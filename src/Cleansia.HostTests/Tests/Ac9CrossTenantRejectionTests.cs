@@ -9,11 +9,8 @@ using Microsoft.EntityFrameworkCore;
 namespace Cleansia.HostTests.Tests;
 
 /// <summary>
-/// AC9 (cross-tenant rejection — testing.md must-cover #5) — a caller whose JWT tenant_id differs from
-/// the target resource's TenantId gets NOT-FOUND (the EF global query filter hides the row), never the
-/// cross-tenant resource. At least one case per category: user-by-id, dispute create, invoice-by-id,
-/// order action. The attacker is given the genuine owning sub/employee_id so ONLY the tenant boundary
-/// is under test — every other ownership gate would otherwise pass.
+/// Operator and partner resources stay company-scoped. Customer order actions instead admit the proven
+/// owner across operators and refuse other customers without revealing the resource.
 /// </summary>
 public sealed class Ac9CrossTenantRejectionTests(HostTestPostgresFixture db) : AuthzHostTestBase(db)
 {
@@ -42,36 +39,44 @@ public sealed class Ac9CrossTenantRejectionTests(HostTestPostgresFixture db) : A
     }
 
     [Fact]
-    public async Task Cross_tenant_create_dispute_returns_not_found_and_creates_no_dispute()
+    public async Task Cross_market_create_dispute_serves_the_owner_and_rejects_another_customer_without_changes()
     {
-        string ownerId = "", orderId = "";
+        string ownerId = "", outsiderId = "", orderId = "";
         await SeedAsync(async ctx =>
         {
             await DomainSeed.EnsureReferenceDataAsync(ctx);
-            var owner = DomainSeed.Customer("xt-owner@hosttests.local", tenantId: TenantA);
-            ctx.Users.Add(owner);
-            var order = DomainSeed.NewOrder(owner.Id, "xt-owner@hosttests.local", tenantId: TenantA);
+            var owner = DomainSeed.Customer("xt-owner@hosttests.local", tenantId: TenantB);
+            var outsider = DomainSeed.Customer("xt-outsider@hosttests.local", tenantId: TenantB);
+            ctx.Users.AddRange(owner, outsider);
+            var order = DomainSeed.NewOrder(owner.Id, owner.Email, tenantId: TenantA, cleaningDateTime: DateTime.UtcNow.AddHours(-2));
             ctx.Orders.Add(order);
             ownerId = owner.Id;
+            outsiderId = outsider.Id;
             orderId = order.Id;
         });
 
-        // sub == the genuine order owner, but the token's tenant is B → the order is invisible.
-        var token = TestJwtFactory.Mint(CustomerAudience, ownerId, "xt-owner@hosttests.local",
-            UserProfile.Customer, tenantId: TenantB);
-
-        var resp = await CustomerClient(token).PostAsync("/api/Dispute/Create", JsonContent.Create(new
+        HttpContent Body() => JsonContent.Create(new
         {
             OrderId = orderId,
             Reason = (int)DisputeReason.Other,
-            Description = "cross-tenant dispute attempt body",
-        }));
+            Description = "A problem with the cross-market cleaning",
+        });
+        var outsiderToken = TestJwtFactory.Mint(CustomerAudience, outsiderId, "xt-outsider@hosttests.local", UserProfile.Customer, tenantId: TenantB);
+        await HttpAssert.RejectedAsync(await CustomerClient(outsiderToken).PostAsync("/api/Dispute/Create", Body()), BusinessErrorMessage.OrderNotFound);
+        Assert.Equal(0, await QueryAsync(ctx => ctx.Disputes.IgnoreQueryFilters().CountAsync()));
 
-        await HttpAssert.RejectedAsync(resp, BusinessErrorMessage.OrderNotFound);
-
-        var disputes = await QueryAsync(ctx =>
-            ctx.Set<Dispute>().IgnoreQueryFilters().CountAsync(d => d.OrderId == orderId));
-        Assert.Equal(0, disputes);
+        var ownerToken = TestJwtFactory.Mint(CustomerAudience, ownerId, "xt-owner@hosttests.local", UserProfile.Customer, tenantId: TenantB);
+        HttpAssert.IsOk(await CustomerClient(ownerToken).PostAsync("/api/Dispute/Create", Body()));
+        var dispute = await QueryAsync(ctx => ctx.Disputes.IgnoreQueryFilters().SingleAsync());
+        Assert.Equal(orderId, dispute.OrderId);
+        Assert.Equal(ownerId, dispute.UserId);
+        Assert.Equal(TenantA, dispute.TenantId);
+        var order = await QueryAsync(ctx => ctx.Orders.IgnoreQueryFilters().SingleAsync(o => o.Id == orderId));
+        Assert.Equal(OrderStatus.New, order.CurrentStatus);
+        Assert.Equal(TenantA, order.TenantId);
+        var audits = await QueryAsync(ctx => ctx.CustomerActionAudits.IgnoreQueryFilters().ToListAsync());
+        Assert.Equal(TenantA, Assert.Single(audits, a => a.Success && a.UserId == ownerId).TenantId);
+        Assert.Equal(TenantB, Assert.Single(audits, a => !a.Success && a.UserId == outsiderId).TenantId);
     }
 
     [Fact]

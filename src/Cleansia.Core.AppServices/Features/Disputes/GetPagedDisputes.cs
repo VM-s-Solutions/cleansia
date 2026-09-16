@@ -22,7 +22,8 @@ public class GetPagedDisputes
 
     internal class Handler(
         IDisputeRepository disputeRepository,
-        IUserSessionProvider userSessionProvider)
+        IUserSessionProvider userSessionProvider,
+        ITenantProvider tenantProvider)
         : IRequestHandler<Request, PagedData<DisputeListItem>>
     {
         public async Task<PagedData<DisputeListItem>> Handle(Request request, CancellationToken cancellationToken)
@@ -41,14 +42,13 @@ public class GetPagedDisputes
             var specification = filterDto.MapToDomain();
             var filter = specification.SatisfiedBy();
 
-            // A customer's disputes sit in the books of every company they booked with (a dispute carries
-            // its order's operator), so their list reads across companies pinned by their own id; an
-            // admin's list stays their company's through the filter.
+            // Explicit root pins keep account navigation available for identity search without broadening access.
+            var operatorTenantId = tenantProvider.GetCurrentTenantId();
             var totalItems = ownerId is null
-                ? await disputeRepository.GetCountAsync(filter, cancellationToken)
+                ? await disputeRepository.GetCountForOperatorAsync(operatorTenantId, filter, cancellationToken)
                 : await disputeRepository.GetCountForOwnerAsync(ownerId, filter, cancellationToken);
             var page = ownerId is null
-                ? disputeRepository.GetPagedSort<DisputeSort>(request.Offset, request.Limit, filter, request.Sort.MapToDomain())
+                ? disputeRepository.GetPagedSortForOperator<DisputeSort>(operatorTenantId, request.Offset, request.Limit, filter, request.Sort.MapToDomain())
                 : disputeRepository.GetPagedSortForOwner<DisputeSort>(ownerId, request.Offset, request.Limit, filter, request.Sort.MapToDomain());
             // Establish the page under the access filter before loading its cross-company customer navigation.
             var ids = await page.Select(d => d.Id).ToListAsync(cancellationToken);

@@ -52,7 +52,8 @@ public class CancelOrderAuditTests(PostgresContainerFixture fixture) : BaseInteg
     private static Func<CleansiaDbContext, Task> Seed(
         string ownerUserId = CustomerId,
         OrderStatus lastStatus = OrderStatus.Confirmed,
-        bool accepted = true) => async context =>
+        bool accepted = true,
+        string operatorTenantId = TestTenants.Default) => async context =>
     {
         context.Languages.Add(Language.Create("en", "English"));
         var country = Country.Create("Czechia", "CZE", "CZ", isServiced: true);
@@ -69,7 +70,9 @@ public class CancelOrderAuditTests(PostgresContainerFixture fixture) : BaseInteg
         var other = User.CreateWithPassword("cancel-audit-2@cleansia.test", "Seed-Password-123", "Other", "Customer");
         other.Id = OtherCustomerId;
         var cleanerUser = User.CreateWithPassword("cleaner-cancel-audit@cleansia.test", "Seed-Password-123", "Clean", "Er", UserProfile.Employee);
+        cleanerUser.TenantId = operatorTenantId;
         var cleaner = Employee.CreateWithUser(cleanerUser);
+        cleaner.TenantId = operatorTenantId;
         context.Users.AddRange(customer, other, cleanerUser);
         context.Employees.Add(cleaner);
 
@@ -87,6 +90,8 @@ public class CancelOrderAuditTests(PostgresContainerFixture fixture) : BaseInteg
             paymentStatus: PaymentStatus.Paid,
             userId: ownerUserId);
         order.Id = OrderId;
+        order.TenantId = operatorTenantId;
+        order.CustomerAddress!.TenantId = operatorTenantId;
         // Booked two days ago, so the oops window cannot mask the tier.
         order.Created("seed", DateTimeOffset.UtcNow.AddDays(-2));
         order.AssignStripeSessionId("cs_test_cancel_audit");
@@ -95,6 +100,7 @@ public class CancelOrderAuditTests(PostgresContainerFixture fixture) : BaseInteg
         foreach (var status in new[] { OrderStatus.New, lastStatus })
         {
             var track = OrderStatusTrack.Create(status, order);
+            track.TenantId = operatorTenantId;
             track.Created("seed", stamp);
             order.AddOrderStatus(track);
             stamp = stamp.AddMinutes(1);
@@ -191,12 +197,14 @@ public class CancelOrderAuditTests(PostgresContainerFixture fixture) : BaseInteg
             transactional: false);
     }
 
-    [Fact]
-    public async Task A_Probe_At_Another_Customers_Order_Leaves_The_Probers_Failure_Row_At_The_Victims_Order_And_The_Order_Untouched()
+    [Theory]
+    [InlineData(TestTenants.Default)]
+    [InlineData(TestTenants.Second)]
+    public async Task A_Probe_At_Another_Customers_Order_Leaves_The_Probers_Failure_Row_At_The_Victims_Order_And_The_Order_Untouched(string operatorTenantId)
     {
         await TestMethod(
             setup: CustomerSession,
-            arrange: Seed(ownerUserId: OtherCustomerId),
+            arrange: Seed(ownerUserId: OtherCustomerId, operatorTenantId: operatorTenantId),
             act: async provider => await provider.GetRequiredService<IMediator>()
                 .Send(new CancelOrder.Command(OrderId, Reason: null)),
             assert: async (CleansiaDbContext context, BusinessResult<CancelOrder.Response> result) =>
@@ -208,13 +216,46 @@ public class CancelOrderAuditTests(PostgresContainerFixture fixture) : BaseInteg
                 Assert.Equal(OrderStatus.Confirmed, order.CurrentStatus);
                 Assert.Null(order.CancelledAt);
                 Assert.Equal(PaymentStatus.Paid, order.PaymentStatus);
+                Assert.Equal(operatorTenantId, order.TenantId);
+                Assert.Empty(await context.OutboxMessages.IgnoreQueryFilters().ToListAsync());
 
                 var row = Assert.Single(await CustomerRows(context));
                 Assert.False(row.Success);
                 Assert.Equal(BusinessErrorMessage.OrderNotFound, row.ErrorCode);
                 Assert.Equal(CustomerId, row.UserId);
+                Assert.Equal(TestTenants.Default, row.TenantId);
                 Assert.Equal("Order", row.ResourceType);
                 Assert.Equal(OrderId, row.ResourceId);
+                Assert.Null(row.PayloadJson);
+            },
+            transactional: false);
+    }
+
+    [Fact]
+    public async Task A_Missing_Order_Returns_The_Same_Refusal_And_Leaves_One_Account_Failure_Row()
+    {
+        const string missingOrderId = "missing-cancel-order";
+        await TestMethod(
+            setup: CustomerSession,
+            arrange: Seed(),
+            act: async provider => await provider.GetRequiredService<IMediator>()
+                .Send(new CancelOrder.Command(missingOrderId, Reason: null)),
+            assert: async (CleansiaDbContext context, BusinessResult<CancelOrder.Response> result) =>
+            {
+                Assert.True(result.IsFailure);
+                Assert.Equal(BusinessErrorMessage.OrderNotFound, result.Error!.Message);
+                var order = await context.Orders.IgnoreQueryFilters().SingleAsync();
+                Assert.Equal(OrderStatus.Confirmed, order.CurrentStatus);
+                Assert.Null(order.CancelledAt);
+                Assert.Empty(await context.OutboxMessages.IgnoreQueryFilters().ToListAsync());
+                var row = Assert.Single(await CustomerRows(context));
+                Assert.False(row.Success);
+                Assert.Equal(BusinessErrorMessage.OrderNotFound, row.ErrorCode);
+                Assert.Equal("customer.order.cancel", row.Action);
+                Assert.Equal(CustomerId, row.UserId);
+                Assert.Equal(TestTenants.Default, row.TenantId);
+                Assert.Equal("Order", row.ResourceType);
+                Assert.Equal(missingOrderId, row.ResourceId);
                 Assert.Null(row.PayloadJson);
             },
             transactional: false);

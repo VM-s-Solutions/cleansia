@@ -9,8 +9,10 @@ public class UserRepository(CleansiaDbContext context)
     : BaseRepository<User>(context), IUserRepository
 {
     public Task<string?> GetNotificationRecipientTenantAsync(string userId, CancellationToken cancellationToken)
-        => GetDbSet().IgnoreQueryFilters().Where(u => u.Id == userId)
+    {
+        return GetDbSet().IgnoreQueryFilters().Where(u => u.Id == userId)
             .Select(u => u.TenantId).FirstOrDefaultAsync(cancellationToken);
+    }
 
     public override IQueryable<User> GetQueryable()
     {

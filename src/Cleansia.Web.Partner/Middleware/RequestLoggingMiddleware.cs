@@ -288,6 +288,10 @@ public partial class RequestLoggingMiddleware(RequestDelegate next, ILogger<Requ
                // list and the device label is client-controlled text no denylist reaches (ADR-0062 D6).
                // Present on every host like the paths beside it, so a route that moves hosts keeps it.
                pathValue.Contains("/customeraudit/") ||
+               // Customer panels contain company free text beside redacted account fields.
+               (pathValue.Contains("/adminorder/") && pathValue.TrimEnd('/').EndsWith("/customer")) ||
+               pathValue.Contains("/adminuser/") ||
+               pathValue.Contains("/user/getbyid") ||
                // Reading documents back: an operator's review notes and the cleaner's own description
                // ride behind the SAS, which redaction collapses. The write side (/savemydocuments) was
                // already suppressed; the read was not.

@@ -48,16 +48,22 @@ public partial class CreateOrderCallerCurrencyTests
         return scope;
     }
 
-    [Fact]
-    public async Task CrossMarket_Dispute_Operator_Reads_All_Messages_Without_Current_Foreign_Account_Pii_And_Can_Resolve()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task CrossMarket_Dispute_Operator_Reads_All_Messages_Without_Current_Foreign_Account_Pii_And_Can_Resolve(bool crossMarket)
     {
         const string adminId = "review-operator-admin";
+        var customerTenant = crossMarket ? TestTenants.Default : TestTenants.Second;
+        var visibleName = crossMarket ? "Caller Customer" : "PrivateCurrentName PrivateSurname";
+        var visibleEmail = crossMarket ? CustomerEmail : "private-current@test.local";
         var actor = new ReviewActor();
         await TestMethod<string>(setup: services => ConfigureReviewActor(services, actor),
             arrange: async (CleansiaDbContext context) =>
             {
                 await SeedCrossOrderAsync(context);
                 var customer = await context.Users.SingleAsync(u => u.Id == CustomerUserId);
+                customer.TenantId = customerTenant;
                 customer.Update("PrivateCurrentName", "PrivateSurname", "+420777999000", new DateOnly(1991, 2, 3));
                 context.Entry(customer).Property(u => u.Email).CurrentValue = "private-current@test.local";
                 var admin = User.CreateWithPassword("operator-admin@test.local", "Password123!", "Operator", "Support", UserProfile.Administrator);
@@ -69,7 +75,7 @@ public partial class CreateOrderCallerCurrencyTests
             act: async provider =>
             {
                 string disputeId;
-                await using (var customer = ReviewScope(provider, actor, CustomerUserId, UserProfile.Customer, TestTenants.Default))
+                await using (var customer = ReviewScope(provider, actor, CustomerUserId, UserProfile.Customer, customerTenant))
                 {
                     var mediator = customer.ServiceProvider.GetRequiredService<IMediator>();
                     var created = await mediator.Send(new CreateDispute.Command(CrossOrderId, DisputeReason.QualityIssue, "The bathroom was not cleaned completely."));
@@ -89,13 +95,28 @@ public partial class CreateOrderCallerCurrencyTests
                     Assert.Equal(1, page.Total);
                     var listed = Assert.Single(page.Data);
                     Assert.Equal(disputeId, listed.Id);
-                    Assert.Equal("Caller Customer", listed.CustomerName);
-                    Assert.Equal(CustomerEmail, listed.CustomerEmail);
-                    var searched = await mediator.Send(new GetPagedDisputes.Request
+                    Assert.Equal(visibleName, listed.CustomerName);
+                    Assert.Equal(visibleEmail, listed.CustomerEmail);
+                    foreach (var filter in new[]
                     {
-                        Filter = new DisputeFilter(null, null, "Caller", CustomerEmail, null, null, null, null, null, null, null, null)
-                    });
-                    Assert.Single(searched.Data);
+                        new DisputeFilter(null, null, visibleName.Split(' ')[0], null, null, null, null, null, null, null, null, null),
+                        new DisputeFilter(null, null, null, visibleEmail, null, null, null, null, null, null, null, null)
+                    })
+                    {
+                        var searched = await mediator.Send(new GetPagedDisputes.Request { Filter = filter });
+                        Assert.Equal(1, searched.Total);
+                        Assert.Equal(disputeId, Assert.Single(searched.Data).Id);
+                    }
+                    foreach (var filter in new[]
+                    {
+                        new DisputeFilter(null, null, crossMarket ? "PrivateCurrentName" : "Caller", null, null, null, null, null, null, null, null, null),
+                        new DisputeFilter(null, null, null, crossMarket ? "private-current@test.local" : CustomerEmail, null, null, null, null, null, null, null, null)
+                    })
+                    {
+                        var searched = await mediator.Send(new GetPagedDisputes.Request { Filter = filter });
+                        Assert.Equal(0, searched.Total);
+                        Assert.Empty(searched.Data);
+                    }
                     Assert.True((await mediator.Send(new AddDisputeMessage.Command(disputeId, "Staff response", true))).IsSuccess);
                     Assert.True((await mediator.Send(new UpdateDisputeStatus.Command(disputeId, DisputeStatus.UnderReview))).IsSuccess);
                 }
@@ -105,15 +126,18 @@ public partial class CreateOrderCallerCurrencyTests
                     var mediator = admin.ServiceProvider.GetRequiredService<IMediator>();
                     var detail = await mediator.Send(new GetDisputeDetails.Query(disputeId));
                     Assert.True(detail.IsSuccess, detail.Error?.Message);
-                    Assert.Equal("Caller Customer", detail.Value.CustomerName);
-                    Assert.Equal(CustomerEmail, detail.Value.CustomerEmail);
-                    Assert.Contains(detail.Value.Messages, m => m.Message == "Customer follow-up" && m.AuthorName == "Caller Customer");
+                    Assert.Equal(visibleName, detail.Value.CustomerName);
+                    Assert.Equal(visibleEmail, detail.Value.CustomerEmail);
+                    Assert.Contains(detail.Value.Messages, m => m.Message == "Customer follow-up" && m.AuthorName == visibleName);
                     Assert.Contains(detail.Value.Messages, m => m.Message == "Staff response" && m.AuthorName == "Operator Support");
                     Assert.Single(detail.Value.Evidence);
                     var json = JsonSerializer.Serialize(detail.Value);
-                    Assert.DoesNotContain("PrivateCurrentName", json);
-                    Assert.DoesNotContain("PrivateSurname", json);
-                    Assert.DoesNotContain("private-current", json);
+                    if (crossMarket)
+                    {
+                        Assert.DoesNotContain("PrivateCurrentName", json);
+                        Assert.DoesNotContain("PrivateSurname", json);
+                        Assert.DoesNotContain("private-current", json);
+                    }
                     Assert.DoesNotContain("777999000", json);
                     Assert.DoesNotContain("1991", json);
                     Assert.True((await mediator.Send(new ResolveDispute.Command(disputeId, null, "Resolved with an agreed reclean."))).IsSuccess);
@@ -123,12 +147,18 @@ public partial class CreateOrderCallerCurrencyTests
                 {
                     var mediator = other.ServiceProvider.GetRequiredService<IMediator>();
                     Assert.Empty((await mediator.Send(new GetPagedDisputes.Request())).Data);
+                    var searched = await mediator.Send(new GetPagedDisputes.Request
+                    {
+                        Filter = new DisputeFilter(null, null, visibleName.Split(' ')[0], visibleEmail, null, null, null, null, null, null, null, null)
+                    });
+                    Assert.Equal(0, searched.Total);
+                    Assert.Empty(searched.Data);
                     Assert.True((await mediator.Send(new GetDisputeDetails.Query(disputeId))).IsFailure);
                     Assert.True((await mediator.Send(new UpdateDisputeStatus.Command(disputeId, DisputeStatus.UnderReview))).IsFailure);
                     Assert.True((await mediator.Send(new ResolveDispute.Command(disputeId, null, "Must not be accepted"))).IsFailure);
                 }
 
-                await using (var customer = ReviewScope(provider, actor, CustomerUserId, UserProfile.Customer, TestTenants.Default))
+                await using (var customer = ReviewScope(provider, actor, CustomerUserId, UserProfile.Customer, customerTenant))
                 {
                     var detail = await customer.ServiceProvider.GetRequiredService<IMediator>().Send(new GetDisputeDetails.Query(disputeId));
                     Assert.True(detail.IsSuccess, detail.Error?.Message);

@@ -75,7 +75,6 @@ public sealed class RecurringBookingMembershipGateRouteTests(HostTestPostgresFix
     });
 
     private static readonly string UpdateBodyJson = ReAuthorBodyFor(TemplateId);
-    private static readonly string ForeignUpdateBodyJson = ReAuthorBodyFor(ForeignTemplateId);
 
     public enum Membership { None, Active, Trialing, Cancelled, PastDue, PeriodExpired }
 
@@ -195,22 +194,30 @@ public sealed class RecurringBookingMembershipGateRouteTests(HostTestPostgresFix
 
     /// <summary>
     /// The entitlement link is the LAST link of the ownership chain, so a template the caller does not
-    /// own resolves as not-owned and never as "you need Plus" — otherwise the refusal is an oracle for
+    /// own resolves as not-found and never as "you need Plus" — otherwise the refusal is an oracle for
     /// whether the caller happens to be a subscriber on somebody else's id.
     /// </summary>
-    [Fact]
-    public async Task A_lapsed_subscriber_updating_someone_elses_template_is_told_not_owned_not_membership()
+    [Theory]
+    [InlineData(Membership.Cancelled)]
+    [InlineData(Membership.Active)]
+    public async Task Updating_someone_elses_template_is_not_found_regardless_of_membership(Membership membership)
     {
-        await ArrangeAsync(Membership.Cancelled, withForeignTemplate: true);
-
-        var response = await PostAsync(UpdateRoute, ForeignUpdateBodyJson);
-
-        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
-        await HttpAssert.AssertBusinessErrorAsync(
-            response, BusinessErrorMessage.RecurringTemplateNotOwnedByUser);
-        Assert.DoesNotContain(
-            BusinessErrorMessage.RecurringTemplateMembershipRequired,
-            await response.Content.ReadAsStringAsync());
+        await ArrangeAsync(membership, withForeignTemplate: true);
+        var before = (await LoadTemplateAsync(ForeignTemplateId))!;
+        foreach (var templateId in new[] { ForeignTemplateId, "missing-recurring-template" })
+        {
+            var response = await PostAsync(UpdateRoute, ReAuthorBodyFor(templateId));
+            Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+            await HttpAssert.AssertBusinessErrorAsync(response, BusinessErrorMessage.RecurringTemplateNotFound);
+            Assert.DoesNotContain(BusinessErrorMessage.RecurringTemplateMembershipRequired, await response.Content.ReadAsStringAsync());
+        }
+        var after = (await LoadTemplateAsync(ForeignTemplateId))!;
+        Assert.Equal(StrangerId, after.UserId);
+        Assert.Equal(before.Frequency, after.Frequency);
+        Assert.Equal(before.SelectedServiceIds, after.SelectedServiceIds);
+        Assert.Equal(before.LastMaterializedFor, after.LastMaterializedFor);
+        Assert.Equal(0, await CountTemplatesAsync(CustomerId));
+        Assert.Equal(1, await CountTemplatesAsync(StrangerId));
     }
 
     // ── arrange / act helpers ─────────────────────────────────────────────────────────────────────

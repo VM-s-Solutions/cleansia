@@ -22,6 +22,7 @@ public class FrozenPermissionMapTests
         [Policy.CanViewPagedOrder] = PhysicalPolicy.EmployeeOrAdmin,
         [Policy.CanViewPagedUserOrder] = PhysicalPolicy.Authenticated,
         [Policy.CanViewOrderDetail] = PhysicalPolicy.Authenticated,
+        [Policy.CanViewOrderCustomer] = PhysicalPolicy.AdminOnly,
         [Policy.CanUpdateOrder] = PhysicalPolicy.EmployeeOrAdmin,
         [Policy.CanTakeOrder] = PhysicalPolicy.EmployeeOrAdmin,
         [Policy.CanStartOrder] = PhysicalPolicy.EmployeeOrAdmin,

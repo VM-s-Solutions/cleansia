@@ -65,6 +65,20 @@ public class DisputeRepository(CleansiaDbContext context) : BaseRepository<Dispu
             .FirstOrDefaultAsync(d => d.Id == disputeId, cancellationToken);
     }
 
+    private IQueryable<Dispute> ForOperator(string? operatorTenantId)
+        => GetQueryableIgnoringTenant().Where(d => operatorTenantId != null && d.TenantId == operatorTenantId);
+
+    public Task<int> GetCountForOperatorAsync(string? operatorTenantId, Expression<Func<Dispute, bool>>? filter, CancellationToken cancellationToken)
+    {
+        var query = ForOperator(operatorTenantId);
+        return (filter is null ? query : query.Where(filter)).CountAsync(cancellationToken);
+    }
+
+    public IQueryable<Dispute> GetPagedSortForOperator<TSort>(
+        string? operatorTenantId, int offset, int limit, Expression<Func<Dispute, bool>>? filter, IEnumerable<SortDefinition> sort)
+        where TSort : BaseSort<Dispute>
+        => PagedSort<TSort>(ForOperator(operatorTenantId), offset, limit, filter, sort);
+
     public Task<int> GetCountForOwnerAsync(string userId, Expression<Func<Dispute, bool>>? filter, CancellationToken cancellationToken)
     {
         var query = GetQueryableForOwner(userId);

@@ -2,6 +2,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Net.Http.Json;
 using System.Text.Json;
 using Cleansia.Core.AppServices.Common;
+using Cleansia.Core.Blobs.Abstractions;
 using Cleansia.Core.Domain.Company;
 using Cleansia.Core.Domain.Configuration;
 using Cleansia.Core.Domain.EmployeePayroll;
@@ -14,6 +15,9 @@ using Cleansia.Core.Domain.Services;
 using Cleansia.Core.Domain.Users;
 using Cleansia.HostTests.Infrastructure;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
+using Moq;
 
 namespace Cleansia.HostTests.Tests;
 
@@ -22,7 +26,8 @@ namespace Cleansia.HostTests.Tests;
 /// serving Slovakia) with a customer, a cleaner, an order, a receipt, a pay default, a promo code, a
 /// company record and an active membership — and a CZ admin who lists none of it and 404s on every
 /// row by id, while listing its own company's seeded config rows (the seed re-homing proven by a read,
-/// not only by the scan). The CZ customer reaches the SK order only by its secret; an anonymous
+/// not only by the scan). Customers read their own orders across operators; unrelated customers need
+/// the order's secret. An anonymous
 /// registration naming Slovakia lands in <c>cleansia-sk</c> and cannot be repeated in CZ; login by that
 /// email resolves the SK account; every JWT the hosts mint carries <c>tenant_id</c>.
 /// </summary>
@@ -31,6 +36,17 @@ public sealed class SecondTenantIsolationHostTests(HostTestPostgresFixture db) :
     private const string SlovakiaId = "SK-hosttests";
     private const string EurId = "EUR-hosttests";
     private const string Password = "12345678Test!";
+    private static readonly byte[] ReceiptBytes = [37, 80, 68, 70, 45, 49];
+    private readonly Mock<IBlobContainerClient> _receiptBlob = new(MockBehavior.Strict);
+
+    protected override void ConfigureCustomerHostServices(IServiceCollection services)
+    {
+        _receiptBlob.Setup(b => b.DownloadAsync("receipts/r.pdf", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(() => new BlobFile(new MemoryStream(ReceiptBytes), "application/pdf"));
+        var factory = new Mock<IBlobContainerClientFactory>(MockBehavior.Strict);
+        factory.Setup(f => f.GetBlobContainerClient(Constants.BlobContainers.GeneratedReceipts)).Returns(_receiptBlob.Object);
+        services.Replace(ServiceDescriptor.Singleton(factory.Object));
+    }
 
     private sealed record Arranged(
         string CzAdminId, string CzAdminEmail,
@@ -40,7 +56,7 @@ public sealed class SecondTenantIsolationHostTests(HostTestPostgresFixture db) :
         string SkPayConfigId, string SkPromoCodeId, string SkCompanyInfoId,
         string CzPayConfigId, string CzPromoCodeId, string CzCompanyInfoId);
 
-    private async Task<Arranged> ArrangeTwoOperatorsAsync()
+    private async Task<Arranged> ArrangeTwoOperatorsAsync(bool receiptOwnedByCzCustomer = false)
     {
         Arranged arranged = null!;
         await SeedAsync(async ctx =>
@@ -79,7 +95,8 @@ public sealed class SecondTenantIsolationHostTests(HostTestPostgresFixture db) :
             ctx.Users.AddRange(skCustomer, skCleanerUser);
             var skCleaner = DomainSeed.ApprovedEmployee(skCleanerUser, tenantId: HostTestTenants.B);
             ctx.Employees.Add(skCleaner);
-            var skOrder = DomainSeed.NewOrder(skCustomer.Id, skCustomer.Email, tenantId: HostTestTenants.B);
+            var receiptOwner = receiptOwnedByCzCustomer ? czCustomer : skCustomer;
+            var skOrder = DomainSeed.NewOrder(receiptOwner.Id, receiptOwner.Email, tenantId: HostTestTenants.B);
             ctx.Orders.Add(skOrder);
             var language = ctx.Languages.Local.FirstOrDefault(l => l.Code == DomainSeed.LanguageCode)
                 ?? await ctx.Languages.SingleAsync(l => l.Code == DomainSeed.LanguageCode);
@@ -180,19 +197,38 @@ public sealed class SecondTenantIsolationHostTests(HostTestPostgresFixture db) :
             await PartnerClient(partnerAdminToken).GetAsync($"/api/User/GetById?UserId={a.SkCustomerId}"),
             BusinessErrorMessage.NotExistingUserWithId);
 
-        // The receipt and the membership hang off the customer surface: the genuine owner's sub with the
-        // CZ claim reaches neither.
-        var czClaimOnSkOwner = TestJwtFactory.Mint(CustomerAudience, a.SkCustomerId, a.SkCustomerEmail, UserProfile.Customer, tenantId: HostTestTenants.A);
-        await HttpAssert.RejectedAsync(
-            await CustomerClient(czClaimOnSkOwner).GetAsync($"/api/Order/DownloadReceipt?OrderId={a.SkOrderId}"),
-            BusinessErrorMessage.OrderNotFound);
-        // GetMine answers 200 with HasMembership = false when the filter hides the row — the same shape a
-        // customer with no membership gets, which is the point: the CZ claim cannot tell it is there.
-        Assert.False(await HasMembershipAsync(CustomerClient(czClaimOnSkOwner)));
-
-        // And the same rows ARE reachable by their own company — the isolation is the claim, not a gap.
         var skClaim = TestJwtFactory.Mint(CustomerAudience, a.SkCustomerId, a.SkCustomerEmail, UserProfile.Customer, tenantId: HostTestTenants.B);
         Assert.True(await HasMembershipAsync(CustomerClient(skClaim)));
+        // Membership remains in the account company's scope even though order ownership spans operators.
+        var czClaimOnSkOwner = TestJwtFactory.Mint(CustomerAudience, a.SkCustomerId, a.SkCustomerEmail, UserProfile.Customer, tenantId: HostTestTenants.A);
+        Assert.False(await HasMembershipAsync(CustomerClient(czClaimOnSkOwner)));
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task A_Customer_Can_Download_Their_Receipt_Across_Operators_And_A_Different_Customer_Cannot(bool receiptOwnedByCzCustomer)
+    {
+        var a = await ArrangeTwoOperatorsAsync(receiptOwnedByCzCustomer);
+        var ownerId = receiptOwnedByCzCustomer ? a.CzCustomerId : a.SkCustomerId;
+        var ownerEmail = receiptOwnedByCzCustomer ? a.CzCustomerEmail : a.SkCustomerEmail;
+        var token = TestJwtFactory.Mint(CustomerAudience, ownerId, ownerEmail, UserProfile.Customer, tenantId: HostTestTenants.A);
+        var receipt = await CustomerClient(token).GetAsync($"/api/Order/DownloadReceipt?OrderId={a.SkOrderId}");
+        HttpAssert.IsOk(receipt);
+        Assert.Equal("application/pdf", receipt.Content.Headers.ContentType!.MediaType);
+        Assert.Equal(ReceiptBytes, await receipt.Content.ReadAsByteArrayAsync());
+        _receiptBlob.Verify(b => b.DownloadAsync("receipts/r.pdf", It.IsAny<CancellationToken>()), Times.Once);
+
+        var outsiderId = receiptOwnedByCzCustomer ? a.SkCustomerId : a.CzCustomerId;
+        var outsiderEmail = receiptOwnedByCzCustomer ? a.SkCustomerEmail : a.CzCustomerEmail;
+        var outsiderTenant = receiptOwnedByCzCustomer ? HostTestTenants.B : HostTestTenants.A;
+        var outsider = TestJwtFactory.Mint(CustomerAudience, outsiderId, outsiderEmail, UserProfile.Customer, tenantId: outsiderTenant);
+        await HttpAssert.RejectedAsync(
+            await CustomerClient(outsider).GetAsync($"/api/Order/DownloadReceipt?OrderId={a.SkOrderId}"),
+            BusinessErrorMessage.OrderNotFound);
+        _receiptBlob.Verify(b => b.DownloadAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Once);
+        var persisted = await QueryAsync(ctx => ctx.OrderReceipts.IgnoreQueryFilters().SingleAsync(r => r.OrderId == a.SkOrderId));
+        Assert.Equal(HostTestTenants.B, persisted.TenantId);
     }
 
     [Fact]

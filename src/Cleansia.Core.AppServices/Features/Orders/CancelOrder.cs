@@ -72,14 +72,12 @@ public class CancelOrder
 
     public class Validator : AbstractValidator<Command>
     {
-        public Validator(IOrderAccessService orderAccessService)
+        public Validator()
         {
             RuleFor(x => x.OrderId)
                 .Cascade(CascadeMode.Stop)
                 .NotEmpty()
-                .WithMessage(BusinessErrorMessage.Required)
-                .MustAsync(orderAccessService.OrderExistsForCallerAsync)
-                .WithMessage(BusinessErrorMessage.OrderNotFound);
+                .WithMessage(BusinessErrorMessage.Required);
 
             RuleFor(x => x.Reason)
                 .MaximumLength(500)
@@ -104,6 +102,7 @@ public class CancelOrder
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
         {
             var userId = userSessionProvider.GetUserId()!;
+            // Missing and foreign orders share the handler's refusal and failure-audit path.
             var order = await orderAccessService
                 .OrdersForCaller()
                 .Include(o => o.OrderStatusHistory)

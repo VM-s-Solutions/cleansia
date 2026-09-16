@@ -47,13 +47,17 @@ public class DisputeSpecification : BaseSpecification<string?>, ISpecification<D
         if (!string.IsNullOrEmpty(CustomerName))
         {
             specification &= new DirectSpecification<Dispute>(x =>
-                x.Order != null && x.Order.CustomerName.Contains(CustomerName));
+                x.User != null && x.User.TenantId == x.TenantId
+                    ? x.User.FirstName.Contains(CustomerName) || x.User.LastName.Contains(CustomerName)
+                    : x.Order != null && x.Order.CustomerName.Contains(CustomerName));
         }
 
         if (!string.IsNullOrEmpty(CustomerEmail))
         {
             specification &= new DirectSpecification<Dispute>(x =>
-                x.Order != null && x.Order.CustomerEmail.Contains(CustomerEmail));
+                x.User != null && x.User.TenantId == x.TenantId
+                    ? x.User.Email.Contains(CustomerEmail)
+                    : x.Order != null && x.Order.CustomerEmail.Contains(CustomerEmail));
         }
 
         if (Statuses is not null && Statuses.Any())

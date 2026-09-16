@@ -54,6 +54,8 @@ public class UserRepositoryTokenLookupTenantTests
         var inNamedBypasses = new[]
             {
                 "GetByIdIgnoringTenantAsync",
+                // An order's operator can differ from its recipient's account; delivery resolves only that account's company.
+                "GetNotificationRecipientTenantAsync",
                 "GetByEmailIgnoringTenantAsync",
                 "ExistsWithEmailIgnoringTenantAsync",
                 // Sign in with Apple is anonymous and resolves the account by the verified Apple sub —
@@ -73,6 +75,17 @@ public class UserRepositoryTokenLookupTenantTests
             .Sum(method => Regex.Matches(ExtractMethodBody(source, method), IgnoreCall).Count);
 
         Assert.Equal(inNamedBypasses, occurrences);
+    }
+
+    [Fact]
+    public void Notification_Recipient_Bypass_Is_Pinned_To_The_User_And_Projects_Only_Their_Company()
+    {
+        var body = ExtractMethodBody(ReadRepositorySource(), "GetNotificationRecipientTenantAsync");
+        Assert.Matches(@"\.Where\(u\s*=>\s*u\.Id\s*==\s*userId\)", body);
+        Assert.Matches(@"\.Select\(u\s*=>\s*u\.TenantId\)", body);
+        Assert.Contains(".FirstOrDefaultAsync(cancellationToken)", body);
+        Assert.DoesNotContain(".Include(", body);
+        Assert.Single(Regex.Matches(body, IgnoreCall));
     }
 
     // Extracts a single method's brace-balanced body by name.

@@ -62,6 +62,13 @@ public interface IDisputeRepository : IRepository<Dispute, string>
 
     Task<Dispute?> GetDisputeWithDetailsForOwnerAsync(string disputeId, string userId, CancellationToken cancellationToken);
 
+    /// <summary>Operator list scope, pinned by the server-resolved company before cross-company identity search.</summary>
+    Task<int> GetCountForOperatorAsync(string? operatorTenantId, Expression<Func<Dispute, bool>>? filter, CancellationToken cancellationToken);
+
+    IQueryable<Dispute> GetPagedSortForOperator<TSort>(
+        string? operatorTenantId, int offset, int limit, Expression<Func<Dispute, bool>>? filter, IEnumerable<SortDefinition> sort)
+        where TSort : BaseSort<Dispute>;
+
     Task<int> GetCountForOwnerAsync(string userId, Expression<Func<Dispute, bool>>? filter, CancellationToken cancellationToken);
 
     IQueryable<Dispute> GetPagedSortForOwner<TSort>(

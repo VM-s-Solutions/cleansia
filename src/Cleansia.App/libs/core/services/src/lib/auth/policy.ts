@@ -145,6 +145,13 @@ export const Policy = {
   CanUpdateTenantConfiguration: 'CanUpdateTenantConfiguration',
   CanDeleteTenantConfiguration: 'CanDeleteTenantConfiguration',
 
+  // Company lifecycle
+  CanViewCompanyLifecycle: 'CanViewCompanyLifecycle',
+  CanDeactivateCompany: 'CanDeactivateCompany',
+  CanReactivateCompany: 'CanReactivateCompany',
+  CanWindDownCompany: 'CanWindDownCompany',
+  CanArchiveCompany: 'CanArchiveCompany',
+
   // GDPR (own)
   CanExportOwnData: 'CanExportOwnData',
   CanDeleteOwnAccount: 'CanDeleteOwnAccount',
@@ -317,6 +324,12 @@ export const POLICY_MAP: Record<PolicyName, PhysicalPolicy> = {
   CanCreateTenantConfiguration: PhysicalPolicy.AdminOnly,
   CanUpdateTenantConfiguration: PhysicalPolicy.AdminOnly,
   CanDeleteTenantConfiguration: PhysicalPolicy.AdminOnly,
+
+  CanViewCompanyLifecycle: PhysicalPolicy.AdminOnly,
+  CanDeactivateCompany: PhysicalPolicy.AdminOnly,
+  CanReactivateCompany: PhysicalPolicy.AdminOnly,
+  CanWindDownCompany: PhysicalPolicy.AdminOnly,
+  CanArchiveCompany: PhysicalPolicy.AdminOnly,
 
   CanExportOwnData: PhysicalPolicy.Authenticated,
   CanDeleteOwnAccount: PhysicalPolicy.Authenticated,

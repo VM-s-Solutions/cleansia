@@ -126,6 +126,12 @@ export class AppComponent implements OnInit {
       route: '/company-settings',
       permission: Policy.CanViewTenantConfigurations,
     },
+    {
+      label: 'sidebar.company_lifecycle',
+      icon: 'pi pi-power-off',
+      route: '/company-lifecycle',
+      permission: Policy.CanViewCompanyLifecycle,
+    },
     { label: 'sidebar.templates', icon: 'pi pi-file-edit', route: '/template-management' },
     { label: 'sidebar.fiscal_failures', icon: 'pi pi-exclamation-triangle', route: '/fiscal-failures' },
     {

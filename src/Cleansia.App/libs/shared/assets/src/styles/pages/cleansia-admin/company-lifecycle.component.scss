@@ -1,0 +1,177 @@
+.cleansia-company-lifecycle {
+  display: flex;
+  justify-content: center;
+  padding: 1rem;
+  max-width: 100vw;
+  overflow-x: hidden;
+  position: relative;
+
+  &__container {
+    background: var(--cleansia-white);
+    border-radius: 12px;
+    padding: 2rem;
+    width: 100%;
+    max-width: 1400px;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  &__header {
+    text-align: center;
+  }
+
+  &__description,
+  &__hint {
+    color: var(--cleansia-text-secondary);
+    font-size: 1rem;
+    line-height: 1.5;
+  }
+
+  &__state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 3rem 1rem;
+    color: var(--cleansia-text-secondary);
+
+    i {
+      font-size: 2rem;
+      color: #b45309;
+    }
+  }
+
+  &__banner {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    padding: 1.25rem 1.5rem;
+    border-radius: 12px;
+    border-left: 6px solid var(--cleansia-primary);
+    background: var(--cleansia-primary-0);
+
+    &[data-severity='success'] {
+      border-left-color: #16a34a;
+    }
+
+    &[data-severity='warn'] {
+      border-left-color: #d97706;
+    }
+
+    &[data-severity='danger'] {
+      border-left-color: #dc2626;
+    }
+
+    &[data-severity='info'] {
+      border-left-color: #2563eb;
+    }
+
+    &[data-severity='secondary'] {
+      border-left-color: #6b7280;
+    }
+  }
+
+  &__banner-headline {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+
+    cleansia-button {
+      margin-left: auto;
+    }
+  }
+
+  &__company-name {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--cleansia-text-primary);
+  }
+
+  &__stamps,
+  &__reasons {
+    margin: 0;
+    padding-left: 1.25rem;
+    color: var(--cleansia-text-secondary);
+    line-height: 1.5;
+  }
+
+  &__manifest {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    color: var(--cleansia-text-secondary);
+
+    code {
+      word-break: break-all;
+      color: var(--cleansia-text-primary);
+    }
+  }
+
+  &__run-in-progress {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 600;
+    color: #b45309;
+  }
+
+  &__acts {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 1rem;
+  }
+
+  &__act {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding: 1rem;
+    border: 1px solid var(--cleansia-primary-0);
+    border-radius: 12px;
+  }
+
+  &__reasons {
+    font-size: 0.875rem;
+  }
+
+  &__link {
+    color: var(--cleansia-primary);
+    font-weight: 600;
+    text-decoration: underline;
+  }
+}
+
+.cleansia-wind-down-dialog {
+  &__form {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  &__lede {
+    margin: 0;
+    color: var(--cleansia-text-primary);
+    line-height: 1.5;
+  }
+
+  &__consequences-title {
+    margin: 0;
+    font-weight: 600;
+  }
+
+  &__consequences {
+    margin: 0;
+    padding-left: 1.25rem;
+    color: var(--cleansia-text-secondary);
+    line-height: 1.5;
+  }
+}
+
+cleansia-admin-company-lifecycle {
+  display: flex;
+  flex-direction: column;
+  background: var(--cleansia-primary-0);
+  min-height: 100vh;
+}

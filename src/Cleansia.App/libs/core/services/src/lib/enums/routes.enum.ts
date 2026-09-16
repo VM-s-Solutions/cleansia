@@ -32,6 +32,8 @@ export enum CleansiaAdminRoute {
   SERVICE_AREA_MANAGEMENT = 'service-area-management',
   CURRENCY_MANAGEMENT = 'currency-management',
   COMPANY_INFO = 'company-info',
+  COMPANY_SETTINGS = 'company-settings',
+  COMPANY_LIFECYCLE = 'company-lifecycle',
   EMPLOYEE_DOCUMENTS = 'employee-documents',
   TEMPLATE_MANAGEMENT = 'template-management',
   PAY_CONFIG_MANAGEMENT = 'pay-config-management',

@@ -1,0 +1,128 @@
+<div class="cleansia-company-lifecycle">
+  <div class="cleansia-company-lifecycle__container page-wrapper">
+    <div class="cleansia-company-lifecycle__header">
+      <div class="header-content">
+        <cleansia-title [title]="'pages.company_lifecycle.title' | translate" />
+        <p class="cleansia-company-lifecycle__description">
+          {{ 'pages.company_lifecycle.description' | translate }}
+        </p>
+      </div>
+    </div>
+
+    @if (facade.initialLoading()) {
+    <cleansia-section>
+      <cleansia-loader />
+    </cleansia-section>
+    } @else if (facade.hasError()) {
+    <cleansia-section>
+      <div class="cleansia-company-lifecycle__state">
+        <i class="pi pi-exclamation-triangle"></i>
+        <p>{{ 'pages.company_lifecycle.load_error' | translate }}</p>
+        <cleansia-button
+          [label]="'pages.company_lifecycle.retry' | translate"
+          icon="pi pi-refresh"
+          severity="secondary"
+          [outlined]="true"
+          (onClick)="facade.load()"
+        />
+      </div>
+    </cleansia-section>
+    } @else if (facade.lifecycle(); as lifecycle) {
+    <cleansia-section [title]="'pages.company_lifecycle.sections.state' | translate">
+      <div class="cleansia-company-lifecycle__banner" [attr.data-severity]="facade.stateSeverity()">
+        <div class="cleansia-company-lifecycle__banner-headline">
+          <span class="cleansia-company-lifecycle__company-name">{{ lifecycle.name }}</span>
+          <p-tag [value]="facade.stateKey() | translate" [severity]="facade.stateSeverity()" />
+          <cleansia-button
+            [label]="'global.refresh' | translate"
+            icon="pi pi-refresh"
+            severity="secondary"
+            [text]="true"
+            [loading]="facade.loading()"
+            (onClick)="facade.load()"
+          />
+        </div>
+
+        @if (facade.stamps().length > 0) {
+        <ul class="cleansia-company-lifecycle__stamps">
+          @for (stamp of facade.stamps(); track stamp.key) {
+          <li>{{ stamp.key | translate: stamp.params }}</li>
+          }
+        </ul>
+        }
+
+        @if (lifecycle.archiveManifestSha256) {
+        <div class="cleansia-company-lifecycle__manifest">
+          <span>{{ 'pages.company_lifecycle.manifest_hash' | translate }}</span>
+          <code>{{ lifecycle.archiveManifestSha256 }}</code>
+        </div>
+        }
+
+        @if (facade.runInProgress()) {
+        <div class="cleansia-company-lifecycle__run-in-progress">
+          <i class="pi pi-spin pi-spinner"></i>
+          <span>{{ 'pages.company_lifecycle.run_in_progress' | translate }}</span>
+        </div>
+        }
+      </div>
+    </cleansia-section>
+
+    <cleansia-section [title]="'pages.company_lifecycle.sections.acts' | translate">
+      <div class="cleansia-company-lifecycle__acts">
+        @for (act of facade.acts(); track act.act) {
+        <div class="cleansia-company-lifecycle__act" *cleansiaPermission="act.policy">
+          <cleansia-button
+            [label]="act.labelKey | translate"
+            [icon]="act.icon"
+            [severity]="act.severity"
+            [disabled]="!act.enabled || facade.actInFlight() !== null"
+            [loading]="facade.actInFlight() === act.act"
+            (onClick)="facade.perform(act.act)"
+          />
+          @if (act.reasons.length > 0) {
+          <ul class="cleansia-company-lifecycle__reasons">
+            @for (reason of act.reasons; track reason.key) {
+            <li>{{ reason.key | translate: reason.params }}</li>
+            }
+          </ul>
+          }
+        </div>
+        }
+      </div>
+    </cleansia-section>
+
+    <cleansia-section [title]="'pages.company_lifecycle.sections.facts' | translate">
+      <p class="cleansia-company-lifecycle__hint">
+        {{ 'pages.company_lifecycle.facts_hint' | translate }}
+      </p>
+      <cleansia-table
+        [data]="facade.facts()"
+        [columns]="columns"
+        [config]="{ paginator: false, emptyMessage: 'pages.company_lifecycle.no_facts' }"
+        [loading]="facade.loading()"
+      />
+    </cleansia-section>
+    }
+  </div>
+</div>
+
+<ng-template #valueTemplate let-fact>
+  @if (fact.route) {
+  <a class="cleansia-company-lifecycle__link" [routerLink]="fact.route">{{ fact.display }}</a>
+  } @else {
+  <span>{{ fact.display }}</span>
+  }
+</ng-template>
+
+<ng-template #statusTemplate let-fact>
+  <p-tag [value]="fact.statusKey | translate" [severity]="fact.statusSeverity" />
+</ng-template>
+
+<cleansia-admin-wind-down-dialog
+  [visible]="facade.windDownDialogOpen()"
+  (visibleChange)="facade.setWindDownDialogOpen($event)"
+  [submitting]="facade.actInFlight() === LifecycleAct.WindDown"
+  [companyName]="facade.lifecycle()?.name ?? ''"
+  [minDate]="facade.minWindDownDate()"
+  (submitForm)="facade.confirmWindDown($event)"
+/>

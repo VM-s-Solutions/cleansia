@@ -73,6 +73,7 @@
       "company_info_create": "Create Company Info",
       "company_info_edit": "Edit Company Info",
       "company_settings": "Company settings",
+      "company_lifecycle": "Company lifecycle",
       "templates": "Templates",
       "invoice_templates": "Invoice Templates",
       "invoice_template_create": "Create Invoice Template",
@@ -238,6 +239,7 @@
     "employee_document_deletion_requests": "Deletion requests",
     "company_info": "Company Info",
     "company_settings": "Company settings",
+    "company_lifecycle": "Company lifecycle",
     "templates": "Templates",
     "global_rates": "Global Rates",
     "fiscal_failures": "Fiscal Failures",
@@ -1811,6 +1813,114 @@
         "lifecycle": {
           "chargeback_horizon_days": "Days after the company's latest card-paid cleaning during which a cardholder may still dispute the charge; the archive waits until they have passed"
         }
+      }
+    },
+    "company_lifecycle": {
+      "title": "Company lifecycle",
+      "description": "Where your operating company stands — operating, winding down, deactivated, frozen or archived — every fact that must be settled before its books can be sealed, and the four acts that move it: announce the closing date, close the door, reopen it, seal the books.",
+      "load_error": "Failed to load the company lifecycle",
+      "retry": "Try again",
+      "no_facts": "No settlement facts",
+      "facts_hint": "Every count must be zero and the chargeback horizon must have passed before the archive is admissible. A count links to the list where it can be settled; the horizon links to the Company settings page that holds its length.",
+      "manifest_hash": "Archive manifest SHA-256",
+      "run_in_progress": "A wind-down run is in progress — refresh to see where it stands.",
+      "sections": {
+        "state": "State",
+        "acts": "Acts",
+        "facts": "Settlement facts"
+      },
+      "states": {
+        "Operating": "Operating",
+        "WindingDown": "Winding down",
+        "Deactivated": "Deactivated",
+        "Frozen": "Frozen",
+        "Archived": "Archived"
+      },
+      "stamps": {
+        "wind_down": "Wind-down from {{from}} — requested on {{requestedOn}} by {{email}}",
+        "deactivated": "Deactivated on {{date}} by {{email}}",
+        "frozen": "Books frozen for archive on {{date}} by {{email}}",
+        "archived": "Archived on {{date}}"
+      },
+      "acts": {
+        "deactivate": "Deactivate",
+        "reactivate": "Reactivate",
+        "wind_down": "Wind down from a date",
+        "run_wind_down_again": "Run wind-down again",
+        "archive": "Archive",
+        "build_archive_again": "Build archive again"
+      },
+      "reasons": {
+        "unsettled_facts": "Still to settle: {{facts}}.",
+        "within_chargeback_horizon": "The archive becomes admissible on {{date}}, once the chargeback horizon has passed."
+      },
+      "confirm": {
+        "deactivate": "Deactivate {{name}}? Its markets vanish from every directory and every \"serviced\" check at once: no new booking, Plus purchase or registration in them, and its cleaners can no longer sign in to the partner apps. Administrators and customers keep their access. Nothing is cancelled, refunded or e-mailed by this act — the wind-down does that.",
+        "deactivate_with_wind_down": "Deactivate {{name}}? Its markets vanish from every directory and every \"serviced\" check at once, and its cleaners can no longer sign in to the partner apps. Because a wind-down from {{date}} is set, the sweep runs again with the date floor lifted: every open order is cancelled and refunded, unspent credit is discharged, and once nothing is open the last pay period is closed and invoiced.",
+        "reactivate": "Reactivate {{name}}? Its markets are listed again, bookings are accepted again and its cleaners can sign in again.",
+        "reactivate_after_wind_down": "Reactivate {{name}}? Its markets are listed again and its cleaners can sign in again, and the wind-down date {{date}} is cleared. What the wind-down already did does not come back: cancelled orders stay cancelled, Plus that was ended stays ended, discharged credit stays discharged.",
+        "run_wind_down_again": "Run the wind-down of {{name}} from {{date}} again? Anything booked on or after the date since the last run is cancelled and refunded, a refund that failed is re-driven, and — once the company is deactivated — unspent credit is discharged and the last pay period is closed and invoiced. Nothing already done is repeated.",
+        "archive": "Seal the books of {{name}}? They freeze at this click: from then on nothing but retention and erasure can change them, and there is no way back. Every one of these must be zero: {{facts}}. Chargeback horizon: {{date}}. A sealed bundle is then built in the background; retrieving it is an operations step.",
+        "archive_again": "Build the archive of {{name}} again? The books have been frozen since {{frozenOn}}; the bundle is rebuilt from scratch and nothing about the books changes."
+      },
+      "messages": {
+        "deactivated": "The company is deactivated",
+        "reactivated": "The company is operating again",
+        "wind_down_requested": "The wind-down is announced and its first run has started",
+        "wind_down_rerun": "A new wind-down run has started",
+        "archive_requested": "The books are frozen and the archive is being built"
+      },
+      "facts": {
+        "openOrders": "Open orders",
+        "openOrdersOnOrAfterWindDownFrom": "Open orders on or after the wind-down date",
+        "activeTemplates": "Active recurring templates",
+        "activeMemberships": "Active Plus memberships",
+        "creditBalances": "Credit balances above zero",
+        "pendingRefunds": "Pending refunds",
+        "ordersAwaitingPay": "Orders awaiting pay calculation",
+        "ordersAwaitingReceipt": "Orders awaiting a receipt",
+        "receiptsAwaitingFiscalRegistration": "Receipts awaiting fiscal registration",
+        "openPayPeriods": "Open pay periods",
+        "unpaidInvoices": "Unpaid cleaner invoices",
+        "uninvoicedPayRows": "Uninvoiced pay rows in closed periods",
+        "openDisputes": "Open disputes",
+        "chargebackHorizonEndsOn": "Chargeback horizon",
+        "windDownLastRunOn": "Last wind-down run",
+        "windDownRunStartedOn": "Wind-down run in progress since"
+      },
+      "values": {
+        "archive_admissible_from": "Archive admissible from {{date}}",
+        "no_horizon": "No card payment taken — no horizon",
+        "never": "Never",
+        "not_running": "No run in progress"
+      },
+      "status": {
+        "blocking": "Blocks the archive",
+        "settled": "Settled",
+        "informational": "Informational"
+      },
+      "columns": {
+        "fact": "Fact",
+        "value": "Value",
+        "status": "Status"
+      },
+      "wind_down_dialog": {
+        "title": "Wind down from a date",
+        "lede": "Choose the wind-down date of {{name}}. From that day on the company serves nothing. The date is set once and cannot be changed afterwards.",
+        "field": {
+          "from_date": "Wind-down date",
+          "from_date_help": "Not before today in the company's markets. Bookings before this day still happen; every open booking on or after it is cancelled and refunded."
+        },
+        "consequences": {
+          "title": "What happens when you confirm, in this order:",
+          "notices": "Every customer and every approved cleaner is told by e-mail, now.",
+          "orders": "Every open booking on or after the date is cancelled and refunded in full; an unpaid card booking is left alone.",
+          "templates": "Every recurring template is paused.",
+          "memberships": "Every Plus is cancelled at the end of its period.",
+          "credit": "Unspent credit is discharged once the company is deactivated.",
+          "pay_period": "The last pay period is closed and invoiced once the company is deactivated and nothing is open."
+        },
+        "submit": "Announce the wind-down"
       }
     },
     "reports": {

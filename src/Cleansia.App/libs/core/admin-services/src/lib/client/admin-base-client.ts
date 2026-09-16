@@ -10,6 +10,8 @@ import {
   IAdminCodeClient,
   AdminCompanyClient,
   IAdminCompanyClient,
+  AdminCompanyLifecycleClient,
+  IAdminCompanyLifecycleClient,
   AdminCountryClient,
   IAdminCountryClient,
   AdminCreditClient,
@@ -69,6 +71,7 @@ import {
 interface IAdminClient {
   adminAuthClient: IAdminAuthClient;
   adminCompanyClient: IAdminCompanyClient;
+  adminCompanyLifecycleClient: IAdminCompanyLifecycleClient;
   adminEmployeeClient: IAdminEmployeeClient;
   adminCodeClient: IAdminCodeClient;
   adminCountryClient: IAdminCountryClient;
@@ -115,6 +118,10 @@ export class AdminClient implements IAdminClient {
     this.apiBaseUrl
   );
   adminCompanyClient: IAdminCompanyClient = new AdminCompanyClient(
+    this.httpClient,
+    this.apiBaseUrl
+  );
+  adminCompanyLifecycleClient: IAdminCompanyLifecycleClient = new AdminCompanyLifecycleClient(
     this.httpClient,
     this.apiBaseUrl
   );

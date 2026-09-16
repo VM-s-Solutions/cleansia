@@ -73,6 +73,7 @@
       "company_info_create": "Vytvořit informace o společnosti",
       "company_info_edit": "Upravit informace o společnosti",
       "company_settings": "Nastavení společnosti",
+      "company_lifecycle": "Životní cyklus společnosti",
       "templates": "Šablony",
       "invoice_templates": "Šablony faktur",
       "invoice_template_create": "Vytvořit šablonu faktury",
@@ -238,6 +239,7 @@
     "employee_document_deletion_requests": "Žádosti o smazání",
     "company_info": "Údaje o společnosti",
     "company_settings": "Nastavení společnosti",
+    "company_lifecycle": "Životní cyklus společnosti",
     "templates": "Šablony",
     "global_rates": "Globální sazby",
     "fiscal_failures": "Fiskální selhání",
@@ -1921,6 +1923,114 @@
         "lifecycle": {
           "chargeback_horizon_days": "Počet dnů po posledním kartou zaplaceném úklidu společnosti, během kterých může držitel karty platbu ještě reklamovat; archivace čeká, dokud neuplynou"
         }
+      }
+    },
+    "company_lifecycle": {
+      "title": "Životní cyklus společnosti",
+      "description": "Kde se vaše provozní společnost nachází — v provozu, v ukončování, deaktivovaná, zmrazená nebo archivovaná — každá skutečnost, která musí být vypořádána, než lze její knihy zapečetit, a čtyři úkony, které ji posouvají: oznámit datum ukončení, zavřít dveře, znovu je otevřít, zapečetit knihy.",
+      "load_error": "Životní cyklus společnosti se nepodařilo načíst",
+      "retry": "Zkusit znovu",
+      "no_facts": "Žádné skutečnosti k vypořádání",
+      "facts_hint": "Každý počet musí být nula a lhůta pro chargeback musí uplynout, než je archivace přípustná. Počet odkazuje na seznam, kde jej lze vypořádat; lhůta odkazuje na stránku Nastavení společnosti, která určuje její délku.",
+      "manifest_hash": "SHA-256 manifestu archivu",
+      "run_in_progress": "Probíhá běh ukončování — obnovte stránku, abyste viděli, kde je.",
+      "sections": {
+        "state": "Stav",
+        "acts": "Úkony",
+        "facts": "Skutečnosti k vypořádání"
+      },
+      "states": {
+        "Operating": "V provozu",
+        "WindingDown": "Ukončuje se",
+        "Deactivated": "Deaktivovaná",
+        "Frozen": "Zmrazená",
+        "Archived": "Archivovaná"
+      },
+      "stamps": {
+        "wind_down": "Ukončení od {{from}} — vyžádáno {{requestedOn}}, {{email}}",
+        "deactivated": "Deaktivována {{date}}, {{email}}",
+        "frozen": "Knihy zmrazeny pro archivaci {{date}}, {{email}}",
+        "archived": "Archivována {{date}}"
+      },
+      "acts": {
+        "deactivate": "Deaktivovat",
+        "reactivate": "Znovu aktivovat",
+        "wind_down": "Ukončit od data",
+        "run_wind_down_again": "Spustit ukončení znovu",
+        "archive": "Archivovat",
+        "build_archive_again": "Sestavit archiv znovu"
+      },
+      "reasons": {
+        "unsettled_facts": "Zbývá vypořádat: {{facts}}.",
+        "within_chargeback_horizon": "Archivace bude přípustná od {{date}}, jakmile uplyne lhůta pro chargeback."
+      },
+      "confirm": {
+        "deactivate": "Deaktivovat {{name}}? Její trhy okamžitě zmizí ze všech seznamů a ze všech kontrol „obsluhováno“: žádná nová objednávka, nákup Plus ani registrace v nich a její uklízeči se už nepřihlásí do partnerských aplikací. Administrátoři a zákazníci si přístup ponechají. Tento úkon nic neruší, nevrací ani nerozesílá — to dělá ukončování.",
+        "deactivate_with_wind_down": "Deaktivovat {{name}}? Její trhy okamžitě zmizí ze všech seznamů a ze všech kontrol „obsluhováno“ a její uklízeči se už nepřihlásí do partnerských aplikací. Protože je nastaveno ukončení od {{date}}, běh se spustí znovu bez omezení datem: každá otevřená objednávka je zrušena a vrácena, nevyužitý kredit je odepsán, a jakmile není nic otevřené, poslední výplatní období je uzavřeno a fakturováno.",
+        "reactivate": "Znovu aktivovat {{name}}? Její trhy budou opět v nabídce, objednávky se opět přijímají a její uklízeči se mohou znovu přihlásit.",
+        "reactivate_after_wind_down": "Znovu aktivovat {{name}}? Její trhy budou opět v nabídce, její uklízeči se mohou znovu přihlásit a datum ukončení {{date}} se zruší. Co ukončování už provedlo, se nevrací: zrušené objednávky zůstávají zrušené, ukončené Plus zůstává ukončené, odepsaný kredit zůstává odepsaný.",
+        "run_wind_down_again": "Spustit ukončení společnosti {{name}} od {{date}} znovu? Vše objednané na dané datum nebo později od posledního běhu je zrušeno a vráceno, neúspěšné vrácení se zopakuje a — jakmile je společnost deaktivovaná — nevyužitý kredit je odepsán a poslední výplatní období uzavřeno a fakturováno. Nic, co už bylo provedeno, se neopakuje.",
+        "archive": "Zapečetit knihy společnosti {{name}}? Tímto kliknutím se zmrazí: od té chvíle je může měnit jen retence a výmaz a cesta zpět neexistuje. Každá z těchto položek musí být nula: {{facts}}. Lhůta pro chargeback: {{date}}. Poté se na pozadí sestaví zapečetěný balík; jeho vyzvednutí je provozní krok.",
+        "archive_again": "Sestavit archiv společnosti {{name}} znovu? Knihy jsou zmrazené od {{frozenOn}}; balík se sestaví od začátku a na knihách se nic nemění."
+      },
+      "messages": {
+        "deactivated": "Společnost je deaktivovaná",
+        "reactivated": "Společnost je opět v provozu",
+        "wind_down_requested": "Ukončení je oznámeno a jeho první běh byl spuštěn",
+        "wind_down_rerun": "Byl spuštěn nový běh ukončování",
+        "archive_requested": "Knihy jsou zmrazené a archiv se sestavuje"
+      },
+      "facts": {
+        "openOrders": "Otevřené objednávky",
+        "openOrdersOnOrAfterWindDownFrom": "Otevřené objednávky na datum ukončení nebo později",
+        "activeTemplates": "Aktivní opakované šablony",
+        "activeMemberships": "Aktivní členství Plus",
+        "creditBalances": "Kreditní zůstatky nad nulou",
+        "pendingRefunds": "Čekající vrácení",
+        "ordersAwaitingPay": "Objednávky čekající na výpočet odměny",
+        "ordersAwaitingReceipt": "Objednávky čekající na účtenku",
+        "receiptsAwaitingFiscalRegistration": "Účtenky čekající na fiskální registraci",
+        "openPayPeriods": "Otevřená výplatní období",
+        "unpaidInvoices": "Neuhrazené faktury uklízečů",
+        "uninvoicedPayRows": "Nefakturované odměny v uzavřených obdobích",
+        "openDisputes": "Otevřené reklamace",
+        "chargebackHorizonEndsOn": "Lhůta pro chargeback",
+        "windDownLastRunOn": "Poslední běh ukončování",
+        "windDownRunStartedOn": "Běh ukončování probíhá od"
+      },
+      "values": {
+        "archive_admissible_from": "Archivace přípustná od {{date}}",
+        "no_horizon": "Žádná platba kartou — bez lhůty",
+        "never": "Nikdy",
+        "not_running": "Žádný běh neprobíhá"
+      },
+      "status": {
+        "blocking": "Brání archivaci",
+        "settled": "Vypořádáno",
+        "informational": "Informativní"
+      },
+      "columns": {
+        "fact": "Skutečnost",
+        "value": "Hodnota",
+        "status": "Stav"
+      },
+      "wind_down_dialog": {
+        "title": "Ukončit od data",
+        "lede": "Zvolte datum ukončení společnosti {{name}}. Od toho dne společnost nic neobsluhuje. Datum se nastavuje jednou a později je nelze změnit.",
+        "field": {
+          "from_date": "Datum ukončení",
+          "from_date_help": "Ne dříve než dnes na trzích společnosti. Objednávky před tímto dnem proběhnou; každá otevřená objednávka na tento den nebo později je zrušena a vrácena."
+        },
+        "consequences": {
+          "title": "Co se stane po potvrzení, v tomto pořadí:",
+          "notices": "Každý zákazník a každý schválený uklízeč je ihned informován e-mailem.",
+          "orders": "Každá otevřená objednávka na dané datum nebo později je zrušena a vrácena v plné výši; neuhrazená objednávka kartou zůstává nedotčena.",
+          "templates": "Každá opakovaná šablona je pozastavena.",
+          "memberships": "Každé Plus je zrušeno ke konci svého období.",
+          "credit": "Nevyužitý kredit je odepsán, jakmile je společnost deaktivovaná.",
+          "pay_period": "Poslední výplatní období je uzavřeno a fakturováno, jakmile je společnost deaktivovaná a nic není otevřené."
+        },
+        "submit": "Oznámit ukončení"
       }
     },
     "reports": {

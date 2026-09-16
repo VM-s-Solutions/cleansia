@@ -70,3 +70,13 @@ No signature; no PDF for the customer's own export; no change to the JSON export
   `@cleansia/services`, the subject lookup pages the whole trail, the order-page button under both
   policies, component specs). `2a919b7d`: `ProvenOrderIds` moved to `GetActionTimeline` and shared
   with the timeline's user arm. Recorded in ADR-0062 D6 as amended; role card `incident-file`.
+- 2026-09-16 — the order picker built. `433ce829`: `OrderFilter` gains a trailing optional `UserId`, applied
+  by `GetPagedOrders.Handler` for admins only (like the PII terms); `OrderListUserScopeTests` (Postgres, four
+  cases: the account's orders, a guest booking under the same e-mail excluded, the unfiltered list, a
+  cleaner's list not narrowed). `9ad0b0ed`: `npm run generate-admin-client` run against a throwaway
+  Postgres + `Cleansia.Web.Admin` on :5001 (the diff is `userId` in `AdminOrderClient.getPaged`, slot 18,
+  `order-management.facade.ts` passes `undefined`), and `/customers/:userId` replaces the typed order id with
+  `<cleansia-select [filter]>` over `loadSubjectOrders(userId)` (newest first, 100 per read, a page-ceiling
+  notice, loading / error + retry / empty states; eight keys under `pages.customer_detail.incident_file` in
+  five locales). `loyalty-user-detail` 37/37, `order-management` 75/75, admin i18n parity 73/73. The
+  order-detail action still passes its own order id. Recorded in ADR-0062 D6 as amended 2026-09-16.

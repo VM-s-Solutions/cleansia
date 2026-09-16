@@ -67,3 +67,17 @@ customer-audience marker, its sole web consumer is dead code) — routed to T-07
   agreement text is still open). Step 2 in `db0607a3` (`registerEmployee(…, termsAccepted)`,
   `SignupConsentService` deleted with its spec, export, inject and the `setSession` flush; grep empty;
   typecheck of all three apps green). Recorded in ADR-0062 D4 as amended.
+- 2026-09-16 — the mobile residual retired on the owner's go for the branch sweep. `e336dbc4`: Android
+  `AuthRepositoryImpl.register(…, termsAccepted, countryId)` puts the tick on `RegisterEmployeeCommand`
+  (wire pin `AuthRepositoryTrustedDeviceTest.register_putsTheTermsTickOnTheCommandUnderTheNameTheBackendBinds`);
+  `ConsentModule.kt`, `GdprConsentClient.kt`, `GdprConsentWireTest.kt`, `SignupConsentFlowTest.kt` deleted with
+  the login/confirm-e-mail delivery hook; `GdprApi` moved to `core/gdpr/GdprModule.kt` for its one reader.
+  iOS `RegisterViewModel` passes `termsAccepted: form.acceptTerms`; `PartnerSignupConsentClient`,
+  `SignupConsentFlowTests`, the repository in the partner stack removed;
+  `PartnerTrustedDeviceLoginTests.testRegisteringPutsTheTermsTickOnTheRegisterEmployeeBody` pins the body.
+  `9ad0b0ed` (review): `ConsentWireStub.swift` and the now-unbound `CleansiaCore/Consent/*` seam, the
+  `signupConsent:` parameter on `AuthApiClient` and three Core test files deleted; Android core consent
+  comments now name the customer app as the only parker. `:partner-app` 569/569, `:core` 236/236,
+  SwiftFormat and `check-ios-symbols` clean; XCTest runs in iOS CI. Recorded in ADR-0062 D4 as amended
+  2026-09-16. Residual reported on the owner plate: the Android customer app still parks the tick beside
+  sending it.

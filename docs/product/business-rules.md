@@ -874,8 +874,8 @@ ADR-0041). When the tick arrives the server grants `TermsOfService` and `Privacy
 commit as the account, with the document in force for the market, the IP and the device — nothing is
 parked in the browser; every client (customer web, Android, iOS) sends the tick on registration and
 on a booking that showed the box. A partner's registration sends its tick too and the server grants
-the two employee consents, unversioned, in the same commit (the partner **web**; both mobile partner
-apps still park the tick for a first sign-in that delivers it). One residual, stated: a booking by a
+the two employee consents, unversioned, in the same commit — on the partner web and, since 2026-09-16,
+on both mobile partner apps, which no longer park it. One residual, stated: a booking by a
 signed-in customer with no consent rows records the tick but grants no rows — in production every
 account has both from registration, so only a DEV account created before the grant existed is asked
 again.

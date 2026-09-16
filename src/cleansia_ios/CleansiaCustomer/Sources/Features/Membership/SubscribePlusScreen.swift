@@ -32,44 +32,42 @@ struct SubscribePlusScreen: View {
     }
 
     var body: some View {
-        GeometryReader { proxy in
-            ZStack(alignment: .bottom) {
-                switch vm.plansState {
-                case let .loaded(plans) where !plans.isEmpty:
-                    offer(plans, topInset: proxy.safeAreaInsets.top)
-                case .loaded:
-                    reducedHero(topInset: proxy.safeAreaInsets.top) {
-                        MascotEmptyState(
-                            image: Mascot.leaning.image,
-                            text: L10n.Membership.notAvailableInMarket,
-                            verticallyCentered: true,
-                            imageSize: 160,
-                            titleStyle: CleansiaTypography.headlineSmall
-                        ) { EmptyView() }
-                    }
-                case .error:
-                    reducedHero(topInset: proxy.safeAreaInsets.top) {
-                        MascotEmptyState(
-                            image: Mascot.leaning.image,
-                            text: L10n.Membership.plansLoadFailed,
-                            verticallyCentered: true,
-                            imageSize: 160,
-                            titleStyle: CleansiaTypography.headlineSmall
-                        ) {
-                            CleansiaPrimaryButton(L10n.retry) { Task { await vm.reloadPlans() } }
-                                .fixedSize()
-                        }
-                    }
-                case .loading:
-                    reducedHero(topInset: proxy.safeAreaInsets.top) { Spacer() }
+        ZStack(alignment: .bottom) {
+            switch vm.plansState {
+            case let .loaded(plans) where !plans.isEmpty:
+                offer(plans)
+            case .loaded:
+                reducedHero {
+                    MascotEmptyState(
+                        image: Mascot.leaning.image,
+                        text: L10n.Membership.notAvailableInMarket,
+                        verticallyCentered: true,
+                        imageSize: 160,
+                        titleStyle: CleansiaTypography.headlineSmall
+                    ) { EmptyView() }
                 }
-                BusyMascotOverlay(
-                    visible: vm.submitState.isSubmitting,
-                    message: L10n.Membership.busySubscribePlus
-                )
+            case .error:
+                reducedHero {
+                    MascotEmptyState(
+                        image: Mascot.leaning.image,
+                        text: L10n.Membership.plansLoadFailed,
+                        verticallyCentered: true,
+                        imageSize: 160,
+                        titleStyle: CleansiaTypography.headlineSmall
+                    ) {
+                        CleansiaPrimaryButton(L10n.retry) { Task { await vm.reloadPlans() } }
+                            .fixedSize()
+                    }
+                }
+            case .loading:
+                reducedHero { Spacer() }
             }
-            .background(CleansiaColors.background.ignoresSafeArea())
+            BusyMascotOverlay(
+                visible: vm.submitState.isSubmitting,
+                message: L10n.Membership.busySubscribePlus
+            )
         }
+        .background(CleansiaColors.background.ignoresSafeArea())
         // Mounted here as well as at the shell root: the root's SwiftUI update pass runs BEFORE this
         // screen's appearance transition, and the bar is hidden inside that transition. Safe to mount
         // per-screen because the delegate is static — see `InteractivePopGestureEnabler`.
@@ -94,7 +92,7 @@ struct SubscribePlusScreen: View {
         }
     }
 
-    private func offer(_ plans: [MembershipPlan], topInset: CGFloat) -> some View {
+    private func offer(_ plans: [MembershipPlan]) -> some View {
         Group {
             ScrollView {
                 VStack(alignment: .leading, spacing: Spacing.l) {
@@ -102,7 +100,6 @@ struct SubscribePlusScreen: View {
                         plans: plans,
                         selectedPlanCode: selectedPlanCode,
                         selectedPlan: selectedPlan,
-                        topInset: topInset,
                         onSelectPlan: { selectedPlanCode = $0 },
                         onBack: onBack
                     )
@@ -111,7 +108,6 @@ struct SubscribePlusScreen: View {
                     Color.clear.frame(height: 140)
                 }
             }
-            .ignoresSafeArea(.container, edges: .top)
             if vm.canSubscribe {
                 StickyCtaBar(
                     label: (selectedPlan?.trialPeriodDays ?? 0) > 0
@@ -126,20 +122,18 @@ struct SubscribePlusScreen: View {
 
     /// The hero's identity row alone over the gradient — what stays when there is no plan to price:
     /// no headline, no price, no switcher, no perks, no CTA.
-    private func reducedHero(topInset: CGFloat, @ViewBuilder below: () -> some View) -> some View {
+    private func reducedHero(@ViewBuilder below: () -> some View) -> some View {
         VStack(spacing: 0) {
             HeroTopRow(onBack: onBack)
                 .padding(.horizontal, Spacing.ml)
                 .padding(.bottom, Spacing.ml)
-                .padding(.top, Spacing.ml + topInset)
+                .padding(.top, Spacing.ml)
                 .frame(maxWidth: .infinity)
-                .background(MembershipPalette.heroGradient)
-                .animation(nil, value: topInset)
+                .background(MembershipPalette.heroGradient.ignoresSafeArea(.container, edges: .top))
             below()
                 .padding(.horizontal, Spacing.xl)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .ignoresSafeArea(.container, edges: .top)
     }
 
     /// A selection is only ever one of the plans on screen: the monthly plan first, the first plan
@@ -228,7 +222,6 @@ private struct HeroBlock: View {
     let plans: [MembershipPlan]
     let selectedPlanCode: String
     let selectedPlan: MembershipPlan?
-    var topInset: CGFloat = 0
     let onSelectPlan: (String) -> Void
     let onBack: () -> Void
 
@@ -268,14 +261,9 @@ private struct HeroBlock: View {
         }
         .padding(.horizontal, Spacing.ml)
         .padding(.bottom, Spacing.ml)
-        .padding(.top, Spacing.ml + topInset)
+        .padding(.top, Spacing.ml)
         .frame(maxWidth: .infinity)
-        .background(MembershipPalette.heroGradient)
-        // The GeometryReader safe-area inset settles 0 → real on first layout; an
-        // ambient transaction would animate that top-padding change into a visible
-        // slide. Pin it so the header paints in its final position (round-6 fix
-        // intact; iOS fix-round 8).
-        .animation(nil, value: topInset)
+        .background(MembershipPalette.heroGradient.ignoresSafeArea(.container, edges: .top))
     }
 
     @ViewBuilder

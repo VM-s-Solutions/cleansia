@@ -138,6 +138,7 @@ public struct SnapSheet<Background: View, Ornament: View, Content: View>: View {
                     // guessing, and a guess is only visibly wrong at the anchors where the uncovered
                     // strip is small.
                     .environment(\.snapSheetTop, currentTop + geometry.safeAreaInsets.top)
+                    .environment(\.snapSheetSafeTop, geometry.safeAreaInsets.top)
 
                 sheet(bottomOverhang: currentTop)
                     .frame(height: height)
@@ -149,7 +150,8 @@ public struct SnapSheet<Background: View, Ornament: View, Content: View>: View {
                     .offset(y: SnapSheetOrnament.offsetY(sheetTop: currentTop, size: ornamentSize))
                     .allowsHitTesting(false)
                     .padding(.trailing, Spacing.m)
-                    .frame(maxWidth: .infinity, alignment: .trailing)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
+                    .clipped()
             }
             .animation(.interactiveSpring(response: 0.35, dampingFraction: 0.85), value: anchor)
             .animation(.interactiveSpring(response: 0.35, dampingFraction: 0.85), value: dragOffset)
@@ -288,7 +290,17 @@ private struct SnapSheetTopKey: EnvironmentKey {
     static let defaultValue: CGFloat = 0
 }
 
+private struct SnapSheetSafeTopKey: EnvironmentKey {
+    static let defaultValue: CGFloat = 0
+}
+
 public extension EnvironmentValues {
+    /// The top of the safe viewport in the full-bleed backdrop's coordinates.
+    var snapSheetSafeTop: CGFloat {
+        get { self[SnapSheetSafeTopKey.self] }
+        set { self[SnapSheetSafeTopKey.self] = newValue }
+    }
+
     /// The y of the sheet's top edge, in the coordinate space of the SnapSheet's BACKGROUND view.
     ///
     /// Published so a backdrop can centre its content in the strip the sheet actually leaves visible,

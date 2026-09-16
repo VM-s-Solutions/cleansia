@@ -512,6 +512,11 @@ need backfilling.
 
 ### Fixed
 
+- **iOS — profile and Plus content stays below the status bar while scrolling.** Both profiles and
+  the customer Plus offer keep their content inside the safe viewport. Order-sheet decorations are
+  clipped at that boundary, and the cleaner's approximate-area legend appears only when it fits
+  between the status bar and the sheet.
+
 - **Admin — the incident file names the operating company and its markets instead of an internal
   id.** The identity section printed the company's database identifier under *Operator*; it now
   prints the company by name and the markets it serves (*Cleansia CZ s.r.o.*, *Czechia (CZ)*), or a

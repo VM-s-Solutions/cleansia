@@ -29,56 +29,52 @@ struct ProfileTab: View {
     }
 
     var body: some View {
-        GeometryReader { proxy in
-            ZStack {
-                CleansiaColors.background.ignoresSafeArea()
-                ScrollView {
-                    VStack(spacing: Spacing.l) {
-                        ProfileHeader(
-                            user: profileVM.currentUser,
-                            tier: tierLabel,
-                            avatarCache: avatarCache,
-                            topInset: proxy.safeAreaInsets.top,
-                            onEdit: { onOpen(.editProfile(showBookingHint: false)) },
-                            onAvatarLoadFailure: { photo in
-                                Task { await profileVM.avatarLoadFailed(fileName: photo.fileName) }
-                            },
-                            onAvatarLoadSuccess: profileVM.avatarLoadSucceeded
-                        )
+        ZStack {
+            CleansiaColors.background.ignoresSafeArea()
+            ScrollView {
+                VStack(spacing: Spacing.l) {
+                    ProfileHeader(
+                        user: profileVM.currentUser,
+                        tier: tierLabel,
+                        avatarCache: avatarCache,
+                        onEdit: { onOpen(.editProfile(showBookingHint: false)) },
+                        onAvatarLoadFailure: { photo in
+                            Task { await profileVM.avatarLoadFailed(fileName: photo.fileName) }
+                        },
+                        onAvatarLoadSuccess: profileVM.avatarLoadSucceeded
+                    )
 
-                        MembershipManagementCard(vm: membershipVM, onSubscribeClick: { onOpen(Self.subscribeRoute) })
-                            .padding(.horizontal, Spacing.m)
-
-                        // Sits below the membership card and above the settings groups, matching
-                        // Android. Never gated on membership: for a subscriber it is the way to a
-                        // live schedule, and for everyone else the destination sells Plus.
-                        RecurringEntryRow(onTap: { onOpen(.recurringList) })
-                            .padding(.horizontal, Spacing.m)
-
-                        sectionGroup(title: L10n.Profile.groupAccount, rows: accountRows)
-                        sectionGroup(title: L10n.Profile.groupPreferences, rows: preferenceRows)
-                        sectionGroup(title: L10n.Profile.groupSupport, rows: supportRows)
-
-                        // One inset for the pair, not one each — the gap between them is a
-                        // design decision, and two separate paddings let it drift.
-                        VStack(spacing: Spacing.m) {
-                            DeleteAccountRow(onTap: { onOpen(.deleteAccount) })
-                            // CleansiaDangerButton already IS the partner app's logout treatment:
-                            // centred, error at 0.12 behind an error 0.4 hairline. Reusing it
-                            // rather than hand-rolling a second copy of the same shape.
-                            CleansiaDangerButton(
-                                L10n.Profile.signOut,
-                                size: .medium,
-                                leadingIcon: "rectangle.portrait.and.arrow.right"
-                            ) {
-                                showSignOutDialog = true
-                            }
-                        }
+                    MembershipManagementCard(vm: membershipVM, onSubscribeClick: { onOpen(Self.subscribeRoute) })
                         .padding(.horizontal, Spacing.m)
-                        .padding(.bottom, Spacing.xxl)
+
+                    // Sits below the membership card and above the settings groups, matching
+                    // Android. Never gated on membership: for a subscriber it is the way to a
+                    // live schedule, and for everyone else the destination sells Plus.
+                    RecurringEntryRow(onTap: { onOpen(.recurringList) })
+                        .padding(.horizontal, Spacing.m)
+
+                    sectionGroup(title: L10n.Profile.groupAccount, rows: accountRows)
+                    sectionGroup(title: L10n.Profile.groupPreferences, rows: preferenceRows)
+                    sectionGroup(title: L10n.Profile.groupSupport, rows: supportRows)
+
+                    // One inset for the pair, not one each — the gap between them is a
+                    // design decision, and two separate paddings let it drift.
+                    VStack(spacing: Spacing.m) {
+                        DeleteAccountRow(onTap: { onOpen(.deleteAccount) })
+                        // CleansiaDangerButton already IS the partner app's logout treatment:
+                        // centred, error at 0.12 behind an error 0.4 hairline. Reusing it
+                        // rather than hand-rolling a second copy of the same shape.
+                        CleansiaDangerButton(
+                            L10n.Profile.signOut,
+                            size: .medium,
+                            leadingIcon: "rectangle.portrait.and.arrow.right"
+                        ) {
+                            showSignOutDialog = true
+                        }
                     }
+                    .padding(.horizontal, Spacing.m)
+                    .padding(.bottom, Spacing.xxl)
                 }
-                .ignoresSafeArea(.container, edges: .top)
             }
         }
         .overlay { signOutOverlay }
@@ -225,7 +221,6 @@ private struct ProfileHeader: View {
     let user: CurrentUserProfile?
     let tier: String
     let avatarCache: RemoteImageCache
-    var topInset: CGFloat = 0
     let onEdit: () -> Void
     let onAvatarLoadFailure: (ProfilePhoto) -> Void
     let onAvatarLoadSuccess: () -> Void
@@ -241,7 +236,6 @@ private struct ProfileHeader: View {
                 user: user,
                 tier: tier,
                 avatarCache: avatarCache,
-                topInset: topInset,
                 onEdit: onEdit,
                 onAvatarLoadFailure: onAvatarLoadFailure,
                 onAvatarLoadSuccess: onAvatarLoadSuccess
@@ -312,7 +306,6 @@ private struct HeroGradient: View {
     let user: CurrentUserProfile?
     let tier: String
     let avatarCache: RemoteImageCache
-    var topInset: CGFloat = 0
     let onEdit: () -> Void
     let onAvatarLoadFailure: (ProfilePhoto) -> Void
     let onAvatarLoadSuccess: () -> Void
@@ -348,11 +341,12 @@ private struct HeroGradient: View {
                 .frame(maxHeight: .infinity, alignment: .center)
         }
         .padding(.horizontal, Spacing.ml)
-        .padding(.top, 48 + topInset)
+        .padding(.top, 48)
         .padding(.bottom, 40)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(
             LinearGradient(colors: BrandGradient.blue.colors, startPoint: .top, endPoint: .bottom)
+                .ignoresSafeArea(.container, edges: .top)
         )
     }
 }

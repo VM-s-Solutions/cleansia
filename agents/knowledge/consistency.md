@@ -555,7 +555,20 @@ Canonical shape (see `patterns-backend.md` for the full sample). **Every paged/l
   since 2026-09-15), `InitialMigrationTenantDdlTests` (the committed migration's own operations: 48
   `FK_<T>_Tenants_TenantId`, 2 nullable, no `IX_<tenantless>_TenantId` — counts pinned by hand, so a
   new stamped table updates the number), `TenantIdNotNullEnforcedTests` (a real `23502`) and
-  `TenantForeignKeyEnforcedTests` (a real `23503`).
+  `TenantForeignKeyEnforcedTests` (a real `23503`). **Since 2026-09-16 (ADR-0064 D3) a stamped type is
+  also sorted for the archived-company write guard**: `ArchivedCompanyWriteGuardRosterTests` walks
+  `ctx.Model` and fails an `ITenantEntity` that is in neither `ArchivedCompanyWriteGuard.AccountSurface`
+  (the person's rows — the closed set that passes a frozen company) nor the test's own `Books` roster
+  (the company's — refused); names the nine tenantless children of books rows (`DisputeLine`,
+  `CreditTransaction`, `OrderReviewLine`, `OrderExtra`, `DisputeMessage`, `DisputeEvidence`,
+  `OrderEmployee`, `OrderService`, `OrderPackage`) and fails on a tenth or on a stale name; and pins the
+  account surface verbatim with `CreditAccount` absent. `LegalObligationGateCallSiteTests` reads the
+  `Core.AppServices` sources and fails when any file but `DataRetentionBackgroundService.cs` and
+  `GdprDeletionService.cs` calls `OpenForLegalObligation(` — the gate's callers are a build-time roster,
+  not a grep. `CompanyArchiveRecordGuardTests` walks the bundle's record types and fails a member whose
+  name contains a forbidden part (the `CustomerAuditPayloadGuard` shape, thirty parts). A new stamped
+  table therefore fails **three** guards until someone sorts it on purpose: NOT NULL + FK, the DDL count,
+  and books-or-account.
 
 - **Moving a gate onto a new denormalized column keeps the old term until a backfill retires it
   (ADR-0034 D7, `accepted`).** A flag defaulting to `false` is `false` for every existing row on release

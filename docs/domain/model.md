@@ -24,14 +24,22 @@ erDiagram
 
 **A tenant is an operating company under the holding** — the legal entity that contracts the customer,
 employs the cleaner, issues the receipt and pays the payout ([ADR-0061](/decisions/adr-0061)). `Tenant`
-is a three-column registry (`Id varchar(26)`, assigned not generated — `cleansia-cz`; `Name`;
-`IsActive`), written only by the seed; there is no DTO and no admin surface until a second company
-exists, and one repository member — `ITenantRepository.GetAllIdsAsync`, every company, deactivated
-ones included — that the retention job loops. `IsActive` is read by nothing (the lifecycle ADR is
-Batch 2). **A country is served by at most one operator and an operator serves one or more
-countries**: `CountryConfiguration.OperatorTenantId` (nullable, FK Restrict, indexed) is the whole map.
-Null means nobody serves that market — `Market/GetOverview` does not list it and an anonymous write
-naming it is refused `tenant.not_found`.
+is the registry row **and the company's lifecycle** ([ADR-0064](/decisions/adr-0064)): `Tenant :
+Auditable` — `Id varchar(26)`, assigned not generated (`cleansia-cz`); `Name`; the `Auditable` stamps
+(`CreatedBy/On`, `UpdatedBy/On`, `DeactivatedBy/On`, `IsActive`); and nine lifecycle columns —
+`WindDownFrom` (date), `WindDownRequestedOn/By`, `WindDownRunStartedOn`, `WindDownLastRunOn`,
+`ArchiveRequestedOn/By`, `ArchivedOn`, `ArchiveManifestSha256` (char 64). The *registry* — which
+companies exist — is still written only by the seed; the *lifecycle* is written by the company's own
+administrators through four commands (deactivate, reactivate, wind down, archive) and read by one query.
+`IsActive` means **deactivated**, read through `IsDeactivated` — by the serviced-country predicate (a
+deactivated company's markets are not markets), the partner sign-in gate, the recurring-booking
+materialiser and the pay-period rollover; `ArchiveRequestedOn` means **frozen**, read by the commit's
+write guard. The registry keeps one job reader — `ITenantRepository.GetAllIdsAsync`, every company,
+deactivated and archived ones included — that the retention job loops. **A country is served by at most
+one operator and an operator serves one or more countries**: `CountryConfiguration.OperatorTenantId`
+(nullable, FK Restrict, indexed) is the whole map. Null — or a deactivated operator — means nobody
+serves that market: `Market/GetOverview` does not list it and an anonymous write naming it is refused
+`country.not_serviced`. → [Tenant](/domain/roles/tenant), [Company lifecycle](/domain/roles/company-lifecycle)
 
 **Every stamped row carries its operator, and the column is a foreign key.** A type that belongs to
 one company extends **`TenantAuditable : Auditable, ITenantEntity`** — 46 of them — or is one of the
@@ -50,7 +58,7 @@ grows one.
 
 | Entity | |
 |---|---|
-| `Tenant` | — ; referenced by `CountryConfiguration.OperatorTenantId` and by `TenantId` on all 48 stamped tables |
+| `Tenant` | — ; referenced by `CountryConfiguration.OperatorTenantId` and by `TenantId` on all 48 stamped tables. `Auditable` (tenantless by construction); the lifecycle columns above; the company's state is the highest of *archived* (`ArchivedOn`), *frozen* (`ArchiveRequestedOn`), *deactivated* (`!IsActive`), *winding down* (`WindDownFrom`), *operating* → [Company lifecycle](/domain/roles/company-lifecycle) |
 | `TenantConfiguration` | references `Tenant`; one row per `(TenantId, Key)` (unique, `NULLS NOT DISTINCT`) holding a company's override of one catalogued setting — the nine `retention.*` windows today; no row means the catalogue default. Written by the admin's *Company settings* page, read per company by the retention job → [TenantConfiguration](/domain/roles/tenant-configuration) |
 
 ## Identity and access

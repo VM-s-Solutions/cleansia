@@ -94,6 +94,19 @@ The customer is refunded **and** credited the apology figure authored for the or
 > the plain cancellation. The home page states the figure from the market, never from the translation;
 > see [Money constants](#money-constants).
 
+### When the platform cancels {#platform-cancellation}
+
+Four reasons exist for a cancellation nobody asked for, each a stable key the customer's apps turn into
+a sentence (`OrderCancellationReasons`): the card payment never completed
+(`order.cancelled.payment_not_completed` — the checkout was abandoned and the slot released), a recurring
+occurrence went unconfirmed (`order.cancelled.recurring_not_confirmed`, fee-free at the lead-time
+cut-off), nobody took the job by its slot (`order.cancelled.no_cleaner_available` — the no-show above;
+**the one key no client renders yet**, a known gap the parity gate names), and **the operating company is
+closing** (`order.cancelled.company_wind_down`): the booking fell on or after the company's last day of
+service, so the platform cancelled it and — on a card booking — refunded it in full, absorbing the Stripe
+fee; a cash booking is simply cancelled. No fee is ever charged on a platform cancellation. →
+[A company's lifecycle](#company-lifecycle)
+
 ## Disputes {#disputes}
 
 ### The reporting window — 24 h, and it gates the guarantee rather than the door
@@ -548,10 +561,13 @@ order:
 3. **Else the default market** — the one country configuration flagged `IsDefaultMarket` (owner
    ruling 2026-09-13; CZE today, seeded). At most one row carries the flag, held by a partial unique
    index; an admin moves it with `PUT api/AdminCountry/{id}/default-market`, which refuses a country
-   that is not serviced, whose configured currency is not active, or that no operating company serves
-   (`country.not_serviced`, `country.market_not_ready`) — a default the directory would not list is a
-   pre-selection of nothing, and a default nobody operates would refuse every registration that names
-   no market.
+   that is not serviced — which, since [ADR-0064](/decisions/adr-0064), includes one whose operating
+   company is deactivated — whose configured currency is not active, or that no operating company
+   serves (`country.not_serviced`, `country.market_not_ready`) — a default the directory would not list
+   is a pre-selection of nothing, and a default nobody operates would refuse every registration that
+   names no market. **The reverse holds too: the company that holds the default market cannot be
+   deactivated** (`company.operates_default_market`) until the flag has been moved to another company's
+   market — with one company in the registry, it cannot be deactivated at all.
    When nothing is flagged, or the flagged country is not listed, an error is logged and the older
    rule decides: the market on the platform default currency, the lowest ISO code among several, none
    when there is none (then the first listed market is pre-selected). A pre-selection, not a pricing
@@ -604,10 +620,149 @@ company, from the first write:
 **Opening a market is data, gated twice** — three times when a *new* company will serve it: the
 currency needs a loyalty divisor before `ActivateCurrency` accepts it
 (`currency.loyalty_divisor_missing`); a country cannot be switched on as serviced until its
-configuration names an **active** currency (`country.market_not_ready`) — otherwise the wizard would
-offer an address the quote cannot price; and it is listed, and usable by a visitor, only once a company
-is assigned to it. Plus prices and the copy figures are optional steps. → [Platform expandability — the
-expansion path](/architecture/platform-expandability#expansion-path)
+configuration names an **active** currency and an operating company that is **not deactivated**
+(`country.market_not_ready`) — otherwise the wizard would offer an address the quote cannot price; and
+it is listed, and usable by a visitor, only once a company is assigned to it. Plus prices and the copy
+figures are optional steps. **Closing a market is a company's act**, not a country's: a deactivated
+company's markets are not markets anywhere — not listed, not quoted, not bookable, not offered to a
+cleaner as a work country — the moment the switch is thrown → [A company's lifecycle](#company-lifecycle),
+[Platform expandability — the expansion path](/architecture/platform-expandability#expansion-path)
+
+## A company's lifecycle {#company-lifecycle}
+
+An operating company stops trading in three acts, run by **its own administrators** from the admin app's
+*Company lifecycle* page, in the order announce → close → seal ([ADR-0064](/decisions/adr-0064), owner
+ruling 2026-09-15: *"I'd build up to (c). Archive is also a good functionality to introduce in the
+beginning"*). Every act is idempotent, every act is on the admin audit trail with the state before and
+after, no act names another company, and **no act deletes a row** — the company's books stay for the ten
+years accounting law asks for.
+
+**1. Wind down from a date** (`WindDownCompany(fromDate)`). The last day of service, set **once** — a
+date already past in any of the company's markets — "today" is read in its easternmost market — is refused (`company.wind_down_date_in_past`),
+a second date is refused (`company.wind_down_already_requested`; an earlier close is an admin cancelling
+the stragglers by hand). The request enqueues one sweep, which runs in the background and can be run
+again from the page (*Run wind-down again*) until nothing is left; a re-run while one is in flight is
+refused (`company.wind_down_in_progress`, for at most an hour). In order:
+
+1. **Everyone is told first, by e-mail** — every active, e-mail-confirmed customer and every approved
+   cleaner of the company; not a deleted account, an unconfirmed sign-up or a rejected applicant. The
+   notice names the company as its receipts do (the legal name of each market it serves) and the date.
+   A customer reads: bookings on or after the date are cancelled and — on a card booking — refunded in
+   full; Plus ends at the end of the current period; unspent credit expires when the company closes; the
+   account and its history stay; where to export or delete their data. A cleaner reads: the last day of
+   work; jobs before it go ahead; the last pay period is invoiced and paid as usual; sign-in to the
+   partner app ends when the company closes; the customer app is where to export or erase. One notice per
+   person per wind-down — a re-run sends nothing twice; a later wind-down after a reactivation is
+   announced afresh. Not a marketing message: the promo opt-in is not consulted.
+2. **Open bookings on or after the date are cancelled and refunded in full** — booked, taken or on the
+   way (a clean already under way finishes), card-paid or cash (an unpaid card booking is an abandoned
+   checkout and is left to its own sweep), on or after midnight of the date in the address's market
+   timezone. The reason the customer sees is `order.cancelled.company_wind_down`; there is no fee; the
+   platform absorbs the card fee; every assigned cleaner is told; the express waiver is released; loyalty
+   points for the booking are revoked. Each booking is committed before the next refund is attempted. **A
+   refund the card processor refused is driven again on the next run**, under the same refund key, until
+   it succeeds — the company cannot be archived while one is pending.
+3. **Every recurring schedule is paused.**
+4. **Every Plus the company's customers hold is ended at the end of its current period, in any currency**
+   (the customer can book nowhere else today; a subscription that keeps renewing into a closed company is
+   revenue after the books closed). The customer keeps the benefit until the period ends and is told by
+   the membership's own ending notice.
+5. **Unspent credit is written off — only once the company is deactivated** (below). Until the door
+   closes a customer can still spend it on a booking before the date. Credit expires rather than pays out
+   (owner ruling 2026-09-05); the write-off is a ledger entry carrying the note *company wind-down*, so a
+   later decision to move it to the holding has a row to read.
+6. **The last pay period is closed and invoiced — only once the company is deactivated, no job is open
+   and no completed job still awaits its pay calculation** — by the same body the nightly close uses
+   (one invoice per cleaner per currency, the PDF, the e-mail), and **no new period is opened**. A period
+   already closed is never re-invoiced: a pay row an allocation failure left uninvoiced is a fact the
+   page shows and the admin settles with the pay-period tools.
+
+Bookings **before** the date still happen, cleaners still work them and credit can still be spent on
+them. Nothing refuses a booking after the date while the company is still operating — a booking made
+after the announcement for a day after the date is cancelled and refunded by the sweep's re-run at
+deactivation, and the notice said so. A guest booking is cancelled and refunded with the standard
+cancellation e-mail; guests get no separate notice. The customer's cancellation push says *"the company
+is closing"*; the notice that explains it arrived first.
+
+**2. Deactivate** (`DeactivateCompany`). The door closes, instantly and reversibly:
+
+- **The company's markets are not markets any more, anywhere.** The country is not listed by any app, not
+  offered by the booking wizard, not quoted; a registration, sign-up, guest booking, quote, recurring
+  booking, saved address or Plus purchase that names it is refused `country.not_serviced`; a cleaner
+  cannot be approved into or moved into it; the recurring-booking sweep creates no order for it.
+- **Its cleaners can no longer sign in to the partner apps** — web, Android, iOS, Google/Apple, and the
+  next token refresh — refused `auth.company_deactivated`; a session already open lasts at most thirty
+  minutes. A cleaner can still sign in to the **customer** app with the same account, where their data
+  export and erasure remain available.
+- **Its administrators still sign in** (admin and partner surfaces) — they are the hands that settle the
+  company; no holding role exists yet (T-0748), so nobody else could. Any administrator of the company
+  can reactivate it.
+- **Its customers keep everything**: sign-in, order history, receipts, Plus until its period ends,
+  export, erasure. They can book nowhere until cross-market booking exists (Batch 3).
+- **The wind-down runs again with no date floor** when a date is set: every open booking is cancelled and
+  refunded, unspent credit is written off, and the last pay period is closed and invoiced once no job is
+  open. No new pay period is ever opened for a deactivated company.
+- **Refused while the company holds the default market** (`company.operates_default_market`): every
+  sign-in and registration that names no market is scoped to the default market's company, so delisting
+  it would refuse them all, for every company. Move the flag first (`SetDefaultMarket`, which refuses a
+  deactivated company's market).
+
+Deactivation cancels nothing, refunds nothing and e-mails nobody by itself — the wind-down does. It
+deletes nothing: settings, company record, receipts and invoices all stay. A deactivated company is
+`Deactivated` for months, not archived: the archive waits for the chargeback horizon and for the last
+Plus period.
+
+**3. Reactivate** (`ReactivateCompany`) reopens a deactivated company — markets listed, cleaners admitted —
+and clears the wind-down date so a later wind-down is announced afresh. What the wind-down already did
+(cancelled bookings, paused schedules, ended Plus, written-off credit) does not come back; the page's
+confirmation says so. A frozen or archived company cannot be reactivated (`company.archived`).
+
+**4. Archive** (`ArchiveCompany`). Admitted only when the company is deactivated **and** wound down
+**and** every live fact is settled **and** the chargeback horizon has passed — refused otherwise with the
+first unsettled fact as the reason, in this order: an open booking (`company.has_open_orders`), a
+completed job awaiting its pay calculation (`…has_orders_awaiting_pay`), a paid or cash booking without
+its receipt (`…has_orders_awaiting_receipt`), a receipt still to be fiscally registered
+(`…has_receipts_awaiting_fiscal_registration`), a pending refund (`…has_pending_refunds`), a live Plus —
+even one already ending at period end (`…has_active_memberships`), a credit balance
+(`…has_credit_balances`), an open pay period (`…has_open_pay_period`), an unpaid invoice
+(`…has_unpaid_invoices`), an uninvoiced pay row (`…has_uninvoiced_pay`), an open dispute
+(`…has_open_disputes`), and the horizon (`company.within_chargeback_horizon`). **The chargeback horizon**
+is the company's latest card-paid cleaning date plus `lifecycle.chargeback_horizon_days` (default 180,
+range 0–730, set on Company settings): a cardholder can dispute a charge for months, and a chargeback on
+sealed books would have nowhere to land. The page shows every count, with a link to the list that
+settles it, and the date the archive becomes admissible.
+
+What the archive does, at the click: **the books freeze** — from that commit on, every write to the
+company's books is refused (`tenant.archived`, HTTP 409): a late review, a receipt edit, a goodwill credit,
+a pay calculation arriving late, a Stripe event for a frozen company's order — the last two are recorded
+as dead letters for operations (Stripe is always answered 200, never asked to retry) and never applied.
+Then, in the background, **a sealed bundle** is written to the `company-archives` storage container under
+the company's id and the freeze instant: the ledgers as one JSON Lines file per table (orders as the
+two-year retention sweep leaves them — no name, contact, street, instruction or note; status history; pay
+rows; receipts; refunds; disputes without their text or the customer; pay periods; invoices; the cleaners
+as the invoice prints them — legal entity, registration number, work country, status, nothing personal;
+credit accounts and their ledger; promo codes and redemptions; the company record; the two counters; the
+company's settings; the admin and cleaner audit trails), every receipt PDF and every payout-invoice PDF
+(copied — the originals stay where customers download them), and a manifest written last with the row
+count and SHA-256 of every file, the schema version, and the freeze and build instants. The manifest's
+own hash is stamped on the company's row and shown on the page, so a copy in hand can be checked against
+the database. **Not in the bundle**: accounts, consents, customer audit rows, bank details, memberships,
+notifications, devices, notes, photos, reviews, dispute messages and evidence — the personal-data estate
+stays in the database under the retention and erasure regime, which keeps running on a frozen company.
+Retrieval of the bundle is an operations step in the storage account until roles exist. A build that
+fails is asked for again from the page (*Build archive again*) and rebuilds the same folder, hash for
+hash; two overlapping builds seal with the first manifest to land. There is no un-archive.
+
+**What survives the company, for whom.** *Customers*: sign-in, history, receipt downloads, export and
+erasure. *Cleaners*: the invoice PDFs they were e-mailed; export and erasure on the customer app.
+*Administrators*: read access to everything, write access to nothing on the books. *The law*: the
+retention sweeps and an erasure keep pseudonymising the frozen company's books, because its GDPR
+obligations do not end with its trading. *The public*: no market. After ten years is a later decision
+with an accountant in the room; nothing is deleted until then.
+
+**Defaults the owner may overrule** (ADR-0064 O-1..O-6): administrators are not refused at deactivation;
+every Plus is ended regardless of currency; the bundle holds the books only; credit is written off rather
+than transferred; the storage container is not locked; nothing decides the eleventh year.
 
 ## What is recorded about a customer {#customer-record}
 
@@ -735,6 +890,11 @@ catalogue no longer accepts falls back to the default rather than to zero.
 | Notifications | `retention.notifications.days` | 90 | 1 – 36 500 days | in-app notification rows (plus a 500-per-user cap that is not a setting) |
 | Customer audit rows | `retention.customer_audit.years` | 3 | 1 – 100 years | per row, from its own act |
 | Dispute text after erasure | `retention.dispute_text.years` | 3 | 1 – 100 years | the description, messages and resolution notes of an **erased** customer's disputes, from the erasure |
+
+A tenth catalogue key sits beside them on the same page under its own category, `lifecycle`: the
+**chargeback horizon** (`lifecycle.chargeback_horizon_days`, default **180**, range **0 – 730** days —
+zero means no horizon), counted from the company's latest card-paid cleaning; the company cannot be
+archived until it has passed → [A company's lifecycle](#company-lifecycle).
 
 **Erasure keeps the row and blanks where it came from — and it is one commit.** Account deletion
 nulls the IP address, the device label and the device id on every row of the subject — and on the

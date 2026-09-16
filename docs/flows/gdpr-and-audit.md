@@ -142,6 +142,21 @@ erasure when it stamps, not by the sweep.
 **A failed erasure is retried by its own daily job**, not by this sweep — `RetryFailedUserDeletions`
 at 05:00 UTC, under the same master switch (→ above).
 
+**Both keep writing after the company has stopped — through the legal-obligation gate.** A company
+frozen for archive ([ADR-0064](/decisions/adr-0064) D3) refuses every write to its books at the commit
+(`CompanyArchivedException`, 409 `tenant.archived` on a request) — but the order-PII sweep modifies
+books rows, the dispute-text sweep does too, and an erasure pseudonymises orders and disputes, and none
+of that stops because the company closed: a company's GDPR obligations outlive its trading, and Art. 17
+does not care that the books are sealed. So the retention job opens `IArchiveWriteGate.OpenForLegalObligation
+("data retention")` around its per-company loop, and `GdprDeletionService` opens it (`"erasure"`) around
+the walk, and the guard lets a commit through while the gate is open. **Exactly two call sites**, and
+`LegalObligationGateCallSiteTests` reads the `Core.AppServices` sources and fails on a third — the gate is
+not a general escape hatch, and fiscal retry is deliberately not a caller (the archive waits for every
+receipt to be registered instead). The registry loop the sweep drives (`GetAllIdsAsync`) returns
+deactivated and archived companies for the same reason. The bundle the archive wrote holds no account,
+consent, customer audit row or bank detail, so nothing the sweep or an erasure blanks has a sealed copy
+that outlives it. → [Company archive](/domain/roles/company-archive)
+
 ## Admin action audit
 
 Every privileged action writes an **append-only** record carrying the actor's session — and it records

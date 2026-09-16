@@ -72,13 +72,16 @@ T-0738: `Disputes.TextRetainedUntil` + `IX_Disputes_TextRetainedUntil`) to `2026
 through the 2026-09-15 tenancy batch (T-0758: `TenantId` off the 21 tenantless tables with their
 `IX_<T>_TenantId`, `FK_<T>_Tenants_TenantId` Restrict on all 48 stamped tables; T-0757:
 `PayoutReferenceCounters (TenantId, Year, Scope)`, `IX_EmployeeInvoices_TenantId_InvoiceNumber`,
-`IX_EmployeeInvoices_TenantId_VariableSymbol`) to **`20260915172310`** — 87 tables. Each regeneration
-was proven against a real Postgres by the integration suite; the tenancy ones also by
-`SeededDatabaseHasNoOrphanTenantRowsTests`, which applies the seed to the migration-built database,
-and the last one by `InitialMigrationTenantDdlTests`, which reads the migration's own operations.
-**The one owed drop belongs to `20260915172310`**: a DEV database whose `__EFMigrationsHistory`
-records any earlier id replays the whole create script against tables that already exist. The legal
-texts need no extra step — every host seeds them at start.
+`IX_EmployeeInvoices_TenantId_VariableSymbol`) to `20260915172310`, then through the 2026-09-16
+company-lifecycle batch (T-0760: `Tenants` becomes `Auditable` and gains the nine lifecycle columns —
+`WindDownFrom`, `WindDownRequestedOn/By`, `WindDownRunStartedOn`, `WindDownLastRunOn`,
+`ArchiveRequestedOn/By`, `ArchivedOn`, `ArchiveManifestSha256`) to **`20260915232921`** — still 87
+tables. Each regeneration was proven against a real Postgres by the integration suite; the tenancy ones
+also by `SeededDatabaseHasNoOrphanTenantRowsTests`, which applies the seed to the migration-built
+database, and the last two by `InitialMigrationTenantDdlTests`, which reads the migration's own
+operations. **The one owed drop belongs to `20260915232921`**: a DEV database whose
+`__EFMigrationsHistory` records any earlier id replays the whole create script against tables that
+already exist. The legal texts need no extra step — every host seeds them at start.
 
 Regenerating is no longer a manual step of any kind (owner ruling 2026-08-25): it is ordinary work and
 is done in the branch that needs it. **This drop is the part that stayed the owner's**, and every

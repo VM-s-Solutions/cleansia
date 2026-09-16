@@ -81,9 +81,9 @@ a comment that only explains *why* belongs in `docs/` with a `→ /path#anchor` 
 | Order lifecycle — the two axes, and why `Pending` is dead | `/domain/order-lifecycle` |
 | Offerability, the preferred-cleaner hold, seat allocation | `/domain/offerability` |
 | Entities and their relationships | `/domain/model` |
-| Per-component contracts (28 of them) | `/domain/roles/` |
+| Per-component contracts (32 of them) | `/domain/roles/` |
 | The ten flows, end to end | `/flows/` |
-| Why a decision was made — 63 ADRs | `/decisions/` |
+| Why a decision was made — 64 ADRs | `/decisions/` |
 | Aspire, ports, the migrator, request logging | `/architecture/local-orchestration` |
 | The S1–S12 security laws | `/architecture/security-rules` |
 
@@ -218,7 +218,14 @@ Four things that look like bugs, are not, and have each cost a session:
   is not; and a `NULL`-stamped row used to vanish from every tenanted reader — now a writer that
   forgets its market fails `23502` in DEV instead of orphaning rows, and one that invents a company
   fails `23503`. An anonymous request names a **market** (`countryId`), never a tenant; the server
-  maps market → operator. → `/architecture/security-rules`, `/decisions/adr-0061`
+  maps market → operator. **A company has a lifecycle, and `Tenant.IsActive` is read** (ADR-0064,
+  2026-09-16): `Tenant : Auditable` carries nine lifecycle columns; `IsActive = false` is
+  *deactivated* — its markets are not markets for every reader of "serviced" and its cleaners are
+  refused on the partner apps; `ArchiveRequestedOn` is *frozen* — `CommitAsync` throws
+  `CompanyArchivedException` on any write to that company's books (everything stamped that is not on
+  `ArchivedCompanyWriteGuard.AccountSurface`), and a new stamped table is books until sorted. The
+  registry is still seed-only; the lifecycle is written by the company's own admins.
+  → `/architecture/security-rules`, `/decisions/adr-0061`, `/decisions/adr-0064`
 
 - **System jobs run with no JWT context.** Two shapes, and the input decides which. Rows in: query
   with `GetQueryableIgnoringTenant()`, then `SetTenantOverride` per tenant group and commit **inside**

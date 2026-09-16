@@ -10,7 +10,9 @@ validator, no `BusinessResult`: there is nothing a caller can get wrong.
 
 ## Collaborators
 
-- `ICountryRepository.GetServicedAsync` — the candidate set (`IsServiced && IsActive`).
+- `ICountryRepository.GetServicedAsync` — the candidate set (`IsServiced && IsActive`, **and** — since
+  [ADR-0064](/decisions/adr-0064) D1 — a configuration naming an operating company whose `Tenant.IsActive`
+  is true; a deactivated company's countries are not candidates).
 - `ICountryConfigurationRepository.GetByCountryIdAsync` — the country's `DefaultCurrencyCode` and its
   `InsuranceCoverageAmount` (ADR-0060 D2); `GetDefaultMarketAsync` — the one configuration flagged
   `IsDefaultMarket` (owner ruling 2026-09-13, ADR-0058 amendment).
@@ -26,10 +28,12 @@ validator, no `BusinessResult`: there is nothing a caller can get wrong.
 
 ## Contract
 
-- **Listed iff** the country is serviced and active, has a configuration whose `DefaultCurrencyCode`
-  names a `Currency`, and that currency `IsActive`. A serviced country failing any of the three is
-  **omitted and warned about** — the read is the backstop for seed-authored states the
-  `SetCountryServiced` gate (`country.market_not_ready`) never saw.
+- **Listed iff** the country is serviced and active, is served by an operating company that is not
+  deactivated, has a configuration whose `DefaultCurrencyCode` names a `Currency`, and that currency
+  `IsActive`. A serviced country failing any of the currency predicates is **omitted and warned about**
+  — the read is the backstop for seed-authored states the `SetCountryServiced` gate
+  (`country.market_not_ready`) never saw; the null-operator log the handler still carries is a belt,
+  unreachable now that the repository predicate excludes such a country.
 - **`isDefault`:** the listed market whose configuration carries **`IsDefaultMarket`** (at most one,
   by the database; `SetDefaultMarket` moves it; CZE seeded). When nothing is flagged, or the flagged
   country is not listed — logged as an error — the fallback rule decides: among the listed markets on

@@ -160,6 +160,7 @@ export default withMermaid(
               { text: "ADR-0061 — Tenancy is active from day one: one tenant per…", link: '/decisions/adr-0061' },
               { text: "ADR-0062 — A customer's actions are recorded for incident defence…", link: '/decisions/adr-0062' },
               { text: "ADR-0063 — Legal documents are versioned by effective date, stored…", link: '/decisions/adr-0063' },
+              { text: "ADR-0064 — A company's lifecycle: deactivation, wind-down, archive", link: '/decisions/adr-0064' },
             ],
           },
         ],

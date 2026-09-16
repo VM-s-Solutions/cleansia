@@ -13,8 +13,12 @@ it?* — or, when no country is given, for the default market, using the same de
 directory makes.
 
 ## Collaborators
-- `ICountryRepository.GetByIdAsync` — a country that does not exist, is not serviced or is not active is
-  **not a market**, before any configuration is read.
+- `ICountryRepository.IsServicedAsync` (since [ADR-0064](/decisions/adr-0064) D1, 2026-09-16 — it used
+  to read `IsServiced && IsActive` off the loaded entity) — a country that does not exist, is not
+  serviced, is not active, **or whose configuration names no operating company or a deactivated one** is
+  **not a market**, before any configuration is read. The repository predicate is the one every reader
+  of "serviced" shares, so a deactivated company's markets vanish from the anonymous scope, the directory
+  and the booking path at once.
 - `GetMarkets.ResolveMarketAsync` (static, shared with the directory) — the remaining market predicates:
   a configuration naming a currency, and that currency switched on (ADR-0058 D1). One code path, so the
   directory and the anonymous scope can never disagree on what a market is.
@@ -25,7 +29,10 @@ directory makes.
   of the second answer.
 - `ILogger` — a platform with no listed default market is logged as an error and answered *"market, no
   operator"* (`IsMarket = true, OperatorTenantId = null`): a configuration defect of the same class as a
-  market nobody operates, and the caller refuses it as one.
+  market nobody operates, and the caller refuses it as one. Since ADR-0064 a country with no operator is
+  simply not serviced (the serviced predicate carries the operator term), so this branch is reachable
+  only through the null-country default — which is exactly why `DeactivateCompany` refuses the company
+  that holds the default market.
 
 ## Does NOT know
 - **The request, the claim, the host, the override.** It returns a value; the behaviour decides whether

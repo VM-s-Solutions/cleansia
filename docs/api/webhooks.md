@@ -167,3 +167,4 @@ wait for Stripe's own 3-day retry.
 | Missing OrderId in metadata | `400` | `OrderIdMissing` |
 | Order not found | `400` | `OrderNotFound` |
 | Unhandled event type | `200` | (empty -- acknowledged) |
+| The event's write lands on a company **frozen for archive** (a late chargeback, a settlement on an archived company's order) | `200` | (empty -- acknowledged; the verbatim body is recorded as a `DeadLetter` with source `stripe-webhook` and error `tenant.archived:<tenantId>`, and an Error is logged for operations — the write is never applied. Stripe is never asked to retry against a frozen company; see [ADR-0064](/decisions/adr-0064) D3) |

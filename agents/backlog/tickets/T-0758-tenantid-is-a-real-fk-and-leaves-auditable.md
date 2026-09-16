@@ -46,8 +46,9 @@ T-0759 was about to add a third writer.
   `SeededDatabaseHasNoOrphanTenantRowsTests` still green (the seed inserts `Tenants` first).
 - Every stale "single-tenant mode is `TenantId = null`" comment rewritten (`0751c055`); the D9
   rationale lives once behind a pointer.
-- `Initial` regenerated → **`20260915172310`** (final id, after T-0757 folded in). The DEV drop is
-  owed at deploy (MS-2), never on the branch.
+- `Initial` regenerated → **`20260915172310`** (final id for Batch 1, after T-0757 folded in; T-0760
+  regenerated it again on 2026-09-16 as **`20260915232921`** for the `Tenants` lifecycle columns). The
+  DEV drop is owed at deploy (MS-2), never on the branch — one drop covers every regen on the branch.
 
 **Exact numbers:** 47 `FK_<T>_Tenants_TenantId` at this commit, **48** after T-0757 made
 `PayoutReferenceCounter` stamped (46 `TenantAuditable` + 2 audits; 46 NOT NULL + 2 nullable);

@@ -382,6 +382,39 @@ cleaner, order, receipt, pay default, promo code, membership — and a CZ admin 
 `FK_<T>_Tenants_TenantId`, 2 nullable, no `IX_<tenantless>_TenantId`) and
 **`TenantForeignKeyEnforcedTests`** (a real `23503`).
 
+**The write rule beside the read rules — a frozen company's books refuse every write (ADR-0064 D3).**
+Once a company's administrators have requested its archive (`Tenant.ArchiveRequestedOn` set — the
+*freeze*, before the bundle exists), `CleansiaDbContext.CommitAsync` runs one more check after the
+stamp loop and before `SaveChangesAsync`: the distinct `TenantId`s of every `Added`/`Modified`/`Deleted`
+`ITenantEntity` whose CLR type is **not** on `ArchivedCompanyWriteGuard.AccountSurface` are looked up in
+`Tenants` (one read per company per context instance, memoised; nothing at all when only the account
+surface or nothing stamped is touched), and a frozen one throws `CompanyArchivedException(tenantId)` —
+nothing of that unit of work lands. **The sort is closed on the account surface** — the person's rows:
+`User`, `RefreshToken`, `Device`, `LiveActivityToken`, `Cart`, `SavedAddress`, `UserConsent`,
+`UserNotificationPreferences`, `UserNotification`, `GdprRequest`, `UserStripeCustomer`, `UserMembership`,
+`MembershipBenefitUsage`, `LoyaltyAccount`, `LoyaltyTransaction`, `ReferralCode`, `Referral`, the three
+audit tables, `OutboxMessage`, `DeadLetter` — and **everything else is books and fails closed**, so a new
+stamped table is guarded until somebody sorts it; `ArchivedCompanyWriteGuardRosterTests` walks
+`ctx.Model` and fails an unsorted type, and names the nine tenantless children of books rows
+(`DisputeLine`, `CreditTransaction`, `OrderReviewLine`, `OrderExtra`, `DisputeMessage`, `DisputeEvidence`,
+`OrderEmployee`, `OrderService`, `OrderPackage`) the guard cannot see — bounded because each is written
+beside a parent write it does see or through a path the freeze already closed. `CreditAccount` is
+books. What meets the exception: a request → `RequestValidationExceptionFilterAttribute`'s second arm,
+**409** with `TenantId → tenant.archived` (and the customer audit failure row); the three Stripe webhook
+actions → `ArchivedCompanyWebhookAcknowledgeFilterAttribute`, a `DeadLetter` from a fresh scope under the
+frozen company and **200** (Stripe must never be asked to retry); `calculate-order-pay` and
+`generate-receipt` → the same dead letter, acked as permanent; any other consumer → its poison twin. The
+one sanctioned way through is **`IArchiveWriteGate.OpenForLegalObligation(reason)`** — scoped, closed
+unless opened, exactly two callers (the retention job's per-company loop and the erasure walk), pinned by
+`LegalObligationGateCallSiteTests` reading the sources — because a company's GDPR obligations do not end
+with its trading. **Known bypasses of the commit, enumerated and each shown harmless after the archive's
+preconditions:** `ExecuteUpdateAsync` (the code-clearing sweep and the login throttle — account surface),
+the two self-committing counters (need a receipt or an invoice, which need an order or a period the
+preconditions exclude), `BulkRevokeIgnoringConcurrencyAsync` (`RefreshTokens`), the credit spend's
+conditional `UPDATE` (needs a booking, refused upstream). A reviewer re-derives the list with
+`grep -rn "ExecuteUpdateAsync\|ExecuteDeleteAsync\|ExecuteSqlRawAsync\|ON CONFLICT" src/Cleansia.Infra.Database src/Cleansia.Core.AppServices`.
+→ [Company archive](/domain/roles/company-archive), [Cross-cutting concerns](/flows/cross-cutting#tenancy)
+
 ### The one question that decides every bypass (ADR-0051)
 
 **The filter is the default. A bypass is owed exactly one demonstration and must pay exactly one price.**
@@ -524,6 +557,17 @@ must filter `Where(e => e.IsActive)` itself. Common miss: "list my saved address
 packages", "pay configs" must exclude deactivated. Note the collision on recurring templates, where
 `IsActive` is the user's *pause/resume* flag, not soft-delete — don't conflate them; if a true
 soft-delete is ever needed there, add a separate column.
+
+**`Tenant.IsActive` is the company's deactivation (ADR-0064 D1)** — `Auditable.Deactivated()` writes it
+with `DeactivatedBy/On` in one call and `Reactivated()` clears all three — and it is read, like every
+other `IsActive`, by the reader that needs it and never by a filter: through the predicate
+`Tenant.IsDeactivated` in code (`CompanySignInGate`, the recurring-booking materialiser, the pay-period
+rollover, `SetCountryServiced`'s readiness gate, the lifecycle validators), and **by column in exactly one
+SQL predicate** — `CountryRepository.GetServicedAsync` / `IsServicedAsync` join `CountryConfigurations`
+to `OperatorTenant.IsActive`, so a deactivated company's markets are not markets for every reader of
+"serviced" at once (a computed property does not translate). A new reader asks the predicate; a new
+handler that reads the column directly is a review finding. The frozen and archived states are separate
+stamps (`ArchiveRequestedOn`, `ArchivedOn`), not a second meaning of `IsActive`.
 
 ## S11 — Every per-user cache on mobile is wiped on session end (shared-device leak)
 

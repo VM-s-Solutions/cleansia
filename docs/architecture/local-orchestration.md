@@ -42,7 +42,10 @@ jobs failed on first run.
 
 The AppHost declares the containers so the emulator creates them at startup:
 `generated-receipts`, `generated-invoices`, `user-files`, `employee-documents`, `order-photos`,
-`dispute-evidence`. The names mirror the production Bicep.
+`dispute-evidence`. The names mirror the production Bicep. The eighth container, `company-archives`
+(the archived-company bundle, [ADR-0064](/decisions/adr-0064)), is not in the AppHost list: it has no
+read-before-write path — the archive build's first act is a streaming write, and every blob write creates
+its container if it is missing — so it appears the first time a company is archived.
 
 ## The Postgres password is fixed, not generated {#postgres-password}
 

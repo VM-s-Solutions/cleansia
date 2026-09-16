@@ -203,8 +203,9 @@ rather than *whether* it exists.
 
 **What is built:** the registry, the operator map, the anonymous scope, the token-mint adoption, the two
 agreement rules (`order.country_operator_mismatch`, `employee.work_country_operator_mismatch`), NOT NULL,
-the re-homed seed. **What is not, on purpose:** no admin CRUD for `Tenants` or the map, no holding-level
-view, no host resolution, no `TenantId` in any DTO.
+the re-homed seed — and, since 2026-09-16, the company's lifecycle (the note below). **What is not, on
+purpose:** no admin CRUD for the `Tenants` *registry* or the map (the lifecycle columns are admin-written;
+the row's existence is not), no holding-level view, no host resolution, no `TenantId` in any DTO.
 
 **What a second operating company costs** (ADR-0061 D12 — six steps, no code): a `Tenants` seed row;
 `OperatorTenantId` on that country's configuration; a `CompanyInfo` row for the issuer; the first admin
@@ -216,6 +217,28 @@ opens or its visitors register into `cleansia-cz`.
 **Standing questions, each with its default applied** (`agents/backlog/questions/open.md`
 Q-TENANCY-01..05): cross-operator booking on one account (refused), invoice numbering per legal entity
 (global), `Tenant.IsActive` (no reader), `TenantConfiguration` (no writer), one identity per email (yes).
+
+> **2026-09-15/16 — the rulings landed, and the paragraph above is history.** Q-TENANCY-02 *"separate
+> everything"* (T-0757: per-company payout numbering; T-0758: `TenantId` a real FK, off `Auditable`);
+> Q-TENANCY-04 (T-0759: `TenantSettingCatalog`, a per-company reader, an admin writer and the Company
+> settings page); Q-TENANCY-01/05 (one holding Stripe account, cross-market booking is Batch 3, still
+> refused); and **Q-TENANCY-03 — the company lifecycle, ADR-0064, T-0760..d (2026-09-16):**
+> `Tenant : Auditable` with nine lifecycle columns; `IsActive = false` is *deactivation* and is read —
+> by the serviced predicate at `CountryRepository` (the operator term joined `IsServiced && IsActive`, so
+> every reader of "serviced" inherits it), by `CompanySignInGate` (cleaners refused on the partner
+> audiences, administrators admitted — O-1), by the materialiser and the pay-period rollover. A
+> **wind-down** from a date is a queue consumer under the envelope's tenant (notices, cancellations with
+> full refunds re-driven on the same key, templates paused, every Plus ended, credit discharged and the
+> last period invoiced once deactivated) — the third job shape beside row-driven and registry-driven.
+> An **archive** freezes the books at the request (`ArchiveRequestedOn`), builds a JSON-Lines + PDF
+> bundle into `company-archives` with the manifest hash on the row, and the commit refuses every later
+> write to that company's books (`ArchivedCompanyWriteGuard.AccountSurface` is the closed set of the
+> person's rows; everything else is books and fails closed) except through `IArchiveWriteGate` — the
+> retention sweep and the erasure, pinned to two call sites. **The registry stays seed-only; the
+> lifecycle has four admin writers.** The company that holds the default market cannot be deactivated,
+> which with one company means none can — the second company is still the unlock. Residuals filed:
+> Q-LC-01 (administrators), Q-LC-02 (the bundle's estate), Q-LC-03 (the `UserId` on two bundle files).
+> → `docs/decisions/adr-0064.md`, `docs/domain/roles/{tenant,company-lifecycle,company-archive}.md`
 
 ## Axis (b) — physical region placement: NEW, purely infra/config
 

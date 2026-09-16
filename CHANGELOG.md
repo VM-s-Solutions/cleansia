@@ -70,6 +70,49 @@ need backfilling.
 
 ### Added
 
+- **Operator — an operating company can be closed down from the admin app, in three acts, without
+  deleting a row.** On the new *Company lifecycle* page (beside Company settings, `CanViewCompanyLifecycle`)
+  an administrator of the company **winds it down from a date**: every active customer and approved
+  cleaner is told by e-mail first (the company named as its receipts name it, the date, what happens to
+  bookings, Plus, credit and the account; the cleaner's last day, the last pay period, where to export or
+  erase); every booking on or after that date — booked, taken or on the way, card-paid or cash — is
+  cancelled with the reason *the company is closing* and refunded in full at the platform's expense, a
+  refund the card processor refused is driven again on the next run; every recurring schedule is paused;
+  every Plus the company's customers hold ends at the end of its period, in any currency. The sweep runs
+  in the background and *Run wind-down again* re-runs it until nothing is left. **Deactivate** closes the
+  door: the company's markets disappear from every app, quote, wizard and work-country rule at once
+  (`country.not_serviced`), its cleaners can no longer sign in to the partner apps
+  (`auth.company_deactivated` — they keep the customer app for their data), its administrators and
+  customers still can, and the wind-down runs again with no date floor — every open booking cancelled and
+  refunded, unspent credit written off, the last pay period closed and invoiced once no job is open and
+  no successor period opened. **Reactivate** reopens a deactivated company (what the wind-down did does
+  not come back). **Archive**, admitted only once the company is deactivated, wound down, settled — no
+  open booking, pending refund, open dispute, open period, unpaid invoice, uninvoiced pay row, unissued
+  or unregistered receipt, live Plus or credit balance — and past its chargeback horizon: the books
+  freeze at the click, a sealed bundle (the ledgers as JSON Lines, every receipt and payout-invoice PDF,
+  a manifest with a hash per file) is written to the `company-archives` container, and the manifest's
+  hash is stamped on the company and shown on the page. The page shows the state with every stamp and
+  who set it, the sixteen facts the archive waits on — each linking to the list that settles it — and
+  the date the archive becomes admissible. **The company that holds the default market cannot be
+  deactivated** (`company.operates_default_market`) — move the flag first; with one company in the
+  registry, none can be. Nothing is ever deleted. (ADR-0064; owner ruling 2026-09-15, *"I'd build up to
+  (c). Archive is also a good functionality to introduce in the beginning"*)
+
+- **Admin — a tenth company setting, the chargeback horizon.** `lifecycle.chargeback_horizon_days`
+  (default 180, 0–730) on the Company settings page: counted from the company's latest card-paid
+  cleaning, it is how long the archive waits for a cardholder's dispute window to close. (ADR-0064)
+
+- **Customer — a booking cancelled because the company is closing says so.** The order detail on the
+  web, Android and iOS renders the new reason *the company is closing*; a card booking is refunded in
+  full, a cash booking is simply cancelled. (ADR-0064)
+
+- **API consumer — a write against a company frozen for archive answers `409` with `tenant.archived`.**
+  A review, a receipt edit, a credit grant or any other write to an archived company's books on any
+  host is refused at the commit with a ProblemDetails body carrying one error, `TenantId →
+  tenant.archived`; reads are unchanged. The Stripe webhook is the one exception: a frozen company's
+  event is answered `200` and recorded as a dead letter for operations, never applied and never retried.
+  (ADR-0064)
+
 - **Admin — a Company settings page.** Under the configuration area, an admin now sets **their own
   operating company's** values for the settings that may differ per company — today the nine
   data-retention windows (stale devices, old notifications, withdrawn consents, superseded documents,
@@ -296,6 +339,25 @@ need backfilling.
 
 ### Changed
 
+- **Operator — "serviced" now means "served by an operating company that is not deactivated".** The
+  one read every market check goes through (`Country/GetServiced`, `Market/GetOverview`, the quotes,
+  the booking, the recurring booking, the saved address, the Plus purchase, the work-country rules)
+  gained that term, so a country whose configuration names no operator — until now a seed defect logged
+  and hidden from the directory only — is not serviced anywhere; and switching a country on
+  (`PUT api/AdminCountry/{id}/serviced`) or flagging it the default market now refuses one whose
+  operator is deactivated (`country.market_not_ready`, `country.not_serviced`). With one operating
+  company, nothing changes today. (ADR-0064 D1)
+
+- **Operator — the company registry row carries the company's lifecycle.** `Tenants` gained the
+  `Auditable` stamps and nine lifecycle columns (the wind-down date and its stamps, the freeze, the
+  archive and its manifest hash). The `Initial` migration was regenerated (**`20260915232921`**, 87
+  tables); **the DEV drop is owed at deploy**, as before. (ADR-0064 D1)
+
+- **Operator — a late pay calculation or receipt for an archived company is a dead letter on first
+  delivery**, not five retries towards books that cannot change; the row names the queue and
+  `tenant.archived`. The retention sweeps and an erasure still write to a frozen company's rows —
+  a company's GDPR obligations do not end with its trading. (ADR-0064 D3)
+
 - **Operator — each operating company numbers its own payout invoices.** A cleaner's payout invoice is
   numbered `INV-YYYY-NNNNNN` from the issuing company's own yearly series (it used to be
   `INV-yyyyMM-` plus five random characters), and its ten-digit variable symbol comes from that
@@ -316,7 +378,8 @@ need backfilling.
   now carries a real foreign key into the company registry, so a row written under an unknown company
   fails at once (`23503`) instead of landing where no one can read it; the 21 catalogue and per-country
   tables lost a dead, never-written tenant column and its index. The `Initial` migration was
-  regenerated (`20260915172310`); **the DEV drop is owed at deploy**, as before. (ADR-0061 D1/D8 as
+  regenerated (`20260915172310`; regenerated again on 2026-09-16 as `20260915232921` for the company
+  lifecycle — one drop covers both); **the DEV drop is owed at deploy**, as before. (ADR-0061 D1/D8 as
   amended, owner ruling 2026-09-15)
 
 - **Customer — erasing your account also erases the bookings you made as a guest with the same

@@ -52,8 +52,8 @@ answers the premise §D3.2 was contingent on (Q-VS-03 as well).
   `pg_indexes`); the `NullsNotDistinctIndexModelTests` roster is thirteen rows;
   `PayoutReferenceProductionCensusTests.The_Pay_Period_Batch_Numbers_Each_Companys_Invoices_From_Its_Own_Series`;
   `Every_Allocated_Invoice_Number_Is_INV_The_Year_And_Six_Digits`.
-- Folded into the `Initial` regen — final id `20260915172310` (with T-0758); the DEV drop is owed at
-  deploy (MS-2).
+- Folded into the `Initial` regen — final id `20260915172310` for Batch 1 (with T-0758), regenerated
+  again as `20260915232921` by T-0760 on 2026-09-16; the DEV drop is owed at deploy (MS-2).
 
 ## NOT
 

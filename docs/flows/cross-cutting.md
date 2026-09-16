@@ -13,11 +13,13 @@ reads automatically. A row gets its tenant at commit time from whatever is ambie
 | Who is writing | Where the tenant comes from |
 |---|---|
 | An authenticated request | the JWT's `tenant_id` claim, minted from the user's own row |
-| An anonymous request that writes (register, social sign-up, guest booking, promo request, referral check) | the **market** it names (`countryId`, or the default market) → that market's operator, set by `OperatorTenantScopeBehavior` before validation. A country that is not a market is `country.not_serviced`; a market nobody operates is `tenant.not_found` |
+| An anonymous request that writes (register, social sign-up, guest booking, promo request, referral check) | the **market** it names (`countryId`, or the default market) → that market's operator, set by `OperatorTenantScopeBehavior` before validation. A country that is not a market — not serviced, or served by nobody, or by a **deactivated** company ([ADR-0064](/decisions/adr-0064) D1) — is `country.not_serviced`; a default market nobody operates is `tenant.not_found` |
 | A request that authenticates a user (login, refresh, social sign-in, email confirm) | the user being authenticated — `TokenService` adopts it **before the confirmation check** and before the `RefreshToken` is written, replacing the market's operator on a social sign-in of an existing account; the two password-reset commands mint no token and adopt it themselves. The session acts name no market and implement `IOperatorScopedRequest` with an explicit `CountryId => null`, so their *refusal* audit row lands under the default market's operator and their *success* row under the account's ([ADR-0061](/decisions/adr-0061) D3/D4 as amended) |
 | A system job or webhook | the row it read — or, when the work is *per company*, the registry — see below |
 | An audit row (admin or customer) | the same ambient tenant as the act it records, stamped by the audit writer (success) or the out-of-band failure sink — so the row and the `Order`/`User` it describes agree by construction. A customer refusal raised *before* an anonymous request's operator is resolved (`country.not_serviced`, `tenant.not_found`) has none, and the sink skips it with one warning rather than writing an orphan ([ADR-0062](/decisions/adr-0062) D7) |
 | A `Failed` GDPR request row | the erasure's own ambient tenant — written out of band by `OutOfBandGdprDeletionFailureSink` in a scope of its own, so the rolled-back walk cannot take it with it; the daily retry job sets the row's tenant per candidate scope before re-running it |
+| The two company-lifecycle consumers (`company-wind-down`, `company-archive`) | the **envelope's** tenant — the company the admin's act named, set as the override before the first read, so every filtered read inside is that company's and every commit stamps it ([ADR-0064](/decisions/adr-0064) D2/D3; the third job shape, below) |
+| A dead letter for a write a frozen company's books refused | the **frozen company's** tenant, set on a fresh scope by `ArchivedCompanyDeadLetter` — from the Stripe webhook filter, or from the `calculate-order-pay` / `generate-receipt` consumers — so the row is that company's to find |
 
 **System jobs carry no JWT**, which makes them the interesting case. They read across tenants
 deliberately, and when they *write* they must group by tenant, set the override per group, and commit
@@ -64,6 +66,34 @@ company with no override rows is simply a company on the defaults — so a one-y
 company B deletes B's two-year-old rows and leaves A's alone. `DataRetentionBackgroundService` is the
 reference; `CleanupStalePendingOrders` is the reference for the row-driven shape above. Which one a
 new job takes is decided by its input: rows, or companies.
+
+**The third shape: a consumer whose unit of work is one company an admin named.** The company
+wind-down sweep and the archive build ([ADR-0064](/decisions/adr-0064)) are neither row-driven nor
+registry-driven: an admin's act enqueues one message whose envelope names *their* company, and the
+consumer sets that override before its first read and keeps it for the whole run. Every filtered read
+inside — the users to notify, the orders to cancel, the templates, the memberships, the credit accounts,
+the pay periods; or the twenty books tables to export — is that company's alone, and every step commits
+on its own (per order, per membership, per account, per page of notices) so a redelivery resumes past what
+is done. The message key carries the request instant (`wind-down:{tenantId}:{yyyyMMddHHmmss}`,
+`archive:{tenantId}:{yyyyMMddHHmmss}`), so the same act asked twice within a second is one run and a
+later act is a new one; a message naming a company that no longer qualifies (missing, no wind-down date,
+frozen; not frozen, already archived, a stale freeze instant) is a **permanent no-op** — logged and
+acked, never poisoned. `CompanyWindDownService` and `CompanyArchiveService` are the references; the
+input (a row, a company from the registry, or a company from an admin's act) is what picks the shape.
+
+**The archived-company write guard sits under all three shapes.** Once a company is frozen for archive
+(`Tenant.ArchiveRequestedOn`), `CleansiaDbContext.CommitAsync` refuses any unit of work that adds,
+modifies or deletes one of that company's **books** rows — every stamped table that is not on the
+account surface (the person's rows: `User`, sessions, devices, consents, notifications, GDPR requests,
+memberships, loyalty, referrals, the three audit tables, the two envelopes) — with
+`CompanyArchivedException`, before anything is saved. A request meets it as **409 `tenant.archived`**;
+the Stripe webhook is **acknowledged 200** with a dead-letter row for operations (Stripe must never be
+asked to retry an endpoint every company shares); a late `calculate-order-pay` or `generate-receipt`
+message is dead-lettered and acked as permanent; any other consumer reaches the same dead-letter row
+through its poison twin. **The law's writes pass:** the retention sweeps and an erasure open
+`IArchiveWriteGate.OpenForLegalObligation` around their work — exactly two call sites, pinned by a
+build-time test — because a company's GDPR obligations do not end with its trading. → [Security rules —
+S8](/architecture/security-rules#s8-tenant-isolation-correctness), [Company archive](/domain/roles/company-archive)
 
 ⚠️ **A job that forgets its override does not read someone else's rows — it reads nothing, and writes
 a `23502`.** The filter's `null == null` clause matches nothing on a stamped table now that the column
@@ -134,6 +164,13 @@ handler is purely *persist and alert*.
 `DeadLetter`; the only code that touches one after the write is GDPR erasure, which deletes it. The row
 is **the record that a thing failed, not the mechanism for making it succeed** — recovery today means a
 human reading the alert and acting. → [`dead-letter-record`](/domain/roles/dead-letter-record)
+
+**One writer of the row is not a poison consumer.** A write that a frozen company's books refused —
+a Stripe event on the synchronous webhook, a late pay calculation, a late receipt — is dead-lettered
+**on first delivery** by `ArchivedCompanyDeadLetter` (source `stripe-webhook`, `calculate-order-pay` or
+`generate-receipt`, error `tenant.archived:{tenantId}`, the body verbatim), from a fresh scope under the
+frozen company, and then acknowledged; the retry budget is never spent, because a redelivery cannot thaw
+the books. Same row, same three rules, one delivery sooner. → [ADR-0064](/decisions/adr-0064) D3
 
 **Acking is mandatory.** Throwing would re-poison the message into an endless loop. The durable row is
 what makes acking safe.

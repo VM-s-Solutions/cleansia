@@ -1755,6 +1755,115 @@ region's DB), so `e.TenantId == currentTenantId` is sufficient *within* that DB 
   gated on the first real second region); only the resolver indirection is laid now, keeping this wave
   migration-free.
 
+## An admin click that starts long work records ONE message and returns (ADR-0064 D2)
+
+An admin's act that fans out into many money or people operations — a company wind-down is a hundred
+Stripe refunds; a sitewide promo is ten thousand pushes — is **never** done inside the request. The
+request validates, moves the row's state, records **one** outbox message and returns; a queue consumer
+does the work **under the envelope's tenant**, committing per unit so a redelivery resumes past what is
+done. `SendSitewidePromo` → `SendSitewidePromoFanoutHandler` was the first; `WindDownCompany` →
+`CompanyWindDownService` and `ArchiveCompany` → `CompanyArchiveService` are the reference pair.
+
+```csharp
+// The request — Features/CompanyLifecycle/WindDownCompany.cs (handler, happy path only)
+tenant.RequestWindDown(fromDate, userSessionProvider.GetUserId()!, now);          // the state
+await CompanyWindDownDispatch.EnqueueAsync(pendingDispatch, outboxRepo, tenant.Id, now, ct); // ONE message, post-commit
+auditContext.RecordChange("Tenant", tenant.Id, before, CompanyLifecycleSnapshot.Of(tenant));
+
+// The dispatch — deterministic key, deduplicated on the outbox's (queue, key) so two acts within a
+// second ask for one run; the unique index is the concurrent backstop.
+var key = MessageKeys.CompanyWindDown(tenantId, requestedAt);      // wind-down:{tenant}:{yyyyMMddHHmmss}
+if (await outboxRepo.GetByQueueAndKeyAsync(QueueNames.CompanyWindDown, key, ct) is not null) return false;
+pendingDispatch.Enqueue(QueueNames.CompanyWindDown, new QueueEnvelope<CompanyWindDownMessage>(key, tenantId, new(tenantId)), key);
+
+// The consumer — Functions.Core/Handlers/CompanyWindDownHandler.cs
+tenantProvider.SetTenantOverride(tenantId);                       // from the ENVELOPE, before the first read
+var summary = await companyWindDownService.RunAsync(tenantId, ct);
+if (!summary.Ran) logger.LogWarning("… discarded as permanent: {Reason}", summary.SkippedBecause); // ack, never poison
+```
+
+The rules the pair pins:
+- **The key is a domain input, never a timestamp of convenience.** A re-run is an *intended* new run, so
+  the request instant to the second is the input; a double-click is one run. `MessageKeys` is the one
+  home (ADR-0002 D2.1).
+- **The consumer decides what is permanent.** A message naming a company that no longer qualifies
+  (missing, dateless, frozen; not frozen, already archived, a stale freeze instant) is logged and acked
+  — a redelivery cannot change it. Anything else throws so the runtime redelivers and, after five, the
+  poison twin dead-letters it.
+- **Every step commits alone** (per order, per membership, per account, per page of notices) so the
+  30-minute Dedicated timeout and a crash mid-way lose nothing; the ~1,800-per-delivery bound is
+  stated, not configured, and "run it again" is the recovery.
+- **No timer.** The consumer runs when an admin asks (the request, the deactivation, *Run again*).
+- **The row records the run, not its counts** — `StartWindDownRun` / `RecordWindDownRun` are the
+  overlap guard (a one-hour staleness escape for a run that died); the *facts* are a live query
+  (`ICompanySettlementReader`), and they are what the next act's validator checks.
+
+### A synchronous webhook that must always answer 2xx gets an ACKNOWLEDGE filter, not a 409
+
+The Stripe webhook is a request (`PaymentController.Webhook` → MediatR), not a consumer — so a refusal
+raised at its commit would reach Stripe as a non-2xx, and Stripe retries with backoff for three days
+against an endpoint every company shares. When the refusal is one the caller cannot fix by retrying
+(the company's books are frozen), the action **acknowledges** and records the fact:
+
+```csharp
+// Config/Filters/ArchivedCompanyWebhookAcknowledgeFilterAttribute.cs — on the three Webhook actions
+context.HttpContext.Request.EnableBuffering();                 // the action reads the body; we read it again
+var executed = await next();
+if (executed.Exception is not CompanyArchivedException refusal || executed.ExceptionHandled) return;
+var body = await ReadBodyAsync(context.HttpContext.Request, ct);
+await services.GetRequiredService<ArchivedCompanyDeadLetter>().RecordAsync("stripe-webhook", body, refusal, ct);
+executed.ExceptionHandled = true;
+executed.Result = new OkResult();                              // 200 — Stripe never retries this
+
+// Tenancy/ArchivedCompanyDeadLetter.cs — a FRESH scope: the scope that threw still tracks the refused rows
+await using var scope = serviceScopeFactory.CreateAsyncScope();
+scope.ServiceProvider.GetRequiredService<ITenantProvider>().SetTenantOverride(exception.TenantId);
+await scope.ServiceProvider.GetRequiredService<IDeadLetterStore>().RecordAsync(sourceQueue, body, $"tenant.archived:{exception.TenantId}", ct);
+logger.LogError(exception, "… refused and dead-lettered …");     // the alert
+```
+
+The same helper is what a late-arriving **consumer** (`calculate-order-pay`, `generate-receipt`) calls to
+classify the exception as permanent — dead-letter under its own queue name, ack — instead of spending
+five retries towards a row that cannot change. The `OutOfBandAuditFailureSink` shape (fresh scope,
+override, direct write) is the ancestor; the dead-letter row is the operations record, the log line the
+alert, and the caller is never asked to try again.
+
+### A guard at the commit sorts every stamped type, and the unsorted one fails closed (ADR-0064 D3)
+
+`CleansiaDbContext.CommitAsync` is the one seam every write crosses — requests through the UnitOfWork
+pipeline, jobs and consumers directly — which is why a rule about *what may be written* lives there and
+not in a pipeline behaviour (a behaviour sees requests only). The archived-company write guard is the
+reference:
+
+```csharp
+// after the stamp loop, before SaveChangesAsync
+var touched = ArchivedCompanyWriteGuard.TouchedBooksTenantIds(ChangeTracker);   // Added/Modified/Deleted ITenantEntity, TenantId set, type NOT on AccountSurface
+if (touched.Count == 0 || archiveWriteGate?.IsOpen == true) return;              // nothing stamped, or the law's writes
+… one Tenants read for the ids this context has not asked about yet, memoised per context instance …
+if (touched.FirstOrDefault(id => frozenByTenantId[id]) is { } refused) throw new CompanyArchivedException(refused);
+```
+
+- **The closed set is the one that PASSES.** `AccountSurface` names the person's rows (`User`, sessions,
+  devices, consents, notifications, GDPR requests, memberships, loyalty, referrals, the three audit
+  tables, the two envelopes); *everything else is books* and is guarded. Inverting it — a books roster
+  with everything else passing — would let a new stamped table through by default (Alt. (j)).
+- **The sort is a build-time act.** `ArchivedCompanyWriteGuardRosterTests` walks `ctx.Model` (no copied
+  list) and fails an `ITenantEntity` that is in neither `AccountSurface` nor the test's `Books` roster,
+  and names by type the tenantless children of books rows the guard cannot see (nine today), failing on
+  a tenth. A new stamped table therefore fails **twice** — at runtime, closed; at build, until sorted
+  with a one-line reason.
+- **The escape is a scoped gate with pinned callers, not a flag.** `IArchiveWriteGate.OpenForLegalObligation
+  (reason)` is `IDisposable`, closed unless opened, and `LegalObligationGateCallSiteTests` reads the
+  `Core.AppServices` sources and asserts exactly two files call it (the retention loop, the erasure
+  walk). A third caller fails the build, which is what makes the gate a law rather than a convenience.
+- **The exception is typed and mapped once.** `CompanyArchivedException` lives in `Core.Domain` so
+  `Infra.Database` can throw it and `Config` can map it: `RequestValidationExceptionFilterAttribute`'s
+  second arm answers **409** with the same ProblemDetails body as the 400 arm and one keyed error
+  (`TenantId → tenant.archived`); the webhook filter above acknowledges instead; consumers classify.
+- **Cost is paid only by a commit that touches a guarded row** — one PK-predicate read per company per
+  context instance; the account surface and empty commits pay nothing (the fixture's command-count
+  interceptor asserts it).
+
 ## Deployment / IaC — Bicep, Key Vault refs + managed identity (ADR-0015)
 
 Deployment is **orthogonal to the domain** — no handler, config key, or connection-string slot changes

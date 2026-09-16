@@ -2,7 +2,7 @@
 
 Every architecture and business decision on record, with the argument that settled it.
 
-**63 records.** A decision keeps a stable id — `ADR-0037` — and roughly six hundred source
+**64 records.** A decision keeps a stable id — `ADR-0037` — and roughly six hundred source
 files cite ids in that form. The id is the reference, not the file name or the title, so a record can
 be retitled without breaking a single citation.
 
@@ -51,7 +51,9 @@ constant became a stored, dated document); the rest of ADR-0062 stands and was *
 supersedes **one section** of [ADR-0046](./adr-0046) (§D3's global namespace — each operating company
 numbers its own payout invoices since 2026-09-15, and ADR-0046 carries the superseding note at its
 head); ADR-0061 itself was **amended in place on 2026-09-15** with the owner's rulings on its five open
-items and carries a §Rulings table.
+items and carries a §Rulings table. [ADR-0064](./adr-0064) **amends ADR-0061 by reference** (its O-3
+default and D1's "seed-only writer" for the `Tenants` row) and adds a fourth market predicate to
+[ADR-0058](./adr-0058) D1 — every other sentence of both stands, so there is no arrow.
 
 ## All records
 
@@ -120,6 +122,7 @@ items and carries a §Rulings table.
 | **[ADR-0061](./adr-0061)** | Tenancy is active from day one: one tenant per operating company (amended 2026-09-14 and 2026-09-15 — the FK, `TenantAuditable`, per-company payout numbering and settings) | `accepted` |
 | **[ADR-0062](./adr-0062)** | A customer's actions are recorded for incident defence, and support reads them in the admin panel (extends ADR-0012; amended 2026-09-14 and 2026-09-15) | `accepted` |
 | **[ADR-0063](./adr-0063)** | Legal documents are versioned by effective date, stored per market, and a consent stamps the version | `accepted` |
+| **[ADR-0064](./adr-0064)** | A company's lifecycle: deactivation, wind-down, archive (amends ADR-0061 O-3/D1 and ADR-0058 D1 by reference) | `accepted` |
 
 ⟲ = superseded in whole or in part by a later record.
 

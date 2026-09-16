@@ -159,8 +159,30 @@ range, the platform default, the value in force and whether the company has over
 inline with a number field or a checkbox, *Reset* puts a setting back on the default, and every change
 is on the admin audit trail with the before and after values. A setting outside the catalogue cannot be
 created and a value outside its range is refused, so the page can never hold a number nothing reads.
-The retention sweeps read each company's own windows. → [Business rules — retention](/product/business-rules#customer-record),
+The retention sweeps read each company's own windows. A tenth setting, the **chargeback horizon** (180
+days by default), is the one the company's archive waits on — below. → [Business rules — retention](/product/business-rules#customer-record),
 [ADR-0061](/decisions/adr-0061) O-4 as ruled
+
+**Company lifecycle** — a page beside Company settings where an admin closes **their own operating
+company** in three acts, each behind a confirmation that says exactly what it does, and sees why an act is
+refused before clicking. *Wind down from a date* tells every customer and cleaner by e-mail, cancels and
+refunds in full every booking on or after that date (bookings before it go ahead), pauses every recurring
+schedule and ends every Plus at the end of its period — and can be run again until nothing is left.
+*Deactivate* closes the door: the company's markets vanish from every app and quote at once, its cleaners
+can no longer sign in to the partner apps (its administrators and customers still can), and the wind-down
+runs again with no date floor — every open booking is cancelled and refunded, unspent credit is written
+off, and the last pay period is closed and invoiced once no job is open. *Reactivate* reopens a
+deactivated company (what the wind-down already did does not come back). *Archive* seals a company that
+is deactivated, wound down, settled — no open order, refund, dispute, pay period, unpaid invoice,
+uninvoiced pay row, unissued receipt or live Plus, no credit balance — and past its chargeback horizon:
+the books freeze at the click, a bundle of them (the ledgers as JSON Lines, every receipt and payout
+invoice PDF, a manifest with a hash per file) is written to storage, and from then on nothing can change
+the company's books except the retention and erasure the law requires. The page shows the company's
+state with every stamp and who set it, the sixteen facts the archive waits on — each count linking to
+the admin list that settles it — and the date the archive becomes admissible; a company that holds the
+default market cannot be deactivated, and the page says so. Nothing is deleted, ever. →
+[Business rules — a company's lifecycle](/product/business-rules#company-lifecycle),
+[ADR-0064](/decisions/adr-0064)
 
 **The admin's own trail** — an administrator's sign-in and sign-out are on the audit log as admin acts
 (`admin.session.login`, `admin.session.logout`), including a refused sign-in on a known account, and a
@@ -177,5 +199,8 @@ refused sign-in is that account's row.
   today — the database holds it to a company it knows, and a second company is a seed row and a
   country assignment, not code. Each company numbers its own payout invoices and keeps its own
   retention windows; one email is one identity across the holding; the holding runs one Stripe account
-  for now. → [Business rules — the market](/product/business-rules#market),
+  for now. A company has a lifecycle its own administrators drive — wind down, deactivate, archive — and
+  a closed company's customers keep their accounts, their history, their receipts and their right to
+  export or erase. → [Business rules — the market](/product/business-rules#market),
+  [Business rules — a company's lifecycle](/product/business-rules#company-lifecycle),
   [Cross-cutting concerns](/flows/cross-cutting#tenancy)

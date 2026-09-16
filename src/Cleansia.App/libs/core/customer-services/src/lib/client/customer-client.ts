@@ -12485,6 +12485,7 @@ export class OrderItem implements IOrderItem {
     preferredOffer!: PreferredOfferDetails;
     hasAccessInstructions!: boolean | undefined;
     systemCancellationReason!: string | undefined;
+    customerCompany!: string | undefined;
 
     constructor(data?: IOrderItem) {
         if (data) {
@@ -12584,6 +12585,7 @@ export class OrderItem implements IOrderItem {
             this.preferredOffer = Data["preferredOffer"] ? PreferredOfferDetails.fromJS(Data["preferredOffer"]) : undefined as any;
             this.hasAccessInstructions = Data["hasAccessInstructions"];
             this.systemCancellationReason = Data["systemCancellationReason"];
+            this.customerCompany = Data["customerCompany"];
         }
     }
 
@@ -12683,6 +12685,7 @@ export class OrderItem implements IOrderItem {
         data["preferredOffer"] = this.preferredOffer ? this.preferredOffer.toJSON() : undefined as any;
         data["hasAccessInstructions"] = this.hasAccessInstructions;
         data["systemCancellationReason"] = this.systemCancellationReason;
+        data["customerCompany"] = this.customerCompany;
         return data;
     }
 }
@@ -12745,6 +12748,7 @@ export interface IOrderItem {
     preferredOffer: PreferredOfferDetails;
     hasAccessInstructions: boolean | undefined;
     systemCancellationReason: string | undefined;
+    customerCompany: string | undefined;
 }
 
 export class OrderListItem implements IOrderListItem {
@@ -12786,6 +12790,7 @@ export class OrderListItem implements IOrderListItem {
     customerAddressLatitude!: number | undefined;
     customerAddressLongitude!: number | undefined;
     hasReview!: boolean;
+    countryId!: string | undefined;
 
     constructor(data?: IOrderListItem) {
         if (data) {
@@ -12854,6 +12859,7 @@ export class OrderListItem implements IOrderListItem {
             this.customerAddressLatitude = Data["customerAddressLatitude"];
             this.customerAddressLongitude = Data["customerAddressLongitude"];
             this.hasReview = Data["hasReview"];
+            this.countryId = Data["countryId"];
         }
     }
 
@@ -12922,6 +12928,7 @@ export class OrderListItem implements IOrderListItem {
         data["customerAddressLatitude"] = this.customerAddressLatitude;
         data["customerAddressLongitude"] = this.customerAddressLongitude;
         data["hasReview"] = this.hasReview;
+        data["countryId"] = this.countryId;
         return data;
     }
 }
@@ -12965,6 +12972,7 @@ export interface IOrderListItem {
     customerAddressLatitude: number | undefined;
     customerAddressLongitude: number | undefined;
     hasReview: boolean;
+    countryId: string | undefined;
 }
 
 export class OrderNoteDto implements IOrderNoteDto {

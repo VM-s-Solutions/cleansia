@@ -7025,6 +7025,11 @@ export interface IApiClient {
      * @return OK
      */
     adminServiceCityDelete(id: string): Observable<DeleteServiceCityResponse>;
+    /**
+     * @param orderId (optional) 
+     * @return OK
+     */
+    adminUser(userId: string, orderId?: string | undefined): Observable<UserItem>;
 }
 
 @Injectable({
@@ -7370,6 +7375,86 @@ export class ApiClient implements IApiClient {
             let resultData404 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
             result404 = ProblemDetails.fromJS(resultData404);
             return throwException("Not Found", status, ResponseText, Headers, result404);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
+            }));
+        }
+        return ObservableOf(null as any);
+    }
+
+    /**
+     * @param orderId (optional) 
+     * @return OK
+     */
+    adminUser(userId: string, orderId?: string | undefined): Observable<UserItem> {
+        let url = this.baseUrl + "/api/AdminUser/{userId}?";
+        if (userId === undefined || userId === null)
+            throw new globalThis.Error("The parameter 'userId' must be defined.");
+        url = url.replace("{userId}", encodeURIComponent("" + userId));
+        if (orderId === null)
+            throw new globalThis.Error("The parameter 'orderId' cannot be null.");
+        else if (orderId !== undefined)
+            url += "orderId=" + encodeURIComponent("" + orderId) + "&";
+        url = url.replace(/[?&]$/, "");
+
+        let options : any = {
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Accept": "application/json"
+            })
+        };
+
+        return this.http.request("get", url, options).pipe(ObservableMergeMap((response : any) => {
+            return this.processAdminUser(response);
+        })).pipe(ObservableCatch((response: any) => {
+            if (response instanceof HttpResponseBase) {
+                try {
+                    return this.processAdminUser(response as any);
+                } catch (e) {
+                    return ObservableThrow(e) as any as Observable<UserItem>;
+                }
+            } else
+                return ObservableThrow(response) as any as Observable<UserItem>;
+        }));
+    }
+
+    protected processAdminUser(response: HttpResponseBase): Observable<UserItem> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result200: any = null;
+            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result200 = UserItem.fromJS(resultData200);
+            return ObservableOf(result200);
+            }));
+        } else if (status === 400) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result400: any = null;
+            let resultData400 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result400 = ProblemDetails.fromJS(resultData400);
+            return throwException("Bad Request", status, ResponseText, Headers, result400);
+            }));
+        } else if (status === 401) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result401: any = null;
+            let resultData401 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result401 = ProblemDetails.fromJS(resultData401);
+            return throwException("Unauthorized", status, ResponseText, Headers, result401);
+            }));
+        } else if (status === 403) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result403: any = null;
+            let resultData403 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result403 = ProblemDetails.fromJS(resultData403);
+            return throwException("Forbidden", status, ResponseText, Headers, result403);
             }));
         } else if (status !== 200 && status !== 204) {
             return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
@@ -10507,6 +10592,10 @@ export interface IAdminOrderClient {
     /**
      * @return OK
      */
+    customer(orderId: string): Observable<UserItem>;
+    /**
+     * @return OK
+     */
     photos(orderId: string): Observable<GetOrderPhotosResponse>;
     /**
      * @param body (optional) 
@@ -10769,6 +10858,81 @@ export class AdminOrderClient implements IAdminOrderClient {
             let result200: any = null;
             let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
             result200 = OrderItem.fromJS(resultData200);
+            return ObservableOf(result200);
+            }));
+        } else if (status === 400) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result400: any = null;
+            let resultData400 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result400 = ProblemDetails.fromJS(resultData400);
+            return throwException("Bad Request", status, ResponseText, Headers, result400);
+            }));
+        } else if (status === 401) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result401: any = null;
+            let resultData401 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result401 = ProblemDetails.fromJS(resultData401);
+            return throwException("Unauthorized", status, ResponseText, Headers, result401);
+            }));
+        } else if (status === 403) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result403: any = null;
+            let resultData403 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result403 = ProblemDetails.fromJS(resultData403);
+            return throwException("Forbidden", status, ResponseText, Headers, result403);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
+            }));
+        }
+        return ObservableOf(null as any);
+    }
+
+    /**
+     * @return OK
+     */
+    customer(orderId: string): Observable<UserItem> {
+        let url = this.baseUrl + "/api/AdminOrder/{orderId}/customer";
+        if (orderId === undefined || orderId === null)
+            throw new globalThis.Error("The parameter 'orderId' must be defined.");
+        url = url.replace("{orderId}", encodeURIComponent("" + orderId));
+        url = url.replace(/[?&]$/, "");
+
+        let options : any = {
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Accept": "application/json"
+            })
+        };
+
+        return this.http.request("get", url, options).pipe(ObservableMergeMap((response : any) => {
+            return this.processCustomer(response);
+        })).pipe(ObservableCatch((response: any) => {
+            if (response instanceof HttpResponseBase) {
+                try {
+                    return this.processCustomer(response as any);
+                } catch (e) {
+                    return ObservableThrow(e) as any as Observable<UserItem>;
+                }
+            } else
+                return ObservableThrow(response) as any as Observable<UserItem>;
+        }));
+    }
+
+    protected processCustomer(response: HttpResponseBase): Observable<UserItem> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result200: any = null;
+            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result200 = UserItem.fromJS(resultData200);
             return ObservableOf(result200);
             }));
         } else if (status === 400) {
@@ -19528,6 +19692,54 @@ export enum BillingInterval {
     Yearly = 2,
 }
 
+export class BlobFileDto implements IBlobFileDto {
+    fileName!: string | undefined;
+    base64Content!: string | undefined;
+    contentType!: string | undefined;
+    blobUrl!: string | undefined;
+
+    constructor(data?: IBlobFileDto) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.fileName = Data["fileName"];
+            this.base64Content = Data["base64Content"];
+            this.contentType = Data["contentType"];
+            this.blobUrl = Data["blobUrl"];
+        }
+    }
+
+    static fromJS(data: any): BlobFileDto {
+        data = typeof data === 'object' ? data : {};
+        let result = new BlobFileDto();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["fileName"] = this.fileName;
+        data["base64Content"] = this.base64Content;
+        data["contentType"] = this.contentType;
+        data["blobUrl"] = this.blobUrl;
+        return data;
+    }
+}
+
+export interface IBlobFileDto {
+    fileName: string | undefined;
+    base64Content: string | undefined;
+    contentType: string | undefined;
+    blobUrl: string | undefined;
+}
+
 export class BulkCreateEmployeePayConfigsCommand implements IBulkCreateEmployeePayConfigsCommand {
     employeeId!: string | undefined;
     grade!: string | undefined;
@@ -22250,6 +22462,54 @@ export interface ICustomerActionAuditDto {
     success: boolean;
     errorCode: string | undefined;
     occurredOn: Date;
+}
+
+export class CustomerOfAnotherCompanyDto implements ICustomerOfAnotherCompanyDto {
+    id!: string | undefined;
+    firstName!: string | undefined;
+    maskedEmail!: string | undefined;
+    companyName!: string | undefined;
+
+    constructor(data?: ICustomerOfAnotherCompanyDto) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.id = Data["id"];
+            this.firstName = Data["firstName"];
+            this.maskedEmail = Data["maskedEmail"];
+            this.companyName = Data["companyName"];
+        }
+    }
+
+    static fromJS(data: any): CustomerOfAnotherCompanyDto {
+        data = typeof data === 'object' ? data : {};
+        let result = new CustomerOfAnotherCompanyDto();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["id"] = this.id;
+        data["firstName"] = this.firstName;
+        data["maskedEmail"] = this.maskedEmail;
+        data["companyName"] = this.companyName;
+        return data;
+    }
+}
+
+export interface ICustomerOfAnotherCompanyDto {
+    id: string | undefined;
+    firstName: string | undefined;
+    maskedEmail: string | undefined;
+    companyName: string | undefined;
 }
 
 export class DailyRevenue implements IDailyRevenue {
@@ -28572,6 +28832,7 @@ export class OrderItem implements IOrderItem {
     preferredOffer!: PreferredOfferDetails;
     hasAccessInstructions!: boolean | undefined;
     systemCancellationReason!: string | undefined;
+    customerCompany!: string | undefined;
 
     constructor(data?: IOrderItem) {
         if (data) {
@@ -28671,6 +28932,7 @@ export class OrderItem implements IOrderItem {
             this.preferredOffer = Data["preferredOffer"] ? PreferredOfferDetails.fromJS(Data["preferredOffer"]) : undefined as any;
             this.hasAccessInstructions = Data["hasAccessInstructions"];
             this.systemCancellationReason = Data["systemCancellationReason"];
+            this.customerCompany = Data["customerCompany"];
         }
     }
 
@@ -28770,6 +29032,7 @@ export class OrderItem implements IOrderItem {
         data["preferredOffer"] = this.preferredOffer ? this.preferredOffer.toJSON() : undefined as any;
         data["hasAccessInstructions"] = this.hasAccessInstructions;
         data["systemCancellationReason"] = this.systemCancellationReason;
+        data["customerCompany"] = this.customerCompany;
         return data;
     }
 }
@@ -28832,6 +29095,7 @@ export interface IOrderItem {
     preferredOffer: PreferredOfferDetails;
     hasAccessInstructions: boolean | undefined;
     systemCancellationReason: string | undefined;
+    customerCompany: string | undefined;
 }
 
 export class OrderListItem implements IOrderListItem {
@@ -28873,6 +29137,7 @@ export class OrderListItem implements IOrderListItem {
     customerAddressLatitude!: number | undefined;
     customerAddressLongitude!: number | undefined;
     hasReview!: boolean;
+    countryId!: string | undefined;
 
     constructor(data?: IOrderListItem) {
         if (data) {
@@ -28941,6 +29206,7 @@ export class OrderListItem implements IOrderListItem {
             this.customerAddressLatitude = Data["customerAddressLatitude"];
             this.customerAddressLongitude = Data["customerAddressLongitude"];
             this.hasReview = Data["hasReview"];
+            this.countryId = Data["countryId"];
         }
     }
 
@@ -29009,6 +29275,7 @@ export class OrderListItem implements IOrderListItem {
         data["customerAddressLatitude"] = this.customerAddressLatitude;
         data["customerAddressLongitude"] = this.customerAddressLongitude;
         data["hasReview"] = this.hasReview;
+        data["countryId"] = this.countryId;
         return data;
     }
 }
@@ -29052,6 +29319,7 @@ export interface IOrderListItem {
     customerAddressLatitude: number | undefined;
     customerAddressLongitude: number | undefined;
     hasReview: boolean;
+    countryId: string | undefined;
 }
 
 export class OrderNoteDto implements IOrderNoteDto {
@@ -35826,6 +36094,94 @@ export interface IUserConsentDto {
     grantedAt: Date | undefined;
     withdrawnAt: Date | undefined;
     createdOn: Date;
+}
+
+export class UserItem implements IUserItem {
+    id!: string | undefined;
+    isActive!: boolean;
+    email!: string | undefined;
+    firstName!: string | undefined;
+    lastName!: string | undefined;
+    phoneNumber!: string | undefined;
+    profile!: Code;
+    authenticationType!: Code;
+    isEmailConfirmed!: boolean;
+    birthDate!: Date | undefined;
+    profilePhoto!: BlobFileDto;
+    preferredLanguageCode!: string | undefined;
+    preferredLanguageName!: string | undefined;
+    customerOfAnotherCompany!: CustomerOfAnotherCompanyDto;
+
+    constructor(data?: IUserItem) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.id = Data["id"];
+            this.isActive = Data["isActive"];
+            this.email = Data["email"];
+            this.firstName = Data["firstName"];
+            this.lastName = Data["lastName"];
+            this.phoneNumber = Data["phoneNumber"];
+            this.profile = Data["profile"] ? Code.fromJS(Data["profile"]) : undefined as any;
+            this.authenticationType = Data["authenticationType"] ? Code.fromJS(Data["authenticationType"]) : undefined as any;
+            this.isEmailConfirmed = Data["isEmailConfirmed"];
+            this.birthDate = Data["birthDate"] ? new Date(Data["birthDate"].toString()) : undefined as any;
+            this.profilePhoto = Data["profilePhoto"] ? BlobFileDto.fromJS(Data["profilePhoto"]) : undefined as any;
+            this.preferredLanguageCode = Data["preferredLanguageCode"];
+            this.preferredLanguageName = Data["preferredLanguageName"];
+            this.customerOfAnotherCompany = Data["customerOfAnotherCompany"] ? CustomerOfAnotherCompanyDto.fromJS(Data["customerOfAnotherCompany"]) : undefined as any;
+        }
+    }
+
+    static fromJS(data: any): UserItem {
+        data = typeof data === 'object' ? data : {};
+        let result = new UserItem();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["id"] = this.id;
+        data["isActive"] = this.isActive;
+        data["email"] = this.email;
+        data["firstName"] = this.firstName;
+        data["lastName"] = this.lastName;
+        data["phoneNumber"] = this.phoneNumber;
+        data["profile"] = this.profile ? this.profile.toJSON() : undefined as any;
+        data["authenticationType"] = this.authenticationType ? this.authenticationType.toJSON() : undefined as any;
+        data["isEmailConfirmed"] = this.isEmailConfirmed;
+        data["birthDate"] = this.birthDate ? formatDate(this.birthDate) : undefined as any;
+        data["profilePhoto"] = this.profilePhoto ? this.profilePhoto.toJSON() : undefined as any;
+        data["preferredLanguageCode"] = this.preferredLanguageCode;
+        data["preferredLanguageName"] = this.preferredLanguageName;
+        data["customerOfAnotherCompany"] = this.customerOfAnotherCompany ? this.customerOfAnotherCompany.toJSON() : undefined as any;
+        return data;
+    }
+}
+
+export interface IUserItem {
+    id: string | undefined;
+    isActive: boolean;
+    email: string | undefined;
+    firstName: string | undefined;
+    lastName: string | undefined;
+    phoneNumber: string | undefined;
+    profile: Code;
+    authenticationType: Code;
+    isEmailConfirmed: boolean;
+    birthDate: Date | undefined;
+    profilePhoto: BlobFileDto;
+    preferredLanguageCode: string | undefined;
+    preferredLanguageName: string | undefined;
+    customerOfAnotherCompany: CustomerOfAnotherCompanyDto;
 }
 
 export enum UserProfile {

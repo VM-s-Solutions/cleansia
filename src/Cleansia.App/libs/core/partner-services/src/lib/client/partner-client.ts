@@ -6186,9 +6186,10 @@ export interface IUserClient {
     getPaged(id?: string | undefined, isActive?: boolean | undefined, firstName?: string | undefined, lastName?: string | undefined, phoneNumber?: string | undefined, email?: string | undefined, userProfiles?: number[] | undefined, authenticationTypes?: number[] | undefined, sort?: SortDefinition[] | undefined, offset?: number | undefined, limit?: number | undefined): Observable<PagedDataOfUserListItem>;
     /**
      * @param userId (optional) 
+     * @param orderId (optional) 
      * @return OK
      */
-    getById(userId?: string | undefined): Observable<UserItem>;
+    getById(userId?: string | undefined, orderId?: string | undefined): Observable<UserItem>;
     /**
      * @param query (optional) 
      * @return OK
@@ -6358,14 +6359,19 @@ export class UserClient implements IUserClient {
 
     /**
      * @param userId (optional) 
+     * @param orderId (optional) 
      * @return OK
      */
-    getById(userId?: string | undefined): Observable<UserItem> {
+    getById(userId?: string | undefined, orderId?: string | undefined): Observable<UserItem> {
         let url = this.baseUrl + "/api/User/GetById?";
         if (userId === null)
             throw new globalThis.Error("The parameter 'userId' cannot be null.");
         else if (userId !== undefined)
             url += "UserId=" + encodeURIComponent("" + userId) + "&";
+        if (orderId === null)
+            throw new globalThis.Error("The parameter 'orderId' cannot be null.");
+        else if (orderId !== undefined)
+            url += "OrderId=" + encodeURIComponent("" + orderId) + "&";
         url = url.replace(/[?&]$/, "");
 
         let options : any = {
@@ -7593,6 +7599,54 @@ export interface ICurrencyListItem {
     symbol: string | undefined;
     name: string | undefined;
     isDefault: boolean;
+}
+
+export class CustomerOfAnotherCompanyDto implements ICustomerOfAnotherCompanyDto {
+    id!: string | undefined;
+    firstName!: string | undefined;
+    maskedEmail!: string | undefined;
+    companyName!: string | undefined;
+
+    constructor(data?: ICustomerOfAnotherCompanyDto) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.id = Data["id"];
+            this.firstName = Data["firstName"];
+            this.maskedEmail = Data["maskedEmail"];
+            this.companyName = Data["companyName"];
+        }
+    }
+
+    static fromJS(data: any): CustomerOfAnotherCompanyDto {
+        data = typeof data === 'object' ? data : {};
+        let result = new CustomerOfAnotherCompanyDto();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["id"] = this.id;
+        data["firstName"] = this.firstName;
+        data["maskedEmail"] = this.maskedEmail;
+        data["companyName"] = this.companyName;
+        return data;
+    }
+}
+
+export interface ICustomerOfAnotherCompanyDto {
+    id: string | undefined;
+    firstName: string | undefined;
+    maskedEmail: string | undefined;
+    companyName: string | undefined;
 }
 
 export class DailyTimeSpent implements IDailyTimeSpent {
@@ -11238,6 +11292,7 @@ export class OrderItem implements IOrderItem {
     preferredOffer!: PreferredOfferDetails;
     hasAccessInstructions!: boolean | undefined;
     systemCancellationReason!: string | undefined;
+    customerCompany!: string | undefined;
 
     constructor(data?: IOrderItem) {
         if (data) {
@@ -11337,6 +11392,7 @@ export class OrderItem implements IOrderItem {
             this.preferredOffer = Data["preferredOffer"] ? PreferredOfferDetails.fromJS(Data["preferredOffer"]) : undefined as any;
             this.hasAccessInstructions = Data["hasAccessInstructions"];
             this.systemCancellationReason = Data["systemCancellationReason"];
+            this.customerCompany = Data["customerCompany"];
         }
     }
 
@@ -11436,6 +11492,7 @@ export class OrderItem implements IOrderItem {
         data["preferredOffer"] = this.preferredOffer ? this.preferredOffer.toJSON() : undefined as any;
         data["hasAccessInstructions"] = this.hasAccessInstructions;
         data["systemCancellationReason"] = this.systemCancellationReason;
+        data["customerCompany"] = this.customerCompany;
         return data;
     }
 }
@@ -11498,6 +11555,7 @@ export interface IOrderItem {
     preferredOffer: PreferredOfferDetails;
     hasAccessInstructions: boolean | undefined;
     systemCancellationReason: string | undefined;
+    customerCompany: string | undefined;
 }
 
 export class OrderListItem implements IOrderListItem {
@@ -11539,6 +11597,7 @@ export class OrderListItem implements IOrderListItem {
     customerAddressLatitude!: number | undefined;
     customerAddressLongitude!: number | undefined;
     hasReview!: boolean;
+    countryId!: string | undefined;
 
     constructor(data?: IOrderListItem) {
         if (data) {
@@ -11607,6 +11666,7 @@ export class OrderListItem implements IOrderListItem {
             this.customerAddressLatitude = Data["customerAddressLatitude"];
             this.customerAddressLongitude = Data["customerAddressLongitude"];
             this.hasReview = Data["hasReview"];
+            this.countryId = Data["countryId"];
         }
     }
 
@@ -11675,6 +11735,7 @@ export class OrderListItem implements IOrderListItem {
         data["customerAddressLatitude"] = this.customerAddressLatitude;
         data["customerAddressLongitude"] = this.customerAddressLongitude;
         data["hasReview"] = this.hasReview;
+        data["countryId"] = this.countryId;
         return data;
     }
 }
@@ -11718,6 +11779,7 @@ export interface IOrderListItem {
     customerAddressLatitude: number | undefined;
     customerAddressLongitude: number | undefined;
     hasReview: boolean;
+    countryId: string | undefined;
 }
 
 export class OrderNoteDto implements IOrderNoteDto {
@@ -15462,6 +15524,7 @@ export class UserItem implements IUserItem {
     profilePhoto!: BlobFileDto;
     preferredLanguageCode!: string | undefined;
     preferredLanguageName!: string | undefined;
+    customerOfAnotherCompany!: CustomerOfAnotherCompanyDto;
 
     constructor(data?: IUserItem) {
         if (data) {
@@ -15487,6 +15550,7 @@ export class UserItem implements IUserItem {
             this.profilePhoto = Data["profilePhoto"] ? BlobFileDto.fromJS(Data["profilePhoto"]) : undefined as any;
             this.preferredLanguageCode = Data["preferredLanguageCode"];
             this.preferredLanguageName = Data["preferredLanguageName"];
+            this.customerOfAnotherCompany = Data["customerOfAnotherCompany"] ? CustomerOfAnotherCompanyDto.fromJS(Data["customerOfAnotherCompany"]) : undefined as any;
         }
     }
 
@@ -15512,6 +15576,7 @@ export class UserItem implements IUserItem {
         data["profilePhoto"] = this.profilePhoto ? this.profilePhoto.toJSON() : undefined as any;
         data["preferredLanguageCode"] = this.preferredLanguageCode;
         data["preferredLanguageName"] = this.preferredLanguageName;
+        data["customerOfAnotherCompany"] = this.customerOfAnotherCompany ? this.customerOfAnotherCompany.toJSON() : undefined as any;
         return data;
     }
 }
@@ -15530,6 +15595,7 @@ export interface IUserItem {
     profilePhoto: BlobFileDto;
     preferredLanguageCode: string | undefined;
     preferredLanguageName: string | undefined;
+    customerOfAnotherCompany: CustomerOfAnotherCompanyDto;
 }
 
 export class UserListItem implements IUserListItem {

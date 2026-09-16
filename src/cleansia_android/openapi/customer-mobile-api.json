@@ -10115,6 +10115,10 @@
           "systemCancellationReason": {
             "type": "string",
             "nullable": true
+          },
+          "customerCompany": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -10284,6 +10288,10 @@
           },
           "hasReview": {
             "type": "boolean"
+          },
+          "countryId": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false

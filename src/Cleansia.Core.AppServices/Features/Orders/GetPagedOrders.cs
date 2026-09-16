@@ -93,6 +93,7 @@ public class GetPagedOrders
                 request.Filter?.HasAvailableSpots,
                 request.Filter?.IsUnassigned,
                 request.Filter?.ExcludeEmployeeId,
+                userId: isAdmin ? request.Filter?.UserId : null,
                 restrictToEmployeeId: isAdmin ? null : callerEmployeeId,
                 notHeldFromEmployeeId: isAdmin ? null : callerEmployeeId,
                 nowUtc: isAdmin ? null : DateTime.UtcNow,

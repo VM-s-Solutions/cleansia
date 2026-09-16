@@ -22,4 +22,8 @@ public record OrderFilter(
     bool? HasAvailableSpots,
     bool? IsUnassigned,
     string? ExcludeEmployeeId,
-    string? CurrencyId = null);
+    string? CurrencyId = null,
+    // The account the orders were booked on. Admin-only, like the customer PII terms above: a cleaner
+    // must not be able to enumerate a customer's bookings by id. A guest booking carries no UserId and
+    // is never this account's, whatever e-mail it names (SubjectOrders).
+    string? UserId = null);

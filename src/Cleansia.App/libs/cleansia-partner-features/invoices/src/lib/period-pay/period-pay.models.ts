@@ -1,7 +1,27 @@
 import { TableColumn } from '@cleansia/components';
-import { OrderEmployeePayDto } from '@cleansia/partner-services';
+import { EmployeeInvoiceDto, OrderEmployeePayDto } from '@cleansia/partner-services';
 
 export type PeriodStatusKey = 'open' | 'closed' | 'paid' | 'unknown';
+
+export interface PeriodCurrency {
+  id: string;
+  code: string;
+}
+
+/**
+ * The currencies a period can be viewed in are the ones it was invoiced in: the server answers
+ * GetPeriodPays in ONE currency, and a cleaner with an invoice in each of two currencies would
+ * otherwise never see the second one's rows on this screen.
+ */
+export function getPeriodCurrencies(invoices: EmployeeInvoiceDto[] | undefined): PeriodCurrency[] {
+  const currencies: PeriodCurrency[] = [];
+  for (const invoice of invoices ?? []) {
+    if (!invoice.currencyId || !invoice.currencyCode) continue;
+    if (currencies.some((currency) => currency.id === invoice.currencyId)) continue;
+    currencies.push({ id: invoice.currencyId, code: invoice.currencyCode });
+  }
+  return currencies;
+}
 
 /**
  * The currency comes from the server and is never assumed here. On an invoiced period it is the

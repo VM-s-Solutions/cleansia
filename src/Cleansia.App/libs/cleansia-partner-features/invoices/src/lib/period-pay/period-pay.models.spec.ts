@@ -1,5 +1,9 @@
-import { OrderEmployeePayDto } from '@cleansia/partner-services';
-import { formatPayAmount, getPeriodPayTableDefinition } from './period-pay.models';
+import { EmployeeInvoiceDto, OrderEmployeePayDto } from '@cleansia/partner-services';
+import {
+  formatPayAmount,
+  getPeriodCurrencies,
+  getPeriodPayTableDefinition,
+} from './period-pay.models';
 
 describe('formatPayAmount', () => {
   it('formats an amount with two decimals and the currency suffix', () => {
@@ -49,5 +53,33 @@ describe('getPeriodPayTableDefinition', () => {
 
     expect(total.getValue(OrderEmployeePayDto.fromJS({ totalPay: 99, currencyCode: 'EUR' }))).toBe('99.00 EUR');
     expect(total.getValue(OrderEmployeePayDto.fromJS({ totalPay: 99 }))).toBe('99.00 CZK');
+  });
+});
+
+describe('getPeriodCurrencies', () => {
+  it('names each currency the period was invoiced in once, in invoice order', () => {
+    const invoices = [
+      EmployeeInvoiceDto.fromJS({ id: 'inv-1', currencyId: 'cur-czk', currencyCode: 'CZK' }),
+      EmployeeInvoiceDto.fromJS({ id: 'inv-2', currencyId: 'cur-eur', currencyCode: 'EUR' }),
+      EmployeeInvoiceDto.fromJS({ id: 'inv-3', currencyId: 'cur-czk', currencyCode: 'CZK' }),
+    ];
+
+    expect(getPeriodCurrencies(invoices)).toEqual([
+      { id: 'cur-czk', code: 'CZK' },
+      { id: 'cur-eur', code: 'EUR' },
+    ]);
+  });
+
+  it('skips an invoice that names no currency', () => {
+    const invoices = [
+      EmployeeInvoiceDto.fromJS({ id: 'inv-1' }),
+      EmployeeInvoiceDto.fromJS({ id: 'inv-2', currencyId: 'cur-eur', currencyCode: 'EUR' }),
+    ];
+
+    expect(getPeriodCurrencies(invoices)).toEqual([{ id: 'cur-eur', code: 'EUR' }]);
+  });
+
+  it('is empty for a period with no invoice yet', () => {
+    expect(getPeriodCurrencies(undefined)).toEqual([]);
   });
 });

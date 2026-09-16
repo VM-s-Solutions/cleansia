@@ -9,10 +9,11 @@ import {
   SortDefinition,
   SortDirection,
 } from '@cleansia/partner-services';
-import { catchError, finalize, of, takeUntil } from 'rxjs';
-import { PeriodStatusKey } from './period-pay.models';
+import { catchError, finalize, forkJoin, map, of, takeUntil } from 'rxjs';
+import { PeriodCurrency, PeriodStatusKey, getPeriodCurrencies } from './period-pay.models';
 
 const PERIODS_LIMIT = 26;
+const PERIOD_INVOICES_LIMIT = 20;
 
 @Injectable()
 export class PeriodPayFacade extends UnsubscribeControlDirective {
@@ -24,12 +25,20 @@ export class PeriodPayFacade extends UnsubscribeControlDirective {
   readonly initialLoading = signal<boolean>(true);
   readonly hasError = signal<boolean>(false);
   readonly selectedPeriodId = signal<string | null>(null);
+  readonly periodCurrencies = signal<PeriodCurrency[]>([]);
+  readonly selectedCurrencyId = signal<string | null>(null);
 
   readonly periodOptions = computed<ICleansiaSelectOption[]>(() =>
     this.payPeriods()
       .filter((period) => !!period.id)
       .map((period) => ({ label: period.periodLabel ?? '', value: period.id }))
   );
+
+  readonly currencyOptions = computed<ICleansiaSelectOption[]>(() =>
+    this.periodCurrencies().map((currency) => ({ label: currency.code, value: currency.id }))
+  );
+
+  readonly hasMultipleCurrencies = computed<boolean>(() => this.periodCurrencies().length > 1);
 
   readonly selectedPeriod = computed<PayPeriodDto | null>(
     () =>
@@ -51,6 +60,7 @@ export class PeriodPayFacade extends UnsubscribeControlDirective {
 
   private employeeId: string | null = null;
   private periodControl: FormControl<string | null> | null = null;
+  private currencyControl: FormControl<string | null> | null = null;
 
   connectPeriodControl(control: FormControl<string | null>): void {
     this.periodControl = control;
@@ -59,6 +69,17 @@ export class PeriodPayFacade extends UnsubscribeControlDirective {
       .subscribe((periodId) => {
         if (periodId && periodId !== this.selectedPeriodId()) {
           this.selectPeriod(periodId);
+        }
+      });
+  }
+
+  connectCurrencyControl(control: FormControl<string | null>): void {
+    this.currencyControl = control;
+    control.valueChanges
+      .pipe(takeUntil(this.destroyed$))
+      .subscribe((currencyId) => {
+        if (currencyId && currencyId !== this.selectedCurrencyId()) {
+          this.selectCurrency(currencyId);
         }
       });
   }
@@ -89,7 +110,15 @@ export class PeriodPayFacade extends UnsubscribeControlDirective {
   selectPeriod(payPeriodId: string): void {
     this.selectedPeriodId.set(payPeriodId);
     this.periodControl?.setValue(payPeriodId, { emitEvent: false });
-    this.loadSummary();
+    this.selectedCurrencyId.set(null);
+    this.currencyControl?.setValue(null, { emitEvent: false });
+    this.loadSummary(true);
+  }
+
+  selectCurrency(currencyId: string): void {
+    this.selectedCurrencyId.set(currencyId);
+    this.currencyControl?.setValue(currencyId, { emitEvent: false });
+    this.loadSummary(false);
   }
 
   retry(): void {
@@ -97,7 +126,7 @@ export class PeriodPayFacade extends UnsubscribeControlDirective {
       this.init();
       return;
     }
-    this.loadSummary();
+    this.loadSummary(true);
   }
 
   private loadPayPeriods(): void {
@@ -137,7 +166,11 @@ export class PeriodPayFacade extends UnsubscribeControlDirective {
       });
   }
 
-  private loadSummary(): void {
+  /**
+   * Unnamed, the currency view is the server's choice (the cleaner's resolved currency, or the one
+   * invoice's), so the first load asks for nothing and the switch is then set to whatever came back.
+   */
+  private loadSummary(withCurrencies: boolean): void {
     const payPeriodId = this.selectedPeriodId();
     if (!this.employeeId || !payPeriodId) {
       return;
@@ -146,8 +179,34 @@ export class PeriodPayFacade extends UnsubscribeControlDirective {
     this.loading.set(true);
     this.hasError.set(false);
 
-    this.partnerClient.employeePayrollClient
-      .getPeriodPays(this.employeeId, payPeriodId)
+    const payrollClient = this.partnerClient.employeePayrollClient;
+    const currencies$ = withCurrencies
+      ? payrollClient
+          .getPagedInvoices(
+            this.employeeId,
+            payPeriodId,
+            undefined,
+            undefined,
+            undefined,
+            undefined,
+            undefined,
+            undefined,
+            undefined,
+            undefined,
+            0,
+            PERIOD_INVOICES_LIMIT
+          )
+          .pipe(map((paged) => getPeriodCurrencies(paged.data)))
+      : of(this.periodCurrencies());
+
+    forkJoin({
+      summary: payrollClient.getPeriodPays(
+        this.employeeId,
+        payPeriodId,
+        this.selectedCurrencyId() ?? undefined
+      ),
+      currencies: currencies$,
+    })
       .pipe(
         takeUntil(this.destroyed$),
         catchError(() => {
@@ -161,10 +220,18 @@ export class PeriodPayFacade extends UnsubscribeControlDirective {
           }
         })
       )
-      .subscribe((summary) => {
-        if (summary) {
-          this.summary.set(summary);
+      .subscribe((view) => {
+        if (!view) {
+          return;
         }
+        this.summary.set(view.summary);
+        this.periodCurrencies.set(view.currencies);
+        const shownCurrencyId =
+          this.selectedCurrencyId() ??
+          view.currencies.find((currency) => currency.code === view.summary.currencyCode)?.id ??
+          null;
+        this.selectedCurrencyId.set(shownCurrencyId);
+        this.currencyControl?.setValue(shownCurrencyId, { emitEvent: false });
       });
   }
 }

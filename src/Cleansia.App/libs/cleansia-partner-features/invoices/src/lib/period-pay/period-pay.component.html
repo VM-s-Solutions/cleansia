@@ -49,6 +49,21 @@
         </span>
       </div>
 
+      @if (facade.hasMultipleCurrencies()) {
+      <div class="cleansia-period-pay__currency">
+        <cleansia-select
+          [label]="'pages.period_pay.currency' | translate"
+          [formControl]="currencyControl"
+          [options]="facade.currencyOptions()"
+          [showClear]="false"
+          [showErrors]="false"
+        />
+        <p class="cleansia-period-pay__currency-hint">
+          {{ 'pages.period_pay.multiple_currencies_hint' | translate }}
+        </p>
+      </div>
+      }
+
       @if (facade.summary(); as summary) {
       <div class="period-pay-summary" [class.is-loading]="facade.loading()">
         <div class="summary-grid">

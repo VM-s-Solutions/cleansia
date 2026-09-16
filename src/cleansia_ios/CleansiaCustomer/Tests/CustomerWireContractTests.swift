@@ -154,6 +154,23 @@ final class CustomerWireContractTests: XCTestCase {
         assertRefused("rating") { try CustomerOrderDetail(payload) }
     }
 
+    /// The market an order was booked in rides both the row and the detail as its `countryId`; the
+    /// label resolves it against the directory, so nothing here is refused — an absent country reads as
+    /// unavailable rather than blanking the order.
+    func testTheRowAndTheDetailCarryTheMarketTheyWereBookedIn() throws {
+        var row = OrderListItem.wireComplete()
+        row.countryId = "svk"
+        XCTAssertEqual(try CustomerOrderSummary(row)?.countryId, "svk")
+        row.countryId = nil
+        XCTAssertNil(try CustomerOrderSummary(row)?.countryId)
+
+        var detail = OrderItem.wireComplete()
+        detail.countryId = "svk"
+        XCTAssertEqual(try CustomerOrderDetail(detail).countryId, "svk")
+        detail.countryId = nil
+        XCTAssertNil(try CustomerOrderDetail(detail).countryId)
+    }
+
     /// The one identifier this surface does NOT refuse: the screen is routed with the order id and
     /// keeps it, so a null here has an equally authoritative replacement and refusing would blank a
     /// screen that navigates perfectly.

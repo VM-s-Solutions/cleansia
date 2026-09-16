@@ -225,6 +225,7 @@ struct CustomerShellView: View {
 
             OrdersTab(
                 repository: container.orderRepository,
+                marketStore: container.marketStore,
                 snackbar: snackbar,
                 onOrderClick: { model.path.append(ShellRoute.orderDetail($0)) },
                 onBookCleaning: openBooking
@@ -406,6 +407,7 @@ extension CustomerShellView {
             client: container.orderClient,
             repository: container.orderRepository,
             membershipRepository: container.membershipRepository,
+            marketStore: container.marketStore,
             snackbar: snackbar,
             eventBus: container.orderEventBus,
             paymentSheet: StripePaymentController(),

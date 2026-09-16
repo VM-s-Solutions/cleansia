@@ -29,6 +29,7 @@ struct OrderDetailView: View {
         client: OrderClient,
         repository: OrderRepository,
         membershipRepository: MembershipRepository,
+        marketStore: MarketStore,
         snackbar: SnackbarController,
         eventBus: OrderEventBus,
         paymentSheet: PaymentSheetPresenting,
@@ -43,6 +44,7 @@ struct OrderDetailView: View {
                 client: client,
                 repository: repository,
                 membershipRepository: membershipRepository,
+                marketStore: marketStore,
                 snackbar: snackbar,
                 eventBus: eventBus
             )
@@ -133,6 +135,7 @@ struct OrderDetailView: View {
             VStack(spacing: 0) {
                 OrderDetailContent(
                     order: order,
+                    markets: vm.markets,
                     photos: vm.photos,
                     isDownloadingReceipt: vm.receiptState.isSubmitting,
                     onLeaveReview: { showReviewSheet = true },

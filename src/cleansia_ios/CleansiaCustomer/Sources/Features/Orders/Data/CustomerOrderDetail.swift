@@ -55,6 +55,7 @@ struct CustomerOrderReview: Equatable {
 /// → /decisions/adr-0048
 struct CustomerOrderDetail: Equatable {
     let id: String?
+    let countryId: String?
     let displayOrderNumber: String?
     let statusCode: Code?
     let cleaningDateTime: Date?
@@ -113,6 +114,7 @@ struct CustomerOrderDetail: Equatable {
 extension CustomerOrderDetail {
     init(_ item: OrderItem) throws {
         id = item.id
+        countryId = item.countryId
         displayOrderNumber = item.displayOrderNumber
         statusCode = item.orderStatus
         cleaningDateTime = item.cleaningDateTime

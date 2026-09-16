@@ -76,6 +76,14 @@ extension L10n {
         static var back: String {
             localized("common_back")
         }
+
+        static var marketUnknown: String {
+            localized("order_market_unknown")
+        }
+
+        static func marketLabel(_ country: String, _ currency: String) -> String {
+            format("order_market_label", country, currency)
+        }
     }
 
     enum OrderDetail {

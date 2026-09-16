@@ -252,6 +252,7 @@ private struct PopularPackageCard: View {
         static var sampleOrder: CustomerOrderSummary {
             CustomerOrderSummary(
                 id: "o1",
+                countryId: "cze",
                 displayOrderNumber: "1042",
                 statusCode: Code(type: "OrderStatus", name: "Completed", value: 5),
                 cleaningDateTime: Date(),

@@ -3,7 +3,7 @@
   <head>
     <script>
       // Sync color-scheme with stored theme before CSS loads,
-      // so PrimeFlex light-dark() picks the correct values.
+      // so the light-dark() utilities pick the correct values.
       (function() {
         var t = localStorage.getItem('cleansia-theme');
         var isDark = t === 'dark' || (!t && window.matchMedia('(prefers-color-scheme: dark)').matches);
@@ -63,17 +63,6 @@
         href="https://cdn.jsdelivr.net/gh/lipis/flag-icons@6.6.6/css/flag-icons.min.css"
     /></noscript>
 
-    <link
-      rel="stylesheet"
-      media="print"
-      onload="this.media='all'"
-      href="https://cdn.jsdelivr.net/npm/primeflex@4.0.0/primeflex.min.css"
-    />
-    <noscript
-      ><link
-        rel="stylesheet"
-        href="https://cdn.jsdelivr.net/npm/primeflex@4.0.0/primeflex.min.css"
-    /></noscript>
     <link
       rel="stylesheet"
       media="print"

@@ -1,7 +1,8 @@
-/* PrimeFlex is loaded via CDN in index.html for better performance */
+// First in the bundle, where the CDN copy used to sit in the cascade.
+@use './primeflex-subset';
 
 html {
-  // Force light color-scheme by default so PrimeFlex light-dark() picks light values.
+  // Force light color-scheme by default so the light-dark() utilities pick light values.
   // ThemeService overrides this to 'dark' when dark mode is active.
   color-scheme: light;
 }

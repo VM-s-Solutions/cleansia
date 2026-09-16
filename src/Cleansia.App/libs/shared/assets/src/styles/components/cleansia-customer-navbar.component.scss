@@ -17,10 +17,10 @@ $nav-band: 96px;
 
 .customer-navbar {
   height: 64px;
-  // Layout duplicated from the PrimeFlex utility classes on purpose:
-  // PrimeFlex loads async, so anything the first paint depends on must be
-  // in this (bundled) stylesheet or the whole header reflows when the
-  // utilities arrive — a full-page layout shift.
+  // Layout duplicated from the PrimeFlex utility classes on purpose, so the
+  // bar stands on its own rules. The utilities used to arrive async from a
+  // CDN and reflow the header; they are bundled now (primeflex-subset.scss),
+  // and the duplication stays so the bar never depends on them again.
   position: fixed;
   top: 0;
   left: 0;
@@ -796,11 +796,12 @@ body:has(.cleansia-dev-banner) {
 
 // The bar needs 1331px in Ukrainian — the longest labels we ship — before the
 // brand, four links, both controls, the sign-in link and the CTA all fit inside
-// the pill. PrimeFlex's `md:flex` starts laying them out at 768 and ships
-// `!important`, so they were rendered anyway from 768 up and the right-hand
-// cluster ran past the pill's edge: 134px in Czech, and still 105px at a 1200
-// breakpoint in Ukrainian. Below 1360 the hamburger owns the bar. Keep in step
-// with NAV_DESKTOP_MIN_WIDTH in customer-navbar.component.ts, and see
+// the pill. PrimeFlex's `md:flex` — self-hosted in primeflex-subset.scss with
+// its 768 breakpoint and `!important` intact — lays them out from 768 up, so
+// they were rendered anyway and the right-hand cluster ran past the pill's
+// edge: 134px in Czech, and still 105px at a 1200 breakpoint in Ukrainian.
+// Below 1360 the hamburger owns the bar. Keep in step with
+// NAV_DESKTOP_MIN_WIDTH in customer-navbar.component.ts, and see
 // agents/tools/check-nav-fits.mjs.
 @media (max-width: 1359.98px) {
   .customer-navbar__center,

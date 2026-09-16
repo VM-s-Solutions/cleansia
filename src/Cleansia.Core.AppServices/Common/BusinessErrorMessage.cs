@@ -358,7 +358,7 @@ public static class BusinessErrorMessage
     public const string CountryInUse = "country.in_use";
     public const string CountryNotServiced = "country.not_serviced";
     public const string CountryRequired = "country.required";
-    /// <summary>The named (or default) market has no operating company behind it — a seed defect, not user input (ADR-0061 D3).</summary>
+    /// <summary>The default market has no operating company behind it — a seed defect, not user input (ADR-0061 D3; a named country without an operator is not a market, ADR-0064 D1).</summary>
     public const string TenantNotFound = "tenant.not_found";
     /// <summary>Two upper-case letters (ISO 3166-1 alpha-2), the form the market chip prints.</summary>
     public const string CountryIsoAlpha2Invalid = "country.iso_alpha2_invalid";

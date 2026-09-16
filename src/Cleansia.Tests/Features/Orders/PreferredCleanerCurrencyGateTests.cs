@@ -281,7 +281,7 @@ public class PreferredCleanerCurrencyGateTests
         new(_session.Object, _membershipRepository.Object, _orderRepository.Object, _markets);
 
     private CreateRecurringBooking.Validator CreateRecurringValidator() =>
-        new(_orderRepository.Object, _session.Object, _savedAddressRepository.Object, _markets);
+        new(_orderRepository.Object, _session.Object, _savedAddressRepository.Object, _markets, OrderMarketDoubles.Servicing(Czechia));
 
     private UpdateRecurringBooking.Validator UpdateRecurringValidator() =>
         new(

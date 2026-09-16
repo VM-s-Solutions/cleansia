@@ -6,6 +6,7 @@ using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Bookings;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Repositories;
+using Cleansia.Core.Domain.Users;
 using Cleansia.Infra.Common.Validations;
 using FluentValidation;
 
@@ -34,17 +35,20 @@ public class CreateRecurringBooking
         private readonly IUserSessionProvider _userSessionProvider;
         private readonly ISavedAddressRepository _savedAddressRepository;
         private readonly ICurrencyResolutionService _currencyResolutionService;
+        private readonly ICountryRepository _countryRepository;
 
         public Validator(
             IOrderRepository orderRepository,
             IUserSessionProvider userSessionProvider,
             ISavedAddressRepository savedAddressRepository,
-            ICurrencyResolutionService currencyResolutionService)
+            ICurrencyResolutionService currencyResolutionService,
+            ICountryRepository countryRepository)
         {
             _orderRepository = orderRepository;
             _userSessionProvider = userSessionProvider;
             _savedAddressRepository = savedAddressRepository;
             _currencyResolutionService = currencyResolutionService;
+            _countryRepository = countryRepository;
 
             RuleFor(x => x.Frequency)
                 .Must(f => Enum.IsDefined(typeof(RecurrenceFrequency), f))
@@ -63,7 +67,12 @@ public class CreateRecurringBooking
             RuleFor(x => x.Rooms).GreaterThanOrEqualTo(0).WithMessage(BusinessErrorMessage.InvalidEnumValue);
             RuleFor(x => x.Bathrooms).GreaterThanOrEqualTo(0).WithMessage(BusinessErrorMessage.InvalidEnumValue);
 
-            RuleFor(x => x.SavedAddressId).NotEmpty().WithMessage(BusinessErrorMessage.Required);
+            RuleFor(x => x.SavedAddressId)
+                .Cascade(CascadeMode.Stop)
+                .NotEmpty()
+                .WithMessage(BusinessErrorMessage.Required)
+                .MustAsync(SavedAddressCountryIsServicedAsync)
+                .WithMessage(BusinessErrorMessage.CountryNotServiced);
 
             RuleFor(x => x.PaymentType)
                 .Must(p => Enum.IsDefined(typeof(PaymentType), p))
@@ -121,18 +130,41 @@ public class CreateRecurringBooking
         private async Task<bool> PreferredEmployeeIsPaidInTheAddressCurrencyAsync(
             string userId, string savedAddressId, string employeeId, CancellationToken cancellationToken)
         {
-            var addresses = await _savedAddressRepository.GetByUserAsync(userId, cancellationToken);
-            var address = addresses.FirstOrDefault(a => a.Id == savedAddressId);
-            if (address?.Address is null)
+            var address = await FindSavedAddressAsync(userId, savedAddressId, cancellationToken);
+            if (address is null)
             {
                 return true;
             }
 
             var orderCurrency = await _currencyResolutionService.ResolveCurrencyForCountryAsync(
-                address.Address.CountryId, cancellationToken);
+                address.CountryId, cancellationToken);
             var cleanerCurrency = await _currencyResolutionService.ResolveCurrencyForEmployeeAsync(
                 employeeId, cancellationToken);
             return cleanerCurrency.Id == orderCurrency.Id;
+        }
+
+        /// <summary>
+        /// The same answer the one-off booking gets from <c>OrderAddressResolver</c>: a saved address in
+        /// a country nobody operates — delisted, or a deactivated company's market — books nothing.
+        /// A saved address the handler will refuse passes so its own not-found answer is the one given.
+        /// </summary>
+        private async Task<bool> SavedAddressCountryIsServicedAsync(string savedAddressId, CancellationToken cancellationToken)
+        {
+            var userId = _userSessionProvider.GetUserId();
+            if (string.IsNullOrEmpty(userId))
+            {
+                return true;
+            }
+
+            var address = await FindSavedAddressAsync(userId, savedAddressId, cancellationToken);
+            return address is null
+                || await _countryRepository.IsServicedAsync(address.CountryId, cancellationToken);
+        }
+
+        private async Task<Address?> FindSavedAddressAsync(string userId, string savedAddressId, CancellationToken cancellationToken)
+        {
+            var addresses = await _savedAddressRepository.GetByUserAsync(userId, cancellationToken);
+            return addresses.FirstOrDefault(a => a.Id == savedAddressId)?.Address;
         }
     }
 

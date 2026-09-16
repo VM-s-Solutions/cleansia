@@ -183,7 +183,8 @@ public class CreateRecurringBookingPreferredCleanerTests
             _orderRepository.Object,
             _session.Object,
             _savedAddressRepository.Object,
-            OrderMarketDoubles.Trading(CreateOrderTestData.DefaultCurrency()));
+            OrderMarketDoubles.Trading(CreateOrderTestData.DefaultCurrency()),
+            OrderMarketDoubles.Servicing("country-cz"));
 
     private CreateRecurringBooking.Handler CreateHandler() =>
         new(

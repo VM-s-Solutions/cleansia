@@ -5,9 +5,14 @@ using System.Text;
 using System.Text.Json;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Services.Interfaces;
+using Cleansia.Core.Clients.Abstractions.Stripe;
+using Cleansia.Core.Domain.Bookings;
 using Cleansia.Core.Domain.Configuration;
+using Cleansia.Core.Domain.EmployeePayroll;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Internationalization;
+using Cleansia.Core.Domain.Memberships;
+using Cleansia.Core.Domain.Services;
 using Cleansia.Core.Domain.Tenancy;
 using Cleansia.Core.Domain.Users;
 using Cleansia.HostTests.Infrastructure;
@@ -20,12 +25,21 @@ namespace Cleansia.HostTests.Tests;
 
 /// <summary>
 /// ADR-0064 D1 end to end over the real hosts with two operating companies: A (<c>cleansia-cz</c>,
-/// the default market CZE) and B (<c>cleansia-sk</c>, SVK). Deactivating B delists SVK from every
-/// market directory and from <c>Country/GetServiced</c>, refuses every anonymous and signed-in
-/// booking-path write naming it with <c>country.not_serviced</c>, refuses B's cleaners on the partner
-/// audiences and on refresh while its administrators and customers keep signing in; reactivation
-/// restores all of it; the company holding the default market cannot be deactivated until the flag
-/// moves; every act is refused under the right key and leaves its admin audit row.
+/// the default market CZE) and B (<c>cleansia-sk</c>, SVK, with one service priced and paid in EUR, a
+/// Plus plan priced in EUR and a customer holding a saved Bratislava address). Deactivating B delists
+/// SVK from every market directory and from <c>Country/GetServiced</c>, refuses every anonymous and
+/// signed-in booking-path write naming it with <c>country.not_serviced</c>, refuses B's cleaners on the
+/// partner audiences and on refresh while its administrators and customers keep signing in;
+/// reactivation restores all of it; the company holding the default market cannot be deactivated
+/// until the flag moves; every act is refused under the right key and leaves its admin audit row.
+///
+/// <para>Every refusal is paired with the same request succeeding while B operates — a quote priced
+/// in EUR, a Plus purchase through a recording Stripe client, a recurring booking, a saved address, a
+/// non-empty catalogue — so a predicate that refused everything, or one that never delisted the
+/// catalogue, fails here. The one write that does not succeed on this harness is the booking itself
+/// (no serviced city is seeded, and past that <c>CreateOrder</c> geocodes an inline address through
+/// the outbound Mapbox seam); while B operates it is asserted on <c>city.not_serviced</c>, the refusal
+/// that is reachable only once the address resolver has admitted the country.</para>
 /// </summary>
 public sealed class CompanyLifecycleRouteTests(HostTestPostgresFixture db) : AuthzHostTestBase(db)
 {
@@ -36,6 +50,9 @@ public sealed class CompanyLifecycleRouteTests(HostTestPostgresFixture db) : Aut
 
     private const string EurId = "cur-eur-lifecycle";
     private const string SvkId = "country-svk-lifecycle";
+    private const string ServiceId = "service-lifecycle";
+    private const string PlanCode = "PLUS_MONTHLY";
+    private const string SavedAddressBId = "lifecycle-saved-address-b";
 
     private const string AdminAId = "lifecycle-admin-a";
     private const string AdminAEmail = "lifecycle-admin-a@hosttests.local";
@@ -55,6 +72,14 @@ public sealed class CompanyLifecycleRouteTests(HostTestPostgresFixture db) : Aut
     {
         [GoogleCleanerBToken] = new("sub-lifecycle-cleaner-b", GoogleCleanerBEmail, EmailVerified: true),
     });
+
+    private readonly RecordingStripeClient _stripe = new();
+
+    protected override void ConfigureCustomerHostServices(IServiceCollection services)
+    {
+        services.RemoveAll<IStripeClient>();
+        services.AddSingleton<IStripeClient>(_stripe);
+    }
 
     protected override void ConfigurePartnerHostServices(IServiceCollection services) => UseStubVerifier(services);
 
@@ -99,6 +124,20 @@ public sealed class CompanyLifecycleRouteTests(HostTestPostgresFixture db) : Aut
             ctx.CountryConfigurations.Add(
                 CountryConfiguration.Create(SvkId, "EUR", "sk", 0.20m).AssignOperator(HostTestTenants.B));
 
+            var category = ServiceCategory.Create("lifecycle", "Lifecycle", "Category under test");
+            ctx.Add(category);
+            var service = Service.Create(category.Id, "Lifecycle clean", "Under test", 60);
+            service.Id = ServiceId;
+            ctx.Add(service);
+            ctx.ServicePrices.Add(ServicePrice.Create(ServiceId, EurId, 40m, 10m));
+            var pay = EmployeePayConfig.CreateForService(ServiceId, 10m, EurId);
+            pay.TenantId = HostTestTenants.B;
+            ctx.Add(pay);
+
+            var plan = DomainSeed.MembershipPlan(PlanCode);
+            ctx.MembershipPlans.Add(plan);
+            ctx.MembershipPlanPrices.Add(MembershipPlanPrice.Create(plan.Id, EurId, 7.99m, $"price_hosttest_{PlanCode}_lifecycle"));
+
             ctx.Users.AddRange(
                 Stamped(DomainSeed.Admin(AdminAEmail), HostTestTenants.A).WithId(AdminAId),
                 Stamped(DomainSeed.Customer(CustomerAEmail), HostTestTenants.A).WithId(CustomerAId),
@@ -106,6 +145,14 @@ public sealed class CompanyLifecycleRouteTests(HostTestPostgresFixture db) : Aut
                 Stamped(DomainSeed.EmployeeUser(CleanerBEmail), HostTestTenants.B).WithId(CleanerBId),
                 Stamped(User.CreateWithGoogle(GoogleCleanerBEmail, "Google", "Cleaner", "sub-lifecycle-cleaner-b").UpgradeToEmployee(), HostTestTenants.B).WithId(GoogleCleanerBId),
                 Stamped(DomainSeed.Customer(CustomerBEmail), HostTestTenants.B).WithId(CustomerBId));
+
+            var bratislava = Address.Create("Hlavna 1", "Bratislava", "81101", SvkId, null, 48.1486, 17.1077);
+            bratislava.TenantId = HostTestTenants.B;
+            ctx.Addresses.Add(bratislava);
+            var savedInSlovakia = SavedAddress.Create(CustomerBId, bratislava.Id, "Home", isDefault: true);
+            savedInSlovakia.Id = SavedAddressBId;
+            savedInSlovakia.TenantId = HostTestTenants.B;
+            ctx.SavedAddresses.Add(savedInSlovakia);
         });
     }
 
@@ -154,34 +201,85 @@ public sealed class CompanyLifecycleRouteTests(HostTestPostgresFixture db) : Aut
         Assert.Contains(expectedKey, await response.Content.ReadAsStringAsync(), StringComparison.Ordinal);
     }
 
+    private static readonly DateTime CleaningDate = DateTime.UtcNow.Date.AddDays(5).AddHours(9);
+
     private static object QuoteAt(string countryId) => new
     {
-        selectedServiceIds = new[] { "service-lifecycle" },
+        selectedServiceIds = new[] { ServiceId },
         selectedPackageIds = Array.Empty<string>(),
         rooms = 2,
         bathrooms = 1,
         currencyId = (string?)null,
+        cleaningDate = CleaningDate,
         countryId,
     };
 
-    private static object GuestOrderAt(string countryId, string email) => new
+    private static object OrderAt(string countryId, string email, decimal totalPrice) => new
     {
-        customerName = "Guest Customer",
+        customerName = "Slovak Customer",
         customerEmail = email,
         customerPhone = "+421900000000",
         customerAddress = new { street = "Hlavna 1", city = "Bratislava", zipCode = "81101", countryId },
         savedAddressId = (string?)null,
         selectedPackageIds = Array.Empty<string>(),
-        selectedServiceIds = new[] { "service-lifecycle" },
+        selectedServiceIds = new[] { ServiceId },
         rooms = 2,
         bathrooms = 1,
         extras = new Dictionary<string, bool>(),
-        cleaningDate = DateTime.UtcNow.AddDays(5),
+        cleaningDate = CleaningDate,
         paymentType = (int)PaymentType.Cash,
         currencyId = (string?)null,
-        totalPrice = 100m,
+        totalPrice,
         termsAccepted = true,
     };
+
+    private static object RecurringBookingAt(string savedAddressId) => new
+    {
+        frequency = (int)RecurrenceFrequency.Weekly,
+        dayOfWeek = (int)System.DayOfWeek.Tuesday,
+        timeOfDay = "09:00",
+        rooms = 2,
+        bathrooms = 1,
+        savedAddressId,
+        selectedServiceIds = new[] { ServiceId },
+        selectedPackageIds = Array.Empty<string>(),
+        paymentType = (int)PaymentType.Card,
+        startsOn = DateTime.UtcNow.Date.AddDays(3),
+        endsOn = (DateTime?)null,
+        preferredEmployeeId = (string?)null,
+    };
+
+    private static object SavedAddressAt(string countryId, string label) => new
+    {
+        label,
+        street = "Obchodna 2",
+        city = "Bratislava",
+        zipCode = "81106",
+        countryId,
+        setAsDefault = false,
+        latitude = 48.1461,
+        longitude = 17.1116,
+    };
+
+    /// <summary>The EUR total the calculator quotes for <see cref="QuoteAt"/> — what the booking must resubmit.</summary>
+    private static async Task<decimal> QuotedEurTotalAsync(HttpResponseMessage quote)
+    {
+        HttpAssert.IsOk(quote);
+        var body = await BodyAsync(quote);
+        Assert.Equal("EUR", body.GetProperty("currencyCode").GetString());
+        var total = body.GetProperty("totalPrice").GetDecimal();
+        Assert.True(total > 0m);
+        return total;
+    }
+
+    private async Task<HashSet<string>> ServiceOverviewAsync(HttpClient client)
+    {
+        var overview = await client.GetAsync($"/api/Service/GetOverview?countryId={SvkId}");
+        HttpAssert.IsOk(overview);
+        return (await BodyAsync(overview)).EnumerateArray()
+            .Select(s => s.GetProperty("id").GetString()!)
+            .ToHashSet(StringComparer.Ordinal);
+    }
 
     private static object Registration(string email, string countryId) => new
     {
@@ -193,16 +291,6 @@ public sealed class CompanyLifecycleRouteTests(HostTestPostgresFixture db) : Aut
         countryId,
         termsAccepted = true,
     };
-
-    private static async Task<bool> IsRefusedNotServicedAsync(HttpResponseMessage response)
-    {
-        if (response.StatusCode != HttpStatusCode.BadRequest)
-        {
-            return false;
-        }
-
-        return (await response.Content.ReadAsStringAsync()).Contains(BusinessErrorMessage.CountryNotServiced, StringComparison.Ordinal);
-    }
 
     [Fact]
     public async Task NonAdmin_callers_are_403d_and_anonymous_401d_on_every_lifecycle_route()
@@ -234,15 +322,21 @@ public sealed class CompanyLifecycleRouteTests(HostTestPostgresFixture db) : Aut
         await AssertMarketDirectoriesAsync(svkListed: true);
     }
 
-    /// <summary>TC-LC-DEACT-2: the anonymous writes that name the closed market.</summary>
+    /// <summary>
+    /// TC-LC-DEACT-2: the anonymous writes that name the closed market. While B operates the quote is
+    /// priced in EUR and the guest order carrying that price gets past the country predicate (refused
+    /// on the city, which no test seeds); once B is deactivated the same bytes are refused on the
+    /// country and nothing is written; reactivation admits them again.
+    /// </summary>
     [Fact]
     public async Task Anonymous_register_quote_and_guest_order_naming_the_closed_market_are_refused_and_write_nothing()
     {
         await ArrangeTwoCompaniesAsync();
         var anonymous = CustomerClientAnonymous();
 
-        Assert.False(await IsRefusedNotServicedAsync(await anonymous.PostAsJsonAsync("/api/Order/Quote", QuoteAt(SvkId))));
-        Assert.False(await IsRefusedNotServicedAsync(await anonymous.PostAsJsonAsync("/api/Order/CreateOrder", GuestOrderAt(SvkId, "guest-open@hosttests.local"))));
+        var quotedTotal = await QuotedEurTotalAsync(await anonymous.PostAsJsonAsync("/api/Order/Quote", QuoteAt(SvkId)));
+        var openOrder = await anonymous.PostAsJsonAsync("/api/Order/CreateOrder", OrderAt(SvkId, "guest-open@hosttests.local", quotedTotal));
+        await HttpAssert.AssertBusinessErrorAsync(openOrder, BusinessErrorMessage.CityNotServiced);
 
         await DeactivateBAsync();
 
@@ -253,11 +347,12 @@ public sealed class CompanyLifecycleRouteTests(HostTestPostgresFixture db) : Aut
         var quote = await anonymous.PostAsJsonAsync("/api/Order/Quote", QuoteAt(SvkId));
         await HttpAssert.AssertBusinessErrorAsync(quote, BusinessErrorMessage.CountryNotServiced);
 
-        var order = await anonymous.PostAsJsonAsync("/api/Order/CreateOrder", GuestOrderAt(SvkId, "guest-closed@hosttests.local"));
+        var order = await anonymous.PostAsJsonAsync("/api/Order/CreateOrder", OrderAt(SvkId, "guest-closed@hosttests.local", quotedTotal));
         await HttpAssert.AssertBusinessErrorAsync(order, BusinessErrorMessage.CountryNotServiced);
         Assert.Equal(0, await QueryAsync(ctx => ctx.Orders.IgnoreQueryFilters().CountAsync()));
 
         HttpAssert.IsOk(await AdminB().PostAsync(ReactivateRoute, content: null));
+        Assert.Equal(quotedTotal, await QuotedEurTotalAsync(await anonymous.PostAsJsonAsync("/api/Order/Quote", QuoteAt(SvkId))));
         var registerAgain = await anonymous.PostAsJsonAsync("/api/Auth/Register", Registration("new-slovak@hosttests.local", SvkId));
         HttpAssert.IsOk(registerAgain);
         var landed = await QueryAsync(ctx => ctx.Users.IgnoreQueryFilters().SingleAsync(u => u.Email == "new-slovak@hosttests.local"));
@@ -265,31 +360,55 @@ public sealed class CompanyLifecycleRouteTests(HostTestPostgresFixture db) : Aut
     }
 
     /// <summary>
-    /// TC-LC-DEACT-3: the signed-in customer's booking-path writes at the closed market. The quote and
-    /// the booking read the same repository predicate, so the quote stands for the booking here — a
-    /// bookable order body needs the whole catalogue seeded, and the guest order above already proves
-    /// the write path.
+    /// TC-LC-DEACT-3 and its half of TC-LC-DEACT-5: B's customer quotes in EUR, buys Plus through the
+    /// recording Stripe client, schedules a recurring booking at the saved Bratislava address, saves a
+    /// second Slovak address and browses a non-empty catalogue while B operates; once B is deactivated
+    /// every one of those is refused <c>country.not_serviced</c> with no row written, the booking is
+    /// refused by <c>CreateOrder</c>'s own validator before the country is ever named (its price chain
+    /// runs ahead of the address resolver — pre-existing, and <c>CreateOrder</c> is diff-empty by the
+    /// ADR), and the catalogue answers empty; reactivation restores the quote and the catalogue.
     /// </summary>
     [Fact]
-    public async Task A_signed_in_customers_quote_and_plus_purchase_at_the_closed_market_are_refused_and_the_catalogue_is_empty()
+    public async Task A_signed_in_customers_booking_path_writes_at_the_closed_market_are_refused_and_the_catalogue_is_empty()
     {
         await ArrangeTwoCompaniesAsync();
         var customer = CustomerB();
-        var subscribe = new { PlanCode = "PLUS_MONTHLY", PaymentMethodConfirmed = true, CountryId = SvkId, IdempotencyToken = "lifecycle-sub-1" };
+        var subscribe = new { PlanCode, PaymentMethodConfirmed = true, CountryId = SvkId, IdempotencyToken = "lifecycle-sub-1" };
 
-        Assert.False(await IsRefusedNotServicedAsync(await customer.PostAsJsonAsync("/api/Order/Quote", QuoteAt(SvkId))));
-        Assert.False(await IsRefusedNotServicedAsync(await customer.PostAsJsonAsync("/api/Membership/Subscribe", subscribe)));
-        HttpAssert.IsOk(await customer.GetAsync($"/api/Service/GetOverview?countryId={SvkId}"));
+        var quotedTotal = await QuotedEurTotalAsync(await customer.PostAsJsonAsync("/api/Order/Quote", QuoteAt(SvkId)));
+        Assert.Contains(ServiceId, await ServiceOverviewAsync(customer));
+        HttpAssert.IsOk(await customer.PostAsJsonAsync("/api/Membership/Subscribe", subscribe));
+        Assert.Equal(1, await QueryAsync(ctx => ctx.UserMemberships.IgnoreQueryFilters().CountAsync(m => m.UserId == CustomerBId)));
+        HttpAssert.IsOk(await customer.PostAsJsonAsync("/api/RecurringBooking/Create", RecurringBookingAt(SavedAddressBId)));
+        Assert.Equal(1, await QueryAsync(ctx => ctx.RecurringBookingTemplates.IgnoreQueryFilters().CountAsync(t => t.UserId == CustomerBId)));
+        HttpAssert.IsOk(await customer.PostAsJsonAsync("/api/SavedAddress/Add", SavedAddressAt(SvkId, "Office")));
+        Assert.Equal(2, await QueryAsync(ctx => ctx.SavedAddresses.IgnoreQueryFilters().CountAsync(a => a.UserId == CustomerBId)));
+        var openOrder = await customer.PostAsJsonAsync("/api/Order/CreateOrder", OrderAt(SvkId, CustomerBEmail, quotedTotal));
+        await HttpAssert.AssertBusinessErrorAsync(openOrder, BusinessErrorMessage.CityNotServiced);
 
         await DeactivateBAsync();
 
         await HttpAssert.AssertBusinessErrorAsync(await customer.PostAsJsonAsync("/api/Order/Quote", QuoteAt(SvkId)), BusinessErrorMessage.CountryNotServiced);
-        await HttpAssert.AssertBusinessErrorAsync(await customer.PostAsJsonAsync("/api/Membership/Subscribe", subscribe), BusinessErrorMessage.CountryNotServiced);
-        Assert.Equal(0, await QueryAsync(ctx => ctx.UserMemberships.IgnoreQueryFilters().CountAsync()));
+        // A signed-in booking into a country nobody services is stopped by CreateOrder's validator
+        // before the address resolver can name the country: the unserviced country resolves to no
+        // market, the price chain judges the selection in the platform default currency and refuses
+        // it there. The claim here is that the booking no longer reaches the city check it reached
+        // while B operated, and writes nothing.
+        var closedOrder = await customer.PostAsJsonAsync("/api/Order/CreateOrder", OrderAt(SvkId, CustomerBEmail, quotedTotal));
+        Assert.Equal(HttpStatusCode.BadRequest, closedOrder.StatusCode);
+        Assert.DoesNotContain(BusinessErrorMessage.CityNotServiced, await closedOrder.Content.ReadAsStringAsync(), StringComparison.Ordinal);
+        Assert.Equal(0, await QueryAsync(ctx => ctx.Orders.IgnoreQueryFilters().CountAsync()));
+        await HttpAssert.AssertBusinessErrorAsync(await customer.PostAsJsonAsync("/api/Membership/Subscribe", subscribe with { IdempotencyToken = "lifecycle-sub-2" }), BusinessErrorMessage.CountryNotServiced);
+        Assert.Equal(1, await QueryAsync(ctx => ctx.UserMemberships.IgnoreQueryFilters().CountAsync(m => m.UserId == CustomerBId)));
+        await HttpAssert.AssertBusinessErrorAsync(await customer.PostAsJsonAsync("/api/RecurringBooking/Create", RecurringBookingAt(SavedAddressBId)), BusinessErrorMessage.CountryNotServiced);
+        Assert.Equal(1, await QueryAsync(ctx => ctx.RecurringBookingTemplates.IgnoreQueryFilters().CountAsync(t => t.UserId == CustomerBId)));
+        await HttpAssert.AssertBusinessErrorAsync(await customer.PostAsJsonAsync("/api/SavedAddress/Add", SavedAddressAt(SvkId, "Parents")), BusinessErrorMessage.CountryNotServiced);
+        Assert.Equal(2, await QueryAsync(ctx => ctx.SavedAddresses.IgnoreQueryFilters().CountAsync(a => a.UserId == CustomerBId)));
+        Assert.Empty(await ServiceOverviewAsync(customer));
 
-        var overview = await customer.GetAsync($"/api/Service/GetOverview?countryId={SvkId}");
-        HttpAssert.IsOk(overview);
-        Assert.Empty((await BodyAsync(overview)).EnumerateArray());
+        HttpAssert.IsOk(await AdminB().PostAsync(ReactivateRoute, content: null));
+        Assert.Equal(quotedTotal, await QuotedEurTotalAsync(await customer.PostAsJsonAsync("/api/Order/Quote", QuoteAt(SvkId))));
+        Assert.Contains(ServiceId, await ServiceOverviewAsync(customer));
     }
 
     /// <summary>TC-LC-DEACT-4 and the sign-in half of TC-LC-DEACT-5.</summary>

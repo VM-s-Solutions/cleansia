@@ -499,7 +499,7 @@ export class OrderDetailComponent implements OnInit {
    * costs more trust than a missing sentence.
    *
    * Mirrors `Cleansia.Core.Domain.Orders.OrderCancellationReasons`, iOS `CancellationReasonCopy` and
-   * Android `cancellationReasonText`.
+   * Android `cancellationReasonRes`.
    */
   protected cancellationReasonKey(): string | null {
     const reason = this.order()?.systemCancellationReason;

@@ -425,6 +425,7 @@ data class CancelOrderResponse(
     val refundAmount: Double,
     val totalPrice: Double,
     val refundInitiated: Boolean,
+    val actualRefundAmount: Double? = null,
 )
 
 /**

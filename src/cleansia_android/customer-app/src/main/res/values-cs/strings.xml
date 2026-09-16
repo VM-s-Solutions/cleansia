@@ -1375,4 +1375,17 @@
     <string name="error_dispute_line_not_on_order">Jedna z vybraných služeb na té objednávce není. Otevřete formulář znovu a zkuste to ještě jednou.</string>
     <string name="order_market_unknown">Trh není k dispozici</string>
     <string name="order_market_label">%1$s · %2$s</string>
+    <string name="guest_order_entry">Najít rezervaci bez účtu</string>
+    <string name="guest_order_title">Rezervace bez účtu</string>
+    <string name="guest_order_intro">Zadejte číslo rezervace, e-mail a potvrzovací kód z potvrzovacího e-mailu.</string>
+    <string name="guest_order_number">Číslo rezervace</string>
+    <string name="guest_order_code">Potvrzovací kód</string>
+    <string name="guest_order_lookup">Najít rezervaci</string>
+    <string name="guest_order_required">Zadejte číslo rezervace, e-mail a potvrzovací kód.</string>
+    <string name="guest_order_empty">Po vyhledání se zde zobrazí podrobnosti rezervace.</string>
+    <string name="guest_order_loading">Hledáme vaši rezervaci…</string>
+    <string name="guest_order_cancel">Zrušit rezervaci</string>
+    <string name="guest_order_cannot_cancel">Tuto rezervaci nelze zrušit.</string>
+    <string name="guest_order_preview_required">Poplatek za zrušení se nepodařilo ověřit. Před potvrzením zrušení to zkuste znovu.</string>
+    <string name="guest_order_fee_estimate">Storno poplatek: %1$s. Maximální vrácení platby kartou: %2$s. Vrátit lze pouze přijaté platby kartou; v potvrzení uvidíte skutečně vrácenou částku.</string>
 </resources>

@@ -1484,6 +1484,29 @@
       "change_email": "Change e-mail"
     },
     "track_order": {
+      "cancellation": {
+        "action": "Cancel booking",
+        "title": "Cancel this booking?",
+        "explanation": "Review the fee for this booking before confirming cancellation.",
+        "fee": "Cancellation fee",
+        "refund_estimate": "Maximum card refund",
+        "refund_note": "Only collected card payments can be refunded. Your confirmation will show the amount actually issued.",
+        "confirm": "Confirm cancellation",
+        "keep": "Keep booking",
+        "loading": "Calculating the cancellation fee…",
+        "preview_error": "We could not load a valid fee preview. Try again before cancelling.",
+        "submit_error": "We could not cancel this booking. Please try again.",
+        "retry": "Try again",
+        "success": "Your booking is cancelled. We will email your confirmation.",
+        "refund_success": "A refund of {{amount}} was issued.",
+        "tier": {
+          "0": "No cleaner has accepted this booking.",
+          "1": "This booking is within the cancellation grace period.",
+          "2": "This booking is outside the chargeable cancellation window.",
+          "3": "A partial cancellation fee applies.",
+          "4": "A last-minute cancellation fee applies."
+        }
+      },
       "title": "Track Your Order",
       "subtitle": "Enter your order number and email to check the status of your order",
       "order_number": "Order Number",

@@ -1372,4 +1372,17 @@
     <string name="error_dispute_line_not_on_order">Однієї з обраних послуг немає в цьому замовленні. Відкрийте форму знову та спробуйте ще раз.</string>
     <string name="order_market_unknown">Ринок недоступний</string>
     <string name="order_market_label">%1$s · %2$s</string>
+    <string name="guest_order_entry">Знайти бронювання без облікового запису</string>
+    <string name="guest_order_title">Бронювання без облікового запису</string>
+    <string name="guest_order_intro">Введіть номер бронювання, електронну пошту та код підтвердження з листа про бронювання.</string>
+    <string name="guest_order_number">Номер бронювання</string>
+    <string name="guest_order_code">Код підтвердження</string>
+    <string name="guest_order_lookup">Знайти бронювання</string>
+    <string name="guest_order_required">Введіть номер бронювання, електронну пошту та код підтвердження.</string>
+    <string name="guest_order_empty">Після пошуку тут з’являться деталі бронювання.</string>
+    <string name="guest_order_loading">Шукаємо ваше бронювання…</string>
+    <string name="guest_order_cancel">Скасувати бронювання</string>
+    <string name="guest_order_cannot_cancel">Це бронювання неможливо скасувати.</string>
+    <string name="guest_order_preview_required">Не вдалося перевірити плату за скасування. Спробуйте ще раз, перш ніж підтвердити скасування.</string>
+    <string name="guest_order_fee_estimate">Збір за скасування: %1$s. Максимальне повернення на картку: %2$s. Повернути можна лише отримані платежі карткою; у підтвердженні буде вказано фактично повернену суму.</string>
 </resources>

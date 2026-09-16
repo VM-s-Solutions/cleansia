@@ -1484,6 +1484,29 @@
       "change_email": "Změnit e-mail"
     },
     "track_order": {
+      "cancellation": {
+        "action": "Zrušit objednávku",
+        "title": "Zrušit tuto objednávku?",
+        "explanation": "Před potvrzením zrušení si zkontrolujte poplatek za tuto objednávku.",
+        "fee": "Storno poplatek",
+        "refund_estimate": "Maximální vrácení platby kartou",
+        "refund_note": "Vrátit lze pouze přijaté platby kartou. V potvrzení uvidíte skutečně vrácenou částku.",
+        "confirm": "Potvrdit zrušení",
+        "keep": "Ponechat objednávku",
+        "loading": "Počítáme storno poplatek…",
+        "preview_error": "Nepodařilo se načíst platný přehled poplatku. Před zrušením to zkuste znovu.",
+        "submit_error": "Objednávku se nepodařilo zrušit. Zkuste to prosím znovu.",
+        "retry": "Zkusit znovu",
+        "success": "Objednávka je zrušená. Potvrzení vám pošleme e-mailem.",
+        "refund_success": "Byla vrácena částka {{amount}}.",
+        "tier": {
+          "0": "Tuto objednávku zatím nepřijal žádný pracovník.",
+          "1": "Objednávka je v ochranné lhůtě pro bezplatné zrušení.",
+          "2": "Objednávka je mimo období zpoplatněného zrušení.",
+          "3": "Platí částečný storno poplatek.",
+          "4": "Platí storno poplatek za zrušení na poslední chvíli."
+        }
+      },
       "title": "Sledovat objednávku",
       "subtitle": "Zadejte číslo objednávky a e-mail pro kontrolu stavu vaší objednávky",
       "order_number": "Číslo objednávky",

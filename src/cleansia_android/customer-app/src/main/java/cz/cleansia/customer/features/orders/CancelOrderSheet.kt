@@ -84,7 +84,7 @@ private enum class CancelReasonOption(val code: String, val labelRes: Int) {
  *    confirmation.
  *  - Confirm is held back only while the quote is in flight. A quote that
  *    FAILS never blocks a cancellation — the card says so and the button stays
- *    live.
+ *    live for signed-in callers. Guests require a valid preview.
  *  - Clicking the primary button never closes the sheet directly; the VM
  *    observes the result and emits on a SharedFlow that the screen uses to
  *    drive the dismissal.
@@ -103,6 +103,8 @@ fun CancelOrderSheet(
     isSubmitting: Boolean = false,
     errorMessage: String? = null,
     onReasonChanged: () -> Unit = {},
+    requireValidPreview: Boolean = false,
+    maxReasonLength: Int? = null,
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     var selectedReason by remember { mutableStateOf<CancelReasonOption?>(null) }
@@ -114,6 +116,7 @@ fun CancelOrderSheet(
         isOtherReason = selectedReason == CancelReasonOption.Other,
         notes = notes,
         isSubmitting = isSubmitting,
+        requireValidPreview = requireValidPreview,
     )
 
     ModalBottomSheet(
@@ -136,7 +139,7 @@ fun CancelOrderSheet(
             )
             Spacer(Modifier.height(12.dp))
 
-            FeePreviewBlock(state = previewState, onRetry = onRetryPreview)
+            FeePreviewBlock(state = previewState, onRetry = onRetryPreview, requireValidPreview = requireValidPreview)
             Spacer(Modifier.height(16.dp))
 
             // Reason picker — tap a chip; tapping again deselects. "Other"
@@ -154,6 +157,9 @@ fun CancelOrderSheet(
                 enabled = !isSubmitting,
                 onSelect = { picked ->
                     selectedReason = picked
+                    if (maxReasonLength != null) {
+                        notes = notes.take((maxReasonLength - (picked?.code?.length ?: 0) - 2).coerceAtLeast(0))
+                    }
                     if (!errorMessage.isNullOrBlank()) onReasonChanged()
                 },
             )
@@ -167,8 +173,11 @@ fun CancelOrderSheet(
                 OutlinedTextField(
                     value = notes,
                     onValueChange = { next ->
-                        val clipped = if (next.length > MAX_REASON_LENGTH) {
-                            next.substring(0, MAX_REASON_LENGTH)
+                        val limit = maxReasonLength?.let {
+                            (it - (selectedReason?.code?.length ?: 0) - 2).coerceAtLeast(0)
+                        } ?: MAX_REASON_LENGTH
+                        val clipped = if (next.length > limit) {
+                            next.substring(0, limit)
                         } else {
                             next
                         }
@@ -333,6 +342,7 @@ private fun ReasonChipGrid(
 private fun FeePreviewBlock(
     state: CancellationPreviewUiState,
     onRetry: () -> Unit,
+    requireValidPreview: Boolean,
 ) {
     when (state) {
         CancellationPreviewUiState.Loading -> FeeCard(
@@ -348,11 +358,11 @@ private fun FeePreviewBlock(
                 )
             },
         )
-        CancellationPreviewUiState.Error -> UnavailableFeeCard(onRetry)
+        CancellationPreviewUiState.Error -> UnavailableFeeCard(onRetry, requireValidPreview)
         is CancellationPreviewUiState.Loaded -> {
-            val callout = cancellationFeeCallout(state.preview)
+            val callout = cancellationFeeCallout(state.preview, refundIsEstimate = requireValidPreview)
             if (callout == null) {
-                UnavailableFeeCard(onRetry)
+                UnavailableFeeCard(onRetry, requireValidPreview)
             } else {
                 LoadedFeeCard(callout, state.preview.currencyCode)
             }
@@ -394,14 +404,17 @@ private fun LoadedFeeCard(callout: CancellationFeeCallout, currencyCode: String?
 }
 
 @Composable
-private fun UnavailableFeeCard(onRetry: () -> Unit) {
+private fun UnavailableFeeCard(onRetry: () -> Unit, requireValidPreview: Boolean) {
     val tint = MaterialTheme.colorScheme.onSurfaceVariant
     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
         FeeCard(
             tint = tint,
             icon = Icons.Outlined.Warning,
             title = stringResource(R.string.order_cancel_fee_neutral),
-            subtitle = stringResource(R.string.order_cancel_fee_unavailable),
+            subtitle = stringResource(
+                if (requireValidPreview) R.string.guest_order_preview_required
+                else R.string.order_cancel_fee_unavailable,
+            ),
         )
         CleansiaTextLink(
             text = stringResource(R.string.order_cancel_fee_retry),

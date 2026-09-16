@@ -79,6 +79,17 @@ class CancellationFeeCalloutTest {
     }
 
     @Test
+    fun `guest charged tiers identify policy refund as an estimate without changing signed in copy`() {
+        for (tier in listOf(3, 4)) {
+            val quote = preview(tier = tier, feeAmount = 22.5, refundAmount = 67.5)
+            val guest = cancellationFeeCallout(quote, refundIsEstimate = true)!!
+            assertEquals(R.string.guest_order_fee_estimate, guest.amountRes)
+            assertEquals(listOf(22.5, 67.5), guest.amounts)
+            assertEquals(R.string.order_cancel_fee_split, cancellationFeeCallout(quote)!!.amountRes)
+        }
+    }
+
+    @Test
     fun `rate disagreeing with the tier does not move the copy`() {
         val callout = cancellationFeeCallout(
             preview(tier = 2, feeRate = 0.5, feeAmount = 500.0, refundAmount = 500.0),

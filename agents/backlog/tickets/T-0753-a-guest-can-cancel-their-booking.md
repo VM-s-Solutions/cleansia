@@ -72,30 +72,30 @@ once this ticket ships.
 
 ## Acceptance criteria
 
-- [ ] **AC1** — Given a guest booking in `New` or `Confirmed` looked up with its order number, e-mail
+- [x] **AC1** — Given a guest booking in `New` or `Confirmed` looked up with its order number, e-mail
       and confirmation code, When the guest cancels it, Then the order is `Cancelled` with
       `CancelledBy.Customer`, the fee tier and refund are the ones `CancellationAssessor` computes for a
       signed-in customer at the same notice, the refund is issued on a paid card order and the credit
       returned on an unpaid one, and the response carries the same figures the signed-in cancel returns.
-- [ ] **AC2** — Given a wrong e-mail, a wrong confirmation code or an order number that is not a guest
+- [x] **AC2** — Given a wrong e-mail, a wrong confirmation code or an order number that is not a guest
       booking, When the cancel is attempted, Then it is refused `order.not_found` — the same answer for
       all three — and nothing changes.
-- [ ] **AC3** — Given a guest booking a cleaner has started (`InProgress`), When the guest cancels,
+- [x] **AC3** — Given a guest booking a cleaner has started (`InProgress`), When the guest cancels,
       Then it is refused `order.in_progress_cannot_cancel`, as for a signed-in customer.
-- [ ] **AC4** — Given a successful guest cancel, Then exactly one `customer.order.cancel` row exists
+- [x] **AC4** — Given a successful guest cancel, Then exactly one `customer.order.cancel` row exists
       with `UserId` null, `ResourceType = Order`, the order id, `OrderCancellationEvidence` and the
       caller's IP, stamped with the **order's** operator; a refusal leaves one failure row with the key.
-- [ ] **AC5** — Given a guest booking placed in a second operator's market, When the guest cancels
+- [x] **AC5** — Given a guest booking placed in a second operator's market, When the guest cancels
       from a client that names no market, Then the cancel succeeds and every row it writes carries that
       operator (`SecondTenantIsolationHostTests` shape).
-- [ ] **AC6** — Given a guest cancel, Then a cancellation e-mail (with the refund line when one was
+- [x] **AC6** — Given a guest cancel, Then a cancellation e-mail (with the refund line when one was
       issued) is sent to the booking's e-mail address, and no notification row or push is attempted
       against a user id.
 - [ ] **AC7** — Given the web `/track-order` page, the Android and the iOS guest lookup screens, When
       a cancellable booking is shown, Then a cancel action with the fee preview is offered and works
       end to end; the routes sit in the `auth` rate window (`RateLimitCoverageGuardTests` green, the
       roster guard green — the marker is on an `IOperatorScopedRequest`).
-- [ ] **AC8** — HostTests: the route answers `200` anonymous with a valid key on both customer hosts,
+- [x] **AC8** — HostTests: the route answers `200` anonymous with a valid key on both customer hosts,
       `404` on the partner and admin hosts; the request log suppresses the e-mail (S6).
 
 ## Out of scope (the NOT list)
@@ -109,6 +109,16 @@ once this ticket ships.
 
 ## Status log
 
+- 2026-09-16 — Web and Android guest cancellation are implemented and source-reviewed. The web
+  flow passed 349 affected tests, all three app typechecks, clean lint and a guarded production
+  build with zero application-network attempts. Isolated browser fixtures exercised lookup,
+  cancellation preview and actual-refund success at 400 × 844 and 768 × 1024 with no errors,
+  missing fixtures or outbound requests. The new cancellation controls meet the 44 px target.
+  Android customer passed 1,114 tests, core 236 and partner 586, with every task executed using
+  `--rerun-tasks --no-build-cache` (53, 22 and 53 tasks); Gradle stopped afterward. Kotlin clients
+  were regenerated from the committed customer and partner specifications. Dedicated review closed
+  the guest preview's overpromised-refund copy in all five locales. iOS still awaits the existing
+  contract-generation clarification, so the three-client acceptance criterion remains open.
 - 2026-09-16 — Backend and generated-contract checkpoint verified: 1,322 affected unit tests,
   all 501 PostgreSQL integration tests, all 314 host tests before the additive lookup alias, then
   all 22 guest host cases after it. Three web lookup wire tests and all three app compilation

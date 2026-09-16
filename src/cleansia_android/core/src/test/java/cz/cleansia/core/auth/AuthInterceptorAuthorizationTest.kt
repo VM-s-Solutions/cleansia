@@ -81,6 +81,15 @@ class AuthInterceptorAuthorizationTest {
     }
 
     @Test
+    fun `guest order endpoints omit stale bearer while signed in cancellation keeps it`() {
+        assertNull(get("/api/Order/Lookup").getHeader("Authorization"))
+        assertNull(get("/api/Order/GuestCancellationPreview").getHeader("Authorization"))
+        assertNull(get("/api/Order/CancelGuest").getHeader("Authorization"))
+        assertEquals("Bearer access-1", get("/api/Order/Cancel").getHeader("Authorization"))
+        assertEquals("Bearer access-1", get("/api/Order/CancellationPreview").getHeader("Authorization"))
+    }
+
+    @Test
     fun `sends no bearer when signed out`() {
         every { tokenStore.current() } returns null
 

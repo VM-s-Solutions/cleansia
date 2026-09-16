@@ -1372,4 +1372,17 @@
     <string name="error_dispute_line_not_on_order">Одной из выбранных услуг нет в этом заказе. Откройте форму снова и попробуйте ещё раз.</string>
     <string name="order_market_unknown">Рынок недоступен</string>
     <string name="order_market_label">%1$s · %2$s</string>
+    <string name="guest_order_entry">Найти бронирование без учётной записи</string>
+    <string name="guest_order_title">Бронирование без учётной записи</string>
+    <string name="guest_order_intro">Введите номер бронирования, электронную почту и код подтверждения из письма о бронировании.</string>
+    <string name="guest_order_number">Номер бронирования</string>
+    <string name="guest_order_code">Код подтверждения</string>
+    <string name="guest_order_lookup">Найти бронирование</string>
+    <string name="guest_order_required">Введите номер бронирования, электронную почту и код подтверждения.</string>
+    <string name="guest_order_empty">После поиска здесь появятся сведения о бронировании.</string>
+    <string name="guest_order_loading">Ищем ваше бронирование…</string>
+    <string name="guest_order_cancel">Отменить бронирование</string>
+    <string name="guest_order_cannot_cancel">Это бронирование невозможно отменить.</string>
+    <string name="guest_order_preview_required">Не удалось проверить плату за отмену. Попробуйте ещё раз, прежде чем подтвердить отмену.</string>
+    <string name="guest_order_fee_estimate">Сбор за отмену: %1$s. Максимальный возврат на карту: %2$s. Вернуть можно только полученные платежи картой; в подтверждении будет указана фактически возвращённая сумма.</string>
 </resources>

@@ -18,6 +18,9 @@ object Routes {
     data object SignIn
 
     @Serializable
+    data object GuestOrder
+
+    @Serializable
     data object SignUp
 
     @Serializable

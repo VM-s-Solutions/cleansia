@@ -70,9 +70,9 @@ need backfilling.
 
 ### Added
 
-- **Guest cancellation API:** guests can preview the standard cancellation fee and cancel using
+- **Guest cancellation on customer web and Android:** guests can preview the standard cancellation fee and cancel using
   their booking number, email and confirmation code. Confirmation email reports any refund actually
-  issued. Web and mobile cancellation screens are still being connected. Guest lookup also accepts
+  issued. The iOS screen remains pending. Guest lookup also accepts
   a POST body, keeping these credentials out of request URLs.
 
 - **Customer — one account can book in any serviced market with an active operator.** The service

@@ -31,6 +31,11 @@ export type {
 } from './lib/client/customer-client';
 export {
   OrderClient as CustomerOrderClient,
+  CancelGuestOrderCommand,
+  CancelOrderResponse,
+  CancellationFeeTier,
+  GetCancellationFeePreviewResponse,
+  GetGuestCancellationFeePreviewQuery,
   LookupOrderQuery,
   LookupOrderResponse,
   LookupOrderBatchQuery,

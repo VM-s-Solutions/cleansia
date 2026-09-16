@@ -360,7 +360,7 @@ private fun GenCurrencyDetailDto.toAppDto(): OrderCurrencyDetailDto = OrderCurre
  * they are getting nothing back on the one screen they will screenshot, and `refundInitiated = false`
  * invents a refund that was never started.
  */
-private fun GenCancelOrderResponse?.toAppDto(): CancelOrderResponse {
+internal fun GenCancelOrderResponse?.toAppDto(): CancelOrderResponse {
     val receipt = required("CancelOrderResponse")
     return CancelOrderResponse(
         orderId = receipt.orderId,
@@ -368,6 +368,7 @@ private fun GenCancelOrderResponse?.toAppDto(): CancelOrderResponse {
         refundAmount = receipt.refundAmount.required("refundAmount"),
         totalPrice = receipt.totalPrice.required("totalPrice"),
         refundInitiated = receipt.refundInitiated.required("refundInitiated"),
+        actualRefundAmount = receipt.actualRefundAmount,
     )
 }
 
@@ -375,7 +376,7 @@ private fun GenCancelOrderResponse?.toAppDto(): CancelOrderResponse {
  * The tier is refused rather than defaulted — every other field on the generated response is nullable
  * too, so ordinal 0 would quote a free cancellation on the strength of a field the server never sent.
  */
-private fun GenGetCancellationFeePreviewResponse?.toAppDto(): CancellationFeePreviewDto {
+internal fun GenGetCancellationFeePreviewResponse?.toAppDto(): CancellationFeePreviewDto {
     val quote = required("GetCancellationFeePreviewResponse")
     return CancellationFeePreviewDto(
         orderId = quote.orderId,

@@ -1185,6 +1185,402 @@ export class AdminCompanyClient implements IAdminCompanyClient {
     }
 }
 
+export interface IAdminCompanyLifecycleClient {
+    /**
+     * @return OK
+     */
+    get(): Observable<CompanyLifecycleDto>;
+    /**
+     * @return OK
+     */
+    deactivate(): Observable<DeactivateCompanyResponse>;
+    /**
+     * @return OK
+     */
+    reactivate(): Observable<ReactivateCompanyResponse>;
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    windDown(body?: WindDownCompanyCommand | undefined): Observable<WindDownCompanyResponse>;
+    /**
+     * @return OK
+     */
+    archive(): Observable<ArchiveCompanyResponse>;
+}
+
+@Injectable({
+    providedIn: 'root'
+})
+export class AdminCompanyLifecycleClient implements IAdminCompanyLifecycleClient {
+    private http: HttpClient;
+    private baseUrl: string;
+    protected jsonParseReviver: ((key: string, value: any) => any) | undefined = undefined;
+
+    constructor(@Inject(HttpClient) http: HttpClient, @Optional() @Inject(ADMINAPIBASEURL) baseUrl?: string) {
+        this.http = http;
+        this.baseUrl = baseUrl ?? "";
+    }
+
+    /**
+     * @return OK
+     */
+    get(): Observable<CompanyLifecycleDto> {
+        let url = this.baseUrl + "/api/AdminCompanyLifecycle/get";
+        url = url.replace(/[?&]$/, "");
+
+        let options : any = {
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Accept": "application/json"
+            })
+        };
+
+        return this.http.request("get", url, options).pipe(ObservableMergeMap((response : any) => {
+            return this.processGet(response);
+        })).pipe(ObservableCatch((response: any) => {
+            if (response instanceof HttpResponseBase) {
+                try {
+                    return this.processGet(response as any);
+                } catch (e) {
+                    return ObservableThrow(e) as any as Observable<CompanyLifecycleDto>;
+                }
+            } else
+                return ObservableThrow(response) as any as Observable<CompanyLifecycleDto>;
+        }));
+    }
+
+    protected processGet(response: HttpResponseBase): Observable<CompanyLifecycleDto> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result200: any = null;
+            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result200 = CompanyLifecycleDto.fromJS(resultData200);
+            return ObservableOf(result200);
+            }));
+        } else if (status === 401) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result401: any = null;
+            let resultData401 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result401 = ProblemDetails.fromJS(resultData401);
+            return throwException("Unauthorized", status, ResponseText, Headers, result401);
+            }));
+        } else if (status === 403) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result403: any = null;
+            let resultData403 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result403 = ProblemDetails.fromJS(resultData403);
+            return throwException("Forbidden", status, ResponseText, Headers, result403);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
+            }));
+        }
+        return ObservableOf(null as any);
+    }
+
+    /**
+     * @return OK
+     */
+    deactivate(): Observable<DeactivateCompanyResponse> {
+        let url = this.baseUrl + "/api/AdminCompanyLifecycle/deactivate";
+        url = url.replace(/[?&]$/, "");
+
+        let options : any = {
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Accept": "application/json"
+            })
+        };
+
+        return this.http.request("post", url, options).pipe(ObservableMergeMap((response : any) => {
+            return this.processDeactivate(response);
+        })).pipe(ObservableCatch((response: any) => {
+            if (response instanceof HttpResponseBase) {
+                try {
+                    return this.processDeactivate(response as any);
+                } catch (e) {
+                    return ObservableThrow(e) as any as Observable<DeactivateCompanyResponse>;
+                }
+            } else
+                return ObservableThrow(response) as any as Observable<DeactivateCompanyResponse>;
+        }));
+    }
+
+    protected processDeactivate(response: HttpResponseBase): Observable<DeactivateCompanyResponse> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result200: any = null;
+            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result200 = DeactivateCompanyResponse.fromJS(resultData200);
+            return ObservableOf(result200);
+            }));
+        } else if (status === 400) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result400: any = null;
+            let resultData400 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result400 = ProblemDetails.fromJS(resultData400);
+            return throwException("Bad Request", status, ResponseText, Headers, result400);
+            }));
+        } else if (status === 401) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result401: any = null;
+            let resultData401 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result401 = ProblemDetails.fromJS(resultData401);
+            return throwException("Unauthorized", status, ResponseText, Headers, result401);
+            }));
+        } else if (status === 403) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result403: any = null;
+            let resultData403 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result403 = ProblemDetails.fromJS(resultData403);
+            return throwException("Forbidden", status, ResponseText, Headers, result403);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
+            }));
+        }
+        return ObservableOf(null as any);
+    }
+
+    /**
+     * @return OK
+     */
+    reactivate(): Observable<ReactivateCompanyResponse> {
+        let url = this.baseUrl + "/api/AdminCompanyLifecycle/reactivate";
+        url = url.replace(/[?&]$/, "");
+
+        let options : any = {
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Accept": "application/json"
+            })
+        };
+
+        return this.http.request("post", url, options).pipe(ObservableMergeMap((response : any) => {
+            return this.processReactivate(response);
+        })).pipe(ObservableCatch((response: any) => {
+            if (response instanceof HttpResponseBase) {
+                try {
+                    return this.processReactivate(response as any);
+                } catch (e) {
+                    return ObservableThrow(e) as any as Observable<ReactivateCompanyResponse>;
+                }
+            } else
+                return ObservableThrow(response) as any as Observable<ReactivateCompanyResponse>;
+        }));
+    }
+
+    protected processReactivate(response: HttpResponseBase): Observable<ReactivateCompanyResponse> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result200: any = null;
+            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result200 = ReactivateCompanyResponse.fromJS(resultData200);
+            return ObservableOf(result200);
+            }));
+        } else if (status === 400) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result400: any = null;
+            let resultData400 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result400 = ProblemDetails.fromJS(resultData400);
+            return throwException("Bad Request", status, ResponseText, Headers, result400);
+            }));
+        } else if (status === 401) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result401: any = null;
+            let resultData401 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result401 = ProblemDetails.fromJS(resultData401);
+            return throwException("Unauthorized", status, ResponseText, Headers, result401);
+            }));
+        } else if (status === 403) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result403: any = null;
+            let resultData403 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result403 = ProblemDetails.fromJS(resultData403);
+            return throwException("Forbidden", status, ResponseText, Headers, result403);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
+            }));
+        }
+        return ObservableOf(null as any);
+    }
+
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    windDown(body?: WindDownCompanyCommand | undefined): Observable<WindDownCompanyResponse> {
+        let url = this.baseUrl + "/api/AdminCompanyLifecycle/wind-down";
+        url = url.replace(/[?&]$/, "");
+
+        const content = JSON.stringify(body);
+
+        let options : any = {
+            body: content,
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            })
+        };
+
+        return this.http.request("post", url, options).pipe(ObservableMergeMap((response : any) => {
+            return this.processWindDown(response);
+        })).pipe(ObservableCatch((response: any) => {
+            if (response instanceof HttpResponseBase) {
+                try {
+                    return this.processWindDown(response as any);
+                } catch (e) {
+                    return ObservableThrow(e) as any as Observable<WindDownCompanyResponse>;
+                }
+            } else
+                return ObservableThrow(response) as any as Observable<WindDownCompanyResponse>;
+        }));
+    }
+
+    protected processWindDown(response: HttpResponseBase): Observable<WindDownCompanyResponse> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result200: any = null;
+            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result200 = WindDownCompanyResponse.fromJS(resultData200);
+            return ObservableOf(result200);
+            }));
+        } else if (status === 400) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result400: any = null;
+            let resultData400 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result400 = ProblemDetails.fromJS(resultData400);
+            return throwException("Bad Request", status, ResponseText, Headers, result400);
+            }));
+        } else if (status === 401) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result401: any = null;
+            let resultData401 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result401 = ProblemDetails.fromJS(resultData401);
+            return throwException("Unauthorized", status, ResponseText, Headers, result401);
+            }));
+        } else if (status === 403) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result403: any = null;
+            let resultData403 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result403 = ProblemDetails.fromJS(resultData403);
+            return throwException("Forbidden", status, ResponseText, Headers, result403);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
+            }));
+        }
+        return ObservableOf(null as any);
+    }
+
+    /**
+     * @return OK
+     */
+    archive(): Observable<ArchiveCompanyResponse> {
+        let url = this.baseUrl + "/api/AdminCompanyLifecycle/archive";
+        url = url.replace(/[?&]$/, "");
+
+        let options : any = {
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Accept": "application/json"
+            })
+        };
+
+        return this.http.request("post", url, options).pipe(ObservableMergeMap((response : any) => {
+            return this.processArchive(response);
+        })).pipe(ObservableCatch((response: any) => {
+            if (response instanceof HttpResponseBase) {
+                try {
+                    return this.processArchive(response as any);
+                } catch (e) {
+                    return ObservableThrow(e) as any as Observable<ArchiveCompanyResponse>;
+                }
+            } else
+                return ObservableThrow(response) as any as Observable<ArchiveCompanyResponse>;
+        }));
+    }
+
+    protected processArchive(response: HttpResponseBase): Observable<ArchiveCompanyResponse> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result200: any = null;
+            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result200 = ArchiveCompanyResponse.fromJS(resultData200);
+            return ObservableOf(result200);
+            }));
+        } else if (status === 400) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result400: any = null;
+            let resultData400 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result400 = ProblemDetails.fromJS(resultData400);
+            return throwException("Bad Request", status, ResponseText, Headers, result400);
+            }));
+        } else if (status === 401) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result401: any = null;
+            let resultData401 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result401 = ProblemDetails.fromJS(resultData401);
+            return throwException("Unauthorized", status, ResponseText, Headers, result401);
+            }));
+        } else if (status === 403) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result403: any = null;
+            let resultData403 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result403 = ProblemDetails.fromJS(resultData403);
+            return throwException("Forbidden", status, ResponseText, Headers, result403);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
+            }));
+        }
+        return ObservableOf(null as any);
+    }
+}
+
 export interface IAdminCountryClient {
     /**
      * @return OK
@@ -18955,6 +19351,46 @@ export interface IApproveInvoiceResponse {
     invoiceId: string | undefined;
 }
 
+export class ArchiveCompanyResponse implements IArchiveCompanyResponse {
+    state!: CompanyLifecycleState;
+    archiveRequestedOn!: Date | undefined;
+
+    constructor(data?: IArchiveCompanyResponse) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.state = Data["state"];
+            this.archiveRequestedOn = Data["archiveRequestedOn"] ? new Date(Data["archiveRequestedOn"].toString()) : undefined as any;
+        }
+    }
+
+    static fromJS(data: any): ArchiveCompanyResponse {
+        data = typeof data === 'object' ? data : {};
+        let result = new ArchiveCompanyResponse();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["state"] = this.state;
+        data["archiveRequestedOn"] = this.archiveRequestedOn ? this.archiveRequestedOn.toISOString() : undefined as any;
+        return data;
+    }
+}
+
+export interface IArchiveCompanyResponse {
+    state: CompanyLifecycleState;
+    archiveRequestedOn: Date | undefined;
+}
+
 export class AssignInvoiceVariableSymbolCommand implements IAssignInvoiceVariableSymbolCommand {
     invoiceId!: string | undefined;
     languageCode!: string | undefined;
@@ -19702,6 +20138,158 @@ export interface ICompanyInfoListItem {
     phone: string | undefined;
     email: string | undefined;
     isActive: boolean;
+}
+
+export class CompanyLifecycleDto implements ICompanyLifecycleDto {
+    name!: string | undefined;
+    state!: CompanyLifecycleState;
+    operatesDefaultMarket!: boolean;
+    deactivatedOn!: Date | undefined;
+    deactivatedByEmail!: string | undefined;
+    windDownFrom!: Date | undefined;
+    windDownRequestedOn!: Date | undefined;
+    windDownRequestedByEmail!: string | undefined;
+    windDownRunStartedOn!: Date | undefined;
+    windDownLastRunOn!: Date | undefined;
+    archiveRequestedOn!: Date | undefined;
+    archiveRequestedByEmail!: string | undefined;
+    archivedOn!: Date | undefined;
+    archiveManifestSha256!: string | undefined;
+    openOrders!: number;
+    openOrdersOnOrAfterWindDownFrom!: number;
+    activeTemplates!: number;
+    activeMemberships!: number;
+    creditBalances!: number;
+    pendingRefunds!: number;
+    ordersAwaitingPay!: number;
+    ordersAwaitingReceipt!: number;
+    receiptsAwaitingFiscalRegistration!: number;
+    openPayPeriods!: number;
+    unpaidInvoices!: number;
+    uninvoicedPayRows!: number;
+    openDisputes!: number;
+    chargebackHorizonEndsOn!: Date | undefined;
+
+    constructor(data?: ICompanyLifecycleDto) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.name = Data["name"];
+            this.state = Data["state"];
+            this.operatesDefaultMarket = Data["operatesDefaultMarket"];
+            this.deactivatedOn = Data["deactivatedOn"] ? new Date(Data["deactivatedOn"].toString()) : undefined as any;
+            this.deactivatedByEmail = Data["deactivatedByEmail"];
+            this.windDownFrom = Data["windDownFrom"] ? new Date(Data["windDownFrom"].toString()) : undefined as any;
+            this.windDownRequestedOn = Data["windDownRequestedOn"] ? new Date(Data["windDownRequestedOn"].toString()) : undefined as any;
+            this.windDownRequestedByEmail = Data["windDownRequestedByEmail"];
+            this.windDownRunStartedOn = Data["windDownRunStartedOn"] ? new Date(Data["windDownRunStartedOn"].toString()) : undefined as any;
+            this.windDownLastRunOn = Data["windDownLastRunOn"] ? new Date(Data["windDownLastRunOn"].toString()) : undefined as any;
+            this.archiveRequestedOn = Data["archiveRequestedOn"] ? new Date(Data["archiveRequestedOn"].toString()) : undefined as any;
+            this.archiveRequestedByEmail = Data["archiveRequestedByEmail"];
+            this.archivedOn = Data["archivedOn"] ? new Date(Data["archivedOn"].toString()) : undefined as any;
+            this.archiveManifestSha256 = Data["archiveManifestSha256"];
+            this.openOrders = Data["openOrders"];
+            this.openOrdersOnOrAfterWindDownFrom = Data["openOrdersOnOrAfterWindDownFrom"];
+            this.activeTemplates = Data["activeTemplates"];
+            this.activeMemberships = Data["activeMemberships"];
+            this.creditBalances = Data["creditBalances"];
+            this.pendingRefunds = Data["pendingRefunds"];
+            this.ordersAwaitingPay = Data["ordersAwaitingPay"];
+            this.ordersAwaitingReceipt = Data["ordersAwaitingReceipt"];
+            this.receiptsAwaitingFiscalRegistration = Data["receiptsAwaitingFiscalRegistration"];
+            this.openPayPeriods = Data["openPayPeriods"];
+            this.unpaidInvoices = Data["unpaidInvoices"];
+            this.uninvoicedPayRows = Data["uninvoicedPayRows"];
+            this.openDisputes = Data["openDisputes"];
+            this.chargebackHorizonEndsOn = Data["chargebackHorizonEndsOn"] ? new Date(Data["chargebackHorizonEndsOn"].toString()) : undefined as any;
+        }
+    }
+
+    static fromJS(data: any): CompanyLifecycleDto {
+        data = typeof data === 'object' ? data : {};
+        let result = new CompanyLifecycleDto();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["name"] = this.name;
+        data["state"] = this.state;
+        data["operatesDefaultMarket"] = this.operatesDefaultMarket;
+        data["deactivatedOn"] = this.deactivatedOn ? this.deactivatedOn.toISOString() : undefined as any;
+        data["deactivatedByEmail"] = this.deactivatedByEmail;
+        data["windDownFrom"] = this.windDownFrom ? formatDate(this.windDownFrom) : undefined as any;
+        data["windDownRequestedOn"] = this.windDownRequestedOn ? this.windDownRequestedOn.toISOString() : undefined as any;
+        data["windDownRequestedByEmail"] = this.windDownRequestedByEmail;
+        data["windDownRunStartedOn"] = this.windDownRunStartedOn ? this.windDownRunStartedOn.toISOString() : undefined as any;
+        data["windDownLastRunOn"] = this.windDownLastRunOn ? this.windDownLastRunOn.toISOString() : undefined as any;
+        data["archiveRequestedOn"] = this.archiveRequestedOn ? this.archiveRequestedOn.toISOString() : undefined as any;
+        data["archiveRequestedByEmail"] = this.archiveRequestedByEmail;
+        data["archivedOn"] = this.archivedOn ? this.archivedOn.toISOString() : undefined as any;
+        data["archiveManifestSha256"] = this.archiveManifestSha256;
+        data["openOrders"] = this.openOrders;
+        data["openOrdersOnOrAfterWindDownFrom"] = this.openOrdersOnOrAfterWindDownFrom;
+        data["activeTemplates"] = this.activeTemplates;
+        data["activeMemberships"] = this.activeMemberships;
+        data["creditBalances"] = this.creditBalances;
+        data["pendingRefunds"] = this.pendingRefunds;
+        data["ordersAwaitingPay"] = this.ordersAwaitingPay;
+        data["ordersAwaitingReceipt"] = this.ordersAwaitingReceipt;
+        data["receiptsAwaitingFiscalRegistration"] = this.receiptsAwaitingFiscalRegistration;
+        data["openPayPeriods"] = this.openPayPeriods;
+        data["unpaidInvoices"] = this.unpaidInvoices;
+        data["uninvoicedPayRows"] = this.uninvoicedPayRows;
+        data["openDisputes"] = this.openDisputes;
+        data["chargebackHorizonEndsOn"] = this.chargebackHorizonEndsOn ? this.chargebackHorizonEndsOn.toISOString() : undefined as any;
+        return data;
+    }
+}
+
+export interface ICompanyLifecycleDto {
+    name: string | undefined;
+    state: CompanyLifecycleState;
+    operatesDefaultMarket: boolean;
+    deactivatedOn: Date | undefined;
+    deactivatedByEmail: string | undefined;
+    windDownFrom: Date | undefined;
+    windDownRequestedOn: Date | undefined;
+    windDownRequestedByEmail: string | undefined;
+    windDownRunStartedOn: Date | undefined;
+    windDownLastRunOn: Date | undefined;
+    archiveRequestedOn: Date | undefined;
+    archiveRequestedByEmail: string | undefined;
+    archivedOn: Date | undefined;
+    archiveManifestSha256: string | undefined;
+    openOrders: number;
+    openOrdersOnOrAfterWindDownFrom: number;
+    activeTemplates: number;
+    activeMemberships: number;
+    creditBalances: number;
+    pendingRefunds: number;
+    ordersAwaitingPay: number;
+    ordersAwaitingReceipt: number;
+    receiptsAwaitingFiscalRegistration: number;
+    openPayPeriods: number;
+    unpaidInvoices: number;
+    uninvoicedPayRows: number;
+    openDisputes: number;
+    chargebackHorizonEndsOn: Date | undefined;
+}
+
+export enum CompanyLifecycleState {
+    Operating = 1,
+    WindingDown = 2,
+    Deactivated = 3,
+    Frozen = 4,
+    Archived = 5,
 }
 
 export enum ConsentType {
@@ -21744,6 +22332,42 @@ export interface IDeactivateAdminUserResponse {
     id: string | undefined;
 }
 
+export class DeactivateCompanyResponse implements IDeactivateCompanyResponse {
+    state!: CompanyLifecycleState;
+
+    constructor(data?: IDeactivateCompanyResponse) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.state = Data["state"];
+        }
+    }
+
+    static fromJS(data: any): DeactivateCompanyResponse {
+        data = typeof data === 'object' ? data : {};
+        let result = new DeactivateCompanyResponse();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["state"] = this.state;
+        return data;
+    }
+}
+
+export interface IDeactivateCompanyResponse {
+    state: CompanyLifecycleState;
+}
+
 export class DeactivateCurrencyResponse implements IDeactivateCurrencyResponse {
     currencyId!: string | undefined;
 
@@ -23250,6 +23874,8 @@ export enum EmailType {
     PeriodEndReminder = 5,
     OrderStatusUpdate = 6,
     PromoCode = 7,
+    CompanyWindDownCustomer = 8,
+    CompanyWindDownCleaner = 9,
 }
 
 export class EmailTypeDetailDto implements IEmailTypeDetailDto {
@@ -31050,6 +31676,42 @@ export enum PromoCodeType {
     FixedDiscount = 2,
 }
 
+export class ReactivateCompanyResponse implements IReactivateCompanyResponse {
+    state!: CompanyLifecycleState;
+
+    constructor(data?: IReactivateCompanyResponse) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.state = Data["state"];
+        }
+    }
+
+    static fromJS(data: any): ReactivateCompanyResponse {
+        data = typeof data === 'object' ? data : {};
+        let result = new ReactivateCompanyResponse();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["state"] = this.state;
+        return data;
+    }
+}
+
+export interface IReactivateCompanyResponse {
+    state: CompanyLifecycleState;
+}
+
 export enum ReferralStatus {
     Accepted = 1,
     Qualified = 2,
@@ -35170,6 +35832,82 @@ export enum UserProfile {
     Customer = 1,
     Employee = 2,
     Administrator = 100,
+}
+
+export class WindDownCompanyCommand implements IWindDownCompanyCommand {
+    fromDate!: Date | undefined;
+
+    constructor(data?: IWindDownCompanyCommand) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.fromDate = Data["fromDate"] ? new Date(Data["fromDate"].toString()) : undefined as any;
+        }
+    }
+
+    static fromJS(data: any): WindDownCompanyCommand {
+        data = typeof data === 'object' ? data : {};
+        let result = new WindDownCompanyCommand();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["fromDate"] = this.fromDate ? formatDate(this.fromDate) : undefined as any;
+        return data;
+    }
+}
+
+export interface IWindDownCompanyCommand {
+    fromDate: Date | undefined;
+}
+
+export class WindDownCompanyResponse implements IWindDownCompanyResponse {
+    state!: CompanyLifecycleState;
+    windDownFrom!: Date | undefined;
+
+    constructor(data?: IWindDownCompanyResponse) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.state = Data["state"];
+            this.windDownFrom = Data["windDownFrom"] ? new Date(Data["windDownFrom"].toString()) : undefined as any;
+        }
+    }
+
+    static fromJS(data: any): WindDownCompanyResponse {
+        data = typeof data === 'object' ? data : {};
+        let result = new WindDownCompanyResponse();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["state"] = this.state;
+        data["windDownFrom"] = this.windDownFrom ? formatDate(this.windDownFrom) : undefined as any;
+        return data;
+    }
+}
+
+export interface IWindDownCompanyResponse {
+    state: CompanyLifecycleState;
+    windDownFrom: Date | undefined;
 }
 
 function formatDate(d: Date) {

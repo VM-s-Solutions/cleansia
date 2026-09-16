@@ -104,8 +104,6 @@ public sealed class CompanyWindDownSweepTests(PostgresContainerFixture fixture) 
         return await scope.ServiceProvider.GetRequiredService<ICompanyWindDownService>().RunAsync(tenantId, CancellationToken.None);
     }
 
-    // ── TC-LC-WD-1 / TC-LC-WD-2 ─────────────────────────────────────────────────────────────────
-
     [Fact]
     public async Task The_sweep_tells_everyone_cancels_and_refunds_after_the_date_pauses_templates_and_ends_every_Plus_then_converges_on_a_second_run()
     {
@@ -227,8 +225,6 @@ public sealed class CompanyWindDownSweepTests(PostgresContainerFixture fixture) 
             transactional: false);
     }
 
-    // ── TC-LC-WD-4 ──────────────────────────────────────────────────────────────────────────────
-
     [Fact]
     public async Task A_refund_Stripe_refuses_stays_pending_and_the_next_run_re_drives_it_once_on_the_same_key()
     {
@@ -286,8 +282,6 @@ public sealed class CompanyWindDownSweepTests(PostgresContainerFixture fixture) 
             },
             transactional: false);
     }
-
-    // ── TC-LC-WD-3 ──────────────────────────────────────────────────────────────────────────────
 
     [Fact]
     public async Task Once_the_door_is_closed_the_floor_lifts_credit_is_discharged_and_the_last_period_is_invoiced_without_a_successor()
@@ -452,8 +446,6 @@ public sealed class CompanyWindDownSweepTests(PostgresContainerFixture fixture) 
             },
             transactional: false);
     }
-
-    // ── seeding ─────────────────────────────────────────────────────────────────────────────────
 
     private static async Task<Seeded> SeedTwoCompaniesAsync(
         CleansiaDbContext ctx, bool deactivateB, bool includeOpenOrdersAfterDate = true, bool includeBeforeOrders = true)
@@ -705,8 +697,6 @@ public sealed class CompanyWindDownSweepTests(PostgresContainerFixture fixture) 
         var order = await ctx.Orders.IgnoreQueryFilters().SingleAsync(o => o.Id == orderId);
         return new RefundSnapshot(refund.Status, order.PaymentStatus, order.CurrentStatus);
     }
-
-    // ── doubles ─────────────────────────────────────────────────────────────────────────────────
 
     private static IPdfService StubPdfService()
     {

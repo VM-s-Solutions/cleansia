@@ -1360,7 +1360,7 @@
     <string name="tracker_step_counter">Krok %1$d / %2$d</string>
     <string name="order_cancelled_reason_payment_not_completed">Platba nebola dokončená, a preto bola táto rezervácia uvoľnená.</string>
     <string name="order_cancelled_reason_recurring_not_confirmed">Táto opakovaná rezervácia nebola včas potvrdená, a preto bola zadarmo zrušená.</string>
-    <string name="order_cancelled_reason_company_wind_down">Upratovacia spoločnosť, ktorá pôsobila vo vašej oblasti, končí, a preto bola táto rezervácia zrušená a v plnej výške vrátená.</string>
+    <string name="order_cancelled_reason_company_wind_down">Upratovacia spoločnosť, ktorá pôsobila vo vašej oblasti, končí, a preto bola táto rezervácia zrušená; všetko, čo ste zaplatili, vám vraciame v plnej výške.</string>
     <string name="dispute_create_which_items">Čo konkrétne nedopadlo?</string>
     <string name="dispute_create_which_items_hint">Nepovinné. Označte služby, ktoré neboli urobené poriadne — pomôže nám to rýchlejšie napraviť. Ak bol problém celé upratovanie, nechajte prázdne.</string>
     <string name="dispute_create_item_in_package">v balíku %1$s</string>

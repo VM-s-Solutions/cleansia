@@ -19234,31 +19234,31 @@
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Úklidová společnost, která působila ve vaší oblasti, končí, a proto byla tato rezervace zrušena a v plné výši vrácena."
+            "value": "Úklidová společnost, která působila ve vaší oblasti, končí, a proto byla tato rezervace zrušena; vše, co jste zaplatili, vám vracíme v plné výši."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "The cleaning company that served your area is closing, so this booking was cancelled and refunded in full."
+            "value": "The cleaning company that served your area is closing, so this booking was cancelled; anything you paid is refunded in full."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Клининговая компания, обслуживавшая ваш район, прекращает работу, поэтому это бронирование отменено, а деньги возвращены в полном объёме."
+            "value": "Клининговая компания, обслуживавшая ваш район, прекращает работу, поэтому это бронирование отменено; всё, что вы оплатили, будет возвращено в полном объёме."
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Upratovacia spoločnosť, ktorá pôsobila vo vašej oblasti, končí, a preto bola táto rezervácia zrušená a v plnej výške vrátená."
+            "value": "Upratovacia spoločnosť, ktorá pôsobila vo vašej oblasti, končí, a preto bola táto rezervácia zrušená; všetko, čo ste zaplatili, vám vraciame v plnej výške."
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Клінінгова компанія, що обслуговувала ваш район, припиняє роботу, тому це бронювання скасовано, а кошти повернуто в повному обсязі."
+            "value": "Клінінгова компанія, що обслуговувала ваш район, припиняє роботу, тому це бронювання скасовано; усе, що ви сплатили, буде повернуто в повному обсязі."
           }
         }
       }

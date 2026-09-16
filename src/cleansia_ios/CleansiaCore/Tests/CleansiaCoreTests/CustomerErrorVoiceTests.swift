@@ -15,11 +15,13 @@ final class CustomerErrorVoiceTests: XCTestCase {
         CustomerOnlyKey("membership.express_waiver.no_longer_available", emitters: "CreateOrder"),
         CustomerOnlyKey(
             "order.already_cancelled",
-            emitters: "CancelOrder, AdminCancelOrder, AdminOverrideOrderStatus"
+            emitters: "CancelOrder, CancelGuestOrder, GetGuestCancellationFeePreview, AdminCancelOrder, "
+                + "AdminOverrideOrderStatus"
         ),
         CustomerOnlyKey(
             "order.already_completed",
-            emitters: "CancelOrder, AdminCancelOrder, AdminOverrideOrderStatus"
+            emitters: "CancelOrder, CancelGuestOrder, GetGuestCancellationFeePreview, AdminCancelOrder, "
+                + "AdminOverrideOrderStatus"
         ),
         CustomerOnlyKey("order.span_exceeds_maximum", emitters: "CreateOrder, QuoteOrder"),
         CustomerOnlyKey("order.empty", emitters: "CreateOrder"),
@@ -87,9 +89,10 @@ final class CustomerErrorVoiceTests: XCTestCase {
         "auth.too_many_attempts": "ChangePassword, ConfirmUserEmail",
         "city.not_serviced": "OrderAddressResolver",
         "common.invalid_enum_value": "ConfirmRecurringOrder, CreateDispute, CreateOrder +3 more",
-        "common.max_length": "AddSavedAddress, AppleAuth, BaseAuthValidator +8 more",
+        "common.max_length": "AddSavedAddress, AppleAuth, BaseAuthValidator, CancelGuestOrder +8 more",
         "common.min_length": "AddSavedAddress, CreateDispute, CreateOrder +1 more",
-        "common.required": "AddDisputeMessage, AddSavedAddress, AppleAuth +38 more",
+        "common.required": "AddDisputeMessage, AddSavedAddress, AppleAuth, CancelGuestOrder, "
+            + "GetGuestCancellationFeePreview +38 more",
         "company.not_found": "ReceiptService",
         "consent.terms_not_accepted": "CreateOrder, Register",
         "country.not_existing_id": "AddSavedAddress, UpdateSavedAddress",
@@ -133,9 +136,11 @@ final class CustomerErrorVoiceTests: XCTestCase {
         "order.cleaning_date.future": "CreateOrder",
         "order.country_operator_mismatch": "CreateOrder",
         "order.empty": "CreateOrder",
-        "order.in_progress_cannot_cancel": "CancellationAssessor",
+        "order.in_progress_cannot_cancel": "CancellationAssessor via CancelOrder, CancelGuestOrder, "
+            + "GetGuestCancellationFeePreview",
         "order.not_completed": "SubmitOrderReview",
-        "order.not_found": "CancelOrder, ConfirmRecurringOrder, CreateDispute +10 more",
+        "order.not_found": "CancelGuestOrder, CancelOrder, ConfirmRecurringOrder, CreateDispute, "
+            + "GetGuestCancellationFeePreview +10 more",
         "order.payment_gateway_unavailable":
             "CancelMembershipSubscription, CreateMembershipCheckoutSession, CreateMembershipSubscription +3 more",
         "order.preferred_employee.not_eligible": "CreateOrder, CreateRecurringBooking",

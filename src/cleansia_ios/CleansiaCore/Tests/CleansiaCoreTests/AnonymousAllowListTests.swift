@@ -26,6 +26,8 @@ final class AnonymousAllowListTests: XCTestCase {
         "/api/Order/CreateOrder",
         "/api/Order/Lookup",
         "/api/Order/LookupBatch",
+        "/api/Order/GuestCancellationPreview",
+        "/api/Order/CancelGuest",
         "/api/Payment/CreateOrder",
         "/api/Referral/Validate"
     ]
@@ -112,6 +114,18 @@ final class AnonymousAllowListTests: XCTestCase {
         XCTAssertFalse(list.isDualUse(path: "/api/Order/Lookup"))
         XCTAssertFalse(list.isDualUse(path: "/api/Service/GetOverview"))
         XCTAssertFalse(list.isDualUse(path: "/api/Referral/Validate"))
+    }
+
+    /// The guest's secret is the whole credential. A signed-in customer looking up someone else's guest
+    /// booking must not send their own stale Bearer beside it, while their own account cancel keeps it.
+    func testGuestOrderPathsStayTokenlessWhileTheAccountCancelStaysAuthed() {
+        let list = AnonymousAllowList.customer
+        for path in ["/api/Order/Lookup", "/api/Order/GuestCancellationPreview", "/api/Order/CancelGuest"] {
+            XCTAssertTrue(list.isAnonymous(path: path), "\(path) must be anonymous")
+            XCTAssertFalse(list.isDualUse(path: path), "\(path) must never carry a Bearer")
+        }
+        XCTAssertFalse(list.isAnonymous(path: "/api/Order/Cancel"))
+        XCTAssertFalse(list.isAnonymous(path: "/api/Order/CancellationPreview"))
     }
 
     func testPaymentCreateIntentIsNeverAnonymousOrDualUse() {

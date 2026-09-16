@@ -47,6 +47,14 @@ enum CancelOrderConfirmGate {
         guard hasReason, !quoteIsLoading, !isSubmitting else { return false }
         return !needsNotes || notes.trimmingCharacters(in: .whitespaces).count >= 3
     }
+
+    /// The guest half of the rule. A guest has no account for a surprise fee to be reconciled against
+    /// afterwards, so a guest commits only to a quote the server has actually priced for this booking —
+    /// a preview outage holds the button instead of degrading, and the card says so.
+    static func quoteIsUsable(_ quote: UiState<CancellationQuote>) -> Bool {
+        guard let quote = quote.loadedValue else { return false }
+        return !(quote.currencyCode?.isBlank ?? true)
+    }
 }
 
 struct CancelOrderSheet: View {
@@ -58,11 +66,16 @@ struct CancelOrderSheet: View {
     let onRetryQuote: () -> Void
     let onConfirm: (String?) -> Void
     let onDismiss: () -> Void
+    var requiresQuote = false
+    /// A ceiling on the whole `code: notes` payload; nil keeps the notes' own limit. The guest command
+    /// refuses a reason over 500 characters, and a refusal after the sheet is filled in is the worst
+    /// moment to learn it.
+    var reasonLimit: Int?
 
     @State private var selectedReason: CancelReasonOption?
     @State private var notes = ""
 
-    private let maxReasonLength = 2000
+    private static let defaultNotesLimit = 2000
 
     private var canSubmit: Bool {
         CancelOrderConfirmGate.canConfirm(
@@ -71,7 +84,12 @@ struct CancelOrderSheet: View {
             notes: notes,
             quoteIsLoading: quote.isLoading,
             isSubmitting: isSubmitting
-        )
+        ) && (!requiresQuote || CancelOrderConfirmGate.quoteIsUsable(quote))
+    }
+
+    private var notesLimit: Int {
+        guard let reasonLimit else { return Self.defaultNotesLimit }
+        return max(0, reasonLimit - (selectedReason?.code.count ?? 0) - 2)
     }
 
     var body: some View {
@@ -82,8 +100,9 @@ struct CancelOrderSheet: View {
                     .foregroundColor(CleansiaColors.onSurface)
 
                 CancellationFeeCard(
-                    model: CancellationFeeCardModel(quote),
+                    model: CancellationFeeCardModel(quote, refundIsEstimate: requiresQuote),
                     currencyCode: currencyCode,
+                    requiresQuote: requiresQuote,
                     onRetry: onRetryQuote
                 )
 
@@ -92,6 +111,7 @@ struct CancelOrderSheet: View {
                     .foregroundColor(CleansiaColors.onSurface)
 
                 ReasonChips(selected: $selectedReason, enabled: !isSubmitting) {
+                    if notes.count > notesLimit { notes = String(notes.prefix(notesLimit)) }
                     if errorMessage?.isBlank == false { onReasonChanged() }
                 }
 
@@ -100,7 +120,7 @@ struct CancelOrderSheet: View {
                         notes: $notes,
                         isOther: selectedReason == .other,
                         enabled: !isSubmitting,
-                        maxLength: maxReasonLength,
+                        maxLength: notesLimit,
                         onChange: { if errorMessage?.isBlank == false { onReasonChanged() } }
                     )
                 }

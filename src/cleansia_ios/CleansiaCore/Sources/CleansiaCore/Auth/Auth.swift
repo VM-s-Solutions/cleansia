@@ -27,7 +27,7 @@ public enum RegisterEndpoint: Sendable {
     }
 }
 
-public final class AuthApiClient: AuthSpine, @unchecked Sendable {
+public final class AuthApiClient: AuthSpine, AnonymousPosting, @unchecked Sendable {
     private let apiBaseURL: URL
     private let authedSession: URLSession
     private let noAuthSession: URLSession
@@ -40,7 +40,7 @@ public final class AuthApiClient: AuthSpine, @unchecked Sendable {
     private var preLogout: (@Sendable () async -> Void)?
 
     private let encoder = JSONEncoder()
-    private let decoder = JSONDecoder()
+    private let decoder = ApiDateDecoding.decoder(primary: ISO8601DateParser.parse)
 
     public init(
         apiBaseURL: URL,
@@ -230,6 +230,13 @@ public final class AuthApiClient: AuthSpine, @unchecked Sendable {
             await group.next()
             group.cancelAll()
         }
+    }
+
+    public func postAnonymous<Response: Decodable>(
+        path: String,
+        body: some Encodable
+    ) async -> ApiResult<Response> {
+        await post(path: path, body: body, useNoAuthSession: true)
     }
 
     public func signOutLocal() async {

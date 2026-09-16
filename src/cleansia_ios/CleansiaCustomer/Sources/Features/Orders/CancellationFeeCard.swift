@@ -25,17 +25,20 @@ enum CancellationFeeCardModel: Equatable {
     case unavailable
     case quoted(CancellationFeeCallout)
 
-    init(_ state: UiState<CancellationQuote>) {
+    init(_ state: UiState<CancellationQuote>, refundIsEstimate: Bool = false) {
         switch state {
         case .loading: self = .checking
         case .error: self = .unavailable
-        case let .loaded(quote): self = .quoted(CancellationFeeCallout(quote))
+        case let .loaded(quote): self = .quoted(CancellationFeeCallout(quote, refundIsEstimate: refundIsEstimate))
         }
     }
 }
 
 extension CancellationFeeCallout {
-    init(_ quote: CancellationQuote) {
+    /// `refundIsEstimate` is the guest's reading of a charged tier: the policy refund is a ceiling on a
+    /// card refund that only a collected payment can produce, so the guest copy calls it a maximum and
+    /// points at the confirmation for the actual figure. The signed-in copy is unchanged.
+    init(_ quote: CancellationQuote, refundIsEstimate: Bool = false) {
         switch quote.tier {
         case .freeNotAccepted:
             self.init(free: "order_cancel_fee_not_accepted", quote)
@@ -44,9 +47,14 @@ extension CancellationFeeCallout {
         case .freeOutsideWindow:
             self.init(free: "order_cancel_fee_outside_window", quote)
         case .partial:
-            self.init(charged: "order_cancel_fee_partial", severity: .fee, quote)
+            self.init(charged: "order_cancel_fee_partial", severity: .fee, quote, refundIsEstimate: refundIsEstimate)
         case .lastMinute:
-            self.init(charged: "order_cancel_fee_last_minute", severity: .lastMinute, quote)
+            self.init(
+                charged: "order_cancel_fee_last_minute",
+                severity: .lastMinute,
+                quote,
+                refundIsEstimate: refundIsEstimate
+            )
         }
     }
 
@@ -60,10 +68,15 @@ extension CancellationFeeCallout {
         )
     }
 
-    private init(charged titleKey: String, severity: CancellationFeeSeverity, _ quote: CancellationQuote) {
+    private init(
+        charged titleKey: String,
+        severity: CancellationFeeSeverity,
+        _ quote: CancellationQuote,
+        refundIsEstimate: Bool
+    ) {
         self.init(
             titleKey: titleKey,
-            amountKey: "order_cancel_fee_split",
+            amountKey: refundIsEstimate ? "guest_order_fee_estimate" : "order_cancel_fee_split",
             amounts: [quote.feeAmount, quote.refundAmount],
             severity: severity,
             warnsExpressWaiverForfeited: quote.forfeitsExpressWaiver
@@ -91,6 +104,7 @@ extension CancellationFeeSeverity {
 struct CancellationFeeCard: View {
     let model: CancellationFeeCardModel
     let currencyCode: String?
+    var requiresQuote = false
     let onRetry: () -> Void
 
     var body: some View {
@@ -103,7 +117,7 @@ struct CancellationFeeCard: View {
                     tint: CleansiaColors.onSurfaceVariant,
                     symbol: "exclamationmark.triangle",
                     title: L10n.OrderCancel.feeNeutral,
-                    subtitle: L10n.OrderCancel.feeUnavailable
+                    subtitle: requiresQuote ? L10n.GuestOrder.quoteRequired : L10n.OrderCancel.feeUnavailable
                 )
                 CleansiaTextLink(L10n.OrderCancel.feeRetry, action: onRetry)
             }

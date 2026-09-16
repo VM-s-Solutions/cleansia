@@ -40,7 +40,13 @@ struct CustomerRootView: View {
                 makeViewModel: { makeAuthViewModel() },
                 onForgotPassword: { route = .forgotPassword },
                 onSignUp: { route = .register },
+                onGuestOrder: { route = .guestOrder },
                 onOutcome: { route = Route.afterAuth($0) }
+            )
+        case .guestOrder:
+            GuestOrderView(
+                makeViewModel: { makeGuestOrderViewModel() },
+                onBack: { route = .login }
             )
         case .register:
             SignUpView(
@@ -83,6 +89,10 @@ struct CustomerRootView: View {
         )
     }
 
+    private func makeGuestOrderViewModel() -> GuestOrderViewModel {
+        GuestOrderViewModel(client: container.guestOrderClient, settings: container.appSettings)
+    }
+
     private func makeAuthViewModel(pendingEmail: String? = nil) -> CustomerAuthViewModel {
         CustomerAuthViewModel(
             loginClient: container.loginClient,
@@ -104,6 +114,7 @@ struct CustomerRootView: View {
         case login
         case register
         case forgotPassword
+        case guestOrder
         case verifyEmail(email: String?)
         case home
         case profileOnboarding

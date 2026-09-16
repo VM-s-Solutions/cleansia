@@ -127,3 +127,10 @@ public struct RefreshedTokens: Equatable, Sendable {
 public protocol MobileApiClient: AnyObject {
     var baseURL: URL { get }
 }
+
+/// A secret-keyed guest call rides the no-auth session on purpose: the server verifies the confirmation
+/// code, never a Bearer, and a stale account token beside the key would let an expired session answer
+/// for a booking that account never owned.
+public protocol AnonymousPosting: AnyObject, Sendable {
+    func postAnonymous<Response: Decodable>(path: String, body: some Encodable) async -> ApiResult<Response>
+}

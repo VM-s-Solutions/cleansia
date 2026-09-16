@@ -35,6 +35,14 @@ final class CustomerRootRouteTests: XCTestCase {
         XCTAssertNotEqual(CustomerRootView.Route.home, .login)
     }
 
+    /// The guest lookup is reached from the sign-in screen and goes back to it; it is never a way into
+    /// the shell, and it carries no credential in the route.
+    func testGuestOrderIsItsOwnPreAuthAudience() {
+        XCTAssertNotEqual(CustomerRootView.Route.guestOrder, .login)
+        XCTAssertNotEqual(CustomerRootView.Route.guestOrder, .home)
+        XCTAssertNotEqual(CustomerRootView.Route.guestOrder, .splash)
+    }
+
     func testProfileOnboardingIsItsOwnPreShellAudience() {
         XCTAssertNotEqual(CustomerRootView.Route.profileOnboarding, .home)
         XCTAssertNotEqual(CustomerRootView.Route.profileOnboarding, .login)

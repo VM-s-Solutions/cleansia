@@ -10402,6 +10402,461 @@
         }
       }
     },
+    "guest_order_cancel": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zrušit rezervaci"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cancel booking"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Отменить бронирование"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zrušiť rezerváciu"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Скасувати бронювання"
+          }
+        }
+      }
+    },
+    "guest_order_cannot_cancel": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tuto rezervaci nelze zrušit."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This booking cannot be cancelled."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Это бронирование невозможно отменить."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Túto rezerváciu nemožno zrušiť."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Це бронювання неможливо скасувати."
+          }
+        }
+      }
+    },
+    "guest_order_code": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Potvrzovací kód"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Confirmation code"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Код подтверждения"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Potvrdzovací kód"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Код підтвердження"
+          }
+        }
+      }
+    },
+    "guest_order_empty": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Po vyhledání se zde zobrazí podrobnosti rezervace."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your booking details will appear here after lookup."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "После поиска здесь появятся сведения о бронировании."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Po vyhľadaní sa tu zobrazia podrobnosti rezervácie."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Після пошуку тут з’являться деталі бронювання."
+          }
+        }
+      }
+    },
+    "guest_order_entry": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Najít rezervaci bez účtu"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Find a guest booking"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Найти бронирование без учётной записи"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nájsť rezerváciu bez účtu"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Знайти бронювання без облікового запису"
+          }
+        }
+      }
+    },
+    "guest_order_fee_estimate": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Storno poplatek: %1$@. Maximální vrácení platby kartou: %2$@. Vrátit lze pouze přijaté platby kartou; v potvrzení uvidíte skutečně vrácenou částku."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cancellation fee: %1$@. Maximum card refund: %2$@. Only collected card payments can be refunded; your confirmation shows the actual amount."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Сбор за отмену: %1$@. Максимальный возврат на карту: %2$@. Вернуть можно только полученные платежи картой; в подтверждении будет указана фактически возвращённая сумма."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Storno poplatok: %1$@. Maximálne vrátenie platby kartou: %2$@. Vrátiť možno iba prijaté platby kartou; v potvrdení uvidíte skutočne vrátenú sumu."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Збір за скасування: %1$@. Максимальне повернення на картку: %2$@. Повернути можна лише отримані платежі карткою; у підтвердженні буде вказано фактично повернену суму."
+          }
+        }
+      }
+    },
+    "guest_order_intro": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zadejte číslo rezervace, e-mail a potvrzovací kód z potvrzovacího e-mailu."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Use the booking number, email and confirmation code from your booking email."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Введите номер бронирования, электронную почту и код подтверждения из письма о бронировании."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zadajte číslo rezervácie, e-mail a potvrdzovací kód z potvrdzovacieho e-mailu."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Введіть номер бронювання, електронну пошту та код підтвердження з листа про бронювання."
+          }
+        }
+      }
+    },
+    "guest_order_loading": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hledáme vaši rezervaci…"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Finding your booking…"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ищем ваше бронирование…"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hľadáme vašu rezerváciu…"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Шукаємо ваше бронювання…"
+          }
+        }
+      }
+    },
+    "guest_order_lookup": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Najít rezervaci"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Find booking"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Найти бронирование"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nájsť rezerváciu"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Знайти бронювання"
+          }
+        }
+      }
+    },
+    "guest_order_number": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Číslo rezervace"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Booking number"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Номер бронирования"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Číslo rezervácie"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Номер бронювання"
+          }
+        }
+      }
+    },
+    "guest_order_preview_required": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Poplatek za zrušení se nepodařilo ověřit. Před potvrzením zrušení to zkuste znovu."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The cancellation fee could not be checked. Try again before confirming cancellation."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Не удалось проверить плату за отмену. Попробуйте ещё раз, прежде чем подтвердить отмену."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Poplatok za zrušenie sa nepodarilo overiť. Pred potvrdením zrušenia to skúste znova."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Не вдалося перевірити плату за скасування. Спробуйте ще раз, перш ніж підтвердити скасування."
+          }
+        }
+      }
+    },
+    "guest_order_required": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zadejte číslo rezervace, e-mail a potvrzovací kód."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enter the booking number, email and confirmation code."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Введите номер бронирования, электронную почту и код подтверждения."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zadajte číslo rezervácie, e-mail a potvrdzovací kód."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Введіть номер бронювання, електронну пошту та код підтвердження."
+          }
+        }
+      }
+    },
+    "guest_order_title": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rezervace bez účtu"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Guest booking"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Бронирование без учётной записи"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rezervácia bez účtu"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Бронювання без облікового запису"
+          }
+        }
+      }
+    },
     "help_call": {
       "extractionState": "stale",
       "localizations": {

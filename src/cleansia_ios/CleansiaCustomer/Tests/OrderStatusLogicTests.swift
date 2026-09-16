@@ -355,11 +355,23 @@ final class CancellationFeeCardModelTests: XCTestCase {
         XCTAssertFalse(Self.callout(.lastMinute).warnsExpressWaiverForfeited)
     }
 
+    /// A guest's charged tier calls the policy refund a maximum; the signed-in sentence is untouched.
+    func testAGuestChargedTierNamesTheRefundAnEstimateWithoutChangingTheSignedInCopy() {
+        for tier in [CancellationTier.partial, .lastMinute] {
+            let guest = Self.callout(tier, fee: 22.5, refund: 67.5, refundIsEstimate: true)
+            XCTAssertEqual(guest.amountKey, "guest_order_fee_estimate")
+            XCTAssertEqual(guest.amounts, [22.5, 67.5])
+            XCTAssertEqual(Self.callout(tier, fee: 22.5, refund: 67.5).amountKey, "order_cancel_fee_split")
+        }
+        XCTAssertEqual(Self.callout(.freeOopsWindow, refundIsEstimate: true).amountKey, "order_cancel_fee_none")
+    }
+
     private static func callout(
         _ tier: CancellationTier,
         fee: Double = 0,
         refund: Double = 1000,
-        forfeitsExpressWaiver: Bool = false
+        forfeitsExpressWaiver: Bool = false,
+        refundIsEstimate: Bool = false
     ) -> CancellationFeeCallout {
         let quote = CancellationQuote(
             tier: tier,
@@ -368,7 +380,8 @@ final class CancellationFeeCardModelTests: XCTestCase {
             currencyCode: "CZK",
             forfeitsExpressWaiver: forfeitsExpressWaiver
         )
-        guard case let .quoted(callout) = CancellationFeeCardModel(.loaded(quote)) else {
+        let model = CancellationFeeCardModel(.loaded(quote), refundIsEstimate: refundIsEstimate)
+        guard case let .quoted(callout) = model else {
             return CancellationFeeCallout(
                 titleKey: "",
                 amountKey: "",
@@ -436,6 +449,30 @@ final class CancelOrderConfirmGateTests: XCTestCase {
             quoteIsLoading: false,
             isSubmitting: true
         ))
+    }
+
+    /// The guest half: only a priced quote in a known currency is usable, so a preview outage holds the
+    /// guest's button where it lets a signed-in customer through.
+    func testAGuestConfirmationRequiresAPricedQuoteInAKnownCurrency() {
+        let priced = CancellationQuote(
+            tier: .partial,
+            feeAmount: 250,
+            refundAmount: 750,
+            currencyCode: "CZK",
+            forfeitsExpressWaiver: false
+        )
+        let unpriced = CancellationQuote(
+            tier: .partial,
+            feeAmount: 250,
+            refundAmount: 750,
+            currencyCode: " ",
+            forfeitsExpressWaiver: false
+        )
+
+        XCTAssertFalse(CancelOrderConfirmGate.quoteIsUsable(.loading))
+        XCTAssertFalse(CancelOrderConfirmGate.quoteIsUsable(.error(ApiError(httpStatus: 500))))
+        XCTAssertFalse(CancelOrderConfirmGate.quoteIsUsable(.loaded(unpriced)))
+        XCTAssertTrue(CancelOrderConfirmGate.quoteIsUsable(.loaded(priced)))
     }
 }
 

@@ -37,7 +37,7 @@ struct GuestOrderView: View {
             onBack: onBack,
             onCredentialsChanged: vm.onCredentialsChanged,
             onLookup: { Task { await vm.lookup(number: number, email: email, code: code) } },
-            onCancel: vm.openCancellation
+            onCancel: { Task { await vm.openCancellation() } }
         )
         .onChange(of: vm.state) { state in
             guard case .cancelled = state else { return }
@@ -61,7 +61,6 @@ struct GuestOrderView: View {
             requiresQuote: true,
             reasonLimit: GuestOrderViewModel.maxReasonLength
         )
-        .task { await vm.loadQuote() }
     }
 }
 

@@ -135,7 +135,7 @@ final class CustomerAppContainer: AppContainer {
         let orderRepository = OrderRepository(client: orderClient)
         self.orderClient = orderClient
         self.orderRepository = orderRepository
-        guestOrderClient = LiveGuestOrderClient(transport: authStack.spine)
+        guestOrderClient = LiveGuestOrderClient()
         let loyaltyRepository = LoyaltyRepository(client: LiveLoyaltyClient())
         let referralRepository = RewardsReferralRepository(client: LiveRewardsReferralClient())
         self.loyaltyRepository = loyaltyRepository

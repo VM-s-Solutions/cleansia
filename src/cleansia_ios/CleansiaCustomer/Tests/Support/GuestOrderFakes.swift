@@ -109,36 +109,6 @@ final class FakeGuestOrderClient: GuestOrderClient, @unchecked Sendable {
     }
 }
 
-final class FakeGuestSettings: AppSettingsStore {
-    var hasSeenOnboarding = false
-    var languageTag = "sk"
-    var persistedLanguageTag: String?
-    var theme: Theme = .system
-
-    func markOnboardingSeen() {
-        hasSeenOnboarding = true
-    }
-
-    func hasAnsweredPrompt(_: String, userId _: String) -> Bool {
-        false
-    }
-
-    func markPromptAnswered(_: String, userId _: String) {}
-
-    func setLanguage(_ tag: String) {
-        languageTag = tag
-        persistedLanguageTag = tag
-    }
-
-    func clearLanguage() {
-        persistedLanguageTag = nil
-    }
-
-    func setTheme(_ theme: Theme) {
-        self.theme = theme
-    }
-}
-
 /// Answers with the raw server key so a test can tell a localized refusal from a transport fault.
 struct KeyEchoLocalizer: ApiErrorLocalizing {
     func message(for error: ApiError) -> String {

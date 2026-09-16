@@ -81,9 +81,12 @@ final class GuestOrderViewModel: ViewModel {
         }
     }
 
-    func openCancellation() {
+    /// Opening asks for the quote itself, as on Android, so no sheet is ever up with a confirm waiting on
+    /// a load the view forgot to start.
+    func openCancellation() async {
         guard let order = state.loadedOrder, order.isCancellable, !cancelState.isSubmitting else { return }
         isCancellationPresented = true
+        await loadQuote()
     }
 
     func dismissCancellation() {

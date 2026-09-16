@@ -150,7 +150,7 @@ public sealed class CleanupStalePendingOrdersTwoOperatorsTests(PostgresContainer
             var handler = new CleanupStalePendingOrders.Handler(
                 new OrderRepository(ctx),
                 new CreditAccountRepository(ctx),
-                new NotificationProducer(new UserNotificationRepository(ctx), new OutboxPendingDispatch(ctx)),
+                new NotificationProducer(new UserNotificationRepository(ctx), new OutboxPendingDispatch(ctx), new UserRepository(ctx), Microsoft.Extensions.Logging.Abstractions.NullLogger<NotificationProducer>.Instance),
                 _tenantProvider,
                 ctx,
                 NullLogger<CleanupStalePendingOrders.Handler>.Instance);

@@ -61,7 +61,7 @@ public class PreferredOfferDisclosureTests
             .Setup(s => s.CanAccessOrderAsync(It.IsAny<Order>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
         _employeeRepository
-            .Setup(r => r.GetQueryable())
+            .Setup(r => r.GetQueryableIgnoringTenant())
             .Returns(Array.Empty<Employee>().AsQueryable().BuildMock());
         _userMembershipRepository
             .Setup(r => r.GetEntitledForUserNoTrackingAsync(

@@ -24,7 +24,8 @@ public partial class CreateOrderCallerCurrencyTests
     public async Task CrossMarket_Preferred_Cleaner_And_Second_Offer_Use_The_Operator_And_Account_Entitlement()
     {
         var cleanerIds = new[] { "cross-first-cleaner", "cross-second-cleaner" };
-        await TestMethod<string>(setup: ConfigureCustomerSession,
+        var actor = new ReviewActor();
+        await TestMethod<string>(setup: services => ConfigureReviewActor(services, actor),
             arrange: async (CleansiaDbContext context) =>
             {
                 await SeedCrossMembershipAsync(context);
@@ -68,6 +69,18 @@ public partial class CreateOrderCallerCurrencyTests
                 var order = await orders.GetByIdForOwnerAsync(created.Value.Id, CustomerUserId, CancellationToken.None);
                 Assert.Equal(1, order!.PreferredOfferRound);
                 Assert.Equal(cleanerIds[0], order.PreferredEmployeeId);
+                await using (var account = ReviewScope(provider, actor, CustomerUserId, UserProfile.Customer, TestTenants.Default))
+                {
+                    var detail = await account.ServiceProvider.GetRequiredService<IMediator>().Send(new GetOrderDetails.Query(order.Id));
+                    Assert.True(detail.IsSuccess, detail.Error?.Message);
+                    Assert.Equal("Serving Cleaner", detail.Value.PreferredOffer?.CleanerName);
+                }
+                await using (var unrelated = ReviewScope(provider, actor, "unrelated-customer", UserProfile.Customer, TestTenants.Default))
+                {
+                    var detail = await unrelated.ServiceProvider.GetRequiredService<IMediator>().Send(new GetOrderDetails.Query(order.Id));
+                    Assert.True(detail.IsFailure);
+                }
+                actor.Session = provider.GetRequiredService<IUserSessionProvider>();
                 order.EndPreferredHold(DateTime.UtcNow.AddSeconds(-1));
                 await provider.GetRequiredService<IUnitOfWork>().CommitAsync(CancellationToken.None);
                 AsAccount(provider);

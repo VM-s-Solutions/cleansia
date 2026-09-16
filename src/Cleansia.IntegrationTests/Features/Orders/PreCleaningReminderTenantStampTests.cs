@@ -21,7 +21,7 @@ namespace Cleansia.IntegrationTests.Features.Orders;
 
 /// <summary>
 /// The pre-cleaning sweep runs system-level with no JWT, so it reads across tenants and must write each
-/// order's notification back under that order's own tenant. Getting it wrong is invisible in a unit
+/// notification under the recipient's account tenant. Getting it wrong is invisible in a unit
 /// test with one tenant and catastrophic in production: the customer's app filters the feed and the
 /// drainer routes the push by tenant, so a row stamped with the wrong one is delivered to nobody and
 /// looks exactly like a delivery bug.
@@ -75,13 +75,14 @@ public class PreCleaningReminderTenantStampTests(PostgresContainerFixture fixtur
     /// The address FK is left standing, so the country and currency an order references are real rows,
     /// and the three operators are registered so the notifications the sweep writes pass their FK into
     /// Tenants. Only the Orders / OrderEmployees FKs are dropped, and only so the fixture can name a
-    /// customer and a cleaner without building two full identity graphs the sweep never reads.
+    /// cleaner assignment without building its employee graph. Recipient accounts are persisted.
     /// </summary>
     private async Task SeedCatalogAsync()
     {
         _tenantProvider.ClearTenantOverride();
         await using var ctx = NewContext();
 
+        ctx.Languages.Add(Language.Create("en", "English"));
         ctx.Tenants.AddRange(
             Tenant.Create(TenantA, "Operator A"),
             Tenant.Create(TenantB, "Operator B"),
@@ -160,6 +161,10 @@ public class PreCleaningReminderTenantStampTests(PostgresContainerFixture fixtur
         // an assignment EXISTS, and a full employee graph would add nothing but fixtures.
         _tenantProvider.SetTenantOverride(tenantId);
         await using var ctx = NewContext();
+        var customer = User.CreateWithPassword($"{userId}@test.local", "Password123!", "Reminder", "Customer");
+        customer.Id = userId;
+        customer.TenantId = tenantId;
+        ctx.Users.Add(customer);
         ctx.Orders.Add(order);
         await ctx.CommitAsync(CancellationToken.None);
         _tenantProvider.ClearTenantOverride();
@@ -173,7 +178,7 @@ public class PreCleaningReminderTenantStampTests(PostgresContainerFixture fixtur
         await using var ctx = NewContext();
         var handler = new SendPreCleaningReminders.Handler(
             new OrderRepository(ctx),
-            new NotificationProducer(new UserNotificationRepository(ctx), new OutboxPendingDispatch(ctx)),
+            new NotificationProducer(new UserNotificationRepository(ctx), new OutboxPendingDispatch(ctx), new UserRepository(ctx), Microsoft.Extensions.Logging.Abstractions.NullLogger<NotificationProducer>.Instance),
             _tenantProvider,
             ctx,
             NullLogger<SendPreCleaningReminders.Handler>.Instance);
@@ -269,7 +274,7 @@ public class PreCleaningReminderTenantStampTests(PostgresContainerFixture fixtur
         var recorder = new TenantRecordingUnitOfWork(ctx, _tenantProvider);
         var handler = new SendPreCleaningReminders.Handler(
             new OrderRepository(ctx),
-            new NotificationProducer(new UserNotificationRepository(ctx), new OutboxPendingDispatch(ctx)),
+            new NotificationProducer(new UserNotificationRepository(ctx), new OutboxPendingDispatch(ctx), new UserRepository(ctx), Microsoft.Extensions.Logging.Abstractions.NullLogger<NotificationProducer>.Instance),
             _tenantProvider,
             recorder,
             NullLogger<SendPreCleaningReminders.Handler>.Instance);

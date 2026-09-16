@@ -50,12 +50,15 @@ public class GetPagedDisputes
             var page = ownerId is null
                 ? disputeRepository.GetPagedSort<DisputeSort>(request.Offset, request.Limit, filter, request.Sort.MapToDomain())
                 : disputeRepository.GetPagedSortForOwner<DisputeSort>(ownerId, request.Offset, request.Limit, filter, request.Sort.MapToDomain());
-            var items = await page
+            // Establish the page under the access filter before loading its cross-company customer navigation.
+            var ids = await page.Select(d => d.Id).ToListAsync(cancellationToken);
+            var rows = await disputeRepository.GetQueryableIgnoringTenant()
+                .Where(d => ids.Contains(d.Id))
                 .Include(d => d.Order)
                 .Include(d => d.User)
                 .AsNoTracking()
-                .Select(dispute => dispute.MapToListItem())
-                .ToListAsync(cancellationToken);
+                .ToDictionaryAsync(d => d.Id, cancellationToken);
+            var items = ids.Where(rows.ContainsKey).Select(id => rows[id].MapToListItem()).ToList();
 
             return items.MapToDto(totalItems, request);
         }

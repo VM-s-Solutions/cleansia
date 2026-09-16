@@ -190,7 +190,7 @@ public sealed class NewJobsDigestPreferredHoldTests : IDisposable
 
         var handler = new NotifyLapsedPreferredOffers.Handler(
             new OrderRepository(ctx),
-            new NotificationProducer(new UserNotificationRepository(ctx), new OutboxPendingDispatch(ctx)),
+            new NotificationProducer(new UserNotificationRepository(ctx), new OutboxPendingDispatch(ctx), new UserRepository(ctx), Microsoft.Extensions.Logging.Abstractions.NullLogger<NotificationProducer>.Instance),
             tenantProvider,
             ctx,
             NullLogger<NotifyLapsedPreferredOffers.Handler>.Instance);

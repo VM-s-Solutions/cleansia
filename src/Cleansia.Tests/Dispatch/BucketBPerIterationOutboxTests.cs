@@ -84,6 +84,14 @@ public sealed class BucketBPerIterationOutboxTests : IDisposable
     private async Task SeedAsync(params Order[] orders)
     {
         await using var ctx = NewContext();
+        foreach (var order in orders.Where(o => o.UserId is not null).GroupBy(o => o.UserId).Select(g => g.First()))
+        {
+            if (await ctx.Users.IgnoreQueryFilters().AnyAsync(u => u.Id == order.UserId)) continue;
+            var user = User.CreateWithPassword($"{order.UserId}@test.local", "Password123!", "Test", "Customer");
+            user.Id = order.UserId!;
+            user.TenantId = order.TenantId ?? TestTenants.Default;
+            ctx.Users.Add(user);
+        }
         ctx.Orders.AddRange(orders);
         await ctx.CommitAsync(CancellationToken.None);
     }
@@ -94,7 +102,7 @@ public sealed class BucketBPerIterationOutboxTests : IDisposable
         var handler = new AutoCancelStaleRecurringOrders.Handler(
             new OrderRepository(ctx),
             new CreditAccountRepository(ctx),
-            new NotificationProducer(new UserNotificationRepository(ctx), new OutboxPendingDispatch(ctx)),
+            new NotificationProducer(new UserNotificationRepository(ctx), new OutboxPendingDispatch(ctx), new UserRepository(ctx), Microsoft.Extensions.Logging.Abstractions.NullLogger<NotificationProducer>.Instance),
             new FixedTenantProvider(TestTenants.Default),
             ctx,
             NullLogger<AutoCancelStaleRecurringOrders.Handler>.Instance);

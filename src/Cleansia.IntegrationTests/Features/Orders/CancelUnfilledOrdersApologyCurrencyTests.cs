@@ -123,7 +123,7 @@ public class CancelUnfilledOrdersApologyCurrencyTests(PostgresContainerFixture f
             new OrderRepository(ctx),
             new CreditAccountRepository(ctx),
             new NoRefunds(),
-            new NotificationProducer(new UserNotificationRepository(ctx), new OutboxPendingDispatch(ctx)),
+            new NotificationProducer(new UserNotificationRepository(ctx), new OutboxPendingDispatch(ctx), new UserRepository(ctx), Microsoft.Extensions.Logging.Abstractions.NullLogger<NotificationProducer>.Instance),
             new FixedTenantProvider(TestTenants.Default),
             ctx,
             NullLogger<CancelUnfilledOrders.Handler>.Instance);

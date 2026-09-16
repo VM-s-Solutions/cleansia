@@ -196,8 +196,9 @@ public class GetOrderDetails
 
             var cleanerName = string.IsNullOrEmpty(order.PreferredEmployeeId)
                 ? null
-                : await employeeRepository.GetQueryable()
+                : await employeeRepository.GetQueryableIgnoringTenant()
                     .AsNoTracking()
+                    // The disclosed employee id comes from the customer's authorized order.
                     .Where(e => e.Id == order.PreferredEmployeeId && e.User != null)
                     .Select(e => (e.User!.FirstName + " " + e.User.LastName).Trim())
                     .FirstOrDefaultAsync(cancellationToken);

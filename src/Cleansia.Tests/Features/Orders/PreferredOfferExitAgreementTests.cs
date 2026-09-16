@@ -73,7 +73,7 @@ public class PreferredOfferExitAgreementTests
             .Setup(s => s.CanAccessOrderAsync(It.IsAny<Order>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
         _employeeRepository
-            .Setup(r => r.GetQueryable())
+            .Setup(r => r.GetQueryableIgnoringTenant())
             .Returns(Array.Empty<Employee>().AsQueryable().BuildMock());
         _resolver
             .Setup(r => r.ResolveAsync(

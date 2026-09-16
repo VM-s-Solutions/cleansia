@@ -52,10 +52,15 @@ public sealed class NotificationProducerFeedRowTests : IDisposable
     {
         await using var ctx = NewContext();
         await ctx.Database.EnsureCreatedAsync();
+        var user = Cleansia.Core.Domain.Users.User.CreateWithPassword("feed@test.local", "Password123!", "Feed", "Recipient");
+        user.Id = UserId;
+        user.TenantId = TenantId;
+        ctx.Users.Add(user);
+        await ctx.CommitAsync(CancellationToken.None);
     }
 
     private static NotificationProducer NewProducer(CleansiaDbContext ctx) =>
-        new(new UserNotificationRepository(ctx), new OutboxPendingDispatch(ctx));
+        new(new UserNotificationRepository(ctx), new OutboxPendingDispatch(ctx), new UserRepository(ctx), Microsoft.Extensions.Logging.Abstractions.NullLogger<NotificationProducer>.Instance);
 
     private static Dictionary<string, string> OrderArgs(string orderId) => new()
     {
@@ -73,6 +78,18 @@ public sealed class NotificationProducerFeedRowTests : IDisposable
     {
         await using var ctx = NewContext();
         return await ctx.Set<Cleansia.Core.Domain.Outbox.OutboxMessage>().IgnoreQueryFilters().ToListAsync();
+    }
+
+    [Fact]
+    public async Task A_Missing_Recipient_Does_Not_Use_The_Caller_Supplied_Tenant()
+    {
+        await EnsureSchemaAsync();
+        await using var ctx = NewContext();
+        await NewProducer(ctx).NotifyAsync("missing-user", NotificationEventCatalog.OrderConfirmed,
+            OrderArgs("missing-order"), TenantId, "missing-order", CancellationToken.None);
+        await ctx.CommitAsync(CancellationToken.None);
+        Assert.Empty(await ReadRowsAsync());
+        Assert.Empty(await ReadOutboxAsync());
     }
 
     // ── FD-AC1: one row per send, atomic with the outbox row ─────────────────────────────────

@@ -76,9 +76,11 @@ public class DisputeRepository(CleansiaDbContext context) : BaseRepository<Dispu
         where TSort : BaseSort<Dispute>
         => PagedSort<TSort>(GetQueryableForOwner(userId), offset, limit, filter, sort);
 
-    public Task<Dispute?> GetDisputeWithDetailsAsync(string disputeId, CancellationToken cancellationToken)
+    public async Task<Dispute?> GetDisputeWithDetailsAsync(string disputeId, CancellationToken cancellationToken)
     {
-        return WithDetailGraph(GetDbSet())
+        if (!await GetDbSet().AnyAsync(d => d.Id == disputeId, cancellationToken)) return null;
+        // Prove the operator's root access before loading its cross-company message authors.
+        return await WithDetailGraph(GetQueryableIgnoringTenant())
             .FirstOrDefaultAsync(d => d.Id == disputeId, cancellationToken);
     }
 
@@ -116,9 +118,10 @@ public class DisputeRepository(CleansiaDbContext context) : BaseRepository<Dispu
             .FirstOrDefaultAsync(d => d.Id == disputeId, cancellationToken);
     }
 
-    public override Task<Dispute?> GetByIdAsync(string id, CancellationToken cancellationToken)
+    public override async Task<Dispute?> GetByIdAsync(string id, CancellationToken cancellationToken)
     {
-        return GetDbSet()
+        if (!await GetDbSet().AnyAsync(d => d.Id == id, cancellationToken)) return null;
+        return await GetQueryableIgnoringTenant()
             .Include(d => d.Order)
             .Include(d => d.User)
             .Include(d => d.Messages)

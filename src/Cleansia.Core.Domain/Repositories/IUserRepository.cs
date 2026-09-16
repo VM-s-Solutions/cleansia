@@ -77,6 +77,9 @@ public interface IUserRepository : IRepository<User, string>
     /// </summary>
     Task<User?> GetByIdIgnoringTenantAsync(string id, CancellationToken cancellationToken = default);
 
+    /// <summary>Recipient company for a notification addressed by a server-derived user id.</summary>
+    Task<string?> GetNotificationRecipientTenantAsync(string userId, CancellationToken cancellationToken);
+
     /// <summary>
     /// Atomically increments the account's failed-login counter and opens the lockout window once
     /// <see cref="User.MaxFailedLoginAttempts"/> is reached. Persists immediately (the failing login

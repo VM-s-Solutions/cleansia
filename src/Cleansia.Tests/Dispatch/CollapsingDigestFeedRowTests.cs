@@ -27,8 +27,14 @@ public class CollapsingDigestFeedRowTests
     private readonly Mock<IUserNotificationRepository> _repository = new();
     private readonly Mock<IPendingDispatch> _pendingDispatch = new();
 
-    private NotificationProducer Producer() =>
-        new(_repository.Object, _pendingDispatch.Object);
+    private NotificationProducer Producer()
+    {
+        var users = new Mock<IUserRepository>();
+        users.Setup(r => r.GetNotificationRecipientTenantAsync(UserId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync("recipient-company");
+        return new(_repository.Object, _pendingDispatch.Object, users.Object,
+            Microsoft.Extensions.Logging.Abstractions.NullLogger<NotificationProducer>.Instance);
+    }
 
     private static Dictionary<string, string> Count(int n) => new() { ["count"] = n.ToString() };
 

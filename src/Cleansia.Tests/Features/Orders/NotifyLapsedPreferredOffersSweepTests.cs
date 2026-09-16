@@ -344,6 +344,14 @@ public sealed class NotifyLapsedPreferredOffersSweepTests : IDisposable
     private async Task SeedAsync(params Order[] orders)
     {
         await using var ctx = NewContext();
+        foreach (var order in orders.Where(o => o.UserId is not null).GroupBy(o => o.UserId).Select(g => g.First()))
+        {
+            if (await ctx.Users.IgnoreQueryFilters().AnyAsync(u => u.Id == order.UserId)) continue;
+            var user = User.CreateWithPassword($"{order.UserId}@test.local", "Password123!", "Test", "Customer");
+            user.Id = order.UserId!;
+            user.TenantId = order.TenantId ?? TestTenants.Default;
+            ctx.Users.Add(user);
+        }
         ctx.Orders.AddRange(orders);
         await ctx.CommitAsync(CancellationToken.None);
     }
@@ -353,7 +361,7 @@ public sealed class NotifyLapsedPreferredOffersSweepTests : IDisposable
         await using var ctx = NewContext();
         var handler = new NotifyLapsedPreferredOffers.Handler(
             new OrderRepository(ctx),
-            new NotificationProducer(new UserNotificationRepository(ctx), new OutboxPendingDispatch(ctx)),
+            new NotificationProducer(new UserNotificationRepository(ctx), new OutboxPendingDispatch(ctx), new UserRepository(ctx), Microsoft.Extensions.Logging.Abstractions.NullLogger<NotificationProducer>.Instance),
             _tenantProvider,
             ctx,
             NullLogger<NotifyLapsedPreferredOffers.Handler>.Instance);
@@ -375,7 +383,7 @@ public sealed class NotifyLapsedPreferredOffersSweepTests : IDisposable
         var handler = new DeclinePreferredOffer.Handler(
             new OrderRepository(ctx),
             accessService.Object,
-            new NotificationProducer(new UserNotificationRepository(ctx), new OutboxPendingDispatch(ctx)));
+            new NotificationProducer(new UserNotificationRepository(ctx), new OutboxPendingDispatch(ctx), new UserRepository(ctx), Microsoft.Extensions.Logging.Abstractions.NullLogger<NotificationProducer>.Instance));
 
         Assert.True((await handler.Handle(new DeclinePreferredOffer.Command(orderId), default)).IsSuccess);
         await ctx.CommitAsync(CancellationToken.None);

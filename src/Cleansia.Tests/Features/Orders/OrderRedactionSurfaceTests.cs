@@ -76,6 +76,7 @@ public class OrderRedactionSurfaceTests
     /// </summary>
     private static readonly string[] DetailKept =
     [
+        nameof(OrderItem.CountryId),
         nameof(OrderItem.Id),
         nameof(OrderItem.CustomerAddressApproximate),
         nameof(OrderItem.RequiredEmployees),
@@ -381,7 +382,8 @@ public class OrderRedactionSurfaceTests
             ExpressWaiverForfeitedOnCancel: true,
             PreferredOffer: new PreferredOfferDetails(
                 PreferredOfferState.AwaitingConfirmation, "Petra", DateTime.UtcNow.AddHours(2), true),
-            CustomerCompany: "Account company");
+            CustomerCompany: "Account company",
+            CountryId: "CZ");
 
     private static OrderListItem FullyPopulatedListItem() =>
         new(

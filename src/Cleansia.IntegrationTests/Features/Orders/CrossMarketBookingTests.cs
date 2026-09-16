@@ -46,6 +46,7 @@ public partial class CreateOrderCallerCurrencyTests
                 var detail = await mediator.Send(new GetOrderDetails.Query(created.Value.Id));
                 Assert.True(detail.IsSuccess, detail.Error?.Message);
                 Assert.Null(detail.Value.CustomerCompany);
+                Assert.Equal(Slovakia, detail.Value.CountryId);
                 var preview = await mediator.Send(new GetCancellationFeePreview.Query(created.Value.Id));
                 Assert.True(preview.IsSuccess, preview.Error?.Message);
                 var cancelled = await mediator.Send(new CancelOrder.Command(created.Value.Id, null));

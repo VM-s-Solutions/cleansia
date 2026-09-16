@@ -171,5 +171,8 @@ public record OrderItem(
     string? SystemCancellationReason = null,
 
     /// <summary>Customer company name for an admin viewing another company's customer; null otherwise.</summary>
-    string? CustomerCompany = null
+    string? CustomerCompany = null,
+
+    /// <summary>The booking address's country, independent of the customer's browsing market.</summary>
+    string? CountryId = null
 );

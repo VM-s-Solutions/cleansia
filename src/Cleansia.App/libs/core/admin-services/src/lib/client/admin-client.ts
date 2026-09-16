@@ -28833,6 +28833,7 @@ export class OrderItem implements IOrderItem {
     hasAccessInstructions!: boolean | undefined;
     systemCancellationReason!: string | undefined;
     customerCompany!: string | undefined;
+    countryId!: string | undefined;
 
     constructor(data?: IOrderItem) {
         if (data) {
@@ -28933,6 +28934,7 @@ export class OrderItem implements IOrderItem {
             this.hasAccessInstructions = Data["hasAccessInstructions"];
             this.systemCancellationReason = Data["systemCancellationReason"];
             this.customerCompany = Data["customerCompany"];
+            this.countryId = Data["countryId"];
         }
     }
 
@@ -29033,6 +29035,7 @@ export class OrderItem implements IOrderItem {
         data["hasAccessInstructions"] = this.hasAccessInstructions;
         data["systemCancellationReason"] = this.systemCancellationReason;
         data["customerCompany"] = this.customerCompany;
+        data["countryId"] = this.countryId;
         return data;
     }
 }
@@ -29096,6 +29099,7 @@ export interface IOrderItem {
     hasAccessInstructions: boolean | undefined;
     systemCancellationReason: string | undefined;
     customerCompany: string | undefined;
+    countryId: string | undefined;
 }
 
 export class OrderListItem implements IOrderListItem {

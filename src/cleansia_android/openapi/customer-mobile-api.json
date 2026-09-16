@@ -10119,6 +10119,10 @@
           "customerCompany": {
             "type": "string",
             "nullable": true
+          },
+          "countryId": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false

@@ -308,7 +308,8 @@ public static class OrderMappers
             HasAfterPhotos: hasAfterPhotos,
             ExpressWaiverForfeitedOnCancel: expressWaiverForfeitedOnCancel,
             PreferredOffer: preferredOffer,
-            CustomerCompany: customerCompany
+            CustomerCompany: customerCompany,
+            CountryId: order.CustomerAddress?.CountryId
         );
     }
 

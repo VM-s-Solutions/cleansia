@@ -667,6 +667,11 @@ const SHARED_KEYS_NOT_REACHABLE_HERE: ReadonlyArray<{
   reason: string;
 }> = [
   {
+    key: 'auth.company_deactivated',
+    reason:
+      'Emitted by CompanySignInGate (ADR-0064 D1) and re-asserted by TokenService as an invariant, for the Employee profile on the Partner and Mobile audiences only. The customer audience admits every profile — a cleaner of a deactivated company signs in here to export or erase — so no request through this host can carry the key.',
+  },
+  {
     key: 'company.not_found',
     reason:
       'Emitted by ReceiptService, but only from ReserveReceiptAsync, RealizeFiscalAndPdfAsync and RetryFiscalRegistrationAsync. This host\'s only ReceiptService caller is DownloadOrderReceipt, which calls DownloadReceiptPdfAsync and throws none of them; the other three run in the Functions receipt handler and the fiscal retry service, neither behind an HTTP controller.',

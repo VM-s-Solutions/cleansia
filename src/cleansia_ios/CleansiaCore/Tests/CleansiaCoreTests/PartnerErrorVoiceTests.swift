@@ -32,6 +32,7 @@ final class PartnerErrorVoiceTests: XCTestCase {
         PartnerOnlyKey("order.completion_notes.too_long", emitters: "CompleteOrder"),
         PartnerOnlyKey("employee.profile_incomplete", emitters: "TakeOrder, CompleteOrder, ApproveEmployee"),
         PartnerOnlyKey("employee.not_approved", emitters: "TakeOrder, StartOrder, CompleteOrder, MarkCashCollected"),
+        PartnerOnlyKey("auth.company_deactivated", emitters: "CompanySignInGate via MobilePartnerLogin, GoogleAuth, RefreshToken"),
         PartnerOnlyKey(
             "payout.not_found",
             emitters: "GetMyPayoutDetails, GetEmployeePayoutDetails, RevealEmployeePayoutDetails"
@@ -61,6 +62,7 @@ final class PartnerErrorVoiceTests: XCTestCase {
     private static let partnerReachable: [String: String] = [
         "auth.account_locked": "LoginValidator",
         "auth.apple_type_error": "AuthTypeErrorMessages",
+        "auth.company_deactivated": "CompanySignInGate via MobilePartnerLogin, GoogleAuth, RefreshToken",
         "auth.external_type_error": "AuthTypeErrorMessages",
         "auth.google_type_error": "AuthTypeErrorMessages",
         "auth.insufficient_privileges": "ConfirmUserEmail, GoogleAuth, MobilePartnerLogin",

@@ -14,7 +14,9 @@ namespace Cleansia.Core.AppServices.Features.Countries;
 /// on every client, and a serviced country whose configuration is missing or whose currency is not
 /// switched on is an address the quote cannot price — the customer meets the dead end three screens
 /// after the admin created it. The gate moves that refusal to the admin. Switching OFF is never
-/// gated.</para>
+/// gated. The configuration must also name an operating company that is not deactivated (ADR-0064
+/// D1): the repository's serviced predicate requires an active operator, so a country switched on
+/// without one would be serviced and not serviced at once.</para>
 /// </summary>
 public class SetCountryServiced
 {
@@ -27,7 +29,8 @@ public class SetCountryServiced
         public Validator(
             ICountryRepository countryRepository,
             ICountryConfigurationRepository countryConfigurationRepository,
-            ICurrencyRepository currencyRepository)
+            ICurrencyRepository currencyRepository,
+            ITenantRepository tenantRepository)
         {
             RuleFor(x => x.CountryId)
                 .Cascade(CascadeMode.Stop)
@@ -48,7 +51,23 @@ public class SetCountryServiced
                 }
 
                 var currency = await currencyRepository.GetByCodeAsync(configuration.DefaultCurrencyCode, ct);
-                return currency is { IsActive: true };
+                if (currency is not { IsActive: true })
+                {
+                    return false;
+                }
+
+                return await OperatorIsActiveAsync(configuration.OperatorTenantId, ct);
+            }
+
+            async Task<bool> OperatorIsActiveAsync(string? operatorTenantId, CancellationToken ct)
+            {
+                if (operatorTenantId is null)
+                {
+                    return false;
+                }
+
+                var operatorTenant = await tenantRepository.GetByIdAsync(operatorTenantId, ct);
+                return operatorTenant is { IsDeactivated: false };
             }
         }
     }

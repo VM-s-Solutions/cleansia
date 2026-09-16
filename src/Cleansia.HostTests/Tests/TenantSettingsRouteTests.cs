@@ -77,17 +77,22 @@ public sealed class TenantSettingsRouteTests(HostTestPostgresFixture db) : Authz
         HttpAssert.IsOk(resp);
         var body = await resp.Content.ReadFromJsonAsync<SettingsResponse>();
         Assert.NotNull(body);
-        Assert.Equal(9, body!.Settings.Count);
+        Assert.Equal(10, body!.Settings.Count);
         Assert.All(body.Settings, s =>
         {
             Assert.False(s.IsOverridden);
             Assert.Equal(s.DefaultValue, s.EffectiveValue);
-            Assert.Equal("retention", s.Category);
         });
+        Assert.Equal(9, body.Settings.Count(s => s.Category == "retention"));
         var window = Assert.Single(body.Settings, s => s.Key == Key);
         Assert.Equal("3", window.DefaultValue);
         Assert.Equal(1, window.Min);
         Assert.Equal(100, window.Max);
+        var horizon = Assert.Single(body.Settings, s => s.Key == "lifecycle.chargeback_horizon_days");
+        Assert.Equal("lifecycle", horizon.Category);
+        Assert.Equal("180", horizon.DefaultValue);
+        Assert.Equal(0, horizon.Min);
+        Assert.Equal(730, horizon.Max);
     }
 
     [Fact]

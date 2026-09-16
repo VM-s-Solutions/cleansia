@@ -2,6 +2,7 @@ using Cleansia.Core.AppServices.Auditing;
 using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Features.Auth;
 using Cleansia.Core.AppServices.Services.Interfaces;
+using Cleansia.Core.AppServices.Tenancy;
 using Cleansia.Core.AppServices.Shared.DTOs.ResponseModels;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Legal;
@@ -57,7 +58,7 @@ public sealed class SocialAuthProvisioningConsentTests
         verifier.Setup(v => v.VerifyAsync("token", It.IsAny<CancellationToken>())).ReturnsAsync(claims);
         return new GoogleAuth.Handler(
             verifier.Object, _tokenService.Object, _cartRepository.Object, _userRepository.Object, _hostAudience,
-            _consentService.Object, _legalDocuments.Object, _auditContext);
+            _consentService.Object, _legalDocuments.Object, _auditContext, Mock.Of<ICompanySignInGate>());
     }
 
     private AppleAuth.Handler AppleHandler(AppleVerifiedClaims? claims)
@@ -66,7 +67,7 @@ public sealed class SocialAuthProvisioningConsentTests
         verifier.Setup(v => v.VerifyAsync("token", "nonce", It.IsAny<CancellationToken>())).ReturnsAsync(claims);
         return new AppleAuth.Handler(
             verifier.Object, _tokenService.Object, _cartRepository.Object, _userRepository.Object, _hostAudience,
-            _consentService.Object, _legalDocuments.Object, NullLogger<AppleAuth.Handler>.Instance, _auditContext);
+            _consentService.Object, _legalDocuments.Object, NullLogger<AppleAuth.Handler>.Instance, _auditContext, Mock.Of<ICompanySignInGate>());
     }
 
     private static GoogleAuth.Command GoogleCommand(bool termsAccepted) =>

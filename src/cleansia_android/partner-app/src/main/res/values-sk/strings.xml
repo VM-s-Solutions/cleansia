@@ -1092,6 +1092,7 @@
     <string name="error_auth_refresh_token_reused">Z bezpečnostných dôvodov ste boli odhlásení zo všetkých zariadení.</string>
     <string name="error_auth_current_password_invalid">Vaše súčasné heslo nie je správne.</string>
     <string name="error_auth_account_locked">Príliš veľa neúspešných pokusov o prihlásenie. Účet je dočasne uzamknutý — skúste to znova o niekoľko minút.</string>
+    <string name="error_auth_company_deactivated">Vaša spoločnosť bola deaktivovaná, partnerská aplikácia vám preto už nie je k dispozícii. Svoje údaje môžete stále exportovať alebo vymazať v zákazníckej aplikácii.</string>
 
     <string name="error_user_email_confirmed">Tento e-mail je už potvrdený.</string>
     <string name="error_user_existing_email">Účet s týmto e-mailom už existuje.</string>

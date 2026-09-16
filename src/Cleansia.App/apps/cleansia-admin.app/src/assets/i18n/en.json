@@ -1775,7 +1775,8 @@
         "source": "Source"
       },
       "categories": {
-        "retention": "Data retention"
+        "retention": "Data retention",
+        "lifecycle": "Company lifecycle"
       },
       "descriptions": {
         "retention": {
@@ -1806,6 +1807,9 @@
           "dispute_text": {
             "years": "Years after a customer's account erasure that the free text of their disputes is kept before it is blanked"
           }
+        },
+        "lifecycle": {
+          "chargeback_horizon_days": "Days after the company's latest card-paid cleaning during which a cardholder may still dispute the charge; the archive waits until they have passed"
         }
       }
     },
@@ -2778,7 +2782,11 @@
     "company": {
       "exists_for_country": "Company information already exists for this country",
       "in_use": "Cannot delete company because it is currently in use",
-      "not_found": "Company information not found"
+      "not_found": "Company information not found",
+      "already_deactivated": "The company is already deactivated.",
+      "not_deactivated": "The company is not deactivated, so there is nothing to reactivate.",
+      "archived": "The company is frozen for archive; its lifecycle can no longer change.",
+      "operates_default_market": "The company operates the default market and cannot be deactivated. Move the default market to another company first."
     },
     "country": {
       "in_use": "Cannot delete country because it is currently in use",

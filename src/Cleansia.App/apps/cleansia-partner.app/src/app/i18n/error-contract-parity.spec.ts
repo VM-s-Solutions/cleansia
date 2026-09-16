@@ -440,6 +440,9 @@ function resolveKey(
 const PARTNER_SURFACE_ERROR_KEYS: readonly string[] = [
   // Auth — partner login / confirm / reset / refresh
   'auth.account_locked',
+  // A cleaner of a deactivated company is refused on every partner sign-in and on refresh
+  // (CompanySignInGate, ADR-0064 D1); the key is emitted from Tenancy/, not the feature file.
+  'auth.company_deactivated',
   'auth.insufficient_privileges',
   'auth.invalid_confirmation_code',
   'auth.invalid_google_token',

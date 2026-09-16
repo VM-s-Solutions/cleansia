@@ -13,6 +13,7 @@ using Cleansia.Core.Domain.Packages;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.SeedWork;
 using Cleansia.Core.Domain.Services;
+using Cleansia.Core.Domain.Tenancy;
 using Cleansia.Core.Domain.Users;
 using Cleansia.Infra.Database;
 using Cleansia.Infra.Database.Repositories;
@@ -84,6 +85,45 @@ public sealed class MaterializeRecurringBookingsTenantStampingTests : IDisposabl
         Assert.Equal(TenantB, await OrderTenantOfAsync("tmpl-b"));
     }
 
+    /// <summary>
+    /// ADR-0064 D1 — the sweep asks the registry once per company and skips a deactivated one's
+    /// templates: no order for B, while A's template still materialises.
+    /// </summary>
+    [Fact]
+    public async Task A_Deactivated_Companys_Templates_Are_Skipped_And_The_Other_Companys_Materialise()
+    {
+        await SeedAsync(
+            Template("tmpl-a", "user-a", "saved-a", TenantA),
+            Template("tmpl-b", "user-b", "saved-b", TenantB));
+        await RegisterCompaniesAsync(deactivated: TenantB);
+
+        var response = await RunSweepAsync();
+
+        Assert.True(response.OrdersCreated > 0);
+        Assert.Equal(1, response.TemplatesProcessed);
+        Assert.Equal(TenantA, await OrderTenantOfAsync("tmpl-a"));
+        await using var ctx = NewContext();
+        Assert.Empty(await ctx.Orders.IgnoreQueryFilters().Where(o => o.RecurringTemplateId == "tmpl-b").ToListAsync());
+    }
+
+    private async Task RegisterCompaniesAsync(string deactivated)
+    {
+        _tenantProvider.ClearTenantOverride();
+        await using var ctx = NewContext();
+        foreach (var tenantId in new[] { TenantA, TenantB })
+        {
+            var tenant = Tenant.Create(tenantId, tenantId);
+            if (tenantId == deactivated)
+            {
+                tenant.Deactivate("admin-1", DateTimeOffset.UtcNow);
+            }
+
+            ctx.Tenants.Add(tenant);
+        }
+
+        await ctx.CommitAsync(CancellationToken.None);
+    }
+
     [Fact]
     public async Task Each_Templates_Status_Tracks_Are_Stamped_With_Their_Own_Tenant()
     {
@@ -136,6 +176,7 @@ public sealed class MaterializeRecurringBookingsTenantStampingTests : IDisposabl
 
         var handler = new MaterializeRecurringBookings.Handler(
             outerScope.ServiceProvider.GetRequiredService<IRecurringBookingTemplateRepository>(),
+            outerScope.ServiceProvider.GetRequiredService<ITenantRepository>(),
             provider.GetRequiredService<IServiceScopeFactory>(),
             NullLogger<MaterializeRecurringBookings.Handler>.Instance);
 
@@ -171,6 +212,8 @@ public sealed class MaterializeRecurringBookingsTenantStampingTests : IDisposabl
 
         services.AddScoped<IRecurringBookingTemplateRepository>(
             sp => new RecurringBookingTemplateRepository(sp.GetRequiredService<CleansiaDbContext>()));
+        services.AddScoped<ITenantRepository>(
+            sp => new TenantRepository(sp.GetRequiredService<CleansiaDbContext>()));
         services.AddScoped<ISavedAddressRepository>(
             sp => new SavedAddressRepository(sp.GetRequiredService<CleansiaDbContext>(), session));
         services.AddScoped<IAddressRepository>(

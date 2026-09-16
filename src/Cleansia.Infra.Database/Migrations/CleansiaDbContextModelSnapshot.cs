@@ -5478,6 +5478,35 @@ namespace Cleansia.Infra.Database.Migrations
                         .HasMaxLength(26)
                         .HasColumnType("character varying(26)");
 
+                    b.Property<string>("ArchiveManifestSha256")
+                        .HasMaxLength(64)
+                        .HasColumnType("character(64)");
+
+                    b.Property<string>("ArchiveRequestedBy")
+                        .HasMaxLength(26)
+                        .HasColumnType("character varying(26)");
+
+                    b.Property<DateTimeOffset?>("ArchiveRequestedOn")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset?>("ArchivedOn")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<DateTimeOffset>("CreatedOn")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("DeactivatedBy")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<DateTimeOffset?>("DeactivatedOn")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<bool>("IsActive")
                         .HasColumnType("boolean");
 
@@ -5485,6 +5514,29 @@ namespace Cleansia.Infra.Database.Migrations
                         .IsRequired()
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<DateTimeOffset?>("UpdatedOn")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateOnly?>("WindDownFrom")
+                        .HasColumnType("date");
+
+                    b.Property<DateTimeOffset?>("WindDownLastRunOn")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("WindDownRequestedBy")
+                        .HasMaxLength(26)
+                        .HasColumnType("character varying(26)");
+
+                    b.Property<DateTimeOffset?>("WindDownRequestedOn")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset?>("WindDownRunStartedOn")
+                        .HasColumnType("timestamp with time zone");
 
                     b.HasKey("Id");
 

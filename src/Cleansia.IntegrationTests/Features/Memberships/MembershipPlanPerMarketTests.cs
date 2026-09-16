@@ -10,6 +10,7 @@ using Cleansia.Infra.Common.Validations;
 using Cleansia.Infra.Database;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using Cleansia.TestUtilities;
 using Microsoft.Extensions.DependencyInjection;
 using Npgsql;
 
@@ -194,8 +195,8 @@ public class MembershipPlanPerMarketTests(PostgresContainerFixture fixture) : Ba
         var svk = Country.Create("Slovakia", "SVK", "SK", isServiced: true);
         svk.Id = SvkId;
         ctx.Countries.AddRange(cze, svk);
-        ctx.CountryConfigurations.Add(CountryConfiguration.Create(CzeId, "CZK", "cs", 0.21m));
-        ctx.CountryConfigurations.Add(CountryConfiguration.Create(SvkId, "EUR", "sk", 0.20m));
+        ctx.CountryConfigurations.Add(CountryConfiguration.Create(CzeId, "CZK", "cs", 0.21m).AssignOperator(TestTenants.Default));
+        ctx.CountryConfigurations.Add(CountryConfiguration.Create(SvkId, "EUR", "sk", 0.20m).AssignOperator(TestTenants.Default));
 
         var monthly = MembershipPlan.Create("PLUS_MONTHLY", "Cleansia Plus (Monthly)", 5m, 4, true);
         monthly.Id = MonthlyId;

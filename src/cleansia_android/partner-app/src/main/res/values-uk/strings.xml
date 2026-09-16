@@ -1097,6 +1097,7 @@
     <string name="error_auth_refresh_token_reused">З міркувань безпеки вас було вийшло з усіх пристроїв.</string>
     <string name="error_auth_current_password_invalid">Ваш поточний пароль неправильний.</string>
     <string name="error_auth_account_locked">Забагато невдалих спроб входу. Акаунт тимчасово заблоковано — спробуйте ще раз за кілька хвилин.</string>
+    <string name="error_auth_company_deactivated">Вашу компанію деактивовано, тому партнерський застосунок вам більше не доступний. Ви й далі можете експортувати або видалити свої дані в застосунку для клієнтів.</string>
 
     <string name="error_user_email_confirmed">Цю е-пошту вже підтверджено.</string>
     <string name="error_user_existing_email">Акаунт з цією е-поштою вже існує.</string>

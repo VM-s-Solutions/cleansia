@@ -5,6 +5,7 @@ using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Common.Validators.Auth;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.AppServices.Shared.DTOs.ResponseModels;
+using Cleansia.Core.AppServices.Tenancy;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Infra.Common.Validations;
@@ -45,6 +46,7 @@ public class MobilePartnerLogin
         IUserRepository userRepository,
         IHostAudienceProvider hostAudience,
         IRequestMetadataProvider requestMetadata,
+        ICompanySignInGate companySignInGate,
         ILogger<Handler> logger)
         : ICommandHandler<Command, JwtTokenResponse>
     {
@@ -73,6 +75,11 @@ public class MobilePartnerLogin
             {
                 return BusinessResult.Failure<JwtTokenResponse>(
                     new Error(nameof(command.Email), BusinessErrorMessage.InsufficientPrivileges));
+            }
+
+            if (await companySignInGate.RefusalForAsync(user, hostAudience.Audience, cancellationToken) is { } refusal)
+            {
+                return BusinessResult.Failure<JwtTokenResponse>(new Error(nameof(command.Email), refusal));
             }
 
             user.ResetLoginThrottle();

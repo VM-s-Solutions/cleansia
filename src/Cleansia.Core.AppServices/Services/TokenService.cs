@@ -4,6 +4,7 @@ using Microsoft.IdentityModel.Tokens;
 using System.Security.Claims;
 using System.Text;
 using Cleansia.Core.AppServices.Extensions;
+using Cleansia.Core.AppServices.Tenancy;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Users;
@@ -18,6 +19,7 @@ public class TokenService(
     IEmployeeRepository employeeRepository,
     IRequestMetadataProvider requestMetadata,
     ITenantProvider tenantProvider,
+    ICompanySignInGate companySignInGate,
     TimeProvider timeProvider)
     : ITokenService
 {
@@ -34,6 +36,11 @@ public class TokenService(
         if (!Admits(audience, user.Profile))
         {
             throw new InvalidOperationException($"A {audience} session is never minted for a {user.Profile} account; the issuing command refuses it first.");
+        }
+
+        if (await companySignInGate.RefusalForAsync(user, audience, cancellationToken) is { } refusal)
+        {
+            throw new InvalidOperationException($"A {audience} session is never minted for a {user.Profile} account of a deactivated company ({refusal}); the issuing command refuses it first.");
         }
 
         // Every token mint runs on an anonymous request, so the RefreshToken row added below would be

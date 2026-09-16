@@ -3,6 +3,7 @@ using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Auth;
 using Cleansia.Core.AppServices.Services.Interfaces;
+using Cleansia.Core.AppServices.Tenancy;
 using Cleansia.Core.AppServices.Shared.DTOs.ResponseModels;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Repositories;
@@ -74,7 +75,8 @@ public class AppleAuthHandlerTests
             new Mock<IConsentService>().Object,
             new Mock<ILegalDocumentResolver>().Object,
             new CapturingLogger<AppleAuth.Handler>(_logEntries),
-            new AuditContext())!;
+            new AuditContext(),
+            Mock.Of<ICompanySignInGate>())!;
 
     // Defaults to the signup screen's shape so the provisioning branch stays reachable; the sign-in
     // screen sends no tick and its tests pass termsAccepted: false explicitly.

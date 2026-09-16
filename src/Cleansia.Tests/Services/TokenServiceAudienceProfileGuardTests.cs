@@ -1,6 +1,8 @@
 using Cleansia.Core.AppServices.Authentication;
+using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Services;
 using Cleansia.Core.AppServices.Services.Interfaces;
+using Cleansia.Core.AppServices.Tenancy;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Users;
@@ -23,6 +25,7 @@ public sealed class TokenServiceAudienceProfileGuardTests
     private readonly Mock<IJwtSettings> _jwtSettings = new();
     private readonly Mock<IRefreshTokenService> _refreshTokenService = new();
     private readonly Mock<IEmployeeRepository> _employeeRepository = new();
+    private readonly Mock<ICompanySignInGate> _companySignInGate = new();
 
     public TokenServiceAudienceProfileGuardTests()
     {
@@ -47,6 +50,7 @@ public sealed class TokenServiceAudienceProfileGuardTests
         _employeeRepository.Object,
         Mock.Of<IRequestMetadataProvider>(),
         Mock.Of<ITenantProvider>(),
+        _companySignInGate.Object,
         TimeProvider.System);
 
     private static User ConfirmedAccount(UserProfile profile) =>
@@ -96,5 +100,22 @@ public sealed class TokenServiceAudienceProfileGuardTests
         var user = ConfirmedAccount(UserProfile.Administrator);
 
         await Assert.ThrowsAsync<InvalidOperationException>(() => Sut().GenerateTokenAsync(user, rememberMe: true, "cleansia.functions"));
+    }
+
+    /// <summary>ADR-0064 D1 — the company gate is the same class of invariant: a partner session is never minted for a cleaner of a deactivated company.</summary>
+    [Fact]
+    public async Task A_Cleaner_The_Company_Gate_Refuses_Is_Never_Minted_A_Session()
+    {
+        var user = ConfirmedAccount(UserProfile.Employee);
+        _companySignInGate
+            .Setup(g => g.RefusalForAsync(user, JwtAudiences.Partner, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(BusinessErrorMessage.CompanyDeactivated);
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() => Sut().GenerateTokenAsync(user, rememberMe: true, JwtAudiences.Partner));
+
+        _refreshTokenService.Verify(
+            s => s.Issue(It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<string?>()),
+            Times.Never);
+        Assert.Null(user.LastLoginAt);
     }
 }

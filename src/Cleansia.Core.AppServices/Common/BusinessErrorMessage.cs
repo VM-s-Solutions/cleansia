@@ -1,4 +1,4 @@
-namespace Cleansia.Core.AppServices.Common;
+﻿namespace Cleansia.Core.AppServices.Common;
 
 public static class BusinessErrorMessage
 {
@@ -30,6 +30,8 @@ public static class BusinessErrorMessage
     public const string CurrentPasswordInvalid = "auth.current_password_invalid";
     public const string AccountLocked = "auth.account_locked";
     public const string TooManyAttempts = "auth.too_many_attempts";
+    /// <summary>A cleaner of a deactivated company is refused on the partner audiences (ADR-0064 D1); administrators are not.</summary>
+    public const string CompanyDeactivated = "auth.company_deactivated";
 
     // Common
     public const string InvalidEnumValue = "common.invalid_enum_value";
@@ -511,6 +513,14 @@ public static class BusinessErrorMessage
     public const string TenantSettingUnknownKey = "tenant_setting.unknown_key";
     /// <summary>The value is not of the key's type or is outside its range (a retention window is 1 to its ceiling).</summary>
     public const string TenantSettingInvalidValue = "tenant_setting.invalid_value";
+
+    // Company lifecycle (ADR-0064) — the admin's own operating company
+    public const string CompanyAlreadyDeactivated = "company.already_deactivated";
+    public const string CompanyNotDeactivated = "company.not_deactivated";
+    /// <summary>A lifecycle command on a company frozen for archive, or already archived; reactivation from the archive is not offered.</summary>
+    public const string CompanyArchived = "company.archived";
+    /// <summary>Deactivating the company that holds the default market would refuse every anonymous identity request on every host.</summary>
+    public const string CompanyOperatesDefaultMarket = "company.operates_default_market";
 
     // Country Configuration
     public const string CountryConfigNotFound = "country_config.not_found";

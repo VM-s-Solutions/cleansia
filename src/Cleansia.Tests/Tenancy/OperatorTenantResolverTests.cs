@@ -11,8 +11,9 @@ using Moq;
 namespace Cleansia.Tests.Tenancy;
 
 /// <summary>
-/// ADR-0061 D3 — two answers for one country id. Is it a market (ADR-0058 D1's three predicates), and
-/// which operating company serves it. Null names the default market, the SAME one the directory flags.
+/// ADR-0061 D3 — two answers for one country id. Is it a market (ADR-0058 D1's three predicates, the
+/// fourth — an active operator — answered by the repository's serviced read, ADR-0064 D1), and which
+/// operating company serves it. Null names the default market, the SAME one the directory flags.
 /// </summary>
 public sealed class OperatorTenantResolverTests
 {
@@ -24,6 +25,7 @@ public sealed class OperatorTenantResolverTests
     public OperatorTenantResolverTests()
     {
         _countries.Setup(r => r.GetByIdAsync(It.IsAny<string>(), It.IsAny<CancellationToken>())).ReturnsAsync((Country?)null);
+        _countries.Setup(r => r.IsServicedAsync(It.IsAny<string>(), It.IsAny<CancellationToken>())).ReturnsAsync(false);
         _configurations.Setup(r => r.GetByCountryIdAsync(It.IsAny<string>(), It.IsAny<CancellationToken>())).ReturnsAsync((CountryConfiguration?)null);
         _currencies.Setup(r => r.GetByCodeAsync(It.IsAny<string>(), It.IsAny<CancellationToken>())).ReturnsAsync((Currency?)null);
         _directory.Setup(h => h.Handle(It.IsAny<GetMarkets.Request>(), It.IsAny<CancellationToken>())).ReturnsAsync([]);
@@ -32,12 +34,13 @@ public sealed class OperatorTenantResolverTests
     private OperatorTenantResolver Resolver() =>
         new(_countries.Object, _configurations.Object, _currencies.Object, _directory.Object, NullLogger<OperatorTenantResolver>.Instance);
 
-    private void ServicedCountry(string id, bool serviced = true, bool active = true)
+    private void ServicedCountry(string id, bool serviced = true, bool active = true, bool operatorActive = true)
     {
         var country = Country.Create(id, id, id[..2], serviced);
         country.Id = id;
         country.IsActive = active;
         _countries.Setup(r => r.GetByIdAsync(id, It.IsAny<CancellationToken>())).ReturnsAsync(country);
+        _countries.Setup(r => r.IsServicedAsync(id, It.IsAny<CancellationToken>())).ReturnsAsync(serviced && active && operatorActive);
     }
 
     private void Configuration(string countryId, string currencyCode, string? operatorTenantId)
@@ -79,10 +82,16 @@ public sealed class OperatorTenantResolverTests
     [InlineData("inactive")]
     [InlineData("unconfigured")]
     [InlineData("currency-off")]
+    [InlineData("operator-deactivated")]
     public async Task A_Country_Failing_Any_Market_Predicate_Is_Not_A_Market(string shape)
     {
         switch (shape)
         {
+            case "operator-deactivated":
+                ServicedCountry("DEU", operatorActive: false);
+                Configuration("DEU", "EUR", "cleansia-cz");
+                Currency("EUR");
+                break;
             case "unserviced":
                 ServicedCountry("DEU", serviced: false);
                 Configuration("DEU", "EUR", "cleansia-cz");
@@ -105,6 +114,18 @@ public sealed class OperatorTenantResolverTests
         }
 
         Assert.Equal(OperatorResolution.NotAMarket, await Resolver().ResolveAsync("DEU", CancellationToken.None));
+    }
+
+    [Fact]
+    public async Task The_Serviced_Answer_Is_The_Repositorys_Not_The_Loaded_Rows_Flags()
+    {
+        ServicedCountry("SVK");
+        Configuration("SVK", "EUR", "cleansia-sk");
+        Currency("EUR");
+        _countries.Setup(r => r.IsServicedAsync("SVK", It.IsAny<CancellationToken>())).ReturnsAsync(false);
+
+        Assert.Equal(OperatorResolution.NotAMarket, await Resolver().ResolveAsync("SVK", CancellationToken.None));
+        _countries.Verify(r => r.IsServicedAsync("SVK", It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]

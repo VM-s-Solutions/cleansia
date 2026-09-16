@@ -1046,7 +1046,8 @@
       "account_locked": "Too many failed login attempts. The account is temporarily locked — try again in a few minutes.",
       "too_many_attempts": "Too many attempts with this code. Request a new code and try again.",
       "invalid_refresh_token": "Your session has expired. Please sign in again.",
-      "refresh_token_reused": "Your session was used elsewhere. Please sign in again."
+      "refresh_token_reused": "Your session was used elsewhere. Please sign in again.",
+      "company_deactivated": "Your company has been deactivated, so the partner app is no longer available to you. You can still export or delete your data in the customer app."
     },
     "common": {
       "invalid_enum_value": "Invalid enum value",

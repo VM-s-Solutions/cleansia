@@ -61,8 +61,8 @@ public sealed class MembershipResubscribeAcrossCurrenciesRouteTests(HostTestPost
             svk.Id = SvkId;
             ctx.Countries.AddRange(cze, svk);
             ctx.CountryConfigurations.AddRange(
-                CountryConfiguration.Create(CzeId, "CZK", "cs", 0.21m),
-                CountryConfiguration.Create(SvkId, "EUR", "sk", 0.20m));
+                CountryConfiguration.Create(CzeId, "CZK", "cs", 0.21m).AssignOperator(HostTestTenants.Default),
+                CountryConfiguration.Create(SvkId, "EUR", "sk", 0.20m).AssignOperator(HostTestTenants.Default));
 
             var plan = DomainSeed.MembershipPlan("PLUS_MONTHLY");
             plan.Id = PlanId;

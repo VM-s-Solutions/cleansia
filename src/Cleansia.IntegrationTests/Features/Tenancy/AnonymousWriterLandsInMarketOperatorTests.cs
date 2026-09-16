@@ -27,10 +27,10 @@ namespace Cleansia.IntegrationTests.Features.Tenancy;
 /// <summary>
 /// ADR-0061 D3 through the real pipeline with NO claim and NO override: an anonymous request naming a
 /// market lands its rows in that market's operating company; naming none lands in the default market's;
-/// naming a market nobody operates is refused <c>tenant.not_found</c> and writes nothing; naming a
-/// country that is not a market is refused <c>country.not_serviced</c>, never <c>tenant.not_found</c>.
-/// The seeded map: CZE (default market) → cleansia-cz, SVK → cleansia-sk, POL → nobody, DEU → not
-/// serviced.
+/// naming a market nobody operates is not a market at all since ADR-0064 D1 (an operating company is the
+/// fourth serviced predicate) and is refused <c>country.not_serviced</c> like any country that is not a
+/// market, writing nothing; <c>tenant.not_found</c> is left to a default market nobody operates. The
+/// seeded map: CZE (default market) → cleansia-cz, SVK → cleansia-sk, POL → nobody, DEU → not serviced.
 /// </summary>
 [Collection("PostgresCollection")]
 public sealed class AnonymousWriterLandsInMarketOperatorTests(PostgresContainerFixture fixture) : BaseIntegrationTest(fixture)
@@ -227,7 +227,7 @@ public sealed class AnonymousWriterLandsInMarketOperatorTests(PostgresContainerF
     }
 
     [Fact]
-    public async Task A_Market_Nobody_Operates_Is_Refused_As_A_Configuration_Defect_And_Writes_Nothing()
+    public async Task A_Serviced_Country_Nobody_Operates_Is_Not_A_Market_And_Writes_Nothing()
     {
         await TestMethod(
             setup: Anonymous,
@@ -238,7 +238,7 @@ public sealed class AnonymousWriterLandsInMarketOperatorTests(PostgresContainerF
             {
                 Assert.False(result.IsSuccess);
                 var error = Assert.Single(Assert.IsAssignableFrom<IValidationResult>(result).Errors);
-                Assert.Equal(BusinessErrorMessage.TenantNotFound, error.Message);
+                Assert.Equal(BusinessErrorMessage.CountryNotServiced, error.Message);
                 Assert.Equal("CountryId", error.Code);
                 Assert.Empty(await context.Users.IgnoreQueryFilters().ToListAsync());
             },

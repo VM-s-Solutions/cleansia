@@ -60,8 +60,8 @@ $inner$ LANGUAGE plpgsql;
 -- The operating companies under the holding (ADR-0061 D1). The first is the Czech s.r.o.; every
 -- stamped row below carries its id, and the CZE configuration names it as the market's operator.
 -- A second company is a second row here plus an OperatorTenantId on its country's configuration.
-INSERT INTO public."Tenants" ("Id", "IsActive", "Name")
-VALUES ('cleansia-cz', true, 'Cleansia CZ s.r.o.')
+INSERT INTO public."Tenants" ("Id", "IsActive", "Name", "CreatedBy", "CreatedOn")
+VALUES ('cleansia-cz', true, 'Cleansia CZ s.r.o.', 'seed', now())
 ON CONFLICT ("Id") DO NOTHING;
 
 -- 2b. LANGUAGES

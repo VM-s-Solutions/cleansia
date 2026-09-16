@@ -80,7 +80,8 @@ public class GoogleAuth
         IHostAudienceProvider hostAudience,
         IConsentService consentService,
         ILegalDocumentResolver legalDocumentResolver,
-        IAuditContext auditContext)
+        IAuditContext auditContext,
+        ICompanySignInGate companySignInGate)
         : ICommandHandler<Command, JwtTokenResponse>
     {
         private bool IsCustomerHost => hostAudience.Audience == JwtAudiences.Customer;
@@ -143,6 +144,11 @@ public class GoogleAuth
                 {
                     return BusinessResult.Failure<JwtTokenResponse>(
                         new Error(nameof(Command.Email), BusinessErrorMessage.InvalidPassword));
+                }
+
+                if (await companySignInGate.RefusalForAsync(user, hostAudience.Audience, cancellationToken) is { } refusal)
+                {
+                    return BusinessResult.Failure<JwtTokenResponse>(new Error(nameof(Command.Email), refusal));
                 }
 
                 // Anchor the account to the subject on the one sign-in that resolved by email. A no-op

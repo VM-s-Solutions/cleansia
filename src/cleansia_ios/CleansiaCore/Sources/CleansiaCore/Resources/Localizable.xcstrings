@@ -246,6 +246,41 @@
         }
       }
     },
+    "error.auth.company_deactivated": {
+      "extractionState": "stale",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vaše společnost byla deaktivována, partnerská aplikace vám proto již není k dispozici. Svá data můžete stále exportovat nebo smazat v zákaznické aplikaci."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your company has been deactivated, so the partner app is no longer available to you. You can still export or delete your data in the customer app."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ваша компания деактивирована, поэтому партнёрское приложение вам больше не доступно. Вы по-прежнему можете экспортировать или удалить свои данные в приложении для клиентов."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vaša spoločnosť bola deaktivovaná, partnerská aplikácia vám preto už nie je k dispozícii. Svoje údaje môžete stále exportovať alebo vymazať v zákazníckej aplikácii."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Вашу компанію деактивовано, тому партнерський застосунок вам більше не доступний. Ви й далі можете експортувати або видалити свої дані в застосунку для клієнтів."
+          }
+        }
+      }
+    },
     "error.auth.current_password_invalid": {
       "extractionState": "stale",
       "localizations": {

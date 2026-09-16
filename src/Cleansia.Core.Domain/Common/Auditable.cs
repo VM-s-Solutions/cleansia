@@ -38,4 +38,13 @@ public class Auditable : BaseEntity
 
         return this;
     }
+
+    public Auditable Reactivated()
+    {
+        DeactivatedBy = null;
+        DeactivatedOn = null;
+        IsActive = true;
+
+        return this;
+    }
 }

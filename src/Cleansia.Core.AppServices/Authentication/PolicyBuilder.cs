@@ -210,6 +210,13 @@ public static class PolicyBuilder
         [Policy.CanUpdateTenantConfiguration] = PhysicalPolicy.AdminOnly,
         [Policy.CanDeleteTenantConfiguration] = PhysicalPolicy.AdminOnly,
 
+        // Company lifecycle
+        [Policy.CanViewCompanyLifecycle] = PhysicalPolicy.AdminOnly,
+        [Policy.CanDeactivateCompany] = PhysicalPolicy.AdminOnly,
+        [Policy.CanReactivateCompany] = PhysicalPolicy.AdminOnly,
+        [Policy.CanWindDownCompany] = PhysicalPolicy.AdminOnly,
+        [Policy.CanArchiveCompany] = PhysicalPolicy.AdminOnly,
+
         // Device
         [Policy.Authenticated] = PhysicalPolicy.Authenticated,
 

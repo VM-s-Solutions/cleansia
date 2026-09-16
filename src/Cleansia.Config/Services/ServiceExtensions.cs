@@ -237,6 +237,8 @@ public static class ServiceExtensions
         services.AddScoped<IOrderFactory, OrderFactory>();
         services.AddScoped<IOrderAddressResolver, OrderAddressResolver>();
         services.AddScoped<IOperatorTenantResolver, OperatorTenantResolver>();
+        // Scoped and memoised: the issuing command and the mint share one Tenants read (ADR-0064 D1).
+        services.AddScoped<ICompanySignInGate, CompanySignInGate>();
         services.AddScoped<IOrderPromoApplier, OrderPromoApplier>();
         services.AddScoped<IOrderLateReferralAcceptor, OrderLateReferralAcceptor>();
         services.AddScoped<IOrderPaymentDispatcher, OrderPaymentDispatcher>();

@@ -1046,7 +1046,8 @@
       "account_locked": "Příliš mnoho neúspěšných pokusů o přihlášení. Účet je dočasně uzamčen — zkuste to znovu za několik minut.",
       "too_many_attempts": "Příliš mnoho pokusů s tímto kódem. Vyžádejte si nový kód a zkuste to znovu.",
       "invalid_refresh_token": "Vaše relace vypršela. Přihlaste se prosím znovu.",
-      "refresh_token_reused": "Vaše relace byla použita jinde. Přihlaste se prosím znovu."
+      "refresh_token_reused": "Vaše relace byla použita jinde. Přihlaste se prosím znovu.",
+      "company_deactivated": "Vaše společnost byla deaktivována, partnerská aplikace vám proto již není k dispozici. Svá data můžete stále exportovat nebo smazat v zákaznické aplikaci."
     },
     "common": {
       "invalid_enum_value": "Neplatná hodnota výčtu",

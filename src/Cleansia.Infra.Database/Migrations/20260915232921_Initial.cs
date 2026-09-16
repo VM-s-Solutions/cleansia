@@ -246,7 +246,22 @@ namespace Cleansia.Infra.Database.Migrations
                 {
                     Id = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
                     Name = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: false),
-                    IsActive = table.Column<bool>(type: "boolean", nullable: false)
+                    WindDownFrom = table.Column<DateOnly>(type: "date", nullable: true),
+                    WindDownRequestedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    WindDownRequestedBy = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: true),
+                    WindDownRunStartedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    WindDownLastRunOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    ArchiveRequestedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    ArchiveRequestedBy = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: true),
+                    ArchivedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    ArchiveManifestSha256 = table.Column<string>(type: "character(64)", maxLength: 64, nullable: true),
+                    IsActive = table.Column<bool>(type: "boolean", nullable: false),
+                    CreatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
+                    CreatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
+                    UpdatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
+                    UpdatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    DeactivatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
+                    DeactivatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true)
                 },
                 constraints: table =>
                 {

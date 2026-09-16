@@ -1885,7 +1885,8 @@
         "source": "Zdroj"
       },
       "categories": {
-        "retention": "Uchovávání dat"
+        "retention": "Uchovávání dat",
+        "lifecycle": "Životní cyklus společnosti"
       },
       "descriptions": {
         "retention": {
@@ -1916,6 +1917,9 @@
           "dispute_text": {
             "years": "Počet let po výmazu účtu zákazníka, po které se uchovává volný text jeho reklamací, než se vymaže"
           }
+        },
+        "lifecycle": {
+          "chargeback_horizon_days": "Počet dnů po posledním kartou zaplaceném úklidu společnosti, během kterých může držitel karty platbu ještě reklamovat; archivace čeká, dokud neuplynou"
         }
       }
     },
@@ -2778,7 +2782,11 @@
     "company": {
       "exists_for_country": "Informace o společnosti pro tuto zemi již existují",
       "in_use": "Společnost nelze smazat, protože je aktuálně používána",
-      "not_found": "Informace o společnosti nenalezeny"
+      "not_found": "Informace o společnosti nenalezeny",
+      "already_deactivated": "Společnost je již deaktivována.",
+      "not_deactivated": "Společnost není deaktivována, není co znovu aktivovat.",
+      "archived": "Společnost je zmrazena k archivaci; její stav již nelze měnit.",
+      "operates_default_market": "Společnost provozuje výchozí trh a nelze ji deaktivovat. Nejprve přesuňte výchozí trh na jinou společnost."
     },
     "country": {
       "in_use": "Zemi nelze smazat, protože je aktuálně používána",

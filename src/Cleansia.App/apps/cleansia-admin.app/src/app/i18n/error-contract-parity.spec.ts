@@ -485,6 +485,11 @@ const ADMIN_SURFACE_ERROR_KEYS: readonly string[] = [
   'company.exists_for_country',
   'company.in_use',
   'company.not_found',
+  // The admin's own company's lifecycle (ADR-0064 D1): AdminCompanyLifecycleController.Deactivate / Reactivate.
+  'company.already_deactivated',
+  'company.archived',
+  'company.not_deactivated',
+  'company.operates_default_market',
   // A country switches on only once its configuration names an active currency; its market content
   // needs that configuration row: AdminCountryController.SetCountryServiced / UpdateCountryMarketContent.
   'country.configuration_missing',
@@ -700,7 +705,13 @@ const DELIBERATELY_NOT_TRANSLATED: ReadonlyArray<{
 const SHARED_KEYS_NOT_REACHABLE_HERE: ReadonlyArray<{
   key: string;
   reason: string;
-}> = [];
+}> = [
+  {
+    key: 'auth.company_deactivated',
+    reason:
+      'Emitted by CompanySignInGate (ADR-0064 D1) and re-asserted by TokenService as an invariant, for the Employee profile on the Partner and Mobile audiences only. Administrators are never refused, and this host mints the Admin audience alone, so no request through it can carry the key.',
+  },
+];
 
 
 // Contract keys that no BusinessErrorMessage reference anywhere in

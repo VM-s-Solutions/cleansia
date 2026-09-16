@@ -7,7 +7,8 @@ namespace Cleansia.Tests.Features.TenantSettings;
 /// The catalogue is the whole contract of what an operating company may configure: a key outside it
 /// is refused, a value outside its range is refused, and a missing or unusable row resolves to the
 /// default the sweeps were written against. The nine retention windows are its first category; each
-/// entry's default is the <c>RetentionDefaults</c> constant, so the two can never disagree.
+/// entry's default is the <c>RetentionDefaults</c> constant, so the two can never disagree. The
+/// lifecycle category holds the archive's chargeback horizon (ADR-0064 D3).
 /// </summary>
 public sealed class TenantSettingCatalogTests
 {
@@ -57,10 +58,30 @@ public sealed class TenantSettingCatalogTests
     }
 
     [Fact]
-    public void The_Catalogue_Holds_Exactly_The_Nine_Retention_Keys_And_No_Duplicate()
+    public void The_Catalogue_Holds_Exactly_The_Nine_Retention_Keys_And_The_Lifecycle_Horizon_And_No_Duplicate()
     {
-        Assert.Equal(9, TenantSettingCatalog.All.Count);
+        Assert.Equal(10, TenantSettingCatalog.All.Count);
         Assert.Equal(TenantSettingCatalog.All.Count, TenantSettingCatalog.All.Select(d => d.Key).Distinct(StringComparer.Ordinal).Count());
+        Assert.Equal(9, TenantSettingCatalog.All.Count(d => d.Category == TenantSettingCatalog.RetentionCategory));
+        Assert.Equal(1, TenantSettingCatalog.All.Count(d => d.Category == TenantSettingCatalog.LifecycleCategory));
+    }
+
+    [Fact]
+    public void The_Chargeback_Horizon_Is_Catalogued_Under_Lifecycle_With_180_Days_And_A_Zero_To_730_Range()
+    {
+        var horizon = TenantSettingCatalog.Find("lifecycle.chargeback_horizon_days");
+
+        Assert.Same(TenantSettingCatalog.ChargebackHorizonDays, horizon);
+        Assert.Equal(TenantSettingCatalog.LifecycleCategory, horizon!.Category);
+        Assert.Equal("180", horizon.DefaultValue);
+        Assert.Equal(0, horizon.Min);
+        Assert.Equal(730, horizon.Max);
+        Assert.Equal(TenantSettingValueType.Int, horizon.ValueType);
+        Assert.True(TenantSettingCatalog.ChargebackHorizonDays.IsValid("0"));
+        Assert.True(TenantSettingCatalog.ChargebackHorizonDays.IsValid("730"));
+        Assert.False(TenantSettingCatalog.ChargebackHorizonDays.IsValid("731"));
+        Assert.False(TenantSettingCatalog.ChargebackHorizonDays.IsValid("-1"));
+        Assert.Equal(180, TenantSettingCatalog.ChargebackHorizonDays.Resolve(null));
     }
 
     [Theory]
@@ -74,9 +95,11 @@ public sealed class TenantSettingCatalogTests
     }
 
     [Fact]
-    public void Every_Window_Has_A_Floor_Of_One_And_A_Ceiling_The_Date_Arithmetic_Can_Carry()
+    public void Every_Retention_Window_Has_A_Floor_Of_One_And_A_Ceiling_The_Date_Arithmetic_Can_Carry()
     {
-        var windows = TenantSettingCatalog.All.OfType<IntTenantSetting>().ToList();
+        var windows = TenantSettingCatalog.All.OfType<IntTenantSetting>()
+            .Where(w => w.Category == TenantSettingCatalog.RetentionCategory)
+            .ToList();
 
         Assert.Equal(8, windows.Count);
         Assert.All(windows, w => Assert.Equal(1, w.Min));

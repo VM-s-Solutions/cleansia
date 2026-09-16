@@ -1097,6 +1097,7 @@
     <string name="error_auth_refresh_token_reused">В целях безопасности вы вышли со всех устройств.</string>
     <string name="error_auth_current_password_invalid">Ваш текущий пароль неверен.</string>
     <string name="error_auth_account_locked">Слишком много неудачных попыток входа. Аккаунт временно заблокирован — попробуйте снова через несколько минут.</string>
+    <string name="error_auth_company_deactivated">Ваша компания деактивирована, поэтому партнёрское приложение вам больше не доступно. Вы по-прежнему можете экспортировать или удалить свои данные в приложении для клиентов.</string>
 
     <string name="error_user_email_confirmed">Этот е-мейл уже подтверждён.</string>
     <string name="error_user_existing_email">Аккаунт с этим е-мейлом уже существует.</string>

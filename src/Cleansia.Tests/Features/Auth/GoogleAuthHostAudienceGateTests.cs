@@ -3,6 +3,7 @@ using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Auth;
 using Cleansia.Core.AppServices.Services.Interfaces;
+using Cleansia.Core.AppServices.Tenancy;
 using Cleansia.Core.AppServices.Shared.DTOs.ResponseModels;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Repositories;
@@ -48,7 +49,8 @@ public sealed class GoogleAuthHostAudienceGateTests
         new HostAudienceProvider(hostAudience),
         new Mock<IConsentService>().Object,
         new Mock<ILegalDocumentResolver>().Object,
-        new AuditContext());
+        new AuditContext(),
+        Mock.Of<ICompanySignInGate>());
 
     private static GoogleAuth.Command Command(string email) =>
         new(Token, GoogleId: "ignored", email, "First", "Last", TermsAccepted: true);

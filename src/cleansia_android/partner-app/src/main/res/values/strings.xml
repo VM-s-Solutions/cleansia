@@ -1113,6 +1113,7 @@
     <string name="error_auth_refresh_token_reused">For your security, you\'ve been signed out everywhere.</string>
     <string name="error_auth_current_password_invalid">Your current password is incorrect.</string>
     <string name="error_auth_account_locked">Too many failed login attempts. The account is temporarily locked — try again in a few minutes.</string>
+    <string name="error_auth_company_deactivated">Your company has been deactivated, so the partner app is no longer available to you. You can still export or delete your data in the customer app.</string>
 
     <!-- User -->
     <string name="error_user_email_confirmed">This email is already confirmed.</string>

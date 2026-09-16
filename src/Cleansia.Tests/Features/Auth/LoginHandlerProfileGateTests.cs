@@ -5,6 +5,7 @@ using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Auth;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.AppServices.Shared.DTOs.ResponseModels;
+using Cleansia.Core.AppServices.Tenancy;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Users;
@@ -27,7 +28,7 @@ public class LoginHandlerProfileGateTests
 
     // The customer and admin logins record a session row and so take the audit context; the partner
     // login does not. The constructor is filled by parameter type so one helper serves all three.
-    private static T Invoke<T>(Type featureType, ITokenService tokenService, IUserRepository repo, object command)
+    private static T Invoke<T>(Type featureType, ITokenService tokenService, IUserRepository repo, object command, ICompanySignInGate? gate = null)
     {
         var handlerType = featureType.GetNestedType("Handler", BindingFlags.NonPublic | BindingFlags.Public)!;
         var dependencies = new Dictionary<Type, object>
@@ -36,11 +37,20 @@ public class LoginHandlerProfileGateTests
             [typeof(IUserRepository)] = repo,
             [typeof(IHostAudienceProvider)] = new HostAudienceProvider(Audience),
             [typeof(IAuditContext)] = new AuditContext(),
+            [typeof(ICompanySignInGate)] = gate ?? Mock.Of<ICompanySignInGate>(),
+            [typeof(IRequestMetadataProvider)] = Mock.Of<IRequestMetadataProvider>(),
         };
         var constructor = handlerType.GetConstructors().Single();
-        var handler = constructor.Invoke(constructor.GetParameters().Select(p => dependencies[p.ParameterType]).ToArray());
+        var handler = constructor.Invoke(constructor.GetParameters().Select(p => Resolve(p.ParameterType)).ToArray());
         var handleMethod = handlerType.GetMethod("Handle")!;
         return (T)handleMethod.Invoke(handler, [command, CancellationToken.None])!;
+
+        object Resolve(Type parameterType) =>
+            dependencies.TryGetValue(parameterType, out var dependency)
+                ? dependency
+                : parameterType.IsGenericType && parameterType.GetGenericTypeDefinition() == typeof(Microsoft.Extensions.Logging.ILogger<>)
+                    ? Activator.CreateInstance(typeof(Microsoft.Extensions.Logging.Abstractions.NullLogger<>).MakeGenericType(parameterType.GenericTypeArguments[0]))!
+                    : throw new InvalidOperationException($"No test double for {parameterType.Name}.");
     }
 
     private static (Mock<ITokenService> tokenService, Mock<IUserRepository> repo) Arrange(User user)
@@ -68,6 +78,28 @@ public class LoginHandlerProfileGateTests
             new PartnerLogin.Command(user.Email, "validated-upstream", true));
 
         Assert.True(result.IsSuccess);
+    }
+
+    /// <summary>ADR-0064 D1 — the company gate's refusal is returned on the e-mail field, before any mint.</summary>
+    [Theory]
+    [InlineData(typeof(PartnerLogin))]
+    [InlineData(typeof(MobilePartnerLogin))]
+    public async Task PartnerLogins_Reject_A_Cleaner_The_Company_Gate_Refuses_With_CompanyDeactivated(Type featureType)
+    {
+        var user = UserMockFactory.Generate(new UserMockFactory.UserPartial { Profile = UserProfile.Employee });
+        var (tokenService, repo) = Arrange(user);
+        var gate = new Mock<ICompanySignInGate>();
+        gate.Setup(g => g.RefusalForAsync(user, Audience, It.IsAny<CancellationToken>())).ReturnsAsync(BusinessErrorMessage.CompanyDeactivated);
+        object command = featureType == typeof(PartnerLogin)
+            ? new PartnerLogin.Command(user.Email, "validated-upstream", true)
+            : new MobilePartnerLogin.Command(user.Email, "validated-upstream", true);
+
+        var result = await Invoke<Task<BusinessResult<JwtTokenResponse>>>(featureType, tokenService.Object, repo.Object, command, gate.Object);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal(BusinessErrorMessage.CompanyDeactivated, result.Error!.Message);
+        Assert.Equal("Email", result.Error.Code);
+        tokenService.Verify(t => t.GenerateTokenAsync(It.IsAny<User>(), It.IsAny<bool>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]

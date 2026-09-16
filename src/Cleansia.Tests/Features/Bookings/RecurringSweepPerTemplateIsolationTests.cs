@@ -191,6 +191,7 @@ public sealed class RecurringSweepPerTemplateIsolationTests : IDisposable
 
         var handler = new MaterializeRecurringBookings.Handler(
             outerScope.ServiceProvider.GetRequiredService<IRecurringBookingTemplateRepository>(),
+            outerScope.ServiceProvider.GetRequiredService<ITenantRepository>(),
             provider.GetRequiredService<IServiceScopeFactory>(),
             NullLogger<MaterializeRecurringBookings.Handler>.Instance);
 
@@ -215,6 +216,8 @@ public sealed class RecurringSweepPerTemplateIsolationTests : IDisposable
 
         services.AddScoped<IRecurringBookingTemplateRepository>(
             sp => new RecurringBookingTemplateRepository(sp.GetRequiredService<CleansiaDbContext>()));
+        services.AddScoped<ITenantRepository>(
+            sp => new TenantRepository(sp.GetRequiredService<CleansiaDbContext>()));
         services.AddScoped<ISavedAddressRepository>(
             sp => new SavedAddressRepository(sp.GetRequiredService<CleansiaDbContext>(), session));
         services.AddScoped<IAddressRepository>(

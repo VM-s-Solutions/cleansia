@@ -3,6 +3,7 @@ using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Extensions;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.AppServices.Shared.DTOs.ResponseModels;
+using Cleansia.Core.AppServices.Tenancy;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Users;
@@ -52,6 +53,7 @@ public class RefreshToken
         IRequestMetadataProvider requestMetadata,
         IJwtSettings jwtSettings,
         ITenantProvider tenantProvider,
+        ICompanySignInGate companySignInGate,
         TimeProvider timeProvider)
         : ICommandHandler<Command, JwtTokenResponse>
     {
@@ -95,6 +97,11 @@ public class RefreshToken
             {
                 return BusinessResult.Failure<JwtTokenResponse>(
                     new Error(nameof(Command.Token), BusinessErrorMessage.InvalidRefreshToken));
+            }
+
+            if (await companySignInGate.RefusalForAsync(user, issued.Record.Audience ?? string.Empty, cancellationToken) is { } refusal)
+            {
+                return BusinessResult.Failure<JwtTokenResponse>(new Error(nameof(Command.Token), refusal));
             }
 
             // The rotated RefreshToken row is stamped at the flush below; the request is anonymous, so

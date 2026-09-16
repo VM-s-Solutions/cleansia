@@ -1,6 +1,7 @@
 using System.IdentityModel.Tokens.Jwt;
 using Cleansia.Core.AppServices.Services;
 using Cleansia.Core.AppServices.Services.Interfaces;
+using Cleansia.Core.AppServices.Tenancy;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Infra.Common.Configuration.Interfaces;
@@ -50,6 +51,7 @@ public sealed class TokenServiceAdoptsUserTenantTests
         Mock.Of<IEmployeeRepository>(),
         Mock.Of<IRequestMetadataProvider>(),
         _tenant.Object,
+        Mock.Of<ICompanySignInGate>(),
         TimeProvider.System);
 
     [Fact]

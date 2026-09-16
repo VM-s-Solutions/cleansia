@@ -5,6 +5,7 @@ using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Common.Validators.Auth;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.AppServices.Shared.DTOs.ResponseModels;
+using Cleansia.Core.AppServices.Tenancy;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Infra.Common.Validations;
@@ -43,7 +44,8 @@ public class PartnerLogin
     internal class Handler(
         ITokenService tokenService,
         IUserRepository userRepository,
-        IHostAudienceProvider hostAudience)
+        IHostAudienceProvider hostAudience,
+        ICompanySignInGate companySignInGate)
         : ICommandHandler<Command, JwtTokenResponse>
     {
         public async Task<BusinessResult<JwtTokenResponse>> Handle(Command command, CancellationToken cancellationToken)
@@ -60,6 +62,11 @@ public class PartnerLogin
             {
                 return BusinessResult.Failure<JwtTokenResponse>(
                     new Error(nameof(command.Email), BusinessErrorMessage.InsufficientPrivileges));
+            }
+
+            if (await companySignInGate.RefusalForAsync(user, hostAudience.Audience, cancellationToken) is { } refusal)
+            {
+                return BusinessResult.Failure<JwtTokenResponse>(new Error(nameof(command.Email), refusal));
             }
 
             user.ResetLoginThrottle();

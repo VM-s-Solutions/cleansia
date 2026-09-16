@@ -196,9 +196,9 @@ public abstract class BaseIntegrationTest : BaseTransactionalPostgresSqlTest<Cle
     {
         await using var seed = new NpgsqlCommand(
             $"""
-            INSERT INTO "Tenants" ("Id", "IsActive", "Name")
-            VALUES ('{TestTenants.Default}', true, 'Cleansia CZ s.r.o.'),
-                   ('{TestTenants.Second}', true, 'Cleansia SK s.r.o.')
+            INSERT INTO "Tenants" ("Id", "IsActive", "Name", "CreatedBy", "CreatedOn")
+            VALUES ('{TestTenants.Default}', true, 'Cleansia CZ s.r.o.', 'seed', now()),
+                   ('{TestTenants.Second}', true, 'Cleansia SK s.r.o.', 'seed', now())
             ON CONFLICT ("Id") DO NOTHING;
             """,
             conn);

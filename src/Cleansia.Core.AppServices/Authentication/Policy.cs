@@ -201,6 +201,13 @@ public class Policy
     public const string CanUpdateTenantConfiguration = nameof(CanUpdateTenantConfiguration); // Admin
     public const string CanDeleteTenantConfiguration = nameof(CanDeleteTenantConfiguration); // Admin
 
+    // Company lifecycle (the admin's own operating company)
+    public const string CanViewCompanyLifecycle = nameof(CanViewCompanyLifecycle); // Admin
+    public const string CanDeactivateCompany = nameof(CanDeactivateCompany); // Admin
+    public const string CanReactivateCompany = nameof(CanReactivateCompany); // Admin
+    public const string CanWindDownCompany = nameof(CanWindDownCompany); // Admin
+    public const string CanArchiveCompany = nameof(CanArchiveCompany); // Admin
+
     // Device
     public const string Authenticated = nameof(Authenticated); // Authenticated (All roles)
 

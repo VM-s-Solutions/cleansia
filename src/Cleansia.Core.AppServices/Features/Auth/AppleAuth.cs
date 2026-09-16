@@ -86,7 +86,8 @@ public class AppleAuth
         IConsentService consentService,
         ILegalDocumentResolver legalDocumentResolver,
         ILogger<Handler> logger,
-        IAuditContext auditContext)
+        IAuditContext auditContext,
+        ICompanySignInGate companySignInGate)
         : ICommandHandler<Command, JwtTokenResponse>
     {
         private const string AppleRelayEmailDomain = "privaterelay.appleid.com";
@@ -155,6 +156,11 @@ public class AppleAuth
                 {
                     return BusinessResult.Failure<JwtTokenResponse>(
                         new Error(nameof(Command.IdentityToken), BusinessErrorMessage.InvalidPassword));
+                }
+
+                if (await companySignInGate.RefusalForAsync(user, hostAudience.Audience, cancellationToken) is { } refusal)
+                {
+                    return BusinessResult.Failure<JwtTokenResponse>(new Error(nameof(Command.IdentityToken), refusal));
                 }
 
                 // Heal an account stored with a blank name. Apple sends the name ONLY on the first

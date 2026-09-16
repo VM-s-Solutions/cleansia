@@ -5,12 +5,21 @@ namespace Cleansia.Core.AppServices.Features.TenantSettings;
 /// <summary>
 /// Every key an operating company may hold in <c>TenantConfigurations</c>. A key outside this list is
 /// refused by the writer and ignored by the readers, so the table can never carry a value nothing
-/// reads. The defaults are the <see cref="RetentionDefaults"/> constants the sweeps were written
-/// against; a second category joins by adding its entries here.
+/// reads. The retention defaults are the <see cref="RetentionDefaults"/> constants the sweeps were
+/// written against; the lifecycle entry is the archive's chargeback horizon (ADR-0064 D3).
 /// </summary>
 public static class TenantSettingCatalog
 {
     public const string RetentionCategory = "retention";
+
+    public const string LifecycleCategory = "lifecycle";
+
+    public const string ChargebackHorizonDaysKey = "lifecycle.chargeback_horizon_days";
+
+    // Card networks let a cardholder dispute a charge for 120 days and longer on some reason codes; a
+    // chargeback on a sealed company is a books event the freeze would refuse, so the archive waits.
+    public const int DefaultChargebackHorizonDays = 180;
+    private const int MaxChargebackHorizonDays = 730;
 
     // DateTimeOffset.AddYears/AddDays throw past the calendar's end, so a window needs a ceiling as
     // well as the floor of one the sweeps enforce; a century is far beyond any retention obligation.
@@ -44,6 +53,9 @@ public static class TenantSettingCatalog
     public static readonly IntTenantSetting DisputeTextRetentionYears = Years(
         RetentionDefaults.DisputeTextRetentionYearsKey, RetentionDefaults.DefaultDisputeTextRetentionYears);
 
+    public static readonly IntTenantSetting ChargebackHorizonDays = new(
+        ChargebackHorizonDaysKey, LifecycleCategory, DefaultChargebackHorizonDays, min: 0, max: MaxChargebackHorizonDays);
+
     public static readonly IReadOnlyList<TenantSettingDefinition> All =
     [
         ExpiredCodesEnabled,
@@ -55,6 +67,7 @@ public static class TenantSettingCatalog
         NotificationsDays,
         CustomerAuditRetentionYears,
         DisputeTextRetentionYears,
+        ChargebackHorizonDays,
     ];
 
     private static readonly IReadOnlyDictionary<string, TenantSettingDefinition> ByKey =

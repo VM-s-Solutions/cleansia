@@ -20,8 +20,13 @@ public sealed class OperatorTenantResolver(
             return await ResolveDefaultMarketAsync(cancellationToken);
         }
 
+        if (!await countryRepository.IsServicedAsync(countryId, cancellationToken))
+        {
+            return OperatorResolution.NotAMarket;
+        }
+
         var country = await countryRepository.GetByIdAsync(countryId, cancellationToken);
-        if (country is null || !country.IsServiced || !country.IsActive)
+        if (country is null)
         {
             return OperatorResolution.NotAMarket;
         }

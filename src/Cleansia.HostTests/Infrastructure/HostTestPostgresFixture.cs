@@ -66,9 +66,9 @@ public sealed class HostTestPostgresFixture : IAsyncLifetime
 
         await using var tenants = new NpgsqlCommand(
             $"""
-            INSERT INTO "Tenants" ("Id", "IsActive", "Name")
-            VALUES ('{HostTestTenants.A}', true, 'Cleansia CZ s.r.o.'),
-                   ('{HostTestTenants.B}', true, 'Cleansia SK s.r.o.')
+            INSERT INTO "Tenants" ("Id", "IsActive", "Name", "CreatedBy", "CreatedOn")
+            VALUES ('{HostTestTenants.A}', true, 'Cleansia CZ s.r.o.', 'seed', now()),
+                   ('{HostTestTenants.B}', true, 'Cleansia SK s.r.o.', 'seed', now())
             ON CONFLICT ("Id") DO NOTHING;
             """,
             conn);

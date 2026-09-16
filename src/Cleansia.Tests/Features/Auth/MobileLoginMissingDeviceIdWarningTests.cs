@@ -3,6 +3,7 @@ using Cleansia.Core.AppServices.Auditing;
 using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Features.Auth;
 using Cleansia.Core.AppServices.Services.Interfaces;
+using Cleansia.Core.AppServices.Tenancy;
 using Cleansia.Core.AppServices.Shared.DTOs.ResponseModels;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Extensions;
@@ -73,6 +74,7 @@ public class MobileLoginMissingDeviceIdWarningTests
             [typeof(IRequestMetadataProvider)] = Metadata(deviceId).Object,
             [typeof(IAuditContext)] = new AuditContext(),
             [typeof(ILogger<>).MakeGenericType(handlerType)] = logger,
+            [typeof(ICompanySignInGate)] = Mock.Of<ICompanySignInGate>(),
         };
         var constructor = handlerType.GetConstructors().Single();
         var handler = constructor.Invoke(constructor.GetParameters().Select(p => dependencies[p.ParameterType]).ToArray());

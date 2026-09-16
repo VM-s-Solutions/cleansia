@@ -32,7 +32,10 @@ final class PartnerErrorVoiceTests: XCTestCase {
         PartnerOnlyKey("order.completion_notes.too_long", emitters: "CompleteOrder"),
         PartnerOnlyKey("employee.profile_incomplete", emitters: "TakeOrder, CompleteOrder, ApproveEmployee"),
         PartnerOnlyKey("employee.not_approved", emitters: "TakeOrder, StartOrder, CompleteOrder, MarkCashCollected"),
-        PartnerOnlyKey("auth.company_deactivated", emitters: "CompanySignInGate via MobilePartnerLogin, GoogleAuth, RefreshToken"),
+        PartnerOnlyKey(
+            "auth.company_deactivated",
+            emitters: "CompanySignInGate via MobilePartnerLogin, GoogleAuth, RefreshToken"
+        ),
         PartnerOnlyKey(
             "payout.not_found",
             emitters: "GetMyPayoutDetails, GetEmployeePayoutDetails, RevealEmployeePayoutDetails"

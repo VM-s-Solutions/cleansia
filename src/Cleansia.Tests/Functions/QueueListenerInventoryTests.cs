@@ -77,7 +77,7 @@ public class QueueListenerInventoryTests
     public void TheListenerCountIsTwicePerDeclaredQueue()
     {
         Assert.Equal(DeclaredQueueNames().Count * 2, TriggeredQueueNames().Count);
-        Assert.Equal(16, TriggeredQueueNames().Count);
+        Assert.Equal(18, TriggeredQueueNames().Count);
     }
 
     /// <summary>

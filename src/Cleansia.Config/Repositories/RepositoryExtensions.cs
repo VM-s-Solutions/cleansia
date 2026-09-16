@@ -63,6 +63,11 @@ public static class RepositoryExtensions
         // because it counts across a dozen tables through the scoped DbContext.
         services.AddScoped<ICompanySettlementReader, CompanySettlementReader>();
 
+        // The archived-company write guard's two seams (ADR-0064 D3): the gate the law's writes open,
+        // read by CleansiaDbContext.CommitAsync, and the schema id the archive manifest records.
+        services.AddScoped<IArchiveWriteGate, ArchiveWriteGate>();
+        services.AddScoped<ISchemaVersionReader, SchemaVersionReader>();
+
         return services.RegisterFromAssemblies([AssemblyReference.Assembly], type => type.GetInterfaces().Where(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IRepository<,>)));
     }
 }

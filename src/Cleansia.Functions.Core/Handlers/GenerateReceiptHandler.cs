@@ -3,10 +3,12 @@ using System.Text.RegularExpressions;
 using Cleansia.Core.Queue.Abstractions;
 using Cleansia.Core.Queue.Abstractions.Messages;
 using Cleansia.Core.AppServices.Services.Interfaces;
+using Cleansia.Core.AppServices.Tenancy;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Receipts;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.SeedWork;
+using Cleansia.Core.Domain.Tenancy;
 using Cleansia.Core.Fiscal.Abstractions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -20,6 +22,7 @@ public class GenerateReceiptHandler(
     ICountryConfigurationRepository countryConfigurationRepository,
     IUnitOfWork unitOfWork,
     ITenantProvider tenantProvider,
+    ArchivedCompanyDeadLetter archivedCompanyDeadLetter,
     ILogger<GenerateReceiptHandler> logger)
 {
     private static readonly JsonSerializerOptions JsonOptions =
@@ -173,6 +176,12 @@ public class GenerateReceiptHandler(
             await unitOfWork.CommitAsync(ct);
 
             logger.LogInformation("Receipt generated and email sent for order {OrderId}", message.OrderId);
+        }
+        catch (CompanyArchivedException ex)
+        {
+            // Permanent: the company's books are frozen for archive, and a redelivery cannot thaw
+            // them. The dead-letter row is the operations record of the receipt that was never issued.
+            await archivedCompanyDeadLetter.RecordAsync(QueueNames.GenerateReceipt, messageText, ex, ct);
         }
         catch (Exception ex)
         {

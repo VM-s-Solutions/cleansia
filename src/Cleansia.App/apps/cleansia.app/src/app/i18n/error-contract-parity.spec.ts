@@ -546,6 +546,11 @@ const CUSTOMER_SURFACE_ERROR_KEYS: readonly string[] = [
   // host dispatches: the named (or default) market has no operating company (ADR-0061 D3). Its
   // sibling refusal, a country that is not a market, is country.not_serviced above.
   'tenant.not_found',
+  // A write against a company frozen for archive — a review, a dispute, a cancellation on its
+  // order — is refused at the commit and answered 409 by RequestValidationExceptionFilterAttribute on
+  // every controller (ADR-0064 D3); the key is referenced from AuditFailureCaptureBehavior, which
+  // records it on the failure audit row.
+  'tenant.archived',
   // Legal — the terms / privacy page reads the text in force for the market; a market with no
   // seeded text yet is the one refusal the page can show.
   'legal.document_not_found',

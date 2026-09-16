@@ -72,6 +72,14 @@ public static class MessageKeys
         $"wind-down:{tenantId}:{requestedAt.UtcDateTime:yyyyMMddHHmmss}";
 
     /// <summary>
+    /// company-archive → <c>archive:{tenantId}:{requestedAt:yyyyMMddHHmmss}</c>. The first request's
+    /// instant is the freeze instant on the row; a "build again" after a poisoned run is asked for at
+    /// a later instant and is a new message, while the bundle it rebuilds is still named by the freeze.
+    /// </summary>
+    public static string CompanyArchive(string tenantId, DateTimeOffset requestedAt) =>
+        $"archive:{tenantId}:{requestedAt.UtcDateTime:yyyyMMddHHmmss}";
+
+    /// <summary>
     /// Deterministic, non-reversible short hash of a raw email token, used as the code segment of the
     /// send-email key so the secret never appears in a key or a log line. Producer and consumer
     /// (dual-read key synthesis) compute it the same way.

@@ -47,6 +47,7 @@ var blobContainers = [
   'employee-documents'
   'order-photos'
   'dispute-evidence'
+  'company-archives'
 ]
 
 // The runtime queue set (QueueNames.cs). Each carries a `-poison` companion (ADR-0002 D3): the
@@ -62,6 +63,7 @@ var queueBaseNames = [
   'send-email'
   'live-activity-dispatch'
   'company-wind-down'
+  'company-archive'
 ]
 var poisonQueueNames = [for q in queueBaseNames: '${q}-poison']
 var allQueueNames = concat(queueBaseNames, poisonQueueNames)

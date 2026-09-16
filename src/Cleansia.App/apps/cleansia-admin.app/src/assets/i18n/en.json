@@ -2789,7 +2789,20 @@
       "operates_default_market": "The company operates the default market and cannot be deactivated. Move the default market to another company first.",
       "wind_down_already_requested": "The wind-down date is already set; it cannot be changed. Cancel the remaining orders by hand if an earlier date is needed.",
       "wind_down_date_in_past": "The last day of service cannot be before today in the company's markets.",
-      "wind_down_in_progress": "A wind-down run is in progress; try again once it has finished."
+      "wind_down_in_progress": "A wind-down run is in progress; try again once it has finished.",
+      "wind_down_not_requested": "The archive waits for the people to have been told: set a wind-down date first.",
+      "has_open_orders": "The company still has open orders; the archive waits until every one is completed or cancelled.",
+      "has_orders_awaiting_pay": "A completed order still awaits its pay calculation; the archive waits for it.",
+      "has_orders_awaiting_receipt": "A paid or cash order still awaits its receipt; the archive waits for it.",
+      "has_receipts_awaiting_fiscal_registration": "A receipt still awaits fiscal registration; the archive waits for it.",
+      "has_pending_refunds": "A refund is still pending; the archive waits until it has settled.",
+      "has_active_memberships": "A customer still holds an active Plus; the archive waits until the last period has ended.",
+      "has_credit_balances": "A customer still holds a credit balance; the archive waits until every balance is discharged.",
+      "has_open_pay_period": "A pay period is still open; close it first.",
+      "has_unpaid_invoices": "A cleaner's invoice is not yet paid; the archive waits until every invoice is paid or cancelled.",
+      "has_uninvoiced_pay": "A closed pay period holds pay that was never invoiced; the archive waits for it.",
+      "has_open_disputes": "A dispute is still open; resolve it first.",
+      "within_chargeback_horizon": "A cardholder can still dispute the company's latest card payment; the archive becomes admissible once the chargeback horizon has passed."
     },
     "country": {
       "in_use": "Cannot delete country because it is currently in use",
@@ -3087,7 +3100,8 @@
       }
     },
     "tenant": {
-      "not_found": "This market is not operated by any Cleansia company yet."
+      "not_found": "This market is not operated by any Cleansia company yet.",
+      "archived": "This company's records are sealed for archive; nothing about them can be changed any more."
     },
     "tenant_setting": {
       "invalid_value": "The value is not of the right type or is outside the allowed range for this setting.",

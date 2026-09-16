@@ -66,4 +66,17 @@ public class AdminCompanyLifecycleController(IMediator mediator) : ApiController
         var result = await Mediator.Send(command, cancellationToken);
         return HandleResult<WindDownCompany.Response>(result);
     }
+
+    [HttpPost("archive")]
+    [Permission(Policy.CanArchiveCompany)]
+    [ProducesResponseType(typeof(ArchiveCompany.Response), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [EnableRateLimiting("auth")]
+    public async Task<IActionResult> Archive(CancellationToken cancellationToken)
+    {
+        var result = await Mediator.Send(new ArchiveCompany.Command(), cancellationToken);
+        return HandleResult<ArchiveCompany.Response>(result);
+    }
 }

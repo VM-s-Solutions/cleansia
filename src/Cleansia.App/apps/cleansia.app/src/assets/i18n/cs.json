@@ -1862,7 +1862,8 @@
       "not_existing_id": "Tuto zemi jsme nenašli."
     },
     "tenant": {
-      "not_found": "Tento trh zatím neprovozuje žádná společnost Cleansia."
+      "not_found": "Tento trh zatím neprovozuje žádná společnost Cleansia.",
+      "archived": "Záznamy této společnosti jsou zapečetěny k archivaci; nic na nich už nelze měnit."
     },
     "city": {
       "not_serviced": "V tomto městě zatím nepůsobíme."

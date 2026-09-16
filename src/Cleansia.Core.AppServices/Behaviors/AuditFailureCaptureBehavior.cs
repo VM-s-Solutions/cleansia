@@ -1,7 +1,9 @@
 using Cleansia.Core.AppServices.Auditing;
 using Cleansia.Core.AppServices.Authentication;
+using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.Domain.Auditing;
 using Cleansia.Core.Domain.Repositories;
+using Cleansia.Core.Domain.Tenancy;
 using Cleansia.Infra.Common.Validations;
 using MediatR;
 using Microsoft.Extensions.Logging;
@@ -58,6 +60,11 @@ public class AuditFailureCaptureBehavior<TRequest, TResponse>(
         catch (RequestValidationException ex)
         {
             await RecordFailureOutOfBandAsync(request, descriptor, audience.Value, AuditErrorCode.Resolve(ex.Errors), cancellationToken);
+            throw;
+        }
+        catch (CompanyArchivedException)
+        {
+            await RecordFailureOutOfBandAsync(request, descriptor, audience.Value, BusinessErrorMessage.TenantArchived, cancellationToken);
             throw;
         }
         catch (Exception ex)

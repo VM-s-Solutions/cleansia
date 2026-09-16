@@ -224,6 +224,7 @@ public sealed class OutboxErasureTests : IDisposable
             _blobClientFactory.Object,
             Mock.Of<IAppConfigurationProvider>(),
             new ErasureAttempt(),
+            new ArchiveWriteGate(),
             NullLogger<GdprDeletionService>.Instance);
 
         var result = await service.DeleteUserAccountAsync(

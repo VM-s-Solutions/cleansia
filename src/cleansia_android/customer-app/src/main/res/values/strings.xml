@@ -1284,6 +1284,7 @@
     <string name="error_currency_invalid">Invalid currency</string>
     <string name="error_country_not_serviced">We don\'t operate in this country yet.</string>
     <string name="error_tenant_not_found">This market is not operated by any Cleansia company yet.</string>
+    <string name="error_tenant_archived">This company\'s records are sealed for archive; nothing about them can be changed any more.</string>
     <string name="error_order_country_operator_mismatch">This address is served by another Cleansia company and cannot be booked from this account.</string>
     <string name="error_promo_not_found">Code not found</string>
     <string name="error_promo_inactive">Code is no longer available</string>

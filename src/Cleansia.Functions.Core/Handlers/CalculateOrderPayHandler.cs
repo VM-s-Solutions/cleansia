@@ -1,9 +1,12 @@
 using System.Text.Json;
 using Cleansia.Core.AppServices.Features.EmployeePayroll;
 using Cleansia.Core.AppServices.Services.Interfaces;
+using Cleansia.Core.AppServices.Tenancy;
 using Cleansia.Core.Domain.Repositories;
+using Cleansia.Core.Domain.Tenancy;
 using Cleansia.Core.Queue.Abstractions;
 using Cleansia.Core.Queue.Abstractions.Messages;
+using Cleansia.Infra.Common.Validations;
 using MediatR;
 using Microsoft.Extensions.Logging;
 
@@ -37,6 +40,7 @@ public class CalculateOrderPayHandler(
     IMediator mediator,
     IPayPeriodBackgroundService payPeriodService,
     ITenantProvider tenantProvider,
+    ArchivedCompanyDeadLetter archivedCompanyDeadLetter,
     ILogger<CalculateOrderPayHandler> logger)
 {
     public async Task HandleAsync(string messageText, CancellationToken ct)
@@ -66,11 +70,22 @@ public class CalculateOrderPayHandler(
 
         tenantProvider.SetTenantOverride(tenantId);
 
-        await payPeriodService.EnsureOpenPeriodAsync(ct);
+        BusinessResult<CalculateOrderPay.Response> result;
+        try
+        {
+            await payPeriodService.EnsureOpenPeriodAsync(ct);
 
-        var result = await mediator.Send(
-            new CalculateOrderPay.Command(message.OrderId, message.EmployeeId),
-            ct);
+            result = await mediator.Send(
+                new CalculateOrderPay.Command(message.OrderId, message.EmployeeId),
+                ct);
+        }
+        catch (CompanyArchivedException ex)
+        {
+            // Permanent: the company's books are frozen for archive, and a redelivery cannot thaw
+            // them. The dead-letter row is the operations record of the pay row that was never written.
+            await archivedCompanyDeadLetter.RecordAsync(QueueNames.CalculateOrderPay, messageText, ex, ct);
+            return;
+        }
 
         if (result.IsSuccess)
         {

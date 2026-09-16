@@ -494,6 +494,25 @@ const ADMIN_SURFACE_ERROR_KEYS: readonly string[] = [
   'company.wind_down_already_requested',
   'company.wind_down_date_in_past',
   'company.wind_down_in_progress',
+  // The archive request (ADR-0064 D3): AdminCompanyLifecycleController.Archive refuses on every live
+  // fact of the books, in the decision's order, until the company is settled.
+  'company.wind_down_not_requested',
+  'company.has_open_orders',
+  'company.has_orders_awaiting_pay',
+  'company.has_orders_awaiting_receipt',
+  'company.has_receipts_awaiting_fiscal_registration',
+  'company.has_pending_refunds',
+  'company.has_active_memberships',
+  'company.has_credit_balances',
+  'company.has_open_pay_period',
+  'company.has_unpaid_invoices',
+  'company.has_uninvoiced_pay',
+  'company.has_open_disputes',
+  'company.within_chargeback_horizon',
+  // A write against a company frozen for archive is refused at the commit and answered 409 by
+  // RequestValidationExceptionFilterAttribute on every controller (ADR-0064 D3); the key is
+  // referenced from AuditFailureCaptureBehavior, which records it on the failure audit row.
+  'tenant.archived',
   // A country switches on only once its configuration names an active currency; its market content
   // needs that configuration row: AdminCountryController.SetCountryServiced / UpdateCountryMarketContent.
   'country.configuration_missing',

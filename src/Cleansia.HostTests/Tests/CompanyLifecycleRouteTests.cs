@@ -12,6 +12,7 @@ using Cleansia.Core.Domain.EmployeePayroll;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Internationalization;
 using Cleansia.Core.Domain.Memberships;
+using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Services;
 using Cleansia.Core.Domain.Tenancy;
 using Cleansia.Core.Domain.Users;
@@ -48,6 +49,7 @@ public sealed class CompanyLifecycleRouteTests(HostTestPostgresFixture db) : Aut
     private const string DeactivateRoute = "/api/AdminCompanyLifecycle/deactivate";
     private const string ReactivateRoute = "/api/AdminCompanyLifecycle/reactivate";
     private const string WindDownRoute = "/api/AdminCompanyLifecycle/wind-down";
+    private const string ArchiveRoute = "/api/AdminCompanyLifecycle/archive";
     private const string Password = "12345678Test!";
 
     private const string EurId = "cur-eur-lifecycle";
@@ -694,6 +696,242 @@ public sealed class CompanyLifecycleRouteTests(HostTestPostgresFixture db) : Aut
         await HttpAssert.AssertBusinessErrorAsync(
             await AdminB().PostAsJsonAsync(WindDownRoute, WindDownFrom(null)), BusinessErrorMessage.CompanyArchived);
         Assert.Equal(2, (await WindDownMessagesAsync()).Count);
+    }
+
+    private async Task<List<Cleansia.Core.Domain.Outbox.OutboxMessage>> ArchiveMessagesAsync() =>
+        await QueryAsync(ctx => ctx.OutboxMessages.IgnoreQueryFilters()
+            .Where(m => m.QueueName == QueueNames.CompanyArchive)
+            .OrderBy(m => m.CreatedOn)
+            .ToListAsync());
+
+    /// <summary>Announce, then close: the two acts the archive waits on, both through the routes.</summary>
+    private async Task WindDownAndDeactivateBAsync()
+    {
+        HttpAssert.IsOk(await AdminB().PostAsJsonAsync(WindDownRoute, WindDownFrom(DateOnly.FromDateTime(DateTime.UtcNow).AddDays(30))));
+        await WaitForTheNextSecondAsync();
+        await DeactivateBAsync();
+    }
+
+    /// <summary>
+    /// ADR-0064 D3 and TC-LC-ARCH-1 on the route: the request is refused on the door, on the notice and
+    /// on a live fact in the table's order, admitted once the books are settled — stamping the freeze,
+    /// recording one build message and one audit row — admitted again while frozen and un-archived with
+    /// no second stamp, and refused once archived; the read shows Frozen, then Archived with the hash.
+    /// </summary>
+    [Fact]
+    public async Task The_archive_is_refused_until_the_books_are_settled_then_freezes_the_row_and_records_one_build_message()
+    {
+        await ArrangeTwoCompaniesAsync();
+
+        await HttpAssert.AssertBusinessErrorAsync(await AdminB().PostAsync(ArchiveRoute, content: null), BusinessErrorMessage.CompanyNotDeactivated);
+        await DeactivateBAsync();
+        await HttpAssert.AssertBusinessErrorAsync(await AdminB().PostAsync(ArchiveRoute, content: null), BusinessErrorMessage.CompanyWindDownNotRequested);
+        var announced = await AdminB().PostAsJsonAsync(WindDownRoute, WindDownFrom(DateOnly.FromDateTime(DateTime.UtcNow).AddDays(30)));
+        Assert.True(announced.IsSuccessStatusCode, await announced.Content.ReadAsStringAsync());
+
+        string openOrderId = default!;
+        await SeedAsync(async ctx =>
+        {
+            var open = CardOrderOfB(DateTime.UtcNow.AddDays(3));
+            open.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.Confirmed, open));
+            ctx.Orders.Add(open);
+            openOrderId = open.Id;
+            await Task.CompletedTask;
+        });
+        await HttpAssert.AssertBusinessErrorAsync(await AdminB().PostAsync(ArchiveRoute, content: null), BusinessErrorMessage.CompanyHasOpenOrders);
+        Assert.Null((await TenantRowAsync(HostTestTenants.B)).ArchiveRequestedOn);
+        Assert.Empty(await ArchiveMessagesAsync());
+
+        await SeedAsync(async ctx =>
+        {
+            var open = await ctx.Orders.IgnoreQueryFilters().Include(o => o.OrderStatusHistory).SingleAsync(o => o.Id == openOrderId);
+            open.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.Cancelled, open));
+        });
+
+        var frozen = await AdminB().PostAsync(ArchiveRoute, content: null);
+        HttpAssert.IsOk(frozen);
+        var body = await BodyAsync(frozen);
+        Assert.Equal((int)CompanyLifecycleState.Frozen, body.GetProperty("state").GetInt32());
+        Assert.NotEqual(JsonValueKind.Null, body.GetProperty("archiveRequestedOn").ValueKind);
+
+        var row = await TenantRowAsync(HostTestTenants.B);
+        Assert.NotNull(row.ArchiveRequestedOn);
+        Assert.Equal(AdminBId, row.ArchiveRequestedBy);
+        Assert.Null(row.ArchivedOn);
+
+        var message = Assert.Single(await ArchiveMessagesAsync());
+        Assert.Equal(HostTestTenants.B, message.TenantId);
+        Assert.StartsWith($"archive:{HostTestTenants.B}:", message.MessageKey, StringComparison.Ordinal);
+        Assert.Contains(HostTestTenants.B, message.Body, StringComparison.Ordinal);
+
+        var audits = await QueryAsync(ctx => ctx.AdminActionAudits.IgnoreQueryFilters().Where(a => a.Action == "company.archive").ToListAsync());
+        var audit = Assert.Single(audits, a => a.Success);
+        Assert.Equal(AdminBId, audit.ActorId);
+        Assert.Equal("Tenant", audit.ResourceType);
+        Assert.Equal(HostTestTenants.B, audit.ResourceId);
+        Assert.Equal("deactivated", JsonDocument.Parse(audit.BeforeJson!).RootElement.GetProperty("state").GetString());
+        Assert.Equal("frozen", JsonDocument.Parse(audit.AfterJson!).RootElement.GetProperty("state").GetString());
+
+        var read = await BodyAsync(await AdminB().GetAsync(GetRoute));
+        Assert.Equal((int)CompanyLifecycleState.Frozen, read.GetProperty("state").GetInt32());
+        Assert.Equal(AdminBEmail, read.GetProperty("archiveRequestedByEmail").GetString());
+        Assert.Equal(JsonValueKind.Null, read.GetProperty("archiveManifestSha256").ValueKind);
+
+        // "Build archive again": admitted while frozen and un-archived, the freeze untouched, a new message.
+        await WaitForTheNextSecondAsync();
+        HttpAssert.IsOk(await AdminB().PostAsync(ArchiveRoute, content: null));
+        Assert.Equal(row.ArchiveRequestedOn, (await TenantRowAsync(HostTestTenants.B)).ArchiveRequestedOn);
+        Assert.Equal(2, (await ArchiveMessagesAsync()).Count);
+
+        var manifestSha256 = new string('a', 64);
+        await SeedAsync(async ctx =>
+        {
+            var tenant = await ctx.Tenants.SingleAsync(t => t.Id == HostTestTenants.B);
+            tenant.MarkArchived(manifestSha256, DateTimeOffset.UtcNow);
+        });
+        await HttpAssert.AssertBusinessErrorAsync(await AdminB().PostAsync(ArchiveRoute, content: null), BusinessErrorMessage.CompanyArchived);
+        var archived = await BodyAsync(await AdminB().GetAsync(GetRoute));
+        Assert.Equal((int)CompanyLifecycleState.Archived, archived.GetProperty("state").GetInt32());
+        Assert.Equal(manifestSha256, archived.GetProperty("archiveManifestSha256").GetString());
+        Assert.DoesNotContain(archived.EnumerateObject(), p => p.Name.Contains("blob", StringComparison.OrdinalIgnoreCase));
+
+        HttpAssert.IsForbidden(await AdminClient(TestJwtFactory.Mint(AdminAudience, CleanerBId, CleanerBEmail, UserProfile.Employee, tenantId: HostTestTenants.B)).PostAsync(ArchiveRoute, content: null));
+        HttpAssert.IsUnauthorized(await AdminClientAnonymous().PostAsync(ArchiveRoute, content: null));
+    }
+
+    /// <summary>
+    /// TC-LC-ARCH-3 on the routes: a frozen company's customer is answered 409 <c>tenant.archived</c>
+    /// on a review and on a dispute — the dispute's failure audit row carries the key and no books row
+    /// lands — while a signed Stripe chargeback for the company's order is answered 200 and leaves a
+    /// dead-letter row under the company, so Stripe never retries against an endpoint every company
+    /// shares.
+    /// </summary>
+    [Fact]
+    public async Task A_frozen_companys_books_answer_409_on_the_request_path_and_200_plus_a_dead_letter_on_the_Stripe_webhook()
+    {
+        await ArrangeTwoCompaniesAsync();
+
+        // Seeded before the freeze — the freeze refuses the seed itself afterwards. Card and unpaid so it
+        // owes no receipt, with its pay row written, so the books read as settled.
+        const string paymentIntentId = "pi_lifecycle_frozen_b";
+        string orderId = default!;
+        await SeedAsync(async ctx =>
+        {
+            var completed = CardOrderOfB(DateTime.UtcNow.AddDays(-3));
+            completed.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.Completed, completed));
+            completed.AssignStripePaymentIntentId(paymentIntentId);
+            completed.MarkEmployeePayCalculated();
+            ctx.Orders.Add(completed);
+            orderId = completed.Id;
+            await Task.CompletedTask;
+        });
+
+        await WindDownAndDeactivateBAsync();
+        var frozen = await AdminB().PostAsync(ArchiveRoute, content: null);
+        Assert.True(frozen.IsSuccessStatusCode, await frozen.Content.ReadAsStringAsync());
+
+        var review = await CustomerB().PostAsJsonAsync("/api/Order/SubmitReview", new { orderId, rating = 5, comment = "spotless" });
+        Assert.Equal(HttpStatusCode.Conflict, review.StatusCode);
+        await HttpAssert.AssertBusinessErrorAsync(review, BusinessErrorMessage.TenantArchived);
+        Assert.Contains("\"TenantId\"", await review.Content.ReadAsStringAsync(), StringComparison.Ordinal);
+        Assert.Equal(0, await QueryAsync(ctx => ctx.OrderReviews.IgnoreQueryFilters().CountAsync(r => r.OrderId == orderId)));
+
+        var dispute = await CustomerB().PostAsJsonAsync("/api/Dispute/Create", new
+        {
+            orderId,
+            reason = (int)DisputeReason.QualityIssue,
+            description = "the kitchen was not touched and the windows are streaky",
+        });
+        Assert.Equal(HttpStatusCode.Conflict, dispute.StatusCode);
+        await HttpAssert.AssertBusinessErrorAsync(dispute, BusinessErrorMessage.TenantArchived);
+        Assert.Equal(0, await QueryAsync(ctx => ctx.Disputes.IgnoreQueryFilters().CountAsync(d => d.OrderId == orderId)));
+        var failure = Assert.Single(await QueryAsync(ctx => ctx.CustomerActionAudits.IgnoreQueryFilters().Where(a => a.Action == "customer.dispute.create").ToListAsync()));
+        Assert.False(failure.Success);
+        Assert.Equal(BusinessErrorMessage.TenantArchived, failure.ErrorCode);
+        Assert.Equal(HostTestTenants.B, failure.TenantId);
+
+        var payload = ChargebackCreated("evt_lifecycle_frozen_b", "dp_lifecycle_frozen_b", paymentIntentId);
+        using var webhook = new HttpRequestMessage(HttpMethod.Post, "/api/Payment/webhook")
+        {
+            Content = new StringContent(payload, Encoding.UTF8, "application/json"),
+        };
+        webhook.Headers.Add("Stripe-Signature", SignForHostTests(payload));
+        var acknowledged = await CustomerClientAnonymous().SendAsync(webhook);
+
+        HttpAssert.IsOk(acknowledged);
+        Assert.Equal(0, await QueryAsync(ctx => ctx.Disputes.IgnoreQueryFilters().CountAsync(d => d.OrderId == orderId)));
+        var deadLetter = Assert.Single(await QueryAsync(ctx => ctx.DeadLetters.IgnoreQueryFilters().ToListAsync()));
+        Assert.Equal("stripe-webhook", deadLetter.SourceQueue);
+        Assert.Equal(HostTestTenants.B, deadLetter.TenantId);
+        Assert.Equal(payload, deadLetter.RawBody);
+        Assert.Contains(BusinessErrorMessage.TenantArchived, deadLetter.Error, StringComparison.Ordinal);
+        Assert.Contains(HostTestTenants.B, deadLetter.Error, StringComparison.Ordinal);
+    }
+
+    /// <summary>A B customer's card booking at the Bratislava address, unpaid: it owes no receipt and no chargeback horizon.</summary>
+    private static Order CardOrderOfB(DateTime cleaningDateTime)
+    {
+        var address = Address.Create("Hlavna 1", "Bratislava", "81101", SvkId, null, 48.1486, 17.1077);
+        address.TenantId = HostTestTenants.B;
+        var order = Order.Create(
+            customerName: "Lifecycle Customer",
+            customerEmail: CustomerBEmail,
+            customerPhone: "+421900000000",
+            customerAddress: address,
+            rooms: 2,
+            bathrooms: 1,
+            cleaningDateTime: cleaningDateTime,
+            paymentType: PaymentType.Card,
+            totalPrice: 60m,
+            currencyId: EurId,
+            paymentStatus: PaymentStatus.Pending,
+            userId: CustomerBId);
+        order.TenantId = HostTestTenants.B;
+        var created = OrderStatusTrack.Create(OrderStatus.New, order);
+        created.TenantId = HostTestTenants.B;
+        order.AddOrderStatus(created);
+        return order;
+    }
+
+    private static string ChargebackCreated(string eventId, string disputeId, string paymentIntentId)
+    {
+        var created = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+        return $$"""
+        {
+          "id": "{{eventId}}",
+          "object": "event",
+          "api_version": "2024-06-20",
+          "type": "charge.dispute.created",
+          "created": {{created}},
+          "livemode": false,
+          "pending_webhooks": 0,
+          "request": null,
+          "data": {
+            "object": {
+              "id": "{{disputeId}}",
+              "object": "dispute",
+              "amount": 1000,
+              "charge": "ch_lifecycle_frozen_b",
+              "created": {{created}},
+              "currency": "eur",
+              "is_charge_refundable": false,
+              "livemode": false,
+              "payment_intent": "{{paymentIntentId}}",
+              "reason": "fraudulent",
+              "status": "needs_response"
+            },
+            "previous_attributes": null
+          }
+        }
+        """;
+    }
+
+    /// <summary>The webhook secret the host tests are configured with (appsettings.HostTests.json).</summary>
+    private static string SignForHostTests(string payload)
+    {
+        var timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString(System.Globalization.CultureInfo.InvariantCulture);
+        var signature = Stripe.EventUtility.ComputeSignature("whsec_hosttests", timestamp, payload);
+        return $"t={timestamp},v1={signature}";
     }
 
     private sealed class StubGoogleTokenVerifier(IReadOnlyDictionary<string, GoogleVerifiedClaims> claimsByToken) : IGoogleTokenVerifier

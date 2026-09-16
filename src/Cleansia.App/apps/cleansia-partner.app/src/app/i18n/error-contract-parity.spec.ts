@@ -628,6 +628,11 @@ const SHARED_KEYS_NOT_REACHABLE_HERE: ReadonlyArray<{
   reason: string;
 }> = [
   {
+    key: 'tenant.archived',
+    reason:
+      'The archived-company write guard (ADR-0064 D3) refuses a books write of a company frozen for archive at the commit; a cleaner of such a company is deactivated and refused at sign-in with auth.company_deactivated before any write, so the one caller who could reach it here is an administrator using the partner app (ADR-0064 O-1), a residual the batch left untranslated on this host: the admin app is where a frozen company is acted on and carries the sentence.',
+  },
+  {
     key: 'gdpr.request_not_found',
     reason:
       'Emitted by GdprDeletionService.RetryDeletionAsync, whose only callers are AdminRetryUserDeletion (dispatched by AdminGdprController) and, through it, the RetryFailedUserDeletions timer. This host dispatches DeleteUserAccount, which enters the service through DeleteUserAccountAsync and never reaches the retry.',

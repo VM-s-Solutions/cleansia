@@ -11,6 +11,7 @@ public class Constants
         public const string GeneratedReceipts = "generated-receipts";
         public const string OrderPhotos = "order-photos";
         public const string DisputeEvidence = "dispute-evidence";
+        public const string CompanyArchives = "company-archives";
     }
 
     public class VirtualDirectories

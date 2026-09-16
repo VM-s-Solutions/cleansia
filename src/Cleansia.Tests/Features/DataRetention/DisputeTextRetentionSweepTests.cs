@@ -216,6 +216,7 @@ public sealed class DisputeTextRetentionSweepTests : IDisposable
             _configProvider.Object,
             new DataRetentionConfig(configuration),
             _blobClientFactory.Object,
+            new ArchiveWriteGate(),
             NullLogger<DataRetentionBackgroundService>.Instance);
     }
 

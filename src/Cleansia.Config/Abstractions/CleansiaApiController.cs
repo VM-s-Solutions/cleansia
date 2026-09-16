@@ -99,6 +99,13 @@ public abstract class CleansiaApiController(IMediator mediator) : ControllerBase
             IValidationResult.ValidationError,
             errors);
 
+    /// <summary>
+    /// A write the company's frozen books refused at the commit (ADR-0064 D3): the same body shape
+    /// as every other refusal, under 409, with the one keyed error the clients localise.
+    /// </summary>
+    internal static ProblemDetails CreateArchivedCompanyProblemDetails(Error error) =>
+        CreateProblemDetails("Conflict", StatusCodes.Status409Conflict, error, [error]);
+
     private static ProblemDetails CreateProblemDetails(string title, int status, Error error, Error[]? errors = null)
     {
         var errorDetails = errors?

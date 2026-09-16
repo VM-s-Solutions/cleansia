@@ -10,6 +10,7 @@ using Cleansia.Core.Domain.Repositories;
 using Cleansia.Infra.Common.Configuration.Interfaces;
 using Cleansia.Infra.Common.Validations;
 using Cleansia.TestUtilities;
+using Cleansia.Core.Domain.Tenancy;
 using MediatR;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
@@ -116,6 +117,26 @@ public sealed class AuditFailureCaptureBehaviorTests
         Assert.Same(commitFailure, thrown);
         _sink.Verify(s => s.RecordFailureAsync(It.Is<AdminActionAudit>(a =>
             !a.Success && a.ErrorCode == nameof(InvalidOperationException) && a.Action == "AdminRefundOrder"),
+            It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    /// <summary>
+    /// The frozen company's refusal is a keyed refusal the caller sees as <c>tenant.archived</c>, so
+    /// the row records that key rather than the exception's type name (ADR-0064 D3).
+    /// </summary>
+    [Fact]
+    public async Task A_CommitThrow_From_The_Archived_Company_Guard_Writes_The_Archived_Key_Then_Rethrows()
+    {
+        var behavior = Behavior<AdminRefundOrderCommand>(Session(UserProfile.Administrator));
+        var refusal = new CompanyArchivedException("cleansia-sk");
+
+        var thrown = await Assert.ThrowsAsync<CompanyArchivedException>(() =>
+            behavior.Handle(new AdminRefundOrderCommand("ORD-1"),
+                _ => Task.FromException<BusinessResult>(refusal), CancellationToken.None));
+
+        Assert.Same(refusal, thrown);
+        _sink.Verify(s => s.RecordFailureAsync(It.Is<AdminActionAudit>(a =>
+            !a.Success && a.ErrorCode == BusinessErrorMessage.TenantArchived && a.Action == "AdminRefundOrder"),
             It.IsAny<CancellationToken>()), Times.Once);
     }
 

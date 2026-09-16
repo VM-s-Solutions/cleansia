@@ -100,6 +100,7 @@ public sealed class UserNotificationRetentionAndGdprTests : IDisposable
             _configProvider.Object,
             new DataRetentionConfig(new ConfigurationBuilder().Build()),
             _blobClientFactory.Object,
+            new ArchiveWriteGate(),
             NullLogger<DataRetentionBackgroundService>.Instance);
     }
 
@@ -212,6 +213,7 @@ public sealed class UserNotificationRetentionAndGdprTests : IDisposable
                 _blobClientFactory.Object,
                 Mock.Of<IAppConfigurationProvider>(),
                 new ErasureAttempt(),
+                new ArchiveWriteGate(),
                 NullLogger<GdprDeletionService>.Instance);
 
             var result = await gdpr.DeleteUserAccountAsync(

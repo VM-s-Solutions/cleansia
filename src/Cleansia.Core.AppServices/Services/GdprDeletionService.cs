@@ -8,6 +8,7 @@ using Cleansia.Core.Domain.Configuration;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Repositories;
+using Cleansia.Core.Domain.Tenancy;
 using Cleansia.Infra.Common.Validations;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -43,6 +44,7 @@ public class GdprDeletionService(
     IBlobContainerClientFactory blobClientFactory,
     IAppConfigurationProvider configProvider,
     IErasureAttempt erasureAttempt,
+    IArchiveWriteGate archiveWriteGate,
     ILogger<GdprDeletionService> logger)
     : IGdprDeletionService
 {
@@ -186,6 +188,12 @@ public class GdprDeletionService(
         Func<Domain.Users.User, (string ProcessedBy, string? Notes)> resolveAuditActor,
         CancellationToken cancellationToken)
     {
+        // Art. 17 does not care that the subject's company is frozen for archive: the walk below
+        // pseudonymises its orders and disputes, and the archived-company write guard must let the
+        // commit through. The commit runs in the pipeline after this returns, so the gate is left open
+        // for the rest of the request scope rather than closed at the end of the walk.
+        archiveWriteGate.OpenForLegalObligation("erasure");
+
         await CancelActiveMembershipAsync(user.Id, cancellationToken);
         await AnonymizeUserDataAsync(user, deactivationReason, cancellationToken);
 

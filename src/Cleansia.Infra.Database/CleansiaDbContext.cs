@@ -39,6 +39,11 @@ public class CleansiaDbContext : DbContext, IUnitOfWork
 {
     private readonly IUserSessionProvider userSessionProvider;
     private readonly ITenantProvider tenantProvider;
+    private readonly IArchiveWriteGate? archiveWriteGate;
+
+    // One Tenants read per company per context instance: a request scope or a job iteration asks
+    // once and every later commit on the same context reuses the answer.
+    private readonly Dictionary<string, bool> frozenByTenantId = new(StringComparer.Ordinal);
 
     public CleansiaDbContext()
     {
@@ -55,11 +60,16 @@ public class CleansiaDbContext : DbContext, IUnitOfWork
     {
     }
 
-    public CleansiaDbContext(DbContextOptions dbContextOptions, IUserSessionProvider userSessionProvider, ITenantProvider tenantProvider)
+    public CleansiaDbContext(
+        DbContextOptions dbContextOptions,
+        IUserSessionProvider userSessionProvider,
+        ITenantProvider tenantProvider,
+        IArchiveWriteGate? archiveWriteGate = null)
         : base(dbContextOptions)
     {
         this.userSessionProvider = userSessionProvider;
         this.tenantProvider = tenantProvider;
+        this.archiveWriteGate = archiveWriteGate;
     }
 
     public void Migrate()
@@ -99,7 +109,43 @@ public class CleansiaDbContext : DbContext, IUnitOfWork
                 entity.Entity.Updated(stateUser, currentTime);
             }
         }
+
+        await RefuseFrozenBooksAsync(cancellationToken);
         await SaveChangesAsync(cancellationToken);
+    }
+
+    /// <summary>
+    /// The archived-company write guard (ADR-0064 D3), after the stamp loop so a row stamped just now
+    /// is seen, before the save so nothing of a frozen company's books lands. The account surface
+    /// passes; the law's writes pass while the gate is open; everything else asks the registry once.
+    /// </summary>
+    private async Task RefuseFrozenBooksAsync(CancellationToken cancellationToken)
+    {
+        var touched = ArchivedCompanyWriteGuard.TouchedBooksTenantIds(ChangeTracker);
+        if (touched.Count == 0 || archiveWriteGate?.IsOpen == true)
+        {
+            return;
+        }
+
+        var unknown = touched.Where(id => !frozenByTenantId.ContainsKey(id)).ToList();
+        if (unknown.Count > 0)
+        {
+            var frozen = await Tenants
+                .AsNoTracking()
+                .Where(t => unknown.Contains(t.Id))
+                .Select(t => new { t.Id, Frozen = t.ArchiveRequestedOn != null })
+                .ToListAsync(cancellationToken);
+            foreach (var id in unknown)
+            {
+                frozenByTenantId[id] = frozen.Any(t => t.Id == id && t.Frozen);
+            }
+        }
+
+        var refused = touched.FirstOrDefault(id => frozenByTenantId[id]);
+        if (refused is not null)
+        {
+            throw new CompanyArchivedException(refused);
+        }
     }
 
     public Task<IDbContextTransaction> BeginTransactionAsync(CancellationToken cancellationToken)

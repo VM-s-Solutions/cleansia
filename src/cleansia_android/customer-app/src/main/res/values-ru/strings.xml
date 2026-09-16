@@ -1255,6 +1255,7 @@
     <string name="error_currency_invalid">Недействительная валюта</string>
     <string name="error_country_not_serviced">В этой стране мы пока не работаем.</string>
     <string name="error_tenant_not_found">Этот рынок пока не обслуживает ни одна компания Cleansia.</string>
+    <string name="error_tenant_archived">Записи этой компании опечатаны для архивирования; изменить в них уже ничего нельзя.</string>
     <string name="error_order_country_operator_mismatch">Этот адрес обслуживает другая компания Cleansia, и с этого аккаунта его нельзя забронировать.</string>
     <string name="error_promo_not_found">Код не найден</string>
     <string name="error_promo_inactive">Код больше не доступен</string>

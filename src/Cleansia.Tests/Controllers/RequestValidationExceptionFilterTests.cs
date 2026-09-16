@@ -5,6 +5,7 @@ using Cleansia.Config.Filters;
 using Cleansia.Core.AppServices.Behaviors;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Infra.Common.Validations;
+using Cleansia.Core.Domain.Tenancy;
 using MediatR;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -54,6 +55,30 @@ public class RequestValidationExceptionFilterTests
         Assert.Equal("Validation Error", actual.Title);
         var errors = Assert.IsType<Dictionary<string, string>>(actual.Extensions["errors"]);
         Assert.Equal($"{BusinessErrorMessage.PageSizeExceeded}; {BusinessErrorMessage.Required}", errors["Limit"]);
+    }
+
+    /// <summary>
+    /// A write a frozen company's books refused at the commit (ADR-0064 D3) answers 409 with the same
+    /// body shape, one keyed error the clients localise, and never a 500.
+    /// </summary>
+    [Fact]
+    public void The_archived_company_refusal_answers_409_with_one_keyed_error_on_the_tenant()
+    {
+        var context = ExceptionContextFor(new CompanyArchivedException("cleansia-sk"));
+
+        new RequestValidationExceptionFilterAttribute().OnException(context);
+
+        Assert.True(context.ExceptionHandled);
+        var result = Assert.IsType<ObjectResult>(context.Result);
+        Assert.Equal(StatusCodes.Status409Conflict, result.StatusCode);
+        var body = Assert.IsType<ProblemDetails>(result.Value);
+        Assert.Equal(StatusCodes.Status409Conflict, body.Status);
+        Assert.Equal("Conflict", body.Title);
+        Assert.Equal("TenantId", body.Type);
+        Assert.Equal(BusinessErrorMessage.TenantArchived, body.Detail);
+        var errors = Assert.IsType<Dictionary<string, string>>(body.Extensions["errors"]);
+        Assert.Equal(new KeyValuePair<string, string>("TenantId", BusinessErrorMessage.TenantArchived), Assert.Single(errors));
+        Assert.DoesNotContain("cleansia-sk", JsonSerializer.Serialize(body), StringComparison.Ordinal);
     }
 
     [Fact]

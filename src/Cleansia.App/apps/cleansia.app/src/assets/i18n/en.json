@@ -1862,7 +1862,8 @@
       "not_existing_id": "We couldn't find that country."
     },
     "tenant": {
-      "not_found": "This market is not operated by any Cleansia company yet."
+      "not_found": "This market is not operated by any Cleansia company yet.",
+      "archived": "This company's records are sealed for archive; nothing about them can be changed any more."
     },
     "city": {
       "not_serviced": "We don't currently serve this city."

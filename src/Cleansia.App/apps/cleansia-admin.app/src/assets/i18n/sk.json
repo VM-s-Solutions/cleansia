@@ -2789,7 +2789,20 @@
       "operates_default_market": "Spoločnosť prevádzkuje predvolený trh a nemožno ju deaktivovať. Najprv presuňte predvolený trh na inú spoločnosť.",
       "wind_down_already_requested": "Dátum ukončenia je už nastavený a nemožno ho zmeniť. Ak je potrebný skorší dátum, zrušte zvyšné objednávky ručne.",
       "wind_down_date_in_past": "Posledný deň poskytovania služieb nemôže byť skôr ako dnes na trhoch spoločnosti.",
-      "wind_down_in_progress": "Prebieha beh ukončovania činnosti; skúste to znova, keď skončí."
+      "wind_down_in_progress": "Prebieha beh ukončovania činnosti; skúste to znova, keď skončí.",
+      "wind_down_not_requested": "Archivácia čaká, kým budú ľudia informovaní: najprv nastavte dátum ukončenia činnosti.",
+      "has_open_orders": "Spoločnosť má stále otvorené objednávky; archivácia čaká, kým nebude každá dokončená alebo zrušená.",
+      "has_orders_awaiting_pay": "Dokončená objednávka stále čaká na výpočet odmeny; archivácia naň čaká.",
+      "has_orders_awaiting_receipt": "Zaplatená alebo hotovostná objednávka stále čaká na doklad; archivácia naň čaká.",
+      "has_receipts_awaiting_fiscal_registration": "Doklad stále čaká na fiškálnu registráciu; archivácia naň čaká.",
+      "has_pending_refunds": "Vrátenie platby stále čaká na vybavenie; archivácia čaká, kým nebude vysporiadané.",
+      "has_active_memberships": "Zákazník má stále aktívne Plus; archivácia čaká, kým sa neskončí posledné obdobie.",
+      "has_credit_balances": "Zákazník má stále kreditný zostatok; archivácia čaká, kým nebudú všetky zostatky vysporiadané.",
+      "has_open_pay_period": "Výplatné obdobie je stále otvorené; najprv ho uzavrite.",
+      "has_unpaid_invoices": "Faktúra upratovača ešte nie je zaplatená; archivácia čaká, kým nebude každá faktúra zaplatená alebo stornovaná.",
+      "has_uninvoiced_pay": "Uzavreté výplatné obdobie obsahuje odmenu, ktorá nebola nikdy vyfakturovaná; archivácia na ňu čaká.",
+      "has_open_disputes": "Reklamácia je stále otvorená; najprv ju vyriešte.",
+      "within_chargeback_horizon": "Držiteľ karty môže poslednú kartovú platbu spoločnosti stále rozporovať; archivácia bude možná, keď uplynie lehota na chargeback."
     },
     "country": {
       "in_use": "Nie je možné odstrániť krajinu, pretože sa práve používa",
@@ -3087,7 +3100,8 @@
       }
     },
     "tenant": {
-      "not_found": "Tento trh zatiaľ neprevádzkuje žiadna spoločnosť Cleansia."
+      "not_found": "Tento trh zatiaľ neprevádzkuje žiadna spoločnosť Cleansia.",
+      "archived": "Záznamy tejto spoločnosti sú zapečatené na archiváciu; nič na nich už nemožno meniť."
     },
     "tenant_setting": {
       "invalid_value": "Hodnota nemá správny typ alebo je mimo povoleného rozsahu tohto nastavenia.",

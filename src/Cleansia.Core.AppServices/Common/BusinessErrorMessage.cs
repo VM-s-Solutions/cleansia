@@ -360,6 +360,8 @@ public static class BusinessErrorMessage
     public const string CountryRequired = "country.required";
     /// <summary>The default market has no operating company behind it — a seed defect, not user input (ADR-0061 D3; a named country without an operator is not a market, ADR-0064 D1).</summary>
     public const string TenantNotFound = "tenant.not_found";
+    /// <summary>The company's books are frozen for archive; a write against them is refused at the commit (409).</summary>
+    public const string TenantArchived = "tenant.archived";
     /// <summary>Two upper-case letters (ISO 3166-1 alpha-2), the form the market chip prints.</summary>
     public const string CountryIsoAlpha2Invalid = "country.iso_alpha2_invalid";
     /// <summary>Servicing a country needs a configuration whose default currency is switched on (ADR-0058 D7 gate 2).</summary>
@@ -527,6 +529,21 @@ public static class BusinessErrorMessage
     public const string CompanyWindDownDateInPast = "company.wind_down_date_in_past";
     /// <summary>A wind-down run started less than an hour ago and has not recorded its end.</summary>
     public const string CompanyWindDownInProgress = "company.wind_down_in_progress";
+    /// <summary>The archive waits for the people to have been told: a wind-down date must be set first.</summary>
+    public const string CompanyWindDownNotRequested = "company.wind_down_not_requested";
+    public const string CompanyHasOpenOrders = "company.has_open_orders";
+    public const string CompanyHasOrdersAwaitingPay = "company.has_orders_awaiting_pay";
+    public const string CompanyHasOrdersAwaitingReceipt = "company.has_orders_awaiting_receipt";
+    public const string CompanyHasReceiptsAwaitingFiscalRegistration = "company.has_receipts_awaiting_fiscal_registration";
+    public const string CompanyHasPendingRefunds = "company.has_pending_refunds";
+    public const string CompanyHasActiveMemberships = "company.has_active_memberships";
+    public const string CompanyHasCreditBalances = "company.has_credit_balances";
+    public const string CompanyHasOpenPayPeriod = "company.has_open_pay_period";
+    public const string CompanyHasUnpaidInvoices = "company.has_unpaid_invoices";
+    public const string CompanyHasUninvoicedPay = "company.has_uninvoiced_pay";
+    public const string CompanyHasOpenDisputes = "company.has_open_disputes";
+    /// <summary>A cardholder can still dispute the company's latest card charge; the archive waits for the horizon to pass.</summary>
+    public const string CompanyWithinChargebackHorizon = "company.within_chargeback_horizon";
 
     // Country Configuration
     public const string CountryConfigNotFound = "country_config.not_found";

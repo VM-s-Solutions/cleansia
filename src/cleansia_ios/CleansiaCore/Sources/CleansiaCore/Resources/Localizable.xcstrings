@@ -5737,6 +5737,41 @@
         }
       }
     },
+    "error.tenant.archived": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Záznamy této společnosti jsou zapečetěny k archivaci; nic na nich už nelze měnit."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This company's records are sealed for archive; nothing about them can be changed any more."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Записи этой компании опечатаны для архивирования; изменить в них уже ничего нельзя."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Záznamy tejto spoločnosti sú zapečatené na archiváciu; nič na nich už nemožno meniť."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Записи цієї компанії опечатано для архівування; змінити в них уже нічого не можна."
+          }
+        }
+      }
+    },
     "error.tenant.not_found": {
       "extractionState": "manual",
       "localizations": {

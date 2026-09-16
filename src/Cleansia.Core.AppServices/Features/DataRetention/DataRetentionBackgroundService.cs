@@ -5,6 +5,7 @@ using Cleansia.Core.Domain.Common;
 using Cleansia.Core.Domain.Configuration;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Repositories;
+using Cleansia.Core.Domain.Tenancy;
 using Cleansia.Infra.Common.Configuration.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -26,6 +27,7 @@ public class DataRetentionBackgroundService(
     IAppConfigurationProvider configProvider,
     IDataRetentionConfig retentionConfig,
     IBlobContainerClientFactory blobClientFactory,
+    IArchiveWriteGate archiveWriteGate,
     ILogger<DataRetentionBackgroundService> logger)
     : IDataRetentionBackgroundService
 {
@@ -48,6 +50,10 @@ public class DataRetentionBackgroundService(
         // settings are its own, and the commits inside each task stamp nothing else. No JWT on a job —
         // without the override a filtered read returns nothing at all.
         var tenantIds = await tenantRepository.GetAllIdsAsync(cancellationToken);
+
+        // A company's GDPR obligations do not end with its trading: the windows keep blanking a
+        // frozen company's books, which the archived-company write guard would otherwise refuse.
+        using var legalObligation = archiveWriteGate.OpenForLegalObligation("data retention");
 
         foreach (var tenantId in tenantIds)
         {

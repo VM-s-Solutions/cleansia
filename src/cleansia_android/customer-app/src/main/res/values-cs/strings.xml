@@ -1258,6 +1258,7 @@
     <string name="error_currency_invalid">Neplatná měna</string>
     <string name="error_country_not_serviced">V této zemi zatím nepůsobíme.</string>
     <string name="error_tenant_not_found">Tento trh zatím neprovozuje žádná společnost Cleansia.</string>
+    <string name="error_tenant_archived">Záznamy této společnosti jsou zapečetěny k archivaci; nic na nich už nelze měnit.</string>
     <string name="error_order_country_operator_mismatch">Tuto adresu obsluhuje jiná společnost Cleansia a z tohoto účtu ji nelze objednat.</string>
     <string name="error_promo_not_found">Kód nebyl nalezen</string>
     <string name="error_promo_inactive">Kód už není dostupný</string>

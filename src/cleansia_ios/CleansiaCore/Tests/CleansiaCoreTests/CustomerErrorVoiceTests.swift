@@ -166,6 +166,7 @@ final class CustomerErrorVoiceTests: XCTestCase {
         "refund.failed": "RefundService",
         "refund.nothing_refundable": "RefundService",
         "refund.order_not_refundable": "RefundService",
+        "tenant.archived": "CleansiaDbContext.CommitAsync via RequestValidationExceptionFilterAttribute (409)",
         "tenant.not_found": "OperatorTenantScopeBehavior",
         "user.email_confirmed": "ResendConfirmationEmail",
         "user.existing_email": "Register",

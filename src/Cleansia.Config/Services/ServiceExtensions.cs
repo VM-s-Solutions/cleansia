@@ -239,6 +239,9 @@ public static class ServiceExtensions
         services.AddScoped<IOperatorTenantResolver, OperatorTenantResolver>();
         // Scoped and memoised: the issuing command and the mint share one Tenants read (ADR-0064 D1).
         services.AddScoped<ICompanySignInGate, CompanySignInGate>();
+        // The operations record of a books write a frozen company refused where the caller cannot be
+        // refused (the Stripe webhook, a late queue consumer) — ADR-0064 D3.
+        services.AddScoped<ArchivedCompanyDeadLetter>();
         services.AddScoped<IOrderPromoApplier, OrderPromoApplier>();
         services.AddScoped<IOrderLateReferralAcceptor, OrderLateReferralAcceptor>();
         services.AddScoped<IOrderPaymentDispatcher, OrderPaymentDispatcher>();

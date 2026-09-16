@@ -177,6 +177,7 @@ public sealed class DataRetentionEnablementTests : IDisposable
             new AppConfigurationProvider(ctx),
             new DataRetentionConfig(configuration),
             _blobClientFactory.Object,
+            new ArchiveWriteGate(),
             NullLogger<DataRetentionBackgroundService>.Instance);
     }
 

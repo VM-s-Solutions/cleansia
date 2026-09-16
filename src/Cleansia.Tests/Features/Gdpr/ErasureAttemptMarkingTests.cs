@@ -183,6 +183,7 @@ public sealed class ErasureAttemptMarkingTests : IDisposable
             _blobClientFactory.Object,
             Mock.Of<IAppConfigurationProvider>(),
             attempt,
+            new ArchiveWriteGate(),
             NullLogger<GdprDeletionService>.Instance);
     }
 

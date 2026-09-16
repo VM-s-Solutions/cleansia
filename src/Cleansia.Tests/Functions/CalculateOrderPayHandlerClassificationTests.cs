@@ -7,9 +7,11 @@ using Cleansia.Core.Queue.Abstractions;
 using Cleansia.Core.Queue.Abstractions.Messages;
 using Cleansia.Infra.Common.Validations;
 using Cleansia.Functions.Core.Handlers;
+using Cleansia.Core.AppServices.Tenancy;
 using MediatR;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Cleansia.Tests.Functions;
 
@@ -30,6 +32,7 @@ public class CalculateOrderPayHandlerClassificationTests
         _mediator.Object,
         _payPeriod.Object,
         _tenantProvider.Object,
+        new ArchivedCompanyDeadLetter(Mock.Of<IServiceScopeFactory>(), NullLogger<ArchivedCompanyDeadLetter>.Instance),
         NullLogger<CalculateOrderPayHandler>.Instance);
 
     private static string Enveloped(string orderId, string employeeId) =>

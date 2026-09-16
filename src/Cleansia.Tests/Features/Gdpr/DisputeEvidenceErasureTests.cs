@@ -211,6 +211,7 @@ public sealed class DisputeEvidenceErasureTests : IDisposable
             _blobClientFactory.Object,
             _configProvider.Object,
             new ErasureAttempt(),
+            new ArchiveWriteGate(),
             NullLogger<GdprDeletionService>.Instance);
 
         var result = await service.DeleteUserAccountAsync(

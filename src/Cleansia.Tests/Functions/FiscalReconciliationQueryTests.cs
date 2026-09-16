@@ -218,11 +218,8 @@ public sealed class FiscalReconciliationQueryTests : IDisposable
         Assert.Empty(due);
     }
 
-    // ── A cancelled order owes no receipt: nothing was collected on a cash one, and a paid card one
-    // is refunded rather than receipted — neither arm sweeps it ──
-
     [Fact]
-    public async Task Receipt_Recon_Skips_Cancelled_Orders_Without_A_Receipt()
+    public async Task Receipt_Recon_Skips_Cancelled_Orders_But_Still_Sweeps_Their_Stale_Twin()
     {
         await EnsureSchemaAsync();
         var stale = DateTimeOffset.UtcNow.AddMinutes(-60);
@@ -233,7 +230,8 @@ public sealed class FiscalReconciliationQueryTests : IDisposable
             cancelledCash.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.Cancelled, cancelledCash));
             var cancelledPaidCard = NewOrder("01HZX9N6M7Q8R9S0T1V2W3X41B", PaymentType.Card, PaymentStatus.Paid, stale);
             cancelledPaidCard.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.Cancelled, cancelledPaidCard));
-            seed.AddRange(cancelledCash, cancelledPaidCard);
+            var staleCash = NewOrder("01HZX9N6M7Q8R9S0T1V2W3X41C", PaymentType.Cash, PaymentStatus.Pending, stale);
+            seed.AddRange(cancelledCash, cancelledPaidCard, staleCash);
             await seed.CommitAsync(CancellationToken.None);
         }
 
@@ -242,7 +240,8 @@ public sealed class FiscalReconciliationQueryTests : IDisposable
         var cutoff = DateTime.UtcNow.AddMinutes(-15);
         var due = await repo.GetReceiptReconciliationCandidatesAsync(cutoff, take: 50, CancellationToken.None);
 
-        Assert.Empty(due);
+        var swept = Assert.Single(due);
+        Assert.Equal("01HZX9N6M7Q8R9S0T1V2W3X41C", swept.Id);
     }
 
     // ── OR-shape regression — the sweep is now a UNION of a Cash arm and a Paid arm; an order that

@@ -445,8 +445,8 @@ public class OrderRepository(CleansiaDbContext context) : BaseRepository<Order>(
         // looks across tenants too, or a stale order whose receipt is registered reads as unrealized.
         var registeredReceipts = Context.Set<OrderReceipt>().IgnoreQueryFilters();
 
-        // A cancelled order owes no receipt — nothing was collected on a cash one, and a paid card one
-        // is refunded rather than receipted — so neither arm sweeps it.
+        // A cancelled order is out of the sweep: its money is settled by the refund path, and a receipt
+        // for a fee it kept is the payment-time enqueue's job, not this backstop's.
         //
         // The single-query `(Cash OR Paid)` shape forced a seq scan 288x/day — the OR defeats both
         // (PaymentType|PaymentStatus, CreatedOn) composites. Split the eligibility into one

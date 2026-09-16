@@ -22,8 +22,9 @@ and fitting fallback. `SnapSheetOrnamentTests` guards the production ornament's 
 anchor/offset tests remain. Reintroducing the original layout must fail the corresponding guard.
 These are source regression tests, not screenshot or geometry tests.
 
-SwiftFormat 0.60.1 passed per touched file. XCTest and SwiftLint are unrun locally on Windows; CI is
-pending for this change. No local simulator, device or Mac result is claimed.
+SwiftFormat 0.60.1 passed per touched file. CI passed for `b5470030`, including strict SwiftLint,
+Core's 720 tests and the partner's 856 tests. XCTest and SwiftLint were not run locally on Windows.
+The simulator/device acceptance matrix below remains pending.
 
 Runtime checks remain: iOS 16 notched iPhone and a Dynamic Island iPhone; portrait and landscape;
 default and larger Dynamic Type; profile scrolled past the hero; map/approximate-map order detail at

@@ -40,7 +40,9 @@ uncovered strip. No generated API members or Android sources changed for this ti
 Five source-binding XCTest cases guard these regressions; existing sheet-anchor geometry tests
 remain. SwiftFormat 0.60.1 passed separately for all eight touched Swift files. XCTest and SwiftLint
 are not runnable locally on this Windows machine. The per-app audit notes list source coverage and
-the outstanding device matrix; CI and runtime confirmation are pending, so this ticket stays open.
+the outstanding device matrix. All seven CI workflows passed for `b5470030`, including SwiftFormat,
+strict SwiftLint and the Core (720), Partner (856) and Customer (1,187, one skipped) XCTest suites.
+Rendered device confirmation remains pending, so this ticket stays open.
 
 Independent source review approved the changes with no blockers or majors: caller safe-area chains,
 clipping and fitting behavior are consistent, and both app project manifests include the new tests.

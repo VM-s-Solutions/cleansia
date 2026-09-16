@@ -25,8 +25,8 @@ import org.junit.rules.TestName
  *    than re-granted;
  *  - anything that did not land stays parked for the next session.
  *
- * The exact commands that reach the wire are pinned per app, over each app's real
- * generated `GdprApi` — see `SignupConsentFlowTest` in customer-app and partner-app.
+ * The exact commands that reach the wire are pinned over the customer app's real
+ * generated `GdprApi` — see `SignupConsentFlowTest` in customer-app.
  */
 class SignupConsentRepositoryTest {
 

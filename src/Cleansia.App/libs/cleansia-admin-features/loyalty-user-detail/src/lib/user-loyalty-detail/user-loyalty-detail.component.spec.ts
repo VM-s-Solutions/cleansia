@@ -12,11 +12,12 @@ import {
   GetUserCreditResponse,
   GetUserLoyaltyAccountResponse,
   LoyaltyTier,
+  PagedDataOfOrderListItem,
 } from '@cleansia/admin-services';
 import { TimelineComponent } from '@cleansia/admin-features/audit-log';
 import { PermissionService, SnackbarService } from '@cleansia/services';
 import { TranslateModule } from '@ngx-translate/core';
-import { of } from 'rxjs';
+import { of, throwError } from 'rxjs';
 import { ExpireCreditDialogComponent } from '../expire-credit-dialog/expire-credit-dialog.component';
 import { GrantPointsDialogComponent } from '../grant-points-dialog/grant-points-dialog.component';
 import { IssueCreditDialogComponent } from '../issue-credit-dialog/issue-credit-dialog.component';
@@ -63,13 +64,20 @@ class TimelineStub {
 describe('UserLoyaltyDetailComponent — credit section', () => {
   let creditClient: { user: jest.Mock; issue: jest.Mock; expire: jest.Mock };
   let gdprClient: { export: jest.Mock; incidentFile: jest.Mock };
+  let orderClient: { getPaged: jest.Mock };
   let grantedPolicies: Set<string>;
+
+  const orderPage = (orders: { id: string; displayOrderNumber: string }[], total = orders.length) =>
+    PagedDataOfOrderListItem.fromJS({ data: orders, total });
 
   beforeEach(async () => {
     creditClient = { user: jest.fn(), issue: jest.fn(), expire: jest.fn() };
     gdprClient = {
       export: jest.fn().mockReturnValue(of(null)),
       incidentFile: jest.fn().mockReturnValue(of(null)),
+    };
+    orderClient = {
+      getPaged: jest.fn().mockReturnValue(of(orderPage([{ id: 'order-7', displayOrderNumber: 'ORD-7' }]))),
     };
     grantedPolicies = new Set<string>([
       'CanGrantLoyaltyPoints',
@@ -103,6 +111,7 @@ describe('UserLoyaltyDetailComponent — credit section', () => {
             },
             adminCreditClient: creditClient,
             adminCurrencyClient: { getOverview: jest.fn().mockReturnValue(of([])) },
+            adminOrderClient: orderClient,
           },
         },
         { provide: SnackbarService, useValue: { showSuccess: jest.fn(), showError: jest.fn() } },
@@ -271,24 +280,71 @@ describe('UserLoyaltyDetailComponent — credit section', () => {
   });
 
   // The incident file is the same PII egress as the export, so it sits beside it under the same
-  // policy, with the order scope the admin types handed to the facade untouched — trimming is the
-  // facade's, and an untrimmed value here is what proves the component does not pre-empt it.
-  it('offers the incident file with its order scope beside the export and hands the typed scope to the facade', () => {
+  // policy, with the orders of the account offered as its scope and the picked id handed to the facade.
+  it('offers the incident file with the orders of the account as its scope and hands the picked order to the facade', () => {
     const fixture = renderFixture(noAccount());
     const el = fixture.nativeElement as HTMLElement;
     const facade = fixture.debugElement.injector.get(UserLoyaltyDetailFacade);
     const exportIncidentFile = jest.spyOn(facade, 'exportIncidentFile');
 
+    expect(orderClient.getPaged.mock.lastCall?.[18]).toBe('user-1');
     expect(el.querySelector('.cleansia-user-loyalty-detail__incident-file')).toBeTruthy();
     expect(
-      el.querySelector('.cleansia-user-loyalty-detail__incident-scope cleansia-text-input')
+      el.querySelector('.cleansia-user-loyalty-detail__incident-scope cleansia-select')
     ).toBeTruthy();
 
-    fixture.componentInstance.incidentOrderControl.setValue('  order-7 ');
+    fixture.componentInstance.incidentOrderControl.setValue('order-7');
     fixture.componentInstance.exportIncidentFile();
 
-    expect(exportIncidentFile).toHaveBeenCalledWith('  order-7 ');
+    expect(exportIncidentFile).toHaveBeenCalledWith('order-7');
     expect(gdprClient.incidentFile).toHaveBeenCalledWith('user-1', 'order-7');
+  });
+
+  it('asks for the whole account when no order is picked', () => {
+    const fixture = renderFixture(noAccount());
+
+    fixture.componentInstance.exportIncidentFile();
+
+    expect(gdprClient.incidentFile).toHaveBeenCalledWith('user-1', undefined);
+  });
+
+  it('says so instead of a picker when the account has no orders', () => {
+    orderClient.getPaged.mockReturnValue(of(orderPage([])));
+    const el = render(noAccount());
+
+    const scope = el.querySelector('.cleansia-user-loyalty-detail__incident-scope');
+    expect(scope?.querySelector('cleansia-select')).toBeNull();
+    expect(scope?.textContent).toContain('pages.customer_detail.incident_file.no_orders');
+  });
+
+  it('offers a retry instead of a picker when the orders could not be read, and re-asks on it', () => {
+    orderClient.getPaged.mockReturnValueOnce(throwError(() => new Error('boom')));
+    const fixture = renderFixture(noAccount());
+    const el = fixture.nativeElement as HTMLElement;
+
+    const scope = el.querySelector('.cleansia-user-loyalty-detail__incident-scope');
+    expect(scope?.querySelector('cleansia-select')).toBeNull();
+    expect(scope?.textContent).toContain('pages.customer_detail.incident_file.orders_error');
+    expect(scope?.querySelector('.cleansia-user-loyalty-detail__incident-scope-retry')).toBeTruthy();
+
+    fixture.componentInstance.reloadSubjectOrders();
+    fixture.detectChanges();
+
+    expect(orderClient.getPaged).toHaveBeenCalledTimes(2);
+    expect(
+      el.querySelector('.cleansia-user-loyalty-detail__incident-scope cleansia-select')
+    ).toBeTruthy();
+  });
+
+  it('names the page ceiling when the account holds more orders than it offers', () => {
+    orderClient.getPaged.mockReturnValue(
+      of(orderPage([{ id: 'order-7', displayOrderNumber: 'ORD-7' }], 140))
+    );
+    const el = render(noAccount());
+
+    expect(el.querySelector('.cleansia-user-loyalty-detail__incident-scope')?.textContent).toContain(
+      'pages.customer_detail.incident_file.orders_truncated'
+    );
   });
 
   it('hides the incident file and its scope without CanAdminExportUserData', () => {

@@ -2705,8 +2705,14 @@
       "export_error": "The subject export failed",
       "incident_file": {
         "button": "Incident file (PDF)",
-        "order_scope": "Order id (optional)",
-        "order_scope_hint": "Leave empty for the whole account, or enter one of this customer's order ids to scope the file to that order.",
+        "order_scope": "Order (optional)",
+        "order_scope_placeholder": "Whole account",
+        "order_scope_hint": "Leave empty for the whole account, or pick one of this customer's orders to scope the file to it.",
+        "orders_loading": "Loading this customer's orders…",
+        "orders_error": "This customer's orders could not be loaded. The file can still be built for the whole account.",
+        "orders_retry": "Try again",
+        "no_orders": "This customer has no orders; the file covers the whole account.",
+        "orders_truncated": "Showing the newest {{shown}} of {{total}} orders.",
         "success": "The incident file was downloaded and recorded",
         "error": "The incident file could not be built"
       }

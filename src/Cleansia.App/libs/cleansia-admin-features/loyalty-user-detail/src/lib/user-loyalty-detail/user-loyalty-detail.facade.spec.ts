@@ -14,8 +14,11 @@ import {
   GrantPointsManuallyCommand,
   IssueCustomerCreditCommand,
   IssueCustomerCreditResponse,
+  OrderListItem,
+  PagedDataOfOrderListItem,
   ReferralStatus,
   RevokePointsManuallyCommand,
+  SortDirection,
 } from '@cleansia/admin-services';
 import { FileDownloadService, SnackbarService } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
@@ -457,10 +460,10 @@ describe('UserLoyaltyDetailFacade — incident file', () => {
     expect(facade.incidentFileExporting()).toBe(false);
   });
 
-  it('scopes the file to the order the admin named', () => {
+  it('scopes the file to the order the admin picked', () => {
     facade.loadCredit('user-1');
 
-    facade.exportIncidentFile('  order-7 ');
+    facade.exportIncidentFile('order-7');
 
     expect(gdprClient.incidentFile).toHaveBeenCalledWith('user-1', 'order-7');
   });
@@ -502,5 +505,114 @@ describe('UserLoyaltyDetailFacade — incident file', () => {
     facade.incidentFileExporting.set(true);
     facade.exportIncidentFile('order-7');
     expect(gdprClient.incidentFile).not.toHaveBeenCalled();
+  });
+});
+
+describe('UserLoyaltyDetailFacade — incident order picker', () => {
+  let facade: UserLoyaltyDetailFacade;
+  let getPaged: jest.Mock;
+
+  const USER_ID_SLOT = 18;
+  const SORT_SLOT = 19;
+  const OFFSET_SLOT = 20;
+  const LIMIT_SLOT = 21;
+
+  const page = (orders: Partial<OrderListItem>[], total = orders.length) =>
+    PagedDataOfOrderListItem.fromJS({ data: orders, total });
+
+  beforeEach(() => {
+    getPaged = jest.fn().mockReturnValue(of(page([])));
+
+    TestBed.configureTestingModule({
+      providers: [
+        UserLoyaltyDetailFacade,
+        { provide: AdminClient, useValue: { adminOrderClient: { getPaged } } },
+        {
+          provide: SnackbarService,
+          useValue: { showSuccess: jest.fn(), showError: jest.fn(), showApiError: jest.fn() },
+        },
+        { provide: TranslateService, useValue: { instant: (k: string) => k } },
+        { provide: Router, useValue: { navigate: jest.fn() } },
+        { provide: AdminGdprClient, useValue: { export: jest.fn(), incidentFile: jest.fn() } },
+        { provide: FileDownloadService, useValue: { downloadBlob: jest.fn() } },
+      ],
+    });
+    facade = TestBed.inject(UserLoyaltyDetailFacade);
+  });
+
+  // The account is the only filter: a cancelled or completed booking is as much an incident's
+  // subject as a live one, and the newest cleaning is the one an admin is most often asked about.
+  it('asks for the orders of the one account, newest cleaning first, in one page', () => {
+    facade.loadSubjectOrders('user-1');
+
+    const call = getPaged.mock.lastCall as unknown[];
+    expect(call[USER_ID_SLOT]).toBe('user-1');
+    expect(call[SORT_SLOT]).toEqual([
+      expect.objectContaining({ field: 'cleaningDateTime', direction: SortDirection.Descending }),
+    ]);
+    expect(call[OFFSET_SLOT]).toBe(0);
+    expect(call[LIMIT_SLOT]).toBe(100);
+    call.forEach((arg, slot) => {
+      if (![USER_ID_SLOT, SORT_SLOT, OFFSET_SLOT, LIMIT_SLOT].includes(slot)) {
+        expect(arg).toBeUndefined();
+      }
+    });
+  });
+
+  it('offers each order by its display number and cleaning date, valued by its id', () => {
+    getPaged.mockReturnValue(
+      of(
+        page([
+          { id: 'order-7', displayOrderNumber: 'ORD-7', cleaningDateTime: new Date('2026-09-14T10:00:00Z') },
+          { id: 'order-3', displayOrderNumber: 'ORD-3', cleaningDateTime: new Date('2026-03-02T08:30:00Z') },
+          { displayOrderNumber: 'no-id' },
+        ])
+      )
+    );
+
+    facade.loadSubjectOrders('user-1');
+
+    const options = facade.incidentOrderOptions();
+    expect(options.map((o) => o.value)).toEqual(['order-7', 'order-3']);
+    expect(options[0].label).toMatch(/^ORD-7 · .*2026/);
+    expect(options[1].label).toMatch(/^ORD-3 · .*2026/);
+    expect(facade.subjectOrdersLoading()).toBe(false);
+    expect(facade.subjectOrdersError()).toBe(false);
+    expect(facade.subjectOrdersTruncated()).toBe(false);
+  });
+
+  it('falls back to the id when an order has no display number', () => {
+    getPaged.mockReturnValue(of(page([{ id: 'order-9' }])));
+
+    facade.loadSubjectOrders('user-1');
+
+    expect(facade.incidentOrderOptions()).toEqual([{ label: 'order-9', value: 'order-9' }]);
+  });
+
+  it('reports an empty account as no options and no error', () => {
+    facade.loadSubjectOrders('user-1');
+
+    expect(facade.incidentOrderOptions()).toEqual([]);
+    expect(facade.subjectOrdersError()).toBe(false);
+    expect(facade.subjectOrdersLoading()).toBe(false);
+  });
+
+  it('flags a failed read as an error state rather than an empty account', () => {
+    getPaged.mockReturnValue(throwError(() => new Error('boom')));
+
+    facade.loadSubjectOrders('user-1');
+
+    expect(facade.subjectOrdersError()).toBe(true);
+    expect(facade.subjectOrdersLoading()).toBe(false);
+    expect(facade.incidentOrderOptions()).toEqual([]);
+  });
+
+  it('says when the account holds more orders than the page offers', () => {
+    getPaged.mockReturnValue(of(page([{ id: 'order-1' }], 140)));
+
+    facade.loadSubjectOrders('user-1');
+
+    expect(facade.subjectOrdersTruncated()).toBe(true);
+    expect(facade.subjectOrdersTotal()).toBe(140);
   });
 });

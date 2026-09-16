@@ -2705,8 +2705,14 @@
       "export_error": "Export dat subjektu se nezdařil",
       "incident_file": {
         "button": "Spis incidentu (PDF)",
-        "order_scope": "ID objednávky (volitelné)",
-        "order_scope_hint": "Nechte prázdné pro celý účet, nebo zadejte ID jedné objednávky tohoto zákazníka a spis se omezí na ni.",
+        "order_scope": "Objednávka (volitelné)",
+        "order_scope_placeholder": "Celý účet",
+        "order_scope_hint": "Nechte prázdné pro celý účet, nebo vyberte jednu objednávku tohoto zákazníka a spis se omezí na ni.",
+        "orders_loading": "Načítáme objednávky tohoto zákazníka…",
+        "orders_error": "Objednávky tohoto zákazníka se nepodařilo načíst. Spis lze i tak sestavit pro celý účet.",
+        "orders_retry": "Zkusit znovu",
+        "no_orders": "Tento zákazník nemá žádné objednávky; spis pokrývá celý účet.",
+        "orders_truncated": "Zobrazeno {{shown}} nejnovějších z {{total}} objednávek.",
         "success": "Spis incidentu byl stažen a zaznamenán",
         "error": "Spis incidentu se nepodařilo sestavit"
       }

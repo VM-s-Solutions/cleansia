@@ -27,8 +27,8 @@ import {
   CleansiaButtonComponent,
   CleansiaLoaderComponent,
   CleansiaSectionComponent,
+  CleansiaSelectComponent,
   CleansiaTableComponent,
-  CleansiaTextInputComponent,
   CleansiaTitleComponent,
   PaginationState,
   TableColumn,
@@ -63,8 +63,8 @@ import { UserLoyaltyDetailFacade } from './user-loyalty-detail.facade';
     CleansiaButtonComponent,
     CleansiaLoaderComponent,
     CleansiaSectionComponent,
+    CleansiaSelectComponent,
     CleansiaTableComponent,
-    CleansiaTextInputComponent,
     CleansiaTitleComponent,
     GrantPointsDialogComponent,
     IssueCreditDialogComponent,
@@ -89,9 +89,7 @@ export class UserLoyaltyDetailComponent
   readonly userId = signal<string | null>(null);
   readonly userEmail = signal<string | null>(null);
 
-  readonly incidentOrderControl = new FormControl<string>('', {
-    nonNullable: true,
-  });
+  readonly incidentOrderControl = new FormControl<string | null>(null);
 
   // One dialog reused for both grant + revoke; mode flips to drive copy/colors.
   readonly dialogVisible = signal<boolean>(false);
@@ -182,6 +180,7 @@ export class UserLoyaltyDetailComponent
     this.facade.loadReferrals(id);
     this.facade.loadCredit(id);
     this.facade.loadCurrencies();
+    this.facade.loadSubjectOrders(id);
   }
 
   ngAfterViewInit(): void {
@@ -542,6 +541,13 @@ export class UserLoyaltyDetailComponent
 
   exportIncidentFile(): void {
     this.facade.exportIncidentFile(this.incidentOrderControl.value);
+  }
+
+  reloadSubjectOrders(): void {
+    const id = this.userId();
+    if (id) {
+      this.facade.loadSubjectOrders(id);
+    }
   }
 
   onBack(): void {

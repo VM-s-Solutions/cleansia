@@ -126,7 +126,7 @@ export class OrderManagementFacade extends UnsubscribeControlDirective {
     // Parameters order: id, isActive, customerName, customerEmail, customerPhone,
     // displayOrderNumber, employeeId, cleaningDateFrom, cleaningDateTo,
     // paymentStatuses, paymentTypes, minTotalPrice, maxTotalPrice, orderStatuses,
-    // hasAvailableSpots, isUnassigned, excludeEmployeeId, currencyId, sort, offset, limit
+    // hasAvailableSpots, isUnassigned, excludeEmployeeId, currencyId, userId, sort, offset, limit
     this.adminClient.adminOrderClient
       .getPaged(
         undefined, // id
@@ -147,6 +147,7 @@ export class OrderManagementFacade extends UnsubscribeControlDirective {
         filterParams?.isUnassigned, // isUnassigned
         undefined, // excludeEmployeeId
         filterParams?.currencyId, // currencyId
+        undefined, // userId
         this.currentSort(),
         this.currentOffset(),
         this.currentLimit()

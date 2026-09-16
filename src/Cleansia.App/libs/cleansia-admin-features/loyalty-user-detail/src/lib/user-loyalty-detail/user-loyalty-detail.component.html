@@ -34,14 +34,52 @@
       *cleansiaPermission="Policy.CanAdminExportUserData"
       class="cleansia-user-loyalty-detail__incident-scope"
     >
-      <cleansia-text-input
-        [label]="'pages.customer_detail.incident_file.order_scope' | translate"
-        [formControl]="incidentOrderControl"
-        inputSize="large-width"
-      />
-      <small class="cleansia-user-loyalty-detail__incident-scope-hint">
-        {{ 'pages.customer_detail.incident_file.order_scope_hint' | translate }}
-      </small>
+      @if (facade.subjectOrdersLoading()) {
+        <small class="cleansia-user-loyalty-detail__incident-scope-hint">
+          {{ 'pages.customer_detail.incident_file.orders_loading' | translate }}
+        </small>
+      } @else if (facade.subjectOrdersError()) {
+        <small class="cleansia-user-loyalty-detail__incident-scope-error">
+          <i class="pi pi-exclamation-triangle"></i>
+          {{ 'pages.customer_detail.incident_file.orders_error' | translate }}
+        </small>
+        <cleansia-button
+          class="cleansia-user-loyalty-detail__incident-scope-retry"
+          [label]="'pages.customer_detail.incident_file.orders_retry' | translate"
+          icon="pi pi-refresh"
+          severity="secondary"
+          [text]="true"
+          (onClick)="reloadSubjectOrders()"
+        />
+      } @else if (facade.hasSubjectOrders()) {
+        <cleansia-select
+          [label]="'pages.customer_detail.incident_file.order_scope' | translate"
+          [placeholder]="'pages.customer_detail.incident_file.order_scope_placeholder' | translate"
+          [formControl]="incidentOrderControl"
+          [options]="facade.incidentOrderOptions()"
+          [filter]="true"
+          inputSize="large-width"
+        />
+        <small class="cleansia-user-loyalty-detail__incident-scope-hint">
+          {{ 'pages.customer_detail.incident_file.order_scope_hint' | translate }}
+        </small>
+        @if (facade.subjectOrdersTruncated()) {
+          <small class="cleansia-user-loyalty-detail__incident-scope-hint">
+            {{
+              'pages.customer_detail.incident_file.orders_truncated'
+                | translate
+                  : {
+                      shown: facade.subjectOrders().length,
+                      total: facade.subjectOrdersTotal()
+                    }
+            }}
+          </small>
+        }
+      } @else {
+        <small class="cleansia-user-loyalty-detail__incident-scope-hint">
+          {{ 'pages.customer_detail.incident_file.no_orders' | translate }}
+        </small>
+      }
     </div>
 
     @if (facade.accountLoading() && !facade.account()) {

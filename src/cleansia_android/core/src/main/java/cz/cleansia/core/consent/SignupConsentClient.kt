@@ -4,10 +4,11 @@ import cz.cleansia.core.network.ApiError
 import cz.cleansia.core.network.ApiResult
 
 /**
- * Per-app binding seam for the GDPR consent endpoints, mirroring
- * [cz.cleansia.core.notifications.DeviceRegistrationClient]: each app implements it
- * over its own OpenAPI-generated `GdprApi` so the parking and delivery rules live
- * once, in [SignupConsentRepository].
+ * Binding seam for the GDPR consent endpoints, mirroring
+ * [cz.cleansia.core.notifications.DeviceRegistrationClient]: the customer app implements
+ * it over its OpenAPI-generated `GdprApi` so the parking and delivery rules live once, in
+ * [SignupConsentRepository]. The partner app sends its tick on `RegisterEmployee` itself
+ * and has no implementation.
  */
 interface SignupConsentClient {
 

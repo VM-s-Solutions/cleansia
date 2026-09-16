@@ -11,8 +11,8 @@ import javax.inject.Singleton
 import kotlinx.coroutines.flow.first
 
 /**
- * Qualifies the preferences `DataStore` backing [SignupConsentStore]. Each app provides
- * one under its own file name, the same arrangement
+ * Qualifies the preferences `DataStore` backing [SignupConsentStore]. The customer app
+ * provides it under its own file name, the same arrangement
  * [cz.cleansia.core.notifications.PushTokenDataStore] uses.
  */
 @Qualifier

@@ -1,4 +1,4 @@
-import { Injectable, inject, signal } from '@angular/core';
+import { Injectable, computed, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import {
   AdminClient,
@@ -14,9 +14,13 @@ import {
   FileResponse,
   GdprExportDto,
   IssueCustomerCreditCommand,
+  OrderListItem,
   RevokePointsManuallyCommand,
+  SortDefinition,
+  SortDirection,
   incidentFileName,
 } from '@cleansia/admin-services';
+import { ICleansiaSelectOption } from '@cleansia/components';
 import { UnsubscribeControlDirective } from '@cleansia/directives';
 import { FileDownloadService, SnackbarService } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
@@ -44,6 +48,8 @@ export interface CreditCurrencyOption {
   id: string;
   code: string;
 }
+
+const SUBJECT_ORDERS_LIMIT = 100;
 
 @Injectable()
 export class UserLoyaltyDetailFacade extends UnsubscribeControlDirective {
@@ -90,6 +96,25 @@ export class UserLoyaltyDetailFacade extends UnsubscribeControlDirective {
   readonly submitting = signal<boolean>(false);
   readonly exporting = signal<boolean>(false);
   readonly incidentFileExporting = signal<boolean>(false);
+
+  /**
+   * The account's bookings, offered as the incident file's optional scope. Every status counts —
+   * a cancelled or completed booking is as much an incident's subject as a live one — and whether
+   * a picked order is this customer's stays the server's rule.
+   */
+  readonly subjectOrders = signal<OrderListItem[]>([]);
+  readonly subjectOrdersTotal = signal<number>(0);
+  readonly subjectOrdersLoading = signal<boolean>(false);
+  readonly subjectOrdersError = signal<boolean>(false);
+  readonly subjectOrdersTruncated = computed<boolean>(
+    () => this.subjectOrdersTotal() > this.subjectOrders().length
+  );
+  readonly incidentOrderOptions = computed<ICleansiaSelectOption[]>(() =>
+    this.subjectOrders()
+      .filter((order): order is OrderListItem & { id: string } => !!order.id)
+      .map((order) => ({ label: this.incidentOrderLabel(order), value: order.id }))
+  );
+  readonly hasSubjectOrders = computed<boolean>(() => this.incidentOrderOptions().length > 0);
 
   private currentUserId: string | null = null;
   private currentActivityOffset = 0;
@@ -156,6 +181,55 @@ export class UserLoyaltyDetailFacade extends UnsubscribeControlDirective {
   onActivityPageChange(offset: number, limit: number): void {
     if (!this.currentUserId) return;
     this.loadActivity(this.currentUserId, offset, limit);
+  }
+
+  loadSubjectOrders(userId: string): void {
+    this.currentUserId = userId;
+    this.subjectOrdersLoading.set(true);
+    this.subjectOrdersError.set(false);
+    // Parameters order: id, isActive, customerName, customerEmail, customerPhone,
+    // displayOrderNumber, employeeId, cleaningDateFrom, cleaningDateTo,
+    // paymentStatuses, paymentTypes, minTotalPrice, maxTotalPrice, orderStatuses,
+    // hasAvailableSpots, isUnassigned, excludeEmployeeId, currencyId, userId, sort, offset, limit
+    this.adminClient.adminOrderClient
+      .getPaged(
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        userId,
+        [new SortDefinition({ field: 'cleaningDateTime', direction: SortDirection.Descending })],
+        0,
+        SUBJECT_ORDERS_LIMIT
+      )
+      .pipe(
+        takeUntil(this.destroyed$),
+        catchError(() => {
+          this.subjectOrdersError.set(true);
+          return of(null);
+        }),
+        finalize(() => this.subjectOrdersLoading.set(false))
+      )
+      .subscribe((response) => {
+        if (response) {
+          this.subjectOrders.set(response.data ?? []);
+          this.subjectOrdersTotal.set(response.total ?? 0);
+        }
+      });
   }
 
   loadCredit(userId: string): void {
@@ -415,14 +489,14 @@ export class UserLoyaltyDetailFacade extends UnsubscribeControlDirective {
 
   /**
    * The incident file: the server builds the PDF from the database and records the build as an
-   * admin audit row. An empty scope asks for the whole account; an order id narrows it to that
-   * order, and whether the order is this customer's is the server's rule.
+   * admin audit row. No scope asks for the whole account; a picked order id narrows it to that
+   * order.
    */
   exportIncidentFile(orderScope: string | null): void {
     const userId = this.currentUserId;
     if (!userId || this.incidentFileExporting()) return;
 
-    const orderId = orderScope?.trim() || undefined;
+    const orderId = orderScope || undefined;
     this.incidentFileExporting.set(true);
     this.gdprClient
       .incidentFile(userId, orderId)
@@ -452,6 +526,19 @@ export class UserLoyaltyDetailFacade extends UnsubscribeControlDirective {
 
   navigateBack(): void {
     this.router.navigate(['/admin-user-management']);
+  }
+
+  private incidentOrderLabel(order: OrderListItem): string {
+    const number = order.displayOrderNumber || order.id || '';
+    if (!order.cleaningDateTime) return number;
+    const date = new Intl.DateTimeFormat(this.translate.currentLang ?? 'en', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    }).format(order.cleaningDateTime);
+    return `${number} · ${date}`;
   }
 
   private downloadJson(data: unknown, fileName: string): void {

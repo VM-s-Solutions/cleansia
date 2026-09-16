@@ -2,7 +2,7 @@ package cz.cleansia.core.consent
 
 /**
  * The GDPR consent kinds the backend records, by their on-the-wire integer
- * (`Cleansia.Core.Domain.Enums.ConsentType`). Each app maps this onto its own
+ * (`Cleansia.Core.Domain.Enums.ConsentType`). The customer app maps this onto its
  * OpenAPI-generated enum, whose entries are named `_0`.. `_3`.
  */
 enum class SignupConsentType(val wireValue: Int) {

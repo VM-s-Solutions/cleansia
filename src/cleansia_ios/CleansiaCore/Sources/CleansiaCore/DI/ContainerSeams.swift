@@ -54,10 +54,10 @@ public protocol PasswordResetClient: AnyObject {
 /// `termsAccepted` is what tells a signup apart from a sign-in: both screens call one endpoint, and
 /// the server provisions an identity it has never seen only for a call that asserts the signup
 /// screen's tick — everything else is refused with `auth.social_account_not_found`. It carries no
-/// default for the same reason `SignupConsentRecording.recordSignupTick` does not: a consent flag
-/// that can be omitted at a call site is a consent nobody gave. `countryId` carries no default for
-/// the neighbouring reason: a market that can be omitted is a signup that silently lands with the
-/// default operating company, and the call site is the only place that knows whether that is so.
+/// default: a consent flag that can be omitted at a call site is a consent nobody gave. `countryId`
+/// carries no default for the neighbouring reason: a market that can be omitted is a signup that
+/// silently lands with the default operating company, and the call site is the only place that
+/// knows whether that is so.
 public protocol SocialAuthClient: AnyObject {
     func googleAuth(_ request: GoogleAuthRequest) async -> ApiResult<LoginOutcome>
     func appleAuth(_ request: AppleAuthRequest) async -> ApiResult<LoginOutcome>

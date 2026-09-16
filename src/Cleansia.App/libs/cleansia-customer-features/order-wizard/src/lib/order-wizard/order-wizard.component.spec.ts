@@ -370,12 +370,23 @@ describe('OrderWizardComponent (a11y)', () => {
       expect(select?.innerValue).toBe('cze-id');
     });
 
-    it('writes a pick onto the address country', async () => {
+    it('writes a pick made in the rendered select onto the address country', async () => {
       await setup();
       facade.activeStep.set(1);
+      facade.countryOptions.set([
+        { label: 'Czechia', value: 'cze-id' },
+        { label: 'Slovakia', value: 'svk-id' },
+      ]);
       fixture.detectChanges();
+      await fixture.whenStable();
 
-      fixture.componentInstance.updateAddressField('countryId', 'svk-id');
+      const select = fixture.debugElement
+        .queryAll(By.directive(CleansiaSelectComponent))
+        .map((debugElement) => debugElement.componentInstance as CleansiaSelectComponent)
+        .find((instance) => instance.id() === 'wizard-country');
+      expect(select).toBeTruthy();
+
+      select?.handleChange({ value: 'svk-id' });
 
       expect(facade.formData().address.countryId).toBe('svk-id');
     });

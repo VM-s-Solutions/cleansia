@@ -66,9 +66,9 @@ export const appConfig: ApplicationConfig = {
     // authenticated GET was eligible. Both are fixed in 20.3.25/20.3.27 and the
     // cache is on again. Angular now skips any request sent with credentials, so
     // what is transferred is decided by CustomerAuthInterceptorFn: an anonymous
-    // GET (catalogue overviews, market, plans, property sizes, serviced
-    // countries) goes credential-less and is served from the document on
-    // bootstrap; the same GET with a session carries the cookie, is never
+    // GET (catalogue overviews, market, plans, property sizes) goes
+    // credential-less and is served from the document on bootstrap; the same
+    // GET with a session carries the cookie, is never
     // transferred, and is re-fetched by the browser — which is the property the
     // advisory needed.
     provideClientHydration(withEventReplay()),

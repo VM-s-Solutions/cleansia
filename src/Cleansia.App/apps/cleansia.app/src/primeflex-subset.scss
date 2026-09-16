@@ -6,9 +6,9 @@
 // whole 373 KB sheet came from cdn.jsdelivr.net. The `md:` variants keep their
 // 768px breakpoint for the same reason — the navbar's `!important` override in
 // cleansia-customer-navbar.component.scss still fights that breakpoint on
-// purpose. apps/cleansia.app/src/app/theme/primeflex-subset.spec.ts holds this
-// file to the package byte for byte and fails when a template reaches for a
-// utility that is not here.
+// purpose. apps/cleansia.app/src/app/theme/primeflex-subset.spec.ts holds every
+// rule here to the package declaration-for-declaration and fails when a template
+// reaches for a utility that is not here.
 
 .text-700 {
   color: light-dark(var(--p-surface-700), var(--p-surface-100)) !important;
@@ -61,24 +61,24 @@
   text-align: right !important;
 }
 
-.text-xl {
-  font-size: 1.25rem !important;
-}
-
 .font-medium {
   font-weight: 500 !important;
+}
+
+.text-xl {
+  font-size: 1.25rem !important;
 }
 
 .flex-column {
   flex-direction: column !important;
 }
 
-.justify-content-center {
-  justify-content: center !important;
-}
-
 .justify-content-end {
   justify-content: flex-end !important;
+}
+
+.justify-content-center {
+  justify-content: center !important;
 }
 
 .justify-content-between {

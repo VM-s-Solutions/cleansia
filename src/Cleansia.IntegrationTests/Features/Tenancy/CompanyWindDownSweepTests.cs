@@ -755,7 +755,7 @@ public sealed class CompanyWindDownSweepTests(PostgresContainerFixture fixture) 
         public Task<string> SendEmailConfirmationAsync(string email, string userName, string verificationCode, string languageCode, CancellationToken ct = default) => Sent();
         public Task<string> SendPeriodEndReminderEmailAsync(string email, string employeeName, DateOnly startDate, DateOnly endDate, int daysRemaining, string periodLabel, string languageCode = "en", CancellationToken ct = default) => Sent();
         public Task<string> SendPromoCodeEmailAsync(string email, string promoCode, string discountLabel, DateTime? expiresOn, string languageCode = "en", CancellationToken ct = default) => Sent();
-        public Task<string> SendOrderStatusUpdateEmailAsync(string email, Order order, string newStatus, string languageCode = "en", CancellationToken ct = default) => Sent();
+        public Task<string> SendOrderStatusUpdateEmailAsync(string email, Order order, string newStatus, string languageCode = "en", CancellationToken ct = default, decimal? refundedAmount = null) => Sent();
         public Task<string> SendCompanyWindDownCustomerNoticeAsync(string email, string userName, IReadOnlyList<string> companyNames, DateOnly windDownFrom, string languageCode = "en", CancellationToken ct = default) => Sent();
         public Task<string> SendCompanyWindDownCleanerNoticeAsync(string email, string userName, IReadOnlyList<string> companyNames, DateOnly windDownFrom, string languageCode = "en", CancellationToken ct = default) => Sent();
     }

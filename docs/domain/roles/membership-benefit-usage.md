@@ -45,8 +45,9 @@ row or `null`), stamp the resulting order onto it, release it, and count the liv
   **[WAS WRONG]** *This card said `OrderFactory`.* **AM-9 moved consumption out of the factory** so the
   factory gains zero collaborators, and a thin consumer seam was interposed; `OrderFactory` never
   reserves. `roles/express-waiver-resolver.md` records the same amendment.
-- **Release callers: `CancelOrder.cs:145` and `PlatformOrderCancellation.cs:63`** (the admin cancel and
-  the wind-down sweep share the latter; both via `ExpressWaiverConsumer.ReleaseForOrderAsync`), plus the orphan reclaim
+- **Release callers: `CustomerOrderCancellation.cs:65` and `PlatformOrderCancellation.cs:63`**
+  (signed-in and guest cancellation share the former; admin cancellation and the wind-down sweep
+  share the latter; both via `ExpressWaiverConsumer.ReleaseForOrderAsync`), plus the orphan reclaim
   **`ReleaseOrphanedBenefitReservations.cs:46`**.
   **[WAS WRONG]** *This card named `CleanupStalePendingOrders` as a release caller.* It is not one and
   **structurally cannot be**: it queries `Orders`, and an orphan is by definition a row whose order

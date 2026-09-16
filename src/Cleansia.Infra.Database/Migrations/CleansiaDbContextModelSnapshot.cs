@@ -3901,6 +3901,7 @@ namespace Cleansia.Infra.Database.Migrations
                         .HasColumnType("character varying(26)");
 
                     b.Property<int>("CurrentStatus")
+                        .IsConcurrencyToken()
                         .HasColumnType("integer");
 
                     b.Property<string>("CustomerAddressId")

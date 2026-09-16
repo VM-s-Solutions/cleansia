@@ -1,4 +1,4 @@
-﻿using Cleansia.Core.Domain.Enums;
+using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Loyalty;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Receipts;
@@ -198,7 +198,8 @@ public class OrderEntityConfiguration : TenantAuditableEntityConfiguration<Order
         // is staged, so a status-less order is not constructible, and the column carrying no NULLs is
         // what keeps the status term a plain equality/IN instead of an OR.
         builder.Property(o => o.CurrentStatus)
-            .IsRequired();
+            .IsRequired()
+            .IsConcurrencyToken();
 
         // (CurrentStatus, CleaningDateTime): the leftmost prefix serves the status-set predicates
         // migrated off the per-row latest-history subquery (partner available/active dashboard

@@ -65,6 +65,34 @@ public class EmailServiceCurrencySymbolTests
         Assert.DoesNotContain("Kč", values["Total"], StringComparison.Ordinal);
     }
 
+    [Theory]
+    [InlineData("en", "Your order has been cancelled.", "Refund issued:")]
+    [InlineData("cs", "Vaše rezervace byla zrušena.", "Vrácená částka:")]
+    [InlineData("sk", "Vaša rezervácia bola zrušená.", "Vrátená suma:")]
+    [InlineData("uk", "Ваше бронювання скасовано.", "Сума повернення:")]
+    [InlineData("ru", "Ваше бронирование отменено.", "Сумма возврата:")]
+    public async Task Guest_cancellation_email_localizes_copy_and_only_prints_actual_successful_refund(
+        string language, string cancelled, string refundLabel)
+    {
+        var order = BuildOrder(Euro());
+        var (service, values) = BuildService(EmailType.OrderStatusUpdate);
+        await service.SendOrderStatusUpdateEmailAsync(Recipient, order, "Cancelled", language,
+            CancellationToken.None, 400m);
+        Assert.Contains(cancelled, values["StatusMessage"]);
+        Assert.Contains(refundLabel, values["StatusMessage"]);
+        Assert.Contains($"€{400m:N2}", values["StatusMessage"]);
+        Assert.DoesNotContain($"{order.TotalPrice:N2}", values["StatusMessage"]);
+        Assert.Contains($"confirmationCode={Uri.EscapeDataString(order.ConfirmationCode)}", values["OrderStatusLink"]);
+        Assert.False(string.IsNullOrWhiteSpace(values["ButtonText"]));
+        Assert.False(string.IsNullOrWhiteSpace(values["StatusLabel"]));
+        Assert.DoesNotContain("{{", string.Join(" ", values.Values));
+
+        await service.SendOrderStatusUpdateEmailAsync(Recipient, order, "Cancelled", language,
+            CancellationToken.None, null);
+        Assert.Equal(cancelled, values["StatusMessage"]);
+        Assert.DoesNotContain(refundLabel, values["StatusMessage"]);
+    }
+
     private static Order BuildOrder(Currency? currency)
     {
         var address = Address.Create("Hauptstr. 2", "Berlin", "10115", "de");

@@ -1,4 +1,7 @@
 using Cleansia.Core.AppServices.Behaviors;
+using Cleansia.Core.AppServices.Auditing;
+using Cleansia.Core.AppServices.Features.Orders;
+using Microsoft.EntityFrameworkCore;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Infra.Common.Validations;
@@ -7,17 +10,15 @@ using MediatR;
 namespace Cleansia.Core.AppServices.Tenancy;
 
 /// <summary>
-/// Gives an anonymous <see cref="IOperatorScopedRequest"/> the ambient tenant of its market's operating
-/// company BEFORE validation runs (ADR-0061 D3) — the validators' filtered pre-checks are the first
-/// tenanted reads, so anything set later is too late. Steps aside when a claim exists: a claim is the
-/// tenant, and the request can never override it (S1). Two refusals, and it is this behaviour rather
-/// than a validator that owns them because it runs first: a country that is not a market is user input
-/// (<c>country.not_serviced</c>); a market nobody operates is a configuration defect
-/// (<c>tenant.not_found</c>).
+/// Establishes operator scope before validation. Guest order requests prove their resource with the
+/// complete secret key; other anonymous requests resolve their market and authenticated requests
+/// retain their claim scope.
 /// </summary>
 public sealed class OperatorTenantScopeBehavior<TRequest, TResponse>(
     ITenantProvider tenantProvider,
-    IOperatorTenantResolver resolver)
+    IOperatorTenantResolver resolver,
+    GuestOrderAccess guestOrderAccess,
+    IAuditContext auditContext)
     : IPipelineBehavior<TRequest, TResponse>
     where TRequest : IRequest<TResponse>
     where TResponse : BusinessResult
@@ -27,6 +28,28 @@ public sealed class OperatorTenantScopeBehavior<TRequest, TResponse>(
         RequestHandlerDelegate<TResponse> next,
         CancellationToken cancellationToken)
     {
+        if (request is IGuestOrderScopedRequest guest)
+        {
+            var order = await guestOrderAccess.OrdersForKey(guest).AsNoTracking()
+                .Select(o => new { o.Id, o.TenantId })
+                .FirstOrDefaultAsync(cancellationToken);
+            if (order is not null && !string.IsNullOrEmpty(order.TenantId))
+            {
+                tenantProvider.SetTenantOverride(order.TenantId);
+                auditContext.RecordEvidence("Order", order.Id, null);
+            }
+            else if (tenantProvider.GetCurrentTenantId() is null)
+            {
+                // An unmatched secret proves no resource; the default only supplies failure-audit scope.
+                var (_, fallbackTenantId) = await resolver.ResolveAsync(null, cancellationToken);
+                if (!string.IsNullOrEmpty(fallbackTenantId))
+                {
+                    tenantProvider.SetTenantOverride(fallbackTenantId);
+                }
+            }
+            return await next(cancellationToken);
+        }
+
         if (request is not IOperatorScopedRequest scoped || tenantProvider.GetCurrentTenantId() is not null)
         {
             return await next(cancellationToken);

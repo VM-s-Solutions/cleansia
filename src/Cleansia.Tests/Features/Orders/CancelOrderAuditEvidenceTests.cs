@@ -56,15 +56,17 @@ public sealed class CancelOrderAuditEvidenceTests
         new(
             OrderAccessDoubles.Over(_orderRepository, _session),
             _session.Object,
-            Mock.Of<ITenantProvider>(),
-            _refundService.Object,
-            _creditAccountRepository.Object,
-            _loyaltyService.Object,
-            new CancellationPolicyResolver(_membershipRepository.Object),
-            _producer.Object,
-            _liveActivityProducer.Object,
-            _expressWaiverConsumer.Object,
-            _auditContext);
+            new CustomerOrderCancellation(
+                Mock.Of<ITenantProvider>(),
+                _refundService.Object,
+                Mock.Of<IRefundRepository>(),
+                _creditAccountRepository.Object,
+                _loyaltyService.Object,
+                new CancellationPolicyResolver(_membershipRepository.Object),
+                _producer.Object,
+                _liveActivityProducer.Object,
+                _expressWaiverConsumer.Object,
+                _auditContext));
 
     private void ArrangePlusMember(int freeCancellationWindowHours = 4)
     {
@@ -164,6 +166,7 @@ public sealed class CancelOrderAuditEvidenceTests
         Assert.Equal(0.50m, payload.GetProperty("feeRate").GetDecimal());
         Assert.Equal(500m, payload.GetProperty("feeAmount").GetDecimal());
         Assert.Equal(500m, payload.GetProperty("refundAmount").GetDecimal());
+        Assert.Equal(500m, payload.GetProperty("actualRefundAmount").GetDecimal());
         Assert.Equal(1000m, payload.GetProperty("totalPrice").GetDecimal());
         Assert.Equal(CurrencyId, payload.GetProperty("currencyId").GetString());
         Assert.True(payload.GetProperty("hasBeenAccepted").GetBoolean());
@@ -185,7 +188,7 @@ public sealed class CancelOrderAuditEvidenceTests
         Assert.Equal(BookingPolicy.OopsWindowMinutesFirstTime, figures.GetProperty("oopsMinutesFirstTime").GetInt32());
 
         var members = payload.EnumerateObject().Select(p => p.Name).ToList();
-        Assert.Equal(16, members.Count);
+        Assert.Equal(17, members.Count);
         Assert.DoesNotContain(members, m =>
             m.EndsWith("Reason", StringComparison.OrdinalIgnoreCase)
             || m.EndsWith("Name", StringComparison.OrdinalIgnoreCase)
@@ -215,6 +218,7 @@ public sealed class CancelOrderAuditEvidenceTests
         _expressWaiverConsumer.Verify(c => c.ReleaseForOrderAsync(OrderId, It.IsAny<CancellationToken>()), Times.Once);
         Assert.False(payload.GetProperty("expressWaiverReleased").GetBoolean());
         Assert.False(payload.GetProperty("refundInitiated").GetBoolean());
+        Assert.Equal(JsonValueKind.Null, payload.GetProperty("actualRefundAmount").ValueKind);
         Assert.Equal("cash", payload.GetProperty("paymentType").GetString());
         Assert.Equal("pending", payload.GetProperty("paymentStatus").GetString());
         Assert.True(payload.GetProperty("reasonProvided").GetBoolean());

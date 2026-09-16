@@ -1,4 +1,6 @@
 using System.Text.Json;
+using Microsoft.EntityFrameworkCore;
+using Cleansia.Core.Domain.Common;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Repositories;
@@ -29,13 +31,38 @@ public class SendEmailHandler(
     IPromoCodeRepository promoCodeRepository,
     ITenantRepository tenantRepository,
     ICompanyInfoRepository companyInfoRepository,
-    ILogger<SendEmailHandler> logger)
+    ILogger<SendEmailHandler> logger,
+    IOrderRepository orderRepository)
 {
     private static readonly JsonSerializerOptions JsonOptions =
         new() { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
 
     public async Task HandleAsync(string messageText, CancellationToken ct)
     {
+        SendGuestOrderCancellationEmailMessage? guestMessage;
+        string? guestTenantId;
+        try
+        {
+            using var document = JsonDocument.Parse(messageText);
+            var root = document.RootElement;
+            if (root.ValueKind != JsonValueKind.Object) return;
+            var payload = root.TryGetProperty("payload", out var nested) ? nested : root;
+            guestMessage = payload.ValueKind == JsonValueKind.Object && payload.TryGetProperty("messageType", out var kind)
+                && kind.ValueKind == JsonValueKind.String && kind.GetString() == "guest-order-cancelled"
+                ? payload.Deserialize<SendGuestOrderCancellationEmailMessage>(JsonOptions) : null;
+            guestTenantId = root.TryGetProperty("tenantId", out var tenant) && tenant.ValueKind == JsonValueKind.String ? tenant.GetString() : null;
+        }
+        catch (JsonException ex)
+        {
+            logger.LogWarning(ex, "Discarding email message: malformed body (permanent)");
+            return;
+        }
+        if (guestMessage is not null)
+        {
+            await SendGuestCancellationAsync(guestMessage, guestTenantId, ct);
+            return;
+        }
+
         SendEmailMessage? message;
         string? envelopeTenantId;
         try
@@ -115,6 +142,43 @@ public class SendEmailHandler(
             logger.LogWarning(ex,
                 "Sent {EmailType} email to user {UserId} but failed to record the idempotency claim (key {MessageKey}) — acking; a redelivery may duplicate this email",
                 message.EmailType, message.UserId, messageKey);
+        }
+    }
+
+    private async Task SendGuestCancellationAsync(
+        SendGuestOrderCancellationEmailMessage message, string? envelopeTenantId, CancellationToken ct)
+    {
+        var tenantId = envelopeTenantId ?? message.TenantId;
+        if (string.IsNullOrWhiteSpace(message.OrderId) || string.IsNullOrWhiteSpace(tenantId))
+        {
+            logger.LogWarning("Discarding guest cancellation email with no order or operator");
+            return;
+        }
+        var key = MessageKeys.GuestOrderCancelledEmail(message.OrderId);
+        if (await idempotencyGuard.HasProcessedAsync(key, ct)) return;
+
+        tenantProvider.SetTenantOverride(tenantId);
+        var order = await orderRepository.GetQueryable()
+            .Include(o => o.Currency).Include(o => o.CustomerAddress)
+            .AsNoTracking()
+            .FirstOrDefaultAsync(o => o.Id == message.OrderId && o.UserId == null
+                && o.CurrentStatus == OrderStatus.Cancelled && o.CancelledBy == CancelledBy.Customer, ct);
+        if (order is null || string.IsNullOrWhiteSpace(order.CustomerEmail)
+            || order.CustomerEmail == AnonymizationMarker.Value)
+        {
+            logger.LogWarning("Discarding guest cancellation email: order {OrderId} has no eligible destination", message.OrderId);
+            return;
+        }
+
+        await emailService.SendOrderStatusUpdateEmailAsync(order.CustomerEmail, order, "Cancelled",
+            message.LanguageCode, ct, message.SuccessfulRefundAmount);
+        try
+        {
+            await idempotencyGuard.MarkProcessedAsync(key, ct);
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(ex, "Guest cancellation email sent for order {OrderId}, but its delivery claim failed", order.Id);
         }
     }
 

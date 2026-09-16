@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Cleansia.Infra.Database.Migrations
 {
     [DbContext(typeof(CleansiaDbContext))]
-    [Migration("20260915232921_Initial")]
+    [Migration("20260916102615_Initial")]
     partial class Initial
     {
         /// <inheritdoc />
@@ -3904,6 +3904,7 @@ namespace Cleansia.Infra.Database.Migrations
                         .HasColumnType("character varying(26)");
 
                     b.Property<int>("CurrentStatus")
+                        .IsConcurrencyToken()
                         .HasColumnType("integer");
 
                     b.Property<string>("CustomerAddressId")

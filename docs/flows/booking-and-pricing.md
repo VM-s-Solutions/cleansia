@@ -170,7 +170,40 @@ market. → [Business rules — order currency](/product/business-rules#price-st
 
 ## Guest order lookup
 
-`GET /Order/Lookup` takes an order number and an email and is anonymous. It is not enumerable: the
-number is `ORD-` plus 8 random hex characters (32 bits, not sequential), the email must match, and the
-endpoint is rate-limited. The batch variant is capped at 10 items and keyed on the internal GUID
-rather than the human-typed number, so it is strictly narrower than the single lookup it builds on.
+`POST api/Order/Lookup` is anonymous and accepts **order number, e-mail and confirmation code** in
+the request body, which the request logger suppresses. The existing GET route remains compatible. All
+three are checked together; a wrong number, e-mail or code receives the same `order.not_found`
+answer. The display number and e-mail alone are not the secret. `POST api/Order/LookupBatch` takes
+at most 10 internal order-id/e-mail pairs for remembered orders; it does not accept a display number
+as a substitute for the internal id. Both reads are rate-limited.
+
+## Guest cancellation {#guest-cancellation}
+
+A guest can use the same order number, e-mail and confirmation code to preview cancellation and
+submit it without creating an account. Both operations require a guest booking (`UserId` null); an
+account-owned booking is refused with the same `order.not_found` answer as a wrong secret. The
+booking’s operator is resolved from that proven order, so the guest need not choose its market and
+an unrelated browsing or account market cannot redirect the cancellation.
+
+The preview shows the standard cancellation tier, fee and policy refund in the order’s currency.
+The cancellation recalculates those figures at the time it is submitted, with the same notice,
+cleaner-assignment and oops-window rules as the signed-in path, and records `CancelledBy.Customer`.
+A guest has no Plus entitlement. An order already cancelled, completed or under way cannot be
+cancelled again. → [Cancellation rules](/product/business-rules#cancellation)
+
+The two anonymous routes are available on the customer web and customer mobile API hosts, both in
+the `auth` rate-limit window. Their request bodies carry the complete secret:
+
+| Route | Result |
+|---|---|
+| `POST api/Order/GuestCancellationPreview` | The same fee-preview response shape as the signed-in API, under the standard guest policy |
+| `POST api/Order/CancelGuest` | The cancellation response: policy fee/refund, whether a refund succeeded, and its actual amount when available |
+
+A cancellation e-mail goes to the **persisted booking address**, with a refund line only for a
+successfully issued refund and its actual amount. A deleted or anonymised destination receives
+nothing. The guest gets no account, feed or push; assigned cleaners still receive their notice. The
+act is recorded as `customer.order.cancel` with no customer user id, even when a session accompanies
+the guest secret. → [The customer trail](/flows/gdpr-and-audit#customer-trail)
+
+**Implementation checkpoint, 2026-09-16:** the backend routes are implemented. Generated contracts
+and guest cancellation screens on web, Android and iOS remain in progress under T-0753.

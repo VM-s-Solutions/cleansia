@@ -51,7 +51,7 @@ server and not yet on the client.
 running — they hold the abstraction DLLs open. `Cleansia.Core.Domain` and `Cleansia.Core.AppServices`
 both build clean on their own; the backend test suites need the hosts stopped.
 
-### MS-2 — Drop the DEV database before the next deploy — **owner, deferred by decision**
+### MS-2 — Drop the DEV database with the next deploy — **deferred by decision**
 
 > **Owner, 2026-08-14:** *"I'll drop the db and reseed the data after all of the Phases are done."*
 > Deferred deliberately — not overlooked. It stays open until the drop happens.
@@ -79,13 +79,17 @@ company-lifecycle batch (T-0760: `Tenants` becomes `Auditable` and gains the nin
 tables. Each regeneration was proven against a real Postgres by the integration suite; the tenancy ones
 also by `SeededDatabaseHasNoOrphanTenantRowsTests`, which applies the seed to the migration-built
 database, and the last two by `InitialMigrationTenantDdlTests`, which reads the migration's own
-operations. **The one owed drop belongs to `20260915232921`**: a DEV database whose
+operations. Guest cancellation then regenerated `Initial` as **`20260916102615`** on 2026-09-16:
+`Order.CurrentStatus` becomes an EF concurrency token to reject stale status writes. There is no new
+SQL column and the create operations remain unchanged; all 501 PostgreSQL integration tests passed
+with this metadata change. **The one owed drop belongs to `20260916102615`**: a DEV database whose
 `__EFMigrationsHistory` records any earlier id replays the whole create script against tables that
 already exist. The legal texts need no extra step — every host seeds them at start.
 
 Regenerating is no longer a manual step of any kind (owner ruling 2026-08-25): it is ordinary work and
-is done in the branch that needs it. **This drop is the part that stayed the owner's**, and every
-regeneration renews it rather than adding a new obligation. `MigrationService/Program.cs` runs `MigrateAsync()` on every deploy, and a database
+is done in the branch that needs it. **The drop remains deferred until deployment, never branch
+work**, and every regeneration renews it rather than adding a new obligation. It is routine DEV
+deployment work; all production operations remain prohibited. `MigrationService/Program.cs` runs `MigrateAsync()` on every deploy, and a database
 whose `__EFMigrationsHistory` records the **old** id will try to replay the whole create script against
 tables that already exist — failing the `migrate-database` job every other deploy job depends on.
 

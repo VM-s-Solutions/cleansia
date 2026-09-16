@@ -27,4 +27,4 @@ non-refunded fee only on pure goodwill — `RefundReason.AdminDiscretion`).
 - **Discount / express-surcharge math** — those are already embedded in `Order.TotalPrice`
   (`OrderFactory.cs:91-95`); no refund actor re-applies them.
 - **The cancel penalty** — `BookingPolicy`'s cancel-fee tiers (`BookingPolicy.cs:98-127`,
-  `CancelOrder.cs:119`) are a different, distinct fee; `RefundPolicy` never touches the cancel penalty.
+  `CustomerOrderCancellation.cs:32`) are a different, distinct fee; `RefundPolicy` never touches the cancel penalty.

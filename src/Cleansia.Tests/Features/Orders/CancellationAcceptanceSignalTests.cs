@@ -101,15 +101,17 @@ public class CancellationAcceptanceSignalTests
         new(
             OrderAccessDoubles.Over(_orderRepository, _session),
             _session.Object,
-            Mock.Of<ITenantProvider>(),
-            _refundService.Object,
-            _creditAccountRepository.Object,
-            _loyaltyService.Object,
-            new CancellationPolicyResolver(_membershipRepository.Object),
-            _producer.Object,
-            _liveActivityProducer.Object,
-            _expressWaiverConsumer.Object,
-            new AuditContext());
+            new CustomerOrderCancellation(
+                Mock.Of<ITenantProvider>(),
+                _refundService.Object,
+                Mock.Of<IRefundRepository>(),
+                _creditAccountRepository.Object,
+                _loyaltyService.Object,
+                new CancellationPolicyResolver(_membershipRepository.Object),
+                _producer.Object,
+                _liveActivityProducer.Object,
+                _expressWaiverConsumer.Object,
+                new AuditContext()));
 
     private HandlePaymentNotification.Handler CreateWebhookHandler() =>
         new(

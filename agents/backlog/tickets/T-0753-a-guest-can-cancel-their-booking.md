@@ -1,11 +1,11 @@
 ---
 id: T-0753
 title: A guest can cancel their booking — anonymous cancel keyed like the guest lookup, on web + Android + iOS
-status: todo
+status: in_progress
 size: M
 owner: —
 created: 2026-09-15
-updated: 2026-09-15
+updated: 2026-09-16
 depends_on: []
 blocks: []
 stories: []
@@ -27,9 +27,9 @@ well."* Filed **open** — no lane until the owner opens it.
 a booking placed as a guest — `Order.UserId` null, the customer's e-mail its only handle — can be
 cancelled by **nobody but an admin** (`AdminCancelOrder`). Nothing anonymous cancels. The guest can
 *see* the booking: `GET api/Order/Lookup?orderNumber=&email=&confirmationCode=` and
-`POST api/Order/LookupBatch` are anonymous on the two customer hosts, rate-limited on the
-`interactive` window, tenant-ignoring on the shared secret and re-pinned to the order (ADR-0051,
-ADR-0061 D4) — the web `/track-order` page and both mobile apps' guest lookup use them.
+`POST api/Order/LookupBatch` are anonymous on the two customer hosts, rate-limited on the web
+`interactive` and mobile `auth` windows, tenant-ignoring on the shared secret and re-pinned to the
+order (ADR-0051, ADR-0061 D4). The web `/track-order` page uses them; mobile guest lookup is added here.
 
 **Why it matters beyond the guest's convenience:** the erasure walk (T-0751) leaves a **live** guest
 booking under the erased e-mail out rather than refusing, precisely because the subject has no way to
@@ -109,4 +109,43 @@ once this ticket ships.
 
 ## Status log
 
+- 2026-09-16 — Backend and generated-contract checkpoint verified: 1,322 affected unit tests,
+  all 501 PostgreSQL integration tests, all 314 host tests before the additive lookup alias, then
+  all 22 guest host cases after it. Three web lookup wire tests and all three app compilation
+  units pass. Regenerated `_nswag:partner`, `_nswag:admin`, `_nswag:customer`, then refreshed both
+  mobile OpenAPI specs with `refresh-mobile-spec.sh partner` and `customer`; only the customer
+  contracts changed. Stopped the five recorded local hosts and removed their disposable PostgreSQL
+  container. No deployed DEV drop or deployment ran. Web lookup now uses POST; cancellation UI
+  work remains in progress. Dedicated reviews closed the guest audit actor and mobile lookup
+  rate-policy findings; the existing audit payload roster now asserts the actual refund field.
+- 2026-09-16 — All 501 PostgreSQL integration and 314 HTTP host tests passed. Android preparation
+  found that the existing GET lookup exposes its secret in HTTP URLs. Added a POST alias on both
+  customer hosts, reusing the query, handler, each host's existing lookup window (web `interactive`,
+  mobile `auth`) and sensitive-body suppression;
+  retained GET compatibility. Added both-host valid/invalid key and compatibility cases and both-body
+  logging guards. Five generated contracts and client work follow verification of this addition.
+- 2026-09-16 — Client ground truth corrected the original assumptions: neither mobile customer app
+  has a guest lookup screen, and signed-in web order detail has no fee confirmation dialog. The
+  approved minimal mobile lookup and guest web dialog use the existing UI components; no additional
+  signed-in web cancellation feature is added.
+- 2026-09-16 — Regenerated the single `Initial` as `20260916102615` with dotnet-ef 10.0.12,
+  `Cleansia.Web.Partner` startup and the localhost-only design-time factory. Removed then added;
+  generated migration files were not hand-edited. `CurrentStatus` concurrency metadata changed,
+  while all 87 table create operations remain identical. MS-2 now tracks this id. No deployed DEV
+  database drop or deployment ran. Final build passed with zero errors; all 501 PostgreSQL
+  integration tests passed, including 15 guest cancellation scenarios.
+- 2026-09-16 — Dedicated money/security review found an account actor leaking into guest audit rows
+  when a JWT accompanied the secret. Four new success/refusal and session/snapshot cases first
+  failed, then passed after forcing the guest customer actor to null. The separate admin builder
+  retains its existing actor rule. Updated the explicit operator-request roster for both new routes;
+  74 affected unit tests pass. The host regression now covers both success and refusal with a JWT.
+- 2026-09-16 — Opened by the approved Batch 4 programme. Backend implementation compiles with
+  zero errors; security, refund-recovery and PostgreSQL concurrency tests are being added and are
+  not yet verified. `Order.CurrentStatus` is now an EF concurrency token to reject stale status
+  writes; no new SQL column, but the model metadata requires a regenerated single `Initial` and
+  full integration verification before commit. DEV drop remains timed with deployment. Clients
+  follow regenerated contracts; dependent Swift work awaits the existing contract clarification.
+- 2026-09-16 — Shared cancellation extraction moved waiver release and policy assessment. Updated
+  the living membership-benefit-usage and refund-policy role citations; historical ADR bodies stay
+  unchanged. The catalog checker has zero claim violations after those corrections.
 - 2026-09-15 — filed `todo` by the docs lane on the owner's word; waiting on the owner to open it.

@@ -14,6 +14,9 @@ namespace Cleansia.Core.Queue.Abstractions;
 /// </summary>
 public static class MessageKeys
 {
+    /// <summary>One guest cancellation email per order.</summary>
+    public static string GuestOrderCancelledEmail(string orderId) => $"email:guest-order-cancelled:{orderId}";
+
     /// <summary>generate-receipt → <c>receipt:{OrderId}</c> (one receipt per order).</summary>
     public static string Receipt(string orderId) => $"receipt:{orderId}";
 

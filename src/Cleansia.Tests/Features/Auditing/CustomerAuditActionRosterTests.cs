@@ -31,6 +31,7 @@ public sealed class CustomerAuditActionRosterTests
     private static readonly IReadOnlyDictionary<Type, Expected> Roster = new Dictionary<Type, Expected>
     {
         [typeof(CancelOrder.Command)] = new("customer.order.cancel", "Order"),
+        [typeof(CancelGuestOrder.Command)] = new("customer.order.cancel", "Order", AllowsAnonymousActor: true),
         [typeof(CreateOrder.Command)] = new("customer.order.create", "Order", AllowsAnonymousActor: true),
         [typeof(ConfirmRecurringOrder.Command)] = new("customer.order.recurring.confirm", "Order"),
         [typeof(CreateDispute.Command)] = new("customer.dispute.create", "Order"),
@@ -67,7 +68,7 @@ public sealed class CustomerAuditActionRosterTests
             .ToList();
 
     [Fact]
-    public void The_Customer_Roster_Is_Exactly_The_TwentyFive_Commands_With_Their_Frozen_Labels()
+    public void The_Customer_Roster_Has_Exactly_The_Declared_Commands_With_Their_Frozen_Labels()
     {
         var marked = MarkedInProduction();
 
@@ -146,7 +147,9 @@ public sealed class CustomerAuditActionRosterTests
         Assert.Equal(
             new HashSet<Type>
             {
-                typeof(Register.Command), typeof(CreateOrder.Command),
+                typeof(Register.Command),
+            typeof(CancelGuestOrder.Command),
+            typeof(CreateOrder.Command),
                 typeof(Login.Command), typeof(MobileLogin.Command), typeof(GoogleAuth.Command), typeof(AppleAuth.Command),
                 typeof(RequestPasswordChange.Command), typeof(ChangePassword.Command), typeof(ConfirmUserEmail.Command),
             },

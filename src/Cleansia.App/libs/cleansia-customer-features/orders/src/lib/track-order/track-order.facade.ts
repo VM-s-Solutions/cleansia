@@ -8,6 +8,7 @@ import {
   LookupOrderBatchQuery,
   LookupOrderBatchResponse,
   LookupOrderResponse,
+  LookupOrderQuery,
 } from '@cleansia/customer-services';
 import { Observable } from 'rxjs';
 
@@ -41,7 +42,11 @@ export class TrackOrderFacade extends UnsubscribeControlDirective {
     email: string,
     confirmationCode: string,
   ): Observable<LookupOrderResponse> {
-    return this.orderClient.lookup(orderNumber, email, confirmationCode);
+    const query = new LookupOrderQuery();
+    query.displayOrderNumber = orderNumber;
+    query.email = email;
+    query.confirmationCode = confirmationCode;
+    return this.orderClient.lookupPost(query);
   }
 
   lookupBatch(

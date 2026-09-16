@@ -5,6 +5,7 @@ using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Extensions;
 using Cleansia.Core.AppServices.Features.Bookings;
 using Cleansia.Core.AppServices.Features.Memberships;
+using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.Domain.Auditing;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Repositories;
@@ -27,6 +28,35 @@ public sealed class AuditEntryFactoryCustomerTests
     public sealed record CancelCommand(string OrderId);
 
     private static readonly AuditActionDescriptor CancelDescriptor = AuditActionDescriptor.For(typeof(CancelCommand));
+
+    [Theory]
+    [InlineData(true, true)]
+    [InlineData(true, false)]
+    [InlineData(false, true)]
+    [InlineData(false, false)]
+    public void Guest_Cancellation_Never_Takes_An_Actor_From_The_Session_Or_Snapshot(bool signedIn, bool success)
+    {
+        var request = new CancelGuestOrder.Command("A-1042", "guest@example.test", "secret");
+        var descriptor = AuditActionDescriptor.For(typeof(CancelGuestOrder.Command));
+        var context = new AuditContext();
+        context.RecordEvidence("Order", "ORD-1", new { feeRate = 0m }, actorUserId: "snapshot-account");
+        var factory = Factory(signedIn ? CustomerSession("session-account") : AnonymousSession());
+        var row = success
+            ? factory.CreateCustomerSuccess(request, descriptor, context.DrainSnapshot())
+            : factory.CreateCustomerFailure(request, descriptor, BusinessErrorMessage.OrderInProgressCannotCancel,
+                context.DrainSnapshot());
+
+        Assert.Null(row.UserId);
+        Assert.Equal(success, row.Success);
+        Assert.Equal("customer.order.cancel", row.Action);
+        Assert.Equal("Order", row.ResourceType);
+        Assert.Equal("ORD-1", row.ResourceId);
+        if (!success)
+        {
+            Assert.Equal(BusinessErrorMessage.OrderInProgressCannotCancel, row.ErrorCode);
+            Assert.Null(row.PayloadJson);
+        }
+    }
 
     private static IUserSessionProvider CustomerSession(string userId, string? deviceId = null)
     {

@@ -1,4 +1,4 @@
-﻿using System.Security.Claims;
+using System.Security.Claims;
 using System.Text;
 using Cleansia.Config.Services.DeviceRevocation;
 using Cleansia.Config.Services.UserRevocation;
@@ -258,6 +258,8 @@ public static class ServiceExtensions
         services.AddScoped<IReferralService, ReferralService>();
         services.AddScoped<IStripeSubscriptionWebhookHandler, StripeSubscriptionWebhookHandler>();
         services.AddScoped<ICancellationPolicyResolver, CancellationPolicyResolver>();
+        services.AddScoped<Cleansia.Core.AppServices.Features.Orders.GuestOrderAccess>();
+        services.AddScoped<Cleansia.Core.AppServices.Features.Orders.CustomerOrderCancellation>();
         services.AddScoped<IPreferredCleanerHoldResolver, PreferredCleanerHoldResolver>();
         // ADR-0035 — the express-waiver seam. The period-key factory is SCOPED because it caches the
         // resolved platform zone for the request, and CreateOrder builds the key twice (validator and

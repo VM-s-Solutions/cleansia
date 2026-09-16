@@ -31,6 +31,7 @@ export type {
 } from './lib/client/customer-client';
 export {
   OrderClient as CustomerOrderClient,
+  LookupOrderQuery,
   LookupOrderResponse,
   LookupOrderBatchQuery,
   LookupOrderBatchResponse,

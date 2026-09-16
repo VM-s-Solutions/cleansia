@@ -1,4 +1,4 @@
-﻿using Cleansia.Core.AppServices.Common;
+using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.Domain.Emails;
 using Cleansia.Core.Domain.Orders;
 
@@ -24,7 +24,7 @@ public interface IEmailService
     /// </summary>
     Task<string> SendPromoCodeEmailAsync(string email, string promoCode, string discountLabel, DateTime? expiresOn, string languageCode = Constants.Language.English, CancellationToken ct = default);
 
-    Task<string> SendOrderStatusUpdateEmailAsync(string email, Order order, string newStatus, string languageCode = Constants.Language.English, CancellationToken ct = default);
+    Task<string> SendOrderStatusUpdateEmailAsync(string email, Order order, string newStatus, string languageCode = Constants.Language.English, CancellationToken ct = default, decimal? refundedAmount = null);
 
     /// <summary>
     /// The wind-down notice to a customer of a closing company (ADR-0064 D2 step 1): the company

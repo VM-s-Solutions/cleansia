@@ -53,7 +53,9 @@ public sealed class OperatorTenantScopeBehaviorOrderTests
         tenant.Setup(t => t.GetCurrentTenantId()).Returns(ambientTenant);
         var resolver = new Mock<IOperatorTenantResolver>();
         resolver.Setup(r => r.ResolveAsync(It.IsAny<string?>(), It.IsAny<CancellationToken>())).ReturnsAsync(resolution);
-        return (new OperatorTenantScopeBehavior<TRequest, BusinessResult>(tenant.Object, resolver.Object), tenant, resolver);
+        return (new OperatorTenantScopeBehavior<TRequest, BusinessResult>(tenant.Object, resolver.Object,
+            new Cleansia.Core.AppServices.Features.Orders.GuestOrderAccess(Mock.Of<IOrderRepository>()),
+            new Cleansia.Core.AppServices.Auditing.AuditContext()), tenant, resolver);
     }
 
     [Fact]
@@ -135,14 +137,11 @@ public sealed class OperatorTenantScopeBehaviorOrderTests
     }
 
     /// <summary>
-    /// The nine requests of ADR-0061 D3 carry the marker, plus the six session acts that name no
-    /// market and write a tenanted audit row on refusal (ADR-0062, Q-AUD-L5 overruled: the sign-ins,
-    /// the admin sign-in among them since its rows are admin ones (owner ruling 2026-09-15), the e-mail
-    /// confirmation and the password reset pair — default market, the account's own company replacing
-    /// it on the token, D4). Nothing else does: a grep is the roster, and this is the grep.
+    /// Market requests, anonymous session acts and secret-key guest operations are explicitly
+    /// enumerated so adding an operator-scoped request requires reviewing its tenant resolution.
     /// </summary>
     [Fact]
-    public void Exactly_The_D3_Requests_And_The_Session_Acts_Carry_The_Marker()
+    public void Only_The_Listed_Market_Session_And_Guest_Requests_Carry_The_Marker()
     {
         var marked = typeof(IOperatorScopedRequest).Assembly.GetTypes()
             .Where(t => typeof(IOperatorScopedRequest).IsAssignableFrom(t) && !t.IsInterface)
@@ -160,7 +159,9 @@ public sealed class OperatorTenantScopeBehaviorOrderTests
             "Cleansia.Core.AppServices.Features.Auth.MobileLogin+Command",
             "Cleansia.Core.AppServices.Features.Auth.Register+Command",
             "Cleansia.Core.AppServices.Features.Auth.RegisterEmployee+Command",
+            "Cleansia.Core.AppServices.Features.Orders.CancelGuestOrder+Command",
             "Cleansia.Core.AppServices.Features.Orders.CreateOrder+Command",
+            "Cleansia.Core.AppServices.Features.Orders.GetGuestCancellationFeePreview+Query",
             "Cleansia.Core.AppServices.Features.Orders.QuoteOrder+Command",
             "Cleansia.Core.AppServices.Features.Orders.QuotePlusSavings+Query",
             "Cleansia.Core.AppServices.Features.PromoCodes.RequestPromoCode+Command",

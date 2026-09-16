@@ -75,6 +75,21 @@ flowchart LR
 
 `CancellationFeeRateFor` is the **only** place a tier is priced.
 
+### A guest cancels under the same policy
+
+The guest cancellation API needs the booking’s **order number, e-mail and confirmation code**, and
+accepts only a booking placed without an account. A wrong combination or an account-owned booking
+returns the same `order.not_found` answer. The preview and cancellation use the same fee assessment
+as a signed-in customer: no fee while no cleaner is assigned, the standard 15-minute oops window,
+and the standard 24 h / 4 h fee tiers above. A guest has no Plus free-window extension. Cancellation
+is refused once cleaning is under way, completed or already cancelled.
+
+The cancellation is confirmed by e-mail to the address stored on the booking. A refund line appears
+only when a refund was successfully issued, using that refund’s actual amount; the policy refund
+shown in a preview is not proof of a payment. The guest remains without an account, feed or push
+notification. Assigned cleaners still receive their cancellation notice.
+→ [Guest cancellation](/flows/booking-and-pricing#guest-cancellation)
+
 ### The "oops window"
 
 Free cancellation within **15 minutes** of booking, regardless of how close the cleaning is —
@@ -928,12 +943,13 @@ carries the account's e-mail (matched case-insensitively; a booking another acco
 address in its contact field is that account's and never matches), in any market. An **ended** guest
 booking is anonymised like the account's own — name, contact, address, photos, pay rows — and the
 guest rows on it in the trail lose their IP and device. A guest booking **still live** (booked, taken
-or under way) is **left out, not a reason to refuse**: only the account's own live orders block an
-erasure, because a guest booking cannot be cancelled by anyone but an admin (→ T-0753) and a stranger's
-mistyped address would otherwise lock the subject out of their own erasure; its contact data stays
-until the job ends and the two-year order sweep reaches it. Whether a live guest booking should block
-instead is an open owner question. The subject's data export lists the same set of orders, the live
-guest booking included.
+or under way) is **left out, not a reason to refuse**: only the account’s own live orders block an
+erasure. Its contact data stays until the job ends and the two-year order sweep reaches it. The guest
+cancellation backend added on 2026-09-16 (T-0753) changes the earlier “only an admin can cancel”
+premise, **not this erasure rule**. Cancellation still needs the booking’s complete secret; an e-mail
+match alone does not prove that the account holder placed it. Whether a live guest booking should
+block instead remains the open owner question Q-GDPR-03. The subject’s data export lists the same set
+of orders, the live guest booking included.
 
 **A failed erasure is on record and finished by the platform.** If the walk throws or is refused
 after it began, a `Failed` GDPR request row is written outside the rolled-back transaction with the

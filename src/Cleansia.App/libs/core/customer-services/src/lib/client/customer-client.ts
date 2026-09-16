@@ -3601,12 +3601,27 @@ export class NotificationPreferencesClient implements INotificationPreferencesCl
 
 export interface IOrderClient {
     /**
+     * @param body (optional) 
+     * @return OK
+     */
+    cancelGuest(body?: CancelGuestOrderCommand | undefined): Observable<CancelOrderResponse>;
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    guestCancellationPreview(body?: GetGuestCancellationFeePreviewQuery | undefined): Observable<GetCancellationFeePreviewResponse>;
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    lookupPost(body?: LookupOrderQuery | undefined): Observable<LookupOrderResponse>;
+    /**
      * @param orderNumber (optional) 
      * @param email (optional) 
      * @param confirmationCode (optional) 
      * @return OK
      */
-    lookup(orderNumber?: string | undefined, email?: string | undefined, confirmationCode?: string | undefined): Observable<LookupOrderResponse>;
+    lookupGet(orderNumber?: string | undefined, email?: string | undefined, confirmationCode?: string | undefined): Observable<LookupOrderResponse>;
     /**
      * @param body (optional) 
      * @return OK
@@ -3745,12 +3760,201 @@ export class OrderClient implements IOrderClient {
     }
 
     /**
+     * @param body (optional) 
+     * @return OK
+     */
+    cancelGuest(body?: CancelGuestOrderCommand | undefined): Observable<CancelOrderResponse> {
+        let url = this.baseUrl + "/api/Order/CancelGuest";
+        url = url.replace(/[?&]$/, "");
+
+        const content = JSON.stringify(body);
+
+        let options : any = {
+            body: content,
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            })
+        };
+
+        return this.http.request("post", url, options).pipe(ObservableMergeMap((response : any) => {
+            return this.processCancelGuest(response);
+        })).pipe(ObservableCatch((response: any) => {
+            if (response instanceof HttpResponseBase) {
+                try {
+                    return this.processCancelGuest(response as any);
+                } catch (e) {
+                    return ObservableThrow(e) as any as Observable<CancelOrderResponse>;
+                }
+            } else
+                return ObservableThrow(response) as any as Observable<CancelOrderResponse>;
+        }));
+    }
+
+    protected processCancelGuest(response: HttpResponseBase): Observable<CancelOrderResponse> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result200: any = null;
+            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result200 = CancelOrderResponse.fromJS(resultData200);
+            return ObservableOf(result200);
+            }));
+        } else if (status === 400) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result400: any = null;
+            let resultData400 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result400 = ProblemDetails.fromJS(resultData400);
+            return throwException("Bad Request", status, ResponseText, Headers, result400);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
+            }));
+        }
+        return ObservableOf(null as any);
+    }
+
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    guestCancellationPreview(body?: GetGuestCancellationFeePreviewQuery | undefined): Observable<GetCancellationFeePreviewResponse> {
+        let url = this.baseUrl + "/api/Order/GuestCancellationPreview";
+        url = url.replace(/[?&]$/, "");
+
+        const content = JSON.stringify(body);
+
+        let options : any = {
+            body: content,
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            })
+        };
+
+        return this.http.request("post", url, options).pipe(ObservableMergeMap((response : any) => {
+            return this.processGuestCancellationPreview(response);
+        })).pipe(ObservableCatch((response: any) => {
+            if (response instanceof HttpResponseBase) {
+                try {
+                    return this.processGuestCancellationPreview(response as any);
+                } catch (e) {
+                    return ObservableThrow(e) as any as Observable<GetCancellationFeePreviewResponse>;
+                }
+            } else
+                return ObservableThrow(response) as any as Observable<GetCancellationFeePreviewResponse>;
+        }));
+    }
+
+    protected processGuestCancellationPreview(response: HttpResponseBase): Observable<GetCancellationFeePreviewResponse> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result200: any = null;
+            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result200 = GetCancellationFeePreviewResponse.fromJS(resultData200);
+            return ObservableOf(result200);
+            }));
+        } else if (status === 400) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result400: any = null;
+            let resultData400 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result400 = ProblemDetails.fromJS(resultData400);
+            return throwException("Bad Request", status, ResponseText, Headers, result400);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
+            }));
+        }
+        return ObservableOf(null as any);
+    }
+
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    lookupPost(body?: LookupOrderQuery | undefined): Observable<LookupOrderResponse> {
+        let url = this.baseUrl + "/api/Order/Lookup";
+        url = url.replace(/[?&]$/, "");
+
+        const content = JSON.stringify(body);
+
+        let options : any = {
+            body: content,
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            })
+        };
+
+        return this.http.request("post", url, options).pipe(ObservableMergeMap((response : any) => {
+            return this.processLookupPost(response);
+        })).pipe(ObservableCatch((response: any) => {
+            if (response instanceof HttpResponseBase) {
+                try {
+                    return this.processLookupPost(response as any);
+                } catch (e) {
+                    return ObservableThrow(e) as any as Observable<LookupOrderResponse>;
+                }
+            } else
+                return ObservableThrow(response) as any as Observable<LookupOrderResponse>;
+        }));
+    }
+
+    protected processLookupPost(response: HttpResponseBase): Observable<LookupOrderResponse> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result200: any = null;
+            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result200 = LookupOrderResponse.fromJS(resultData200);
+            return ObservableOf(result200);
+            }));
+        } else if (status === 400) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result400: any = null;
+            let resultData400 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result400 = ProblemDetails.fromJS(resultData400);
+            return throwException("Bad Request", status, ResponseText, Headers, result400);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
+            }));
+        }
+        return ObservableOf(null as any);
+    }
+
+    /**
      * @param orderNumber (optional) 
      * @param email (optional) 
      * @param confirmationCode (optional) 
      * @return OK
      */
-    lookup(orderNumber?: string | undefined, email?: string | undefined, confirmationCode?: string | undefined): Observable<LookupOrderResponse> {
+    lookupGet(orderNumber?: string | undefined, email?: string | undefined, confirmationCode?: string | undefined): Observable<LookupOrderResponse> {
         let url = this.baseUrl + "/api/Order/Lookup?";
         if (orderNumber === null)
             throw new globalThis.Error("The parameter 'orderNumber' cannot be null.");
@@ -3775,11 +3979,11 @@ export class OrderClient implements IOrderClient {
         };
 
         return this.http.request("get", url, options).pipe(ObservableMergeMap((response : any) => {
-            return this.processLookup(response);
+            return this.processLookupGet(response);
         })).pipe(ObservableCatch((response: any) => {
             if (response instanceof HttpResponseBase) {
                 try {
-                    return this.processLookup(response as any);
+                    return this.processLookupGet(response as any);
                 } catch (e) {
                     return ObservableThrow(e) as any as Observable<LookupOrderResponse>;
                 }
@@ -3788,7 +3992,7 @@ export class OrderClient implements IOrderClient {
         }));
     }
 
-    protected processLookup(response: HttpResponseBase): Observable<LookupOrderResponse> {
+    protected processLookupGet(response: HttpResponseBase): Observable<LookupOrderResponse> {
         const status = response.status;
         const responseBlob =
             response instanceof HttpResponse ? response.body :
@@ -7492,6 +7696,58 @@ export interface IBlobFileDto {
     blobUrl: string | undefined;
 }
 
+export class CancelGuestOrderCommand implements ICancelGuestOrderCommand {
+    displayOrderNumber!: string | undefined;
+    email!: string | undefined;
+    confirmationCode!: string | undefined;
+    reason!: string | undefined;
+    language!: string | undefined;
+
+    constructor(data?: ICancelGuestOrderCommand) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.displayOrderNumber = Data["displayOrderNumber"];
+            this.email = Data["email"];
+            this.confirmationCode = Data["confirmationCode"];
+            this.reason = Data["reason"];
+            this.language = Data["language"];
+        }
+    }
+
+    static fromJS(data: any): CancelGuestOrderCommand {
+        data = typeof data === 'object' ? data : {};
+        let result = new CancelGuestOrderCommand();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["displayOrderNumber"] = this.displayOrderNumber;
+        data["email"] = this.email;
+        data["confirmationCode"] = this.confirmationCode;
+        data["reason"] = this.reason;
+        data["language"] = this.language;
+        return data;
+    }
+}
+
+export interface ICancelGuestOrderCommand {
+    displayOrderNumber: string | undefined;
+    email: string | undefined;
+    confirmationCode: string | undefined;
+    reason: string | undefined;
+    language: string | undefined;
+}
+
 export class CancelMembershipSubscriptionResponse implements ICancelMembershipSubscriptionResponse {
     effectiveEndDate!: Date;
 
@@ -7574,6 +7830,7 @@ export class CancelOrderResponse implements ICancelOrderResponse {
     refundAmount!: number;
     totalPrice!: number;
     refundInitiated!: boolean;
+    actualRefundAmount!: number | undefined;
 
     constructor(data?: ICancelOrderResponse) {
         if (data) {
@@ -7591,6 +7848,7 @@ export class CancelOrderResponse implements ICancelOrderResponse {
             this.refundAmount = Data["refundAmount"];
             this.totalPrice = Data["totalPrice"];
             this.refundInitiated = Data["refundInitiated"];
+            this.actualRefundAmount = Data["actualRefundAmount"];
         }
     }
 
@@ -7608,6 +7866,7 @@ export class CancelOrderResponse implements ICancelOrderResponse {
         data["refundAmount"] = this.refundAmount;
         data["totalPrice"] = this.totalPrice;
         data["refundInitiated"] = this.refundInitiated;
+        data["actualRefundAmount"] = this.actualRefundAmount;
         return data;
     }
 }
@@ -7618,6 +7877,7 @@ export interface ICancelOrderResponse {
     refundAmount: number;
     totalPrice: number;
     refundInitiated: boolean;
+    actualRefundAmount: number | undefined;
 }
 
 export enum CancellationFeeTier {
@@ -10482,6 +10742,50 @@ export class GetCurrentUserQuery implements IGetCurrentUserQuery {
 export interface IGetCurrentUserQuery {
 }
 
+export class GetGuestCancellationFeePreviewQuery implements IGetGuestCancellationFeePreviewQuery {
+    displayOrderNumber!: string | undefined;
+    email!: string | undefined;
+    confirmationCode!: string | undefined;
+
+    constructor(data?: IGetGuestCancellationFeePreviewQuery) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.displayOrderNumber = Data["displayOrderNumber"];
+            this.email = Data["email"];
+            this.confirmationCode = Data["confirmationCode"];
+        }
+    }
+
+    static fromJS(data: any): GetGuestCancellationFeePreviewQuery {
+        data = typeof data === 'object' ? data : {};
+        let result = new GetGuestCancellationFeePreviewQuery();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["displayOrderNumber"] = this.displayOrderNumber;
+        data["email"] = this.email;
+        data["confirmationCode"] = this.confirmationCode;
+        return data;
+    }
+}
+
+export interface IGetGuestCancellationFeePreviewQuery {
+    displayOrderNumber: string | undefined;
+    email: string | undefined;
+    confirmationCode: string | undefined;
+}
+
 export class GetLoyaltyActivityActivityItem implements IGetLoyaltyActivityActivityItem {
     type!: LoyaltyTransactionType;
     points!: number;
@@ -11913,6 +12217,50 @@ export class LookupOrderBatchResponse implements ILookupOrderBatchResponse {
 
 export interface ILookupOrderBatchResponse {
     orders: LookupOrderResponse[] | undefined;
+}
+
+export class LookupOrderQuery implements ILookupOrderQuery {
+    displayOrderNumber!: string | undefined;
+    email!: string | undefined;
+    confirmationCode!: string | undefined;
+
+    constructor(data?: ILookupOrderQuery) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.displayOrderNumber = Data["displayOrderNumber"];
+            this.email = Data["email"];
+            this.confirmationCode = Data["confirmationCode"];
+        }
+    }
+
+    static fromJS(data: any): LookupOrderQuery {
+        data = typeof data === 'object' ? data : {};
+        let result = new LookupOrderQuery();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["displayOrderNumber"] = this.displayOrderNumber;
+        data["email"] = this.email;
+        data["confirmationCode"] = this.confirmationCode;
+        return data;
+    }
+}
+
+export interface ILookupOrderQuery {
+    displayOrderNumber: string | undefined;
+    email: string | undefined;
+    confirmationCode: string | undefined;
 }
 
 export class LookupOrderResponse implements ILookupOrderResponse {

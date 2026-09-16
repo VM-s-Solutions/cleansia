@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.Security.Claims;
 using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Extensions;
+using Cleansia.Core.AppServices.Tenancy;
 using Cleansia.Core.Domain.Auditing;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Repositories;
@@ -26,6 +27,8 @@ namespace Cleansia.Core.AppServices.Auditing;
 /// snapshot too — a validator names the account it is about to refuse through the same seam — but never
 /// its payload, before/after or reason: on a refusal the only payload there could be is the request's
 /// own words.</para>
+/// <para>Secret-key guest cancellation always has a null customer actor, even when an unrelated
+/// account session or snapshot is present; the secret proves access to the booking, not an account.</para>
 ///
 /// <para>The customer pair (ADR-0062 D1) builds the <c>CustomerActionAudit</c> row the same way, plus
 /// the request context: <c>ClientAudience</c> is the host that served the request (never the JWT — it is
@@ -96,9 +99,12 @@ public sealed class AuditEntryFactory(
         AuditSnapshot? snapshot)
     {
         var sessionUserId = userSessionProvider.GetUserId();
+        var actorId = request is IGuestOrderScopedRequest
+            ? null
+            : string.IsNullOrWhiteSpace(sessionUserId) ? snapshot?.ActorUserId : sessionUserId;
 
         return CustomerActionAudit.Create(
-            userId: string.IsNullOrWhiteSpace(sessionUserId) ? snapshot?.ActorUserId : sessionUserId,
+            userId: actorId,
             clientAudience: hostAudienceProvider.Audience,
             ipAddress: requestMetadataProvider.IpAddress,
             deviceLabel: requestMetadataProvider.DeviceLabel,

@@ -253,17 +253,117 @@ public sealed class EmailService : IEmailService
             ct);
     }
 
+    private static readonly IReadOnlyDictionary<string, Dictionary<string, string>> CancellationEmailDefaults =
+        new Dictionary<string, Dictionary<string, string>>
+        {
+            ["en"] = new()
+            {
+                ["StatusTitle_Cancelled"] = "Order cancelled",
+                ["StatusMessage_Cancelled"] = "Your order has been cancelled.",
+                ["RefundMessage"] = "Refund issued:",
+                ["StatusSectionLabel"] = "Current status",
+                ["OrderNumberLabel"] = "Order #",
+                ["CleaningDateLabel"] = "Cleaning date",
+                ["AddressLabel"] = "Address",
+                ["TotalLabel"] = "Total",
+                ["ButtonText"] = "View order details",
+                ["QuestionsText"] = "If you have questions about your order, please contact us.",
+                ["SupportText"] = "Need help? Contact us at",
+                ["Closing"] = "Best regards,",
+                ["TeamName"] = "The Cleansia team",
+            },
+            ["cs"] = new()
+            {
+                ["StatusTitle_Cancelled"] = "Rezervace zrušena",
+                ["StatusMessage_Cancelled"] = "Vaše rezervace byla zrušena.",
+                ["RefundMessage"] = "Vrácená částka:",
+                ["StatusSectionLabel"] = "Aktuální stav",
+                ["OrderNumberLabel"] = "Rezervace č.",
+                ["CleaningDateLabel"] = "Datum úklidu",
+                ["AddressLabel"] = "Adresa",
+                ["TotalLabel"] = "Celkem",
+                ["ButtonText"] = "Zobrazit detail rezervace",
+                ["QuestionsText"] = "Pokud máte dotazy k rezervaci, kontaktujte nás.",
+                ["SupportText"] = "Potřebujete pomoc? Kontaktujte nás na",
+                ["Closing"] = "S pozdravem",
+                ["TeamName"] = "Tým Cleansia",
+            },
+            ["sk"] = new()
+            {
+                ["StatusTitle_Cancelled"] = "Rezervácia zrušená",
+                ["StatusMessage_Cancelled"] = "Vaša rezervácia bola zrušená.",
+                ["RefundMessage"] = "Vrátená suma:",
+                ["StatusSectionLabel"] = "Aktuálny stav",
+                ["OrderNumberLabel"] = "Rezervácia č.",
+                ["CleaningDateLabel"] = "Dátum upratovania",
+                ["AddressLabel"] = "Adresa",
+                ["TotalLabel"] = "Spolu",
+                ["ButtonText"] = "Zobraziť detail rezervácie",
+                ["QuestionsText"] = "Ak máte otázky k rezervácii, kontaktujte nás.",
+                ["SupportText"] = "Potrebujete pomoc? Kontaktujte nás na",
+                ["Closing"] = "S pozdravom",
+                ["TeamName"] = "Tím Cleansia",
+            },
+            ["uk"] = new()
+            {
+                ["StatusTitle_Cancelled"] = "Бронювання скасовано",
+                ["StatusMessage_Cancelled"] = "Ваше бронювання скасовано.",
+                ["RefundMessage"] = "Сума повернення:",
+                ["StatusSectionLabel"] = "Поточний статус",
+                ["OrderNumberLabel"] = "Бронювання №",
+                ["CleaningDateLabel"] = "Дата прибирання",
+                ["AddressLabel"] = "Адреса",
+                ["TotalLabel"] = "Разом",
+                ["ButtonText"] = "Переглянути бронювання",
+                ["QuestionsText"] = "Якщо у вас є запитання щодо бронювання, зв’яжіться з нами.",
+                ["SupportText"] = "Потрібна допомога? Напишіть нам:",
+                ["Closing"] = "З повагою",
+                ["TeamName"] = "Команда Cleansia",
+            },
+            ["ru"] = new()
+            {
+                ["StatusTitle_Cancelled"] = "Бронирование отменено",
+                ["StatusMessage_Cancelled"] = "Ваше бронирование отменено.",
+                ["RefundMessage"] = "Сумма возврата:",
+                ["StatusSectionLabel"] = "Текущий статус",
+                ["OrderNumberLabel"] = "Бронирование №",
+                ["CleaningDateLabel"] = "Дата уборки",
+                ["AddressLabel"] = "Адрес",
+                ["TotalLabel"] = "Итого",
+                ["ButtonText"] = "Посмотреть бронирование",
+                ["QuestionsText"] = "Если у вас есть вопросы о бронировании, свяжитесь с нами.",
+                ["SupportText"] = "Нужна помощь? Напишите нам:",
+                ["Closing"] = "С уважением",
+                ["TeamName"] = "Команда Cleansia",
+            },
+        };
+
     public async Task<string> SendOrderStatusUpdateEmailAsync(
         string email,
         Order order,
         string newStatus,
         string languageCode = Constants.Language.English,
-        CancellationToken ct = default)
+        CancellationToken ct = default,
+        decimal? refundedAmount = null)
     {
         var translations = await emailTemplateTranslationRepository
             .GetTranslationsByTypeAndLanguageAsync(EmailType.OrderStatusUpdate, languageCode, ct);
 
+        if (newStatus.Equals("cancelled", StringComparison.OrdinalIgnoreCase))
+        {
+            var defaults = CancellationEmailDefaults.GetValueOrDefault(languageCode)
+                ?? CancellationEmailDefaults[Constants.Language.English];
+            foreach (var (key, value) in defaults)
+            {
+                translations.TryAdd(key, value);
+            }
+        }
+
         var orderStatusLink = $"{sendGridConfig.ClientDomainUrl}/track-order?orderNumber={Uri.EscapeDataString(order.DisplayOrderNumber)}&email={Uri.EscapeDataString(email)}";
+        if (string.IsNullOrEmpty(order.UserId))
+        {
+            orderStatusLink += $"&confirmationCode={Uri.EscapeDataString(order.ConfirmationCode)}";
+        }
         var address = order.CustomerAddress != null
             ? $"{order.CustomerAddress.Street}, {order.CustomerAddress.City}"
             : "";
@@ -298,15 +398,19 @@ public sealed class EmailService : IEmailService
                 "confirmed")
         };
 
-        var subject = translations.GetValueOrDefault("Subject", $"Order {order.DisplayOrderNumber} — {statusTitle}");
+        var orderLabel = statusClass == "cancelled" ? translations.GetValueOrDefault("OrderNumberLabel", "Order") : "Order";
+        var subject = translations.GetValueOrDefault("Subject", $"{orderLabel} {order.DisplayOrderNumber} — {statusTitle}");
 
         var values = BuildTemplateValues(translations, new
         {
             Subject = subject,
-            StatusMessage = statusMessage,
+            StatusMessage = refundedAmount is > 0m
+                ? $"{statusMessage} {translations.GetValueOrDefault("RefundMessage", "Refund issued:")} {currencySymbol}{refundedAmount.Value:N2}."
+                : statusMessage,
             StatusSectionLabel = translations.GetValueOrDefault("StatusSectionLabel", "Current Status"),
             StatusClass = statusClass,
-            StatusLabel = newStatus.ToUpperInvariant(),
+            StatusLabel = newStatus.Equals("cancelled", StringComparison.OrdinalIgnoreCase)
+                ? statusTitle : newStatus.ToUpperInvariant(),
             OrderNumberLabel = translations.GetValueOrDefault("OrderNumberLabel", "Order #"),
             OrderNumber = order.DisplayOrderNumber,
             CleaningDateLabel = translations.GetValueOrDefault("CleaningDateLabel", "Cleaning Date"),
@@ -322,7 +426,9 @@ public sealed class EmailService : IEmailService
             SupportEmail = translations.GetValueOrDefault("SupportEmail", "info@cleansia.cz"),
             Closing = translations.GetValueOrDefault("Closing", "Best regards,"),
             TeamName = translations.GetValueOrDefault("TeamName", "The Cleansia Team"),
-            FooterText = translations.GetValueOrDefault("FooterText", $"© {DateTime.UtcNow.Year} Cleansia s.r.o. All rights reserved.")
+            FooterText = translations.GetValueOrDefault("FooterText", statusClass == "cancelled"
+                ? $"© {DateTime.UtcNow.Year} Cleansia"
+                : $"© {DateTime.UtcNow.Year} Cleansia s.r.o. All rights reserved.")
         }, languageCode);
 
         return await SendRenderedAsync(

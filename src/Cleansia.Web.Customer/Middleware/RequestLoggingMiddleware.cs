@@ -1,4 +1,4 @@
-﻿using System.Diagnostics;
+using System.Diagnostics;
 using System.Security.Claims;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -250,6 +250,8 @@ public partial class RequestLoggingMiddleware(RequestDelegate next, ILogger<Requ
                pathValue.Contains("/login") ||
                pathValue.Contains("password") ||
                pathValue.Contains("/order/lookup") ||
+               pathValue.Contains("/order/cancelguest") ||
+               pathValue.Contains("/order/guestcancellationpreview") ||
                // Operator free text riding beside a base64 payload — an identity-document description
                // and a cleaner's note about a customer's household. No field-name denylist can reach
                // free text, so the whole body is suppressed.

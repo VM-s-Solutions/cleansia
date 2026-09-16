@@ -16,6 +16,39 @@ namespace Cleansia.Web.Customer.Controllers;
 public class OrderController(IMediator mediator) : CustomerApiController(mediator)
 {
     [AllowAnonymous]
+    [EnableRateLimiting("auth")]
+    [HttpPost("CancelGuest")]
+    [ProducesResponseType(typeof(CancelOrder.Response), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> CancelGuest(
+        [FromBody] CancelGuestOrder.Command command, CancellationToken cancellationToken)
+    {
+        return HandleResult<CancelOrder.Response>(await Mediator.Send(command, cancellationToken));
+    }
+
+    [AllowAnonymous]
+    [EnableRateLimiting("auth")]
+    [HttpPost("GuestCancellationPreview")]
+    [ProducesResponseType(typeof(GetCancellationFeePreview.Response), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> GuestCancellationPreview(
+        [FromBody] GetGuestCancellationFeePreview.Query query, CancellationToken cancellationToken)
+    {
+        return HandleResult<GetCancellationFeePreview.Response>(await Mediator.Send(query, cancellationToken));
+    }
+
+    [AllowAnonymous]
+    [EnableRateLimiting("interactive")]
+    [HttpPost("Lookup")]
+    [ProducesResponseType(typeof(LookupOrder.Response), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> Lookup(
+        [FromBody] LookupOrder.Query query, CancellationToken cancellationToken)
+    {
+        return HandleResult<LookupOrder.Response>(await Mediator.Send(query, cancellationToken));
+    }
+
+    [AllowAnonymous]
     [EnableRateLimiting("interactive")]
     [HttpGet("Lookup")]
     [ProducesResponseType(typeof(LookupOrder.Response), StatusCodes.Status200OK)]

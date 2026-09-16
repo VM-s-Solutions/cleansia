@@ -510,6 +510,8 @@ export class OrderDetailComponent implements OnInit {
         return 'pages.order_detail.cancellation_reason.recurring_not_confirmed';
       case 'order.cancelled.company_wind_down':
         return 'pages.order_detail.cancellation_reason.company_wind_down';
+      case 'order.cancelled.no_cleaner_available':
+        return 'pages.order_detail.cancellation_reason.no_cleaner_available';
       default:
         return null;
     }

@@ -105,9 +105,8 @@ function buildFixture(overrides = {}) {
     iosFaqNoFigure: 'Covered by insurance.',
     iosSeasonal: null,
     // The platform's cancellation reasons: every declared key is mapped and localised on the three
-    // clients unless the scenario drops one surface; the known unrendered key is declared as it is
-    // in the tree so the checker's own list stays honest.
-    reasons: ['payment_not_completed', 'company_wind_down'],
+    // clients unless the scenario drops one surface.
+    reasons: ['payment_not_completed', 'company_wind_down', 'no_cleaner_available'],
     reasonMissingOn: null,
     ...overrides,
   };
@@ -145,7 +144,7 @@ public static class BookingPolicy
     }
   }
 
-  const reasonConsts = [...o.reasons, 'no_cleaner_available']
+  const reasonConsts = o.reasons
     .map((r) => `    public const string R_${r} = "order.cancelled.${r}";`)
     .join('\n');
   write(root, 'src/Cleansia.Core.Domain/Orders/OrderCancellationReasons.cs', `
@@ -300,8 +299,13 @@ scenario('a tree whose four surfaces agree passes', {}, { code: 0 });
 
 // ─── 1b. Every platform cancellation reason renders on the three clients ────
 // A key the server writes that a client cannot turn into a sentence reaches the customer as
-// silence; the one known gap is named in the checker and must stay declared in the tree.
+// silence, and the checker carries no allow-list entry for it.
 scenario('a reason mapped and localised everywhere passes', { reasons: ['company_wind_down'] }, { code: 0 });
+scenario(
+  'the reason of the unfilled-order sweep must render like the others',
+  { reasons: ['no_cleaner_available'], reasonMissingOn: 'web' },
+  { code: 1, mentions: ['no_cleaner_available'] },
+);
 for (const surface of ['web', 'android', 'ios', 'web-locale', 'android-locale', 'ios-locale']) {
   scenario(
     `a reason the ${surface} surface does not render fails`,

@@ -19,7 +19,8 @@ enum CancellationReasonCopy {
     private static let copy: [String: String] = [
         "order.cancelled.payment_not_completed": "order_cancelled_reason_payment_not_completed",
         "order.cancelled.recurring_not_confirmed": "order_cancelled_reason_recurring_not_confirmed",
-        "order.cancelled.company_wind_down": "order_cancelled_reason_company_wind_down"
+        "order.cancelled.company_wind_down": "order_cancelled_reason_company_wind_down",
+        "order.cancelled.no_cleaner_available": "order_cancelled_reason_no_cleaner_available"
     ]
 
     static func text(for reason: String?) -> String? {

@@ -1365,6 +1365,7 @@
     <string name="order_cancelled_reason_payment_not_completed">Platba nebyla dokončena, a proto byla tato rezervace uvolněna.</string>
     <string name="order_cancelled_reason_recurring_not_confirmed">Tato opakovaná rezervace nebyla včas potvrzena, a proto byla zdarma zrušena.</string>
     <string name="order_cancelled_reason_company_wind_down">Úklidová společnost, která působila ve vaší oblasti, končí, a proto byla tato rezervace zrušena; vše, co jste zaplatili, vám vracíme v plné výši.</string>
+    <string name="order_cancelled_reason_no_cleaner_available">Pro tuto rezervaci nebyl k dispozici žádný uklízeč, a proto byla zrušena.</string>
     <string name="dispute_create_which_items">Co konkrétně nedopadlo?</string>
     <string name="dispute_create_which_items_hint">Nepovinné. Označte služby, které nebyly udělány pořádně — pomůže nám to rychleji to napravít. Pokud byl problém celý üklid, nechte prázdné.</string>
     <string name="dispute_create_item_in_package">v balíčku %1$s</string>

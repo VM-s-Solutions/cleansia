@@ -390,9 +390,10 @@ export function readCancellationReasons(source) {
 
 /**
  * Keys the server writes that no client renders yet. A gap named here is a finding for the owner,
- * not a pass: the list exists so the gate fails on the NEXT key while the known one is reported.
+ * not a pass: the list exists so the gate fails on the NEXT key while a known one is reported.
+ * Empty today — every declared reason renders on all three clients.
  */
-const REASONS_NOT_YET_RENDERED = new Set(['order.cancelled.no_cleaner_available']);
+const REASONS_NOT_YET_RENDERED = new Set();
 
 const reasons = existsSync(join(REPO, REASONS_CS)) ? readCancellationReasons(read(REASONS_CS)) : [];
 if (reasons.length === 0) note(REASONS_CS, 'declares no cancellation reason — the parser needs updating');

@@ -1165,13 +1165,15 @@ private fun SheetExpandedUkPreview() = PreviewSheet()
  * Mirrors `Cleansia.Core.Domain.Orders.OrderCancellationReasons` and the iOS twin
  * `CancellationReasonCopy`.
  */
-@Composable
-private fun cancellationReasonText(reason: String?): String? = when (reason) {
-    "order.cancelled.payment_not_completed" ->
-        stringResource(R.string.order_cancelled_reason_payment_not_completed)
-    "order.cancelled.recurring_not_confirmed" ->
-        stringResource(R.string.order_cancelled_reason_recurring_not_confirmed)
-    "order.cancelled.company_wind_down" ->
-        stringResource(R.string.order_cancelled_reason_company_wind_down)
+@StringRes
+internal fun cancellationReasonRes(reason: String?): Int? = when (reason) {
+    "order.cancelled.payment_not_completed" -> R.string.order_cancelled_reason_payment_not_completed
+    "order.cancelled.recurring_not_confirmed" -> R.string.order_cancelled_reason_recurring_not_confirmed
+    "order.cancelled.company_wind_down" -> R.string.order_cancelled_reason_company_wind_down
+    "order.cancelled.no_cleaner_available" -> R.string.order_cancelled_reason_no_cleaner_available
     else -> null
 }
+
+@Composable
+private fun cancellationReasonText(reason: String?): String? =
+    cancellationReasonRes(reason)?.let { stringResource(it) }

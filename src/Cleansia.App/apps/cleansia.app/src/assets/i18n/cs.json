@@ -1107,7 +1107,8 @@
       "cancellation_reason": {
         "payment_not_completed": "Platba nebyla dokončena, a proto byla tato rezervace uvolněna.",
         "recurring_not_confirmed": "Tato opakovaná rezervace nebyla včas potvrzena, a proto byla zdarma zrušena.",
-        "company_wind_down": "Úklidová společnost, která působila ve vaší oblasti, končí, a proto byla tato rezervace zrušena; vše, co jste zaplatili, vám vracíme v plné výši."
+        "company_wind_down": "Úklidová společnost, která působila ve vaší oblasti, končí, a proto byla tato rezervace zrušena; vše, co jste zaplatili, vám vracíme v plné výši.",
+        "no_cleaner_available": "Pro tuto rezervaci nebyl k dispozici žádný uklízeč, a proto byla zrušena."
       },
       "where_it_is": "Kde to je",
       "two_axes_lead": "Dvě věci se dějí zvlášť — proto dvě osy.",

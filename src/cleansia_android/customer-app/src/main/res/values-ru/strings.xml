@@ -1362,6 +1362,7 @@
     <string name="order_cancelled_reason_payment_not_completed">Оплата не была завершена, поэтому это бронирование было отменено.</string>
     <string name="order_cancelled_reason_recurring_not_confirmed">Это повторное бронирование не было подтверждено вовремя, поэтому оно отменено бесплатно.</string>
     <string name="order_cancelled_reason_company_wind_down">Клининговая компания, обслуживавшая ваш район, прекращает работу, поэтому это бронирование отменено; всё, что вы оплатили, будет возвращено в полном объёме.</string>
+    <string name="order_cancelled_reason_no_cleaner_available">Для этого бронирования не нашлось свободного уборщика, поэтому оно отменено.</string>
     <string name="dispute_create_which_items">Что именно пошло не так?</string>
     <string name="dispute_create_which_items_hint">Необязательно. Отметьте услуги, выполненные плохо — это поможет быстрее всё исправить. Если проблемой была вся уборка — оставьте пустым.</string>
     <string name="dispute_create_item_in_package">в пакете %1$s</string>

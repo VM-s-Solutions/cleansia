@@ -1,7 +1,7 @@
 ---
 id: T-0692
 title: A lapsed Plus member is never told their recurring schedule stopped
-status: in_progress
+status: done
 size: S
 owner: —
 created: 2026-09-08

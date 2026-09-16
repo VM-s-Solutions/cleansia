@@ -1,7 +1,7 @@
 ---
 id: T-0765
 title: A customer books in any market the holding serves — the order belongs to the market's operator, loyalty and credit follow the account, one holding Stripe account
-status: in_progress
+status: done
 size: M
 owner: —
 created: 2026-09-16

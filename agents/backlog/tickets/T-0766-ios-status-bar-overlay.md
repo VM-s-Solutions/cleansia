@@ -1,7 +1,7 @@
 ---
 id: T-0766
 title: iOS: content draws under the status bar — audit every screen of both apps for safe-area handling and fix what overlays
-status: in_progress
+status: done
 size: S
 owner: —
 created: 2026-09-16

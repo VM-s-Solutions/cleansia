@@ -1,7 +1,7 @@
 ---
 id: T-0753
 title: A guest can cancel their booking — anonymous cancel keyed like the guest lookup, on web + Android + iOS
-status: in_progress
+status: done
 size: M
 owner: —
 created: 2026-09-15
@@ -159,3 +159,4 @@ once this ticket ships.
   the living membership-benefit-usage and refund-policy role citations; historical ADR bodies stay
   unchanged. The catalog checker has zero claim violations after those corrections.
 - 2026-09-15 — filed `todo` by the docs lane on the owner's word; waiting on the owner to open it.
+- 2026-09-16 — iOS half shipped (`28ccf8b1`, review fix `4156fc1a`): the guest lookup/cancel screen off the sign-in screen, the quote-gated `CancelOrderSheet`, thirteen `guest_order_*` keys in five locales; the three calls ride the generated `CustomerOrderAPI` (iOS CI regenerates it from the committed spec — the review refuted the "committed client predates the routes" premise), the two routes are on the customer anonymous allow list. Five XCTest files written, unrun on Windows; iOS CI builds the target. Ticket done on all three clients.

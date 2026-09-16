@@ -1,7 +1,7 @@
 ---
 id: T-0694
 title: The order.confirmed push key has a fulfilment name and a money meaning
-status: in_progress
+status: done
 size: M
 owner: —
 created: 2026-09-08

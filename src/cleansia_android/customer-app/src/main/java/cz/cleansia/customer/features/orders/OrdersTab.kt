@@ -55,6 +55,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import cz.cleansia.customer.R
+import cz.cleansia.customer.core.market.MarketState
 import cz.cleansia.core.format.formatOrderDateRange
 import cz.cleansia.core.format.formatOrderPrice
 import cz.cleansia.customer.ui.format.orderStatusColor
@@ -86,6 +87,7 @@ fun OrdersTab(
     viewModel: OrdersTabViewModel = hiltViewModel(),
 ) {
     val orders by viewModel.orders.collectAsStateWithLifecycle()
+    val markets by viewModel.markets.collectAsStateWithLifecycle()
     val loading by viewModel.loading.collectAsStateWithLifecycle()
     val loadingMore by viewModel.loadingMore.collectAsStateWithLifecycle()
     val loaded by viewModel.loaded.collectAsStateWithLifecycle()
@@ -162,6 +164,7 @@ fun OrdersTab(
                 }
                 else -> OrdersContent(
                     allOrders = orders,
+                    markets = markets,
                     filtered = filtered,
                     activeFilter = activeFilter,
                     onFilterChange = { activeFilter = it },
@@ -220,6 +223,7 @@ private fun ScrollableStateContainer(content: @Composable () -> Unit) {
 @Composable
 private fun OrdersContent(
     allOrders: List<OrderListItemDto>,
+    markets: MarketState,
     filtered: List<OrderListItemDto>,
     activeFilter: OrderFilter,
     onFilterChange: (OrderFilter) -> Unit,
@@ -276,7 +280,7 @@ private fun OrdersContent(
                 item { FilteredEmptyNote(activeFilter) }
             } else {
                 items(filtered, key = { it.id ?: it.hashCode().toString() }) { order ->
-                    OrderCard(order = order, onClick = {
+                    OrderCard(order = order, markets = markets, onClick = {
                         order.id?.let(onOrderClick)
                     })
                 }
@@ -361,6 +365,7 @@ private fun OrderFilterChip(
 @Composable
 private fun OrderCard(
     order: OrderListItemDto,
+    markets: MarketState,
     onClick: () -> Unit,
 ) {
     val statusColor = orderStatusColor(order.orderStatus?.value)
@@ -427,6 +432,13 @@ private fun OrderCard(
             )
         }
         Spacer(Modifier.height(10.dp))
+
+        Text(
+            text = orderMarketLabel(order.countryId, order.currency?.code, markets),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Spacer(Modifier.height(6.dp))
 
         // Services summary + price
         Row(

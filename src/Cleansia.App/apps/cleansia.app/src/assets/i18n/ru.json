@@ -1059,7 +1059,9 @@
       "rooms_few": "{{count}} комнаты",
       "rooms_many": "{{count}} комнат",
       "rooms_other": "{{count}} комнат",
-      "filter_empty": "Под этот фильтр не подходит ни один заказ."
+      "filter_empty": "Под этот фильтр не подходит ни один заказ.",
+      "market_unknown": "Рынок недоступен",
+      "market_label": "{{country}} · {{currency}}"
     },
     "order_detail": {
       "order": "Заказ",
@@ -1138,7 +1140,8 @@
       "action_report": "Что-то пошло не так",
       "track_live": "Следить онлайн",
       "cancellation_note": "Бесплатная отмена была доступна за {{hours}} ч до уборки.",
-      "estimated_hours": "примерно {{hours}} ч"
+      "estimated_hours": "примерно {{hours}} ч",
+      "label_market": "Рынок"
     },
     "checkout": {
       "success": {

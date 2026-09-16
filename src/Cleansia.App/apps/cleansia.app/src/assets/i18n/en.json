@@ -1059,7 +1059,9 @@
       "rooms_few": "{{count}} rooms",
       "rooms_many": "{{count}} rooms",
       "rooms_other": "{{count}} rooms",
-      "filter_empty": "No orders match this filter."
+      "filter_empty": "No orders match this filter.",
+      "market_unknown": "Market unavailable",
+      "market_label": "{{country}} · {{currency}}"
     },
     "order_detail": {
       "order": "Order",
@@ -1138,7 +1140,8 @@
       "action_report": "Something was wrong",
       "track_live": "Track live",
       "cancellation_note": "Free cancellation ran until {{hours}} hours before the clean.",
-      "estimated_hours": "about {{hours}} h"
+      "estimated_hours": "about {{hours}} h",
+      "label_market": "Market"
     },
     "checkout": {
       "success": {

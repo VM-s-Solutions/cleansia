@@ -73,6 +73,7 @@ import cz.cleansia.core.ui.components.SnapSheetState
 import cz.cleansia.core.ui.components.rememberSnapSheetState
 import cz.cleansia.core.ui.theme.Spacing
 import cz.cleansia.customer.R
+import cz.cleansia.customer.core.market.MarketState
 import cz.cleansia.customer.core.orders.OrderCurrencyDetailDto
 import cz.cleansia.customer.core.orders.OrderAddressDto
 import cz.cleansia.customer.core.orders.OrderDetailDto
@@ -125,6 +126,7 @@ fun OrderDetailScreen(
     viewModel: OrderDetailViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val markets by viewModel.markets.collectAsStateWithLifecycle()
     // Wave 4 — single ActionState replaces (cancelling, cancelError) etc.
     // The screen still derives the same boolean / message values from the
     // sealed variant; sheets receive those derived bits via their existing
@@ -321,6 +323,7 @@ fun OrderDetailScreen(
             LaunchedEffect(s.order.id) { viewModel.ensurePhotosLoaded() }
             OrderDetailMapLayout(
                 order = s.order,
+                markets = markets,
                 photosState = photosState,
                 showCancel = isCancellable,
                 showReportIssue = canReportIssue,
@@ -418,6 +421,7 @@ fun OrderDetailScreen(
 @Composable
 private fun OrderDetailMapLayout(
     order: OrderDetailDto,
+    markets: MarketState,
     photosState: PhotosUiState,
     showCancel: Boolean,
     showReportIssue: Boolean,
@@ -497,6 +501,7 @@ private fun OrderDetailMapLayout(
     ) {
         OrderDetailSheetContent(
             order = order,
+            markets = markets,
             status = status,
             scrollState = contentScroll,
             photosState = photosState,
@@ -540,6 +545,7 @@ private fun MapFocusToggle(
 @Composable
 private fun OrderDetailSheetContent(
     order: OrderDetailDto,
+    markets: MarketState = MarketState.Unavailable,
     status: OrderStatus?,
     scrollState: ScrollState,
     photosState: PhotosUiState,
@@ -644,6 +650,11 @@ private fun OrderDetailSheetContent(
             // Confirmation code and price. Everything that identifies the order is in the pinned
             // header above; this carries only what the header has no room for.
             OrderFactsStrip(order = order)
+            Text(
+                text = orderMarketLabel(order.countryId, order.currency?.code, markets),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
 
             // Sits right under the hero so it's the first thing the customer
             // sees after tapping the recurring-scheduled push.

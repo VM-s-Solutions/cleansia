@@ -1370,4 +1370,6 @@
     <string name="order_review_item_in_package">v balíku %1$s</string>
     <string name="order_review_rate_item_star">Dať službe %1$s %2$d hviezdičiek</string>
     <string name="error_dispute_line_not_on_order">Jedna z vybraných služieb na tej objednávke nie je. Otvorte formulár znova a skúste to ešte raz.</string>
+    <string name="order_market_unknown">Trh nie je k dispozícii</string>
+    <string name="order_market_label">%1$s · %2$s</string>
 </resources>

@@ -15,6 +15,7 @@ import cz.cleansia.customer.core.orders.CancellationFeePreviewDto
 import cz.cleansia.customer.core.orders.ConfirmRecurringOrderResponse
 import cz.cleansia.customer.core.orders.OrderDetailDto
 import cz.cleansia.customer.core.orders.OrderPhotosResponse
+import cz.cleansia.customer.core.market.MarketRepository
 import cz.cleansia.customer.core.orders.OrderRepository
 import cz.cleansia.customer.core.orders.ReviewLineScoreRequest
 import cz.cleansia.customer.core.orders.ReviewTag
@@ -94,12 +95,15 @@ sealed interface CancellationPreviewUiState {
 @HiltViewModel
 class OrderDetailViewModel @Inject constructor(
     private val orderRepository: OrderRepository,
+    private val marketRepository: MarketRepository,
     private val snackbar: SnackbarController,
     @ApplicationContext private val appContext: Context,
     savedStateHandle: SavedStateHandle,
     private val membershipRepository: MembershipRepository,
     orderEventBus: OrderEventBus,
 ) : ViewModel() {
+
+    val markets = marketRepository.state
 
     /** Captured once in init so downstream calls (cancel, refresh) don't reread the handle. */
     private val orderId: String? = savedStateHandle.get<String>("orderId")
@@ -198,6 +202,7 @@ class OrderDetailViewModel @Inject constructor(
     val confirmResult: SharedFlow<ConfirmRecurringOrderResponse> = _confirmResult.asSharedFlow()
 
     init {
+        viewModelScope.launch { marketRepository.ensureLoaded() }
         load()
         viewModelScope.launch {
             if (membershipRepository.staleness.isStale()) membershipRepository.refresh()

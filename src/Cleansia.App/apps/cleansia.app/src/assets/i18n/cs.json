@@ -1059,7 +1059,9 @@
       "rooms_few": "{{count}} pokoje",
       "rooms_many": "{{count}} pokojů",
       "rooms_other": "{{count}} pokojů",
-      "filter_empty": "Tomuto filtru neodpovídá žádná objednávka."
+      "filter_empty": "Tomuto filtru neodpovídá žádná objednávka.",
+      "market_unknown": "Trh není k dispozici",
+      "market_label": "{{country}} · {{currency}}"
     },
     "order_detail": {
       "order": "Objednávka",
@@ -1138,7 +1140,8 @@
       "action_report": "Něco nebylo v pořádku",
       "track_live": "Sledovat živě",
       "cancellation_note": "Zrušit zdarma šlo do {{hours}} hodin před úklidem.",
-      "estimated_hours": "odhadem {{hours}} h"
+      "estimated_hours": "odhadem {{hours}} h",
+      "label_market": "Trh"
     },
     "checkout": {
       "success": {

@@ -145,6 +145,7 @@ class OrderWireTest {
     @Test
     fun everyListRowMoneyFieldArrivesWithItsLiteralValue() = runTest {
         val row = listed(CAPTURED_PAGE).data.first()
+        assertEquals("country-cz", row.countryId)
 
         assertEquals(4380.00, row.totalPrice, 0.0)
         assertEquals(3650.00, row.originalSubtotal, 0.0)
@@ -161,6 +162,7 @@ class OrderWireTest {
     @Test
     fun everyDetailMoneyFieldArrivesWithItsLiteralValue() = runTest {
         val order = detailed(CAPTURED_ORDER)
+        assertEquals("country-sk", order.countryId)
 
         assertEquals(4380.00, order.totalPrice, 0.0)
         assertEquals(3650.00, order.originalSubtotal, 0.0)
@@ -425,6 +427,7 @@ class OrderWireTest {
               "customerName": "Ada Lovelace",
               "customerEmail": "ada@example.com",
               "customerPhone": "+420600000000",
+              "countryId": "country-cz",
               "customerAddress": "Vodickova 1, Praha 1",
               "customerAddressApproximate": "Praha 1, 110 xx",
               "displayOrderNumber": "CL-2026-0${id.last()}",
@@ -489,6 +492,7 @@ class OrderWireTest {
         val CAPTURED_ORDER = """
             {
               "id": "o-1",
+              "countryId": "country-sk",
               "displayOrderNumber": "CL-2026-0042",
               "customerName": "Ada Lovelace",
               "customerEmail": "ada@example.com",
@@ -606,6 +610,7 @@ class OrderWireTest {
 
         val LIST_ITEM_SPEC_PROPERTIES = setOf(
             "id",
+            "countryId",
             "customerName",
             "customerEmail",
             "customerPhone",

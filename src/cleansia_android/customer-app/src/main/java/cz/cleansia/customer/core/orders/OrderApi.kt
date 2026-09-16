@@ -147,6 +147,7 @@ private fun GenPagedDataOfOrderListItem?.toAppDto(): OrderListResponseDto {
  */
 private fun GenOrderListItem.toAppDtoOrRefuse(): OrderListItemDto = OrderListItemDto(
     id = id.required("id"),
+    countryId = countryId,
     customerName = customerName,
     customerEmail = customerEmail,
     customerPhone = customerPhone,
@@ -192,6 +193,7 @@ private fun GenOrderItem?.toAppDto(): OrderDetailDto {
     val order = required("OrderItem")
     return OrderDetailDto(
         id = order.id.required("id"),
+        countryId = order.countryId,
         displayOrderNumber = order.displayOrderNumber,
         customerName = order.customerName,
         customerEmail = order.customerEmail,

@@ -713,7 +713,14 @@
         "success": "Spis incidentu byl stažen a zaznamenán",
         "error": "Spis incidentu se nepodařilo sestavit",
         "no_subject": "Na časové ose této objednávky není žádný zákazník — sestavte spis ze stránky zákazníka."
-      }
+      },
+      "customer_account": "Zákaznický účet",
+      "customer_of_company": "Zákazník společnosti {{company}}",
+      "customer_account_read_only": "Tento zákazník patří jiné společnosti. Údaje účtu jsou pouze pro čtení.",
+      "open_customer": "Otevřít zákazníka",
+      "customer_account_empty": "K této objednávce není přiřazen zákaznický účet.",
+      "customer_account_error": "Zákaznický účet se nepodařilo načíst.",
+      "load_error": "Objednávku se nepodařilo načíst."
     },
     "invoice_management": {
       "title": "Správa faktur",

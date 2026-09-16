@@ -9,11 +9,12 @@ import {
   AdminGdprClient,
   CustomerAuditClient,
   OrderItem,
+  UserItem,
 } from '@cleansia/admin-services';
 import { CleansiaButtonComponent } from '@cleansia/components';
 import { PermissionService, SnackbarService } from '@cleansia/services';
 import { TranslateModule } from '@ngx-translate/core';
-import { of } from 'rxjs';
+import { of, Subject, throwError } from 'rxjs';
 import {
   AdminOrderOpsComponent,
   AdminOrderPhotosComponent,
@@ -41,19 +42,21 @@ class OrderPhotosStub {
 
 describe('OrderDetailComponent — incident file', () => {
   let details: jest.Mock;
+  let customer: jest.Mock;
   let grantedPolicies: Set<string>;
 
   beforeEach(async () => {
     details = jest.fn().mockReturnValue(of(OrderItem.fromJS({ id: 'order-1' })));
-    grantedPolicies = new Set<string>(['CanAdminExportUserData', 'CanViewAuditLog']);
+    customer = jest.fn().mockReturnValue(of(null));
+    grantedPolicies = new Set<string>(['CanAdminExportUserData', 'CanViewAuditLog', 'CanViewOrderCustomer']);
 
     await TestBed.configureTestingModule({
       imports: [OrderDetailComponent, TranslateModule.forRoot()],
       providers: [
-        { provide: AdminClient, useValue: { adminOrderClient: { details } } },
+        { provide: AdminClient, useValue: { adminOrderClient: { details, customer } } },
         { provide: AdminGdprClient, useValue: { incidentFile: jest.fn() } },
         { provide: CustomerAuditClient, useValue: { timeline: jest.fn() } },
-        { provide: SnackbarService, useValue: { showSuccess: jest.fn(), showError: jest.fn() } },
+        { provide: SnackbarService, useValue: { showSuccess: jest.fn(), showError: jest.fn(), showApiError: jest.fn() } },
         {
           provide: PermissionService,
           useValue: { hasPolicy: (p: string) => grantedPolicies.has(p) },
@@ -128,4 +131,49 @@ describe('OrderDetailComponent — incident file', () => {
 
     expect(incidentButton(fixture)).toBeNull();
   });
+  it('shows foreign customer fields read-only without an account navigation button', () => {
+    details.mockReturnValue(of(OrderItem.fromJS({ id: 'order-1', customerCompany: 'Cleansia CZ', customerName: 'Order snapshot' })));
+    customer.mockReturnValue(of(UserItem.fromJS({ id: 'foreign', email: 'must-not-render@example.test', lastName: 'MustNotRender', customerOfAnotherCompany: {
+      id: 'foreign', firstName: 'Alice', maskedEmail: 'a***@mail.test', companyName: 'Cleansia CZ',
+    } })));
+    const fixture = render();
+    const panel = fixture.debugElement.query(By.css('.cleansia-order-detail__customer-account'));
+    expect(panel.nativeElement.textContent).toContain('Alice');
+    expect(panel.nativeElement.textContent).toContain('a***@mail.test');
+    expect(panel.nativeElement.textContent).not.toContain('must-not-render');
+    expect(panel.nativeElement.textContent).not.toContain('MustNotRender');
+    expect(fixture.debugElement.query(By.css('.cleansia-order-detail__customer-link'))).toBeNull();
+    expect(fixture.nativeElement.textContent).toContain('Order snapshot');
+  });
+
+  it('offers the same-company customer button and navigates with its proven id', () => {
+    customer.mockReturnValue(of(UserItem.fromJS({ id: 'same', firstName: 'Alice' })));
+    const fixture = render();
+    const button = fixture.debugElement.query(By.css('.cleansia-order-detail__customer-link'));
+    expect(button).toBeTruthy();
+    (button.componentInstance as CleansiaButtonComponent).onClick.emit(new MouseEvent('click'));
+    expect(TestBed.inject(Router).navigate).toHaveBeenCalledWith(['customers', 'same']);
+  });
+
+  it('renders loading, empty and failure states for the account independently of the order', () => {
+    const pending = new Subject<UserItem>();
+    customer.mockReturnValue(pending);
+    const fixture = render();
+    expect(fixture.debugElement.query(By.css('.cleansia-order-detail__customer-account cleansia-loader'))).toBeTruthy();
+    pending.complete();
+    fixture.detectChanges();
+    expect(fixture.nativeElement.textContent).toContain('pages.order_detail.customer_account_empty');
+    customer.mockReturnValue(throwError(() => new Error('offline')));
+    fixture.debugElement.injector.get(OrderDetailFacade).loadOrderDetail('order-1');
+    fixture.detectChanges();
+    expect(fixture.nativeElement.textContent).toContain('pages.order_detail.customer_account_error');
+  });
+
+  it('hides the panel and avoids its request without the customer policy', () => {
+    grantedPolicies.delete('CanViewOrderCustomer');
+    const fixture = render();
+    expect(fixture.debugElement.query(By.css('.cleansia-order-detail__customer-account'))).toBeNull();
+    expect(customer).not.toHaveBeenCalled();
+  });
+
 });

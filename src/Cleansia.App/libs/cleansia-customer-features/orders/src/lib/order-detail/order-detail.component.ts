@@ -22,6 +22,7 @@ import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { SkeletonModule } from 'primeng/skeleton';
 import { OrderPreferredOfferComponent } from './components/order-preferred-offer.component';
 import { OrderDetailFacade } from './order-detail.facade';
+import { OrderMarketFacade } from '../order-market.facade';
 import {
   buildReviewLineOptions,
   ReviewLineOption,
@@ -73,11 +74,12 @@ interface EntryDetail {
     OrderStatusLabelPipe,
     OrderPreferredOfferComponent,
   ],
-  providers: [OrderDetailFacade, OrderPreferredOfferFacade],
+  providers: [OrderDetailFacade, OrderPreferredOfferFacade, OrderMarketFacade],
   templateUrl: './order-detail.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class OrderDetailComponent implements OnInit {
+  protected readonly market = inject(OrderMarketFacade);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly translate = inject(TranslateService);

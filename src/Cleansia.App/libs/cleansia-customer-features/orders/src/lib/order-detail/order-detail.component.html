@@ -203,6 +203,14 @@
           </div>
         </div>
 
+        <div class="order-detail__fact">
+          <i class="pi pi-globe"></i>
+          <div>
+            <span class="order-detail__fact-label">{{ 'pages.order_detail.label_market' | translate }}</span>
+            <div class="order-detail__fact-value">{{ market.label(order()) }}</div>
+          </div>
+        </div>
+
         @if (entry(); as entry) {
         <div class="order-detail__fact">
           <i class="pi pi-sign-in"></i>

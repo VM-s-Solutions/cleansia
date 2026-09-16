@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import cz.cleansia.core.network.ApiError
 import cz.cleansia.core.snackbar.SnackbarController
 import cz.cleansia.customer.core.orders.OrderListItemDto
+import cz.cleansia.customer.core.market.MarketRepository
 import cz.cleansia.customer.core.orders.OrderRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
@@ -15,14 +16,21 @@ import kotlinx.coroutines.launch
 @HiltViewModel
 class OrdersTabViewModel @Inject constructor(
     private val orderRepository: OrderRepository,
+    private val marketRepository: MarketRepository,
     private val snackbar: SnackbarController,
 ) : ViewModel() {
+
+    val markets = marketRepository.state
 
     val orders: StateFlow<List<OrderListItemDto>> = orderRepository.orders
     val loading: StateFlow<Boolean> = orderRepository.loading
     val loadingMore: StateFlow<Boolean> = orderRepository.loadingMore
     val loaded: StateFlow<Boolean> = orderRepository.loaded
     val totalRecords: StateFlow<Int> = orderRepository.totalRecords
+
+    init {
+        viewModelScope.launch { marketRepository.ensureLoaded() }
+    }
 
     fun refresh() {
         viewModelScope.launch {

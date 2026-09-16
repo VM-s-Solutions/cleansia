@@ -713,7 +713,14 @@
         "success": "The incident file was downloaded and recorded",
         "error": "The incident file could not be built",
         "no_subject": "No customer is on this order's trail — build the file from the customer's page."
-      }
+      },
+      "customer_account": "Customer account",
+      "customer_of_company": "Customer of {{company}}",
+      "customer_account_read_only": "This customer belongs to another company. Account details are read-only.",
+      "open_customer": "Open customer",
+      "customer_account_empty": "No customer account is linked to this order.",
+      "customer_account_error": "Could not load the customer account.",
+      "load_error": "Could not load the order."
     },
     "invoice_management": {
       "title": "Invoice Management",

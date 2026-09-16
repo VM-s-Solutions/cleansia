@@ -33,6 +33,7 @@ data class OrderListResponseDto(
 @Serializable
 data class OrderListItemDto(
     val id: String,
+    val countryId: String? = null,
     val customerName: String? = null,
     val customerEmail: String? = null,
     val customerPhone: String? = null,
@@ -87,6 +88,7 @@ data class OrderListItemDto(
 @Serializable
 data class OrderDetailDto(
     val id: String,
+    val countryId: String? = null,
     val displayOrderNumber: String? = null,
     val customerName: String? = null,
     val customerEmail: String? = null,

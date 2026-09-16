@@ -881,7 +881,11 @@ describe('error-contract parity (customer app, EP-1/EP-2/DA-7)', () => {
         'UserController -> Users/ChangePassword.cs -> OperatorTenantScopeBehavior',
         'UserController -> Users/RequestPasswordChange.cs -> OperatorTenantScopeBehavior',
       ];
-      expect([...(surface.keys.get('tenant.not_found') ?? [])].sort()).toEqual(scoped);
+      expect([...(surface.keys.get('tenant.not_found') ?? [])].sort()).toEqual([
+        ...scoped,
+        'OrderController -> Orders/CreateOrder.cs',
+        'PaymentController -> Orders/CreateOrder.cs',
+      ].sort());
       expect(
         [...(surface.keys.get('country.not_serviced') ?? [])]
           .filter((provenance) => provenance.endsWith('OperatorTenantScopeBehavior'))

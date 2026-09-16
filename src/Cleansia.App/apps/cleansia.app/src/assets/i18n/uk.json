@@ -1059,7 +1059,9 @@
       "rooms_few": "{{count}} кімнати",
       "rooms_many": "{{count}} кімнат",
       "rooms_other": "{{count}} кімнат",
-      "filter_empty": "Під цей фільтр не підходить жодне замовлення."
+      "filter_empty": "Під цей фільтр не підходить жодне замовлення.",
+      "market_unknown": "Ринок недоступний",
+      "market_label": "{{country}} · {{currency}}"
     },
     "order_detail": {
       "order": "Замовлення",
@@ -1138,7 +1140,8 @@
       "action_report": "Щось пішло не так",
       "track_live": "Стежити наживо",
       "cancellation_note": "Безкоштовне скасування діяло за {{hours}} год до прибирання.",
-      "estimated_hours": "приблизно {{hours}} год"
+      "estimated_hours": "приблизно {{hours}} год",
+      "label_market": "Ринок"
     },
     "checkout": {
       "success": {

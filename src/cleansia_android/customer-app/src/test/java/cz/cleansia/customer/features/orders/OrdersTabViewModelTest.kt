@@ -1,5 +1,7 @@
 package cz.cleansia.customer.features.orders
 
+import cz.cleansia.customer.core.market.MarketRepository
+import cz.cleansia.customer.core.market.MarketState
 import cz.cleansia.core.network.ApiError
 import cz.cleansia.core.network.ApiResult
 import cz.cleansia.core.snackbar.SnackbarController
@@ -27,6 +29,11 @@ class OrdersTabViewModelTest {
     val mainRule = MainDispatcherRule()
 
     private lateinit var orderRepository: OrderRepository
+    private val markets = MutableStateFlow<MarketState>(MarketState.Unavailable)
+    private val marketRepository = mockk<MarketRepository> {
+        every { state } returns markets
+        coEvery { ensureLoaded() } answers { markets.value }
+    }
     private lateinit var snackbar: SnackbarController
 
     private val orders = MutableStateFlow<List<OrderListItemDto>>(emptyList())
@@ -46,7 +53,7 @@ class OrdersTabViewModelTest {
         every { orderRepository.totalRecords } returns totalRecords
     }
 
-    private fun viewModel() = OrdersTabViewModel(orderRepository, snackbar)
+    private fun viewModel() = OrdersTabViewModel(orderRepository, marketRepository, snackbar)
 
     @Test
     fun `the exposed flows mirror the repository`() = runTest {

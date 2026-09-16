@@ -20,6 +20,7 @@ import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { SkeletonModule } from 'primeng/skeleton';
 import { PaginatorModule, PaginatorState } from 'primeng/paginator';
+import { OrderMarketFacade } from '../order-market.facade';
 
 @Component({
   selector: 'cleansia-customer-orders',
@@ -35,9 +36,11 @@ import { PaginatorModule, PaginatorState } from 'primeng/paginator';
     OrderStatusLabelPipe,
   ],
   templateUrl: './orders.component.html',
+  providers: [OrderMarketFacade],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class OrdersComponent implements OnInit {
+  protected readonly market = inject(OrderMarketFacade);
   private readonly store = inject(Store);
   readonly router = inject(Router);
   private readonly translate = inject(TranslateService);

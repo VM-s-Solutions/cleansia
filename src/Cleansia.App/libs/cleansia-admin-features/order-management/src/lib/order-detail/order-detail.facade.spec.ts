@@ -1,4 +1,5 @@
 import { TestBed } from '@angular/core/testing';
+import { Router } from '@angular/router';
 import {
   AdminClient,
   AdminGdprClient,
@@ -8,10 +9,11 @@ import {
   PagedDataOfTimelineEntryDto,
   TimelineEntryDto,
   TimelineSource,
+  UserItem,
 } from '@cleansia/admin-services';
-import { FileDownloadService, SnackbarService } from '@cleansia/services';
+import { FileDownloadService, PermissionService, Policy, PhysicalPolicy, resolvePhysicalPolicy, SnackbarService } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
-import { of, throwError } from 'rxjs';
+import { of, Subject, throwError } from 'rxjs';
 import { OrderDetailFacade } from './order-detail.facade';
 
 describe('OrderDetailFacade', () => {
@@ -21,6 +23,8 @@ describe('OrderDetailFacade', () => {
     TestBed.configureTestingModule({
       providers: [
         OrderDetailFacade,
+        { provide: Router, useValue: { navigate: jest.fn() } },
+        { provide: PermissionService, useValue: { hasPolicy: () => true } },
         { provide: AdminClient, useValue: { adminOrderClient: {} } },
         { provide: SnackbarService, useValue: { showSuccess: jest.fn(), showError: jest.fn() } },
         { provide: TranslateService, useValue: { instant: (k: string) => k } },
@@ -117,6 +121,8 @@ describe('OrderDetailFacade — incident file', () => {
     TestBed.configureTestingModule({
       providers: [
         OrderDetailFacade,
+        { provide: Router, useValue: { navigate: jest.fn() } },
+        { provide: PermissionService, useValue: { hasPolicy: () => true } },
         { provide: AdminClient, useValue: { adminOrderClient: {} } },
         { provide: SnackbarService, useValue: snackbar },
         { provide: TranslateService, useValue: { instant: (k: string) => k } },
@@ -262,5 +268,110 @@ describe('OrderDetailFacade — incident file', () => {
     facade.incidentFileExporting.set(true);
     facade.exportIncidentFile();
     expect(auditClient.timeline).not.toHaveBeenCalled();
+  });
+});
+
+describe('OrderDetailFacade — customer account', () => {
+  let facade: OrderDetailFacade;
+  let details: jest.Mock;
+  let customer: jest.Mock;
+  let navigate: jest.Mock;
+  let hasPolicy: jest.Mock;
+
+  beforeEach(() => {
+    details = jest.fn().mockImplementation((id: string) => of(OrderItem.fromJS({ id })));
+    customer = jest.fn().mockReturnValue(of(null));
+    navigate = jest.fn();
+    hasPolicy = jest.fn().mockReturnValue(true);
+    TestBed.configureTestingModule({ providers: [
+      OrderDetailFacade,
+      { provide: AdminClient, useValue: { adminOrderClient: { details, customer } } },
+      { provide: AdminGdprClient, useValue: {} },
+      { provide: CustomerAuditClient, useValue: { timeline: jest.fn() } },
+      { provide: SnackbarService, useValue: { showApiError: jest.fn() } },
+      { provide: TranslateService, useValue: { instant: (key: string) => key } },
+      { provide: Router, useValue: { navigate } },
+      { provide: PermissionService, useValue: { hasPolicy } },
+    ] });
+    facade = TestBed.inject(OrderDetailFacade);
+  });
+
+  it('reads only the order-keyed endpoint and permits navigation only for a same-company customer', () => {
+    customer.mockReturnValue(of(UserItem.fromJS({ id: 'same' })));
+    facade.loadOrderDetail('order-1');
+    expect(customer).toHaveBeenCalledWith('order-1');
+    facade.openCustomer();
+    expect(navigate).toHaveBeenCalledWith(['customers', 'same']);
+    customer.mockReturnValue(of(UserItem.fromJS({ id: 'foreign', customerOfAnotherCompany: { id: 'foreign', firstName: 'First', maskedEmail: 'f***@mail.test', companyName: 'Cleansia CZ' } })));
+    facade.loadOrderDetail('order-2');
+    expect(facade.customerId()).toBeUndefined();
+    facade.openCustomer();
+    expect(navigate).toHaveBeenCalledTimes(1);
+    expect(TestBed.inject(CustomerAuditClient).timeline).not.toHaveBeenCalled();
+  });
+
+  it('clears and cancels old customer requests before a different order can be exposed', () => {
+    const oldCustomer = new Subject<UserItem>();
+    const newCustomer = new Subject<UserItem>();
+    customer.mockReturnValueOnce(oldCustomer).mockReturnValueOnce(newCustomer);
+    facade.loadOrderDetail('old');
+    expect(facade.customerLoading()).toBe(true);
+    facade.loadOrderDetail('new');
+    expect(oldCustomer.observed).toBe(false);
+    expect(facade.customer()).toBeNull();
+    oldCustomer.next(UserItem.fromJS({ id: 'old-customer' }));
+    expect(facade.customer()).toBeNull();
+    newCustomer.next(UserItem.fromJS({ id: 'new-customer' }));
+    newCustomer.complete();
+    expect(facade.customerId()).toBe('new-customer');
+    expect(facade.customerLoading()).toBe(false);
+  });
+
+  it('cancels old detail responses and clears prior customer data while reloading', () => {
+    customer.mockReturnValue(of(UserItem.fromJS({ id: 'first' })));
+    facade.loadOrderDetail('first');
+    const pending = new Subject<OrderItem>();
+    details.mockReturnValueOnce(pending);
+    facade.loadOrderDetail('old');
+    expect(facade.customer()).toBeNull();
+    facade.loadOrderDetail('new');
+    expect(pending.observed).toBe(false);
+    expect(customer).not.toHaveBeenCalledWith('old');
+    expect(facade.order()?.id).toBe('new');
+  });
+
+  it('distinguishes empty accounts from failures and preserves the order on account failure', () => {
+    facade.loadOrderDetail('guest');
+    expect(facade.customer()).toBeNull();
+    expect(facade.customerError()).toBe(false);
+    customer.mockReturnValue(throwError(() => new Error('offline')));
+    facade.loadOrderDetail('failed');
+    expect(facade.customerError()).toBe(true);
+    expect(facade.customerLoading()).toBe(false);
+    expect(facade.order()?.id).toBe('failed');
+    customer.mockReturnValue(of(null));
+    facade.loadOrderDetail('retry');
+    expect(facade.customerError()).toBe(false);
+  });
+
+  it('treats a guest account ProblemDetails response as empty without a toast', () => {
+    details.mockReturnValue(of(OrderItem.fromJS({ id: 'guest', customerName: 'Guest', customerEmail: 'guest@example.test' })));
+    customer.mockReturnValue(throwError(() => ({
+      status: 400, title: 'Bad Request', detail: 'A validation problem occurred.',
+      errors: { OrderNotFound: 'order.not_found' },
+    })));
+    facade.loadOrderDetail('guest');
+    expect(facade.customer()).toBeNull();
+    expect(facade.customerError()).toBe(false);
+    expect(facade.order()?.customerEmail).toBe('guest@example.test');
+    expect(TestBed.inject(SnackbarService).showApiError).not.toHaveBeenCalled();
+  });
+
+  it('does not request accounts without the admin-only customer policy', () => {
+    expect(resolvePhysicalPolicy(Policy.CanViewOrderCustomer)).toBe(PhysicalPolicy.AdminOnly);
+    hasPolicy.mockReturnValue(false);
+    facade.loadOrderDetail('order');
+    expect(customer).not.toHaveBeenCalled();
+    expect(facade.customerLoading()).toBe(false);
   });
 });

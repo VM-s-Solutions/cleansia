@@ -187,6 +187,9 @@ public class PayPeriodBackgroundService : IPayPeriodBackgroundService
     public async Task ClosePeriodAsync(PayPeriod period, string closeNote, bool openNext, CancellationToken cancellationToken)
     {
         period.Close("System", closeNote);
+        // The successor check below reads the store, so the close has to be there first: a period
+        // with nothing to invoice has no invoice commit to carry it, and was read back as still Open.
+        await _unitOfWork.CommitAsync(cancellationToken);
         _logger.LogInformation(
             "Closed pay period {PeriodId} ({StartDate} - {EndDate})",
             period.Id,
@@ -456,11 +459,10 @@ public class PayPeriodBackgroundService : IPayPeriodBackgroundService
         }
         catch (DbUpdateException ex) when (DbConstraintViolation.IsUniqueViolation(ex))
         {
-            // Rollback() is context-global — it sets EVERY tracked entry to Unchanged, including
-            // period.Close() if no earlier employee in this period has already committed. So on the
-            // FIRST invoicing employee of a period this also reverts the close: the period stays Open,
-            // is re-selected on the next tick, and its period-closed emails go out a second time. No
-            // duplicate invoice results (the already-has-one guard above skips it) and no money moves.
+            // Rollback() is context-global — it sets EVERY tracked entry to Unchanged. The close is
+            // already durable, so what it discards is this invoice row and its pay-row assignments:
+            // the rows stay uninvoiced in a Closed period, the fact the lifecycle page shows and the
+            // admin settles from the pay-period tools. No money moves.
             _unitOfWork.Rollback();
 
             _logger.LogError(

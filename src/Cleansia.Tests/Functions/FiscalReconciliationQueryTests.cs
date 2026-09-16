@@ -218,6 +218,33 @@ public sealed class FiscalReconciliationQueryTests : IDisposable
         Assert.Empty(due);
     }
 
+    // ── A cancelled order owes no receipt: nothing was collected on a cash one, and a paid card one
+    // is refunded rather than receipted — neither arm sweeps it ──
+
+    [Fact]
+    public async Task Receipt_Recon_Skips_Cancelled_Orders_Without_A_Receipt()
+    {
+        await EnsureSchemaAsync();
+        var stale = DateTimeOffset.UtcNow.AddMinutes(-60);
+
+        await using (var seed = NewContext())
+        {
+            var cancelledCash = NewOrder("01HZX9N6M7Q8R9S0T1V2W3X41A", PaymentType.Cash, PaymentStatus.Pending, stale);
+            cancelledCash.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.Cancelled, cancelledCash));
+            var cancelledPaidCard = NewOrder("01HZX9N6M7Q8R9S0T1V2W3X41B", PaymentType.Card, PaymentStatus.Paid, stale);
+            cancelledPaidCard.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.Cancelled, cancelledPaidCard));
+            seed.AddRange(cancelledCash, cancelledPaidCard);
+            await seed.CommitAsync(CancellationToken.None);
+        }
+
+        await using var ctx = NewContext();
+        var repo = new OrderRepository(ctx);
+        var cutoff = DateTime.UtcNow.AddMinutes(-15);
+        var due = await repo.GetReceiptReconciliationCandidatesAsync(cutoff, take: 50, CancellationToken.None);
+
+        Assert.Empty(due);
+    }
+
     // ── OR-shape regression — the sweep is now a UNION of a Cash arm and a Paid arm; an order that
     // is BOTH Cash and Paid must appear exactly once ──
 

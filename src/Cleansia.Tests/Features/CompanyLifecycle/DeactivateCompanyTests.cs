@@ -90,6 +90,18 @@ public sealed class DeactivateCompanyTests
     }
 
     [Fact]
+    public async Task A_Company_Missing_From_The_Registry_Is_Refused_As_Not_Found_Not_As_Archived()
+    {
+        _tenants.Setup(r => r.GetByIdAsync(TenantId, It.IsAny<CancellationToken>())).ReturnsAsync((Tenant?)null);
+
+        var result = await Validator().ValidateAsync(new DeactivateCompany.Command());
+
+        var error = Assert.Single(result.Errors);
+        Assert.Equal(BusinessErrorMessage.TenantNotFound, error.ErrorMessage);
+        Assert.Equal(DeactivateCompany.ErrorCode, error.PropertyName);
+    }
+
+    [Fact]
     public async Task The_Company_Holding_The_Default_Market_Is_Refused()
     {
         Company();

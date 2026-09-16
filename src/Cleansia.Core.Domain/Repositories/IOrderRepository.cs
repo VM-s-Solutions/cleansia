@@ -246,7 +246,7 @@ public interface IOrderRepository : IRepository<Order, string>
         string employeeId, CancellationToken cancellationToken);
 
     /// <summary>
-    /// ADR-0002 D3.4 + ADR-0004 C-B — receipt-eligible orders committed before
+    /// ADR-0002 D3.4 + ADR-0004 C-B — receipt-eligible, not cancelled orders committed before
     /// <paramref name="olderThanUtc"/> whose receipt is missing OR carries no fiscal code. Batch-bounded
     /// by <paramref name="take"/>, oldest first.
     ///

@@ -445,6 +445,9 @@ public class OrderRepository(CleansiaDbContext context) : BaseRepository<Order>(
         // looks across tenants too, or a stale order whose receipt is registered reads as unrealized.
         var registeredReceipts = Context.Set<OrderReceipt>().IgnoreQueryFilters();
 
+        // A cancelled order owes no receipt — nothing was collected on a cash one, and a paid card one
+        // is refunded rather than receipted — so neither arm sweeps it.
+        //
         // The single-query `(Cash OR Paid)` shape forced a seq scan 288x/day — the OR defeats both
         // (PaymentType|PaymentStatus, CreatedOn) composites. Split the eligibility into one
         // index-served, CreatedOn-ordered, take-bounded arm per composite and UNION them: the global
@@ -456,6 +459,7 @@ public class OrderRepository(CleansiaDbContext context) : BaseRepository<Order>(
         var cashArm = GetDbSet()
             .IgnoreQueryFilters()
             .Where(o => o.PaymentType == PaymentType.Cash
+                && o.CurrentStatus != OrderStatus.Cancelled
                 && o.CreatedOn <= cutoff
                 && !registeredReceipts.Any(r => r.OrderId == o.Id && r.FiscalCode != null))
             .OrderBy(o => o.CreatedOn)
@@ -465,6 +469,7 @@ public class OrderRepository(CleansiaDbContext context) : BaseRepository<Order>(
         var paidArm = GetDbSet()
             .IgnoreQueryFilters()
             .Where(o => o.PaymentStatus == PaymentStatus.Paid
+                && o.CurrentStatus != OrderStatus.Cancelled
                 && o.CreatedOn <= cutoff
                 && !registeredReceipts.Any(r => r.OrderId == o.Id && r.FiscalCode != null))
             .OrderBy(o => o.CreatedOn)

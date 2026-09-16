@@ -43,6 +43,7 @@ public sealed class CompanySettlementReader(CleansiaDbContext context, ITenantPr
         var ordersAwaitingReceipt = await context.Orders
             .CountAsync(
                 o => (o.PaymentType == PaymentType.Cash || o.PaymentStatus == PaymentStatus.Paid)
+                    && o.CurrentStatus != OrderStatus.Cancelled
                     && !receipts.Any(r => r.OrderId == o.Id),
                 cancellationToken);
         var receiptsAwaitingFiscalRegistration = await receipts

@@ -27,6 +27,8 @@ public class ReactivateCompany
         {
             RuleFor(x => x)
                 .Cascade(CascadeMode.Stop)
+                .MustAsync(async (_, ct) => await CompanyAsync(ct) is not null)
+                .WithMessage(BusinessErrorMessage.TenantNotFound)
                 .MustAsync(async (_, ct) => await CompanyAsync(ct) is { IsFrozen: false })
                 .WithMessage(BusinessErrorMessage.CompanyArchived)
                 .MustAsync(async (_, ct) => await CompanyAsync(ct) is { IsDeactivated: true })

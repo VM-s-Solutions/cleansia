@@ -135,7 +135,9 @@ public sealed class CompanySettlementReaderTests(PostgresContainerFixture fixtur
         var cardPaidWithReceipt = CardPaidOrder($"{key}-card-receipt", LatestCardClean.AddDays(-10));
         var cashWithReceipt = OpenOrder($"{key}-cash-receipt", new DateTime(2026, 9, 1, 9, 0, 0, DateTimeKind.Utc));
         cashWithReceipt.AddOrderStatus(Track(OrderStatus.Cancelled, cashWithReceipt, DateTimeOffset.UtcNow));
-        ctx.Orders.AddRange(openAfterCutoff, openBeforeCutoff, completedAwaitingPay, completedPaid, cardPaidNoReceipt, cardPaidWithReceipt, cashWithReceipt);
+        var cancelledCashNoReceipt = OpenOrder($"{key}-cash-cancelled", new DateTime(2026, 9, 2, 9, 0, 0, DateTimeKind.Utc));
+        cancelledCashNoReceipt.AddOrderStatus(Track(OrderStatus.Cancelled, cancelledCashNoReceipt, DateTimeOffset.UtcNow));
+        ctx.Orders.AddRange(openAfterCutoff, openBeforeCutoff, completedAwaitingPay, completedPaid, cardPaidNoReceipt, cardPaidWithReceipt, cashWithReceipt, cancelledCashNoReceipt);
 
         var registered = OrderReceipt.Create(cashWithReceipt.Id, $"R-{key}-1", "r1.pdf", "receipts/r1.pdf", LanguageId);
         registered.SetFiscalData("eet", $"FIK-{key}", DateTime.UtcNow);
@@ -262,7 +264,8 @@ public sealed class CompanySettlementReaderTests(PostgresContainerFixture fixtur
         Assert.Equal(1, facts.PendingRefunds);
         Assert.Equal(1, facts.OrdersAwaitingPay);
         // The card-paid order without a receipt, the awaiting-pay and pay-done cash orders (owed at
-        // creation) and the two open cash orders; the receipted ones are settled.
+        // creation) and the two open cash orders; the receipted ones are settled, and the cancelled
+        // cash order without one owes none — nothing was collected on it.
         Assert.Equal(5, facts.OrdersAwaitingReceipt);
         Assert.Equal(1, facts.ReceiptsAwaitingFiscalRegistration);
         Assert.Equal(1, facts.OpenPayPeriods);

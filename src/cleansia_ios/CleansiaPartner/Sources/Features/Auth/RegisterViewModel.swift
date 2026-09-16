@@ -57,20 +57,17 @@ final class RegisterViewModel: ViewModel {
     private let marketClient: PartnerMarketClient
     private let settings: AppSettingsStore
     private let snackbar: SnackbarController
-    private let signupConsent: SignupConsentRecording
 
     init(
         client: RegistrationAuthClient,
         marketClient: PartnerMarketClient,
         settings: AppSettingsStore,
-        snackbar: SnackbarController,
-        signupConsent: SignupConsentRecording
+        snackbar: SnackbarController
     ) {
         self.client = client
         self.marketClient = marketClient
         self.settings = settings
         self.snackbar = snackbar
-        self.signupConsent = signupConsent
     }
 
     func onFirstNameChange(_ value: String) {
@@ -131,15 +128,12 @@ final class RegisterViewModel: ViewModel {
             lastName: form.lastName,
             language: settings.languageTag,
             countryId: market.countryId,
-            // The server accepts the tick here, but the partner app still parks it for the first
-            // session while the employee agreement text is open (ADR-0041), so none is sent.
-            termsAccepted: nil
+            termsAccepted: form.acceptTerms
         )
         registerState = .idle
 
         switch result {
         case .success:
-            await signupConsent.recordSignupTick(email: form.email, accepted: form.acceptTerms)
             registerSuccess.send(form.email)
         case let .failure(error):
             snackbar.showApiError(error)

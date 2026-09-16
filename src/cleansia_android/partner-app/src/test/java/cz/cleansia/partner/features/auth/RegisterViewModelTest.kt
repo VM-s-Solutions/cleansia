@@ -1,7 +1,6 @@
 package cz.cleansia.partner.features.auth
 
 import android.content.Context
-import cz.cleansia.core.consent.SignupConsentRepository
 import cz.cleansia.core.network.ApiError
 import cz.cleansia.core.network.ApiResult
 import cz.cleansia.core.snackbar.SnackbarController
@@ -46,7 +45,6 @@ class RegisterViewModelTest {
     private lateinit var errorTranslator: ApiErrorTranslator
     private lateinit var appSettingsRepository: AppSettingsRepository
     private lateinit var snackbar: SnackbarController
-    private lateinit var signupConsent: SignupConsentRepository
     private lateinit var marketRepository: MarketRepository
     private lateinit var context: Context
 
@@ -59,7 +57,6 @@ class RegisterViewModelTest {
         errorTranslator = mockk(relaxed = true)
         appSettingsRepository = mockk()
         snackbar = mockk(relaxed = true)
-        signupConsent = mockk(relaxed = true)
         marketRepository = mockk()
         context = mockk()
         every { context.getString(any()) } returns "validation message"
@@ -74,7 +71,6 @@ class RegisterViewModelTest {
         errorTranslator,
         appSettingsRepository,
         snackbar,
-        signupConsent,
         marketRepository,
         context,
     )
@@ -95,7 +91,7 @@ class RegisterViewModelTest {
     @Test
     fun `register sends the resolved device language, not a hardcoded en`() = runTest {
         coEvery { appSettingsRepository.emailLanguageTag() } returns "cs"
-        coEvery { authRepository.register(any(), any(), any(), any(), any(), any()) } returns
+        coEvery { authRepository.register(any(), any(), any(), any(), any(), any(), any()) } returns
             ApiResult.Success(Unit)
 
         val vm = viewModel()
@@ -110,6 +106,7 @@ class RegisterViewModelTest {
                 firstName = "Ada",
                 lastName = "Lovelace",
                 language = "cs",
+                termsAccepted = true,
             )
         }
     }
@@ -121,7 +118,7 @@ class RegisterViewModelTest {
     @Test
     fun `register forwards whatever the resolver returns`() = runTest {
         coEvery { appSettingsRepository.emailLanguageTag() } returns "uk"
-        coEvery { authRepository.register(any(), any(), any(), any(), any(), any()) } returns
+        coEvery { authRepository.register(any(), any(), any(), any(), any(), any(), any()) } returns
             ApiResult.Success(Unit)
 
         val vm = viewModel()
@@ -130,19 +127,19 @@ class RegisterViewModelTest {
         advanceUntilIdle()
 
         coVerify(exactly = 1) {
-            authRepository.register(any(), any(), any(), any(), language = "uk")
+            authRepository.register(any(), any(), any(), any(), language = "uk", any())
         }
     }
 
     /**
-     * The terms box is a hard blocker, not a hint. It is the reason the "unticked box
-     * records nothing" rule in [cz.cleansia.core.consent.SignupConsentRepository] can never
-     * fire from this screen — and the reason that rule cannot be the only thing pinning it.
+     * The terms box is a hard blocker, not a hint: the server grants the employee consents off the
+     * tick the request carries, so a form that could submit unticked would register an account with
+     * no consent on record and nothing left to deliver it later.
      */
     @Test
     fun `an unticked terms box does not register at all`() = runTest {
         coEvery { appSettingsRepository.emailLanguageTag() } returns "cs"
-        coEvery { authRepository.register(any(), any(), any(), any(), any(), any()) } returns
+        coEvery { authRepository.register(any(), any(), any(), any(), any(), any(), any()) } returns
             ApiResult.Success(Unit)
 
         val vm = viewModel()
@@ -151,15 +148,14 @@ class RegisterViewModelTest {
         vm.register()
         advanceUntilIdle()
 
-        coVerify(exactly = 0) { authRepository.register(any(), any(), any(), any(), any(), any()) }
-        coVerify(exactly = 0) { signupConsent.recordSignupTick(any(), any()) }
+        coVerify(exactly = 0) { authRepository.register(any(), any(), any(), any(), any(), any(), any()) }
         assertNotNull(vm.uiState.value.termsError)
     }
 
     @Test
-    fun `a successful registration records the tick against the submitted address`() = runTest {
+    fun `a ticked terms box rides the registration itself`() = runTest {
         coEvery { appSettingsRepository.emailLanguageTag() } returns "cs"
-        coEvery { authRepository.register(any(), any(), any(), any(), any(), any()) } returns
+        coEvery { authRepository.register(any(), any(), any(), any(), any(), any(), any()) } returns
             ApiResult.Success(Unit)
 
         val vm = viewModel()
@@ -167,7 +163,9 @@ class RegisterViewModelTest {
         vm.register()
         advanceUntilIdle()
 
-        coVerify(exactly = 1) { signupConsent.recordSignupTick("ada@example.com", true) }
+        coVerify(exactly = 1) {
+            authRepository.register(any(), any(), any(), any(), any(), termsAccepted = true, any())
+        }
     }
 
     // ── the market picker (ADR-0061 D3/D6) ──
@@ -199,7 +197,7 @@ class RegisterViewModelTest {
     @Test
     fun `register sends the preselected market`() = runTest {
         coEvery { appSettingsRepository.emailLanguageTag() } returns "cs"
-        coEvery { authRepository.register(any(), any(), any(), any(), any(), any()) } returns
+        coEvery { authRepository.register(any(), any(), any(), any(), any(), any(), any()) } returns
             ApiResult.Success(Unit)
 
         val vm = viewModel()
@@ -209,14 +207,14 @@ class RegisterViewModelTest {
         advanceUntilIdle()
 
         coVerify(exactly = 1) {
-            authRepository.register(any(), any(), any(), any(), any(), countryId = "cze-id")
+            authRepository.register(any(), any(), any(), any(), any(), any(), countryId = "cze-id")
         }
     }
 
     @Test
     fun `register sends the market the cleaner picked`() = runTest {
         coEvery { appSettingsRepository.emailLanguageTag() } returns "cs"
-        coEvery { authRepository.register(any(), any(), any(), any(), any(), any()) } returns
+        coEvery { authRepository.register(any(), any(), any(), any(), any(), any(), any()) } returns
             ApiResult.Success(Unit)
 
         val vm = viewModel()
@@ -227,7 +225,7 @@ class RegisterViewModelTest {
         advanceUntilIdle()
 
         coVerify(exactly = 1) {
-            authRepository.register(any(), any(), any(), any(), any(), countryId = "svk-id")
+            authRepository.register(any(), any(), any(), any(), any(), any(), countryId = "svk-id")
         }
     }
 
@@ -241,7 +239,7 @@ class RegisterViewModelTest {
         coEvery { marketRepository.getMarkets() } returns
             ApiResult.Error(ApiError.Network(message = "offline"))
         coEvery { appSettingsRepository.emailLanguageTag() } returns "cs"
-        coEvery { authRepository.register(any(), any(), any(), any(), any(), any()) } returns
+        coEvery { authRepository.register(any(), any(), any(), any(), any(), any(), any()) } returns
             ApiResult.Success(Unit)
 
         val vm = viewModel()
@@ -252,14 +250,14 @@ class RegisterViewModelTest {
 
         assertEquals(emptyList<Market>(), vm.uiState.value.markets)
         coVerify(exactly = 1) {
-            authRepository.register(any(), any(), any(), any(), any(), countryId = null)
+            authRepository.register(any(), any(), any(), any(), any(), any(), countryId = null)
         }
     }
 
     @Test
-    fun `a rejected registration records nothing`() = runTest {
+    fun `a rejected registration surfaces the refusal and does not succeed`() = runTest {
         coEvery { appSettingsRepository.emailLanguageTag() } returns "cs"
-        coEvery { authRepository.register(any(), any(), any(), any(), any(), any()) } returns
+        coEvery { authRepository.register(any(), any(), any(), any(), any(), any(), any()) } returns
             ApiResult.Error(ApiError.BadRequest(message = "taken", errorKey = "user.existing_email"))
 
         val vm = viewModel()
@@ -267,6 +265,8 @@ class RegisterViewModelTest {
         vm.register()
         advanceUntilIdle()
 
-        coVerify(exactly = 0) { signupConsent.recordSignupTick(any(), any()) }
+        assertEquals(false, vm.uiState.value.isRegistrationSuccessful)
+        assertEquals(false, vm.uiState.value.isLoading)
+        coVerify(exactly = 1) { snackbar.showError(any<String>()) }
     }
 }

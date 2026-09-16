@@ -2,7 +2,6 @@ package cz.cleansia.partner.data.auth
 
 import cz.cleansia.core.auth.SessionScopedCache
 import cz.cleansia.core.auth.TokenStore
-import cz.cleansia.core.consent.SignupConsentRepository
 import cz.cleansia.core.notifications.PushTokenRepository
 import cz.cleansia.partner.api.client.AuthApi
 import cz.cleansia.partner.api.client.EmployeeApi
@@ -42,7 +41,6 @@ class AuthRepositoryTrustedDeviceTest {
     private val tokenStore = mockk<TokenStore>(relaxed = true)
     private val userProfileStore = mockk<UserProfileStore>(relaxed = true)
     private val pushTokenRepository = mockk<PushTokenRepository>(relaxed = true)
-    private val signupConsent = mockk<SignupConsentRepository>(relaxed = true)
     private val cache = mockk<SessionScopedCache>(relaxed = true)
 
     private val json = Json { ignoreUnknownKeys = true; isLenient = true }
@@ -56,7 +54,6 @@ class AuthRepositoryTrustedDeviceTest {
         json = json,
         pushTokenRepository = pushTokenRepository,
         sessionScopedCaches = { setOf(cache) },
-        signupConsent = { signupConsent },
     )
 
     private fun storedTokens(refreshToken: String = "stored-refresh") = TokenStore.Tokens(
@@ -157,13 +154,33 @@ class AuthRepositoryTrustedDeviceTest {
         val register = slot<RegisterEmployeeCommand>()
         coEvery { anonymousAuthApi.authRegisterEmployee(capture(register)) } returns Response.success(Unit)
 
-        newRepository().register("cleaner@example.com", "pw", "Ada", "Lovelace", "en", countryId = "svk-id")
+        newRepository().register("cleaner@example.com", "pw", "Ada", "Lovelace", "en", termsAccepted = true, countryId = "svk-id")
         assertEquals("svk-id", register.captured.countryId)
         assertTrue(wireJson.encodeToString(register.captured).contains("\"countryId\":\"svk-id\""))
 
-        newRepository().register("cleaner@example.com", "pw", "Ada", "Lovelace", "en", countryId = null)
+        newRepository().register("cleaner@example.com", "pw", "Ada", "Lovelace", "en", termsAccepted = true, countryId = null)
         assertNull(register.captured.countryId)
         assertTrue(!wireJson.encodeToString(register.captured).contains("countryId"))
+    }
+
+    /**
+     * The sign-up form cannot submit unticked, so the only value this ever carries is `true` — and
+     * the server grants both employee consents in the registration's own commit off exactly this
+     * member. Nothing is parked on the device any more, so a tick that misses the wire is lost.
+     */
+    @Test
+    fun register_putsTheTermsTickOnTheCommandUnderTheNameTheBackendBinds() = runTest {
+        val wireJson = NetworkModule.provideJson()
+        val register = slot<RegisterEmployeeCommand>()
+        coEvery { anonymousAuthApi.authRegisterEmployee(capture(register)) } returns Response.success(Unit)
+
+        newRepository().register("cleaner@example.com", "pw", "Ada", "Lovelace", "en", termsAccepted = true)
+        assertEquals(true, register.captured.termsAccepted)
+        assertTrue(wireJson.encodeToString(register.captured).contains("\"termsAccepted\":true"))
+
+        newRepository().register("cleaner@example.com", "pw", "Ada", "Lovelace", "en", termsAccepted = false)
+        assertEquals(false, register.captured.termsAccepted)
+        assertTrue(wireJson.encodeToString(register.captured).contains("\"termsAccepted\":false"))
     }
 
     @Test
@@ -182,7 +199,7 @@ class AuthRepositoryTrustedDeviceTest {
         coEvery { anonymousAuthApi.authForgotPassword(capture(forgot)) } returns Response.success(Unit)
 
         val repo = newRepository()
-        repo.register("cleaner@example.com", "pw", "Ada", "Lovelace", "en")
+        repo.register("cleaner@example.com", "pw", "Ada", "Lovelace", "en", termsAccepted = true)
         repo.confirmEmail("cleaner@example.com", "123456")
         repo.resendConfirmation("cleaner@example.com", "en")
         repo.forgotPassword("cleaner@example.com", "en")

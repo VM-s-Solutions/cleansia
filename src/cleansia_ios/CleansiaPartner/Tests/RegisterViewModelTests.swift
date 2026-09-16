@@ -16,11 +16,13 @@ final class RegisterViewModelTests: XCTestCase {
             language: String
         )?
         private(set) var lastCountryId: String?
+        private(set) var lastTermsAccepted: Bool?
 
         func register(_ request: RegisterRequest) async -> ApiResult<Bool> {
             callCount += 1
             lastArgs = (request.email, request.password, request.firstName, request.lastName, request.language)
             lastCountryId = request.countryId
+            lastTermsAccepted = request.termsAccepted
             return result
         }
     }
@@ -73,7 +75,6 @@ final class RegisterViewModelTests: XCTestCase {
     private var marketClient: FakeMarketClient!
     private var settings: FakeSettings!
     private var snackbar: SnackbarController!
-    private var signupConsent: RecordingSignupConsent!
     private var cancellables: Set<AnyCancellable>!
 
     override func setUp() {
@@ -82,13 +83,11 @@ final class RegisterViewModelTests: XCTestCase {
         marketClient = FakeMarketClient()
         settings = FakeSettings()
         snackbar = SnackbarController()
-        signupConsent = RecordingSignupConsent()
         cancellables = []
     }
 
     override func tearDown() {
         cancellables = nil
-        signupConsent = nil
         snackbar = nil
         settings = nil
         marketClient = nil
@@ -101,8 +100,7 @@ final class RegisterViewModelTests: XCTestCase {
             client: client,
             marketClient: marketClient,
             settings: settings,
-            snackbar: snackbar,
-            signupConsent: signupConsent
+            snackbar: snackbar
         )
     }
 
@@ -176,9 +174,8 @@ final class RegisterViewModelTests: XCTestCase {
         XCTAssertEqual(client.callCount, 0)
     }
 
-    /// The terms box is a hard blocker, not a hint. It is the reason the "unticked box parks
-    /// nothing" rule in `SignupConsentRepository` can never fire from this screen — and the
-    /// reason that rule cannot be the only thing pinning it.
+    /// The terms box is a hard blocker, not a hint: an unticked form never reaches the wire, so the
+    /// server is never asked to record a consent nobody gave.
     func testUnacceptedTermsSetsErrorAndDoesNotSubmit() async {
         let vm = makeViewModel()
         fillValid(vm)
@@ -187,28 +184,34 @@ final class RegisterViewModelTests: XCTestCase {
 
         XCTAssertNotNil(vm.form.termsError)
         XCTAssertEqual(client.callCount, 0)
-        XCTAssertEqual(signupConsent.parked.count, 0)
+        XCTAssertNil(client.lastTermsAccepted)
     }
 
-    func testASuccessfulRegistrationParksTheTickAgainstTheSubmittedAddress() async {
+    /// The tick rides the registration itself: the server grants the employee consents in the same
+    /// commit that creates the account, so nothing is parked on the device any more.
+    func testASuccessfulRegistrationSendsTheTickOnTheRegistrationItself() async {
         client.result = .success(true)
         let vm = makeViewModel()
         fillValid(vm)
 
         await vm.register()
 
-        XCTAssertEqual(signupConsent.parked.map(\.email), ["jana@b.cz"])
-        XCTAssertEqual(signupConsent.parked.map(\.accepted), [true])
+        XCTAssertEqual(client.lastTermsAccepted, true)
     }
 
-    func testARejectedRegistrationParksNothing() async {
+    func testARejectedRegistrationSurfacesTheRefusalAndEmitsNoSuccess() async {
         client.result = .failure(ApiError(code: "user.existing_email", httpStatus: 400))
         let vm = makeViewModel()
         fillValid(vm)
 
+        var receivedEmail: String?
+        vm.registerSuccess.sink { receivedEmail = $0 }.store(in: &cancellables)
+
         await vm.register()
 
-        XCTAssertEqual(signupConsent.parked.count, 0)
+        XCTAssertNil(receivedEmail)
+        XCTAssertEqual(vm.registerState, .idle)
+        XCTAssertEqual(client.callCount, 1)
     }
 
     func testValidFormSubmitsAndEmitsRegisterSuccess() async {
@@ -255,8 +258,7 @@ final class RegisterViewModelTests: XCTestCase {
             client: client,
             marketClient: marketClient,
             settings: store,
-            snackbar: snackbar,
-            signupConsent: signupConsent
+            snackbar: snackbar
         )
         fillValid(vm)
         await vm.register()
@@ -280,8 +282,7 @@ final class RegisterViewModelTests: XCTestCase {
             client: client,
             marketClient: marketClient,
             settings: store,
-            snackbar: snackbar,
-            signupConsent: signupConsent
+            snackbar: snackbar
         )
         fillValid(vm)
         await vm.register()
@@ -494,19 +495,6 @@ enum RegisterMarketFixtures {
     )
 
     static let two = [czechia, slovakia]
-}
-
-final class RecordingSignupConsent: SignupConsentRecording, @unchecked Sendable {
-    private let lock = NSLock()
-    private var records: [(email: String, accepted: Bool)] = []
-
-    var parked: [(email: String, accepted: Bool)] {
-        lock.withLock { records }
-    }
-
-    func recordSignupTick(email: String, accepted: Bool) async {
-        lock.withLock { records.append((email, accepted)) }
-    }
 }
 
 /// For flows that never open the market picker: the directory is never read and a market-less

@@ -82,6 +82,16 @@ final class PartnerTrustedDeviceLoginTests: XCTestCase {
         XCTAssertFalse(wire.contains(storedRefresh), wire)
     }
 
+    /// The terms tick travels on the registration under the member the spec declares, as the bytes
+    /// the production encoder produced — the server grants both employee consents off it in the
+    /// same commit, and nothing is parked on the device for a later session.
+    func testRegisteringPutsTheTermsTickOnTheRegisterEmployeeBody() async throws {
+        await register()
+
+        let wire = try XCTUnwrap(AuthWireRecorder.body(ofPath: "/api/Auth/RegisterEmployee"))
+        XCTAssertTrue(wire.contains("\"termsAccepted\":true"), wire)
+    }
+
     private func signIn() async {
         let viewModel = LoginViewModel(loginClient: spine, snackbar: SnackbarController())
         viewModel.onEmailChange("cleaner@example.com")
@@ -94,8 +104,7 @@ final class PartnerTrustedDeviceLoginTests: XCTestCase {
             client: spine,
             marketClient: UnreadMarketClient(),
             settings: UserDefaultsAppSettingsStore(defaults: defaults),
-            snackbar: SnackbarController(),
-            signupConsent: RecordingSignupConsent()
+            snackbar: SnackbarController()
         )
         viewModel.onFirstNameChange("Ada")
         viewModel.onLastNameChange("Lovelace")

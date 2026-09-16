@@ -2,7 +2,6 @@ package cz.cleansia.partner.data.auth
 
 import cz.cleansia.core.auth.SessionScopedCache
 import cz.cleansia.core.auth.TokenStore
-import cz.cleansia.core.consent.SignupConsentRepository
 import cz.cleansia.core.network.ApiError
 import cz.cleansia.core.network.ApiResult
 import cz.cleansia.core.notifications.PushTokenRepository
@@ -35,7 +34,6 @@ class AuthRepositorySessionFlagsTest {
     private val tokenStore = mockk<TokenStore>(relaxed = true)
     private val pushTokenRepository = mockk<PushTokenRepository>(relaxed = true)
     private val cache = mockk<SessionScopedCache>(relaxed = true)
-    private val signupConsent = mockk<SignupConsentRepository>(relaxed = true)
 
     private val json = Json { ignoreUnknownKeys = true; isLenient = true }
 
@@ -57,7 +55,6 @@ class AuthRepositorySessionFlagsTest {
         json = json,
         pushTokenRepository = pushTokenRepository,
         sessionScopedCaches = { setOf(cache) },
-        signupConsent = { signupConsent },
     )
 
     private fun tokenResponse(

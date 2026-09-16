@@ -47,7 +47,6 @@ struct PartnerRootView: View {
                 marketClient: container.marketClient,
                 settings: container.appSettings,
                 snackbar: container.snackbar,
-                signupConsent: container.signupConsent,
                 onSignIn: { route = .login },
                 onRegistered: { route = .verifyEmail(email: $0) }
             )

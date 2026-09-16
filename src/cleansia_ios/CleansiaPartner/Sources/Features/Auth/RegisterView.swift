@@ -11,7 +11,6 @@ struct RegisterView: View {
         marketClient: PartnerMarketClient,
         settings: AppSettingsStore,
         snackbar: SnackbarController,
-        signupConsent: SignupConsentRecording,
         onSignIn: @escaping () -> Void,
         onRegistered: @escaping (String) -> Void
     ) {
@@ -19,8 +18,7 @@ struct RegisterView: View {
             client: client,
             marketClient: marketClient,
             settings: settings,
-            snackbar: snackbar,
-            signupConsent: signupConsent
+            snackbar: snackbar
         ))
         self.onSignIn = onSignIn
         self.onRegistered = onRegistered

@@ -19228,6 +19228,41 @@
         }
       }
     },
+    "order_cancelled_reason_company_wind_down": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Úklidová společnost, která působila ve vaší oblasti, končí, a proto byla tato rezervace zrušena a v plné výši vrácena."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The cleaning company that served your area is closing, so this booking was cancelled and refunded in full."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Клининговая компания, обслуживавшая ваш район, прекращает работу, поэтому это бронирование отменено, а деньги возвращены в полном объёме."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Upratovacia spoločnosť, ktorá pôsobila vo vašej oblasti, končí, a preto bola táto rezervácia zrušená a v plnej výške vrátená."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Клінінгова компанія, що обслуговувала ваш район, припиняє роботу, тому це бронювання скасовано, а кошти повернуто в повному обсязі."
+          }
+        }
+      }
+    },
     "order_cancelled_reason_recurring_not_confirmed": {
       "extractionState": "manual",
       "localizations": {

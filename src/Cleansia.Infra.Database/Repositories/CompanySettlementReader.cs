@@ -99,12 +99,12 @@ public sealed class CompanySettlementReader(CleansiaDbContext context, ITenantPr
         var markets = await context.CountryConfigurations
             .Select(c => new { c.CountryId, c.TimeZoneId })
             .ToListAsync(cancellationToken);
-        var utcCutoff = CutoffUtc(from, timeZoneId: null);
+        var utcCutoff = WindDownCutoff.Utc(from, timeZoneId: null);
 
         var count = 0;
         foreach (var market in markets)
         {
-            var cutoff = CutoffUtc(from, market.TimeZoneId);
+            var cutoff = WindDownCutoff.Utc(from, market.TimeZoneId);
             count += await context.Orders.CountAsync(
                 o => OpenStatuses.Contains(o.CurrentStatus)
                     && o.CustomerAddress != null
@@ -121,34 +121,5 @@ public sealed class CompanySettlementReader(CleansiaDbContext context, ITenantPr
             cancellationToken);
 
         return count;
-    }
-
-    private static DateTime CutoffUtc(DateOnly windDownFrom, string? timeZoneId)
-    {
-        var midnight = windDownFrom.ToDateTime(TimeOnly.MinValue, DateTimeKind.Unspecified);
-        return TimeZoneInfo.ConvertTimeToUtc(midnight, ResolveZone(timeZoneId));
-    }
-
-    // FindSystemTimeZoneById throws on an unknown id and a settlement read must never throw over one;
-    // UTC is the sweep's own fallback for a market without a zone.
-    private static TimeZoneInfo ResolveZone(string? timeZoneId)
-    {
-        if (string.IsNullOrWhiteSpace(timeZoneId))
-        {
-            return TimeZoneInfo.Utc;
-        }
-
-        try
-        {
-            return TimeZoneInfo.FindSystemTimeZoneById(timeZoneId);
-        }
-        catch (TimeZoneNotFoundException)
-        {
-            return TimeZoneInfo.Utc;
-        }
-        catch (InvalidTimeZoneException)
-        {
-            return TimeZoneInfo.Utc;
-        }
     }
 }

@@ -2786,7 +2786,10 @@
       "already_deactivated": "The company is already deactivated.",
       "not_deactivated": "The company is not deactivated, so there is nothing to reactivate.",
       "archived": "The company is frozen for archive; its lifecycle can no longer change.",
-      "operates_default_market": "The company operates the default market and cannot be deactivated. Move the default market to another company first."
+      "operates_default_market": "The company operates the default market and cannot be deactivated. Move the default market to another company first.",
+      "wind_down_already_requested": "The wind-down date is already set; it cannot be changed. Cancel the remaining orders by hand if an earlier date is needed.",
+      "wind_down_date_in_past": "The last day of service cannot be before today in the company's markets.",
+      "wind_down_in_progress": "A wind-down run is in progress; try again once it has finished."
     },
     "country": {
       "in_use": "Cannot delete country because it is currently in use",

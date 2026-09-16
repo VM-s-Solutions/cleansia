@@ -38,6 +38,7 @@ public class PayPeriodBackgroundService : IPayPeriodBackgroundService
     private readonly IBlobContainerClientFactory _blobContainerClientFactory;
     private readonly ITenantProvider _tenantProvider;
     private readonly IPayoutReferenceAllocator _payoutReferenceAllocator;
+    private readonly ITenantRepository _tenantRepository;
 
     public PayPeriodBackgroundService(
         IPayPeriodRepository payPeriodRepository,
@@ -56,7 +57,8 @@ public class PayPeriodBackgroundService : IPayPeriodBackgroundService
         IPdfService pdfService,
         IBlobContainerClientFactory blobContainerClientFactory,
         ITenantProvider tenantProvider,
-        IPayoutReferenceAllocator payoutReferenceAllocator)
+        IPayoutReferenceAllocator payoutReferenceAllocator,
+        ITenantRepository tenantRepository)
     {
         _payPeriodRepository = payPeriodRepository;
         _employeeRepository = employeeRepository;
@@ -75,6 +77,7 @@ public class PayPeriodBackgroundService : IPayPeriodBackgroundService
         _blobContainerClientFactory = blobContainerClientFactory;
         _tenantProvider = tenantProvider;
         _payoutReferenceAllocator = payoutReferenceAllocator;
+        _tenantRepository = tenantRepository;
     }
 
     public async Task EnsureOpenPeriodAsync(CancellationToken cancellationToken = default)
@@ -145,38 +148,19 @@ public class PayPeriodBackgroundService : IPayPeriodBackgroundService
                     _tenantProvider.SetTenantOverride(tenantGroup.Key);
                 }
 
+                // A company that has closed its door has no next period: its last one is closed here
+                // like any other, and the wind-down sweep closes whatever an InProgress order opens
+                // after that (ADR-0064 D2).
+                var company = string.IsNullOrEmpty(tenantGroup.Key)
+                    ? null
+                    : await _tenantRepository.GetByIdAsync(tenantGroup.Key, cancellationToken);
+                var openNext = company is not { IsDeactivated: true };
+
                 foreach (var period in tenantGroup)
                 {
                     try
                     {
-                        period.Close("System", "Automatically closed by background job");
-                        _logger.LogInformation(
-                            "Closed pay period {PeriodId} ({StartDate} - {EndDate})",
-                            period.Id,
-                            period.StartDate.ToString("yyyy-MM-dd"),
-                            period.EndDate.ToString("yyyy-MM-dd"));
-
-                        await SendPeriodClosedEmailsAsync(period, cancellationToken);
-
-                        // Within the current tenant — check if any open period exists.
-                        var hasActivePeriod = await _payPeriodRepository
-                            .GetQueryable()
-                            .AnyAsync(p => p.Status == PayPeriodStatus.Open, cancellationToken);
-
-                        if (!hasActivePeriod)
-                        {
-                            var newStartDate = period.EndDate.AddDays(1);
-                            var newEndDate = newStartDate.AddMonths(1).AddDays(-1);
-
-                            var newPeriod = PayPeriod.Create(newStartDate, newEndDate);
-                            _payPeriodRepository.Add(newPeriod);
-
-                            _logger.LogInformation(
-                                "Created new pay period {PeriodId} ({StartDate} - {EndDate})",
-                                newPeriod.Id,
-                                newPeriod.StartDate.ToString("yyyy-MM-dd"),
-                                newPeriod.EndDate.ToString("yyyy-MM-dd"));
-                        }
+                        await ClosePeriodAsync(period, "Automatically closed by background job", openNext, cancellationToken);
                     }
                     catch (Exception ex)
                     {
@@ -197,6 +181,43 @@ public class PayPeriodBackgroundService : IPayPeriodBackgroundService
         {
             _logger.LogError(ex, "Fatal error in pay period auto-close job");
             throw;
+        }
+    }
+
+    public async Task ClosePeriodAsync(PayPeriod period, string closeNote, bool openNext, CancellationToken cancellationToken)
+    {
+        period.Close("System", closeNote);
+        _logger.LogInformation(
+            "Closed pay period {PeriodId} ({StartDate} - {EndDate})",
+            period.Id,
+            period.StartDate.ToString("yyyy-MM-dd"),
+            period.EndDate.ToString("yyyy-MM-dd"));
+
+        await SendPeriodClosedEmailsAsync(period, cancellationToken);
+
+        if (!openNext)
+        {
+            return;
+        }
+
+        // Within the current tenant — check if any open period exists.
+        var hasActivePeriod = await _payPeriodRepository
+            .GetQueryable()
+            .AnyAsync(p => p.Status == PayPeriodStatus.Open, cancellationToken);
+
+        if (!hasActivePeriod)
+        {
+            var newStartDate = period.EndDate.AddDays(1);
+            var newEndDate = newStartDate.AddMonths(1).AddDays(-1);
+
+            var newPeriod = PayPeriod.Create(newStartDate, newEndDate);
+            _payPeriodRepository.Add(newPeriod);
+
+            _logger.LogInformation(
+                "Created new pay period {PeriodId} ({StartDate} - {EndDate})",
+                newPeriod.Id,
+                newPeriod.StartDate.ToString("yyyy-MM-dd"),
+                newPeriod.EndDate.ToString("yyyy-MM-dd"));
         }
     }
 

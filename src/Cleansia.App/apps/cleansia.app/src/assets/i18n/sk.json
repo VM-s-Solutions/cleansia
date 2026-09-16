@@ -1104,7 +1104,8 @@
       },
       "cancellation_reason": {
         "payment_not_completed": "Platba nebola dokončená, a preto bola táto rezervácia uvoľnená.",
-        "recurring_not_confirmed": "Táto opakovaná rezervácia nebola včas potvrdená, a preto bola zadarmo zrušená."
+        "recurring_not_confirmed": "Táto opakovaná rezervácia nebola včas potvrdená, a preto bola zadarmo zrušená.",
+        "company_wind_down": "Upratovacia spoločnosť, ktorá pôsobila vo vašej oblasti, končí, a preto bola táto rezervácia zrušená a v plnej výške vrátená."
       },
       "where_it_is": "Kde to je",
       "two_axes_lead": "Dve veci sa dejú zvlášť — preto dve osi.",

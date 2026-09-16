@@ -1360,6 +1360,7 @@
     <string name="tracker_step_counter">Крок %1$d / %2$d</string>
     <string name="order_cancelled_reason_payment_not_completed">Оплату не було завершено, тому це бронювання було скасовано.</string>
     <string name="order_cancelled_reason_recurring_not_confirmed">Це повторне бронювання не було підтверджено вчасно, тому його скасовано безкоштовно.</string>
+    <string name="order_cancelled_reason_company_wind_down">Клінінгова компанія, що обслуговувала ваш район, припиняє роботу, тому це бронювання скасовано, а кошти повернуто в повному обсязі.</string>
     <string name="dispute_create_which_items">Що саме пішло не так?</string>
     <string name="dispute_create_which_items_hint">Необов’язково. Позначте послуги, які виконані погано — це допоможе швидше все виправити. Якщо проблемою було все прибирання — залиште порожнім.</string>
     <string name="dispute_create_item_in_package">у пакеті %1$s</string>

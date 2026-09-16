@@ -18,7 +18,8 @@ enum CancellationReasonCopy {
     /// sentences precisely so this mapping can exist.
     private static let copy: [String: String] = [
         "order.cancelled.payment_not_completed": "order_cancelled_reason_payment_not_completed",
-        "order.cancelled.recurring_not_confirmed": "order_cancelled_reason_recurring_not_confirmed"
+        "order.cancelled.recurring_not_confirmed": "order_cancelled_reason_recurring_not_confirmed",
+        "order.cancelled.company_wind_down": "order_cancelled_reason_company_wind_down"
     ]
 
     static func text(for reason: String?) -> String? {

@@ -25,6 +25,15 @@ public class CountryConfigurationRepository(CleansiaDbContext context) : BaseRep
             .FirstOrDefaultAsync(c => c.IsDefaultMarket, cancellationToken);
     }
 
+    public async Task<IReadOnlyList<CountryConfiguration>> GetOperatedByAsync(string tenantId, CancellationToken cancellationToken)
+    {
+        return await GetDbSet()
+            .AsNoTracking()
+            .Where(c => c.OperatorTenantId == tenantId)
+            .OrderBy(c => c.CountryId)
+            .ToListAsync(cancellationToken);
+    }
+
     public async Task ClearDefaultMarketAsync(CancellationToken cancellationToken)
     {
         var flagged = await GetDbSet()

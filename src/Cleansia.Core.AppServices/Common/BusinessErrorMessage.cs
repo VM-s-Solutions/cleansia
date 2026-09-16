@@ -521,6 +521,12 @@ public static class BusinessErrorMessage
     public const string CompanyArchived = "company.archived";
     /// <summary>Deactivating the company that holds the default market would refuse every anonymous identity request on every host.</summary>
     public const string CompanyOperatesDefaultMarket = "company.operates_default_market";
+    /// <summary>The wind-down date is set once; a company that needs an earlier date cancels the remaining orders by hand.</summary>
+    public const string CompanyWindDownAlreadyRequested = "company.wind_down_already_requested";
+    /// <summary>The last day of service is before today in one of the company's own markets.</summary>
+    public const string CompanyWindDownDateInPast = "company.wind_down_date_in_past";
+    /// <summary>A wind-down run started less than an hour ago and has not recorded its end.</summary>
+    public const string CompanyWindDownInProgress = "company.wind_down_in_progress";
 
     // Country Configuration
     public const string CountryConfigNotFound = "country_config.not_found";

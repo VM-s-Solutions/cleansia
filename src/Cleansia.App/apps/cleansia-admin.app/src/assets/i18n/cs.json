@@ -2786,7 +2786,10 @@
       "already_deactivated": "Společnost je již deaktivována.",
       "not_deactivated": "Společnost není deaktivována, není co znovu aktivovat.",
       "archived": "Společnost je zmrazena k archivaci; její stav již nelze měnit.",
-      "operates_default_market": "Společnost provozuje výchozí trh a nelze ji deaktivovat. Nejprve přesuňte výchozí trh na jinou společnost."
+      "operates_default_market": "Společnost provozuje výchozí trh a nelze ji deaktivovat. Nejprve přesuňte výchozí trh na jinou společnost.",
+      "wind_down_already_requested": "Datum ukončení je již nastaveno a nelze ho změnit. Pokud je potřeba dřívější datum, zrušte zbývající objednávky ručně.",
+      "wind_down_date_in_past": "Poslední den poskytování služeb nemůže být dříve než dnes v trzích společnosti.",
+      "wind_down_in_progress": "Probíhá běh ukončování činnosti; zkuste to znovu, až skončí."
     },
     "country": {
       "in_use": "Zemi nelze smazat, protože je aktuálně používána",

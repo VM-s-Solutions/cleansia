@@ -45,6 +45,11 @@ const REPO = rootArg
   : join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 
 const POLICY_CS = 'src/Cleansia.Core.AppServices/Features/Orders/BookingPolicy.cs';
+/** The platform's own cancellation reasons — keys the three customer clients turn into a sentence. */
+const REASONS_CS = 'src/Cleansia.Core.Domain/Orders/OrderCancellationReasons.cs';
+const WEB_REASON_MAP = 'src/Cleansia.App/libs/cleansia-customer-features/orders/src/lib/order-detail/order-detail.component.ts';
+const ANDROID_REASON_MAP = 'src/cleansia_android/customer-app/src/main/java/cz/cleansia/customer/features/orders/OrderDetailScreen.kt';
+const IOS_REASON_MAP = 'src/cleansia_ios/CleansiaCustomer/Sources/Features/Orders/CancellationReasonCopy.swift';
 /** The customer legal texts, one dated folder per version, one markdown file per language. */
 const LEGAL_SEED = 'src/Cleansia.Infra.Database/Seed/Legal/customer';
 const LEGAL_SEED_TYPES = ['terms-of-service', 'privacy-policy'];
@@ -370,6 +375,67 @@ for (const locale of LOCALES) {
   }
 }
 
+// ─── 4. Every platform cancellation reason renders as a sentence in the three customer clients ────
+// `OrderCancellationReasons` is a cross-assembly contract: the sweeps write the key and each client
+// maps it to copy in five locales. A key added on the server without its three maps reaches the
+// customer as silence (the clients render nothing for an unknown key, by design), which no compiler
+// sees. The maps are read as source and the copy as the locale files.
+
+/** `public const string X = "order.cancelled.y";` → ["order.cancelled.y", …]. */
+export function readCancellationReasons(source) {
+  return [...source.matchAll(/public\s+const\s+string\s+\w+\s*=\s*"(order\.cancelled\.[a-z_]+)"\s*;/g)].map(
+    (m) => m[1],
+  );
+}
+
+/**
+ * Keys the server writes that no client renders yet. A gap named here is a finding for the owner,
+ * not a pass: the list exists so the gate fails on the NEXT key while the known one is reported.
+ */
+const REASONS_NOT_YET_RENDERED = new Set(['order.cancelled.no_cleaner_available']);
+
+const reasons = existsSync(join(REPO, REASONS_CS)) ? readCancellationReasons(read(REASONS_CS)) : [];
+if (reasons.length === 0) note(REASONS_CS, 'declares no cancellation reason — the parser needs updating');
+
+const webReasonMap = existsSync(join(REPO, WEB_REASON_MAP)) ? read(WEB_REASON_MAP) : '';
+const androidReasonMap = existsSync(join(REPO, ANDROID_REASON_MAP)) ? read(ANDROID_REASON_MAP) : '';
+const iosReasonMap = existsSync(join(REPO, IOS_REASON_MAP)) ? read(IOS_REASON_MAP) : '';
+
+for (const reason of reasons) {
+  if (REASONS_NOT_YET_RENDERED.has(reason)) continue;
+  const suffix = reason.slice('order.cancelled.'.length);
+
+  const webKey = `pages.order_detail.cancellation_reason.${suffix}`;
+  if (!webReasonMap.includes(`'${reason}'`) || !webReasonMap.includes(`'${webKey}'`)) {
+    note(WEB_REASON_MAP, `does not map ${reason} to ${webKey}`);
+  }
+  const androidResource = `order_cancelled_reason_${suffix}`;
+  if (!androidReasonMap.includes(`"${reason}"`) || !androidReasonMap.includes(`R.string.${androidResource}`)) {
+    note(ANDROID_REASON_MAP, `does not map ${reason} to R.string.${androidResource}`);
+  }
+  if (!iosReasonMap.includes(`"${reason}": "${androidResource}"`)) {
+    note(IOS_REASON_MAP, `does not map ${reason} to ${androidResource}`);
+  }
+
+  for (const locale of LOCALES) {
+    const web = JSON.parse(read(join(WEB_I18N, `${locale}.json`)));
+    const sentence = web.pages?.order_detail?.cancellation_reason?.[suffix];
+    if (!sentence) note(`web/${locale}`, `${webKey} is missing`);
+    if (androidString(ANDROID_DIRS[locale], androidResource) === null) {
+      note(`android/${ANDROID_DIRS[locale]}`, `${androidResource} is missing`);
+    }
+    if (iosString(iosCatalog, androidResource, locale) === null) {
+      note(`ios/${locale}`, `${androidResource} is missing`);
+    }
+  }
+}
+
+for (const known of REASONS_NOT_YET_RENDERED) {
+  if (!reasons.includes(known)) {
+    note(REASONS_CS, `${known} is on the not-yet-rendered list but no longer declared — drop it from the list`);
+  }
+}
+
 // ─── Report ─────────────────────────────────────────────────────────────────
 if (findings.length) {
   console.log('booking-policy-parity violations:');
@@ -385,7 +451,8 @@ if (findings.length) {
     `booking-policy-parity: ${LOCALES.length} locale(s) × web + android + ios agree with ` +
       `BookingPolicy — cancellation ${partialPct}%/${lastMinutePct}%, express +${expressPct}% ` +
       `from ${policy.ExpressLeadTimeHours} h, window ${policy.FirstWindowHour}:00–${policy.LastWindowHour}:00; ` +
-      `money figures in copy come from the market; legal seed ${seedVersions} carries the placeholders`,
+      `money figures in copy come from the market; legal seed ${seedVersions} carries the placeholders; ` +
+      `${reasons.length - REASONS_NOT_YET_RENDERED.size} cancellation reason(s) render on every client`,
   );
 }
 

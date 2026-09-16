@@ -249,6 +249,8 @@ public static class ServiceExtensions
         // transition onto its own queue, gated on a registered token — no feed row, no preference gate.
         services.AddScoped<ILiveActivityProducer, LiveActivityProducer>();
         services.AddScoped<IRefundService, RefundService>();
+        // The one fee-free, full-refund cancellation body behind the admin cancel and the company wind-down.
+        services.AddScoped<IPlatformOrderCancellation, PlatformOrderCancellation>();
         services.AddScoped<IPromoCodeService, PromoCodeService>();
         services.AddScoped<IReferralService, ReferralService>();
         services.AddScoped<IStripeSubscriptionWebhookHandler, StripeSubscriptionWebhookHandler>();

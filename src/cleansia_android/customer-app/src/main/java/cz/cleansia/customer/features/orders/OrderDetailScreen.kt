@@ -1160,5 +1160,7 @@ private fun cancellationReasonText(reason: String?): String? = when (reason) {
         stringResource(R.string.order_cancelled_reason_payment_not_completed)
     "order.cancelled.recurring_not_confirmed" ->
         stringResource(R.string.order_cancelled_reason_recurring_not_confirmed)
+    "order.cancelled.company_wind_down" ->
+        stringResource(R.string.order_cancelled_reason_company_wind_down)
     else -> null
 }

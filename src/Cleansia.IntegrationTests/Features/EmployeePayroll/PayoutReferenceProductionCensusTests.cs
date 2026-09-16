@@ -253,6 +253,8 @@ public class PayoutReferenceProductionCensusTests(PostgresContainerFixture fixtu
         public Task<string> SendPeriodEndReminderEmailAsync(string email, string employeeName, DateOnly startDate, DateOnly endDate, int daysRemaining, string periodLabel, string languageCode = Constants.Language.English, CancellationToken ct = default) => Sent();
         public Task<string> SendPromoCodeEmailAsync(string email, string promoCode, string discountLabel, DateTime? expiresOn, string languageCode = Constants.Language.English, CancellationToken ct = default) => Sent();
         public Task<string> SendOrderStatusUpdateEmailAsync(string email, Order order, string newStatus, string languageCode = Constants.Language.English, CancellationToken ct = default) => Sent();
+        public Task<string> SendCompanyWindDownCustomerNoticeAsync(string email, string userName, IReadOnlyList<string> companyNames, DateOnly windDownFrom, string languageCode = Constants.Language.English, CancellationToken ct = default) => Sent();
+        public Task<string> SendCompanyWindDownCleanerNoticeAsync(string email, string userName, IReadOnlyList<string> companyNames, DateOnly windDownFrom, string languageCode = Constants.Language.English, CancellationToken ct = default) => Sent();
     }
 
     private static async Task<string> ForeignPeriodIdAsync(CleansiaDbContext context)

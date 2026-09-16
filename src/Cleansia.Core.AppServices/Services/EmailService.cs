@@ -646,6 +646,255 @@ public sealed class EmailService : IEmailService
             },
         };
 
+    public Task<string> SendCompanyWindDownCustomerNoticeAsync(
+        string email,
+        string userName,
+        IReadOnlyList<string> companyNames,
+        DateOnly windDownFrom,
+        string languageCode = Constants.Language.English,
+        CancellationToken ct = default) =>
+        SendCompanyWindDownNoticeAsync(
+            EmailType.CompanyWindDownCustomer, CompanyWindDownCustomerDefaults, email, userName, companyNames, windDownFrom, languageCode, ct);
+
+    public Task<string> SendCompanyWindDownCleanerNoticeAsync(
+        string email,
+        string userName,
+        IReadOnlyList<string> companyNames,
+        DateOnly windDownFrom,
+        string languageCode = Constants.Language.English,
+        CancellationToken ct = default) =>
+        SendCompanyWindDownNoticeAsync(
+            EmailType.CompanyWindDownCleaner, CompanyWindDownCleanerDefaults, email, userName, companyNames, windDownFrom, languageCode, ct);
+
+    // The same three layers as the promo e-mail: in-code copy per locale, an admin translation row
+    // over it, and the per-send facts over both. The company is named as its receipts name it —
+    // one legal name per market — never as the registry label.
+    private async Task<string> SendCompanyWindDownNoticeAsync(
+        EmailType emailType,
+        Dictionary<string, IReadOnlyDictionary<string, string>> defaultsByLocale,
+        string email,
+        string userName,
+        IReadOnlyList<string> companyNames,
+        DateOnly windDownFrom,
+        string languageCode,
+        CancellationToken ct)
+    {
+        var translations = await emailTemplateTranslationRepository
+            .GetTranslationsByTypeAndLanguageAsync(emailType, languageCode, ct);
+        var defaults = defaultsByLocale.TryGetValue(languageCode ?? string.Empty, out var copy)
+            ? copy
+            : defaultsByLocale[Constants.Language.English];
+
+        var values = new Dictionary<string, string?>(StringComparer.Ordinal);
+        foreach (var (key, value) in defaults)
+        {
+            values[key] = value;
+        }
+
+        foreach (var (key, value) in translations)
+        {
+            values[key] = value;
+        }
+
+        var company = companyNames.Count == 0 ? "Cleansia" : string.Join(", ", companyNames);
+        var date = windDownFrom.ToString("d. M. yyyy");
+        var subject = string.Format(values["Subject"]!, company, date);
+
+        values["lang"] = languageCode ?? Constants.Language.English;
+        values["Subject"] = subject;
+        values["UserName"] = userName;
+        values["IntroText"] = string.Format(values["IntroText"]!, company, date);
+        values["WindDownDate"] = date;
+        values["AppLink"] = sendGridConfig.ClientDomainUrl;
+        values["SupportEmail"] = sendGridConfig.AddressFrom;
+
+        var html = templateRenderer.Render(TemplateFileFor(emailType), values);
+
+        return await SendRenderedAsync(
+            email,
+            html,
+            subject,
+            $"Company wind-down notice ({emailType}) to {email}",
+            ct);
+    }
+
+    /// <summary>Default customer wind-down copy per locale; <c>{0}</c> is the company name(s), <c>{1}</c> the date.</summary>
+    private static readonly Dictionary<string, IReadOnlyDictionary<string, string>> CompanyWindDownCustomerDefaults =
+        new(StringComparer.OrdinalIgnoreCase)
+        {
+            ["en"] = new Dictionary<string, string>(StringComparer.Ordinal)
+            {
+                ["Subject"] = "{0} is closing — what it means for you",
+                ["Greeting"] = "Hello",
+                ["IntroText"] = "{0} is winding down its operations. The last day on which a cleaning can take place is:",
+                ["BookingsText"] = "Every booking on or after this date is cancelled and refunded in full. You do not need to do anything.",
+                ["PlusText"] = "If you have Cleansia Plus, it ends at the end of your current billing period and will not renew.",
+                ["CreditText"] = "Any unspent credit on your account expires when the company closes.",
+                ["AccountText"] = "Your account and your order history stay exactly as they are.",
+                ["DataText"] = "You can export or delete your data at any time from your account settings.",
+                ["ButtonText"] = "Open my account",
+                ["ThanksText"] = "Thank you for cleaning with us.",
+                ["SupportText"] = "Questions? Write to us at",
+                ["Closing"] = "Kind regards,",
+                ["TeamName"] = "the Cleansia team",
+                ["FooterText"] = "© Cleansia s.r.o. All rights reserved.",
+            },
+            ["cs"] = new Dictionary<string, string>(StringComparer.Ordinal)
+            {
+                ["Subject"] = "{0} končí — co to pro vás znamená",
+                ["Greeting"] = "Dobrý den",
+                ["IntroText"] = "{0} ukončuje svou činnost. Poslední den, kdy může úklid proběhnout, je:",
+                ["BookingsText"] = "Každá objednávka na tento den nebo později je zrušena a v plné výši vrácena. Nemusíte nic dělat.",
+                ["PlusText"] = "Pokud máte Cleansia Plus, skončí na konci aktuálního zúčtovacího období a neobnoví se.",
+                ["CreditText"] = "Nevyčerpaný kredit na vašem účtu propadne v den, kdy společnost ukončí činnost.",
+                ["AccountText"] = "Váš účet i historie objednávek zůstávají beze změny.",
+                ["DataText"] = "Svá data si můžete kdykoli exportovat nebo smazat v nastavení účtu.",
+                ["ButtonText"] = "Otevřít můj účet",
+                ["ThanksText"] = "Děkujeme, že jste uklízeli s námi.",
+                ["SupportText"] = "Máte otázky? Napište nám na",
+                ["Closing"] = "S pozdravem,",
+                ["TeamName"] = "tým Cleansia",
+                ["FooterText"] = "© Cleansia s.r.o. Všechna práva vyhrazena.",
+            },
+            ["sk"] = new Dictionary<string, string>(StringComparer.Ordinal)
+            {
+                ["Subject"] = "{0} končí — čo to pre vás znamená",
+                ["Greeting"] = "Dobrý deň",
+                ["IntroText"] = "{0} ukončuje svoju činnosť. Posledný deň, keď môže upratovanie prebehnúť, je:",
+                ["BookingsText"] = "Každá objednávka na tento deň alebo neskôr je zrušená a v plnej výške vrátená. Nemusíte nič robiť.",
+                ["PlusText"] = "Ak máte Cleansia Plus, skončí na konci aktuálneho zúčtovacieho obdobia a neobnoví sa.",
+                ["CreditText"] = "Nevyčerpaný kredit na vašom účte prepadne v deň, keď spoločnosť ukončí činnosť.",
+                ["AccountText"] = "Váš účet aj história objednávok zostávajú bez zmeny.",
+                ["DataText"] = "Svoje údaje si môžete kedykoľvek exportovať alebo vymazať v nastaveniach účtu.",
+                ["ButtonText"] = "Otvoriť môj účet",
+                ["ThanksText"] = "Ďakujeme, že ste upratovali s nami.",
+                ["SupportText"] = "Máte otázky? Napíšte nám na",
+                ["Closing"] = "S pozdravom,",
+                ["TeamName"] = "tím Cleansia",
+                ["FooterText"] = "© Cleansia s.r.o. Všetky práva vyhradené.",
+            },
+            ["uk"] = new Dictionary<string, string>(StringComparer.Ordinal)
+            {
+                ["Subject"] = "{0} припиняє роботу — що це означає для вас",
+                ["Greeting"] = "Доброго дня",
+                ["IntroText"] = "{0} припиняє свою діяльність. Останній день, коли може відбутися прибирання:",
+                ["BookingsText"] = "Кожне замовлення на цей день або пізніше скасовано, а кошти повернуто в повному обсязі. Вам нічого не потрібно робити.",
+                ["PlusText"] = "Якщо у вас є Cleansia Plus, підписка завершиться наприкінці поточного розрахункового періоду й не поновиться.",
+                ["CreditText"] = "Невикористаний кредит на вашому рахунку згорить у день закриття компанії.",
+                ["AccountText"] = "Ваш обліковий запис та історія замовлень залишаються без змін.",
+                ["DataText"] = "Ви можете будь-коли експортувати або видалити свої дані в налаштуваннях облікового запису.",
+                ["ButtonText"] = "Відкрити мій обліковий запис",
+                ["ThanksText"] = "Дякуємо, що прибирали з нами.",
+                ["SupportText"] = "Є запитання? Напишіть нам на",
+                ["Closing"] = "З повагою,",
+                ["TeamName"] = "команда Cleansia",
+                ["FooterText"] = "© Cleansia s.r.o. Усі права захищено.",
+            },
+            ["ru"] = new Dictionary<string, string>(StringComparer.Ordinal)
+            {
+                ["Subject"] = "{0} прекращает работу — что это значит для вас",
+                ["Greeting"] = "Здравствуйте",
+                ["IntroText"] = "{0} прекращает свою деятельность. Последний день, когда может состояться уборка:",
+                ["BookingsText"] = "Каждый заказ на этот день или позже отменён, а деньги возвращены в полном объёме. Вам ничего не нужно делать.",
+                ["PlusText"] = "Если у вас есть Cleansia Plus, подписка закончится в конце текущего расчётного периода и не продлится.",
+                ["CreditText"] = "Неиспользованный кредит на вашем счёте сгорит в день закрытия компании.",
+                ["AccountText"] = "Ваш аккаунт и история заказов остаются без изменений.",
+                ["DataText"] = "Вы можете в любой момент экспортировать или удалить свои данные в настройках аккаунта.",
+                ["ButtonText"] = "Открыть мой аккаунт",
+                ["ThanksText"] = "Спасибо, что убирались с нами.",
+                ["SupportText"] = "Есть вопросы? Напишите нам на",
+                ["Closing"] = "С уважением,",
+                ["TeamName"] = "команда Cleansia",
+                ["FooterText"] = "© Cleansia s.r.o. Все права защищены.",
+            },
+        };
+
+    /// <summary>Default cleaner wind-down copy per locale; <c>{0}</c> is the company name(s), <c>{1}</c> the date.</summary>
+    private static readonly Dictionary<string, IReadOnlyDictionary<string, string>> CompanyWindDownCleanerDefaults =
+        new(StringComparer.OrdinalIgnoreCase)
+        {
+            ["en"] = new Dictionary<string, string>(StringComparer.Ordinal)
+            {
+                ["Subject"] = "{0} is closing — your last day of work",
+                ["Greeting"] = "Hello",
+                ["IntroText"] = "{0} is winding down its operations. Your last day of work is:",
+                ["LastDayText"] = "Jobs scheduled on or after this date are cancelled; jobs before it go ahead as planned.",
+                ["PayText"] = "Your last pay period is closed and invoiced as usual once the last job is done, and paid the usual way.",
+                ["SignInText"] = "Once the company closes, signing in to the partner app will no longer be possible.",
+                ["DataText"] = "To export or delete your data, sign in to the customer app with the same account.",
+                ["ButtonText"] = "Open the customer app",
+                ["ThanksText"] = "Thank you for the work you have done with us.",
+                ["SupportText"] = "Questions? Write to us at",
+                ["Closing"] = "Kind regards,",
+                ["TeamName"] = "the Cleansia team",
+                ["FooterText"] = "© Cleansia s.r.o. All rights reserved.",
+            },
+            ["cs"] = new Dictionary<string, string>(StringComparer.Ordinal)
+            {
+                ["Subject"] = "{0} končí — váš poslední pracovní den",
+                ["Greeting"] = "Dobrý den",
+                ["IntroText"] = "{0} ukončuje svou činnost. Váš poslední pracovní den je:",
+                ["LastDayText"] = "Zakázky naplánované na tento den nebo později jsou zrušeny; zakázky před ním proběhnou podle plánu.",
+                ["PayText"] = "Vaše poslední výplatní období bude po dokončení poslední zakázky uzavřeno a vyfakturováno jako obvykle a vyplaceno obvyklým způsobem.",
+                ["SignInText"] = "Po ukončení činnosti společnosti už nebude možné se přihlásit do partnerské aplikace.",
+                ["DataText"] = "Pro export nebo smazání svých dat se přihlaste stejným účtem do zákaznické aplikace.",
+                ["ButtonText"] = "Otevřít zákaznickou aplikaci",
+                ["ThanksText"] = "Děkujeme za práci, kterou jste s námi odvedli.",
+                ["SupportText"] = "Máte otázky? Napište nám na",
+                ["Closing"] = "S pozdravem,",
+                ["TeamName"] = "tým Cleansia",
+                ["FooterText"] = "© Cleansia s.r.o. Všechna práva vyhrazena.",
+            },
+            ["sk"] = new Dictionary<string, string>(StringComparer.Ordinal)
+            {
+                ["Subject"] = "{0} končí — váš posledný pracovný deň",
+                ["Greeting"] = "Dobrý deň",
+                ["IntroText"] = "{0} ukončuje svoju činnosť. Váš posledný pracovný deň je:",
+                ["LastDayText"] = "Zákazky naplánované na tento deň alebo neskôr sú zrušené; zákazky pred ním prebehnú podľa plánu.",
+                ["PayText"] = "Vaše posledné výplatné obdobie bude po dokončení poslednej zákazky uzavreté a vyfakturované ako obvykle a vyplatené obvyklým spôsobom.",
+                ["SignInText"] = "Po ukončení činnosti spoločnosti už nebude možné prihlásiť sa do partnerskej aplikácie.",
+                ["DataText"] = "Na export alebo vymazanie svojich údajov sa prihláste rovnakým účtom do zákazníckej aplikácie.",
+                ["ButtonText"] = "Otvoriť zákaznícku aplikáciu",
+                ["ThanksText"] = "Ďakujeme za prácu, ktorú ste s nami odviedli.",
+                ["SupportText"] = "Máte otázky? Napíšte nám na",
+                ["Closing"] = "S pozdravom,",
+                ["TeamName"] = "tím Cleansia",
+                ["FooterText"] = "© Cleansia s.r.o. Všetky práva vyhradené.",
+            },
+            ["uk"] = new Dictionary<string, string>(StringComparer.Ordinal)
+            {
+                ["Subject"] = "{0} припиняє роботу — ваш останній робочий день",
+                ["Greeting"] = "Доброго дня",
+                ["IntroText"] = "{0} припиняє свою діяльність. Ваш останній робочий день:",
+                ["LastDayText"] = "Замовлення, заплановані на цей день або пізніше, скасовано; замовлення до нього відбудуться за планом.",
+                ["PayText"] = "Ваш останній розрахунковий період буде закрито та виставлено рахунок як зазвичай після завершення останнього замовлення, а виплату здійснено звичайним способом.",
+                ["SignInText"] = "Після закриття компанії вхід до партнерського застосунку буде неможливим.",
+                ["DataText"] = "Щоб експортувати або видалити свої дані, увійдіть тим самим обліковим записом у застосунок для клієнтів.",
+                ["ButtonText"] = "Відкрити застосунок для клієнтів",
+                ["ThanksText"] = "Дякуємо за роботу, яку ви виконали разом з нами.",
+                ["SupportText"] = "Є запитання? Напишіть нам на",
+                ["Closing"] = "З повагою,",
+                ["TeamName"] = "команда Cleansia",
+                ["FooterText"] = "© Cleansia s.r.o. Усі права захищено.",
+            },
+            ["ru"] = new Dictionary<string, string>(StringComparer.Ordinal)
+            {
+                ["Subject"] = "{0} прекращает работу — ваш последний рабочий день",
+                ["Greeting"] = "Здравствуйте",
+                ["IntroText"] = "{0} прекращает свою деятельность. Ваш последний рабочий день:",
+                ["LastDayText"] = "Заказы, запланированные на этот день или позже, отменены; заказы до него состоятся по плану.",
+                ["PayText"] = "Ваш последний расчётный период будет закрыт и выставлен к оплате как обычно после завершения последнего заказа, а выплата произведена обычным способом.",
+                ["SignInText"] = "После закрытия компании вход в партнёрское приложение станет невозможным.",
+                ["DataText"] = "Чтобы экспортировать или удалить свои данные, войдите тем же аккаунтом в приложение для клиентов.",
+                ["ButtonText"] = "Открыть приложение для клиентов",
+                ["ThanksText"] = "Спасибо за работу, которую вы проделали вместе с нами.",
+                ["SupportText"] = "Есть вопросы? Напишите нам на",
+                ["Closing"] = "С уважением,",
+                ["TeamName"] = "команда Cleansia",
+                ["FooterText"] = "© Cleansia s.r.o. Все права защищены.",
+            },
+        };
+
     private static string TemplateFileFor(EmailType emailType) => emailType switch
     {
         EmailType.ConfirmationEmail => "email-confirmation.html",
@@ -655,6 +904,8 @@ public sealed class EmailService : IEmailService
         EmailType.PeriodClosed => "close-period-notification.html",
         EmailType.PeriodEndReminder => "closure-period-reminder.html",
         EmailType.PromoCode => "promo-code.html",
+        EmailType.CompanyWindDownCustomer => "company-wind-down-customer.html",
+        EmailType.CompanyWindDownCleaner => "company-wind-down-cleaner.html",
         _ => throw new InvalidOperationException($"No e-mail template is mapped for {emailType}."),
     };
 }

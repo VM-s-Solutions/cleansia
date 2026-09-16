@@ -490,6 +490,10 @@ const ADMIN_SURFACE_ERROR_KEYS: readonly string[] = [
   'company.archived',
   'company.not_deactivated',
   'company.operates_default_market',
+  // The wind-down request (ADR-0064 D2): AdminCompanyLifecycleController.WindDown.
+  'company.wind_down_already_requested',
+  'company.wind_down_date_in_past',
+  'company.wind_down_in_progress',
   // A country switches on only once its configuration names an active currency; its market content
   // needs that configuration row: AdminCountryController.SetCountryServiced / UpdateCountryMarketContent.
   'country.configuration_missing',

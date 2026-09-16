@@ -13,6 +13,7 @@ public sealed class CompanyLifecycleAuditLabelTests
     [Theory]
     [InlineData(typeof(DeactivateCompany.Command), "company.deactivate")]
     [InlineData(typeof(ReactivateCompany.Command), "company.reactivate")]
+    [InlineData(typeof(WindDownCompany.Command), "company.wind_down")]
     public void The_Lifecycle_Writers_Carry_The_Frozen_Tenant_Label(Type commandType, string expectedLabel)
     {
         var descriptor = AuditActionDescriptor.For(commandType);

@@ -32,4 +32,14 @@ public class CompanyInfoRepository(CleansiaDbContext context) : BaseRepository<C
     {
         return await GetDbSet().CountAsync(c => c.IsActive, cancellationToken);
     }
+
+    public async Task<IReadOnlyList<string>> GetActiveLegalNamesAsync(CancellationToken cancellationToken)
+    {
+        return await GetDbSet()
+            .AsNoTracking()
+            .Where(c => c.IsActive)
+            .OrderBy(c => c.CountryId)
+            .Select(c => c.LegalName)
+            .ToListAsync(cancellationToken);
+    }
 }

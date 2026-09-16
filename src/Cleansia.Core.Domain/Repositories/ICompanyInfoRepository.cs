@@ -9,4 +9,7 @@ public interface ICompanyInfoRepository : IRepository<CompanyInfo, string>
     Task<bool> ExistsActiveForCountryAsync(string countryId, CancellationToken cancellationToken);
     Task<bool> ExistsActiveForCountryExcludingAsync(string countryId, string excludeId, CancellationToken cancellationToken);
     Task<int> CountActiveAsync(CancellationToken cancellationToken);
+
+    /// <summary>The legal name of every active company info of the ambient company, one per market, in country order.</summary>
+    Task<IReadOnlyList<string>> GetActiveLegalNamesAsync(CancellationToken cancellationToken);
 }

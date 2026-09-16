@@ -104,6 +104,11 @@ function buildFixture(overrides = {}) {
     iosFaq: 'Covered by insurance up to %1$@ per booking.',
     iosFaqNoFigure: 'Covered by insurance.',
     iosSeasonal: null,
+    // The platform's cancellation reasons: every declared key is mapped and localised on the three
+    // clients unless the scenario drops one surface; the known unrendered key is declared as it is
+    // in the tree so the checker's own list stays honest.
+    reasons: ['payment_not_completed', 'company_wind_down'],
+    reasonMissingOn: null,
     ...overrides,
   };
 
@@ -140,6 +145,38 @@ public static class BookingPolicy
     }
   }
 
+  const reasonConsts = [...o.reasons, 'no_cleaner_available']
+    .map((r) => `    public const string R_${r} = "order.cancelled.${r}";`)
+    .join('\n');
+  write(root, 'src/Cleansia.Core.Domain/Orders/OrderCancellationReasons.cs', `
+public static class OrderCancellationReasons
+{
+${reasonConsts}
+}
+`);
+  const mapped = (surface) => o.reasons.filter(() => o.reasonMissingOn !== surface);
+  write(
+    root,
+    'src/Cleansia.App/libs/cleansia-customer-features/orders/src/lib/order-detail/order-detail.component.ts',
+    mapped('web')
+      .map((r) => `      case 'order.cancelled.${r}':\n        return 'pages.order_detail.cancellation_reason.${r}';`)
+      .join('\n'),
+  );
+  write(
+    root,
+    'src/cleansia_android/customer-app/src/main/java/cz/cleansia/customer/features/orders/OrderDetailScreen.kt',
+    mapped('android')
+      .map((r) => `    "order.cancelled.${r}" ->\n        stringResource(R.string.order_cancelled_reason_${r})`)
+      .join('\n'),
+  );
+  write(
+    root,
+    'src/cleansia_ios/CleansiaCustomer/Sources/Features/Orders/CancellationReasonCopy.swift',
+    mapped('ios')
+      .map((r) => `        "order.cancelled.${r}": "order_cancelled_reason_${r}",`)
+      .join('\n'),
+  );
+
   write(root, 'src/Cleansia.App/libs/shared/models/src/lib/models/booking-window.models.ts', `
 export const FIRST_WINDOW_HOUR = ${o.firstHour};
 export const LAST_WINDOW_HOUR = ${o.lastHour};
@@ -170,6 +207,11 @@ export const EXPRESS_SURCHARGE_RATE = ${o.tsExpressRate};
               date_hint: o.webDateHint,
             },
           },
+          order_detail: {
+            cancellation_reason: Object.fromEntries(
+              mapped('web-locale').map((r) => [r, `Reason ${r} (${locale})`]),
+            ),
+          },
         },
       }, null, 2),
     );
@@ -185,7 +227,7 @@ export const EXPRESS_SURCHARGE_RATE = ${o.tsExpressRate};
     <string name="booking_trust_insured_no_figure">${o.androidInsuredNoFigure}</string>
     <string name="help_faq_a3">${o.androidFaq}</string>
     <string name="help_faq_a3_no_figure">${o.androidFaqNoFigure}</string>
-${o.androidSeasonal === null ? '' : `    <string name="home_seasonal_subtitle">${o.androidSeasonal}</string>\n`}</resources>`,
+${mapped('android-locale').map((r) => `    <string name="order_cancelled_reason_${r}">Reason ${r}</string>\n`).join('')}${o.androidSeasonal === null ? '' : `    <string name="home_seasonal_subtitle">${o.androidSeasonal}</string>\n`}</resources>`,
     );
   }
 
@@ -203,6 +245,9 @@ ${o.androidSeasonal === null ? '' : `    <string name="home_seasonal_subtitle">$
         booking_trust_insured_no_figure: { localizations: localizations(o.iosInsuredNoFigure) },
         help_faq_a3: { localizations: localizations(o.iosFaq) },
         help_faq_a3_no_figure: { localizations: localizations(o.iosFaqNoFigure) },
+        ...Object.fromEntries(
+          mapped('ios-locale').map((r) => [`order_cancelled_reason_${r}`, { localizations: localizations(`Reason ${r}`) }]),
+        ),
         ...(o.iosSeasonal === null ? {} : { home_seasonal_subtitle: { localizations: localizations(o.iosSeasonal) } }),
       },
     }, null, 2),
@@ -252,6 +297,18 @@ function scenario(name, overrides, expect) {
 
 // ─── 1. A tree that agrees passes ───────────────────────────────────────────
 scenario('a tree whose four surfaces agree passes', {}, { code: 0 });
+
+// ─── 1b. Every platform cancellation reason renders on the three clients ────
+// A key the server writes that a client cannot turn into a sentence reaches the customer as
+// silence; the one known gap is named in the checker and must stay declared in the tree.
+scenario('a reason mapped and localised everywhere passes', { reasons: ['company_wind_down'] }, { code: 0 });
+for (const surface of ['web', 'android', 'ios', 'web-locale', 'android-locale', 'ios-locale']) {
+  scenario(
+    `a reason the ${surface} surface does not render fails`,
+    { reasons: ['company_wind_down'], reasonMissingOn: surface },
+    { code: 1, mentions: ['company_wind_down'] },
+  );
+}
 
 // ─── 2. The gate can still fail ─────────────────────────────────────────────
 {

@@ -10,6 +10,9 @@ public interface ICountryConfigurationRepository : IRepository<CountryConfigurat
     /// <summary>The configuration flagged as the default market, with its country; null when none is.</summary>
     Task<CountryConfiguration?> GetDefaultMarketAsync(CancellationToken cancellationToken);
 
+    /// <summary>The markets one operating company runs — every configuration naming it as operator.</summary>
+    Task<IReadOnlyList<CountryConfiguration>> GetOperatedByAsync(string tenantId, CancellationToken cancellationToken);
+
     /// <summary>
     /// Clears the flag on every row that carries it -- ALL rather than "the" one, for the reason
     /// <see cref="ICurrencyRepository.ClearDefaultAsync"/> gives: a clear keyed on a prior read races

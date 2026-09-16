@@ -3,6 +3,7 @@ using Cleansia.Core.AppServices.Auditing;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Tenancy;
+using Cleansia.Core.Queue.Abstractions;
 using Cleansia.Infra.Common.Validations;
 using FluentValidation;
 
@@ -17,6 +18,10 @@ namespace Cleansia.Core.AppServices.Features.CompanyLifecycle;
 /// <para>Refused while the company holds the default market: every anonymous identity request on
 /// every host is scoped to the default market's operator, so delisting it would refuse them all
 /// until somebody runs SQL. The owner moves the flag with <c>SetDefaultMarket</c> first.</para>
+///
+/// <para>When a wind-down date is already set the sweep is run again from here, with the door now
+/// closed: anything booked since the announcement is cancelled and refunded, credit is discharged and
+/// the last pay period is closed. Deactivation never waits on a run already in flight.</para>
 /// </summary>
 [AuditAction("company.deactivate", ResourceType = "Tenant")]
 public class DeactivateCompany
@@ -64,6 +69,8 @@ public class DeactivateCompany
         ITenantProvider tenantProvider,
         IUserSessionProvider userSessionProvider,
         IAuditContext auditContext,
+        IPendingDispatch pendingDispatch,
+        IOutboxMessageRepository outboxMessageRepository,
         TimeProvider timeProvider) : ICommandHandler<Command, Response>
     {
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
@@ -75,8 +82,14 @@ public class DeactivateCompany
                 return BusinessResult.Failure<Response>(new Error(ErrorCode, BusinessErrorMessage.TenantNotFound));
             }
 
+            var now = timeProvider.GetUtcNow();
             var before = CompanyLifecycleSnapshot.Of(tenant);
-            tenant.Deactivate(userSessionProvider.GetUserId()!, timeProvider.GetUtcNow());
+            tenant.Deactivate(userSessionProvider.GetUserId()!, now);
+            if (tenant.IsWindDownRequested)
+            {
+                await CompanyWindDownDispatch.EnqueueAsync(pendingDispatch, outboxMessageRepository, tenant.Id, now, cancellationToken);
+            }
+
             auditContext.RecordChange("Tenant", tenant.Id, before, CompanyLifecycleSnapshot.Of(tenant));
 
             return BusinessResult.Success(new Response(tenant.State));

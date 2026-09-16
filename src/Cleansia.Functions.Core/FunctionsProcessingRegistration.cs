@@ -26,6 +26,8 @@ public static class FunctionsProcessingRegistration
         services.AddScoped<INewJobsDigestService, NewJobsDigestService>();
         services.AddScoped<IDataRetentionBackgroundService, DataRetentionBackgroundService>();
         services.AddScoped<IRefreshTokenCleanupService, RefreshTokenCleanupService>();
+        // ADR-0064 D2 — the company wind-down sweep, consumed here only.
+        services.AddScoped<ICompanyWindDownService, CompanyWindDownService>();
 
         // ADR-0002 D5 step 1 — the testable consumer bodies. The [Function] trigger shells
         // (Cleansia.Functions/Functions/*.cs) stay in the Exe so the Worker SDK source-gen discovers all
@@ -63,6 +65,7 @@ public static class FunctionsProcessingRegistration
         // ADR-0029 — the direct-APNs live-activity dispatch consumer + its 24h stale-token janitor.
         services.AddScoped<SendLiveActivityUpdateHandler>();
         services.AddScoped<LiveActivityJanitorTimerHandler>();
+        services.AddScoped<CompanyWindDownHandler>();
 
         // ADR-0002 D3 (F3) — the per-queue -poison consumers. Each records a durable DeadLetter row +
         // LogError + acks; IDeadLetterStore is registered in AddCoreBindings → AddRepositories.
@@ -73,6 +76,7 @@ public static class FunctionsProcessingRegistration
         services.AddScoped<CalculateOrderPayPoisonHandler>();
         services.AddScoped<SendEmailPoisonHandler>();
         services.AddScoped<LiveActivityDispatchPoisonHandler>();
+        services.AddScoped<CompanyWindDownPoisonHandler>();
 
         return services;
     }

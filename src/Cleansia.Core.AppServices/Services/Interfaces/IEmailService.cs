@@ -25,4 +25,17 @@ public interface IEmailService
     Task<string> SendPromoCodeEmailAsync(string email, string promoCode, string discountLabel, DateTime? expiresOn, string languageCode = Constants.Language.English, CancellationToken ct = default);
 
     Task<string> SendOrderStatusUpdateEmailAsync(string email, Order order, string newStatus, string languageCode = Constants.Language.English, CancellationToken ct = default);
+
+    /// <summary>
+    /// The wind-down notice to a customer of a closing company (ADR-0064 D2 step 1): the company
+    /// names as the receipts print them, the last day of service, and what happens to bookings, Plus,
+    /// credit and the account.
+    /// </summary>
+    Task<string> SendCompanyWindDownCustomerNoticeAsync(string email, string userName, IReadOnlyList<string> companyNames, DateOnly windDownFrom, string languageCode = Constants.Language.English, CancellationToken ct = default);
+
+    /// <summary>
+    /// The wind-down notice to an approved cleaner of a closing company: the last day of work, the
+    /// last pay period, partner sign-in ending at the close, and the customer app for export or erasure.
+    /// </summary>
+    Task<string> SendCompanyWindDownCleanerNoticeAsync(string email, string userName, IReadOnlyList<string> companyNames, DateOnly windDownFrom, string languageCode = Constants.Language.English, CancellationToken ct = default);
 }

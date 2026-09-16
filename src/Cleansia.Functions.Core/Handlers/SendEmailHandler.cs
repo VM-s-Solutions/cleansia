@@ -27,6 +27,8 @@ public class SendEmailHandler(
     IIdempotencyGuard idempotencyGuard,
     ITenantProvider tenantProvider,
     IPromoCodeRepository promoCodeRepository,
+    ITenantRepository tenantRepository,
+    ICompanyInfoRepository companyInfoRepository,
     ILogger<SendEmailHandler> logger)
 {
     private static readonly JsonSerializerOptions JsonOptions =
@@ -126,8 +128,39 @@ public class SendEmailHandler(
         // not carry — they live on the row the command just wrote, keyed by the
         // same code. Reading them here keeps the message shape unchanged.
         EmailType.PromoCode => SendPromoAsync(message, ct),
+        // The wind-down notice names the company as its receipts do and the last day of service —
+        // both on the company's own rows, read under the override the envelope set, so the message
+        // shape stays the frozen one.
+        EmailType.CompanyWindDownCustomer => SendCompanyWindDownAsync(message, ct),
+        EmailType.CompanyWindDownCleaner => SendCompanyWindDownAsync(message, ct),
         _ => throw new InvalidOperationException($"Unsupported email type for the send-email queue: {message.EmailType}"),
     };
+
+    private async Task SendCompanyWindDownAsync(SendEmailMessage message, CancellationToken ct)
+    {
+        var tenantId = tenantProvider.GetCurrentTenantId();
+        var company = string.IsNullOrEmpty(tenantId) ? null : await tenantRepository.GetByIdAsync(tenantId, ct);
+        if (company?.WindDownFrom is not { } windDownFrom)
+        {
+            // The date was cleared by a reactivation after the notice was enqueued. Like a promo code
+            // deleted after its e-mail was queued, this throws rather than acks: the poison row is how
+            // a person learns a notice was asked for and not sent.
+            throw new InvalidOperationException(
+                $"Company {tenantId} has no wind-down date; refusing to send a wind-down notice for it.");
+        }
+
+        var companyNames = await companyInfoRepository.GetActiveLegalNamesAsync(ct);
+
+        if (message.EmailType == EmailType.CompanyWindDownCleaner)
+        {
+            await emailService.SendCompanyWindDownCleanerNoticeAsync(
+                message.Email, message.UserName, companyNames, windDownFrom, message.LanguageCode, ct);
+            return;
+        }
+
+        await emailService.SendCompanyWindDownCustomerNoticeAsync(
+            message.Email, message.UserName, companyNames, windDownFrom, message.LanguageCode, ct);
+    }
 
     private async Task SendPromoAsync(SendEmailMessage message, CancellationToken ct)
     {

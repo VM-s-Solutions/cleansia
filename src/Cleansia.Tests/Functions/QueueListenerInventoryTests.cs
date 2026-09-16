@@ -77,7 +77,29 @@ public class QueueListenerInventoryTests
     public void TheListenerCountIsTwicePerDeclaredQueue()
     {
         Assert.Equal(DeclaredQueueNames().Count * 2, TriggeredQueueNames().Count);
-        Assert.Equal(14, TriggeredQueueNames().Count);
+        Assert.Equal(16, TriggeredQueueNames().Count);
+    }
+
+    /// <summary>
+    /// The poison alert is one rule over every <c>*-poison</c> queue, so a new queue is covered the
+    /// moment its companion is provisioned — as long as the rule still matches on the companion
+    /// suffix rather than on a hand-kept list. This pins that shape against every declared queue.
+    /// </summary>
+    [Fact]
+    public void EveryPoisonCompanionIsCoveredByThePoisonAlert()
+    {
+        var bicep = File.ReadAllText(RepoPath("deploy", "bicep", "modules", "queueAlerts.bicep"));
+        var query = Regex.Match(bicep, @"query:\s*'(?<kql>[^']*)'");
+
+        Assert.True(query.Success, "queueAlerts.bicep no longer declares a KQL query for the poison alert.");
+
+        var suffix = Regex.Match(query.Groups["kql"].Value, @"ObjectKey contains ""(?<suffix>[^""]+)""");
+        Assert.True(suffix.Success, "The poison alert no longer filters StorageQueueLogs on the poison companion suffix.");
+
+        foreach (var name in DeclaredQueueNames())
+        {
+            Assert.EndsWith(suffix.Groups["suffix"].Value, $"{name}-poison", StringComparison.Ordinal);
+        }
     }
 
     private static string RepoPath(params string[] segments)

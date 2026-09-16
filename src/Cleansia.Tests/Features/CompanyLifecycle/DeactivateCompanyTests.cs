@@ -4,6 +4,8 @@ using Cleansia.Core.AppServices.Features.CompanyLifecycle;
 using Cleansia.Core.Domain.Configuration;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Tenancy;
+using Cleansia.Core.Queue.Abstractions;
+using Cleansia.Core.Queue.Abstractions.Messages;
 using Cleansia.TestUtilities;
 using Moq;
 
@@ -25,6 +27,8 @@ public sealed class DeactivateCompanyTests
     private readonly Mock<ITenantProvider> _tenantProvider = new();
     private readonly Mock<ICountryConfigurationRepository> _configurations = new();
     private readonly Mock<IAuditContext> _auditContext = new();
+    private readonly Mock<IPendingDispatch> _pendingDispatch = new();
+    private readonly Mock<IOutboxMessageRepository> _outbox = new();
     private readonly StubTimeProvider _clock = new(Now);
 
     public DeactivateCompanyTests()
@@ -49,6 +53,8 @@ public sealed class DeactivateCompanyTests
         _tenantProvider.Object,
         new TestUserSessionProvider(AdminId, "admin@cleansia.test"),
         _auditContext.Object,
+        _pendingDispatch.Object,
+        _outbox.Object,
         _clock);
 
     [Fact]
@@ -124,6 +130,8 @@ public sealed class DeactivateCompanyTests
             new CompanyLifecycleSnapshot(CompanyLifecycleState.Operating, null),
             new CompanyLifecycleSnapshot(CompanyLifecycleState.Deactivated, null),
             null), Times.Once);
+        _pendingDispatch.Verify(d => d.Enqueue(
+            It.IsAny<string>(), It.IsAny<QueueEnvelope<CompanyWindDownMessage>>(), It.IsAny<string>()), Times.Never);
     }
 
     [Fact]
@@ -140,6 +148,21 @@ public sealed class DeactivateCompanyTests
             new CompanyLifecycleSnapshot(CompanyLifecycleState.WindingDown, new DateOnly(2026, 10, 1)),
             new CompanyLifecycleSnapshot(CompanyLifecycleState.Deactivated, new DateOnly(2026, 10, 1)),
             null), Times.Once);
+    }
+
+    [Fact]
+    public async Task Closing_The_Door_On_A_Company_With_A_WindDown_Date_Runs_The_Sweep_Again()
+    {
+        Company(t => t.RequestWindDown(new DateOnly(2026, 10, 1), AdminId, Now.AddDays(-7)).StartWindDownRun(Now.AddMinutes(-5)));
+
+        var result = await Handler().Handle(new DeactivateCompany.Command(), CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        var key = MessageKeys.CompanyWindDown(TenantId, Now);
+        _pendingDispatch.Verify(d => d.Enqueue(
+            QueueNames.CompanyWindDown,
+            It.Is<QueueEnvelope<CompanyWindDownMessage>>(e => e.MessageKey == key && e.TenantId == TenantId && e.Payload.TenantId == TenantId),
+            key), Times.Once);
     }
 
     [Fact]

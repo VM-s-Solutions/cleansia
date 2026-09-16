@@ -506,6 +506,8 @@ export class OrderDetailComponent implements OnInit {
         return 'pages.order_detail.cancellation_reason.payment_not_completed';
       case 'order.cancelled.recurring_not_confirmed':
         return 'pages.order_detail.cancellation_reason.recurring_not_confirmed';
+      case 'order.cancelled.company_wind_down':
+        return 'pages.order_detail.cancellation_reason.company_wind_down';
       default:
         return null;
     }

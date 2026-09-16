@@ -70,7 +70,8 @@ public class PayPeriodBackgroundServiceInvoiceMathTests
         _pdfService.Object,
         _blobContainerClientFactory.Object,
         _tenantProvider.Object,
-        _payoutReferenceAllocator.Object);
+        _payoutReferenceAllocator.Object,
+        new Mock<ITenantRepository>().Object);
 
     private void ArrangePeriodCloseWithPays(params OrderEmployeePay[] pays)
     {

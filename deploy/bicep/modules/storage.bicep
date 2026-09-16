@@ -61,6 +61,7 @@ var queueBaseNames = [
   'calculate-order-pay'
   'send-email'
   'live-activity-dispatch'
+  'company-wind-down'
 ]
 var poisonQueueNames = [for q in queueBaseNames: '${q}-poison']
 var allQueueNames = concat(queueBaseNames, poisonQueueNames)

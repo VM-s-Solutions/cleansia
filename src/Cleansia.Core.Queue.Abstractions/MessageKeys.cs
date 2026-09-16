@@ -63,6 +63,15 @@ public static class MessageKeys
         $"email:{Purpose(emailType)}:{userId}:{codeHash}";
 
     /// <summary>
+    /// company-wind-down → <c>wind-down:{tenantId}:{requestedAt:yyyyMMddHHmmss}</c>. The sweep is
+    /// re-run on purpose — at the request, at deactivation, and from the admin page — so the instant
+    /// the run was asked for is a domain input, not a source of randomness: the same request yields the
+    /// same key, and every later request is a new run.
+    /// </summary>
+    public static string CompanyWindDown(string tenantId, DateTimeOffset requestedAt) =>
+        $"wind-down:{tenantId}:{requestedAt.UtcDateTime:yyyyMMddHHmmss}";
+
+    /// <summary>
     /// Deterministic, non-reversible short hash of a raw email token, used as the code segment of the
     /// send-email key so the secret never appears in a key or a log line. Producer and consumer
     /// (dual-read key synthesis) compute it the same way.

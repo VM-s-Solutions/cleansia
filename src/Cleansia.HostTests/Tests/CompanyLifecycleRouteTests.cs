@@ -15,6 +15,7 @@ using Cleansia.Core.Domain.Memberships;
 using Cleansia.Core.Domain.Services;
 using Cleansia.Core.Domain.Tenancy;
 using Cleansia.Core.Domain.Users;
+using Cleansia.Core.Queue.Abstractions;
 using Cleansia.HostTests.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -46,6 +47,7 @@ public sealed class CompanyLifecycleRouteTests(HostTestPostgresFixture db) : Aut
     private const string GetRoute = "/api/AdminCompanyLifecycle/get";
     private const string DeactivateRoute = "/api/AdminCompanyLifecycle/deactivate";
     private const string ReactivateRoute = "/api/AdminCompanyLifecycle/reactivate";
+    private const string WindDownRoute = "/api/AdminCompanyLifecycle/wind-down";
     private const string Password = "12345678Test!";
 
     private const string EurId = "cur-eur-lifecycle";
@@ -574,6 +576,124 @@ public sealed class CompanyLifecycleRouteTests(HostTestPostgresFixture db) : Aut
         var seenByB = await BodyAsync(await AdminB().GetAsync(GetRoute));
         Assert.Equal("Cleansia SK s.r.o.", seenByB.GetProperty("name").GetString());
         Assert.False(seenByB.GetProperty("operatesDefaultMarket").GetBoolean());
+    }
+
+    private static object WindDownFrom(DateOnly? fromDate) => new { fromDate = fromDate?.ToString("yyyy-MM-dd") };
+
+    /// <summary>The sweep's message key is the request instant to the second: two acts within one second ask for one run.</summary>
+    private static async Task WaitForTheNextSecondAsync()
+    {
+        var second = DateTime.UtcNow.Second;
+        while (DateTime.UtcNow.Second == second)
+        {
+            await Task.Delay(50);
+        }
+    }
+
+    private async Task<List<Cleansia.Core.Domain.Outbox.OutboxMessage>> WindDownMessagesAsync() =>
+        await QueryAsync(ctx => ctx.OutboxMessages.IgnoreQueryFilters()
+            .Where(m => m.QueueName == QueueNames.CompanyWindDown)
+            .OrderBy(m => m.CreatedOn)
+            .ToListAsync());
+
+    /// <summary>
+    /// ADR-0064 D2 and TC-LC-WD-5 on the route: the date is set once and never in the past, the request
+    /// stamps the row, records one sweep message under B and one audit row, a re-run needs no date and
+    /// is refused only while a run is fresh.
+    /// </summary>
+    [Fact]
+    public async Task A_wind_down_date_is_set_once_starts_the_sweep_and_a_re_run_waits_for_a_fresh_run_only()
+    {
+        await ArrangeTwoCompaniesAsync();
+        var today = DateOnly.FromDateTime(DateTime.UtcNow);
+        var from = today.AddDays(30);
+
+        await HttpAssert.AssertBusinessErrorAsync(
+            await AdminB().PostAsJsonAsync(WindDownRoute, WindDownFrom(today.AddDays(-2))), BusinessErrorMessage.CompanyWindDownDateInPast);
+        await HttpAssert.AssertBusinessErrorAsync(
+            await AdminB().PostAsJsonAsync(WindDownRoute, WindDownFrom(null)), BusinessErrorMessage.Required);
+        Assert.Empty(await WindDownMessagesAsync());
+        Assert.Null((await TenantRowAsync(HostTestTenants.B)).WindDownFrom);
+
+        var first = await AdminB().PostAsJsonAsync(WindDownRoute, WindDownFrom(from));
+        HttpAssert.IsOk(first);
+        var body = await BodyAsync(first);
+        Assert.Equal((int)CompanyLifecycleState.WindingDown, body.GetProperty("state").GetInt32());
+        Assert.Equal(from.ToString("yyyy-MM-dd"), body.GetProperty("windDownFrom").GetString());
+
+        var row = await TenantRowAsync(HostTestTenants.B);
+        Assert.Equal(from, row.WindDownFrom);
+        Assert.Equal(AdminBId, row.WindDownRequestedBy);
+        Assert.NotNull(row.WindDownRequestedOn);
+
+        var message = Assert.Single(await WindDownMessagesAsync());
+        Assert.Equal(HostTestTenants.B, message.TenantId);
+        Assert.StartsWith($"wind-down:{HostTestTenants.B}:", message.MessageKey, StringComparison.Ordinal);
+
+        var audits = await QueryAsync(ctx => ctx.AdminActionAudits.IgnoreQueryFilters().ToListAsync());
+        Assert.All(audits, a => Assert.Equal("company.wind_down", a.Action));
+        var audit = Assert.Single(audits, a => a.Success);
+        Assert.Equal(AdminBId, audit.ActorId);
+        Assert.Equal("Tenant", audit.ResourceType);
+        Assert.Equal(HostTestTenants.B, audit.ResourceId);
+        Assert.Equal("operating", JsonDocument.Parse(audit.BeforeJson!).RootElement.GetProperty("state").GetString());
+        Assert.Equal("windingDown", JsonDocument.Parse(audit.AfterJson!).RootElement.GetProperty("state").GetString());
+        Assert.Equal(from.ToString("yyyy-MM-dd"), JsonDocument.Parse(audit.AfterJson!).RootElement.GetProperty("windDownFrom").GetString());
+
+        await HttpAssert.AssertBusinessErrorAsync(
+            await AdminB().PostAsJsonAsync(WindDownRoute, WindDownFrom(from.AddDays(1))), BusinessErrorMessage.CompanyWindDownAlreadyRequested);
+        Assert.Equal(from, (await TenantRowAsync(HostTestTenants.B)).WindDownFrom);
+
+        await WaitForTheNextSecondAsync();
+        HttpAssert.IsOk(await AdminB().PostAsJsonAsync(WindDownRoute, WindDownFrom(null)));
+        Assert.Equal(2, (await WindDownMessagesAsync()).Count);
+
+        await SeedAsync(async ctx =>
+        {
+            var tenant = await ctx.Tenants.SingleAsync(t => t.Id == HostTestTenants.B);
+            tenant.StartWindDownRun(DateTimeOffset.UtcNow.AddMinutes(-10));
+        });
+        await HttpAssert.AssertBusinessErrorAsync(
+            await AdminB().PostAsJsonAsync(WindDownRoute, WindDownFrom(null)), BusinessErrorMessage.CompanyWindDownInProgress);
+        Assert.Equal(2, (await WindDownMessagesAsync()).Count);
+
+        await SeedAsync(async ctx =>
+        {
+            var tenant = await ctx.Tenants.SingleAsync(t => t.Id == HostTestTenants.B);
+            tenant.StartWindDownRun(DateTimeOffset.UtcNow.AddHours(-2));
+        });
+        await WaitForTheNextSecondAsync();
+        HttpAssert.IsOk(await AdminB().PostAsJsonAsync(WindDownRoute, WindDownFrom(null)));
+        Assert.Equal(3, (await WindDownMessagesAsync()).Count);
+
+        HttpAssert.IsForbidden(await AdminClient(TestJwtFactory.Mint(AdminAudience, CleanerBId, CleanerBEmail, UserProfile.Employee, tenantId: HostTestTenants.B)).PostAsJsonAsync(WindDownRoute, WindDownFrom(from)));
+        HttpAssert.IsUnauthorized(await AdminClientAnonymous().PostAsJsonAsync(WindDownRoute, WindDownFrom(from)));
+    }
+
+    [Fact]
+    public async Task Closing_the_door_on_a_company_with_a_wind_down_date_runs_the_sweep_again_and_a_frozen_company_refuses_it()
+    {
+        await ArrangeTwoCompaniesAsync();
+        var from = DateOnly.FromDateTime(DateTime.UtcNow).AddDays(30);
+        HttpAssert.IsOk(await AdminB().PostAsJsonAsync(WindDownRoute, WindDownFrom(from)));
+        Assert.Single(await WindDownMessagesAsync());
+
+        await WaitForTheNextSecondAsync();
+        await DeactivateBAsync();
+
+        var messages = await WindDownMessagesAsync();
+        Assert.Equal(2, messages.Count);
+        Assert.All(messages, m => Assert.Equal(HostTestTenants.B, m.TenantId));
+        Assert.Equal(2, messages.Select(m => m.MessageKey).Distinct().Count());
+
+        await SeedAsync(async ctx =>
+        {
+            var tenant = await ctx.Tenants.SingleAsync(t => t.Id == HostTestTenants.B);
+            tenant.RequestArchive(AdminBId, DateTimeOffset.UtcNow);
+        });
+        await HttpAssert.AssertBusinessErrorAsync(
+            await AdminB().PostAsJsonAsync(WindDownRoute, WindDownFrom(null)), BusinessErrorMessage.CompanyArchived);
+        Assert.Equal(2, (await WindDownMessagesAsync()).Count);
     }
 
     private sealed class StubGoogleTokenVerifier(IReadOnlyDictionary<string, GoogleVerifiedClaims> claimsByToken) : IGoogleTokenVerifier

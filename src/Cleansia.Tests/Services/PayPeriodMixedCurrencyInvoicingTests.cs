@@ -321,7 +321,8 @@ public class PayPeriodMixedCurrencyInvoicingTests
         _pdfService.Object,
         _blobContainerClientFactory.Object,
         _tenantProvider.Object,
-        _payoutReferenceAllocator.Object)
+        _payoutReferenceAllocator.Object,
+        new Mock<ITenantRepository>().Object)
         .CloseExpiredPeriodsAndOpenNewAsync(CancellationToken.None);
 
     private static Employee Cleaner()

@@ -2786,7 +2786,10 @@
       "already_deactivated": "Spoločnosť je už deaktivovaná.",
       "not_deactivated": "Spoločnosť nie je deaktivovaná, nie je čo znova aktivovať.",
       "archived": "Spoločnosť je zmrazená na archiváciu; jej stav už nemožno meniť.",
-      "operates_default_market": "Spoločnosť prevádzkuje predvolený trh a nemožno ju deaktivovať. Najprv presuňte predvolený trh na inú spoločnosť."
+      "operates_default_market": "Spoločnosť prevádzkuje predvolený trh a nemožno ju deaktivovať. Najprv presuňte predvolený trh na inú spoločnosť.",
+      "wind_down_already_requested": "Dátum ukončenia je už nastavený a nemožno ho zmeniť. Ak je potrebný skorší dátum, zrušte zvyšné objednávky ručne.",
+      "wind_down_date_in_past": "Posledný deň poskytovania služieb nemôže byť skôr ako dnes na trhoch spoločnosti.",
+      "wind_down_in_progress": "Prebieha beh ukončovania činnosti; skúste to znova, keď skončí."
     },
     "country": {
       "in_use": "Nie je možné odstrániť krajinu, pretože sa práve používa",

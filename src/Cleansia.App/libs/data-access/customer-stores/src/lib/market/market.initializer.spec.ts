@@ -13,7 +13,7 @@ describe('initializeMarket', () => {
   let getOverview: jest.Mock;
   let dispatch: jest.Mock;
 
-  const run = (platform: 'server' | 'browser', cookieHeader?: string): Promise<void> => {
+  const run = (platform: 'server' | 'browser', cookieHeader?: string, hasServerRequest = true): Promise<void> => {
     TestBed.resetTestingModule();
     TestBed.configureTestingModule({
       providers: [
@@ -23,7 +23,7 @@ describe('initializeMarket', () => {
         {
           provide: REQUEST,
           useValue:
-            platform === 'server'
+            platform === 'server' && hasServerRequest
               ? { headers: new Headers(cookieHeader ? { cookie: cookieHeader } : {}) }
               : null,
         },
@@ -41,6 +41,13 @@ describe('initializeMarket', () => {
   // The closest pin to "a cookie-less request renders the default market": the server branch
   // reads only the request, and with no cookie the resolution is the `isDefault` row.
   describe('on the server', () => {
+    it('makes no API request during build-time route extraction', async () => {
+      await run('server', undefined, false);
+
+      expect(getOverview).not.toHaveBeenCalled();
+      expect(dispatch).not.toHaveBeenCalled();
+    });
+
     it('resolves the default market for a request with no cookie and writes nothing', async () => {
       await run('server');
 

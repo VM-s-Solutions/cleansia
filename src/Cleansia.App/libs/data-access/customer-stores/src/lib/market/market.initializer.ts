@@ -21,6 +21,9 @@ export function initializeMarket(): () => Promise<void> {
   const request = inject(REQUEST, { optional: true });
 
   return async () => {
+    // Build-time route extraction has no HTTP request and must not contact a live API.
+    if (!isBrowser && !request) return;
+
     const cookieHeader = isBrowser ? document.cookie : request?.headers.get('cookie');
     const markets = await firstValueFrom(
       client.marketClient.getOverview().pipe(catchError(() => of<MarketListItem[] | null>(null))),

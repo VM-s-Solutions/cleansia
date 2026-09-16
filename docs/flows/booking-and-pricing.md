@@ -47,6 +47,14 @@ that follows the market instead of the address is the Plus step (a subscription 
 customer, not to the booking). When the market list could not be loaded no `countryId` is sent
 anywhere and the platform default answers. → [Business rules — the market](/product/business-rules#market)
 
+A signed-in customer may book in any serviced market with an active operator, including a market
+served by a different company from the account’s. The server resolves the operator from the address
+before creating the order and its children; a saved address from the account’s company is copied
+into the order’s address snapshot. Receipts, refunds and disputes belong to that operator. Loyalty,
+credit and membership usage stay with the account; card payments still use one holding Stripe
+account. Owner-pinned reads keep the booking and its receipt visible in the customer’s order history
+regardless of the browsing market. → [ADR-0061 D6](/decisions/adr-0061#d6-tenant-country-and-currency-agree-by-construction-and-two-validators-refuse-the-cases-that-could-break-it)
+
 ## The price is never taken from the client
 
 `CreateOrder.Command` carries a `TotalPrice`, and it is **a confirmation, not an input**. The validator
@@ -66,12 +74,16 @@ case the row exists for, and it is reachable later only by the order, never by a
 
 A refused booking is a row too, written outside the transaction that was rolled back: a missing
 terms tick is `consent.terms_not_accepted` (judged first, ahead of the price chain), the wrong quoted
-total is `order.total_price.not_match`, an express waiver whose quota ran out is its own key, a
-country another company serves is `order.country_operator_mismatch`. An anonymous refusal carries
-the caller's IP and is bounded by the same `auth` window as the request. Two refusals leave no row
+total is `order.total_price.not_match`, and an express waiver whose quota ran out is its own key.
+`order.country_operator_mismatch` remains a guest consistency check; a signed-in account belonging
+to another operator is no longer a refusal. An anonymous refusal carries the caller’s IP and is
+bounded by the same `auth` window as the request. On an anonymous request, two refusals leave no row
 because nothing exists yet to stamp them with: a country that is not a market
 (`country.not_serviced`) and a market nobody operates (`tenant.not_found`) are refused before the
 operator is resolved, and the failure sink logs one warning instead of writing a row with no tenant.
+Successful order/dispute acts follow the order’s operator. A refused act does so only after ownership
+is proven; a foreign or missing resource probe retains the caller’s account company. The account
+company’s admin can read the customer’s trail across operators after proving access to that account.
 → [What is recorded about a customer](/product/business-rules#customer-record)
 
 ## The terms tick is required, unless the account already consented
@@ -133,9 +145,10 @@ until the customer confirms it, so *"pending for over an hour"* is its **normal*
 abandoned checkout — which is why the stale-checkout sweep explicitly excludes rows with a
 `RecurringTemplateId`. A separate sweep retracts unconfirmed occurrences an hour before the slot.
 
-**A schedule is priced in the market of its saved address.** The template carries no currency; every
-occurrence is priced in the currency of the saved address's country, the same rule as a one-off
-booking. Two consequences follow. A preferred cleaner named on the template (`CreateRecurringBooking`,
+**A schedule is priced and operated in the market of its saved address.** Creation and update stamp
+the template with that address’s active operator. The template carries no currency; every occurrence
+resolves its operator and price from the saved address’s country again, the same rule as a one-off
+booking. The customer keeps access to their own schedules across operators. Two consequences follow. A preferred cleaner named on the template (`CreateRecurringBooking`,
 `UpdateRecurringBooking`) must be paid in that currency as well as have a completed order with the
 customer — one key, `order.preferred_employee.not_eligible`, for both terms — because a cleaner paid in
 another currency would never see an occurrence on their board. And every recurring wizard -- web,

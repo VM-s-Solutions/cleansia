@@ -70,6 +70,15 @@ need backfilling.
 
 ### Added
 
+- **Customer — one account can book in any serviced market with an active operator.** The service
+  address chooses the booking’s company and currency; the customer can still find and manage the
+  booking in their order history. Loyalty, credit and membership usage stay with the account.
+  Receipts, refunds and disputes belong to the booking’s operator; card payments still use one
+  holding Stripe account. Customer web and Android lists and details show each order’s country and
+  currency. The operator’s admin can open a read-only, masked panel for a customer of another
+  company without gaining access to that company’s customer list. iOS order market labels remain
+  outstanding. (T-0765; ADR-0061 D6 amended 2026-09-16.)
+
 - **Operator — an operating company can be closed down from the admin app, in three acts, without
   deleting a row.** On the new *Company lifecycle* page (beside Company settings, `CanViewCompanyLifecycle`)
   an administrator of the company **winds it down from a date**: every active customer and approved

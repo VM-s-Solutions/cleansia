@@ -141,3 +141,66 @@ order lists show the market; ADR-0061 D6 and ADR-0058 amended, ADR-0062 D7 rule 
 ("a customer may book in any serviced market; the order belongs to the market's company; loyalty and
 credit belong to the customer"), flows/booking-and-pricing, customer-app overview, backlog row done,
 Q-TENANCY-01/05 marked answered as built.
+
+## Implementation checkpoint — 2026-09-16
+
+The backend now resolves a signed-in booking’s operator from its service address, stamps recurring
+templates and occurrences from their address, and keeps customer order/dispute/receipt/photo and
+schedule reads pinned to the caller across operators. Loyalty, currency-specific credit, membership
+usage and promo/referral account records retain the account’s company. Notifications use the
+persisted recipient’s account company for the feed, outbox and delivery envelope.
+
+Successful order/dispute audit acts follow the booking operator; the failure sink adopts an operator
+only for a proven-owned resource. Foreign or missing probes keep the caller’s account company. The
+admin by-user timeline and paged customer-action list join across operators after a filtered user
+read proves access to the account. Operator dispute views use the booking identity snapshot for
+foreign customers.
+
+The admin customer read is **order-keyed**: `GET api/AdminOrder/{orderId}/customer` under the new
+AdminOnly `CanViewOrderCustomer` policy. It proves access to the filtered order before returning a
+full same-company `UserItem` or a masked, read-only `CustomerOfAnotherCompanyDto`. The shared order
+DTO carries `CustomerCompany`, without adding a customer account id. Guest orders return
+`400 order.not_found` for this read, rendered as an explicit empty account state. The six existing
+AdminUser management routes remain. Cross-company listing stays closed.
+
+Customer web and Android list/detail market labels and the admin web panel are implemented and
+independently reviewed and locally verified. Labels resolve the order’s country from the
+full directory and use the order’s currency. The detail contract’s missing `CountryId`, caught by
+the web tests, was added in `a0e9d7eb` and all five contracts were regenerated.
+
+**Evidence already complete:** full backend suites passed — 5,827 unit, 486 integration and 296 host
+tests — before the final additive detail-country correction. Three web clients and both mobile
+OpenAPI specifications were regenerated. The final detail-country correction passed the solution
+build, 105 affected unit tests, the cross-market PostgreSQL scenario and all three web app typechecks.
+All 336 targeted web tests passed. The full web pass covered 2,591 tests across 73 projects; its one
+stale error-provenance expectation was corrected and all 48 tests in that app passed on rerun.
+All 76 lint projects and all three production builds passed. Android customer tests passed 1,079/1,079
+and partner tests passed 579/579, with 53 tasks executed in each run and caches disabled. Gradle was stopped. There is no
+schema change, Initial regeneration, deployed DEV database drop, SQL or deployment in this batch.
+
+The repository checks passed. Two stale self-test fixtures were repaired without relaxing either
+production checker: offerability now exercises the four-status floor (12 scenarios passed), and
+module-boundary ratchet scenarios inject their retired baseline while separately testing the shipped
+empty baseline (23 scenarios passed). The docs build passed. The code graph rebuilt with one worker:
+79,985 nodes and 196,473 edges; its optional SQL parser was absent (18 files skipped), and eight files
+had parser limitations. These graph limitations do not replace compiler or test results.
+
+**Separate build finding:** Angular route extraction bootstraps the customer market initializer
+without an incoming HTTP request, and the production build configuration names the production API.
+The first customer build ran before this was discovered and may have attempted a production read;
+no network trace was captured to establish whether it reached the server. No production query was
+made to investigate it. `6c873a4e` now skips market loading in request-less server bootstrap while
+preserving normal SSR and browser loading. Its 57-test store suite and lint passed; a repeat
+production build passed with application API connections blocked and zero such attempts recorded
+(only the Google Fonts build asset host was allowed).
+
+**Still open:** iOS order market labels are not implemented. The handover’s requirement to use only
+members already present in a committed Swift client conflicts with the repository’s generated Swift
+clients being gitignored and created from committed OpenAPI specifications in CI. The requested
+owner clarification is pending; the Mac regeneration/Xcode session remains parked. T-0765 stays
+`in_progress` until the remaining client work and verification are complete.
+
+The documentation now records the implemented split between account and operator ownership in
+ADR-0058, ADR-0061, ADR-0062, business rules, booking flow and customer web overview. The ADR-0061
+ruling table also corrects its stale Q-TENANCY-03 claim: Batch 2’s lifecycle is already implemented
+under ADR-0064.

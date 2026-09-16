@@ -18,8 +18,13 @@ names the `Q-` id.** A question with no blocked row behind it is a question nobo
 > **Q-TENANCY-01 … 05 and Q-PUSH-01 were answered by the owner on 2026-09-15** and are deleted from
 > here per the rule above. The record: `docs/decisions/adr-0061.md` §Rulings (one table — the default
 > filed beside the ruling and where it landed — plus the dated Stripe note: *one holding Stripe account
-> for now, card revenue settled intercompany; cross-market booking is Batch 3; deactivation's a → b → c
-> is Batch 2*); the work is T-0754 … T-0759. Q-PUSH-01's record is `docs/decisions/adr-0054.md`
+> for now, card revenue settled intercompany*). Batch 1 is T-0754 … T-0759; the lifecycle is built in
+> Batch 2 below. **Q-TENANCY-01/05’s cross-market backend is implemented in T-0765 (Batch 3,
+> 2026-09-16)**: bookings follow the address’s operator, account loyalty and credit keep their company,
+> and owner-pinned history spans operators. Web/Android labels and the admin customer panel are
+> implemented and locally verified; iOS label work remains outstanding. The ticket
+> remains `in_progress`; ADR-0061 D5.1/D6 and ADR-0062 D7 carry the dated implementation amendments.
+> Q-PUSH-01's record is `docs/decisions/adr-0054.md`
 > §Rulings (*the digest is not silenceable*; T-0756). Q-VS-03 — the accounting premise ADR-0046 §D3.2
 > was contingent on — was answered by the same ruling as Q-TENANCY-02 and is recorded in ADR-0046's
 > superseding note.

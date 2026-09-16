@@ -21,7 +21,7 @@ history, saved addresses, disputes, Plus, recurring schedules and rewards.
 | Order wizard | `/order` — services, address, date/time, Plus step, payment, review. Public: a guest books end to end. From the address step on the address's country decides the price; the Plus step keeps the chosen market |
 | Checkout | Stripe card payments or cash; `/checkout/success` and `/checkout/cancel` are the two URLs Stripe returns to |
 | Order tracking | `/track-order` — anonymous lookup by order number + e-mail |
-| My Orders | `/orders`, `/orders/:orderId` — history, detail, rebook (auth) |
+| My Orders | `/orders`, `/orders/:orderId` — the customer’s history across operators, detail and rebook (auth); each row and detail show the order’s country and currency |
 | Disputes | `/disputes` — file and follow a dispute (auth) |
 | Cleansia Plus | `/plus` — the one public Plus page: benefits and the plans priced in the chosen market for everyone, the management panel on top for a member (`/membership` redirects here; `/membership/welcome` is the post-purchase page) |
 | Recurring bookings | `/membership/recurring`, `…/create`, `…/:id` — a member's schedules (create and edit gated by `customerMembershipGuard`; list, pause and delete are not) |
@@ -29,6 +29,22 @@ history, saved addresses, disputes, Plus, recurring schedules and rewards.
 | Profile | `/profile` (account, language, notification preferences), `/saved-addresses` |
 | Authentication | `/login`, `/register`, `/r/:code` (referral landing), `/confirm-email` (6-digit code), `/forgot-password`; e-mail + password, Google and Apple sign-in (buttons hidden when the client id is not configured) |
 | Legal | `/terms` and `/privacy` — the stored document in force for the chosen market and the UI language, fetched from `GET api/Legal/GetDocument` and rendered with its title, effective date and version (`yyyy-MM-dd`; the currency code filled in from the market — ADR-0063); `/gdpr` (cookie consent and data requests) |
+
+## Orders across markets
+
+One account can book in any serviced market with an active operator. The market selector chooses
+the browsing context; the service address chooses the booking’s operator and currency. An order
+placed with another operating company stays in the customer’s history, with owner checks on the
+detail, cancellation, receipt, photos and dispute paths. Loyalty, credit and membership usage remain
+with the account.
+
+The list and detail show a market label in all five languages. `OrderMarketFacade` resolves the
+order’s `countryId` against `selectMarkets`, the full directory, and displays the order’s own
+currency code. Switching the browsing market does not relabel an existing order. If that country
+is absent from the directory, the label says “Market unavailable” and keeps the order currency; it
+does not guess from the selected market.
+
+→ [Booking and pricing](/flows/booking-and-pricing) · [Tenancy — cross-market booking](/decisions/adr-0061#d6-tenant-country-and-currency-agree-by-construction-and-two-validators-refuse-the-cases-that-could-break-it)
 
 ## SSR {#ssr}
 

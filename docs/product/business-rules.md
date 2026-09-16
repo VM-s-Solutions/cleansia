@@ -605,17 +605,29 @@ company, from the first write:
   request and a referral check name the market (`countryId`); with none named, the default market.
   A cleaner registers with a market too, and must be approved for a work country that market's
   company serves (`employee.work_country_operator_mismatch`).
-- **An order belongs to the company that serves its address's country** — the same country that decides
-  its currency, so the two can never disagree. A customer of one company booking an address another
-  company serves is refused (`order.country_operator_mismatch`), guest or signed in: the order would be
-  invisible to the account that placed it. **Cross-company booking on one account is refused until two
-  companies exist**; whether it then becomes a feature is the owner's call (Q-TENANCY-01).
+- **A customer may book in any serviced market with an active operator.** The order belongs to the
+  company that serves its address’s country — the same country that decides its currency. The account
+  keeps its original company, and “my orders” includes that customer’s bookings across operators.
+  A guest still has to agree with the operator resolved for its anonymous request
+  (`order.country_operator_mismatch`). Recurring templates and each occurrence resolve their operator
+  from the saved address, too. (Q-TENANCY-01/05, 2026-09-15; ADR-0061 D6 amended 2026-09-16.)
+- **Loyalty and credit follow the account.** Booking with another operator does not create a second
+  loyalty account or move the customer’s credit; credit stays separate by currency. Membership
+  entitlement and benefit usage remain with the account, under the existing membership market rule.
+  Notifications about those bookings arrive in the recipient’s account feed.
+- **The operator’s admin sees the booking, not another company’s customer profile.** An order-keyed
+  customer read returns the full account only within the same company. A foreign customer has a
+  read-only customer-of-another-company panel with first name and masked e-mail, and no customer-profile
+  link. Booking contact details remain the order’s snapshot; cross-company customer listing stays
+  closed.
 - **One email is one identity across the holding.** An email registered with any company is registered
   with Cleansia; a second registration with the same email in another market is refused
   (`user.existing_email`), and an unconfirmed account can be re-registered only in the market it was
   created in. Login, password reset and social sign-in find the one account wherever it lives.
-- **A company's money stays its own:** its receipts number from its own counter, its pay rates and promo
-  codes are its own, and a site-wide campaign reaches its own customers only.
+- **Each company keeps its own books:** receipts and refunds belong to the order’s operator, receipt
+  numbers come from that operator’s counter, its pay rates and promo codes are its own, and a site-wide
+  campaign reaches its own customers only. Card payments use **one holding Stripe account**, with
+  revenue settled intercompany (Q-TENANCY-01/05); there is no per-company Stripe account today.
 
 **Opening a market is data, gated twice** — three times when a *new* company will serve it: the
 currency needs a loyalty divisor before `ActivateCurrency` accepts it

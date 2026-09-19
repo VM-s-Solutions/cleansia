@@ -1,7 +1,7 @@
 ---
 id: T-0774
 title: Administrators are told by e-mail — the channel, the template, the mailbox key (ADR-0065 D2 step 4, D3)
-status: todo
+status: done
 size: M
 owner: —
 created: 2026-09-19
@@ -106,3 +106,4 @@ queue (AC5). The reviewer walks S1/S6/S8 against the diff.
   the backend lane flips it when it picks the ticket up. `security_touching` corrected to `true` — a
   tenant-ignoring read, an outbound e-mail channel and a wire-crossing value type are each on Gate 3's
   own list; the routing note above says what the Security Reviewer looks at.
+- 2026-09-19 — done in c099d23d + 77531caf · web 90d3800e: EmailType.AdminNotification with one embedded template and per-event copy in five locales rides the send-email outbox; notifications.admin_email (Email value type) read by the event's company — the mailbox when set, every active administrator otherwise; the Company settings page edits it with client-side validation. Verified in the main-session pass: backend unit suite 6 080 green, web 74 projects / 2 893 specs, lint 77, typecheck 3/3; the Postgres and host suites need Docker Desktop, which was down on the machine that day — CI is their first execution.

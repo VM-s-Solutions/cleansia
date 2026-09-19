@@ -1,7 +1,7 @@
 ---
 id: T-0769
 title: Admin web — the bell and the notifications page (ADR-0065 D5)
-status: todo
+status: done
 size: M
 owner: —
 created: 2026-09-19
@@ -71,3 +71,4 @@ signals; no raw controls; every string through `TranslatePipe`.
 - 2026-09-19 — filed by the docs lane from the batch-6 panel; runs after T-0768's admin client regen.
 - 2026-09-19 (review) — `todo`, no owner: it was filed `in_progress` for a lane that does not exist yet.
   The frontend lane flips it when it picks the ticket up, once T-0768's regenerated client is committed.
+- 2026-09-19 — done in 8086c376 + fcfdb81d: a sidebar bell with the unread count and the /notifications page (paged list, mark read, mark all read with a microsecond-safe watermark, rows deep-link to order / dispute / customer / company); the sidebar gate has a spec that goes red without it. Verified in the main-session pass: backend unit suite 6 080 green, web 74 projects / 2 893 specs, lint 77, typecheck 3/3; the Postgres and host suites need Docker Desktop, which was down on the machine that day — CI is their first execution.

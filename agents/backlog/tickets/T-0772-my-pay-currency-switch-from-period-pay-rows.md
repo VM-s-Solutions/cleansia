@@ -1,7 +1,7 @@
 ---
 id: T-0772
 title: My Pay — the currency switch comes from the period's pay rows (F6)
-status: todo
+status: done
 size: S
 owner: —
 created: 2026-09-19
@@ -106,3 +106,4 @@ id (S1), and that the new member carries currency ids and codes only.
   no dependency, so it is ready the moment the backend lane is free. `security_touching` corrected to
   `true` — a response DTO changes, which is Gate 3's own definition; the routing note above says what the
   Security Reviewer looks at.
+- 2026-09-19 — done in 8fb1e549 + b9f18e50 · web 2407b701: PeriodPaySummaryDto.availableCurrencies from the period's pay rows (a cancelled invoice's currency is not offered); the partner client regenerated and the partner-mobile spec refreshed (additive); My Pay derives its switch from the DTO. Verified in the main-session pass: backend unit suite 6 080 green, web 74 projects / 2 893 specs, lint 77, typecheck 3/3; the Postgres and host suites need Docker Desktop, which was down on the machine that day — CI is their first execution.

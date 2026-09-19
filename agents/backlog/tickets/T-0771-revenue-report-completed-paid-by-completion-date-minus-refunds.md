@@ -1,7 +1,7 @@
 ---
 id: T-0771
 title: The revenue report — completed and paid, by completion date, minus both refund legs (D3)
-status: todo
+status: done
 size: M
 owner: —
 created: 2026-09-19
@@ -166,3 +166,4 @@ executable assertions and the panel re-reads them (memory: refund money-math nee
   no dependency, so it is ready the moment the backend lane is free. `security_touching` corrected to
   `true` — a response DTO and repository reads change, which is Gate 3's own definition; the routing note
   above says what the Security Reviewer looks at.
+- 2026-09-19 — done in c45a4af4 + 1fa06aa8 · web 56884360 + df7c9ba9: completed + paid by CompletedAt, net of both refund legs (card refunds and credit returned), cancelled/unpaid excluded, the admin override stamps CompletedAt and a test goes red for any Completed writer that forgets to; lost chargebacks named on the page (O-D3-2); the admin client regenerated; the report page reads the net figure and names both legs. Verified in the main-session pass: backend unit suite 6 080 green, web 74 projects / 2 893 specs, lint 77, typecheck 3/3; the Postgres and host suites need Docker Desktop, which was down on the machine that day — CI is their first execution.

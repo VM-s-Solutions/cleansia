@@ -1,7 +1,7 @@
 ---
 id: T-0770
 title: Confirmed → New when the last cleaner leaves; the administrators are told (ADR-0067, D2)
-status: todo
+status: done
 size: M
 owner: —
 created: 2026-09-19
@@ -119,3 +119,4 @@ assertions.
   the backend lane flips it when it picks the ticket up after T-0768. `security_touching` corrected to
   `true` — the ticket changes three resource-by-id commands and a state transition, which is Gate 3's own
   definition; the routing note above says what the Security Reviewer looks at.
+- 2026-09-19 — done in c30e2580 + 667de9f7: Order.ReturnToBoardIfUnstaffed() walks Confirmed → New when a drop or admin rejection empties the crew; admin.order.crew_lost fires at any non-terminal status; the override refuses Confirmed on an unstaffed order; RejectEmployee ends the preferred hold; the sweeps keep their crew terms; AdminReassignOrder loads OrderStatusHistory (the Sequence collision) with AsSplitQuery; no invariant claimed; the customer is told nothing (O-D2-1). Verified in the main-session pass: backend unit suite 6 080 green, web 74 projects / 2 893 specs, lint 77, typecheck 3/3; the Postgres and host suites need Docker Desktop, which was down on the machine that day — CI is their first execution.

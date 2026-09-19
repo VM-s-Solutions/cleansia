@@ -1,7 +1,7 @@
 ---
 id: T-0768
 title: Administrators are told — the notifier, the feed audience, the admin feed routes, the first event (ADR-0065)
-status: in_progress
+status: done
 size: M
 owner: backend
 created: 2026-09-19
@@ -95,3 +95,4 @@ comments. The admin NSwag regen is the lane's to run and to report (CLAUDE.md §
 ## Status log
 
 - 2026-09-19 — filed `in_progress` by the docs lane from the batch-6 panel; ADR-0065 `proposed` the same day.
+- 2026-09-19 — done in 7078e617 + 8e4219b2: the notifier writes one feed row per administrator of the named company (recipients by argument, no push, no commit), the admin host serves /api/AdminNotification/* under CanViewAdminNotifications, a filed dispute is the first event; the admin client regenerated and both mobile specs re-dumped for the Admin audience member. Postgres and host tests written; first executed by CI / the main-session run once Docker is up. Verified in the main-session pass: backend unit suite 6 080 green, web 74 projects / 2 893 specs, lint 77, typecheck 3/3; the Postgres and host suites need Docker Desktop, which was down on the machine that day — CI is their first execution.

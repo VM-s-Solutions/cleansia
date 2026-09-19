@@ -1,7 +1,7 @@
 ---
 id: T-0775
 title: Administrators are told — the seven remaining events (ADR-0065 D4)
-status: todo
+status: done
 size: M
 owner: —
 created: 2026-09-19
@@ -101,3 +101,4 @@ fan-out is a side-effecting command on Gate 3's own list.
   the backend lane flips it when it picks the ticket up. `security_touching` corrected to `true` —
   tenant-ignoring writes on webhook and job paths and an e-mail fan-out are each on Gate 3's own list; the
   routing note above says what the Security Reviewer looks at.
+- 2026-09-19 — done in b27fc069 + 4d6d6f11: the seven remaining events at the sites that prove them — a new offerable order, a first card decline (guarded by the order's money and fulfilment state), a chargeback, a failed erasure retry and the three wind-down milestones — each idempotent on redelivery. Verified in the main-session pass: backend unit suite 6 080 green, web 74 projects / 2 893 specs, lint 77, typecheck 3/3; the Postgres and host suites need Docker Desktop, which was down on the machine that day — CI is their first execution.

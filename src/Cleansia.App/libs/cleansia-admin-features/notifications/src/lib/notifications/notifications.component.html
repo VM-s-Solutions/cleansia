@@ -1,0 +1,101 @@
+<div class="cleansia-notifications">
+  <div class="cleansia-notifications__container page-wrapper">
+    <div class="cleansia-notifications__header">
+      <div class="cleansia-notifications__heading">
+        <cleansia-title [title]="'pages.notifications.title' | translate" [level]="1" />
+        <p class="cleansia-notifications__description">
+          {{ 'pages.notifications.description' | translate }}
+        </p>
+      </div>
+      <cleansia-button
+        [label]="'pages.notifications.mark_all_read' | translate"
+        icon="pi pi-check-circle"
+        severity="secondary"
+        [outlined]="true"
+        size="auto-width"
+        [disabled]="!facade.hasUnread()"
+        [loading]="facade.markingAll()"
+        (onClick)="facade.markAllRead()"
+      />
+    </div>
+
+    @if (facade.initialLoading()) {
+    <cleansia-section>
+      <cleansia-loader />
+    </cleansia-section>
+    } @else if (facade.hasError()) {
+    <cleansia-section>
+      <div class="cleansia-notifications__state">
+        <i class="pi pi-exclamation-triangle"></i>
+        <p>{{ 'pages.notifications.load_error' | translate }}</p>
+        <cleansia-button
+          [label]="'pages.notifications.retry' | translate"
+          icon="pi pi-refresh"
+          severity="secondary"
+          [outlined]="true"
+          size="auto-width"
+          (onClick)="facade.load()"
+        />
+      </div>
+    </cleansia-section>
+    } @else if (facade.rows().length === 0) {
+    <cleansia-section>
+      <div class="cleansia-notifications__state cleansia-notifications__state--empty">
+        <i class="pi pi-bell-slash"></i>
+        <p>{{ 'pages.notifications.empty' | translate }}</p>
+        <span class="cleansia-notifications__state-hint">{{ 'pages.notifications.empty_hint' | translate }}</span>
+      </div>
+    </cleansia-section>
+    } @else {
+    <cleansia-section>
+      <ol class="cleansia-notifications__feed" [class.cleansia-notifications__feed--refreshing]="facade.loading()">
+        @for (row of facade.rows(); track row.id) {
+        <li
+          class="cleansia-notifications__row"
+          [class.cleansia-notifications__row--unread]="row.isUnread"
+          [class.cleansia-notifications__row--linked]="row.route !== null"
+          [class.cleansia-notifications__row--busy]="facade.openingId() === row.id"
+          [attr.data-family]="row.family"
+          role="button"
+          tabindex="0"
+          [attr.aria-label]="row.titleKey | translate: row.params"
+          (click)="facade.open(row)"
+          (keydown.enter)="onRowKeydown(row, $event)"
+          (keydown.space)="onRowKeydown(row, $event)"
+        >
+          <span class="cleansia-notifications__glyph" aria-hidden="true">
+            <i [class]="row.icon"></i>
+          </span>
+          <span class="cleansia-notifications__text">
+            <span class="cleansia-notifications__title">{{ row.titleKey | translate: row.params }}</span>
+            @if (row.bodyKey) {
+            <span class="cleansia-notifications__body">{{ row.bodyKey | translate: row.params }}</span>
+            }
+          </span>
+          <span class="cleansia-notifications__meta">
+            <time [attr.datetime]="row.createdOn.toISOString()">{{ row.createdOnLabel }}</time>
+            @if (row.isUnread) {
+            <span class="cleansia-notifications__unread">{{ 'pages.notifications.unread' | translate }}</span>
+            }
+            @if (row.route) {
+            <i class="pi pi-arrow-right cleansia-notifications__arrow" aria-hidden="true"></i>
+            }
+          </span>
+        </li>
+        }
+      </ol>
+
+      @if (facade.totalRecords() > facade.pageSize) {
+      <p-paginator
+        class="cleansia-notifications__paginator"
+        [first]="facade.first()"
+        [rows]="facade.pageSize"
+        [totalRecords]="facade.totalRecords()"
+        [showCurrentPageReport]="false"
+        (onPageChange)="onPageChange($event)"
+      />
+      }
+    </cleansia-section>
+    }
+  </div>
+</div>

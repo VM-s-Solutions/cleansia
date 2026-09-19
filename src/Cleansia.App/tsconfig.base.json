@@ -135,6 +135,9 @@
       "@cleansia/admin-features/membership-plan-management": [
         "libs/cleansia-admin-features/membership-plan-management/src/index.ts"
       ],
+      "@cleansia/admin-features/notifications": [
+        "libs/cleansia-admin-features/notifications/src/index.ts"
+      ],
       "@cleansia/admin-features/data-protection": [
         "libs/cleansia-admin-features/data-protection/src/index.ts"
       ],

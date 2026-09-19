@@ -41,6 +41,7 @@
       "invoices": "Invoices",
       "invoice_details": "Invoice Details",
       "audit_log": "Audit Log",
+      "notifications": "Notifications",
       "audit_log_history": "Resource History",
       "audit_log_entry": "Audit Entry",
       "reports": "Reports",
@@ -254,6 +255,7 @@
     "memberships": "Memberships",
     "data_protection": "Data Protection",
     "audit_log": "Audit Log",
+    "notifications": "Notifications",
     "profile": "My Profile"
   },
   "pages": {
@@ -2679,6 +2681,77 @@
         "confirm_title": "Erase account?",
         "confirm_message": "This permanently anonymizes the account of user {{userId}}. This cannot be undone.",
         "confirm_yes": "Erase"
+      }
+    },
+    "notifications": {
+      "title": "Notifications",
+      "description": "Everything the platform can prove happened in your company, newest first. Open a row to land on the order, dispute, request or page it names.",
+      "mark_all_read": "Mark all as read",
+      "load_error": "The notifications could not be loaded.",
+      "retry": "Try again",
+      "empty": "Nothing to read",
+      "empty_hint": "New orders, lost cleaners, disputes, failed payments and company milestones will show up here.",
+      "unread": "Unread",
+      "messages": {
+        "marked_all_read": "{{count}} marked as read"
+      },
+      "events": {
+        "unknown": {
+          "title": "An event this console cannot show yet"
+        },
+        "admin": {
+          "order": {
+            "new": {
+              "title": "New order to serve",
+              "body": "Order {{orderNumber}} for {{amount}} is ready for a cleaner."
+            },
+            "crew_lost": {
+              "title": "An order lost its last cleaner",
+              "body": "Order {{orderNumber}} on {{cleaningDateTime}} has nobody on it — {{cause}}. It is back on the board.",
+              "body_under_way": "Order {{orderNumber}} on {{cleaningDateTime}} has nobody on it — {{cause}}. The clean was already under way.",
+              "causes": {
+                "dropped": "the cleaner dropped it",
+                "rejected": "the cleaner's account was rejected"
+              }
+            }
+          },
+          "dispute": {
+            "filed": {
+              "title": "A dispute was filed",
+              "body": "A customer filed a dispute on order {{orderNumber}}."
+            },
+            "chargeback": {
+              "title": "A chargeback came in",
+              "body": "The bank reversed {{amount}} on order {{orderNumber}}. The dispute holds the details."
+            }
+          },
+          "payment": {
+            "failed": {
+              "title": "A card payment failed",
+              "body": "The card payment for order {{orderNumber}} was declined. The order is cancelled automatically if it stays unpaid."
+            }
+          },
+          "erasure": {
+            "failed": {
+              "title": "An erasure could not be completed",
+              "body": "An account erasure request failed on {{day}} and is retried tomorrow. The data-protection page lists it."
+            }
+          },
+          "company": {
+            "wind_down_requested": {
+              "title": "Wind-down requested",
+              "body": "Your company is winding down from {{windDownFrom}}."
+            },
+            "wind_down_run": {
+              "title": "A wind-down run settled the books",
+              "body": "Cancelled {{cancelled}}, refunded {{refunded}}, refund failures {{refundFailures}}, pay periods closed {{periodsClosed}}."
+            },
+            "archived": {
+              "title": "Company archived",
+              "body": "The books were sealed on {{archivedOn}}."
+            }
+          }
+        }
       }
     },
     "admin_profile": {

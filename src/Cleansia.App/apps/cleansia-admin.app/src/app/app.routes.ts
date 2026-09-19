@@ -262,6 +262,14 @@ export const appRoutes: Route[] = [
       ),
   },
   {
+    path: 'notifications',
+    canActivate: [adminGuard],
+    loadChildren: () =>
+      import('@cleansia/admin-features/notifications').then(
+        (m) => m.notificationsRoutes
+      ),
+  },
+  {
     path: 'profile',
     canActivate: [adminGuard],
     loadChildren: () =>

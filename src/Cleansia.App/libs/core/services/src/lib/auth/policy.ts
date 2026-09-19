@@ -195,6 +195,9 @@ export const Policy = {
 
   // Admin Action Audit Log
   CanViewAuditLog: 'CanViewAuditLog',
+
+  // Admin notification feed
+  CanViewAdminNotifications: 'CanViewAdminNotifications',
 } as const;
 
 export type PolicyName = (typeof Policy)[keyof typeof Policy];
@@ -368,6 +371,8 @@ export const POLICY_MAP: Record<PolicyName, PhysicalPolicy> = {
   CanDeactivateMembershipPlan: PhysicalPolicy.AdminOnly,
 
   CanViewAuditLog: PhysicalPolicy.AdminOnly,
+
+  CanViewAdminNotifications: PhysicalPolicy.AdminOnly,
 };
 
 export function resolvePhysicalPolicy(policy: PolicyName | string): PhysicalPolicy {

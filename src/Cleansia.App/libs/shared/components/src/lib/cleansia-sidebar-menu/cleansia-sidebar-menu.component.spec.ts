@@ -85,3 +85,60 @@ describe('CleansiaSidebarMenuComponent — close control touch floor', () => {
     expect(close).toMatch(/right:\s*max\(0\.5rem,\s*calc\(\(\$touch-target-floor - 1\.75rem\) \/ 2\)\);/);
   });
 });
+
+/**
+ * A badge is a count the reader must not lose by collapsing the rail: the one element sits beside
+ * the label while expanded, and the collapsed stylesheet lifts it onto the icon's corner rather than
+ * hiding it with the label and the arrow.
+ */
+describe('CleansiaSidebarMenuComponent — badge', () => {
+  let fixture: ComponentFixture<CleansiaSidebarMenuComponent>;
+  let component: CleansiaSidebarMenuComponent;
+
+  const badges = () =>
+    Array.from((fixture.nativeElement as HTMLElement).querySelectorAll('.menu-item-badge')) as HTMLElement[];
+
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({
+      imports: [CleansiaSidebarMenuComponent, TranslateModule.forRoot()],
+      providers: [provideRouter([])],
+    }).compileComponents();
+
+    Object.defineProperty(window, 'innerWidth', { value: 1280, configurable: true });
+    fixture = TestBed.createComponent(CleansiaSidebarMenuComponent);
+    component = fixture.componentInstance;
+    component.onResize();
+    fixture.componentRef.setInput('menuItems', [
+      { label: 'sidebar.notifications', icon: 'pi pi-bell', route: '/notifications', badge: '3' },
+      { label: 'sidebar.employees', icon: 'pi pi-users', route: '/employee-management' },
+    ]);
+    fixture.detectChanges();
+  });
+
+  it('draws one badge with the count while expanded', () => {
+    expect(badges()).toHaveLength(1);
+    expect(badges()[0].textContent?.trim()).toBe('3');
+  });
+
+  it('keeps that badge in the rail once it collapses', () => {
+    component.toggleCollapsed();
+    fixture.detectChanges();
+
+    expect(component.effectiveCollapsed()).toBe(true);
+    expect(badges()).toHaveLength(1);
+    expect(badges()[0].textContent?.trim()).toBe('3');
+  });
+
+  it('the collapsed stylesheet lifts the badge onto the icon corner instead of hiding it', () => {
+    const scss = readFileSync(
+      join(__dirname, '../../../../assets/src/styles/components/cleansia-sidebar-menu.component.scss'),
+      'utf-8'
+    );
+    const collapsed = scss.slice(scss.indexOf('.sidebar--collapsed {'), scss.indexOf('// ===== RESPONSIVE'));
+    const hidden = /\.menu-item-label,\s*\.menu-item-arrow \{\s*display: none;/;
+
+    expect(collapsed).toMatch(hidden);
+    expect(collapsed).not.toMatch(/\.menu-item-badge,/);
+    expect(collapsed).toMatch(/\.menu-item-badge \{\s*position: absolute;/);
+  });
+});

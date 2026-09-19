@@ -1,10 +1,11 @@
 import { isPlatformBrowser, NgClass } from '@angular/common';
-import { ChangeDetectionStrategy, Component, inject, OnInit, PLATFORM_ID, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, OnInit, PLATFORM_ID, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { RouterModule } from '@angular/router';
-import { AdminAuthService } from '@cleansia/admin-services';
+import { AdminAuthService, AdminNotificationBadgeService } from '@cleansia/admin-services';
 import { loadAdminCodes } from '@cleansia/admin-stores';
 import {
+  CleansiaButtonComponent,
   CleansiaCookieConsentComponent,
   CleansiaDevBannerComponent,
   CleansiaLanguageSwitcherComponent,
@@ -12,12 +13,15 @@ import {
   isMobileViewport,
   SidebarMenuItem,
 } from '@cleansia/components';
-import { DialogService, PageTitleService, Policy } from '@cleansia/services';
+import { CleansiaPermissionDirective } from '@cleansia/directives';
+import { CleansiaAdminRoute, DialogService, PageTitleService, Policy } from '@cleansia/services';
 import { environment } from '../environments/environment';
 import { Store } from '@ngrx/store';
-import { TranslateService } from '@ngx-translate/core';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { ToastModule } from 'primeng/toast';
+
+const NOTIFICATIONS_ROUTE = `/${CleansiaAdminRoute.NOTIFICATIONS}`;
 
 @Component({
   imports: [
@@ -25,10 +29,13 @@ import { ToastModule } from 'primeng/toast';
     ToastModule,
     ConfirmDialogModule,
     RouterModule,
+    TranslatePipe,
+    CleansiaButtonComponent,
     CleansiaSidebarMenuComponent,
     CleansiaCookieConsentComponent,
     CleansiaDevBannerComponent,
     CleansiaLanguageSwitcherComponent,
+    CleansiaPermissionDirective,
   ],
   selector: 'app-root',
   templateUrl: './app.component.html',
@@ -42,6 +49,9 @@ export class AppComponent implements OnInit {
   private readonly pageTitleService = inject(PageTitleService);
   private readonly dialogService = inject(DialogService);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
+  protected readonly notificationBadge = inject(AdminNotificationBadgeService);
+  protected readonly Policy = Policy;
+  protected readonly notificationsRoute = NOTIFICATIONS_ROUTE;
 
   readonly bugReportUrl = environment.bugReportUrl;
   sidebarCollapsed = signal(false);
@@ -59,6 +69,7 @@ export class AppComponent implements OnInit {
     if (this.isBrowser) {
       this.updateMobileStatus();
       window.addEventListener('resize', () => this.updateMobileStatus());
+      this.notificationBadge.start();
     }
   }
 
@@ -80,7 +91,22 @@ export class AppComponent implements OnInit {
     this.mobileSignal.set(isMobileViewport(window.innerWidth));
   }
 
-  sidebarMenuItems: SidebarMenuItem[] = [
+  // Only the notifications entry is re-created when the badge moves; every other item keeps its
+  // identity, and with it the expanded state the sidebar writes onto the object.
+  readonly sidebarMenuItems = computed<SidebarMenuItem[]>(() => {
+    const badge = this.notificationBadge.badgeLabel();
+    return this.menuItems.map((item) =>
+      item.route === NOTIFICATIONS_ROUTE ? { ...item, badge: badge ?? undefined } : item
+    );
+  });
+
+  private readonly menuItems: SidebarMenuItem[] = [
+    {
+      label: 'sidebar.notifications',
+      icon: 'pi pi-bell',
+      route: NOTIFICATIONS_ROUTE,
+      permission: Policy.CanViewAdminNotifications,
+    },
     { label: 'sidebar.employees', icon: 'pi pi-users', route: '/employee-management' },
     { label: 'sidebar.pay_periods', icon: 'pi pi-calendar', route: '/pay-periods' },
     { label: 'sidebar.orders', icon: 'pi pi-shopping-cart', route: '/order-management' },

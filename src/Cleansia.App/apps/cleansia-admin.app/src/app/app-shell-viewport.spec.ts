@@ -1,7 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { readFileSync } from 'fs';
 import { join } from 'path';
-import { AdminAuthService } from '@cleansia/admin-services';
+import { AdminAuthService, AdminNotificationBadgeService } from '@cleansia/admin-services';
 import { MOBILE_VIEWPORT_MAX_PX } from '@cleansia/components';
 import { DialogService, PageTitleService } from '@cleansia/services';
 import { Store } from '@ngrx/store';
@@ -29,6 +29,7 @@ describe('admin app shell viewport mode', () => {
           useValue: { isLoggedIn$: new BehaviorSubject(true), logout: () => EMPTY },
         },
         { provide: PageTitleService, useValue: { initialize: jest.fn() } },
+        { provide: AdminNotificationBadgeService, useValue: { start: jest.fn(), badgeLabel: () => null } },
         { provide: DialogService, useValue: { confirmTranslated: () => EMPTY } },
         { provide: TranslateService, useValue: { instant: (k: string) => k } },
       ],

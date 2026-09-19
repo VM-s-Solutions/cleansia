@@ -41,6 +41,7 @@
       "invoices": "Faktury",
       "invoice_details": "Detail faktury",
       "audit_log": "Protokol akcí",
+      "notifications": "Upozornění",
       "audit_log_history": "Historie zdroje",
       "audit_log_entry": "Záznam auditu",
       "reports": "Přehledy",
@@ -254,6 +255,7 @@
     "memberships": "Členství",
     "data_protection": "Ochrana údajů",
     "audit_log": "Protokol akcí",
+    "notifications": "Upozornění",
     "profile": "Můj profil"
   },
   "pages": {
@@ -2679,6 +2681,77 @@
         "confirm_title": "Vymazat účet?",
         "confirm_message": "Účet uživatele {{userId}} bude trvale anonymizován. Tuto akci nelze vrátit.",
         "confirm_yes": "Vymazat"
+      }
+    },
+    "notifications": {
+      "title": "Upozornění",
+      "description": "Vše, co platforma ve vaší společnosti prokazatelně zaznamenala, od nejnovějšího. Otevřením řádku přejdete na objednávku, reklamaci, žádost nebo stránku, kterou jmenuje.",
+      "mark_all_read": "Označit vše jako přečtené",
+      "load_error": "Upozornění se nepodařilo načíst.",
+      "retry": "Zkusit znovu",
+      "empty": "Nic k přečtení",
+      "empty_hint": "Nové objednávky, ztracení úklidoví pracovníci, reklamace, neúspěšné platby a milníky společnosti se objeví zde.",
+      "unread": "Nepřečteno",
+      "messages": {
+        "marked_all_read": "Označeno jako přečtené: {{count}}"
+      },
+      "events": {
+        "unknown": {
+          "title": "Událost, kterou tato konzole zatím neumí zobrazit"
+        },
+        "admin": {
+          "order": {
+            "new": {
+              "title": "Nová objednávka k obsloužení",
+              "body": "Objednávka {{orderNumber}} za {{amount}} čeká na úklidového pracovníka."
+            },
+            "crew_lost": {
+              "title": "Objednávka přišla o posledního pracovníka",
+              "body": "Na objednávce {{orderNumber}} dne {{cleaningDateTime}} nikdo není — {{cause}}. Je zpět na nástěnce.",
+              "body_under_way": "Na objednávce {{orderNumber}} dne {{cleaningDateTime}} nikdo není — {{cause}}. Úklid už přitom probíhal.",
+              "causes": {
+                "dropped": "pracovník ji vrátil",
+                "rejected": "účet pracovníka byl zamítnut"
+              }
+            }
+          },
+          "dispute": {
+            "filed": {
+              "title": "Byla podána reklamace",
+              "body": "Zákazník podal reklamaci k objednávce {{orderNumber}}."
+            },
+            "chargeback": {
+              "title": "Přišla zpětná platba (chargeback)",
+              "body": "Banka vrátila {{amount}} z objednávky {{orderNumber}}. Podrobnosti jsou u reklamace."
+            }
+          },
+          "payment": {
+            "failed": {
+              "title": "Platba kartou selhala",
+              "body": "Platba kartou za objednávku {{orderNumber}} byla zamítnuta. Pokud zůstane nezaplacená, objednávka se automaticky zruší."
+            }
+          },
+          "erasure": {
+            "failed": {
+              "title": "Výmaz účtu se nepodařilo dokončit",
+              "body": "Žádost o výmaz účtu dne {{day}} selhala a zítra se zopakuje. Najdete ji na stránce Ochrana údajů."
+            }
+          },
+          "company": {
+            "wind_down_requested": {
+              "title": "Vyžádáno ukončení činnosti",
+              "body": "Vaše společnost ukončuje činnost od {{windDownFrom}}."
+            },
+            "wind_down_run": {
+              "title": "Běh ukončení činnosti vypořádal knihy",
+              "body": "Zrušeno {{cancelled}}, vráceno {{refunded}}, neúspěšných vratek {{refundFailures}}, uzavřených výplatních období {{periodsClosed}}."
+            },
+            "archived": {
+              "title": "Společnost archivována",
+              "body": "Knihy byly zapečetěny dne {{archivedOn}}."
+            }
+          }
+        }
       }
     },
     "admin_profile": {

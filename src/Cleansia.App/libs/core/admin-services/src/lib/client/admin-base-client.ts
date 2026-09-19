@@ -1,5 +1,6 @@
 import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
+import { errorToastSuppressingHttpClient } from '@cleansia/services';
 import {
   AccessInstructionsClient,
   IAccessInstructionsClient,
@@ -38,6 +39,8 @@ import {
   IAdminLoyaltyTierClient,
   AdminMarketingClient,
   IAdminMarketingClient,
+  AdminNotificationClient,
+  IAdminNotificationClient,
   AdminOrderClient,
   IAdminOrderClient,
   AdminPackageClient,
@@ -98,6 +101,7 @@ interface IAdminClient {
   adminLoyaltyClient: IAdminLoyaltyClient;
   adminCreditClient: IAdminCreditClient;
   adminMarketingClient: IAdminMarketingClient;
+  adminNotificationClient: IAdminNotificationClient;
   adminReferralClient: IAdminReferralClient;
   payoutDetailsClient: IPayoutDetailsClient;
   // The kitchen-sink generated client — hosts service-city CRUD + any
@@ -229,9 +233,33 @@ export class AdminClient implements IAdminClient {
     this.httpClient,
     this.apiBaseUrl
   );
+  adminNotificationClient: IAdminNotificationClient = new AdminNotificationClient(
+    this.httpClient,
+    this.apiBaseUrl
+  );
   payoutDetailsClient: IPayoutDetailsClient = new PayoutDetailsClient(
     this.httpClient,
     this.apiBaseUrl
   );
   apiClient: IApiClient = new ApiClient(this.httpClient, this.apiBaseUrl);
+}
+
+/**
+ * The same sub-clients over an `HttpClient` that opts every request out of the shared error toast.
+ * Only the sub-clients with a call site that asked for silence are exposed here: the unread-count
+ * poll behind the notification badge is made on the administrator's behalf every minute, and a toast
+ * for a failed background read is noise about something nobody asked for.
+ */
+@Injectable({
+  providedIn: 'root',
+})
+export class SilentFailureAdminClient {
+  private readonly httpClient: HttpClient = errorToastSuppressingHttpClient();
+  private readonly apiBaseUrl: string =
+    inject(ADMINAPIBASEURL, { optional: true }) ?? 'http://localhost:5001';
+
+  adminNotificationClient: IAdminNotificationClient = new AdminNotificationClient(
+    this.httpClient,
+    this.apiBaseUrl
+  );
 }

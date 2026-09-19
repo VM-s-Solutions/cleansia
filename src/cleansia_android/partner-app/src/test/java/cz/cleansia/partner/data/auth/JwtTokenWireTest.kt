@@ -246,6 +246,7 @@ class JwtTokenWireTest {
             "refreshTokenExpiresAt",
             "csrfToken",
             "role",
+            "adminRole",
         )
 
         val REQUIRED_FLAGS = listOf("isEmailConfirmed", "hasAdminAccess")

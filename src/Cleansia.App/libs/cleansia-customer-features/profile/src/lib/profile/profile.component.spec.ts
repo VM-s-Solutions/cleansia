@@ -81,18 +81,20 @@ describe('ProfileComponent — the saved-address country picker', () => {
 
   it('renders the country select in the dialog, fed by the market directory', async () => {
     fixture.componentInstance.openAddAddress();
-    fixture.detectChanges();
-    await fixture.whenStable();
+    // The value reaches the PrimeNG control through an asynchronous ngModel write.
+    for (let round = 0; round < 2; round++) {
+      fixture.detectChanges();
+      await fixture.whenStable();
+    }
 
     const select = fixture.debugElement
       .queryAll(By.directive(CleansiaSelectComponent))
-      .map((debugElement) => debugElement.componentInstance as CleansiaSelectComponent)
-      .find((instance) => instance.label() === 'pages.profile.address_country');
+      .find((debugElement) => (debugElement.componentInstance as CleansiaSelectComponent).label() === 'pages.profile.address_country');
     expect(select).toBeTruthy();
-    expect(select?.options()).toEqual([
+    expect((select?.componentInstance as CleansiaSelectComponent).options()).toEqual([
       { label: 'Czechia', value: 'cze-id' },
       { label: 'Slovakia', value: 'svk-id' },
     ]);
-    expect(select?.formControl.value).toBe('svk-id');
+    expect((select?.nativeElement as HTMLElement).querySelector('.p-select-label')?.textContent?.trim()).toBe('Slovakia');
   });
 });

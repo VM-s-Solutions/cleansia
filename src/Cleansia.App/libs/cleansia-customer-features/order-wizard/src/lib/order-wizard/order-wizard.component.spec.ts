@@ -356,20 +356,23 @@ describe('OrderWizardComponent (a11y)', () => {
         { label: 'Slovakia', value: 'svk-id' },
       ]);
       facade.addressCountryId.set('cze-id');
-      fixture.detectChanges();
-      await fixture.whenStable();
+      // The value reaches the PrimeNG control through two asynchronous ngModel writes.
+      for (let round = 0; round < 3; round++) {
+        fixture.detectChanges();
+        await fixture.whenStable();
+      }
 
       const select = fixture.debugElement
         .queryAll(By.directive(CleansiaSelectComponent))
-        .map((debugElement) => debugElement.componentInstance as CleansiaSelectComponent)
-        .find((instance) => instance.id() === 'wizard-country');
+        .find((debugElement) => (debugElement.componentInstance as CleansiaSelectComponent).id() === 'wizard-country');
       expect(select).toBeTruthy();
-      expect(select?.label()).toBe('pages.order.country');
-      expect(select?.options()).toEqual([
+      const instance = select?.componentInstance as CleansiaSelectComponent;
+      expect(instance.label()).toBe('pages.order.country');
+      expect(instance.options()).toEqual([
         { label: 'Czechia', value: 'cze-id' },
         { label: 'Slovakia', value: 'svk-id' },
       ]);
-      expect(select?.innerValue).toBe('cze-id');
+      expect((select?.nativeElement as HTMLElement).querySelector('.p-select-label')?.textContent?.trim()).toBe('Czechia');
     });
 
     it('writes a pick made in the rendered select onto the address country', async () => {

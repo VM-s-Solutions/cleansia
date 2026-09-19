@@ -206,6 +206,8 @@ final class GuestOrderViewModelTests: XCTestCase {
         XCTAssertEqual(client.cancelCalls.count, 1, "no retry without a fresh quote")
     }
 
+    /// The over-limit reason is also written in astral text: 251 emoji are 251 to `String.count` and 502
+    /// to the server's `MaximumLength(500)`, so a `count` guard would let them through to a refusal.
     func testTheReasonLimitAndAMissingQuoteAreEnforcedBeyondTheButton() async {
         let gate = AsyncGate()
         client.quoteGate = gate
@@ -218,6 +220,7 @@ final class GuestOrderViewModelTests: XCTestCase {
         gate.open()
         await opening.value
         await vm.cancel(reason: String(repeating: "x", count: 501))
+        await vm.cancel(reason: String(repeating: "😀", count: 251))
         await vm.cancel(reason: " ")
         await vm.cancel(reason: nil)
 

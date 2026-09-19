@@ -400,7 +400,10 @@ final class AuthApiClientTests: XCTestCase {
     }
 
     /// The tick is never omitted the way the market is: the server refuses an absent tick exactly as
-    /// it refuses a false one, so the body always states which of the two the form asserted.
+    /// it refuses a false one, so the body always states which of the two the form asserted. This pins
+    /// only the encoding — that `false` is written rather than dropped. A form leaving the tick
+    /// unasserted is refused by the seam's non-optional `Bool` at compile time, which no runtime test
+    /// can exercise.
     func testRegisterAlwaysStatesTheTermsTickOnTheWire() async throws {
         let client = try makeClient(store: MemTokenStore(), registerEndpoint: .customer)
         MockURLProtocol.handler = { _ in (200, Data("true".utf8)) }

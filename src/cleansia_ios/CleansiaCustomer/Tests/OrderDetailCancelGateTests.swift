@@ -137,22 +137,47 @@ final class OrderDetailCancelGateTests: XCTestCase {
 
     // MARK: - the reason cap
 
+    /// The boundaries below are written in astral-plane text: `MaximumLength(500)` measures .NET
+    /// `string.Length` — UTF-16 units — and an ASCII-only suite passes under `count` too and proves nothing.
+    private let emoji = "😀"
+
     func testTheCapIsTheServerValidatorsFigure() {
-        XCTAssertEqual(CancelReasonLimit.maxLength, 500)
+        XCTAssertEqual(CancelReasonLimit.maxUtf16Length, 500)
     }
 
-    func testTheNotesLimitLeavesRoomForTheReasonCodeAndItsSeparator() {
-        XCTAssertEqual(CancelReasonLimit.notesLimit(reasonCode: "no_longer_needed"), 500 - "no_longer_needed".count - 2)
+    func testTheNotesLimitLeavesRoomForTheReasonCodeAndItsSeparatorInUtf16Units() {
+        let code = "no_longer_needed"
+        XCTAssertEqual(CancelReasonLimit.notesLimit(reasonCode: code), 500 - code.utf16.count - 2)
+        XCTAssertEqual(CancelReasonLimit.notesLimit(reasonCode: emoji), 500 - 2 - 2)
         XCTAssertEqual(CancelReasonLimit.notesLimit(reasonCode: nil), 500)
         XCTAssertEqual(CancelReasonLimit.notesLimit(reasonCode: String(repeating: "x", count: 600)), 0)
     }
 
+    func testNotesWithinTheBudgetAreReturnedUnchanged() {
+        XCTAssertEqual(CancelReasonLimit.cappedNotes("Plans changed", reasonCode: "other"), "Plans changed")
+    }
+
+    /// 300 emoji behind "other" read 305 to `String.count` — under the cap — and 607 to the server. The
+    /// budget of 493 falls one unit inside the 247th emoji, so that one must be dropped whole, not halved.
+    func testNotesAreClippedInUtf16UnitsNotGraphemesAndNeverSplitASurrogatePair() {
+        let notes = String(repeating: emoji, count: 300)
+        XCTAssertEqual(notes.count, 300)
+        XCTAssertEqual(notes.utf16.count, 600)
+
+        let capped = CancelReasonLimit.cappedNotes(notes, reasonCode: "other")
+
+        XCTAssertLessThanOrEqual(("other: " + capped).utf16.count, CancelReasonLimit.maxUtf16Length)
+        XCTAssertEqual(capped.count, 246)
+        XCTAssertFalse(capped.unicodeScalars.contains("\u{FFFD}"))
+    }
+
     /// The sheet is the only place the limit is applied, and a private figure re-inlined there would
-    /// compile with both tests above still green — so its one clip source is pinned the same way the
+    /// compile with the tests above still green — so its one clip source is pinned the same way the
     /// view's gate binding is, and neither surface hands the sheet a figure of its own.
     func testTheSheetClipsTheNotesThroughTheSharedLimitAndCarriesNoFigureOfItsOwn() throws {
         let sheet = try readSource("CleansiaCustomer/Sources/Features/Orders/CancelOrderSheet.swift")
-        XCTAssertTrue(sheet.contains("CancelReasonLimit.notesLimit(reasonCode: selectedReason?.code)"))
+        XCTAssertTrue(sheet.contains("CancelReasonLimit.cappedNotes("))
+        XCTAssertFalse(sheet.contains(".prefix("), "the sheet clips by grapheme again")
         XCTAssertFalse(sheet.contains("2000"), "the sheet carries a notes limit of its own")
         XCTAssertFalse(sheet.contains("reasonLimit"), "the sheet takes a per-caller limit again")
 

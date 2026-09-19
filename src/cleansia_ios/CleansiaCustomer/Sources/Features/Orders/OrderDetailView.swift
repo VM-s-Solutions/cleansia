@@ -337,9 +337,9 @@ enum OrderDetailFooterActions {
 /// outlined rather than filled so it cannot out-rank the primary Book again CTA
 /// above it on a completed order.
 ///
-/// Cancel carries the same tint, and Confirmed is the one status that offers
-/// both, so on that screen the glyphs are the entire differentiator between
-/// cancelling a booking and filing a complaint.
+/// Cancel carries the same tint, and Confirmed and OnTheWay both offer the two
+/// side by side, so on those screens the glyphs are the entire differentiator
+/// between cancelling a booking and filing a complaint.
 struct OrderDetailFooterStyle {
     let icon: String
     let tint: Color

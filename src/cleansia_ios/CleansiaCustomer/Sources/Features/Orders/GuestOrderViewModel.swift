@@ -121,7 +121,7 @@ final class GuestOrderViewModel: ViewModel {
     func cancel(reason: String?) async {
         guard isCancellationPresented, !cancelState.isSubmitting,
               let key = credentials, let order = state.loadedOrder, order.isCancellable,
-              let reason, !reason.isBlank, reason.count <= CancelReasonLimit.maxLength,
+              let reason, !reason.isBlank, reason.utf16.count <= CancelReasonLimit.maxUtf16Length,
               CancelOrderConfirmGate.quoteIsUsable(quote)
         else { return }
         let current = generation

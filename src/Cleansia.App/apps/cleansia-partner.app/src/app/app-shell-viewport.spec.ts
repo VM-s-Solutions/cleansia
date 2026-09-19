@@ -80,4 +80,15 @@ describe('partner app shell viewport mode', () => {
     expect(queries.length).toBeGreaterThan(0);
     expect(new Set(queries)).toEqual(new Set([MOBILE_VIEWPORT_MAX_PX]));
   });
+
+  // The menu button is a 2.25rem glyph box in a 3.25rem toolbar; the 44px hit area is the shared
+  // ring grown past that box, so the toolbar keeps its height.
+  it('gives the mobile menu button the shared 44px hit area around its 2.25rem box', () => {
+    const scss = readFileSync(join(__dirname, 'app.component.scss'), 'utf-8');
+
+    expect(scss).toMatch(/@use '(\.\.\/)+libs\/shared\/assets\/src\/styles\/common\/touch-target' as \*;/);
+    expect(scss).toMatch(
+      /&__menu-btn\s*\{[^}]*width:\s*2\.25rem;\s*height:\s*2\.25rem;\s*position:\s*relative;\s*@include touch-target;/
+    );
+  });
 });

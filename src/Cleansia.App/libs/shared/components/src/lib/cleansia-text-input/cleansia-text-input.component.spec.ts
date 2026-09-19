@@ -1,6 +1,8 @@
 import { Component } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
+import { readFileSync } from 'fs';
+import { join } from 'path';
 import { CleansiaTextInputComponent } from './cleansia-text-input.component';
 
 @Component({
@@ -66,5 +68,26 @@ describe('CleansiaTextInputComponent', () => {
 
     expect(fixture.componentInstance.control.value).toBe('192');
     expect(input.value).toBe('192');
+  });
+});
+
+/**
+ * The field is its own hit area and the eye is a real control beside it; both need the 44px box
+ * a thumb can hit, and the theme renders the field 35px tall at the partner and admin apps' 14px
+ * root. jsdom lays nothing out, so the floors are read from the stylesheet, which is declared an
+ * input of this project's test target.
+ */
+describe('CleansiaTextInputComponent (touch floor)', () => {
+  const scss = readFileSync(
+    join(__dirname, '../../../../assets/src/styles/components/cleansia-text-input.component.scss'),
+    'utf-8'
+  );
+
+  it('gives the field a 44px box at any root font size', () => {
+    expect(scss).toMatch(/cleansia-text-input input\.p-inputtext\s*\{[^}]*min-height:\s*44px;/);
+  });
+
+  it('gives the password eye a 44px box around its glyph', () => {
+    expect(scss).toMatch(/button\.cleansia-text-input__eye\s*\{[^}]*width:\s*44px;[^}]*height:\s*44px;/);
   });
 });

@@ -1,11 +1,11 @@
 ---
 id: T-0761
 title: order.cancelled.no_cleaner_available is written by the unfilled-order sweep and rendered by no client — the copy and the three reason maps
-status: todo
+status: done
 size: S
 owner: —
 created: 2026-09-16
-updated: 2026-09-16
+updated: 2026-09-19
 depends_on: []
 blocks: []
 stories: []
@@ -54,12 +54,17 @@ No backend change; no change to the sweep, the credit or the push. No new reason
 
 ## Acceptance criteria
 
-- [ ] AC1 — a customer whose booking was cancelled by the unfilled-order sweep sees the reason sentence on
+- [x] AC1 — a customer whose booking was cancelled by the unfilled-order sweep sees the reason sentence on
       the order detail of customer web, Android and iOS, in each of the five locales.
-- [ ] AC2 — `node agents/tools/check-booking-policy-parity.mjs` exits 0 with *"4 cancellation reason(s)
+- [x] AC2 — `node agents/tools/check-booking-policy-parity.mjs` exits 0 with *"4 cancellation reason(s)
       render on every client"* and an empty `REASONS_NOT_YET_RENDERED`.
 
 ## Status log
 
 - 2026-09-16 — filed `todo` by the docs lane from the parity gate's allow-list; waiting on the owner to
   open it.
+- 2026-09-16 — shipped in `4fd9991b` + `608360e0`; the INDEX row was left open by mistake.
+- 2026-09-19 — closed `done` on ground truth by the batch-6 docs lane: the key is in the five customer-web
+  locales and `order-detail.component.ts`'s reason map, the five Android `strings.xml` and
+  `OrderDetailScreen.kt`, `Localizable.xcstrings` and `CancellationReasonCopy.swift` (each with a test);
+  `check-booking-policy-parity.mjs:396` reads `REASONS_NOT_YET_RENDERED = new Set()`.

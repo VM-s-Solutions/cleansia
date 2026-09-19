@@ -2,7 +2,7 @@
 
 Every architecture and business decision on record, with the argument that settled it.
 
-**64 records.** A decision keeps a stable id — `ADR-0037` — and roughly six hundred source
+**67 records.** A decision keeps a stable id — `ADR-0037` — and roughly six hundred source
 files cite ids in that form. The id is the reference, not the file name or the title, so a record can
 be retitled without breaking a single citation.
 
@@ -38,8 +38,10 @@ flowchart LR
   A0061[ADR-0061] --> A0017[ADR-0017]
   A0061[ADR-0061] --> A0046[ADR-0046]
   A0063[ADR-0063] --> A0062[ADR-0062]
+  A0066[ADR-0066] --> A0001[ADR-0001]
+  A0067[ADR-0067] --> A0057[ADR-0057]
   classDef old fill:#e5e7eb,stroke:#6b7280,color:#374151
-  class A0001,A0002,A0006,A0010,A0013,A0017,A0024,A0026,A0036,A0037,A0045,A0046,A0050,A0062 old
+  class A0001,A0002,A0006,A0010,A0013,A0017,A0024,A0026,A0036,A0037,A0045,A0046,A0050,A0057,A0062 old
 ```
 
 Grey nodes are superseded in whole or in part. Not every later record replaces an earlier one:
@@ -53,7 +55,14 @@ numbers its own payout invoices since 2026-09-15, and ADR-0046 carries the super
 head); ADR-0061 itself was **amended in place on 2026-09-15** with the owner's rulings on its five open
 items and carries a §Rulings table. [ADR-0064](./adr-0064) **amends ADR-0061 by reference** (its O-3
 default and D1's "seed-only writer" for the `Tenants` row) and adds a fourth market predicate to
-[ADR-0058](./adr-0058) D1 — every other sentence of both stands, so there is no arrow.
+[ADR-0058](./adr-0058) D1 — every other sentence of both stands, so there is no arrow. **Three records
+were proposed on 2026-09-19** from the owner's rulings of that day and are `proposed` until their tickets
+ship: [ADR-0065](./adr-0065) (administrators are told — an in-app feed and an e-mail per event) supersedes
+nothing and composes with ADR-0002, ADR-0025, ADR-0061 and ADR-0064; [ADR-0066](./adr-0066) (four
+administrator roles) supersedes **ADR-0001 D2's table** for every admin-host row — the arrow — and keeps
+D1, D3, D4 and D5; [ADR-0067](./adr-0067) (`Confirmed → New` when the last cleaner leaves) supersedes
+**ADR-0057's one open consequence** — the arrow — and leaves its status ruling standing, with a dated
+pointer at ADR-0057's head.
 
 ## All records
 
@@ -115,7 +124,7 @@ default and D1's "seed-only writer" for the `Tenants` row) and adds a fourth mar
 | **[ADR-0054](./adr-0054)** | Cleaner job reminders dedupe on a stamp per recipient… (Q-PUSH-01 ruled 2026-09-15: the digest stays non-silenceable) | `accepted` |
 | **[ADR-0055](./adr-0055)** | A cleaner may set off or start only inside a 60-minute… | `accepted` |
 | **[ADR-0056](./adr-0056)** | Property size is two integers; the label is per-country… | `proposed` |
-| **[ADR-0057](./adr-0057)** | Confirmed means a cleaner took the job, and nothing else | `accepted` |
+| **[ADR-0057](./adr-0057)** | Confirmed means a cleaner took the job, and nothing else ⟲ (its open consequence taken by ADR-0067, 2026-09-19) | `accepted` |
 | **[ADR-0058](./adr-0058)** | A customer's market is chosen, remembered, and overridden by the address | `accepted` |
 | **[ADR-0059](./adr-0059)** | Cleansia Plus is priced per market | `accepted` |
 | **[ADR-0060](./adr-0060)** | Money figures in copy come from the market, not the translation | `accepted` |
@@ -123,6 +132,9 @@ default and D1's "seed-only writer" for the `Tenants` row) and adds a fourth mar
 | **[ADR-0062](./adr-0062)** | A customer's actions are recorded for incident defence, and support reads them in the admin panel (extends ADR-0012; amended 2026-09-14 and 2026-09-15) | `accepted` |
 | **[ADR-0063](./adr-0063)** | Legal documents are versioned by effective date, stored per market, and a consent stamps the version | `accepted` |
 | **[ADR-0064](./adr-0064)** | A company's lifecycle: deactivation, wind-down, archive (amends ADR-0061 O-3/D1 and ADR-0058 D1 by reference) | `accepted` |
+| **[ADR-0065](./adr-0065)** | Administrators are told: an in-app feed and an e-mail per event (owner ruling D5, 2026-09-19; T-0768 / T-0769 / T-0774 / T-0775) | `proposed` |
+| **[ADR-0066](./adr-0066)** | Four administrator roles: Administrator, Manager, Support, Accountant (owner ruling D8, 2026-09-19; supersedes ADR-0001 D2's admin rows; T-0748 / T-0773) | `proposed` |
+| **[ADR-0067](./adr-0067)** | Confirmed → New when the last cleaner leaves; the administrators are told (owner ruling D2, 2026-09-19; supersedes ADR-0057's open consequence; T-0770) | `proposed` |
 
 ⟲ = superseded in whole or in part by a later record.
 

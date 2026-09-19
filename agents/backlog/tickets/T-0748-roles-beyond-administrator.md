@@ -5,11 +5,11 @@ status: todo
 size: L
 owner: —
 created: 2026-09-14
-updated: 2026-09-14
-depends_on: []
-blocks: []
+updated: 2026-09-19
+depends_on: [T-0768, T-0775]
+blocks: [T-0773]
 stories: []
-adrs: [ADR-0001, ADR-0062]
+adrs: [ADR-0066, ADR-0001, ADR-0062, ADR-0065]
 layers: [analyst, architect, backend, frontend]
 security_touching: true
 manual_steps: []
@@ -71,6 +71,119 @@ from what the admin host exposes today — the analyst confirms it against the o
 Customer- or employee-facing roles; per-tenant roles (one holding, one admin pool — ADR-0061 D5
 stamps admins with the default operator).
 
+---
+
+## Brief as picked up (2026-09-19) — the model, the sets, the map, the admin-host reads, the assignment, the matrix (ADR-0066)
+
+- **Size:** L · **Lane:** backend · **ADR:** ADR-0066 · **Depends on:** T-0768 (the recipient filter),
+  T-0775 (every event exists to filter) · **Blocks:** T-0773 · **security_touching:** yes
+
+### Doing
+
+- `AdminRole` enum; `User.AdminRole` + `SetAdminRole()` + `CreateWithPassword(adminRole:)` (throws for an
+  Administrator without a role); the check constraint `CK_Users_AdminRole_Profile`;
+  `AdminActionAudit.ActorAdminRole`; **one `Initial` regen** (the batch's only schema change); the seed
+  (`insert_seed_data.sql:1983-1997` gains `"AdminRole" = 1`) and `set-admin-role.sql` (both columns);
+  `DomainSeed.Admin(role:)`; `TestJwtFactory.Mint(adminRole:)`; **every fixture that calls
+  `CreateWithPassword(…, UserProfile.Administrator)` passes `adminRole: AdminRole.Administrator`** — at least
+  `DomainSeed`, `CrossMarketReadAndDeliveryTests`, `DisputeTextRetentionTests`, `SubjectExportDisputesTests`,
+  `RegisterEmployeeProfileUpgradeTests`, `ChangeOwnPasswordTests`, `AdminUserProfileFieldsTests`,
+  `DeactivateAdminUserValidatorTests`, `EmployeeUserAuditCoverageTests`; the lane greps for multi-line calls.
+- `SetClaims` → `admin_role`; `JwtTokenResponse.AdminRole`.
+- `PhysicalPolicy` ×4 (`AdministratorOnly`, `ManagerOrAbove`, `SupportOrAbove`, `AccountantOrAbove`;
+  `AdminOnly` keeps its name and means any role); `AdminRoleSets` (+ `For`, `Any`, `Admits`); four
+  registrations; startup presence + semantics (`AdminOnly` does not require the claim).
+- **Eleven `Policy` constants**: `CanViewPagedOrderAdmin`, `CanViewOrderDetailAdmin`, `CanViewOrderPhotosAdmin`,
+  `CanViewEmployeeDocumentsAdmin`, `CanViewEmployeePayoutDetailsAdmin`, `CanViewPagedInvoicesAdmin`,
+  `CanViewPayPeriodsAdmin`, `CanViewPayPeriodAdmin`, `CanViewLegalDocuments`, `CanSetAdminRole`
+  (+ `CanViewAdminNotifications` from T-0768); the **sixteen admin-controller attribute edits** (ADR-0066
+  §Context table + `AdminLegalController.cs:21, 37`); `PolicyBuilder.Map` per ADR-0066 D3;
+  `FrozenPermissionMapTests` rewritten to D3; the five `// SuperAdmin` comments at `Policy.cs:177-181` →
+  `// Administrator`.
+- `SetAdminRole` command + `POST api/AdminUser/{userId}/role` + keys (`admin_user.cannot_change_own_role`,
+  `admin_user.cannot_demote_last_administrator`); `IUserRepository.DemoteAdministratorIfAnotherRemainsAsync`
+  and `DeactivateAdministratorIfAnotherRemainsAsync` — **one transaction each:
+  `pg_advisory_xact_lock(hashtext(tenantId))` then the conditional `UPDATE`**; `DeactivateAdminUser` moves
+  onto the second and its predicate narrows to Administrator-role; `CreateAdminUser.Command.Role`;
+  `AdminUserListItem` / `AdminUserDetailDto` `.AdminRole`; `GetPagedAdminActionAudits` role filter;
+  `AuditEntryFactory` reads the claim.
+- `AdminEventCatalog` audiences per ADR-0065 D4 (chargeback → `AdminOnly`); `AdminNotifier` recipient filter
+  through `AdminRoleSets.For(entry.Audience)` (ADR-0066 D8).
+- Tests: `Cleansia.Tests/Authentication/AdminRolePolicyMatrixTests` (every map row × eight principals through
+  `IAuthorizationService`); `Cleansia.HostTests/Tests/AdminHostPermissionCoverageTests` (reflection +
+  allow-list); four behavioural HostTests classes; the Testcontainers race tests for both guards; the
+  constraint test.
+- The admin NSwag client regenerated and committed; the DEV drop **at the deploy**, reported.
+- Docs per ADR-0066 §Consequences, after green; this ticket closed with the D3 table as AC1; the owner plate
+  D8 ruled + **O-R1..O-R10** (recorded at filing).
+
+### NOT doing
+
+- No holding role, no per-market scope, no invitations, no fifth role, no policy splits beyond the eleven
+  (the document-requirement CRUD sharing `CanAdminUpdateEmployee` and the admin-user read `{userId}`
+  sharing `CanViewOrderCustomer` are findings F13), no rewrite of the twenty-five handler-level profile
+  checks, no bulk session revocation, no change to `CompanySignInGate` (Q-LC-01 kept — ADR-0066 D7), no
+  partner/customer/mobile change (the eight shared read policies keep their partner-host meaning), no HTTP
+  walk of every route.
+- No web (T-0773).
+
+### Done looks like
+
+`AssertComplete` passes; the matrix answers every map row for every principal; every admin-host action
+carries a non-`Deny` permission or is allow-listed; an Accountant token is refused the order detail and an
+employee document download and admitted on the invoice list; the seeded administrator is an Administrator;
+an Administrator can assign roles and cannot demote the last one, deterministically under the lock; every
+act by any role is audited with the role; the regenerated client and the regenerated `Initial` are
+committed; DEV dropped at the deploy and said so.
+
+### Acceptance criteria (replace the 2026-09-14 draft above)
+
+- [ ] **AC1** — The `Policy.* → set` table of ADR-0066 D3 is `PolicyBuilder.Map` (frozen test); the admin
+      controllers reference none of the eight shared read policies (grep); the partner and mobile
+      controllers are byte-identical.
+- [ ] **AC2** — *Given* each of the four roles, a claimless Administrator, an Employee, a Customer and
+      anonymous, *when* `IAuthorizationService` evaluates every map row, *then* the answer equals D3 (the
+      matrix test); every admin-host action carries `[Permission]` mapping to non-`Deny` or is on the
+      allow-list naming only `AdminCodeController.GetOverview` and the anonymous sign-in routes.
+- [ ] **AC3** — *Given* a Support token, *then* the customer trail, the admin log, the order detail, the
+      export and the incident file are 200, and refund, override, erasure, a service update and the invoice
+      list are 403; *given* an Accountant token, *then* the invoice list, the pay periods and the revenue
+      report are 200 and the order detail, the customer page and an employee document download are 403;
+      *given* a Manager token, *then* the company lifecycle and the legal documents are 403.
+- [ ] **AC4** — *Given* a Manager, Support and Accountant each perform one admin act, *then* three
+      `AdminActionAudits` rows exist with `ActorAdminRole` = their role.
+- [ ] **AC5** — *Given* a company with one Administrator and one Support, *when* the Administrator demotes
+      themselves or is demoted, *then* `admin_user.cannot_change_own_role` /
+      `admin_user.cannot_demote_last_administrator`; *given* two Administrators, *when* two demotions of
+      them race (Testcontainers, two connections), *then* **exactly one succeeds, on every run**, and the
+      same holds for two deactivations.
+- [ ] **AC6** — *Given* the same company, *when* the Administrator is deactivated while only a Support
+      remains, *then* `admin_user.cannot_deactivate_last_admin` (the existing key,
+      `BusinessErrorMessage.cs:424`).
+- [ ] **AC7** — The emitted DDL carries `CK_Users_AdminRole_Profile`; an Administrator with a null role and a
+      Customer with a role both fail `23514`; the seed row reads `AdminRole = 1`;
+      `CreateWithPassword(…, Administrator)` without a role throws.
+- [ ] **AC8** — *Given* an `admin.order.new` event for a company with one Accountant and one Support, *then*
+      one feed row (the Support's); *given* an `admin.dispute.chargeback` event, *then* two (both).
+- [ ] **AC9** — `CompanySignInGate.RefusedProfiles == { Employee }` (a pinned test).
+
+### Implementation notes
+
+ADR-0066 D1–D9. The `Initial` regen and the DEV drop are the lane's to run and to report (CLAUDE.md
+§Database migrations; memory: the drop is timed with the deploy). T-0770 AC1's "per administrator"
+becomes "per administrator whose role admits `SupportOrAbove`" when this lands (panel finding F3).
+
 ## Status log
 
 - 2026-09-14 — filed `todo` by the docs lane on the owner's ruling; waiting on the owner to open it.
+- 2026-09-19 — opened by the owner (*"let's do those 3 for now"*: Support, Accountant, Manager beside
+  Administrator); designed as ADR-0066 (`proposed`), panel-accepted the same day; queued last on
+  the batch-6 backend lane. The brief above replaces the 2026-09-14 sketch where they differ (the sketch's
+  `UserProfile` members became a column and a claim — ADR-0066 D1; the sketch's `AdminOr*` combinations
+  became the four "or above" sets — D2). The web half is T-0773.
+- 2026-09-19 (review) — `todo`, no owner: no lane holds this ticket yet; the backend lane flips it to
+  `in_progress` when it picks it up after T-0775. **The frontmatter `title` is kept as filed on
+  2026-09-14 on purpose:** ADR-0066 cites the 2026-09-14 sketch in this file by line (`:37`, `:44-47`)
+  and as *"T-0748's own sketch"*, so lines 1–74 stay as they were; the current title is the INDEX row's
+  (*"Four administrator roles — Administrator / Manager / Support / Accountant …"*) and the brief below
+  the rule carries it. Retitle only together with a re-pin of ADR-0066's citations.

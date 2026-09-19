@@ -47,6 +47,29 @@ export class ReportsFacade extends UnsubscribeControlDirective {
     () => this.loadingRevenue() || this.loadingPayroll()
   );
 
+  private readonly language = signal<string>(this.translate.currentLang);
+
+  /** The headline is the server's net figure; the page derives no money arithmetic of its own. */
+  readonly revenueHeadline = computed(() =>
+    this.formatRevenueAmount(this.revenueReport()?.netRevenue)
+  );
+
+  readonly revenueBreakdown = computed(() => {
+    const report = this.revenueReport();
+    return {
+      gross: this.formatRevenueAmount(report?.totalRevenue),
+      refunded: this.formatRevenueAmount(report?.totalRefunded),
+      credit: this.formatRevenueAmount(report?.totalReturnedToCredit),
+    };
+  });
+
+  constructor() {
+    super();
+    this.translate.onLangChange
+      .pipe(takeUntil(this.destroyed$))
+      .subscribe((event) => this.language.set(event.lang));
+  }
+
   private getDefaultStartDate(): Date {
     const date = new Date();
     date.setMonth(date.getMonth() - 1);
@@ -143,32 +166,18 @@ export class ReportsFacade extends UnsubscribeControlDirective {
     return this.formatAmount(value, this.revenueReport()?.currencyCode);
   }
 
-  /** The headline is the server's net figure; the page derives no money arithmetic of its own. */
-  revenueHeadline(): string {
-    return this.formatRevenueAmount(this.revenueReport()?.netRevenue);
-  }
-
-  revenueBreakdown(): { gross: string; refunded: string; credit: string } {
-    const report = this.revenueReport();
-    return {
-      gross: this.formatRevenueAmount(report?.totalRevenue),
-      refunded: this.formatRevenueAmount(report?.totalRefunded),
-      credit: this.formatRevenueAmount(report?.totalReturnedToCredit),
-    };
-  }
-
   /** The payroll report's amounts, in the currency THAT report names. */
   formatPayrollAmount(value: number | undefined): string {
     return this.formatAmount(value, this.payrollReport()?.currencyCode);
   }
 
   // The server names the currency; nothing here assumes one. No fraction-digit override: the
-  // "taken by this tender" column reconciles against a Stripe statement to the cent, and rounding
-  // 45.10 € to 45 € is how lines stop summing.
+  // per-tender columns, net on tender above all, reconcile against a Stripe statement to the cent,
+  // and rounding 45.10 € to 45 € is how lines stop summing.
   private formatAmount(value: number | undefined, currencyCode: string | undefined): string {
     if (value === undefined || value === null) return '';
     if (!currencyCode) return String(value);
-    return new Intl.NumberFormat(this.translate.currentLang || 'en-GB', {
+    return new Intl.NumberFormat(this.language() || 'en-GB', {
       style: 'currency',
       currency: currencyCode,
     }).format(value);

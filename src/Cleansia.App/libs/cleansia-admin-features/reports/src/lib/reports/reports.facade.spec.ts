@@ -7,7 +7,7 @@ import {
 } from '@cleansia/admin-services';
 import { SnackbarService } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
-import { of } from 'rxjs';
+import { Subject, of } from 'rxjs';
 import { ReportsFacade } from './reports.facade';
 
 describe('ReportsFacade', () => {
@@ -15,8 +15,10 @@ describe('ReportsFacade', () => {
   let revenueMock: jest.Mock;
   let payrollMock: jest.Mock;
   let getOverviewMock: jest.Mock;
+  let onLangChange: Subject<{ lang: string }>;
 
   beforeEach(() => {
+    onLangChange = new Subject<{ lang: string }>();
     revenueMock = jest
       .fn()
       .mockReturnValue(of(RevenueReportDto.fromJS({ totalRevenue: 0 })));
@@ -39,7 +41,10 @@ describe('ReportsFacade', () => {
           provide: SnackbarService,
           useValue: { showSuccess: jest.fn(), showError: jest.fn() },
         },
-        { provide: TranslateService, useValue: { instant: (k: string) => k } },
+        {
+          provide: TranslateService,
+          useValue: { instant: (k: string) => k, currentLang: 'en-GB', onLangChange },
+        },
       ],
     });
 
@@ -96,12 +101,14 @@ describe('ReportsFacade', () => {
     expect(facade.formatRevenueAmount(undefined)).toBe('');
   });
 
-  it('reads the headline off the net figure the server sent, never off the gross one', () => {
+  it('reads the headline off the net figure the server sent, never re-summing it from the parts', () => {
+    // The parts deliberately do not add up: a client that subtracted the refund legs from the gross
+    // figure would print 4 700 or 4 600 here, and only a read of netRevenue prints 2 700.
     facade.revenueReport.set(
       RevenueReportDto.fromJS({
-        totalRevenue: 3000,
+        totalRevenue: 5000,
         totalRefundedToCard: 300,
-        totalReturnedToCredit: 0,
+        totalReturnedToCredit: 100,
         totalRefunded: 300,
         netRevenue: 2700,
         currencyCode: 'EUR',
@@ -112,7 +119,26 @@ describe('ReportsFacade', () => {
       new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'EUR' }).format(value);
 
     expect(facade.revenueHeadline()).toBe(eur(2700));
-    expect(facade.revenueHeadline()).not.toBe(eur(3000));
+    expect(facade.revenueBreakdown()).toEqual({
+      gross: eur(5000),
+      refunded: eur(300),
+      credit: eur(100),
+    });
+  });
+
+  it('re-renders the headline in the new locale when the language changes', () => {
+    facade.revenueReport.set(
+      RevenueReportDto.fromJS({ netRevenue: 2700, currencyCode: 'EUR' })
+    );
+    const inLocale = (locale: string) =>
+      new Intl.NumberFormat(locale, { style: 'currency', currency: 'EUR' }).format(2700);
+
+    expect(facade.revenueHeadline()).toBe(inLocale('en-GB'));
+
+    onLangChange.next({ lang: 'cs' });
+
+    expect(facade.revenueHeadline()).toBe(inLocale('cs'));
+    expect(facade.revenueHeadline()).not.toBe(inLocale('en-GB'));
   });
 
   it('breaks the headline into gross, refunded (both legs) and the credit leg, each in the report currency', () => {

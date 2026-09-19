@@ -124,7 +124,7 @@ fun GuestOrderScreen(
                     Text(stringResource(R.string.order_detail_total))
                     Text(formatOrderPrice(order.totalPrice, order.currencyCode))
                     orderStatusLabelRes(order.status)?.let { Text(stringResource(it)) }
-                    if (guestOrderCanCancel(order.status)) {
+                    if (customerCanCancelOrder(order.status)) {
                         CleansiaOutlinedButton(
                             text = stringResource(R.string.guest_order_cancel),
                             onClick = viewModel::openCancellation,
@@ -146,7 +146,6 @@ fun GuestOrderScreen(
             isSubmitting = submitting,
             errorMessage = (cancelState as? ActionState.Error)?.message,
             requireValidPreview = true,
-            maxReasonLength = 500,
         )
     }
 }

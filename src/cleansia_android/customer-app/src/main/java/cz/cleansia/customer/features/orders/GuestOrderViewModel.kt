@@ -91,7 +91,7 @@ class GuestOrderViewModel @Inject constructor(
 
     fun openCancellation() {
         val order = (_state.value as? GuestOrderUiState.Loaded)?.order ?: return
-        if (!guestOrderCanCancel(order.status) || _cancelState.value is ActionState.Submitting) return
+        if (!customerCanCancelOrder(order.status) || _cancelState.value is ActionState.Submitting) return
         _showCancellation.value = true
         loadPreview()
     }
@@ -138,8 +138,8 @@ class GuestOrderViewModel @Inject constructor(
     fun cancel(reason: String?) {
         val key = credentials ?: return
         val order = (_state.value as? GuestOrderUiState.Loaded)?.order ?: return
-        if (!_showCancellation.value || !guestOrderCanCancel(order.status) ||
-            reason.isNullOrBlank() || reason.length > 500 ||
+        if (!_showCancellation.value || !customerCanCancelOrder(order.status) ||
+            reason.isNullOrBlank() || reason.length > CANCEL_REASON_MAX_LENGTH ||
             !cancelConfirmEnabled(_preview.value, true, false, "", _cancelState.value is ActionState.Submitting, true)
         ) return
         val current = generation
@@ -170,6 +170,3 @@ class GuestOrderViewModel @Inject constructor(
         }
     }
 }
-
-internal fun guestOrderCanCancel(status: Int): Boolean =
-    orderStatusFromValue(status) in setOf(OrderStatus.New, OrderStatus.Pending, OrderStatus.Confirmed, OrderStatus.OnTheWay)

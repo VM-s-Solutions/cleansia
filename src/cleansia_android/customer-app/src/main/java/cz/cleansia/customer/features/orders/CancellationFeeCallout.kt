@@ -4,6 +4,16 @@ import androidx.annotation.StringRes
 import cz.cleansia.customer.R
 import cz.cleansia.customer.core.orders.CancellationFeePreviewDto
 
+/** Mirrors `CancelOrder.Validator`'s `RuleFor(x => x.Reason).MaximumLength(500)`. */
+const val CANCEL_REASON_MAX_LENGTH = 500
+
+/**
+ * How many characters the free-text notes may hold once the reason code and its `": "` joiner
+ * are in front of them, so the submitted payload never exceeds [CANCEL_REASON_MAX_LENGTH].
+ */
+fun cancelNotesLimit(reasonCode: String?): Int =
+    reasonCode?.let { CANCEL_REASON_MAX_LENGTH - it.length - 2 }?.coerceAtLeast(0) ?: CANCEL_REASON_MAX_LENGTH
+
 /** How loudly the fee card is drawn. Carried as a token so a test can name it. */
 enum class CancellationFeeSeverity { Free, Fee, LastMinute }
 

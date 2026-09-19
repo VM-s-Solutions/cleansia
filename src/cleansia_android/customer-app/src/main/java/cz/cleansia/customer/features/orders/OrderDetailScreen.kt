@@ -276,9 +276,7 @@ fun OrderDetailScreen(
     // order to pull the status from; the other branches hide the footer.
     val loaded = state as? OrderDetailUiState.Loaded
     val status = loaded?.let { orderStatusFromValue(it.order.orderStatus?.value) }
-    val isCancellable = status == OrderStatus.New ||
-        status == OrderStatus.Pending ||
-        status == OrderStatus.Confirmed
+    val isCancellable by viewModel.canCancel.collectAsStateWithLifecycle()
     // Wave 2 Phase 6 — Report Issue is only meaningful AFTER the cleaning has
     // been picked up by a cleaner (Confirmed) and through Completed. New /
     // Pending / Cancelled are hidden because there's nothing to dispute yet.

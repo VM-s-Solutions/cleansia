@@ -111,6 +111,11 @@ class OrderDetailViewModel @Inject constructor(
     private val _state = MutableStateFlow<OrderDetailUiState>(OrderDetailUiState.Loading)
     val state: StateFlow<OrderDetailUiState> = _state.asStateFlow()
 
+    /** Whether the footer offers Cancel: the server's set, read off the loaded order's status. */
+    val canCancel: StateFlow<Boolean> = _state
+        .map { customerCanCancelOrder((it as? OrderDetailUiState.Loaded)?.order?.orderStatus?.value) }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, false)
+
     /**
      * Gates the "Make this recurring" shortcut, from the same nullable membership
      * the recurring list resolves. This screen fetches the answer itself rather
@@ -354,14 +359,15 @@ class OrderDetailViewModel @Inject constructor(
                     appContext.getString(R.string.order_cancel_retry_hint),
                 )
             } else {
-                // Build the success snackbar text here — the VM has both the
-                // currency code (from the currently loaded detail, if any) and
-                // the wire values. Fallbacks keep us safe if state is Loaded-less.
+                // The figure is what the refund service confirmed, never the policy
+                // `refundAmount` — that one is quoted for every cancel, including a cash
+                // order that refunds nothing.
                 val currencyCode = (state.value as? OrderDetailUiState.Loaded)?.order?.currency?.code
-                val message = if (result.refundInitiated && result.refundAmount > 0.0) {
+                val actualRefund = result.actualRefundAmount
+                val message = if (result.refundInitiated && actualRefund != null && actualRefund > 0.0) {
                     appContext.getString(
                         R.string.order_cancel_success_with_refund,
-                        formatOrderPrice(result.refundAmount, currencyCode),
+                        formatOrderPrice(actualRefund, currencyCode),
                     )
                 } else {
                     appContext.getString(R.string.order_cancel_success_no_refund)

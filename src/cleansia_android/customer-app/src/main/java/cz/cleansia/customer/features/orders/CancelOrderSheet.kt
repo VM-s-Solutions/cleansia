@@ -54,8 +54,6 @@ import cz.cleansia.core.ui.components.CleansiaTextLink
 import cz.cleansia.customer.R
 import cz.cleansia.customer.ui.theme.WarningStar
 
-private const val MAX_REASON_LENGTH = 2000
-
 /**
  * Predefined cancellation reasons. The localized label is shown to the user
  * in a chip; the [code] is included in the submitted payload as a stable
@@ -88,8 +86,8 @@ private enum class CancelReasonOption(val code: String, val labelRes: Int) {
  *  - Clicking the primary button never closes the sheet directly; the VM
  *    observes the result and emits on a SharedFlow that the screen uses to
  *    drive the dismissal.
- *  - An optional reason is capped at 2000 chars client-side so we can't send
- *    a payload the backend will reject.
+ *  - The submitted reason (code + notes) is capped at [CANCEL_REASON_MAX_LENGTH]
+ *    client-side so we can't send a payload the backend will reject.
  *  - While submitting, the scrim/back gesture no-ops — we don't want a
  *    half-completed cancel to dismiss the only feedback surface.
  */
@@ -104,7 +102,6 @@ fun CancelOrderSheet(
     errorMessage: String? = null,
     onReasonChanged: () -> Unit = {},
     requireValidPreview: Boolean = false,
-    maxReasonLength: Int? = null,
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     var selectedReason by remember { mutableStateOf<CancelReasonOption?>(null) }
@@ -157,31 +154,21 @@ fun CancelOrderSheet(
                 enabled = !isSubmitting,
                 onSelect = { picked ->
                     selectedReason = picked
-                    if (maxReasonLength != null) {
-                        notes = notes.take((maxReasonLength - (picked?.code?.length ?: 0) - 2).coerceAtLeast(0))
-                    }
+                    notes = notes.take(cancelNotesLimit(picked?.code))
                     if (!errorMessage.isNullOrBlank()) onReasonChanged()
                 },
             )
             Spacer(Modifier.height(14.dp))
 
             // Notes — visible once a reason is picked. For "Other" it's required
-            // (≥3 chars); otherwise it's an optional add-on. Cap at 2000 chars
-            // client-side so the payload matches the backend validator.
+            // (≥3 chars); otherwise it's an optional add-on. Capped so the
+            // "code: notes" payload fits the backend validator.
             if (selectedReason != null) {
                 val isOther = selectedReason == CancelReasonOption.Other
                 OutlinedTextField(
                     value = notes,
                     onValueChange = { next ->
-                        val limit = maxReasonLength?.let {
-                            (it - (selectedReason?.code?.length ?: 0) - 2).coerceAtLeast(0)
-                        } ?: MAX_REASON_LENGTH
-                        val clipped = if (next.length > limit) {
-                            next.substring(0, limit)
-                        } else {
-                            next
-                        }
-                        notes = clipped
+                        notes = next.take(cancelNotesLimit(selectedReason?.code))
                         if (!errorMessage.isNullOrBlank()) onReasonChanged()
                     },
                     enabled = !isSubmitting,

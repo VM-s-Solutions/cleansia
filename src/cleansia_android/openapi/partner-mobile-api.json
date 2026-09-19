@@ -8781,6 +8781,10 @@
           "role": {
             "type": "string",
             "nullable": true
+          },
+          "adminRole": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false

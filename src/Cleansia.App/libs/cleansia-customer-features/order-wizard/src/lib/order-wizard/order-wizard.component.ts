@@ -720,7 +720,7 @@ export class OrderWizardComponent implements OnInit {
     void data.selectedPackageIds;
     void data.rooms;
     void data.bathrooms;
-    void data.address.countryId;
+    void this.facade.addressCountryId();
     if (onPlusStep && havePlans) {
       this.refreshPlusSavings();
     }
@@ -737,8 +737,10 @@ export class OrderWizardComponent implements OnInit {
     query.rooms = data.rooms;
     query.bathrooms = data.bathrooms;
     query.planCode = plan.code;
-    // The address's country decides the currency the saving is priced in.
-    query.countryId = data.address.countryId || undefined;
+    // The address's country decides the currency the saving is priced in — the
+    // same country the price and the catalogue are asked for, market fallback
+    // included, so the three quotes cannot disagree with the picker.
+    query.countryId = this.facade.addressCountryId() ?? undefined;
     // The SLOT, not the date: midnight is a different express band.
     query.cleaningDate = composeSlotMoment(data.cleaningDate, data.cleaningTime) ?? undefined;
     this.facade.loadPlusSavings(query);

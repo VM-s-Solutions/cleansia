@@ -12,6 +12,7 @@ import {
   PackageListItem,
   PaymentType,
   QuoteOrderResponse,
+  QuotePlusSavingsQuery,
   QuotePlusSavingsResponse,
   SavedAddressDto,
   ServiceListItem,
@@ -109,6 +110,7 @@ class FakeOrderWizardFacade {
   // supplies both so the component can render without either.
   plans = signal<GetMembershipPlansResponse[]>([]);
   plusSavings = signal<QuotePlusSavingsResponse | null>(null);
+  plusUnavailable = signal(false);
   activeMembership = signal<GetMyMembershipResponse | null>(null);
   loadPlans = jest.fn();
   loadPlusSavings = jest.fn();
@@ -389,6 +391,41 @@ describe('OrderWizardComponent (a11y)', () => {
       select?.handleChange({ value: 'svk-id' });
 
       expect(facade.formData().address.countryId).toBe('svk-id');
+    });
+  });
+
+  /**
+   * Three quotes read the booking's country — the price, the catalogue and this
+   * one — and the picker shows `addressCountryId`, which falls back to the market
+   * when the address has none yet. A quote that reads the raw address field
+   * instead is priced for no country at all while the picker shows one.
+   */
+  describe('the Plus-savings quote', () => {
+    it('is priced for the country the picker shows, market fallback included', async () => {
+      await setup();
+      facade.plans.set([
+        GetMembershipPlansResponse.fromJS({
+          code: 'plus-monthly',
+          name: 'Plus',
+          price: 199,
+          billingInterval: 0,
+          discountPercentage: 12,
+          freeCancellationWindowHours: 24,
+          expressUpgradesPerMonth: 0,
+          trialPeriodDays: 0,
+          savingsPercentVsMonthly: 0,
+          currencyCode: 'CZK',
+        }),
+      ]);
+      facade.addressCountryId.set('cze-id');
+      facade.activeStep.set(4);
+      fixture.detectChanges();
+
+      expect(facade.formData().address.countryId).toBe('');
+      expect(facade.loadPlusSavings).toHaveBeenCalled();
+      const query = facade.loadPlusSavings.mock.calls.at(-1)?.[0] as QuotePlusSavingsQuery;
+      expect(query).toBeInstanceOf(QuotePlusSavingsQuery);
+      expect(query.countryId).toBe('cze-id');
     });
   });
 

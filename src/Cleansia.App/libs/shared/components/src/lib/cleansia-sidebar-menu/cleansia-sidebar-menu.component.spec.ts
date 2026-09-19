@@ -49,4 +49,14 @@ describe('CleansiaSidebarMenuComponent — brand rail', () => {
     expect(component.effectiveCollapsed()).toBe(false);
     expect(component.brandCompact()).toBe(false);
   });
+
+  it.each([
+    [767, true],
+    [768, true],
+    [769, false],
+  ])('at %i px the rail is in mobile mode: %s', (width, mobile) => {
+    setViewportWidth(width);
+
+    expect(component.isMobile()).toBe(mobile);
+  });
 });

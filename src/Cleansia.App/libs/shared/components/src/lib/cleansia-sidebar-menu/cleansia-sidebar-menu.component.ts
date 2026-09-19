@@ -20,7 +20,7 @@ import { TooltipModule } from 'primeng/tooltip';
 import { CleansiaBrandNameComponent } from '../cleansia-brand-name';
 import { CleansiaButtonComponent } from '../cleansia-button';
 import { CleansiaLanguageSwitcherComponent } from '../cleansia-language-switcher';
-import { SidebarMenuItem } from './cleansia-sidebar-menu.models';
+import { isMobileViewport, SidebarMenuItem } from './cleansia-sidebar-menu.models';
 import { filter } from 'rxjs';
 
 @Component({
@@ -99,7 +99,7 @@ export class CleansiaSidebarMenuComponent {
 
   private updateMobileStatus() {
     if (!this.isBrowser) return;
-    this.isMobileSignal.set(window.innerWidth < 768);
+    this.isMobileSignal.set(isMobileViewport(window.innerWidth));
   }
 
   toggleCollapsed(): void {

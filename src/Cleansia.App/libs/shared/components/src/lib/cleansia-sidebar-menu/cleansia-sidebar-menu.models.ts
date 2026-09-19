@@ -14,3 +14,14 @@ export interface SidebarMenuItem {
    */
   permission?: string | string[];
 }
+
+/**
+ * The widest viewport the signed-in shell treats as mobile. The stylesheets collapse the desktop
+ * rail with `max-width: 768px`, which includes 768 itself, so the script that decides whether the
+ * mobile toolbar renders must include it too — one predicate, or 768 px has no navigation at all.
+ */
+export const MOBILE_VIEWPORT_MAX_PX = 768;
+
+export function isMobileViewport(innerWidth: number): boolean {
+  return innerWidth <= MOBILE_VIEWPORT_MAX_PX;
+}

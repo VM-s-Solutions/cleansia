@@ -9,6 +9,7 @@ import {
   CleansiaDevBannerComponent,
   CleansiaLanguageSwitcherComponent,
   CleansiaSidebarMenuComponent,
+  isMobileViewport,
   SidebarMenuItem,
 } from '@cleansia/components';
 import { DialogService, PageTitleService, Policy } from '@cleansia/services';
@@ -76,7 +77,7 @@ export class AppComponent implements OnInit {
   }
 
   private updateMobileStatus(): void {
-    this.mobileSignal.set(window.innerWidth < 768);
+    this.mobileSignal.set(isMobileViewport(window.innerWidth));
   }
 
   sidebarMenuItems: SidebarMenuItem[] = [

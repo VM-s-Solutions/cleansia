@@ -1,4 +1,3 @@
-using System.Net;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.HostTests.Infrastructure;
 
@@ -59,11 +58,11 @@ public sealed class AdminRoleManagerBehaviourTests(HostTestPostgresFixture db) :
         await SeedAsync();
         var client = Manager();
 
-        Assert.NotEqual(HttpStatusCode.Forbidden, (await client.PutAsync("/api/AdminService/update/some-service", content: null)).StatusCode);
-        Assert.NotEqual(HttpStatusCode.Forbidden, (await client.PostAsync("/api/AdminPayConfig/create", content: null)).StatusCode);
+        HttpAssert.ClearedTheGate(await client.PutAsync("/api/AdminService/update/some-service", content: null));
+        HttpAssert.ClearedTheGate(await client.PostAsync("/api/AdminPayConfig/create", content: null));
         // The erasure gate, on a request id that names nothing: the gate is cleared and the validator answers.
-        Assert.NotEqual(HttpStatusCode.Forbidden, (await client.PostAsync("/api/v1/AdminGdpr/requests/no-such-request/retry-deletion", content: null)).StatusCode);
-        Assert.NotEqual(HttpStatusCode.Forbidden, (await client.PostAsync("/api/AdminCredit/expire", content: null)).StatusCode);
+        HttpAssert.ClearedTheGate(await client.PostAsync("/api/v1/AdminGdpr/requests/no-such-request/retry-deletion", content: null));
+        HttpAssert.ClearedTheGate(await client.PostAsync("/api/AdminCredit/expire", content: null));
     }
 
     [Fact]

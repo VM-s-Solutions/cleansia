@@ -1,4 +1,3 @@
-using System.Net;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.HostTests.Infrastructure;
 
@@ -63,10 +62,10 @@ public sealed class AdminRoleSupportBehaviourTests(HostTestPostgresFixture db) :
         var client = Support();
 
         // Bodiless posts: the gate answers 403 before binding; anything else means the gate was cleared.
-        Assert.NotEqual(HttpStatusCode.Forbidden, (await client.PostAsync("/api/AdminOrder/override-status", content: null)).StatusCode);
-        Assert.NotEqual(HttpStatusCode.Forbidden, (await client.PostAsync("/api/AdminOrder/refund", content: null)).StatusCode);
-        Assert.NotEqual(HttpStatusCode.Forbidden, (await client.PostAsync("/api/AdminRefund/partial", content: null)).StatusCode);
-        Assert.NotEqual(HttpStatusCode.Forbidden, (await client.PostAsync("/api/AdminOrder/cancel", content: null)).StatusCode);
+        HttpAssert.ClearedTheGate(await client.PostAsync("/api/AdminOrder/override-status", content: null));
+        HttpAssert.ClearedTheGate(await client.PostAsync("/api/AdminOrder/refund", content: null));
+        HttpAssert.ClearedTheGate(await client.PostAsync("/api/AdminRefund/partial", content: null));
+        HttpAssert.ClearedTheGate(await client.PostAsync("/api/AdminOrder/cancel", content: null));
     }
 
     [Fact]

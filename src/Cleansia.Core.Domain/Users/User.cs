@@ -55,7 +55,8 @@ public class User : TenantAuditable
     /// <summary>
     /// The administrator's role: NOT NULL iff <see cref="Profile"/> is <see cref="UserProfile.Administrator"/>
     /// (the database check constraint says the same), meaningless and null for a customer or a cleaner.
-    /// Written by <see cref="CreateWithPassword"/> and <see cref="SetAdminRole"/> only.
+    /// Written by <see cref="CreateWithPassword"/> at creation; every later change goes through the
+    /// repository's guarded update, which is the only path that refuses to demote the last Administrator.
     /// </summary>
     public AdminRole? AdminRole { get; private set; }
 
@@ -344,17 +345,6 @@ public class User : TenantAuditable
         => string.IsNullOrWhiteSpace(storedNamePart)
             || (!string.IsNullOrWhiteSpace(derivedNamePart)
                 && string.Equals(storedNamePart.Trim(), derivedNamePart.Trim(), StringComparison.OrdinalIgnoreCase));
-
-    public User SetAdminRole(AdminRole role)
-    {
-        if (Profile != UserProfile.Administrator)
-        {
-            throw new InvalidOperationException("Only an administrator holds an admin role.");
-        }
-
-        AdminRole = role;
-        return this;
-    }
 
     public User UpgradeToEmployee()
     {

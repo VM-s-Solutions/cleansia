@@ -2949,9 +2949,11 @@
       "invalid_length": "Neplatná dĺžka adresy"
     },
     "admin_user": {
+      "cannot_change_own_role": "Nemôžete zmeniť svoju vlastnú rolu",
       "cannot_deactivate_last_admin": "Nemôžete deaktivovať posledného aktívneho administrátora",
       "cannot_deactivate_self": "Nemôžete deaktivovať vlastný účet",
       "cannot_delete_self": "Nemôžete odstrániť vlastný účet",
+      "cannot_demote_last_administrator": "Nemôžete zmeniť rolu posledného administrátora",
       "cannot_target_admin_via_gdpr_tool": "Účty administrátorov nemožno spracovať nástrojom GDPR",
       "email_exists": "Administrátor s týmto e-mailom už existuje",
       "not_found": "Administrátor nebol nájdený"

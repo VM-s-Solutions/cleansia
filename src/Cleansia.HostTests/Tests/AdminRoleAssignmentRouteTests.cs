@@ -14,7 +14,8 @@ namespace Cleansia.HostTests.Tests;
 /// the role it ran under; a Support caller is refused the route at the gate; the caller cannot change
 /// their own role; the company's last Administrator cannot be demoted or deactivated while only a
 /// Support remains; every act by a Manager, a Support and an Accountant lands on the admin table with
-/// their role; and a demoted administrator's next sign-in mints the new role — the hint in the body,
+/// their role; another company's administrator is not found from this company's console and its row
+/// is untouched; and a demoted administrator's next sign-in mints the new role — the hint in the body,
 /// the claim in the cookie — and that token is refused an Administrator-only route.
 /// </summary>
 public sealed class AdminRoleAssignmentRouteTests(HostTestPostgresFixture db) : AuthzHostTestBase(db)
@@ -32,6 +33,8 @@ public sealed class AdminRoleAssignmentRouteTests(HostTestPostgresFixture db) : 
     private const string AccountantEmail = "role-assign-accountant@hosttests.local";
     private const string CustomerId = "role-assign-customer";
     private const string CustomerEmail = "role-assign-customer@hosttests.local";
+    private const string ForeignAdministratorId = "role-assign-foreign-admin";
+    private const string ForeignAdministratorEmail = "role-assign-foreign-admin@hosttests.local";
 
     private Task SeedAsync(bool secondAdministrator = false) =>
         SeedAsync(async ctx =>
@@ -181,6 +184,33 @@ public sealed class AdminRoleAssignmentRouteTests(HostTestPostgresFixture db) : 
         await HttpAssert.AssertBusinessErrorAsync(response, BusinessErrorMessage.CannotDeactivateLastAdmin);
         var target = await QueryAsync(ctx => ctx.Users.IgnoreQueryFilters().SingleAsync(u => u.Id == SupportId));
         Assert.True(target.IsActive);
+    }
+
+    [Fact]
+    public async Task Another_company_administrator_is_not_found_and_its_row_is_untouched()
+    {
+        await SeedAsync(secondAdministrator: true);
+        await SeedAsync(ctx =>
+        {
+            var foreign = DomainSeed.Admin(ForeignAdministratorEmail, tenantId: HostTestTenants.B, role: AdminRole.Administrator);
+            foreign.Id = ForeignAdministratorId;
+            ctx.Users.Add(foreign);
+            return Task.CompletedTask;
+        });
+        var client = As(AdministratorId, AdministratorEmail, AdminRole.Administrator);
+
+        var roleResponse = await SetRoleAsync(client, ForeignAdministratorId, AdminRole.Support);
+        Assert.Equal(HttpStatusCode.BadRequest, roleResponse.StatusCode);
+        await HttpAssert.AssertBusinessErrorAsync(roleResponse, BusinessErrorMessage.AdminUserNotFound);
+
+        var deactivateResponse = await client.PostAsync($"/api/AdminUser/{ForeignAdministratorId}/deactivate", content: null);
+        Assert.Equal(HttpStatusCode.BadRequest, deactivateResponse.StatusCode);
+        await HttpAssert.AssertBusinessErrorAsync(deactivateResponse, BusinessErrorMessage.AdminUserNotFound);
+
+        var foreignRow = await QueryAsync(ctx => ctx.Users.IgnoreQueryFilters().SingleAsync(u => u.Id == ForeignAdministratorId));
+        Assert.Equal(HostTestTenants.B, foreignRow.TenantId);
+        Assert.Equal(AdminRole.Administrator, foreignRow.AdminRole);
+        Assert.True(foreignRow.IsActive);
     }
 
     [Fact]

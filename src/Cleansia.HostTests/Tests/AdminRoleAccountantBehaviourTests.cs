@@ -1,4 +1,3 @@
-using System.Net;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.HostTests.Infrastructure;
 
@@ -59,7 +58,7 @@ public sealed class AdminRoleAccountantBehaviourTests(HostTestPostgresFixture db
         HttpAssert.IsOk(await client.GetAsync($"/api/AdminReport/revenue?startDate=2026-01-01&endDate=2026-01-31&currencyId={DomainSeed.CurrencyId}"));
         HttpAssert.IsOk(await client.GetAsync("/api/AdminPayConfig/get-paged"));
         // The masked read is the Accountant's; its body depends on the cleaner's payout record, so only the gate is asserted here.
-        Assert.NotEqual(HttpStatusCode.Forbidden, (await client.GetAsync($"/api/AdminEmployee/{employeeId}/payout-details")).StatusCode);
+        HttpAssert.ClearedTheGate(await client.GetAsync($"/api/AdminEmployee/{employeeId}/payout-details"));
         HttpAssert.IsOk(await client.GetAsync("/api/AdminEmployee/get-paged"));
         HttpAssert.IsOk(await client.GetAsync("/api/AdminService/get-paged"));
         HttpAssert.IsOk(await client.GetAsync("/api/AdminNotification/unread-count"));

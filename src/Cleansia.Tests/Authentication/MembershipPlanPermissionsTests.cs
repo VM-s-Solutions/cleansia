@@ -3,7 +3,7 @@ using Cleansia.Core.AppServices.Authentication;
 namespace Cleansia.Tests.Authentication;
 
 /// <summary>
-/// AC7 (T-0175a) — the four membership-plan admin permissions resolve to an administrator set,
+/// The four membership-plan admin permissions resolve to an administrator set,
 /// fail-closed under ADR-0001: a non-admin (customer/partner) JWT is denied. The read is any
 /// administrator's and the writes are the Manager's (ADR-0066 D3). A missing map row would resolve to
 /// PhysicalPolicy.Deny — so this asserts the rows landed correctly.

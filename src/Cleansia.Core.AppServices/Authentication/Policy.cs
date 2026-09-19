@@ -132,7 +132,7 @@ public class Policy
     public const string CanUpdateDisputeStatus = nameof(CanUpdateDisputeStatus); // SupportOrAbove (Only admins can update status)
     public const string CanUploadDisputeEvidence = nameof(CanUploadDisputeEvidence); // Customer (Customers can upload evidence to their own disputes)
     // Admin-host dispute reads. Distinct from the CustomerOnly own-data CanViewDispute/CanViewDisputeList:
-    // the admin reads every dispute, so the admin host needs its own AdminOnly view gates.
+    // the admin reads every dispute, so the admin host needs its own view gates (Support's area).
     public const string CanViewDisputeAdmin = nameof(CanViewDisputeAdmin); // SupportOrAbove (any dispute)
     public const string CanViewDisputeListAdmin = nameof(CanViewDisputeListAdmin); // SupportOrAbove (all disputes)
 

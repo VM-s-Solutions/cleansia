@@ -448,9 +448,11 @@ function resolveKey(
 // merely remembered cannot fail on a key added after it was written.
 const ADMIN_SURFACE_ERROR_KEYS: readonly string[] = [
   // Admin sign-in and the admin-user screen
+  'admin_user.cannot_change_own_role',
   'admin_user.cannot_deactivate_last_admin',
   'admin_user.cannot_deactivate_self',
   'admin_user.cannot_delete_self',
+  'admin_user.cannot_demote_last_administrator',
   'admin_user.cannot_target_admin_via_gdpr_tool',
   'admin_user.email_exists',
   'admin_user.not_found',

@@ -10,7 +10,7 @@ using Microsoft.Extensions.DependencyInjection;
 namespace Cleansia.Tests.Authentication;
 
 /// <summary>
-/// AC7 (ADR-0001 D1/D2, re-mapped by ADR-0066 D3) — the status-override permission is
+/// ADR-0001 D1/D2, re-mapped by ADR-0066 D3 — the status-override permission is
 /// <c>SupportOrAbove</c>, fail-closed, and mapped. An Administrator passes; a Customer or Employee is
 /// denied — the privileged lifecycle write never leaks to a non-admin role — and so is an administrator
 /// outside Support's branch of the lattice.

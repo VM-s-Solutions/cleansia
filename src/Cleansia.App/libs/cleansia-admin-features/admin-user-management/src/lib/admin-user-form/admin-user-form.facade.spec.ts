@@ -2,6 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
 import {
   AdminClient,
+  AdminRole,
   CreateAdminUserCommand,
   LanguageListItem,
   UpdateAdminUserCommand,
@@ -176,6 +177,7 @@ describe('AdminUserFormFacade', () => {
         phoneNumber: '+420777111222',
         birthDate: '1990-05-15',
         preferredLanguageCode: 'cs',
+        role: AdminRole.Support,
       });
     });
 

@@ -6,7 +6,8 @@ namespace Cleansia.Tests.Domain.Users;
 /// <summary>
 /// The administrator's role is a second axis on the account, meaningful only for the Administrator
 /// profile: the factory refuses an administrator without a role and a role on any other profile — the
-/// invariant the database check constraint enforces — and the only later writer refuses a non-administrator.
+/// invariant the database check constraint enforces — and no later domain writer exists: a role changes
+/// only through the repository's guarded update.
 /// </summary>
 public class UserAdminRoleTests
 {
@@ -46,25 +47,6 @@ public class UserAdminRoleTests
     public void A_Customer_Or_A_Cleaner_Carries_No_Role(UserProfile profile)
     {
         Assert.Null(Create(profile, null).AdminRole);
-    }
-
-    [Fact]
-    public void SetAdminRole_Changes_An_Administrator_Role()
-    {
-        var user = Create(UserProfile.Administrator, AdminRole.Administrator);
-
-        user.SetAdminRole(AdminRole.Accountant);
-
-        Assert.Equal(AdminRole.Accountant, user.AdminRole);
-    }
-
-    [Fact]
-    public void SetAdminRole_Refuses_A_Non_Administrator()
-    {
-        var customer = Create(UserProfile.Customer, null);
-
-        Assert.Throws<InvalidOperationException>(() => customer.SetAdminRole(AdminRole.Support));
-        Assert.Null(customer.AdminRole);
     }
 
     [Fact]

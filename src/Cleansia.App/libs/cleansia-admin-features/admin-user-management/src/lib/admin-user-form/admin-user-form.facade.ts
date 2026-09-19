@@ -2,6 +2,7 @@ import { Injectable, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import {
   AdminClient,
+  AdminRole,
   AdminUserDetailDto,
   CreateAdminUserCommand,
   CreateAdminUserResponse,
@@ -83,6 +84,8 @@ export class AdminUserFormFacade extends UnsubscribeControlDirective {
     command.phoneNumber = data.phoneNumber || undefined;
     command.birthDate = data.birthDate;
     command.preferredLanguageCode = data.preferredLanguageCode || undefined;
+    // The server requires a role and the form carries no picker yet; least privilege until it does.
+    command.role = AdminRole.Support;
 
     this.adminClient.adminUserClient
       .create(command)

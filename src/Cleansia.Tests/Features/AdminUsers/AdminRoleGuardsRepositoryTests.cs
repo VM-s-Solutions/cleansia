@@ -14,7 +14,8 @@ namespace Cleansia.Tests.Features.AdminUsers;
 /// The two last-Administrator guards' predicates, on a real <see cref="CleansiaDbContext"/> over
 /// SQLite so the tenant filter, the correlated EXISTS and the ExecuteUpdate translate for real: a
 /// demotion or deactivation lands only while ANOTHER active Administrator-role administrator of the
-/// SAME company remains, a promotion needs no guard, and the model's check constraint refuses an
+/// SAME company remains, a promotion needs no guard, neither guard reaches another company's row
+/// however many Administrators the caller's company keeps, and the model's check constraint refuses an
 /// administrator row without a role and a customer row with one. The advisory lock and the race are
 /// Postgres facts and live in the integration suite.
 /// </summary>
@@ -120,6 +121,34 @@ public sealed class AdminRoleGuardsRepositoryTests : IDisposable
 
         Assert.Equal(0, rows);
         Assert.Equal(AdminRole.Administrator, (await LoadAsync("only-admin")).AdminRole);
+    }
+
+    [Fact]
+    public async Task Demoting_Another_Company_Administrator_Touches_No_Row()
+    {
+        await SeedAsync(Company, Admin("admin-1", AdminRole.Administrator), Admin("admin-2", AdminRole.Administrator));
+        await SeedAsync(OtherCompany, Admin("their-admin", AdminRole.Administrator), Admin("their-admin-2", AdminRole.Administrator));
+
+        await using var ctx = NewContext(Company);
+        var rows = await new UserRepository(ctx).DemoteAdministratorIfAnotherRemainsAsync(Company, "their-admin", AdminRole.Support, CancellationToken.None);
+
+        Assert.Equal(0, rows);
+        Assert.Equal(AdminRole.Administrator, (await LoadAsync("their-admin")).AdminRole);
+    }
+
+    [Fact]
+    public async Task Deactivating_Another_Company_Administrator_Touches_No_Row()
+    {
+        await SeedAsync(Company, Admin("admin-1", AdminRole.Administrator), Admin("admin-2", AdminRole.Administrator));
+        await SeedAsync(OtherCompany, Admin("their-admin", AdminRole.Administrator), Admin("their-admin-2", AdminRole.Administrator));
+
+        await using var ctx = NewContext(Company);
+        var rows = await new UserRepository(ctx).DeactivateAdministratorIfAnotherRemainsAsync(Company, "their-admin", Actor, DateTimeOffset.UtcNow, CancellationToken.None);
+
+        Assert.Equal(0, rows);
+        var theirs = await LoadAsync("their-admin");
+        Assert.True(theirs.IsActive);
+        Assert.Null(theirs.DeactivatedBy);
     }
 
     [Fact]

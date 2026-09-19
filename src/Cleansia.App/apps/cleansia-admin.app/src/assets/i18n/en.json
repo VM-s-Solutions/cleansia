@@ -2949,9 +2949,11 @@
       "invalid_length": "Invalid address length"
     },
     "admin_user": {
+      "cannot_change_own_role": "You cannot change your own role",
       "cannot_deactivate_last_admin": "You cannot deactivate the last active administrator",
       "cannot_deactivate_self": "You cannot deactivate your own account",
       "cannot_delete_self": "You cannot delete your own account",
+      "cannot_demote_last_administrator": "You cannot demote the last administrator",
       "cannot_target_admin_via_gdpr_tool": "Administrator accounts cannot be targeted by the GDPR data tool",
       "email_exists": "An admin user with this email already exists",
       "not_found": "Admin user not found"

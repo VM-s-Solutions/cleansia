@@ -250,10 +250,15 @@ public class HandlePaymentNotification
 
             // Stripe fires this per ATTEMPT and the platform resolves the state itself — a retry or the
             // stale sweep's cancel within the hour — so the administrators hear of the first decline on
-            // an order and not of every fumbled card entry. The subject is the order, and a repeated
-            // subject fails the commit on the outbox index rather than collapsing, so the feed is read
-            // before the call: a row for this order means the company was already told.
+            // an order and not of every fumbled card entry. Stripe also does not order a failed
+            // attempt's event against the later success on the same PaymentIntent, so a decline that
+            // lands after the money did, or after the order was cancelled, is news about nothing. The
+            // subject is the order, and a repeated subject fails the commit on the outbox index rather
+            // than collapsing, so the feed is read before the call: a row for this order means the
+            // company was already told.
             if (!string.IsNullOrEmpty(order.TenantId)
+                && order.PaymentStatus == PaymentStatus.Pending
+                && order.CurrentStatus != OrderStatus.Cancelled
                 && !await userNotificationRepository.AnyForEventAsync(
                     order.TenantId, AdminNotificationEventCatalog.PaymentFailed, "orderId", order.Id, cancellationToken))
             {

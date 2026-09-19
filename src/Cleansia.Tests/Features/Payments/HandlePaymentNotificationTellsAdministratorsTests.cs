@@ -25,7 +25,8 @@ namespace Cleansia.Tests.Features.Payments;
 /// short-circuit, so a redelivery raises nothing and a settled order raises nothing again. A declined
 /// PaymentIntent raises the payment-failed event ONCE PER ORDER: Stripe fires it per attempt, so the
 /// arm reads the feed first and a second decline on an order the company was already told about
-/// raises nothing and still succeeds. A chargeback raises its event naming the dispute the money is
+/// raises nothing and still succeeds; a decline that lands after the order was paid or cancelled
+/// raises nothing without reading the feed. A chargeback raises its event naming the dispute the money is
 /// now attached to — the customer's open one when there is one, else the chargeback's own — with the
 /// Stripe dispute id as the subject and the disputed amount in the order's currency.
 /// </summary>
@@ -179,6 +180,33 @@ public sealed class HandlePaymentNotificationTellsAdministratorsTests
         var result = await Handler().Handle(Command(IntentFailedPayload("evt_tells_declined_again")), CancellationToken.None);
 
         Assert.True(result.IsSuccess);
+        Assert.Empty(_raised);
+    }
+
+    [Fact]
+    public async Task A_Decline_Delivered_After_The_Order_Was_Paid_Tells_Nobody_And_Reads_No_Feed()
+    {
+        ArrangeOrder(PaymentStatus.Paid);
+
+        var result = await Handler().Handle(Command(IntentFailedPayload("evt_tells_declined_late")), CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        Assert.Empty(_raised);
+        _userNotifications.Verify(
+            r => r.AnyForEventAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()),
+            Times.Never);
+    }
+
+    [Fact]
+    public async Task A_Decline_Delivered_After_The_Customer_Cancelled_The_Unpaid_Order_Tells_Nobody()
+    {
+        var order = ArrangeOrder();
+        order.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.Cancelled, order));
+
+        var result = await Handler().Handle(Command(IntentFailedPayload("evt_tells_declined_dead")), CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(PaymentStatus.Pending, order.PaymentStatus);
         Assert.Empty(_raised);
     }
 

@@ -19,8 +19,8 @@ import { TranslateService } from '@ngx-translate/core';
 import { catchError, finalize, of, takeUntil } from 'rxjs';
 
 /**
- * The statuses the server's CancellationAssessor lets a customer cancel from — everything it
- * does not block (InProgress, Completed, Cancelled) — and the same set the guest flow offers.
+ * The statuses the server's CancellationAssessor lets a customer cancel from, less the dead
+ * `Pending` it also lets through (no production writer; the guest flow withholds it too).
  */
 const CANCELLABLE_ORDER_STATUSES: readonly OrderStatus[] = [
   OrderStatus.New,

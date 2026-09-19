@@ -1,5 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { TranslateModule } from '@ngx-translate/core';
+import { readFileSync } from 'fs';
+import { join } from 'path';
 import { CleansiaButtonComponent } from './cleansia-button.component';
 
 describe('CleansiaButtonComponent (a11y)', () => {
@@ -54,3 +56,34 @@ describe('CleansiaButtonComponent (a11y)', () => {
     expect(nativeButton().getAttribute('aria-label')).toBeNull();
   });
 });
+
+/**
+ * A labelled action in a fixed-width slot shrinks to 5rem on a phone and shows an initial and an
+ * ellipsis. `auto-width` is the content-sized slot; it needs both halves — the class on the host and
+ * the stylesheet lifting the base min-width — or the button is still a full-row slab.
+ */
+describe('CleansiaButtonComponent (content-sized action)', () => {
+  it('puts the auto-width class on the host', async () => {
+    await TestBed.configureTestingModule({
+      imports: [CleansiaButtonComponent, TranslateModule.forRoot()],
+    }).compileComponents();
+    const fixture = TestBed.createComponent(CleansiaButtonComponent);
+    fixture.componentRef.setInput('label', 'Export my data');
+    fixture.componentRef.setInput('size', 'auto-width');
+    fixture.detectChanges();
+
+    const classes = fixture.componentInstance.cssClasses().split(' ');
+    expect(classes).toContain('auto-width');
+    expect(classes.some((c) => /-width$/.test(c) && c !== 'auto-width')).toBe(false);
+  });
+
+  it('lifts the full-row minimum in the stylesheet for that size', () => {
+    const scss = readFileSync(
+      join(__dirname, '../../../../assets/src/styles/components/cleansia-button.component.scss'),
+      'utf-8'
+    );
+
+    expect(scss).toMatch(/\.cleansia-button\.auto-width\s*\{[^}]*min-width:\s*0;/);
+  });
+});
+

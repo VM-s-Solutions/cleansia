@@ -40,7 +40,7 @@
                       | translate
                   "
                   icon="pi pi-plus"
-                  size="small-width"
+                  size="auto-width"
                   [outlined]="true"
                   [disabled]="facade.creating()"
                   [loading]="facade.creating()"
@@ -76,14 +76,14 @@
                     <cleansia-button
                       [label]="'global.actions.save' | translate"
                       icon="pi pi-check"
-                      size="small-width"
+                      size="auto-width"
                       [disabled]="facade.saving() && savingKey() === kv.key"
                       [loading]="facade.saving() && savingKey() === kv.key"
                       (onClick)="onSaveTranslation(lang.code, kv.id!, kv.key!)"
                     />
                     <cleansia-button
                       icon="pi pi-trash"
-                      size="small-width"
+                      size="auto-width"
                       severity="danger"
                       [outlined]="true"
                       [disabled]="facade.deleting() && deletingKey() === kv.key"

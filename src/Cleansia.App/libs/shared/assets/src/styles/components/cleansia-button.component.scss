@@ -206,6 +206,13 @@
   }
 }
 
+// A content-sized action. It takes its label's width and shares a row with its neighbours, the
+// way the brand appearances below do, instead of a fixed slot the label has to fit into: the
+// fixed slots shrink to 5rem on a phone, and a cs/uk label in one was an initial and an ellipsis.
+.cleansia-button.auto-width {
+  min-width: 0;
+}
+
 // ===== ANIMATIONS =====
 @keyframes spin {
   from {

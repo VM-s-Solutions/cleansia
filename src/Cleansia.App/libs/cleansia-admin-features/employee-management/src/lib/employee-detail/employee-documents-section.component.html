@@ -103,12 +103,12 @@
       <div class="document-card__action-row">
         <cleansia-button
           [label]="'pages.employee_detail.actions.preview_document' | translate"
-          icon="pi pi-eye" severity="info" size="small-width" [outlined]="true"
+          icon="pi pi-eye" severity="info" size="auto-width" [outlined]="true"
           (onClick)="facade.previewDocument(doc)"
         />
         <cleansia-button
           [label]="'pages.employee_detail.actions.download_document' | translate"
-          icon="pi pi-download" severity="secondary" size="small-width" [outlined]="true"
+          icon="pi pi-download" severity="secondary" size="auto-width" [outlined]="true"
           (onClick)="facade.downloadDocument(doc)"
         />
       </div>
@@ -116,14 +116,14 @@
         <div class="document-card__action-row">
           <cleansia-button
             [label]="'pages.employee_detail.actions.approve_document' | translate"
-            icon="pi pi-check" severity="success" size="small-width"
+            icon="pi pi-check" severity="success" size="auto-width"
             [outlined]="showApproveOnly"
             (onClick)="facade.approveDocument(doc.id!, employeeId)"
           />
           @if (!showApproveOnly) {
             <cleansia-button
               [label]="'pages.employee_detail.actions.reject_document' | translate"
-              icon="pi pi-times" severity="danger" size="small-width" [outlined]="true"
+              icon="pi pi-times" severity="danger" size="auto-width" [outlined]="true"
               (onClick)="rejectDocument.emit(doc)"
             />
           }

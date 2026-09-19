@@ -73,6 +73,7 @@ public class AdminOverrideOrderStatus
                 .GetQueryable()
                 .Include(o => o.OrderStatusHistory)
                 .Include(o => o.AssignedEmployees)
+                .AsSplitQuery()
                 .FirstOrDefaultAsync(o => o.Id == command.OrderId, cancellationToken);
 
             if (order == null)

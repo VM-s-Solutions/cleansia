@@ -112,7 +112,8 @@ public class RejectEmployee
         ///
         /// <para><b>Future <c>Confirmed</c> work only.</b> An order already <c>OnTheWay</c> or
         /// <c>InProgress</c> is a cleaner standing in a customer's home; taking that seat mid-clean is
-        /// worse than letting an admin resolve it. Those are logged for the admin instead.</para>
+        /// worse than letting an admin resolve it. Those seats are left in place and raise no event
+        /// here — a drop at those statuses does, through <c>DropOrder</c>.</para>
         ///
         /// <para><b>A seat whose release empties the crew walks the order back to <c>New</c></b> —
         /// Confirmed means a cleaner took it, and nobody has it now — ends a live reservation the

@@ -1,4 +1,5 @@
-﻿using Cleansia.Core.Domain.Users;
+﻿using Cleansia.Core.Domain.Enums;
+using Cleansia.Core.Domain.Users;
 
 namespace Cleansia.Core.Domain.Repositories;
 
@@ -81,11 +82,29 @@ public interface IUserRepository : IRepository<User, string>
     Task<string?> GetNotificationRecipientTenantAsync(string userId, CancellationToken cancellationToken);
 
     /// <summary>
-    /// The administrators of <paramref name="tenantId"/> an admin event is delivered to: active,
-    /// e-mail confirmed and not anonymised. Reads by the company ARGUMENT, never the ambient tenant —
-    /// the event's company is the order's or the webhook's, and the caller's override may name another.
+    /// The administrators of <paramref name="tenantId"/> an admin event may be delivered to: active,
+    /// e-mail confirmed and not anonymised, with their role for the notifier to match against the
+    /// event's audience. Reads by the company ARGUMENT, never the ambient tenant — the event's company
+    /// is the order's or the webhook's, and the caller's override may name another.
     /// </summary>
     Task<IReadOnlyList<AdministratorRecipient>> GetActiveAdministratorsAsync(string tenantId, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Sets an administrator's role, refusing to demote the company's last active Administrator. Runs
+    /// as one transaction under the company's advisory lock, so two demotions of the last two
+    /// Administrators serialise and the second reads the first's committed result (a conditional
+    /// UPDATE alone is write skew under READ COMMITTED: each sees the other row still an Administrator).
+    /// Returns the rows updated — 0 means refused. Commits itself; the unit of work has no part in it.
+    /// </summary>
+    Task<int> DemoteAdministratorIfAnotherRemainsAsync(string tenantId, string userId, AdminRole role, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Deactivates an administrator, refusing to deactivate the company's last active Administrator-role
+    /// administrator — a company with only a Support left has nobody who can assign a role or create an
+    /// account. Same transaction and lock as <see cref="DemoteAdministratorIfAnotherRemainsAsync"/>.
+    /// Returns the rows updated — 0 means refused.
+    /// </summary>
+    Task<int> DeactivateAdministratorIfAnotherRemainsAsync(string tenantId, string userId, string actorId, DateTimeOffset now, CancellationToken cancellationToken);
 
     /// <summary>
     /// Atomically increments the account's failed-login counter and opens the lockout window once

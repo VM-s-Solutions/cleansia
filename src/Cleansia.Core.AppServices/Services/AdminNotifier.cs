@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.AdminNotifications;
 using Cleansia.Core.AppServices.Features.TenantSettings;
@@ -46,12 +47,15 @@ public class AdminNotifier(
                 nameof(adminEvent));
         }
 
-        var recipients = await userRepository.GetActiveAdministratorsAsync(adminEvent.TenantId, cancellationToken);
+        var audience = AdminRoleSets.For(entry.Audience);
+        var recipients = (await userRepository.GetActiveAdministratorsAsync(adminEvent.TenantId, cancellationToken))
+            .Where(r => r.AdminRole is { } role && audience.Contains(role))
+            .ToList();
         if (recipients.Count == 0)
         {
             logger.LogWarning(
-                "Admin event {EventKey} for company {TenantId} reached nobody: no active confirmed administrator",
-                adminEvent.Key, adminEvent.TenantId);
+                "Admin event {EventKey} for company {TenantId} reached nobody: no active confirmed administrator in {Audience}",
+                adminEvent.Key, adminEvent.TenantId, entry.Audience);
             return;
         }
 

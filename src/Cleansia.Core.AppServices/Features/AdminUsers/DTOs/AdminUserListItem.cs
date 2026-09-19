@@ -1,5 +1,6 @@
 #nullable enable
 using Cleansia.Core.AppServices.Shared.DTOs.Enums;
+using Cleansia.Core.Domain.Enums;
 
 namespace Cleansia.Core.AppServices.Features.AdminUsers.DTOs;
 
@@ -13,4 +14,5 @@ public record AdminUserListItem(
     bool IsEmailConfirmed,
     bool IsActive,
     DateTimeOffset CreatedAt,
-    DateTimeOffset? LastLoginAt);
+    DateTimeOffset? LastLoginAt,
+    AdminRole? AdminRole = null);

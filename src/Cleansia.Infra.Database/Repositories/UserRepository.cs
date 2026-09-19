@@ -9,6 +9,8 @@ namespace Cleansia.Infra.Database.Repositories;
 public class UserRepository(CleansiaDbContext context)
     : BaseRepository<User>(context), IUserRepository
 {
+    private const string PostgresProvider = "Npgsql.EntityFrameworkCore.PostgreSQL";
+
     public Task<string?> GetNotificationRecipientTenantAsync(string userId, CancellationToken cancellationToken)
     {
         return GetDbSet().IgnoreQueryFilters().Where(u => u.Id == userId)
@@ -25,7 +27,7 @@ public class UserRepository(CleansiaDbContext context)
                 && u.IsEmailConfirmed
                 && !u.Email.EndsWith(User.AnonymisedEmailSuffix))
             .OrderBy(u => u.Id)
-            .Select(u => new AdministratorRecipient(u.Id, u.Email, u.FirstName, u.LastName, u.PreferredLanguageCode))
+            .Select(u => new AdministratorRecipient(u.Id, u.Email, u.FirstName, u.LastName, u.PreferredLanguageCode, u.AdminRole))
             .ToListAsync(cancellationToken);
     }
 
@@ -157,6 +159,71 @@ public class UserRepository(CleansiaDbContext context)
         return GetDbSet()
             .IgnoreQueryFilters()
             .FirstOrDefaultAsync(u => u.Id == id, cancellationToken);
+    }
+
+    // The two last-Administrator guards. A conditional UPDATE whose WHERE asks "does another active
+    // Administrator remain?" is atomic against a second UPDATE of the SAME row, but not against one of a
+    // DIFFERENT row: under READ COMMITTED each statement's snapshot still sees the other row as an
+    // Administrator, neither blocks, and both land — write skew. So each runs inside one transaction
+    // that first takes the company's advisory lock; the second waits and its predicate reads the first's
+    // committed result. The lock is released with the transaction. The tenant filter scopes every read
+    // to the caller's company and the explicit predicate keeps the lock key and the rows on one company.
+    public async Task<int> DemoteAdministratorIfAnotherRemainsAsync(string tenantId, string userId, AdminRole role, CancellationToken cancellationToken)
+    {
+        await using var transaction = await BeginTransactionAsync(cancellationToken);
+        await LockCompanyAsync(tenantId, cancellationToken);
+
+        var rowsAffected = await GetDbSet()
+            .Where(u => u.TenantId == tenantId
+                && u.Id == userId
+                && u.Profile == UserProfile.Administrator
+                && (role == AdminRole.Administrator
+                    || GetDbSet().Any(other =>
+                        other.TenantId == tenantId
+                        && other.Id != userId
+                        && other.Profile == UserProfile.Administrator
+                        && other.IsActive
+                        && other.AdminRole == AdminRole.Administrator)))
+            .ExecuteUpdateAsync(s => s.SetProperty(u => u.AdminRole, role), cancellationToken);
+
+        await transaction.CommitAsync(cancellationToken);
+        return rowsAffected;
+    }
+
+    public async Task<int> DeactivateAdministratorIfAnotherRemainsAsync(string tenantId, string userId, string actorId, DateTimeOffset now, CancellationToken cancellationToken)
+    {
+        await using var transaction = await BeginTransactionAsync(cancellationToken);
+        await LockCompanyAsync(tenantId, cancellationToken);
+
+        var rowsAffected = await GetDbSet()
+            .Where(u => u.TenantId == tenantId
+                && u.Id == userId
+                && u.Profile == UserProfile.Administrator
+                && u.IsActive
+                && GetDbSet().Any(other =>
+                    other.TenantId == tenantId
+                    && other.Id != userId
+                    && other.Profile == UserProfile.Administrator
+                    && other.IsActive
+                    && other.AdminRole == AdminRole.Administrator))
+            .ExecuteUpdateAsync(
+                s => s
+                    .SetProperty(u => u.IsActive, false)
+                    .SetProperty(u => u.DeactivatedBy, actorId)
+                    .SetProperty(u => u.DeactivatedOn, now),
+                cancellationToken);
+
+        await transaction.CommitAsync(cancellationToken);
+        return rowsAffected;
+    }
+
+    // pg_advisory_xact_lock is Postgres; on the SQLite test backend a single connection serialises
+    // writers anyway and there is no lock to take.
+    private Task LockCompanyAsync(string tenantId, CancellationToken cancellationToken)
+    {
+        return Context.Database.ProviderName == PostgresProvider
+            ? Context.Database.ExecuteSqlAsync($"SELECT pg_advisory_xact_lock(hashtext({tenantId}))", cancellationToken)
+            : Task.CompletedTask;
     }
 
     // S7a — the lockout transition must be one atomic statement: a read-then-increment would let a

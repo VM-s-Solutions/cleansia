@@ -213,7 +213,7 @@ public class SubjectExportDisputesTests(PostgresContainerFixture fixture) : Base
         var stranger = User.CreateWithPassword(StrangerEmail, "Seed-Password-123", "Tomas", "Svoboda");
         stranger.Id = StrangerId;
         stranger.ConfirmEmail();
-        var admin = User.CreateWithPassword(AdminEmail, "Seed-Password-123", "Ad", "Min", UserProfile.Administrator);
+        var admin = User.CreateWithPassword(AdminEmail, "Seed-Password-123", "Ad", "Min", UserProfile.Administrator, adminRole: AdminRole.Administrator);
         admin.Id = AdminId;
         admin.ConfirmEmail();
         context.Users.AddRange(subject, stranger, admin);

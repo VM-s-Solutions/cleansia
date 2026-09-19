@@ -38,6 +38,9 @@ public class AdminActionAuditConfiguration : BaseEntityConfiguration<AdminAction
             .IsRequired()
             .HasConversion<int>();
 
+        builder.Property(e => e.ActorAdminRole)
+            .HasConversion<int?>();
+
         builder.Property(e => e.Action)
             .IsRequired()
             .HasMaxLength(200);

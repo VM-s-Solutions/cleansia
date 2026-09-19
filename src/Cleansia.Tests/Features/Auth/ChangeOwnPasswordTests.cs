@@ -41,7 +41,7 @@ public class ChangeOwnPasswordTests
 
     private static User BuildAdmin(string id, string rawPassword)
     {
-        var user = User.CreateWithPassword($"{id}@example.com", rawPassword, "First", "Last", UserProfile.Administrator);
+        var user = User.CreateWithPassword($"{id}@example.com", rawPassword, "First", "Last", UserProfile.Administrator, adminRole: AdminRole.Administrator);
         user.Id = id;
         // Model the persisted column: the DB holds the salted hash, never the raw password.
         user.UpdatePassword(rawPassword.HashAndSaltPassword());

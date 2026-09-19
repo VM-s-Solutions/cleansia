@@ -16,7 +16,7 @@ namespace Cleansia.Web.Admin.Controllers;
 public class AdminOrderController(IMediator mediator) : ApiController(mediator)
 {
     [HttpGet("get-paged")]
-    [Permission(Policy.CanViewPagedOrder)]
+    [Permission(Policy.CanViewPagedOrderAdmin)]
     [ProducesResponseType(typeof(PagedData<OrderListItem>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -28,7 +28,7 @@ public class AdminOrderController(IMediator mediator) : ApiController(mediator)
     }
 
     [HttpGet("details/{orderId}")]
-    [Permission(Policy.CanViewOrderDetail)]
+    [Permission(Policy.CanViewOrderDetailAdmin)]
     [ProducesResponseType(typeof(OrderItem), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -68,7 +68,7 @@ public class AdminOrderController(IMediator mediator) : ApiController(mediator)
     }
 
     [HttpGet("photos/{orderId}")]
-    [Permission(Policy.CanViewOrderPhotos)]
+    [Permission(Policy.CanViewOrderPhotosAdmin)]
     [ProducesResponseType(typeof(GetOrderPhotos.Response), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]

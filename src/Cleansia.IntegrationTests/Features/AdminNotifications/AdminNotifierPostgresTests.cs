@@ -41,9 +41,12 @@ public class AdminNotifierPostgresTests(PostgresContainerFixture fixture) : Base
     private const string MailboxA = "ops-a@example.com";
     private const string MailboxB = "ops-b@example.com";
 
-    private static User Administrator(string id, string tenantId, bool confirmed = true, string? language = null)
+    private const string AccountantA = "admin-a-accountant";
+    private const string SupportA = "admin-a-support";
+
+    private static User Administrator(string id, string tenantId, bool confirmed = true, string? language = null, AdminRole role = AdminRole.Administrator)
     {
-        var user = User.CreateWithPassword($"{id}@cleansia.test", "Seed-Password-123", "Ad", "Min", UserProfile.Administrator, language);
+        var user = User.CreateWithPassword($"{id}@cleansia.test", "Seed-Password-123", "Ad", "Min", UserProfile.Administrator, language, adminRole: role);
         user.Id = id;
         user.TenantId = tenantId;
         if (confirmed)
@@ -111,6 +114,42 @@ public class AdminNotifierPostgresTests(PostgresContainerFixture fixture) : Base
         return Commit(context);
     }
 
+    private static Task SeedAnAccountantAndASupport(CleansiaDbContext context)
+    {
+        context.Languages.Add(Language.Create("en", "English"));
+        context.Users.AddRange(
+            Administrator(AccountantA, TestTenants.Default, role: AdminRole.Accountant),
+            Administrator(SupportA, TestTenants.Default, role: AdminRole.Support));
+        return Commit(context);
+    }
+
+    private static AdminEvent OrderNewFor(string tenantId, string orderId = OrderId) =>
+        new(
+            AdminNotificationEventCatalog.OrderNew,
+            tenantId,
+            Subject: orderId,
+            Args: new Dictionary<string, string>
+            {
+                ["orderNumber"] = "ORD-ADMIN1",
+                ["amount"] = "1500.00 CZK",
+                ["paymentType"] = nameof(PaymentType.Cash),
+                ["countryId"] = "CZ",
+                ["orderId"] = orderId,
+            });
+
+    private static AdminEvent ChargebackFor(string tenantId, string orderId = OrderId) =>
+        new(
+            AdminNotificationEventCatalog.DisputeChargeback,
+            tenantId,
+            Subject: "dispute-1",
+            Args: new Dictionary<string, string>
+            {
+                ["orderNumber"] = "ORD-ADMIN1",
+                ["amount"] = "1500.00 CZK",
+                ["disputeId"] = "dispute-1",
+                ["orderId"] = orderId,
+            });
+
     private static AdminEvent DisputeFiledFor(string tenantId, string orderId = OrderId) =>
         new(
             AdminNotificationEventCatalog.DisputeFiled,
@@ -169,6 +208,44 @@ public class AdminNotifierPostgresTests(PostgresContainerFixture fixture) : Base
                     Assert.Equal("dispute-1", args["disputeId"]);
                 });
                 Assert.DoesNotContain(rows, r => r.UserId == AdminB1);
+            },
+            transactional: false);
+    }
+
+    // ADR-0066 D8, on the real projection: the role comes off the row, an order event is Support's alone
+    // and a chargeback is both branches of the lattice.
+    [Fact]
+    public async Task A_New_Order_Reaches_The_Support_And_Not_The_Accountant()
+    {
+        await TestMethod(
+            arrange: SeedAnAccountantAndASupport,
+            act: provider => RaiseUnderOverride(provider, TestTenants.Default, OrderNewFor(TestTenants.Default)),
+            assert: async (CleansiaDbContext context, int _) =>
+            {
+                var rows = await context.Set<UserNotification>().IgnoreQueryFilters()
+                    .Where(n => n.EventKey == AdminNotificationEventCatalog.OrderNew)
+                    .ToListAsync();
+                Assert.Equal(SupportA, Assert.Single(rows).UserId);
+                var email = Assert.Single(await EmailRows(context));
+                Assert.Equal($"{SupportA}@cleansia.test", Read(email).Payload.Email);
+            },
+            transactional: false);
+    }
+
+    [Fact]
+    public async Task A_Chargeback_Reaches_The_Support_And_The_Accountant_Both()
+    {
+        await TestMethod(
+            arrange: SeedAnAccountantAndASupport,
+            act: provider => RaiseUnderOverride(provider, TestTenants.Default, ChargebackFor(TestTenants.Default)),
+            assert: async (CleansiaDbContext context, int _) =>
+            {
+                var rows = await context.Set<UserNotification>().IgnoreQueryFilters()
+                    .Where(n => n.EventKey == AdminNotificationEventCatalog.DisputeChargeback)
+                    .OrderBy(n => n.UserId)
+                    .ToListAsync();
+                Assert.Equal([AccountantA, SupportA], rows.Select(r => r.UserId));
+                Assert.Equal(2, (await EmailRows(context)).Count);
             },
             transactional: false);
     }

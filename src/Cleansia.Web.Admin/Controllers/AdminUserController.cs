@@ -113,6 +113,27 @@ public class AdminUserController(IMediator mediator) : ApiController(mediator)
         return HandleResult<ActivateAdminUser.Response>(result);
     }
 
+    [HttpPost("{userId}/role")]
+    [Permission(Policy.CanSetAdminRole)]
+    [ProducesResponseType(typeof(SetAdminRole.Response), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [EnableRateLimiting("auth")]
+    public async Task<IActionResult> SetAdminRole(
+        string userId,
+        [FromBody] SetAdminRole.Command command,
+        CancellationToken cancellationToken)
+    {
+        if (command.UserId != userId)
+        {
+            return BadRequest("User ID in route does not match command");
+        }
+        var result = await Mediator.Send(command, cancellationToken);
+        return HandleResult<SetAdminRole.Response>(result);
+    }
+
     [HttpGet("{userId}")]
     [Permission(Policy.CanViewOrderCustomer)]
     [ProducesResponseType(typeof(UserItem), StatusCodes.Status200OK)]

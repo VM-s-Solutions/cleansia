@@ -21,7 +21,8 @@ public class CreateAdminUser
         string LastName,
         string? PhoneNumber,
         DateOnly? BirthDate,
-        string? PreferredLanguageCode) : ICommand<Response>;
+        string? PreferredLanguageCode,
+        AdminRole Role) : ICommand<Response>;
 
     public record Response(string Id);
 
@@ -76,6 +77,10 @@ public class CreateAdminUser
                 .MustAsync(async (code, ct) => await languageRepository.ExistsWithCodeAsync(code!, ct))
                 .WithMessage(BusinessErrorMessage.LanguageNotSupported)
                 .When(x => !string.IsNullOrWhiteSpace(x.PreferredLanguageCode));
+
+            RuleFor(x => x.Role)
+                .IsInEnum()
+                .WithMessage(BusinessErrorMessage.InvalidEnumValue);
         }
     }
 
@@ -93,7 +98,8 @@ public class CreateAdminUser
                 firstName: command.FirstName,
                 lastName: command.LastName,
                 profile: UserProfile.Administrator,
-                languageCode: command.PreferredLanguageCode);
+                languageCode: command.PreferredLanguageCode,
+                adminRole: command.Role);
 
             user.ConfirmEmail();
             user.UpdateBirthDate(command.BirthDate);

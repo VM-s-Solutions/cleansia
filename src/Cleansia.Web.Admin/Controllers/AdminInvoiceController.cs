@@ -15,7 +15,7 @@ namespace Cleansia.Web.Admin.Controllers;
 public class AdminInvoiceController(IMediator mediator) : ApiController(mediator)
 {
     [HttpGet("get-paged")]
-    [Permission(Policy.CanViewPagedInvoices)]
+    [Permission(Policy.CanViewPagedInvoicesAdmin)]
     [ProducesResponseType(typeof(PagedData<EmployeeInvoiceDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -27,7 +27,7 @@ public class AdminInvoiceController(IMediator mediator) : ApiController(mediator
     }
 
     [HttpGet("details/{invoiceId}")]
-    [Permission(Policy.CanViewPagedInvoices)]
+    [Permission(Policy.CanViewPagedInvoicesAdmin)]
     [ProducesResponseType(typeof(EmployeeInvoiceDetailDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -91,7 +91,7 @@ public class AdminInvoiceController(IMediator mediator) : ApiController(mediator
     }
 
     [HttpGet("download/{invoiceId}")]
-    [Permission(Policy.CanViewPagedInvoices)]
+    [Permission(Policy.CanViewPagedInvoicesAdmin)]
     [ProducesResponseType(typeof(FileContentResult), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]

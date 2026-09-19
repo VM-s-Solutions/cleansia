@@ -1970,6 +1970,8 @@ WHERE ps."CountryId" = co."Id" AND ps."Code" NOT LIKE '%\_%';
 -- locking the seeded admin out.
 --
 -- Profile 100 = Administrator, AuthenticationType 1 = Internal (email + password, not Google/Apple).
+-- AdminRole 1 = Administrator: the role that holds everything, including role assignment itself —
+-- CK_Users_AdminRole_Profile refuses an administrator row without one (ADR-0066 D1).
 -- TenantId is the operating company (ADR-0061 D5); the column is NOT NULL and IX_Users_Email is
 -- globally unique, so the guard below really does prevent a duplicate rather than merely appearing to.
 --
@@ -1983,7 +1985,7 @@ WHERE ps."CountryId" = co."Id" AND ps."Code" NOT LIKE '%\_%';
 INSERT INTO public."Users" (
   "Id", "IsActive", "CreatedBy", "CreatedOn",
   "Email", "Password", "FirstName", "LastName",
-  "Profile", "AuthenticationType", "IsEmailConfirmed",
+  "Profile", "AdminRole", "AuthenticationType", "IsEmailConfirmed",
   "FailedLoginAttempts", "ConfirmationCodeAttempts", "ResetPasswordCodeAttempts",
   "PreferredLanguageCode", "TenantId"
 )
@@ -1991,7 +1993,7 @@ SELECT generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP,
        'admin@cleansia.local',
        'v2$qZh8Ie/E1KhtIu0D3H9/nYe8kBsd96nMjcmoUiAbE8to1ifT7R6D4ZQ2yoe6tCyW',
        'Dev', 'Administrator',
-       100, 1, true,
+       100, 1, 1, true,
        0, 0, 0,
        'en', 'cleansia-cz'
 WHERE NOT EXISTS (SELECT 1 FROM public."Users");

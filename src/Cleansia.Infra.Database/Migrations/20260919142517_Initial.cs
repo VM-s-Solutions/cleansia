@@ -643,6 +643,7 @@ namespace Cleansia.Infra.Database.Migrations
                     ActorId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
                     ActorEmail = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
                     ActorProfile = table.Column<int>(type: "integer", nullable: false),
+                    ActorAdminRole = table.Column<int>(type: "integer", nullable: true),
                     Action = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: false),
                     ResourceType = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true),
                     ResourceId = table.Column<string>(type: "character varying(64)", maxLength: 64, nullable: true),
@@ -1070,6 +1071,7 @@ namespace Cleansia.Infra.Database.Migrations
                     ResetPasswordCodeExpiresAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
                     BirthDate = table.Column<DateOnly>(type: "date", nullable: true),
                     Profile = table.Column<int>(type: "integer", nullable: false),
+                    AdminRole = table.Column<int>(type: "integer", nullable: true),
                     AuthenticationType = table.Column<int>(type: "integer", nullable: false),
                     ProfilePhotoName = table.Column<string>(type: "text", nullable: true),
                     ConfirmationCode = table.Column<string>(type: "character varying(64)", maxLength: 64, nullable: true),
@@ -1094,6 +1096,7 @@ namespace Cleansia.Infra.Database.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Users", x => x.Id);
+                    table.CheckConstraint("CK_Users_AdminRole_Profile", "(\"Profile\" = 100) = (\"AdminRole\" IS NOT NULL)");
                     table.ForeignKey(
                         name: "FK_Users_Languages_PreferredLanguageCode",
                         column: x => x.PreferredLanguageCode,

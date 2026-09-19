@@ -40,7 +40,7 @@ public class AdminUserProfileFieldsTests
 
     private static User BuildAdmin(string id = AdminId, DateOnly? birthDate = null)
     {
-        var user = User.CreateWithPassword($"{id}@example.com", "Password1", "First", "Last", UserProfile.Administrator);
+        var user = User.CreateWithPassword($"{id}@example.com", "Password1", "First", "Last", UserProfile.Administrator, adminRole: AdminRole.Administrator);
         user.Id = id;
         user.UpdateBirthDate(birthDate);
         return user;
@@ -109,7 +109,8 @@ public class AdminUserProfileFieldsTests
             LastName: "Last",
             PhoneNumber: null,
             BirthDate: birthDate,
-            PreferredLanguageCode: SupportedLanguage));
+            PreferredLanguageCode: SupportedLanguage,
+            Role: AdminRole.Support));
 
         Assert.True(result.IsSuccess);
         Assert.Equal(birthDate, captured!.BirthDate);
@@ -182,7 +183,8 @@ public class AdminUserProfileFieldsTests
         var result = await validator.ValidateAsync(new CreateAdminUser.Command(
             "taken@example.com", "Password1", "First", "Last", null,
             BirthDate: null,
-            PreferredLanguageCode: null));
+            PreferredLanguageCode: null,
+            Role: AdminRole.Support));
 
         Assert.Contains(result.Errors, e => e.ErrorMessage == BusinessErrorMessage.AdminUserEmailExists);
         _userRepository.Verify(r => r.GetAll(), Times.Never);
@@ -197,7 +199,8 @@ public class AdminUserProfileFieldsTests
         var result = await validator.ValidateAsync(new CreateAdminUser.Command(
             "new-admin@example.com", "Password1", "First", "Last", null,
             BirthDate: DateOnly.FromDateTime(DateTime.Today),
-            PreferredLanguageCode: null));
+            PreferredLanguageCode: null,
+            Role: AdminRole.Support));
 
         Assert.False(result.IsValid);
         Assert.Contains(result.Errors, e => e.ErrorMessage == BusinessErrorMessage.DateMustBeInPast);
@@ -212,7 +215,8 @@ public class AdminUserProfileFieldsTests
         var result = await validator.ValidateAsync(new CreateAdminUser.Command(
             "new-admin@example.com", "Password1", "First", "Last", null,
             BirthDate: DateOnly.FromDateTime(DateTime.Today).AddDays(-1),
-            PreferredLanguageCode: null));
+            PreferredLanguageCode: null,
+            Role: AdminRole.Support));
 
         Assert.False(result.IsValid);
         Assert.Contains(result.Errors, e => e.ErrorMessage == BusinessErrorMessage.InvalidAge);
@@ -227,7 +231,8 @@ public class AdminUserProfileFieldsTests
         var result = await validator.ValidateAsync(new CreateAdminUser.Command(
             "new-admin@example.com", "Password1", "First", "Last", null,
             BirthDate: null,
-            PreferredLanguageCode: UnknownLanguage));
+            PreferredLanguageCode: UnknownLanguage,
+            Role: AdminRole.Support));
 
         Assert.False(result.IsValid);
         Assert.Contains(result.Errors, e => e.ErrorMessage == BusinessErrorMessage.LanguageNotSupported);

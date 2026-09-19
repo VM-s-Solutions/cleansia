@@ -12,9 +12,10 @@ namespace Cleansia.Tests.Features.AdminUsers;
 /// <summary>
 /// Deactivating an admin user already blocks self-deactivation
 /// (<see cref="BusinessErrorMessage.CannotDeactivateSelf"/>); this adds the last-admin guard so the
-/// final ACTIVE administrator cannot be deactivated and lock the tenant out of its admin console.
-/// Regression: with two or more active admins a non-self, non-last target still passes and the
-/// self-guard still fires.
+/// final ACTIVE Administrator-role administrator cannot be deactivated and lock the tenant out of its
+/// admin console — a remaining Support or Accountant does not count, since neither can assign a role or
+/// create an account. Regression: with two or more active Administrators a non-self, non-last target
+/// still passes and the self-guard still fires.
 /// </summary>
 public class DeactivateAdminUserValidatorTests
 {
@@ -31,9 +32,9 @@ public class DeactivateAdminUserValidatorTests
         return new DeactivateAdminUser.Validator(_userRepository.Object, _sessionProvider.Object);
     }
 
-    private static User BuildAdmin(string id, bool isActive = true)
+    private static User BuildAdmin(string id, bool isActive = true, AdminRole role = AdminRole.Administrator)
     {
-        var user = User.CreateWithPassword($"{id}@example.com", "Password1", "First", "Last", UserProfile.Administrator);
+        var user = User.CreateWithPassword($"{id}@example.com", "Password1", "First", "Last", UserProfile.Administrator, adminRole: role);
         user.Id = id;
         user.IsActive = isActive;
         return user;
@@ -65,6 +66,33 @@ public class DeactivateAdminUserValidatorTests
 
         Assert.False(result.IsValid);
         Assert.Contains(result.Errors, e => e.ErrorMessage == BusinessErrorMessage.CannotDeactivateLastAdmin);
+    }
+
+    // A remaining Support is not an Administrator: the only Administrator-role admin is still the last one.
+    [Fact]
+    public async Task When_Only_Other_Active_Admin_Is_A_Support_Then_Fails_With_CannotDeactivateLastAdmin()
+    {
+        var administrator = BuildAdmin("the-administrator");
+        var support = BuildAdmin(CallerId, role: AdminRole.Support);
+        var validator = CreateValidator(administrator, support);
+
+        var result = await validator.ValidateAsync(new DeactivateAdminUser.Command(administrator.Id));
+
+        Assert.False(result.IsValid);
+        Assert.Contains(result.Errors, e => e.ErrorMessage == BusinessErrorMessage.CannotDeactivateLastAdmin);
+    }
+
+    // Deactivating a Support while an Administrator remains passes: the guard counts Administrators, not the target.
+    [Fact]
+    public async Task When_Target_Is_A_Support_And_An_Administrator_Remains_Then_Valid()
+    {
+        var administrator = BuildAdmin(CallerId);
+        var support = BuildAdmin("a-support", role: AdminRole.Support);
+        var validator = CreateValidator(administrator, support);
+
+        var result = await validator.ValidateAsync(new DeactivateAdminUser.Command(support.Id));
+
+        Assert.True(result.IsValid);
     }
 
     // Two or more active admins, target is neither caller nor the last admin → passes.

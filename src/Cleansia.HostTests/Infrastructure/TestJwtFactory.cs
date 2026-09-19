@@ -25,14 +25,23 @@ public static class TestJwtFactory
 
     public const string EmployeeIdClaimType = "employee_id";
     public const string TenantClaimType = "tenant_id";
+    public const string AdminRoleClaimType = "admin_role";
 
+    /// <summary>
+    /// An administrator token carries the <c>admin_role</c> claim the production mint emits — the
+    /// Administrator role unless a test names another, so every token minted before roles existed keeps
+    /// its meaning. <paramref name="claimlessAdministrator"/> mints the one shape production no longer
+    /// does: an Administrator with no role claim, the token of a session opened before the deploy.
+    /// </summary>
     public static string Mint(
         string audience,
         string userId,
         string email,
         UserProfile profile,
         string? employeeId = null,
-        string? tenantId = HostTestTenants.Default)
+        string? tenantId = HostTestTenants.Default,
+        AdminRole? adminRole = null,
+        bool claimlessAdministrator = false)
     {
         var claims = new List<Claim>
         {
@@ -41,6 +50,9 @@ public static class TestJwtFactory
             new(ClaimTypes.Email, email),
             new(ClaimTypes.Role, profile.ToString()),
         };
+
+        if (profile == UserProfile.Administrator && !claimlessAdministrator)
+            claims.Add(new Claim(AdminRoleClaimType, (adminRole ?? AdminRole.Administrator).ToString()));
 
         if (!string.IsNullOrEmpty(tenantId))
             claims.Add(new Claim(TenantClaimType, tenantId));

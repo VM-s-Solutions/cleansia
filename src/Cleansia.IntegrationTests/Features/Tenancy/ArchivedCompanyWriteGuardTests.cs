@@ -322,7 +322,7 @@ public sealed class ArchivedCompanyWriteGuardTests(PostgresContainerFixture fixt
 
     private static User NewUser(string email, UserProfile profile = UserProfile.Customer)
     {
-        var user = User.CreateWithPassword(email, "12345678Test!", "Arch", "Guard", profile);
+        var user = User.CreateWithPassword(email, "12345678Test!", "Arch", "Guard", profile, adminRole: profile == UserProfile.Administrator ? AdminRole.Administrator : null);
         user.ConfirmEmail();
         return user;
     }

@@ -78,6 +78,7 @@ public sealed class AuditEntryFactory(
             ActorId = string.IsNullOrWhiteSpace(actorId) ? SystemActor : actorId,
             ActorEmail = userSessionProvider.GetUserEmail(),
             ActorProfile = ResolveActorProfile(snapshot),
+            ActorAdminRole = ResolveActorAdminRole(),
             Action = descriptor.AdminAction,
             ResourceType = snapshot?.ResourceType ?? descriptor.ResourceType,
             ResourceId = snapshot?.ResourceId ?? AuditResourceResolver.ResolveResourceId(request, descriptor.ResourceType),
@@ -137,6 +138,15 @@ public sealed class AuditEntryFactory(
             userSessionProvider.GetTypedUserClaim(ClaimTypes.Role)?.Value, out var profile)
             ? profile
             : snapshot?.ActorProfile ?? UserProfile.Administrator;
+    }
+
+    private AdminRole? ResolveActorAdminRole()
+    {
+        return Enum.TryParse<AdminRole>(
+            userSessionProvider.GetTypedUserClaim(AdminRoleSets.ClaimType)?.Value, out var role)
+            && Enum.IsDefined(role)
+            ? role
+            : null;
     }
 
     private static string? ResolveCorrelationId()

@@ -21,7 +21,8 @@ public static class AdminActionAuditMappers
             ErrorCode: audit.ErrorCode,
             OccurredOn: audit.OccurredOn,
             Reason: audit.Reason,
-            CorrelationId: audit.CorrelationId);
+            CorrelationId: audit.CorrelationId,
+            ActorAdminRole: audit.ActorAdminRole);
     }
 
     public static AdminActionAuditDetailDto MapToDetailDto(this AdminActionAudit audit)
@@ -40,7 +41,8 @@ public static class AdminActionAuditMappers
             Reason: audit.Reason,
             CorrelationId: audit.CorrelationId,
             BeforeJson: audit.BeforeJson,
-            AfterJson: audit.AfterJson);
+            AfterJson: audit.AfterJson,
+            ActorAdminRole: audit.ActorAdminRole);
     }
 
     public static AdminActionAuditSpecification MapToDomain(this AdminActionAuditFilter? filter)
@@ -54,7 +56,8 @@ public static class AdminActionAuditMappers
             ResourceId = filter?.ResourceId,
             OccurredFrom = filter?.OccurredFrom,
             OccurredTo = filter?.OccurredTo,
-            Success = filter?.Success
+            Success = filter?.Success,
+            ActorAdminRole = filter?.ActorAdminRole
         };
     }
 }

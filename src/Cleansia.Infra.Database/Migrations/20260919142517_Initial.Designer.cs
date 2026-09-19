@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Cleansia.Infra.Database.Migrations
 {
     [DbContext(typeof(CleansiaDbContext))]
-    [Migration("20260916120038_Initial")]
+    [Migration("20260919142517_Initial")]
     partial class Initial
     {
         /// <inheritdoc />
@@ -37,6 +37,9 @@ namespace Cleansia.Infra.Database.Migrations
                         .IsRequired()
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)");
+
+                    b.Property<int?>("ActorAdminRole")
+                        .HasColumnType("integer");
 
                     b.Property<string>("ActorEmail")
                         .HasMaxLength(255)
@@ -6281,6 +6284,9 @@ namespace Cleansia.Infra.Database.Migrations
                         .HasMaxLength(26)
                         .HasColumnType("character varying(26)");
 
+                    b.Property<int?>("AdminRole")
+                        .HasColumnType("integer");
+
                     b.Property<string>("AppleId")
                         .HasMaxLength(512)
                         .HasColumnType("character varying(512)");
@@ -6424,7 +6430,10 @@ namespace Cleansia.Infra.Database.Migrations
 
                     b.HasIndex("TenantId");
 
-                    b.ToTable("Users");
+                    b.ToTable("Users", t =>
+                        {
+                            t.HasCheckConstraint("CK_Users_AdminRole_Profile", "(\"Profile\" = 100) = (\"AdminRole\" IS NOT NULL)");
+                        });
                 });
 
             modelBuilder.Entity("Cleansia.Core.Domain.Users.UserConsent", b =>

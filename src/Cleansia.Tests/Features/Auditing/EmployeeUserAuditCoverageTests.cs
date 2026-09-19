@@ -272,7 +272,7 @@ public sealed class EmployeeUserAuditCoverageTests
 
     private static Mock<IUserRepository> AdminUserRepository()
     {
-        var adminUser = User.CreateWithPassword(AdminEmail, "Passw0rd!", "Ada", "Min", UserProfile.Administrator);
+        var adminUser = User.CreateWithPassword(AdminEmail, "Passw0rd!", "Ada", "Min", UserProfile.Administrator, adminRole: AdminRole.Administrator);
         adminUser.Id = AdminId;
         var mock = new Mock<IUserRepository>();
         mock.Setup(r => r.GetByEmailAsync(AdminEmail, It.IsAny<CancellationToken>())).ReturnsAsync(adminUser);

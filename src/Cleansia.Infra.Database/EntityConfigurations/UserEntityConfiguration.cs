@@ -48,6 +48,15 @@ public class UserEntityConfiguration : TenantAuditableEntityConfiguration<User, 
         builder.Property(u => u.Profile)
             .HasConversion<int>();
 
+        builder.Property(u => u.AdminRole)
+            .HasConversion<int?>();
+
+        // The role is an axis of the Administrator profile alone: an administrator row without one and
+        // a customer or cleaner row with one are both refused at the database, not only by the factory.
+        builder.ToTable(t => t.HasCheckConstraint(
+            "CK_Users_AdminRole_Profile",
+            "(\"Profile\" = 100) = (\"AdminRole\" IS NOT NULL)"));
+
         builder.Property(u => u.AuthenticationType)
             .HasConversion<int>();
 

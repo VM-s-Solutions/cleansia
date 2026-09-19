@@ -56,8 +56,10 @@ public class SeededAdminCredentialsTests
         var block = insert[insert.IndexOf("DEVELOPMENT ADMINISTRATOR", StringComparison.Ordinal)..];
 
         // Profile 100 is the only value that reaches the admin app, and an unconfirmed email is
-        // refused at login — the two things set-admin-role.sql used to do by hand.
-        Assert.Contains($"{(int)UserProfile.Administrator}, {(int)AuthenticationType.Internal}, true", block);
+        // refused at login — the two things set-admin-role.sql used to do by hand. The seeded
+        // administrator is an Administrator: the one role that can assign the others.
+        Assert.Contains($"{(int)UserProfile.Administrator}, {(int)AdminRole.Administrator}, {(int)AuthenticationType.Internal}, true", block);
+        Assert.Contains("\"Profile\", \"AdminRole\", \"AuthenticationType\"", block);
         Assert.Contains(SeededEmail, block);
         // Reserved suffix: it cannot resolve to a real mailbox, so this fixture can never receive
         // real mail or be mistaken for a live account.

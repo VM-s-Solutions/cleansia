@@ -49,6 +49,7 @@ export class AuditLogFacade extends UnsubscribeControlDirective {
         filter?.occurredFrom,
         filter?.occurredTo,
         filter?.success,
+        undefined,
         this.currentSort(),
         this.currentOffset(),
         this.currentLimit()

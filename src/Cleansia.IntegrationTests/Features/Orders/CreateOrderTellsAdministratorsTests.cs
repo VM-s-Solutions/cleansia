@@ -30,7 +30,7 @@ public partial class CreateOrderCallerCurrencyTests
         await SeedWithSlovakiaOperatedBySecondCompanyAsync(context);
         foreach (var (id, tenantId) in new[] { (AdminOfSecondId, TestTenants.Second), (AdminOfDefaultId, TestTenants.Default) })
         {
-            var admin = User.CreateWithPassword($"{id}@cleansia.test", "Seed-Password-123", "Ad", "Min", UserProfile.Administrator);
+            var admin = User.CreateWithPassword($"{id}@cleansia.test", "Seed-Password-123", "Ad", "Min", UserProfile.Administrator, adminRole: AdminRole.Administrator);
             admin.Id = id;
             admin.TenantId = tenantId;
             admin.ConfirmEmail();

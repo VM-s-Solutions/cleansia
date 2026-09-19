@@ -42,7 +42,7 @@ public class OrderWebhookTellsAdministratorsTests(PostgresContainerFixture fixtu
 
     private static User Administrator(string id, string tenantId, string? language = null)
     {
-        var user = User.CreateWithPassword($"{id}@cleansia.test", "Seed-Password-123", "Ad", "Min", UserProfile.Administrator, language);
+        var user = User.CreateWithPassword($"{id}@cleansia.test", "Seed-Password-123", "Ad", "Min", UserProfile.Administrator, language, adminRole: AdminRole.Administrator);
         user.Id = id;
         user.TenantId = tenantId;
         user.ConfirmEmail();

@@ -64,6 +64,17 @@ public static class ServiceExtensions
                     UserProfile.Administrator.ToString()))
             .AddPolicy(PhysicalPolicy.AdminOnly,
                 p => p.RequireRole(UserProfile.Administrator.ToString()))
+            // The four administrator sets (ADR-0066 D2): the Administrator profile AND an admin_role
+            // claim inside the set. AdminOnly above stays claim-free on purpose — it is what keeps a
+            // token minted before roles existed usable on the any-administrator routes until it refreshes.
+            .AddPolicy(PhysicalPolicy.AdministratorOnly,
+                p => p.RequireAssertion(ctx => AdminRoleSets.Admits(ctx.User, AdminRoleSets.AdministratorOnly)))
+            .AddPolicy(PhysicalPolicy.ManagerOrAbove,
+                p => p.RequireAssertion(ctx => AdminRoleSets.Admits(ctx.User, AdminRoleSets.ManagerOrAbove)))
+            .AddPolicy(PhysicalPolicy.SupportOrAbove,
+                p => p.RequireAssertion(ctx => AdminRoleSets.Admits(ctx.User, AdminRoleSets.SupportOrAbove)))
+            .AddPolicy(PhysicalPolicy.AccountantOrAbove,
+                p => p.RequireAssertion(ctx => AdminRoleSets.Admits(ctx.User, AdminRoleSets.AccountantOrAbove)))
             // OwnerOrElevated (ADR-0001 §D3): elevated == Admin ONLY (the old blanket
             // IsInRole(Employee) → true grant was an employee-wide PII IDOR and is removed). A
             // non-admin caller is allowed IFF the requested subject id equals their own sub. The id is

@@ -7,6 +7,7 @@ using Cleansia.Core.AppServices.Features.Auth;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.AppServices.Tenancy;
 using Cleansia.Core.AppServices.Shared.DTOs.ResponseModels;
+using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Users;
 using Cleansia.Core.Queue.Abstractions;
@@ -121,7 +122,7 @@ public class UserEmailRaceMappingTests
             TermsAccepted: true);
 
     private static CreateAdminUser.Command AdminCommand() =>
-        new(Email, Password, "John", "Doe", PhoneNumber: null, BirthDate: null, PreferredLanguageCode: null);
+        new(Email, Password, "John", "Doe", PhoneNumber: null, BirthDate: null, PreferredLanguageCode: null, Role: AdminRole.Support);
 
     private static async Task<BusinessResult<CreateAdminUser.Response>> InvokeCreateAdminUser(
         IUserRepository userRepository, CreateAdminUser.Command command)

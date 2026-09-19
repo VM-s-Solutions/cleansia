@@ -52,7 +52,7 @@ public class RejectEmployeeReturnsOrdersToTheBoardTests(PostgresContainerFixture
 
     private static User Administrator(string id, string tenantId)
     {
-        var user = User.CreateWithPassword($"{id}@cleansia.test", "Seed-Password-123", "Ad", "Min", UserProfile.Administrator);
+        var user = User.CreateWithPassword($"{id}@cleansia.test", "Seed-Password-123", "Ad", "Min", UserProfile.Administrator, adminRole: AdminRole.Administrator);
         user.Id = id;
         user.TenantId = tenantId;
         user.ConfirmEmail();

@@ -32,7 +32,7 @@ public class AdminExportUserDataValidatorTests
 
     private static User BuildUser(string id, UserProfile profile)
     {
-        var user = User.CreateWithPassword($"{id}@example.com", "Password1", "First", "Last", profile);
+        var user = User.CreateWithPassword($"{id}@example.com", "Password1", "First", "Last", profile, adminRole: profile == UserProfile.Administrator ? AdminRole.Administrator : null);
         user.Id = id;
         return user;
     }

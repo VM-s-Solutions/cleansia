@@ -82,9 +82,9 @@ public static class DomainSeed
         return user;
     }
 
-    public static User Admin(string email, string? tenantId = null)
+    public static User Admin(string email, string? tenantId = null, AdminRole role = AdminRole.Administrator)
     {
-        var user = User.CreateWithPassword(email, "12345678Test!", "Ad", "Min", UserProfile.Administrator);
+        var user = User.CreateWithPassword(email, "12345678Test!", "Ad", "Min", UserProfile.Administrator, adminRole: role);
         user.ConfirmEmail();
         if (tenantId is not null) user.TenantId = tenantId;
         return user;

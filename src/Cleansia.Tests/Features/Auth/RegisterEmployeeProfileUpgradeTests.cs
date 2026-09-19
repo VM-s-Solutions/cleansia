@@ -51,7 +51,7 @@ public class RegisterEmployeeProfileUpgradeTests
     [Fact]
     public async Task Existing_Unconfirmed_Administrator_Is_Not_Downgraded()
     {
-        var user = User.CreateWithPassword(Email, Password, "John", "Doe", UserProfile.Administrator);
+        var user = User.CreateWithPassword(Email, Password, "John", "Doe", UserProfile.Administrator, adminRole: AdminRole.Administrator);
         _userRepository.Setup(r => r.GetByEmailIgnoringTenantAsync(Email, It.IsAny<CancellationToken>())).ReturnsAsync(user);
 
         var result = await CreateHandler().Handle(Command(), CancellationToken.None);

@@ -49,6 +49,7 @@ public sealed class AdminActionAuditModelMetadataTests
     [InlineData(nameof(AdminActionAudit.ActorId))]
     [InlineData(nameof(AdminActionAudit.ActorEmail))]
     [InlineData(nameof(AdminActionAudit.ActorProfile))]
+    [InlineData(nameof(AdminActionAudit.ActorAdminRole))]
     [InlineData(nameof(AdminActionAudit.Action))]
     [InlineData(nameof(AdminActionAudit.ResourceType))]
     [InlineData(nameof(AdminActionAudit.ResourceId))]

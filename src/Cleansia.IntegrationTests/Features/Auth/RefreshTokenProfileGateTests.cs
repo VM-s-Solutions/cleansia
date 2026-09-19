@@ -197,7 +197,8 @@ public class RefreshTokenProfileGateTests(PostgresContainerFixture fixture) : Ba
             password: TestConstants.TestUserSession.TestUserPassword,
             firstName: TestConstants.TestUserSession.TestFirstName,
             lastName: TestConstants.TestUserSession.TestLastName,
-            profile: dbProfile);
+            profile: dbProfile,
+            adminRole: dbProfile == UserProfile.Administrator ? AdminRole.Administrator : null);
         user.ConfirmEmail();
         context.Users.Add(user);
         await context.CommitAsync(CancellationToken.None);

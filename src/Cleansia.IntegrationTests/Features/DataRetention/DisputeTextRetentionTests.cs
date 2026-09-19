@@ -131,7 +131,7 @@ public class DisputeTextRetentionTests(PostgresContainerFixture fixture) : BaseI
         subject.ConfirmEmail();
         context.Users.Add(subject);
 
-        var admin = User.CreateWithPassword("support@cleansia.test", "Seed-Password-123", "Support", "Desk", UserProfile.Administrator);
+        var admin = User.CreateWithPassword("support@cleansia.test", "Seed-Password-123", "Support", "Desk", UserProfile.Administrator, adminRole: AdminRole.Administrator);
         admin.Id = AdminId;
         admin.ConfirmEmail();
         context.Users.Add(admin);

@@ -18,7 +18,7 @@ namespace Cleansia.Web.Admin.Controllers;
 public class AdminLegalController(IMediator mediator) : ApiController(mediator)
 {
     [HttpGet("get-versions")]
-    [Permission(Policy.CanViewCountryConfigurations)]
+    [Permission(Policy.CanViewLegalDocuments)]
     [ProducesResponseType(typeof(IReadOnlyList<LegalDocumentVersionDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -34,7 +34,7 @@ public class AdminLegalController(IMediator mediator) : ApiController(mediator)
     }
 
     [HttpGet("get-document/{id}")]
-    [Permission(Policy.CanViewCountryConfigurations)]
+    [Permission(Policy.CanViewLegalDocuments)]
     [ProducesResponseType(typeof(AdminLegalDocumentDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]

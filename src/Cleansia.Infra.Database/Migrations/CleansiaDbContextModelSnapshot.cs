@@ -35,6 +35,9 @@ namespace Cleansia.Infra.Database.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)");
 
+                    b.Property<int?>("ActorAdminRole")
+                        .HasColumnType("integer");
+
                     b.Property<string>("ActorEmail")
                         .HasMaxLength(255)
                         .HasColumnType("character varying(255)");
@@ -6278,6 +6281,9 @@ namespace Cleansia.Infra.Database.Migrations
                         .HasMaxLength(26)
                         .HasColumnType("character varying(26)");
 
+                    b.Property<int?>("AdminRole")
+                        .HasColumnType("integer");
+
                     b.Property<string>("AppleId")
                         .HasMaxLength(512)
                         .HasColumnType("character varying(512)");
@@ -6421,7 +6427,10 @@ namespace Cleansia.Infra.Database.Migrations
 
                     b.HasIndex("TenantId");
 
-                    b.ToTable("Users");
+                    b.ToTable("Users", t =>
+                        {
+                            t.HasCheckConstraint("CK_Users_AdminRole_Profile", "(\"Profile\" = 100) = (\"AdminRole\" IS NOT NULL)");
+                        });
                 });
 
             modelBuilder.Entity("Cleansia.Core.Domain.Users.UserConsent", b =>

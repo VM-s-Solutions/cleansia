@@ -656,7 +656,7 @@ public sealed class CompanyWindDownSweepTests(PostgresContainerFixture fixture) 
 
     private static User NewUser(string email, UserProfile profile, bool confirmed)
     {
-        var user = User.CreateWithPassword(email, "12345678Test!", "Wind", "Down", profile);
+        var user = User.CreateWithPassword(email, "12345678Test!", "Wind", "Down", profile, adminRole: profile == UserProfile.Administrator ? AdminRole.Administrator : null);
         if (confirmed)
         {
             user.ConfirmEmail();

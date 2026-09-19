@@ -427,6 +427,8 @@ public static class BusinessErrorMessage
     public const string CannotDeleteSelf = "admin_user.cannot_delete_self";
     // Availability/authorization guards on the admin destructive flows.
     public const string CannotDeactivateLastAdmin = "admin_user.cannot_deactivate_last_admin";
+    public const string CannotChangeOwnRole = "admin_user.cannot_change_own_role";
+    public const string CannotDemoteLastAdministrator = "admin_user.cannot_demote_last_administrator";
     public const string CannotTargetAdminViaGdprTool = "admin_user.cannot_target_admin_via_gdpr_tool";
 
     // Validation

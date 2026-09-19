@@ -24,12 +24,13 @@ export interface IAdminAuditLogClient {
      * @param occurredFrom (optional) 
      * @param occurredTo (optional) 
      * @param success (optional) 
+     * @param actorAdminRole (optional) 
      * @param sort (optional) 
      * @param offset (optional) 
      * @param limit (optional) 
      * @return OK
      */
-    getPaged(actorId?: string | undefined, actorEmail?: string | undefined, action?: string | undefined, resourceType?: string | undefined, resourceId?: string | undefined, occurredFrom?: Date | undefined, occurredTo?: Date | undefined, success?: boolean | undefined, sort?: SortDefinition[] | undefined, offset?: number | undefined, limit?: number | undefined): Observable<PagedDataOfAdminActionAuditDto>;
+    getPaged(actorId?: string | undefined, actorEmail?: string | undefined, action?: string | undefined, resourceType?: string | undefined, resourceId?: string | undefined, occurredFrom?: Date | undefined, occurredTo?: Date | undefined, success?: boolean | undefined, actorAdminRole?: AdminRole | undefined, sort?: SortDefinition[] | undefined, offset?: number | undefined, limit?: number | undefined): Observable<PagedDataOfAdminActionAuditDto>;
     /**
      * @return OK
      */
@@ -58,12 +59,13 @@ export class AdminAuditLogClient implements IAdminAuditLogClient {
      * @param occurredFrom (optional) 
      * @param occurredTo (optional) 
      * @param success (optional) 
+     * @param actorAdminRole (optional) 
      * @param sort (optional) 
      * @param offset (optional) 
      * @param limit (optional) 
      * @return OK
      */
-    getPaged(actorId?: string | undefined, actorEmail?: string | undefined, action?: string | undefined, resourceType?: string | undefined, resourceId?: string | undefined, occurredFrom?: Date | undefined, occurredTo?: Date | undefined, success?: boolean | undefined, sort?: SortDefinition[] | undefined, offset?: number | undefined, limit?: number | undefined): Observable<PagedDataOfAdminActionAuditDto> {
+    getPaged(actorId?: string | undefined, actorEmail?: string | undefined, action?: string | undefined, resourceType?: string | undefined, resourceId?: string | undefined, occurredFrom?: Date | undefined, occurredTo?: Date | undefined, success?: boolean | undefined, actorAdminRole?: AdminRole | undefined, sort?: SortDefinition[] | undefined, offset?: number | undefined, limit?: number | undefined): Observable<PagedDataOfAdminActionAuditDto> {
         let url = this.baseUrl + "/api/AdminAuditLog/get-paged?";
         if (actorId === null)
             throw new globalThis.Error("The parameter 'actorId' cannot be null.");
@@ -97,6 +99,10 @@ export class AdminAuditLogClient implements IAdminAuditLogClient {
             throw new globalThis.Error("The parameter 'success' cannot be null.");
         else if (success !== undefined)
             url += "Filter.Success=" + encodeURIComponent("" + success) + "&";
+        if (actorAdminRole === null)
+            throw new globalThis.Error("The parameter 'actorAdminRole' cannot be null.");
+        else if (actorAdminRole !== undefined)
+            url += "Filter.ActorAdminRole=" + encodeURIComponent("" + actorAdminRole) + "&";
         if (sort === null)
             throw new globalThis.Error("The parameter 'sort' cannot be null.");
         else if (sort !== undefined)
@@ -16554,6 +16560,11 @@ export interface IAdminUserClient {
      * @return OK
      */
     activate(userId: string): Observable<ActivateAdminUserResponse>;
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    role(userId: string, body?: SetAdminRoleCommand | undefined): Observable<SetAdminRoleResponse>;
 }
 
 @Injectable({
@@ -17043,6 +17054,93 @@ export class AdminUserClient implements IAdminUserClient {
             let result200: any = null;
             let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
             result200 = ActivateAdminUserResponse.fromJS(resultData200);
+            return ObservableOf(result200);
+            }));
+        } else if (status === 400) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result400: any = null;
+            let resultData400 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result400 = ProblemDetails.fromJS(resultData400);
+            return throwException("Bad Request", status, ResponseText, Headers, result400);
+            }));
+        } else if (status === 401) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result401: any = null;
+            let resultData401 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result401 = ProblemDetails.fromJS(resultData401);
+            return throwException("Unauthorized", status, ResponseText, Headers, result401);
+            }));
+        } else if (status === 403) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result403: any = null;
+            let resultData403 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result403 = ProblemDetails.fromJS(resultData403);
+            return throwException("Forbidden", status, ResponseText, Headers, result403);
+            }));
+        } else if (status === 404) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result404: any = null;
+            let resultData404 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result404 = ProblemDetails.fromJS(resultData404);
+            return throwException("Not Found", status, ResponseText, Headers, result404);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
+            }));
+        }
+        return ObservableOf(null as any);
+    }
+
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    role(userId: string, body?: SetAdminRoleCommand | undefined): Observable<SetAdminRoleResponse> {
+        let url = this.baseUrl + "/api/AdminUser/{userId}/role";
+        if (userId === undefined || userId === null)
+            throw new globalThis.Error("The parameter 'userId' must be defined.");
+        url = url.replace("{userId}", encodeURIComponent("" + userId));
+        url = url.replace(/[?&]$/, "");
+
+        const content = JSON.stringify(body);
+
+        let options : any = {
+            body: content,
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            })
+        };
+
+        return this.http.request("post", url, options).pipe(ObservableMergeMap((response : any) => {
+            return this.processRole(response);
+        })).pipe(ObservableCatch((response: any) => {
+            if (response instanceof HttpResponseBase) {
+                try {
+                    return this.processRole(response as any);
+                } catch (e) {
+                    return ObservableThrow(e) as any as Observable<SetAdminRoleResponse>;
+                }
+            } else
+                return ObservableThrow(response) as any as Observable<SetAdminRoleResponse>;
+        }));
+    }
+
+    protected processRole(response: HttpResponseBase): Observable<SetAdminRoleResponse> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result200: any = null;
+            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result200 = SetAdminRoleResponse.fromJS(resultData200);
             return ObservableOf(result200);
             }));
         } else if (status === 400) {
@@ -17681,6 +17779,7 @@ export class AdminActionAuditDetailDto implements IAdminActionAuditDetailDto {
     correlationId!: string | undefined;
     beforeJson!: string | undefined;
     afterJson!: string | undefined;
+    actorAdminRole!: AdminRole;
 
     constructor(data?: IAdminActionAuditDetailDto) {
         if (data) {
@@ -17707,6 +17806,7 @@ export class AdminActionAuditDetailDto implements IAdminActionAuditDetailDto {
             this.correlationId = Data["correlationId"];
             this.beforeJson = Data["beforeJson"];
             this.afterJson = Data["afterJson"];
+            this.actorAdminRole = Data["actorAdminRole"];
         }
     }
 
@@ -17733,6 +17833,7 @@ export class AdminActionAuditDetailDto implements IAdminActionAuditDetailDto {
         data["correlationId"] = this.correlationId;
         data["beforeJson"] = this.beforeJson;
         data["afterJson"] = this.afterJson;
+        data["actorAdminRole"] = this.actorAdminRole;
         return data;
     }
 }
@@ -17752,6 +17853,7 @@ export interface IAdminActionAuditDetailDto {
     correlationId: string | undefined;
     beforeJson: string | undefined;
     afterJson: string | undefined;
+    actorAdminRole: AdminRole;
 }
 
 export class AdminActionAuditDto implements IAdminActionAuditDto {
@@ -17767,6 +17869,7 @@ export class AdminActionAuditDto implements IAdminActionAuditDto {
     occurredOn!: Date;
     reason!: string | undefined;
     correlationId!: string | undefined;
+    actorAdminRole!: AdminRole;
 
     constructor(data?: IAdminActionAuditDto) {
         if (data) {
@@ -17791,6 +17894,7 @@ export class AdminActionAuditDto implements IAdminActionAuditDto {
             this.occurredOn = Data["occurredOn"] ? new Date(Data["occurredOn"].toString()) : undefined as any;
             this.reason = Data["reason"];
             this.correlationId = Data["correlationId"];
+            this.actorAdminRole = Data["actorAdminRole"];
         }
     }
 
@@ -17815,6 +17919,7 @@ export class AdminActionAuditDto implements IAdminActionAuditDto {
         data["occurredOn"] = this.occurredOn ? this.occurredOn.toISOString() : undefined as any;
         data["reason"] = this.reason;
         data["correlationId"] = this.correlationId;
+        data["actorAdminRole"] = this.actorAdminRole;
         return data;
     }
 }
@@ -17832,6 +17937,7 @@ export interface IAdminActionAuditDto {
     occurredOn: Date;
     reason: string | undefined;
     correlationId: string | undefined;
+    actorAdminRole: AdminRole;
 }
 
 export class AdminCancelOrderCommand implements IAdminCancelOrderCommand {
@@ -19002,6 +19108,13 @@ export interface IAdminRefundOrderResponse {
     refundInitiated: boolean;
 }
 
+export enum AdminRole {
+    Administrator = 1,
+    Manager = 2,
+    Support = 3,
+    Accountant = 4,
+}
+
 export class AdminServiceDetailDto implements IAdminServiceDetailDto {
     id!: string | undefined;
     name!: string | undefined;
@@ -19483,6 +19596,7 @@ export class AdminUserDetailDto implements IAdminUserDetailDto {
     preferredLanguageCode!: string | undefined;
     createdAt!: Date;
     lastLoginAt!: Date | undefined;
+    adminRole!: AdminRole;
 
     constructor(data?: IAdminUserDetailDto) {
         if (data) {
@@ -19507,6 +19621,7 @@ export class AdminUserDetailDto implements IAdminUserDetailDto {
             this.preferredLanguageCode = Data["preferredLanguageCode"];
             this.createdAt = Data["createdAt"] ? new Date(Data["createdAt"].toString()) : undefined as any;
             this.lastLoginAt = Data["lastLoginAt"] ? new Date(Data["lastLoginAt"].toString()) : undefined as any;
+            this.adminRole = Data["adminRole"];
         }
     }
 
@@ -19531,6 +19646,7 @@ export class AdminUserDetailDto implements IAdminUserDetailDto {
         data["preferredLanguageCode"] = this.preferredLanguageCode;
         data["createdAt"] = this.createdAt ? this.createdAt.toISOString() : undefined as any;
         data["lastLoginAt"] = this.lastLoginAt ? this.lastLoginAt.toISOString() : undefined as any;
+        data["adminRole"] = this.adminRole;
         return data;
     }
 }
@@ -19548,6 +19664,7 @@ export interface IAdminUserDetailDto {
     preferredLanguageCode: string | undefined;
     createdAt: Date;
     lastLoginAt: Date | undefined;
+    adminRole: AdminRole;
 }
 
 export class AdminUserListItem implements IAdminUserListItem {
@@ -19561,6 +19678,7 @@ export class AdminUserListItem implements IAdminUserListItem {
     isActive!: boolean;
     createdAt!: Date;
     lastLoginAt!: Date | undefined;
+    adminRole!: AdminRole;
 
     constructor(data?: IAdminUserListItem) {
         if (data) {
@@ -19583,6 +19701,7 @@ export class AdminUserListItem implements IAdminUserListItem {
             this.isActive = Data["isActive"];
             this.createdAt = Data["createdAt"] ? new Date(Data["createdAt"].toString()) : undefined as any;
             this.lastLoginAt = Data["lastLoginAt"] ? new Date(Data["lastLoginAt"].toString()) : undefined as any;
+            this.adminRole = Data["adminRole"];
         }
     }
 
@@ -19605,6 +19724,7 @@ export class AdminUserListItem implements IAdminUserListItem {
         data["isActive"] = this.isActive;
         data["createdAt"] = this.createdAt ? this.createdAt.toISOString() : undefined as any;
         data["lastLoginAt"] = this.lastLoginAt ? this.lastLoginAt.toISOString() : undefined as any;
+        data["adminRole"] = this.adminRole;
         return data;
     }
 }
@@ -19620,6 +19740,7 @@ export interface IAdminUserListItem {
     isActive: boolean;
     createdAt: Date;
     lastLoginAt: Date | undefined;
+    adminRole: AdminRole;
 }
 
 export enum AppliedDiscountSource {
@@ -21006,6 +21127,7 @@ export class CreateAdminUserCommand implements ICreateAdminUserCommand {
     phoneNumber!: string | undefined;
     birthDate!: Date | undefined;
     preferredLanguageCode!: string | undefined;
+    role!: AdminRole;
 
     constructor(data?: ICreateAdminUserCommand) {
         if (data) {
@@ -21025,6 +21147,7 @@ export class CreateAdminUserCommand implements ICreateAdminUserCommand {
             this.phoneNumber = Data["phoneNumber"];
             this.birthDate = Data["birthDate"] ? new Date(Data["birthDate"].toString()) : undefined as any;
             this.preferredLanguageCode = Data["preferredLanguageCode"];
+            this.role = Data["role"];
         }
     }
 
@@ -21044,6 +21167,7 @@ export class CreateAdminUserCommand implements ICreateAdminUserCommand {
         data["phoneNumber"] = this.phoneNumber;
         data["birthDate"] = this.birthDate ? formatDate(this.birthDate) : undefined as any;
         data["preferredLanguageCode"] = this.preferredLanguageCode;
+        data["role"] = this.role;
         return data;
     }
 }
@@ -21056,6 +21180,7 @@ export interface ICreateAdminUserCommand {
     phoneNumber: string | undefined;
     birthDate: Date | undefined;
     preferredLanguageCode: string | undefined;
+    role: AdminRole;
 }
 
 export class CreateAdminUserResponse implements ICreateAdminUserResponse {
@@ -27957,6 +28082,7 @@ export class JwtTokenResponse implements IJwtTokenResponse {
     refreshTokenExpiresAt!: Date | undefined;
     csrfToken!: string | undefined;
     role!: string | undefined;
+    adminRole!: string | undefined;
 
     constructor(data?: IJwtTokenResponse) {
         if (data) {
@@ -27978,6 +28104,7 @@ export class JwtTokenResponse implements IJwtTokenResponse {
             this.refreshTokenExpiresAt = Data["refreshTokenExpiresAt"] ? new Date(Data["refreshTokenExpiresAt"].toString()) : undefined as any;
             this.csrfToken = Data["csrfToken"];
             this.role = Data["role"];
+            this.adminRole = Data["adminRole"];
         }
     }
 
@@ -27999,6 +28126,7 @@ export class JwtTokenResponse implements IJwtTokenResponse {
         data["refreshTokenExpiresAt"] = this.refreshTokenExpiresAt ? this.refreshTokenExpiresAt.toISOString() : undefined as any;
         data["csrfToken"] = this.csrfToken;
         data["role"] = this.role;
+        data["adminRole"] = this.adminRole;
         return data;
     }
 }
@@ -28013,6 +28141,7 @@ export interface IJwtTokenResponse {
     refreshTokenExpiresAt: Date | undefined;
     csrfToken: string | undefined;
     role: string | undefined;
+    adminRole: string | undefined;
 }
 
 export class LanguageDetailDto implements ILanguageDetailDto {
@@ -34360,6 +34489,86 @@ export interface IServiceListItem {
     perRoomPrice: number;
     translations: { [key: string]: Translation; } | undefined;
     currencyCode: string | undefined;
+}
+
+export class SetAdminRoleCommand implements ISetAdminRoleCommand {
+    userId!: string | undefined;
+    role!: AdminRole;
+
+    constructor(data?: ISetAdminRoleCommand) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.userId = Data["userId"];
+            this.role = Data["role"];
+        }
+    }
+
+    static fromJS(data: any): SetAdminRoleCommand {
+        data = typeof data === 'object' ? data : {};
+        let result = new SetAdminRoleCommand();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["userId"] = this.userId;
+        data["role"] = this.role;
+        return data;
+    }
+}
+
+export interface ISetAdminRoleCommand {
+    userId: string | undefined;
+    role: AdminRole;
+}
+
+export class SetAdminRoleResponse implements ISetAdminRoleResponse {
+    id!: string | undefined;
+    role!: AdminRole;
+
+    constructor(data?: ISetAdminRoleResponse) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.id = Data["id"];
+            this.role = Data["role"];
+        }
+    }
+
+    static fromJS(data: any): SetAdminRoleResponse {
+        data = typeof data === 'object' ? data : {};
+        let result = new SetAdminRoleResponse();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["id"] = this.id;
+        data["role"] = this.role;
+        return data;
+    }
+}
+
+export interface ISetAdminRoleResponse {
+    id: string | undefined;
+    role: AdminRole;
 }
 
 export class SetCountryServicedResponse implements ISetCountryServicedResponse {

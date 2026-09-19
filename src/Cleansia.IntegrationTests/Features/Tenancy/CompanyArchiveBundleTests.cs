@@ -523,7 +523,7 @@ public sealed class CompanyArchiveBundleTests(PostgresContainerFixture fixture) 
 
     private static User NewUser(string email, UserProfile profile)
     {
-        var user = User.CreateWithPassword(email, "12345678Test!", "Bundle", "Person", profile);
+        var user = User.CreateWithPassword(email, "12345678Test!", "Bundle", "Person", profile, adminRole: profile == UserProfile.Administrator ? AdminRole.Administrator : null);
         user.ConfirmEmail();
         return user;
     }

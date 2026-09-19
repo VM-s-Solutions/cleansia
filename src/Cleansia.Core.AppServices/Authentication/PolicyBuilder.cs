@@ -17,7 +17,7 @@ public static class PolicyBuilder
         [Policy.CanViewPagedOrder] = PhysicalPolicy.EmployeeOrAdmin,
         [Policy.CanViewPagedUserOrder] = PhysicalPolicy.Authenticated,
         [Policy.CanViewOrderDetail] = PhysicalPolicy.Authenticated,
-        [Policy.CanViewOrderCustomer] = PhysicalPolicy.AdminOnly,
+        [Policy.CanViewOrderCustomer] = PhysicalPolicy.SupportOrAbove,
         [Policy.CanUpdateOrder] = PhysicalPolicy.EmployeeOrAdmin,
         [Policy.CanTakeOrder] = PhysicalPolicy.EmployeeOrAdmin,
         [Policy.CanStartOrder] = PhysicalPolicy.EmployeeOrAdmin,
@@ -34,10 +34,16 @@ public static class PolicyBuilder
         [Policy.CanSubmitOrderReview] = PhysicalPolicy.CustomerOnly,
         [Policy.CanViewOrderReview] = PhysicalPolicy.Authenticated,
         [Policy.CanCancelOrder] = PhysicalPolicy.CustomerOnly,
-        [Policy.CanAdminCancelOrder] = PhysicalPolicy.AdminOnly,
-        [Policy.CanOverrideOrderStatus] = PhysicalPolicy.AdminOnly,
-        [Policy.CanReassignOrder] = PhysicalPolicy.AdminOnly,
-        [Policy.CanRefundOrder] = PhysicalPolicy.AdminOnly,
+        [Policy.CanAdminCancelOrder] = PhysicalPolicy.SupportOrAbove,
+        [Policy.CanOverrideOrderStatus] = PhysicalPolicy.SupportOrAbove,
+        [Policy.CanReassignOrder] = PhysicalPolicy.SupportOrAbove,
+        [Policy.CanRefundOrder] = PhysicalPolicy.SupportOrAbove,
+        // Admin-host reads split from the shared partner-host reads (ADR-0066 D3): CanViewPagedOrder,
+        // CanViewOrderDetail and CanViewOrderPhotos keep their partner-host meaning above; these three
+        // are what the admin host routes, so the administrator's role gates the customer's PII.
+        [Policy.CanViewPagedOrderAdmin] = PhysicalPolicy.SupportOrAbove,
+        [Policy.CanViewOrderDetailAdmin] = PhysicalPolicy.SupportOrAbove,
+        [Policy.CanViewOrderPhotosAdmin] = PhysicalPolicy.SupportOrAbove,
 
         // Saved addresses
         [Policy.CanManageSavedAddresses] = PhysicalPolicy.CustomerOnly,
@@ -67,22 +73,24 @@ public static class PolicyBuilder
         [Policy.CanCheckCurrentEmployee] = PhysicalPolicy.Authenticated,
         [Policy.CanUpdateCurrentEmployee] = PhysicalPolicy.Authenticated,
         [Policy.CanViewPagedEmployee] = PhysicalPolicy.AdminOnly,
-        [Policy.CanApproveEmployee] = PhysicalPolicy.AdminOnly,
-        [Policy.CanRejectEmployee] = PhysicalPolicy.AdminOnly,
-        [Policy.CanAdminUpdateEmployee] = PhysicalPolicy.AdminOnly,
+        [Policy.CanApproveEmployee] = PhysicalPolicy.SupportOrAbove,
+        [Policy.CanRejectEmployee] = PhysicalPolicy.SupportOrAbove,
+        [Policy.CanAdminUpdateEmployee] = PhysicalPolicy.SupportOrAbove,
         // Masked by default for admins, own-record for a cleaner ([OWN-DATA], handler-scoped);
         // the unmasked value is a separate, audited, rate-limited admin command (ADR-0034 D8).
         [Policy.CanViewEmployeePayoutDetails] = PhysicalPolicy.EmployeeOrAdmin,
-        [Policy.CanRevealEmployeePayoutDetails] = PhysicalPolicy.AdminOnly,
-        [Policy.CanRevealOrderAccessInstructions] = PhysicalPolicy.AdminOnly,
+        [Policy.CanViewEmployeePayoutDetailsAdmin] = PhysicalPolicy.AccountantOrAbove,
+        [Policy.CanRevealEmployeePayoutDetails] = PhysicalPolicy.ManagerOrAbove,
+        [Policy.CanRevealOrderAccessInstructions] = PhysicalPolicy.SupportOrAbove,
 
         // Employee Documents
         [Policy.CanViewEmployeeDocuments] = PhysicalPolicy.EmployeeOrAdmin,
         [Policy.CanUploadEmployeeDocument] = PhysicalPolicy.EmployeeOrAdmin,
         [Policy.CanDownloadEmployeeDocument] = PhysicalPolicy.EmployeeOrAdmin,
-        [Policy.CanApproveEmployeeDocument] = PhysicalPolicy.AdminOnly,
-        [Policy.CanRejectEmployeeDocument] = PhysicalPolicy.AdminOnly,
+        [Policy.CanApproveEmployeeDocument] = PhysicalPolicy.SupportOrAbove,
+        [Policy.CanRejectEmployeeDocument] = PhysicalPolicy.SupportOrAbove,
         [Policy.CanDeleteEmployeeDocument] = PhysicalPolicy.EmployeeOrAdmin,
+        [Policy.CanViewEmployeeDocumentsAdmin] = PhysicalPolicy.SupportOrAbove,
 
         // Employee Payroll — Invoices (was unmapped → fail-open; now closed)
         // CanViewPagedInvoices/CanViewPeriodPays gate an employee's OWN pay on the Partner host
@@ -90,133 +98,141 @@ public static class PolicyBuilder
         // every cleaner from their own invoices.
         [Policy.CanViewPagedInvoices] = PhysicalPolicy.EmployeeOrAdmin,
         [Policy.CanViewPeriodPays] = PhysicalPolicy.EmployeeOrAdmin,
+        [Policy.CanViewPagedInvoicesAdmin] = PhysicalPolicy.AccountantOrAbove,
         [Policy.CanCalculateOrderPay] = PhysicalPolicy.AdminOnly,
-        [Policy.CanGenerateInvoice] = PhysicalPolicy.AdminOnly,
-        [Policy.CanApproveInvoice] = PhysicalPolicy.AdminOnly,
-        [Policy.CanMarkInvoicePaid] = PhysicalPolicy.AdminOnly,
-        [Policy.CanCancelInvoice] = PhysicalPolicy.AdminOnly,
-        [Policy.CanClosePayPeriod] = PhysicalPolicy.AdminOnly,
-        [Policy.CanUpdateInvoiceAmounts] = PhysicalPolicy.AdminOnly,
-        [Policy.CanDisputeInvoice] = PhysicalPolicy.AdminOnly,
-        [Policy.CanRejectInvoice] = PhysicalPolicy.AdminOnly,
+        [Policy.CanGenerateInvoice] = PhysicalPolicy.AccountantOrAbove,
+        [Policy.CanApproveInvoice] = PhysicalPolicy.AccountantOrAbove,
+        [Policy.CanMarkInvoicePaid] = PhysicalPolicy.AccountantOrAbove,
+        [Policy.CanCancelInvoice] = PhysicalPolicy.AccountantOrAbove,
+        [Policy.CanClosePayPeriod] = PhysicalPolicy.AccountantOrAbove,
+        [Policy.CanUpdateInvoiceAmounts] = PhysicalPolicy.AccountantOrAbove,
+        [Policy.CanDisputeInvoice] = PhysicalPolicy.AccountantOrAbove,
+        [Policy.CanRejectInvoice] = PhysicalPolicy.AccountantOrAbove,
 
         // Employee Payroll — Pay Periods. Pay periods are global cycles (Note B), so an
         // employee may list them to locate their own pay; the per-row data is fetched via the
-        // [OWN-DATA] CanViewPeriodPays path. Mutations are admin-only.
+        // [OWN-DATA] CanViewPeriodPays path. The admin host lists them on its own constants below;
+        // mutations are the Accountant's.
         [Policy.CanViewPayPeriods] = PhysicalPolicy.EmployeeOrAdmin,
         [Policy.CanViewPayPeriod] = PhysicalPolicy.EmployeeOrAdmin,
-        [Policy.CanCreatePayPeriod] = PhysicalPolicy.AdminOnly,
-        [Policy.CanUpdatePayPeriod] = PhysicalPolicy.AdminOnly,
-        [Policy.CanOpenPayPeriod] = PhysicalPolicy.AdminOnly,
-        [Policy.CanDeletePayPeriod] = PhysicalPolicy.AdminOnly,
-        [Policy.CanMarkPayPeriodPaid] = PhysicalPolicy.AdminOnly,
-        [Policy.CanReopenPayPeriod] = PhysicalPolicy.AdminOnly,
+        [Policy.CanViewPayPeriodsAdmin] = PhysicalPolicy.AccountantOrAbove,
+        [Policy.CanViewPayPeriodAdmin] = PhysicalPolicy.AccountantOrAbove,
+        [Policy.CanCreatePayPeriod] = PhysicalPolicy.AccountantOrAbove,
+        [Policy.CanUpdatePayPeriod] = PhysicalPolicy.AccountantOrAbove,
+        [Policy.CanOpenPayPeriod] = PhysicalPolicy.AccountantOrAbove,
+        [Policy.CanDeletePayPeriod] = PhysicalPolicy.AccountantOrAbove,
+        [Policy.CanMarkPayPeriodPaid] = PhysicalPolicy.AccountantOrAbove,
+        [Policy.CanReopenPayPeriod] = PhysicalPolicy.AccountantOrAbove,
 
-        // Employee Payroll — Pay Config. Admin-only configuration surface.
-        [Policy.CanViewPayConfigs] = PhysicalPolicy.AdminOnly,
-        [Policy.CanViewPayConfig] = PhysicalPolicy.AdminOnly,
-        [Policy.CanCreatePayConfig] = PhysicalPolicy.AdminOnly,
-        [Policy.CanUpdatePayConfig] = PhysicalPolicy.AdminOnly,
-        [Policy.CanDeletePayConfig] = PhysicalPolicy.AdminOnly,
+        // Employee Payroll — Pay Config. Readable by whoever books a pay row; a rate is company policy.
+        [Policy.CanViewPayConfigs] = PhysicalPolicy.AccountantOrAbove,
+        [Policy.CanViewPayConfig] = PhysicalPolicy.AccountantOrAbove,
+        [Policy.CanCreatePayConfig] = PhysicalPolicy.ManagerOrAbove,
+        [Policy.CanUpdatePayConfig] = PhysicalPolicy.ManagerOrAbove,
+        [Policy.CanDeletePayConfig] = PhysicalPolicy.ManagerOrAbove,
 
         // Dispute
         [Policy.CanCreateDispute] = PhysicalPolicy.CustomerOnly,
         [Policy.CanViewDispute] = PhysicalPolicy.CustomerOnly,
         [Policy.CanViewDisputeList] = PhysicalPolicy.CustomerOnly,
         // Dispute reply split (Note C): the customer self-reply path is CustomerOnly [OWN-DATA]; the staff
-        // reply path (CanRespondToDispute) is AdminOnly (was the fail-open Authenticated).
+        // reply path (CanRespondToDispute) is Support's (was the fail-open Authenticated).
         [Policy.CanAddDisputeMessage] = PhysicalPolicy.CustomerOnly,
-        [Policy.CanRespondToDispute] = PhysicalPolicy.AdminOnly,
-        [Policy.CanResolveDispute] = PhysicalPolicy.AdminOnly,
-        [Policy.CanUpdateDisputeStatus] = PhysicalPolicy.AdminOnly,
+        [Policy.CanRespondToDispute] = PhysicalPolicy.SupportOrAbove,
+        [Policy.CanResolveDispute] = PhysicalPolicy.SupportOrAbove,
+        [Policy.CanUpdateDisputeStatus] = PhysicalPolicy.SupportOrAbove,
         [Policy.CanUploadDisputeEvidence] = PhysicalPolicy.CustomerOnly,
         // Admin-host dispute reads (D-01 admin dispute management). The own-data view gates above stay
-        // CustomerOnly; these are the AdminOnly all-disputes reads for the Admin host.
-        [Policy.CanViewDisputeAdmin] = PhysicalPolicy.AdminOnly,
-        [Policy.CanViewDisputeListAdmin] = PhysicalPolicy.AdminOnly,
+        // CustomerOnly; these are the all-disputes reads for the Admin host, Support's area.
+        [Policy.CanViewDisputeAdmin] = PhysicalPolicy.SupportOrAbove,
+        [Policy.CanViewDisputeListAdmin] = PhysicalPolicy.SupportOrAbove,
 
         // Reports
-        [Policy.CanViewRevenueReport] = PhysicalPolicy.AdminOnly,
-        [Policy.CanViewPayrollReport] = PhysicalPolicy.AdminOnly,
+        [Policy.CanViewRevenueReport] = PhysicalPolicy.AccountantOrAbove,
+        [Policy.CanViewPayrollReport] = PhysicalPolicy.AccountantOrAbove,
 
         // Fiscal
-        [Policy.CanManageFiscalFailures] = PhysicalPolicy.AdminOnly,
+        [Policy.CanManageFiscalFailures] = PhysicalPolicy.AccountantOrAbove,
 
         // Services
         [Policy.CanViewServices] = PhysicalPolicy.AdminOnly,
-        [Policy.CanCreateService] = PhysicalPolicy.AdminOnly,
-        [Policy.CanUpdateService] = PhysicalPolicy.AdminOnly,
-        [Policy.CanDeleteService] = PhysicalPolicy.AdminOnly,
+        [Policy.CanCreateService] = PhysicalPolicy.ManagerOrAbove,
+        [Policy.CanUpdateService] = PhysicalPolicy.ManagerOrAbove,
+        [Policy.CanDeleteService] = PhysicalPolicy.ManagerOrAbove,
 
         // Packages
         [Policy.CanViewPackages] = PhysicalPolicy.AdminOnly,
-        [Policy.CanCreatePackage] = PhysicalPolicy.AdminOnly,
-        [Policy.CanUpdatePackage] = PhysicalPolicy.AdminOnly,
-        [Policy.CanDeletePackage] = PhysicalPolicy.AdminOnly,
+        [Policy.CanCreatePackage] = PhysicalPolicy.ManagerOrAbove,
+        [Policy.CanUpdatePackage] = PhysicalPolicy.ManagerOrAbove,
+        [Policy.CanDeletePackage] = PhysicalPolicy.ManagerOrAbove,
 
         // Extras
         [Policy.CanViewExtras] = PhysicalPolicy.AdminOnly,
-        [Policy.CanCreateExtra] = PhysicalPolicy.AdminOnly,
-        [Policy.CanUpdateExtra] = PhysicalPolicy.AdminOnly,
-        [Policy.CanDeleteExtra] = PhysicalPolicy.AdminOnly,
+        [Policy.CanCreateExtra] = PhysicalPolicy.ManagerOrAbove,
+        [Policy.CanUpdateExtra] = PhysicalPolicy.ManagerOrAbove,
+        [Policy.CanDeleteExtra] = PhysicalPolicy.ManagerOrAbove,
 
         // Languages
         [Policy.CanViewLanguages] = PhysicalPolicy.AdminOnly,
-        [Policy.CanCreateLanguage] = PhysicalPolicy.AdminOnly,
-        [Policy.CanUpdateLanguage] = PhysicalPolicy.AdminOnly,
-        [Policy.CanDeleteLanguage] = PhysicalPolicy.AdminOnly,
+        [Policy.CanCreateLanguage] = PhysicalPolicy.ManagerOrAbove,
+        [Policy.CanUpdateLanguage] = PhysicalPolicy.ManagerOrAbove,
+        [Policy.CanDeleteLanguage] = PhysicalPolicy.ManagerOrAbove,
 
         // Countries
         [Policy.CanViewCountries] = PhysicalPolicy.AdminOnly,
-        [Policy.CanCreateCountry] = PhysicalPolicy.AdminOnly,
-        [Policy.CanUpdateCountry] = PhysicalPolicy.AdminOnly,
-        [Policy.CanDeleteCountry] = PhysicalPolicy.AdminOnly,
+        [Policy.CanCreateCountry] = PhysicalPolicy.ManagerOrAbove,
+        [Policy.CanUpdateCountry] = PhysicalPolicy.ManagerOrAbove,
+        [Policy.CanDeleteCountry] = PhysicalPolicy.ManagerOrAbove,
 
         // Service areas
         [Policy.CanViewServiceCities] = PhysicalPolicy.AdminOnly,
-        [Policy.CanManageServiceCities] = PhysicalPolicy.AdminOnly,
+        [Policy.CanManageServiceCities] = PhysicalPolicy.ManagerOrAbove,
 
         // Currencies
         [Policy.CanViewCurrencies] = PhysicalPolicy.AdminOnly,
-        [Policy.CanCreateCurrency] = PhysicalPolicy.AdminOnly,
-        [Policy.CanUpdateCurrency] = PhysicalPolicy.AdminOnly,
-        [Policy.CanDeleteCurrency] = PhysicalPolicy.AdminOnly,
+        [Policy.CanCreateCurrency] = PhysicalPolicy.ManagerOrAbove,
+        [Policy.CanUpdateCurrency] = PhysicalPolicy.ManagerOrAbove,
+        [Policy.CanDeleteCurrency] = PhysicalPolicy.ManagerOrAbove,
 
         // Admin Users
-        [Policy.CanViewAdminUsers] = PhysicalPolicy.AdminOnly,
-        [Policy.CanCreateAdminUser] = PhysicalPolicy.AdminOnly,
-        [Policy.CanUpdateAdminUser] = PhysicalPolicy.AdminOnly,
-        [Policy.CanDeactivateAdminUser] = PhysicalPolicy.AdminOnly,
-        [Policy.CanActivateAdminUser] = PhysicalPolicy.AdminOnly,
+        [Policy.CanViewAdminUsers] = PhysicalPolicy.ManagerOrAbove,
+        [Policy.CanCreateAdminUser] = PhysicalPolicy.AdministratorOnly,
+        [Policy.CanUpdateAdminUser] = PhysicalPolicy.AdministratorOnly,
+        [Policy.CanDeactivateAdminUser] = PhysicalPolicy.AdministratorOnly,
+        [Policy.CanActivateAdminUser] = PhysicalPolicy.AdministratorOnly,
+        [Policy.CanSetAdminRole] = PhysicalPolicy.AdministratorOnly,
 
         // Company Info
         [Policy.CanViewCompanyInfo] = PhysicalPolicy.AdminOnly,
-        [Policy.CanCreateCompanyInfo] = PhysicalPolicy.AdminOnly,
-        [Policy.CanUpdateCompanyInfo] = PhysicalPolicy.AdminOnly,
-        [Policy.CanDeleteCompanyInfo] = PhysicalPolicy.AdminOnly,
+        [Policy.CanCreateCompanyInfo] = PhysicalPolicy.ManagerOrAbove,
+        [Policy.CanUpdateCompanyInfo] = PhysicalPolicy.ManagerOrAbove,
+        [Policy.CanDeleteCompanyInfo] = PhysicalPolicy.ManagerOrAbove,
 
         // Email Templates
         [Policy.CanViewEmailTemplates] = PhysicalPolicy.AdminOnly,
-        [Policy.CanUpdateEmailTemplate] = PhysicalPolicy.AdminOnly,
+        [Policy.CanUpdateEmailTemplate] = PhysicalPolicy.ManagerOrAbove,
 
         // Country Configuration
         [Policy.CanViewCountryConfigurations] = PhysicalPolicy.AdminOnly,
-        [Policy.CanCreateCountryConfiguration] = PhysicalPolicy.AdminOnly,
-        [Policy.CanUpdateCountryConfiguration] = PhysicalPolicy.AdminOnly,
-        [Policy.CanDeleteCountryConfiguration] = PhysicalPolicy.AdminOnly,
+        [Policy.CanCreateCountryConfiguration] = PhysicalPolicy.ManagerOrAbove,
+        [Policy.CanUpdateCountryConfiguration] = PhysicalPolicy.ManagerOrAbove,
+        [Policy.CanDeleteCountryConfiguration] = PhysicalPolicy.ManagerOrAbove,
+
+        // Legal documents
+        [Policy.CanViewLegalDocuments] = PhysicalPolicy.AdministratorOnly,
 
         // Tenant Configuration
-        [Policy.CanViewTenantConfigurations] = PhysicalPolicy.AdminOnly,
-        [Policy.CanCreateTenantConfiguration] = PhysicalPolicy.AdminOnly,
-        [Policy.CanUpdateTenantConfiguration] = PhysicalPolicy.AdminOnly,
-        [Policy.CanDeleteTenantConfiguration] = PhysicalPolicy.AdminOnly,
+        [Policy.CanViewTenantConfigurations] = PhysicalPolicy.AdministratorOnly,
+        [Policy.CanCreateTenantConfiguration] = PhysicalPolicy.AdministratorOnly,
+        [Policy.CanUpdateTenantConfiguration] = PhysicalPolicy.AdministratorOnly,
+        [Policy.CanDeleteTenantConfiguration] = PhysicalPolicy.AdministratorOnly,
 
         // Company lifecycle
-        [Policy.CanViewCompanyLifecycle] = PhysicalPolicy.AdminOnly,
-        [Policy.CanDeactivateCompany] = PhysicalPolicy.AdminOnly,
-        [Policy.CanReactivateCompany] = PhysicalPolicy.AdminOnly,
-        [Policy.CanWindDownCompany] = PhysicalPolicy.AdminOnly,
-        [Policy.CanArchiveCompany] = PhysicalPolicy.AdminOnly,
+        [Policy.CanViewCompanyLifecycle] = PhysicalPolicy.AdministratorOnly,
+        [Policy.CanDeactivateCompany] = PhysicalPolicy.AdministratorOnly,
+        [Policy.CanReactivateCompany] = PhysicalPolicy.AdministratorOnly,
+        [Policy.CanWindDownCompany] = PhysicalPolicy.AdministratorOnly,
+        [Policy.CanArchiveCompany] = PhysicalPolicy.AdministratorOnly,
 
         // Device
         [Policy.Authenticated] = PhysicalPolicy.Authenticated,
@@ -229,10 +245,10 @@ public static class PolicyBuilder
         [Policy.CanViewOwnConsents] = PhysicalPolicy.Authenticated,
 
         // Admin GDPR
-        [Policy.CanAdminExportUserData] = PhysicalPolicy.AdminOnly,
-        [Policy.CanAdminDeleteUserAccount] = PhysicalPolicy.AdminOnly,
-        [Policy.CanAdminViewUserConsents] = PhysicalPolicy.AdminOnly,
-        [Policy.CanViewGdprRequests] = PhysicalPolicy.AdminOnly,
+        [Policy.CanAdminExportUserData] = PhysicalPolicy.SupportOrAbove,
+        [Policy.CanAdminDeleteUserAccount] = PhysicalPolicy.ManagerOrAbove,
+        [Policy.CanAdminViewUserConsents] = PhysicalPolicy.SupportOrAbove,
+        [Policy.CanViewGdprRequests] = PhysicalPolicy.SupportOrAbove,
 
         // Loyalty
         [Policy.CanViewMyLoyalty] = PhysicalPolicy.CustomerOnly,
@@ -246,39 +262,39 @@ public static class PolicyBuilder
 
         // Admin Promo Codes
         [Policy.CanViewPromoCodes] = PhysicalPolicy.AdminOnly,
-        [Policy.CanCreatePromoCode] = PhysicalPolicy.AdminOnly,
-        [Policy.CanUpdatePromoCode] = PhysicalPolicy.AdminOnly,
-        [Policy.CanDeactivatePromoCode] = PhysicalPolicy.AdminOnly,
+        [Policy.CanCreatePromoCode] = PhysicalPolicy.ManagerOrAbove,
+        [Policy.CanUpdatePromoCode] = PhysicalPolicy.ManagerOrAbove,
+        [Policy.CanDeactivatePromoCode] = PhysicalPolicy.ManagerOrAbove,
 
         // Admin Loyalty Tier Configs
         [Policy.CanViewLoyaltyTierConfigs] = PhysicalPolicy.AdminOnly,
-        [Policy.CanUpdateLoyaltyTierConfig] = PhysicalPolicy.AdminOnly,
+        [Policy.CanUpdateLoyaltyTierConfig] = PhysicalPolicy.ManagerOrAbove,
 
         // Admin Loyalty (manual grants + user inspection)
-        [Policy.CanGrantLoyaltyPoints] = PhysicalPolicy.AdminOnly,
-        [Policy.CanViewUserLoyalty] = PhysicalPolicy.AdminOnly,
+        [Policy.CanGrantLoyaltyPoints] = PhysicalPolicy.SupportOrAbove,
+        [Policy.CanViewUserLoyalty] = PhysicalPolicy.SupportOrAbove,
 
         // Admin Membership Plans
         [Policy.CanViewMembershipPlans] = PhysicalPolicy.AdminOnly,
-        [Policy.CanCreateMembershipPlan] = PhysicalPolicy.AdminOnly,
-        [Policy.CanUpdateMembershipPlan] = PhysicalPolicy.AdminOnly,
-        [Policy.CanDeactivateMembershipPlan] = PhysicalPolicy.AdminOnly,
+        [Policy.CanCreateMembershipPlan] = PhysicalPolicy.ManagerOrAbove,
+        [Policy.CanUpdateMembershipPlan] = PhysicalPolicy.ManagerOrAbove,
+        [Policy.CanDeactivateMembershipPlan] = PhysicalPolicy.ManagerOrAbove,
 
         // Admin Referrals
         [Policy.CanViewReferrals] = PhysicalPolicy.AdminOnly,
-        [Policy.CanInterveneReferral] = PhysicalPolicy.AdminOnly,
+        [Policy.CanInterveneReferral] = PhysicalPolicy.SupportOrAbove,
 
         // Marketing (sitewide push)
-        [Policy.CanSendSitewidePromo] = PhysicalPolicy.AdminOnly,
+        [Policy.CanSendSitewidePromo] = PhysicalPolicy.ManagerOrAbove,
 
         // Refunds (admin-issued partial refund) — ADR-0001 D2
-        [Policy.CanIssueRefund] = PhysicalPolicy.AdminOnly,
-        [Policy.CanIssueCustomerCredit] = PhysicalPolicy.AdminOnly,
+        [Policy.CanIssueRefund] = PhysicalPolicy.SupportOrAbove,
+        [Policy.CanIssueCustomerCredit] = PhysicalPolicy.SupportOrAbove,
         [Policy.CanViewUserCredit] = PhysicalPolicy.AdminOnly,
-        [Policy.CanExpireCustomerCredit] = PhysicalPolicy.AdminOnly,
+        [Policy.CanExpireCustomerCredit] = PhysicalPolicy.ManagerOrAbove,
 
         // Admin Action Audit Log (read surface — ADR-0012 D7)
-        [Policy.CanViewAuditLog] = PhysicalPolicy.AdminOnly,
+        [Policy.CanViewAuditLog] = PhysicalPolicy.SupportOrAbove,
 
         // Admin notifications feed
         [Policy.CanViewAdminNotifications] = PhysicalPolicy.AdminOnly,

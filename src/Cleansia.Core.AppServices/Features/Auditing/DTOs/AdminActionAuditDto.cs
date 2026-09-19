@@ -14,4 +14,5 @@ public record AdminActionAuditDto(
     string? ErrorCode,
     DateTimeOffset OccurredOn,
     string? Reason,
-    string? CorrelationId);
+    string? CorrelationId,
+    AdminRole? ActorAdminRole = null);

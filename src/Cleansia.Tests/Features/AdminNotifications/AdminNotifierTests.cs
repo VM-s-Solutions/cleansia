@@ -3,6 +3,7 @@ using Cleansia.Core.AppServices.Features.TenantSettings;
 using Cleansia.Core.AppServices.Services;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Configuration;
+using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Notifications;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.SeedWork;
@@ -15,9 +16,10 @@ using Moq;
 namespace Cleansia.Tests.Features.AdminNotifications;
 
 /// <summary>
-/// The notifier turns one event into one feed row per administrator of the NAMED company and one
-/// send-email outbox intent per recipient address — the company's shared mailbox in English when it
-/// has set one, else every administrator in their own language. The recipients and the mailbox are
+/// The notifier turns one event into one feed row per administrator of the NAMED company whose role is
+/// in the event's audience and one send-email outbox intent per recipient address — the company's
+/// shared mailbox in English when it has set one, else every such administrator in their own language
+/// (ADR-0066 D8: told what you can act on). The recipients and the mailbox are
 /// read by the event's company argument, the rows carry that company, no commit is issued (the
 /// caller's unit of work lands the rows with the business state), the feed rows are written before
 /// the first intent so a failing outbox leaves the feed intact, and the class has no hand on a push,
@@ -50,8 +52,11 @@ public sealed class AdminNotifierTests
         new(_users.Object, _notifications.Object, _configuration.Object, _dispatch.Object, logger ?? NullLogger<AdminNotifier>.Instance);
 
     private void ArrangeAdministratorsSpeaking(string tenantId, params (string Id, string? Language)[] admins) =>
+        ArrangeAdministratorsHolding(tenantId, admins.Select(a => (a.Id, a.Language, AdminRole.Administrator)).ToArray());
+
+    private void ArrangeAdministratorsHolding(string tenantId, params (string Id, string? Language, AdminRole Role)[] admins) =>
         _users.Setup(r => r.GetActiveAdministratorsAsync(tenantId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(admins.Select(a => new AdministratorRecipient(a.Id, $"{a.Id}@cleansia.test", "Ad", "Min", a.Language)).ToList());
+            .ReturnsAsync(admins.Select(a => new AdministratorRecipient(a.Id, $"{a.Id}@cleansia.test", "Ad", "Min", a.Language, a.Role)).ToList());
 
     private void ArrangeAdministrators(string tenantId, params string[] ids) =>
         ArrangeAdministratorsSpeaking(tenantId, ids.Select(id => (id, (string?)"cs")).ToArray());
@@ -60,6 +65,40 @@ public sealed class AdminNotifierTests
         _configuration
             .Setup(p => p.GetTenantSettingAsync(tenantId, TenantSettingCatalog.AdminNotificationEmailKey, It.IsAny<CancellationToken>()))
             .ReturnsAsync(stored);
+
+    private static AdminEvent OrderNew(string tenantId, string orderId = "order-1") =>
+        new(
+            AdminNotificationEventCatalog.OrderNew,
+            tenantId,
+            Subject: orderId,
+            Args: new Dictionary<string, string>
+            {
+                ["orderNumber"] = "ORD-1A2B3C4D",
+                ["amount"] = "1500.00 CZK",
+                ["paymentType"] = "Cash",
+                ["countryId"] = "CZ",
+                ["orderId"] = orderId,
+            });
+
+    private static AdminEvent Chargeback(string tenantId, string disputeId = "dispute-1", string orderId = "order-1") =>
+        new(
+            AdminNotificationEventCatalog.DisputeChargeback,
+            tenantId,
+            Subject: disputeId,
+            Args: new Dictionary<string, string>
+            {
+                ["orderNumber"] = "ORD-1A2B3C4D",
+                ["amount"] = "1500.00 CZK",
+                ["disputeId"] = disputeId,
+                ["orderId"] = orderId,
+            });
+
+    private static AdminEvent ErasureFailed(string tenantId) =>
+        new(
+            AdminNotificationEventCatalog.ErasureFailed,
+            tenantId,
+            Subject: "request-1",
+            Args: new Dictionary<string, string> { ["day"] = "2026-09-19", ["requestId"] = "request-1" });
 
     private static AdminEvent DisputeFiled(string tenantId, string disputeId = "dispute-1", string orderId = "order-1") =>
         new(
@@ -95,6 +134,76 @@ public sealed class AdminNotifierTests
             Assert.Equal("order-1", args["orderId"]);
             Assert.Equal(4, args.Count);
         });
+    }
+
+    [Fact]
+    public async Task An_Order_Event_Reaches_The_Support_And_Not_The_Accountant()
+    {
+        ArrangeAdministratorsHolding(TenantA, ("the-accountant", "cs", AdminRole.Accountant), ("the-support", "cs", AdminRole.Support));
+
+        await NewNotifier().NotifyAsync(OrderNew(TenantA), CancellationToken.None);
+
+        Assert.Equal("the-support", Assert.Single(_added).UserId);
+        Assert.Equal("the-support@cleansia.test", Assert.Single(_enqueued).Envelope.Payload.Email);
+    }
+
+    [Fact]
+    public async Task A_Chargeback_Reaches_The_Support_And_The_Accountant_Both()
+    {
+        ArrangeAdministratorsHolding(TenantA, ("the-accountant", "cs", AdminRole.Accountant), ("the-support", "cs", AdminRole.Support));
+
+        await NewNotifier().NotifyAsync(Chargeback(TenantA), CancellationToken.None);
+
+        Assert.Equal(["the-accountant", "the-support"], _added.Select(n => n.UserId));
+        Assert.Equal(2, _enqueued.Count);
+    }
+
+    [Fact]
+    public async Task A_Failed_Erasure_Reaches_The_Manager_And_The_Administrator_And_Nobody_Below()
+    {
+        ArrangeAdministratorsHolding(
+            TenantA,
+            ("the-administrator", "cs", AdminRole.Administrator),
+            ("the-manager", "cs", AdminRole.Manager),
+            ("the-support", "cs", AdminRole.Support),
+            ("the-accountant", "cs", AdminRole.Accountant));
+
+        await NewNotifier().NotifyAsync(ErasureFailed(TenantA), CancellationToken.None);
+
+        Assert.Equal(["the-administrator", "the-manager"], _added.Select(n => n.UserId));
+    }
+
+    [Fact]
+    public async Task An_Administrator_Row_Without_A_Role_Is_Told_Nothing()
+    {
+        _users.Setup(r => r.GetActiveAdministratorsAsync(TenantA, It.IsAny<CancellationToken>()))
+            .ReturnsAsync([new AdministratorRecipient("roleless", "roleless@cleansia.test", "Ad", "Min", "cs", null)]);
+
+        await NewNotifier().NotifyAsync(Chargeback(TenantA), CancellationToken.None);
+
+        Assert.Empty(_added);
+        Assert.Empty(_enqueued);
+    }
+
+    [Fact]
+    public async Task A_Company_Whose_Administrators_Are_All_Outside_The_Audience_Writes_Nothing_Enqueues_Nothing_And_Warns()
+    {
+        ArrangeAdministratorsHolding(TenantA, ("the-accountant", "cs", AdminRole.Accountant));
+        ArrangeMailbox(TenantA, Mailbox);
+        var logger = new Mock<ILogger<AdminNotifier>>();
+
+        await NewNotifier(logger.Object).NotifyAsync(OrderNew(TenantA), CancellationToken.None);
+
+        Assert.Empty(_added);
+        Assert.Empty(_enqueued);
+        logger.Verify(
+            l => l.Log(
+                LogLevel.Warning,
+                It.IsAny<EventId>(),
+                It.IsAny<It.IsAnyType>(),
+                null,
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            Times.Once);
     }
 
     [Fact]

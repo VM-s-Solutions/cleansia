@@ -33,7 +33,7 @@ public class ChangeOwnPasswordLockoutTests(PostgresContainerFixture fixture) : B
             CurrentPassword,
             Constants.TestUserSession.TestFirstName,
             Constants.TestUserSession.TestLastName,
-            UserProfile.Administrator);
+            UserProfile.Administrator, adminRole: AdminRole.Administrator);
         user.ConfirmEmail();
         user.Created(Constants.TestUserSession.TestUserId, DateTime.UtcNow);
         user.Id = Constants.TestUserSession.TestUserId;

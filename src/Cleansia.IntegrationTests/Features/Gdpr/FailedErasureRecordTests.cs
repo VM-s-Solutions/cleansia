@@ -354,11 +354,11 @@ public class FailedErasureRecordTests(PostgresContainerFixture fixture) : BaseIn
 
     private static async Task SeedAdministrators(CleansiaDbContext context)
     {
-        var ofSecond = User.CreateWithPassword($"{AdminOfSecondId}@cleansia.test", "Seed-Password-123", "Ad", "Min", UserProfile.Administrator);
+        var ofSecond = User.CreateWithPassword($"{AdminOfSecondId}@cleansia.test", "Seed-Password-123", "Ad", "Min", UserProfile.Administrator, adminRole: AdminRole.Administrator);
         ofSecond.Id = AdminOfSecondId;
         ofSecond.TenantId = TestTenants.Second;
         ofSecond.ConfirmEmail();
-        var ofDefault = User.CreateWithPassword($"{AdminOfDefaultId}@cleansia.test", "Seed-Password-123", "Ad", "Min", UserProfile.Administrator);
+        var ofDefault = User.CreateWithPassword($"{AdminOfDefaultId}@cleansia.test", "Seed-Password-123", "Ad", "Min", UserProfile.Administrator, adminRole: AdminRole.Administrator);
         ofDefault.Id = AdminOfDefaultId;
         ofDefault.TenantId = TestTenants.Default;
         ofDefault.ConfirmEmail();

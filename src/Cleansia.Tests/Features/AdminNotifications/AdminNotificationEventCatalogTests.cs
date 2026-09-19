@@ -72,10 +72,27 @@ public sealed class AdminNotificationEventCatalogTests
         }
     }
 
-    [Fact]
-    public void Every_Entry_Is_The_Whole_Company_Until_Roles_Exist()
+    // ADR-0066 D8: every audience is the NAME of an administrator set, and the one event that belongs to
+    // two branches of the lattice — a chargeback — is any administrator.
+    [Theory]
+    [InlineData(AdminNotificationEventCatalog.OrderNew, PhysicalPolicy.SupportOrAbove)]
+    [InlineData(AdminNotificationEventCatalog.OrderCrewLost, PhysicalPolicy.SupportOrAbove)]
+    [InlineData(AdminNotificationEventCatalog.DisputeFiled, PhysicalPolicy.SupportOrAbove)]
+    [InlineData(AdminNotificationEventCatalog.DisputeChargeback, PhysicalPolicy.AdminOnly)]
+    [InlineData(AdminNotificationEventCatalog.PaymentFailed, PhysicalPolicy.SupportOrAbove)]
+    [InlineData(AdminNotificationEventCatalog.ErasureFailed, PhysicalPolicy.ManagerOrAbove)]
+    [InlineData(AdminNotificationEventCatalog.CompanyWindDownRequested, PhysicalPolicy.AdministratorOnly)]
+    [InlineData(AdminNotificationEventCatalog.CompanyWindDownRun, PhysicalPolicy.AdministratorOnly)]
+    [InlineData(AdminNotificationEventCatalog.CompanyArchived, PhysicalPolicy.AdministratorOnly)]
+    public void Every_Entry_Names_The_Administrator_Set_It_Is_Told_To(string key, string audience)
     {
-        Assert.All(AdminEventCatalog.All, entry => Assert.Equal(PhysicalPolicy.AdminOnly, entry.Audience));
+        Assert.Equal(audience, AdminEventCatalog.Find(key).Audience);
+    }
+
+    [Fact]
+    public void Every_Audience_Resolves_To_A_Set()
+    {
+        Assert.All(AdminEventCatalog.All, entry => Assert.NotEmpty(AdminRoleSets.For(entry.Audience)));
     }
 
     [Fact]

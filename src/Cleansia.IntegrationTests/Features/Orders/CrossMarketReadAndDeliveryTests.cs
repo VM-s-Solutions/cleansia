@@ -66,7 +66,7 @@ public partial class CreateOrderCallerCurrencyTests
                 customer.TenantId = customerTenant;
                 customer.Update("PrivateCurrentName", "PrivateSurname", "+420777999000", new DateOnly(1991, 2, 3));
                 context.Entry(customer).Property(u => u.Email).CurrentValue = "private-current@test.local";
-                var admin = User.CreateWithPassword("operator-admin@test.local", "Password123!", "Operator", "Support", UserProfile.Administrator);
+                var admin = User.CreateWithPassword("operator-admin@test.local", "Password123!", "Operator", "Support", UserProfile.Administrator, adminRole: AdminRole.Administrator);
                 admin.Id = adminId;
                 admin.TenantId = TestTenants.Second;
                 context.Users.Add(admin);

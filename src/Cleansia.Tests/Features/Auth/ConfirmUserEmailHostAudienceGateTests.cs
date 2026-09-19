@@ -38,7 +38,7 @@ public sealed class ConfirmUserEmailHostAudienceGateTests
 
     private (User user, string otp) UnconfirmedAccount(UserProfile profile)
     {
-        var user = User.CreateWithPassword($"{profile}@example.com".ToLowerInvariant(), "Secret-123!", "First", "Last", profile);
+        var user = User.CreateWithPassword($"{profile}@example.com".ToLowerInvariant(), "Secret-123!", "First", "Last", profile, adminRole: profile == UserProfile.Administrator ? AdminRole.Administrator : null);
         user.Created(user.Email, DateTime.UtcNow);
         _userRepository
             .Setup(r => r.GetByEmailIgnoringTenantAsync(user.Email, It.IsAny<CancellationToken>()))

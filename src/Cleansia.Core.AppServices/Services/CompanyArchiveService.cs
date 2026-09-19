@@ -41,6 +41,7 @@ public sealed class CompanyArchiveService(
     IBlobContainerClientFactory blobClientFactory,
     ISchemaVersionReader schemaVersionReader,
     IAdminNotifier adminNotifier,
+    IUserNotificationRepository userNotificationRepository,
     TimeProvider timeProvider,
     ILogger<CompanyArchiveService> logger) : ICompanyArchiveService
 {
@@ -175,17 +176,24 @@ public sealed class CompanyArchiveService(
         tenant.MarkArchived(manifestSha256, builtOn);
 
         // The company is frozen, so this commit admits only the account surface — which is exactly
-        // what the feed row and the outbox row are; a books write here would throw.
-        await adminNotifier.NotifyAsync(
-            new AdminEvent(
-                AdminNotificationEventCatalog.CompanyArchived,
-                tenant.Id,
-                Subject: $"{tenant.Id}:{frozenOn.UtcDateTime:yyyyMMdd'T'HHmmss'Z'}",
-                Args: new Dictionary<string, string>
-                {
-                    ["archivedOn"] = builtOn.UtcDateTime.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
-                }),
-            cancellationToken);
+        // what the feed row and the outbox row are; a books write here would throw. Two builds of one
+        // frozen company can overlap (a redelivery beside a "build again") and both reach this point
+        // with the same subject, which would fail the second commit on the outbox index rather than
+        // collapse — so the feed is read before the call: a row naming the day means the company was
+        // already told.
+        var archivedOn = builtOn.UtcDateTime.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+        if (!await userNotificationRepository.AnyForEventAsync(
+                tenant.Id, AdminNotificationEventCatalog.CompanyArchived, "archivedOn", archivedOn, cancellationToken))
+        {
+            await adminNotifier.NotifyAsync(
+                new AdminEvent(
+                    AdminNotificationEventCatalog.CompanyArchived,
+                    tenant.Id,
+                    Subject: $"{tenant.Id}:{frozenOn.UtcDateTime:yyyyMMdd'T'HHmmss'Z'}",
+                    Args: new Dictionary<string, string> { ["archivedOn"] = archivedOn }),
+                cancellationToken);
+        }
+
         await unitOfWork.CommitAsync(cancellationToken);
 
         // Error, not Information: the Functions host's Sentry integration drops Warning to a

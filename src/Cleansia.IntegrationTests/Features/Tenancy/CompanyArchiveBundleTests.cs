@@ -352,6 +352,16 @@ public sealed class CompanyArchiveBundleTests(PostgresContainerFixture fixture) 
                 Assert.Equal(runs.Earlier.ManifestSha256, tenant.ArchiveManifestSha256);
                 Assert.Equal(runs.Later.ManifestSha256, tenant.ArchiveManifestSha256);
                 Assert.Equal(FrozenOn.AddHours(1), JsonDocument.Parse(manifestBytes).RootElement.GetProperty("builtOn").GetDateTimeOffset());
+
+                // One sealing, one announcement: the later build's rows were on the feed by the time the
+                // earlier build read it, so the earlier build raised nothing a second time.
+                var told = Assert.Single(await ctx.Set<UserNotification>().IgnoreQueryFilters()
+                    .Where(n => n.EventKey == AdminNotificationEventCatalog.CompanyArchived)
+                    .ToListAsync());
+                Assert.Equal(AdminBId, told.UserId);
+                Assert.Single(await ctx.OutboxMessages.IgnoreQueryFilters()
+                    .Where(m => m.QueueName == QueueNames.SendEmail && m.Body.Contains(AdminNotificationEventCatalog.CompanyArchived))
+                    .ToListAsync());
             },
             transactional: false);
     }

@@ -38,7 +38,7 @@ public class RejectEmployeeReturnsOrdersToTheBoardTests(PostgresContainerFixture
     private const string ColleagueId = "emp-reject-board-2";
     private const string OtherPreferredId = "emp-reject-board-other";
     private const string HeldOrderId = "order-reject-board-held";
-    private const string OtherHoldOrderId = "order-reject-board-other-hold";
+    private const string OtherHoldOrderId = "order-reject-other-hold";
     private const string CrewedOrderId = "order-reject-board-crewed";
     private const string CurrencyId = "currency-czk-reject-board";
     private const string CountryId = "country-cz-reject-board";

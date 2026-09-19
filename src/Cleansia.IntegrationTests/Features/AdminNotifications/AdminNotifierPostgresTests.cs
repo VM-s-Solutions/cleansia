@@ -61,26 +61,39 @@ public class AdminNotifierPostgresTests(PostgresContainerFixture fixture) : Base
         return row;
     }
 
-    private static Task SeedTwoCompanies(CleansiaDbContext context)
+    private static void AddTwoCompanies(CleansiaDbContext context)
     {
         context.Languages.AddRange(Language.Create("en", "English"), Language.Create("cs", "Czech"));
         context.Users.AddRange(
             Administrator(AdminA1, TestTenants.Default, language: "cs"),
             Administrator(AdminA2, TestTenants.Default),
             Administrator(AdminB1, TestTenants.Second));
-        return Task.CompletedTask;
     }
 
-    private static async Task SeedTwoCompaniesWithAMailboxOnB(CleansiaDbContext context)
+    private static Task Commit(CleansiaDbContext context)
     {
-        await SeedTwoCompanies(context);
+        StampUnstampedAdded(context, TestTenants.Default);
+        return context.CommitAsync(CancellationToken.None);
+    }
+
+    private static Task SeedTwoCompanies(CleansiaDbContext context)
+    {
+        AddTwoCompanies(context);
+        return Commit(context);
+    }
+
+    private static Task SeedTwoCompaniesWithAMailboxOnB(CleansiaDbContext context)
+    {
+        AddTwoCompanies(context);
         context.TenantConfigurations.Add(Mailbox(TestTenants.Second, MailboxB));
+        return Commit(context);
     }
 
-    private static async Task SeedTwoCompaniesWithAMailboxOnA(CleansiaDbContext context)
+    private static Task SeedTwoCompaniesWithAMailboxOnA(CleansiaDbContext context)
     {
-        await SeedTwoCompanies(context);
+        AddTwoCompanies(context);
         context.TenantConfigurations.Add(Mailbox(TestTenants.Default, MailboxA));
+        return Commit(context);
     }
 
     private static Task SeedIneligibleAdministrators(CleansiaDbContext context)
@@ -95,7 +108,7 @@ public class AdminNotifierPostgresTests(PostgresContainerFixture fixture) : Base
             deactivated,
             Administrator(UnconfirmedA, TestTenants.Default, confirmed: false),
             anonymised);
-        return Task.CompletedTask;
+        return Commit(context);
     }
 
     private static AdminEvent DisputeFiledFor(string tenantId, string orderId = OrderId) =>

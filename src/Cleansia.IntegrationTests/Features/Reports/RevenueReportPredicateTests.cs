@@ -64,7 +64,8 @@ public class RevenueReportPredicateTests(PostgresContainerFixture fixture) : Bas
                     At("confirmed", OrderStatus.Confirmed),
                     At("in-progress", OrderStatus.InProgress),
                     Cancelled("cancelled", March5));
-                await Task.CompletedTask;
+                StampUnstampedAdded(context, TestTenants.Default);
+                await context.CommitAsync(CancellationToken.None);
             },
             act: provider => provider.GetRequiredService<IOrderRepository>()
                 .GetCompletedPaidOrdersByCompletionDateAsync(Start, End, Czk, CancellationToken.None),
@@ -89,7 +90,8 @@ public class RevenueReportPredicateTests(PostgresContainerFixture fixture) : Bas
                     Completed("after-end", PaymentStatus.Paid, End.AddSeconds(1)),
                     Completed("before-start", PaymentStatus.Paid, Start.AddSeconds(-1)),
                     Completed("undated", PaymentStatus.Paid, completedAt: null));
-                await Task.CompletedTask;
+                StampUnstampedAdded(context, TestTenants.Default);
+                await context.CommitAsync(CancellationToken.None);
             },
             act: provider => provider.GetRequiredService<IOrderRepository>()
                 .GetCompletedPaidOrdersByCompletionDateAsync(Start, End, Czk, CancellationToken.None),
@@ -116,7 +118,8 @@ public class RevenueReportPredicateTests(PostgresContainerFixture fixture) : Bas
                     Completed("booked-march-done-april", PaymentStatus.Paid, April1, cleaningDateTime: new DateTime(2026, 3, 31, 9, 0, 0, DateTimeKind.Utc)),
                     Completed("march-czk", PaymentStatus.Paid, March5),
                     Completed("march-eur", PaymentStatus.Paid, March5, currencyId: Eur));
-                await Task.CompletedTask;
+                StampUnstampedAdded(context, TestTenants.Default);
+                await context.CommitAsync(CancellationToken.None);
             },
             act: async provider =>
             {
@@ -150,7 +153,8 @@ public class RevenueReportPredicateTests(PostgresContainerFixture fixture) : Bas
                 SeedCatalogue(context);
                 var order = At(orderId, OrderStatus.New, OrderStatus.Confirmed, OrderStatus.InProgress);
                 context.Add(order);
-                await Task.CompletedTask;
+                StampUnstampedAdded(context, TestTenants.Default);
+                await context.CommitAsync(CancellationToken.None);
             },
             act: async provider =>
             {
@@ -203,7 +207,8 @@ public class RevenueReportPredicateTests(PostgresContainerFixture fixture) : Bas
                 // Failed has no domain writer; set directly.
                 typeof(Refund).GetProperty(nameof(Refund.Status))!.SetValue(failed, RefundStatus.Failed);
                 context.AddRange(inMarch, inApril, pending, failed);
-                await Task.CompletedTask;
+                StampUnstampedAdded(context, TestTenants.Default);
+                await context.CommitAsync(CancellationToken.None);
             },
             act: provider => provider.GetRequiredService<IRefundRepository>()
                 .GetSucceededRefundTotalsByOrderAsync(["twice", "pending-only", "untouched"], CancellationToken.None),
@@ -243,7 +248,8 @@ public class RevenueReportPredicateTests(PostgresContainerFixture fixture) : Bas
                 account.Issue(200m, CreditTransactionReason.OrderPaymentReturned, "credit:rev:abandoned:return", "seed", orderId: abandoned.Id);
                 account.Issue(300m, CreditTransactionReason.DisputeSettlement, "credit:rev:mixed:dispute", "seed", orderId: mixed.Id);
                 context.CreditAccounts.Add(account);
-                await Task.CompletedTask;
+                StampUnstampedAdded(context, TestTenants.Default);
+                await context.CommitAsync(CancellationToken.None);
             },
             act: provider => provider.GetRequiredService<ICreditAccountRepository>()
                 .GetReturnedTotalsByOrderAsync(["mixed"], CancellationToken.None),
@@ -275,7 +281,8 @@ public class RevenueReportPredicateTests(PostgresContainerFixture fixture) : Bas
                     Cancelled("booking-eur", March5, currencyId: Eur),
                     Cancelled("abandoned-checkout", cancelledAt: null),
                     Completed("completed", PaymentStatus.Paid, March5));
-                await Task.CompletedTask;
+                StampUnstampedAdded(context, TestTenants.Default);
+                await context.CommitAsync(CancellationToken.None);
             },
             act: provider => provider.GetRequiredService<IOrderRepository>()
                 .CountCancelledBookingsInPeriodAsync(Start, End, Czk, CancellationToken.None),

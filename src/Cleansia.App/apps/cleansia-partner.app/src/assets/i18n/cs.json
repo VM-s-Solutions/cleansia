@@ -1183,7 +1183,8 @@
       "not_approved": "Váš účet není schválen pro práci na zakázkách",
       "already_approved": "Zaměstnanec již byl schválen",
       "already_rejected": "Zaměstnanec již byl zamítnut",
-      "job_radius_out_of_range": "Zadaný dojezdový okruh je mimo povolený rozsah"
+      "job_radius_out_of_range": "Zadaný dojezdový okruh je mimo povolený rozsah",
+      "legal_entity_not_accepted": "Úklidoví pracovníci s námi spolupracují jako fyzické osoby; firmu zde nelze registrovat"
     },
     "employee_document": {
       "not_found": "Dokument nenalezen",

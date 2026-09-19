@@ -488,6 +488,9 @@ const PARTNER_SURFACE_ERROR_KEYS: readonly string[] = [
   'order.weekly_limit_reached',
   // Employee profile + documents
   'employee.job_radius_out_of_range',
+  // A cleaner contracts as a natural person; UpdateEmployee refuses EntityType = LegalEntity. The
+  // choice is being removed from the profile form, so a live client can only hit it stale.
+  'employee.legal_entity_not_accepted',
   'employee.not_allowed_to_update',
   'employee.not_approved',
   'employee.not_found',

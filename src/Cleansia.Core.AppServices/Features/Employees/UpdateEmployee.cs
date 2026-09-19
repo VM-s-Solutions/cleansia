@@ -90,6 +90,10 @@ public class UpdateEmployee
             RuleFor(c => c.PassportId)
                 .ValidatePassportId();
 
+            RuleFor(c => c.EntityType)
+                .NotEqual(EmployeeEntityType.LegalEntity)
+                .WithMessage(BusinessErrorMessage.LegalEntityNotAccepted);
+
             RuleFor(c => c.RegistrationNumber)
                 .MaximumLength(50)
                 .WithMessage(BusinessErrorMessage.MaxLengthExceeded);
@@ -102,13 +106,6 @@ public class UpdateEmployee
                     return result.IsValid;
                 })
                 .WithMessage(BusinessErrorMessage.RegistrationNumberInvalidFormat);
-
-            RuleFor(c => c.LegalEntityName)
-                .NotEmpty()
-                .WithMessage(BusinessErrorMessage.Required)
-                .MaximumLength(200)
-                .WithMessage(BusinessErrorMessage.MaxLengthExceeded)
-                .When(c => c.EntityType == EmployeeEntityType.LegalEntity);
 
             RuleFor(c => c.EmergencyName)
                 .ValidateEmergencyName()

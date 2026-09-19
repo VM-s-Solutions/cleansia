@@ -42,6 +42,10 @@ public class UpdateIdentificationInfo
             RuleFor(c => c.PassportId)
                 .ValidatePassportId();
 
+            RuleFor(c => c.EntityType)
+                .NotEqual(EmployeeEntityType.LegalEntity)
+                .WithMessage(BusinessErrorMessage.LegalEntityNotAccepted);
+
             // CountryId scopes the IČO/VAT format check — different countries
             // have different patterns. Required because the validator below
             // can't run without it.
@@ -73,15 +77,6 @@ public class UpdateIdentificationInfo
                 })
                 .WithMessage(BusinessErrorMessage.RegistrationNumberInvalidFormat)
                 .When(c => !string.IsNullOrWhiteSpace(c.RegistrationNumber));
-
-            // Legal entity name only required when EntityType=LegalEntity.
-            // For natural persons the field is ignored (handler clears it).
-            RuleFor(c => c.LegalEntityName)
-                .NotEmpty()
-                .WithMessage(BusinessErrorMessage.Required)
-                .MaximumLength(200)
-                .WithMessage(BusinessErrorMessage.MaxLengthExceeded)
-                .When(c => c.EntityType == EmployeeEntityType.LegalEntity);
         }
 
         // Not an ownership comparison — the subject is server-resolved, so there is nothing for a client

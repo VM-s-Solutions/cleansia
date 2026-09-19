@@ -113,6 +113,43 @@ public class UpdateEmployeeValidatorTests
         Assert.True(result.IsValid);
     }
 
+    /// <summary>
+    /// A cleaner contracts with the platform as a natural person (owner ruling 2026-09-20, on the
+    /// lawyer's advice). The enum member and the columns stay for the rows that already carry it and
+    /// for the administrator, who may still onboard a company by hand; the cleaner's own writes refuse
+    /// it with one reason, and nothing else — a second "legal entity name is required" would send the
+    /// cleaner to fill in a field for a choice that is not on offer.
+    /// </summary>
+    [Fact]
+    public async Task A_Legal_Entity_Is_Refused_With_LegalEntityNotAccepted_And_Nothing_Else()
+    {
+        ArrangePassingContext();
+
+        var result = await CreateValidator().ValidateAsync(Valid() with
+        {
+            EntityType = EmployeeEntityType.LegalEntity,
+            LegalEntityName = null,
+        });
+
+        var error = Assert.Single(result.Errors);
+        Assert.Equal(nameof(UpdateEmployee.Command.EntityType), error.PropertyName);
+        Assert.Equal(BusinessErrorMessage.LegalEntityNotAccepted, error.ErrorMessage);
+    }
+
+    [Fact]
+    public async Task A_Natural_Person_Passes_Whatever_LegalEntityName_Carries()
+    {
+        ArrangePassingContext();
+
+        var result = await CreateValidator().ValidateAsync(Valid() with
+        {
+            EntityType = EmployeeEntityType.NaturalPerson,
+            LegalEntityName = new string('x', 201),
+        });
+
+        Assert.True(result.IsValid);
+    }
+
     [Fact]
     public async Task Empty_FirstName_Fails_Required()
     {

@@ -1183,7 +1183,8 @@
       "not_approved": "Your account is not approved to work on orders",
       "already_approved": "Employee has already been approved",
       "already_rejected": "Employee has already been rejected",
-      "job_radius_out_of_range": "The travel radius you entered is outside the allowed range"
+      "job_radius_out_of_range": "The travel radius you entered is outside the allowed range",
+      "legal_entity_not_accepted": "Cleaners work with us as natural persons; a company cannot be registered here"
     },
     "employee_document": {
       "not_found": "Document not found",

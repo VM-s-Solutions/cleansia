@@ -254,6 +254,12 @@ public static class BusinessErrorMessage
     public const string EmployeeAlreadyApproved = "employee.already_approved";
     public const string EmployeeAlreadyRejected = "employee.already_rejected";
     public const string EmployeeJobRadiusOutOfRange = "employee.job_radius_out_of_range";
+    /// <summary>
+    /// A cleaner contracts with the platform as a natural person; a cleaner-facing write naming
+    /// <c>EmployeeEntityType.LegalEntity</c> is refused. The admin write still accepts it, so a company
+    /// is onboarded by an operator by hand or not at all.
+    /// </summary>
+    public const string LegalEntityNotAccepted = "employee.legal_entity_not_accepted";
     // Approval asserts the cleaner can be quoted on the whole active catalogue, so an approved cleaner
     // never opens the app to a board of blank pay. The refusal is emitted once PER uncovered catalogue
     // entry with that entry's name as the failure's ErrorCode, so the ProblemDetails errors bag names

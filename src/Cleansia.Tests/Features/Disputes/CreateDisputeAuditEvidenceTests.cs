@@ -2,6 +2,7 @@ using System.Text.Json;
 using Cleansia.Core.AppServices.Auditing;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Disputes;
+using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Disputes;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Internationalization;
@@ -39,7 +40,7 @@ public sealed class CreateDisputeAuditEvidenceTests
     }
 
     private CreateDispute.Handler CreateHandler() =>
-        new(_disputeRepository.Object, Cleansia.Tests.Common.OrderAccessDoubles.Over(_orderRepository, _session), _session.Object, Mock.Of<ITenantProvider>(), _auditContext);
+        new(_disputeRepository.Object, Cleansia.Tests.Common.OrderAccessDoubles.Over(_orderRepository, _session), _session.Object, Mock.Of<ITenantProvider>(), _auditContext, Mock.Of<IAdminNotifier>());
 
     private Order ArrangeOrder(string? ownerUserId = CallerUserId, DateTime? cleaningDateTime = null, DateTime? completedAt = null)
     {

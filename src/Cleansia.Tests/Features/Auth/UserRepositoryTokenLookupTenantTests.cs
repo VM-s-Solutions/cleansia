@@ -56,6 +56,9 @@ public class UserRepositoryTokenLookupTenantTests
                 "GetByIdIgnoringTenantAsync",
                 // An order's operator can differ from its recipient's account; delivery resolves only that account's company.
                 "GetNotificationRecipientTenantAsync",
+                // An admin event names its company as an argument (the order's, the webhook's) while the
+                // caller's override may name another; the read pins TenantId to that argument.
+                "GetActiveAdministratorsAsync",
                 "GetByEmailIgnoringTenantAsync",
                 "ExistsWithEmailIgnoringTenantAsync",
                 // Sign in with Apple is anonymous and resolves the account by the verified Apple sub —
@@ -75,6 +78,19 @@ public class UserRepositoryTokenLookupTenantTests
             .Sum(method => Regex.Matches(ExtractMethodBody(source, method), IgnoreCall).Count);
 
         Assert.Equal(inNamedBypasses, occurrences);
+    }
+
+    [Fact]
+    public void Administrators_Bypass_Is_Pinned_To_The_Named_Company_And_The_Eligible_Administrators()
+    {
+        var body = ExtractMethodBody(ReadRepositorySource(), "GetActiveAdministratorsAsync");
+        Assert.Matches(@"u\.TenantId\s*==\s*tenantId", body);
+        Assert.Matches(@"u\.Profile\s*==\s*UserProfile\.Administrator", body);
+        Assert.Contains("u.IsActive", body);
+        Assert.Contains("u.IsEmailConfirmed", body);
+        Assert.Matches(@"!u\.Email\.EndsWith\(User\.AnonymisedEmailSuffix\)", body);
+        Assert.DoesNotContain(".Include(", body);
+        Assert.Single(Regex.Matches(body, IgnoreCall));
     }
 
     [Fact]

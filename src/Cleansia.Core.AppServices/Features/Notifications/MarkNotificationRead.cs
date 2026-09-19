@@ -1,4 +1,5 @@
 using Cleansia.Core.AppServices.Abstractions;
+using Cleansia.Core.AppServices.Auditing;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.Domain.Notifications;
 using Cleansia.Core.Domain.Repositories;
@@ -9,7 +10,9 @@ namespace Cleansia.Core.AppServices.Features.Notifications;
 
 public class MarkNotificationRead
 {
+    // A bell click is not a ledger entry: an administrator reading their own feed leaves no admin audit row.
     /// <summary><c>Audience</c> is server-enriched: always overwritten by the host controller, never trusted from the client.</summary>
+    [AuditAction(Audited = false)]
     public record Command(
         string Id,
         NotificationFeedAudience Audience = NotificationFeedAudience.Customer) : ICommand<Response>;

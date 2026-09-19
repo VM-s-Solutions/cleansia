@@ -2,8 +2,10 @@ using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Auditing;
 using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Common;
+using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Disputes;
 using Cleansia.Core.Domain.Enums;
+using Cleansia.Core.Domain.Notifications;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Infra.Common.Validations;
@@ -102,7 +104,8 @@ public class CreateDispute
         IOrderAccessService orderAccessService,
         IUserSessionProvider userSessionProvider,
         ITenantProvider tenantProvider,
-        IAuditContext auditContext) : ICommandHandler<Command, Response>
+        IAuditContext auditContext,
+        IAdminNotifier adminNotifier) : ICommandHandler<Command, Response>
     {
         public async Task<BusinessResult<Response>> Handle(Command request, CancellationToken cancellationToken)
         {
@@ -179,6 +182,20 @@ public class CreateDispute
             }
 
             disputeRepository.Add(dispute);
+
+            await adminNotifier.NotifyAsync(
+                new AdminEvent(
+                    AdminNotificationEventCatalog.DisputeFiled,
+                    order.TenantId!,
+                    Subject: dispute.Id,
+                    Args: new Dictionary<string, string>
+                    {
+                        ["orderNumber"] = order.DisplayOrderNumber,
+                        ["reason"] = request.Reason.ToString(),
+                        ["disputeId"] = dispute.Id,
+                        ["orderId"] = order.Id,
+                    }),
+                cancellationToken);
 
             var cleanEndedAt = order.CompletedAt ?? order.CleaningDateTime;
             auditContext.RecordEvidence("Dispute", dispute.Id, new DisputeFilingEvidence(

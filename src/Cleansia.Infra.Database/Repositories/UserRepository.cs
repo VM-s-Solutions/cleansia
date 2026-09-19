@@ -1,4 +1,5 @@
 ﻿using Cleansia.Core.Domain.Common;
+using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Users;
 using Microsoft.EntityFrameworkCore;
@@ -12,6 +13,20 @@ public class UserRepository(CleansiaDbContext context)
     {
         return GetDbSet().IgnoreQueryFilters().Where(u => u.Id == userId)
             .Select(u => u.TenantId).FirstOrDefaultAsync(cancellationToken);
+    }
+
+    public async Task<IReadOnlyList<AdministratorRecipient>> GetActiveAdministratorsAsync(string tenantId, CancellationToken cancellationToken)
+    {
+        return await GetDbSet()
+            .IgnoreQueryFilters()
+            .Where(u => u.TenantId == tenantId
+                && u.Profile == UserProfile.Administrator
+                && u.IsActive
+                && u.IsEmailConfirmed
+                && !u.Email.EndsWith(User.AnonymisedEmailSuffix))
+            .OrderBy(u => u.Id)
+            .Select(u => new AdministratorRecipient(u.Id, u.Email, u.FirstName, u.LastName, u.PreferredLanguageCode))
+            .ToListAsync(cancellationToken);
     }
 
     public override IQueryable<User> GetQueryable()

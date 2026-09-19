@@ -3,15 +3,17 @@ using Cleansia.Infra.Common.Attributes;
 namespace Cleansia.Core.Domain.Notifications;
 
 /// <summary>
-/// Which mobile host's feed a request serves. Always set server-side by the host controller —
+/// Which host's feed a request serves. Always set server-side by the host controller —
 /// never trusted from the client — so a dual-role user's customer app can never read, count, or
-/// mark-read the partner feed's rows (and vice versa).
+/// mark-read the partner feed's rows (and vice versa), and an administrator's console never reads
+/// a partner-app row of the same person.
 /// </summary>
 [SwaggerEnumAsInt]
 public enum NotificationFeedAudience
 {
     Customer = 0,
     Partner = 1,
+    Admin = 2,
 }
 
 /// <summary>
@@ -56,10 +58,18 @@ public static class NotificationFeedEventKeys
         NotificationEventCatalog.InvoicePaid,
     ];
 
+    /// <summary>
+    /// The admin console renders every key of its catalogue, so the keyset IS the catalogue. These rows
+    /// are written by the admin notifier alone — never by the push seam, which is why
+    /// <see cref="IsFeedEvent"/> does not know them.
+    /// </summary>
+    public static readonly IReadOnlyList<string> Admin = AdminNotificationEventCatalog.All;
+
     public static IReadOnlyList<string> For(NotificationFeedAudience audience) => audience switch
     {
         NotificationFeedAudience.Customer => Customer,
         NotificationFeedAudience.Partner => Partner,
+        NotificationFeedAudience.Admin => Admin,
         _ => throw new ArgumentOutOfRangeException(nameof(audience), audience, "Unknown feed audience."),
     };
 

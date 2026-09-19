@@ -13,6 +13,7 @@ public class User : TenantAuditable
 {
     public const int MaxFailedLoginAttempts = 5;
     public const int MaxCodeVerificationAttempts = 5;
+    public const string AnonymisedEmailSuffix = "@anonymized.local";
     public static readonly TimeSpan FailedLoginLockout = TimeSpan.FromMinutes(15);
 
     [Password]
@@ -411,7 +412,7 @@ public class User : TenantAuditable
     {
         FirstName = AnonymizationMarker.Value;
         LastName = AnonymizationMarker.Value;
-        Email = $"deleted_{Id}@anonymized.local";
+        Email = $"deleted_{Id}{AnonymisedEmailSuffix}";
         PhoneNumber = null;
         BirthDate = null;
         GoogleId = null;

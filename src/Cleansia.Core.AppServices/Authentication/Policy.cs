@@ -272,4 +272,7 @@ public class Policy
 
     // Admin Action Audit Log (read surface — ADR-0012 D7)
     public const string CanViewAuditLog = nameof(CanViewAuditLog); // Admin
+
+    // Admin notifications feed (the administrator's own rows)
+    public const string CanViewAdminNotifications = nameof(CanViewAdminNotifications); // Admin
 }

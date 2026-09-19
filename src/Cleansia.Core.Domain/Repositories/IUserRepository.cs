@@ -81,6 +81,13 @@ public interface IUserRepository : IRepository<User, string>
     Task<string?> GetNotificationRecipientTenantAsync(string userId, CancellationToken cancellationToken);
 
     /// <summary>
+    /// The administrators of <paramref name="tenantId"/> an admin event is delivered to: active,
+    /// e-mail confirmed and not anonymised. Reads by the company ARGUMENT, never the ambient tenant —
+    /// the event's company is the order's or the webhook's, and the caller's override may name another.
+    /// </summary>
+    Task<IReadOnlyList<AdministratorRecipient>> GetActiveAdministratorsAsync(string tenantId, CancellationToken cancellationToken);
+
+    /// <summary>
     /// Atomically increments the account's failed-login counter and opens the lockout window once
     /// <see cref="User.MaxFailedLoginAttempts"/> is reached. Persists immediately (the failing login
     /// command never commits the unit of work) and is a no-op while the account is already locked.

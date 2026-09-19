@@ -2,6 +2,7 @@ using Cleansia.Core.AppServices.Auditing;
 using Cleansia.TestUtilities.MockDataFactories.Orders;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Disputes;
+using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Disputes;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Orders;
@@ -53,7 +54,7 @@ public class CreateDisputeHandlerTests
             _disputeRepository.Object,
             Cleansia.Tests.Common.OrderAccessDoubles.Over(_orderRepository, _session),
             _session.Object, Mock.Of<ITenantProvider>(),
-            new AuditContext())!;
+            new AuditContext(), Mock.Of<IAdminNotifier>())!;
 
     /// <summary>
     /// The clean defaults to YESTERDAY. It used to default to tomorrow, which every happy-path test

@@ -1,0 +1,18 @@
+namespace Cleansia.Core.AppServices.Services.Interfaces;
+
+/// <param name="Key">An <c>AdminNotificationEventCatalog</c> key.</param>
+/// <param name="TenantId">The company whose administrators are told.</param>
+/// <param name="Subject">
+/// The resource id the event is about, plus a discriminator where one resource can raise the event
+/// more than once. Unique per logical event across requests: the e-mail outbox keys on it, and a
+/// repeated key fails the caller's commit rather than collapsing.
+/// </param>
+/// <param name="Args">
+/// Loc-args for the feed row and the e-mail body, named as the event's catalogue entry declares.
+/// Never a person: no name, contact, address or free text. Always the id(s) the console deep-links from.
+/// </param>
+public sealed record AdminEvent(
+    string Key,
+    string TenantId,
+    string Subject,
+    IReadOnlyDictionary<string, string> Args);

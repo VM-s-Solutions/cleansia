@@ -268,6 +268,9 @@ public class FrozenPermissionMapTests
 
         // Admin Action Audit Log read surface (additive — ADR-0012 D7 / T-0285)
         [Policy.CanViewAuditLog] = PhysicalPolicy.AdminOnly,
+
+        // Admin notifications feed (additive — ADR-0065 D1)
+        [Policy.CanViewAdminNotifications] = PhysicalPolicy.AdminOnly,
     };
 
     private static IReadOnlyDictionary<string, string> ActualMap()

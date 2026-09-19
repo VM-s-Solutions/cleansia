@@ -10559,6 +10559,347 @@ export class AdminMembershipClient implements IAdminMembershipClient {
     }
 }
 
+export interface IAdminNotificationClient {
+    /**
+     * @param audience (optional) 
+     * @param sort (optional) 
+     * @param offset (optional) 
+     * @param limit (optional) 
+     * @return OK
+     */
+    getPaged(audience?: NotificationFeedAudience | undefined, sort?: SortDefinition[] | undefined, offset?: number | undefined, limit?: number | undefined): Observable<PagedDataOfUserNotificationDto>;
+    /**
+     * @return OK
+     */
+    unreadCount(): Observable<UnreadNotificationCountDto>;
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    markRead(body?: MarkNotificationReadCommand | undefined): Observable<MarkNotificationReadResponse>;
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    markAllRead(body?: MarkAllNotificationsReadCommand | undefined): Observable<MarkAllNotificationsReadResponse>;
+}
+
+@Injectable({
+    providedIn: 'root'
+})
+export class AdminNotificationClient implements IAdminNotificationClient {
+    private http: HttpClient;
+    private baseUrl: string;
+    protected jsonParseReviver: ((key: string, value: any) => any) | undefined = undefined;
+
+    constructor(@Inject(HttpClient) http: HttpClient, @Optional() @Inject(ADMINAPIBASEURL) baseUrl?: string) {
+        this.http = http;
+        this.baseUrl = baseUrl ?? "";
+    }
+
+    /**
+     * @param audience (optional) 
+     * @param sort (optional) 
+     * @param offset (optional) 
+     * @param limit (optional) 
+     * @return OK
+     */
+    getPaged(audience?: NotificationFeedAudience | undefined, sort?: SortDefinition[] | undefined, offset?: number | undefined, limit?: number | undefined): Observable<PagedDataOfUserNotificationDto> {
+        let url = this.baseUrl + "/api/AdminNotification/get-paged?";
+        if (audience === null)
+            throw new globalThis.Error("The parameter 'audience' cannot be null.");
+        else if (audience !== undefined)
+            url += "Audience=" + encodeURIComponent("" + audience) + "&";
+        if (sort === null)
+            throw new globalThis.Error("The parameter 'sort' cannot be null.");
+        else if (sort !== undefined)
+            sort && sort.forEach((item, index) => {
+                for (const attr in item)
+        			if (item.hasOwnProperty(attr)) {
+        				url += "Sort[" + index + "]." + attr + "=" + encodeURIComponent("" + (item as any)[attr]) + "&";
+        			}
+            });
+        if (offset === null)
+            throw new globalThis.Error("The parameter 'offset' cannot be null.");
+        else if (offset !== undefined)
+            url += "Offset=" + encodeURIComponent("" + offset) + "&";
+        if (limit === null)
+            throw new globalThis.Error("The parameter 'limit' cannot be null.");
+        else if (limit !== undefined)
+            url += "Limit=" + encodeURIComponent("" + limit) + "&";
+        url = url.replace(/[?&]$/, "");
+
+        let options : any = {
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Accept": "application/json"
+            })
+        };
+
+        return this.http.request("get", url, options).pipe(ObservableMergeMap((response : any) => {
+            return this.processGetPaged(response);
+        })).pipe(ObservableCatch((response: any) => {
+            if (response instanceof HttpResponseBase) {
+                try {
+                    return this.processGetPaged(response as any);
+                } catch (e) {
+                    return ObservableThrow(e) as any as Observable<PagedDataOfUserNotificationDto>;
+                }
+            } else
+                return ObservableThrow(response) as any as Observable<PagedDataOfUserNotificationDto>;
+        }));
+    }
+
+    protected processGetPaged(response: HttpResponseBase): Observable<PagedDataOfUserNotificationDto> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result200: any = null;
+            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result200 = PagedDataOfUserNotificationDto.fromJS(resultData200);
+            return ObservableOf(result200);
+            }));
+        } else if (status === 401) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result401: any = null;
+            let resultData401 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result401 = ProblemDetails.fromJS(resultData401);
+            return throwException("Unauthorized", status, ResponseText, Headers, result401);
+            }));
+        } else if (status === 403) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result403: any = null;
+            let resultData403 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result403 = ProblemDetails.fromJS(resultData403);
+            return throwException("Forbidden", status, ResponseText, Headers, result403);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
+            }));
+        }
+        return ObservableOf(null as any);
+    }
+
+    /**
+     * @return OK
+     */
+    unreadCount(): Observable<UnreadNotificationCountDto> {
+        let url = this.baseUrl + "/api/AdminNotification/unread-count";
+        url = url.replace(/[?&]$/, "");
+
+        let options : any = {
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Accept": "application/json"
+            })
+        };
+
+        return this.http.request("get", url, options).pipe(ObservableMergeMap((response : any) => {
+            return this.processUnreadCount(response);
+        })).pipe(ObservableCatch((response: any) => {
+            if (response instanceof HttpResponseBase) {
+                try {
+                    return this.processUnreadCount(response as any);
+                } catch (e) {
+                    return ObservableThrow(e) as any as Observable<UnreadNotificationCountDto>;
+                }
+            } else
+                return ObservableThrow(response) as any as Observable<UnreadNotificationCountDto>;
+        }));
+    }
+
+    protected processUnreadCount(response: HttpResponseBase): Observable<UnreadNotificationCountDto> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result200: any = null;
+            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result200 = UnreadNotificationCountDto.fromJS(resultData200);
+            return ObservableOf(result200);
+            }));
+        } else if (status === 401) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result401: any = null;
+            let resultData401 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result401 = ProblemDetails.fromJS(resultData401);
+            return throwException("Unauthorized", status, ResponseText, Headers, result401);
+            }));
+        } else if (status === 403) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result403: any = null;
+            let resultData403 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result403 = ProblemDetails.fromJS(resultData403);
+            return throwException("Forbidden", status, ResponseText, Headers, result403);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
+            }));
+        }
+        return ObservableOf(null as any);
+    }
+
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    markRead(body?: MarkNotificationReadCommand | undefined): Observable<MarkNotificationReadResponse> {
+        let url = this.baseUrl + "/api/AdminNotification/mark-read";
+        url = url.replace(/[?&]$/, "");
+
+        const content = JSON.stringify(body);
+
+        let options : any = {
+            body: content,
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            })
+        };
+
+        return this.http.request("post", url, options).pipe(ObservableMergeMap((response : any) => {
+            return this.processMarkRead(response);
+        })).pipe(ObservableCatch((response: any) => {
+            if (response instanceof HttpResponseBase) {
+                try {
+                    return this.processMarkRead(response as any);
+                } catch (e) {
+                    return ObservableThrow(e) as any as Observable<MarkNotificationReadResponse>;
+                }
+            } else
+                return ObservableThrow(response) as any as Observable<MarkNotificationReadResponse>;
+        }));
+    }
+
+    protected processMarkRead(response: HttpResponseBase): Observable<MarkNotificationReadResponse> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result200: any = null;
+            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result200 = MarkNotificationReadResponse.fromJS(resultData200);
+            return ObservableOf(result200);
+            }));
+        } else if (status === 400) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result400: any = null;
+            let resultData400 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result400 = ProblemDetails.fromJS(resultData400);
+            return throwException("Bad Request", status, ResponseText, Headers, result400);
+            }));
+        } else if (status === 401) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result401: any = null;
+            let resultData401 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result401 = ProblemDetails.fromJS(resultData401);
+            return throwException("Unauthorized", status, ResponseText, Headers, result401);
+            }));
+        } else if (status === 403) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result403: any = null;
+            let resultData403 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result403 = ProblemDetails.fromJS(resultData403);
+            return throwException("Forbidden", status, ResponseText, Headers, result403);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
+            }));
+        }
+        return ObservableOf(null as any);
+    }
+
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    markAllRead(body?: MarkAllNotificationsReadCommand | undefined): Observable<MarkAllNotificationsReadResponse> {
+        let url = this.baseUrl + "/api/AdminNotification/mark-all-read";
+        url = url.replace(/[?&]$/, "");
+
+        const content = JSON.stringify(body);
+
+        let options : any = {
+            body: content,
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            })
+        };
+
+        return this.http.request("post", url, options).pipe(ObservableMergeMap((response : any) => {
+            return this.processMarkAllRead(response);
+        })).pipe(ObservableCatch((response: any) => {
+            if (response instanceof HttpResponseBase) {
+                try {
+                    return this.processMarkAllRead(response as any);
+                } catch (e) {
+                    return ObservableThrow(e) as any as Observable<MarkAllNotificationsReadResponse>;
+                }
+            } else
+                return ObservableThrow(response) as any as Observable<MarkAllNotificationsReadResponse>;
+        }));
+    }
+
+    protected processMarkAllRead(response: HttpResponseBase): Observable<MarkAllNotificationsReadResponse> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result200: any = null;
+            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result200 = MarkAllNotificationsReadResponse.fromJS(resultData200);
+            return ObservableOf(result200);
+            }));
+        } else if (status === 401) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result401: any = null;
+            let resultData401 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result401 = ProblemDetails.fromJS(resultData401);
+            return throwException("Unauthorized", status, ResponseText, Headers, result401);
+            }));
+        } else if (status === 403) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result403: any = null;
+            let resultData403 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result403 = ProblemDetails.fromJS(resultData403);
+            return throwException("Forbidden", status, ResponseText, Headers, result403);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
+            }));
+        }
+        return ObservableOf(null as any);
+    }
+}
+
 export interface IAdminOrderClient {
     /**
      * @param id (optional) 
@@ -27948,6 +28289,82 @@ export enum LoyaltyTransactionType {
     Revoke = 2,
 }
 
+export class MarkAllNotificationsReadCommand implements IMarkAllNotificationsReadCommand {
+    upToCreatedOn!: Date | undefined;
+    audience!: NotificationFeedAudience;
+
+    constructor(data?: IMarkAllNotificationsReadCommand) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.upToCreatedOn = Data["upToCreatedOn"] ? new Date(Data["upToCreatedOn"].toString()) : undefined as any;
+            this.audience = Data["audience"];
+        }
+    }
+
+    static fromJS(data: any): MarkAllNotificationsReadCommand {
+        data = typeof data === 'object' ? data : {};
+        let result = new MarkAllNotificationsReadCommand();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["upToCreatedOn"] = this.upToCreatedOn ? this.upToCreatedOn.toISOString() : undefined as any;
+        data["audience"] = this.audience;
+        return data;
+    }
+}
+
+export interface IMarkAllNotificationsReadCommand {
+    upToCreatedOn: Date | undefined;
+    audience: NotificationFeedAudience;
+}
+
+export class MarkAllNotificationsReadResponse implements IMarkAllNotificationsReadResponse {
+    markedCount!: number;
+
+    constructor(data?: IMarkAllNotificationsReadResponse) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.markedCount = Data["markedCount"];
+        }
+    }
+
+    static fromJS(data: any): MarkAllNotificationsReadResponse {
+        data = typeof data === 'object' ? data : {};
+        let result = new MarkAllNotificationsReadResponse();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["markedCount"] = this.markedCount;
+        return data;
+    }
+}
+
+export interface IMarkAllNotificationsReadResponse {
+    markedCount: number;
+}
+
 export class MarkInvoicePaidCommand implements IMarkInvoicePaidCommand {
     invoiceId!: string | undefined;
     bankTransferNote!: string | undefined;
@@ -28026,6 +28443,86 @@ export class MarkInvoicePaidResponse implements IMarkInvoicePaidResponse {
 
 export interface IMarkInvoicePaidResponse {
     invoiceId: string | undefined;
+}
+
+export class MarkNotificationReadCommand implements IMarkNotificationReadCommand {
+    id!: string | undefined;
+    audience!: NotificationFeedAudience;
+
+    constructor(data?: IMarkNotificationReadCommand) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.id = Data["id"];
+            this.audience = Data["audience"];
+        }
+    }
+
+    static fromJS(data: any): MarkNotificationReadCommand {
+        data = typeof data === 'object' ? data : {};
+        let result = new MarkNotificationReadCommand();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["id"] = this.id;
+        data["audience"] = this.audience;
+        return data;
+    }
+}
+
+export interface IMarkNotificationReadCommand {
+    id: string | undefined;
+    audience: NotificationFeedAudience;
+}
+
+export class MarkNotificationReadResponse implements IMarkNotificationReadResponse {
+    id!: string | undefined;
+    readOn!: Date;
+
+    constructor(data?: IMarkNotificationReadResponse) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.id = Data["id"];
+            this.readOn = Data["readOn"] ? new Date(Data["readOn"].toString()) : undefined as any;
+        }
+    }
+
+    static fromJS(data: any): MarkNotificationReadResponse {
+        data = typeof data === 'object' ? data : {};
+        let result = new MarkNotificationReadResponse();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["id"] = this.id;
+        data["readOn"] = this.readOn ? this.readOn.toISOString() : undefined as any;
+        return data;
+    }
+}
+
+export interface IMarkNotificationReadResponse {
+    id: string | undefined;
+    readOn: Date;
 }
 
 export class MarkPayPeriodPaidCommand implements IMarkPayPeriodPaidCommand {
@@ -28490,6 +28987,12 @@ export interface IMonthlyPayroll {
     monthName: string | undefined;
     totalAmount: number;
     invoiceCount: number;
+}
+
+export enum NotificationFeedAudience {
+    Customer = 0,
+    Partner = 1,
+    Admin = 2,
 }
 
 export class OpenPayPeriodCommand implements IOpenPayPeriodCommand {
@@ -31164,6 +31667,62 @@ export interface IPagedDataOfTimelineEntryDto {
     pageSize: number;
     total: number;
     data: TimelineEntryDto[] | undefined;
+}
+
+export class PagedDataOfUserNotificationDto implements IPagedDataOfUserNotificationDto {
+    pageNumber!: number;
+    pageSize!: number;
+    total!: number;
+    data!: UserNotificationDto[] | undefined;
+
+    constructor(data?: IPagedDataOfUserNotificationDto) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.pageNumber = Data["pageNumber"];
+            this.pageSize = Data["pageSize"];
+            this.total = Data["total"];
+            if (Array.isArray(Data["data"])) {
+                this.data = [] as any;
+                for (let item of Data["data"])
+                    this.data!.push(UserNotificationDto.fromJS(item));
+            }
+        }
+    }
+
+    static fromJS(data: any): PagedDataOfUserNotificationDto {
+        data = typeof data === 'object' ? data : {};
+        let result = new PagedDataOfUserNotificationDto();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["pageNumber"] = this.pageNumber;
+        data["pageSize"] = this.pageSize;
+        data["total"] = this.total;
+        if (Array.isArray(this.data)) {
+            data["data"] = [];
+            for (let item of this.data)
+                data["data"].push(item ? item.toJSON() : undefined as any);
+        }
+        return data;
+    }
+}
+
+export interface IPagedDataOfUserNotificationDto {
+    pageNumber: number;
+    pageSize: number;
+    total: number;
+    data: UserNotificationDto[] | undefined;
 }
 
 export class PayPeriodDto implements IPayPeriodDto {
@@ -34298,6 +34857,42 @@ export interface ITranslation {
     tagline: string | undefined;
 }
 
+export class UnreadNotificationCountDto implements IUnreadNotificationCountDto {
+    count!: number;
+
+    constructor(data?: IUnreadNotificationCountDto) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.count = Data["count"];
+        }
+    }
+
+    static fromJS(data: any): UnreadNotificationCountDto {
+        data = typeof data === 'object' ? data : {};
+        let result = new UnreadNotificationCountDto();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["count"] = this.count;
+        return data;
+    }
+}
+
+export interface IUnreadNotificationCountDto {
+    count: number;
+}
+
 export class UpdateAdminUserCommand implements IUpdateAdminUserCommand {
     userId!: string | undefined;
     firstName!: string | undefined;
@@ -36192,6 +36787,70 @@ export interface IUserItem {
     preferredLanguageCode: string | undefined;
     preferredLanguageName: string | undefined;
     customerOfAnotherCompany: CustomerOfAnotherCompanyDto;
+}
+
+export class UserNotificationDto implements IUserNotificationDto {
+    id!: string | undefined;
+    eventKey!: string | undefined;
+    args!: { [key: string]: string; } | undefined;
+    createdOn!: Date;
+    readOn!: Date | undefined;
+
+    constructor(data?: IUserNotificationDto) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.id = Data["id"];
+            this.eventKey = Data["eventKey"];
+            if (Data["args"]) {
+                this.args = {} as any;
+                for (let key in Data["args"]) {
+                    if (Data["args"].hasOwnProperty(key))
+                        (this.args as any)![key] = Data["args"][key];
+                }
+            }
+            this.createdOn = Data["createdOn"] ? new Date(Data["createdOn"].toString()) : undefined as any;
+            this.readOn = Data["readOn"] ? new Date(Data["readOn"].toString()) : undefined as any;
+        }
+    }
+
+    static fromJS(data: any): UserNotificationDto {
+        data = typeof data === 'object' ? data : {};
+        let result = new UserNotificationDto();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["id"] = this.id;
+        data["eventKey"] = this.eventKey;
+        if (this.args) {
+            data["args"] = {};
+            for (let key in this.args) {
+                if (this.args.hasOwnProperty(key))
+                    (data["args"] as any)[key] = (this.args as any)[key];
+            }
+        }
+        data["createdOn"] = this.createdOn ? this.createdOn.toISOString() : undefined as any;
+        data["readOn"] = this.readOn ? this.readOn.toISOString() : undefined as any;
+        return data;
+    }
+}
+
+export interface IUserNotificationDto {
+    id: string | undefined;
+    eventKey: string | undefined;
+    args: { [key: string]: string; } | undefined;
+    createdOn: Date;
+    readOn: Date | undefined;
 }
 
 export enum UserProfile {

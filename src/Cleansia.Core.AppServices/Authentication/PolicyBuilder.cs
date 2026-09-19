@@ -279,6 +279,9 @@ public static class PolicyBuilder
 
         // Admin Action Audit Log (read surface — ADR-0012 D7)
         [Policy.CanViewAuditLog] = PhysicalPolicy.AdminOnly,
+
+        // Admin notifications feed
+        [Policy.CanViewAdminNotifications] = PhysicalPolicy.AdminOnly,
     };
 
     /// <summary>

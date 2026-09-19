@@ -122,10 +122,6 @@ public class UpdateIdentificationInfo
                 command.NationalityId,
                 command.PassportId);
 
-            // Business identity is a separate domain method — keeps the
-            // "who you are" (nationality + passport) and "how your business
-            // is registered" (entity type + IČO + VAT + legal name)
-            // concerns aligned with how the Employee aggregate exposes them.
             employee.UpdateBusinessIdentity(
                 command.EntityType,
                 command.RegistrationNumber,

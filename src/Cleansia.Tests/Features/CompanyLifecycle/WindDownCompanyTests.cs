@@ -1,7 +1,10 @@
 using Cleansia.Core.AppServices.Auditing;
 using Cleansia.Core.AppServices.Common;
+using Cleansia.Core.AppServices.Features.AdminNotifications;
 using Cleansia.Core.AppServices.Features.CompanyLifecycle;
+using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Configuration;
+using Cleansia.Core.Domain.Notifications;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Tenancy;
 using Cleansia.Core.Queue.Abstractions;
@@ -16,7 +19,8 @@ namespace Cleansia.Tests.Features.CompanyLifecycle;
 /// date is set once and must not be before today in any of the company's own markets; a request with
 /// no date is a re-run, admitted only once a date is set and no run is in flight (a run that died is
 /// stale after an hour, TC-LC-WD-5); nothing moves on a frozen company. The handler stamps the row
-/// on the first request and records one sweep message under the company's own tenant every time.
+/// on the first request, tells the company's administrators that once, and records one sweep message
+/// under the company's own tenant every time.
 /// </summary>
 public sealed class WindDownCompanyTests
 {
@@ -31,6 +35,8 @@ public sealed class WindDownCompanyTests
     private readonly Mock<IAuditContext> _auditContext = new();
     private readonly Mock<IPendingDispatch> _pendingDispatch = new();
     private readonly Mock<IOutboxMessageRepository> _outbox = new();
+    private readonly Mock<IAdminNotifier> _adminNotifier = new();
+    private readonly List<AdminEvent> _raised = [];
     private readonly StubTimeProvider _clock = new(Now);
 
     public WindDownCompanyTests()
@@ -38,6 +44,10 @@ public sealed class WindDownCompanyTests
         _tenantProvider.Setup(p => p.GetCurrentTenantId()).Returns(TenantId);
         _configurations.Setup(r => r.GetOperatedByAsync(TenantId, It.IsAny<CancellationToken>()))
             .ReturnsAsync([CountryConfiguration.Create("SVK", "EUR", "sk", 0.20m, timeZoneId: "Europe/Bratislava").AssignOperator(TenantId)]);
+        _adminNotifier
+            .Setup(n => n.NotifyAsync(It.IsAny<AdminEvent>(), It.IsAny<CancellationToken>()))
+            .Callback<AdminEvent, CancellationToken>((e, _) => _raised.Add(e))
+            .Returns(Task.CompletedTask);
     }
 
     private Tenant Company(Action<Tenant>? shape = null)
@@ -57,6 +67,7 @@ public sealed class WindDownCompanyTests
         _auditContext.Object,
         _pendingDispatch.Object,
         _outbox.Object,
+        _adminNotifier.Object,
         _clock);
 
     [Fact]
@@ -208,6 +219,35 @@ public sealed class WindDownCompanyTests
             new CompanyLifecycleSnapshot(CompanyLifecycleState.Operating, null),
             new CompanyLifecycleSnapshot(CompanyLifecycleState.WindingDown, from),
             null), Times.Once);
+    }
+
+    [Fact]
+    public async Task The_First_Request_Tells_The_Administrators_Once_With_The_Date_And_The_Request_Instant_As_Subject()
+    {
+        Company();
+        var from = new DateOnly(2026, 10, 1);
+
+        var result = await Handler().Handle(new WindDownCompany.Command(from), CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        var raised = Assert.Single(_raised);
+        Assert.Equal(AdminNotificationEventCatalog.CompanyWindDownRequested, raised.Key);
+        Assert.Equal(TenantId, raised.TenantId);
+        Assert.Equal($"{TenantId}:{Now.UtcDateTime:yyyyMMddHHmmss}", raised.Subject);
+        var declared = AdminEventCatalog.Find(AdminNotificationEventCatalog.CompanyWindDownRequested).EmailArgOrder;
+        Assert.Equal(declared.OrderBy(a => a), raised.Args.Keys.OrderBy(a => a));
+        Assert.Equal("2026-10-01", raised.Args["windDownFrom"]);
+    }
+
+    [Fact]
+    public async Task A_Re_Run_Tells_Nobody()
+    {
+        Company(t => t.RequestWindDown(new DateOnly(2026, 10, 1), "someone-else", Now.AddDays(-7)));
+
+        var result = await Handler().Handle(new WindDownCompany.Command(null), CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        Assert.Empty(_raised);
     }
 
     [Fact]

@@ -9,6 +9,7 @@ using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Services;
 using Cleansia.TestUtilities.MockDataFactories.Users;
 using MockQueryable;
+using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using Cleansia.Core.AppServices.Tenancy;
 
@@ -280,7 +281,9 @@ public class OrderSpanCapTests
             _loyaltyService.Object,
             _userMembershipRepository.Object,
             NoPreferredCleanerHold.Resolver,
-            Mock.Of<INotificationProducer>());
+            Mock.Of<INotificationProducer>(),
+            Mock.Of<IAdminNotifier>(),
+            NullLogger<OrderFactory>.Instance);
 
     private CreateOrder.Validator CreateValidator() =>
         new(

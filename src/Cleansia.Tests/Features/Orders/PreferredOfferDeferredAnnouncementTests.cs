@@ -227,6 +227,7 @@ public class PreferredOfferDeferredAnnouncementTests
             recurringTemplateId: recurringTemplateId);
         order.Id = OrderId;
         order.TenantId = TenantId;
+        order.SetCurrency(Core.Domain.Internationalization.Currency.Create("CZK", "Kč", "Czech koruna"));
         order.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.New, order));
         return order;
     }
@@ -249,6 +250,7 @@ public class PreferredOfferDeferredAnnouncementTests
             _pending.Object,
             _notificationProducer.Object,
             resolver,
+            Mock.Of<IAdminNotifier>(),
             new AuditContext(),
             NullLogger<ConfirmRecurringOrder.Handler>.Instance);
     }
@@ -279,6 +281,8 @@ public class PreferredOfferDeferredAnnouncementTests
             _pending.Object,
             _notificationProducer.Object,
             resolver,
+            Mock.Of<IAdminNotifier>(),
+            Mock.Of<IUserNotificationRepository>(),
             NullLogger<HandlePaymentNotification.Handler>.Instance);
     }
 

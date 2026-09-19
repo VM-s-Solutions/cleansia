@@ -7,6 +7,7 @@ using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Services;
 using Cleansia.TestUtilities.MockDataFactories.Users;
 using MockQueryable;
+using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 
 namespace Cleansia.Tests.Features.Orders;
@@ -55,7 +56,9 @@ public class OrderSpecialInstructionsTests
             _loyaltyService.Object,
             _userMembershipRepository.Object,
             NoPreferredCleanerHold.Resolver,
-            Mock.Of<INotificationProducer>());
+            Mock.Of<INotificationProducer>(),
+            Mock.Of<IAdminNotifier>(),
+            NullLogger<OrderFactory>.Instance);
 
     /// <summary>
     /// Anonymous (no user id) keeps the factory off the loyalty/membership

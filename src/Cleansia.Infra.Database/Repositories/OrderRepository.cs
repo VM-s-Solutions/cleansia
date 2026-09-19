@@ -268,8 +268,10 @@ public class OrderRepository(CleansiaDbContext context) : BaseRepository<Order>(
         // charge.dispute.* event carries the payment_intent but no OrderId
         // metadata, and arrives with no tenant context. Bypass the tenant
         // filter; the caller re-scopes via SetTenantOverride before writing.
+        // The currency rides along because the administrators are told the amount in it.
         return GetDbSet()
             .IgnoreQueryFilters()
+            .Include(o => o.Currency)
             .FirstOrDefaultAsync(o => o.StripePaymentIntentId == paymentIntentId, cancellationToken);
     }
 

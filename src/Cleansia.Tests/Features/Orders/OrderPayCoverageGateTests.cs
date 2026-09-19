@@ -9,6 +9,7 @@ using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Services;
 using Cleansia.TestUtilities.MockDataFactories.Users;
 using MockQueryable;
+using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using Cleansia.Core.AppServices.Tenancy;
 
@@ -89,7 +90,9 @@ public class OrderPayCoverageGateTests
         _loyaltyService.Object,
         _userMembershipRepository.Object,
         NoPreferredCleanerHold.Resolver,
-        _notificationProducer.Object);
+        _notificationProducer.Object,
+        Mock.Of<IAdminNotifier>(),
+        NullLogger<OrderFactory>.Instance);
 
     private Task<Cleansia.Core.Domain.Orders.Order> CreateOrderAsync(
         IEnumerable<string>? serviceIds = null, IEnumerable<string>? packageIds = null) =>

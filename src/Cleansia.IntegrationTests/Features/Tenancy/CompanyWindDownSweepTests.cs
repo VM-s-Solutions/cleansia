@@ -221,6 +221,34 @@ public sealed class CompanyWindDownSweepTests(PostgresContainerFixture fixture) 
                 Assert.Equal(2, (await ctx.Set<OrderStatusTrack>().IgnoreQueryFilters().CountAsync(t => t.Status == OrderStatus.Cancelled)));
                 Assert.NotNull(runs.LastRunAfterFirst);
                 Assert.True(tenant.WindDownLastRunOn > runs.LastRunAfterFirst);
+
+                // The first run cancelled and refunded, so B's two administrators were told once, with
+                // the four counts; the second run moved nothing and told nobody, and A's heard nothing.
+                var told = await ctx.Set<UserNotification>().IgnoreQueryFilters()
+                    .Where(n => n.EventKey == AdminNotificationEventCatalog.CompanyWindDownRun)
+                    .OrderBy(n => n.UserId)
+                    .ToListAsync();
+                Assert.Equal(2, told.Count);
+                Assert.All(told, row =>
+                {
+                    Assert.Equal(B, row.TenantId);
+                    var args = JsonSerializer.Deserialize<Dictionary<string, string>>(row.ArgsJson)!;
+                    Assert.Equal("2", args["cancelled"]);
+                    Assert.Equal("1", args["refunded"]);
+                    Assert.Equal("0", args["refundFailures"]);
+                    Assert.Equal("0", args["periodsClosed"]);
+                });
+                var adminIds = await ctx.Users.IgnoreQueryFilters()
+                    .Where(u => u.Profile == UserProfile.Administrator)
+                    .Select(u => new { u.Id, u.TenantId })
+                    .ToListAsync();
+                Assert.Equal(adminIds.Where(a => a.TenantId == B).Select(a => a.Id).Order(), told.Select(t => t.UserId).Order());
+                var runEmails = await ctx.OutboxMessages.IgnoreQueryFilters()
+                    .Where(m => m.QueueName == QueueNames.SendEmail && m.Body.Contains(AdminNotificationEventCatalog.CompanyWindDownRun))
+                    .ToListAsync();
+                Assert.Equal(2, runEmails.Count);
+                Assert.Equal(2, runEmails.Select(m => m.MessageKey).Distinct(StringComparer.Ordinal).Count());
+                Assert.All(runEmails, m => Assert.Equal(B, m.TenantId));
             },
             transactional: false);
     }
@@ -494,7 +522,12 @@ public sealed class CompanyWindDownSweepTests(PostgresContainerFixture fixture) 
         var rejectedApplicantUser = Stamped(NewUser("wd-rejected-b@cleansia.test", UserProfile.Employee, confirmed: true), B);
         var plusCustomer = Stamped(NewUser("wd-plus-czk-b@cleansia.test", UserProfile.Customer, confirmed: false), B);
         var aCustomer = Stamped(NewUser("wd-customer-a@cleansia.test", UserProfile.Customer, confirmed: true), A);
-        ctx.Users.AddRange(confirmedCustomer, unconfirmedCustomer, erasedCustomer, approvedCleanerUser, rejectedApplicantUser, plusCustomer, aCustomer);
+        // B's two administrators hear of a run that moved something; A's hears nothing. None of them
+        // is a notice recipient — the notices go to customers and approved cleaners only.
+        var adminB1 = Stamped(NewUser("wd-admin-b1@cleansia.test", UserProfile.Administrator, confirmed: true), B);
+        var adminB2 = Stamped(NewUser("wd-admin-b2@cleansia.test", UserProfile.Administrator, confirmed: true), B);
+        var adminA = Stamped(NewUser("wd-admin-a@cleansia.test", UserProfile.Administrator, confirmed: true), A);
+        ctx.Users.AddRange(confirmedCustomer, unconfirmedCustomer, erasedCustomer, approvedCleanerUser, rejectedApplicantUser, plusCustomer, aCustomer, adminB1, adminB2, adminA);
 
         var approvedCleaner = Employee.CreateWithUser(approvedCleanerUser).Approve(AdminBId);
         approvedCleaner.TenantId = B;

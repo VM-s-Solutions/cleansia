@@ -1,7 +1,12 @@
+using System.Globalization;
 using Cleansia.Core.AppServices.Common;
+using Cleansia.Core.AppServices.Features.AdminNotifications;
 using Cleansia.Core.AppServices.Features.Gdpr;
+using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Enums;
+using Cleansia.Core.Domain.Notifications;
 using Cleansia.Core.Domain.Repositories;
+using Cleansia.Core.Domain.SeedWork;
 using Cleansia.Core.Domain.Users;
 using Cleansia.Infra.Common.Configuration;
 using Cleansia.Infra.Common.Validations;
@@ -24,7 +29,10 @@ namespace Cleansia.Tests.Features.Gdpr;
 /// erasure inside will stamp from. Due means Failed and not attempted today (the last attempt is the
 /// row's UpdatedOn), or Processing for longer than any live run could be; an export, a Completed row, a
 /// row already attempted today and a Processing row minutes old are all left alone. The master switch
-/// stops it; one row's throw does not stop the rest. Real repository over SQLite, the mediator observed.
+/// stops it; one row's throw does not stop the rest. A retry that fails or throws tells the row's own
+/// company once, in a scope of its own that commits there, with the day in the subject so tomorrow's
+/// failure is a second event and today's second run — which selects no candidate — is not. Real
+/// repository over SQLite, the mediator and the notifier observed.
 /// </summary>
 public sealed class RetryFailedUserDeletionsSweepTests : IDisposable
 {
@@ -32,7 +40,10 @@ public sealed class RetryFailedUserDeletionsSweepTests : IDisposable
 
     private readonly SqliteConnection _connection;
     private readonly Mock<IMediator> _mediator = new();
+    private readonly Mock<IUnitOfWork> _unitOfWork = new();
+    private readonly MutableClock _clock = new(DateTimeOffset.UtcNow);
     private readonly List<(string RequestId, string? Tenant)> _sent = [];
+    private readonly List<(AdminEvent Event, string? AmbientTenant)> _raised = [];
 
     public RetryFailedUserDeletionsSweepTests()
     {
@@ -139,6 +150,88 @@ public sealed class RetryFailedUserDeletionsSweepTests : IDisposable
         Assert.Empty(_sent);
     }
 
+    [Fact]
+    public async Task A_Retry_That_Fails_Tells_The_Rows_Company_In_A_Scope_Of_Its_Own_And_Commits_There()
+    {
+        await EnsureSchemaAsync();
+        await SeedAsync(Failed("req-stuck", lastAttempt: StartOfToday.AddMinutes(-1), tenant: TestTenants.Second));
+        Answer(BusinessResult.Failure(new Error("userId", BusinessErrorMessage.GdprDeletionBlockedByOrder)));
+
+        var response = await RunSweepAsync(EmptyConfiguration());
+
+        Assert.Equal(new Response(1, 0, 1), response);
+        var (raised, ambient) = Assert.Single(_raised);
+        Assert.Equal(AdminNotificationEventCatalog.ErasureFailed, raised.Key);
+        Assert.Equal(TestTenants.Second, raised.TenantId);
+        Assert.Equal(TestTenants.Second, ambient);
+        Assert.Equal($"req-stuck:{Today()}", raised.Subject);
+        var declared = AdminEventCatalog.Find(AdminNotificationEventCatalog.ErasureFailed).EmailArgOrder;
+        Assert.Equal(declared.OrderBy(a => a), raised.Args.Keys.OrderBy(a => a));
+        Assert.Equal(Today(), raised.Args["day"]);
+        Assert.Equal("req-stuck", raised.Args["requestId"]);
+        _unitOfWork.Verify(u => u.CommitAsync(It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task A_Retry_That_Throws_Tells_The_Company_Too_And_A_Retry_That_Completes_Tells_Nobody()
+    {
+        await EnsureSchemaAsync();
+        await SeedAsync(
+            Failed("req-throws", StartOfToday.AddMinutes(-2)),
+            Failed("req-completes", StartOfToday.AddMinutes(-1)));
+        _mediator.Setup(m => m.Send(It.IsAny<AdminRetryUserDeletion.Command>(), It.IsAny<CancellationToken>()))
+            .Returns<AdminRetryUserDeletion.Command, CancellationToken>((command, _) =>
+                command.RequestId == "req-throws"
+                    ? throw new InvalidOperationException("walk blew up")
+                    : Task.FromResult(BusinessResult.Success()));
+
+        var response = await RunSweepAsync(EmptyConfiguration());
+
+        Assert.Equal(new Response(2, 1, 1), response);
+        var (raised, _) = Assert.Single(_raised);
+        Assert.Equal("req-throws", raised.Args["requestId"]);
+    }
+
+    /// <summary>
+    /// The failure record bumps the row's UpdatedOn out of band; here the test plays that part, because
+    /// the mediator is a double. The day's second run selects nothing, so nothing is raised twice; the
+    /// next day's run selects the row again and raises a second event whose subject names the new day.
+    /// </summary>
+    [Fact]
+    public async Task A_Second_Run_On_The_Day_Raises_Nothing_Because_It_Selects_Nothing_And_The_Next_Day_Raises_A_Second_Event()
+    {
+        await EnsureSchemaAsync();
+        await SeedAsync(Failed("req-daily", StartOfToday.AddMinutes(-1)));
+        Answer(BusinessResult.Failure(new Error("userId", BusinessErrorMessage.GdprDeletionBlockedByOrder)));
+
+        var first = await RunSweepAsync(EmptyConfiguration());
+        await StampAttemptAsync("req-daily", _clock.GetUtcNow());
+        var sameDay = await RunSweepAsync(EmptyConfiguration());
+        _clock.Advance(TimeSpan.FromDays(1));
+        var nextDay = await RunSweepAsync(EmptyConfiguration());
+
+        Assert.Equal(new Response(1, 0, 1), first);
+        Assert.Equal(new Response(0, 0, 0), sameDay);
+        Assert.Equal(new Response(1, 0, 1), nextDay);
+        Assert.Equal(2, _raised.Count);
+        var subjects = _raised.Select(r => r.Event.Subject).ToList();
+        Assert.Equal(2, subjects.Distinct(StringComparer.Ordinal).Count());
+        Assert.Equal($"req-daily:{Today()}", subjects[0]);
+        Assert.Equal($"req-daily:{Today(daysFromNow: 1)}", subjects[1]);
+        Assert.Equal(Today(daysFromNow: 1), _raised[1].Event.Args["day"]);
+    }
+
+    private string Today(int daysFromNow = 0) =>
+        new DateTimeOffset(DateTimeOffset.UtcNow.UtcDateTime.Date, TimeSpan.Zero).AddDays(daysFromNow).ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+
+    private async Task StampAttemptAsync(string requestId, DateTimeOffset attemptedOn)
+    {
+        await using var ctx = NewContext();
+        var request = await ctx.GdprRequests.IgnoreQueryFilters().SingleAsync(r => r.Id == requestId);
+        request.Updated("system", attemptedOn);
+        await ctx.SaveChangesAsync();
+    }
+
     private void Answer(BusinessResult result) =>
         _mediator.Setup(m => m.Send(It.IsAny<AdminRetryUserDeletion.Command>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(result);
@@ -149,7 +242,8 @@ public sealed class RetryFailedUserDeletionsSweepTests : IDisposable
         var handler = new RetryFailedUserDeletions.Handler(
             new GdprRequestRepository(ctx),
             new DataRetentionConfig(configuration),
-            new RecordingScopeFactory(_mediator.Object, _sent),
+            new RecordingScopeFactory(_mediator.Object, _sent, _raised, _unitOfWork),
+            _clock,
             NullLogger<RetryFailedUserDeletions.Handler>.Instance);
 
         var result = await handler.Handle(new RetryFailedUserDeletions.Command(), CancellationToken.None);
@@ -211,10 +305,15 @@ public sealed class RetryFailedUserDeletionsSweepTests : IDisposable
 
     /// <summary>
     /// Each candidate gets a scope of its own; the scope's tenant provider is what the sweep sets the row's
-    /// tenant on, and the mediator inside it is the one observed. Resolving them here is what the sweep
-    /// does through the real container.
+    /// tenant on, and the mediator inside it is the one observed — as is the notifier the sweep resolves
+    /// in the second scope it opens to tell the company, recorded with the tenant that scope was set to.
+    /// Resolving them here is what the sweep does through the real container.
     /// </summary>
-    private sealed class RecordingScopeFactory(IMediator mediator, List<(string RequestId, string? Tenant)> sent) : IServiceScopeFactory
+    private sealed class RecordingScopeFactory(
+        IMediator mediator,
+        List<(string RequestId, string? Tenant)> sent,
+        List<(AdminEvent Event, string? AmbientTenant)> raised,
+        Mock<IUnitOfWork> unitOfWork) : IServiceScopeFactory
     {
         public IServiceScope CreateScope()
         {
@@ -222,8 +321,26 @@ public sealed class RetryFailedUserDeletionsSweepTests : IDisposable
             var services = new ServiceCollection();
             services.AddSingleton<ITenantProvider>(tenantProvider);
             services.AddSingleton<IMediator>(new TenantStampingMediator(mediator, tenantProvider, sent));
+            services.AddSingleton<IAdminNotifier>(new TenantStampingNotifier(tenantProvider, raised));
+            services.AddSingleton(unitOfWork.Object);
             return services.BuildServiceProvider().CreateScope();
         }
+    }
+
+    private sealed class TenantStampingNotifier(ITenantProvider tenantProvider, List<(AdminEvent Event, string? AmbientTenant)> raised) : IAdminNotifier
+    {
+        public Task NotifyAsync(AdminEvent adminEvent, CancellationToken cancellationToken)
+        {
+            raised.Add((adminEvent, tenantProvider.GetCurrentTenantId()));
+            return Task.CompletedTask;
+        }
+    }
+
+    private sealed class MutableClock(DateTimeOffset now) : TimeProvider
+    {
+        private DateTimeOffset _now = now;
+        public override DateTimeOffset GetUtcNow() => _now;
+        public void Advance(TimeSpan by) => _now += by;
     }
 
     private sealed class TenantStampingMediator(IMediator inner, ITenantProvider tenantProvider, List<(string RequestId, string? Tenant)> sent) : IMediator

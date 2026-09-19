@@ -408,25 +408,6 @@ public class CancelUnfilledOrdersTests
             It.IsAny<CancellationToken>()), Times.Once);
     }
 
-    [Theory]
-    [InlineData("250", "250 Kč")]
-    [InlineData("250.00", "250 Kč")]
-    [InlineData("10", "10 Kč")]
-    [InlineData("9.5", "9.5 Kč")]
-    [InlineData("9.50", "9.5 Kč")]
-    public void TheCreditIsFormattedInvariantWithNoTrailingZerosThenTheSymbol(string amount, string expected)
-    {
-        Assert.Equal(expected, CancelUnfilledOrders.FormatCreditAmount(decimal.Parse(amount, System.Globalization.CultureInfo.InvariantCulture), _czk));
-    }
-
-    [Fact]
-    public void ASymbollessCurrencyFallsBackToItsCode()
-    {
-        var bare = Currency.Create("XXX", "", "Bare");
-
-        Assert.Equal("250 XXX", CancelUnfilledOrders.FormatCreditAmount(250m, bare));
-    }
-
     /// <summary>
     /// THE HONESTY GUARD. The announcing key promises credit, so it is sent only when credit was
     /// actually issued. A currency with no authored figure is refused the grant and a guest has

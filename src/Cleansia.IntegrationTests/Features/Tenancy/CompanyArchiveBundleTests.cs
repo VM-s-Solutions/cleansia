@@ -13,9 +13,11 @@ using Cleansia.Core.Domain.Disputes;
 using Cleansia.Core.Domain.EmployeePayroll;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Internationalization;
+using Cleansia.Core.Domain.Notifications;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Receipts;
 using Cleansia.Core.Domain.Users;
+using Cleansia.Core.Queue.Abstractions;
 using Cleansia.Infra.Database;
 using Cleansia.TestUtilities;
 using Microsoft.EntityFrameworkCore;
@@ -239,6 +241,23 @@ public sealed class CompanyArchiveBundleTests(PostgresContainerFixture fixture) 
                 Assert.False(runs.Second.Ran);
                 Assert.Equal("the company is already archived", runs.Second.SkippedBecause);
                 Assert.Equal(runs.AfterFirst, _blobs.Snapshot());
+
+                // B's administrator was told in the sealing commit itself — on a frozen company, which
+                // admits the feed row and the outbox row because both are account surface — and the
+                // no-op second delivery told nobody again.
+                var told = Assert.Single(await ctx.Set<UserNotification>().IgnoreQueryFilters()
+                    .Where(n => n.EventKey == AdminNotificationEventCatalog.CompanyArchived)
+                    .ToListAsync());
+                Assert.Equal(AdminBId, told.UserId);
+                Assert.Equal(B, told.TenantId);
+                Assert.Equal(
+                    tenant.ArchivedOn!.Value.UtcDateTime.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture),
+                    JsonSerializer.Deserialize<Dictionary<string, string>>(told.ArgsJson)!["archivedOn"]);
+                var archivedEmail = Assert.Single(await ctx.OutboxMessages.IgnoreQueryFilters()
+                    .Where(m => m.QueueName == QueueNames.SendEmail && m.Body.Contains(AdminNotificationEventCatalog.CompanyArchived))
+                    .ToListAsync());
+                Assert.Equal(B, archivedEmail.TenantId);
+                Assert.Contains("bundle-admin-b@cleansia.test", archivedEmail.Body);
 
                 // Nothing of A, and nothing of the person's estate, is in the bundle.
                 Assert.DoesNotContain(ArchivedNames(), n => n.Contains("user", StringComparison.OrdinalIgnoreCase) || n.Contains("consent", StringComparison.OrdinalIgnoreCase) || n.Contains("payout-details", StringComparison.OrdinalIgnoreCase) || n.Contains("membership", StringComparison.OrdinalIgnoreCase) || n.Contains("customer-action", StringComparison.OrdinalIgnoreCase));

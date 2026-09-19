@@ -126,6 +126,8 @@ public class HandlePaymentNotification
         IPendingDispatch pending,
         INotificationProducer notificationProducer,
         IPreferredCleanerHoldResolver preferredCleanerHoldResolver,
+        IAdminNotifier adminNotifier,
+        IUserNotificationRepository userNotificationRepository,
         ILogger<Handler> logger) : ICommandHandler<Command>
     {
         public async Task<BusinessResult> Handle(Command command, CancellationToken cancellationToken)
@@ -227,7 +229,7 @@ public class HandlePaymentNotification
                     or Constants.StripeEventType.PaymentIntentSucceeded
                     => await HandleCompletedSession(order, orderId, command.Language, cancellationToken),
                 Constants.StripeEventType.PaymentIntentPaymentFailed
-                    => HandlePaymentIntentFailed(order, orderId),
+                    => await HandlePaymentIntentFailed(order, orderId, cancellationToken),
                 Constants.StripeEventType.PaymentIntentCanceled
                     => await HandleExpiredSession(order, orderId, cancellationToken),
                 _ => BusinessResult.Success(),
@@ -240,11 +242,34 @@ public class HandlePaymentNotification
         /// different payment method. Don't move to Cancelled — that path is
         /// reserved for explicit user cancellation or session expiry.
         /// </summary>
-        private BusinessResult HandlePaymentIntentFailed(Order order, string orderId)
+        private async Task<BusinessResult> HandlePaymentIntentFailed(Order order, string orderId, CancellationToken cancellationToken)
         {
             logger.LogWarning(
                 "PaymentIntent failed for order {OrderId} (status remains {Status}); client may retry",
                 orderId, order.PaymentStatus);
+
+            // Stripe fires this per ATTEMPT and the platform resolves the state itself — a retry or the
+            // stale sweep's cancel within the hour — so the administrators hear of the first decline on
+            // an order and not of every fumbled card entry. The subject is the order, and a repeated
+            // subject fails the commit on the outbox index rather than collapsing, so the feed is read
+            // before the call: a row for this order means the company was already told.
+            if (!string.IsNullOrEmpty(order.TenantId)
+                && !await userNotificationRepository.AnyForEventAsync(
+                    order.TenantId, AdminNotificationEventCatalog.PaymentFailed, "orderId", order.Id, cancellationToken))
+            {
+                await adminNotifier.NotifyAsync(
+                    new AdminEvent(
+                        AdminNotificationEventCatalog.PaymentFailed,
+                        order.TenantId,
+                        Subject: order.Id,
+                        Args: new Dictionary<string, string>
+                        {
+                            ["orderNumber"] = order.DisplayOrderNumber,
+                            ["orderId"] = order.Id,
+                        }),
+                    cancellationToken);
+            }
+
             return BusinessResult.Success();
         }
 
@@ -312,6 +337,7 @@ public class HandlePaymentNotification
             // produce a second announcement.
             await PreferredOfferNotifier.NotifyBecameOfferableAsync(
                 order, preferredCleanerHoldResolver, notificationProducer, DateTime.UtcNow, cancellationToken);
+            await NewOrderAdminNotifier.NotifyIfOfferableAsync(order, adminNotifier, logger, cancellationToken);
 
             logger.LogInformation("Successfully processed payment webhook for order {OrderId}", orderId);
             return BusinessResult.Success();
@@ -445,6 +471,7 @@ public class HandlePaymentNotification
             if (existing is not null)
             {
                 existing.LinkStripeDispute(stripeDisputeId, WebhookActor);
+                await TellAdministratorsOfChargeback(order, existing.Id, stripeDispute!, cancellationToken);
                 logger.LogInformation("Linked chargeback to existing dispute for order {OrderId}", order.Id);
                 return BusinessResult.Success();
             }
@@ -470,12 +497,40 @@ public class HandlePaymentNotification
                 return BusinessResult.Success();
             }
             disputeRepository.Add(dispute);
+            await TellAdministratorsOfChargeback(order, dispute.Id, stripeDispute!, cancellationToken);
 
             logger.LogInformation("Created and linked chargeback dispute for order {OrderId}", order.Id);
             return BusinessResult.Success();
         }
 
         private const string ChargebackDescription = "Bank chargeback raised against this order's payment.";
+
+        /// <summary>
+        /// The dispute named is the one the money is now attached to — the customer's open one when
+        /// there is one, else the chargeback's own — so the console opens the right file. The amount is
+        /// what the bank pulled, in Stripe's minor units, shown in the order's currency.
+        /// </summary>
+        private Task TellAdministratorsOfChargeback(Order order, string disputeId, Stripe.Dispute stripeDispute, CancellationToken cancellationToken)
+        {
+            if (string.IsNullOrEmpty(order.TenantId))
+            {
+                return Task.CompletedTask;
+            }
+
+            return adminNotifier.NotifyAsync(
+                new AdminEvent(
+                    AdminNotificationEventCatalog.DisputeChargeback,
+                    order.TenantId,
+                    Subject: stripeDispute.Id,
+                    Args: new Dictionary<string, string>
+                    {
+                        ["orderNumber"] = order.DisplayOrderNumber,
+                        ["amount"] = MoneyText.Format(stripeDispute.Amount / 100m, order.Currency!),
+                        ["disputeId"] = disputeId,
+                        ["orderId"] = order.Id,
+                    }),
+                cancellationToken);
+        }
 
         private async Task<BusinessResult> ReflectChargebackStatus(
             Stripe.Dispute stripeDispute, string stripeDisputeId, Event stripeEvent, CancellationToken cancellationToken)

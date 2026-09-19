@@ -50,6 +50,7 @@ public sealed class ConfirmRecurringOrderAuditEvidenceTests
             new Mock<IPendingDispatch>().Object,
             new Mock<INotificationProducer>().Object,
             NoPreferredCleanerHold.Resolver,
+            Mock.Of<IAdminNotifier>(),
             _auditContext,
             NullLogger<ConfirmRecurringOrder.Handler>.Instance);
 

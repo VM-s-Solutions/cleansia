@@ -6,6 +6,7 @@ using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Features.Payments;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Enums;
+using Cleansia.Core.Domain.Internationalization;
 using Cleansia.Core.Domain.Notifications;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Repositories;
@@ -96,6 +97,7 @@ public class OrderConfirmedHonestProducerTests
             _pending.Object,
             _notificationProducer.Object,
             NoPreferredCleanerHold.Resolver,
+            Mock.Of<IAdminNotifier>(),
             new AuditContext(),
             NullLogger<ConfirmRecurringOrder.Handler>.Instance);
         var result = await handler.Handle(new ConfirmRecurringOrder.Command(OrderId), CancellationToken.None);
@@ -146,6 +148,7 @@ public class OrderConfirmedHonestProducerTests
             recurringTemplateId: recurringTemplateId);
         order.Id = OrderId;
         order.TenantId = TenantId;
+        order.SetCurrency(Currency.Create("CZK", "Kč", "Czech koruna"));
         order.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.New, order));
         return order;
     }
@@ -176,6 +179,8 @@ public class OrderConfirmedHonestProducerTests
             _pending.Object,
             _notificationProducer.Object,
             NoPreferredCleanerHold.Resolver,
+            Mock.Of<IAdminNotifier>(),
+            Mock.Of<IUserNotificationRepository>(),
             NullLogger<HandlePaymentNotification.Handler>.Instance);
     }
 

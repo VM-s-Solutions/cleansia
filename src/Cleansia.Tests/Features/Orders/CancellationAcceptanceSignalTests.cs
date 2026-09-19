@@ -126,6 +126,8 @@ public class CancellationAcceptanceSignalTests
             _pending.Object,
             _producer.Object,
             NoPreferredCleanerHold.Resolver,
+            Mock.Of<IAdminNotifier>(),
+            Mock.Of<IUserNotificationRepository>(),
             NullLogger<HandlePaymentNotification.Handler>.Instance);
 
     private ConfirmRecurringOrder.Handler CreateRecurringConfirmHandler() =>
@@ -140,6 +142,7 @@ public class CancellationAcceptanceSignalTests
             _pending.Object,
             _producer.Object,
             NoPreferredCleanerHold.Resolver,
+            Mock.Of<IAdminNotifier>(),
             new AuditContext(),
             NullLogger<ConfirmRecurringOrder.Handler>.Instance);
 

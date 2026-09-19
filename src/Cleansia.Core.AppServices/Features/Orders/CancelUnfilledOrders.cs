@@ -1,5 +1,5 @@
-using System.Globalization;
 using Cleansia.Core.AppServices.Abstractions;
+using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Services;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Credit;
@@ -83,20 +83,6 @@ public class CancelUnfilledOrders
     /// it in full on a crew count of zero would pay back a clean that was partly done.
     /// </summary>
     private static readonly OrderStatus[] NeverStarted = [OrderStatus.New, OrderStatus.Confirmed];
-
-    /// <summary>
-    /// The credit as the push states it: the number in invariant culture with no trailing zeros, a
-    /// space, then the currency's own symbol ("250 Kč", "10 €", "9.5 zł"); the code stands in for a
-    /// currency with no symbol. Formatted here rather than on the device because the figure is the
-    /// credit's own currency, which the device cannot know from the order alone (owner ruling
-    /// 2026-09-13).
-    /// </summary>
-    public static string FormatCreditAmount(decimal amount, Currency currency)
-    {
-        var number = amount.ToString("0.############################", CultureInfo.InvariantCulture);
-        var unit = string.IsNullOrWhiteSpace(currency.Symbol) ? currency.Code : currency.Symbol;
-        return $"{number} {unit}";
-    }
 
     public class Handler(
         IOrderRepository orderRepository,
@@ -238,7 +224,7 @@ public class CancelUnfilledOrders
                         };
                         if (apology is { } creditAmount)
                         {
-                            args["amount"] = FormatCreditAmount(creditAmount, order.Currency!);
+                            args["amount"] = MoneyText.Format(creditAmount, order.Currency!);
                         }
 
                         await notificationProducer.NotifyAsync(

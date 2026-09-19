@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
@@ -7,6 +8,7 @@ using Cleansia.Core.AppServices.Features.CompanyLifecycle.Archive;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Blobs.Abstractions;
 using Cleansia.Core.Domain.Common;
+using Cleansia.Core.Domain.Notifications;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.SeedWork;
 using Cleansia.Core.Domain.Tenancy;
@@ -38,6 +40,7 @@ public sealed class CompanyArchiveService(
     IEmployeeActionAuditRepository employeeActionAuditRepository,
     IBlobContainerClientFactory blobClientFactory,
     ISchemaVersionReader schemaVersionReader,
+    IAdminNotifier adminNotifier,
     TimeProvider timeProvider,
     ILogger<CompanyArchiveService> logger) : ICompanyArchiveService
 {
@@ -170,6 +173,19 @@ public sealed class CompanyArchiveService(
             files);
         var manifestSha256 = await SealAsync(archives, $"{folder}/{ManifestFileName}", JsonSerializer.SerializeToUtf8Bytes(manifest, ManifestJsonOptions), cancellationToken);
         tenant.MarkArchived(manifestSha256, builtOn);
+
+        // The company is frozen, so this commit admits only the account surface — which is exactly
+        // what the feed row and the outbox row are; a books write here would throw.
+        await adminNotifier.NotifyAsync(
+            new AdminEvent(
+                AdminNotificationEventCatalog.CompanyArchived,
+                tenant.Id,
+                Subject: $"{tenant.Id}:{frozenOn.UtcDateTime:yyyyMMdd'T'HHmmss'Z'}",
+                Args: new Dictionary<string, string>
+                {
+                    ["archivedOn"] = builtOn.UtcDateTime.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
+                }),
+            cancellationToken);
         await unitOfWork.CommitAsync(cancellationToken);
 
         // Error, not Information: the Functions host's Sentry integration drops Warning to a

@@ -7,6 +7,7 @@ using Cleansia.Core.Domain.Loyalty;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Repositories;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using Order = Cleansia.Core.Domain.Orders.Order;
 using OrderService = Cleansia.Core.Domain.Orders.OrderService;
 
@@ -37,7 +38,9 @@ public sealed class OrderFactory(
     ILoyaltyService loyaltyService,
     IUserMembershipRepository userMembershipRepository,
     IPreferredCleanerHoldResolver preferredCleanerHoldResolver,
-    INotificationProducer notificationProducer) : IOrderFactory
+    INotificationProducer notificationProducer,
+    IAdminNotifier adminNotifier,
+    ILogger<OrderFactory> logger) : IOrderFactory
 {
     /// <summary>
     /// Hard cap on the combined (Plus + tier) discount, as a fraction of raw subtotal. <b>12% is an
@@ -313,6 +316,7 @@ public sealed class OrderFactory(
         // the moment it exists, which is why it is the only shape announced here.
         await PreferredOfferNotifier.NotifyIfOfferableAsync(
             order, preferredCleaner.Recipient, notificationProducer, cancellationToken);
+        await NewOrderAdminNotifier.NotifyIfOfferableAsync(order, adminNotifier, logger, cancellationToken);
 
         orderRepository.Add(order);
         return order;

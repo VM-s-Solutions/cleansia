@@ -45,6 +45,7 @@ public sealed class CompanyWindDownServiceNoOpTests
         Mock.Of<ICreditAccountRepository>(),
         Mock.Of<IPayPeriodRepository>(),
         Mock.Of<IPayPeriodBackgroundService>(),
+        Mock.Of<IAdminNotifier>(),
         new StubTimeProvider(Now),
         NullLogger<CompanyWindDownService>.Instance);
 

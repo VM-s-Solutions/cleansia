@@ -8,6 +8,7 @@ using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Services;
 using Cleansia.TestUtilities.MockDataFactories.Users;
 using MockQueryable;
+using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 
 namespace Cleansia.Tests.Features.Orders;
@@ -220,7 +221,9 @@ public class OrderFactoryPreferredHoldTests
             _loyaltyService.Object,
             _userMembershipRepository.Object,
             resolver,
-            _notificationProducer.Object);
+            _notificationProducer.Object,
+            Mock.Of<IAdminNotifier>(),
+            NullLogger<OrderFactory>.Instance);
 
     /// <summary>
     /// A one-off CASH booking by default — the one shape that is offerable the instant it exists, which

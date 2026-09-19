@@ -1,6 +1,9 @@
+using System.Globalization;
 using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Auditing;
 using Cleansia.Core.AppServices.Common;
+using Cleansia.Core.AppServices.Services.Interfaces;
+using Cleansia.Core.Domain.Notifications;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Tenancy;
 using Cleansia.Core.Queue.Abstractions;
@@ -84,6 +87,7 @@ public class WindDownCompany
         IAuditContext auditContext,
         IPendingDispatch pendingDispatch,
         IOutboxMessageRepository outboxMessageRepository,
+        IAdminNotifier adminNotifier,
         TimeProvider timeProvider) : ICommandHandler<Command, Response>
     {
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
@@ -100,6 +104,19 @@ public class WindDownCompany
             if (command.FromDate is { } fromDate)
             {
                 tenant.RequestWindDown(fromDate, userSessionProvider.GetUserId()!, now);
+
+                // The date is set once, so only the request that sets it is news; a re-run of the
+                // sweep announces nothing. The request instant makes the subject unique per company.
+                await adminNotifier.NotifyAsync(
+                    new AdminEvent(
+                        AdminNotificationEventCatalog.CompanyWindDownRequested,
+                        tenant.Id,
+                        Subject: $"{tenant.Id}:{now.UtcDateTime:yyyyMMddHHmmss}",
+                        Args: new Dictionary<string, string>
+                        {
+                            ["windDownFrom"] = fromDate.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
+                        }),
+                    cancellationToken);
             }
 
             await CompanyWindDownDispatch.EnqueueAsync(pendingDispatch, outboxMessageRepository, tenant.Id, now, cancellationToken);

@@ -62,6 +62,8 @@ public class LateSettlementAfterCashCollectionTests
         _pending.Object,
         _producer.Object,
         NoPreferredCleanerHold.Resolver,
+        Mock.Of<IAdminNotifier>(),
+        Mock.Of<IUserNotificationRepository>(),
         NullLogger<HandlePaymentNotification.Handler>.Instance);
 
     private Order ArrangeOrder(bool collectedInCash)
@@ -70,7 +72,7 @@ public class LateSettlementAfterCashCollectionTests
             customerName: "Test Customer",
             customerEmail: "customer@example.com",
             customerPhone: "+420123456789",
-            customerAddress: null!,
+            customerAddress: Core.Domain.Users.Address.Create("123 Main St", "Prague", "11000", "cz"),
             rooms: 2,
             bathrooms: 1,
             cleaningDateTime: DateTime.UtcNow.AddDays(-1),
@@ -81,6 +83,7 @@ public class LateSettlementAfterCashCollectionTests
             userId: "user-1");
         order.Id = OrderId;
         order.TenantId = TenantId;
+        order.SetCurrency(Core.Domain.Internationalization.Currency.Create("CZK", "Kč", "Czech koruna"));
 
         if (collectedInCash)
         {

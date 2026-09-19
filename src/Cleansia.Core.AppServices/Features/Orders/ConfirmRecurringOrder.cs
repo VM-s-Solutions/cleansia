@@ -78,6 +78,7 @@ public class ConfirmRecurringOrder
         IPendingDispatch pending,
         INotificationProducer notificationProducer,
         IPreferredCleanerHoldResolver preferredCleanerHoldResolver,
+        IAdminNotifier adminNotifier,
         IAuditContext auditContext,
         ILogger<Handler> logger) : ICommandHandler<Command, Response>
     {
@@ -186,6 +187,7 @@ public class ConfirmRecurringOrder
             // webhook instead, and the PaymentStatus guard upstream keeps either to one announcement.
             await PreferredOfferNotifier.NotifyBecameOfferableAsync(
                 order, preferredCleanerHoldResolver, notificationProducer, DateTime.UtcNow, cancellationToken);
+            await NewOrderAdminNotifier.NotifyIfOfferableAsync(order, adminNotifier, logger, cancellationToken);
 
             return BusinessResult.Success(new Response(
                 OrderId: order.Id,

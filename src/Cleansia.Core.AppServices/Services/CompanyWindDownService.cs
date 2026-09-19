@@ -1,3 +1,4 @@
+using System.Globalization;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Clients.Abstractions.Stripe;
@@ -5,6 +6,7 @@ using Cleansia.Core.Domain.Credit;
 using Cleansia.Core.Domain.EmployeePayroll;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Memberships;
+using Cleansia.Core.Domain.Notifications;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.SeedWork;
@@ -33,6 +35,7 @@ public sealed class CompanyWindDownService(
     ICreditAccountRepository creditAccountRepository,
     IPayPeriodRepository payPeriodRepository,
     IPayPeriodBackgroundService payPeriodBackgroundService,
+    IAdminNotifier adminNotifier,
     TimeProvider timeProvider,
     ILogger<CompanyWindDownService> logger) : ICompanyWindDownService
 {
@@ -82,6 +85,14 @@ public sealed class CompanyWindDownService(
         var (periodsClosed, periodSkippedBecause) = await CloseLastPeriodAsync(tenant, cancellationToken);
 
         tenant.RecordWindDownRun(timeProvider.GetUtcNow());
+        await TellAdministratorsAsync(
+            tenant,
+            startedOn,
+            cancelled: cancelledOrderIds.Count,
+            refunded: refunded + redriven,
+            refundFailures: refundFailures + redriveFailures,
+            periodsClosed,
+            cancellationToken);
         await unitOfWork.CommitAsync(cancellationToken);
 
         var summary = new CompanyWindDownRunSummary(
@@ -111,6 +122,36 @@ public sealed class CompanyWindDownService(
             periodsClosed, periodSkippedBecause is null ? string.Empty : $" (period step skipped: {periodSkippedBecause})");
 
         return summary;
+    }
+
+    /// <summary>
+    /// The sweep is re-run on purpose — at the request, at deactivation, from the admin page and on
+    /// the schedule — and a run that moved nothing is not news, so only a run that cancelled, refunded,
+    /// failed a refund or closed a period is announced. The run instant makes the subject unique, to
+    /// the tick: two deliveries can start within one second, and a repeated subject would fail the
+    /// second run's commit on the outbox index. The rows ride the same commit as the run stamp.
+    /// </summary>
+    private Task TellAdministratorsAsync(
+        Tenant tenant, DateTimeOffset startedOn, int cancelled, int refunded, int refundFailures, int periodsClosed, CancellationToken cancellationToken)
+    {
+        if (cancelled + refunded + refundFailures + periodsClosed == 0)
+        {
+            return Task.CompletedTask;
+        }
+
+        return adminNotifier.NotifyAsync(
+            new AdminEvent(
+                AdminNotificationEventCatalog.CompanyWindDownRun,
+                tenant.Id,
+                Subject: $"{tenant.Id}:{startedOn.UtcDateTime:yyyyMMddHHmmssfffffff}",
+                Args: new Dictionary<string, string>
+                {
+                    ["cancelled"] = cancelled.ToString(CultureInfo.InvariantCulture),
+                    ["refunded"] = refunded.ToString(CultureInfo.InvariantCulture),
+                    ["refundFailures"] = refundFailures.ToString(CultureInfo.InvariantCulture),
+                    ["periodsClosed"] = periodsClosed.ToString(CultureInfo.InvariantCulture),
+                }),
+            cancellationToken);
     }
 
     private CompanyWindDownRunSummary Skip(string tenantId, string reason)

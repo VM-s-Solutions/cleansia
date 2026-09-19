@@ -1,12 +1,17 @@
+using System.Globalization;
 using System.Security.Claims;
+using System.Text.Json;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Gdpr;
 using Cleansia.Core.Domain.Auditing;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Internationalization;
+using Cleansia.Core.Domain.Notifications;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Users;
+using Cleansia.Core.Queue.Abstractions;
+using Cleansia.Core.Queue.Abstractions.Messages;
 using Cleansia.Infra.Common.Configuration.Interfaces;
 using Cleansia.Infra.Common.Validations;
 using Cleansia.Infra.Database;
@@ -29,7 +34,10 @@ namespace Cleansia.IntegrationTests.Features.Gdpr;
 /// second note and a fresh last-attempt stamp; the daily sweep, run the way the timer runs it — no
 /// session, no ambient tenant — retries yesterday's failure and leaves today's alone, and where the retry
 /// throws or is refused it leaves the row Failed under its own tenant with the second note and the
-/// system actor on it; and a refusal before the walk (a live order) leaves no row at all.
+/// system actor on it; and a refusal before the walk (a live order) leaves no row at all. A retry the
+/// sweep fails tells the row's own company through the admin feed and the send-email outbox — once
+/// that day, because the day's second run selects no candidate, and again the next day under a subject
+/// naming the new day.
 /// </summary>
 [Collection("PostgresCollection")]
 public class FailedErasureRecordTests(PostgresContainerFixture fixture) : BaseIntegrationTest(fixture)
@@ -46,6 +54,8 @@ public class FailedErasureRecordTests(PostgresContainerFixture fixture) : BaseIn
     private const string CountryId = "country-cz-failed-erasure";
     private const string CurrencyId = "currency-czk-failed-eras";
     private const string FirstNote = "DbUpdateException: boom";
+    private const string AdminOfSecondId = "admin-failed-erasure-sk";
+    private const string AdminOfDefaultId = "admin-failed-erasure-cz";
 
     private static readonly DateTimeOffset StartOfToday = new(DateTimeOffset.UtcNow.UtcDateTime.Date, TimeSpan.Zero);
 
@@ -239,6 +249,128 @@ public class FailedErasureRecordTests(PostgresContainerFixture fixture) : BaseIn
                 Assert.True(consent.IsGranted);
             },
             transactional: false);
+    }
+
+    [Fact]
+    public async Task The_Sweep_Tells_The_Rows_Company_When_The_Retry_Fails_Again_And_The_Days_Second_Run_Selects_Nothing()
+    {
+        await TestMethod(
+            setup: AsTheTimer,
+            arrange: async context =>
+            {
+                await Seed(context, failedRequest: true, handleTaken: true, lastAttempt: StartOfToday.AddMinutes(-1), tenant: TestTenants.Second);
+                await SeedAdministrators(context);
+            },
+            act: async provider =>
+            {
+                var mediator = provider.GetRequiredService<IMediator>();
+                var first = await mediator.Send(new RetryFailedUserDeletions.Command());
+                var second = await mediator.Send(new RetryFailedUserDeletions.Command());
+                return (First: first, Second: second);
+            },
+            assert: async (CleansiaDbContext context, (BusinessResult<RetryFailedUserDeletions.Response> First, BusinessResult<RetryFailedUserDeletions.Response> Second) swept) =>
+            {
+                Assert.Equal(new RetryFailedUserDeletions.Response(1, 0, 1), swept.First.Value);
+                Assert.Equal(new RetryFailedUserDeletions.Response(0, 0, 0), swept.Second.Value);
+
+                var today = StartOfToday.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+                var row = Assert.Single(await ErasureFailedRows(context));
+                Assert.Equal(AdminOfSecondId, row.UserId);
+                Assert.Equal(TestTenants.Second, row.TenantId);
+                var args = JsonSerializer.Deserialize<Dictionary<string, string>>(row.ArgsJson)!;
+                Assert.Equal(FailedRequestId, args["requestId"]);
+                Assert.Equal(today, args["day"]);
+                Assert.Equal(2, args.Count);
+                Assert.DoesNotContain("@", row.ArgsJson);
+
+                var email = Assert.Single(await ErasureFailedEmails(context));
+                Assert.Equal(TestTenants.Second, email.TenantId);
+                var envelope = Read(email);
+                Assert.Equal($"{AdminOfSecondId}@cleansia.test", envelope.Payload.Email);
+                Assert.Equal($"{FailedRequestId}:{today}", envelope.Payload.Subject);
+            },
+            transactional: false);
+    }
+
+    [Fact]
+    public async Task A_Request_That_Fails_Again_Tomorrow_Tells_The_Company_Again_Under_The_New_Day()
+    {
+        var clock = new ManualClock(DateTimeOffset.UtcNow);
+        await TestMethod(
+            setup: async services =>
+            {
+                await AsTheTimer(services);
+                services.Replace(ServiceDescriptor.Singleton<TimeProvider>(clock));
+            },
+            arrange: async context =>
+            {
+                await Seed(context, failedRequest: true, handleTaken: true, lastAttempt: StartOfToday.AddMinutes(-1), tenant: TestTenants.Second);
+                await SeedAdministrators(context);
+            },
+            act: async provider =>
+            {
+                var mediator = provider.GetRequiredService<IMediator>();
+                var today = await mediator.Send(new RetryFailedUserDeletions.Command());
+                clock.Advance(TimeSpan.FromDays(1));
+                var tomorrow = await mediator.Send(new RetryFailedUserDeletions.Command());
+                return (Today: today, Tomorrow: tomorrow);
+            },
+            assert: async (CleansiaDbContext context, (BusinessResult<RetryFailedUserDeletions.Response> Today, BusinessResult<RetryFailedUserDeletions.Response> Tomorrow) swept) =>
+            {
+                Assert.Equal(new RetryFailedUserDeletions.Response(1, 0, 1), swept.Today.Value);
+                Assert.Equal(new RetryFailedUserDeletions.Response(1, 0, 1), swept.Tomorrow.Value);
+
+                var days = new[] { StartOfToday, StartOfToday.AddDays(1) }
+                    .Select(d => d.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture))
+                    .ToList();
+                var rows = await ErasureFailedRows(context);
+                Assert.Equal(2, rows.Count);
+                Assert.All(rows, r => Assert.Equal(AdminOfSecondId, r.UserId));
+                Assert.Equal(days, rows.Select(r => JsonSerializer.Deserialize<Dictionary<string, string>>(r.ArgsJson)!["day"]).Order());
+
+                var emails = await ErasureFailedEmails(context);
+                Assert.Equal(2, emails.Count);
+                Assert.Equal(2, emails.Select(e => e.MessageKey).Distinct(StringComparer.Ordinal).Count());
+                Assert.Equal(days.Select(d => $"{FailedRequestId}:{d}"), emails.Select(e => Read(e).Payload.Subject).Order());
+            },
+            transactional: false);
+    }
+
+    private static Task<List<UserNotification>> ErasureFailedRows(CleansiaDbContext context) =>
+        context.Set<UserNotification>().IgnoreQueryFilters()
+            .Where(n => n.EventKey == AdminNotificationEventCatalog.ErasureFailed)
+            .OrderBy(n => n.CreatedOn)
+            .ToListAsync();
+
+    private static Task<List<Core.Domain.Outbox.OutboxMessage>> ErasureFailedEmails(CleansiaDbContext context) =>
+        context.OutboxMessages.IgnoreQueryFilters()
+            .Where(m => m.QueueName == QueueNames.SendEmail && m.Body.Contains(AdminNotificationEventCatalog.ErasureFailed))
+            .OrderBy(m => m.CreatedOn)
+            .ToListAsync();
+
+    private static QueueEnvelope<SendAdminNotificationEmailMessage> Read(Core.Domain.Outbox.OutboxMessage row) =>
+        JsonSerializer.Deserialize<QueueEnvelope<SendAdminNotificationEmailMessage>>(
+            row.Body, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase })!;
+
+    private static async Task SeedAdministrators(CleansiaDbContext context)
+    {
+        var ofSecond = User.CreateWithPassword($"{AdminOfSecondId}@cleansia.test", "Seed-Password-123", "Ad", "Min", UserProfile.Administrator);
+        ofSecond.Id = AdminOfSecondId;
+        ofSecond.TenantId = TestTenants.Second;
+        ofSecond.ConfirmEmail();
+        var ofDefault = User.CreateWithPassword($"{AdminOfDefaultId}@cleansia.test", "Seed-Password-123", "Ad", "Min", UserProfile.Administrator);
+        ofDefault.Id = AdminOfDefaultId;
+        ofDefault.TenantId = TestTenants.Default;
+        ofDefault.ConfirmEmail();
+        context.Users.AddRange(ofSecond, ofDefault);
+        await context.CommitAsync(CancellationToken.None);
+    }
+
+    private sealed class ManualClock(DateTimeOffset now) : TimeProvider
+    {
+        private DateTimeOffset _now = now;
+        public override DateTimeOffset GetUtcNow() => _now;
+        public void Advance(TimeSpan by) => _now += by;
     }
 
     [Fact]

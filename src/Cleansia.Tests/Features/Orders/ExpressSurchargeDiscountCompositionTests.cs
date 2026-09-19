@@ -10,6 +10,7 @@ using Cleansia.Core.Domain.Packages;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Services;
 using Cleansia.TestUtilities.MockDataFactories.Users;
+using Microsoft.Extensions.Logging.Abstractions;
 using MockQueryable;
 using Moq;
 
@@ -192,7 +193,9 @@ public class ExpressSurchargeDiscountCompositionTests
             _loyaltyService.Object,
             _userMembershipRepository.Object,
             NoPreferredCleanerHold.Resolver,
-            _notificationProducer.Object);
+            _notificationProducer.Object,
+            Mock.Of<IAdminNotifier>(),
+            NullLogger<OrderFactory>.Instance);
 
         return await factory.CreateAsync(
             new CreateOrderInput(

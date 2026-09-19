@@ -1,3 +1,4 @@
+import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
 import {
@@ -18,6 +19,7 @@ import { NOTIFICATIONS_PAGE_SIZE } from './notifications.models';
 
 const NEWEST = new Date('2026-09-19T08:30:00Z');
 const OLDER = new Date('2026-09-18T08:30:00Z');
+const WATERMARK_AFTER_NEWEST = new Date(NEWEST.getTime() + 1).toISOString();
 
 function item(overrides: Record<string, unknown> = {}): UserNotificationDto {
   return UserNotificationDto.fromJS({
@@ -39,6 +41,7 @@ describe('NotificationsFacade', () => {
   let markRead: jest.Mock;
   let markAllRead: jest.Mock;
   let refreshBadge: jest.Mock;
+  let badgeCount: ReturnType<typeof signal<number>>;
   let navigate: jest.Mock;
   let showSuccess: jest.Mock;
   let onLangChange: Subject<{ lang: string }>;
@@ -48,6 +51,7 @@ describe('NotificationsFacade', () => {
     markRead = jest.fn().mockReturnValue(of(MarkNotificationReadResponse.fromJS({ id: 'n-1', readOn: NEWEST.toISOString() })));
     markAllRead = jest.fn().mockReturnValue(of(MarkAllNotificationsReadResponse.fromJS({ markedCount: 1 })));
     refreshBadge = jest.fn();
+    badgeCount = signal(0);
     navigate = jest.fn().mockResolvedValue(true);
     showSuccess = jest.fn();
     onLangChange = new Subject<{ lang: string }>();
@@ -56,7 +60,7 @@ describe('NotificationsFacade', () => {
       providers: [
         NotificationsFacade,
         { provide: AdminClient, useValue: { adminNotificationClient: { getPaged, markRead, markAllRead } } },
-        { provide: AdminNotificationBadgeService, useValue: { refresh: refreshBadge } },
+        { provide: AdminNotificationBadgeService, useValue: { refresh: refreshBadge, unreadCount: badgeCount } },
         { provide: SnackbarService, useValue: { showSuccess } },
         { provide: Router, useValue: { navigate } },
         {
@@ -206,7 +210,7 @@ describe('NotificationsFacade', () => {
   });
 
   describe('markAllRead', () => {
-    it('sends the newest fetched createdOn as the watermark, toasts the count, re-reads and refreshes the badge', () => {
+    it('sends the millisecond after the newest fetched createdOn as the watermark, toasts the count, re-reads and refreshes the badge', () => {
       facade.load();
       expect(facade.hasUnread()).toBe(true);
       getPaged.mockClear();
@@ -215,7 +219,7 @@ describe('NotificationsFacade', () => {
 
       const command: MarkAllNotificationsReadCommand = markAllRead.mock.calls[0][0];
       expect(command).toBeInstanceOf(MarkAllNotificationsReadCommand);
-      expect(command.toJSON()).toEqual({ upToCreatedOn: NEWEST.toISOString(), audience: undefined });
+      expect(command.toJSON()).toEqual({ upToCreatedOn: WATERMARK_AFTER_NEWEST, audience: undefined });
       expect(showSuccess).toHaveBeenCalledWith('pages.notifications.messages.marked_all_read:{"count":1}');
       expect(getPaged).toHaveBeenCalledTimes(1);
       expect(refreshBadge).toHaveBeenCalledTimes(1);
@@ -230,7 +234,17 @@ describe('NotificationsFacade', () => {
       facade.markAllRead();
 
       const command: MarkAllNotificationsReadCommand = markAllRead.mock.calls[0][0];
-      expect(command.toJSON()['upToCreatedOn']).toBe(NEWEST.toISOString());
+      expect(command.toJSON()['upToCreatedOn']).toBe(WATERMARK_AFTER_NEWEST);
+    });
+
+    it('stays offered while the badge still counts unread rows on another page, even when this page is all read', () => {
+      getPaged.mockReturnValue(of(page([item({ readOn: NEWEST.toISOString() })], 40)));
+      facade.load();
+      expect(facade.hasUnread()).toBe(false);
+
+      badgeCount.set(2);
+
+      expect(facade.hasUnread()).toBe(true);
     });
 
     it('does nothing before anything was fetched', () => {

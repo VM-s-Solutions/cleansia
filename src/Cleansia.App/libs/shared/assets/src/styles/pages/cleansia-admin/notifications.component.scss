@@ -138,8 +138,16 @@
       pointer-events: none;
     }
 
-    &:not(&--linked):not(&--unread) {
+    &--inert {
       cursor: default;
+
+      &:hover {
+        background: transparent;
+      }
+
+      &:active {
+        transform: none;
+      }
     }
   }
 

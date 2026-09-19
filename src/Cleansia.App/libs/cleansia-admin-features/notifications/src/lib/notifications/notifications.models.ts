@@ -69,6 +69,7 @@ export interface NotificationRow {
   createdOnLabel: string;
   isUnread: boolean;
   route: string[] | null;
+  interactive: boolean;
   family: NotificationFamily;
   icon: string;
 }
@@ -156,6 +157,8 @@ export function buildNotificationRows(
     if (!item.id) continue;
     const args = item.args ?? {};
     const family = getNotificationFamily(item.eventKey);
+    const isUnread = !item.readOn;
+    const route = getNotificationRoute(item.eventKey, args);
     rows.push({
       id: item.id,
       eventKey: item.eventKey ?? '',
@@ -164,8 +167,9 @@ export function buildNotificationRows(
       params: buildNotificationParams(args, lang, translate),
       createdOn: item.createdOn,
       createdOnLabel: formatStamp(item.createdOn, lang),
-      isUnread: !item.readOn,
-      route: getNotificationRoute(item.eventKey, args),
+      isUnread,
+      route,
+      interactive: isUnread || route !== null,
       family,
       icon: NOTIFICATION_FAMILY_ICONS[family],
     });
@@ -189,6 +193,9 @@ export function buildMarkReadCommand(id: string): MarkNotificationReadCommand {
 
 export function buildMarkAllReadCommand(upToCreatedOn: Date | undefined): MarkAllNotificationsReadCommand {
   const command = new MarkAllNotificationsReadCommand();
-  command.upToCreatedOn = upToCreatedOn;
+  // A JS Date holds milliseconds, the column holds microseconds, and the server keeps rows at or
+  // before the watermark — sent as fetched, the newest row's own sub-millisecond tail would leave it
+  // unread on every click. The next whole millisecond covers it.
+  command.upToCreatedOn = upToCreatedOn && new Date(upToCreatedOn.getTime() + 1);
   return command;
 }

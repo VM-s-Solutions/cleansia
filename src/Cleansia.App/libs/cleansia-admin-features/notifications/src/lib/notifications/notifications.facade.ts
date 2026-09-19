@@ -44,7 +44,7 @@ export class NotificationsFacade extends UnsubscribeControlDirective {
     buildNotificationRows(this.items(), this.language(), (key) => this.translate.instant(key))
   );
 
-  readonly hasUnread = computed(() => this.rows().some((row) => row.isUnread));
+  readonly hasUnread = computed(() => this.badge.unreadCount() > 0 || this.rows().some((row) => row.isUnread));
 
   constructor() {
     super();

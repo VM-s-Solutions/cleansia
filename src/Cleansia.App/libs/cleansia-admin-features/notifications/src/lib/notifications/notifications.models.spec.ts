@@ -180,10 +180,12 @@ describe('buildNotificationRows', () => {
       createdOnLabel: new Date('2026-09-19T08:30:00Z').toLocaleString('en', { dateStyle: 'medium', timeStyle: 'short' }),
       isUnread: true,
       route: ['dispute-management', 'd-1'],
+      interactive: true,
       family: NotificationFamily.Dispute,
       icon: NOTIFICATION_FAMILY_ICONS[NotificationFamily.Dispute],
     });
     expect(rows[1].isUnread).toBe(false);
+    expect(rows[1].interactive).toBe(true);
   });
 
   it('keeps a row whose key it does not know, under the shared title, with no body and no link', () => {
@@ -193,6 +195,20 @@ describe('buildNotificationRows', () => {
     expect(row.bodyKey).toBeNull();
     expect(row.route).toBeNull();
     expect(row.family).toBe(NotificationFamily.Unknown);
+    expect(row.interactive).toBe(true);
+  });
+
+  it('is inert once a row with nowhere to go has been read — a click could neither mark nor land anywhere', () => {
+    const rows = buildNotificationRows(
+      [
+        dto({ eventKey: 'admin.future.event', args: { orderId: 'o-1' }, readOn: new Date('2026-09-19T09:00:00Z') }),
+        dto({ id: 'n-2', eventKey: 'admin.order.new', args: { orderNumber: 'ORD-1' }, readOn: new Date('2026-09-19T09:00:00Z') }),
+      ],
+      'en',
+      translate
+    );
+
+    expect(rows.map((row) => row.interactive)).toEqual([false, false]);
   });
 
   it('drops a row without an id — nothing could be marked read', () => {
@@ -224,13 +240,23 @@ describe('the wire bodies', () => {
     expect(command.toJSON()).toEqual({ id: 'n-1', audience: undefined });
   });
 
-  it('mark-all-read carries the watermark the page fetched', () => {
+  it('mark-all-read carries the watermark the page fetched, widened to the next whole millisecond', () => {
     const upTo = new Date('2026-09-19T08:30:00Z');
     const command = buildMarkAllReadCommand(upTo);
 
     expect(command).toBeInstanceOf(MarkAllNotificationsReadCommand);
     expect(Object.keys(command.toJSON()).sort()).toEqual(['audience', 'upToCreatedOn']);
-    expect(command.toJSON()).toEqual({ upToCreatedOn: '2026-09-19T08:30:00.000Z', audience: undefined });
+    expect(command.toJSON()).toEqual({ upToCreatedOn: '2026-09-19T08:30:00.001Z', audience: undefined });
+  });
+
+  it('mark-all-read covers the sub-millisecond tail the wire drops from the newest row, so that row is inside the watermark', () => {
+    const row = UserNotificationDto.fromJS({ ...dto().toJSON(), createdOn: '2026-09-19T08:30:00.1234567Z' });
+    expect(row.createdOn.toISOString()).toBe('2026-09-19T08:30:00.123Z');
+
+    const command = buildMarkAllReadCommand(row.createdOn);
+
+    expect(command.upToCreatedOn?.getTime()).toBeGreaterThan(row.createdOn.getTime());
+    expect(command.toJSON()['upToCreatedOn']).toBe('2026-09-19T08:30:00.124Z');
   });
 
   it('mark-all-read without a watermark asks for everything', () => {

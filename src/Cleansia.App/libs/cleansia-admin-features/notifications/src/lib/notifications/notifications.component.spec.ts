@@ -1,3 +1,4 @@
+import { signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
 import {
@@ -46,7 +47,7 @@ describe('NotificationsComponent', () => {
       imports: [NotificationsComponent, TranslateModule.forRoot()],
       providers: [
         { provide: AdminClient, useValue: { adminNotificationClient: { getPaged, markRead, markAllRead } } },
-        { provide: AdminNotificationBadgeService, useValue: { refresh: refreshBadge } },
+        { provide: AdminNotificationBadgeService, useValue: { refresh: refreshBadge, unreadCount: signal(0) } },
         { provide: SnackbarService, useValue: { showSuccess: jest.fn() } },
         { provide: Router, useValue: { navigate } },
       ],
@@ -101,8 +102,9 @@ describe('NotificationsComponent', () => {
 
     expect(rows()).toHaveLength(2);
     expect(rows()[0].classList).toContain('cleansia-notifications__row--unread');
-    expect(rows()[0].classList).toContain('cleansia-notifications__row--linked');
+    expect(rows()[0].classList).not.toContain('cleansia-notifications__row--inert');
     expect(rows()[1].classList).not.toContain('cleansia-notifications__row--unread');
+    expect(rows()[1].classList).not.toContain('cleansia-notifications__row--inert');
     expect(rows()[0].textContent).toContain('pages.notifications.events.admin.dispute.filed.title');
     expect(rows()[0].textContent).toContain('pages.notifications.events.admin.dispute.filed.body');
     expect(rows()[0].querySelector('time')?.getAttribute('datetime')).toBe('2026-09-19T08:30:00.000Z');
@@ -131,6 +133,21 @@ describe('NotificationsComponent', () => {
 
     expect(markRead).not.toHaveBeenCalled();
     expect(navigate).toHaveBeenCalledWith(['dispute-management', 'd-1']);
+  });
+
+  it('renders an already-read row with nowhere to go as plain text, not a button', async () => {
+    getPaged.mockReturnValue(of(page([item({ eventKey: 'admin.future.event', args: {}, readOn: '2026-09-19T09:00:00Z' })])));
+
+    await render();
+
+    expect(rows()[0].classList).toContain('cleansia-notifications__row--inert');
+    expect(rows()[0].getAttribute('role')).toBeNull();
+    expect(rows()[0].getAttribute('tabindex')).toBeNull();
+    rows()[0].click();
+    fixture.detectChanges();
+
+    expect(markRead).not.toHaveBeenCalled();
+    expect(navigate).not.toHaveBeenCalled();
   });
 
   it('pages when the feed is longer than one page', async () => {

@@ -1,5 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
+import { PermissionService, Policy } from '@cleansia/services';
 import { TranslateModule } from '@ngx-translate/core';
 import { readFileSync } from 'fs';
 import { join } from 'path';
@@ -140,5 +141,53 @@ describe('CleansiaSidebarMenuComponent — badge', () => {
     expect(collapsed).toMatch(hidden);
     expect(collapsed).not.toMatch(/\.menu-item-badge,/);
     expect(collapsed).toMatch(/\.menu-item-badge \{\s*position: absolute;/);
+  });
+});
+
+/**
+ * An entry that names a policy is drawn only for a reader who holds it; an entry that names none is
+ * drawn for everyone. The gate is the sidebar's, not the shell's — the shell only declares the policy
+ * on the item — so this is the one place a stubbed guard would go red.
+ */
+describe('CleansiaSidebarMenuComponent — permission gate', () => {
+  let fixture: ComponentFixture<CleansiaSidebarMenuComponent>;
+  let hasPolicy: jest.Mock;
+
+  const labels = () =>
+    Array.from((fixture.nativeElement as HTMLElement).querySelectorAll('.menu-item-label')).map((el) =>
+      el.textContent?.trim()
+    );
+
+  async function render(): Promise<void> {
+    await TestBed.configureTestingModule({
+      imports: [CleansiaSidebarMenuComponent, TranslateModule.forRoot()],
+      providers: [provideRouter([]), { provide: PermissionService, useValue: { hasPolicy } }],
+    }).compileComponents();
+
+    Object.defineProperty(window, 'innerWidth', { value: 1280, configurable: true });
+    fixture = TestBed.createComponent(CleansiaSidebarMenuComponent);
+    fixture.componentInstance.onResize();
+    fixture.componentRef.setInput('menuItems', [
+      { label: 'sidebar.notifications', icon: 'pi pi-bell', route: '/notifications', permission: Policy.CanViewAdminNotifications },
+      { label: 'sidebar.employees', icon: 'pi pi-users', route: '/employee-management' },
+    ]);
+    fixture.detectChanges();
+  }
+
+  it('leaves the gated entry out for a reader without its policy, and keeps the ungated one', async () => {
+    hasPolicy = jest.fn().mockReturnValue(false);
+
+    await render();
+
+    expect(hasPolicy).toHaveBeenCalledWith(Policy.CanViewAdminNotifications);
+    expect(labels()).toEqual(['sidebar.employees']);
+  });
+
+  it('draws the gated entry for a reader who holds its policy', async () => {
+    hasPolicy = jest.fn().mockImplementation((policy: string) => policy === Policy.CanViewAdminNotifications);
+
+    await render();
+
+    expect(labels()).toEqual(['sidebar.notifications', 'sidebar.employees']);
   });
 });

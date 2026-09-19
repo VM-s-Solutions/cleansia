@@ -1,5 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import {
+  EmployeeInvoiceDto,
   EmployeeInvoiceStatus,
   EmployeeItem,
   PagedDataOfEmployeeInvoiceDto,
@@ -71,6 +72,15 @@ describe('InvoicesFacade', () => {
     const facade = create();
 
     facade.downloadInvoice(facade.invoices()[0]);
+
+    expect(snackbar.showErrorTranslated).toHaveBeenCalledWith('pages.invoices.pdf_not_available');
+    expect(employeePayrollClient.downloadInvoice).not.toHaveBeenCalled();
+  });
+
+  it('refuses to download a row that carries a PDF but no id, without calling the server', () => {
+    const facade = create();
+
+    facade.downloadInvoice(EmployeeInvoiceDto.fromJS({ invoiceNumber: 'INV-3', pdfBlobName: 'inv-3.pdf' }));
 
     expect(snackbar.showErrorTranslated).toHaveBeenCalledWith('pages.invoices.pdf_not_available');
     expect(employeePayrollClient.downloadInvoice).not.toHaveBeenCalled();

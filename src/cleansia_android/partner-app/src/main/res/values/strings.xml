@@ -486,8 +486,6 @@
     <!-- Identification & business section -->
     <string name="identification_header_person">Identity</string>
     <string name="identification_header_business">Business</string>
-    <string name="entity_type_natural_person">Self-employed</string>
-    <string name="entity_type_legal_entity">Legal entity</string>
     <string name="business_country">Business country</string>
     <string name="registration_number_label">Registration number</string>
     <string name="registration_number_helper">The format depends on the country you selected.</string>
@@ -616,7 +614,6 @@
     <string name="error_passport_required">Enter your passport / ID number</string>
     <string name="error_pick_business_country">Pick the country your business is registered in</string>
     <string name="error_registration_number_required">Enter your registration number</string>
-    <string name="error_legal_entity_name_required">Enter the legal entity name</string>
     <string name="error_pick_address_first">Pick your address on the map first</string>
 
     <!-- Profile Validation -->

@@ -486,8 +486,6 @@
     <!-- Identification & business section -->
     <string name="identification_header_person">Личность</string>
     <string name="identification_header_business">Бизнес</string>
-    <string name="entity_type_natural_person">ИП / самозанятый</string>
-    <string name="entity_type_legal_entity">Юридическое лицо</string>
     <string name="business_country">Страна регистрации</string>
     <string name="registration_number_label">Регистрационный номер</string>
     <string name="registration_number_helper">Формат зависит от выбранной страны.</string>
@@ -616,7 +614,6 @@
     <string name="error_passport_required">Введите номер паспорта / ID</string>
     <string name="error_pick_business_country">Выберите страну регистрации вашего бизнеса</string>
     <string name="error_registration_number_required">Введите регистрационный номер</string>
-    <string name="error_legal_entity_name_required">Введите название юридического лица</string>
     <string name="error_pick_address_first">Сначала выберите адрес на карте</string>
 
     <!-- Profile Validation -->

@@ -31,22 +31,25 @@ import javax.inject.Inject
  * Form for "Identification & business" — collects everything the
  * backend's `IsProfileComplete` check needs that doesn't live on the
  * other section screens: nationality + passport (the person), plus
- * entity type + business country + IČO + optional VAT + legal entity
- * name (the business).
+ * business country + IČO (the business). A cleaner contracts as a
+ * natural person, so there is no entity type to choose.
  *
  * [businessCountryId] is pre-filled from the cleaner's address country
  * on load so the typical case (business registered where the cleaner
  * lives) is one tap. They can override it via the country picker.
+ *
+ * [storedLegalEntityName] is display only: an operator may onboard a
+ * company by hand, and what the server holds for such a row is shown,
+ * never edited or sent from here.
  */
 data class IdentificationForm(
     val employeeId: String = "",
     val countries: List<CountryListItem> = emptyList(),
     val nationalityId: String? = null,
     val passportId: String = "",
-    val entityType: EmployeeEntityType = EmployeeEntityType._1,
     val businessCountryId: String? = null,
     val registrationNumber: String = "",
-    val legalEntityName: String = "",
+    val storedLegalEntityName: String? = null,
 )
 
 sealed interface IdentificationSectionUiState {
@@ -106,12 +109,12 @@ class IdentificationSectionViewModel @Inject constructor(
                             countries = countries,
                             nationalityId = e.nationalityId,
                             passportId = e.passportId.orEmpty(),
-                            entityType = e.entityType ?: EmployeeEntityType._1,
                             // Pre-fill business country with the address
                             // country so the typical case is zero-tap.
                             businessCountryId = e.countryId,
                             registrationNumber = e.registrationNumber.orEmpty(),
-                            legalEntityName = e.legalEntityName.orEmpty(),
+                            storedLegalEntityName = e.legalEntityName
+                                ?.takeIf { e.entityType == EmployeeEntityType._2 },
                         ),
                     )
                     e.countryId?.let { loadFieldLabels(it) }
@@ -127,16 +130,6 @@ class IdentificationSectionViewModel @Inject constructor(
     fun onNationalitySelected(id: String) = updateForm { it.copy(nationalityId = id) }
 
     fun onPassportChange(v: String) = updateForm { it.copy(passportId = v) }
-
-    fun onEntityTypeSelected(type: EmployeeEntityType) = updateForm {
-        // Clear legal entity name when switching back to natural
-        // person — backend ignores it but a stale value is confusing
-        // if the user toggles back to legal entity later.
-        it.copy(
-            entityType = type,
-            legalEntityName = if (type == EmployeeEntityType._2) it.legalEntityName else "",
-        )
-    }
 
     fun onBusinessCountrySelected(id: String) {
         updateForm { it.copy(businessCountryId = id) }
@@ -161,8 +154,6 @@ class IdentificationSectionViewModel @Inject constructor(
     }
 
     fun onRegistrationNumberChange(v: String) = updateForm { it.copy(registrationNumber = v) }
-
-    fun onLegalEntityNameChange(v: String) = updateForm { it.copy(legalEntityName = v) }
 
     fun save() {
         val form = (_uiState.value as? IdentificationSectionUiState.Loaded)?.form ?: return
@@ -189,9 +180,6 @@ class IdentificationSectionViewModel @Inject constructor(
         if (form.registrationNumber.isBlank()) {
             snackbar.showError(appContext.getString(R.string.error_registration_number_required)); return
         }
-        if (form.entityType == EmployeeEntityType._2 && form.legalEntityName.isBlank()) {
-            snackbar.showError(appContext.getString(R.string.error_legal_entity_name_required)); return
-        }
 
         viewModelScope.launch {
             _saveState.value = ActionState.Submitting
@@ -199,10 +187,8 @@ class IdentificationSectionViewModel @Inject constructor(
                 employeeId = form.employeeId,
                 nationalityId = nationalityId,
                 passportId = form.passportId,
-                entityType = form.entityType,
                 businessCountryId = businessCountryId,
                 registrationNumber = form.registrationNumber,
-                legalEntityName = form.legalEntityName.takeIf { it.isNotBlank() },
             )
             when (result) {
                 is ApiResult.Success -> {

@@ -486,8 +486,6 @@
     <!-- Identification & business section -->
     <string name="identification_header_person">Особа</string>
     <string name="identification_header_business">Бізнес</string>
-    <string name="entity_type_natural_person">ФОП</string>
-    <string name="entity_type_legal_entity">Юридична особа</string>
     <string name="business_country">Країна реєстрації</string>
     <string name="registration_number_label">Реєстраційний номер</string>
     <string name="registration_number_helper">Формат залежить від обраної країни.</string>
@@ -616,7 +614,6 @@
     <string name="error_passport_required">Введіть номер паспорта / ID</string>
     <string name="error_pick_business_country">Виберіть країну реєстрації вашого бізнесу</string>
     <string name="error_registration_number_required">Введіть реєстраційний номер</string>
-    <string name="error_legal_entity_name_required">Введіть назву юридичної особи</string>
     <string name="error_pick_address_first">Спершу виберіть адресу на карті</string>
 
     <!-- Profile Validation -->

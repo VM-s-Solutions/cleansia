@@ -426,8 +426,6 @@
     <!-- Identification & business section -->
     <string name="identification_header_person">Totožnost</string>
     <string name="identification_header_business">Podnikání</string>
-    <string name="entity_type_natural_person">OSVČ</string>
-    <string name="entity_type_legal_entity">Právnická osoba</string>
     <string name="business_country">Země registrace</string>
     <string name="registration_number_label">Registrační číslo</string>
     <string name="registration_number_helper">Formát závisí na zvolené zemi.</string>
@@ -547,7 +545,6 @@
     <string name="error_passport_required">Zadejte číslo pasu / OP</string>
     <string name="error_pick_business_country">Vyberte zemi, kde je vaše podnikání registrováno</string>
     <string name="error_registration_number_required">Zadejte IČO</string>
-    <string name="error_legal_entity_name_required">Zadejte název právnické osoby</string>
     <string name="error_pick_address_first">Nejprve vyberte adresu na mapě</string>
 
     <!-- Profile Validation -->

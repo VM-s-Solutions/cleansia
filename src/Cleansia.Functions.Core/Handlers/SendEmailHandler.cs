@@ -11,9 +11,12 @@ using Microsoft.Extensions.Logging;
 namespace Cleansia.Functions.Core.Handlers;
 
 /// <summary>
-/// Realizes the account-creation / password-reset email off the request path. The four auth handlers
-/// record this intent post-commit; this consumer resolves the template by <see cref="EmailType"/> and
-/// sends via the existing <see cref="IEmailService"/>, preserving the language the producer chose.
+/// Realizes every e-mail the send-email queue carries, off the request path. The queue holds three
+/// payload shapes told apart by their <c>messageType</c> discriminator: the bare
+/// <see cref="SendEmailMessage"/> (no discriminator; confirmation, reset, promo and the two wind-down
+/// notices, resolved by <see cref="EmailType"/>), the guest order cancellation, and the admin
+/// notification. Each is sent via the existing <see cref="IEmailService"/> in the language the
+/// producer chose.
 ///
 /// Idempotent via <see cref="IIdempotencyGuard"/> in ACT-THEN-CLAIM mode (at-least-once): non-claiming
 /// check on the deterministic key → send → claim. A FAILED send leaves the key unclaimed so the queue

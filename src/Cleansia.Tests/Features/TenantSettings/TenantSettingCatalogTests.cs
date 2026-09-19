@@ -117,7 +117,7 @@ public sealed class TenantSettingCatalogTests
     }
 
     [Fact]
-    public void The_Admin_Mailbox_Refuses_An_Address_Longer_Than_The_Column_Allows()
+    public void The_Admin_Mailbox_Refuses_An_Address_Longer_Than_The_Catalogue_Allows()
     {
         var local = new string('a', EmailTenantSetting.MaxLength - "@example.com".Length + 1);
 

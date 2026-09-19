@@ -56,27 +56,28 @@ The "Reset" button returns to the default date range and the default currency.
 
 ## Revenue Report
 
-The revenue report (`RevenueReportDto`) provides business-level financial data:
+The revenue report (`RevenueReportDto`) is **completed and paid orders by completion date, in one
+currency, minus every refund on those orders** — the owner's definition of 2026-09-19, stated on the
+page itself (`pages.reports.revenue_description`) together with its three caveats: a refund reduces
+the month the order completed in, not the month it was issued; lost chargebacks are not subtracted;
+cash orders refunded by hand have no refund record and show gross. The rules and the reasoning are in
+[Business rules — the revenue report](/product/business-rules#revenue-report).
 
 ### Key Metrics
 
-| Metric | Description |
-|---|---|
-| Total Revenue | Sum of all completed order payments |
-| Order Count | Total number of orders in the period |
-| Average Order Value | Revenue / order count |
-| Revenue by Service | Breakdown by service type |
-| Revenue by Payment Method | Card vs cash distribution |
-| Revenue Trend | Comparison with previous period |
-| Customer Metrics | New vs returning customers |
+| Card | DTO member | What it is |
+|---|---|---|
+| **Net revenue** (the headline) | `netRevenue` = `totalRevenue − totalRefundedToCard − totalReturnedToCredit` | the sales, minus every refund on them; the sub-line reads *{gross} gross − {refunded} refunded (incl. {credit} returned as credit)* |
+| Completed & paid orders | `totalOrders` (`completedOrders` equals it by construction) | the period's completed, paid orders — a fully refunded one included, netting to zero |
+| Average order value | `averageOrderValue` | net revenue over the order count |
+| Cancelled orders | `cancelledOrders` | cancelled **bookings** in the period by cancellation date, on their own axis and not part of revenue; an abandoned card checkout is not a booking (the card's tooltip says so) |
+| Growth | `growthPercentage` | second half of the period's daily net against the first half |
+| Revenue by service / package | `revenueByService`, `revenueByPackage` | net, split evenly across an order's lines |
+| Revenue by payment type | `revenueByPaymentType` | per tender: the sale, *from customer credit*, *taken by this tender*, **refunded to card**, **returned as credit**, and **net on tender** — the figure to reconcile against the gateway statement (the table's hint) |
+| Revenue by payment status | `revenueByPaymentStatus` | gross by `PaymentStatus` — `Paid`, `PartiallyRefunded`, `Refunded`; `Disputed` has no production writer and no copy |
+| Daily revenue | `dailyRevenues` | by completion date, each day's `amount` net and its `refunded` beside it |
 
-### Revenue Breakdown
-
-The report includes breakdowns that help identify:
-- Which services generate the most revenue
-- Payment method distribution (card vs cash)
-- Revenue trends over time
-- Customer acquisition patterns
+There is no *Completed orders* card any more — it would always equal the total.
 
 ## Payroll Report
 

@@ -82,23 +82,62 @@ withheld until they take it.
 instructions and the full address become visible on assignment. A job cannot be started more than an
 hour before it is booked for.
 
+**Leaving a job** — ask for cover (the cleaner stays on the hook until somebody takes the seat) or drop
+it outright. A drop puts the seat back on the board and cancels nothing; when it was the last cleaner
+on a confirmed booking, the booking goes back to *New* and is re-offered, and the company's
+administrators are told — at any status, including a clean already under way. The customer hears
+nothing until either a new cleaner takes it or the slot passes with nobody on it.
+→ [Business rules — when the last cleaner leaves](/product/business-rules#crew-lost)
+
 **Not forgetting the job** — a count of tomorrow's jobs each evening at 18:00 in the cleaner's own local
 time, a notice about two hours before each one, and a nudge close to the start for a cleaner who still
 has not set off. The nudge stops the moment they mark themselves on the way. None of the three can be
 silenced: they are about work the cleaner already accepted.
 
 **Getting paid** — see pay per job, per pay period, and download invoices. Payout details are the
-cleaner's own to read in full.
+cleaner's own to read in full. A period that holds pay in more than one currency (reachable only
+through an admin reassignment) shows a currency switch on My Pay, derived from the period's pay rows —
+an open period offers it before any invoice exists, and a cancelled invoice's currency is not offered.
 
 **Availability** — job radius and working country. There is **no** weekly cap by default; an admin can
 set one on a single cleaner, and does not for anyone today.
 
 ## Admin
 
+**Four roles, one console.** Every administrator account carries a role — **Administrator**, **Manager**,
+**Support** or **Accountant** — and the console shows each role only what it may do; the server refuses the
+rest whether or not a button was visible. An Administrator has everything. A Manager has everything but
+the company's own affairs: the lifecycle, the company settings, the legal documents, and the administrator
+accounts and their roles. Support runs the day: orders (the unredacted detail, door codes, reassign,
+override, cancel, refunds), disputes, customers (credit, loyalty, referrals, exports and the incident
+file, consents, GDPR requests), cleaners (approve, reject, identity documents) and the audit log — but not
+payouts, pay periods, reports, erasure, a pay rate or any catalogue write. The Accountant keeps the books:
+payout invoices, pay periods, pay rates (read), the revenue and payroll reports, fiscal failures, masked
+payout details and the cleaner list — but not an order's detail, a customer's page or a cleaner's
+documents. Every role reads the catalogue, the company info, a credit balance and the notifications feed,
+and every role's act is on the audit log with the role it ran under. A role is assigned from the
+administrator's page by an Administrator — never to oneself, and never off the company's last
+Administrator, which is also why the last Administrator cannot be deactivated while a Support remains.
+A new account starts as Support. A changed role reaches the person's session within fifteen minutes,
+without a sign-out. → [Where the server gates and the web hides](/architecture/security-rules#administrator-roles-adr-0066-accepted-2026-09-19),
+[ADR-0066](/decisions/adr-0066)
+
 **Orders** — search, inspect, reassign a cleaner, override a status, cancel, refund in full or in part.
+The override moves strictly forward and cannot set *Confirmed* on an order with nobody assigned —
+reassign to put a cleaner on it; an override to *Completed* dates the completion so the order is
+revenue of a month.
+
+**Being told** — a bell in the sidebar and a *Notifications* page: one row per event the company has
+to act on — an order to serve, an order that lost its last cleaner, a dispute filed, a chargeback, a
+first card decline, a failed erasure retry, and the company's own wind-down request, each run that did
+something, and the archive — with the order, dispute or page it names a click away, unread emphasis,
+mark read and mark all read, and a badge that refreshes every minute while the tab is visible. Every
+event is also e-mailed: to each administrator in their own language, or to the one shared mailbox
+the company sets on Company settings. → [Business rules — administrators are told](/product/business-rules#admin-notifications)
 
 **People** — approve or reject cleaners, review and remove documents, set which document types each
-country requires, answer removal requests, manage admin users, inspect a customer's loyalty position.
+country requires, answer removal requests, manage administrator accounts and their roles, inspect a
+customer's loyalty position.
 
 **Money** — pay periods (open, close, reopen, mark paid), employee invoices (one per cleaner per period
 per currency they were paid in, numbered `INV-YYYY-NNNNNN` from the operating company's own series
@@ -122,9 +161,15 @@ Price id per currency, any currency optional — a plan unpriced in a market is 
 there), site-wide push campaigns, email templates.
 
 **Oversight** — an append-only audit log of privileged actions, including the ones that failed, plus
-revenue and payroll reporting — one currency per report, never a sum across two — and GDPR request
+revenue and payroll reporting — one currency per report, never a sum across two; the revenue report's
+headline is **net**: completed and paid orders by completion date, minus every card refund and every
+credit returned on them whatever the refund's date, with cancelled bookings counted beside it rather
+than in it, a per-tender *net on tender* line that reconciles against the gateway statement, and the
+two gaps it does not close (lost chargebacks, hand-refunded cash) stated on the page — and GDPR request
 handling: the data-protection page filters requests by status, shows a **failed** erasure with the
-note of what went wrong, and offers **Retry** on it (the platform retries once a day by itself).
+note of what went wrong, and offers **Retry** on it (the platform retries once a day by itself, and
+tells the administrators when the retry fails again).
+→ [Business rules — the revenue report](/product/business-rules#revenue-report)
 
 **The customer trail** — the audit log has a second segment, *Customer actions*: what customers did
 on their own accounts (booking, cancelling, filing a dispute, subscribing to, swapping or cancelling
@@ -160,7 +205,10 @@ inline with a number field or a checkbox, *Reset* puts a setting back on the def
 is on the admin audit trail with the before and after values. A setting outside the catalogue cannot be
 created and a value outside its range is refused, so the page can never hold a number nothing reads.
 The retention sweeps read each company's own windows. A tenth setting, the **chargeback horizon** (180
-days by default), is the one the company's archive waits on — below. → [Business rules — retention](/product/business-rules#customer-record),
+days by default), is the one the company's archive waits on — below. An eleventh, the **administrator
+notification mailbox**, is the first that is an address rather than a number: edited in an e-mail
+field, refused when malformed, and shown as *every administrator* while unset.
+→ [Business rules — retention](/product/business-rules#customer-record),
 [ADR-0061](/decisions/adr-0061) O-4 as ruled
 
 **Company lifecycle** — a page beside Company settings where an admin closes **their own operating
@@ -180,7 +228,9 @@ invoice PDF, a manifest with a hash per file) is written to storage, and from th
 the company's books except the retention and erasure the law requires. The page shows the company's
 state with every stamp and who set it, the sixteen facts the archive waits on — each count linking to
 the admin list that settles it — and the date the archive becomes admissible; a company that holds the
-default market cannot be deactivated, and the page says so. Nothing is deleted, ever. →
+default market cannot be deactivated, and the page says so. The administrators are told of the request,
+of each run that did something, and of the seal, through the feed and by e-mail. Nothing is deleted,
+ever. →
 [Business rules — a company's lifecycle](/product/business-rules#company-lifecycle),
 [ADR-0064](/decisions/adr-0064)
 

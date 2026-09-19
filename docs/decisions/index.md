@@ -56,13 +56,16 @@ head); ADR-0061 itself was **amended in place on 2026-09-15** with the owner's r
 items and carries a §Rulings table. [ADR-0064](./adr-0064) **amends ADR-0061 by reference** (its O-3
 default and D1's "seed-only writer" for the `Tenants` row) and adds a fourth market predicate to
 [ADR-0058](./adr-0058) D1 — every other sentence of both stands, so there is no arrow. **Three records
-were proposed on 2026-09-19** from the owner's rulings of that day and are `proposed` until their tickets
-ship: [ADR-0065](./adr-0065) (administrators are told — an in-app feed and an e-mail per event) supersedes
-nothing and composes with ADR-0002, ADR-0025, ADR-0061 and ADR-0064; [ADR-0066](./adr-0066) (four
-administrator roles) supersedes **ADR-0001 D2's table** for every admin-host row — the arrow — and keeps
-D1, D3, D4 and D5; [ADR-0067](./adr-0067) (`Confirmed → New` when the last cleaner leaves) supersedes
-**ADR-0057's one open consequence** — the arrow — and leaves its status ruling standing, with a dated
-pointer at ADR-0057's head.
+were proposed on 2026-09-19** from the owner's rulings of that day and all three were accepted the same day
+when their tickets shipped, each carrying a *§What shipped* block for where the tree departs from the draft:
+[ADR-0065](./adr-0065) (administrators are told — an in-app feed and an e-mail per event; `accepted`,
+T-0768 / T-0769 / T-0774 / T-0775) supersedes nothing and composes with ADR-0002, ADR-0025, ADR-0061 and
+ADR-0064; [ADR-0067](./adr-0067) (`Confirmed → New` when the last cleaner leaves; `accepted`, T-0770)
+supersedes **ADR-0057's one open consequence** — the arrow — and leaves its status ruling standing, with
+a dated pointer at ADR-0057's head. [ADR-0066](./adr-0066) (four administrator roles; `accepted`, T-0748 /
+T-0773) supersedes **ADR-0001 D2's table** for every admin-host row — the arrow — and keeps D1, D3, D4 and
+D5; it amends ADR-0062 D1 (the admin audit row gains the actor's role) and ADR-0065 D2/D4 (the recipient
+set narrows by the entry's audience) by reference.
 
 ## All records
 
@@ -132,9 +135,9 @@ pointer at ADR-0057's head.
 | **[ADR-0062](./adr-0062)** | A customer's actions are recorded for incident defence, and support reads them in the admin panel (extends ADR-0012; amended 2026-09-14 and 2026-09-15) | `accepted` |
 | **[ADR-0063](./adr-0063)** | Legal documents are versioned by effective date, stored per market, and a consent stamps the version | `accepted` |
 | **[ADR-0064](./adr-0064)** | A company's lifecycle: deactivation, wind-down, archive (amends ADR-0061 O-3/D1 and ADR-0058 D1 by reference) | `accepted` |
-| **[ADR-0065](./adr-0065)** | Administrators are told: an in-app feed and an e-mail per event (owner ruling D5, 2026-09-19; T-0768 / T-0769 / T-0774 / T-0775) | `proposed` |
-| **[ADR-0066](./adr-0066)** | Four administrator roles: Administrator, Manager, Support, Accountant (owner ruling D8, 2026-09-19; supersedes ADR-0001 D2's admin rows; T-0748 / T-0773) | `proposed` |
-| **[ADR-0067](./adr-0067)** | Confirmed → New when the last cleaner leaves; the administrators are told (owner ruling D2, 2026-09-19; supersedes ADR-0057's open consequence; T-0770) | `proposed` |
+| **[ADR-0065](./adr-0065)** | Administrators are told: an in-app feed and an e-mail per event (owner ruling D5, 2026-09-19; shipped as T-0768 / T-0769 / T-0774 / T-0775) | `accepted` |
+| **[ADR-0066](./adr-0066)** | Four administrator roles: Administrator, Manager, Support, Accountant (owner ruling D8, 2026-09-19; supersedes ADR-0001 D2's admin rows; T-0748 / T-0773) | `accepted` |
+| **[ADR-0067](./adr-0067)** | Confirmed → New when the last cleaner leaves; the administrators are told (owner ruling D2, 2026-09-19; supersedes ADR-0057's open consequence; shipped as T-0770) | `accepted` |
 
 ⟲ = superseded in whole or in part by a later record.
 

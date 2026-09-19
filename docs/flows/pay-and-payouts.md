@@ -140,6 +140,21 @@ route, which sends it as `GetPeriodPays`' `currencyId`. The code alone was not e
 a client that only had the code would have had to look the id up or fall back to the resolved-currency
 rule, which is the mislabel the parameter exists to close.
 
+**The switch comes from the period's pay rows, not its invoices** (owner ruling 2026-09-19: the
+switch should exist *"for any period holding pays in more than one currency"*). The summary carries
+`availableCurrencies` — the view currency first, then every other distinct currency among the
+cleaner's pay rows in that period, ordered by code — computed from the rows the handler had already
+loaded before it filtered to the view, so it costs no extra query. The partner web shows the currency
+switch when there is more than one entry and makes one call per period load; until 2026-09-19 it
+derived the switch from the period's invoices, which meant an open (uninvoiced) period with CZK and EUR
+pay showed no switch and the EUR rows were unreachable, while a **cancelled** invoice's currency was
+offered with no live pay row in it. A pay row is the fact; an invoice is a document over rows, absent
+on an open period and present-but-cancelled after a cancel. The view is always first so the switch
+always contains the value it shows — a deep link naming a currency the period has no rows in (`EUR`
+against CZK-only rows) answers `[EUR, CZK]` with an empty row list rather than a select with no
+selected option. The member is additive and nullable; the mobile apps ignore it until a mobile ticket
+reads it.
+
 ## Numbering is allocated, never derived
 
 Both the invoice number and the payout variable symbol come from an atomic `ON CONFLICT` counter, and
@@ -185,4 +200,6 @@ already does.
 | A cleaner with a legacy `IBAN` but no payout record | Passes the completeness gate (it reads `HasPayoutDetails`, or a non-empty `IBAN` that is not the anonymisation marker), and their invoice is refused at approval by the presence rule above — the `IBAN` mirror is not a record. |
 | An anonymised cleaner | Has no payout destination: erasure clears `HasPayoutDetails` and overwrites `IBAN` with the marker, and the gate does not read the marker as a destination — so an erased cleaner is incomplete, not complete-by-accident. |
 | My Pay opened from a EUR invoice | A client that passes the invoice's `currencyId` gets the EUR view exactly, whatever the cleaner's resolved currency; one that passes nothing gets the fallback rule above. |
+| An open period with CZK and EUR pay rows | The summary lists both; the partner web shows the switch before any invoice exists. |
+| A period whose only second currency is a cancelled invoice's | Not offered — the switch follows pay rows, and a cancelled invoice has no live row in that currency. |
 | Bonus or deduction applied later | Re-clamps the same core identically, because the clamp bounds are persisted on the row. |

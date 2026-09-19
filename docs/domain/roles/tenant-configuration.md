@@ -24,13 +24,18 @@ catalogue default, never another company's and never a value nothing reads.
 ## Collaborators
 
 - **`TenantSettingCatalog`** — the closed list of keys a company may hold. Each entry is a typed
-  definition (`IntTenantSetting` with `min`/`max`, `BoolTenantSetting`) carrying the key, the category
-  and the default. Today: the **nine `retention.*` keys**, defaults from `RetentionDefaults`, floor
-  **1** on every window (a zero window would empty the customer-audit table on the next tick), ceiling
-  100 years / 36 500 days (`DateTimeOffset.AddYears` throws past the calendar's end). A key outside the
-  list is refused by the writer (`tenant_setting.unknown_key`) and ignored by the readers; a value the
-  definition rejects is refused (`tenant_setting.invalid_value`). A second category joins by adding
-  entries here — nowhere else.
+  definition (`IntTenantSetting` with `min`/`max`, `BoolTenantSetting`, and since 2026-09-19
+  `EmailTenantSetting`) carrying the key, the category and the default. Today, **eleven keys in three
+  categories**: the **nine `retention.*` keys**, defaults from `RetentionDefaults`, floor **1** on every
+  window (a zero window would empty the customer-audit table on the next tick), ceiling 100 years /
+  36 500 days (`DateTimeOffset.AddYears` throws past the calendar's end); `lifecycle.chargeback_horizon_days`
+  (180, 0–730 — the archive's wait, ADR-0064); and **`notifications.admin_email`** — an
+  `EmailTenantSetting`, value type `Email = 3` (appended, never reordered — the type is on the wire),
+  stored trimmed and lower-cased, one `@` with something on both sides, no whitespace, ≤ 150, **the
+  empty string invalid**: "unset" is the row's absence and `Resolve(null)` answers `""`, which the admin
+  notifier reads as *every administrator* (ADR-0065 D3). A key outside the list is refused by the writer
+  (`tenant_setting.unknown_key`) and ignored by the readers; a value the definition rejects is refused
+  (`tenant_setting.invalid_value`). A category joins by adding entries here — nowhere else.
 - **`TenantConfigurationRepository`** — filtered reads (`GetByKeyAsync`, `GetAllAsync`); the unique
   `(TenantId, Key)` index, `NULLS NOT DISTINCT`, is the arbiter of "one row per company per key".
 - **`IAppConfigurationProvider.GetTenantSettingAsync(key)`** + the `TenantSettingReader.GetAsync
@@ -38,6 +43,12 @@ catalogue default, never another company's and never a value nothing reads.
   hands the stored text to the definition's `Resolve`, which returns the parsed value or the default
   when there is no row **or the row holds something the catalogue no longer accepts**. The reader does
   not take a tenant id: the company is whatever is ambient, which is the caller's job to set.
+  **One overload takes one** — `GetTenantSettingAsync(tenantId, key)` + `GetAsync(provider, tenantId,
+  definition)`, a tenant-ignoring read with `TenantId == tenantId && Key == key` in the predicate — for
+  the one writer that must not trust the ambient tenant: the admin notifier, which is called from
+  webhooks and jobs whose override is whatever company was processed last, and would otherwise have
+  mailed company A's order numbers to company B's mailbox (ADR-0065 D2, challenge B1). Nothing else
+  uses it; a request or a per-company loop keeps the ambient form.
 - **`DataRetentionBackgroundService`** — the first per-company reader. It loops
   `ITenantRepository.GetAllIdsAsync`, sets the override per company, runs the nine sweeps under it and
   clears; every `GetAsync(TenantSettingCatalog.X)` inside is that company's. `GdprDeletionService`
@@ -52,24 +63,30 @@ catalogue default, never another company's and never a value nothing reads.
 - **`AdminTenantSettingsController`** — `GET api/AdminTenantSettings/get-all`
   (`CanViewTenantConfigurations`), `PUT …/set` (`CanUpdateTenantConfiguration`), `DELETE …/reset/{key}`
   (`CanDeleteTenantConfiguration`); the two writes under the `auth` rate window. The policies existed
-  before the routes did (`PolicyBuilder`, AdminOnly); the routes are the first thing they gate.
+  before the routes did (`PolicyBuilder`, then `AdminOnly`; `AdministratorOnly` since ADR-0066 — the
+  *view* too, because the ruling excludes the whole area from a Manager); the routes are the first thing
+  they gate.
 - **The admin audit** — both writes carry a marker (`tenant_setting.set`, `tenant_setting.reset`,
   `ResourceType = "TenantSetting"`) and push a `TenantSettingSnapshot(Key, Value)` before/after through
   `IAuditContext.RecordChange` — a number or a switch, never personal data; a null value is "no row".
 - **The admin web page** (*Company settings*, `/company-settings`, sidebar entry gated by
   `CanViewTenantConfigurations`) — one row per catalogue key: key, description (from the locale, keyed
   by the catalogue key), category, range, default, the value in force and whether it is an override.
-  Edit is inline with the typed input the value type calls for (a number field, a checkbox); Reset sits
-  behind a confirmation and only on an overridden row; either write re-reads the catalogue. A spec ties
-  the five admin locales to the backend catalogue, so a new key without its copy fails the build.
+  Edit is inline with the typed input the value type calls for (a number field, a checkbox, an e-mail
+  field for `Email` — which refuses a malformed address client-side with the server's own
+  `api.tenant_setting.invalid_value` sentence and shows *every administrator* while the row is unset);
+  Reset sits behind a confirmation and only on an overridden row; either write re-reads the catalogue.
+  A spec ties the five admin locales to the backend catalogue and its three categories, so a new key
+  without its copy fails the build.
 
 ## Does NOT know
 
 - **A per-country setting.** That is `CountryConfiguration` (tax labels, the market's copy figures).
   This table is per **company**; a company serving two countries holds one value for both.
 - **Another company.** The writer names no tenant — there is no way to set company B's window from
-  company A's admin, and the reader has no tenant parameter. Both are the ambient tenant, and under a
-  job that is the override the loop set.
+  company A's admin, and the ambient reader has no tenant parameter. Both are the ambient tenant, and
+  under a job that is the override the loop set. The explicit-tenant overload is a read, never a
+  write, and its one caller names the company from the event it is told about.
 - **What a key means.** The catalogue knows the type and the range; the sweep knows the semantics.
   `Description` on the row is unused by the page (the copy comes from the locale) and `Category` is a
   grouping label, nothing keys on it.
@@ -103,9 +120,10 @@ catalogue default, never another company's and never a value nothing reads.
 ## Watch-list
 
 - **The next category.** A non-retention setting (a pay-calculation constant, a booking window a company
-  wants to move) joins by adding a definition to the catalogue and a description to five locales. It
-  does **not** join by adding a second table, a second reader or a per-country arm — if a value must
-  differ per country, it is `CountryConfiguration`'s and not this table's.
+  wants to move) joins by adding a definition to the catalogue and a description to five locales — the
+  `lifecycle` and `notifications` categories joined exactly that way. It does **not** join by adding a
+  second table, a second reader or a per-country arm — if a value must differ per country, it is
+  `CountryConfiguration`'s and not this table's.
 - **A per-market override of a catalogue table** (ADR-0041 RB-9's routed question) is still not this.
   This is a company's *number*, not a company's *catalogue row*.
 - **A holding-level view** (set a window for every company at once) is not built and is not a

@@ -71,9 +71,14 @@ blanked) and who asked (`self`, the admin's e-mail, `system`); a refusal before 
 order, a request already pending — stays a plain answer with no row. A `Failed` row, or one left
 `Processing` for more than thirty minutes by a host that died mid-walk, is **retryable**: the daily
 `RetryFailedUserDeletions` job (05:00 UTC, under the retention master switch) re-runs each once per
-row per day in its own scope with the row's tenant set, completes the row on success, appends the new
-note and logs at Error on another failure — the alarm until admin notifications exist; an admin can
-**Retry** it from the data-protection page at any time (`gdpr.user.delete.retry`, audited). Every
+row per day in its own scope with the row's tenant set, completes the row on success, and on another
+failure appends the new note, logs at Error and **tells the row's company's administrators** — one feed
+row each and an e-mail (`admin.erasure.failed`: the request and the day, never the subject), written
+in a scope of its own and committed there so the discarded failing walk cannot take the notice with
+it; the day is in the notice's subject because a request that fails again tomorrow is meant to be
+heard again, and the candidate predicate (last attempt before today) is what keeps one day to one
+attempt and so to one notice. An admin can **Retry** it from the data-protection page at any time
+(`gdpr.user.delete.retry`, audited). Every
 request not yet `Completed` counts as pending, so the subject cannot file a second one over a failed
 first — the second used to complete on a row of its own and the sweep then re-walked the erased
 subject through the first.

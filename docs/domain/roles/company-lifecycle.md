@@ -54,7 +54,9 @@ never naming another company.
   `RequestWindDown` on the first request, then **one** message on `company-wind-down`
   (`wind-down:{tenantId}:{now:yyyyMMddHHmmss}`) through `CompanyWindDownDispatch`, which is shared with
   `DeactivateCompany`, drained after the commit, and deduplicated on the outbox's `(queue, key)` so two
-  acts within a second ask for one run.
+  acts within a second ask for one run. **Only the request that sets the date tells the administrators**
+  (`admin.company.wind_down_requested`, the date; subject `{tenantId}:{requestInstant}`) — a re-run
+  announces nothing (ADR-0065 D4).
 - **`CompanyWindDownService.RunAsync(tenantId)`** — the sweep, under the envelope's override; a permanent
   no-op when the company is missing, has no date or is frozen; `StartWindDownRun` committed first; then
   **(1) notices** — every `IsActive && IsEmailConfirmed && not anonymised` customer and every such cleaner
@@ -72,7 +74,12 @@ never naming another company.
   `TryDebitAsync(…, Expired, "wind-down-credit:{account}:{run}", note: "company wind-down")`;
   **(6) the last period** — only when deactivated, no open order and no completed order awaiting pay —
   `PayPeriodBackgroundService.ClosePeriodAsync(period, "Company wind-down", openNext: false)`; then
-  `RecordWindDownRun` and a summary at Error.
+  `RecordWindDownRun`, **the administrators told of a run that did something** — `admin.company.wind_down_run`
+  with the four counts (cancelled, refunded, refund failures, periods closed), raised only when their sum
+  is positive because the sweep is re-run on purpose and a run that moved nothing is not news; the subject
+  is the run instant to the tick, since two deliveries can start within one second and a repeated subject
+  would fail the second run's commit on the outbox index — riding the same commit as the run stamp; and a
+  summary at Error.
 - **`IEmailService.SendCompanyWindDownCustomerNoticeAsync` / `…CleanerNoticeAsync`** —
   `EmailType.CompanyWindDownCustomer = 8` / `CompanyWindDownCleaner = 9`, two templates, five locales of
   default copy under admin `EmailTemplateTranslation` rows; the company is named by each market's
@@ -86,7 +93,8 @@ never naming another company.
 - **`AdminCompanyLifecycleController`** — `GET api/AdminCompanyLifecycle/get` (`CanViewCompanyLifecycle`),
   `POST …/deactivate` (`CanDeactivateCompany`), `…/reactivate` (`CanReactivateCompany`), `…/wind-down`
   (`CanWindDownCompany`), `…/archive` (`CanArchiveCompany`); the four writes under the `auth` rate window;
-  every policy `AdminOnly`.
+  every policy `AdministratorOnly` since ADR-0066 — the company's lifecycle is the Administrator role's,
+  not a Manager's ([AdminRoleGate](./admin-role-gate)).
 - **The admin audit** — the four labels with `ResourceType = "Tenant"` and a
   `CompanyLifecycleSnapshot(State, WindDownFrom)` before/after; frozen by `CompanyLifecycleAuditLabelTests`.
 - **The admin web page** — `/company-lifecycle`, sidebar under `CanViewCompanyLifecycle`: the state

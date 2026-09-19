@@ -72,7 +72,8 @@ explicitly classified as kept or stripped.
 | Cleaner opens tomorrow's job and taps Start | Refused with `order.too_early_to_start` until the job is within an hour. |
 | Cleaner is early at the door — 09:50 for a 10:00 job | Allowed. The window is a grace, not an exact time; cleaners arrive early and the platform must not argue with that. |
 | Cleaner starts three hours late | Allowed and recorded. Late is a real thing that happened. |
-| Admin needs to force a status | A separate admin-only override, which is audited. |
+| Admin needs to force a status | A separate admin-only override, which is audited; strictly forward, refuses `Confirmed` on an order with nobody assigned (reassign instead), and dates an override to `Completed` so the order is revenue of a month. |
+| The last cleaner drops a job | The seat goes back on the board; a `Confirmed` order returns to `New`, one already on the way or in progress keeps its status; the company's administrators are told either way; the customer is not. → [When the last cleaner leaves](/product/business-rules#crew-lost) |
 | Live Activity token stale | The push is dropped; the activity ends on its own. |
 
 ## Entry instructions

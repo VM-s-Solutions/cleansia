@@ -81,7 +81,7 @@ a comment that only explains *why* belongs in `docs/` with a `→ /path#anchor` 
 | Order lifecycle — the two axes, and why `Pending` is dead | `/domain/order-lifecycle` |
 | Offerability, the preferred-cleaner hold, seat allocation | `/domain/offerability` |
 | Entities and their relationships | `/domain/model` |
-| Per-component contracts (32 of them) | `/domain/roles/` |
+| Per-component contracts (34 of them) | `/domain/roles/` |
 | The ten flows, end to end | `/flows/` |
 | Why a decision was made — 64 ADRs | `/decisions/` |
 | Aspire, ports, the migrator, request logging | `/architecture/local-orchestration` |
@@ -241,13 +241,15 @@ Four things that look like bugs, are not, and have each cost a session:
   rather than a missing key. Every key needs all five locales in every app that can reach the endpoint;
   the parity guards are `apps/<app>/src/app/i18n/error-contract-parity.spec.ts`.
 
-- **`Confirmed` means a cleaner TOOK the job — not that one is on it now, and nothing about money.**
-  Until ADR-0057 (owner ruling 2026-09-08) it ALSO meant "money settled", and three separate comments
-  in the codebase existed to warn readers not to trust it. A paid card order now rests at `New`, like a
-  cash one. It still does not mean a cleaner is currently assigned — a drop, cover or rejection removes
-  the crew without walking the status back — so read `AssignedEmployees` when that is the question. And
-  `OrderStatus.Pending` is dead with no production writer; the state it used to describe lives on the
-  payment axis. → `/domain/order-lifecycle`, `/decisions/adr-0057`
+- **`Confirmed` means a cleaner TOOK the job — and nothing about money.** Until ADR-0057 (owner ruling
+  2026-09-08) it ALSO meant "money settled"; a paid card order now rests at `New`, like a cash one. Since
+  ADR-0067 (owner ruling 2026-09-19) a drop or an admin rejection that empties the crew of a `Confirmed`
+  order walks it back to `New` (`Order.ReturnToBoardIfUnstaffed`, the one writer) — when the writer can
+  prove the crew is empty; a cover request removes nobody, a reassign or cover swap replaces, and two
+  releases racing can still leave `Confirmed` with nobody on it. So read `AssignedEmployees` when "is
+  anyone on it?" is the question; the sweeps do, and the override refuses `Confirmed` on an unstaffed
+  order. `OrderStatus.Pending` is dead with no production writer; the state it used to describe lives on
+  the payment axis. → `/domain/order-lifecycle`, `/decisions/adr-0057`, `/decisions/adr-0067`
 
 ## Agent operating system
 

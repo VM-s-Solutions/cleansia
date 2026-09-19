@@ -15,6 +15,7 @@ Provide cleaning partners with tools to find and manage cleaning jobs, track the
 | My Orders | View assigned orders, start/complete work, upload photos |
 | Order Detail | Full order info, Take/Start/Complete flow, Report Issue, Add Note |
 | Invoices | View pay period invoices, download PDFs |
+| My Pay | A pay period's rows and totals in one currency; a period holding pay in more than one currency (after an admin reassignment) shows a currency switch derived from the period's **pay rows** — present on an open period before any invoice exists, and never offering a cancelled invoice's currency |
 | Profile | Manage personal info, availability, documents |
 | Registration | Create account, email confirmation, profile completion |
 
@@ -27,6 +28,7 @@ The partner app uses a sidebar layout with the following navigation items (all p
 | `/orders` | Orders | Available and My Orders tabs |
 | `/dashboard` | Dashboard | Analytics and stats |
 | `/invoices` | Invoices | Pay period invoices |
+| `/my-pay` | My Pay | Pay per period in one currency, with the currency switch when the period holds more than one → [Pay and payouts](/flows/pay-and-payouts#my-pay-shows-one-currency) |
 | `/profile` | Profile | Account settings |
 
 The home route (`/`) redirects to `/orders`.
@@ -43,6 +45,7 @@ The home route (`/`) redirects to `/orders`.
 /orders/:id           # Order detail page (auth guard)
 /invoices             # Invoice list (auth guard)
 /invoices/:id         # Invoice detail (auth guard)
+/my-pay               # Period pay in one currency, currency switch from the period's pay rows (auth guard)
 /profile              # Profile management (auth guard)
 /not-found            # 404 page
 ```

@@ -20,6 +20,7 @@ reads automatically. A row gets its tenant at commit time from whatever is ambie
 | A `Failed` GDPR request row | the erasure's own ambient tenant — written out of band by `OutOfBandGdprDeletionFailureSink` in a scope of its own, so the rolled-back walk cannot take it with it; the daily retry job sets the row's tenant per candidate scope before re-running it |
 | The two company-lifecycle consumers (`company-wind-down`, `company-archive`) | the **envelope's** tenant — the company the admin's act named, set as the override before the first read, so every filtered read inside is that company's and every commit stamps it ([ADR-0064](/decisions/adr-0064) D2/D3; the third job shape, below) |
 | A dead letter for a write a frozen company's books refused | the **frozen company's** tenant, set on a fresh scope by `ArchivedCompanyDeadLetter` — from the Stripe webhook filter, or from the `calculate-order-pay` / `generate-receipt` consumers — so the row is that company's to find |
+| An administrator notice (feed row + outbox e-mail) | the **event's** company, passed as an argument to `IAdminNotifier` — the site names it from the subject it already holds (the order's, the dispute's, the request's, the company's own) — and every read the notifier makes (the administrators, the mailbox setting) is by that argument through a tenant-ignoring query, never through the filter; the outbox row's tenant is read back from the envelope ([ADR-0065](/decisions/adr-0065) D2) |
 
 **System jobs carry no JWT**, which makes them the interesting case. They read across tenants
 deliberately, and when they *write* they must group by tenant, set the override per group, and commit
@@ -124,6 +125,27 @@ One producer writes the in-app row and enqueues the push in the same unit of wor
 caused it. The tenant is passed **explicitly** down this path rather than inherited from ambient
 context, which is why notification rows from system sweeps are correctly tenanted even where the
 sweep itself is not.
+
+**The administrators' channel is a second writer with the same shape and no push.** An event site
+calls `IAdminNotifier` once with the event key, the company, a **subject** and the loc-args; the
+notifier writes one `UserNotification` per eligible administrator of that company **whose role is in the
+event's audience** (a set name on the catalogue entry — `SupportOrAbove` for order, dispute and payment
+events, `ManagerOrAbove` for a failed erasure, `AdministratorOnly` for the company milestones, every role
+for a chargeback; [ADR-0066](/decisions/adr-0066) D8) and enqueues one e-mail per recipient address on the
+`send-email` outbox — one shared mailbox when the company has set `notifications.admin_email`, else each
+of those administrators in their own language — inside the caller's unit of work, and commits nothing
+itself. The rows exist iff the event committed; the e-mail cannot fail
+the command because the command never sends one. **The subject rule is the caller's**: the outbox
+collapses a repeated `(queue, key)` in-request only, and across requests the unique index fails the
+business commit — for a webhook that also un-stamps the Stripe event — so a subject must be unique
+per logical event across requests (an order id for "became offerable", a released assignment id for
+"lost its crew", a Stripe dispute id for a chargeback, the request id plus the day for a failed
+erasure retry, the run instant to the tick for a wind-down run). The two sites that can raise one
+logical event twice — a repeated card decline on one order, two overlapping archive builds of one
+frozen company — read the feed first (`AnyForEventAsync`, a jsonb containment on the row's args by
+company and key) and stay silent when a row already says so. A job with no ambient tenant (the daily
+erasure retry) opens a scope of its own, sets the override, calls the notifier and commits there, so a
+discarded failing walk cannot take the notice with it. → [Admin notifier](/domain/roles/admin-notifier)
 
 ## Rate limiting
 

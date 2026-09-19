@@ -574,6 +574,78 @@ Feed reads/marks are always scoped to the calling mobile host's audience keyset 
 controller overwrites the `Audience` field server-side (S1-style enrichment); never trust it from
 the client.
 
+### An administrator is told through `IAdminNotifier` — never the push seam, never `IEmailService` from a handler (ADR-0065)
+
+The third feed audience has its own writer, **`IAdminNotifier.NotifyAsync(new AdminEvent(key,
+tenantId, subject, args), ct)`** (`Core.AppServices/Services/AdminNotifier.cs`): one `UserNotification`
+per eligible administrator of the **named** company plus one `SendAdminNotificationEmailMessage` per
+recipient address on the `send-email` outbox, in the caller's unit of work, no push, no commit. Rules
+it encodes, and what a site owes it:
+
+- **The company is an argument, never the ambient tenant.** Name it from the subject the site already
+  holds (`order.TenantId`, `tenant.Id`, `candidate.TenantId`); under a webhook or a job loop the override
+  is whatever company was processed last. A null tenant is a warning and no call, never a stamp on the
+  wrong company. Both reads inside are `IgnoreQueryFilters()` with `TenantId == tenantId`
+  (`GetActiveAdministratorsAsync`, `GetTenantSettingAsync(tenantId, key)`) — the ambient
+  `GetTenantSettingAsync(key)` is **not** for this path.
+- **`Subject` is unique per logical event across requests.** The outbox collapses `(queue, key)`
+  in-request only; across requests the unique index **fails the business commit** (and un-stamps a
+  Stripe event). An order id for "became offerable", a released assignment id for "lost its crew", a
+  Stripe dispute id for a chargeback, `{requestId}:{day}` for a failed retry, the run instant to the tick
+  for a sweep. A site that can raise one logical event twice reads the feed first —
+  `IUserNotificationRepository.AnyForEventAsync(tenantId, key, argName, argValue)` (jsonb containment)
+  — the way the card-decline and archive sites do. The notifier dedups nothing.
+- **Args are exactly the entry's `EmailArgOrder`** (`AdminEventCatalog`), no more, no less — the notifier
+  throws otherwise — and never a person: ids, numbers, enum names, `yyyy-MM-dd` days, ISO-8601 instants,
+  money through `MoneyText.Format`. The order is positional for the e-mail copy's `{n}`.
+- **Declare the key in Domain first** (`AdminNotificationEventCatalog`, which *is*
+  `NotificationFeedEventKeys.Admin`), then the AppServices entry, then the five-locale copy on both the
+  e-mail defaults (`EmailService.AdminNotification.cs`) and the admin web
+  (`pages.notifications.events.<key>.*`) — the admin copy spec walks the C# file and fails a key without
+  its sentence. `IsFeedEvent` does not know admin keys: the push seam cannot write one.
+- **A job with no ambient tenant tells the company in a scope of its own and commits there**
+  (`RetryFailedUserDeletions.TellAdministratorsAsync`), so a discarded failing walk cannot take the
+  notice with it. The one event written on a **frozen** company (`admin.company.archived`) rides its
+  commit only because `UserNotification` and `OutboxMessage` are account surface.
+- **The recipients narrow by the entry's `Audience` — a set name, never a policy.** Each
+  `AdminEventCatalog` entry names one of the administrator sets (`PhysicalPolicy.SupportOrAbove`,
+  `ManagerOrAbove`, `AdministratorOnly`, or `AdminOnly` for every role) and the notifier keeps the rows
+  whose `AdminRole` is in `AdminRoleSets.For(entry.Audience)`. A chargeback is `AdminOnly` on purpose:
+  Support answers the bank, the Accountant reconciles the money. A new event picks a set, not a role.
+
+### An admin permission maps to one of the five administrator sets — a handler never reads `admin_role` (ADR-0066)
+
+The administrator's **role** (`AdminRole` — Administrator / Manager / Support / Accountant) is a second axis
+on the account beside the **profile**, not a fifth `UserProfile`: the profile answers *which audience is
+this?* and every handler-level `role == UserProfile.Administrator` check keeps asking exactly that; the
+role answers *which administrator?* and is read in one place — the physical-policy registrations in
+`Cleansia.Config/Services/ServiceExtensions.cs` through `AdminRoleSets.Admits(ctx.User, set)`. What a
+feature owes it:
+
+- **A new admin-host permission is one `Policy` constant and one `PolicyBuilder.Map` row onto a set** —
+  `AdministratorOnly` ⊂ `ManagerOrAbove` ⊂ (`SupportOrAbove` ∪ `AccountantOrAbove`) ⊂ `AdminOnly` (any role).
+  The map is the whole surface; `FrozenPermissionMapTests` pins it and `AdminRolePolicyMatrixTests` evaluates
+  every row against eight principals through `IAuthorizationService`, so a row with no expectation fails.
+  Nothing reads `AdminRoleSets.ClaimType` outside `AdminRoleSets`, `AuthExtensions.SetClaims`,
+  `AuditEntryFactory` and the test factory — a handler that branches on the claim is a review finding.
+- **A read the admin host shares with a partner host gets an `…Admin` constant when the role must gate
+  it** (`CanViewOrderDetailAdmin` beside `CanViewOrderDetail`, `CanViewPagedInvoicesAdmin` beside
+  `CanViewPagedInvoices`, …): the shared physical policy (`EmployeeOrAdmin` / `Authenticated`) cannot be
+  narrowed without refusing a cleaner their own rows, so the admin controller moves onto the twin and the
+  partner hosts stay byte-identical. The `CanViewDisputeAdmin` precedent, applied eight times.
+- **A last-of-kind guard on `Users` runs under the company's advisory lock.** A conditional `UPDATE … WHERE
+  another Administrator remains` is not atomic against a second one on a different row (write skew under
+  READ COMMITTED), so `UserRepository.DemoteAdministratorIfAnotherRemainsAsync` and
+  `DeactivateAdministratorIfAnotherRemainsAsync` each open a transaction, take
+  `pg_advisory_xact_lock(hashtext(tenantId))`, then run the conditional `UPDATE`; `rows == 0` is the business
+  error. Copy that shape for any "never the last X of a company" rule; do not copy the bare `UPDATE`.
+- **`AdminOnly` requires no claim; the four sets do.** A token minted before a deploy that adds a set keeps
+  working on any-administrator routes until its refresh (≤ 15 min on the admin host); a claimless
+  Administrator is refused every set-mapped route. Never register a set policy that admits a missing claim.
+- **The role rides the audit row** (`AdminActionAudit.ActorAdminRole`, from the claim, both arms) and the
+  token response (`JwtTokenResponse.AdminRole`) — the web's `PermissionService` mirrors the map and hides
+  what the role lacks; the server is the gate, the hint over-shows on an unknown policy by design.
+
 ### When a server table DECLARES that client copy exists, the guard belongs on the server
 
 `FcmMessageFactory.ApnsDisplayMap` is not a lookup — it is an assertion that

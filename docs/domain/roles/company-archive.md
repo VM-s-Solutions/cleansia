@@ -46,7 +46,13 @@ at the one seam every write crosses**, letting through only the person's rows an
   **last** and **only if absent** — tenant id and name, the ADR id, the schema version
   (`ISchemaVersionReader` → the `Initial` migration id), the freeze and build instants, the `CompanyInfo`
   rows as of the freeze, and per file its path, row count and SHA-256. Then `tenant.MarkArchived(sha256 of
-  the manifest that landed, now)` and one commit.
+  the manifest that landed, now)`, **the administrators told the books were sealed**
+  (`admin.company.archived`, the day; subject `{tenantId}:{freezeInstant}`; guarded by
+  `AnyForEventAsync` on the day, because two builds of one frozen company can overlap — a redelivery
+  beside a *Build archive again* — and both reach this point with the same subject, which would fail the
+  second commit on the outbox index rather than collapse), and one commit. That notice is **the one event
+  written on a frozen company**: it rides the commit only because `UserNotification` and `OutboxMessage`
+  are on the account surface below — a new stamped table would have thrown here (ADR-0065 D1).
 - **`CompanyArchiveRecords`** — one `record` per file; the projection is the rule. `orders.jsonl` carries
   none of the members `Order.AnonymizeCustomerData()` assigns and no street — the country and city, the
   money, the tender, the discounts, the cancellation facts, the Stripe ids, `ReceiptId`/`ReceiptNumber`,

@@ -34,6 +34,16 @@ Both arrows into the board wake **many cleaners at the same instant**: the new-j
 `NotifyLapsedPreferredOffers` when a hold expires. That is a designed thundering herd onto a single
 seat, and it is why the seat needs a real arbiter rather than a check.
 
+**The same transition tells the company.** The three sites that make an order offerable — a cash
+one-off at creation, a card order on its payment, a recurring occurrence on the customer's confirm —
+are the three that raise `admin.order.new` to the company's administrators, beside the preferred
+cleaner's offer and under the same offerability read; an unpaid card checkout, which the stale sweep
+cancels an hour later, announces nothing. A seat that empties again is a second notice: a drop or an
+admin rejection that leaves nobody on the order raises `admin.order.crew_lost` at any status, and
+walks a `Confirmed` order back to `New` so the fresh row is also the digest's re-advertisement.
+→ [Business rules — administrators are told](/product/business-rules#admin-notifications),
+[when the last cleaner leaves](/product/business-rules#crew-lost)
+
 ## The seat is decided by the database
 
 The take passes three capacity checks — validator, handler re-check, and an in-memory guard — and

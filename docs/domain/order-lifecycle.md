@@ -11,6 +11,7 @@ flowchart TB
   subgraph FULFILMENT["FULFILMENT — Order.CurrentStatus (non-nullable)"]
     direction LR
     New["New (0)"] --> Confirmed["Confirmed (2)"] --> OnTheWay["OnTheWay (3)"] --> InProgress["InProgress (4)"] --> Completed["Completed (5)"]
+    Confirmed -->|"last cleaner leaves"| New
     New --> Cancelled["Cancelled (6)"]
     Confirmed --> Cancelled
     OnTheWay --> Cancelled
@@ -62,13 +63,21 @@ more. Two producers stopped writing it:
 | `AdminReassignOrder` | an admin assigned a cleaner | **yes** — added with the split |
 | `HandlePaymentNotification` | the Stripe webhook landed | no — sets `PaymentStatus.Paid` only |
 | `ConfirmRecurringOrder` | the customer confirmed a recurring occurrence | no — money axis only |
-| `AdminOverrideOrderStatus` | an admin forced it | yes, by definition — it forces any status |
+| `AdminOverrideOrderStatus` | an admin forced it | yes — but only onto an order that has a crew; on an unstaffed one the target is refused (`order.status.confirmed_needs_crew`, ADR-0067) |
 
-> **`Confirmed` still does not mean "a cleaner is on this job right now."** It means one took it. A
-> drop, a cover request or an admin rejection removes the assignment **without** walking the status
-> back, so an order can read `Confirmed` with zero assignees. Read `AssignedEmployees` when you need
-> to know who is actually on it — `CancellationAssessor` does exactly that, and did so even before the
-> split.
+> **`Confirmed` means a cleaner took it — and since [ADR-0067](/decisions/adr-0067) (owner ruling
+> 2026-09-19) the word is walked back when that stops being true.** When the last assigned cleaner
+> leaves a `Confirmed` order — a **drop**, or an admin **rejecting** the cleaner — the order returns to
+> `New` through one domain writer, `Order.ReturnToBoardIfUnstaffed()`, and the fresh `New` row is also
+> its re-advertisement to the board. Only two writers can empty a crew: **a cover request removes
+> nobody** (the cleaner stays assigned until somebody takes the seat), and a reassign or a cover swap
+> **replaces** — remove then add, never a release. An order past `Confirmed` is never walked back: a
+> drop at `OnTheWay` or `InProgress` leaves the status where it is (a cleaner may be in the home) and
+> the company's administrators are told instead. Two releases racing on one order can still leave
+> `Confirmed` with nobody on it — `CurrentStatus` is the only concurrency token and neither commit
+> changes it — which is why every sweep, reminder and validator keeps reading `AssignedEmployees`:
+> **the crew is the fact, the status its summary.** `CancellationAssessor` does exactly that, and did
+> so even before the split. → [Business rules — when the last cleaner leaves](/product/business-rules#crew-lost)
 
 ## `Pending (1)` is dead, and stays
 
@@ -93,6 +102,18 @@ land in the same tick.
 
 There is no history fallback and no `!= null` conjunct. Dropping those is what lets Postgres seek on
 `IX_Orders_CurrentStatus_CleaningDateTime`. **Do not reintroduce a nullable read.**
+
+**The one backward edge has one writer, and the override cannot fake the forward one.**
+`OrderStatusTrack.Create(OrderStatus.New, …)` reaches `AddOrderStatus` from exactly two places: the
+factory at creation, and `Order.ReturnToBoardIfUnstaffed()` — a no-op unless the crew is empty *and*
+the order is `Confirmed`, called by the two release writers (`DropOrder`, `RejectEmployee`) after their
+unassign and never by a swap. In the other direction, `AdminOverrideOrderStatus` keeps its strictly
+forward rank rule and gains one refusal: **`Confirmed` as a target on an order with nobody assigned is
+refused** (`order.status.confirmed_needs_crew`) — an administrator who wants a cleaner on the job
+reassigns, which writes `Confirmed` itself. The other forward moves stay open on an unstaffed order
+(`New → OnTheWay / InProgress / Completed` are the *"the cleaner is there but never tapped"* repairs);
+they are the administrator's own audited act, and an override to `Completed` now also stamps
+`CompletedAt`, because the revenue report reads it. → [Admin order management](/admin-app/order-management#order-status-override)
 
 ## Where the axes are read together
 

@@ -51,8 +51,8 @@ employee and never on `EmployeeDto`. Two endpoints, two DTOs:
 
 | Endpoint | Returns | Notes |
 |---|---|---|
-| `GET /api/AdminEmployee/{employeeId}/payout-details` | `MaskedPayoutDetails` | Policy `CanViewEmployeePayoutDetails`. The record has **no unmasked field at all** — a client cannot render what it was never sent, so widening it is a schema change a reviewer sees |
-| `POST /api/AdminEmployee/{employeeId}/payout-details/reveal` | `RevealedPayoutDetails` | Policy `CanRevealEmployeePayoutDetails`, **rate-limited under the `auth` policy**. A command, not a query — that is what puts it through the audit engine, the compensating control for plaintext storage. It stamps `LastRevealedAt` / `RevealCount`, both shown on the masked view. The rate limit matters: masking only bounds exposure if the number of reveals does, and the same policy that lists employee ids reaches this route |
+| `GET /api/AdminEmployee/{employeeId}/payout-details` | `MaskedPayoutDetails` | Policy `CanViewEmployeePayoutDetailsAdmin` (Accountant or above — the admin-host twin of the cleaner's own `CanViewEmployeePayoutDetails`, ADR-0066). The record has **no unmasked field at all** — a client cannot render what it was never sent, so widening it is a schema change a reviewer sees |
+| `POST /api/AdminEmployee/{employeeId}/payout-details/reveal` | `RevealedPayoutDetails` | Policy `CanRevealEmployeePayoutDetails` (Manager or above — the Accountant sees the masked view only, per the owner's matrix), **rate-limited under the `auth` policy**. A command, not a query — that is what puts it through the audit engine, the compensating control for plaintext storage. It stamps `LastRevealedAt` / `RevealCount`, both shown on the masked view. The rate limit matters: masking only bounds exposure if the number of reveals does, and the same policy that lists employee ids reaches this route |
 
 The record is never `Include`d on the employee grid or any paged query.
 

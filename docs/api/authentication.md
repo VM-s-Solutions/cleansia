@@ -276,8 +276,13 @@ The token includes standard claims set from the `User` entity via `user.SetClaim
 |-------|--------|
 | `sub` (NameIdentifier) | `User.Id` |
 | `email` | `User.Email` |
-| `role` | `User.Profile` (Customer, Employee, Admin, SuperAdmin) |
+| `role` | `User.Profile` (`Customer`, `Employee`, `Administrator`) — the **audience** the account belongs to |
+| `admin_role` | `User.AdminRole` (`Administrator`, `Manager`, `Support`, `Accountant`) — present on an `Administrator`-profile token only; the set an admin-host permission requires is checked against it ([ADR-0066](/decisions/adr-0066)). The partner hosts never read it |
 | `tenant_id` | `User.TenantId` — the operating company the account belongs to, **always present** (the column is NOT NULL). It is the only thing that scopes an authenticated request; the request body never carries it and cannot override it |
+
+`JwtTokenResponse` repeats the two hints the web cannot read out of an HttpOnly cookie — `role` and, for an
+administrator, `adminRole` — beside the token; the admin app stores both and gates its UI on them. The
+server remains the gate.
 
 Every token mint — login on all five hosts, refresh, Google/Apple, e-mail confirmation — runs on an
 anonymous request and writes a `RefreshToken` row; the server adopts the authenticated user's tenant
@@ -285,21 +290,32 @@ before writing it, so the row and the claim always agree ([ADR-0061](/decisions/
 
 ## RBAC Policies
 
-Authorization policies are defined in `src/Cleansia.Core.AppServices/Authentication/Policy.cs`. Key policies:
+Authorization policies are defined in `src/Cleansia.Core.AppServices/Authentication/Policy.cs` and every one
+maps, in `PolicyBuilder.Map`, to one physical policy — `Anonymous`, `Authenticated`, `CustomerOnly`,
+`EmployeeOrAdmin`, `OwnerOrElevated`, `AdminOnly` (any administrator role), or one of the four
+administrator **sets** — `AdministratorOnly`, `ManagerOrAbove`, `SupportOrAbove`, `AccountantOrAbove` —
+which require the `admin_role` claim. Key policies:
 
-| Category | Policy | Allowed Roles |
-|----------|--------|---------------|
-| Orders | `CanViewPagedOrder` | Admin, Employee |
+| Category | Policy | Allowed |
+|----------|--------|---------|
+| Orders | `CanViewPagedOrder` | Employee or any administrator (the partner hosts) |
+| Orders | `CanViewPagedOrderAdmin` | Support or above (the admin host's own list — every order of the company) |
 | Orders | `CanTakeOrder` | Employee |
 | Orders | `CanStartOrder` | Employee |
 | Orders | `CanCompleteOrder` | Employee |
 | Orders | `CanUploadOrderPhoto` | Employee |
 | Orders | `CanSubmitOrderReview` | Customer |
 | Users | `CanGetCurrentUser` | Authenticated (all) |
-| Employees | `CanApproveEmployee` | Admin |
-| Admin | `CanViewAdminUsers` | SuperAdmin |
+| Employees | `CanApproveEmployee` | Support or above |
+| Payroll | `CanViewPagedInvoicesAdmin` | Accountant or above |
+| Admin | `CanViewAdminUsers` | Manager or above |
+| Admin | `CanSetAdminRole` | Administrator |
+| Company | `CanViewCompanyLifecycle`, `CanViewTenantConfigurations`, `CanViewLegalDocuments` | Administrator |
 
-Policies are enforced using the `[Permission(Policy.XYZ)]` attribute on controller actions.
+Policies are enforced using the `[Permission(Policy.XYZ)]` attribute on controller actions. A read the admin
+host shares with a partner host has an `…Admin` twin when the role must gate it, so a cleaner's own reads
+stay open. The full row-by-row table is [ADR-0066 D3](/decisions/adr-0066); who has what, by area, is on
+the [AdminRoleGate](/domain/roles/admin-role-gate) card.
 
 ### RequireCompleteProfile Filter
 

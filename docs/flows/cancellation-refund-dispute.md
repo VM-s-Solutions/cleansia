@@ -74,6 +74,15 @@ cannot explain.
 Chargebacks arrive as Stripe events and are **reflected onto the linked dispute**, not onto the
 order's payment status.
 
+**The company's administrators are told of both, in the same commit.** A customer filing a dispute
+writes one feed row per administrator of the order's company whose role is Support or above, and one
+e-mail per recipient address (`admin.dispute.filed` — the order number and the reason, never the text);
+a chargeback writes `admin.dispute.chargeback` — to **every role**, the Accountant included, because the
+money that left is theirs to reconcile — with the reversed amount and the dispute the money is now
+attached to — the customer's open dispute when there is one, else the chargeback's own — so the console
+opens the right file. Both ride the outbox, so a Stripe redelivery that never reaches the handler never mails twice.
+→ [Business rules — administrators are told](/product/business-rules#admin-notifications)
+
 **Filing one is recorded against the order, then the dispute.** `CreateDispute` is marked
 `customer.dispute.create` with `Order` as its resource, so a filing that is refused — against a clean
 that has not started (`dispute.cleaning_not_started`), while another dispute is open on the order, or

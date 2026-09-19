@@ -1,7 +1,7 @@
 ---
 id: T-0773
 title: Admin web — the role in the session, the guards, the sidebar, the administrators page (ADR-0066 D6)
-status: todo
+status: done
 size: M
 owner: —
 created: 2026-09-19
@@ -57,23 +57,33 @@ also refused by the server.
 
 ## Acceptance criteria
 
-- [ ] **AC1** — *Given* a Support session, *then* the sidebar shows employees, employee documents, orders,
+- [x] **AC1** — *Given* a Support session, *then* the sidebar shows employees, employee documents, orders,
       disputes, customers, data protection, audit log, catalogue reads and notifications, and not pay
       periods, invoices, reports, company settings, company lifecycle, legal documents or administrators;
-      navigating to `/reports` lands on `/unauthorized`.
-- [ ] **AC2** — *Given* an Accountant session, *then* pay periods, invoices, reports, fiscal failures,
+      navigating to `/reports` lands on `/unauthorized`. *Met — `admin-role-visibility.spec.ts` pins the
+      Support sidebar list and the guard verdict per route. "Customers" is a route, not a sidebar entry
+      (`/customers/:id`, reached from an order, the audit log or a notification) — as before this ticket.*
+- [x] **AC2** — *Given* an Accountant session, *then* pay periods, invoices, reports, fiscal failures,
       company info, employees (list) and notifications are visible; the orders, customers and
-      employee-documents pages are not.
-- [ ] **AC3** — *Given* an Administrator session on another administrator's detail, *when* the role is
+      employee-documents pages are not. *Met — the same spec's Accountant list and route verdicts.*
+- [x] **AC3** — *Given* an Administrator session on another administrator's detail, *when* the role is
       changed to Manager, *then* the list shows Manager; *given* their own detail, *then* the picker is
       disabled with the self-refusal text; *given* the last Administrator, *then* the server's refusal
-      renders from `api.admin_user.cannot_demote_last_administrator`.
-- [ ] **AC4** — *Given* an Employee `role` in localStorage (a stale session), *then* `adminGuard` redirects
+      renders from `api.admin_user.cannot_demote_last_administrator`. *Met — `admin-user-form.facade.spec.ts`
+      (the `SetAdminRoleCommand` wire body, the role signal) and `admin-user-role.refusal.spec.ts` (self
+      disabled, the server's refusal restores the control and renders the key); the key in five locales.*
+- [x] **AC4** — *Given* an Employee `role` in localStorage (a stale session), *then* `adminGuard` redirects
       to `/unauthorized`; *given* a refresh response carrying a new `adminRole`, *then* `currentAdminRole()`
-      reads it without a re-login.
-- [ ] **AC5** — The mirror spec fails when a `PolicyBuilder.Map` row and its TS row differ.
-- [ ] **AC6** — Every `SidebarMenuItem` has a `permission`; every top-level `Route` (except login,
-      unauthorized, not-found) has `data.permission` — a spec walks both arrays.
+      reads it without a re-login. *Met — `admin.guard.spec.ts`; `admin-auth.service.spec.ts` (`isAdministrator`
+      false for Employee); the refresh path already re-ran `setSession`, which now stores `adminRole`.*
+- [x] **AC5** — The mirror spec fails when a `PolicyBuilder.Map` row and its TS row differ. *Met —
+      `policy-map-mirror.spec.ts` parses `PolicyBuilder.cs`, `PhysicalPolicy.cs`, `AdminRoleSets.cs` and
+      `AdminRole.cs` out of the solution tree (not a JSON export — the error-contract parity spec's shape;
+      recorded in ADR-0066 §What shipped).*
+- [x] **AC6** — Every `SidebarMenuItem` has a `permission`; every top-level `Route` (except login,
+      unauthorized, not-found) has `data.permission` — a spec walks both arrays. *Met —
+      `admin-role-surface.spec.ts` over `ADMIN_MENU_ITEMS` and `appRoutes` (also asserts
+      `canActivate: [adminGuard, permissionGuard]` on every guarded route).*
 
 ## Implementation notes
 
@@ -83,3 +93,13 @@ diffed against. Components delegate to facades; no raw controls; every string th
 ## Status log
 
 - 2026-09-19 — filed `todo` by the docs lane from the batch-6 panel; waits on T-0748's admin client regen.
+- 2026-09-19 — `todo` → `done` by the admin web lane after T-0748's regen: **`14c833bf`** (the session
+  stores the role, `PermissionService` + `ADMIN_ROLE_SETS`, `POLICY_MAP` per D3, `adminGuard` +
+  `permissionGuard`, `ADMIN_MENU_ITEMS` with a permission on every entry and `resolveLandingRoute`, the
+  administrators page's role column / select / picker, the audit log's role column and filter) and
+  **`bef0838e`** (a Support and an Accountant session asserted end to end through the stored role, the
+  real permission service, the mirror map, the sidebar and the route table; the admin session keys as one
+  constant). The create form's Support default, the two `api.admin_user.*` refusal keys in five locales and
+  the guards pinned against another company's administrator rode the shared fix **`45462202`**. The
+  sidebar moved out of `app.component.ts` into `admin-menu.ts` (ADR-0066 §What shipped). Docs by the docs
+  lane the same night (the admin overview's guards, roles and route sections; the AdminRoleGate card).

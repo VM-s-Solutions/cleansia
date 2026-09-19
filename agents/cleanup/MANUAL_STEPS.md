@@ -8,9 +8,10 @@ step, cleared when done.
 ### MS-13 — Send one of each migrated e-mail before the next deploy — **owner**
 
 T-0677 moved all six live e-mails off hosted SendGrid templates onto
-`email-templates/` in this repository. Ten tests assert on the HTML the SDK actually serializes, so
-the bodies are proven; what is **not** proven is what a real mail client does with them, and that is
-the half a test cannot reach.
+`email-templates/` in this repository. The folder holds **ten templates now**: the original six, the
+promo-code e-mail, the two company wind-down notices (T-0762) and the administrator notification
+(T-0774). Tests assert on the HTML the SDK actually serializes, so the bodies are proven; what is
+**not** proven is what a real mail client does with them, and that is the half a test cannot reach.
 
 **Action:** with a live SendGrid key, trigger one of each and open them — ideally in Gmail and
 Outlook, which are the two that rewrite CSS:
@@ -22,6 +23,12 @@ Outlook, which are the two that rewrite CSS:
    `{{StatusClass}}` written into a class attribute)
 5. close a pay period → period-closed (check the invoice PDF)
 6. a period near its end → reminder (check the countdown reads "N days remaining")
+7. request a promo code → promo-code e-mail
+8. wind down the company from a date → the customer notice **and** the cleaner notice (one each)
+9. file a dispute as a customer → the administrator notification (`admin-notification.html`; the body
+   is one sentence with the order number substituted — check the substitution and the sign-in hint
+   line — and set `notifications.admin_email` on Company settings to see the single-mailbox, English
+   variant)
 
 **Why it matters more than usual here.** These bodies were previously rendered by SendGrid, which
 inlines CSS on the way out. We now send the HTML as written, so anything relying on that inlining
@@ -87,7 +94,15 @@ with this metadata change. Recurring pause notification state regenerated Initia
 `RecurringPauseStateObservedAt`, `RecurringPauseNotificationSentAt` and
 `RecurringPauseNotificationSequence`, with PostgreSQL `xmin` concurrency metadata. The table count
 remains 87; verified on Postgres after the hand-over (backend 5880 / 515 / 318, CI 7/7 on 881d9cc1).
-**The one owed drop belongs to `20260916120038`**: a DEV database whose
+The four administrator roles (T-0748, `56fa5aa2`, 2026-09-19 — ADR-0066) regenerated `Initial` once more as
+**`20260919142517`**: `Users.AdminRole` (nullable int) with the check constraint
+`CK_Users_AdminRole_Profile` (`("Profile" = 100) = ("AdminRole" IS NOT NULL)`) and
+`AdminActionAudits.ActorAdminRole` (nullable int); the body diff against `20260916120038` is exactly those
+three operations and the table count is still 87. The seed inserts the administrator with `AdminRole = 1`
+and `sql-scripts/set-admin-role.sql` sets both columns. Unit suite 6174 green at the lane; the Postgres
+integration suite (which carries the constraint test and the two lock-race tests) and the host suite
+compiled but first execute in CI — Docker was down on the box.
+**The one owed drop belongs to `20260919142517`**: a DEV database whose
 `__EFMigrationsHistory` records any earlier id replays the whole create script against tables that
 already exist. The legal texts need no extra step — every host seeds them at start.
 

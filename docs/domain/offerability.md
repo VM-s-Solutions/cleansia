@@ -85,6 +85,15 @@ deadline passed, *you* are the preferred cleaner, or somebody is already assigne
 > indistinguishable from a missing one, or the refusal itself leaks the fact that someone else was
 > named. For the same reason `PreferredEmployeeId` never appears on a partner-facing DTO.
 
+**A release ends the hold its beneficiary held.** A cleaner dropping a job ends their own live
+reservation on it, and — since [ADR-0067](/decisions/adr-0067) — **an admin rejection ends a hold whose
+beneficiary is the rejected cleaner**: an order returned to the board must be *on* the board, and a
+live hold would hide the seat from every other cleaner for up to twelve hours on behalf of someone who
+can no longer work. A hold naming a *different* cleaner on a multi-seat job is not the release's to
+end. Nothing else about offerability moves on a walk-back: `New` and `Confirmed` are both in the
+coarse floor and the rule reads no seats, so an order that was offerable at `Confirmed` with a free
+seat is offerable at `New`; the offer window and the lapse sweep are status-blind and unchanged.
+
 ## The cleaner's currency {#cleaner-currency}
 
 The second (order, cleaner) question, and the same type answers it. A cleaner is paid in the currency

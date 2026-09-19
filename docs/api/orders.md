@@ -502,7 +502,9 @@ Returns a paginated list of orders.
 GET /api/Order/GetPaged?page=1&pageSize=10
 ```
 
-**Auth:** `CanViewPagedOrder` (Admin, Employee) or `CanViewPagedUserOrder` (Customer -- own orders)
+**Auth:** `CanViewPagedOrder` (Employee or any administrator, on the partner hosts) or
+`CanViewPagedUserOrder` (Customer -- own orders). The admin host's list is its own route,
+`GET /api/AdminOrder/get-paged`, under `CanViewPagedOrderAdmin` (Support or above — [ADR-0066](/decisions/adr-0066)).
 
 **Response:**
 
@@ -547,7 +549,9 @@ Returns full details of a single order.
 GET /api/Order/GetById?id=order-id
 ```
 
-**Auth:** `CanViewOrderDetail` (Authenticated -- all roles)
+**Auth:** `CanViewOrderDetail` (Authenticated -- all roles; the handler redacts for a browsing cleaner).
+The admin host's unredacted detail is `GET /api/AdminOrder/details/{orderId}` under
+`CanViewOrderDetailAdmin` (Support or above — an Accountant is refused).
 
 **Response:** `OrderItem` object with full order details, address, services, packages, status history.
 

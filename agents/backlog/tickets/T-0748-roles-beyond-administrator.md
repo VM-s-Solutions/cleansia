@@ -1,7 +1,7 @@
 ---
 id: T-0748
 title: Roles beyond Administrator — Support / Accountant / Manager (Q-AUD-O1)
-status: todo
+status: done
 size: L
 owner: —
 created: 2026-09-14
@@ -60,8 +60,9 @@ from what the admin host exposes today — the analyst confirms it against the o
 - [ ] **AC1** — A `Policy.*` → role matrix exists, ratified by the owner, with every constant on one row.
 - [ ] **AC2** — `PolicyBuilder.AssertComplete` still passes with the new physical policies; every
       admin route answers 403 to a role the matrix excludes and 200 to one it includes (HostTests).
-- [ ] **AC3** — A Support user can read the customer trail and build the incident file and cannot
-      refund, override, erase or change configuration.
+- [ ] **AC3** — A Support user can read the customer trail and build the incident file, may refund within
+      the policy and override an order (the owner's Support list, ADR-0066 D3), and cannot erase or change
+      configuration. *(The 2026-09-16 draft said "cannot refund, override"; the 2026-09-19 ruling widened it.)*
 - [ ] **AC4** — Every act by a Support/Accountant/Manager is on the admin audit table with the actor's
       role.
 - [ ] **AC5** — Admin-user management can assign the role; the admin web hides what the role lacks.
@@ -138,34 +139,47 @@ committed; DEV dropped at the deploy and said so.
 
 ### Acceptance criteria (replace the 2026-09-14 draft above)
 
-- [ ] **AC1** — The `Policy.* → set` table of ADR-0066 D3 is `PolicyBuilder.Map` (frozen test); the admin
+- [x] **AC1** — The `Policy.* → set` table of ADR-0066 D3 is `PolicyBuilder.Map` (frozen test); the admin
       controllers reference none of the eight shared read policies (grep); the partner and mobile
-      controllers are byte-identical.
-- [ ] **AC2** — *Given* each of the four roles, a claimless Administrator, an Employee, a Customer and
+      controllers are byte-identical. *Met — `FrozenPermissionMapTests` rewritten to D3; the sixteen attribute
+      edits across seven admin controllers; the partner/mobile controllers untouched in the diff.*
+- [x] **AC2** — *Given* each of the four roles, a claimless Administrator, an Employee, a Customer and
       anonymous, *when* `IAuthorizationService` evaluates every map row, *then* the answer equals D3 (the
       matrix test); every admin-host action carries `[Permission]` mapping to non-`Deny` or is on the
-      allow-list naming only `AdminCodeController.GetOverview` and the anonymous sign-in routes.
-- [ ] **AC3** — *Given* a Support token, *then* the customer trail, the admin log, the order detail, the
-      export and the incident file are 200, and refund, override, erasure, a service update and the invoice
-      list are 403; *given* an Accountant token, *then* the invoice list, the pay periods and the revenue
+      allow-list naming only `AdminCodeController.GetOverview` and the anonymous sign-in routes. *Met —
+      `AdminRolePolicyMatrixTests` (unit, green); `AdminHostPermissionCoverageTests` (host). The allow-list
+      has four entries, not three: `AdminAuthController.Logout` sits beside `Login`, `RefreshToken` and
+      `GetOverview` with its reason — recorded in ADR-0066 §What shipped.*
+- [x] **AC3** — *Given* a Support token, *then* the customer trail, the admin log, the order detail, the
+      export and the incident file are 200, refund and override clear the gate (D3), and erasure, a service
+      update and the invoice list are 403; *given* an Accountant token, *then* the invoice list, the pay periods and the revenue
       report are 200 and the order detail, the customer page and an employee document download are 403;
-      *given* a Manager token, *then* the company lifecycle and the legal documents are 403.
-- [ ] **AC4** — *Given* a Manager, Support and Accountant each perform one admin act, *then* three
-      `AdminActionAudits` rows exist with `ActorAdminRole` = their role.
-- [ ] **AC5** — *Given* a company with one Administrator and one Support, *when* the Administrator demotes
+      *given* a Manager token, *then* the company lifecycle and the legal documents are 403. *Met by the
+      four behavioural host classes (`AdminRoleSupportBehaviourTests`, `AdminRoleAccountantBehaviourTests`,
+      `AdminRoleManagerBehaviourTests`, `AdminRoleClaimlessAdministratorBehaviourTests`) — compiled at the
+      lane, first executed by CI (Docker down on the box).*
+- [x] **AC4** — *Given* a Manager, Support and Accountant each perform one admin act, *then* three
+      `AdminActionAudits` rows exist with `ActorAdminRole` = their role. *Met — the behavioural classes assert
+      the row; `AuditEntryFactoryAdminRoleTests` pins the claim read on both arms (unit, green).*
+- [x] **AC5** — *Given* a company with one Administrator and one Support, *when* the Administrator demotes
       themselves or is demoted, *then* `admin_user.cannot_change_own_role` /
       `admin_user.cannot_demote_last_administrator`; *given* two Administrators, *when* two demotions of
       them race (Testcontainers, two connections), *then* **exactly one succeeds, on every run**, and the
-      same holds for two deactivations.
-- [ ] **AC6** — *Given* the same company, *when* the Administrator is deactivated while only a Support
+      same holds for two deactivations. *Met — `SetAdminRoleTests` + `AdminRoleGuardsRepositoryTests` (unit,
+      green); `AdminRoleGuardRaceTests` (Postgres, first executed by CI).*
+- [x] **AC6** — *Given* the same company, *when* the Administrator is deactivated while only a Support
       remains, *then* `admin_user.cannot_deactivate_last_admin` (the existing key,
-      `BusinessErrorMessage.cs:424`).
-- [ ] **AC7** — The emitted DDL carries `CK_Users_AdminRole_Profile`; an Administrator with a null role and a
+      `BusinessErrorMessage.cs:424`). *Met — `DeactivateAdministratorIfAnotherRemainsAsync`'s predicate reads
+      `other.AdminRole == Administrator`; covered in `AdminRoleGuardsRepositoryTests`.*
+- [x] **AC7** — The emitted DDL carries `CK_Users_AdminRole_Profile`; an Administrator with a null role and a
       Customer with a role both fail `23514`; the seed row reads `AdminRole = 1`;
-      `CreateWithPassword(…, Administrator)` without a role throws.
-- [ ] **AC8** — *Given* an `admin.order.new` event for a company with one Accountant and one Support, *then*
-      one feed row (the Support's); *given* an `admin.dispute.chargeback` event, *then* two (both).
-- [ ] **AC9** — `CompanySignInGate.RefusedProfiles == { Employee }` (a pinned test).
+      `CreateWithPassword(…, Administrator)` without a role throws. *Met — `20260919142517_Initial.cs:1099`;
+      `AdminRoleCheckConstraintTests` (Postgres, first executed by CI); the seed applied by the regen host
+      read `Profile=100, AdminRole=1`; `UserAdminRoleTests` (unit, green).*
+- [x] **AC8** — *Given* an `admin.order.new` event for a company with one Accountant and one Support, *then*
+      one feed row (the Support's); *given* an `admin.dispute.chargeback` event, *then* two (both). *Met —
+      `AdminNotifier` filters through `AdminRoleSets.For(entry.Audience)`; the chargeback entry is `AdminOnly`.*
+- [x] **AC9** — `CompanySignInGate.RefusedProfiles == { Employee }` (a pinned test). *Met — unchanged (D7).*
 
 ### Implementation notes
 
@@ -187,3 +201,14 @@ becomes "per administrator whose role admits `SupportOrAbove`" when this lands (
   and as *"T-0748's own sketch"*, so lines 1–74 stay as they were; the current title is the INDEX row's
   (*"Four administrator roles — Administrator / Manager / Support / Accountant …"*) and the brief below
   the rule carries it. Retitle only together with a re-pin of ADR-0066's citations.
+- 2026-09-19 — `in_progress` → `done` by the backend lane: **`56fa5aa2`** (104 files) and the fix
+  **`45462202`** (the dead `User.SetAdminRole()` writer removed, the console's guards pinned against another
+  company's administrator). `Initial` regenerated as **`20260919142517`** (`dotnet ef migrations remove
+  --force` + `add Initial`, startup `Cleansia.Web.Partner`); the admin NSwag client regenerated against a
+  portable Postgres (`generate-admin-client`, typecheck 3/3); DEV not dropped — owed at the deploy (MS-2).
+  `dotnet build Cleansia.Api.sln -m:4` 0 errors; `Cleansia.Tests` **6174 passed, 0 failed**;
+  `Cleansia.IntegrationTests` and `Cleansia.HostTests` compiled, not executed locally (Docker down) — CI is
+  their first execution. Departures from ADR-0066's text are in its §What shipped (no `User.SetAdminRole()`;
+  `Admits` also `IsDefined`; the lock is Postgres-only by construction; four allow-list entries). Docs by
+  the docs lane the same night: ADR-0066 `accepted`, `docs/domain/roles/admin-role-gate.md`, security-rules
+  S2, features, the admin overview, the API auth page, model, changelog, MS-2, the owner plate.

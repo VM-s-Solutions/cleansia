@@ -48,8 +48,9 @@ sequenceDiagram
 | Two redeliveries in parallel | One wins the insert, the other gets `23505` and acks. |
 | Order already `Paid` or `Refunded` | Short-circuit — but only *after* the cash check. |
 | Event for an order that no longer exists | Logged and ignored. |
-| Payment fails | Status is left alone so the client can retry. |
-| Chargeback | Reflected onto the linked dispute rather than the order's payment status. |
+| Payment fails | Status is left alone so the client can retry. The company's administrators are told of the **first** decline on an order and not of every fumbled card entry: the site reads the feed before raising `admin.payment.failed`, and a decline that lands after the money did, or after the order was cancelled, is news about nothing. |
+| Chargeback | Reflected onto the linked dispute rather than the order's payment status; the administrators are told (`admin.dispute.chargeback`, the reversed amount and the dispute it landed on). |
+| Card order paid | `admin.order.new` to the company's administrators — the order became offerable on this write, never at creation; a redelivery never reaches the site. |
 
 ## Amounts are never reconciled, and do not need to be
 

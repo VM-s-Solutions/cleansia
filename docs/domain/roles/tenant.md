@@ -93,9 +93,11 @@ operating, winding down from a date, deactivated, frozen for archive, archived.
   The lifecycle DTO names actors by e-mail and carries the manifest hash, never a blob path.
 
 ## Watch-list
-- **The day T-0748 gives the holding a role**, `CompanySignInGate.RefusedProfiles` is the one constant
-  that decides whether a deactivated company's own administrators are refused too (ADR-0064 O-1, filed as
-  Q-LC-01). Until then any administrator of the company can reactivate it.
+- **`CompanySignInGate.RefusedProfiles` is the one constant** that decides whether a deactivated
+  company's own administrators are refused too (ADR-0064 O-1, filed as Q-LC-01). T-0748 (ADR-0066 D7)
+  kept it at `{ Employee }` — an administrator of any role is still admitted — and narrowed the act
+  instead: since then only an **Administrator-role** administrator can reactivate the company
+  (`CanReactivateCompany` → `AdministratorOnly`). A holding role is still ADR-0061 D14's open item.
 - **The day a second company exists**, the ticket that onboards it decides whether the registry needs a
   writer — not before. The lifecycle needs none: it already has four.
 - **A tenth tenantless child of a books row** fails `ArchivedCompanyWriteGuardRosterTests` until it is

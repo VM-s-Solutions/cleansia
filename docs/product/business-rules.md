@@ -109,6 +109,48 @@ The customer is refunded **and** credited the apology figure authored for the or
 > the plain cancellation. The home page states the figure from the market, never from the translation;
 > see [Money constants](#money-constants).
 
+### When the last cleaner leaves {#crew-lost}
+
+**A confirmed booking whose last cleaner leaves goes back to `New` and is re-offered; the customer is
+told nothing; the company's administrators are** (owner ruling 2026-09-19, [ADR-0067](/decisions/adr-0067):
+*"it could go back to New since 'Confirmed' means that cleaner(s) are assigned. Also I want admin know
+about it as well."*). Two acts can empty a crew — a cleaner **dropping** the job, and an admin
+**rejecting** a cleaner who holds future confirmed work — and both walk a `Confirmed` order back
+through one domain writer, `Order.ReturnToBoardIfUnstaffed()`. A cover request removes nobody; a
+reassign or a cover swap replaces. Three rules ride with it:
+
+- **The walk-back is `Confirmed`-only; the alarm is not.** A drop is admitted at any offerable status,
+  and an order dropped `OnTheWay` or `InProgress` is never walked back — a cleaner may be in the home —
+  and no sweep selects it. So the administrators are told **whenever the crew empties, at any status**,
+  and the notice says which (`admin.order.crew_lost`, with the cause — *the cleaner dropped it* / *the
+  cleaner's account was rejected* — the order number, the slot, and *"the clean was already under way"*
+  when it was). A two-seat job losing one of two cleaners keeps its status, re-advertises the seat, and
+  tells nobody. → [Administrators are told](#admin-notifications)
+- **An administrator cannot set `Confirmed` on an order with no crew.** The status override refuses it
+  (`order.status.confirmed_needs_crew`); an administrator who wants a cleaner on the job reassigns,
+  which writes `Confirmed` itself. The other forward moves — `OnTheWay`, `InProgress`, `Completed` on an
+  unstaffed order — stay open, as the administrator's own audited repair of the work's state.
+- **A rejection also ends the hold.** A live preferred-cleaner reservation whose beneficiary is the
+  rejected cleaner is ended with the release — an order back on the board must be *on* the board — while
+  a hold naming another cleaner is left alone. → [Offerability](/domain/offerability#the-preferred-cleaner-hold)
+
+**The customer's sequence changes, and nothing new is sent** (default O-D2-1, the owner may overrule).
+A drop moves no money and cancels nothing — *the customer has lost a cleaner, not their clean* — and the
+slot-time sweep is still the one place the customer learns nobody came. But the next take is a
+`New → Confirmed` transition again, so it sends a **second "your order is confirmed" e-mail** on top of
+the assignment push it already sends: *Confirmed → silence → Confirmed again*, with the timeline's
+search step current again in between and no message saying why. Accepted as stated: a new cleaner is
+a new confirmation, and the e-mail is true when it is sent. No "your cleaner left, we are looking for
+another" message exists.
+
+**No invariant is claimed.** Two releases racing on one order — two same-window drops on a two-seat
+job, a drop racing a rejection — can still leave `Confirmed` with nobody on it, because `CurrentStatus`
+is the only concurrency token and neither commit changes it. Every sweep therefore keeps reading the
+crew: `CancelUnfilledOrders` still selects `{New, Confirmed}` with no assignee, the reminders still
+require one, the validators still authorise the caller by their assignment. The status is a summary;
+the crew is the fact. Legacy DEV rows holding `Confirmed` with no crew are harmless for the same
+reason and are not migrated. → [Order lifecycle](/domain/order-lifecycle)
+
 ### When the platform cancels {#platform-cancellation}
 
 Four reasons exist for a cancellation nobody asked for, each a stable key the customer's apps turn into
@@ -254,6 +296,64 @@ in time to *arrange* the day, and the two-hour notice cannot substitute for it. 
 up is somebody else's morning. → [Push notifications](/architecture/push-notifications),
 [ADR-0054](/decisions/adr-0054)
 
+## Administrators are told {#admin-notifications}
+
+**Nine things the platform can prove happened reach the company's administrators through an in-app
+feed and an e-mail, both** (owner ruling 2026-09-19, [ADR-0065](/decisions/adr-0065): *"both in-app and
+email"*). Until then nothing told an administrator anything: a failed erasure was an Error log line, a
+chargeback was a dispute row nobody opened, an order that lost its crew was re-advertised to cleaners
+only. One writer, `IAdminNotifier`, turns an event into one feed row per administrator of the **named**
+company and one e-mail per recipient address, inside the same unit of work as the event — so the rows
+exist iff the event committed, and a failing e-mail can never fail the command, because the command
+never sends one; it writes an outbox row. No push: the admin console is a browser, and the partner app
+an administrator may also hold cannot render these keys.
+
+| Event | When | What the notice carries (never a person) |
+|---|---|---|
+| `admin.order.new` | an order the company now has to serve becomes **offerable** — a cash one-off at creation, a card order on its payment, a recurring occurrence on the customer's confirm. Never an unpaid card checkout, which the stale sweep cancels within the hour | order number, amount with its currency, tender, market |
+| `admin.order.crew_lost` | a drop or an admin rejection leaves nobody on the order, at any status → [above](#crew-lost) | order number, the cause, the status at the loss, the slot |
+| `admin.dispute.filed` | a customer files a dispute | order number, the reason (an enum), the dispute |
+| `admin.dispute.chargeback` | the bank reverses a charge — the dispute named is the customer's open one when there is one, else the chargeback's own | order number, the reversed amount, the dispute |
+| `admin.payment.failed` | a card payment is declined — **once per order**, the first decline only (default O-6): Stripe fires per attempt and the platform resolves the state itself, by a retry or the stale sweep's cancel | order number |
+| `admin.erasure.failed` | the daily retry of a failed account erasure fails again — **once per request per day**, and a request that fails again tomorrow is meant to be heard again | the request, the day |
+| `admin.company.wind_down_requested` | an administrator sets the company's last day of service (a re-run announces nothing) | the date |
+| `admin.company.wind_down_run` | a wind-down run **that did something** — cancelled, refunded, failed a refund or closed a period; a run that moved nothing is not news | the four counts |
+| `admin.company.archived` | the company's books are sealed — the one event written on a frozen company, which the account surface admits | the day |
+
+**Who.** Every active, e-mail-confirmed, non-anonymised administrator of the event's company **whose
+role is in the event's audience** — read by the company **argument**, never by whatever tenant happens to
+be ambient at a webhook or a job — gets their own feed row with their own read state, so the first
+administrator who glances at the bell does not silence it for everyone. The audience is one of the
+administrator sets ([ADR-0066](/decisions/adr-0066) D8): the order, dispute and payment events and a
+lost crew reach **Support and above**; a failed erasure retry reaches **Manager and above**; the three
+company milestones reach **Administrators only**; a **chargeback reaches every role** — Support answers
+the bank, the Accountant reconciles the money that left. The e-mail fan-out below is over the same
+narrowed set. A company with no eligible administrator in the audience is a logged warning, not an error.
+
+**The e-mail, and the one setting.** One template, one subject and one paragraph per event in five
+locales, and a line saying to sign in to the console to act on it — no link, no button, nothing that
+carries a secret; the copy is layered under the admin e-mail-template page like the wind-down notices. The address is decided by one company setting, **`notifications.admin_email`**
+(category *notifications*, on Company settings): set, **exactly that one mailbox** gets one message per
+event, in English; unset — the default — **every administrator in the event's audience** gets their own,
+in their preferred language. The feed rows are written either way; the key changes the e-mail fan-out only. An address is
+stored trimmed and lower-cased, must have one `@` with something on both sides and no whitespace, and
+the empty string is not a value — *unset* is *Reset*. A company that wants three mailboxes has a
+distribution list on its own mail server. The volume this implies until a mailbox is set — fifty
+offerable orders a day times three administrators is 150 e-mails — is default O-5, the owner's to
+overrule.
+
+**What is not built, on purpose.** No digest, no throttling, no per-administrator preference (an
+administrator who does not want order e-mails is a company that sets the mailbox), no reason free
+text, no holding-wide feed (the row is the company's), and no audit row for a mark-read — a bell click
+is not a ledger entry, and the same switch stopped the accidental admin audit rows an administrator
+used to write by marking read in the partner app. Rows fall under `retention.notifications.days`
+(90): the feed is a bell, not a ledger — the record of a chargeback is the dispute, of a failed
+erasure the request row, of a wind-down the company's stamps and the audit trail. Two silent ends are
+named: a mistyped mailbox that bounces dead-letters every admin e-mail and the fallback never
+engages, and a SendGrid outage dead-letters likewise — the feed is the surviving channel in both,
+which is why *both* was the right ruling and not a redundancy. → [Admin notifier](/domain/roles/admin-notifier),
+[Push notifications — the admin audience](/architecture/push-notifications#admin-audience)
+
 ## Cleaner pay
 
 One `EmployeePayConfig` is selected per selected service **and** per selected package, then summed:
@@ -339,7 +439,12 @@ and that one currency scopes everything the cleaner sees and does with money:
   reassigning a cleaner onto an order is the deliberate override** (`AdminReassignOrder` is not
   gated), and an order the cleaner is already on stays visible to them whatever its currency.
 - **My Pay and the dashboard label with it.** Every partner-facing money aggregate is filtered to the
-  resolved currency and printed with its code; counts stay over all orders.
+  resolved currency and printed with its code; counts stay over all orders. **A period that holds pay
+  in more than one currency offers a switch** (owner ruling 2026-09-19): the period view answers the
+  distinct currencies of the cleaner's **pay rows** in that period — the currency shown first, the
+  rest by code — and the partner web shows the switch when there is more than one. Pay rows, not
+  invoices: an open period has no invoice yet, and a cancelled invoice's currency is not a currency the
+  cleaner is owed in. → [Pay and payouts — My Pay](/flows/pay-and-payouts#my-pay-shows-one-currency)
 - **Approval checks the account against it.** An undeclared payout account is read as holding the
   work country's currency, never the platform default — so the normal case needs no declaration.
 - **A customer can only ask for a cleaner who is paid in the order's currency.** The preferred-cleaner
@@ -359,6 +464,45 @@ default. Only a **null** country resolves to the platform default: an unapproved
 country yet, or the customer wizard before an address is known. The seed is what keeps this from ever
 firing — see [Money constants](#money-constants).
 → [Pay and payouts](/flows/pay-and-payouts#approval-is-the-last-refusal)
+
+## The revenue report {#revenue-report}
+
+**Revenue is completed and paid orders, by completion date, in one currency, minus every refund on
+those orders** (owner ruling 2026-09-19: *"paid and completed orders, minus refunds, per currency, by
+completion date"*). Until then the report summed every order whose *cleaning* date fell in the period,
+gross, cancelled ones included. The rules, each one a line of the query or the handler
+(`GetRevenueReport`):
+
+- **An order counts in the period it was completed in** (`CompletedAt`), not the period it was booked
+  for: a clean booked on 31 March and done on 1 April is April's. An order completed by an
+  administrator's status override is dated by the override — until now it carried no completion date
+  and was revenue of no month. Historic override-completed DEV rows are not backfilled.
+- **Only completed, paid orders are revenue.** `Completed` on the fulfilment axis and *paid at some
+  point* on the money axis — `Paid`, `PartiallyRefunded`, `Refunded`, `Disputed` — so a fully refunded
+  order **stays in the set and nets to zero** rather than vanishing. A `Confirmed`, cancelled or unpaid
+  order contributes nothing.
+- **Both refund legs are subtracted from the order they belong to, whatever their date.** The card
+  share is the succeeded `Refund` rows; the credit share is the credit returned to the customer's
+  balance (`OrderPaymentReturned`). Netting the card leg alone would leave 500 of revenue on a 2 000
+  order the customer has entirely back. A refund therefore **reduces the month the order completed
+  in, not the month it was issued** — a closed month changes when a later refund lands, and the page
+  says so. A `Pending` or `Failed` refund row subtracts nothing.
+- **The headline is net; the by-tender table stays gross with the refunds beside it.** `TotalRevenue`
+  is Σ price (gross), `NetRevenue = TotalRevenue − refunded to card − returned as credit` is the
+  ruling's number, and the average order value is net. Per tender the row reads the sale, what was
+  settled from credit, what the tender took, what it gave back to the card and what went back as
+  credit, and **`NetOnTender = taken − refunded to card` — the figure to reconcile against a Stripe
+  statement**, because the gateway never saw the credit. Every derived figure is derived, never
+  summed a second time, so the columns close.
+- **Cancelled bookings are counted on their own axis, not in revenue** — by `CancelledAt` in the
+  period, so an abandoned card checkout (a `Cancelled` track with no `CancelledAt`) is not a booking
+  and is not counted; an accountant reading the order list should not file the difference as a bug.
+- **One currency per report**, as before; an order in another currency is absent.
+
+**Two named gaps, stated on the page.** A **lost chargeback is not subtracted**: the platform records
+the dispute's outcome, not the amount the bank reversed, and a wrong number in a money report is worse
+than a stated gap (default O-D3-2 — the fix, if wanted, is one column stamped from the `lost` webhook).
+A **cash order refunded by hand has no refund record** and shows gross. → [Admin reporting](/admin-app/reporting#revenue-report)
 
 ## Charging a package and a service together
 
@@ -669,7 +813,11 @@ date already past in any of the company's markets — "today" is read in its eas
 a second date is refused (`company.wind_down_already_requested`; an earlier close is an admin cancelling
 the stragglers by hand). The request enqueues one sweep, which runs in the background and can be run
 again from the page (*Run wind-down again*) until nothing is left; a re-run while one is in flight is
-refused (`company.wind_down_in_progress`, for at most an hour). In order:
+refused (`company.wind_down_in_progress`, for at most an hour). **The company's own administrators are
+told of three milestones** through the admin feed and e-mail: the request (the date), each run **that
+did something** (how many bookings cancelled, refunds issued, refunds failed, pay periods closed — a
+re-run that moved nothing is not news), and the archive (the day the books were sealed)
+→ [Administrators are told](#admin-notifications). In order:
 
 1. **Everyone is told first, by e-mail** — every active, e-mail-confirmed customer and every approved
    cleaner of the company; not a deleted account, an unconfirmed sign-up or a rejected applicant. The
@@ -773,7 +921,9 @@ company's settings; the admin and cleaner audit trails), every receipt PDF and e
 (copied — the originals stay where customers download them), and a manifest written last with the row
 count and SHA-256 of every file, the schema version, and the freeze and build instants. The manifest's
 own hash is stamped on the company's row and shown on the page, so a copy in hand can be checked against
-the database. **Not in the bundle**: accounts, consents, customer audit rows, bank details, memberships,
+the database, and the administrators are told the books were sealed — the one notice written on a
+frozen company, admitted because a person's feed row and an outbox row are account surface, not books.
+**Not in the bundle**: accounts, consents, customer audit rows, bank details, memberships,
 notifications, devices, notes, photos, reviews, dispute messages and evidence — the personal-data estate
 stays in the database under the retention and erasure regime, which keeps running on a frozen company.
 Retrieval of the bundle is an operations step in the storage account until roles exist. A build that
@@ -921,7 +1071,10 @@ catalogue no longer accepts falls back to the default rather than to zero.
 A tenth catalogue key sits beside them on the same page under its own category, `lifecycle`: the
 **chargeback horizon** (`lifecycle.chargeback_horizon_days`, default **180**, range **0 – 730** days —
 zero means no horizon), counted from the company's latest card-paid cleaning; the company cannot be
-archived until it has passed → [A company's lifecycle](#company-lifecycle).
+archived until it has passed → [A company's lifecycle](#company-lifecycle). An eleventh, under
+`notifications`, is the first that is not a number: the **shared mailbox for administrator notices**
+(`notifications.admin_email`, an e-mail address; empty by default, which means every administrator is
+e-mailed individually) → [Administrators are told](#admin-notifications).
 
 **Erasure keeps the row and blanks where it came from — and it is one commit.** Account deletion
 nulls the IP address, the device label and the device id on every row of the subject — and on the
@@ -957,8 +1110,9 @@ reason (exception type and message, any e-mail blanked) and who asked (`self`, t
 the customer cannot file a second request while one is not yet completed (they see the existing
 "already pending" answer). A daily job (05:00 UTC) retries every `Failed` request — and every request
 left `Processing` for more than thirty minutes by a host that died mid-walk — once per row per day,
-appending the outcome to the row and logging a still-failed one at Error; an admin can retry it from
-the data-protection page at any time.
+appending the outcome to the row, logging a still-failed one at Error and **telling the company's
+administrators** (feed and e-mail, once per request per day — [Administrators are told](#admin-notifications));
+an admin can retry it from the data-protection page at any time.
 
 **Support reads it; nobody else does.** The three admin reads and the per-customer timeline are behind
 `CanViewAuditLog` — no separate support role yet (owner, Q-AUD-O1: *"a few more roles like Support /

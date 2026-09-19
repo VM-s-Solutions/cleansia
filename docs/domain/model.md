@@ -81,7 +81,7 @@ erDiagram
 
 | Entity | |
 |---|---|
-| `User` | references `PreferredLanguage`; unique `Email` (`citext`) **with no tenant term** — one identity per email across the holding ([ADR-0061](/decisions/adr-0061) D5.1); `TenantId` NOT NULL is the operating company the account belongs to, the market's operator at registration |
+| `User` | references `PreferredLanguage`; unique `Email` (`citext`) **with no tenant term** — one identity per email across the holding ([ADR-0061](/decisions/adr-0061) D5.1); `TenantId` NOT NULL is the operating company the account belongs to, the market's operator at registration; `AdminRole` (nullable int: Administrator 1 / Manager 2 / Support 3 / Accountant 4) is NOT NULL iff `Profile` is `Administrator` — `CK_Users_AdminRole_Profile` ([ADR-0066](/decisions/adr-0066)) |
 | `Employee` | references `Nationality`, `User`, `WorkCountry` — at approval the work country's operator must be the admin's own tenant (`employee.work_country_operator_mismatch`) |
 | `RefreshToken` | references `User` |
 | `Device` | references `User` |
@@ -300,7 +300,7 @@ named on their rows: `OrderReview` and `OrderReviewLine` (declared, with delete 
 
 | Entity | |
 |---|---|
-| `AdminActionAudit` | — |
+| `AdminActionAudit` | no references; `ActorAdminRole` (nullable int) records the administrator role the act ran under, read from the `admin_role` claim ([ADR-0066](/decisions/adr-0066) D5) |
 | `CountryInvoiceConfig` | references `Country` |
 | `DeadLetter` | — |
 | `EmailTemplateTranslation` | references `Language` |

@@ -184,5 +184,19 @@ are refused (`order.invalid_status_transition`), as is any move out of a termina
 new `Pending` row could appear. It stays in the handler's rank array so legacy rows holding it can
 still be ranked and moved forward.
 
+**`Confirmed` is refused as a target on an order with nobody assigned** (`order.status.confirmed_needs_crew`,
+[ADR-0067](/decisions/adr-0067)). `Confirmed` means a cleaner took the job, and a release that empties
+the crew walks it back to `New` — so this was the one door an administrator could open onto that state
+with a click. An administrator who wants a cleaner on the order reassigns, which writes `Confirmed`
+itself. The other forward moves stay open on an unstaffed order: `New → OnTheWay / InProgress /
+Completed` are the *"the cleaner is there but never tapped"* repairs, about the work's state rather
+than the crew's, and they are the administrator's own audited act — an unstaffed `OnTheWay` produced
+this way is one no sweep cancels out from under them.
+
+**An override to `Completed` stamps `CompletedAt`.** The override does not run the completion
+pipeline (pay, receipt, fiscal — that is `CompleteOrder`'s), but the revenue report reads
+`CompletedAt`, so an override that completes the order has to date it or the order is revenue of no
+month; the first stamp wins.
+
 Every override is audited (`order.status.override`, marked sensitive) and, for targets that map to a
 Live Activity event, pushes a state-card update.

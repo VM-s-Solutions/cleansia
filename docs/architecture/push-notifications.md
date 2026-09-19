@@ -247,6 +247,50 @@ resources, so the two must stay in step.
 
 Several keys exist as separate keys for reasons that are easy to undo by "simplifying" them.
 
+### The admin audience: a feed and an e-mail, never a push {#admin-audience}
+
+The in-app feed has **three** audiences, and the host controller sets which one a request serves —
+`NotificationFeedAudience { Customer, Partner, Admin }` — so a dual-role user's console can never read,
+count or mark-read a row of their partner-app feed. The customer and partner keysets are lists that
+trail their clients' templates (a key belongs in a keyset only once the audience's clients render it,
+or the badge counts a row the app drops unrendered). **The admin keyset is the catalogue by
+construction** — `NotificationFeedEventKeys.Admin = AdminNotificationEventCatalog.All`, the nine
+`admin.*` keys ([ADR-0065](/decisions/adr-0065)) — because the console is built to render every key of
+its catalogue, and a spec walks the C# file so a key added on the server fails the admin build without
+its five-locale sentence.
+
+Three things separate this audience from the other two:
+
+| | Customer / partner | Admin |
+|---|---|---|
+| Writer | `NotificationProducer.NotifyAsync` — the feed row **and** an unconditional push | `AdminNotifier.NotifyAsync` — the feed row and an outbox **e-mail**; no push, ever. `IsFeedEvent` does not know the admin keys: the push seam cannot write them |
+| Recipient | one user, resolved from the persisted row | every eligible administrator of the **named** company, one row each, read by argument past the tenant filter |
+| Category / mute | `GetCategoryFor(key)` → a mutable category, or non-mutable | every `admin.*` key maps to **null**: no category, no preference, nothing to mute — an administrator who does not want order e-mails is a company that sets the mailbox |
+
+**Why no push.** `NotificationProducer` enqueues a `SendPushNotificationMessage` on every call, an
+administrator may hold a partner-app device row, and a push would reach an app that cannot render an
+`admin.*` key — the admin console is a browser, and it polls `unread-count` once a minute while the tab
+is visible instead. **The e-mail rides the same `send-email` queue** as every other message, as a second
+message shape the consumer tells apart by a `messageType` discriminator (`admin-notification`), the way
+the guest cancellation e-mail already did: one `EmailType.AdminNotification`, one embedded template
+(`admin-notification.html`), and per-event subject and body copy in five locales keyed
+`{eventKey}.Subject` / `.Body` (the crew-lost event adds `.BodyUnderWay` and two `.Cause.*` phrases),
+layered under the admin e-mail-template page's rows like the wind-down notices. Its message key is
+`admin-email:{eventKey}:{subject}:{hash(address)}` — the address hashed so no recipient appears in a
+key or a log line — which is why an event's **subject must be unique per logical event across
+requests**: the outbox index fails the second commit rather than collapsing it. **Args are never PII**,
+the same rule as the two client feeds: ids, numbers, enum names, dates and money, and the catalogue
+entry declares the exact set a site may pass, so a site cannot smuggle a name in. Rows fall under
+`retention.notifications.days` like every other feed row.
+
+**The customer keyset is unchanged by the walk-back**, and one consequence is named rather than hidden:
+when a `Confirmed` order loses its last cleaner and goes back to `New` ([ADR-0067](/decisions/adr-0067)),
+no customer push, e-mail or feed row is written — but the next take is a `New → Confirmed` transition
+again, so the customer receives a **second** "your order is confirmed" e-mail on top of the assignment
+push. A new cleaner is a new confirmation; the e-mail is true when it is sent (default O-D2-1).
+→ [Business rules — administrators are told](/product/business-rules#admin-notifications),
+[Admin notifier](/domain/roles/admin-notifier)
+
 ### Why the cleaner-assigned event is not the confirmed event {#assigned-vs-confirmed}
 
 `order.payment_confirmed` records the payment-side confirmation. The Stripe webhook settles a card

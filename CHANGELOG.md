@@ -70,6 +70,42 @@ need backfilling.
 
 ### Added
 
+- **Admin — four administrator roles: Administrator, Manager, Support, Accountant.** Every administrator
+  account now carries a role, and the console shows each role only what it may do while the server refuses
+  the rest whether or not a button was visible. An Administrator has everything. A Manager has everything but
+  the company's own affairs — the lifecycle, the company settings, the legal documents, the administrator
+  accounts and their roles. Support runs the day: orders (the full detail, door codes, reassign, override,
+  cancel, refunds), disputes, customers (credit, loyalty, referrals, exports, the incident file, consents,
+  GDPR requests), cleaners (approve, reject, identity documents) and the audit log — not payouts, pay
+  periods, reports, erasure, pay rates or catalogue changes. The Accountant keeps the books: payout invoices,
+  pay periods, pay rates (read-only), the revenue and payroll reports, fiscal failures, masked payout details
+  and the cleaner list — not an order's detail, a customer's page or a cleaner's documents. Every role reads
+  the catalogue, the company info, a credit balance and the notifications feed (a chargeback is told to
+  every role; an order, dispute or payment event to Support and above; a failed erasure to Manager and
+  above; a company milestone to Administrators only). Every act is on the audit log with the role it ran
+  under, and the log filters by role. An Administrator assigns roles from the administrators page — never
+  to themselves and never off the company's last Administrator, who likewise cannot be deactivated while
+  only a Support remains; a new account starts as Support. A changed role reaches the person's session
+  within fifteen minutes without a sign-out. Cleaners and customers see no change. **Operator:** the
+  database migration was regenerated (`20260919142517_Initial`) — the DEV drop before the next deploy covers
+  it; the seeded administrator is an Administrator. (ADR-0066; owner ruling 2026-09-19, *"let's do those 3
+  for now"*.)
+
+- **Admin — administrators are told, in the console and by e-mail.** A *Notifications* entry, first in
+  the admin sidebar with the unread count as its badge (a bell on the mobile toolbar), and a page that
+  lists, newest first, the things the company has to act on: an order the company now has to serve (a
+  cash booking at creation, a card booking once paid, a recurring visit once confirmed — never an
+  abandoned checkout), an order that lost its last cleaner (at any status, saying whether the clean was
+  already under way), a dispute filed, a chargeback, the first card decline on an order, a failed
+  erasure retry, and the company's own wind-down request, each wind-down run that did something, and the
+  archive. A row opens the order, dispute, data-protection or company-lifecycle page it names and is
+  marked read; *mark all read* clears the badge. Every event is also e-mailed, from one template with
+  per-event copy in five locales: to each administrator in their own language, or — once the company sets
+  the new **administrator notification mailbox** on Company settings (`notifications.admin_email`, the
+  eleventh setting, an e-mail field that reads *every administrator* while unset) — to that one address,
+  in English. The notices carry order numbers, amounts, dates and ids, never a person. Nothing is pushed
+  to a phone. (ADR-0065; owner ruling 2026-09-19, *"both in-app and email"*.)
+
 - **Plus — a recurring schedule pause is now explained.** After a confirmed paid membership
   lapses, the customer receives one notice explaining that scheduling is paused and renewing Plus
   resumes it. Existing booked visits remain intact; muting push still leaves the feed item. Android
@@ -359,6 +395,28 @@ need backfilling.
 
 ### Changed
 
+- **Customer, cleaner, admin — a confirmed booking whose last cleaner leaves goes back to *New* and is
+  re-offered.** When a cleaner drops a job, or an admin rejects a cleaner who holds future confirmed
+  work, and nobody is left on the booking, its status walks back from *Confirmed* to *New* (the one
+  backward move the platform makes) and the seat is re-advertised; a rejection also ends a
+  preferred-cleaner hold the rejected cleaner held. A booking already on the way or in progress is not
+  walked back — the administrators are told instead, at any status. The customer is not messaged on the
+  walk-back; the next cleaner to take it sends a second "your order is confirmed" e-mail. An admin's
+  status override can no longer set *Confirmed* on a booking with nobody assigned — reassign instead.
+  (ADR-0067; owner ruling 2026-09-19.)
+
+- **Admin — the revenue report is net, by completion date.** The headline is completed and paid
+  orders in the period **by completion date**, in one currency, **minus every refund on those orders** —
+  card refunds and credit returned to the customer's balance — whatever the refund's date, so a refund
+  reduces the month the order completed in, not the month it was issued. Cancelled and unpaid orders
+  are no longer revenue; cancelled bookings are counted beside it, by cancellation date, and an
+  abandoned card checkout is not counted. The per-tender table gains *Refunded to card*, *Returned as
+  credit* and *Net on tender* — the figure to reconcile against the gateway statement; the *Completed
+  orders* card is gone (it always equalled the total). The page states the definition and the two gaps it
+  does not close: a lost chargeback is not subtracted, and a cash order refunded by hand shows gross. A
+  status override to *Completed* now dates the completion, so an override-completed order is revenue of
+  a month; historic override-completed DEV rows are not backfilled. (Owner ruling 2026-09-19.)
+
 - **Operator — release updated mobile clients before the notification backend.** New payment-side
   confirmations use `order.payment_confirmed`; both mobile platforms retain `order.confirmed` for
   old feed rows, queued messages and notifications held by devices. Copy and triggers stay the same.
@@ -527,6 +585,30 @@ need backfilling.
   never run before** — expect a burst of previously-undelivered notifications on that deploy.
 
 ### Fixed
+
+- **Cleaner — the My Pay currency switch follows the period's pay, not its invoices.** A period holding
+  pay in more than one currency (reachable only through an admin reassignment) now offers the switch on
+  the partner web as soon as the rows exist — an open period used to show none until it was invoiced, so
+  its second currency was unreachable — and a cancelled invoice's currency is no longer offered when no
+  pay row is in it. The period view carries the available currencies; the mobile apps ignore the new
+  member until they read it. (Owner ruling 2026-09-19.)
+
+- **Admin — marking a notification read in the partner app no longer writes an admin audit row.** An
+  administrator who also holds a cleaner account used to leave an admin act on the audit log for every
+  bell tap; a mark-read is not a ledger entry on either feed. (ADR-0065)
+
+- **Admin — reassigning a cleaner no longer writes a status row that collides with the booking's first
+  one.** The reassign appended its *Confirmed* row without the order's history loaded, so its sequence
+  number clashed with the creation row's. (ADR-0067)
+
+- **Partner and admin web — the responsiveness audit's fixes.** The admin package edit page rendered
+  nothing (its load re-armed itself); the partner and admin shells had no navigation at exactly 768 px
+  (the sidebar collapsed at ≤ 768 while the shell switched to mobile below it); a shared input inside a
+  nested form group bound to the wrong control on the admin catalogue forms; thirteen action labels
+  truncated at 400/768 px on the partner data-protection and My Pay pages and the admin employee
+  documents, e-mail translations and audit entry pages — standalone actions now size to their label;
+  and every tappable control carries a 44 px hit ring around the unchanged visual. (T-0776; owner
+  ruling 2026-09-19 on the 2026-09-16 audit.)
 
 - **iOS — profile and Plus content stays below the status bar while scrolling.** Both profiles and
   the customer Plus offer keep their content inside the safe viewport. Order-sheet decorations are

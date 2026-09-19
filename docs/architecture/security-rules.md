@@ -59,7 +59,76 @@ Every controller method has exactly one of:
 - `[Authorize]` with no policy — only for "any authenticated user" routes (e.g. `GetMyProfile`).
 
 A new endpoint with **none** of these is a hole: the default policy requires authentication, but a
-missing policy attribute lets *any* authenticated user (any role, any tenant) hit it.
+missing policy attribute lets *any* authenticated user (any role, any tenant) hit it. On the admin host
+that sentence is now mechanical: `AdminHostPermissionCoverageTests` (`Cleansia.HostTests`) reflects every
+action on every admin controller and fails one that carries no `[Permission]` mapping to a non-`Deny`
+physical policy unless it is on a four-entry allow-list with a reason (`Login`, `RefreshToken`, `Logout`,
+`AdminCodeController.GetOverview`).
+
+### Administrator roles (ADR-0066, accepted 2026-09-19)
+
+**An admin permission is gated by a *set of administrator roles*, resolved through the map that already
+existed; a handler never reads the role.** `UserProfile.Administrator` stays the profile — it answers *which
+audience is this account?* and every `role == UserProfile.Administrator` check in a handler keeps asking
+exactly that. Beside it `User.AdminRole` (`Administrator` / `Manager` / `Support` / `Accountant`; `NOT NULL`
+iff the profile is `Administrator`, `CK_Users_AdminRole_Profile`) answers *which administrator?*, is minted
+into the JWT as one claim `admin_role` (`AuthExtensions.cs:30-33`), and is read in **one** place: the four
+physical policies registered beside `AdminOnly` (`Cleansia.Config/Services/ServiceExtensions.cs:65-77`) through
+`AdminRoleSets.Admits(ctx.User, set)` (`AdminRoleSets.cs:56-60`) — Administrator profile **and** a parseable,
+defined claim **and** membership; anything else is `false`. The matrix is a lattice, so five names cover it:
+`AdministratorOnly` ⊂ `ManagerOrAbove` ⊂ (`SupportOrAbove` ∪ `AccountantOrAbove`) ⊂ `AdminOnly`
+(`PhysicalPolicy.cs:9-18`). **`AdminOnly` keeps its name and requires no claim** — that is what keeps a
+token minted before the deploy usable on any-administrator routes until its refresh — while the four sets
+refuse a claimless Administrator. `PolicyBuilder.Map` is the whole surface (`PolicyBuilder.cs:8-301`; the
+row-by-row table is ADR-0066 D3), pinned by `FrozenPermissionMapTests` and evaluated by
+`AdminRolePolicyMatrixTests` for every row × eight principals through `IAuthorizationService`, so a new
+constant without a row fails boot (`AssertComplete`) and a row without an expectation fails the build.
+
+**Where the server gates and where the web merely hides.** The server is the gate: every admin-host route
+resolves its `[Permission]` to a set and 403s a role outside it. The admin web is a **hint** that mirrors
+the same map — `PermissionService.satisfies` answers a set policy with `role === Administrator &&
+ADMIN_ROLE_SETS[physical].includes(adminRole)` (`permission.service.ts:37-44`) from the `adminRole` the
+login/refresh response stored beside `role`; `permissionGuard` (`permission.guard.ts:11-17`) sends a route
+whose `data.permission` the role lacks to `/unauthorized`; every sidebar entry carries a `permission`
+(`admin-menu.ts:17`); `policy-map-mirror.spec.ts` diffs the TypeScript mirror against the C# source so a
+row moved on one side reddens the build. The hint **over-shows** on an unknown policy (`Authenticated`
+fallback) and is **fifteen minutes stale** after a role change (the token's own lifetime; the refresh
+response re-runs `setSession`) — neither widens what the server allows, and no bulk revocation is done on a
+role change (the residual is audited, below).
+
+**A read the admin host shares with a partner host gets an `…Admin` constant when the role must gate it.**
+`CanViewOrderDetail` is `Authenticated` because a cleaner reads a job before taking it, and
+`CanViewPagedInvoices` is `EmployeeOrAdmin` because a cleaner reads their own invoices; narrowing either
+would refuse the cleaner. So the admin controller moves onto a twin — `CanViewOrderDetailAdmin`,
+`CanViewPagedInvoicesAdmin` and six more (`PolicyBuilder.cs:41-46, 82, 93, 101, 118-119`) — the partner hosts
+stay byte-identical, and the customer's phone and address, the cleaner's identity documents and the payout
+ledger are behind the role on the admin host. The `CanViewDisputeAdmin` precedent, applied eight times. A
+reviewer greps the admin controllers for the bare shared name and expects nothing.
+
+**A last-of-kind guard on `Users` runs under the company's advisory lock.** *"Never demote or deactivate
+the last Administrator"* is a predicate over *other* rows, and a conditional `UPDATE … WHERE another remains`
+is not atomic against a second one on a different row — under READ COMMITTED each statement's snapshot
+sees the other row still active, both land, and the company has no Administrator (write skew, not a lost
+update — S7a's `ExecuteUpdateAsync` shape does not cover it). `UserRepository.DemoteAdministratorIfAnotherRemainsAsync`
+and `DeactivateAdministratorIfAnotherRemainsAsync` (`UserRepository.cs:171-218`) therefore each open a
+transaction, take `SELECT pg_advisory_xact_lock(hashtext(tenantId))` (`:220-227`; Postgres only — the SQLite
+unit-test provider serialises on one connection), then run the conditional `UPDATE`; `0 rows` is the business
+error (`admin_user.cannot_demote_last_administrator` / `admin_user.cannot_deactivate_last_admin`), and the
+race test on Testcontainers proves exactly one of two concurrent demotions succeeds on every run. The
+tenant is the actor's claim passed explicitly (S1), so the lock key and the predicate name one company.
+There is **no** `User.SetAdminRole()`: the only writers of the column are `CreateWithPassword(adminRole:)`
+(which throws on an Administrator without a role — a silent default to the top role would be fail-open in
+a factory) and the guarded repository update.
+
+**Accountability carries the role.** `AdminActionAudit.ActorAdminRole` is read from the claim on both arms
+(`AuditEntryFactory.cs:143-150`); `AuditGate`'s admin arm fires on the **profile**, so every act by a
+Manager, Support or Accountant lands on the admin table with the role it ran under — which is what makes
+the fifteen-minute residual above acceptable. `SetAdminRole` itself is audited (`admin.user.set_role`, a
+`RoleSnapshot` before and after, no PII) and refuses the caller's own row. The [AdminNotifier](/domain/roles/admin-notifier)
+narrows recipients by the same sets through the entry's `Audience` — a set **name**, never a policy
+(`AdminEventCatalog.cs:21-38`), so a chargeback can reach every role. **The partner hosts never read the
+role**: the claim rides an administrator's partner-audience token and nothing there consults it.
+→ [AdminRoleGate](/domain/roles/admin-role-gate), [ADR-0066](/decisions/adr-0066)
 
 **Accountability (ADR-0012).** Every admin mutation (a `Command` run by an `Administrator`) leaves an
 append-only `AdminActionAudit` row, captured generically by `AuditLogBehavior` — you write no audit

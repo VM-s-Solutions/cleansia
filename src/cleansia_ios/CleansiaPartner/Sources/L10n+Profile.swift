@@ -193,18 +193,6 @@ extension L10n {
             localized("profile_legal_entity_name")
         }
 
-        static var entityType: String {
-            localized("profile_entity_type")
-        }
-
-        static var entityTypeNatural: String {
-            localized("profile_entity_type_natural")
-        }
-
-        static var entityTypeLegal: String {
-            localized("profile_entity_type_legal")
-        }
-
         static var iban: String {
             localized("profile_iban")
         }
@@ -445,10 +433,6 @@ extension L10n {
 
         static var errorRegistrationNumberRequired: String {
             localized("profile_error_registration_number_required")
-        }
-
-        static var errorLegalEntityNameRequired: String {
-            localized("profile_error_legal_entity_name_required")
         }
 
         static var errorAddressNotPicked: String {

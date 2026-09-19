@@ -37,8 +37,18 @@ final class IdentificationSectionViewModelTests: XCTestCase {
         guard case .loaded = vm.state else { return XCTFail("expected loaded") }
         XCTAssertEqual(vm.form.passportId, "P123")
         XCTAssertEqual(vm.form.businessCountryId, "cz")
-        XCTAssertTrue(vm.isLegalEntity)
+        XCTAssertEqual(vm.form.storedLegalEntityName, "Acme s.r.o.")
         XCTAssertEqual(vm.countryOptions.first?.label, "Czechia")
+    }
+
+    /// The server nulls the legal name for a natural person, so a name beside `._1` is stale data
+    /// and the row is not a company: nothing is shown for it.
+    func testANaturalPersonShowsNoStoredLegalName() async {
+        client.employeeResult = .success(EmployeeItem(id: "emp-1", entityType: ._1, legalEntityName: "stale"))
+        let vm = makeVM()
+        await vm.load()
+
+        XCTAssertNil(vm.form.storedLegalEntityName)
     }
 
     func testLoadFailureSetsErrorAndSnackbars() async {
@@ -96,12 +106,27 @@ final class IdentificationSectionViewModelTests: XCTestCase {
         XCTAssertEqual(vm.form.passportId, "P123")
     }
 
-    func testSwitchingToNaturalClearsLegalEntityName() async {
-        client.employeeResult = .success(EmployeeItem(id: "emp-1", entityType: ._2, legalEntityName: "Acme"))
+    /// A cleaner contracts as a natural person and the server refuses anything else on this write,
+    /// so the command names the natural person and carries no legal name — even for a row an
+    /// operator onboarded as a company, whose stored name is shown but never sent back.
+    func testSaveSendsTheNaturalPersonAndNoLegalName() async {
+        client.employeeResult = .success(EmployeeItem(
+            id: "emp-1",
+            countryId: "cz",
+            nationalityId: "cz",
+            passportId: "P123",
+            entityType: ._2,
+            registrationNumber: "12345678",
+            legalEntityName: "Acme s.r.o."
+        ))
         let vm = makeVM()
         await vm.load()
-        vm.setEntityType(._1)
-        XCTAssertEqual(vm.form.legalEntityName, "")
+
+        await vm.save()
+
+        XCTAssertEqual(client.identificationCommand?.entityType, ._1)
+        XCTAssertNil(client.identificationCommand?.legalEntityName)
+        XCTAssertEqual(client.identificationCommand?.registrationNumber, "12345678")
     }
 
     func testSaveValidationFailureSkipsNetwork() async {

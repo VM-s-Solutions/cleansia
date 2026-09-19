@@ -9,10 +9,12 @@ final class IdentificationSectionViewModel: ViewModel {
         var employeeId: String
         var nationalityId: String?
         var passportId: String
-        var entityType: EmployeeEntityType
         var businessCountryId: String?
         var registrationNumber: String
-        var legalEntityName: String
+        /// Display only. An operator may onboard a company by hand, and what the server holds for
+        /// such a row is shown, never edited or sent from here — a cleaner contracts as a natural
+        /// person and the server refuses anything else on this write.
+        var storedLegalEntityName: String?
     }
 
     @Published private(set) var state: UiState<Void> = .loading
@@ -21,10 +23,9 @@ final class IdentificationSectionViewModel: ViewModel {
         employeeId: "",
         nationalityId: nil,
         passportId: "",
-        entityType: ._1,
         businessCountryId: nil,
         registrationNumber: "",
-        legalEntityName: ""
+        storedLegalEntityName: nil
     )
     @Published private(set) var countryOptions: [CleansiaDropdownOption] = []
 
@@ -51,10 +52,6 @@ final class IdentificationSectionViewModel: ViewModel {
         self.snackbar = snackbar
     }
 
-    var isLegalEntity: Bool {
-        form.entityType == ._2
-    }
-
     func load() async {
         state = .loading
         let countries = await (client.getAllCountries()).valueOrNil ?? []
@@ -68,10 +65,9 @@ final class IdentificationSectionViewModel: ViewModel {
                 employeeId: employee.id ?? "",
                 nationalityId: employee.nationalityId,
                 passportId: employee.passportId ?? "",
-                entityType: employee.entityType ?? ._1,
                 businessCountryId: employee.countryId,
                 registrationNumber: employee.registrationNumber ?? "",
-                legalEntityName: employee.legalEntityName ?? ""
+                storedLegalEntityName: employee.entityType == ._2 ? employee.legalEntityName : nil
             )
             state = .loaded(())
             await loadFieldLabels(for: employee.countryId)
@@ -96,13 +92,6 @@ final class IdentificationSectionViewModel: ViewModel {
         fieldLabels = result.valueOrNil.flatMap { $0 }
     }
 
-    func setEntityType(_ type: EmployeeEntityType) {
-        form.entityType = type
-        if type != ._2 {
-            form.legalEntityName = ""
-        }
-    }
-
     func save() async {
         guard case .loaded = state, !action.isSubmitting else { return }
         guard !form.employeeId.isBlank else {
@@ -125,20 +114,16 @@ final class IdentificationSectionViewModel: ViewModel {
             snackbar.showError(L10n.Profile.errorRegistrationNumberRequired)
             return
         }
-        if isLegalEntity, form.legalEntityName.isBlank {
-            snackbar.showError(L10n.Profile.errorLegalEntityNameRequired)
-            return
-        }
 
         action = .submitting
         let command = UpdateIdentificationInfoCommand(
             employeeId: form.employeeId,
             nationalityId: nationalityId,
             passportId: form.passportId.trimmed,
-            entityType: form.entityType,
+            entityType: ._1,
             businessCountryId: businessCountryId,
             registrationNumber: form.registrationNumber.trimmed,
-            legalEntityName: form.legalEntityName.trimmedOrNil
+            legalEntityName: nil
         )
         switch await client.updateIdentificationInfo(command) {
         case .success:

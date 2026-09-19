@@ -8,7 +8,6 @@ import cz.cleansia.core.auth.AuthAuthenticator
 import cz.cleansia.core.auth.TokenStore
 import cz.cleansia.core.auth.JwtDecoder
 import cz.cleansia.core.auth.ForcedSignOutReason
-import cz.cleansia.core.consent.SignupConsentRepository
 
 import android.util.Log
 import cz.cleansia.core.network.ApiError
@@ -55,12 +54,6 @@ class AuthRepository(
     private val sessionManager: SessionManager,
     private val sessionScopedCaches: Set<@JvmSuppressWildcards SessionScopedCache>,
     private val pushTokenRepository: PushTokenRepository,
-    /**
-     * Lazy for the same reason as [authenticatedApi]: it reaches the GDPR endpoints
-     * through the authenticated Retrofit, and that graph owns [AuthAuthenticator],
-     * which holds a `Provider<AuthRepository>` back to this class.
-     */
-    private val signupConsent: javax.inject.Provider<SignupConsentRepository>,
     private val json: Json,
 ) : RefreshClient {
 
@@ -229,12 +222,6 @@ class AuthRepository(
         sessionScopedCaches.forEach { it.clear() }
 
         tokenStore.save(tokens)
-
-        // The signup tick predates any session, and this is the first point at which the
-        // SERVER has named the account it belongs to. Best-effort inside — sign-in must
-        // not be breakable by the bookkeeping call that rides it — and it returns before
-        // any network call when nothing is parked, which is every sign-in but the first.
-        signupConsent.get().deliverFor(body.email)
 
         // Device registration is driven by PushTokenSessionObserver,
         // which reacts to the auth-token flow flipping null→non-null

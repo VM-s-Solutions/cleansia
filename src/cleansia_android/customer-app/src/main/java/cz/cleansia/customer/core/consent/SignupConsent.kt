@@ -1,9 +1,9 @@
-package cz.cleansia.core.consent
+package cz.cleansia.customer.core.consent
 
 /**
  * The GDPR consent kinds the backend records, by their on-the-wire integer
- * (`Cleansia.Core.Domain.Enums.ConsentType`). The customer app maps this onto its
- * OpenAPI-generated enum, whose entries are named `_0`.. `_3`.
+ * (`Cleansia.Core.Domain.Enums.ConsentType`), named so the booking review step does not have to
+ * read the generated enum's `_0`..`_3` entries.
  */
 enum class SignupConsentType(val wireValue: Int) {
     TermsOfService(0),
@@ -19,16 +19,9 @@ enum class SignupConsentType(val wireValue: Int) {
 }
 
 /**
- * One tick, two records: both signup sentences name the Terms of Service and the
+ * One tick, two records: the signup and booking sentences name the Terms of Service and the
  * Privacy Policy by title. Neither form offers a marketing box, so
- * [SignupConsentType.MarketingEmails] must never appear here — a record nobody
- * ticked is worse than no record at all.
+ * [SignupConsentType.MarketingEmails] must never appear here.
  */
 val SIGNUP_TICK_CONSENTS: List<SignupConsentType> =
     listOf(SignupConsentType.TermsOfService, SignupConsentType.PrivacyPolicy)
-
-/** A signup tick waiting for a session it can be recorded against. */
-data class PendingSignupConsent(
-    val email: String,
-    val types: List<SignupConsentType>,
-)

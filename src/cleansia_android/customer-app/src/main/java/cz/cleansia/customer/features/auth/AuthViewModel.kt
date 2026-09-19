@@ -3,7 +3,6 @@ package cz.cleansia.customer.features.auth
 import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import cz.cleansia.core.consent.SignupConsentRepository
 import cz.cleansia.core.network.ApiResult
 import cz.cleansia.customer.R
 import cz.cleansia.customer.core.auth.ApiErrorParser
@@ -41,7 +40,6 @@ class AuthViewModel @Inject constructor(
     private val settings: AppSettingsRepository,
     private val snackbar: SnackbarController,
     private val googleSignInController: GoogleSignInController,
-    private val signupConsent: SignupConsentRepository,
     private val marketRepository: MarketRepository,
     @ApplicationContext private val appContext: Context,
 ) : ViewModel() {
@@ -110,7 +108,6 @@ class AuthViewModel @Inject constructor(
                 countryId = marketRepository.ensureLoaded().countryId,
             )
                 .onSuccess {
-                    signupConsent.recordSignupTick(email, acceptedTerms)
                     _uiState.value = AuthUiState(outcome = AuthOutcome.NeedsEmailConfirm(email))
                 }
                 .onError { error ->
@@ -220,10 +217,6 @@ class AuthViewModel @Inject constructor(
         viewModelScope.launch {
             when (val pick = googleSignInController.signIn(activityContext)) {
                 is GoogleSignInResult.Success -> {
-                    // Parked BEFORE the call, not after: a social signup comes back with a live
-                    // session, and the repository flushes any parked tick from inside that same
-                    // call. A tick parked afterwards misses the only delivery this flow performs.
-                    signupConsent.recordSignupTick(pick.email, termsAccepted)
                     _uiState.value = authRepository.googleAuth(
                         googleIdToken = pick.idToken,
                         googleId = pick.googleId,

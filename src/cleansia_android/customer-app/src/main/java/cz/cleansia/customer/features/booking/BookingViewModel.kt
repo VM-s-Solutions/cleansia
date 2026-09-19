@@ -14,7 +14,7 @@ import cz.cleansia.customer.core.booking.QuoteOrderCommand
 import cz.cleansia.customer.core.booking.QuoteOrderResponse
 import cz.cleansia.customer.core.catalog.CatalogRepository
 import cz.cleansia.customer.core.consent.GdprConsentClient
-import cz.cleansia.core.consent.SIGNUP_TICK_CONSENTS
+import cz.cleansia.customer.core.consent.SIGNUP_TICK_CONSENTS
 import cz.cleansia.customer.core.memberships.ExpressWaiver
 import cz.cleansia.customer.core.memberships.MembershipRepository
 import cz.cleansia.customer.core.memberships.resolveExpressWaiver

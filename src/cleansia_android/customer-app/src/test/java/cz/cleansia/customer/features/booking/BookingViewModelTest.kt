@@ -15,7 +15,7 @@ import cz.cleansia.customer.core.catalog.ExtraListItem
 import cz.cleansia.customer.core.catalog.PackageListItem
 import cz.cleansia.customer.core.catalog.ServiceListItem
 import cz.cleansia.customer.core.consent.GdprConsentClient
-import cz.cleansia.core.consent.SignupConsentType
+import cz.cleansia.customer.core.consent.SignupConsentType
 import cz.cleansia.core.servicearea.ServicedCountry
 import cz.cleansia.customer.core.memberships.ExpressWaiverStatus
 import cz.cleansia.customer.core.memberships.GetMyMembershipResponse

@@ -3,7 +3,6 @@ package cz.cleansia.customer.features.auth
 import android.content.Context
 import android.content.res.Resources
 import cz.cleansia.core.auth.TokenStore
-import cz.cleansia.core.consent.SignupConsentRepository
 import cz.cleansia.core.network.ApiError
 import cz.cleansia.core.network.ApiResult
 import cz.cleansia.core.snackbar.SnackbarController
@@ -66,7 +65,6 @@ class AuthViewModelTest {
     private lateinit var settings: AppSettingsRepository
     private lateinit var snackbar: SnackbarController
     private lateinit var googleSignInController: GoogleSignInController
-    private lateinit var signupConsent: SignupConsentRepository
     private lateinit var marketRepository: MarketRepository
     private lateinit var context: Context
     private lateinit var resources: Resources
@@ -84,7 +82,6 @@ class AuthViewModelTest {
         settings = mockk(relaxed = true)
         snackbar = mockk(relaxed = true)
         googleSignInController = mockk(relaxed = true)
-        signupConsent = mockk(relaxed = true)
         marketRepository = mockk()
         context = mockk(relaxed = true)
         resources = mockk(relaxed = true)
@@ -115,7 +112,6 @@ class AuthViewModelTest {
         settings = settings,
         snackbar = snackbar,
         googleSignInController = googleSignInController,
-        signupConsent = signupConsent,
         marketRepository = marketRepository,
         appContext = context,
     )
@@ -312,9 +308,8 @@ class AuthViewModelTest {
     // ─── Email sign-up: the tick reaches the server on the registration itself ───
 
     /**
-     * The server grants both consents in the registration's own commit off this one member, so a
-     * ViewModel that only parks the tick on the device leaves the account with no consent on record
-     * until a sign-in that may never come from this handset.
+     * The server grants both consents in the registration's own commit off this one member; the
+     * request is the only place the tick travels.
      */
     @Test
     fun `register asserts the terms tick on the registration request`() = runTest {

@@ -1,5 +1,9 @@
 import { TestBed } from '@angular/core/testing';
-import { EmployeeItem, PartnerClient } from '@cleansia/partner-services';
+import {
+  EmployeeEntityType,
+  EmployeeItem,
+  PartnerClient,
+} from '@cleansia/partner-services';
 import { PartnerPayoutDetailsService } from '@cleansia/partner-services';
 import {
   DialogService,
@@ -115,5 +119,48 @@ describe('ProfileFacade — job radius seeding', () => {
 
     expect(facade.jobRadiusFacade.loadFailed()).toBe(true);
     expect(facade.jobRadiusFacade.loaded()).toBe(false);
+  });
+
+  /**
+   * A cleaner contracts as a natural person and the choice is gone from this surface, but an
+   * operator may still onboard a company by hand. What the server holds for such a row is shown, not
+   * edited: the display is a signal beside the form, never a control on it.
+   */
+  describe('stored legal name', () => {
+    it('surfaces the legal name of a row an operator set to a legal entity', () => {
+      getCurrentEmployee.mockReturnValue(
+        of(
+          EmployeeItem.fromJS({
+            id: 'emp-1',
+            entityType: EmployeeEntityType.LegalEntity,
+            legalEntityName: 'Uklid Praha s.r.o.',
+          })
+        )
+      );
+      const facade = createFacade();
+
+      facade.loadProfile();
+
+      expect(facade.legalEntityName()).toBe('Uklid Praha s.r.o.');
+      expect(facade.formGroup.get('entityType')).toBeNull();
+      expect(facade.formGroup.get('legalEntityName')).toBeNull();
+    });
+
+    it('holds null for a natural person, even if the payload carries a name', () => {
+      getCurrentEmployee.mockReturnValue(
+        of(
+          EmployeeItem.fromJS({
+            id: 'emp-1',
+            entityType: EmployeeEntityType.NaturalPerson,
+            legalEntityName: 'stale',
+          })
+        )
+      );
+      const facade = createFacade();
+
+      facade.loadProfile();
+
+      expect(facade.legalEntityName()).toBeNull();
+    });
   });
 });

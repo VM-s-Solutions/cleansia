@@ -2,6 +2,7 @@ using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Internationalization;
 using Cleansia.Core.Domain.Users;
 using Cleansia.Infra.Database;
+using Cleansia.TestUtilities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Npgsql;
@@ -19,6 +20,8 @@ public sealed class AdminRoleCheckConstraintTests(PostgresContainerFixture fixtu
     private const string AdminId = "ck-role-admin";
     private const string CustomerId = "ck-role-customer";
 
+    // Seeds commit through the context so the audit columns are stamped — the arrange wrapper's bare save
+    // leaves CreatedBy null and the row never lands.
     private static Task Seed(CleansiaDbContext context)
     {
         context.Languages.Add(Language.Create("en", "English"));
@@ -27,7 +30,8 @@ public sealed class AdminRoleCheckConstraintTests(PostgresContainerFixture fixtu
         var customer = User.CreateWithPassword($"{CustomerId}@cleansia.test", "Seed-Password-123", "Cust", "Omer");
         customer.Id = CustomerId;
         context.Users.AddRange(admin, customer);
-        return Task.CompletedTask;
+        StampUnstampedAdded(context, TestTenants.Default);
+        return context.CommitAsync(CancellationToken.None);
     }
 
     private static async Task<PostgresException> RefusedAsync(CleansiaDbContext context, FormattableString sql)

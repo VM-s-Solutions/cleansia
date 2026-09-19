@@ -40,6 +40,7 @@ import { ConfirmationService, MessageService } from 'primeng/api';
 import { providePrimeNG } from 'primeng/config';
 import { environment } from '../environments/environment';
 import { appRoutes } from './app.routes';
+import { ADMIN_AUTH_COOKIE_KEYS } from './auth/admin-auth-cookie-keys';
 import { APP_INTERCEPTORS_FN } from './http-interceptors';
 
 registerLocaleData(localeCs);
@@ -98,18 +99,7 @@ export const appConfig: ApplicationConfig = {
     { provide: Sentry.TraceService, deps: [Router] },
     { provide: LOCALE_ID, useValue: 'en' },
     { provide: ADMINAPIBASEURL, useValue: environment.apiBaseUrl },
-    {
-      provide: AUTH_COOKIE_KEYS,
-      useValue: {
-        token: 'admin_token',
-        refreshToken: 'admin_refresh_token',
-        refreshTokenExp: 'admin_refresh_token_exp',
-        role: 'admin_role',
-        csrfToken: 'admin_csrf',
-        adminRole: 'admin_administrator_role',
-        userId: 'admin_user_id',
-      },
-    },
+    { provide: AUTH_COOKIE_KEYS, useValue: ADMIN_AUTH_COOKIE_KEYS },
     importProvidersFrom(
       BrowserAnimationsModule,
       StoreModule.forRoot(adminReducers, {

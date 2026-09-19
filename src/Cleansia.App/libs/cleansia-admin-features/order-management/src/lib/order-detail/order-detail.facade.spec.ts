@@ -367,8 +367,8 @@ describe('OrderDetailFacade — customer account', () => {
     expect(TestBed.inject(SnackbarService).showApiError).not.toHaveBeenCalled();
   });
 
-  it('does not request accounts without the admin-only customer policy', () => {
-    expect(resolvePhysicalPolicy(Policy.CanViewOrderCustomer)).toBe(PhysicalPolicy.AdminOnly);
+  it('does not request accounts without the Support-or-above customer policy', () => {
+    expect(resolvePhysicalPolicy(Policy.CanViewOrderCustomer)).toBe(PhysicalPolicy.SupportOrAbove);
     hasPolicy.mockReturnValue(false);
     facade.loadOrderDetail('order');
     expect(customer).not.toHaveBeenCalled();

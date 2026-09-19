@@ -95,8 +95,17 @@ public class GetPeriodPays
             var currencyId = invoice?.CurrencyId ?? view.Id;
             var currencyCode = invoice is null ? view.Code : invoice.Currency?.Code ?? view.Code;
 
-            var orderPays = (await orderEmployeePayRepository
-                    .GetByEmployeeAndPeriodAsync(query.EmployeeId, query.PayPeriodId, cancellationToken))
+            var allPays = await orderEmployeePayRepository
+                .GetByEmployeeAndPeriodAsync(query.EmployeeId, query.PayPeriodId, cancellationToken);
+
+            var availableCurrencies = new List<PeriodCurrencyDto> { new(currencyId, currencyCode) };
+            availableCurrencies.AddRange(allPays
+                .Where(p => p.CurrencyId != currencyId)
+                .Select(p => new PeriodCurrencyDto(p.CurrencyId, p.Currency?.Code ?? p.CurrencyId))
+                .DistinctBy(c => c.Id)
+                .OrderBy(c => c.Code, StringComparer.Ordinal));
+
+            var orderPays = allPays
                 .Where(p => p.CurrencyId == currencyId)
                 .ToList();
 
@@ -115,7 +124,8 @@ public class GetPeriodPays
                 HasInvoice: invoice is not null,
                 InvoiceId: invoice?.Id,
                 OrderPays: orderPays.Select(p => p.MapToDto()),
-                CurrencyCode: currencyCode
+                CurrencyCode: currencyCode,
+                AvailableCurrencies: availableCurrencies
             );
 
             return BusinessResult.Success(summary);

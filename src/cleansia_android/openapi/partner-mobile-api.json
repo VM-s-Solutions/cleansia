@@ -10206,6 +10206,20 @@
         },
         "additionalProperties": false
       },
+      "PeriodCurrencyDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "nullable": true
+          },
+          "code": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
       "PeriodPaySummaryDto": {
         "type": "object",
         "properties": {
@@ -10269,6 +10283,13 @@
           },
           "currencyCode": {
             "type": "string",
+            "nullable": true
+          },
+          "availableCurrencies": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PeriodCurrencyDto"
+            },
             "nullable": true
           }
         },

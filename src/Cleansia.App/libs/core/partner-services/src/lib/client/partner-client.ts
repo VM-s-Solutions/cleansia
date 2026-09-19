@@ -940,12 +940,13 @@ export interface IDashboardClient {
      * @param isUnassigned (optional) 
      * @param excludeEmployeeId (optional) 
      * @param currencyId (optional) 
+     * @param userId (optional) 
      * @param sort (optional) 
      * @param offset (optional) 
      * @param limit (optional) 
      * @return OK
      */
-    getUpcomingOrders(id?: string | undefined, isActive?: boolean | undefined, customerName?: string | undefined, customerEmail?: string | undefined, customerPhone?: string | undefined, displayOrderNumber?: string | undefined, employeeId?: string | undefined, cleaningDateFrom?: Date | undefined, cleaningDateTo?: Date | undefined, paymentStatuses?: PaymentStatus[] | undefined, paymentTypes?: PaymentType[] | undefined, minTotalPrice?: number | undefined, maxTotalPrice?: number | undefined, orderStatuses?: OrderStatus[] | undefined, hasAvailableSpots?: boolean | undefined, isUnassigned?: boolean | undefined, excludeEmployeeId?: string | undefined, currencyId?: string | undefined, sort?: SortDefinition[] | undefined, offset?: number | undefined, limit?: number | undefined): Observable<PagedDataOfOrderListItem>;
+    getUpcomingOrders(id?: string | undefined, isActive?: boolean | undefined, customerName?: string | undefined, customerEmail?: string | undefined, customerPhone?: string | undefined, displayOrderNumber?: string | undefined, employeeId?: string | undefined, cleaningDateFrom?: Date | undefined, cleaningDateTo?: Date | undefined, paymentStatuses?: PaymentStatus[] | undefined, paymentTypes?: PaymentType[] | undefined, minTotalPrice?: number | undefined, maxTotalPrice?: number | undefined, orderStatuses?: OrderStatus[] | undefined, hasAvailableSpots?: boolean | undefined, isUnassigned?: boolean | undefined, excludeEmployeeId?: string | undefined, currencyId?: string | undefined, userId?: string | undefined, sort?: SortDefinition[] | undefined, offset?: number | undefined, limit?: number | undefined): Observable<PagedDataOfOrderListItem>;
     /**
      * @param employeeId (optional) 
      * @param startDate (optional) 
@@ -1079,12 +1080,13 @@ export class DashboardClient implements IDashboardClient {
      * @param isUnassigned (optional) 
      * @param excludeEmployeeId (optional) 
      * @param currencyId (optional) 
+     * @param userId (optional) 
      * @param sort (optional) 
      * @param offset (optional) 
      * @param limit (optional) 
      * @return OK
      */
-    getUpcomingOrders(id?: string | undefined, isActive?: boolean | undefined, customerName?: string | undefined, customerEmail?: string | undefined, customerPhone?: string | undefined, displayOrderNumber?: string | undefined, employeeId?: string | undefined, cleaningDateFrom?: Date | undefined, cleaningDateTo?: Date | undefined, paymentStatuses?: PaymentStatus[] | undefined, paymentTypes?: PaymentType[] | undefined, minTotalPrice?: number | undefined, maxTotalPrice?: number | undefined, orderStatuses?: OrderStatus[] | undefined, hasAvailableSpots?: boolean | undefined, isUnassigned?: boolean | undefined, excludeEmployeeId?: string | undefined, currencyId?: string | undefined, sort?: SortDefinition[] | undefined, offset?: number | undefined, limit?: number | undefined): Observable<PagedDataOfOrderListItem> {
+    getUpcomingOrders(id?: string | undefined, isActive?: boolean | undefined, customerName?: string | undefined, customerEmail?: string | undefined, customerPhone?: string | undefined, displayOrderNumber?: string | undefined, employeeId?: string | undefined, cleaningDateFrom?: Date | undefined, cleaningDateTo?: Date | undefined, paymentStatuses?: PaymentStatus[] | undefined, paymentTypes?: PaymentType[] | undefined, minTotalPrice?: number | undefined, maxTotalPrice?: number | undefined, orderStatuses?: OrderStatus[] | undefined, hasAvailableSpots?: boolean | undefined, isUnassigned?: boolean | undefined, excludeEmployeeId?: string | undefined, currencyId?: string | undefined, userId?: string | undefined, sort?: SortDefinition[] | undefined, offset?: number | undefined, limit?: number | undefined): Observable<PagedDataOfOrderListItem> {
         let url = this.baseUrl + "/api/Dashboard/GetUpcomingOrders?";
         if (id === null)
             throw new globalThis.Error("The parameter 'id' cannot be null.");
@@ -1158,6 +1160,10 @@ export class DashboardClient implements IDashboardClient {
             throw new globalThis.Error("The parameter 'currencyId' cannot be null.");
         else if (currencyId !== undefined)
             url += "Filter.CurrencyId=" + encodeURIComponent("" + currencyId) + "&";
+        if (userId === null)
+            throw new globalThis.Error("The parameter 'userId' cannot be null.");
+        else if (userId !== undefined)
+            url += "Filter.UserId=" + encodeURIComponent("" + userId) + "&";
         if (sort === null)
             throw new globalThis.Error("The parameter 'sort' cannot be null.");
         else if (sort !== undefined)
@@ -3647,12 +3653,13 @@ export interface IOrderClient {
      * @param isUnassigned (optional) 
      * @param excludeEmployeeId (optional) 
      * @param currencyId (optional) 
+     * @param userId (optional) 
      * @param sort (optional) 
      * @param offset (optional) 
      * @param limit (optional) 
      * @return OK
      */
-    getPaged(id?: string | undefined, isActive?: boolean | undefined, customerName?: string | undefined, customerEmail?: string | undefined, customerPhone?: string | undefined, displayOrderNumber?: string | undefined, employeeId?: string | undefined, cleaningDateFrom?: Date | undefined, cleaningDateTo?: Date | undefined, paymentStatuses?: PaymentStatus[] | undefined, paymentTypes?: PaymentType[] | undefined, minTotalPrice?: number | undefined, maxTotalPrice?: number | undefined, orderStatuses?: OrderStatus[] | undefined, hasAvailableSpots?: boolean | undefined, isUnassigned?: boolean | undefined, excludeEmployeeId?: string | undefined, currencyId?: string | undefined, sort?: SortDefinition[] | undefined, offset?: number | undefined, limit?: number | undefined): Observable<PagedDataOfOrderListItem>;
+    getPaged(id?: string | undefined, isActive?: boolean | undefined, customerName?: string | undefined, customerEmail?: string | undefined, customerPhone?: string | undefined, displayOrderNumber?: string | undefined, employeeId?: string | undefined, cleaningDateFrom?: Date | undefined, cleaningDateTo?: Date | undefined, paymentStatuses?: PaymentStatus[] | undefined, paymentTypes?: PaymentType[] | undefined, minTotalPrice?: number | undefined, maxTotalPrice?: number | undefined, orderStatuses?: OrderStatus[] | undefined, hasAvailableSpots?: boolean | undefined, isUnassigned?: boolean | undefined, excludeEmployeeId?: string | undefined, currencyId?: string | undefined, userId?: string | undefined, sort?: SortDefinition[] | undefined, offset?: number | undefined, limit?: number | undefined): Observable<PagedDataOfOrderListItem>;
     /**
      * @param orderId (optional) 
      * @return OK
@@ -3771,12 +3778,13 @@ export class OrderClient implements IOrderClient {
      * @param isUnassigned (optional) 
      * @param excludeEmployeeId (optional) 
      * @param currencyId (optional) 
+     * @param userId (optional) 
      * @param sort (optional) 
      * @param offset (optional) 
      * @param limit (optional) 
      * @return OK
      */
-    getPaged(id?: string | undefined, isActive?: boolean | undefined, customerName?: string | undefined, customerEmail?: string | undefined, customerPhone?: string | undefined, displayOrderNumber?: string | undefined, employeeId?: string | undefined, cleaningDateFrom?: Date | undefined, cleaningDateTo?: Date | undefined, paymentStatuses?: PaymentStatus[] | undefined, paymentTypes?: PaymentType[] | undefined, minTotalPrice?: number | undefined, maxTotalPrice?: number | undefined, orderStatuses?: OrderStatus[] | undefined, hasAvailableSpots?: boolean | undefined, isUnassigned?: boolean | undefined, excludeEmployeeId?: string | undefined, currencyId?: string | undefined, sort?: SortDefinition[] | undefined, offset?: number | undefined, limit?: number | undefined): Observable<PagedDataOfOrderListItem> {
+    getPaged(id?: string | undefined, isActive?: boolean | undefined, customerName?: string | undefined, customerEmail?: string | undefined, customerPhone?: string | undefined, displayOrderNumber?: string | undefined, employeeId?: string | undefined, cleaningDateFrom?: Date | undefined, cleaningDateTo?: Date | undefined, paymentStatuses?: PaymentStatus[] | undefined, paymentTypes?: PaymentType[] | undefined, minTotalPrice?: number | undefined, maxTotalPrice?: number | undefined, orderStatuses?: OrderStatus[] | undefined, hasAvailableSpots?: boolean | undefined, isUnassigned?: boolean | undefined, excludeEmployeeId?: string | undefined, currencyId?: string | undefined, userId?: string | undefined, sort?: SortDefinition[] | undefined, offset?: number | undefined, limit?: number | undefined): Observable<PagedDataOfOrderListItem> {
         let url = this.baseUrl + "/api/Order/GetPaged?";
         if (id === null)
             throw new globalThis.Error("The parameter 'id' cannot be null.");
@@ -3850,6 +3858,10 @@ export class OrderClient implements IOrderClient {
             throw new globalThis.Error("The parameter 'currencyId' cannot be null.");
         else if (currencyId !== undefined)
             url += "Filter.CurrencyId=" + encodeURIComponent("" + currencyId) + "&";
+        if (userId === null)
+            throw new globalThis.Error("The parameter 'userId' cannot be null.");
+        else if (userId !== undefined)
+            url += "Filter.UserId=" + encodeURIComponent("" + userId) + "&";
         if (sort === null)
             throw new globalThis.Error("The parameter 'sort' cannot be null.");
         else if (sort !== undefined)
@@ -12795,6 +12807,46 @@ export interface IPendingOfferItem {
     currencyCode: string | undefined;
 }
 
+export class PeriodCurrencyDto implements IPeriodCurrencyDto {
+    id!: string | undefined;
+    code!: string | undefined;
+
+    constructor(data?: IPeriodCurrencyDto) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.id = Data["id"];
+            this.code = Data["code"];
+        }
+    }
+
+    static fromJS(data: any): PeriodCurrencyDto {
+        data = typeof data === 'object' ? data : {};
+        let result = new PeriodCurrencyDto();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["id"] = this.id;
+        data["code"] = this.code;
+        return data;
+    }
+}
+
+export interface IPeriodCurrencyDto {
+    id: string | undefined;
+    code: string | undefined;
+}
+
 export class PeriodPaySummaryDto implements IPeriodPaySummaryDto {
     payPeriodId!: string | undefined;
     payPeriodLabel!: string | undefined;
@@ -12811,6 +12863,7 @@ export class PeriodPaySummaryDto implements IPeriodPaySummaryDto {
     invoiceId!: string | undefined;
     orderPays!: OrderEmployeePayDto[] | undefined;
     currencyCode!: string | undefined;
+    availableCurrencies!: PeriodCurrencyDto[] | undefined;
 
     constructor(data?: IPeriodPaySummaryDto) {
         if (data) {
@@ -12842,6 +12895,11 @@ export class PeriodPaySummaryDto implements IPeriodPaySummaryDto {
                     this.orderPays!.push(OrderEmployeePayDto.fromJS(item));
             }
             this.currencyCode = Data["currencyCode"];
+            if (Array.isArray(Data["availableCurrencies"])) {
+                this.availableCurrencies = [] as any;
+                for (let item of Data["availableCurrencies"])
+                    this.availableCurrencies!.push(PeriodCurrencyDto.fromJS(item));
+            }
         }
     }
 
@@ -12873,6 +12931,11 @@ export class PeriodPaySummaryDto implements IPeriodPaySummaryDto {
                 data["orderPays"].push(item ? item.toJSON() : undefined as any);
         }
         data["currencyCode"] = this.currencyCode;
+        if (Array.isArray(this.availableCurrencies)) {
+            data["availableCurrencies"] = [];
+            for (let item of this.availableCurrencies)
+                data["availableCurrencies"].push(item ? item.toJSON() : undefined as any);
+        }
         return data;
     }
 }
@@ -12893,6 +12956,7 @@ export interface IPeriodPaySummaryDto {
     invoiceId: string | undefined;
     orderPays: OrderEmployeePayDto[] | undefined;
     currencyCode: string | undefined;
+    availableCurrencies: PeriodCurrencyDto[] | undefined;
 }
 
 export class PersonalBests implements IPersonalBests {

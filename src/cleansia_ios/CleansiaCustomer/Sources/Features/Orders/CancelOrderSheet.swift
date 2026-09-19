@@ -57,6 +57,19 @@ enum CancelOrderConfirmGate {
     }
 }
 
+/// Mirrors `CancelOrder.Validator`'s `RuleFor(x => x.Reason).MaximumLength(500)`; the guest command
+/// refuses the same figure, and a refusal after the sheet is filled in is the worst moment to learn it.
+enum CancelReasonLimit {
+    static let maxLength = 500
+
+    /// How many characters the free-text notes may hold once the reason code and its `": "` joiner
+    /// are in front of them, so the submitted payload never exceeds `maxLength`.
+    static func notesLimit(reasonCode: String?) -> Int {
+        guard let reasonCode else { return maxLength }
+        return max(0, maxLength - reasonCode.count - 2)
+    }
+}
+
 struct CancelOrderSheet: View {
     let quote: UiState<CancellationQuote>
     let currencyCode: String?
@@ -67,15 +80,9 @@ struct CancelOrderSheet: View {
     let onConfirm: (String?) -> Void
     let onDismiss: () -> Void
     var requiresQuote = false
-    /// A ceiling on the whole `code: notes` payload; nil keeps the notes' own limit. The guest command
-    /// refuses a reason over 500 characters, and a refusal after the sheet is filled in is the worst
-    /// moment to learn it.
-    var reasonLimit: Int?
 
     @State private var selectedReason: CancelReasonOption?
     @State private var notes = ""
-
-    private static let defaultNotesLimit = 2000
 
     private var canSubmit: Bool {
         CancelOrderConfirmGate.canConfirm(
@@ -88,8 +95,7 @@ struct CancelOrderSheet: View {
     }
 
     private var notesLimit: Int {
-        guard let reasonLimit else { return Self.defaultNotesLimit }
-        return max(0, reasonLimit - (selectedReason?.code.count ?? 0) - 2)
+        CancelReasonLimit.notesLimit(reasonCode: selectedReason?.code)
     }
 
     var body: some View {

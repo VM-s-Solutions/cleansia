@@ -165,7 +165,7 @@ struct OrderDetailView: View {
                     order.status,
                     authoring: vm.recurringAuthoring
                 ),
-                showCancel: OrderStatusGroup.isCancellable(order.status),
+                showCancel: vm.canCancel,
                 showReportIssue: OrderStatusGroup.isReportable(order.status),
                 cancelEnabled: !vm.cancelState.isSubmitting,
                 onRebook: { onRebook(orderId) },

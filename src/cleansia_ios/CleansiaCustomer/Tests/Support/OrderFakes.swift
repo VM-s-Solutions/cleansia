@@ -12,7 +12,7 @@ final class FakeOrderClient: OrderClient, @unchecked Sendable {
     private(set) var detailCallCount = 0
 
     var cancelResult: ApiResult<OrderCancellation> = .success(
-        OrderCancellation(refundAmount: 0, refundInitiated: false)
+        OrderCancellation(refundAmount: 0, refundInitiated: false, actualRefundAmount: nil)
     )
     private(set) var cancelCallCount = 0
     private(set) var lastCancelReason: String??

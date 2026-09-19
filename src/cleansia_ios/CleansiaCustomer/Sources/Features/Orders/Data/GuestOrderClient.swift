@@ -30,13 +30,8 @@ struct GuestOrder: Equatable {
         OrderStatus(rawValue: statusValue)
     }
 
-    /// New, Pending, Confirmed and OnTheWay — everything the server's `CancellationAssessor` does not
-    /// block. Same set the web track-order page and Android's guest screen offer the button on.
     var isCancellable: Bool {
-        switch status {
-        case ._0, ._1, ._2, ._3: true
-        default: false
-        }
+        OrderStatusGroup.isCancellable(status)
     }
 }
 
@@ -49,7 +44,8 @@ struct GuestCancellationQuote: Equatable {
 }
 
 /// `actualRefundAmount` is the money actually sent back; `refundAmount` is the policy figure. A guest's
-/// receipt is the one screen they will keep, so it quotes the former and never borrows the latter.
+/// receipt is the one screen they will keep, so it quotes the former and never borrows the latter —
+/// the same rule `OrderCancellation` applies to the signed-in confirmation.
 struct GuestOrderCancellation: Equatable {
     let refundAmount: Double
     let refundInitiated: Bool

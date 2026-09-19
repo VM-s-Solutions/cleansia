@@ -83,6 +83,11 @@ final class OrderDetailViewModel: ViewModel {
         subscribeToEvents()
     }
 
+    /// Whether the footer offers Cancel: the server's set, read off the loaded order's status.
+    var canCancel: Bool {
+        OrderStatusGroup.isCancellable(state.loadedValue?.status)
+    }
+
     /// Gates the "Make this recurring" shortcut, from the same nullable membership the
     /// recurring list resolves. Nothing on this screen used to fetch that answer, so a
     /// paid-up member lost the shortcut whenever no other screen had warmed the cache.

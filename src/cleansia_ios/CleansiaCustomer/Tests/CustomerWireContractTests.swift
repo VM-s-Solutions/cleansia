@@ -70,11 +70,25 @@ final class CustomerWireContractTests: XCTestCase {
 
     // MARK: the cancellation refund
 
-    func testACancellationReportsTheRefundItWasGiven() throws {
+    /// The figure is the refund the server actually issued, never the policy `refundAmount` it
+    /// quotes for every cancel — including a cash order that refunds nothing.
+    func testACancellationReportsTheRefundItWasGivenAndNotThePolicyFigure() throws {
         let cancellation = try OrderCancellation(
-            CancelOrderResponse(refundAmount: 1200, refundInitiated: true)
+            CancelOrderResponse(refundAmount: 1200, refundInitiated: true, actualRefundAmount: 1150)
         )
-        XCTAssertEqual(cancellation.refunded, 1200)
+        XCTAssertEqual(cancellation.refundAmount, 1200)
+        XCTAssertEqual(cancellation.actualRefundAmount, 1150)
+        XCTAssertEqual(cancellation.refunded, 1150)
+    }
+
+    /// Nullable by design: no confirmed refund is "no refund", not the policy amount borrowed back.
+    func testANullActualRefundStaysUnknownInsteadOfBorrowingThePolicyAmount() throws {
+        let cancellation = try OrderCancellation(
+            CancelOrderResponse(refundAmount: 1200, refundInitiated: true, actualRefundAmount: nil)
+        )
+        XCTAssertNil(cancellation.actualRefundAmount)
+        XCTAssertNil(cancellation.refunded)
+        XCTAssertEqual(cancellation.refundAmount, 1200)
     }
 
     func testABrokenCancellationDoesNotReportNoRefund() {
@@ -82,7 +96,7 @@ final class CustomerWireContractTests: XCTestCase {
             ("refundAmount", { (dto: inout CancelOrderResponse) in dto.refundAmount = nil }),
             ("refundInitiated", { dto in dto.refundInitiated = nil })
         ] {
-            var payload = CancelOrderResponse(refundAmount: 1200, refundInitiated: true)
+            var payload = CancelOrderResponse(refundAmount: 1200, refundInitiated: true, actualRefundAmount: 1200)
             break_(&payload)
             assertRefused(field) { try OrderCancellation(payload) }
         }

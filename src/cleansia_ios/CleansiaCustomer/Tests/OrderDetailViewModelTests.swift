@@ -110,7 +110,9 @@ final class OrderDetailViewModelTests: XCTestCase {
             .success(OrderFixtures.detail(statusValue: 2)),
             .success(OrderFixtures.detail(statusValue: 6))
         ]
-        client.cancelResult = .success(OrderCancellation(refundAmount: 0, refundInitiated: false))
+        client.cancelResult = .success(
+            OrderCancellation(refundAmount: 0, refundInitiated: false, actualRefundAmount: nil)
+        )
         let vm = makeVM(client: client)
         await vm.load()
 

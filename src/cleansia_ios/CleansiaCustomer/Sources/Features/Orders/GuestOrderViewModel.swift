@@ -21,8 +21,6 @@ extension GuestOrderUiState {
 /// against a generation counter so a reply for a booking the guest has since edited away cannot land.
 @MainActor
 final class GuestOrderViewModel: ViewModel {
-    static let maxReasonLength = 500
-
     @Published private(set) var state: GuestOrderUiState = .empty
     @Published private(set) var quote: UiState<CancellationQuote> = .loading
     @Published private(set) var cancelState: ActionState = .idle
@@ -123,7 +121,7 @@ final class GuestOrderViewModel: ViewModel {
     func cancel(reason: String?) async {
         guard isCancellationPresented, !cancelState.isSubmitting,
               let key = credentials, let order = state.loadedOrder, order.isCancellable,
-              let reason, !reason.isBlank, reason.count <= Self.maxReasonLength,
+              let reason, !reason.isBlank, reason.count <= CancelReasonLimit.maxLength,
               CancelOrderConfirmGate.quoteIsUsable(quote)
         else { return }
         let current = generation

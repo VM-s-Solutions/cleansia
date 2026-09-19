@@ -61,12 +61,16 @@ final class OrderStatusLogicTests: XCTestCase {
         XCTAssertFalse(OrderStatusGroup.isUpcoming(nil))
     }
 
-    func testCancellableIsNewPendingConfirmed() {
+    /// The server's own set — every status `CancellationAssessor.BlockedReason` does not refuse.
+    func testCancellableIsEveryStatusBeforeWorkStarts() {
         XCTAssertTrue(OrderStatusGroup.isCancellable(._0))
         XCTAssertTrue(OrderStatusGroup.isCancellable(._1))
         XCTAssertTrue(OrderStatusGroup.isCancellable(._2))
-        XCTAssertFalse(OrderStatusGroup.isCancellable(._3))
+        XCTAssertTrue(OrderStatusGroup.isCancellable(._3))
+        XCTAssertFalse(OrderStatusGroup.isCancellable(._4))
         XCTAssertFalse(OrderStatusGroup.isCancellable(._5))
+        XCTAssertFalse(OrderStatusGroup.isCancellable(._6))
+        XCTAssertFalse(OrderStatusGroup.isCancellable(nil))
     }
 
     /// The Report-issue gate, matching `OrderDetailScreen.kt`'s `canReportIssue`:

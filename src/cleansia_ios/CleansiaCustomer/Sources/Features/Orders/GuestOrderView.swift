@@ -58,8 +58,7 @@ struct GuestOrderView: View {
             onRetryQuote: { Task { await vm.loadQuote() } },
             onConfirm: { reason in Task { await vm.cancel(reason: reason) } },
             onDismiss: vm.dismissCancellation,
-            requiresQuote: true,
-            reasonLimit: GuestOrderViewModel.maxReasonLength
+            requiresQuote: true
         )
     }
 }

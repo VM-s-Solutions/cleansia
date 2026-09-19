@@ -1,8 +1,13 @@
 using System.Text.Json;
+using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.AdminNotifications;
+using Cleansia.Core.AppServices.Features.TenantSettings;
 using Cleansia.Core.AppServices.Services.Interfaces;
+using Cleansia.Core.Domain.Configuration;
 using Cleansia.Core.Domain.Notifications;
 using Cleansia.Core.Domain.Repositories;
+using Cleansia.Core.Queue.Abstractions;
+using Cleansia.Core.Queue.Abstractions.Messages;
 using Microsoft.Extensions.Logging;
 
 namespace Cleansia.Core.AppServices.Services;
@@ -11,11 +16,20 @@ namespace Cleansia.Core.AppServices.Services;
 public class AdminNotifier(
     IUserRepository userRepository,
     IUserNotificationRepository userNotificationRepository,
+    IAppConfigurationProvider configurationProvider,
+    IPendingDispatch pendingDispatch,
     ILogger<AdminNotifier> logger) : IAdminNotifier
 {
     public async Task NotifyAsync(AdminEvent adminEvent, CancellationToken cancellationToken)
     {
         var entry = AdminEventCatalog.Find(adminEvent.Key);
+        if (string.IsNullOrWhiteSpace(adminEvent.Subject))
+        {
+            throw new ArgumentException(
+                $"Admin event {adminEvent.Key} carries no subject; its e-mail could not be told from another's.",
+                nameof(adminEvent));
+        }
+
         var undeclared = adminEvent.Args.Keys.Except(entry.EmailArgOrder, StringComparer.Ordinal).ToList();
         if (undeclared.Count > 0)
         {
@@ -46,6 +60,25 @@ public class AdminNotifier(
         {
             userNotificationRepository.Add(
                 UserNotification.Create(recipient.Id, adminEvent.Key, argsJson, adminEvent.TenantId));
+        }
+
+        var mailbox = await configurationProvider.GetAsync(
+            adminEvent.TenantId, TenantSettingCatalog.AdminNotificationEmail, cancellationToken);
+        IEnumerable<(string Email, string Locale)> addresses = mailbox.Length > 0
+            ? [(mailbox, Constants.Language.English)]
+            : recipients.Select(r => (r.Email, EmailLocale.Resolve(r.PreferredLanguageCode)));
+
+        foreach (var (email, locale) in addresses)
+        {
+            var messageKey = MessageKeys.AdminNotificationEmail(adminEvent.Key, adminEvent.Subject, email);
+            pendingDispatch.Enqueue(
+                QueueNames.SendEmail,
+                new QueueEnvelope<SendAdminNotificationEmailMessage>(
+                    messageKey,
+                    adminEvent.TenantId,
+                    new SendAdminNotificationEmailMessage(
+                        adminEvent.Key, adminEvent.Subject, adminEvent.Args, email, locale, adminEvent.TenantId)),
+                messageKey);
         }
     }
 }

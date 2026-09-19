@@ -281,6 +281,26 @@ public class CoverAndDropHandlerTests
             Times.Once);
     }
 
+    /// <summary>
+    /// The event's subject is the released assignment, and a second drop of a job the cleaner is no
+    /// longer on is the no-op success above: the administrators are told once, so the e-mail keyed on
+    /// that subject is enqueued once and a redelivered command never collides on the outbox.
+    /// </summary>
+    [Fact]
+    public async Task DroppingTheSameSeatTwiceTellsTheAdministratorsOnce()
+    {
+        var order = OrderWith(EmployeeId);
+        Arrange(order);
+        var handler = DropHandler();
+
+        var first = await handler.Handle(new DropOrder.Command(OrderId), default);
+        var second = await handler.Handle(new DropOrder.Command(OrderId), default);
+
+        Assert.True(first.IsSuccess);
+        Assert.True(second.IsSuccess);
+        Assert.Single(_raised);
+    }
+
     /// <summary>A crew remains: the job is still staffed, so the status holds and nobody is alarmed.</summary>
     [Fact]
     public async Task DroppingOneSeatOfTwoKeepsConfirmedReAdvertisesAndTellsNobody()

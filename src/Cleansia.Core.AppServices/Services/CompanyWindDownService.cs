@@ -47,9 +47,6 @@ public sealed class CompanyWindDownService(
 
     private static readonly OrderStatus[] OpenStatuses = [.. OrderAvailability.OfferableStatuses];
 
-    private static readonly HashSet<string> SupportedLocales =
-        new(StringComparer.OrdinalIgnoreCase) { "en", "cs", "sk", "uk", "ru" };
-
     public async Task<CompanyWindDownRunSummary> RunAsync(string tenantId, CancellationToken cancellationToken)
     {
         tenantProvider.SetTenantOverride(tenantId);
@@ -187,7 +184,7 @@ public sealed class CompanyWindDownService(
                             recipient.Email,
                             $"{recipient.FirstName} {recipient.LastName}".Trim(),
                             code,
-                            ResolveLocale(recipient.PreferredLanguageCode),
+                            EmailLocale.Resolve(recipient.PreferredLanguageCode),
                             recipient.Id,
                             tenant.Id)),
                     cancellationToken);
@@ -489,11 +486,6 @@ public sealed class CompanyWindDownService(
             .ToListAsync(cancellationToken);
         return markets.ToDictionary(m => m.CountryId, m => WindDownCutoff.Utc(windDownFrom, m.TimeZoneId), StringComparer.Ordinal);
     }
-
-    private static string ResolveLocale(string? preferredLanguageCode) =>
-        !string.IsNullOrWhiteSpace(preferredLanguageCode) && SupportedLocales.Contains(preferredLanguageCode)
-            ? preferredLanguageCode.ToLowerInvariant()
-            : Constants.Language.English;
 
     private sealed record NoticeRecipient(
         string Id, string Email, string FirstName, string LastName, string? PreferredLanguageCode, UserProfile Profile);

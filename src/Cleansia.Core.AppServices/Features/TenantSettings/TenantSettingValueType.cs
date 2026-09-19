@@ -10,5 +10,6 @@ namespace Cleansia.Core.AppServices.Features.TenantSettings;
 public enum TenantSettingValueType
 {
     Int = 1,
-    Bool = 2
+    Bool = 2,
+    Email = 3,
 }

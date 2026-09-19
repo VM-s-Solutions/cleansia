@@ -89,9 +89,54 @@ public sealed class SetTenantSettingTests
     }
 
     [Theory]
+    [InlineData("not an address")]
+    [InlineData("ops@")]
+    [InlineData("Ops <ops@example.com>")]
+    public async Task The_Admin_Mailbox_Refuses_What_Is_Not_One_Address(string value)
+    {
+        var result = await Validator().ValidateAsync(new SetTenantSetting.Command(TenantSettingCatalog.AdminNotificationEmailKey, value));
+
+        Assert.False(result.IsValid);
+        var error = Assert.Single(result.Errors);
+        Assert.Equal(BusinessErrorMessage.TenantSettingInvalidValue, error.ErrorMessage);
+        Assert.Equal(nameof(SetTenantSetting.Command.Value), error.PropertyName);
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("   ")]
+    public async Task The_Admin_Mailbox_Cannot_Be_Set_Empty_Because_Unset_Is_The_Reset(string value)
+    {
+        var result = await Validator().ValidateAsync(new SetTenantSetting.Command(TenantSettingCatalog.AdminNotificationEmailKey, value));
+
+        Assert.False(result.IsValid);
+        var error = Assert.Single(result.Errors);
+        Assert.Equal(BusinessErrorMessage.Required, error.ErrorMessage);
+        Assert.Equal(nameof(SetTenantSetting.Command.Value), error.PropertyName);
+    }
+
+    [Fact]
+    public async Task The_Admin_Mailbox_Is_Stored_Trimmed_And_Lower_Cased_Under_The_Notifications_Category()
+    {
+        ArrangeRow(TenantSettingCatalog.AdminNotificationEmailKey, null);
+        TenantConfiguration? added = null;
+        _repository.Setup(r => r.Add(It.IsAny<TenantConfiguration>())).Callback<TenantConfiguration>(row => added = row);
+
+        var result = await CreateHandler().Handle(
+            new SetTenantSetting.Command(TenantSettingCatalog.AdminNotificationEmailKey, "  Ops@Example.com "), CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal("ops@example.com", result.Value.Value);
+        Assert.NotNull(added);
+        Assert.Equal("ops@example.com", added.Value);
+        Assert.Equal(TenantSettingCatalog.NotificationsCategory, added.Category);
+    }
+
+    [Theory]
     [InlineData(Key, "1")]
     [InlineData(Key, " 100 ")]
     [InlineData(RetentionDefaults.ExpiredCodesEnabledKey, "False")]
+    [InlineData(TenantSettingCatalog.AdminNotificationEmailKey, "ops@example.com")]
     public async Task A_Catalogued_Key_With_A_Value_In_Range_Passes(string key, string value)
     {
         var result = await Validator().ValidateAsync(new SetTenantSetting.Command(key, value));

@@ -24487,6 +24487,7 @@ export enum EmailType {
     PromoCode = 7,
     CompanyWindDownCustomer = 8,
     CompanyWindDownCleaner = 9,
+    AdminNotification = 10,
 }
 
 export class EmailTypeDetailDto implements IEmailTypeDetailDto {
@@ -34665,6 +34666,7 @@ export interface ITenantSettingDto {
 export enum TenantSettingValueType {
     Int = 1,
     Bool = 2,
+    Email = 3,
 }
 
 export class TierConfigAdminDto implements ITierConfigAdminDto {

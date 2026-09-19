@@ -86,6 +86,17 @@ public static class MessageKeys
         $"archive:{tenantId}:{requestedAt.UtcDateTime:yyyyMMddHHmmss}";
 
     /// <summary>
+    /// send-email (admin notification) → <c>admin-email:{eventKey}:{subject}:{addressHash}</c> — one
+    /// e-mail per logical admin event per recipient address. The subject is the event site's dedup
+    /// subject, unique per logical event across requests, so a repeated raise collides on the outbox
+    /// index instead of mailing twice; the address is hashed so no recipient appears in a key or a
+    /// log line, and it is lower-cased first because a mailbox is stored canonical while an
+    /// administrator's address is stored as typed.
+    /// </summary>
+    public static string AdminNotificationEmail(string eventKey, string subject, string email) =>
+        $"admin-email:{eventKey}:{subject}:{HashCode(email.Trim().ToLowerInvariant())}";
+
+    /// <summary>
     /// Deterministic, non-reversible short hash of a raw email token, used as the code segment of the
     /// send-email key so the secret never appears in a key or a log line. Producer and consumer
     /// (dual-read key synthesis) compute it the same way.

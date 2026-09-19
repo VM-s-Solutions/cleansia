@@ -255,6 +255,7 @@ public class PayoutReferenceProductionCensusTests(PostgresContainerFixture fixtu
         public Task<string> SendOrderStatusUpdateEmailAsync(string email, Order order, string newStatus, string languageCode = Constants.Language.English, CancellationToken ct = default, decimal? refundedAmount = null) => Sent();
         public Task<string> SendCompanyWindDownCustomerNoticeAsync(string email, string userName, IReadOnlyList<string> companyNames, DateOnly windDownFrom, string languageCode = Constants.Language.English, CancellationToken ct = default) => Sent();
         public Task<string> SendCompanyWindDownCleanerNoticeAsync(string email, string userName, IReadOnlyList<string> companyNames, DateOnly windDownFrom, string languageCode = Constants.Language.English, CancellationToken ct = default) => Sent();
+        public Task<string> SendAdminNotificationEmailAsync(string email, string eventKey, IReadOnlyDictionary<string, string> args, string languageCode = Constants.Language.English, CancellationToken ct = default) => Sent();
     }
 
     private static async Task<string> ForeignPeriodIdAsync(CleansiaDbContext context)

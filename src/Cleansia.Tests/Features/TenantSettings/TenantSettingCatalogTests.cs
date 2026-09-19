@@ -8,7 +8,9 @@ namespace Cleansia.Tests.Features.TenantSettings;
 /// is refused, a value outside its range is refused, and a missing or unusable row resolves to the
 /// default the sweeps were written against. The nine retention windows are its first category; each
 /// entry's default is the <c>RetentionDefaults</c> constant, so the two can never disagree. The
-/// lifecycle category holds the archive's chargeback horizon (ADR-0064 D3).
+/// lifecycle category holds the archive's chargeback horizon (ADR-0064 D3); the notifications
+/// category holds the shared mailbox admin events are e-mailed to (ADR-0065 D3), an address whose
+/// empty default means every administrator.
 /// </summary>
 public sealed class TenantSettingCatalogTests
 {
@@ -58,12 +60,69 @@ public sealed class TenantSettingCatalogTests
     }
 
     [Fact]
-    public void The_Catalogue_Holds_Exactly_The_Nine_Retention_Keys_And_The_Lifecycle_Horizon_And_No_Duplicate()
+    public void The_Catalogue_Holds_Exactly_The_Nine_Retention_Keys_The_Lifecycle_Horizon_The_Admin_Mailbox_And_No_Duplicate()
     {
-        Assert.Equal(10, TenantSettingCatalog.All.Count);
+        Assert.Equal(11, TenantSettingCatalog.All.Count);
         Assert.Equal(TenantSettingCatalog.All.Count, TenantSettingCatalog.All.Select(d => d.Key).Distinct(StringComparer.Ordinal).Count());
         Assert.Equal(9, TenantSettingCatalog.All.Count(d => d.Category == TenantSettingCatalog.RetentionCategory));
         Assert.Equal(1, TenantSettingCatalog.All.Count(d => d.Category == TenantSettingCatalog.LifecycleCategory));
+        Assert.Equal(1, TenantSettingCatalog.All.Count(d => d.Category == TenantSettingCatalog.NotificationsCategory));
+    }
+
+    [Fact]
+    public void The_Admin_Mailbox_Is_Catalogued_Under_Notifications_As_An_Email_With_An_Empty_Default_And_No_Range()
+    {
+        var mailbox = TenantSettingCatalog.Find("notifications.admin_email");
+
+        Assert.Same(TenantSettingCatalog.AdminNotificationEmail, mailbox);
+        Assert.Equal(TenantSettingCatalog.NotificationsCategory, mailbox!.Category);
+        Assert.Equal(TenantSettingValueType.Email, mailbox.ValueType);
+        Assert.Equal(string.Empty, mailbox.DefaultValue);
+        Assert.Null(mailbox.Min);
+        Assert.Null(mailbox.Max);
+        Assert.Equal(string.Empty, TenantSettingCatalog.AdminNotificationEmail.Resolve(null));
+    }
+
+    [Theory]
+    [InlineData("ops@example.com", "ops@example.com")]
+    [InlineData("  Ops@Example.COM  ", "ops@example.com")]
+    [InlineData("ops+admin@example.com", "ops+admin@example.com")]
+    [InlineData("a@b", "a@b")]
+    public void The_Admin_Mailbox_Accepts_An_Address_And_Stores_It_Trimmed_And_Lower_Cased(string raw, string canonical)
+    {
+        var mailbox = TenantSettingCatalog.AdminNotificationEmail;
+
+        Assert.True(mailbox.IsValid(raw));
+        Assert.Equal(canonical, mailbox.Canonicalize(raw));
+        Assert.Equal(canonical, mailbox.Resolve(raw));
+    }
+
+    [Theory]
+    [InlineData("not an address")]
+    [InlineData("ops@")]
+    [InlineData("@example.com")]
+    [InlineData("ops@@example.com")]
+    [InlineData("ops example@example.com")]
+    [InlineData("Ops <ops@example.com>")]
+    [InlineData("")]
+    [InlineData("   ")]
+    [InlineData(null)]
+    public void The_Admin_Mailbox_Refuses_Anything_But_One_Address_And_Resolves_It_To_Every_Administrator(string? raw)
+    {
+        var mailbox = TenantSettingCatalog.AdminNotificationEmail;
+
+        Assert.False(mailbox.IsValid(raw));
+        Assert.Null(mailbox.Canonicalize(raw));
+        Assert.Equal(string.Empty, mailbox.Resolve(raw));
+    }
+
+    [Fact]
+    public void The_Admin_Mailbox_Refuses_An_Address_Longer_Than_The_Column_Allows()
+    {
+        var local = new string('a', EmailTenantSetting.MaxLength - "@example.com".Length + 1);
+
+        Assert.False(TenantSettingCatalog.AdminNotificationEmail.IsValid($"{local}@example.com"));
+        Assert.True(TenantSettingCatalog.AdminNotificationEmail.IsValid($"{local[1..]}@example.com"));
     }
 
     [Fact]

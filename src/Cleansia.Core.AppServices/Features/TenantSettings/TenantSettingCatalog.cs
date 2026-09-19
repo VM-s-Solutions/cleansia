@@ -6,7 +6,9 @@ namespace Cleansia.Core.AppServices.Features.TenantSettings;
 /// Every key an operating company may hold in <c>TenantConfigurations</c>. A key outside this list is
 /// refused by the writer and ignored by the readers, so the table can never carry a value nothing
 /// reads. The retention defaults are the <see cref="RetentionDefaults"/> constants the sweeps were
-/// written against; the lifecycle entry is the archive's chargeback horizon (ADR-0064 D3).
+/// written against; the lifecycle entry is the archive's chargeback horizon (ADR-0064 D3); the
+/// notifications entry is the shared mailbox admin events are e-mailed to instead of every
+/// administrator (ADR-0065 D3) — empty, its default, means every administrator.
 /// </summary>
 public static class TenantSettingCatalog
 {
@@ -14,7 +16,11 @@ public static class TenantSettingCatalog
 
     public const string LifecycleCategory = "lifecycle";
 
+    public const string NotificationsCategory = "notifications";
+
     public const string ChargebackHorizonDaysKey = "lifecycle.chargeback_horizon_days";
+
+    public const string AdminNotificationEmailKey = "notifications.admin_email";
 
     // Card networks let a cardholder dispute a charge for 120 days and longer on some reason codes; a
     // chargeback on a sealed company is a books event the freeze would refuse, so the archive waits.
@@ -56,6 +62,9 @@ public static class TenantSettingCatalog
     public static readonly IntTenantSetting ChargebackHorizonDays = new(
         ChargebackHorizonDaysKey, LifecycleCategory, DefaultChargebackHorizonDays, min: 0, max: MaxChargebackHorizonDays);
 
+    public static readonly EmailTenantSetting AdminNotificationEmail = new(
+        AdminNotificationEmailKey, NotificationsCategory, @default: string.Empty);
+
     public static readonly IReadOnlyList<TenantSettingDefinition> All =
     [
         ExpiredCodesEnabled,
@@ -68,6 +77,7 @@ public static class TenantSettingCatalog
         CustomerAuditRetentionYears,
         DisputeTextRetentionYears,
         ChargebackHorizonDays,
+        AdminNotificationEmail,
     ];
 
     private static readonly IReadOnlyDictionary<string, TenantSettingDefinition> ByKey =

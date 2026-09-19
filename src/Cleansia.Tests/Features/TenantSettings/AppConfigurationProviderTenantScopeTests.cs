@@ -12,7 +12,9 @@ namespace Cleansia.Tests.Features.TenantSettings;
 /// The raw read behind every setting is the AMBIENT company's row: the claim on a request, the override
 /// a job sets for the company it is processing. Two companies holding the same key see only their own
 /// value, and a caller with neither claim nor override sees no row at all — which is what makes the
-/// per-company loop in the retention job the only correct way to read a window there.
+/// per-company loop in the retention job the only correct way to read a window there. The read by
+/// company argument answers the NAMED company's row whatever the ambient tenant is — the notifier's
+/// read, which fires under another company's override.
 /// </summary>
 public sealed class AppConfigurationProviderTenantScopeTests : IDisposable
 {
@@ -59,6 +61,23 @@ public sealed class AppConfigurationProviderTenantScopeTests : IDisposable
         _tenantProvider.SetTenantOverride(TestTenants.Default);
 
         Assert.Null(await provider.GetTenantSettingAsync(Key));
+    }
+
+    [Fact]
+    public async Task The_By_Company_Read_Answers_The_Named_Companys_Row_Under_Any_Ambient_Tenant_And_Null_For_No_Row()
+    {
+        await using var ctx = NewContext();
+        await TestTenants.EnsureCreatedWithRegistryAsync(ctx);
+        await SeedAsync(ctx, TestTenants.Default, "1");
+        var provider = new AppConfigurationProvider(ctx);
+
+        _tenantProvider.SetTenantOverride(TestTenants.Second);
+        Assert.Equal("1", await provider.GetTenantSettingAsync(TestTenants.Default, Key));
+        Assert.Null(await provider.GetTenantSettingAsync(TestTenants.Second, Key));
+
+        _tenantProvider.ClearTenantOverride();
+        Assert.Equal("1", await provider.GetTenantSettingAsync(TestTenants.Default, Key));
+        Assert.Null(await provider.GetTenantSettingAsync(TestTenants.Default, "retention.other.key"));
     }
 
     private async Task SeedAsync(CleansiaDbContext ctx, string tenantId, string value)

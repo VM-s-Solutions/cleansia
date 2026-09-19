@@ -14,7 +14,7 @@ using SendGrid.Helpers.Mail;
 
 namespace Cleansia.Core.AppServices.Services;
 
-public sealed class EmailService : IEmailService
+public sealed partial class EmailService : IEmailService
 {
     // The named IHttpClientFactory client whose pooled, resilience-wrapped handler the SendGrid SDK's
     // transport is built on. Kept in sync with SendGridExtensions.HttpClientName.
@@ -1012,6 +1012,7 @@ public sealed class EmailService : IEmailService
         EmailType.PromoCode => "promo-code.html",
         EmailType.CompanyWindDownCustomer => "company-wind-down-customer.html",
         EmailType.CompanyWindDownCleaner => "company-wind-down-cleaner.html",
+        EmailType.AdminNotification => "admin-notification.html",
         _ => throw new InvalidOperationException($"No e-mail template is mapped for {emailType}."),
     };
 }

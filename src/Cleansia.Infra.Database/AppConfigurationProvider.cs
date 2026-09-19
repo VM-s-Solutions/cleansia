@@ -14,6 +14,17 @@ public class AppConfigurationProvider(CleansiaDbContext dbContext) : IAppConfigu
         return config?.Value;
     }
 
+    public async Task<string?> GetTenantSettingAsync(string tenantId, string key, CancellationToken cancellationToken = default)
+    {
+        var config = await dbContext.TenantConfigurations
+            .IgnoreQueryFilters()
+            .AsNoTracking()
+            .Where(c => c.TenantId == tenantId && c.Key == key)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        return config?.Value;
+    }
+
     public async Task<CountryConfiguration?> GetCountryConfigurationAsync(string countryId, CancellationToken cancellationToken = default)
     {
         return await dbContext.CountryConfigurations

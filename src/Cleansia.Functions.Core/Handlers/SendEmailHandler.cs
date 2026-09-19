@@ -40,17 +40,21 @@ public class SendEmailHandler(
     public async Task HandleAsync(string messageText, CancellationToken ct)
     {
         SendGuestOrderCancellationEmailMessage? guestMessage;
-        string? guestTenantId;
+        SendAdminNotificationEmailMessage? adminMessage;
+        string? discriminatedTenantId;
         try
         {
             using var document = JsonDocument.Parse(messageText);
             var root = document.RootElement;
             if (root.ValueKind != JsonValueKind.Object) return;
             var payload = root.TryGetProperty("payload", out var nested) ? nested : root;
-            guestMessage = payload.ValueKind == JsonValueKind.Object && payload.TryGetProperty("messageType", out var kind)
-                && kind.ValueKind == JsonValueKind.String && kind.GetString() == "guest-order-cancelled"
+            var messageType = payload.ValueKind == JsonValueKind.Object && payload.TryGetProperty("messageType", out var kind)
+                && kind.ValueKind == JsonValueKind.String ? kind.GetString() : null;
+            guestMessage = messageType == "guest-order-cancelled"
                 ? payload.Deserialize<SendGuestOrderCancellationEmailMessage>(JsonOptions) : null;
-            guestTenantId = root.TryGetProperty("tenantId", out var tenant) && tenant.ValueKind == JsonValueKind.String ? tenant.GetString() : null;
+            adminMessage = messageType == SendAdminNotificationEmailMessage.Discriminator
+                ? payload.Deserialize<SendAdminNotificationEmailMessage>(JsonOptions) : null;
+            discriminatedTenantId = root.TryGetProperty("tenantId", out var tenant) && tenant.ValueKind == JsonValueKind.String ? tenant.GetString() : null;
         }
         catch (JsonException ex)
         {
@@ -59,7 +63,12 @@ public class SendEmailHandler(
         }
         if (guestMessage is not null)
         {
-            await SendGuestCancellationAsync(guestMessage, guestTenantId, ct);
+            await SendGuestCancellationAsync(guestMessage, discriminatedTenantId, ct);
+            return;
+        }
+        if (adminMessage is not null)
+        {
+            await SendAdminNotificationAsync(adminMessage, discriminatedTenantId, ct);
             return;
         }
 
@@ -179,6 +188,43 @@ public class SendEmailHandler(
         catch (Exception ex)
         {
             logger.LogWarning(ex, "Guest cancellation email sent for order {OrderId}, but its delivery claim failed", order.Id);
+        }
+    }
+
+    // Act-then-claim like the two shapes beside it: the send is the only thing that may throw, and it
+    // throws so the runtime retries and dead-letters; a body the producer could never have written acks.
+    private async Task SendAdminNotificationAsync(
+        SendAdminNotificationEmailMessage message, string? envelopeTenantId, CancellationToken ct)
+    {
+        if (string.IsNullOrWhiteSpace(message.EventKey) || string.IsNullOrWhiteSpace(message.Subject)
+            || string.IsNullOrWhiteSpace(message.Email) || message.Args is null)
+        {
+            logger.LogWarning("Discarding admin notification email with no event, subject, address or args (permanent)");
+            return;
+        }
+
+        var key = MessageKeys.AdminNotificationEmail(message.EventKey, message.Subject, message.Email);
+        if (await idempotencyGuard.HasProcessedAsync(key, ct))
+        {
+            logger.LogInformation("Admin notification email {MessageKey} already sent, skipping (idempotent)", key);
+            return;
+        }
+
+        var tenantId = envelopeTenantId ?? message.TenantId;
+        if (!string.IsNullOrWhiteSpace(tenantId))
+        {
+            tenantProvider.SetTenantOverride(tenantId);
+        }
+
+        await emailService.SendAdminNotificationEmailAsync(message.Email, message.EventKey, message.Args, message.LanguageCode, ct);
+
+        try
+        {
+            await idempotencyGuard.MarkProcessedAsync(key, ct);
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(ex, "Admin notification email {MessageKey} sent, but its delivery claim failed — acking; a redelivery may duplicate it", key);
         }
     }
 

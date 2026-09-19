@@ -1,10 +1,16 @@
 using System.Text.Json;
+using Cleansia.Core.AppServices.Features.TenantSettings;
 using Cleansia.Core.AppServices.Services.Interfaces;
+using Cleansia.Core.Domain.Configuration;
 using Cleansia.Core.Domain.Enums;
+using Cleansia.Core.Domain.Internationalization;
 using Cleansia.Core.Domain.Notifications;
+using Cleansia.Core.Domain.Outbox;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.SeedWork;
 using Cleansia.Core.Domain.Users;
+using Cleansia.Core.Queue.Abstractions;
+using Cleansia.Core.Queue.Abstractions.Messages;
 using Cleansia.Infra.Database;
 using Cleansia.TestUtilities;
 using Microsoft.EntityFrameworkCore;
@@ -17,6 +23,9 @@ namespace Cleansia.IntegrationTests.Features.AdminNotifications;
 /// ambient tenant is overridden to another company at the call, every row carries the named company,
 /// a deactivated, unconfirmed or anonymised administrator receives nothing, and the once-per-resource
 /// guard finds the row by the arg the notifier wrote — for that company, that key and that value only.
+/// The e-mail leg lands beside the rows: one send-email outbox row per administrator in their own
+/// language with no mailbox set, exactly one English row to the mailbox when the NAMED company set one
+/// — and the other company's mailbox, the one the ambient override points at, is never the address.
 /// </summary>
 [Collection("PostgresCollection")]
 public class AdminNotifierPostgresTests(PostgresContainerFixture fixture) : BaseIntegrationTest(fixture)
@@ -29,9 +38,12 @@ public class AdminNotifierPostgresTests(PostgresContainerFixture fixture) : Base
     private const string AnonymisedA = "admin-a-anonymised";
     private const string OrderId = "order-admin-notifier-1";
 
-    private static User Administrator(string id, string tenantId, bool confirmed = true)
+    private const string MailboxA = "ops-a@example.com";
+    private const string MailboxB = "ops-b@example.com";
+
+    private static User Administrator(string id, string tenantId, bool confirmed = true, string? language = null)
     {
-        var user = User.CreateWithPassword($"{id}@cleansia.test", "Seed-Password-123", "Ad", "Min", UserProfile.Administrator);
+        var user = User.CreateWithPassword($"{id}@cleansia.test", "Seed-Password-123", "Ad", "Min", UserProfile.Administrator, language);
         user.Id = id;
         user.TenantId = tenantId;
         if (confirmed)
@@ -42,17 +54,38 @@ public class AdminNotifierPostgresTests(PostgresContainerFixture fixture) : Base
         return user;
     }
 
+    private static TenantConfiguration Mailbox(string tenantId, string address)
+    {
+        var row = TenantConfiguration.Create(TenantSettingCatalog.AdminNotificationEmailKey, address, category: TenantSettingCatalog.NotificationsCategory);
+        row.TenantId = tenantId;
+        return row;
+    }
+
     private static Task SeedTwoCompanies(CleansiaDbContext context)
     {
+        context.Languages.AddRange(Language.Create("en", "English"), Language.Create("cs", "Czech"));
         context.Users.AddRange(
-            Administrator(AdminA1, TestTenants.Default),
+            Administrator(AdminA1, TestTenants.Default, language: "cs"),
             Administrator(AdminA2, TestTenants.Default),
             Administrator(AdminB1, TestTenants.Second));
         return Task.CompletedTask;
     }
 
+    private static async Task SeedTwoCompaniesWithAMailboxOnB(CleansiaDbContext context)
+    {
+        await SeedTwoCompanies(context);
+        context.TenantConfigurations.Add(Mailbox(TestTenants.Second, MailboxB));
+    }
+
+    private static async Task SeedTwoCompaniesWithAMailboxOnA(CleansiaDbContext context)
+    {
+        await SeedTwoCompanies(context);
+        context.TenantConfigurations.Add(Mailbox(TestTenants.Default, MailboxA));
+    }
+
     private static Task SeedIneligibleAdministrators(CleansiaDbContext context)
     {
+        context.Languages.Add(Language.Create("en", "English"));
         var deactivated = Administrator(DeactivatedA, TestTenants.Default);
         deactivated.IsActive = false;
         var anonymised = Administrator(AnonymisedA, TestTenants.Default);
@@ -94,6 +127,16 @@ public class AdminNotifierPostgresTests(PostgresContainerFixture fixture) : Base
             .OrderBy(n => n.UserId)
             .ToListAsync();
 
+    private static Task<List<OutboxMessage>> EmailRows(CleansiaDbContext context) =>
+        context.OutboxMessages.IgnoreQueryFilters()
+            .Where(m => m.QueueName == QueueNames.SendEmail)
+            .OrderBy(m => m.MessageKey)
+            .ToListAsync();
+
+    private static QueueEnvelope<SendAdminNotificationEmailMessage> Read(OutboxMessage row) =>
+        JsonSerializer.Deserialize<QueueEnvelope<SendAdminNotificationEmailMessage>>(
+            row.Body, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase })!;
+
     [Fact]
     public async Task Tells_The_Named_Companys_Administrators_Even_When_The_Ambient_Tenant_Is_Another_Company()
     {
@@ -127,6 +170,60 @@ public class AdminNotifierPostgresTests(PostgresContainerFixture fixture) : Base
             {
                 var row = Assert.Single(await AdminRows(context));
                 Assert.Equal(AdminA1, row.UserId);
+                var email = Assert.Single(await EmailRows(context));
+                Assert.Equal($"{AdminA1}@cleansia.test", Read(email).Payload.Email);
+            },
+            transactional: false);
+    }
+
+    [Fact]
+    public async Task With_No_Mailbox_Every_Administrator_Of_The_Named_Company_Gets_An_Outbox_Email_In_Their_Language_And_Never_The_Other_Companys_Mailbox()
+    {
+        await TestMethod(
+            arrange: SeedTwoCompaniesWithAMailboxOnB,
+            act: provider => RaiseUnderOverride(provider, TestTenants.Second, DisputeFiledFor(TestTenants.Default)),
+            assert: async (CleansiaDbContext context, int _) =>
+            {
+                Assert.Equal([AdminA1, AdminA2], (await AdminRows(context)).Select(r => r.UserId));
+
+                var emails = await EmailRows(context);
+                Assert.Equal(2, emails.Count);
+                Assert.Equal(2, emails.Select(e => e.MessageKey).Distinct(StringComparer.Ordinal).Count());
+                Assert.All(emails, row =>
+                {
+                    Assert.Equal(TestTenants.Default, row.TenantId);
+                    var envelope = Read(row);
+                    Assert.Equal(row.MessageKey, envelope.MessageKey);
+                    Assert.Equal(TestTenants.Default, envelope.TenantId);
+                    Assert.Equal(SendAdminNotificationEmailMessage.Discriminator, envelope.Payload.MessageType);
+                    Assert.Equal(AdminNotificationEventCatalog.DisputeFiled, envelope.Payload.EventKey);
+                    Assert.Equal("dispute-1", envelope.Payload.Subject);
+                    Assert.Equal(OrderId, envelope.Payload.Args["orderId"]);
+                    Assert.NotEqual(MailboxB, envelope.Payload.Email);
+                });
+                Assert.Equal(
+                    [($"{AdminA1}@cleansia.test", "cs"), ($"{AdminA2}@cleansia.test", "en")],
+                    emails.Select(Read).Select(e => (e.Payload.Email, e.Payload.LanguageCode)).OrderBy(e => e.Email));
+            },
+            transactional: false);
+    }
+
+    [Fact]
+    public async Task With_A_Mailbox_On_The_Named_Company_Exactly_One_English_Email_Goes_There_And_The_Feed_Rows_Stay_Per_Administrator()
+    {
+        await TestMethod(
+            arrange: SeedTwoCompaniesWithAMailboxOnA,
+            act: provider => RaiseUnderOverride(provider, TestTenants.Second, DisputeFiledFor(TestTenants.Default)),
+            assert: async (CleansiaDbContext context, int _) =>
+            {
+                Assert.Equal([AdminA1, AdminA2], (await AdminRows(context)).Select(r => r.UserId));
+
+                var email = Assert.Single(await EmailRows(context));
+                Assert.Equal(TestTenants.Default, email.TenantId);
+                var envelope = Read(email);
+                Assert.Equal(MailboxA, envelope.Payload.Email);
+                Assert.Equal("en", envelope.Payload.LanguageCode);
+                Assert.Equal(MessageKeys.AdminNotificationEmail(AdminNotificationEventCatalog.DisputeFiled, "dispute-1", MailboxA), email.MessageKey);
             },
             transactional: false);
     }

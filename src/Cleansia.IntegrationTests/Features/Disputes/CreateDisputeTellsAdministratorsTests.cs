@@ -7,6 +7,8 @@ using Cleansia.Core.Domain.Notifications;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Users;
+using Cleansia.Core.Queue.Abstractions;
+using Cleansia.Core.Queue.Abstractions.Messages;
 using Cleansia.Infra.Common.Validations;
 using Cleansia.Infra.Database;
 using Cleansia.TestUtilities;
@@ -21,7 +23,8 @@ namespace Cleansia.IntegrationTests.Features.Disputes;
 /// A customer's filing through the real pipeline on real Postgres writes one <c>admin.dispute.filed</c>
 /// row per active confirmed administrator of the ORDER's company, committed with the dispute, carrying
 /// the ids the console deep-links from and nothing of the customer — and a second company's
-/// administrator sees nothing.
+/// administrator sees nothing. The same commit lands one send-email outbox row per administrator,
+/// each under its own key and addressed in that administrator's language.
 /// </summary>
 [Collection("PostgresCollection")]
 public class CreateDisputeTellsAdministratorsTests(PostgresContainerFixture fixture) : BaseIntegrationTest(fixture)
@@ -42,9 +45,9 @@ public class CreateDisputeTellsAdministratorsTests(PostgresContainerFixture fixt
         return Task.CompletedTask;
     }
 
-    private static User Administrator(string id, string tenantId)
+    private static User Administrator(string id, string tenantId, string? language = null)
     {
-        var user = User.CreateWithPassword($"{id}@cleansia.test", "Seed-Password-123", "Ad", "Min", UserProfile.Administrator);
+        var user = User.CreateWithPassword($"{id}@cleansia.test", "Seed-Password-123", "Ad", "Min", UserProfile.Administrator, language);
         user.Id = id;
         user.TenantId = tenantId;
         user.ConfirmEmail();
@@ -53,7 +56,7 @@ public class CreateDisputeTellsAdministratorsTests(PostgresContainerFixture fixt
 
     private static async Task Seed(CleansiaDbContext context)
     {
-        context.Languages.Add(Language.Create("en", "English"));
+        context.Languages.AddRange(Language.Create("en", "English"), Language.Create("uk", "Ukrainian"));
         var country = Country.Create("Czechia", "CZE", "CZ", isServiced: true);
         country.Id = CountryId;
         context.Countries.Add(country);
@@ -67,7 +70,7 @@ public class CreateDisputeTellsAdministratorsTests(PostgresContainerFixture fixt
         customer.Id = CustomerId;
         context.Users.Add(customer);
         context.Users.AddRange(
-            Administrator(AdminA1, TestTenants.Default),
+            Administrator(AdminA1, TestTenants.Default, language: "uk"),
             Administrator(AdminA2, TestTenants.Default),
             Administrator(AdminB1, TestTenants.Second));
 
@@ -124,6 +127,28 @@ public class CreateDisputeTellsAdministratorsTests(PostgresContainerFixture fixt
                     Assert.DoesNotContain("@", row.ArgsJson);
                 });
                 Assert.DoesNotContain(rows, r => r.UserId == AdminB1);
+
+                var emails = await context.OutboxMessages.IgnoreQueryFilters()
+                    .Where(m => m.QueueName == QueueNames.SendEmail)
+                    .ToListAsync();
+                Assert.Equal(2, emails.Count);
+                Assert.Equal(2, emails.Select(e => e.MessageKey).Distinct(StringComparer.Ordinal).Count());
+                var envelopes = emails
+                    .Select(e => JsonSerializer.Deserialize<QueueEnvelope<SendAdminNotificationEmailMessage>>(
+                        e.Body, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase })!)
+                    .OrderBy(e => e.Payload.Email)
+                    .ToList();
+                Assert.Equal(
+                    [($"{AdminA1}@cleansia.test", "uk"), ($"{AdminA2}@cleansia.test", "en")],
+                    envelopes.Select(e => (e.Payload.Email, e.Payload.LanguageCode)));
+                Assert.All(envelopes, e =>
+                {
+                    Assert.Equal(TestTenants.Default, e.TenantId);
+                    Assert.Equal(AdminNotificationEventCatalog.DisputeFiled, e.Payload.EventKey);
+                    Assert.Equal(result.Value.DisputeId, e.Payload.Subject);
+                    Assert.Equal(order.DisplayOrderNumber, e.Payload.Args["orderNumber"]);
+                });
+                Assert.All(emails, e => Assert.Equal(TestTenants.Default, e.TenantId));
             },
             transactional: false);
     }

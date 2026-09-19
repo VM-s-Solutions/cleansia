@@ -2,6 +2,7 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.DataRetention;
+using Cleansia.Core.AppServices.Features.TenantSettings;
 using Cleansia.Core.Domain.Auditing;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.HostTests.Infrastructure;
@@ -32,7 +33,7 @@ public sealed class TenantSettingsRouteTests(HostTestPostgresFixture db) : Authz
 
     private sealed record SettingsResponse(List<SettingRow> Settings);
 
-    private sealed record SettingRow(string Key, string Category, string DefaultValue, string EffectiveValue, bool IsOverridden, int? Min, int? Max);
+    private sealed record SettingRow(string Key, string Category, TenantSettingValueType ValueType, string DefaultValue, string EffectiveValue, bool IsOverridden, int? Min, int? Max);
 
     private sealed record SetResponse(string Key, string Value);
 
@@ -77,13 +78,19 @@ public sealed class TenantSettingsRouteTests(HostTestPostgresFixture db) : Authz
         HttpAssert.IsOk(resp);
         var body = await resp.Content.ReadFromJsonAsync<SettingsResponse>();
         Assert.NotNull(body);
-        Assert.Equal(10, body!.Settings.Count);
+        Assert.Equal(11, body!.Settings.Count);
         Assert.All(body.Settings, s =>
         {
             Assert.False(s.IsOverridden);
             Assert.Equal(s.DefaultValue, s.EffectiveValue);
         });
         Assert.Equal(9, body.Settings.Count(s => s.Category == "retention"));
+        var mailbox = Assert.Single(body.Settings, s => s.Key == "notifications.admin_email");
+        Assert.Equal("notifications", mailbox.Category);
+        Assert.Equal(TenantSettingValueType.Email, mailbox.ValueType);
+        Assert.Equal(string.Empty, mailbox.DefaultValue);
+        Assert.Null(mailbox.Min);
+        Assert.Null(mailbox.Max);
         var window = Assert.Single(body.Settings, s => s.Key == Key);
         Assert.Equal("3", window.DefaultValue);
         Assert.Equal(1, window.Min);
@@ -144,6 +151,41 @@ public sealed class TenantSettingsRouteTests(HostTestPostgresFixture db) : Authz
         Assert.Equal((null, "1"), Snapshot(rows[0]));
         Assert.Equal(("1", "2"), Snapshot(rows[1]));
         Assert.Equal(("2", null), Snapshot(rows[2]));
+    }
+
+    [Fact]
+    public async Task The_admin_mailbox_refuses_what_is_not_an_address_stores_a_valid_one_canonical_and_is_gone_after_reset()
+    {
+        var client = AdminClient(AdminToken(AdminAId, HostTestTenants.A));
+        var key = TenantSettingCatalog.AdminNotificationEmailKey;
+
+        var malformed = await client.PutAsJsonAsync(SetRoute, new { key, value = "not an address" });
+        await HttpAssert.AssertBusinessErrorAsync(malformed, BusinessErrorMessage.TenantSettingInvalidValue);
+
+        var empty = await client.PutAsJsonAsync(SetRoute, new { key, value = "" });
+        await HttpAssert.AssertBusinessErrorAsync(empty, BusinessErrorMessage.Required);
+        Assert.Empty(await QueryAsync(ctx => ctx.TenantConfigurations.IgnoreQueryFilters().ToListAsync()));
+
+        var set = await client.PutAsJsonAsync(SetRoute, new { key, value = " Ops@Example.com " });
+        HttpAssert.IsOk(set);
+        Assert.Equal(new SetResponse(key, "ops@example.com"), await set.Content.ReadFromJsonAsync<SetResponse>());
+        var stored = Assert.Single(await QueryAsync(ctx => ctx.TenantConfigurations.IgnoreQueryFilters().ToListAsync()));
+        Assert.Equal(HostTestTenants.A, stored.TenantId);
+        Assert.Equal("ops@example.com", stored.Value);
+        Assert.Equal("notifications", stored.Category);
+
+        var inEffect = await (await client.GetAsync(GetAllRoute)).Content.ReadFromJsonAsync<SettingsResponse>();
+        var mailbox = Assert.Single(inEffect!.Settings, s => s.Key == key);
+        Assert.True(mailbox.IsOverridden);
+        Assert.Equal("ops@example.com", mailbox.EffectiveValue);
+
+        var reset = await client.DeleteAsync(ResetRoute(key));
+        HttpAssert.IsOk(reset);
+        Assert.Equal(new SetResponse(key, string.Empty), await reset.Content.ReadFromJsonAsync<SetResponse>());
+        Assert.Empty(await QueryAsync(ctx => ctx.TenantConfigurations.IgnoreQueryFilters().ToListAsync()));
+        var restored = Assert.Single((await (await client.GetAsync(GetAllRoute)).Content.ReadFromJsonAsync<SettingsResponse>())!.Settings, s => s.Key == key);
+        Assert.False(restored.IsOverridden);
+        Assert.Equal(string.Empty, restored.EffectiveValue);
     }
 
     [Fact]

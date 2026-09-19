@@ -758,6 +758,7 @@ public sealed class CompanyWindDownSweepTests(PostgresContainerFixture fixture) 
         public Task<string> SendOrderStatusUpdateEmailAsync(string email, Order order, string newStatus, string languageCode = "en", CancellationToken ct = default, decimal? refundedAmount = null) => Sent();
         public Task<string> SendCompanyWindDownCustomerNoticeAsync(string email, string userName, IReadOnlyList<string> companyNames, DateOnly windDownFrom, string languageCode = "en", CancellationToken ct = default) => Sent();
         public Task<string> SendCompanyWindDownCleanerNoticeAsync(string email, string userName, IReadOnlyList<string> companyNames, DateOnly windDownFrom, string languageCode = "en", CancellationToken ct = default) => Sent();
+        public Task<string> SendAdminNotificationEmailAsync(string email, string eventKey, IReadOnlyDictionary<string, string> args, string languageCode = "en", CancellationToken ct = default) => Sent();
     }
 
     /// <summary>Refunds and subscription cancels are recorded; anything else on this path is a bug.</summary>

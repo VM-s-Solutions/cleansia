@@ -17,6 +17,9 @@ public sealed class TenantSettingReaderTests
     private void Stored(string key, string? value) =>
         _provider.Setup(p => p.GetTenantSettingAsync(key, It.IsAny<CancellationToken>())).ReturnsAsync(value);
 
+    private void StoredFor(string tenantId, string key, string? value) =>
+        _provider.Setup(p => p.GetTenantSettingAsync(tenantId, key, It.IsAny<CancellationToken>())).ReturnsAsync(value);
+
     [Fact]
     public async Task No_Row_Resolves_To_The_Catalogue_Default()
     {
@@ -64,6 +67,18 @@ public sealed class TenantSettingReaderTests
         var enabled = await _provider.Object.GetAsync(TenantSettingCatalog.ExpiredCodesEnabled, CancellationToken.None);
 
         Assert.Equal(expected, enabled);
+    }
+
+    [Fact]
+    public async Task The_By_Company_Read_Resolves_That_Companys_Row_And_Never_The_Ambient_One()
+    {
+        Stored(TenantSettingCatalog.AdminNotificationEmailKey, "ambient@example.com");
+        StoredFor("company-a", TenantSettingCatalog.AdminNotificationEmailKey, "Ops@Example.com");
+        StoredFor("company-b", TenantSettingCatalog.AdminNotificationEmailKey, null);
+
+        Assert.Equal("ops@example.com", await _provider.Object.GetAsync("company-a", TenantSettingCatalog.AdminNotificationEmail, CancellationToken.None));
+        Assert.Equal(string.Empty, await _provider.Object.GetAsync("company-b", TenantSettingCatalog.AdminNotificationEmail, CancellationToken.None));
+        _provider.Verify(p => p.GetTenantSettingAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]

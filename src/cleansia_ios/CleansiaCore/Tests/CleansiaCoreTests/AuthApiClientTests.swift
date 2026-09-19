@@ -236,7 +236,7 @@ final class AuthApiClientTests: XCTestCase {
 
         _ = await client.register(
             email: "a@b.cz", password: "pw", firstName: "A", lastName: "B", language: "en",
-            countryId: nil, termsAccepted: nil
+            countryId: nil, termsAccepted: true
         )
         _ = await client.resendConfirmation(email: "a@b.cz", language: "en")
 
@@ -312,7 +312,7 @@ final class AuthApiClientTests: XCTestCase {
 
         _ = await client.register(
             email: "a@b.cz", password: "pw", firstName: "A", lastName: "B", language: "en",
-            countryId: nil, termsAccepted: nil
+            countryId: nil, termsAccepted: true
         )
         _ = await client.resendConfirmation(email: "a@b.cz", language: "en")
         MockURLProtocol.handler = { _ in (204, Data()) }
@@ -331,7 +331,7 @@ final class AuthApiClientTests: XCTestCase {
 
         let result = await client.register(
             email: "a@b.cz", password: "pw", firstName: "A", lastName: "B", language: "en",
-            countryId: nil, termsAccepted: nil
+            countryId: nil, termsAccepted: true
         )
 
         guard case let .success(value) = result else { return XCTFail("expected success") }
@@ -346,7 +346,7 @@ final class AuthApiClientTests: XCTestCase {
 
         let result = await client.register(
             email: "a@b.cz", password: "pw", firstName: "A", lastName: "B", language: "en",
-            countryId: nil, termsAccepted: nil
+            countryId: nil, termsAccepted: true
         )
 
         guard case let .success(value) = result else { return XCTFail("expected success") }
@@ -363,7 +363,7 @@ final class AuthApiClientTests: XCTestCase {
 
         _ = await client.register(
             email: "a@b.cz", password: "pw", firstName: "A", lastName: "B", language: "en",
-            countryId: nil, termsAccepted: nil
+            countryId: nil, termsAccepted: true
         )
 
         let request = try XCTUnwrap(MockURLProtocol.recorder.last(matching: "Register"))
@@ -379,7 +379,7 @@ final class AuthApiClientTests: XCTestCase {
 
         _ = await client.register(
             email: "a@b.cz", password: "pw", firstName: "A", lastName: "B", language: "en",
-            countryId: "svk", termsAccepted: nil
+            countryId: "svk", termsAccepted: true
         )
 
         let body = try decodeBody(XCTUnwrap(MockURLProtocol.recorder.last(matching: "Register")))
@@ -392,11 +392,28 @@ final class AuthApiClientTests: XCTestCase {
 
         _ = await client.register(
             email: "a@b.cz", password: "pw", firstName: "A", lastName: "B", language: "en",
-            countryId: nil, termsAccepted: nil
+            countryId: nil, termsAccepted: true
         )
 
         let body = try decodeBody(XCTUnwrap(MockURLProtocol.recorder.last(matching: "RegisterEmployee")))
         XCTAssertFalse(body.keys.contains("countryId"))
+    }
+
+    /// The tick is never omitted the way the market is: the server refuses an absent tick exactly as
+    /// it refuses a false one, so the body always states which of the two the form asserted.
+    func testRegisterAlwaysStatesTheTermsTickOnTheWire() async throws {
+        let client = try makeClient(store: MemTokenStore(), registerEndpoint: .customer)
+        MockURLProtocol.handler = { _ in (200, Data("true".utf8)) }
+
+        for tick in [true, false] {
+            _ = await client.register(
+                email: "a@b.cz", password: "pw", firstName: "A", lastName: "B", language: "en",
+                countryId: nil, termsAccepted: tick
+            )
+
+            let body = try decodeBody(XCTUnwrap(MockURLProtocol.recorder.last(matching: "Register")))
+            XCTAssertEqual(body["termsAccepted"] as? Bool, tick)
+        }
     }
 
     func testFailureSurfacesFirstBusinessKeyFromErrorsDict() async throws {

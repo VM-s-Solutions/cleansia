@@ -94,7 +94,7 @@ final class TrustedDeviceLoginTests: XCTestCase {
 
         _ = await client.register(
             email: "a@b.cz", password: "pw", firstName: "Ada", lastName: "Lovelace", language: "en",
-            countryId: nil, termsAccepted: nil
+            countryId: nil, termsAccepted: true
         )
         _ = await client.confirmEmail(email: "a@b.cz", code: "123456")
         _ = await client.resendConfirmation(email: "a@b.cz", language: "en")

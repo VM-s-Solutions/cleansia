@@ -43,9 +43,9 @@ public struct RegisterRequest: Encodable, Sendable {
     /// The market the visitor chose; absent, the server registers them with the default market's
     /// operating company. Every market-scoped anonymous request carries the same optional member.
     public let countryId: String?
-    /// The sign-up screen's terms tick, granted server-side in the registration's own commit. Absent
-    /// is "not asserted" — the only value a form without the box can honestly send.
-    public let termsAccepted: Bool?
+    /// The sign-up screen's terms tick, granted server-side in the registration's own commit. Both
+    /// sign-up forms carry the box, so the tick is always a stated yes or no, never "not asserted".
+    public let termsAccepted: Bool
 }
 
 /// The email names the account the 6-digit code was issued to — the server verifies the code ONLY

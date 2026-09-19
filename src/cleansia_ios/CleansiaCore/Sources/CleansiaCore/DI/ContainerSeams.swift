@@ -15,7 +15,7 @@ public protocol RegistrationAuthClient: AnyObject {
 
 public extension RegistrationAuthClient {
     // One label per wire member; `countryId` and `termsAccepted` deliberately carry no default so
-    // every caller names the market and the tick (or their absence) rather than forgetting them.
+    // every caller names the market (or its absence) and the tick rather than forgetting them.
     // swiftlint:disable:next function_parameter_count
     func register(
         email: String,
@@ -25,7 +25,7 @@ public extension RegistrationAuthClient {
         language: String,
         referralCode: String? = nil,
         countryId: String?,
-        termsAccepted: Bool?
+        termsAccepted: Bool
     ) async -> ApiResult<Bool> {
         await register(RegisterRequest(
             email: email,

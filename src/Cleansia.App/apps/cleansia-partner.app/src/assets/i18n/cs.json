@@ -527,7 +527,7 @@
       "description": "Přehled vaší výplaty za jednotlivá platební období – pouze pro čtení.",
       "pay_period": "Platební období",
       "currency": "Měna",
-      "multiple_currencies_hint": "Toto období bylo fakturováno ve více měnách. Vyberte, kterou chcete zobrazit.",
+      "multiple_currencies_hint": "V tomto období jste byli vyplaceni ve více měnách. Vyberte, kterou chcete zobrazit.",
       "period_status_open": "Otevřené",
       "period_status_closed": "Uzavřené",
       "period_status_paid": "Vyplacené",

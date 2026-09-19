@@ -1,5 +1,5 @@
 import { TableColumn } from '@cleansia/components';
-import { EmployeeInvoiceDto, OrderEmployeePayDto } from '@cleansia/partner-services';
+import { OrderEmployeePayDto, PeriodPaySummaryDto } from '@cleansia/partner-services';
 
 export type PeriodStatusKey = 'open' | 'closed' | 'paid' | 'unknown';
 
@@ -9,18 +9,16 @@ export interface PeriodCurrency {
 }
 
 /**
- * The currencies a period can be viewed in are the ones it was invoiced in: the server answers
- * GetPeriodPays in ONE currency, and a cleaner with an invoice in each of two currencies would
- * otherwise never see the second one's rows on this screen.
+ * The currencies a period can be viewed in come with the summary: the view currency first, then
+ * every other currency a pay row of the period is in. The server answers GetPeriodPays in ONE
+ * currency, so this list is the only way a cleaner paid in two reaches the second one's rows.
+ * It is not derived from invoices: an open period has none, and a cancelled one is a document
+ * over rows that may no longer be there.
  */
-export function getPeriodCurrencies(invoices: EmployeeInvoiceDto[] | undefined): PeriodCurrency[] {
-  const currencies: PeriodCurrency[] = [];
-  for (const invoice of invoices ?? []) {
-    if (!invoice.currencyId || !invoice.currencyCode) continue;
-    if (currencies.some((currency) => currency.id === invoice.currencyId)) continue;
-    currencies.push({ id: invoice.currencyId, code: invoice.currencyCode });
-  }
-  return currencies;
+export function getPeriodCurrencies(summary: PeriodPaySummaryDto | null): PeriodCurrency[] {
+  return (summary?.availableCurrencies ?? []).flatMap((currency) =>
+    currency.id && currency.code ? [{ id: currency.id, code: currency.code }] : []
+  );
 }
 
 /**

@@ -527,7 +527,7 @@
       "description": "A read-only summary of your pay for each pay period.",
       "pay_period": "Pay Period",
       "currency": "Currency",
-      "multiple_currencies_hint": "This period was invoiced in more than one currency. Pick the one to view.",
+      "multiple_currencies_hint": "You were paid in more than one currency this period. Pick the one to view.",
       "period_status_open": "Open",
       "period_status_closed": "Closed",
       "period_status_paid": "Paid",

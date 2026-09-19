@@ -9,11 +9,10 @@ import {
   SortDefinition,
   SortDirection,
 } from '@cleansia/partner-services';
-import { catchError, finalize, forkJoin, map, of, takeUntil } from 'rxjs';
+import { catchError, finalize, of, takeUntil } from 'rxjs';
 import { PeriodCurrency, PeriodStatusKey, getPeriodCurrencies } from './period-pay.models';
 
 const PERIODS_LIMIT = 26;
-const PERIOD_INVOICES_LIMIT = 20;
 
 @Injectable()
 export class PeriodPayFacade extends UnsubscribeControlDirective {
@@ -112,13 +111,13 @@ export class PeriodPayFacade extends UnsubscribeControlDirective {
     this.periodControl?.setValue(payPeriodId, { emitEvent: false });
     this.selectedCurrencyId.set(null);
     this.currencyControl?.setValue(null, { emitEvent: false });
-    this.loadSummary(true);
+    this.loadSummary();
   }
 
   selectCurrency(currencyId: string): void {
     this.selectedCurrencyId.set(currencyId);
     this.currencyControl?.setValue(currencyId, { emitEvent: false });
-    this.loadSummary(false);
+    this.loadSummary();
   }
 
   retry(): void {
@@ -126,7 +125,7 @@ export class PeriodPayFacade extends UnsubscribeControlDirective {
       this.init();
       return;
     }
-    this.loadSummary(true);
+    this.loadSummary();
   }
 
   private loadPayPeriods(): void {
@@ -167,10 +166,11 @@ export class PeriodPayFacade extends UnsubscribeControlDirective {
   }
 
   /**
-   * Unnamed, the currency view is the server's choice (the cleaner's resolved currency, or the one
-   * invoice's), so the first load asks for nothing and the switch is then set to whatever came back.
+   * Unnamed, the currency view is the server's choice (the cleaner's resolved currency, or the live
+   * invoice's), so the first load asks for nothing; the summary then names the currencies the period
+   * can be viewed in, with the one it is shown in first, and the switch is set from that answer.
    */
-  private loadSummary(withCurrencies: boolean): void {
+  private loadSummary(): void {
     const payPeriodId = this.selectedPeriodId();
     if (!this.employeeId || !payPeriodId) {
       return;
@@ -179,34 +179,8 @@ export class PeriodPayFacade extends UnsubscribeControlDirective {
     this.loading.set(true);
     this.hasError.set(false);
 
-    const payrollClient = this.partnerClient.employeePayrollClient;
-    const currencies$ = withCurrencies
-      ? payrollClient
-          .getPagedInvoices(
-            this.employeeId,
-            payPeriodId,
-            undefined,
-            undefined,
-            undefined,
-            undefined,
-            undefined,
-            undefined,
-            undefined,
-            undefined,
-            0,
-            PERIOD_INVOICES_LIMIT
-          )
-          .pipe(map((paged) => getPeriodCurrencies(paged.data)))
-      : of(this.periodCurrencies());
-
-    forkJoin({
-      summary: payrollClient.getPeriodPays(
-        this.employeeId,
-        payPeriodId,
-        this.selectedCurrencyId() ?? undefined
-      ),
-      currencies: currencies$,
-    })
+    this.partnerClient.employeePayrollClient
+      .getPeriodPays(this.employeeId, payPeriodId, this.selectedCurrencyId() ?? undefined)
       .pipe(
         takeUntil(this.destroyed$),
         catchError(() => {
@@ -220,16 +194,15 @@ export class PeriodPayFacade extends UnsubscribeControlDirective {
           }
         })
       )
-      .subscribe((view) => {
-        if (!view) {
+      .subscribe((summary) => {
+        if (!summary) {
           return;
         }
-        this.summary.set(view.summary);
-        this.periodCurrencies.set(view.currencies);
+        const currencies = getPeriodCurrencies(summary);
+        this.summary.set(summary);
+        this.periodCurrencies.set(currencies);
         const shownCurrencyId =
-          this.selectedCurrencyId() ??
-          view.currencies.find((currency) => currency.code === view.summary.currencyCode)?.id ??
-          null;
+          currencies.find((currency) => currency.code === summary.currencyCode)?.id ?? null;
         this.selectedCurrencyId.set(shownCurrencyId);
         this.currencyControl?.setValue(shownCurrencyId, { emitEvent: false });
       });

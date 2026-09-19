@@ -1,4 +1,4 @@
-import { EmployeeInvoiceDto, OrderEmployeePayDto } from '@cleansia/partner-services';
+import { OrderEmployeePayDto, PeriodPaySummaryDto } from '@cleansia/partner-services';
 import {
   formatPayAmount,
   getPeriodCurrencies,
@@ -57,29 +57,33 @@ describe('getPeriodPayTableDefinition', () => {
 });
 
 describe('getPeriodCurrencies', () => {
-  it('names each currency the period was invoiced in once, in invoice order', () => {
-    const invoices = [
-      EmployeeInvoiceDto.fromJS({ id: 'inv-1', currencyId: 'cur-czk', currencyCode: 'CZK' }),
-      EmployeeInvoiceDto.fromJS({ id: 'inv-2', currencyId: 'cur-eur', currencyCode: 'EUR' }),
-      EmployeeInvoiceDto.fromJS({ id: 'inv-3', currencyId: 'cur-czk', currencyCode: 'CZK' }),
-    ];
+  // The server lists the view currency first and then every other currency a pay row of the period
+  // is in; this screen renders that list as it came and never re-derives it from invoices.
+  it('maps the currencies the summary names, in the order the server sent them', () => {
+    const summary = PeriodPaySummaryDto.fromJS({
+      currencyCode: 'CZK',
+      availableCurrencies: [
+        { id: 'cur-czk', code: 'CZK' },
+        { id: 'cur-eur', code: 'EUR' },
+      ],
+    });
 
-    expect(getPeriodCurrencies(invoices)).toEqual([
+    expect(getPeriodCurrencies(summary)).toEqual([
       { id: 'cur-czk', code: 'CZK' },
       { id: 'cur-eur', code: 'EUR' },
     ]);
   });
 
-  it('skips an invoice that names no currency', () => {
-    const invoices = [
-      EmployeeInvoiceDto.fromJS({ id: 'inv-1' }),
-      EmployeeInvoiceDto.fromJS({ id: 'inv-2', currencyId: 'cur-eur', currencyCode: 'EUR' }),
-    ];
+  it('skips an entry that names no id or no code', () => {
+    const summary = PeriodPaySummaryDto.fromJS({
+      availableCurrencies: [{ id: 'cur-czk' }, { code: 'EUR' }, { id: 'cur-usd', code: 'USD' }],
+    });
 
-    expect(getPeriodCurrencies(invoices)).toEqual([{ id: 'cur-eur', code: 'EUR' }]);
+    expect(getPeriodCurrencies(summary)).toEqual([{ id: 'cur-usd', code: 'USD' }]);
   });
 
-  it('is empty for a period with no invoice yet', () => {
-    expect(getPeriodCurrencies(undefined)).toEqual([]);
+  it('is empty for a summary from a server that does not name the currencies yet', () => {
+    expect(getPeriodCurrencies(PeriodPaySummaryDto.fromJS({ currencyCode: 'CZK' }))).toEqual([]);
+    expect(getPeriodCurrencies(null)).toEqual([]);
   });
 });

@@ -24,6 +24,14 @@ public class AdminNotifier(
                 nameof(adminEvent));
         }
 
+        var missing = entry.EmailArgOrder.Except(adminEvent.Args.Keys, StringComparer.Ordinal).ToList();
+        if (missing.Count > 0)
+        {
+            throw new ArgumentException(
+                $"Admin event {adminEvent.Key} lacks args its catalogue entry declares: {string.Join(", ", missing)}.",
+                nameof(adminEvent));
+        }
+
         var recipients = await userRepository.GetActiveAdministratorsAsync(adminEvent.TenantId, cancellationToken);
         if (recipients.Count == 0)
         {

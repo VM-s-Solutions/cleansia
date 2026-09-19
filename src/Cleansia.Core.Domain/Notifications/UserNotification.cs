@@ -3,13 +3,13 @@ using Cleansia.Core.Domain.Common;
 namespace Cleansia.Core.Domain.Notifications;
 
 /// <summary>
-/// One in-app feed row per targeted push send, written by the PRODUCER inside the same unit of
-/// work as the domain change and the outbox push row — the feed records business truth, so the
-/// row exists iff the event the user reads about committed. Push delivery is deliberately
-/// at-most-once and keeps nothing, so this row is the only durable record of the notification.
+/// One in-app feed row per recipient of an event, written by a producer — the push seam or the
+/// admin notifier — inside the caller's unit of work, so the row exists iff the event the user
+/// reads about committed. Where a push exists, its outbox row rides the same commit; push delivery
+/// is deliberately at-most-once and keeps nothing, so this row is the only durable record.
 ///
-/// <see cref="ArgsJson"/> is exactly the push <c>Args</c> dictionary (loc-args, never PII, never
-/// rendered text — clients render title/body from their bundled templates in the device locale).
+/// <see cref="ArgsJson"/> is the event's loc-args dictionary (never PII, never rendered text —
+/// clients render title/body from their bundled templates in the device locale).
 /// <see cref="Auditable.CreatedOn"/> null-<see cref="ReadOn"/> = unread.
 /// </summary>
 public class UserNotification : TenantAuditable

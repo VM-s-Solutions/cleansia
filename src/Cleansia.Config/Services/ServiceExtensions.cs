@@ -246,7 +246,7 @@ public static class ServiceExtensions
         services.AddScoped<IOrderLateReferralAcceptor, OrderLateReferralAcceptor>();
         services.AddScoped<IOrderPaymentDispatcher, OrderPaymentDispatcher>();
         services.AddScoped<ILoyaltyService, LoyaltyService>();
-        // The single notify seam: feed row + outbox push, atomically, in the caller's unit of work.
+        // The push seam: feed row + outbox push, atomically, in the caller's unit of work.
         services.AddScoped<INotificationProducer, NotificationProducer>();
         // The administrators' seam: feed rows for the NAMED company, no push, no commit.
         services.AddScoped<IAdminNotifier, AdminNotifier>();

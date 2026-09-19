@@ -183,19 +183,22 @@ public class CreateDispute
 
             disputeRepository.Add(dispute);
 
-            await adminNotifier.NotifyAsync(
-                new AdminEvent(
-                    AdminNotificationEventCatalog.DisputeFiled,
-                    order.TenantId!,
-                    Subject: dispute.Id,
-                    Args: new Dictionary<string, string>
-                    {
-                        ["orderNumber"] = order.DisplayOrderNumber,
-                        ["reason"] = request.Reason.ToString(),
-                        ["disputeId"] = dispute.Id,
-                        ["orderId"] = order.Id,
-                    }),
-                cancellationToken);
+            if (!string.IsNullOrEmpty(order.TenantId))
+            {
+                await adminNotifier.NotifyAsync(
+                    new AdminEvent(
+                        AdminNotificationEventCatalog.DisputeFiled,
+                        order.TenantId,
+                        Subject: dispute.Id,
+                        Args: new Dictionary<string, string>
+                        {
+                            ["orderNumber"] = order.DisplayOrderNumber,
+                            ["reason"] = request.Reason.ToString(),
+                            ["disputeId"] = dispute.Id,
+                            ["orderId"] = order.Id,
+                        }),
+                    cancellationToken);
+            }
 
             var cleanEndedAt = order.CompletedAt ?? order.CleaningDateTime;
             auditContext.RecordEvidence("Dispute", dispute.Id, new DisputeFilingEvidence(

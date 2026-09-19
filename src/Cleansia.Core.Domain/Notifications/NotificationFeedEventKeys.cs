@@ -59,9 +59,10 @@ public static class NotificationFeedEventKeys
     ];
 
     /// <summary>
-    /// The admin console renders every key of its catalogue, so the keyset IS the catalogue. These rows
-    /// are written by the admin notifier alone — never by the push seam, which is why
-    /// <see cref="IsFeedEvent"/> does not know them.
+    /// The console is built to render every key of its catalogue, so the keyset is the catalogue by
+    /// construction rather than a list that trails the client's templates. These rows are written by
+    /// the admin notifier alone — never by the push seam, which is why <see cref="IsFeedEvent"/> does
+    /// not know them.
     /// </summary>
     public static readonly IReadOnlyList<string> Admin = AdminNotificationEventCatalog.All;
 

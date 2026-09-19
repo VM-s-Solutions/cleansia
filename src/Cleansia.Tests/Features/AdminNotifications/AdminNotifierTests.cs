@@ -149,6 +149,28 @@ public sealed class AdminNotifierTests
     }
 
     [Fact]
+    public async Task An_Arg_The_Catalogue_Declares_But_The_Site_Omits_Is_Refused_Before_Any_Row()
+    {
+        ArrangeAdministrators(TenantA, "admin-1");
+        var withoutTheDeepLinkId = DisputeFiled(TenantA) with
+        {
+            Args = new Dictionary<string, string>
+            {
+                ["orderNumber"] = "ORD-1A2B3C4D",
+                ["reason"] = "QualityIssue",
+                ["disputeId"] = "dispute-1",
+            },
+        };
+
+        var refused = await Assert.ThrowsAsync<ArgumentException>(
+            () => NewNotifier().NotifyAsync(withoutTheDeepLinkId, CancellationToken.None));
+
+        Assert.Contains("orderId", refused.Message);
+        Assert.Empty(_added);
+        _users.Verify(r => r.GetActiveAdministratorsAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
     public async Task A_Key_Outside_The_Catalogue_Is_Refused()
     {
         var unknown = DisputeFiled(TenantA) with { Key = NotificationEventCatalog.OrderConfirmed };

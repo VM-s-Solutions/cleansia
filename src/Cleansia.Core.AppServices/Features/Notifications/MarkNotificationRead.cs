@@ -10,8 +10,11 @@ namespace Cleansia.Core.AppServices.Features.Notifications;
 
 public class MarkNotificationRead
 {
-    // A bell click is not a ledger entry: an administrator reading their own feed leaves no admin audit row.
-    /// <summary><c>Audience</c> is server-enriched: always overwritten by the host controller, never trusted from the client.</summary>
+    /// <summary>
+    /// <c>Audience</c> is server-enriched: always overwritten by the host controller, never trusted from
+    /// the client. Not audited: a bell click is not a ledger entry, so an administrator reading their own
+    /// feed leaves no admin audit row.
+    /// </summary>
     [AuditAction(Audited = false)]
     public record Command(
         string Id,

@@ -5,7 +5,7 @@ namespace Cleansia.Core.AppServices.Features.AdminNotifications;
 
 /// <summary>
 /// What each admin event carries and who is told, keyed by <see cref="AdminNotificationEventCatalog"/>.
-/// <see cref="Entry.EmailArgOrder"/> is the closed set of arg names a site may pass — ids, numbers,
+/// <see cref="Entry.EmailArgOrder"/> is the exact set of arg names a site passes — ids, numbers,
 /// enum names, dates and money, never a person — in the order the e-mail copy substitutes them.
 /// <see cref="Entry.Audience"/> is the administrator set the recipients narrow to; every entry is the
 /// whole company until roles exist.

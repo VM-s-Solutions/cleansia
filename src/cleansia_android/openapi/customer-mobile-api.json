@@ -4209,6 +4209,13 @@
             }
           },
           {
+            "name": "Filter.UserId",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
             "name": "Sort",
             "in": "query",
             "schema": {
@@ -4464,6 +4471,13 @@
           },
           {
             "name": "Filter.CurrencyId",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Filter.UserId",
             "in": "query",
             "schema": {
               "type": "string"
@@ -10030,13 +10044,15 @@
       "NotificationFeedAudience": {
         "enum": [
           0,
-          1
+          1,
+          2
         ],
         "type": "integer",
         "format": "int32",
         "x-enumNames": [
           "Customer",
-          "Partner"
+          "Partner",
+          "Admin"
         ]
       },
       "NotificationPreferencesDto": {

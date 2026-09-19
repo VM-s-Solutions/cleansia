@@ -9,11 +9,12 @@ namespace Cleansia.Core.AppServices.Features.Notifications;
 
 public class MarkAllNotificationsRead
 {
-    // A bell click is not a ledger entry: an administrator reading their own feed leaves no admin audit row.
     /// <summary>
     /// <c>UpToCreatedOn</c> is the client's watermark — the newest <c>CreatedOn</c> it fetched —
     /// so a row created after the fetch stays unread (null = mark everything).
     /// <c>Audience</c> is server-enriched: always overwritten by the host controller.
+    /// Not audited: a bell click is not a ledger entry, so an administrator reading their own feed
+    /// leaves no admin audit row.
     /// </summary>
     [AuditAction(Audited = false)]
     public record Command(

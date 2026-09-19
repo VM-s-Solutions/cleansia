@@ -54,8 +54,10 @@ public class GetRevenueReport
                     nameof(request.Filter.CurrencyId), BusinessErrorMessage.CurrencyNotFound));
             }
 
+            var bounds = request.Filter.AsUtc();
+
             var orders = await orderRepository.GetCompletedPaidOrdersByCompletionDateAsync(
-                request.Filter.StartDate, request.Filter.EndDate, currency.Id, cancellationToken);
+                bounds.StartDate, bounds.EndDate, currency.Id, cancellationToken);
             var orderIds = orders.Select(o => o.Id).ToList();
 
             // A refund has two legs: the card share is a Refund row, the credit share went back to the
@@ -129,7 +131,7 @@ public class GetRevenueReport
             // Cancelled bookings are not revenue; they are counted on their own axis so the card stays
             // on the page.
             var cancelledOrders = await orderRepository.CountCancelledBookingsInPeriodAsync(
-                request.Filter.StartDate, request.Filter.EndDate, currency.Id, cancellationToken);
+                bounds.StartDate, bounds.EndDate, currency.Id, cancellationToken);
 
             var growthPercentage = CalculateGrowthPercentage(dailyRevenues);
 

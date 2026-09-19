@@ -46,8 +46,10 @@ public class GetPayrollReport
                     nameof(request.Filter.CurrencyId), BusinessErrorMessage.CurrencyNotFound));
             }
 
+            var bounds = request.Filter.AsUtc();
+
             var invoices = await employeeInvoiceRepository.GetAllByDateRangeAsync(
-                request.Filter.StartDate, request.Filter.EndDate, currency.Id, cancellationToken);
+                bounds.StartDate, bounds.EndDate, currency.Id, cancellationToken);
 
             var totalPayroll = invoices.Sum(i => i.TotalAmount);
             var totalInvoices = invoices.Count;

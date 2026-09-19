@@ -28,6 +28,11 @@
         "assets": [
           "apps/cleansia.app/src/assets",
           {
+            "glob": "**/*.svg",
+            "input": "node_modules/flag-icons/flags",
+            "output": "assets/flags"
+          },
+          {
             "glob": "robots.txt",
             "input": "apps/cleansia.app/src/root-assets",
             "output": "/"

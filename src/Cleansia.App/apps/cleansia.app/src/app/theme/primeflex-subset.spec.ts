@@ -17,12 +17,7 @@ const TEMPLATE_ROOTS = [
  * Shrink-only: an entry leaves when its sheet is self-hosted, and a new one
  * is argued for here rather than added to the HTML.
  */
-const REMAINING_THIRD_PARTY_STYLESHEETS = [
-  'fonts.googleapis.com/css2',
-  'lipis/flag-icons',
-  'primeicons',
-  'font-awesome',
-];
+const REMAINING_THIRD_PARTY_STYLESHEETS = ['fonts.googleapis.com/css2'];
 
 interface CssRule {
   media: string;
@@ -52,6 +47,8 @@ function findSolutionDir(): string {
 
 const FRONTEND_DIR = join(findSolutionDir(), 'Cleansia.App');
 const APP_DIR = join(FRONTEND_DIR, 'apps', APP_NAME);
+// The build resolves bare package paths in the stylesheets; the plain compiler needs telling where.
+const NODE_MODULES_DIR = join(FRONTEND_DIR, 'node_modules');
 
 function indexHtml(app: string): string {
   return readFileSync(join(FRONTEND_DIR, 'apps', app, 'src', 'index.html'), 'utf8');
@@ -190,7 +187,7 @@ function compiledBuildCss(): string {
     readFileSync(join(APP_DIR, 'project.json'), 'utf8')
   ) as ProjectConfiguration;
   return project.targets.build.options.styles
-    .map((stylesheet) => compile(join(FRONTEND_DIR, stylesheet), { quietDeps: true }).css)
+    .map((stylesheet) => compile(join(FRONTEND_DIR, stylesheet), { quietDeps: true, loadPaths: [NODE_MODULES_DIR] }).css)
     .join('\n');
 }
 

@@ -60,9 +60,10 @@ export class CleansiaSelectComponent extends CleansiaBaseFormInputComponent {
   private readonly changeDetector = inject(ChangeDetectorRef);
 
   // A value or a disabled state arrives through the accessor, not an input, so
-  // under OnPush nothing marks this view — an initial ngModel (applied by the
-  // forms module asynchronously) or a control set after a load would otherwise
-  // sit on the model without the rendered label following it.
+  // under OnPush nothing marks this view when a reactive control is set or
+  // disabled after the first render — the model would move without the rendered
+  // label following it. NgModel marks the host view itself; FormControl and
+  // FormControlName do not.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   override writeValue(value: any): void {
     this.innerValue = value ?? null;

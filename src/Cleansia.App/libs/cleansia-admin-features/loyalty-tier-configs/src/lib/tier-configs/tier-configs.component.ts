@@ -24,6 +24,8 @@ import {
   CleansiaTextInputComponent,
   CleansiaTitleComponent,
 } from '@cleansia/components';
+import { CleansiaPermissionDirective } from '@cleansia/directives';
+import { PermissionService, Policy } from '@cleansia/services';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { DialogModule } from 'primeng/dialog';
 import { getTierConfigsTableDefinition, TierRow } from './tier-configs.models';
@@ -34,6 +36,7 @@ import { TierConfigsFacade } from './tier-configs.facade';
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
+    CleansiaPermissionDirective,
     CommonModule,
     ReactiveFormsModule,
     TranslatePipe,
@@ -52,7 +55,9 @@ import { TierConfigsFacade } from './tier-configs.facade';
 export class TierConfigsComponent implements OnInit, OnDestroy {
   private readonly fb = inject(FormBuilder);
   private readonly translate = inject(TranslateService);
+  private readonly permissions = inject(PermissionService);
   protected readonly facade = inject(TierConfigsFacade);
+  protected readonly Policy = Policy;
   private readonly destroyRef = inject(DestroyRef);
 
   // Edit modal state
@@ -110,7 +115,8 @@ export class TierConfigsComponent implements OnInit, OnDestroy {
    */
   readonly tableDefinition = getTierConfigsTableDefinition(
     { onEdit: (row) => this.openEdit(row) },
-    this.translate
+    this.translate,
+    this.permissions
   );
 
   readonly editForm = this.fb.group({

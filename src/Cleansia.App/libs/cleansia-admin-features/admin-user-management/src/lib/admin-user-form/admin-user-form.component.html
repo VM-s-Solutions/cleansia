@@ -52,9 +52,47 @@
               [required]="true"
             />
           </div>
+
+          <div class="form-field">
+            <cleansia-select
+              [label]="'pages.admin_user_form.role' | translate"
+              formControlName="role"
+              [options]="roleOptions()"
+              [showClear]="false"
+              [required]="true"
+            />
+            <small class="form-field__hint">
+              {{ 'pages.admin_user_form.role_hint' | translate }}
+            </small>
+          </div>
           }
         </div>
       </cleansia-section>
+
+      @if (isEditMode()) {
+      <cleansia-section
+        *cleansiaPermission="Policy.CanSetAdminRole"
+        [title]="'pages.admin_user_form.role_section' | translate"
+      >
+        <div class="form-grid">
+          <div class="form-field">
+            <cleansia-select
+              [label]="'pages.admin_user_form.role' | translate"
+              [formControl]="roleControl"
+              [options]="roleOptions()"
+              [showClear]="false"
+            />
+            <small class="form-field__hint">
+              @if (facade.isSelf()) {
+              {{ 'api.admin_user.cannot_change_own_role' | translate }}
+              } @else {
+              {{ 'pages.admin_user_form.role_change_hint' | translate }}
+              }
+            </small>
+          </div>
+        </div>
+      </cleansia-section>
+      }
 
       <cleansia-section
         [title]="'pages.admin_user_form.personal_info' | translate"
@@ -110,17 +148,25 @@
           [outlined]="true"
           (onClick)="onCancel()"
         />
+        @if (isEditMode()) {
         <cleansia-button
-          [label]="
-            isEditMode()
-              ? ('global.actions.save' | translate)
-              : ('global.actions.create' | translate)
-          "
+          *cleansiaPermission="Policy.CanUpdateAdminUser"
+          [label]="'global.actions.save' | translate"
           type="submit"
           [disabled]="facade.saving()"
           [loading]="facade.saving()"
           (onClick)="onSave()"
         />
+        } @else {
+        <cleansia-button
+          *cleansiaPermission="Policy.CanCreateAdminUser"
+          [label]="'global.actions.create' | translate"
+          type="submit"
+          [disabled]="facade.saving()"
+          [loading]="facade.saving()"
+          (onClick)="onSave()"
+        />
+        }
       </div>
     </form>
     }

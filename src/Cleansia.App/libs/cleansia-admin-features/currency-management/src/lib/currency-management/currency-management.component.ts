@@ -19,7 +19,7 @@ import {
   TableColumn,
   TableAction,
 } from '@cleansia/components';
-import { Policy } from '@cleansia/services';
+import { PermissionService, Policy } from '@cleansia/services';
 import { CleansiaPermissionDirective } from '@cleansia/directives';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { ConfirmationService } from 'primeng/api';
@@ -54,6 +54,7 @@ export class CurrencyManagementComponent implements AfterViewInit, OnDestroy {
   protected readonly facade = inject(CurrencyManagementFacade);
   protected readonly Policy = Policy;
   private readonly translate = inject(TranslateService);
+  private readonly permissions = inject(PermissionService);
   private readonly confirmationService = inject(ConfirmationService);
 
   flagTemplate = viewChild<TemplateRef<AdminCurrencyListItem>>('flagTemplate');
@@ -91,6 +92,7 @@ export class CurrencyManagementComponent implements AfterViewInit, OnDestroy {
         onActivate: this.confirmActivateCurrency.bind(this),
       },
       this.translate,
+      this.permissions,
       this.flagTemplate()
     );
     this.currencyColumns = tableDef.columns;

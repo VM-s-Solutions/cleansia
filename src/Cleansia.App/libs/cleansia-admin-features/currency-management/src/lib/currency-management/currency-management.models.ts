@@ -1,6 +1,7 @@
 import { TemplateRef } from '@angular/core';
 import { AdminCurrencyListItem } from '@cleansia/admin-services';
 import { TableColumn, TableAction } from '@cleansia/components';
+import { PermissionService, Policy } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
 
 // Map currency codes to country codes for flag display
@@ -95,6 +96,7 @@ export function getCurrencyTableDefinition(
     onActivate: (row: AdminCurrencyListItem) => void;
   },
   translate: TranslateService,
+  permissions: PermissionService,
   flagTemplate?: TemplateRef<AdminCurrencyListItem>
 ): { columns: TableColumn<AdminCurrencyListItem>[]; actions: TableAction<AdminCurrencyListItem>[] } {
   return {
@@ -156,6 +158,7 @@ export function getCurrencyTableDefinition(
         icon: 'pi pi-pencil',
         tooltip: translate.instant('pages.currency_management.edit_currency'),
         color: 'warning',
+        visible: () => permissions.hasPolicy(Policy.CanUpdateCurrency),
         onClick: (row: AdminCurrencyListItem) => defs.onEdit(row),
       },
       {
@@ -165,7 +168,8 @@ export function getCurrencyTableDefinition(
         tooltip: translate.instant('pages.currency_management.set_default'),
         color: 'info',
         onClick: (row: AdminCurrencyListItem) => defs.onSetDefault(row),
-        visible: (row: AdminCurrencyListItem) => !row.isDefault && row.isActive,
+        visible: (row: AdminCurrencyListItem) =>
+          !row.isDefault && row.isActive && permissions.hasPolicy(Policy.CanUpdateCurrency),
       },
       {
         // THE MARKET SWITCH. Off is hidden on the default row for the same reason delete is: the
@@ -173,14 +177,16 @@ export function getCurrencyTableDefinition(
         icon: 'pi pi-ban',
         tooltip: translate.instant('pages.currency_management.deactivate'),
         color: 'danger',
-        visible: (row: AdminCurrencyListItem) => row.isActive && !row.isDefault,
+        visible: (row: AdminCurrencyListItem) =>
+          row.isActive && !row.isDefault && permissions.hasPolicy(Policy.CanUpdateCurrency),
         onClick: (row: AdminCurrencyListItem) => defs.onDeactivate(row),
       },
       {
         icon: 'pi pi-check-circle',
         tooltip: translate.instant('pages.currency_management.activate'),
         color: 'success',
-        visible: (row: AdminCurrencyListItem) => !row.isActive,
+        visible: (row: AdminCurrencyListItem) =>
+          !row.isActive && permissions.hasPolicy(Policy.CanUpdateCurrency),
         onClick: (row: AdminCurrencyListItem) => defs.onActivate(row),
       },
       {
@@ -188,7 +194,8 @@ export function getCurrencyTableDefinition(
         tooltip: translate.instant('pages.currency_management.delete_currency'),
         color: 'danger',
         onClick: (row: AdminCurrencyListItem) => defs.onDelete(row),
-        visible: (row: AdminCurrencyListItem) => !row.isDefault,
+        visible: (row: AdminCurrencyListItem) =>
+          !row.isDefault && permissions.hasPolicy(Policy.CanDeleteCurrency),
       },
     ],
   };

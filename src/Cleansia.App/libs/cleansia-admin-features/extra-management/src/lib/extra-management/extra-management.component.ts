@@ -10,7 +10,7 @@ import {
 } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { CleansiaAdminRoute, Policy } from '@cleansia/services';
+import { CleansiaAdminRoute, PermissionService, Policy } from '@cleansia/services';
 import { CleansiaPermissionDirective } from '@cleansia/directives';
 import {
   ExtraListItem,
@@ -68,6 +68,7 @@ export class ExtraManagementComponent implements AfterViewInit, OnDestroy {
   protected readonly facade = inject(ExtraManagementFacade);
   protected readonly Policy = Policy;
   private readonly translate = inject(TranslateService);
+  private readonly permissions = inject(PermissionService);
   private readonly confirmationService = inject(ConfirmationService);
 
   extraColumns!: TableColumn<ExtraListItem>[];
@@ -126,6 +127,7 @@ export class ExtraManagementComponent implements AfterViewInit, OnDestroy {
         getIsActiveFilter: () => this.facade.isActiveFilter(),
       },
       this.translate,
+      this.permissions,
       this.facade.formatCurrency.bind(this.facade)
     );
 

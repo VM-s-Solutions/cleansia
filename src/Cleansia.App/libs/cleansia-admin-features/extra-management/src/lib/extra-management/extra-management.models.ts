@@ -1,5 +1,6 @@
 import { ExtraListItem } from '@cleansia/admin-services';
 import { TableColumn, TableAction } from '@cleansia/components';
+import { PermissionService, Policy } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
 
 export type CatalogStatusFilter = 'all' | 'active' | 'inactive';
@@ -55,6 +56,7 @@ export function getExtraTableDefinition(
     getIsActiveFilter: () => boolean | undefined;
   },
   translate: TranslateService,
+  permissions: PermissionService,
   formatCurrency: (value: number | undefined) => string
 ): { columns: TableColumn<ExtraListItem>[]; actions: TableAction<ExtraListItem>[] } {
   return {
@@ -98,26 +100,30 @@ export function getExtraTableDefinition(
         icon: 'pi pi-pencil',
         tooltip: translate.instant('pages.extra_management.edit_extra'),
         color: 'warning',
+        visible: () => permissions.hasPolicy(Policy.CanUpdateExtra),
         onClick: (row: ExtraListItem) => defs.onEdit(row),
       },
       {
         icon: 'pi pi-ban',
         tooltip: translate.instant('pages.extra_management.deactivate_extra'),
         color: 'danger',
-        visible: () => defs.getIsActiveFilter() !== false,
+        visible: () =>
+          defs.getIsActiveFilter() !== false && permissions.hasPolicy(Policy.CanUpdateExtra),
         onClick: (row: ExtraListItem) => defs.onDeactivate(row),
       },
       {
         icon: 'pi pi-check-circle',
         tooltip: translate.instant('pages.extra_management.activate_extra'),
         color: 'success',
-        visible: () => defs.getIsActiveFilter() !== true,
+        visible: () =>
+          defs.getIsActiveFilter() !== true && permissions.hasPolicy(Policy.CanUpdateExtra),
         onClick: (row: ExtraListItem) => defs.onActivate(row),
       },
       {
         icon: 'pi pi-trash',
         tooltip: translate.instant('pages.extra_management.delete_extra'),
         color: 'danger',
+        visible: () => permissions.hasPolicy(Policy.CanDeleteExtra),
         onClick: (row: ExtraListItem) => defs.onDelete(row),
       },
     ],

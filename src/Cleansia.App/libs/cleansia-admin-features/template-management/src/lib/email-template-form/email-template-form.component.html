@@ -87,6 +87,7 @@
           (onClick)="onCancel()"
         />
         <cleansia-button
+          *cleansiaPermission="Policy.CanUpdateEmailTemplate"
           [label]="'pages.template_management.actions.send_test_email' | translate"
           icon="pi pi-send"
           [outlined]="true"
@@ -95,6 +96,7 @@
           (onClick)="openTestEmailDialog()"
         />
         <cleansia-button
+          *cleansiaPermission="Policy.CanUpdateEmailTemplate"
           [label]="'global.actions.save' | translate"
           type="submit"
           [disabled]="facade.saving()"

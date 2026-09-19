@@ -1,6 +1,7 @@
 import { TemplateRef } from '@angular/core';
 import { BillingInterval, MembershipPlanListItem } from '@cleansia/admin-services';
 import { TableAction, TableColumn } from '@cleansia/components';
+import { PermissionService, Policy } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
 
 export const BILLING_INTERVAL_WIRE = {
@@ -44,6 +45,7 @@ export function getMembershipPlanTableDefinition(
     onDeactivate: (row: MembershipPlanListItem) => void;
   },
   translate: TranslateService,
+  permissions: PermissionService,
   statusTemplate?: TemplateRef<MembershipPlanListItem>
 ): {
   columns: TableColumn<MembershipPlanListItem>[];
@@ -142,13 +144,15 @@ export function getMembershipPlanTableDefinition(
         icon: 'pi pi-pencil',
         tooltip: translate.instant('global.actions.edit'),
         color: 'warning',
+        visible: () => permissions.hasPolicy(Policy.CanUpdateMembershipPlan),
         onClick: (row) => defs.onEdit(row),
       },
       {
         icon: 'pi pi-ban',
         tooltip: translate.instant('pages.membership_plans.actions.deactivate'),
         color: 'danger',
-        visible: (row) => row.isActive === true,
+        visible: (row) =>
+          row.isActive === true && permissions.hasPolicy(Policy.CanDeactivateMembershipPlan),
         onClick: (row) => defs.onDeactivate(row),
       },
     ],

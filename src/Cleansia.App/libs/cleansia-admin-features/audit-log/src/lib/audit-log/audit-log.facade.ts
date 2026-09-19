@@ -2,6 +2,7 @@ import { Injectable, inject, signal } from '@angular/core';
 import {
   AdminActionAuditDto,
   AdminAuditLogClient,
+  AdminRole,
   SortDefinition,
 } from '@cleansia/admin-services';
 import { UnsubscribeControlDirective } from '@cleansia/directives';
@@ -16,6 +17,7 @@ export interface AuditLogFilterParams {
   occurredFrom?: Date;
   occurredTo?: Date;
   success?: boolean;
+  actorAdminRole?: AdminRole;
 }
 
 @Injectable()
@@ -49,7 +51,7 @@ export class AuditLogFacade extends UnsubscribeControlDirective {
         filter?.occurredFrom,
         filter?.occurredTo,
         filter?.success,
-        undefined,
+        filter?.actorAdminRole,
         this.currentSort(),
         this.currentOffset(),
         this.currentLimit()

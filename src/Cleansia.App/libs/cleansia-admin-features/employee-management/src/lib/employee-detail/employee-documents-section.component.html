@@ -115,6 +115,7 @@
       @if (showApproveReject) {
         <div class="document-card__action-row">
           <cleansia-button
+            *cleansiaPermission="Policy.CanApproveEmployeeDocument"
             [label]="'pages.employee_detail.actions.approve_document' | translate"
             icon="pi pi-check" severity="success" size="auto-width"
             [outlined]="showApproveOnly"
@@ -122,6 +123,7 @@
           />
           @if (!showApproveOnly) {
             <cleansia-button
+              *cleansiaPermission="Policy.CanRejectEmployeeDocument"
               [label]="'pages.employee_detail.actions.reject_document' | translate"
               icon="pi pi-times" severity="danger" size="auto-width" [outlined]="true"
               (onClick)="rejectDocument.emit(doc)"

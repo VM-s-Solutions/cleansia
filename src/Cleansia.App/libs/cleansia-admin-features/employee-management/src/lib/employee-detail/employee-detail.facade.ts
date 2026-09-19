@@ -17,7 +17,7 @@ import {
 } from '@cleansia/admin-services';
 import { ICleansiaSelectOption } from '@cleansia/components';
 import { UnsubscribeControlDirective } from '@cleansia/directives';
-import { SnackbarService } from '@cleansia/services';
+import { PermissionService, Policy, SnackbarService } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
 import { DialogService } from 'primeng/dynamicdialog';
 import { catchError, finalize, of, takeUntil } from 'rxjs';
@@ -39,6 +39,7 @@ export class EmployeeDetailFacade extends UnsubscribeControlDirective {
   private readonly translate = inject(TranslateService);
   private readonly dialogService = inject(DialogService);
   private readonly docsFacade = inject(EmployeeDocumentsFacade);
+  private readonly permissions = inject(PermissionService);
 
   readonly employee = signal<AdminEmployeeDetail | null>(null);
   readonly loading = signal<boolean>(false);
@@ -77,7 +78,11 @@ export class EmployeeDetailFacade extends UnsubscribeControlDirective {
       .subscribe((response) => {
         if (response) {
           this.employee.set(response);
-          this.docsFacade.loadEmployeeDocuments(employeeId);
+          // A read the role lacks answers 403 and the shared interceptor toasts it; the page
+          // shows the section only to a role that can read it, so it must not ask either.
+          if (this.permissions.hasPolicy(Policy.CanViewEmployeeDocumentsAdmin)) {
+            this.docsFacade.loadEmployeeDocuments(employeeId);
+          }
           this.loadCountries();
         }
       });
@@ -388,6 +393,7 @@ export class EmployeeDetailFacade extends UnsubscribeControlDirective {
 
   // Pay config methods
   loadEmployeePayConfigs(employeeId: string): void {
+    if (!this.permissions.hasPolicy(Policy.CanViewPayConfigs)) return;
     this.loadPayConfigSummary(employeeId);
   }
 
@@ -562,7 +568,7 @@ export class EmployeeDetailFacade extends UnsubscribeControlDirective {
           );
           this.editingSection.set(null);
           this.payConfigDialogOpen.set(false);
-          this.loadEmployeePayConfigs(employeeId);
+          this.loadPayConfigSummary(employeeId);
         }
       });
   }
@@ -587,7 +593,7 @@ export class EmployeeDetailFacade extends UnsubscribeControlDirective {
           this.snackbarService.showSuccess(
             this.translate.instant('pages.employee_detail.messages.pay_config_delete_success')
           );
-          this.loadEmployeePayConfigs(employeeId);
+          this.loadPayConfigSummary(employeeId);
         }
       });
   }

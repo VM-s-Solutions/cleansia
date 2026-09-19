@@ -1,5 +1,5 @@
 import { TemplateRef } from '@angular/core';
-import { AdminUserListItem } from '@cleansia/admin-services';
+import { AdminUserListItem, getAdminRoleLabelKey } from '@cleansia/admin-services';
 import { TableColumn, TableAction } from '@cleansia/components';
 import { PermissionService, Policy } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
@@ -30,13 +30,20 @@ export function getAdminUserTableDefinition(
         field: 'email',
         header: translate.instant('pages.admin_user_management.columns.email'),
         sortable: true,
-        width: '25%',
+        width: '20%',
+      },
+      {
+        id: 'adminRole',
+        field: 'adminRole',
+        header: translate.instant('pages.admin_user_management.columns.role'),
+        getValue: (row: AdminUserListItem) => formatAdminRole(row, translate),
+        width: '10%',
       },
       {
         id: 'phone',
         field: 'phoneNumber',
         header: translate.instant('pages.admin_user_management.columns.phone'),
-        width: '15%',
+        width: '10%',
       },
       {
         id: 'status',
@@ -101,4 +108,12 @@ export function getAdminUserTableDefinition(
       },
     ],
   };
+}
+
+export function formatAdminRole(
+  row: Pick<AdminUserListItem, 'adminRole'>,
+  translate: TranslateService
+): string {
+  const key = getAdminRoleLabelKey(row.adminRole);
+  return key ? translate.instant(key) : '';
 }

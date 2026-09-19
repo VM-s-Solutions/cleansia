@@ -6,8 +6,9 @@ import { PhysicalPolicy } from './physical-policy';
  * PhysicalPolicy via {@link POLICY_MAP} and checks the current user's role
  * against that gate.
  *
- * Keep in sync with the backend `Policy.cs` + `PolicyBuilder.cs` map. When
- * the backend adds or moves a policy, regenerate-or-edit this file by hand.
+ * Every row of the backend `PolicyBuilder.Map` is here and nothing else is: the admin app's
+ * `policy-map-mirror.spec.ts` diffs the two, so a backend row that moves or appears fails the
+ * build until this file follows it. The seven anonymous permissions are not mapped on either side.
  */
 export const Policy = {
   // Order
@@ -23,20 +24,36 @@ export const Policy = {
   CanViewOrderPhotos: 'CanViewOrderPhotos',
   CanDeleteOrderPhoto: 'CanDeleteOrderPhoto',
   CanAddOrderNote: 'CanAddOrderNote',
+  CanUpdateOrderNote: 'CanUpdateOrderNote',
+  CanDeleteOrderNote: 'CanDeleteOrderNote',
   CanReportOrderIssue: 'CanReportOrderIssue',
+  CanUpdateOrderIssue: 'CanUpdateOrderIssue',
+  CanDeleteOrderIssue: 'CanDeleteOrderIssue',
   CanSubmitOrderReview: 'CanSubmitOrderReview',
   CanViewOrderReview: 'CanViewOrderReview',
   CanCancelOrder: 'CanCancelOrder',
+  CanAdminCancelOrder: 'CanAdminCancelOrder',
+  CanOverrideOrderStatus: 'CanOverrideOrderStatus',
+  CanReassignOrder: 'CanReassignOrder',
+  CanRefundOrder: 'CanRefundOrder',
+  CanViewPagedOrderAdmin: 'CanViewPagedOrderAdmin',
+  CanViewOrderDetailAdmin: 'CanViewOrderDetailAdmin',
+  CanViewOrderPhotosAdmin: 'CanViewOrderPhotosAdmin',
 
-  // Saved addresses / Membership / Recurring bookings (customer)
+  // Saved addresses
   CanManageSavedAddresses: 'CanManageSavedAddresses',
+
+  // Cleansia Plus membership (customer)
   CanManageMembership: 'CanManageMembership',
+
+  // Recurring bookings (customer)
   CanManageRecurringBookings: 'CanManageRecurringBookings',
 
   // User
   CanViewPagedUser: 'CanViewPagedUser',
   CanViewUserDetail: 'CanViewUserDetail',
   CanGetCurrentUser: 'CanGetCurrentUser',
+  CanChangeOwnPassword: 'CanChangeOwnPassword',
   CanUpdateCurrentUser: 'CanUpdateCurrentUser',
   CanAddPhoneNumber: 'CanAddPhoneNumber',
 
@@ -49,7 +66,9 @@ export const Policy = {
   CanRejectEmployee: 'CanRejectEmployee',
   CanAdminUpdateEmployee: 'CanAdminUpdateEmployee',
   CanViewEmployeePayoutDetails: 'CanViewEmployeePayoutDetails',
+  CanViewEmployeePayoutDetailsAdmin: 'CanViewEmployeePayoutDetailsAdmin',
   CanRevealEmployeePayoutDetails: 'CanRevealEmployeePayoutDetails',
+  CanRevealOrderAccessInstructions: 'CanRevealOrderAccessInstructions',
 
   // Employee Documents
   CanViewEmployeeDocuments: 'CanViewEmployeeDocuments',
@@ -58,59 +77,95 @@ export const Policy = {
   CanApproveEmployeeDocument: 'CanApproveEmployeeDocument',
   CanRejectEmployeeDocument: 'CanRejectEmployeeDocument',
   CanDeleteEmployeeDocument: 'CanDeleteEmployeeDocument',
+  CanViewEmployeeDocumentsAdmin: 'CanViewEmployeeDocumentsAdmin',
 
-  // Employee Payroll
+  // Employee Payroll — Invoices
   CanViewPagedInvoices: 'CanViewPagedInvoices',
   CanViewPeriodPays: 'CanViewPeriodPays',
+  CanViewPagedInvoicesAdmin: 'CanViewPagedInvoicesAdmin',
   CanCalculateOrderPay: 'CanCalculateOrderPay',
   CanGenerateInvoice: 'CanGenerateInvoice',
   CanApproveInvoice: 'CanApproveInvoice',
   CanMarkInvoicePaid: 'CanMarkInvoicePaid',
   CanCancelInvoice: 'CanCancelInvoice',
+  CanClosePayPeriod: 'CanClosePayPeriod',
   CanUpdateInvoiceAmounts: 'CanUpdateInvoiceAmounts',
   CanDisputeInvoice: 'CanDisputeInvoice',
   CanRejectInvoice: 'CanRejectInvoice',
-  CanClosePayPeriod: 'CanClosePayPeriod',
+
+  // Employee Payroll — Pay Periods
+  CanViewPayPeriods: 'CanViewPayPeriods',
+  CanViewPayPeriod: 'CanViewPayPeriod',
+  CanViewPayPeriodsAdmin: 'CanViewPayPeriodsAdmin',
+  CanViewPayPeriodAdmin: 'CanViewPayPeriodAdmin',
+  CanCreatePayPeriod: 'CanCreatePayPeriod',
+  CanUpdatePayPeriod: 'CanUpdatePayPeriod',
+  CanOpenPayPeriod: 'CanOpenPayPeriod',
+  CanDeletePayPeriod: 'CanDeletePayPeriod',
   CanMarkPayPeriodPaid: 'CanMarkPayPeriodPaid',
   CanReopenPayPeriod: 'CanReopenPayPeriod',
+
+  // Employee Payroll — Pay Config
+  CanViewPayConfigs: 'CanViewPayConfigs',
+  CanViewPayConfig: 'CanViewPayConfig',
+  CanCreatePayConfig: 'CanCreatePayConfig',
+  CanUpdatePayConfig: 'CanUpdatePayConfig',
+  CanDeletePayConfig: 'CanDeletePayConfig',
 
   // Dispute
   CanCreateDispute: 'CanCreateDispute',
   CanViewDispute: 'CanViewDispute',
   CanViewDisputeList: 'CanViewDisputeList',
+  CanAddDisputeMessage: 'CanAddDisputeMessage',
   CanRespondToDispute: 'CanRespondToDispute',
   CanResolveDispute: 'CanResolveDispute',
   CanUpdateDisputeStatus: 'CanUpdateDisputeStatus',
   CanUploadDisputeEvidence: 'CanUploadDisputeEvidence',
+  CanViewDisputeAdmin: 'CanViewDisputeAdmin',
+  CanViewDisputeListAdmin: 'CanViewDisputeListAdmin',
 
-  // Reports / Fiscal
+  // Reports
   CanViewRevenueReport: 'CanViewRevenueReport',
   CanViewPayrollReport: 'CanViewPayrollReport',
+
+  // Fiscal
   CanManageFiscalFailures: 'CanManageFiscalFailures',
 
-  // Catalog
+  // Services
   CanViewServices: 'CanViewServices',
   CanCreateService: 'CanCreateService',
   CanUpdateService: 'CanUpdateService',
   CanDeleteService: 'CanDeleteService',
+
+  // Packages
   CanViewPackages: 'CanViewPackages',
   CanCreatePackage: 'CanCreatePackage',
   CanUpdatePackage: 'CanUpdatePackage',
   CanDeletePackage: 'CanDeletePackage',
+
+  // Extras
   CanViewExtras: 'CanViewExtras',
   CanCreateExtra: 'CanCreateExtra',
   CanUpdateExtra: 'CanUpdateExtra',
   CanDeleteExtra: 'CanDeleteExtra',
 
-  // i18n
+  // Languages
   CanViewLanguages: 'CanViewLanguages',
   CanCreateLanguage: 'CanCreateLanguage',
   CanUpdateLanguage: 'CanUpdateLanguage',
   CanDeleteLanguage: 'CanDeleteLanguage',
+
+  // Countries
   CanViewCountries: 'CanViewCountries',
   CanCreateCountry: 'CanCreateCountry',
   CanUpdateCountry: 'CanUpdateCountry',
   CanDeleteCountry: 'CanDeleteCountry',
+
+  // Service areas
+  CanViewServiceCities: 'CanViewServiceCities',
+  CanManageServiceCities: 'CanManageServiceCities',
+
+  // Currencies
   CanViewCurrencies: 'CanViewCurrencies',
   CanCreateCurrency: 'CanCreateCurrency',
   CanUpdateCurrency: 'CanUpdateCurrency',
@@ -122,11 +177,9 @@ export const Policy = {
   CanUpdateAdminUser: 'CanUpdateAdminUser',
   CanDeactivateAdminUser: 'CanDeactivateAdminUser',
   CanActivateAdminUser: 'CanActivateAdminUser',
+  CanSetAdminRole: 'CanSetAdminRole',
 
-  // Auth (own credentials)
-  CanChangeOwnPassword: 'CanChangeOwnPassword',
-
-  // Company
+  // Company Info
   CanViewCompanyInfo: 'CanViewCompanyInfo',
   CanCreateCompanyInfo: 'CanCreateCompanyInfo',
   CanUpdateCompanyInfo: 'CanUpdateCompanyInfo',
@@ -136,11 +189,16 @@ export const Policy = {
   CanViewEmailTemplates: 'CanViewEmailTemplates',
   CanUpdateEmailTemplate: 'CanUpdateEmailTemplate',
 
-  // Country / Tenant Configuration
+  // Country Configuration
   CanViewCountryConfigurations: 'CanViewCountryConfigurations',
   CanCreateCountryConfiguration: 'CanCreateCountryConfiguration',
   CanUpdateCountryConfiguration: 'CanUpdateCountryConfiguration',
   CanDeleteCountryConfiguration: 'CanDeleteCountryConfiguration',
+
+  // Legal documents
+  CanViewLegalDocuments: 'CanViewLegalDocuments',
+
+  // Tenant Configuration
   CanViewTenantConfigurations: 'CanViewTenantConfigurations',
   CanCreateTenantConfiguration: 'CanCreateTenantConfiguration',
   CanUpdateTenantConfiguration: 'CanUpdateTenantConfiguration',
@@ -153,7 +211,10 @@ export const Policy = {
   CanWindDownCompany: 'CanWindDownCompany',
   CanArchiveCompany: 'CanArchiveCompany',
 
-  // GDPR (own)
+  // Device
+  Authenticated: 'Authenticated',
+
+  // GDPR
   CanExportOwnData: 'CanExportOwnData',
   CanDeleteOwnAccount: 'CanDeleteOwnAccount',
   CanGrantConsent: 'CanGrantConsent',
@@ -166,26 +227,29 @@ export const Policy = {
   CanAdminViewUserConsents: 'CanAdminViewUserConsents',
   CanViewGdprRequests: 'CanViewGdprRequests',
 
-  // Loyalty / Promo / Referrals (customer)
+  // Loyalty
   CanViewMyLoyalty: 'CanViewMyLoyalty',
+  CanViewMyCredit: 'CanViewMyCredit',
+
+  // Promo codes
   CanRedeemPromoCode: 'CanRedeemPromoCode',
+
+  // Referrals
   CanViewMyReferral: 'CanViewMyReferral',
 
-  // Admin Promo / Loyalty / Referrals
+  // Admin Promo Codes
   CanViewPromoCodes: 'CanViewPromoCodes',
   CanCreatePromoCode: 'CanCreatePromoCode',
   CanUpdatePromoCode: 'CanUpdatePromoCode',
   CanDeactivatePromoCode: 'CanDeactivatePromoCode',
+
+  // Admin Loyalty Tier Configs
   CanViewLoyaltyTierConfigs: 'CanViewLoyaltyTierConfigs',
   CanUpdateLoyaltyTierConfig: 'CanUpdateLoyaltyTierConfig',
+
+  // Admin Loyalty
   CanGrantLoyaltyPoints: 'CanGrantLoyaltyPoints',
   CanViewUserLoyalty: 'CanViewUserLoyalty',
-  // Credit — its own feature, not a mode of loyalty (owner ruling 2026-09-05).
-  CanIssueCustomerCredit: 'CanIssueCustomerCredit',
-  CanViewUserCredit: 'CanViewUserCredit',
-  CanExpireCustomerCredit: 'CanExpireCustomerCredit',
-  CanViewReferrals: 'CanViewReferrals',
-  CanInterveneReferral: 'CanInterveneReferral',
 
   // Admin Membership Plans
   CanViewMembershipPlans: 'CanViewMembershipPlans',
@@ -193,10 +257,23 @@ export const Policy = {
   CanUpdateMembershipPlan: 'CanUpdateMembershipPlan',
   CanDeactivateMembershipPlan: 'CanDeactivateMembershipPlan',
 
+  // Admin Referrals
+  CanViewReferrals: 'CanViewReferrals',
+  CanInterveneReferral: 'CanInterveneReferral',
+
+  // Marketing
+  CanSendSitewidePromo: 'CanSendSitewidePromo',
+
+  // Refunds and credit
+  CanIssueRefund: 'CanIssueRefund',
+  CanIssueCustomerCredit: 'CanIssueCustomerCredit',
+  CanViewUserCredit: 'CanViewUserCredit',
+  CanExpireCustomerCredit: 'CanExpireCustomerCredit',
+
   // Admin Action Audit Log
   CanViewAuditLog: 'CanViewAuditLog',
 
-  // Admin notification feed
+  // Admin notifications feed
   CanViewAdminNotifications: 'CanViewAdminNotifications',
 } as const;
 
@@ -212,7 +289,7 @@ export const POLICY_MAP: Record<PolicyName, PhysicalPolicy> = {
   CanViewPagedOrder: PhysicalPolicy.EmployeeOrAdmin,
   CanViewPagedUserOrder: PhysicalPolicy.Authenticated,
   CanViewOrderDetail: PhysicalPolicy.Authenticated,
-  CanViewOrderCustomer: PhysicalPolicy.AdminOnly,
+  CanViewOrderCustomer: PhysicalPolicy.SupportOrAbove,
   CanUpdateOrder: PhysicalPolicy.EmployeeOrAdmin,
   CanTakeOrder: PhysicalPolicy.EmployeeOrAdmin,
   CanStartOrder: PhysicalPolicy.EmployeeOrAdmin,
@@ -221,157 +298,256 @@ export const POLICY_MAP: Record<PolicyName, PhysicalPolicy> = {
   CanViewOrderPhotos: PhysicalPolicy.Authenticated,
   CanDeleteOrderPhoto: PhysicalPolicy.EmployeeOrAdmin,
   CanAddOrderNote: PhysicalPolicy.EmployeeOrAdmin,
+  CanUpdateOrderNote: PhysicalPolicy.EmployeeOrAdmin,
+  CanDeleteOrderNote: PhysicalPolicy.EmployeeOrAdmin,
   CanReportOrderIssue: PhysicalPolicy.Authenticated,
+  CanUpdateOrderIssue: PhysicalPolicy.EmployeeOrAdmin,
+  CanDeleteOrderIssue: PhysicalPolicy.EmployeeOrAdmin,
   CanSubmitOrderReview: PhysicalPolicy.CustomerOnly,
   CanViewOrderReview: PhysicalPolicy.Authenticated,
   CanCancelOrder: PhysicalPolicy.CustomerOnly,
+  CanAdminCancelOrder: PhysicalPolicy.SupportOrAbove,
+  CanOverrideOrderStatus: PhysicalPolicy.SupportOrAbove,
+  CanReassignOrder: PhysicalPolicy.SupportOrAbove,
+  CanRefundOrder: PhysicalPolicy.SupportOrAbove,
+  CanViewPagedOrderAdmin: PhysicalPolicy.SupportOrAbove,
+  CanViewOrderDetailAdmin: PhysicalPolicy.SupportOrAbove,
+  CanViewOrderPhotosAdmin: PhysicalPolicy.SupportOrAbove,
 
+  // Saved addresses
   CanManageSavedAddresses: PhysicalPolicy.CustomerOnly,
+
+  // Cleansia Plus membership (customer)
   CanManageMembership: PhysicalPolicy.CustomerOnly,
+
+  // Recurring bookings (customer)
   CanManageRecurringBookings: PhysicalPolicy.CustomerOnly,
 
+  // User
   CanViewPagedUser: PhysicalPolicy.EmployeeOrAdmin,
   CanViewUserDetail: PhysicalPolicy.OwnerOrElevated,
   CanGetCurrentUser: PhysicalPolicy.Authenticated,
+  CanChangeOwnPassword: PhysicalPolicy.Authenticated,
   CanUpdateCurrentUser: PhysicalPolicy.Authenticated,
   CanAddPhoneNumber: PhysicalPolicy.Authenticated,
 
+  // Employee
   CanGetCurrentEmployee: PhysicalPolicy.Authenticated,
   CanCheckCurrentEmployee: PhysicalPolicy.Authenticated,
   CanUpdateCurrentEmployee: PhysicalPolicy.Authenticated,
   CanViewPagedEmployee: PhysicalPolicy.AdminOnly,
-  CanApproveEmployee: PhysicalPolicy.AdminOnly,
-  CanRejectEmployee: PhysicalPolicy.AdminOnly,
-  CanAdminUpdateEmployee: PhysicalPolicy.AdminOnly,
+  CanApproveEmployee: PhysicalPolicy.SupportOrAbove,
+  CanRejectEmployee: PhysicalPolicy.SupportOrAbove,
+  CanAdminUpdateEmployee: PhysicalPolicy.SupportOrAbove,
   CanViewEmployeePayoutDetails: PhysicalPolicy.EmployeeOrAdmin,
-  CanRevealEmployeePayoutDetails: PhysicalPolicy.AdminOnly,
+  CanViewEmployeePayoutDetailsAdmin: PhysicalPolicy.AccountantOrAbove,
+  CanRevealEmployeePayoutDetails: PhysicalPolicy.ManagerOrAbove,
+  CanRevealOrderAccessInstructions: PhysicalPolicy.SupportOrAbove,
 
+  // Employee Documents
   CanViewEmployeeDocuments: PhysicalPolicy.EmployeeOrAdmin,
   CanUploadEmployeeDocument: PhysicalPolicy.EmployeeOrAdmin,
   CanDownloadEmployeeDocument: PhysicalPolicy.EmployeeOrAdmin,
-  CanApproveEmployeeDocument: PhysicalPolicy.AdminOnly,
-  CanRejectEmployeeDocument: PhysicalPolicy.AdminOnly,
+  CanApproveEmployeeDocument: PhysicalPolicy.SupportOrAbove,
+  CanRejectEmployeeDocument: PhysicalPolicy.SupportOrAbove,
   CanDeleteEmployeeDocument: PhysicalPolicy.EmployeeOrAdmin,
+  CanViewEmployeeDocumentsAdmin: PhysicalPolicy.SupportOrAbove,
 
-  CanViewPagedInvoices: PhysicalPolicy.AdminOnly,
+  // Employee Payroll — Invoices
+  CanViewPagedInvoices: PhysicalPolicy.EmployeeOrAdmin,
   CanViewPeriodPays: PhysicalPolicy.EmployeeOrAdmin,
+  CanViewPagedInvoicesAdmin: PhysicalPolicy.AccountantOrAbove,
   CanCalculateOrderPay: PhysicalPolicy.AdminOnly,
-  CanGenerateInvoice: PhysicalPolicy.AdminOnly,
-  CanApproveInvoice: PhysicalPolicy.AdminOnly,
-  CanMarkInvoicePaid: PhysicalPolicy.AdminOnly,
-  CanCancelInvoice: PhysicalPolicy.AdminOnly,
-  CanUpdateInvoiceAmounts: PhysicalPolicy.AdminOnly,
-  CanDisputeInvoice: PhysicalPolicy.AdminOnly,
-  CanRejectInvoice: PhysicalPolicy.AdminOnly,
-  CanClosePayPeriod: PhysicalPolicy.AdminOnly,
-  CanMarkPayPeriodPaid: PhysicalPolicy.AdminOnly,
-  CanReopenPayPeriod: PhysicalPolicy.AdminOnly,
+  CanGenerateInvoice: PhysicalPolicy.AccountantOrAbove,
+  CanApproveInvoice: PhysicalPolicy.AccountantOrAbove,
+  CanMarkInvoicePaid: PhysicalPolicy.AccountantOrAbove,
+  CanCancelInvoice: PhysicalPolicy.AccountantOrAbove,
+  CanClosePayPeriod: PhysicalPolicy.AccountantOrAbove,
+  CanUpdateInvoiceAmounts: PhysicalPolicy.AccountantOrAbove,
+  CanDisputeInvoice: PhysicalPolicy.AccountantOrAbove,
+  CanRejectInvoice: PhysicalPolicy.AccountantOrAbove,
 
+  // Employee Payroll — Pay Periods
+  CanViewPayPeriods: PhysicalPolicy.EmployeeOrAdmin,
+  CanViewPayPeriod: PhysicalPolicy.EmployeeOrAdmin,
+  CanViewPayPeriodsAdmin: PhysicalPolicy.AccountantOrAbove,
+  CanViewPayPeriodAdmin: PhysicalPolicy.AccountantOrAbove,
+  CanCreatePayPeriod: PhysicalPolicy.AccountantOrAbove,
+  CanUpdatePayPeriod: PhysicalPolicy.AccountantOrAbove,
+  CanOpenPayPeriod: PhysicalPolicy.AccountantOrAbove,
+  CanDeletePayPeriod: PhysicalPolicy.AccountantOrAbove,
+  CanMarkPayPeriodPaid: PhysicalPolicy.AccountantOrAbove,
+  CanReopenPayPeriod: PhysicalPolicy.AccountantOrAbove,
+
+  // Employee Payroll — Pay Config
+  CanViewPayConfigs: PhysicalPolicy.AccountantOrAbove,
+  CanViewPayConfig: PhysicalPolicy.AccountantOrAbove,
+  CanCreatePayConfig: PhysicalPolicy.ManagerOrAbove,
+  CanUpdatePayConfig: PhysicalPolicy.ManagerOrAbove,
+  CanDeletePayConfig: PhysicalPolicy.ManagerOrAbove,
+
+  // Dispute
   CanCreateDispute: PhysicalPolicy.CustomerOnly,
   CanViewDispute: PhysicalPolicy.CustomerOnly,
   CanViewDisputeList: PhysicalPolicy.CustomerOnly,
-  CanRespondToDispute: PhysicalPolicy.Authenticated,
-  CanResolveDispute: PhysicalPolicy.AdminOnly,
-  CanUpdateDisputeStatus: PhysicalPolicy.AdminOnly,
+  CanAddDisputeMessage: PhysicalPolicy.CustomerOnly,
+  CanRespondToDispute: PhysicalPolicy.SupportOrAbove,
+  CanResolveDispute: PhysicalPolicy.SupportOrAbove,
+  CanUpdateDisputeStatus: PhysicalPolicy.SupportOrAbove,
   CanUploadDisputeEvidence: PhysicalPolicy.CustomerOnly,
+  CanViewDisputeAdmin: PhysicalPolicy.SupportOrAbove,
+  CanViewDisputeListAdmin: PhysicalPolicy.SupportOrAbove,
 
-  CanViewRevenueReport: PhysicalPolicy.AdminOnly,
-  CanViewPayrollReport: PhysicalPolicy.AdminOnly,
-  CanManageFiscalFailures: PhysicalPolicy.AdminOnly,
+  // Reports
+  CanViewRevenueReport: PhysicalPolicy.AccountantOrAbove,
+  CanViewPayrollReport: PhysicalPolicy.AccountantOrAbove,
 
+  // Fiscal
+  CanManageFiscalFailures: PhysicalPolicy.AccountantOrAbove,
+
+  // Services
   CanViewServices: PhysicalPolicy.AdminOnly,
-  CanCreateService: PhysicalPolicy.AdminOnly,
-  CanUpdateService: PhysicalPolicy.AdminOnly,
-  CanDeleteService: PhysicalPolicy.AdminOnly,
+  CanCreateService: PhysicalPolicy.ManagerOrAbove,
+  CanUpdateService: PhysicalPolicy.ManagerOrAbove,
+  CanDeleteService: PhysicalPolicy.ManagerOrAbove,
+
+  // Packages
   CanViewPackages: PhysicalPolicy.AdminOnly,
-  CanCreatePackage: PhysicalPolicy.AdminOnly,
-  CanUpdatePackage: PhysicalPolicy.AdminOnly,
-  CanDeletePackage: PhysicalPolicy.AdminOnly,
+  CanCreatePackage: PhysicalPolicy.ManagerOrAbove,
+  CanUpdatePackage: PhysicalPolicy.ManagerOrAbove,
+  CanDeletePackage: PhysicalPolicy.ManagerOrAbove,
+
+  // Extras
   CanViewExtras: PhysicalPolicy.AdminOnly,
-  CanCreateExtra: PhysicalPolicy.AdminOnly,
-  CanUpdateExtra: PhysicalPolicy.AdminOnly,
-  CanDeleteExtra: PhysicalPolicy.AdminOnly,
+  CanCreateExtra: PhysicalPolicy.ManagerOrAbove,
+  CanUpdateExtra: PhysicalPolicy.ManagerOrAbove,
+  CanDeleteExtra: PhysicalPolicy.ManagerOrAbove,
 
+  // Languages
   CanViewLanguages: PhysicalPolicy.AdminOnly,
-  CanCreateLanguage: PhysicalPolicy.AdminOnly,
-  CanUpdateLanguage: PhysicalPolicy.AdminOnly,
-  CanDeleteLanguage: PhysicalPolicy.AdminOnly,
+  CanCreateLanguage: PhysicalPolicy.ManagerOrAbove,
+  CanUpdateLanguage: PhysicalPolicy.ManagerOrAbove,
+  CanDeleteLanguage: PhysicalPolicy.ManagerOrAbove,
+
+  // Countries
   CanViewCountries: PhysicalPolicy.AdminOnly,
-  CanCreateCountry: PhysicalPolicy.AdminOnly,
-  CanUpdateCountry: PhysicalPolicy.AdminOnly,
-  CanDeleteCountry: PhysicalPolicy.AdminOnly,
+  CanCreateCountry: PhysicalPolicy.ManagerOrAbove,
+  CanUpdateCountry: PhysicalPolicy.ManagerOrAbove,
+  CanDeleteCountry: PhysicalPolicy.ManagerOrAbove,
+
+  // Service areas
+  CanViewServiceCities: PhysicalPolicy.AdminOnly,
+  CanManageServiceCities: PhysicalPolicy.ManagerOrAbove,
+
+  // Currencies
   CanViewCurrencies: PhysicalPolicy.AdminOnly,
-  CanCreateCurrency: PhysicalPolicy.AdminOnly,
-  CanUpdateCurrency: PhysicalPolicy.AdminOnly,
-  CanDeleteCurrency: PhysicalPolicy.AdminOnly,
+  CanCreateCurrency: PhysicalPolicy.ManagerOrAbove,
+  CanUpdateCurrency: PhysicalPolicy.ManagerOrAbove,
+  CanDeleteCurrency: PhysicalPolicy.ManagerOrAbove,
 
-  CanViewAdminUsers: PhysicalPolicy.AdminOnly,
-  CanCreateAdminUser: PhysicalPolicy.AdminOnly,
-  CanUpdateAdminUser: PhysicalPolicy.AdminOnly,
-  CanDeactivateAdminUser: PhysicalPolicy.AdminOnly,
-  CanActivateAdminUser: PhysicalPolicy.AdminOnly,
+  // Admin Users
+  CanViewAdminUsers: PhysicalPolicy.ManagerOrAbove,
+  CanCreateAdminUser: PhysicalPolicy.AdministratorOnly,
+  CanUpdateAdminUser: PhysicalPolicy.AdministratorOnly,
+  CanDeactivateAdminUser: PhysicalPolicy.AdministratorOnly,
+  CanActivateAdminUser: PhysicalPolicy.AdministratorOnly,
+  CanSetAdminRole: PhysicalPolicy.AdministratorOnly,
 
-  CanChangeOwnPassword: PhysicalPolicy.Authenticated,
-
+  // Company Info
   CanViewCompanyInfo: PhysicalPolicy.AdminOnly,
-  CanCreateCompanyInfo: PhysicalPolicy.AdminOnly,
-  CanUpdateCompanyInfo: PhysicalPolicy.AdminOnly,
-  CanDeleteCompanyInfo: PhysicalPolicy.AdminOnly,
+  CanCreateCompanyInfo: PhysicalPolicy.ManagerOrAbove,
+  CanUpdateCompanyInfo: PhysicalPolicy.ManagerOrAbove,
+  CanDeleteCompanyInfo: PhysicalPolicy.ManagerOrAbove,
 
+  // Email Templates
   CanViewEmailTemplates: PhysicalPolicy.AdminOnly,
-  CanUpdateEmailTemplate: PhysicalPolicy.AdminOnly,
+  CanUpdateEmailTemplate: PhysicalPolicy.ManagerOrAbove,
 
+  // Country Configuration
   CanViewCountryConfigurations: PhysicalPolicy.AdminOnly,
-  CanCreateCountryConfiguration: PhysicalPolicy.AdminOnly,
-  CanUpdateCountryConfiguration: PhysicalPolicy.AdminOnly,
-  CanDeleteCountryConfiguration: PhysicalPolicy.AdminOnly,
-  CanViewTenantConfigurations: PhysicalPolicy.AdminOnly,
-  CanCreateTenantConfiguration: PhysicalPolicy.AdminOnly,
-  CanUpdateTenantConfiguration: PhysicalPolicy.AdminOnly,
-  CanDeleteTenantConfiguration: PhysicalPolicy.AdminOnly,
+  CanCreateCountryConfiguration: PhysicalPolicy.ManagerOrAbove,
+  CanUpdateCountryConfiguration: PhysicalPolicy.ManagerOrAbove,
+  CanDeleteCountryConfiguration: PhysicalPolicy.ManagerOrAbove,
 
-  CanViewCompanyLifecycle: PhysicalPolicy.AdminOnly,
-  CanDeactivateCompany: PhysicalPolicy.AdminOnly,
-  CanReactivateCompany: PhysicalPolicy.AdminOnly,
-  CanWindDownCompany: PhysicalPolicy.AdminOnly,
-  CanArchiveCompany: PhysicalPolicy.AdminOnly,
+  // Legal documents
+  CanViewLegalDocuments: PhysicalPolicy.AdministratorOnly,
 
+  // Tenant Configuration
+  CanViewTenantConfigurations: PhysicalPolicy.AdministratorOnly,
+  CanCreateTenantConfiguration: PhysicalPolicy.AdministratorOnly,
+  CanUpdateTenantConfiguration: PhysicalPolicy.AdministratorOnly,
+  CanDeleteTenantConfiguration: PhysicalPolicy.AdministratorOnly,
+
+  // Company lifecycle
+  CanViewCompanyLifecycle: PhysicalPolicy.AdministratorOnly,
+  CanDeactivateCompany: PhysicalPolicy.AdministratorOnly,
+  CanReactivateCompany: PhysicalPolicy.AdministratorOnly,
+  CanWindDownCompany: PhysicalPolicy.AdministratorOnly,
+  CanArchiveCompany: PhysicalPolicy.AdministratorOnly,
+
+  // Device
+  Authenticated: PhysicalPolicy.Authenticated,
+
+  // GDPR
   CanExportOwnData: PhysicalPolicy.Authenticated,
   CanDeleteOwnAccount: PhysicalPolicy.Authenticated,
   CanGrantConsent: PhysicalPolicy.Authenticated,
   CanWithdrawConsent: PhysicalPolicy.Authenticated,
   CanViewOwnConsents: PhysicalPolicy.Authenticated,
 
-  CanAdminExportUserData: PhysicalPolicy.AdminOnly,
-  CanAdminDeleteUserAccount: PhysicalPolicy.AdminOnly,
-  CanAdminViewUserConsents: PhysicalPolicy.AdminOnly,
-  CanViewGdprRequests: PhysicalPolicy.AdminOnly,
+  // Admin GDPR
+  CanAdminExportUserData: PhysicalPolicy.SupportOrAbove,
+  CanAdminDeleteUserAccount: PhysicalPolicy.ManagerOrAbove,
+  CanAdminViewUserConsents: PhysicalPolicy.SupportOrAbove,
+  CanViewGdprRequests: PhysicalPolicy.SupportOrAbove,
 
+  // Loyalty
   CanViewMyLoyalty: PhysicalPolicy.CustomerOnly,
+  CanViewMyCredit: PhysicalPolicy.CustomerOnly,
+
+  // Promo codes
   CanRedeemPromoCode: PhysicalPolicy.CustomerOnly,
+
+  // Referrals
   CanViewMyReferral: PhysicalPolicy.CustomerOnly,
 
+  // Admin Promo Codes
   CanViewPromoCodes: PhysicalPolicy.AdminOnly,
-  CanCreatePromoCode: PhysicalPolicy.AdminOnly,
-  CanUpdatePromoCode: PhysicalPolicy.AdminOnly,
-  CanDeactivatePromoCode: PhysicalPolicy.AdminOnly,
+  CanCreatePromoCode: PhysicalPolicy.ManagerOrAbove,
+  CanUpdatePromoCode: PhysicalPolicy.ManagerOrAbove,
+  CanDeactivatePromoCode: PhysicalPolicy.ManagerOrAbove,
+
+  // Admin Loyalty Tier Configs
   CanViewLoyaltyTierConfigs: PhysicalPolicy.AdminOnly,
-  CanUpdateLoyaltyTierConfig: PhysicalPolicy.AdminOnly,
-  CanGrantLoyaltyPoints: PhysicalPolicy.AdminOnly,
-  CanViewUserLoyalty: PhysicalPolicy.AdminOnly,
-  CanIssueCustomerCredit: PhysicalPolicy.AdminOnly,
-  CanViewUserCredit: PhysicalPolicy.AdminOnly,
-  CanExpireCustomerCredit: PhysicalPolicy.AdminOnly,
-  CanViewReferrals: PhysicalPolicy.AdminOnly,
-  CanInterveneReferral: PhysicalPolicy.AdminOnly,
+  CanUpdateLoyaltyTierConfig: PhysicalPolicy.ManagerOrAbove,
 
+  // Admin Loyalty
+  CanGrantLoyaltyPoints: PhysicalPolicy.SupportOrAbove,
+  CanViewUserLoyalty: PhysicalPolicy.SupportOrAbove,
+
+  // Admin Membership Plans
   CanViewMembershipPlans: PhysicalPolicy.AdminOnly,
-  CanCreateMembershipPlan: PhysicalPolicy.AdminOnly,
-  CanUpdateMembershipPlan: PhysicalPolicy.AdminOnly,
-  CanDeactivateMembershipPlan: PhysicalPolicy.AdminOnly,
+  CanCreateMembershipPlan: PhysicalPolicy.ManagerOrAbove,
+  CanUpdateMembershipPlan: PhysicalPolicy.ManagerOrAbove,
+  CanDeactivateMembershipPlan: PhysicalPolicy.ManagerOrAbove,
 
-  CanViewAuditLog: PhysicalPolicy.AdminOnly,
+  // Admin Referrals
+  CanViewReferrals: PhysicalPolicy.AdminOnly,
+  CanInterveneReferral: PhysicalPolicy.SupportOrAbove,
 
+  // Marketing
+  CanSendSitewidePromo: PhysicalPolicy.ManagerOrAbove,
+
+  // Refunds and credit
+  CanIssueRefund: PhysicalPolicy.SupportOrAbove,
+  CanIssueCustomerCredit: PhysicalPolicy.SupportOrAbove,
+  CanViewUserCredit: PhysicalPolicy.AdminOnly,
+  CanExpireCustomerCredit: PhysicalPolicy.ManagerOrAbove,
+
+  // Admin Action Audit Log
+  CanViewAuditLog: PhysicalPolicy.SupportOrAbove,
+
+  // Admin notifications feed
   CanViewAdminNotifications: PhysicalPolicy.AdminOnly,
 };
 

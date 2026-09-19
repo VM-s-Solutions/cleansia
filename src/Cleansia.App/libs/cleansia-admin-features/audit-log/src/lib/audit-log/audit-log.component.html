@@ -112,6 +112,13 @@
           [label]="'pages.audit_log.filters.actor_id' | translate"
           className="full-width"
         />
+        <cleansia-select
+          [label]="'pages.audit_log.filters.actor_role' | translate"
+          [options]="actorRoleOptions"
+          [ngModel]="filterForm.value.actorAdminRole"
+          [ngModelOptions]="{ standalone: true }"
+          (valueChanges)="onActorRoleChange($event)"
+        />
       </div>
 
       <div class="filter-section">

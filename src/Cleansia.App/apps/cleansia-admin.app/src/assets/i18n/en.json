@@ -778,7 +778,8 @@
         "actor": "Actor",
         "action": "Action",
         "resource": "Resource",
-        "outcome": "Outcome"
+        "outcome": "Outcome",
+        "actor_role": "Role"
       },
       "outcome": {
         "success": "Success",
@@ -798,7 +799,8 @@
         "date_from": "From",
         "date_to": "To",
         "reset": "Reset Filters",
-        "clear_all": "Clear All"
+        "clear_all": "Clear All",
+        "actor_role": "Actor role"
       },
       "history": {
         "title": "Resource History",
@@ -1217,7 +1219,8 @@
         "status": "Status",
         "created_at": "Created At",
         "last_login": "Last Login",
-        "actions": "Actions"
+        "actions": "Actions",
+        "role": "Role"
       },
       "messages": {
         "load_error": "Failed to load admin users",
@@ -1242,11 +1245,16 @@
         "create_success": "Admin user created successfully",
         "create_error": "Failed to create admin user",
         "update_success": "Admin user updated successfully",
-        "update_error": "Failed to update admin user"
+        "update_error": "Failed to update admin user",
+        "role_success": "Role updated"
       },
       "birth_date": "Birth Date",
       "birth_date_hint": "The administrator must be at least 18 years old",
-      "preferred_language": "Preferred Language"
+      "preferred_language": "Preferred Language",
+      "role": "Role",
+      "role_hint": "Support has the least access. An Administrator can change the role later.",
+      "role_section": "Role",
+      "role_change_hint": "The change applies at once. The administrator keeps their current access for up to fifteen minutes, until their session refreshes."
     },
     "language_management": {
       "title": "Language Management",
@@ -3455,5 +3463,11 @@
   },
   "admin_user": {
     "cannot_target_admin_via_gdpr_tool": "Administrator accounts can't be targeted with the GDPR tools."
+  },
+  "admin_roles": {
+    "administrator": "Administrator",
+    "manager": "Manager",
+    "support": "Support",
+    "accountant": "Accountant"
   }
 }

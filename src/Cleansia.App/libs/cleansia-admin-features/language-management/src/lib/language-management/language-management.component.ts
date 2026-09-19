@@ -24,7 +24,7 @@ import {
   TableColumn,
   TableAction,
 } from '@cleansia/components';
-import { Policy } from '@cleansia/services';
+import { PermissionService, Policy } from '@cleansia/services';
 import { CleansiaPermissionDirective } from '@cleansia/directives';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { ConfirmationService } from 'primeng/api';
@@ -63,6 +63,7 @@ export class LanguageManagementComponent implements AfterViewInit, OnDestroy {
   protected readonly facade = inject(LanguageManagementFacade);
   protected readonly Policy = Policy;
   private readonly translate = inject(TranslateService);
+  private readonly permissions = inject(PermissionService);
   private readonly confirmationService = inject(ConfirmationService);
 
   flagTemplate = viewChild<TemplateRef<LanguageListItem>>('flagTemplate');
@@ -125,6 +126,7 @@ export class LanguageManagementComponent implements AfterViewInit, OnDestroy {
         onDelete: this.confirmDeleteLanguage.bind(this),
       },
       this.translate,
+      this.permissions,
       this.flagTemplate()
     );
     this.languageColumns = tableDef.columns;

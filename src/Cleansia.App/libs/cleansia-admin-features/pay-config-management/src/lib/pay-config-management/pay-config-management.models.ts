@@ -1,5 +1,6 @@
 import { EmployeePayConfigDto } from '@cleansia/admin-services';
 import { TableColumn, TableAction } from '@cleansia/components';
+import { PermissionService, Policy } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
 
 export function getPayConfigTableDefinition(
@@ -8,6 +9,7 @@ export function getPayConfigTableDefinition(
     onDelete: (row: EmployeePayConfigDto) => void;
   },
   translate: TranslateService,
+  permissions: PermissionService,
   formatCurrency: (value: number | undefined, currencyCode?: string) => string
 ): { columns: TableColumn<EmployeePayConfigDto>[]; actions: TableAction<EmployeePayConfigDto>[] } {
   return {
@@ -65,12 +67,14 @@ export function getPayConfigTableDefinition(
         icon: 'pi pi-pencil',
         tooltip: translate.instant('pages.pay_config_management.edit'),
         color: 'warning',
+        visible: () => permissions.hasPolicy(Policy.CanUpdatePayConfig),
         onClick: (row: EmployeePayConfigDto) => defs.onEdit(row),
       },
       {
         icon: 'pi pi-trash',
         tooltip: translate.instant('pages.pay_config_management.delete'),
         color: 'danger',
+        visible: () => permissions.hasPolicy(Policy.CanDeletePayConfig),
         onClick: (row: EmployeePayConfigDto) => defs.onDelete(row),
       },
     ],

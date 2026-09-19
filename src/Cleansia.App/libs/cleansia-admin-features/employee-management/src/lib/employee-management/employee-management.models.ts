@@ -4,6 +4,7 @@ import {
   ContractStatus,
 } from '@cleansia/admin-services';
 import { TableColumn, TableAction } from '@cleansia/components';
+import { PermissionService, Policy } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
 
 export function getEmployeeTableDefinition(
@@ -13,6 +14,7 @@ export function getEmployeeTableDefinition(
     onViewDetails: (row: AdminEmployeeListItem) => void;
   },
   translate: TranslateService,
+  permissions: PermissionService,
   contractStatusTemplate?: TemplateRef<AdminEmployeeListItem>
 ): { columns: TableColumn<AdminEmployeeListItem>[]; actions: TableAction<AdminEmployeeListItem>[] } {
   return {
@@ -101,7 +103,7 @@ export function getEmployeeTableDefinition(
         onClick: (row: AdminEmployeeListItem) => defs.onApprove(row),
         visible: (row: AdminEmployeeListItem) =>
           row.contractStatus === ContractStatus[ContractStatus.Pending] &&
-          row.isProfileComplete,
+          row.isProfileComplete && permissions.hasPolicy(Policy.CanApproveEmployee),
       },
       {
         icon: 'pi pi-times',
@@ -110,7 +112,7 @@ export function getEmployeeTableDefinition(
         onClick: (row: AdminEmployeeListItem) => defs.onReject(row),
         visible: (row: AdminEmployeeListItem) =>
           row.contractStatus === ContractStatus[ContractStatus.Pending] &&
-          row.isProfileComplete,
+          row.isProfileComplete && permissions.hasPolicy(Policy.CanRejectEmployee),
       },
     ],
   };

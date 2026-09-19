@@ -21,6 +21,8 @@ import {
   CleansiaTitleComponent,
   ICleansiaSelectOption,
 } from '@cleansia/components';
+import { CleansiaPermissionDirective } from '@cleansia/directives';
+import { Policy } from '@cleansia/services';
 import { TranslatePipe } from '@ngx-translate/core';
 import { CompanyInfoFormData, CompanyInfoFacade } from './company-info.facade';
 
@@ -28,6 +30,7 @@ import { CompanyInfoFormData, CompanyInfoFacade } from './company-info.facade';
   selector: 'cleansia-admin-company-info',
   standalone: true,
   imports: [
+    CleansiaPermissionDirective,
     CommonModule,
     ReactiveFormsModule,
     TranslatePipe,
@@ -48,6 +51,7 @@ import { CompanyInfoFormData, CompanyInfoFacade } from './company-info.facade';
 export class CompanyInfoComponent implements OnInit, OnDestroy {
   private readonly fb = inject(FormBuilder);
   protected readonly facade = inject(CompanyInfoFacade);
+  protected readonly Policy = Policy;
 
   readonly form = this.fb.nonNullable.group({
     legalName: ['', [Validators.required, Validators.maxLength(200)]],

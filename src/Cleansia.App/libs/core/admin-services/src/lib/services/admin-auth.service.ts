@@ -105,12 +105,20 @@ export class AdminAuthService {
       : localStorage.getItem(this.cookieKeys.role);
   }
 
-  isAdminOrEditor(): boolean {
+  /** The signed-in account's id from the most recent login/refresh response. */
+  getUserId(): string | null {
+    return typeof localStorage === 'undefined' || !this.cookieKeys.userId
+      ? null
+      : localStorage.getItem(this.cookieKeys.userId);
+  }
+
+  /** The admin audience mints a token for the Administrator profile only, so anything else in
+   *  the stored hint is a stale session from another app on the same origin. */
+  isAdministrator(): boolean {
     if (!this.isLoggedIn()) {
       return false;
     }
-    const role = this.getRole();
-    return role === Role.ADMINISTRATOR || role === Role.EMPLOYEE;
+    return this.getRole() === Role.ADMINISTRATOR;
   }
 
   setIsWarningShown(isShown: boolean): void {
@@ -136,15 +144,21 @@ export class AdminAuthService {
       localStorage.removeItem(this.cookieKeys.refreshTokenExp);
       localStorage.removeItem(this.cookieKeys.csrfToken);
       localStorage.removeItem(this.cookieKeys.role);
+      for (const key of [this.cookieKeys.adminRole, this.cookieKeys.userId]) {
+        if (key) localStorage.removeItem(key);
+      }
     }
     this.isLoggedIn$.next(false);
   }
 
   setSession(authResult: JwtTokenResponse): void {
-    const role = (authResult as unknown as { role?: string }).role;
-    if (role) {
-      setLocalStorageValueByKey(this.cookieKeys.role, role);
+    if (authResult.role) {
+      setLocalStorageValueByKey(this.cookieKeys.role, authResult.role);
     }
+    // The refresh path lands here too, so a role changed on the server reaches the hint at the
+    // next refresh; a response without one clears it rather than leaving a stale set behind.
+    this.storeOrClear(this.cookieKeys.adminRole, authResult.adminRole);
+    this.storeOrClear(this.cookieKeys.userId, authResult.userId);
     if (authResult.refreshTokenExpiresAt) {
       localStorage.setItem(
         this.cookieKeys.refreshTokenExp,
@@ -157,5 +171,14 @@ export class AdminAuthService {
 
     this.isLoggedIn$.next(true);
     this.setWarningDialogStatus(false);
+  }
+
+  private storeOrClear(key: string | undefined, value: string | undefined): void {
+    if (!key) return;
+    if (value) {
+      setLocalStorageValueByKey(key, value);
+    } else {
+      localStorage.removeItem(key);
+    }
   }
 }

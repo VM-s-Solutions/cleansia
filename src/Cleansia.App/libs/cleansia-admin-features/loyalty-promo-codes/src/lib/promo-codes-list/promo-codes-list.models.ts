@@ -1,5 +1,6 @@
 import { PromoCodeListItem, PromoCodeType } from '@cleansia/admin-services';
 import { TableAction, TableColumn } from '@cleansia/components';
+import { PermissionService, Policy } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
 
 export type PromoCodeStatusBadge = 'active' | 'inactive' | 'expired';
@@ -84,6 +85,7 @@ export function getPromoCodeTableDefinition(
     onDeactivate: (row: PromoCodeListItem) => void;
   },
   translate: TranslateService,
+  permissions: PermissionService,
   formatDate: (d?: Date) => string
 ): {
   columns: TableColumn<PromoCodeListItem>[];
@@ -159,6 +161,7 @@ export function getPromoCodeTableDefinition(
         icon: 'pi pi-pencil',
         tooltip: translate.instant('global.actions.edit'),
         color: 'warning',
+        visible: () => permissions.hasPolicy(Policy.CanUpdatePromoCode),
         onClick: (row) => defs.onEdit(row),
       },
       {
@@ -167,7 +170,8 @@ export function getPromoCodeTableDefinition(
           'pages.promo_codes.detail.deactivate_button'
         ),
         color: 'danger',
-        visible: (row) => getPromoCodeStatus(row) === 'active',
+        visible: (row) =>
+          getPromoCodeStatus(row) === 'active' && permissions.hasPolicy(Policy.CanDeactivatePromoCode),
         onClick: (row) => defs.onDeactivate(row),
       },
     ],

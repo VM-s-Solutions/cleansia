@@ -1,3 +1,4 @@
+export * from './admin-role.enum';
 export * from './audit-resource';
 export * from './role.enum';
 export * from './routes.enum';

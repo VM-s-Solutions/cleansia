@@ -19,7 +19,7 @@ import {
   TableColumn,
   TableAction,
 } from '@cleansia/components';
-import { Policy } from '@cleansia/services';
+import { PermissionService, Policy } from '@cleansia/services';
 import { CleansiaPermissionDirective } from '@cleansia/directives';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { ConfirmationService } from 'primeng/api';
@@ -56,6 +56,7 @@ export class CountryManagementComponent implements AfterViewInit, OnDestroy {
   protected readonly facade = inject(CountryManagementFacade);
   protected readonly Policy = Policy;
   private readonly translate = inject(TranslateService);
+  private readonly permissions = inject(PermissionService);
   private readonly confirmationService = inject(ConfirmationService);
 
   flagTemplate = viewChild<TemplateRef<CountryListItem>>('flagTemplate');
@@ -94,6 +95,7 @@ export class CountryManagementComponent implements AfterViewInit, OnDestroy {
         onSetDefaultMarket: this.confirmSetDefaultMarket.bind(this),
       },
       this.translate,
+      this.permissions,
       this.flagTemplate(),
       this.defaultMarketTemplate()
     );

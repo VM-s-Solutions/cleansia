@@ -1,4 +1,5 @@
 import { TableAction, TableColumn } from '@cleansia/components';
+import { PermissionService, Policy } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
 import { LoyaltyTier } from '@cleansia/admin-services';
 
@@ -32,6 +33,7 @@ export function getTierConfigsTableDefinition(
     onEdit: (row: TierRow) => void;
   },
   translate: TranslateService,
+  permissions: PermissionService,
 ): { columns: TableColumn<TierRow>[]; actions: TableAction<TierRow>[] } {
   return {
     columns: [
@@ -71,6 +73,7 @@ export function getTierConfigsTableDefinition(
         icon: 'pi pi-pencil',
         tooltip: translate.instant('global.actions.edit'),
         color: 'warning',
+        visible: () => permissions.hasPolicy(Policy.CanUpdateLoyaltyTierConfig),
         onClick: (row: TierRow) => defs.onEdit(row),
       },
     ],

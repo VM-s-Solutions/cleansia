@@ -11,6 +11,11 @@ export interface AuthCookieKeys {
   // on state-changing requests so the server can verify it matches the
   // session derived from the HttpOnly auth cookie.
   csrfToken: string;
+  // The administrator's role beside the profile, and the account id the picker refuses as
+  // "self". Only the admin app's session writes them; the partner and customer apps carry
+  // neither, which is why both are optional here.
+  adminRole?: string;
+  userId?: string;
 }
 
 /**
@@ -34,6 +39,8 @@ export const AUTH_COOKIE_KEYS = new InjectionToken<AuthCookieKeys>(
       refreshTokenExp: LocalStorageKey.REFRESH_TOKEN_EXP,
       role: LocalStorageKey.ROLE,
       csrfToken: LocalStorageKey.CSRF_TOKEN,
+      adminRole: LocalStorageKey.ADMIN_ROLE,
+      userId: LocalStorageKey.USER_ID,
     }),
   },
 );

@@ -1,5 +1,6 @@
 import { TemplateRef } from '@angular/core';
 import { CountryListItem } from '@cleansia/admin-services';
+import { PermissionService } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
 import {
   getCountryTableDefinition,
@@ -8,6 +9,7 @@ import {
 
 describe('country-management models', () => {
   const translate = { instant: (k: string) => k } as TranslateService;
+  const permissions = { hasPolicy: () => true } as unknown as PermissionService;
   const defaultRow = CountryListItem.fromJS({ id: 'c-1', isDefaultMarket: true });
   const otherRow = CountryListItem.fromJS({ id: 'c-2', isDefaultMarket: false });
 
@@ -15,6 +17,7 @@ describe('country-management models', () => {
     return getCountryTableDefinition(
       { onEdit: jest.fn(), onDelete: jest.fn(), onSetDefaultMarket: jest.fn() },
       translate,
+      permissions,
       undefined,
       {} as TemplateRef<CountryListItem>
     );
@@ -50,7 +53,8 @@ describe('country-management models', () => {
       const onSetDefaultMarket = jest.fn();
       const action = getCountryTableDefinition(
         { onEdit: jest.fn(), onDelete: jest.fn(), onSetDefaultMarket },
-        translate
+        translate,
+        permissions
       ).actions.find((a) => a.icon === 'pi pi-star');
 
       expect(action?.tooltip).toBe('pages.country_management.set_default_market');

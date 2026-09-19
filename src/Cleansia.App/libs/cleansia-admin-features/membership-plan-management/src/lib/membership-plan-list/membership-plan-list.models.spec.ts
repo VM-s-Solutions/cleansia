@@ -1,4 +1,5 @@
 import { MembershipPlanListItem } from '@cleansia/admin-services';
+import { PermissionService } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
 import {
   BILLING_INTERVAL_WIRE,
@@ -27,9 +28,11 @@ describe('formatPlanPrice', () => {
 
 describe('getMembershipPlanTableDefinition', () => {
   const translate = { instant: (k: string) => k } as TranslateService;
+  const permissions = { hasPolicy: () => true } as unknown as PermissionService;
   const { columns } = getMembershipPlanTableDefinition(
     { onEdit: jest.fn(), onDeactivate: jest.fn() },
-    translate
+    translate,
+    permissions
   );
   const column = (id: string) => {
     const found = columns.find((c) => c.id === id);

@@ -14,14 +14,13 @@ import {
   SidebarMenuItem,
 } from '@cleansia/components';
 import { CleansiaPermissionDirective } from '@cleansia/directives';
-import { CleansiaAdminRoute, DialogService, PageTitleService, Policy } from '@cleansia/services';
+import { DialogService, PageTitleService, Policy } from '@cleansia/services';
 import { environment } from '../environments/environment';
+import { ADMIN_MENU_ITEMS, NOTIFICATIONS_ROUTE } from './admin-menu';
 import { Store } from '@ngrx/store';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { ToastModule } from 'primeng/toast';
-
-const NOTIFICATIONS_ROUTE = `/${CleansiaAdminRoute.NOTIFICATIONS}`;
 
 @Component({
   imports: [
@@ -101,129 +100,11 @@ export class AppComponent implements OnInit {
   });
 
   private readonly menuItems: SidebarMenuItem[] = [
-    {
-      label: 'sidebar.notifications',
-      icon: 'pi pi-bell',
-      route: NOTIFICATIONS_ROUTE,
-      permission: Policy.CanViewAdminNotifications,
-    },
-    { label: 'sidebar.employees', icon: 'pi pi-users', route: '/employee-management' },
-    { label: 'sidebar.pay_periods', icon: 'pi pi-calendar', route: '/pay-periods' },
-    { label: 'sidebar.orders', icon: 'pi pi-shopping-cart', route: '/order-management' },
-    { label: 'sidebar.disputes', icon: 'pi pi-flag', route: '/dispute-management' },
-    { label: 'sidebar.invoices', icon: 'pi pi-file', route: '/invoice-management' },
-    { label: 'sidebar.reports', icon: 'pi pi-chart-bar', route: '/reports' },
-    { label: 'sidebar.services', icon: 'pi pi-wrench', route: '/service-management' },
-    { label: 'sidebar.packages', icon: 'pi pi-box', route: '/package-management' },
-    { label: 'sidebar.extras', icon: 'pi pi-plus-circle', route: '/extra-management' },
-    { label: 'sidebar.global_rates', icon: 'pi pi-money-bill', route: '/pay-config-management' },
-    { label: 'sidebar.admin_users', icon: 'pi pi-user-plus', route: '/admin-user-management' },
-    { label: 'sidebar.languages', icon: 'pi pi-globe', route: '/language-management' },
-    { label: 'sidebar.countries', icon: 'pi pi-map', route: '/country-management' },
-    { label: 'sidebar.service_area', icon: 'pi pi-map-marker', route: '/service-area-management' },
-    { label: 'sidebar.currencies', icon: 'pi pi-dollar', route: '/currency-management' },
-    {
-      label: 'sidebar.legal_documents',
-      icon: 'pi pi-file-check',
-      route: '/legal-documents',
-      permission: Policy.CanViewCountryConfigurations,
-    },
-    {
-      label: 'sidebar.employee_documents',
-      icon: 'pi pi-id-card',
-      route: '/employee-documents',
-      permission: Policy.CanViewEmployeeDocuments,
-      children: [
-        {
-          label: 'sidebar.employee_document_requirements',
-          icon: 'pi pi-list-check',
-          route: '/employee-documents',
-        },
-        {
-          label: 'sidebar.employee_document_deletion_requests',
-          icon: 'pi pi-trash',
-          route: '/employee-documents/deletion-requests',
-        },
-      ],
-    },
-    { label: 'sidebar.company_info', icon: 'pi pi-building', route: '/company-info' },
-    {
-      label: 'sidebar.company_settings',
-      icon: 'pi pi-sliders-h',
-      route: '/company-settings',
-      permission: Policy.CanViewTenantConfigurations,
-    },
-    {
-      label: 'sidebar.company_lifecycle',
-      icon: 'pi pi-power-off',
-      route: '/company-lifecycle',
-      permission: Policy.CanViewCompanyLifecycle,
-    },
-    { label: 'sidebar.templates', icon: 'pi pi-file-edit', route: '/template-management' },
-    { label: 'sidebar.fiscal_failures', icon: 'pi pi-exclamation-triangle', route: '/fiscal-failures' },
-    {
-      label: 'sidebar.loyalty',
-      icon: 'pi pi-star',
-      children: [
-        {
-          label: 'sidebar.loyalty_promo_codes',
-          icon: 'pi pi-tag',
-          route: '/loyalty/promos',
-        },
-        {
-          label: 'sidebar.loyalty_tiers',
-          icon: 'pi pi-chart-line',
-          route: '/loyalty/tiers',
-        },
-        {
-          label: 'sidebar.loyalty_referrals',
-          icon: 'pi pi-share-alt',
-          route: '/loyalty/referrals',
-        },
-      ],
-    },
-    {
-      label: 'sidebar.memberships',
-      icon: 'pi pi-id-card',
-      route: '/membership-plan-management',
-      permission: Policy.CanViewMembershipPlans,
-    },
-    {
-      label: 'sidebar.marketing',
-      icon: 'pi pi-megaphone',
-      children: [
-        {
-          label: 'sidebar.marketing_sitewide_push',
-          icon: 'pi pi-send',
-          route: '/marketing/sitewide-push',
-        },
-      ],
-    },
-    {
-      label: 'sidebar.data_protection',
-      icon: 'pi pi-shield',
-      route: '/data-protection',
-      permission: [
-        Policy.CanViewGdprRequests,
-        Policy.CanAdminViewUserConsents,
-        Policy.CanAdminExportUserData,
-        Policy.CanAdminDeleteUserAccount,
-      ],
-    },
-    {
-      label: 'sidebar.audit_log',
-      icon: 'pi pi-history',
-      route: '/audit-log',
-      permission: Policy.CanViewAuditLog,
-    },
-    {
-      label: 'sidebar.profile',
-      icon: 'pi pi-user',
-      route: '/profile',
-    },
+    ...ADMIN_MENU_ITEMS,
     {
       label: 'sidebar.logout',
       icon: 'pi pi-sign-out',
+      permission: Policy.Authenticated,
       onClickFn: () => {
         this.dialogService
           .confirmTranslated('global.dialog.confirm_logout', 'global.dialog.confirm')

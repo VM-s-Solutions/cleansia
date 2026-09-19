@@ -29,7 +29,7 @@ import {
   TableAction,
   PaginationState,
 } from '@cleansia/components';
-import { Policy } from '@cleansia/services';
+import { PermissionService, Policy } from '@cleansia/services';
 import { CleansiaPermissionDirective } from '@cleansia/directives';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { ConfirmationService } from 'primeng/api';
@@ -65,6 +65,7 @@ export class CompanyInfoListComponent implements AfterViewInit, OnDestroy {
   protected readonly facade = inject(CompanyInfoListFacade);
   protected readonly Policy = Policy;
   private readonly translate = inject(TranslateService);
+  private readonly permissions = inject(PermissionService);
   private readonly confirmationService = inject(ConfirmationService);
 
   statusTemplate = viewChild<TemplateRef<CompanyInfoListItem>>('statusTemplate');
@@ -122,6 +123,7 @@ export class CompanyInfoListComponent implements AfterViewInit, OnDestroy {
         onDelete: this.confirmDeleteCompanyInfo.bind(this),
       },
       this.translate,
+      this.permissions,
       this.statusTemplate()
     );
     this.companyColumns = tableDef.columns;

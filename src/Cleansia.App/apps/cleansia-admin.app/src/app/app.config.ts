@@ -106,6 +106,8 @@ export const appConfig: ApplicationConfig = {
         refreshTokenExp: 'admin_refresh_token_exp',
         role: 'admin_role',
         csrfToken: 'admin_csrf',
+        adminRole: 'admin_administrator_role',
+        userId: 'admin_user_id',
       },
     },
     importProvidersFrom(

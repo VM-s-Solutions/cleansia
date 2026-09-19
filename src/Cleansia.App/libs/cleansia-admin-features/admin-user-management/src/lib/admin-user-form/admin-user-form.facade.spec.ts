@@ -1,10 +1,15 @@
+import { FormControl } from '@angular/forms';
 import { TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
 import {
+  AdminAuthService,
   AdminClient,
   AdminRole,
+  AdminUserDetailDto,
   CreateAdminUserCommand,
   LanguageListItem,
+  SetAdminRoleCommand,
+  SetAdminRoleResponse,
   UpdateAdminUserCommand,
 } from '@cleansia/admin-services';
 import { SnackbarService } from '@cleansia/services';
@@ -18,8 +23,10 @@ describe('AdminUserFormFacade', () => {
   let updateMock: jest.Mock;
   let detailsMock: jest.Mock;
   let getOverviewMock: jest.Mock;
+  let roleMock: jest.Mock;
   let snackbar: { showSuccess: jest.Mock; showError: jest.Mock };
   let navigate: jest.Mock;
+  let currentUserId: string | null;
 
   const birthDate = new Date(1990, 4, 15);
 
@@ -31,6 +38,7 @@ describe('AdminUserFormFacade', () => {
     phoneNumber: '+420777111222',
     birthDate,
     preferredLanguageCode: 'cs',
+    role: AdminRole.Manager,
   };
 
   beforeEach(() => {
@@ -38,8 +46,10 @@ describe('AdminUserFormFacade', () => {
     updateMock = jest.fn();
     detailsMock = jest.fn();
     getOverviewMock = jest.fn();
+    roleMock = jest.fn();
     snackbar = { showSuccess: jest.fn(), showError: jest.fn() };
     navigate = jest.fn();
+    currentUserId = 'usr-me';
 
     TestBed.configureTestingModule({
       providers: [
@@ -51,10 +61,12 @@ describe('AdminUserFormFacade', () => {
               create: createMock,
               update: updateMock,
               details: detailsMock,
+              role: roleMock,
             },
             adminLanguageClient: { getOverview: getOverviewMock },
           },
         },
+        { provide: AdminAuthService, useValue: { getUserId: () => currentUserId } },
         { provide: SnackbarService, useValue: snackbar },
         { provide: TranslateService, useValue: { instant: (k: string) => k } },
         { provide: Router, useValue: { navigate } },
@@ -177,7 +189,7 @@ describe('AdminUserFormFacade', () => {
         phoneNumber: '+420777111222',
         birthDate: '1990-05-15',
         preferredLanguageCode: 'cs',
-        role: AdminRole.Support,
+        role: AdminRole.Manager,
       });
     });
 
@@ -198,6 +210,14 @@ describe('AdminUserFormFacade', () => {
       });
     });
 
+    it('sends the least-privilege role when the form names none', () => {
+      createMock.mockReturnValue(of({ id: 'usr-1' }));
+
+      facade.createUser({ ...fullData, role: undefined });
+
+      expect(createMock.mock.calls[0][0].toJSON().role).toBe(AdminRole.Support);
+    });
+
     it('sends undefined rather than an empty string for a blank phone and language', () => {
       createMock.mockReturnValue(of({ id: 'usr-1' }));
 
@@ -206,6 +226,92 @@ describe('AdminUserFormFacade', () => {
       const body = createMock.mock.calls[0][0].toJSON();
       expect(body.phoneNumber).toBeUndefined();
       expect(body.preferredLanguageCode).toBeUndefined();
+    });
+  });
+
+  /**
+   * The picker is a control the facade drives: it follows the loaded detail, sends one command per
+   * change, and steps back to the last server-confirmed role when the server refuses. The refusal
+   * sentence itself reaches the user through the shared interceptor, never a second toast here.
+   */
+  describe('role picker', () => {
+    let control: FormControl<AdminRole | null>;
+
+    function loadTarget(id: string, role: AdminRole): void {
+      detailsMock.mockReturnValue(of(AdminUserDetailDto.fromJS({ id, adminRole: role })));
+      facade.loadUser(id);
+    }
+
+    beforeEach(() => {
+      control = new FormControl<AdminRole | null>(null);
+      facade.connectRoleControl(control);
+    });
+
+    it('seeds the control from the loaded detail without firing a command', () => {
+      loadTarget('usr-1', AdminRole.Accountant);
+
+      expect(control.value).toBe(AdminRole.Accountant);
+      expect(facade.role()).toBe(AdminRole.Accountant);
+      expect(roleMock).not.toHaveBeenCalled();
+    });
+
+    it('sends one SetAdminRole command for the target when the picker changes', () => {
+      loadTarget('usr-1', AdminRole.Support);
+      roleMock.mockReturnValue(
+        of(SetAdminRoleResponse.fromJS({ id: 'usr-1', role: AdminRole.Manager }))
+      );
+
+      control.setValue(AdminRole.Manager);
+
+      expect(roleMock).toHaveBeenCalledTimes(1);
+      const [userId, command] = roleMock.mock.calls[0] as [string, SetAdminRoleCommand];
+      expect(userId).toBe('usr-1');
+      expect(command).toBeInstanceOf(SetAdminRoleCommand);
+      expect(command.toJSON()).toEqual({ userId: 'usr-1', role: AdminRole.Manager });
+      expect(facade.role()).toBe(AdminRole.Manager);
+      expect(facade.roleSaving()).toBe(false);
+      expect(snackbar.showSuccess).toHaveBeenCalledWith('pages.admin_user_form.messages.role_success');
+    });
+
+    it('steps the picker back to the confirmed role when the server refuses, with no toast of its own', () => {
+      loadTarget('usr-1', AdminRole.Administrator);
+      roleMock.mockReturnValue(
+        throwError(() => ({ result: { detail: 'admin_user.cannot_demote_last_administrator' } }))
+      );
+
+      control.setValue(AdminRole.Support);
+
+      expect(control.value).toBe(AdminRole.Administrator);
+      expect(facade.role()).toBe(AdminRole.Administrator);
+      expect(facade.roleSaving()).toBe(false);
+      expect(snackbar.showError).not.toHaveBeenCalled();
+      expect(snackbar.showSuccess).not.toHaveBeenCalled();
+    });
+
+    it('ignores a change that names the role already held', () => {
+      loadTarget('usr-1', AdminRole.Support);
+
+      control.setValue(AdminRole.Support);
+
+      expect(roleMock).not.toHaveBeenCalled();
+    });
+
+    it('refuses self before any command: the control is disabled and the target is flagged', () => {
+      loadTarget('usr-me', AdminRole.Administrator);
+
+      expect(facade.isSelf()).toBe(true);
+      expect(control.disabled).toBe(true);
+
+      control.enable();
+      control.setValue(AdminRole.Support);
+      expect(roleMock).not.toHaveBeenCalled();
+    });
+
+    it('leaves the control enabled for another administrator', () => {
+      loadTarget('usr-1', AdminRole.Administrator);
+
+      expect(facade.isSelf()).toBe(false);
+      expect(control.disabled).toBe(false);
     });
   });
 });

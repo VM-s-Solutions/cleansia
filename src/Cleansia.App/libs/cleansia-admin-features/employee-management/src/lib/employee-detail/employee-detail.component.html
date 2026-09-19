@@ -244,6 +244,7 @@
         } @else {
         <div style="display: flex; justify-content: flex-end; margin-bottom: 0.5rem;">
           <cleansia-button
+            *cleansiaPermission="Policy.CanAdminUpdateEmployee"
             [label]="'common.edit' | translate"
             severity="secondary"
             icon="pi pi-pencil"
@@ -353,6 +354,7 @@
         } @else {
         <div style="display: flex; justify-content: flex-end; margin-bottom: 0.5rem;">
           <cleansia-button
+            *cleansiaPermission="Policy.CanAdminUpdateEmployee"
             [label]="'common.edit' | translate"
             severity="secondary"
             icon="pi pi-pencil"
@@ -459,6 +461,7 @@
         } @else {
         <div style="display: flex; justify-content: flex-end; margin-bottom: 0.5rem;">
           <cleansia-button
+            *cleansiaPermission="Policy.CanAdminUpdateEmployee"
             [label]="'common.edit' | translate"
             severity="secondary"
             icon="pi pi-pencil"
@@ -549,6 +552,7 @@
         } @else {
         <div style="display: flex; justify-content: flex-end; margin-bottom: 0.5rem;">
           <cleansia-button
+            *cleansiaPermission="Policy.CanAdminUpdateEmployee"
             [label]="'common.edit' | translate"
             severity="secondary"
             icon="pi pi-pencil"
@@ -600,6 +604,7 @@
         <!-- View mode -->
         <div style="display: flex; justify-content: flex-end; margin-bottom: 0.5rem;">
           <cleansia-button
+            *cleansiaPermission="Policy.CanAdminUpdateEmployee"
             [label]="'common.edit' | translate"
             severity="secondary"
             icon="pi pi-pencil"
@@ -639,6 +644,7 @@
 
       <!-- Pay Configuration -->
       <cleansia-section
+        *cleansiaPermission="Policy.CanViewPayConfigs"
         [title]="'pages.employee_detail.pay_configuration' | translate"
       >
         @if (facade.loadingPayConfigs()) {
@@ -691,6 +697,7 @@
           </div>
           <div style="display: flex; gap: 0.5rem; margin-top: 1rem; justify-content: flex-end;">
             <cleansia-button
+              *cleansiaPermission="Policy.CanCreatePayConfig"
               [label]="'pages.employee_detail.apply_to_all' | translate"
               icon="pi pi-check"
               severity="primary"
@@ -725,6 +732,7 @@
               </span>
               }
               <cleansia-button
+                *cleansiaPermission="Policy.CanUpdatePayConfig"
                 icon="pi pi-pencil"
                 severity="secondary"
                 buttonSize="small"
@@ -745,6 +753,7 @@
               />
               @if (item.hasConfig) {
               <cleansia-button
+                *cleansiaPermission="Policy.CanDeletePayConfig"
                 icon="pi pi-trash"
                 severity="danger"
                 buttonSize="small"
@@ -783,6 +792,7 @@
               </span>
               }
               <cleansia-button
+                *cleansiaPermission="Policy.CanUpdatePayConfig"
                 icon="pi pi-pencil"
                 severity="secondary"
                 buttonSize="small"
@@ -803,6 +813,7 @@
               />
               @if (item.hasConfig) {
               <cleansia-button
+                *cleansiaPermission="Policy.CanDeletePayConfig"
                 icon="pi pi-trash"
                 severity="danger"
                 buttonSize="small"
@@ -875,12 +886,13 @@
 
       @if (employee.id) {
       <cleansia-employee-payout-section
-        *cleansiaPermission="Policy.CanViewEmployeePayoutDetails"
+        *cleansiaPermission="Policy.CanViewEmployeePayoutDetailsAdmin"
         [employeeId]="employee.id"
       />
       }
 
       <cleansia-employee-documents-section
+        *cleansiaPermission="Policy.CanViewEmployeeDocumentsAdmin"
         [facade]="docsFacade"
         [employeeId]="employee?.id"
         (rejectDocument)="onRejectDocument($event)"

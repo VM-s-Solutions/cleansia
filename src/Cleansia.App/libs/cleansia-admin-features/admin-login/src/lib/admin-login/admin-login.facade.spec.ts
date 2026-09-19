@@ -81,9 +81,7 @@ describe('AdminLoginFacade', () => {
 
     expect(authService.setSession).toHaveBeenCalled();
     expect(dispatchSpy).toHaveBeenCalledWith(loadUserCurrent());
-    expect(router.navigate).toHaveBeenCalledWith([
-      CleansiaAdminRoute.EMPLOYEE_MANAGEMENT,
-    ]);
+    expect(router.navigate).toHaveBeenCalledWith(['/' + CleansiaAdminRoute.HOME]);
     expect(facade.loading()).toBe(false);
   });
 

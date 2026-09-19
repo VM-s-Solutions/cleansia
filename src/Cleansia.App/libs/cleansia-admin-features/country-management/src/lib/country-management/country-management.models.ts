@@ -1,6 +1,7 @@
 import { TemplateRef } from '@angular/core';
 import { CountryListItem } from '@cleansia/admin-services';
 import { TableColumn, TableAction } from '@cleansia/components';
+import { PermissionService, Policy } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
 
 // Map ISO 3166-1 alpha-3 codes to alpha-2 codes for flag-icons
@@ -133,6 +134,7 @@ export function getCountryTableDefinition(
     onSetDefaultMarket: (row: CountryListItem) => void;
   },
   translate: TranslateService,
+  permissions: PermissionService,
   flagTemplate?: TemplateRef<CountryListItem>,
   defaultMarketTemplate?: TemplateRef<CountryListItem>
 ): { columns: TableColumn<CountryListItem>[]; actions: TableAction<CountryListItem>[] } {
@@ -174,6 +176,7 @@ export function getCountryTableDefinition(
         icon: 'pi pi-pencil',
         tooltip: translate.instant('pages.country_management.edit_country'),
         color: 'warning',
+        visible: () => permissions.hasPolicy(Policy.CanUpdateCountry),
         onClick: (row: CountryListItem) => defs.onEdit(row),
       },
       {
@@ -183,12 +186,14 @@ export function getCountryTableDefinition(
         tooltip: translate.instant('pages.country_management.set_default_market'),
         color: 'info',
         onClick: (row: CountryListItem) => defs.onSetDefaultMarket(row),
-        visible: (row: CountryListItem) => !row.isDefaultMarket,
+        visible: (row: CountryListItem) =>
+          !row.isDefaultMarket && permissions.hasPolicy(Policy.CanUpdateCountry),
       },
       {
         icon: 'pi pi-trash',
         tooltip: translate.instant('pages.country_management.delete_country'),
         color: 'danger',
+        visible: () => permissions.hasPolicy(Policy.CanDeleteCountry),
         onClick: (row: CountryListItem) => defs.onDelete(row),
       },
     ],

@@ -17,6 +17,8 @@ import {
   TableAction,
   PaginationState,
 } from '@cleansia/components';
+import { CleansiaPermissionDirective } from '@cleansia/directives';
+import { PermissionService, Policy } from '@cleansia/services';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { ConfirmationService } from 'primeng/api';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
@@ -29,6 +31,7 @@ import { getPayConfigTableDefinition } from './pay-config-management.models';
   selector: 'cleansia-admin-pay-config-management',
   standalone: true,
   imports: [
+    CleansiaPermissionDirective,
     CommonModule,
     CleansiaButtonComponent,
     TranslatePipe,
@@ -45,7 +48,9 @@ import { getPayConfigTableDefinition } from './pay-config-management.models';
 export class PayConfigManagementComponent implements AfterViewInit, OnDestroy {
   private readonly router = inject(Router);
   protected readonly facade = inject(PayConfigManagementFacade);
+  protected readonly Policy = Policy;
   private readonly translate = inject(TranslateService);
+  private readonly permissions = inject(PermissionService);
   private readonly confirmationService = inject(ConfirmationService);
 
   payConfigColumns!: TableColumn<EmployeePayConfigDto>[];
@@ -72,6 +77,7 @@ export class PayConfigManagementComponent implements AfterViewInit, OnDestroy {
         onDelete: this.confirmDelete.bind(this),
       },
       this.translate,
+      this.permissions,
       this.facade.formatCurrency.bind(this.facade)
     );
 

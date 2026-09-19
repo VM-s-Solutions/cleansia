@@ -778,7 +778,8 @@
         "actor": "Aktér",
         "action": "Akce",
         "resource": "Zdroj",
-        "outcome": "Výsledek"
+        "outcome": "Výsledek",
+        "actor_role": "Role"
       },
       "outcome": {
         "success": "Úspěch",
@@ -798,7 +799,8 @@
         "date_from": "Od",
         "date_to": "Do",
         "reset": "Obnovit filtry",
-        "clear_all": "Vymazat vše"
+        "clear_all": "Vymazat vše",
+        "actor_role": "Role aktéra"
       },
       "history": {
         "title": "Historie zdroje",
@@ -1327,7 +1329,8 @@
         "status": "Stav",
         "created_at": "Vytvořeno",
         "last_login": "Poslední přihlášení",
-        "actions": "Akce"
+        "actions": "Akce",
+        "role": "Role"
       },
       "messages": {
         "load_error": "Nepodařilo se načíst administrátory",
@@ -1352,11 +1355,16 @@
         "create_success": "Administrátor byl úspěšně vytvořen",
         "create_error": "Nepodařilo se vytvořit administrátora",
         "update_success": "Administrátor byl úspěšně aktualizován",
-        "update_error": "Nepodařilo se aktualizovat administrátora"
+        "update_error": "Nepodařilo se aktualizovat administrátora",
+        "role_success": "Role byla změněna"
       },
       "birth_date": "Datum narození",
       "birth_date_hint": "Administrátorovi musí být alespoň 18 let",
-      "preferred_language": "Preferovaný jazyk"
+      "preferred_language": "Preferovaný jazyk",
+      "role": "Role",
+      "role_hint": "Podpora má nejmenší oprávnění. Administrátor může roli později změnit.",
+      "role_section": "Role",
+      "role_change_hint": "Změna platí okamžitě. Administrátor si ponechá dosavadní přístup nejvýše patnáct minut, než se jeho relace obnoví."
     },
     "language_management": {
       "title": "Správa jazyků",
@@ -3455,5 +3463,11 @@
   },
   "admin_user": {
     "cannot_target_admin_via_gdpr_tool": "Na účty administrátorů nelze použít nástroje GDPR."
+  },
+  "admin_roles": {
+    "administrator": "Administrátor",
+    "manager": "Manažer",
+    "support": "Podpora",
+    "accountant": "Účetní"
   }
 }

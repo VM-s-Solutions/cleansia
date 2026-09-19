@@ -86,6 +86,7 @@
               [style]="{ minWidth: '240px' }"
             />
             <cleansia-button
+              *cleansiaPermission="Policy.CanManageServiceCities"
               [label]="'pages.service_area_management.cities.add' | translate"
               icon="pi pi-plus"
               [disabled]="!selectedCountryId()"
@@ -125,6 +126,7 @@
                     </td>
                     <td class="actions-col">
                       <button
+                        *cleansiaPermission="Policy.CanManageServiceCities"
                         type="button"
                         class="city-action-btn"
                         (click)="openEditCityDialog(city)"
@@ -133,6 +135,7 @@
                         <i class="pi pi-pencil"></i>
                       </button>
                       <button
+                        *cleansiaPermission="Policy.CanManageServiceCities"
                         type="button"
                         class="city-action-btn city-action-btn--danger"
                         (click)="confirmDeleteCity(city)"

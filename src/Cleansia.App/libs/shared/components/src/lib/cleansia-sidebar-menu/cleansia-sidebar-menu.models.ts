@@ -1,3 +1,5 @@
+import { PermissionService } from '@cleansia/services';
+
 export interface SidebarMenuItem {
   label: string;
   icon?: string;
@@ -13,6 +15,15 @@ export interface SidebarMenuItem {
    * menu where a structural directive cannot attach.
    */
   permission?: string | string[];
+}
+
+export function isSidebarItemAllowed(
+  item: SidebarMenuItem,
+  permissions: PermissionService
+): boolean {
+  if (!item.permission) return true;
+  const policies = Array.isArray(item.permission) ? item.permission : [item.permission];
+  return policies.some((p) => permissions.hasPolicy(p));
 }
 
 /**

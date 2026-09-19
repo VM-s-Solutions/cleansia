@@ -81,11 +81,17 @@ export abstract class CleansiaBaseFormInputComponent
 
     if (this.ngControl) {
       if (this.ngControl instanceof FormControlName) {
+        // FormControlName receives its control only after this hook, so it is resolved from the
+        // form by its full path: the bare name lands on the root group, which is a different
+        // control inside a nested formGroupName and no control at all when the name exists only
+        // there.
+        const path = this.ngControl.path;
         this.formControl =
-          this.ngControl.control ||
-          ((this.ngControl.formDirective as FormGroupDirective)?.form.controls[
-            this.ngControl.name as string
-          ] as FormControl);
+          this.ngControl.control ??
+          ((path &&
+            (this.ngControl.formDirective as FormGroupDirective | null)?.form.get(
+              path
+            )) as FormControl);
       } else if (
         this.ngControl instanceof FormControlDirective ||
         this.ngControl instanceof NgModel

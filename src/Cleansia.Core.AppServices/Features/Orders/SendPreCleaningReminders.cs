@@ -20,8 +20,8 @@ namespace Cleansia.Core.AppServices.Features.Orders;
 /// <c>CurrentStatus == Confirmed</c> is the only status the cleaning is still ahead of: <c>New</c> means
 /// nobody has taken it (cash) or the card payment has not settled, <c>OnTheWay</c>/<c>InProgress</c>
 /// mean the customer has already been told the work is starting, and the two terminal states have
-/// nothing to remind about. But <c>Confirmed</c> is overloaded — the Stripe webhook writes it with no
-/// cleaner on the job — so it is conjoined with an assignment row. The money term is
+/// nothing to remind about. It is conjoined with an assignment row because "your cleaner is coming"
+/// is a promise about the crew, and the crew is the fact the status only summarises. The money term is
 /// <c>OrderAvailability</c>'s, specialised to <c>RecurringTemplateId == null</c>: a one-off card order
 /// still <c>Pending</c> is what <c>CleanupStalePendingOrders</c> cancels on its next tick.</para>
 ///

@@ -798,6 +798,26 @@ public class Order : TenantAuditable
     }
 
     /// <summary>
+    /// The ONLY writer of <see cref="OrderStatus.Confirmed"/> → <see cref="OrderStatus.New"/>. Confirmed
+    /// says a cleaner took the job; a release that left nobody on it makes that false, so the order goes
+    /// back on the board. Called by the release writers after their unassign, never by a swap — a swap's
+    /// transient empty crew between its remove and its add is not a release. A no-op when a crew remains
+    /// or the order is not Confirmed: an order past Confirmed is a cleaner in a home and is never walked
+    /// back by the platform. Requires <see cref="OrderStatusHistory"/> to be loaded, like every
+    /// <see cref="AddOrderStatus"/> caller. → /domain/order-lifecycle
+    /// </summary>
+    public bool ReturnToBoardIfUnstaffed()
+    {
+        if (_assignedEmployees.Count > 0 || CurrentStatus != OrderStatus.Confirmed)
+        {
+            return false;
+        }
+
+        AddOrderStatus(OrderStatusTrack.Create(OrderStatus.New, this));
+        return true;
+    }
+
+    /// <summary>
     /// Derives the crew the booked work needs and the seat cap that follows from it.
     /// <paramref name="spareSeats"/> is a platform policy number the application layer owns
     /// (<c>BookingPolicy.SpareSeatsPerOrder</c>) — this entity stays policy-ignorant, the same way

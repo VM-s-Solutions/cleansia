@@ -55,9 +55,13 @@ public class AdminReassignOrder
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
         {
             _ = userSessionProvider.GetUserId()!;
+            // OrderStatusHistory is not optional — the Confirmed append below derives its Sequence from
+            // the loaded history, and without it the row takes the creation row's place.
             var order = await orderRepository
                 .GetQueryable()
+                .Include(o => o.OrderStatusHistory)
                 .Include(o => o.AssignedEmployees)
+                .AsSplitQuery()
                 .FirstOrDefaultAsync(o => o.Id == command.OrderId, cancellationToken);
 
             if (order == null)
@@ -122,13 +126,13 @@ public class AdminReassignOrder
             // mirroring TakeOrder, and guarded the same way so a reassignment on an OnTheWay or
             // InProgress order never walks the status backwards.
             //
-            // This append is new with T-0691 and it is not cosmetic. Before the split every card order
-            // arrived here already Confirmed (the Stripe webhook wrote it on payment), so an admin
-            // assignment on a New order could only be a cash one, which TakeOrder would have confirmed.
-            // Now a paid card order rests at New, and without this line an admin-assigned order would
-            // sit at New with a crew on it — a false statement under the new meaning, and invisible to
-            // the six sweeps that select Confirmed AND AssignedEmployees.Any(): the pre-cleaning
-            // reminder, the cleaner job reminder, the tomorrow digest, NotifyOnTheWay and StartOrder.
+            // The crew is the fact and the status is its summary: a paid card order rests at New until
+            // somebody takes it, and an order that lost its last cleaner is walked back to New by the
+            // release. Without this line an admin-assigned order would sit at New with a crew on it,
+            // and the sweeps that select Confirmed — the pre-cleaning reminder, the cleaner job
+            // reminder, the tomorrow digest, NotifyOnTheWay and StartOrder — would not see it. Each of
+            // them still reads AssignedEmployees as well, because that is the fact the summary
+            // follows, not a belt for it.
             if (order.GetCurrentOrderStatus() is OrderStatus.New)
             {
                 order.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.Confirmed, order));

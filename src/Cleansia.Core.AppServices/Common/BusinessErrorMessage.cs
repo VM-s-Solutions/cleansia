@@ -79,6 +79,11 @@ public static class BusinessErrorMessage
 
     public const string OrderInProgressCannotCancel = "order.in_progress_cannot_cancel";
     public const string InvalidOrderStatusTransition = "order.invalid_status_transition";
+    /// <summary>
+    /// The admin override may not write Confirmed onto an order with nobody assigned: Confirmed means a
+    /// cleaner took the job, and the reassign is the admin act that puts one on it.
+    /// </summary>
+    public const string OrderStatusConfirmedNeedsCrew = "order.status.confirmed_needs_crew";
     public const string CancellationWindowClosed = "order.cancellation_window_closed";
     // Cash-collection gating (cleaner marks cash collected before an order can be completed).
     public const string OrderCashAlreadyCollected = "order.cash_already_collected";

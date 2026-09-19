@@ -139,7 +139,8 @@ public sealed class EmployeeUserAuditCoverageTests
 
         var handler = new RejectEmployee.Handler(
             employeeRepository.Object, AdminUserRepository().Object, orderRepository.Object,
-            new Mock<INotificationProducer>().Object, AdminSession(), auditContext);
+            new Mock<INotificationProducer>().Object, AdminSession(), auditContext,
+            new Mock<IAdminNotifier>().Object);
         var result = await handler.Handle(
             new RejectEmployee.Command(SubjectEmployeeId, "documents look forged"), CancellationToken.None);
 

@@ -6,6 +6,7 @@ using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Internationalization;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Repositories;
+using Cleansia.Core.Domain.Users;
 using MockQueryable;
 using Moq;
 
@@ -17,11 +18,18 @@ namespace Cleansia.Tests.Features.Orders;
 /// rewritten), restricted to allowed forward transitions. An illegal/ambiguous override returns a
 /// documented <see cref="BusinessErrorMessage"/> code instead of corrupting the trail. A terminal
 /// order (Completed / Cancelled) cannot be overridden.
+///
+/// <para><b>And <c>Confirmed</c> needs a crew.</b> Confirmed means a cleaner took the job, so the
+/// override may not write it onto an order with nobody assigned — that is the one door an administrator
+/// could open with a click onto the state a release walks back from. An administrator who wants a
+/// cleaner on the order reassigns, which writes Confirmed itself. The other forward moves stay open on an
+/// unstaffed order: they are repairs about the work, not about the crew.</para>
 /// </summary>
 public class AdminOverrideOrderStatusHandlerTests
 {
     private const string OrderId = "order-admin-override-1";
     private const string AdminUserId = "admin-user";
+    private const string CleanerId = "emp-override-1";
 
     private readonly Mock<IOrderRepository> _orderRepository = new();
     private readonly Mock<IUserSessionProvider> _session = new();
@@ -37,7 +45,9 @@ public class AdminOverrideOrderStatusHandlerTests
     private AdminOverrideOrderStatus.Handler CreateHandler() =>
         new(_orderRepository.Object, _session.Object, _auditContext, _liveActivityProducer.Object);
 
-    private Order ArrangeOrder(params OrderStatus[] history)
+    private Order ArrangeOrder(params OrderStatus[] history) => ArrangeOrder(crew: 0, history);
+
+    private Order ArrangeOrder(int crew, params OrderStatus[] history)
     {
         var currency = Currency.Create("CZK", "Kč", "Czech Koruna");
         var order = Order.Create(
@@ -55,9 +65,16 @@ public class AdminOverrideOrderStatusHandlerTests
             userId: "owner-user");
         order.Id = OrderId;
         order.SetCurrency(currency);
+        order.SetMaxEmployees(2);
         foreach (var status in history)
         {
             order.AddOrderStatus(OrderStatusTrack.Create(status, order));
+        }
+
+        for (var i = 0; i < crew; i++)
+        {
+            order.AddAssignedEmployee(OrderEmployee.Create(
+                order, ValidatorTestHelpers.BuildEmployee($"{CleanerId}-{i}", ContractStatus.Approved)));
         }
 
         _orderRepository
@@ -158,16 +175,80 @@ public class AdminOverrideOrderStatusHandlerTests
         Assert.Equal(OrderStatus.Pending, order.CurrentStatus);
     }
 
+    /// <summary>
+    /// The rank rule is what this pins — Pending ranks below Confirmed, so the move is forward. The
+    /// fixture carries a cleaner because Confirmed now also needs one; without the crew the refusal
+    /// would come from the crew rule and say nothing about the rank.
+    /// </summary>
     [Fact]
-    public async Task A_Legacy_Pending_Order_Can_Still_Move_Forward_To_Confirmed()
+    public async Task A_Legacy_Pending_Order_With_A_Crew_Can_Still_Move_Forward_To_Confirmed()
     {
-        var order = ArrangeOrder(OrderStatus.New, OrderStatus.Pending);
+        var order = ArrangeOrder(crew: 1, OrderStatus.New, OrderStatus.Pending);
 
         var result = await CreateHandler().Handle(
             new AdminOverrideOrderStatus.Command(OrderId, OrderStatus.Confirmed), CancellationToken.None);
 
         Assert.True(result.IsSuccess);
         Assert.Equal(OrderStatus.Confirmed, order.CurrentStatus);
+    }
+
+    // ── Confirmed needs a crew ──
+
+    [Fact]
+    public async Task Confirmed_On_An_Unstaffed_Order_Is_Refused()
+    {
+        var order = ArrangeOrder(OrderStatus.New);
+
+        var result = await CreateHandler().Handle(
+            new AdminOverrideOrderStatus.Command(OrderId, OrderStatus.Confirmed), CancellationToken.None);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal(BusinessErrorMessage.OrderStatusConfirmedNeedsCrew, result.Error!.Message);
+        Assert.Equal(OrderStatus.New, order.CurrentStatus);
+        Assert.Single(order.OrderStatusHistory);
+    }
+
+    [Fact]
+    public async Task Confirmed_On_A_Staffed_New_Order_Is_Allowed()
+    {
+        var order = ArrangeOrder(crew: 1, OrderStatus.New);
+
+        var result = await CreateHandler().Handle(
+            new AdminOverrideOrderStatus.Command(OrderId, OrderStatus.Confirmed), CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(OrderStatus.Confirmed, order.CurrentStatus);
+    }
+
+    /// <summary>
+    /// The crew rule is about Confirmed only. "The cleaner is there but never tapped" is what the
+    /// override exists for, and that repair is about the work — it stays open on an unstaffed order,
+    /// the administrator's own audited act.
+    /// </summary>
+    [Fact]
+    public async Task OnTheWay_On_An_Unstaffed_New_Order_Is_Still_Allowed()
+    {
+        var order = ArrangeOrder(OrderStatus.New);
+
+        var result = await CreateHandler().Handle(
+            new AdminOverrideOrderStatus.Command(OrderId, OrderStatus.OnTheWay), CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(OrderStatus.OnTheWay, order.CurrentStatus);
+    }
+
+    /// <summary>The rank rule answers first: a same-value or backward Confirmed is refused as before.</summary>
+    [Fact]
+    public async Task A_Backward_Confirmed_On_An_Unstaffed_Order_Is_Still_An_Invalid_Transition()
+    {
+        var order = ArrangeOrder(OrderStatus.Confirmed, OrderStatus.OnTheWay);
+
+        var result = await CreateHandler().Handle(
+            new AdminOverrideOrderStatus.Command(OrderId, OrderStatus.Confirmed), CancellationToken.None);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal(BusinessErrorMessage.InvalidOrderStatusTransition, result.Error!.Message);
+        Assert.Equal(OrderStatus.OnTheWay, order.CurrentStatus);
     }
 
     [Fact]

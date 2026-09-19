@@ -30,6 +30,12 @@ namespace Cleansia.Core.AppServices.Features.Orders;
 /// <para><b>Prefer <see cref="RequestCover"/>.</b> A drop leaves the seat empty from this instant; a
 /// cover request keeps the cleaner on the hook until somebody actually takes it. The partner app
 /// should offer cover first and this as the way out when nobody answers.</para>
+///
+/// <para><b>The last cleaner leaving is two facts.</b> A <c>Confirmed</c> order with nobody left on it
+/// goes back to <c>New</c> (owner ruling 2026-09-19: Confirmed means cleaners are assigned), through
+/// <see cref="Order.ReturnToBoardIfUnstaffed"/>; an order past Confirmed is never walked back. And the
+/// company's administrators are told whenever the crew empties, at any status — an unstaffed
+/// <c>OnTheWay</c> order is caught by no sweep. The customer is told nothing here.</para>
 /// </summary>
 public class DropOrder
 {
@@ -60,7 +66,8 @@ public class DropOrder
         IOrderAccessService orderAccessService,
         IEmployeeRepository employeeRepository,
         INotificationProducer notificationProducer,
-        IEmployeeActionAuditRepository employeeActionAuditRepository) : ICommandHandler<Command, Response>
+        IEmployeeActionAuditRepository employeeActionAuditRepository,
+        IAdminNotifier adminNotifier) : ICommandHandler<Command, Response>
     {
         public async Task<BusinessResult<Response>> Handle(
             Command command, CancellationToken cancellationToken)
@@ -125,11 +132,20 @@ public class DropOrder
                 order.EndPreferredHold(nowUtc);
             }
 
-            // Re-advertise. The digest's freshness test is
-            // OrderStatusHistory.Any(s => s.CreatedOn > since), so without a new row this seat is
-            // invisible to every cleaner forever. Same value, so nothing else in the platform reads a
-            // change. → NewJobsDigestService
-            order.AddOrderStatus(OrderStatusTrack.Create(order.CurrentStatus, order));
+            // Two facts, read before the walk-back can change either: whether the crew emptied decides
+            // the alarm below at ANY status; the status it emptied at is what the administrator is told.
+            var crewEmptied = order.AssignedEmployees.Count == 0;
+            var statusAtLoss = order.CurrentStatus;
+
+            // A Confirmed order with nobody left on it goes back to New — and that fresh row is also its
+            // re-advertisement. Otherwise re-advertise with a same-value row: the digest's freshness
+            // test is OrderStatusHistory.Any(s => s.CreatedOn > since), so without a new row this seat
+            // is invisible to every cleaner forever, and same value means nothing else in the platform
+            // reads a change. → NewJobsDigestService
+            if (!order.ReturnToBoardIfUnstaffed())
+            {
+                order.AddOrderStatus(OrderStatusTrack.Create(order.CurrentStatus, order));
+            }
 
             employeeActionAuditRepository.Add(EmployeeActionAudit.Create(
                 employeeId, order.Id, EmployeeAuditAction.OrderDropped));
@@ -143,6 +159,17 @@ public class DropOrder
                 employeeRepository,
                 notificationProducer,
                 cancellationToken);
+
+            if (crewEmptied)
+            {
+                await OrderCrewLostNotifier.NotifyAsync(
+                    order,
+                    releasedAssignmentId,
+                    OrderCrewLostNotifier.Dropped,
+                    statusAtLoss,
+                    adminNotifier,
+                    cancellationToken);
+            }
 
             return BusinessResult.Success(
                 new Response(order.Id, order.AssignedEmployees.Count));

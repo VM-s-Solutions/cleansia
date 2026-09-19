@@ -589,6 +589,8 @@ const ADMIN_SURFACE_ERROR_KEYS: readonly string[] = [
   'order.invalid_status_transition',
   'order.no_available_spots',
   'order.not_found',
+  // The override may not set Confirmed on an order with nobody assigned: AdminOrderController.OverrideOrderStatus.
+  'order.status.confirmed_needs_crew',
   'receipt.not_found',
   'refund.line_invalid',
   'refund.lines_required',

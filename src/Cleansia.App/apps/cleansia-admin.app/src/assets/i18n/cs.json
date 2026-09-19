@@ -3080,6 +3080,9 @@
       "selected_services": {
         "invalid": "Vybrané služby jsou neplatné"
       },
+      "status": {
+        "confirmed_needs_crew": "Potvrzeno znamená, že zakázku převzal uklízeč. Místo toho objednávce přiřaďte uklízeče."
+      },
       "total_price": {
         "not_match": "Celková cena neodpovídá",
         "positive": "Celková cena musí být kladná"

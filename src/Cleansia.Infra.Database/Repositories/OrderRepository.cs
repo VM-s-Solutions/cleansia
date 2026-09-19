@@ -37,12 +37,16 @@ public class OrderRepository(CleansiaDbContext context) : BaseRepository<Order>(
     public async Task<IReadOnlyList<Order>> GetFutureConfirmedOrdersForEmployeeAsync(
         string employeeId, DateTime nowUtc, CancellationToken cancellationToken)
     {
+        // The caller appends a status row per released order, and AddOrderStatus derives Sequence from
+        // the loaded history — without it every appended row collides with the creation row's.
         return await GetDbSet()
+            .Include(o => o.OrderStatusHistory)
             .Include(o => o.AssignedEmployees)
                 .ThenInclude(ae => ae.Employee)
             .Where(o => o.CurrentStatus == OrderStatus.Confirmed
                 && o.CleaningDateTime > nowUtc
                 && o.AssignedEmployees.Any(ae => ae.EmployeeId == employeeId))
+            .AsSplitQuery()
             .ToListAsync(cancellationToken);
     }
 

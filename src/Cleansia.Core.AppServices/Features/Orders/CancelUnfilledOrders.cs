@@ -24,8 +24,12 @@ namespace Cleansia.Core.AppServices.Features.Orders;
 /// <para><b>Nothing in the platform noticed this before.</b> Every sweep that could have seen it
 /// requires an assignment — the two reminder sweeps conjoin <c>AssignedEmployees.Any()</c>, and the
 /// preferred-hold machinery is about reservations. So a paid order whose seat was never filled sat
-/// <c>Confirmed</c> past its cleaning time forever: the customer had paid, nobody was coming, and no
-/// system anywhere said so.</para>
+/// past its cleaning time forever: the customer had paid, nobody was coming, and no system anywhere
+/// said so. The predicate reads the crew, not the status, because the crew is the fact and the status
+/// its summary: a release that empties a <c>Confirmed</c> order walks it back to <c>New</c>, but two
+/// releases racing can leave <c>Confirmed</c> standing with nobody on it, and an order dropped to
+/// <c>New</c> at its slot is exactly a never-taken one — so both statuses are swept on the same
+/// term.</para>
 ///
 /// <para><b>This is the one no-show the platform can prove.</b> Every other version of "the cleaner
 /// did not arrive" rests on a missing tap, which is indistinguishable from a cleaner who turned up and

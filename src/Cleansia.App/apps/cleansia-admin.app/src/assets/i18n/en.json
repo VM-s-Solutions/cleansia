@@ -3080,6 +3080,9 @@
       "selected_services": {
         "invalid": "Selected services are invalid"
       },
+      "status": {
+        "confirmed_needs_crew": "Confirmed means a cleaner took the job. Assign a cleaner to the order instead."
+      },
       "total_price": {
         "not_match": "Total price doesn't match",
         "positive": "Total price must be positive"

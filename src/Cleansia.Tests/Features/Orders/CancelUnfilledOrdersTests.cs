@@ -179,6 +179,33 @@ public class CancelUnfilledOrdersTests
     }
 
     /// <summary>
+    /// A paid order whose only cleaner dropped it went back to New through the domain writer. At its
+    /// slot it is exactly a never-taken one — the same empty seat at the same instant — and the sweep
+    /// pays it exactly the same, with no second money path.
+    /// </summary>
+    [Fact]
+    public async Task AnOrderDroppedBackToNewIsSweptExactlyLikeANeverTakenOne()
+    {
+        var order = UnfilledOrder();
+        order.AddAssignedEmployee(OrderEmployee.Create(
+            order, ValidatorTestHelpers.BuildEmployee("emp-left", ContractStatus.Approved)));
+        order.UnassignEmployee("emp-left");
+        Assert.True(order.ReturnToBoardIfUnstaffed());
+        Assert.Equal(OrderStatus.New, order.CurrentStatus);
+        Arrange(order);
+
+        var result = await Sweep();
+
+        Assert.Equal(1, result.Value.CancelledCount);
+        Assert.Equal(1, result.Value.RefundedCount);
+        Assert.Equal(1, result.Value.CreditedCount);
+        Assert.Equal(OrderStatus.Cancelled, order.CurrentStatus);
+        Assert.Equal(OrderCancellationReasons.NoCleanerAvailable, order.CancellationReason);
+        Assert.Equal(order.TotalPrice, order.CancellationRefundAmount);
+        Assert.Equal(CzkApology, _account!.Balance);
+    }
+
+    /// <summary>
     /// A cleaner may take a job AFTER its start time — TakeOrder has no lead-time gate — so a seat
     /// filled between the read and the write must not have the booking cancelled out from under it.
     /// </summary>

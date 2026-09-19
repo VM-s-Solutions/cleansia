@@ -29,18 +29,19 @@ namespace Cleansia.Tests.Features.Orders;
 /// <summary>
 /// T-0525 — what "a cleaner accepted this job" actually means when the cancellation fee is priced.
 ///
-/// <see cref="OrderStatus.Confirmed"/> is a deliberately OVERLOADED status in this domain: it means
-/// "payment settled" OR "cleaner assigned", and four writers produce it —
-/// <c>TakeOrder</c> (a cleaner really did claim it), <c>HandlePaymentNotification</c> (the Stripe
-/// webhook), <c>ConfirmRecurringOrder</c> (cash auto-confirm) and <c>AdminOverrideOrderStatus</c>.
-/// Pricing the fee off the status track therefore charged every card customer a 25%/50% cancellation
-/// fee for a job no cleaner had ever seen. The acceptance signal is the ASSIGNMENT ROW.
+/// <see cref="OrderStatus.Confirmed"/> used to be an OVERLOADED status — "payment settled" OR "cleaner
+/// assigned", written by the Stripe webhook, the cash auto-confirm and the admin override as well as by
+/// <c>TakeOrder</c> — and pricing the fee off the status track charged every card customer a 25%/50%
+/// cancellation fee for a job no cleaner had ever seen. The word now means a cleaner took the job and
+/// the override can no longer put it on an unstaffed order, but the acceptance signal stays the
+/// ASSIGNMENT ROW: the crew is the fact, the status its summary, and a cleaner taking a seat on an
+/// already-Confirmed order leaves no new track.
 ///
-/// Where a case needs an order in <c>Confirmed</c>, it gets there by RUNNING THE REAL WRITER — a
-/// signed Stripe webhook, the real cash-confirm handler, the real admin override — never by setting a
-/// bool, so the suite pins the production wiring rather than the policy function's argument. The
-/// assignment-only cases deliberately carry no <c>Confirmed</c> track at all; that is the hole a
-/// status-based predicate cannot see.
+/// Where a case moves an order through a writer, it RUNS THE REAL WRITER — a signed Stripe webhook,
+/// the real cash-confirm handler, the real admin override — never by setting a bool, so the suite pins
+/// the production wiring rather than the policy function's argument. The assignment-only cases
+/// deliberately carry no <c>Confirmed</c> track at all; that is the hole a status-based predicate
+/// cannot see.
 /// </summary>
 public class CancellationAcceptanceSignalTests
 {
@@ -293,16 +294,23 @@ public class CancellationAcceptanceSignalTests
 
     // ── AC5: an admin walking the lifecycle forward ──
 
+    /// <summary>
+    /// This case used to force Confirmed onto an unstaffed order through the override and assert the
+    /// cancellation stayed free. The override now refuses exactly that write — Confirmed means a
+    /// cleaner took the job — so the door this case guarded is closed rather than survived: the word
+    /// cannot be put on the order, the order stays New with nobody on it, and the fee is still nothing.
+    /// </summary>
     [Fact]
-    public async Task AdminOverriddenToConfirmed_NoCleanerAssigned_IsFree()
+    public async Task AdminCannotForceConfirmedOntoAnUnstaffedOrder_AndCancellationIsFree()
     {
         var order = ArrangeNewOrder(cleaningInHours: 12);
 
         var overridden = await CreateAdminOverrideHandler().Handle(
             new AdminOverrideOrderStatus.Command(OrderId, OrderStatus.Confirmed), CancellationToken.None);
 
-        Assert.True(overridden.IsSuccess);
-        Assert.Equal(OrderStatus.Confirmed, order.CurrentStatus);
+        Assert.True(overridden.IsFailure);
+        Assert.Equal(BusinessErrorMessage.OrderStatusConfirmedNeedsCrew, overridden.Error!.Message);
+        Assert.Equal(OrderStatus.New, order.CurrentStatus);
 
         var response = await CancelAsync();
 

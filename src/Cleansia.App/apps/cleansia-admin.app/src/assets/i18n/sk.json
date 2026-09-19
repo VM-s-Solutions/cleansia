@@ -3080,6 +3080,9 @@
       "selected_services": {
         "invalid": "Vybrané služby sú neplatné"
       },
+      "status": {
+        "confirmed_needs_crew": "Potvrdené znamená, že zákazku prevzal upratovač. Namiesto toho objednávke priraďte upratovača."
+      },
       "total_price": {
         "not_match": "Celková cena sa nezhoduje",
         "positive": "Celková cena musí byť kladná"

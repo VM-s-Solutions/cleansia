@@ -284,10 +284,10 @@ public static class BookingPolicy
     /// <param name="hasBeenAccepted">
     /// True if a cleaner has actually been pulled onto the job — i.e. the order carries at least one
     /// ASSIGNMENT row (<c>Order.AssignedEmployees</c>), which is what <c>CancelOrder</c> passes.
-    /// <b>Not</b> an <c>OrderStatusHistory</c> entry of <c>OrderStatus.Confirmed</c>: Confirmed is a
-    /// deliberately overloaded status in this domain (payment settled OR cleaner assigned) written by
-    /// four paths, only one of which involves a cleaner, and it is not even written when a cleaner
-    /// takes an order that was already Confirmed.
+    /// <b>Not</b> an <c>OrderStatusHistory</c> entry of <c>OrderStatus.Confirmed</c>: the crew is the
+    /// fact and the status is its summary — written when a cleaner takes the job, walked back when a
+    /// release can prove the crew is empty, not written when a cleaner takes a seat on an order that
+    /// was already Confirmed. The fee prices the cleaner's time, so it reads the crew.
     /// </param>
     /// <param name="freeCancellationHoursOverride">
     /// Absolute free-cancellation threshold in hours that REPLACES

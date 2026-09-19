@@ -4,6 +4,7 @@ using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Enums;
+using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Infra.Common.Validations;
 using FluentValidation;
@@ -56,7 +57,8 @@ public class RejectEmployee
         IOrderRepository orderRepository,
         INotificationProducer notificationProducer,
         IUserSessionProvider userSessionProvider,
-        IAuditContext auditContext)
+        IAuditContext auditContext,
+        IAdminNotifier adminNotifier)
         : ICommandHandler<Command, Response>
     {
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
@@ -112,6 +114,14 @@ public class RejectEmployee
         /// <c>InProgress</c> is a cleaner standing in a customer's home; taking that seat mid-clean is
         /// worse than letting an admin resolve it. Those are logged for the admin instead.</para>
         ///
+        /// <para><b>A seat whose release empties the crew walks the order back to <c>New</c></b> —
+        /// Confirmed means a cleaner took it, and nobody has it now — ends a live reservation the
+        /// rejected cleaner held (an order back on the board must be ON the board, and a hold hides it
+        /// from everyone else for up to twelve hours on behalf of someone who can no longer work), and
+        /// tells the company's administrators, the one who clicked included. A crew that remains keeps
+        /// the status and gets the same-value re-advertisement a drop writes, so the digest sees the
+        /// freed seat either way.</para>
+        ///
         /// <para>The cleaner is told per assignment, through the same seam the admin reassign uses, so
         /// the subject is <c>AssignmentNotificationSubject.For(orderId, assignmentId)</c> and N released
         /// orders mint N distinct outbox keys rather than colliding on the cleaner.</para>
@@ -139,10 +149,33 @@ public class RejectEmployee
 
                 order.UnassignEmployee(employeeId);
 
+                if (order.PreferredEmployeeId == employeeId)
+                {
+                    order.EndPreferredHold(now);
+                }
+
+                var crewEmptied = order.AssignedEmployees.Count == 0;
+                var statusAtLoss = order.CurrentStatus;
+                if (!order.ReturnToBoardIfUnstaffed())
+                {
+                    order.AddOrderStatus(OrderStatusTrack.Create(order.CurrentStatus, order));
+                }
+
                 if (cleaner is not null)
                 {
                     await OrderAssignmentChangeNotifier.NotifyCleanerOfRevocationAsync(
                         order, cleaner, assignmentId, notificationProducer, cancellationToken);
+                }
+
+                if (crewEmptied)
+                {
+                    await OrderCrewLostNotifier.NotifyAsync(
+                        order,
+                        assignmentId,
+                        OrderCrewLostNotifier.Rejected,
+                        statusAtLoss,
+                        adminNotifier,
+                        cancellationToken);
                 }
             }
         }

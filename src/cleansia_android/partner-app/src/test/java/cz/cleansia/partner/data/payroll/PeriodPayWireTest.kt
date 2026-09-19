@@ -128,6 +128,26 @@ class PeriodPayWireTest {
         assertEquals(listOf("CZK", "CZK"), summary.orderPays.map { it.currencyCode })
     }
 
+    @Test
+    fun theCurrenciesThePeriodOffersArriveInTheServersOrderWithTheirIds() = runTest {
+        val summary = loaded(CAPTURED_PAYLOAD)
+
+        assertEquals(
+            listOf(PeriodCurrency(id = "cur-czk", code = "CZK"), PeriodCurrency(id = "cur-eur", code = "EUR")),
+            summary.availableCurrencies,
+        )
+    }
+
+    /** A server that predates the member sends no key; the period still maps, with nothing to switch to. */
+    @Test
+    fun aPeriodWithoutTheCurrenciesKeyStillMapsWithNoneOffered() = runTest {
+        val summary = loaded(payloadWithoutSummaryKey("availableCurrencies"))
+
+        assertEquals(emptyList<PeriodCurrency>(), summary.availableCurrencies)
+        assertEquals("CZK", summary.currencyCode)
+        assertEquals(4951.80, summary.grandTotal, 0.0)
+    }
+
     // --- rule 1: money is never coerced -----------------------------------------
 
     @Test
@@ -314,6 +334,10 @@ class PeriodPayWireTest {
               "hasInvoice": true,
               "invoiceId": "inv-42",
               "currencyCode": "CZK",
+              "availableCurrencies": [
+                { "id": "cur-czk", "code": "CZK" },
+                { "id": "cur-eur", "code": "EUR" }
+              ],
               "orderPays": [
                 {
                   "id": "line-1",
@@ -373,6 +397,7 @@ class PeriodPayWireTest {
             "invoiceId",
             "orderPays",
             "currencyCode",
+            "availableCurrencies",
         )
 
         val LINE_SPEC_PROPERTIES = setOf(

@@ -4,6 +4,7 @@ import cz.cleansia.core.network.ApiResult
 import cz.cleansia.core.network.safeApiCall
 import cz.cleansia.partner.api.client.EmployeePayrollApi
 import cz.cleansia.partner.api.model.OrderEmployeePayDto
+import cz.cleansia.partner.api.model.PeriodCurrencyDto
 import cz.cleansia.partner.api.model.PeriodPaySummaryDto
 import cz.cleansia.core.network.mapWire
 import cz.cleansia.core.network.required
@@ -46,6 +47,17 @@ data class PeriodPaySummary(
     /** The currency every amount above is in, from the server — the invoice's own on an invoiced
      *  period, so this screen and the payout document cannot disagree. Nullable on the wire. */
     val currencyCode: String?,
+    /**
+     * Every currency a pay row of this period is in, the view currency first. The server names at
+     * least one whenever it sends the list, so empty only means a server that predates the member.
+     * Carried for wire parity; no partner screen switches on it yet.
+     */
+    val availableCurrencies: List<PeriodCurrency>,
+)
+
+data class PeriodCurrency(
+    val id: String?,
+    val code: String?,
 )
 
 data class OrderPayLine(
@@ -103,7 +115,10 @@ internal fun PeriodPaySummaryDto.toDomain() = PeriodPaySummary(
     invoiceId = invoiceId,
     orderPays = orderPays.orEmpty().mapNotNull { it.toDomainOrNull() },
     currencyCode = currencyCode,
+    availableCurrencies = availableCurrencies.orEmpty().map { it.toDomain() },
 )
+
+internal fun PeriodCurrencyDto.toDomain() = PeriodCurrency(id = id, code = code)
 
 internal fun OrderEmployeePayDto.toDomainOrNull(): OrderPayLine? {
     val lineId = id ?: return null

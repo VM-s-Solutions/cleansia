@@ -6,6 +6,7 @@ import cz.cleansia.partner.core.auth.EmployeeIdResolver
 import cz.cleansia.core.network.ApiError
 import cz.cleansia.partner.core.network.ApiErrorTranslator
 import cz.cleansia.core.network.ApiResult
+import cz.cleansia.partner.data.payroll.PeriodCurrency
 import cz.cleansia.partner.data.payroll.PeriodPayRepository
 import cz.cleansia.partner.data.payroll.PeriodPaySummary
 import cz.cleansia.partner.testing.MainDispatcherRule
@@ -49,6 +50,7 @@ class PeriodPayViewModelTest {
         invoiceId = null,
         orderPays = emptyList(),
         currencyCode = "CZK",
+        availableCurrencies = listOf(PeriodCurrency(id = "cur-czk", code = "CZK")),
     )
 
     @Before

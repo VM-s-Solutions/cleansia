@@ -96,6 +96,53 @@ describe('ReportsFacade', () => {
     expect(facade.formatRevenueAmount(undefined)).toBe('');
   });
 
+  it('reads the headline off the net figure the server sent, never off the gross one', () => {
+    facade.revenueReport.set(
+      RevenueReportDto.fromJS({
+        totalRevenue: 3000,
+        totalRefundedToCard: 300,
+        totalReturnedToCredit: 0,
+        totalRefunded: 300,
+        netRevenue: 2700,
+        currencyCode: 'EUR',
+      })
+    );
+
+    const eur = (value: number) =>
+      new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'EUR' }).format(value);
+
+    expect(facade.revenueHeadline()).toBe(eur(2700));
+    expect(facade.revenueHeadline()).not.toBe(eur(3000));
+  });
+
+  it('breaks the headline into gross, refunded (both legs) and the credit leg, each in the report currency', () => {
+    facade.revenueReport.set(
+      RevenueReportDto.fromJS({
+        totalRevenue: 2000,
+        totalRefundedToCard: 1500,
+        totalReturnedToCredit: 500,
+        totalRefunded: 2000,
+        netRevenue: 0,
+        currencyCode: 'CZK',
+      })
+    );
+
+    const czk = (value: number) =>
+      new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'CZK' }).format(value);
+
+    expect(facade.revenueBreakdown()).toEqual({
+      gross: czk(2000),
+      refunded: czk(2000),
+      credit: czk(500),
+    });
+    expect(facade.revenueHeadline()).toBe(czk(0));
+  });
+
+  it('renders an empty headline and breakdown before a report has loaded', () => {
+    expect(facade.revenueHeadline()).toBe('');
+    expect(facade.revenueBreakdown()).toEqual({ gross: '', refunded: '', credit: '' });
+  });
+
   it('keeps only currencies that carry an id and a code', () => {
     getOverviewMock.mockReturnValue(
       of([

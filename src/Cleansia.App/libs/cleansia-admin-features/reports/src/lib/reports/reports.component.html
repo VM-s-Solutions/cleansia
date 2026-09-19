@@ -55,6 +55,9 @@
         <p-tabpanels>
           <!-- Revenue Report Tab -->
           <p-tabpanel value="revenue">
+            <p class="report-description">
+              {{ 'pages.reports.revenue_description' | translate }}
+            </p>
             @if (facade.loadingRevenue()) {
             <cleansia-loader />
             } @else if (facade.revenueReport()) {
@@ -67,12 +70,14 @@
                   </div>
                   <div class="summary-card__content">
                     <span class="summary-card__label">{{
-                      'pages.reports.total_revenue' | translate
+                      'pages.reports.net_revenue' | translate
                     }}</span>
                     <span class="summary-card__value">{{
-                      facade.formatRevenueAmount(
-                        facade.revenueReport()?.totalRevenue
-                      )
+                      facade.revenueHeadline()
+                    }}</span>
+                    <span class="summary-card__subline">{{
+                      'pages.reports.gross_and_refunds'
+                        | translate : facade.revenueBreakdown()
                     }}</span>
                   </div>
                 </div>
@@ -93,30 +98,16 @@
                   </div>
                 </div>
 
-                <div class="summary-card">
-                  <div class="summary-card__icon">
-                    <i class="pi pi-shopping-cart"></i>
-                  </div>
-                  <div class="summary-card__content">
-                    <span class="summary-card__label">{{
-                      'pages.reports.total_orders' | translate
-                    }}</span>
-                    <span class="summary-card__value">{{
-                      facade.revenueReport()?.totalOrders || 0
-                    }}</span>
-                  </div>
-                </div>
-
                 <div class="summary-card summary-card--success">
                   <div class="summary-card__icon">
                     <i class="pi pi-check-circle"></i>
                   </div>
                   <div class="summary-card__content">
                     <span class="summary-card__label">{{
-                      'pages.reports.completed_orders' | translate
+                      'pages.reports.completed_paid_orders' | translate
                     }}</span>
                     <span class="summary-card__value">{{
-                      facade.revenueReport()?.completedOrders || 0
+                      facade.revenueReport()?.totalOrders || 0
                     }}</span>
                   </div>
                 </div>
@@ -126,9 +117,14 @@
                     <i class="pi pi-times-circle"></i>
                   </div>
                   <div class="summary-card__content">
-                    <span class="summary-card__label">{{
-                      'pages.reports.cancelled_orders' | translate
-                    }}</span>
+                    <span class="summary-card__label">
+                      {{ 'pages.reports.cancelled_orders' | translate }}
+                      <i
+                        class="pi pi-info-circle summary-card__hint"
+                        [pTooltip]="'pages.reports.cancelled_orders_hint' | translate"
+                        tooltipPosition="top"
+                      ></i>
+                    </span>
                     <span class="summary-card__value">{{
                       facade.revenueReport()?.cancelledOrders || 0
                     }}</span>
@@ -204,6 +200,9 @@
                 <h3 class="data-section__title">
                   {{ 'pages.reports.revenue_by_payment_type' | translate }}
                 </h3>
+                <p class="data-section__hint">
+                  {{ 'pages.reports.revenue_by_payment_type_hint' | translate }}
+                </p>
                 <cleansia-table
                   [data]="facade.revenueReport()?.revenueByPaymentType || []"
                   [columns]="revenueByPaymentTypeColumns"

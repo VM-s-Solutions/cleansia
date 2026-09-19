@@ -2063,7 +2063,6 @@
       "total_revenue": "Celkové tržby",
       "avg_order_value": "Průměrná hodnota objednávky",
       "total_orders": "Celkem objednávek",
-      "completed_orders": "Dokončené objednávky",
       "cancelled_orders": "Zrušené objednávky",
       "growth": "Růst",
       "revenue_by_service": "Tržby podle služby",
@@ -2095,7 +2094,16 @@
         "payroll_load_error": "Nepodařilo se načíst přehled mezd"
       },
       "settled_from_credit": "Z kreditu zákazníků",
-      "settled_on_tender": "Skutečně přijato"
+      "settled_on_tender": "Skutečně přijato",
+      "net_revenue": "Čisté tržby",
+      "gross_and_refunds": "{{gross}} hrubé − {{refunded}} vráceno (z toho {{credit}} vráceno jako kredit)",
+      "completed_paid_orders": "Dokončené a zaplacené objednávky",
+      "cancelled_orders_hint": "Zrušené rezervace v tomto období podle data zrušení. Opuštěné platby kartou nejsou rezervace. Nejsou součástí tržeb.",
+      "refunded_to_card": "Vráceno na kartu",
+      "returned_to_credit": "Vráceno jako kredit",
+      "net_on_tender": "Čistě přijato",
+      "revenue_by_payment_type_hint": "Čistě přijato je částka, kterou porovnáte s výpisem platební brány.",
+      "revenue_description": "Tržby jsou dokončené a zaplacené objednávky podle data dokončení, v jedné měně, minus všechny vratky těchto objednávek – vrácení na kartu i vrácený kredit – bez ohledu na datum vratky. Vratka tedy snižuje měsíc, ve kterém byla objednávka dokončena, ne měsíc, ve kterém byla vystavena. Zrušené a nezaplacené objednávky nejsou tržby. Prohrané chargebacky se neodečítají (platforma neeviduje částku, kterou banka stáhla). Hotovostní objednávky vrácené ručně nemají záznam o vratce a zobrazují se v hrubé výši."
     },
     "promo_codes": {
       "title": "Promo kódy",

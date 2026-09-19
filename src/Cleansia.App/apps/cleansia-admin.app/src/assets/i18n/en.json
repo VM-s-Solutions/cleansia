@@ -1953,7 +1953,6 @@
       "total_revenue": "Total Revenue",
       "avg_order_value": "Average Order Value",
       "total_orders": "Total Orders",
-      "completed_orders": "Completed Orders",
       "cancelled_orders": "Cancelled Orders",
       "growth": "Growth",
       "revenue_by_service": "Revenue by Service",
@@ -1985,7 +1984,16 @@
         "payroll_load_error": "Failed to load payroll report"
       },
       "settled_from_credit": "From customer credit",
-      "settled_on_tender": "Taken by this tender"
+      "settled_on_tender": "Taken by this tender",
+      "net_revenue": "Net revenue",
+      "gross_and_refunds": "{{gross}} gross − {{refunded}} refunded (incl. {{credit}} returned as credit)",
+      "completed_paid_orders": "Completed & paid orders",
+      "cancelled_orders_hint": "Cancelled bookings in this period, by cancellation date. Abandoned card checkouts are not bookings. Not part of revenue.",
+      "refunded_to_card": "Refunded to card",
+      "returned_to_credit": "Returned as credit",
+      "net_on_tender": "Net on tender",
+      "revenue_by_payment_type_hint": "Net on tender is the figure to reconcile against the gateway statement.",
+      "revenue_description": "Revenue is completed and paid orders by completion date, in one currency, minus every refund on those orders — card refunds and credit returned — whatever the refund’s date. A refund therefore reduces the month the order completed in, not the month it was issued. Cancelled and unpaid orders are not revenue. Lost chargebacks are not subtracted (the platform does not record the reversed amount). Cash orders refunded by hand have no refund record and show gross."
     },
     "invoice_detail": {
       "title": "Invoice Details",

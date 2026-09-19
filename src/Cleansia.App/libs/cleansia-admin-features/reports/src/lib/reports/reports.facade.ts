@@ -143,6 +143,20 @@ export class ReportsFacade extends UnsubscribeControlDirective {
     return this.formatAmount(value, this.revenueReport()?.currencyCode);
   }
 
+  /** The headline is the server's net figure; the page derives no money arithmetic of its own. */
+  revenueHeadline(): string {
+    return this.formatRevenueAmount(this.revenueReport()?.netRevenue);
+  }
+
+  revenueBreakdown(): { gross: string; refunded: string; credit: string } {
+    const report = this.revenueReport();
+    return {
+      gross: this.formatRevenueAmount(report?.totalRevenue),
+      refunded: this.formatRevenueAmount(report?.totalRefunded),
+      credit: this.formatRevenueAmount(report?.totalReturnedToCredit),
+    };
+  }
+
   /** The payroll report's amounts, in the currency THAT report names. */
   formatPayrollAmount(value: number | undefined): string {
     return this.formatAmount(value, this.payrollReport()?.currencyCode);

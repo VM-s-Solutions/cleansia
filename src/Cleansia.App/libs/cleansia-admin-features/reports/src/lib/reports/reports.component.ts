@@ -29,6 +29,7 @@ import { TabList } from 'primeng/tabs';
 import { Tab } from 'primeng/tabs';
 import { TabPanels } from 'primeng/tabs';
 import { TabPanel } from 'primeng/tabs';
+import { TooltipModule } from 'primeng/tooltip';
 import { ReportsFacade, ReportType } from './reports.facade';
 
 @Component({
@@ -43,6 +44,7 @@ import { ReportsFacade, ReportType } from './reports.facade';
     Tab,
     TabPanels,
     TabPanel,
+    TooltipModule,
     CleansiaButtonComponent,
     CleansiaCalendarComponent,
     CleansiaLoaderComponent,
@@ -175,11 +177,11 @@ export class ReportsComponent implements OnInit {
         header: this.translate.instant('pages.reports.total_revenue'),
         getValue: (row) => this.facade.formatRevenueAmount(row?.totalRevenue),
       },
-      // Revenue is the SALE and stays as it is: credit is a tender, not a discount. These two say how
-      // the sale was SETTLED, and the second is the one that reconciles against a Stripe statement —
-      // without it the Card row read as though the gateway had taken the whole figure, and a month
-      // checked against Stripe came up short by exactly the credit total with nothing here to explain
-      // the gap.
+      // Revenue is the SALE and stays gross: credit is a tender, not a discount. The next two say how
+      // the sale was SETTLED, the two after how much of it went back, and the last one — what the
+      // tender took less what it gave back, the card leg only — is the line that reconciles against
+      // a Stripe statement. The gateway never saw the credit, so the credit leg is shown beside it
+      // and netted only in the headline.
       {
         id: 'settledFromCredit',
         field: 'settledFromCredit',
@@ -191,6 +193,24 @@ export class ReportsComponent implements OnInit {
         field: 'settledOnTender',
         header: this.translate.instant('pages.reports.settled_on_tender'),
         getValue: (row) => this.facade.formatRevenueAmount(row?.settledOnTender),
+      },
+      {
+        id: 'refundedToCard',
+        field: 'refundedToCard',
+        header: this.translate.instant('pages.reports.refunded_to_card'),
+        getValue: (row) => this.facade.formatRevenueAmount(row?.refundedToCard),
+      },
+      {
+        id: 'returnedToCredit',
+        field: 'returnedToCredit',
+        header: this.translate.instant('pages.reports.returned_to_credit'),
+        getValue: (row) => this.facade.formatRevenueAmount(row?.returnedToCredit),
+      },
+      {
+        id: 'netOnTender',
+        field: 'netOnTender',
+        header: this.translate.instant('pages.reports.net_on_tender'),
+        getValue: (row) => this.facade.formatRevenueAmount(row?.netOnTender),
       },
     ];
 

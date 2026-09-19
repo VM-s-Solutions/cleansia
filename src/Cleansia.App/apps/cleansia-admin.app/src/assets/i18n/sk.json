@@ -1953,7 +1953,6 @@
       "total_revenue": "Celkové príjmy",
       "avg_order_value": "Priemerná hodnota objednávky",
       "total_orders": "Celkový počet objednávok",
-      "completed_orders": "Dokončené objednávky",
       "cancelled_orders": "Zrušené objednávky",
       "growth": "Rast",
       "revenue_by_service": "Príjmy podľa služieb",
@@ -1985,7 +1984,16 @@
         "payroll_load_error": "Nepodarilo sa načítať report miezd"
       },
       "settled_from_credit": "Z kreditu zákazníkov",
-      "settled_on_tender": "Skutočne prijaté"
+      "settled_on_tender": "Skutočne prijaté",
+      "net_revenue": "Čisté príjmy",
+      "gross_and_refunds": "{{gross}} hrubé − {{refunded}} vrátené (z toho {{credit}} vrátené ako kredit)",
+      "completed_paid_orders": "Dokončené a zaplatené objednávky",
+      "cancelled_orders_hint": "Zrušené rezervácie v tomto období podľa dátumu zrušenia. Opustené platby kartou nie sú rezervácie. Nie sú súčasťou príjmov.",
+      "refunded_to_card": "Vrátené na kartu",
+      "returned_to_credit": "Vrátené ako kredit",
+      "net_on_tender": "Čisto prijaté",
+      "revenue_by_payment_type_hint": "Čisto prijaté je suma, ktorú porovnáte s výpisom platobnej brány.",
+      "revenue_description": "Príjmy sú dokončené a zaplatené objednávky podľa dátumu dokončenia, v jednej mene, mínus všetky vrátenia týchto objednávok – vrátenia na kartu aj vrátený kredit – bez ohľadu na dátum vrátenia. Vrátenie teda znižuje mesiac, v ktorom bola objednávka dokončená, nie mesiac, v ktorom bolo vystavené. Zrušené a nezaplatené objednávky nie sú príjmy. Prehrané chargebacky sa neodpočítavajú (platforma neeviduje sumu, ktorú banka stiahla). Hotovostné objednávky vrátené ručne nemajú záznam o vrátení a zobrazujú sa v hrubej výške."
     },
     "invoice_detail": {
       "title": "Detail faktúry",

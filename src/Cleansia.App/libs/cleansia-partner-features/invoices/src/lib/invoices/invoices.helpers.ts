@@ -1,7 +1,6 @@
 import { HelpStep, StatusFlowItem } from '@cleansia/components';
-import { EmployeeInvoiceStatus } from '@cleansia/partner-services';
+import { EmployeeInvoiceDto, EmployeeInvoiceStatus } from '@cleansia/partner-services';
 import { TranslateService } from '@ngx-translate/core';
-import { EmployeeInvoice } from './invoices.facade';
 
 export interface FilterChip {
   key: string;
@@ -84,9 +83,25 @@ export const INVOICE_STATUS_FLOW: StatusFlowItem[] = [
 
 // --- Helper functions ---
 
-export function getInvoiceStatusClass(invoice: EmployeeInvoice): string {
-  const statusName = invoice.status.toLowerCase();
-  return `status-badge status-${statusName}`;
+const INVOICE_STATUS_NAMES: Readonly<Record<EmployeeInvoiceStatus, string>> = {
+  [EmployeeInvoiceStatus.Pending]: 'pending',
+  [EmployeeInvoiceStatus.Approved]: 'approved',
+  [EmployeeInvoiceStatus.Paid]: 'paid',
+  [EmployeeInvoiceStatus.Disputed]: 'disputed',
+  [EmployeeInvoiceStatus.Rejected]: 'rejected',
+  [EmployeeInvoiceStatus.Cancelled]: 'cancelled',
+};
+
+export function getInvoiceStatusName(status: EmployeeInvoiceStatus): string {
+  return INVOICE_STATUS_NAMES[status] ?? INVOICE_STATUS_NAMES[EmployeeInvoiceStatus.Pending];
+}
+
+export function getInvoiceStatusLabelKey(invoice: EmployeeInvoiceDto): string {
+  return `pages.invoices.status_${getInvoiceStatusName(invoice.status)}`;
+}
+
+export function getInvoiceStatusClass(invoice: EmployeeInvoiceDto): string {
+  return `status-badge status-${getInvoiceStatusName(invoice.status)}`;
 }
 
 export function buildInvoiceStatusOptions(translate: TranslateService): InvoiceStatusOption[] {

@@ -12,44 +12,13 @@ import { SnackbarService } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
 import { catchError, debounceTime, distinctUntilChanged, of, takeUntil } from 'rxjs';
 
-export interface EmployeeInvoice {
-  id: string;
-  employeeId: string;
-  employeeName: string;
-  payPeriodId: string;
-  payPeriodLabel: string;
-  invoiceNumber: string;
-  variableSymbol: string;
-  totalOrders: number;
-  subTotal: number;
-  bonusAmount: number;
-  deductionAmount: number;
-  totalAmount: number;
-  currencyCode: string;
-  status:
-    | 'Pending'
-    | 'Approved'
-    | 'Paid'
-    | 'Disputed'
-    | 'Rejected'
-    | 'Cancelled';
-  pdfBlobName?: string;
-  generatedAt: Date;
-  approvedAt?: Date;
-  approvedBy?: string;
-  paidAt?: Date;
-  adminNotes?: string;
-  bankTransferNote?: string;
-}
-
 @Injectable()
 export class InvoicesFacade extends UnsubscribeControlDirective {
   private readonly snackbarService = inject(SnackbarService);
   private readonly partnerClient = inject(PartnerClient);
   private readonly translate = inject(TranslateService);
 
-  // Signals for reactive data
-  invoices = signal<EmployeeInvoice[]>([]);
+  invoices = signal<EmployeeInvoiceDto[]>([]);
   loading = signal<boolean>(false);
   totalRecords = signal<number>(0);
 
@@ -84,53 +53,6 @@ export class InvoicesFacade extends UnsubscribeControlDirective {
           this.loadInvoices();
         }
       });
-  }
-
-  private mapDtoToInvoice(dto: EmployeeInvoiceDto): EmployeeInvoice {
-    return {
-      id: dto.id ?? '',
-      employeeId: dto.employeeId ?? '',
-      employeeName: dto.employeeName ?? '',
-      payPeriodId: dto.payPeriodId ?? '',
-      payPeriodLabel: dto.payPeriodLabel ?? '',
-      invoiceNumber: dto.invoiceNumber ?? '',
-      variableSymbol: dto.variableSymbol ?? '',
-      totalOrders: dto.totalOrders,
-      subTotal: dto.subTotal,
-      bonusAmount: dto.bonusAmount,
-      deductionAmount: dto.deductionAmount,
-      totalAmount: dto.totalAmount,
-      currencyCode: dto.currencyCode ?? '',
-      status: this.mapStatusToString(dto.status),
-      pdfBlobName: dto.pdfBlobName ?? undefined,
-      generatedAt: new Date(dto.generatedAt),
-      approvedAt: dto.approvedAt ? new Date(dto.approvedAt) : undefined,
-      approvedBy: dto.approvedBy ?? undefined,
-      paidAt: dto.paidAt ? new Date(dto.paidAt) : undefined,
-      adminNotes: dto.adminNotes ?? undefined,
-      bankTransferNote: dto.bankTransferNote ?? undefined,
-    };
-  }
-
-  private mapStatusToString(
-    status: EmployeeInvoiceStatus
-  ): 'Pending' | 'Approved' | 'Paid' | 'Disputed' | 'Rejected' | 'Cancelled' {
-    switch (status) {
-      case EmployeeInvoiceStatus.Pending:
-        return 'Pending';
-      case EmployeeInvoiceStatus.Approved:
-        return 'Approved';
-      case EmployeeInvoiceStatus.Paid:
-        return 'Paid';
-      case EmployeeInvoiceStatus.Disputed:
-        return 'Disputed';
-      case EmployeeInvoiceStatus.Rejected:
-        return 'Rejected';
-      case EmployeeInvoiceStatus.Cancelled:
-        return 'Cancelled';
-      default:
-        return 'Pending';
-    }
   }
 
   loadInvoices(offset = 0, limit = 20): void {
@@ -168,10 +90,7 @@ export class InvoicesFacade extends UnsubscribeControlDirective {
       )
       .subscribe((pagedData: PagedDataOfEmployeeInvoiceDto | null) => {
         if (pagedData && pagedData.data) {
-          const invoices = pagedData.data.map((dto: EmployeeInvoiceDto) =>
-            this.mapDtoToInvoice(dto)
-          );
-          this.invoices.set(invoices);
+          this.invoices.set(pagedData.data);
           this.totalRecords.set(pagedData.total ?? 0);
         } else {
           this.invoices.set([]);
@@ -207,8 +126,8 @@ export class InvoicesFacade extends UnsubscribeControlDirective {
     this.loadInvoices(0, 10);
   }
 
-  downloadInvoice(invoice: EmployeeInvoice): void {
-    if (!invoice.pdfBlobName) {
+  downloadInvoice(invoice: EmployeeInvoiceDto): void {
+    if (!invoice.id || !invoice.pdfBlobName) {
       this.snackbarService.showErrorTranslated(
         'pages.invoices.pdf_not_available'
       );

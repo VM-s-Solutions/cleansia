@@ -1,8 +1,8 @@
-import { EmployeeInvoice } from './invoices.facade';
+import { EmployeeInvoiceDto, EmployeeInvoiceStatus, IEmployeeInvoiceDto } from '@cleansia/partner-services';
 import { getInvoicesTableDefinition } from './invoices.models';
 
-function invoice(overrides: Partial<EmployeeInvoice>): EmployeeInvoice {
-  return {
+function invoice(overrides: Partial<IEmployeeInvoiceDto>): EmployeeInvoiceDto {
+  return EmployeeInvoiceDto.fromJS({
     id: 'inv-1',
     employeeId: 'emp-1',
     employeeName: 'Jana',
@@ -16,14 +16,14 @@ function invoice(overrides: Partial<EmployeeInvoice>): EmployeeInvoice {
     deductionAmount: 0,
     totalAmount: 1200,
     currencyCode: 'EUR',
-    status: 'Pending',
-    generatedAt: new Date('2026-09-01'),
+    status: EmployeeInvoiceStatus.Pending,
+    generatedAt: '2026-09-01T00:00:00Z',
     ...overrides,
-  };
+  });
 }
 
 describe('getInvoicesTableDefinition — total amount', () => {
-  const totalOf = (row: EmployeeInvoice): unknown => {
+  const totalOf = (row: EmployeeInvoiceDto): unknown => {
     const column = getInvoicesTableDefinition({ onDownload: jest.fn() }).columns.find(
       (c) => c.id === 'totalAmount'
     );

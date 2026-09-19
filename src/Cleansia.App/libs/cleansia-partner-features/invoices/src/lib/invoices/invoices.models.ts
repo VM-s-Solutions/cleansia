@@ -1,16 +1,16 @@
 import { TemplateRef } from '@angular/core';
 import { TableColumn, TableAction } from '@cleansia/components';
+import { EmployeeInvoiceDto } from '@cleansia/partner-services';
 import { formatMoney } from '@cleansia/utils';
-import { EmployeeInvoice } from './invoices.facade';
 
 export interface InvoicesActions {
-  onDownload: (invoice: EmployeeInvoice) => void;
+  onDownload: (invoice: EmployeeInvoiceDto) => void;
 }
 
 export function getInvoicesTableDefinition(
   actions: InvoicesActions,
-  statusTemplate?: TemplateRef<EmployeeInvoice>
-): { columns: TableColumn<EmployeeInvoice>[]; actions: TableAction<EmployeeInvoice>[] } {
+  statusTemplate?: TemplateRef<EmployeeInvoiceDto>
+): { columns: TableColumn<EmployeeInvoiceDto>[]; actions: TableAction<EmployeeInvoiceDto>[] } {
   return {
     columns: [
       {
@@ -29,7 +29,7 @@ export function getInvoicesTableDefinition(
         id: 'generatedAt',
         field: 'generatedAt',
         header: 'pages.invoices.generated_date',
-        getValue: (invoice?: EmployeeInvoice) =>
+        getValue: (invoice?: EmployeeInvoiceDto) =>
           invoice
             ? new Date(invoice.generatedAt).toLocaleDateString('en-GB')
             : '',
@@ -45,8 +45,8 @@ export function getInvoicesTableDefinition(
         id: 'totalAmount',
         field: 'totalAmount',
         header: 'pages.invoices.total_amount',
-        getValue: (invoice?: EmployeeInvoice) =>
-          invoice ? formatMoney(invoice.totalAmount, invoice.currencyCode, 'en-GB', { fractionDigits: 2 }) : '',
+        getValue: (invoice?: EmployeeInvoiceDto) =>
+          invoice ? formatMoney(invoice.totalAmount, invoice.currencyCode ?? '', 'en-GB', { fractionDigits: 2 }) : '',
         sortable: true,
         align: 'right',
       },
@@ -63,7 +63,7 @@ export function getInvoicesTableDefinition(
         icon: 'pi pi-download',
         tooltip: 'pages.invoices.download_pdf',
         onClick: actions.onDownload,
-        disabled: (invoice: EmployeeInvoice) => !invoice.pdfBlobName,
+        disabled: (invoice: EmployeeInvoiceDto) => !invoice.pdfBlobName,
       },
     ],
   };

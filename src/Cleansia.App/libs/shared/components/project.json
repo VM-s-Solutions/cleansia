@@ -23,7 +23,8 @@
         "{workspaceRoot}/jest.preset.js",
         "{workspaceRoot}/jest.polyfills.ts",
         "{workspaceRoot}/libs/shared/assets/src/styles/components/cleansia-button.component.scss",
-        "{workspaceRoot}/libs/shared/assets/src/styles/components/cleansia-sidebar-menu.component.scss"
+        "{workspaceRoot}/libs/shared/assets/src/styles/components/cleansia-sidebar-menu.component.scss",
+        "{workspaceRoot}/libs/shared/assets/src/styles/components/cleansia-text-input.component.scss"
       ]
     },
     "lint": {

@@ -141,19 +141,23 @@
     }
   }
 
+  // The default size is the touch floor. 2.75rem is 44px at a 16px root and 38.5px at the 14px
+  // root the partner and admin apps set, so the floor is stated in pixels and the box is the same
+  // target everywhere; the button clips its own overflow for the ripple, so its box is the whole
+  // hit area it has. -> design-language.md#7-the-pre-submission-review
   &--medium {
     button {
       font-size: 0.9375rem;
       padding: 0.75rem 1.5rem;
-      min-height: 2.75rem;
+      min-height: max(2.75rem, 44px);
 
       .p-button-icon {
         font-size: 1rem;
       }
 
       &.p-button-icon-only {
-        width: 2.75rem;
-        height: 2.75rem;
+        width: max(2.75rem, 44px);
+        height: max(2.75rem, 44px);
         padding: 0.625rem;
       }
     }
@@ -241,8 +245,8 @@
       padding: 0.625rem 1.25rem;
 
       &.p-button-icon-only {
-        width: 2.5rem;
-        height: 2.5rem;
+        width: max(2.5rem, 44px);
+        height: max(2.5rem, 44px);
       }
     }
 

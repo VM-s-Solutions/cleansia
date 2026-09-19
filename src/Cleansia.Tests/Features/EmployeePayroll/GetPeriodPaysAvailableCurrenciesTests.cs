@@ -148,6 +148,29 @@ public class GetPeriodPaysAvailableCurrenciesTests
         AssertOffered(dto, [(CzkId, "CZK")]);
     }
 
+    /// <summary>
+    /// The invoiced-elsewhere fallback follows a document the cleaner holds; a cancelled invoice is
+    /// not one, so when it is the period's only invoice the view stays the resolved currency, over
+    /// its own rows, and the cancelled currency is not offered.
+    /// </summary>
+    [Fact]
+    public async Task An_Unnamed_View_Does_Not_Follow_A_Cancelled_Invoice_In_Another_Currency()
+    {
+        ArrangeInvoices([CancelledInvoiceIn(UsdId)]);
+        ArrangePays(
+            PayrollMockFactory.OrderPay(basePay: 300m),
+            PayrollMockFactory.OrderPay(basePay: 400m));
+
+        var dto = await HandleAsync(new GetPeriodPays.Query(EmployeeId, PayPeriodId));
+
+        AssertOffered(dto, [(CzkId, "CZK")]);
+        Assert.Equal("CZK", dto.CurrencyCode);
+        Assert.Equal(2, dto.OrderPays.Count());
+        Assert.All(dto.OrderPays, row => Assert.Equal("CZK", row.CurrencyCode));
+        Assert.False(dto.HasInvoice);
+        Assert.Null(dto.InvoiceId);
+    }
+
     [Fact]
     public async Task The_Other_Currencies_Are_Distinct_And_Ordered_By_Code_After_The_View()
     {
@@ -163,8 +186,6 @@ public class GetPeriodPaysAvailableCurrenciesTests
 
         AssertOffered(dto, [(CzkId, "CZK"), (EurId, "EUR"), (UsdId, "USD")]);
     }
-
-    // ── arrangement ──────────────────────────────────────────────────
 
     private async Task<PeriodPaySummaryDto> HandleAsync(GetPeriodPays.Query query)
     {

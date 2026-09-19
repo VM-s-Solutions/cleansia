@@ -8,6 +8,7 @@ import {
   OnDestroy,
   OnInit,
   signal,
+  untracked,
 } from '@angular/core';
 import {
   FormBuilder,
@@ -127,8 +128,11 @@ export class PackageFormComponent implements OnInit, OnDestroy {
 
   private packageLoadEffect = effect(() => {
     const pkg = this.facade.pkg();
+    const availableServices = this.facade.availableServices();
     if (pkg && this.isEditMode()) {
-      this.populateForm(pkg);
+      // Only the package and the service list may re-run this: populating reads the weight rows
+      // the facade then rewrites, and tracking that read re-dirtied the effect on every run.
+      untracked(() => this.populateForm(pkg, availableServices));
     }
   });
 
@@ -238,22 +242,25 @@ export class PackageFormComponent implements OnInit, OnDestroy {
     }
   }
 
-  private populateForm(pkg: {
-    name?: string;
-    description?: string;
-    prices?: { [key: string]: number };
-    includedServices?: {
-      id?: string;
+  private populateForm(
+    pkg: {
       name?: string;
       description?: string;
-      priceWeight?: number;
-    }[];
-    tagline?: string | undefined;
-    isPopular?: boolean;
-    translations?: {
-      [key: string]: { name?: string; description?: string; tagline?: string };
-    };
-  }): void {
+      prices?: { [key: string]: number };
+      includedServices?: {
+        id?: string;
+        name?: string;
+        description?: string;
+        priceWeight?: number;
+      }[];
+      tagline?: string | undefined;
+      isPopular?: boolean;
+      translations?: {
+        [key: string]: { name?: string; description?: string; tagline?: string };
+      };
+    },
+    availableServices: ServiceListItem[]
+  ): void {
     this.form.patchValue({
       name: pkg.name ?? '',
       description: pkg.description ?? '',
@@ -268,10 +275,8 @@ export class PackageFormComponent implements OnInit, OnDestroy {
     this.patchPrices(pkg.prices);
     this.syncPreviewPrice();
 
-    // Set selected services for multiselect
     const includedServices = pkg.includedServices;
     if (includedServices) {
-      const availableServices = this.facade.availableServices();
       const selected = availableServices.filter((s) =>
         includedServices.some((is) => is.id === s.id)
       );

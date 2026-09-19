@@ -41,8 +41,8 @@ import org.junit.Test
  * `CancellationAssessor.BlockedReason` does not refuse — and the figure it confirms is the refund
  * the server actually issued, not the policy figure the preview quoted.
  *
- * A cancellable order arms the detail poller, so this file settles work with `runCurrent()` and
- * cancels the scope at the end of each test (see [OrderDetailViewModelTest]).
+ * A Confirmed/OnTheWay order arms the detail poller, so this file settles work with `runCurrent()`
+ * and cancels the scope at the end of each test (see [OrderDetailViewModelTest]).
  */
 @OptIn(ExperimentalCoroutinesApi::class)
 class OrderDetailCancelGateTest {
@@ -223,12 +223,32 @@ class OrderDetailCancelGateTest {
         assertEquals(0, cancelNotesLimit("x".repeat(600)))
     }
 
-    private val screenSource: String = sequenceOf(
+    /**
+     * The sheet is the only place the limit is applied, and a private figure re-inlined there
+     * would compile with both tests above still green — so its two clip sites are pinned the
+     * same way the screen's gate binding is.
+     */
+    @Test
+    fun `the sheet clips the notes through the shared limit and carries no figure of its own`() {
+        val clipSites = Regex("""notes = \w+\.take\((\w+)\(""")
+            .findAll(sheetSource)
+            .map { it.groupValues[1] }
+            .toList()
+        assertEquals(listOf("cancelNotesLimit", "cancelNotesLimit"), clipSites)
+        assertEquals(clipSites.size, Regex("""\.take\(""").findAll(sheetSource).count())
+        assertFalse(sheetSource.contains("MAX_REASON_LENGTH"))
+        assertFalse(Regex("""\b2000\b""").containsMatchIn(sheetSource))
+    }
+
+    private val screenSource: String = featureSource("OrderDetailScreen.kt")
+    private val sheetSource: String = featureSource("CancelOrderSheet.kt")
+
+    private fun featureSource(fileName: String): String = sequenceOf(
         File("."),
         File("customer-app"),
         File("src/cleansia_android/customer-app"),
-    ).map { File(it, "src/main/java/cz/cleansia/customer/features/orders/OrderDetailScreen.kt") }
+    ).map { File(it, "src/main/java/cz/cleansia/customer/features/orders/$fileName") }
         .firstOrNull { it.isFile }
         ?.readText()
-        ?: error("OrderDetailScreen.kt not found from working dir ${File(".").absolutePath}")
+        ?: error("$fileName not found from working dir ${File(".").absolutePath}")
 }

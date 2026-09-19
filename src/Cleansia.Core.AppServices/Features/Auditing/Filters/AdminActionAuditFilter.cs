@@ -1,4 +1,6 @@
 #nullable enable
+using Cleansia.Core.Domain.Enums;
+
 namespace Cleansia.Core.AppServices.Features.Auditing.Filters;
 
 public record AdminActionAuditFilter(
@@ -9,4 +11,5 @@ public record AdminActionAuditFilter(
     string? ResourceId,
     DateTimeOffset? OccurredFrom,
     DateTimeOffset? OccurredTo,
-    bool? Success);
+    bool? Success,
+    AdminRole? ActorAdminRole = null);

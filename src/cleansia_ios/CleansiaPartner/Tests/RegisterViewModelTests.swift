@@ -15,10 +15,24 @@ final class RegisterViewModelTests: XCTestCase {
             lastName: String,
             language: String
         )?
+        private(set) var lastCountryId: String?
+        private(set) var lastTermsAccepted: Bool?
 
         func register(_ request: RegisterRequest) async -> ApiResult<Bool> {
             callCount += 1
             lastArgs = (request.email, request.password, request.firstName, request.lastName, request.language)
+            lastCountryId = request.countryId
+            lastTermsAccepted = request.termsAccepted
+            return result
+        }
+    }
+
+    private final class FakeMarketClient: PartnerMarketClient, @unchecked Sendable {
+        var result: ApiResult<[RegisterMarket]> = .success(RegisterMarketFixtures.two)
+        private(set) var callCount = 0
+
+        func getMarkets() async -> ApiResult<[RegisterMarket]> {
+            callCount += 1
             return result
         }
     }
@@ -58,31 +72,36 @@ final class RegisterViewModelTests: XCTestCase {
     }
 
     private var client: FakeRegisterClient!
+    private var marketClient: FakeMarketClient!
     private var settings: FakeSettings!
     private var snackbar: SnackbarController!
-    private var signupConsent: RecordingSignupConsent!
     private var cancellables: Set<AnyCancellable>!
 
     override func setUp() {
         super.setUp()
         client = FakeRegisterClient()
+        marketClient = FakeMarketClient()
         settings = FakeSettings()
         snackbar = SnackbarController()
-        signupConsent = RecordingSignupConsent()
         cancellables = []
     }
 
     override func tearDown() {
         cancellables = nil
-        signupConsent = nil
         snackbar = nil
         settings = nil
+        marketClient = nil
         client = nil
         super.tearDown()
     }
 
     private func makeViewModel() -> RegisterViewModel {
-        RegisterViewModel(client: client, settings: settings, snackbar: snackbar, signupConsent: signupConsent)
+        RegisterViewModel(
+            client: client,
+            marketClient: marketClient,
+            settings: settings,
+            snackbar: snackbar
+        )
     }
 
     private func fillValid(_ vm: RegisterViewModel) {
@@ -155,9 +174,8 @@ final class RegisterViewModelTests: XCTestCase {
         XCTAssertEqual(client.callCount, 0)
     }
 
-    /// The terms box is a hard blocker, not a hint. It is the reason the "unticked box parks
-    /// nothing" rule in `SignupConsentRepository` can never fire from this screen — and the
-    /// reason that rule cannot be the only thing pinning it.
+    /// The terms box is a hard blocker, not a hint: an unticked form never reaches the wire, so the
+    /// server is never asked to record a consent nobody gave.
     func testUnacceptedTermsSetsErrorAndDoesNotSubmit() async {
         let vm = makeViewModel()
         fillValid(vm)
@@ -166,28 +184,34 @@ final class RegisterViewModelTests: XCTestCase {
 
         XCTAssertNotNil(vm.form.termsError)
         XCTAssertEqual(client.callCount, 0)
-        XCTAssertEqual(signupConsent.parked.count, 0)
+        XCTAssertNil(client.lastTermsAccepted)
     }
 
-    func testASuccessfulRegistrationParksTheTickAgainstTheSubmittedAddress() async {
+    /// The tick rides the registration itself: the server grants the employee consents in the same
+    /// commit that creates the account, so nothing is parked on the device any more.
+    func testASuccessfulRegistrationSendsTheTickOnTheRegistrationItself() async {
         client.result = .success(true)
         let vm = makeViewModel()
         fillValid(vm)
 
         await vm.register()
 
-        XCTAssertEqual(signupConsent.parked.map(\.email), ["jana@b.cz"])
-        XCTAssertEqual(signupConsent.parked.map(\.accepted), [true])
+        XCTAssertEqual(client.lastTermsAccepted, true)
     }
 
-    func testARejectedRegistrationParksNothing() async {
+    func testARejectedRegistrationSurfacesTheRefusalAndEmitsNoSuccess() async {
         client.result = .failure(ApiError(code: "user.existing_email", httpStatus: 400))
         let vm = makeViewModel()
         fillValid(vm)
 
+        var receivedEmail: String?
+        vm.registerSuccess.sink { receivedEmail = $0 }.store(in: &cancellables)
+
         await vm.register()
 
-        XCTAssertEqual(signupConsent.parked.count, 0)
+        XCTAssertNil(receivedEmail)
+        XCTAssertEqual(vm.registerState, .idle)
+        XCTAssertEqual(client.callCount, 1)
     }
 
     func testValidFormSubmitsAndEmitsRegisterSuccess() async {
@@ -230,7 +254,12 @@ final class RegisterViewModelTests: XCTestCase {
 
         preferences.selectLanguage(id: "uk")
 
-        let vm = RegisterViewModel(client: client, settings: store, snackbar: snackbar, signupConsent: signupConsent)
+        let vm = RegisterViewModel(
+            client: client,
+            marketClient: marketClient,
+            settings: store,
+            snackbar: snackbar
+        )
         fillValid(vm)
         await vm.register()
 
@@ -249,7 +278,12 @@ final class RegisterViewModelTests: XCTestCase {
         let preferences = PreferencesModel(settings: store, languageSync: SilentLanguageSync())
         preferences.selectLanguage(id: "de-DE")
 
-        let vm = RegisterViewModel(client: client, settings: store, snackbar: snackbar, signupConsent: signupConsent)
+        let vm = RegisterViewModel(
+            client: client,
+            marketClient: marketClient,
+            settings: store,
+            snackbar: snackbar
+        )
         fillValid(vm)
         await vm.register()
 
@@ -257,6 +291,121 @@ final class RegisterViewModelTests: XCTestCase {
         XCTAssertTrue(
             UserDefaultsAppSettingsStore.supportedLanguageTags.contains(client.lastArgs?.language ?? "")
         )
+    }
+
+    // MARK: - The market picker
+
+    /// The form lists exactly what the partner host's market directory returns and preselects the
+    /// row it flags as default; the cleaner is registered with that country's operating company and
+    /// held to it at approval, so the two have to agree from the first write.
+    func testTheDirectoryIsListedAndTheDefaultMarketIsPreselected() async {
+        let vm = makeViewModel()
+
+        await vm.loadMarkets()
+
+        XCTAssertEqual(vm.market.markets, RegisterMarketFixtures.two)
+        XCTAssertEqual(vm.market.selected, RegisterMarketFixtures.czechia)
+        XCTAssertTrue(vm.market.offersChoice)
+    }
+
+    func testRegisterSendsThePreselectedDefaultMarket() async {
+        let vm = makeViewModel()
+        await vm.loadMarkets()
+        fillValid(vm)
+
+        await vm.register()
+
+        XCTAssertEqual(client.lastCountryId, "cze")
+    }
+
+    func testRegisterSendsTheMarketTheCleanerPicked() async {
+        let vm = makeViewModel()
+        await vm.loadMarkets()
+        fillValid(vm)
+        vm.onMarketChange(countryId: "svk")
+
+        await vm.register()
+
+        XCTAssertEqual(vm.market.selected, RegisterMarketFixtures.slovakia)
+        XCTAssertEqual(client.lastCountryId, "svk")
+    }
+
+    func testPickingAnUnlistedMarketKeepsTheCurrentChoice() async {
+        let vm = makeViewModel()
+        await vm.loadMarkets()
+
+        vm.onMarketChange(countryId: "deu")
+        vm.onMarketChange(countryId: nil)
+
+        XCTAssertEqual(vm.market.selected, RegisterMarketFixtures.czechia)
+    }
+
+    func testWithNoDefaultFlagTheFirstRowIsPreselected() async {
+        marketClient.result = .success([RegisterMarketFixtures.slovakia, RegisterMarketFixtures.germany])
+        let vm = makeViewModel()
+
+        await vm.loadMarkets()
+
+        XCTAssertEqual(vm.market.selected, RegisterMarketFixtures.slovakia)
+    }
+
+    /// One market is no choice: the picker stays off the form and the row is still what is sent.
+    func testASingleMarketOffersNoChoiceButIsStillSent() async {
+        marketClient.result = .success([RegisterMarketFixtures.czechia])
+        let vm = makeViewModel()
+        await vm.loadMarkets()
+        fillValid(vm)
+
+        await vm.register()
+
+        XCTAssertFalse(vm.market.offersChoice)
+        XCTAssertEqual(client.lastCountryId, "cze")
+    }
+
+    /// No directory is the no-market state: the form sends nothing and the server registers the
+    /// cleaner with the default market's operating company, which is what the picker would have
+    /// preselected.
+    func testAnUnreadableDirectorySendsNoCountryRatherThanBlockingRegistration() async {
+        marketClient.result = .failure(ApiError(httpStatus: 500))
+        let vm = makeViewModel()
+        await vm.loadMarkets()
+        fillValid(vm)
+
+        await vm.register()
+
+        XCTAssertEqual(vm.market, .unavailable)
+        XCTAssertEqual(client.callCount, 1)
+        XCTAssertNil(client.lastCountryId)
+    }
+
+    func testAnEmptyDirectoryIsTheNoMarketState() async {
+        marketClient.result = .success([])
+        let vm = makeViewModel()
+
+        await vm.loadMarkets()
+
+        XCTAssertEqual(vm.market, .unavailable)
+    }
+
+    func testAnUnreadableDirectoryIsRetriedOnTheNextAppearanceAndAHeldListIsNot() async {
+        marketClient.result = .failure(ApiError(httpStatus: 500))
+        let vm = makeViewModel()
+        await vm.loadMarkets()
+        marketClient.result = .success(RegisterMarketFixtures.two)
+
+        await vm.loadMarkets()
+        vm.onMarketChange(countryId: "svk")
+        await vm.loadMarkets()
+
+        XCTAssertEqual(marketClient.callCount, 2)
+        XCTAssertEqual(vm.market.selected, RegisterMarketFixtures.slovakia)
+    }
+
+    func testTheRowLabelNamesTheCountryInTheCleanersLanguageWithItsCurrency() {
+        XCTAssertEqual(RegisterMarketLabel.row(RegisterMarketFixtures.czechia, languageTag: "cs"), "Česko · CZK")
+        XCTAssertEqual(RegisterMarketLabel.row(RegisterMarketFixtures.czechia, languageTag: "cs-CZ"), "Česko · CZK")
+        XCTAssertEqual(RegisterMarketLabel.row(RegisterMarketFixtures.czechia, languageTag: "en"), "Czechia · CZK")
+        XCTAssertEqual(RegisterMarketLabel.row(RegisterMarketFixtures.germany, languageTag: "cs"), "Germany · EUR")
     }
 
     func testRegisterFailureSnackbarsAndReturnsToIdleWithoutSuccess() async {
@@ -317,15 +466,41 @@ final class RegisterViewModelTests: XCTestCase {
     }
 }
 
-final class RecordingSignupConsent: SignupConsentRecording, @unchecked Sendable {
-    private let lock = NSLock()
-    private var records: [(email: String, accepted: Bool)] = []
+enum RegisterMarketFixtures {
+    static let czechia = RegisterMarket(
+        countryId: "cze",
+        isoCode: "CZE",
+        name: "Czechia",
+        translations: ["cs": "Česko", "sk": "Česko"],
+        currencyCode: "CZK",
+        isDefault: true
+    )
 
-    var parked: [(email: String, accepted: Bool)] {
-        lock.withLock { records }
-    }
+    static let slovakia = RegisterMarket(
+        countryId: "svk",
+        isoCode: "SVK",
+        name: "Slovakia",
+        translations: ["cs": "Slovensko"],
+        currencyCode: "EUR",
+        isDefault: false
+    )
 
-    func recordSignupTick(email: String, accepted: Bool) async {
-        lock.withLock { records.append((email, accepted)) }
+    static let germany = RegisterMarket(
+        countryId: "deu",
+        isoCode: "DEU",
+        name: "Germany",
+        translations: [:],
+        currencyCode: "EUR",
+        isDefault: false
+    )
+
+    static let two = [czechia, slovakia]
+}
+
+/// For flows that never open the market picker: the directory is never read and a market-less
+/// register sends no countryId, which is the shape those flows were written against.
+struct UnreadMarketClient: PartnerMarketClient {
+    func getMarkets() async -> ApiResult<[RegisterMarket]> {
+        .success([])
     }
 }

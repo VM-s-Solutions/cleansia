@@ -1,6 +1,5 @@
 package cz.cleansia.customer.core.consent
 
-import cz.cleansia.core.consent.SignupConsentType
 import cz.cleansia.customer.core.network.IntEnumSerializersModule
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.ExperimentalSerializationApi
@@ -26,10 +25,11 @@ import cz.cleansia.customer.api.client.GdprApi as GenGdprApi
 import cz.cleansia.customer.api.model.UserConsentDto as GenUserConsentDto
 
 /**
- * `answeredTypes` decides which signup consents to ask for again. A row lost on the way in reads as
- * "never answered", so the app re-asks for a consent the user has since withdrawn and writes it back
- * — which makes a dropped row here a GDPR record the user did not make. `UserConsentDto.ConsentType`
- * is non-nullable in C#; the spec carries it as a bare `$ref`, whose silence means nothing.
+ * `grantedTypes` decides whether the booking review step shows the terms tick. A row lost on the
+ * way in reads as "never granted", so the app re-asks for a consent the user already holds and
+ * writes it back — which makes a dropped row here a GDPR record the user did not make.
+ * `UserConsentDto.ConsentType` is non-nullable in C#; the spec carries it as a bare `$ref`, whose
+ * silence means nothing.
  */
 class GdprConsentWireTest {
 
@@ -40,8 +40,9 @@ class GdprConsentWireTest {
         serializersModule = IntEnumSerializersModule
     }
 
-    private suspend fun answered(
+    private suspend fun granted(
         body: String,
+        status: Int = 200,
         onRequest: (RecordedRequest) -> Unit = {},
     ): Set<SignupConsentType>? {
         val server = MockWebServer()
@@ -49,7 +50,7 @@ class GdprConsentWireTest {
         return try {
             server.enqueue(
                 MockResponse()
-                    .setResponseCode(200)
+                    .setResponseCode(status)
                     .setHeader("Content-Type", "application/json")
                     .setBody(body),
             )
@@ -61,7 +62,7 @@ class GdprConsentWireTest {
                     .create(GenGdprApi::class.java),
                 json,
             )
-            client.answeredTypes().also { onRequest(server.takeRequest()) }
+            client.grantedTypes().also { onRequest(server.takeRequest()) }
         } finally {
             server.shutdown()
         }
@@ -77,7 +78,7 @@ class GdprConsentWireTest {
     @Test
     fun theRequestKeepsThePathTheServerBinds() = runTest {
         var path: String? = null
-        answered(CAPTURED_CONSENTS) { path = it.path }
+        granted(CAPTURED_CONSENTS) { path = it.path }
 
         assertEquals("/api/v1/Gdpr/consents", path)
     }
@@ -85,31 +86,22 @@ class GdprConsentWireTest {
     // --- rule 3: identity is refused, never synthesized --------------------------
 
     @Test
-    fun everyAnsweredTypeArrivesWithTheValueTheWireCarried() = runTest {
+    fun everyGrantedTypeArrivesWithTheValueTheWireCarried() = runTest {
         assertEquals(
             setOf(SignupConsentType.TermsOfService, SignupConsentType.PrivacyPolicy),
-            answered(CAPTURED_CONSENTS),
+            granted(consentsWithEveryRow { it - "withdrawnAt" }),
         )
     }
 
-    /**
-     * A withdrawn row is still an answer — the whole reason the read is not filtered by `isGranted`.
-     */
+    /** A row that would count: the withdrawn ones are filtered before the type is read. */
     @Test
-    fun aWithdrawnConsentStillCountsAsAnswered() = runTest {
-        val types = answered(consentsWithFirstRow { it + ("isGranted" to JsonPrimitive(false)) })
-
-        assertEquals(setOf(SignupConsentType.TermsOfService, SignupConsentType.PrivacyPolicy), types)
+    fun aGrantedRowWithoutItsTypeRefusesTheAnswerRatherThanReadingAsNeverGranted() = runTest {
+        assertNull(granted(grantedRowsWithFirstRow { it - "consentType" }))
     }
 
     @Test
-    fun aRowWithoutItsTypeRefusesTheAnswerRatherThanReadingAsNeverAsked() = runTest {
-        assertNull(answered(consentsWithFirstRow { it - "consentType" }))
-    }
-
-    @Test
-    fun aRowWithAnExplicitNullTypeRefusesTheAnswer() = runTest {
-        assertNull(answered(consentsWithFirstRow { it + ("consentType" to JsonNull) }))
+    fun aGrantedRowWithAnExplicitNullTypeRefusesTheAnswer() = runTest {
+        assertNull(granted(grantedRowsWithFirstRow { it + ("consentType" to JsonNull) }))
     }
 
     /**
@@ -119,14 +111,45 @@ class GdprConsentWireTest {
      */
     @Test
     fun aTypeOutsideTheEnumRefusesTheAnswerRatherThanBeingSkipped() = runTest {
-        assertNull(answered(consentsWithFirstRow { it + ("consentType" to JsonPrimitive(99)) }))
+        assertNull(granted(consentsWithFirstRow { it + ("consentType" to JsonPrimitive(99)) }))
+    }
+
+    // --- grantedTypes: the booking tick's "already consented" read --------------
+
+    /**
+     * The web wizard's predicate, member for member: granted AND not withdrawn. A withdrawn Privacy
+     * Policy consent is not a consent, and asking again is the correct response to one.
+     */
+    @Test
+    fun aWithdrawnConsentIsNotGranted() = runTest {
+        assertEquals(emptySet<SignupConsentType>(), granted(CAPTURED_CONSENTS))
+    }
+
+    @Test
+    fun aConsentGrantedAndNeverWithdrawnIsGranted() = runTest {
+        val body = consentsWithEveryRow { it - "withdrawnAt" }
+
+        assertEquals(setOf(SignupConsentType.TermsOfService, SignupConsentType.PrivacyPolicy), granted(body))
+    }
+
+    @Test
+    fun aRowNotMarkedGrantedIsNotGrantedEvenWithoutAWithdrawalDate() = runTest {
+        val body = consentsWithEveryRow { it - "withdrawnAt" + ("isGranted" to JsonPrimitive(false)) }
+
+        assertEquals(emptySet<SignupConsentType>(), granted(body))
+    }
+
+    /** A failed read is a refusal, not "nothing granted" — the caller shows the tick either way. */
+    @Test
+    fun aFailedReadRefusesRatherThanReadingAsNothingGranted() = runTest {
+        assertNull(granted("", status = 500))
     }
 
     // --- rule 4: collections do default -----------------------------------------
 
     @Test
     fun anAccountThatHasAnsweredNothingIsAnEmptySetRatherThanARefusal() = runTest {
-        assertEquals(emptySet<SignupConsentType>(), answered("[]"))
+        assertEquals(emptySet<SignupConsentType>(), granted("[]"))
     }
 
     // --- payload plumbing ---------------------------------------------------------
@@ -134,6 +157,19 @@ class GdprConsentWireTest {
     private fun consentsWithFirstRow(transform: (JsonObject) -> JsonObject): String {
         val rows = Json.parseToJsonElement(CAPTURED_CONSENTS).jsonArray.mapIndexed { index, row ->
             if (index == 0) transform(row.jsonObject) else row
+        }
+        return JsonArray(rows).toString()
+    }
+
+    private fun consentsWithEveryRow(transform: (JsonObject) -> JsonObject): String {
+        val rows = Json.parseToJsonElement(CAPTURED_CONSENTS).jsonArray.map { transform(it.jsonObject) }
+        return JsonArray(rows).toString()
+    }
+
+    private fun grantedRowsWithFirstRow(transform: (JsonObject) -> JsonObject): String {
+        val rows = Json.parseToJsonElement(CAPTURED_CONSENTS).jsonArray.mapIndexed { index, row ->
+            val granted = row.jsonObject - "withdrawnAt"
+            if (index == 0) transform(granted) else granted
         }
         return JsonArray(rows).toString()
     }

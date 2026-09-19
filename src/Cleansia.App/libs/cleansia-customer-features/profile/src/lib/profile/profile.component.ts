@@ -249,7 +249,6 @@ export class ProfileComponent implements OnInit, OnDestroy, AfterViewInit {
 
     this.loadProfile();
     this.facade.refreshSavedAddresses();
-    this.facade.loadCountries();
     if (this.isBrowser) {
       window.addEventListener('scroll', this.onScroll);
     }
@@ -374,7 +373,7 @@ export class ProfileComponent implements OnInit, OnDestroy, AfterViewInit {
       street: '',
       city: '',
       zip: '',
-      country: this.defaultCountryId(),
+      country: this.facade.defaultCountryId(),
       isDefault: isFirstAddress,
     });
     this.showAddressDialog.set(true);
@@ -400,8 +399,8 @@ export class ProfileComponent implements OnInit, OnDestroy, AfterViewInit {
   /**
    * Mapbox autocomplete picked a suggestion — populate the form fields and
    * stash lat/lng for the eventual AddSavedAddressCommand. Country is left
-   * untouched: Mapbox doesn't return our internal Country.Id, and the user
-   * has typically already chosen it (defaults to CZ).
+   * untouched: Mapbox doesn't return our internal Country.Id, and the picker
+   * already holds the chosen market or what the customer picked.
    */
   onAddressPicked(suggestion: MapboxAddressSuggestion): void {
     this.addressForm.patchValue({
@@ -466,14 +465,6 @@ export class ProfileComponent implements OnInit, OnDestroy, AfterViewInit {
     if (ok) {
       this.closeAddressDialog();
     }
-  }
-
-  private defaultCountryId(): string {
-    // Pre-select Czech Republic so customers in CZ don't have to pick it every time.
-    const cz = this.countryOptions().find((o) =>
-      o.label.includes('(CZE)') || o.label.toLowerCase().includes('czech')
-    );
-    return (cz?.value as string) ?? '';
   }
 
   async deleteAddress(id: string): Promise<void> {

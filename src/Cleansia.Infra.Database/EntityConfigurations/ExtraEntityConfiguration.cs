@@ -29,9 +29,6 @@ public class ExtraEntityConfiguration : AuditableEntityConfiguration<Extra, stri
         builder.Property(e => e.Description)
             .HasMaxLength(500);
 
-        builder.Property(e => e.Price)
-            .IsRequired()
-            .HasPrecision(10, 2);
 
         builder.Property(e => e.DisplayOrder)
             .IsRequired();

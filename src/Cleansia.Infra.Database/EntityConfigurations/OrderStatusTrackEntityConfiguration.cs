@@ -4,12 +4,15 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Cleansia.Infra.Database.EntityConfigurations;
 
-// Pins only the new Sequence column (NOT NULL). Everything else on OrderStatusTrack stays
-// convention-mapped exactly as before, so the Initial-regen diff is the single added column.
-public class OrderStatusTrackEntityConfiguration : IEntityTypeConfiguration<OrderStatusTrack>
+// Inherits the shared TenantAuditable mapping so the stamped TenantId column is NOT NULL, varchar(26)
+// and a foreign key like every other ITenantEntity table (ADR-0061 D8); a convention-only mapping left
+// it text NULL.
+public class OrderStatusTrackEntityConfiguration : TenantAuditableEntityConfiguration<OrderStatusTrack, string>
 {
-    public void Configure(EntityTypeBuilder<OrderStatusTrack> builder)
+    public override void Configure(EntityTypeBuilder<OrderStatusTrack> builder)
     {
+        base.Configure(builder);
+
         builder.Property(t => t.Sequence)
             .IsRequired();
     }

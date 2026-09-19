@@ -82,17 +82,6 @@ public static class BookingPolicy
     public const int OopsWindowMinutesFirstTime = 60;
 
     /// <summary>
-    /// Refund + credit issued when a cleaner cancels or no-shows. Owner ruling 2026-09-05: 250, down
-    /// from 500.
-    ///
-    /// <para><b>Still read by nothing.</b> No production code writes <c>CancelledBy.Cleaner</c>, so
-    /// neither the refund nor the credit half of the home page's "Everything back + 250 CZK" happens
-    /// today — the path is scheduled behind customer credit, which does not exist yet either. The
-    /// number lives here so the copy and the eventual implementation cannot disagree about it.</para>
-    /// </summary>
-    public const decimal NoShowCreditCzk = 250m;
-
-    /// <summary>
     /// The most of one order a customer's credit balance may settle. The rest goes on the card.
     ///
     /// <para>Owner ruling 2026-09-05: a customer must never be able to pay for a clean with credit
@@ -295,10 +284,10 @@ public static class BookingPolicy
     /// <param name="hasBeenAccepted">
     /// True if a cleaner has actually been pulled onto the job — i.e. the order carries at least one
     /// ASSIGNMENT row (<c>Order.AssignedEmployees</c>), which is what <c>CancelOrder</c> passes.
-    /// <b>Not</b> an <c>OrderStatusHistory</c> entry of <c>OrderStatus.Confirmed</c>: Confirmed is a
-    /// deliberately overloaded status in this domain (payment settled OR cleaner assigned) written by
-    /// four paths, only one of which involves a cleaner, and it is not even written when a cleaner
-    /// takes an order that was already Confirmed.
+    /// <b>Not</b> an <c>OrderStatusHistory</c> entry of <c>OrderStatus.Confirmed</c>: the crew is the
+    /// fact and the status is its summary — written when a cleaner takes the job, walked back when a
+    /// release can prove the crew is empty, not written when a cleaner takes a seat on an order that
+    /// was already Confirmed. The fee prices the cleaner's time, so it reads the crew.
     /// </param>
     /// <param name="freeCancellationHoursOverride">
     /// Absolute free-cancellation threshold in hours that REPLACES

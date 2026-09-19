@@ -1,4 +1,5 @@
-﻿using Cleansia.Core.AppServices.Common;
+﻿using Cleansia.Core.AppServices.Auditing;
+using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Auth;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.TestUtilities.MockDataFactories.Users;
@@ -14,9 +15,7 @@ public class ConfirmUserEmailValidatorTests
     {
         // Arrange
         var mockRepo = new Mock<IUserRepository>();
-        mockRepo.Setup(r => r.ExistsWithConfirmationCodeAsync(null, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(false);
-        var validator = new ConfirmUserEmail.Validator(mockRepo.Object, Mock.Of<ILogger<ConfirmUserEmail.Validator>>());
+        var validator = new ConfirmUserEmail.Validator(mockRepo.Object, Mock.Of<ILogger<ConfirmUserEmail.Validator>>(), new AuditContext());
         var command = new ConfirmUserEmail.Command(null);
 
         // Act
@@ -33,9 +32,7 @@ public class ConfirmUserEmailValidatorTests
     {
         // Arrange
         var mockRepo = new Mock<IUserRepository>();
-        mockRepo.Setup(r => r.ExistsWithConfirmationCodeAsync(string.Empty, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(false);
-        var validator = new ConfirmUserEmail.Validator(mockRepo.Object, Mock.Of<ILogger<ConfirmUserEmail.Validator>>());
+        var validator = new ConfirmUserEmail.Validator(mockRepo.Object, Mock.Of<ILogger<ConfirmUserEmail.Validator>>(), new AuditContext());
         var command = new ConfirmUserEmail.Command(string.Empty);
 
         // Act
@@ -53,7 +50,7 @@ public class ConfirmUserEmailValidatorTests
         // Arrange
         var mockRepo = new Mock<IUserRepository>();
         const string invalidCode = "invalidCode";
-        var validator = new ConfirmUserEmail.Validator(mockRepo.Object, Mock.Of<ILogger<ConfirmUserEmail.Validator>>());
+        var validator = new ConfirmUserEmail.Validator(mockRepo.Object, Mock.Of<ILogger<ConfirmUserEmail.Validator>>(), new AuditContext());
         var command = new ConfirmUserEmail.Command(invalidCode);
 
         // Act
@@ -72,11 +69,11 @@ public class ConfirmUserEmailValidatorTests
         // Arrange
         var mockRepo = new Mock<IUserRepository>();
         const string validCode = "validCode";
-        mockRepo.Setup(r => r.GetByConfirmationCodeAsync(validCode, It.IsAny<CancellationToken>()))
+        mockRepo.Setup(r => r.GetByConfirmationCodeIgnoringTenantAsync(validCode, It.IsAny<CancellationToken>()))
             .ReturnsAsync(UserMockFactory.Generate(new UserMockFactory.UserPartial { ConfirmationCode = validCode, ConfirmationCodeExpiresAt = DateTimeOffset.UtcNow }));
         mockRepo.Setup(r => r.TryChargeConfirmationCodeAttemptAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
-        var validator = new ConfirmUserEmail.Validator(mockRepo.Object, Mock.Of<ILogger<ConfirmUserEmail.Validator>>());
+        var validator = new ConfirmUserEmail.Validator(mockRepo.Object, Mock.Of<ILogger<ConfirmUserEmail.Validator>>(), new AuditContext());
         var command = new ConfirmUserEmail.Command(validCode);
 
         // Act
@@ -95,11 +92,11 @@ public class ConfirmUserEmailValidatorTests
         // Arrange
         var mockRepo = new Mock<IUserRepository>();
         const string validCode = "validCode";
-        mockRepo.Setup(r => r.GetByConfirmationCodeAsync(validCode, It.IsAny<CancellationToken>()))
+        mockRepo.Setup(r => r.GetByConfirmationCodeIgnoringTenantAsync(validCode, It.IsAny<CancellationToken>()))
             .ReturnsAsync(UserMockFactory.Generate(new UserMockFactory.UserPartial { ConfirmationCode = validCode, ConfirmationCodeExpiresAt = DateTimeOffset.UtcNow.AddMinutes(15) }));
         mockRepo.Setup(r => r.TryChargeConfirmationCodeAttemptAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
-        var validator = new ConfirmUserEmail.Validator(mockRepo.Object, Mock.Of<ILogger<ConfirmUserEmail.Validator>>());
+        var validator = new ConfirmUserEmail.Validator(mockRepo.Object, Mock.Of<ILogger<ConfirmUserEmail.Validator>>(), new AuditContext());
         var command = new ConfirmUserEmail.Command(validCode);
 
         // Act

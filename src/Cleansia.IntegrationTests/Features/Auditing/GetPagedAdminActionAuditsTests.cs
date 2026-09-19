@@ -25,8 +25,8 @@ namespace Cleansia.IntegrationTests.Features.Auditing;
 [Collection("PostgresCollection")]
 public class GetPagedAdminActionAuditsTests : BaseIntegrationTest
 {
-    private const string TenantA = "tenant-A";
-    private const string TenantB = "tenant-B";
+    private const string TenantA = TestTenants.Default;
+    private const string TenantB = TestTenants.Second;
 
     public GetPagedAdminActionAuditsTests(PostgresContainerFixture fixture) : base(fixture)
     {
@@ -88,6 +88,7 @@ public class GetPagedAdminActionAuditsTests : BaseIntegrationTest
             SchemasToExclude = ["pg_catalog", "information_schema"]
         });
         await respawner.ResetAsync(conn);
+        await SeedTenantRegistryAsync(conn);
     }
 
     private async Task SeedAsync(params AdminActionAudit[] rows)

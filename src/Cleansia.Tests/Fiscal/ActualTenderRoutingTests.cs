@@ -56,8 +56,7 @@ public class ActualTenderRoutingTests
             street: "Hauptstr. 1",
             city: "Berlin",
             zipCode: "10115",
-            countryId: CountryId,
-            vatNumber: "DE123456789");
+            countryId: CountryId);
         _companyInfoRepository
             .Setup(r => r.GetActiveByCountryAsync(CountryId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(company);
@@ -67,7 +66,7 @@ public class ActualTenderRoutingTests
 
         _countryRepository
             .Setup(r => r.GetByIdAsync(CountryId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(Country.Create("Germany", "DE"));
+            .ReturnsAsync(Country.Create("Germany", "DE", "DE"));
 
         _countryConfigurationRepository
             .Setup(r => r.GetByCountryIdAsync(CountryId, It.IsAny<CancellationToken>()))
@@ -125,12 +124,12 @@ public class ActualTenderRoutingTests
             customerAddress: Address.Create("Hauptstr. 2", "Berlin", "10115", CountryId),
             rooms: 1,
             bathrooms: 1,
-            extras: new Dictionary<string, bool>(),
             cleaningDateTime: DateTime.UtcNow.AddDays(1),
             paymentType: paymentType,
             totalPrice: 1000m,
             currencyId: "eur",
             paymentStatus: PaymentStatus.Pending);
+        order.SetCurrency(Euro());
         order.Id = OrderId;
 
         if (collectedInCash)
@@ -139,6 +138,13 @@ public class ActualTenderRoutingTests
         }
 
         return order;
+    }
+
+    private static Currency Euro()
+    {
+        var eur = Currency.Create("EUR", "€", "Euro");
+        eur.Id = "eur";
+        return eur;
     }
 
     private static OrderReceipt BuildReceipt() =>

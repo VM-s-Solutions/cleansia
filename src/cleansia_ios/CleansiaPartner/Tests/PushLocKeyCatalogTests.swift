@@ -16,6 +16,7 @@ final class PushLocKeyCatalogTests: XCTestCase {
     private let appBundle = Bundle(identifier: "cz.cleansia.partner") ?? .main
     private let languages = ["en", "cs", "sk", "uk", "ru"]
     private let events = [
+        "order.payment_confirmed",
         "order.confirmed",
         "order.cleaner_assigned",
         "order.on_the_way",
@@ -23,9 +24,11 @@ final class PushLocKeyCatalogTests: XCTestCase {
         "order.completed",
         "order.cancelled",
         "order.refunded",
+        "order.no_cleaner_refunded",
         "order.starting_soon",
         "dispute.reply",
         "recurring.scheduled",
+        "recurring.paused",
         "loyalty.tier_upgrade",
         "membership.expiring_soon",
         "membership.cancellation_effective",
@@ -47,6 +50,7 @@ final class PushLocKeyCatalogTests: XCTestCase {
     /// APNs loc-args are always strings, so every slot is `%1$@` whatever the
     /// backend put in it.
     private let orderNumberArgEvents: Set<String> = [
+        "order.payment_confirmed",
         "order.confirmed",
         "order.cleaner_assigned",
         "order.on_the_way",
@@ -66,6 +70,12 @@ final class PushLocKeyCatalogTests: XCTestCase {
         "order.reminder_soon",
         "order.reminder_not_started",
         "employee.weekly_limit_set"
+    ]
+
+    /// The server formats the credit as "<number> <symbol>" and sends it after the order number,
+    /// so the body takes two slots and states neither a figure nor a currency of its own.
+    private let orderNumberAndAmountArgEvents: Set<String> = [
+        "order.no_cleaner_refunded"
     ]
 
     /// The word each locale uses for "cancelled" — i.e. the claim `order.assignment_revoked`
@@ -106,7 +116,16 @@ final class PushLocKeyCatalogTests: XCTestCase {
             let table = try localizableTable(for: language)
             for event in events {
                 let body = try XCTUnwrap(table["push.\(event).body"], "push.\(event).body in \(language)")
-                if orderNumberArgEvents.contains(event) {
+                if orderNumberAndAmountArgEvents.contains(event) {
+                    XCTAssertTrue(
+                        body.contains("%1$@") && body.contains("%2$@"),
+                        "push.\(event).body must carry the %1$@ and %2$@ loc-arg slots in \(language): \(body)"
+                    )
+                    XCTAssertEqual(
+                        formatSpecifierCount(body), 2,
+                        "push.\(event).body must carry exactly two slots in \(language): \(body)"
+                    )
+                } else if orderNumberArgEvents.contains(event) {
                     XCTAssertTrue(
                         body.contains("%1$@"),
                         "push.\(event).body must carry the %1$@ loc-arg slot in \(language): \(body)"
@@ -191,6 +210,44 @@ final class PushLocKeyCatalogTests: XCTestCase {
                         "\(key) says \(word) in \(language): \(value)"
                     )
                 }
+            }
+        }
+    }
+
+    func testPaymentConfirmationRetainsTheLegacyCopyInEveryLanguage() throws {
+        for language in languages {
+            let table = try localizableTable(for: language)
+            for suffix in ["title", "body"] {
+                let current = try XCTUnwrap(table["push.order.payment_confirmed.\(suffix)"], language)
+                let legacy = try XCTUnwrap(table["push.order.confirmed.\(suffix)"], language)
+                XCTAssertEqual(current, legacy, language)
+            }
+        }
+    }
+
+    func testRecurringPauseExplainsInactivePlusAndRenewalWithoutCancellingVisits() throws {
+        let requiredWords = [
+            "en": ["paused", "not active", "renew", "resume"],
+            "cs": ["pozastaven", "není aktivní", "obnovte", "pokračovat"],
+            "sk": ["pozastaven", "nie je aktívne", "obnovte", "pokračovať"],
+            "uk": ["призупинено", "неактивний", "поновіть", "відновити"],
+            "ru": ["приостановлено", "неактивен", "продлите", "возобновить"]
+        ]
+        let cancellationWords = ["cancel", "zruš", "скасов", "скасован", "отмен"]
+        for language in languages {
+            let table = try localizableTable(for: language)
+            let title = try XCTUnwrap(table["push.recurring.paused.title"], language)
+            let body = try XCTUnwrap(table["push.recurring.paused.body"], language)
+            XCTAssertFalse(title.isEmpty, language)
+            XCTAssertFalse(body.isEmpty, language)
+            XCTAssertFalse(title.contains("%"), language)
+            XCTAssertFalse(body.contains("%"), language)
+            XCTAssertTrue(body.contains("Plus"), language)
+            for word in try XCTUnwrap(requiredWords[language]) {
+                XCTAssertNotNil(body.range(of: word, options: .caseInsensitive), "\(language): \(word)")
+            }
+            for word in cancellationWords {
+                XCTAssertNil("\(title) \(body)".range(of: word, options: .caseInsensitive), "\(language): \(word)")
             }
         }
     }

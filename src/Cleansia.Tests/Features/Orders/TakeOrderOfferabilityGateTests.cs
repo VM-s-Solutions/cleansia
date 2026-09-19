@@ -47,7 +47,8 @@ public class TakeOrderOfferabilityGateTests
         _validator = new TakeOrder.Validator(
             _orderRepository.Object,
             _employeeRepository.Object,
-            _accessService.Object);
+            _accessService.Object,
+            ValidatorTestHelpers.CurrencyResolver());
     }
 
     // ── The offerability gate itself ──

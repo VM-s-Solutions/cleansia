@@ -1,6 +1,8 @@
 import { computed, inject, Injectable, PLATFORM_ID, signal } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
+import { selectMarketCountryId } from '@cleansia/customer-stores';
 import { UnsubscribeControlDirective } from '@cleansia/directives';
+import { Store } from '@ngrx/store';
 import {
   CustomerClient,
   ExpressWaiverStatus,
@@ -10,7 +12,7 @@ import {
   QuotePlusSavingsResponse,
   resolveExpressWaiverStatus,
 } from '@cleansia/customer-services';
-import { catchError, finalize, of, takeUntil } from 'rxjs';
+import { catchError, distinctUntilChanged, finalize, of, switchMap, takeUntil } from 'rxjs';
 
 /**
  * The wizard's one read of the signed-in customer's membership.
@@ -27,6 +29,7 @@ import { catchError, finalize, of, takeUntil } from 'rxjs';
 @Injectable()
 export class OrderMembershipFacade extends UnsubscribeControlDirective {
   private readonly customerClient = inject(CustomerClient);
+  private readonly store = inject(Store);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
   readonly loading = signal(false);
@@ -67,28 +70,51 @@ export class OrderMembershipFacade extends UnsubscribeControlDirective {
    */
   readonly plans = signal<GetMembershipPlansResponse[]>([]);
 
+  /**
+   * The market listed no plan: Plus is not on sale there, and the step has
+   * nothing to offer. A failed read is not this — it is the same silence as
+   * before, no plan cards and no claim.
+   */
+  readonly plusUnavailable = signal(false);
+
   /** What Plus would be worth on the basket as it stands. Null until asked. */
   readonly plusSavings = signal<QuotePlusSavingsResponse | null>(null);
 
-  loadPlans(): void {
-    if (!this.isBrowser || this.plans().length > 0) return;
+  private plansFollowMarket = false;
 
-    this.customerClient.membershipClient
-      .getPlans()
+  /**
+   * The plans on offer in the CHOSEN market — not the address's (ADR-0058 D4):
+   * a subscription belongs to the customer, not to the booking, and is bought
+   * in the market they browse in. Re-read when that market changes.
+   */
+  loadPlans(): void {
+    if (!this.isBrowser || this.plansFollowMarket) return;
+    this.plansFollowMarket = true;
+
+    this.store
+      .select(selectMarketCountryId)
       .pipe(
+        distinctUntilChanged(),
+        switchMap((countryId) =>
+          this.customerClient.membershipClient
+            .getPlans(countryId ?? undefined)
+            .pipe(catchError(() => of<GetMembershipPlansResponse[] | null>(null))),
+        ),
         takeUntil(this.destroyed$),
-        catchError(() => of([] as GetMembershipPlansResponse[])),
       )
       // A failed read leaves the step with no plans to show, which the template
       // renders as no plan cards — the same silence the membership read uses,
       // and better than a half-priced offer.
-      // … and `?? []` because the generated client answers a 200 whose body is not a JSON array
+      // … and null because the generated client answers a 200 whose body is not a JSON array
       // with NULL, not an empty list — see `processGetPlans` in customer-client.ts, which falls to
       // `result200 = null as any` while its declared type promises an array. Nothing above catches
       // it: null is not an error, so `catchError` never fires and TypeScript never complains. Five
       // readers then index or measure this signal, and the first to run is the plus-savings effect
       // on step ONE, so the whole wizard goes down long before anyone reaches the Plus step.
-      .subscribe((plans) => this.plans.set(plans ?? []));
+      .subscribe((plans) => {
+        this.plans.set(plans ?? []);
+        this.plusUnavailable.set(plans !== null && plans.length === 0);
+      });
   }
 
   /**

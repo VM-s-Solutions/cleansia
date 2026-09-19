@@ -21,7 +21,7 @@ public class GdprRequestRepository(CleansiaDbContext context) : BaseRepository<G
         return GetDbSet()
             .AnyAsync(r => r.UserId == userId
                 && r.RequestType == requestType
-                && (r.Status == GdprRequestStatus.Pending || r.Status == GdprRequestStatus.Processing),
+                && r.Status != GdprRequestStatus.Completed,
                 cancellationToken);
     }
 }

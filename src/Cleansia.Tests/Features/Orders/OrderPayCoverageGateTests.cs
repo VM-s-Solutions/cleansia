@@ -9,7 +9,9 @@ using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Services;
 using Cleansia.TestUtilities.MockDataFactories.Users;
 using MockQueryable;
+using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
+using Cleansia.Core.AppServices.Tenancy;
 
 namespace Cleansia.Tests.Features.Orders;
 
@@ -29,6 +31,13 @@ public class OrderPayCoverageGateTests
     private const string PackageId = "pkg-1";
     private const string CurrencyId = "czk";
 
+    /// <summary>
+    /// ONE instance, shared by the price rows and the input, because the price lookup filters on
+    /// currency id — two <c>Currency.Create</c> calls are two different currencies, and the rows would
+    /// simply not be found.
+    /// </summary>
+    private static readonly Currency Czk = CreateOrderTestData.DefaultCurrency();
+
     private readonly Mock<IOrderRepository> _orderRepository = new();
     private readonly Mock<IServiceRepository> _serviceRepository = new();
     private readonly Mock<IPackageRepository> _packageRepository = new();
@@ -42,9 +51,9 @@ public class OrderPayCoverageGateTests
 
     public OrderPayCoverageGateTests()
     {
-        var service = Service.Create("cat-1", "General Cleaning", "d", 500m, 150m, estimatedTime: 120);
+        var service = Service.Create("cat-1", "General Cleaning", "d", estimatedTime: 120);
         service.Id = ServiceId;
-        var package = Package.Create("Essential Clean", "d", 799m);
+        var package = Package.Create("Essential Clean", "d");
         package.Id = PackageId;
 
         _serviceRepository.Setup(r => r.GetByIds(It.IsAny<IEnumerable<string>>()))
@@ -68,6 +77,12 @@ public class OrderPayCoverageGateTests
         _orderRepository.Object,
         _serviceRepository.Object,
         _packageRepository.Object,
+        ExtraRepositoryDouble.Empty(),
+        // Priced, so the pay gate is what refuses — an unpriced catalogue throws too, and would make
+        // every refusal assertion below pass for the wrong reason.
+        CataloguePriceDoubles.Services(Czk, (ServiceId, 500m, 100m)),
+        CataloguePriceDoubles.Packages(Czk, (PackageId, 1000m)),
+        CataloguePriceDoubles.NoExtras(),
         _payConfigRepository.Object,
         _companyInfoRepository.Object,
         _countryConfigurationRepository.Object,
@@ -75,7 +90,9 @@ public class OrderPayCoverageGateTests
         _loyaltyService.Object,
         _userMembershipRepository.Object,
         NoPreferredCleanerHold.Resolver,
-        _notificationProducer.Object);
+        _notificationProducer.Object,
+        Mock.Of<IAdminNotifier>(),
+        NullLogger<OrderFactory>.Instance);
 
     private Task<Cleansia.Core.Domain.Orders.Order> CreateOrderAsync(
         IEnumerable<string>? serviceIds = null, IEnumerable<string>? packageIds = null) =>
@@ -88,15 +105,16 @@ public class OrderPayCoverageGateTests
                 Address: AddressMockFactory.Generate(),
                 Rooms: 2,
                 Bathrooms: 1,
-                Extras: new Dictionary<string, bool>(),
+                SelectedExtraSlugs: [],
                 CleaningDate: DateTime.UtcNow.AddDays(3),
                 PaymentType: PaymentType.Cash,
-                Currency: Currency.Create("CZK", "Kč", "Czech Koruna", 1m),
+                Currency: Czk,
                 SelectedServiceIds: serviceIds ?? [ServiceId],
                 SelectedPackageIds: packageIds ?? [],
                 RawSubtotal: 1000m,
                 NowUtc: DateTime.UtcNow,
                 ReservedExpressWaiver: null,
+                OperatorTenantId: null,
                 PromoDiscountAmount: 0m),
             CancellationToken.None);
 
@@ -178,9 +196,9 @@ public class CreateOrderPayCoverageValidatorTests
 
     public CreateOrderPayCoverageValidatorTests()
     {
-        var service = Service.Create("cat-1", "General Cleaning", "d", 500m, 150m, estimatedTime: 120);
+        var service = Service.Create("cat-1", "General Cleaning", "d", estimatedTime: 120);
         service.Id = CreateOrderTestData.ServiceId;
-        var package = Package.Create("Essential Clean", "d", 799m);
+        var package = Package.Create("Essential Clean", "d");
         package.Id = CreateOrderTestData.PackageId;
 
         _serviceRepository
@@ -194,8 +212,12 @@ public class CreateOrderPayCoverageValidatorTests
         _packageRepository.Setup(r => r.GetByIds(It.IsAny<IEnumerable<string>>()))
             .Returns(new[] { package }.AsQueryable().BuildMock());
         _currencyRepository
-            .Setup(r => r.ExistsAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .Setup(r => r.IsOfferableAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
+        // The pay gate asks in the order's currency, which with no CurrencyId named is the default.
+        _currencyRepository
+            .Setup(r => r.GetDefaultAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(CreateOrderTestData.DefaultCurrency());
         _pricingCalculator
             .Setup(c => c.CalculateAsync(
                 It.IsAny<IEnumerable<string>>(), It.IsAny<IEnumerable<string>>(), It.IsAny<IEnumerable<string>>(),
@@ -212,12 +234,23 @@ public class CreateOrderPayCoverageValidatorTests
     private CreateOrder.Validator CreateValidator() => new(
         _packageRepository.Object,
         _serviceRepository.Object,
-        _currencyRepository.Object,
         _pricingCalculator.Object,
         _orderRepository.Object,
         _userMembershipRepository.Object,
         _session.Object,
-        _payConfigRepository.Object);
+        _payConfigRepository.Object,
+        _currencyRepository.Object,
+        OrderMarketDoubles.AddressIn("cz"),
+        OrderMarketDoubles.Trading(CreateOrderTestData.DefaultCurrency()),
+        CataloguePriceDoubles.Services(
+            CreateOrderTestData.DefaultCurrency(), (CreateOrderTestData.ServiceId, 500m, 100m)),
+        CataloguePriceDoubles.Packages(
+            CreateOrderTestData.DefaultCurrency(), (CreateOrderTestData.PackageId, 1000m)),
+        Mock.Of<IPromoCodeService>(),
+        Cleansia.Tests.Features.Orders.OrderMarketDoubles.OperatedBy("cleansia-cz"),
+        Cleansia.Tests.Features.Orders.OrderMarketDoubles.TenantAt("cleansia-cz"),
+        Mock.Of<IUserConsentRepository>(),
+        CreateOrderTestData.Speaking(Constants.Language.English));
 
     [Fact]
     public async Task An_Unconfigured_Service_Fails_InvalidSelectedServices()

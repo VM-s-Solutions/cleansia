@@ -82,9 +82,7 @@ export class PayConfigFormFacade extends UnsubscribeControlDirective {
       .subscribe((response) => {
         if (response?.data) {
           this.services.set(
-            response.data
-              .filter((s) => s.id && s.name)
-              .map((s) => ({ id: s.id!, name: s.name! }))
+            response.data.flatMap((s) => (s.id && s.name ? [{ id: s.id, name: s.name }] : []))
           );
         }
       });
@@ -100,9 +98,7 @@ export class PayConfigFormFacade extends UnsubscribeControlDirective {
       .subscribe((response) => {
         if (response?.data) {
           this.packages.set(
-            response.data
-              .filter((p) => p.id && p.name)
-              .map((p) => ({ id: p.id!, name: p.name! }))
+            response.data.flatMap((p) => (p.id && p.name ? [{ id: p.id, name: p.name }] : []))
           );
         }
       });
@@ -118,9 +114,7 @@ export class PayConfigFormFacade extends UnsubscribeControlDirective {
       .subscribe((currencies) => {
         if (currencies) {
           this.currencies.set(
-            currencies
-              .filter((c) => c.id && c.code)
-              .map((c) => ({ id: c.id!, code: c.code! }))
+            currencies.flatMap((c) => (c.id && c.code ? [{ id: c.id, code: c.code }] : []))
           );
         }
       });

@@ -33,7 +33,6 @@ const QUOTE_1000_NO_DISCOUNT: QuoteFields = {
   extrasSubtotal: 0,
   expressSurchargeApplied: false,
   expressSurchargeAmount: 0,
-  exchangeRate: 1,
   expressSurchargeWaivedByMembership: false,
   expressUpgradesRemaining: undefined,
   creditBalance: 0,

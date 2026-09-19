@@ -5,14 +5,15 @@ namespace Cleansia.Core.AppServices.Features.Memberships.Admin.Mappers;
 
 public static class MembershipPlanMapper
 {
-    public static MembershipPlanListItem MapToListItem(this MembershipPlan plan) =>
+    public static MembershipPlanListItem MapToListItem(this MembershipPlan plan, decimal? price, string currencyCode) =>
         new(
             Id: plan.Id,
             Code: plan.Code,
             Name: plan.Name,
             BillingInterval: plan.BillingInterval,
-            MonthlyPriceCzk: plan.MonthlyPriceCzk,
-            MonthlyEquivalentPriceCzk: plan.MonthlyEquivalentPriceCzk,
+            Price: price,
+            MonthlyEquivalentPrice: price is { } p ? plan.MonthlyEquivalentOf(p) : null,
+            CurrencyCode: currencyCode,
             DiscountPercentage: plan.DiscountPercentage,
             TrialPeriodDays: plan.TrialPeriodDays,
             FreeCancellationWindowHours: plan.FreeCancellationWindowHours,
@@ -21,15 +22,15 @@ public static class MembershipPlanMapper
             IsActive: plan.IsActive,
             CreatedOn: plan.CreatedOn);
 
-    public static MembershipPlanDetailDto MapToDetailDto(this MembershipPlan plan) =>
+    public static MembershipPlanDetailDto MapToDetailDto(this MembershipPlan plan, IEnumerable<MembershipPlanPrice> prices) =>
         new(
             Id: plan.Id,
             Code: plan.Code,
             Name: plan.Name,
             BillingInterval: plan.BillingInterval,
-            MonthlyPriceCzk: plan.MonthlyPriceCzk,
-            MonthlyEquivalentPriceCzk: plan.MonthlyEquivalentPriceCzk,
-            StripePriceId: plan.StripePriceId,
+            Prices: prices.ToDictionary(
+                p => p.Currency!.Code,
+                p => new MembershipPlanPriceDto(p.Price, plan.MonthlyEquivalentOf(p.Price), p.StripePriceId)),
             DiscountPercentage: plan.DiscountPercentage,
             TrialPeriodDays: plan.TrialPeriodDays,
             FreeCancellationWindowHours: plan.FreeCancellationWindowHours,

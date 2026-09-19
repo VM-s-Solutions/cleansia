@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using Cleansia.Core.AppServices.Abstractions;
+using Cleansia.Core.AppServices.Auditing;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Enums;
@@ -7,20 +8,24 @@ using Cleansia.Core.Domain.Notifications;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Infra.Common.Validations;
 using FluentValidation;
+using Microsoft.EntityFrameworkCore;
 
 namespace Cleansia.Core.AppServices.Features.Disputes;
 
+// Admin audience: only the admin arm records it, so a customer's or a cleaner's message stays unrecorded
+// (ADR-0062 D3 — the dispute row is its own durable record of author and time).
+[AuditAction("dispute.message.add", ResourceType = "Dispute")]
 public class AddDisputeMessage
 {
     public class Validator : AbstractValidator<Command>
     {
-        public Validator(IDisputeRepository disputeRepository)
+        public Validator(IDisputeRepository disputeRepository, IUserSessionProvider userSessionProvider)
         {
             RuleFor(x => x.DisputeId)
                 .Cascade(CascadeMode.Stop)
                 .NotEmpty()
                 .WithMessage(BusinessErrorMessage.Required)
-                .MustAsync(disputeRepository.ExistsAsync)
+                .MustAsync((id, ct) => DisputeReads.ExistsForCallerAsync(disputeRepository, userSessionProvider, id, ct))
                 .WithMessage(BusinessErrorMessage.DisputeNotFound);
 
             RuleFor(x => x.Message)
@@ -46,7 +51,6 @@ public class AddDisputeMessage
         public async Task<BusinessResult> Handle(Command request, CancellationToken cancellationToken)
         {
             var userId = userSessionProvider.GetUserId()!;
-            var dispute = await disputeRepository.GetForUpdateAsync(request.DisputeId, cancellationToken);
 
             // ADR-0001 §D2 Note C: the staff flag is DERIVED from the caller's profile,
             // never trusted from the request body. A customer-host caller can flip
@@ -57,7 +61,16 @@ public class AddDisputeMessage
                 == UserProfile.Administrator.ToString();
             var isStaffMessage = request.IsStaffMessage && isAdmin;
 
-            if (!isStaffMessage && dispute.UserId != userId)
+            // An admin reaches their company's disputes through the filter; a customer reaches their own
+            // in every operating company — the dispute carries its order's operator, and the customer
+            // may have booked across the border (S8: pinned by the caller's own id).
+            var dispute = isAdmin
+                ? await disputeRepository.GetForUpdateAsync(request.DisputeId, cancellationToken)
+                : await disputeRepository.GetQueryableForOwner(userId)
+                    .Include(d => d.Order)
+                    .FirstOrDefaultAsync(d => d.Id == request.DisputeId, cancellationToken);
+
+            if (dispute is null || (!isStaffMessage && dispute.UserId != userId))
             {
                 return BusinessResult.Failure(new Error(
                     nameof(request.DisputeId), BusinessErrorMessage.DisputeNotOwnedByUser));

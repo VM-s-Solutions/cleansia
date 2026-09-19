@@ -19,7 +19,7 @@
         <cleansia-button
           [label]="'global.actions.retry' | translate"
           [icon]="'pi pi-refresh'"
-          [size]="'small-width'"
+          [size]="'auto-width'"
           (onClick)="retry()"
         />
       </div>
@@ -48,6 +48,21 @@
           {{ 'pages.period_pay.period_status_' + facade.selectedPeriodStatus() | translate }}
         </span>
       </div>
+
+      @if (facade.hasMultipleCurrencies()) {
+      <div class="cleansia-period-pay__currency">
+        <cleansia-select
+          [label]="'pages.period_pay.currency' | translate"
+          [formControl]="currencyControl"
+          [options]="facade.currencyOptions()"
+          [showClear]="false"
+          [showErrors]="false"
+        />
+        <p class="cleansia-period-pay__currency-hint">
+          {{ 'pages.period_pay.multiple_currencies_hint' | translate }}
+        </p>
+      </div>
+      }
 
       @if (facade.summary(); as summary) {
       <div class="period-pay-summary" [class.is-loading]="facade.loading()">
@@ -99,7 +114,7 @@
             [icon]="'pi pi-file'"
             [severity]="'secondary'"
             [outlined]="true"
-            [size]="'small-width'"
+            [size]="'auto-width'"
             (onClick)="viewInvoice()"
           />
         </div>

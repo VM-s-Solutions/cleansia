@@ -24,15 +24,18 @@ public class TakeOrder
         private readonly IOrderRepository _orderRepository;
         private readonly IEmployeeRepository _employeeRepository;
         private readonly IOrderAccessService _orderAccessService;
+        private readonly ICurrencyResolutionService _currencyResolutionService;
 
         public Validator(
             IOrderRepository orderRepository,
             IEmployeeRepository employeeRepository,
-            IOrderAccessService orderAccessService)
+            IOrderAccessService orderAccessService,
+            ICurrencyResolutionService currencyResolutionService)
         {
             _orderRepository = orderRepository;
             _employeeRepository = employeeRepository;
             _orderAccessService = orderAccessService;
+            _currencyResolutionService = currencyResolutionService;
 
             // ONE ordered chain, deliberately (ADR-0037 D6). Cascade.Stop is rule-LEVEL and
             // FluentValidation's class-level default is Continue, so a second chain here would run
@@ -78,14 +81,22 @@ public class TakeOrder
         /// <see cref="BusinessErrorMessage.NoAvailableSpots"/>, which is the disagreement this
         /// placement exists to prevent. The employee is server-derived from the caller, never a
         /// command field; a caller with no employee id is nobody's beneficiary and is held out.
+        ///
+        /// <para>The currency term rides in the same query for the same reason: an order priced in a
+        /// currency the caller is not paid in was never on their board, so from their side it does not
+        /// exist. A caller with no employee id resolves no currency and is held out by that term too.
+        /// </para>
         /// </summary>
         private async Task<bool> ExistsAndIsOpenToCallerAsync(Command command, CancellationToken cancellationToken)
         {
             var employeeId = await _orderAccessService.GetCallerEmployeeIdAsync(cancellationToken);
+            var cleanerCurrencyId = string.IsNullOrEmpty(employeeId)
+                ? null
+                : (await _currencyResolutionService.ResolveCurrencyForEmployeeAsync(employeeId, cancellationToken)).Id;
 
             return await _orderRepository
                 .GetQueryable()
-                .Where(OrderVisibility.NotHeldFrom(employeeId, DateTime.UtcNow))
+                .Where(OrderVisibility.OpenTo(employeeId, cleanerCurrencyId, DateTime.UtcNow))
                 .AnyAsync(o => o.Id == command.OrderId, cancellationToken);
         }
 

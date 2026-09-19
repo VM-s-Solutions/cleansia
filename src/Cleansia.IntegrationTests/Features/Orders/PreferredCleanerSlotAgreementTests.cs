@@ -144,11 +144,12 @@ public class PreferredCleanerSlotAgreementTests(PostgresContainerFixture fixture
     {
         context.Languages.Add(Language.Create("en", "English"));
 
-        var country = Country.Create("Czechia", "CZ", isServiced: true);
+        var country = Country.Create("Czechia", "CZ", "CZ", isServiced: true);
         country.Id = CountryId;
         context.Countries.Add(country);
 
-        var currency = Currency.Create("CZK", "Kč", "Czech koruna", 1.0m);
+        var currency = Currency.Create("CZK", "Kč", "Czech koruna");
+        currency.IsActive = true;
         currency.Id = CurrencyId;
         currency.SetAsDefault(true);
         context.Currencies.Add(currency);
@@ -157,7 +158,7 @@ public class PreferredCleanerSlotAgreementTests(PostgresContainerFixture fixture
         category.Id = "cat-slot";
         context.Add(category);
 
-        var service = Service.Create(category.Id, "Deep clean", "Deep clean", 1500m, 200m, ServiceMinutes);
+        var service = Service.Create(category.Id, "Deep clean", "Deep clean", ServiceMinutes);
         service.Id = ServiceId;
         context.Add(service);
 
@@ -175,6 +176,7 @@ public class PreferredCleanerSlotAgreementTests(PostgresContainerFixture fixture
         context.Add(UserMembership.Create(
             userId: CustomerId,
             membershipPlanId: NewPlan(context).Id,
+            currencyId: CurrencyId,
             stripeSubscriptionId: "sub_slot_agreement",
             currentPeriodStart: Now.AddDays(-10),
             currentPeriodEnd: Now.AddDays(20)));
@@ -202,8 +204,6 @@ public class PreferredCleanerSlotAgreementTests(PostgresContainerFixture fixture
         var plan = MembershipPlan.Create(
             code: "PLUS",
             name: "Cleansia Plus",
-            monthlyPriceCzk: 299m,
-            stripePriceId: "price_slot_agreement",
             discountPercentage: 5m,
             freeCancellationWindowHours: 48,
             allowsExpressUpgrade: true);
@@ -267,7 +267,6 @@ public class PreferredCleanerSlotAgreementTests(PostgresContainerFixture fixture
             customerAddress: Address.Create("Slot St 3", "Brno", "60200", CountryId),
             rooms: 2,
             bathrooms: 1,
-            extras: new Dictionary<string, bool>(),
             cleaningDateTime: cleaningDateTime,
             paymentType: PaymentType.Card,
             totalPrice: 1500m,

@@ -15,6 +15,7 @@ public sealed class AdminUserPrivilegeAuditLabelTests
     [InlineData(typeof(DeactivateAdminUser.Command), "admin.user.deactivate")]
     [InlineData(typeof(ActivateAdminUser.Command), "admin.user.activate")]
     [InlineData(typeof(UpdateAdminUser.Command), "admin.user.update")]
+    [InlineData(typeof(SetAdminRole.Command), "admin.user.set_role")]
     public void Privilege_Commands_Carry_The_Frozen_AdminUser_Label(Type commandType, string expectedLabel)
     {
         var descriptor = AuditActionDescriptor.For(commandType);

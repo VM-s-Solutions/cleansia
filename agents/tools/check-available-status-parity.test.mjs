@@ -50,7 +50,7 @@ function freshRoot() {
 
 function patch(root, file, from, to) {
     const p = join(root, file);
-    const src = readFileSync(p, "utf8");
+    const src = readFileSync(p, "utf8").replace(/\r\n/g, "\n");
     if (!src.includes(from)) {
         throw new Error(`fixture patch target vanished in ${file}: ${JSON.stringify(from)}`);
     }
@@ -131,8 +131,8 @@ scenario("Android Available QUERY literal gains dead Pending -> RED", {
         patch(
             r,
             "src/cleansia_android/partner-app/src/main/java/cz/cleansia/partner/features/orders/OrdersListViewModel.kt",
-            "listOf(OrderStatus._0, OrderStatus._2)",
-            "listOf(OrderStatus._0, OrderStatus._1, OrderStatus._2)",
+            "listOf(OrderStatus._0, OrderStatus._2, OrderStatus._3, OrderStatus._4)",
+            "listOf(OrderStatus._0, OrderStatus._1, OrderStatus._2, OrderStatus._3, OrderStatus._4)",
         ),
     expectExit: 1,
     expectText: ["[android.query.available]", "EXTRA"],
@@ -143,8 +143,8 @@ scenario("iOS Available QUERY literal loses a status -> RED", {
         patch(
             r,
             "src/cleansia_ios/CleansiaPartner/Sources/Features/Orders/OrdersListLogic.swift",
-            "statuses: [._0, ._2],",
-            "statuses: [._2],",
+            "statuses: [._0, ._2, ._3, ._4],",
+            "statuses: [._2, ._3, ._4],",
         ),
     expectExit: 1,
     expectText: ["[ios.query.available]", "MISSING"],
@@ -183,8 +183,8 @@ scenario("web detail take-BUTTON gate stops offering New -> RED", {
         patch(
             r,
             "src/Cleansia.App/libs/cleansia-partner-features/orders/src/lib/order-details/order-details.helpers.ts",
-            "orderStatusValue === OrderStatus.New || orderStatusValue === OrderStatus.Confirmed",
-            "orderStatusValue === OrderStatus.Confirmed",
+            "    orderStatusValue === OrderStatus.New ||\n",
+            "",
         ),
     expectExit: 1,
     expectText: ["[web.button.detail]", "MISSING", "New(0)"],
@@ -203,7 +203,7 @@ scenario("an exactly-baselined divergence is reported, not hidden, and does not 
         ),
     tool: (r) =>
         toolWithBaseline(r, {
-            "web.query.available": { statuses: [0, 1, 2], ticket: "T-TEST", why: "fixture" },
+            "web.query.available": { statuses: [0, 1, 2, 3, 4], ticket: "T-TEST", why: "fixture" },
         }),
     expectExit: 0,
     expectText: ["KNOWN divergences", "[web.query.available]", "1 known divergence(s)"],
@@ -212,7 +212,7 @@ scenario("an exactly-baselined divergence is reported, not hidden, and does not 
 scenario("a baselined surface that drifts to a DIFFERENT set goes RED", {
     tool: (r) =>
         toolWithBaseline(r, {
-            "web.query.available": { statuses: [0, 1, 2], ticket: "T-TEST", why: "fixture" },
+            "web.query.available": { statuses: [0, 1, 2, 3, 4], ticket: "T-TEST", why: "fixture" },
         }),
     expectExit: 1,
     expectText: ["BASELINE STALE", "[web.query.available]"],
@@ -221,7 +221,7 @@ scenario("a baselined surface that drifts to a DIFFERENT set goes RED", {
 scenario("a baselined surface that AGREES with the floor goes RED until its entry is deleted", {
     tool: (r) =>
         toolWithBaseline(r, {
-            "web.query.available": { statuses: [0, 2], ticket: "T-TEST", why: "fixture" },
+            "web.query.available": { statuses: [0, 2, 3, 4], ticket: "T-TEST", why: "fixture" },
         }),
     expectExit: 1,
     expectText: ["BASELINE STALE", "now AGREES with the floor"],
@@ -229,17 +229,17 @@ scenario("a baselined surface that AGREES with the floor goes RED until its entr
 
 // 6 — THE test that proves the canonical C# is the source of truth. Widen the domain floor and the
 //     two already-correct mobile clients must go red for disagreeing with the NEW floor. A checker
-//     carrying its own hardcoded {New, Confirmed} would stay green here.
+//     carrying its own hardcoded status set would stay green here.
 scenario("widening the CANONICAL C# floor reddens the mobile clients (canonical is really parsed)", {
     mutate: (r) =>
         patch(
             r,
             "src/Cleansia.Core.Domain/Orders/OrderAvailability.cs",
-            "[OrderStatus.New, OrderStatus.Confirmed]",
-            "[OrderStatus.New, OrderStatus.Confirmed, OrderStatus.OnTheWay]",
+            "[OrderStatus.New, OrderStatus.Confirmed, OrderStatus.OnTheWay, OrderStatus.InProgress]",
+            "[OrderStatus.New, OrderStatus.Confirmed, OrderStatus.OnTheWay, OrderStatus.InProgress, OrderStatus.Completed]",
         ),
     expectExit: 1,
-    expectText: ["[android.query.available]", "[ios.query.available]", "OnTheWay(3)"],
+    expectText: ["[android.query.available]", "[ios.query.available]", "Completed(5)"],
 });
 
 // 7 — losing the canonical file must fail loudly, not check nothing.

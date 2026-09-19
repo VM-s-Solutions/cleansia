@@ -20,7 +20,7 @@ export interface CompleteOrderDialogResult {
 }
 
 @Component({
-  selector: 'cleansia-complete-order-dialog',
+  selector: 'cleansia-partner-complete-order-dialog',
   standalone: true,
   imports: [
     CommonModule,
@@ -93,10 +93,7 @@ export class CompleteOrderDialogComponent {
       return;
     }
 
-    const result: CompleteOrderDialogResult = {
-      actualCompletionTimeMinutes: this.form.value.actualCompletionTimeMinutes!,
-      completionNotes: this.form.value.completionNotes!,
-    };
+    const result: CompleteOrderDialogResult = this.form.getRawValue();
 
     this.dialogRef.close(result);
   }

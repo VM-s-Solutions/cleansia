@@ -1,4 +1,4 @@
-﻿using System.Diagnostics;
+using System.Diagnostics;
 using System.Security.Claims;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -246,6 +246,8 @@ public partial class RequestLoggingMiddleware(RequestDelegate next, ILogger<Requ
                pathValue.Contains("/login") ||
                pathValue.Contains("password") ||
                pathValue.Contains("/order/lookup") ||
+               pathValue.Contains("/order/cancelguest") ||
+               pathValue.Contains("/order/guestcancellationpreview") ||
                // Operator free text riding beside a base64 payload — an identity-document description
                // and a cleaner's note about a customer's household. No field-name denylist can reach
                // free text, so the whole body is suppressed.
@@ -283,6 +285,15 @@ public partial class RequestLoggingMiddleware(RequestDelegate next, ILogger<Requ
                // "/api/AdminAuth/...". The admin route dumps another user's whole export, payout block
                // included, so it is the one that most needed covering.
                pathValue.Contains("gdpr/") ||
+               // A customer audit entry carries the payload, the IP address and the device label of the
+               // subject, and the timeline lists the same rows; none of those names is in a redaction
+               // list and the device label is client-controlled text no denylist reaches (ADR-0062 D6).
+               // Present on every host like the paths beside it, so a route that moves hosts keeps it.
+               pathValue.Contains("/customeraudit/") ||
+               // Customer panels contain company free text beside redacted account fields.
+               (pathValue.Contains("/adminorder/") && pathValue.TrimEnd('/').EndsWith("/customer")) ||
+               pathValue.Contains("/adminuser/") ||
+               pathValue.Contains("/user/getbyid") ||
                // Reading documents back: an operator's review notes and the cleaner's own description
                // ride behind the SAS, which redaction collapses. The write side (/savemydocuments) was
                // already suppressed; the read was not.

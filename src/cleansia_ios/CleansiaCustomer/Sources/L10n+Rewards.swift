@@ -63,7 +63,7 @@ extension L10n {
             format("loyalty_discount_basic", percent)
         }
 
-        static func discountMinOrder(_ percent: Int, _ minOrder: Int) -> String {
+        static func discountMinOrder(_ percent: Int, _ minOrder: String) -> String {
             format("loyalty_discount_min_order", percent, minOrder)
         }
 

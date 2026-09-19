@@ -56,6 +56,7 @@ import cz.cleansia.customer.core.memberships.GetMyMembershipResponse
 import cz.cleansia.customer.features.orders.roomsAndBathrooms
 import cz.cleansia.customer.R
 import cz.cleansia.core.format.formatOrderPrice
+import cz.cleansia.core.ui.components.CleansiaConsentCheckbox
 import cz.cleansia.core.ui.components.CleansiaTextField
 import cz.cleansia.customer.ui.theme.CleansiaTheme
 import cz.cleansia.customer.ui.theme.selectionTint
@@ -91,12 +92,13 @@ fun ConfirmStep(
     val quoteState by bookingVm.quoteState.collectAsStateWithLifecycle()
     val quote = (quoteState as? QuoteState.Quoted)?.response
     val promoState by bookingVm.promoCodeState.collectAsStateWithLifecycle()
-    // Every money row on this screen renders through [formatOrderPrice] with the
-    // quote's own currency, so the summary and the sheet footer can never disagree.
-    // Null before the first quote lands — formatOrderPrice falls back to CZK, which
-    // is what the hardcoded " CZK" suffix this replaced always assumed.
-    val currencyCode = quote?.currencyCode
+    // Every money row on this screen renders through [formatOrderPrice] with the one code the VM
+    // resolves — the quote's own once it lands, the catalogue's default before — so the summary,
+    // the sheet footer and the catalogue-sum fallback can never disagree.
+    val currencyCode by bookingVm.displayCurrencyCode.collectAsStateWithLifecycle()
+    val insuranceCoverage by viewModel.insuranceCoverage.collectAsStateWithLifecycle()
     val effectiveDiscount by bookingVm.effectiveDiscount.collectAsStateWithLifecycle()
+    val alreadyConsented by bookingVm.alreadyConsented.collectAsStateWithLifecycle()
     // Every money row comes from the one resolver, so this card and the sticky bar below it cannot
     // disagree with each other or with the total the order is created with.
     val summary = BookingPriceSummary.resolve(quote, effectiveDiscount)
@@ -377,6 +379,18 @@ fun ConfirmStep(
         CancellationPolicyCard(membershipRepository = viewModel.membershipRepository)
         Spacer(Modifier.height(16.dp))
 
+        // The same two documents the sign-up tick names, asked only of an account that has not
+        // already granted both. Gates the slide-to-confirm and rides `termsAccepted` on CreateOrder.
+        if (!alreadyConsented) {
+            CleansiaConsentCheckbox(
+                checked = state.termsAccepted,
+                onCheckedChange = { onUpdate(state.copy(termsAccepted = it)) },
+                html = stringResource(R.string.register_terms_and_conditions),
+                modifier = Modifier.fillMaxWidth(),
+            )
+            Spacer(Modifier.height(16.dp))
+        }
+
         // ── Trust badges ──
         Row(
             modifier = Modifier
@@ -391,7 +405,9 @@ fun ConfirmStep(
         ) {
             TrustBadge(
                 Icons.Outlined.Shield,
-                stringResource(R.string.booking_trust_insured),
+                insuranceCoverage?.let { coverage ->
+                    stringResource(R.string.booking_trust_insured, formatOrderPrice(coverage.amount, coverage.currencyCode))
+                } ?: stringResource(R.string.booking_trust_insured_no_figure),
                 Modifier.weight(1f).fillMaxHeight(),
             )
             Box(Modifier.width(1.dp).fillMaxHeight().background(MaterialTheme.colorScheme.outlineVariant))
@@ -409,6 +425,7 @@ fun ConfirmStep(
     if (promoSheetOpen) {
         PromoCodeBottomSheet(
             initialCode = state.promoCode,
+            currencyCode = currencyCode,
             onDismiss = { promoSheetOpen = false },
             onValidate = { code -> bookingVm.validatePromoCodeNow(code) },
             // VM persisted code + state; the sheet only signals so we can close it.

@@ -1,3 +1,4 @@
+using Cleansia.Core.AppServices.Auditing;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Auth;
 using Cleansia.Core.AppServices.Services.Interfaces;
@@ -46,14 +47,14 @@ public class LoginLockoutValidatorTests
 
     private static IRefreshTokenService Hasher() => Mock.Of<IRefreshTokenService>();
 
-    private static Login.Validator LoginValidatorFor(Mock<IUserRepository> repo)
-        => new(repo.Object, NoTokens(), Hasher());
+    private static Login.Validator LoginValidatorFor(Mock<IUserRepository> repo, IAuditContext? auditContext = null)
+        => new(repo.Object, NoTokens(), Hasher(), auditContext ?? new AuditContext());
 
     private static AdminLogin.Validator AdminValidatorFor(Mock<IUserRepository> repo)
-        => new(repo.Object, NoTokens(), Hasher());
+        => new(repo.Object, NoTokens(), Hasher(), new AuditContext());
 
     private static PartnerLogin.Validator PartnerValidatorFor(Mock<IUserRepository> repo)
-        => new(repo.Object, NoTokens(), Hasher());
+        => new(repo.Object, NoTokens(), Hasher(), new AuditContext());
 
     [Fact]
     public async Task When_The_Account_Is_Locked_Even_The_Correct_Password_Is_Refused()
@@ -174,5 +175,25 @@ public class LoginLockoutValidatorTests
 
         Assert.False(result.IsValid);
         repo.Verify(r => r.RecordFailedLoginAsync(user.Email, It.IsAny<DateTimeOffset>(), It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    /// <summary>
+    /// A locked account never evaluates the password, but the refusal is still that account's audit
+    /// row: the lockout rule resolved it, so it is named — a lockout storm is keyed on the victim.
+    /// </summary>
+    [Fact]
+    public async Task A_Locked_Account_Is_Named_To_The_Audit_Context_Even_Though_The_Password_Is_Never_Evaluated()
+    {
+        var user = UserWith(lockoutEndsAt: DateTimeOffset.UtcNow.AddMinutes(10));
+        var auditContext = new AuditContext();
+        var validator = LoginValidatorFor(RepoFor(user), auditContext);
+
+        var result = await validator.ValidateAsync(new Login.Command(user.Email, Password, true));
+
+        Assert.False(result.IsValid);
+        Assert.Contains(result.Errors, e => e.ErrorMessage == BusinessErrorMessage.AccountLocked);
+        var snapshot = auditContext.DrainSnapshot();
+        Assert.Equal(user.Id, snapshot?.ActorUserId);
+        Assert.Null(snapshot?.AfterJson);
     }
 }

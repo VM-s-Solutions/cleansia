@@ -21,7 +21,7 @@ strings — everything goes through `TranslatePipe` and exists in all 5 locales.
   `SnackbarService`, `*cleansiaPermission`, `Policy`), the four-file feature, NgRx, i18n, performance.
 - `agents/knowledge/consistency.md` — the canonical form for list features (C1–C8) and form features
   (D1–D3). Build the page **the same way** existing pages do; a new deviation is a hard review fail.
-- `agents/knowledge/conventions.md` — naming, owner-only steps.
+- `agents/knowledge/conventions.md` — naming, generated-artifact rules.
 - `docs/architecture/frontend.md` — canonical frontend architecture.
 - The ticket + AC + the backend API contract (the generated client signatures).
 
@@ -52,9 +52,10 @@ pure helper (formatting, derivation) is TDD'd strictly.
 
 ## Regenerating the API client
 If the ticket depends on a backend DTO/endpoint change, **run `npm run generate-*-client` yourself**
-before the work that needs it — nothing is owner-only any more (ruling 2026-09-07, `CLAUDE.md` →
-"Manual steps — there are none left"). Commit the regenerated client alongside the change. Still
-never hand-edit a generated file: regenerate it.
+before the work that needs it. Regeneration is ordinary implementation work. Commit the regenerated
+client in the same change as the DTO or endpoint, verify all three app builds, and name every
+regeneration command run in the report. Never hand-edit a generated file. All production operations
+remain prohibited by `CLAUDE.md`.
 
 ## Constraints
 - No `any`. No string-literal enum comparisons in templates (expose the enum). No raw HTML form

@@ -2,8 +2,6 @@
 
 public class Auditable : BaseEntity
 {
-    public string? TenantId { get; set; }
-
     public string CreatedBy { get; private set; } = default!;
 
     public DateTimeOffset CreatedOn { get; private set; } = DateTimeOffset.UtcNow;
@@ -37,6 +35,15 @@ public class Auditable : BaseEntity
         DeactivatedBy = deactivatedBy;
         DeactivatedOn = deactivatedOn;
         IsActive = false;
+
+        return this;
+    }
+
+    public Auditable Reactivated()
+    {
+        DeactivatedBy = null;
+        DeactivatedOn = null;
+        IsActive = true;
 
         return this;
     }

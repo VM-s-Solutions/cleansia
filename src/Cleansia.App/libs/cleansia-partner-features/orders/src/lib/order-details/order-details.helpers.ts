@@ -243,13 +243,13 @@ export function buildCurrencyOptions(
 }
 
 export function hasExtras(extras: Record<string, boolean> | undefined): boolean {
-  return !!extras && Object.entries(extras).some(([_, value]) => value);
+  return !!extras && Object.values(extras).some((value) => value);
 }
 
 export function getExtrasEntries(
   extras: Record<string, boolean> | undefined
 ): [string, boolean][] {
   return extras
-    ? (Object.entries(extras).filter(([_, value]) => value) as [string, boolean][])
+    ? Object.entries(extras).filter(([, value]) => value)
     : [];
 }

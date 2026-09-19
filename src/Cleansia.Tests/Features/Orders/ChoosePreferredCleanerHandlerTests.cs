@@ -41,10 +41,10 @@ public class ChoosePreferredCleanerHandlerTests
     {
         _session.Setup(s => s.GetUserId()).Returns(CustomerUserId);
         _userMembershipRepository
-            .Setup(r => r.GetActiveForUserNoTrackingAsync(
+            .Setup(r => r.GetEntitledForUserNoTrackingAsync(
                 It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(UserMembership.Create(
-                CustomerUserId, "plan-plus", "sub_choose", DateTime.UtcNow, DateTime.UtcNow.AddMonths(1)));
+                CustomerUserId, "plan-plus", "currency-czk", "sub_choose", DateTime.UtcNow, DateTime.UtcNow.AddMonths(1)));
         GrantOnResolve();
     }
 
@@ -270,7 +270,8 @@ public class ChoosePreferredCleanerHandlerTests
             _session.Object,
             _resolver.Object,
             _notificationProducer.Object,
-            _userMembershipRepository.Object);
+            _userMembershipRepository.Object,
+            Mock.Of<ITenantProvider>());
 
     private void GrantOnResolve()
     {
@@ -296,7 +297,6 @@ public class ChoosePreferredCleanerHandlerTests
             customerAddress: Address.Create("Choose St 1", "Praha", "11000", "cz"),
             rooms: 2,
             bathrooms: 1,
-            extras: new Dictionary<string, bool>(),
             cleaningDateTime: DateTime.UtcNow.AddHours(cleaningInHours),
             paymentType: PaymentType.Card,
             totalPrice: 1500m,
@@ -316,7 +316,7 @@ public class ChoosePreferredCleanerHandlerTests
         order.GrantPreferredHold(
             FirstChoiceId, lapsesAt, lapsesAt.AddHours(-2), BookingPolicy.MaxPreferredOfferRounds);
 
-        _orderRepository.Setup(r => r.GetQueryable()).Returns(new[] { order }.AsQueryable().BuildMock());
+        _orderRepository.Setup(r => r.GetQueryableForOwner(It.IsAny<string>())).Returns(new[] { order }.AsQueryable().BuildMock());
         return order;
     }
 

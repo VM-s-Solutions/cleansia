@@ -27,9 +27,6 @@ public class PackageEntityConfiguration : AuditableEntityConfiguration<Package, 
         builder.Property(p => p.Tagline)
             .HasMaxLength(60);
 
-        builder.Property(p => p.Price)
-            .IsRequired()
-            .HasPrecision(18, 2);
 
         builder.Property(s => s.Translations)
             .HasConversion(new JsonValueConverter<IReadOnlyDictionary<string, Translation>>())

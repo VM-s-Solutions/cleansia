@@ -46,6 +46,84 @@ class BackendKeyStringsTest {
         "validation.invalid_password",
     )
 
+    /**
+     * `CreateOrder` refuses a promo the server will not honour instead of booking at full price, so
+     * every `BusinessErrorMessage.Promo*` key is a live 400 on the mobile customer host. Error code
+     * `PromoCode`; the preview road (`ValidatePromoCode`) still answers the enum name at 200.
+     */
+    private val createOrderPromoKeys = listOf(
+        "promo.not_found",
+        "promo.inactive",
+        "promo.expired",
+        "promo.not_yet_valid",
+        "promo.global_limit_reached",
+        "promo.per_user_limit_reached",
+        "promo.below_minimum_order_amount",
+        "promo.currency_mismatch",
+        "promo.requires_account",
+    )
+
+    /**
+     * `QuoteOrder` judges the address's country and the selection's price rows itself now, so a
+     * refusal that used to come only from the address resolver or from Create can land on the
+     * live quote.
+     */
+    private val quoteOrderMarketKeys = listOf(
+        "country.not_serviced",
+        "currency.invalid",
+        "order.selected_services.invalid",
+        "order.selected_package.invalid",
+    )
+
+    /**
+     * `Subscribe` resolves the chosen market's currency and picks the plan's price row in it
+     * (ADR-0059); a market with no row, or a Stripe Customer already billed in another currency,
+     * refuses with a key the snackbar must be able to say.
+     */
+    private val subscribeMarketKeys = listOf(
+        "membership.plan.not_priced_in_currency",
+        "membership.stripe_customer_currency_locked",
+        "country.not_serviced",
+    )
+
+    /**
+     * `OperatorTenantScopeBehavior` runs before validation on every anonymous request that names a
+     * market — `Register`, `GoogleAuth`, `Referral/Validate`, `Order/Quote`, `Order/QuotePlusSavings`
+     * and both `CreateOrder` routes. A country that is not a market is refused with the existing key;
+     * a market nobody operates is refused with the new one (ADR-0061 D3).
+     */
+    private val operatorScopeKeys = listOf(
+        "country.not_serviced",
+        "tenant.not_found",
+    )
+
+    /**
+     * `CreateOrder` refuses an address whose country is operated by another company than the one the
+     * caller's account belongs to (ADR-0061 D6); reachable from both the order and the payment route.
+     */
+    private val createOrderOperatorKeys = listOf(
+        "order.country_operator_mismatch",
+    )
+
+    /**
+     * The terms gate: `Register` and `CreateOrder` refuse a call that asserts no tick — a registration
+     * always, a booking unless the signed-in account already holds both legal consents. The social
+     * sign-ups keep `auth.social_account_not_found` for the same absence, because there the flag is
+     * what tells the sign-in screen from the sign-up screen.
+     */
+    private val termsTickKeys = listOf(
+        "consent.terms_not_accepted",
+    )
+
+    /**
+     * The archived-company write guard (ADR-0064 D3): a review, a dispute or a cancellation against a
+     * company frozen for archive is refused at the commit and answered 409 with this key on every
+     * customer route, so the snackbar must be able to say it.
+     */
+    private val archivedCompanyKeys = listOf(
+        "tenant.archived",
+    )
+
     private val resDir: File = sequenceOf(
         File("src/main/res"),
         File("customer-app/src/main/res"),
@@ -73,6 +151,41 @@ class BackendKeyStringsTest {
     @Test
     fun `every google-auth refusal resolves to a sentence in all five locales`() {
         assertAllResolve(googleAuthKeys)
+    }
+
+    @Test
+    fun `every promo refusal CreateOrder can answer resolves to a sentence in all five locales`() {
+        assertAllResolve(createOrderPromoKeys)
+    }
+
+    @Test
+    fun `every market refusal QuoteOrder can answer resolves to a sentence in all five locales`() {
+        assertAllResolve(quoteOrderMarketKeys)
+    }
+
+    @Test
+    fun `every market refusal Subscribe can answer resolves to a sentence in all five locales`() {
+        assertAllResolve(subscribeMarketKeys)
+    }
+
+    @Test
+    fun `every operator-scope refusal an anonymous request can answer resolves to a sentence in all five locales`() {
+        assertAllResolve(operatorScopeKeys)
+    }
+
+    @Test
+    fun `the operator mismatch CreateOrder can answer resolves to a sentence in all five locales`() {
+        assertAllResolve(createOrderOperatorKeys)
+    }
+
+    @Test
+    fun `the terms refusal Register and CreateOrder can answer resolves to a sentence in all five locales`() {
+        assertAllResolve(termsTickKeys)
+    }
+
+    @Test
+    fun `the archived-company refusal every write can answer resolves to a sentence in all five locales`() {
+        assertAllResolve(archivedCompanyKeys)
     }
 
     private fun assertAllResolve(keys: List<String>) {

@@ -44,11 +44,11 @@ public sealed class OutboxPendingDispatchTests : IDisposable
     private async Task EnsureSchemaAsync()
     {
         await using var ctx = NewContext(null);
-        await ctx.Database.EnsureCreatedAsync();
+        await TestTenants.EnsureCreatedWithRegistryAsync(ctx);
     }
 
     private static QueueEnvelope<GenerateReceiptMessage> Envelope(string orderId) =>
-        new(MessageKeys.Receipt(orderId), "tenant-1", new GenerateReceiptMessage(orderId, "en"));
+        new(MessageKeys.Receipt(orderId), TestTenants.Default, new GenerateReceiptMessage(orderId, "en"));
 
     [Fact]
     public async Task Enqueue_With_A_Committed_Business_Change_Persists_Exactly_One_Row()
@@ -67,7 +67,7 @@ public sealed class OutboxPendingDispatchTests : IDisposable
         var row = Assert.Single(await readCtx.OutboxMessages.IgnoreQueryFilters().ToListAsync());
         Assert.Equal(QueueNames.GenerateReceipt, row.QueueName);
         Assert.Equal(MessageKeys.Receipt("ORDER-1"), row.MessageKey);
-        Assert.Equal("tenant-1", row.TenantId);
+        Assert.Equal(TestTenants.Default, row.TenantId);
         Assert.Equal(OutboxMessageStatus.Pending, row.Status);
         Assert.Contains("ORDER-1", row.Body);
         Assert.Single(await readCtx.Languages.Where(l => l.Code == "xx").ToListAsync());
@@ -88,7 +88,7 @@ public sealed class OutboxPendingDispatchTests : IDisposable
             // the in-request collapse, so the unique index rejects the whole SaveChanges and the unit of
             // work (the outbox row + the business change) rolls back together.
             ctx.OutboxMessages.Add(OutboxMessage.Create(
-                QueueNames.GenerateReceipt, MessageKeys.Receipt("ORDER-1"), "{}", "tenant-1"));
+                QueueNames.GenerateReceipt, MessageKeys.Receipt("ORDER-1"), "{}", TestTenants.Default));
 
             await Assert.ThrowsAnyAsync<Exception>(() => ctx.CommitAsync(CancellationToken.None));
         }

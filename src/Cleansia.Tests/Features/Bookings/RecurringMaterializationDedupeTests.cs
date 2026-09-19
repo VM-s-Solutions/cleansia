@@ -1,7 +1,10 @@
-﻿using Cleansia.Core.AppServices.Features.Bookings;
+using Cleansia.TestUtilities.MockDataFactories.Memberships;
+using Cleansia.Core.AppServices.Features.Bookings;
 using Cleansia.Core.AppServices.Features.Orders;
+using Cleansia.Core.AppServices.Services;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Bookings;
+using Cleansia.Core.Domain.Configuration;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Internationalization;
 using Cleansia.Core.Domain.Loyalty;
@@ -18,8 +21,8 @@ using Cleansia.TestUtilities;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging.Abstractions;
 using MockQueryable;
+using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 
 namespace Cleansia.Tests.Features.Bookings;
@@ -187,6 +190,7 @@ public sealed class RecurringMaterializationDedupeTests : IDisposable
 
     private async Task CancelFirstOccurrenceAsync()
     {
+        _tenantProvider.SetTenantOverride(TestTenants.Default);
         await using var ctx = NewContext();
         var order = await ctx.Orders
             .IgnoreQueryFilters()
@@ -255,6 +259,7 @@ public sealed class RecurringMaterializationDedupeTests : IDisposable
         var services = new ServiceCollection();
 
         services.AddLogging();
+        services.AddSingleton(Cleansia.Tests.Features.Orders.OrderMarketDoubles.OperatedBy(TestTenants.Default));
         services.AddScoped<ITenantProvider>(_ => new MutableTenantProvider());
         services.AddScoped(sp => new CleansiaDbContext(
             new DbContextOptionsBuilder<CleansiaDbContext>().UseSqlite(_connection).Options,
@@ -270,10 +275,20 @@ public sealed class RecurringMaterializationDedupeTests : IDisposable
             sp => new AddressRepository(sp.GetRequiredService<CleansiaDbContext>()));
         services.AddScoped<ICurrencyRepository>(
             sp => new CurrencyRepository(sp.GetRequiredService<CleansiaDbContext>()));
+        services.AddScoped<ICurrencyResolutionService>(
+            sp => new CurrencyResolutionService(
+                new EmployeeRepository(sp.GetRequiredService<CleansiaDbContext>()),
+                new CountryConfigurationRepository(sp.GetRequiredService<CleansiaDbContext>()),
+                sp.GetRequiredService<ICurrencyRepository>()));
         services.AddScoped<IOrderRepository>(
             sp => new OrderRepository(sp.GetRequiredService<CleansiaDbContext>()));
         services.AddSingleton(PricingCalculator());
         services.AddScoped(sp => RealOrderFactory(sp.GetRequiredService<IOrderRepository>()));
+        // The sweep requires a PAID membership (T-0690). These classes are about tenant stamping,
+        // dedupe and per-template isolation, so the owner is simply entitled — otherwise the sweep
+        // correctly generates nothing and their real subject never runs.
+        services.AddScoped(_ => EntitledMemberships());
+        services.AddScoped<INotificationProducer>(_ => Mock.Of<INotificationProducer>());
         services.AddScoped<MaterializeRecurringBookingTemplate.Handler>();
 
         return services.BuildServiceProvider();
@@ -291,7 +306,7 @@ public sealed class RecurringMaterializationDedupeTests : IDisposable
 
         var loyalty = new Mock<ILoyaltyService>();
         loyalty.Setup(s => s.ResolveTierDiscountForOrderAsync(
-                It.IsAny<string>(), It.IsAny<decimal>(), It.IsAny<CancellationToken>()))
+                It.IsAny<string>(), It.IsAny<decimal>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new TierDiscountResult(0m, null));
 
         var holdResolver = new Mock<IPreferredCleanerHoldResolver>();
@@ -304,14 +319,22 @@ public sealed class RecurringMaterializationDedupeTests : IDisposable
             orderRepository,
             services.Object,
             packages.Object,
+            ExtraRepositoryDouble.Empty(),
+            CataloguePriceDoubles.NoServices(),
+            CataloguePriceDoubles.NoPackages(),
+            CataloguePriceDoubles.NoExtras(),
             PayConfigRepositoryDouble.Holding(),
             new Mock<ICompanyInfoRepository>().Object,
             new Mock<ICountryConfigurationRepository>().Object,
             new Mock<IVatCalculator>().Object,
             loyalty.Object,
-            new Mock<IUserMembershipRepository>().Object,
+            // The sweep now requires a PAID membership (T-0690). This class is not about
+            // membership, so the owner is simply entitled and the real subject runs.
+            EntitledMemberships(),
             holdResolver.Object,
-            new Mock<INotificationProducer>().Object);
+            new Mock<INotificationProducer>().Object,
+            Mock.Of<IAdminNotifier>(),
+            NullLogger<OrderFactory>.Instance);
     }
 
     private static IOrderPricingCalculator PricingCalculator()
@@ -328,15 +351,22 @@ public sealed class RecurringMaterializationDedupeTests : IDisposable
 
     private async Task SeedAsync()
     {
-        _tenantProvider.ClearTenantOverride();
+        _tenantProvider.SetTenantOverride(TestTenants.Default);
 
         await using var ctx = NewContext();
         await ctx.Database.EnsureCreatedAsync();
 
-        var currency = Currency.Create("CZK", "Kč", "Czech Koruna", 1m);
+        var currency = Currency.Create("CZK", "Kč", "Czech Koruna");
         currency.Id = "currency-czk";
         currency.SetAsDefault(true);
         ctx.Set<Currency>().Add(currency);
+
+        // The service address's country must resolve to a real currency: a named country with no
+        // configuration throws rather than falling back to the default.
+        var country = Country.Create("Czechia", "CZ", "CZ", isServiced: true);
+        country.Id = "country-cz";
+        ctx.Set<Country>().Add(country);
+        ctx.Set<CountryConfiguration>().Add(CountryConfiguration.Create("country-cz", "CZK", "cs", 0.21m));
 
         var user = User.CreateWithPassword(
             $"{UserId}@cleansia.test", "Password1!", "Rita", "Recurring", UserProfile.Customer);
@@ -371,9 +401,20 @@ public sealed class RecurringMaterializationDedupeTests : IDisposable
 
     private sealed class MutableTenantProvider : ITenantProvider
     {
-        private string? _tenantId;
+        private string? _tenantId = TestTenants.Default;
         public string? GetCurrentTenantId() => _tenantId;
         public void SetTenantOverride(string tenantId) => _tenantId = tenantId;
         public void ClearTenantOverride() => _tenantId = null;
+    }
+
+    private static IUserMembershipRepository EntitledMemberships()
+    {
+        var memberships = new Mock<IUserMembershipRepository>();
+        memberships
+            .Setup(r => r.GetEntitledForUserNoTrackingAsync(
+                It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((string userId, CancellationToken _) =>
+                UserMembershipMockFactory.Paid(userId));
+        return memberships.Object;
     }
 }

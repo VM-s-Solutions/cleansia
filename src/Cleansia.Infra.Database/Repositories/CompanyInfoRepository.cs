@@ -18,6 +18,14 @@ public class CompanyInfoRepository(CleansiaDbContext context) : BaseRepository<C
             .FirstOrDefaultAsync(c => c.CountryId == countryId && c.IsActive, cancellationToken);
     }
 
+    public async Task<CompanyInfo?> GetActiveForOperatorAsync(string operatorTenantId, string countryId, CancellationToken cancellationToken)
+    {
+        return await GetQueryableIgnoringTenant()
+            .Include(c => c.Country)
+            .FirstOrDefaultAsync(
+                c => c.TenantId == operatorTenantId && c.CountryId == countryId && c.IsActive, cancellationToken);
+    }
+
     public async Task<bool> ExistsActiveForCountryAsync(string countryId, CancellationToken cancellationToken)
     {
         return await GetDbSet().AnyAsync(c => c.CountryId == countryId && c.IsActive, cancellationToken);
@@ -31,5 +39,15 @@ public class CompanyInfoRepository(CleansiaDbContext context) : BaseRepository<C
     public async Task<int> CountActiveAsync(CancellationToken cancellationToken)
     {
         return await GetDbSet().CountAsync(c => c.IsActive, cancellationToken);
+    }
+
+    public async Task<IReadOnlyList<string>> GetActiveLegalNamesAsync(CancellationToken cancellationToken)
+    {
+        return await GetDbSet()
+            .AsNoTracking()
+            .Where(c => c.IsActive)
+            .OrderBy(c => c.CountryId)
+            .Select(c => c.LegalName)
+            .ToListAsync(cancellationToken);
     }
 }

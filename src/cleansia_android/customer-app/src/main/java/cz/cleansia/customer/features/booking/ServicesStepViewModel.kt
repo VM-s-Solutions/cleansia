@@ -5,6 +5,8 @@ import androidx.lifecycle.viewModelScope
 import cz.cleansia.core.network.ApiError
 import cz.cleansia.core.snackbar.SnackbarController
 import cz.cleansia.customer.core.catalog.CatalogRepository
+import cz.cleansia.customer.core.market.MarketRepository
+import cz.cleansia.customer.core.market.countryId
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.launch
@@ -22,12 +24,15 @@ import kotlinx.coroutines.launch
 @HiltViewModel
 class ServicesStepViewModel @Inject constructor(
     val catalogRepository: CatalogRepository,
+    private val marketRepository: MarketRepository,
     private val snackbar: SnackbarController,
 ) : ViewModel() {
 
+    /** Before the address step the wizard prices the chosen market (ADR-0058 D4). */
     fun refreshCatalog() {
         viewModelScope.launch {
-            catalogRepository.refresh().onError { error ->
+            val market = marketRepository.ensureLoaded()
+            catalogRepository.refresh(market.countryId).onError { error ->
                 if (error !is ApiError.Network) snackbar.showError(error)
             }
         }

@@ -60,8 +60,8 @@
             <span class="menu-item-label">{{ item.label | translate }}</span>
             }
 
-            <!-- Badge (shown when not collapsed) -->
-            @if (item.badge && !effectiveCollapsed()) {
+            <!-- Badge: beside the label, or on the icon's corner once the rail collapses -->
+            @if (item.badge) {
             <span class="menu-item-badge">{{ item.badge }}</span>
             }
 

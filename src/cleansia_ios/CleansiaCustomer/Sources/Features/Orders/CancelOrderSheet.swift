@@ -47,6 +47,34 @@ enum CancelOrderConfirmGate {
         guard hasReason, !quoteIsLoading, !isSubmitting else { return false }
         return !needsNotes || notes.trimmingCharacters(in: .whitespaces).count >= 3
     }
+
+    /// The guest half of the rule. A guest has no account for a surprise fee to be reconciled against
+    /// afterwards, so a guest commits only to a quote the server has actually priced for this booking —
+    /// a preview outage holds the button instead of degrading, and the card says so.
+    static func quoteIsUsable(_ quote: UiState<CancellationQuote>) -> Bool {
+        guard let quote = quote.loadedValue else { return false }
+        return !(quote.currencyCode?.isBlank ?? true)
+    }
+}
+
+/// Mirrors `CancelOrder.Validator`'s `RuleFor(x => x.Reason).MaximumLength(500)`; the guest command
+/// refuses the same figure, and a refusal after the sheet is filled in is the worst moment to learn it.
+///
+/// Counted in UTF-16, as the server counts it — see `String.cappedToUtf16`. A `count` cap would let
+/// 300 emoji through the field and have them refused at submit.
+enum CancelReasonLimit {
+    static let maxUtf16Length = 500
+
+    /// How many UTF-16 units the free-text notes may hold once the reason code and its `": "` joiner
+    /// are in front of them, so the submitted payload never exceeds `maxUtf16Length`.
+    static func notesLimit(reasonCode: String?) -> Int {
+        guard let reasonCode else { return maxUtf16Length }
+        return max(0, maxUtf16Length - reasonCode.utf16.count - 2)
+    }
+
+    static func cappedNotes(_ notes: String, reasonCode: String?) -> String {
+        notes.cappedToUtf16(notesLimit(reasonCode: reasonCode))
+    }
 }
 
 struct CancelOrderSheet: View {
@@ -58,11 +86,10 @@ struct CancelOrderSheet: View {
     let onRetryQuote: () -> Void
     let onConfirm: (String?) -> Void
     let onDismiss: () -> Void
+    var requiresQuote = false
 
     @State private var selectedReason: CancelReasonOption?
     @State private var notes = ""
-
-    private let maxReasonLength = 2000
 
     private var canSubmit: Bool {
         CancelOrderConfirmGate.canConfirm(
@@ -71,7 +98,7 @@ struct CancelOrderSheet: View {
             notes: notes,
             quoteIsLoading: quote.isLoading,
             isSubmitting: isSubmitting
-        )
+        ) && (!requiresQuote || CancelOrderConfirmGate.quoteIsUsable(quote))
     }
 
     var body: some View {
@@ -82,8 +109,9 @@ struct CancelOrderSheet: View {
                     .foregroundColor(CleansiaColors.onSurface)
 
                 CancellationFeeCard(
-                    model: CancellationFeeCardModel(quote),
+                    model: CancellationFeeCardModel(quote, refundIsEstimate: requiresQuote),
                     currencyCode: currencyCode,
+                    requiresQuote: requiresQuote,
                     onRetry: onRetryQuote
                 )
 
@@ -92,6 +120,8 @@ struct CancelOrderSheet: View {
                     .foregroundColor(CleansiaColors.onSurface)
 
                 ReasonChips(selected: $selectedReason, enabled: !isSubmitting) {
+                    let capped = CancelReasonLimit.cappedNotes(notes, reasonCode: selectedReason?.code)
+                    if capped != notes { notes = capped }
                     if errorMessage?.isBlank == false { onReasonChanged() }
                 }
 
@@ -100,7 +130,7 @@ struct CancelOrderSheet: View {
                         notes: $notes,
                         isOther: selectedReason == .other,
                         enabled: !isSubmitting,
-                        maxLength: maxReasonLength,
+                        reasonCode: selectedReason.code,
                         onChange: { if errorMessage?.isBlank == false { onReasonChanged() } }
                     )
                 }
@@ -213,7 +243,7 @@ private struct NotesField: View {
     @Binding var notes: String
     let isOther: Bool
     let enabled: Bool
-    let maxLength: Int
+    let reasonCode: String
     let onChange: () -> Void
 
     var body: some View {
@@ -232,7 +262,8 @@ private struct NotesField: View {
                 )
                 .disabled(!enabled)
                 .onChange(of: notes) { value in
-                    if value.count > maxLength { notes = String(value.prefix(maxLength)) }
+                    let capped = CancelReasonLimit.cappedNotes(value, reasonCode: reasonCode)
+                    if capped != value { notes = capped }
                     onChange()
                 }
         }

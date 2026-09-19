@@ -52,6 +52,8 @@ function findSolutionDir(): string {
 
 const FRONTEND_DIR = join(findSolutionDir(), 'Cleansia.App');
 const APP_DIR = join(FRONTEND_DIR, 'apps', APP_NAME);
+// The build resolves bare package paths in the stylesheets; the plain compiler needs telling where.
+const NODE_MODULES_DIR = join(FRONTEND_DIR, 'node_modules');
 
 function buildStylesheets(): string[] {
   const project = JSON.parse(
@@ -63,7 +65,7 @@ function buildStylesheets(): string[] {
 function compiledStylesheets(): CompiledStylesheet[] {
   return buildStylesheets().map((stylesheet) => ({
     stylesheet,
-    css: compile(join(FRONTEND_DIR, stylesheet), { quietDeps: true }).css,
+    css: compile(join(FRONTEND_DIR, stylesheet), { quietDeps: true, loadPaths: [NODE_MODULES_DIR] }).css,
   }));
 }
 

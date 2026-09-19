@@ -21,6 +21,7 @@ public static class PayCoverageLookup
         IEmployeePayConfigRepository payConfigRepository,
         IReadOnlyList<PayCoverageTarget> catalogue,
         string? employeeId,
+        string currencyId,
         CancellationToken cancellationToken)
     {
         if (catalogue.Count == 0)
@@ -41,7 +42,11 @@ public static class PayCoverageLookup
         // Narrowed in SQL to the rows that could possibly apply, then decided in memory by
         // PayCoverage.Applies — the SQL term is a superset filter for cost, never the arbiter, so the
         // two cannot drift into disagreement about what "applies" means.
+        // THE ORDER'S CURRENCY, as the repository's own order-scoped reads do
+        // (currencyIds.Contains(c.CurrencyId)). A rate in another currency cannot pay this order, so
+        // counting it would admit an order the writer then finds nothing for.
         var query = payConfigRepository.GetAll()
+            .Where(config => config.CurrencyId == currencyId)
             .Where(config =>
                 (config.ServiceId != null && serviceIds.Contains(config.ServiceId))
                 || (config.PackageId != null && packageIds.Contains(config.PackageId)));
@@ -52,7 +57,7 @@ public static class PayCoverageLookup
 
         var configs = await query.AsNoTracking().ToListAsync(cancellationToken);
 
-        return PayCoverage.FindGaps(catalogue, configs, employeeId);
+        return PayCoverage.FindGaps(catalogue, configs, employeeId, currencyId);
     }
 
     /// <summary>
@@ -66,6 +71,7 @@ public static class PayCoverageLookup
         IPackageRepository packageRepository,
         IEmployeePayConfigRepository payConfigRepository,
         string? employeeId,
+        string currencyId,
         CancellationToken cancellationToken)
     {
         var services = await serviceRepository.GetAll()
@@ -84,6 +90,7 @@ public static class PayCoverageLookup
             payConfigRepository,
             AsTargets(services, packages),
             employeeId,
+            currencyId,
             cancellationToken);
     }
 
@@ -100,6 +107,7 @@ public static class PayCoverageLookup
         IEmployeePayConfigRepository payConfigRepository,
         IEnumerable<string> serviceIds,
         IEnumerable<string> packageIds,
+        string currencyId,
         CancellationToken cancellationToken)
     {
         var wantedServiceIds = serviceIds.Distinct().ToList();
@@ -123,6 +131,7 @@ public static class PayCoverageLookup
             payConfigRepository,
             AsTargets(services, packages),
             employeeId: null,
+            currencyId,
             cancellationToken);
     }
 

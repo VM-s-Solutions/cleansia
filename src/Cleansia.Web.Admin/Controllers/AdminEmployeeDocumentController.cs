@@ -16,7 +16,7 @@ namespace Cleansia.Web.Admin.Controllers;
 public class AdminEmployeeDocumentController(IMediator mediator) : ApiController(mediator)
 {
     [HttpPost("get-paged")]
-    [Permission(Policy.CanViewEmployeeDocuments)]
+    [Permission(Policy.CanViewEmployeeDocumentsAdmin)]
     [ProducesResponseType(typeof(PagedData<EmployeeDocumentItem>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -64,7 +64,7 @@ public class AdminEmployeeDocumentController(IMediator mediator) : ApiController
     }
     
     [HttpGet("{documentId}/versions")]
-    [Permission(Policy.CanViewEmployeeDocuments)]
+    [Permission(Policy.CanViewEmployeeDocumentsAdmin)]
     [ProducesResponseType(typeof(GetDocumentVersionHistory.Response), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -77,7 +77,7 @@ public class AdminEmployeeDocumentController(IMediator mediator) : ApiController
     }
 
     [HttpGet("{documentId}/download")]
-    [Permission(Policy.CanViewEmployeeDocuments)]
+    [Permission(Policy.CanViewEmployeeDocumentsAdmin)]
     [ProducesResponseType(typeof(FileContentResult), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -105,7 +105,7 @@ public class AdminEmployeeDocumentController(IMediator mediator) : ApiController
     /// requirements change with the law, and a change that needs a release is a change that waits for one.
     /// </summary>
     [HttpGet("requirements/{countryId}")]
-    [Permission(Policy.CanViewEmployeeDocuments)]
+    [Permission(Policy.CanViewEmployeeDocumentsAdmin)]
     [ProducesResponseType(typeof(IEnumerable<DocumentRequirementDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
@@ -162,7 +162,7 @@ public class AdminEmployeeDocumentController(IMediator mediator) : ApiController
     /// a status, so the record is not hidden — it is just not what the screen opens on.
     /// </summary>
     [HttpGet("deletion-requests")]
-    [Permission(Policy.CanViewEmployeeDocuments)]
+    [Permission(Policy.CanViewEmployeeDocumentsAdmin)]
     [ProducesResponseType(typeof(IEnumerable<DocumentDeletionRequestDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]

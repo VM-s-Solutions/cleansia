@@ -1,4 +1,5 @@
-﻿using Cleansia.Core.Domain.Users;
+﻿using Cleansia.Core.Domain.Enums;
+using Cleansia.Core.Domain.Users;
 
 namespace Cleansia.Core.Domain.Repositories;
 
@@ -25,12 +26,12 @@ public interface IUserRepository : IRepository<User, string>
     Task<bool> ExistsWithEmailAsync(string email, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Anonymous-path variant of <see cref="GetByEmailAsync"/> for login / lockout / password-reset.
-    /// Those requests carry no tenant claim, so the global tenant filter narrows every read to
-    /// <c>TenantId == null</c> and a tenant-stamped account could never log in. Bypasses the filter;
-    /// the caller-supplied email is the scope. Never use it on authenticated or registration
-    /// surfaces — email uniqueness is per-tenant (the (TenantId, Email) unique index), so those must
-    /// stay inside the filter.
+    /// Anonymous-path variant of <see cref="GetByEmailAsync"/> for login / lockout / password-reset and
+    /// the registration pre-checks. Those requests carry no claim, so the global tenant filter would
+    /// narrow the read to the ambient tenant and a stamped account in another operating company would be
+    /// invisible. Bypasses the filter; the caller-supplied email is the scope, and it is one identity
+    /// across the holding (the global Email unique index, ADR-0061 D5.1). Authenticated surfaces keep
+    /// <see cref="GetByEmailAsync"/>: their claim is the scope.
     /// </summary>
     Task<User?> GetByEmailIgnoringTenantAsync(string email, CancellationToken cancellationToken = default);
 
@@ -59,8 +60,11 @@ public interface IUserRepository : IRepository<User, string>
     /// </summary>
     Task<User?> GetByGoogleIdIgnoringTenantAsync(string googleId, CancellationToken cancellationToken = default);
 
-    Task<bool> ExistsWithConfirmationCodeAsync(string token, CancellationToken cancellationToken = default);
-    Task<User?> GetByConfirmationCodeAsync(string token, CancellationToken cancellationToken = default);
+    /// <summary>
+    /// The legacy 128-bit confirm link, opened anonymously against a tenant-stamped row: the hash is the
+    /// pin (ADR-0051 bypass-and-re-pin, ADR-0061 D4).
+    /// </summary>
+    Task<User?> GetByConfirmationCodeIgnoringTenantAsync(string token, CancellationToken cancellationToken = default);
     IQueryable<User> GetUnconfirmedUsersOlderThan(DateTime cutoffDate);
     Task<bool> ExistsWithPhoneNumberAsync(string phoneNumber, CancellationToken cancellationToken);
     IQueryable<User> GetConfirmedUsersWithEmails(IEnumerable<string> emails);
@@ -73,6 +77,34 @@ public interface IUserRepository : IRepository<User, string>
     /// before mutating any tenant-scoped row.
     /// </summary>
     Task<User?> GetByIdIgnoringTenantAsync(string id, CancellationToken cancellationToken = default);
+
+    /// <summary>Recipient company for a notification addressed by a server-derived user id.</summary>
+    Task<string?> GetNotificationRecipientTenantAsync(string userId, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// The administrators of <paramref name="tenantId"/> an admin event may be delivered to: active,
+    /// e-mail confirmed and not anonymised, with their role for the notifier to match against the
+    /// event's audience. Reads by the company ARGUMENT, never the ambient tenant — the event's company
+    /// is the order's or the webhook's, and the caller's override may name another.
+    /// </summary>
+    Task<IReadOnlyList<AdministratorRecipient>> GetActiveAdministratorsAsync(string tenantId, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Sets an administrator's role, refusing to demote the company's last active Administrator. Runs
+    /// as one transaction under the company's advisory lock, so two demotions of the last two
+    /// Administrators serialise and the second reads the first's committed result (a conditional
+    /// UPDATE alone is write skew under READ COMMITTED: each sees the other row still an Administrator).
+    /// Returns the rows updated — 0 means refused. Commits itself; the unit of work has no part in it.
+    /// </summary>
+    Task<int> DemoteAdministratorIfAnotherRemainsAsync(string tenantId, string userId, AdminRole role, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Deactivates an administrator, refusing to deactivate the company's last active Administrator-role
+    /// administrator — a company with only a Support left has nobody who can assign a role or create an
+    /// account. Same transaction and lock as <see cref="DemoteAdministratorIfAnotherRemainsAsync"/>.
+    /// Returns the rows updated — 0 means refused.
+    /// </summary>
+    Task<int> DeactivateAdministratorIfAnotherRemainsAsync(string tenantId, string userId, string actorId, DateTimeOffset now, CancellationToken cancellationToken);
 
     /// <summary>
     /// Atomically increments the account's failed-login counter and opens the lockout window once

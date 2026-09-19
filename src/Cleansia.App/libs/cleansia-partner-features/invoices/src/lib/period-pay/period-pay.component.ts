@@ -36,6 +36,7 @@ export class PeriodPayComponent implements OnInit {
   private readonly router = inject(Router);
 
   protected readonly periodControl = new FormControl<string | null>(null);
+  protected readonly currencyControl = new FormControl<string | null>(null);
   // Computed, not a field initializer: the currency arrives with the summary, so the column formatters
   // have to be rebuilt when it does or every row would render with whatever was known at construction.
   protected readonly periodPayColumns = computed(
@@ -44,6 +45,7 @@ export class PeriodPayComponent implements OnInit {
 
   ngOnInit(): void {
     this.facade.connectPeriodControl(this.periodControl);
+    this.facade.connectCurrencyControl(this.currencyControl);
     this.facade.init();
   }
 

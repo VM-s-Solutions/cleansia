@@ -4,7 +4,12 @@ import {
   GdprRequestStatus,
   UserConsentDto,
 } from '@cleansia/admin-services';
-import { TableAction, TableColumn } from '@cleansia/components';
+import {
+  ICleansiaSelectOption,
+  TableAction,
+  TableColumn,
+} from '@cleansia/components';
+import { PermissionService, Policy } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
 
 export const GDPR_REQUEST_STATUS_LABEL_KEYS: Readonly<
@@ -34,10 +39,33 @@ const REQUEST_TYPE_LABEL_KEYS: Readonly<Record<string, string>> = {
   Deletion: 'pages.data_protection.request_types.deletion',
 };
 
+const DELETION_REQUEST_TYPE = 'Deletion';
+
+const GDPR_REQUEST_STATUSES: readonly GdprRequestStatus[] = [
+  GdprRequestStatus.Pending,
+  GdprRequestStatus.Processing,
+  GdprRequestStatus.Completed,
+  GdprRequestStatus.Failed,
+];
+
+export function getGdprRequestStatusOptions(
+  translate: TranslateService
+): ICleansiaSelectOption[] {
+  return GDPR_REQUEST_STATUSES.map((status) => ({
+    label: translate.instant(GDPR_REQUEST_STATUS_LABEL_KEYS[status]),
+    value: status,
+  }));
+}
+
 export function getGdprRequestTableDefinition(
+  defs: {
+    onFulfil: (row: GdprRequestDto) => void;
+    onRetry: (row: GdprRequestDto) => void;
+    retrying: () => boolean;
+  },
   translate: TranslateService,
-  formatDate: (d?: Date) => string,
-  onFulfil: (row: GdprRequestDto) => void
+  permissions: PermissionService,
+  formatDate: (d?: Date) => string
 ): {
   columns: TableColumn<GdprRequestDto>[];
   actions: TableAction<GdprRequestDto>[];
@@ -123,8 +151,23 @@ export function getGdprRequestTableDefinition(
         visible: (row) =>
           !!row.userId &&
           row.status === GdprRequestStatus.Pending &&
-          row.requestType === 'Deletion',
-        onClick: onFulfil,
+          row.requestType === DELETION_REQUEST_TYPE,
+        onClick: defs.onFulfil,
+      },
+      {
+        icon: 'pi pi-refresh',
+        color: 'warning',
+        tooltip: translate.instant('pages.data_protection.requests.retry'),
+        // Processing is offered too: a row left there is a run the host never finished. Whether it
+        // is stale enough to re-run is the server's rule — a refusal comes back translated.
+        visible: (row) =>
+          !!row.id &&
+          row.requestType === DELETION_REQUEST_TYPE &&
+          (row.status === GdprRequestStatus.Failed ||
+            row.status === GdprRequestStatus.Processing) &&
+          permissions.hasPolicy(Policy.CanAdminDeleteUserAccount),
+        disabled: () => defs.retrying(),
+        onClick: defs.onRetry,
       },
     ],
   };

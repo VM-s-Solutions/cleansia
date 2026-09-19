@@ -31,6 +31,10 @@ public class OrderSort(string propertyName, bool isAscending)
         {
             return x => x.TotalPrice;
         }
+        if (string.Equals(propertyName, nameof(Order.CurrencyId), StringComparison.CurrentCultureIgnoreCase))
+        {
+            return x => x.CurrencyId;
+        }
         if (string.Equals(propertyName, nameof(Order.PaymentStatus), StringComparison.CurrentCultureIgnoreCase))
         {
             return x => x.PaymentStatus;

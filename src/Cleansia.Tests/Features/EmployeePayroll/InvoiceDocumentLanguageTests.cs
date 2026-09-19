@@ -116,6 +116,9 @@ public class InvoiceDocumentLanguageTests
         _payoutReferenceAllocator
             .Setup(a => a.AllocateAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(BusinessResult.Success(PayrollMockFactory.TestVariableSymbol));
+        _payoutReferenceAllocator
+            .Setup(a => a.AllocateInvoiceNumberAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(BusinessResult.Success(PayrollMockFactory.TestInvoiceNumber));
 
         _languageRepository
             .Setup(r => r.GetByCodeAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
@@ -207,7 +210,8 @@ public class InvoiceDocumentLanguageTests
         _pdfService.Object,
         _blobContainerClientFactory.Object,
         _tenantProvider.Object,
-        _payoutReferenceAllocator.Object)
+        _payoutReferenceAllocator.Object,
+        new Mock<ITenantRepository>().Object)
         .CloseExpiredPeriodsAndOpenNewAsync(CancellationToken.None);
 
     private Task<BusinessResult<RegenerateInvoicePdf.Response>> ReRender(string languageCode) =>
@@ -233,12 +237,12 @@ public class InvoiceDocumentLanguageTests
         var address = Address.Create("Dlouhá 12", "Praha", "11000", "cz");
         typeof(Address)
             .GetProperty(nameof(Address.Country))!
-            .SetValue(address, Country.Create("Czechia", CleanerCountryIsoCode));
+            .SetValue(address, Country.Create("Czechia", CleanerCountryIsoCode, "CZ"));
 
         var employee = Employee.CreateWithUser(user);
         employee.Id = PayrollMockFactory.EmployeeId;
         employee.UpdateAddress(address);
-        employee.UpdateBusinessIdentity(EmployeeEntityType.NaturalPerson, "12345678", null, null);
+        employee.UpdateBusinessIdentity(EmployeeEntityType.NaturalPerson, "12345678", null);
         return employee;
     }
 
@@ -251,7 +255,6 @@ public class InvoiceDocumentLanguageTests
             city: "Praha",
             zipCode: "11000",
             countryId: "cz",
-            vatNumber: "CZ87654321",
             iban: "CZ1101000000001234567890",
             bankAccountNumber: "1234567890/0100",
             swift: "KOMBCZPP");

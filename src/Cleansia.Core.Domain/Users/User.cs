@@ -9,10 +9,11 @@ using Cleansia.Core.Domain.Internationalization;
 
 namespace Cleansia.Core.Domain.Users;
 
-public class User : Auditable, ITenantEntity
+public class User : TenantAuditable
 {
     public const int MaxFailedLoginAttempts = 5;
     public const int MaxCodeVerificationAttempts = 5;
+    public const string AnonymisedEmailSuffix = "@anonymized.local";
     public static readonly TimeSpan FailedLoginLockout = TimeSpan.FromMinutes(15);
 
     [Password]
@@ -50,6 +51,14 @@ public class User : Auditable, ITenantEntity
     public DateOnly? BirthDate { get; private set; }
 
     public UserProfile Profile { get; private set; } = UserProfile.Customer;
+
+    /// <summary>
+    /// The administrator's role: NOT NULL iff <see cref="Profile"/> is <see cref="UserProfile.Administrator"/>
+    /// (the database check constraint says the same), meaningless and null for a customer or a cleaner.
+    /// Written by <see cref="CreateWithPassword"/> at creation; every later change goes through the
+    /// repository's guarded update, which is the only path that refuses to demote the last Administrator.
+    /// </summary>
+    public AdminRole? AdminRole { get; private set; }
 
     public AuthenticationType AuthenticationType { get; private set; } = AuthenticationType.Internal;
 
@@ -122,8 +131,17 @@ public class User : Auditable, ITenantEntity
     /// </summary>
     public UserMembership? ActiveMembership => _memberships.FirstOrDefault(m => m.IsActive);
 
-    public static User CreateWithPassword(string email, string password, string firstName, string lastName, UserProfile profile = UserProfile.Customer, string? languageCode = null)
+    public static User CreateWithPassword(string email, string password, string firstName, string lastName, UserProfile profile = UserProfile.Customer, string? languageCode = null, AdminRole? adminRole = null)
     {
+        // A silent default to the most privileged role would be fail-open in a domain factory, and a
+        // role on a customer is a row that lies; both are programming errors, refused here before the
+        // constraint refuses them at the database.
+        if ((profile == UserProfile.Administrator) != adminRole.HasValue)
+        {
+            throw new InvalidOperationException(
+                "An administrator holds exactly one admin role and no other profile holds any.");
+        }
+
         // Generate the typed 6-digit verification code (the apps render six digit boxes), persist only
         // its hash, and surface the raw value transiently so the registration handler can email it
         // (never persisted/logged). The password-reset token stays the 128-bit link token.
@@ -140,6 +158,7 @@ public class User : Auditable, ITenantEntity
             RawConfirmationToken = rawConfirmationToken,
             ConfirmationCodeExpiresAt = DateTime.UtcNow.AddMinutes(15),
             Profile = profile,
+            AdminRole = adminRole,
         };
     }
 
@@ -411,7 +430,7 @@ public class User : Auditable, ITenantEntity
     {
         FirstName = AnonymizationMarker.Value;
         LastName = AnonymizationMarker.Value;
-        Email = $"deleted_{Id}@anonymized.local";
+        Email = $"deleted_{Id}{AnonymisedEmailSuffix}";
         PhoneNumber = null;
         BirthDate = null;
         GoogleId = null;

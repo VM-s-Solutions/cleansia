@@ -124,7 +124,6 @@
       "entity_type_natural_person": "Samostatne zárobkovo činná osoba (OSVČ)",
       "entity_type_legal_entity": "Právnická osoba (s.r.o., a.s., ...)",
       "registration_number": "Registračné číslo",
-      "vat_number": "IČ DPH",
       "legal_entity_name": "Názov firmy",
       "bank_details": "Bankové údaje pre výplatu",
       "iban": "IBAN",
@@ -527,6 +526,8 @@
       "title": "Moja výplata za obdobie",
       "description": "Prehľad vašej výplaty za jednotlivé platobné obdobia – len na čítanie.",
       "pay_period": "Platobné obdobie",
+      "currency": "Mena",
+      "multiple_currencies_hint": "V tomto období ste boli vyplatení vo viacerých menách. Vyberte, ktorú chcete zobraziť.",
       "period_status_open": "Otvorené",
       "period_status_closed": "Uzavreté",
       "period_status_paid": "Vyplatené",
@@ -1047,7 +1048,8 @@
       "account_locked": "Príliš veľa neúspešných pokusov o prihlásenie. Účet je dočasne uzamknutý — skúste to znova o niekoľko minút.",
       "too_many_attempts": "Príliš veľa pokusov s týmto kódom. Vyžiadajte si nový kód a skúste to znova.",
       "invalid_refresh_token": "Vaša relácia vypršala. Prihláste sa, prosím, znova.",
-      "refresh_token_reused": "Vaša relácia bola použitá inde. Prihláste sa, prosím, znova."
+      "refresh_token_reused": "Vaša relácia bola použitá inde. Prihláste sa, prosím, znova.",
+      "company_deactivated": "Vaša spoločnosť bola deaktivovaná, partnerská aplikácia vám preto už nie je k dispozícii. Svoje údaje môžete stále exportovať alebo vymazať v zákazníckej aplikácii."
     },
     "common": {
       "invalid_enum_value": "Neplatná hodnota výčtu",
@@ -1072,9 +1074,6 @@
       "invalid_zip_code": "Neplatný formát PSČ",
       "registration_number": {
         "invalid_format": "Neplatný formát IČO pre vybranú krajinu"
-      },
-      "vat_number": {
-        "invalid_format": "Neplatný formát IČ DPH pre vybranú krajinu"
       },
       "must_be_positive": "Hodnota musí byť kladná",
       "invalid_availability_format": "Neplatný formát dostupnosti. Dni musia byť platné názvy dní alebo dátumy (yyyy-MM-dd) a časové rozsahy musia mať začiatok pred koncom.",
@@ -1106,8 +1105,7 @@
       "not_found": "Mena nenájdená",
       "code_already_exists": "Mena s týmto kódom už existuje",
       "in_use": "Menu nie je možné vymazať, pretože sa aktuálne používa",
-      "cannot_delete_default": "Predvolenú menu nie je možné vymazať",
-      "exchange_rate_must_be_positive": "Výmenný kurz musí byť kladné číslo"
+      "cannot_delete_default": "Predvolenú menu nie je možné vymazať"
     },
     "email": {
       "invalid_format": "Neplatný formát e-mailu",
@@ -1202,6 +1200,7 @@
         "not_found": "Faktúra nenájdená",
         "invalid_status": "Neplatný stav faktúry",
         "already_exists": "Faktúra už existuje",
+        "already_paid": "Táto faktúra je už zaplatená a nedá sa znovu vygenerovať",
         "pdf_generation_failed": "Nepodarilo sa vygenerovať PDF",
         "template_not_found": "Šablóna faktúry nenájdená",
         "cannot_cancel_paid": "Nie je možné zrušiť zaplatenú faktúru",
@@ -1270,6 +1269,12 @@
       "iso_code_already_exists": "Krajina s týmto ISO kódom už existuje",
       "in_use": "Krajinu nie je možné vymazať, pretože sa aktuálne používa",
       "not_serviced": "V tejto krajine zatiaľ nepôsobíme"
+    },
+    "tenant": {
+      "not_found": "Tento trh zatiaľ neprevádzkuje žiadna spoločnosť Cleansia."
+    },
+    "consent": {
+      "terms_not_accepted": "Pre pokračovanie prosím prijmite obchodné podmienky a zásady ochrany súkromia."
     },
     "gdpr": {
       "consent_not_found": "Toto nastavenie súhlasu sme nenašli",
@@ -1492,6 +1497,8 @@
       "email": "E-mail",
       "password": "Heslo",
       "confirm_password": "Potvrdiť heslo",
+      "market": "Trh",
+      "market_placeholder": "Vyberte svoj trh",
       "terms_agreement": "Súhlasím s podmienkami",
       "terms_and_conditions": "Súhlasím s <a href='/gdpr' target='_blank'>Obchodnými podmienkami a Zásadami ochrany osobných údajov</a>",
       "have_account": "Už máte účet?",

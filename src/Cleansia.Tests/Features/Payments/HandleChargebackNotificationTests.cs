@@ -4,6 +4,7 @@ using Cleansia.Core.AppServices.Features.Payments;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Disputes;
 using Cleansia.Core.Domain.Enums;
+using Cleansia.Core.Domain.Internationalization;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Queue.Abstractions;
@@ -82,6 +83,8 @@ public class HandleChargebackNotificationTests
             _pending.Object,
             _producer.Object,
             NoPreferredCleanerHold.Resolver,
+            Mock.Of<IAdminNotifier>(),
+            Mock.Of<IUserNotificationRepository>(),
             NullLogger<HandlePaymentNotification.Handler>.Instance)!;
 
     private static Order ArrangeOrder()
@@ -93,7 +96,6 @@ public class HandleChargebackNotificationTests
             customerAddress: null!,
             rooms: 2,
             bathrooms: 1,
-            extras: new Dictionary<string, bool>(),
             cleaningDateTime: DateTime.UtcNow.AddDays(1),
             paymentType: PaymentType.Card,
             totalPrice: 1000m,
@@ -103,6 +105,7 @@ public class HandleChargebackNotificationTests
         order.Id = OrderId;
         order.AssignStripePaymentIntentId(PaymentIntentId);
         order.TenantId = TenantId;
+        order.SetCurrency(Currency.Create("CZK", "Kč", "Czech koruna"));
         return order;
     }
 

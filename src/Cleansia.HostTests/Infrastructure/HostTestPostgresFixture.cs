@@ -55,13 +55,24 @@ public sealed class HostTestPostgresFixture : IAsyncLifetime
     }
 
     /// <summary>Truncate every table so each test starts from a clean database (called by the base
-    /// test class before each test arranges its own graph).</summary>
+    /// test class before each test arranges its own graph), then re-insert the two operating companies
+    /// so a <c>CountryConfiguration</c> can point at either — the seed script's own ordering.</summary>
     public async Task ResetAsync()
     {
         if (_respawner is null) return;
         await using var conn = new NpgsqlConnection(ConnectionString);
         await conn.OpenAsync();
         await _respawner.ResetAsync(conn);
+
+        await using var tenants = new NpgsqlCommand(
+            $"""
+            INSERT INTO "Tenants" ("Id", "IsActive", "Name", "CreatedBy", "CreatedOn")
+            VALUES ('{HostTestTenants.A}', true, 'Cleansia CZ s.r.o.', 'seed', now()),
+                   ('{HostTestTenants.B}', true, 'Cleansia SK s.r.o.', 'seed', now())
+            ON CONFLICT ("Id") DO NOTHING;
+            """,
+            conn);
+        await tenants.ExecuteNonQueryAsync();
     }
 
     private async Task ApplyMigrationsAsync()

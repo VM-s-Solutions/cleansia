@@ -5,15 +5,35 @@ namespace Cleansia.Core.AppServices.Mappers;
 
 public static class ExtraMappers
 {
-    public static ExtraListItem MapToDto(this Extra extra)
+    /// <summary>
+    /// <paramref name="price"/> is passed in rather than read off the entity — see
+    /// <see cref="ServiceMappers"/> for the rule and why the DTO field name does not move.
+    /// </summary>
+    public static ExtraListItem MapToDto(this Extra extra, decimal price, string currencyCode)
     {
         return new ExtraListItem(
             Id: extra.Id,
             Slug: extra.Slug,
             Name: extra.Name,
             Description: extra.Description,
-            Price: extra.Price,
+            Price: price,
             DisplayOrder: extra.DisplayOrder,
-            Translations: extra.Translations.ToDictionary());
+            Translations: extra.Translations.ToDictionary(),
+            CurrencyCode: currencyCode);
+    }
+
+    /// <summary>Every currency's row, keyed by code. See ServiceMappers.MapToAdminDetail.</summary>
+    public static AdminExtraDetailDto MapToAdminDetail(this Extra extra, Dictionary<string, decimal> prices)
+    {
+        return new AdminExtraDetailDto(
+            Id: extra.Id,
+            Slug: extra.Slug,
+            Name: extra.Name,
+            Description: extra.Description,
+            DisplayOrder: extra.DisplayOrder,
+            Prices: prices,
+            Translations: extra.Translations.ToDictionary(),
+            CreatedOn: extra.CreatedOn,
+            UpdatedOn: extra.UpdatedOn);
     }
 }

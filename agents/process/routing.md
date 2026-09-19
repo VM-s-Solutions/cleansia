@@ -42,8 +42,10 @@ specialist(s) — and a reviewer alongside each developer. This table is the dec
 4. **Platforms parallel.** `android` and `ios` run together off the same locked contract.
 5. **Gates last.** `security` / `optimizer` / `qa` run after implementation + review converge,
    before merge.
-6. **Manual steps block.** If a ticket needs an EF migration or NSwag regen, the PM flags it to the
-   owner and **holds** the dependent layer until confirmed.
+6. **Generated contracts precede consumers.** Route EF/NSwag regeneration as implementation work;
+   finish and verify it before the dependent layer uses the changed contract. Commit generated
+   artifacts with the change and report every regeneration. Track any DEV drop for deployment,
+   never branch work; all production operations remain prohibited.
 7. **Spine tickets gate harder.** A ticket that builds a *spine / foundation / middleware / skeleton*
    (the change everything else will stand on) is flagged at routing time as requiring **Gate 6.5**
    (behavioral non-stub — at least one test fails if the implementation is stubbed to the empty/default
@@ -63,7 +65,7 @@ specialist(s) — and a reviewer alongside each developer. This table is the dec
 
 - Does not write code, ADRs, stories, or tests — it delegates.
 - Does not approve its own merges — the reviewer (and security/QA where applicable) gates.
-- Does not run owner-only steps — it flags them.
+- Does not execute anything against production; the root prohibition applies to every lane.
 - Does not ping the owner for routine progress — it batches into the sprint doc.
 
 ## Fan-out budget

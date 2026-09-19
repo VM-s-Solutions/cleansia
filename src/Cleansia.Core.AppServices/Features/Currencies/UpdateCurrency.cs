@@ -1,3 +1,4 @@
+using Microsoft.EntityFrameworkCore;
 using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.Domain.Repositories;
@@ -13,7 +14,8 @@ public class UpdateCurrency
         string Code,
         string Symbol,
         string Name,
-        decimal ExchangeRate) : ICommand<Response>;
+        decimal? LoyaltyPointsDivisor = null,
+        decimal? NoShowCredit = null) : ICommand<Response>;
 
     public record Response(string Id);
 
@@ -56,10 +58,32 @@ public class UpdateCurrency
                 .MaximumLength(50)
                 .WithMessage(BusinessErrorMessage.MaxLength);
 
-            RuleFor(x => x.ExchangeRate)
+            // Zero is a division by zero and a negative is a negative earn; null is "earns nothing yet",
+            // which an open market may not become: ActivateCurrency refuses to open one without a
+            // divisor, and clearing it afterwards would reopen the same hole from the other side.
+            RuleFor(x => x.LoyaltyPointsDivisor)
                 .Cascade(CascadeMode.Stop)
-                .GreaterThan(0)
-                .WithMessage(BusinessErrorMessage.ExchangeRateMustBePositive);
+                .GreaterThan(0m)
+                .When(x => x.LoyaltyPointsDivisor.HasValue)
+                .WithMessage(BusinessErrorMessage.MustBePositive)
+                .MustAsync(async (command, divisor, ct) =>
+                {
+                    if (divisor.HasValue)
+                    {
+                        return true;
+                    }
+
+                    var currency = await currencyRepository.GetByIdAsync(command.CurrencyId, ct);
+                    return currency is null || !currency.IsActive;
+                })
+                .WithMessage(BusinessErrorMessage.CurrencyLoyaltyDivisorMissing);
+
+            // Null is "no apology credit in this currency" and is legal on an active market; only a
+            // non-positive figure is refused.
+            RuleFor(x => x.NoShowCredit)
+                .GreaterThan(0m)
+                .When(x => x.NoShowCredit.HasValue)
+                .WithMessage(BusinessErrorMessage.MustBePositive);
         }
     }
 
@@ -75,7 +99,21 @@ public class UpdateCurrency
                 return BusinessResult.Failure<Response>(new Error(nameof(command.CurrencyId), BusinessErrorMessage.CurrencyNotFound));
             }
 
-            currency.Update(command.Code, command.Symbol, command.Name, command.ExchangeRate);
+            currency.Update(command.Code, command.Symbol, command.Name);
+            currency.SetLoyaltyPointsDivisor(command.LoyaltyPointsDivisor);
+            currency.SetNoShowCredit(command.NoShowCredit);
+
+            // Renaming a code races the same way a create does -- see CreateCurrency.
+            try
+            {
+                await currencyRepository.CommitAsync(cancellationToken);
+            }
+            catch (DbUpdateException ex)
+                when (DbConstraintViolation.IsUniqueViolation(ex))
+            {
+                return BusinessResult.Failure<Response>(
+                    new Error(nameof(Command.Code), BusinessErrorMessage.CurrencyCodeAlreadyExists));
+            }
 
             return BusinessResult.Success(new Response(currency.Id));
         }

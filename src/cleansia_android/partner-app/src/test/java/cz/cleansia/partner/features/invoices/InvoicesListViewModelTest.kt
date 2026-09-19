@@ -124,6 +124,7 @@ class InvoicesListViewModelTest {
         deductionAmount = 0.0,
         totalAmount = totalAmount,
         currencyCode = "CZK",
+        currencyId = "cur-czk",
         status = EmployeeInvoiceStatus._3,
         pdfBlobName = "invoices/2026-0042.pdf",
         pdfGenerationFailed = false,

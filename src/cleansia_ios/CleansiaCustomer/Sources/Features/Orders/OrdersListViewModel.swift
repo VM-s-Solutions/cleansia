@@ -34,16 +34,20 @@ final class OrdersListViewModel: ViewModel {
     @Published private(set) var refreshPhase: RefreshPhase = .idle
     @Published private(set) var loadingMore = false
     @Published private(set) var hasMore = false
+    @Published private(set) var markets: MarketState = .loading
     @Published var activeFilter: OrdersFilter = .all
 
     private let repository: OrderRepository
+    private let marketStore: MarketStore
     private let snackbar: SnackbarController
     private var cancellables: Set<AnyCancellable> = []
 
-    init(repository: OrderRepository, snackbar: SnackbarController) {
+    init(repository: OrderRepository, marketStore: MarketStore, snackbar: SnackbarController) {
         self.repository = repository
+        self.marketStore = marketStore
         self.snackbar = snackbar
         super.init()
+        marketStore.$state.assign(to: &$markets)
         bind()
     }
 
@@ -58,9 +62,12 @@ final class OrdersListViewModel: ViewModel {
 
     /// Background refresh on appear (gated on `loading`) — the MainShell prefetch
     /// only runs once, so a booking created since then would leave the cache
-    /// stale (`OrdersTab.kt:141-147`).
+    /// stale (`OrdersTab.kt:141-147`). The market directory rides alongside: each
+    /// card names its order's market from it, and a failed launch read is retried here.
     func onAppear() async {
+        async let market: Void = marketStore.refreshIfStale()
         await backgroundRefresh()
+        await market
     }
 
     /// A `.page` TabView keeps its tab views alive, so `.task`/`.onAppear` do

@@ -4,13 +4,16 @@ using Cleansia.Core.Domain.Notifications;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Queue.Abstractions;
 using Cleansia.Core.Queue.Abstractions.Messages;
+using Microsoft.Extensions.Logging;
 
 namespace Cleansia.Core.AppServices.Services;
 
 /// <inheritdoc cref="INotificationProducer"/>
 public class NotificationProducer(
     IUserNotificationRepository userNotificationRepository,
-    IPendingDispatch pendingDispatch) : INotificationProducer
+    IPendingDispatch pendingDispatch,
+    IUserRepository userRepository,
+    ILogger<NotificationProducer> logger) : INotificationProducer
 {
     public async Task NotifyAsync(
         string userId,
@@ -20,9 +23,17 @@ public class NotificationProducer(
         string? subject,
         CancellationToken cancellationToken)
     {
+        // Notification ownership follows the recipient, while the business action keeps its operator.
+        var recipientTenantId = await userRepository.GetNotificationRecipientTenantAsync(userId, cancellationToken);
+        if (string.IsNullOrEmpty(recipientTenantId))
+        {
+            logger.LogWarning("Notification {EventKey} skipped: recipient {UserId} has no persisted account company", eventKey, userId);
+            return;
+        }
+
         if (NotificationFeedEventKeys.IsFeedEvent(eventKey))
         {
-            await UpsertFeedRowAsync(userId, eventKey, args, tenantId, cancellationToken);
+            await UpsertFeedRowAsync(userId, eventKey, args, recipientTenantId, cancellationToken);
         }
 
         var messageKey = MessageKeys.Push(userId, eventKey, subject);
@@ -30,8 +41,8 @@ public class NotificationProducer(
             QueueNames.NotificationsDispatch,
             new QueueEnvelope<SendPushNotificationMessage>(
                 messageKey,
-                tenantId,
-                new SendPushNotificationMessage(userId, eventKey, args, tenantId)),
+                recipientTenantId,
+                new SendPushNotificationMessage(userId, eventKey, args, recipientTenantId)),
             messageKey);
     }
 

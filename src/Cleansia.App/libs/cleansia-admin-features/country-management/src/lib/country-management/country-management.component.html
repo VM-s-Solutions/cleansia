@@ -52,3 +52,13 @@
     [ngClass]="['fi', 'fi-' + getCountryFlagCode(item.isoCode), 'flag-icon']"
   ></span>
 </ng-template>
+
+<ng-template #defaultMarketTemplate let-item>
+  @if (item.isDefaultMarket) {
+  <p-tag
+    [value]="'pages.country_management.default_market' | translate"
+    severity="info"
+    icon="pi pi-star-fill"
+  />
+  }
+</ng-template>

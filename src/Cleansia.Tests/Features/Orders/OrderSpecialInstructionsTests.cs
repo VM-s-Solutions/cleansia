@@ -7,6 +7,7 @@ using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Services;
 using Cleansia.TestUtilities.MockDataFactories.Users;
 using MockQueryable;
+using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 
 namespace Cleansia.Tests.Features.Orders;
@@ -44,6 +45,10 @@ public class OrderSpecialInstructionsTests
             _orderRepository.Object,
             _serviceRepository.Object,
             _packageRepository.Object,
+            ExtraRepositoryDouble.Empty(),
+            CataloguePriceDoubles.NoServices(),
+            CataloguePriceDoubles.NoPackages(),
+            CataloguePriceDoubles.NoExtras(),
             PayConfigRepositoryDouble.Holding(),
             _companyInfoRepository.Object,
             _countryConfigurationRepository.Object,
@@ -51,7 +56,9 @@ public class OrderSpecialInstructionsTests
             _loyaltyService.Object,
             _userMembershipRepository.Object,
             NoPreferredCleanerHold.Resolver,
-            Mock.Of<INotificationProducer>());
+            Mock.Of<INotificationProducer>(),
+            Mock.Of<IAdminNotifier>(),
+            NullLogger<OrderFactory>.Instance);
 
     /// <summary>
     /// Anonymous (no user id) keeps the factory off the loyalty/membership
@@ -66,15 +73,16 @@ public class OrderSpecialInstructionsTests
             Address: AddressMockFactory.Generate(),
             Rooms: 2,
             Bathrooms: 1,
-            Extras: new Dictionary<string, bool>(),
+            SelectedExtraSlugs: [],
             CleaningDate: DateTime.UtcNow.AddDays(3),
             PaymentType: PaymentType.Cash,
-            Currency: Currency.Create("CZK", "Kč", "Czech Koruna", 1m),
+            Currency: Currency.Create("CZK", "Kč", "Czech Koruna"),
             SelectedServiceIds: ["service-1"],
             SelectedPackageIds: [],
             RawSubtotal: 1500m,
             NowUtc: DateTime.UtcNow,
             ReservedExpressWaiver: null,
+            OperatorTenantId: null,
             SpecialInstructions: specialInstructions);
 
     [Fact]
@@ -127,15 +135,15 @@ public class OrderSpecialInstructionsTests
             Address: AddressMockFactory.Generate(),
             Rooms: 2,
             Bathrooms: 1,
-            Extras: new Dictionary<string, bool>(),
+            SelectedExtraSlugs: [],
             CleaningDate: DateTime.UtcNow.AddDays(3),
             PaymentType: PaymentType.Cash,
-            Currency: Currency.Create("CZK", "Kč", "Czech Koruna", 1m),
+            Currency: Currency.Create("CZK", "Kč", "Czech Koruna"),
             SelectedServiceIds: ["service-1"],
             SelectedPackageIds: [],
             RawSubtotal: 1500m,
             NowUtc: DateTime.UtcNow,
-            ReservedExpressWaiver: null);
+            ReservedExpressWaiver: null, OperatorTenantId: "cleansia-cz");
 
         var order = await CreateFactory().CreateAsync(input, CancellationToken.None);
 

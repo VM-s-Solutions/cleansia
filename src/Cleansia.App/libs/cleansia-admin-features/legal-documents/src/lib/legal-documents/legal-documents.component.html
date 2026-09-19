@@ -1,0 +1,125 @@
+<div class="cleansia-legal-documents">
+  <div class="cleansia-legal-documents__container page-wrapper">
+    <div class="cleansia-legal-documents__header">
+      <div class="header-content">
+        <cleansia-title [title]="'pages.legal_documents.title' | translate" />
+        <p class="cleansia-legal-documents__description">
+          {{ 'pages.legal_documents.description' | translate }}
+        </p>
+      </div>
+    </div>
+
+    <cleansia-section>
+      @if (facade.initialLoading()) {
+      <cleansia-loader />
+      } @else if (facade.hasError()) {
+      <div class="cleansia-legal-documents__state">
+        <i class="pi pi-exclamation-triangle"></i>
+        <p>{{ 'pages.legal_documents.load_error' | translate }}</p>
+        <cleansia-button
+          [label]="'pages.legal_documents.retry' | translate"
+          icon="pi pi-refresh"
+          severity="secondary"
+          [outlined]="true"
+          (onClick)="facade.loadVersions()"
+        />
+      </div>
+      } @else {
+      <cleansia-table
+        [data]="facade.versions()"
+        [columns]="versionColumns"
+        [actions]="versionActions"
+        [config]="{
+          paginator: false,
+          emptyMessage: 'pages.legal_documents.no_versions'
+        }"
+        [loading]="facade.loading()"
+      />
+      }
+    </cleansia-section>
+
+    @if (facade.selectedVersion(); as version) {
+    <cleansia-section>
+      <div class="cleansia-legal-documents__preview-header">
+        <h3 class="cleansia-legal-documents__section-title">
+          {{ 'pages.legal_documents.preview_title' | translate }}
+        </h3>
+        <cleansia-button
+          [label]="'pages.legal_documents.close_preview' | translate"
+          icon="pi pi-times"
+          severity="secondary"
+          [outlined]="true"
+          (onClick)="facade.closePreview()"
+        />
+      </div>
+
+      <dl class="cleansia-legal-documents__meta">
+        <div class="cleansia-legal-documents__meta-item">
+          <dt>{{ 'pages.legal_documents.columns.audience' | translate }}</dt>
+          <dd>{{ audienceLabelKey(version.audience) | translate }}</dd>
+        </div>
+        <div class="cleansia-legal-documents__meta-item">
+          <dt>{{ 'pages.legal_documents.columns.type' | translate }}</dt>
+          <dd>{{ typeLabelKey(version.type) | translate }}</dd>
+        </div>
+        <div class="cleansia-legal-documents__meta-item">
+          <dt>{{ 'pages.legal_documents.columns.market' | translate }}</dt>
+          <dd>{{ version.countryIsoCode || ('pages.legal_documents.all_markets' | translate) }}</dd>
+        </div>
+        <div class="cleansia-legal-documents__meta-item">
+          <dt>{{ 'pages.legal_documents.columns.effective_from' | translate }}</dt>
+          <dd>{{ effectiveDate(version.effectiveFrom) }}</dd>
+        </div>
+        <div class="cleansia-legal-documents__meta-item">
+          <dt>{{ 'pages.legal_documents.columns.version' | translate }}</dt>
+          <dd>{{ version.version }}</dd>
+        </div>
+        <div class="cleansia-legal-documents__meta-item">
+          <dt>{{ 'pages.legal_documents.columns.in_force' | translate }}</dt>
+          <dd>{{ (version.isInForce ? 'global.yes' : 'global.no') | translate }}</dd>
+        </div>
+        @if (version.notes) {
+        <div class="cleansia-legal-documents__meta-item">
+          <dt>{{ 'pages.legal_documents.columns.notes' | translate }}</dt>
+          <dd>{{ version.notes }}</dd>
+        </div>
+        }
+      </dl>
+
+      <cleansia-table
+        [data]="version.texts ?? []"
+        [columns]="textColumns"
+        [actions]="textActions"
+        [config]="{
+          paginator: false,
+          emptyMessage: 'pages.legal_documents.no_texts'
+        }"
+      />
+
+      @if (facade.documentLoading()) {
+      <cleansia-loader />
+      } @else if (facade.documentError()) {
+      <div class="cleansia-legal-documents__state">
+        <i class="pi pi-exclamation-triangle"></i>
+        <p>{{ 'pages.legal_documents.text_load_error' | translate }}</p>
+        <cleansia-button
+          [label]="'pages.legal_documents.retry' | translate"
+          icon="pi pi-refresh"
+          severity="secondary"
+          [outlined]="true"
+          (onClick)="facade.retryText()"
+        />
+      </div>
+      } @else if (facade.document(); as doc) {
+      <div class="cleansia-legal-documents__document">
+        <div class="cleansia-legal-documents__document-header">
+          <h4 class="cleansia-legal-documents__document-title">{{ doc.title }}</h4>
+          <span class="cleansia-legal-documents__document-language">{{ doc.language }}</span>
+        </div>
+        <div class="cleansia-legal-documents__content" [innerHTML]="doc.contentHtml"></div>
+      </div>
+      }
+    </cleansia-section>
+    }
+  </div>
+</div>

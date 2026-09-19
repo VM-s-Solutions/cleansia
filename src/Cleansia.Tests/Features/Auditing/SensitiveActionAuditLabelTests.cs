@@ -28,6 +28,9 @@ public sealed class SensitiveActionAuditLabelTests
     [InlineData(typeof(ExpireCustomerCredit.Command), "credit.expire", "CreditAccount")]
     [InlineData(typeof(RevokePointsManually.Command), "loyalty.points.revoke", "LoyaltyAccount")]
     [InlineData(typeof(AdminDeleteUserAccount.Command), "gdpr.user.delete", "User")]
+    [InlineData(typeof(AdminRetryUserDeletion.Command), "gdpr.user.delete.retry", "GdprRequest")]
+    [InlineData(typeof(AdminExportUserData.Command), "gdpr.user.export", "User")]
+    [InlineData(typeof(ExportCustomerIncidentFile.Command), "gdpr.user.incident_file", "User")]
     public void Sensitive_Commands_Carry_The_Frozen_Sensitive_Label(Type commandType, string expectedLabel, string expectedResourceType)
     {
         var descriptor = AuditActionDescriptor.For(commandType);

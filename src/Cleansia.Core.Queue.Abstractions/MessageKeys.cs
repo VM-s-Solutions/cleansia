@@ -14,6 +14,12 @@ namespace Cleansia.Core.Queue.Abstractions;
 /// </summary>
 public static class MessageKeys
 {
+    /// <summary>One recurring-pause dispatch per membership lapse, including repeated lapses in one period.</summary>
+    public static string RecurringPauseSubject(string membershipId, string sequence) => $"{membershipId}:{sequence}";
+
+    /// <summary>One guest cancellation email per order.</summary>
+    public static string GuestOrderCancelledEmail(string orderId) => $"email:guest-order-cancelled:{orderId}";
+
     /// <summary>generate-receipt → <c>receipt:{OrderId}</c> (one receipt per order).</summary>
     public static string Receipt(string orderId) => $"receipt:{orderId}";
 
@@ -39,7 +45,7 @@ public static class MessageKeys
     public static string LiveActivity(string orderId, string eventKey, int sequence) =>
         $"liveactivity:{orderId}:{eventKey}:{sequence}";
 
-    /// <summary>generate-invoice → <c>invoice:{PayPeriodId}:{EmployeeId}</c> (one invoice per employee per period).</summary>
+    /// <summary>generate-invoice → <c>invoice:{PayPeriodId}:{EmployeeId}</c> (one generation per employee per period; it yields one invoice per currency the period holds).</summary>
     public static string Invoice(string payPeriodId, string employeeId) => $"invoice:{payPeriodId}:{employeeId}";
 
     /// <summary>
@@ -61,6 +67,34 @@ public static class MessageKeys
     /// </summary>
     public static string Email(EmailType emailType, string userId, string codeHash) =>
         $"email:{Purpose(emailType)}:{userId}:{codeHash}";
+
+    /// <summary>
+    /// company-wind-down → <c>wind-down:{tenantId}:{requestedAt:yyyyMMddHHmmss}</c>. The sweep is
+    /// re-run on purpose — at the request, at deactivation, and from the admin page — so the instant
+    /// the run was asked for is a domain input, not a source of randomness: the same request yields the
+    /// same key, and every later request is a new run.
+    /// </summary>
+    public static string CompanyWindDown(string tenantId, DateTimeOffset requestedAt) =>
+        $"wind-down:{tenantId}:{requestedAt.UtcDateTime:yyyyMMddHHmmss}";
+
+    /// <summary>
+    /// company-archive → <c>archive:{tenantId}:{requestedAt:yyyyMMddHHmmss}</c>. The first request's
+    /// instant is the freeze instant on the row; a "build again" after a poisoned run is asked for at
+    /// a later instant and is a new message, while the bundle it rebuilds is still named by the freeze.
+    /// </summary>
+    public static string CompanyArchive(string tenantId, DateTimeOffset requestedAt) =>
+        $"archive:{tenantId}:{requestedAt.UtcDateTime:yyyyMMddHHmmss}";
+
+    /// <summary>
+    /// send-email (admin notification) → <c>admin-email:{eventKey}:{subject}:{addressHash}</c> — one
+    /// e-mail per logical admin event per recipient address. The subject is the event site's dedup
+    /// subject, unique per logical event across requests, so a repeated raise collides on the outbox
+    /// index instead of mailing twice; the address is hashed so no recipient appears in a key or a
+    /// log line, and it is lower-cased first because a mailbox is stored canonical while an
+    /// administrator's address is stored as typed.
+    /// </summary>
+    public static string AdminNotificationEmail(string eventKey, string subject, string email) =>
+        $"admin-email:{eventKey}:{subject}:{HashCode(email.Trim().ToLowerInvariant())}";
 
     /// <summary>
     /// Deterministic, non-reversible short hash of a raw email token, used as the code segment of the

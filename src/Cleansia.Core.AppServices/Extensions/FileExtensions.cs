@@ -29,6 +29,14 @@ public static class FileExtensions
         IReadOnlyList<OrderEmployeePay> orderPays, CountryInvoiceContext? countryContext, CompanyInfo companyInfo,
         EmployeePayoutDetails? payoutDetails, string dateFormat = "dd.MM.yyyy")
     {
+        // A tax document in a guessed unit is a false one, not a degraded one. The caller records the
+        // exception as the invoice's render failure; it never prints CZK for a EUR invoice.
+        if (currency is null)
+        {
+            throw new InvalidOperationException(
+                $"Invoice {invoice.Id} has no resolved currency; refusing to render it in a default one");
+        }
+
         var supplier = employee.CreateSupplierData(payoutDetails);
         var vatAmount = countryContext?.VatWithinGross(invoice.TotalAmount, supplier.IsVatPayer) ?? 0m;
 
@@ -47,8 +55,8 @@ public static class FileExtensions
             DeductionAmount = invoice.DeductionAmount,
             VatAmount = vatAmount,
             TotalAmount = invoice.TotalAmount,
-            CurrencyCode = currency?.Code ?? Constants.Currency.Czk,
-            CurrencySymbol = currency?.Symbol ?? "Kč",
+            CurrencyCode = currency.Code,
+            CurrencySymbol = currency.Symbol,
             LineItems = orderPays.Select(op => new InvoiceLineItem
             {
                 OrderNumber = op.Order?.DisplayOrderNumber ?? "N/A",
@@ -91,7 +99,25 @@ public static class FileExtensions
     {
         // A registered cleaner is rare rather than impossible, so the document expresses both variants
         // and the presence of a validated DIČ is what selects between them.
-        var vatNumber = string.IsNullOrWhiteSpace(employee.VatNumber) ? null : employee.VatNumber;
+        // A CLEANER IS NEVER A VAT PAYER. Owner ruling 2026-09-09: cleaners contract as zivnostnici on
+        // an ICO and do not register for VAT, so a payout invoice always carries the non-payer notice
+        // and never a VAT line.
+        //
+        // This is the fix for a live hazard, not a tidy-up. The supplier's posture used to be derived
+        // as `vatNumber != null` from a field the CLEANER can set on themselves at any time, from their
+        // own phone (PUT /api/Employee/UpdateIdentificationInfo on the partner mobile host). Nothing
+        // snapshots it, and RegenerateInvoicePdf -- which has no status gate, so a PAID invoice
+        // qualifies -- re-reads it and overwrites the issued PDF AT THE SAME BLOB URL. So a cleaner
+        // could change the tax treatment of a document that had already been sent, after the fact, by
+        // editing their own profile.
+        //
+        // Deriving it from the ruling instead of from mutable state closes that without a schema
+        // column: there is nothing left to snapshot when the answer cannot vary. The field itself, and
+        // its three write paths, are wire-shaped and come out in the chunk that regenerates the clients
+        // and the two mobile specs -- removing them here would break the Android and iOS mappers for
+        // no gain, because the posture no longer reads them.
+        const bool cleanersAreVatPayers = false;
+
 
         return new InvoiceSupplierData
         {
@@ -103,8 +129,7 @@ public static class FileExtensions
             City = employee.Address?.City,
             Country = employee.Address?.Country?.Name,
             RegistrationNumber = employee.RegistrationNumber,
-            VatNumber = vatNumber,
-            IsVatPayer = vatNumber != null,
+            IsVatPayer = cleanersAreVatPayers,
             Email = employee.User?.Email,
             Phone = employee.User?.PhoneNumber,
             BankName = payoutDetails?.BankName,

@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Cleansia.Infra.Database.EntityConfigurations;
 
-public class RecurringBookingTemplateEntityConfiguration : AuditableEntityConfiguration<RecurringBookingTemplate, string>
+public class RecurringBookingTemplateEntityConfiguration : TenantAuditableEntityConfiguration<RecurringBookingTemplate, string>
 {
     public override void Configure(EntityTypeBuilder<RecurringBookingTemplate> builder)
     {

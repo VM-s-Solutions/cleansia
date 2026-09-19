@@ -1,5 +1,7 @@
+using Cleansia.Core.AppServices.Features.Catalog;
 using Cleansia.Core.AppServices.Features.Extras.DTOs;
 using Cleansia.Core.AppServices.Mappers;
+using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Repositories;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -13,20 +15,43 @@ namespace Cleansia.Core.AppServices.Features.Extras;
 /// </summary>
 public class GetExtraOverview
 {
-    public record Request : IRequest<IEnumerable<ExtraListItem>>;
+    /// <param name="CountryId">See <see cref="Services.GetServiceOverview.Request"/>.</param>
+    public record Request(string? CountryId = null) : IRequest<IEnumerable<ExtraListItem>>;
 
-    public class Handler(IExtraRepository extraRepository)
+    public class Handler(
+        IExtraRepository extraRepository,
+        IExtraPriceRepository extraPriceRepository,
+        ICurrencyResolutionService currencyResolutionService,
+        ICountryRepository countryRepository)
         : IRequestHandler<Request, IEnumerable<ExtraListItem>>
     {
         public async Task<IEnumerable<ExtraListItem>> Handle(Request request, CancellationToken cancellationToken)
         {
+            // An unserviced or unknown country has no catalogue: an empty answer, never the default
+            // market's prices under a foreign address and never the resolver's throw as a 500.
+            if (request.CountryId is not null
+                && !await countryRepository.IsServicedAsync(request.CountryId, cancellationToken))
+            {
+                return [];
+            }
+
             // Soft-deleted extras (IsActive=false) stay referenceable by
             // historical orders but never surface in the catalog.
-            return await extraRepository.GetAll()
+            var extras = await extraRepository.GetAll()
                 .Where(e => e.IsActive)
                 .OrderBy(e => e.DisplayOrder)
-                .Select(extra => extra.MapToDto())
                 .ToListAsync(cancellationToken);
+
+            // And priced in the currency being quoted -- see GetServiceOverview for the reasoning.
+            var currency = await currencyResolutionService.ResolveCurrencyForCountryAsync(
+                request.CountryId, cancellationToken);
+            var prices = await CataloguePriceLookup.ForExtrasAsync(
+                extraPriceRepository, extras.Select(e => e.Id).ToList(), currency.Id, cancellationToken);
+
+            return extras
+                .Where(extra => prices.ContainsKey(extra.Id))
+                .Select(extra => extra.MapToDto(prices[extra.Id], currency.Code))
+                .ToList();
         }
     }
 }

@@ -5,6 +5,7 @@ using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Dashboard.DTOs;
 using Cleansia.Core.AppServices.Mappers;
+using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Infra.Common.Validations;
@@ -23,7 +24,8 @@ public class GetEarningsAnalytics
     internal class Handler(
         IEmployeeInvoiceRepository employeeInvoiceRepository,
         IOrderAccessService orderAccessService,
-        IUserSessionProvider userSessionProvider)
+        IUserSessionProvider userSessionProvider,
+        ICurrencyResolutionService currencyResolutionService)
         : IRequestHandler<Query, BusinessResult<EarningsAnalyticsDto>>
     {
         public async Task<BusinessResult<EarningsAnalyticsDto>> Handle(Query request, CancellationToken cancellationToken)
@@ -47,8 +49,15 @@ public class GetEarningsAnalytics
                     BusinessErrorMessage.EmployeeNotFound));
             }
 
-            var invoices = await employeeInvoiceRepository
-                .GetByEmployeeAndDateRangeAsync(employeeId, request.StartDate, request.EndDate, cancellationToken);
+            // Scoped to the currency the dashboard labels this chart with (DashboardStatsDto.CurrencyCode
+            // resolves the same way), so the label and the sums cannot disagree. This DTO carries no
+            // currency of its own on purpose — adding one is a wire change on both partner contracts.
+            var currency = await currencyResolutionService
+                .ResolveCurrencyForEmployeeAsync(employeeId, cancellationToken);
+            var invoices = (await employeeInvoiceRepository
+                    .GetByEmployeeAndDateRangeAsync(employeeId, request.StartDate, request.EndDate, cancellationToken))
+                .Where(i => i.CurrencyId == currency.Id)
+                .ToList();
 
             var monthlyEarnings = invoices
                 .GroupBy(i => (i.GeneratedAt.Year, i.GeneratedAt.Month))

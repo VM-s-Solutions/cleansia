@@ -1,3 +1,4 @@
+using Cleansia.Core.AppServices.Auditing;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Bookings;
 using Cleansia.Core.Domain.Bookings;
@@ -33,7 +34,7 @@ public class CreateRecurringBookingMembershipGuardTests
             .Setup(r => r.GetByUserAsync(UserId, It.IsAny<CancellationToken>()))
             .ReturnsAsync([ArrangeSavedAddress()]);
         _membershipRepository
-            .Setup(r => r.GetActiveForUserNoTrackingAsync(UserId, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetEntitledForUserNoTrackingAsync(UserId, It.IsAny<CancellationToken>()))
             .ReturnsAsync((UserMembership?)null);
     }
 
@@ -42,7 +43,9 @@ public class CreateRecurringBookingMembershipGuardTests
             _templateRepository.Object,
             _savedAddressRepository.Object,
             _membershipRepository.Object,
-            _session.Object);
+            _session.Object,
+            Cleansia.Tests.Features.Orders.OrderMarketDoubles.OperatedBy("cleansia-cz"),
+            new AuditContext());
 
     private static SavedAddress ArrangeSavedAddress()
     {
@@ -60,19 +63,18 @@ public class CreateRecurringBookingMembershipGuardTests
         var plan = MembershipPlan.Create(
             code: "PLUS",
             name: "Cleansia Plus",
-            monthlyPriceCzk: 199m,
-            stripePriceId: "price_plus",
             discountPercentage: 10m,
             freeCancellationWindowHours: 4,
             allowsExpressUpgrade: true);
         var membership = UserMembership.Create(
             userId: UserId,
             membershipPlanId: plan.Id,
+            currencyId: "currency-czk",
             stripeSubscriptionId: "sub_1",
             currentPeriodStart: DateTime.UtcNow.AddDays(-1),
             currentPeriodEnd: DateTime.UtcNow.AddMonths(1));
         _membershipRepository
-            .Setup(r => r.GetActiveForUserNoTrackingAsync(UserId, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetEntitledForUserNoTrackingAsync(UserId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(membership);
     }
 
@@ -134,6 +136,6 @@ public class CreateRecurringBookingMembershipGuardTests
         await CreateHandler().Handle(ValidCommand(), CancellationToken.None);
 
         _membershipRepository.Verify(
-            r => r.GetActiveForUserNoTrackingAsync(UserId, It.IsAny<CancellationToken>()), Times.Once);
+            r => r.GetEntitledForUserNoTrackingAsync(UserId, It.IsAny<CancellationToken>()), Times.Once);
     }
 }

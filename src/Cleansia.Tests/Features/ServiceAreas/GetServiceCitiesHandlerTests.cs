@@ -34,13 +34,13 @@ public class GetServiceCitiesHandlerTests
     [Fact]
     public async Task NoCountryId_ListsAllActiveCities_AndProjectsFullDto()
     {
-        var czechia = Country.Create("Czechia", "CZE", isServiced: true);
+        var czechia = Country.Create("Czechia", "CZE", "CZ", isServiced: true);
         _repository
             .Setup(r => r.GetAllActiveAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(new List<ServiceCity>
             {
                 City("city-1", "cz", "Prague", "10", czechia),
-                City("city-2", "sk", "Bratislava", "81", Country.Create("Slovakia", "SVK", isServiced: true)),
+                City("city-2", "sk", "Bratislava", "81", Country.Create("Slovakia", "SVK", "SK", isServiced: true)),
             });
 
         var result = (await Handler().Handle(new GetServiceCities.Request(), CancellationToken.None)).ToList();

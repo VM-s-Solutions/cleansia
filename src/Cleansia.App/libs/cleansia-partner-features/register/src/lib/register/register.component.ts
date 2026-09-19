@@ -9,6 +9,7 @@ import {
   CleansiaCheckboxComponent,
   CleansiaDynamicBackgroundComponent,
   CleansiaLanguageSwitcherComponent,
+  CleansiaSelectComponent,
   CleansiaTextInputComponent,
   CleansiaTitleComponent,
 } from '@cleansia/components';
@@ -33,6 +34,7 @@ import { PasswordCheck, checkIfPasswordsValid } from './register.models';
     CleansiaButtonComponent,
     CleansiaCheckboxComponent,
     CleansiaBrandNameComponent,
+    CleansiaSelectComponent,
     CleansiaTextInputComponent,
     CleansiaLanguageSwitcherComponent,
     CleansiaDynamicBackgroundComponent,

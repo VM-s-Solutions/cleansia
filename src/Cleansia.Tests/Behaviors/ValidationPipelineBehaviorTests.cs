@@ -1,5 +1,6 @@
 using Cleansia.Core.AppServices.Behaviors;
 using Cleansia.Core.AppServices.Common;
+using Cleansia.Core.AppServices.Shared.DTOs.ResponseModels;
 using Cleansia.Infra.Common.Validations;
 using FluentValidation;
 using MediatR;
@@ -19,8 +20,12 @@ namespace Cleansia.Tests.Behaviors;
 ///
 /// The fix keys on the property — but 58 rules set a code deliberately, and a few of those name
 /// something other than a property on purpose (<c>nameof(BlobFileDto)</c> groups a file's four
-/// rules; <c>"Language"</c>). Those must survive, which is what makes the last two tests here the
+/// rules; <c>"Language"</c>). Those must survive, which is what makes those two tests here the
 /// point rather than padding.
+///
+/// The second defect: the behavior was constrained to a <c>BusinessResult</c> response, so a paged
+/// read's validator was registered and never ran. It now runs for every response type; where the
+/// response cannot carry the failure the reject is thrown, with the same keyed errors.
 /// </summary>
 public class ValidationPipelineBehaviorTests
 {
@@ -113,6 +118,60 @@ public class ValidationPipelineBehaviorTests
     }
 
     private sealed class NoRules : AbstractValidator<FakeCommand>;
+
+    public sealed record FakePagedRequest(int Limit) : IRequest<PagedData<string>>;
+
+    private sealed class LimitCap : AbstractValidator<FakePagedRequest>
+    {
+        public LimitCap() =>
+            RuleFor(r => r.Limit)
+                .LessThanOrEqualTo(100)
+                .WithMessage(BusinessErrorMessage.PageSizeExceeded);
+    }
+
+    private static ValidationPipelineBehavior<FakePagedRequest, PagedData<string>> PagedBehavior(IValidator<FakePagedRequest> validator) =>
+        new([validator], NullLogger<ValidationPipelineBehavior<FakePagedRequest, PagedData<string>>>.Instance);
+
+    private static readonly PagedData<string> EmptyPage = new(1, 50, 0, []);
+
+    [Fact]
+    public async Task A_Rejected_Request_Whose_Response_Cannot_Carry_A_Failure_Throws_The_Same_Keyed_Errors()
+    {
+        var reached = false;
+
+        var thrown = await Assert.ThrowsAsync<RequestValidationException>(() =>
+            PagedBehavior(new LimitCap()).Handle(
+                new FakePagedRequest(1000),
+                _ =>
+                {
+                    reached = true;
+                    return Task.FromResult(EmptyPage);
+                },
+                CancellationToken.None));
+
+        Assert.False(reached);
+        var error = Assert.Single(thrown.Errors);
+        Assert.Equal(nameof(FakePagedRequest.Limit), error.Code);
+        Assert.Equal(BusinessErrorMessage.PageSizeExceeded, error.Message);
+    }
+
+    [Fact]
+    public async Task A_Valid_Request_Whose_Response_Cannot_Carry_A_Failure_Reaches_The_Handler()
+    {
+        var reached = false;
+
+        var result = await PagedBehavior(new LimitCap()).Handle(
+            new FakePagedRequest(100),
+            _ =>
+            {
+                reached = true;
+                return Task.FromResult(EmptyPage);
+            },
+            CancellationToken.None);
+
+        Assert.True(reached);
+        Assert.Same(EmptyPage, result);
+    }
 
     [Fact]
     public async Task A_Valid_Request_Reaches_The_Handler()

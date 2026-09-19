@@ -1,4 +1,4 @@
-namespace Cleansia.Core.AppServices.Common;
+﻿namespace Cleansia.Core.AppServices.Common;
 
 public static class BusinessErrorMessage
 {
@@ -30,6 +30,8 @@ public static class BusinessErrorMessage
     public const string CurrentPasswordInvalid = "auth.current_password_invalid";
     public const string AccountLocked = "auth.account_locked";
     public const string TooManyAttempts = "auth.too_many_attempts";
+    /// <summary>A cleaner of a deactivated company is refused on the partner audiences (ADR-0064 D1); administrators are not.</summary>
+    public const string CompanyDeactivated = "auth.company_deactivated";
 
     // Common
     public const string InvalidEnumValue = "common.invalid_enum_value";
@@ -41,9 +43,16 @@ public static class BusinessErrorMessage
     public const string InvalidCurrency = "currency.invalid";
     public const string CurrencyNotFound = "currency.not_found";
     public const string CurrencyCodeAlreadyExists = "currency.code_already_exists";
+    public const string CurrencyDefaultChangedConcurrently = "currency.default_changed_concurrently";
     public const string CurrencyInUse = "currency.in_use";
     public const string CannotDeleteDefaultCurrency = "currency.cannot_delete_default";
-    public const string ExchangeRateMustBePositive = "currency.exchange_rate_must_be_positive";
+    public const string CannotDeactivateDefaultCurrency = "currency.cannot_deactivate_default";
+    /// <summary>Promotion refused: the catalogue has no price rows in this currency, so making it the
+    /// default would withhold every entry from every customer.</summary>
+    public const string CurrencyNotPriced = "currency.not_priced";
+    /// <summary>A market cannot open, and an open one cannot stop, earning loyalty points: an order
+    /// completed while the divisor is unset earns nothing and nothing re-fires the grant later.</summary>
+    public const string CurrencyLoyaltyDivisorMissing = "currency.loyalty_divisor_missing";
     
     // Email
     public const string InvalidEmailFormat = "email.invalid_format";
@@ -70,6 +79,11 @@ public static class BusinessErrorMessage
 
     public const string OrderInProgressCannotCancel = "order.in_progress_cannot_cancel";
     public const string InvalidOrderStatusTransition = "order.invalid_status_transition";
+    /// <summary>
+    /// The admin override may not write Confirmed onto an order with nobody assigned: Confirmed means a
+    /// cleaner took the job, and the reassign is the admin act that puts one on it.
+    /// </summary>
+    public const string OrderStatusConfirmedNeedsCrew = "order.status.confirmed_needs_crew";
     public const string CancellationWindowClosed = "order.cancellation_window_closed";
     // Cash-collection gating (cleaner marks cash collected before an order can be completed).
     public const string OrderCashAlreadyCollected = "order.cash_already_collected";
@@ -84,6 +98,8 @@ public static class BusinessErrorMessage
     public const string AddressLabelRequired = "address.label_required";
     public const string SavedAddressAlreadyExists = "address.already_exists";
     public const string OrderAddressExactlyOneRequired = "order.address_exactly_one_required";
+    /// <summary>The service address is served by another operating company than the caller's (ADR-0061 D6).</summary>
+    public const string OrderCountryOperatorMismatch = "order.country_operator_mismatch";
     public const string EmptyOrder = "order.empty";
     public const string InvalidSelectedPackage = "order.selected_package.invalid";
     public const string InvalidSelectedServices = "order.selected_services.invalid";
@@ -134,6 +150,19 @@ public static class BusinessErrorMessage
     public const string MembershipSwapSamePlan = "membership.swap_same_plan";
 
     /// <summary>
+    /// The plan has no <c>MembershipPlanPrice</c> row in the currency the subscribe (or swap) resolved:
+    /// Plus is not on sale in that market. Absence is the gate — no row, not listed, not subscribable.
+    /// </summary>
+    public const string MembershipPlanNotPricedInCurrency = "membership.plan.not_priced_in_currency";
+
+    /// <summary>
+    /// Stripe refused to bill this Customer in a second currency ("cannot combine currencies on a
+    /// single customer"): the customer once held Plus in another currency and the platform holds one
+    /// Stripe Customer per user. Classified so the re-subscribe path is a refusal, never a 500.
+    /// </summary>
+    public const string MembershipStripeCustomerCurrencyLocked = "membership.stripe_customer_currency_locked";
+
+    /// <summary>
     /// ADR-0035 AM-8 — the member's free express upgrade was still available when the price was quoted
     /// and is not available now. Distinct from <see cref="TotalPriceNotMatch"/> on purpose: every client
     /// maps that one to a generic "the price changed" string, so the state that needs its own sentence
@@ -147,6 +176,15 @@ public static class BusinessErrorMessage
     // Membership plans — admin back-office CRUD
     public const string MembershipPlanCodeAlreadyExists = "membership.plan.code_already_exists";
     public const string MembershipPlanDiscountOutOfRange = "membership.plan.discount_out_of_range";
+    public const string MembershipPlanStripePriceAlreadyUsed = "membership.plan.stripe_price_already_used";
+
+    /// <summary>
+    /// A free trial is benefits without payment, and the owner ruling of 2026-09-08 (T-0690) is that no
+    /// Cleansia Plus benefit is granted until the customer actually subscribes. The field stays on the
+    /// plan because Stripe subscriptions carry it and historical rows may hold a non-zero value; only
+    /// setting a new one is refused.
+    /// </summary>
+    public const string MembershipPlanTrialNotPermitted = "membership.plan.trial_not_permitted";
 
     // Recurring booking template errors. Backend rejects with these keys; the
     // customer UI maps to localized strings. NotOwnedByUser is the per-user
@@ -202,6 +240,8 @@ public static class BusinessErrorMessage
     /// sitting in the queue.
     /// </summary>
     public const string EmployeeDocumentsNotApproved = "employee.documents_not_approved";
+    /// <summary>The work country is operated by another company than the approving admin's (ADR-0061 D6).</summary>
+    public const string EmployeeWorkCountryOperatorMismatch = "employee.work_country_operator_mismatch";
     // RETAINED deliberately. No production code emits this any more (order actions now
     // use EmployeeNotApproved), but it is referenced by negative-assert tests proving it is NOT emitted,
     // and its "employee.documents_missing" locale key is STILL used by the frontend registration flow —
@@ -262,6 +302,13 @@ public static class BusinessErrorMessage
     public const string InvoiceReferenceCapacityExhausted = "payroll.invoice.reference_capacity_exhausted";
     public const string InvoiceReferenceAlreadyAssigned = "payroll.invoice.reference_already_assigned";
 
+    // T-0708 -- the cleaner's payout account does not hold the invoice's currency; raised at approval,
+    // the last point before the owner keys a manual transfer.
+    public const string InvoicePayoutCurrencyMismatch = "payroll.invoice.payout_currency_mismatch";
+    // ADR-0034 D7's presence gate, relocated to approval (correction of 2026-09-12): the record is
+    // absent, has no scheme, or is not Provided -- the transfer has nowhere usable to go.
+    public const string InvoicePayoutDetailsMissing = "payroll.invoice.payout_details_missing";
+
     // Receipt
     public const string ReceiptNotFound = "receipt.not_found";
     public const string ReceiptGenerationFailed = "receipt.generation_failed";
@@ -316,6 +363,18 @@ public static class BusinessErrorMessage
     public const string CountryInUse = "country.in_use";
     public const string CountryNotServiced = "country.not_serviced";
     public const string CountryRequired = "country.required";
+    /// <summary>The default market has no operating company behind it — a seed defect, not user input (ADR-0061 D3; a named country without an operator is not a market, ADR-0064 D1).</summary>
+    public const string TenantNotFound = "tenant.not_found";
+    /// <summary>The company's books are frozen for archive; a write against them is refused at the commit (409).</summary>
+    public const string TenantArchived = "tenant.archived";
+    /// <summary>Two upper-case letters (ISO 3166-1 alpha-2), the form the market chip prints.</summary>
+    public const string CountryIsoAlpha2Invalid = "country.iso_alpha2_invalid";
+    /// <summary>Servicing a country needs a configuration whose default currency is switched on (ADR-0058 D7 gate 2).</summary>
+    public const string CountryMarketNotReady = "country.market_not_ready";
+    /// <summary>Market content hangs off the configuration row; a country without one has nowhere to hold it.</summary>
+    public const string CountryConfigurationMissing = "country.configuration_missing";
+    /// <summary>Two admins promoted different default markets in the same instant; the loser is told to reload.</summary>
+    public const string CountryDefaultMarketChangedConcurrently = "country.default_market_changed_concurrently";
 
     // Service areas
     public const string ServiceCityNotFound = "service_city.not_found";
@@ -368,6 +427,8 @@ public static class BusinessErrorMessage
     public const string CannotDeleteSelf = "admin_user.cannot_delete_self";
     // Availability/authorization guards on the admin destructive flows.
     public const string CannotDeactivateLastAdmin = "admin_user.cannot_deactivate_last_admin";
+    public const string CannotChangeOwnRole = "admin_user.cannot_change_own_role";
+    public const string CannotDemoteLastAdministrator = "admin_user.cannot_demote_last_administrator";
     public const string CannotTargetAdminViaGdprTool = "admin_user.cannot_target_admin_via_gdpr_tool";
 
     // Validation
@@ -382,7 +443,6 @@ public static class BusinessErrorMessage
     public const string InvalidZipCode = "validation.invalid_zip_code";
     // Country-scoped IČO/VAT format checks, driven by CountryConfiguration's regexes.
     public const string RegistrationNumberInvalidFormat = "validation.registration_number.invalid_format";
-    public const string VatNumberInvalidFormat = "validation.vat_number.invalid_format";
 
     // Payout details (ADR-0034 D4) — every key the payout validator can return, plus the feature's own.
     public const string PayoutCountryNotSupported = "validation.payout.country_not_supported";
@@ -406,10 +466,27 @@ public static class BusinessErrorMessage
     public const string TranslationsRequired = "service.translations_required";
     public const string MissingTranslationForLanguage = "service.missing_translation_for_language";
 
+    /// <summary>A catalogue entry saved with no price block at all. Shared with packages, like the
+    /// translation keys above.</summary>
+    public const string PricesRequired = "service.prices_required";
+
+    /// <summary>A catalogue entry saved without a price in some currency the platform operates in.
+    /// The entry would exist but be unbookable in that market, which is never what an admin means.
+    /// </summary>
+    public const string MissingPriceForCurrency = "service.missing_price_for_currency";
+
     // Package
     public const string PackageNotFound = "package.not_found";
     public const string PackageInUse = "package.in_use";
     public const string PackageInvalidWeight = "package.invalid_weight";
+
+    // Extra
+    public const string ExtraNotFound = "extra.not_found";
+    /// <summary>Referenced by an order line (OrderExtras.ExtraId is ON DELETE RESTRICT). Deactivate instead.</summary>
+    public const string ExtraInUse = "extra.in_use";
+    public const string ExtraSlugAlreadyExists = "extra.slug_already_exists";
+    /// <summary>Lower-case words joined by single hyphens, e.g. "inside-oven" — the alphabet the client-side icon maps and OrderExtra.Slug snapshots key by.</summary>
+    public const string ExtraSlugInvalid = "extra.slug_invalid";
 
     // Common Validation
     public const string MustBePositive = "validation.must_be_positive";
@@ -441,6 +518,39 @@ public static class BusinessErrorMessage
     // Tenant Configuration
     public const string TenantConfigNotFound = "tenant_config.not_found";
     public const string TenantConfigKeyAlreadyExists = "tenant_config.key_already_exists";
+    /// <summary>Only a key in <c>TenantSettingCatalog</c> may be set or reset for an operating company.</summary>
+    public const string TenantSettingUnknownKey = "tenant_setting.unknown_key";
+    /// <summary>The value is not of the key's type or is outside its range (a retention window is 1 to its ceiling).</summary>
+    public const string TenantSettingInvalidValue = "tenant_setting.invalid_value";
+
+    // Company lifecycle (ADR-0064) — the admin's own operating company
+    public const string CompanyAlreadyDeactivated = "company.already_deactivated";
+    public const string CompanyNotDeactivated = "company.not_deactivated";
+    /// <summary>A lifecycle command on a company frozen for archive, or already archived; reactivation from the archive is not offered.</summary>
+    public const string CompanyArchived = "company.archived";
+    /// <summary>Deactivating the company that holds the default market would refuse every anonymous identity request on every host.</summary>
+    public const string CompanyOperatesDefaultMarket = "company.operates_default_market";
+    /// <summary>The wind-down date is set once; a company that needs an earlier date cancels the remaining orders by hand.</summary>
+    public const string CompanyWindDownAlreadyRequested = "company.wind_down_already_requested";
+    /// <summary>The last day of service is before today in one of the company's own markets.</summary>
+    public const string CompanyWindDownDateInPast = "company.wind_down_date_in_past";
+    /// <summary>A wind-down run started less than an hour ago and has not recorded its end.</summary>
+    public const string CompanyWindDownInProgress = "company.wind_down_in_progress";
+    /// <summary>The archive waits for the people to have been told: a wind-down date must be set first.</summary>
+    public const string CompanyWindDownNotRequested = "company.wind_down_not_requested";
+    public const string CompanyHasOpenOrders = "company.has_open_orders";
+    public const string CompanyHasOrdersAwaitingPay = "company.has_orders_awaiting_pay";
+    public const string CompanyHasOrdersAwaitingReceipt = "company.has_orders_awaiting_receipt";
+    public const string CompanyHasReceiptsAwaitingFiscalRegistration = "company.has_receipts_awaiting_fiscal_registration";
+    public const string CompanyHasPendingRefunds = "company.has_pending_refunds";
+    public const string CompanyHasActiveMemberships = "company.has_active_memberships";
+    public const string CompanyHasCreditBalances = "company.has_credit_balances";
+    public const string CompanyHasOpenPayPeriod = "company.has_open_pay_period";
+    public const string CompanyHasUnpaidInvoices = "company.has_unpaid_invoices";
+    public const string CompanyHasUninvoicedPay = "company.has_uninvoiced_pay";
+    public const string CompanyHasOpenDisputes = "company.has_open_disputes";
+    /// <summary>A cardholder can still dispute the company's latest card charge; the archive waits for the horizon to pass.</summary>
+    public const string CompanyWithinChargebackHorizon = "company.within_chargeback_horizon";
 
     // Country Configuration
     public const string CountryConfigNotFound = "country_config.not_found";
@@ -489,8 +599,24 @@ public static class BusinessErrorMessage
     /// the same, so splitting it would name a distinction the reader cannot act on.
     /// </summary>
     public const string GdprDeletionBlockedByUnsettledPay = "gdpr.deletion_blocked_by_unsettled_pay";
+    public const string GdprRequestNotFound = "gdpr.request_not_found";
+
+    /// <summary>
+    /// Only a deletion request that is <c>Failed</c>, or one left <c>Processing</c> long enough that no
+    /// run can still be on it, is re-run. A completed one has nothing to redo; a live one must not be
+    /// raced.
+    /// </summary>
+    public const string GdprRequestNotRetryable = "gdpr.request_not_retryable";
     public const string ConsentNotFound = "gdpr.consent_not_found";
     public const string ConsentAlreadyGranted = "gdpr.consent_already_granted";
+
+    // Consent
+    /// <summary>
+    /// A customer registration or booking that does not assert the terms tick is refused (owner ruling
+    /// 2026-09-14, ADR-0062 D4 as amended). A signed-in customer who already holds both legal consents
+    /// sees no box and is not asked again; a guest always asserts it.
+    /// </summary>
+    public const string TermsNotAccepted = "consent.terms_not_accepted";
 
     // Promo codes — kept for client mapping consistency. Not used directly
     // inside the handler (which returns the PromoCodeError enum stringified).
@@ -502,6 +628,9 @@ public static class BusinessErrorMessage
     public const string PromoPerUserLimitReached = "promo.per_user_limit_reached";
     public const string PromoBelowMinimumOrderAmount = "promo.below_minimum_order_amount";
     public const string PromoCurrencyMismatch = "promo.currency_mismatch";
+    /// <summary>A promo code on an anonymous booking: the applier keys every code to a customer, so with
+    /// no account it would be dropped and the order booked at full price against the total consented to.</summary>
+    public const string PromoRequiresAccount = "promo.requires_account";
 
     // Promo codes — public requests
     public const string PromoCodeAlreadySent = "promo.already_sent";
@@ -532,6 +661,11 @@ public static class BusinessErrorMessage
     public const string ReferralNotAccepted = "referral.not_accepted";
     public const string ReferralReasonRequired = "referral.reason_required";
 
+    // Legal documents
+    public const string LegalDocumentNotFound = "legal.document_not_found";
+
     // Admin action audit log
     public const string AuditNotFound = "audit.not_found";
+    /// <summary>The timeline is keyed by exactly one of a user or a (resource type, resource id) pair.</summary>
+    public const string TimelineFilterRequired = "audit.timeline.filter_required";
 }

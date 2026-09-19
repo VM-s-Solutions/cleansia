@@ -23,7 +23,9 @@ describe('MembershipPlanListFacade', () => {
         code: 'PLUS_MONTHLY',
         name: 'Cleansia Plus',
         billingInterval: BILLING_INTERVAL_WIRE.monthly,
-        monthlyPriceCzk: 199,
+        price: 199,
+        monthlyEquivalentPrice: 199,
+        currencyCode: 'CZK',
         isActive: true,
       }),
     ],
@@ -150,5 +152,14 @@ describe('MembershipPlanListFacade', () => {
     expect(snackbar.showError).toHaveBeenCalledWith(
       'api.membership.plan.action_failed'
     );
+  });
+
+  it('keeps the row currency code the DTO carries — the label never comes from a second read', () => {
+    membershipClient.getPaged.mockReturnValue(of(page));
+
+    facade.loadPlans();
+
+    expect(facade.plans()[0].currencyCode).toBe('CZK');
+    expect(facade.plans()[0].price).toBe(199);
   });
 });

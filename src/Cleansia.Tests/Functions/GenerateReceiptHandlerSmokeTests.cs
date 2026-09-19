@@ -4,8 +4,10 @@ using Cleansia.Core.Domain.SeedWork;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Queue.Abstractions.Messages;
 using Cleansia.Functions.Core.Handlers;
+using Cleansia.Core.AppServices.Tenancy;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Cleansia.Tests.Functions;
 
@@ -37,6 +39,7 @@ public class GenerateReceiptHandlerSmokeTests
         _countryConfigurationRepository.Object,
         _unitOfWork.Object,
         _tenantProvider.Object,
+        new ArchivedCompanyDeadLetter(Mock.Of<IServiceScopeFactory>(), NullLogger<ArchivedCompanyDeadLetter>.Instance),
         NullLogger<GenerateReceiptHandler>.Instance);
 
     [Fact]

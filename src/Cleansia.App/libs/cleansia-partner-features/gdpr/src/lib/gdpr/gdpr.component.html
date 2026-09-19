@@ -16,7 +16,7 @@
           <cleansia-button
             [label]="'pages.gdpr.export_button' | translate"
             icon="pi pi-download"
-            size="small-width"
+            size="auto-width"
             [loading]="facade.exporting()"
             [disabled]="facade.exporting()"
             (onClick)="exportData()"
@@ -59,7 +59,7 @@
             [label]="'pages.gdpr.delete_button' | translate"
             icon="pi pi-trash"
             severity="danger"
-            size="small-width"
+            size="auto-width"
             [loading]="facade.deleting()"
             [disabled]="facade.deleting()"
             (onClick)="deleteAccount()"

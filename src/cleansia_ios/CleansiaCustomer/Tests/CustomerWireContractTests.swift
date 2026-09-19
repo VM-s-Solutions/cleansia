@@ -27,7 +27,6 @@ final class CustomerWireContractTests: XCTestCase {
             extrasSubtotal: 0,
             expressSurchargeApplied: true,
             expressSurchargeAmount: 400,
-            exchangeRate: 1,
             expressSurchargeWaivedByMembership: false
         )
     }
@@ -71,11 +70,25 @@ final class CustomerWireContractTests: XCTestCase {
 
     // MARK: the cancellation refund
 
-    func testACancellationReportsTheRefundItWasGiven() throws {
+    /// The figure is the refund the server actually issued, never the policy `refundAmount` it
+    /// quotes for every cancel — including a cash order that refunds nothing.
+    func testACancellationReportsTheRefundItWasGivenAndNotThePolicyFigure() throws {
         let cancellation = try OrderCancellation(
-            CancelOrderResponse(refundAmount: 1200, refundInitiated: true)
+            CancelOrderResponse(refundAmount: 1200, refundInitiated: true, actualRefundAmount: 1150)
         )
-        XCTAssertEqual(cancellation.refunded, 1200)
+        XCTAssertEqual(cancellation.refundAmount, 1200)
+        XCTAssertEqual(cancellation.actualRefundAmount, 1150)
+        XCTAssertEqual(cancellation.refunded, 1150)
+    }
+
+    /// Nullable by design: no confirmed refund is "no refund", not the policy amount borrowed back.
+    func testANullActualRefundStaysUnknownInsteadOfBorrowingThePolicyAmount() throws {
+        let cancellation = try OrderCancellation(
+            CancelOrderResponse(refundAmount: 1200, refundInitiated: true, actualRefundAmount: nil)
+        )
+        XCTAssertNil(cancellation.actualRefundAmount)
+        XCTAssertNil(cancellation.refunded)
+        XCTAssertEqual(cancellation.refundAmount, 1200)
     }
 
     func testABrokenCancellationDoesNotReportNoRefund() {
@@ -83,7 +96,7 @@ final class CustomerWireContractTests: XCTestCase {
             ("refundAmount", { (dto: inout CancelOrderResponse) in dto.refundAmount = nil }),
             ("refundInitiated", { dto in dto.refundInitiated = nil })
         ] {
-            var payload = CancelOrderResponse(refundAmount: 1200, refundInitiated: true)
+            var payload = CancelOrderResponse(refundAmount: 1200, refundInitiated: true, actualRefundAmount: 1200)
             break_(&payload)
             assertRefused(field) { try OrderCancellation(payload) }
         }
@@ -153,6 +166,23 @@ final class CustomerWireContractTests: XCTestCase {
         var payload = OrderItem.wireComplete()
         payload.review = OrderReviewDto(rating: nil, comment: "Spotless.")
         assertRefused("rating") { try CustomerOrderDetail(payload) }
+    }
+
+    /// The market an order was booked in rides both the row and the detail as its `countryId`; the
+    /// label resolves it against the directory, so nothing here is refused — an absent country reads as
+    /// unavailable rather than blanking the order.
+    func testTheRowAndTheDetailCarryTheMarketTheyWereBookedIn() throws {
+        var row = OrderListItem.wireComplete()
+        row.countryId = "svk"
+        XCTAssertEqual(try CustomerOrderSummary(row)?.countryId, "svk")
+        row.countryId = nil
+        XCTAssertNil(try CustomerOrderSummary(row)?.countryId)
+
+        var detail = OrderItem.wireComplete()
+        detail.countryId = "svk"
+        XCTAssertEqual(try CustomerOrderDetail(detail).countryId, "svk")
+        detail.countryId = nil
+        XCTAssertNil(try CustomerOrderDetail(detail).countryId)
     }
 
     /// The one identifier this surface does NOT refuse: the screen is routed with the order id and
@@ -257,6 +287,75 @@ final class CustomerWireContractTests: XCTestCase {
         XCTAssertEqual(gallery.beforeCount, 0)
     }
 
+    // MARK: the Plus plans — priced per market, so every figure travels with its unit
+
+    private func planPayload() -> GetMembershipPlansResponse {
+        GetMembershipPlansResponse(
+            code: "PLUS_MONTHLY",
+            name: "Monthly",
+            price: 199,
+            monthlyEquivalentPrice: 199,
+            billingInterval: 1,
+            discountPercentage: 5,
+            freeCancellationWindowHours: 4,
+            allowsExpressUpgrade: true,
+            expressUpgradesPerMonth: 2,
+            trialPeriodDays: 0,
+            savingsPercentVsMonthly: 0,
+            currencyCode: "CZK"
+        )
+    }
+
+    func testAFullyPopulatedPlanMapsWithItsCurrency() throws {
+        let plan = try planPayload().toDomain()
+        XCTAssertEqual(plan.price, 199)
+        XCTAssertEqual(plan.currencyCode, "CZK")
+        XCTAssertEqual(plan.billingInterval, 1)
+    }
+
+    /// A plan without its unit would be printed with a unit guessed for it, and one without its
+    /// money would be advertised as free.
+    func testABrokenPlanIsRefusedRatherThanPricedOrLabelledByGuess() {
+        for (field, break_) in [
+            ("price", { (dto: inout GetMembershipPlansResponse) in dto.price = nil }),
+            ("monthlyEquivalentPrice", { dto in dto.monthlyEquivalentPrice = nil }),
+            ("billingInterval", { dto in dto.billingInterval = nil }),
+            ("currencyCode", { dto in dto.currencyCode = nil }),
+            ("currencyCode", { dto in dto.currencyCode = "" })
+        ] {
+            var payload = planPayload()
+            break_(&payload)
+            assertRefused(field) { try payload.toDomain() }
+        }
+    }
+
+    // MARK: my membership — its own price and currency, for the life of the subscription
+
+    func testAMembershipMapsItsOwnPriceAndCurrency() throws {
+        let membership = try GetMyMembershipResponse(
+            hasMembership: true,
+            planCode: "PLUS_MONTHLY",
+            planName: "Cleansia Plus",
+            price: 199,
+            cancelRequested: false,
+            billingInterval: 1,
+            monthlyEquivalentPrice: 199,
+            currencyCode: "CZK"
+        ).toDomain()
+        XCTAssertEqual(membership.price, 199)
+        XCTAssertEqual(membership.monthlyEquivalentPrice, 199)
+        XCTAssertEqual(membership.currencyCode, "CZK")
+    }
+
+    /// `price` is null without a membership and when the plan's row in that currency is gone; neither
+    /// is a broken wire, so the snapshot still maps and the figures are simply not printed.
+    func testAMembershipWithoutAPriceRowStillMaps() throws {
+        let membership = try GetMyMembershipResponse(hasMembership: false, cancelRequested: false).toDomain()
+        XCTAssertFalse(membership.hasMembership)
+        XCTAssertNil(membership.price)
+        XCTAssertNil(membership.currencyCode)
+    }
+
     // MARK: the express-waiver quota — a claim, not a number
 
     /// The one case where the coerced value is the OPPOSITE of what the server's null means:
@@ -339,6 +438,29 @@ final class CustomerWireContractTests: XCTestCase {
         XCTAssertEqual(try? payload.toDomain().isDefault, true)
         payload.isDefault = nil
         assertRefused("isDefault") { try payload.toDomain() }
+    }
+
+    /// The recurring form prices its catalogue for the picked address's country, so the row it picks
+    /// from has to carry it; a row without an id is dropped, one without a country reads the default.
+    func testARecurringAddressCarriesItsCountry() {
+        var payload = SavedAddressDto(
+            id: "addr-1",
+            label: "Home",
+            street: "Hlavná 1",
+            city: "Bratislava",
+            zipCode: "811 01",
+            countryId: "svk",
+            isDefault: true
+        )
+        XCTAssertEqual(payload.toRecurringAddress()?.countryId, "svk")
+        XCTAssertEqual(payload.toRecurringAddress()?.isDefault, true)
+
+        payload.countryId = nil
+        XCTAssertNil(payload.toRecurringAddress()?.countryId)
+        XCTAssertNotNil(payload.toRecurringAddress())
+
+        payload.id = nil
+        XCTAssertNil(payload.toRecurringAddress())
     }
 
     private func assertRefused(

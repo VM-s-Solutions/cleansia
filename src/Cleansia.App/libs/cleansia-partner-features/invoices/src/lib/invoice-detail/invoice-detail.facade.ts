@@ -60,7 +60,7 @@ export class InvoiceDetailFacade extends UnsubscribeControlDirective {
       return;
     }
 
-    if (!invoice.pdfBlobName) {
+    if (!invoice.pdfBlobName || !invoice.id) {
       this.snackbarService.showErrorTranslated(
         'pages.invoices.pdf_not_available'
       );
@@ -70,7 +70,7 @@ export class InvoiceDetailFacade extends UnsubscribeControlDirective {
     this.loading.set(true);
 
     this.partnerClient.employeePayrollClient
-      .downloadInvoice(invoice.id!)
+      .downloadInvoice(invoice.id)
       .pipe(
         takeUntil(this.destroyed$),
         tap((fileResponse) => {

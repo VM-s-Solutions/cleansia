@@ -68,11 +68,15 @@ public static class DashboardMappers
         );
     }
 
-    public static WeeklyOrderCount MapToWeeklyOrderCount(this IGrouping<(int Year, int Week), Order> group)
+    /// <summary>
+    /// Counts cover every order in the week; TotalRevenue covers only the orders in <paramref name="currencyId"/>,
+    /// the currency the dashboard labels it with. A count has no unit; a sum does.
+    /// </summary>
+    public static WeeklyOrderCount MapToWeeklyOrderCount(this IGrouping<(int Year, int Week), Order> group, string currencyId)
     {
         var weekStart = ISOWeek.ToDateTime(group.Key.Year, group.Key.Week, DayOfWeek.Monday);
         var completedCount = group.Count(o => o.GetCurrentOrderStatus() == Cleansia.Core.Domain.Enums.OrderStatus.Completed);
-        var totalRevenue = group.Sum(o => o.TotalPrice);
+        var totalRevenue = group.Where(o => o.CurrencyId == currencyId).Sum(o => o.TotalPrice);
 
         return new WeeklyOrderCount(
             Year: group.Key.Year,
@@ -84,15 +88,20 @@ public static class DashboardMappers
         );
     }
 
+    /// <summary>
+    /// Counts cover every order; the two money columns cover only orders in <paramref name="currencyId"/>,
+    /// the currency the dashboard labels them with. A count has no unit; a sum does.
+    /// </summary>
     public static ServiceTypeCount MapToServiceTypeCount(
-        this IGrouping<string, (string ServiceName, decimal Price)> group)
+        this IGrouping<string, (string ServiceName, string CurrencyId, decimal Price)> group,
+        string currencyId)
     {
-        var count = group.Count();
+        var priced = group.Where(s => s.CurrencyId == currencyId).ToList();
         return new ServiceTypeCount(
             ServiceName: group.Key,
-            OrderCount: count,
-            AveragePrice: count > 0 ? group.Sum(s => s.Price) / count : 0,
-            TotalRevenue: group.Sum(s => s.Price)
+            OrderCount: group.Count(),
+            AveragePrice: priced.Count > 0 ? priced.Sum(s => s.Price) / priced.Count : 0,
+            TotalRevenue: priced.Sum(s => s.Price)
         );
     }
 }

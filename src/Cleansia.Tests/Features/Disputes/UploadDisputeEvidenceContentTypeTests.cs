@@ -136,7 +136,10 @@ public class UploadDisputeEvidenceContentTypeTests
             .Setup(r => r.ExistsAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
-        return await new UploadDisputeEvidence.Validator(disputeRepository.Object)
+        disputeRepository.Setup(r => r.GetQueryable()).Returns(new[] {
+            new Dispute("order-1", OwnerUserId, DisputeReason.Other, "x", OwnerUserId) { Id = DisputeId }
+        }.AsQueryable().BuildMock());
+        return await new UploadDisputeEvidence.Validator(disputeRepository.Object, Mock.Of<IUserSessionProvider>())
             .ValidateAsync(new UploadDisputeEvidence.Command(DisputeId, "evidence.pdf", "application/pdf", fileData));
     }
 
@@ -160,7 +163,7 @@ public class UploadDisputeEvidenceContentTypeTests
         };
 
         var disputeRepository = new Mock<IDisputeRepository>();
-        disputeRepository.Setup(r => r.GetQueryable()).Returns(new[] { dispute }.AsQueryable().BuildMock());
+        disputeRepository.Setup(r => r.GetQueryableForOwner(OwnerUserId)).Returns(new[] { dispute }.AsQueryable().BuildMock());
 
         string? uploadedBlobName = null;
         var blobClient = new Mock<IBlobContainerClient>();

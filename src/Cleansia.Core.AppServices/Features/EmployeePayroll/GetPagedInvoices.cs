@@ -6,6 +6,7 @@ using Cleansia.Core.AppServices.Features.EmployeePayroll.Filters;
 using Cleansia.Core.AppServices.Mappers;
 using Cleansia.Core.AppServices.Shared.DTOs.RequestModels;
 using Cleansia.Core.AppServices.Shared.DTOs.ResponseModels;
+using Cleansia.Core.Domain.EmployeePayroll;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Sorting;
@@ -50,13 +51,16 @@ public class GetPagedInvoices
                 minAmount: request.Filter?.MinAmount,
                 maxAmount: request.Filter?.MaxAmount,
                 dateFrom: request.Filter?.DateFrom,
-                dateTo: request.Filter?.DateTo);
+                dateTo: request.Filter?.DateTo,
+                currencyId: request.Filter?.CurrencyId);
 
             var filter = specification.SatisfiedBy();
+            var sort = request.Sort.MapToDomain()
+                .WithinCurrencyWhenSortedBy(nameof(EmployeeInvoice.TotalAmount), request.Filter?.CurrencyId);
 
             var totalItems = await invoiceRepository.GetCountAsync(filter, cancellationToken);
             var items = await invoiceRepository
-                .GetPagedSort<EmployeeInvoiceSort>(request.Offset, request.Limit, filter, request.Sort.MapToDomain())
+                .GetPagedSort<EmployeeInvoiceSort>(request.Offset, request.Limit, filter, sort)
                 .Include(i => i.Employee)
                     .ThenInclude(e => e.User)
                 .Include(i => i.PayPeriod)

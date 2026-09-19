@@ -68,7 +68,6 @@
           emptyMessage: 'pages.language_management.no_languages'
         }"
         [loading]="facade.loading()"
-        (sortChange)="onSortChange($event)"
       >
       </cleansia-table>
       }
@@ -78,7 +77,14 @@
 
 <!-- Filter Drawer Backdrop -->
 @if (isFilterDrawerOpen()) {
-<div class="filter-drawer-backdrop" (click)="closeFilterDrawer()"></div>
+<div
+  class="filter-drawer-backdrop"
+  role="button"
+  tabindex="0"
+  (click)="closeFilterDrawer()"
+  (keydown.escape)="closeFilterDrawer()"
+  [attr.aria-label]="'global.close' | translate"
+></div>
 }
 
 <!-- Filter Drawer -->

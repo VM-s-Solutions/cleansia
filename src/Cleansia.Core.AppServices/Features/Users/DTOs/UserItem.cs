@@ -18,5 +18,8 @@ public record UserItem(
     string? PreferredLanguageCode,
     string? PreferredLanguageName,
     string Id,
-    bool IsActive)
+    bool IsActive,
+    CustomerOfAnotherCompanyDto? CustomerOfAnotherCompany = null)
     : BaseRecord<string>(Id, IsActive);
+
+public record CustomerOfAnotherCompanyDto(string Id, string FirstName, string MaskedEmail, string CompanyName);

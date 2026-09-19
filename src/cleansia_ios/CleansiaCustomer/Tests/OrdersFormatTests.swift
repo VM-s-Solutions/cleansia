@@ -17,6 +17,17 @@ final class OrdersFormatTests: XCTestCase {
         XCTAssertTrue(russian.contains { $0.isCyrillic })
     }
 
+    /// A missing code used to render as "Kč" — a label guessed for a figure the payload never labelled.
+    func testABlankCurrencyCodeRendersNoUnit() {
+        let labelled = OrdersFormat.price(1290, currencyCode: "CZK")
+        XCTAssertTrue(labelled.hasSuffix(" Kč"))
+        let bare = String(labelled.dropLast(" Kč".count))
+        XCTAssertEqual(OrdersFormat.price(1290, currencyCode: nil), bare)
+        XCTAssertEqual(OrdersFormat.price(1290, currencyCode: ""), bare)
+        XCTAssertEqual(OrdersFormat.price(1290, currencyCode: "  "), bare)
+        XCTAssertTrue(OrdersFormat.price(1290, currencyCode: "EUR").hasSuffix(" €"))
+    }
+
     func testDateTimeLocalizesPerAppLocale() {
         XCTAssertNotEqual(
             OrdersFormat.dateTime(instant, locale: ruLocale),

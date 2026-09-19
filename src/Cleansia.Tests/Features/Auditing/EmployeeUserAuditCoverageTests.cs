@@ -1,5 +1,6 @@
 ﻿using System.Security.Claims;
 using Cleansia.Core.AppServices.Auditing;
+using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Behaviors;
 using Cleansia.Core.AppServices.Features.Employees;
 using Cleansia.Core.AppServices.Services.Interfaces;
@@ -7,11 +8,13 @@ using Cleansia.Core.Domain.Auditing;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Users;
+using Cleansia.Infra.Common.Configuration.Interfaces;
 using Cleansia.Infra.Common.Validations;
 using Cleansia.TestUtilities;
 using MediatR;
 using Microsoft.Extensions.Logging.Abstractions;
 using MockQueryable;
+using Cleansia.Core.Domain.Internationalization;
 using Moq;
 
 namespace Cleansia.Tests.Features.Auditing;
@@ -77,7 +80,8 @@ public sealed class EmployeeUserAuditCoverageTests
 
         var handler = new ApproveEmployee.Handler(
             employeeRepository.Object, AdminUserRepository().Object, AdminSession(), auditContext,
-            CoveredCatalogue().services, CoveredCatalogue().packages, CoveredCatalogue().payConfigs);
+            CoveredCatalogue().services, CoveredCatalogue().packages, CoveredCatalogue().payConfigs,
+            CzkResolution());
         var result = await handler.Handle(
             new ApproveEmployee.Command(SubjectEmployeeId, "country-cz", "fast-track onboarding"),
             CancellationToken.None);
@@ -87,8 +91,8 @@ public sealed class EmployeeUserAuditCoverageTests
         Assert.NotNull(snapshot);
         Assert.Equal("User", snapshot!.ResourceType);
         Assert.Equal(SubjectUserId, snapshot.ResourceId);
-        Assert.Contains($"\"status\":{(int)ContractStatus.Pending}", snapshot.BeforeJson);
-        Assert.Contains($"\"status\":{(int)ContractStatus.Approved}", snapshot.AfterJson);
+        Assert.Contains("\"status\":\"pending\"", snapshot.BeforeJson);
+        Assert.Contains("\"status\":\"approved\"", snapshot.AfterJson);
         Assert.Contains("\"workCountryId\":\"country-cz\"", snapshot.AfterJson);
         Assert.Contains($"\"employeeId\":\"{SubjectEmployeeId}\"", snapshot.AfterJson);
         // The admin's free-text notes never enter the snapshot (could carry subject PII).
@@ -105,7 +109,8 @@ public sealed class EmployeeUserAuditCoverageTests
 
         var handler = new ApproveEmployee.Handler(
             employeeRepository.Object, AdminUserRepository().Object, AdminSession(), auditContext,
-            CoveredCatalogue().services, CoveredCatalogue().packages, CoveredCatalogue().payConfigs);
+            CoveredCatalogue().services, CoveredCatalogue().packages, CoveredCatalogue().payConfigs,
+            CzkResolution());
         var result = await handler.Handle(
             new ApproveEmployee.Command("missing-emp", "country-cz"), CancellationToken.None);
 
@@ -134,7 +139,8 @@ public sealed class EmployeeUserAuditCoverageTests
 
         var handler = new RejectEmployee.Handler(
             employeeRepository.Object, AdminUserRepository().Object, orderRepository.Object,
-            new Mock<INotificationProducer>().Object, AdminSession(), auditContext);
+            new Mock<INotificationProducer>().Object, AdminSession(), auditContext,
+            new Mock<IAdminNotifier>().Object);
         var result = await handler.Handle(
             new RejectEmployee.Command(SubjectEmployeeId, "documents look forged"), CancellationToken.None);
 
@@ -143,8 +149,8 @@ public sealed class EmployeeUserAuditCoverageTests
         Assert.NotNull(snapshot);
         Assert.Equal("User", snapshot!.ResourceType);
         Assert.Equal(SubjectUserId, snapshot.ResourceId);
-        Assert.Contains($"\"status\":{(int)ContractStatus.Pending}", snapshot.BeforeJson);
-        Assert.Contains($"\"status\":{(int)ContractStatus.Rejected}", snapshot.AfterJson);
+        Assert.Contains("\"status\":\"pending\"", snapshot.BeforeJson);
+        Assert.Contains("\"status\":\"rejected\"", snapshot.AfterJson);
         Assert.Contains($"\"employeeId\":\"{SubjectEmployeeId}\"", snapshot.AfterJson);
         Assert.DoesNotContain("documents look forged", snapshot.AfterJson);
         AssertNoSubjectPii(snapshot);
@@ -179,7 +185,6 @@ public sealed class EmployeeUserAuditCoverageTests
                 PassportId: null,
                 EntityType: null,
                 RegistrationNumber: null,
-                VatNumber: null,
                 LegalEntityName: null,
                 EmergencyName: null,
                 EmergencyPhone: null),
@@ -242,7 +247,8 @@ public sealed class EmployeeUserAuditCoverageTests
             "partner-1", "partner@cleansia.test",
             [new Claim(ClaimTypes.Role, UserProfile.Employee.ToString())]);
         var behavior = new AuditLogBehavior<RejectEmployee.Command, BusinessResult>(
-            session, new AuditContext(), writer.Object, sink.Object, new AuditEntryFactory(session),
+            session, new HostAudienceProvider(JwtAudiences.Admin), new AuditContext(), writer.Object, sink.Object,
+            new AuditEntryFactory(session, new TestRequestMetadataProvider(), new HostAudienceProvider(JwtAudiences.Admin)),
             NullLogger<AuditLogBehavior<RejectEmployee.Command, BusinessResult>>.Instance);
 
         await behavior.Handle(
@@ -266,7 +272,7 @@ public sealed class EmployeeUserAuditCoverageTests
 
     private static Mock<IUserRepository> AdminUserRepository()
     {
-        var adminUser = User.CreateWithPassword(AdminEmail, "Passw0rd!", "Ada", "Min", UserProfile.Administrator);
+        var adminUser = User.CreateWithPassword(AdminEmail, "Passw0rd!", "Ada", "Min", UserProfile.Administrator, adminRole: AdminRole.Administrator);
         adminUser.Id = AdminId;
         var mock = new Mock<IUserRepository>();
         mock.Setup(r => r.GetByEmailAsync(AdminEmail, It.IsAny<CancellationToken>())).ReturnsAsync(adminUser);
@@ -279,7 +285,7 @@ public sealed class EmployeeUserAuditCoverageTests
     /// </summary>
     private static (IServiceRepository services, IPackageRepository packages, IEmployeePayConfigRepository payConfigs) CoveredCatalogue()
     {
-        var service = Cleansia.Core.Domain.Services.Service.Create("cat-1", "General Cleaning", "d", 500m, 150m);
+        var service = Cleansia.Core.Domain.Services.Service.Create("cat-1", "General Cleaning", "d");
         service.Id = "svc-audit";
 
         var services = new Mock<IServiceRepository>();
@@ -298,6 +304,19 @@ public sealed class EmployeeUserAuditCoverageTests
         return (services.Object, packages.Object, payConfigs.Object);
     }
 
+    /// <summary>The work country's currency, with the id the covered catalogue's rates are stamped with.</summary>
+    private static ICurrencyResolutionService CzkResolution()
+    {
+        var czk = Currency.Create("CZK", "Kč", "Czech koruna");
+        czk.Id = "czk";
+        czk.IsActive = true;
+        var resolution = new Mock<ICurrencyResolutionService>();
+        resolution
+            .Setup(s => s.ResolveCurrencyForCountryAsync(It.IsAny<string?>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(czk);
+        return resolution.Object;
+    }
+
     private static Employee BuildEmployee()
     {
         var user = User.CreateWithPassword(SubjectEmail, "Passw0rd!", SubjectFirstName, SubjectLastName, UserProfile.Employee);
@@ -309,7 +328,6 @@ public sealed class EmployeeUserAuditCoverageTests
         employee.UpdateEmployeeDetails(
             EmployeeEntityType.NaturalPerson,
             registrationNumber: "12345678",
-            vatNumber: null,
             legalEntityName: null,
             nationalityId: "country-cz",
             passportId: SubjectPassport,

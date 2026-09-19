@@ -2,6 +2,7 @@
 using Cleansia.Infra.Common.Configuration;
 using Cleansia.Infra.Common.Configuration.Interfaces;
 using Cleansia.Infra.Database;
+using Cleansia.Infra.Database.Seed.Legal;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -58,15 +59,26 @@ public static class DbContextBindingExtensions
             TryEagerlyReloadTypeCatalog(dataSource);
         }
 
-        services.AddSingleton(dataSource);
+        // Through a factory, not as the instance: the container disposes what a factory returned and never an
+        // instance handed to it, and that is what closes the pool with the host. Built above rather than
+        // inside the factory so the eager type-catalog probe can run at composition. Registered as an
+        // instance it outlived every shutdown — and in a test suite, every host booted — holding its
+        // connections open on the server to the end.
+        services.AddSingleton(_ => dataSource);
         // Registration order is load-bearing: IHostedService.StartAsync runs sequentially, and
         // NpgsqlTypeCatalogInitializer awaits a retry loop that can span ~2 minutes while a migration is
         // in flight. Registered after it, the warm-up would be queued behind exactly the slow boot it
         // exists to help. It yields immediately, so it delays the initializer by nothing.
         services.AddHostedService<EfModelWarmupService>();
         services.AddHostedService<NpgsqlTypeCatalogInitializer>();
-        services.AddDbContext<CleansiaDbContext>(options => options.UseNpgsql(dataSource));
+        services.AddDbContext<CleansiaDbContext>((provider, options) =>
+            options.UseNpgsql(provider.GetRequiredService<NpgsqlDataSource>()));
         services.AddScoped<IUnitOfWork>(provider => provider.GetService<CleansiaDbContext>()!);
+        // The legal texts are seeded from the embedded files at every host start, in every environment
+        // (a deploy is how a new version reaches the database). Registered after the type-catalog
+        // initializer so the seed waits behind an in-flight migration instead of retrying against it.
+        services.AddScoped<LegalDocumentSeeder>();
+        services.AddHostedService<LegalDocumentSeedHostedService>();
 
         return services;
     }

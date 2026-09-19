@@ -1,5 +1,6 @@
 #nullable enable
 using Cleansia.Core.AppServices.Shared.DTOs.Enums;
+using Cleansia.Core.Domain.Enums;
 
 namespace Cleansia.Core.AppServices.Features.AdminUsers.DTOs;
 
@@ -15,4 +16,5 @@ public record AdminUserDetailDto(
     DateOnly? BirthDate,
     string? PreferredLanguageCode,
     DateTimeOffset CreatedAt,
-    DateTimeOffset? LastLoginAt);
+    DateTimeOffset? LastLoginAt,
+    AdminRole? AdminRole = null);

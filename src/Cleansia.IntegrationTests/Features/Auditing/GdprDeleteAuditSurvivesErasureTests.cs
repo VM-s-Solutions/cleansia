@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using Cleansia.Core.AppServices.Auditing;
+using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Behaviors;
 using Cleansia.Core.AppServices.Features.Gdpr;
 using Cleansia.Core.AppServices.Services.Interfaces;
@@ -7,6 +8,7 @@ using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Internationalization;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Users;
+using Cleansia.Infra.Common.Configuration.Interfaces;
 using Cleansia.Infra.Common.Validations;
 using Cleansia.Infra.Database;
 using Cleansia.Infra.Database.Auditing;
@@ -49,7 +51,7 @@ public class GdprDeleteAuditSurvivesErasureTests : BaseIntegrationTest
     private CleansiaDbContext NewContext() =>
         new(new DbContextOptionsBuilder<CleansiaDbContext>().UseNpgsql(Fixture.GetConnectionString()).Options,
             AdminSession(),
-            new FixedTenantProvider(tenantId: null));
+            new FixedTenantProvider(TestTenants.Default));
 
     // The production nesting for the success path: UnitOfWork (outer, the single commit) → AuditLog
     // (inner, drains the handler snapshot and adds the audit row to the same scoped context) → handler.
@@ -57,14 +59,15 @@ public class GdprDeleteAuditSurvivesErasureTests : BaseIntegrationTest
     {
         var session = AdminSession();
         var auditContext = new AuditContext();
-        var factory = new AuditEntryFactory(session);
-        var writer = new DbContextAuditWriter(context, new FixedTenantProvider(null));
+        var factory = new AuditEntryFactory(session, new TestRequestMetadataProvider(), new HostAudienceProvider(JwtAudiences.Admin));
+        var writer = new DbContextAuditWriter(context, new FixedTenantProvider(TestTenants.Default));
         var sink = new OutOfBandAuditFailureSink(
-            new SingleDbScopeFactory(Fixture.GetConnectionString()), new FixedTenantProvider(null));
+            new SingleDbScopeFactory(Fixture.GetConnectionString()), new FixedTenantProvider(TestTenants.Default),
+            NullLogger<OutOfBandAuditFailureSink>.Instance);
 
         var handler = new AdminDeleteUserAccount.Handler(session, deletionService, auditContext);
         var audit = new AuditLogBehavior<AdminDeleteUserAccount.Command, BusinessResult>(
-            session, auditContext, writer, sink, factory,
+            session, new HostAudienceProvider(JwtAudiences.Admin), auditContext, writer, sink, factory,
             NullLogger<AuditLogBehavior<AdminDeleteUserAccount.Command, BusinessResult>>.Instance);
         var unitOfWork = new UnitOfWorkPipelineBehavior<AdminDeleteUserAccount.Command, BusinessResult>(context);
 
@@ -138,6 +141,7 @@ public class GdprDeleteAuditSurvivesErasureTests : BaseIntegrationTest
             SchemasToExclude = ["pg_catalog", "information_schema"]
         });
         await respawner.ResetAsync(conn);
+        await SeedTenantRegistryAsync(conn);
     }
 
     private sealed class SucceedingDeletionService : IGdprDeletionService
@@ -147,6 +151,12 @@ public class GdprDeleteAuditSurvivesErasureTests : BaseIntegrationTest
             string deactivationReason,
             Func<User, (string ProcessedBy, string? Notes)> resolveAuditActor,
             bool deferEmployeeErasure,
+            CancellationToken cancellationToken) =>
+            Task.FromResult(BusinessResult.Success());
+
+        public Task<BusinessResult> RetryDeletionAsync(
+            string requestId,
+            Func<User, (string ProcessedBy, string? Notes)> resolveAuditActor,
             CancellationToken cancellationToken) =>
             Task.FromResult(BusinessResult.Success());
     }
@@ -163,7 +173,7 @@ public class GdprDeleteAuditSurvivesErasureTests : BaseIntegrationTest
                 ? new CleansiaDbContext(
                     new DbContextOptionsBuilder<CleansiaDbContext>().UseNpgsql(connectionString).Options,
                     new TestUserSessionProvider("admin-1", "admin@cleansia.test"),
-                    new FixedTenantProvider(null))
+                    new FixedTenantProvider(TestTenants.Default))
                 : null;
     }
 

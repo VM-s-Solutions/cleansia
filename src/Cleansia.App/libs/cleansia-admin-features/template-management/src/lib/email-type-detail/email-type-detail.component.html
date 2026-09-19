@@ -35,12 +35,13 @@
               @if (getFormForLanguage(lang.code); as form) {
               <div class="translation-panel-header">
                 <cleansia-button
+                  *cleansiaPermission="Policy.CanUpdateEmailTemplate"
                   [label]="
                     'pages.template_management.actions.add_translation'
                       | translate
                   "
                   icon="pi pi-plus"
-                  size="small-width"
+                  size="auto-width"
                   [outlined]="true"
                   [disabled]="facade.creating()"
                   [loading]="facade.creating()"
@@ -74,16 +75,18 @@
                   </div>
                   <div class="translation-actions">
                     <cleansia-button
+                      *cleansiaPermission="Policy.CanUpdateEmailTemplate"
                       [label]="'global.actions.save' | translate"
                       icon="pi pi-check"
-                      size="small-width"
+                      size="auto-width"
                       [disabled]="facade.saving() && savingKey() === kv.key"
                       [loading]="facade.saving() && savingKey() === kv.key"
                       (onClick)="onSaveTranslation(lang.code, kv.id!, kv.key!)"
                     />
                     <cleansia-button
+                      *cleansiaPermission="Policy.CanUpdateEmailTemplate"
                       icon="pi pi-trash"
-                      size="small-width"
+                      size="auto-width"
                       severity="danger"
                       [outlined]="true"
                       [disabled]="facade.deleting() && deletingKey() === kv.key"
@@ -121,6 +124,7 @@
           (onClick)="onCancel()"
         />
         <cleansia-button
+          *cleansiaPermission="Policy.CanUpdateEmailTemplate"
           [label]="
             'pages.template_management.actions.send_test_email' | translate
           "

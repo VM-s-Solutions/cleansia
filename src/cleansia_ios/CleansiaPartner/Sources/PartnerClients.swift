@@ -8,7 +8,6 @@ struct PartnerAuthStack {
     /// stamps as X-Device-Id and Device/Register persists. Surfaced so the
     /// Devices client can pass it as currentDeviceId — no second source.
     let deviceIdProvider: DeviceIdProvider
-    let signupConsent: SignupConsentRepository
 }
 
 enum PartnerAuthSpine {
@@ -22,24 +21,18 @@ enum PartnerAuthSpine {
             deviceIdProvider: deviceIdProvider,
             anonymousAllowList: .partner
         )
-        let signupConsent = SignupConsentRepository(
-            store: UserDefaultsSignupConsentStore(),
-            client: PartnerSignupConsentClient()
-        )
         let spine = AuthApiClient(
             apiBaseURL: apiBaseURL,
             tokenStore: tokenStore,
             headerAdapter: headerAdapter,
             sessionScopedCaches: sessionScopedCaches,
-            signupConsent: signupConsent,
             authedSession: URLSession(configuration: .default),
             noAuthSession: URLSession(configuration: .ephemeral)
         )
         return PartnerAuthStack(
             spine: spine,
             headerAdapter: headerAdapter,
-            deviceIdProvider: deviceIdProvider,
-            signupConsent: signupConsent
+            deviceIdProvider: deviceIdProvider
         )
     }
 }

@@ -11,4 +11,10 @@ export enum PhysicalPolicy {
   EmployeeOrAdmin = 'EmployeeOrAdmin',
   AdminOnly = 'AdminOnly',
   OwnerOrElevated = 'OwnerOrElevated',
+  // The administrator sets — a lattice: Administrator ⊇ Manager ⊇ Support ∪ Accountant. Each needs the
+  // Administrator profile AND an administrator role inside the set; AdminOnly above is any role.
+  AdministratorOnly = 'AdministratorOnly',
+  ManagerOrAbove = 'ManagerOrAbove',
+  SupportOrAbove = 'SupportOrAbove',
+  AccountantOrAbove = 'AccountantOrAbove',
 }

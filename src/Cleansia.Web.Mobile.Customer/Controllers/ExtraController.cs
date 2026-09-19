@@ -15,8 +15,10 @@ public class ExtraController(IMediator mediator) : CustomerMobileApiController(m
     [HttpGet("GetOverview")]
     [ProducesResponseType(typeof(IEnumerable<ExtraListItem>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
-    public async Task<IEnumerable<ExtraListItem>> GetOverview(CancellationToken cancellationToken)
+    public async Task<IEnumerable<ExtraListItem>> GetOverview(
+        [FromQuery] string? countryId,
+        CancellationToken cancellationToken)
     {
-        return await Mediator.Send(new GetExtraOverview.Request(), cancellationToken);
+        return await Mediator.Send(new GetExtraOverview.Request(countryId), cancellationToken);
     }
 }

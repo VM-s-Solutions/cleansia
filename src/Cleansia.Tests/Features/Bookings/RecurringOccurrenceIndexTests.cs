@@ -24,11 +24,10 @@ namespace Cleansia.Tests.Features.Bookings;
 /// exact key the handler reasons with, both sides whole minutes produced by <c>ComputeOccurrences</c>,
 /// so equality asks the handler's own question and nothing wider.
 ///
-/// <para><b>The filter is load-bearing twice over.</b> Every one-off order carries
-/// <c>RecurringTemplateId</c> NULL, and without the filter they would contend with each other. It also
-/// keeps <c>TenantId</c> out of the key: a unique index containing nullable <c>TenantId</c> enforces
-/// nothing in single-tenant mode, because Postgres treats NULLs as distinct — the landmine
-/// <c>CLAUDE.md</c> names, and the reason this index is two non-null columns rather than three.</para>
+/// <para><b>The filter is load-bearing.</b> Every one-off order carries <c>RecurringTemplateId</c>
+/// NULL, and without the filter they would contend with each other. <c>TenantId</c> stays out of the
+/// key: a template belongs to one company, so the pair is already tenant-unique and a third column
+/// would narrow nothing.</para>
 /// </summary>
 public sealed class RecurringOccurrenceIndexTests
 {
@@ -88,19 +87,19 @@ public sealed class RecurringOccurrenceIndexTests
     }
 
     /// <summary>
-    /// TenantId must stay OUT of this key. It is nullable and NULL in single-tenant mode — production
-    /// today — and Postgres treats NULLs as distinct, so a key containing it would admit unlimited
-    /// duplicates while appearing to arbitrate. → /architecture/security-rules
+    /// TenantId must stay OUT of this key. A template belongs to one company, so the pair is already
+    /// tenant-unique; a tenant term would widen the index without narrowing the question.
+    /// → /architecture/security-rules
     /// </summary>
     [Fact]
-    public void The_Occurrence_Index_Does_Not_Depend_On_The_Nullable_TenantId()
+    public void The_Occurrence_Index_Does_Not_Carry_A_TenantId_Term()
     {
         var names = OccurrenceIndex()!.Properties.Select(p => p.Name).ToList();
 
         Assert.DoesNotContain("TenantId", names);
     }
 
-    /// <summary>Mirrors the seat-index tests' provider (null ⇒ single-tenant, which is production).</summary>
+    /// <summary>Mirrors the seat-index tests' provider; the model is built without a tenant context.</summary>
     private sealed class FixedTenantProvider(string? tenantId) : ITenantProvider
     {
         private string? _tenantId = tenantId;

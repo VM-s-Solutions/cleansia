@@ -145,11 +145,11 @@ class OrderWireTest {
     @Test
     fun everyListRowMoneyFieldArrivesWithItsLiteralValue() = runTest {
         val row = listed(CAPTURED_PAGE).data.first()
+        assertEquals("country-cz", row.countryId)
 
         assertEquals(4380.00, row.totalPrice, 0.0)
         assertEquals(3650.00, row.originalSubtotal, 0.0)
         assertEquals(2, row.appliedDiscountSource)
-        assertEquals(24.75, row.currency?.exchangeRate)
     }
 
     @Test
@@ -160,15 +160,9 @@ class OrderWireTest {
     }
 
     @Test
-    fun aMissingExchangeRateRefusesThePageRatherThanAssumingParity() = runTest {
-        refuses("exchangeRate") {
-            listed(pageWithFirstRow { row -> row + ("currency" to (row["currency"]!!.jsonObject - "exchangeRate")) })
-        }
-    }
-
-    @Test
     fun everyDetailMoneyFieldArrivesWithItsLiteralValue() = runTest {
         val order = detailed(CAPTURED_ORDER)
+        assertEquals("country-sk", order.countryId)
 
         assertEquals(4380.00, order.totalPrice, 0.0)
         assertEquals(3650.00, order.originalSubtotal, 0.0)
@@ -423,7 +417,6 @@ class OrderWireTest {
               "code": "CZK",
               "symbol": "Kč",
               "name": "Czech koruna",
-              "exchangeRate": 24.75,
               "isDefault": true
             }
         """
@@ -434,6 +427,7 @@ class OrderWireTest {
               "customerName": "Ada Lovelace",
               "customerEmail": "ada@example.com",
               "customerPhone": "+420600000000",
+              "countryId": "country-cz",
               "customerAddress": "Vodickova 1, Praha 1",
               "customerAddressApproximate": "Praha 1, 110 xx",
               "displayOrderNumber": "CL-2026-0${id.last()}",
@@ -498,6 +492,7 @@ class OrderWireTest {
         val CAPTURED_ORDER = """
             {
               "id": "o-1",
+              "countryId": "country-sk",
               "displayOrderNumber": "CL-2026-0042",
               "customerName": "Ada Lovelace",
               "customerEmail": "ada@example.com",
@@ -615,6 +610,7 @@ class OrderWireTest {
 
         val LIST_ITEM_SPEC_PROPERTIES = setOf(
             "id",
+            "countryId",
             "customerName",
             "customerEmail",
             "customerPhone",
@@ -654,10 +650,10 @@ class OrderWireTest {
             "amountDueOnCard",
         )
 
-        val CURRENCY_SPEC_PROPERTIES = setOf("id", "code", "symbol", "name", "exchangeRate", "isDefault")
+        val CURRENCY_SPEC_PROPERTIES = setOf("id", "code", "symbol", "name", "isDefault")
 
         val CANCEL_SPEC_PROPERTIES =
-            setOf("orderId", "feeRate", "refundAmount", "totalPrice", "refundInitiated")
+            setOf("orderId", "feeRate", "refundAmount", "totalPrice", "refundInitiated", "actualRefundAmount")
 
         val PREVIEW_SPEC_PROPERTIES = setOf(
             "orderId",

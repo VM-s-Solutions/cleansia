@@ -106,8 +106,6 @@ public class QuotePlusSavingsTests
         MembershipPlan.Create(
             code: "PLUS_MONTHLY",
             name: "Cleansia Plus",
-            monthlyPriceCzk: 199m,
-            stripePriceId: "price_test",
             discountPercentage: discountPercent,
             freeCancellationWindowHours: 4,
             allowsExpressUpgrade: true,
@@ -142,18 +140,18 @@ public class QuotePlusSavingsTests
                 PackagesSubtotal: 0m,
                 ExtrasSubtotal: 0m,
                 ExpressSurchargeApplied: expressSurcharge > 0m,
-                ExpressSurchargeAmount: expressSurcharge,
-                ExchangeRate: 1m));
+                ExpressSurchargeAmount: expressSurcharge));
 
         var loyalty = new Mock<ILoyaltyService>();
         loyalty.Setup(l => l.ResolveTierDiscountForOrderAsync(
-                It.IsAny<string>(), It.IsAny<decimal>(), It.IsAny<CancellationToken>()))
+                It.IsAny<string>(), It.IsAny<decimal>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new TierDiscountResult(tierDiscount, null));
 
         var session = new Mock<IUserSessionProvider>();
         session.Setup(s => s.GetUserId()).Returns("user-1");
 
         return new QuotePlusSavings.Handler(
-            pricing.Object, plans.Object, loyalty.Object, session.Object);
+            pricing.Object, plans.Object, loyalty.Object, session.Object,
+            new Mock<ICurrencyResolutionService>().Object);
     }
 }

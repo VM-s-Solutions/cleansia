@@ -97,8 +97,8 @@ public class SendSitewidePromoFanoutHandler(
             // GetQueryableIgnoringTenant() on both sides with NO tenant predicate, so SetTenantOverride
             // had zero effect once filters were ignored — one tenant's campaign fanned out to opted-in
             // users of EVERY tenant. We keep IgnoreQueryFilters (the override is not load-bearing) and
-            // add an EXPLICIT TenantId predicate. A null campaign.TenantId means single-tenant mode and
-            // matches the (null) rows for that deployment.
+            // add an EXPLICIT TenantId predicate. Preferences are stamped NOT NULL, so a message that
+            // somehow carries no tenant matches nobody rather than everybody.
             var campaignTenantId = campaign.TenantId;
             var query = preferencesRepository.GetQueryableIgnoringTenant()
                 .Where(p => p.Promo)

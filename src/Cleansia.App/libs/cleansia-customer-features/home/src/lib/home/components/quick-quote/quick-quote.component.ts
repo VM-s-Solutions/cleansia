@@ -4,8 +4,10 @@ import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { EXPRESS_LEAD_TIME_HOURS, generateTimeOptions } from '@cleansia/models';
+import { localeFor } from '@cleansia/utils';
 import { DatePickerModule } from 'primeng/datepicker';
 import { SelectModule } from 'primeng/select';
+import { CleansiaMarketSwitcherComponent } from '@cleansia/components/cleansia-market-switcher';
 
 import { QuickQuoteFacade } from './quick-quote.facade';
 import { PropertySizePreset } from './property-size-presets';
@@ -28,7 +30,14 @@ export interface QuickQuoteService {
   templateUrl: './quick-quote.component.html',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [TranslatePipe, RouterModule, FormsModule, DatePickerModule, SelectModule],
+  imports: [
+    TranslatePipe,
+    RouterModule,
+    FormsModule,
+    DatePickerModule,
+    SelectModule,
+    CleansiaMarketSwitcherComponent,
+  ],
   providers: [QuickQuoteFacade],
 })
 export class QuickQuoteComponent {
@@ -121,12 +130,8 @@ export class QuickQuoteComponent {
     const mins = this.facade.crewMinutes();
     if (!mins) return null;
     const hours = Math.round((mins / 60) * 2) / 2;
-    return new Intl.NumberFormat(this.localeTag(), { maximumFractionDigits: 1 }).format(hours);
+    return new Intl.NumberFormat(localeFor(this.lang()), { maximumFractionDigits: 1 }).format(hours);
   });
-
-  private localeTag(): string {
-    return this.lang() || this.translate.getDefaultLang() || 'cs';
-  }
 
   onDate(value: Date | null): void {
     if (!value) {

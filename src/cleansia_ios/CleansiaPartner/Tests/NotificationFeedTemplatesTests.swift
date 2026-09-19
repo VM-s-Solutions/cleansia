@@ -6,6 +6,16 @@ final class NotificationFeedTemplatesTests: XCTestCase {
     private let appBundle = Bundle(identifier: "cz.cleansia.partner") ?? .main
     private let languages = ["en", "cs", "sk", "uk", "ru"]
 
+    func testRecurringPauseStaysOutOfThePartnerFeed() {
+        XCTAssertFalse(PartnerFeedEventKeys.contains("recurring.paused"))
+        XCTAssertNil(NotificationFeedTemplates.render(eventKey: "recurring.paused", args: [:]))
+        let rows = NotificationFeedTemplates.rows(from: [
+            NotificationFixtures.item(id: "paused", eventKey: "recurring.paused"),
+            NotificationFixtures.item(id: "job", eventKey: "order.new_available")
+        ])
+        XCTAssertEqual(rows.map(\.id), ["job"])
+    }
+
     func testNewAvailableRowRendersTheApnsTemplateWithTheCount() throws {
         let rendered = try XCTUnwrap(NotificationFeedTemplates.render(
             eventKey: "order.new_available",

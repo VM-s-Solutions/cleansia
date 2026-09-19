@@ -14,6 +14,7 @@ public static class FcmMessageFactory
 {
     private static readonly IReadOnlyList<string> OrderNumberArg = ["orderNumber"];
     private static readonly IReadOnlyList<string> CountArg = ["count"];
+    private static readonly IReadOnlyList<string> OrderNumberAndAmountArgs = ["orderNumber", "amount"];
     private static readonly IReadOnlyList<string> NoArgs = [];
 
     /// <summary>
@@ -23,12 +24,15 @@ public static class FcmMessageFactory
     /// <c>promo.new_sitewide</c> is structurally excluded (no fixed template anywhere). Add a key
     /// ONLY after its loc-keys ship in BOTH iOS apps' main-bundle catalogs (client-first rule) —
     /// enforced by <c>ApnsDisplayMapIosCatalogSyncTests</c>, which reads both <c>.xcstrings</c> off
-    /// disk — and keep arg names inside the closed {orderNumber, count} lock-screen allowlist (D3):
-    /// internal ids and raw enum values must never render.
+    /// disk — and keep arg names inside the closed {orderNumber, count, amount} lock-screen allowlist
+    /// (D3, widened by one slot on owner ruling 2026-09-13: <c>amount</c> is a
+    /// server-formatted money figure with its own currency's symbol, "250 Kč", carried only by
+    /// <c>order.no_cleaner_refunded</c>): internal ids and raw enum values must never render.
     /// </summary>
     public static IReadOnlyDictionary<string, IReadOnlyList<string>> ApnsDisplayMap { get; } =
         new Dictionary<string, IReadOnlyList<string>>
         {
+            [NotificationEventCatalog.OrderPaymentConfirmed] = OrderNumberArg,
             [NotificationEventCatalog.OrderConfirmed] = OrderNumberArg,
             [NotificationEventCatalog.OrderCleanerAssigned] = OrderNumberArg,
             [NotificationEventCatalog.OrderStartingSoon] = OrderNumberArg,
@@ -39,8 +43,9 @@ public static class FcmMessageFactory
             [NotificationEventCatalog.OrderCompleted] = OrderNumberArg,
             [NotificationEventCatalog.OrderCancelled] = OrderNumberArg,
             [NotificationEventCatalog.OrderRefunded] = OrderNumberArg,
-            [NotificationEventCatalog.OrderNoCleanerRefunded] = OrderNumberArg,
+            [NotificationEventCatalog.OrderNoCleanerRefunded] = OrderNumberAndAmountArgs,
             [NotificationEventCatalog.RecurringScheduled] = OrderNumberArg,
+            [NotificationEventCatalog.RecurringPaused] = NoArgs,
             [NotificationEventCatalog.NewJobsAvailable] = CountArg,
             [NotificationEventCatalog.OrderSeatOpen] = OrderNumberArg,
             [NotificationEventCatalog.ReminderTomorrow] = CountArg,

@@ -36,19 +36,18 @@ public class GetOrderPhotos
 
     public class Validator : AbstractValidator<Query>
     {
-        public Validator(IOrderRepository orderRepository)
+        public Validator(IOrderAccessService orderAccessService)
         {
             RuleFor(x => x.OrderId)
                 .Cascade(CascadeMode.Stop)
                 .NotEmpty()
                 .WithMessage(BusinessErrorMessage.Required)
-                .MustAsync(orderRepository.ExistsAsync)
+                .MustAsync(orderAccessService.OrderExistsForCallerAsync)
                 .WithMessage(BusinessErrorMessage.OrderNotFound);
         }
     }
 
     public class Handler(
-        IOrderRepository orderRepository,
         IOrderPhotoRepository photoRepository,
         IOrderAccessService orderAccessService,
         IBlobContainerClientFactory blobClientFactory) : IQueryHandler<Query, Response>
@@ -59,28 +58,23 @@ public class GetOrderPhotos
             // a signed URL that works outside Cleansia auth and can be forwarded. Nothing about the
             // inside of the home is part of deciding whether to take the job, and the write paths were
             // already assignment-gated.
-            var order = await orderRepository.GetByIdAsync(query.OrderId, cancellationToken);
+            var order = await orderAccessService.LoadOrderForCallerAsync(query.OrderId, cancellationToken);
             if (order == null || !await orderAccessService.CanAccessOrderAsync(order, cancellationToken))
             {
                 return BusinessResult.Failure<Response>(new Error(
                     nameof(query.OrderId), BusinessErrorMessage.OrderNotFound));
             }
 
-            var photos = await photoRepository.GetPhotosByOrderIdAsync(query.OrderId, cancellationToken);
+            var photos = orderAccessService.IsCustomerCaller()
+                ? await photoRepository.GetPhotosByOrderIdForOwnerAsync(order.Id, order.UserId!, cancellationToken)
+                : await photoRepository.GetPhotosByOrderIdAsync(order.Id, cancellationToken);
             var blobClient = blobClientFactory.GetBlobContainerClient(Constants.BlobContainers.OrderPhotos);
             var hideEmployeeIds = orderAccessService.IsCustomerCaller();
 
             var photoDtos = photos.Select(p => MapToDto(p, blobClient, hideEmployeeIds)).ToList();
 
-            var beforeCount = await photoRepository.GetPhotoCountByOrderIdAndTypeAsync(
-                query.OrderId,
-                PhotoType.Before,
-                cancellationToken);
-
-            var afterCount = await photoRepository.GetPhotoCountByOrderIdAndTypeAsync(
-                query.OrderId,
-                PhotoType.After,
-                cancellationToken);
+            var beforeCount = photos.Count(p => p.PhotoType == PhotoType.Before);
+            var afterCount = photos.Count(p => p.PhotoType == PhotoType.After);
 
             return BusinessResult.Success(new Response(
                 Photos: photoDtos,

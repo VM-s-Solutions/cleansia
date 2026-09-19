@@ -5,6 +5,7 @@ import { UnsubscribeControlDirective } from '@cleansia/directives';
 import { CleansiaAdminRoute, SnackbarService } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
 import { catchError, finalize, of, takeUntil } from 'rxjs';
+import { resolveCountryErrorKey } from './country-management.models';
 
 @Injectable()
 export class CountryManagementFacade extends UnsubscribeControlDirective {
@@ -46,6 +47,32 @@ export class CountryManagementFacade extends UnsubscribeControlDirective {
     if (country.id) {
       this.router.navigate([CleansiaAdminRoute.COUNTRY_MANAGEMENT, country.id, 'edit']);
     }
+  }
+
+  setDefaultMarket(country: CountryListItem): void {
+    if (!country.id || country.isDefaultMarket) return;
+
+    this.adminClient.adminCountryClient
+      .defaultMarket(country.id)
+      .pipe(
+        takeUntil(this.destroyed$),
+        catchError((error: unknown) => {
+          this.snackbarService.showError(
+            this.translate.instant(resolveCountryErrorKey(error))
+          );
+          return of(null);
+        })
+      )
+      .subscribe((response) => {
+        if (response) {
+          this.snackbarService.showSuccess(
+            this.translate.instant(
+              'pages.country_management.messages.set_default_market_success'
+            )
+          );
+          this.loadCountries();
+        }
+      });
   }
 
   deleteCountry(country: CountryListItem): void {

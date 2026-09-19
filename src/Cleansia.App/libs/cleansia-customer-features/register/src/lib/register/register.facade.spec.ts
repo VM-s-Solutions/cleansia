@@ -1,17 +1,15 @@
 import { TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
 import {
-  ConsentType,
   CustomerAuthService,
   CustomerClient,
-  GrantConsentCommand,
   JwtTokenResponse,
-  SignupConsentService,
   ValidateReferralQuery,
   ValidateReferralResponse,
 } from '@cleansia/customer-services';
+import { selectMarketCountryId } from '@cleansia/customer-stores';
 import { SnackbarService, extractApiErrorCode } from '@cleansia/services';
-import { provideMockStore } from '@ngrx/store/testing';
+import { MockStore, provideMockStore } from '@ngrx/store/testing';
 import { TranslateService } from '@ngx-translate/core';
 import { Subject, of, throwError } from 'rxjs';
 import { RegisterFacade } from './register.facade';
@@ -55,7 +53,9 @@ describe('RegisterFacade — referral landing capture (/r/{code})', () => {
     TestBed.configureTestingModule({
       providers: [
         RegisterFacade,
-        provideMockStore(),
+        provideMockStore({
+          selectors: [{ selector: selectMarketCountryId, value: null }],
+        }),
         { provide: Router, useValue: { navigate: jest.fn() } },
         { provide: CustomerAuthService, useValue: authService },
         { provide: CustomerClient, useValue: { referralClient } },
@@ -151,8 +151,125 @@ describe('RegisterFacade — referral landing capture (/r/{code})', () => {
       'Heslo1234',
       'Jan',
       'Novák',
-      'ABC12'
+      true,
+      'ABC12',
+      null
     );
+  });
+});
+
+describe('RegisterFacade — the chosen market', () => {
+  let facade: RegisterFacade;
+  let store: MockStore;
+  let referralClient: { validate: jest.Mock };
+  let authService: {
+    register: jest.Mock;
+    signUpWithGoogle: jest.Mock;
+    signUpWithApple: jest.Mock;
+    setSession: jest.Mock;
+  };
+
+  const EMAIL = 'jan@example.com';
+  const CREDENTIAL = [
+    'header',
+    btoa(JSON.stringify({ sub: 'google-subject', email: EMAIL, given_name: 'Jan', family_name: 'Novák' })),
+    'signature',
+  ].join('.');
+
+  function fillForm(): void {
+    facade.formGroup.patchValue({
+      firstName: 'Jan',
+      lastName: 'Novák',
+      email: EMAIL,
+      password: 'Heslo1234',
+      confirmPassword: 'Heslo1234',
+      terms: true,
+    });
+  }
+
+  beforeEach(() => {
+    referralClient = {
+      validate: jest.fn().mockReturnValue(of(ValidateReferralResponse.fromJS({ isValid: true }))),
+    };
+    authService = {
+      register: jest.fn().mockReturnValue(of(true)),
+      signUpWithGoogle: jest.fn().mockReturnValue(of({ email: EMAIL })),
+      signUpWithApple: jest.fn().mockReturnValue(of({ email: EMAIL })),
+      setSession: jest.fn(),
+    };
+
+    TestBed.configureTestingModule({
+      providers: [
+        RegisterFacade,
+        provideMockStore({
+          selectors: [{ selector: selectMarketCountryId, value: 'svk-id' }],
+        }),
+        { provide: Router, useValue: { navigate: jest.fn() } },
+        { provide: CustomerAuthService, useValue: authService },
+        { provide: CustomerClient, useValue: { referralClient } },
+        {
+          provide: SnackbarService,
+          useValue: { showError: jest.fn(), showApiError: jest.fn(), showSuccessTranslated: jest.fn() },
+        },
+        { provide: TranslateService, useValue: { instant: (k: string) => k } },
+      ],
+    });
+
+    facade = TestBed.inject(RegisterFacade);
+    store = TestBed.inject(MockStore);
+  });
+
+  // The market the visitor is browsing is the operating company the account is
+  // opened with (ADR-0061 D3); every anonymous call the form makes names it.
+  it('registers with the persisted market', () => {
+    fillForm();
+
+    facade.register();
+
+    expect(authService.register).toHaveBeenCalledWith(EMAIL, 'Heslo1234', 'Jan', 'Novák', true, undefined, 'svk-id');
+  });
+
+  it('signs up with Google in the persisted market', () => {
+    fillForm();
+
+    facade.googleRegister(CREDENTIAL);
+
+    expect(authService.signUpWithGoogle).toHaveBeenCalledWith(
+      CREDENTIAL,
+      'google-subject',
+      EMAIL,
+      'Jan',
+      'Novák',
+      'svk-id'
+    );
+  });
+
+  it('signs up with Apple in the persisted market', () => {
+    fillForm();
+
+    facade.appleRegister('id-token', 'raw-nonce', 'Jan', 'Novák');
+
+    expect(authService.signUpWithApple).toHaveBeenCalledWith('id-token', 'raw-nonce', 'Jan', 'Novák', 'svk-id');
+  });
+
+  it('validates a referral code against the persisted market', async () => {
+    await facade.validateReferralCodeNow('abc12');
+
+    const query = referralClient.validate.mock.calls[0][0];
+    expect(query).toBeInstanceOf(ValidateReferralQuery);
+    expect(query.toJSON()).toEqual({ code: 'ABC12', countryId: 'svk-id' });
+  });
+
+  it('names no market when none resolved, so the server falls back to its default', async () => {
+    store.overrideSelector(selectMarketCountryId, null);
+    store.refreshState();
+    fillForm();
+
+    facade.register();
+    await facade.validateReferralCodeNow('abc12');
+
+    expect(authService.register).toHaveBeenCalledWith(EMAIL, 'Heslo1234', 'Jan', 'Novák', true, undefined, null);
+    expect(referralClient.validate.mock.calls[0][0].toJSON()).toEqual({ code: 'ABC12' });
   });
 });
 
@@ -178,7 +295,9 @@ describe('RegisterFacade — Sign in with Apple', () => {
     TestBed.configureTestingModule({
       providers: [
         RegisterFacade,
-        provideMockStore(),
+        provideMockStore({
+          selectors: [{ selector: selectMarketCountryId, value: null }],
+        }),
         { provide: Router, useValue: router },
         { provide: CustomerAuthService, useValue: authService },
         { provide: CustomerClient, useValue: { referralClient: { validate: jest.fn() } } },
@@ -204,7 +323,8 @@ describe('RegisterFacade — Sign in with Apple', () => {
       'id-token',
       'raw-nonce',
       'Jan',
-      'Novák'
+      'Novák',
+      null
     );
     expect(authService.setSession).toHaveBeenCalled();
     expect(router.navigate).toHaveBeenCalled();
@@ -238,8 +358,6 @@ describe('RegisterFacade — Sign in with Apple', () => {
 
 describe('RegisterFacade — the consent ticked at signup', () => {
   let facade: RegisterFacade;
-  let signupConsent: SignupConsentService;
-  let gdprClient: Record<string, jest.Mock>;
   let authService: { register: jest.Mock };
   let router: { navigate: jest.Mock };
   let snackbar: { showError: jest.Mock; showApiError: jest.Mock; showSuccessTranslated: jest.Mock };
@@ -257,15 +375,11 @@ describe('RegisterFacade — the consent ticked at signup', () => {
     });
   }
 
-  function grantedTypes(): unknown[] {
-    return gdprClient['consentsPost'].mock.calls.map(([command]) => {
-      expect(command).toBeInstanceOf(GrantConsentCommand);
-      return (command as GrantConsentCommand).toJSON();
-    });
+  function assertedTick(): unknown {
+    return authService.register.mock.calls[0][4];
   }
 
   beforeEach(() => {
-    localStorage.clear();
     authService = { register: jest.fn().mockReturnValue(of(true)) };
     router = { navigate: jest.fn() };
     snackbar = {
@@ -273,50 +387,34 @@ describe('RegisterFacade — the consent ticked at signup', () => {
       showApiError: jest.fn(),
       showSuccessTranslated: jest.fn(),
     };
-    gdprClient = {
-      consentsGet: jest.fn().mockReturnValue(of([])),
-      consentsPost: jest.fn().mockReturnValue(of(undefined)),
-    };
 
     TestBed.configureTestingModule({
       providers: [
         RegisterFacade,
-        provideMockStore(),
+        provideMockStore({
+          selectors: [{ selector: selectMarketCountryId, value: null }],
+        }),
         { provide: Router, useValue: router },
         { provide: CustomerAuthService, useValue: authService },
-        {
-          provide: CustomerClient,
-          useValue: { referralClient: { validate: jest.fn() }, gdprClient },
-        },
+        { provide: CustomerClient, useValue: { referralClient: { validate: jest.fn() } } },
         { provide: SnackbarService, useValue: snackbar },
         { provide: TranslateService, useValue: { instant: (k: string) => k } },
       ],
     });
 
     facade = TestBed.inject(RegisterFacade);
-    signupConsent = TestBed.inject(SignupConsentService);
   });
 
-  it('grants the ticked documents at the session that follows the signup', () => {
+  // The server grants the two consents from the tick and records the assertion (ADR-0062 D4), so
+  // the tick is a property of the register request — nothing is parked client-side any more.
+  it('asserts the tick on the register request', () => {
     fillForm(true);
 
     facade.register();
-    signupConsent.flush(EMAIL);
 
-    expect(grantedTypes()).toEqual([
-      { consentType: ConsentType.TermsOfService },
-      { consentType: ConsentType.PrivacyPolicy },
-    ]);
-  });
-
-  it('grants nothing when the registration itself failed', () => {
-    authService.register.mockReturnValue(throwError(() => new Error('taken')));
-    fillForm(true);
-
-    facade.register();
-    signupConsent.flush(EMAIL);
-
-    expect(gdprClient['consentsPost']).not.toHaveBeenCalled();
+    expect(assertedTick()).toBe(true);
+    expect(snackbar.showSuccessTranslated).toHaveBeenCalledWith('auth.register.success');
+    expect(router.navigate).toHaveBeenCalled();
   });
 
   it('refuses to register at all while the box is unticked', () => {
@@ -328,41 +426,24 @@ describe('RegisterFacade — the consent ticked at signup', () => {
   });
 
   // Unreachable in the shipped form, which the test above pins: `terms` is
-  // `requiredTrue`, so an unticked submit never reaches the grant. This pins the
-  // guard, not its reachability — it is what keeps an untick from becoming a
-  // manufactured record if the tick ever stops being required.
-  it('grants nothing for an absent tick when the form does not require one', () => {
+  // `requiredTrue`, so an unticked submit never reaches the request. This pins
+  // the assertion, not its reachability — an untick must never be sent as a tick
+  // if the tick ever stops being required.
+  it('asserts no tick for an absent one when the form does not require one', () => {
     const terms = facade.formGroup.get('terms');
     terms?.clearValidators();
     terms?.updateValueAndValidity();
     fillForm(false);
 
     facade.register();
-    signupConsent.flush(EMAIL);
 
     expect(authService.register).toHaveBeenCalled();
-    expect(gdprClient['consentsPost']).not.toHaveBeenCalled();
-  });
-
-  it('completes the signup even when the tick cannot be parked for delivery', () => {
-    const setItem = jest
-      .spyOn(Storage.prototype, 'setItem')
-      .mockImplementation(() => {
-        throw new Error('quota');
-      });
-    fillForm(true);
-
-    expect(() => facade.register()).not.toThrow();
-
-    setItem.mockRestore();
-    expect(snackbar.showSuccessTranslated).toHaveBeenCalledWith('auth.register.success');
-    expect(router.navigate).toHaveBeenCalled();
+    expect(assertedTick()).toBe(false);
   });
 });
 
 describe('RegisterFacade — the consent ticked at a social signup', () => {
   let facade: RegisterFacade;
-  let gdprClient: Record<string, jest.Mock>;
   // Both pairs are stubbed so wiring a signup screen to the sign-in entry point
   // shows up as a called mock instead of a crash on an absent method.
   let authService: {
@@ -400,15 +481,7 @@ describe('RegisterFacade — the consent ticked at a social signup', () => {
     facade.formGroup.patchValue({ terms: accepted });
   }
 
-  function grantedTypes(): unknown[] {
-    return gdprClient['consentsPost'].mock.calls.map(([command]) => {
-      expect(command).toBeInstanceOf(GrantConsentCommand);
-      return (command as GrantConsentCommand).toJSON();
-    });
-  }
-
   beforeEach(() => {
-    localStorage.clear();
     authService = {
       signUpWithGoogle: jest.fn().mockReturnValue(of(SESSION)),
       signUpWithApple: jest.fn().mockReturnValue(of(SESSION)),
@@ -422,78 +495,22 @@ describe('RegisterFacade — the consent ticked at a social signup', () => {
       showErrorTranslated: jest.fn(),
       showSuccessTranslated: jest.fn(),
     };
-    gdprClient = {
-      consentsGet: jest.fn().mockReturnValue(of([])),
-      consentsPost: jest.fn().mockReturnValue(of(undefined)),
-    };
 
     TestBed.configureTestingModule({
       providers: [
         RegisterFacade,
-        provideMockStore(),
+        provideMockStore({
+          selectors: [{ selector: selectMarketCountryId, value: null }],
+        }),
         { provide: Router, useValue: router },
         { provide: CustomerAuthService, useValue: authService },
-        {
-          provide: CustomerClient,
-          useValue: { referralClient: { validate: jest.fn() }, gdprClient },
-        },
+        { provide: CustomerClient, useValue: { referralClient: { validate: jest.fn() } } },
         { provide: SnackbarService, useValue: snackbar },
         { provide: TranslateService, useValue: { instant: (k: string) => k } },
       ],
     });
 
     facade = TestBed.inject(RegisterFacade);
-  });
-
-  it('grants exactly the two ticked documents on a Google signup', () => {
-    tick(true);
-
-    facade.googleRegister(CREDENTIAL);
-
-    expect(grantedTypes()).toEqual([
-      { consentType: ConsentType.TermsOfService },
-      { consentType: ConsentType.PrivacyPolicy },
-    ]);
-    expect(grantedTypes().map((body) => (body as Record<string, unknown>)['consentType'])).not.toContain(
-      ConsentType.MarketingEmails
-    );
-  });
-
-  it('grants exactly the two ticked documents on an Apple signup', () => {
-    tick(true);
-
-    facade.appleRegister('id-token', 'raw-nonce', 'Jan', 'Novak');
-
-    expect(grantedTypes()).toEqual([
-      { consentType: ConsentType.TermsOfService },
-      { consentType: ConsentType.PrivacyPolicy },
-    ]);
-  });
-
-  // The address in the credential is a client-supplied claim the backend ignores;
-  // parking a failed delivery under it strands the retry, because every later
-  // flush is keyed on the identity the token response carried.
-  it('parks a failed delivery under the identity the server returned, not the one Google claimed', () => {
-    gdprClient['consentsGet'].mockReturnValueOnce(
-      throwError(() => new Error('offline'))
-    );
-    const claimedByGoogle = [
-      'header',
-      btoa(JSON.stringify({ sub: 'google-subject', email: 'someone-else@example.com' })),
-      'signature',
-    ].join('.');
-    tick(true);
-
-    facade.googleRegister(claimedByGoogle);
-
-    expect(gdprClient['consentsPost']).not.toHaveBeenCalled();
-
-    TestBed.inject(SignupConsentService).flush(EMAIL);
-
-    expect(grantedTypes()).toEqual([
-      { consentType: ConsentType.TermsOfService },
-      { consentType: ConsentType.PrivacyPolicy },
-    ]);
   });
 
   // The signup screen must reach the entry point that asserts the tick. A screen
@@ -521,7 +538,6 @@ describe('RegisterFacade — the consent ticked at a social signup', () => {
 
     expect(authService[signUp as keyof typeof authService]).not.toHaveBeenCalled();
     expect(authService[signIn as keyof typeof authService]).not.toHaveBeenCalled();
-    expect(gdprClient['consentsPost']).not.toHaveBeenCalled();
     expect(authService.setSession).not.toHaveBeenCalled();
     expect(router.navigate).not.toHaveBeenCalled();
     expect(snackbar.showErrorTranslated).toHaveBeenCalledWith(
@@ -529,27 +545,23 @@ describe('RegisterFacade — the consent ticked at a social signup', () => {
     );
   });
 
-  // The provider popup runs in its own window and the box stays clickable behind
-  // it, so the tick that opened the flow can be gone by the time it returns. The
-  // blocker cannot see that; this is the guard that does.
-  it('grants nothing when the box is unticked while the provider popup is open', () => {
-    const pending$ = new Subject<JwtTokenResponse>();
-    authService.signUpWithGoogle.mockReturnValue(pending$.asObservable());
+  it.each([
+    ['Google', (f: RegisterFacade) => f.googleRegister(CREDENTIAL)],
+    ['Apple', (f: RegisterFacade) => f.appleRegister('id-token', 'raw-nonce', 'Jan', 'Novak')],
+  ])('signs the user in and lands on the orders after a %s signup', (_, run) => {
     tick(true);
 
-    facade.googleRegister(CREDENTIAL);
-    tick(false);
-    pending$.next(SESSION);
+    run(facade);
 
-    expect(authService.signUpWithGoogle).toHaveBeenCalled();
-    expect(authService.setSession).toHaveBeenCalled();
-    expect(gdprClient['consentsPost']).not.toHaveBeenCalled();
+    expect(authService.setSession).toHaveBeenCalledWith(SESSION);
+    expect(snackbar.showSuccessTranslated).toHaveBeenCalledWith('auth.login.success');
+    expect(router.navigate).toHaveBeenCalled();
   });
 
   it.each([
     ['Google', (f: RegisterFacade) => f.googleRegister(CREDENTIAL), 'signUpWithGoogle'],
     ['Apple', (f: RegisterFacade) => f.appleRegister('id-token', 'raw-nonce'), 'signUpWithApple'],
-  ])('grants nothing when the %s sign-up itself failed', (_, run, clientCall) => {
+  ])('mints no session when the %s sign-up itself failed', (_, run, clientCall) => {
     (authService[clientCall as keyof typeof authService] as jest.Mock).mockReturnValue(
       throwError(() => ({ errors: { Token: 'auth.invalid_google_token' } }))
     );
@@ -557,21 +569,8 @@ describe('RegisterFacade — the consent ticked at a social signup', () => {
 
     run(facade);
 
-    expect(gdprClient['consentsPost']).not.toHaveBeenCalled();
     expect(authService.setSession).not.toHaveBeenCalled();
-  });
-
-  it('signs the user in even when the grant is refused', () => {
-    gdprClient['consentsPost'].mockReturnValue(
-      throwError(() => ({ errors: { '': 'common.error_occurred' } }))
-    );
-    tick(true);
-
-    expect(() => facade.googleRegister(CREDENTIAL)).not.toThrow();
-
-    expect(authService.setSession).toHaveBeenCalledWith(SESSION);
-    expect(snackbar.showSuccessTranslated).toHaveBeenCalledWith('auth.login.success');
-    expect(router.navigate).toHaveBeenCalled();
+    expect(snackbar.showApiError).toHaveBeenCalled();
   });
 
   it('tracks the tick so the buttons can reflect it', () => {

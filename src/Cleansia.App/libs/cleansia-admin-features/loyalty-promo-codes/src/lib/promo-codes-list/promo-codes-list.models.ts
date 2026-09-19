@@ -1,5 +1,6 @@
 import { PromoCodeListItem, PromoCodeType } from '@cleansia/admin-services';
 import { TableAction, TableColumn } from '@cleansia/components';
+import { PermissionService, Policy } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
 
 export type PromoCodeStatusBadge = 'active' | 'inactive' | 'expired';
@@ -10,10 +11,7 @@ export function getPromoCodeStatus(row: PromoCodeListItem): PromoCodeStatusBadge
   return 'active';
 }
 
-export function formatDiscount(
-  row: PromoCodeListItem,
-  translate: TranslateService
-): string {
+export function formatDiscount(row: PromoCodeListItem): string {
   if (row.type === PromoCodeType.PercentDiscount) {
     const pct = row.discountPercent ?? 0;
     // Backend stores percent as 0..1; UI shows 0..100.
@@ -44,7 +42,7 @@ export function formatValidity(
     });
   }
   return translate.instant('pages.promo_codes.validity.until', {
-    date: formatDate(row.validUntil!),
+    date: formatDate(row.validUntil),
   });
 }
 
@@ -87,6 +85,7 @@ export function getPromoCodeTableDefinition(
     onDeactivate: (row: PromoCodeListItem) => void;
   },
   translate: TranslateService,
+  permissions: PermissionService,
   formatDate: (d?: Date) => string
 ): {
   columns: TableColumn<PromoCodeListItem>[];
@@ -111,7 +110,7 @@ export function getPromoCodeTableDefinition(
         id: 'discount',
         field: 'discountPercent',
         header: translate.instant('pages.promo_codes.column.discount'),
-        getValue: (row) => formatDiscount(row, translate),
+        getValue: (row) => formatDiscount(row),
         width: '10%',
       },
       {
@@ -162,6 +161,7 @@ export function getPromoCodeTableDefinition(
         icon: 'pi pi-pencil',
         tooltip: translate.instant('global.actions.edit'),
         color: 'warning',
+        visible: () => permissions.hasPolicy(Policy.CanUpdatePromoCode),
         onClick: (row) => defs.onEdit(row),
       },
       {
@@ -170,7 +170,8 @@ export function getPromoCodeTableDefinition(
           'pages.promo_codes.detail.deactivate_button'
         ),
         color: 'danger',
-        visible: (row) => getPromoCodeStatus(row) === 'active',
+        visible: (row) =>
+          getPromoCodeStatus(row) === 'active' && permissions.hasPolicy(Policy.CanDeactivatePromoCode),
         onClick: (row) => defs.onDeactivate(row),
       },
     ],

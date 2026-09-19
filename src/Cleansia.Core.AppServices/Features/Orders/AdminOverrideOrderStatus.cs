@@ -72,6 +72,8 @@ public class AdminOverrideOrderStatus
             var order = await orderRepository
                 .GetQueryable()
                 .Include(o => o.OrderStatusHistory)
+                .Include(o => o.AssignedEmployees)
+                .AsSplitQuery()
                 .FirstOrDefaultAsync(o => o.Id == command.OrderId, cancellationToken);
 
             if (order == null)
@@ -120,6 +122,25 @@ public class AdminOverrideOrderStatus
                 return BusinessResult.Failure<Response>(new Error(
                     nameof(command.TargetStatus),
                     BusinessErrorMessage.InvalidOrderStatusTransition));
+            }
+
+            // Confirmed means a cleaner took the job, and a release that empties the crew walks it back
+            // to New — so this is the one door an administrator could open onto that state with a
+            // click. An administrator who wants a cleaner on the order reassigns, which writes
+            // Confirmed itself. The other forward moves stay open on an unstaffed order: they repair
+            // the work's state, not the crew's, and they are the administrator's own audited act.
+            if (command.TargetStatus == OrderStatus.Confirmed && order.AssignedEmployees.Count == 0)
+            {
+                return BusinessResult.Failure<Response>(new Error(
+                    nameof(command.TargetStatus),
+                    BusinessErrorMessage.OrderStatusConfirmedNeedsCrew));
+            }
+
+            // The reports read CompletedAt, and CompleteOrder is not reached from here: an override that
+            // completes the order has to date it or the order is revenue of no month.
+            if (command.TargetStatus == OrderStatus.Completed)
+            {
+                order.MarkCompletedAt(DateTime.UtcNow);
             }
 
             var transition = OrderStatusTrack.Create(command.TargetStatus, order);

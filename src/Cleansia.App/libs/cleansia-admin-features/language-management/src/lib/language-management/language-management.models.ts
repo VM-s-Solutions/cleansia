@@ -1,6 +1,7 @@
 import { TemplateRef } from '@angular/core';
 import { LanguageListItem } from '@cleansia/admin-services';
 import { TableColumn, TableAction } from '@cleansia/components';
+import { PermissionService, Policy } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
 
 // Map language codes to country codes for flag display
@@ -49,6 +50,7 @@ export function getLanguageTableDefinition(
     onDelete: (row: LanguageListItem) => void;
   },
   translate: TranslateService,
+  permissions: PermissionService,
   flagTemplate?: TemplateRef<LanguageListItem>
 ): { columns: TableColumn<LanguageListItem>[]; actions: TableAction<LanguageListItem>[] } {
   return {
@@ -81,12 +83,14 @@ export function getLanguageTableDefinition(
         icon: 'pi pi-pencil',
         tooltip: translate.instant('pages.language_management.edit_language'),
         color: 'warning',
+        visible: () => permissions.hasPolicy(Policy.CanUpdateLanguage),
         onClick: (row: LanguageListItem) => defs.onEdit(row),
       },
       {
         icon: 'pi pi-trash',
         tooltip: translate.instant('pages.language_management.delete_language'),
         color: 'danger',
+        visible: () => permissions.hasPolicy(Policy.CanDeleteLanguage),
         onClick: (row: LanguageListItem) => defs.onDelete(row),
       },
     ],

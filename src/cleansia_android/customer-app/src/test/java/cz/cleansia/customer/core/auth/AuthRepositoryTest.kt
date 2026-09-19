@@ -5,7 +5,6 @@ import cz.cleansia.core.auth.RefreshResult
 import cz.cleansia.core.auth.SessionManager
 import cz.cleansia.core.auth.SessionScopedCache
 import cz.cleansia.core.auth.TokenStore
-import cz.cleansia.core.consent.SignupConsentRepository
 import cz.cleansia.core.network.ApiError
 import cz.cleansia.core.network.ApiResult
 
@@ -22,6 +21,7 @@ import io.mockk.mockk
 import io.mockk.verify
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.jsonObject
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.ResponseBody.Companion.toResponseBody
 import org.junit.Assert.assertEquals
@@ -45,7 +45,6 @@ class AuthRepositoryTest {
     private lateinit var tokenStore: TokenStore
     private lateinit var sessionManager: SessionManager
     private lateinit var pushTokenRepository: PushTokenRepository
-    private lateinit var signupConsent: SignupConsentRepository
     private lateinit var appContext: Context
 
     private val json = Json { ignoreUnknownKeys = true; isLenient = true }
@@ -60,7 +59,6 @@ class AuthRepositoryTest {
         tokenStore = mockk(relaxed = true)
         sessionManager = mockk(relaxed = true)
         pushTokenRepository = mockk(relaxed = true)
-        signupConsent = mockk(relaxed = true)
         appContext = mockk(relaxed = true)
 
         every { appContext.getString(R.string.error_generic_network) } returns networkMessage
@@ -84,7 +82,6 @@ class AuthRepositoryTest {
             sessionManager = sessionManager,
             sessionScopedCaches = caches,
             pushTokenRepository = pushTokenRepository,
-            signupConsent = javax.inject.Provider { signupConsent },
             json = json,
         )
 
@@ -230,6 +227,7 @@ class AuthRepositoryTest {
             firstName = "A",
             lastName = "B",
             language = "en",
+            termsAccepted = true,
         )
 
         assertTrue(result is ApiResult.Success)
@@ -247,6 +245,7 @@ class AuthRepositoryTest {
             firstName = "A",
             lastName = "B",
             language = "en",
+            termsAccepted = true,
         )
 
         assertTrue(result is ApiResult.Error)
@@ -278,6 +277,101 @@ class AuthRepositoryTest {
             termsAccepted = termsAccepted,
         )
         return captured.captured
+    }
+
+    // ── the market reaching the wire body (ADR-0061 D3) ──
+
+    @Test
+    fun register_putsTheMarketOnTheRequestBody() = kotlinx.coroutines.test.runTest {
+        val captured = io.mockk.slot<RegisterRequest>()
+        coEvery { api.register(capture(captured)) } returns Response.success(Unit)
+
+        newRepository().register(
+            "user@example.com", "pw", "Ada", "Lovelace", "en", termsAccepted = true, countryId = "svk-id",
+        )
+
+        assertEquals("svk-id", captured.captured.countryId)
+    }
+
+    // ── register() — the terms tick reaching the wire body ──
+
+    /**
+     * The sign-up form cannot submit unticked, so the only value this ever carries is `true` — and
+     * the server grants both consents in the registration's own commit off exactly this member.
+     */
+    @Test
+    fun register_putsTheTermsTickOnTheRequestBody() = kotlinx.coroutines.test.runTest {
+        val captured = io.mockk.slot<RegisterRequest>()
+        coEvery { api.register(capture(captured)) } returns Response.success(Unit)
+
+        newRepository().register("user@example.com", "pw", "Ada", "Lovelace", "en", termsAccepted = true)
+
+        assertEquals(true, captured.captured.termsAccepted)
+    }
+
+    /** `Register.Command.TermsAccepted` binds by ASP.NET's camel-case default, like `GoogleAuth`'s. */
+    @Test
+    fun register_serializesTheTickUnderTheNameTheBackendBinds() {
+        val wireJson = AuthModule.provideJson()
+        val register = RegisterRequest("user@example.com", "pw", "Ada", "Lovelace", "en", termsAccepted = true)
+
+        assertTrue(wireJson.encodeToString(register).contains("\"termsAccepted\":true"))
+    }
+
+    /**
+     * The committed contract the app is built against. The server grants both consents off this one
+     * member and nothing on the device carries the tick any more, so a re-dump that drops it would
+     * leave every new account with no consent on record while the request-body pins above stay green.
+     */
+    @Test
+    fun register_theCommittedContractStillBindsTheTick() {
+        val androidRoot = generateSequence(java.io.File(".").absoluteFile) { it.parentFile }
+            .first { java.io.File(it, "openapi/customer-mobile-api.json").isFile }
+        val spec = java.io.File(androidRoot, "openapi/customer-mobile-api.json").readText().removePrefix("﻿")
+        val registerCommand = Json.parseToJsonElement(spec)
+            .jsonObject.getValue("components")
+            .jsonObject.getValue("schemas")
+            .jsonObject.getValue("Register_Command")
+            .jsonObject.getValue("properties")
+            .jsonObject
+
+        assertTrue("Register_Command lost termsAccepted: ${registerCommand.keys}", "termsAccepted" in registerCommand)
+    }
+
+    @Test
+    fun googleAuth_putsTheMarketOnTheRequestBody() = kotlinx.coroutines.test.runTest {
+        val captured = io.mockk.slot<GoogleAuthRequest>()
+        stubGoogleAuth(captured)
+
+        newRepository().googleAuth(
+            googleIdToken = "google-id-token",
+            googleId = "google-subject",
+            email = "user@example.com",
+            firstName = "Ada",
+            lastName = "Lovelace",
+            termsAccepted = true,
+            countryId = "svk-id",
+        )
+
+        assertEquals("svk-id", captured.captured.countryId)
+    }
+
+    /**
+     * The backend binds `CountryId` by ASP.NET's camel-case default; an absent key means "the default
+     * market", so a null must be dropped from the body rather than written as `null`.
+     */
+    @Test
+    fun identityRequests_serializeTheMarketUnderTheNameTheBackendBinds() {
+        val wireJson = AuthModule.provideJson()
+        val register = RegisterRequest(
+            "user@example.com", "pw", "Ada", "Lovelace", "en", termsAccepted = true, countryId = "svk-id",
+        )
+        val google = GoogleAuthRequest("t", "g", "user@example.com", "Ada", "Lovelace", true, countryId = "svk-id")
+
+        assertTrue(wireJson.encodeToString(register).contains("\"countryId\":\"svk-id\""))
+        assertTrue(wireJson.encodeToString(google).contains("\"countryId\":\"svk-id\""))
+        assertTrue(!wireJson.encodeToString(register.copy(countryId = null)).contains("countryId"))
+        assertTrue(!wireJson.encodeToString(google.copy(countryId = null)).contains("countryId"))
     }
 
     @Test
@@ -428,7 +522,7 @@ class AuthRepositoryTest {
         coEvery { authenticatedApi.logout(capture(logout)) } returns Response.success(Unit)
 
         val repo = newRepository()
-        repo.register("user@example.com", "pw", "Ada", "Lovelace", "en")
+        repo.register("user@example.com", "pw", "Ada", "Lovelace", "en", termsAccepted = true)
         repo.googleAuth("id-token", "subject", "user@example.com", "Ada", "Lovelace", termsAccepted = true)
         repo.confirmEmail("user@example.com", "123456")
         repo.resendConfirmationEmail("user@example.com", "en")

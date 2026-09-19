@@ -41,9 +41,11 @@ class PartnerServiceAreaDataSource @Inject constructor(
                 val id = dto.id ?: return@mapNotNull null
                 ServicedCountry(
                     id = id,
-                    // Normalised to ISO alpha-2 lowercase — see IsoCountryCodes
-                    // (backend stores alpha-3; Mapbox-facing code is alpha-2).
-                    isoCode = IsoCountryCodes.toAlpha2(dto.isoCode),
+                    // ISO alpha-2 lowercase, as everything Mapbox-facing expects. The wire carries it
+                    // (Country.IsoAlpha2); the per-device alpha-3 map is only the fallback for a
+                    // row that arrives without one.
+                    isoCode = dto.isoAlpha2?.takeIf { it.isNotBlank() }?.lowercase()
+                        ?: IsoCountryCodes.toAlpha2(dto.isoCode),
                     name = dto.name.orEmpty(),
                 )
             }

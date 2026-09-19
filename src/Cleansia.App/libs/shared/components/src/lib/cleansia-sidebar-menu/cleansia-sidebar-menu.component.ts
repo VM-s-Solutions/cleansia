@@ -2,7 +2,6 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
-  effect,
   ElementRef,
   HostListener,
   inject,
@@ -21,7 +20,7 @@ import { TooltipModule } from 'primeng/tooltip';
 import { CleansiaBrandNameComponent } from '../cleansia-brand-name';
 import { CleansiaButtonComponent } from '../cleansia-button';
 import { CleansiaLanguageSwitcherComponent } from '../cleansia-language-switcher';
-import { SidebarMenuItem } from './cleansia-sidebar-menu.models';
+import { isMobileViewport, isSidebarItemAllowed, SidebarMenuItem } from './cleansia-sidebar-menu.models';
 import { filter } from 'rxjs';
 
 @Component({
@@ -53,7 +52,7 @@ export class CleansiaSidebarMenuComponent {
   collapsed = input(false);
 
   visibleItems = computed(() =>
-    this.menuItems().filter((item) => this.itemAllowed(item))
+    this.menuItems().filter((item) => isSidebarItemAllowed(item, this.permissionService))
   );
 
   // Two-way binding for mobile sidebar expanded state (controlled by parent)
@@ -100,7 +99,7 @@ export class CleansiaSidebarMenuComponent {
 
   private updateMobileStatus() {
     if (!this.isBrowser) return;
-    this.isMobileSignal.set(window.innerWidth < 768);
+    this.isMobileSignal.set(isMobileViewport(window.innerWidth));
   }
 
   toggleCollapsed(): void {
@@ -145,13 +144,5 @@ export class CleansiaSidebarMenuComponent {
 
   getTooltipText(item: SidebarMenuItem): string {
     return this.effectiveCollapsed() ? item.label : '';
-  }
-
-  private itemAllowed(item: SidebarMenuItem): boolean {
-    if (!item.permission) return true;
-    const policies = Array.isArray(item.permission)
-      ? item.permission
-      : [item.permission];
-    return policies.some((p) => this.permissionService.hasPolicy(p));
   }
 }

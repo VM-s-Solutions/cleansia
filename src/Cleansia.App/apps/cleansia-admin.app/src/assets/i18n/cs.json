@@ -41,6 +41,7 @@
       "invoices": "Faktury",
       "invoice_details": "Detail faktury",
       "audit_log": "Protokol akcí",
+      "notifications": "Upozornění",
       "audit_log_history": "Historie zdroje",
       "audit_log_entry": "Záznam auditu",
       "reports": "Přehledy",
@@ -50,6 +51,9 @@
       "packages": "Balíčky",
       "package_create": "Vytvořit balíček",
       "package_edit": "Upravit balíček",
+      "extras": "Doplňky",
+      "extra_create": "Vytvořit doplněk",
+      "extra_edit": "Upravit doplněk",
       "admin_users": "Administrátoři",
       "admin_user_create": "Vytvořit administrátora",
       "admin_user_edit": "Upravit administrátora",
@@ -63,11 +67,14 @@
       "currencies": "Měny",
       "currency_create": "Vytvořit měnu",
       "currency_edit": "Upravit měnu",
+      "legal_documents": "Právní dokumenty",
       "document_requirements": "Požadované dokumenty",
       "document_deletion_requests": "Žádosti o smazání dokumentu",
       "company_info": "Informace o společnosti",
       "company_info_create": "Vytvořit informace o společnosti",
       "company_info_edit": "Upravit informace o společnosti",
+      "company_settings": "Nastavení společnosti",
+      "company_lifecycle": "Životní cyklus společnosti",
       "templates": "Šablony",
       "invoice_templates": "Šablony faktur",
       "invoice_template_create": "Vytvořit šablonu faktury",
@@ -93,7 +100,9 @@
       "membership_plan_edit": "Upravit plán členství",
       "data_protection": "Ochrana údajů",
       "profile": "Můj profil",
-      "customer_detail": "Zákazník"
+      "customer_detail": "Zákazník",
+      "audit_log_customers": "Akce zákazníků",
+      "audit_log_customer_entry": "Akce zákazníka"
     }
   },
   "components": {
@@ -219,15 +228,19 @@
     "reports": "Přehledy",
     "services": "Služby",
     "packages": "Balíčky",
+    "extras": "Doplňky",
     "admin_users": "Administrátoři",
     "languages": "Jazyky",
     "countries": "Země",
     "service_area": "Servisní oblast",
     "currencies": "Měny",
+    "legal_documents": "Právní dokumenty",
     "employee_documents": "Dokumenty uklízečů",
     "employee_document_requirements": "Požadavky",
     "employee_document_deletion_requests": "Žádosti o smazání",
     "company_info": "Údaje o společnosti",
+    "company_settings": "Nastavení společnosti",
+    "company_lifecycle": "Životní cyklus společnosti",
     "templates": "Šablony",
     "global_rates": "Globální sazby",
     "fiscal_failures": "Fiskální selhání",
@@ -242,6 +255,7 @@
     "memberships": "Členství",
     "data_protection": "Ochrana údajů",
     "audit_log": "Protokol akcí",
+    "notifications": "Upozornění",
     "profile": "Můj profil"
   },
   "pages": {
@@ -334,7 +348,6 @@
       "entity_type_natural_person": "Osoba samostatně výdělečně činná",
       "entity_type_legal_entity": "Právnická osoba",
       "registration_number": "Registrační číslo",
-      "vat_number": "DIČ",
       "legal_entity_name": "Název firmy",
       "iban": "IBAN",
       "emergency_contact": "Kontakt v nouzi",
@@ -558,7 +571,8 @@
         "date_from": "Datum od",
         "date_to": "Datum do",
         "reset": "Resetovat filtry",
-        "clear_all": "Vymazat vše"
+        "clear_all": "Vymazat vše",
+        "currency": "Měna"
       },
       "order_status": {
         "pending": "Čekající",
@@ -695,7 +709,20 @@
       },
       "access_instructions_reveal": "Zobrazit",
       "access_instructions_reveal_hint": "Zobrazení pokynů ke vstupu se zaznamenává k vašemu účtu.",
-      "access_instructions_reveal_failed": "Pokyny ke vstupu se nepodařilo zobrazit. Zkuste to prosím znovu."
+      "access_instructions_reveal_failed": "Pokyny ke vstupu se nepodařilo zobrazit. Zkuste to prosím znovu.",
+      "incident_file": {
+        "button": "Spis incidentu",
+        "success": "Spis incidentu byl stažen a zaznamenán",
+        "error": "Spis incidentu se nepodařilo sestavit",
+        "no_subject": "Na časové ose této objednávky není žádný zákazník — sestavte spis ze stránky zákazníka."
+      },
+      "customer_account": "Zákaznický účet",
+      "customer_of_company": "Zákazník společnosti {{company}}",
+      "customer_account_read_only": "Tento zákazník patří jiné společnosti. Údaje účtu jsou pouze pro čtení.",
+      "open_customer": "Otevřít zákazníka",
+      "customer_account_empty": "K této objednávce není přiřazen zákaznický účet.",
+      "customer_account_error": "Zákaznický účet se nepodařilo načíst.",
+      "load_error": "Objednávku se nepodařilo načíst."
     },
     "invoice_management": {
       "title": "Správa faktur",
@@ -723,7 +750,8 @@
         "search_placeholder": "Hledat dle čísla faktury nebo zaměstnance",
         "status": "Stav faktury",
         "reset": "Resetovat filtry",
-        "clear_all": "Vymazat vše"
+        "clear_all": "Vymazat vše",
+        "currency": "Měna"
       },
       "invoice_status": {
         "pending": "Čekající",
@@ -750,7 +778,8 @@
         "actor": "Aktér",
         "action": "Akce",
         "resource": "Zdroj",
-        "outcome": "Výsledek"
+        "outcome": "Výsledek",
+        "actor_role": "Role"
       },
       "outcome": {
         "success": "Úspěch",
@@ -770,12 +799,12 @@
         "date_from": "Od",
         "date_to": "Do",
         "reset": "Obnovit filtry",
-        "clear_all": "Vymazat vše"
+        "clear_all": "Vymazat vše",
+        "actor_role": "Role aktéra"
       },
       "history": {
         "title": "Historie zdroje",
         "description": "Vše, co se s tímto zdrojem stalo:",
-        "no_audits": "Pro tento zdroj nejsou žádné záznamy",
         "back": "Zpět na protokol akcí"
       },
       "entry": {
@@ -793,6 +822,126 @@
       },
       "drill_in": {
         "view_history": "Zobrazit historii auditu"
+      },
+      "segments": {
+        "admin": "Akce adminů",
+        "customer": "Akce zákazníků"
+      },
+      "customers": {
+        "title": "Akce zákazníků",
+        "description": "Stopa toho, co zákazníci udělali na svých účtech — objednávky, storna, reklamace, členství, souhlasy — a co k tomu platforma zaznamenala.",
+        "no_audits": "Žádné akce zákazníků nenalezeny",
+        "load_error": "Akce zákazníků se nepodařilo načíst",
+        "guest": "Host",
+        "columns": {
+          "occurred_on": "Kdy",
+          "user": "Zákazník",
+          "action": "Akce",
+          "resource": "Zdroj",
+          "audience": "Klient",
+          "outcome": "Výsledek"
+        },
+        "filters": {
+          "user": "Zákazník",
+          "user_id": "ID zákazníka",
+          "action": "Akce",
+          "audience": "Klient"
+        },
+        "entry": {
+          "title": "Akce zákazníka",
+          "description": "Co zákazník udělal, z jakého klienta a jaké důkazy si k tomu platforma uložila.",
+          "view": "Zobrazit detail",
+          "back": "Zpět",
+          "load_error": "Akci zákazníka se nepodařilo načíst",
+          "when": "Kdy",
+          "who": "Kdo",
+          "outcome": "Výsledek",
+          "audience": "Klient",
+          "audience_hint": "Zákaznický web a zákaznická aplikace sdílejí tento název; rozliší je zařízení.",
+          "ip_address": "IP adresa",
+          "device": "Zařízení",
+          "device_id": "ID zařízení",
+          "correlation_id": "Korelační ID",
+          "payload_title": "Zaznamenané důkazy",
+          "field": "Pole",
+          "value": "Hodnota",
+          "before": "Před",
+          "after": "Po",
+          "no_payload": "K této akci nebyly zaznamenány žádné důkazy",
+          "show_raw": "Zobrazit surový JSON",
+          "hide_raw": "Zobrazit jako tabulku"
+        }
+      },
+      "timeline": {
+        "load_error": "Časovou osu se nepodařilo načíst",
+        "no_entries": "Zatím nic zaznamenáno",
+        "view": "Zobrazit detail",
+        "columns": {
+          "occurred_on": "Kdy",
+          "source": "Původ",
+          "actor": "Kdo",
+          "action": "Akce",
+          "resource": "Zdroj",
+          "outcome": "Výsledek"
+        },
+        "source": {
+          "customer": "Zákazník",
+          "admin": "Admin",
+          "employee": "Uklízeč"
+        }
+      },
+      "actions": {
+        "customer": {
+          "order": {
+            "create": "Objednávka vytvořena",
+            "cancel": "Objednávka stornována",
+            "recurring": {
+              "confirm": "Opakovaný termín potvrzen"
+            }
+          },
+          "dispute": {
+            "create": "Reklamace podána"
+          },
+          "account": {
+            "register": "Účet zaregistrován",
+            "email_confirmed": "E-mailová adresa potvrzena"
+          },
+          "consent": {
+            "grant": "Souhlas udělen",
+            "withdraw": "Souhlas odvolán"
+          },
+          "membership": {
+            "subscribe": "Členství sjednáno",
+            "swap": "Plán členství změněn",
+            "cancel": "Členství zrušeno"
+          },
+          "notification_preferences": {
+            "update": "Nastavení notifikací změněno"
+          },
+          "recurring": {
+            "create": "Opakovaná objednávka vytvořena",
+            "update": "Opakovaná objednávka upravena",
+            "set_active": "Opakovaná objednávka pozastavena nebo obnovena",
+            "delete": "Opakovaná objednávka smazána"
+          },
+          "gdpr": {
+            "export": "Data exportována"
+          },
+          "session": {
+            "login": "Přihlášení",
+            "logout": "Odhlášení"
+          },
+          "password": {
+            "reset_requested": "Obnovení hesla vyžádáno",
+            "reset_completed": "Obnovení hesla dokončeno"
+          }
+        },
+        "employee": {
+          "order": {
+            "cover_requested": "Vyžádán záskok",
+            "dropped": "Zakázka odhozena"
+          }
+        }
       }
     },
     "invoice_detail": {
@@ -1020,8 +1169,11 @@
       "name": "Název",
       "description": "Popis",
       "category": "Kategorie",
-      "base_price": "Základní cena (CZK)",
-      "per_room_price": "Cena za pokoj (CZK)",
+      "base_price": "Základní cena",
+      "per_room_price": "Cena za pokoj",
+      "no_currencies": "Nejsou nastaveny žádné měny, takže zatím nelze určit cenu.",
+      "price_required": "Povinné",
+      "price_optional": "Nepovinné",
       "estimated_time": "Odhadovaný čas (minuty)",
       "messages": {
         "load_error": "Nepodařilo se načíst službu",
@@ -1079,7 +1231,11 @@
       "translations": "Překlady",
       "name": "Název",
       "description": "Popis",
-      "price": "Cena (CZK)",
+      "price": "Cena",
+      "pricing": "Ceník",
+      "no_currencies": "Nejsou nastaveny žádné měny, takže zatím nelze určit cenu.",
+      "price_required": "Povinné",
+      "price_optional": "Nepovinné",
       "included_services": "Zahrnuté služby",
       "select_services": "Vyberte služby k zahrnutí",
       "weights_title": "Relativní cenové váhy",
@@ -1094,6 +1250,60 @@
       },
       "tagline": "Krátký popisek na kartě",
       "is_popular": "Nejoblíbenější balíček"
+    },
+    "extra_management": {
+      "title": "Doplňky",
+      "description": "Doplňkové služby k rezervaci a jejich cena v jednotlivých měnách",
+      "create_extra": "Vytvořit doplněk",
+      "edit_extra": "Upravit",
+      "delete_extra": "Smazat doplněk",
+      "delete_confirm": "Smazat tento doplněk? Smazat lze pouze doplněk, který si dosud žádná objednávka nekoupila; jinak jej deaktivujte.",
+      "activate_extra": "Aktivovat doplněk",
+      "deactivate_extra": "Deaktivovat doplněk",
+      "deactivate_confirm": "Deaktivovat „{{name}}“? Doplněk se skryje z rezervačního průvodce, objednávky, které si jej koupily, zůstanou zachovány.",
+      "no_extras": "Nebyly nalezeny žádné doplňky",
+      "filters": {
+        "title": "Filtry",
+        "search": "Vyhledávání",
+        "search_placeholder": "Hledat dle identifikátoru, názvu nebo popisu",
+        "reset": "Resetovat filtry",
+        "clear_all": "Vymazat vše",
+        "status": "Stav",
+        "status_all": "Vše",
+        "status_active": "Aktivní",
+        "status_inactive": "Neaktivní"
+      },
+      "columns": {
+        "slug": "Identifikátor",
+        "name": "Název",
+        "price": "Cena",
+        "display_order": "Pořadí"
+      },
+      "messages": {
+        "delete_success": "Doplněk byl smazán",
+        "activate_success": "Doplněk byl aktivován",
+        "deactivate_success": "Doplněk byl deaktivován"
+      }
+    },
+    "extra_form": {
+      "create_title": "Vytvořit doplněk",
+      "edit_title": "Upravit doplněk",
+      "basic_info": "Základní informace",
+      "pricing": "Ceník",
+      "translations": "Překlady",
+      "slug": "Identifikátor (slug)",
+      "slug_hint": "Malá písmena spojená pomlčkami, např. inside-oven. Později jej nelze změnit.",
+      "name": "Název",
+      "description": "Popis",
+      "display_order": "Pořadí zobrazení",
+      "price": "Cena",
+      "price_required": "Povinné",
+      "price_optional": "Nepovinné",
+      "no_currencies": "Nejsou nastaveny žádné měny, takže zatím nelze určit cenu.",
+      "messages": {
+        "create_success": "Doplněk byl vytvořen",
+        "update_success": "Doplněk byl aktualizován"
+      }
     },
     "admin_user_management": {
       "title": "Správa administrátorů",
@@ -1119,7 +1329,8 @@
         "status": "Stav",
         "created_at": "Vytvořeno",
         "last_login": "Poslední přihlášení",
-        "actions": "Akce"
+        "actions": "Akce",
+        "role": "Role"
       },
       "messages": {
         "load_error": "Nepodařilo se načíst administrátory",
@@ -1144,11 +1355,16 @@
         "create_success": "Administrátor byl úspěšně vytvořen",
         "create_error": "Nepodařilo se vytvořit administrátora",
         "update_success": "Administrátor byl úspěšně aktualizován",
-        "update_error": "Nepodařilo se aktualizovat administrátora"
+        "update_error": "Nepodařilo se aktualizovat administrátora",
+        "role_success": "Role byla změněna"
       },
       "birth_date": "Datum narození",
       "birth_date_hint": "Administrátorovi musí být alespoň 18 let",
-      "preferred_language": "Preferovaný jazyk"
+      "preferred_language": "Preferovaný jazyk",
+      "role": "Role",
+      "role_hint": "Podpora má nejmenší oprávnění. Administrátor může roli později změnit.",
+      "role_section": "Role",
+      "role_change_hint": "Změna platí okamžitě. Administrátor si ponechá dosavadní přístup nejvýše patnáct minut, než se jeho relace obnoví."
     },
     "language_management": {
       "title": "Správa jazyků",
@@ -1192,6 +1408,41 @@
         "update_error": "Nepodařilo se aktualizovat jazyk"
       }
     },
+    "legal_documents": {
+      "title": "Právní dokumenty",
+      "description": "Každá verze každého právního textu, který platforma zobrazila, pouze ke čtení: nová verze je seed soubor s novým datem účinnosti plus nasazení.",
+      "no_versions": "Žádné právní dokumenty nenalezeny",
+      "no_texts": "Tato verze nemá žádné texty",
+      "load_error": "Právní dokumenty se nepodařilo načíst",
+      "text_load_error": "Tento text se nepodařilo načíst",
+      "retry": "Zkusit znovu",
+      "preview": "Náhled",
+      "preview_title": "Náhled",
+      "close_preview": "Zavřít náhled",
+      "show_language": "Zobrazit tento jazyk",
+      "all_markets": "Všechny trhy",
+      "audience": {
+        "customer": "Zákazník",
+        "employee": "Zaměstnanec"
+      },
+      "type": {
+        "terms_of_service": "Obchodní podmínky",
+        "privacy_policy": "Zásady ochrany osobních údajů"
+      },
+      "columns": {
+        "audience": "Publikum",
+        "type": "Typ",
+        "market": "Trh",
+        "effective_from": "Účinné od",
+        "version": "Verze",
+        "in_force": "V platnosti",
+        "languages": "Jazyky",
+        "language": "Jazyk",
+        "title": "Název",
+        "hash": "SHA-256",
+        "notes": "Poznámky"
+      }
+    },
     "country_management": {
       "title": "Správa zemí",
       "description": "Spravujte země dostupné v systému",
@@ -1199,15 +1450,20 @@
       "edit_country": "Upravit zemi",
       "delete_country": "Smazat zemi",
       "delete_confirm": "Opravdu chcete smazat tuto zemi? Toto může ovlivnit existující data.",
+      "set_default_market": "Nastavit jako výchozí trh",
+      "set_default_market_confirm": "Nastavit {{name}} jako výchozí trh? Návštěvníci jej uvidí, dokud si nevyberou zemi.",
+      "default_market": "Výchozí trh",
       "no_countries": "Žádné země nenalezeny",
       "columns": {
         "iso_code": "ISO kód",
         "name": "Název",
+        "default_market": "Výchozí trh",
         "actions": "Akce"
       },
       "messages": {
         "load_error": "Nepodařilo se načíst země",
         "delete_success": "Země byla úspěšně smazána",
+        "set_default_market_success": "Výchozí trh byl změněn",
         "delete_error": "Nepodařilo se smazat zemi"
       }
     },
@@ -1263,7 +1519,7 @@
       "edit_title": "Upravit zemi",
       "basic_info": "Základní informace",
       "iso_code": "ISO kód",
-      "iso_code_placeholder": "např. CZ, US, DE",
+      "iso_code_placeholder": "např. CZE, USA, DEU",
       "name": "Název země",
       "name_placeholder": "např. Česká republika, Spojené státy, Německo",
       "messages": {
@@ -1271,12 +1527,24 @@
         "create_success": "Země byla úspěšně vytvořena",
         "create_error": "Nepodařilo se vytvořit zemi",
         "update_success": "Země byla úspěšně aktualizována",
-        "update_error": "Nepodařilo se aktualizovat zemi"
-      }
+        "update_error": "Nepodařilo se aktualizovat zemi",
+        "market_content_success": "Obsah trhu byl úspěšně aktualizován"
+      },
+      "iso_alpha2": "Dvoupísmenný kód",
+      "iso_alpha2_placeholder": "např. CZ, US, DE",
+      "iso_alpha2_help": "ISO 3166-1 alpha-2. Zákazníci ho vidí na štítku trhu.",
+      "validation": {
+        "iso_alpha2_invalid": "Přesně dvě písmena."
+      },
+      "market": "Trh",
+      "insurance_coverage_amount": "Pojistné krytí na jednu rezervaci",
+      "insurance_coverage_amount_placeholder": "Nechte prázdné, pokud se nemá uvádět žádná částka",
+      "insurance_coverage_amount_help": "Částka ve výchozí měně země, zobrazená v textech pro zákazníky. Prázdné znamená, že text žádnou částku neuvádí.",
+      "market_content_unavailable": "Dostupné, jakmile bude mít země konfiguraci."
     },
     "currency_management": {
       "title": "Správa měn",
-      "description": "Spravujte měny a směnné kurzy",
+      "description": "Spravujte měny, ve kterých platforma působí, výchozí měnu a částku, za kterou se získá věrnostní bod",
       "create_currency": "Vytvořit měnu",
       "edit_currency": "Upravit měnu",
       "delete_currency": "Smazat měnu",
@@ -1287,44 +1555,66 @@
         "code": "Kód",
         "symbol": "Symbol",
         "name": "Název",
-        "exchange_rate": "Směnný kurz",
+        "is_active": "V provozu",
         "is_default": "Výchozí",
         "actions": "Akce"
       },
+      "operated": "Ano",
+      "not_operated": "Zatím ne",
       "messages": {
         "load_error": "Nepodařilo se načíst měny",
         "delete_success": "Měna byla úspěšně smazána",
         "delete_error": "Nepodařilo se smazat měnu",
-        "set_default_success": "Výchozí měna byla změněna"
+        "set_default_success": "Výchozí měna byla změněna",
+        "activate_success": "Měna byla zapnuta",
+        "deactivate_success": "Měna byla vypnuta"
       },
       "set_default": "Nastavit jako výchozí",
-      "set_default_confirm": "Nastavit {{code}} jako výchozí měnu?"
+      "set_default_confirm": "Nastavit {{code}} jako výchozí měnu?",
+      "activate": "Zapnout",
+      "activate_confirm": "Zapnout {{code}}? Od této chvíle musí mít každá služba a balíček cenu v této měně, aby šly uložit.",
+      "deactivate": "Vypnout",
+      "deactivate_confirm": "Vypnout {{code}}? Zákazníci v ní už nebudou moci objednávat. Stávající objednávky, výplaty a faktury zůstávají beze změny."
     },
     "currency_form": {
       "create_title": "Vytvořit měnu",
       "edit_title": "Upravit měnu",
       "basic_info": "Základní informace",
       "code": "Kód měny",
-      "code_placeholder": "např. USD, EUR, CZK",
       "symbol": "Symbol",
-      "symbol_placeholder": "např. $, €, Kč",
       "name": "Název měny",
-      "name_placeholder": "např. Americký dolar, Euro, Česká koruna",
-      "exchange_rate": "Směnný kurz",
-      "exchange_rate_placeholder": "např. 1.0, 0.92, 24.50",
+      "loyalty_points_divisor": "Částka, za kterou se získá jeden věrnostní bod",
+      "loyalty_points_divisor_placeholder": "např. 10 pro CZK — pokud pole necháte prázdné, měna žádné body nezískává",
       "messages": {
         "load_error": "Nepodařilo se načíst měnu",
         "create_success": "Měna byla úspěšně vytvořena",
         "create_error": "Nepodařilo se vytvořit měnu",
         "update_success": "Měna byla úspěšně aktualizována",
         "update_error": "Nepodařilo se aktualizovat měnu"
-      }
+      },
+      "no_show_credit": "Omluvný kredit za nedostavení se",
+      "no_show_credit_placeholder": "např. 250 pro CZK — pokud pole necháte prázdné, v této měně se žádný kredit nevyplácí"
     },
     "company_info": {
-      "title": "Údaje o společnosti",
+      "bank_account_number": "Číslo účtu",
+      "bank_name": "Název banky",
+      "city": "Město",
+      "country": "Země",
       "create_title": "Vytvořit společnost",
-      "edit_title": "Upravit společnost",
       "description": "Správa údajů o společnosti použitých na fakturách a příjemkách",
+      "edit_title": "Upravit společnost",
+      "email": "E-mail",
+      "iban": "IBAN",
+      "is_vat_payer": "Plátce DPH",
+      "legal_name": "Právní název",
+      "messages": {
+        "load_error": "Nepodařilo se načíst údaje o společnosti",
+        "save_success": "Údaje o společnosti byly úspěšně uloženy",
+        "save_error": "Nepodařilo se uložit údaje o společnosti",
+        "create_success": "Údaje o společnosti byly úspěšně vytvořeny"
+      },
+      "phone": "Telefon",
+      "registration_number": "Registrační číslo",
       "sections": {
         "legal_info": "Právní informace",
         "tax_info": "Daňové údaje",
@@ -1332,28 +1622,16 @@
         "contact": "Kontaktní údaje",
         "banking": "Bankovní údaje"
       },
-      "legal_name": "Právní název",
-      "trading_name": "Obchodní název",
-      "tagline": "Slogan",
-      "registration_number": "Registrační číslo",
-      "vat_number": "DIČ",
       "street": "Ulice",
-      "city": "Město",
-      "zip_code": "PSČ",
-      "country": "Země",
-      "phone": "Telefon",
-      "email": "E-mail",
-      "website": "Webová stránka",
-      "bank_name": "Název banky",
-      "bank_account_number": "Číslo účtu",
-      "iban": "IBAN",
       "swift": "SWIFT/BIC",
-      "messages": {
-        "load_error": "Nepodařilo se načíst údaje o společnosti",
-        "save_success": "Údaje o společnosti byly úspěšně uloženy",
-        "save_error": "Nepodařilo se uložit údaje o společnosti",
-        "create_success": "Údaje o společnosti byly úspěšně vytvořeny"
-      }
+      "tagline": "Slogan",
+      "title": "Údaje o společnosti",
+      "trading_name": "Obchodní název",
+      "vat_number": "DIČ",
+      "vat_registered_from": "Plátcem DPH od",
+      "vat_registered_from_hint": "Datum účinnosti registrace. Uchováváme jej, protože po změně statusu už jej nelze zjistit.",
+      "website": "Webová stránka",
+      "zip_code": "PSČ"
     },
     "template_management": {
       "title": "Správa šablon",
@@ -1595,6 +1873,188 @@
         "delete_error": "Nepodařilo se smazat údaje o společnosti"
       }
     },
+    "company_settings": {
+      "title": "Nastavení společnosti",
+      "description": "Každé nastavení, které může vaše provozní společnost mít, s výchozí hodnotou platformy a hodnotou, která platí. Řádek s výchozí hodnotou nic neukládá; přepsání se ukládá jen pro vaši společnost.",
+      "no_settings": "Katalog neobsahuje žádná nastavení",
+      "load_error": "Nastavení společnosti se nepodařilo načíst",
+      "retry": "Zkusit znovu",
+      "edit": "Upravit",
+      "save": "Uložit",
+      "cancel": "Zrušit",
+      "reset": "Obnovit výchozí",
+      "enabled": "Zapnuto",
+      "every_administrator": "Každý administrátor",
+      "confirm_reset_title": "Obnovit výchozí",
+      "confirm_reset": "Odstranit uloženou hodnotu {{key}}, aby znovu platila výchozí hodnota platformy?",
+      "source": {
+        "overridden": "Přepsáno",
+        "default": "Výchozí"
+      },
+      "messages": {
+        "save_success": "Nastavení uloženo",
+        "reset_success": "Nastavení obnoveno na výchozí hodnotu"
+      },
+      "columns": {
+        "key": "Klíč",
+        "description": "Popis",
+        "category": "Kategorie",
+        "range": "Povolený rozsah",
+        "default": "Výchozí",
+        "value": "Hodnota",
+        "source": "Zdroj"
+      },
+      "categories": {
+        "retention": "Uchovávání dat",
+        "lifecycle": "Životní cyklus společnosti",
+        "notifications": "Notifikace"
+      },
+      "descriptions": {
+        "retention": {
+          "expired_codes": {
+            "enabled": "Zda týdenní úloha uchovávání dat maže expirované kódy pro potvrzení e-mailu a obnovu hesla"
+          },
+          "stale_devices": {
+            "days": "Počet dní nečinnosti zařízení, po kterých se smaže jeho registrace pro push notifikace"
+          },
+          "gdpr_requests": {
+            "years": "Počet let po dokončení žádosti o ochranu údajů, po kterých se z ní odstraní identita administrátora, který ji zpracoval"
+          },
+          "order_pii": {
+            "years": "Počet let po úklidu, po kterých se anonymizují zákaznické údaje dokončené objednávky"
+          },
+          "withdrawn_consents": {
+            "years": "Počet let, po které se uchovává záznam o odvolaném souhlasu"
+          },
+          "deleted_documents": {
+            "days": "Počet dní, po které se uchovává deaktivovaný dokument zaměstnance, než se soubor smaže"
+          },
+          "notifications": {
+            "days": "Počet dní, po které notifikace zůstává v přehledu v aplikaci"
+          },
+          "customer_audit": {
+            "years": "Počet let, po které se uchovává auditní záznam zákazníka"
+          },
+          "dispute_text": {
+            "years": "Počet let po výmazu účtu zákazníka, po které se uchovává volný text jeho reklamací, než se vymaže"
+          }
+        },
+        "lifecycle": {
+          "chargeback_horizon_days": "Počet dnů po posledním kartou zaplaceném úklidu společnosti, během kterých může držitel karty platbu ještě reklamovat; archivace čeká, dokud neuplynou"
+        },
+        "notifications": {
+          "admin_email": "Schránka, která dostává jeden e-mail v angličtině za každou administrátorskou událost místo všech administrátorů; ve výchozím stavu dostane e-mail každý administrátor ve svém jazyce"
+        }
+      }
+    },
+    "company_lifecycle": {
+      "title": "Životní cyklus společnosti",
+      "description": "Kde se vaše provozní společnost nachází — v provozu, v ukončování, deaktivovaná, zmrazená nebo archivovaná — každá skutečnost, která musí být vypořádána, než lze její knihy zapečetit, a čtyři úkony, které ji posouvají: oznámit datum ukončení, zavřít dveře, znovu je otevřít, zapečetit knihy.",
+      "load_error": "Životní cyklus společnosti se nepodařilo načíst",
+      "retry": "Zkusit znovu",
+      "no_facts": "Žádné skutečnosti k vypořádání",
+      "facts_hint": "Každý počet musí být nula a lhůta pro chargeback musí uplynout, než je archivace přípustná. Počet odkazuje na seznam, kde jej lze vypořádat; lhůta odkazuje na stránku Nastavení společnosti, která určuje její délku.",
+      "manifest_hash": "SHA-256 manifestu archivu",
+      "run_in_progress": "Probíhá běh ukončování — obnovte stránku, abyste viděli, kde je.",
+      "sections": {
+        "state": "Stav",
+        "acts": "Úkony",
+        "facts": "Skutečnosti k vypořádání"
+      },
+      "states": {
+        "Operating": "V provozu",
+        "WindingDown": "Ukončuje se",
+        "Deactivated": "Deaktivovaná",
+        "Frozen": "Zmrazená",
+        "Archived": "Archivovaná"
+      },
+      "stamps": {
+        "wind_down": "Ukončení od {{from}} — vyžádáno {{requestedOn}}, {{email}}",
+        "deactivated": "Deaktivována {{date}}, {{email}}",
+        "frozen": "Knihy zmrazeny pro archivaci {{date}}, {{email}}",
+        "archived": "Archivována {{date}}"
+      },
+      "acts": {
+        "deactivate": "Deaktivovat",
+        "reactivate": "Znovu aktivovat",
+        "wind_down": "Ukončit od data",
+        "run_wind_down_again": "Spustit ukončení znovu",
+        "archive": "Archivovat",
+        "build_archive_again": "Sestavit archiv znovu"
+      },
+      "reasons": {
+        "unsettled_facts": "Zbývá vypořádat: {{facts}}.",
+        "within_chargeback_horizon": "Archivace bude přípustná od {{date}}, jakmile uplyne lhůta pro chargeback."
+      },
+      "confirm": {
+        "deactivate": "Deaktivovat {{name}}? Její trhy okamžitě zmizí ze všech seznamů a ze všech kontrol „obsluhováno“: žádná nová objednávka, nákup Plus ani registrace v nich a její uklízeči se už nepřihlásí do partnerských aplikací. Administrátoři a zákazníci si přístup ponechají. Tento úkon nic neruší, nevrací ani nerozesílá — to dělá ukončování.",
+        "deactivate_with_wind_down": "Deaktivovat {{name}}? Její trhy okamžitě zmizí ze všech seznamů a ze všech kontrol „obsluhováno“ a její uklízeči se už nepřihlásí do partnerských aplikací. Protože je nastaveno ukončení od {{date}}, běh se spustí znovu bez omezení datem: každá otevřená objednávka je zrušena a vrácena, nevyužitý kredit je odepsán, a jakmile není nic otevřené, poslední výplatní období je uzavřeno a fakturováno.",
+        "reactivate": "Znovu aktivovat {{name}}? Její trhy budou opět v nabídce, objednávky se opět přijímají a její uklízeči se mohou znovu přihlásit.",
+        "reactivate_after_wind_down": "Znovu aktivovat {{name}}? Její trhy budou opět v nabídce, její uklízeči se mohou znovu přihlásit a datum ukončení {{date}} se zruší. Co ukončování už provedlo, se nevrací: zrušené objednávky zůstávají zrušené, ukončené Plus zůstává ukončené, odepsaný kredit zůstává odepsaný.",
+        "run_wind_down_again": "Spustit ukončení společnosti {{name}} od {{date}} znovu? Vše objednané na dané datum nebo později od posledního běhu je zrušeno a vráceno, neúspěšné vrácení se zopakuje a — jakmile je společnost deaktivovaná — nevyužitý kredit je odepsán a poslední výplatní období uzavřeno a fakturováno. Nic, co už bylo provedeno, se neopakuje.",
+        "archive": "Zapečetit knihy společnosti {{name}}? Tímto kliknutím se zmrazí: od té chvíle je může měnit jen retence a výmaz a cesta zpět neexistuje. Každá z těchto položek musí být nula: {{facts}}. Lhůta pro chargeback: {{date}}. Poté se na pozadí sestaví zapečetěný balík; jeho vyzvednutí je provozní krok.",
+        "archive_again": "Sestavit archiv společnosti {{name}} znovu? Knihy jsou zmrazené od {{frozenOn}}; balík se sestaví od začátku a na knihách se nic nemění."
+      },
+      "messages": {
+        "deactivated": "Společnost je deaktivovaná",
+        "reactivated": "Společnost je opět v provozu",
+        "wind_down_requested": "Ukončení je oznámeno a jeho první běh byl spuštěn",
+        "wind_down_rerun": "Byl spuštěn nový běh ukončování",
+        "archive_requested": "Knihy jsou zmrazené a archiv se sestavuje"
+      },
+      "facts": {
+        "openOrders": "Otevřené objednávky",
+        "openOrdersOnOrAfterWindDownFrom": "Otevřené objednávky na datum ukončení nebo později",
+        "activeTemplates": "Aktivní opakované šablony",
+        "activeMemberships": "Aktivní členství Plus",
+        "creditBalances": "Kreditní zůstatky nad nulou",
+        "pendingRefunds": "Čekající vrácení",
+        "ordersAwaitingPay": "Objednávky čekající na výpočet odměny",
+        "ordersAwaitingReceipt": "Objednávky čekající na účtenku",
+        "receiptsAwaitingFiscalRegistration": "Účtenky čekající na fiskální registraci",
+        "openPayPeriods": "Otevřená výplatní období",
+        "unpaidInvoices": "Neuhrazené faktury uklízečů",
+        "uninvoicedPayRows": "Nefakturované odměny v uzavřených obdobích",
+        "openDisputes": "Otevřené reklamace",
+        "chargebackHorizonEndsOn": "Lhůta pro chargeback",
+        "windDownLastRunOn": "Poslední běh ukončování",
+        "windDownRunStartedOn": "Běh ukončování probíhá od"
+      },
+      "values": {
+        "archive_admissible_from": "Archivace přípustná od {{date}}",
+        "no_horizon": "Žádná platba kartou — bez lhůty",
+        "never": "Nikdy",
+        "not_running": "Žádný běh neprobíhá"
+      },
+      "status": {
+        "blocking": "Brání archivaci",
+        "settled": "Vypořádáno",
+        "informational": "Informativní"
+      },
+      "columns": {
+        "fact": "Skutečnost",
+        "value": "Hodnota",
+        "status": "Stav"
+      },
+      "wind_down_dialog": {
+        "title": "Ukončit od data",
+        "lede": "Zvolte datum ukončení společnosti {{name}}. Od toho dne společnost nic neobsluhuje. Datum se nastavuje jednou a později je nelze změnit.",
+        "field": {
+          "from_date": "Datum ukončení",
+          "from_date_help": "Ne dříve než dnes na trzích společnosti. Objednávky před tímto dnem proběhnou; každá otevřená objednávka na tento den nebo později je zrušena a vrácena."
+        },
+        "consequences": {
+          "title": "Co se stane po potvrzení, v tomto pořadí:",
+          "notices": "Každý zákazník a každý schválený uklízeč je ihned informován e-mailem.",
+          "orders": "Každá otevřená objednávka na dané datum nebo později je zrušena a vrácena v plné výši; neuhrazená objednávka kartou zůstává nedotčena.",
+          "templates": "Každá opakovaná šablona je pozastavena.",
+          "memberships": "Každé Plus je zrušeno ke konci svého období.",
+          "credit": "Nevyužitý kredit je odepsán, jakmile je společnost deaktivovaná.",
+          "pay_period": "Poslední výplatní období je uzavřeno a fakturováno, jakmile je společnost deaktivovaná a nic není otevřené."
+        },
+        "submit": "Oznámit ukončení"
+      }
+    },
     "reports": {
       "title": "Přehledy",
       "description": "Prohlížejte přehledy o tržbách a mzdách, analyzujte výkon a sledujte finanční údaje",
@@ -1607,7 +2067,8 @@
         "title": "Filtry",
         "date_range": "Časové období",
         "reset": "Resetovat filtry",
-        "clear_all": "Vymazat vše"
+        "clear_all": "Vymazat vše",
+        "currency": "Měna"
       },
       "revenue_report": "Přehled tržeb",
       "payroll_report": "Přehled mezd",
@@ -1615,7 +2076,6 @@
       "total_revenue": "Celkové tržby",
       "avg_order_value": "Průměrná hodnota objednávky",
       "total_orders": "Celkem objednávek",
-      "completed_orders": "Dokončené objednávky",
       "cancelled_orders": "Zrušené objednávky",
       "growth": "Růst",
       "revenue_by_service": "Tržby podle služby",
@@ -1647,7 +2107,16 @@
         "payroll_load_error": "Nepodařilo se načíst přehled mezd"
       },
       "settled_from_credit": "Z kreditu zákazníků",
-      "settled_on_tender": "Skutečně přijato"
+      "settled_on_tender": "Skutečně přijato",
+      "net_revenue": "Čisté tržby",
+      "gross_and_refunds": "{{gross}} hrubé − {{refunded}} vráceno (z toho {{credit}} vráceno jako kredit)",
+      "completed_paid_orders": "Dokončené a zaplacené objednávky",
+      "cancelled_orders_hint": "Zrušené rezervace v tomto období podle data zrušení. Opuštěné platby kartou nejsou rezervace. Nejsou součástí tržeb.",
+      "refunded_to_card": "Vráceno na kartu",
+      "returned_to_credit": "Vráceno jako kredit",
+      "net_on_tender": "Čistě přijato",
+      "revenue_by_payment_type_hint": "Čistě přijato je částka, kterou porovnáte s výpisem platební brány.",
+      "revenue_description": "Tržby jsou dokončené a zaplacené objednávky podle data dokončení, v jedné měně, minus všechny vratky těchto objednávek – vrácení na kartu i vrácený kredit – bez ohledu na datum vratky. Vratka tedy snižuje měsíc, ve kterém byla objednávka dokončena, ne měsíc, ve kterém byla vystavena. Zrušené a nezaplacené objednávky nejsou tržby. Prohrané chargebacky se neodečítají (platforma neeviduje částku, kterou banka stáhla). Hotovostní objednávky vrácené ručně nemají záznam o vratce a zobrazují se v hrubé výši."
     },
     "promo_codes": {
       "title": "Promo kódy",
@@ -1904,12 +2373,14 @@
           "cancel": "Zrušit",
           "submit": "Přidělit kredit",
           "field": {
-            "amount": "Částka ({{currency}})",
+            "currency": "Měna",
+            "amount": "Částka",
             "reason": "Důvod",
             "note": "Co se stalo",
             "note_help": "Zaznamenáno pod vaším jménem. Napište to, co byste sami chtěli číst, než tomuto zákazníkovi znovu něco přidělíte."
           },
           "validation": {
+            "currency_required": "Vyberte měnu.",
             "amount_min": "Zadejte částku větší než nula.",
             "amount_max": "To přesahuje limit pro jeden kredit. Vystavte jej po menších částkách.",
             "note_required": "Uveďte, co se stalo.",
@@ -1922,7 +2393,7 @@
           "reason": "Důvod",
           "note": "Co se stalo"
         },
-        "expire_success": "Odepsáno {{amount}}.",
+        "expire_success": "Odepsáno {{amount}} {{currency}}.",
         "expire_error": "Zůstatek se nepodařilo odepsat.",
         "expire_dialog": {
           "title": "Odepsat zůstatek kreditu",
@@ -2087,13 +2558,14 @@
         "code": "Kód",
         "name": "Název",
         "interval": "Fakturace",
-        "price": "Cena (CZK)",
-        "monthly_equivalent": "Měsíční ekvivalent (CZK)",
+        "price": "Cena",
+        "monthly_equivalent": "Měsíční ekvivalent",
         "discount": "Sleva",
         "trial_days": "Zkušební dny",
         "free_cancel_window": "Storno zdarma (h)",
         "express": "Expres",
-        "status": "Stav"
+        "status": "Stav",
+        "currency": "Měna"
       },
       "interval": {
         "Monthly": "Měsíčně",
@@ -2124,7 +2596,7 @@
           "name": "Název",
           "interval": "Fakturační období",
           "interval_immutable": "Fakturační období nelze po vytvoření změnit.",
-          "price": "Cena (CZK)",
+          "price": "Cena",
           "stripe_price_id": "Stripe Price id",
           "stripe_price_id_help": "Zkopírujte ze Stripe dashboardu (price_...). Platforma ceny ve Stripe nevytváří.",
           "discount": "Sleva (%)",
@@ -2137,17 +2609,22 @@
         "validation": {
           "code_invalid": "2–50 znaků: písmena, číslice nebo podtržítka.",
           "price_negative": "Cena musí být nula nebo vyšší.",
-          "stripe_price_id_required": "Stripe Price id je povinné.",
           "discount_range": "Sleva musí být mezi 0 a 100.",
           "trial_negative": "Počet zkušebních dnů musí být nula nebo vyšší.",
           "window_negative": "Lhůta musí být nula nebo vyšší.",
-          "express_upgrades_negative": "Počet zahrnutých expresních upgradů musí být nula nebo vyšší."
+          "express_upgrades_negative": "Počet zahrnutých expresních upgradů musí být nula nebo vyšší.",
+          "price_block_half_filled": "Zadejte cenu i Stripe Price id, nebo nechte obě pole prázdná, aby plán v této měně nebyl v prodeji."
         },
         "submit_create": "Vytvořit plán",
         "submit_update": "Uložit změny",
         "success": {
           "created": "Plán členství byl vytvořen",
           "updated": "Plán členství byl upraven"
+        },
+        "price_block": {
+          "active": "Aktivní",
+          "optional": "Nepovinné",
+          "no_currencies": "Nejsou nastaveny žádné měny, takže plán zatím nelze ocenit."
         }
       }
     },
@@ -2168,7 +2645,13 @@
           "created_on": "Vytvořeno"
         },
         "fulfil": "Vyřídit žádost o smazání",
-        "fulfil_title": "Vyřídit tuto žádost o smazání?"
+        "fulfil_title": "Vyřídit tuto žádost o smazání?",
+        "retry": "Opakovat výmaz",
+        "retry_confirm_title": "Opakovat tento výmaz?",
+        "retry_confirm_message": "Výmaz účtu uživatele {{userId}} bude spuštěn znovu. Pokud uspěje, účet bude trvale anonymizován a akci nelze vrátit.",
+        "retry_confirm_yes": "Opakovat",
+        "retry_success": "Výmaz byl zopakován. Účet je nyní vymazán.",
+        "retry_error": "Výmaz se nepodařilo zopakovat."
       },
       "request_status": {
         "Pending": "Čeká",
@@ -2221,6 +2704,77 @@
         "confirm_yes": "Vymazat"
       }
     },
+    "notifications": {
+      "title": "Upozornění",
+      "description": "Vše, co platforma ve vaší společnosti prokazatelně zaznamenala, od nejnovějšího. Otevřením řádku přejdete na objednávku, reklamaci, žádost nebo stránku, kterou jmenuje.",
+      "mark_all_read": "Označit vše jako přečtené",
+      "load_error": "Upozornění se nepodařilo načíst.",
+      "retry": "Zkusit znovu",
+      "empty": "Nic k přečtení",
+      "empty_hint": "Nové objednávky, ztracení úklidoví pracovníci, reklamace, neúspěšné platby a milníky společnosti se objeví zde.",
+      "unread": "Nepřečteno",
+      "messages": {
+        "marked_all_read": "Označeno jako přečtené: {{count}}"
+      },
+      "events": {
+        "unknown": {
+          "title": "Událost, kterou tato konzole zatím neumí zobrazit"
+        },
+        "admin": {
+          "order": {
+            "new": {
+              "title": "Nová objednávka k obsloužení",
+              "body": "Objednávka {{orderNumber}} za {{amount}} čeká na úklidového pracovníka."
+            },
+            "crew_lost": {
+              "title": "Objednávka přišla o posledního pracovníka",
+              "body": "Na objednávce {{orderNumber}} dne {{cleaningDateTime}} nikdo není — {{cause}}. Je zpět na nástěnce.",
+              "body_under_way": "Na objednávce {{orderNumber}} dne {{cleaningDateTime}} nikdo není — {{cause}}. Úklid už přitom probíhal.",
+              "causes": {
+                "dropped": "pracovník ji vrátil",
+                "rejected": "účet pracovníka byl zamítnut"
+              }
+            }
+          },
+          "dispute": {
+            "filed": {
+              "title": "Byla podána reklamace",
+              "body": "Zákazník podal reklamaci k objednávce {{orderNumber}}."
+            },
+            "chargeback": {
+              "title": "Přišla zpětná platba (chargeback)",
+              "body": "Banka vrátila {{amount}} z objednávky {{orderNumber}}. Podrobnosti jsou u reklamace."
+            }
+          },
+          "payment": {
+            "failed": {
+              "title": "Platba kartou selhala",
+              "body": "Platba kartou za objednávku {{orderNumber}} byla zamítnuta. Pokud zůstane nezaplacená, objednávka se automaticky zruší."
+            }
+          },
+          "erasure": {
+            "failed": {
+              "title": "Výmaz účtu se nepodařilo dokončit",
+              "body": "Žádost o výmaz účtu dne {{day}} selhala a zítra se zopakuje. Najdete ji na stránce Ochrana údajů."
+            }
+          },
+          "company": {
+            "wind_down_requested": {
+              "title": "Vyžádáno ukončení činnosti",
+              "body": "Vaše společnost ukončuje činnost od {{windDownFrom}}."
+            },
+            "wind_down_run": {
+              "title": "Běh ukončení činnosti vypořádal knihy",
+              "body": "Zrušeno {{cancelled}}, vráceno {{refunded}}, neúspěšných vratek {{refundFailures}}, uzavřených výplatních období {{periodsClosed}}."
+            },
+            "archived": {
+              "title": "Společnost archivována",
+              "body": "Knihy byly zapečetěny dne {{archivedOn}}."
+            }
+          }
+        }
+      }
+    },
     "admin_profile": {
       "title": "Můj profil",
       "change_password": {
@@ -2233,6 +2787,28 @@
       },
       "messages": {
         "change_password_success": "Heslo bylo úspěšně změněno"
+      }
+    },
+    "customer_detail": {
+      "timeline": {
+        "title": "Časová osa",
+        "description": "Každý zaznamenaný úkon u tohoto zákazníka — jeho vlastní, adminův na jeho objednávkách, reklamacích a členství, a uklízečův na jeho zakázkách — od nejnovějšího."
+      },
+      "export_subject_data": "Exportovat data subjektu",
+      "export_success": "Export dat subjektu byl stažen a zaznamenán",
+      "export_error": "Export dat subjektu se nezdařil",
+      "incident_file": {
+        "button": "Spis incidentu (PDF)",
+        "order_scope": "Objednávka (volitelné)",
+        "order_scope_placeholder": "Celý účet",
+        "order_scope_hint": "Nechte prázdné pro celý účet, nebo vyberte jednu objednávku tohoto zákazníka a spis se omezí na ni.",
+        "orders_loading": "Načítáme objednávky tohoto zákazníka…",
+        "orders_error": "Objednávky tohoto zákazníka se nepodařilo načíst. Spis lze i tak sestavit pro celý účet.",
+        "orders_retry": "Zkusit znovu",
+        "no_orders": "Tento zákazník nemá žádné objednávky; spis pokrývá celý účet.",
+        "orders_truncated": "Zobrazeno {{shown}} nejnovějších z {{total}} objednávek.",
+        "success": "Spis incidentu byl stažen a zaznamenán",
+        "error": "Spis incidentu se nepodařilo sestavit"
       }
     }
   },
@@ -2381,15 +2957,20 @@
       "invalid_length": "Neplatná délka adresy"
     },
     "admin_user": {
+      "cannot_change_own_role": "Nemůžete změnit svou vlastní roli",
       "cannot_deactivate_last_admin": "Nemůžete deaktivovat posledního aktivního administrátora",
       "cannot_deactivate_self": "Nemůžete deaktivovat svůj vlastní účet",
       "cannot_delete_self": "Nemůžete smazat svůj vlastní účet",
+      "cannot_demote_last_administrator": "Nemůžete změnit roli posledního administrátora",
       "cannot_target_admin_via_gdpr_tool": "Účty administrátorů nelze zpracovat nástrojem GDPR",
       "email_exists": "Administrátor s tímto e-mailem již existuje",
       "not_found": "Administrátor nenalezen"
     },
     "audit": {
-      "not_found": "Záznam auditu nebyl nalezen."
+      "not_found": "Záznam auditu nebyl nalezen.",
+      "timeline": {
+        "filter_required": "Časová osa vyžaduje právě jeden klíč: uživatele, nebo typ zdroje spolu s jeho id."
+      }
     },
     "auth": {
       "account_locked": "Příliš mnoho neúspěšných pokusů o přihlášení. Účet je dočasně uzamčen — zkuste to znovu za několik minut.",
@@ -2420,7 +3001,27 @@
     "company": {
       "exists_for_country": "Informace o společnosti pro tuto zemi již existují",
       "in_use": "Společnost nelze smazat, protože je aktuálně používána",
-      "not_found": "Informace o společnosti nenalezeny"
+      "not_found": "Informace o společnosti nenalezeny",
+      "already_deactivated": "Společnost je již deaktivována.",
+      "not_deactivated": "Společnost není deaktivována, není co znovu aktivovat.",
+      "archived": "Společnost je zmrazena k archivaci; její stav již nelze měnit.",
+      "operates_default_market": "Společnost provozuje výchozí trh a nelze ji deaktivovat. Nejprve přesuňte výchozí trh na jinou společnost.",
+      "wind_down_already_requested": "Datum ukončení je již nastaveno a nelze ho změnit. Pokud je potřeba dřívější datum, zrušte zbývající objednávky ručně.",
+      "wind_down_date_in_past": "Poslední den poskytování služeb nemůže být dříve než dnes v trzích společnosti.",
+      "wind_down_in_progress": "Probíhá běh ukončování činnosti; zkuste to znovu, až skončí.",
+      "wind_down_not_requested": "Archivace čeká, až budou lidé informováni: nejprve nastavte datum ukončení činnosti.",
+      "has_open_orders": "Společnost má stále otevřené objednávky; archivace čeká, dokud nebude každá dokončena nebo zrušena.",
+      "has_orders_awaiting_pay": "Dokončená objednávka stále čeká na výpočet odměny; archivace na něj čeká.",
+      "has_orders_awaiting_receipt": "Zaplacená nebo hotovostní objednávka stále čeká na účtenku; archivace na ni čeká.",
+      "has_receipts_awaiting_fiscal_registration": "Účtenka stále čeká na fiskální registraci; archivace na ni čeká.",
+      "has_pending_refunds": "Vrácení platby stále čeká na vyřízení; archivace čeká, dokud nebude vypořádáno.",
+      "has_active_memberships": "Zákazník má stále aktivní Plus; archivace čeká, dokud neskončí poslední období.",
+      "has_credit_balances": "Zákazník má stále kreditní zůstatek; archivace čeká, dokud nebudou všechny zůstatky vypořádány.",
+      "has_open_pay_period": "Výplatní období je stále otevřené; nejprve ho uzavřete.",
+      "has_unpaid_invoices": "Faktura uklízeče ještě není zaplacena; archivace čeká, dokud nebude každá faktura zaplacena nebo stornována.",
+      "has_uninvoiced_pay": "Uzavřené výplatní období obsahuje odměnu, která nebyla nikdy vyfakturována; archivace na ni čeká.",
+      "has_open_disputes": "Reklamace je stále otevřená; nejprve ji vyřešte.",
+      "within_chargeback_horizon": "Držitel karty může poslední kartovou platbu společnosti stále rozporovat; archivace bude možná, jakmile uplyne lhůta pro chargeback."
     },
     "country": {
       "in_use": "Zemi nelze smazat, protože je aktuálně používána",
@@ -2428,7 +3029,11 @@
       "not_existing_id": "Země nenalezena",
       "not_found": "Země nenalezena",
       "not_serviced": "V této zemi nepůsobíme.",
-      "required": "Země je povinná."
+      "required": "Země je povinná.",
+      "market_not_ready": "Tuto zemi zatím nelze zapnout: potřebuje konfiguraci, jejíž výchozí měna je aktivní.",
+      "default_market_changed_concurrently": "Výchozí trh mezitím změnil někdo jiný. Obnovte stránku a zkuste to znovu",
+      "configuration_missing": "Tato země zatím nemá konfiguraci, takže obsah trhu nelze uložit.",
+      "iso_alpha2_invalid": "Dvoupísmenný kód země musí být přesně dvě velká písmena."
     },
     "credit": {
       "amount_exceeds_sanity_cap": "Tato částka přesahuje limit pro jeden kredit. Pokud je správná, vystavte ji po menších částkách.",
@@ -2437,11 +3042,14 @@
     },
     "currency": {
       "cannot_delete_default": "Výchozí měnu nelze smazat",
+      "cannot_deactivate_default": "Výchozí měnu nelze vypnout. Nejprve nastavte jako výchozí jinou měnu",
       "code_already_exists": "Měna s tímto kódem již existuje",
-      "exchange_rate_must_be_positive": "Směnný kurz musí být kladné číslo",
+      "default_changed_concurrently": "Výchozí měnu mezitím změnil někdo jiný. Obnovte stránku a zkuste to znovu",
       "in_use": "Měnu nelze smazat, protože je aktuálně používána",
       "invalid": "Neplatná měna",
-      "not_found": "Měna nenalezena"
+      "not_found": "Měna nenalezena",
+      "not_priced": "Katalog v této měně zatím nemá žádné ceny. Nejprve v ní naceňte alespoň jednu službu nebo balíček",
+      "loyalty_divisor_missing": "Tato měna zatím nemá nastavený kurz věrnostních bodů. Než trh zapnete, nastavte ve formuláři měny, kolik z ní vynese jeden bod; zapnutý trh ho musí mít stále"
     },
     "device": {
       "invalid_platform": "Platforma musí být 'android' nebo 'ios'"
@@ -2472,7 +3080,8 @@
       "not_found": "Zaměstnanec nenalezen",
       "pay_config_missing": "Tento uklízeč nemá nastavenou odměnu u jedné nebo více aktivních služeb či balíčků. Před schválením chybějící nastavení doplňte.",
       "profile_incomplete": "Profil zaměstnance je nekompletní",
-      "weekly_limit_invalid": "Týdenní limit zakázek musí být alespoň 1, nebo prázdný pro neomezený počet"
+      "weekly_limit_invalid": "Týdenní limit zakázek musí být alespoň 1, nebo prázdný pro neomezený počet",
+      "work_country_operator_mismatch": "Pracovní země patří jiné provozní společnosti."
     },
     "employee_document": {
       "deletion_already_resolved": "Tato žádost o smazání již byla vyřízena.",
@@ -2500,7 +3109,9 @@
       "deletion_blocked_by_assigned_order": "Tato üklidová pracovnice je přiřazena k zakázce a zatím ji nelze smazat.",
       "deletion_blocked_by_unsettled_pay": "Této üklidové pracovnici stále dlužíme odměnu. Vyřešte to před smazáním účtu.",
       "consent_not_found": "Toto nastavení souhlasu se nepodařilo najít.",
-      "consent_already_granted": "Tento souhlas již byl udělen."
+      "consent_already_granted": "Tento souhlas již byl udělen.",
+      "request_not_found": "Tuto žádost GDPR jsme nenašli.",
+      "request_not_retryable": "Opakovat lze pouze neúspěšnou žádost o smazání."
     },
     "general": {
       "not_found": "Zdroj nenalezen"
@@ -2510,6 +3121,9 @@
       "in_use": "Jazyk nelze smazat, protože je používán jinými entitami",
       "not_found": "Jazyk nenalezen",
       "not_supported": "Jazyk není podporován"
+    },
+    "legal": {
+      "document_not_found": "Tento právní dokument zatím není k dispozici."
     },
     "loyalty": {
       "points_exceed_sanity_cap": "Tento počet bodů překračuje limit povolený pro ruční úpravu.",
@@ -2522,7 +3136,9 @@
         "action_failed": "Akce s plánem členství se nezdařila. Zkuste to znovu.",
         "code_already_exists": "Plán s tímto kódem již existuje.",
         "discount_out_of_range": "Sleva musí být mezi 0 a 100.",
-        "not_found": "Plán členství nebyl nalezen."
+        "not_found": "Plán členství nebyl nalezen.",
+        "trial_not_permitted": "Výhody Cleansia Plus vyžadují aktivní předplatné, zkušební období proto nelze nastavit. Ponechte 0 dní.",
+        "stripe_price_already_used": "Toto Stripe Price id už používá cena jiného plánu."
       }
     },
     "order": {
@@ -2560,10 +3176,19 @@
       "selected_services": {
         "invalid": "Vybrané služby jsou neplatné"
       },
+      "status": {
+        "confirmed_needs_crew": "Potvrzeno znamená, že zakázku převzal uklízeč. Místo toho objednávce přiřaďte uklízeče."
+      },
       "total_price": {
         "not_match": "Celková cena neodpovídá",
         "positive": "Celková cena musí být kladná"
       }
+    },
+    "extra": {
+      "in_use": "Doplněk nelze smazat, protože na něj odkazuje objednávka. Místo toho jej deaktivujte.",
+      "not_found": "Doplněk nenalezen",
+      "slug_already_exists": "Doplněk s tímto identifikátorem (slug) již existuje",
+      "slug_invalid": "Identifikátor (slug) musí být malá písmena spojená jednotlivými pomlčkami, např. inside-oven"
     },
     "package": {
       "in_use": "Balíček nelze smazat, protože je aktuálně používán",
@@ -2610,6 +3235,8 @@
         "invalid_status": "Neplatný stav faktury",
         "not_approved": "Fakturu je nutné nejprve schválit, teprve poté ji lze označit jako zaplacenou",
         "not_found": "Faktura nenalezena",
+        "payout_currency_mismatch": "Výplatní účet uklízeče není nastaven pro příjem měny této faktury. Požádejte ho, aby před schválením aktualizoval své výplatní údaje.",
+        "payout_details_missing": "Uklízeč nemá uložené použitelné výplatní údaje, takže platbu za tuto fakturu není kam poslat. Požádejte ho, aby před schválením doplnil své výplatní údaje.",
         "pdf_generation_failed": "Nepodařilo se vygenerovat PDF",
         "reference_already_assigned": "Tato faktura již variabilní symbol má.",
         "reference_capacity_exhausted": "Variabilní symboly pro letošní rok jsou vyčerpány. Kontaktujte podporu.",
@@ -2662,7 +3289,9 @@
       "in_use": "Službu nelze smazat, protože je aktuálně používána",
       "missing_translation_for_language": "Chybí překlad pro požadovaný jazyk",
       "not_found": "Služba nenalezena",
-      "translations_required": "Překlady jsou vyžadovány pro všechny podporované jazyky"
+      "translations_required": "Překlady jsou vyžadovány pro všechny podporované jazyky",
+      "prices_required": "Cena je povinná",
+      "missing_price_for_currency": "Chybí cena pro měnu, ve které platforma prodává"
     },
     "service_area": {
       "city_not_serviced": "V tomto městě zatím nepůsobíme.",
@@ -2691,6 +3320,14 @@
         "in_use": "Šablonu účtenky nelze smazat, protože je aktuálně používána",
         "not_found": "Šablona účtenky nenalezena"
       }
+    },
+    "tenant": {
+      "not_found": "Tento trh zatím neprovozuje žádná společnost Cleansia.",
+      "archived": "Záznamy této společnosti jsou zapečetěny k archivaci; nic na nich už nelze měnit."
+    },
+    "tenant_setting": {
+      "invalid_value": "Hodnota nemá správný typ nebo je mimo povolený rozsah tohoto nastavení.",
+      "unknown_key": "Toto nastavení není v katalogu a nelze jej nastavit."
     },
     "user": {
       "email_confirmed": "E-mail je již potvrzen",
@@ -2826,5 +3463,11 @@
   },
   "admin_user": {
     "cannot_target_admin_via_gdpr_tool": "Na účty administrátorů nelze použít nástroje GDPR."
+  },
+  "admin_roles": {
+    "administrator": "Administrátor",
+    "manager": "Manažer",
+    "support": "Podpora",
+    "accountant": "Účetní"
   }
 }

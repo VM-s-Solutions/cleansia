@@ -46,7 +46,7 @@ public sealed class RefreshTokenServiceRevokeByDeviceTests : IDisposable
         return new CleansiaDbContext(
             options,
             new TestUserSessionProvider(UserId, "user@cleansia.test"),
-            new NullTenantProvider());
+            new DefaultTenantProvider());
     }
 
     private static RefreshTokenService NewService(CleansiaDbContext ctx)
@@ -79,7 +79,7 @@ public sealed class RefreshTokenServiceRevokeByDeviceTests : IDisposable
     private async Task SeedAsync()
     {
         await using var ctx = NewContext();
-        await ctx.Database.EnsureCreatedAsync();
+        await TestTenants.EnsureCreatedWithRegistryAsync(ctx);
 
         ctx.Add(Language.Create("en", "English"));
 
@@ -154,9 +154,9 @@ public sealed class RefreshTokenServiceRevokeByDeviceTests : IDisposable
         Assert.False(tokenB.IsAlive);
     }
 
-    private sealed class NullTenantProvider : ITenantProvider
+    private sealed class DefaultTenantProvider : ITenantProvider
     {
-        public string? GetCurrentTenantId() => null;
+        public string? GetCurrentTenantId() => TestTenants.Default;
         public void SetTenantOverride(string tenantId) { }
         public void ClearTenantOverride() { }
     }

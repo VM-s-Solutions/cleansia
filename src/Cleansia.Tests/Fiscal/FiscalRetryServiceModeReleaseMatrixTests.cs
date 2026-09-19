@@ -2,6 +2,7 @@ using Cleansia.Core.AppServices.Services;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Configuration;
 using Cleansia.Core.Domain.Enums;
+using Cleansia.Core.Domain.Internationalization;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Receipts;
 using Cleansia.Core.Domain.Repositories;
@@ -88,6 +89,13 @@ public sealed class FiscalRetryServiceModeReleaseMatrixTests
             .ReturnsAsync(BuildOrder(receipt.OrderId, countryId));
     }
 
+    private static Currency Euro()
+    {
+        var eur = Currency.Create("EUR", "€", "Euro");
+        eur.Id = "eur";
+        return eur;
+    }
+
     private static Order BuildOrder(string orderId, string? countryId)
     {
         var address = Address.Create("Hauptstr. 2", "Berlin", "10115", countryId!);
@@ -98,12 +106,12 @@ public sealed class FiscalRetryServiceModeReleaseMatrixTests
             customerAddress: address,
             rooms: 1,
             bathrooms: 1,
-            extras: new Dictionary<string, bool>(),
             cleaningDateTime: DateTime.UtcNow.AddDays(1),
             paymentType: PaymentType.Cash,
             totalPrice: 1000m,
             currencyId: "eur",
             paymentStatus: PaymentStatus.Pending);
+        order.SetCurrency(Euro());
         order.Id = orderId;
         return order;
     }

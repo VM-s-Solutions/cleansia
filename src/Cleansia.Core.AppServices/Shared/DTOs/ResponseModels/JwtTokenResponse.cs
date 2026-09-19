@@ -9,7 +9,8 @@
 // `Role` is the user's profile (Customer / Employee / Administrator) emitted
 // explicitly so web clients can drive permission gating without decoding
 // the JWT — which becomes impossible once the access token is HttpOnly.
-// Source-of-truth is still server-side; this is a UI hint only.
+// `AdminRole` is the administrator's role beside it, for the same reason and
+// only for that profile. Source-of-truth is still server-side; both are UI hints.
 public record JwtTokenResponse(
     string Token,
     bool IsEmailConfirmed,
@@ -19,4 +20,5 @@ public record JwtTokenResponse(
     string? RefreshToken = null,
     DateTimeOffset? RefreshTokenExpiresAt = null,
     string? CsrfToken = null,
-    string? Role = null);
+    string? Role = null,
+    string? AdminRole = null);

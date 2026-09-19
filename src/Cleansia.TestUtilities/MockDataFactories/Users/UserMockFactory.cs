@@ -42,6 +42,8 @@ public class UserMockFactory
 
         public UserProfile? Profile { get; set; }
 
+        public AdminRole? AdminRole { get; set; }
+
         public AuthenticationType? AuthenticationType { get; set; }
 
         public string? CartId { get; set; }
@@ -67,11 +69,19 @@ public class UserMockFactory
 
     public static User Generate(UserPartial? mergeFrom = null)
     {
+        // The profile and the role go through the factory rather than the merge so a mocked administrator
+        // never carries the null role the constraint refuses; a mock that names no role is an Administrator.
+        var profile = mergeFrom?.Profile ?? UserProfile.Customer;
+        var adminRole = profile == UserProfile.Administrator
+            ? mergeFrom?.AdminRole ?? AdminRole.Administrator
+            : mergeFrom?.AdminRole;
         var user = User.CreateWithPassword(
             Constants.TestUserSession.TestUserEmail,
             Constants.TestUserSession.TestUserPassword,
             Constants.TestUserSession.TestFirstName,
-            Constants.TestUserSession.TestLastName);
+            Constants.TestUserSession.TestLastName,
+            profile,
+            adminRole: adminRole);
         user.ConfirmEmail();
         user.Created(Constants.TestUserSession.TestUserId, mergeFrom?.CreatedAt ?? DateTime.UtcNow);
 

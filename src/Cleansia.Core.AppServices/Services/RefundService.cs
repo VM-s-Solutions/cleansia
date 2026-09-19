@@ -102,7 +102,9 @@ public sealed class RefundService(
                 orderId: order.Id,
                 refundKey: refundKey,
                 amount: amount,
-                currency: order.Currency.Code,
+                currency: order.Currency?.Code
+                          ?? throw new InvalidOperationException(
+                              $"Order {order.Id} has no resolved currency; a refund cannot be denominated."),
                 reason: request.Reason,
                 source: RefundSource.AppRefund,
                 disputeId: request.DisputeId,
@@ -185,7 +187,7 @@ public sealed class RefundService(
 
         logger.LogInformation(
             "Refund {RefundId} issued for order {OrderId}: {Amount} {Currency} ({Reason}).",
-            refund.Id, order.Id, refund.Amount, order.Currency.Code, request.Reason);
+            refund.Id, order.Id, refund.Amount, order.Currency?.Code, request.Reason);
 
         return BusinessResult.Success(new RefundResult(
             RefundId: refund.Id,

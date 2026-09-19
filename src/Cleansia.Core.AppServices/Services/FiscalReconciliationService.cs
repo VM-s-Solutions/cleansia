@@ -56,8 +56,8 @@ public sealed class FiscalReconciliationService(
         var reEnqueued = 0;
         foreach (var order in candidates)
         {
-            // System job — no JWT. Reset before each item so a previous multi-tenant item's override
-            // doesn't leak into a single-tenant one (FiscalRetryService.cs:42-48 pattern).
+            // System job — no JWT. Reset before each item so the previous item's override never
+            // outlives it (the FiscalRetryService pattern).
             tenantProvider.ClearTenantOverride();
             if (!string.IsNullOrEmpty(order.TenantId))
             {

@@ -174,6 +174,5 @@ class BookingPriceSummaryTest {
         expressSurchargeApplied = surchargeApplied,
         expressSurchargeAmount = surcharge,
         expressSurchargeWaivedByMembership = waived,
-        exchangeRate = 1.0,
     )
 }

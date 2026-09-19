@@ -40,7 +40,7 @@ public class CreditReturnTests(PostgresContainerFixture fixture) : BaseIntegrati
         return new CleansiaDbContext(
             options,
             new TestUserSessionProvider("system", "system@cleansia.test"),
-            new FixedTenantProvider(tenantId: null));
+            new FixedTenantProvider(TestTenants.Default));
     }
 
     private async Task ResetAsync()
@@ -53,12 +53,14 @@ public class CreditReturnTests(PostgresContainerFixture fixture) : BaseIntegrati
             SchemasToExclude = ["pg_catalog", "information_schema"]
         });
         await respawner.ResetAsync(conn);
+        await SeedTenantRegistryAsync(conn);
     }
 
     private async Task<(string UserId, string CurrencyId)> SeedCustomerAsync(decimal balance)
     {
         await using var ctx = NewContext();
-        var currency = Currency.Create("CZK", "Kc", "Czech koruna", 1.0m);
+        var currency = Currency.Create("CZK", "Kc", "Czech koruna");
+        currency.IsActive = true;
         var user = User.CreateWithPassword(
             "credit-return@cleansia.test", "Seed-Password-123", "Credit", "Tester");
         ctx.Languages.Add(Language.Create("en", "English"));

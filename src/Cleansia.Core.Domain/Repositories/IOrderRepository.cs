@@ -1,4 +1,6 @@
-﻿using Cleansia.Core.Domain.Orders;
+﻿using System.Linq.Expressions;
+using Cleansia.Core.Domain.Orders;
+using Cleansia.Core.Domain.Sorting.Common;
 
 namespace Cleansia.Core.Domain.Repositories;
 
@@ -61,10 +63,22 @@ public interface IOrderRepository : IRepository<Order, string>
         CancellationToken cancellationToken);
 
     /// <summary>
-    /// All orders within a date range. Used by the admin revenue report.
+    /// The revenue set: orders in one currency that are <see cref="Cleansia.Core.Domain.Enums.OrderStatus.Completed"/> with a
+    /// <see cref="Order.CompletedAt"/> inside [<paramref name="startUtc"/>, <paramref name="endUtc"/>]
+    /// and a payment status that says the order was paid at some point — <c>Paid</c> and every state
+    /// after it, so a completed order later refunded in full is still in the set and nets to zero
+    /// rather than vanishing. Loads the services/packages graph the report allocates over.
     /// </summary>
-    Task<IReadOnlyList<Order>> GetOrdersByDateRangeAsync(
-        DateTime startDate, DateTime endDate, CancellationToken cancellationToken);
+    Task<IReadOnlyList<Order>> GetCompletedPaidOrdersByCompletionDateAsync(
+        DateTime startUtc, DateTime endUtc, string currencyId, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Cancelled BOOKINGS in one currency whose <see cref="Order.CancelledAt"/> falls in the period. An
+    /// abandoned card checkout carries a Cancelled track and no <c>CancelledAt</c> — it was never a
+    /// booking — and is not counted.
+    /// </summary>
+    Task<int> CountCancelledBookingsInPeriodAsync(
+        DateTime startUtc, DateTime endUtc, string currencyId, CancellationToken cancellationToken);
 
     /// <summary>
     /// Counts the number of orders assigned to an employee in the current week (Monday to Sunday).
@@ -97,27 +111,6 @@ public interface IOrderRepository : IRepository<Order, string>
     /// </summary>
     Task<bool> HasOverlappingOrderIgnoringTenantAsync(string employeeId, DateTime cleaningDateTime, int estimatedTimeMinutes, CancellationToken ct);
 
-    /// <summary>
-    /// ADR-0039 D3 — which of <paramref name="employeeIds"/> hold a live-commitment assignment
-    /// overlapping <c>[windowStartUtc, windowEndUtc)</c>. Same window filter as
-    /// <see cref="HasOverlappingOrderAsync"/>, in the shape a LIST of candidates needs.
-    ///
-    /// <para>Returns the BUSY subset, never the free one, so absence is the fail-OPEN default: a
-    /// cleaner missing from the answer is treated as available, which is today's behaviour.</para>
-    ///
-    /// <para>ONE query for the whole set. Calling <see cref="HasOverlappingOrderAsync"/> in a loop over
-    /// a candidate list on a request path is a hard reject — it is N unbounded scans per render, and it
-    /// is what this method exists to replace.</para>
-    ///
-    /// <para>The preferred-cleaner picker and the hold resolver both call THIS method with the SAME
-    /// window. Not the same rule — the same method: if the picker could say available and the resolver
-    /// then say busy for a reason of its own, the feature has already failed.</para>
-    ///
-    /// <para>TENANT-SCOPED, deliberately, and there is no ignoring sibling: every caller is a request
-    /// path with a claim (the recurring materializer runs under its own per-template tenant override).
-    /// A background sweep asking about ONE cleaner already has
-    /// <see cref="HasOverlappingOrderIgnoringTenantAsync"/>.</para>
-    /// </summary>
     /// <summary>
     /// The cleaners who are, RIGHT NOW, physically on a job — <c>OnTheWay</c> or <c>InProgress</c> on
     /// some assignment, with no time window at all.
@@ -156,6 +149,27 @@ public interface IOrderRepository : IRepository<Order, string>
         DateTime nowUtc,
         CancellationToken cancellationToken);
 
+    /// <summary>
+    /// ADR-0039 D3 — which of <paramref name="employeeIds"/> hold a live-commitment assignment
+    /// overlapping <c>[windowStartUtc, windowEndUtc)</c>. Same window filter as
+    /// <see cref="HasOverlappingOrderAsync"/>, in the shape a LIST of candidates needs.
+    ///
+    /// <para>Returns the BUSY subset, never the free one, so absence is the fail-OPEN default: a
+    /// cleaner missing from the answer is treated as available, which is today's behaviour.</para>
+    ///
+    /// <para>ONE query for the whole set. Calling <see cref="HasOverlappingOrderAsync"/> in a loop over
+    /// a candidate list on a request path is a hard reject — it is N unbounded scans per render, and it
+    /// is what this method exists to replace.</para>
+    ///
+    /// <para>The preferred-cleaner picker and the hold resolver both call THIS method with the SAME
+    /// window. Not the same rule — the same method: if the picker could say available and the resolver
+    /// then say busy for a reason of its own, the feature has already failed.</para>
+    ///
+    /// <para>TENANT-SCOPED, deliberately, and there is no ignoring sibling: every caller is a request
+    /// path with a claim (the recurring materializer runs under its own per-template tenant override).
+    /// A background sweep asking about ONE cleaner already has
+    /// <see cref="HasOverlappingOrderIgnoringTenantAsync"/>.</para>
+    /// </summary>
     Task<IReadOnlySet<string>> GetBusyEmployeeIdsInWindowAsync(
         IReadOnlyCollection<string> employeeIds,
         DateTime windowStartUtc,
@@ -192,14 +206,43 @@ public interface IOrderRepository : IRepository<Order, string>
     Task<bool> UserHasCompletedOrderWithEmployeeAsync(string userId, string employeeId, CancellationToken ct);
 
     /// <summary>
+    /// The order's owner and currency id, projected with no includes. For a validator term that only
+    /// has to know whether the caller's order is priced in a given currency -- a full
+    /// <c>GetByIdAsync</c> there loaded the order's whole graph a second time on the same request,
+    /// ahead of the handler's own load. Null when no such order is visible to the caller's tenant.
+    /// </summary>
+    Task<OrderOwnerAndCurrency?> GetOwnerAndCurrencyAsync(string orderId, CancellationToken cancellationToken);
+    Task<OrderOwnerAndCurrency?> GetOwnerAndCurrencyAsync(string orderId, string userId, CancellationToken cancellationToken);
+
+    /// <summary>
     /// The customer profile hero stats for <paramref name="userId"/> (T-0392):
     /// total bookings placed, total money saved (tier + promo + membership
     /// discounts summed over the user's non-cancelled orders), and the currency
     /// code of the user's most recent order. Returns
     /// <see cref="CustomerProfileStats.Empty"/> semantics for a user with no
-    /// orders (zeros, null currency).
+    /// orders (zeros, null currency). Counts the user's orders in every operating company
+    /// (<see cref="GetQueryableForOwner"/>); <paramref name="userId"/> is the caller's own.
     /// </summary>
     Task<CustomerProfileStats> GetCustomerProfileStatsAsync(string userId, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Orders across operators pinned by the session user, or by a user from an authorized order.
+    /// Staff listings remain tenant-filtered.
+    /// </summary>
+    IQueryable<Order> GetQueryableForOwner(string userId);
+
+    /// <summary>
+    /// <see cref="IRepository{Order,String}.GetByIdAsync"/>'s graph over <see cref="GetQueryableForOwner"/>.
+    /// Null when no order of that id belongs to <paramref name="userId"/>, so a missing order and
+    /// somebody else's read the same.
+    /// </summary>
+    Task<Order?> GetByIdForOwnerAsync(string id, string userId, CancellationToken cancellationToken);
+
+    Task<int> GetCountForOwnerAsync(string userId, Expression<Func<Order, bool>>? filter, CancellationToken cancellationToken);
+
+    IQueryable<Order> GetPagedSortForOwner<TSort>(
+        string userId, int offset, int limit, Expression<Func<Order, bool>>? filter, IEnumerable<SortDefinition> sort)
+        where TSort : BaseSort<Order>;
 
     /// <summary>
     /// Cross-tenant lookup by order id. ONLY for use by Stripe webhook handlers
@@ -238,7 +281,7 @@ public interface IOrderRepository : IRepository<Order, string>
         string employeeId, CancellationToken cancellationToken);
 
     /// <summary>
-    /// ADR-0002 D3.4 + ADR-0004 C-B — receipt-eligible orders committed before
+    /// ADR-0002 D3.4 + ADR-0004 C-B — receipt-eligible, not cancelled orders committed before
     /// <paramref name="olderThanUtc"/> whose receipt is missing OR carries no fiscal code. Batch-bounded
     /// by <paramref name="take"/>, oldest first.
     ///

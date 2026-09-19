@@ -6,7 +6,7 @@ namespace Cleansia.Tests.Features.Catalog;
 /// <summary>
 /// Authorization contract (ADR-0001): the catalog lifecycle endpoints REUSE the
 /// existing update permissions — no new Policy.* consts — and those permissions still resolve to
-/// AdminOnly in the live map. The logical permission is read from the [Permission] constructor
+/// the Manager's set in the live map (ADR-0066 D3: catalogue writes). The logical permission is read from the [Permission] constructor
 /// argument, mirroring <c>AnonymousAllowListExhaustivenessTests</c>.
 /// </summary>
 public class CatalogLifecycleEndpointPermissionTests
@@ -24,6 +24,7 @@ public class CatalogLifecycleEndpointPermissionTests
     [InlineData(typeof(AdminPackageController), "DeactivatePackage", Policy.CanUpdatePackage)]
     [InlineData(typeof(AdminPackageController), "ActivatePackage", Policy.CanUpdatePackage)]
     [InlineData(typeof(AdminCurrencyController), "SetDefaultCurrency", Policy.CanUpdateCurrency)]
+    [InlineData(typeof(AdminCountryController), "SetDefaultMarket", Policy.CanUpdateCountry)]
     public void LifecycleEndpoint_Reuses_The_Existing_Update_Permission(Type controller, string action, string expectedPermission)
     {
         Assert.Equal(expectedPermission, PermissionOf(controller, action));
@@ -33,8 +34,9 @@ public class CatalogLifecycleEndpointPermissionTests
     [InlineData(Policy.CanUpdateService)]
     [InlineData(Policy.CanUpdatePackage)]
     [InlineData(Policy.CanUpdateCurrency)]
-    public void Reused_Permission_Still_Resolves_To_AdminOnly(string permission)
+    [InlineData(Policy.CanUpdateCountry)]
+    public void Reused_Permission_Still_Resolves_To_ManagerOrAbove(string permission)
     {
-        Assert.Equal(PhysicalPolicy.AdminOnly, permission.ToPhysicalPolicy());
+        Assert.Equal(PhysicalPolicy.ManagerOrAbove, permission.ToPhysicalPolicy());
     }
 }

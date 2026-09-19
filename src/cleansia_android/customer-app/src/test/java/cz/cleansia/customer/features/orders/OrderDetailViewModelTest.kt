@@ -4,6 +4,8 @@ import android.content.Context
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
 import cz.cleansia.core.freshness.Staleness
+import cz.cleansia.customer.core.market.MarketRepository
+import cz.cleansia.customer.core.market.MarketState
 import cz.cleansia.core.network.ApiError
 import cz.cleansia.core.network.ApiResult
 import cz.cleansia.core.snackbar.SnackbarController
@@ -61,6 +63,11 @@ class OrderDetailViewModelTest {
     private lateinit var membershipRepository: MembershipRepository
     private lateinit var membershipStaleness: Staleness
     private lateinit var membership: MutableStateFlow<GetMyMembershipResponse?>
+    private val markets = MutableStateFlow<MarketState>(MarketState.Unavailable)
+    private val marketRepository = mockk<MarketRepository> {
+        every { state } returns markets
+        coEvery { ensureLoaded() } answers { markets.value }
+    }
     private lateinit var snackbar: SnackbarController
     private lateinit var appContext: Context
     private lateinit var orderEventBus: OrderEventBus
@@ -95,6 +102,7 @@ class OrderDetailViewModelTest {
 
     private fun viewModel(id: String? = orderId) = OrderDetailViewModel(
         orderRepository = repository,
+        marketRepository = marketRepository,
         snackbar = snackbar,
         appContext = appContext,
         savedStateHandle = SavedStateHandle(mapOf("orderId" to id)),

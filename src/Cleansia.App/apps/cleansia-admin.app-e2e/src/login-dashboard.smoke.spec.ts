@@ -20,7 +20,7 @@ import { expect, Page, Route, test } from '@playwright/test';
  * AUTH MODEL: the real auth/refresh tokens are HttpOnly cookies; the JS layer
  * only persists `csrfToken`, `refreshTokenExp` and `role` to localStorage, and
  * `adminGuard` gates on those (`isLoggedIn()` = csrf present + refresh-exp in
- * the future, AND `isAdminOrEditor()` = role Administrator/Employee). So the
+ * the future, AND `isAdministrator()` = role Administrator). So the
  * login stub returns a `JwtTokenResponse` with `hasAdminAccess: true`, a CSRF
  * token, a future refresh-token expiry and the Administrator role — `setSession`
  * persists them and the guard on `/employee-management` passes.
@@ -38,6 +38,7 @@ const LOGIN_FIXTURE = {
   refreshTokenExpiresAt: FUTURE_EXP,
   csrfToken: 'stub-csrf-token',
   role: 'Administrator',
+  adminRole: 'Administrator',
 };
 
 const SEEDED_EMPLOYEE_NAME = 'Jan Novak';
@@ -118,8 +119,9 @@ test('admin can log in and land on the admin home with a seeded data row', async
   const payload = request.postDataJSON() as { email: string };
   expect(payload.email).toBe('admin@example.com');
 
-  // ── Authenticated landing: the facade navigates to /employee-management and
-  //    the shell renders the sidebar (rendered only when `isLoggedIn()`) ──
+  // ── Authenticated landing: the facade navigates home, which resolves to
+  //    /employee-management for the role, and the shell renders the sidebar
+  //    (rendered only when `isLoggedIn()`) ──
   await expect.poll(() => page.url()).toContain('/employee-management');
   await expect(page.locator('nav.sidebar-nav')).toBeVisible();
 

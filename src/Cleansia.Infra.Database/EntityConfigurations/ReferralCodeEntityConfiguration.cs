@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Cleansia.Infra.Database.EntityConfigurations;
 
-public class ReferralCodeEntityConfiguration : AuditableEntityConfiguration<ReferralCode, string>
+public class ReferralCodeEntityConfiguration : TenantAuditableEntityConfiguration<ReferralCode, string>
 {
     public override void Configure(EntityTypeBuilder<ReferralCode> builder)
     {
@@ -35,7 +35,8 @@ public class ReferralCodeEntityConfiguration : AuditableEntityConfiguration<Refe
 
         // Lookup is GetByCodeAsync(code) — codes are tenant-scoped (the
         // global EF filter still applies at query time).
-        // NULLS NOT DISTINCT because single-tenant mode is TenantId = null. The odds are long — a
+        // NULLS NOT DISTINCT kept on a NOT NULL tenant term -> /decisions/adr-0061#d9-nulls-not-distinct-on-every-sole-arbiter-tenant-index-and-the-two-indexes-that-gain-a-tenant-term
+        // The odds are long — a
         // generated code collides about once in 481 million attempts — but EnsureCodeForUserAsync's
         // retry-on-collision loop can only see COMMITTED rows, so without this two users can end up
         // holding one code and ProcessOrderCompletedAsync then pays the referral points to whichever

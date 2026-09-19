@@ -25,7 +25,13 @@ public class UpdateCompanyInfo
         string? BankName,
         string? BankAccountNumber,
         string? Iban,
-        string? Swift) : ICommand<Response>;
+        string? Swift,
+        // THE VAT LEVER. Absent from both commands until now, which is why SetVatPayerStatus had no
+        // production caller and every company row was permanently a neplatce -- turning VAT on meant a
+        // hand-written UPDATE against production, the one operation the owner has forbidden. The date
+        // rides alongside because it is unrecoverable once the flag has flipped.
+        bool IsVatPayer,
+        DateOnly? VatRegisteredFrom) : ICommand<Response>;
 
     public record Response(string Id);
 
@@ -152,6 +158,12 @@ public class UpdateCompanyInfo
             companyInfo.UpdateAddress(command.Street, command.City, command.ZipCode, command.CountryId);
             companyInfo.UpdateContactInfo(command.Phone, command.Email, command.Website);
             companyInfo.UpdateBankDetails(command.BankName, command.BankAccountNumber, command.Iban, command.Swift);
+
+            // LAST, and after UpdateTaxInfo specifically. SetVatPayerStatus(false) clears the VAT number,
+            // so running it here means a company switched off keeps no number behind -- running it
+            // BEFORE UpdateTaxInfo would let that line put one straight back on a neplatce, which is how
+            // a document ends up stating VAT the company does not owe (SS108 ZDPH).
+            companyInfo.SetVatPayerStatus(command.IsVatPayer, command.VatRegisteredFrom);
 
             return BusinessResult.Success(new Response(companyInfo.Id));
         }

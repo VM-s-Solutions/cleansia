@@ -1,4 +1,5 @@
 using Cleansia.Core.AppServices.Abstractions;
+using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Orders.DTOs;
 using Cleansia.Core.AppServices.Mappers;
@@ -35,13 +36,13 @@ public class SubmitOrderReview
 
     public class Validator : AbstractValidator<Command>
     {
-        public Validator(IOrderRepository orderRepository)
+        public Validator(IOrderAccessService orderAccessService)
         {
             RuleFor(x => x.OrderId)
                 .Cascade(CascadeMode.Stop)
                 .NotEmpty()
                 .WithMessage(BusinessErrorMessage.Required)
-                .MustAsync(orderRepository.ExistsAsync)
+                .MustAsync(orderAccessService.OrderExistsForCallerAsync)
                 .WithMessage(BusinessErrorMessage.OrderNotFound);
 
             RuleFor(x => x.Rating)
@@ -97,14 +98,16 @@ public class SubmitOrderReview
 
     public class Handler(
         IOrderRepository orderRepository,
+        IOrderAccessService orderAccessService,
         IEmployeeRepository employeeRepository,
-        IUserSessionProvider userSessionProvider
+        IUserSessionProvider userSessionProvider,
+        ITenantProvider tenantProvider
     ) : ICommandHandler<Command, OrderReviewDto>
     {
         public async Task<BusinessResult<OrderReviewDto>> Handle(Command command, CancellationToken cancellationToken)
         {
-            var order = await orderRepository
-                .GetQueryable()
+            var order = await orderAccessService
+                .OrdersForCaller()
                 .Include(o => o.Reviews)
                 .Include(o => o.OrderStatusHistory)
                 .Include(o => o.AssignedEmployees)
@@ -135,6 +138,15 @@ public class SubmitOrderReview
             {
                 return BusinessResult.Failure<OrderReviewDto>(
                     new Error(nameof(command.OrderId), BusinessErrorMessage.OrderNotCompleted));
+            }
+
+            // The review and the cleaners it rates are the ORDER's operator's — a booking made across
+            // the border was cleaned by that company's staff — so the rest of this act runs as that
+            // company: the cleaners' rating recompute reads them through its filter and the review row
+            // lands in its books.
+            if (!string.IsNullOrEmpty(order.TenantId))
+            {
+                tenantProvider.SetTenantOverride(order.TenantId);
             }
 
             var scores = command.Lines ?? [];

@@ -10,7 +10,9 @@ public record PackageListItem(
     bool IsPopular,
     decimal Price,
     Dictionary<string, Translation> Translations,
-    IEnumerable<PackageServiceSummary> IncludedServices);
+    IEnumerable<PackageServiceSummary> IncludedServices,
+    /// <summary>The currency <see cref="Price"/> is in -- see <see cref="Services.DTOs.ServiceListItem.CurrencyCode"/>.</summary>
+    string? CurrencyCode = null);
 
 /// <param name="ServiceId">
 /// The service's own id, so a client can NAME this item back to the server.

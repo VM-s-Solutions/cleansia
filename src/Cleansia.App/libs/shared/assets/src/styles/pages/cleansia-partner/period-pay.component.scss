@@ -57,6 +57,29 @@
     }
   }
 
+  &__currency {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+
+    cleansia-select {
+      max-width: 320px;
+    }
+
+    @media (max-width: 640px) {
+      cleansia-select {
+        max-width: none;
+      }
+    }
+  }
+
+  &__currency-hint {
+    margin: 0;
+    font-size: 0.875rem;
+    color: var(--text-color-secondary);
+  }
+
   &__invoice-link {
     margin-top: 1.5rem;
   }

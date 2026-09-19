@@ -45,6 +45,8 @@ export class OrderEffects {
             req.filter?.hasAvailableSpots,
             req.filter?.isUnassigned,
             req.filter?.excludeEmployeeId,
+            undefined, // currencyId: the board is scoped server-side to the cleaner's currency
+            undefined, // userId: an admin-only scope; a cleaner never enumerates one account's bookings
             req.sort,
             req.offset,
             req.limit
@@ -91,12 +93,12 @@ export class OrderEffects {
               )
             )
           ),
-          map(([response, completedStatusCode]) => {
+          map(([, completedStatusCode]) => {
             this.snackbarService.showSuccess(
               this.translate.instant('pages.orders.complete_order.success')
             );
             return OrderActions.completeOrderSuccess({
-              orderId: response.orderId!,
+              orderId,
               orderStatus: completedStatusCode?.name || 'Completed',
             });
           }),

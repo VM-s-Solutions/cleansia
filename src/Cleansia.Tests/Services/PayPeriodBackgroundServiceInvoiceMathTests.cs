@@ -48,6 +48,9 @@ public class PayPeriodBackgroundServiceInvoiceMathTests
         _payoutReferenceAllocator
             .Setup(a => a.AllocateAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(BusinessResult.Success(PayrollMockFactory.TestVariableSymbol));
+        _payoutReferenceAllocator
+            .Setup(a => a.AllocateInvoiceNumberAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(BusinessResult.Success(PayrollMockFactory.TestInvoiceNumber));
     }
 
     private PayPeriodBackgroundService CreateService() => new(
@@ -67,7 +70,8 @@ public class PayPeriodBackgroundServiceInvoiceMathTests
         _pdfService.Object,
         _blobContainerClientFactory.Object,
         _tenantProvider.Object,
-        _payoutReferenceAllocator.Object);
+        _payoutReferenceAllocator.Object,
+        new Mock<ITenantRepository>().Object);
 
     private void ArrangePeriodCloseWithPays(params OrderEmployeePay[] pays)
     {
@@ -102,6 +106,12 @@ public class PayPeriodBackgroundServiceInvoiceMathTests
         currency.Id = PayrollMockFactory.CurrencyId;
         _currencyRepository
             .Setup(r => r.GetDefaultAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(currency);
+
+        // Resolved BY ID now: the invoice's currency comes from the pay rows being invoiced rather
+        // than from the employee, so the sweep looks up the id those rows carry.
+        _currencyRepository
+            .Setup(r => r.GetByIdAsync(PayrollMockFactory.CurrencyId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(currency);
     }
 
@@ -151,6 +161,7 @@ public class PayPeriodBackgroundServiceInvoiceMathTests
             orderId: $"order-{Guid.NewGuid():N}",
             employeeId: PayrollMockFactory.EmployeeId,
             payPeriodId: PayrollMockFactory.PayPeriodId,
+            currencyId: PayrollMockFactory.CurrencyId,
             basePay: basePay,
             extrasPay: extrasPay,
             expensesPay: expensesPay,

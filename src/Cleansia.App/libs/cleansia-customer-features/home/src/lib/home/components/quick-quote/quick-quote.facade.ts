@@ -1,10 +1,25 @@
 import { computed, inject, Injectable, PLATFORM_ID, signal } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { UnsubscribeControlDirective } from '@cleansia/directives';
 import { CustomerClient, QuoteOrderCommand, QuoteOrderResponse } from '@cleansia/customer-services';
-import { Subject, catchError, map, of, switchMap, takeUntil } from 'rxjs';
+import { chooseMarket, selectMarket, selectMarkets } from '@cleansia/customer-stores';
+import { Store } from '@ngrx/store';
+import { TranslateService } from '@ngx-translate/core';
+import {
+  Subject,
+  catchError,
+  combineLatest,
+  distinctUntilChanged,
+  map,
+  of,
+  skip,
+  startWith,
+  switchMap,
+  takeUntil,
+} from 'rxjs';
 
-import { PROPERTY_SIZE_PRESETS, PropertySizePreset } from './property-size-presets';
+import { DEFAULT_PROPERTY_SIZE, PropertySizePreset } from './property-size-presets';
 
 /** The three states the calculator can be in, rendered explicitly. */
 export type QuoteState = 'idle' | 'loading' | 'loaded' | 'error';
@@ -16,24 +31,45 @@ export type QuoteState = 'idle' | 'loading' | 'loaded' | 'error';
  * generated client — the same endpoint the order wizard calls — because the
  * quote is the server's answer and a second implementation on the client is a
  * second answer waiting to disagree with it.
+ *
+ * It is priced in the chosen market (ADR-0058 D5): the quote carries the
+ * market's country, the size presets are the market's, and the chip beside
+ * the amount names the market and is the control that changes it.
  */
 @Injectable()
 export class QuickQuoteFacade extends UnsubscribeControlDirective {
   private readonly client = inject(CustomerClient);
+  private readonly store = inject(Store);
+  private readonly translate = inject(TranslateService);
   private readonly platformId = inject(PLATFORM_ID);
 
-  /** Per-country size options — see `PROPERTY_SIZE_PRESETS`. */
-  readonly sizes = inject(PROPERTY_SIZE_PRESETS);
+  readonly markets = toSignal(this.store.select(selectMarkets), { initialValue: [] });
+  private readonly market = toSignal(this.store.select(selectMarket), { initialValue: null });
+  readonly selectedMarketCode = computed(() => this.market()?.isoCode ?? null);
+  /** A market resolved, so the chip beside the amount is its unit; without one the quote's code is. */
+  readonly hasMarket = computed(() => this.market() !== null);
 
   private readonly _serviceId = signal<string | null>(null);
-  private readonly _size = signal<PropertySizePreset>(this.sizes[2] ?? this.sizes[0]);
+  private readonly _sizes = signal<PropertySizePreset[]>([]);
+  private readonly _sizeCode = signal<string | null>(null);
   private readonly _cleaningDate = signal<string | null>(null);
   private readonly _cleaningTime = signal<string | null>(null);
   private readonly _state = signal<QuoteState>('idle');
   private readonly _quote = signal<QuoteOrderResponse | null>(null);
 
   readonly selectedServiceId = this._serviceId.asReadonly();
-  readonly selectedSize = this._size.asReadonly();
+  /** The market's size presets, labelled for the current language; empty without a market. */
+  readonly sizes = this._sizes.asReadonly();
+  /** The customer's pick, else the third preset (the artboard's default), else the first. */
+  readonly selectedSize = computed<PropertySizePreset>(() => {
+    const sizes = this._sizes();
+    return (
+      sizes.find((size) => size.code === this._sizeCode()) ??
+      sizes[2] ??
+      sizes[0] ??
+      DEFAULT_PROPERTY_SIZE
+    );
+  });
   readonly cleaningDate = this._cleaningDate.asReadonly();
   readonly cleaningTime = this._cleaningTime.asReadonly();
   readonly state = this._state.asReadonly();
@@ -49,6 +85,18 @@ export class QuickQuoteFacade extends UnsubscribeControlDirective {
    * until the new one lands.
    */
   readonly displayPrice = computed(() => this._quote()?.totalPrice ?? null);
+
+  readonly currencyCode = computed(() => this._quote()?.currencyCode ?? null);
+
+  /**
+   * What the amount prints: the number alone when the market chip beside it
+   * carries the unit, the quote's own code when no market resolved.
+   */
+  readonly amountLabel = computed(() => {
+    const price = this.displayPrice();
+    if (price === null) return null;
+    return this.hasMarket() ? String(price) : `${price} ${this.currencyCode() ?? ''}`.trim();
+  });
 
   /** What the small label above the number says, given the current state. */
   readonly priceLabelKey = computed(() => {
@@ -75,7 +123,7 @@ export class QuickQuoteFacade extends UnsubscribeControlDirective {
    * through — and re-entered both. A quote nobody can act on is a demo.
    */
   readonly continueQueryParams = computed(() => {
-    const size = this._size();
+    const size = this.selectedSize();
     const params: Record<string, string> = {
       rooms: String(size.rooms),
       bathrooms: String(size.bathrooms),
@@ -98,9 +146,95 @@ export class QuickQuoteFacade extends UnsubscribeControlDirective {
 
     return params;
   });
-  readonly currencyCode = computed(() => this._quote()?.currencyCode ?? null);
 
   readonly isLoading = computed(() => this._state() === 'loading');
+
+  /** The latest quote request. Older ones are cancelled, not merged. */
+  private readonly pending$ = new Subject<QuoteOrderCommand>();
+
+  constructor() {
+    super();
+    this.pending$
+      .pipe(
+        switchMap((command) =>
+          this.client.orderClient.quote(command).pipe(
+            map((result) => ({ result, failed: false })),
+            catchError(() => of({ result: null, failed: true })),
+          ),
+        ),
+        takeUntil(this.destroyed$),
+      )
+      .subscribe(({ result, failed }) => {
+        if (failed) {
+          this._state.set('error');
+          return;
+        }
+        if (result) {
+          this._quote.set(result);
+        }
+        // Always cleared on a reply, so a previous failure cannot outlive it.
+        this._state.set('loaded');
+      });
+
+    this.followMarket();
+  }
+
+  /**
+   * The presets are the market's, labelled by the server for the language, so
+   * both a market switch and a language switch re-read them. A market switch
+   * also re-quotes: the price is in that market's currency. A failed read
+   * leaves the size row empty rather than failing the calculator.
+   */
+  private followMarket(): void {
+    const isoCode$ = this.store
+      .select(selectMarket)
+      .pipe(map((market) => market?.isoCode ?? null), distinctUntilChanged());
+    const lang$ = this.translate.onLangChange.pipe(
+      map(({ lang }) => lang),
+      startWith(this.translate.currentLang),
+      distinctUntilChanged(),
+    );
+
+    combineLatest([isoCode$, lang$])
+      .pipe(
+        switchMap(([isoCode, lang]) =>
+          isoCode
+            ? this.client.countryClient
+                .getPropertySizes(isoCode, lang)
+                .pipe(catchError(() => of(null)))
+            : of([]),
+        ),
+        takeUntil(this.destroyed$),
+      )
+      .subscribe((presets) => {
+        const sizes: PropertySizePreset[] = (presets ?? [])
+          .filter((preset) => !!preset.code)
+          .map((preset) => ({
+            code: preset.code ?? '',
+            label: preset.label ?? preset.code ?? '',
+            rooms: preset.rooms,
+            bathrooms: preset.bathrooms,
+          }));
+        this._sizes.set(sizes);
+        if (!sizes.some((size) => size.code === this._sizeCode())) {
+          this._sizeCode.set(null);
+        }
+      });
+
+    this.store
+      .select(selectMarket)
+      .pipe(
+        map((market) => market?.countryId ?? null),
+        distinctUntilChanged(),
+        skip(1),
+        takeUntil(this.destroyed$),
+      )
+      .subscribe(() => this.refresh());
+  }
+
+  chooseMarket(isoCode: string): void {
+    this.store.dispatch(chooseMarket({ isoCode }));
+  }
 
   selectService(serviceId: string): void {
     if (this._serviceId() === serviceId) {
@@ -147,10 +281,10 @@ export class QuickQuoteFacade extends UnsubscribeControlDirective {
   }
 
   selectSize(size: PropertySizePreset): void {
-    if (this._size().code === size.code) {
+    if (this.selectedSize().code === size.code) {
       return;
     }
-    this._size.set(size);
+    this._sizeCode.set(size.code);
     this.refresh();
   }
 
@@ -161,42 +295,17 @@ export class QuickQuoteFacade extends UnsubscribeControlDirective {
    * Accept-Language for 60 seconds, so a quote rendered there would be served
    * to somebody who never chose it.
    */
-  /** The latest quote request. Older ones are cancelled, not merged. */
-  private readonly pending$ = new Subject<QuoteOrderCommand>();
-
-  constructor() {
-    super();
-    this.pending$
-      .pipe(
-        switchMap((command) =>
-          this.client.orderClient.quote(command).pipe(
-            map((result) => ({ result, failed: false })),
-            catchError(() => of({ result: null, failed: true })),
-          ),
-        ),
-        takeUntil(this.destroyed$),
-      )
-      .subscribe(({ result, failed }) => {
-        if (failed) {
-          this._state.set('error');
-          return;
-        }
-        if (result) {
-          this._quote.set(result);
-        }
-        // Always cleared on a reply, so a previous failure cannot outlive it.
-        this._state.set('loaded');
-      });
-  }
-
   refresh(): void {
     const serviceId = this._serviceId();
     if (!serviceId || !isPlatformBrowser(this.platformId)) {
       return;
     }
 
-    const size = this._size();
+    const size = this.selectedSize();
     const command = new QuoteOrderCommand();
+    // The chosen market's country (ADR-0058 D4); none when no market resolved, which the server
+    // prices in the platform default. The quick quote has no address to override it with.
+    command.countryId = this.market()?.countryId ?? undefined;
     command.selectedServiceIds = [serviceId];
     command.selectedPackageIds = [];
     command.selectedExtraSlugs = [];

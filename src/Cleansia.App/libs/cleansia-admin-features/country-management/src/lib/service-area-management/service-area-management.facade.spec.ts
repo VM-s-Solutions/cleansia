@@ -104,13 +104,23 @@ describe('ServiceAreaManagementFacade', () => {
     );
   });
 
-  it('leaves the serviced set alone when the toggle fails', () => {
+  it('leaves the serviced set alone when the toggle fails, and bumps the revision so the switch snaps back', () => {
     servicedMock.mockReturnValue(throwError(() => new Error('boom')));
+    const before = facade.servicedToggleRevision();
 
     facade.setCountryServiced('c-1', true);
 
     expect(facade.servicedCountryIds().size).toBe(0);
+    expect(facade.servicedToggleRevision()).toBe(before + 1);
     expect(snackbar.showSuccess).not.toHaveBeenCalled();
+  });
+
+  it('does not bump the revision when the toggle lands', () => {
+    const before = facade.servicedToggleRevision();
+
+    facade.setCountryServiced('c-1', true);
+
+    expect(facade.servicedToggleRevision()).toBe(before);
   });
 
   it('re-reads the city list after a create', () => {

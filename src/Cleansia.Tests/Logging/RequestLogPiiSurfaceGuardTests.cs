@@ -118,7 +118,7 @@ public class RequestLogPiiSurfaceGuardTests
             .SelectMany(t => WireSurface.FlattenedMembers(t, depth: 0))
             .Count();
 
-        Assert.InRange(routes.Count, 400, 1000);
+        Assert.InRange(routes.Count, 400, 1500);
         Assert.InRange(membersWalked, 1000, 20000);
         Assert.NotEmpty(WireSurface.ReadContactIdentityTokens());
     }

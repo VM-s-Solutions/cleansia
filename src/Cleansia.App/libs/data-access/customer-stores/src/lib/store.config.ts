@@ -4,6 +4,7 @@ import { customerLoadingReducer, CustomerLoadingState } from './loading';
 import { CustomerUserEffects, customerUserReducer, CustomerUserState } from './user';
 import { CustomerOrderEffects, customerOrderReducer, CustomerOrderState } from './order';
 import { CustomerDisputeEffects, customerDisputeReducer, CustomerDisputeState } from './dispute';
+import { CustomerMarketEffects, customerMarketReducer, CustomerMarketState } from './market';
 
 export interface CustomerAppState {
   customerUser: CustomerUserState;
@@ -11,6 +12,7 @@ export interface CustomerAppState {
   customerCatalog: CustomerCatalogState;
   customerOrder: CustomerOrderState;
   customerDispute: CustomerDisputeState;
+  customerMarket: CustomerMarketState;
 }
 
 export const customerReducers: ActionReducerMap<CustomerAppState> = {
@@ -19,6 +21,13 @@ export const customerReducers: ActionReducerMap<CustomerAppState> = {
   customerCatalog: customerCatalogReducer,
   customerOrder: customerOrderReducer,
   customerDispute: customerDisputeReducer,
+  customerMarket: customerMarketReducer,
 };
 
-export const customerEffects = [CustomerUserEffects, CustomerCatalogEffects, CustomerOrderEffects, CustomerDisputeEffects];
+export const customerEffects = [
+  CustomerUserEffects,
+  CustomerCatalogEffects,
+  CustomerOrderEffects,
+  CustomerDisputeEffects,
+  CustomerMarketEffects,
+];

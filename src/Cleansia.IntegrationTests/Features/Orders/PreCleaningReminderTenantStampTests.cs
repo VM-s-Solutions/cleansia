@@ -6,6 +6,7 @@ using Cleansia.Core.Domain.Internationalization;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.SeedWork;
+using Cleansia.Core.Domain.Tenancy;
 using Cleansia.Core.Domain.Users;
 using Cleansia.Core.Queue.Abstractions;
 using Cleansia.Infra.Database;
@@ -20,15 +21,14 @@ namespace Cleansia.IntegrationTests.Features.Orders;
 
 /// <summary>
 /// The pre-cleaning sweep runs system-level with no JWT, so it reads across tenants and must write each
-/// order's notification back under that order's own tenant. Getting it wrong is invisible in a unit
+/// notification under the recipient's account tenant. Getting it wrong is invisible in a unit
 /// test with one tenant and catastrophic in production: the customer's app filters the feed and the
 /// drainer routes the push by tenant, so a row stamped with the wrong one is delivered to nobody and
 /// looks exactly like a delivery bug.
 ///
 /// <para>Against real PostgreSQL, because tenancy here is enforced by a global query filter compiled
-/// into SQL and by NULL semantics that SQLite does not share — a legacy single-tenant order carries
-/// <c>TenantId IS NULL</c>, and "NULL stays NULL rather than inheriting the previous group's tenant" is
-/// a claim about the provider, not about C#.</para>
+/// into SQL — "each group's rows carry its own tenant rather than the previous group's" is a claim
+/// about the provider, not about C#. Three operators, three groups, every row stamped (ADR-0061 D8).</para>
 ///
 /// <para>The schema is built from the live EF model via EnsureCreated on a dedicated database (NOT the
 /// shared migration-applied one) so it exercises the <c>PreCleaningReminderSentAt</c> column this
@@ -40,6 +40,7 @@ public class PreCleaningReminderTenantStampTests(PostgresContainerFixture fixtur
 {
     private const string TenantA = "tenant-a";
     private const string TenantB = "tenant-b";
+    private const string TenantC = "tenant-c";
     private const string CountryId = "country-cz-reminder";
     private const string CurrencyId = "currency-czk-reminder";
 
@@ -71,20 +72,28 @@ public class PreCleaningReminderTenantStampTests(PostgresContainerFixture fixtur
     }
 
     /// <summary>
-    /// The address FK is left standing, so the country and currency an order references are real rows.
-    /// Only the Orders / OrderEmployees FKs are dropped, and only so the fixture can name a customer and
-    /// a cleaner without building two full identity graphs the sweep never reads.
+    /// The address FK is left standing, so the country and currency an order references are real rows,
+    /// and the three operators are registered so the notifications the sweep writes pass their FK into
+    /// Tenants. Only the Orders / OrderEmployees FKs are dropped, and only so the fixture can name a
+    /// cleaner assignment without building its employee graph. Recipient accounts are persisted.
     /// </summary>
     private async Task SeedCatalogAsync()
     {
         _tenantProvider.ClearTenantOverride();
         await using var ctx = NewContext();
 
-        var country = Country.Create("Czechia", "CZ", isServiced: true);
+        ctx.Languages.Add(Language.Create("en", "English"));
+        ctx.Tenants.AddRange(
+            Tenant.Create(TenantA, "Operator A"),
+            Tenant.Create(TenantB, "Operator B"),
+            Tenant.Create(TenantC, "Operator C"));
+
+        var country = Country.Create("Czechia", "CZ", "CZ", isServiced: true);
         country.Id = CountryId;
         ctx.Countries.Add(country);
 
-        var currency = Currency.Create("CZK", "Kč", "Czech koruna", 1.0m);
+        var currency = Currency.Create("CZK", "Kč", "Czech koruna");
+        currency.IsActive = true;
         currency.Id = CurrencyId;
         ctx.Currencies.Add(currency);
 
@@ -125,7 +134,7 @@ public class PreCleaningReminderTenantStampTests(PostgresContainerFixture fixtur
         await cmd.ExecuteNonQueryAsync();
     }
 
-    private async Task SeedDueOrderAsync(string key, string userId, string? tenantId)
+    private async Task SeedDueOrderAsync(string key, string userId, string tenantId)
     {
         var orderId = $"ord-{key}";
         var order = Order.Create(
@@ -135,7 +144,6 @@ public class PreCleaningReminderTenantStampTests(PostgresContainerFixture fixtur
             customerAddress: Address.Create("Tenant St 1", "Brno", "60200", CountryId),
             rooms: 2,
             bathrooms: 1,
-            extras: new Dictionary<string, bool>(),
             cleaningDateTime: DateTime.UtcNow.AddMinutes(60),
             paymentType: PaymentType.Cash,
             totalPrice: 1500m,
@@ -151,10 +159,15 @@ public class PreCleaningReminderTenantStampTests(PostgresContainerFixture fixtur
         // A cleaner is committed to this job, which is the half of "Confirmed" the reminder needs and
         // the half that status alone does not carry. Inserted as a bare row: the sweep asks only whether
         // an assignment EXISTS, and a full employee graph would add nothing but fixtures.
-        _tenantProvider.ClearTenantOverride();
+        _tenantProvider.SetTenantOverride(tenantId);
         await using var ctx = NewContext();
+        var customer = User.CreateWithPassword($"{userId}@test.local", "Password123!", "Reminder", "Customer");
+        customer.Id = userId;
+        customer.TenantId = tenantId;
+        ctx.Users.Add(customer);
         ctx.Orders.Add(order);
         await ctx.CommitAsync(CancellationToken.None);
+        _tenantProvider.ClearTenantOverride();
         await ctx.Database.ExecuteSqlRawAsync(
             "INSERT INTO \"OrderEmployees\" (\"Id\", \"OrderId\", \"EmployeeId\", \"IsActive\", \"SeatOrdinal\") VALUES ({0}, {1}, {2}, true, 0)",
             $"oe-{key}", orderId, $"emp-{key}");
@@ -165,7 +178,7 @@ public class PreCleaningReminderTenantStampTests(PostgresContainerFixture fixtur
         await using var ctx = NewContext();
         var handler = new SendPreCleaningReminders.Handler(
             new OrderRepository(ctx),
-            new NotificationProducer(new UserNotificationRepository(ctx), new OutboxPendingDispatch(ctx)),
+            new NotificationProducer(new UserNotificationRepository(ctx), new OutboxPendingDispatch(ctx), new UserRepository(ctx), Microsoft.Extensions.Logging.Abstractions.NullLogger<NotificationProducer>.Instance),
             _tenantProvider,
             ctx,
             NullLogger<SendPreCleaningReminders.Handler>.Instance);
@@ -181,7 +194,7 @@ public class PreCleaningReminderTenantStampTests(PostgresContainerFixture fixtur
     {
         await SeedDueOrderAsync("pre-a", "user-tenant-a", TenantA);
         await SeedDueOrderAsync("pre-b", "user-tenant-b", TenantB);
-        await SeedDueOrderAsync("pre-legacy", "user-legacy", tenantId: null);
+        await SeedDueOrderAsync("pre-c", "user-tenant-c", TenantC);
 
         var response = await RunSweepAsync();
 
@@ -199,7 +212,7 @@ public class PreCleaningReminderTenantStampTests(PostgresContainerFixture fixtur
                  {
                      ("user-tenant-a", TenantA),
                      ("user-tenant-b", TenantB),
-                     ("user-legacy", (string?)null),
+                     ("user-tenant-c", TenantC),
                  })
         {
             var reminder = Assert.Single(reminders, r => r.MessageKey.Contains(userId, StringComparison.Ordinal));
@@ -254,14 +267,14 @@ public class PreCleaningReminderTenantStampTests(PostgresContainerFixture fixtur
     {
         await SeedDueOrderAsync("pre-c1", "user-tenant-a", TenantA);
         await SeedDueOrderAsync("pre-c2", "user-tenant-b", TenantB);
-        await SeedDueOrderAsync("pre-c3", "user-legacy", tenantId: null);
+        await SeedDueOrderAsync("pre-c3", "user-tenant-c", TenantC);
 
         _tenantProvider.ClearTenantOverride();
         await using var ctx = NewContext();
         var recorder = new TenantRecordingUnitOfWork(ctx, _tenantProvider);
         var handler = new SendPreCleaningReminders.Handler(
             new OrderRepository(ctx),
-            new NotificationProducer(new UserNotificationRepository(ctx), new OutboxPendingDispatch(ctx)),
+            new NotificationProducer(new UserNotificationRepository(ctx), new OutboxPendingDispatch(ctx), new UserRepository(ctx), Microsoft.Extensions.Logging.Abstractions.NullLogger<NotificationProducer>.Instance),
             _tenantProvider,
             recorder,
             NullLogger<SendPreCleaningReminders.Handler>.Instance);

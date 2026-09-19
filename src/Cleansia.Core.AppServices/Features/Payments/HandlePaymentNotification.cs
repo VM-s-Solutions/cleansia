@@ -126,6 +126,8 @@ public class HandlePaymentNotification
         IPendingDispatch pending,
         INotificationProducer notificationProducer,
         IPreferredCleanerHoldResolver preferredCleanerHoldResolver,
+        IAdminNotifier adminNotifier,
+        IUserNotificationRepository userNotificationRepository,
         ILogger<Handler> logger) : ICommandHandler<Command>
     {
         public async Task<BusinessResult> Handle(Command command, CancellationToken cancellationToken)
@@ -227,7 +229,7 @@ public class HandlePaymentNotification
                     or Constants.StripeEventType.PaymentIntentSucceeded
                     => await HandleCompletedSession(order, orderId, command.Language, cancellationToken),
                 Constants.StripeEventType.PaymentIntentPaymentFailed
-                    => HandlePaymentIntentFailed(order, orderId),
+                    => await HandlePaymentIntentFailed(order, orderId, cancellationToken),
                 Constants.StripeEventType.PaymentIntentCanceled
                     => await HandleExpiredSession(order, orderId, cancellationToken),
                 _ => BusinessResult.Success(),
@@ -240,11 +242,39 @@ public class HandlePaymentNotification
         /// different payment method. Don't move to Cancelled — that path is
         /// reserved for explicit user cancellation or session expiry.
         /// </summary>
-        private BusinessResult HandlePaymentIntentFailed(Order order, string orderId)
+        private async Task<BusinessResult> HandlePaymentIntentFailed(Order order, string orderId, CancellationToken cancellationToken)
         {
             logger.LogWarning(
                 "PaymentIntent failed for order {OrderId} (status remains {Status}); client may retry",
                 orderId, order.PaymentStatus);
+
+            // Stripe fires this per ATTEMPT and the platform resolves the state itself — a retry or the
+            // stale sweep's cancel within the hour — so the administrators hear of the first decline on
+            // an order and not of every fumbled card entry. Stripe also does not order a failed
+            // attempt's event against the later success on the same PaymentIntent, so a decline that
+            // lands after the money did, or after the order was cancelled, is news about nothing. The
+            // subject is the order, and a repeated subject fails the commit on the outbox index rather
+            // than collapsing, so the feed is read before the call: a row for this order means the
+            // company was already told.
+            if (!string.IsNullOrEmpty(order.TenantId)
+                && order.PaymentStatus == PaymentStatus.Pending
+                && order.CurrentStatus != OrderStatus.Cancelled
+                && !await userNotificationRepository.AnyForEventAsync(
+                    order.TenantId, AdminNotificationEventCatalog.PaymentFailed, "orderId", order.Id, cancellationToken))
+            {
+                await adminNotifier.NotifyAsync(
+                    new AdminEvent(
+                        AdminNotificationEventCatalog.PaymentFailed,
+                        order.TenantId,
+                        Subject: order.Id,
+                        Args: new Dictionary<string, string>
+                        {
+                            ["orderNumber"] = order.DisplayOrderNumber,
+                            ["orderId"] = order.Id,
+                        }),
+                    cancellationToken);
+            }
+
             return BusinessResult.Success();
         }
 
@@ -264,8 +294,19 @@ public class HandlePaymentNotification
                 return BusinessResult.Success();
             }
 
+            // The MONEY axis only. This used to append OrderStatus.Confirmed too, which is what made
+            // that word mean two unrelated things — "money settled" here, and "a cleaner took the job"
+            // in TakeOrder. Owner ruling 2026-09-08 (T-0691): Confirmed means only the second, so a
+            // paid card order rests at New + Paid, exactly as a cash order rests at New + Pending.
+            //
+            // Nothing is appended in its place. The fulfilment axis has not moved — no cleaner has
+            // done anything — and a same-value re-append would put a second New track on the history
+            // for an event that is not a fulfilment event at all.
+            //
+            // What still makes the order offerable is OrderAvailability: its status term admits New,
+            // and its money term is satisfied by the line above. That relaxation shipped first,
+            // deliberately, so the board was ready before any order could rest here.
             order.UpdatePaymentStatus(PaymentStatus.Paid);
-            order.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.Confirmed, order));
 
             // ADR-0002 D1/D5 (the F2 webhook stamp/effect-split fix): record intent. These now fire
             // only AFTER the ProcessedStripeEvent stamp + state change commit; on a commit-throw
@@ -283,7 +324,7 @@ public class HandlePaymentNotification
             {
                 await notificationProducer.NotifyAsync(
                     order.UserId,
-                    NotificationEventCatalog.OrderConfirmed,
+                    NotificationEventCatalog.OrderPaymentConfirmed,
                     new Dictionary<string, string>
                     {
                         ["orderId"] = order.Id,
@@ -294,13 +335,14 @@ public class HandlePaymentNotification
                     cancellationToken);
             }
 
-            // Q-BROWSE-01 (b): the two writes above are what make a card order offerable, so this is
+            // Q-BROWSE-01 (b): the payment write above is what makes a card order offerable, so this is
             // where its preferred cleaner is told. Creation could not: until the money lands the order
             // is New + Pending, the browse gate refuses it, and CleanupStalePendingOrders cancels it an
             // hour later. Runs after the terminal-state short-circuit, so a Stripe redelivery cannot
             // produce a second announcement.
             await PreferredOfferNotifier.NotifyBecameOfferableAsync(
                 order, preferredCleanerHoldResolver, notificationProducer, DateTime.UtcNow, cancellationToken);
+            await NewOrderAdminNotifier.NotifyIfOfferableAsync(order, adminNotifier, logger, cancellationToken);
 
             logger.LogInformation("Successfully processed payment webhook for order {OrderId}", orderId);
             return BusinessResult.Success();
@@ -434,6 +476,7 @@ public class HandlePaymentNotification
             if (existing is not null)
             {
                 existing.LinkStripeDispute(stripeDisputeId, WebhookActor);
+                await TellAdministratorsOfChargeback(order, existing.Id, stripeDispute!, cancellationToken);
                 logger.LogInformation("Linked chargeback to existing dispute for order {OrderId}", order.Id);
                 return BusinessResult.Success();
             }
@@ -459,12 +502,40 @@ public class HandlePaymentNotification
                 return BusinessResult.Success();
             }
             disputeRepository.Add(dispute);
+            await TellAdministratorsOfChargeback(order, dispute.Id, stripeDispute!, cancellationToken);
 
             logger.LogInformation("Created and linked chargeback dispute for order {OrderId}", order.Id);
             return BusinessResult.Success();
         }
 
         private const string ChargebackDescription = "Bank chargeback raised against this order's payment.";
+
+        /// <summary>
+        /// The dispute named is the one the money is now attached to — the customer's open one when
+        /// there is one, else the chargeback's own — so the console opens the right file. The amount is
+        /// what the bank pulled, in Stripe's minor units, shown in the order's currency.
+        /// </summary>
+        private Task TellAdministratorsOfChargeback(Order order, string disputeId, Stripe.Dispute stripeDispute, CancellationToken cancellationToken)
+        {
+            if (string.IsNullOrEmpty(order.TenantId))
+            {
+                return Task.CompletedTask;
+            }
+
+            return adminNotifier.NotifyAsync(
+                new AdminEvent(
+                    AdminNotificationEventCatalog.DisputeChargeback,
+                    order.TenantId,
+                    Subject: stripeDispute.Id,
+                    Args: new Dictionary<string, string>
+                    {
+                        ["orderNumber"] = order.DisplayOrderNumber,
+                        ["amount"] = MoneyText.Format(stripeDispute.Amount / 100m, order.Currency!),
+                        ["disputeId"] = disputeId,
+                        ["orderId"] = order.Id,
+                    }),
+                cancellationToken);
+        }
 
         private async Task<BusinessResult> ReflectChargebackStatus(
             Stripe.Dispute stripeDispute, string stripeDisputeId, Event stripeEvent, CancellationToken cancellationToken)

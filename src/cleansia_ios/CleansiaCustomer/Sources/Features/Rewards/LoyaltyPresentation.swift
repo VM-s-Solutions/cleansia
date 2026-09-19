@@ -13,6 +13,26 @@ enum DiscountSummary: Equatable {
     case minOrder(percent: Int, minOrder: Int)
 }
 
+/// Whether the tier floor line is stated, and with which unit. The floor is a platform-default-
+/// currency number enforced only on orders in that currency, so it is stated only when the chosen
+/// market's currency is the default one — and never with a unit guessed for it.
+enum TierFloorLabel: Equatable {
+    /// The floor applies; nil code = the unit is not known yet and the figure renders bare.
+    case applies(currencyCode: String?)
+    /// The market's currency is not the floor's: no floor applies and no line is drawn.
+    case notApplicable
+
+    var applies: Bool {
+        if case .applies = self { return true }
+        return false
+    }
+
+    var currencyCode: String? {
+        if case let .applies(code) = self { return code }
+        return nil
+    }
+}
+
 enum LoyaltyTransactionKind: Equatable {
     case earnOrder(points: Int, order: String)
     case revokeOrder(points: Int, order: String)
@@ -40,11 +60,22 @@ enum LoyaltyPresentation {
         return min(max(Double(account.lifetimePoints) / Double(threshold), 0), 1)
     }
 
-    static func discountSummary(_ tier: TierInfo) -> DiscountSummary {
+    static func discountSummary(_ tier: TierInfo, floorApplies: Bool = true) -> DiscountSummary {
         let percent = Int(tier.discountPercent * 100)
         guard percent > 0 else { return .noDiscount }
-        let minOrder = Int(tier.minimumOrderAmountForDiscount ?? 0)
+        let minOrder = floorApplies ? Int(tier.minimumOrderAmountForDiscount ?? 0) : 0
         return minOrder > 0 ? .minOrder(percent: percent, minOrder: minOrder) : .basic(percent: percent)
+    }
+
+    /// With a resolved market the floor is stated only when that market's currency is the default
+    /// market's, labelled with it; without one (directory unavailable) the catalogue's default code
+    /// labels it, as before there was a directory.
+    static func tierFloor(market: MarketState, catalogDefaultCurrencyCode: String?) -> TierFloorLabel {
+        guard let selected = market.selected else {
+            return .applies(currencyCode: catalogDefaultCurrencyCode)
+        }
+        guard selected.currencyCode == market.defaultCurrencyCode else { return .notApplicable }
+        return .applies(currencyCode: selected.currencyCode)
     }
 
     static func status(for tier: LoyaltyTier, current: LoyaltyTier) -> TierStatus {

@@ -8,7 +8,7 @@ public record AdminPackageDetailDto(
     string Description,
     string? Tagline,
     bool IsPopular,
-    decimal Price,
+    Dictionary<string, decimal> Prices,
     Dictionary<string, Translation> Translations,
     IEnumerable<PackageServiceDto> IncludedServices,
     DateTimeOffset CreatedOn,

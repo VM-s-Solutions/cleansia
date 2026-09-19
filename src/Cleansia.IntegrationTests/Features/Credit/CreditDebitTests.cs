@@ -37,7 +37,7 @@ public class CreditDebitTests(PostgresContainerFixture fixture) : BaseIntegratio
         return new CleansiaDbContext(
             options,
             new TestUserSessionProvider("system", "system@cleansia.test"),
-            new FixedTenantProvider(tenantId: null));
+            new FixedTenantProvider(TestTenants.Default));
     }
 
     private async Task ResetAsync()
@@ -50,6 +50,7 @@ public class CreditDebitTests(PostgresContainerFixture fixture) : BaseIntegratio
             SchemasToExclude = ["pg_catalog", "information_schema"]
         });
         await respawner.ResetAsync(conn);
+        await SeedTenantRegistryAsync(conn);
     }
 
     /// <summary>
@@ -61,7 +62,8 @@ public class CreditDebitTests(PostgresContainerFixture fixture) : BaseIntegratio
     {
         await using var ctx = NewContext();
 
-        var currency = Currency.Create("CZK", "Kc", "Czech koruna", 1.0m);
+        var currency = Currency.Create("CZK", "Kc", "Czech koruna");
+        currency.IsActive = true;
         var user = User.CreateWithPassword(
             "credit-tests@cleansia.test", "Seed-Password-123", "Credit", "Tester");
         ctx.Languages.Add(Language.Create("en", "English"));

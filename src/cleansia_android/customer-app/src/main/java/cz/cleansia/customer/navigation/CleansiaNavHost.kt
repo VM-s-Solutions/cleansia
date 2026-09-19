@@ -1,7 +1,4 @@
 package cz.cleansia.customer.navigation
-import cz.cleansia.customer.core.auth.TokenStoreEntryPoint
-import cz.cleansia.core.auth.TokenStore
-import cz.cleansia.core.auth.JwtDecoder
 import cz.cleansia.core.auth.SessionEvent
 
 import androidx.compose.animation.AnimatedContentTransitionScope
@@ -35,6 +32,7 @@ import cz.cleansia.customer.features.disputes.CreateDisputeScreen
 import cz.cleansia.customer.features.disputes.DisputeDetailScreen
 import cz.cleansia.customer.features.disputes.DisputesListScreen
 import cz.cleansia.customer.features.main.MainShell
+import cz.cleansia.customer.features.orders.GuestOrderScreen
 import cz.cleansia.customer.features.orders.OrderDetailScreen
 import cz.cleansia.customer.features.orders.photos.OrderPhotosScreen
 import cz.cleansia.customer.core.settings.AppSettingsRepository
@@ -44,10 +42,12 @@ import cz.cleansia.customer.features.profile.DevicesScreen
 import cz.cleansia.customer.features.profile.EditProfileScreen
 import cz.cleansia.customer.features.profile.HelpSupportScreen
 import cz.cleansia.customer.features.profile.LanguageScreen
+import cz.cleansia.customer.features.profile.MarketScreen
 import cz.cleansia.customer.features.profile.NotificationsScreen
 import cz.cleansia.customer.features.profile.SecurityScreen
 import cz.cleansia.customer.features.rewards.RewardsActivityScreen
 import cz.cleansia.customer.features.splash.SplashScreen
+import cz.cleansia.customer.features.splash.SplashViewModel
 
 // ── Transition specs ──
 // Horizontal push (settings drill-down, auth stack) — 280ms
@@ -126,23 +126,11 @@ fun CleansiaNavHost(
             enterTransition = fadeEnterLong,
             exitTransition = fadeExitLong,
         ) {
-            val context = androidx.compose.ui.platform.LocalContext.current
-            // TODO(W3.3): refactor to VM injection — Splash gates on TokenStore
-            // pre-Hilt-VM scope; a holder VM here is feasible but the splash is
-            // a one-shot route. Acceptable residue mirroring CleansiaApp.kt.
-            val tokenStore = androidx.compose.runtime.remember {
-                dagger.hilt.android.EntryPointAccessors.fromApplication(
-                    context,
-                    cz.cleansia.customer.core.auth.TokenStoreEntryPoint::class.java,
-                ).tokenStore()
-            }
+            val splashVm: SplashViewModel = hiltViewModel()
 
             SplashScreen(
                 onContinue = {
-                    // Resume the session if the refresh token is still valid.
-                    // The access token may have expired — the 401 Authenticator will refresh it.
-                    val hasValidSession = tokenStore.current()?.let { !it.isRefreshExpired() } == true
-                    val destination: Any = if (hasValidSession) Routes.Home else Routes.SignIn
+                    val destination: Any = if (splashVm.hasValidSession()) Routes.Home() else Routes.SignIn
                     navController.navigate(destination) {
                         popUpTo(Routes.Splash) { inclusive = true }
                     }
@@ -163,7 +151,7 @@ fun CleansiaNavHost(
             LaunchedEffect(state.outcome) {
                 when (val outcome = state.outcome) {
                     AuthOutcome.SignedIn -> {
-                        navController.navigate(Routes.Home) {
+                        navController.navigate(Routes.Home()) {
                             popUpTo(Routes.SignIn) { inclusive = true }
                         }
                         vm.clearState()
@@ -180,9 +168,18 @@ fun CleansiaNavHost(
                 onSignInClick = { email, password -> vm.signIn(email, password) },
                 onForgotPassword = { navController.navigate(Routes.ForgotPassword) },
                 onCreateAccount = { navController.navigate(Routes.SignUp) },
+                onGuestOrder = { navController.navigate(Routes.GuestOrder) },
                 onGoogleSignIn = { vm.signInWithGoogle(context) },
                 loading = state.loading,
             )
+        }
+        composable<Routes.GuestOrder>(
+            enterTransition = pushEnter,
+            exitTransition = pushExit,
+            popEnterTransition = popEnter,
+            popExitTransition = popExit,
+        ) {
+            GuestOrderScreen(onBack = { navController.popBackStack() })
         }
         composable<Routes.SignUp>(
             enterTransition = pushEnter,
@@ -204,7 +201,7 @@ fun CleansiaNavHost(
                     // Home if the account already exists (email is auto-
                     // confirmed by Google). Treat it the same as a SignIn.
                     AuthOutcome.SignedIn -> {
-                        navController.navigate(Routes.Home) {
+                        navController.navigate(Routes.Home()) {
                             popUpTo(Routes.SignIn) { inclusive = true }
                         }
                         vm.clearState()
@@ -276,7 +273,7 @@ fun CleansiaNavHost(
 
             LaunchedEffect(state.outcome) {
                 if (state.outcome is AuthOutcome.SignedIn) {
-                    navController.navigate(Routes.Home) {
+                    navController.navigate(Routes.Home()) {
                         popUpTo(Routes.SignIn) { inclusive = true }
                     }
                     vm.clearState()
@@ -305,12 +302,12 @@ fun CleansiaNavHost(
                 // the detail returns the user to the Home tab, not to success.
                 onViewOrders = {
                     navController.navigate(Routes.OrderDetail(args.orderId)) {
-                        popUpTo(Routes.Home) { inclusive = false }
+                        popUpTo<Routes.Home> { inclusive = false }
                     }
                 },
                 onGoHome = {
-                    navController.navigate(Routes.Home) {
-                        popUpTo(Routes.Home) { inclusive = true }
+                    navController.navigate(Routes.Home()) {
+                        popUpTo<Routes.Home> { inclusive = true }
                     }
                 },
             )
@@ -320,8 +317,10 @@ fun CleansiaNavHost(
             exitTransition = { fadeOut(tween(PUSH_DUR)) },
             popEnterTransition = { fadeIn(tween(PUSH_DUR)) },
             popExitTransition = { fadeOut(tween(PUSH_DUR)) },
-        ) {
+        ) { backStackEntry ->
+            val landingTab = backStackEntry.toRoute<Routes.Home>().tab
             MainShell(
+                initialTabName = landingTab,
                 onPromptOrderReview = { orderId ->
                     navController.navigate(Routes.OrderDetail(orderId, openReview = true))
                 },
@@ -346,6 +345,7 @@ fun CleansiaNavHost(
                         "devices" -> navController.navigate(Routes.Devices)
                         "appearance" -> navController.navigate(Routes.Appearance)
                         "language" -> navController.navigate(Routes.Language)
+                        "market" -> navController.navigate(Routes.Market)
                         "help" -> navController.navigate(Routes.HelpSupport)
                         "delete_account" -> navController.navigate(Routes.DeleteAccount)
                         "subscribe_plus" -> navController.navigate(Routes.SubscribePlus)
@@ -366,6 +366,9 @@ fun CleansiaNavHost(
                 },
                 onSubscribePlus = {
                     navController.navigate(Routes.SubscribePlus)
+                },
+                onOpenMarket = {
+                    navController.navigate(Routes.Market)
                 },
                 onSetupRecurring = {
                     navController.navigate(Routes.CreateRecurringBooking())
@@ -507,23 +510,8 @@ fun CleansiaNavHost(
             val deleteState by vm.deleteState.collectAsStateWithLifecycle()
             val loading = deleteState is cz.cleansia.customer.ui.state.ActionState.Submitting
 
-            // Read the current user's email from TokenStore so we can pre-fill the confirm-match check.
-            // TODO(W3.3): refactor to VM injection — DeleteAccountViewModel
-            // could expose the decoded email; this in-screen TokenStore reach
-            // mirrors the splash pattern.
-            val context = androidx.compose.ui.platform.LocalContext.current
-            val email = androidx.compose.runtime.remember {
-                val tokens = dagger.hilt.android.EntryPointAccessors.fromApplication(
-                    context,
-                    cz.cleansia.customer.core.auth.TokenStoreEntryPoint::class.java,
-                ).tokenStore().current()?.accessToken
-                tokens?.let { jwt ->
-                    cz.cleansia.core.auth.JwtDecoder.extractEmail(jwt)
-                }.orEmpty()
-            }
-
             cz.cleansia.customer.features.profile.DeleteAccountScreen(
-                userEmail = email,
+                userEmail = vm.userEmail,
                 onBack = { navController.popBackStack() },
                 onConfirmDelete = { vm.deleteAccount() },
                 loading = loading,
@@ -564,6 +552,14 @@ fun CleansiaNavHost(
         ) {
             LanguageScreen(onBack = { navController.popBackStack() })
         }
+        composable<Routes.Market>(
+            enterTransition = pushEnter,
+            exitTransition = pushExit,
+            popEnterTransition = popEnter,
+            popExitTransition = popExit,
+        ) {
+            MarketScreen(onBack = { navController.popBackStack() })
+        }
         composable<Routes.SubscribePlus>(
             enterTransition = pushEnter,
             exitTransition = pushExit,
@@ -591,7 +587,7 @@ fun CleansiaNavHost(
                 onPrimary = {
                     // "Back home" — clear the success screen off the back stack
                     // so back-press from the next screen lands on Home, not here.
-                    navController.popBackStack(Routes.Home, inclusive = false)
+                    navController.popBackStack<Routes.Home>(inclusive = false)
                 },
                 onSecondary = {
                     // Set up recurring — replace Success with the create wizard

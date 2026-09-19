@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { TranslateModule } from '@ngx-translate/core';
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
@@ -14,7 +14,7 @@ export interface ReportIssueDialogResult {
 }
 
 @Component({
-  selector: 'cleansia-report-issue-dialog',
+  selector: 'cleansia-partner-report-issue-dialog',
   standalone: true,
   imports: [FormsModule, TranslateModule, ButtonModule, Textarea],
   changeDetection: ChangeDetectionStrategy.OnPush,

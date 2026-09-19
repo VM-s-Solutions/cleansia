@@ -14,13 +14,18 @@ public protocol RegistrationAuthClient: AnyObject {
 }
 
 public extension RegistrationAuthClient {
+    // One label per wire member; `countryId` and `termsAccepted` deliberately carry no default so
+    // every caller names the market (or its absence) and the tick rather than forgetting them.
+    // swiftlint:disable:next function_parameter_count
     func register(
         email: String,
         password: String,
         firstName: String,
         lastName: String,
         language: String,
-        referralCode: String? = nil
+        referralCode: String? = nil,
+        countryId: String?,
+        termsAccepted: Bool
     ) async -> ApiResult<Bool> {
         await register(RegisterRequest(
             email: email,
@@ -28,7 +33,9 @@ public extension RegistrationAuthClient {
             firstName: firstName,
             lastName: lastName,
             language: language,
-            referralCode: referralCode
+            referralCode: referralCode,
+            countryId: countryId,
+            termsAccepted: termsAccepted
         ))
     }
 }
@@ -47,8 +54,10 @@ public protocol PasswordResetClient: AnyObject {
 /// `termsAccepted` is what tells a signup apart from a sign-in: both screens call one endpoint, and
 /// the server provisions an identity it has never seen only for a call that asserts the signup
 /// screen's tick — everything else is refused with `auth.social_account_not_found`. It carries no
-/// default for the same reason `SignupConsentRecording.recordSignupTick` does not: a consent flag
-/// that can be omitted at a call site is a consent nobody gave.
+/// default: a consent flag that can be omitted at a call site is a consent nobody gave. `countryId`
+/// carries no default for the neighbouring reason: a market that can be omitted is a signup that
+/// silently lands with the default operating company, and the call site is the only place that
+/// knows whether that is so.
 public protocol SocialAuthClient: AnyObject {
     func googleAuth(_ request: GoogleAuthRequest) async -> ApiResult<LoginOutcome>
     func appleAuth(_ request: AppleAuthRequest) async -> ApiResult<LoginOutcome>
@@ -57,7 +66,8 @@ public protocol SocialAuthClient: AnyObject {
 public extension SocialAuthClient {
     func googleAuth(
         _ credential: SocialSignInResult.GoogleCredential,
-        termsAccepted: Bool
+        termsAccepted: Bool,
+        countryId: String?
     ) async -> ApiResult<LoginOutcome> {
         await googleAuth(GoogleAuthRequest(
             token: credential.idToken,
@@ -65,20 +75,23 @@ public extension SocialAuthClient {
             email: credential.email,
             firstName: credential.firstName,
             lastName: credential.lastName,
-            termsAccepted: termsAccepted
+            termsAccepted: termsAccepted,
+            countryId: countryId
         ))
     }
 
     func appleAuth(
         _ credential: SocialSignInResult.AppleCredential,
-        termsAccepted: Bool
+        termsAccepted: Bool,
+        countryId: String?
     ) async -> ApiResult<LoginOutcome> {
         await appleAuth(AppleAuthRequest(
             identityToken: credential.identityToken,
             rawNonce: credential.rawNonce,
             firstName: credential.firstName,
             lastName: credential.lastName,
-            termsAccepted: termsAccepted
+            termsAccepted: termsAccepted,
+            countryId: countryId
         ))
     }
 }

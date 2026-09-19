@@ -1,3 +1,4 @@
+using Cleansia.Core.AppServices.Auditing;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Users;
 using Cleansia.Core.Domain.Common;
@@ -41,7 +42,7 @@ public class PasswordResetAuthTypeGuardTests
     {
         var user = UserMockFactory.Generate(new UserMockFactory.UserPartial { AuthenticationType = authenticationType });
 
-        var result = await new RequestPasswordChange.Validator(RepoFor(user).Object)
+        var result = await new RequestPasswordChange.Validator(RepoFor(user).Object, new AuditContext())
             .ValidateAsync(new RequestPasswordChange.Command(user.Email));
 
         Assert.False(result.IsValid);
@@ -53,7 +54,7 @@ public class PasswordResetAuthTypeGuardTests
     {
         var user = UserMockFactory.Generate();
 
-        var result = await new RequestPasswordChange.Validator(RepoFor(user).Object)
+        var result = await new RequestPasswordChange.Validator(RepoFor(user).Object, new AuditContext())
             .ValidateAsync(new RequestPasswordChange.Command(user.Email));
 
         Assert.True(result.IsValid);
@@ -65,7 +66,7 @@ public class PasswordResetAuthTypeGuardTests
         var repo = new Mock<IUserRepository>();
         repo.Setup(r => r.ExistsWithEmailIgnoringTenantAsync(UnknownEmail, It.IsAny<CancellationToken>())).ReturnsAsync(false);
 
-        var result = await new RequestPasswordChange.Validator(repo.Object)
+        var result = await new RequestPasswordChange.Validator(repo.Object, new AuditContext())
             .ValidateAsync(new RequestPasswordChange.Command(UnknownEmail));
 
         Assert.False(result.IsValid);
@@ -86,7 +87,7 @@ public class PasswordResetAuthTypeGuardTests
         // half must refuse on its own, not lean on the request half no longer minting codes.
         var (user, rawCode) = SocialAccountHoldingALiveResetCode(authenticationType);
 
-        var result = await new ChangePassword.Validator(RepoFor(user).Object)
+        var result = await new ChangePassword.Validator(RepoFor(user).Object, new AuditContext())
             .ValidateAsync(new ChangePassword.Command(user.Email, NewPassword, rawCode));
 
         Assert.False(result.IsValid);
@@ -98,7 +99,7 @@ public class PasswordResetAuthTypeGuardTests
     {
         var (user, rawCode) = SocialAccountHoldingALiveResetCode(AuthenticationType.Internal);
 
-        var result = await new ChangePassword.Validator(RepoFor(user).Object)
+        var result = await new ChangePassword.Validator(RepoFor(user).Object, new AuditContext())
             .ValidateAsync(new ChangePassword.Command(user.Email, NewPassword, rawCode));
 
         Assert.True(result.IsValid);
@@ -110,7 +111,7 @@ public class PasswordResetAuthTypeGuardTests
         var repo = new Mock<IUserRepository>();
         repo.Setup(r => r.ExistsWithEmailIgnoringTenantAsync(UnknownEmail, It.IsAny<CancellationToken>())).ReturnsAsync(false);
 
-        var result = await new ChangePassword.Validator(repo.Object)
+        var result = await new ChangePassword.Validator(repo.Object, new AuditContext())
             .ValidateAsync(new ChangePassword.Command(UnknownEmail, NewPassword, "any-code"));
 
         Assert.False(result.IsValid);
@@ -146,5 +147,58 @@ public class PasswordResetAuthTypeGuardTests
             ResetPasswordCodeExpiresAt = DateTimeOffset.UtcNow.AddMinutes(15),
         });
         return (user, raw);
+    }
+
+    // ── the refused account is named to the audit context ──────────────────────
+
+    /// <summary>
+    /// A reset refused on a KNOWN address is that account's audit row: the guard resolved the account
+    /// before refusing, so it names the subject (id only, no payload) — on both halves. An unknown
+    /// address is never read, so nothing is named and the row carries neither a user nor the address.
+    /// </summary>
+    [Fact]
+    public async Task A_Refused_Reset_Request_On_A_Social_Account_Names_That_Account_With_No_Payload()
+    {
+        var user = UserMockFactory.Generate(new UserMockFactory.UserPartial { AuthenticationType = AuthenticationType.Google });
+        var auditContext = new AuditContext();
+
+        var result = await new RequestPasswordChange.Validator(RepoFor(user).Object, auditContext)
+            .ValidateAsync(new RequestPasswordChange.Command(user.Email));
+
+        Assert.False(result.IsValid);
+        var snapshot = auditContext.DrainSnapshot();
+        Assert.NotNull(snapshot);
+        Assert.Equal(user.Id, snapshot!.ActorUserId);
+        Assert.Equal("User", snapshot.ResourceType);
+        Assert.Equal(user.Id, snapshot.ResourceId);
+        Assert.Null(snapshot.AfterJson);
+    }
+
+    [Fact]
+    public async Task A_Refused_Reset_Completion_On_A_Social_Account_Names_That_Account_With_No_Payload()
+    {
+        var (user, rawCode) = SocialAccountHoldingALiveResetCode(AuthenticationType.Apple);
+        var auditContext = new AuditContext();
+
+        var result = await new ChangePassword.Validator(RepoFor(user).Object, auditContext)
+            .ValidateAsync(new ChangePassword.Command(user.Email, NewPassword, rawCode));
+
+        Assert.False(result.IsValid);
+        var snapshot = auditContext.DrainSnapshot();
+        Assert.Equal(user.Id, snapshot?.ActorUserId);
+        Assert.Null(snapshot?.AfterJson);
+    }
+
+    [Fact]
+    public async Task An_Unknown_Address_Names_Nobody_On_Either_Half()
+    {
+        var repo = new Mock<IUserRepository>();
+        repo.Setup(r => r.ExistsWithEmailIgnoringTenantAsync(UnknownEmail, It.IsAny<CancellationToken>())).ReturnsAsync(false);
+        var auditContext = new AuditContext();
+
+        await new RequestPasswordChange.Validator(repo.Object, auditContext).ValidateAsync(new RequestPasswordChange.Command(UnknownEmail));
+        await new ChangePassword.Validator(repo.Object, auditContext).ValidateAsync(new ChangePassword.Command(UnknownEmail, NewPassword, "any-code"));
+
+        Assert.Null(auditContext.DrainSnapshot());
     }
 }

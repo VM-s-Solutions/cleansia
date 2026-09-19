@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Cleansia.Core.AppServices.Auditing;
 using Cleansia.Core.AppServices.Features.Auth;
 using Cleansia.Core.AppServices.Features.Users;
 using Cleansia.Core.AppServices.Services.Interfaces;
@@ -8,6 +9,7 @@ using Cleansia.Core.Domain.Users;
 using Cleansia.Core.Queue.Abstractions;
 using Cleansia.Core.Queue.Abstractions.Messages;
 using Microsoft.Extensions.Logging.Abstractions;
+using Cleansia.Tests.Domain.Legal;
 using Moq;
 
 namespace Cleansia.Tests.Features.Auth;
@@ -44,12 +46,12 @@ public class RegistrationEmailDispatchTests
     [Fact]
     public async Task Register_Enqueues_Confirmation_Email_With_Deterministic_Key()
     {
-        _userRepository.Setup(r => r.GetByEmailAsync(Email, It.IsAny<CancellationToken>())).ReturnsAsync((User?)null);
+        _userRepository.Setup(r => r.GetByEmailIgnoringTenantAsync(Email, It.IsAny<CancellationToken>())).ReturnsAsync((User?)null);
         var referralService = new Mock<IReferralService>();
 
         var handler = new Register.Handler(
             _cartRepository.Object, _userRepository.Object, referralService.Object, _pending,
-            NullLogger<Register.Handler>.Instance);
+            new Mock<IConsentService>().Object, LegalDocumentFixtures.Resolver().Object, new AuditContext(), NullLogger<Register.Handler>.Instance);
 
         var result = await handler.Handle(
             new Register.Command(Email, "Password1!@abc", "John", "Doe", Language), CancellationToken.None);
@@ -71,11 +73,12 @@ public class RegistrationEmailDispatchTests
     [Fact]
     public async Task RegisterEmployee_Enqueues_Confirmation_Email()
     {
-        _userRepository.Setup(r => r.GetByEmailAsync(Email, It.IsAny<CancellationToken>())).ReturnsAsync((User?)null);
+        _userRepository.Setup(r => r.GetByEmailIgnoringTenantAsync(Email, It.IsAny<CancellationToken>())).ReturnsAsync((User?)null);
         var employeeRepository = new Mock<IEmployeeRepository>();
 
         var handler = new RegisterEmployee.Handler(
-            _cartRepository.Object, _userRepository.Object, employeeRepository.Object, _pending);
+            _cartRepository.Object, _userRepository.Object, employeeRepository.Object, _pending,
+            new Mock<IConsentService>().Object);
 
         var result = await handler.Handle(
             new RegisterEmployee.Command(Email, "Password1!@abc", "John", "Doe", Language), CancellationToken.None);
@@ -90,7 +93,7 @@ public class RegistrationEmailDispatchTests
     public async Task ResendConfirmationEmail_Enqueues_Confirmation_Email()
     {
         var user = User.CreateWithPassword(Email, "Password1!@abc", "John", "Doe");
-        _userRepository.Setup(r => r.GetByEmailAsync(Email, It.IsAny<CancellationToken>())).ReturnsAsync(user);
+        _userRepository.Setup(r => r.GetByEmailIgnoringTenantAsync(Email, It.IsAny<CancellationToken>())).ReturnsAsync(user);
 
         var handler = new ResendConfirmationEmail.Handler(_userRepository.Object, _pending);
 
@@ -109,7 +112,7 @@ public class RegistrationEmailDispatchTests
         user.UpdateLanguagePreference("uk");
         _userRepository.Setup(r => r.GetByEmailIgnoringTenantAsync(Email, It.IsAny<CancellationToken>())).ReturnsAsync(user);
 
-        var handler = new RequestPasswordChange.Handler(_userRepository.Object, _pending);
+        var handler = new RequestPasswordChange.Handler(_userRepository.Object, _pending, Mock.Of<ITenantProvider>(), new AuditContext());
 
         var result = await handler.Handle(new RequestPasswordChange.Command(Email, Language), CancellationToken.None);
 
@@ -126,7 +129,7 @@ public class RegistrationEmailDispatchTests
         user.UpdateLanguagePreference(null);
         _userRepository.Setup(r => r.GetByEmailIgnoringTenantAsync(Email, It.IsAny<CancellationToken>())).ReturnsAsync(user);
 
-        var handler = new RequestPasswordChange.Handler(_userRepository.Object, _pending);
+        var handler = new RequestPasswordChange.Handler(_userRepository.Object, _pending, Mock.Of<ITenantProvider>(), new AuditContext());
 
         await handler.Handle(new RequestPasswordChange.Command(Email, Language), CancellationToken.None);
 

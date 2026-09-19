@@ -46,28 +46,57 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import cz.cleansia.core.format.formatOrderPrice
 import cz.cleansia.customer.R
+import cz.cleansia.customer.core.market.InsuranceCoverage
 import cz.cleansia.customer.ui.theme.CleansiaTheme
 import cz.cleansia.core.ui.theme.Poppins
 
-private data class FaqItem(val qRes: Int, val aRes: Int)
+private data class FaqItem(val qRes: Int, val answer: @Composable () -> String)
 
-private val faqs = listOf(
-    FaqItem(R.string.help_faq_q1, R.string.help_faq_a1),
-    FaqItem(R.string.help_faq_q2, R.string.help_faq_a2),
-    FaqItem(R.string.help_faq_q3, R.string.help_faq_a3),
-    FaqItem(R.string.help_faq_q4, R.string.help_faq_a4),
-    FaqItem(R.string.help_faq_q5, R.string.help_faq_a5),
+/** Answer 3 states the insurance ceiling only when the market authored one (ADR-0060 D2). */
+private fun faqs(insuranceCoverage: InsuranceCoverage?) = listOf(
+    FaqItem(R.string.help_faq_q1) { stringResource(R.string.help_faq_a1) },
+    FaqItem(R.string.help_faq_q2) { stringResource(R.string.help_faq_a2) },
+    FaqItem(R.string.help_faq_q3) {
+        insuranceCoverage?.let { coverage ->
+            stringResource(R.string.help_faq_a3, formatOrderPrice(coverage.amount, coverage.currencyCode))
+        } ?: stringResource(R.string.help_faq_a3_no_figure)
+    },
+    FaqItem(R.string.help_faq_q4) { stringResource(R.string.help_faq_a4) },
+    FaqItem(R.string.help_faq_q5) { stringResource(R.string.help_faq_a5) },
 )
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HelpSupportScreen(
     onBack: () -> Unit = {},
     onCall: () -> Unit = {},
     onEmail: () -> Unit = {},
     onChat: () -> Unit = {},
+    viewModel: HelpSupportViewModel = hiltViewModel(),
 ) {
+    val insuranceCoverage by viewModel.insuranceCoverage.collectAsStateWithLifecycle()
+    HelpSupportScreenContent(
+        insuranceCoverage = insuranceCoverage,
+        onBack = onBack,
+        onCall = onCall,
+        onEmail = onEmail,
+        onChat = onChat,
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun HelpSupportScreenContent(
+    insuranceCoverage: InsuranceCoverage?,
+    onBack: () -> Unit,
+    onCall: () -> Unit,
+    onEmail: () -> Unit,
+    onChat: () -> Unit,
+) {
+    val faqs = faqs(insuranceCoverage)
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -214,7 +243,7 @@ private fun FaqRow(faq: FaqItem) {
         if (expanded) {
             Spacer(Modifier.height(8.dp))
             Text(
-                stringResource(faq.aRes),
+                faq.answer(),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(start = 28.dp),
@@ -226,5 +255,7 @@ private fun FaqRow(faq: FaqItem) {
 @Preview(widthDp = 390, heightDp = 900)
 @Composable
 private fun HelpPreview() {
-    CleansiaTheme { HelpSupportScreen() }
+    CleansiaTheme {
+        HelpSupportScreenContent(insuranceCoverage = null, onBack = {}, onCall = {}, onEmail = {}, onChat = {})
+    }
 }

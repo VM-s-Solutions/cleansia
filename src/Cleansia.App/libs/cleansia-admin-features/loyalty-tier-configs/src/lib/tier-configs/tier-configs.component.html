@@ -9,6 +9,7 @@
       </div>
       <div class="header-actions">
         <cleansia-button
+          *cleansiaPermission="Policy.CanUpdateLoyaltyTierConfig"
           [label]="'pages.loyalty_tiers.preview_impact_button' | translate"
           icon="pi pi-chart-bar"
           [outlined]="true"
@@ -45,9 +46,9 @@
   @if (editingTier(); as tier) {
     <form [formGroup]="editForm" (ngSubmit)="onEditSubmit()" class="tier-edit-form">
       <div class="form-field">
-        <label class="static-label">
+        <span class="static-label">
           {{ 'pages.loyalty_tiers.column.tier' | translate }}
-        </label>
+        </span>
         <div class="static-value">{{ tier.tierName }}</div>
       </div>
 

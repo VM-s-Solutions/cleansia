@@ -5,9 +5,11 @@ import cz.cleansia.core.validation.EmailValidator
 import cz.cleansia.core.validation.PasswordPolicy
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import cz.cleansia.core.consent.SignupConsentRepository
 import cz.cleansia.core.snackbar.SnackbarController
 import cz.cleansia.partner.R
+import cz.cleansia.partner.core.market.Market
+import cz.cleansia.partner.core.market.MarketRepository
+import cz.cleansia.partner.core.market.defaultOrFirst
 import cz.cleansia.partner.core.network.ApiErrorTranslator
 import cz.cleansia.core.network.ApiResult
 import cz.cleansia.partner.core.settings.AppSettingsRepository
@@ -28,6 +30,9 @@ data class RegisterUiState(
     val password: String = "",
     val confirmPassword: String = "",
     val acceptTerms: Boolean = false,
+    /** What `Market/GetOverview` listed; empty until read, or when the read failed. */
+    val markets: List<Market> = emptyList(),
+    val selectedMarketId: String? = null,
     val isLoading: Boolean = false,
     val error: String? = null,
     val firstNameError: String? = null,
@@ -42,6 +47,9 @@ data class RegisterUiState(
     val passwordHasLetter get() = PasswordPolicy.hasLetter(password)
     val passwordHasNumber get() = PasswordPolicy.hasNumber(password)
     val passwordsMatch get() = PasswordPolicy.passwordsMatch(password, confirmPassword)
+
+    /** The picker renders only when there is a choice to make, as the customer app's market chip does. */
+    val offersAChoice get() = markets.size >= 2
 }
 
 @HiltViewModel
@@ -50,12 +58,24 @@ class RegisterViewModel @Inject constructor(
     private val errorTranslator: ApiErrorTranslator,
     private val appSettingsRepository: AppSettingsRepository,
     private val snackbar: SnackbarController,
-    private val signupConsent: SignupConsentRepository,
+    private val marketRepository: MarketRepository,
     @ApplicationContext private val context: Context,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(RegisterUiState())
     val uiState: StateFlow<RegisterUiState> = _uiState.asStateFlow()
+
+    init {
+        viewModelScope.launch {
+            // A directory that cannot be read is not a reason to refuse a registration: with no market
+            // named the server scopes the account to the default market, as every registration was
+            // before the picker existed, and the work country is checked again at approval.
+            val markets = (marketRepository.getMarkets() as? ApiResult.Success)?.data ?: return@launch
+            _uiState.update {
+                it.copy(markets = markets, selectedMarketId = markets.defaultOrFirst()?.countryId)
+            }
+        }
+    }
 
     fun onFirstNameChange(v: String) = _uiState.update { it.copy(firstName = v, firstNameError = null, error = null) }
     fun onLastNameChange(v: String) = _uiState.update { it.copy(lastName = v, lastNameError = null, error = null) }
@@ -63,6 +83,7 @@ class RegisterViewModel @Inject constructor(
     fun onPasswordChange(v: String) = _uiState.update { it.copy(password = v, passwordError = null, error = null) }
     fun onConfirmPasswordChange(v: String) = _uiState.update { it.copy(confirmPassword = v, confirmPasswordError = null, error = null) }
     fun onAcceptTermsChange(v: Boolean) = _uiState.update { it.copy(acceptTerms = v, termsError = null, error = null) }
+    fun onMarketChange(countryId: String) = _uiState.update { it.copy(selectedMarketId = countryId, error = null) }
 
     fun register() {
         val state = _uiState.value
@@ -102,9 +123,10 @@ class RegisterViewModel @Inject constructor(
                 firstName = state.firstName,
                 lastName = state.lastName,
                 language = language,
+                termsAccepted = state.acceptTerms,
+                countryId = state.selectedMarketId,
             )) {
                 is ApiResult.Success -> {
-                    signupConsent.recordSignupTick(state.email, state.acceptTerms)
                     _uiState.update { it.copy(isLoading = false, isRegistrationSuccessful = true) }
                 }
                 is ApiResult.Error -> {

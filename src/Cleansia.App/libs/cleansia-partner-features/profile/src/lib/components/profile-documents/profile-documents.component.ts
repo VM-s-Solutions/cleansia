@@ -21,7 +21,7 @@ import { DocumentType } from '@cleansia/partner-services';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { DialogModule } from 'primeng/dialog';
 import { Skeleton } from 'primeng/skeleton';
-import { ProfileDocumentsFacade } from '../../profile/profile-documents.facade';
+import { MyDocument, ProfileDocumentsFacade } from '../../profile/profile-documents.facade';
 
 const FILE_BG_COLORS: Record<string, string> = {
   pdf: '#fef2f2',
@@ -56,11 +56,11 @@ const IMAGE_EXTENSIONS = new Set(['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp']);
 interface DocumentGroup {
   key: string;
   titleKey: string;
-  docs: Signal<any[]>;
+  docs: Signal<MyDocument[]>;
 }
 
 @Component({
-  selector: 'cleansia-profile-documents',
+  selector: 'cleansia-partner-profile-documents',
   standalone: true,
   imports: [
     CommonModule,

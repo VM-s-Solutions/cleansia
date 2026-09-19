@@ -7,6 +7,61 @@
   a second result screen doing the same job; it redirects here.
 -->
 
+<p-dialog
+  [header]="'pages.track_order.cancellation.title' | translate"
+  [visible]="facade.cancellationOpen()"
+  (visibleChange)="!$event && facade.closeCancellation()"
+  [modal]="true"
+  [closable]="!facade.cancelling()"
+  [closeOnEscape]="!facade.cancelling()"
+  [draggable]="false"
+  styleClass="cleansia-dialog cl-trk-cancellation-dialog"
+>
+  <p>{{ 'pages.track_order.cancellation.explanation' | translate }}</p>
+  @if (facade.previewLoading()) {
+  <p role="status">{{ 'pages.track_order.cancellation.loading' | translate }}</p>
+  }
+  @if (facade.cancellationError(); as error) {
+  <p role="alert" class="cl-trk__cancellation-error">{{ error | translate }}</p>
+  <cleansia-button
+    [label]="'pages.track_order.cancellation.retry' | translate"
+    [disabled]="facade.cancelling()"
+    (onClick)="facade.openCancellation()"
+  />
+  }
+  @if (facade.cancellationPreview(); as preview) {
+  <p>{{ ('pages.track_order.cancellation.tier.' + preview.tier) | translate }}</p>
+  <dl class="cl-trk__cancellation-figures">
+    <div>
+      <dt>{{ 'pages.track_order.cancellation.fee' | translate }}</dt>
+      <dd>{{ formatAmount(preview.feeAmount, preview.currencyCode) }} ({{ preview.feeRate | percent }})</dd>
+    </div>
+    <div>
+      <dt>{{ 'pages.track_order.cancellation.refund_estimate' | translate }}</dt>
+      <dd>{{ formatAmount(preview.refundAmount, preview.currencyCode) }}</dd>
+    </div>
+  </dl>
+  <p>{{ 'pages.track_order.cancellation.refund_note' | translate }}</p>
+  }
+  <ng-template #footer>
+    <div class="cl-trk__cancellation-actions">
+      <cleansia-button
+        [label]="'pages.track_order.cancellation.keep' | translate"
+        severity="secondary"
+        [disabled]="facade.cancelling()"
+        (onClick)="facade.closeCancellation()"
+      />
+      <cleansia-button
+        [label]="'pages.track_order.cancellation.confirm' | translate"
+        severity="danger"
+        [loading]="facade.cancelling()"
+        [disabled]="!facade.canConfirmCancellation()"
+        (onClick)="cancelBooking()"
+      />
+    </div>
+  </ng-template>
+</p-dialog>
+
 @if (found(); as order) {
 <!-- ========================== THE ORDER IT FOUND ========================== -->
 <section class="cl-trk cl-trk--found">
@@ -153,11 +208,28 @@
         <div class="cl-trk__total cl-num">{{ formatPriceFor(order, order.totalPrice) }}</div>
         <p class="cl-trk__total-note">{{ priceNote() | translate }}</p>
 
+        @if (facade.cancellationResult()) {
+        <div class="cl-trk__cancellation-result" role="status">
+          <p>{{ 'pages.track_order.cancellation.success' | translate }}</p>
+          @if (refundMessage(); as message) { <p>{{ message }}</p> }
+        </div>
+        }
+        @if (facade.canCancel()) {
+        <cleansia-button
+          class="cl-trk__cancel"
+          [label]="'pages.track_order.cancellation.action' | translate"
+          severity="danger"
+          [outlined]="true"
+          [disabled]="facade.cancelling()"
+          (onClick)="facade.openCancellation()"
+        />
+        }
+
         <a class="cl-trk__action" [routerLink]="'/' + routes.DISPUTES">
           <i class="pi pi-question-circle"></i>
           {{ 'pages.track_order.need_help' | translate }}
         </a>
-        <button type="button" class="cl-trk__action" (click)="reset()">
+        <button type="button" class="cl-trk__action" [disabled]="facade.cancelling()" (click)="reset()">
           <i class="pi pi-search"></i>
           {{ 'pages.track_order.lookup_another' | translate }}
         </button>

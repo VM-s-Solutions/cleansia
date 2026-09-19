@@ -63,8 +63,8 @@ public class GenerateInvoiceHandler(
         if (result.IsSuccess)
         {
             logger.LogInformation(
-                "GenerateInvoice succeeded for employee {EmployeeId} / period {PayPeriodId} → invoice {InvoiceId}",
-                message.EmployeeId, message.PayPeriodId, result.Value?.InvoiceId);
+                "GenerateInvoice succeeded for employee {EmployeeId} / period {PayPeriodId} → invoices {InvoiceIds}",
+                message.EmployeeId, message.PayPeriodId, string.Join(", ", result.Value?.InvoiceIds ?? []));
         }
         else if (result.Error?.Message == BusinessErrorMessage.InvoiceReferenceUnavailable)
         {

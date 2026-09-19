@@ -12,6 +12,8 @@ import {
   CleansiaTextInputComponent,
   CleansiaTitleComponent,
 } from '@cleansia/components';
+import { CleansiaPermissionDirective } from '@cleansia/directives';
+import { Policy } from '@cleansia/services';
 import { DialogModule } from 'primeng/dialog';
 import { EmailTemplateFormFacade, EmailTemplateFormData } from './email-template-form.facade';
 
@@ -24,6 +26,7 @@ interface TemplateVariable {
   selector: 'cleansia-admin-email-template-form',
   standalone: true,
   imports: [
+    CleansiaPermissionDirective,
     CommonModule,
     ReactiveFormsModule,
     TranslateModule,
@@ -44,6 +47,7 @@ export class EmailTemplateFormComponent implements OnInit, OnDestroy {
   private readonly fb = inject(FormBuilder);
   private readonly route = inject(ActivatedRoute);
   private readonly translate = inject(TranslateService);
+  protected readonly Policy = Policy;
 
   form!: FormGroup;
   testEmailForm!: FormGroup;

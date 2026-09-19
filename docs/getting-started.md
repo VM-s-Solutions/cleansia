@@ -89,9 +89,14 @@ exists. Prague is seeded, along with its district spellings in both Czech and En
 about this at address-selection time so it is not discovered at payment — but that warning is
 advisory, and the **address still saves**: people move, and coverage grows.
 
-**`Confirmed` does not mean a cleaner is assigned.** It is deliberately overloaded — it means either
-"money is settled" or "a cleaner took it". To find out whether anyone is actually doing the job, look
-at the assigned crew. See [the order lifecycle](/domain/order-lifecycle).
+**`Confirmed` means a cleaner took the job — and nothing about money.** A card order that is paid but
+unassigned sits at `New`, exactly like a cash one. It used to mean either thing, which is how a
+customer who cancelled twenty minutes after paying was billed an "acceptance" fee for a cleaner who
+did not exist; [ADR-0057](/decisions/adr-0057) separated them. And since [ADR-0067](/decisions/adr-0067)
+the word is walked back when it stops being true: a drop or an admin rejection that leaves nobody on a
+`Confirmed` order returns it to `New` and tells the company's administrators. Two releases racing can
+still leave `Confirmed` with nobody on it, so read the assigned crew when *"is anyone on it?"* is the
+question — the sweeps do. See [the order lifecycle](/domain/order-lifecycle).
 
 **A job can need more than one cleaner.** Crew size is derived from the estimated duration, so a long
 service needs two people and stays partly open until both seats are taken.

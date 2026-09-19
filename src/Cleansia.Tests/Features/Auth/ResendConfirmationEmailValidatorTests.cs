@@ -58,7 +58,7 @@ public class ResendConfirmationEmailValidatorTests
         var email = "test@example.com";
         var mockUserRepo = new Mock<IUserRepository>();
         var mockLangRepo = new Mock<ILanguageRepository>();
-        mockUserRepo.Setup(r => r.ExistsWithEmailAsync(email, It.IsAny<CancellationToken>())).ReturnsAsync(false);
+        mockUserRepo.Setup(r => r.ExistsWithEmailIgnoringTenantAsync(email, It.IsAny<CancellationToken>())).ReturnsAsync(false);
         mockLangRepo.Setup(r => r.ExistsWithCodeAsync("cs", It.IsAny<CancellationToken>())).ReturnsAsync(true);
         var validator = new ResendConfirmationEmail.Validator(mockUserRepo.Object, mockLangRepo.Object);
         var command = new ResendConfirmationEmail.Command(email, "cs");
@@ -81,8 +81,8 @@ public class ResendConfirmationEmailValidatorTests
         var email = "test@example.com";
         var mockUserRepo = new Mock<IUserRepository>();
         var mockLangRepo = new Mock<ILanguageRepository>();
-        mockUserRepo.Setup(r => r.ExistsWithEmailAsync(email, It.IsAny<CancellationToken>())).ReturnsAsync(true);
-        mockUserRepo.Setup(r => r.GetByEmailAsync(email, It.IsAny<CancellationToken>())).ReturnsAsync(UserMockFactory.Generate());
+        mockUserRepo.Setup(r => r.ExistsWithEmailIgnoringTenantAsync(email, It.IsAny<CancellationToken>())).ReturnsAsync(true);
+        mockUserRepo.Setup(r => r.GetByEmailIgnoringTenantAsync(email, It.IsAny<CancellationToken>())).ReturnsAsync(UserMockFactory.Generate());
         mockLangRepo.Setup(r => r.ExistsWithCodeAsync("cs", It.IsAny<CancellationToken>())).ReturnsAsync(true);
         var validator = new ResendConfirmationEmail.Validator(mockUserRepo.Object, mockLangRepo.Object);
         var command = new ResendConfirmationEmail.Command(email, "cs");
@@ -105,8 +105,8 @@ public class ResendConfirmationEmailValidatorTests
         var email = "test@example.com";
         var mockUserRepo = new Mock<IUserRepository>();
         var mockLangRepo = new Mock<ILanguageRepository>();
-        mockUserRepo.Setup(r => r.ExistsWithEmailAsync(email, It.IsAny<CancellationToken>())).ReturnsAsync(true);
-        mockUserRepo.Setup(r => r.GetByEmailAsync(email, It.IsAny<CancellationToken>())).ReturnsAsync(User.CreateWithPassword(
+        mockUserRepo.Setup(r => r.ExistsWithEmailIgnoringTenantAsync(email, It.IsAny<CancellationToken>())).ReturnsAsync(true);
+        mockUserRepo.Setup(r => r.GetByEmailIgnoringTenantAsync(email, It.IsAny<CancellationToken>())).ReturnsAsync(User.CreateWithPassword(
             TestUtilities.Constants.TestUserSession.TestUserEmail,
             TestUtilities.Constants.TestUserSession.TestUserPassword,
             TestUtilities.Constants.TestUserSession.TestFirstName,

@@ -1,6 +1,6 @@
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, OnInit, PLATFORM_ID } from '@angular/core';
-import { Router, RouterLink } from '@angular/router';
+import { Router } from '@angular/router';
 import { CleansiaButtonComponent } from '@cleansia/components';
 import {
   GetLoyaltyActivityActivityItem,
@@ -10,6 +10,7 @@ import {
   LoyaltyTransactionType,
 } from '@cleansia/customer-services';
 import { CleansiaCustomerRoute, SnackbarService } from '@cleansia/services';
+import { formatMoney, localeFor } from '@cleansia/utils';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { FoamEdgeComponent } from '@cleansia-customer/home';
 import { SkeletonModule } from 'primeng/skeleton';
@@ -59,19 +60,6 @@ export class RewardsComponent implements OnInit {
    * which is why Plus adds nothing on top of it. -> /product/business-rules
    */
   protected readonly discountCapPercent = 12;
-
-  /**
-   * Roughly what has been cleaned for, read back out of the points. A point is
-   * a fixed tenth of a koruna of order total, so this is a restatement rather
-   * than an estimate — the "roughly" is the flooring, not the rate.
-   */
-  cleanedForLabel(points: number): string {
-    return new Intl.NumberFormat(this.getLocale(), {
-      style: 'currency',
-      currency: 'CZK',
-      maximumFractionDigits: 0,
-    }).format(points * 10);
-  }
 
   /**
    * Progress 0..100 to the next tier. Computed against the current tier's
@@ -144,19 +132,29 @@ export class RewardsComponent implements OnInit {
   }
 
   /**
-   * Pick a translation key + interpolation for a tier's discount line so
-   * the template stays free of branching. Keys come from `pages.rewards.*`.
+   * A tier's discount line: the percent, and the floor it applies above when the tier has one.
+   * The floor is the server's `MinimumOrderAmountForDiscount` — a platform-default-currency
+   * number — printed as money with the default's code; the perk labels beside it state the
+   * percent only, so the floor is said once and from data.
    */
   discountLabel(tier: GetLoyaltyTiersTierInfo): { key: string; params: Record<string, unknown> } {
     if (!tier.discountPercent) {
       return { key: 'pages.rewards.no_discount_yet', params: {} };
     }
-    if (tier.minimumOrderAmountForDiscount && tier.minimumOrderAmountForDiscount > 0) {
+    if (
+      this.facade.floorApplies() &&
+      tier.minimumOrderAmountForDiscount &&
+      tier.minimumOrderAmountForDiscount > 0
+    ) {
       return {
         key: 'pages.rewards.discount_min_order',
         params: {
           percent: this.percentOf(tier.discountPercent),
-          minAmount: tier.minimumOrderAmountForDiscount,
+          minAmount: formatMoney(
+            tier.minimumOrderAmountForDiscount,
+            this.facade.defaultCurrencyCode(),
+            localeFor(this.translate.currentLang),
+          ),
         },
       };
     }
@@ -220,26 +218,11 @@ export class RewardsComponent implements OnInit {
     return { key: 'pages.rewards.tx.completed', params: {} };
   }
 
-  /**
-   * Format the ledger timestamp using the active language. Falls back to en-US
-   * when the runtime locale isn't in our explicit map.
-   */
-  private getLocale(): string {
-    const localeMap: Record<string, string> = {
-      en: 'en-US',
-      cs: 'cs-CZ',
-      sk: 'sk-SK',
-      uk: 'uk-UA',
-      ru: 'ru-RU',
-    };
-    return localeMap[this.translate.currentLang] || 'en-US';
-  }
-
   // The board's activity rows carry a date, not a timestamp: a points movement
   // is a thing that happened on a day, and the minute it landed says nothing.
   formatDate(date: Date | undefined | null): string {
     if (!date) return '';
-    return new Date(date).toLocaleDateString(this.getLocale(), {
+    return new Date(date).toLocaleDateString(localeFor(this.translate.currentLang), {
       day: 'numeric',
       month: 'numeric',
       year: 'numeric',

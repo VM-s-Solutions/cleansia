@@ -5,6 +5,7 @@ import {
   CreateCountryCommand,
   CountryDetailDto,
   UpdateCountryCommand,
+  UpdateCountryMarketContentCommand,
 } from '@cleansia/admin-services';
 import { UnsubscribeControlDirective } from '@cleansia/directives';
 import { CleansiaAdminRoute, SnackbarService } from '@cleansia/services';
@@ -13,7 +14,12 @@ import { catchError, finalize, of, takeUntil } from 'rxjs';
 
 export interface CountryFormData {
   isoCode: string;
+  isoAlpha2: string;
   name: string;
+}
+
+export interface CountryMarketContentData {
+  insuranceCoverageAmount: number | null;
 }
 
 @Injectable()
@@ -52,6 +58,7 @@ export class CountryFormFacade extends UnsubscribeControlDirective {
 
     const command = new CreateCountryCommand();
     command.isoCode = data.isoCode;
+    command.isoAlpha2 = data.isoAlpha2;
     command.name = data.name;
 
     this.adminClient.adminCountryClient
@@ -71,15 +78,55 @@ export class CountryFormFacade extends UnsubscribeControlDirective {
       });
   }
 
-  updateCountry(countryId: string, data: CountryFormData): void {
+  /**
+   * The market content rides a second PUT because it lives on the configuration row, not the
+   * country; it runs only once the country update has landed, and only when the form had the
+   * section to save (a country without a configuration has nothing to write to).
+   */
+  updateCountry(
+    countryId: string,
+    data: CountryFormData,
+    marketContent: CountryMarketContentData | null
+  ): void {
     this.saving.set(true);
 
     const command = new UpdateCountryCommand();
     command.countryId = countryId;
     command.name = data.name;
+    command.isoAlpha2 = data.isoAlpha2.trim() || undefined;
 
     this.adminClient.adminCountryClient
       .update(countryId, command)
+      .pipe(
+        takeUntil(this.destroyed$),
+        catchError(() => of(null))
+      )
+      .subscribe((response) => {
+        if (!response) {
+          this.saving.set(false);
+          return;
+        }
+        this.snackbarService.showSuccess(
+          this.translate.instant('pages.country_form.messages.update_success')
+        );
+        if (marketContent) {
+          this.updateMarketContent(countryId, marketContent);
+        } else {
+          this.saving.set(false);
+          this.router.navigate([CleansiaAdminRoute.COUNTRY_MANAGEMENT]);
+        }
+      });
+  }
+
+  updateMarketContent(countryId: string, data: CountryMarketContentData): void {
+    this.saving.set(true);
+
+    const command = new UpdateCountryMarketContentCommand();
+    command.countryId = countryId;
+    command.insuranceCoverageAmount = data.insuranceCoverageAmount ?? undefined;
+
+    this.adminClient.adminCountryClient
+      .marketContent(countryId, command)
       .pipe(
         takeUntil(this.destroyed$),
         catchError(() => of(null)),
@@ -88,7 +135,9 @@ export class CountryFormFacade extends UnsubscribeControlDirective {
       .subscribe((response) => {
         if (response) {
           this.snackbarService.showSuccess(
-            this.translate.instant('pages.country_form.messages.update_success')
+            this.translate.instant(
+              'pages.country_form.messages.market_content_success'
+            )
           );
           this.router.navigate([CleansiaAdminRoute.COUNTRY_MANAGEMENT]);
         }

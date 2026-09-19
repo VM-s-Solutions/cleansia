@@ -6,6 +6,7 @@ import cz.cleansia.core.network.ApiResult
 import cz.cleansia.core.snackbar.SnackbarController
 import cz.cleansia.customer.R
 import io.mockk.coEvery
+import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
@@ -17,6 +18,7 @@ import kotlinx.coroutines.test.runTest
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.ResponseBody.Companion.toResponseBody
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -80,15 +82,23 @@ class CatalogRepositoryTest {
 
     private fun extra(id: String) = ExtraListItem(id = id, slug = "oven", name = "Inside Oven", price = 5.0)
 
+    private fun currency(code: String, isDefault: Boolean) =
+        CurrencyListItem(id = "cur-$code", code = code, symbol = code, name = code, isDefault = isDefault)
+
+    private fun stubDefaultCurrency(code: String = "CZK") {
+        coEvery { api.getCurrencies() } returns Response.success(listOf(currency(code, isDefault = true)))
+    }
+
     private fun errorBody() = "{}".toResponseBody("application/json".toMediaType())
 
     // ── success ──
 
     @Test
     fun refresh_givenAllSuccessful_populatesFlowsAndReturnsSuccess() = runTest {
-        coEvery { api.getServices() } returns Response.success(listOf(service("s-1")))
-        coEvery { api.getPackages() } returns Response.success(listOf(pkg("p-1")))
-        coEvery { api.getExtras() } returns Response.success(listOf(extra("e-1")))
+        stubDefaultCurrency()
+        coEvery { api.getServices(any()) } returns Response.success(listOf(service("s-1")))
+        coEvery { api.getPackages(any()) } returns Response.success(listOf(pkg("p-1")))
+        coEvery { api.getExtras(any()) } returns Response.success(listOf(extra("e-1")))
 
         val repo = newRepo()
         val result = repo.refresh()
@@ -104,9 +114,10 @@ class CatalogRepositoryTest {
 
     @Test
     fun refresh_whenExtrasFail_stillSucceedsWithEmptyExtras() = runTest {
-        coEvery { api.getServices() } returns Response.success(listOf(service("s-1")))
-        coEvery { api.getPackages() } returns Response.success(listOf(pkg("p-1")))
-        coEvery { api.getExtras() } returns Response.error(500, errorBody())
+        stubDefaultCurrency()
+        coEvery { api.getServices(any()) } returns Response.success(listOf(service("s-1")))
+        coEvery { api.getPackages(any()) } returns Response.success(listOf(pkg("p-1")))
+        coEvery { api.getExtras(any()) } returns Response.error(500, errorBody())
 
         val repo = newRepo()
         val result = repo.refresh()
@@ -123,9 +134,10 @@ class CatalogRepositoryTest {
         // Drive the repo into loading=true via a gated services call, then a
         // second refresh must bail out (no-op) to Success without a second hit.
         val gate = CompletableDeferred<Response<List<ServiceListItem>>>()
-        coEvery { api.getServices() } coAnswers { gate.await() }
-        coEvery { api.getPackages() } returns Response.success(listOf(pkg("p-1")))
-        coEvery { api.getExtras() } returns Response.success(emptyList())
+        stubDefaultCurrency()
+        coEvery { api.getServices(any()) } coAnswers { gate.await() }
+        coEvery { api.getPackages(any()) } returns Response.success(listOf(pkg("p-1")))
+        coEvery { api.getExtras(any()) } returns Response.success(emptyList())
 
         val repo = newRepo()
         val first = async { repo.refresh() }
@@ -142,9 +154,10 @@ class CatalogRepositoryTest {
 
     @Test
     fun refresh_givenServicesHttp500_returnsServerErrorMessageAndNoRepoSnackbar() = runTest {
-        coEvery { api.getServices() } returns Response.error(500, errorBody())
-        coEvery { api.getPackages() } returns Response.success(listOf(pkg("p-1")))
-        coEvery { api.getExtras() } returns Response.success(emptyList())
+        stubDefaultCurrency()
+        coEvery { api.getServices(any()) } returns Response.error(500, errorBody())
+        coEvery { api.getPackages(any()) } returns Response.success(listOf(pkg("p-1")))
+        coEvery { api.getExtras(any()) } returns Response.success(emptyList())
 
         val repo = newRepo()
         val result = repo.refresh()
@@ -160,9 +173,10 @@ class CatalogRepositoryTest {
 
     @Test
     fun refresh_givenPackagesHttp400_returnsParsedMessageAndNoRepoSnackbar() = runTest {
-        coEvery { api.getServices() } returns Response.success(listOf(service("s-1")))
-        coEvery { api.getPackages() } returns Response.error(400, errorBody())
-        coEvery { api.getExtras() } returns Response.success(emptyList())
+        stubDefaultCurrency()
+        coEvery { api.getServices(any()) } returns Response.success(listOf(service("s-1")))
+        coEvery { api.getPackages(any()) } returns Response.error(400, errorBody())
+        coEvery { api.getExtras(any()) } returns Response.success(emptyList())
 
         val repo = newRepo()
         val result = repo.refresh()
@@ -178,7 +192,8 @@ class CatalogRepositoryTest {
 
     @Test
     fun refresh_whenServicesThrows_returnsNetworkErrorSilently() = runTest {
-        coEvery { api.getServices() } throws java.io.IOException("boom")
+        stubDefaultCurrency()
+        coEvery { api.getServices(any()) } throws java.io.IOException("boom")
 
         val repo = newRepo()
         val result = repo.refresh()
@@ -192,5 +207,118 @@ class CatalogRepositoryTest {
         assertEquals(false, repo.loaded.value)
         assertEquals(false, repo.loading.value)
         verify(exactly = 0) { snackbar.showError(any<String>()) }
+    }
+
+    // ── the currency the catalogue is priced in ──
+
+    @Test
+    fun refresh_labelsTheCatalogueWithTheOverviewsDefaultCurrency() = runTest {
+        coEvery { api.getCurrencies() } returns Response.success(
+            listOf(currency("CZK", isDefault = false), currency("EUR", isDefault = true)),
+        )
+        coEvery { api.getServices(any()) } returns Response.success(listOf(service("s-1")))
+        coEvery { api.getPackages(any()) } returns Response.success(listOf(pkg("p-1")))
+        coEvery { api.getExtras(any()) } returns Response.success(emptyList())
+
+        val repo = newRepo()
+        assertNull(repo.currencyCode.value)
+
+        val result = repo.refresh()
+
+        assertTrue("expected Success but got: $result", result is ApiResult.Success)
+        assertEquals("EUR", repo.currencyCode.value)
+    }
+
+    /**
+     * A price list whose currency is unknown is a price list the customer was never shown: the old
+     * `formatOrderPrice(x, null)` labelled it CZK by construction, which is the defect this closes.
+     */
+    @Test
+    fun refresh_givenAnOverviewWithNoDefault_refusesRatherThanLabellingTheCatalogueByGuess() = runTest {
+        coEvery { api.getCurrencies() } returns Response.success(listOf(currency("CZK", isDefault = false)))
+        coEvery { api.getServices(any()) } returns Response.success(listOf(service("s-1")))
+        coEvery { api.getPackages(any()) } returns Response.success(listOf(pkg("p-1")))
+        coEvery { api.getExtras(any()) } returns Response.success(emptyList())
+
+        val repo = newRepo()
+        val result = repo.refresh()
+
+        assertTrue("expected Error but got: $result", result is ApiResult.Error)
+        assertTrue((result as ApiResult.Error).error is ApiError.Server)
+        assertNull(repo.currencyCode.value)
+        assertEquals(false, repo.loaded.value)
+    }
+
+    // ── the market the catalogue is priced for ──
+    //
+    // The booking's country is the market: every overview is asked for that country so the server
+    // prices it in the country's currency and withholds what has no price row there. The repository
+    // remembers which country the loaded catalogue answers for, so the wizard can tell whether a
+    // new address needs a reload.
+
+    @Test
+    fun refresh_givenACountry_asksEveryOverviewForItAndRemembersIt() = runTest {
+        stubDefaultCurrency()
+        coEvery { api.getServices("svk") } returns Response.success(listOf(service("s-1")))
+        coEvery { api.getPackages("svk") } returns Response.success(listOf(pkg("p-1")))
+        coEvery { api.getExtras("svk") } returns Response.success(listOf(extra("e-1")))
+
+        val repo = newRepo()
+        assertNull(repo.countryId.value)
+
+        val result = repo.refresh(countryId = "svk")
+
+        assertTrue("expected Success but got: $result", result is ApiResult.Success)
+        assertEquals("svk", repo.countryId.value)
+        coVerify(exactly = 1) { api.getServices("svk") }
+        coVerify(exactly = 1) { api.getPackages("svk") }
+        coVerify(exactly = 1) { api.getExtras("svk") }
+    }
+
+    @Test
+    fun refresh_withoutACountry_asksForThePlatformDefaultAndRemembersNoCountry() = runTest {
+        stubDefaultCurrency()
+        coEvery { api.getServices(null) } returns Response.success(listOf(service("s-1")))
+        coEvery { api.getPackages(null) } returns Response.success(listOf(pkg("p-1")))
+        coEvery { api.getExtras(null) } returns Response.success(emptyList())
+
+        val repo = newRepo()
+        repo.refresh()
+
+        assertNull(repo.countryId.value)
+        coVerify(exactly = 1) { api.getServices(null) }
+    }
+
+    /** A failed reload must not claim the new market: the rows on screen are still the old country's. */
+    @Test
+    fun refresh_givenACountry_whenTheReloadFails_keepsTheCountryTheRowsAnswerFor() = runTest {
+        stubDefaultCurrency()
+        coEvery { api.getServices(any()) } returns Response.success(listOf(service("s-1")))
+        coEvery { api.getPackages(any()) } returns Response.success(listOf(pkg("p-1")))
+        coEvery { api.getExtras(any()) } returns Response.success(emptyList())
+        val repo = newRepo()
+        repo.refresh(countryId = "cze")
+
+        coEvery { api.getServices("svk") } returns Response.error(500, errorBody())
+        val result = repo.refresh(countryId = "svk")
+
+        assertTrue(result is ApiResult.Error)
+        assertEquals("cze", repo.countryId.value)
+        assertEquals(listOf(service("s-1")), repo.services.value)
+    }
+
+    @Test
+    fun refresh_givenCurrencyHttp500_failsTheRefreshLikeServicesDo() = runTest {
+        coEvery { api.getCurrencies() } returns Response.error(500, errorBody())
+        coEvery { api.getServices(any()) } returns Response.success(listOf(service("s-1")))
+        coEvery { api.getPackages(any()) } returns Response.success(listOf(pkg("p-1")))
+        coEvery { api.getExtras(any()) } returns Response.success(emptyList())
+
+        val repo = newRepo()
+        val result = repo.refresh()
+
+        assertTrue("expected Error but got: $result", result is ApiResult.Error)
+        assertEquals(serverMessage, (result as ApiResult.Error).error.message)
+        assertEquals(false, repo.loaded.value)
     }
 }

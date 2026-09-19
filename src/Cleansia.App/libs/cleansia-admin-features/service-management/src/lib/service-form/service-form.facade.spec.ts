@@ -18,12 +18,15 @@ describe('ServiceFormFacade', () => {
   let navigate: jest.Mock;
   let getLanguagesMock: jest.Mock;
   let getCategoriesMock: jest.Mock;
+  let getCurrenciesMock: jest.Mock;
 
   const formData: ServiceFormData = {
     name: 'Deep clean',
     description: 'Full property deep clean',
-    basePrice: 1200,
-    perRoomPrice: 250,
+    prices: {
+      CZK: { basePrice: 1200, perRoomPrice: 250 },
+      EUR: { basePrice: 48, perRoomPrice: 10 },
+    },
     estimatedTime: 180,
     categoryId: 'cat-1',
     translations: {
@@ -40,6 +43,7 @@ describe('ServiceFormFacade', () => {
     navigate = jest.fn();
     getLanguagesMock = jest.fn().mockReturnValue(of([]));
     getCategoriesMock = jest.fn().mockReturnValue(of([]));
+    getCurrenciesMock = jest.fn().mockReturnValue(of([]));
 
     TestBed.configureTestingModule({
       providers: [
@@ -54,6 +58,7 @@ describe('ServiceFormFacade', () => {
               categories: getCategoriesMock,
             },
             adminLanguageClient: { getOverview: getLanguagesMock },
+            adminCurrencyClient: { getOverview: getCurrenciesMock },
             adminCategoryClient: { getAll: jest.fn().mockReturnValue(of([])) },
           },
         },
@@ -110,10 +115,58 @@ describe('ServiceFormFacade', () => {
 
       expect(facade.categories()).toEqual([]);
     });
+
+    it('leaves the currency list an empty array', () => {
+      facade.currencies.set([
+        { code: 'CZK', symbol: 'Kč', name: 'Czech koruna', isActive: true },
+      ]);
+      getCurrenciesMock.mockReturnValue(of(null));
+
+      facade.loadCurrencies();
+
+      expect(facade.currencies()).toEqual([]);
+    });
+  });
+
+  /**
+   * The form marks a block REQUIRED when its currency is operated and OPTIONAL when it is not, which
+   * is exactly what the backend rule does — so the flag has to survive the mapping. A dropped
+   * `isActive` reads as "nothing is required", and the admin learns the rule from a rejected save.
+   */
+  it('carries whether the platform operates in each currency', () => {
+    getCurrenciesMock.mockReturnValue(
+      of([
+        { code: 'CZK', symbol: 'Kč', name: 'Czech koruna', isActive: true },
+        { code: 'EUR', symbol: '€', name: 'Euro', isActive: false },
+      ])
+    );
+
+    facade.loadCurrencies();
+
+    expect(facade.currencies().map((c) => [c.code, c.isActive])).toEqual([
+      ['CZK', true],
+      ['EUR', false],
+    ]);
+  });
+
+  // A currency's symbol and name are what the form's block headings read; the CODE is what the
+  // backend keys the price row by, so a row with none is a price the upsert cannot place.
+  it('falls back to the code when a currency arrives with no symbol or name', () => {
+    getCurrenciesMock.mockReturnValue(
+      of([{ code: 'CZK', isActive: true }, { symbol: '€', name: 'Euro' }])
+    );
+
+    facade.loadCurrencies();
+
+    expect(facade.currencies()).toEqual([
+      { code: 'CZK', symbol: 'CZK', name: 'CZK', isActive: true },
+    ]);
   });
 
   // Every member of a generated command is optional, so a dropped assignment type-checks.
-  // These pin the serialized body instead (ADR-0031) — the price fields decide money.
+  // These pin the serialized body instead (ADR-0031) — the price map decides money, and it now
+  // decides it per currency: a map that loses a key silently takes the service off sale in that
+  // market, which no type ever catches.
   describe('command bodies on the wire', () => {
     it('serializes a create with the prices, the category and only the filled translations', () => {
       facade.createService(formData);
@@ -123,8 +176,10 @@ describe('ServiceFormFacade', () => {
       expect(command.toJSON()).toEqual({
         name: 'Deep clean',
         description: 'Full property deep clean',
-        basePrice: 1200,
-        perRoomPrice: 250,
+        prices: {
+          CZK: { basePrice: 1200, perRoomPrice: 250 },
+          EUR: { basePrice: 48, perRoomPrice: 10 },
+        },
         estimatedTime: 180,
         categoryId: 'cat-1',
         translations: {
@@ -142,8 +197,10 @@ describe('ServiceFormFacade', () => {
         serviceId: 'svc-1',
         name: 'Deep clean',
         description: 'Full property deep clean',
-        basePrice: 1200,
-        perRoomPrice: 250,
+        prices: {
+          CZK: { basePrice: 1200, perRoomPrice: 250 },
+          EUR: { basePrice: 48, perRoomPrice: 10 },
+        },
         estimatedTime: 180,
         categoryId: 'cat-1',
         translations: {

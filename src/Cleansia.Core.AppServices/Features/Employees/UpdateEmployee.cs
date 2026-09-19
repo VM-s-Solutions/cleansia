@@ -103,21 +103,6 @@ public class UpdateEmployee
                 })
                 .WithMessage(BusinessErrorMessage.RegistrationNumberInvalidFormat);
 
-            RuleFor(c => c.VatNumber)
-                .MaximumLength(50)
-                .WithMessage(BusinessErrorMessage.MaxLengthExceeded)
-                .When(c => !string.IsNullOrWhiteSpace(c.VatNumber));
-
-            RuleFor(c => c.VatNumber)
-                .MustAsync(async (command, value, ct) =>
-                {
-                    var result = await _taxIdValidator.ValidateVatNumberAsync(
-                        command.CountryId, value, ct);
-                    return result.IsValid;
-                })
-                .WithMessage(BusinessErrorMessage.VatNumberInvalidFormat)
-                .When(c => !string.IsNullOrWhiteSpace(c.VatNumber));
-
             RuleFor(c => c.LegalEntityName)
                 .NotEmpty()
                 .WithMessage(BusinessErrorMessage.Required)
@@ -218,7 +203,6 @@ public class UpdateEmployee
         string PassportId,
         EmployeeEntityType EntityType,
         string RegistrationNumber,
-        string? VatNumber,
         string? LegalEntityName,
         string? EmergencyName,
         string? EmergencyPhone,
@@ -260,7 +244,7 @@ public class UpdateEmployee
             // The validator only gates on Consent == true; GDPR Art. 7(1) requires us to be able to
             // DEMONSTRATE the consent, so the grant is persisted on the same unit of work as the
             // profile it belongs to. Re-saving an already-consented profile is a no-op.
-            await consentService.TryGrantAsync(employee.UserId, ConsentType.DataProcessing, cancellationToken);
+            await consentService.TryGrantAsync(employee.UserId, ConsentType.DataProcessing, document: null, cancellationToken);
 
             return BusinessResult.Success(new Response(employee.Id));
         }
@@ -372,7 +356,6 @@ public class UpdateEmployee
             employee.UpdateEmployeeDetails(
                 command.EntityType,
                 command.RegistrationNumber,
-                command.VatNumber,
                 command.LegalEntityName,
                 command.NationalityId,
                 command.PassportId,

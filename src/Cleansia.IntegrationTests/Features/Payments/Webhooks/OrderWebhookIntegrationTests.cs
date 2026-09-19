@@ -10,6 +10,7 @@ using Cleansia.Core.Domain.Users;
 using Cleansia.Core.Queue.Abstractions;
 using Cleansia.Infra.Common.Validations;
 using Cleansia.Infra.Database;
+using Cleansia.TestUtilities;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -35,16 +36,24 @@ namespace Cleansia.IntegrationTests.Features.Payments.Webhooks;
 /// The webhook is anonymous (no tenant claim): the handler reads the order tenant-ignoring
 /// (<c>GetByIdIgnoringTenantAsync</c>) and the persisted effect rows carry the order's own tenant, read
 /// back from the enqueued envelope body by <c>OutboxPendingDispatch</c> — asserted explicitly so the
-/// row's tenant and its body stay in agreement. These run in single-tenant mode (the production web
-/// Checkout path): the order-exists VALIDATOR rule is tenant-scoped, so it resolves only single-tenant
-/// orders today (see productionBugsFound — the handler read is tenant-ignoring, the validator is not).
+/// row's tenant and its body stay in agreement. Most cases arrange the order under the fixture's own
+/// company; one arranges it under a second company, because the order-exists VALIDATOR rule was once
+/// tenant-scoped and resolved nothing on the anonymous path (the handler read was tenant-ignoring,
+/// the validator was not).
 /// </summary>
 [Collection("PostgresCollection")]
 public class OrderWebhookIntegrationTests(PostgresContainerFixture fixture) : BaseIntegrationTest(fixture)
 {
     private const string CurrencyId = "currency-czk-order-webhook";
     private const string CountryId = "country-cz-order-webhook";
-    private const string TenantId = "tenant-order-webhook";
+    private const string TenantId = TestTenants.Second;
+
+    /// <summary>
+    /// The fulfilment status this fixture arranges. Pending is the DEAD status (ADR-0037 D5, no
+    /// production writer) — this fixture has always used it and the webhook never depended on it. Named
+    /// so the assertions can say "unchanged" rather than repeat a literal nobody should copy.
+    /// </summary>
+    private const OrderStatus ArrangedStatus = OrderStatus.Pending;
 
     private static string _orderId = default!;
     private static string _userId = default!;
@@ -67,19 +76,25 @@ public class OrderWebhookIntegrationTests(PostgresContainerFixture fixture) : Ba
 
                 var order = await LoadOrderAsync(context);
                 Assert.Equal(PaymentStatus.Paid, order.PaymentStatus);
-                Assert.Equal(OrderStatus.Confirmed, LatestStatus(order));
+                // T-0691: settlement moves the MONEY axis only, so the fulfilment axis is exactly where
+                // the arrangement left it and the webhook adds nothing. Confirmed means a cleaner took
+                // the job, and none has. What makes the order offerable now is OrderAvailability's money
+                // term, not a status the webhook wrote. Asserted as "unchanged" rather than as a literal,
+                // because the point is the ABSENCE of a write.
+                Assert.Equal(ArrangedStatus, LatestStatus(order));
+                Assert.DoesNotContain(order.OrderStatusHistory, t => t.Status == OrderStatus.Confirmed);
 
                 Assert.Equal(1, await ProcessedEventCountAsync(context, "evt_order_first"));
                 Assert.Equal(1, await ReceiptOutboxCountAsync(context));
-                Assert.Equal(1, await OrderConfirmedPushOutboxCountAsync(context));
+                Assert.Equal(1, await OrderPaymentConfirmedPushOutboxCountAsync(context));
             });
     }
 
-    // ── AC2/AC3 — a NON-NULL-tenant order is confirmed+paid once, with effects once, on the anonymous
-    //              webhook path. RED before the fix: the order-exists validator rule is tenant-scoped, so
-    //              with no tenant claim it resolves only TenantId==null rows, rejects this order, and the
-    //              order stays Pending. GREEN after the fix: the existence check is tenant-ignoring like
-    //              the handler read, so the order confirms and the effect rows carry the order's tenant. ──
+    // ── AC2/AC3 — a second company's order is confirmed+paid once, with effects once, on the anonymous
+    //              webhook path. RED before the fix: the order-exists validator rule was tenant-scoped, so
+    //              with no tenant claim it resolved no stamped row, rejected this order, and the order
+    //              stayed Pending. GREEN after the fix: the existence check is tenant-ignoring like the
+    //              handler read, so the order confirms and the effect rows carry the order's tenant. ──
 
     [Fact]
     public async Task ValidCheckoutCompleted_NonNullTenantOrder_ConfirmsPaysOrder_AndEffectsCarryTenant()
@@ -98,11 +113,17 @@ public class OrderWebhookIntegrationTests(PostgresContainerFixture fixture) : Ba
                 var order = await LoadOrderAsync(context);
                 Assert.Equal(TenantId, order.TenantId);
                 Assert.Equal(PaymentStatus.Paid, order.PaymentStatus);
-                Assert.Equal(OrderStatus.Confirmed, LatestStatus(order));
+                // T-0691: settlement moves the MONEY axis only, so the fulfilment axis is exactly where
+                // the arrangement left it and the webhook adds nothing. Confirmed means a cleaner took
+                // the job, and none has. What makes the order offerable now is OrderAvailability's money
+                // term, not a status the webhook wrote. Asserted as "unchanged" rather than as a literal,
+                // because the point is the ABSENCE of a write.
+                Assert.Equal(ArrangedStatus, LatestStatus(order));
+                Assert.DoesNotContain(order.OrderStatusHistory, t => t.Status == OrderStatus.Confirmed);
 
                 Assert.Equal(1, await ProcessedEventCountAsync(context, "evt_order_tenant_scoped"));
                 Assert.Equal(1, await ReceiptOutboxCountAsync(context));
-                Assert.Equal(1, await OrderConfirmedPushOutboxCountAsync(context));
+                Assert.Equal(1, await OrderPaymentConfirmedPushOutboxCountAsync(context));
 
                 // AC3: the write re-scoped to the order's own tenant, so the persisted effect rows carry
                 // that tenant — not null and not the (absent) request tenant.
@@ -134,13 +155,16 @@ public class OrderWebhookIntegrationTests(PostgresContainerFixture fixture) : Ba
 
                 var order = await LoadOrderAsync(context);
                 Assert.Equal(PaymentStatus.Paid, order.PaymentStatus);
-                // Exactly one Confirmed transition — the redelivery did not stack a second.
-                Assert.Equal(1, order.OrderStatusHistory.Count(s => s.Status == OrderStatus.Confirmed));
+                // The redelivery did not stack a fulfilment track. Post-T-0691 the webhook writes NO
+                // status at all, so the assertion inverts: zero Confirmed rather than exactly one, and
+                // the history is left with only the track this fixture arranged it with.
+                Assert.Equal(0, order.OrderStatusHistory.Count(s => s.Status == OrderStatus.Confirmed));
+                Assert.Single(order.OrderStatusHistory);
 
                 // The ProcessedStripeEvent stamp + each outbox effect survive both deliveries exactly once.
                 Assert.Equal(1, await ProcessedEventCountAsync(context, "evt_order_redeliver"));
                 Assert.Equal(1, await ReceiptOutboxCountAsync(context));
-                Assert.Equal(1, await OrderConfirmedPushOutboxCountAsync(context));
+                Assert.Equal(1, await OrderPaymentConfirmedPushOutboxCountAsync(context));
             });
     }
 
@@ -162,8 +186,8 @@ public class OrderWebhookIntegrationTests(PostgresContainerFixture fixture) : Ba
                 var order = await LoadOrderAsync(context);
                 var receipt = await ReceiptOutboxRowAsync(context);
                 // OutboxPendingDispatch derives the row's tenant from the envelope body's tenantId, so the
-                // row tenant equals the order's tenant (null in single-tenant) — a regression that wrote a
-                // different tenant onto the row, or lost the body's tenant, fails here.
+                // row tenant equals the order's tenant — a regression that wrote a different tenant onto
+                // the row, or lost the body's tenant, fails here.
                 Assert.Equal(order.TenantId, receipt.TenantId);
             });
     }
@@ -247,7 +271,7 @@ public class OrderWebhookIntegrationTests(PostgresContainerFixture fixture) : Ba
 
         Assert.Equal(0, await ProcessedEventCountAsync(context, eventId));
         Assert.Equal(0, await ReceiptOutboxCountAsync(context));
-        Assert.Equal(0, await OrderConfirmedPushOutboxCountAsync(context));
+        Assert.Equal(0, await OrderPaymentConfirmedPushOutboxCountAsync(context));
     }
 
     private static Task<Order> LoadOrderAsync(CleansiaDbContext context) =>
@@ -276,21 +300,21 @@ public class OrderWebhookIntegrationTests(PostgresContainerFixture fixture) : Ba
             .FirstAsync(m => m.QueueName == QueueNames.GenerateReceipt
                           && m.MessageKey == MessageKeys.Receipt(_orderId));
 
-    private static async Task<int> OrderConfirmedPushOutboxCountAsync(CleansiaDbContext context)
+    private static async Task<int> OrderPaymentConfirmedPushOutboxCountAsync(CleansiaDbContext context)
     {
-        var pushKey = MessageKeys.Push(_userId, NotificationEventCatalog.OrderConfirmed, _orderId);
+        var pushKey = MessageKeys.Push(_userId, NotificationEventCatalog.OrderPaymentConfirmed, _orderId);
         return await context.OutboxMessages
             .IgnoreQueryFilters()
             .CountAsync(m => m.QueueName == QueueNames.NotificationsDispatch && m.MessageKey == pushKey);
     }
 
-    // Single-tenant (TenantId == null) — the production web Checkout path. The handler read is
-    // tenant-ignoring and (after T-0245) so is the order-exists validator rule, so both resolve the order.
+    // The fixture's own company: no explicit tenant, so CommitAsync stamps the ambient one. The handler
+    // read is tenant-ignoring and so is the order-exists validator rule, so both resolve the order.
     private static Task SeedPendingCardOrder(CleansiaDbContext context) =>
         SeedPendingCardOrder(context, tenantId: null);
 
-    // Non-null-tenant order — the multi-tenant Checkout path the tenant-scoped validator rule used to
-    // drop on the floor (the order resolved null and the webhook rejected the paid event).
+    // A second company's order — the path the once tenant-scoped validator rule dropped on the floor
+    // (the order resolved null and the webhook rejected the paid event).
     private static Task SeedTenantScopedPendingCardOrder(CleansiaDbContext context) =>
         SeedPendingCardOrder(context, tenantId: TenantId);
 
@@ -298,11 +322,12 @@ public class OrderWebhookIntegrationTests(PostgresContainerFixture fixture) : Ba
     {
         context.Languages.Add(Language.Create("en", "English"));
 
-        var country = Country.Create("Czechia", "CZ", isServiced: true);
+        var country = Country.Create("Czechia", "CZ", "CZ", isServiced: true);
         country.Id = CountryId;
         context.Countries.Add(country);
 
-        var currency = Currency.Create("CZK", "Kč", "Czech koruna", 1.0m);
+        var currency = Currency.Create("CZK", "Kč", "Czech koruna");
+        currency.IsActive = true;
         currency.Id = CurrencyId;
         currency.SetAsDefault(true);
         context.Currencies.Add(currency);
@@ -320,7 +345,6 @@ public class OrderWebhookIntegrationTests(PostgresContainerFixture fixture) : Ba
             customerAddress: Address.Create("Webhook St 1", "Brno", "60200", CountryId),
             rooms: 2,
             bathrooms: 1,
-            extras: new Dictionary<string, bool>(),
             cleaningDateTime: DateTime.UtcNow.AddDays(3),
             paymentType: PaymentType.Card,
             totalPrice: 1500m,
@@ -328,7 +352,7 @@ public class OrderWebhookIntegrationTests(PostgresContainerFixture fixture) : Ba
             paymentStatus: PaymentStatus.Pending,
             userId: user.Id);
         order.AssignStripeSessionId("cs_test_session");
-        order.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.Pending, order));
+        order.AddOrderStatus(OrderStatusTrack.Create(ArrangedStatus, order));
         order.TenantId = tenantId;
         context.Add(order);
 

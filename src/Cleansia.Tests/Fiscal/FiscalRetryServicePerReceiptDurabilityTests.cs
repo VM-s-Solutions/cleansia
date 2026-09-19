@@ -84,6 +84,13 @@ public sealed class FiscalRetryServicePerReceiptDurabilityTests
         _tenantProvider.Object,
         NullLogger<FiscalRetryService>.Instance);
 
+    private static Currency Euro()
+    {
+        var eur = Currency.Create("EUR", "€", "Euro");
+        eur.Id = "eur";
+        return eur;
+    }
+
     private static Order BuildOrder(string orderId)
     {
         var address = Address.Create("Hauptstr. 2", "Berlin", "10115", CountryId);
@@ -94,12 +101,12 @@ public sealed class FiscalRetryServicePerReceiptDurabilityTests
             customerAddress: address,
             rooms: 1,
             bathrooms: 1,
-            extras: new Dictionary<string, bool>(),
             cleaningDateTime: DateTime.UtcNow.AddDays(1),
             paymentType: PaymentType.Cash,
             totalPrice: 1000m,
             currencyId: "eur",
             paymentStatus: PaymentStatus.Pending);
+        order.SetCurrency(Euro());
         order.Id = orderId;
         return order;
     }

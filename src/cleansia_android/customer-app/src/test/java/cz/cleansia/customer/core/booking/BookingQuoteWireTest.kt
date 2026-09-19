@@ -9,6 +9,7 @@ import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
@@ -43,6 +44,7 @@ class BookingQuoteWireTest {
 
     private suspend fun quote(
         body: String,
+        command: QuoteOrderCommand = COMMAND,
         onRequest: (RecordedRequest) -> Unit = {},
     ): QuoteOrderResponse? {
         val server = MockWebServer()
@@ -61,7 +63,7 @@ class BookingQuoteWireTest {
                     .build()
                     .create(GenOrderApi::class.java),
             )
-            api.quote(COMMAND).body().also { onRequest(server.takeRequest()) }
+            api.quote(command).body().also { onRequest(server.takeRequest()) }
         } finally {
             server.shutdown()
         }
@@ -100,6 +102,23 @@ class BookingQuoteWireTest {
         assertEquals("/api/Order/Quote", path)
     }
 
+    /**
+     * The address's country is the market the server prices in. It travels under the name the
+     * command binds, and a wizard that has not reached the address step sends nothing rather than a
+     * null the server would have to interpret.
+     */
+    @Test
+    fun theRequestCarriesTheCountryTheServerPricesFor() = runTest {
+        var body: JsonObject? = null
+        quote(CAPTURED_QUOTE, command = COMMAND.copy(countryId = "svk")) {
+            body = Json.parseToJsonElement(it.body.readUtf8()).jsonObject
+        }
+        assertEquals("svk", body?.get("countryId")?.jsonPrimitive?.content)
+
+        quote(CAPTURED_QUOTE) { body = Json.parseToJsonElement(it.body.readUtf8()).jsonObject }
+        assertNull(body?.get("countryId"))
+    }
+
     // --- rule 1: money is never coerced -----------------------------------------
 
     @Test
@@ -113,7 +132,6 @@ class BookingQuoteWireTest {
         assertEquals(450.00, quote.packagesSubtotal, 0.0)
         assertEquals(300.00, quote.extrasSubtotal, 0.0)
         assertEquals(730.00, quote.expressSurchargeAmount, 0.0)
-        assertEquals(24.75, quote.exchangeRate, 0.0)
     }
 
     @Test
@@ -126,15 +144,6 @@ class BookingQuoteWireTest {
     @Test
     fun anExplicitNullQuoteMoneyKeyRefusesTheQuoteToo() = runTest {
         assertQuoteRefused("totalPrice", withKey(CAPTURED_QUOTE, "totalPrice", JsonNull))
-    }
-
-    /**
-     * `exchangeRate` used to default to `1.0`, which is not a neutral fallback: every converted figure
-     * on the confirm step would be off by the true rate — 24.75× for a CZK order priced in EUR.
-     */
-    @Test
-    fun aMissingExchangeRateRefusesTheQuoteRatherThanAssumingParity() = runTest {
-        assertQuoteRefused("exchangeRate", withoutKey(CAPTURED_QUOTE, "exchangeRate"))
     }
 
     /**
@@ -279,7 +288,6 @@ class BookingQuoteWireTest {
               "extrasSubtotal": 300.00,
               "expressSurchargeApplied": true,
               "expressSurchargeAmount": 730.00,
-              "exchangeRate": 24.75,
               "expressSurchargeWaivedByMembership": false,
               "expressUpgradesRemaining": 2
             }
@@ -300,7 +308,6 @@ class BookingQuoteWireTest {
             "extrasSubtotal",
             "expressSurchargeApplied",
             "expressSurchargeAmount",
-            "exchangeRate",
             "expressSurchargeWaivedByMembership",
             "expressUpgradesRemaining",
             "estimatedDurationMinutes",

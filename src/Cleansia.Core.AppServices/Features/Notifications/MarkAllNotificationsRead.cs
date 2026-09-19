@@ -1,4 +1,5 @@
 using Cleansia.Core.AppServices.Abstractions;
+using Cleansia.Core.AppServices.Auditing;
 using Cleansia.Core.Domain.Notifications;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Infra.Common.Validations;
@@ -12,7 +13,10 @@ public class MarkAllNotificationsRead
     /// <c>UpToCreatedOn</c> is the client's watermark — the newest <c>CreatedOn</c> it fetched —
     /// so a row created after the fetch stays unread (null = mark everything).
     /// <c>Audience</c> is server-enriched: always overwritten by the host controller.
+    /// Not audited: a bell click is not a ledger entry, so an administrator reading their own feed
+    /// leaves no admin audit row.
     /// </summary>
+    [AuditAction(Audited = false)]
     public record Command(
         DateTimeOffset? UpToCreatedOn = null,
         NotificationFeedAudience Audience = NotificationFeedAudience.Customer) : ICommand<Response>;

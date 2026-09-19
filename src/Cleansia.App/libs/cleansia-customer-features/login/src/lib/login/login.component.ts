@@ -16,6 +16,7 @@ import {
   CleansiaCustomerRoute,
   createAppleNonce,
   getAppleIdApi,
+  getGoogleIdApi,
   GOOGLE_CLIENT_ID,
   isAppleSignInCancelled,
 } from '@cleansia/services';
@@ -92,8 +93,8 @@ export class LoginComponent implements AfterViewInit {
 
   private initGoogleSignIn() {
     this.loadGsiScript();
-    const google = (window as any).google;
-    if (!google?.accounts?.id) {
+    const googleId = getGoogleIdApi();
+    if (!googleId) {
       if (this._gsiRetries < this._gsiMaxRetries) {
         this._gsiRetries++;
         setTimeout(() => this.initGoogleSignIn(), 300);
@@ -101,9 +102,9 @@ export class LoginComponent implements AfterViewInit {
       return;
     }
 
-    google.accounts.id.initialize({
+    googleId.initialize({
       client_id: this.googleClientId,
-      callback: (response: { credential: string }) => {
+      callback: (response) => {
         this.zone.run(() => this.facade.googleLogin(response.credential));
       },
     });
@@ -117,7 +118,7 @@ export class LoginComponent implements AfterViewInit {
       // can happen if the parent is display:none on first paint.
       const measured = (btnEl as HTMLElement).clientWidth;
       const width = Math.min(measured > 0 ? measured : 400, 400);
-      google.accounts.id.renderButton(btnEl, {
+      googleId.renderButton(btnEl, {
         theme: 'outline',
         size: 'large',
         width,

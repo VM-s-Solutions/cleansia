@@ -6,7 +6,7 @@ using Cleansia.Core.Domain.Users;
 
 namespace Cleansia.Core.Domain.EmployeePayroll;
 
-public class EmployeeInvoice : Auditable, ITenantEntity
+public class EmployeeInvoice : TenantAuditable
 {
     private const int PdfGenerationErrorMaxLength = 1000;
 
@@ -94,10 +94,10 @@ public class EmployeeInvoice : Auditable, ITenantEntity
     private ICollection<OrderEmployeePay> _orderPays = [];
     public IReadOnlyCollection<OrderEmployeePay> OrderPays => _orderPays.ToList().AsReadOnly();
 
-    // variableSymbol is REQUIRED and deliberately not defaulted: it is claimed from the durable
-    // per-year counter before the invoice exists, and a defaulted parameter would let a future third
-    // creation path compile while silently issuing a payout invoice that carries no payment
-    // reference — which is exactly the state ADR-0046 closes.
+    // variableSymbol and invoiceNumber are REQUIRED and deliberately not defaulted: both are claimed
+    // from the company's durable per-year counter before the invoice exists, and a defaulted parameter
+    // would let a future third creation path compile while silently issuing a payout invoice that
+    // carries no payment reference — which is exactly the state ADR-0046 closes.
     public static EmployeeInvoice Create(
         string employeeId,
         string payPeriodId,
@@ -105,6 +105,7 @@ public class EmployeeInvoice : Auditable, ITenantEntity
         decimal subTotal,
         string currencyId,
         string variableSymbol,
+        string invoiceNumber,
         decimal bonusAmount = 0,
         decimal deductionAmount = 0)
     {
@@ -114,8 +115,6 @@ public class EmployeeInvoice : Auditable, ITenantEntity
         {
             totalAmount = 0;
         }
-
-        var invoiceNumber = $"INV-{DateTime.UtcNow:yyyyMM}-{Guid.NewGuid().ToString("N")[..5].ToUpper()}";
 
         return new EmployeeInvoice
         {
@@ -135,13 +134,29 @@ public class EmployeeInvoice : Auditable, ITenantEntity
         };
     }
 
+    /// <summary>
+    /// The invoice's currency is DERIVED FROM THE ROWS IT INVOICES, not supplied.
+    ///
+    /// <para>It used to be an argument, and the two callers computed it two different ways — one from
+    /// the work country's default currency, the other from <c>Employee.PreferredCurrencyCode</c> (a
+    /// field with no writer, so always null and always falling through to the platform default).
+    /// Neither read the rows being invoiced. They can disagree for the same employee and period, and
+    /// whichever ran first decided what a cleaner's tax document said.</para>
+    ///
+    /// <para><b>Throws when the rows disagree</b>, because SumPayAmounts is about to add them together
+    /// and a sum across currencies is not a number. This is a backstop, not the guard: both callers
+    /// group the rows by currency first and create one invoice per group, so it only fires on a caller
+    /// that forgot to. An empty set throws for the same reason — there is no currency to derive and no
+    /// invoice to write.</para>
+    /// </summary>
     public static EmployeeInvoice CreateFromOrderPays(
         string employeeId,
         string payPeriodId,
         IReadOnlyCollection<OrderEmployeePay> orderPays,
-        string currencyId,
-        string variableSymbol)
+        string variableSymbol,
+        string invoiceNumber)
     {
+        var currencyId = SingleCurrencyOf(orderPays);
         var (subTotal, bonusAmount, deductionAmount) = SumPayAmounts(orderPays);
 
         return Create(
@@ -151,8 +166,26 @@ public class EmployeeInvoice : Auditable, ITenantEntity
             subTotal,
             currencyId,
             variableSymbol,
+            invoiceNumber,
             bonusAmount,
             deductionAmount);
+    }
+
+    /// <summary>
+    /// The one currency every row shares, or an exception. See <see cref="CreateFromOrderPays"/>.
+    /// </summary>
+    public static string SingleCurrencyOf(IReadOnlyCollection<OrderEmployeePay> orderPays)
+    {
+        var currencies = orderPays.Select(p => p.CurrencyId).Distinct().ToList();
+
+        return currencies.Count switch
+        {
+            1 => currencies[0],
+            0 => throw new InvalidOperationException(
+                "Cannot invoice an empty set of order pays: there is no currency to derive."),
+            _ => throw new InvalidOperationException(
+                $"Order pays span {currencies.Count} currencies; one invoice cannot cover them.")
+        };
     }
 
     public EmployeeInvoice AddOrderPays(IEnumerable<OrderEmployeePay> orderPays)
@@ -360,13 +393,6 @@ public class EmployeeInvoice : Auditable, ITenantEntity
         ArgumentOutOfRangeException.ThrowIfNegative(paymentTermsDays);
 
         return GeneratedAt.Date.AddDays(paymentTermsDays);
-    }
-
-    public string GenerateInvoiceNumber(string prefix = "EMP")
-    {
-        var employeeShort = EmployeeId.Substring(0, Math.Min(6, EmployeeId.Length)).ToUpper();
-        var periodShort = PayPeriodId.Substring(0, Math.Min(6, PayPeriodId.Length)).ToUpper();
-        return $"{prefix}-{periodShort}-{employeeShort}";
     }
 
     public decimal CalculateAveragePay()

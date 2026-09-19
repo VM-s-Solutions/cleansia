@@ -23,6 +23,25 @@ final class SnapSheetOrnamentTests: XCTestCase {
         XCTAssertEqual(travel, mapFocusTop - peekTop, accuracy: 0.001)
     }
 
+    func testOrnamentIsClippedToTheSafeViewportWithoutMovingItOntoTheControls() throws {
+        let root = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+        let source = try String(
+            contentsOf: root.appendingPathComponent("Sources/CleansiaCore/Components/SnapSheet.swift"),
+            encoding: .utf8
+        ).components(separatedBy: .whitespacesAndNewlines).joined()
+        let start = try XCTUnwrap(source.range(of: "ornament.frame(width:ornamentSize,height:ornamentSize)"))
+        let end = try XCTUnwrap(source.range(of: "}.animation(", range: start.upperBound ..< source.endIndex))
+        let ornament = source[start.lowerBound ..< end.lowerBound]
+        XCTAssertTrue(ornament.contains(".offset(y:SnapSheetOrnament.offsetY(sheetTop:currentTop,size:ornamentSize))"))
+        XCTAssertTrue(ornament.contains(
+            ".frame(maxWidth:.infinity,maxHeight:.infinity,alignment:.topTrailing).clipped()"
+        ))
+        XCTAssertTrue(source.contains(".environment(\\.snapSheetSafeTop,geometry.safeAreaInsets.top)"))
+    }
+
     func testTapFromPeekRevealsTheMap() {
         XCTAssertEqual(SnapAnchor.peek.tapToggled, .mapFocus)
     }

@@ -59,6 +59,7 @@ final class EarningsOwnershipTests: XCTestCase {
         let vm = PeriodPayViewModel(
             payPeriodId: "pp-1",
             currencyCode: "CZK",
+            currencyId: nil,
             client: client,
             snackbar: snackbar
         )

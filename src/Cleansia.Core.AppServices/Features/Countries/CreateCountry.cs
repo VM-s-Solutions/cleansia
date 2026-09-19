@@ -11,7 +11,8 @@ public class CreateCountry
 {
     public record Command(
         string IsoCode,
-        string Name) : ICommand<Response>;
+        string Name,
+        string IsoAlpha2) : ICommand<Response>;
 
     public record Response(string Id);
 
@@ -35,15 +36,24 @@ public class CreateCountry
                 .WithMessage(BusinessErrorMessage.Required)
                 .MaximumLength(50)
                 .WithMessage(BusinessErrorMessage.MaxLength);
+
+            RuleFor(x => x.IsoAlpha2)
+                .Cascade(CascadeMode.Stop)
+                .NotEmpty()
+                .WithMessage(BusinessErrorMessage.Required)
+                .Matches(IsoAlpha2Pattern)
+                .WithMessage(BusinessErrorMessage.CountryIsoAlpha2Invalid);
         }
     }
+
+    public const string IsoAlpha2Pattern = "^[A-Z]{2}$";
 
     internal class Handler(ICountryRepository countryRepository)
         : ICommandHandler<Command, Response>
     {
         public Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
         {
-            var country = Country.Create(command.Name, command.IsoCode);
+            var country = Country.Create(command.Name, command.IsoCode, command.IsoAlpha2);
 
             countryRepository.Add(country);
 

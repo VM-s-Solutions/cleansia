@@ -63,13 +63,10 @@ final class PartnerAppContainer: AppContainer {
         base.apiClient
     }
 
-    var signupConsent: SignupConsentRepository {
-        authStack.signupConsent
-    }
-
     let dashboardClient: PartnerDashboardClient = LivePartnerDashboardClient()
     let payrollClient: PartnerPayrollClient = LivePartnerPayrollClient()
     let registrationClient: PartnerRegistrationClient = LivePartnerRegistrationClient()
+    let marketClient: PartnerMarketClient = LivePartnerMarketClient()
     let profileClient: PartnerProfileClient = LivePartnerProfileClient()
     let userClient: PartnerUserClient = LivePartnerUserClient()
     let devicesClient: PartnerDevicesClient

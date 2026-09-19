@@ -38,7 +38,7 @@ public class PreferredCleanerHoldResolverTests
     public PreferredCleanerHoldResolverTests()
     {
         _memberships
-            .Setup(r => r.GetActiveForUserNoTrackingAsync(UserId, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetEntitledForUserNoTrackingAsync(UserId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(NewMembership());
         _employees
             .Setup(r => r.GetByIdAsync(CleanerId, It.IsAny<CancellationToken>()))
@@ -78,7 +78,7 @@ public class PreferredCleanerHoldResolverTests
     public async Task A_Non_Member_Gets_Neither()
     {
         _memberships
-            .Setup(r => r.GetActiveForUserNoTrackingAsync(UserId, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetEntitledForUserNoTrackingAsync(UserId, It.IsAny<CancellationToken>()))
             .ReturnsAsync((UserMembership?)null);
 
         AssertDeclined(await ResolveAsync(), HoldDeclineReason.NoMembership);
@@ -217,7 +217,7 @@ public class PreferredCleanerHoldResolverTests
     public async Task A_Non_Member_Never_Pays_For_The_Busy_Query()
     {
         _memberships
-            .Setup(r => r.GetActiveForUserNoTrackingAsync(UserId, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetEntitledForUserNoTrackingAsync(UserId, It.IsAny<CancellationToken>()))
             .ReturnsAsync((UserMembership?)null);
 
         await ResolveAsync();
@@ -301,6 +301,7 @@ public class PreferredCleanerHoldResolverTests
         return UserMembership.Create(
             UserId,
             membershipPlanId: "plan-plus",
+            currencyId: "currency-czk",
             stripeSubscriptionId: "sub_test_preferred",
             currentPeriodStart: Now.AddDays(-10),
             currentPeriodEnd: Now.AddDays(20));

@@ -1,6 +1,8 @@
 import { TestBed } from '@angular/core/testing';
 import { CustomerClient } from '@cleansia/customer-services';
+import { selectMarketCountryId } from '@cleansia/customer-stores';
 import { ApiErrorResult } from '@cleansia/services';
+import { MockStore, provideMockStore } from '@ngrx/store/testing';
 import { TranslateService } from '@ngx-translate/core';
 import { of, Subject, throwError } from 'rxjs';
 import { PromoRequestFacade } from './promo-request.facade';
@@ -24,6 +26,9 @@ describe('PromoRequestFacade', () => {
     TestBed.configureTestingModule({
       providers: [
         PromoRequestFacade,
+        provideMockStore({
+          selectors: [{ selector: selectMarketCountryId, value: 'svk-id' }],
+        }),
         { provide: CustomerClient, useValue: { promoCodeClient: { request } } },
         { provide: TranslateService, useValue: { currentLang: 'cs' } },
       ],
@@ -42,6 +47,31 @@ describe('PromoRequestFacade', () => {
         languageCode: 'cs',
       })
     );
+  });
+
+  // The code is issued by the market's operating company (ADR-0061 D3), so the
+  // request names the market the visitor is reading the site in.
+  it('requests the promo in the persisted market', () => {
+    facade.request('customer@example.com', true);
+
+    expect(request.mock.calls[0][0].toJSON()).toEqual({
+      email: 'customer@example.com',
+      languageCode: 'cs',
+      countryId: 'svk-id',
+    });
+  });
+
+  it('names no market when none resolved', () => {
+    const store = TestBed.inject(MockStore);
+    store.overrideSelector(selectMarketCountryId, null);
+    store.refreshState();
+
+    facade.request('customer@example.com', true);
+
+    expect(request.mock.calls[0][0].toJSON()).toEqual({
+      email: 'customer@example.com',
+      languageCode: 'cs',
+    });
   });
 
   it('reports a duplicate as already sent instead of success or a retryable error', () => {

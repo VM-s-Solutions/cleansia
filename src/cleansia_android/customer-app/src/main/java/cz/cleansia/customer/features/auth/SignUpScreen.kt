@@ -115,11 +115,6 @@ fun SignUpScreen(
         acceptedTerms = acceptedTerms,
     )
 
-    // Loyalty Phase C — referral repo via the holder VM. The validate call is
-    // safe without a token; AuthInterceptor skips Authorization when the
-    // TokenStore is empty and the backend endpoint is [AllowAnonymous].
-    val referralRepo = viewModel.referralRepository
-
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -283,9 +278,8 @@ fun SignUpScreen(
         }
     }
 
-    // Reuse the same booking-feature dialog. The validate lambda calls the repo
-    // directly; we own the Apply-success persistence here so onApplied flips
-    // both the canonical code + validated flag.
+    // Reuse the same booking-feature dialog; we own the Apply-success persistence here so onApplied
+    // flips both the canonical code + validated flag.
     if (referralSheetOpen) {
         ReferralCodeBottomSheet(
             initialCode = referralCode,
@@ -295,7 +289,7 @@ fun SignUpScreen(
                 if (normalized.isBlank()) {
                     ReferralCodeUiState.Idle
                 } else {
-                    val resp = referralRepo.validate(normalized).getOrNull()
+                    val resp = viewModel.validateReferral(normalized).getOrNull()
                     when {
                         resp == null -> ReferralCodeUiState.Invalid(null)
                         resp.isValid -> ReferralCodeUiState.Valid(resp.referrerFirstName)

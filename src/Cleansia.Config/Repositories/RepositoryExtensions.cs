@@ -2,9 +2,13 @@
 using Cleansia.Core.AppServices.Auditing;
 using Cleansia.Core.Domain.Auditing;
 using Cleansia.Core.Domain.Repositories;
+using Cleansia.Core.Domain.Tenancy;
+using Cleansia.Core.Domain.Users;
 using Cleansia.Core.Queue.Abstractions;
 using Cleansia.Infra.Database;
 using Cleansia.Infra.Database.Auditing;
+using Cleansia.Infra.Database.Gdpr;
+using Cleansia.Infra.Database.Repositories;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Cleansia.Config.Repositories;
@@ -49,6 +53,20 @@ public static class RepositoryExtensions
         services.AddScoped<IAuditWriter, DbContextAuditWriter>();
         services.AddScoped<IAuditFailureSink, OutOfBandAuditFailureSink>();
         services.AddScoped<AuditEntryFactory>();
+
+        // The erasure's own failure record, written the same way — in a scope of its own, because the
+        // erasure's single commit is what failed (IErasureAttempt, the scoped marker it reads, is
+        // registered with the deletion service).
+        services.AddScoped<IGdprDeletionFailureSink, OutOfBandGdprDeletionFailureSink>();
+
+        // The ambient company's unsettled books in one read (ADR-0064 D3); lives in Infra.Database
+        // because it counts across a dozen tables through the scoped DbContext.
+        services.AddScoped<ICompanySettlementReader, CompanySettlementReader>();
+
+        // The archived-company write guard's two seams (ADR-0064 D3): the gate the law's writes open,
+        // read by CleansiaDbContext.CommitAsync, and the schema id the archive manifest records.
+        services.AddScoped<IArchiveWriteGate, ArchiveWriteGate>();
+        services.AddScoped<ISchemaVersionReader, SchemaVersionReader>();
 
         return services.RegisterFromAssemblies([AssemblyReference.Assembly], type => type.GetInterfaces().Where(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IRepository<,>)));
     }

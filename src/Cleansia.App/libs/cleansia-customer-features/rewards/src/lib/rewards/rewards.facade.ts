@@ -1,4 +1,5 @@
 import { computed, inject, Injectable, signal } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { UnsubscribeControlDirective } from '@cleansia/directives';
 import {
   CustomerClient,
@@ -8,6 +9,12 @@ import {
   GetMyReferralResponse,
   LoyaltyTier,
 } from '@cleansia/customer-services';
+import {
+  loadCustomerCurrencies,
+  selectCustomerDefaultCurrencyCode,
+  selectMarketCurrencyCode,
+} from '@cleansia/customer-stores';
+import { Store } from '@ngrx/store';
 import { catchError, forkJoin, of, takeUntil } from 'rxjs';
 
 /**
@@ -24,9 +31,30 @@ import { catchError, forkJoin, of, takeUntil } from 'rxjs';
 @Injectable({ providedIn: 'root' })
 export class RewardsFacade extends UnsubscribeControlDirective {
   private readonly customerClient = inject(CustomerClient);
+  private readonly store = inject(Store);
 
   readonly account = signal<GetMyLoyaltyResponse | null>(null);
   readonly tiers = signal<GetLoyaltyTiersTierInfo[]>([]);
+  /**
+   * The tier floor (`MinimumOrderAmountForDiscount`) is a platform-default-currency number that
+   * applies to no other currency, so it is printed with the default's code.
+   */
+  readonly defaultCurrencyCode = toSignal(this.store.select(selectCustomerDefaultCurrencyCode), {
+    initialValue: null,
+  });
+  private readonly marketCurrencyCode = toSignal(this.store.select(selectMarketCurrencyCode), {
+    initialValue: null,
+  });
+  /**
+   * The floor is enforced only on an order in the default currency, so it is stated only while
+   * the market the customer browses in is priced in it (ADR-0058 D5). With no market resolved
+   * the readers price in the default, so the floor applies and is stated; in any other market no
+   * floor applies and the line is omitted rather than printed in a unit it was never set in.
+   */
+  readonly floorApplies = computed(() => {
+    const market = this.marketCurrencyCode();
+    return market === null || market === this.defaultCurrencyCode();
+  });
   readonly recentActivity = signal<GetLoyaltyActivityActivityItem[]>([]);
   readonly activityList = signal<GetLoyaltyActivityActivityItem[]>([]);
   readonly totalActivity = signal(0);
@@ -52,6 +80,7 @@ export class RewardsFacade extends UnsubscribeControlDirective {
   loadAll(): void {
     this.loading.set(true);
     this.error.set(null);
+    this.store.dispatch(loadCustomerCurrencies());
 
     forkJoin({
       account: this.customerClient.loyaltyClient.getMy(),

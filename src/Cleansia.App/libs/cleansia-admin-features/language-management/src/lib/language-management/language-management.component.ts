@@ -13,11 +13,7 @@ import {
 } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import {
-  LanguageListItem,
-  SortDefinition,
-  SortDirection,
-} from '@cleansia/admin-services';
+import { LanguageListItem } from '@cleansia/admin-services';
 import {
   CleansiaButtonComponent,
   CleansiaLoaderComponent,
@@ -27,9 +23,8 @@ import {
   CleansiaTitleComponent,
   TableColumn,
   TableAction,
-  PaginationState,
 } from '@cleansia/components';
-import { Policy } from '@cleansia/services';
+import { PermissionService, Policy } from '@cleansia/services';
 import { CleansiaPermissionDirective } from '@cleansia/directives';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { ConfirmationService } from 'primeng/api';
@@ -68,9 +63,10 @@ export class LanguageManagementComponent implements AfterViewInit, OnDestroy {
   protected readonly facade = inject(LanguageManagementFacade);
   protected readonly Policy = Policy;
   private readonly translate = inject(TranslateService);
+  private readonly permissions = inject(PermissionService);
   private readonly confirmationService = inject(ConfirmationService);
 
-  flagTemplate = viewChild<TemplateRef<any>>('flagTemplate');
+  flagTemplate = viewChild<TemplateRef<LanguageListItem>>('flagTemplate');
 
   languageColumns!: TableColumn<LanguageListItem>[];
   languageActions!: TableAction<LanguageListItem>[];
@@ -130,6 +126,7 @@ export class LanguageManagementComponent implements AfterViewInit, OnDestroy {
         onDelete: this.confirmDeleteLanguage.bind(this),
       },
       this.translate,
+      this.permissions,
       this.flagTemplate()
     );
     this.languageColumns = tableDef.columns;
@@ -149,10 +146,6 @@ export class LanguageManagementComponent implements AfterViewInit, OnDestroy {
     this.filterForm.reset({
       searchTerm: '',
     });
-  }
-
-  onSortChange(event: { field: string; order: number }): void {
-    // Sorting is handled client-side in the table component
   }
 
   createLanguage(): void {

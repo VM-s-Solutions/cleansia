@@ -17,6 +17,7 @@ struct CustomerOrderLineName: Equatable, Hashable {
 /// nothing, on the row it belongs to. → /decisions/adr-0048
 struct CustomerOrderSummary: Equatable {
     let id: String
+    let countryId: String?
     let displayOrderNumber: String?
     let statusCode: Code?
     let cleaningDateTime: Date?
@@ -41,6 +42,7 @@ extension CustomerOrderSummary {
     init?(_ item: OrderListItem) throws {
         guard let id = item.id, !id.isBlank else { return nil }
         self.id = id
+        countryId = item.countryId
         displayOrderNumber = item.displayOrderNumber
         statusCode = item.orderStatus
         cleaningDateTime = item.cleaningDateTime

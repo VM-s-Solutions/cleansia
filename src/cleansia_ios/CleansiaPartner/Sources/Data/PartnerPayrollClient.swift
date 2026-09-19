@@ -8,7 +8,13 @@ protocol PartnerPayrollClient: AnyObject {
     /// never echoes a screen-supplied one.
     func currentEmployeeId() async -> ApiResult<String>
 
-    func getPeriodPays(employeeId: String, payPeriodId: String) async -> ApiResult<PeriodPaySummary>
+    /// `currencyId` names the currency view — the invoice's, when My Pay is opened from one; nil
+    /// lets the server pick the cleaner's resolved currency.
+    func getPeriodPays(
+        employeeId: String,
+        payPeriodId: String,
+        currencyId: String?
+    ) async -> ApiResult<PeriodPaySummary>
     func getPagedInvoices(employeeId: String) async -> ApiResult<[Invoice]>
     func getInvoice(id: String) async -> ApiResult<InvoiceDetail>
     func downloadInvoicePdf(id: String) async -> ApiResult<URL>
@@ -21,11 +27,16 @@ final class LivePartnerPayrollClient: PartnerPayrollClient {
         }
     }
 
-    func getPeriodPays(employeeId: String, payPeriodId: String) async -> ApiResult<PeriodPaySummary> {
+    func getPeriodPays(
+        employeeId: String,
+        payPeriodId: String,
+        currencyId: String?
+    ) async -> ApiResult<PeriodPaySummary> {
         await apiResult(mapError: ApiError.fromGenerated) {
             try await PeriodPaySummary(PartnerEmployeePayrollAPI.employeePayrollGetPeriodPays(
                 employeeId: employeeId,
-                payPeriodId: payPeriodId
+                payPeriodId: payPeriodId,
+                currencyId: currencyId
             ))
         }
     }

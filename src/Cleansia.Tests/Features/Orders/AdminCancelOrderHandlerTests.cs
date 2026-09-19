@@ -3,24 +3,21 @@ using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Internationalization;
-using Cleansia.Core.Domain.Notifications;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Repositories;
-using Cleansia.Infra.Common.Validations;
 using MockQueryable;
-using Cleansia.Tests.Common;
 using Moq;
 
 namespace Cleansia.Tests.Features.Orders;
 
 /// <summary>
-/// AC2 / AC3 — the admin-cancel command. An admin (whose <c>sub</c> is NOT the order's UserId) can
-/// cancel ANY order: there is no ownership gate (the rejection that blocks admins on the customer
-/// CancelOrder path is absent here), the order is attributed to <see cref="CancelledBy.Admin"/>, and the
-/// terminal-state guards (Cancelled / Completed / InProgress) still surface the existing
-/// <see cref="BusinessErrorMessage"/> codes. The Stripe refund is issued ONLY through
-/// <see cref="IRefundService"/> with the deterministic cancel key, so a retried admin cancel cannot
-/// double-refund (the seam reports ResolvedToExisting and no second Stripe call is made).
+/// The admin-cancel command after the money path moved to <see cref="IPlatformOrderCancellation"/>
+/// (ADR-0064 D2): the handler loads the order, keeps its terminal-state gates with the existing
+/// <see cref="BusinessErrorMessage"/> codes, has no ownership gate (an admin cancels ANY order), and
+/// hands the body one call with <see cref="CancelledBy.Admin"/>, the admin's note and
+/// <see cref="RefundReason.CustomerCancellation"/> — the reason that keeps its refund key
+/// <c>refund:{id}:cancel</c>, byte-identical to before the extraction. The body's own guarantees are
+/// <c>PlatformOrderCancellationTests</c>.
 /// </summary>
 public class AdminCancelOrderHandlerTests
 {
@@ -30,32 +27,29 @@ public class AdminCancelOrderHandlerTests
 
     private readonly Mock<IOrderRepository> _orderRepository = new();
     private readonly Mock<IUserSessionProvider> _session = new();
-    private readonly Mock<IRefundService> _refundService = new();
-    private readonly Mock<ICreditAccountRepository> _creditAccountRepository = new();
-    private readonly Mock<ILoyaltyService> _loyaltyService = new();
-    private readonly Mock<INotificationProducer> _producer = new();
-    private readonly Mock<ILiveActivityProducer> _liveActivityProducer = new();
-    private readonly Mock<IExpressWaiverConsumer> _expressWaiverConsumer = ExpressWaiverMocks.NoConsumer();
+    private readonly Mock<IPlatformOrderCancellation> _cancellation = new();
 
     public AdminCancelOrderHandlerTests()
     {
         _session.Setup(s => s.GetUserId()).Returns(AdminUserId);
+        _cancellation
+            .Setup(c => c.CancelAsync(
+                It.IsAny<Order>(), It.IsAny<string>(), It.IsAny<CancelledBy>(), It.IsAny<string?>(),
+                It.IsAny<RefundReason>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Order o, string _, CancelledBy by, string? reason, RefundReason _, CancellationToken _) =>
+            {
+                o.Cancel(DateTime.UtcNow, by, 0m, o.TotalPrice, reason);
+                o.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.Cancelled, o));
+                return new PlatformOrderCancellationResult(o.TotalPrice, PlatformRefundOutcome.Issued);
+            });
     }
 
     private AdminCancelOrder.Handler CreateHandler() =>
-        new(
-            _orderRepository.Object,
-            _session.Object,
-            _refundService.Object,
-            _creditAccountRepository.Object,
-            _loyaltyService.Object,
-            _producer.Object,
-            _liveActivityProducer.Object,
-            _expressWaiverConsumer.Object);
+        new(_orderRepository.Object, _session.Object, _cancellation.Object);
 
-    private Order ArrangeOrder(OrderStatus latestStatus, PaymentStatus paymentStatus = PaymentStatus.Paid)
+    private Order ArrangeOrder(OrderStatus latestStatus)
     {
-        var currency = Currency.Create("CZK", "Kč", "Czech Koruna", 1m);
+        var currency = Currency.Create("CZK", "Kč", "Czech Koruna");
         var order = Order.Create(
             customerName: "Cust",
             customerEmail: "c@x.test",
@@ -63,12 +57,11 @@ public class AdminCancelOrderHandlerTests
             customerAddress: null!,
             rooms: 2,
             bathrooms: 1,
-            extras: new Dictionary<string, bool>(),
             cleaningDateTime: DateTime.UtcNow.AddDays(5),
             paymentType: PaymentType.Card,
             totalPrice: 1000m,
             currencyId: currency.Id,
-            paymentStatus: paymentStatus,
+            paymentStatus: PaymentStatus.Paid,
             // OWNED BY A DIFFERENT USER — proves the admin path has no ownership gate.
             userId: OwnerUserId);
         order.Id = OrderId;
@@ -82,55 +75,10 @@ public class AdminCancelOrderHandlerTests
         return order;
     }
 
-    // A mobile (PaymentSheet) card order: T-0347 suppresses the Checkout Session, so the order's only
-    // refundable charge surface is the PaymentIntent.
-    private Order ArrangeOrderWithPaymentIntentOnly(
-        OrderStatus latestStatus, PaymentStatus paymentStatus = PaymentStatus.Paid)
-    {
-        var currency = Currency.Create("CZK", "Kč", "Czech Koruna", 1m);
-        var order = Order.Create(
-            customerName: "Cust",
-            customerEmail: "c@x.test",
-            customerPhone: "+420123456789",
-            customerAddress: null!,
-            rooms: 2,
-            bathrooms: 1,
-            extras: new Dictionary<string, bool>(),
-            cleaningDateTime: DateTime.UtcNow.AddDays(5),
-            paymentType: PaymentType.Card,
-            totalPrice: 1000m,
-            currencyId: currency.Id,
-            paymentStatus: paymentStatus,
-            userId: OwnerUserId);
-        order.Id = OrderId;
-        order.SetCurrency(currency);
-        order.AssignStripePaymentIntentId("pi_test_admin_cancel");
-        order.AddOrderStatus(OrderStatusTrack.Create(latestStatus, order));
-
-        _orderRepository
-            .Setup(r => r.GetQueryable())
-            .Returns(new[] { order }.AsQueryable().BuildMock());
-        return order;
-    }
-
-    private void ArrangeSeamSuccess(decimal amount, bool resolvedToExisting = false)
-    {
-        _refundService
-            .Setup(s => s.IssueRefundAsync(It.IsAny<RefundRequest>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync((RefundRequest req, CancellationToken _) =>
-                BusinessResult.Success(new RefundResult(
-                    RefundId: "refund-1",
-                    RefundKey: $"refund:{req.OrderId}:cancel",
-                    Amount: amount,
-                    Status: RefundStatus.Succeeded,
-                    ResolvedToExisting: resolvedToExisting)));
-    }
-
     [Fact]
     public async Task Admin_Cancels_NonOwned_Confirmed_Order_Succeeds_AttributedToAdmin()
     {
         var order = ArrangeOrder(OrderStatus.Confirmed);
-        ArrangeSeamSuccess(amount: 1000m);
 
         var result = await CreateHandler().Handle(
             new AdminCancelOrder.Command(OrderId, "incident"), CancellationToken.None);
@@ -138,124 +86,56 @@ public class AdminCancelOrderHandlerTests
         Assert.True(result.IsSuccess);
         Assert.Equal(CancelledBy.Admin, order.CancelledBy);
         Assert.Equal(OrderStatus.Cancelled, order.CurrentStatus);
+        Assert.Equal(1000m, result.Value!.RefundAmount);
+        Assert.True(result.Value.RefundInitiated);
     }
 
     [Fact]
-    public async Task Admin_Cancel_Completed_Order_Returns_OrderAlreadyCompleted()
+    public async Task Admin_Cancel_Hands_The_Body_The_Admin_The_Note_And_The_CustomerCancellation_Reason()
     {
-        ArrangeOrder(OrderStatus.Completed);
+        var order = ArrangeOrder(OrderStatus.Confirmed);
 
-        var result = await CreateHandler().Handle(
-            new AdminCancelOrder.Command(OrderId, null), CancellationToken.None);
+        await CreateHandler().Handle(new AdminCancelOrder.Command(OrderId, "incident"), CancellationToken.None);
 
-        Assert.True(result.IsFailure);
-        Assert.Equal(BusinessErrorMessage.OrderAlreadyCompleted, result.Error!.Message);
-    }
-
-    [Fact]
-    public async Task Admin_Cancel_AlreadyCancelled_Order_Returns_OrderAlreadyCancelled()
-    {
-        ArrangeOrder(OrderStatus.Cancelled);
-
-        var result = await CreateHandler().Handle(
-            new AdminCancelOrder.Command(OrderId, null), CancellationToken.None);
-
-        Assert.True(result.IsFailure);
-        Assert.Equal(BusinessErrorMessage.OrderAlreadyCancelled, result.Error!.Message);
-    }
-
-    [Fact]
-    public async Task Admin_Cancel_InProgress_Order_Returns_OrderInProgressCannotCancel()
-    {
-        ArrangeOrder(OrderStatus.InProgress);
-
-        var result = await CreateHandler().Handle(
-            new AdminCancelOrder.Command(OrderId, null), CancellationToken.None);
-
-        Assert.True(result.IsFailure);
-        Assert.Equal(BusinessErrorMessage.OrderInProgressCannotCancel, result.Error!.Message);
-    }
-
-    [Fact]
-    public async Task Admin_Cancel_WithRefund_GoesThroughSeam_WithCancelKey_AndCustomerCancellationReason()
-    {
-        ArrangeOrder(OrderStatus.Confirmed);
-        RefundRequest? captured = null;
-        _refundService
-            .Setup(s => s.IssueRefundAsync(It.IsAny<RefundRequest>(), It.IsAny<CancellationToken>()))
-            .Callback<RefundRequest, CancellationToken>((r, _) => captured = r)
-            .ReturnsAsync(BusinessResult.Success(new RefundResult(
-                "refund-1", $"refund:{OrderId}:cancel", 1000m, RefundStatus.Succeeded, false)));
-
-        var result = await CreateHandler().Handle(
-            new AdminCancelOrder.Command(OrderId, null), CancellationToken.None);
-
-        Assert.True(result.IsSuccess);
-        _refundService.Verify(
-            s => s.IssueRefundAsync(It.IsAny<RefundRequest>(), It.IsAny<CancellationToken>()), Times.Once);
-        Assert.NotNull(captured);
-        Assert.Equal(OrderId, captured!.OrderId);
-        // The cancel purpose key (refund:{OrderId}:cancel) is one-per-order, so admin + customer cancels
-        // and any retry collapse onto the same refund — never an un-keyed inline Stripe call.
-        Assert.Equal(RefundReason.CustomerCancellation, captured.Reason);
-        Assert.Equal(AdminUserId, captured.ActorId);
-        Assert.Null(captured.DisputeId);
-    }
-
-    // T-0348: cancelling a mobile-paid card order (StripeSessionId empty, PaymentIntentId set) MUST
-    // still refund — the cancel gate now keys on the charge surface, not the Session alone (under master
-    // the session-only gate silently kept the money on a cancelled mobile card order).
-    [Fact]
-    public async Task Admin_Cancel_PaymentIntentOnlyOrder_StillRefunds_ThroughSeam()
-    {
-        ArrangeOrderWithPaymentIntentOnly(OrderStatus.Confirmed);
-        ArrangeSeamSuccess(amount: 1000m);
-
-        var result = await CreateHandler().Handle(
-            new AdminCancelOrder.Command(OrderId, null), CancellationToken.None);
-
-        Assert.True(result.IsSuccess);
-        Assert.True(result.Value!.RefundInitiated);
-        _refundService.Verify(
-            s => s.IssueRefundAsync(It.IsAny<RefundRequest>(), It.IsAny<CancellationToken>()), Times.Once);
-    }
-
-    [Fact]
-    public async Task Admin_Cancel_Retry_DoesNotDoubleRefund_ResolveToExisting_StillSucceeds()
-    {
-        ArrangeOrder(OrderStatus.Confirmed);
-        // The seam reports the second call collapsed onto the existing succeeded refund (same cancel key):
-        // no second Stripe refund was issued. The handler still reports success + RefundInitiated.
-        ArrangeSeamSuccess(amount: 1000m, resolvedToExisting: true);
-
-        var result = await CreateHandler().Handle(
-            new AdminCancelOrder.Command(OrderId, null), CancellationToken.None);
-
-        Assert.True(result.IsSuccess);
-        Assert.True(result.Value!.RefundInitiated);
-        _refundService.Verify(
-            s => s.IssueRefundAsync(It.IsAny<RefundRequest>(), It.IsAny<CancellationToken>()), Times.Once);
-    }
-
-    [Fact]
-    public async Task Admin_Cancel_RefundSuccess_RecordsOrderRefundedNotification()
-    {
-        ArrangeOrder(OrderStatus.Confirmed);
-        ArrangeSeamSuccess(amount: 1000m);
-
-        var result = await CreateHandler().Handle(
-            new AdminCancelOrder.Command(OrderId, null), CancellationToken.None);
-
-        Assert.True(result.IsSuccess);
-        _producer.Verify(p => p.NotifyAsync(
-            OwnerUserId,
-            NotificationEventCatalog.OrderRefunded,
-            It.IsAny<Dictionary<string, string>>(),
-            It.IsAny<string?>(),
-                It.Is<string>(subject => !string.IsNullOrWhiteSpace(subject)
-                    && subject != OrderId),
-            It.IsAny<CancellationToken>()),
+        _cancellation.Verify(c => c.CancelAsync(
+            order, AdminUserId, CancelledBy.Admin, "incident", RefundReason.CustomerCancellation, It.IsAny<CancellationToken>()),
             Times.Once);
+        _cancellation.Verify(c => c.RefundAsync(
+            It.IsAny<Order>(), It.IsAny<string>(), It.IsAny<RefundReason>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task Admin_Cancel_Reports_A_Refund_The_Body_Could_Not_Issue()
+    {
+        var order = ArrangeOrder(OrderStatus.Confirmed);
+        _cancellation
+            .Setup(c => c.CancelAsync(
+                order, AdminUserId, CancelledBy.Admin, null, RefundReason.CustomerCancellation, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new PlatformOrderCancellationResult(1000m, PlatformRefundOutcome.Failed(BusinessErrorMessage.RefundFailed)));
+
+        var result = await CreateHandler().Handle(new AdminCancelOrder.Command(OrderId, null), CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        Assert.False(result.Value!.RefundInitiated);
+    }
+
+    [Theory]
+    [InlineData(OrderStatus.Completed, BusinessErrorMessage.OrderAlreadyCompleted)]
+    [InlineData(OrderStatus.Cancelled, BusinessErrorMessage.OrderAlreadyCancelled)]
+    [InlineData(OrderStatus.InProgress, BusinessErrorMessage.OrderInProgressCannotCancel)]
+    public async Task Admin_Cancel_Of_A_Terminal_Or_Running_Order_Is_Refused_Before_The_Body_Runs(
+        OrderStatus latestStatus, string expectedError)
+    {
+        ArrangeOrder(latestStatus);
+
+        var result = await CreateHandler().Handle(
+            new AdminCancelOrder.Command(OrderId, null), CancellationToken.None);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal(expectedError, result.Error!.Message);
+        _cancellation.Verify(c => c.CancelAsync(
+            It.IsAny<Order>(), It.IsAny<string>(), It.IsAny<CancelledBy>(), It.IsAny<string?>(),
+            It.IsAny<RefundReason>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]

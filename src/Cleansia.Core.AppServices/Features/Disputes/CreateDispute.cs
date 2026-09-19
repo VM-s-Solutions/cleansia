@@ -1,7 +1,11 @@
 using Cleansia.Core.AppServices.Abstractions;
+using Cleansia.Core.AppServices.Auditing;
+using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Common;
+using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Disputes;
 using Cleansia.Core.Domain.Enums;
+using Cleansia.Core.Domain.Notifications;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Infra.Common.Validations;
@@ -10,17 +14,20 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Cleansia.Core.AppServices.Features.Disputes;
 
+// The marker names the ORDER: a refused filing has no dispute, and the order is what the refusal was
+// against. A successful filing re-labels its row to the dispute it created.
+[AuditAction("customer.dispute.create", Audience = AuditAudience.Customer, ResourceType = "Order")]
 public class CreateDispute
 {
     public class Validator : AbstractValidator<Command>
     {
-        public Validator(IOrderRepository orderRepository)
+        public Validator(IOrderAccessService orderAccessService)
         {
             RuleFor(x => x.OrderId)
                 .Cascade(CascadeMode.Stop)
                 .NotEmpty()
                 .WithMessage(BusinessErrorMessage.Required)
-                .MustAsync(orderRepository.ExistsAsync)
+                .MustAsync(orderAccessService.OrderExistsForCallerAsync)
                 .WithMessage(BusinessErrorMessage.OrderNotFound);
 
             RuleFor(x => x.Reason)
@@ -76,10 +83,29 @@ public class CreateDispute
 
     public record Response(string DisputeId);
 
+    /// <summary>
+    /// The filing as the server saw it (ADR-0062 D3): when it came relative to the clean and the
+    /// advertised window, how much was written and against how many lines. The description text stays
+    /// on the dispute row under its own erasure verdict.
+    /// </summary>
+    public record DisputeFilingEvidence(
+        string DisputeId,
+        string OrderId,
+        DisputeReason Reason,
+        decimal HoursSinceCompletion,
+        int FilingWindowHours,
+        int DescriptionLength,
+        int LineCount,
+        decimal OrderTotalPrice,
+        string? CurrencyCode) : ICustomerAuditPayload;
+
     public class Handler(
         IDisputeRepository disputeRepository,
-        IOrderRepository orderRepository,
-        IUserSessionProvider userSessionProvider) : ICommandHandler<Command, Response>
+        IOrderAccessService orderAccessService,
+        IUserSessionProvider userSessionProvider,
+        ITenantProvider tenantProvider,
+        IAuditContext auditContext,
+        IAdminNotifier adminNotifier) : ICommandHandler<Command, Response>
     {
         public async Task<BusinessResult<Response>> Handle(Command request, CancellationToken cancellationToken)
         {
@@ -88,15 +114,23 @@ public class CreateDispute
             // Inner ownership gate (ADR-0001 §D2 [OWN-DATA], S3): the
             // CanCreateDispute → CustomerOnly policy is the coarse outer gate; this
             // handler check decides *which* customer's order may be disputed and holds
-            // on any invocation path. Loaded via the tenant-filtered GetByIdAsync (S8 —
-            // never IgnoreQueryFilters). A non-owner gets the not-found business error
+            // on any invocation path. The load is the caller's own orders in every operating
+            // company, pinned by their id (S8). A non-owner gets the not-found business error
             // (NotFound, not Forbidden) so a missing order and someone else's order are
             // indistinguishable.
-            var order = await orderRepository.GetByIdAsync(request.OrderId, cancellationToken);
+            var order = await orderAccessService.LoadOrderForCallerAsync(request.OrderId, cancellationToken);
 
             if (order is null || order.UserId != userId)
             {
                 return BusinessResult.Failure<Response>(new Error(nameof(request.OrderId), BusinessErrorMessage.OrderNotFound));
+            }
+
+            // The dispute is a claim against the ORDER's operator and lives in that company's books,
+            // like the chargeback path's rows do: the open-dispute read below, the row added and this
+            // act's audit row all take the order's tenant, not the customer's.
+            if (!string.IsNullOrEmpty(order.TenantId))
+            {
+                tenantProvider.SetTenantOverride(order.TenantId);
             }
 
             // You cannot report a clean that has not happened yet. Nothing stopped it before: the
@@ -148,6 +182,35 @@ public class CreateDispute
             }
 
             disputeRepository.Add(dispute);
+
+            if (!string.IsNullOrEmpty(order.TenantId))
+            {
+                await adminNotifier.NotifyAsync(
+                    new AdminEvent(
+                        AdminNotificationEventCatalog.DisputeFiled,
+                        order.TenantId,
+                        Subject: dispute.Id,
+                        Args: new Dictionary<string, string>
+                        {
+                            ["orderNumber"] = order.DisplayOrderNumber,
+                            ["reason"] = request.Reason.ToString(),
+                            ["disputeId"] = dispute.Id,
+                            ["orderId"] = order.Id,
+                        }),
+                    cancellationToken);
+            }
+
+            var cleanEndedAt = order.CompletedAt ?? order.CleaningDateTime;
+            auditContext.RecordEvidence("Dispute", dispute.Id, new DisputeFilingEvidence(
+                DisputeId: dispute.Id,
+                OrderId: order.Id,
+                Reason: request.Reason,
+                HoursSinceCompletion: Math.Round((decimal)(DateTime.UtcNow - cleanEndedAt).TotalHours, 2),
+                FilingWindowHours: DisputeLimits.FilingWindowHours,
+                DescriptionLength: request.Description.Length,
+                LineCount: selected.Count,
+                OrderTotalPrice: order.TotalPrice,
+                CurrencyCode: order.Currency?.Code));
 
             return BusinessResult.Success(new Response(dispute.Id));
         }

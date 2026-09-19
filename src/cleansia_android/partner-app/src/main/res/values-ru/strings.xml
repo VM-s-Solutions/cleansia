@@ -68,6 +68,7 @@
     <string name="login_subtitle">Войдите, чтобы продолжить работу с аккаунтом</string>
     <string name="create_account">Создать аккаунт</string>
     <string name="register_subtitle">Присоединяйтесь и начните зарабатывать уже сегодня</string>
+    <string name="register_market_label">Страна, где вы будете работать</string>
     <string name="first_name">Имя</string>
     <string name="last_name">Фамилия</string>
     <string name="phone">Номер телефона</string>
@@ -490,8 +491,6 @@
     <string name="business_country">Страна регистрации</string>
     <string name="registration_number_label">Регистрационный номер</string>
     <string name="registration_number_helper">Формат зависит от выбранной страны.</string>
-    <string name="vat_number_label">Номер плательщика НДС</string>
-    <string name="vat_number_helper">Необязательно — только если вы плательщик НДС.</string>
     <string name="legal_entity_name_label">Название юридического лица</string>
     <string name="street">Улица</string>
     <string name="city">Город</string>
@@ -1098,6 +1097,7 @@
     <string name="error_auth_refresh_token_reused">В целях безопасности вы вышли со всех устройств.</string>
     <string name="error_auth_current_password_invalid">Ваш текущий пароль неверен.</string>
     <string name="error_auth_account_locked">Слишком много неудачных попыток входа. Аккаунт временно заблокирован — попробуйте снова через несколько минут.</string>
+    <string name="error_auth_company_deactivated">Ваша компания деактивирована, поэтому партнёрское приложение вам больше не доступно. Вы по-прежнему можете экспортировать или удалить свои данные в приложении для клиентов.</string>
 
     <string name="error_user_email_confirmed">Этот е-мейл уже подтверждён.</string>
     <string name="error_user_existing_email">Аккаунт с этим е-мейлом уже существует.</string>
@@ -1191,7 +1191,6 @@
     <string name="error_validation_invalid_iban">Введите, пожалуйста, корректный IBAN.</string>
     <string name="error_validation_invalid_zip_code">Введите, пожалуйста, корректный почтовый индекс.</string>
     <string name="error_validation_registration_number_invalid_format">Введите действительный регистрационный номер компании для выбранной страны.</string>
-    <string name="error_validation_vat_number_invalid_format">Введите действительный номер НДС для выбранной страны.</string>
     <string name="error_validation_must_be_positive">Должно быть положительное число.</string>
     <string name="error_validation_invalid_availability_format">Неверный формат доступности.</string>
 
@@ -1217,6 +1216,7 @@
     <string name="error_general_not_found">Не найдено.</string>
 
     <string name="error_country_not_serviced">В этой стране мы пока не работаем.</string>
+    <string name="error_tenant_not_found">Этот рынок пока не обслуживает ни одна компания Cleansia.</string>
     <string name="error_country_required">Выберите, пожалуйста, страну.</string>
     <string name="error_city_not_serviced">В этом городе мы пока не работаем.</string>
     <string name="error_language_not_supported">Этот язык не поддерживается.</string>
@@ -1235,8 +1235,8 @@
     <string name="notification_channel_dispute_reply_name">Ответы поддержки</string>
     <string name="notification_channel_dispute_reply_desc">Уведомляет, когда поддержка отвечает на вашу жалобу.</string>
 
-    <string name="notification_order_confirmed_title">Заказ подтверждён</string>
-    <string name="notification_order_confirmed_body">Заказ №%1$s подтверждён. Нажмите, чтобы посмотреть детали.</string>
+    <string name="notification_order_payment_confirmed_title">Заказ подтверждён</string>
+    <string name="notification_order_payment_confirmed_body">Заказ №%1$s подтверждён. Нажмите, чтобы посмотреть детали.</string>
     <string name="notification_order_in_progress_title">Заказ выполняется</string>
     <string name="notification_order_in_progress_body">Заказ №%1$s выполняется. Нажмите, чтобы следить за ним.</string>
     <string name="notification_order_completed_title">Заказ завершён</string>
@@ -1297,6 +1297,7 @@
     <string name="error_company_not_found">Информация о компании не найдена</string>
     <string name="error_country_not_existing_id">Страна не найдена</string>
     <string name="error_currency_invalid">Недействительная валюта</string>
+    <string name="error_currency_not_found">Валюта не найдена</string>
     <string name="error_dispute_max_length_exceeded">Превышена максимальная длина</string>
     <string name="error_employee_not_approved">Ваш аккаунт ещё не одобрен.</string>
     <string name="error_gdpr_consent_already_granted">Это согласие уже предоставлено.</string>
@@ -1405,4 +1406,6 @@
     <string name="open_settings">Открыть настройки</string>
     <string name="photo_source_title">Добавить фото</string>
     <string name="camera_unavailable">На этом устройстве нет камеры.</string>
+    <string name="notification_recurring_paused_title">Расписание регулярных уборок приостановлено</string>
+    <string name="notification_recurring_paused_body">Ваше расписание регулярных уборок приостановлено, поскольку Plus неактивен. Продлите Plus, чтобы возобновить планирование уборок.</string>
 </resources>

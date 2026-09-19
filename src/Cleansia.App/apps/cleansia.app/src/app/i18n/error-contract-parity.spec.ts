@@ -28,6 +28,18 @@ const BUSINESS_ERROR_MESSAGE_PATH = join(
 
 const FEATURES_DIR = join(APP_SERVICES_DIR, 'Features');
 
+const SHARED_VALIDATORS_DIR = join(APP_SERVICES_DIR, 'Common/Validators');
+
+const OPERATOR_TENANT_SCOPE_BEHAVIOR_PATH = join(
+  APP_SERVICES_DIR,
+  'Tenancy/OperatorTenantScopeBehavior.cs'
+);
+
+// A request record whose base list names the marker: `...) : ICommand, IOperatorScopedRequest`.
+// Anchored on the base list rather than a bare mention, because a doc comment naming the interface
+// is not an implementation of it.
+const OPERATOR_SCOPED_REQUEST = /[)\w]\s*:\s*[\w<>,?.\s]*\bIOperatorScopedRequest\b/;
+
 // The host that serves this app: Cleansia.Web.Customer listens on :5003 and the
 // customer dev server proxies /api to it (apps/cleansia.app/proxy.conf.json).
 const HOST_CONTROLLERS_DIR = join(
@@ -154,6 +166,8 @@ interface HostSurface {
 // shows up here without anyone remembering to paste it into the roster below.
 function deriveHostSurface(): HostSurface {
   const featureFiles = featureFilesByClassName();
+  const extensions = ruleBuilderExtensionKeys();
+  const operatorScope = operatorTenantScopeKeys();
   const constants = parseBusinessErrorConstants();
   const sites: DispatchSite[] = [];
   const featureClasses = new Set<string>();
@@ -213,6 +227,37 @@ function deriveHostSurface(): HostSurface {
             .join('/')}`;
           keys.set(value, (keys.get(value) ?? new Set()).add(provenance));
         }
+
+        // ...and the keys this file reaches through a shared rule-builder extension, which carries
+        // no `BusinessErrorMessage.` token of its own. Anchored on `.Helper(` rather than a bare
+        // mention, because a doc comment naming a helper is not a call to it.
+        for (const [helper, helperKeys] of extensions) {
+          if (!new RegExp(`\\.${helper}\\s*(?:<|\\()`).test(fileSource)) continue;
+          const provenance = `${controller.replace('.cs', '')} -> ${relative(
+            FEATURES_DIR,
+            file
+          )
+            .split(sep)
+            .join('/')} -> ${helper}()`;
+          for (const value of helperKeys) {
+            keys.set(value, (keys.get(value) ?? new Set()).add(provenance));
+          }
+        }
+
+        // ...and the refusals OperatorTenantScopeBehavior raises before validation for every request
+        // that implements IOperatorScopedRequest. The behaviour lives under Tenancy/, not in the
+        // feature file, so the token scan above never sees them; the marker on the record is the reach.
+        if (OPERATOR_SCOPED_REQUEST.test(fileSource)) {
+          const provenance = `${controller.replace('.cs', '')} -> ${relative(
+            FEATURES_DIR,
+            file
+          )
+            .split(sep)
+            .join('/')} -> OperatorTenantScopeBehavior`;
+          for (const value of operatorScope) {
+            keys.set(value, (keys.get(value) ?? new Set()).add(provenance));
+          }
+        }
       }
     }
   }
@@ -224,6 +269,96 @@ function deriveHostSurface(): HostSurface {
     featureClasses,
     keys,
   };
+}
+
+/**
+ * Keys emitted by a SHARED RULE-BUILDER EXTENSION, indexed by the extension's name.
+ *
+ * `deriveHostSurface` finds keys by scanning a feature file for `BusinessErrorMessage.` tokens. A
+ * validator that writes `.MustCoverAllActiveCurrencies(currencyRepository)` carries no such token —
+ * the keys live in the helper — so every key reached that way was invisible to the walker, and
+ * therefore neither required on the contract nor checked for translation through this path. Four
+ * catalogue keys sat in that hole.
+ *
+ * Indexed by scanning the DIRECTORY rather than a hand-written list, so a new helper file is picked
+ * up without an edit here.
+ */
+function ruleBuilderExtensionKeys(): Map<string, Set<string>> {
+  const constants = parseBusinessErrorConstants();
+  const index = new Map<string, Set<string>>();
+  for (const file of listCsFiles(SHARED_VALIDATORS_DIR)) {
+    const source = readFileSync(file, 'utf8');
+    const signature = /public static\s+[^\n(]*?\b(\w+)(?:<[^>]*>)?\s*\(/g;
+    const defs: { name: string; at: number }[] = [];
+    let m: RegExpExecArray | null;
+    while ((m = signature.exec(source)) !== null) {
+      defs.push({ name: m[1], at: m.index });
+    }
+    for (let i = 0; i < defs.length; i++) {
+      const body = source.slice(
+        defs[i].at,
+        i + 1 < defs.length ? defs[i + 1].at : source.length
+      );
+      // Only rule-builder extensions. A plain static helper is reached by a normal call the
+      // scanner already sees, and folding its keys in by name would attribute them everywhere.
+      if (!/this IRuleBuilder/.test(body)) continue;
+      const keys = index.get(defs[i].name) ?? new Set<string>();
+      const emitted = /BusinessErrorMessage\.(\w+)/g;
+      let k: RegExpExecArray | null;
+      while ((k = emitted.exec(body)) !== null) {
+        const value = constants.get(k[1]);
+        if (value) keys.add(value);
+      }
+      index.set(defs[i].name, keys);
+    }
+  }
+  return index;
+}
+
+/**
+ * Keys OperatorTenantScopeBehavior emits. It runs before validation on every anonymous request that
+ * implements IOperatorScopedRequest, so each such request can return them from any controller that
+ * dispatches it — and the feature-file scan cannot see that, because the tokens sit under Tenancy/.
+ * Read from the behaviour rather than listed, so a key added there reaches every host that dispatches
+ * a scoped request without an edit here.
+ */
+function operatorTenantScopeKeys(): Set<string> {
+  const constants = parseBusinessErrorConstants();
+  const source = readFileSync(OPERATOR_TENANT_SCOPE_BEHAVIOR_PATH, 'utf8');
+  const keys = new Set<string>();
+  const emitted = /BusinessErrorMessage\.(\w+)/g;
+  let match: RegExpExecArray | null;
+  while ((match = emitted.exec(source)) !== null) {
+    const value = constants.get(match[1]);
+    if (value) keys.add(value);
+  }
+  return keys;
+}
+
+/**
+ * Every key emitted from AppServices but OUTSIDE `Features/` — shared validators, shared services.
+ *
+ * This is the backstop, and it is the half that cannot rot. The extension follow above is regex-driven
+ * and can quietly stop matching (a reformatted signature, a helper moved into `Services/`), at which
+ * point it would silently cover nothing and no test would notice. This one asks a different question —
+ * "is every shared-emitter key accounted for on this host, one way or another?" — and it is answered
+ * by accounting rather than by attribution, so a new shared emitter in ANY shape fails it.
+ */
+function keysEmittedOutsideFeatures(): Set<string> {
+  const constants = parseBusinessErrorConstants();
+  const emitted = new Set<string>();
+  for (const file of listCsFiles(APP_SERVICES_DIR)) {
+    if (file.startsWith(FEATURES_DIR)) continue;
+    if (file.endsWith('BusinessErrorMessage.cs')) continue;
+    const source = readFileSync(file, 'utf8');
+    const regex = /BusinessErrorMessage\.(\w+)/g;
+    let match: RegExpExecArray | null;
+    while ((match = regex.exec(source)) !== null) {
+      const value = constants.get(match[1]);
+      if (value) emitted.add(value);
+    }
+  }
+  return emitted;
 }
 
 function keysEmittedAnywhere(): Set<string> {
@@ -370,6 +505,9 @@ const CUSTOMER_SURFACE_ERROR_KEYS: readonly string[] = [
   'order.span_exceeds_maximum',
   'order.payment_gateway_unavailable',
   'currency.invalid',
+  // The ambient tenant (the claim, or the market's operator for a guest) must be the operator of the
+  // address country; a booking in another operating company's country is refused (ADR-0061 D6).
+  'order.country_operator_mismatch',
   // Preferred cleaner — CreateOrder, CreateRecurringBooking and the standalone
   // ChoosePreferredCleaner all run the same two entitlement gates in the same
   // order, and the re-offer window closing is its own refusal.
@@ -404,6 +542,18 @@ const CUSTOMER_SURFACE_ERROR_KEYS: readonly string[] = [
   'country.required',
   'country.not_existing_id',
   'city.not_serviced',
+  // OperatorTenantScopeBehavior, before validation, on every anonymous IOperatorScopedRequest this
+  // host dispatches: the named (or default) market has no operating company (ADR-0061 D3). Its
+  // sibling refusal, a country that is not a market, is country.not_serviced above.
+  'tenant.not_found',
+  // A write against a company frozen for archive — a review, a dispute, a cancellation on its
+  // order — is refused at the commit and answered 409 by RequestValidationExceptionFilterAttribute on
+  // every controller (ADR-0064 D3); the key is referenced from AuditFailureCaptureBehavior, which
+  // records it on the failure audit row.
+  'tenant.archived',
+  // Legal — the terms / privacy page reads the text in force for the market; a market with no
+  // seeded text yet is the one refusal the page can show.
+  'legal.document_not_found',
   // Dispute — customer dispute flow
   'dispute.not_found',
   'dispute.already_exists',
@@ -433,7 +583,12 @@ const CUSTOMER_SURFACE_ERROR_KEYS: readonly string[] = [
   'gdpr.deletion_blocked_by_invoice',
   'gdpr.consent_not_found',
   'gdpr.consent_already_granted',
-  // Promo — request a first-clean code and checkout promo apply
+  // Consent — the terms gate on Register and CreateOrder: a registration, or a booking by a guest or
+  // by a customer whose account does not already hold both legal consents, that asserts no tick.
+  'consent.terms_not_accepted',
+  // Promo — request a first-clean code, and CreateOrder refusing a promo the
+  // server will not honour (one key per PromoCodeError reason, plus a code on
+  // an anonymous booking, which the applier would otherwise drop silently)
   'promo.already_sent',
   'promo.not_found',
   'promo.expired',
@@ -443,6 +598,7 @@ const CUSTOMER_SURFACE_ERROR_KEYS: readonly string[] = [
   'promo.per_user_limit_reached',
   'promo.below_minimum_order_amount',
   'promo.currency_mismatch',
+  'promo.requires_account',
   // Referral — validate
   'referral.not_found',
   'referral.self_referral',
@@ -450,10 +606,12 @@ const CUSTOMER_SURFACE_ERROR_KEYS: readonly string[] = [
   'referral.inactive',
   // Membership — subscribe / cancel / swap
   'membership.plan.not_found',
+  'membership.plan.not_priced_in_currency',
   'membership.already_active',
   'membership.not_found',
   'membership.not_owned_by_user',
   'membership.stripe_customer_required',
+  'membership.stripe_customer_currency_locked',
   'membership.swap_same_plan',
   // The CreateOrder waiver rule runs BEFORE the price rule and has its own code
   // precisely so this never renders as the generic "the price changed".
@@ -469,6 +627,18 @@ const CUSTOMER_SURFACE_ERROR_KEYS: readonly string[] = [
   // Device — push registration
   'device.invalid_platform',
   'device.not_found',
+  // ---------------------------------------------------------------------------
+  // Reached through a SHARED emitter, and invisible to this walker until it learned
+  // to follow one (2026-09-10). GdprController -> DeleteUserAccount ->
+  // GdprDeletionService. The service draws NO customer/cleaner distinction at
+  // runtime: the invoice, assigned-order and unsettled-pay checks sit behind
+  // `if (user.Employee is not null)` and run before the deferred-erasure return —
+  // and Login has no profile gate (unlike PartnerLogin), so a cleaner's account can
+  // authenticate here and hit all three. `gdpr.deletion_blocked_by_invoice` was
+  // already on this contract for exactly that reason; these are its siblings.
+  'gdpr.deletion_blocked_by_assigned_order',
+  'gdpr.deletion_blocked_by_credit_balance',
+  'gdpr.deletion_blocked_by_unsettled_pay',
 ];
 
 // Reachable from a Cleansia.Web.Customer controller and deliberately left out of
@@ -490,17 +660,156 @@ const DELIBERATELY_NOT_TRANSLATED: ReadonlyArray<{
   },
 ];
 
+/**
+ * Keys emitted by a SHARED emitter outside `Features/` that this host genuinely cannot reach.
+ *
+ * The only escape from the shared-emitter accounting assertion. Each entry says why in prose, and a
+ * blank reason fails its own test — the point is that skipping a key costs a sentence of thought,
+ * not a line of list.
+ */
+const SHARED_KEYS_NOT_REACHABLE_HERE: ReadonlyArray<{
+  key: string;
+  reason: string;
+}> = [
+  {
+    key: 'auth.company_deactivated',
+    reason:
+      'Emitted by CompanySignInGate (ADR-0064 D1) and re-asserted by TokenService as an invariant, for the Employee profile on the Partner and Mobile audiences only. The customer audience admits every profile — a cleaner of a deactivated company signs in here to export or erase — so no request through this host can carry the key.',
+  },
+  {
+    key: 'company.not_found',
+    reason:
+      'Emitted by ReceiptService, but only from ReserveReceiptAsync, RealizeFiscalAndPdfAsync and RetryFiscalRegistrationAsync. This host\'s only ReceiptService caller is DownloadOrderReceipt, which calls DownloadReceiptPdfAsync and throws none of them; the other three run in the Functions receipt handler and the fiscal retry service, neither behind an HTTP controller.',
+  },
+  {
+    key: 'currency.not_found',
+    reason:
+      'Emitted by MustCoverAllActiveCurrencies and the Currencies CRUD features, all dispatched only by Cleansia.Web.Admin. This host has no currency controller at all.',
+  },
+  {
+    key: 'language.not_found',
+    reason:
+      'Emitted by ReceiptService.ReserveReceiptAsync — which only the Functions receipt handler reaches — and by the Languages CRUD features. This host\'s LanguageController serves GetLanguageOverview and nothing else.',
+  },
+  {
+    key: 'gdpr.request_not_found',
+    reason:
+      'Emitted by GdprDeletionService.RetryDeletionAsync, whose only callers are AdminRetryUserDeletion (dispatched by AdminGdprController) and, through it, the RetryFailedUserDeletions timer. This host dispatches DeleteUserAccount, which enters the service through DeleteUserAccountAsync and never reaches the retry.',
+  },
+  {
+    key: 'payroll.invoice.reference_capacity_exhausted',
+    reason:
+      'Sole emitter is PayoutReferenceAllocator, reached only from the two admin payroll commands and the pay-period timer. This host has no payroll controller.',
+  },
+  {
+    key: 'refund.failed',
+    reason:
+      'The only caller of IRefundService on this host is CancelOrder, and it reduces the result to a boolean — the handler returns Success either way — so a RefundService error code can never become a response body here.',
+  },
+  {
+    key: 'refund.nothing_refundable',
+    reason: 'Same single call site, and the same discard: CancelOrder keeps only `refund.IsSuccess`.',
+  },
+  {
+    key: 'refund.order_not_refundable',
+    reason:
+      'Same single call site, and doubly unreachable: CancelOrder requires HasRefundableChargeSurface before it calls the service, so the guard that emits this is not even entered.',
+  },
+  {
+    key: 'service.missing_price_for_currency',
+    reason:
+      'Emitted inside MustCoverAllActiveCurrencies, whose only callers are the four admin catalogue writes. A customer reads the catalogue and writes none of it.',
+  },
+  {
+    key: 'service.prices_required',
+    reason: 'Same helper, same four admin-only callers.',
+  },
+  {
+    key: 'service.missing_translation_for_language',
+    reason: 'Emitted inside MustCoverAllActiveLanguages, whose only callers are the four admin catalogue writes.',
+  },
+  {
+    key: 'service.translations_required',
+    reason: 'Same helper, same four admin-only callers.',
+  },
+  {
+    key: 'validation.payout.account_number_required',
+    reason:
+      'Every validation.payout.* code comes from PayoutDetailsValidator, whose only consumer in the solution is UpdateBankDetails — dispatched by the partner host\'s EmployeeController and its mobile twin. This host has no employee controller and no bank-details endpoint.',
+  },
+  {
+    key: 'validation.payout.country_not_supported',
+    reason:
+      'Same: PayoutDetailsValidator is consumed only by UpdateBankDetails, which no controller on this host dispatches.',
+  },
+  {
+    key: 'validation.payout.iban_country_mismatch',
+    reason:
+      'Same: PayoutDetailsValidator is consumed only by UpdateBankDetails, which no controller on this host dispatches.',
+  },
+  {
+    key: 'validation.payout.iban_mismatch',
+    reason:
+      'Same: PayoutDetailsValidator is consumed only by UpdateBankDetails, which no controller on this host dispatches.',
+  },
+  {
+    key: 'validation.payout.invalid_account_number',
+    reason:
+      'Same: PayoutDetailsValidator is consumed only by UpdateBankDetails, which no controller on this host dispatches.',
+  },
+  {
+    key: 'validation.payout.invalid_account_prefix',
+    reason:
+      'Same: PayoutDetailsValidator is consumed only by UpdateBankDetails, which no controller on this host dispatches.',
+  },
+  {
+    key: 'validation.payout.invalid_bank_code',
+    reason:
+      'Same: PayoutDetailsValidator is consumed only by UpdateBankDetails, which no controller on this host dispatches.',
+  },
+  {
+    key: 'validation.payout.invalid_iban',
+    reason:
+      'Same: PayoutDetailsValidator is consumed only by UpdateBankDetails, which no controller on this host dispatches.',
+  },
+  {
+    key: 'validation.payout.invalid_swift',
+    reason:
+      'Same: PayoutDetailsValidator is consumed only by UpdateBankDetails, which no controller on this host dispatches.',
+  },
+  {
+    key: 'validation.payout.looks_like_card',
+    reason:
+      'Same: PayoutDetailsValidator is consumed only by UpdateBankDetails, which no controller on this host dispatches.',
+  },
+  {
+    key: 'validation.payout.scheme_not_supported',
+    reason:
+      'Same: PayoutDetailsValidator is consumed only by UpdateBankDetails, which no controller on this host dispatches.',
+  },
+  {
+    key: 'validation.payout.swift_required',
+    reason:
+      'Same: PayoutDetailsValidator is consumed only by UpdateBankDetails, which no controller on this host dispatches.',
+  },
+];
+
+
 // Contract keys that no BusinessErrorMessage reference anywhere in
 // Cleansia.Core.AppServices emits — the constant is declared and dead. Asserted
 // as an exact set in both directions: a contract entry that goes dead has to be
 // listed or deleted, and one that comes back to life has to leave.
 //
-// Two different things sit here. The promo.* codes are alive but travel a
-// different road: ValidatePromoCode returns the PromoValidationError enum name in
-// its Response, and the order-promo facade maps that onto api.promo.*, so no
-// handler ever names the constant. The rest were declared for refusals that were
-// never wired to a validator; their strings ship ahead of the rule, the way
-// auth.invalid_apple_token does.
+// These were declared for refusals that were never wired to a validator; their
+// strings ship ahead of the rule, the way auth.invalid_apple_token does.
+//
+// Seven promo.* codes used to sit here too (promo.not_found was always emitted, by
+// the admin promo features). They are emitted now: CreateOrder refuses a booking
+// whose promo the server would not honour, keyed to PromoCode under the
+// api.promo.* string for the preview's reason. The checkout preview
+// (ValidatePromoCode) still travels its own road -- it answers the PromoCodeError
+// enum name in its Response, which order-wizard.models.ts maps onto
+// pages.order.promo.error_*, never onto api.promo.*.
 const DECLARED_BUT_NEVER_EMITTED: readonly string[] = [
   'file.count_too_few',
   'file.size_exceeded_10mb',
@@ -511,18 +820,17 @@ const DECLARED_BUT_NEVER_EMITTED: readonly string[] = [
   'order.cancellation_window_closed',
   'order.creation_failed',
   'order.review.already_exists',
-  'promo.below_minimum_order_amount',
-  'promo.currency_mismatch',
-  'promo.expired',
-  'promo.global_limit_reached',
-  'promo.inactive',
-  'promo.not_yet_valid',
-  'promo.per_user_limit_reached',
   'receipt.generation_failed',
   'referral.already_referred',
   'referral.inactive',
   'referral.self_referral',
 ];
+
+/**
+ * Keys the shared-emitter assertion should treat as ACCOUNTED FOR because another list in this file
+ * already owns them and asserts their translation. Not an exemption — a cross-reference.
+ */
+const ALSO_ACCOUNTED_ELSEWHERE: readonly string[] = [];
 
 describe('error-contract parity (customer app, EP-1/EP-2/DA-7)', () => {
   const en = readLocale('en');
@@ -549,6 +857,40 @@ describe('error-contract parity (customer app, EP-1/EP-2/DA-7)', () => {
       expect([...(surface.keys.get('order.preferred_offer_closed') ?? [])]).toEqual([
         'OrderController -> Orders/ChoosePreferredCleaner.cs',
       ]);
+    });
+
+    it('walks the IOperatorScopedRequest marker to the refusals OperatorTenantScopeBehavior raises', () => {
+      expect([...operatorTenantScopeKeys()].sort()).toEqual([
+        'country.not_serviced',
+        'tenant.not_found',
+      ]);
+      // The session acts (sign-in, e-mail confirmation, the password reset pair) name no market and
+      // are scoped so their refusal audit row is stamped with the default market's operator.
+      const scoped = [
+        'AuthController -> Auth/AppleAuth.cs -> OperatorTenantScopeBehavior',
+        'AuthController -> Auth/ConfirmUserEmail.cs -> OperatorTenantScopeBehavior',
+        'AuthController -> Auth/GoogleAuth.cs -> OperatorTenantScopeBehavior',
+        'AuthController -> Auth/Login.cs -> OperatorTenantScopeBehavior',
+        'AuthController -> Auth/Register.cs -> OperatorTenantScopeBehavior',
+        'OrderController -> Orders/CreateOrder.cs -> OperatorTenantScopeBehavior',
+        'OrderController -> Orders/QuoteOrder.cs -> OperatorTenantScopeBehavior',
+        'OrderController -> Orders/QuotePlusSavings.cs -> OperatorTenantScopeBehavior',
+        'PaymentController -> Orders/CreateOrder.cs -> OperatorTenantScopeBehavior',
+        'PromoCodeController -> PromoCodes/RequestPromoCode.cs -> OperatorTenantScopeBehavior',
+        'ReferralController -> Referrals/ValidateReferral.cs -> OperatorTenantScopeBehavior',
+        'UserController -> Users/ChangePassword.cs -> OperatorTenantScopeBehavior',
+        'UserController -> Users/RequestPasswordChange.cs -> OperatorTenantScopeBehavior',
+      ];
+      expect([...(surface.keys.get('tenant.not_found') ?? [])].sort()).toEqual([
+        ...scoped,
+        'OrderController -> Orders/CreateOrder.cs',
+        'PaymentController -> Orders/CreateOrder.cs',
+      ].sort());
+      expect(
+        [...(surface.keys.get('country.not_serviced') ?? [])]
+          .filter((provenance) => provenance.endsWith('OperatorTenantScopeBehavior'))
+          .sort()
+      ).toEqual(scoped);
     });
 
     it('leaves no derived key unclassified', () => {
@@ -591,6 +933,76 @@ describe('error-contract parity (customer app, EP-1/EP-2/DA-7)', () => {
         (key) => !emitted.has(key)
       ).sort();
       expect(dead).toEqual([...DECLARED_BUT_NEVER_EMITTED].sort());
+    });
+
+    /**
+     * The extension index is regex-driven, so its silent failure mode is an EMPTY map that covers
+     * nothing while every other assertion still passes. This reads it back.
+     */
+    it('reads the shared rule-builder helpers, and does not merely remember them', () => {
+      const extensions = ruleBuilderExtensionKeys();
+      expect(extensions.size).toBeGreaterThanOrEqual(10);
+      expect(
+        [...(extensions.get('MustCoverAllActiveCurrencies') ?? [])].sort()
+      ).toEqual([
+        'currency.not_found',
+        'service.missing_price_for_currency',
+        'service.prices_required',
+      ]);
+      expect(
+        [...(extensions.get('MustCoverAllActiveLanguages') ?? [])].sort()
+      ).toEqual([
+        'service.missing_translation_for_language',
+        'service.translations_required',
+      ]);
+    });
+
+    /**
+     * The backstop. Fails the moment ANY new shared emitter appears anywhere in AppServices, in any
+     * shape, and forces the author to put the key on the contract or write down why this host cannot
+     * reach it.
+     */
+    it('accounts for every key emitted outside Features/', () => {
+      const outside = keysEmittedOutsideFeatures();
+      // A REACH FLOOR, because this assertion's own failure mode is passing on an empty set: point
+      // the scan at nothing and "everything is accounted for" is trivially true. Measured at 39 on
+      // 2026-09-10; the floor is far below that and far above zero, so it survives ordinary churn
+      // and dies the moment the reader breaks.
+      expect(outside.size).toBeGreaterThanOrEqual(25);
+
+      const excused = SHARED_KEYS_NOT_REACHABLE_HERE.map((entry) => entry.key);
+      const unaccounted = [...outside]
+        .filter(
+          (key) =>
+            !surface.keys.has(key) &&
+            !ALSO_ACCOUNTED_ELSEWHERE.includes(key) &&
+            !CUSTOMER_SURFACE_ERROR_KEYS.includes(key) &&
+            !excused.includes(key)
+        )
+        .sort();
+      const unexplained = SHARED_KEYS_NOT_REACHABLE_HERE.filter(
+        (entry) => entry.reason.trim().length === 0
+      ).map((entry) => entry.key);
+      expect({ unaccounted, unexplained }).toEqual({
+        unaccounted: [],
+        unexplained: [],
+      });
+    });
+
+    /**
+     * The backstop above skips Features/, and the controller walk only reads the file named for
+     * the dispatched class - it never follows a base class. A generic validator base under
+     * Features/ is therefore invisible to both, and every key it emits goes unaccounted for on
+     * every host. Such a base belongs under Common/Validators, where the backstop reads it.
+     */
+    it('no generic AbstractValidator base class lives under Features/', () => {
+      const basesUnderFeatures = listCsFiles(FEATURES_DIR)
+        .filter((file) =>
+          /class\s+\w+<\w+>\s*:\s*AbstractValidator</.test(readFileSync(file, 'utf8'))
+        )
+        .map((file) => relative(FEATURES_DIR, file).split(sep).join('/'))
+        .sort();
+      expect(basesUnderFeatures).toEqual([]);
     });
   });
 

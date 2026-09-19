@@ -50,6 +50,7 @@
     "chart.js": "^4.5.1",
     "compression": "^1.8.1",
     "express": "^5.2.1",
+    "flag-icons": "6.15.0",
     "jwt-decode": "^4.0.0",
     "lucide-angular": "^0.525.0",
     "ng2-charts": "^8.0.0",

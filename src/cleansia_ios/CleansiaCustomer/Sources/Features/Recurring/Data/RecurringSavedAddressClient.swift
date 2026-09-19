@@ -15,18 +15,19 @@ struct LiveRecurringSavedAddressClient: RecurringSavedAddressClient {
         let result = await apiResult(mapError: ApiError.fromGenerated) {
             try await CustomerSavedAddressAPI.savedAddressGetMine()
         }
-        return result.map { $0.compactMap { $0.toDomain() } }
+        return result.map { $0.compactMap { $0.toRecurringAddress() } }
     }
 }
 
-private extension SavedAddressDto {
-    func toDomain() -> RecurringSavedAddress? {
+extension SavedAddressDto {
+    func toRecurringAddress() -> RecurringSavedAddress? {
         guard let id else { return nil }
         return RecurringSavedAddress(
             id: id,
             label: label,
             street: street,
             city: city,
+            countryId: countryId,
             isDefault: isDefault ?? false
         )
     }

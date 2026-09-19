@@ -1,5 +1,6 @@
 using System.Reflection;
 using Cleansia.Core.AppServices.Features.AdminUsers;
+using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Extensions;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Users;
@@ -79,7 +80,8 @@ public class CreateAdminUserPasswordHashingTests
             LastName: "Last",
             PhoneNumber: null,
             BirthDate: null,
-            PreferredLanguageCode: null);
+            PreferredLanguageCode: null,
+            Role: AdminRole.Support);
 
         var result = await InvokeHandler(userRepository.Object, command);
 

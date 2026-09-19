@@ -21,7 +21,8 @@ public class CreateAdminUser
         string LastName,
         string? PhoneNumber,
         DateOnly? BirthDate,
-        string? PreferredLanguageCode) : ICommand<Response>;
+        string? PreferredLanguageCode,
+        AdminRole Role) : ICommand<Response>;
 
     public record Response(string Id);
 
@@ -37,9 +38,10 @@ public class CreateAdminUser
                 .WithMessage(BusinessErrorMessage.InvalidEmailFormat)
                 .MaximumLength(150)
                 .WithMessage(BusinessErrorMessage.MaxLength)
+                // One identity per email across the holding (ADR-0061 D5.1): the read ignores the
+                // tenant so an address held by another operating company is refused here, as a 400.
                 .MustAsync(async (email, ct) =>
-                    !await userRepository.GetAll()
-                        .AnyAsync(u => u.Email.ToLower() == email.ToLower(), ct))
+                    !await userRepository.ExistsWithEmailIgnoringTenantAsync(email, ct))
                 .WithMessage(BusinessErrorMessage.AdminUserEmailExists);
 
             RuleFor(x => x.Password).ValidatePassword();
@@ -75,6 +77,10 @@ public class CreateAdminUser
                 .MustAsync(async (code, ct) => await languageRepository.ExistsWithCodeAsync(code!, ct))
                 .WithMessage(BusinessErrorMessage.LanguageNotSupported)
                 .When(x => !string.IsNullOrWhiteSpace(x.PreferredLanguageCode));
+
+            RuleFor(x => x.Role)
+                .IsInEnum()
+                .WithMessage(BusinessErrorMessage.InvalidEnumValue);
         }
     }
 
@@ -92,7 +98,8 @@ public class CreateAdminUser
                 firstName: command.FirstName,
                 lastName: command.LastName,
                 profile: UserProfile.Administrator,
-                languageCode: command.PreferredLanguageCode);
+                languageCode: command.PreferredLanguageCode,
+                adminRole: command.Role);
 
             user.ConfirmEmail();
             user.UpdateBirthDate(command.BirthDate);
@@ -105,8 +112,8 @@ public class CreateAdminUser
             userRepository.Add(user);
 
             // The validator's existence check and this insert cross a snapshot boundary with no lock, so
-            // (TenantId, Email) UNIQUE is what actually arbitrates two simultaneous creations
-            // (ADR-0050). FLUSH here and own the loser's 23505: the pipeline commit runs after this
+            // the global Email UNIQUE index is what actually arbitrates two simultaneous creations
+            // (ADR-0050 D2, ADR-0061 D5.1). FLUSH here and own the loser's 23505: the pipeline commit runs after this
             // handler returns, where the same violation can only surface as a 500 (S7b).
             try
             {

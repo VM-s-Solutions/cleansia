@@ -61,6 +61,17 @@ public interface IRefreshTokenService
     /// </summary>
     Task RevokeAllForUserAsync(string userId, string reason, string? exceptRawToken, CancellationToken cancellationToken);
 
+    /// <summary>
+    /// Revokes every active refresh token a user holds WITHOUT committing — the erasure's shape.
+    /// <see cref="RevokeAllForUserAsync"/> commits the unit of work itself so a kill switch lands even
+    /// when the caller's own commit is outraced; inside an erasure that same commit split the walk in
+    /// two, with everything staged before it durable and everything after it still able to roll back.
+    /// Here the tokens die only when the caller's single commit carries them, and a concurrency
+    /// collision on a token row surfaces as that commit's failure — the admin's re-run is the retry.
+    /// No-ops when nothing matches.
+    /// </summary>
+    Task StageRevokeAllForUserAsync(string userId, string reason, CancellationToken cancellationToken);
+
     /// <summary>Hashes a raw token using SHA-256 hex — exposed for tests and for the validator that checks existence.</summary>
     string HashToken(string rawToken);
 }

@@ -3,7 +3,9 @@ import CleansiaCustomerApi
 import SwiftUI
 
 struct OrderDetailContent: View {
+    @Environment(\.locale) private var locale
     let order: CustomerOrderDetail
+    let markets: MarketState
     let photos: PhotosUiState
     let isDownloadingReceipt: Bool
     let onLeaveReview: () -> Void
@@ -43,6 +45,14 @@ struct OrderDetailContent: View {
                         // The bar is a thin 4pt rule; the parent's Spacing.s alone left the facts row
                         // crowding it from below.
                         .padding(.top, Spacing.xxs)
+                    Text(OrderMarketLabel.text(
+                        countryId: order.countryId,
+                        currencyCode: order.currencyCode,
+                        markets: markets,
+                        locale: locale
+                    ))
+                    .font(CleansiaTypography.bodyMedium)
+                    .foregroundColor(CleansiaColors.onSurfaceVariant)
 
                     if let disclosure = PreferredOfferPresentation.disclosure(for: order) {
                         PreferredOfferCard(disclosure: disclosure)

@@ -88,9 +88,8 @@ public class GetOrderPhotosAssignmentGateTests
         var order = ValidatorTestHelpers.BuildOrder(
             OrderId, OrderStatus.Completed, AssignedEmployeeId, maxEmployees: 2);
 
-        var orderRepository = new Mock<IOrderRepository>();
-        orderRepository
-            .Setup(r => r.GetByIdAsync(OrderId, It.IsAny<CancellationToken>()))
+        accessService
+            .Setup(s => s.LoadOrderForCallerAsync(OrderId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(order);
 
         var photo = OrderPhoto.Create(
@@ -125,7 +124,7 @@ public class GetOrderPhotosAssignmentGateTests
         blobFactory.Setup(f => f.GetBlobContainerClient(It.IsAny<string>())).Returns(blobClient.Object);
 
         var handler = new GetOrderPhotos.Handler(
-            orderRepository.Object, photoRepository.Object, accessService.Object, blobFactory.Object);
+            photoRepository.Object, accessService.Object, blobFactory.Object);
 
         return await handler.Handle(new GetOrderPhotos.Query(OrderId), CancellationToken.None);
     }

@@ -9,7 +9,13 @@
       >
         <i class="pi pi-arrow-left"></i>
       </button>
-      <a class="cleansia-invoice-detail__breadcrumb-link" (click)="navigateToInvoices()">
+      <a
+        class="cleansia-invoice-detail__breadcrumb-link"
+        role="button"
+        tabindex="0"
+        (click)="navigateToInvoices()"
+        (keydown.enter)="navigateToInvoices()"
+      >
         {{ 'sidebar.invoices' | translate }}
       </a>
       <i class="pi pi-chevron-right cleansia-invoice-detail__breadcrumb-sep"></i>

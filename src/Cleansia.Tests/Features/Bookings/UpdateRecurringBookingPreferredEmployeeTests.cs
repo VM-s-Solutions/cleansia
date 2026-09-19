@@ -5,6 +5,7 @@ using Cleansia.Core.Domain.Bookings;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Memberships;
 using Cleansia.Core.Domain.Repositories;
+using Cleansia.Tests.Features.Orders;
 using Moq;
 
 namespace Cleansia.Tests.Features.Bookings;
@@ -30,18 +31,22 @@ public class UpdateRecurringBookingPreferredEmployeeTests
     private readonly Mock<IUserMembershipRepository> _membershipRepository = new();
     private readonly Mock<IUserSessionProvider> _session = new();
     private readonly Mock<IOrderRepository> _orderRepository = new();
+    private readonly Mock<ISavedAddressRepository> _savedAddressRepository = new();
 
     public UpdateRecurringBookingPreferredEmployeeTests()
     {
         _session.Setup(s => s.GetUserId()).Returns(UserId);
+        _savedAddressRepository
+            .Setup(r => r.GetByUserAsync(UserId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync([]);
         _templateRepository
             .Setup(r => r.ExistsAsync(TemplateId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
         _templateRepository
-            .Setup(r => r.GetByIdAsync(TemplateId, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetByIdForOwnerAsync(TemplateId, It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(BuildTemplate());
         _membershipRepository
-            .Setup(r => r.GetActiveForUserNoTrackingAsync(UserId, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetEntitledForUserNoTrackingAsync(UserId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(BuildActiveMembership());
     }
 
@@ -68,14 +73,13 @@ public class UpdateRecurringBookingPreferredEmployeeTests
         var plan = MembershipPlan.Create(
             code: "PLUS",
             name: "Cleansia Plus",
-            monthlyPriceCzk: 199m,
-            stripePriceId: "price_plus",
             discountPercentage: 10m,
             freeCancellationWindowHours: 4,
             allowsExpressUpgrade: true);
         return UserMembership.Create(
             userId: UserId,
             membershipPlanId: plan.Id,
+            currencyId: "currency-czk",
             stripeSubscriptionId: "sub_1",
             currentPeriodStart: DateTime.UtcNow.AddDays(-1),
             currentPeriodEnd: DateTime.UtcNow.AddMonths(1));
@@ -83,7 +87,8 @@ public class UpdateRecurringBookingPreferredEmployeeTests
 
     private UpdateRecurringBooking.Validator CreateValidator() =>
         new(_templateRepository.Object, _membershipRepository.Object, _session.Object,
-            _orderRepository.Object);
+            _orderRepository.Object, _savedAddressRepository.Object,
+            OrderMarketDoubles.Trading(CreateOrderTestData.DefaultCurrency()), OrderMarketDoubles.Servicing("country-cz"));
 
     private static UpdateRecurringBooking.Command CommandWith(string? preferredEmployeeId) =>
         new(

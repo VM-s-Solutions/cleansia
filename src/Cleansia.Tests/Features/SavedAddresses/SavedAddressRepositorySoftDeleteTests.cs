@@ -42,18 +42,18 @@ public sealed class SavedAddressRepositorySoftDeleteTests : IDisposable
         return new CleansiaDbContext(
             options,
             NewSession(),
-            new NullTenantProvider());
+            new DefaultTenantProvider());
     }
 
     private async Task<(string ActiveId, string DeactivatedId)> SeedOneActiveOneDeactivatedAsync(bool deactivatedIsDefault)
     {
         await using var ctx = NewContext();
-        await ctx.Database.EnsureCreatedAsync();
+        await TestTenants.EnsureCreatedWithRegistryAsync(ctx);
 
         var language = Language.Create("en", "English");
         var user = User.CreateWithPassword("owner@cleansia.test", "Passw0rd!", "Owner", "User");
         user.Id = UserId;
-        var country = Country.Create("Czechia", "CZE");
+        var country = Country.Create("Czechia", "CZE", "CZ");
         country.Id = "country-1";
         var activeAddress = NewAddress("addr-active", country.Id);
         var deactivatedAddress = NewAddress("addr-deactivated", country.Id);
@@ -122,9 +122,9 @@ public sealed class SavedAddressRepositorySoftDeleteTests : IDisposable
         Assert.NotNull(row.DeactivatedOn);
     }
 
-    private sealed class NullTenantProvider : ITenantProvider
+    private sealed class DefaultTenantProvider : ITenantProvider
     {
-        public string? GetCurrentTenantId() => null;
+        public string? GetCurrentTenantId() => TestTenants.Default;
         public void SetTenantOverride(string tenantId) { }
         public void ClearTenantOverride() { }
     }

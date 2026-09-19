@@ -50,6 +50,11 @@ public class EmployeeRepository(CleansiaDbContext context) : BaseRepository<Empl
             .FirstOrDefaultAsync(e => e.Id == id, cancellationToken);
     }
 
+    public Task<Employee?> GetServingCustomerAsync(string employeeId, string userId, CancellationToken cancellationToken)
+        => GetDbSet().IgnoreQueryFilters().FirstOrDefaultAsync(e => e.Id == employeeId
+            && e.AssignedOrders.Any(a => a.Order.UserId == userId
+                && a.Order.OrderStatusHistory.Any(h => h.Status == Core.Domain.Enums.OrderStatus.Completed)), cancellationToken);
+
     public Task<Employee?> GetByIdIgnoringTenantAsync(string id, CancellationToken cancellationToken)
     {
         return GetQueryableIgnoringTenant()

@@ -81,6 +81,8 @@ The `Jwt--Key` and `Stripe--SecretKey` should be rotated periodically. Coordinat
 | `user-files` | Private | Customer-uploaded files | Until account deletion |
 | `employee-documents` | Private | Contracts, IDs, certifications | Per GDPR policy |
 | `order-photos` | Private | Before/after cleaning photos | Tied to order lifecycle |
+| `dispute-evidence` | Private | Files a customer attached to a dispute | Deleted at the customer's erasure |
+| `company-archives` | Private | An archived company's sealed bundle — `<tenantId>/<freeze instant>/` holding the books as JSON Lines, every receipt and payout-invoice PDF (copied, not moved) and a `manifest.json` written last with a SHA-256 per file; the manifest's hash is on the company's row ([ADR-0064](/decisions/adr-0064) D3) | Indefinite — no immutability policy yet (O-6); retrieval is an operations step |
 
 ### Blob Naming Convention
 
@@ -130,6 +132,12 @@ Queues decouple the APIs from long-running operations (PDF generation). Each que
 |-------|-------------|----------|----------|
 | `generate-receipt` | `generate-receipt-poison` | Customer API (after payment) | `GenerateReceipt` function |
 | `generate-invoice` | `generate-invoice-poison` | Admin API (period close) | `GenerateInvoice` function |
+| `company-wind-down` | `company-wind-down-poison` | Admin API (`WindDownCompany`, and `DeactivateCompany` when a date is set) — one message per act, keyed `wind-down:{tenantId}:{request instant}` | `CompanyWindDown` function — the idempotent sweep ([ADR-0064](/decisions/adr-0064) D2) |
+| `company-archive` | `company-archive-poison` | Admin API (`ArchiveCompany`) — keyed `archive:{tenantId}:{request instant}` | `CompanyArchive` function — builds the bundle into `company-archives` and stamps the manifest hash (ADR-0064 D3) |
+
+The other five (`calculate-order-pay`, `send-email`, `notifications-dispatch`, `live-activity-dispatch`,
+`sitewide-promo-fanout`) are in the consumer inventory below; every one of the nine has its poison twin
+in `storage.bicep`'s `queueBaseNames` and an alert in `queueAlerts.bicep`.
 
 ### Queue Message Format
 
@@ -163,9 +171,11 @@ All functions run in a single Azure Functions project deployed as a Docker conta
 
 ### Function Inventory
 
-**34 functions**, 20 timers and 14 queue consumers. This inventory listed five of them until
-2026-08-22, which is a large part of why nobody noticed that eight timers had never fired at all — see
-[the schedule tokens](#timer-schedules) below.
+**40 functions**, 22 timers and 18 queue consumers (`grep -l TimerTrigger src/Cleansia.Functions/Functions/*.cs | wc -l`
+is the check — the table below was one short, `ExpireStaleCredit`, until 2026-09-14; the two
+company-lifecycle consumers and their poison twins joined on 2026-09-16). This inventory
+listed five of them until 2026-08-22, which is a large part of why nobody noticed that eight timers
+had never fired at all — see [the schedule tokens](#timer-schedules) below.
 
 #### Timers
 
@@ -181,16 +191,18 @@ All functions run in a single Azure Functions project deployed as a Docker conta
 | `SendNewJobsDigest` | `%Cron%` — hourly | Tells cleaners how many new offerable jobs are near them |
 | `SendTomorrowJobDigest` | `%Cron%` — hourly | Tells each cleaner how many jobs they have tomorrow, at 18:00 **local** — hourly because a UTC cron cannot be timezone-aware |
 | `AutoCancelStaleRecurringOrders` | hourly | Cancels recurring instances nobody took in time |
-| `CloseExpiredPayPeriods` | daily 02:00 UTC | Marks pay periods past their end date as closed |
-| `MaterializeRecurringBookings` | `%Cron%` — daily 02:00 UTC | Turns recurring bookings into real orders |
+| `CloseExpiredPayPeriods` | daily 02:00 UTC | Marks pay periods past their end date as closed and opens the successor — no successor for a deactivated company |
+| `MaterializeRecurringBookings` | `%Cron%` — daily 02:00 UTC | Turns recurring bookings into real orders — none for a deactivated company's templates |
 | `SendRecurringOrderReminders` | `%Cron%` — daily 02:30 UTC | Warns a customer about an upcoming recurring instance |
 | `SendMembershipLifecycleNotifications` | `%Cron%` — daily 03:00 UTC | Expiry, renewal and cancellation notices |
 | `RefreshTokenCleanup` | daily 03:30 UTC | Deletes expired refresh tokens |
+| `ExpireStaleCredit` | daily 03:30 UTC | Expires customer credit past its expiry date |
 | `ExpireStaleReferrals` | `%Cron%` — daily 03:30 UTC | Expires referrals nobody redeemed |
 | `LiveActivityJanitor` | daily 04:00 UTC | Ends Live Activities whose orders are long finished |
 | `PruneOutbox` | daily 04:00 UTC | Deletes drained outbox rows |
+| `RetryFailedUserDeletions` | daily 05:00 UTC | Re-runs every GDPR erasure left `Failed` (or `Processing` for over 30 min), once per row per day, in its own scope per row; logs a still-failed one at Error. Under `DataRetention__Enabled` |
 | `SendPeriodEndReminders` | daily 09:00 UTC | Emails employees whose pay period ends in 3 days |
-| `DataRetentionCleanup` | weekly, Sun 03:00 UTC | GDPR — deletes expired user data, anonymizes old orders |
+| `DataRetentionCleanup` | weekly, Sun 03:00 UTC | GDPR — deletes expired user data, anonymizes old orders, expires customer audit rows (3 y per row) and blanks an erased customer's dispute text once its 3-year window is past (`DisputeText`). Runs **once per operating company** under that company's own windows (its *Company settings*; the platform defaults where none are set) |
 
 #### Queue consumers
 
@@ -203,8 +215,13 @@ All functions run in a single Azure Functions project deployed as a Docker conta
 | `SendPushNotification` | `notifications-dispatch` | FCM delivery |
 | `SendLiveActivityUpdate` | `live-activity-dispatch` | APNs Live Activity updates |
 | `SendSitewidePromoFanout` | `sitewide-promo-fanout` | Fans a sitewide promo out to recipients |
+| `CompanyWindDown` | `company-wind-down` | Winds a company down under the envelope's tenant: notices to every customer and cleaner, open bookings on or after the date cancelled and refunded (failed refunds re-driven), templates paused, every Plus ended, credit discharged and the last period invoiced once the company is deactivated; converges on re-run |
+| `CompanyArchive` | `company-archive` | Builds a frozen company's sealed bundle into `company-archives` and stamps the manifest's hash on the row; a no-op for a company not frozen, already archived, or a stale request |
 
-Each of those seven has a matching `*Poison` consumer on `<queue>-poison`.
+Each of those nine has a matching `*Poison` consumer on `<queue>-poison`. Two of them also classify one
+exception as permanent on first delivery: `CalculateOrderPay` and `GenerateReceipt` dead-letter and ack a
+message whose write a **frozen** company's books refused (`tenant.archived`), rather than retrying five
+times towards the same row. → [Cross-cutting — dead letters](/flows/cross-cutting#dead-letters)
 
 ### The eight `%Cron%` schedules — and how they never ran {#timer-schedules}
 
@@ -233,7 +250,7 @@ deployed database while reporting success (T-0685).
 
 | Setting | Turns off | Keeps working |
 |---|---|---|
-| `DataRetention__Enabled` | The weekly GDPR retention sweep (Sun 03:00) — expired codes, stale devices, old GDPR requests, order PII anonymisation, withdrawn consents, superseded documents, notifications | Everything else |
+| `DataRetention__Enabled` | The weekly GDPR retention sweep (Sun 03:00) — expired codes, stale devices, old GDPR requests, order PII anonymisation, withdrawn consents, superseded documents, notifications, customer audit rows, erased customers' dispute text — **and** the daily failed-erasure retry (05:00) | Everything else |
 | `PayPeriodClosing__Enabled` | The nightly pay-period job (02:00) — closing expired periods, opening the next, **and generating + emailing an invoice per employee** | `EnsureOpenPeriodAsync`, called inline by pay calculation, so pay-calc never fails with `NoActivePeriod` |
 | `Stripe__Enabled` | **All seven card-charge surfaces** — web checkout, resume checkout, mobile PaymentSheet, recurring-occurrence confirm, membership subscribe, membership checkout, membership plan swap | **Cash orders**, and everything that returns or releases money: refunds, cash-collection intent cancellation, membership cancellation, and GDPR erasure of the Stripe customer |
 

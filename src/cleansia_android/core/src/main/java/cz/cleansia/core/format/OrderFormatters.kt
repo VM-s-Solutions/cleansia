@@ -93,19 +93,20 @@ fun formatOrderDateRange(
 /**
  * Format a price with a currency suffix. Uses the device locale for grouping
  * and decimal marks. Known currencies get their native symbol (Kč, €, $);
- * unknown codes fall through as "123 USD".
+ * unknown codes fall through as "123 USD"; a blank code renders the bare
+ * number rather than a label guessed for it.
  */
 fun formatOrderPrice(
     amount: Double,
     currencyCode: String?,
     locale: Locale = Locale.getDefault(),
 ): String {
-    val code = currencyCode?.takeIf { it.isNotBlank() } ?: "CZK"
     val nf = NumberFormat.getNumberInstance(locale).apply {
         maximumFractionDigits = 0
         minimumFractionDigits = 0
     }
     val formatted = nf.format(amount)
+    val code = currencyCode?.trim()?.takeIf { it.isNotEmpty() } ?: return formatted
     return when (code.uppercase()) {
         "CZK" -> "$formatted Kč"
         "EUR" -> "$formatted €"

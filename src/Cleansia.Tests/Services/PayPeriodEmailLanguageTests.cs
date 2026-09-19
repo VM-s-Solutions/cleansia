@@ -66,6 +66,9 @@ public class PayPeriodEmailLanguageTests
         _payoutReferenceAllocator
             .Setup(a => a.AllocateAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(BusinessResult.Success(PayrollMockFactory.TestVariableSymbol));
+        _payoutReferenceAllocator
+            .Setup(a => a.AllocateInvoiceNumberAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(BusinessResult.Success(PayrollMockFactory.TestInvoiceNumber));
 
         _emailService
             .Setup(s => s.SendPeriodClosedEmailAsync(
@@ -183,7 +186,8 @@ public class PayPeriodEmailLanguageTests
             _pdfService.Object,
             _blobContainerClientFactory.Object,
             _tenantProvider.Object,
-            _payoutReferenceAllocator.Object);
+            _payoutReferenceAllocator.Object,
+        new Mock<ITenantRepository>().Object);
     }
 
     private PeriodReminderBackgroundService CreateReminderService()

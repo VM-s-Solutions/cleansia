@@ -536,6 +536,76 @@
     opacity: 0.6;
     cursor: default;
   }
+
+  // The one row that undoes the booking reads in the danger ink, on the same
+  // outline as its neighbours: a choice, not an alarm.
+  &--danger {
+    color: var(--cl-danger);
+    border-color: var(--cl-danger-line);
+
+    &:hover:not(:disabled) {
+      background: var(--cl-danger-soft);
+    }
+  }
+}
+
+.order-detail__cancellation-result {
+  margin-top: var(--cl-u);
+  padding: var(--cl-u);
+  border-radius: var(--cl-u);
+  background: var(--cl-tint);
+  font-size: calc(0.9375 * var(--cl-u));
+  color: var(--cl-body);
+
+  p {
+    margin: 0;
+
+    + p {
+      margin-top: calc(0.375 * var(--cl-u));
+      font-weight: 800;
+    }
+  }
+}
+
+.order-detail__cancellation-dialog {
+  width: min(32rem, calc(100vw - 2rem));
+
+  .p-dialog-header-actions button {
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  .p-button {
+    min-height: 44px;
+  }
+}
+
+.order-detail__cancellation-figures > div {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-block: 1rem;
+
+  dd {
+    margin: 0;
+    font-weight: 700;
+  }
+}
+
+.order-detail__cancellation-error {
+  color: var(--cl-body);
+  font-weight: 700;
+}
+
+.order-detail__cancellation-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+
+  cleansia-button {
+    flex: 1 1 12rem;
+  }
 }
 
 .order-detail__policy {

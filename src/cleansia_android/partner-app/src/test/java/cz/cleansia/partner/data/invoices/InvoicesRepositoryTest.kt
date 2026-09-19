@@ -34,7 +34,7 @@ class InvoicesRepositoryTest {
     fun clear_resetsMyInvoicesWatermark() = runTest {
         coEvery {
             payrollApi.employeePayrollGetPagedInvoices(
-                any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(),
+                any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(),
             )
         } returns Response.success(mockk<PagedDataOfEmployeeInvoiceDto>(relaxed = true))
         val repo = newRepo()

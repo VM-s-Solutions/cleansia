@@ -30,12 +30,32 @@ public class RequestLogAdminFreeTextPathTests
 
     [Theory]
     [MemberData(nameof(HostMiddlewareTypes))]
+    public async Task CustomerPanel_CompanyFreeText_IsSuppressed_On_All_Route_Shapes(Type middlewareType)
+    {
+        const string marker = "Private customer company text";
+        var json = JsonSerializer.Serialize(new { email = "customer@test.local", customerOfAnotherCompany = new { companyName = marker } });
+        foreach (var prefix in new[] { "/api", "/api/v1" })
+        {
+            foreach (var path in new[] { "/AdminOrder/order-id/customer", "/AdminUser/user-id", "/User/GetById" })
+            {
+                var logged = await RequestLoggingHarness.RunAsync(middlewareType, prefix + path,
+                    responseJson: json, requestJson: "", method: HttpMethods.Get);
+                Assert.NotEmpty(logged);
+                Assert.All(logged, message => Assert.DoesNotContain(marker, message));
+                Assert.Contains(logged, message => message.Contains(Suppressed));
+            }
+        }
+    }
+
+    [Theory]
+    [MemberData(nameof(HostMiddlewareTypes))]
     public async Task IssueCredit_TheAdminsNoteAboutTheCustomer_IsSuppressed(Type middlewareType)
     {
         const string marker = "let the cat out and would not answer the door";
         var json = JsonSerializer.Serialize(new IssueCustomerCredit.Command(
             UserId: "01USERCREDIT00000000000001",
             Amount: 500m,
+            CurrencyId: "01CURRENCYCZK0000000000001",
             Reason: CreditTransactionReason.Goodwill,
             Note: marker,
             RequestId: "req-1"));

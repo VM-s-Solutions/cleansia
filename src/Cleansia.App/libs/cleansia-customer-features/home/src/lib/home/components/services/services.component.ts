@@ -3,10 +3,11 @@ import { ChangeDetectionStrategy, Component, computed, DestroyRef, inject, signa
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { RouterModule } from '@angular/router';
 import {
-  loadCustomerServices,
+  selectCustomerDefaultCurrencyCode,
   selectCustomerServices,
 } from '@cleansia/customer-stores';
 import { PackageListItem, ServiceListItem } from '@cleansia/customer-services';
+import { formatMoney, localeFor } from '@cleansia/utils';
 import { Store } from '@ngrx/store';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { toSignal } from '@angular/core/rxjs-interop';
@@ -40,6 +41,10 @@ export class ServicesComponent {
 
   services = toSignal(this.store.select(selectCustomerServices), {
     initialValue: [] as ServiceListItem[],
+  });
+  /** The label for the fallback figures, which have no item behind them; a catalogue item carries its own code. */
+  private readonly currencyCode = toSignal(this.store.select(selectCustomerDefaultCurrencyCode), {
+    initialValue: null,
   });
 
   /**
@@ -75,13 +80,9 @@ export class ServicesComponent {
     return (item as unknown as Record<string, string>)[field] || '';
   }
 
-  formatPrice(price: number | undefined): string {
+  formatPrice(price: number | undefined, currencyCode?: string | null): string {
     if (price == null) return '';
-    return new Intl.NumberFormat('cs-CZ', {
-      style: 'currency',
-      currency: 'CZK',
-      minimumFractionDigits: 0,
-    }).format(price);
+    return formatMoney(price, currencyCode || this.currencyCode(), localeFor(this.lang()));
   }
 
   /**

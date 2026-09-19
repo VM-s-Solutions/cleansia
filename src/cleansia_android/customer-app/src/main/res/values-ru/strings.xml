@@ -131,7 +131,6 @@
 
     <string name="home_hero2_top">Весна уже здесь</string>
     <string name="home_hero2_title">Глубокая уборка + окна вместе</string>
-    <string name="home_hero2_cta">Экономия 450 CZK</string>
 
     <string name="home_hero3_top">Пригласите друга</string>
     <string name="home_hero3_title">Подарите бонус, получите дополнение бесплатно</string>
@@ -166,8 +165,6 @@
     <string name="home_milestone_title_v2">%1$s — Прогресс к следующему уровню</string>
 
     <!-- Home — seasonal -->
-    <string name="home_seasonal_title">Сезон весенней уборки</string>
-    <string name="home_seasonal_subtitle">Окна + обивка комбо — в этом месяце +450 CZK</string>
 
     <!-- Home — quick actions -->
     <string name="home_quick_book">Заказать</string>
@@ -180,13 +177,10 @@
     <string name="home_services_see_all">Показать все</string>
 
     <string name="home_service_household_name">Домашняя</string>
-    <string name="home_service_household_price">599 CZK</string>
 
     <string name="home_service_upholstery_name">Обивка</string>
-    <string name="home_service_upholstery_price">799 CZK</string>
 
     <string name="home_service_windows_name">Окна</string>
-    <string name="home_service_windows_price">299 CZK</string>
 
     <!-- Home — promo carousel -->
     <string name="home_promo_title">Для вас</string>
@@ -519,7 +513,8 @@
     <string name="help_faq_q2">Что делать, если меня нет дома, когда придёт клинер?</string>
     <string name="help_faq_a2">Добавьте инструкции по доступу при бронировании (напр. код от двери, место ключа). Клинеры ждут до 15 минут; если мы не сможем связаться, бронирование может быть отменено.</string>
     <string name="help_faq_q3">Застрахованы ли клинеры и проверены?</string>
-    <string name="help_faq_a3">Да. Все клинеры Cleansia проверены и застрахованы до 1 000 000 CZK на бронирование.</string>
+    <string name="help_faq_a3">Да. Все клинеры Cleansia проверены и застрахованы до %1$s на бронирование.</string>
+    <string name="help_faq_a3_no_figure">Да. Все клинеры Cleansia проверены и застрахованы.</string>
     <string name="help_faq_q4">Как перенести время?</string>
     <string name="help_faq_a4">Во вкладке Заказы откройте предстоящее бронирование и нажмите \"Перенести\". Бесплатный перенос за 12 часов до уборки.</string>
     <string name="help_faq_q5">Что входит в стандартную уборку?</string>
@@ -538,6 +533,8 @@
     <!-- Profile — language -->
     <string name="language_title">Язык</string>
     <string name="language_hint">Изменения применяются сразу.</string>
+    <string name="market_title">Рынок</string>
+    <string name="market_hint">Цены, Cleansia Plus и наши правила соответствуют рынку, который вы просматриваете. В какой валюте оплачивается заказ, определяет его адрес.</string>
     <string name="language_system">Как в системе</string>
     <string name="language_english">Английский</string>
     <string name="language_czech">Чешский</string>
@@ -547,6 +544,8 @@
 
     <string name="profile_row_appearance">Оформление</string>
     <string name="profile_row_language">Язык</string>
+    <string name="profile_row_market">Рынок</string>
+    <string name="market_chip_a11y">Рынок: %1$s, цены в %2$s</string>
 
     <!-- Profile — security -->
     <string name="profile_security_title">Безопасность</string>
@@ -597,7 +596,8 @@
     <!-- Booking — save address -->
     <string name="booking_save_address">Сохранить этот адрес</string>
     <string name="booking_set_as_default">Сделать основным</string>
-    <string name="booking_trust_insured">Застраховано до 1М CZK</string>
+    <string name="booking_trust_insured">Застраховано до %1$s</string>
+    <string name="booking_trust_insured_no_figure">Застраховано</string>
     <string name="booking_trust_vetted">Проверенные клинеры</string>
 
     <string name="booking_pick_service">Выберите услугу</string>
@@ -605,8 +605,8 @@
     <string name="booking_packages_featured">Рекомендуемые пакеты</string>
     <string name="booking_package_includes">ВКЛЮЧАЕТ</string>
     <string name="booking_package_includes_prefix">Включает:</string>
-    <string name="booking_price_from">от %1$d CZK</string>
-    <string name="booking_price_per_room">+ %1$d CZK/комната</string>
+    <string name="booking_price_from">от %1$s</string>
+    <string name="booking_price_per_room">+ %1$s/комната</string>
     <string name="details_base_price">Базовая цена</string>
     <string name="details_per_room">За комнату</string>
     <string name="details_add_to_booking">Добавить в бронирование</string>
@@ -809,13 +809,13 @@
     <!-- Cleansia Plus subscription -->
     <string name="membership_plus_title">Cleansia Plus</string>
     <string name="membership_plus_subtitle">Лучший способ держать дом чистым</string>
-    <string name="membership_plus_price_per_month">199 Kč / месяц</string>
     <string name="membership_subscribe_cta">Попробовать Cleansia Plus</string>
     <string name="membership_disclosure">Можно отменить в любое время. Подписка автоматически продлевается до отмены.</string>
+    <string name="plus_not_available_in_market">Plus пока недоступен на вашем рынке</string>
 
     <!-- Plus subscribe page redesign -->
     <string name="membership_hero_headline">Начните экономить уже сегодня</string>
-    <string name="membership_hero_trial_price">0 Kč / первые %1$d дней</string>
+    <string name="membership_hero_trial_price">%1$s / первые %2$d дней</string>
     <string name="membership_hero_then_price">затем %1$s / месяц</string>
     <string name="membership_hero_then_price_year">затем %1$s / год</string>
     <string name="membership_social_proof_headline">Как работает скидка для участников</string>
@@ -1066,6 +1066,7 @@
     <string name="order_action_report_issue">Сообщить о проблеме</string>
     <string name="order_action_rebook">Заказать снова</string>
     <string name="order_rebook_unavailable_items">Некоторые позиции из вашего предыдущего заказа больше не доступны.</string>
+    <string name="booking_market_items_unavailable">Некоторые выбранные позиции по этому адресу не предлагаются, поэтому они удалены.</string>
 
     <!-- Dispute list -->
     <string name="dispute_list_title">Мои споры</string>
@@ -1137,13 +1138,9 @@
     <string name="loyalty_tier_status_locked">Заблокировано</string>
     <string name="loyalty_threshold_points">%1$d б.</string>
     <string name="loyalty_discount_basic">%1$d%% скидка на все бронирования</string>
-    <string name="loyalty_discount_min_order">%1$d%% скидка на заказы ≥%2$d CZK</string>
+    <string name="loyalty_discount_min_order">%1$d%% скидка на заказы ≥ %2$s</string>
     <string name="loyalty_no_discount_yet">Пока без скидки</string>
     <string name="loyalty_perks_welcome_badge">Добро пожаловать в награды Cleansia</string>
-    <string name="loyalty_perks_discount_5_above_1000" formatted="false">5% скидка на бронирования свыше 1000 CZK</string>
-    <string name="loyalty_perks_discount_10" formatted="false">10% скидка на бронирования свыше 1000 CZK</string>
-    <string name="loyalty_perks_discount_12" formatted="false">12% скидка на бронирования свыше 1000 CZK</string>
-    <string name="loyalty_perks_discount_15" formatted="false">15% скидка на бронирования свыше 1000 CZK</string>
     <string name="loyalty_perks_priority_support">Приоритетная поддержка клиентов</string>
     <string name="loyalty_perks_dedicated_pool">Выделенная команда клинеров</string>
     <string name="loyalty_activity_title">Недавняя активность</string>
@@ -1186,8 +1183,8 @@
     <string name="notification_channel_dispute_reply_name">Ответы поддержки</string>
     <string name="notification_channel_dispute_reply_desc">Сообщим, когда поддержка ответит на вашу жалобу.</string>
 
-    <string name="notification_order_confirmed_title">Заказ подтверждён ✅</string>
-    <string name="notification_order_confirmed_body">Заказ #%1$s подтверждён. Нажмите, чтобы посмотреть подробности.</string>
+    <string name="notification_order_payment_confirmed_title">Заказ подтверждён ✅</string>
+    <string name="notification_order_payment_confirmed_body">Заказ #%1$s подтверждён. Нажмите, чтобы посмотреть подробности.</string>
     <string name="notification_cleaner_assigned_title">Клинер найден! 🎉</string>
     <string name="notification_cleaner_assigned_body">К вашему заказу #%1$s назначен клинер. Нажмите, чтобы посмотреть подробности.</string>
     <string name="notification_order_starting_soon_title">Уборка скоро начнётся</string>
@@ -1205,7 +1202,7 @@
     <string name="notification_order_refunded_title">Возврат средств</string>
     <string name="notification_order_refunded_body">Возврат за заказ #%1$s обрабатывается.</string>
     <string name="notification_order_no_cleaner_refunded_title">Свободных уборщиков не нашлось</string>
-    <string name="notification_order_no_cleaner_refunded_body">Заказ #%1$s никто не взял, поэтому мы вернули всю сумму и добавили 250 Kč бонусов на следующую уборку. Простите.</string>
+    <string name="notification_order_no_cleaner_refunded_body">Заказ #%1$s никто не взял, поэтому мы вернули всю сумму и добавили бонус %2$s на следующую уборку. Простите.</string>
     <string name="notification_dispute_reply_title">Поддержка ответила</string>
     <string name="notification_dispute_reply_body">У вас новое сообщение по вашей жалобе. Нажмите, чтобы прочитать.</string>
     <string name="notification_recurring_scheduled_title">Подтвердите завтрашнюю уборку</string>
@@ -1253,8 +1250,22 @@
     <string name="error_auth_social_account_not_found">Мы не нашли аккаунт для этого входа. Сначала зарегистрируйтесь.</string>
     <string name="error_auth_too_many_attempts">Слишком много попыток с этим кодом. Запросите новый код и попробуйте ещё раз.</string>
     <string name="error_company_not_found">Информация о компании не найдена</string>
+    <string name="error_consent_terms_not_accepted">Чтобы продолжить, примите Условия использования и Политику конфиденциальности.</string>
     <string name="error_country_not_existing_id">Страна не найдена</string>
     <string name="error_currency_invalid">Недействительная валюта</string>
+    <string name="error_country_not_serviced">В этой стране мы пока не работаем.</string>
+    <string name="error_tenant_not_found">Этот рынок пока не обслуживает ни одна компания Cleansia.</string>
+    <string name="error_tenant_archived">Записи этой компании опечатаны для архивирования; изменить в них уже ничего нельзя.</string>
+    <string name="error_order_country_operator_mismatch">Этот адрес обслуживает другая компания Cleansia, и с этого аккаунта его нельзя забронировать.</string>
+    <string name="error_promo_not_found">Код не найден</string>
+    <string name="error_promo_inactive">Код больше не доступен</string>
+    <string name="error_promo_expired">Срок действия кода истёк</string>
+    <string name="error_promo_not_yet_valid">Код ещё не активен</string>
+    <string name="error_promo_global_limit_reached">Код больше не доступен</string>
+    <string name="error_promo_per_user_limit_reached">Вы уже использовали этот код</string>
+    <string name="error_promo_below_minimum_order_amount">Заказ не соответствует минимальной сумме для этого кода</string>
+    <string name="error_promo_currency_mismatch">Код не действует для этой валюты</string>
+    <string name="error_promo_requires_account">Войдите, чтобы использовать промокод.</string>
     <string name="error_device_invalid_platform">Неподдерживаемая платформа устройства.</string>
     <string name="error_dispute_already_exists">Спор для этого заказа уже существует</string>
     <string name="error_dispute_max_length_exceeded">Превышена максимальная длина</string>
@@ -1273,6 +1284,8 @@
     <string name="error_membership_not_found">Членство не найдено.</string>
     <string name="error_membership_plan_not_found">План членства не найден.</string>
     <string name="error_membership_swap_same_plan">У вас уже есть этот план.</string>
+    <string name="error_membership_plan_not_priced_in_currency">Этот план пока не продаётся на вашем рынке.</string>
+    <string name="error_membership_stripe_customer_currency_locked">Оплата Plus уже настроена в другой валюте. Чтобы изменить её, обратитесь в поддержку.</string>
     <string name="error_order_not_completed">Оценить заказ можно только после завершения.</string>
     <string name="error_order_preferred_employee_not_eligible">Выбранный клинер недоступен для этого заказа.</string>
     <string name="error_order_preferred_employee_membership_required">Выбор любимого уборщика — преимущество Cleansia Plus.</string>
@@ -1348,6 +1361,8 @@
     <string name="tracker_step_counter">Шаг %1$d / %2$d</string>
     <string name="order_cancelled_reason_payment_not_completed">Оплата не была завершена, поэтому это бронирование было отменено.</string>
     <string name="order_cancelled_reason_recurring_not_confirmed">Это повторное бронирование не было подтверждено вовремя, поэтому оно отменено бесплатно.</string>
+    <string name="order_cancelled_reason_company_wind_down">Клининговая компания, обслуживавшая ваш район, прекращает работу, поэтому это бронирование отменено; всё, что вы оплатили, будет возвращено в полном объёме.</string>
+    <string name="order_cancelled_reason_no_cleaner_available">Для этого бронирования не нашлось свободного уборщика, поэтому оно отменено.</string>
     <string name="dispute_create_which_items">Что именно пошло не так?</string>
     <string name="dispute_create_which_items_hint">Необязательно. Отметьте услуги, выполненные плохо — это поможет быстрее всё исправить. Если проблемой была вся уборка — оставьте пустым.</string>
     <string name="dispute_create_item_in_package">в пакете %1$s</string>
@@ -1356,4 +1371,21 @@
     <string name="order_review_item_in_package">в пакете %1$s</string>
     <string name="order_review_rate_item_star">Поставить %1$s %2$d звёзд</string>
     <string name="error_dispute_line_not_on_order">Одной из выбранных услуг нет в этом заказе. Откройте форму снова и попробуйте ещё раз.</string>
+    <string name="order_market_unknown">Рынок недоступен</string>
+    <string name="order_market_label">%1$s · %2$s</string>
+    <string name="notification_recurring_paused_title">Расписание регулярных уборок приостановлено</string>
+    <string name="notification_recurring_paused_body">Ваше расписание регулярных уборок приостановлено, поскольку Plus неактивен. Продлите Plus, чтобы возобновить планирование уборок.</string>
+    <string name="guest_order_entry">Найти бронирование без учётной записи</string>
+    <string name="guest_order_title">Бронирование без учётной записи</string>
+    <string name="guest_order_intro">Введите номер бронирования, электронную почту и код подтверждения из письма о бронировании.</string>
+    <string name="guest_order_number">Номер бронирования</string>
+    <string name="guest_order_code">Код подтверждения</string>
+    <string name="guest_order_lookup">Найти бронирование</string>
+    <string name="guest_order_required">Введите номер бронирования, электронную почту и код подтверждения.</string>
+    <string name="guest_order_empty">После поиска здесь появятся сведения о бронировании.</string>
+    <string name="guest_order_loading">Ищем ваше бронирование…</string>
+    <string name="guest_order_cancel">Отменить бронирование</string>
+    <string name="guest_order_cannot_cancel">Это бронирование невозможно отменить.</string>
+    <string name="guest_order_preview_required">Не удалось проверить плату за отмену. Попробуйте ещё раз, прежде чем подтвердить отмену.</string>
+    <string name="guest_order_fee_estimate">Сбор за отмену: %1$s. Максимальный возврат на карту: %2$s. Вернуть можно только полученные платежи картой; в подтверждении будет указана фактически возвращённая сумма.</string>
 </resources>

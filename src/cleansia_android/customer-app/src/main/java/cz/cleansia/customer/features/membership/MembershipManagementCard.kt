@@ -37,17 +37,15 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import cz.cleansia.core.format.formatOrderPrice
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cz.cleansia.customer.R
 import cz.cleansia.customer.core.memberships.ExpressWaiverStatus
 import cz.cleansia.core.ui.components.CleansiaDialog
-import cz.cleansia.core.snackbar.SnackbarController
-import dagger.hilt.android.EntryPointAccessors
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -75,26 +73,19 @@ fun MembershipManagementCard(
     val plans by viewModel.plans.collectAsStateWithLifecycle()
     val submitState by viewModel.submitState.collectAsStateWithLifecycle()
     val submitting = submitState is cz.cleansia.customer.ui.state.ActionState.Submitting
-    val context = LocalContext.current
-
-    // TODO(W3.3): refactor to VM injection — pull snackbar into
-    // MembershipViewModel like ProfileViewModel/OrderDetailViewModel.
-    val snackbar = remember {
-        EntryPointAccessors
-            .fromApplication(context, SubscribePlusEntryPoint::class.java)
-            .snackbarController()
-    }
 
     var showCancelDialog by remember { mutableStateOf(false) }
     var showSwitchDialog by remember { mutableStateOf(false) }
 
     // Find the yearly plan if there is one — drives the "Switch to annual" CTA
     // visibility. Only rendered when the user is on Monthly + a Yearly plan
-    // exists in the catalog.
-    val yearlyPlan = remember(plans) {
-        plans.firstOrNull { it.billingInterval == 2 }
-    }
+    // exists in the catalog. A swap keeps the subscription's currency (ADR-0059 D2), and the plans
+    // are priced in the chosen market's, so the CTA quotes a price only when the two agree — a
+    // yearly figure in another currency would be a price Stripe will not charge.
     val membership = current
+    val yearlyPlan = remember(plans, membership?.currencyCode) {
+        plans.firstOrNull { it.billingInterval == 2 && it.currencyCode == membership?.currencyCode }
+    }
     val showSwitchCta = membership?.hasMembership == true &&
         membership.billingInterval == 1 &&
         !membership.cancelRequested &&
@@ -122,14 +113,7 @@ fun MembershipManagementCard(
             confirmLabel = stringResource(R.string.membership_cancel_dialog_confirm),
             onConfirm = {
                 showCancelDialog = false
-                viewModel.cancel { effectiveDate ->
-                    snackbar.showSuccess(
-                        context.getString(
-                            R.string.membership_cancelled_until,
-                            formatPeriodEnd(effectiveDate),
-                        ),
-                    )
-                }
+                viewModel.cancel()
             },
             dismissLabel = stringResource(R.string.common_back),
         )
@@ -141,14 +125,12 @@ fun MembershipManagementCard(
             title = stringResource(R.string.membership_switch_dialog_title),
             message = stringResource(
                 R.string.membership_switch_dialog_message,
-                formatPriceCzkCard(yearlyPlan.price),
+                formatOrderPrice(yearlyPlan.price, yearlyPlan.currencyCode),
             ),
             confirmLabel = stringResource(R.string.membership_switch_dialog_confirm),
             onConfirm = {
                 showSwitchDialog = false
-                viewModel.swapPlan(yearlyPlan.code) {
-                    snackbar.showSuccess(context.getString(R.string.membership_switch_success))
-                }
+                viewModel.swapPlan(yearlyPlan.code)
             },
             dismissLabel = stringResource(R.string.common_back),
         )
@@ -492,14 +474,9 @@ private val PremiumGold = androidx.compose.ui.graphics.Color(0xFFD97706)
  */
 private val EndingAccent = androidx.compose.ui.graphics.Color(0xFFB91C1C)
 
-/** CZK formatter shared with the subscribe screen — local copy to avoid file deps. */
-private fun formatPriceCzkCard(amount: Double): String {
-    val rounded = if (amount % 1.0 == 0.0) amount.toInt().toString() else "%.2f".format(amount)
-    return "$rounded Kč"
-}
 
 /** Format a backend ISO-8601 instant as a localized short date (e.g. "May 30, 2026"). */
-private fun formatPeriodEnd(iso: String): String {
+internal fun formatPeriodEnd(iso: String): String {
     return runCatching {
         val instant = Instant.parse(iso)
         val formatter = DateTimeFormatter

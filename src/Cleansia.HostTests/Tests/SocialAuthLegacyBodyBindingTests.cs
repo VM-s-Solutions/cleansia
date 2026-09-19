@@ -12,12 +12,16 @@ namespace Cleansia.HostTests.Tests;
 /// implicit-required runs before MediatR, so a unit or mediator-level test constructs the command
 /// directly and cannot see it. An old client must reach the handler and be told what is wrong with
 /// its token, not be handed "The TermsAccepted field is required."
+///
+/// <para>Both calls are anonymous market-scoped writes (ADR-0061 D3), so the market must exist for the
+/// request to get past the scope behaviour and reach the handler's verdict on the token.</para>
 /// </summary>
 public sealed class SocialAuthLegacyBodyBindingTests(HostTestPostgresFixture db) : AuthzHostTestBase(db)
 {
     [Fact]
     public async Task A_Google_Body_Without_TermsAccepted_Binds_And_Reaches_The_Handler()
     {
+        await SeedAsync(DomainSeed.EnsureReferenceDataAsync);
         var response = await CustomerClientAnonymous().PostAsJsonAsync("/api/Auth/GoogleAuth", new
         {
             token = "a-token-the-verifier-will-reject",
@@ -33,6 +37,7 @@ public sealed class SocialAuthLegacyBodyBindingTests(HostTestPostgresFixture db)
     [Fact]
     public async Task An_Apple_Body_Without_TermsAccepted_Binds_And_Reaches_The_Handler()
     {
+        await SeedAsync(DomainSeed.EnsureReferenceDataAsync);
         var response = await CustomerClientAnonymous().PostAsJsonAsync("/api/Auth/AppleAuth", new
         {
             identityToken = "a-token-the-verifier-will-reject",

@@ -58,6 +58,12 @@
       </button>
 
       <cleansia-language-switcher variant="globe" />
+      <cleansia-market-switcher
+        variant="pill"
+        [markets]="markets()"
+        [selected]="selectedMarketCode()"
+        (marketChange)="onMarketChange($event)"
+      />
 
       <!-- User menu — only once there is a user. Signed out, the artboard has a
            plain "Přihlásit" link and nothing else. -->
@@ -257,6 +263,21 @@
         </span>
         <cleansia-language-switcher variant="globe" />
       </div>
+
+      @if (hasMarketChoice()) {
+        <div class="customer-navbar__mobile-link flex align-items-center justify-content-between" style="cursor: default">
+          <span class="flex align-items-center">
+            <i class="pi pi-map mr-2"></i>
+            {{ 'nav.market' | translate }}
+          </span>
+          <cleansia-market-switcher
+            variant="pill"
+            [markets]="markets()"
+            [selected]="selectedMarketCode()"
+            (marketChange)="onMarketChange($event)"
+          />
+        </div>
+      }
 
       @if (isLoggedIn()) {
         @if (userDisplayName(); as name) {

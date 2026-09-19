@@ -1,19 +1,33 @@
 package cz.cleansia.customer.features.recurring
 
+import android.content.Context
 import androidx.lifecycle.SavedStateHandle
+import androidx.lifecycle.ViewModelStore
 import app.cash.turbine.test
 import cz.cleansia.core.network.ApiError
 import cz.cleansia.core.network.ApiResult
 import cz.cleansia.core.snackbar.SnackbarController
+import cz.cleansia.customer.R
 import cz.cleansia.customer.core.catalog.CatalogRepository
+import cz.cleansia.customer.core.catalog.CategoryDto
+import cz.cleansia.customer.core.catalog.PackageListItem
+import cz.cleansia.customer.core.catalog.ServiceListItem
 import cz.cleansia.customer.core.data.AddressRepository
+import cz.cleansia.customer.core.data.UserAddress
+import cz.cleansia.customer.core.market.MarketListItem
+import cz.cleansia.customer.core.market.MarketRepository
+import cz.cleansia.customer.core.market.MarketState
+import cz.cleansia.customer.core.orders.OrderDetailDto
+import cz.cleansia.customer.core.orders.OrderPackageDetailsDto
 import cz.cleansia.customer.core.orders.OrderRepository
+import cz.cleansia.customer.core.orders.OrderServiceDetailsDto
 import cz.cleansia.customer.core.recurring.RecurrenceFrequency
 import cz.cleansia.customer.core.recurring.RecurringBookingRepository
 import cz.cleansia.customer.core.recurring.RecurringBookingTemplateDto
 import cz.cleansia.customer.core.recurring.UpdateRecurringBookingRequest
 import cz.cleansia.customer.testing.MainDispatcherRule
 import cz.cleansia.customer.ui.state.ActionState
+import io.mockk.clearMocks
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
@@ -42,9 +56,17 @@ class CreateRecurringViewModelTest {
     private lateinit var orderRepo: OrderRepository
     private lateinit var catalogRepo: CatalogRepository
     private lateinit var addressRepo: AddressRepository
+    private lateinit var marketRepo: MarketRepository
     private lateinit var snackbar: SnackbarController
+    private lateinit var appContext: Context
+    private lateinit var marketFlow: MutableStateFlow<MarketState>
 
     private lateinit var templatesFlow: MutableStateFlow<List<RecurringBookingTemplateDto>>
+    private lateinit var addressesFlow: MutableStateFlow<List<UserAddress>>
+    private lateinit var catalogServicesFlow: MutableStateFlow<List<ServiceListItem>>
+    private lateinit var catalogPackagesFlow: MutableStateFlow<List<PackageListItem>>
+    private lateinit var catalogCountryFlow: MutableStateFlow<String?>
+    private lateinit var catalogLoadedFlow: MutableStateFlow<Boolean>
 
     @Before
     fun setUp() {
@@ -52,11 +74,29 @@ class CreateRecurringViewModelTest {
         orderRepo = mockk(relaxed = true)
         catalogRepo = mockk(relaxed = true)
         addressRepo = mockk(relaxed = true)
+        marketRepo = mockk(relaxed = true)
         snackbar = mockk(relaxed = true)
+        appContext = mockk(relaxed = true)
+        marketFlow = MutableStateFlow(MarketState.Unavailable)
+        every { marketRepo.state } returns marketFlow
+        coEvery { marketRepo.ensureLoaded() } answers { marketFlow.value }
         templatesFlow = MutableStateFlow(emptyList())
-        coEvery { catalogRepo.refresh() } returns ApiResult.Success(Unit)
-        every { addressRepo.addresses } returns MutableStateFlow(emptyList())
+        addressesFlow = MutableStateFlow(emptyList())
+        catalogServicesFlow = MutableStateFlow(emptyList())
+        catalogPackagesFlow = MutableStateFlow(emptyList())
+        catalogCountryFlow = MutableStateFlow(null)
+        catalogLoadedFlow = MutableStateFlow(false)
+        coEvery { catalogRepo.refresh(null) } coAnswers {
+            catalogLoadedFlow.value = true
+            ApiResult.Success(Unit)
+        }
+        every { catalogRepo.services } returns catalogServicesFlow
+        every { catalogRepo.packages } returns catalogPackagesFlow
+        every { catalogRepo.countryId } returns catalogCountryFlow
+        every { catalogRepo.loaded } returns catalogLoadedFlow
+        every { addressRepo.addresses } returns addressesFlow
         every { recurringRepo.templates } returns templatesFlow
+        every { appContext.getString(R.string.booking_market_items_unavailable) } returns marketNotice
     }
 
     private fun viewModel(orderId: String? = null, templateId: String? = null) =
@@ -68,9 +108,151 @@ class CreateRecurringViewModelTest {
             orderRepo = orderRepo,
             catalogRepo = catalogRepo,
             addressRepo = addressRepo,
+            marketRepo = marketRepo,
             snackbar = snackbar,
-            appContext = mockk(relaxed = true),
+            appContext = appContext,
         )
+
+    private fun slovakMarket(): MarketState {
+        val svk = MarketListItem(
+            countryId = "svk-id",
+            isoCode = "SVK",
+            isoAlpha2 = "SK",
+            name = "Slovakia",
+            currencyId = "cur-eur",
+            currencyCode = "EUR",
+            currencySymbol = "€",
+            isDefault = false,
+        )
+        return MarketState.Resolved(listOf(svk), svk)
+    }
+
+    // The catalogue is a UiState like the booking wizard's: a failed entry read is retried from the
+    // screen, and nothing is submitted against a catalogue the customer never saw (iOS parity, 4cc7a9dd).
+
+    @Test
+    fun `a successful entry read lands the catalogue as Loaded`() = runTest {
+        val vm = viewModel()
+        advanceUntilIdle()
+
+        assertEquals(RecurringCatalogState.Loaded, vm.catalogState.value)
+    }
+
+    @Test
+    fun `a failed entry read leaves the catalogue on Error and holds submit`() = runTest {
+        coEvery { catalogRepo.refresh(null) } returns ApiResult.Error(ApiError.Network("boom"))
+
+        val vm = viewModel()
+        advanceUntilIdle()
+        fillValidForm(vm)
+        runCurrent()
+
+        assertEquals(RecurringCatalogState.Error, vm.catalogState.value)
+        assertEquals(false, vm.isValid.value)
+        vm.submit()
+        advanceUntilIdle()
+        coVerify(exactly = 0) { recurringRepo.create(any()) }
+        assertEquals(ActionState.Idle, vm.submitState.value)
+    }
+
+    @Test
+    fun `step three cannot submit until a catalogue has landed`() = runTest {
+        coEvery { catalogRepo.refresh(null) } returns ApiResult.Error(ApiError.Network("boom"))
+        val vm = viewModel()
+        advanceUntilIdle()
+        fillValidForm(vm)
+        vm.nextStep()
+        vm.nextStep()
+        runCurrent()
+        assertEquals(false, vm.canAdvance.value)
+
+        coEvery { catalogRepo.refresh(null) } coAnswers {
+            catalogServicesFlow.value = listOf(service("svc-1"))
+            catalogLoadedFlow.value = true
+            ApiResult.Success(Unit)
+        }
+        vm.retryCatalog()
+        advanceUntilIdle()
+
+        assertEquals(RecurringCatalogState.Loaded, vm.catalogState.value)
+        assertEquals(true, vm.canAdvance.value)
+        assertEquals(true, vm.isValid.value)
+    }
+
+    @Test
+    fun `retryCatalog re-reads the selected address's market and prunes the prefilled selection`() = runTest {
+        addressesFlow.value = listOf(address("addr-sk", "svk-id", isDefault = true))
+        coEvery { catalogRepo.refresh(any()) } returns ApiResult.Error(ApiError.Network("boom"))
+        sourceOrder(services = listOf("s-1", "s-2"))
+        val vm = viewModel(orderId = "ord-7")
+        advanceUntilIdle()
+        assertEquals(RecurringCatalogState.Error, vm.catalogState.value)
+        assertEquals(setOf("s-1", "s-2"), vm.state.value.selectedServiceIds)
+
+        slovakCatalogue(service("s-1"))
+        vm.retryCatalog()
+        advanceUntilIdle()
+
+        assertEquals(RecurringCatalogState.Loaded, vm.catalogState.value)
+        assertEquals(setOf("s-1"), vm.state.value.selectedServiceIds)
+        verify(exactly = 1) { snackbar.showInfo(marketNotice) }
+    }
+
+    @Test
+    fun `a retry that fails again stays on Error and prunes nothing`() = runTest {
+        coEvery { catalogRepo.refresh(any()) } returns ApiResult.Error(ApiError.Network("boom"))
+        val vm = viewModel()
+        advanceUntilIdle()
+        vm.toggleService("svc-1")
+
+        vm.retryCatalog()
+        advanceUntilIdle()
+
+        assertEquals(RecurringCatalogState.Error, vm.catalogState.value)
+        assertEquals(setOf("svc-1"), vm.state.value.selectedServiceIds)
+        verify(exactly = 0) { snackbar.showInfo(any<String>()) }
+    }
+
+    // ADR-0058 D4/D5: the entry read prices the chosen market; the address then wins; leaving hands
+    // the market back rather than the platform default.
+
+    @Test
+    fun `the entry read is for the chosen market`() = runTest {
+        marketFlow.value = slovakMarket()
+        slovakCatalogue(service("svc-1"))
+
+        val vm = viewModel()
+        advanceUntilIdle()
+
+        coVerify(exactly = 1) { catalogRepo.refresh("svk-id") }
+        coVerify(exactly = 0) { catalogRepo.refresh(null) }
+        assertEquals(RecurringCatalogState.Loaded, vm.catalogState.value)
+    }
+
+    @Test
+    fun `leaving the wizard after a foreign address returns the catalogue to the chosen market`() = runTest {
+        marketFlow.value = slovakMarket()
+        addressesFlow.value = listOf(address("addr-cz", "cze-id", isDefault = true))
+        coEvery { catalogRepo.refresh("svk-id") } coAnswers {
+            catalogCountryFlow.value = "svk-id"
+            catalogLoadedFlow.value = true
+            ApiResult.Success(Unit)
+        }
+        coEvery { catalogRepo.refresh("cze-id") } coAnswers {
+            catalogCountryFlow.value = "cze-id"
+            ApiResult.Success(Unit)
+        }
+        val vm = viewModel()
+        advanceUntilIdle()
+        assertEquals("cze-id", catalogCountryFlow.value)
+        clearMocks(catalogRepo, answers = false)
+
+        ViewModelStore().apply { put("wizard", vm) }.clear()
+        advanceUntilIdle()
+
+        coVerify(exactly = 1) { catalogRepo.refresh("svk-id") }
+        coVerify(exactly = 0) { catalogRepo.refresh(null) }
+    }
 
     private fun fillValidForm(vm: CreateRecurringViewModel) {
         vm.setSavedAddressId("addr-1")
@@ -79,6 +261,61 @@ class CreateRecurringViewModelTest {
     }
 
     private val plusRefusal = "Recurring cleanings are a Cleansia Plus benefit — subscribe to set one up."
+
+    private val marketNotice = "Some of your picks are not offered at this address and were removed."
+
+    private fun address(serverId: String, countryId: String?, isDefault: Boolean = false) = UserAddress(
+        id = serverId,
+        serverId = serverId,
+        label = serverId,
+        street = "Hlavná 1",
+        city = "Bratislava",
+        zipCode = "81101",
+        countryId = countryId,
+        isDefault = isDefault,
+    )
+
+    private fun service(id: String) = ServiceListItem(
+        id = id,
+        name = "Service $id",
+        basePrice = 10.0,
+        perRoomPrice = 1.0,
+        category = CategoryDto(id = "c-1", slug = "general", name = "General"),
+    )
+
+    private fun pkg(id: String) = PackageListItem(id = id, name = "Package $id", price = 20.0)
+
+    private fun slovakCatalogue(vararg services: ServiceListItem) {
+        coEvery { catalogRepo.refresh("svk-id") } coAnswers {
+            catalogServicesFlow.value = services.toList()
+            catalogPackagesFlow.value = emptyList()
+            catalogCountryFlow.value = "svk-id"
+            catalogLoadedFlow.value = true
+            ApiResult.Success(Unit)
+        }
+    }
+
+    private fun loadedCatalogue(countryId: String?, services: List<String>, packages: List<String>) {
+        catalogServicesFlow.value = services.map(::service)
+        catalogPackagesFlow.value = packages.map(::pkg)
+        catalogCountryFlow.value = countryId
+        catalogLoadedFlow.value = true
+    }
+
+    private fun sourceOrder(services: List<String>, packages: List<String> = emptyList()) {
+        coEvery { orderRepo.getById("ord-7") } returns ApiResult.Success(
+            OrderDetailDto(
+                id = "ord-7",
+                rooms = 3,
+                bathrooms = 2,
+                totalPrice = 100.0,
+                originalSubtotal = 100.0,
+                appliedDiscountSource = 0,
+                selectedServices = services.map { OrderServiceDetailsDto(id = it, name = "Service $it") },
+                selectedPackages = packages.map { OrderPackageDetailsDto(id = it, name = "Package $it") },
+            ),
+        )
+    }
 
     private val template = RecurringBookingTemplateDto(
         id = "tpl-1",
@@ -330,6 +567,322 @@ class CreateRecurringViewModelTest {
         verify(exactly = 0) { snackbar.showError(any<String>()) }
         verify(exactly = 0) { snackbar.showErrorKey(any()) }
         assertTrue(vm.submitState.value is ActionState.Error)
+    }
+
+    // ── the market rule — the service address's country prices the template ──
+    //
+    // Owner ruling 2026-09-12: an order is priced in the currency of the service address's country.
+    // The wizard's picks are a saved address, so its country is the market: the catalogue is re-read
+    // for it and a pick the new market does not offer is dropped with a notice, not refused at submit.
+
+    @Test
+    fun `picking a saved address reloads the catalogue for that address's country`() = runTest {
+        addressesFlow.value = listOf(address("addr-legacy", countryId = null), address("addr-sk", "svk-id"))
+        slovakCatalogue(service("svc-1"))
+
+        val vm = viewModel()
+        advanceUntilIdle()
+        coVerify(exactly = 0) { catalogRepo.refresh("svk-id") }
+
+        vm.setSavedAddressId("addr-sk")
+        advanceUntilIdle()
+
+        coVerify(exactly = 1) { catalogRepo.refresh("svk-id") }
+    }
+
+    @Test
+    fun `the default saved address sets the market on entry`() = runTest {
+        addressesFlow.value = listOf(address("addr-cz", countryId = null), address("addr-sk", "svk-id", isDefault = true))
+        slovakCatalogue(service("svc-1"))
+
+        viewModel()
+        advanceUntilIdle()
+
+        coVerify(exactly = 1) { catalogRepo.refresh("svk-id") }
+    }
+
+    @Test
+    fun `an address in the market the catalogue already answers for reloads nothing`() = runTest {
+        addressesFlow.value = listOf(address("addr-sk", "svk-id"), address("addr-sk-2", "svk-id"))
+        catalogCountryFlow.value = "svk-id"
+
+        val vm = viewModel()
+        advanceUntilIdle()
+        vm.setSavedAddressId("addr-sk-2")
+        advanceUntilIdle()
+
+        coVerify(exactly = 0) { catalogRepo.refresh("svk-id") }
+    }
+
+    @Test
+    fun `an address change prunes what the new market does not offer and says so`() = runTest {
+        addressesFlow.value = listOf(address("addr-legacy", countryId = null), address("addr-sk", "svk-id"))
+        slovakCatalogue(service("svc-1"))
+
+        val vm = viewModel()
+        advanceUntilIdle()
+        vm.toggleService("svc-1")
+        vm.toggleService("svc-2")
+        vm.togglePackage("pkg-1")
+
+        vm.setSavedAddressId("addr-sk")
+        advanceUntilIdle()
+
+        assertEquals(setOf("svc-1"), vm.state.value.selectedServiceIds)
+        assertEquals(emptySet<String>(), vm.state.value.selectedPackageIds)
+        verify(exactly = 1) { snackbar.showInfo(marketNotice) }
+    }
+
+    @Test
+    fun `an address change that drops nothing stays quiet`() = runTest {
+        addressesFlow.value = listOf(address("addr-legacy", countryId = null), address("addr-sk", "svk-id"))
+        slovakCatalogue(service("svc-1"))
+
+        val vm = viewModel()
+        advanceUntilIdle()
+        vm.toggleService("svc-1")
+
+        vm.setSavedAddressId("addr-sk")
+        advanceUntilIdle()
+
+        assertEquals(setOf("svc-1"), vm.state.value.selectedServiceIds)
+        verify(exactly = 0) { snackbar.showInfo(any<String>()) }
+    }
+
+    /** A reload that failed says nothing about the market; pruning against it would empty the basket. */
+    @Test
+    fun `a failed reload keeps the picks and the old catalogue`() = runTest {
+        addressesFlow.value = listOf(address("addr-legacy", countryId = null), address("addr-sk", "svk-id"))
+        coEvery { catalogRepo.refresh("svk-id") } returns ApiResult.Error(ApiError.Network("boom"))
+
+        val vm = viewModel()
+        advanceUntilIdle()
+        vm.toggleService("svc-1")
+        vm.toggleService("svc-2")
+
+        vm.setSavedAddressId("addr-sk")
+        advanceUntilIdle()
+
+        assertEquals(setOf("svc-1", "svc-2"), vm.state.value.selectedServiceIds)
+        verify(exactly = 0) { snackbar.showInfo(any<String>()) }
+    }
+
+    /** The home carousel prices from this same repository; a Slovak template must not leave it in euros. */
+    @Test
+    fun `leaving the wizard after a foreign market returns the catalogue to the platform default`() = runTest {
+        addressesFlow.value = listOf(address("addr-sk", "svk-id", isDefault = true))
+        slovakCatalogue(service("svc-1"))
+
+        val vm = viewModel()
+        advanceUntilIdle()
+        assertEquals("svk-id", catalogCountryFlow.value)
+        clearMocks(catalogRepo, answers = false)
+
+        ViewModelStore().apply { put("wizard", vm) }.clear()
+        advanceUntilIdle()
+
+        coVerify(exactly = 1) { catalogRepo.refresh(null) }
+    }
+
+    @Test
+    fun `leaving the wizard on the platform default reloads nothing`() = runTest {
+        val vm = viewModel()
+        advanceUntilIdle()
+        clearMocks(catalogRepo, answers = false)
+
+        ViewModelStore().apply { put("wizard", vm) }.clear()
+        advanceUntilIdle()
+
+        coVerify(exactly = 0) { catalogRepo.refresh(any()) }
+    }
+
+    @Test
+    fun `the wizard opens on its first step and cannot step back`() = runTest {
+        val vm = viewModel()
+        advanceUntilIdle()
+
+        assertEquals(1, vm.step.value)
+        assertEquals(false, vm.canStepBack.value)
+    }
+
+    @Test
+    fun `stepping forward then back returns exactly one step`() = runTest {
+        val vm = viewModel()
+        advanceUntilIdle()
+
+        vm.nextStep()
+        vm.nextStep()
+        runCurrent()
+        assertEquals(3, vm.step.value)
+        assertEquals(true, vm.canStepBack.value)
+
+        vm.previousStep()
+        runCurrent()
+        assertEquals(2, vm.step.value)
+        assertEquals(true, vm.canStepBack.value)
+
+        vm.previousStep()
+        runCurrent()
+        assertEquals(1, vm.step.value)
+        assertEquals(false, vm.canStepBack.value)
+    }
+
+    @Test
+    fun `the steps are clamped at both ends`() = runTest {
+        val vm = viewModel()
+        advanceUntilIdle()
+
+        vm.previousStep()
+        assertEquals(1, vm.step.value)
+
+        repeat(CreateRecurringViewModel.TOTAL_STEPS + 2) { vm.nextStep() }
+        assertEquals(CreateRecurringViewModel.TOTAL_STEPS, vm.step.value)
+    }
+
+    @Test
+    fun `the exposed address and catalogue flows mirror the repositories`() = runTest {
+        val vm = viewModel()
+        advanceUntilIdle()
+        assertEquals(emptyList<UserAddress>(), vm.savedAddresses.value)
+        assertEquals(emptyList<ServiceListItem>(), vm.services.value)
+        assertEquals(emptyList<PackageListItem>(), vm.packages.value)
+
+        addressesFlow.value = listOf(address("addr-1", countryId = null))
+        catalogServicesFlow.value = listOf(service("svc-1"))
+        catalogPackagesFlow.value = listOf(pkg("pkg-1"))
+        advanceUntilIdle()
+
+        assertEquals(listOf("addr-1"), vm.savedAddresses.value.map { it.serverId })
+        assertEquals(listOf("svc-1"), vm.services.value.map { it.id })
+        assertEquals(listOf("pkg-1"), vm.packages.value.map { it.id })
+    }
+
+    @Test
+    fun `a prefilled pick the address's market does not offer is pruned with a notice`() = runTest {
+        addressesFlow.value = listOf(address("addr-sk", "svk-id", isDefault = true))
+        loadedCatalogue("svk-id", services = listOf("s-1"), packages = emptyList())
+        sourceOrder(services = listOf("s-1", "s-2"), packages = listOf("p-1"))
+
+        val vm = viewModel(orderId = "ord-7")
+        advanceUntilIdle()
+
+        coVerify(exactly = 0) { catalogRepo.refresh("svk-id") }
+        assertEquals(setOf("s-1"), vm.state.value.selectedServiceIds)
+        assertEquals(emptySet<String>(), vm.state.value.selectedPackageIds)
+        assertEquals(3, vm.state.value.rooms)
+        verify(exactly = 1) { snackbar.showInfo(marketNotice) }
+    }
+
+    @Test
+    fun `a prefilled pick the address's market offers survives`() = runTest {
+        addressesFlow.value = listOf(address("addr-sk", "svk-id", isDefault = true))
+        loadedCatalogue("svk-id", services = listOf("s-1", "s-2"), packages = listOf("p-1"))
+        sourceOrder(services = listOf("s-2"), packages = listOf("p-1"))
+
+        val vm = viewModel(orderId = "ord-7")
+        advanceUntilIdle()
+
+        assertEquals(setOf("s-2"), vm.state.value.selectedServiceIds)
+        assertEquals(setOf("p-1"), vm.state.value.selectedPackageIds)
+    }
+
+    @Test
+    fun `a prefilled selection the market fully offers raises no notice`() = runTest {
+        addressesFlow.value = listOf(address("addr-sk", "svk-id", isDefault = true))
+        loadedCatalogue("svk-id", services = listOf("s-1"), packages = emptyList())
+        sourceOrder(services = listOf("s-1"))
+
+        val vm = viewModel(orderId = "ord-7")
+        advanceUntilIdle()
+
+        assertEquals(setOf("s-1"), vm.state.value.selectedServiceIds)
+        verify(exactly = 0) { snackbar.showInfo(any<String>()) }
+    }
+
+    /** The catalogue on hand is another market's; judging the picks against it would drop what the reload may price. */
+    @Test
+    fun `a prefill landing before the market reload leaves the pruning to the reload`() = runTest {
+        addressesFlow.value = listOf(address("addr-sk", "svk-id", isDefault = true))
+        loadedCatalogue(null, services = listOf("s-9"), packages = emptyList())
+        val reload = CompletableDeferred<Unit>()
+        coEvery { catalogRepo.refresh("svk-id") } coAnswers {
+            reload.await()
+            catalogServicesFlow.value = listOf(service("s-1"))
+            catalogPackagesFlow.value = emptyList()
+            catalogCountryFlow.value = "svk-id"
+            ApiResult.Success(Unit)
+        }
+        sourceOrder(services = listOf("s-1", "s-2"))
+
+        val vm = viewModel(orderId = "ord-7")
+        advanceUntilIdle()
+        assertEquals(setOf("s-1", "s-2"), vm.state.value.selectedServiceIds)
+        verify(exactly = 0) { snackbar.showInfo(any<String>()) }
+
+        reload.complete(Unit)
+        advanceUntilIdle()
+
+        assertEquals(setOf("s-1"), vm.state.value.selectedServiceIds)
+        verify(exactly = 1) { snackbar.showInfo(marketNotice) }
+    }
+
+    @Test
+    fun `step one advances once a time of day is set`() = runTest {
+        val vm = viewModel()
+        advanceUntilIdle()
+        assertEquals(true, vm.canAdvance.value)
+
+        vm.setTimeOfDay("")
+        runCurrent()
+        assertEquals(false, vm.canAdvance.value)
+
+        vm.setTimeOfDay("09:30")
+        runCurrent()
+        assertEquals(true, vm.canAdvance.value)
+    }
+
+    @Test
+    fun `step two advances only with a service or a package picked`() = runTest {
+        val vm = viewModel()
+        advanceUntilIdle()
+        vm.nextStep()
+        runCurrent()
+        assertEquals(false, vm.canAdvance.value)
+
+        vm.toggleService("svc-1")
+        runCurrent()
+        assertEquals(true, vm.canAdvance.value)
+
+        vm.toggleService("svc-1")
+        vm.togglePackage("pkg-1")
+        runCurrent()
+        assertEquals(true, vm.canAdvance.value)
+
+        vm.togglePackage("pkg-1")
+        runCurrent()
+        assertEquals(false, vm.canAdvance.value)
+    }
+
+    @Test
+    fun `step three advances only with an address and a start date`() = runTest {
+        val vm = viewModel()
+        advanceUntilIdle()
+        vm.nextStep()
+        vm.nextStep()
+        runCurrent()
+        assertEquals(false, vm.canAdvance.value)
+
+        vm.setSavedAddressId("addr-1")
+        runCurrent()
+        assertEquals(false, vm.canAdvance.value)
+
+        vm.setStartsOn("2026-07-01T00:00:00Z")
+        runCurrent()
+        assertEquals(true, vm.canAdvance.value)
+
+        vm.setSavedAddressId("")
+        runCurrent()
+        assertEquals(false, vm.canAdvance.value)
     }
 
     @Test

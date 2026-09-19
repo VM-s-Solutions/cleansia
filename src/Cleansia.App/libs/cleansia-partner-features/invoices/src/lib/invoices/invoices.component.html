@@ -231,6 +231,6 @@
 
 <ng-template #statusTemplate let-item>
   <span [class]="getStatusClass(item)">
-    {{ 'pages.invoices.status_' + item.status.toLowerCase() | translate }}
+    {{ getStatusLabelKey(item) | translate }}
   </span>
 </ng-template>

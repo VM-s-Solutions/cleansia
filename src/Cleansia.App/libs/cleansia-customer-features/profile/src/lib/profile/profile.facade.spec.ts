@@ -6,8 +6,13 @@ import {
   UpdateCurrentUserCommand,
   UpdateCurrentUserPhotoCommand,
 } from '@cleansia/customer-services';
-import { SavedAddressStore } from '@cleansia/customer-stores';
+import {
+  SavedAddressStore,
+  selectMarketCountryId,
+  selectMarkets,
+} from '@cleansia/customer-stores';
 import { SnackbarService } from '@cleansia/services';
+import { MockStore, provideMockStore } from '@ngrx/store/testing';
 import { TranslateService } from '@ngx-translate/core';
 import { Subject, of, throwError } from 'rxjs';
 import { ProfileFacade } from './profile.facade';
@@ -43,6 +48,8 @@ const formDetails: ProfileDetails = {
 };
 
 describe('ProfileFacade', () => {
+  let store: MockStore;
+  let langChange: Subject<{ lang: string }>;
   let facade: ProfileFacade;
   let userClient: {
     getCurrent: jest.Mock;
@@ -74,15 +81,16 @@ describe('ProfileFacade', () => {
       showError: jest.fn(),
       showErrorTranslated: jest.fn(),
     };
+    langChange = new Subject<{ lang: string }>();
 
     TestBed.configureTestingModule({
       providers: [
         ProfileFacade,
+        provideMockStore(),
         {
           provide: CustomerClient,
           useValue: {
             userClient,
-            countryClient: { getServiced: jest.fn() },
             // The rail reads the loyalty tier after the profile resolves.
             loyaltyClient: { getMy: jest.fn(() => of({ currentTier: 2 })) },
             // A customer who has never been credited — the ordinary case, and the one that
@@ -93,7 +101,12 @@ describe('ProfileFacade', () => {
         { provide: SnackbarService, useValue: snackbar },
         {
           provide: TranslateService,
-          useValue: { instant: (key: string) => key, currentLang: 'en' },
+          useValue: {
+            instant: (key: string) => key,
+            currentLang: 'en',
+            getDefaultLang: () => 'en',
+            onLangChange: langChange,
+          },
         },
         {
           provide: SavedAddressStore,
@@ -106,7 +119,45 @@ describe('ProfileFacade', () => {
       ],
     });
 
+    store = TestBed.inject(MockStore);
+    store.overrideSelector(selectMarkets, []);
+    store.overrideSelector(selectMarketCountryId, null);
     facade = TestBed.inject(ProfileFacade);
+  });
+
+  // The saved-address country picker lists the market directory (ADR-0058 D1) and a new address
+  // starts on the chosen market — by id, not by scanning option labels for "Czech".
+  describe('the saved-address country picker', () => {
+    const markets = [
+      { countryId: 'cze-id', isoCode: 'CZE', name: 'Czechia', translations: { cs: { name: 'Česko' } } },
+      { countryId: 'svk-id', isoCode: 'SVK', name: 'Slovakia', translations: { cs: { name: 'Slovensko' } } },
+    ];
+
+    beforeEach(() => {
+      store.overrideSelector(selectMarkets, markets as never);
+      store.overrideSelector(selectMarketCountryId, 'svk-id');
+      store.refreshState();
+    });
+
+    it('offers every market as a country, labelled in the current language', () => {
+      expect(facade.countryOptions()).toEqual([
+        { label: 'Czechia', value: 'cze-id' },
+        { label: 'Slovakia', value: 'svk-id' },
+      ]);
+
+      langChange.next({ lang: 'cs' });
+
+      expect(facade.countryOptions().map((option) => option.label)).toEqual(['Česko', 'Slovensko']);
+    });
+
+    it('starts a new address on the chosen market, and on nothing when no market resolved', () => {
+      expect(facade.defaultCountryId()).toBe('svk-id');
+
+      store.overrideSelector(selectMarketCountryId, null);
+      store.refreshState();
+
+      expect(facade.defaultCountryId()).toBe('');
+    });
   });
 
   describe('loading the profile', () => {

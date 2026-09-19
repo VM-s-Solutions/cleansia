@@ -23,14 +23,14 @@ namespace Cleansia.Core.Domain.Users;
 /// <i>required</i> is decided per scheme by the payout validator, not by the column's nullability
 /// (D4/D5).</para>
 /// </summary>
-public class EmployeePayoutDetails : Auditable, ITenantEntity
+public class EmployeePayoutDetails : TenantAuditable
 {
     [Required]
     [MaxLength(26)]
     public string EmployeeId { get; private set; } = default!;
     public Employee? Employee { get; private set; }
 
-    /// <summary>Null ⇒ unusable for payout: the issuance block refuses it (D7).</summary>
+    /// <summary>Null ⇒ unusable for payout: invoice approval refuses it (D7, gate at approval since 2026-09-12).</summary>
     public PayoutScheme? Scheme { get; private set; }
 
     /// <summary>
@@ -40,6 +40,15 @@ public class EmployeePayoutDetails : Auditable, ITenantEntity
     [MaxLength(26)]
     public string? BankCountryId { get; private set; }
     public Country? BankCountry { get; private set; }
+
+    /// <summary>
+    /// The currency the account HOLDS, by the cleaner's own statement. Declared, never derived: a bank's
+    /// country does not decide it (a Czech bank sells EUR accounts) and the platform has no other source.
+    /// Null ⇒ not declared, which the approval gate reads as the currency of the cleaner's work country
+    /// (owner ruling 2026-09-12: CZ is CZK, SK is EUR, PL is PLN — never the platform default).
+    /// </summary>
+    [MaxLength(26)]
+    public string? CurrencyId { get; private set; }
 
     /// <summary>Zero-padded canonical CZ/SK account prefix. Leading zeros are canonicalization, not identity (D5.1).</summary>
     [MaxLength(6)]
@@ -103,7 +112,8 @@ public class EmployeePayoutDetails : Auditable, ITenantEntity
         string? bankName = null,
         string? holderName = null,
         string? providerAccountRef = null,
-        DateTime? confirmedAt = null)
+        DateTime? confirmedAt = null,
+        string? currencyId = null)
     {
         if (string.IsNullOrWhiteSpace(employeeId))
         {
@@ -125,6 +135,7 @@ public class EmployeePayoutDetails : Auditable, ITenantEntity
             HolderName = holderName,
             ProviderAccountRef = providerAccountRef,
             ConfirmedAt = confirmedAt,
+            CurrencyId = currencyId,
         };
     }
 
@@ -144,7 +155,8 @@ public class EmployeePayoutDetails : Auditable, ITenantEntity
         string? bankName = null,
         string? holderName = null,
         string? providerAccountRef = null,
-        DateTime? confirmedAt = null)
+        DateTime? confirmedAt = null,
+        string? currencyId = null)
     {
         Scheme = scheme;
         BankCountryId = string.IsNullOrEmpty(bankCountryId) ? null : bankCountryId;
@@ -158,6 +170,7 @@ public class EmployeePayoutDetails : Auditable, ITenantEntity
         HolderName = holderName;
         ProviderAccountRef = providerAccountRef;
         ConfirmedAt = confirmedAt;
+        CurrencyId = currencyId;
         return this;
     }
 

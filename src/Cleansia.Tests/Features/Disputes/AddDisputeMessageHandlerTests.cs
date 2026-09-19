@@ -1,3 +1,4 @@
+using MockQueryable;
 using System.Security.Claims;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Disputes;
@@ -60,6 +61,8 @@ public class AddDisputeMessageHandlerTests
         _disputeRepository
             .Setup(r => r.GetForUpdateAsync(DisputeId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(dispute);
+        _disputeRepository.Setup(r => r.GetQueryableForOwner(It.IsAny<string>()))
+            .Returns(new[] { dispute }.AsQueryable().BuildMock());
         return dispute;
     }
 

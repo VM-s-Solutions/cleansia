@@ -1,5 +1,5 @@
 import { OrderListItem, OrderStatus } from '@cleansia/partner-services';
-import { getAvailableOrdersTableDefinition } from './orders.models';
+import { getAvailableOrdersTableDefinition, getMyOrdersTableDefinition } from './orders.models';
 
 function row(status: OrderStatus, availableSpots = 1): OrderListItem {
   return OrderListItem.fromJS({
@@ -61,5 +61,25 @@ describe('getAvailableOrdersTableDefinition — take action visibility', () => {
     });
 
     expect(actions[0].disabled?.(row(OrderStatus.New))).toBe(true);
+  });
+});
+
+describe('the total price column names the order currency', () => {
+  const priceValues = (order: OrderListItem) =>
+    [
+      getAvailableOrdersTableDefinition({ onTakeOrder: jest.fn(), isTakeInFlight: () => false }),
+      getMyOrdersTableDefinition({ onStartOrder: jest.fn(), onCompleteOrder: jest.fn() }),
+    ].map((def) => def.columns.find((c) => c.id === 'totalPrice')?.getValue?.(order));
+
+  it('labels the total with the code the order carries', () => {
+    const order = OrderListItem.fromJS({ totalPrice: 1200, currency: { code: 'EUR' } });
+    expect(priceValues(order)).toEqual(['€1,200.00', '€1,200.00']);
+  });
+
+  // The server always sends the order's currency; a bare number is honest when it does not, and
+  // crowns would mislabel every non-crown order.
+  it('prints a bare number rather than a currency the order does not name', () => {
+    const order = OrderListItem.fromJS({ totalPrice: 1200 });
+    expect(priceValues(order)).toEqual(['1,200.00', '1,200.00']);
   });
 });

@@ -1,6 +1,7 @@
 import { TemplateRef } from '@angular/core';
 import { CompanyInfoListItem } from '@cleansia/admin-services';
 import { TableColumn, TableAction } from '@cleansia/components';
+import { PermissionService, Policy } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
 
 export function getCompanyInfoTableDefinition(
@@ -9,6 +10,7 @@ export function getCompanyInfoTableDefinition(
     onDelete: (row: CompanyInfoListItem) => void;
   },
   translate: TranslateService,
+  permissions: PermissionService,
   statusTemplate?: TemplateRef<CompanyInfoListItem>
 ): { columns: TableColumn<CompanyInfoListItem>[]; actions: TableAction<CompanyInfoListItem>[] } {
   return {
@@ -60,12 +62,14 @@ export function getCompanyInfoTableDefinition(
         icon: 'pi pi-pencil',
         tooltip: translate.instant('pages.company_management.edit_company'),
         color: 'warning',
+        visible: () => permissions.hasPolicy(Policy.CanUpdateCompanyInfo),
         onClick: (row: CompanyInfoListItem) => defs.onEdit(row),
       },
       {
         icon: 'pi pi-trash',
         tooltip: translate.instant('pages.company_management.delete_company'),
         color: 'danger',
+        visible: () => permissions.hasPolicy(Policy.CanDeleteCompanyInfo),
         onClick: (row: CompanyInfoListItem) => defs.onDelete(row),
       },
     ],

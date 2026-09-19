@@ -10,7 +10,7 @@ namespace Cleansia.Core.Domain.Users;
 /// The backend enforces at most one default per user via application-layer logic in
 /// the SetAsDefault command. (A unique filtered index is also acceptable; pick in migration.)
 /// </summary>
-public class SavedAddress : Auditable, ITenantEntity
+public class SavedAddress : TenantAuditable
 {
     public string UserId { get; private set; }
     public User? User { get; private set; }

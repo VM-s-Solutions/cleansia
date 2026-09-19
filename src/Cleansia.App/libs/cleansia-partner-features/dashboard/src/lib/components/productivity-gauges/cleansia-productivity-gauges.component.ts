@@ -32,7 +32,7 @@ export class CleansiaProductivityGaugesComponent {
 
   constructor(private translate: TranslateService) {}
 
-  getArcPath(percentage: number, strokeWidth: number): string {
+  getArcPath(percentage: number): string {
     const radius = 80;
     const centerX = 100;
     const centerY = 100;

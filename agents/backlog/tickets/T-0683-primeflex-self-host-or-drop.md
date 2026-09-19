@@ -107,3 +107,18 @@ should look at those screens and decide which.
 
 - 2026-09-06 — filed after the T-0682 findings pass measured the real wire cost and found the drawer
   dependency. The original "373 KB, 99.88% unused" framing was decompressed size, corrected here.
+- 2026-09-16 — done in `27cefab1` (AC1 as a self-hosted subset: the 38 classes the customer app renders,
+  measured across every customer-reachable template incl. `[class]`/`styleClass` bindings — the list
+  above plus `mt-3` — copied declaration-for-declaration from `node_modules/primeflex` 4.0.0 into
+  `apps/cleansia.app/src/primeflex-subset.scss`, loaded first so computed styles are unchanged, the drawer's
+  open state included; AC2 the CDN `<link>` and `<noscript>` removed from `index.html`; AC3 the navbar's
+  1360px `!important` override is still needed because the subset reproduces the 768px conflict, kept with
+  its comment naming the subset; guard `apps/cleansia.app/src/app/theme/primeflex-subset.spec.ts` derives
+  the class universe from the package, scans the templates, compiles the bundle with `sass` and asserts every
+  used class has an identical rule, that no app's `index.html` names primeflex and that the third-party
+  stylesheet allow-list — Google Fonts, flag-icons, primeicons, Font Awesome — can only shrink) and
+  `7cf02550` (review: the admin dispute-detail stylesheet the lane had added on the way was taken out again —
+  it is the admin design ticket named above, not this one; the subset header and two rule positions
+  corrected). `NX_DAEMON=false npx jest --maxWorkers=3 apps/cleansia.app` 56/56; typecheck 3/3; lint clean.
+  Still on CDNs, reported for the owner: Font Awesome 6.0.0-beta3 (partner + admin, one `unauthorized`
+  screen uses it), primeicons and flag-icons (all three apps) — the guard's allow-list.

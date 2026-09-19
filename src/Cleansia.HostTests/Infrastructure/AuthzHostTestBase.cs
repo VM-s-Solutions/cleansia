@@ -32,9 +32,9 @@ public abstract class AuthzHostTestBase : IAsyncLifetime
     {
         Db = db;
         _admin = new(() => new HostTestApplicationFactory<Cleansia.Web.Admin.Program>(db.ConnectionString));
-        _partner = new(() => new HostTestApplicationFactory<Cleansia.Web.Partner.Program>(db.ConnectionString));
-        _customer = new(() => new HostTestApplicationFactory<Cleansia.Web.Customer.Program>(db.ConnectionString));
-        _mobile = new(() => new HostTestApplicationFactory<Cleansia.Web.Mobile.Partner.Program>(db.ConnectionString));
+        _partner = new(() => new HostTestApplicationFactory<Cleansia.Web.Partner.Program>(db.ConnectionString, ConfigurePartnerHostServices));
+        _customer = new(() => new HostTestApplicationFactory<Cleansia.Web.Customer.Program>(db.ConnectionString, ConfigureCustomerHostServices));
+        _mobile = new(() => new HostTestApplicationFactory<Cleansia.Web.Mobile.Partner.Program>(db.ConnectionString, ConfigureMobileHostServices));
     }
 
     protected HostTestApplicationFactory<Cleansia.Web.Admin.Program> AdminHost => _admin.Value;
@@ -62,14 +62,33 @@ public abstract class AuthzHostTestBase : IAsyncLifetime
     protected Task ResetDatabaseAsync() => Db.ResetAsync();
 
     /// <summary>
+    /// Override to swap a seam on one host (the harness has no Stripe or Google stub by default: every
+    /// other class exercises paths that stop before the outbound call).
+    /// </summary>
+    protected virtual void ConfigureCustomerHostServices(IServiceCollection services)
+    {
+    }
+
+    protected virtual void ConfigurePartnerHostServices(IServiceCollection services)
+    {
+    }
+
+    protected virtual void ConfigureMobileHostServices(IServiceCollection services)
+    {
+    }
+
+    /// <summary>
     /// Run <paramref name="seed"/> against a real host's <see cref="CleansiaDbContext"/> scope and
     /// commit. The Partner host is used by default — any host's scope writes the same shared DB.
-    /// Seeding runs OUTSIDE an HTTP request, so the tenant provider returns null and entities are
-    /// stamped with a null TenantId unless the seed sets one explicitly (used by the cross-tenant AC).
+    /// Seeding runs OUTSIDE an HTTP request, so the ambient tenant is set to
+    /// <see cref="HostTestTenants.Default"/> for the commit: every stamped table is NOT NULL
+    /// (ADR-0061 D8), and a row the seed did not stamp explicitly (the cross-tenant ACs do) lands there —
+    /// the same company the default <see cref="TestJwtFactory"/> token carries.
     /// </summary>
     protected async Task SeedAsync(Func<CleansiaDbContext, Task> seed)
     {
         using var scope = PartnerHost.Services.CreateScope();
+        scope.ServiceProvider.GetRequiredService<ITenantProvider>().SetTenantOverride(HostTestTenants.Default);
         var ctx = scope.ServiceProvider.GetRequiredService<CleansiaDbContext>();
         await seed(ctx);
         await ctx.CommitAsync(CancellationToken.None);
@@ -80,8 +99,8 @@ public abstract class AuthzHostTestBase : IAsyncLifetime
     protected async Task<T> QueryAsync<T>(Func<CleansiaDbContext, Task<T>> query)
     {
         using var scope = PartnerHost.Services.CreateScope();
-        // Override to a sentinel tenant the test data never uses so the default null/null single-tenant
-        // match doesn't accidentally satisfy the filter; assertions use IgnoreQueryFilters anyway.
+        // Override to a sentinel tenant the test data never uses so no ambient tenant can accidentally
+        // satisfy the filter; assertions use IgnoreQueryFilters anyway.
         var tenant = scope.ServiceProvider.GetRequiredService<ITenantProvider>();
         tenant.SetTenantOverride("__hosttests_query_scope__");
         var ctx = scope.ServiceProvider.GetRequiredService<CleansiaDbContext>();
@@ -95,6 +114,8 @@ public abstract class AuthzHostTestBase : IAsyncLifetime
 
     protected HttpClient PartnerClientAnonymous() => PartnerHost.CreateClient();
     protected HttpClient CustomerClientAnonymous() => CustomerHost.CreateClient();
+    protected HttpClient MobileClientAnonymous() => MobileHost.CreateClient();
+    protected HttpClient AdminClientAnonymous() => AdminHost.CreateClient();
 
     private static HttpClient Authorized(HttpClient client, string token)
     {

@@ -170,6 +170,7 @@ public sealed class ReferralService(
             referredUserId: acceptingUserId,
             referralCodeId: referralCode.Id,
             actorId: SystemActor);
+        referral.TenantId = referralCode.TenantId;
 
         referralRepository.Add(referral);
         return new ReferralAcceptResult(true, null);
@@ -184,7 +185,10 @@ public sealed class ReferralService(
             return;
         }
 
-        var referral = await referralRepository.GetByReferredUserIdAsync(userId, cancellationToken);
+        var order = await orderRepository.GetByIdForOwnerAsync(orderId, userId, cancellationToken);
+        if (order is null || !order.OrderStatusHistory.Any(h => h.Status == OrderStatus.Completed)) return;
+
+        var referral = await referralRepository.GetForOrderOwnerAsync(orderId, userId, cancellationToken);
         if (referral == null)
         {
             // User wasn't referred — nothing to do.
@@ -207,17 +211,11 @@ public sealed class ReferralService(
             return;
         }
 
-        // First-completed-order check. CompleteOrder.Handler has already
-        // appended the OrderStatusTrack with Status=Completed by the time
-        // this runs, so the count includes the current order. Anything
-        // other than 1 means the user had earlier completed orders — they
-        // don't qualify (the referral fires on the FIRST one only).
-        var completedCount = await orderRepository.GetQueryable()
-            .Where(o => o.UserId == userId
-                && o.OrderStatusHistory.Any(h => h.Status == OrderStatus.Completed))
-            .CountAsync(cancellationToken);
+        // The current completion may still be staged; only previously completed orders disqualify it.
+        var hasEarlierCompletion = await orderRepository.GetQueryableForOwner(userId)
+            .AnyAsync(o => o.Id != orderId && o.OrderStatusHistory.Any(h => h.Status == OrderStatus.Completed), cancellationToken);
 
-        if (completedCount != 1)
+        if (hasEarlierCompletion)
         {
             // Not the first qualifying order — leave the referral pending.
             // It will eventually expire if no future order qualifies it
@@ -257,9 +255,7 @@ public sealed class ReferralService(
 
         // Bump the inviter's "X friends qualified" counter so the Rewards
         // tab stat updates without a recount.
-        var referralCode = await referralCodeRepository.GetByIdAsync(
-            referral.ReferralCodeId, cancellationToken);
-        referralCode?.RecordUse(SystemActor);
+        referral.ReferralCode?.RecordUse(SystemActor);
     }
 
     public async Task ExpireStaleReferralsAsync(CancellationToken cancellationToken)

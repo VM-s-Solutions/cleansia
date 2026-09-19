@@ -62,16 +62,16 @@ public class PartialRefundFeeRoundingTests
 
     private void ArrangeCountryFee(decimal? rate, decimal? fixedFee)
     {
-        var config = CountryConfiguration.Create("cz", "CZK", "cs", 21m);
+        var config = CountryConfiguration.Create("cz", "CZK", "cs", 0.21m);
         config.UpdateRefundStripeFee(rate, fixedFee);
         _countryConfigurationRepository
             .Setup(r => r.GetByCountryIdAsync(CountryId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(config);
     }
 
-    private static Order SingleServiceOrder(decimal totalPrice, decimal? appliedVatRate = null)
+    private static Order SingleServiceOrder(decimal totalPrice, decimal? appliedVatRate = null, string currencyCode = "CZK")
     {
-        var currency = Currency.Create("CZK", "Kč", "Czech Koruna", 1m);
+        var currency = Currency.Create(currencyCode, "Kč", "Czech Koruna");
         var address = Address.Create("Street 1", "Prague", "11000", CountryId);
         var order = Order.Create(
             customerName: "Cust",
@@ -80,7 +80,6 @@ public class PartialRefundFeeRoundingTests
             customerAddress: address,
             rooms: 2,
             bathrooms: 1,
-            extras: new Dictionary<string, bool>(),
             cleaningDateTime: DateTime.UtcNow.AddDays(-1),
             paymentType: PaymentType.Card,
             totalPrice: totalPrice,
@@ -90,12 +89,16 @@ public class PartialRefundFeeRoundingTests
         order.Id = OrderId;
         order.SetCurrency(currency);
         order.SetVatBreakdown(
-            netAmount: appliedVatRate is { } rate ? totalPrice * 100m / (100m + rate) : totalPrice,
-            vatAmount: appliedVatRate is { } r ? totalPrice * r / (100m + r) : 0m,
+            // FRACTION, not percent — see the note in IssuePartialRefundHandlerTests.
+            netAmount: appliedVatRate is { } rate ? totalPrice / (1m + rate) : totalPrice,
+            vatAmount: appliedVatRate is { } r ? totalPrice * r / (1m + r) : 0m,
             appliedRate: appliedVatRate);
-        var svc = Service.Create("cat-1", "Service A", "", totalPrice, 0m);
+        var svc = Service.Create("cat-1", "Service A", "");
         svc.Id = "svc-a";
-        order.AddSelectedServices([OrderService.Create(order, svc)]);
+        // The sole line carries the WHOLE total, so the allocator's share is 1 and every expected value
+        // below is a pure fee-rounding figure. Flat, with no per-room component, for the same reason.
+        order.AddSelectedServices([OrderService.Create(
+            order, svc, unitBasePrice: totalPrice, unitPerRoomPrice: 0m, lineTotal: totalPrice)]);
         order.CompleteOrder(actualCompletionTime: 120);
         return order;
     }
@@ -114,6 +117,39 @@ public class PartialRefundFeeRoundingTests
             [new IssuePartialRefund.RefundLineSelection("svc-a", null)],
             RefundReason.AdminDiscretion,
             OverrideReason: null);
+
+    /// <summary>
+    /// The FIXED part of the fee is a number in the COUNTRY's currency (6 on the CZE row is 6 CZK). On
+    /// a CZ-address order priced in EUR it must not be taken as 6 EUR: the rate still applies, the
+    /// fixed part is absorbed (T-0703).
+    /// </summary>
+    [Fact]
+    public async Task Fee_FixedPart_NotDeducted_WhenOrderCurrencyIsNotTheCountrys()
+    {
+        var order = SingleServiceOrder(totalPrice: 1000m, currencyCode: "EUR");
+        Arrange(order);
+        ArrangeCountryFee(rate: 1.4m, fixedFee: 6m);
+
+        var result = await CreateHandler().Handle(AdminDiscretionWholeOrder(), CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        // fee = 1000 × 1.4% = 14.00, and NOT + 6 → sent 986.00.
+        Assert.Equal(986.00m, _refundService.LastRequest!.Amount);
+    }
+
+    [Fact]
+    public async Task Fee_FixedPart_Deducted_WhenOrderCurrencyMatchesTheCountrys()
+    {
+        var order = SingleServiceOrder(totalPrice: 1000m, currencyCode: "CZK");
+        Arrange(order);
+        ArrangeCountryFee(rate: 1.4m, fixedFee: 6m);
+
+        var result = await CreateHandler().Handle(AdminDiscretionWholeOrder(), CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        // fee = 14.00 + 6.00 = 20.00 → sent 980.00.
+        Assert.Equal(980.00m, _refundService.LastRequest!.Amount);
+    }
 
     [Fact]
     public async Task Fee_AtHalfCent_RoundsAwayFromZero_NotBankers()
@@ -181,8 +217,8 @@ public class PartialRefundFeeRoundingTests
         // VAT-payer order, whole order, AdminDiscretion. Fee deducts FIRST off the gross, THEN VAT/net
         // derive from the seam-confirmed (post-fee) amount — not the pre-fee gross.
         // total 10 @21% VAT; fee 4.05% of 10 = 0.405 → 0.41 → confirmed 9.59.
-        // VAT off 9.59 = round(9.59 × 21/121) = round(1.6643…) = 1.66; net = 9.59 − 1.66 = 7.93 (hand-derived).
-        var order = SingleServiceOrder(totalPrice: 10m, appliedVatRate: 21m);
+        // VAT off 9.59 = round(9.59 × 0.21/1.21) = round(1.6643…) = 1.66; net = 9.59 − 1.66 = 7.93 (hand-derived).
+        var order = SingleServiceOrder(totalPrice: 10m, appliedVatRate: 0.21m);
         Arrange(order);
         ArrangeCountryFee(rate: 4.05m, fixedFee: 0m);
 
@@ -224,7 +260,7 @@ public class PartialRefundFeeRoundingTests
 
         public Task GrantForCompletedOrderAsync(string orderId, CancellationToken cancellationToken) => Task.CompletedTask;
         public Task RevokeForCancelledOrderAsync(string orderId, CancellationToken cancellationToken) => Task.CompletedTask;
-        public Task<TierDiscountResult> ResolveTierDiscountForOrderAsync(string userId, decimal orderTotal, CancellationToken cancellationToken)
+        public Task<TierDiscountResult> ResolveTierDiscountForOrderAsync(string userId, decimal orderTotal, string currencyId, CancellationToken cancellationToken)
             => Task.FromResult(new TierDiscountResult(0m, null));
         public Task GrantPointsManuallyAsync(string userId, int points, Cleansia.Core.Domain.Loyalty.LoyaltyEarnSource source, string? orderId, string actorId, string? reason, string? requestId, CancellationToken cancellationToken)
             => Task.CompletedTask;

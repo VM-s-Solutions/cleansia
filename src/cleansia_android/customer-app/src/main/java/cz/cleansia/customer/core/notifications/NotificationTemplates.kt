@@ -20,9 +20,9 @@ object NotificationTemplates {
     )
 
     fun templateFor(eventKey: String): Template? = when (eventKey) {
-        "order.confirmed" -> Template(
-            R.string.notification_order_confirmed_title,
-            R.string.notification_order_confirmed_body,
+        "order.payment_confirmed", "order.confirmed" -> Template(
+            R.string.notification_order_payment_confirmed_title,
+            R.string.notification_order_payment_confirmed_body,
             NotificationCategoryDto.OrderUpdates,
         )
         "order.cleaner_assigned" -> Template(
@@ -79,6 +79,11 @@ object NotificationTemplates {
             R.string.notification_dispute_reply_body,
             NotificationCategoryDto.DisputeReply,
         )
+        "recurring.paused" -> Template(
+            R.string.notification_recurring_paused_title,
+            R.string.notification_recurring_paused_body,
+            NotificationCategoryDto.RecurringScheduled,
+        )
         "recurring.scheduled" -> Template(
             R.string.notification_recurring_scheduled_title,
             R.string.notification_recurring_scheduled_body,
@@ -118,6 +123,7 @@ object NotificationTemplates {
      */
     fun formatBody(context: Context, eventKey: String, bodyRes: Int, args: Map<String, String>): String =
         when (eventKey) {
+            "order.payment_confirmed",
             "order.confirmed",
             "order.cleaner_assigned",
             "order.starting_soon",
@@ -127,11 +133,17 @@ object NotificationTemplates {
             "order.completed",
             "order.cancelled",
             "order.refunded",
-            "order.no_cleaner_refunded",
             "order.assignment_cancelled",
             "recurring.scheduled" -> {
                 val orderNumber = args["orderNumber"].orEmpty()
                 context.getString(bodyRes, orderNumber)
+            }
+            // The credit figure arrives already formatted by the server in the credit's own
+            // currency ("250 Kč", "10 €"); the device only places it.
+            "order.no_cleaner_refunded" -> {
+                val orderNumber = args["orderNumber"].orEmpty()
+                val amount = args["amount"].orEmpty()
+                context.getString(bodyRes, orderNumber, amount)
             }
             "loyalty.tier_upgrade" -> {
                 // Body carries a localized tier name. The wire `tier` arg is the

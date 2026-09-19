@@ -3,13 +3,12 @@ using System.Text.RegularExpressions;
 namespace Cleansia.Tests.Features.Auth;
 
 /// <summary>
-/// The anonymous confirm hashed-token lookups must NOT bypass the
-/// global tenant filter with <c>IgnoreQueryFilters()</c> (which would let a hashed token match
-/// cross-tenant). The repo does expose deliberate bypasses — the <c>*IgnoringTenant*</c> lookups for
-/// system triggers and the anonymous login path, plus the login-lockout / reset-budget charges that
-/// must land for tenant-stamped accounts on anonymous requests — but the confirm-token flows must NOT
-/// route through them. This source-level guard pins that the confirm-lookup methods stay inside the
-/// global filter and that <c>IgnoreQueryFilters</c> appears only in the enumerated bypass methods.
+/// <c>IgnoreQueryFilters()</c> is a deliberate, enumerated bypass: the <c>*IgnoringTenant*</c> lookups
+/// for system triggers and the anonymous identity paths (login, register pre-check, social, the legacy
+/// confirm link — each pinned by a secret or by the globally unique email, ADR-0061 D4/D5.1), plus the
+/// login-lockout / reset-budget charges that must land for tenant-stamped accounts on anonymous
+/// requests. This source-level guard pins that <c>IgnoreQueryFilters</c> appears only in the enumerated
+/// bypass methods.
 /// </summary>
 public class UserRepositoryTokenLookupTenantTests
 {
@@ -32,21 +31,19 @@ public class UserRepositoryTokenLookupTenantTests
     // "IgnoreQueryFilters" can't trip the assertion; only a real invocation counts.
     private const string IgnoreCall = @"\.IgnoreQueryFilters\(";
 
-    // The confirm-token lookup methods do not call IgnoreQueryFilters().
+    // The legacy confirm link is opened anonymously against a stamped row (ADR-0061 D4): the read MUST
+    // bypass, and the server-issued 128-bit hash is the pin.
     [Fact]
-    public void ConfirmationCode_Lookups_Do_Not_Ignore_Tenant_Filter()
+    public void Legacy_ConfirmationCode_Read_Ignores_Tenant_Filter()
     {
         var source = ReadRepositorySource();
 
-        foreach (var method in new[] { "GetByConfirmationCodeAsync", "ExistsWithConfirmationCodeAsync" })
-        {
-            var body = ExtractMethodBody(source, method);
-            Assert.False(Regex.IsMatch(body, IgnoreCall), $"{method} must not call IgnoreQueryFilters()");
-        }
+        var body = ExtractMethodBody(source, "GetByConfirmationCodeIgnoringTenantAsync");
+        Assert.True(Regex.IsMatch(body, IgnoreCall), "GetByConfirmationCodeIgnoringTenantAsync must call IgnoreQueryFilters()");
     }
 
     // IgnoreQueryFilters() is only CALLED in the enumerated bypass methods (the named cross-tenant /
-    // anonymous-login lookups and the anonymous lockout/reset-budget charges), never the confirm flows.
+    // anonymous-login lookups and the anonymous lockout/reset-budget charges).
     // Adding a bypass anywhere else must consciously extend this list.
     [Fact]
     public void IgnoreQueryFilters_Is_Confined_To_The_Enumerated_Bypass_Methods()
@@ -57,6 +54,11 @@ public class UserRepositoryTokenLookupTenantTests
         var inNamedBypasses = new[]
             {
                 "GetByIdIgnoringTenantAsync",
+                // An order's operator can differ from its recipient's account; delivery resolves only that account's company.
+                "GetNotificationRecipientTenantAsync",
+                // An admin event names its company as an argument (the order's, the webhook's) while the
+                // caller's override may name another; the read pins TenantId to that argument.
+                "GetActiveAdministratorsAsync",
                 "GetByEmailIgnoringTenantAsync",
                 "ExistsWithEmailIgnoringTenantAsync",
                 // Sign in with Apple is anonymous and resolves the account by the verified Apple sub —
@@ -65,17 +67,41 @@ public class UserRepositoryTokenLookupTenantTests
                 // Google sign-in is anonymous for the same reason and now resolves by the verified
                 // Google sub before falling back to the email — same bypass rationale as Apple.
                 "GetByGoogleIdIgnoringTenantAsync",
+                // The legacy 128-bit confirm link: anonymous request, stamped row, hash is the pin.
+                "GetByConfirmationCodeIgnoringTenantAsync",
                 "RecordFailedLoginAsync",
                 "TryChargeResetPasswordCodeAttemptAsync",
                 // The OTP confirm branch resolves the account by email (anonymous), so its budget
                 // charge must land for tenant-stamped accounts too — mirrors the reset charge above.
-                // The confirm-token HASH lookups stay filtered (the test above); only the charge is a
-                // bypass.
                 "TryChargeConfirmationCodeAttemptAsync",
             }
             .Sum(method => Regex.Matches(ExtractMethodBody(source, method), IgnoreCall).Count);
 
         Assert.Equal(inNamedBypasses, occurrences);
+    }
+
+    [Fact]
+    public void Administrators_Bypass_Is_Pinned_To_The_Named_Company_And_The_Eligible_Administrators()
+    {
+        var body = ExtractMethodBody(ReadRepositorySource(), "GetActiveAdministratorsAsync");
+        Assert.Matches(@"u\.TenantId\s*==\s*tenantId", body);
+        Assert.Matches(@"u\.Profile\s*==\s*UserProfile\.Administrator", body);
+        Assert.Contains("u.IsActive", body);
+        Assert.Contains("u.IsEmailConfirmed", body);
+        Assert.Matches(@"!u\.Email\.EndsWith\(User\.AnonymisedEmailSuffix\)", body);
+        Assert.DoesNotContain(".Include(", body);
+        Assert.Single(Regex.Matches(body, IgnoreCall));
+    }
+
+    [Fact]
+    public void Notification_Recipient_Bypass_Is_Pinned_To_The_User_And_Projects_Only_Their_Company()
+    {
+        var body = ExtractMethodBody(ReadRepositorySource(), "GetNotificationRecipientTenantAsync");
+        Assert.Matches(@"\.Where\(u\s*=>\s*u\.Id\s*==\s*userId\)", body);
+        Assert.Matches(@"\.Select\(u\s*=>\s*u\.TenantId\)", body);
+        Assert.Contains(".FirstOrDefaultAsync(cancellationToken)", body);
+        Assert.DoesNotContain(".Include(", body);
+        Assert.Single(Regex.Matches(body, IgnoreCall));
     }
 
     // Extracts a single method's brace-balanced body by name.

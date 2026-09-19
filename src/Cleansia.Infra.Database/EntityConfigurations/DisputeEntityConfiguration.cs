@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Cleansia.Infra.Database.EntityConfigurations;
 
-public class DisputeEntityConfiguration : AuditableEntityConfiguration<Dispute, string>
+public class DisputeEntityConfiguration : TenantAuditableEntityConfiguration<Dispute, string>
 {
     public override void Configure(EntityTypeBuilder<Dispute> builder)
     {
@@ -66,5 +66,6 @@ public class DisputeEntityConfiguration : AuditableEntityConfiguration<Dispute, 
         builder.HasIndex(d => d.UserId);
         builder.HasIndex(d => d.Status);
         builder.HasIndex(d => d.CreatedOn);
+        builder.HasIndex(d => d.TextRetainedUntil);
     }
 }

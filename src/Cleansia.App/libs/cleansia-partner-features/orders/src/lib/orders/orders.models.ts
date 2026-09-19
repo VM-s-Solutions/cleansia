@@ -1,11 +1,22 @@
 import { TemplateRef } from '@angular/core';
 import { HelpStep, StatusFlowItem, TableAction, TableColumn } from '@cleansia/components';
 import { OrderListItem, OrderStatus } from '@cleansia/partner-services';
+import { formatMoney } from '@cleansia/utils';
 
 export interface FilterChip {
   key: string;
   label: string;
   value: string;
+}
+
+export interface OrderFilterFormValue {
+  customerName?: string | null;
+  customerEmail?: string | null;
+  displayOrderNumber?: string | null;
+  orderStatuses?: number[] | null;
+  paymentStatuses?: number[] | null;
+  cleaningDateFrom?: Date | null;
+  cleaningDateTo?: Date | null;
 }
 
 export const ORDERS_HELP_STEPS: HelpStep[] = [
@@ -126,14 +137,7 @@ export function getAvailableOrdersTableDefinition(
         field: 'totalPrice',
         header: 'pages.orders.total_price',
         getValue: (row?: OrderListItem) =>
-          row?.totalPrice
-            ? Number(row.totalPrice).toLocaleString('en-GB', {
-                style: 'currency',
-                currency: row?.currency?.code || 'CZK',
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2,
-              })
-            : '',
+          row?.totalPrice ? formatMoney(row.totalPrice, row.currency?.code, 'en-GB', { fractionDigits: 2 }) : '',
         sortable: true,
         width: '12%',
         align: 'right',
@@ -241,14 +245,7 @@ export function getMyOrdersTableDefinition(
         field: 'totalPrice',
         header: 'pages.orders.total_price',
         getValue: (row?: OrderListItem) =>
-          row?.totalPrice
-            ? Number(row.totalPrice).toLocaleString('en-GB', {
-                style: 'currency',
-                currency: row?.currency?.code || 'CZK',
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2,
-              })
-            : '',
+          row?.totalPrice ? formatMoney(row.totalPrice, row.currency?.code, 'en-GB', { fractionDigits: 2 }) : '',
         sortable: true,
         width: '12%',
         align: 'right',

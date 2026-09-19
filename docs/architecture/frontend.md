@@ -198,6 +198,14 @@ ngOnInit() {
 ```
 :::
 
+**What the transfer cache serves.** `provideClientHydration()` transfers the server's HTTP responses
+into the document, and Angular skips any request sent `withCredentials`. The customer app's
+`CustomerAuthInterceptorFn` therefore sends credentials only on state-changing methods and on calls
+made with a session: an **anonymous own-API GET** (the market directory, the catalogue overviews, the
+plans, the property sizes, the serviced countries) is fetched once on the server and reused on
+bootstrap; a **session-bearing GET** carries the cookie, is never transferred and is re-fetched by the
+browser. → [Customer app overview — SSR](/customer-app/overview#ssr)
+
 The partner and admin apps are client-side only (no SSR).
 
 ## State Management

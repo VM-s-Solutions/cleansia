@@ -1,0 +1,257 @@
+.cleansia-notifications {
+  display: flex;
+  justify-content: center;
+  padding: 1rem;
+  max-width: 100vw;
+  overflow-x: hidden;
+  position: relative;
+
+  &__container {
+    background: var(--cleansia-white);
+    border-radius: 12px;
+    padding: 2rem;
+    width: 100%;
+    max-width: 1100px;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  &__header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 1rem 1.5rem;
+  }
+
+  &__heading {
+    flex: 1 1 24rem;
+    min-width: 0;
+  }
+
+  &__description {
+    margin: 0;
+    color: var(--cleansia-text-secondary);
+    font-size: 1rem;
+    line-height: 1.6;
+    max-width: 60ch;
+  }
+
+  &__state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 3rem 1rem;
+    color: var(--cleansia-text-secondary);
+    text-align: center;
+
+    i {
+      font-size: 2rem;
+      color: #b45309;
+    }
+
+    p {
+      margin: 0;
+      font-weight: 600;
+      color: var(--cleansia-text-primary);
+    }
+
+    &--empty i {
+      color: var(--cleansia-primary-300);
+    }
+  }
+
+  &__state-hint {
+    font-size: 0.875rem;
+    line-height: 1.6;
+    max-width: 44ch;
+  }
+
+  // The feed is a ledger of rows separated by hairlines, not a card grid: one unread row is louder
+  // than the rest by ground and by a left rule, and nothing else on the page competes with it.
+  &__feed {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    border-top: 1px solid #e2e8f0;
+    transition: opacity 0.2s ease;
+
+    &--refreshing {
+      opacity: 0.6;
+      pointer-events: none;
+    }
+  }
+
+  &__row {
+    position: relative;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: start;
+    gap: 1rem;
+    padding: 1rem 1rem 1rem 1.25rem;
+    border-bottom: 1px solid #e2e8f0;
+    border-left: 3px solid transparent;
+    cursor: pointer;
+    outline: none;
+    transition: background-color 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
+
+    &:hover {
+      background: var(--cleansia-primary-50);
+    }
+
+    &:focus-visible {
+      box-shadow: inset 0 0 0 2px var(--cleansia-primary-600);
+      border-radius: 6px;
+    }
+
+    &:active {
+      transform: translateX(2px);
+    }
+
+    &--unread {
+      background: var(--cleansia-primary-50);
+      border-left-color: var(--cleansia-primary-600);
+
+      .cleansia-notifications__title {
+        color: var(--cleansia-primary-700);
+      }
+
+      .cleansia-notifications__glyph {
+        background: var(--cleansia-primary-600);
+
+        i {
+          color: var(--cleansia-white);
+        }
+      }
+
+      &:hover {
+        background: var(--cleansia-primary-100);
+      }
+    }
+
+    &--busy {
+      opacity: 0.6;
+      pointer-events: none;
+    }
+
+    &--inert {
+      cursor: default;
+
+      &:hover {
+        background: transparent;
+      }
+
+      &:active {
+        transform: none;
+      }
+    }
+  }
+
+  &__glyph {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 12px;
+    background: var(--cleansia-primary-100);
+    transition: background-color 0.15s ease;
+
+    i {
+      font-size: 1.125rem;
+      color: var(--cleansia-primary-600);
+    }
+  }
+
+  &__text {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    min-width: 0;
+  }
+
+  &__title {
+    font-size: 0.9375rem;
+    font-weight: 700;
+    line-height: 1.3;
+    color: var(--cleansia-text-primary);
+  }
+
+  &__body {
+    font-size: 0.875rem;
+    line-height: 1.6;
+    color: var(--cleansia-text-secondary);
+    overflow-wrap: anywhere;
+  }
+
+  &__meta {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.375rem;
+    padding-top: 0.125rem;
+    white-space: nowrap;
+
+    time {
+      font-size: 0.75rem;
+      font-variant-numeric: tabular-nums;
+      color: var(--cleansia-text-secondary);
+    }
+  }
+
+  &__unread {
+    font-size: 0.6875rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--cleansia-primary-700);
+  }
+
+  &__arrow {
+    font-size: 0.75rem;
+    color: var(--cleansia-primary-400);
+    transition: transform 0.15s ease, color 0.15s ease;
+
+    .cleansia-notifications__row:hover & {
+      transform: translateX(2px);
+      color: var(--cleansia-primary-600);
+    }
+  }
+
+  &__paginator {
+    display: block;
+    margin-top: 1rem;
+  }
+
+  @media (max-width: 768px) {
+    padding: 0.5rem;
+
+    &__container {
+      padding: 1.25rem;
+    }
+
+    &__row {
+      grid-template-columns: auto minmax(0, 1fr);
+      padding-left: 0.75rem;
+    }
+
+    &__meta {
+      grid-column: 2;
+      flex-direction: row;
+      align-items: center;
+      gap: 0.75rem;
+      padding-top: 0;
+    }
+  }
+}
+
+cleansia-admin-notifications {
+  display: flex;
+  flex-direction: column;
+  background: var(--cleansia-primary-0);
+  min-height: 100vh;
+}

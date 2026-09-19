@@ -12,7 +12,6 @@ final class IdentificationSectionViewModel: ViewModel {
         var entityType: EmployeeEntityType
         var businessCountryId: String?
         var registrationNumber: String
-        var vatNumber: String
         var legalEntityName: String
     }
 
@@ -25,7 +24,6 @@ final class IdentificationSectionViewModel: ViewModel {
         entityType: ._1,
         businessCountryId: nil,
         registrationNumber: "",
-        vatNumber: "",
         legalEntityName: ""
     )
     @Published private(set) var countryOptions: [CleansiaDropdownOption] = []
@@ -73,7 +71,6 @@ final class IdentificationSectionViewModel: ViewModel {
                 entityType: employee.entityType ?? ._1,
                 businessCountryId: employee.countryId,
                 registrationNumber: employee.registrationNumber ?? "",
-                vatNumber: employee.vatNumber ?? "",
                 legalEntityName: employee.legalEntityName ?? ""
             )
             state = .loaded(())
@@ -141,7 +138,6 @@ final class IdentificationSectionViewModel: ViewModel {
             entityType: form.entityType,
             businessCountryId: businessCountryId,
             registrationNumber: form.registrationNumber.trimmed,
-            vatNumber: form.vatNumber.trimmedOrNil,
             legalEntityName: form.legalEntityName.trimmedOrNil
         )
         switch await client.updateIdentificationInfo(command) {

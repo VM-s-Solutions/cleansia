@@ -13,6 +13,7 @@ import { SnackbarService } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
 import { Subject } from 'rxjs';
 import { OrderDetailComponent } from './order-detail.component';
+import { OrderMarketFacade } from '../order-market.facade';
 import { OrderDetailFacade } from './order-detail.facade';
 import { OrderPreferredOfferFacade } from './order-preferred-offer.facade';
 
@@ -51,6 +52,7 @@ describe('order detail wiring the preferred-offer facade', () => {
       providers: [
         OrderDetailComponent,
         OrderDetailFacade,
+        { provide: OrderMarketFacade, useValue: { label: jest.fn() } },
         OrderPreferredOfferFacade,
         { provide: PLATFORM_ID, useValue: 'browser' },
         {

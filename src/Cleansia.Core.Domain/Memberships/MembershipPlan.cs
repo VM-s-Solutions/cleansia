@@ -17,11 +17,9 @@ public enum BillingInterval
 }
 
 /// <summary>
-/// A purchasable membership plan (e.g. "Cleansia Plus"). Initially zero rows
-/// — the entity exists so the pricing/cancellation/matching pipelines can
-/// resolve <see cref="UserMembership.MembershipPlan"/> at runtime once the
-/// product launches. Adding the actual Plus product is then a single SQL
-/// insert + a Stripe Product/Price registration, no code change.
+/// A purchasable membership plan (e.g. "Cleansia Plus"): the benefits and the billing cadence. What it
+/// costs, and which Stripe Price charges it, lives on <see cref="MembershipPlanPrice"/> — one row per
+/// currency, so the same plan is sold in every market at that market's own figure.
 /// </summary>
 public class MembershipPlan : Auditable
 {
@@ -34,17 +32,6 @@ public class MembershipPlan : Auditable
     [Required]
     [MaxLength(100)]
     public string Name { get; private set; } = default!;
-
-    /// <summary>
-    /// Display price in CZK for a single billing period. For Monthly plans
-    /// this is the per-month price. For Yearly plans this is the full annual
-    /// charge — divide by 12 if you need the equivalent per-month figure
-    /// (see <see cref="MonthlyEquivalentPriceCzk"/>).
-    ///
-    /// Canonical price lives in Stripe (referenced via <see cref="StripePriceId"/>);
-    /// this mirror lets us preview prices without a Stripe round-trip.
-    /// </summary>
-    public decimal MonthlyPriceCzk { get; private set; }
 
     /// <summary>
     /// How often this plan bills. Drives the "save XX%" badge + per-month
@@ -62,23 +49,15 @@ public class MembershipPlan : Auditable
     public int TrialPeriodDays { get; private set; }
 
     /// <summary>
-    /// Per-month equivalent of <see cref="MonthlyPriceCzk"/>. For monthly
-    /// plans this is the same value; for yearly it's the annual price ÷ 12.
-    /// Drives "199 Kč/month, billed annually" copy.
+    /// The per-month figure a price of this plan renders as: the price itself for a monthly plan, the
+    /// annual charge ÷ 12 for a yearly one. Lives here rather than on the price row because the cadence
+    /// is the plan's; the row only supplies the number.
     /// </summary>
-    public decimal MonthlyEquivalentPriceCzk => BillingInterval switch
+    public decimal MonthlyEquivalentOf(decimal price) => BillingInterval switch
     {
-        BillingInterval.Yearly => Math.Round(MonthlyPriceCzk / 12m, 2),
-        _ => MonthlyPriceCzk,
+        BillingInterval.Yearly => Math.Round(price / 12m, 2),
+        _ => price,
     };
-
-    /// <summary>
-    /// The Stripe Price id this plan is sold against. One Price per plan.
-    /// Required because Stripe subscriptions cannot be created without it.
-    /// </summary>
-    [Required]
-    [MaxLength(64)]
-    public string StripePriceId { get; private set; } = default!;
 
     /// <summary>
     /// Discount percentage applied to every cleaning while the membership is
@@ -125,17 +104,9 @@ public class MembershipPlan : Auditable
     // Private constructor for EF Core
     private MembershipPlan() { }
 
-    /// <summary>
-    /// Create a new membership plan. Caller is responsible for creating the
-    /// matching Stripe Product + Price first and passing the Price id in.
-    /// For yearly plans, <paramref name="monthlyPriceCzk"/> is the full
-    /// annual price (the field is named for the dominant monthly case).
-    /// </summary>
     public static MembershipPlan Create(
         string code,
         string name,
-        decimal monthlyPriceCzk,
-        string stripePriceId,
         decimal discountPercentage,
         int freeCancellationWindowHours,
         bool allowsExpressUpgrade,
@@ -146,8 +117,6 @@ public class MembershipPlan : Auditable
         {
             Code = code.ToUpperInvariant(),
             Name = name,
-            MonthlyPriceCzk = monthlyPriceCzk,
-            StripePriceId = stripePriceId,
             DiscountPercentage = discountPercentage,
             FreeCancellationWindowHours = freeCancellationWindowHours,
             AllowsExpressUpgrade = allowsExpressUpgrade,
@@ -159,13 +128,6 @@ public class MembershipPlan : Auditable
     public MembershipPlan UpdateName(string name)
     {
         Name = name;
-        return this;
-    }
-
-    public MembershipPlan UpdatePricing(decimal monthlyPriceCzk, string stripePriceId)
-    {
-        MonthlyPriceCzk = monthlyPriceCzk;
-        StripePriceId = stripePriceId;
         return this;
     }
 

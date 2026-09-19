@@ -74,7 +74,6 @@ public class PayCalculatorExtensionsTests
             customerAddress: Address.Create("Street 1", "Prague", "10000", "CZ"),
             rooms: rooms,
             bathrooms: bathrooms,
-            extras: new Dictionary<string, bool>(),
             cleaningDateTime: new DateTime(2026, 4, 1, 10, 0, 0, DateTimeKind.Utc),
             paymentType: PaymentType.Cash,
             totalPrice: 1000m,

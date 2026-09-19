@@ -43,4 +43,10 @@ public static class OrderCancellationReasons
     /// → <c>CancelUnfilledOrders</c></para>
     /// </summary>
     public const string NoCleanerAvailable = "order.cancelled.no_cleaner_available";
+
+    /// <summary>
+    /// The operating company is closing and the booking fell on or after its last day of service, so
+    /// the platform cancelled it and refunded it in full. → <c>CompanyWindDownService</c>
+    /// </summary>
+    public const string CompanyWindDown = "order.cancelled.company_wind_down";
 }

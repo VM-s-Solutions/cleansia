@@ -149,7 +149,7 @@ public sealed class ReceiptService(
 
     // The provider key identifies the fiscal regime, which decides the counter's issuer scope and
     // year-reset rule. With no fiscal system (None) there is no provider, so the empty key resolves to
-    // the default annually-reset scope — matching CZ's current behaviour.
+    // FiscalSequenceScope.DefaultIssuerScope, which never resets annually (NoAnnualResetYear).
     private async Task<string> ResolveProviderKeyAsync(string? countryId, FiscalEnforcementMode enforcementMode, CancellationToken cancellationToken)
     {
         if (enforcementMode == FiscalEnforcementMode.None || countryId == null)
@@ -158,8 +158,9 @@ public sealed class ReceiptService(
         }
 
         var country = await countryRepository.GetByIdAsync(countryId, cancellationToken);
-        var isoCode = country?.IsoCode ?? "CZ";
-        return fiscalServiceResolver.Resolve(isoCode).ProviderKey;
+        // No ISO code, no regime: the empty key resolves to the default scope, never to the Czech one.
+        var isoCode = country?.IsoCode;
+        return isoCode is null ? string.Empty : fiscalServiceResolver.Resolve(isoCode).ProviderKey;
     }
 
     private async Task HandleFiscalAsync(
@@ -176,15 +177,15 @@ public sealed class ReceiptService(
             return;
         }
 
-        var isoCode = countryCode ?? "CZ";
-        var fiscalService = fiscalServiceResolver.Resolve(isoCode);
+        // An unresolved country resolves to the no-op provider, and the request below refuses to be
+        // built for it -- the same fail-closed landing as a missing currency, never the Czech regime.
+        var fiscalService = fiscalServiceResolver.Resolve(countryCode ?? string.Empty);
 
         FiscalGoLiveGate.EnsureRegisterIdempotent(fiscalService, enforcementMode);
 
-        var fiscalRequest = BuildFiscalRequest(order, receipt, companyInfo, isoCode);
-
         try
         {
+            var fiscalRequest = BuildFiscalRequest(order, receipt, companyInfo, FiscalCountryCodeOf(order, countryCode));
             var result = await fiscalService.RegisterReceiptAsync(fiscalRequest, cancellationToken);
 
             if (result.IsRegistered && result.FiscalCode != null)
@@ -207,7 +208,8 @@ public sealed class ReceiptService(
         }
         catch (Exception ex)
         {
-            // Never fail the receipt generation over a fiscal authority hiccup.
+            // Never fail the receipt generation over a fiscal authority hiccup, and never over a
+            // request the platform refused to build (an order without its currency lands here too).
             // The receipt is marked as failed so the retry job can pick it up later.
             receipt.MarkFiscalRegistrationFailed(fiscalService.ProviderKey, FiscalErrorKind.Unknown, ex.Message);
             logger.LogError(ex,
@@ -219,36 +221,71 @@ public sealed class ReceiptService(
     // The initial register and the recovery re-register MUST build the request the same way so they
     // carry the same explicit idempotency token (the receipt number) — that is what lets an idempotent
     // authority collapse a recovery re-register onto the prior entry instead of double-registering.
+    /// <summary>
+    /// Whether VAT was applied to THIS ORDER, read from the order's own frozen breakdown.
+    ///
+    /// <para><b>Deliberately not <c>companyInfo.IsVatPayer</c>.</b> That is live company state, and a
+    /// receipt is a statement about a sale that already happened. Reading it live failed in both
+    /// directions: before registration a re-rendered order could claim VAT it never charged, and after
+    /// registration a pre-registration order re-rendered through <c>RetryFiscalRegistrationAsync</c> —
+    /// which re-resolves company info and re-uploads the stored blob — produced a document with
+    /// neither a VAT line (the layout needs <c>VatAmount &gt; 0</c>) nor the statutory non-payer notice
+    /// (the layout needs <c>!IsVatPayer</c>). A tax document asserting neither posture.</para>
+    ///
+    /// <para><c>AppliedVatRate</c> is the right discriminator because it is written exactly once, at
+    /// order creation, and is null precisely when no VAT regime applied. <c>VatCalculator</c> now
+    /// throws rather than returning a silent zero for a VAT payer with no country configuration, so
+    /// null no longer doubles as "we could not tell".</para>
+    /// </summary>
+    private static bool VatApplied(Order order) => order.AppliedVatRate is not null;
+
     private static FiscalReceiptRequest BuildFiscalRequest(Order order, OrderReceipt receipt, CompanyInfo companyInfo, string isoCode) =>
         FiscalReceiptRequest.Create(
             receiptNumber: receipt.ReceiptNumber,
             issuedAt: receipt.IssuedAt,
             totalAmount: order.TotalPrice,
-            vatAmount: companyInfo.IsVatPayer && order.VatAmount > 0 ? order.VatAmount : null,
-            currencyCode: order.Currency?.Code ?? Constants.Currency.Czk,
+            vatAmount: VatApplied(order) && order.VatAmount > 0 ? order.VatAmount : null,
+            currencyCode: FiscalCurrencyCodeOf(order),
             companyLegalName: companyInfo.LegalName,
             companyRegistrationNumber: companyInfo.RegistrationNumber,
             companyVatNumber: companyInfo.VatNumber,
             customerName: order.CustomerName,
             customerEmail: order.CustomerEmail,
-            lineItems: BuildFiscalLineItems(order, companyInfo.IsVatPayer ? order.AppliedVatRate : null),
+            lineItems: BuildFiscalLineItems(order, order.AppliedVatRate),
             // The tender actually taken, not the booked one — a card booking the cleaner settled in cash
             // must be registered with the fiscal authority as a cash sale.
             paymentMethod: order.ActualPaymentType.ToString(),
             countryCode: isoCode);
 
+    // A declaration to a tax authority in a guessed unit is a false one, not a degraded one. An order
+    // that reaches the register without its currency loaded is refused; the throw lands in the
+    // caller's failure recording, never in a registered CZK receipt for a EUR sale.
+    private static string FiscalCurrencyCodeOf(Order order) =>
+        order.Currency?.Code
+        ?? throw new InvalidOperationException(
+            $"Order {order.Id} has no resolved currency; refusing to register its receipt in a default one");
+
+    // The regime is the country's, and a receipt whose country could not be resolved used to be declared
+    // to the Czech authority by default. Same refusal, same landing.
+    private static string FiscalCountryCodeOf(Order order, string? countryCode) =>
+        countryCode
+        ?? throw new InvalidOperationException(
+            $"Order {order.Id} has no resolved country; refusing to register its receipt under a default regime");
+
     private static IReadOnlyList<FiscalLineItem> BuildFiscalLineItems(Order order, decimal? vatRate)
     {
         var items = new List<FiscalLineItem>();
 
+        // Prices from the ORDER'S snapshot, names from the catalogue. These figures are declared to a
+        // tax authority, and they used to be recomputed from the live catalogue every time the receipt
+        // was rendered — including by RetryFiscalRegistrationAsync, which re-renders an old receipt
+        // against today's prices. The name is a label and may drift; the number may not.
         foreach (var s in order.SelectedServices)
         {
-            var basePrice = s.Service?.BasePrice ?? 0;
-            var perRoom = (s.Service?.PerRoomPrice ?? 0) * (order.Rooms + order.Bathrooms);
             items.Add(new FiscalLineItem(
                 Description: s.Service?.Name ?? "Service",
                 Quantity: 1,
-                UnitPrice: basePrice + perRoom,
+                UnitPrice: s.LineTotal,
                 VatRate: vatRate));
         }
 
@@ -257,7 +294,7 @@ public sealed class ReceiptService(
             items.Add(new FiscalLineItem(
                 Description: p.Package?.Name ?? "Package",
                 Quantity: 1,
-                UnitPrice: p.Package?.Price ?? 0,
+                UnitPrice: p.LineTotal,
                 VatRate: vatRate));
         }
 
@@ -293,13 +330,11 @@ public sealed class ReceiptService(
             countryCode = country?.IsoCode;
         }
 
-        var isoCode = countryCode ?? "CZ";
-        var fiscalService = fiscalServiceResolver.Resolve(isoCode);
-
-        var fiscalRequest = BuildFiscalRequest(order, receipt, companyInfo, isoCode);
+        var fiscalService = fiscalServiceResolver.Resolve(countryCode ?? string.Empty);
 
         try
         {
+            var fiscalRequest = BuildFiscalRequest(order, receipt, companyInfo, FiscalCountryCodeOf(order, countryCode));
             var result = await fiscalService.RegisterReceiptAsync(fiscalRequest, cancellationToken);
 
             if (result.IsRegistered && result.FiscalCode != null)
@@ -356,37 +391,35 @@ public sealed class ReceiptService(
             CustomerEmail = order.CustomerEmail,
             CustomerPhone = order.CustomerPhone,
             CustomerAddress = $"{order.CustomerAddress?.Street}, {order.CustomerAddress?.City}, {order.CustomerAddress?.ZipCode}",
+            // Snapshot prices, catalogue names — see BuildFiscalLineItems.
             Services = order.SelectedServices
-                .Select(s =>
-                {
-                    var basePrice = s.Service?.BasePrice ?? 0;
-                    var perRoom = (s.Service?.PerRoomPrice ?? 0) * (order.Rooms + order.Bathrooms);
-                    return new ReceiptLineItem(s.Service?.Name ?? "Service", basePrice + perRoom);
-                })
+                .Select(s => new ReceiptLineItem(s.Service?.Name ?? "Service", s.LineTotal))
                 .ToList(),
             Packages = order.SelectedPackages
-                .Select(p => new ReceiptLineItem(p.Package?.Name ?? "Package", p.Package?.Price ?? 0))
+                .Select(p => new ReceiptLineItem(p.Package?.Name ?? "Package", p.LineTotal))
                 .ToList(),
-            Extras = order.Extras
-                .Where(e => e.Value)
-                .Select(e => e.Key)
+            Extras = order.SelectedExtras
+                .Select(e => e.Slug)
                 .ToList(),
             Total = order.TotalPrice,
             // The sale above, how it was settled below. -> ReceiptPdfData.CreditApplied
             CreditApplied = order.CreditAppliedAmount,
             AmountDueOnCard = order.AmountDueOnCard,
-            Currency = order.Currency?.Symbol ?? "Kč",
+            // An unloaded Currency navigation is a loader omission, not a CZK order: no unit rather than a guessed one. → /architecture/platform-expandability#_5-where-czk-kc-is-hardcoded-vs-configurable
+            Currency = order.Currency?.Symbol ?? string.Empty,
             PaymentStatus = order.PaymentStatus.ToString(),
             PaymentType = order.ActualPaymentType.ToString(),
             CleaningDate = order.CleaningDateTime.ToString("dd.MM.yyyy HH:mm"),
             Rooms = order.Rooms,
             Bathrooms = order.Bathrooms,
             EstimatedTime = order.EstimatedTime,
-            IsVatPayer = companyInfo.IsVatPayer,
-            NetAmount = companyInfo.IsVatPayer ? order.NetAmount : null,
-            VatAmount = companyInfo.IsVatPayer ? order.VatAmount : null,
-            VatRate = companyInfo.IsVatPayer ? order.AppliedVatRate : null,
-            NonVatPayerNotice = companyInfo.IsVatPayer ? null : "Nejsme plátci DPH",
+            // THE ORDER'S OWN SNAPSHOT, never the live company row. A receipt is a statement about a
+            // sale that already happened, so its VAT posture is a property of that sale.
+            IsVatPayer = VatApplied(order),
+            NetAmount = VatApplied(order) ? order.NetAmount : null,
+            VatAmount = VatApplied(order) ? order.VatAmount : null,
+            VatRate = order.AppliedVatRate,
+            NonVatPayerNotice = VatApplied(order) ? null : "Nejsme plátci DPH",
             Company = new CompanyInfoData
             {
                 LegalName = companyInfo.LegalName,

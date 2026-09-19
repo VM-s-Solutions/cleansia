@@ -351,13 +351,14 @@ public class OrderDetailBrowsingCleanerRedactionTests
 
     private GetOrderDetails.Handler CreateHandler() =>
         new(
-            _orderRepository.Object,
             _orderAccessService.Object,
             _userSessionProvider.Object,
             _payConfigRepository.Object,
             _orderEmployeePayRepository.Object,
             _orderPhotoRepository.Object,
             _employeeRepository.Object,
+            Mock.Of<IUserRepository>(),
+            Mock.Of<ITenantRepository>(),
             _expressWaiverConsumer.Object,
             Mock.Of<IUserMembershipRepository>());
 
@@ -365,6 +366,9 @@ public class OrderDetailBrowsingCleanerRedactionTests
     {
         _orderRepository
             .Setup(r => r.GetByIdAsync(OrderId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(order);
+        _orderAccessService
+            .Setup(a => a.LoadOrderForCallerAsync(OrderId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(order);
         _orderPhotoRepository
             .Setup(r => r.GetPhotoCountByOrderIdAndTypeAsync(OrderId, PhotoType.After, It.IsAny<CancellationToken>()))
@@ -374,11 +378,13 @@ public class OrderDetailBrowsingCleanerRedactionTests
             .ReturnsAsync((OrderEmployeePay?)null);
         _payConfigRepository
             .Setup(r => r.GetServiceConfigsForOrderAsync(
-                It.IsAny<IEnumerable<string>>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                It.IsAny<IEnumerable<string>>(), It.IsAny<string>(),
+                It.IsAny<IReadOnlyCollection<string>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Array.Empty<EmployeePayConfig>());
         _payConfigRepository
             .Setup(r => r.GetPackageConfigsForOrderAsync(
-                It.IsAny<IEnumerable<string>>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                It.IsAny<IEnumerable<string>>(), It.IsAny<string>(),
+                It.IsAny<IReadOnlyCollection<string>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Array.Empty<EmployeePayConfig>());
     }
 
@@ -417,7 +423,6 @@ public class OrderDetailBrowsingCleanerRedactionTests
             customerAddress: address,
             rooms: 3,
             bathrooms: 2,
-            extras: new Dictionary<string, bool> { ["insideOven"] = true },
             cleaningDateTime: DateTime.UtcNow.AddDays(2),
             paymentType: PaymentType.Card,
             totalPrice: 1500m,
@@ -428,7 +433,9 @@ public class OrderDetailBrowsingCleanerRedactionTests
             accessInstructions: AccessInstructions);
 
         order.Id = OrderId;
-        order.SetCurrency(Currency.Create("CZK", "Kč", "Czech Koruna", 1m));
+        order.AddSelectedExtras(
+            [OrderExtra.Create(order, Extra.Create("insideOven", "insideOven", null), 250m)]);
+        order.SetCurrency(Currency.Create("CZK", "Kč", "Czech Koruna"));
         order.UpdateEstimatedTime(180);
 
         // Two required seats, no spare, one of them filled below — so none of the five seat members

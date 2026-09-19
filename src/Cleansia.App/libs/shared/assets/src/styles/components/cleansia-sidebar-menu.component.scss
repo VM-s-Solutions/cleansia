@@ -1,3 +1,5 @@
+@use '../common/touch-target' as *;
+
 :root {
   --sidebar-width-expanded: 16rem;
   --sidebar-width-collapsed: 6rem;
@@ -28,7 +30,8 @@
 .sidebar-close {
   position: absolute;
   top: 0.5rem;
-  right: 0.5rem;
+  // Far enough from the rail's clipped edge for the hit ring to fit.
+  right: max(0.5rem, calc(($touch-target-floor - 1.75rem) / 2));
   z-index: 2;
   display: flex;
   align-items: center;
@@ -43,6 +46,7 @@
   cursor: pointer;
   flex-shrink: 0;
   transition: all 0.2s ease;
+  @include touch-target;
 
   &:hover {
     background: var(--cleansia-primary-100, #f0f9ff);
@@ -525,9 +529,15 @@
   }
 
   .menu-item-label,
-  .menu-item-badge,
   .menu-item-arrow {
     display: none;
+  }
+
+  // The count stays readable on the rail: lifted onto the top-right corner of the centred 2rem icon.
+  .menu-item-badge {
+    position: absolute;
+    top: 0.25rem;
+    right: calc(50% - 1.375rem);
   }
 
   .menu-item-icon-wrapper {

@@ -16,4 +16,5 @@ public record OrderEmployeePayDto(
     decimal TotalPay,
     string? PayBreakdown,
     bool IsApproved,
-    DateTime CreatedOn);
+    DateTime CreatedOn,
+    string? CurrencyCode = null);

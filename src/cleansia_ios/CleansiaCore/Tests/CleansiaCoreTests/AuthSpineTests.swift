@@ -183,6 +183,14 @@ final class HeaderAdapterTests: XCTestCase {
         XCTAssertEqual(try customerBearer(for: "/api/Payment/CreatePaymentIntent", token: "t-1"), "Bearer t-1")
     }
 
+    /// The partner register form reads the market directory with no session and must not be sent a
+    /// stale Bearer by a handset that still holds one.
+    func testPartnerMarketDirectoryStaysTokenless() throws {
+        var request = try URLRequest(url: XCTUnwrap(URL(string: "https://api.test/api/Market/GetOverview")))
+        adapter().apply(to: &request, accessToken: "t-1")
+        XCTAssertNil(request.value(forHTTPHeaderField: "Authorization"))
+    }
+
     func testPartnerBookingPathsAreNotAnonymousSoTheyCarryBearer() throws {
         var request = try URLRequest(url: XCTUnwrap(URL(string: "https://api.test/api/Order/CreateOrder")))
         adapter().apply(to: &request, accessToken: "t-1")

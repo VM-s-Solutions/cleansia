@@ -45,6 +45,10 @@ public sealed class AuthorizationCompletenessStartupFilter : IStartupFilter
             PhysicalPolicy.CustomerOnly,
             PhysicalPolicy.EmployeeOrAdmin,
             PhysicalPolicy.AdminOnly,
+            PhysicalPolicy.AdministratorOnly,
+            PhysicalPolicy.ManagerOrAbove,
+            PhysicalPolicy.SupportOrAbove,
+            PhysicalPolicy.AccountantOrAbove,
             PhysicalPolicy.OwnerOrElevated,
             PhysicalPolicy.Deny,
         };
@@ -63,6 +67,9 @@ public sealed class AuthorizationCompletenessStartupFilter : IStartupFilter
     /// Behavior parity (not just name parity): a constructed admin passes AdminOnly and fails
     /// CustomerOnly; a constructed customer fails AdminOnly and passes CustomerOnly; an employee
     /// passes EmployeeOrAdmin. Catches a wrong duplicate winning or UserRole/UserProfile drift.
+    /// The administrator sets read the admin_role claim: a Support passes SupportOrAbove and AdminOnly
+    /// and fails the other three sets; an Administrator with no claim passes AdminOnly and no set; an
+    /// Employee fails all five.
     /// </summary>
     private static void AssertSemantics(IServiceProvider provider)
     {
@@ -71,6 +78,7 @@ public sealed class AuthorizationCompletenessStartupFilter : IStartupFilter
         var admin = PrincipalWithRole(UserProfile.Administrator.ToString());
         var customer = PrincipalWithRole(UserProfile.Customer.ToString());
         var employee = PrincipalWithRole(UserProfile.Employee.ToString());
+        var support = PrincipalWithRole(UserProfile.Administrator.ToString(), AdminRole.Support);
 
         Require(authz, admin, PhysicalPolicy.AdminOnly, expected: true);
         Require(authz, admin, PhysicalPolicy.CustomerOnly, expected: false);
@@ -79,6 +87,27 @@ public sealed class AuthorizationCompletenessStartupFilter : IStartupFilter
         Require(authz, employee, PhysicalPolicy.EmployeeOrAdmin, expected: true);
         Require(authz, admin, PhysicalPolicy.Deny, expected: false);
         Require(authz, customer, PhysicalPolicy.Deny, expected: false);
+
+        Require(authz, support, PhysicalPolicy.SupportOrAbove, expected: true);
+        Require(authz, support, PhysicalPolicy.AdminOnly, expected: true);
+        Require(authz, support, PhysicalPolicy.ManagerOrAbove, expected: false);
+        Require(authz, support, PhysicalPolicy.AccountantOrAbove, expected: false);
+        Require(authz, support, PhysicalPolicy.AdministratorOnly, expected: false);
+
+        string[] sets =
+        {
+            PhysicalPolicy.AdministratorOnly,
+            PhysicalPolicy.ManagerOrAbove,
+            PhysicalPolicy.SupportOrAbove,
+            PhysicalPolicy.AccountantOrAbove,
+        };
+        foreach (var set in sets)
+        {
+            Require(authz, admin, set, expected: false);
+            Require(authz, employee, set, expected: false);
+        }
+
+        Require(authz, employee, PhysicalPolicy.AdminOnly, expected: false);
     }
 
     private static void Require(
@@ -92,12 +121,18 @@ public sealed class AuthorizationCompletenessStartupFilter : IStartupFilter
                 $"principal with the relevant role, but was {actual}. Check UserRole/UserProfile parity.");
     }
 
-    private static ClaimsPrincipal PrincipalWithRole(string role) =>
-        new(new ClaimsIdentity(
-            new[]
-            {
-                new Claim(ClaimTypes.NameIdentifier, "startup-assertion"),
-                new Claim(ClaimTypes.Role, role),
-            },
-            authenticationType: "StartupAssertion"));
+    private static ClaimsPrincipal PrincipalWithRole(string role, AdminRole? adminRole = null)
+    {
+        var claims = new List<Claim>
+        {
+            new(ClaimTypes.NameIdentifier, "startup-assertion"),
+            new(ClaimTypes.Role, role),
+        };
+        if (adminRole is { } value)
+        {
+            claims.Add(new Claim(AdminRoleSets.ClaimType, value.ToString()));
+        }
+
+        return new ClaimsPrincipal(new ClaimsIdentity(claims, authenticationType: "StartupAssertion"));
+    }
 }

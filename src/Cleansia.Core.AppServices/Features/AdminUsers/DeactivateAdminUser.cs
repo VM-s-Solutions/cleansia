@@ -30,12 +30,13 @@ public class DeactivateAdminUser
                     await userRepository.GetAll()
                         .AnyAsync(u => u.Id == userId && u.Profile == UserProfile.Administrator, ct))
                 .WithMessage(BusinessErrorMessage.AdminUserNotFound)
-                // Never deactivate the last ACTIVE administrator — that would
-                // lock the tenant out of its own admin console with no recovery. Reject when the
-                // target is the only active admin (the active-admin count would drop to 0).
+                // Never deactivate the last ACTIVE Administrator-role administrator — a company with only
+                // a Support or an Accountant left has nobody who can assign a role or create an account,
+                // so the console is locked with no recovery. Reject when the target is the only one.
                 .MustAsync(async (userId, ct) =>
                     await userRepository.GetAll()
                         .CountAsync(u => u.Profile == UserProfile.Administrator && u.IsActive
+                            && u.AdminRole == AdminRole.Administrator
                             && u.Id != userId, ct) > 0)
                 .WithMessage(BusinessErrorMessage.CannotDeactivateLastAdmin);
 
@@ -47,38 +48,22 @@ public class DeactivateAdminUser
 
     internal class Handler(
         IUserRepository userRepository,
-        IUserSessionProvider userSessionProvider)
+        IUserSessionProvider userSessionProvider,
+        ITenantProvider tenantProvider)
         : ICommandHandler<Command, Response>
     {
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
         {
             var actorId = userSessionProvider.GetUserId() ?? string.Empty;
+            var tenantId = tenantProvider.GetCurrentTenantId()!;
 
-            // S7a — ATOMIC last-active-admin guard. The validator's count-then-check is a
-            // fast-path UX message but is NOT race-safe: two concurrent deactivations of the final two
-            // admins can both pass the validator under READ COMMITTED and zero out active admins. This
-            // single conditional UPDATE deactivates the target ONLY while another ACTIVE admin still
-            // exists; 0 rows affected ⇒ the target is (now) the last active admin ⇒ CannotDeactivateLastAdmin.
-            // It is a SANCTIONED self-commit: ExecuteUpdateAsync bypasses the change tracker and lands
-            // before the UnitOfWork pipeline's commit, which is required — the guard is atomic only while
-            // the other-active-admin predicate and the write are one statement the database evaluates
-            // together — and it rolls nothing back: 0 rows leaves the target untouched under the refusal
-            // below, and a deactivation that did land stays landed whatever the rest of the request does.
-            var now = DateTimeOffset.UtcNow;
-            var rowsAffected = await userRepository.GetAll()
-                .Where(u => u.Id == command.UserId
-                    && u.Profile == UserProfile.Administrator
-                    && u.IsActive
-                    && userRepository.GetAll().Any(other =>
-                        other.Profile == UserProfile.Administrator
-                        && other.IsActive
-                        && other.Id != command.UserId))
-                .ExecuteUpdateAsync(
-                    s => s
-                        .SetProperty(u => u.IsActive, false)
-                        .SetProperty(u => u.DeactivatedBy, actorId)
-                        .SetProperty(u => u.DeactivatedOn, now),
-                    cancellationToken);
+            // The validator's count-then-check is a fast-path message, not the guard: two concurrent
+            // deactivations of the final two Administrators both pass it under READ COMMITTED. The
+            // repository's write is the guard — one transaction under the company's advisory lock, the
+            // deactivation landing only while another active Administrator remains; 0 rows means the
+            // target is (now) the last one. It commits itself, before and apart from the pipeline's commit.
+            var rowsAffected = await userRepository.DeactivateAdministratorIfAnotherRemainsAsync(
+                tenantId, command.UserId, actorId, DateTimeOffset.UtcNow, cancellationToken);
 
             if (rowsAffected == 0)
             {

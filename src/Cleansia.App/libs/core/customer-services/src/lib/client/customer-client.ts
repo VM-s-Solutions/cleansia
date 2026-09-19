@@ -1102,6 +1102,92 @@ export class CreditClient implements ICreditClient {
     }
 }
 
+export interface ICurrencyClient {
+    /**
+     * @return OK
+     */
+    getOverview(): Observable<CurrencyListItem[]>;
+}
+
+@Injectable({
+    providedIn: 'root'
+})
+export class CurrencyClient implements ICurrencyClient {
+    private http: HttpClient;
+    private baseUrl: string;
+    protected jsonParseReviver: ((key: string, value: any) => any) | undefined = undefined;
+
+    constructor(@Inject(HttpClient) http: HttpClient, @Optional() @Inject(CUSTOMERAPIBASEURL) baseUrl?: string) {
+        this.http = http;
+        this.baseUrl = baseUrl ?? "";
+    }
+
+    /**
+     * @return OK
+     */
+    getOverview(): Observable<CurrencyListItem[]> {
+        let url = this.baseUrl + "/api/Currency/GetOverview";
+        url = url.replace(/[?&]$/, "");
+
+        let options : any = {
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Accept": "application/json"
+            })
+        };
+
+        return this.http.request("get", url, options).pipe(ObservableMergeMap((response : any) => {
+            return this.processGetOverview(response);
+        })).pipe(ObservableCatch((response: any) => {
+            if (response instanceof HttpResponseBase) {
+                try {
+                    return this.processGetOverview(response as any);
+                } catch (e) {
+                    return ObservableThrow(e) as any as Observable<CurrencyListItem[]>;
+                }
+            } else
+                return ObservableThrow(response) as any as Observable<CurrencyListItem[]>;
+        }));
+    }
+
+    protected processGetOverview(response: HttpResponseBase): Observable<CurrencyListItem[]> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result200: any = null;
+            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            if (Array.isArray(resultData200)) {
+                result200 = [] as any;
+                for (let item of resultData200)
+                    result200!.push(CurrencyListItem.fromJS(item));
+            }
+            else {
+                result200 = null as any;
+            }
+            return ObservableOf(result200);
+            }));
+        } else if (status === 400) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result400: any = null;
+            let resultData400 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result400 = ProblemDetails.fromJS(resultData400);
+            return throwException("Bad Request", status, ResponseText, Headers, result400);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
+            }));
+        }
+        return ObservableOf(null as any);
+    }
+}
+
 export interface IDeviceClient {
     /**
      * @param body (optional) 
@@ -2021,9 +2107,10 @@ export class DisputeClient implements IDisputeClient {
 
 export interface IExtraClient {
     /**
+     * @param countryId (optional) 
      * @return OK
      */
-    getOverview(): Observable<ExtraListItem[]>;
+    getOverview(countryId?: string | undefined): Observable<ExtraListItem[]>;
 }
 
 @Injectable({
@@ -2040,10 +2127,15 @@ export class ExtraClient implements IExtraClient {
     }
 
     /**
+     * @param countryId (optional) 
      * @return OK
      */
-    getOverview(): Observable<ExtraListItem[]> {
-        let url = this.baseUrl + "/api/Extra/GetOverview";
+    getOverview(countryId?: string | undefined): Observable<ExtraListItem[]> {
+        let url = this.baseUrl + "/api/Extra/GetOverview?";
+        if (countryId === null)
+            throw new globalThis.Error("The parameter 'countryId' cannot be null.");
+        else if (countryId !== undefined)
+            url += "countryId=" + encodeURIComponent("" + countryId) + "&";
         url = url.replace(/[?&]$/, "");
 
         let options : any = {
@@ -2153,7 +2245,7 @@ export class GdprClient implements IGdprClient {
             })
         };
 
-        return this.http.request("get", url, options).pipe(ObservableMergeMap((response : any) => {
+        return this.http.request("post", url, options).pipe(ObservableMergeMap((response : any) => {
             return this.processExport(response);
         })).pipe(ObservableCatch((response: any) => {
             if (response instanceof HttpResponseBase) {
@@ -2507,6 +2599,103 @@ export class LanguageClient implements ILanguageClient {
     }
 }
 
+export interface ILegalClient {
+    /**
+     * @param type (optional) 
+     * @param countryId (optional) 
+     * @param language (optional) 
+     * @return OK
+     */
+    getDocument(type?: LegalDocumentType | undefined, countryId?: string | undefined, language?: string | undefined): Observable<LegalDocumentDto>;
+}
+
+@Injectable({
+    providedIn: 'root'
+})
+export class LegalClient implements ILegalClient {
+    private http: HttpClient;
+    private baseUrl: string;
+    protected jsonParseReviver: ((key: string, value: any) => any) | undefined = undefined;
+
+    constructor(@Inject(HttpClient) http: HttpClient, @Optional() @Inject(CUSTOMERAPIBASEURL) baseUrl?: string) {
+        this.http = http;
+        this.baseUrl = baseUrl ?? "";
+    }
+
+    /**
+     * @param type (optional) 
+     * @param countryId (optional) 
+     * @param language (optional) 
+     * @return OK
+     */
+    getDocument(type?: LegalDocumentType | undefined, countryId?: string | undefined, language?: string | undefined): Observable<LegalDocumentDto> {
+        let url = this.baseUrl + "/api/Legal/GetDocument?";
+        if (type === null)
+            throw new globalThis.Error("The parameter 'type' cannot be null.");
+        else if (type !== undefined)
+            url += "type=" + encodeURIComponent("" + type) + "&";
+        if (countryId === null)
+            throw new globalThis.Error("The parameter 'countryId' cannot be null.");
+        else if (countryId !== undefined)
+            url += "countryId=" + encodeURIComponent("" + countryId) + "&";
+        if (language === null)
+            throw new globalThis.Error("The parameter 'language' cannot be null.");
+        else if (language !== undefined)
+            url += "language=" + encodeURIComponent("" + language) + "&";
+        url = url.replace(/[?&]$/, "");
+
+        let options : any = {
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Accept": "application/json"
+            })
+        };
+
+        return this.http.request("get", url, options).pipe(ObservableMergeMap((response : any) => {
+            return this.processGetDocument(response);
+        })).pipe(ObservableCatch((response: any) => {
+            if (response instanceof HttpResponseBase) {
+                try {
+                    return this.processGetDocument(response as any);
+                } catch (e) {
+                    return ObservableThrow(e) as any as Observable<LegalDocumentDto>;
+                }
+            } else
+                return ObservableThrow(response) as any as Observable<LegalDocumentDto>;
+        }));
+    }
+
+    protected processGetDocument(response: HttpResponseBase): Observable<LegalDocumentDto> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result200: any = null;
+            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result200 = LegalDocumentDto.fromJS(resultData200);
+            return ObservableOf(result200);
+            }));
+        } else if (status === 400) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result400: any = null;
+            let resultData400 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result400 = ProblemDetails.fromJS(resultData400);
+            return throwException("Bad Request", status, ResponseText, Headers, result400);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
+            }));
+        }
+        return ObservableOf(null as any);
+    }
+}
+
 export interface ILoyaltyClient {
     /**
      * @return OK
@@ -2764,6 +2953,92 @@ export class LoyaltyClient implements ILoyaltyClient {
     }
 }
 
+export interface IMarketClient {
+    /**
+     * @return OK
+     */
+    getOverview(): Observable<MarketListItem[]>;
+}
+
+@Injectable({
+    providedIn: 'root'
+})
+export class MarketClient implements IMarketClient {
+    private http: HttpClient;
+    private baseUrl: string;
+    protected jsonParseReviver: ((key: string, value: any) => any) | undefined = undefined;
+
+    constructor(@Inject(HttpClient) http: HttpClient, @Optional() @Inject(CUSTOMERAPIBASEURL) baseUrl?: string) {
+        this.http = http;
+        this.baseUrl = baseUrl ?? "";
+    }
+
+    /**
+     * @return OK
+     */
+    getOverview(): Observable<MarketListItem[]> {
+        let url = this.baseUrl + "/api/Market/GetOverview";
+        url = url.replace(/[?&]$/, "");
+
+        let options : any = {
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Accept": "application/json"
+            })
+        };
+
+        return this.http.request("get", url, options).pipe(ObservableMergeMap((response : any) => {
+            return this.processGetOverview(response);
+        })).pipe(ObservableCatch((response: any) => {
+            if (response instanceof HttpResponseBase) {
+                try {
+                    return this.processGetOverview(response as any);
+                } catch (e) {
+                    return ObservableThrow(e) as any as Observable<MarketListItem[]>;
+                }
+            } else
+                return ObservableThrow(response) as any as Observable<MarketListItem[]>;
+        }));
+    }
+
+    protected processGetOverview(response: HttpResponseBase): Observable<MarketListItem[]> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result200: any = null;
+            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            if (Array.isArray(resultData200)) {
+                result200 = [] as any;
+                for (let item of resultData200)
+                    result200!.push(MarketListItem.fromJS(item));
+            }
+            else {
+                result200 = null as any;
+            }
+            return ObservableOf(result200);
+            }));
+        } else if (status === 400) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result400: any = null;
+            let resultData400 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result400 = ProblemDetails.fromJS(resultData400);
+            return throwException("Bad Request", status, ResponseText, Headers, result400);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
+            }));
+        }
+        return ObservableOf(null as any);
+    }
+}
+
 export interface IMembershipClient {
     /**
      * @param body (optional) 
@@ -2784,9 +3059,10 @@ export interface IMembershipClient {
      */
     createCheckoutSession(body?: CreateMembershipCheckoutSessionCommand | undefined): Observable<CreateMembershipCheckoutSessionResponse>;
     /**
+     * @param countryId (optional) 
      * @return OK
      */
-    getPlans(): Observable<GetMembershipPlansResponse[]>;
+    getPlans(countryId?: string | undefined): Observable<GetMembershipPlansResponse[]>;
     /**
      * @param body (optional) 
      * @return OK
@@ -3043,10 +3319,15 @@ export class MembershipClient implements IMembershipClient {
     }
 
     /**
+     * @param countryId (optional) 
      * @return OK
      */
-    getPlans(): Observable<GetMembershipPlansResponse[]> {
-        let url = this.baseUrl + "/api/Membership/GetPlans";
+    getPlans(countryId?: string | undefined): Observable<GetMembershipPlansResponse[]> {
+        let url = this.baseUrl + "/api/Membership/GetPlans?";
+        if (countryId === null)
+            throw new globalThis.Error("The parameter 'countryId' cannot be null.");
+        else if (countryId !== undefined)
+            url += "countryId=" + encodeURIComponent("" + countryId) + "&";
         url = url.replace(/[?&]$/, "");
 
         let options : any = {
@@ -3320,12 +3601,27 @@ export class NotificationPreferencesClient implements INotificationPreferencesCl
 
 export interface IOrderClient {
     /**
+     * @param body (optional) 
+     * @return OK
+     */
+    cancelGuest(body?: CancelGuestOrderCommand | undefined): Observable<CancelOrderResponse>;
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    guestCancellationPreview(body?: GetGuestCancellationFeePreviewQuery | undefined): Observable<GetCancellationFeePreviewResponse>;
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    lookupPost(body?: LookupOrderQuery | undefined): Observable<LookupOrderResponse>;
+    /**
      * @param orderNumber (optional) 
      * @param email (optional) 
      * @param confirmationCode (optional) 
      * @return OK
      */
-    lookup(orderNumber?: string | undefined, email?: string | undefined, confirmationCode?: string | undefined): Observable<LookupOrderResponse>;
+    lookupGet(orderNumber?: string | undefined, email?: string | undefined, confirmationCode?: string | undefined): Observable<LookupOrderResponse>;
     /**
      * @param body (optional) 
      * @return OK
@@ -3369,12 +3665,14 @@ export interface IOrderClient {
      * @param hasAvailableSpots (optional) 
      * @param isUnassigned (optional) 
      * @param excludeEmployeeId (optional) 
+     * @param currencyId (optional) 
+     * @param userId (optional) 
      * @param sort (optional) 
      * @param offset (optional) 
      * @param limit (optional) 
      * @return OK
      */
-    getMyOrders(id?: string | undefined, isActive?: boolean | undefined, customerName?: string | undefined, customerEmail?: string | undefined, customerPhone?: string | undefined, displayOrderNumber?: string | undefined, employeeId?: string | undefined, cleaningDateFrom?: Date | undefined, cleaningDateTo?: Date | undefined, paymentStatuses?: PaymentStatus[] | undefined, paymentTypes?: PaymentType[] | undefined, minTotalPrice?: number | undefined, maxTotalPrice?: number | undefined, orderStatuses?: OrderStatus[] | undefined, hasAvailableSpots?: boolean | undefined, isUnassigned?: boolean | undefined, excludeEmployeeId?: string | undefined, sort?: SortDefinition[] | undefined, offset?: number | undefined, limit?: number | undefined): Observable<PagedDataOfOrderListItem>;
+    getMyOrders(id?: string | undefined, isActive?: boolean | undefined, customerName?: string | undefined, customerEmail?: string | undefined, customerPhone?: string | undefined, displayOrderNumber?: string | undefined, employeeId?: string | undefined, cleaningDateFrom?: Date | undefined, cleaningDateTo?: Date | undefined, paymentStatuses?: PaymentStatus[] | undefined, paymentTypes?: PaymentType[] | undefined, minTotalPrice?: number | undefined, maxTotalPrice?: number | undefined, orderStatuses?: OrderStatus[] | undefined, hasAvailableSpots?: boolean | undefined, isUnassigned?: boolean | undefined, excludeEmployeeId?: string | undefined, currencyId?: string | undefined, userId?: string | undefined, sort?: SortDefinition[] | undefined, offset?: number | undefined, limit?: number | undefined): Observable<PagedDataOfOrderListItem>;
     /**
      * @param id (optional) 
      * @param isActive (optional) 
@@ -3393,12 +3691,14 @@ export interface IOrderClient {
      * @param hasAvailableSpots (optional) 
      * @param isUnassigned (optional) 
      * @param excludeEmployeeId (optional) 
+     * @param currencyId (optional) 
+     * @param userId (optional) 
      * @param sort (optional) 
      * @param offset (optional) 
      * @param limit (optional) 
      * @return OK
      */
-    getPaged(id?: string | undefined, isActive?: boolean | undefined, customerName?: string | undefined, customerEmail?: string | undefined, customerPhone?: string | undefined, displayOrderNumber?: string | undefined, employeeId?: string | undefined, cleaningDateFrom?: Date | undefined, cleaningDateTo?: Date | undefined, paymentStatuses?: PaymentStatus[] | undefined, paymentTypes?: PaymentType[] | undefined, minTotalPrice?: number | undefined, maxTotalPrice?: number | undefined, orderStatuses?: OrderStatus[] | undefined, hasAvailableSpots?: boolean | undefined, isUnassigned?: boolean | undefined, excludeEmployeeId?: string | undefined, sort?: SortDefinition[] | undefined, offset?: number | undefined, limit?: number | undefined): Observable<PagedDataOfOrderListItem>;
+    getPaged(id?: string | undefined, isActive?: boolean | undefined, customerName?: string | undefined, customerEmail?: string | undefined, customerPhone?: string | undefined, displayOrderNumber?: string | undefined, employeeId?: string | undefined, cleaningDateFrom?: Date | undefined, cleaningDateTo?: Date | undefined, paymentStatuses?: PaymentStatus[] | undefined, paymentTypes?: PaymentType[] | undefined, minTotalPrice?: number | undefined, maxTotalPrice?: number | undefined, orderStatuses?: OrderStatus[] | undefined, hasAvailableSpots?: boolean | undefined, isUnassigned?: boolean | undefined, excludeEmployeeId?: string | undefined, currencyId?: string | undefined, userId?: string | undefined, sort?: SortDefinition[] | undefined, offset?: number | undefined, limit?: number | undefined): Observable<PagedDataOfOrderListItem>;
     /**
      * @param orderId (optional) 
      * @return OK
@@ -3462,12 +3762,201 @@ export class OrderClient implements IOrderClient {
     }
 
     /**
+     * @param body (optional) 
+     * @return OK
+     */
+    cancelGuest(body?: CancelGuestOrderCommand | undefined): Observable<CancelOrderResponse> {
+        let url = this.baseUrl + "/api/Order/CancelGuest";
+        url = url.replace(/[?&]$/, "");
+
+        const content = JSON.stringify(body);
+
+        let options : any = {
+            body: content,
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            })
+        };
+
+        return this.http.request("post", url, options).pipe(ObservableMergeMap((response : any) => {
+            return this.processCancelGuest(response);
+        })).pipe(ObservableCatch((response: any) => {
+            if (response instanceof HttpResponseBase) {
+                try {
+                    return this.processCancelGuest(response as any);
+                } catch (e) {
+                    return ObservableThrow(e) as any as Observable<CancelOrderResponse>;
+                }
+            } else
+                return ObservableThrow(response) as any as Observable<CancelOrderResponse>;
+        }));
+    }
+
+    protected processCancelGuest(response: HttpResponseBase): Observable<CancelOrderResponse> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result200: any = null;
+            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result200 = CancelOrderResponse.fromJS(resultData200);
+            return ObservableOf(result200);
+            }));
+        } else if (status === 400) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result400: any = null;
+            let resultData400 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result400 = ProblemDetails.fromJS(resultData400);
+            return throwException("Bad Request", status, ResponseText, Headers, result400);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
+            }));
+        }
+        return ObservableOf(null as any);
+    }
+
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    guestCancellationPreview(body?: GetGuestCancellationFeePreviewQuery | undefined): Observable<GetCancellationFeePreviewResponse> {
+        let url = this.baseUrl + "/api/Order/GuestCancellationPreview";
+        url = url.replace(/[?&]$/, "");
+
+        const content = JSON.stringify(body);
+
+        let options : any = {
+            body: content,
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            })
+        };
+
+        return this.http.request("post", url, options).pipe(ObservableMergeMap((response : any) => {
+            return this.processGuestCancellationPreview(response);
+        })).pipe(ObservableCatch((response: any) => {
+            if (response instanceof HttpResponseBase) {
+                try {
+                    return this.processGuestCancellationPreview(response as any);
+                } catch (e) {
+                    return ObservableThrow(e) as any as Observable<GetCancellationFeePreviewResponse>;
+                }
+            } else
+                return ObservableThrow(response) as any as Observable<GetCancellationFeePreviewResponse>;
+        }));
+    }
+
+    protected processGuestCancellationPreview(response: HttpResponseBase): Observable<GetCancellationFeePreviewResponse> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result200: any = null;
+            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result200 = GetCancellationFeePreviewResponse.fromJS(resultData200);
+            return ObservableOf(result200);
+            }));
+        } else if (status === 400) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result400: any = null;
+            let resultData400 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result400 = ProblemDetails.fromJS(resultData400);
+            return throwException("Bad Request", status, ResponseText, Headers, result400);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
+            }));
+        }
+        return ObservableOf(null as any);
+    }
+
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    lookupPost(body?: LookupOrderQuery | undefined): Observable<LookupOrderResponse> {
+        let url = this.baseUrl + "/api/Order/Lookup";
+        url = url.replace(/[?&]$/, "");
+
+        const content = JSON.stringify(body);
+
+        let options : any = {
+            body: content,
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            })
+        };
+
+        return this.http.request("post", url, options).pipe(ObservableMergeMap((response : any) => {
+            return this.processLookupPost(response);
+        })).pipe(ObservableCatch((response: any) => {
+            if (response instanceof HttpResponseBase) {
+                try {
+                    return this.processLookupPost(response as any);
+                } catch (e) {
+                    return ObservableThrow(e) as any as Observable<LookupOrderResponse>;
+                }
+            } else
+                return ObservableThrow(response) as any as Observable<LookupOrderResponse>;
+        }));
+    }
+
+    protected processLookupPost(response: HttpResponseBase): Observable<LookupOrderResponse> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result200: any = null;
+            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result200 = LookupOrderResponse.fromJS(resultData200);
+            return ObservableOf(result200);
+            }));
+        } else if (status === 400) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result400: any = null;
+            let resultData400 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result400 = ProblemDetails.fromJS(resultData400);
+            return throwException("Bad Request", status, ResponseText, Headers, result400);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
+            }));
+        }
+        return ObservableOf(null as any);
+    }
+
+    /**
      * @param orderNumber (optional) 
      * @param email (optional) 
      * @param confirmationCode (optional) 
      * @return OK
      */
-    lookup(orderNumber?: string | undefined, email?: string | undefined, confirmationCode?: string | undefined): Observable<LookupOrderResponse> {
+    lookupGet(orderNumber?: string | undefined, email?: string | undefined, confirmationCode?: string | undefined): Observable<LookupOrderResponse> {
         let url = this.baseUrl + "/api/Order/Lookup?";
         if (orderNumber === null)
             throw new globalThis.Error("The parameter 'orderNumber' cannot be null.");
@@ -3492,11 +3981,11 @@ export class OrderClient implements IOrderClient {
         };
 
         return this.http.request("get", url, options).pipe(ObservableMergeMap((response : any) => {
-            return this.processLookup(response);
+            return this.processLookupGet(response);
         })).pipe(ObservableCatch((response: any) => {
             if (response instanceof HttpResponseBase) {
                 try {
-                    return this.processLookup(response as any);
+                    return this.processLookupGet(response as any);
                 } catch (e) {
                     return ObservableThrow(e) as any as Observable<LookupOrderResponse>;
                 }
@@ -3505,7 +3994,7 @@ export class OrderClient implements IOrderClient {
         }));
     }
 
-    protected processLookup(response: HttpResponseBase): Observable<LookupOrderResponse> {
+    protected processLookupGet(response: HttpResponseBase): Observable<LookupOrderResponse> {
         const status = response.status;
         const responseBlob =
             response instanceof HttpResponse ? response.body :
@@ -3867,12 +4356,14 @@ export class OrderClient implements IOrderClient {
      * @param hasAvailableSpots (optional) 
      * @param isUnassigned (optional) 
      * @param excludeEmployeeId (optional) 
+     * @param currencyId (optional) 
+     * @param userId (optional) 
      * @param sort (optional) 
      * @param offset (optional) 
      * @param limit (optional) 
      * @return OK
      */
-    getMyOrders(id?: string | undefined, isActive?: boolean | undefined, customerName?: string | undefined, customerEmail?: string | undefined, customerPhone?: string | undefined, displayOrderNumber?: string | undefined, employeeId?: string | undefined, cleaningDateFrom?: Date | undefined, cleaningDateTo?: Date | undefined, paymentStatuses?: PaymentStatus[] | undefined, paymentTypes?: PaymentType[] | undefined, minTotalPrice?: number | undefined, maxTotalPrice?: number | undefined, orderStatuses?: OrderStatus[] | undefined, hasAvailableSpots?: boolean | undefined, isUnassigned?: boolean | undefined, excludeEmployeeId?: string | undefined, sort?: SortDefinition[] | undefined, offset?: number | undefined, limit?: number | undefined): Observable<PagedDataOfOrderListItem> {
+    getMyOrders(id?: string | undefined, isActive?: boolean | undefined, customerName?: string | undefined, customerEmail?: string | undefined, customerPhone?: string | undefined, displayOrderNumber?: string | undefined, employeeId?: string | undefined, cleaningDateFrom?: Date | undefined, cleaningDateTo?: Date | undefined, paymentStatuses?: PaymentStatus[] | undefined, paymentTypes?: PaymentType[] | undefined, minTotalPrice?: number | undefined, maxTotalPrice?: number | undefined, orderStatuses?: OrderStatus[] | undefined, hasAvailableSpots?: boolean | undefined, isUnassigned?: boolean | undefined, excludeEmployeeId?: string | undefined, currencyId?: string | undefined, userId?: string | undefined, sort?: SortDefinition[] | undefined, offset?: number | undefined, limit?: number | undefined): Observable<PagedDataOfOrderListItem> {
         let url = this.baseUrl + "/api/Order/GetMyOrders?";
         if (id === null)
             throw new globalThis.Error("The parameter 'id' cannot be null.");
@@ -3942,6 +4433,14 @@ export class OrderClient implements IOrderClient {
             throw new globalThis.Error("The parameter 'excludeEmployeeId' cannot be null.");
         else if (excludeEmployeeId !== undefined)
             url += "Filter.ExcludeEmployeeId=" + encodeURIComponent("" + excludeEmployeeId) + "&";
+        if (currencyId === null)
+            throw new globalThis.Error("The parameter 'currencyId' cannot be null.");
+        else if (currencyId !== undefined)
+            url += "Filter.CurrencyId=" + encodeURIComponent("" + currencyId) + "&";
+        if (userId === null)
+            throw new globalThis.Error("The parameter 'userId' cannot be null.");
+        else if (userId !== undefined)
+            url += "Filter.UserId=" + encodeURIComponent("" + userId) + "&";
         if (sort === null)
             throw new globalThis.Error("The parameter 'sort' cannot be null.");
         else if (sort !== undefined)
@@ -4044,12 +4543,14 @@ export class OrderClient implements IOrderClient {
      * @param hasAvailableSpots (optional) 
      * @param isUnassigned (optional) 
      * @param excludeEmployeeId (optional) 
+     * @param currencyId (optional) 
+     * @param userId (optional) 
      * @param sort (optional) 
      * @param offset (optional) 
      * @param limit (optional) 
      * @return OK
      */
-    getPaged(id?: string | undefined, isActive?: boolean | undefined, customerName?: string | undefined, customerEmail?: string | undefined, customerPhone?: string | undefined, displayOrderNumber?: string | undefined, employeeId?: string | undefined, cleaningDateFrom?: Date | undefined, cleaningDateTo?: Date | undefined, paymentStatuses?: PaymentStatus[] | undefined, paymentTypes?: PaymentType[] | undefined, minTotalPrice?: number | undefined, maxTotalPrice?: number | undefined, orderStatuses?: OrderStatus[] | undefined, hasAvailableSpots?: boolean | undefined, isUnassigned?: boolean | undefined, excludeEmployeeId?: string | undefined, sort?: SortDefinition[] | undefined, offset?: number | undefined, limit?: number | undefined): Observable<PagedDataOfOrderListItem> {
+    getPaged(id?: string | undefined, isActive?: boolean | undefined, customerName?: string | undefined, customerEmail?: string | undefined, customerPhone?: string | undefined, displayOrderNumber?: string | undefined, employeeId?: string | undefined, cleaningDateFrom?: Date | undefined, cleaningDateTo?: Date | undefined, paymentStatuses?: PaymentStatus[] | undefined, paymentTypes?: PaymentType[] | undefined, minTotalPrice?: number | undefined, maxTotalPrice?: number | undefined, orderStatuses?: OrderStatus[] | undefined, hasAvailableSpots?: boolean | undefined, isUnassigned?: boolean | undefined, excludeEmployeeId?: string | undefined, currencyId?: string | undefined, userId?: string | undefined, sort?: SortDefinition[] | undefined, offset?: number | undefined, limit?: number | undefined): Observable<PagedDataOfOrderListItem> {
         let url = this.baseUrl + "/api/Order/GetPaged?";
         if (id === null)
             throw new globalThis.Error("The parameter 'id' cannot be null.");
@@ -4119,6 +4620,14 @@ export class OrderClient implements IOrderClient {
             throw new globalThis.Error("The parameter 'excludeEmployeeId' cannot be null.");
         else if (excludeEmployeeId !== undefined)
             url += "Filter.ExcludeEmployeeId=" + encodeURIComponent("" + excludeEmployeeId) + "&";
+        if (currencyId === null)
+            throw new globalThis.Error("The parameter 'currencyId' cannot be null.");
+        else if (currencyId !== undefined)
+            url += "Filter.CurrencyId=" + encodeURIComponent("" + currencyId) + "&";
+        if (userId === null)
+            throw new globalThis.Error("The parameter 'userId' cannot be null.");
+        else if (userId !== undefined)
+            url += "Filter.UserId=" + encodeURIComponent("" + userId) + "&";
         if (sort === null)
             throw new globalThis.Error("The parameter 'sort' cannot be null.");
         else if (sort !== undefined)
@@ -4913,9 +5422,10 @@ export class OrderClient implements IOrderClient {
 
 export interface IPackageClient {
     /**
+     * @param countryId (optional) 
      * @return OK
      */
-    getOverview(): Observable<PackageListItem[]>;
+    getOverview(countryId?: string | undefined): Observable<PackageListItem[]>;
 }
 
 @Injectable({
@@ -4932,10 +5442,15 @@ export class PackageClient implements IPackageClient {
     }
 
     /**
+     * @param countryId (optional) 
      * @return OK
      */
-    getOverview(): Observable<PackageListItem[]> {
-        let url = this.baseUrl + "/api/Package/GetOverview";
+    getOverview(countryId?: string | undefined): Observable<PackageListItem[]> {
+        let url = this.baseUrl + "/api/Package/GetOverview?";
+        if (countryId === null)
+            throw new globalThis.Error("The parameter 'countryId' cannot be null.");
+        else if (countryId !== undefined)
+            url += "countryId=" + encodeURIComponent("" + countryId) + "&";
         url = url.replace(/[?&]$/, "");
 
         let options : any = {
@@ -6430,9 +6945,10 @@ export class SavedAddressClient implements ISavedAddressClient {
 
 export interface IServiceClient {
     /**
+     * @param countryId (optional) 
      * @return OK
      */
-    getOverview(): Observable<ServiceListItem[]>;
+    getOverview(countryId?: string | undefined): Observable<ServiceListItem[]>;
 }
 
 @Injectable({
@@ -6449,10 +6965,15 @@ export class ServiceClient implements IServiceClient {
     }
 
     /**
+     * @param countryId (optional) 
      * @return OK
      */
-    getOverview(): Observable<ServiceListItem[]> {
-        let url = this.baseUrl + "/api/Service/GetOverview";
+    getOverview(countryId?: string | undefined): Observable<ServiceListItem[]> {
+        let url = this.baseUrl + "/api/Service/GetOverview?";
+        if (countryId === null)
+            throw new globalThis.Error("The parameter 'countryId' cannot be null.");
+        else if (countryId !== undefined)
+            url += "countryId=" + encodeURIComponent("" + countryId) + "&";
         url = url.replace(/[?&]$/, "");
 
         let options : any = {
@@ -7033,6 +7554,7 @@ export class AppleAuthCommand implements IAppleAuthCommand {
     firstName!: string | undefined;
     lastName!: string | undefined;
     termsAccepted!: boolean;
+    countryId!: string | undefined;
 
     constructor(data?: IAppleAuthCommand) {
         if (data) {
@@ -7050,6 +7572,7 @@ export class AppleAuthCommand implements IAppleAuthCommand {
             this.firstName = Data["firstName"];
             this.lastName = Data["lastName"];
             this.termsAccepted = Data["termsAccepted"];
+            this.countryId = Data["countryId"];
         }
     }
 
@@ -7067,6 +7590,7 @@ export class AppleAuthCommand implements IAppleAuthCommand {
         data["firstName"] = this.firstName;
         data["lastName"] = this.lastName;
         data["termsAccepted"] = this.termsAccepted;
+        data["countryId"] = this.countryId;
         return data;
     }
 }
@@ -7077,6 +7601,7 @@ export interface IAppleAuthCommand {
     firstName: string | undefined;
     lastName: string | undefined;
     termsAccepted: boolean;
+    countryId: string | undefined;
 }
 
 export enum AppliedDiscountSource {
@@ -7183,6 +7708,58 @@ export interface IBlobFileDto {
     blobUrl: string | undefined;
 }
 
+export class CancelGuestOrderCommand implements ICancelGuestOrderCommand {
+    displayOrderNumber!: string | undefined;
+    email!: string | undefined;
+    confirmationCode!: string | undefined;
+    reason!: string | undefined;
+    language!: string | undefined;
+
+    constructor(data?: ICancelGuestOrderCommand) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.displayOrderNumber = Data["displayOrderNumber"];
+            this.email = Data["email"];
+            this.confirmationCode = Data["confirmationCode"];
+            this.reason = Data["reason"];
+            this.language = Data["language"];
+        }
+    }
+
+    static fromJS(data: any): CancelGuestOrderCommand {
+        data = typeof data === 'object' ? data : {};
+        let result = new CancelGuestOrderCommand();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["displayOrderNumber"] = this.displayOrderNumber;
+        data["email"] = this.email;
+        data["confirmationCode"] = this.confirmationCode;
+        data["reason"] = this.reason;
+        data["language"] = this.language;
+        return data;
+    }
+}
+
+export interface ICancelGuestOrderCommand {
+    displayOrderNumber: string | undefined;
+    email: string | undefined;
+    confirmationCode: string | undefined;
+    reason: string | undefined;
+    language: string | undefined;
+}
+
 export class CancelMembershipSubscriptionResponse implements ICancelMembershipSubscriptionResponse {
     effectiveEndDate!: Date;
 
@@ -7265,6 +7842,7 @@ export class CancelOrderResponse implements ICancelOrderResponse {
     refundAmount!: number;
     totalPrice!: number;
     refundInitiated!: boolean;
+    actualRefundAmount!: number | undefined;
 
     constructor(data?: ICancelOrderResponse) {
         if (data) {
@@ -7282,6 +7860,7 @@ export class CancelOrderResponse implements ICancelOrderResponse {
             this.refundAmount = Data["refundAmount"];
             this.totalPrice = Data["totalPrice"];
             this.refundInitiated = Data["refundInitiated"];
+            this.actualRefundAmount = Data["actualRefundAmount"];
         }
     }
 
@@ -7299,6 +7878,7 @@ export class CancelOrderResponse implements ICancelOrderResponse {
         data["refundAmount"] = this.refundAmount;
         data["totalPrice"] = this.totalPrice;
         data["refundInitiated"] = this.refundInitiated;
+        data["actualRefundAmount"] = this.actualRefundAmount;
         return data;
     }
 }
@@ -7309,6 +7889,7 @@ export interface ICancelOrderResponse {
     refundAmount: number;
     totalPrice: number;
     refundInitiated: boolean;
+    actualRefundAmount: number | undefined;
 }
 
 export enum CancellationFeeTier {
@@ -7741,8 +8322,10 @@ export enum ContractStatus {
 export class CountryListItem implements ICountryListItem {
     id!: string | undefined;
     isoCode!: string | undefined;
+    isoAlpha2!: string | undefined;
     name!: string | undefined;
     translations!: { [key: string]: Translation; } | undefined;
+    isDefaultMarket!: boolean;
 
     constructor(data?: ICountryListItem) {
         if (data) {
@@ -7757,6 +8340,7 @@ export class CountryListItem implements ICountryListItem {
         if (Data) {
             this.id = Data["id"];
             this.isoCode = Data["isoCode"];
+            this.isoAlpha2 = Data["isoAlpha2"];
             this.name = Data["name"];
             if (Data["translations"]) {
                 this.translations = {} as any;
@@ -7765,6 +8349,7 @@ export class CountryListItem implements ICountryListItem {
                         (this.translations as any)![key] = Data["translations"][key] ? Translation.fromJS(Data["translations"][key]) : new Translation();
                 }
             }
+            this.isDefaultMarket = Data["isDefaultMarket"];
         }
     }
 
@@ -7779,6 +8364,7 @@ export class CountryListItem implements ICountryListItem {
         data = typeof data === 'object' ? data : {};
         data["id"] = this.id;
         data["isoCode"] = this.isoCode;
+        data["isoAlpha2"] = this.isoAlpha2;
         data["name"] = this.name;
         if (this.translations) {
             data["translations"] = {};
@@ -7787,6 +8373,7 @@ export class CountryListItem implements ICountryListItem {
                     (data["translations"] as any)[key] = this.translations[key] ? this.translations[key].toJSON() : undefined as any;
             }
         }
+        data["isDefaultMarket"] = this.isDefaultMarket;
         return data;
     }
 }
@@ -7794,8 +8381,10 @@ export class CountryListItem implements ICountryListItem {
 export interface ICountryListItem {
     id: string | undefined;
     isoCode: string | undefined;
+    isoAlpha2: string | undefined;
     name: string | undefined;
     translations: { [key: string]: Translation; } | undefined;
+    isDefaultMarket: boolean;
 }
 
 export class CreateDisputeCommand implements ICreateDisputeCommand {
@@ -7932,6 +8521,7 @@ export interface ICreateDisputeResponse {
 
 export class CreateMembershipCheckoutSessionCommand implements ICreateMembershipCheckoutSessionCommand {
     planCode!: string | undefined;
+    countryId!: string | undefined;
 
     constructor(data?: ICreateMembershipCheckoutSessionCommand) {
         if (data) {
@@ -7945,6 +8535,7 @@ export class CreateMembershipCheckoutSessionCommand implements ICreateMembership
     init(Data?: any) {
         if (Data) {
             this.planCode = Data["planCode"];
+            this.countryId = Data["countryId"];
         }
     }
 
@@ -7958,12 +8549,14 @@ export class CreateMembershipCheckoutSessionCommand implements ICreateMembership
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
         data["planCode"] = this.planCode;
+        data["countryId"] = this.countryId;
         return data;
     }
 }
 
 export interface ICreateMembershipCheckoutSessionCommand {
     planCode: string | undefined;
+    countryId: string | undefined;
 }
 
 export class CreateMembershipCheckoutSessionResponse implements ICreateMembershipCheckoutSessionResponse {
@@ -8005,6 +8598,7 @@ export interface ICreateMembershipCheckoutSessionResponse {
 export class CreateMembershipSubscriptionCommand implements ICreateMembershipSubscriptionCommand {
     planCode!: string | undefined;
     paymentMethodConfirmed!: boolean;
+    countryId!: string | undefined;
     idempotencyToken!: string | undefined;
 
     constructor(data?: ICreateMembershipSubscriptionCommand) {
@@ -8020,6 +8614,7 @@ export class CreateMembershipSubscriptionCommand implements ICreateMembershipSub
         if (Data) {
             this.planCode = Data["planCode"];
             this.paymentMethodConfirmed = Data["paymentMethodConfirmed"];
+            this.countryId = Data["countryId"];
             this.idempotencyToken = Data["idempotencyToken"];
         }
     }
@@ -8035,6 +8630,7 @@ export class CreateMembershipSubscriptionCommand implements ICreateMembershipSub
         data = typeof data === 'object' ? data : {};
         data["planCode"] = this.planCode;
         data["paymentMethodConfirmed"] = this.paymentMethodConfirmed;
+        data["countryId"] = this.countryId;
         data["idempotencyToken"] = this.idempotencyToken;
         return data;
     }
@@ -8043,6 +8639,7 @@ export class CreateMembershipSubscriptionCommand implements ICreateMembershipSub
 export interface ICreateMembershipSubscriptionCommand {
     planCode: string | undefined;
     paymentMethodConfirmed: boolean;
+    countryId: string | undefined;
     idempotencyToken: string | undefined;
 }
 
@@ -8118,6 +8715,7 @@ export class CreateOrderCommand implements ICreateOrderCommand {
     customerFloor!: string | undefined;
     customerApartment!: string | undefined;
     accessMode!: string | undefined;
+    termsAccepted!: boolean | undefined;
 
     constructor(data?: ICreateOrderCommand) {
         if (data) {
@@ -8167,6 +8765,7 @@ export class CreateOrderCommand implements ICreateOrderCommand {
             this.customerFloor = Data["customerFloor"];
             this.customerApartment = Data["customerApartment"];
             this.accessMode = Data["accessMode"];
+            this.termsAccepted = Data["termsAccepted"];
         }
     }
 
@@ -8216,6 +8815,7 @@ export class CreateOrderCommand implements ICreateOrderCommand {
         data["customerFloor"] = this.customerFloor;
         data["customerApartment"] = this.customerApartment;
         data["accessMode"] = this.accessMode;
+        data["termsAccepted"] = this.termsAccepted;
         return data;
     }
 }
@@ -8244,6 +8844,7 @@ export interface ICreateOrderCommand {
     customerFloor: string | undefined;
     customerApartment: string | undefined;
     accessMode: string | undefined;
+    termsAccepted: boolean | undefined;
 }
 
 export class CreateOrderResponse implements ICreateOrderResponse {
@@ -8475,7 +9076,6 @@ export class CurrencyDetailDto implements ICurrencyDetailDto {
     code!: string | undefined;
     name!: string | undefined;
     symbol!: string | undefined;
-    exchangeRate!: number;
     isDefault!: boolean;
 
     constructor(data?: ICurrencyDetailDto) {
@@ -8493,7 +9093,6 @@ export class CurrencyDetailDto implements ICurrencyDetailDto {
             this.code = Data["code"];
             this.name = Data["name"];
             this.symbol = Data["symbol"];
-            this.exchangeRate = Data["exchangeRate"];
             this.isDefault = Data["isDefault"];
         }
     }
@@ -8511,7 +9110,6 @@ export class CurrencyDetailDto implements ICurrencyDetailDto {
         data["code"] = this.code;
         data["name"] = this.name;
         data["symbol"] = this.symbol;
-        data["exchangeRate"] = this.exchangeRate;
         data["isDefault"] = this.isDefault;
         return data;
     }
@@ -8522,7 +9120,6 @@ export interface ICurrencyDetailDto {
     code: string | undefined;
     name: string | undefined;
     symbol: string | undefined;
-    exchangeRate: number;
     isDefault: boolean;
 }
 
@@ -8531,7 +9128,6 @@ export class CurrencyListItem implements ICurrencyListItem {
     code!: string | undefined;
     symbol!: string | undefined;
     name!: string | undefined;
-    exchangeRate!: number;
     isDefault!: boolean;
 
     constructor(data?: ICurrencyListItem) {
@@ -8549,7 +9145,6 @@ export class CurrencyListItem implements ICurrencyListItem {
             this.code = Data["code"];
             this.symbol = Data["symbol"];
             this.name = Data["name"];
-            this.exchangeRate = Data["exchangeRate"];
             this.isDefault = Data["isDefault"];
         }
     }
@@ -8567,7 +9162,6 @@ export class CurrencyListItem implements ICurrencyListItem {
         data["code"] = this.code;
         data["symbol"] = this.symbol;
         data["name"] = this.name;
-        data["exchangeRate"] = this.exchangeRate;
         data["isDefault"] = this.isDefault;
         return data;
     }
@@ -8578,7 +9172,6 @@ export interface ICurrencyListItem {
     code: string | undefined;
     symbol: string | undefined;
     name: string | undefined;
-    exchangeRate: number;
     isDefault: boolean;
 }
 
@@ -9099,6 +9692,7 @@ export class ExtraListItem implements IExtraListItem {
     price!: number;
     displayOrder!: number;
     translations!: { [key: string]: Translation; } | undefined;
+    currencyCode!: string | undefined;
 
     constructor(data?: IExtraListItem) {
         if (data) {
@@ -9124,6 +9718,7 @@ export class ExtraListItem implements IExtraListItem {
                         (this.translations as any)![key] = Data["translations"][key] ? Translation.fromJS(Data["translations"][key]) : new Translation();
                 }
             }
+            this.currencyCode = Data["currencyCode"];
         }
     }
 
@@ -9149,6 +9744,7 @@ export class ExtraListItem implements IExtraListItem {
                     (data["translations"] as any)[key] = this.translations[key] ? this.translations[key].toJSON() : undefined as any;
             }
         }
+        data["currencyCode"] = this.currencyCode;
         return data;
     }
 }
@@ -9161,6 +9757,7 @@ export interface IExtraListItem {
     price: number;
     displayOrder: number;
     translations: { [key: string]: Translation; } | undefined;
+    currencyCode: string | undefined;
 }
 
 export class GdprExportAddressDto implements IGdprExportAddressDto {
@@ -9221,6 +9818,10 @@ export class GdprExportConsentDto implements IGdprExportConsentDto {
     isGranted!: boolean;
     grantedAt!: Date | undefined;
     withdrawnAt!: Date | undefined;
+    ipAddress!: string | undefined;
+    userAgent!: string | undefined;
+    documentVersion!: string | undefined;
+    legalDocumentId!: string | undefined;
 
     constructor(data?: IGdprExportConsentDto) {
         if (data) {
@@ -9238,6 +9839,10 @@ export class GdprExportConsentDto implements IGdprExportConsentDto {
             this.isGranted = Data["isGranted"];
             this.grantedAt = Data["grantedAt"] ? new Date(Data["grantedAt"].toString()) : undefined as any;
             this.withdrawnAt = Data["withdrawnAt"] ? new Date(Data["withdrawnAt"].toString()) : undefined as any;
+            this.ipAddress = Data["ipAddress"];
+            this.userAgent = Data["userAgent"];
+            this.documentVersion = Data["documentVersion"];
+            this.legalDocumentId = Data["legalDocumentId"];
         }
     }
 
@@ -9255,6 +9860,10 @@ export class GdprExportConsentDto implements IGdprExportConsentDto {
         data["isGranted"] = this.isGranted;
         data["grantedAt"] = this.grantedAt ? this.grantedAt.toISOString() : undefined as any;
         data["withdrawnAt"] = this.withdrawnAt ? this.withdrawnAt.toISOString() : undefined as any;
+        data["ipAddress"] = this.ipAddress;
+        data["userAgent"] = this.userAgent;
+        data["documentVersion"] = this.documentVersion;
+        data["legalDocumentId"] = this.legalDocumentId;
         return data;
     }
 }
@@ -9265,6 +9874,222 @@ export interface IGdprExportConsentDto {
     isGranted: boolean;
     grantedAt: Date | undefined;
     withdrawnAt: Date | undefined;
+    ipAddress: string | undefined;
+    userAgent: string | undefined;
+    documentVersion: string | undefined;
+    legalDocumentId: string | undefined;
+}
+
+export class GdprExportCustomerActionDto implements IGdprExportCustomerActionDto {
+    action!: string | undefined;
+    occurredOn!: Date;
+    resourceType!: string | undefined;
+    resourceId!: string | undefined;
+    success!: boolean;
+    errorCode!: string | undefined;
+    payloadJson!: string | undefined;
+    ipAddress!: string | undefined;
+    deviceLabel!: string | undefined;
+
+    constructor(data?: IGdprExportCustomerActionDto) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.action = Data["action"];
+            this.occurredOn = Data["occurredOn"] ? new Date(Data["occurredOn"].toString()) : undefined as any;
+            this.resourceType = Data["resourceType"];
+            this.resourceId = Data["resourceId"];
+            this.success = Data["success"];
+            this.errorCode = Data["errorCode"];
+            this.payloadJson = Data["payloadJson"];
+            this.ipAddress = Data["ipAddress"];
+            this.deviceLabel = Data["deviceLabel"];
+        }
+    }
+
+    static fromJS(data: any): GdprExportCustomerActionDto {
+        data = typeof data === 'object' ? data : {};
+        let result = new GdprExportCustomerActionDto();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["action"] = this.action;
+        data["occurredOn"] = this.occurredOn ? this.occurredOn.toISOString() : undefined as any;
+        data["resourceType"] = this.resourceType;
+        data["resourceId"] = this.resourceId;
+        data["success"] = this.success;
+        data["errorCode"] = this.errorCode;
+        data["payloadJson"] = this.payloadJson;
+        data["ipAddress"] = this.ipAddress;
+        data["deviceLabel"] = this.deviceLabel;
+        return data;
+    }
+}
+
+export interface IGdprExportCustomerActionDto {
+    action: string | undefined;
+    occurredOn: Date;
+    resourceType: string | undefined;
+    resourceId: string | undefined;
+    success: boolean;
+    errorCode: string | undefined;
+    payloadJson: string | undefined;
+    ipAddress: string | undefined;
+    deviceLabel: string | undefined;
+}
+
+export class GdprExportDisputeDto implements IGdprExportDisputeDto {
+    id!: string | undefined;
+    orderId!: string | undefined;
+    orderDisplayNumber!: string | undefined;
+    reason!: string | undefined;
+    description!: string | undefined;
+    status!: string | undefined;
+    resolutionNotes!: string | undefined;
+    refundAmount!: number | undefined;
+    currencyCode!: string | undefined;
+    createdOn!: Date;
+    resolvedOn!: Date | undefined;
+    messages!: GdprExportDisputeMessageDto[] | undefined;
+    evidenceFileNames!: string[] | undefined;
+
+    constructor(data?: IGdprExportDisputeDto) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.id = Data["id"];
+            this.orderId = Data["orderId"];
+            this.orderDisplayNumber = Data["orderDisplayNumber"];
+            this.reason = Data["reason"];
+            this.description = Data["description"];
+            this.status = Data["status"];
+            this.resolutionNotes = Data["resolutionNotes"];
+            this.refundAmount = Data["refundAmount"];
+            this.currencyCode = Data["currencyCode"];
+            this.createdOn = Data["createdOn"] ? new Date(Data["createdOn"].toString()) : undefined as any;
+            this.resolvedOn = Data["resolvedOn"] ? new Date(Data["resolvedOn"].toString()) : undefined as any;
+            if (Array.isArray(Data["messages"])) {
+                this.messages = [] as any;
+                for (let item of Data["messages"])
+                    this.messages!.push(GdprExportDisputeMessageDto.fromJS(item));
+            }
+            if (Array.isArray(Data["evidenceFileNames"])) {
+                this.evidenceFileNames = [] as any;
+                for (let item of Data["evidenceFileNames"])
+                    this.evidenceFileNames!.push(item);
+            }
+        }
+    }
+
+    static fromJS(data: any): GdprExportDisputeDto {
+        data = typeof data === 'object' ? data : {};
+        let result = new GdprExportDisputeDto();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["id"] = this.id;
+        data["orderId"] = this.orderId;
+        data["orderDisplayNumber"] = this.orderDisplayNumber;
+        data["reason"] = this.reason;
+        data["description"] = this.description;
+        data["status"] = this.status;
+        data["resolutionNotes"] = this.resolutionNotes;
+        data["refundAmount"] = this.refundAmount;
+        data["currencyCode"] = this.currencyCode;
+        data["createdOn"] = this.createdOn ? this.createdOn.toISOString() : undefined as any;
+        data["resolvedOn"] = this.resolvedOn ? this.resolvedOn.toISOString() : undefined as any;
+        if (Array.isArray(this.messages)) {
+            data["messages"] = [];
+            for (let item of this.messages)
+                data["messages"].push(item ? item.toJSON() : undefined as any);
+        }
+        if (Array.isArray(this.evidenceFileNames)) {
+            data["evidenceFileNames"] = [];
+            for (let item of this.evidenceFileNames)
+                data["evidenceFileNames"].push(item);
+        }
+        return data;
+    }
+}
+
+export interface IGdprExportDisputeDto {
+    id: string | undefined;
+    orderId: string | undefined;
+    orderDisplayNumber: string | undefined;
+    reason: string | undefined;
+    description: string | undefined;
+    status: string | undefined;
+    resolutionNotes: string | undefined;
+    refundAmount: number | undefined;
+    currencyCode: string | undefined;
+    createdOn: Date;
+    resolvedOn: Date | undefined;
+    messages: GdprExportDisputeMessageDto[] | undefined;
+    evidenceFileNames: string[] | undefined;
+}
+
+export class GdprExportDisputeMessageDto implements IGdprExportDisputeMessageDto {
+    authorRole!: string | undefined;
+    sentAt!: Date;
+    text!: string | undefined;
+
+    constructor(data?: IGdprExportDisputeMessageDto) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.authorRole = Data["authorRole"];
+            this.sentAt = Data["sentAt"] ? new Date(Data["sentAt"].toString()) : undefined as any;
+            this.text = Data["text"];
+        }
+    }
+
+    static fromJS(data: any): GdprExportDisputeMessageDto {
+        data = typeof data === 'object' ? data : {};
+        let result = new GdprExportDisputeMessageDto();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["authorRole"] = this.authorRole;
+        data["sentAt"] = this.sentAt ? this.sentAt.toISOString() : undefined as any;
+        data["text"] = this.text;
+        return data;
+    }
+}
+
+export interface IGdprExportDisputeMessageDto {
+    authorRole: string | undefined;
+    sentAt: Date;
+    text: string | undefined;
 }
 
 export class GdprExportDocumentDto implements IGdprExportDocumentDto {
@@ -9321,9 +10146,11 @@ export class GdprExportDto implements IGdprExportDto {
     employee!: GdprExportEmployeeDto;
     payoutDetails!: GdprExportPayoutDetailsDto;
     orders!: GdprExportOrderDto[] | undefined;
+    disputes!: GdprExportDisputeDto[] | undefined;
     documents!: GdprExportDocumentDto[] | undefined;
     invoices!: GdprExportInvoiceDto[] | undefined;
     consents!: GdprExportConsentDto[] | undefined;
+    customerActions!: GdprExportCustomerActionDto[] | undefined;
     metadata!: GdprExportMetadataDto;
 
     constructor(data?: IGdprExportDto) {
@@ -9346,6 +10173,11 @@ export class GdprExportDto implements IGdprExportDto {
                 for (let item of Data["orders"])
                     this.orders!.push(GdprExportOrderDto.fromJS(item));
             }
+            if (Array.isArray(Data["disputes"])) {
+                this.disputes = [] as any;
+                for (let item of Data["disputes"])
+                    this.disputes!.push(GdprExportDisputeDto.fromJS(item));
+            }
             if (Array.isArray(Data["documents"])) {
                 this.documents = [] as any;
                 for (let item of Data["documents"])
@@ -9360,6 +10192,11 @@ export class GdprExportDto implements IGdprExportDto {
                 this.consents = [] as any;
                 for (let item of Data["consents"])
                     this.consents!.push(GdprExportConsentDto.fromJS(item));
+            }
+            if (Array.isArray(Data["customerActions"])) {
+                this.customerActions = [] as any;
+                for (let item of Data["customerActions"])
+                    this.customerActions!.push(GdprExportCustomerActionDto.fromJS(item));
             }
             this.metadata = Data["metadata"] ? GdprExportMetadataDto.fromJS(Data["metadata"]) : undefined as any;
         }
@@ -9383,6 +10220,11 @@ export class GdprExportDto implements IGdprExportDto {
             for (let item of this.orders)
                 data["orders"].push(item ? item.toJSON() : undefined as any);
         }
+        if (Array.isArray(this.disputes)) {
+            data["disputes"] = [];
+            for (let item of this.disputes)
+                data["disputes"].push(item ? item.toJSON() : undefined as any);
+        }
         if (Array.isArray(this.documents)) {
             data["documents"] = [];
             for (let item of this.documents)
@@ -9398,6 +10240,11 @@ export class GdprExportDto implements IGdprExportDto {
             for (let item of this.consents)
                 data["consents"].push(item ? item.toJSON() : undefined as any);
         }
+        if (Array.isArray(this.customerActions)) {
+            data["customerActions"] = [];
+            for (let item of this.customerActions)
+                data["customerActions"].push(item ? item.toJSON() : undefined as any);
+        }
         data["metadata"] = this.metadata ? this.metadata.toJSON() : undefined as any;
         return data;
     }
@@ -9409,9 +10256,11 @@ export interface IGdprExportDto {
     employee: GdprExportEmployeeDto;
     payoutDetails: GdprExportPayoutDetailsDto;
     orders: GdprExportOrderDto[] | undefined;
+    disputes: GdprExportDisputeDto[] | undefined;
     documents: GdprExportDocumentDto[] | undefined;
     invoices: GdprExportInvoiceDto[] | undefined;
     consents: GdprExportConsentDto[] | undefined;
+    customerActions: GdprExportCustomerActionDto[] | undefined;
     metadata: GdprExportMetadataDto;
 }
 
@@ -9419,7 +10268,6 @@ export class GdprExportEmployeeDto implements IGdprExportEmployeeDto {
     id!: string | undefined;
     entityType!: EmployeeEntityType;
     registrationNumber!: string | undefined;
-    vatNumber!: string | undefined;
     legalEntityName!: string | undefined;
     iban!: string | undefined;
     passportId!: string | undefined;
@@ -9445,7 +10293,6 @@ export class GdprExportEmployeeDto implements IGdprExportEmployeeDto {
             this.id = Data["id"];
             this.entityType = Data["entityType"];
             this.registrationNumber = Data["registrationNumber"];
-            this.vatNumber = Data["vatNumber"];
             this.legalEntityName = Data["legalEntityName"];
             this.iban = Data["iban"];
             this.passportId = Data["passportId"];
@@ -9471,7 +10318,6 @@ export class GdprExportEmployeeDto implements IGdprExportEmployeeDto {
         data["id"] = this.id;
         data["entityType"] = this.entityType;
         data["registrationNumber"] = this.registrationNumber;
-        data["vatNumber"] = this.vatNumber;
         data["legalEntityName"] = this.legalEntityName;
         data["iban"] = this.iban;
         data["passportId"] = this.passportId;
@@ -9490,7 +10336,6 @@ export interface IGdprExportEmployeeDto {
     id: string | undefined;
     entityType: EmployeeEntityType;
     registrationNumber: string | undefined;
-    vatNumber: string | undefined;
     legalEntityName: string | undefined;
     iban: string | undefined;
     passportId: string | undefined;
@@ -9667,6 +10512,7 @@ export class GdprExportPayoutDetailsDto implements IGdprExportPayoutDetailsDto {
     scheme!: PayoutScheme;
     status!: PayoutDetailsStatus;
     bankCountryId!: string | undefined;
+    currencyId!: string | undefined;
     accountPrefix!: string | undefined;
     accountNumber!: string | undefined;
     bankCode!: string | undefined;
@@ -9692,6 +10538,7 @@ export class GdprExportPayoutDetailsDto implements IGdprExportPayoutDetailsDto {
             this.scheme = Data["scheme"];
             this.status = Data["status"];
             this.bankCountryId = Data["bankCountryId"];
+            this.currencyId = Data["currencyId"];
             this.accountPrefix = Data["accountPrefix"];
             this.accountNumber = Data["accountNumber"];
             this.bankCode = Data["bankCode"];
@@ -9717,6 +10564,7 @@ export class GdprExportPayoutDetailsDto implements IGdprExportPayoutDetailsDto {
         data["scheme"] = this.scheme;
         data["status"] = this.status;
         data["bankCountryId"] = this.bankCountryId;
+        data["currencyId"] = this.currencyId;
         data["accountPrefix"] = this.accountPrefix;
         data["accountNumber"] = this.accountNumber;
         data["bankCode"] = this.bankCode;
@@ -9735,6 +10583,7 @@ export interface IGdprExportPayoutDetailsDto {
     scheme: PayoutScheme;
     status: PayoutDetailsStatus;
     bankCountryId: string | undefined;
+    currencyId: string | undefined;
     accountPrefix: string | undefined;
     accountNumber: string | undefined;
     bankCode: string | undefined;
@@ -9903,6 +10752,50 @@ export class GetCurrentUserQuery implements IGetCurrentUserQuery {
 }
 
 export interface IGetCurrentUserQuery {
+}
+
+export class GetGuestCancellationFeePreviewQuery implements IGetGuestCancellationFeePreviewQuery {
+    displayOrderNumber!: string | undefined;
+    email!: string | undefined;
+    confirmationCode!: string | undefined;
+
+    constructor(data?: IGetGuestCancellationFeePreviewQuery) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.displayOrderNumber = Data["displayOrderNumber"];
+            this.email = Data["email"];
+            this.confirmationCode = Data["confirmationCode"];
+        }
+    }
+
+    static fromJS(data: any): GetGuestCancellationFeePreviewQuery {
+        data = typeof data === 'object' ? data : {};
+        let result = new GetGuestCancellationFeePreviewQuery();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["displayOrderNumber"] = this.displayOrderNumber;
+        data["email"] = this.email;
+        data["confirmationCode"] = this.confirmationCode;
+        return data;
+    }
+}
+
+export interface IGetGuestCancellationFeePreviewQuery {
+    displayOrderNumber: string | undefined;
+    email: string | undefined;
+    confirmationCode: string | undefined;
 }
 
 export class GetLoyaltyActivityActivityItem implements IGetLoyaltyActivityActivityItem {
@@ -10117,6 +11010,7 @@ export class GetMembershipPlansResponse implements IGetMembershipPlansResponse {
     expressUpgradesPerMonth!: number;
     trialPeriodDays!: number;
     savingsPercentVsMonthly!: number;
+    currencyCode!: string | undefined;
 
     constructor(data?: IGetMembershipPlansResponse) {
         if (data) {
@@ -10140,6 +11034,7 @@ export class GetMembershipPlansResponse implements IGetMembershipPlansResponse {
             this.expressUpgradesPerMonth = Data["expressUpgradesPerMonth"];
             this.trialPeriodDays = Data["trialPeriodDays"];
             this.savingsPercentVsMonthly = Data["savingsPercentVsMonthly"];
+            this.currencyCode = Data["currencyCode"];
         }
     }
 
@@ -10163,6 +11058,7 @@ export class GetMembershipPlansResponse implements IGetMembershipPlansResponse {
         data["expressUpgradesPerMonth"] = this.expressUpgradesPerMonth;
         data["trialPeriodDays"] = this.trialPeriodDays;
         data["savingsPercentVsMonthly"] = this.savingsPercentVsMonthly;
+        data["currencyCode"] = this.currencyCode;
         return data;
     }
 }
@@ -10179,6 +11075,51 @@ export interface IGetMembershipPlansResponse {
     expressUpgradesPerMonth: number;
     trialPeriodDays: number;
     savingsPercentVsMonthly: number;
+    currencyCode: string | undefined;
+}
+
+export class GetMyCreditCurrencyBalance implements IGetMyCreditCurrencyBalance {
+    balance!: number;
+    currencyCode!: string | undefined;
+    expiresOn!: Date | undefined;
+
+    constructor(data?: IGetMyCreditCurrencyBalance) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.balance = Data["balance"];
+            this.currencyCode = Data["currencyCode"];
+            this.expiresOn = Data["expiresOn"] ? new Date(Data["expiresOn"].toString()) : undefined as any;
+        }
+    }
+
+    static fromJS(data: any): GetMyCreditCurrencyBalance {
+        data = typeof data === 'object' ? data : {};
+        let result = new GetMyCreditCurrencyBalance();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["balance"] = this.balance;
+        data["currencyCode"] = this.currencyCode;
+        data["expiresOn"] = this.expiresOn ? this.expiresOn.toISOString() : undefined as any;
+        return data;
+    }
+}
+
+export interface IGetMyCreditCurrencyBalance {
+    balance: number;
+    currencyCode: string | undefined;
+    expiresOn: Date | undefined;
 }
 
 export class GetMyCreditResponse implements IGetMyCreditResponse {
@@ -10187,6 +11128,7 @@ export class GetMyCreditResponse implements IGetMyCreditResponse {
     maxShareOfOrder!: number;
     appliesAutomatically!: boolean;
     expiresOn!: Date | undefined;
+    balances!: GetMyCreditCurrencyBalance[] | undefined;
 
     constructor(data?: IGetMyCreditResponse) {
         if (data) {
@@ -10204,6 +11146,11 @@ export class GetMyCreditResponse implements IGetMyCreditResponse {
             this.maxShareOfOrder = Data["maxShareOfOrder"];
             this.appliesAutomatically = Data["appliesAutomatically"];
             this.expiresOn = Data["expiresOn"] ? new Date(Data["expiresOn"].toString()) : undefined as any;
+            if (Array.isArray(Data["balances"])) {
+                this.balances = [] as any;
+                for (let item of Data["balances"])
+                    this.balances!.push(GetMyCreditCurrencyBalance.fromJS(item));
+            }
         }
     }
 
@@ -10221,6 +11168,11 @@ export class GetMyCreditResponse implements IGetMyCreditResponse {
         data["maxShareOfOrder"] = this.maxShareOfOrder;
         data["appliesAutomatically"] = this.appliesAutomatically;
         data["expiresOn"] = this.expiresOn ? this.expiresOn.toISOString() : undefined as any;
+        if (Array.isArray(this.balances)) {
+            data["balances"] = [];
+            for (let item of this.balances)
+                data["balances"].push(item ? item.toJSON() : undefined as any);
+        }
         return data;
     }
 }
@@ -10231,6 +11183,7 @@ export interface IGetMyCreditResponse {
     maxShareOfOrder: number;
     appliesAutomatically: boolean;
     expiresOn: Date | undefined;
+    balances: GetMyCreditCurrencyBalance[] | undefined;
 }
 
 export class GetMyLoyaltyResponse implements IGetMyLoyaltyResponse {
@@ -10353,7 +11306,7 @@ export class GetMyMembershipResponse implements IGetMyMembershipResponse {
     hasMembership!: boolean;
     planCode!: string | undefined;
     planName!: string | undefined;
-    monthlyPriceCzk!: number | undefined;
+    price!: number | undefined;
     discountPercentage!: number | undefined;
     freeCancellationWindowHours!: number | undefined;
     allowsExpressUpgrade!: boolean | undefined;
@@ -10361,11 +11314,12 @@ export class GetMyMembershipResponse implements IGetMyMembershipResponse {
     currentPeriodEnd!: Date | undefined;
     cancelRequested!: boolean;
     billingInterval!: number | undefined;
-    monthlyEquivalentPriceCzk!: number | undefined;
+    monthlyEquivalentPrice!: number | undefined;
     expressUpgradesPerMonth!: number | undefined;
     expressUpgradesRemaining!: number | undefined;
     trialEndsAtUtc!: Date | undefined;
     trialEligible!: boolean;
+    currencyCode!: string | undefined;
 
     constructor(data?: IGetMyMembershipResponse) {
         if (data) {
@@ -10381,7 +11335,7 @@ export class GetMyMembershipResponse implements IGetMyMembershipResponse {
             this.hasMembership = Data["hasMembership"];
             this.planCode = Data["planCode"];
             this.planName = Data["planName"];
-            this.monthlyPriceCzk = Data["monthlyPriceCzk"];
+            this.price = Data["price"];
             this.discountPercentage = Data["discountPercentage"];
             this.freeCancellationWindowHours = Data["freeCancellationWindowHours"];
             this.allowsExpressUpgrade = Data["allowsExpressUpgrade"];
@@ -10389,11 +11343,12 @@ export class GetMyMembershipResponse implements IGetMyMembershipResponse {
             this.currentPeriodEnd = Data["currentPeriodEnd"] ? new Date(Data["currentPeriodEnd"].toString()) : undefined as any;
             this.cancelRequested = Data["cancelRequested"];
             this.billingInterval = Data["billingInterval"];
-            this.monthlyEquivalentPriceCzk = Data["monthlyEquivalentPriceCzk"];
+            this.monthlyEquivalentPrice = Data["monthlyEquivalentPrice"];
             this.expressUpgradesPerMonth = Data["expressUpgradesPerMonth"];
             this.expressUpgradesRemaining = Data["expressUpgradesRemaining"];
             this.trialEndsAtUtc = Data["trialEndsAtUtc"] ? new Date(Data["trialEndsAtUtc"].toString()) : undefined as any;
             this.trialEligible = Data["trialEligible"];
+            this.currencyCode = Data["currencyCode"];
         }
     }
 
@@ -10409,7 +11364,7 @@ export class GetMyMembershipResponse implements IGetMyMembershipResponse {
         data["hasMembership"] = this.hasMembership;
         data["planCode"] = this.planCode;
         data["planName"] = this.planName;
-        data["monthlyPriceCzk"] = this.monthlyPriceCzk;
+        data["price"] = this.price;
         data["discountPercentage"] = this.discountPercentage;
         data["freeCancellationWindowHours"] = this.freeCancellationWindowHours;
         data["allowsExpressUpgrade"] = this.allowsExpressUpgrade;
@@ -10417,11 +11372,12 @@ export class GetMyMembershipResponse implements IGetMyMembershipResponse {
         data["currentPeriodEnd"] = this.currentPeriodEnd ? this.currentPeriodEnd.toISOString() : undefined as any;
         data["cancelRequested"] = this.cancelRequested;
         data["billingInterval"] = this.billingInterval;
-        data["monthlyEquivalentPriceCzk"] = this.monthlyEquivalentPriceCzk;
+        data["monthlyEquivalentPrice"] = this.monthlyEquivalentPrice;
         data["expressUpgradesPerMonth"] = this.expressUpgradesPerMonth;
         data["expressUpgradesRemaining"] = this.expressUpgradesRemaining;
         data["trialEndsAtUtc"] = this.trialEndsAtUtc ? this.trialEndsAtUtc.toISOString() : undefined as any;
         data["trialEligible"] = this.trialEligible;
+        data["currencyCode"] = this.currencyCode;
         return data;
     }
 }
@@ -10430,7 +11386,7 @@ export interface IGetMyMembershipResponse {
     hasMembership: boolean;
     planCode: string | undefined;
     planName: string | undefined;
-    monthlyPriceCzk: number | undefined;
+    price: number | undefined;
     discountPercentage: number | undefined;
     freeCancellationWindowHours: number | undefined;
     allowsExpressUpgrade: boolean | undefined;
@@ -10438,11 +11394,12 @@ export interface IGetMyMembershipResponse {
     currentPeriodEnd: Date | undefined;
     cancelRequested: boolean;
     billingInterval: number | undefined;
-    monthlyEquivalentPriceCzk: number | undefined;
+    monthlyEquivalentPrice: number | undefined;
     expressUpgradesPerMonth: number | undefined;
     expressUpgradesRemaining: number | undefined;
     trialEndsAtUtc: Date | undefined;
     trialEligible: boolean;
+    currencyCode: string | undefined;
 }
 
 export class GetMyReferralResponse implements IGetMyReferralResponse {
@@ -10796,6 +11753,7 @@ export class GoogleAuthCommand implements IGoogleAuthCommand {
     firstName!: string | undefined;
     lastName!: string | undefined;
     termsAccepted!: boolean;
+    countryId!: string | undefined;
 
     constructor(data?: IGoogleAuthCommand) {
         if (data) {
@@ -10814,6 +11772,7 @@ export class GoogleAuthCommand implements IGoogleAuthCommand {
             this.firstName = Data["firstName"];
             this.lastName = Data["lastName"];
             this.termsAccepted = Data["termsAccepted"];
+            this.countryId = Data["countryId"];
         }
     }
 
@@ -10832,6 +11791,7 @@ export class GoogleAuthCommand implements IGoogleAuthCommand {
         data["firstName"] = this.firstName;
         data["lastName"] = this.lastName;
         data["termsAccepted"] = this.termsAccepted;
+        data["countryId"] = this.countryId;
         return data;
     }
 }
@@ -10843,6 +11803,7 @@ export interface IGoogleAuthCommand {
     firstName: string | undefined;
     lastName: string | undefined;
     termsAccepted: boolean;
+    countryId: string | undefined;
 }
 
 export class GrantConsentCommand implements IGrantConsentCommand {
@@ -10891,6 +11852,7 @@ export class JwtTokenResponse implements IJwtTokenResponse {
     refreshTokenExpiresAt!: Date | undefined;
     csrfToken!: string | undefined;
     role!: string | undefined;
+    adminRole!: string | undefined;
 
     constructor(data?: IJwtTokenResponse) {
         if (data) {
@@ -10912,6 +11874,7 @@ export class JwtTokenResponse implements IJwtTokenResponse {
             this.refreshTokenExpiresAt = Data["refreshTokenExpiresAt"] ? new Date(Data["refreshTokenExpiresAt"].toString()) : undefined as any;
             this.csrfToken = Data["csrfToken"];
             this.role = Data["role"];
+            this.adminRole = Data["adminRole"];
         }
     }
 
@@ -10933,6 +11896,7 @@ export class JwtTokenResponse implements IJwtTokenResponse {
         data["refreshTokenExpiresAt"] = this.refreshTokenExpiresAt ? this.refreshTokenExpiresAt.toISOString() : undefined as any;
         data["csrfToken"] = this.csrfToken;
         data["role"] = this.role;
+        data["adminRole"] = this.adminRole;
         return data;
     }
 }
@@ -10947,6 +11911,7 @@ export interface IJwtTokenResponse {
     refreshTokenExpiresAt: Date | undefined;
     csrfToken: string | undefined;
     role: string | undefined;
+    adminRole: string | undefined;
 }
 
 export class LanguageListItem implements ILanguageListItem {
@@ -10991,6 +11956,75 @@ export interface ILanguageListItem {
     id: string | undefined;
     code: string | undefined;
     name: string | undefined;
+}
+
+export class LegalDocumentDto implements ILegalDocumentDto {
+    type!: LegalDocumentType;
+    countryId!: string | undefined;
+    version!: string | undefined;
+    effectiveFrom!: Date;
+    language!: string | undefined;
+    title!: string | undefined;
+    contentHtml!: string | undefined;
+    contentHash!: string | undefined;
+
+    constructor(data?: ILegalDocumentDto) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.type = Data["type"];
+            this.countryId = Data["countryId"];
+            this.version = Data["version"];
+            this.effectiveFrom = Data["effectiveFrom"] ? new Date(Data["effectiveFrom"].toString()) : undefined as any;
+            this.language = Data["language"];
+            this.title = Data["title"];
+            this.contentHtml = Data["contentHtml"];
+            this.contentHash = Data["contentHash"];
+        }
+    }
+
+    static fromJS(data: any): LegalDocumentDto {
+        data = typeof data === 'object' ? data : {};
+        let result = new LegalDocumentDto();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["type"] = this.type;
+        data["countryId"] = this.countryId;
+        data["version"] = this.version;
+        data["effectiveFrom"] = this.effectiveFrom ? formatDate(this.effectiveFrom) : undefined as any;
+        data["language"] = this.language;
+        data["title"] = this.title;
+        data["contentHtml"] = this.contentHtml;
+        data["contentHash"] = this.contentHash;
+        return data;
+    }
+}
+
+export interface ILegalDocumentDto {
+    type: LegalDocumentType;
+    countryId: string | undefined;
+    version: string | undefined;
+    effectiveFrom: Date;
+    language: string | undefined;
+    title: string | undefined;
+    contentHtml: string | undefined;
+    contentHash: string | undefined;
+}
+
+export enum LegalDocumentType {
+    TermsOfService = 0,
+    PrivacyPolicy = 1,
 }
 
 export class LoginCommand implements ILoginCommand {
@@ -11201,6 +12235,50 @@ export interface ILookupOrderBatchResponse {
     orders: LookupOrderResponse[] | undefined;
 }
 
+export class LookupOrderQuery implements ILookupOrderQuery {
+    displayOrderNumber!: string | undefined;
+    email!: string | undefined;
+    confirmationCode!: string | undefined;
+
+    constructor(data?: ILookupOrderQuery) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.displayOrderNumber = Data["displayOrderNumber"];
+            this.email = Data["email"];
+            this.confirmationCode = Data["confirmationCode"];
+        }
+    }
+
+    static fromJS(data: any): LookupOrderQuery {
+        data = typeof data === 'object' ? data : {};
+        let result = new LookupOrderQuery();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["displayOrderNumber"] = this.displayOrderNumber;
+        data["email"] = this.email;
+        data["confirmationCode"] = this.confirmationCode;
+        return data;
+    }
+}
+
+export interface ILookupOrderQuery {
+    displayOrderNumber: string | undefined;
+    email: string | undefined;
+    confirmationCode: string | undefined;
+}
+
 export class LookupOrderResponse implements ILookupOrderResponse {
     id!: string | undefined;
     displayOrderNumber!: string | undefined;
@@ -11336,6 +12414,94 @@ export enum LoyaltyTier {
 export enum LoyaltyTransactionType {
     Earn = 1,
     Revoke = 2,
+}
+
+export class MarketListItem implements IMarketListItem {
+    countryId!: string | undefined;
+    isoCode!: string | undefined;
+    isoAlpha2!: string | undefined;
+    name!: string | undefined;
+    translations!: { [key: string]: Translation; } | undefined;
+    currencyId!: string | undefined;
+    currencyCode!: string | undefined;
+    currencySymbol!: string | undefined;
+    isDefault!: boolean;
+    noShowCredit!: number | undefined;
+    insuranceCoverageAmount!: number | undefined;
+
+    constructor(data?: IMarketListItem) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.countryId = Data["countryId"];
+            this.isoCode = Data["isoCode"];
+            this.isoAlpha2 = Data["isoAlpha2"];
+            this.name = Data["name"];
+            if (Data["translations"]) {
+                this.translations = {} as any;
+                for (let key in Data["translations"]) {
+                    if (Data["translations"].hasOwnProperty(key))
+                        (this.translations as any)![key] = Data["translations"][key] ? Translation.fromJS(Data["translations"][key]) : new Translation();
+                }
+            }
+            this.currencyId = Data["currencyId"];
+            this.currencyCode = Data["currencyCode"];
+            this.currencySymbol = Data["currencySymbol"];
+            this.isDefault = Data["isDefault"];
+            this.noShowCredit = Data["noShowCredit"];
+            this.insuranceCoverageAmount = Data["insuranceCoverageAmount"];
+        }
+    }
+
+    static fromJS(data: any): MarketListItem {
+        data = typeof data === 'object' ? data : {};
+        let result = new MarketListItem();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["countryId"] = this.countryId;
+        data["isoCode"] = this.isoCode;
+        data["isoAlpha2"] = this.isoAlpha2;
+        data["name"] = this.name;
+        if (this.translations) {
+            data["translations"] = {};
+            for (let key in this.translations) {
+                if (this.translations.hasOwnProperty(key))
+                    (data["translations"] as any)[key] = this.translations[key] ? this.translations[key].toJSON() : undefined as any;
+            }
+        }
+        data["currencyId"] = this.currencyId;
+        data["currencyCode"] = this.currencyCode;
+        data["currencySymbol"] = this.currencySymbol;
+        data["isDefault"] = this.isDefault;
+        data["noShowCredit"] = this.noShowCredit;
+        data["insuranceCoverageAmount"] = this.insuranceCoverageAmount;
+        return data;
+    }
+}
+
+export interface IMarketListItem {
+    countryId: string | undefined;
+    isoCode: string | undefined;
+    isoAlpha2: string | undefined;
+    name: string | undefined;
+    translations: { [key: string]: Translation; } | undefined;
+    currencyId: string | undefined;
+    currencyCode: string | undefined;
+    currencySymbol: string | undefined;
+    isDefault: boolean;
+    noShowCredit: number | undefined;
+    insuranceCoverageAmount: number | undefined;
 }
 
 export enum MembershipStatus {
@@ -11683,6 +12849,8 @@ export class OrderItem implements IOrderItem {
     preferredOffer!: PreferredOfferDetails;
     hasAccessInstructions!: boolean | undefined;
     systemCancellationReason!: string | undefined;
+    customerCompany!: string | undefined;
+    countryId!: string | undefined;
 
     constructor(data?: IOrderItem) {
         if (data) {
@@ -11782,6 +12950,8 @@ export class OrderItem implements IOrderItem {
             this.preferredOffer = Data["preferredOffer"] ? PreferredOfferDetails.fromJS(Data["preferredOffer"]) : undefined as any;
             this.hasAccessInstructions = Data["hasAccessInstructions"];
             this.systemCancellationReason = Data["systemCancellationReason"];
+            this.customerCompany = Data["customerCompany"];
+            this.countryId = Data["countryId"];
         }
     }
 
@@ -11881,6 +13051,8 @@ export class OrderItem implements IOrderItem {
         data["preferredOffer"] = this.preferredOffer ? this.preferredOffer.toJSON() : undefined as any;
         data["hasAccessInstructions"] = this.hasAccessInstructions;
         data["systemCancellationReason"] = this.systemCancellationReason;
+        data["customerCompany"] = this.customerCompany;
+        data["countryId"] = this.countryId;
         return data;
     }
 }
@@ -11943,6 +13115,8 @@ export interface IOrderItem {
     preferredOffer: PreferredOfferDetails;
     hasAccessInstructions: boolean | undefined;
     systemCancellationReason: string | undefined;
+    customerCompany: string | undefined;
+    countryId: string | undefined;
 }
 
 export class OrderListItem implements IOrderListItem {
@@ -11984,6 +13158,7 @@ export class OrderListItem implements IOrderListItem {
     customerAddressLatitude!: number | undefined;
     customerAddressLongitude!: number | undefined;
     hasReview!: boolean;
+    countryId!: string | undefined;
 
     constructor(data?: IOrderListItem) {
         if (data) {
@@ -12052,6 +13227,7 @@ export class OrderListItem implements IOrderListItem {
             this.customerAddressLatitude = Data["customerAddressLatitude"];
             this.customerAddressLongitude = Data["customerAddressLongitude"];
             this.hasReview = Data["hasReview"];
+            this.countryId = Data["countryId"];
         }
     }
 
@@ -12120,6 +13296,7 @@ export class OrderListItem implements IOrderListItem {
         data["customerAddressLatitude"] = this.customerAddressLatitude;
         data["customerAddressLongitude"] = this.customerAddressLongitude;
         data["hasReview"] = this.hasReview;
+        data["countryId"] = this.countryId;
         return data;
     }
 }
@@ -12163,6 +13340,7 @@ export interface IOrderListItem {
     customerAddressLatitude: number | undefined;
     customerAddressLongitude: number | undefined;
     hasReview: boolean;
+    countryId: string | undefined;
 }
 
 export class OrderNoteDto implements IOrderNoteDto {
@@ -12500,6 +13678,7 @@ export class PackageListItem implements IPackageListItem {
     price!: number;
     translations!: { [key: string]: Translation; } | undefined;
     includedServices!: PackageServiceSummary[] | undefined;
+    currencyCode!: string | undefined;
 
     constructor(data?: IPackageListItem) {
         if (data) {
@@ -12530,6 +13709,7 @@ export class PackageListItem implements IPackageListItem {
                 for (let item of Data["includedServices"])
                     this.includedServices!.push(PackageServiceSummary.fromJS(item));
             }
+            this.currencyCode = Data["currencyCode"];
         }
     }
 
@@ -12560,6 +13740,7 @@ export class PackageListItem implements IPackageListItem {
             for (let item of this.includedServices)
                 data["includedServices"].push(item ? item.toJSON() : undefined as any);
         }
+        data["currencyCode"] = this.currencyCode;
         return data;
     }
 }
@@ -12573,6 +13754,7 @@ export interface IPackageListItem {
     price: number;
     translations: { [key: string]: Translation; } | undefined;
     includedServices: PackageServiceSummary[] | undefined;
+    currencyCode: string | undefined;
 }
 
 export class PackageServiceRef implements IPackageServiceRef {
@@ -13052,6 +14234,7 @@ export class QuoteOrderCommand implements IQuoteOrderCommand {
     currencyId!: string | undefined;
     selectedExtraSlugs!: string[] | undefined;
     cleaningDate!: Date | undefined;
+    countryId!: string | undefined;
 
     constructor(data?: IQuoteOrderCommand) {
         if (data) {
@@ -13083,6 +14266,7 @@ export class QuoteOrderCommand implements IQuoteOrderCommand {
                     this.selectedExtraSlugs!.push(item);
             }
             this.cleaningDate = Data["cleaningDate"] ? new Date(Data["cleaningDate"].toString()) : undefined as any;
+            this.countryId = Data["countryId"];
         }
     }
 
@@ -13114,6 +14298,7 @@ export class QuoteOrderCommand implements IQuoteOrderCommand {
                 data["selectedExtraSlugs"].push(item);
         }
         data["cleaningDate"] = this.cleaningDate ? this.cleaningDate.toISOString() : undefined as any;
+        data["countryId"] = this.countryId;
         return data;
     }
 }
@@ -13126,6 +14311,7 @@ export interface IQuoteOrderCommand {
     currencyId: string | undefined;
     selectedExtraSlugs: string[] | undefined;
     cleaningDate: Date | undefined;
+    countryId: string | undefined;
 }
 
 export class QuoteOrderQuoteLine implements IQuoteOrderQuoteLine {
@@ -13199,7 +14385,6 @@ export class QuoteOrderResponse implements IQuoteOrderResponse {
     extrasSubtotal!: number;
     expressSurchargeApplied!: boolean;
     expressSurchargeAmount!: number;
-    exchangeRate!: number;
     estimatedDurationMinutes!: number;
     requiredEmployees!: number;
     expressSurchargeWaivedByMembership!: boolean;
@@ -13233,7 +14418,6 @@ export class QuoteOrderResponse implements IQuoteOrderResponse {
             this.extrasSubtotal = Data["extrasSubtotal"];
             this.expressSurchargeApplied = Data["expressSurchargeApplied"];
             this.expressSurchargeAmount = Data["expressSurchargeAmount"];
-            this.exchangeRate = Data["exchangeRate"];
             this.estimatedDurationMinutes = Data["estimatedDurationMinutes"];
             this.requiredEmployees = Data["requiredEmployees"];
             this.expressSurchargeWaivedByMembership = Data["expressSurchargeWaivedByMembership"];
@@ -13271,7 +14455,6 @@ export class QuoteOrderResponse implements IQuoteOrderResponse {
         data["extrasSubtotal"] = this.extrasSubtotal;
         data["expressSurchargeApplied"] = this.expressSurchargeApplied;
         data["expressSurchargeAmount"] = this.expressSurchargeAmount;
-        data["exchangeRate"] = this.exchangeRate;
         data["estimatedDurationMinutes"] = this.estimatedDurationMinutes;
         data["requiredEmployees"] = this.requiredEmployees;
         data["expressSurchargeWaivedByMembership"] = this.expressSurchargeWaivedByMembership;
@@ -13302,7 +14485,6 @@ export interface IQuoteOrderResponse {
     extrasSubtotal: number;
     expressSurchargeApplied: boolean;
     expressSurchargeAmount: number;
-    exchangeRate: number;
     estimatedDurationMinutes: number;
     requiredEmployees: number;
     expressSurchargeWaivedByMembership: boolean;
@@ -13321,6 +14503,7 @@ export class QuotePlusSavingsQuery implements IQuotePlusSavingsQuery {
     currencyId!: string | undefined;
     selectedExtraSlugs!: string[] | undefined;
     cleaningDate!: Date | undefined;
+    countryId!: string | undefined;
 
     constructor(data?: IQuotePlusSavingsQuery) {
         if (data) {
@@ -13353,6 +14536,7 @@ export class QuotePlusSavingsQuery implements IQuotePlusSavingsQuery {
                     this.selectedExtraSlugs!.push(item);
             }
             this.cleaningDate = Data["cleaningDate"] ? new Date(Data["cleaningDate"].toString()) : undefined as any;
+            this.countryId = Data["countryId"];
         }
     }
 
@@ -13385,6 +14569,7 @@ export class QuotePlusSavingsQuery implements IQuotePlusSavingsQuery {
                 data["selectedExtraSlugs"].push(item);
         }
         data["cleaningDate"] = this.cleaningDate ? this.cleaningDate.toISOString() : undefined as any;
+        data["countryId"] = this.countryId;
         return data;
     }
 }
@@ -13398,6 +14583,7 @@ export interface IQuotePlusSavingsQuery {
     currencyId: string | undefined;
     selectedExtraSlugs: string[] | undefined;
     cleaningDate: Date | undefined;
+    countryId: string | undefined;
 }
 
 export class QuotePlusSavingsResponse implements IQuotePlusSavingsResponse {
@@ -13694,6 +14880,8 @@ export class RegisterCommand implements IRegisterCommand {
     lastName!: string | undefined;
     language!: string | undefined;
     referralCode!: string | undefined;
+    countryId!: string | undefined;
+    termsAccepted!: boolean | undefined;
 
     constructor(data?: IRegisterCommand) {
         if (data) {
@@ -13712,6 +14900,8 @@ export class RegisterCommand implements IRegisterCommand {
             this.lastName = Data["lastName"];
             this.language = Data["language"];
             this.referralCode = Data["referralCode"];
+            this.countryId = Data["countryId"];
+            this.termsAccepted = Data["termsAccepted"];
         }
     }
 
@@ -13730,6 +14920,8 @@ export class RegisterCommand implements IRegisterCommand {
         data["lastName"] = this.lastName;
         data["language"] = this.language;
         data["referralCode"] = this.referralCode;
+        data["countryId"] = this.countryId;
+        data["termsAccepted"] = this.termsAccepted;
         return data;
     }
 }
@@ -13741,6 +14933,8 @@ export interface IRegisterCommand {
     lastName: string | undefined;
     language: string | undefined;
     referralCode: string | undefined;
+    countryId: string | undefined;
+    termsAccepted: boolean | undefined;
 }
 
 export class ReportOrderIssueCommand implements IReportOrderIssueCommand {
@@ -13870,6 +15064,7 @@ export interface IRequestPasswordChangeCommand {
 export class RequestPromoCodeCommand implements IRequestPromoCodeCommand {
     email!: string | undefined;
     languageCode!: string | undefined;
+    countryId!: string | undefined;
 
     constructor(data?: IRequestPromoCodeCommand) {
         if (data) {
@@ -13884,6 +15079,7 @@ export class RequestPromoCodeCommand implements IRequestPromoCodeCommand {
         if (Data) {
             this.email = Data["email"];
             this.languageCode = Data["languageCode"];
+            this.countryId = Data["countryId"];
         }
     }
 
@@ -13898,6 +15094,7 @@ export class RequestPromoCodeCommand implements IRequestPromoCodeCommand {
         data = typeof data === 'object' ? data : {};
         data["email"] = this.email;
         data["languageCode"] = this.languageCode;
+        data["countryId"] = this.countryId;
         return data;
     }
 }
@@ -13905,6 +15102,7 @@ export class RequestPromoCodeCommand implements IRequestPromoCodeCommand {
 export interface IRequestPromoCodeCommand {
     email: string | undefined;
     languageCode: string | undefined;
+    countryId: string | undefined;
 }
 
 export class RequestPromoCodeResponse implements IRequestPromoCodeResponse {
@@ -14421,6 +15619,7 @@ export class ServiceListItem implements IServiceListItem {
     basePrice!: number;
     perRoomPrice!: number;
     translations!: { [key: string]: Translation; } | undefined;
+    currencyCode!: string | undefined;
 
     constructor(data?: IServiceListItem) {
         if (data) {
@@ -14446,6 +15645,7 @@ export class ServiceListItem implements IServiceListItem {
                         (this.translations as any)![key] = Data["translations"][key] ? Translation.fromJS(Data["translations"][key]) : new Translation();
                 }
             }
+            this.currencyCode = Data["currencyCode"];
         }
     }
 
@@ -14471,6 +15671,7 @@ export class ServiceListItem implements IServiceListItem {
                     (data["translations"] as any)[key] = this.translations[key] ? this.translations[key].toJSON() : undefined as any;
             }
         }
+        data["currencyCode"] = this.currencyCode;
         return data;
     }
 }
@@ -14483,6 +15684,7 @@ export interface IServiceListItem {
     basePrice: number;
     perRoomPrice: number;
     translations: { [key: string]: Translation; } | undefined;
+    currencyCode: string | undefined;
 }
 
 export class SetDefaultSavedAddressCommand implements ISetDefaultSavedAddressCommand {
@@ -15397,6 +16599,7 @@ export interface IUserConsentDto {
 export class ValidatePromoCodeCommand implements IValidatePromoCodeCommand {
     code!: string | undefined;
     orderSubtotal!: number;
+    currencyId!: string | undefined;
 
     constructor(data?: IValidatePromoCodeCommand) {
         if (data) {
@@ -15411,6 +16614,7 @@ export class ValidatePromoCodeCommand implements IValidatePromoCodeCommand {
         if (Data) {
             this.code = Data["code"];
             this.orderSubtotal = Data["orderSubtotal"];
+            this.currencyId = Data["currencyId"];
         }
     }
 
@@ -15425,6 +16629,7 @@ export class ValidatePromoCodeCommand implements IValidatePromoCodeCommand {
         data = typeof data === 'object' ? data : {};
         data["code"] = this.code;
         data["orderSubtotal"] = this.orderSubtotal;
+        data["currencyId"] = this.currencyId;
         return data;
     }
 }
@@ -15432,6 +16637,7 @@ export class ValidatePromoCodeCommand implements IValidatePromoCodeCommand {
 export interface IValidatePromoCodeCommand {
     code: string | undefined;
     orderSubtotal: number;
+    currencyId: string | undefined;
 }
 
 export class ValidatePromoCodeResponse implements IValidatePromoCodeResponse {
@@ -15480,6 +16686,7 @@ export interface IValidatePromoCodeResponse {
 
 export class ValidateReferralQuery implements IValidateReferralQuery {
     code!: string | undefined;
+    countryId!: string | undefined;
 
     constructor(data?: IValidateReferralQuery) {
         if (data) {
@@ -15493,6 +16700,7 @@ export class ValidateReferralQuery implements IValidateReferralQuery {
     init(Data?: any) {
         if (Data) {
             this.code = Data["code"];
+            this.countryId = Data["countryId"];
         }
     }
 
@@ -15506,12 +16714,14 @@ export class ValidateReferralQuery implements IValidateReferralQuery {
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
         data["code"] = this.code;
+        data["countryId"] = this.countryId;
         return data;
     }
 }
 
 export interface IValidateReferralQuery {
     code: string | undefined;
+    countryId: string | undefined;
 }
 
 export class ValidateReferralResponse implements IValidateReferralResponse {

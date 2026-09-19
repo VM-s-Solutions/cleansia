@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { TranslatePipe } from '@ngx-translate/core';
 
 @Component({
-  selector: 'order-extras',
+  selector: 'cleansia-partner-order-extras',
   standalone: true,
   imports: [CommonModule, TranslatePipe],
   templateUrl: './order-extras.component.html',

@@ -53,7 +53,6 @@ public record OrderPricingResult(
     decimal ExtrasSubtotal,
     bool ExpressSurchargeApplied,
     decimal ExpressSurchargeAmount,
-    decimal ExchangeRate,
     bool ExpressSurchargeWaivedByMembership = false,
     int? ExpressUpgradesRemaining = null,
     IReadOnlyList<OrderPricingLine>? Lines = null,

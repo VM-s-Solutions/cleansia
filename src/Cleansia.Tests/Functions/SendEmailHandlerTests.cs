@@ -39,12 +39,17 @@ public class SendEmailHandlerTests
     private readonly Mock<IPromoCodeRepository> _promoCodes = new();
     private readonly InMemoryIdempotencyGuard _guard = new();
 
+    private readonly Mock<ITenantRepository> _tenants = new();
+    private readonly Mock<ICompanyInfoRepository> _companyInfos = new();
+
     private SendEmailHandler CreateHandler() => new(
         _emailService.Object,
         _guard,
         _tenantProvider.Object,
         _promoCodes.Object,
-        NullLogger<SendEmailHandler>.Instance);
+        _tenants.Object,
+        _companyInfos.Object,
+        NullLogger<SendEmailHandler>.Instance, Mock.Of<IOrderRepository>());
 
     private static readonly JsonSerializerOptions JsonOptions =
         new() { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
@@ -64,6 +69,63 @@ public class SendEmailHandlerTests
 
     private static SendEmailMessage Reset(string language = "uk") =>
         new(EmailType.ResetPassword, Email, UserName, RawCode, language, UserId, TenantId: null);
+
+    private static SendEmailMessage WindDown(EmailType emailType, string language = "cs") =>
+        new(emailType, Email, UserName, "20260916083000", language, UserId, TenantId: "cleansia-sk");
+
+    private void ArrangeWindingDownCompany(DateOnly? windDownFrom)
+    {
+        var company = Cleansia.Core.Domain.Tenancy.Tenant.Create("cleansia-sk", "Cleansia SK s.r.o.");
+        if (windDownFrom is { } from)
+        {
+            company.RequestWindDown(from, "admin-b", DateTimeOffset.UtcNow);
+        }
+
+        _tenantProvider.Setup(p => p.GetCurrentTenantId()).Returns("cleansia-sk");
+        _tenants.Setup(r => r.GetByIdAsync("cleansia-sk", It.IsAny<CancellationToken>())).ReturnsAsync(company);
+        _companyInfos.Setup(r => r.GetActiveLegalNamesAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(["Cleansia SK s.r.o."]);
+    }
+
+    [Theory]
+    [InlineData(EmailType.CompanyWindDownCustomer)]
+    [InlineData(EmailType.CompanyWindDownCleaner)]
+    public async Task A_WindDown_Notice_Reads_The_Date_And_The_Legal_Names_Off_The_Companys_Rows(EmailType emailType)
+    {
+        ArrangeWindingDownCompany(new DateOnly(2026, 10, 1));
+        _emailService
+            .Setup(s => s.SendCompanyWindDownCustomerNoticeAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<IReadOnlyList<string>>(), It.IsAny<DateOnly>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync("msg-id");
+        _emailService
+            .Setup(s => s.SendCompanyWindDownCleanerNoticeAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<IReadOnlyList<string>>(), It.IsAny<DateOnly>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync("msg-id");
+        var handler = CreateHandler();
+        var body = SerializeEnvelope(WindDown(emailType, "sk"), tenantId: "cleansia-sk");
+
+        await handler.HandleAsync(body, CancellationToken.None);
+        await handler.HandleAsync(body, CancellationToken.None);
+
+        var customerSends = emailType == EmailType.CompanyWindDownCustomer ? Times.Once() : Times.Never();
+        var cleanerSends = emailType == EmailType.CompanyWindDownCleaner ? Times.Once() : Times.Never();
+        _emailService.Verify(s => s.SendCompanyWindDownCustomerNoticeAsync(
+            Email, UserName, It.Is<IReadOnlyList<string>>(n => n.Single() == "Cleansia SK s.r.o."), new DateOnly(2026, 10, 1), "sk", It.IsAny<CancellationToken>()), customerSends);
+        _emailService.Verify(s => s.SendCompanyWindDownCleanerNoticeAsync(
+            Email, UserName, It.Is<IReadOnlyList<string>>(n => n.Single() == "Cleansia SK s.r.o."), new DateOnly(2026, 10, 1), "sk", It.IsAny<CancellationToken>()), cleanerSends);
+        _tenantProvider.Verify(p => p.SetTenantOverride("cleansia-sk"), Times.AtLeastOnce);
+    }
+
+    [Fact]
+    public async Task A_WindDown_Notice_For_A_Company_Whose_Date_Was_Cleared_Throws_For_The_Poison_Row()
+    {
+        ArrangeWindingDownCompany(windDownFrom: null);
+        var handler = CreateHandler();
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            handler.HandleAsync(SerializeEnvelope(WindDown(EmailType.CompanyWindDownCustomer), tenantId: "cleansia-sk"), CancellationToken.None));
+
+        _emailService.Verify(s => s.SendCompanyWindDownCustomerNoticeAsync(
+            It.IsAny<string>(), It.IsAny<string>(), It.IsAny<IReadOnlyList<string>>(), It.IsAny<DateOnly>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
 
     [Fact]
     public async Task Twice_With_Same_Message_Sends_Confirmation_Email_Exactly_Once()
@@ -256,7 +318,9 @@ public class SendEmailHandlerTests
             .ReturnsAsync("msg-id");
         _guard.MarkFails = true;
         var logger = new CapturingLogger();
-        var handler = new SendEmailHandler(_emailService.Object, _guard, _tenantProvider.Object, _promoCodes.Object, logger);
+        var handler = new SendEmailHandler(
+            _emailService.Object, _guard, _tenantProvider.Object, _promoCodes.Object,
+            new Mock<ITenantRepository>().Object, new Mock<ICompanyInfoRepository>().Object, logger, Mock.Of<IOrderRepository>());
 
         var ex = await Record.ExceptionAsync(() => handler.HandleAsync(SerializeEnvelope(Confirmation()), CancellationToken.None));
 

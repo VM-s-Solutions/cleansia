@@ -8,10 +8,11 @@ final class FakeMembershipManagementClient: MembershipManagementClient, @uncheck
 
     var plansResult: ApiResult<[MembershipPlan]> = .success(MembershipFixtures.plans)
     private(set) var plansCallCount = 0
+    private(set) var plansCountryIds: [String?] = []
 
     var phase1Result: ApiResult<SubscriptionSetup> = .success(MembershipFixtures.setup)
     var phase2Result: ApiResult<SubscriptionSetup> = .success(MembershipFixtures.subscribed)
-    private(set) var subscribeCalls: [(planCode: String, confirmed: Bool, token: String)] = []
+    private(set) var subscribeCalls: [(planCode: String, confirmed: Bool, countryId: String?, token: String)] = []
 
     var cancelResult: ApiResult<Date?> = .success(Date(timeIntervalSince1970: 1_780_000_000))
     private(set) var cancelCallCount = 0
@@ -26,17 +27,19 @@ final class FakeMembershipManagementClient: MembershipManagementClient, @uncheck
         return mineResults[index]
     }
 
-    func getPlans() async -> ApiResult<[MembershipPlan]> {
+    func getPlans(countryId: String?) async -> ApiResult<[MembershipPlan]> {
         plansCallCount += 1
+        plansCountryIds.append(countryId)
         return plansResult
     }
 
     func subscribe(
         planCode: String,
         paymentMethodConfirmed: Bool,
+        countryId: String?,
         idempotencyToken: String
     ) async -> ApiResult<SubscriptionSetup> {
-        subscribeCalls.append((planCode, paymentMethodConfirmed, idempotencyToken))
+        subscribeCalls.append((planCode, paymentMethodConfirmed, countryId, idempotencyToken))
         return paymentMethodConfirmed ? phase2Result : phase1Result
     }
 
@@ -75,7 +78,10 @@ enum MembershipFixtures {
         cancelRequested: false,
         billingInterval: 1,
         expressUpgradesPerMonth: 2,
-        expressUpgradesRemaining: 1
+        expressUpgradesRemaining: 1,
+        price: 199,
+        monthlyEquivalentPrice: 199,
+        currencyCode: "CZK"
     )
 
     static let setup = SubscriptionSetup(
@@ -103,7 +109,8 @@ enum MembershipFixtures {
             freeCancellationWindowHours: 4,
             allowsExpressUpgrade: true,
             trialPeriodDays: 14,
-            savingsPercentVsMonthly: 0
+            savingsPercentVsMonthly: 0,
+            currencyCode: "CZK"
         ),
         MembershipPlan(
             code: "plus_yearly",
@@ -115,7 +122,25 @@ enum MembershipFixtures {
             freeCancellationWindowHours: 4,
             allowsExpressUpgrade: true,
             trialPeriodDays: 14,
-            savingsPercentVsMonthly: 15
+            savingsPercentVsMonthly: 15,
+            currencyCode: "CZK"
         )
     ]
+
+    /// The same two plans priced for a EUR market.
+    static let plansInEur = plans.map { plan in
+        MembershipPlan(
+            code: plan.code,
+            name: plan.name,
+            price: plan.price / 25,
+            monthlyEquivalentPrice: plan.monthlyEquivalentPrice / 25,
+            billingInterval: plan.billingInterval,
+            discountPercentage: plan.discountPercentage,
+            freeCancellationWindowHours: plan.freeCancellationWindowHours,
+            allowsExpressUpgrade: plan.allowsExpressUpgrade,
+            trialPeriodDays: plan.trialPeriodDays,
+            savingsPercentVsMonthly: plan.savingsPercentVsMonthly,
+            currencyCode: "EUR"
+        )
+    }
 }

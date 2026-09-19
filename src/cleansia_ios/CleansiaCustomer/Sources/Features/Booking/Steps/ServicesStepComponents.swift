@@ -72,6 +72,7 @@ struct CategoryChip: View {
 struct ServiceRow: View {
     @Environment(\.locale) private var locale
     let service: CatalogService
+    let currencyCode: String
     let selected: Bool
     let onToggle: () -> Void
 
@@ -117,17 +118,21 @@ struct ServiceRow: View {
                     .lineLimit(2)
             }
             HStack(spacing: Spacing.xxs) {
-                Text(L10n.Booking.priceFrom(Int(service.basePrice)))
+                Text(L10n.Booking.priceFrom(price(service.basePrice)))
                     .font(CleansiaTypography.labelLarge)
                     .foregroundColor(CleansiaColors.primary)
                 if service.perRoomPrice > 0 {
-                    Text(L10n.Booking.pricePerRoom(Int(service.perRoomPrice)))
+                    Text(L10n.Booking.pricePerRoom(price(service.perRoomPrice)))
                         .font(CleansiaTypography.bodyMedium)
                         .foregroundColor(CleansiaColors.onSurfaceVariant)
                 }
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private func price(_ amount: Double) -> String {
+        BookingPricing.formatTotal(amount, currencyCode: currencyCode)
     }
 }
 
@@ -147,6 +152,7 @@ enum PackageAccent {
 struct PackageCard: View {
     @Environment(\.locale) private var locale
     let pkg: CatalogPackage
+    let currencyCode: String
     let accent: BrandGradient
     let selected: Bool
     let onOpen: () -> Void
@@ -177,7 +183,7 @@ struct PackageCard: View {
                         .lineLimit(1)
                 }
                 Spacer(minLength: Spacing.xxs)
-                Text(BookingPricing.formatTotal(pkg.price, currencyCode: "CZK"))
+                Text(BookingPricing.formatTotal(pkg.price, currencyCode: currencyCode))
                     .font(CleansiaTypography.titleMedium)
                     .foregroundColor(.white)
             }

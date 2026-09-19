@@ -32,7 +32,6 @@ import androidx.compose.material.icons.automirrored.outlined.ArrowForward
 import androidx.compose.material.icons.automirrored.outlined.ArrowForwardIos
 import androidx.compose.material.icons.outlined.AutoAwesome
 import androidx.compose.material.icons.outlined.Bolt
-import androidx.compose.material.icons.outlined.CalendarToday
 import androidx.compose.material.icons.outlined.CleaningServices
 import androidx.compose.material.icons.outlined.KeyboardArrowDown
 import androidx.compose.material.icons.outlined.LocationOn
@@ -65,6 +64,9 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -75,7 +77,13 @@ import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cz.cleansia.core.format.formatOrderDateTime
 import cz.cleansia.core.format.formatOrderPrice
+import cz.cleansia.core.ui.components.CleansiaChip
 import cz.cleansia.core.ui.components.SudsRefreshIndicator
+import cz.cleansia.customer.core.market.MarketListItem
+import cz.cleansia.customer.core.market.MarketState
+import cz.cleansia.customer.core.market.countryId
+import cz.cleansia.customer.core.market.offersAChoice
+import cz.cleansia.customer.features.booking.localizedName
 import cz.cleansia.core.ui.theme.Poppins
 import cz.cleansia.customer.R
 import cz.cleansia.customer.core.loyalty.LoyaltyAccountDto
@@ -104,6 +112,8 @@ fun HomeTab(
     onOrderClick: (String) -> Unit = {},
     onSeeAllOrders: () -> Unit = {},
     onSubscribePlus: () -> Unit = {},
+    /** Tap on the header's market chip. Opens the Market preference screen (ADR-0058 D6). */
+    onOpenMarket: () -> Unit = {},
     onOpenReferral: () -> Unit = {},
     /** Tap on a popular-package card. Opens booking sheet pre-filled with the package. */
     onBookPackage: (String) -> Unit = {},
@@ -152,12 +162,16 @@ fun HomeTab(
     val isPlus = membership?.hasMembership == true
     val hasAnyOrders = recentOrders.isNotEmpty()
 
-    // Catalog — used for the popular-packages quick-book strip. Refresh once
-    // on first composition; CatalogRepository.refresh is a no-op if cached.
+    // Catalog — used for the popular-packages quick-book strip. Home prices the chosen market
+    // (ADR-0058 D5): refresh on first composition when nothing is loaded, whenever the market
+    // changes, and whenever the repository still answers for another market — both wizards hand
+    // the market back on exit, but Home must not depend on that.
     val catalogRepo = viewModel.catalogRepository
     val packages by catalogRepo.packages.collectAsState(initial = emptyList())
-    androidx.compose.runtime.LaunchedEffect(Unit) {
-        if (packages.isEmpty()) viewModel.refreshCatalog()
+    val marketState by viewModel.marketRepository.state.collectAsStateWithLifecycle()
+    val marketCountryId = marketState.countryId
+    androidx.compose.runtime.LaunchedEffect(marketCountryId) {
+        if (packages.isEmpty() || catalogRepo.countryId.value != marketCountryId) viewModel.refreshCatalog()
     }
     // Top-3 packages by displayOrder (proxy for popularity) — falls back to
     // first 3 if displayOrder is null/uniform across the catalog.
@@ -272,11 +286,13 @@ fun HomeTab(
                 .windowInsetsPadding(WindowInsets.statusBars)
                 .verticalScroll(rememberScrollState()),
         ) {
-            // 1. Address bar + bell
+            // 1. Address bar + market chip + bell
             AddressTopBar(
                 displayedAddress = displayed?.oneLine,
+                market = (marketState as? MarketState.Resolved)?.takeIf { it.offersAChoice }?.selected,
                 unreadCount = unreadNotifications,
                 onAddressClick = onOpenAddressManager,
+                onMarketClick = onOpenMarket,
                 onNotificationClick = { showNotifications = true },
             )
             Spacer(Modifier.height(8.dp))
@@ -361,8 +377,6 @@ fun HomeTab(
                 }
             }
 
-            // 7. Seasonal suggestion
-            SeasonalCard(onBook = onBookCleaning)
             // Trailing inset reserves room for the floating island bottom nav so
             // the last card isn't hidden behind it. ~96dp pill height + 12dp gap.
             Spacer(Modifier.height(108.dp))
@@ -372,11 +386,17 @@ fun HomeTab(
 
 /* ── 1. Address top bar ── */
 
+/**
+ * [market] is non-null only when the directory offers a choice: a chip that opens a one-row picker
+ * is a dead end, and with no market resolved nothing renders a guessed unit (ADR-0058 D3, D6).
+ */
 @Composable
 private fun AddressTopBar(
     displayedAddress: String?,
+    market: MarketListItem?,
     unreadCount: Int,
     onAddressClick: () -> Unit,
+    onMarketClick: () -> Unit,
     onNotificationClick: () -> Unit,
 ) {
     Row(
@@ -413,6 +433,22 @@ private fun AddressTopBar(
                     Icon(Icons.Outlined.KeyboardArrowDown, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(18.dp))
                 }
             }
+        }
+        if (market != null) {
+            Spacer(Modifier.width(8.dp))
+            val marketA11y = stringResource(
+                R.string.market_chip_a11y,
+                localizedName(market.translations, market.name),
+                market.currencyCode,
+            )
+            CleansiaChip(
+                label = "${market.isoAlpha2} \u00B7 ${market.currencyCode}",
+                isSelected = false,
+                onClick = onMarketClick,
+                role = Role.Button,
+                modifier = Modifier.semantics { contentDescription = marketA11y },
+            )
+            Spacer(Modifier.width(8.dp))
         }
         IconButton(onClick = onNotificationClick) {
             Box(modifier = Modifier.size(40.dp)) {
@@ -1228,55 +1264,6 @@ private fun MilestoneProgressCard(account: LoyaltyAccountDto) {
             ),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-    }
-}
-
-/* ── 7. Seasonal tip ── */
-
-@Composable
-private fun SeasonalCard(onBook: () -> Unit) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 20.dp)
-            .clip(RoundedCornerShape(18.dp))
-            .background(MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.5f))
-            .clickable(onClick = onBook)
-            .padding(16.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Box(
-            modifier = Modifier
-                .size(44.dp)
-                .background(MaterialTheme.colorScheme.secondary.copy(alpha = 0.15f), CircleShape),
-            contentAlignment = Alignment.Center,
-        ) {
-            Icon(
-                Icons.Outlined.CalendarToday,
-                null,
-                tint = MaterialTheme.colorScheme.secondary,
-                modifier = Modifier.size(22.dp),
-            )
-        }
-        Spacer(Modifier.width(12.dp))
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                stringResource(R.string.home_seasonal_title),
-                style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
-                color = MaterialTheme.colorScheme.onBackground,
-            )
-            Text(
-                stringResource(R.string.home_seasonal_subtitle),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
-        Icon(
-            Icons.AutoMirrored.Outlined.ArrowForward,
-            null,
-            tint = MaterialTheme.colorScheme.secondary,
-            modifier = Modifier.size(18.dp),
         )
     }
 }

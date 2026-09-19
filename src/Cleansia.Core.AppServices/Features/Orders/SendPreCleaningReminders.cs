@@ -18,12 +18,14 @@ namespace Cleansia.Core.AppServices.Features.Orders;
 ///
 /// <para><b>Who qualifies</b> — both lifecycle axes, never the fulfilment one alone.
 /// <c>CurrentStatus == Confirmed</c> is the only status the cleaning is still ahead of: <c>New</c> means
-/// nobody has taken it (cash) or the card payment has not settled, <c>OnTheWay</c>/<c>InProgress</c>
-/// mean the customer has already been told the work is starting, and the two terminal states have
-/// nothing to remind about. But <c>Confirmed</c> is overloaded — the Stripe webhook writes it with no
-/// cleaner on the job — so it is conjoined with an assignment row. The money term is
-/// <c>OrderAvailability</c>'s, specialised to <c>RecurringTemplateId == null</c>: a one-off card order
-/// still <c>Pending</c> is what <c>CleanupStalePendingOrders</c> cancels on its next tick.</para>
+/// no cleaner has taken it — cash or paid card alike, or walked back there after its last cleaner
+/// left — <c>OnTheWay</c>/<c>InProgress</c> mean the customer has already been told the work is
+/// starting, and the two terminal states have nothing to remind about. It is conjoined with an
+/// assignment row because "your cleaner is coming" is a promise about the crew, and the crew is the
+/// fact the status only summarises. The money term is <c>OrderAvailability</c>'s, specialised to
+/// <c>RecurringTemplateId == null</c>: a one-off card order whose <c>PaymentStatus</c> is still
+/// <c>Pending</c> is an abandoned checkout, which <c>CleanupStalePendingOrders</c> cancels on its next
+/// tick.</para>
 ///
 /// <para><b>Window</b> — <c>CleaningDateTime</c> in <c>[now + 55min, now + 70min]</c>, swept every five
 /// minutes, so the reminder lands between 55 and 70 minutes ahead and the copy's "about an hour" holds

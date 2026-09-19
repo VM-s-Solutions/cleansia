@@ -235,6 +235,16 @@ public class RefreshTokenService(
         }, new RefreshTokenRevocationScope { UserId = userId, SparedTokenHash = sparedHash }, cancellationToken);
     }
 
+    public async Task StageRevokeAllForUserAsync(string userId, string reason, CancellationToken cancellationToken)
+    {
+        var now = timeProvider.GetUtcNow();
+        var active = await repository.GetActiveByUserIdAsync(userId, cancellationToken);
+        foreach (var token in active)
+        {
+            token.Revoke(reason, now);
+        }
+    }
+
     // Stages a revoke then commits on the caller's unit of work, so it stays atomic with any sibling
     // change already staged. On an xmin collision it RE-RUNS the stage predicate rather than re-applying
     // to the conflicted entries — a rotation that raced revoke-all inserts a NEW child the first read

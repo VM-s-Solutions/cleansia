@@ -22,7 +22,7 @@ namespace Cleansia.Core.Domain.Documents;
 /// <c>EmployeeDocument.CreateNewVersion</c> already existed for it. Deletion is for the case where
 /// nothing should be there at all, which is the case an employer has to agree with.</para>
 /// </summary>
-public class DocumentDeletionRequest : Auditable, ITenantEntity
+public class DocumentDeletionRequest : TenantAuditable
 {
     public string DocumentId { get; private set; } = default!;
 

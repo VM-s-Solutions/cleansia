@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Cleansia.Infra.Database.EntityConfigurations;
 
-public class EmployeeDocumentEntityConfiguration : AuditableEntityConfiguration<EmployeeDocument, string>
+public class EmployeeDocumentEntityConfiguration : TenantAuditableEntityConfiguration<EmployeeDocument, string>
 {
     public override void Configure(EntityTypeBuilder<EmployeeDocument> builder)
     {

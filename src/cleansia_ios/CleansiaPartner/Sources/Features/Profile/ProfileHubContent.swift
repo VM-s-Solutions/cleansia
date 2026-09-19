@@ -21,40 +21,36 @@ struct ProfileHubContent: View {
     }
 
     var body: some View {
-        GeometryReader { proxy in
-            ZStack {
-                CleansiaColors.background.ignoresSafeArea()
-                ScrollView {
-                    VStack(spacing: Spacing.l) {
-                        ProfileHero(
-                            employee: employee,
-                            contractStatus: data.contractStatus,
-                            topInset: proxy.safeAreaInsets.top,
-                            display: avatar.display,
-                            avatarCache: avatarCache,
-                            onAvatarLoadFailure: { photo in
-                                Task { await avatar.loadFailed(fileName: photo.fileName) }
-                            },
-                            onAvatarLoadSuccess: avatar.loadSucceeded
-                        )
-                        sectionGroup(title: L10n.Profile.groupAccount, rows: accountRows)
-                        sectionGroup(title: L10n.Profile.groupWorkLegal, rows: workLegalRows)
-                        sectionGroup(title: L10n.Profile.groupPreferences, rows: preferenceRows)
-                        sectionGroup(title: L10n.Profile.groupLegal, rows: legalRows)
-                        // Out of the preferences group and onto its own card beside logout: the two
-                        // account-ending actions belong together, and grouping deletion with
-                        // "language / theme" read as a preference.
-                        VStack(spacing: Spacing.m) {
-                            DeleteAccountRow(onTap: { onOpen(.deleteAccount) })
-                            LogoutRow(onTap: onLogout)
-                        }
-                        // One inset for both, matching sectionGroup's — previously each carried its
-                        // own literal, which is how "aligned" survives only until someone edits one.
-                        .padding(.horizontal, Spacing.m)
-                        .padding(.bottom, Spacing.xxl)
+        ZStack {
+            CleansiaColors.background.ignoresSafeArea()
+            ScrollView {
+                VStack(spacing: Spacing.l) {
+                    ProfileHero(
+                        employee: employee,
+                        contractStatus: data.contractStatus,
+                        display: avatar.display,
+                        avatarCache: avatarCache,
+                        onAvatarLoadFailure: { photo in
+                            Task { await avatar.loadFailed(fileName: photo.fileName) }
+                        },
+                        onAvatarLoadSuccess: avatar.loadSucceeded
+                    )
+                    sectionGroup(title: L10n.Profile.groupAccount, rows: accountRows)
+                    sectionGroup(title: L10n.Profile.groupWorkLegal, rows: workLegalRows)
+                    sectionGroup(title: L10n.Profile.groupPreferences, rows: preferenceRows)
+                    sectionGroup(title: L10n.Profile.groupLegal, rows: legalRows)
+                    // Out of the preferences group and onto its own card beside logout: the two
+                    // account-ending actions belong together, and grouping deletion with
+                    // "language / theme" read as a preference.
+                    VStack(spacing: Spacing.m) {
+                        DeleteAccountRow(onTap: { onOpen(.deleteAccount) })
+                        LogoutRow(onTap: onLogout)
                     }
+                    // One inset for both, matching sectionGroup's — previously each carried its
+                    // own literal, which is how "aligned" survives only until someone edits one.
+                    .padding(.horizontal, Spacing.m)
+                    .padding(.bottom, Spacing.xxl)
                 }
-                .ignoresSafeArea(.container, edges: .top)
             }
         }
     }
@@ -221,7 +217,6 @@ private struct ProfileHubRowItem {
 private struct ProfileHero: View {
     let employee: EmployeeItem
     let contractStatus: ContractStatus?
-    var topInset: CGFloat = 0
     let display: AvatarDisplay
     let avatarCache: RemoteImageCache
     let onAvatarLoadFailure: (ProfilePhoto) -> Void
@@ -249,11 +244,12 @@ private struct ProfileHero: View {
             Spacer(minLength: 0)
         }
         .padding(.horizontal, Spacing.ml)
-        .padding(.top, Spacing.m + topInset)
+        .padding(.top, Spacing.m)
         .padding(.bottom, Spacing.m)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(
             LinearGradient(colors: BrandGradient.blue.colors, startPoint: .top, endPoint: .bottom)
+                .ignoresSafeArea(.container, edges: .top)
         )
     }
 

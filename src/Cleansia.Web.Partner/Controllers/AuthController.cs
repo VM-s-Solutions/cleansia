@@ -19,18 +19,6 @@ public class AuthController(
     AuthCookieConfig cookieConfig) : CookieAuthApiController(mediator, cookieWriter, cookieConfig)
 {
     [AllowAnonymous]
-    [HttpPost("Register")]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    public async Task<IActionResult> Register([FromBody] Register.Command command)
-    {
-        var result = await Mediator.Send(command);
-
-        return HandleResult<object>(result);
-    }
-
-    [AllowAnonymous]
     [HttpPost("RegisterEmployee")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
@@ -99,7 +87,7 @@ public class AuthController(
         var enriched = command with
         {
             Token = RefreshTokenFromCookieOrBody(command.Token),
-            RequiredProfile = UserProfile.Employee,
+            RequiredProfiles = [UserProfile.Employee, UserProfile.Administrator],
             RequiredAudience = JwtAudiences.Partner,
         };
         var result = await Mediator.Send(enriched, cancellationToken);

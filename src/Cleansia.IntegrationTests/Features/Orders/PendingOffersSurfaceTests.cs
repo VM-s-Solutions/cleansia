@@ -3,6 +3,7 @@ using System.Text.Json;
 using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Features.Orders.DTOs;
+using Cleansia.Core.Domain.Configuration;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Internationalization;
 using Cleansia.Core.Domain.Orders;
@@ -207,11 +208,13 @@ public class PendingOffersSurfaceTests(PostgresContainerFixture fixture) : BaseI
     {
         context.Languages.Add(Language.Create("en", "English"));
 
-        var country = Country.Create("Czechia", "CZ", isServiced: true);
+        var country = Country.Create("Czechia", "CZ", "CZ", isServiced: true);
         country.Id = CountryId;
         context.Countries.Add(country);
+        context.CountryConfigurations.Add(CountryConfiguration.Create(CountryId, "CZK", "cs", 0.21m));
 
-        var currency = Currency.Create("CZK", "Kč", "Czech koruna", 1.0m);
+        var currency = Currency.Create("CZK", "Kč", "Czech koruna");
+        currency.IsActive = true;
         currency.Id = CurrencyId;
         currency.SetAsDefault(true);
         context.Currencies.Add(currency);
@@ -253,7 +256,6 @@ public class PendingOffersSurfaceTests(PostgresContainerFixture fixture) : BaseI
             customerAddress: Address.Create("Held St 7", "Brno", "60200", CountryId),
             rooms: 2,
             bathrooms: 1,
-            extras: new Dictionary<string, bool>(),
             cleaningDateTime: cleaningDateTime,
             paymentType: PaymentType.Card,
             totalPrice: 1500m,

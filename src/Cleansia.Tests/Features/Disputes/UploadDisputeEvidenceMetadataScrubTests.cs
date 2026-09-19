@@ -99,6 +99,7 @@ public class UploadDisputeEvidenceMetadataScrubTests
 
         var disputeRepository = new Mock<IDisputeRepository>();
         disputeRepository.Setup(r => r.GetQueryable()).Returns(new[] { dispute }.AsQueryable().BuildMock());
+        disputeRepository.Setup(r => r.GetQueryableForOwner(It.IsAny<string>())).Returns(new[] { dispute }.AsQueryable().BuildMock());
 
         byte[]? uploaded = null;
         var blobClient = new Mock<IBlobContainerClient>();

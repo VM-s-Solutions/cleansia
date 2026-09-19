@@ -2,6 +2,7 @@ import {
   AfterViewInit,
   ChangeDetectionStrategy,
   Component,
+  DestroyRef,
   ElementRef,
   inject,
   OnDestroy,
@@ -9,11 +10,15 @@ import {
   PLATFORM_ID,
 } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
+  loadCustomerCurrencies,
   loadCustomerPackages,
   loadCustomerServices,
+  selectMarketCountryId,
 } from '@cleansia/customer-stores';
 import { Store } from '@ngrx/store';
+import { distinctUntilChanged } from 'rxjs';
 import { CleansiaScrollTopComponent } from '@cleansia/components/cleansia-scroll-top';
 import { TranslatePipe } from '@ngx-translate/core';
 
@@ -37,13 +42,24 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
   private readonly el = inject(ElementRef);
   private readonly store = inject(Store);
   private readonly platformId = inject(PLATFORM_ID);
+  private readonly destroyRef = inject(DestroyRef);
 
   private observer?: IntersectionObserver;
   private mutationObserver?: MutationObserver;
 
+  /**
+   * The catalogue is priced for the chosen market (ADR-0058 D5) and re-read when the customer
+   * switches it. No market resolved sends no country — the platform default.
+   */
   ngOnInit(): void {
-    this.store.dispatch(loadCustomerServices());
-    this.store.dispatch(loadCustomerPackages());
+    this.store
+      .select(selectMarketCountryId)
+      .pipe(distinctUntilChanged(), takeUntilDestroyed(this.destroyRef))
+      .subscribe((countryId) => {
+        this.store.dispatch(loadCustomerServices(countryId));
+        this.store.dispatch(loadCustomerPackages(countryId));
+      });
+    this.store.dispatch(loadCustomerCurrencies());
   }
 
   ngAfterViewInit(): void {
@@ -58,7 +74,7 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   private setupScrollAnimations(): void {
-    this.observer = new IntersectionObserver(
+    const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
           if (entry.isIntersecting) {
@@ -68,11 +84,12 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
       },
       { threshold: 0.08, rootMargin: '0px 0px -40px 0px' }
     );
+    this.observer = observer;
 
-    this.observeAll();
+    this.observeAll(observer);
 
     this.mutationObserver = new MutationObserver(() => {
-      this.observeAll();
+      this.observeAll(observer);
     });
     this.mutationObserver.observe(this.el.nativeElement, {
       childList: true,
@@ -80,7 +97,7 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
     });
   }
 
-  private observeAll(): void {
+  private observeAll(observer: IntersectionObserver): void {
     const elements = this.el.nativeElement.querySelectorAll(
       '.animate-on-scroll:not(.section-visible):not(.anim-pending)'
     );
@@ -90,7 +107,7 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
       // stays visible so the server-rendered paint is never blanked out.
       if (el.getBoundingClientRect().top > viewportBottom) {
         el.classList.add('anim-pending');
-        this.observer!.observe(el);
+        observer.observe(el);
       } else {
         el.classList.add('section-visible');
       }

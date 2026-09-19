@@ -58,11 +58,12 @@ struct CreateRecurringScreen: View {
                     onAddAddress: { showAddressManager = true }
                 )
                 ServicesSection(
-                    catalog: vm.catalog,
+                    catalogState: vm.catalogState,
                     selectedServiceIds: vm.formState.selectedServiceIds,
                     selectedPackageIds: vm.formState.selectedPackageIds,
                     onToggleService: vm.toggleService,
-                    onTogglePackage: vm.togglePackage
+                    onTogglePackage: vm.togglePackage,
+                    onRetry: { Task { await vm.retryCatalog() } }
                 )
                 PropertySizeSection(
                     rooms: vm.formState.rooms,
@@ -97,6 +98,12 @@ struct CreateRecurringScreen: View {
         .navigationBarTitleDisplayMode(.inline)
         .background(CleansiaColors.background.ignoresSafeArea())
         .task { await vm.load() }
+        .onReceive(vm.events) { event in
+            switch event {
+            case .selectionPrunedForMarket:
+                snackbar.showInfo(L10n.Booking.marketSelectionPruned)
+            }
+        }
         .sheet(
             isPresented: $showAddressManager,
             onDismiss: { Task { await vm.reloadAddresses() } },
@@ -316,39 +323,68 @@ private struct PropertySizeSection: View {
 
 private struct ServicesSection: View {
     @Environment(\.locale) private var locale
-    let catalog: Catalog
+    let catalogState: UiState<Catalog>
     let selectedServiceIds: Set<String>
     let selectedPackageIds: Set<String>
     let onToggleService: (String) -> Void
     let onTogglePackage: (String) -> Void
+    let onRetry: () -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: Spacing.s) {
             SectionLabel(text: L10n.Recurring.createServicesLabel)
-            if !catalog.packages.isEmpty {
-                Text(L10n.Recurring.createSectionPackages)
-                    .font(CleansiaTypography.labelLarge)
-                    .foregroundColor(CleansiaColors.onSurfaceVariant)
-                ForEach(catalog.packages) { package in
-                    SelectableRow(
-                        text: package.localizedName(for: locale),
-                        selected: selectedPackageIds.contains(package.id)
-                    ) {
-                        onTogglePackage(package.id)
-                    }
+            switch catalogState {
+            case .loading:
+                CatalogMessageView(
+                    systemImage: "arrow.triangle.2.circlepath",
+                    message: L10n.Booking.catalogLoading,
+                    showsSpinner: true
+                )
+            case .error:
+                CatalogMessageView(
+                    systemImage: "arrow.clockwise",
+                    message: L10n.Booking.catalogError,
+                    retryTitle: L10n.Booking.catalogRetry,
+                    onRetry: onRetry
+                )
+            case let .loaded(catalog) where catalog.isEmpty:
+                CatalogMessageView(
+                    systemImage: "bubbles.and.sparkles",
+                    message: L10n.Booking.catalogEmpty,
+                    retryTitle: L10n.Booking.catalogRetry,
+                    onRetry: onRetry
+                )
+            case let .loaded(catalog):
+                rows(for: catalog)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func rows(for catalog: Catalog) -> some View {
+        if !catalog.packages.isEmpty {
+            Text(L10n.Recurring.createSectionPackages)
+                .font(CleansiaTypography.labelLarge)
+                .foregroundColor(CleansiaColors.onSurfaceVariant)
+            ForEach(catalog.packages) { package in
+                SelectableRow(
+                    text: package.localizedName(for: locale),
+                    selected: selectedPackageIds.contains(package.id)
+                ) {
+                    onTogglePackage(package.id)
                 }
             }
-            if !catalog.services.isEmpty {
-                Text(L10n.Recurring.createSectionServices)
-                    .font(CleansiaTypography.labelLarge)
-                    .foregroundColor(CleansiaColors.onSurfaceVariant)
-                ForEach(catalog.services) { service in
-                    SelectableRow(
-                        text: service.localizedName(for: locale),
-                        selected: selectedServiceIds.contains(service.id)
-                    ) {
-                        onToggleService(service.id)
-                    }
+        }
+        if !catalog.services.isEmpty {
+            Text(L10n.Recurring.createSectionServices)
+                .font(CleansiaTypography.labelLarge)
+                .foregroundColor(CleansiaColors.onSurfaceVariant)
+            ForEach(catalog.services) { service in
+                SelectableRow(
+                    text: service.localizedName(for: locale),
+                    selected: selectedServiceIds.contains(service.id)
+                ) {
+                    onToggleService(service.id)
                 }
             }
         }

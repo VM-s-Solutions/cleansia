@@ -1,16 +1,12 @@
 import { TemplateRef } from '@angular/core';
 import { BillingInterval, MembershipPlanListItem } from '@cleansia/admin-services';
 import { TableAction, TableColumn } from '@cleansia/components';
+import { PermissionService, Policy } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
 
-/**
- * BillingInterval wire values — the backend serializes enums as ints
- * (Monthly=1, Yearly=2); the generated string enum lies about the runtime
- * shape until the admin client is regenerated.
- */
 export const BILLING_INTERVAL_WIRE = {
-  monthly: 1,
-  yearly: 2,
+  monthly: BillingInterval.Monthly,
+  yearly: BillingInterval.Yearly,
 } as const;
 
 export type BillingIntervalWireValue =
@@ -24,10 +20,23 @@ export const BILLING_INTERVAL_LABEL_KEYS: Readonly<Record<number, string>> = {
 export function toBillingIntervalWireValue(
   value: BillingInterval | number | undefined
 ): BillingIntervalWireValue {
-  if (value === BillingInterval.Yearly) return BILLING_INTERVAL_WIRE.yearly;
   return Number(value) === BILLING_INTERVAL_WIRE.yearly
     ? BILLING_INTERVAL_WIRE.yearly
     : BILLING_INTERVAL_WIRE.monthly;
+}
+
+export const UNPRICED_PLAN_CELL = '—';
+
+/**
+ * A plan with no row in the platform default currency is not on sale there — that is a real
+ * state, so the cell reads a dash and never "0", which would read as free.
+ */
+export function formatPlanPrice(
+  value: number | undefined | null,
+  currencyCode: string | undefined | null
+): string {
+  if (value == null) return UNPRICED_PLAN_CELL;
+  return `${value.toFixed(2)} ${currencyCode ?? ''}`.trimEnd();
 }
 
 export function getMembershipPlanTableDefinition(
@@ -36,6 +45,7 @@ export function getMembershipPlanTableDefinition(
     onDeactivate: (row: MembershipPlanListItem) => void;
   },
   translate: TranslateService,
+  permissions: PermissionService,
   statusTemplate?: TemplateRef<MembershipPlanListItem>
 ): {
   columns: TableColumn<MembershipPlanListItem>[];
@@ -47,13 +57,13 @@ export function getMembershipPlanTableDefinition(
         id: 'code',
         field: 'code',
         header: translate.instant('pages.membership_plans.columns.code'),
-        width: '12%',
+        width: '11%',
       },
       {
         id: 'name',
         field: 'name',
         header: translate.instant('pages.membership_plans.columns.name'),
-        width: '14%',
+        width: '13%',
       },
       {
         id: 'billingInterval',
@@ -63,23 +73,31 @@ export function getMembershipPlanTableDefinition(
           const labelKey = BILLING_INTERVAL_LABEL_KEYS[Number(row.billingInterval)];
           return labelKey ? translate.instant(labelKey) : '';
         },
-        width: '9%',
+        width: '8%',
       },
       {
-        id: 'monthlyPriceCzk',
-        field: 'monthlyPriceCzk',
+        id: 'price',
+        field: 'price',
         header: translate.instant('pages.membership_plans.columns.price'),
-        getValue: (row) => formatCzk(row.monthlyPriceCzk),
+        getValue: (row) => formatPlanPrice(row.price, row.currencyCode),
         width: '10%',
       },
       {
-        id: 'monthlyEquivalentPriceCzk',
-        field: 'monthlyEquivalentPriceCzk',
+        id: 'monthlyEquivalentPrice',
+        field: 'monthlyEquivalentPrice',
         header: translate.instant(
           'pages.membership_plans.columns.monthly_equivalent'
         ),
-        getValue: (row) => formatCzk(row.monthlyEquivalentPriceCzk),
+        getValue: (row) =>
+          formatPlanPrice(row.monthlyEquivalentPrice, row.currencyCode),
         width: '11%',
+      },
+      {
+        id: 'currencyCode',
+        field: 'currencyCode',
+        header: translate.instant('pages.membership_plans.columns.currency'),
+        getValue: (row) => row.currencyCode ?? '',
+        width: '7%',
       },
       {
         id: 'discountPercentage',
@@ -87,14 +105,14 @@ export function getMembershipPlanTableDefinition(
         header: translate.instant('pages.membership_plans.columns.discount'),
         getValue: (row) =>
           row.discountPercentage != null ? `${row.discountPercentage}%` : '—',
-        width: '8%',
+        width: '7%',
       },
       {
         id: 'trialPeriodDays',
         field: 'trialPeriodDays',
         header: translate.instant('pages.membership_plans.columns.trial_days'),
         getValue: (row) => `${row.trialPeriodDays ?? 0}`,
-        width: '8%',
+        width: '7%',
       },
       {
         id: 'freeCancellationWindowHours',
@@ -103,7 +121,7 @@ export function getMembershipPlanTableDefinition(
           'pages.membership_plans.columns.free_cancel_window'
         ),
         getValue: (row) => `${row.freeCancellationWindowHours ?? 0}`,
-        width: '9%',
+        width: '8%',
       },
       {
         id: 'allowsExpressUpgrade',
@@ -111,7 +129,7 @@ export function getMembershipPlanTableDefinition(
         header: translate.instant('pages.membership_plans.columns.express'),
         getValue: (row) =>
           translate.instant(row.allowsExpressUpgrade ? 'global.yes' : 'global.no'),
-        width: '8%',
+        width: '7%',
       },
       {
         id: 'isActive',
@@ -126,22 +144,19 @@ export function getMembershipPlanTableDefinition(
         icon: 'pi pi-pencil',
         tooltip: translate.instant('global.actions.edit'),
         color: 'warning',
+        visible: () => permissions.hasPolicy(Policy.CanUpdateMembershipPlan),
         onClick: (row) => defs.onEdit(row),
       },
       {
         icon: 'pi pi-ban',
         tooltip: translate.instant('pages.membership_plans.actions.deactivate'),
         color: 'danger',
-        visible: (row) => row.isActive === true,
+        visible: (row) =>
+          row.isActive === true && permissions.hasPolicy(Policy.CanDeactivateMembershipPlan),
         onClick: (row) => defs.onDeactivate(row),
       },
     ],
   };
-}
-
-function formatCzk(value: number | undefined | null): string {
-  if (value == null) return '—';
-  return `${value.toFixed(2)} CZK`;
 }
 
 /**
@@ -155,6 +170,9 @@ export const MEMBERSHIP_PLAN_ERROR_KEY_MAP: Readonly<Record<string, string>> = {
   'membership.plan.discount_out_of_range':
     'api.membership.plan.discount_out_of_range',
   'membership.plan.not_found': 'api.membership.plan.not_found',
+  'membership.plan.stripe_price_already_used':
+    'api.membership.plan.stripe_price_already_used',
+  'currency.not_found': 'api.currency.not_found',
 };
 
 export const MEMBERSHIP_PLAN_FALLBACK_ERROR_KEY =

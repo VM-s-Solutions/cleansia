@@ -19,11 +19,12 @@ import {
   TableColumn,
   TableAction,
 } from '@cleansia/components';
-import { Policy } from '@cleansia/services';
+import { PermissionService, Policy } from '@cleansia/services';
 import { CleansiaPermissionDirective } from '@cleansia/directives';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { ConfirmationService } from 'primeng/api';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
+import { TagModule } from 'primeng/tag';
 import { Subject, takeUntil } from 'rxjs';
 import { CountryManagementFacade } from './country-management.facade';
 import {
@@ -43,6 +44,7 @@ import {
     CleansiaLoaderComponent,
     CleansiaSectionComponent,
     ConfirmDialogModule,
+    TagModule,
     CleansiaPermissionDirective,
   ],
   templateUrl: './country-management.component.html',
@@ -54,9 +56,13 @@ export class CountryManagementComponent implements AfterViewInit, OnDestroy {
   protected readonly facade = inject(CountryManagementFacade);
   protected readonly Policy = Policy;
   private readonly translate = inject(TranslateService);
+  private readonly permissions = inject(PermissionService);
   private readonly confirmationService = inject(ConfirmationService);
 
-  flagTemplate = viewChild<TemplateRef<any>>('flagTemplate');
+  flagTemplate = viewChild<TemplateRef<CountryListItem>>('flagTemplate');
+  defaultMarketTemplate = viewChild<TemplateRef<CountryListItem>>(
+    'defaultMarketTemplate'
+  );
 
   countryColumns!: TableColumn<CountryListItem>[];
   countryActions!: TableAction<CountryListItem>[];
@@ -86,9 +92,12 @@ export class CountryManagementComponent implements AfterViewInit, OnDestroy {
       {
         onEdit: this.editCountry.bind(this),
         onDelete: this.confirmDeleteCountry.bind(this),
+        onSetDefaultMarket: this.confirmSetDefaultMarket.bind(this),
       },
       this.translate,
-      this.flagTemplate()
+      this.permissions,
+      this.flagTemplate(),
+      this.defaultMarketTemplate()
     );
     this.countryColumns = tableDef.columns;
     this.countryActions = tableDef.actions;
@@ -105,6 +114,20 @@ export class CountryManagementComponent implements AfterViewInit, OnDestroy {
 
   editCountry(country: CountryListItem): void {
     this.facade.navigateToEditCountry(country);
+  }
+
+  confirmSetDefaultMarket(country: CountryListItem): void {
+    this.confirmationService.confirm({
+      message: this.translate.instant(
+        'pages.country_management.set_default_market_confirm',
+        { name: country.name }
+      ),
+      header: this.translate.instant('pages.country_management.set_default_market'),
+      icon: 'pi pi-star',
+      accept: () => {
+        this.facade.setDefaultMarket(country);
+      },
+    });
   }
 
   confirmDeleteCountry(country: CountryListItem): void {

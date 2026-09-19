@@ -1,6 +1,7 @@
 using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Features.Orders.DTOs;
+using Cleansia.Core.AppServices.Features.Users.DTOs;
 using Cleansia.Core.AppServices.Shared.DTOs.ResponseModels;
 using Cleansia.Web.Admin.Abstractions;
 using Cleansia.Web.Admin.Attributes;
@@ -15,7 +16,7 @@ namespace Cleansia.Web.Admin.Controllers;
 public class AdminOrderController(IMediator mediator) : ApiController(mediator)
 {
     [HttpGet("get-paged")]
-    [Permission(Policy.CanViewPagedOrder)]
+    [Permission(Policy.CanViewPagedOrderAdmin)]
     [ProducesResponseType(typeof(PagedData<OrderListItem>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -27,7 +28,7 @@ public class AdminOrderController(IMediator mediator) : ApiController(mediator)
     }
 
     [HttpGet("details/{orderId}")]
-    [Permission(Policy.CanViewOrderDetail)]
+    [Permission(Policy.CanViewOrderDetailAdmin)]
     [ProducesResponseType(typeof(OrderItem), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -39,7 +40,16 @@ public class AdminOrderController(IMediator mediator) : ApiController(mediator)
         return HandleResult<OrderItem>(result);
     }
 
-    // A Command, not a GET, and that is the point: AdminMutationGate writes an audit row only for a
+    [HttpGet("{orderId}/customer")]
+    [Permission(Policy.CanViewOrderCustomer)]
+    [ProducesResponseType(typeof(UserItem), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> GetOrderCustomer(string orderId, CancellationToken cancellationToken)
+        => HandleResult<UserItem>(await Mediator.Send(new GetOrderCustomer.Query(orderId), cancellationToken));
+
+    // A Command, not a GET, and that is the point: AuditGate writes an audit row only for a
     // request type whose name ends in "Command". Entry instructions are a physical key to somebody's
     // home, so the compensating control for holding them is knowing who looked — see
     // RevealOrderAccessInstructions. Rate-limited on the same partition as the payout reveal, because
@@ -58,7 +68,7 @@ public class AdminOrderController(IMediator mediator) : ApiController(mediator)
     }
 
     [HttpGet("photos/{orderId}")]
-    [Permission(Policy.CanViewOrderPhotos)]
+    [Permission(Policy.CanViewOrderPhotosAdmin)]
     [ProducesResponseType(typeof(GetOrderPhotos.Response), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]

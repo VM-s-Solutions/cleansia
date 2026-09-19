@@ -11,6 +11,9 @@ namespace Cleansia.Core.Domain.Repositories;
 /// </summary>
 public interface IUserMembershipRepository : IRepository<UserMembership, string>
 {
+    /// <summary>Latest authoritatively paid enrolment for a proven account owner, tracked for its lapse latch.</summary>
+    Task<UserMembership?> GetLatestPaidForUserAsync(string userId, CancellationToken cancellationToken);
+
     /// <summary>
     /// Resolve the user's currently-providing-benefits membership, with
     /// <see cref="UserMembership.MembershipPlan"/> eagerly loaded so the
@@ -27,6 +30,30 @@ public interface IUserMembershipRepository : IRepository<UserMembership, string>
     /// stays the one for load-then-mutate handlers (cancel/swap/webhook reconciliation).
     /// </summary>
     Task<UserMembership?> GetActiveForUserNoTrackingAsync(string userId, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Resolve the membership that ENTITLES the user to Cleansia Plus benefits — a live enrolment that is
+    /// also being paid for. Owner ruling 2026-09-08 (T-0690): no Plus benefit is granted until the
+    /// customer actually subscribes.
+    ///
+    /// <para><b>This is deliberately a second method rather than a narrowing of
+    /// <see cref="GetActiveForUserAsync"/>, and the distinction is load-bearing.</b> That one answers "is
+    /// there a live enrolment?" and is what stops a second Stripe subscription being created, what lets a
+    /// customer cancel, what the webhook reconciles against, and what GDPR erasure must see. Narrowing it
+    /// in place would make a trialing customer look unsubscribed to <c>CreateMembershipSubscription</c>,
+    /// which would mint a SECOND subscription and collide with the filtered unique index on
+    /// (TenantId, UserId) WHERE Status = Active — a 500 on a paying customer. It would also refuse to
+    /// cancel a live trial. Two questions, two methods.</para>
+    ///
+    /// <para>With the trial removed this is a backstop rather than a live gate: no new enrolment can be
+    /// trialing, because both admin plan commands refuse a non-zero trial period. It stays because
+    /// <c>TrialEndsAtUtc</c> is never cleared once set, historical rows may carry one, and a trial
+    /// reintroduced by any route must not silently start granting benefits again.</para>
+    /// </summary>
+    Task<UserMembership?> GetEntitledForUserAsync(string userId, CancellationToken cancellationToken);
+
+    /// <summary>No-tracking variant of <see cref="GetEntitledForUserAsync"/>, for read-only callers.</summary>
+    Task<UserMembership?> GetEntitledForUserNoTrackingAsync(string userId, CancellationToken cancellationToken);
 
     /// <summary>
     /// Lookup by Stripe subscription id. Used by webhook handlers to reconcile
@@ -46,4 +73,11 @@ public interface IUserMembershipRepository : IRepository<UserMembership, string>
     /// out a second trial. → /flows/loyalty-and-memberships</para>
     /// </summary>
     Task<bool> HasEverStartedTrialAsync(string userId, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Has this user ever held a membership billed in a currency other than <paramref name="currencyId"/>,
+    /// in any status? The question behind adopting the legacy Stripe Customer for a currency: a Customer
+    /// that ever invoiced another currency is locked to it by Stripe. Historical, so every row counts.
+    /// </summary>
+    Task<bool> HasAnyInOtherCurrencyAsync(string userId, string currencyId, CancellationToken cancellationToken);
 }

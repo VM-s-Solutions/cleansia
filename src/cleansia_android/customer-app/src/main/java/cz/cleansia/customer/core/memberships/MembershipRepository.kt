@@ -67,12 +67,14 @@ class MembershipRepository @Inject constructor(
         }
     } }
 
-    suspend fun subscribePhase1(planCode: String): ApiResult<CreateMembershipSubscriptionResponse> =
+    /** [countryId] is the chosen market's — the subscription is created in its currency (ADR-0059 D2). */
+    suspend fun subscribePhase1(planCode: String, countryId: String?): ApiResult<CreateMembershipSubscriptionResponse> =
         call("subscribePhase1") {
             api.subscribe(
                 CreateMembershipSubscriptionRequest(
                     planCode = planCode,
                     paymentMethodConfirmed = false,
+                    countryId = countryId,
                 ),
             )
         }
@@ -86,6 +88,7 @@ class MembershipRepository @Inject constructor(
     suspend fun subscribePhase2(
         planCode: String,
         idempotencyToken: String?,
+        countryId: String?,
     ): ApiResult<CreateMembershipSubscriptionResponse> {
         val result = call("subscribePhase2") {
             api.subscribe(
@@ -93,6 +96,7 @@ class MembershipRepository @Inject constructor(
                     planCode = planCode,
                     paymentMethodConfirmed = true,
                     idempotencyToken = idempotencyToken,
+                    countryId = countryId,
                 ),
             )
         }
@@ -108,16 +112,21 @@ class MembershipRepository @Inject constructor(
     }
 
     /**
-     * Plan catalog. Cached per-process — plans don't change often, no need
-     * to re-fetch on every screen open. Caller can pass [forceRefresh] to
-     * bust the cache (e.g. an admin-side change).
+     * Plan catalog for one market, cached per-process until the market changes: the rows are priced in
+     * the market's currency, so a list answered for another `countryId` is re-read rather than served
+     * (the `CatalogRepository` idiom). An empty answer is cached like any other — it is the server
+     * saying Plus is not on sale there. [forceRefresh] busts the cache (e.g. an admin-side change).
      */
-    suspend fun getPlans(forceRefresh: Boolean = false): ApiResult<List<MembershipPlanDto>> {
+    suspend fun getPlans(countryId: String?, forceRefresh: Boolean = false): ApiResult<List<MembershipPlanDto>> {
         val cached = _plans.value
-        if (!forceRefresh && cached.isNotEmpty()) return ApiResult.Success(cached)
-        return call("getPlans") { api.getPlans() }.onSuccess { _plans.value = it }
+        if (!forceRefresh && cached != null && plansCountryId == countryId) return ApiResult.Success(cached)
+        return call("getPlans") { api.getPlans(countryId) }.onSuccess {
+            _plans.value = it
+            plansCountryId = countryId
+        }
     }
-    private val _plans = MutableStateFlow<List<MembershipPlanDto>>(emptyList())
+    private val _plans = MutableStateFlow<List<MembershipPlanDto>?>(null)
+    private var plansCountryId: String? = null
 
     /**
      * Swap to a different plan. Returns the swap response on success and
@@ -135,7 +144,8 @@ class MembershipRepository @Inject constructor(
     /** Clear cache on sign-out so a re-login starts fresh. */
     override suspend fun clear() {
         _current.value = null
-        _plans.value = emptyList()
+        _plans.value = null
+        plansCountryId = null
         staleness.reset()
     }
 

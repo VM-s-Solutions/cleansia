@@ -33,6 +33,10 @@ final class PartnerErrorVoiceTests: XCTestCase {
         PartnerOnlyKey("employee.profile_incomplete", emitters: "TakeOrder, CompleteOrder, ApproveEmployee"),
         PartnerOnlyKey("employee.not_approved", emitters: "TakeOrder, StartOrder, CompleteOrder, MarkCashCollected"),
         PartnerOnlyKey(
+            "auth.company_deactivated",
+            emitters: "CompanySignInGate via MobilePartnerLogin, GoogleAuth, RefreshToken"
+        ),
+        PartnerOnlyKey(
             "payout.not_found",
             emitters: "GetMyPayoutDetails, GetEmployeePayoutDetails, RevealEmployeePayoutDetails"
         ),
@@ -61,9 +65,10 @@ final class PartnerErrorVoiceTests: XCTestCase {
     private static let partnerReachable: [String: String] = [
         "auth.account_locked": "LoginValidator",
         "auth.apple_type_error": "AuthTypeErrorMessages",
+        "auth.company_deactivated": "CompanySignInGate via MobilePartnerLogin, GoogleAuth, RefreshToken",
         "auth.external_type_error": "AuthTypeErrorMessages",
         "auth.google_type_error": "AuthTypeErrorMessages",
-        "auth.insufficient_privileges": "MobilePartnerLogin",
+        "auth.insufficient_privileges": "ConfirmUserEmail, GoogleAuth, MobilePartnerLogin",
         "auth.internal_type_error": "AuthTypeErrorMessages",
         "auth.invalid_confirmation_code": "ConfirmUserEmail",
         "auth.invalid_google_token": "GoogleAuth",
@@ -75,7 +80,8 @@ final class PartnerErrorVoiceTests: XCTestCase {
         "common.required": "AddOrderNote, BaseAuthValidator, CompleteOrder +37 more",
         "company.not_found": "ReceiptService",
         "country.not_existing_id": "UpdateAddressInfo, UpdateEmployee, UpdateIdentificationInfo",
-        "country.not_serviced": "UpdateAddressInfo, UpdateEmployee",
+        "country.not_serviced": "OperatorTenantScopeBehavior, UpdateAddressInfo, UpdateEmployee",
+        "currency.not_found": "GetPeriodPays",
         "device.invalid_platform": "RegisterDevice",
         "device.not_found": "RevokeDevice",
         "dispute.max_length_exceeded": "UpdateBankDetails, UpdateEmployee, UpdateIdentificationInfo",
@@ -128,8 +134,9 @@ final class PartnerErrorVoiceTests: XCTestCase {
         "payroll.invoice.not_found": "DownloadInvoice, GetInvoiceById",
         "payroll.pay_period.not_found": "GetPeriodPays",
         "receipt.not_found": "DownloadOrderReceipt",
+        "tenant.not_found": "OperatorTenantScopeBehavior",
         "user.email_confirmed": "ResendConfirmationEmail",
-        "user.existing_email": "Register, RegisterEmployee",
+        "user.existing_email": "RegisterEmployee",
         "user.existing_phone_number": "UpdateCurrentUser",
         "user.not_allowed_to_update": "UpdateCurrentUser",
         "user.not_existing_email": "CheckCurrentEmployee, GdprDeletionService, LoginValidator +3 more",

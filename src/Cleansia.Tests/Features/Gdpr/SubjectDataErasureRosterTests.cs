@@ -1,4 +1,4 @@
-﻿using System.Text.RegularExpressions;
+using System.Text.RegularExpressions;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Users;
 using Cleansia.Infra.Database;
@@ -73,6 +73,13 @@ public class SubjectDataErasureRosterTests
         RetainedByPolicy,
 
         /// <summary>
+        /// Kept READABLE for a fixed window after the erasure because a claim on the order may still turn
+        /// on it, then blanked by the retention sweep. The erasure stamps the window rather than the
+        /// marker, so the site it names is that stamp, and the reason names the sweep that finishes it.
+        /// </summary>
+        RetainedForDefence,
+
+        /// <summary>
         /// Kept because the payload identifies a device, a quota slot or a counter rather than a person, and
         /// its only subject handle is an id that no longer resolves to one.
         ///
@@ -124,8 +131,13 @@ public class SubjectDataErasureRosterTests
         [typeof(Core.Domain.Orders.Order)] = new(
             Verdict.AnonymizedInPlace,
             "The service and financial record. Kept, with the customer's name, address, phone, notes and "
-                + "instructions blanked in place.",
-            InErasure("order.AnonymizeCustomerData()")),
+                + "instructions blanked in place. The set is SubjectOrders: the account's own orders AND the "
+                + "guest bookings placed with the account's e-mail (owner ruling 2026-09-15) — a guest booking "
+                + "is never attached to an account afterwards, so the e-mail is the only link — read past the "
+                + "tenant filter because a guest booking carries its market's operator, and the export lists "
+                + "the same set. Only a live ACCOUNT order refuses the erasure; a live guest booking is left "
+                + "for the order-PII sweep rather than dead-ending the subject on an order they cannot cancel.",
+            InErasure("order.AnonymizeCustomerData()"), InErasure("SubjectOrders.Of(user.Id, user.Email)")),
 
         [typeof(Core.Domain.Orders.OrderReview)] = new(
             Verdict.AnonymizedInPlace,
@@ -150,14 +162,20 @@ public class SubjectDataErasureRosterTests
             InErasure("photo.Anonymize()")),
 
         [typeof(Core.Domain.Disputes.Dispute)] = new(
-            Verdict.AnonymizedInPlace,
-            "The adjudication record is kept; the subject's text and the evidence paths are blanked, in that "
-                + "order relative to the blob deletes.",
-            InErasure("dispute.Anonymize()")),
+            Verdict.RetainedForDefence,
+            "The adjudication record is kept, and so is its TEXT — the description, the messages and the "
+                + "resolution notes — for three years after the erasure (owner ruling 2026-09-14: a "
+                + "chargeback or a claim on the order may still turn on it). The erasure stamps "
+                + "TextRetainedUntil from the retention.dispute_text.years window and the retention sweep's "
+                + "DisputeText task blanks the text once the stamp is past. The evidence FILES do not wait: "
+                + "the blobs are deleted at erasure and the rows' names and paths blanked next to them, in "
+                + "that order relative to the deletes.",
+            InErasure("dispute.AnonymizeEvidence()"), InErasure("dispute.RetainTextUntil(")),
 
         [typeof(Core.Domain.Disputes.DisputeMessage)] = new(
-            Verdict.AnonymizedInPlace,
-            "Blanked inside the dispute aggregate's own walk.",
+            Verdict.RetainedForDefence,
+            "Readable for the dispute's three-year window, then blanked inside the dispute aggregate's own "
+                + "walk when the sweep reaches its parent.",
             new Site(DisputeAggregate, "message.Anonymize()")),
 
         [typeof(Core.Domain.EmployeePayroll.OrderEmployeePay)] = new(
@@ -199,8 +217,10 @@ public class SubjectDataErasureRosterTests
                 + "which is what starts that clock: an untouched live token would otherwise keep the "
                 + "subject's IP address, device label and device id until its own natural expiry first. Not a "
                 + "session cut — the refresh path already refuses a deactivated user — and ADR-0027's poll "
-                + "predicate is untouched, since it reads the password_reset reason alone.",
-            InErasure("refreshTokenService.RevokeAllForUserAsync")),
+                + "predicate is untouched, since it reads the password_reset reason alone. STAGED, never "
+                + "self-committed: the revoke rides the erasure's single commit, so a commit failure leaves "
+                + "the sessions alive along with everything else (owner ruling 2026-09-14).",
+            InErasure("refreshTokenService.StageRevokeAllForUserAsync")),
 
         [typeof(Core.Domain.Documents.DocumentDeletionRequest)] = new(
             Verdict.Deleted,
@@ -244,8 +264,10 @@ public class SubjectDataErasureRosterTests
 
         [typeof(Core.Domain.Users.GdprRequest)] = new(
             Verdict.RetainedByPolicy,
-            "It IS the erasure's own audit record — deleting it would erase the evidence that the erasure "
-                + "happened. The retention job anonymizes its ProcessedBy after its own window.",
+            "It IS the erasure's own audit record — and, since ADR-0062, the subject export's: both the "
+                + "customer's self-export and the admin export commit their Export row. Deleting it would erase "
+                + "the evidence that the erasure or the export happened. The retention job anonymizes its "
+                + "ProcessedBy after its own window.",
             InErasure("gdprRequestRepository.Add(auditEntry)")),
 
         [typeof(Core.Domain.Auditing.AdminActionAudit)] = new(
@@ -262,6 +284,20 @@ public class SubjectDataErasureRosterTests
                 + "that they held the seat — and it carries two ids and an enum, no name, contact or "
                 + "free text."),
 
+        [typeof(Core.Domain.Auditing.CustomerActionAudit)] = new(
+            Verdict.AnonymizedInPlace,
+            "ADR-0062 defence-of-claims record. Its subject handle is a bare UserId that User.Anonymize keeps, so "
+                + "it is pseudonymous without a write; the three request-metadata columns (IP, device label, device "
+                + "id) ARE personal data and are blanked here. The payload holds ids, money, enums and versions only "
+                + "— CustomerAuditPayloadPiiGuardTests walks every ICustomerAuditPayload record and is the standing "
+                + "proof. The GUEST rows — no UserId, keyed on one of the subject's orders, which since the "
+                + "2026-09-15 ruling include the guest bookings under the account's e-mail — lose the same three "
+                + "columns in the same commit; a stranger's guest row on another order is untouched. Each row is "
+                + "deleted by the retention sweep three years after its own OccurredOn; the UserId -> OrderId link "
+                + "is kept on purpose (ADR-0062 D5).",
+            InErasure("customerActionAuditRepository.PseudonymiseForSubjectAsync"),
+            InErasure("customerActionAuditRepository.PseudonymiseGuestRowsForOrdersAsync")),
+
         [typeof(Core.Domain.EmployeePayroll.EmployeeInvoice)] = new(
             Verdict.RetainedByPolicy,
             "ADR-0007 D4 financial record. The erasure refuses to run at all while one is Pending, Approved "
@@ -272,6 +308,12 @@ public class SubjectDataErasureRosterTests
             "A subscription record with its Stripe identifiers — a financial record on the same ADR-0007 D4 "
                 + "ground. The erasure requests cancellation at period end rather than deleting the row.",
             InErasure("membership.MarkCancellationRequested()")),
+
+        [typeof(UserStripeCustomer)] = new(
+            Verdict.Deleted,
+            "A Stripe Customer id per currency — the same handle User.StripeCustomerId holds, which "
+                + "Anonymize() clears; two tables recording one fact are treated the same way.",
+            InErasure("userStripeCustomerRepository.RemoveForUserAsync(user.Id, ct)")),
 
         [typeof(Core.Domain.EmployeePayroll.EmployeePayConfig)] = new(
             Verdict.RetainedPseudonymous,
@@ -333,6 +375,12 @@ public class SubjectDataErasureRosterTests
         [typeof(Core.Domain.Configuration.CountryConfiguration)] = new(
             Verdict.NotADataSubject,
             "PhonePrefix is a country dialling code."),
+
+        [typeof(Core.Domain.Legal.LegalDocumentText)] = new(
+            Verdict.NotADataSubject,
+            "The platform's own legal text (the terms, the privacy policy) in one language — the unbounded "
+                + "column is the markdown a customer accepted, which must read the same forever. A consent row "
+                + "points at it by id; nothing about a person is in it."),
     };
 
     /// <summary>
@@ -410,7 +458,7 @@ public class SubjectDataErasureRosterTests
         {
             Assert.False(string.IsNullOrWhiteSpace(row.Why), $"{type.Name} carries no reason.");
 
-            if (row.Verdict is Verdict.Deleted or Verdict.AnonymizedInPlace)
+            if (row.Verdict is Verdict.Deleted or Verdict.AnonymizedInPlace or Verdict.RetainedForDefence)
             {
                 Assert.True(row.Sites.Length > 0,
                     $"{type.Name} claims the erasure acts on it ({row.Verdict}) but names no site that does.");

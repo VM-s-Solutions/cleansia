@@ -45,10 +45,11 @@ public class AnonymousCatalogPlatformConfigStructuralTests
     [MemberData(nameof(CatalogEntities))]
     public void CatalogEntity_MatchesPlatformConfigPrecedent_AuditableButNotITenantEntity(Type entityType)
     {
-        // Same shape as Currency, the platform-config precedent the panel cited: Auditable (the dormant
-        // TenantId column lives on that base, shared by all entities), but NOT ITenantEntity — the marker
-        // the global filter (CleansiaDbContext.ApplyTenantQueryFilters) keys off.
+        // Same shape as Currency, the platform-config precedent the panel cited: plain Auditable, which
+        // carries no TenantId column, and NOT ITenantEntity — the marker the global filter
+        // (CleansiaDbContext.ApplyTenantQueryFilters) keys off.
         Assert.True(typeof(Auditable).IsAssignableFrom(entityType));
+        Assert.False(typeof(TenantAuditable).IsAssignableFrom(entityType));
         Assert.False(typeof(ITenantEntity).IsAssignableFrom(entityType));
 
         Assert.True(typeof(Auditable).IsAssignableFrom(typeof(Currency)));

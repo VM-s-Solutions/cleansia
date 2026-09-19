@@ -1,4 +1,5 @@
 ﻿using Cleansia.Core.AppServices.Features.DataRetention;
+using Cleansia.Core.AppServices.Features.Gdpr;
 using Cleansia.Core.AppServices.Services;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Blobs.Abstractions;
@@ -55,16 +56,23 @@ public sealed class UserNotificationRetentionAndGdprTests : IDisposable
 
     public void Dispose() => _connection.Dispose();
 
-    private CleansiaDbContext NewContext() =>
+    private CleansiaDbContext NewContext(ITenantProvider? tenantProvider = null) =>
         new(
             new DbContextOptionsBuilder<CleansiaDbContext>().UseSqlite(_connection).Options,
             new TestUserSessionProvider("system", "system@cleansia.test"),
-            new FixedTenantProvider(null));
+            tenantProvider ?? new FixedTenantProvider(TestTenants.Default));
 
     private async Task EnsureSchemaAsync()
     {
         await using var ctx = NewContext();
-        await ctx.Database.EnsureCreatedAsync();
+        await TestTenants.EnsureCreatedWithRegistryAsync(ctx);
+    }
+
+    private async Task RunRetentionAsync()
+    {
+        var tenantProvider = new FixedTenantProvider(null);
+        await using var ctx = NewContext(tenantProvider);
+        await NewRetentionService(ctx, tenantProvider).RunAllRetentionTasksAsync(CancellationToken.None);
     }
 
     private static UserNotification Row(string userId, DateTimeOffset createdOn)
@@ -74,7 +82,7 @@ public sealed class UserNotificationRetentionAndGdprTests : IDisposable
         return row;
     }
 
-    private DataRetentionBackgroundService NewRetentionService(CleansiaDbContext ctx)
+    private DataRetentionBackgroundService NewRetentionService(CleansiaDbContext ctx, ITenantProvider tenantProvider)
     {
         var session = new TestUserSessionProvider("system", "system@cleansia.test");
         return new DataRetentionBackgroundService(
@@ -85,9 +93,14 @@ public sealed class UserNotificationRetentionAndGdprTests : IDisposable
             new UserConsentRepository(ctx),
             new EmployeeDocumentRepository(ctx),
             new UserNotificationRepository(ctx),
+            new CustomerActionAuditRepository(ctx),
+            new DisputeRepository(ctx),
+            new TenantRepository(ctx),
+            tenantProvider,
             _configProvider.Object,
             new DataRetentionConfig(new ConfigurationBuilder().Build()),
             _blobClientFactory.Object,
+            new ArchiveWriteGate(),
             NullLogger<DataRetentionBackgroundService>.Instance);
     }
 
@@ -113,10 +126,7 @@ public sealed class UserNotificationRetentionAndGdprTests : IDisposable
             await seed.CommitAsync(CancellationToken.None);
         }
 
-        await using (var ctx = NewContext())
-        {
-            await NewRetentionService(ctx).RunAllRetentionTasksAsync(CancellationToken.None);
-        }
+        await RunRetentionAsync();
 
         var remaining = await ReadRowsAsync();
         Assert.Equal(2, remaining.Count);
@@ -141,10 +151,7 @@ public sealed class UserNotificationRetentionAndGdprTests : IDisposable
             await seed.CommitAsync(CancellationToken.None);
         }
 
-        await using (var ctx = NewContext())
-        {
-            await NewRetentionService(ctx).RunAllRetentionTasksAsync(CancellationToken.None);
-        }
+        await RunRetentionAsync();
 
         var remaining = await ReadRowsAsync();
         Assert.Equal(RetentionDefaults.MaxNotificationsPerUser, remaining.Count(r => r.UserId == UserId));
@@ -186,6 +193,7 @@ public sealed class UserNotificationRetentionAndGdprTests : IDisposable
                 new CreditAccountRepository(ctx),
                 new EmployeePayoutDetailsRepository(ctx),
                 new UserMembershipRepository(ctx),
+                new UserStripeCustomerRepository(ctx),
                 new OrderPhotoRepository(ctx),
                 new DeviceRepository(ctx, session),
                 new LiveActivityTokenRepository(ctx),
@@ -199,9 +207,13 @@ public sealed class UserNotificationRetentionAndGdprTests : IDisposable
                 new UserNotificationRepository(ctx),
                 new DeadLetterRepository(ctx),
                 new OutboxMessageRepository(ctx),
+                new CustomerActionAuditRepository(ctx),
                 Mock.Of<IRefreshTokenService>(),
                 Mock.Of<IStripeClient>(),
                 _blobClientFactory.Object,
+                Mock.Of<IAppConfigurationProvider>(),
+                new ErasureAttempt(),
+                new ArchiveWriteGate(),
                 NullLogger<GdprDeletionService>.Instance);
 
             var result = await gdpr.DeleteUserAccountAsync(

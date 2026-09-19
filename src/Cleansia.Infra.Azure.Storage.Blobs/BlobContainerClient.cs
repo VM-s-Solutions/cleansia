@@ -1,4 +1,5 @@
-﻿using Azure.Storage.Blobs.Models;
+﻿using Azure;
+using Azure.Storage.Blobs.Models;
 using Azure.Storage.Blobs.Specialized;
 using Azure.Storage.Sas;
 using Cleansia.Core.Blobs.Abstractions;
@@ -64,6 +65,25 @@ public class BlobContainerClient : IBlobContainerClient
         if (metadata is not null)
         {
             await client.SetMetadataAsync(metadata.ToDictionary(), cancellationToken: cancellationToken);
+        }
+    }
+
+    public async Task<bool> UploadIfAbsentAsync(string blobName, Stream content, CancellationToken cancellationToken)
+    {
+        await CreateContainerAsync(cancellationToken);
+
+        var client = _container.GetBlobClient(blobName);
+        try
+        {
+            await client.UploadAsync(
+                content,
+                new BlobUploadOptions { Conditions = new BlobRequestConditions { IfNoneMatch = ETag.All } },
+                cancellationToken);
+            return true;
+        }
+        catch (RequestFailedException ex) when (ex.Status is 409 or 412)
+        {
+            return false;
         }
     }
 

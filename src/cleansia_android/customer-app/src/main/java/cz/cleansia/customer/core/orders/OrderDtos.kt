@@ -33,6 +33,7 @@ data class OrderListResponseDto(
 @Serializable
 data class OrderListItemDto(
     val id: String,
+    val countryId: String? = null,
     val customerName: String? = null,
     val customerEmail: String? = null,
     val customerPhone: String? = null,
@@ -87,6 +88,7 @@ data class OrderListItemDto(
 @Serializable
 data class OrderDetailDto(
     val id: String,
+    val countryId: String? = null,
     val displayOrderNumber: String? = null,
     val customerName: String? = null,
     val customerEmail: String? = null,
@@ -366,7 +368,6 @@ data class OrderCurrencyListItemDto(
     val code: String? = null,
     val symbol: String? = null,
     val name: String? = null,
-    val exchangeRate: Double = 0.0,
     val isDefault: Boolean = false,
 )
 
@@ -377,7 +378,6 @@ data class OrderCurrencyDetailDto(
     val code: String? = null,
     val name: String? = null,
     val symbol: String? = null,
-    val exchangeRate: Double = 0.0,
     val isDefault: Boolean = false,
 )
 
@@ -425,6 +425,7 @@ data class CancelOrderResponse(
     val refundAmount: Double,
     val totalPrice: Double,
     val refundInitiated: Boolean,
+    val actualRefundAmount: Double? = null,
 )
 
 /**

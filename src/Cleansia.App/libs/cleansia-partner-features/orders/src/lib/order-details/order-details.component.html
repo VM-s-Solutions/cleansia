@@ -9,7 +9,13 @@
       >
         <i class="pi pi-arrow-left"></i>
       </button>
-      <a class="cleansia-order-details__breadcrumb-link" (click)="navigateToOrders()">
+      <a
+        class="cleansia-order-details__breadcrumb-link"
+        role="button"
+        tabindex="0"
+        (click)="navigateToOrders()"
+        (keydown.enter)="navigateToOrders()"
+      >
         {{ 'sidebar.orders' | translate }}
       </a>
       <i class="pi pi-chevron-right cleansia-order-details__breadcrumb-sep"></i>
@@ -49,7 +55,7 @@
     } @else if (orderDetails()) {
     <form [formGroup]="formGroup" class="cleansia-order-details__form-content">
       <!-- Order Header with status banner, order number and action buttons -->
-      <order-header
+      <cleansia-partner-order-header
         [orderNumber]="orderDetails()!.displayOrderNumber!"
         [hasInvoice]="hasInvoice()"
         [orderStatus]="orderDetails()!.orderStatus"
@@ -58,8 +64,8 @@
         [paymentStatusLabel]="paymentStatusLabel()"
         [createdOn]="formattedCreatedOn()"
         [confirmationCode]="orderDetails()!.confirmationCode || ''"
-        (onPrint)="printOrder()"
-        (onDownloadInvoice)="downloadInvoice()"
+        (print)="printOrder()"
+        (downloadInvoice)="downloadInvoice()"
       />
 
       <!-- Take Order Action -->
@@ -149,39 +155,42 @@
       }
 
       <!-- Order Status Section -->
-      <order-status
+      <cleansia-partner-order-status
         [formGroup]="formGroup"
         [statusOptions]="statusOptions()"
         [paymentStatusOptions]="paymentStatusOptions()"
       />
 
       <!-- Customer Information Section -->
-      <order-customer-info [formGroup]="formGroup" />
+      <cleansia-partner-order-customer-info [formGroup]="formGroup" />
 
       <!-- Service Details Section -->
-      <order-service-details [formGroup]="formGroup" />
+      <cleansia-partner-order-service-details [formGroup]="formGroup" />
 
       <!-- Packages -->
       @if (orderDetails()!.selectedPackages &&
       orderDetails()!.selectedPackages!.length > 0) {
-      <order-packages [packages]="orderDetails()!.selectedPackages!" />
+      <cleansia-partner-order-packages
+        [packages]="orderDetails()!.selectedPackages!"
+        [currencyCode]="orderDetails()!.currency?.code ?? ''"
+      />
       }
 
       <!-- Additional Services -->
       @if (orderDetails()!.selectedServices &&
       orderDetails()!.selectedServices!.length > 0) {
-      <order-additional-services
+      <cleansia-partner-order-additional-services
         [services]="orderDetails()!.selectedServices!"
       />
       }
 
       <!-- Extras -->
       @if (hasExtras()) {
-      <order-extras [extrasEntries]="extrasEntries()" />
+      <cleansia-partner-order-extras [extrasEntries]="extrasEntries()" />
       }
 
       <!-- Payment Information Section -->
-      <order-payment-info
+      <cleansia-partner-order-payment-info
         [formGroup]="formGroup"
         [paymentTypeOptions]="paymentTypeOptions()"
         [currencyOptions]="currencyOptions()"
@@ -198,12 +207,12 @@
         @for (employee of orderDetails()!.assignedEmployees!; track employee.id) {
         <div class="cleansia-order-details__grid cleansia-order-details__employee-row">
           <div class="cleansia-order-details__field">
-            <label class="cleansia-order-details__label">{{ 'pages.order_details.employee_name' | translate }}</label>
+            <span class="cleansia-order-details__label">{{ 'pages.order_details.employee_name' | translate }}</span>
             <span class="cleansia-order-details__value">{{ employee.fullName }}</span>
           </div>
           @if (employee.phoneNumber) {
           <div class="cleansia-order-details__field">
-            <label class="cleansia-order-details__label">{{ 'pages.order_details.employee_phone' | translate }}</label>
+            <span class="cleansia-order-details__label">{{ 'pages.order_details.employee_phone' | translate }}</span>
             <span class="cleansia-order-details__value">{{ employee.phoneNumber }}</span>
           </div>
           }
@@ -335,7 +344,7 @@
 
       <!-- Order Photos Section - Visible when employee is assigned; per-type upload/delete gated. -->
       @if (canManagePhotos() || canUploadBeforePhotos() || canUploadAfterPhotos()) {
-      <order-photos
+      <cleansia-partner-order-photos
         [orderId]="orderDetails()!.id!"
         [employeeId]="currentEmployeeId()!"
         [canUploadBefore]="canUploadBeforePhotos()"

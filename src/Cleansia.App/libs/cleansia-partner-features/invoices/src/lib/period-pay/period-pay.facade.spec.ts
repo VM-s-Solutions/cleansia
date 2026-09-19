@@ -13,7 +13,7 @@ describe('PeriodPayFacade', () => {
   let facade: PeriodPayFacade;
   let employeeClient: { getCurrentEmployee: jest.Mock };
   let payPeriodClient: { getPagedPayPeriods: jest.Mock };
-  let employeePayrollClient: { getPeriodPays: jest.Mock };
+  let employeePayrollClient: { getPeriodPays: jest.Mock; getPagedInvoices: jest.Mock };
 
   const employee = EmployeeItem.fromJS({ id: 'emp-1' });
 
@@ -25,19 +25,31 @@ describe('PeriodPayFacade', () => {
     total: 2,
   });
 
-  const summary = PeriodPaySummaryDto.fromJS({
-    payPeriodId: 'period-2',
-    employeeId: 'emp-1',
-    totalOrders: 2,
-    grandTotal: 3500,
-    hasInvoice: false,
-    orderPays: [{ id: 'pay-1', orderNumber: 'ORD-1', totalPay: 1500 }],
-  });
+  const czk = { id: 'cur-czk', code: 'CZK' };
+  const eur = { id: 'cur-eur', code: 'EUR' };
+
+  // The view currency leads the list the server sends, so the switch always contains the value it shows.
+  const summaryIn = (view: { id: string; code: string }, others: { id: string; code: string }[] = []) =>
+    PeriodPaySummaryDto.fromJS({
+      payPeriodId: 'period-2',
+      employeeId: 'emp-1',
+      totalOrders: 2,
+      grandTotal: 3500,
+      hasInvoice: false,
+      orderPays: [{ id: 'pay-1', orderNumber: 'ORD-1', totalPay: 1500 }],
+      currencyCode: view.code,
+      availableCurrencies: [view, ...others],
+    });
+
+  const summary = summaryIn(czk);
 
   beforeEach(() => {
     employeeClient = { getCurrentEmployee: jest.fn(() => of(employee)) };
     payPeriodClient = { getPagedPayPeriods: jest.fn(() => of(periodsPage)) };
-    employeePayrollClient = { getPeriodPays: jest.fn(() => of(summary)) };
+    employeePayrollClient = {
+      getPeriodPays: jest.fn(() => of(summary)),
+      getPagedInvoices: jest.fn(),
+    };
 
     TestBed.configureTestingModule({
       providers: [
@@ -68,7 +80,7 @@ describe('PeriodPayFacade', () => {
   it('scopes the summary call to the session employee and the selected period', () => {
     facade.init();
 
-    expect(employeePayrollClient.getPeriodPays).toHaveBeenCalledWith('emp-1', 'period-2');
+    expect(employeePayrollClient.getPeriodPays).toHaveBeenCalledWith('emp-1', 'period-2', undefined);
   });
 
   it('derives the status key of the selected period', () => {
@@ -79,7 +91,7 @@ describe('PeriodPayFacade', () => {
     facade.selectPeriod('period-1');
 
     expect(facade.selectedPeriodStatus()).toBe('paid');
-    expect(employeePayrollClient.getPeriodPays).toHaveBeenLastCalledWith('emp-1', 'period-1');
+    expect(employeePayrollClient.getPeriodPays).toHaveBeenLastCalledWith('emp-1', 'period-1', undefined);
   });
 
   it('syncs a connected control on auto-select without re-triggering a load', () => {
@@ -100,7 +112,7 @@ describe('PeriodPayFacade', () => {
     control.setValue('period-1');
 
     expect(facade.selectedPeriodId()).toBe('period-1');
-    expect(employeePayrollClient.getPeriodPays).toHaveBeenLastCalledWith('emp-1', 'period-1');
+    expect(employeePayrollClient.getPeriodPays).toHaveBeenLastCalledWith('emp-1', 'period-1', undefined);
   });
 
   it('shows the empty state when there are no pay periods', () => {
@@ -168,5 +180,121 @@ describe('PeriodPayFacade', () => {
     expect(employeePayrollClient.getPeriodPays).toHaveBeenCalledTimes(2);
     expect(facade.hasError()).toBe(false);
     expect(facade.summary()?.grandTotal).toBe(3500);
+  });
+
+  describe('currency view', () => {
+    it('makes one call per period load and never reads the period invoices', () => {
+      facade.init();
+      facade.selectPeriod('period-1');
+
+      expect(employeePayrollClient.getPeriodPays).toHaveBeenCalledTimes(2);
+      expect(employeePayrollClient.getPagedInvoices).not.toHaveBeenCalled();
+    });
+
+    it('offers no switch when every pay row of the period is in one currency', () => {
+      facade.init();
+
+      expect(facade.hasMultipleCurrencies()).toBe(false);
+      expect(facade.currencyOptions()).toEqual([{ label: 'CZK', value: 'cur-czk' }]);
+      expect(facade.selectedCurrencyId()).toBe('cur-czk');
+    });
+
+    it('offers a switch over every currency the summary names, with the one it is in selected', () => {
+      employeePayrollClient.getPeriodPays.mockReturnValue(of(summaryIn(eur, [czk])));
+      const control = new FormControl<string | null>(null);
+      facade.connectCurrencyControl(control);
+
+      facade.init();
+
+      expect(facade.hasMultipleCurrencies()).toBe(true);
+      expect(facade.currencyOptions()).toEqual([
+        { label: 'EUR', value: 'cur-eur' },
+        { label: 'CZK', value: 'cur-czk' },
+      ]);
+      expect(facade.selectedCurrencyId()).toBe('cur-eur');
+      expect(control.value).toBe('cur-eur');
+      expect(employeePayrollClient.getPeriodPays).toHaveBeenCalledTimes(1);
+    });
+
+    it('offers the switch on an uninvoiced period whose pay rows are in two currencies', () => {
+      employeePayrollClient.getPeriodPays.mockReturnValue(
+        of(PeriodPaySummaryDto.fromJS({ ...summaryIn(czk, [eur]).toJSON(), hasInvoice: false }))
+      );
+
+      facade.init();
+
+      expect(facade.summary()?.hasInvoice).toBe(false);
+      expect(facade.hasMultipleCurrencies()).toBe(true);
+    });
+
+    it('offers no switch when the server does not name the currencies', () => {
+      employeePayrollClient.getPeriodPays.mockReturnValue(
+        of(PeriodPaySummaryDto.fromJS({ ...summary.toJSON(), availableCurrencies: undefined }))
+      );
+
+      facade.init();
+
+      expect(facade.hasMultipleCurrencies()).toBe(false);
+      expect(facade.currencyOptions()).toEqual([]);
+      expect(facade.selectedCurrencyId()).toBeNull();
+    });
+
+    it('reloads the summary in the currency picked through the connected control', () => {
+      employeePayrollClient.getPeriodPays.mockReturnValue(of(summaryIn(czk, [eur])));
+      const control = new FormControl<string | null>(null);
+      facade.connectCurrencyControl(control);
+      facade.init();
+      employeePayrollClient.getPeriodPays.mockReturnValue(of(summaryIn(eur, [czk])));
+
+      control.setValue('cur-eur');
+
+      expect(employeePayrollClient.getPeriodPays).toHaveBeenLastCalledWith('emp-1', 'period-2', 'cur-eur');
+      expect(facade.summary()?.currencyCode).toBe('EUR');
+      expect(facade.selectedCurrencyId()).toBe('cur-eur');
+      expect(control.value).toBe('cur-eur');
+    });
+
+    it('does not reload for a control write that names the currency already shown', () => {
+      employeePayrollClient.getPeriodPays.mockReturnValue(of(summaryIn(czk, [eur])));
+      const control = new FormControl<string | null>(null);
+      facade.connectCurrencyControl(control);
+      facade.init();
+
+      control.setValue('cur-czk');
+
+      expect(employeePayrollClient.getPeriodPays).toHaveBeenCalledTimes(1);
+    });
+
+    it('forgets the currency pick when another period is selected and selects what that period is shown in', () => {
+      employeePayrollClient.getPeriodPays.mockReturnValue(of(summaryIn(czk, [eur])));
+      const control = new FormControl<string | null>(null);
+      facade.connectCurrencyControl(control);
+      facade.init();
+      control.setValue('cur-eur');
+
+      employeePayrollClient.getPeriodPays.mockReturnValue(of(summaryIn(czk)));
+      facade.selectPeriod('period-1');
+
+      expect(employeePayrollClient.getPeriodPays).toHaveBeenLastCalledWith('emp-1', 'period-1', undefined);
+      expect(facade.hasMultipleCurrencies()).toBe(false);
+      expect(facade.selectedCurrencyId()).toBe('cur-czk');
+      expect(control.value).toBe('cur-czk');
+    });
+
+    it('retries in the currency being viewed', () => {
+      employeePayrollClient.getPeriodPays.mockReturnValue(of(summaryIn(czk, [eur])));
+      facade.init();
+      employeePayrollClient.getPeriodPays.mockReturnValue(of(summaryIn(eur, [czk])));
+      facade.selectCurrency('cur-eur');
+      employeePayrollClient.getPeriodPays.mockReturnValueOnce(throwError(() => new Error('boom')));
+      facade.retry();
+
+      expect(facade.hasError()).toBe(true);
+
+      facade.retry();
+
+      expect(facade.hasError()).toBe(false);
+      expect(employeePayrollClient.getPeriodPays).toHaveBeenLastCalledWith('emp-1', 'period-2', 'cur-eur');
+    });
   });
 });

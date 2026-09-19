@@ -9,6 +9,7 @@ import {
   signal,
 } from '@angular/core';
 import { PhotoType } from '@cleansia/admin-services';
+import { CleansiaButtonComponent } from '@cleansia/components';
 import { TranslatePipe } from '@ngx-translate/core';
 
 export interface GalleryPhoto {
@@ -23,7 +24,7 @@ export interface GalleryPhoto {
 @Component({
   selector: 'cleansia-admin-photo-gallery',
   standalone: true,
-  imports: [CommonModule, TranslatePipe],
+  imports: [CommonModule, TranslatePipe, CleansiaButtonComponent],
   templateUrl: './admin-photo-gallery.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -81,7 +82,7 @@ export class AdminPhotoGalleryComponent {
     });
   }
 
-  open(index: number = 0): void {
+  open(index = 0): void {
     this.currentIndex.set(index);
     this.isOpen.set(true);
     document.body.style.overflow = 'hidden';
@@ -109,7 +110,7 @@ export class AdminPhotoGalleryComponent {
     this.currentIndex.set(index);
   }
 
-  onBackdropClick(event: MouseEvent): void {
+  onBackdropClick(event: Event): void {
     if ((event.target as HTMLElement).classList.contains('photo-gallery')) {
       this.close();
     }

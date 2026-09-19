@@ -53,6 +53,52 @@
     color: var(--cleansia-text-primary);
   }
 
+  // ONE BLOCK PER CURRENCY. Separated rather than merged into one grid: the two amounts inside a
+  // block belong to the same currency and the ones in the next block do not, and a single flat grid
+  // of "Base price / Per-room price" repeated four times gives a reader no way to see that.
+  .currency-price-block {
+    padding-top: 1rem;
+
+    & + .currency-price-block {
+      margin-top: 0.5rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid var(--cleansia-primary-200);
+    }
+
+    &__title {
+      margin: 0 0 1rem;
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: var(--cleansia-primary-700);
+    }
+
+    &__badge {
+      margin-left: 0.5rem;
+      padding: 0.1rem 0.45rem;
+      border-radius: 999px;
+      font-size: 0.7rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+      vertical-align: middle;
+      background: var(--cleansia-primary-100);
+      color: var(--cleansia-primary-700);
+
+      // An inactive currency MAY be priced and is not required, so its badge must not read as an
+      // unmet obligation — same size, quieter ground.
+      &--optional {
+        background: transparent;
+        color: var(--cleansia-primary-500);
+        border: 1px solid var(--cleansia-primary-200);
+      }
+    }
+
+    &__empty {
+      margin: 1rem 0 0;
+      color: var(--cleansia-primary-700);
+    }
+  }
+
   .translation-form-grid {
     display: flex;
     flex-direction: column;

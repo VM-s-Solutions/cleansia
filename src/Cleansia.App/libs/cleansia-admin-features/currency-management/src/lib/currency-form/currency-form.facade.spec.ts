@@ -21,7 +21,8 @@ describe('CurrencyFormFacade', () => {
     code: 'CZK',
     symbol: 'Kč',
     name: 'Czech koruna',
-    exchangeRate: 1,
+    loyaltyPointsDivisor: null,
+    noShowCredit: null,
   };
 
   beforeEach(() => {
@@ -74,10 +75,10 @@ describe('CurrencyFormFacade', () => {
   });
 
   // Every member of a generated command is optional, so a dropped assignment type-checks.
-  // These pin the serialized body instead (ADR-0031) — a dropped exchange rate reprices
-  // every order held in this currency.
+  // These pin the serialized body instead (ADR-0031) — a currency saved without its code or
+  // symbol is one nothing can be priced or displayed in.
   describe('command bodies on the wire', () => {
-    it('serializes a create with the code, symbol, name and exchange rate', () => {
+    it('serializes a create with the code, symbol and name', () => {
       facade.createCurrency(formData);
 
       const command: CreateCurrencyCommand = createMock.mock.calls[0][0];
@@ -86,12 +87,11 @@ describe('CurrencyFormFacade', () => {
         code: 'CZK',
         symbol: 'Kč',
         name: 'Czech koruna',
-        exchangeRate: 1,
       });
     });
 
     it('serializes an update with the currency id alongside every field', () => {
-      facade.updateCurrency('cur-1', { ...formData, exchangeRate: 24.5 });
+      facade.updateCurrency('cur-1', { ...formData, name: 'Czech crown' });
 
       const command: UpdateCurrencyCommand = updateMock.mock.calls[0][1];
       expect(command).toBeInstanceOf(UpdateCurrencyCommand);
@@ -99,9 +99,48 @@ describe('CurrencyFormFacade', () => {
         currencyId: 'cur-1',
         code: 'CZK',
         symbol: 'Kč',
-        name: 'Czech koruna',
-        exchangeRate: 24.5,
+        name: 'Czech crown',
       });
+    });
+
+    it('serializes the loyalty divisor on create and update, and omits it when empty', () => {
+      facade.createCurrency({ ...formData, loyaltyPointsDivisor: 0.4 });
+      facade.updateCurrency('cur-1', { ...formData, loyaltyPointsDivisor: null });
+
+      const created: CreateCurrencyCommand = createMock.mock.calls[0][0];
+      const updated: UpdateCurrencyCommand = updateMock.mock.calls[0][1];
+      expect(created.toJSON().loyaltyPointsDivisor).toBe(0.4);
+      expect(updated.toJSON().loyaltyPointsDivisor).toBeUndefined();
+    });
+
+    it('serializes the loyalty divisor on update when set', () => {
+      facade.updateCurrency('cur-1', { ...formData, loyaltyPointsDivisor: 10 });
+
+      const updated: UpdateCurrencyCommand = updateMock.mock.calls[0][1];
+      expect(updated.toJSON().loyaltyPointsDivisor).toBe(10);
+    });
+
+    // The no-show credit is authored per currency like the divisor: absent on the wire reads as
+    // null on the server, which is "no credit in this currency".
+    it('serializes the no-show credit on create and update when typed', () => {
+      facade.createCurrency({ ...formData, noShowCredit: 250 });
+      facade.updateCurrency('cur-1', { ...formData, noShowCredit: 10 });
+
+      const created: CreateCurrencyCommand = createMock.mock.calls[0][0];
+      const updated: UpdateCurrencyCommand = updateMock.mock.calls[0][1];
+      expect(created.toJSON().noShowCredit).toBe(250);
+      expect(updated.toJSON().noShowCredit).toBe(10);
+    });
+
+    it('omits the no-show credit when left blank, so the server clears it', () => {
+      facade.createCurrency(formData);
+      facade.updateCurrency('cur-1', formData);
+
+      const created: CreateCurrencyCommand = createMock.mock.calls[0][0];
+      const updated: UpdateCurrencyCommand = updateMock.mock.calls[0][1];
+      expect(created.toJSON().noShowCredit).toBeUndefined();
+      expect(updated.toJSON().noShowCredit).toBeUndefined();
+      expect(JSON.stringify(updated)).not.toContain('noShowCredit');
     });
   });
 });

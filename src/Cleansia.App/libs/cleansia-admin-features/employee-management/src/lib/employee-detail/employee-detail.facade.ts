@@ -17,7 +17,7 @@ import {
 } from '@cleansia/admin-services';
 import { ICleansiaSelectOption } from '@cleansia/components';
 import { UnsubscribeControlDirective } from '@cleansia/directives';
-import { SnackbarService } from '@cleansia/services';
+import { PermissionService, Policy, SnackbarService } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
 import { DialogService } from 'primeng/dynamicdialog';
 import { catchError, finalize, of, takeUntil } from 'rxjs';
@@ -29,6 +29,7 @@ import {
   RejectDialogData,
   RejectDialogResult,
 } from '../components';
+import { EmployeeEditFormValue, EmployeePayConfigFormValue } from './employee-detail.models';
 import { EmployeeDocumentsFacade } from './employee-documents.facade';
 
 @Injectable()
@@ -38,6 +39,7 @@ export class EmployeeDetailFacade extends UnsubscribeControlDirective {
   private readonly translate = inject(TranslateService);
   private readonly dialogService = inject(DialogService);
   private readonly docsFacade = inject(EmployeeDocumentsFacade);
+  private readonly permissions = inject(PermissionService);
 
   readonly employee = signal<AdminEmployeeDetail | null>(null);
   readonly loading = signal<boolean>(false);
@@ -76,7 +78,11 @@ export class EmployeeDetailFacade extends UnsubscribeControlDirective {
       .subscribe((response) => {
         if (response) {
           this.employee.set(response);
-          this.docsFacade.loadEmployeeDocuments(employeeId);
+          // A read the role lacks answers 403 and the shared interceptor toasts it; the page
+          // shows the section only to a role that can read it, so it must not ask either.
+          if (this.permissions.hasPolicy(Policy.CanViewEmployeeDocumentsAdmin)) {
+            this.docsFacade.loadEmployeeDocuments(employeeId);
+          }
           this.loadCountries();
         }
       });
@@ -97,7 +103,7 @@ export class EmployeeDetailFacade extends UnsubscribeControlDirective {
           const iso = country.isoCode ?? '';
           return {
             label: iso ? `${name} (${iso})` : name,
-            value: country.id!,
+            value: country.id,
           };
         });
         this.countries.set(options);
@@ -317,7 +323,7 @@ export class EmployeeDetailFacade extends UnsubscribeControlDirective {
     this.editingSection.set(null);
   }
 
-  updateEmployee(data: Record<string, any>): void {
+  updateEmployee(data: EmployeeEditFormValue): void {
     const employee = this.employee();
     const employeeId = employee?.id;
     if (!employee || !employeeId) return;
@@ -326,31 +332,29 @@ export class EmployeeDetailFacade extends UnsubscribeControlDirective {
 
     const command = new AdminUpdateEmployeeCommand();
     command.employeeId = employeeId;
-    command.firstName = data['firstName'] ?? employee.firstName;
-    command.lastName = data['lastName'] ?? employee.lastName;
-    command.phone = data['phoneNumber'] ?? data['phone'] ?? employee.phoneNumber;
-    command.birthDate = data['birthDate'] ?? employee.birthDate;
-    command.street = data['street'] ?? employee.street;
-    command.city = data['city'] ?? employee.city;
-    command.zipCode = data['zipCode'] ?? employee.zipCode;
-    command.countryId = data['countryId'] ?? employee.countryId;
-    command.state = data['state'] ?? employee.state;
-    command.nationalityId = data['nationalityId'] ?? employee.nationalityId;
-    command.passportId = data['passportId'] ?? employee.passportId;
-    command.entityType = data['entityType'] ?? employee.entityType;
+    command.firstName = data.firstName ?? employee.firstName;
+    command.lastName = data.lastName ?? employee.lastName;
+    command.phone = data.phoneNumber ?? employee.phoneNumber;
+    const birthDate = data.birthDate ?? employee.birthDate;
+    if (birthDate) {
+      command.birthDate = birthDate;
+    }
+    command.street = data.street ?? employee.street;
+    command.city = data.city ?? employee.city;
+    command.zipCode = data.zipCode ?? employee.zipCode;
+    command.countryId = data.countryId ?? employee.countryId;
+    command.state = employee.state;
+    command.nationalityId = data.nationalityId ?? employee.nationalityId;
+    command.passportId = data.passportId ?? employee.passportId;
+    command.entityType = data.entityType ?? employee.entityType;
     command.registrationNumber =
-      data['registrationNumber'] ?? employee.registrationNumber;
-    command.vatNumber = data['vatNumber'] ?? employee.vatNumber;
+      data.registrationNumber ?? employee.registrationNumber;
     command.legalEntityName =
-      data['legalEntityName'] ?? employee.legalEntityName;
+      data.legalEntityName ?? employee.legalEntityName;
     command.emergencyName =
-      data['emergencyContactName'] ??
-      data['emergencyName'] ??
-      employee.emergencyContactName;
+      data.emergencyContactName ?? employee.emergencyContactName;
     command.emergencyPhone =
-      data['emergencyContactPhone'] ??
-      data['emergencyPhone'] ??
-      employee.emergencyContactPhone;
+      data.emergencyContactPhone ?? employee.emergencyContactPhone;
 
     this.adminClient.adminEmployeeClient
       .update(employeeId, command)
@@ -389,6 +393,7 @@ export class EmployeeDetailFacade extends UnsubscribeControlDirective {
 
   // Pay config methods
   loadEmployeePayConfigs(employeeId: string): void {
+    if (!this.permissions.hasPolicy(Policy.CanViewPayConfigs)) return;
     this.loadPayConfigSummary(employeeId);
   }
 
@@ -502,7 +507,7 @@ export class EmployeeDetailFacade extends UnsubscribeControlDirective {
       .pipe(takeUntil(this.destroyed$), catchError(() => of(null)))
       .subscribe((result) => {
         this.services.set(
-          (result?.data ?? []).map((s) => ({ label: s.name ?? '', value: s.id! }))
+          (result?.data ?? []).map((s) => ({ label: s.name ?? '', value: s.id }))
         );
       });
 
@@ -511,7 +516,7 @@ export class EmployeeDetailFacade extends UnsubscribeControlDirective {
       .pipe(takeUntil(this.destroyed$), catchError(() => of(null)))
       .subscribe((result) => {
         this.packages.set(
-          (result?.data ?? []).map((p) => ({ label: p.name ?? '', value: p.id! }))
+          (result?.data ?? []).map((p) => ({ label: p.name ?? '', value: p.id }))
         );
       });
 
@@ -520,12 +525,12 @@ export class EmployeeDetailFacade extends UnsubscribeControlDirective {
       .pipe(takeUntil(this.destroyed$), catchError(() => of([])))
       .subscribe((currencies) => {
         this.currencies.set(
-          (currencies ?? []).map((c) => ({ label: c.code ?? '', value: c.id! }))
+          (currencies ?? []).map((c) => ({ label: c.code ?? '', value: c.id }))
         );
       });
   }
 
-  createEmployeePayConfig(data: Record<string, any>): void {
+  createEmployeePayConfig(data: EmployeePayConfigFormValue): void {
     const employeeId = this.employee()?.id;
     if (!employeeId) return;
 
@@ -533,16 +538,16 @@ export class EmployeeDetailFacade extends UnsubscribeControlDirective {
 
     const command = new CreatePayConfigCommand();
     command.employeeId = employeeId;
-    command.serviceId = data['serviceId'] || undefined;
-    command.packageId = data['packageId'] || undefined;
-    command.basePay = data['basePay'] ?? 0;
-    command.extraPerRoom = data['extraPerRoom'] ?? 0;
-    command.extraPerBathroom = data['extraPerBathroom'] ?? 0;
-    command.distanceRatePerKm = data['distanceRatePerKm'] ?? 0;
-    command.minimumPay = data['minimumPay'] ?? 0;
-    command.maximumPay = data['maximumPay'] ?? 0;
-    command.currencyId = data['currencyId'];
-    command.description = data['description'] || undefined;
+    command.serviceId = data.serviceId || undefined;
+    command.packageId = data.packageId || undefined;
+    command.basePay = data.basePay ?? 0;
+    command.extraPerRoom = data.extraPerRoom ?? 0;
+    command.extraPerBathroom = data.extraPerBathroom ?? 0;
+    command.distanceRatePerKm = data.distanceRatePerKm ?? 0;
+    command.minimumPay = data.minimumPay ?? 0;
+    command.maximumPay = data.maximumPay ?? 0;
+    command.currencyId = data.currencyId ?? undefined;
+    command.description = data.description || undefined;
 
     this.adminClient.adminPayConfigClient
       .create(command)
@@ -563,7 +568,7 @@ export class EmployeeDetailFacade extends UnsubscribeControlDirective {
           );
           this.editingSection.set(null);
           this.payConfigDialogOpen.set(false);
-          this.loadEmployeePayConfigs(employeeId);
+          this.loadPayConfigSummary(employeeId);
         }
       });
   }
@@ -588,14 +593,9 @@ export class EmployeeDetailFacade extends UnsubscribeControlDirective {
           this.snackbarService.showSuccess(
             this.translate.instant('pages.employee_detail.messages.pay_config_delete_success')
           );
-          this.loadEmployeePayConfigs(employeeId);
+          this.loadPayConfigSummary(employeeId);
         }
       });
-  }
-
-  applyGradeTemplate(multiplier: number): void {
-    // Load global configs, apply multiplier, and use as template for the form
-    // This will be handled by the component
   }
 
   // Format date for display

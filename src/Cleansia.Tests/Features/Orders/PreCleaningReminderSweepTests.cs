@@ -38,7 +38,7 @@ public sealed class PreCleaningReminderSweepTests : IDisposable
     private const string CleanerId = "employee-precleaning";
 
     private readonly SqliteConnection _connection;
-    private readonly FixedTenantProvider _tenantProvider = new(null);
+    private readonly FixedTenantProvider _tenantProvider = new(TestTenants.Default);
 
     public PreCleaningReminderSweepTests()
     {
@@ -82,7 +82,6 @@ public sealed class PreCleaningReminderSweepTests : IDisposable
             customerAddress: Address.Create("123 Main St", "Prague", "11000", "cz"),
             rooms: 1,
             bathrooms: 1,
-            extras: new Dictionary<string, bool>(),
             cleaningDateTime: DateTime.UtcNow.Add(cleaningIn),
             paymentType: paymentType,
             totalPrice: 1000m,
@@ -113,6 +112,14 @@ public sealed class PreCleaningReminderSweepTests : IDisposable
     private async Task SeedAsync(params Order[] orders)
     {
         await using var ctx = NewContext();
+        foreach (var order in orders.Where(o => o.UserId is not null).GroupBy(o => o.UserId).Select(g => g.First()))
+        {
+            if (await ctx.Users.IgnoreQueryFilters().AnyAsync(u => u.Id == order.UserId)) continue;
+            var user = User.CreateWithPassword($"{order.UserId}@test.local", "Password123!", "Test", "Customer");
+            user.Id = order.UserId!;
+            user.TenantId = order.TenantId ?? TestTenants.Default;
+            ctx.Users.Add(user);
+        }
         ctx.Orders.AddRange(orders);
         await ctx.CommitAsync(CancellationToken.None);
     }
@@ -130,7 +137,7 @@ public sealed class PreCleaningReminderSweepTests : IDisposable
         await using var ctx = NewContext();
         var handler = new SendPreCleaningReminders.Handler(
             new OrderRepository(ctx),
-            new NotificationProducer(new UserNotificationRepository(ctx), new OutboxPendingDispatch(ctx)),
+            new NotificationProducer(new UserNotificationRepository(ctx), new OutboxPendingDispatch(ctx), new UserRepository(ctx), Microsoft.Extensions.Logging.Abstractions.NullLogger<NotificationProducer>.Instance),
             _tenantProvider,
             ctx,
             NullLogger<SendPreCleaningReminders.Handler>.Instance);

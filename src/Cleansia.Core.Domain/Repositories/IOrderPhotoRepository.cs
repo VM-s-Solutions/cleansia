@@ -6,4 +6,7 @@ public interface IOrderPhotoRepository : IRepository<OrderPhoto, string>
 {
     Task<List<OrderPhoto>> GetPhotosByOrderIdAsync(string orderId, CancellationToken cancellationToken = default);
     Task<int> GetPhotoCountByOrderIdAndTypeAsync(string orderId, Cleansia.Core.Domain.Enums.PhotoType photoType, CancellationToken cancellationToken = default);
+    Task<List<OrderPhoto>> GetPhotosByOrderIdForOwnerAsync(string orderId, string userId, CancellationToken cancellationToken);
+    Task<int> GetPhotoCountForOwnerAsync(string orderId, string userId, Cleansia.Core.Domain.Enums.PhotoType photoType, CancellationToken cancellationToken);
+
 }

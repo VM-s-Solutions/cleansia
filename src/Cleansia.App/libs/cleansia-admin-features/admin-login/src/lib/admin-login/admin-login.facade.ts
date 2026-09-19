@@ -61,10 +61,10 @@ export class AdminLoginFacade extends UnsubscribeControlDirective {
             return;
           }
 
-          // Set session and navigate to admin
+          // The home route resolves to the first page this session's role can open.
           this.authService.setSession(authResult);
           this.store.dispatch(loadUserCurrent());
-          this.router.navigate([CleansiaAdminRoute.EMPLOYEE_MANAGEMENT]);
+          this.router.navigate(['/' + CleansiaAdminRoute.HOME]);
         },
       });
   }

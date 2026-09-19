@@ -106,7 +106,7 @@ public class DeleteUserAccountTests(PostgresContainerFixture fixture) : BaseInte
     {
         await SeedConfirmedUser(context);
 
-        var country = Country.Create("Czechia", "CZ");
+        var country = Country.Create("Czechia", "CZ", "CZ");
         context.Countries.Add(country);
         // CommitAsync (not SaveChangesAsync) so the Auditable audit fields (CreatedBy) get stamped
         // from the test session — Countries.CreatedBy is NOT NULL and raw SaveChangesAsync skips stamping.
@@ -116,7 +116,8 @@ public class DeleteUserAccountTests(PostgresContainerFixture fixture) : BaseInte
             TestConstants.TestUserSession.TestUserId,
             ConsentType.MarketingEmails,
             ipAddress: null,
-            userAgent: null);
+            userAgent: null,
+            documentVersion: null);
         context.UserConsents.Add(consent);
 
         var address = Address.Create("Domazlicka 18", "Prague", "11000", country.Id);

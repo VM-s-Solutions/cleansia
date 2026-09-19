@@ -1,5 +1,6 @@
 import { ServiceListItem } from '@cleansia/admin-services';
 import { TableColumn, TableAction } from '@cleansia/components';
+import { PermissionService, Policy } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
 
 export type CatalogStatusFilter = 'all' | 'active' | 'inactive';
@@ -55,6 +56,7 @@ export function getServiceTableDefinition(
     getIsActiveFilter: () => boolean | undefined;
   },
   translate: TranslateService,
+  permissions: PermissionService,
   formatCurrency: (value: number | undefined) => string
 ): { columns: TableColumn<ServiceListItem>[]; actions: TableAction<ServiceListItem>[] } {
   return {
@@ -106,26 +108,30 @@ export function getServiceTableDefinition(
         icon: 'pi pi-pencil',
         tooltip: translate.instant('pages.service_management.edit_service'),
         color: 'warning',
+        visible: () => permissions.hasPolicy(Policy.CanUpdateService),
         onClick: (row: ServiceListItem) => defs.onEdit(row),
       },
       {
         icon: 'pi pi-ban',
         tooltip: translate.instant('pages.service_management.deactivate_service'),
         color: 'danger',
-        visible: () => defs.getIsActiveFilter() !== false,
+        visible: () =>
+          defs.getIsActiveFilter() !== false && permissions.hasPolicy(Policy.CanUpdateService),
         onClick: (row: ServiceListItem) => defs.onDeactivate(row),
       },
       {
         icon: 'pi pi-check-circle',
         tooltip: translate.instant('pages.service_management.activate_service'),
         color: 'success',
-        visible: () => defs.getIsActiveFilter() !== true,
+        visible: () =>
+          defs.getIsActiveFilter() !== true && permissions.hasPolicy(Policy.CanUpdateService),
         onClick: (row: ServiceListItem) => defs.onActivate(row),
       },
       {
         icon: 'pi pi-trash',
         tooltip: translate.instant('pages.service_management.delete_service'),
         color: 'danger',
+        visible: () => permissions.hasPolicy(Policy.CanDeleteService),
         onClick: (row: ServiceListItem) => defs.onDelete(row),
       },
     ],

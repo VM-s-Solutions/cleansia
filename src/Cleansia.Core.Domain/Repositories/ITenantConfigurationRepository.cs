@@ -6,4 +6,5 @@ public interface ITenantConfigurationRepository : IRepository<TenantConfiguratio
 {
     Task<TenantConfiguration?> GetByKeyAsync(string key, CancellationToken cancellationToken);
     Task<bool> ExistsWithKeyAsync(string key, CancellationToken cancellationToken);
+    Task<IReadOnlyList<TenantConfiguration>> GetAllAsync(CancellationToken cancellationToken);
 }

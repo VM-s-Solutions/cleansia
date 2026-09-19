@@ -54,8 +54,6 @@ import cz.cleansia.core.ui.components.CleansiaTextLink
 import cz.cleansia.customer.R
 import cz.cleansia.customer.ui.theme.WarningStar
 
-private const val MAX_REASON_LENGTH = 2000
-
 /**
  * Predefined cancellation reasons. The localized label is shown to the user
  * in a chip; the [code] is included in the submitted payload as a stable
@@ -84,12 +82,12 @@ private enum class CancelReasonOption(val code: String, val labelRes: Int) {
  *    confirmation.
  *  - Confirm is held back only while the quote is in flight. A quote that
  *    FAILS never blocks a cancellation — the card says so and the button stays
- *    live.
+ *    live for signed-in callers. Guests require a valid preview.
  *  - Clicking the primary button never closes the sheet directly; the VM
  *    observes the result and emits on a SharedFlow that the screen uses to
  *    drive the dismissal.
- *  - An optional reason is capped at 2000 chars client-side so we can't send
- *    a payload the backend will reject.
+ *  - The submitted reason (code + notes) is capped at [CANCEL_REASON_MAX_LENGTH]
+ *    client-side so we can't send a payload the backend will reject.
  *  - While submitting, the scrim/back gesture no-ops — we don't want a
  *    half-completed cancel to dismiss the only feedback surface.
  */
@@ -103,6 +101,7 @@ fun CancelOrderSheet(
     isSubmitting: Boolean = false,
     errorMessage: String? = null,
     onReasonChanged: () -> Unit = {},
+    requireValidPreview: Boolean = false,
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     var selectedReason by remember { mutableStateOf<CancelReasonOption?>(null) }
@@ -114,6 +113,7 @@ fun CancelOrderSheet(
         isOtherReason = selectedReason == CancelReasonOption.Other,
         notes = notes,
         isSubmitting = isSubmitting,
+        requireValidPreview = requireValidPreview,
     )
 
     ModalBottomSheet(
@@ -136,7 +136,7 @@ fun CancelOrderSheet(
             )
             Spacer(Modifier.height(12.dp))
 
-            FeePreviewBlock(state = previewState, onRetry = onRetryPreview)
+            FeePreviewBlock(state = previewState, onRetry = onRetryPreview, requireValidPreview = requireValidPreview)
             Spacer(Modifier.height(16.dp))
 
             // Reason picker — tap a chip; tapping again deselects. "Other"
@@ -154,25 +154,21 @@ fun CancelOrderSheet(
                 enabled = !isSubmitting,
                 onSelect = { picked ->
                     selectedReason = picked
+                    notes = notes.take(cancelNotesLimit(picked?.code))
                     if (!errorMessage.isNullOrBlank()) onReasonChanged()
                 },
             )
             Spacer(Modifier.height(14.dp))
 
             // Notes — visible once a reason is picked. For "Other" it's required
-            // (≥3 chars); otherwise it's an optional add-on. Cap at 2000 chars
-            // client-side so the payload matches the backend validator.
+            // (≥3 chars); otherwise it's an optional add-on. Capped so the
+            // "code: notes" payload fits the backend validator.
             if (selectedReason != null) {
                 val isOther = selectedReason == CancelReasonOption.Other
                 OutlinedTextField(
                     value = notes,
                     onValueChange = { next ->
-                        val clipped = if (next.length > MAX_REASON_LENGTH) {
-                            next.substring(0, MAX_REASON_LENGTH)
-                        } else {
-                            next
-                        }
-                        notes = clipped
+                        notes = next.take(cancelNotesLimit(selectedReason?.code))
                         if (!errorMessage.isNullOrBlank()) onReasonChanged()
                     },
                     enabled = !isSubmitting,
@@ -333,6 +329,7 @@ private fun ReasonChipGrid(
 private fun FeePreviewBlock(
     state: CancellationPreviewUiState,
     onRetry: () -> Unit,
+    requireValidPreview: Boolean,
 ) {
     when (state) {
         CancellationPreviewUiState.Loading -> FeeCard(
@@ -348,11 +345,11 @@ private fun FeePreviewBlock(
                 )
             },
         )
-        CancellationPreviewUiState.Error -> UnavailableFeeCard(onRetry)
+        CancellationPreviewUiState.Error -> UnavailableFeeCard(onRetry, requireValidPreview)
         is CancellationPreviewUiState.Loaded -> {
-            val callout = cancellationFeeCallout(state.preview)
+            val callout = cancellationFeeCallout(state.preview, refundIsEstimate = requireValidPreview)
             if (callout == null) {
-                UnavailableFeeCard(onRetry)
+                UnavailableFeeCard(onRetry, requireValidPreview)
             } else {
                 LoadedFeeCard(callout, state.preview.currencyCode)
             }
@@ -394,14 +391,17 @@ private fun LoadedFeeCard(callout: CancellationFeeCallout, currencyCode: String?
 }
 
 @Composable
-private fun UnavailableFeeCard(onRetry: () -> Unit) {
+private fun UnavailableFeeCard(onRetry: () -> Unit, requireValidPreview: Boolean) {
     val tint = MaterialTheme.colorScheme.onSurfaceVariant
     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
         FeeCard(
             tint = tint,
             icon = Icons.Outlined.Warning,
             title = stringResource(R.string.order_cancel_fee_neutral),
-            subtitle = stringResource(R.string.order_cancel_fee_unavailable),
+            subtitle = stringResource(
+                if (requireValidPreview) R.string.guest_order_preview_required
+                else R.string.order_cancel_fee_unavailable,
+            ),
         )
         CleansiaTextLink(
             text = stringResource(R.string.order_cancel_fee_retry),

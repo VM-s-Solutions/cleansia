@@ -1,7 +1,9 @@
-﻿using Cleansia.Core.AppServices.Features.PayConfig;
+﻿using Cleansia.Core.AppServices.Features.Catalog;
+using Cleansia.Core.AppServices.Features.PayConfig;
 using Cleansia.Core.AppServices.Features.Packages.DTOs;
 using Cleansia.Core.Domain.EmployeePayroll;
 using Cleansia.Core.AppServices.Mappers;
+using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Repositories;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -10,15 +12,27 @@ namespace Cleansia.Core.AppServices.Features.Packages;
 
 public class GetPackageOverview
 {
-    public record Request : IRequest<IEnumerable<PackageListItem>>;
+    /// <param name="CountryId">See <see cref="Services.GetServiceOverview.Request"/>.</param>
+    public record Request(string? CountryId = null) : IRequest<IEnumerable<PackageListItem>>;
 
     public class Handler(
         IPackageRepository packageRepository,
-        IEmployeePayConfigRepository payConfigRepository)
+        IPackagePriceRepository packagePriceRepository,
+        ICurrencyResolutionService currencyResolutionService,
+        IEmployeePayConfigRepository payConfigRepository,
+        ICountryRepository countryRepository)
         : IRequestHandler<Request, IEnumerable<PackageListItem>>
     {
         public async Task<IEnumerable<PackageListItem>> Handle(Request request, CancellationToken cancellationToken)
         {
+            // An unserviced or unknown country has no catalogue: an empty answer, never the default
+            // market's prices under a foreign address and never the resolver's throw as a 500.
+            if (request.CountryId is not null
+                && !await countryRepository.IsServicedAsync(request.CountryId, cancellationToken))
+            {
+                return [];
+            }
+
             // Customer-facing — only return packages the admin has marked
             // IsActive. Deactivated packages are admin-only state and must
             // not appear in the booking wizard catalog.
@@ -28,20 +42,30 @@ public class GetPackageOverview
                     .ThenInclude(ps => ps.Service)
                 .ToListAsync(cancellationToken);
 
-            // Bookable is IsActive AND quotable — see GetServiceOverview for the reasoning.
+            // The currency being browsed in, resolved first -- see GetServiceOverview for the reasoning.
+            var currency = await currencyResolutionService.ResolveCurrencyForCountryAsync(
+                request.CountryId, cancellationToken);
+
+            // Bookable is IsActive AND quotable in this currency -- see GetServiceOverview.
             var unquotable = (await PayCoverageLookup.FindGapsAsync(
                     payConfigRepository,
                     packages
                         .Select(p => new PayCoverageTarget(PayCoverageTargetKind.Package, p.Id, p.Name))
                         .ToList(),
                     employeeId: null,
+                    currency.Id,
                     cancellationToken))
                 .Select(gap => gap.Id)
                 .ToHashSet();
 
+            // AND priced in the currency being quoted -- see GetServiceOverview for the reasoning.
+            var prices = await CataloguePriceLookup.ForPackagesAsync(
+                packagePriceRepository, packages.Select(p => p.Id).ToList(), currency.Id, cancellationToken);
+
             return packages
-                .Where(package => !unquotable.Contains(package.Id))
-                .Select(package => package.MapToDto());
+                .Where(package => !unquotable.Contains(package.Id) && prices.ContainsKey(package.Id))
+                .Select(package => package.MapToDto(prices[package.Id], currency.Code))
+                .ToList();
         }
     }
 }

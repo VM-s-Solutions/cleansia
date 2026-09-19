@@ -92,5 +92,33 @@ public class CountryConfigurationEntityConfiguration : AuditableEntityConfigurat
 
         builder.Property(e => e.RefundStripeFixedFee)
             .HasPrecision(18, 2);
+
+        builder.Property(e => e.InsuranceCoverageAmount)
+            .HasPrecision(18, 2);
+
+        builder.Property(e => e.IsDefaultMarket)
+            .IsRequired()
+            .HasDefaultValue(false);
+
+        // AT MOST ONE DEFAULT MARKET, held by the database the way IX_Currencies_IsDefault_Unique holds
+        // the default currency. Same partial-unique shape, same consequence: Postgres cannot defer it,
+        // so SetDefaultMarket flushes the clear before it emits the promote.
+        builder.HasIndex(e => e.IsDefaultMarket)
+            .IsUnique()
+            .HasFilter("\"IsDefaultMarket\" = true")
+            .HasDatabaseName("IX_CountryConfigurations_IsDefaultMarket_Unique");
+
+        // The country -> operating company map (ADR-0061 D2): one operator serves many countries, so
+        // the index is non-unique. The resolver reads this column, and every stamped TenantId in the
+        // system descends from it or from a claim minted off a row it stamped.
+        builder.Property(e => e.OperatorTenantId)
+            .HasMaxLength(26);
+
+        builder.HasOne(e => e.OperatorTenant)
+            .WithMany()
+            .HasForeignKey(e => e.OperatorTenantId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasIndex(e => e.OperatorTenantId);
     }
 }

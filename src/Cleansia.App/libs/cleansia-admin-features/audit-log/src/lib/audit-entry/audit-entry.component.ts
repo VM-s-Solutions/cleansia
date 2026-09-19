@@ -2,10 +2,12 @@ import { CommonModule, Location } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
+  computed,
   OnInit,
   inject,
 } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
+import { getAdminRoleLabelKey } from '@cleansia/admin-services';
 import {
   CleansiaButtonComponent,
   CleansiaLoaderComponent,
@@ -36,6 +38,9 @@ export class AuditEntryComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly location = inject(Location);
   protected readonly facade = inject(AuditEntryFacade);
+  readonly actorRoleLabelKey = computed(() =>
+    getAdminRoleLabelKey(this.facade.entry()?.actorAdminRole)
+  );
 
   ngOnInit(): void {
     const auditId = this.route.snapshot.paramMap.get('auditId');

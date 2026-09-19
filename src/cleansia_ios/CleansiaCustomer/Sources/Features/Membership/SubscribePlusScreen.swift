@@ -18,7 +18,10 @@ struct SubscribePlusScreen: View {
         onBack: @escaping () -> Void,
         onSubscribed: @escaping () -> Void
     ) {
-        _vm = StateObject(wrappedValue: MembershipViewModel(repository: repository, snackbar: snackbar))
+        _vm = StateObject(wrappedValue: MembershipViewModel(
+            repository: repository,
+            snackbar: snackbar
+        ))
         self.paymentSheet = paymentSheet
         self.onBack = onBack
         self.onSubscribed = onSubscribed
@@ -29,40 +32,42 @@ struct SubscribePlusScreen: View {
     }
 
     var body: some View {
-        GeometryReader { proxy in
-            ZStack(alignment: .bottom) {
-                ScrollView {
-                    VStack(alignment: .leading, spacing: Spacing.l) {
-                        HeroBlock(
-                            plans: vm.plans,
-                            selectedPlanCode: selectedPlanCode,
-                            selectedPlan: selectedPlan,
-                            topInset: proxy.safeAreaInsets.top,
-                            onSelectPlan: { selectedPlanCode = $0 },
-                            onBack: onBack
-                        )
-                        SocialProofTile()
-                        PerksSection(showExpress: selectedPlan?.allowsExpressUpgrade == true)
-                        Color.clear.frame(height: 140)
+        ZStack(alignment: .bottom) {
+            switch vm.plansState {
+            case let .loaded(plans) where !plans.isEmpty:
+                offer(plans)
+            case .loaded:
+                reducedHero {
+                    MascotEmptyState(
+                        image: Mascot.leaning.image,
+                        text: L10n.Membership.notAvailableInMarket,
+                        verticallyCentered: true,
+                        imageSize: 160,
+                        titleStyle: CleansiaTypography.headlineSmall
+                    ) { EmptyView() }
+                }
+            case .error:
+                reducedHero {
+                    MascotEmptyState(
+                        image: Mascot.leaning.image,
+                        text: L10n.Membership.plansLoadFailed,
+                        verticallyCentered: true,
+                        imageSize: 160,
+                        titleStyle: CleansiaTypography.headlineSmall
+                    ) {
+                        CleansiaPrimaryButton(L10n.retry) { Task { await vm.reloadPlans() } }
+                            .fixedSize()
                     }
                 }
-                .ignoresSafeArea(.container, edges: .top)
-                if vm.canSubscribe {
-                    StickyCtaBar(
-                        label: (selectedPlan?.trialPeriodDays ?? 0) > 0
-                            ? L10n.Membership.ctaStartTrial : L10n.Membership.ctaSubscribe,
-                        disclosure: disclosure,
-                        enabled: !vm.submitState.isSubmitting && !selectedPlanCode.isEmpty,
-                        onTap: subscribe
-                    )
-                }
-                BusyMascotOverlay(
-                    visible: vm.submitState.isSubmitting,
-                    message: L10n.Membership.busySubscribePlus
-                )
+            case .loading:
+                reducedHero { Spacer() }
             }
-            .background(CleansiaColors.background.ignoresSafeArea())
+            BusyMascotOverlay(
+                visible: vm.submitState.isSubmitting,
+                message: L10n.Membership.busySubscribePlus
+            )
         }
+        .background(CleansiaColors.background.ignoresSafeArea())
         // Mounted here as well as at the shell root: the root's SwiftUI update pass runs BEFORE this
         // screen's appearance transition, and the bar is hidden inside that transition. Safe to mount
         // per-screen because the delegate is static — see `InteractivePopGestureEnabler`.
@@ -74,12 +79,11 @@ struct SubscribePlusScreen: View {
         // there for why the earlier `isEnabled`-only version could never have worked on this screen.
         .toolbar(.hidden, for: .navigationBar)
         .task {
+            selectDefaultPlanIfNeeded()
             await vm.load()
-            if selectedPlanCode.isEmpty {
-                selectedPlanCode = vm.plans.first { $0.billingInterval == 1 }?.code
-                    ?? vm.plans.first?.code ?? ""
-            }
+            selectDefaultPlanIfNeeded()
         }
+        .onChange(of: vm.plans) { _ in selectDefaultPlanIfNeeded() }
         .onChange(of: vm.current?.hasMembership) { hasMembership in
             if hasMembership == true, !navigatedAway {
                 navigatedAway = true
@@ -88,16 +92,68 @@ struct SubscribePlusScreen: View {
         }
     }
 
+    private func offer(_ plans: [MembershipPlan]) -> some View {
+        Group {
+            ScrollView {
+                VStack(alignment: .leading, spacing: Spacing.l) {
+                    HeroBlock(
+                        plans: plans,
+                        selectedPlanCode: selectedPlanCode,
+                        selectedPlan: selectedPlan,
+                        onSelectPlan: { selectedPlanCode = $0 },
+                        onBack: onBack
+                    )
+                    SocialProofTile()
+                    PerksSection(showExpress: selectedPlan?.allowsExpressUpgrade == true)
+                    Color.clear.frame(height: 140)
+                }
+            }
+            if vm.canSubscribe {
+                StickyCtaBar(
+                    label: (selectedPlan?.trialPeriodDays ?? 0) > 0
+                        ? L10n.Membership.ctaStartTrial : L10n.Membership.ctaSubscribe,
+                    disclosure: disclosure,
+                    enabled: !vm.submitState.isSubmitting && selectedPlan != nil,
+                    onTap: subscribe
+                )
+            }
+        }
+    }
+
+    /// The hero's identity row alone over the gradient — what stays when there is no plan to price:
+    /// no headline, no price, no switcher, no perks, no CTA.
+    private func reducedHero(@ViewBuilder below: () -> some View) -> some View {
+        VStack(spacing: 0) {
+            HeroTopRow(onBack: onBack)
+                .padding(.horizontal, Spacing.ml)
+                .padding(.bottom, Spacing.ml)
+                .padding(.top, Spacing.ml)
+                .frame(maxWidth: .infinity)
+                .background(MembershipPalette.heroGradient.ignoresSafeArea(.container, edges: .top))
+            below()
+                .padding(.horizontal, Spacing.xl)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    /// A selection is only ever one of the plans on screen: the monthly plan first, the first plan
+    /// otherwise, nothing while there is none — so no figure is ever printed for a plan that is not
+    /// there.
+    private func selectDefaultPlanIfNeeded() {
+        guard selectedPlan == nil else { return }
+        selectedPlanCode = vm.plans.first { $0.billingInterval == 1 }?.code ?? vm.plans.first?.code ?? ""
+    }
+
     private var disclosure: String {
         guard let plan = selectedPlan, plan.trialPeriodDays > 0 else { return L10n.Membership.disclosure }
-        let price = MembershipFormat.price(plan.price)
+        let price = MembershipFormat.price(plan.price, currencyCode: plan.currencyCode)
         return plan.isAnnual
             ? L10n.Membership.ctaDisclosureTrialYear(price)
             : L10n.Membership.ctaDisclosureTrial(price)
     }
 
     private func subscribe() {
-        guard !selectedPlanCode.isEmpty else { return }
+        guard selectedPlan != nil else { return }
         Task {
             switch await vm.startSubscribe(planCode: selectedPlanCode) {
             case let .needsPaymentMethod(presentation):
@@ -132,12 +188,7 @@ struct SubscribePlusScreen: View {
 private let mascotSize: CGFloat = 84
 private let mascotPerch: CGFloat = 14
 
-private struct HeroBlock: View {
-    let plans: [MembershipPlan]
-    let selectedPlanCode: String
-    let selectedPlan: MembershipPlan?
-    var topInset: CGFloat = 0
-    let onSelectPlan: (String) -> Void
+private struct HeroTopRow: View {
     let onBack: () -> Void
 
     var body: some View {
@@ -163,12 +214,28 @@ private struct HeroBlock: View {
                     .background(MembershipPalette.sky400, in: RoundedRectangle(cornerRadius: 10))
                 Spacer()
             }
+        }
+    }
+}
+
+private struct HeroBlock: View {
+    let plans: [MembershipPlan]
+    let selectedPlanCode: String
+    let selectedPlan: MembershipPlan?
+    let onSelectPlan: (String) -> Void
+    let onBack: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: Spacing.m) {
+            HeroTopRow(onBack: onBack)
             Text(L10n.Membership.heroHeadline)
                 .cleansiaFont(CleansiaTypography.headlineMedium)
                 .foregroundColor(.white)
                 .frame(maxWidth: .infinity, alignment: .center)
                 .multilineTextAlignment(.center)
-            priceBlock
+            if let selectedPlan {
+                priceBlock(selectedPlan)
+            }
             if plans.count >= 2 {
                 PlanSwitcher(plans: plans, selectedCode: selectedPlanCode, onSelect: onSelectPlan)
                     // ORDER MATTERS: the overlay goes on FIRST, so it anchors to the control itself.
@@ -194,33 +261,25 @@ private struct HeroBlock: View {
         }
         .padding(.horizontal, Spacing.ml)
         .padding(.bottom, Spacing.ml)
-        .padding(.top, Spacing.ml + topInset)
+        .padding(.top, Spacing.ml)
         .frame(maxWidth: .infinity)
-        .background(
-            LinearGradient(
-                colors: [MembershipPalette.sky950, MembershipPalette.slate900],
-                startPoint: .top,
-                endPoint: .bottom
-            )
-        )
-        // The GeometryReader safe-area inset settles 0 → real on first layout; an
-        // ambient transaction would animate that top-padding change into a visible
-        // slide. Pin it so the header paints in its final position (round-6 fix
-        // intact; iOS fix-round 8).
-        .animation(nil, value: topInset)
+        .background(MembershipPalette.heroGradient.ignoresSafeArea(.container, edges: .top))
     }
 
     @ViewBuilder
-    private var priceBlock: some View {
-        let trialDays = selectedPlan?.trialPeriodDays ?? 0
-        let regularPrice = MembershipFormat.price(selectedPlan?.price ?? 0)
-        let isAnnual = selectedPlan?.isAnnual ?? false
+    private func priceBlock(_ plan: MembershipPlan) -> some View {
+        let trialDays = plan.trialPeriodDays
+        let regularPrice = MembershipFormat.price(plan.price, currencyCode: plan.currencyCode)
+        let isAnnual = plan.isAnnual
         if trialDays > 0 {
             VStack(spacing: Spacing.xs) {
-                Text(L10n.Membership.heroTrialPrice(trialDays))
-                    .cleansiaFont(CleansiaTypography.headlineLarge)
-                    .foregroundColor(.white)
-                    .lineLimit(1)
+                Text(L10n.Membership.heroTrialPrice(
+                    MembershipFormat.price(0, currencyCode: plan.currencyCode),
+                    trialDays
+                ))
+                .cleansiaFont(CleansiaTypography.headlineLarge)
+                .foregroundColor(.white)
+                .lineLimit(1)
                 Text(isAnnual
                     ? L10n.Membership.heroThenPriceYear(regularPrice)
                     : L10n.Membership.heroThenPrice(regularPrice))
@@ -401,14 +460,12 @@ enum MembershipPalette {
     static let slate900 = Color(red: 0.06, green: 0.09, blue: 0.16)
     static let premiumGold = Color(red: 0.85, green: 0.47, blue: 0.02)
     static let endingAccent = Color(red: 0.73, green: 0.11, blue: 0.11)
+    static let heroGradient = LinearGradient(colors: [sky950, slate900], startPoint: .top, endPoint: .bottom)
 }
 
 enum MembershipFormat {
-    static func price(_ amount: Double) -> String {
-        let rounded = amount.truncatingRemainder(dividingBy: 1) == 0
-            ? String(Int(amount))
-            : String(format: "%.2f", amount)
-        return "\(rounded) Kč"
+    static func price(_ amount: Double, currencyCode: String?) -> String {
+        OrdersFormat.price(amount, currencyCode: currencyCode)
     }
 
     static func periodEnd(_ date: Date) -> String {

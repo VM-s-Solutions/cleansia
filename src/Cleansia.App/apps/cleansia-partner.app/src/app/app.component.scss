@@ -1,3 +1,5 @@
+@use '../../../../libs/shared/assets/src/styles/common/touch-target' as *;
+
 .app-layout {
   display: flex;
   overflow: hidden;
@@ -27,6 +29,8 @@
     justify-content: center;
     width: 2.25rem;
     height: 2.25rem;
+    position: relative;
+    @include touch-target;
     border: 1px solid var(--cleansia-primary-200, #e2e8f0);
     border-radius: 8px;
     background: var(--cleansia-primary-50, #f8fafc);

@@ -112,8 +112,13 @@
   }
 
   .inline-toggle {
+    display: flex;
     flex-direction: row;
     align-items: center;
     gap: 10px;
+
+    label {
+      flex-direction: row;
+    }
   }
 }

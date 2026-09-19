@@ -40,7 +40,7 @@ public interface IOrderEmployeePayRepository : IRepository<OrderEmployeePay, str
     /// that aren't yet attached to an invoice. Used by the dashboard
     /// "pending earnings" widget.
     /// </summary>
-    Task<decimal> SumPendingEarningsAsync(string employeeId, CancellationToken cancellationToken);
+    Task<decimal> SumPendingEarningsAsync(string employeeId, string currencyId, CancellationToken cancellationToken);
 
     /// <summary>
     /// All OrderEmployeePay rows for an employee in a specific pay period

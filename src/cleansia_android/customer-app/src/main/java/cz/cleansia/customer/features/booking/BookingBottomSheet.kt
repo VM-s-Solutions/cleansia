@@ -2,6 +2,7 @@ package cz.cleansia.customer.features.booking
 
 import cz.cleansia.core.snackbar.SnackbarInsetScope
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
@@ -68,7 +69,7 @@ import kotlin.math.roundToInt
 
 private enum class SheetAnchor { Hidden, Peek, Half, Full }
 
-private const val TOTAL_STEPS = 3
+private const val TOTAL_STEPS = BookingViewModel.TOTAL_STEPS
 
 /**
  * Bolt-style draggable booking sheet. Wraps content in a BoxWithConstraints so all
@@ -215,10 +216,16 @@ private fun SheetContent(
     val submitState by bookingVm.submitState.collectAsStateWithLifecycle()
     val submitting = submitState is cz.cleansia.customer.ui.state.ActionState.Submitting
     val expressWaiver by bookingVm.expressWaiver.collectAsStateWithLifecycle()
+    val currentStep by bookingVm.step.collectAsStateWithLifecycle()
+    val canStepBack by bookingVm.canStepBack.collectAsStateWithLifecycle()
+    val canPlaceOrder by bookingVm.canPlaceOrder.collectAsStateWithLifecycle()
     val scope = androidx.compose.runtime.rememberCoroutineScope()
 
-    var currentStep by remember { mutableIntStateOf(1) }
     var showAddressManager by remember { mutableStateOf(false) }
+
+    BackHandler(enabled = visible) {
+        if (canStepBack) bookingVm.previousStep() else onDismiss()
+    }
 
     // Counter we bump every time submission fails. Passed to the slide-to-confirm
     // button as `resetTrigger` so the thumb snaps back to the start and the user
@@ -298,10 +305,8 @@ private fun SheetContent(
     // re-fires after this clears `state.street` and re-applies the saved
     // default address.
     LaunchedEffect(visible) {
-        if (visible && rebookFromOrderId == null && lastRebookedFrom == null) {
-            bookingVm.reset()
-            currentStep = 1
-        }
+        if (!visible) return@LaunchedEffect
+        if (rebookFromOrderId == null && lastRebookedFrom == null) bookingVm.reset() else bookingVm.returnToFirstStep()
     }
 
     LaunchedEffect(visible, rebookFromOrderId) {
@@ -415,7 +420,7 @@ private fun SheetContent(
         2 -> state.street.isNotBlank() &&
             state.selectedLocalDate != null &&
             state.selectedTime.isNotBlank()
-        3 -> state.paymentMethod.isNotBlank()
+        3 -> canPlaceOrder
         else -> false
     }
 
@@ -475,10 +480,10 @@ private fun SheetContent(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             IconButton(onClick = {
-                if (currentStep > 1) currentStep-- else onDismiss()
+                if (canStepBack) bookingVm.previousStep() else onDismiss()
             }) {
                 Icon(
-                    if (currentStep > 1) Icons.AutoMirrored.Outlined.ArrowBack else Icons.Outlined.Close,
+                    if (canStepBack) Icons.AutoMirrored.Outlined.ArrowBack else Icons.Outlined.Close,
                     contentDescription = null,
                 )
             }
@@ -600,8 +605,12 @@ private fun SheetContent(
                                                 } else {
                                                     com.stripe.android.paymentsheet.PaymentSheet.GooglePayConfiguration.Environment.Test
                                                 },
+                                                // Stripe: "The two-letter ISO 3166 code of the country of
+                                                // your business" — the merchant account, not the order.
                                                 countryCode = "CZ",
-                                                currencyCode = "CZK",
+                                                // The PaymentIntent's own currency wins on the sheet; this
+                                                // is the Google Pay availability hint.
+                                                currencyCode = outcome.paymentSheet.currencyCode,
                                             ),
                                             allowsDelayedPaymentMethods = false,
                                         ),
@@ -631,7 +640,7 @@ private fun SheetContent(
                 }
                 CleansiaPrimaryButton(
                     text = buttonText,
-                    onClick = { currentStep++ },
+                    onClick = bookingVm::nextStep,
                     enabled = canContinue,
                 )
             }
@@ -653,6 +662,7 @@ private fun SheetContent(
                     .fillMaxSize()
                     .background(MaterialTheme.colorScheme.background),
             ) {
+                BackHandler { showAddressManager = false }
                 cz.cleansia.customer.features.addresses.AddressManagerScreen(
                     onBack = { showAddressManager = false },
                     onAddressSelected = { picked ->

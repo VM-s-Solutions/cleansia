@@ -16,8 +16,13 @@ import { DialogModule } from 'primeng/dialog';
 
 const NOTE_MAX = 500;
 
+export interface ExpireCreditDialogSubmit {
+  currencyId: string;
+  note: string;
+}
+
 /**
- * Taking a customer's whole credit balance off the books, now.
+ * Taking a customer's whole credit balance in one currency off the books, now.
  *
  * <p><b>This is what lets a customer who wants to leave actually leave.</b> Erasure is refused while
  * a balance is positive and Cleansia does not do Stripe payouts, so without this an admin faces a
@@ -55,13 +60,15 @@ export class ExpireCreditDialogComponent {
 
   /**
    * What is about to be discharged, shown back to the admin. The dialog does not compute it — the
-   * balance it names must be the one the ledger above it shows, or the two disagree on screen.
+   * balance it names must be the one the ledger above it shows, or the two disagree on screen. One
+   * account per currency, so the currency IS the choice of which balance goes.
    */
   readonly balance = input<number>(0);
+  readonly currencyId = input<string>('');
   readonly currencyCode = input<string>('');
 
-  /** The note, and only the note: the amount is always the whole balance. */
-  readonly submitForm = output<string>();
+  /** The account's currency and the note: the amount is always that account's whole balance. */
+  readonly submitForm = output<ExpireCreditDialogSubmit>();
 
   readonly form = this.fb.group({
     note: this.fb.control<string>('', {
@@ -90,6 +97,9 @@ export class ExpireCreditDialogComponent {
       this.form.markAllAsTouched();
       return;
     }
-    this.submitForm.emit(this.form.getRawValue().note.trim());
+    this.submitForm.emit({
+      currencyId: this.currencyId(),
+      note: this.form.getRawValue().note.trim(),
+    });
   }
 }

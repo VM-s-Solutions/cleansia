@@ -11,7 +11,7 @@ namespace Cleansia.Tests.Features.Auth;
 /// is the same System.Text.Json the API model-binds with and Swashbuckle builds its schema from, so a
 /// field absent from this round-trip is absent from the generated TS/Kotlin client too.
 ///   - Web Login/PartnerLogin/AdminLogin: trustedDeviceToken is server-set (cookie) → off the wire.
-///   - RefreshToken: requiredProfile/requiredAudience are the host's pin → off the wire.
+///   - RefreshToken: requiredProfiles/requiredAudience are the host's pin → off the wire.
 ///   - Mobile Login/PartnerLogin: trustedDeviceToken is client-supplied → on the wire.
 /// </summary>
 public class AuthWireContractTests
@@ -25,6 +25,24 @@ public class AuthWireContractTests
             new Login.Command("e@x.com", "pw", true) { TrustedDeviceToken = "marker" }, Options);
 
         Assert.DoesNotContain("trustedDeviceToken", json, StringComparison.OrdinalIgnoreCase);
+    }
+
+    /// <summary>
+    /// The session acts — the admin sign-in among them — are market-scoped for the audit row's tenant
+    /// (explicit interface implementation, always the default market); the seam stays off the wire so
+    /// the generated clients do not change.
+    /// </summary>
+    [Theory]
+    [InlineData(typeof(Login.Command))]
+    [InlineData(typeof(AdminLogin.Command))]
+    [InlineData(typeof(MobileLogin.Command))]
+    [InlineData(typeof(ConfirmUserEmail.Command))]
+    [InlineData(typeof(Cleansia.Core.AppServices.Features.Users.RequestPasswordChange.Command))]
+    [InlineData(typeof(Cleansia.Core.AppServices.Features.Users.ChangePassword.Command))]
+    public void The_Session_Acts_Market_Seam_Is_Not_On_The_Wire(Type command)
+    {
+        Assert.True(typeof(Cleansia.Core.AppServices.Tenancy.IOperatorScopedRequest).IsAssignableFrom(command));
+        Assert.DoesNotContain(command.GetProperties(), p => p.Name == "CountryId");
     }
 
     [Fact]
@@ -56,12 +74,12 @@ public class AuthWireContractTests
     }
 
     [Fact]
-    public void RefreshToken_RequiredProfile_And_RequiredAudience_Are_Not_On_The_Wire()
+    public void RefreshToken_RequiredProfiles_And_RequiredAudience_Are_Not_On_The_Wire()
     {
         var json = JsonSerializer.Serialize(
             new RefreshToken.Command("raw")
             {
-                RequiredProfile = UserProfile.Customer,
+                RequiredProfiles = [UserProfile.Customer],
                 RequiredAudience = JwtAudiences.Customer,
             },
             Options);
@@ -72,13 +90,13 @@ public class AuthWireContractTests
     }
 
     [Fact]
-    public void RefreshToken_RequiredProfile_And_RequiredAudience_Cannot_Be_Set_From_The_Body()
+    public void RefreshToken_RequiredProfiles_And_RequiredAudience_Cannot_Be_Set_From_The_Body()
     {
-        const string body = """{"token":"raw","requiredProfile":0,"requiredAudience":"cleansia.admin"}""";
+        const string body = """{"token":"raw","requiredProfiles":[0],"requiredAudience":"cleansia.admin"}""";
 
         var command = JsonSerializer.Deserialize<RefreshToken.Command>(body, Options)!;
 
-        Assert.Null(command.RequiredProfile);
+        Assert.Null(command.RequiredProfiles);
         Assert.Null(command.RequiredAudience);
         Assert.Equal("raw", command.Token);
     }

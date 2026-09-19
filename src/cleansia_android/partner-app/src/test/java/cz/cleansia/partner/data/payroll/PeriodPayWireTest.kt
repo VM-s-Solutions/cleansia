@@ -48,6 +48,7 @@ class PeriodPayWireTest {
 
     private suspend fun fetch(
         body: String,
+        currencyId: String? = null,
         onRequest: (RecordedRequest) -> Unit = {},
     ): ApiResult<PeriodPaySummary> {
         val server = MockWebServer()
@@ -59,7 +60,7 @@ class PeriodPayWireTest {
                     .setHeader("Content-Type", "application/json")
                     .setBody(body),
             )
-            repo(server).getPeriodPays(EMPLOYEE_ID, PAY_PERIOD_ID).also { onRequest(server.takeRequest()) }
+            repo(server).getPeriodPays(EMPLOYEE_ID, PAY_PERIOD_ID, currencyId).also { onRequest(server.takeRequest()) }
         } finally {
             server.shutdown()
         }
@@ -105,6 +106,46 @@ class PeriodPayWireTest {
             "/api/EmployeePayroll/GetPeriodPays?EmployeeId=$EMPLOYEE_ID&PayPeriodId=$PAY_PERIOD_ID",
             path,
         )
+    }
+
+    /** The currency view travels under the name the server binds, and only when one is named. */
+    @Test
+    fun theRequestCarriesTheCurrencyViewWhenOneIsNamed() = runTest {
+        var path: String? = null
+        fetch(CAPTURED_PAYLOAD, currencyId = "cur-eur") { request -> path = request.path }
+
+        assertEquals(
+            "/api/EmployeePayroll/GetPeriodPays?EmployeeId=$EMPLOYEE_ID&PayPeriodId=$PAY_PERIOD_ID&CurrencyId=cur-eur",
+            path,
+        )
+    }
+
+    @Test
+    fun everyLineNamesItsOwnCurrency() = runTest {
+        val summary = loaded(CAPTURED_PAYLOAD)
+
+        assertEquals("CZK", summary.currencyCode)
+        assertEquals(listOf("CZK", "CZK"), summary.orderPays.map { it.currencyCode })
+    }
+
+    @Test
+    fun theCurrenciesThePeriodOffersArriveInTheServersOrderWithTheirIds() = runTest {
+        val summary = loaded(CAPTURED_PAYLOAD)
+
+        assertEquals(
+            listOf(PeriodCurrency(id = "cur-czk", code = "CZK"), PeriodCurrency(id = "cur-eur", code = "EUR")),
+            summary.availableCurrencies,
+        )
+    }
+
+    /** A server that predates the member sends no key; the period still maps, with nothing to switch to. */
+    @Test
+    fun aPeriodWithoutTheCurrenciesKeyStillMapsWithNoneOffered() = runTest {
+        val summary = loaded(payloadWithoutSummaryKey("availableCurrencies"))
+
+        assertEquals(emptyList<PeriodCurrency>(), summary.availableCurrencies)
+        assertEquals("CZK", summary.currencyCode)
+        assertEquals(4951.80, summary.grandTotal, 0.0)
     }
 
     // --- rule 1: money is never coerced -----------------------------------------
@@ -292,6 +333,11 @@ class PeriodPayWireTest {
               "grandTotal": 4951.80,
               "hasInvoice": true,
               "invoiceId": "inv-42",
+              "currencyCode": "CZK",
+              "availableCurrencies": [
+                { "id": "cur-czk", "code": "CZK" },
+                { "id": "cur-eur", "code": "EUR" }
+              ],
               "orderPays": [
                 {
                   "id": "line-1",
@@ -309,7 +355,8 @@ class PeriodPayWireTest {
                   "totalPay": 1686.95,
                   "payBreakdown": "base 1400.10 + extras 103.20",
                   "isApproved": true,
-                  "createdOn": "2026-08-03T09:15:00Z"
+                  "createdOn": "2026-08-03T09:15:00Z",
+                  "currencyCode": "CZK"
                 },
                 {
                   "id": "line-2",
@@ -327,7 +374,8 @@ class PeriodPayWireTest {
                   "totalPay": 3374.85,
                   "payBreakdown": "base 2800.40 + extras 207.05",
                   "isApproved": true,
-                  "createdOn": "2026-08-07T14:40:00Z"
+                  "createdOn": "2026-08-07T14:40:00Z",
+                  "currencyCode": "CZK"
                 }
               ]
             }
@@ -349,6 +397,7 @@ class PeriodPayWireTest {
             "invoiceId",
             "orderPays",
             "currencyCode",
+            "availableCurrencies",
         )
 
         val LINE_SPEC_PROPERTIES = setOf(
@@ -368,6 +417,7 @@ class PeriodPayWireTest {
             "payBreakdown",
             "isApproved",
             "createdOn",
+            "currencyCode",
         )
 
         val SUMMARY_REQUIRED_NUMBERS = listOf(

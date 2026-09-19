@@ -5,6 +5,7 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonObject
@@ -107,6 +108,22 @@ class PromoCodeWireTest {
             it.validate(ValidatePromoCodeRequest("SPRING20", 2400.0))
         }
         assertEquals("/api/PromoCode/Validate", path)
+    }
+
+    /** The preview must ask the question the create asks: the code is judged in the quote's currency. */
+    @Test
+    fun theRequestCarriesTheQuotesCurrency() = runTest {
+        var body: JsonObject? = null
+        serving(CAPTURED_VALID, onRequest = { body = Json.parseToJsonElement(it.body.readUtf8()).jsonObject }) {
+            it.validate(ValidatePromoCodeRequest("SPRING20", 2400.0, currencyId = "cur-eur"))
+        }
+        assertEquals("cur-eur", body?.get("currencyId")?.jsonPrimitive?.content)
+        assertEquals("SPRING20", body?.get("code")?.jsonPrimitive?.content)
+
+        serving(CAPTURED_VALID, onRequest = { body = Json.parseToJsonElement(it.body.readUtf8()).jsonObject }) {
+            it.validate(ValidatePromoCodeRequest("SPRING20", 2400.0))
+        }
+        assertNull(body?.get("currencyId"))
     }
 
     // --- rule 1: money is never coerced -----------------------------------------

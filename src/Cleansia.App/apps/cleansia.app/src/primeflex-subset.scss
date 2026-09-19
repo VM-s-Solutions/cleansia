@@ -1,0 +1,175 @@
+// The PrimeFlex utilities the customer app actually renders, self-hosted.
+//
+// Copied declaration-for-declaration from node_modules/primeflex/primeflex.css
+// (4.0.0), in PrimeFlex's own source order and with its `!important`s, so every
+// element carrying one of these classes computes exactly as it did when the
+// whole 373 KB sheet came from cdn.jsdelivr.net. The `md:` variants keep their
+// 768px breakpoint for the same reason — the navbar's `!important` override in
+// cleansia-customer-navbar.component.scss still fights that breakpoint on
+// purpose. apps/cleansia.app/src/app/theme/primeflex-subset.spec.ts holds every
+// rule here to the package declaration-for-declaration and fails when a template
+// reaches for a utility that is not here.
+
+.text-700 {
+  color: light-dark(var(--p-surface-700), var(--p-surface-100)) !important;
+}
+
+.border-300 {
+  border-color: light-dark(var(--p-surface-300), var(--p-surface-500)) !important;
+}
+
+.surface-overlay {
+  background-color: light-dark(var(--p-surface-0), var(--p-surface-900)) !important;
+}
+
+.field {
+  margin-bottom: 1rem;
+}
+
+.field > label {
+  display: inline-block;
+  margin-bottom: 0.5rem;
+}
+
+.field > small {
+  margin-top: 0.25rem;
+}
+
+.hidden {
+  display: none !important;
+}
+
+.flex {
+  display: flex !important;
+}
+
+@media screen and (min-width: 768px) {
+  .md\:hidden {
+    display: none !important;
+  }
+
+  .md\:flex {
+    display: flex !important;
+  }
+}
+
+.text-center {
+  text-align: center !important;
+}
+
+.text-right {
+  text-align: right !important;
+}
+
+.font-medium {
+  font-weight: 500 !important;
+}
+
+.text-xl {
+  font-size: 1.25rem !important;
+}
+
+.flex-column {
+  flex-direction: column !important;
+}
+
+.justify-content-end {
+  justify-content: flex-end !important;
+}
+
+.justify-content-center {
+  justify-content: center !important;
+}
+
+.justify-content-between {
+  justify-content: space-between !important;
+}
+
+.align-items-center {
+  align-items: center !important;
+}
+
+.gap-2 {
+  gap: 0.5rem !important;
+}
+
+.gap-3 {
+  gap: 1rem !important;
+}
+
+.p-2 {
+  padding: 0.5rem !important;
+}
+
+.p-4 {
+  padding: 1.5rem !important;
+}
+
+.pt-3 {
+  padding-top: 1rem !important;
+}
+
+.mt-2 {
+  margin-top: 0.5rem !important;
+}
+
+.mt-3 {
+  margin-top: 1rem !important;
+}
+
+.mr-2 {
+  margin-right: 0.5rem !important;
+}
+
+.mb-2 {
+  margin-bottom: 0.5rem !important;
+}
+
+.mb-3 {
+  margin-bottom: 1rem !important;
+}
+
+.mb-4 {
+  margin-bottom: 1.5rem !important;
+}
+
+.shadow-2 {
+  box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.03), 0px 0px 2px rgba(0, 0, 0, 0.06), 0px 2px 6px rgba(0, 0, 0, 0.12) !important;
+}
+
+.border-top-1 {
+  border-top-width: 1px !important;
+  border-top-style: solid;
+}
+
+.border-round-3xl {
+  border-radius: 1.5rem !important;
+}
+
+.h-full {
+  height: 100% !important;
+}
+
+.fixed {
+  position: fixed !important;
+}
+
+.relative {
+  position: relative !important;
+}
+
+.top-0 {
+  top: 0px !important;
+}
+
+.left-0 {
+  left: 0px !important;
+}
+
+.right-0 {
+  right: 0px !important;
+}
+
+.z-4 {
+  z-index: 4 !important;
+}

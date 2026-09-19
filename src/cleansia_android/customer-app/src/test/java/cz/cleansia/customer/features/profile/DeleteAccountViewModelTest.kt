@@ -1,6 +1,8 @@
 package cz.cleansia.customer.features.profile
 
 import app.cash.turbine.test
+import cz.cleansia.core.auth.JwtDecoder
+import cz.cleansia.core.auth.TokenStore
 import cz.cleansia.core.network.ApiError
 import cz.cleansia.core.network.ApiResult
 import cz.cleansia.core.snackbar.SnackbarController
@@ -10,7 +12,10 @@ import cz.cleansia.customer.testing.MainDispatcherRule
 import cz.cleansia.customer.ui.state.ActionState
 import io.mockk.coEvery
 import io.mockk.coVerify
+import io.mockk.every
 import io.mockk.mockk
+import io.mockk.mockkObject
+import io.mockk.unmockkObject
 import io.mockk.verify
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -32,15 +37,35 @@ class DeleteAccountViewModelTest {
     private lateinit var repository: UserRepository
     private lateinit var snackbar: SnackbarController
     private lateinit var appContext: android.content.Context
+    private lateinit var tokenStore: TokenStore
 
     @Before
     fun setUp() {
         repository = mockk(relaxed = true)
         snackbar = mockk(relaxed = true)
         appContext = mockk(relaxed = true)
+        tokenStore = mockk(relaxed = true)
     }
 
-    private fun viewModel() = DeleteAccountViewModel(repository, snackbar, appContext)
+    private fun viewModel() = DeleteAccountViewModel(repository, snackbar, appContext, tokenStore)
+
+    @Test
+    fun `the e-mail the confirm field must match is read from the access token`() {
+        every { tokenStore.current() } returns TokenStore.Tokens("jwt-1", 0L, "refresh", 0L)
+        mockkObject(JwtDecoder)
+        try {
+            every { JwtDecoder.extractEmail("jwt-1") } returns "ada@example.com"
+            assertEquals("ada@example.com", viewModel().userEmail)
+        } finally {
+            unmockkObject(JwtDecoder)
+        }
+    }
+
+    @Test
+    fun `no session leaves the e-mail empty`() {
+        every { tokenStore.current() } returns null
+        assertEquals("", viewModel().userEmail)
+    }
 
     @Test
     fun `starts Idle`() {

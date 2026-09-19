@@ -19,6 +19,20 @@
         [disabled]="!facade.order()?.id"
         (onClick)="viewAuditHistory()"
       />
+      <!-- The subject lookup that precedes the file reads the audit timeline, so both policies gate it. -->
+      <ng-container *cleansiaPermission="Policy.CanViewAuditLog">
+        <cleansia-button
+          *cleansiaPermission="Policy.CanAdminExportUserData"
+          class="cleansia-order-detail__incident-file"
+          icon="pi pi-file-pdf"
+          severity="secondary"
+          [outlined]="true"
+          [label]="'pages.order_detail.incident_file.button' | translate"
+          [disabled]="!facade.order()?.id"
+          [loading]="facade.incidentFileExporting()"
+          (onClick)="exportIncidentFile()"
+        />
+      </ng-container>
     </div>
 
     @if (facade.loading()) {
@@ -91,6 +105,44 @@
             }}</span>
           </div>
         </div>
+      </cleansia-section>
+
+      <cleansia-section
+        *cleansiaPermission="Policy.CanViewOrderCustomer"
+        [title]="'pages.order_detail.customer_account' | translate"
+        class="cleansia-order-detail__customer-account"
+      >
+        @if (facade.order()?.customerCompany; as company) {
+        <p>{{ 'pages.order_detail.customer_of_company' | translate: { company } }}</p>
+        }
+        @if (facade.customerLoading()) {
+        <cleansia-loader />
+        } @else if (facade.customerError()) {
+        <p role="alert">{{ 'pages.order_detail.customer_account_error' | translate }}</p>
+        } @else if (facade.customer(); as customer) {
+          @if (customer.customerOfAnotherCompany; as foreign) {
+          <div class="info-grid">
+            <div class="info-item"><span class="label">{{ 'pages.order_detail.customer_name' | translate }}</span><span class="value">{{ foreign.firstName || '—' }}</span></div>
+            <div class="info-item"><span class="label">{{ 'pages.order_detail.customer_email' | translate }}</span><span class="value">{{ foreign.maskedEmail || '—' }}</span></div>
+          </div>
+          <p>{{ 'pages.order_detail.customer_account_read_only' | translate }}</p>
+          } @else {
+          <div class="info-grid">
+            <div class="info-item"><span class="label">{{ 'pages.order_detail.customer_name' | translate }}</span><span class="value">{{ customer.firstName }} {{ customer.lastName }}</span></div>
+            <div class="info-item"><span class="label">{{ 'pages.order_detail.customer_email' | translate }}</span><span class="value">{{ customer.email || '—' }}</span></div>
+          </div>
+          @if (facade.customerId()) {
+          <cleansia-button
+            class="cleansia-order-detail__customer-link"
+            [label]="'pages.order_detail.open_customer' | translate"
+            [outlined]="true"
+            (onClick)="facade.openCustomer()"
+          />
+          }
+          }
+        } @else {
+        <p>{{ 'pages.order_detail.customer_account_empty' | translate }}</p>
+        }
       </cleansia-section>
 
       <!-- Address Information -->
@@ -368,7 +420,7 @@
               severity="secondary"
               [text]="true"
               [loading]="facade.revealingAccessInstructions()"
-              [size]="'small-width'"
+              size="auto-width"
               (onClick)="facade.revealAccessInstructions(facade.order()!.id!)"
             />
             <p class="hint">
@@ -429,7 +481,7 @@
     </div>
     } @else {
     <div class="not-found">
-      <p>{{ 'pages.order_detail.not_found' | translate }}</p>
+      <p>{{ (facade.detailError() ? 'pages.order_detail.load_error' : 'pages.order_detail.not_found') | translate }}</p>
     </div>
     }
   </div>

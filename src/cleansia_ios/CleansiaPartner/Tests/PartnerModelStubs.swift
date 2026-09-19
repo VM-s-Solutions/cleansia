@@ -52,6 +52,7 @@ extension PeriodPaySummary {
         totalBonusPay: Double = 0,
         totalDeductionPay: Double = 0,
         grandTotal: Double = 0,
+        currencyCode: String? = nil,
         orderPays: [OrderPayLine] = []
     ) -> PeriodPaySummary {
         PeriodPaySummary(
@@ -63,6 +64,7 @@ extension PeriodPaySummary {
             totalBonusPay: totalBonusPay,
             totalDeductionPay: totalDeductionPay,
             grandTotal: grandTotal,
+            currencyCode: currencyCode,
             orderPays: orderPays
         )
     }
@@ -76,6 +78,7 @@ extension Invoice {
         totalOrders: Int = 0,
         totalAmount: Double = 0,
         currencyCode: String? = "CZK",
+        currencyId: String? = "cur-czk",
         status: EmployeeInvoiceStatus = ._1,
         generatedAt: Date? = nil,
         paidAt: Date? = nil
@@ -87,6 +90,7 @@ extension Invoice {
             totalOrders: totalOrders,
             totalAmount: totalAmount,
             currencyCode: currencyCode,
+            currencyId: currencyId,
             status: status,
             generatedAt: generatedAt,
             paidAt: paidAt
@@ -98,6 +102,7 @@ extension InvoiceDetail {
     static func stub(
         id: String = "inv-1",
         totalAmount: Double = 0,
+        currencyId: String? = "cur-czk",
         pdfGenerationFailed: Bool = false
     ) -> InvoiceDetail {
         InvoiceDetail(
@@ -113,6 +118,7 @@ extension InvoiceDetail {
             deductionAmount: 0,
             totalAmount: totalAmount,
             currencyCode: "CZK",
+            currencyId: currencyId,
             status: ._1,
             pdfGenerationFailed: pdfGenerationFailed,
             generatedAt: nil,

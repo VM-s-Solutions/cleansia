@@ -58,6 +58,7 @@ public class OrderRedactionSurfaceTests
         nameof(OrderItem.Review),
         nameof(OrderItem.ExpressWaiverForfeitedOnCancel),
         nameof(OrderItem.PreferredOffer),
+        nameof(OrderItem.CustomerCompany),
     ];
 
     private static readonly string[] DetailReshaped =
@@ -75,6 +76,7 @@ public class OrderRedactionSurfaceTests
     /// </summary>
     private static readonly string[] DetailKept =
     [
+        nameof(OrderItem.CountryId),
         nameof(OrderItem.Id),
         nameof(OrderItem.CustomerAddressApproximate),
         nameof(OrderItem.RequiredEmployees),
@@ -130,6 +132,7 @@ public class OrderRedactionSurfaceTests
 
     private static readonly string[] ListKept =
     [
+        nameof(OrderListItem.CountryId),
         nameof(OrderListItem.Id),
         nameof(OrderListItem.CustomerAddressApproximate),
         nameof(OrderListItem.DisplayOrderNumber),
@@ -356,7 +359,7 @@ public class OrderRedactionSurfaceTests
             HasAccessInstructions: true,
             RecurringTemplateId: "tmpl-weekly",
             SelectedPackages: [],
-            Currency: new CurrencyDetailDto("czk", "CZK", "Czech Koruna", "Kč", 1m, true),
+            Currency: new CurrencyDetailDto("czk", "CZK", "Czech Koruna", "Kč", true),
             SelectedServices: [],
             StatusHistory: [new OrderStatusTrackDto(new Code("OrderStatus", "Completed", 5), DateTimeOffset.UtcNow)],
             CreatedOn: DateTimeOffset.UtcNow.AddDays(-3),
@@ -378,7 +381,9 @@ public class OrderRedactionSurfaceTests
             HasAfterPhotos: true,
             ExpressWaiverForfeitedOnCancel: true,
             PreferredOffer: new PreferredOfferDetails(
-                PreferredOfferState.AwaitingConfirmation, "Petra", DateTime.UtcNow.AddHours(2), true));
+                PreferredOfferState.AwaitingConfirmation, "Petra", DateTime.UtcNow.AddHours(2), true),
+            CustomerCompany: "Account company",
+            CountryId: "CZ");
 
     private static OrderListItem FullyPopulatedListItem() =>
         new(
@@ -408,7 +413,7 @@ public class OrderRedactionSurfaceTests
             ConfirmationCode: "CONF-1234",
             SelectedPackages: [],
             CurrencyId: "czk",
-            Currency: new CurrencyListItem("czk", "CZK", "Kč", "Czech Koruna", 1m, true),
+            Currency: new CurrencyListItem("czk", "CZK", "Kč", "Czech Koruna", true),
             AssignedEmployees: ["assignment-1"],
             SelectedServices: [],
             RequiredEmployees: RequiredEmployees,

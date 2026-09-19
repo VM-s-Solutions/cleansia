@@ -1,7 +1,25 @@
 import { TableColumn } from '@cleansia/components';
-import { OrderEmployeePayDto } from '@cleansia/partner-services';
+import { OrderEmployeePayDto, PeriodPaySummaryDto } from '@cleansia/partner-services';
 
 export type PeriodStatusKey = 'open' | 'closed' | 'paid' | 'unknown';
+
+export interface PeriodCurrency {
+  id: string;
+  code: string;
+}
+
+/**
+ * The currencies a period can be viewed in come with the summary: the view currency first, then
+ * every other currency a pay row of the period is in. The server answers GetPeriodPays in ONE
+ * currency, so this list is the only way a cleaner paid in two reaches the second one's rows.
+ * It is not derived from invoices: an open period has none, and a cancelled one is a document
+ * over rows that may no longer be there.
+ */
+export function getPeriodCurrencies(summary: PeriodPaySummaryDto | null): PeriodCurrency[] {
+  return (summary?.availableCurrencies ?? []).flatMap((currency) =>
+    currency.id && currency.code ? [{ id: currency.id, code: currency.code }] : []
+  );
+}
 
 /**
  * The currency comes from the server and is never assumed here. On an invoiced period it is the
@@ -19,9 +37,15 @@ export function formatPayAmount(
     : '';
 }
 
+/**
+ * A row's own currency first — the pay is in the ORDER's currency and the server names it per row —
+ * and the summary's (the currency view) only for a row that carries none.
+ */
 export function getPeriodPayTableDefinition(currencyCode: string | undefined): {
   columns: TableColumn<OrderEmployeePayDto>[];
 } {
+  const format = (pay: OrderEmployeePayDto | undefined, value: number | undefined): string =>
+    formatPayAmount(value, pay?.currencyCode ?? currencyCode);
   return {
     columns: [
       {
@@ -36,7 +60,7 @@ export function getPeriodPayTableDefinition(currencyCode: string | undefined): {
         header: 'pages.period_pay.base_pay',
         sortable: false,
         align: 'right',
-        getValue: (pay?: OrderEmployeePayDto) => formatPayAmount(pay?.basePay, currencyCode),
+        getValue: (pay?: OrderEmployeePayDto) => format(pay, pay?.basePay),
       },
       {
         id: 'extrasPay',
@@ -44,7 +68,7 @@ export function getPeriodPayTableDefinition(currencyCode: string | undefined): {
         header: 'pages.period_pay.extras_pay',
         sortable: false,
         align: 'right',
-        getValue: (pay?: OrderEmployeePayDto) => formatPayAmount(pay?.extrasPay, currencyCode),
+        getValue: (pay?: OrderEmployeePayDto) => format(pay, pay?.extrasPay),
       },
       {
         id: 'expensesPay',
@@ -52,7 +76,7 @@ export function getPeriodPayTableDefinition(currencyCode: string | undefined): {
         header: 'pages.period_pay.expenses_pay',
         sortable: false,
         align: 'right',
-        getValue: (pay?: OrderEmployeePayDto) => formatPayAmount(pay?.expensesPay, currencyCode),
+        getValue: (pay?: OrderEmployeePayDto) => format(pay, pay?.expensesPay),
       },
       {
         id: 'bonusPay',
@@ -60,7 +84,7 @@ export function getPeriodPayTableDefinition(currencyCode: string | undefined): {
         header: 'pages.period_pay.bonus_pay',
         sortable: false,
         align: 'right',
-        getValue: (pay?: OrderEmployeePayDto) => formatPayAmount(pay?.bonusPay, currencyCode),
+        getValue: (pay?: OrderEmployeePayDto) => format(pay, pay?.bonusPay),
       },
       {
         id: 'deductionPay',
@@ -68,7 +92,7 @@ export function getPeriodPayTableDefinition(currencyCode: string | undefined): {
         header: 'pages.period_pay.deduction_pay',
         sortable: false,
         align: 'right',
-        getValue: (pay?: OrderEmployeePayDto) => formatPayAmount(pay?.deductionPay, currencyCode),
+        getValue: (pay?: OrderEmployeePayDto) => format(pay, pay?.deductionPay),
       },
       {
         id: 'totalPay',
@@ -76,7 +100,7 @@ export function getPeriodPayTableDefinition(currencyCode: string | undefined): {
         header: 'pages.period_pay.total_pay',
         sortable: false,
         align: 'right',
-        getValue: (pay?: OrderEmployeePayDto) => formatPayAmount(pay?.totalPay, currencyCode),
+        getValue: (pay?: OrderEmployeePayDto) => format(pay, pay?.totalPay),
       },
     ],
   };

@@ -37,6 +37,7 @@ public class AccountLockoutTests(PostgresContainerFixture fixture) : BaseIntegra
             lastName: Constants.TestUserSession.TestLastName);
         user.ConfirmEmail();
         user.Created(Constants.TestUserSession.TestUserId, DateTime.UtcNow);
+        user.TenantId = TestTenants.Default;
         context.Users.Add(user);
     }
 
@@ -70,6 +71,7 @@ public class AccountLockoutTests(PostgresContainerFixture fixture) : BaseIntegra
             deviceLabel: null,
             ipAddress: null);
         token.Created("test", DateTimeOffset.UtcNow);
+        token.TenantId = TestTenants.Default;
         context.RefreshTokens.Add(token);
         await context.SaveChangesAsync();
         return raw;
@@ -197,6 +199,7 @@ public class AccountLockoutTests(PostgresContainerFixture fixture) : BaseIntegra
                 otherUser.Id = "another-users-id";
                 otherUser.ConfirmEmail();
                 otherUser.Created("test", DateTime.UtcNow);
+                otherUser.TenantId = TestTenants.Default;
                 context.Users.Add(otherUser);
                 await context.SaveChangesAsync();
 
@@ -208,6 +211,7 @@ public class AccountLockoutTests(PostgresContainerFixture fixture) : BaseIntegra
                     deviceLabel: null,
                     ipAddress: null);
                 foreign.Created("test", DateTimeOffset.UtcNow);
+                foreign.TenantId = TestTenants.Default;
                 context.RefreshTokens.Add(foreign);
                 await context.SaveChangesAsync();
             },

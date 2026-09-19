@@ -28,7 +28,8 @@ import {
   CleansiaTextInputComponent,
   CleansiaTitleComponent,
 } from '@cleansia/components';
-import { SnackbarService } from '@cleansia/services';
+import { CleansiaPermissionDirective } from '@cleansia/directives';
+import { Policy, SnackbarService } from '@cleansia/services';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { ConfirmationService } from 'primeng/api';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
@@ -41,6 +42,7 @@ import { EmailTypeDetailFacade } from './email-type-detail.facade';
   selector: 'cleansia-admin-email-type-detail',
   standalone: true,
   imports: [
+    CleansiaPermissionDirective,
     CommonModule,
     ReactiveFormsModule,
     TranslatePipe,
@@ -64,6 +66,7 @@ import { EmailTypeDetailFacade } from './email-type-detail.facade';
 })
 export class EmailTypeDetailComponent implements OnInit, OnDestroy {
   protected readonly facade = inject(EmailTypeDetailFacade);
+  protected readonly Policy = Policy;
   private readonly fb = inject(FormBuilder);
   private readonly route = inject(ActivatedRoute);
   private readonly translate = inject(TranslateService);

@@ -192,8 +192,8 @@ otherwise `MigrateAsync()` replays the create script against tables that already
 regeneration with the integration suite: it builds a real Postgres from the migration and is the only
 thing that proves the model and the schema agree.
 
-**NSwag client regeneration is owner-run.** Work that needs it is flagged `manual_step: nswag-regen`
-rather than performed. Migrations are not — see `CLAUDE.md`.
+**NSwag client regeneration is ordinary work** (owner ruling 2026-09-07): regenerate before the frontend
+work that depends on it and commit the client with the DTO — never flag it. Migrations likewise — see `CLAUDE.md`.
 
 ## Regenerating the API clients
 

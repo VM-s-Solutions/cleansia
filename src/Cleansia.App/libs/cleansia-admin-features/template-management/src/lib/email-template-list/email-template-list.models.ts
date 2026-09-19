@@ -1,5 +1,5 @@
 import { TemplateRef } from '@angular/core';
-import { EmailType, EmailTypeListItemDto } from '@cleansia/admin-services';
+import { EmailTypeListItemDto } from '@cleansia/admin-services';
 import { TableColumn, TableAction } from '@cleansia/components';
 import { TranslateService } from '@ngx-translate/core';
 

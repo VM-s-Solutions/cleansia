@@ -1,5 +1,6 @@
 using System.Linq.Expressions;
 using Cleansia.Core.Domain.Auditing;
+using Cleansia.Core.Domain.Enums;
 using Cleansia.Infra.Common.Specifications;
 
 namespace Cleansia.Core.Domain.Specifications;
@@ -14,6 +15,7 @@ public class AdminActionAuditSpecification : BaseSpecification<string?>, ISpecif
     public DateTimeOffset? OccurredFrom { get; set; }
     public DateTimeOffset? OccurredTo { get; set; }
     public bool? Success { get; set; }
+    public AdminRole? ActorAdminRole { get; set; }
 
     public Expression<Func<AdminActionAudit, bool>> SatisfiedBy()
     {
@@ -60,6 +62,11 @@ public class AdminActionAuditSpecification : BaseSpecification<string?>, ISpecif
             specification &= new DirectSpecification<AdminActionAudit>(x => x.Success == Success.Value);
         }
 
+        if (ActorAdminRole.HasValue)
+        {
+            specification &= new DirectSpecification<AdminActionAudit>(x => x.ActorAdminRole == ActorAdminRole.Value);
+        }
+
         return specification.SatisfiedBy();
     }
 
@@ -71,7 +78,8 @@ public class AdminActionAuditSpecification : BaseSpecification<string?>, ISpecif
         string? resourceId = null,
         DateTimeOffset? occurredFrom = null,
         DateTimeOffset? occurredTo = null,
-        bool? success = null)
+        bool? success = null,
+        AdminRole? actorAdminRole = null)
     {
         return new AdminActionAuditSpecification
         {
@@ -82,7 +90,8 @@ public class AdminActionAuditSpecification : BaseSpecification<string?>, ISpecif
             ResourceId = resourceId,
             OccurredFrom = occurredFrom,
             OccurredTo = occurredTo,
-            Success = success
+            Success = success,
+            ActorAdminRole = actorAdminRole
         };
     }
 }

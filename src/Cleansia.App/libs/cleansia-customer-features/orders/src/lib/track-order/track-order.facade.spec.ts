@@ -34,6 +34,19 @@ describe('TrackOrderFacade', () => {
 
   // Every member of a generated query is optional, so a dropped assignment type-checks.
   // This reads the body off the wire instead (ADR-0031).
+  it('sends all three lookup secrets in the body without URL parameters', () => {
+    facade.lookup('CLS-123', 'guest@example.test', 'ABC123').subscribe();
+    const request = httpMock.expectOne(`${BASE_URL}/api/Order/Lookup`);
+    expect(request.request.method).toBe('POST');
+    expect(request.request.params.keys()).toEqual([]);
+    expect(JSON.parse(request.request.body)).toEqual({
+      displayOrderNumber: 'CLS-123',
+      email: 'guest@example.test',
+      confirmationCode: 'ABC123',
+    });
+    request.flush(new Blob([JSON.stringify({})]));
+  });
+
   it('sends every lookup pair in the batch body', () => {
     facade
       .lookupBatch([

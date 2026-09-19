@@ -9,6 +9,8 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import cz.cleansia.customer.R
 import cz.cleansia.customer.core.user.UserRepository
 import cz.cleansia.customer.ui.state.ActionState
+import cz.cleansia.core.auth.JwtDecoder
+import cz.cleansia.core.auth.TokenStore
 import cz.cleansia.core.snackbar.SnackbarController
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
@@ -25,7 +27,11 @@ class DeleteAccountViewModel @Inject constructor(
     private val userRepository: UserRepository,
     private val snackbar: SnackbarController,
     @ApplicationContext private val appContext: Context,
+    tokenStore: TokenStore,
 ) : ViewModel() {
+
+    /** The signed-in e-mail the confirm field must match, read once from the access token. */
+    val userEmail: String = tokenStore.current()?.accessToken?.let(JwtDecoder::extractEmail).orEmpty()
 
     private val _deleteState = MutableStateFlow<ActionState>(ActionState.Idle)
     val deleteState: StateFlow<ActionState> = _deleteState.asStateFlow()

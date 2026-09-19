@@ -8,6 +8,7 @@ struct ResolvedOrderInputs {
     let instant: Date
     let countryId: String?
     let promoIsValid: Bool
+    let alreadyConsented: Bool
 }
 
 enum BookingOrderCommandFactory {
@@ -25,6 +26,10 @@ enum BookingOrderCommandFactory {
             guard resolved.promoIsValid, !state.promoCode.isBlank else { return nil }
             return state.promoCode.trimmingCharacters(in: .whitespacesAndNewlines).uppercased()
         }()
+
+        // Asserted only when the box was shown and ticked; an account that already consented saw no
+        // box and asserts nothing new.
+        let termsAccepted: Bool? = !resolved.alreadyConsented && state.termsAccepted ? true : nil
 
         return CreateOrderCommand(
             customerName: resolved.profile.fullName,
@@ -45,7 +50,8 @@ enum BookingOrderCommandFactory {
             referralCode: nil,
             preferredEmployeeId: state.preferredEmployeeId,
             specialInstructions: BookingInstructions.trimmedOrNil(state.specialInstructions),
-            accessInstructions: BookingInstructions.trimmedOrNil(state.accessInstructions)
+            accessInstructions: BookingInstructions.trimmedOrNil(state.accessInstructions),
+            termsAccepted: termsAccepted
         )
     }
 }

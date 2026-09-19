@@ -31,7 +31,7 @@ import {
 } from './order-photos.helpers';
 
 @Component({
-  selector: 'order-photos',
+  selector: 'cleansia-partner-order-photos',
   standalone: true,
   imports: [
     CommonModule,
@@ -112,7 +112,7 @@ export class OrderPhotosComponent {
     for (const file of files) {
       const validation = validatePhotoFile(file);
       if (!validation.valid) {
-        this.snackbarService.showErrorTranslated(validation.errorKey!);
+        if (validation.errorKey) this.snackbarService.showErrorTranslated(validation.errorKey);
         continue;
       }
       this.stagePhoto(file, photoType);

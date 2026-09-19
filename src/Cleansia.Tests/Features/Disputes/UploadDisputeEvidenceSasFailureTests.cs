@@ -40,7 +40,7 @@ public class UploadDisputeEvidenceSasFailureTests
         {
             Id = DisputeId,
         };
-        _disputeRepository.Setup(r => r.GetQueryable())
+        _disputeRepository.Setup(r => r.GetQueryableForOwner(It.IsAny<string>()))
             .Returns(new[] { dispute }.AsQueryable().BuildMock());
 
         _blobFactory.Setup(f => f.GetBlobContainerClient(It.IsAny<string>())).Returns(_blobClient.Object);

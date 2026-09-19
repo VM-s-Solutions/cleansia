@@ -3,9 +3,11 @@ using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Dashboard;
 using Cleansia.Core.AppServices.Features.Orders;
+using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.AppServices.Features.Orders.DTOs;
 using Cleansia.Core.AppServices.Features.Orders.Filters;
 using Cleansia.Core.AppServices.Shared.DTOs.ResponseModels;
+using Cleansia.Core.Domain.Configuration;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Internationalization;
 using Cleansia.Core.Domain.Orders;
@@ -79,10 +81,12 @@ public class PreferredHoldSurfaceAgreementTests(PostgresContainerFixture fixture
                 var board = await mediator.Send(AvailableRequest());
 
                 var orderRepository = provider.GetRequiredService<IOrderRepository>();
+                var currencyResolution = provider.GetRequiredService<ICurrencyResolutionService>();
+                var currency = await currencyResolution.ResolveCurrencyForEmployeeAsync(CallerEmployeeId, CancellationToken.None);
                 var counted = await orderRepository
                     .GetQueryable()
                     .Where(DashboardSpecifications
-                        .CreateAvailableOrdersSpec(CallerEmployeeId, DateTime.UtcNow)
+                        .CreateAvailableOrdersSpec(CallerEmployeeId, currency.Id, DateTime.UtcNow)
                         .SatisfiedBy())
                     .Select(o => o.Id)
                     .ToListAsync();
@@ -91,7 +95,8 @@ public class PreferredHoldSurfaceAgreementTests(PostgresContainerFixture fixture
                 var validator = new TakeOrder.Validator(
                     orderRepository,
                     provider.GetRequiredService<IEmployeeRepository>(),
-                    accessService);
+                    accessService,
+                    currencyResolution);
 
                 var browsable = new Dictionary<string, bool>();
                 var takeVerdicts = new Dictionary<string, string?>();
@@ -214,11 +219,13 @@ public class PreferredHoldSurfaceAgreementTests(PostgresContainerFixture fixture
     {
         context.Languages.Add(Language.Create("en", "English"));
 
-        var country = Country.Create("Czechia", "CZ", isServiced: true);
+        var country = Country.Create("Czechia", "CZ", "CZ", isServiced: true);
         country.Id = CountryId;
         context.Countries.Add(country);
+        context.CountryConfigurations.Add(CountryConfiguration.Create(CountryId, "CZK", "cs", 0.21m));
 
-        var currency = Currency.Create("CZK", "Kč", "Czech koruna", 1.0m);
+        var currency = Currency.Create("CZK", "Kč", "Czech koruna");
+        currency.IsActive = true;
         currency.Id = CurrencyId;
         currency.SetAsDefault(true);
         context.Currencies.Add(currency);
@@ -259,7 +266,6 @@ public class PreferredHoldSurfaceAgreementTests(PostgresContainerFixture fixture
                 "Held St 7", "Brno", "60200", CountryId, latitude: 49.19506, longitude: 16.606837),
             rooms: 2,
             bathrooms: 1,
-            extras: new Dictionary<string, bool>(),
             cleaningDateTime: cleaningDateTime,
             paymentType: PaymentType.Card,
             totalPrice: 1500m,

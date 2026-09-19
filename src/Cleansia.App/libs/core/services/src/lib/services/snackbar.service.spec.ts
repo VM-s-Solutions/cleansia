@@ -142,6 +142,26 @@ describe('SnackbarService.extractApiErrorMessage', () => {
     ).toBe(translated);
   });
 
+  // The admin types an order id by hand into the incident-file scope, so a missed
+  // lookup is routine there; the facade's showApiError replaces the interceptor's
+  // translated snackbar, and this lookup is what the admin reads.
+  it('translates a missed order lookup', () => {
+    const translated = 'Order not found';
+    const translate = TestBed.inject(TranslateService);
+    jest
+      .spyOn(translate, 'instant')
+      .mockImplementation((key: string | string[]) =>
+        key === 'api.order.not_found' ? translated : (key as string)
+      );
+
+    expect(
+      service.extractApiErrorMessage(
+        { errors: { OrderId: 'order.not_found' } },
+        'pages.customer_detail.incident_file.error'
+      )
+    ).toBe(translated);
+  });
+
   // The auth arm repeats the key in both places, so the new precedence must not
   // change what that surface renders.
   it('translates the auth key when detail and errors carry the same value', () => {

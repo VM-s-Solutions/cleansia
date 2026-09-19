@@ -62,10 +62,46 @@ final class OrderRepositoryTests: XCTestCase {
 
 @MainActor
 final class OrdersListViewModelTests: XCTestCase {
-    private func makeVM(_ client: FakeOrderClient) -> (OrdersListViewModel, OrderRepository) {
+    private func makeVM(
+        _ client: FakeOrderClient,
+        marketStore: MarketStore? = nil
+    ) -> (OrdersListViewModel, OrderRepository) {
         let repo = OrderRepository(client: client, pageSize: 1)
-        let vm = OrdersListViewModel(repository: repo, snackbar: SnackbarController())
+        let vm = OrdersListViewModel(
+            repository: repo,
+            marketStore: marketStore ?? MarketFixtures.store().0,
+            snackbar: SnackbarController()
+        )
         return (vm, repo)
+    }
+
+    /// Each card names its order's market off the directory, so the tab reads it on entry — once,
+    /// joined by the shell's launch read — and mirrors whatever the store resolves.
+    func testTheTabReadsTheMarketDirectoryOnAppearAndMirrorsIt() async {
+        let client = FakeOrderClient()
+        client.pages = [OrdersPage(items: [OrderFixtures.summary(id: "a", statusValue: 2)], total: 1)]
+        let (store, marketClient, _) = MarketFixtures.store()
+        let (vm, _) = makeVM(client, marketStore: store)
+        XCTAssertEqual(vm.markets, .loading)
+
+        await vm.onAppear()
+        await vm.onForeground()
+
+        XCTAssertEqual(marketClient.callCount, 1)
+        XCTAssertEqual(vm.markets, store.state)
+        XCTAssertEqual(vm.markets.markets, MarketFixtures.two)
+    }
+
+    func testAnUnreadableDirectoryLeavesTheTabOnTheNoMarketState() async {
+        let client = FakeOrderClient()
+        client.pages = [OrdersPage(items: [], total: 0)]
+        let (store, _, _) = MarketFixtures.store(.failure(ApiError(httpStatus: 500)))
+        let (vm, _) = makeVM(client, marketStore: store)
+
+        await vm.onAppear()
+
+        XCTAssertEqual(vm.markets, .unavailable)
+        XCTAssertEqual(vm.state.loadedValue?.isEmpty, true)
     }
 
     func testPullToRefreshLoadsAndSurfacesLoaded() async {

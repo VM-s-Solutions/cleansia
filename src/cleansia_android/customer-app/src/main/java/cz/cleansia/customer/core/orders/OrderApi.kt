@@ -147,6 +147,7 @@ private fun GenPagedDataOfOrderListItem?.toAppDto(): OrderListResponseDto {
  */
 private fun GenOrderListItem.toAppDtoOrRefuse(): OrderListItemDto = OrderListItemDto(
     id = id.required("id"),
+    countryId = countryId,
     customerName = customerName,
     customerEmail = customerEmail,
     customerPhone = customerPhone,
@@ -192,6 +193,7 @@ private fun GenOrderItem?.toAppDto(): OrderDetailDto {
     val order = required("OrderItem")
     return OrderDetailDto(
         id = order.id.required("id"),
+        countryId = order.countryId,
         displayOrderNumber = order.displayOrderNumber,
         customerName = order.customerName,
         customerEmail = order.customerEmail,
@@ -329,15 +331,19 @@ private fun GenPackageDetails.toAppDto(): OrderPackageDetailsDto = OrderPackageD
 )
 
 /**
- * A zeroed `exchangeRate` is not a neutral fallback but a claim that every converted figure on the
- * screen is nothing; parity (`1.0`) would be equally invented, off by 24.75× on a CZK order.
+ * `exchangeRate` is GONE from the contract -- prices are authored per currency now rather than
+ * converted at a rate. It used to be `.required` here because neither available fallback was
+ * honest: zero claims every converted figure on the screen is nothing, and parity is off by 24.75x
+ * on a CZK order. With no rate on the wire there is nothing left to get wrong.
+ *
+ * `isDefault` stays required for the original reason: a defaulted `false` on every row is a claim
+ * the platform has no default currency.
  */
 private fun GenCurrencyListItem.toAppDto(): OrderCurrencyListItemDto = OrderCurrencyListItemDto(
     id = id,
     code = code,
     symbol = symbol,
     name = name,
-    exchangeRate = exchangeRate.required("exchangeRate"),
     isDefault = isDefault.required("isDefault"),
 )
 
@@ -346,7 +352,6 @@ private fun GenCurrencyDetailDto.toAppDto(): OrderCurrencyDetailDto = OrderCurre
     code = code,
     name = name,
     symbol = symbol,
-    exchangeRate = exchangeRate.required("exchangeRate"),
     isDefault = isDefault.required("isDefault"),
 )
 
@@ -355,7 +360,7 @@ private fun GenCurrencyDetailDto.toAppDto(): OrderCurrencyDetailDto = OrderCurre
  * they are getting nothing back on the one screen they will screenshot, and `refundInitiated = false`
  * invents a refund that was never started.
  */
-private fun GenCancelOrderResponse?.toAppDto(): CancelOrderResponse {
+internal fun GenCancelOrderResponse?.toAppDto(): CancelOrderResponse {
     val receipt = required("CancelOrderResponse")
     return CancelOrderResponse(
         orderId = receipt.orderId,
@@ -363,6 +368,7 @@ private fun GenCancelOrderResponse?.toAppDto(): CancelOrderResponse {
         refundAmount = receipt.refundAmount.required("refundAmount"),
         totalPrice = receipt.totalPrice.required("totalPrice"),
         refundInitiated = receipt.refundInitiated.required("refundInitiated"),
+        actualRefundAmount = receipt.actualRefundAmount,
     )
 }
 
@@ -370,7 +376,7 @@ private fun GenCancelOrderResponse?.toAppDto(): CancelOrderResponse {
  * The tier is refused rather than defaulted — every other field on the generated response is nullable
  * too, so ordinal 0 would quote a free cancellation on the strength of a field the server never sent.
  */
-private fun GenGetCancellationFeePreviewResponse?.toAppDto(): CancellationFeePreviewDto {
+internal fun GenGetCancellationFeePreviewResponse?.toAppDto(): CancellationFeePreviewDto {
     val quote = required("GetCancellationFeePreviewResponse")
     return CancellationFeePreviewDto(
         orderId = quote.orderId,

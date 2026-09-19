@@ -6,6 +6,7 @@ import cz.cleansia.core.network.ApiError
 import cz.cleansia.core.network.ApiResult
 import cz.cleansia.customer.R
 import cz.cleansia.customer.core.user.SavedAddressApi
+import cz.cleansia.customer.core.user.SavedAddressDto
 import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
@@ -88,6 +89,27 @@ class AddressRepositoryTest {
     )
 
     private fun addressWithoutCoords() = addressWithCoords().copy(latitude = null, longitude = null)
+
+    // ── the wire → cache mapping ──
+
+    /** The recurring wizard prices its template from the saved address's country; the id must survive the cache. */
+    @Test
+    fun toUserAddress_carriesTheCountryId() {
+        val dto = SavedAddressDto(
+            id = "srv-1",
+            label = "Home",
+            street = "Hlavná 1",
+            city = "Bratislava",
+            zipCode = "81101",
+            countryId = "svk-id",
+            country = "Slovakia",
+        )
+
+        val mapped = dto.toUserAddress()
+
+        assertEquals("svk-id", mapped.countryId)
+        assertEquals("srv-1", mapped.serverId)
+    }
 
     // ── refreshFromServer() ──
 

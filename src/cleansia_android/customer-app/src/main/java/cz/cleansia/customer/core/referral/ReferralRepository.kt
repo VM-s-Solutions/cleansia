@@ -85,8 +85,8 @@ class ReferralRepository @Inject constructor(
      * that as a generic "couldn't validate" state and falls back to the
      * informational `error_referral_generic` string.
      */
-    suspend fun validate(code: String): ApiResult<ValidateReferralResponse> {
-        val resp = networkCall { api.validate(ValidateReferralRequest(code.trim().uppercase())) }
+    suspend fun validate(code: String, countryId: String?): ApiResult<ValidateReferralResponse> {
+        val resp = networkCall { api.validate(ValidateReferralRequest(code.trim().uppercase(), countryId)) }
             ?: return networkError()
         if (!resp.isSuccessful) {
             return httpError(resp.errorBody(), resp.code())

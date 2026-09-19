@@ -143,15 +143,16 @@ public class NewJobsDigestRadiusPostgresTests(PostgresContainerFixture fixture) 
     {
         context.Languages.Add(Language.Create("en", "English"));
 
-        var country = Country.Create("Czechia", "CZE", isServiced: true);
+        var country = Country.Create("Czechia", "CZE", "CZ", isServiced: true);
         country.Id = CountryId;
         context.Countries.Add(country);
 
-        var foreignCountry = Country.Create("Germany", "DEU", isServiced: true);
+        var foreignCountry = Country.Create("Germany", "DEU", "DE", isServiced: true);
         foreignCountry.Id = ForeignCountryId;
         context.Countries.Add(foreignCountry);
 
-        var currency = Currency.Create("CZK", "Kč", "Czech koruna", 1.0m);
+        var currency = Currency.Create("CZK", "Kč", "Czech koruna");
+        currency.IsActive = true;
         currency.Id = CurrencyId;
         currency.SetAsDefault(true);
         context.Currencies.Add(currency);
@@ -196,7 +197,6 @@ public class NewJobsDigestRadiusPostgresTests(PostgresContainerFixture fixture) 
                 "Job St 1", "Kladno", "27201", job.CountryId, null, job.Latitude, job.Longitude),
             rooms: 2,
             bathrooms: 1,
-            extras: new Dictionary<string, bool>(),
             cleaningDateTime: cleaningDateTime,
             paymentType: PaymentType.Card,
             totalPrice: 1200m,

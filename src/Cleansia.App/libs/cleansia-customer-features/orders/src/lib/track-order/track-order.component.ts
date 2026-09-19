@@ -30,9 +30,11 @@ import {
 import { OrderStatus, PaymentStatus } from '@cleansia/models';
 import { OrderStatusIconPipe, OrderStatusLabelPipe } from '@cleansia/pipes';
 import { CleansiaCustomerRoute } from '@cleansia/services';
+import { formatMoney, localeFor } from '@cleansia/utils';
 import { GuestOrderService } from './guest-order.service';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { takeUntil } from 'rxjs';
+import { DialogModule } from 'primeng/dialog';
 import { TrackOrderFacade } from './track-order.facade';
 
 @Component({
@@ -50,6 +52,7 @@ import { TrackOrderFacade } from './track-order.facade';
     FoamEdgeComponent,
     OrderStatusLabelPipe,
     OrderStatusIconPipe,
+    DialogModule,
   ],
   templateUrl: './track-order.component.html',
   providers: [TrackOrderFacade],
@@ -59,7 +62,8 @@ export class TrackOrderComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly translate = inject(TranslateService);
   private readonly guestOrderService = inject(GuestOrderService);
-  private readonly facade = inject(TrackOrderFacade);
+  readonly facade = inject(TrackOrderFacade);
+  private lookupVersion = 0;
   private readonly authService = inject(CustomerAuthService);
 
   routes = CleansiaCustomerRoute;
@@ -114,7 +118,7 @@ export class TrackOrderComponent implements OnInit {
   // State
   loading = signal(false);
   recentOrders = signal<LookupOrderResponse[]>([]);
-  manualResult = signal<LookupOrderResponse | null>(null);
+  readonly manualResult = this.facade.selectedOrder;
   error = signal<string | null>(null);
   searched = signal(false);
 
@@ -124,6 +128,22 @@ export class TrackOrderComponent implements OnInit {
    * the flag that used to gate the form went with the second screen.
    */
   readonly found = computed(() => this.manualResult());
+
+  readonly refundMessage = computed(() => {
+    const amount = this.facade.cancellationResult()?.actualRefundAmount;
+    return amount !== undefined && Number.isFinite(amount) && amount > 0
+      ? this.translate.instant('pages.track_order.cancellation.refund_success', {
+        amount: this.formatAmount(amount, this.facade.refundCurrency()),
+      }) : null;
+  });
+
+  cancelBooking(): void {
+    this.facade.cancelBooking(this.translate.currentLang || 'en');
+  }
+
+  formatAmount(amount: number, currency: string | undefined): string {
+    return formatMoney(amount, currency, localeFor(this.translate.currentLang));
+  }
 
   /**
    * Whether the three values are even worth sending. `form.valid` is not a
@@ -273,7 +293,9 @@ export class TrackOrderComponent implements OnInit {
 
   /** Back to the form, with the fields kept so a typo can be corrected. */
   reset(): void {
-    this.manualResult.set(null);
+    if (!this.facade.clearSelection()) return;
+    this.lookupVersion++;
+    this.loading.set(false);
     this.error.set(null);
     this.searched.set(false);
   }
@@ -324,6 +346,7 @@ export class TrackOrderComponent implements OnInit {
   }
 
   lookup(): void {
+    if (this.loading() || this.facade.cancelling()) return;
     // Touch everything first: a field the customer never focused has no error
     // to show until it is marked, so an invalid submit would look like nothing
     // happened at all.
@@ -333,10 +356,11 @@ export class TrackOrderComponent implements OnInit {
     }
 
     const { orderNumber, email, confirmationCode } = this.form.getRawValue();
+    const version = ++this.lookupVersion;
 
     this.loading.set(true);
     this.error.set(null);
-    this.manualResult.set(null);
+    this.facade.clearSelection();
     this.searched.set(true);
 
     this.facade
@@ -344,10 +368,12 @@ export class TrackOrderComponent implements OnInit {
       .pipe(takeUntil(this.facade.destroyed$))
       .subscribe({
         next: (data) => {
-          this.manualResult.set(data);
+          if (version !== this.lookupVersion) return;
+          this.facade.selectOrder(data, email, confirmationCode);
           this.loading.set(false);
         },
         error: () => {
+          if (version !== this.lookupVersion) return;
           this.error.set(
             this.translate.instant('pages.track_order.not_found')
           );
@@ -366,26 +392,17 @@ export class TrackOrderComponent implements OnInit {
    * round trip: `lookupBatch` already returned the whole order.
    */
   showOrder(order: LookupOrderResponse): void {
-    this.manualResult.set(order);
+    if (!this.facade.selectRememberedOrder(order)) return;
+    this.lookupVersion++;
+    this.loading.set(false);
     this.error.set(null);
     this.searched.set(true);
-  }
-
-  private getLocale(): string {
-    const localeMap: Record<string, string> = {
-      cs: 'cs-CZ',
-      en: 'en-US',
-      sk: 'sk-SK',
-      uk: 'uk-UA',
-      ru: 'ru-RU',
-    };
-    return localeMap[this.translate.currentLang] || 'en-US';
   }
 
   formatDate(date: string | Date | undefined): string {
     if (!date) return '';
     const d = date instanceof Date ? date : new Date(date);
-    return d.toLocaleDateString(this.getLocale(), {
+    return d.toLocaleDateString(localeFor(this.translate.currentLang), {
       day: '2-digit',
       month: '2-digit',
       year: 'numeric',
@@ -399,11 +416,6 @@ export class TrackOrderComponent implements OnInit {
     price: number | undefined
   ): string {
     if (price == null) return '';
-    const code = order.currency?.code || 'CZK';
-    return new Intl.NumberFormat(this.getLocale(), {
-      style: 'currency',
-      currency: code,
-      minimumFractionDigits: 0,
-    }).format(price);
+    return formatMoney(price, order.currency?.code, localeFor(this.translate.currentLang));
   }
 }

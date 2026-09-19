@@ -3,6 +3,7 @@ using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Auditing;
 using Cleansia.Core.Domain.Enums;
+using Cleansia.Core.Domain.Notifications;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Users;
@@ -25,23 +26,43 @@ namespace Cleansia.Tests.Features.Orders;
 /// booking, so there is nothing to refund at that moment; an order that reaches its slot with nobody on
 /// it is the sweep's business. Two money paths for one failure would have needed a guard between them
 /// against paying twice.</para>
+///
+/// <para><b>A drop that empties the crew is two facts, not one.</b> <c>Confirmed</c> says a cleaner
+/// took the job, so a <c>Confirmed</c> order with nobody left on it goes back to <c>New</c>; and the
+/// company's administrators are told whenever the crew empties, at ANY status — an order dropped
+/// <c>OnTheWay</c> is not walked back (a cleaner may be in the home) and no sweep catches it, so the
+/// alarm is the only thing that does.</para>
 /// </summary>
 public class CoverAndDropHandlerTests
 {
     private const string OrderId = "order-drop-1";
     private const string EmployeeId = "emp-drop-1";
     private const string OtherEmployeeId = "emp-drop-2";
+    private const string CompanyId = "company-drop";
 
     private readonly Mock<IOrderRepository> _orderRepository = new();
     private readonly Mock<IOrderAccessService> _accessService = new();
     private readonly Mock<IEmployeeRepository> _employees = new();
     private readonly Mock<INotificationProducer> _notifications = new();
     private readonly Mock<IEmployeeActionAuditRepository> _audit = new();
+    private readonly Mock<IAdminNotifier> _adminNotifier = new();
+    private readonly List<AdminEvent> _raised = [];
 
-    private static Order OrderWith(params string[] assignedEmployeeIds)
+    public CoverAndDropHandlerTests()
     {
-        var order = ValidatorTestHelpers.BuildEmptyOrder(
-            OrderId, OrderStatus.Confirmed, maxEmployees: 2);
+        _adminNotifier
+            .Setup(n => n.NotifyAsync(It.IsAny<AdminEvent>(), It.IsAny<CancellationToken>()))
+            .Callback<AdminEvent, CancellationToken>((e, _) => _raised.Add(e))
+            .Returns(Task.CompletedTask);
+    }
+
+    private static Order OrderWith(params string[] assignedEmployeeIds) =>
+        OrderAt(OrderStatus.Confirmed, assignedEmployeeIds);
+
+    private static Order OrderAt(OrderStatus status, params string[] assignedEmployeeIds)
+    {
+        var order = ValidatorTestHelpers.BuildEmptyOrder(OrderId, status, maxEmployees: 2);
+        order.TenantId = CompanyId;
 
         foreach (var id in assignedEmployeeIds)
         {
@@ -70,7 +91,7 @@ public class CoverAndDropHandlerTests
 
     private DropOrder.Handler DropHandler() =>
         new(_orderRepository.Object, _accessService.Object, _employees.Object,
-            _notifications.Object, _audit.Object);
+            _notifications.Object, _audit.Object, _adminNotifier.Object);
 
     // ── RequestCover ──
 
@@ -219,5 +240,129 @@ public class CoverAndDropHandlerTests
         Assert.True(result.IsSuccess);
         Assert.Single(order.AssignedEmployees);
         _audit.Verify(r => r.Add(It.IsAny<EmployeeActionAudit>()), Times.Never);
+    }
+    // ── DropOrder: the crew empties ──
+
+    /// <summary>
+    /// The last cleaner leaving a Confirmed order makes the word false — nobody took it any more — so
+    /// the order returns to New through the one domain writer, with a fresh history row (which is also
+    /// the re-advertisement the digest needs), and the company is told once.
+    /// </summary>
+    [Fact]
+    public async Task DroppingTheLastSeatOfAConfirmedOrderReturnsItToNewAndTellsTheAdministrators()
+    {
+        var order = OrderWith(EmployeeId);
+        var releasedAssignmentId = order.AssignedEmployees.Single().Id;
+        Arrange(order);
+        var lastSequence = order.OrderStatusHistory.Max(s => s.Sequence);
+
+        var result = await DropHandler().Handle(new DropOrder.Command(OrderId), default);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(OrderStatus.New, order.CurrentStatus);
+        var latest = order.OrderStatusHistory.OrderByDescending(s => s.Sequence).First();
+        Assert.Equal(OrderStatus.New, latest.Status);
+        Assert.Equal(lastSequence + 1, latest.Sequence);
+
+        var raised = Assert.Single(_raised);
+        Assert.Equal(AdminNotificationEventCatalog.OrderCrewLost, raised.Key);
+        Assert.Equal(CompanyId, raised.TenantId);
+        Assert.Equal(AssignmentNotificationSubject.For(OrderId, releasedAssignmentId), raised.Subject);
+        Assert.Equal("dropped", raised.Args["cause"]);
+        Assert.Equal(nameof(OrderStatus.Confirmed), raised.Args["statusAtLoss"]);
+        Assert.Equal(OrderId, raised.Args["orderId"]);
+        Assert.Equal(order.DisplayOrderNumber, raised.Args["orderNumber"]);
+        Assert.Equal(
+            DateTime.SpecifyKind(order.CleaningDateTime, DateTimeKind.Utc).ToString("O"),
+            raised.Args["cleaningDateTime"]);
+        Assert.Equal(5, raised.Args.Count);
+        _audit.Verify(
+            r => r.Add(It.Is<EmployeeActionAudit>(a => a.Action == EmployeeAuditAction.OrderDropped)),
+            Times.Once);
+    }
+
+    /// <summary>
+    /// The event's subject is the released assignment, and a second drop of a job the cleaner is no
+    /// longer on is the no-op success above: the administrators are told once, so the e-mail keyed on
+    /// that subject is enqueued once and a redelivered command never collides on the outbox.
+    /// </summary>
+    [Fact]
+    public async Task DroppingTheSameSeatTwiceTellsTheAdministratorsOnce()
+    {
+        var order = OrderWith(EmployeeId);
+        Arrange(order);
+        var handler = DropHandler();
+
+        var first = await handler.Handle(new DropOrder.Command(OrderId), default);
+        var second = await handler.Handle(new DropOrder.Command(OrderId), default);
+
+        Assert.True(first.IsSuccess);
+        Assert.True(second.IsSuccess);
+        Assert.Single(_raised);
+    }
+
+    /// <summary>A crew remains: the job is still staffed, so the status holds and nobody is alarmed.</summary>
+    [Fact]
+    public async Task DroppingOneSeatOfTwoKeepsConfirmedReAdvertisesAndTellsNobody()
+    {
+        var order = OrderWith(EmployeeId, OtherEmployeeId);
+        Arrange(order);
+        var before = order.OrderStatusHistory.Count;
+
+        var result = await DropHandler().Handle(new DropOrder.Command(OrderId), default);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(OrderStatus.Confirmed, order.CurrentStatus);
+        Assert.Equal(before + 1, order.OrderStatusHistory.Count);
+        Assert.Equal(OrderStatus.Confirmed, order.OrderStatusHistory.OrderByDescending(s => s.Sequence).First().Status);
+        Assert.Empty(_raised);
+    }
+
+    /// <summary>
+    /// Past Confirmed the platform never walks the status back — a cleaner may be standing in the home —
+    /// and no sweep selects an unstaffed OnTheWay order. The alarm is the only thing that fires, and it
+    /// says which status the crew was lost at so the sentence can say the clean was under way.
+    /// </summary>
+    [Theory]
+    [InlineData(OrderStatus.OnTheWay)]
+    [InlineData(OrderStatus.InProgress)]
+    public async Task DroppingTheLastSeatOfAnOrderUnderWayKeepsTheStatusAndTellsTheAdministrators(OrderStatus status)
+    {
+        var order = OrderAt(status, EmployeeId);
+        Arrange(order);
+        var before = order.OrderStatusHistory.Count;
+
+        var result = await DropHandler().Handle(new DropOrder.Command(OrderId), default);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(status, order.CurrentStatus);
+        Assert.Equal(before + 1, order.OrderStatusHistory.Count);
+        Assert.Equal(status, order.OrderStatusHistory.OrderByDescending(s => s.Sequence).First().Status);
+        var raised = Assert.Single(_raised);
+        Assert.Equal("dropped", raised.Args["cause"]);
+        Assert.Equal(status.ToString(), raised.Args["statusAtLoss"]);
+    }
+
+    /// <summary>
+    /// The customer's keyset is untouched by a walk-back: a drop moves no money and cancels nothing, and
+    /// the slot-time sweep is the one place they learn nobody came. The only push here is the seat-open
+    /// wake to other cleaners, and this fixture's cohort is empty.
+    /// </summary>
+    [Fact]
+    public async Task DroppingTheLastSeatSendsTheCustomerNothing()
+    {
+        var order = OrderWith(EmployeeId);
+        Arrange(order);
+
+        await DropHandler().Handle(new DropOrder.Command(OrderId), default);
+
+        _notifications.Verify(n => n.NotifyAsync(
+                It.IsAny<string>(),
+                It.Is<string>(key => NotificationFeedEventKeys.Customer.Contains(key)),
+                It.IsAny<Dictionary<string, string>>(),
+                It.IsAny<string?>(),
+                It.IsAny<string?>(),
+                It.IsAny<CancellationToken>()),
+            Times.Never);
     }
 }

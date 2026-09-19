@@ -8,6 +8,8 @@ struct SavedAddress: Equatable, Identifiable {
     let city: String
     let zipCode: String
     let country: String
+    /// The server's country id for the row — the market a booking at this address is priced in.
+    var countryId: String?
     let latitude: Double?
     let longitude: Double?
     let isDefault: Bool

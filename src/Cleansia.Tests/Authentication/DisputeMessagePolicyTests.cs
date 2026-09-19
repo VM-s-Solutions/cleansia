@@ -12,8 +12,8 @@ namespace Cleansia.Tests.Authentication;
 /// <summary>
 /// ADR-0001 §D2 Note C, verification #5 — the dispute-message permission split
 /// at the policy (outer-gate) layer, resolved through the shared <c>AddCleansiaAuthorization</c>:
-///   - the staff-reply <see cref="Policy.CanRespondToDispute"/> resolves to AdminOnly — a
-///     non-Admin (Customer or Employee) is denied; an Administrator passes.
+///   - the staff-reply <see cref="Policy.CanRespondToDispute"/> resolves to SupportOrAbove (ADR-0066
+///     D3) — a non-Admin (Customer or Employee) is denied; a Support or Administrator passes.
 ///   - the customer self-reply <see cref="Policy.CanAddDisputeMessage"/> resolves to CustomerOnly —
 ///     a customer passes; an Employee/Admin is denied (the staff path is a separate permission).
 /// This is the buildable tier-1 coverage (ADR-0001 §D6); the HTTP 403/200 cases ride a separate harness.
@@ -38,13 +38,18 @@ public class DisputeMessagePolicyTests
         return services.BuildServiceProvider();
     }
 
-    private static ClaimsPrincipal Principal(UserProfile role)
+    private static ClaimsPrincipal Principal(UserProfile role, AdminRole? adminRole = null)
     {
         var claims = new List<Claim>
         {
             new(ClaimTypes.NameIdentifier, "sub-1"),
             new(ClaimTypes.Role, role.ToString()),
         };
+        if (adminRole is { } value)
+        {
+            claims.Add(new Claim(AdminRoleSets.ClaimType, value.ToString()));
+        }
+
         return new ClaimsPrincipal(new ClaimsIdentity(claims, authenticationType: "Test"));
     }
 
@@ -59,19 +64,21 @@ public class DisputeMessagePolicyTests
 
         var result = await authz.AuthorizeAsync(Principal(role), new DefaultHttpContext(), physical);
 
-        Assert.Equal(PhysicalPolicy.AdminOnly, physical);
+        Assert.Equal(PhysicalPolicy.SupportOrAbove, physical);
         Assert.False(result.Succeeded);
     }
 
-    [Fact]
-    public async Task Admin_Is_Allowed_The_Staff_Reply_Permission()
+    [Theory]
+    [InlineData(AdminRole.Administrator)]
+    [InlineData(AdminRole.Support)]
+    public async Task Admin_Is_Allowed_The_Staff_Reply_Permission(AdminRole adminRole)
     {
         await using var provider = BuildProvider();
         var authz = provider.GetRequiredService<IAuthorizationService>();
         var physical = Policy.CanRespondToDispute.ToPhysicalPolicy();
 
         var result = await authz.AuthorizeAsync(
-            Principal(UserProfile.Administrator), new DefaultHttpContext(), physical);
+            Principal(UserProfile.Administrator, adminRole), new DefaultHttpContext(), physical);
 
         Assert.True(result.Succeeded);
     }

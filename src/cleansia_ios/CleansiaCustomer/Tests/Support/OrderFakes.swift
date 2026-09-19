@@ -12,7 +12,7 @@ final class FakeOrderClient: OrderClient, @unchecked Sendable {
     private(set) var detailCallCount = 0
 
     var cancelResult: ApiResult<OrderCancellation> = .success(
-        OrderCancellation(refundAmount: 0, refundInitiated: false)
+        OrderCancellation(refundAmount: 0, refundInitiated: false, actualRefundAmount: nil)
     )
     private(set) var cancelCallCount = 0
     private(set) var lastCancelReason: String??
@@ -107,6 +107,7 @@ enum OrderFixtures {
 
     static func summary(
         id: String = "o1",
+        countryId: String? = nil,
         statusCode: Code? = nil,
         displayOrderNumber: String? = nil,
         cleaningDateTime: Date? = nil,
@@ -120,6 +121,7 @@ enum OrderFixtures {
     ) -> CustomerOrderSummary {
         CustomerOrderSummary(
             id: id,
+            countryId: countryId,
             displayOrderNumber: displayOrderNumber,
             statusCode: statusCode,
             cleaningDateTime: cleaningDateTime,
@@ -139,6 +141,7 @@ enum OrderFixtures {
 
     static func detail(
         id: String? = "o1",
+        countryId: String? = nil,
         statusCode: Code? = nil,
         displayOrderNumber: String? = nil,
         cleaningDateTime: Date? = nil,
@@ -173,6 +176,7 @@ enum OrderFixtures {
     ) -> CustomerOrderDetail {
         CustomerOrderDetail(
             id: id,
+            countryId: countryId,
             displayOrderNumber: displayOrderNumber,
             statusCode: statusCode,
             cleaningDateTime: cleaningDateTime,

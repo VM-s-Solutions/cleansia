@@ -1,5 +1,6 @@
 // ===== CLEANSIA CUSTOM TABLE COMPONENT =====
 // Glass morphism design with separated sections (header, body, footer)
+@use '../common/touch-target' as *;
 
 // Flag icon styling for table cells
 .flag-icon {
@@ -326,6 +327,8 @@
           width: 2rem;
           height: 2rem;
           padding: 0;
+          position: relative;
+          @include touch-target;
           border-radius: 8px;
           display: inline-flex;
           align-items: center;
@@ -417,6 +420,8 @@
       min-width: 2rem;
       height: 2rem;
       padding: 0 0.5rem;
+      position: relative;
+      @include touch-target;
       display: inline-flex;
       align-items: center;
       justify-content: center;

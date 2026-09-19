@@ -23,9 +23,9 @@ public class SubmitOrderReviewTagValidatorTests
 
     public SubmitOrderReviewTagValidatorTests()
     {
-        var orderRepository = new Mock<IOrderRepository>();
+        var orderRepository = new Mock<Cleansia.Core.AppServices.Authentication.IOrderAccessService>();
         orderRepository
-            .Setup(r => r.ExistsAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .Setup(r => r.OrderExistsForCallerAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
         _validator = new SubmitOrderReview.Validator(orderRepository.Object);

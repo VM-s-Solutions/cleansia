@@ -26,18 +26,26 @@ public sealed record PayCoverageTarget(PayCoverageTargetKind Kind, string Id, st
 /// with it in either direction would gate on something other than what the cleaner's board shows.
 /// <c>IsActive</c> is deliberately NOT a term: the estimator's lookup does not carry one either, and a
 /// predicate that filtered rows the estimator still quotes from would report a gap that is not one.</para>
+///
+/// <para><b>The currency term is copied the same way.</b> The estimator narrows to
+/// <c>c.CurrencyId == orderCurrencyId</c> and the pay writer reads only rows in the order's currency,
+/// so a rate in another currency is not a rate for this order — however good it is. Without this term
+/// every gate admitted a EUR order on the strength of a CZK rate, and the writer then found nothing:
+/// an order on every board with no pay on any of them.</para>
 /// </summary>
 public static class PayCoverage
 {
-    public static bool Applies(EmployeePayConfig config, string? employeeId) =>
-        config.EmployeeId is null || (employeeId is not null && config.EmployeeId == employeeId);
+    public static bool Applies(EmployeePayConfig config, string? employeeId, string currencyId) =>
+        config.CurrencyId == currencyId
+        && (config.EmployeeId is null || (employeeId is not null && config.EmployeeId == employeeId));
 
     public static IReadOnlyList<PayCoverageTarget> FindGaps(
         IEnumerable<PayCoverageTarget> catalogue,
         IEnumerable<EmployeePayConfig> configs,
-        string? employeeId)
+        string? employeeId,
+        string currencyId)
     {
-        var applicable = configs.Where(config => Applies(config, employeeId)).ToList();
+        var applicable = configs.Where(config => Applies(config, employeeId, currencyId)).ToList();
 
         var coveredServiceIds = applicable
             .Where(config => config.ServiceId is not null)

@@ -1,4 +1,13 @@
 /* You can add global styles to this file, and also import other style files */
+// Self-hosted, where the CDN copies used to sit: the icon font travels with
+// the bundle and the flags are copied to /assets/flags by the build. Bare
+// package paths on purpose — the builder resolves them and treats what they
+// load as a dependency, which is what keeps the package's own Sass deprecation
+// warnings out of every build.
+@use 'primeicons/primeicons';
+@use 'flag-icons/sass/flag-icons' with (
+  $flag-icons-path: '/assets/flags'
+);
 
 // This app's mark is the stacked "Cleansia PARTNER" lockup from iOS, so its
 // box is a different shape from the customer/admin wordmark.

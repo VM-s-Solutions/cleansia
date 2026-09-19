@@ -60,7 +60,7 @@ public sealed class RefreshTokenServiceFailClosedRevokeTests : IDisposable
         return new CleansiaDbContext(
             builder.Options,
             new TestUserSessionProvider(UserId, $"{UserId}@cleansia.test"),
-            new NullTenantProvider());
+            new DefaultTenantProvider());
     }
 
     private static RefreshTokenService NewService(CleansiaDbContext ctx, IUnitOfWork? unitOfWork = null)
@@ -79,7 +79,7 @@ public sealed class RefreshTokenServiceFailClosedRevokeTests : IDisposable
     private async Task SeedUserAsync()
     {
         await using var ctx = NewContext();
-        await ctx.Database.EnsureCreatedAsync();
+        await TestTenants.EnsureCreatedWithRegistryAsync(ctx);
         ctx.Add(Language.Create("en", "English"));
         var user = User.CreateWithPassword($"{UserId}@cleansia.test", "Passw0rd!", "Fail", "Closed");
         user.Id = UserId;
@@ -357,9 +357,9 @@ public sealed class RefreshTokenServiceFailClosedRevokeTests : IDisposable
         }
     }
 
-    private sealed class NullTenantProvider : ITenantProvider
+    private sealed class DefaultTenantProvider : ITenantProvider
     {
-        public string? GetCurrentTenantId() => null;
+        public string? GetCurrentTenantId() => TestTenants.Default;
         public void SetTenantOverride(string tenantId) { }
         public void ClearTenantOverride() { }
     }

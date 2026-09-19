@@ -43,15 +43,19 @@ public class GetCustomerOrders
                 minTotalPrice: request.Filter?.MinTotalPrice,
                 maxTotalPrice: request.Filter?.MaxTotalPrice,
                 orderStatuses: request.Filter?.OrderStatuses,
-                userId: userId);
+                userId: userId,
+                currencyId: request.Filter?.CurrencyId);
 
             var filter = specification.SatisfiedBy();
 
-            var totalItems = await orderRepository.GetCountAsync(filter, cancellationToken);
+            // The customer's own orders in every operating company: a booking belongs to the market's
+            // operator, and this list is the one place the customer sees them all. Pinned by their own
+            // id from the JWT, which the specification carries as well.
+            var totalItems = await orderRepository.GetCountForOwnerAsync(userId, filter, cancellationToken);
             // Server-side projection onto exactly the columns the list DTO reads — the previous
             // full-graph Include set paid ~8 split queries per page for mostly unread columns.
             var rows = await orderRepository
-                .GetPagedSort<OrderSort>(request.Offset, request.Limit, filter, request.Sort.MapToDomain())
+                .GetPagedSortForOwner<OrderSort>(userId, request.Offset, request.Limit, filter, request.Sort.MapToDomain())
                 .SelectOrderListRows()
                 .AsSplitQuery()
                 .ToListAsync(cancellationToken);

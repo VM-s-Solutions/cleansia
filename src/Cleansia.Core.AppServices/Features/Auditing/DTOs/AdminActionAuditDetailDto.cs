@@ -16,4 +16,5 @@ public record AdminActionAuditDetailDto(
     string? Reason,
     string? CorrelationId,
     string? BeforeJson,
-    string? AfterJson);
+    string? AfterJson,
+    AdminRole? ActorAdminRole = null);

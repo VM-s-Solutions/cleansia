@@ -70,7 +70,14 @@
 
 <!-- Filter Drawer Backdrop -->
 @if (isFilterDrawerOpen()) {
-<div class="filter-drawer-backdrop" (click)="closeFilterDrawer()"></div>
+<div
+  class="filter-drawer-backdrop"
+  role="button"
+  tabindex="0"
+  (click)="closeFilterDrawer()"
+  (keydown.escape)="closeFilterDrawer()"
+  [attr.aria-label]="'global.close' | translate"
+></div>
 }
 
 <!-- Filter Drawer -->
@@ -111,7 +118,9 @@
           <div
             class="filter-checkbox-item"
             [class.checked]="isOrderStatusChecked(option.value)"
+            tabindex="0"
             (click)="toggleOrderStatus(option.value)"
+            (keydown.enter)="toggleOrderStatus(option.value)"
           >
             <cleansia-checkbox
               [label]="option.label"
@@ -134,7 +143,9 @@
           <div
             class="filter-checkbox-item"
             [class.checked]="isPaymentStatusChecked(option.value)"
+            tabindex="0"
             (click)="togglePaymentStatus(option.value)"
+            (keydown.enter)="togglePaymentStatus(option.value)"
           >
             <cleansia-checkbox
               [label]="option.label"
@@ -168,6 +179,21 @@
             className="full-width"
           />
         </div>
+      </div>
+
+      <!-- Currency Section -->
+      <div class="filter-section">
+        <h3 class="filter-section-title">
+          {{ 'pages.order_management.filters.currency' | translate }}
+        </h3>
+        <cleansia-select
+          [options]="currencyOptions()"
+          [label]="'pages.order_management.filters.currency' | translate"
+          [floatVariant]="'on'"
+          [showClear]="true"
+          formControlName="currencyId"
+          appendTo="body"
+        />
       </div>
     </form>
   </div>

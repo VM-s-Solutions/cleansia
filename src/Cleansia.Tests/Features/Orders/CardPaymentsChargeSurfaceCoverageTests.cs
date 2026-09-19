@@ -46,9 +46,16 @@ public class CardPaymentsChargeSurfaceCoverageTests
             + "never creating one."),
         ("Features/Memberships/CancelMembershipSubscription.cs",
             "Cancellation. A customer must always be able to stop being billed."),
+        ("Services/CompanyWindDownService.cs",
+            "The company wind-down cancels every Plus at period end and refunds through RefundService. "
+            + "It stops billing and returns money; a closing company must be able to do both with the "
+            + "switch off."),
         ("Services/GdprDeletionService.cs",
             "Deletes the Stripe customer as part of an erasure request. A legal obligation that cannot "
             + "wait on an ops toggle."),
+        ("Services/StripeCustomerResolver.cs",
+            "Creates a Stripe Customer object, never a charge, and only for the two subscribe handlers, "
+            + "both of which refuse on the switch before any Stripe object is created."),
     };
 
     private static readonly Regex StripeDependency =

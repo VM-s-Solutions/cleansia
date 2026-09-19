@@ -1,4 +1,6 @@
 using System.Security.Claims;
+using Cleansia.Core.AppServices.Authentication;
+using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Extensions;
 using Cleansia.Core.Domain.Users;
 
@@ -24,6 +26,11 @@ public static class AuthExtensions
         yield return new Claim(ClaimTypes.Name, $"{user.FirstName} {user.LastName}");
         yield return new Claim(ClaimTypes.Email, user.Email);
         yield return new Claim(ClaimTypes.Role, user.Profile.ToString());
+
+        if (user.Profile == UserProfile.Administrator && user.AdminRole is { } adminRole)
+        {
+            yield return new Claim(AdminRoleSets.ClaimType, adminRole.ToString());
+        }
 
         if (!string.IsNullOrEmpty(user.TenantId))
         {

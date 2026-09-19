@@ -11,6 +11,7 @@ import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
@@ -109,6 +110,26 @@ class ReferralWireTest {
         assertEquals(ACCOUNT_SPEC_PROPERTIES, serialNames(GenGetMyReferralResponse.serializer().descriptor))
         assertEquals(LIST_ITEM_SPEC_PROPERTIES, serialNames(GenReferralListItem.serializer().descriptor))
         assertEquals(VALIDATE_SPEC_PROPERTIES, serialNames(GenValidateReferralResponse.serializer().descriptor))
+    }
+
+    /**
+     * `Referral/Validate` is anonymous and reads `ReferralCodes` through the tenant filter, so the
+     * request names the market the code should be looked up in (ADR-0061 D3); an absent key means the
+     * default market, so a null must not be written out as `null`.
+     */
+    @Test
+    fun validateSendsTheMarketUnderTheNameTheBackendBinds() = runTest {
+        var body: JsonObject? = null
+        serving(CAPTURED_VALIDATION, onRequest = { body = Json.parseToJsonElement(it.body.readUtf8()).jsonObject }) {
+            it.validate(ValidateReferralRequest("FRIEND10", countryId = "svk-id"))
+        }
+        assertEquals("FRIEND10", body!!["code"]!!.jsonPrimitive.content)
+        assertEquals("svk-id", body!!["countryId"]!!.jsonPrimitive.content)
+
+        serving(CAPTURED_VALIDATION, onRequest = { body = Json.parseToJsonElement(it.body.readUtf8()).jsonObject }) {
+            it.validate(ValidateReferralRequest("FRIEND10", countryId = null))
+        }
+        assertNull(body!!["countryId"])
     }
 
     @Test

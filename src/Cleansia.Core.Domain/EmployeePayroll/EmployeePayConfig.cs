@@ -7,7 +7,7 @@ using Cleansia.Core.Domain.Users;
 
 namespace Cleansia.Core.Domain.EmployeePayroll;
 
-public class EmployeePayConfig : Auditable, ITenantEntity
+public class EmployeePayConfig : TenantAuditable
 {
     public string? EmployeeId { get; private set; }
     public Employee? Employee { get; private set; }

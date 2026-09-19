@@ -1,10 +1,12 @@
 using Microsoft.Extensions.Configuration;
+using Cleansia.Core.AppServices.Auditing;
 using Cleansia.Infra.Common.Configuration;
 using System.Globalization;
 using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Features.Payments;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Enums;
+using Cleansia.Core.Domain.Internationalization;
 using Cleansia.Core.Domain.Notifications;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Repositories;
@@ -16,14 +18,13 @@ using Moq;
 using Stripe;
 using Constants = Cleansia.Core.AppServices.Common.Constants;
 using Dispute = Cleansia.Core.Domain.Disputes.Dispute;
+using Cleansia.Tests.Common;
 
 namespace Cleansia.Tests.Features.Orders;
 
 /// <summary>
-/// <c>order.confirmed</c>'s two remaining producers — the Stripe webhook and the customer confirming
-/// their own recurring occurrence — establish that the booking is confirmed and nothing more: on both,
-/// the order only becomes offerable at that moment, so no cleaner has yet seen it. Neither may claim
-/// one, and neither may borrow the assignment key.
+/// Payment settlement and recurring cash confirmation emit the money-axis notification without
+/// claiming a cleaner or changing fulfilment status. Their existing payment guards prevent replay.
 /// </summary>
 public class OrderConfirmedHonestProducerTests
 {
@@ -64,8 +65,14 @@ public class OrderConfirmedHonestProducerTests
             SettlementCommand("evt_confirmed_1"), CancellationToken.None);
 
         Assert.True(result.IsSuccess);
-        Assert.Equal(OrderStatus.Confirmed, order.CurrentStatus);
-        Assert.Equal([NotificationEventCatalog.OrderConfirmed], _sentEventKeys);
+        var replay = await CreateWebhookHandler().Handle(SettlementCommand("evt_confirmed_replay"), CancellationToken.None);
+        Assert.True(replay.IsSuccess);
+        // The money axis moved and the fulfilment axis did NOT. This assertion used to read
+        // Confirmed; that it now reads New is the whole of T-0691 at its writer.
+        Assert.Equal(OrderStatus.New, order.CurrentStatus);
+        Assert.Equal(PaymentStatus.Paid, order.PaymentStatus);
+        Assert.Empty(order.AssignedEmployees);
+        Assert.Equal([NotificationEventCatalog.OrderPaymentConfirmed], _sentEventKeys);
     }
 
     [Fact]
@@ -79,22 +86,48 @@ public class OrderConfirmedHonestProducerTests
         var session = new Mock<IUserSessionProvider>();
         session.Setup(s => s.GetUserId()).Returns(CustomerUserId);
 
-        var result = await new ConfirmRecurringOrder.Handler(
-            _orderRepository.Object,
+        var handler = new ConfirmRecurringOrder.Handler(
+            OrderAccessDoubles.Over(_orderRepository, session),
             new Mock<ICreditAccountRepository>().Object,
             new Mock<IUserRepository>().Object,
             session.Object,
+            Mock.Of<ITenantProvider>(),
             new Mock<Core.Clients.Abstractions.Stripe.IStripeClient>().Object,
             new StripeConfig(new ConfigurationBuilder().Build()),
             _pending.Object,
             _notificationProducer.Object,
             NoPreferredCleanerHold.Resolver,
-            NullLogger<ConfirmRecurringOrder.Handler>.Instance)
-            .Handle(new ConfirmRecurringOrder.Command(OrderId), CancellationToken.None);
-
+            Mock.Of<IAdminNotifier>(),
+            new AuditContext(),
+            NullLogger<ConfirmRecurringOrder.Handler>.Instance);
+        var result = await handler.Handle(new ConfirmRecurringOrder.Command(OrderId), CancellationToken.None);
         Assert.True(result.IsSuccess);
-        Assert.Equal(OrderStatus.Confirmed, order.CurrentStatus);
-        Assert.Equal([NotificationEventCatalog.OrderConfirmed], _sentEventKeys);
+        var replay = await handler.Handle(new ConfirmRecurringOrder.Command(OrderId), CancellationToken.None);
+        Assert.True(replay.IsFailure);
+        // Same as the webhook above: money moves, fulfilment does not. The occurrence stays offerable
+        // because OrderAvailability admits New with a satisfied money term — before T-0691 the
+        // Confirmed append was load-bearing here, since a recurring CASH order at New is refused by
+        // the money term.
+        Assert.Equal(OrderStatus.New, order.CurrentStatus);
+        Assert.Equal(PaymentStatus.Paid, order.PaymentStatus);
+        Assert.Empty(order.AssignedEmployees);
+        Assert.Equal([NotificationEventCatalog.OrderPaymentConfirmed], _sentEventKeys);
+    }
+
+    /// <summary>
+    /// The offerability half, asserted here rather than trusted. Both producers leave the order at New,
+    /// and New is only offerable because the money term is satisfied — so if either the status write or
+    /// the payment write regressed, the job would silently never reach a cleaner. That is the failure
+    /// mode this split is most exposed to, and it is invisible in the two facts above.
+    /// </summary>
+    [Theory]
+    [InlineData(PaymentType.Card, null)]
+    [InlineData(PaymentType.Cash, "tmpl-1")]
+    public void A_Paid_Order_Resting_At_New_Is_Still_Offerable(
+        PaymentType paymentType, string? recurringTemplateId)
+    {
+        Assert.True(OrderAvailability.IsOfferable(
+            OrderStatus.New, paymentType, PaymentStatus.Paid, recurringTemplateId));
     }
 
     private static Order ArrangeOrder(PaymentType paymentType, string? recurringTemplateId)
@@ -106,7 +139,6 @@ public class OrderConfirmedHonestProducerTests
             customerAddress: Core.Domain.Users.Address.Create("123 Main St", "Prague", "11000", "cz"),
             rooms: 1,
             bathrooms: 1,
-            extras: new Dictionary<string, bool>(),
             cleaningDateTime: DateTime.UtcNow.AddDays(1),
             paymentType: paymentType,
             totalPrice: 1000m,
@@ -116,6 +148,7 @@ public class OrderConfirmedHonestProducerTests
             recurringTemplateId: recurringTemplateId);
         order.Id = OrderId;
         order.TenantId = TenantId;
+        order.SetCurrency(Currency.Create("CZK", "Kč", "Czech koruna"));
         order.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.New, order));
         return order;
     }
@@ -146,6 +179,8 @@ public class OrderConfirmedHonestProducerTests
             _pending.Object,
             _notificationProducer.Object,
             NoPreferredCleanerHold.Resolver,
+            Mock.Of<IAdminNotifier>(),
+            Mock.Of<IUserNotificationRepository>(),
             NullLogger<HandlePaymentNotification.Handler>.Instance);
     }
 

@@ -31,7 +31,7 @@ class ReferralApi(
 
     suspend fun validate(body: ValidateReferralRequest): Response<ValidateReferralResponse> {
         val raw = referralApi.referralValidate(
-            validateReferralQuery = GenValidateReferralQuery(code = body.code),
+            validateReferralQuery = GenValidateReferralQuery(code = body.code, countryId = body.countryId),
         )
         return raw.mapWire { it.toAppDto() }
     }

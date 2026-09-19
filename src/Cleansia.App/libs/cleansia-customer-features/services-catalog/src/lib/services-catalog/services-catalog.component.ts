@@ -1,21 +1,34 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, inject, OnInit, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  DestroyRef,
+  inject,
+  OnInit,
+  signal,
+} from '@angular/core';
 import { Router } from '@angular/router';
 import { CleansiaButtonComponent, CleansiaScrollTopComponent } from '@cleansia/components';
 import { FoamEdgeComponent } from '@cleansia-customer/home';
 import {
+  loadCustomerCurrencies,
   loadCustomerPackages,
   loadCustomerServices,
   selectCustomerCatalogLoading,
+  selectCustomerDefaultCurrencyCode,
   selectCustomerPackages,
   selectCustomerServices,
+  selectMarketCountryId,
 } from '@cleansia/customer-stores';
 import { PackageListItem, ServiceListItem } from '@cleansia/customer-services';
 import { CleansiaCustomerRoute } from '@cleansia/services';
+import { formatMoney, localeFor } from '@cleansia/utils';
 import { Store } from '@ngrx/store';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
-import { toSignal } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { Skeleton } from 'primeng/skeleton';
+import { distinctUntilChanged } from 'rxjs';
 
 type SortOption = 'price_asc' | 'price_desc' | 'name_asc';
 
@@ -37,6 +50,7 @@ export class ServicesCatalogComponent implements OnInit {
   private readonly store = inject(Store);
   private readonly router = inject(Router);
   private readonly translate = inject(TranslateService);
+  private readonly destroyRef = inject(DestroyRef);
 
   /** The artboard shows three packages and a link to the rest. */
   private readonly PACKAGE_PREVIEW = 3;
@@ -44,6 +58,10 @@ export class ServicesCatalogComponent implements OnInit {
   services = toSignal(this.store.select(selectCustomerServices), { initialValue: [] });
   packages = toSignal(this.store.select(selectCustomerPackages), { initialValue: [] });
   loading = toSignal(this.store.select(selectCustomerCatalogLoading), { initialValue: false });
+  /** The label for a figure with no item behind it; every catalogue item carries its own code. */
+  private readonly currencyCode = toSignal(this.store.select(selectCustomerDefaultCurrencyCode), {
+    initialValue: null,
+  });
 
   /**
    * Sorting is offered over the services and NOT over the packages, which is
@@ -122,9 +140,16 @@ export class ServicesCatalogComponent implements OnInit {
   readonly heroMascotRight = 'assets/images/mascot/mascot-dusting-tile.webp';
   readonly closingMascot = 'assets/images/mascot/mascot-waving.webp';
 
+  /** Priced for the chosen market and re-read when it changes (ADR-0058 D5). */
   ngOnInit(): void {
-    this.store.dispatch(loadCustomerServices());
-    this.store.dispatch(loadCustomerPackages());
+    this.store
+      .select(selectMarketCountryId)
+      .pipe(distinctUntilChanged(), takeUntilDestroyed(this.destroyRef))
+      .subscribe((countryId) => {
+        this.store.dispatch(loadCustomerServices(countryId));
+        this.store.dispatch(loadCustomerPackages(countryId));
+      });
+    this.store.dispatch(loadCustomerCurrencies());
   }
 
   serviceMascot(index: number): string {
@@ -145,12 +170,8 @@ export class ServicesCatalogComponent implements OnInit {
     return (item as unknown as Record<string, string>)[field] || '';
   }
 
-  formatPrice(price: number): string {
-    return new Intl.NumberFormat('cs-CZ', {
-      style: 'currency',
-      currency: 'CZK',
-      minimumFractionDigits: 0,
-    }).format(price);
+  formatPrice(price: number, currencyCode?: string | null): string {
+    return formatMoney(price, currencyCode || this.currencyCode(), localeFor(this.translate.currentLang));
   }
 
   /**

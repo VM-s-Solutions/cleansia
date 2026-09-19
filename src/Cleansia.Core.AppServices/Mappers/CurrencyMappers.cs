@@ -3,6 +3,10 @@ using Cleansia.Core.Domain.Internationalization;
 
 namespace Cleansia.Core.AppServices.Mappers;
 
+/// <summary>
+/// Pure projections. The admin shapes add <c>IsActive</c>, <c>LoyaltyPointsDivisor</c> and
+/// <c>NoShowCredit</c>; no rate is mapped anywhere because none exists.
+/// </summary>
 public static class CurrencyMappers
 {
     public static CurrencyListItem MapToDto(this Currency currency)
@@ -12,8 +16,35 @@ public static class CurrencyMappers
             Code: currency.Code,
             Symbol: currency.Symbol,
             Name: currency.Name,
-            ExchangeRate: currency.ExchangeRate,
             IsDefault: currency.IsDefault);
+    }
+
+    /// <summary>Admin only — see <see cref="AdminCurrencyListItem"/> for why it is not the same DTO.</summary>
+    public static AdminCurrencyListItem MapToAdminListItem(this Currency currency)
+    {
+        return new AdminCurrencyListItem(
+            Id: currency.Id,
+            Code: currency.Code,
+            Symbol: currency.Symbol,
+            Name: currency.Name,
+            IsDefault: currency.IsDefault,
+            IsActive: currency.IsActive,
+            LoyaltyPointsDivisor: currency.LoyaltyPointsDivisor,
+            NoShowCredit: currency.NoShowCredit);
+    }
+
+    /// <summary>Admin only — see <see cref="AdminCurrencyDetailDto"/>.</summary>
+    public static AdminCurrencyDetailDto MapToAdminDetailDto(this Currency currency)
+    {
+        return new AdminCurrencyDetailDto(
+            Id: currency.Id,
+            Code: currency.Code,
+            Name: currency.Name,
+            Symbol: currency.Symbol,
+            IsDefault: currency.IsDefault,
+            IsActive: currency.IsActive,
+            LoyaltyPointsDivisor: currency.LoyaltyPointsDivisor,
+            NoShowCredit: currency.NoShowCredit);
     }
 
     public static CurrencyDetailDto MapToDetailDto(this Currency currency)
@@ -23,7 +54,6 @@ public static class CurrencyMappers
             Code: currency.Code,
             Name: currency.Name,
             Symbol: currency.Symbol,
-            ExchangeRate: currency.ExchangeRate,
             IsDefault: currency.IsDefault);
     }
 }

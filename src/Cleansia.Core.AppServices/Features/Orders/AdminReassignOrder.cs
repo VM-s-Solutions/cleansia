@@ -1,4 +1,7 @@
+using Cleansia.Core.AppServices.Mappers;
+using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.AppServices.Abstractions;
+using Cleansia.Core.AppServices.Auditing;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Orders;
@@ -10,6 +13,8 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Cleansia.Core.AppServices.Features.Orders;
 
+// The command carries three ids, so without a named resource the resolver records none of them.
+[AuditAction("order.reassign", ResourceType = "Order")]
 public class AdminReassignOrder
 {
     public record Command(
@@ -50,9 +55,13 @@ public class AdminReassignOrder
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
         {
             _ = userSessionProvider.GetUserId()!;
+            // OrderStatusHistory is not optional — the Confirmed append below derives its Sequence from
+            // the loaded history, and without it the row takes the creation row's place.
             var order = await orderRepository
                 .GetQueryable()
+                .Include(o => o.OrderStatusHistory)
                 .Include(o => o.AssignedEmployees)
+                .AsSplitQuery()
                 .FirstOrDefaultAsync(o => o.Id == command.OrderId, cancellationToken);
 
             if (order == null)
@@ -112,6 +121,22 @@ public class AdminReassignOrder
 
             var assignment = OrderEmployee.Create(order, target);
             order.AddAssignedEmployee(assignment);
+
+            // An admin assigning a cleaner IS a cleaner taking the job, so the fulfilment axis moves —
+            // mirroring TakeOrder, and guarded the same way so a reassignment on an OnTheWay or
+            // InProgress order never walks the status backwards.
+            //
+            // The crew is the fact and the status is its summary: a paid card order rests at New until
+            // somebody takes it, and an order that lost its last cleaner is walked back to New by the
+            // release. Without this line an admin-assigned order would sit at New with a crew on it,
+            // and the sweeps that select Confirmed — the pre-cleaning reminder, the cleaner job
+            // reminder, the tomorrow digest, NotifyOnTheWay and StartOrder — would not see it. Each of
+            // them still reads AssignedEmployees as well, because that is the fact the summary
+            // follows, not a belt for it.
+            if (order.GetCurrentOrderStatus() is OrderStatus.New)
+            {
+                order.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.Confirmed, order));
+            }
 
             await OrderCleanerAssignedNotifier.NotifyCustomerOfAssignmentAsync(
                 order, assignment, notificationProducer, cancellationToken);

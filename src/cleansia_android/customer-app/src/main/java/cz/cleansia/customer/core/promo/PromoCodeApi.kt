@@ -20,6 +20,7 @@ class PromoCodeApi(
             validatePromoCodeCommand = GenValidatePromoCodeCommand(
                 code = body.code,
                 orderSubtotal = body.orderSubtotal,
+                currencyId = body.currencyId,
             ),
         )
         return raw.mapWire { it.toAppDto() }

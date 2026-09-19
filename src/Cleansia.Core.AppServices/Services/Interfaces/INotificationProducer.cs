@@ -16,7 +16,8 @@ public interface INotificationProducer
     /// <summary>
     /// Records the notification. <paramref name="args"/> is the loc-args dictionary clients render
     /// templates from (never PII); <paramref name="subject"/> is the push dedup key's subject
-    /// segment (typically the order/dispute/membership id the event is about).
+    /// segment (typically the order/dispute/membership id the event is about). Recipient ownership
+    /// is resolved from the persisted user; the caller's tenant hint never selects the delivery company.
     /// </summary>
     Task NotifyAsync(
         string userId,

@@ -1,6 +1,9 @@
 using Cleansia.Core.AppServices.Auditing;
+using Cleansia.Core.AppServices.Authentication;
+using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.Domain.Auditing;
 using Cleansia.Core.Domain.Repositories;
+using Cleansia.Core.Domain.Tenancy;
 using Cleansia.Infra.Common.Validations;
 using MediatR;
 using Microsoft.Extensions.Logging;
@@ -8,10 +11,11 @@ using Microsoft.Extensions.Logging;
 namespace Cleansia.Core.AppServices.Behaviors;
 
 /// <summary>
-/// ADR-0012 D2.1/D2.2 — the OUTERMOST audit step, the backstop for the two failed-admin-action shapes the
+/// ADR-0012 D2.1/D2.2 — the OUTERMOST audit step, the backstop for the two failed-action shapes the
 /// inner <c>AuditLogBehavior</c> structurally cannot see:
 /// <list type="number">
-///   <item>a <b>validation reject</b> — <c>ValidationPipelineBehavior</c> returns the failure result
+///   <item>a <b>validation reject</b> — <c>ValidationPipelineBehavior</c> returns the failure result,
+///   or throws <see cref="RequestValidationException"/> where the response type cannot carry one,
 ///   WITHOUT calling <c>next()</c>, so neither <c>UnitOfWorkPipelineBehavior</c> nor the inner
 ///   <c>AuditLogBehavior</c> ever runs;</item>
 ///   <item>a <b>commit-throw</b> — the inner <c>AuditLogBehavior</c> adds its success row and returns
@@ -20,14 +24,17 @@ namespace Cleansia.Core.AppServices.Behaviors;
 /// </list>
 /// Registered OUTER to <c>PostCommitDispatchBehavior</c> so it observes the final outcome of the whole
 /// inner pipeline — the short-circuited validation result and the propagated commit exception both reach
-/// it. It routes a failed admin mutation to the OUT-OF-BAND <see cref="IAuditFailureSink"/> exactly like
-/// the inner behavior does, sharing the per-request <see cref="IAuditContext"/> latch so a failure the
-/// inner behavior already recorded (a handler-returned business failure) is not double-written. It is
-/// best-effort and swallowed: a sink failure never changes the error returned to the admin; the exception
-/// path writes the failure row then rethrows.
+/// it. It routes a failed mutation to the OUT-OF-BAND <see cref="IAuditFailureSink"/> exactly like
+/// the inner behavior does — through the same <see cref="AuditGate"/>, to the same table — sharing the
+/// per-request <see cref="IAuditContext"/> latch so a failure the inner behavior already recorded (a
+/// handler-returned business failure) is not double-written. It is best-effort and swallowed: a sink
+/// failure never changes the error returned to the caller; the exception path writes the failure row
+/// then rethrows. The recorded <c>ErrorCode</c> is the first validation failure's key
+/// (<see cref="AuditErrorCode"/>), not the <c>ValidationError</c> sentinel.
 /// </summary>
 public class AuditFailureCaptureBehavior<TRequest, TResponse>(
     IUserSessionProvider userSessionProvider,
+    IHostAudienceProvider hostAudienceProvider,
     IAuditContext auditContext,
     IAuditFailureSink auditFailureSink,
     AuditEntryFactory auditEntryFactory,
@@ -39,7 +46,8 @@ public class AuditFailureCaptureBehavior<TRequest, TResponse>(
     {
         var descriptor = AuditActionDescriptor.For(request.GetType());
 
-        if (!AdminMutationGate.IsAuditable(request, descriptor, userSessionProvider))
+        var audience = AuditGate.Resolve(request, descriptor, userSessionProvider, hostAudienceProvider);
+        if (audience is null)
         {
             return await next(cancellationToken);
         }
@@ -49,15 +57,25 @@ public class AuditFailureCaptureBehavior<TRequest, TResponse>(
         {
             response = await next(cancellationToken);
         }
+        catch (RequestValidationException ex)
+        {
+            await RecordFailureOutOfBandAsync(request, descriptor, audience.Value, AuditErrorCode.Resolve(ex.Errors), cancellationToken);
+            throw;
+        }
+        catch (CompanyArchivedException)
+        {
+            await RecordFailureOutOfBandAsync(request, descriptor, audience.Value, BusinessErrorMessage.TenantArchived, cancellationToken);
+            throw;
+        }
         catch (Exception ex)
         {
-            await RecordFailureOutOfBandAsync(request, descriptor, ex.GetType().Name, cancellationToken);
+            await RecordFailureOutOfBandAsync(request, descriptor, audience.Value, ex.GetType().Name, cancellationToken);
             throw;
         }
 
         if (response is BusinessResult { IsFailure: true } result)
         {
-            await RecordFailureOutOfBandAsync(request, descriptor, result.Error?.Code, cancellationToken);
+            await RecordFailureOutOfBandAsync(request, descriptor, audience.Value, AuditErrorCode.Resolve(result), cancellationToken);
         }
 
         return response;
@@ -66,6 +84,7 @@ public class AuditFailureCaptureBehavior<TRequest, TResponse>(
     private async Task RecordFailureOutOfBandAsync(
         TRequest request,
         AuditActionDescriptor descriptor,
+        AuditAudience audience,
         string? errorCode,
         CancellationToken cancellationToken)
     {
@@ -79,16 +98,27 @@ public class AuditFailureCaptureBehavior<TRequest, TResponse>(
 
         try
         {
-            await auditFailureSink.RecordFailureAsync(
-                auditEntryFactory.CreateFailure(request, descriptor, errorCode),
-                cancellationToken);
+            var snapshot = auditContext.DrainSnapshot();
+            if (audience == AuditAudience.Admin)
+            {
+                await auditFailureSink.RecordFailureAsync(
+                    auditEntryFactory.CreateFailure(request, descriptor, errorCode, snapshot),
+                    cancellationToken);
+            }
+            else
+            {
+                await auditFailureSink.RecordFailureAsync(
+                    auditEntryFactory.CreateCustomerFailure(request, descriptor, errorCode, snapshot),
+                    cancellationToken);
+            }
         }
         catch (Exception sinkEx)
         {
             logger.LogError(
                 sinkEx,
-                "Out-of-band audit-failure write threw for action {Action}; the failed admin action was not recorded.",
-                descriptor.Action);
+                "Out-of-band audit-failure write threw for action {Action} ({Audience}); the failed action was not recorded.",
+                descriptor.Action,
+                audience);
         }
     }
 }

@@ -6,6 +6,45 @@ final class NotificationFeedTemplatesTests: XCTestCase {
     private let appBundle = Bundle(identifier: "cz.cleansia.customer") ?? .main
     private let languages = ["en", "cs", "sk", "uk", "ru"]
 
+    func testRecurringPauseRowRendersWithoutArgsAndSurvivesTheCustomerFeedFilter() throws {
+        XCTAssertTrue(CustomerFeedEventKeys.contains("recurring.paused"))
+        let rendered = try XCTUnwrap(NotificationFeedTemplates.render(eventKey: "recurring.paused", args: [:]))
+        let withUnrelatedArgs = try XCTUnwrap(NotificationFeedTemplates.render(
+            eventKey: "recurring.paused",
+            args: ["orderId": "unrelated-order", "orderNumber": "MUST-NOT-APPEAR", "count": "3"]
+        ))
+        XCTAssertEqual(rendered.title, L10n.localized("push.recurring.paused.title"))
+        XCTAssertEqual(rendered.body, L10n.localized("push.recurring.paused.body"))
+        XCTAssertEqual(withUnrelatedArgs.body, rendered.body)
+        XCTAssertFalse(rendered.body.hasPrefix("push."))
+        XCTAssertFalse(rendered.body.contains("%"))
+        let rows = NotificationFeedTemplates.rows(from: [
+            NotificationFixtures.item(id: "paused", eventKey: "recurring.paused"),
+            NotificationFixtures.item(id: "unknown", eventKey: "unknown.event")
+        ])
+        XCTAssertEqual(rows.map(\.id), ["paused"])
+    }
+
+    func testCurrentAndPersistedLegacyPaymentRowsRenderTheSameBooking() throws {
+        let current = try XCTUnwrap(NotificationFeedTemplates.render(
+            eventKey: "order.payment_confirmed",
+            args: ["orderNumber": "A-1042"]
+        ))
+        let legacy = try XCTUnwrap(NotificationFeedTemplates.render(
+            eventKey: "order.confirmed",
+            args: ["orderNumber": "A-1042"]
+        ))
+        XCTAssertEqual(current.title, legacy.title)
+        XCTAssertEqual(current.body, legacy.body)
+        XCTAssertTrue(current.body.contains("A-1042"))
+        XCTAssertFalse(current.body.contains("%"))
+        let rows = NotificationFeedTemplates.rows(from: [
+            NotificationFixtures.item(id: "current", eventKey: "order.payment_confirmed"),
+            NotificationFixtures.item(id: "saved", eventKey: "order.confirmed")
+        ])
+        XCTAssertEqual(rows.map(\.id), ["current", "saved"])
+    }
+
     func testOrderRowRendersTheApnsTemplateWithTheOrderNumber() throws {
         let rendered = try XCTUnwrap(NotificationFeedTemplates.render(
             eventKey: "order.completed",
@@ -38,6 +77,40 @@ final class NotificationFeedTemplatesTests: XCTestCase {
         )
         XCTAssertTrue(rendered.body.contains("A-1042"))
         XCTAssertFalse(rendered.body.contains("%"))
+    }
+
+    func testNoCleanerRowRendersTheOrderNumberAndTheServerFormattedCredit() throws {
+        let rendered = try XCTUnwrap(NotificationFeedTemplates.render(
+            eventKey: "order.no_cleaner_refunded",
+            args: ["orderId": "ord-7", "orderNumber": "A-1042", "amount": "250 Kč"]
+        ))
+        XCTAssertEqual(rendered.title, L10n.localized("push.order.no_cleaner_refunded.title"))
+        XCTAssertEqual(
+            rendered.body,
+            String(format: L10n.localized("push.order.no_cleaner_refunded.body"), "A-1042", "250 Kč")
+        )
+        XCTAssertTrue(rendered.body.contains("#A-1042"))
+        XCTAssertTrue(rendered.body.contains("250 Kč"))
+        XCTAssertFalse(rendered.body.contains("%"))
+    }
+
+    func testNoCleanerRowWithoutAnAmountStillReadsAndNeverSaysNil() throws {
+        let rendered = try XCTUnwrap(NotificationFeedTemplates.render(
+            eventKey: "order.no_cleaner_refunded",
+            args: ["orderId": "ord-7", "orderNumber": "A-1042"]
+        ))
+        XCTAssertTrue(rendered.body.contains("#A-1042"))
+        XCTAssertFalse(rendered.body.contains("nil"))
+        XCTAssertFalse(rendered.body.contains("%"))
+    }
+
+    func testThePlainCancellationTakesOnlyTheOrderNumberEvenWhenAnAmountArrives() throws {
+        let rendered = try XCTUnwrap(NotificationFeedTemplates.render(
+            eventKey: "order.cancelled",
+            args: ["orderId": "ord-7", "orderNumber": "A-1042", "amount": "250 Kč"]
+        ))
+        XCTAssertEqual(rendered.body, String(format: L10n.localized("push.order.cancelled.body"), "A-1042"))
+        XCTAssertFalse(rendered.body.contains("250 Kč"))
     }
 
     func testArglessEventsRenderTheTemplateVerbatim() throws {

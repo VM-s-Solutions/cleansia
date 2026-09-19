@@ -25,7 +25,7 @@ import {
   TableColumn,
 } from '@cleansia/components';
 import { CleansiaPermissionDirective } from '@cleansia/directives';
-import { CleansiaAdminRoute, Policy } from '@cleansia/services';
+import { CleansiaAdminRoute, PermissionService, Policy } from '@cleansia/services';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { ConfirmationService } from 'primeng/api';
 import { Subject, debounceTime, distinctUntilChanged, takeUntil } from 'rxjs';
@@ -57,6 +57,7 @@ export class MembershipPlanListComponent implements AfterViewInit, OnDestroy {
   private readonly cd = inject(ChangeDetectorRef);
   private readonly router = inject(Router);
   private readonly translate = inject(TranslateService);
+  private readonly permissions = inject(PermissionService);
   private readonly confirmationService = inject(ConfirmationService);
   protected readonly facade = inject(MembershipPlanListFacade);
   protected readonly Policy = Policy;
@@ -126,6 +127,7 @@ export class MembershipPlanListComponent implements AfterViewInit, OnDestroy {
         onDeactivate: (row) => this.confirmDeactivate(row),
       },
       this.translate,
+      this.permissions,
       this.statusTemplate()
     );
     this.planColumns = tableDef.columns;

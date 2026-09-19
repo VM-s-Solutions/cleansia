@@ -11,7 +11,7 @@ namespace Cleansia.Core.Domain.Loyalty;
 /// recomputed on each grant/revoke from the append-only ledger of
 /// <see cref="LoyaltyTransaction"/> entries.
 /// </summary>
-public class LoyaltyAccount : Auditable, ITenantEntity
+public class LoyaltyAccount : TenantAuditable
 {
     [Required]
     public string UserId { get; private set; } = default!;
@@ -72,6 +72,10 @@ public class LoyaltyAccount : Auditable, ITenantEntity
         }
 
         var tx = LoyaltyTransaction.Create(Id, LoyaltyTransactionType.Earn, points, source, orderId, description: description, idempotencyKey: idempotencyKey);
+        // The ledger row belongs to the account's company, not to whichever company's order or admin
+        // moved the points: a cross-market completion grants under the market operator's ambient tenant,
+        // and a row stamped there would vanish from the customer's own activity feed.
+        tx.TenantId = TenantId;
         _transactions.Add(tx);
 
         LifetimePoints += points;
@@ -104,6 +108,7 @@ public class LoyaltyAccount : Auditable, ITenantEntity
         }
 
         var tx = LoyaltyTransaction.Create(Id, LoyaltyTransactionType.Revoke, -points, source, orderId, description: description, idempotencyKey: idempotencyKey);
+        tx.TenantId = TenantId;
         _transactions.Add(tx);
 
         LifetimePoints = Math.Max(0, LifetimePoints - points);

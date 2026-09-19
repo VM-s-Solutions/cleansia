@@ -7,7 +7,11 @@ import {
   CustomerAuthService,
   JwtTokenResponse,
 } from '@cleansia/customer-services';
-import { loadCustomerUser, selectCustomerLoading } from '@cleansia/customer-stores';
+import {
+  loadCustomerUser,
+  selectCustomerLoading,
+  selectMarketCountryId,
+} from '@cleansia/customer-stores';
 import { CleansiaCustomerRoute, SnackbarService } from '@cleansia/services';
 import { GuestOrderService } from '@cleansia-customer/orders';
 import { Store } from '@ngrx/store';
@@ -26,6 +30,11 @@ export class LoginFacade extends UnsubscribeControlDirective {
 
   formGroup = this.createFormGroup();
   loading = toSignal(this.store.select(selectCustomerLoading));
+  // A social sign-in is an anonymous market-scoped request like the signup it shares an
+  // endpoint with (ADR-0061 D3); it names the market the visitor is browsing.
+  private readonly marketCountryId = toSignal(this.store.select(selectMarketCountryId), {
+    initialValue: null,
+  });
 
   login(): void {
     if (this.formGroup.invalid) {
@@ -64,7 +73,14 @@ export class LoginFacade extends UnsubscribeControlDirective {
     const { sub: googleId, email, given_name: firstName, family_name: lastName } = decoded;
 
     this.authService
-      .signInWithGoogle(credential, googleId, email, firstName || '', lastName || '')
+      .signInWithGoogle(
+        credential,
+        googleId,
+        email,
+        firstName || '',
+        lastName || '',
+        this.marketCountryId()
+      )
       .pipe(takeUntil(this.destroyed$))
       .subscribe({
         next: (authResult: JwtTokenResponse) => {
@@ -93,7 +109,7 @@ export class LoginFacade extends UnsubscribeControlDirective {
     lastName?: string
   ): void {
     this.authService
-      .signInWithApple(identityToken, rawNonce, firstName, lastName)
+      .signInWithApple(identityToken, rawNonce, firstName, lastName, this.marketCountryId())
       .pipe(takeUntil(this.destroyed$))
       .subscribe({
         next: (authResult: JwtTokenResponse) => {

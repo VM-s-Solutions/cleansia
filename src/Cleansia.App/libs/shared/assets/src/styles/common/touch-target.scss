@@ -1,0 +1,14 @@
+// A control a thumb has to hit needs a 44px box, and the painted control keeps its own size:
+// the pointer lands on a pseudo-element grown past the box only on the sides where the box is
+// under the floor, so a 28px glyph button and a 40px pill both answer to 44px without looking
+// any different. The host must be positioned and must not clip its overflow, or the ring is
+// painted but unreachable. -> design-language.md#7-the-pre-submission-review
+$touch-target-floor: 44px;
+
+@mixin touch-target($floor: $touch-target-floor) {
+  &::after {
+    content: '';
+    position: absolute;
+    inset: min(0px, calc((100% - #{$floor}) / 2));
+  }
+}

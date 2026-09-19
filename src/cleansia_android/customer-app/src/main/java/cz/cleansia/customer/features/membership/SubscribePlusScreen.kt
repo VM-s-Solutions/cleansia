@@ -49,7 +49,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -58,17 +57,18 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import cz.cleansia.core.format.formatOrderPrice
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import cz.cleansia.customer.core.market.selectedOrNull
+import cz.cleansia.customer.core.memberships.MembershipPlanDto
 import com.stripe.android.paymentsheet.PaymentSheet
 import com.stripe.android.paymentsheet.PaymentSheetResult
 import com.stripe.android.paymentsheet.rememberPaymentSheet
 import cz.cleansia.customer.BuildConfig
 import cz.cleansia.customer.R
-import cz.cleansia.core.snackbar.SnackbarController
 import cz.cleansia.customer.ui.theme.Sky400
 import cz.cleansia.customer.ui.theme.Sky950
 import cz.cleansia.customer.ui.theme.Slate900
-import dagger.hilt.android.EntryPointAccessors
 import kotlinx.coroutines.launch
 
 /**
@@ -82,25 +82,20 @@ fun SubscribePlusScreen(
     onSubscribed: () -> Unit,
     viewModel: MembershipViewModel = hiltViewModel(),
 ) {
-    val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val submitState by viewModel.submitState.collectAsStateWithLifecycle()
     val submitting = submitState is cz.cleansia.customer.ui.state.ActionState.Submitting
     val current by viewModel.current.collectAsStateWithLifecycle()
     val plans by viewModel.plans.collectAsStateWithLifecycle()
+    val plansLoaded by viewModel.plansLoaded.collectAsStateWithLifecycle()
+    val market by viewModel.market.collectAsStateWithLifecycle()
+    val notOnSaleInMarket = plansLoaded && plans.isEmpty()
 
     var selectedPlanCode by remember(plans) {
         mutableStateOf(plans.firstOrNull { it.billingInterval == 1 }?.code ?: plans.firstOrNull()?.code.orEmpty())
     }
     val selectedPlan = remember(plans, selectedPlanCode) { plans.firstOrNull { it.code == selectedPlanCode } }
 
-    // TODO(W3.3): refactor to VM injection — pull snackbar into
-    // MembershipViewModel like ProfileViewModel/OrderDetailViewModel.
-    val snackbar = remember {
-        EntryPointAccessors
-            .fromApplication(context, SubscribePlusEntryPoint::class.java)
-            .snackbarController()
-    }
     // Guards the post-purchase nav so it only fires once even when both the
     // PaymentSheet result handler AND the membership-state LaunchedEffect
     // observe success. Without it the user can briefly bounce out of the
@@ -125,15 +120,8 @@ fun SubscribePlusScreen(
                     }
                 }
             }
-            is PaymentSheetResult.Canceled -> {
-                snackbar.showError(context.getString(R.string.error_payment_cancelled))
-            }
-            is PaymentSheetResult.Failed -> {
-                snackbar.showError(
-                    result.error.localizedMessage
-                        ?: context.getString(R.string.error_payment_failed),
-                )
-            }
+            is PaymentSheetResult.Canceled -> viewModel.onPaymentCancelled()
+            is PaymentSheetResult.Failed -> viewModel.onPaymentFailed(result.error.localizedMessage)
         }
     }
 
@@ -146,6 +134,13 @@ fun SubscribePlusScreen(
             navigatedAway = true
             onBack()
         }
+    }
+
+    // ADR-0059 D3: an empty list is the server saying Plus is not on sale in the chosen market — no
+    // price, no button, just the hero's top row and the customer app's own empty pattern.
+    if (notOnSaleInMarket) {
+        NotAvailableInMarket(onBack = onBack)
+        return
     }
 
     Box(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
@@ -244,15 +239,19 @@ fun SubscribePlusScreen(
                                         } else {
                                             PaymentSheet.GooglePayConfiguration.Environment.Test
                                         },
+                                        // The MERCHANT's country (Stripe's meaning of this field): Cleansia
+                                        // s.r.o. is Czech whichever market the customer shops in.
                                         countryCode = "CZ",
-                                        currencyCode = "CZK",
+                                        // A SetupIntent carries no currency, so this is what the Google Pay
+                                        // sheet shows and what gates it: the currency the plan is sold in.
+                                        currencyCode = selectedPlan?.currencyCode,
                                     ),
                                     allowsDelayedPaymentMethods = false,
                                 ),
                             )
                         }
                         SubscribeOutcome.AlreadyActive -> {
-                            snackbar.showSuccess(context.getString(R.string.membership_already_active))
+                            viewModel.onAlreadyActive()
                             onBack()
                         }
                         SubscribeOutcome.Failed -> Unit
@@ -275,23 +274,24 @@ fun SubscribePlusScreen(
 /**
  * Dark gradient hero with back arrow, brand splash, big trial-first price,
  * and the monthly/annual plan toggle. The trial price is the visual anchor —
- * the "199 Kč" struck-through line under it is doing comparison work, not the
+ * the struck-through regular price under it is doing comparison work, not the
  * other way around.
  */
 @Composable
 private fun HeroBlock(
     onBack: () -> Unit,
-    plans: List<cz.cleansia.customer.core.memberships.MembershipPlanDto>,
+    plans: List<MembershipPlanDto>,
     selectedPlanCode: String,
     onSelectPlan: (String) -> Unit,
-    selectedPlan: cz.cleansia.customer.core.memberships.MembershipPlanDto?,
+    selectedPlan: MembershipPlanDto?,
 ) {
     val trialDays = selectedPlan?.trialPeriodDays ?: 0
+    val currencyCode = selectedPlan?.currencyCode
     // Annual: lead with the year price (no per-month split — keeps pricing
-    // honest and frames the "2030 Kč once" commitment up front).
+    // honest and frames the one-off annual commitment up front).
     // Monthly: lead with the per-month price as before.
     val isAnnual = selectedPlan?.billingInterval == 2
-    val regularPrice = selectedPlan?.price
+    val regularPrice = formatPlanPrice(selectedPlan?.price, currencyCode)
     val regularPriceLabelRes = if (isAnnual) {
         R.string.membership_plan_per_year
     } else {
@@ -326,38 +326,7 @@ private fun HeroBlock(
 
             Spacer(Modifier.height(8.dp))
 
-            // Brand splash — Plus wordmark + premium glyph. Centered for "logo
-            // moment" feel; eyes lock on this first.
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.Center,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text(
-                    text = "Cleansia",
-                    style = MaterialTheme.typography.displaySmall.copy(
-                        fontWeight = FontWeight.ExtraBold,
-                        fontSize = 36.sp,
-                    ),
-                    color = Color.White,
-                )
-                Spacer(Modifier.width(8.dp))
-                Box(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(10.dp))
-                        .background(Sky400)
-                        .padding(horizontal = 10.dp, vertical = 4.dp),
-                ) {
-                    Text(
-                        text = "PLUS",
-                        style = MaterialTheme.typography.titleMedium.copy(
-                            fontWeight = FontWeight.ExtraBold,
-                            fontSize = 18.sp,
-                        ),
-                        color = Slate900,
-                    )
-                }
-            }
+            BrandSplash()
 
             Spacer(Modifier.height(24.dp))
 
@@ -377,11 +346,15 @@ private fun HeroBlock(
             // anchor and the struck line goes away.
             //
             // Sizes intentionally smaller than headline-display defaults so the
-            // line "0 Kč / first 14 days" stays on a single line on narrow
+            // trial line ("0 / first 14 days", with its currency) stays on a single line on narrow
             // phones (~360dp). 36sp is the upper bound that still fits.
             if (trialDays > 0) {
                 Text(
-                    text = stringResource(R.string.membership_hero_trial_price, trialDays),
+                    text = stringResource(
+                        R.string.membership_hero_trial_price,
+                        formatOrderPrice(0.0, currencyCode),
+                        trialDays,
+                    ),
                     style = MaterialTheme.typography.headlineLarge.copy(
                         fontWeight = FontWeight.ExtraBold,
                         fontSize = 34.sp,
@@ -392,14 +365,14 @@ private fun HeroBlock(
                     modifier = Modifier.fillMaxWidth(),
                 )
                 Spacer(Modifier.height(4.dp))
-                // "Then X Kč/month" for monthly, "Then X Kč/year" for annual.
+                // "Then X/month" for monthly, "Then X/year" for annual.
                 // Annual intentionally has no per-month split so we don't show
                 // a rounded number that doesn't match what Stripe charges.
                 Text(
                     text = stringResource(
                         if (isAnnual) R.string.membership_hero_then_price_year
                         else R.string.membership_hero_then_price,
-                        formatPriceCzk(regularPrice),
+                        regularPrice,
                     ),
                     style = MaterialTheme.typography.bodyMedium,
                     color = Color.White.copy(alpha = 0.7f),
@@ -411,7 +384,7 @@ private fun HeroBlock(
                 Text(
                     text = stringResource(
                         regularPriceLabelRes,
-                        formatPriceCzk(regularPrice),
+                        regularPrice,
                     ),
                     style = MaterialTheme.typography.headlineLarge.copy(
                         fontWeight = FontWeight.ExtraBold,
@@ -458,6 +431,41 @@ private fun HeroBlock(
     }
 }
 
+/** Plus wordmark + premium glyph, centred for the "logo moment"; eyes lock on this first. */
+@Composable
+private fun BrandSplash() {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.Center,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            text = "Cleansia",
+            style = MaterialTheme.typography.displaySmall.copy(
+                fontWeight = FontWeight.ExtraBold,
+                fontSize = 36.sp,
+            ),
+            color = Color.White,
+        )
+        Spacer(Modifier.width(8.dp))
+        Box(
+            modifier = Modifier
+                .clip(RoundedCornerShape(10.dp))
+                .background(Sky400)
+                .padding(horizontal = 10.dp, vertical = 4.dp),
+        ) {
+            Text(
+                text = "PLUS",
+                style = MaterialTheme.typography.titleMedium.copy(
+                    fontWeight = FontWeight.ExtraBold,
+                    fontSize = 18.sp,
+                ),
+                color = Slate900,
+            )
+        }
+    }
+}
+
 /**
  * Pill-style plan switcher tuned for dark hero. Compact sizing — wraps to
  * content width and centers under the price block instead of stretching to
@@ -466,7 +474,7 @@ private fun HeroBlock(
  */
 @Composable
 private fun PlanSwitcherDark(
-    plans: List<cz.cleansia.customer.core.memberships.MembershipPlanDto>,
+    plans: List<MembershipPlanDto>,
     selectedCode: String,
     onSelect: (String) -> Unit,
 ) {
@@ -531,7 +539,7 @@ private fun PlanSwitcherDark(
 }
 
 /**
- * Stat tile under the hero — "Members typically save X Kč per cleaning".
+ * Stat tile under the hero — "Members typically save X per cleaning".
  * Number is currently hardcoded as a marketing claim; once we have real
  * analytics on member discount realization, source it from the backend.
  */
@@ -685,11 +693,11 @@ private fun StickyCtaBar(
 
 /**
  * Build the fine-print disclosure under the CTA. Trial-aware: when the plan
- * has a trial, lead with "Then X Kč/month, cancel anytime"; otherwise the
+ * has a trial, lead with "Then X/month, cancel anytime"; otherwise the
  * plain "Cancel anytime" disclosure.
  */
 @Composable
-private fun buildDisclosure(plan: cz.cleansia.customer.core.memberships.MembershipPlanDto?): String {
+private fun buildDisclosure(plan: MembershipPlanDto?): String {
     if (plan == null) return stringResource(R.string.membership_disclosure)
     if (plan.trialPeriodDays <= 0) return stringResource(R.string.membership_disclosure)
     // Trial-aware disclosure. Annual variant uses year price; monthly uses
@@ -700,32 +708,58 @@ private fun buildDisclosure(plan: cz.cleansia.customer.core.memberships.Membersh
     } else {
         R.string.membership_cta_disclosure_trial
     }
-    return stringResource(resId, formatPriceCzk(plan.price))
+    return stringResource(resId, formatPlanPrice(plan.price, plan.currencyCode))
 }
 
-/**
- * Format a CZK amount for display. Drops the decimal when the price is a whole
- * number (199 Kč rather than 199.00 Kč) — matches the rest of the app's
- * money-display convention.
- */
+/** The hero's top row over the Disputes list's empty pattern: one mascot, a title, nothing to buy. */
+@Composable
+private fun NotAvailableInMarket(onBack: () -> Unit) {
+    Column(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(Brush.verticalGradient(listOf(Sky950, Slate900)))
+                .windowInsetsPadding(WindowInsets.statusBars),
+        ) {
+            Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 16.dp)) {
+                IconButton(onClick = onBack, modifier = Modifier.size(40.dp)) {
+                    Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = null, tint = Color.White)
+                }
+                Spacer(Modifier.height(8.dp))
+                BrandSplash()
+                Spacer(Modifier.height(16.dp))
+            }
+        }
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 20.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center,
+        ) {
+            Image(
+                painter = painterResource(R.drawable.mascot_leaning),
+                contentDescription = null,
+                modifier = Modifier.size(160.dp),
+            )
+            Spacer(Modifier.height(24.dp))
+            Text(
+                text = stringResource(R.string.plus_not_available_in_market),
+                style = MaterialTheme.typography.headlineSmall.copy(
+                    fontFamily = cz.cleansia.core.ui.theme.Poppins,
+                    fontWeight = FontWeight.SemiBold,
+                ),
+                color = MaterialTheme.colorScheme.onBackground,
+                textAlign = TextAlign.Center,
+            )
+        }
+    }
+}
+
 /**
  * Null is "no plan is selected", which is only reachable before the plans load or after the API
  * refuses them; it is never a plan whose price the wire dropped, because [MembershipPlanDto] refuses
  * those. Rendering the em dash keeps the screen from quoting a subscription at nothing.
  */
-private fun formatPriceCzk(amount: Double?): String {
-    if (amount == null) return "\u2014"
-    val rounded = if (amount % 1.0 == 0.0) amount.toInt().toString() else "%.2f".format(amount)
-    return "$rounded Kč"
-}
-
-/**
- * Snackbar pulled out of the Hilt graph at composition time. Same pattern
- * as the BookingSheetEntryPoint — the screen needs the singleton snackbar
- * controller for PaymentSheet result handling without going through a VM.
- */
-@dagger.hilt.EntryPoint
-@dagger.hilt.InstallIn(dagger.hilt.components.SingletonComponent::class)
-interface SubscribePlusEntryPoint {
-    fun snackbarController(): SnackbarController
-}
+private fun formatPlanPrice(amount: Double?, currencyCode: String?): String =
+    if (amount == null) "\u2014" else formatOrderPrice(amount, currencyCode)

@@ -14,7 +14,7 @@ export interface AddNoteDialogResult {
 }
 
 @Component({
-  selector: 'cleansia-add-note-dialog',
+  selector: 'cleansia-partner-add-note-dialog',
   standalone: true,
   imports: [FormsModule, TranslateModule, ButtonModule, Textarea],
   changeDetection: ChangeDetectionStrategy.OnPush,

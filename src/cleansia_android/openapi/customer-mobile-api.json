@@ -856,6 +856,65 @@
         }
       }
     },
+    "/api/Currency/GetOverview": {
+      "get": {
+        "tags": [
+          "Currency"
+        ],
+        "operationId": "Currency_GetOverview",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CurrencyListItem"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CurrencyListItem"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CurrencyListItem"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/Device/Register": {
       "post": {
         "tags": [
@@ -1815,6 +1874,15 @@
           "Extra"
         ],
         "operationId": "Extra_GetOverview",
+        "parameters": [
+          {
+            "name": "countryId",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "OK",
@@ -1869,7 +1937,7 @@
       }
     },
     "/api/v1/Gdpr/export": {
-      "get": {
+      "post": {
         "tags": [
           "Gdpr"
         ],
@@ -2044,6 +2112,79 @@
                   "items": {
                     "$ref": "#/components/schemas/LanguageListItem"
                   }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/Legal/GetDocument": {
+      "get": {
+        "tags": [
+          "Legal"
+        ],
+        "operationId": "Legal_GetDocument",
+        "parameters": [
+          {
+            "name": "type",
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/LegalDocumentType"
+            }
+          },
+          {
+            "name": "countryId",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "language",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/LegalDocumentDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LegalDocumentDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LegalDocumentDto"
                 }
               }
             }
@@ -2537,6 +2678,65 @@
         }
       }
     },
+    "/api/Market/GetOverview": {
+      "get": {
+        "tags": [
+          "Market"
+        ],
+        "operationId": "Market_GetOverview",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/MarketListItem"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/MarketListItem"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/MarketListItem"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/Membership/Subscribe": {
       "post": {
         "tags": [
@@ -2761,6 +2961,15 @@
           "Membership"
         ],
         "operationId": "Membership_GetPlans",
+        "parameters": [
+          {
+            "name": "countryId",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "OK",
@@ -3299,7 +3508,212 @@
         }
       }
     },
+    "/api/Order/CancelGuest": {
+      "post": {
+        "tags": [
+          "Order"
+        ],
+        "operationId": "Order_CancelGuest",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CancelGuestOrder_Command"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CancelGuestOrder_Command"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/CancelGuestOrder_Command"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/CancelOrder_Response"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CancelOrder_Response"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CancelOrder_Response"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/Order/GuestCancellationPreview": {
+      "post": {
+        "tags": [
+          "Order"
+        ],
+        "operationId": "Order_GuestCancellationPreview",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GetGuestCancellationFeePreview_Query"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GetGuestCancellationFeePreview_Query"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/GetGuestCancellationFeePreview_Query"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetCancellationFeePreview_Response"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetCancellationFeePreview_Response"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetCancellationFeePreview_Response"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/Order/Lookup": {
+      "post": {
+        "tags": [
+          "Order"
+        ],
+        "operationId": "Order_Lookup",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LookupOrder_Query"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LookupOrder_Query"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/LookupOrder_Query"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/LookupOrder_Response"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LookupOrder_Response"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LookupOrder_Response"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      },
       "get": {
         "tags": [
           "Order"
@@ -3788,6 +4202,20 @@
             }
           },
           {
+            "name": "Filter.CurrencyId",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Filter.UserId",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
             "name": "Sort",
             "in": "query",
             "schema": {
@@ -4036,6 +4464,20 @@
           },
           {
             "name": "Filter.ExcludeEmployeeId",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Filter.CurrencyId",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Filter.UserId",
             "in": "query",
             "schema": {
               "type": "string"
@@ -5106,6 +5548,15 @@
           "Package"
         ],
         "operationId": "Package_GetOverview",
+        "parameters": [
+          {
+            "name": "countryId",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "OK",
@@ -6404,6 +6855,15 @@
           "Service"
         ],
         "operationId": "Service_GetOverview",
+        "parameters": [
+          {
+            "name": "countryId",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "OK",
@@ -6838,6 +7298,10 @@
           },
           "termsAccepted": {
             "type": "boolean"
+          },
+          "countryId": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -6904,6 +7368,32 @@
         },
         "additionalProperties": false
       },
+      "CancelGuestOrder_Command": {
+        "type": "object",
+        "properties": {
+          "displayOrderNumber": {
+            "type": "string",
+            "nullable": true
+          },
+          "email": {
+            "type": "string",
+            "nullable": true
+          },
+          "confirmationCode": {
+            "type": "string",
+            "nullable": true
+          },
+          "reason": {
+            "type": "string",
+            "nullable": true
+          },
+          "language": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
       "CancelMembershipSubscription_Response": {
         "type": "object",
         "properties": {
@@ -6949,6 +7439,11 @@
           },
           "refundInitiated": {
             "type": "boolean"
+          },
+          "actualRefundAmount": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -7177,6 +7672,10 @@
             "type": "string",
             "nullable": true
           },
+          "isoAlpha2": {
+            "type": "string",
+            "nullable": true
+          },
           "name": {
             "type": "string",
             "nullable": true
@@ -7187,6 +7686,9 @@
               "$ref": "#/components/schemas/Translation"
             },
             "nullable": true
+          },
+          "isDefaultMarket": {
+            "type": "boolean"
           }
         },
         "additionalProperties": false
@@ -7245,6 +7747,10 @@
           "planCode": {
             "type": "string",
             "nullable": true
+          },
+          "countryId": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -7268,6 +7774,10 @@
           },
           "paymentMethodConfirmed": {
             "type": "boolean"
+          },
+          "countryId": {
+            "type": "string",
+            "nullable": true
           },
           "idempotencyToken": {
             "type": "string",
@@ -7405,6 +7915,10 @@
           "accessMode": {
             "type": "string",
             "nullable": true
+          },
+          "termsAccepted": {
+            "type": "boolean",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -7539,10 +8053,6 @@
             "type": "string",
             "nullable": true
           },
-          "exchangeRate": {
-            "type": "number",
-            "format": "double"
-          },
           "isDefault": {
             "type": "boolean"
           }
@@ -7567,10 +8077,6 @@
           "name": {
             "type": "string",
             "nullable": true
-          },
-          "exchangeRate": {
-            "type": "number",
-            "format": "double"
           },
           "isDefault": {
             "type": "boolean"
@@ -7926,6 +8432,10 @@
               "$ref": "#/components/schemas/Translation"
             },
             "nullable": true
+          },
+          "currencyCode": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -7978,6 +8488,147 @@
             "type": "string",
             "format": "date-time",
             "nullable": true
+          },
+          "ipAddress": {
+            "type": "string",
+            "nullable": true
+          },
+          "userAgent": {
+            "type": "string",
+            "nullable": true
+          },
+          "documentVersion": {
+            "type": "string",
+            "nullable": true
+          },
+          "legalDocumentId": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "GdprExportCustomerActionDto": {
+        "type": "object",
+        "properties": {
+          "action": {
+            "type": "string",
+            "nullable": true
+          },
+          "occurredOn": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "resourceType": {
+            "type": "string",
+            "nullable": true
+          },
+          "resourceId": {
+            "type": "string",
+            "nullable": true
+          },
+          "success": {
+            "type": "boolean"
+          },
+          "errorCode": {
+            "type": "string",
+            "nullable": true
+          },
+          "payloadJson": {
+            "type": "string",
+            "nullable": true
+          },
+          "ipAddress": {
+            "type": "string",
+            "nullable": true
+          },
+          "deviceLabel": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "GdprExportDisputeDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "nullable": true
+          },
+          "orderId": {
+            "type": "string",
+            "nullable": true
+          },
+          "orderDisplayNumber": {
+            "type": "string",
+            "nullable": true
+          },
+          "reason": {
+            "type": "string",
+            "nullable": true
+          },
+          "description": {
+            "type": "string",
+            "nullable": true
+          },
+          "status": {
+            "type": "string",
+            "nullable": true
+          },
+          "resolutionNotes": {
+            "type": "string",
+            "nullable": true
+          },
+          "refundAmount": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "currencyCode": {
+            "type": "string",
+            "nullable": true
+          },
+          "createdOn": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "resolvedOn": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "messages": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/GdprExportDisputeMessageDto"
+            },
+            "nullable": true
+          },
+          "evidenceFileNames": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "GdprExportDisputeMessageDto": {
+        "type": "object",
+        "properties": {
+          "authorRole": {
+            "type": "string",
+            "nullable": true
+          },
+          "sentAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "text": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -8026,6 +8677,13 @@
             },
             "nullable": true
           },
+          "disputes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/GdprExportDisputeDto"
+            },
+            "nullable": true
+          },
           "documents": {
             "type": "array",
             "items": {
@@ -8047,6 +8705,13 @@
             },
             "nullable": true
           },
+          "customerActions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/GdprExportCustomerActionDto"
+            },
+            "nullable": true
+          },
           "metadata": {
             "$ref": "#/components/schemas/GdprExportMetadataDto"
           }
@@ -8064,10 +8729,6 @@
             "$ref": "#/components/schemas/EmployeeEntityType"
           },
           "registrationNumber": {
-            "type": "string",
-            "nullable": true
-          },
-          "vatNumber": {
             "type": "string",
             "nullable": true
           },
@@ -8206,6 +8867,10 @@
             "type": "string",
             "nullable": true
           },
+          "currencyId": {
+            "type": "string",
+            "nullable": true
+          },
           "accountPrefix": {
             "type": "string",
             "nullable": true
@@ -8328,6 +8993,24 @@
       },
       "GetCurrentUser_Query": {
         "type": "object",
+        "additionalProperties": false
+      },
+      "GetGuestCancellationFeePreview_Query": {
+        "type": "object",
+        "properties": {
+          "displayOrderNumber": {
+            "type": "string",
+            "nullable": true
+          },
+          "email": {
+            "type": "string",
+            "nullable": true
+          },
+          "confirmationCode": {
+            "type": "string",
+            "nullable": true
+          }
+        },
         "additionalProperties": false
       },
       "GetLoyaltyActivity_ActivityItem": {
@@ -8459,6 +9142,29 @@
           "savingsPercentVsMonthly": {
             "type": "number",
             "format": "double"
+          },
+          "currencyCode": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "GetMyCredit_CurrencyBalance": {
+        "type": "object",
+        "properties": {
+          "balance": {
+            "type": "number",
+            "format": "double"
+          },
+          "currencyCode": {
+            "type": "string",
+            "nullable": true
+          },
+          "expiresOn": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -8484,6 +9190,13 @@
           "expiresOn": {
             "type": "string",
             "format": "date-time",
+            "nullable": true
+          },
+          "balances": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/GetMyCredit_CurrencyBalance"
+            },
             "nullable": true
           }
         },
@@ -8562,7 +9275,7 @@
             "type": "string",
             "nullable": true
           },
-          "monthlyPriceCzk": {
+          "price": {
             "type": "number",
             "format": "double",
             "nullable": true
@@ -8597,7 +9310,7 @@
             "format": "int32",
             "nullable": true
           },
-          "monthlyEquivalentPriceCzk": {
+          "monthlyEquivalentPrice": {
             "type": "number",
             "format": "double",
             "nullable": true
@@ -8619,6 +9332,10 @@
           },
           "trialEligible": {
             "type": "boolean"
+          },
+          "currencyCode": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -8807,6 +9524,10 @@
           },
           "termsAccepted": {
             "type": "boolean"
+          },
+          "countryId": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -8857,6 +9578,10 @@
           "role": {
             "type": "string",
             "nullable": true
+          },
+          "adminRole": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -8878,6 +9603,55 @@
           }
         },
         "additionalProperties": false
+      },
+      "LegalDocumentDto": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "$ref": "#/components/schemas/LegalDocumentType"
+          },
+          "countryId": {
+            "type": "string",
+            "nullable": true
+          },
+          "version": {
+            "type": "string",
+            "nullable": true
+          },
+          "effectiveFrom": {
+            "type": "string",
+            "format": "date"
+          },
+          "language": {
+            "type": "string",
+            "nullable": true
+          },
+          "title": {
+            "type": "string",
+            "nullable": true
+          },
+          "contentHtml": {
+            "type": "string",
+            "nullable": true
+          },
+          "contentHash": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "LegalDocumentType": {
+        "enum": [
+          0,
+          1
+        ],
+        "type": "integer",
+        "format": "int32",
+        "x-enumNames": [
+          "TermsOfService",
+          "PrivacyPolicy"
+        ]
       },
       "Logout_Command": {
         "type": "object",
@@ -8924,6 +9698,24 @@
             "items": {
               "$ref": "#/components/schemas/LookupOrder_Response"
             },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "LookupOrder_Query": {
+        "type": "object",
+        "properties": {
+          "displayOrderNumber": {
+            "type": "string",
+            "nullable": true
+          },
+          "email": {
+            "type": "string",
+            "nullable": true
+          },
+          "confirmationCode": {
+            "type": "string",
             "nullable": true
           }
         },
@@ -9099,6 +9891,60 @@
         },
         "additionalProperties": false
       },
+      "MarketListItem": {
+        "type": "object",
+        "properties": {
+          "countryId": {
+            "type": "string",
+            "nullable": true
+          },
+          "isoCode": {
+            "type": "string",
+            "nullable": true
+          },
+          "isoAlpha2": {
+            "type": "string",
+            "nullable": true
+          },
+          "name": {
+            "type": "string",
+            "nullable": true
+          },
+          "translations": {
+            "type": "object",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/Translation"
+            },
+            "nullable": true
+          },
+          "currencyId": {
+            "type": "string",
+            "nullable": true
+          },
+          "currencyCode": {
+            "type": "string",
+            "nullable": true
+          },
+          "currencySymbol": {
+            "type": "string",
+            "nullable": true
+          },
+          "isDefault": {
+            "type": "boolean"
+          },
+          "noShowCredit": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "insuranceCoverageAmount": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
       "MembershipStatus": {
         "enum": [
           1,
@@ -9202,13 +10048,15 @@
       "NotificationFeedAudience": {
         "enum": [
           0,
-          1
+          1,
+          2
         ],
         "type": "integer",
         "format": "int32",
         "x-enumNames": [
           "Customer",
-          "Partner"
+          "Partner",
+          "Admin"
         ]
       },
       "NotificationPreferencesDto": {
@@ -9559,6 +10407,14 @@
           "systemCancellationReason": {
             "type": "string",
             "nullable": true
+          },
+          "customerCompany": {
+            "type": "string",
+            "nullable": true
+          },
+          "countryId": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -9728,6 +10584,10 @@
           },
           "hasReview": {
             "type": "boolean"
+          },
+          "countryId": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -9948,6 +10808,10 @@
             "items": {
               "$ref": "#/components/schemas/PackageServiceSummary"
             },
+            "nullable": true
+          },
+          "currencyCode": {
+            "type": "string",
             "nullable": true
           }
         },
@@ -10287,6 +11151,10 @@
             "type": "string",
             "format": "date-time",
             "nullable": true
+          },
+          "countryId": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -10378,10 +11246,6 @@
             "type": "boolean"
           },
           "expressSurchargeAmount": {
-            "type": "number",
-            "format": "double"
-          },
-          "exchangeRate": {
             "type": "number",
             "format": "double"
           },
@@ -10603,6 +11467,14 @@
           },
           "referralCode": {
             "type": "string",
+            "nullable": true
+          },
+          "countryId": {
+            "type": "string",
+            "nullable": true
+          },
+          "termsAccepted": {
+            "type": "boolean",
             "nullable": true
           }
         },
@@ -10863,6 +11735,10 @@
             "additionalProperties": {
               "$ref": "#/components/schemas/Translation"
             },
+            "nullable": true
+          },
+          "currencyCode": {
+            "type": "string",
             "nullable": true
           }
         },
@@ -11317,6 +12193,10 @@
           "orderSubtotal": {
             "type": "number",
             "format": "double"
+          },
+          "currencyId": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -11343,6 +12223,10 @@
         "type": "object",
         "properties": {
           "code": {
+            "type": "string",
+            "nullable": true
+          },
+          "countryId": {
             "type": "string",
             "nullable": true
           }
@@ -11388,6 +12272,9 @@
       "name": "Credit"
     },
     {
+      "name": "Currency"
+    },
+    {
       "name": "Device"
     },
     {
@@ -11403,10 +12290,16 @@
       "name": "Language"
     },
     {
+      "name": "Legal"
+    },
+    {
       "name": "LiveActivity"
     },
     {
       "name": "Loyalty"
+    },
+    {
+      "name": "Market"
     },
     {
       "name": "Membership"

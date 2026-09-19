@@ -10,14 +10,22 @@ namespace Cleansia.Core.AppServices.Mappers;
 
 public static class DisputeMappers
 {
+    private static string CustomerName(Dispute dispute) => dispute.User is not null && dispute.User.TenantId == dispute.TenantId
+        ? $"{dispute.User.FirstName} {dispute.User.LastName}".Trim()
+        : dispute.Order?.CustomerName ?? string.Empty;
+
+    private static string CustomerEmail(Dispute dispute) => dispute.User is not null && dispute.User.TenantId == dispute.TenantId
+        ? dispute.User.Email
+        : dispute.Order?.CustomerEmail ?? string.Empty;
+
     public static DisputeListItem MapToListItem(this Dispute dispute)
     {
         return new DisputeListItem(
             Id: dispute.Id,
             OrderId: dispute.OrderId,
             DisplayOrderNumber: dispute.Order?.DisplayOrderNumber ?? "",
-            CustomerName: dispute.User?.FirstName + " " + dispute.User?.LastName ?? "",
-            CustomerEmail: dispute.User?.Email ?? "",
+            CustomerName: CustomerName(dispute),
+            CustomerEmail: CustomerEmail(dispute),
             Reason: dispute.Reason.MapToCode(),
             Status: dispute.Status.MapToCode(),
             CreatedOn: dispute.CreatedOn,
@@ -32,8 +40,8 @@ public static class DisputeMappers
             Id: dispute.Id,
             OrderId: dispute.OrderId,
             DisplayOrderNumber: dispute.Order?.DisplayOrderNumber ?? "",
-            CustomerName: dispute.User?.FirstName + " " + dispute.User?.LastName ?? "",
-            CustomerEmail: dispute.User?.Email ?? "",
+            CustomerName: CustomerName(dispute),
+            CustomerEmail: CustomerEmail(dispute),
             Reason: dispute.Reason.MapToCode(),
             Description: dispute.Description,
             Status: dispute.Status.MapToCode(),
@@ -41,7 +49,7 @@ public static class DisputeMappers
             RefundAmount: dispute.RefundAmount,
             Currency: dispute.Order?.Currency?.MapToDetailDto(),
             ResolvedOn: dispute.ResolvedOn,
-            Messages: dispute.Messages.Select(m => m.MapToDto()).ToList(),
+            Messages: dispute.Messages.Select(m => m.MapToDto(dispute)).ToList(),
             Evidence: dispute.Evidence.Select(e => e.MapToDto(evidenceBlobClient)).ToList(),
             CreatedOn: dispute.CreatedOn,
             UpdatedOn: dispute.UpdatedOn,
@@ -78,11 +86,14 @@ public static class DisputeMappers
             PackageName: package?.Name);
     }
 
-    public static DisputeMessageDto MapToDto(this DisputeMessage message)
+    public static DisputeMessageDto MapToDto(this DisputeMessage message, Dispute? dispute = null)
     {
-        var authorName = message.Author != null
+        // Customer identity is the booking snapshot; a foreign account's current profile stays private.
+        var authorName = message.Author is not null && (dispute is null || message.Author.TenantId == dispute.TenantId)
             ? $"{message.Author.FirstName} {message.Author.LastName}".Trim()
-            : string.Empty;
+            : dispute is not null && message.AuthorId == dispute.UserId
+                ? dispute.Order?.CustomerName ?? string.Empty
+                : string.Empty;
 
         return new DisputeMessageDto(
             Id: message.Id,

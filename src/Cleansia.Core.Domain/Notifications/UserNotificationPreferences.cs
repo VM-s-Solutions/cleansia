@@ -10,7 +10,7 @@ namespace Cleansia.Core.Domain.Notifications;
 /// a value renumber. <b>All defaults are TRUE except marketing, which is opt-in.</b>
 /// → /architecture/push-notifications#mutability</para>
 /// </summary>
-public class UserNotificationPreferences : Auditable, ITenantEntity
+public class UserNotificationPreferences : TenantAuditable
 {
     public string UserId { get; private set; } = default!;
     public virtual User User { get; private set; } = default!;

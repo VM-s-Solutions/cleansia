@@ -46,6 +46,9 @@ public class BlobContainerErasureRosterTests
         [AppConstants.BlobContainers.DisputeEvidence] = Verdict.ErasedOnRequest,
         [AppConstants.BlobContainers.GeneratedInvoices] = Verdict.RetainedFinancialRecord,
         [AppConstants.BlobContainers.GeneratedReceipts] = Verdict.RetainedFinancialRecord,
+        // A closed company's sealed books (ADR-0064 D3): no row of the subject's estate is in it, and the
+        // receipt and invoice PDFs it copies are the same ten-year records as the two containers above.
+        [AppConstants.BlobContainers.CompanyArchives] = Verdict.RetainedFinancialRecord,
         [AppConstants.BlobContainers.BetaWhiteList] = Verdict.Unused
     };
 

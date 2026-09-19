@@ -1,14 +1,17 @@
 import { inject, Injectable, signal } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import {
   CreateMembershipCheckoutSessionCommand,
   CustomerClient,
   GetMyMembershipResponse,
   MembershipPlanFactsService,
 } from '@cleansia/customer-services';
+import { selectMarketCountryId } from '@cleansia/customer-stores';
 import { UnsubscribeControlDirective } from '@cleansia/directives';
-import { SnackbarService } from '@cleansia/services';
+import { extractApiErrorCode, SnackbarService } from '@cleansia/services';
+import { Store } from '@ngrx/store';
 import { TranslateService } from '@ngx-translate/core';
-import { catchError, of, take, takeUntil } from 'rxjs';
+import { catchError, distinctUntilChanged, of, take, takeUntil } from 'rxjs';
 
 /**
  * The public Cleansia Plus page.
@@ -31,9 +34,18 @@ export class PlusPageFacade extends UnsubscribeControlDirective {
   private readonly membershipClient = inject(CustomerClient).membershipClient;
   private readonly snackbar = inject(SnackbarService);
   private readonly translate = inject(TranslateService);
+  private readonly store = inject(Store);
 
   readonly loading = this.facts.loading;
   readonly plans = this.facts.plans;
+  /** The code the plans are priced in — the response's own (ADR-0059 D3). */
+  readonly currencyCode = this.facts.currencyCode;
+  /** Plus is not on sale in the chosen market: no price, no button, one line saying so. */
+  readonly plusUnavailable = this.facts.unavailable;
+  /** The chosen market (ADR-0058 D4): the plans are read in it and a subscription is bought in it. */
+  private readonly marketCountryId = toSignal(this.store.select(selectMarketCountryId), {
+    initialValue: null,
+  });
 
   readonly monthlyPlan = this.facts.monthlyPlan;
   readonly yearlyPlan = this.facts.yearlyPlan;
@@ -56,7 +68,10 @@ export class PlusPageFacade extends UnsubscribeControlDirective {
   readonly submitting = signal(false);
 
   load(): void {
-    this.facts.load();
+    this.store
+      .select(selectMarketCountryId)
+      .pipe(distinctUntilChanged(), takeUntil(this.destroyed$))
+      .subscribe((countryId) => this.facts.load(countryId));
   }
 
   refreshMembership(): void {
@@ -85,16 +100,24 @@ export class PlusPageFacade extends UnsubscribeControlDirective {
 
     const command = new CreateMembershipCheckoutSessionCommand();
     command.planCode = planCode;
+    command.countryId = this.marketCountryId() ?? undefined;
 
     this.membershipClient
       .createCheckoutSession(command)
-      .pipe(take(1), takeUntil(this.destroyed$), catchError(() => of(null)))
+      .pipe(
+        take(1),
+        takeUntil(this.destroyed$),
+        catchError((error: unknown) => of({ refused: extractApiErrorCode(error) !== undefined })),
+      )
       .subscribe((response) => {
-        if (response?.checkoutUrl) {
+        if (response && 'checkoutUrl' in response && response.checkoutUrl) {
           window.location.href = response.checkoutUrl;
           return;
         }
         this.submitting.set(false);
+        // A business refusal (an api.* key) is already voiced by the interceptor's toast, and the
+        // snackbar clears its queue on every show — a second, generic toast would replace it.
+        if (response && 'refused' in response && response.refused) return;
         this.snackbar.showError(this.translate.instant('pages.plus.checkout_failed'));
       });
   }

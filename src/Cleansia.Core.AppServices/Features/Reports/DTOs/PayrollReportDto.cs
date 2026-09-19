@@ -12,7 +12,9 @@ public record PayrollReportDto(
     decimal TotalDeductions,
     IEnumerable<EmployeePayrollSummary> EmployeeSummaries,
     IEnumerable<PayrollByStatus> PayrollByStatus,
-    IEnumerable<MonthlyPayroll> MonthlyPayroll);
+    IEnumerable<MonthlyPayroll> MonthlyPayroll,
+    /// <summary>The currency every amount on this report is in. See RevenueReportDto.CurrencyCode.</summary>
+    string? CurrencyCode = null);
 
 public record EmployeePayrollSummary(
     string EmployeeId,

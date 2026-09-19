@@ -4,15 +4,19 @@ using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Reports.DTOs;
 using Cleansia.Core.AppServices.Features.Reports.Filters;
 using Cleansia.Core.AppServices.Mappers;
-using Cleansia.Core.Domain.Enums;
+using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Infra.Common.Validations;
 using FluentValidation;
 using MediatR;
-using Microsoft.EntityFrameworkCore;
 
 namespace Cleansia.Core.AppServices.Features.Reports;
 
+/// <summary>
+/// Revenue is completed and paid orders by completion date, in one currency, minus every refund on
+/// those orders — card refunds and credit returned — whatever the refund's date. A refund therefore
+/// reduces the month the order completed in, not the month it was issued.
+/// </summary>
 public class GetRevenueReport
 {
     public record Query(ReportFilter Filter) : IQuery<RevenueReportDto>;
@@ -30,7 +34,11 @@ public class GetRevenueReport
         }
     }
 
-    internal class Handler(IOrderRepository orderRepository, ICurrencyRepository currencyRepository)
+    internal class Handler(
+        IOrderRepository orderRepository,
+        IRefundRepository refundRepository,
+        ICreditAccountRepository creditAccountRepository,
+        ICurrencyRepository currencyRepository)
         : IRequestHandler<Query, BusinessResult<RevenueReportDto>>
     {
         public async Task<BusinessResult<RevenueReportDto>> Handle(Query request, CancellationToken cancellationToken)
@@ -46,31 +54,31 @@ public class GetRevenueReport
                     nameof(request.Filter.CurrencyId), BusinessErrorMessage.CurrencyNotFound));
             }
 
-            var orders = await orderRepository.GetOrdersByDateRangeAsync(
+            var orders = await orderRepository.GetCompletedPaidOrdersByCompletionDateAsync(
                 request.Filter.StartDate, request.Filter.EndDate, currency.Id, cancellationToken);
+            var orderIds = orders.Select(o => o.Id).ToList();
+
+            // A refund has two legs: the card share is a Refund row, the credit share went back to the
+            // customer's balance. Both are subtracted from the order they belong to, whatever their date.
+            var cardRefunds = await refundRepository.GetSucceededRefundTotalsByOrderAsync(orderIds, cancellationToken);
+            var creditReturns = await creditAccountRepository.GetReturnedTotalsByOrderAsync(orderIds, cancellationToken);
+
+            decimal RefundedToCardOf(Order o) => cardRefunds.GetValueOrDefault(o.Id, 0m);
+            decimal ReturnedToCreditOf(Order o) => creditReturns.GetValueOrDefault(o.Id, 0m);
+            decimal RefundedOf(Order o) => RefundedToCardOf(o) + ReturnedToCreditOf(o);
+            decimal NetOf(Order o) => o.TotalPrice - RefundedOf(o);
 
             var totalRevenue = orders.Sum(o => o.TotalPrice);
             var totalOrders = orders.Count;
-            // Use CompletedAt for the completed-orders count rather
-            // than the status-history lookup — both produce the same
-            // answer today, but CompletedAt is the authoritative
-            // column and cheaper (no nav lookup). Same logic for
-            // cancelled via the existing CancelledAt column.
-            var completedOrders = orders.Count(o => o.CompletedAt.HasValue);
-            var cancelledOrders = orders.Count(o => o.CancelledAt.HasValue);
-            var averageOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0;
+            var averageOrderValue = totalOrders > 0 ? orders.Sum(NetOf) / totalOrders : 0;
 
-            // Daily revenue stays grouped by CleaningDateTime: this
-            // is the admin's "what did we book each day" view, which
-            // is a scheduling read, not a completion read. The
-            // dashboard/cleaner-side "what did I earn today" path is
-            // the one that uses CompletedAt (see GetDashboardStats).
             var dailyRevenues = orders
-                .GroupBy(o => DateOnly.FromDateTime(o.CleaningDateTime))
+                .GroupBy(o => DateOnly.FromDateTime(o.CompletedAt!.Value))
                 .Select(g => new DailyRevenue(
                     Date: g.Key,
-                    Amount: g.Sum(o => o.TotalPrice),
-                    OrderCount: g.Count()))
+                    Amount: g.Sum(NetOf),
+                    OrderCount: g.Count(),
+                    Refunded: g.Sum(RefundedOf)))
                 .OrderBy(d => d.Date)
                 .ToList();
 
@@ -80,7 +88,7 @@ public class GetRevenueReport
                 .Select(g => new RevenueByService(
                     ServiceId: g.Key.Id,
                     ServiceName: g.Key.Name,
-                    TotalRevenue: g.Sum(x => x.Order.TotalPrice / (x.Order.SelectedServices.Count > 0 ? x.Order.SelectedServices.Count : 1)),
+                    TotalRevenue: g.Sum(x => NetOf(x.Order) / Math.Max(1, x.Order.SelectedServices.Count)),
                     OrderCount: g.Select(x => x.Order.Id).Distinct().Count()))
                 .ToList();
 
@@ -90,12 +98,13 @@ public class GetRevenueReport
                 .Select(g => new RevenueByPackage(
                     PackageId: g.Key.Id,
                     PackageName: g.Key.Name,
-                    TotalRevenue: g.Sum(x => x.Order.TotalPrice / (x.Order.SelectedPackages.Count > 0 ? x.Order.SelectedPackages.Count : 1)),
+                    TotalRevenue: g.Sum(x => NetOf(x.Order) / Math.Max(1, x.Order.SelectedPackages.Count)),
                     OrderCount: g.Select(x => x.Order.Id).Distinct().Count()))
                 .ToList();
 
             // Grouped by the tender actually taken, so a card booking the cleaner settled in cash lands
-            // in the cash column the admin has to reconcile against the float.
+            // in the cash column the admin has to reconcile against the float. Gross here: the row
+            // reconciles against a gateway statement, which lists charges and refunds separately.
             var revenueByPaymentType = orders
                 .GroupBy(o => o.ActualPaymentType)
                 .Select(g => new RevenueByPaymentType(
@@ -103,11 +112,9 @@ public class GetRevenueReport
                     PaymentTypeName: g.Key.MapToCode().Name,
                     TotalRevenue: g.Sum(o => o.TotalPrice),
                     OrderCount: g.Count(),
-                    // Revenue stays the SALE - credit is a tender, not a discount - but the Card row
-                    // previously implied Stripe had taken all of it, so a month reconciled against a
-                    // Stripe statement came up short by exactly the credit total with nothing on the
-                    // screen to account for it. SettledOnTender derives from these two.
-                    SettledFromCredit: g.Sum(o => o.CreditAppliedAmount)))
+                    SettledFromCredit: g.Sum(o => o.CreditAppliedAmount),
+                    RefundedToCard: g.Sum(RefundedToCardOf),
+                    ReturnedToCredit: g.Sum(ReturnedToCreditOf)))
                 .ToList();
 
             var revenueByPaymentStatus = orders
@@ -119,13 +126,18 @@ public class GetRevenueReport
                     OrderCount: g.Count()))
                 .ToList();
 
+            // Cancelled bookings are not revenue; they are counted on their own axis so the card stays
+            // on the page.
+            var cancelledOrders = await orderRepository.CountCancelledBookingsInPeriodAsync(
+                request.Filter.StartDate, request.Filter.EndDate, currency.Id, cancellationToken);
+
             var growthPercentage = CalculateGrowthPercentage(dailyRevenues);
 
             return new RevenueReportDto(
                 TotalRevenue: totalRevenue,
                 AverageOrderValue: averageOrderValue,
                 TotalOrders: totalOrders,
-                CompletedOrders: completedOrders,
+                CompletedOrders: totalOrders,
                 CancelledOrders: cancelledOrders,
                 GrowthPercentage: growthPercentage,
                 DailyRevenues: dailyRevenues,
@@ -134,7 +146,9 @@ public class GetRevenueReport
                 RevenueByPaymentType: revenueByPaymentType,
                 RevenueByPaymentStatus: revenueByPaymentStatus,
                 TotalSettledFromCredit: orders.Sum(o => o.CreditAppliedAmount),
-                CurrencyCode: currency.Code);
+                CurrencyCode: currency.Code,
+                TotalRefundedToCard: orders.Sum(RefundedToCardOf),
+                TotalReturnedToCredit: orders.Sum(ReturnedToCreditOf));
         }
 
         private static decimal CalculateGrowthPercentage(List<DailyRevenue> dailyRevenues)

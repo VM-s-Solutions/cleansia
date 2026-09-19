@@ -18,4 +18,20 @@ public class RefundRepository(CleansiaDbContext context) : BaseRepository<Refund
             .Where(r => r.OrderId == orderId && r.Status == RefundStatus.Succeeded)
             .SumAsync(r => r.Amount, cancellationToken);
     }
+
+    public async Task<IReadOnlyDictionary<string, decimal>> GetSucceededRefundTotalsByOrderAsync(
+        IReadOnlyCollection<string> orderIds, CancellationToken cancellationToken)
+    {
+        if (orderIds.Count == 0)
+        {
+            return new Dictionary<string, decimal>(0);
+        }
+
+        var rows = await GetDbSet()
+            .Where(r => r.Status == RefundStatus.Succeeded && orderIds.Contains(r.OrderId))
+            .GroupBy(r => r.OrderId)
+            .Select(g => new { OrderId = g.Key, Total = g.Sum(r => r.Amount) })
+            .ToListAsync(cancellationToken);
+        return rows.ToDictionary(r => r.OrderId, r => r.Total);
+    }
 }

@@ -273,21 +273,47 @@ public class OrderRepository(CleansiaDbContext context) : BaseRepository<Order>(
             .FirstOrDefaultAsync(o => o.StripePaymentIntentId == paymentIntentId, cancellationToken);
     }
 
-    public async Task<IReadOnlyList<Order>> GetOrdersByDateRangeAsync(
-        DateTime startDate, DateTime endDate, string currencyId, CancellationToken cancellationToken)
+    // Paid, and every state after it. A completed order later refunded in full WAS paid — it stays in
+    // the revenue set and nets to zero rather than vanishing. An array so EF emits `= ANY(@p)`, the
+    // form the other status sets on this repository take.
+    private static readonly PaymentStatus[] PaidAtSomePoint =
+    [
+        PaymentStatus.Paid,
+        PaymentStatus.PartiallyRefunded,
+        PaymentStatus.Refunded,
+        PaymentStatus.Disputed,
+    ];
+
+    public async Task<IReadOnlyList<Order>> GetCompletedPaidOrdersByCompletionDateAsync(
+        DateTime startUtc, DateTime endUtc, string currencyId, CancellationToken cancellationToken)
     {
+        // CurrentStatus is the indexed column; CompletedAt is the axis, and the null guard keeps the
+        // range comparison honest for a Completed row that was never dated.
         return await GetDbSet()
-            .Include(o => o.OrderStatusHistory)
             .Include(o => o.SelectedServices)
                 .ThenInclude(s => s.Service)
             .Include(o => o.SelectedPackages)
                 .ThenInclude(op => op.Package)
-            // One currency per report: a sum across two is not a number, so the filter is in SQL.
             .Where(o => o.CurrencyId == currencyId &&
-                       o.CleaningDateTime >= startDate &&
-                       o.CleaningDateTime <= endDate)
+                       o.CurrentStatus == OrderStatus.Completed &&
+                       o.CompletedAt != null &&
+                       o.CompletedAt >= startUtc &&
+                       o.CompletedAt <= endUtc &&
+                       PaidAtSomePoint.Contains(o.PaymentStatus))
             .AsSplitQuery()
             .ToListAsync(cancellationToken);
+    }
+
+    public Task<int> CountCancelledBookingsInPeriodAsync(
+        DateTime startUtc, DateTime endUtc, string currencyId, CancellationToken cancellationToken)
+    {
+        return GetDbSet()
+            .Where(o => o.CurrencyId == currencyId &&
+                       o.CurrentStatus == OrderStatus.Cancelled &&
+                       o.CancelledAt != null &&
+                       o.CancelledAt >= startUtc &&
+                       o.CancelledAt <= endUtc)
+            .CountAsync(cancellationToken);
     }
 
     public async Task<int> GetEmployeeOrderCountThisWeekAsync(string employeeId, CancellationToken ct)

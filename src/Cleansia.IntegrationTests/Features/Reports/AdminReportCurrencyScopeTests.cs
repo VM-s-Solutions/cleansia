@@ -182,6 +182,8 @@ public class AdminReportCurrencyScopeTests(PostgresContainerFixture fixture) : B
         await context.CommitAsync(CancellationToken.None);
     }
 
+    // Completed and paid, completed inside the window: the revenue set. The set's own predicate is
+    // RevenueReportPredicateTests'; this fixture only has to be IN it, in two currencies.
     private static Order NewOrder(string customerEmail, string currencyId, decimal totalPrice)
     {
         var order = Order.Create(
@@ -191,12 +193,14 @@ public class AdminReportCurrencyScopeTests(PostgresContainerFixture fixture) : B
             customerAddress: Address.Create("Report St 1", "Brno", "60200", CountryId),
             rooms: 2,
             bathrooms: 1,
-            cleaningDateTime: DateTime.UtcNow.AddDays(2),
+            cleaningDateTime: DateTime.UtcNow.AddHours(-3),
             paymentType: PaymentType.Cash,
             totalPrice: totalPrice,
             currencyId: currencyId,
-            paymentStatus: PaymentStatus.Pending);
+            paymentStatus: PaymentStatus.Paid);
         order.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.New, order));
+        order.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.Completed, order));
+        order.MarkCompletedAt(DateTime.UtcNow);
         return order;
     }
 }

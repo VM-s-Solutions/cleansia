@@ -136,6 +136,13 @@ public class AdminOverrideOrderStatus
                     BusinessErrorMessage.OrderStatusConfirmedNeedsCrew));
             }
 
+            // The reports read CompletedAt, and CompleteOrder is not reached from here: an override that
+            // completes the order has to date it or the order is revenue of no month.
+            if (command.TargetStatus == OrderStatus.Completed)
+            {
+                order.MarkCompletedAt(DateTime.UtcNow);
+            }
+
             var transition = OrderStatusTrack.Create(command.TargetStatus, order);
             order.AddOrderStatus(transition);
 

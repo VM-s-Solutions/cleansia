@@ -251,6 +251,41 @@ public class AdminOverrideOrderStatusHandlerTests
         Assert.Equal(OrderStatus.OnTheWay, order.CurrentStatus);
     }
 
+    // ── Completed is dated ──
+
+    /// <summary>
+    /// The revenue report reads <see cref="Order.CompletedAt"/>, and <c>CompleteOrder</c> is not the only
+    /// writer of the Completed track: "the cleaner never tapped" is what this override exists for, and
+    /// an order it completes must land in the month the administrator completed it, not vanish from
+    /// every report for want of a date.
+    /// </summary>
+    [Fact]
+    public async Task Override_To_Completed_Stamps_CompletedAt()
+    {
+        var order = ArrangeOrder(OrderStatus.New, OrderStatus.Confirmed, OrderStatus.InProgress);
+        var before = DateTime.UtcNow;
+
+        var result = await CreateHandler().Handle(
+            new AdminOverrideOrderStatus.Command(OrderId, OrderStatus.Completed), CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(OrderStatus.Completed, order.CurrentStatus);
+        Assert.NotNull(order.CompletedAt);
+        Assert.InRange(order.CompletedAt!.Value, before, DateTime.UtcNow);
+    }
+
+    [Fact]
+    public async Task Override_To_A_Status_Short_Of_Completed_Leaves_CompletedAt_Null()
+    {
+        var order = ArrangeOrder(OrderStatus.New, OrderStatus.Confirmed);
+
+        var result = await CreateHandler().Handle(
+            new AdminOverrideOrderStatus.Command(OrderId, OrderStatus.InProgress), CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        Assert.Null(order.CompletedAt);
+    }
+
     [Fact]
     public async Task Admin_Override_On_Completed_Order_Returns_OrderAlreadyCompleted()
     {

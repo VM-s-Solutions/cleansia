@@ -924,6 +924,17 @@ public class Order : TenantAuditable
         return this;
     }
 
+    /// <summary>
+    /// Dates a completion that did not come through <see cref="CompleteOrder"/> — the administrator's
+    /// override, which has no actual duration to give it. The reports read this column, so an undated
+    /// Completed order is revenue that belongs to no month. First stamp wins.
+    /// </summary>
+    public Order MarkCompletedAt(DateTime completedAtUtc)
+    {
+        CompletedAt ??= completedAtUtc;
+        return this;
+    }
+
     public Order AnonymizeCustomerData()
     {
         CustomerName = AnonymizationMarker.Value;

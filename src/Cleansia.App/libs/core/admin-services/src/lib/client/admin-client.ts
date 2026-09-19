@@ -22863,6 +22863,7 @@ export class DailyRevenue implements IDailyRevenue {
     date!: Date;
     amount!: number;
     orderCount!: number;
+    refunded!: number;
 
     constructor(data?: IDailyRevenue) {
         if (data) {
@@ -22878,6 +22879,7 @@ export class DailyRevenue implements IDailyRevenue {
             this.date = Data["date"] ? new Date(Data["date"].toString()) : undefined as any;
             this.amount = Data["amount"];
             this.orderCount = Data["orderCount"];
+            this.refunded = Data["refunded"];
         }
     }
 
@@ -22893,6 +22895,7 @@ export class DailyRevenue implements IDailyRevenue {
         data["date"] = this.date ? formatDate(this.date) : undefined as any;
         data["amount"] = this.amount;
         data["orderCount"] = this.orderCount;
+        data["refunded"] = this.refunded;
         return data;
     }
 }
@@ -22901,6 +22904,7 @@ export interface IDailyRevenue {
     date: Date;
     amount: number;
     orderCount: number;
+    refunded: number;
 }
 
 export class DeactivateAdminUserResponse implements IDeactivateAdminUserResponse {
@@ -33353,7 +33357,10 @@ export class RevenueByPaymentType implements IRevenueByPaymentType {
     totalRevenue!: number;
     orderCount!: number;
     settledFromCredit!: number;
+    refundedToCard!: number;
+    returnedToCredit!: number;
     readonly settledOnTender!: number;
+    readonly netOnTender!: number;
 
     constructor(data?: IRevenueByPaymentType) {
         if (data) {
@@ -33371,7 +33378,10 @@ export class RevenueByPaymentType implements IRevenueByPaymentType {
             this.totalRevenue = Data["totalRevenue"];
             this.orderCount = Data["orderCount"];
             this.settledFromCredit = Data["settledFromCredit"];
+            this.refundedToCard = Data["refundedToCard"];
+            this.returnedToCredit = Data["returnedToCredit"];
             (this as any).settledOnTender = Data["settledOnTender"];
+            (this as any).netOnTender = Data["netOnTender"];
         }
     }
 
@@ -33389,7 +33399,10 @@ export class RevenueByPaymentType implements IRevenueByPaymentType {
         data["totalRevenue"] = this.totalRevenue;
         data["orderCount"] = this.orderCount;
         data["settledFromCredit"] = this.settledFromCredit;
+        data["refundedToCard"] = this.refundedToCard;
+        data["returnedToCredit"] = this.returnedToCredit;
         data["settledOnTender"] = this.settledOnTender;
+        data["netOnTender"] = this.netOnTender;
         return data;
     }
 }
@@ -33400,7 +33413,10 @@ export interface IRevenueByPaymentType {
     totalRevenue: number;
     orderCount: number;
     settledFromCredit: number;
+    refundedToCard: number;
+    returnedToCredit: number;
     settledOnTender: number;
+    netOnTender: number;
 }
 
 export class RevenueByService implements IRevenueByService {
@@ -33465,6 +33481,10 @@ export class RevenueReportDto implements IRevenueReportDto {
     revenueByPaymentStatus!: RevenueByPaymentStatus[] | undefined;
     totalSettledFromCredit!: number;
     currencyCode!: string | undefined;
+    totalRefundedToCard!: number;
+    totalReturnedToCredit!: number;
+    readonly totalRefunded!: number;
+    readonly netRevenue!: number;
 
     constructor(data?: IRevenueReportDto) {
         if (data) {
@@ -33510,6 +33530,10 @@ export class RevenueReportDto implements IRevenueReportDto {
             }
             this.totalSettledFromCredit = Data["totalSettledFromCredit"];
             this.currencyCode = Data["currencyCode"];
+            this.totalRefundedToCard = Data["totalRefundedToCard"];
+            this.totalReturnedToCredit = Data["totalReturnedToCredit"];
+            (this as any).totalRefunded = Data["totalRefunded"];
+            (this as any).netRevenue = Data["netRevenue"];
         }
     }
 
@@ -33555,6 +33579,10 @@ export class RevenueReportDto implements IRevenueReportDto {
         }
         data["totalSettledFromCredit"] = this.totalSettledFromCredit;
         data["currencyCode"] = this.currencyCode;
+        data["totalRefundedToCard"] = this.totalRefundedToCard;
+        data["totalReturnedToCredit"] = this.totalReturnedToCredit;
+        data["totalRefunded"] = this.totalRefunded;
+        data["netRevenue"] = this.netRevenue;
         return data;
     }
 }
@@ -33573,6 +33601,10 @@ export interface IRevenueReportDto {
     revenueByPaymentStatus: RevenueByPaymentStatus[] | undefined;
     totalSettledFromCredit: number;
     currencyCode: string | undefined;
+    totalRefundedToCard: number;
+    totalReturnedToCredit: number;
+    totalRefunded: number;
+    netRevenue: number;
 }
 
 export class ReverseReferralCommand implements IReverseReferralCommand {

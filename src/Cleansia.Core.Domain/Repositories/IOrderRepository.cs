@@ -63,10 +63,22 @@ public interface IOrderRepository : IRepository<Order, string>
         CancellationToken cancellationToken);
 
     /// <summary>
-    /// All orders within a date range. Used by the admin revenue report.
+    /// The revenue set: orders in one currency that are <see cref="Cleansia.Core.Domain.Enums.OrderStatus.Completed"/> with a
+    /// <see cref="Order.CompletedAt"/> inside [<paramref name="startUtc"/>, <paramref name="endUtc"/>]
+    /// and a payment status that says the order was paid at some point — <c>Paid</c> and every state
+    /// after it, so a completed order later refunded in full is still in the set and nets to zero
+    /// rather than vanishing. Loads the services/packages graph the report allocates over.
     /// </summary>
-    Task<IReadOnlyList<Order>> GetOrdersByDateRangeAsync(
-        DateTime startDate, DateTime endDate, string currencyId, CancellationToken cancellationToken);
+    Task<IReadOnlyList<Order>> GetCompletedPaidOrdersByCompletionDateAsync(
+        DateTime startUtc, DateTime endUtc, string currencyId, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Cancelled BOOKINGS in one currency whose <see cref="Order.CancelledAt"/> falls in the period. An
+    /// abandoned card checkout carries a Cancelled track and no <c>CancelledAt</c> — it was never a
+    /// booking — and is not counted.
+    /// </summary>
+    Task<int> CountCancelledBookingsInPeriodAsync(
+        DateTime startUtc, DateTime endUtc, string currencyId, CancellationToken cancellationToken);
 
     /// <summary>
     /// Counts the number of orders assigned to an employee in the current week (Monday to Sunday).

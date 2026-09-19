@@ -155,6 +155,25 @@ public class CreditAccountRepository(CleansiaDbContext context)
             .SumAsync(t => t.Amount, cancellationToken);
     }
 
+    public async Task<IReadOnlyDictionary<string, decimal>> GetReturnedTotalsByOrderAsync(
+        IReadOnlyCollection<string> orderIds, CancellationToken cancellationToken)
+    {
+        if (orderIds.Count == 0)
+        {
+            return new Dictionary<string, decimal>(0);
+        }
+
+        var rows = await context.CreditTransactions
+            .AsNoTracking()
+            .Where(t => t.OrderId != null
+                && orderIds.Contains(t.OrderId)
+                && t.Reason == CreditTransactionReason.OrderPaymentReturned)
+            .GroupBy(t => t.OrderId!)
+            .Select(g => new { OrderId = g.Key, Total = g.Sum(t => t.Amount) })
+            .ToListAsync(cancellationToken);
+        return rows.ToDictionary(r => r.OrderId, r => r.Total);
+    }
+
     public Task<CreditSpendable?> GetSpendableAsync(
         string userId, string currencyId, CancellationToken cancellationToken)
     {

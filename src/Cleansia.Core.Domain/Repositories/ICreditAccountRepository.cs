@@ -119,6 +119,14 @@ public interface ICreditAccountRepository : IRepository<CreditAccount, string>
     Task<decimal> GetReturnedTotalForOrderAsync(string orderId, CancellationToken cancellationToken);
 
     /// <summary>
+    /// The batch form of <see cref="GetReturnedTotalForOrderAsync"/>: Σ
+    /// <see cref="CreditTransactionReason.OrderPaymentReturned"/> per order, keyed by order id; an order
+    /// with none is absent. The credit leg of every refund on those orders, for the revenue report.
+    /// </summary>
+    Task<IReadOnlyDictionary<string, decimal>> GetReturnedTotalsByOrderAsync(
+        IReadOnlyCollection<string> orderIds, CancellationToken cancellationToken);
+
+    /// <summary>
     /// Take <paramref name="amount"/> from the balance, or take nothing.
     ///
     /// <para>Returns false when the balance is short. It is <b>the only</b> way credit is spent, and

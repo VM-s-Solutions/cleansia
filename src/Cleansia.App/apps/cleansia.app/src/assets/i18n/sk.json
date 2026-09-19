@@ -1141,6 +1141,30 @@
       "action_report": "Niečo nebolo v poriadku",
       "track_live": "Sledovať naživo",
       "cancellation_note": "Zrušiť zadarmo sa dalo do {{hours}} hodín pred upratovaním.",
+      "cancellation": {
+        "action": "Zrušiť objednávku",
+        "title": "Zrušiť túto objednávku?",
+        "explanation": "Pred potvrdením zrušenia si skontrolujte poplatok za túto objednávku.",
+        "fee": "Storno poplatok",
+        "refund_estimate": "Maximálne vrátenie platby kartou",
+        "refund_note": "Vrátiť možno iba prijaté platby kartou. V potvrdení uvidíte skutočne vrátenú sumu.",
+        "reason_label": "Dôvod (nepovinné)",
+        "reason_placeholder": "Napíšte nám, prečo objednávku rušíte",
+        "confirm": "Potvrdiť zrušenie",
+        "keep": "Ponechať objednávku",
+        "loading": "Počítame storno poplatok…",
+        "preview_error": "Nepodarilo sa načítať platný prehľad poplatku. Pred zrušením to skúste znova.",
+        "retry": "Skúsiť znova",
+        "success": "Objednávka je zrušená. Potvrdenie vám pošleme e-mailom.",
+        "refund_success": "Bola vrátená suma {{amount}}.",
+        "tier": {
+          "0": "Túto objednávku zatiaľ neprijal žiadny pracovník.",
+          "1": "Objednávka je v ochrannej lehote na bezplatné zrušenie.",
+          "2": "Objednávka je mimo obdobia spoplatneného zrušenia.",
+          "3": "Platí čiastočný storno poplatok.",
+          "4": "Platí storno poplatok za zrušenie na poslednú chvíľu."
+        }
+      },
       "estimated_hours": "odhadom {{hours}} h",
       "label_market": "Trh"
     },

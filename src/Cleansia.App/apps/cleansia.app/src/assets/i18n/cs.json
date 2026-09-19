@@ -1141,6 +1141,30 @@
       "action_report": "Něco nebylo v pořádku",
       "track_live": "Sledovat živě",
       "cancellation_note": "Zrušit zdarma šlo do {{hours}} hodin před úklidem.",
+      "cancellation": {
+        "action": "Zrušit objednávku",
+        "title": "Zrušit tuto objednávku?",
+        "explanation": "Před potvrzením zrušení si zkontrolujte poplatek za tuto objednávku.",
+        "fee": "Storno poplatek",
+        "refund_estimate": "Maximální vrácení platby kartou",
+        "refund_note": "Vrátit lze pouze přijaté platby kartou. V potvrzení uvidíte skutečně vrácenou částku.",
+        "reason_label": "Důvod (nepovinné)",
+        "reason_placeholder": "Napište nám, proč objednávku rušíte",
+        "confirm": "Potvrdit zrušení",
+        "keep": "Ponechat objednávku",
+        "loading": "Počítáme storno poplatek…",
+        "preview_error": "Nepodařilo se načíst platný přehled poplatku. Před zrušením to zkuste znovu.",
+        "retry": "Zkusit znovu",
+        "success": "Objednávka je zrušená. Potvrzení vám pošleme e-mailem.",
+        "refund_success": "Byla vrácena částka {{amount}}.",
+        "tier": {
+          "0": "Tuto objednávku zatím nepřijal žádný pracovník.",
+          "1": "Objednávka je v ochranné lhůtě pro bezplatné zrušení.",
+          "2": "Objednávka je mimo období zpoplatněného zrušení.",
+          "3": "Platí částečný storno poplatek.",
+          "4": "Platí storno poplatek za zrušení na poslední chvíli."
+        }
+      },
       "estimated_hours": "odhadem {{hours}} h",
       "label_market": "Trh"
     },

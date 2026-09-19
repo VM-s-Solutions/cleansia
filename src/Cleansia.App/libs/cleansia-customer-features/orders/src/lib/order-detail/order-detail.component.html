@@ -1,3 +1,75 @@
+<!--
+  Cancelling, on the same terms a guest gets on the tracking page: the server's fee
+  preview first, then one confirmation. The reason box stops at the server's cap.
+-->
+<p-dialog
+  [header]="'pages.order_detail.cancellation.title' | translate"
+  [visible]="cancellationOpen()"
+  (visibleChange)="!$event && closeCancellation()"
+  [modal]="true"
+  [closable]="!cancelling()"
+  [closeOnEscape]="!cancelling()"
+  [draggable]="false"
+  styleClass="cleansia-dialog order-detail__cancellation-dialog"
+>
+  <p>{{ 'pages.order_detail.cancellation.explanation' | translate }}</p>
+  @if (previewLoading()) {
+  <p role="status">{{ 'pages.order_detail.cancellation.loading' | translate }}</p>
+  }
+  @if (cancellationPreviewFailed()) {
+  <p role="alert" class="order-detail__cancellation-error">
+    {{ 'pages.order_detail.cancellation.preview_error' | translate }}
+  </p>
+  <cleansia-button
+    [label]="'pages.order_detail.cancellation.retry' | translate"
+    [disabled]="cancelling()"
+    (onClick)="openCancellation()"
+  />
+  }
+  @if (cancellationPreview(); as preview) {
+  <p>{{ 'pages.order_detail.cancellation.tier.' + preview.tier | translate }}</p>
+  <dl class="order-detail__cancellation-figures">
+    <div>
+      <dt>{{ 'pages.order_detail.cancellation.fee' | translate }}</dt>
+      <dd class="cl-num">{{ formatPrice(preview.feeAmount) }} ({{ preview.feeRate | percent }})</dd>
+    </div>
+    <div>
+      <dt>{{ 'pages.order_detail.cancellation.refund_estimate' | translate }}</dt>
+      <dd class="cl-num">{{ formatPrice(preview.refundAmount) }}</dd>
+    </div>
+  </dl>
+  <p>{{ 'pages.order_detail.cancellation.refund_note' | translate }}</p>
+  <cleansia-textarea
+    id="order-detail-cancellation-reason"
+    [floatVariant]="null"
+    [label]="'pages.order_detail.cancellation.reason_label' | translate"
+    [placeholder]="'pages.order_detail.cancellation.reason_placeholder' | translate"
+    [maxLength]="cancellationReasonMaxLength"
+    [rows]="3"
+    [disabled]="cancelling()"
+    [ngModel]="cancellationReason()"
+    (ngModelChange)="cancellationReason.set($event)"
+  />
+  }
+  <ng-template #footer>
+    <div class="order-detail__cancellation-actions">
+      <cleansia-button
+        [label]="'pages.order_detail.cancellation.keep' | translate"
+        severity="secondary"
+        [disabled]="cancelling()"
+        (onClick)="closeCancellation()"
+      />
+      <cleansia-button
+        [label]="'pages.order_detail.cancellation.confirm' | translate"
+        severity="danger"
+        [loading]="cancelling()"
+        [disabled]="!canConfirmCancellation()"
+        (onClick)="confirmCancellation()"
+      />
+    </div>
+  </ng-template>
+</p-dialog>
+
 <div class="order-detail">
   <!-- Hero. Breadcrumb, the order's name, one sentence of where it is, and the
        action that matters right now. -> Detail artboard -->
@@ -449,7 +521,29 @@
             <i class="pi pi-question-circle"></i>
             {{ 'pages.order_detail.action_report' | translate }}
           </button>
+          @if (canCancel()) {
+          <button
+            type="button"
+            class="order-detail__action order-detail__action--danger"
+            [disabled]="cancelling()"
+            (click)="openCancellation()"
+          >
+            <i class="pi pi-times-circle"></i>
+            {{ 'pages.order_detail.cancellation.action' | translate }}
+          </button>
+          }
         </div>
+
+        @if (cancellationResult()) {
+        <div class="order-detail__cancellation-result" role="status">
+          <p>{{ 'pages.order_detail.cancellation.success' | translate }}</p>
+          @if (actualRefundAmount(); as amount) {
+          <p>
+            {{ 'pages.order_detail.cancellation.refund_success' | translate: { amount: formatPrice(amount) } }}
+          </p>
+          }
+        </div>
+        }
 
         <!-- The window is a membership benefit, so it is read off the
              membership rather than hardcoded. → /product/business-rules -->

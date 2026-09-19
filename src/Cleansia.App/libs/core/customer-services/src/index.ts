@@ -32,6 +32,7 @@ export type {
 export {
   OrderClient as CustomerOrderClient,
   CancelGuestOrderCommand,
+  CancelOrderCommand,
   CancelOrderResponse,
   CancellationFeeTier,
   GetCancellationFeePreviewResponse,

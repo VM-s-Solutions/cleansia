@@ -1,18 +1,32 @@
 import { isPlatformBrowser } from '@angular/common';
-import { inject, Injectable, PLATFORM_ID, signal } from '@angular/core';
+import { computed, inject, Injectable, PLATFORM_ID, signal } from '@angular/core';
 import { UnsubscribeControlDirective } from '@cleansia/directives';
 import {
+  CancelOrderCommand,
+  CancelOrderResponse,
   CustomerAuthService,
   CustomerClient,
+  GetCancellationFeePreviewResponse,
   GetMyMembershipResponse,
   OrderItem,
+  OrderStatus,
   SubmitOrderReviewCommand,
   SubmitOrderReviewReviewLineScore,
 } from '@cleansia/customer-services';
 import { ReviewLineScore } from './order-review-lines.models';
 import { SnackbarService } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
-import { takeUntil } from 'rxjs';
+import { catchError, finalize, of, takeUntil } from 'rxjs';
+
+/**
+ * The statuses the server's CancellationAssessor lets a customer cancel from — everything it
+ * does not block (InProgress, Completed, Cancelled) — and the same set the guest flow offers.
+ */
+const CANCELLABLE_ORDER_STATUSES: readonly OrderStatus[] = [
+  OrderStatus.New,
+  OrderStatus.Confirmed,
+  OrderStatus.OnTheWay,
+];
 
 @Injectable()
 export class OrderDetailFacade extends UnsubscribeControlDirective {
@@ -29,6 +43,23 @@ export class OrderDetailFacade extends UnsubscribeControlDirective {
   membership = signal<GetMyMembershipResponse | null>(null);
   reviewSubmitting = signal(false);
   downloading = signal(false);
+
+  readonly cancellationOpen = signal(false);
+  readonly previewLoading = signal(false);
+  readonly cancellationPreview = signal<GetCancellationFeePreviewResponse | null>(null);
+  readonly cancellationPreviewFailed = signal(false);
+  readonly cancelling = signal(false);
+  readonly cancellationResult = signal<CancelOrderResponse | null>(null);
+
+  readonly canCancel = computed(() => {
+    const status = this.order()?.orderStatus?.value;
+    return !this.cancellationResult() && status !== undefined &&
+      CANCELLABLE_ORDER_STATUSES.includes(status);
+  });
+
+  readonly canConfirmCancellation = computed(() =>
+    this.canCancel() && this.cancellationOpen() && !!this.cancellationPreview() &&
+    !this.previewLoading() && !this.cancelling());
 
   /**
    * Best-effort membership fetch so the "Make this recurring" CTA can
@@ -139,6 +170,60 @@ export class OrderDetailFacade extends UnsubscribeControlDirective {
           this.reviewSubmitting.set(false);
           this.snackbar.showApiError(err, 'pages.order_detail.review.error');
         },
+      });
+  }
+
+  openCancellation(): void {
+    const orderId = this.order()?.id;
+    if (!orderId || !this.canCancel() || this.cancelling()) return;
+    this.cancellationOpen.set(true);
+    this.cancellationPreview.set(null);
+    this.cancellationPreviewFailed.set(false);
+    this.previewLoading.set(true);
+    this.customerClient.orderClient
+      .cancellationPreview(orderId)
+      .pipe(
+        takeUntil(this.destroyed$),
+        catchError(() => of(null)),
+        finalize(() => this.previewLoading.set(false)),
+      )
+      .subscribe((preview) => {
+        if (preview && preview.orderId === orderId) this.cancellationPreview.set(preview);
+        else this.cancellationPreviewFailed.set(true);
+      });
+  }
+
+  closeCancellation(): void {
+    if (this.cancelling()) return;
+    this.cancellationOpen.set(false);
+    this.cancellationPreview.set(null);
+    this.cancellationPreviewFailed.set(false);
+  }
+
+  /**
+   * The re-read runs on both branches: a refusal means the order moved on since the page loaded,
+   * and the shared interceptor's toast says why while the page has to show the status it moved to.
+   */
+  cancelOrder(reason: string): void {
+    const orderId = this.order()?.id;
+    if (!orderId || !this.canConfirmCancellation()) return;
+    const command = new CancelOrderCommand();
+    command.orderId = orderId;
+    command.reason = reason.trim() || undefined;
+    this.cancelling.set(true);
+    this.customerClient.orderClient
+      .cancel(command)
+      .pipe(
+        takeUntil(this.destroyed$),
+        catchError(() => of(null)),
+        finalize(() => this.cancelling.set(false)),
+      )
+      .subscribe((result) => {
+        if (result) this.cancellationResult.set(result);
+        this.cancellationOpen.set(false);
+        this.cancellationPreview.set(null);
+        this.cancellationPreviewFailed.set(false);
+        this.loadOrder(orderId);
       });
   }
 

@@ -8,8 +8,9 @@ import {
   PLATFORM_ID,
   signal,
 } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
-import { CleansiaButtonComponent } from '@cleansia/components';
+import { CleansiaButtonComponent, CleansiaTextareaComponent } from '@cleansia/components';
 import { OrderStatusLabelPipe } from '@cleansia/pipes';
 import { OrderStatus, PaymentStatus } from '@cleansia/customer-services';
 import {
@@ -19,6 +20,7 @@ import {
 import { CleansiaCustomerRoute } from '@cleansia/services';
 import { formatMoney, localeFor } from '@cleansia/utils';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
+import { DialogModule } from 'primeng/dialog';
 import { SkeletonModule } from 'primeng/skeleton';
 import { OrderPreferredOfferComponent } from './components/order-preferred-offer.component';
 import { OrderDetailFacade } from './order-detail.facade';
@@ -28,6 +30,9 @@ import {
   ReviewLineOption,
 } from './order-review-lines.models';
 import { OrderPreferredOfferFacade } from './order-preferred-offer.facade';
+
+/** The cap `CancelOrder.Validator` puts on the reason; the box stops where the server would refuse. */
+const CANCELLATION_REASON_MAX_LENGTH = 500;
 
 /** One row on either status axis. -> the Detail artboard's "Kde to je" card. */
 interface TimelineStep {
@@ -68,9 +73,12 @@ interface EntryDetail {
   standalone: true,
   imports: [
     CommonModule,
+    FormsModule,
     TranslatePipe,
     SkeletonModule,
+    DialogModule,
     CleansiaButtonComponent,
+    CleansiaTextareaComponent,
     OrderStatusLabelPipe,
     OrderPreferredOfferComponent,
   ],
@@ -94,6 +102,26 @@ export class OrderDetailComponent implements OnInit {
   readonly membership = this.facade.membership;
   readonly reviewSubmitting = this.facade.reviewSubmitting;
   readonly downloading = this.facade.downloading;
+
+  readonly canCancel = this.facade.canCancel;
+  readonly cancellationOpen = this.facade.cancellationOpen;
+  readonly previewLoading = this.facade.previewLoading;
+  readonly cancellationPreview = this.facade.cancellationPreview;
+  readonly cancellationPreviewFailed = this.facade.cancellationPreviewFailed;
+  readonly cancelling = this.facade.cancelling;
+  readonly canConfirmCancellation = this.facade.canConfirmCancellation;
+  readonly cancellationResult = this.facade.cancellationResult;
+  readonly cancellationReasonMaxLength = CANCELLATION_REASON_MAX_LENGTH;
+  readonly cancellationReason = signal('');
+
+  /**
+   * The figure the confirmation names is what the server actually refunded, never the preview's
+   * estimate: a cash booking or an uncollected card refunds nothing, and the estimate was a ceiling.
+   */
+  readonly actualRefundAmount = computed(() => {
+    const amount = this.cancellationResult()?.actualRefundAmount;
+    return amount !== undefined && Number.isFinite(amount) && amount > 0 ? amount : null;
+  });
 
   // Rating
   reviewRating = signal(0);
@@ -417,6 +445,19 @@ export class OrderDetailComponent implements OnInit {
 
   downloadReceipt(): void {
     this.facade.downloadReceipt();
+  }
+
+  openCancellation(): void {
+    this.cancellationReason.set('');
+    this.facade.openCancellation();
+  }
+
+  closeCancellation(): void {
+    this.facade.closeCancellation();
+  }
+
+  confirmCancellation(): void {
+    this.facade.cancelOrder(this.cancellationReason());
   }
 
   reportIssue(): void {

@@ -200,8 +200,7 @@ public class RevenueReportPredicateTests(PostgresContainerFixture fixture) : Bas
                 inApril.MarkSucceeded("re_2", new DateTimeOffset(April1));
                 var pending = Refund.Create(pendingOnly.Id, "refund:pending:1", 300m, "CZK", RefundReason.ServiceNotRendered, RefundSource.AppRefund);
                 var failed = Refund.Create(pendingOnly.Id, "refund:pending:2", 300m, "CZK", RefundReason.ServiceNotRendered, RefundSource.AppRefund);
-                // Nothing in the tree writes Failed yet; the enum member exists and the predicate must
-                // already refuse it, so the fixture sets it the way the row would read.
+                // Failed has no domain writer; set directly.
                 typeof(Refund).GetProperty(nameof(Refund.Status))!.SetValue(failed, RefundStatus.Failed);
                 context.AddRange(inMarch, inApril, pending, failed);
                 await Task.CompletedTask;

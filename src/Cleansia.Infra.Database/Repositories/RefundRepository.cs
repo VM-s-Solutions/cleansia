@@ -28,6 +28,7 @@ public class RefundRepository(CleansiaDbContext context) : BaseRepository<Refund
         }
 
         var rows = await GetDbSet()
+            .AsNoTracking()
             .Where(r => r.Status == RefundStatus.Succeeded && orderIds.Contains(r.OrderId))
             .GroupBy(r => r.OrderId)
             .Select(g => new { OrderId = g.Key, Total = g.Sum(r => r.Amount) })

@@ -294,6 +294,7 @@ public class OrderRepository(CleansiaDbContext context) : BaseRepository<Order>(
                 .ThenInclude(s => s.Service)
             .Include(o => o.SelectedPackages)
                 .ThenInclude(op => op.Package)
+            .AsNoTracking()
             .Where(o => o.CurrencyId == currencyId &&
                        o.CurrentStatus == OrderStatus.Completed &&
                        o.CompletedAt != null &&

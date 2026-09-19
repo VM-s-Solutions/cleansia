@@ -49,6 +49,14 @@
       [label]="'pages.company_settings.enabled' | translate"
       [disabled]="facade.isBusy(setting)"
     />
+    } @else if (setting.valueType === TenantSettingValueType.Email) {
+    <cleansia-text-input
+      [formControl]="emailDraft"
+      dataType="email"
+      [floatVariant]="null"
+      [showErrors]="false"
+      [disabled]="facade.isBusy(setting)"
+    />
     } @else {
     <cleansia-text-input
       [formControl]="intDraft"

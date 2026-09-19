@@ -10,7 +10,7 @@ import {
   TemplateRef,
   viewChild,
 } from '@angular/core';
-import { FormControl, ReactiveFormsModule } from '@angular/forms';
+import { FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
 import { TenantSettingDto, TenantSettingValueType } from '@cleansia/admin-services';
 import {
   CleansiaButtonComponent,
@@ -57,6 +57,10 @@ export class CompanySettingsComponent implements OnInit, AfterViewInit, OnDestro
 
   readonly intDraft = new FormControl<string>('', { nonNullable: true });
   readonly boolDraft = new FormControl<boolean>(false, { nonNullable: true });
+  readonly emailDraft = new FormControl<string>('', {
+    nonNullable: true,
+    validators: [Validators.required, Validators.email],
+  });
 
   valueTemplate = viewChild<TemplateRef<TenantSettingDto>>('valueTemplate');
 
@@ -66,7 +70,7 @@ export class CompanySettingsComponent implements OnInit, AfterViewInit, OnDestro
   private readonly destroy$ = new Subject<void>();
 
   ngOnInit(): void {
-    this.facade.connectDraft(this.intDraft, this.boolDraft);
+    this.facade.connectDraft(this.intDraft, this.boolDraft, this.emailDraft);
   }
 
   ngAfterViewInit(): void {

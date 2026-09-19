@@ -35,6 +35,15 @@ describe('CompanySettingsComponent', () => {
     isOverridden: false,
   });
 
+  const adminEmail = TenantSettingDto.fromJS({
+    key: 'notifications.admin_email',
+    category: 'notifications',
+    valueType: TenantSettingValueType.Email,
+    defaultValue: '',
+    effectiveValue: '',
+    isOverridden: false,
+  });
+
   const text = () => (fixture.nativeElement as HTMLElement).textContent ?? '';
 
   async function render(): Promise<void> {
@@ -120,5 +129,20 @@ describe('CompanySettingsComponent', () => {
 
     expect(fixture.nativeElement.querySelector('cleansia-text-input')).toBeNull();
     expect(fixture.nativeElement.querySelector('cleansia-checkbox')).not.toBeNull();
+  });
+
+  it('reads the e-mail row at its default as every administrator and edits it in an e-mail input', async () => {
+    getAllMock = jest.fn().mockReturnValue(of(GetTenantSettingsResponse.fromJS({ settings: [adminEmail] })));
+    await render();
+
+    expect(text()).toContain('pages.company_settings.every_administrator');
+    expect(text()).toContain('pages.company_settings.source.default');
+
+    fixture.componentInstance['facade'].beginEdit(adminEmail);
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('cleansia-text-input input[type="email"]')).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('input[type="number"]')).toBeNull();
+    expect(fixture.nativeElement.querySelector('cleansia-checkbox')).toBeNull();
   });
 });

@@ -34,6 +34,15 @@ const boolSetting = TenantSettingDto.fromJS({
   isOverridden: true,
 });
 
+const emailSetting = TenantSettingDto.fromJS({
+  key: 'notifications.admin_email',
+  category: 'notifications',
+  valueType: TenantSettingValueType.Email,
+  defaultValue: '',
+  effectiveValue: '',
+  isOverridden: false,
+});
+
 describe('company-settings models', () => {
   describe('parseBoolSetting / formatBoolSetting', () => {
     it('reads the catalogue canonical "true" as checked and anything else as unchecked', () => {
@@ -72,6 +81,14 @@ describe('company-settings models', () => {
       expect(formatSettingValue(intSetting, '120', translate)).toBe('120');
       expect(formatSettingValue(intSetting, undefined, translate)).toBe('');
     });
+
+    it('renders an e-mail address verbatim and the empty default as every administrator', () => {
+      expect(formatSettingValue(emailSetting, 'ops@example.com', translate)).toBe('ops@example.com');
+      expect(formatSettingValue(emailSetting, '', translate)).toBe('pages.company_settings.every_administrator');
+      expect(formatSettingValue(emailSetting, undefined, translate)).toBe(
+        'pages.company_settings.every_administrator'
+      );
+    });
   });
 
   describe('formatSettingRange', () => {
@@ -81,6 +98,7 @@ describe('company-settings models', () => {
 
     it('is blank for a setting without a range', () => {
       expect(formatSettingRange(boolSetting)).toBe('');
+      expect(formatSettingRange(emailSetting)).toBe('');
     });
   });
 
@@ -131,6 +149,11 @@ describe('company-settings models', () => {
       expect(value('category', intSetting)).toBe('pages.company_settings.categories.retention');
       expect(value('range', intSetting)).toBe('1 – 36500');
       expect(value('default', boolSetting)).toBe('global.yes');
+      expect(value('default', emailSetting)).toBe('pages.company_settings.every_administrator');
+      expect(value('category', emailSetting)).toBe('pages.company_settings.categories.notifications');
+      expect(value('description', emailSetting)).toBe(
+        'pages.company_settings.descriptions.notifications.admin_email'
+      );
       expect(value('source', intSetting)).toBe('pages.company_settings.source.overridden');
       expect(value('source', TenantSettingDto.fromJS({ ...intSetting, isOverridden: false }))).toBe(
         'pages.company_settings.source.default'

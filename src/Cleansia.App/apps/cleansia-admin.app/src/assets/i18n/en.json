@@ -1766,6 +1766,7 @@
       "cancel": "Cancel",
       "reset": "Reset to default",
       "enabled": "Enabled",
+      "every_administrator": "Every administrator",
       "confirm_reset_title": "Reset to default",
       "confirm_reset": "Remove the stored value of {{key}} so the platform default applies again?",
       "source": {
@@ -1787,7 +1788,8 @@
       },
       "categories": {
         "retention": "Data retention",
-        "lifecycle": "Company lifecycle"
+        "lifecycle": "Company lifecycle",
+        "notifications": "Notifications"
       },
       "descriptions": {
         "retention": {
@@ -1821,6 +1823,9 @@
         },
         "lifecycle": {
           "chargeback_horizon_days": "Days after the company's latest card-paid cleaning during which a cardholder may still dispute the charge; the archive waits until they have passed"
+        },
+        "notifications": {
+          "admin_email": "Mailbox that receives one e-mail in English per admin event instead of every administrator; at its default, each administrator is e-mailed in their own language"
         }
       }
     },

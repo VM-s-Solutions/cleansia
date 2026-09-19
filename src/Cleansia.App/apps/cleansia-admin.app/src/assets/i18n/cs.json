@@ -1876,6 +1876,7 @@
       "cancel": "Zrušit",
       "reset": "Obnovit výchozí",
       "enabled": "Zapnuto",
+      "every_administrator": "Každý administrátor",
       "confirm_reset_title": "Obnovit výchozí",
       "confirm_reset": "Odstranit uloženou hodnotu {{key}}, aby znovu platila výchozí hodnota platformy?",
       "source": {
@@ -1897,7 +1898,8 @@
       },
       "categories": {
         "retention": "Uchovávání dat",
-        "lifecycle": "Životní cyklus společnosti"
+        "lifecycle": "Životní cyklus společnosti",
+        "notifications": "Notifikace"
       },
       "descriptions": {
         "retention": {
@@ -1931,6 +1933,9 @@
         },
         "lifecycle": {
           "chargeback_horizon_days": "Počet dnů po posledním kartou zaplaceném úklidu společnosti, během kterých může držitel karty platbu ještě reklamovat; archivace čeká, dokud neuplynou"
+        },
+        "notifications": {
+          "admin_email": "Schránka, která dostává jeden e-mail v angličtině za každou administrátorskou událost místo všech administrátorů; ve výchozím stavu dostane e-mail každý administrátor ve svém jazyce"
         }
       }
     },

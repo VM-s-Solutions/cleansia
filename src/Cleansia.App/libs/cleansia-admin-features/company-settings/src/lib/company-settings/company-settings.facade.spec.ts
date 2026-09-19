@@ -1,4 +1,4 @@
-import { FormControl } from '@angular/forms';
+import { FormControl, Validators } from '@angular/forms';
 import { TestBed } from '@angular/core/testing';
 import {
   AdminClient,
@@ -19,9 +19,10 @@ describe('CompanySettingsFacade', () => {
   let setMock: jest.Mock;
   let resetMock: jest.Mock;
   let confirmMock: jest.Mock;
-  let snackbar: { showSuccessTranslated: jest.Mock };
+  let snackbar: { showSuccessTranslated: jest.Mock; showErrorTranslated: jest.Mock };
   let intDraft: FormControl<string>;
   let boolDraft: FormControl<boolean>;
+  let emailDraft: FormControl<string>;
 
   const staleDevices = TenantSettingDto.fromJS({
     key: 'retention.stale_devices.days',
@@ -43,10 +44,25 @@ describe('CompanySettingsFacade', () => {
     isOverridden: false,
   });
 
+  const adminEmail = TenantSettingDto.fromJS({
+    key: 'notifications.admin_email',
+    category: 'notifications',
+    valueType: TenantSettingValueType.Email,
+    defaultValue: '',
+    effectiveValue: '',
+    isOverridden: false,
+  });
+
+  const adminEmailSet = TenantSettingDto.fromJS({
+    ...adminEmail,
+    effectiveValue: 'ops@example.com',
+    isOverridden: true,
+  });
+
   const catalogue = (...settings: TenantSettingDto[]) => GetTenantSettingsResponse.fromJS({ settings });
 
   beforeEach(() => {
-    getAllMock = jest.fn().mockReturnValue(of(catalogue(staleDevices, expiredCodes)));
+    getAllMock = jest.fn().mockReturnValue(of(catalogue(staleDevices, expiredCodes, adminEmail)));
     setMock = jest.fn().mockImplementation((command: SetTenantSettingCommand) =>
       of(SetTenantSettingResponse.fromJS({ key: command.key, value: command.value }))
     );
@@ -54,9 +70,13 @@ describe('CompanySettingsFacade', () => {
       of(ResetTenantSettingResponse.fromJS({ key, value: '90' }))
     );
     confirmMock = jest.fn().mockReturnValue(of(true));
-    snackbar = { showSuccessTranslated: jest.fn() };
+    snackbar = { showSuccessTranslated: jest.fn(), showErrorTranslated: jest.fn() };
     intDraft = new FormControl<string>('', { nonNullable: true });
     boolDraft = new FormControl<boolean>(false, { nonNullable: true });
+    emailDraft = new FormControl<string>('', {
+      nonNullable: true,
+      validators: [Validators.required, Validators.email],
+    });
 
     TestBed.configureTestingModule({
       providers: [
@@ -73,7 +93,7 @@ describe('CompanySettingsFacade', () => {
     });
 
     facade = TestBed.inject(CompanySettingsFacade);
-    facade.connectDraft(intDraft, boolDraft);
+    facade.connectDraft(intDraft, boolDraft, emailDraft);
   });
 
   describe('loadSettings', () => {
@@ -81,7 +101,7 @@ describe('CompanySettingsFacade', () => {
       facade.loadSettings();
 
       expect(getAllMock).toHaveBeenCalledTimes(1);
-      expect(facade.settings()).toEqual([staleDevices, expiredCodes]);
+      expect(facade.settings()).toEqual([staleDevices, expiredCodes, adminEmail]);
       expect(facade.loading()).toBe(false);
       expect(facade.initialLoading()).toBe(false);
       expect(facade.hasError()).toBe(false);
@@ -116,7 +136,7 @@ describe('CompanySettingsFacade', () => {
       facade.loadSettings();
 
       expect(facade.hasError()).toBe(false);
-      expect(facade.settings()).toEqual([staleDevices, expiredCodes]);
+      expect(facade.settings()).toEqual([staleDevices, expiredCodes, adminEmail]);
     });
 
     it('keeps loading across a reload issued before the first response arrived', () => {
@@ -170,6 +190,22 @@ describe('CompanySettingsFacade', () => {
       expect(boolDraft.value).toBe(true);
     });
 
+    it('opens the e-mail row at its default with an empty e-mail draft', () => {
+      facade.beginEdit(adminEmail);
+
+      expect(facade.editingKey()).toBe('notifications.admin_email');
+      expect(emailDraft.value).toBe('');
+    });
+
+    it('opens an overridden e-mail row with the stored address in the e-mail draft', () => {
+      getAllMock.mockReturnValue(of(catalogue(adminEmailSet)));
+      facade.loadSettings();
+
+      facade.beginEdit(adminEmailSet);
+
+      expect(emailDraft.value).toBe('ops@example.com');
+    });
+
     it('moves the edit to another row without saving the first', () => {
       facade.beginEdit(staleDevices);
       intDraft.setValue('7');
@@ -216,6 +252,64 @@ describe('CompanySettingsFacade', () => {
 
       const command: SetTenantSettingCommand = setMock.mock.calls[0][0];
       expect(command.toJSON()).toEqual({ key: 'retention.expired_codes.enabled', value: 'false' });
+    });
+
+    it('sends the e-mail draft trimmed as the command body', () => {
+      facade.beginEdit(adminEmail);
+      emailDraft.setValue('  Ops@Example.com ');
+
+      facade.save();
+
+      const command: SetTenantSettingCommand = setMock.mock.calls[0][0];
+      expect(command.toJSON()).toEqual({ key: 'notifications.admin_email', value: 'Ops@Example.com' });
+      expect(snackbar.showErrorTranslated).not.toHaveBeenCalled();
+      expect(facade.editingKey()).toBeNull();
+    });
+
+    it('refuses a malformed address before the write with the invalid-value key the server uses and keeps the edit open', () => {
+      facade.beginEdit(adminEmail);
+      emailDraft.setValue('not-an-address');
+
+      facade.save();
+
+      expect(setMock).not.toHaveBeenCalled();
+      expect(snackbar.showErrorTranslated).toHaveBeenCalledTimes(1);
+      expect(snackbar.showErrorTranslated).toHaveBeenCalledWith('api.tenant_setting.invalid_value');
+      expect(snackbar.showSuccessTranslated).not.toHaveBeenCalled();
+      expect(facade.editingKey()).toBe('notifications.admin_email');
+      expect(facade.busyKey()).toBeNull();
+      expect(getAllMock).toHaveBeenCalledTimes(1);
+    });
+
+    it('refuses an address with a space inside as the server does', () => {
+      facade.beginEdit(adminEmail);
+      emailDraft.setValue('ops @example.com');
+
+      facade.save();
+
+      expect(setMock).not.toHaveBeenCalled();
+      expect(snackbar.showErrorTranslated).toHaveBeenCalledWith('api.tenant_setting.invalid_value');
+    });
+
+    it('refuses an empty or blank address before the write with the required key the server uses', () => {
+      facade.beginEdit(adminEmail);
+      emailDraft.setValue('   ');
+
+      facade.save();
+
+      expect(setMock).not.toHaveBeenCalled();
+      expect(snackbar.showErrorTranslated).toHaveBeenCalledWith('api.common.required');
+      expect(facade.editingKey()).toBe('notifications.admin_email');
+    });
+
+    it('checks nothing client-side on an int row: the server is the one that ranges it', () => {
+      facade.beginEdit(staleDevices);
+      intDraft.setValue('');
+
+      facade.save();
+
+      expect(setMock).toHaveBeenCalledTimes(1);
+      expect(snackbar.showErrorTranslated).not.toHaveBeenCalled();
     });
 
     it('keeps the edit open, toasts nothing and clears the in-flight key when the write is refused', () => {
@@ -269,6 +363,17 @@ describe('CompanySettingsFacade', () => {
       expect(snackbar.showSuccessTranslated).toHaveBeenCalledWith('pages.company_settings.messages.reset_success');
       expect(facade.busyKey()).toBeNull();
       expect(getAllMock).toHaveBeenCalledTimes(2);
+    });
+
+    it('resets an overridden e-mail row through the same delete and re-reads', () => {
+      getAllMock.mockReturnValue(of(catalogue(adminEmailSet)));
+      facade.loadSettings();
+
+      facade.reset(adminEmailSet);
+
+      expect(resetMock).toHaveBeenCalledWith('notifications.admin_email');
+      expect(snackbar.showSuccessTranslated).toHaveBeenCalledWith('pages.company_settings.messages.reset_success');
+      expect(getAllMock).toHaveBeenCalledTimes(3);
     });
 
     it('does nothing when the confirmation is declined', () => {

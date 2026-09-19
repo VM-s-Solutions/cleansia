@@ -23,6 +23,7 @@ export class CompanySettingsFacade extends UnsubscribeControlDirective {
 
   private intDraft: FormControl<string> | null = null;
   private boolDraft: FormControl<boolean> | null = null;
+  private emailDraft: FormControl<string> | null = null;
   private readonly reload$ = new Subject<void>();
 
   constructor() {
@@ -58,9 +59,14 @@ export class CompanySettingsFacade extends UnsubscribeControlDirective {
     this.reload$.next();
   }
 
-  connectDraft(intDraft: FormControl<string>, boolDraft: FormControl<boolean>): void {
+  connectDraft(
+    intDraft: FormControl<string>,
+    boolDraft: FormControl<boolean>,
+    emailDraft: FormControl<string>
+  ): void {
     this.intDraft = intDraft;
     this.boolDraft = boolDraft;
+    this.emailDraft = emailDraft;
   }
 
   isEditing(setting: TenantSettingDto): boolean {
@@ -75,6 +81,8 @@ export class CompanySettingsFacade extends UnsubscribeControlDirective {
     if (!setting.key || this.busyKey()) return;
     if (setting.valueType === TenantSettingValueType.Bool) {
       this.boolDraft?.setValue(parseBoolSetting(setting.effectiveValue));
+    } else if (setting.valueType === TenantSettingValueType.Email) {
+      this.emailDraft?.setValue(setting.effectiveValue ?? '');
     } else {
       this.intDraft?.setValue(setting.effectiveValue ?? '');
     }
@@ -90,9 +98,16 @@ export class CompanySettingsFacade extends UnsubscribeControlDirective {
     const setting = this.settings().find((s) => s.key === key);
     if (!key || !setting || this.busyKey()) return;
 
+    const value = this.draftValueOf(setting);
+    const refusal = this.clientRefusalOf(setting, value);
+    if (refusal) {
+      this.snackbar.showErrorTranslated(refusal);
+      return;
+    }
+
     this.busyKey.set(key);
     this.adminClient.adminTenantSettingsClient
-      .set(buildSetTenantSettingCommand(key, this.draftValueOf(setting)))
+      .set(buildSetTenantSettingCommand(key, value))
       .pipe(
         takeUntil(this.destroyed$),
         catchError(() => of(null)),
@@ -137,6 +152,19 @@ export class CompanySettingsFacade extends UnsubscribeControlDirective {
     if (setting.valueType === TenantSettingValueType.Bool) {
       return formatBoolSetting(this.boolDraft?.value ?? false);
     }
+    if (setting.valueType === TenantSettingValueType.Email) {
+      return (this.emailDraft?.value ?? '').trim();
+    }
     return (this.intDraft?.value ?? '').trim();
+  }
+
+  // The server trims before it validates, so the draft is settled to the trimmed address before its
+  // validators are read; the keys are the ones the server would answer.
+  private clientRefusalOf(setting: TenantSettingDto, value: string): string | null {
+    if (setting.valueType !== TenantSettingValueType.Email || !this.emailDraft) return null;
+    this.emailDraft.setValue(value);
+    if (this.emailDraft.hasError('required')) return 'api.common.required';
+    if (this.emailDraft.invalid) return 'api.tenant_setting.invalid_value';
+    return null;
   }
 }

@@ -33,6 +33,9 @@ export function formatSettingValue(
   if (setting.valueType === TenantSettingValueType.Bool) {
     return translate.instant(parseBoolSetting(value) ? 'global.yes' : 'global.no');
   }
+  if (setting.valueType === TenantSettingValueType.Email && !value) {
+    return translate.instant('pages.company_settings.every_administrator');
+  }
   return value ?? '';
 }
 

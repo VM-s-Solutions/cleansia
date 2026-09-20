@@ -414,7 +414,6 @@
     <string name="address_info">Адреса</string>
     <string name="bank_details">Банківські реквізити</string>
     <string name="documents">Документи</string>
-    <string name="availability">Доступність</string>
     <string name="personal">Особисті</string>
     <string name="birth_date">Дата народження</string>
     <string name="birth_date_placeholder">Виберіть дату</string>
@@ -426,23 +425,6 @@
     <string name="identification_title">Ідентифікація</string>
     <string name="my_documents">Мої документи</string>
     <string name="documents_summary_view">Переглянути, завантажити або видалити</string>
-    <string name="availability_days_set">Встановлено %1$d днів</string>
-    <string name="availability_helper">Увімкніть дні тижня, коли ви можете працювати, і виберіть часовий проміжок.</string>
-    <!-- Availability v2 -->
-    <string name="availability_quick_setup">Швидке налаштування</string>
-    <string name="availability_weekly_schedule">Тижневий розклад</string>
-    <string name="availability_preset_mon_fri">Пн–Пт 9–17</string>
-    <string name="availability_preset_mon_sat">Пн–Сб 8–16</string>
-    <string name="availability_preset_custom">Власне</string>
-    <string name="availability_apply_to_days">Виберіть дні, потім задайте часовий проміжок.</string>
-    <string name="availability_apply">Застосувати</string>
-    <string name="availability_start_time">Початок</string>
-    <string name="availability_end_time">Кінець</string>
-    <string name="availability_add_slot">Додати ще проміжок</string>
-    <string name="availability_remove_slot">Видалити проміжок</string>
-    <string name="availability_pick_time">Виберіть час</string>
-    <string name="availability_no_days_selected">Торкніться дня вище, щоб налаштувати години.</string>
-    <string name="availability_slot_overlap_error">Часові проміжки не можуть перекриватися.</string>
     <string name="add_document">Додати документ</string>
     <string name="upload_document">Завантажити документ</string>
     <string name="document_type">Тип документа</string>
@@ -518,20 +500,6 @@
     <string name="relationship">Ступінь спорідненості</string>
     <string name="contact_phone">Номер телефону</string>
     <string name="contact_email">Електронна адреса</string>
-
-    <!-- Availability -->
-    <string name="set_availability">Встановити доступність</string>
-    <string name="no_availability_set">Доступність не встановлено</string>
-    <string name="select_time">Вибрати час</string>
-    <string name="date_overrides">Винятки в розкладі</string>
-    <string name="add_date_override">Додати виняток</string>
-    <string name="no_date_overrides">Немає винятків у розкладі</string>
-    <string name="unavailable">Недоступний</string>
-    <string name="custom_hours">Особливі години</string>
-    <string name="select_date_override">Вибрати дату</string>
-    <string name="mark_unavailable">Позначити як недоступний</string>
-    <string name="set_custom_hours">Встановити особливі години</string>
-    <string name="date_override_note">Примітка (необов\'язково)</string>
 
     <!-- Settings -->
     <string name="settings">Налаштування</string>
@@ -661,7 +629,6 @@
     <string name="onboarding_highlight_invoices">Рахунки</string>
     <string name="onboarding_highlight_analytics">Аналітика</string>
     <string name="onboarding_highlight_reports">Звіти</string>
-    <string name="onboarding_highlight_availability">Доступність</string>
     <string name="onboarding_highlight_documents">Документи</string>
     <string name="onboarding_highlight_ratings">Рейтинги</string>
 
@@ -783,25 +750,7 @@
     <string name="invoice_notes_admin">Примітки адміністратора</string>
     <string name="invoice_notes_bank">Примітка до банківського переказу</string>
 
-    <!-- Calendar Availability -->
-    <string name="previous_month">Попередній місяць</string>
-    <string name="next_month">Наступний місяць</string>
-    <string name="legend_working">Робочий</string>
-    <string name="legend_custom">Особливий</string>
-    <string name="legend_off">Вихідний</string>
-    <string name="working_day">Робочий день</string>
-    <string name="day_off">Вихідний</string>
-    <string name="exception_day_off">Виняток - Вихідний</string>
-    <string name="edit_hours">Редагувати години</string>
-    <string name="edit_hours_desc">Налаштуйте робочі години для цього дня.</string>
-    <string name="mark_as_exception">Позначити як виняток</string>
-    <string name="mark_exception_desc">Перевизначити звичайний розклад для цієї дати.</string>
-    <string name="schedule_setup_title">Налаштування розкладу</string>
-    <string name="schedule_setup_sheet_desc">Виберіть Ваші робочі дні та години.</string>
-    <string name="remove_exception">Видалити виняток</string>
-    <string name="add_time_slot">Додати часовий слот</string>
     <string name="remove">Видалити</string>
-    <string name="weekly_schedule">Тижневий розклад</string>
     <string name="edit">Редагувати</string>
 
     <!-- Quick Setup Presets -->
@@ -1052,14 +1001,11 @@
     <string name="registration_lock_sign_out_confirm_message">Ваш прогрес збережено. Щоб завершити реєстрацію, потрібно буде увійти знову.</string>
     <string name="registration_lock_support_subject">Cleansia partner — заявку відхилено</string>
     <string name="registration_lock_category_profile">Профіль</string>
-    <string name="registration_lock_category_availability">Доступність</string>
     <string name="registration_lock_category_documents">Документи</string>
     <string name="registration_lock_category_approval">Схвалення</string>
     <string name="registration_lock_action_complete_profile">Заповнити профіль</string>
-    <string name="registration_lock_action_set_availability">Встановити тижневу доступність</string>
     <string name="registration_lock_action_upload_documents">Завантажити документи</string>
     <string name="registration_lock_action_contact_support">Звернутися до підтримки</string>
-    <string name="registration_lock_availability_required">Встановіть свої тижневі робочі години.</string>
     <string name="registration_lock_documents_required">Завантажте свої документи, що посвідчують особу.</string>
     <string name="registration_lock_approval_awaiting_review">Заявку розглядає адміністратор.</string>
     <string name="registration_lock_approval_complete_profile_first">Спочатку виконайте кроки вище — потім адміністратор зможе вас схвалити.</string>
@@ -1206,7 +1152,6 @@
     <string name="error_validation_invalid_zip_code">Введіть, будь ласка, дійсний поштовий індекс.</string>
     <string name="error_validation_registration_number_invalid_format">Введіть дійсний реєстраційний номер компанії для обраної країни.</string>
     <string name="error_validation_must_be_positive">Має бути додатне число.</string>
-    <string name="error_validation_invalid_availability_format">Неправильний формат доступності.</string>
 
     <!-- Payout / bank details -->
     <string name="error_payout_not_found">Ви ще не додали свої банківські реквізити. Додайте їх, щоб ми могли надіслати вам виплату.</string>

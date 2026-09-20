@@ -27,7 +27,7 @@ import retrofit2.converter.kotlinx.serialization.asConverterFactory
 /**
  * This repository has no mapper: it hands the generated DTOs to the UI as they arrive, so the
  * `@SerialName` set **is** the whole contract and a renamed field lands as a silent null on a screen
- * that gates the cleaner's access to work. `jobRadiusKm` and the three registration flags are the
+ * that gates the cleaner's access to work. `jobRadiusKm` and the two registration flags are the
  * sharp ones — the flags decide whether the Orders tab unlocks at all.
  */
 class EmployeeProfileWireTest {
@@ -123,7 +123,6 @@ class EmployeeProfileWireTest {
         assertEquals("Jana", employee.firstName)
         assertEquals("Praha", employee.city)
         assertEquals(25, employee.jobRadiusKm)
-        assertEquals(listOf("09:00" to "13:00"), employee.availability?.get("Monday")?.map { it.start to it.end })
     }
 
     /**
@@ -145,7 +144,6 @@ class EmployeeProfileWireTest {
 
         assertEquals(true, status.areDocumentsUploaded)
         assertEquals(true, status.hasCompletedProfile)
-        assertEquals(true, status.hasSetAvailability)
         assertEquals(listOf("passportId"), status.missingFields)
         assertEquals("not this time", status.rejectionReason)
     }
@@ -228,7 +226,6 @@ class EmployeeProfileWireTest {
               },
               "profile": { "type": "Profile", "name": "Employee", "value": 2 },
               "authenticationType": { "type": "AuthenticationType", "name": "Internal", "value": 1 },
-              "availability": { "Monday": [ { "start": "09:00", "end": "13:00" } ] },
               "jobRadiusKm": 25
             }
         """.trimIndent()
@@ -237,7 +234,6 @@ class EmployeeProfileWireTest {
             {
               "areDocumentsUploaded": true,
               "hasCompletedProfile": true,
-              "hasSetAvailability": true,
               "missingFields": ["passportId"],
               "contractStatus": 4,
               "rejectionReason": "not this time"
@@ -302,14 +298,12 @@ class EmployeeProfileWireTest {
             "profilePhoto",
             "profile",
             "authenticationType",
-            "availability",
             "jobRadiusKm",
         )
 
         val REGISTRATION_SPEC_PROPERTIES = setOf(
             "areDocumentsUploaded",
             "hasCompletedProfile",
-            "hasSetAvailability",
             "missingFields",
             "contractStatus",
             "rejectionReason",

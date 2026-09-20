@@ -6330,41 +6330,6 @@
         }
       }
     },
-    "error.validation.invalid_availability_format": {
-      "extractionState": "stale",
-      "localizations": {
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Neplatný formát dostupnosti."
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Availability format is invalid."
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Неверный формат доступности."
-          }
-        },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Neplatný formát dostupnosti."
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Неправильний формат доступності."
-          }
-        }
-      }
-    },
     "error.validation.invalid_date": {
       "extractionState": "stale",
       "localizations": {

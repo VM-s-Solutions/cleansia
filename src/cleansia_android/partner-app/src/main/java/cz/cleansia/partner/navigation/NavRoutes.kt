@@ -28,7 +28,7 @@ sealed interface NavRoute {
     @Serializable data class ConfirmEmail(val email: String = "") : NavRoute
 
     /**
-     * Pre-Main gate for cleaners whose profile / availability / documents
+     * Pre-Main gate for cleaners whose profile / documents
      * aren't complete or whose contract hasn't been Approved yet. Mirrors
      * the partner-web modal overlay that locks every non-profile route.
      */

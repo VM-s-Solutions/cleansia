@@ -59,6 +59,9 @@ public static class TenantSettingCatalog
     public static readonly IntTenantSetting DisputeTextRetentionYears = Years(
         RetentionDefaults.DisputeTextRetentionYearsKey, RetentionDefaults.DefaultDisputeTextRetentionYears);
 
+    public static readonly IntTenantSetting WorkContractMetadataRetentionYears = Years(
+        RetentionDefaults.WorkContractMetadataRetentionYearsKey, RetentionDefaults.DefaultWorkContractMetadataRetentionYears);
+
     public static readonly IntTenantSetting ChargebackHorizonDays = new(
         ChargebackHorizonDaysKey, LifecycleCategory, DefaultChargebackHorizonDays, min: 0, max: MaxChargebackHorizonDays);
 
@@ -76,6 +79,7 @@ public static class TenantSettingCatalog
         NotificationsDays,
         CustomerAuditRetentionYears,
         DisputeTextRetentionYears,
+        WorkContractMetadataRetentionYears,
         ChargebackHorizonDays,
         AdminNotificationEmail,
     ];

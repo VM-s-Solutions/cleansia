@@ -8,6 +8,7 @@ using Cleansia.Core.Blobs.Abstractions.Extensions;
 using Cleansia.Core.Domain.Auditing;
 using Cleansia.Core.Domain.Company;
 using Cleansia.Core.Domain.Configuration;
+using Cleansia.Core.Domain.Contracts;
 using Cleansia.Core.Domain.Credit;
 using Cleansia.Core.Domain.Disputes;
 using Cleansia.Core.Domain.EmployeePayroll;
@@ -73,6 +74,7 @@ public sealed class CompanyArchiveBundleTests(PostgresContainerFixture fixture) 
         "books/promo-codes.jsonl",
         "books/refunds.jsonl",
         "books/tenant-configurations.jsonl",
+        "books/work-contract-acceptances.jsonl",
         "manifest.json",
         "payout-invoices/INV-2026-000001.pdf",
         "receipts/RCP-2026-0001.pdf",
@@ -81,7 +83,7 @@ public sealed class CompanyArchiveBundleTests(PostgresContainerFixture fixture) 
     private readonly InMemoryBlobStorage _blobs = new();
     private readonly ManualClock _clock = new(FrozenOn.AddHours(1));
 
-    private sealed record Seeded(string CustomerBId, string EmployeeBId, string ReceiptedOrderId, string AnonymisedOrderId, string DisputeId);
+    private sealed record Seeded(string CustomerBId, string EmployeeBId, string ReceiptedOrderId, string AnonymisedOrderId, string DisputeId, string SeatBId);
 
     private Task SetupAsync(IServiceCollection services)
     {
@@ -143,6 +145,7 @@ public sealed class CompanyArchiveBundleTests(PostgresContainerFixture fixture) 
                 Assert.Equal(2, orders.Count);
                 var receipted = Assert.Single(orders, o => o.GetProperty("id").GetString() == seeded.ReceiptedOrderId);
                 Assert.Equal("RCP-2026-0001", receipted.GetProperty("receiptNumber").GetString());
+                Assert.Equal(TestLegalDocuments.WorkContractId, receipted.GetProperty("workContractDocumentId").GetString());
                 Assert.Equal(SvkId, receipted.GetProperty("countryId").GetString());
                 Assert.Equal("Bratislava", receipted.GetProperty("city").GetString());
                 Assert.Equal("Completed", receipted.GetProperty("currentStatus").GetString());
@@ -172,6 +175,18 @@ public sealed class CompanyArchiveBundleTests(PostgresContainerFixture fixture) 
 
                 Assert.Equal(2, Lines(Archived("books/credit-transactions.jsonl")).Count);
                 Assert.Single(Lines(Archived("books/credit-accounts.jsonl")));
+
+                // The contract record is books without the request trio (ADR-0068 D5); A's row is not here.
+                var contract = Assert.Single(Lines(Archived("books/work-contract-acceptances.jsonl")));
+                Assert.Equal(
+                    new[] { "acceptedOn", "clientAudience", "documentVersion", "employeeId", "factsJson", "id", "legalDocumentTextId", "orderEmployeeId", "orderId" },
+                    contract.EnumerateObject().Select(p => p.Name).Order(StringComparer.Ordinal));
+                Assert.Equal(seeded.ReceiptedOrderId, contract.GetProperty("orderId").GetString());
+                Assert.Equal(seeded.SeatBId, contract.GetProperty("orderEmployeeId").GetString());
+                Assert.Equal(seeded.EmployeeBId, contract.GetProperty("employeeId").GetString());
+                Assert.Equal(TestLegalDocuments.WorkContractTextEnId, contract.GetProperty("legalDocumentTextId").GetString());
+                Assert.Equal(WorkContractTestData.Version, contract.GetProperty("documentVersion").GetString());
+                Assert.Contains("ORD-BUNDLE", contract.GetProperty("factsJson").GetString());
 
                 var employee = Assert.Single(Lines(Archived("books/employees.jsonl")));
                 Assert.Equal(
@@ -435,6 +450,9 @@ public sealed class CompanyArchiveBundleTests(PostgresContainerFixture fixture) 
         var extra = Extra.Create("windows", "Windows", "Window cleaning");
         ctx.Add(extra);
 
+        var (contractDocument, _) = TestLegalDocuments.Add(ctx);
+        var contractText = contractDocument.TextFor("en")!;
+
         var registry = await ctx.Tenants.SingleAsync(t => t.Id == B);
         registry.RequestWindDown(new DateOnly(2026, 8, 1), AdminBId, FrozenOn.AddDays(-60));
         registry.Deactivate(AdminBId, FrozenOn.AddDays(-45));
@@ -466,12 +484,22 @@ public sealed class CompanyArchiveBundleTests(PostgresContainerFixture fixture) 
         var receiptedOrder = NewOrder("bundle-b-receipted", SvkId, EurId, customerB.Id, DateTime.UtcNow.AddDays(-40), B);
         receiptedOrder.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.Completed, receiptedOrder));
         receiptedOrder.AddSelectedExtras([OrderExtra.Create(receiptedOrder, extra, 12m)]);
+        receiptedOrder.SetWorkContractDocument(contractDocument);
+        var seatB = OrderEmployee.Create(receiptedOrder, cleanerB);
+        receiptedOrder.AddAssignedEmployee(seatB);
         var anonymisedOrder = NewOrder("bundle-b-anonymised", SvkId, EurId, customerB.Id, DateTime.UtcNow.AddYears(-3), B);
         anonymisedOrder.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.Completed, anonymisedOrder));
         anonymisedOrder.AnonymizeCustomerData();
         var orderA = NewOrder("bundle-a-order", CzeId, CzkId, customerA.Id, DateTime.UtcNow.AddDays(-40), A);
         orderA.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.Completed, orderA));
         ctx.Orders.AddRange(receiptedOrder, anonymisedOrder, orderA);
+        ctx.WorkContractAcceptances.AddRange(
+            Stamped(WorkContractAcceptance.Create(
+                receiptedOrder.Id, seatB.Id, cleanerB.Id, contractText, contractDocument.Version, "cleansia.mobile",
+                "198.51.100.7", "Pixel 8", "device-claim-b", "{\"orderNumber\":\"ORD-BUNDLE-B\"}"), B),
+            Stamped(WorkContractAcceptance.Create(
+                orderA.Id, "01SEATBUNDLEA0000000000001", "emp-a", contractText, contractDocument.Version, "cleansia.partner",
+                "198.51.100.8", "Firefox", null, "{\"orderNumber\":\"ORD-BUNDLE-A\"}"), A));
 
         var receipt = Stamped(OrderReceipt.Create(receiptedOrder.Id, "RCP-2026-0001", "RCP-2026-0001.pdf", "b/RCP-2026-0001.pdf", english.Id), B);
         ctx.OrderReceipts.Add(receipt);
@@ -512,7 +540,7 @@ public sealed class CompanyArchiveBundleTests(PostgresContainerFixture fixture) 
             payloadJson: null, correlationId: null), B));
 
         StampUnstampedAdded(ctx, B);
-        return new Seeded(customerB.Id, cleanerB.Id, receiptedOrder.Id, anonymisedOrder.Id, dispute.Id);
+        return new Seeded(customerB.Id, cleanerB.Id, receiptedOrder.Id, anonymisedOrder.Id, dispute.Id, seatB.Id);
     }
 
     private static T Stamped<T>(T entity, string tenantId) where T : Core.Domain.Common.ITenantEntity

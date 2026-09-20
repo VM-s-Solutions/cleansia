@@ -131,6 +131,7 @@ public sealed class CompanyArchiveRecordGuardTests
 
         Assert.InRange(roots.Count, 20, 40);
         Assert.Contains(typeof(CompanyArchiveRecords.Order), roots);
+        Assert.Contains(typeof(CompanyArchiveRecords.WorkContractAcceptance), roots);
         Assert.Contains(typeof(CompanyArchiveRecords.Manifest), roots);
         Assert.Contains(typeof(CompanyArchiveRecords.OrderExtra), walked);
         Assert.Contains(typeof(CompanyArchiveRecords.DisputeLine), walked);
@@ -140,6 +141,26 @@ public sealed class CompanyArchiveRecordGuardTests
         {
             Assert.DoesNotContain(roots, t => t.Name == excluded);
         }
+    }
+
+    /// <summary>
+    /// ADR-0068 D5: the contract record is books — the act, the seat, the cleaner's id, the text, the
+    /// version, the instant, the client and the frozen facts — and never the request trio the retention
+    /// sweep blanks; the orders row names the text the job was booked under. Pinned by name so the
+    /// stream cannot quietly gain the trio under a name the token list does not catch.
+    /// </summary>
+    [Fact]
+    public void The_Contract_Row_Carries_The_Act_And_The_Facts_And_Never_The_Request_Trio_And_The_Order_Row_Names_Its_Text()
+    {
+        var contract = typeof(CompanyArchiveRecords.WorkContractAcceptance)
+            .GetProperties(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly)
+            .Select(p => p.Name)
+            .Order(StringComparer.Ordinal);
+
+        Assert.Equal(
+            ["AcceptedOn", "ClientAudience", "DocumentVersion", "EmployeeId", "FactsJson", "Id", "LegalDocumentTextId", "OrderEmployeeId", "OrderId"],
+            contract);
+        Assert.Contains("WorkContractDocumentId", typeof(CompanyArchiveRecords.Order).GetProperties().Select(p => p.Name));
     }
 
     /// <summary>

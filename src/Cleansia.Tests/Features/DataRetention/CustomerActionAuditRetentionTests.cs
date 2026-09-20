@@ -260,6 +260,7 @@ public sealed class CustomerActionAuditRetentionTests : IDisposable
             new UserNotificationRepository(ctx),
             new CustomerActionAuditRepository(ctx),
             new DisputeRepository(ctx),
+            new WorkContractAcceptanceRepository(ctx),
             new TenantRepository(ctx),
             tenantProvider,
             _configProvider.Object,

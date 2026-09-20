@@ -7,9 +7,10 @@ public static class IncidentFileSections
 {
     public const string IdentityTitle = "1. Identity as of export";
     public const string OrdersTitle = "2. Orders";
-    public const string DisputesTitle = "3. Disputes";
-    public const string ConsentsTitle = "4. Consents";
-    public const string TrailTitle = "5. Action trail";
+    public const string ContractsTitle = "3. Contracts for work";
+    public const string DisputesTitle = "4. Disputes";
+    public const string ConsentsTitle = "5. Consents";
+    public const string TrailTitle = "6. Action trail";
 
     public const string ErasedMarker = "erased";
     public const string Empty = "—";
@@ -20,6 +21,7 @@ public static class IncidentFileSections
     [
         Identity(data.Subject),
         Orders(data),
+        Contracts(data.Contracts),
         Disputes(data.Disputes),
         Consents(data.Consents),
         Trail(data),
@@ -101,6 +103,40 @@ public static class IncidentFileSections
         }
 
         return new IncidentFileSection(OrdersTitle, blocks);
+    }
+
+    private static IncidentFileSection Contracts(IReadOnlyList<IncidentFileContract> contracts)
+    {
+        var blocks = new List<IncidentFileBlock>();
+        if (contracts.Count == 0)
+        {
+            blocks.Add(new IncidentFileParagraph("No contracts for work."));
+        }
+
+        foreach (var contract in contracts)
+        {
+            blocks.Add(new IncidentFileSubheading($"Contract for work on order {contract.OrderNumber}, seat {contract.OrderEmployeeId}"));
+            var fields = new List<IncidentFileField>
+            {
+                new("Cleaner", $"{contract.CleanerFirstName} ({contract.EmployeeId})"),
+                new("Accepted", Stamp(contract.AcceptedOn)),
+                new("Version", contract.DocumentVersion),
+                new("Language", contract.Language),
+                new("Client", contract.ClientAudience),
+            };
+            if (contract.IpAddress is not null || contract.DeviceLabel is not null || contract.DeviceId is not null)
+            {
+                fields.Add(new("Request", $"{Text(contract.IpAddress)} / {Text(contract.DeviceLabel)} / {Text(contract.DeviceId)}"));
+            }
+
+            blocks.Add(new IncidentFileFieldList(fields));
+            blocks.Add(new IncidentFileTable(
+                "Facts as shown at acceptance",
+                ["Fact", "Value"],
+                contract.Facts.Select(f => (IReadOnlyList<string>)[f.Key, f.Value]).ToList()));
+        }
+
+        return new IncidentFileSection(ContractsTitle, blocks);
     }
 
     private static IncidentFileSection Disputes(IReadOnlyList<IncidentFileDispute> disputes)

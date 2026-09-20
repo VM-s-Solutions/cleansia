@@ -2,7 +2,9 @@ using Cleansia.Core.AppServices.Features.Auditing;
 using Cleansia.Core.AppServices.Services;
 using Cleansia.Core.Domain.Auditing;
 using Cleansia.Core.Domain.Configuration;
+using Cleansia.Core.Domain.Contracts;
 using Cleansia.Core.Domain.Disputes;
+using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Internationalization;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Payments;
@@ -47,13 +49,11 @@ public sealed class IncidentFileServiceTests
     private readonly Mock<ICustomerActionAuditRepository> _customer = new();
     private readonly Mock<IAdminActionAuditRepository> _admin = new();
     private readonly Mock<IEmployeeActionAuditRepository> _employee = new();
+    private readonly Mock<IWorkContractAcceptanceRepository> _acceptances = new();
 
     public IncidentFileServiceTests()
     {
-        var subject = User.CreateWithPassword("subject@cleansia.test", "Seed-Password-123", "Inci", "Dent");
-        subject.Id = SubjectId;
-        subject.TenantId = TestTenants.Default;
-        _users.Setup(r => r.GetQueryable()).Returns(new[] { subject }.AsQueryable().BuildMock());
+        SeedUsers(Subject());
         SeedMarkets();
         _currencies.Setup(r => r.GetQueryable()).Returns(new[] { Czk }.AsQueryable().BuildMock());
         _refunds.Setup(r => r.GetQueryable()).Returns(Array.Empty<Refund>().AsQueryable().BuildMock());
@@ -61,8 +61,70 @@ public sealed class IncidentFileServiceTests
         _consents.Setup(r => r.GetQueryable()).Returns(Array.Empty<UserConsent>().AsQueryable().BuildMock());
         _admin.Setup(r => r.GetQueryable()).Returns(Array.Empty<AdminActionAudit>().AsQueryable().BuildMock());
         _employee.Setup(r => r.GetQueryable()).Returns(Array.Empty<EmployeeActionAudit>().AsQueryable().BuildMock());
+        SeedAcceptances();
         SeedOrders(NewOrder(OrderId, SubjectId), NewOrder(OtherOrderId, SubjectId));
         SeedCustomerRows();
+    }
+
+    /// <summary>
+    /// The contracts section is the evidence the trail's <c>employee.order.contract_accepted</c> row
+    /// points at: one entry per acceptance on the file's orders, in the orders' order, the cleaner
+    /// named the way the crew line names them — given name and id — whether or not they are still on
+    /// the crew, the trio as stored, and the frozen facts flattened the way an audit payload is.
+    /// </summary>
+    [Fact]
+    public async Task The_Contracts_Are_The_Acceptances_On_The_Files_Orders_With_The_Cleaner_Named_And_The_Facts_Flattened()
+    {
+        var onCrew = Cleaner("user-tomas", "emp-tomas", "Tomas");
+        var dropped = Cleaner("user-jana", "emp-jana", "Jana");
+        SeedUsers(Subject(), onCrew.User!, dropped.User!);
+        var order = NewOrder(OrderId, SubjectId);
+        order.AddAssignedEmployee(OrderEmployee.Create(order, onCrew));
+        SeedOrders(order, NewOrder(OtherOrderId, SubjectId));
+        var asked = SeedAcceptances(
+            Row(OtherOrderId, "ORD-2", "seat-other", "emp-jana", T0.AddHours(-2), "203.0.113.9", "Firefox", null),
+            Row(OrderId, "ORD-1", "seat-dropped", "emp-jana", T0.AddHours(1), null, null, null),
+            Row(OrderId, "ORD-1", "seat-tomas", "emp-tomas", T0.AddHours(2), "203.0.113.9", "iPhone 15", "device-claim-1"));
+
+        var data = await Service().BuildAsync(SubjectId, null, AdminEmail, CancellationToken.None);
+
+        Assert.Equal([OrderId, OtherOrderId], asked().Order(StringComparer.Ordinal));
+        Assert.Equal(["seat-dropped", "seat-tomas", "seat-other"], data.Contracts.Select(c => c.OrderEmployeeId));
+        var tomas = data.Contracts.Single(c => c.OrderEmployeeId == "seat-tomas");
+        Assert.Equal("ORD-1", tomas.OrderNumber);
+        Assert.Equal("emp-tomas", tomas.EmployeeId);
+        Assert.Equal("Tomas", tomas.CleanerFirstName);
+        Assert.Equal(T0.AddHours(2), tomas.AcceptedOn);
+        Assert.Equal("2026-02-01", tomas.DocumentVersion);
+        Assert.Equal("cs", tomas.Language);
+        Assert.Equal("cleansia.partner", tomas.ClientAudience);
+        Assert.Equal("203.0.113.9", tomas.IpAddress);
+        Assert.Equal("iPhone 15", tomas.DeviceLabel);
+        Assert.Equal("device-claim-1", tomas.DeviceId);
+        Assert.Equal("ORD-1", tomas.Facts.Single(f => f.Key == "orderNumber").Value);
+        Assert.Equal("1500", tomas.Facts.Single(f => f.Key == "totalPrice").Value);
+        Assert.Equal("Praha · 110", tomas.Facts.Single(f => f.Key == "locationApproximate").Value);
+
+        var jana = data.Contracts.Single(c => c.OrderEmployeeId == "seat-dropped");
+        Assert.Equal("Jana", jana.CleanerFirstName);
+        Assert.Null(jana.IpAddress);
+
+        var text = IncidentFileDigest.CanonicalText(IncidentFileSections.Build(data));
+        Assert.Contains("Cleaner: Tomas (emp-tomas)\n", text);
+        Assert.Contains("Cleaner: Jana (emp-jana)\n", text);
+    }
+
+    [Fact]
+    public async Task Scoped_To_An_Order_The_Contracts_Are_That_Orders_Alone_And_An_Unknown_Cleaner_Prints_Blank()
+    {
+        var asked = SeedAcceptances(Row(OrderId, "ORD-1", "seat-1", "emp-unknown", T0, null, null, null));
+
+        var data = await Service().BuildAsync(SubjectId, OrderId, AdminEmail, CancellationToken.None);
+
+        Assert.Equal([OrderId], asked());
+        var contract = Assert.Single(data.Contracts);
+        Assert.Equal("emp-unknown", contract.EmployeeId);
+        Assert.Equal(IncidentFileSections.Empty, contract.CleanerFirstName);
     }
 
     [Fact]
@@ -183,7 +245,46 @@ public sealed class IncidentFileServiceTests
 
     private IncidentFileService Service() =>
         new(_users.Object, _orders.Object, _refunds.Object, _disputes.Object, _consents.Object, _currencies.Object,
-            _countryConfigurations.Object, _customer.Object, _admin.Object, _employee.Object);
+            _countryConfigurations.Object, _customer.Object, _admin.Object, _employee.Object, _acceptances.Object);
+
+    private static User Subject()
+    {
+        var subject = User.CreateWithPassword("subject@cleansia.test", "Seed-Password-123", "Inci", "Dent");
+        subject.Id = SubjectId;
+        subject.TenantId = TestTenants.Default;
+        return subject;
+    }
+
+    private void SeedUsers(params User[] users) =>
+        _users.Setup(r => r.GetQueryable()).Returns(users.AsQueryable().BuildMock());
+
+    /// <summary>Returns a reader of the order ids the service asked the repository for.</summary>
+    private Func<IReadOnlyCollection<string>> SeedAcceptances(params WorkContractAcceptanceRow[] rows)
+    {
+        IReadOnlyCollection<string> asked = [];
+        _acceptances
+            .Setup(r => r.GetForOrdersAsync(It.IsAny<IReadOnlyCollection<string>>(), It.IsAny<CancellationToken>()))
+            .Callback<IReadOnlyCollection<string>, CancellationToken>((ids, _) => asked = ids)
+            .ReturnsAsync(rows.ToList());
+        return () => asked;
+    }
+
+    private static Employee Cleaner(string userId, string employeeId, string firstName)
+    {
+        var user = User.CreateWithPassword($"{userId}@cleansia.test", "Seed-Password-123", firstName, "Cleaner", UserProfile.Employee);
+        user.Id = userId;
+        var employee = Employee.CreateWithUser(user);
+        employee.Id = employeeId;
+        typeof(User).GetProperty(nameof(User.Employee))!.SetValue(user, employee);
+        return employee;
+    }
+
+    private static WorkContractAcceptanceRow Row(
+        string orderId, string orderNumber, string seatId, string employeeId, DateTimeOffset acceptedOn,
+        string? ipAddress, string? deviceLabel, string? deviceId) =>
+        new($"acc-{seatId}", orderId, orderNumber, seatId, employeeId, "text-cs", "2026-02-01", "cs", acceptedOn, "cleansia.partner",
+            ipAddress, deviceLabel, deviceId,
+            $$$"""{"orderNumber":"{{{orderNumber}}}","totalPrice":1500,"currencyCode":"CZK","locationApproximate":"Praha · 110"}""");
 
     private void SeedMarkets(params CountryConfiguration[] configurations) =>
         _countryConfigurations.Setup(r => r.GetQueryable()).Returns(configurations.AsQueryable().BuildMock());

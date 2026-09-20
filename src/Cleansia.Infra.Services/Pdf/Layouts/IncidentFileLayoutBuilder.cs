@@ -170,7 +170,7 @@ public static class IncidentFileLayoutBuilder
         {
             col.Item().Element(c => c.SectionTitle("Integrity"));
             col.Item().PaddingTop(4).Element(c => c.InlineField("SHA-256", dataSha256));
-            col.Item().Text("Computed over the canonical text of sections 1–5. The header, the footer and this block are outside it. Unsigned.")
+            col.Item().Text("Computed over the canonical text of sections 1–6. The header, the footer and this block are outside it. Unsigned.")
                 .FontSize(CleansiaPdfTheme.FontSizeSmall)
                 .FontColor(CleansiaPdfTheme.TextSecondary);
         });

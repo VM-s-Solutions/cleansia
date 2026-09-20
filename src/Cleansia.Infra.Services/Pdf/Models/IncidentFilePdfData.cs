@@ -10,6 +10,7 @@ public sealed record IncidentFilePdfData(
     IncidentFileSubject Subject,
     string? OrderIdFilter,
     IReadOnlyList<IncidentFileOrder> Orders,
+    IReadOnlyList<IncidentFileContract> Contracts,
     IReadOnlyList<IncidentFileDispute> Disputes,
     IReadOnlyList<IncidentFileConsent> Consents,
     IReadOnlyList<IncidentFileTrailEntry> Trail,
@@ -70,6 +71,27 @@ public sealed record IncidentFileRefund(
     DateTimeOffset? ConfirmedOn);
 
 public sealed record IncidentFileCleaner(string EmployeeId, string FirstName);
+
+/// <summary>
+/// One cleaner's acceptance of the contract for work for one seat of one of the subject's orders — the
+/// evidence the trail's <c>employee.order.contract_accepted</c> row points at. The cleaner is named the
+/// way the crew line names them; <paramref name="Facts"/> is the job as shown to them at that instant,
+/// flattened like an audit payload. The three request members are null once the cleaner's erasure or
+/// the retention sweep has blanked them.
+/// </summary>
+public sealed record IncidentFileContract(
+    string OrderNumber,
+    string OrderEmployeeId,
+    string EmployeeId,
+    string CleanerFirstName,
+    DateTimeOffset AcceptedOn,
+    string DocumentVersion,
+    string Language,
+    string ClientAudience,
+    string? IpAddress,
+    string? DeviceLabel,
+    string? DeviceId,
+    IReadOnlyList<IncidentFileEvidenceField> Facts);
 
 public sealed record IncidentFileDispute(
     string Id,

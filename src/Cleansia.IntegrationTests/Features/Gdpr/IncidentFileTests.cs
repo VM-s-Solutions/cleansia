@@ -6,6 +6,7 @@ using Cleansia.Core.AppServices.Services;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Auditing;
 using Cleansia.Core.Domain.Configuration;
+using Cleansia.Core.Domain.Contracts;
 using Cleansia.Core.Domain.Disputes;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Internationalization;
@@ -57,6 +58,9 @@ public class IncidentFileTests(PostgresContainerFixture fixture) : BaseIntegrati
     private const string AdminEmail = "admin-incident@cleansia.test";
     private const string SubjectIp = "203.0.113.9";
     private const string SubjectDevice = "iPhone 15 / iOS 17.4";
+    private const string SeatId = "01SEATINCIDENT000000000001";
+    private const string CleanerIp = "198.51.100.23";
+    private const string CleanerDeviceId = "device-claim-incident-1";
     private const string Description = "The kitchen floor was not mopped and the bins were left full.";
 
     private static readonly DateTimeOffset T0 = new(2026, 8, 1, 9, 0, 0, TimeSpan.Zero);
@@ -127,8 +131,23 @@ public class IncidentFileTests(PostgresContainerFixture fixture) : BaseIntegrati
                 Assert.True(consent.IsGranted);
                 Assert.Equal(SubjectIp, consent.IpAddress);
 
+                var contract = Assert.Single(data.Contracts);
+                Assert.Equal(orderNumber, contract.OrderNumber);
+                Assert.Equal(SeatId, contract.OrderEmployeeId);
+                Assert.Equal(CleanerId, contract.EmployeeId);
+                Assert.Equal("Clean", contract.CleanerFirstName);
+                Assert.Equal(T0.AddMinutes(30), contract.AcceptedOn);
+                Assert.Equal((await LegalSeed.PlatformWideAsync(context, LegalDocumentType.WorkContract)).Version, contract.DocumentVersion);
+                Assert.Equal("en", contract.Language);
+                Assert.Equal(JwtAudiences.Mobile, contract.ClientAudience);
+                Assert.Equal(CleanerIp, contract.IpAddress);
+                Assert.Equal("Pixel 8 / Android 15", contract.DeviceLabel);
+                Assert.Equal(CleanerDeviceId, contract.DeviceId);
+                Assert.Equal("ORD-INC-SNAPSHOT", contract.Facts.Single(f => f.Key == "orderNumber").Value);
+                Assert.Equal("Praha · 110", contract.Facts.Single(f => f.Key == "locationApproximate").Value);
+
                 Assert.False(data.TrailTruncated);
-                Assert.Equal(6, data.Trail.Count);
+                Assert.Equal(7, data.Trail.Count);
                 var customerRows = data.Trail.Where(e => e.Source == IncidentFileService.CustomerSource).ToList();
                 Assert.Equal(["customer.dispute.create", "customer.order.create"], customerRows.OrderByDescending(e => e.OccurredOn).Select(e => e.Action));
                 Assert.All(customerRows, e => Assert.Equal(SubjectId, e.ActorId));
@@ -145,14 +164,19 @@ public class IncidentFileTests(PostgresContainerFixture fixture) : BaseIntegrati
                 Assert.Equal("dispute upheld", refundRow.Evidence.Single(f => f.Key == "reason").Value);
                 Assert.Equal("CZK", refundRow.Evidence.Single(f => f.Key == "after.currencyId").Value);
 
-                var cleanerRow = Assert.Single(data.Trail, e => e.Source == IncidentFileService.CleanerSource);
-                Assert.Equal("employee.order.dropped", cleanerRow.Action);
-                Assert.Equal(CleanerId, cleanerRow.ActorId);
+                var cleanerRows = data.Trail.Where(e => e.Source == IncidentFileService.CleanerSource).ToList();
+                Assert.Equal(["employee.order.contract_accepted", "employee.order.dropped"], cleanerRows.Select(e => e.Action).OrderBy(a => a));
+                Assert.All(cleanerRows, e => Assert.Equal(CleanerId, e.ActorId));
 
                 var text = IncidentFileDigest.CanonicalText(IncidentFileSections.Build(data));
                 Assert.Contains($"## Order {orderNumber}\n", text);
+                Assert.Contains($"## Contract for work on order {orderNumber}, seat {SeatId}\n", text);
+                Assert.Contains($"Cleaner: Clean ({CleanerId})\n", text);
+                Assert.Contains($"Request: {CleanerIp} / Pixel 8 / Android 15 / {CleanerDeviceId}\n", text);
+                Assert.Contains("orderNumber | ORD-INC-SNAPSHOT\n", text);
                 Assert.Contains("Action: customer.order.create\n", text);
                 Assert.Contains("Action: employee.order.dropped\n", text);
+                Assert.Contains("Action: employee.order.contract_accepted\n", text);
                 Assert.Contains("currencyId | CZK\n", text);
                 Assert.Contains("Operator: Cleansia CZ s.r.o.\n", text);
                 Assert.Contains("Market: Czechia (CZ)\n", text);
@@ -169,7 +193,7 @@ public class IncidentFileTests(PostgresContainerFixture fixture) : BaseIntegrati
                 Assert.Equal(1, snapshot.GetProperty("orderCount").GetInt32());
                 Assert.Equal(1, snapshot.GetProperty("disputeCount").GetInt32());
                 Assert.Equal(1, snapshot.GetProperty("consentCount").GetInt32());
-                Assert.Equal(6, snapshot.GetProperty("trailEntryCount").GetInt32());
+                Assert.Equal(7, snapshot.GetProperty("trailEntryCount").GetInt32());
                 Assert.Equal(IncidentFileDigest.Sha256Hex(IncidentFileSections.Build(data)), snapshot.GetProperty("dataSha256").GetString());
                 Assert.Equal(7, snapshot.EnumerateObject().Count());
                 Assert.DoesNotContain(SubjectEmail, audit.AfterJson!, StringComparison.OrdinalIgnoreCase);
@@ -211,7 +235,8 @@ public class IncidentFileTests(PostgresContainerFixture fixture) : BaseIntegrati
 
                 var adminRows = data.Trail.Where(e => e.Source == IncidentFileService.AdminSource).ToList();
                 Assert.Equal(["dispute.resolve", "order.refund.partial"], adminRows.Select(e => e.Action).OrderBy(a => a));
-                Assert.Single(data.Trail, e => e.Source == IncidentFileService.CleanerSource);
+                Assert.Equal(2, data.Trail.Count(e => e.Source == IncidentFileService.CleanerSource));
+                Assert.Equal(SeatId, Assert.Single(data.Contracts).OrderEmployeeId);
 
                 var audit = Assert.Single(await context.AdminActionAudits.IgnoreQueryFilters().Where(a => a.Action == "gdpr.user.incident_file").ToListAsync());
                 Assert.True(audit.Success);
@@ -275,6 +300,10 @@ public class IncidentFileTests(PostgresContainerFixture fixture) : BaseIntegrati
                 Assert.Equal(await OrderNumberAsync(context), order.Number);
                 Assert.Single(data.Disputes);
                 Assert.Equal(Description, data.Disputes[0].Description);
+                // The customer's erasure leaves the cleaner's contract record untouched (ADR-0068 D5).
+                var contract = Assert.Single(data.Contracts);
+                Assert.Equal(CleanerIp, contract.IpAddress);
+                Assert.Equal("Clean", contract.CleanerFirstName);
 
                 var booking = Assert.Single(data.Trail, e => e.Action == "customer.order.create");
                 Assert.Equal(SubjectId, booking.ActorId);
@@ -331,7 +360,9 @@ public class IncidentFileTests(PostgresContainerFixture fixture) : BaseIntegrati
 
         var order = NewOrder(OrderId, SubjectId, SubjectEmail);
         order.CompleteOrder(90);
-        order.AddAssignedEmployee(OrderEmployee.Create(order, cleaner));
+        var seat = OrderEmployee.Create(order, cleaner);
+        seat.Id = SeatId;
+        order.AddAssignedEmployee(seat);
         context.Orders.Add(order);
         context.Orders.Add(NewOrder(StrangerOrderId, BystanderId, "incident-bystander@cleansia.test"));
 
@@ -373,6 +404,21 @@ public class IncidentFileTests(PostgresContainerFixture fixture) : BaseIntegrati
         drop.TenantId = TestTenants.Default;
         drop.Created(CleanerUserId, T0.AddHours(6));
         context.EmployeeActionAudits.Add(drop);
+
+        var contract = await LegalSeed.PlatformWideAsync(context, LegalDocumentType.WorkContract);
+        var acceptance = WorkContractAcceptance.Create(
+            OrderId, SeatId, CleanerId, contract.TextFor("en")!, contract.Version, JwtAudiences.Mobile,
+            CleanerIp, "Pixel 8 / Android 15", CleanerDeviceId,
+            $"{{\"orderNumber\":\"ORD-INC-SNAPSHOT\",\"totalPrice\":1500,\"currencyCode\":\"CZK\",\"locationApproximate\":\"Praha · 110\"}}");
+        acceptance.TenantId = TestTenants.Default;
+        acceptance.Created(CleanerUserId, T0.AddMinutes(30));
+        typeof(WorkContractAcceptance).GetProperty(nameof(WorkContractAcceptance.AcceptedOn))!.SetValue(acceptance, T0.AddMinutes(30));
+        context.WorkContractAcceptances.Add(acceptance);
+        var accepted = EmployeeActionAudit.Create(CleanerId, OrderId, EmployeeAuditAction.ContractAccepted);
+        accepted.Id = "eaud-inc-accept";
+        accepted.TenantId = TestTenants.Default;
+        accepted.Created(CleanerUserId, T0.AddMinutes(30));
+        context.EmployeeActionAudits.Add(accepted);
 
         StampUnstampedAdded(context, TestTenants.Default);
         await context.SaveChangesAsync();

@@ -6,7 +6,7 @@ namespace Cleansia.Tests.Features.TenantSettings;
 /// <summary>
 /// The catalogue is the whole contract of what an operating company may configure: a key outside it
 /// is refused, a value outside its range is refused, and a missing or unusable row resolves to the
-/// default the sweeps were written against. The nine retention windows are its first category; each
+/// default the sweeps were written against. The ten retention windows are its first category; each
 /// entry's default is the <c>RetentionDefaults</c> constant, so the two can never disagree. The
 /// lifecycle category holds the archive's chargeback horizon (ADR-0064 D3); the notifications
 /// category holds the shared mailbox admin events are e-mailed to (ADR-0065 D3), an address whose
@@ -24,6 +24,7 @@ public sealed class TenantSettingCatalogTests
     [InlineData("retention.notifications.days", "90")]
     [InlineData("retention.customer_audit.years", "3")]
     [InlineData("retention.dispute_text.years", "3")]
+    [InlineData("retention.work_contract_metadata.years", "3")]
     public void Every_Retention_Window_Is_Catalogued_Under_Its_Contracted_Key_With_The_Sweeps_Default(
         string key, string expectedDefault)
     {
@@ -47,6 +48,7 @@ public sealed class TenantSettingCatalogTests
         Assert.Same(TenantSettingCatalog.NotificationsDays, TenantSettingCatalog.Find(RetentionDefaults.NotificationsDaysKey));
         Assert.Same(TenantSettingCatalog.CustomerAuditRetentionYears, TenantSettingCatalog.Find(RetentionDefaults.CustomerAuditRetentionYearsKey));
         Assert.Same(TenantSettingCatalog.DisputeTextRetentionYears, TenantSettingCatalog.Find(RetentionDefaults.DisputeTextRetentionYearsKey));
+        Assert.Same(TenantSettingCatalog.WorkContractMetadataRetentionYears, TenantSettingCatalog.Find(RetentionDefaults.WorkContractMetadataRetentionYearsKey));
 
         Assert.Equal(RetentionDefaults.DefaultExpiredCodesEnabled, TenantSettingCatalog.ExpiredCodesEnabled.Default);
         Assert.Equal(RetentionDefaults.DefaultStaleDevicesDays, TenantSettingCatalog.StaleDevicesDays.Default);
@@ -57,14 +59,15 @@ public sealed class TenantSettingCatalogTests
         Assert.Equal(RetentionDefaults.DefaultNotificationsDays, TenantSettingCatalog.NotificationsDays.Default);
         Assert.Equal(RetentionDefaults.DefaultCustomerAuditRetentionYears, TenantSettingCatalog.CustomerAuditRetentionYears.Default);
         Assert.Equal(RetentionDefaults.DefaultDisputeTextRetentionYears, TenantSettingCatalog.DisputeTextRetentionYears.Default);
+        Assert.Equal(RetentionDefaults.DefaultWorkContractMetadataRetentionYears, TenantSettingCatalog.WorkContractMetadataRetentionYears.Default);
     }
 
     [Fact]
-    public void The_Catalogue_Holds_Exactly_The_Nine_Retention_Keys_The_Lifecycle_Horizon_The_Admin_Mailbox_And_No_Duplicate()
+    public void The_Catalogue_Holds_Exactly_The_Ten_Retention_Keys_The_Lifecycle_Horizon_The_Admin_Mailbox_And_No_Duplicate()
     {
-        Assert.Equal(11, TenantSettingCatalog.All.Count);
+        Assert.Equal(12, TenantSettingCatalog.All.Count);
         Assert.Equal(TenantSettingCatalog.All.Count, TenantSettingCatalog.All.Select(d => d.Key).Distinct(StringComparer.Ordinal).Count());
-        Assert.Equal(9, TenantSettingCatalog.All.Count(d => d.Category == TenantSettingCatalog.RetentionCategory));
+        Assert.Equal(10, TenantSettingCatalog.All.Count(d => d.Category == TenantSettingCatalog.RetentionCategory));
         Assert.Equal(1, TenantSettingCatalog.All.Count(d => d.Category == TenantSettingCatalog.LifecycleCategory));
         Assert.Equal(1, TenantSettingCatalog.All.Count(d => d.Category == TenantSettingCatalog.NotificationsCategory));
     }
@@ -160,7 +163,7 @@ public sealed class TenantSettingCatalogTests
             .Where(w => w.Category == TenantSettingCatalog.RetentionCategory)
             .ToList();
 
-        Assert.Equal(8, windows.Count);
+        Assert.Equal(9, windows.Count);
         Assert.All(windows, w => Assert.Equal(1, w.Min));
         Assert.All(windows.Where(w => w.Key.EndsWith(".years", StringComparison.Ordinal)), w => Assert.Equal(100, w.Max));
         Assert.All(windows.Where(w => w.Key.EndsWith(".days", StringComparison.Ordinal)), w => Assert.Equal(36_500, w.Max));

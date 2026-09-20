@@ -35,8 +35,8 @@ public sealed class IncidentFileDocumentTests
 
         foreach (var heading in new[]
                  {
-                     IncidentFileSections.IdentityTitle, IncidentFileSections.OrdersTitle, IncidentFileSections.DisputesTitle,
-                     IncidentFileSections.ConsentsTitle, IncidentFileSections.TrailTitle,
+                     IncidentFileSections.IdentityTitle, IncidentFileSections.OrdersTitle, IncidentFileSections.ContractsTitle,
+                     IncidentFileSections.DisputesTitle, IncidentFileSections.ConsentsTitle, IncidentFileSections.TrailTitle,
                  })
         {
             Assert.Contains($"# {heading}\n", text);
@@ -49,6 +49,15 @@ public sealed class IncidentFileDocumentTests
         Assert.Contains("Service | Deep clean | 1,500.00 CZK\n", text);
         Assert.Contains("Assigned cleaners: Tomas (emp-1)\n", text);
         Assert.Contains("Confirmed | 2026-03-01 10:05:00 UTC\n", text);
+        Assert.Contains("## Contract for work on order ORD-INC-1, seat 01SEATINC00000000000000001\n", text);
+        Assert.Contains("Cleaner: Tomas (emp-1)\n", text);
+        Assert.Contains("Accepted: 2026-03-01 10:05:00 UTC\n", text);
+        Assert.Contains("Version: 2026-02-01\n", text);
+        Assert.Contains("Language: cs\n", text);
+        Assert.Contains("Client: cleansia.partner\n", text);
+        Assert.Contains("Request: 203.0.113.9 / iPhone 15 / device-claim-1\n", text);
+        Assert.Contains("orderNumber | ORD-INC-1\n", text);
+        Assert.Contains("totalPrice | 1500\n", text);
         Assert.Contains("## Dispute disp-1 on order ORD-INC-1\n", text);
         Assert.Contains("Customer user-1 | The room was not cleaned.\n", text);
         Assert.Contains("TermsOfService | 2026-09-14 | 2026-09-14 | granted", text);
@@ -56,6 +65,7 @@ public sealed class IncidentFileDocumentTests
         Assert.Contains("Action: customer.order.cancel\n", text);
         Assert.Contains("Action: order.refund.full\n", text);
         Assert.Contains("Action: employee.order.dropped\n", text);
+        Assert.Contains("Action: employee.order.contract_accepted\n", text);
         Assert.Contains("Outcome: refused: order.in_progress_cannot_cancel\n", text);
         Assert.Contains("currencyId | CZK\n", text);
         Assert.Contains("Who: Customer user-1\n", text);
@@ -93,7 +103,7 @@ public sealed class IncidentFileDocumentTests
 
         var customer = text.IndexOf("## Customer acts (2)", StringComparison.Ordinal);
         var admin = text.IndexOf("## Admin acts (1)", StringComparison.Ordinal);
-        var cleaner = text.IndexOf("## Cleaner acts (1)", StringComparison.Ordinal);
+        var cleaner = text.IndexOf("## Cleaner acts (2)", StringComparison.Ordinal);
         Assert.True(customer > 0 && customer < admin && admin < cleaner);
 
         var refused = text.IndexOf("Action: customer.order.cancel\nOutcome: refused", StringComparison.Ordinal);
@@ -189,16 +199,38 @@ public sealed class IncidentFileDocumentTests
         Assert.NotEqual(WithoutClock(printedA), WithoutClock(printedB));
     }
 
+    /// <summary>
+    /// The trio is blanked by the cleaner's erasure and by the metadata sweep; the section then prints
+    /// the act without a request line rather than three empty markers, the way the trail does.
+    /// </summary>
+    [Fact]
+    public void A_Contract_Whose_Request_Metadata_Was_Blanked_Prints_No_Request_Line()
+    {
+        var data = Fixture();
+        var blanked = data with
+        {
+            Contracts = data.Contracts.Select(c => c with { IpAddress = null, DeviceLabel = null, DeviceId = null }).ToList(),
+        };
+
+        var text = IncidentFileDigest.CanonicalText(IncidentFileSections.Build(blanked));
+        var section = text[text.IndexOf(IncidentFileSections.ContractsTitle, StringComparison.Ordinal)..text.IndexOf(IncidentFileSections.DisputesTitle, StringComparison.Ordinal)];
+
+        Assert.Contains("Cleaner: Tomas (emp-1)\n", section);
+        Assert.DoesNotContain("Request: ", section);
+        Assert.NotEqual(IncidentFileDigest.Sha256Hex(IncidentFileSections.Build(data)), IncidentFileDigest.Sha256Hex(IncidentFileSections.Build(blanked)));
+    }
+
     [Fact]
     public void An_Empty_Subject_Still_Renders_Every_Section()
     {
-        var data = Fixture() with { Orders = [], Disputes = [], Consents = [], Trail = [], OrderIdFilter = "order-x" };
+        var data = Fixture() with { Orders = [], Contracts = [], Disputes = [], Consents = [], Trail = [], OrderIdFilter = "order-x" };
 
         var text = IncidentFileDigest.CanonicalText(IncidentFileSections.Build(data));
         var rendered = Pdf.GenerateIncidentFilePdf(data);
 
         Assert.Contains("Scoped to order order-x.\n", text);
         Assert.Contains("No orders.\n", text);
+        Assert.Contains("No contracts for work.\n", text);
         Assert.Contains("No disputes.\n", text);
         Assert.Contains("No consents.\n", text);
         Assert.Contains("## Customer acts (0)\nNone.\n", text);
@@ -229,6 +261,11 @@ public sealed class IncidentFileDocumentTests
             [new IncidentFileCleaner("emp-1", "Tomas")],
             CancelledBy: null, CancellationReason: null);
 
+        var contract = new IncidentFileContract(
+            "ORD-INC-1", "01SEATINC00000000000000001", "emp-1", "Tomas", Booked.AddMinutes(5), "2026-02-01", "cs", "cleansia.partner",
+            "203.0.113.9", "iPhone 15", "device-claim-1",
+            [new("orderNumber", "ORD-INC-1"), new("totalPrice", "1500"), new("currencyCode", "CZK")]);
+
         var dispute = new IncidentFileDispute(
             "disp-1", "ORD-INC-1", "ServiceQuality", "Resolved", "Kitchen untouched.", Booked.AddDays(4),
             [new IncidentFileDisputeMessage("Customer", "user-1", Booked.AddDays(4), "The room was not cleaned.")],
@@ -247,10 +284,11 @@ public sealed class IncidentFileDocumentTests
             new("Admin", Booked.AddDays(5), "Administrator", "admin-1", "order.refund.full", "Order", "order-1", true, null,
                 [new("reason", "dispute upheld"), new("after.amount", "300")], null, null),
             new("Cleaner", Booked.AddDays(2), "Employee", "emp-1", "employee.order.dropped", "Order", "order-1", true, null, [], null, null),
+            new("Cleaner", Booked.AddMinutes(5), "Employee", "emp-1", "employee.order.contract_accepted", "Order", "order-1", true, null, [], null, null),
         ];
 
         return new IncidentFilePdfData(
-            subject, null, [order], [dispute], [consent], trail, TrailTruncated: false,
+            subject, null, [order], [contract], [dispute], [consent], trail, TrailTruncated: false,
             new DateTimeOffset(2026, 9, 14, 12, 0, 0, TimeSpan.Zero), "admin@cleansia.test");
     }
 }

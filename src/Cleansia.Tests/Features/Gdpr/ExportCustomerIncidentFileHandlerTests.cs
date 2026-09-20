@@ -102,6 +102,7 @@ public sealed class ExportCustomerIncidentFileHandlerTests
                 new IncidentFileOrder("order-1", "ORD-1", GeneratedAt.AddDays(-9), GeneratedAt.AddDays(-7).UtcDateTime, null, null, "Order St 9, Brno",
                     [], 1500m, "CZK", "Cash", "Pending", "Confirmed", [], [], [], null, null),
             ],
+            [],
             [new IncidentFileDispute("disp-1", "ORD-1", "ServiceQuality", "Pending", "Kitchen untouched.", GeneratedAt.AddDays(-6), [], [], null, null, null, null)],
             [new IncidentFileConsent("TermsOfService", "2026-09-14", new DateOnly(2026, 9, 14), true, GeneratedAt.AddYears(-1), null, "203.0.113.9", "UA")],
             [

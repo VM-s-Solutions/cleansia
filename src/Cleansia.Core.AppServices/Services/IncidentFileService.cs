@@ -23,7 +23,8 @@ public class IncidentFileService(
     ICountryConfigurationRepository countryConfigurationRepository,
     ICustomerActionAuditRepository customerActionAuditRepository,
     IAdminActionAuditRepository adminActionAuditRepository,
-    IEmployeeActionAuditRepository employeeActionAuditRepository) : IIncidentFileService
+    IEmployeeActionAuditRepository employeeActionAuditRepository,
+    IWorkContractAcceptanceRepository workContractAcceptanceRepository) : IIncidentFileService
 {
     /// <summary>
     /// Newest rows of each source that are printed. A trail past this is cut and the file says so; the
@@ -78,6 +79,8 @@ public class IncidentFileService(
             .AsNoTracking()
             .ToListAsync(cancellationToken);
 
+        var contracts = await LoadContractsAsync(orders, currencyCodes, cancellationToken);
+
         var (trail, truncated) = await LoadTrailAsync(userId, orderId, orderIds, disputeIds, currencyCodes, cancellationToken);
         var (operatorName, market) = await ResolveOperatorAsync(user.TenantId, cancellationToken);
 
@@ -89,6 +92,7 @@ public class IncidentFileService(
                 operatorName, market, user.PreferredLanguageCode, erased, erased ? user.DeactivatedOn : null),
             orderId,
             orders.Select(o => MapOrder(o, refunds.Where(r => r.OrderId == o.Id).ToList())).ToList(),
+            contracts,
             disputes.Select(d => MapDispute(d, orderNumbers[d.OrderId])).ToList(),
             consents.Select(MapConsent).ToList(),
             trail,
@@ -119,6 +123,43 @@ public class IncidentFileService(
             .AsNoTracking()
             .OrderBy(o => o.CreatedOn)
             .ToListAsync(cancellationToken);
+    }
+
+    // The cleaner is named by given name and id as the crew line names them, resolved by id rather than
+    // off the crew: the seat the acceptance names is hard-deleted by a drop, and a dropped cleaner's
+    // contract is precisely the record a claim is answered from.
+    private async Task<IReadOnlyList<IncidentFileContract>> LoadContractsAsync(
+        List<Order> orders, Dictionary<string, string> currencyCodes, CancellationToken cancellationToken)
+    {
+        var rows = await workContractAcceptanceRepository.GetForOrdersAsync(orders.Select(o => o.Id).ToList(), cancellationToken);
+        if (rows.Count == 0)
+        {
+            return [];
+        }
+
+        var employeeIds = rows.Select(r => r.EmployeeId).Distinct().ToList();
+        var firstNames = await userRepository.GetQueryable()
+            .AsNoTracking()
+            .Where(u => u.Employee != null && employeeIds.Contains(u.Employee.Id))
+            .Select(u => new { EmployeeId = u.Employee!.Id, u.FirstName })
+            .ToDictionaryAsync(u => u.EmployeeId, u => u.FirstName, cancellationToken);
+
+        return orders
+            .SelectMany(o => rows.Where(r => r.OrderId == o.Id))
+            .Select(r => new IncidentFileContract(
+                r.OrderNumber,
+                r.OrderEmployeeId,
+                r.EmployeeId,
+                firstNames.GetValueOrDefault(r.EmployeeId) ?? "—",
+                r.AcceptedOn,
+                r.DocumentVersion,
+                r.Language,
+                r.ClientAudience,
+                r.IpAddress,
+                r.DeviceLabel,
+                r.DeviceId,
+                IncidentFileEvidenceFields.Flatten(r.FactsJson, currencyCodes)))
+            .ToList();
     }
 
     // The market registry is the only edge into Tenants: an operator is named by the countries it

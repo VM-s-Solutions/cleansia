@@ -38,6 +38,7 @@ public sealed class CompanyArchiveService(
     ITenantConfigurationRepository tenantConfigurationRepository,
     IAdminActionAuditRepository adminActionAuditRepository,
     IEmployeeActionAuditRepository employeeActionAuditRepository,
+    IWorkContractAcceptanceRepository workContractAcceptanceRepository,
     IBlobContainerClientFactory blobClientFactory,
     ISchemaVersionReader schemaVersionReader,
     IAdminNotifier adminNotifier,
@@ -148,6 +149,11 @@ public sealed class CompanyArchiveService(
         files.Add(await WriteAsync(archives, $"{folder}/books/tenant-configurations.jsonl",
             tenantConfigurationRepository.GetQueryable().AsNoTracking(),
             c => new CompanyArchiveRecords.TenantConfiguration(c.Key, c.Value, c.Category),
+            cancellationToken));
+        files.Add(await WriteAsync(archives, $"{folder}/books/work-contract-acceptances.jsonl",
+            workContractAcceptanceRepository.GetQueryable().AsNoTracking(),
+            a => new CompanyArchiveRecords.WorkContractAcceptance(
+                a.Id, a.OrderId, a.OrderEmployeeId, a.EmployeeId, a.LegalDocumentTextId, a.DocumentVersion, a.AcceptedOn, a.ClientAudience, a.FactsJson),
             cancellationToken));
         files.Add(await WriteAsync(archives, $"{folder}/audit/admin-action-audits.jsonl",
             adminActionAuditRepository.GetQueryable().AsNoTracking(), ToRow, cancellationToken));
@@ -369,6 +375,7 @@ public sealed class CompanyArchiveService(
         o.StripePaymentIntentId,
         o.ReceiptId,
         o.Receipt?.ReceiptNumber,
+        o.WorkContractDocumentId,
         o.SelectedExtras.Select(e => new CompanyArchiveRecords.OrderExtra(e.Id, e.ExtraId, e.Slug, e.UnitPrice)).ToList(),
         o.CreatedOn);
 

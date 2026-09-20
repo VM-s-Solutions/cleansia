@@ -53,10 +53,27 @@ public static class CompanyArchiveRecords
         string? StripePaymentIntentId,
         string? ReceiptId,
         string? ReceiptNumber,
+        string? WorkContractDocumentId,
         IReadOnlyList<OrderExtra> Extras,
         DateTimeOffset CreatedOn);
 
     public sealed record OrderExtra(string Id, string ExtraId, string Slug, decimal UnitPrice);
+
+    /// <summary>
+    /// The contract-for-work record without the request trio the retention sweep blanks: the act, the
+    /// seat, the cleaner's id, the exact text row, the version as the human handle, the instant, the
+    /// client and the job facts as shown at acceptance (ADR-0068 D5).
+    /// </summary>
+    public sealed record WorkContractAcceptance(
+        string Id,
+        string OrderId,
+        string OrderEmployeeId,
+        string EmployeeId,
+        string LegalDocumentTextId,
+        string DocumentVersion,
+        DateTimeOffset AcceptedOn,
+        string ClientAudience,
+        string FactsJson);
 
     public sealed record OrderStatusTrack(string Id, string OrderId, OrderStatus Status, int Sequence, DateTimeOffset CreatedOn);
 

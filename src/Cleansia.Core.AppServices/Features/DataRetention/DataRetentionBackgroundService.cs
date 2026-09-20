@@ -22,6 +22,7 @@ public class DataRetentionBackgroundService(
     IUserNotificationRepository userNotificationRepository,
     ICustomerActionAuditRepository customerActionAuditRepository,
     IDisputeRepository disputeRepository,
+    IWorkContractAcceptanceRepository workContractAcceptanceRepository,
     ITenantRepository tenantRepository,
     ITenantProvider tenantProvider,
     IAppConfigurationProvider configProvider,
@@ -69,6 +70,7 @@ public class DataRetentionBackgroundService(
             await RunSafeAsync("UserNotifications", tenantId, CleanUserNotificationsAsync, cancellationToken);
             await RunSafeAsync("CustomerActionAudits", tenantId, CleanCustomerActionAuditsAsync, cancellationToken);
             await RunSafeAsync("DisputeText", tenantId, CleanExpiredDisputeTextAsync, cancellationToken);
+            await RunSafeAsync("WorkContractAcceptanceMetadata", tenantId, CleanWorkContractAcceptanceMetadataAsync, cancellationToken);
         }
 
         tenantProvider.ClearTenantOverride();
@@ -355,5 +357,19 @@ public class DataRetentionBackgroundService(
         }
 
         logger.LogInformation("Blanked the text of {Total} disputes whose retention window has passed", totalBlanked);
+    }
+
+    private async Task CleanWorkContractAcceptanceMetadataAsync(CancellationToken ct)
+    {
+        // Per row by its own age, as the customer audit window is (ADR-0062 D5): one row per job, so a
+        // window anchored on the cleaner's last act would keep every IP for the life of the account.
+        // Only the request trio goes; the acceptance itself is the contract record and is never deleted.
+        var years = await configProvider.GetAsync(TenantSettingCatalog.WorkContractMetadataRetentionYears, ct);
+        var cutoff = DateTimeOffset.UtcNow.AddYears(-years);
+
+        var totalBlanked = await workContractAcceptanceRepository.PseudonymiseExpiredAsync(cutoff, RetentionDefaults.BatchSize, ct);
+
+        logger.LogInformation("Blanked the request metadata on {Total} contract acceptances older than {Years} years",
+            totalBlanked, years);
     }
 }

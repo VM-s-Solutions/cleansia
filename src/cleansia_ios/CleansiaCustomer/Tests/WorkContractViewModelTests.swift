@@ -11,12 +11,12 @@ final class WorkContractViewModelTests: XCTestCase {
     private func makeVM(
         acceptanceId: String = "acc-1",
         client: FakeOrderClient,
-        snackbar: SnackbarController = SnackbarController()
+        snackbar: SnackbarController? = nil
     ) -> WorkContractViewModel {
         WorkContractViewModel(
             acceptanceId: acceptanceId,
             client: client,
-            snackbar: snackbar,
+            snackbar: snackbar ?? SnackbarController(),
             languageTag: { [unowned self] in languageTag }
         )
     }

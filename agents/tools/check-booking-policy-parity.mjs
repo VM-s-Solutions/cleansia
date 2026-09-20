@@ -52,7 +52,7 @@ const ANDROID_REASON_MAP = 'src/cleansia_android/customer-app/src/main/java/cz/c
 const IOS_REASON_MAP = 'src/cleansia_ios/CleansiaCustomer/Sources/Features/Orders/CancellationReasonCopy.swift';
 /** The customer legal texts, one dated folder per version, one markdown file per language. */
 const LEGAL_SEED = 'src/Cleansia.Infra.Database/Seed/Legal/customer';
-const LEGAL_SEED_TYPES = ['terms-of-service', 'privacy-policy'];
+const LEGAL_SEED_TYPES = ['terms-of-service', 'privacy-policy', 'work-contract'];
 const WEB_MODEL = 'src/Cleansia.App/libs/shared/models/src/lib/models/booking-window.models.ts';
 const WEB_I18N = 'src/Cleansia.App/apps/cleansia.app/src/assets/i18n';
 const ANDROID_RES = 'src/cleansia_android/customer-app/src/main/res';

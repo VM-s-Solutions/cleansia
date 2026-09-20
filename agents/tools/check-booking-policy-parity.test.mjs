@@ -84,6 +84,8 @@ function buildFixture(overrides = {}) {
       '## Contact\n\n' +
       'Write to info@cleansia.cz or +420 739 788 108.',
     seedPrivacy: 'Your privacy matters.\n\n## Data We Collect\n\nName, email, phone number and address.',
+    /** The contract for work (ADR-0068): the price is a term of the order's snapshot, never a figure in the text. */
+    seedWorkContract: 'The contract for work.\n\n## Price\n\nThe price of the work is the price shown at booking, in {{currency}}.',
     /** Per-file body overrides keyed `<type>/<lang>`, for the "one translator edited one file" case. */
     seedByFile: {},
     /** The languages the newest version carries; a missing file is a finding. */
@@ -136,6 +138,7 @@ public static class BookingPolicy
     for (const lang of o.seedLanguages) {
       seedFile('terms-of-service', o.seedVersion, lang, o.seedByFile[`terms-of-service/${lang}`] ?? o.seedTerms);
       seedFile('privacy-policy', o.seedVersion, lang, o.seedByFile[`privacy-policy/${lang}`] ?? o.seedPrivacy);
+      seedFile('work-contract', o.seedVersion, lang, o.seedByFile[`work-contract/${lang}`] ?? o.seedWorkContract);
     }
     for (const [version, byType] of Object.entries(o.seedOtherVersions)) {
       for (const [type, body] of Object.entries(byType)) {
@@ -397,6 +400,17 @@ scenario(
     code: 1,
     mentions: ['privacy-policy/any/2026-09-14/cs.md', 'names a currency'],
     silentAbout: ['bakes a figure in', '/en.md', 'terms-of-service/'],
+  },
+);
+// The contract for work binds the price through the order's snapshot; a figure pasted into the text
+// would outlive the market's price and contradict the record.
+scenario(
+  'catches a baked price in one language of the work-contract seed',
+  { seedByFile: { 'work-contract/cs': 'Smlouva o dílo.\n\n## Cena\n\nCena díla je {{currency}} 1000 za úklid.' } },
+  {
+    code: 1,
+    mentions: ['work-contract/any/2026-09-14/cs.md', 'bakes a figure in'],
+    silentAbout: ['/en.md', 'terms-of-service/', 'privacy-policy/'],
   },
 );
 scenario(

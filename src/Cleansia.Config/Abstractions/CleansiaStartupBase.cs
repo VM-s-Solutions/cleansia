@@ -240,6 +240,18 @@ public static class DatabaseMigrationExtensions
             }
 
             SeedDevelopmentData(dbContext, scope.ServiceProvider.GetRequiredService<ILogger<Cleansia.Infra.Database.CleansiaDbContext>>());
+
+            // Every hosted service — LegalDocumentSeedHostedService included — starts BEFORE the pipeline
+            // this runs in is built, so on a fresh Development database the seed's bounded attempts all
+            // fail against no LegalDocuments table and the host comes up with no work-contract text in
+            // force: a host that cannot book until it is restarted. Seeded again here, once the schema
+            // and the catalogue exist; idempotent, so a no-op on a database the hosted service already
+            // seeded. Non-Development deploys migrate in CI/CD before any host starts, so there the
+            // hosted service finds the table and this branch is never entered.
+            scope.ServiceProvider.GetRequiredService<Cleansia.Infra.Database.Seed.Legal.LegalDocumentSeeder>()
+                .SeedAsync(DateOnly.FromDateTime(DateTime.UtcNow), CancellationToken.None)
+                .GetAwaiter()
+                .GetResult();
         }
     }
 

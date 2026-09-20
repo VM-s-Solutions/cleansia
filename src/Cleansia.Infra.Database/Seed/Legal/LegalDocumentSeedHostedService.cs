@@ -9,7 +9,9 @@ namespace Cleansia.Infra.Database.Seed.Legal;
 /// source of the texts and a deploy is how a new version reaches the database. Awaited before the
 /// host serves, so the first legal-page read after a deploy already finds the new version; bounded
 /// retries because a host may come up a moment before its database does, and never a boot failure —
-/// a customer can still book while the legal page reads the previous version.
+/// a customer can still book while the legal page reads the previous version. The one database this
+/// cannot seed is a fresh Development one: hosted services start before the pipeline whose
+/// <c>MigrateDatabase</c> creates the schema, so that path seeds the texts itself after migrating.
 /// </summary>
 public sealed class LegalDocumentSeedHostedService(
     IServiceScopeFactory scopeFactory,

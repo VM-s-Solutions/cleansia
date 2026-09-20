@@ -36,9 +36,18 @@ definition.
 | Serviced countries/cities | `servicearea/` | `ServiceArea/` |
 | Photo compression (both strip EXIF/GPS on re-encode) | `media/ImageCompressor` — reads the orientation tag first, via `androidx.exifinterface` | `Media/ImageCompressor` |
 | Formatters, validators | `format/`, `validation/` | `Format/`, `Validation/` |
+| Server HTML rendered in-app (the contract for work, ADR-0068 — JavaScript off, no navigation) | `ui/components/HtmlContentView` (`AndroidView { WebView }`) | `Components/HtmlContentView` (`WKWebView`) |
 
 Everything else — screens, view models, per-feature API clients, navigation, the app's own theme
-wrapper — is app-owned, because the partner and the customer app genuinely disagree about it.
+wrapper — is app-owned, because the partner and the customer app genuinely disagree about it. The
+contract for work is the one legal text rendered in-app rather than linked to the web page: the
+partner apps' `WorkContractSheet` (Android `features/orders/WorkContractSheet.kt`, iOS
+`Features/Orders/WorkContractSheet.swift`; modes take / accept / read) shows the job facts and the
+order's text over a *Swipe to accept the contract for work* slider (`SlideToCommit` / `SlideToConfirm`)
+and every take path opens it first, sending the previewed text row's id with the take; the customer
+apps' `WorkContractScreen` / `WorkContractView` render an accepted contract with its frozen facts from
+the order detail's *Read the contract*, and the customer wizards' confirm step links to the public web
+`/work-contract` page. → [Business rules — the contract for work](/product/business-rules#work-contract)
 
 ::: warning One definition, not two copies
 `ApiError`/`ApiResult` and the auth spine exist **once** per platform on purpose. A second copy in an

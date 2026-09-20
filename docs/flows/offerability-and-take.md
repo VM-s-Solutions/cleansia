@@ -24,9 +24,50 @@ sequenceDiagram
     O->>B: straight to the open board
   end
   B-->>C: new-job push / digest
-  C->>DB: take
-  DB-->>C: seat won, or "no available spots"
+  C->>DB: preview the contract for work (the order's text + the job facts)
+  DB-->>C: the exact text row, rendered
+  C->>DB: take, echoing that text row's id
+  DB-->>C: seat won + the acceptance recorded, or "no available spots"
 ```
+
+## The take carries the acceptance of the contract for work {#the-take-carries-the-acceptance}
+
+Since 2026-09-20 ([ADR-0068](/decisions/adr-0068)) a take is also the cleaner's acceptance of the
+contract for work the order was booked under. The order carries its text from booking
+(`Orders.WorkContractDocumentId`, the customer-audience `WorkContract` document in force for the
+address's market that day — fixed per order, so a new version never binds a job already booked). The
+app fetches `GetWorkContractPreview` — the text in the cleaner's language rendered with the order's
+currency, plus the job facts the acceptance will freeze (number, window, price, coarse location,
+rooms, bathrooms, services, packages, extras) — and the take echoes the **id of the exact text row**
+shown: `TakeOrder { orderId, acceptedWorkContractTextId }`. The id **is** the tick.
+
+Two rules join the take's one ordered chain: a blank id is refused `contract.not_accepted` **before**
+existence (it depends on nothing about the order, so it can leak neither existence nor the hold); an
+id that is not a text of *this* order's document is refused `contract.text_mismatch` **last** (every
+refusal ahead of it — gone, full, not approved, a time conflict — is a better answer). Between the
+seat and the handler's own commit the acceptance row and its `employee.order.contract_accepted` audit
+row are staged, so **the seat, the status row, the acceptance and the audit row are one transaction**:
+the seat-race loser below leaves no acceptance for a seat it never won. The preferred cleaner's take
+of a held order and the cover take write the row the same way; on a cover the displaced cleaner's
+acceptance stays — it is history — and the taker's names the new seat.
+
+The preview is readable exactly where the board would show the job: on the crew, or offerable with a
+takeable seat and not held from the caller. A held order is a missing order to everyone but its
+beneficiary, and a cancelled, finished, full or unpaid-card job the caller is not on answers
+`order.not_found` and discloses no facts. An order with no text (a fixture — the one production
+writer always stamps it) answers `legal.document_not_found` on the preview and `contract.text_mismatch`
+on the take; nothing resolves a text lazily.
+
+**The admin path writes no acceptance.** `AdminReassignOrder` puts a cleaner on a job without their
+act, and an administrator cannot accept a contract on the cleaner's behalf. The placed cleaner sees a
+banner on the job detail and accepts through `AcceptWorkContract` — the same act as the take's, for
+a seat formed without one, admitted on any order that is not over so a cleaner placed mid-clean can
+still accept before completing; a seat that already has its row answers success and writes nothing.
+Until they do, **Start and Complete refuse them** with `contract.acceptance_required` →
+[Execution and completion](/flows/execution-and-completion#the-contract-gate). The admin's order
+detail shows the seat as *contract pending* until then.
+→ [Business rules — the contract for work](/product/business-rules#work-contract),
+[WorkContractAcceptance](/domain/roles/work-contract-acceptance)
 
 ## Two synchronised broadcasts
 
@@ -68,6 +109,11 @@ would derive 1, which is taken — the seat would be permanently unusable while 
 | Cleaner over the weekly cap | Refused. |
 | Profile incomplete, or contract not approved | Refused before the seat is even considered. |
 | Order cancelled but with a free seat | "This job is gone", not "this job is full" — those checks sit *before* offerability on purpose. |
+| Take sent without a contract text id | `contract.not_accepted`, judged before existence — a held and a missing order answer the same; no seat. |
+| Take echoes a text of another order's document | `contract.text_mismatch`, judged **last** — a full order still says "no available spots". The app re-fetches the preview and asks again. |
+| Two cleaners race, both with valid text ids | One seat, **one** acceptance row; the loser's acceptance rolls back with its seat. |
+| Cleaner took, dropped, re-took | Two seats, two acceptance rows; the order detail lists only the current seat's. |
+| Admin placed a cleaner, then the cleaner drops and the admin re-adds them | A new seat with no acceptance — refused at Start until they accept again. |
 
 ## Taking one job can end another
 

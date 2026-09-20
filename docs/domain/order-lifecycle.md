@@ -79,6 +79,12 @@ more. Two producers stopped writing it:
 > **the crew is the fact, the status its summary.** `CancellationAssessor` does exactly that, and did
 > so even before the split. → [Business rules — when the last cleaner leaves](/product/business-rules#crew-lost)
 
+> **And `Confirmed` still says nothing about the contract for work.** Since [ADR-0068](/decisions/adr-0068)
+> (2026-09-20) a cleaner who *took* the job accepted the contract in the same act, but an admin's
+> reassignment writes `Confirmed` with **no** acceptance — the `WorkContractAcceptances` row for the
+> seat is the fact, and `StartOrder` / `CompleteOrder` read that row, never the status.
+> → [Execution and completion — the contract gate](/flows/execution-and-completion#the-contract-gate)
+
 ## `Pending (1)` is dead, and stays
 
 Nothing in production writes `OrderStatus.Pending`. The state the old documentation described — *"card

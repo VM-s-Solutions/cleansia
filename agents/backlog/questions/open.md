@@ -37,6 +37,102 @@ names the `Q-` id.** A question with no blocked row behind it is a question nobo
 > closing) and O-6 (no storage immutability policy) stand with their defaults applied and are recorded in
 > the ADR's §OPEN items only — none blocks anything.
 
+> **Q-WC-01 … 07 were raised by ADR-0068 (the contract for work, `accepted` and shipped 2026-09-20 as
+> T-0777 … T-0784).** Every one shipped as its default; an overruling is now a change to shipped
+> behaviour and lands as a dated amendment block on the ADR, never an edit of its decision text. Five
+> are the lawyer's to answer with the owner (01, 03, 04, 05, 07); two are the owner's alone (02, 06).
+> None blocks anything.
+
+## Q-WC-01 — Which figure is the *cena díla* on the contract record — the customer's price or the cleaner's pay?
+
+**Raised by:** ADR-0068 D2 (2026-09-20). **Who answers:** the owner, with the lawyer (and the
+accountant — the lawyers' gap table calls the intermediary invoicing model a direct conflict with the
+code, owner plate A8).
+**Why it needs you:** the acceptance row freezes the job as shown to the cleaner, and the price on it
+is **`Order.TotalPrice` in the order's currency** — the customer's price of the work. The lawyer's
+model forms the contract between the customer and the cleaner, so the customer's price is the price
+of *that* contract; the cleaner's pay is the platform ↔ cleaner relation and is not on the row.
+**Default applied: the customer's price and currency; the pay estimate is not stored.** Overruling
+adds a member to `WorkContractFacts` (no schema) and a line to the sheet.
+**Blocks:** nothing.
+
+## Q-WC-02 — The web gesture: a tick and a button on the partner web, or a dragged slider like the mobile swipe?
+
+**Raised by:** ADR-0068 D6 (2026-09-20). **Who answers:** the owner.
+**Why it needs you:** the owner's note says *"uklízečka potvrdí přejetím prstu"*; a finger is a
+phone. On the partner web the dialog shows the facts and the text, a checkbox *I have read and accept
+the contract for work for this job* and *Accept and take the job* enabled by the tick — the
+platform's existing legal-act control on the web (the register form's tick). A mouse-dragged slider
+is a worse control than the tick and proves nothing more.
+**Default applied: the tick on the web, the swipe on Android and iOS.** Overruling is one ticket
+(a slider component on the web dialog).
+**Blocks:** nothing.
+
+## Q-WC-03 — How are the parties named on the rendered contract?
+
+**Raised by:** ADR-0068 D4 (2026-09-20). **Who answers:** the owner, with the lawyer.
+**Why it needs you:** the customer sees the cleaner's **given name only** (as the crew list does) and
+the cleaner sees the customer's name through the order at render time; a consumer contract with a
+trader normally identifies the trader (`Employee.RegistrationNumber`, `LegalEntityName`) — and since
+the same day's company-registration ruling a cleaner contracts as a natural person, so the identity
+to print is a person's, not a company's.
+**Default applied: given name only.** Adding the legal identity is a DTO member on the read, no
+schema. The likeliest ruling to arrive.
+**Blocks:** nothing.
+
+## Q-WC-04 — Does an in-app swipe form a B2C contract for work under Czech law, or is a qualified signature (Signi) needed?
+
+**Raised by:** ADR-0068 D7 (2026-09-20). **Who answers:** the lawyer.
+**Why it needs you:** the row records what a qualified-signature envelope would reference — the exact
+text row (hence its hash), the instant, the actor, the client, the IP and device, the session's signed
+device id — and the owner's note names Signi as *možná*. A provider adds `SignatureEnvelopeId` +
+`SignedOn` and a webhook and changes nothing else.
+**Default applied: the swipe (the tick on the web), recorded as ADR-0068 D2 records it; Signi is the
+upgrade path.**
+**Blocks:** nothing.
+
+## Q-WC-05 — The VOP wording: when the contract forms, and incorporating the template by reference
+
+**Raised by:** ADR-0068 (the lawyer's model, cited; 2026-09-20). **Who answers:** the lawyer.
+**Why it needs you:** (a) VOP 3.2 says the contract forms with the confirmation e-mail; the framework
+agreement 2.3 and VOP 1.3 say at the cleaner's acceptance — **the code follows the latter** (the
+cleaner's acceptance writes the record; the order is stamped with the template at booking). (b) The
+VOP should incorporate the work-contract template by reference — *"the contract for work between you
+and the cleaner is on the terms published at /work-contract, in the version in force when you
+booked"* — so the customer's VOP consent covers it; today the wizard's confirm step carries the P074
+information sentence and the `/work-contract` link.
+**Default applied: the code's shape; the sentences are the lawyer's to write** (a new dated seed folder
+plus a deploy, ADR-0063 D3/D7).
+**Blocks:** nothing.
+
+## Q-WC-06 — May an administrator force a crew member, or should an admin placement be an offer the cleaner takes?
+
+**Raised by:** ADR-0068 D3 / challenge C3(b) (2026-09-20). **Who answers:** the owner.
+**Why it needs you:** `AdminReassignOrder` puts a cleaner on a job without their act and writes no
+acceptance (an admin cannot accept on the cleaner's behalf), so the platform carries a standalone
+`AcceptWorkContract`, a gate on Start **and** Complete (`contract.acceptance_required`), the sheet's
+*accept* mode and a banner on three clients — and a stated residual: a second crew member who neither
+starts nor completes works under no acceptance. The structural alternative is ADR-0036's preferred
+hold: an admin placement becomes an **offer** the cleaner takes, so every seat is formed by the
+cleaner's own act and the standalone act, both gates and one client key are deleted — at the cost of
+the admin's power to force a crew member, a seat left offered until the cleaner acts, and the hold's
+lapse and `NotHeldFrom`'s crew term rethought for a partly crewed order.
+**Default applied: (a) — the admin keeps the force; the gates and the standalone act close what they
+can; the residual is stated.**
+**Blocks:** nothing.
+
+## Q-WC-07 — The coarse location on a permanent row
+
+**Raised by:** ADR-0068 D2 / challenge C12 (2026-09-20). **Who answers:** the lawyer / DPO.
+**Why it needs you:** `locationApproximate` (*"Praha · 120"*) is frozen on the acceptance row for
+ever as a term of the contract (the *místo plnění*) — it is the pre-acceptance disclosure the board
+already makes, produced by the same builder so the screen and the row cannot disagree — while the
+platform's own erasure treats city and zip as personal data at the source (`Address.Anonymize()`
+blanks both). Kept under the row's ground (Art. 6(1)(b), then 17(3)(e) after erasure).
+**Default applied: keep it.** Overruling blanks one member of the facts at erasure — one line in
+`Pseudonymise()`'s neighbourhood.
+**Blocks:** nothing.
+
 ## Q-LC-01 — Should a deactivated company's own administrators be refused, like its cleaners?
 
 **Raised by:** ADR-0064 O-1 (the panel's default, 2026-09-16).

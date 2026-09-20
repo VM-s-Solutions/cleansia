@@ -70,6 +70,41 @@ need backfilling.
 
 ### Added
 
+- **A contract for work between the customer and the cleaner, per job.** Every booking is now made
+  under the platform's *contract for work* text — published at `/work-contract` beside the terms and the
+  privacy policy, in five languages — in the version in force for the address's market on the booking
+  day; the wizard's confirm step says so on the web, Android and iOS (a sentence, not a checkbox), and a
+  market with no text in force cannot be booked. **As a cleaner**, every take shows the contract first —
+  the job facts (order number, date and time window, price, the coarse location, rooms, bathrooms,
+  services, packages, extras; never the street or a name) and the text in your language — and the job is
+  taken by accepting it: a tick and *Accept and take the job* on the web, a *Swipe to accept the contract
+  for work* slider on Android and iOS. The job detail then states when you accepted and which version,
+  with **Read the contract**. A cleaner an administrator placed on a job has accepted nothing: the job
+  detail asks them to, and Start and Complete refuse until they do (`contract.acceptance_required`) — an
+  administrator cannot accept on a cleaner's behalf. One contract per seat: leaving and re-taking a job
+  is a second contract; a new version of the text applies to jobs booked from its date, never to a job
+  already booked. **As a customer**, the order detail states *Contract for work accepted by {given name}
+  on {date}, version {version}* per crew member, with **Read the contract** opening the accepted text and
+  the job facts as the cleaner saw them; before any acceptance it says nothing. **As an admin**, the crew
+  list on the order detail says *accepted {date}, v{version}* or *contract pending* per seat, with
+  **Read**; an Administrator also sees the accepted text row's SHA-256. The acceptance outlives the seat,
+  the order's anonymisation and the cleaner's erasure: it is on the order's timeline
+  (`employee.order.contract_accepted`), in the incident file's new *Contracts for work* section, in the
+  cleaner's data export in full and in the customer's as date, version and language per acceptance, and
+  in a company's archive bundle without the IP and device. **Admin — a twelfth company setting, the tenth
+  retention window:** `retention.work_contract_metadata.years` (default 3, minimum 1) — the IP address,
+  device label and device id on an acceptance are blanked that many years after it, or at the cleaner's
+  erasure, whichever comes first; the acceptance, the text it names and the facts stay. **API consumer:**
+  a take without `acceptedWorkContractTextId` answers `contract.not_accepted`; an id that is not a text
+  of the order's document answers `contract.text_mismatch` (re-fetch the preview and ask again);
+  `GET /api/Order/GetWorkContractPreview` and `POST /api/Order/AcceptWorkContract` on the partner hosts,
+  `GET /api/Order/GetWorkContract?acceptanceId=` on all five (`/api/AdminOrder/GetWorkContract` on the
+  admin host). **Operator:** the database migration was regenerated (`20260919231739_Initial`) — the DEV
+  drop before the next deploy covers it; three legal documents are now seeded (the terms, the privacy
+  policy, the contract for work) and a fresh Development database is seeded in the boot that migrates it.
+  There is no PDF yet, and nothing is written for a cleaner already on a crew when this shipped. (ADR-0068;
+  owner ruling 2026-09-20, *"I want to implement 'smlouva o dílo' (lawyer suggested it)"*.)
+
 - **Admin — four administrator roles: Administrator, Manager, Support, Accountant.** Every administrator
   account now carries a role, and the console shows each role only what it may do while the server refuses
   the rest whether or not a button was visible. An Administrator has everything. A Manager has everything but

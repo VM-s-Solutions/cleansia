@@ -600,9 +600,60 @@ POST /api/Order/LookupBatch
 
 ---
 
+### GetWorkContractPreview
+
+The contract for work a cleaner reads **before** taking a job ([ADR-0068](/decisions/adr-0068) D3):
+the order's own text (stamped at booking), in the requested language or the fallback, rendered with
+the order's currency, plus the job facts the acceptance will freeze — and the **text-row id the take
+must echo**. Partner hosts only.
+
+```
+GET /api/Order/GetWorkContractPreview?orderId=order-id&language=cs
+```
+
+**Auth:** `CanTakeOrder` (Employee) · rate-limit window `interactive`
+
+**Response:** `WorkContractDto`
+
+```json
+{
+  "legalDocumentTextId": "text-row-id",
+  "legalDocumentId": "document-id",
+  "version": "2026-09-20",
+  "effectiveFrom": "2026-09-20",
+  "language": "cs",
+  "title": "Smlouva o dílo",
+  "contentHtml": "<p>…</p>",
+  "facts": {
+    "orderNumber": "CLN-2026-001",
+    "cleaningDateTimeUtc": "2026-10-01T08:00:00Z",
+    "estimatedMinutes": 180,
+    "totalPrice": 1890,
+    "currencyCode": "CZK",
+    "locationApproximate": "Praha · 120",
+    "countryId": "CZE",
+    "rooms": 3,
+    "bathrooms": 1,
+    "services": [{ "id": "…", "name": "Standard cleaning" }],
+    "packages": [],
+    "extraSlugs": ["windows"]
+  },
+  "acceptance": null
+}
+```
+
+Readable exactly where the board would show the job — on the crew, or offerable with a takeable seat
+and not held from the caller: a held order answers `order.not_found` to everyone but its beneficiary,
+and a cancelled, finished, full or unpaid-card job the caller is not on answers `order.not_found` and
+discloses no facts. An order with no text (a fixture — the production writer always stamps one)
+answers `legal.document_not_found`.
+
+---
+
 ### TakeOrder
 
-Employee accepts/claims an order.
+Employee accepts/claims an order **and, in the same act, the contract for work** the order was
+booked under ([ADR-0068](/decisions/adr-0068) D3).
 
 ```
 POST /api/Order/TakeOrder
@@ -614,9 +665,17 @@ POST /api/Order/TakeOrder
 
 ```json
 {
-  "orderId": "order-id"
+  "orderId": "order-id",
+  "acceptedWorkContractTextId": "text-row-id"
 }
 ```
+
+`acceptedWorkContractTextId` is the `legalDocumentTextId` the preview returned — the **exact text
+row** the cleaner read. It is the tick: `null` is *not accepted*, a value is *"I read this text and I
+accept it"*, and it must name a text of **this order's** document. The seat, the `Confirmed` status
+row, the `WorkContractAcceptance` (with the request's IP, device label, the session's signed device
+id and the job facts frozen) and its `employee.order.contract_accepted` audit row are **one commit** —
+a seat-race loser leaves no acceptance.
 
 **Response:** `TakeOrder.Response` with updated order state.
 
@@ -624,22 +683,29 @@ POST /api/Order/TakeOrder
 
 `TakeOrder.Validator` is **one ordered `Cascade.Stop` chain**, so exactly one error comes back — the
 first that fails. The order of the rules is deliberate: a cancelled order with a free seat must say
-*the job is gone*, not *the job is full*.
+*the job is gone*, not *the job is full*; the contract tick is judged **before** existence (it depends
+on nothing about the order, so it can leak neither existence nor the hold) and the echo **last**
+(every refusal ahead of it is a better answer than *wrong text*).
 
 | # | Rule | Error key |
 |---|---|---|
 | 1 | `orderId` present | `common.required` |
-| 2 | Order exists, **is not held from this caller** (ADR-0036), **and is in the currency the caller is paid in** — or the caller is already on it (`OrderVisibility.OpenTo`) | `order.not_found` |
-| 3 | Not cancelled | `order.already_cancelled` |
-| 4 | Not completed | `order.already_completed` |
-| 5 | **Offerable** — the ADR-0037 rule, both axes | `order.not_takeable` |
-| 6 | A seat is free (`assignedEmployees.Count < maxEmployees`) | `order.no_available_spots` |
-| 7 | Caller resolves to an employee | `employee.not_found` |
-| 8 | Employee has an address on file | `employee.profile_incomplete` |
-| 9 | `ContractStatus == Approved` | `employee.not_approved` |
-| 10 | Not already assigned to this order | `order.employee_already_assigned` |
-| 11 | Weekly cap, **only if an admin set one** on this cleaner (`Employee.WeeklyOrderLimit`; null = unlimited, the default) | `order.weekly_limit_reached` |
-| 12 | No scheduling overlap with the employee's live commitments | `order.time_conflict` |
+| 2 | `acceptedWorkContractTextId` present | `contract.not_accepted` |
+| 3 | Order exists, **is not held from this caller** (ADR-0036), **and is in the currency the caller is paid in** — or the caller is already on it (`OrderVisibility.OpenTo`) | `order.not_found` |
+| 4 | Not cancelled | `order.already_cancelled` |
+| 5 | Not completed | `order.already_completed` |
+| 6 | **Offerable** — the ADR-0037 rule, both axes | `order.not_takeable` |
+| 7 | A seat is free (`assignedEmployees.Count < maxEmployees`) | `order.no_available_spots` |
+| 8 | Caller resolves to an employee | `employee.not_found` |
+| 9 | Employee has an address on file | `employee.profile_incomplete` |
+| 10 | `ContractStatus == Approved` | `employee.not_approved` |
+| 11 | Not already assigned to this order | `order.employee_already_assigned` |
+| 12 | Weekly cap, **only if an admin set one** on this cleaner (`Employee.WeeklyOrderLimit`; null = unlimited, the default) | `order.weekly_limit_reached` |
+| 13 | No scheduling overlap with the employee's live commitments | `order.time_conflict` |
+| 14 | The echoed text row belongs to **this order's** `workContractDocumentId` (an order with no document matches nothing) | `contract.text_mismatch` |
+
+On `contract.text_mismatch` the client re-runs the preview, re-renders the text, resets the gesture
+and asks again — a cached id from another order is the case it exists for.
 
 ::: info The preferred-cleaner hold and the currency are folded into the existence check
 Rules 2 and 5 are separate questions. Until `preferredHoldUntilUtc`, the order's **first seat** is
@@ -654,6 +720,80 @@ exist (owner ruling 2026-09-12 — a cleaner is paid in the currency of the coun
 The employee is always derived server-side from the caller, never taken from the request body. On
 failure the response is a `400` RFC 7807 Problem Details; clients resolve `errors[0]` under the
 `api.*` i18n namespace.
+
+---
+
+### AcceptWorkContract
+
+The standalone acceptance, for a cleaner an **administrator placed** on a crew (`AdminReassignOrder`
+writes no acceptance — an admin cannot accept on the cleaner's behalf). The same act the take performs
+inline, for a seat formed without one. Partner hosts only.
+
+```
+POST /api/Order/AcceptWorkContract
+```
+
+**Auth:** `CanTakeOrder` (Employee) · rate-limit window `interactive`
+
+**Request body:**
+
+```json
+{
+  "orderId": "order-id",
+  "acceptedWorkContractTextId": "text-row-id"
+}
+```
+
+**Response:** `{ orderId, acceptanceId, acceptedOn, documentVersion }`.
+
+One ordered chain: `contract.not_accepted` (blank id) → `order.not_found` → `order.employee_not_assigned`
+(the caller holds no seat on the crew) → `take_order.already_cancelled` / `take_order.already_completed`
+(**any not-over order is admitted** — a cleaner placed on an in-progress job can accept before
+completing) → `contract.text_mismatch`. A seat that already has its acceptance answers `200` with that
+row's id and writes nothing (the double tap); a concurrent double tap is arbitrated by the unique index
+on the seat at commit.
+
+---
+
+### GetWorkContract
+
+An **accepted** contract for work, keyed on the acceptance ([ADR-0068](/decisions/adr-0068) D4): the
+facts as **stored** at acceptance (never the live order), the accepted document's text in the
+requested language when it has one — else the accepted text — and the acceptance details. Routed on
+**all five hosts**.
+
+```
+GET /api/Order/GetWorkContract?acceptanceId=acceptance-id&language=en
+```
+
+**Auth:** `CanViewOrderDetail` on the two customer hosts and the two partner hosts;
+`CanViewOrderDetailAdmin` on the admin host at `/api/AdminOrder/GetWorkContract` · window
+`interactive`
+
+**Response:** the `WorkContractDto` above with `acceptance` filled:
+
+```json
+"acceptance": {
+  "acceptedOn": "2026-09-20T09:12:41.5Z",
+  "documentVersion": "2026-09-20",
+  "acceptedLanguage": "cs",
+  "orderEmployeeId": "seat-id",
+  "employeeId": "employee-id"
+}
+```
+
+`acceptedLanguage` is the language of the text row that was accepted, so a page rendering another can
+say *accepted in Czech*. Access is derived from the row: its order must exist for the caller
+(owner-pinned for a customer, the company's for staff) **and**, when the caller is a cleaner, the
+row's `employeeId` must be theirs — an ex-crew cleaner keeps reading the contract they accepted;
+anyone else answers `order.not_found`. Keyed on the acceptance rather than on (order, employee) so the
+dropped contract of a re-take stays readable and no employee id travels on the request.
+
+The order detail (`GetById`) lists the current seats' acceptances as
+`workContractAcceptances: [{ id, orderEmployeeId, employeeId, acceptedOn, documentVersion, language }]`
+— paired with `assignedEmployees` by `orderEmployeeId == assignedEmployees[].id`, which is where the
+name comes from (this member carries none); a crew entry with no match is the pending state. The
+member is **empty for a browsing cleaner**.
 
 ---
 
@@ -674,6 +814,11 @@ POST /api/Order/StartOrder
   "orderId": "order-id"
 }
 ```
+
+**Refused when the caller's seat has no accepted contract for work** — `contract.acceptance_required`,
+right after the assignment rule (a cleaner not on the crew still answers `order.employee_not_assigned`
+and learns nothing). A cleaner who took the job never meets it; a cleaner an admin placed accepts
+through `AcceptWorkContract` and starts. → [the contract gate](/flows/execution-and-completion#the-contract-gate)
 
 **Refused when the job is more than 60 minutes away** — `order.too_early_to_start`. The same gate is on
 `NotifyOnTheWay`, because both write to the customer's lock screen. Late is never blocked. The check is
@@ -699,6 +844,11 @@ POST /api/Order/CompleteOrder
   "orderId": "order-id"
 }
 ```
+
+**Refused when the caller's seat has no accepted contract for work** — `contract.acceptance_required`,
+right after the assignment rule, like `StartOrder`: on a two-seat crew the second cleaner never starts
+(the order is already in progress) but may complete, and Complete is the last act with a contract
+behind it. `NotifyOnTheWay` is not gated. → [the contract gate](/flows/execution-and-completion#the-contract-gate)
 
 ---
 

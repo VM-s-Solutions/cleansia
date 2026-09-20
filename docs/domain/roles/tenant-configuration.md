@@ -25,8 +25,9 @@ catalogue default, never another company's and never a value nothing reads.
 
 - **`TenantSettingCatalog`** — the closed list of keys a company may hold. Each entry is a typed
   definition (`IntTenantSetting` with `min`/`max`, `BoolTenantSetting`, and since 2026-09-19
-  `EmailTenantSetting`) carrying the key, the category and the default. Today, **eleven keys in three
-  categories**: the **nine `retention.*` keys**, defaults from `RetentionDefaults`, floor **1** on every
+  `EmailTenantSetting`) carrying the key, the category and the default. Today, **twelve keys in three
+  categories**: the **ten `retention.*` keys** (the tenth, `retention.work_contract_metadata.years`,
+  since 2026-09-20 — ADR-0068 D5), defaults from `RetentionDefaults`, floor **1** on every
   window (a zero window would empty the customer-audit table on the next tick), ceiling 100 years /
   36 500 days (`DateTimeOffset.AddYears` throws past the calendar's end); `lifecycle.chargeback_horizon_days`
   (180, 0–730 — the archive's wait, ADR-0064); and **`notifications.admin_email`** — an
@@ -50,7 +51,7 @@ catalogue default, never another company's and never a value nothing reads.
   mailed company A's order numbers to company B's mailbox (ADR-0065 D2, challenge B1). Nothing else
   uses it; a request or a per-company loop keeps the ambient form.
 - **`DataRetentionBackgroundService`** — the first per-company reader. It loops
-  `ITenantRepository.GetAllIdsAsync`, sets the override per company, runs the nine sweeps under it and
+  `ITenantRepository.GetAllIdsAsync`, sets the override per company, runs the ten sweeps under it and
   clears; every `GetAsync(TenantSettingCatalog.X)` inside is that company's. `GdprDeletionService`
   reads `DisputeTextRetentionYears` the same way under the erasing request's own claim.
 - **`SetTenantSetting.Command(Key, Value)`** — upsert for **the admin's own company** (the query filter

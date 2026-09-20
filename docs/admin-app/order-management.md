@@ -75,7 +75,7 @@ The admin order detail page provides a comprehensive view of a single order with
 | Order Header | Order number, status, creation date |
 | Customer Info | Name, email, phone, address |
 | Service Details | Selected services, packages, rooms, bathrooms |
-| Employee Info | Assigned partner details |
+| Employee Info | Assigned partner details — and, per crew member, whether the **contract for work** is accepted: *accepted {date}, v{version}* or *contract pending*. **Read** on an accepted one opens the accepted text with the job facts frozen at acceptance and, for an Administrator, the accepted text row's SHA-256 (the hash a dispute cites) → [Business rules — the contract for work](/product/business-rules#work-contract) |
 | Payment Info | Method, status, amount, Stripe references |
 | Status History | Timeline of all status changes |
 | Notes | All notes added by partners and admins |
@@ -109,6 +109,12 @@ The reassignment process:
 2. Confirm the reassignment
 3. The order status and assignment are updated
 4. Both the original and new partners are notified
+
+**A reassignment writes no contract acceptance** (ADR-0068 D3): an administrator cannot accept the
+contract for work on the cleaner's behalf, so the placed cleaner's seat reads *contract pending* on
+this page until they accept it from their app — the job detail shows them a banner, and Start and
+Complete refuse them with `contract.acceptance_required` until they do. The seat they replaced keeps
+its acceptance row as history.
 
 ## Refunds
 

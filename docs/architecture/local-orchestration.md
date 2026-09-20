@@ -88,8 +88,17 @@ about two minutes while a migration is in flight; the seed is registered **after
 behind the migration instead of spending its own five bounded retries against a half-built schema.
 It is a plain `IHostedService`, awaited inline — not a `BackgroundService` — because being awaited is
 what turns its position into a wait rather than a race. A host that still cannot seed logs at Error
-and **starts anyway**: a customer can book while the legal page serves the previous version. Pinned by
-`BootDatabaseIoTests`.
+and **starts anyway**: a customer can book while the legal page serves the previous version — as long
+as *some* version of every text is in the table. Since [ADR-0068](/decisions/adr-0068) the contract
+for work is one of those texts, and a booking with **no** version of it in force is refused by
+`OrderFactory`; that is why the hosted seeder is not the only writer on a first local boot. Every
+hosted service starts **before** the Development migrate-and-seed pipeline in `CleansiaStartupBase`
+runs, so on a fresh Development database the seeder's five attempts all fail against no
+`LegalDocuments` table and the host would come up unable to book until restarted. `CleansiaStartupBase`
+therefore runs `LegalDocumentSeeder.SeedAsync` once more after the Development migration and the
+data seed, idempotently (a no-op on a database the hosted service already seeded). Non-Development
+deploys migrate in CI/CD before any host starts, so there the hosted service finds the table and that
+branch is never entered. Pinned by `BootDatabaseIoTests`.
 
 ## Why there are two customer hosts {#two-customer-hosts}
 

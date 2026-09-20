@@ -102,9 +102,21 @@ three operations and the table count is still 87. The seed inserts the administr
 and `sql-scripts/set-admin-role.sql` sets both columns. Unit suite 6174 green at the lane; the Postgres
 integration suite (which carries the constraint test and the two lock-race tests) and the host suite
 compiled but first execute in CI — Docker was down on the box.
-**The one owed drop belongs to `20260919142517`**: a DEV database whose
+The contract for work (T-0777, `a15d3af0`, 2026-09-20 — ADR-0068) regenerated `Initial` once more as
+**`20260919231739`**: the `WorkContractAcceptances` table (twelve columns + the audit stamps,
+`IX_WorkContractAcceptances_OrderEmployeeId` **unique**, `(OrderId, EmployeeId)`, `(EmployeeId,
+AcceptedOn DESC)`, `(TenantId, AcceptedOn)`, FKs `Orders`, `LegalDocumentTexts` and `Tenants`, all
+Restrict) and `Orders.WorkContractDocumentId` (nullable, FK `LegalDocuments` Restrict, indexed); the
+table count is now **88** and 49 tables carry the `Tenants` FK. The Postgres integration suite
+(`TakeOrderWorkContractTests` on the seat-race fixture, `WorkContractAcceptanceRetentionTests`,
+`CompanyArchiveBundleTests`) and the host suite (`WorkContractRouteTests`) first execute in CI — Docker
+was down on the box again.
+**The one owed drop belongs to `20260919231739`**: a DEV database whose
 `__EFMigrationsHistory` records any earlier id replays the whole create script against tables that
-already exist. The legal texts need no extra step — every host seeds them at start.
+already exist. The legal texts need no extra step — every host seeds them at start, and since
+`efff863a` a fresh Development database is seeded once more in the boot that migrates it (the factory
+now refuses a booking with no contract text in force, so a first boot must not come up without one);
+**three** documents are seeded now (terms, privacy, work contract).
 
 Regenerating is no longer a manual step of any kind (owner ruling 2026-08-25): it is ordinary work and
 is done in the branch that needs it. **The drop remains deferred until deployment, never branch

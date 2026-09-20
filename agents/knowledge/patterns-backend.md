@@ -276,6 +276,31 @@ branch — a registration's proof is the consent rows) — its refusals are stil
 — every `AllowsAnonymousActor` marker in the assembly, not a hand-kept list) + `AuditGateTests` (the host
 arm) + `SessionAuditTests` (the second-operator stamping, on Postgres) — `T1-CI`.
 
+**A legal acceptance echoes the exact text row it rendered — the id is the tick (ADR-0068 D3, the
+first shipped instance of ADR-0041 D3).** Beside the terms tick (`termsAccepted: true`, the server
+resolves and stamps the document in force — ADR-0062 D4 as amended) there is a second shape for an act
+whose *text* matters: the read that shows the text returns the **text row's id** (`WorkContractDto.LegalDocumentTextId`
+from `GetWorkContractPreview`), the command carries that id back (`TakeOrder.Command.AcceptedWorkContractTextId`,
+`AcceptWorkContract.Command`), and the row stores it as an FK (`WorkContractAcceptance.LegalDocumentTextId`
+→ `LegalDocumentTexts`, Restrict) so document, version, language and `ContentHash` come by one join and
+a silent edit is a one-query detection. Not a `bool` (proves a tap, not a text), not `(documentId,
+language)` (the server would pick the text again — a language the seeder added after the preview could
+store a string the cleaner never read). The validator judges the **presence** of the id before
+existence (`contract.not_accepted` — it depends on nothing about the resource, so it leaks neither
+existence nor a hold) and the **echo** last (`contract.text_mismatch` — it depends on the resource,
+and every refusal ahead of it is a better answer), both in the one ordered chain; the handler never
+re-resolves the text — `WorkContractAcceptor.StageAsync` loads the echoed row, guards that it belongs to
+the resource's document (a mismatch here is an `InvalidOperationException`, never a business refusal
+and never a row) and stages the row **and its `EmployeeActionAudit` index row without committing**, so
+the caller's commit carries the act and whatever it rides with (the seat, the status row) as one
+transaction. The client contract on a mismatch is ADR-0041 D3.5's loop: re-run the read, re-render,
+reset the gesture. Use this shape when the record must say *which string* the subject saw; use the
+terms tick when the platform's in-force text at that instant is the fact. **Enforced by:**
+`TakeOrderWorkContractTests` (unit + Postgres — the seat-race loser leaves no row),
+`AcceptWorkContractHandlerTests`, `WorkContractAcceptorTests`, `WorkContractAcceptanceImmutabilityTests`
+— `T1-CI` (all four in `Cleansia.Tests`, the Postgres twin in `Cleansia.IntegrationTests`; both jobs
+of `backend-ci.yml`).
+
 ## Entities (from `Core.Domain/Common/`)
 
 - `IEntity` = `{ object Id; bool IsActive; }`; `IEntity<T>` narrows `Id`/`IsActive`. IDs are strings.

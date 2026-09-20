@@ -2,7 +2,7 @@
 
 Every architecture and business decision on record, with the argument that settled it.
 
-**67 records.** A decision keeps a stable id — `ADR-0037` — and roughly six hundred source
+**68 records.** A decision keeps a stable id — `ADR-0037` — and roughly six hundred source
 files cite ids in that form. The id is the reference, not the file name or the title, so a record can
 be retitled without breaking a single citation.
 
@@ -65,7 +65,12 @@ supersedes **ADR-0057's one open consequence** — the arrow — and leaves its 
 a dated pointer at ADR-0057's head. [ADR-0066](./adr-0066) (four administrator roles; `accepted`, T-0748 /
 T-0773) supersedes **ADR-0001 D2's table** for every admin-host row — the arrow — and keeps D1, D3, D4 and
 D5; it amends ADR-0062 D1 (the admin audit row gains the actor's role) and ADR-0065 D2/D4 (the recipient
-set narrows by the entry's audience) by reference.
+set narrows by the entry's audience) by reference. **[ADR-0068](./adr-0068)** (a contract for work per
+job; `accepted` and shipped 2026-09-20, T-0777–T-0784) supersedes nothing and **amends ADR-0063 D9 in
+one sentence** — the mobile apps render the contract text in-app rather than linking to a web page,
+because the acceptance gesture has to sit under the text it accepts; D9's other sentences stand, and
+ADR-0063 carries the dated pointer in place. It builds on ADR-0041 D2/D3 (the accepted, never-built
+shape of "echo the exact text row served") and ADR-0062 D1/D4/D5, so there is no arrow.
 
 ## All records
 
@@ -138,6 +143,7 @@ set narrows by the entry's audience) by reference.
 | **[ADR-0065](./adr-0065)** | Administrators are told: an in-app feed and an e-mail per event (owner ruling D5, 2026-09-19; shipped as T-0768 / T-0769 / T-0774 / T-0775) | `accepted` |
 | **[ADR-0066](./adr-0066)** | Four administrator roles: Administrator, Manager, Support, Accountant (owner ruling D8, 2026-09-19; supersedes ADR-0001 D2's admin rows; T-0748 / T-0773) | `accepted` |
 | **[ADR-0067](./adr-0067)** | Confirmed → New when the last cleaner leaves; the administrators are told (owner ruling D2, 2026-09-19; supersedes ADR-0057's open consequence; shipped as T-0770) | `accepted` |
+| **[ADR-0068](./adr-0068)** | A contract for work per job: the text the order is booked under, the cleaner's acceptance of it, what both parties can see (owner ruling 2026-09-20; amends ADR-0063 D9 by one sentence; shipped as T-0777–T-0784) | `accepted` |
 
 ⟲ = superseded in whole or in part by a later record.
 

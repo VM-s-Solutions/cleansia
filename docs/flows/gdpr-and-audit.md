@@ -23,13 +23,17 @@ flowchart LR
   class C,X stop
 ```
 
-Twenty repositories are walked: cart, devices, disputes, employee documents, invoices, payout
+Twenty-one repositories are walked: cart, devices, disputes, employee documents, invoices, payout
 details, GDPR requests, live-activity tokens, pay rows, order photos, orders, outbox, recurring
-templates, saved addresses, consents, memberships, notifications, users, dead letters — and the
+templates, saved addresses, consents, memberships, notifications, users, dead letters — the
 customer audit trail, which is **pseudonymised, not deleted**: a tracked load of every row of the
 subject — and of every **guest** row on the subject's orders (no user, resource `Order`, an order in
 the set below) — `Pseudonymise()` on each (the IP address, device label and device id go; the act, its
-outcome, the evidence and the subject id stay). → [The customer trail](#customer-trail)
+outcome, the evidence and the subject id stay) → [The customer trail](#customer-trail) — and, for a
+cleaner, their **contract-for-work acceptances**, pseudonymised the same way (the same three columns
+go; the seat, the text, the instant and the frozen job facts stay — the row is the formation record of
+a retained order, ADR-0068 D5) through a tracked load past the tenant filter riding the one commit. A
+customer's erasure leaves the acceptances on their orders untouched: they name no customer.
 
 **Whose orders.** One predicate, `SubjectOrders.Of(userId, email)`, answers it for the erasure and
 for the subject export alike (owner ruling 2026-09-15): the orders booked on the account, **or** the
@@ -313,6 +317,7 @@ What survives what:
 | Order photos | Anonymised individually — they carry a capturer and free text the order-level walk does not reach. |
 | An audit row for an erased admin | Survives. The audit is append-only and outlives the actor. |
 | A customer audit row for an erased customer | Survives, pseudonymised: the three request-metadata columns are blanked and nothing else changes. An erasure whose commit fails leaves the rows untouched. |
+| A contract-for-work acceptance of an erased cleaner | Survives, pseudonymised the same way: IP, device label and device id go; the seat, the exact text row, the instant and the frozen facts stay, and the cleaner's id stays as the pseudonymous handle `Employee.Anonymize` keeps. The per-company sweep blanks the same three columns three years after the acceptance for everyone else; nothing ever deletes the row. |
 | A guest's booking rows after the guest registers with the same email | Not inherited by the timeline — guest rows have no user and are reachable only from the order's history. The account's **erasure** reaches them all the same, by the e-mail: the ended booking is anonymised and its guest rows lose IP and device. |
 | A guest booking under the erased e-mail that is still live | Left out of the walk, not a refusal: its name, contact and address stay until the job ends and the order-PII sweep reaches it, its guest rows until the three-year sweep. T-0753 adds secret-keyed guest cancellation in the backend; the erasure rule is unchanged, and Q-GDPR-03 remains open. |
 | A guest booking placed in another market with the account's e-mail | Reached and exported all the same — the read goes past the operating-company filter, because a guest checkout is stamped with the market's company and the erasure runs under the subject's. The anonymised rows keep their own company's stamp. |

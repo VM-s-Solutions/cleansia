@@ -102,6 +102,23 @@ grants **no** consent rows for it (a residual stated in ADR-0062 D4 as amended: 
 account holds both from registration). Confirming a recurring occurrence is not gated — the template
 was accepted.
 
+## The order is stamped with the contract for work it is booked under {#work-contract-stamp}
+
+`OrderFactory` — the one production writer of an order, reached by `CreateOrder` and by the recurring
+materialiser alike — resolves the customer-audience **`WorkContract`** document in force for the
+**address's market** on the booking day and stamps it on the order (`Orders.WorkContractDocumentId`),
+beside the currency and for the same reason the pay-coverage gate sits there: an order no contract can
+form on must not be booked. Nothing in force is an `InvalidOperationException`, not a booking with a
+blank; the seed lands the text at every host start (and, on a fresh Development database, once more
+in the boot that migrates it), so the case is a deploy with a future-dated-only folder, and the seed
+test is the guard. The stamp is set once: a new version of the text applies to orders booked from its
+date and changes nothing on an order already booked. The wizard's confirm step names the contract
+(*"By confirming the order you conclude a contract for work with the cleaner on these terms"* →
+`/work-contract`) as an information line, not a second tick — the customer's half is the terms
+consent plus the stamped document. What the cleaner accepts against that stamp, and when, is the take's
+story → [Offerability and the take](/flows/offerability-and-take#the-take-carries-the-acceptance),
+[ADR-0068](/decisions/adr-0068) D1.
+
 ## Responsive quote previews
 
 The home calculator requests its quote immediately. Booking groups rapid selection changes into a

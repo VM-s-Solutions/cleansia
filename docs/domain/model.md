@@ -42,11 +42,11 @@ serves that market: `Market/GetOverview` does not list it and an anonymous write
 `country.not_serviced`. → [Tenant](/domain/roles/tenant), [Company lifecycle](/domain/roles/company-lifecycle)
 
 **Every stamped row carries its operator, and the column is a foreign key.** A type that belongs to
-one company extends **`TenantAuditable : Auditable, ITenantEntity`** — 46 of them — or is one of the
-two `BaseEntity + ITenantEntity` audits (`AdminActionAudit`, `CustomerActionAudit`): **48 stamped
+one company extends **`TenantAuditable : Auditable, ITenantEntity`** — 47 of them — or is one of the
+two `BaseEntity + ITenantEntity` audits (`AdminActionAudit`, `CustomerActionAudit`): **49 stamped
 tables**, each with `FK_<T>_Tenants_TenantId` (`Restrict`, no navigation — the two `TenantId` arrows
-above stand in for all 48; the area diagrams below do not repeat them). The `TenantId` column is
-**NOT NULL** on 46 of them and
+above stand in for all 49; the area diagrams below do not repeat them). The `TenantId` column is
+**NOT NULL** on 47 of them and
 nullable only on `OutboxMessage` and `DeadLetter` (an envelope may have no tenant; a `NULL` passes the
 FK). The value is written at commit time from the ambient tenant — the JWT claim, the market's operator
 for an anonymous write, the user's tenant on a token mint, the row's own tenant or the registry's
@@ -58,8 +58,8 @@ grows one.
 
 | Entity | |
 |---|---|
-| `Tenant` | — ; referenced by `CountryConfiguration.OperatorTenantId` and by `TenantId` on all 48 stamped tables. `Auditable` (tenantless by construction); the lifecycle columns above; the company's state is the highest of *archived* (`ArchivedOn`), *frozen* (`ArchiveRequestedOn`), *deactivated* (`!IsActive`), *winding down* (`WindDownFrom`), *operating* → [Company lifecycle](/domain/roles/company-lifecycle) |
-| `TenantConfiguration` | references `Tenant`; one row per `(TenantId, Key)` (unique, `NULLS NOT DISTINCT`) holding a company's override of one catalogued setting — the nine `retention.*` windows today; no row means the catalogue default. Written by the admin's *Company settings* page, read per company by the retention job → [TenantConfiguration](/domain/roles/tenant-configuration) |
+| `Tenant` | — ; referenced by `CountryConfiguration.OperatorTenantId` and by `TenantId` on all 49 stamped tables. `Auditable` (tenantless by construction); the lifecycle columns above; the company's state is the highest of *archived* (`ArchivedOn`), *frozen* (`ArchiveRequestedOn`), *deactivated* (`!IsActive`), *winding down* (`WindDownFrom`), *operating* → [Company lifecycle](/domain/roles/company-lifecycle) |
+| `TenantConfiguration` | references `Tenant`; one row per `(TenantId, Key)` (unique, `NULLS NOT DISTINCT`) holding a company's override of one catalogued setting — the ten `retention.*` windows today; no row means the catalogue default. Written by the admin's *Company settings* page, read per company by the retention job → [TenantConfiguration](/domain/roles/tenant-configuration) |
 
 ## Identity and access
 
@@ -115,6 +115,9 @@ erDiagram
   OrderStatusTrack }o--|| Order : "Order"
   Order }o--|| Currency : "Currency"
   Order }o--o| PromoCode : "PromoCode"
+  Order }o--o| LegalDocument : "WorkContractDocument"
+  WorkContractAcceptance }o--|| Order : "Order"
+  WorkContractAcceptance }o--|| LegalDocumentText : "LegalDocumentText"
 ```
 
 **`OrderService`, `OrderPackage` and `OrderExtra` are the order's line items** — what was actually
@@ -128,10 +131,25 @@ authoritative.
 service address's country and never changed. The foreign key is `ON DELETE RESTRICT`, so a currency
 that any order was ever priced in cannot be deleted. → [Business rules](/product/business-rules#price-stages)
 
+**`Order.WorkContractDocumentId` is the contract for work the job was booked under** — the
+customer-audience `WorkContract` `LegalDocument` in force for the address's market on the booking day,
+stamped once by `OrderFactory` and never changed; `Restrict`, so a text any order was booked under
+cannot be deleted. Nullable in the schema only because `Order.Create` has 153 callers, 152 in tests —
+the one production writer always stamps it and the take refuses an order without one. **A
+`WorkContractAcceptance` is one cleaner's acceptance of that text for one seat**: `OrderEmployeeId`
+(unique — one contract per seat; a bare scalar, the seat row is hard-deleted by the next drop),
+`EmployeeId` (bare scalar, the cleaner is anonymised on erasure), `LegalDocumentTextId` (the exact
+text row read — document, version, language and hash by join), `DocumentVersion`, `AcceptedOn`,
+`ClientAudience`, `IpAddress` / `DeviceLabel` / `DeviceId` (the request trio, blanked by erasure and
+by the three-year sweep), `FactsJson` (the job as shown at acceptance; never a name or a street).
+Append-only, `TenantAuditable` stamped with the order's operator. → [ADR-0068](/decisions/adr-0068),
+[`work-contract-acceptance`](/domain/roles/work-contract-acceptance)
+
 | Entity | |
 |---|---|
-| `Order` | references `Currency` (Restrict), `PromoCode` (nullable, Restrict — the code that was actually honoured; a losing promo leaves it null), `Receipt`. `UserId` is null on a guest booking and is never attached afterwards, so **`SubjectOrders.Of(userId, email)`** (`Core.Domain/Orders`) is the one definition of a data subject's orders for the erasure and the subject export: the account's orders **or** the rows with no `UserId` whose `CustomerEmail` matches case-folded (owner ruling 2026-09-15) — asked past the tenant filter, because a guest checkout is stamped with the market's operator → [ADR-0062](/decisions/adr-0062) D5 as amended 2026-09-15 |
+| `Order` | references `Currency` (Restrict), `PromoCode` (nullable, Restrict — the code that was actually honoured; a losing promo leaves it null), `WorkContractDocument` → `LegalDocument` (nullable, Restrict, indexed — the contract-for-work text the job was booked under, ADR-0068 D1), `Receipt`. `UserId` is null on a guest booking and is never attached afterwards, so **`SubjectOrders.Of(userId, email)`** (`Core.Domain/Orders`) is the one definition of a data subject's orders for the erasure and the subject export: the account's orders **or** the rows with no `UserId` whose `CustomerEmail` matches case-folded (owner ruling 2026-09-15) — asked past the tenant filter, because a guest checkout is stamped with the market's operator → [ADR-0062](/decisions/adr-0062) D5 as amended 2026-09-15 |
 | `OrderEmployee` | — |
+| `WorkContractAcceptance` | references `Order` (Restrict), `LegalDocumentText` (Restrict — `FK_WorkContractAcceptances_LegalDocumentTexts_TextId`; a text a cleaner accepted can never be deleted from under the row), `Tenant`; **unique `(OrderEmployeeId)`** — one contract per seat and the arbiter of a concurrent double accept; indexed `(OrderId, EmployeeId)`, `(EmployeeId, AcceptedOn DESC)`, `(TenantId, AcceptedOn)`; `OrderEmployeeId` and `EmployeeId` are bare scalars with no FK. `Pseudonymise()` (the trio) is the one mutator; no delete path → [ADR-0068](/decisions/adr-0068) D2 |
 | `OrderExtra` | references `Order` (Cascade), `Extra` (Restrict — a catalogue extra referenced by any order line cannot be deleted, only deactivated); unique `(OrderId, ExtraId)` |
 | `OrderPackageService` | references `OrderPackage` (Cascade), `Service` (Restrict); unique `(OrderPackageId, ServiceId)` |
 | `OrderPhoto` | references `CapturedBy`, `Order` |
@@ -168,13 +186,15 @@ erDiagram
 
 **The legal texts are stored documents, versioned by the date they start applying.** `LegalDocument`
 is one version of one text — `Audience` (Customer | Employee), `Type` (TermsOfService |
-PrivacyPolicy), `CountryId` (the market the copy is for; **null = the platform-wide text a market
+PrivacyPolicy | WorkContract — the third, customer-audience, is the contract for work an order is
+booked under, ADR-0068), `CountryId` (the market the copy is for; **null = the platform-wide text a market
 without its own falls back to**), `EffectiveFrom` and `Version`, which *is* `EffectiveFrom` as
 `yyyy-MM-dd` — with one `LegalDocumentText` per language (`Language`, `Title`, `ContentMarkdown`,
 `ContentHash` SHA-256). Tenantless like `CountryConfiguration`: platform copy per market. **A document
 in force is immutable** — the seeder that writes them refuses to change an in-force text, and a
 wording change is a new document with a new date — so every text a customer ever accepted is still
-in the table, pointed at by `UserConsent.LegalDocumentId`. The documents are seeded from embedded
+in the table, pointed at by `UserConsent.LegalDocumentId`, by `Order.WorkContractDocumentId` and — per
+text row — by `WorkContractAcceptance.LegalDocumentTextId`. The documents are seeded from embedded
 markdown at every host start; there is no admin writer. → [ADR-0063](/decisions/adr-0063),
 [`legal-document`](/domain/roles/legal-document)
 

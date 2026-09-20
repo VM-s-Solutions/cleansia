@@ -11,9 +11,9 @@ Provide cleaning partners with tools to find and manage cleaning jobs, track the
 | Feature | Description |
 |---|---|
 | Dashboard | Stat cards, earnings charts, order distribution, productivity metrics |
-| Available Orders | Browse unassigned orders and take them |
+| Available Orders | Browse unassigned orders and take them — every take opens the **contract-for-work dialog** first (ADR-0068): the job facts and the order's contract text from `GetWorkContractPreview`, a tick *I have read and accept the contract for work for this job*, and *Accept and take the job*, which sends the previewed text row's id with the take |
 | My Orders | View assigned orders, start/complete work, upload photos |
-| Order Detail | Full order info, Take/Start/Complete flow, Report Issue, Add Note |
+| Order Detail | Full order info, Take/Start/Complete flow, Report Issue, Add Note. The take goes through the same contract dialog; the detail states *You accepted the contract for work on {date}, version {version}* with **Read the contract** (the dialog in `read` mode from `GetWorkContract`), or — for a cleaner an admin placed — a banner *Accept the contract for work before you start* whose button opens the dialog in `accept` mode (`AcceptWorkContract`); Start and Complete stay offered and a `contract.acceptance_required` refusal opens the same dialog; a `contract.text_mismatch` re-fetches the preview, unticks and says the contract was updated |
 | Invoices | View pay period invoices, download PDFs |
 | My Pay | A pay period's rows and totals in one currency; a period holding pay in more than one currency (after an admin reassignment) shows a currency switch derived from the period's **pay rows** — present on an open period before any invoice exists, and never offering a cancelled invoice's currency |
 | Profile | Manage personal info, availability, documents |
@@ -59,7 +59,7 @@ The home route (`/`) redirects to `/orders`.
 | `confirm-email` | `@cleansia-partner/confirm-email` | Email verification |
 | `forgot-password` | `@cleansia-partner/forgot-password` | Password reset |
 | `dashboard` | `@cleansia-partner/dashboard` | Analytics dashboard |
-| `orders` | `@cleansia-partner/orders` | Order management |
+| `orders` | `@cleansia-partner/orders` | Order management — the board, the detail, and `components/work-contract-dialog/` (a PrimeNG dialog with a facade; modes `take` / `accept` / `read`; the facts table from the DTO's `facts`, `contentHtml` through the sanitizer; the four `api.contract.*` / `api.legal.document_not_found` keys in five locales, on `PARTNER_SURFACE_ERROR_KEYS`) |
 | `invoices` | `@cleansia-partner/invoices` | Invoice management |
 | `profile` | `@cleansia-partner/profile` | Profile settings |
 

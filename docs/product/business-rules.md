@@ -285,6 +285,63 @@ The last one is the constraint that keeps the feature from eating the marketplac
 offerable work must stay on the open board, so preferred holds cannot starve cleaners who have no
 regular customers.
 
+## The contract for work {#work-contract}
+
+**Owner ruling 2026-09-20 → [ADR-0068](/decisions/adr-0068).** The lawyer's model forms an individual
+*smlouva o dílo* between the customer and the cleaner the moment the cleaner accepts the job, on the
+customer terms. Until 2026-09-20 nothing on the platform could substantiate a claim against a cleaner:
+the order named no text, the take wrote a seat the next drop deleted, and an admin's placement left
+the same row a cleaner's own act did. The rules below are what is written down now.
+
+| Rule | Value |
+|---|---|
+| The text an order is booked under | the **customer-audience** `WorkContract` document in force for the **address's market** on the booking day — stamped on the order once (`Orders.WorkContractDocumentId`), never changed; a booking with no text in force is **refused** (the factory throws), never booked without one |
+| Where the customer reads it | `/work-contract` beside `/terms` and `/privacy`, and the wizard's confirm step says *"By confirming the order you conclude a contract for work with the cleaner on these terms"* on every client, whether or not the account already consented — a sentence, **not a checkbox** |
+| When the acceptance forms | at the **take**: the cleaner reads the text and the job facts in the app and takes the job in one act; the take **carries the id of the exact text row** they read (`acceptedWorkContractTextId`), and a take without it is refused |
+| One contract per **seat** | a take → drop → re-take is two seats and **two** contracts; a take → drop → admin re-add of the same cleaner is a new seat with **no** contract until they accept |
+| An administrator places a cleaner | **no** acceptance is written — an admin cannot accept on a cleaner's behalf. The cleaner accepts from the job detail (a banner), or is refused at **Start** and at **Complete** with `contract.acceptance_required` and accepts then; a cleaner placed on an **in-progress** job can still accept before completing |
+| What binds | the text row (document, version, language, hash by one join) **and a frozen snapshot of the job as shown at acceptance**: order number, date and time window, price and currency (the customer's price — Q-WC-01), the coarse location (*"Praha · 120"*), rooms, bathrooms, services, packages, extras. Never the street, never a name |
+| A new version of the text | applies to orders **booked from its date**; an order already booked keeps its text — no re-acceptance, no "stale version" case |
+| What survives | the row outlives the seat (a drop, cover, rejection or reassignment leaves it), the order's anonymisation and the cleaner's erasure — it is books, kept with the order, **never deleted** |
+| Who can read an accepted contract | the order's customer, the cleaner who accepted it (the server still answers them after they left the job — the read is keyed on the acceptance, not the seat), and the company's administrators — with the stored facts and the text in the reader's language (the page says *accepted in Czech* when it renders another); anyone else is told the order does not exist |
+
+**The three keys.** `contract.not_accepted` — the client sent no text id (a broken or stale client,
+shown as an error); `contract.text_mismatch` — the id is not a text of *this* order's document (a
+cached id from another job; the app re-fetches the text and asks again); `contract.acceptance_required`
+— the caller's seat has no contract yet (a product state the app answers by opening the contract). A
+full order still answers `no_available_spots` ahead of a mismatch, and a held order stays
+indistinguishable from a missing one — the tick is judged before existence, the echo after everything
+else.
+
+**What each party sees.** The partner apps show the contract before every take — the facts, the text,
+and on Android and iOS a *Swipe to accept the contract for work* slider under it, on the web a tick
+and *Accept and take the job*; the job detail states *You accepted the contract for work on {date},
+version {version}* with **Read the contract**. The customer's order detail states *Contract for work
+accepted by {given name} on {date}, version {version}* per crew member, with **Read the contract**;
+before any acceptance it says nothing (the crew list already shows who is on the job). The admin's
+order detail says *accepted {date}, v{version}* or *contract pending* per crew member, with **Read**
+— and, for an Administrator, the accepted text row's SHA-256. There is **no PDF** yet: a dispute is
+answered from the incident file's *Contracts for work* section plus the admin document read's hash.
+
+**The record, and what is kept of it.** Every acceptance carries the client it came from (partner
+web or partner mobile), the IP address, the device label and the session's signed device id, like
+every other legal act on the platform. It writes `employee.order.contract_accepted` on the order's
+timeline, prints in the incident file, is in the cleaner's own data export in full and in the
+customer's export as the order's document version plus each acceptance's date, version and language
+(no cleaner id), and goes into a company's archive bundle without the IP and device. **Retention of
+the request metadata — 3 years per row, per company** (`retention.work_contract_metadata.years`, the
+tenth window in the table below): the IP address, device label and device id are blanked three years
+after the acceptance, or at the cleaner's erasure, whichever comes first; the acceptance itself, the
+text it names and the facts stay. Nothing is written for a cleaner already on a crew when this
+shipped (DEV only, no backfill).
+
+**Open with the owner and the lawyer** (defaults in force, [ADR-0068](/decisions/adr-0068) §Open
+questions): which figure is the *cena díla* (the customer's price today), the web gesture (a tick,
+not a slider), how the parties are named (given name only), whether a swipe forms a B2C contract for
+work or a qualified signature is needed (the swipe; Signi is the upgrade path), the VOP wording that
+incorporates the template, whether an admin may force a crew member at all or every seat should be an
+offer the cleaner takes, and the coarse location on a permanent row.
+
 ## What a cleaner cannot silence {#cleaner-non-mutable}
 
 A cleaner may mute notification categories; **five pushes ignore the mute**, every one about work the
@@ -1050,7 +1107,7 @@ windows. The admin and cleaner audit tables have **no** window (ADR-0012 D6) and
 touches them.
 
 **Every retention window is per operating company** (owner ruling 2026-09-15, Q-TENANCY-04). The
-nine windows below are the platform defaults; an admin sets **their own company's** value on the admin
+ten windows below are the platform defaults; an admin sets **their own company's** value on the admin
 app's *Company settings* page, inside the range shown, and resets it to the default. The sweep runs
 once per company under that company's values, so two companies keep different windows and neither can
 see or set the other's. A value outside the range is refused at the page, and a stored value the
@@ -1067,11 +1124,12 @@ catalogue no longer accepts falls back to the default rather than to zero.
 | Notifications | `retention.notifications.days` | 90 | 1 – 36 500 days | in-app notification rows (plus a 500-per-user cap that is not a setting) |
 | Customer audit rows | `retention.customer_audit.years` | 3 | 1 – 100 years | per row, from its own act |
 | Dispute text after erasure | `retention.dispute_text.years` | 3 | 1 – 100 years | the description, messages and resolution notes of an **erased** customer's disputes, from the erasure |
+| Contract-acceptance metadata | `retention.work_contract_metadata.years` | 3 | 1 – 100 years | the IP address, device label and device id on a cleaner's acceptance of the contract for work, from the acceptance; the acceptance itself is kept with the order → [The contract for work](#work-contract) |
 
-A tenth catalogue key sits beside them on the same page under its own category, `lifecycle`: the
+An eleventh catalogue key sits beside them on the same page under its own category, `lifecycle`: the
 **chargeback horizon** (`lifecycle.chargeback_horizon_days`, default **180**, range **0 – 730** days —
 zero means no horizon), counted from the company's latest card-paid cleaning; the company cannot be
-archived until it has passed → [A company's lifecycle](#company-lifecycle). An eleventh, under
+archived until it has passed → [A company's lifecycle](#company-lifecycle). A twelfth, under
 `notifications`, is the first that is not a number: the **shared mailbox for administrator notices**
 (`notifications.admin_email`, an e-mail address; empty by default, which means every administrator is
 e-mailed individually) → [Administrators are told](#admin-notifications).

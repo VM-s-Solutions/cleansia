@@ -25,6 +25,16 @@ wizard -- web, Android and iOS -- offers only what that market sells.
 **Choosing a cleaner** — nominate a preferred cleaner, who gets first refusal for a bounded window
 before the job opens to everyone.
 
+**The contract for work** — a booking is concluded under a dated contract-for-work text published at
+`/work-contract` beside the terms, and the wizard's confirm step says so on every client (*"By
+confirming the order you conclude a contract for work with the cleaner on these terms"* — a sentence,
+not a tick). Once a cleaner has accepted it for the job, the order detail on web, Android and iOS
+states *Contract for work accepted by {given name} on {date}, version {version}* per crew member, and
+**Read the contract** opens the accepted text with the job facts frozen at acceptance — order number,
+window, price, coarse location, scope — in the customer's language. Before any acceptance it says
+nothing. → [Business rules — the contract for work](/product/business-rules#work-contract),
+[ADR-0068](/decisions/adr-0068)
+
 **Tracking** — see the order move through on-the-way, in progress and completed, with push
 notifications and a Live Activity on iOS.
 
@@ -53,8 +63,9 @@ from the market, not from the translation; a market with no figure gets the sent
 account erasure. The export carries the customer's own conduct record — every booking, cancellation,
 dispute filing, membership change, sign-in and consent, with the figures the platform showed them at
 the time — each consent with the IP, the device and the **version of the terms** it was given under,
-and **every dispute** with its thread, resolution and refund; pulling the export is itself on the
-record. An erasure reaches the **guest bookings placed with the account's e-mail** as well as the
+**every dispute** with its thread, resolution and refund, and on each order the version of the
+contract for work it was booked under with the date, version and language of every acceptance (never
+the cleaner's id); pulling the export is itself on the record. An erasure reaches the **guest bookings placed with the account's e-mail** as well as the
 account's own (a live one is left to finish first). The terms and the privacy policy are **dated
 documents**: the `/terms` and `/privacy` pages show the version in force for the customer's market
 with its effective date, a sign-up or a booking without the terms tick is **refused**, and the
@@ -81,6 +92,16 @@ withheld until they take it.
 **Doing the job** — take a job, mark on-the-way, start, add photos and notes, complete. Entry
 instructions and the full address become visible on assignment. A job cannot be started more than an
 hour before it is booked for.
+
+**Accepting the contract for work** — every take passes through the contract: the app shows the job
+facts (number, window, price, coarse location, scope) and the contract text the order was booked
+under, and the cleaner accepts it in the same act as taking the job — a *Swipe to accept the contract
+for work* slider under the text on Android and iOS, a tick and *Accept and take the job* on the web.
+A cleaner an administrator placed on a job sees a banner on the job detail and accepts from there;
+tapping Start or Complete first opens the same contract. The job detail then states *You accepted the
+contract for work on {date}, version {version}* with **Read the contract**. If the text changed
+between the preview and the take, the app re-fetches it and asks again. → [Business rules — the contract for work](/product/business-rules#work-contract),
+[ADR-0068](/decisions/adr-0068)
 
 **Leaving a job** — ask for cover (the cleaner stays on the hook until somebody takes the seat) or drop
 it outright. A drop puts the seat back on the board and cancels nothing; when it was the last cleaner
@@ -125,7 +146,11 @@ without a sign-out. → [Where the server gates and the web hides](/architecture
 **Orders** — search, inspect, reassign a cleaner, override a status, cancel, refund in full or in part.
 The override moves strictly forward and cannot set *Confirmed* on an order with nobody assigned —
 reassign to put a cleaner on it; an override to *Completed* dates the completion so the order is
-revenue of a month.
+revenue of a month. The crew list on the order detail says per cleaner whether the **contract for
+work** is accepted — *accepted {date}, v{version}* or *contract pending* (the pending state is the
+admin's own doing: a reassignment writes no acceptance, the cleaner accepts from their app) — and
+**Read** opens the accepted text with the frozen job facts; an Administrator also sees the accepted
+text row's SHA-256, the hash a dispute cites. → [Business rules — the contract for work](/product/business-rules#work-contract)
 
 **Being told** — a bell in the sidebar and a *Notifications* page: one row per event the company has
 to act on — an order to serve, an order that lost its last cleaner, a dispute filed, a chargeback, a
@@ -190,22 +215,23 @@ with a hash on the last page; every build of either is itself recorded. The orde
 [ADR-0062](/decisions/adr-0062)
 
 **Legal documents** — a read-only page under the configuration area listing every version of the
-terms and the privacy policy the platform has shown, per audience, type and market, with its
-effective date, whether it is in force and the languages it carries, and a preview of one language
-with its content hash. There is no authoring: a new version is a seed file plus a deploy.
-→ [ADR-0063](/decisions/adr-0063)
+terms, the privacy policy and the contract for work the platform has shown, per audience, type and
+market, with its effective date, whether it is in force and the languages it carries, and a preview
+of one language with its content hash. There is no authoring: a new version is a seed file plus a
+deploy. → [ADR-0063](/decisions/adr-0063), [ADR-0068](/decisions/adr-0068)
 
 **Company settings** — a page under the configuration area where an admin sets **their own operating
-company's** values for the platform settings that may differ per company: today the nine data-retention
+company's** values for the platform settings that may differ per company: today the ten data-retention
 windows (how long stale devices, old notifications, withdrawn consents, superseded documents, completed
-GDPR requests, order contact details, customer audit rows and an erased customer's dispute text are
-kept, and whether expired codes are cleared). One row per setting shows what it means, its allowed
+GDPR requests, order contact details, customer audit rows, an erased customer's dispute text and the
+IP and device details on a cleaner's contract acceptance are kept, and whether expired codes are
+cleared). One row per setting shows what it means, its allowed
 range, the platform default, the value in force and whether the company has overridden it; edit is
 inline with a number field or a checkbox, *Reset* puts a setting back on the default, and every change
 is on the admin audit trail with the before and after values. A setting outside the catalogue cannot be
 created and a value outside its range is refused, so the page can never hold a number nothing reads.
-The retention sweeps read each company's own windows. A tenth setting, the **chargeback horizon** (180
-days by default), is the one the company's archive waits on — below. An eleventh, the **administrator
+The retention sweeps read each company's own windows. An eleventh setting, the **chargeback horizon** (180
+days by default), is the one the company's archive waits on — below. A twelfth, the **administrator
 notification mailbox**, is the first that is an address rather than a number: edited in an e-mail
 field, refused when malformed, and shown as *every administrator* while unset.
 → [Business rules — retention](/product/business-rules#customer-record),

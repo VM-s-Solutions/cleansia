@@ -283,6 +283,7 @@ Because the FKs restrict, `DeleteCurrency` asks `ICurrencyRepository.IsInUseAsyn
 | `MembershipBenefitUsage` | ADR-0035 — the metered-benefit ledger. Two indexes, and confusing them is the trap: `IX_MembershipBenefitUsages_Slot` on `(TenantId, UserId, BenefitKind, PeriodKey, SlotOrdinal)` is unique, `NULLS NOT DISTINCT`, filtered to live rows, and **is the sole arbiter of the reservation race** — the `SlotOrdinal` column is what lets a quota be N rather than 1. `IX_MembershipBenefitUsages_Quota`, the same key **without** `SlotOrdinal`, is **not unique**; it only serves the remaining-count read |
 | `OrderReceipt` | Generated receipt per order, including fiscal-registration state |
 | `FiscalCounter` | Per-issuer gapless fiscal sequence counter (see below) |
+| `WorkContractAcceptance` | ADR-0068 — one cleaner's acceptance of the contract for work for **one seat** of one job. `IX_WorkContractAcceptances_OrderEmployeeId` is **unique** (one contract per seat; the arbiter of a concurrent double accept), the seat and the cleaner are bare scalars with no FK (the seat row is hard-deleted by the next drop, the cleaner is anonymised), `LegalDocumentTextId` and `OrderId` are `Restrict` FKs, `FactsJson` is `jsonb`. Append-only: `Pseudonymise()` blanks the IP / device columns at erasure and after the per-company window; nothing deletes a row. `Orders.WorkContractDocumentId` (nullable, FK `LegalDocuments` Restrict, indexed) is the order's half |
 
 ::: danger A unique index over a nullable column enforces nothing unless it says so
 Postgres treats NULLs as DISTINCT, so a unique index containing a nullable column admits unlimited
@@ -488,12 +489,15 @@ is ordinary work for whoever changes the model, paired with the DEV database dro
 integration suite — owner rulings 2026-08-15, 2026-08-25 and 2026-09-07; nothing here is a manual
 step any more.
 
-Today that file is `20260912110108_Initial`, regenerated on 2026-09-12 for the per-currency schema:
-the three price tables, `Orders.CurrencyId` on delete Restrict, the `(EmployeeId, PayPeriodId,
-CurrencyId)` invoice index, `EmployeePayoutDetails.CurrencyId` and `Currencies.LoyaltyPointsDivisor`.
+Today that file is **`20260919231739_Initial`**, regenerated on 2026-09-20 for the contract for work
+([ADR-0068](/decisions/adr-0068)): the `WorkContractAcceptances` table and `Orders.WorkContractDocumentId`
+— **88 tables**, 49 of them stamped with a `Tenants` foreign key. It replaced `20260919142517` (the
+administrator roles, 2026-09-19); the chain of regenerations before that — the per-currency schema of
+2026-09-12, the customer audit and legal documents, the tenant FK, the company lifecycle, the status
+concurrency token, the recurring pause state — is kept in `agents/cleanup/MANUAL_STEPS.md` MS-2.
 Regenerating changes the migration id, so a DEV database whose `__EFMigrationsHistory` records an
 older id replays the whole create script against tables that already exist — drop it before the
-first start against the new file.
+first start against the new file (MS-2 names the id the owed drop belongs to).
 :::
 
 ## Database Configuration

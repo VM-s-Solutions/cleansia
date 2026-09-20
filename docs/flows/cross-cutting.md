@@ -44,10 +44,13 @@ flowchart LR
 > the loop is what makes the override mean anything.
 
 **The second shape: the sweeps that read per company.** Some jobs have no row to derive the tenant
-from, because their input is the list of companies and their settings — the nine retention sweeps,
+from, because their input is the list of companies and their settings — the ten retention sweeps,
 whose windows are each company's own (`TenantConfiguration`, set on the admin's *Company settings* page;
-→ [Business rules — retention](/product/business-rules#customer-record)). They loop the **registry**
-instead of grouping rows:
+→ [Business rules — retention](/product/business-rules#customer-record)). The tenth, since
+2026-09-20, is `WorkContractAcceptanceMetadata`: it blanks the IP address, device label and device id
+on the company's contract-for-work acceptances older than `retention.work_contract_metadata.years`
+(default 3), in batches through the filter, and **never deletes a row** — the acceptance is books
+([ADR-0068](/decisions/adr-0068) D5). They loop the **registry** instead of grouping rows:
 
 ```mermaid
 flowchart LR

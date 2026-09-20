@@ -497,6 +497,24 @@ question first and the form second.
 | **Written under a tenant claim** | **symmetric → FILTERED.** `src/Cleansia.Config/Filters/RequireCompleteProfileAttribute.cs:25`, `src/Cleansia.Core.AppServices/Authentication/OrderAccessService.cs:112`, the employee self-service `Update*` handlers, `src/Cleansia.Infra.Database/Repositories/LiveActivityTokenRepository.cs:10-45` | **ASYMMETRIC → bypass + re-pin.** `src/Cleansia.Infra.Database/Repositories/EmployeeRepository.cs:19-26` on the token-mint paths; `src/Cleansia.Infra.Database/Repositories/LiveActivityTokenRepository.cs:47-61`; `src/Cleansia.Infra.Database/Repositories/DeviceRepository.cs:46-57` and `src/Cleansia.Infra.Database/Repositories/DeviceRepository.cs:59-68` |
 | **Written with no claim (anonymous)** | **ASYMMETRIC → bypass + re-pin.** `src/Cleansia.Infra.Database/Repositories/RefreshTokenRepository.cs:10-23` and the revoke family at `src/Cleansia.Infra.Database/Repositories/RefreshTokenRepository.cs:120-150`; **the legacy confirm read** `UserRepository.GetByConfirmationCodeIgnoringTenantAsync` (written under the market's operator by `Register`, read anonymously from the link — pinned by the code hash); **the register / resend / admin-create pre-checks** (`GetByEmailIgnoringTenantAsync` / `ExistsWithEmailIgnoringTenantAsync` — pinned by the global `IX_Users_Email`, deliberately across the holding: one email is one identity); `Order/Lookup` and `LookupBatch` (`GetQueryableIgnoringTenant()`, pinned by `ConfirmationCode` + `CustomerEmail`) | **symmetric → FILTERED.** Since ADR-0061 D3 every anonymous write runs under the market operator's override, so this cell holds the reads a request makes of rows *it* wrote in the same scope — the promo `GetByCodeAsync` pre-check under `RequestPromoCode`, `ValidateReferral`'s `(TenantId, Code)` read |
 
+**The newest row in the top-right cell — the contract-for-work acceptance (ADR-0068, 2026-09-20).**
+`WorkContractAcceptances` is written under the *cleaner's* claim and pinned to the **order's**
+operator (`WorkContractAcceptor` sets `TenantId = order.TenantId` on the row and its audit row); the
+order's *customer* may be booked across the border (ADR-0061 D6), so a customer's read under their own
+company's claim is the asymmetric case and would miss the row. Hence
+`WorkContractAcceptanceRepository.GetByIdIgnoringTenantAsync` (the read keyed on the acceptance),
+`GetForSeatsAsync`, `GetForOrdersAsync` and `GetByEmployeeIdNoTrackingAsync` bypass, and each pays the
+price: `GetWorkContract.Validator` re-pins on **the row's order existing for the caller**
+(`IOrderAccessService.OrderExistsForCallerAsync` — `GetQueryableForOwner(userId)` for a customer, the
+filtered set for staff) **and**, when the caller is a cleaner, on `acceptance.EmployeeId == the
+caller's own employee id`; the seat and order reads are made for an order the caller already got
+through the filter or the owner pin (`GetOrderDetails`, the incident file, the customer's export);
+the subject export and the erasure walk (`PseudonymiseForEmployeeAsync`, a **tracked** load riding
+the erasure's single commit) name the subject's own id. The two gates (`AnyForSeatAsync`) and the
+per-company metadata sweep (`PseudonymiseExpiredAsync`) stay **filtered** — symmetric, written and
+read under the same company. Pinned by `GetWorkContractHandlerTests` (another customer, another
+cleaner → `order.not_found`).
+
 **Two things this is deliberately NOT.** *"The endpoint is anonymous"* is not the test — the bottom-right
 cell is anonymous and stays filtered because the scope behaviour gave it a tenant. *(The sentence that
 used to stand here — that widening the register/resend pre-checks across tenants "re-creates the

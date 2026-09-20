@@ -21,14 +21,14 @@ history, saved addresses, disputes, Plus, recurring schedules and rewards.
 | Order wizard | `/order` — services, address, date/time, Plus step, payment, review. Public: a guest books end to end. From the address step on the address's country decides the price; the Plus step keeps the chosen market |
 | Checkout | Stripe card payments or cash; `/checkout/success` and `/checkout/cancel` are the two URLs Stripe returns to |
 | Order tracking | `/track-order` — anonymous lookup by order number + e-mail |
-| My Orders | `/orders`, `/orders/:orderId` — the customer’s history across operators, detail and rebook (auth); each row and detail show the order’s country and currency |
+| My Orders | `/orders`, `/orders/:orderId` — the customer’s history across operators, detail and rebook (auth); each row and detail show the order’s country and currency. The detail states *Contract for work accepted by {given name} on {date}, version {version}* per crew member with an acceptance, and **Read the contract** opens `/orders/:orderId/contract/:acceptanceId` — the accepted text with the job facts frozen at acceptance and the acceptance details (`GET api/Order/GetWorkContract`; another customer's acceptance id renders the error state, ADR-0068) |
 | Disputes | `/disputes` — file and follow a dispute (auth) |
 | Cleansia Plus | `/plus` — the one public Plus page: benefits and the plans priced in the chosen market for everyone, the management panel on top for a member (`/membership` redirects here; `/membership/welcome` is the post-purchase page) |
 | Recurring bookings | `/membership/recurring`, `…/create`, `…/:id` — a member's schedules (create and edit gated by `customerMembershipGuard`; list, pause and delete are not) |
 | Rewards | `/rewards`, `/rewards/activity` — points, tiers and the tier floor line (shown only when the market's currency is the platform default), referral code |
 | Profile | `/profile` (account, language, notification preferences), `/saved-addresses` |
 | Authentication | `/login`, `/register`, `/r/:code` (referral landing), `/confirm-email` (6-digit code), `/forgot-password`; e-mail + password, Google and Apple sign-in (buttons hidden when the client id is not configured) |
-| Legal | `/terms` and `/privacy` — the stored document in force for the chosen market and the UI language, fetched from `GET api/Legal/GetDocument` and rendered with its title, effective date and version (`yyyy-MM-dd`; the currency code filled in from the market — ADR-0063); `/gdpr` (cookie consent and data requests) |
+| Legal | `/terms`, `/privacy` and `/work-contract` — the stored document in force for the chosen market and the UI language, fetched from `GET api/Legal/GetDocument` and rendered with its title, effective date and version (`yyyy-MM-dd`; the currency code filled in from the market — ADR-0063). `/work-contract` is the contract for work every booking is concluded under (ADR-0068): the wizard's confirm step names it in a sentence beneath the consent block, unconditionally, and the footer links it beside the other two; `/gdpr` (cookie consent and data requests) |
 
 ## Orders across markets
 
@@ -105,6 +105,7 @@ above the guarded `orders` route so they keep winning the match):
 /orders/lookup                 → redirect /track-order (pathMatch full)
 /orders/lookup/:orderId        → redirect /track-order (pathMatch full)
 /orders                        My orders (customerAuthGuard)
+/orders/:orderId/contract/:acceptanceId   The accepted contract for work (customerAuthGuard; declared above the detail route)
 /orders/:orderId               Order detail (customerAuthGuard)
 /profile                       Profile (customerAuthGuard)
 /saved-addresses               Saved addresses (customerAuthGuard)
@@ -123,12 +124,13 @@ above the guarded `orders` route so they keep winning the match):
 /gdpr                          Cookie consent / data requests
 /terms                         Terms of service (SSR)
 /privacy                       Privacy policy (SSR)
+/work-contract                 The contract for work (SSR)
 /not-found                     The customer app's own 404 (SSR)
 /**                            → redirect /not-found
 ```
 
-Route path constants come from `CleansiaCustomerRoute` in `@cleansia/services`; `checkout`, `terms`
-and `privacy` are literal strings in the routes file.
+Route path constants come from `CleansiaCustomerRoute` in `@cleansia/services`; `checkout`, `terms`,
+`privacy` and `work-contract` are literal strings in the routes file.
 
 ## Feature Libraries
 
@@ -142,7 +144,7 @@ routes from `src/lib/lib.routes.ts`:
 | `plus` | `@cleansia-customer/plus` | `/plus` — the public Plus page and the member panel |
 | `order-wizard` | `@cleansia-customer/order-wizard` | `/order` — the booking flow, quote, Plus step, payment |
 | `checkout` | `@cleansia-customer/checkout` | `/checkout/success`, `/checkout/cancel` |
-| `orders` | `@cleansia-customer/orders` | `/orders`, `/orders/:orderId`, the `TrackOrderComponent` behind `/track-order` |
+| `orders` | `@cleansia-customer/orders` | `/orders`, `/orders/:orderId`, `/orders/:orderId/contract/:acceptanceId` (the `work-contract-page` — facade + signals, `getWorkContract(acceptanceId, uiLanguage)`, the facts table, the acceptance facts, `[innerHTML]` through the sanitizer, an error state with retry), the `TrackOrderComponent` behind `/track-order` |
 | `disputes` | `@cleansia-customer/disputes` | `/disputes` |
 | `profile` | `@cleansia-customer/profile` | `/profile`, `/saved-addresses`, and the `/membership/*` routes (welcome page, recurring mount, the two redirects to `/plus`) |
 | `recurring-bookings` | `@cleansia-customer/recurring-bookings` | The schedules list and the create/edit wizard, mounted under `/membership/recurring` |
@@ -152,7 +154,7 @@ routes from `src/lib/lib.routes.ts`:
 | `confirm-email` | `@cleansia-customer/confirm-email` | `/confirm-email` |
 | `forgot-password` | `@cleansia-customer/forgot-password` | `/forgot-password` |
 | `gdpr` | `@cleansia-customer/gdpr` | `/gdpr` |
-| `legal-pages` | `@cleansia-customer/legal-pages` | `/terms` and `/privacy` — a fetch-and-render of the stored document in force (`[innerHTML]` through the sanitizer; the copy lives in the seed files, not the locale JSON) |
+| `legal-pages` | `@cleansia-customer/legal-pages` | `/terms`, `/privacy` and `/work-contract` — a fetch-and-render of the stored document in force (`[innerHTML]` through the sanitizer; the copy lives in the seed files, not the locale JSON); one two-line component per type over the shared `legal-document` component |
 
 The 404 (`CustomerNotFoundComponent`) lives in the app itself, under `app/components/not-found/`,
 wrapping the shared component with this app's ways out of it.

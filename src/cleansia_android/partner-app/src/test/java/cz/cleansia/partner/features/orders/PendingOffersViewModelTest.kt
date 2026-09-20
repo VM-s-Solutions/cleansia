@@ -30,9 +30,11 @@ import org.junit.Test
 
 /**
  * "Confirming IS taking" — there is no confirm endpoint, and a UI that called anything else would be a
- * second acquisition path beside TakeOrder's single ordered chain. The refusal cases matter as much as
- * the happy one: a reservation spends no capacity, so a capped cleaner can be reserved a job and then
- * refused the confirm, and that refusal has to read as the platform's problem.
+ * second acquisition path beside TakeOrder's single ordered chain. The take itself now runs inside
+ * the contract sheet, so the confirm opens it and the sheet's verdict comes back as the confirm's
+ * own. The refusal cases matter as much as the happy one: a reservation spends no capacity, so a
+ * capped cleaner can be reserved a job and then refused the confirm, and that refusal has to read as
+ * the platform's problem.
  */
 @OptIn(ExperimentalCoroutinesApi::class)
 class PendingOffersViewModelTest {
@@ -59,6 +61,10 @@ class PendingOffersViewModelTest {
     }
 
     private fun viewModel() = PendingOffersViewModel(ordersRepository, errorTranslator, snackbar)
+
+    private fun taken(id: String) = WorkContractOutcome.Taken(WorkContractRequest.Take(id))
+
+    private fun refused(id: String, error: ApiError) = WorkContractOutcome.Refused(WorkContractRequest.Take(id), error)
 
     private fun offer(id: String) = PendingOffer(
         id = id,
@@ -175,26 +181,60 @@ class PendingOffersViewModelTest {
 
     /**
      * Confirming is TakeOrder — the shipped command with its one ordered Cascade.Stop chain. A UI that
-     * reached for anything else would have built a second, weaker take gate.
+     * reached for anything else would have built a second, weaker take gate. The sheet runs it; the
+     * confirm opens the sheet for exactly this offer and takes nothing on its own.
      */
     @Test
-    fun `confirming takes the order and hands the screen the id to open`() = runTest {
+    fun `confirming opens the contract sheet for the offer and takes nothing itself`() = runTest {
         val row = offer("a")
         serverHolds(row)
-        coEvery { ordersRepository.takeOrder("a") } returns ApiResult.Success(Unit)
+        val vm = viewModel()
+        advanceUntilIdle()
+
+        vm.confirm(row)
+        advanceUntilIdle()
+
+        assertEquals(WorkContractRequest.Take("a"), vm.contractRequest.value)
+        coVerify(exactly = 0) { ordersRepository.takeOrder(any(), any()) }
+        assertEquals(ActionState.Idle, vm.actionState.value)
+    }
+
+    @Test
+    fun `a Taken verdict closes the sheet, hands the screen the id to open and re-asks the server`() = runTest {
+        val row = offer("a")
+        serverHolds(row)
         val vm = viewModel()
         advanceUntilIdle()
 
         val opened = mutableListOf<String>()
         val job = launch { vm.confirmed.collect { opened += it } }
         advanceUntilIdle()
-
         vm.confirm(row)
+
+        vm.onWorkContractOutcome(taken("a"))
         advanceUntilIdle()
 
-        coVerify(exactly = 1) { ordersRepository.takeOrder("a") }
+        assertNull(vm.contractRequest.value)
         assertEquals(listOf("a"), opened)
+        coVerify(exactly = 2) { ordersRepository.refreshPendingOffers() }
+        assertEquals(ActionState.Idle, vm.actionState.value)
         job.cancel()
+    }
+
+    @Test
+    fun `dismissing the sheet leaves the offer where it was`() = runTest {
+        val row = offer("a")
+        serverHolds(row)
+        val vm = viewModel()
+        advanceUntilIdle()
+        vm.confirm(row)
+
+        vm.dismissContract()
+        advanceUntilIdle()
+
+        assertNull(vm.contractRequest.value)
+        coVerify(exactly = 1) { ordersRepository.refreshPendingOffers() }
+        assertEquals(listOf("a"), (vm.uiState.value as PendingOffersUiState.Loaded).offers.map { it.id })
     }
 
     /**
@@ -218,9 +258,9 @@ class PendingOffersViewModelTest {
         )
         val handed = slot<ApiError>()
         every { errorTranslator.translate(capture(handed)) } returns "You've reached your weekly order limit."
-        coEvery { ordersRepository.takeOrder("a") } returns ApiResult.Error(cap)
 
         vm.confirm(row)
+        vm.onWorkContractOutcome(refused("a", cap))
         advanceUntilIdle()
 
         assertEquals(weeklyCapKey, (handed.captured as ApiError.BadRequest).errorKey)
@@ -239,10 +279,8 @@ class PendingOffersViewModelTest {
         serverHolds(row)
         val vm = viewModel()
         advanceUntilIdle()
-        coEvery { ordersRepository.takeOrder("a") } returns
-            ApiResult.Error(ApiError.BadRequest("nope", null, null, "order.no_available_spots"))
-
         vm.confirm(row)
+        vm.onWorkContractOutcome(refused("a", ApiError.BadRequest("nope", null, null, "order.no_available_spots")))
         advanceUntilIdle()
 
         // The server decides whether the row survives, so the list is re-asked rather than guessed at.
@@ -260,10 +298,8 @@ class PendingOffersViewModelTest {
         serverHolds(row)
         val vm = viewModel()
         advanceUntilIdle()
-        coEvery { ordersRepository.takeOrder("a") } returns
-            ApiResult.Error(ApiError.BadRequest("nope", null, null, weeklyCapKey))
-
         vm.confirm(row)
+        vm.onWorkContractOutcome(refused("a", ApiError.BadRequest("nope", null, null, weeklyCapKey)))
         advanceUntilIdle()
 
         verify(exactly = 0) { snackbar.showError(any<String>()) }
@@ -276,9 +312,8 @@ class PendingOffersViewModelTest {
         serverHolds(row)
         val vm = viewModel()
         advanceUntilIdle()
-        coEvery { ordersRepository.takeOrder("a") } returns
-            ApiResult.Error(ApiError.BadRequest("nope", null, null, weeklyCapKey))
         vm.confirm(row)
+        vm.onWorkContractOutcome(refused("a", ApiError.BadRequest("nope", null, null, weeklyCapKey)))
         advanceUntilIdle()
 
         vm.dismissRefusal()
@@ -317,20 +352,20 @@ class PendingOffersViewModelTest {
         serverHolds(a, b)
         val vm = viewModel()
         advanceUntilIdle()
-        coEvery { ordersRepository.takeOrder(any()) } coAnswers {
+        coEvery { ordersRepository.declinePreferredOffer(any()) } coAnswers {
             delay(1_000)
             ApiResult.Success(Unit)
         }
 
-        vm.confirm(a)
-        vm.decline(b)
-        // Far enough for the rival coroutine to have run had one been launched, and short of the
-        // confirm's own completion — asserting before any dispatch would pass with no guard at all.
+        vm.decline(a)
+        vm.confirm(b)
+        // Far enough for the rival to have opened had the guard been missing, and short of the
+        // decline's own completion — asserting before any dispatch would pass with no guard at all.
         advanceTimeBy(500)
 
-        coVerify(exactly = 0) { ordersRepository.declinePreferredOffer(any()) }
+        assertNull("a confirm may not open the sheet over a release in flight", vm.contractRequest.value)
         assertEquals(ActionState.Submitting, vm.actionState.value)
-        assertEquals(OfferAction.Confirm, vm.attempt.value?.action)
+        assertEquals(OfferAction.Decline, vm.attempt.value?.action)
         advanceUntilIdle()
     }
 

@@ -101,6 +101,8 @@ fun OrderDetailScreen(
     val inFlightAction by viewModel.inFlightAction.collectAsStateWithLifecycle()
     val offerRefusal by viewModel.offerRefusal.collectAsStateWithLifecycle()
     val preferredOffer by viewModel.preferredOffer.collectAsStateWithLifecycle()
+    val contractRequest by viewModel.contractRequest.collectAsStateWithLifecycle()
+    val contractStanding by viewModel.contractStanding.collectAsStateWithLifecycle()
     val checkedIds by checklistViewModel.checkedIds.collectAsStateWithLifecycle()
 
     // No local SnackbarHostState — all VMs push directly to the
@@ -144,9 +146,11 @@ fun OrderDetailScreen(
                     order = s.order,
                     inFlight = inFlightAction,
                     preferredOffer = preferredOffer,
+                    contractStanding = contractStanding,
                     checkedIds = checkedIds,
                     onToggleChecklistItem = checklistViewModel::setChecked,
                     onTake = viewModel::take,
+                    onOpenContract = viewModel::openContract,
                     onStart = viewModel::start,
                     onNotifyOnTheWay = viewModel::notifyOnTheWay,
                     // Slide-to-complete now: no dialog, no optional
@@ -182,6 +186,14 @@ fun OrderDetailScreen(
 
                 offerRefusal?.let { refusal ->
                     OfferRefusalDialog(refusal = refusal, onDismiss = viewModel::dismissOfferRefusal)
+                }
+
+                contractRequest?.let { request ->
+                    WorkContractSheet(
+                        request = request,
+                        onDismiss = viewModel::dismissContract,
+                        onOutcome = viewModel::onWorkContractOutcome,
+                    )
                 }
 
                 if (confirmingCash) {
@@ -256,9 +268,11 @@ private fun OrderDetailBottomSheetLayout(
     order: OrderItem,
     inFlight: OrderAction?,
     preferredOffer: PendingOffer?,
+    contractStanding: WorkContractStanding,
     checkedIds: Set<String>,
     onToggleChecklistItem: (String, Boolean) -> Unit,
     onTake: () -> Unit,
+    onOpenContract: (WorkContractRequest) -> Unit,
     onStart: () -> Unit,
     onNotifyOnTheWay: () -> Unit,
     onCompleteClick: () -> Unit,
@@ -318,9 +332,11 @@ private fun OrderDetailBottomSheetLayout(
                     isInProgress = isInProgress,
                     inFlight = inFlight,
                     preferredOffer = preferredOffer,
+                    contractStanding = contractStanding,
                     checkedIds = checkedIds,
                     onToggleChecklistItem = onToggleChecklistItem,
                     onTake = onTake,
+                    onOpenContract = onOpenContract,
                     onStart = onStart,
                     onNotifyOnTheWay = onNotifyOnTheWay,
                     onCompleteClick = onCompleteClick,
@@ -536,9 +552,11 @@ private fun OrderDetailSheetContent(
     isInProgress: Boolean,
     inFlight: OrderAction?,
     preferredOffer: PendingOffer?,
+    contractStanding: WorkContractStanding,
     checkedIds: Set<String>,
     onToggleChecklistItem: (String, Boolean) -> Unit,
     onTake: () -> Unit,
+    onOpenContract: (WorkContractRequest) -> Unit,
     onStart: () -> Unit,
     onNotifyOnTheWay: () -> Unit,
     onCompleteClick: () -> Unit,
@@ -632,6 +650,12 @@ private fun OrderDetailSheetContent(
             // (no card background) — reads as the trailing identity
             // strip below the active-state block above.
             OrderMetadataRow(order = order)
+
+            WorkContractCard(
+                standing = contractStanding,
+                onAccept = { order.id?.let { onOpenContract(WorkContractRequest.Accept(it)) } },
+                onRead = { onOpenContract(WorkContractRequest.Read(it)) },
+            )
 
             if (disclosure.showsAccessCard(status)) {
                 AccessCard(accessInstructions = disclosure.accessInstructions!!)

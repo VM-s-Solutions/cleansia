@@ -28,11 +28,14 @@ import cz.cleansia.partner.api.model.OrderStatus
  * details screen.
  *
  * Status × ownership → action:
- *   New / Confirmed, NOT mine:   Slide-to-take
+ *   New / Confirmed, NOT mine:   "Take this job" (opens the contract sheet; the swipe is there)
  *   Confirmed (mine):            "Notify on the way" (single button)
  *   OnTheWay (mine):             Slide-to-start
  *   InProgress (mine):           "Mark cash collected" (unpaid cash) then Slide-to-complete
  *   Completed / Cancelled:       (nothing)
+ *
+ * Taking is a button rather than a slide because the deliberate gesture now sits under the contract
+ * text it accepts, inside the sheet — a slide that opened a second slide would ask twice.
  *
  * Phase B added `isAssignedToCurrentUser` on the detail DTO, so we no
  * longer need the "render Take and let the server reject" hack from
@@ -58,18 +61,8 @@ fun OrderPrimaryAction(
         OrderStatus._0, OrderStatus._2 -> {
             if (!isAssignedToCurrentUser) {
                 // Available offer the cleaner could take. On a job reserved for them by name the
-                // gesture is the same command with a different word: confirming IS taking.
-                SlideToCommit(
-                    idleLabel = stringResource(
-                        if (isPreferredOffer) R.string.offer_slide_to_confirm else R.string.slide_to_take,
-                    ),
-                    busyLabel = stringResource(
-                        if (isPreferredOffer) R.string.offer_confirming else R.string.taking_order,
-                    ),
-                    onCommit = onTake,
-                    isBusy = inFlight == OrderAction.Take,
-                    modifier = modifier,
-                )
+                // sheet runs the same command with a different word: confirming IS taking.
+                TakeButton(isPreferredOffer = isPreferredOffer, inFlight = inFlight, onTake = onTake, modifier = modifier)
             } else if (status == OrderStatus._2) {
                 // Confirmed and assigned to me — show the expected next
                 // step. We drop the parallel "Start now" shortcut from
@@ -105,13 +98,7 @@ fun OrderPrimaryAction(
                 // every board — owner ruling 2026-09-06 made a started job stay fillable, and this is
                 // the half of it the cleaner can see. The server's own gate is the authority; the
                 // browse-detail endpoint only returns this order at all while a seat remains.
-                SlideToCommit(
-                    idleLabel = stringResource(R.string.slide_to_take),
-                    busyLabel = stringResource(R.string.taking_order),
-                    onCommit = onTake,
-                    isBusy = inFlight == OrderAction.Take,
-                    modifier = modifier,
-                )
+                TakeButton(isPreferredOffer = false, inFlight = inFlight, onTake = onTake, modifier = modifier)
             }
         }
         OrderStatus._4 -> {
@@ -162,17 +149,31 @@ fun OrderPrimaryAction(
             } else {
                 // Same as OnTheWay above: the work has begun with a short crew and a seat is open.
                 // A late joiner is worth more to the customer than an empty seat.
-                SlideToCommit(
-                    idleLabel = stringResource(R.string.slide_to_take),
-                    busyLabel = stringResource(R.string.taking_order),
-                    onCommit = onTake,
-                    isBusy = inFlight == OrderAction.Take,
-                    modifier = modifier,
-                )
+                TakeButton(isPreferredOffer = false, inFlight = inFlight, onTake = onTake, modifier = modifier)
             }
         }
         else -> { /* Completed / Cancelled / null — no actions */ }
     }
+}
+
+/**
+ * Opens the contract sheet for the take. Spins while the host reconciles the order after the
+ * sheet's verdict, so the button cannot reopen the sheet on a job that is already taken.
+ */
+@Composable
+private fun TakeButton(
+    isPreferredOffer: Boolean,
+    inFlight: OrderAction?,
+    onTake: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    CleansiaPrimaryButton(
+        text = stringResource(if (isPreferredOffer) R.string.offer_confirm else R.string.take_order),
+        onClick = onTake,
+        loading = inFlight == OrderAction.Take,
+        enabled = inFlight == null,
+        modifier = modifier,
+    )
 }
 
 /**

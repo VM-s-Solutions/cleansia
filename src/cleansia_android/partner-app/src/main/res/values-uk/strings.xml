@@ -930,8 +930,19 @@
     <string name="history">Історія</string>
     <string name="you_earn">ви заробите</string>
     <string name="distance_unknown">Місце невідоме</string>
-    <string name="slide_to_take">Проведіть, щоб взяти замовлення</string>
-    <string name="taking_order">Беру замовлення…</string>
+    <!-- Contract for work: the sheet under the take, the standalone acceptance, the detail line and banner. -->
+    <string name="work_contract_title">Договір підряду</string>
+    <string name="work_contract_version">Версія %1$s</string>
+    <string name="work_contract_order_number">Замовлення %1$s</string>
+    <string name="work_contract_swipe_to_accept">Проведіть, щоб прийняти договір підряду</string>
+    <string name="work_contract_accepting">Приймаємо\u2026</string>
+    <string name="work_contract_load_error">Не вдалося завантажити договір підряду.</string>
+    <string name="work_contract_accepted_on">Прийнято %1$s, версія %2$s</string>
+    <string name="work_contract_accepted_in_language">Прийнято мовою: %1$s</string>
+    <string name="work_contract_accepted_line">Ви прийняли договір підряду %1$s, версія %2$s</string>
+    <string name="work_contract_pending_banner">Перш ніж почати, прийміть договір підряду</string>
+    <string name="work_contract_accept_cta">Прийняти договір</string>
+    <string name="work_contract_read">Прочитати договір</string>
     <string name="slide_to_start">Проведіть, щоб почати прибирання</string>
     <string name="starting_order">Починаю прибирання…</string>
     <string name="slide_to_complete">Проведіть, щоб завершити</string>
@@ -1133,6 +1144,12 @@
     <string name="error_order_max_employees_exceeded">На цьому замовленні вже максимальна кількість прибиральників.</string>
     <string name="error_order_preferred_employee_not_eligible">Ви не маєте права прийняти це замовлення.</string>
     <string name="error_order_employee_already_has_order_in_progress">У вас уже є інше замовлення в роботі. Завершіть його перед початком нового.</string>
+
+    <!-- Contract for work: the take's echo, the seat's gate, the preview with no text in force -->
+    <string name="error_contract_not_accepted">Перш ніж взяти замовлення, прочитайте та прийміть договір підряду.</string>
+    <string name="error_contract_text_mismatch">Договір оновлено \u2014 будь ласка, прочитайте його ще раз.</string>
+    <string name="error_contract_acceptance_required">Перш ніж продовжити, прийміть договір підряду для цього замовлення.</string>
+    <string name="error_legal_document_not_found">Це замовлення зараз неможливо взяти.</string>
 
     <string name="error_order_not_in_progress">Це замовлення не в роботі.</string>
     <string name="error_order_not_confirmed">Це замовлення ще не підтверджено.</string>
@@ -1343,8 +1360,6 @@
     <string name="offer_reserved_until_date">Ваше до %1$s, %2$s</string>
     <string name="offer_reserved_ended">Це резервування завершилося</string>
     <string name="offer_confirm">Підтвердити</string>
-    <string name="offer_slide_to_confirm">Проведіть, щоб підтвердити</string>
-    <string name="offer_confirming">Підтверджуємо\u2026</string>
     <string name="offer_decline">Відхилити</string>
     <string name="offer_decline_title">Звільнити це замовлення?</string>
     <string name="offer_decline_body">Воно одразу повернеться до всіх прибиральників. Це ніяк не зараховується вам у мінус, і поки воно вільне, ви можете взяти його зі списку.</string>

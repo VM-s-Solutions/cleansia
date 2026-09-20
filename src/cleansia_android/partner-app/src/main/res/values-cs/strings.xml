@@ -945,8 +945,19 @@
     <string name="history">Historie</string>
     <string name="you_earn">vyděláte</string>
     <string name="distance_unknown">Lokalita neznámá</string>
-    <string name="slide_to_take">Posunutím vezměte zakázku</string>
-    <string name="taking_order">Beru zakázku…</string>
+    <!-- Contract for work: the sheet under the take, the standalone acceptance, the detail line and banner. -->
+    <string name="work_contract_title">Smlouva o dílo</string>
+    <string name="work_contract_version">Verze %1$s</string>
+    <string name="work_contract_order_number">Objednávka %1$s</string>
+    <string name="work_contract_swipe_to_accept">Přejetím přijmete smlouvu o dílo</string>
+    <string name="work_contract_accepting">Přijímám\u2026</string>
+    <string name="work_contract_load_error">Smlouvu o dílo se nepodařilo načíst.</string>
+    <string name="work_contract_accepted_on">Přijato %1$s, verze %2$s</string>
+    <string name="work_contract_accepted_in_language">Přijato v jazyce: %1$s</string>
+    <string name="work_contract_accepted_line">Smlouvu o dílo jste přijali %1$s, verze %2$s</string>
+    <string name="work_contract_pending_banner">Než začnete, přijměte smlouvu o dílo</string>
+    <string name="work_contract_accept_cta">Přijmout smlouvu</string>
+    <string name="work_contract_read">Přečíst smlouvu</string>
     <string name="slide_to_start">Posunutím začněte úklid</string>
     <string name="starting_order">Začínám úklid…</string>
     <string name="slide_to_complete">Posunutím dokončete</string>
@@ -1148,6 +1159,12 @@
     <string name="error_order_max_employees_exceeded">Tato zakázka již má maximální počet uklízečů.</string>
     <string name="error_order_preferred_employee_not_eligible">Nejste oprávněni přijmout tuto zakázku.</string>
     <string name="error_order_employee_already_has_order_in_progress">Již máte jinou zakázku v průběhu. Před zahájením nové ji prosím dokončete.</string>
+
+    <!-- Contract for work: the take's echo, the seat's gate, the preview with no text in force -->
+    <string name="error_contract_not_accepted">Před převzetím zakázky si prosím přečtěte a přijměte smlouvu o dílo.</string>
+    <string name="error_contract_text_mismatch">Smlouva byla aktualizována \u2014 přečtěte si ji prosím znovu.</string>
+    <string name="error_contract_acceptance_required">Než budete pokračovat, přijměte smlouvu o dílo k této zakázce.</string>
+    <string name="error_legal_document_not_found">Tuto zakázku nyní nelze převzít.</string>
 
     <string name="error_order_not_in_progress">Tato zakázka není v průběhu.</string>
     <string name="error_order_not_confirmed">Tato zakázka ještě není potvrzena.</string>
@@ -1358,8 +1375,6 @@
     <string name="offer_reserved_until_date">Vaše do %1$s, %2$s</string>
     <string name="offer_reserved_ended">Tato rezervace skončila</string>
     <string name="offer_confirm">Potvrdit</string>
-    <string name="offer_slide_to_confirm">Přejetím potvrdit</string>
-    <string name="offer_confirming">Potvrzuji\u2026</string>
     <string name="offer_decline">Odmítnout</string>
     <string name="offer_decline_title">Uvolnit tuto zakázku?</string>
     <string name="offer_decline_body">Ihned se vrátí všem uklízečům. Nijak se vám to nezapočítává a dokud je volná, můžete si ji z nabídky vzít i vy.</string>

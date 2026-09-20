@@ -136,6 +136,14 @@ fun OrdersListScreen(
         viewModel.onResume()
     }
 
+    uiState.contractRequest?.let { request ->
+        WorkContractSheet(
+            request = request,
+            onDismiss = viewModel::dismissContract,
+            onOutcome = viewModel::onWorkContractOutcome,
+        )
+    }
+
     val inProgress = remember(uiState.orders) {
         // Sticky banner only shows when there's actually an in-progress job
         // *currently in state*. We don't peek across tabs because the VM only

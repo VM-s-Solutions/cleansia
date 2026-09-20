@@ -20,6 +20,7 @@ import io.mockk.verify
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
@@ -158,14 +159,17 @@ class OrdersListViewModelTest {
      */
     @Test
     fun `a rejected inline action invalidates the affected panes and refetches`() = runTest {
-        coEvery { ordersRepository.takeOrder(orderId) } returns
-            ApiResult.Error(ApiError.BadRequest("taken", errorKey = "order.already_taken"))
-
         val vm = viewModel()
         advanceUntilIdle()
         forgetStartUpCalls()
 
         vm.takeOrderInline(orderId)
+        vm.onWorkContractOutcome(
+            WorkContractOutcome.Refused(
+                WorkContractRequest.Take(orderId),
+                ApiError.BadRequest("taken", errorKey = "order.already_taken"),
+            ),
+        )
         advanceUntilIdle()
 
         verify(exactly = 1) { ordersRepository.invalidatePanesFor(OrdersMutation.TakeOrder) }
@@ -173,6 +177,57 @@ class OrdersListViewModelTest {
             ordersRepository.getPaged(any(), any(), any(), any(), any(), any(), any(), any(), any(), OrdersPane.Available)
         }
         assertNull(vm.uiState.value.inFlightActionOrderId)
+    }
+
+    /** Taking is accepting the contract for work: the row's Take opens the sheet and takes nothing itself. */
+    @Test
+    fun `the inline take opens the contract sheet for the row`() = runTest {
+        val vm = viewModel()
+        advanceUntilIdle()
+        forgetStartUpCalls()
+
+        vm.takeOrderInline(orderId)
+        advanceUntilIdle()
+
+        assertEquals(WorkContractRequest.Take(orderId), vm.uiState.value.contractRequest)
+        coVerify(exactly = 0) { ordersRepository.takeOrder(any(), any()) }
+        coVerify(exactly = 0) {
+            ordersRepository.getPaged(any(), any(), any(), any(), any(), any(), any(), any(), any(), any())
+        }
+    }
+
+    @Test
+    fun `a Taken verdict closes the sheet, invalidates the panes and refetches once`() = runTest {
+        val vm = viewModel()
+        advanceUntilIdle()
+        forgetStartUpCalls()
+        vm.takeOrderInline(orderId)
+
+        vm.onWorkContractOutcome(WorkContractOutcome.Taken(WorkContractRequest.Take(orderId)))
+        advanceUntilIdle()
+
+        assertNull(vm.uiState.value.contractRequest)
+        verify(exactly = 1) { ordersRepository.invalidatePanesFor(OrdersMutation.TakeOrder) }
+        coVerify(exactly = 1) {
+            ordersRepository.getPaged(any(), any(), any(), any(), any(), any(), any(), any(), any(), OrdersPane.Available)
+        }
+        assertNull(vm.uiState.value.inFlightActionOrderId)
+    }
+
+    @Test
+    fun `dismissing the sheet refetches nothing`() = runTest {
+        val vm = viewModel()
+        advanceUntilIdle()
+        forgetStartUpCalls()
+        vm.takeOrderInline(orderId)
+
+        vm.dismissContract()
+        advanceUntilIdle()
+
+        assertNull(vm.uiState.value.contractRequest)
+        coVerify(exactly = 0) {
+            ordersRepository.getPaged(any(), any(), any(), any(), any(), any(), any(), any(), any(), any())
+        }
     }
 
     /**

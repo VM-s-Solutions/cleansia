@@ -7,6 +7,7 @@ import cz.cleansia.core.snackbar.SnackbarController
 import cz.cleansia.core.ui.state.ActionState
 import cz.cleansia.partner.R
 import cz.cleansia.partner.api.model.OrderItem
+import cz.cleansia.partner.core.auth.EmployeeIdResolver
 import cz.cleansia.partner.core.network.ApiErrorTranslator
 import cz.cleansia.core.network.ApiResult
 import cz.cleansia.partner.data.orders.OrdersRepository
@@ -16,13 +17,14 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 /** Per-action discriminator so individual buttons can show their own spinners. */
-enum class OrderAction { Take, Start, NotifyOnTheWay, MarkCashCollected, Complete, DeclineOffer }
+enum class OrderAction { Take, AcceptContract, Start, NotifyOnTheWay, MarkCashCollected, Complete, DeclineOffer }
 
 sealed interface OrderDetailUiState {
     data object Loading : OrderDetailUiState
@@ -36,6 +38,7 @@ class OrderDetailViewModel @Inject constructor(
     private val ordersRepository: OrdersRepository,
     private val errorTranslator: ApiErrorTranslator,
     private val snackbar: SnackbarController,
+    private val employeeIdResolver: EmployeeIdResolver,
 ) : ViewModel() {
 
     private val orderId: String = savedStateHandle.get<String>("orderId")
@@ -64,9 +67,26 @@ class OrderDetailViewModel @Inject constructor(
     private val _offerRefusal = MutableStateFlow<OfferRefusal?>(null)
     val offerRefusal: StateFlow<OfferRefusal?> = _offerRefusal.asStateFlow()
 
+    /** The contract sheet the screen is showing, if any: a take, a standalone acceptance or a read. */
+    private val _contractRequest = MutableStateFlow<WorkContractRequest?>(null)
+    val contractRequest: StateFlow<WorkContractRequest?> = _contractRequest.asStateFlow()
+
+    private val myEmployeeId = MutableStateFlow<String?>(null)
+
+    /**
+     * The caller's own acceptance, paired through their crew entry. Resolved here rather than in the
+     * screen because the pairing needs the signed-in employee id, which only the resolver can supply.
+     */
+    val contractStanding: StateFlow<WorkContractStanding> =
+        combine(_uiState, myEmployeeId) { state, employeeId ->
+            (state as? OrderDetailUiState.Loaded)?.order?.workContractStanding(employeeId)
+                ?: WorkContractStanding.None
+        }.stateIn(viewModelScope, SharingStarted.Eagerly, WorkContractStanding.None)
+
     init {
         ensureFreshOrCachedAsync()
         ensureOffersFresh()
+        viewModelScope.launch { myEmployeeId.value = employeeIdResolver.resolve() }
     }
 
     /**
@@ -128,7 +148,29 @@ class OrderDetailViewModel @Inject constructor(
         }
     }
 
-    fun take() = runAction(OrderAction.Take) { ordersRepository.takeOrder(orderId) }
+    /** Taking is accepting the contract: the take happens inside the sheet, on the swipe. */
+    fun take() {
+        _contractRequest.value = WorkContractRequest.Take(orderId)
+    }
+
+    fun openContract(request: WorkContractRequest) {
+        _contractRequest.value = request
+    }
+
+    fun dismissContract() {
+        _contractRequest.value = null
+    }
+
+    /**
+     * The sheet's verdict, handled exactly as the one-tap take used to be: a success refreshes the
+     * order, a refusal is framed (on a disclosed offer) or snackbarred and reconciled.
+     */
+    fun onWorkContractOutcome(outcome: WorkContractOutcome) {
+        _contractRequest.value = null
+        val action = if (outcome.request is WorkContractRequest.Accept) OrderAction.AcceptContract else OrderAction.Take
+        runAction(action) { outcome.asResult() }
+    }
+
     fun start() = runAction(OrderAction.Start) { ordersRepository.startOrder(orderId) }
     fun notifyOnTheWay() = runAction(OrderAction.NotifyOnTheWay) { ordersRepository.notifyOnTheWay(orderId) }
 
@@ -161,6 +203,17 @@ class OrderDetailViewModel @Inject constructor(
                     fetch()
                 }
                 is ApiResult.Error -> {
+                    // A start or a completion on a seat with no acceptance is not an error to read but
+                    // a contract to accept: the same sheet opens, in accept mode, and the gesture
+                    // springs back to be retried once the row exists.
+                    if ((action == OrderAction.Start || action == OrderAction.Complete) &&
+                        result.error.hasKey(ACCEPTANCE_REQUIRED)
+                    ) {
+                        _actionState.value = ActionState.Idle
+                        _inFlightAction.value = null
+                        _contractRequest.value = WorkContractRequest.Accept(orderId)
+                        return@launch
+                    }
                     // A refusal ON A DISCLOSED OFFER is framed by the screen in its own words — the
                     // handover we could not make, or the release that changed nothing — so the bare
                     // reason must not also arrive as a snackbar on top of it. Everything else on this
@@ -197,5 +250,9 @@ class OrderDetailViewModel @Inject constructor(
                 }
             }
         }
+    }
+
+    private companion object {
+        const val ACCEPTANCE_REQUIRED = "contract.acceptance_required"
     }
 }

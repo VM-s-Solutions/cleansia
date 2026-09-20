@@ -925,8 +925,19 @@
     <string name="history">História</string>
     <string name="you_earn">zarobíte</string>
     <string name="distance_unknown">Lokalita neznáma</string>
-    <string name="slide_to_take">Posunutím prevezmite zákazku</string>
-    <string name="taking_order">Preberám zákazku…</string>
+    <!-- Contract for work: the sheet under the take, the standalone acceptance, the detail line and banner. -->
+    <string name="work_contract_title">Zmluva o dielo</string>
+    <string name="work_contract_version">Verzia %1$s</string>
+    <string name="work_contract_order_number">Objednávka %1$s</string>
+    <string name="work_contract_swipe_to_accept">Potiahnutím prijmete zmluvu o dielo</string>
+    <string name="work_contract_accepting">Prijímam\u2026</string>
+    <string name="work_contract_load_error">Zmluvu o dielo sa nepodarilo načítať.</string>
+    <string name="work_contract_accepted_on">Prijaté %1$s, verzia %2$s</string>
+    <string name="work_contract_accepted_in_language">Prijaté v jazyku: %1$s</string>
+    <string name="work_contract_accepted_line">Zmluvu o dielo ste prijali %1$s, verzia %2$s</string>
+    <string name="work_contract_pending_banner">Skôr než začnete, prijmite zmluvu o dielo</string>
+    <string name="work_contract_accept_cta">Prijať zmluvu</string>
+    <string name="work_contract_read">Prečítať zmluvu</string>
     <string name="slide_to_start">Posunutím začnite upratovať</string>
     <string name="starting_order">Začínam upratovanie…</string>
     <string name="slide_to_complete">Posunutím dokončite</string>
@@ -1128,6 +1139,12 @@
     <string name="error_order_max_employees_exceeded">Táto zákazka už má maximálny počet upratovačov.</string>
     <string name="error_order_preferred_employee_not_eligible">Nie ste oprávnení prijať túto zákazku.</string>
     <string name="error_order_employee_already_has_order_in_progress">Už máte inú zákazku v priebehu. Pred začatím novej ju prosím dokončite.</string>
+
+    <!-- Contract for work: the take's echo, the seat's gate, the preview with no text in force -->
+    <string name="error_contract_not_accepted">Pred prevzatím zákazky si prosím prečítajte a prijmite zmluvu o dielo.</string>
+    <string name="error_contract_text_mismatch">Zmluva bola aktualizovaná \u2014 prečítajte si ju prosím znova.</string>
+    <string name="error_contract_acceptance_required">Skôr než budete pokračovať, prijmite zmluvu o dielo k tejto zákazke.</string>
+    <string name="error_legal_document_not_found">Túto zákazku teraz nie je možné prevziať.</string>
 
     <string name="error_order_not_in_progress">Táto zákazka nie je v priebehu.</string>
     <string name="error_order_not_confirmed">Táto zákazka ešte nie je potvrdená.</string>
@@ -1338,8 +1355,6 @@
     <string name="offer_reserved_until_date">Vaša do %1$s, %2$s</string>
     <string name="offer_reserved_ended">Táto rezervácia sa skončila</string>
     <string name="offer_confirm">Potvrdiť</string>
-    <string name="offer_slide_to_confirm">Potvrdiť potiahnutím</string>
-    <string name="offer_confirming">Potvrdzujem\u2026</string>
     <string name="offer_decline">Odmietnuť</string>
     <string name="offer_decline_title">Uvoľniť túto zákazku?</string>
     <string name="offer_decline_body">Ihneď sa vráti všetkým upratovačom. Nijako sa vám to nezapočítava a kým je voľná, môžete si ju z ponuky vziať aj vy.</string>

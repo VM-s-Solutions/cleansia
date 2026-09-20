@@ -920,8 +920,19 @@
     <string name="history">History</string>
     <string name="you_earn">you earn</string>
     <string name="distance_unknown">Location unknown</string>
-    <string name="slide_to_take">Slide to take order</string>
-    <string name="taking_order">Got it — taking…</string>
+    <!-- Contract for work: the sheet under the take, the standalone acceptance, the detail line and banner. -->
+    <string name="work_contract_title">Contract for work</string>
+    <string name="work_contract_version">Version %1$s</string>
+    <string name="work_contract_order_number">Order %1$s</string>
+    <string name="work_contract_swipe_to_accept">Swipe to accept the contract for work</string>
+    <string name="work_contract_accepting">Accepting\u2026</string>
+    <string name="work_contract_load_error">Couldn\'t load the contract for work.</string>
+    <string name="work_contract_accepted_on">Accepted on %1$s, version %2$s</string>
+    <string name="work_contract_accepted_in_language">Accepted in %1$s</string>
+    <string name="work_contract_accepted_line">You accepted the contract for work on %1$s, version %2$s</string>
+    <string name="work_contract_pending_banner">Accept the contract for work before you start</string>
+    <string name="work_contract_accept_cta">Accept the contract</string>
+    <string name="work_contract_read">Read the contract</string>
     <string name="slide_to_start">Slide to start cleaning</string>
     <string name="starting_order">Starting the job…</string>
     <string name="slide_to_complete">Slide to complete</string>
@@ -1154,6 +1165,12 @@
     <string name="error_order_preferred_employee_not_eligible">You\'re not eligible to take this order.</string>
     <string name="error_order_employee_already_has_order_in_progress">You already have another order in progress. Finish it before starting a new one.</string>
 
+    <!-- Contract for work: the take's echo, the seat's gate, the preview with no text in force -->
+    <string name="error_contract_not_accepted">Please read and accept the contract for work before taking the job.</string>
+    <string name="error_contract_text_mismatch">The contract was updated \u2014 please read it again.</string>
+    <string name="error_contract_acceptance_required">Accept the contract for work for this job before you continue.</string>
+    <string name="error_legal_document_not_found">This job cannot be taken right now.</string>
+
     <!-- Order — completion -->
     <string name="error_order_not_in_progress">This order isn\'t in progress.</string>
     <string name="error_order_not_confirmed">This order isn\'t confirmed yet.</string>
@@ -1373,8 +1390,6 @@
     <string name="offer_reserved_until_date">Yours until %1$s, %2$s</string>
     <string name="offer_reserved_ended">This reservation has ended</string>
     <string name="offer_confirm">Confirm</string>
-    <string name="offer_slide_to_confirm">Slide to confirm</string>
-    <string name="offer_confirming">Confirming\u2026</string>
     <string name="offer_decline">Decline</string>
     <string name="offer_decline_title">Release this job?</string>
     <string name="offer_decline_body">It goes back to every cleaner straight away. Nothing about this is held against you, and you can still take it from the board while it is free.</string>

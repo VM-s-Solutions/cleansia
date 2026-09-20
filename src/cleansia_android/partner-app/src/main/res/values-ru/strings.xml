@@ -930,8 +930,19 @@
     <string name="history">История</string>
     <string name="you_earn">вы заработаете</string>
     <string name="distance_unknown">Локация неизвестна</string>
-    <string name="slide_to_take">Проведите, чтобы взять заказ</string>
-    <string name="taking_order">Беру заказ…</string>
+    <!-- Contract for work: the sheet under the take, the standalone acceptance, the detail line and banner. -->
+    <string name="work_contract_title">Договор подряда</string>
+    <string name="work_contract_version">Версия %1$s</string>
+    <string name="work_contract_order_number">Заказ %1$s</string>
+    <string name="work_contract_swipe_to_accept">Проведите, чтобы принять договор подряда</string>
+    <string name="work_contract_accepting">Принимаем\u2026</string>
+    <string name="work_contract_load_error">Не удалось загрузить договор подряда.</string>
+    <string name="work_contract_accepted_on">Принято %1$s, версия %2$s</string>
+    <string name="work_contract_accepted_in_language">Принято на языке: %1$s</string>
+    <string name="work_contract_accepted_line">Вы приняли договор подряда %1$s, версия %2$s</string>
+    <string name="work_contract_pending_banner">Прежде чем начать, примите договор подряда</string>
+    <string name="work_contract_accept_cta">Принять договор</string>
+    <string name="work_contract_read">Прочитать договор</string>
     <string name="slide_to_start">Проведите, чтобы начать уборку</string>
     <string name="starting_order">Начинаю уборку…</string>
     <string name="slide_to_complete">Проведите, чтобы завершить</string>
@@ -1133,6 +1144,12 @@
     <string name="error_order_max_employees_exceeded">На этом заказе уже максимальное количество клинеров.</string>
     <string name="error_order_preferred_employee_not_eligible">Вы не имеете права принять этот заказ.</string>
     <string name="error_order_employee_already_has_order_in_progress">У вас уже есть другой заказ в работе. Завершите его перед началом нового.</string>
+
+    <!-- Contract for work: the take's echo, the seat's gate, the preview with no text in force -->
+    <string name="error_contract_not_accepted">Прежде чем взять заказ, прочитайте и примите договор подряда.</string>
+    <string name="error_contract_text_mismatch">Договор обновлён \u2014 пожалуйста, прочитайте его ещё раз.</string>
+    <string name="error_contract_acceptance_required">Прежде чем продолжить, примите договор подряда для этого заказа.</string>
+    <string name="error_legal_document_not_found">Этот заказ сейчас нельзя взять.</string>
 
     <string name="error_order_not_in_progress">Этот заказ не в работе.</string>
     <string name="error_order_not_confirmed">Этот заказ ещё не подтверждён.</string>
@@ -1343,8 +1360,6 @@
     <string name="offer_reserved_until_date">Ваш до %1$s, %2$s</string>
     <string name="offer_reserved_ended">Это резервирование завершилось</string>
     <string name="offer_confirm">Подтвердить</string>
-    <string name="offer_slide_to_confirm">Проведите, чтобы подтвердить</string>
-    <string name="offer_confirming">Подтверждаем\u2026</string>
     <string name="offer_decline">Отклонить</string>
     <string name="offer_decline_title">Освободить этот заказ?</string>
     <string name="offer_decline_body">Он сразу вернётся ко всем уборщикам. Это никак не засчитывается вам в минус, и пока он свободен, вы можете взять его из списка.</string>

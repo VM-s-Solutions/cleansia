@@ -67,6 +67,7 @@ final class CustomerShellRoutingTests: XCTestCase {
     func testEveryShellRouteRoundTripsThroughTheErasedPath() throws {
         let routes: [ShellRoute] = [
             .orderDetail("order-1"),
+            .workContract(acceptanceId: "acc-1"),
             .subscribePlus,
             .membershipSuccess,
             .recurringList,
@@ -107,6 +108,7 @@ final class CustomerShellRoutingTests: XCTestCase {
             ShellRoute.editProfile(showBookingHint: true)
         )
         XCTAssertNotEqual(ShellRoute.subscribePlus, ShellRoute.editProfile(showBookingHint: false))
+        XCTAssertNotEqual(ShellRoute.workContract(acceptanceId: "a"), ShellRoute.workContract(acceptanceId: "b"))
     }
 
     private func assertPath(

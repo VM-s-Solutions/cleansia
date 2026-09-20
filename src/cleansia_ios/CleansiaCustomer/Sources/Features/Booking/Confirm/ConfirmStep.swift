@@ -51,6 +51,7 @@ struct ConfirmStep: View {
                 )
                 CancellationPolicyCard(policy: extras.cancellationPolicy)
                 termsRow
+                WorkContractNotice()
                 TrustBadges(insurance: viewModel.insurance)
             }
             .padding(Spacing.l)
@@ -192,6 +193,19 @@ struct ConfirmStep: View {
             next.termsAccepted = accepted
             return next
         }
+    }
+}
+
+/// The contract for work the confirmation concludes, named at the offer whether or not the account
+/// already consented: an information line with the public text behind it, never a tick.
+private struct WorkContractNotice: View {
+    var body: some View {
+        Text(ConsentMarkdown.styled(L10n.Booking.workContractNotice))
+            .font(CleansiaTypography.bodyMedium)
+            .foregroundColor(CleansiaColors.onSurfaceVariant)
+            .tint(CleansiaColors.primary)
+            .fixedSize(horizontal: false, vertical: true)
+            .frame(maxWidth: .infinity, alignment: .leading)
     }
 }
 

@@ -88,6 +88,16 @@ final class CleansiaWebTests: XCTestCase {
         XCTAssertEqual(CleansiaWeb.origin, "https://\(CleansiaWeb.domain)")
         XCTAssertEqual(CleansiaWeb.termsURL.absoluteString, "\(CleansiaWeb.origin)/terms")
         XCTAssertEqual(CleansiaWeb.privacyURL.absoluteString, "\(CleansiaWeb.origin)/privacy")
+        XCTAssertEqual(CleansiaWeb.workContractURL.absoluteString, "\(CleansiaWeb.origin)/work-contract")
+    }
+
+    func testEveryLinkPlaceholderResolvesToItsOwnPage() {
+        XCTAssertEqual(ConsentLink.workContract.url, CleansiaWeb.workContractURL)
+        XCTAssertEqual(
+            ConsentMarkdown.attributed("on [these terms](cleansia://work-contract)").runs
+                .compactMap { $0.link?.absoluteString },
+            ["\(CleansiaWeb.origin)/work-contract"]
+        )
     }
 
     func testReferralLinkAndSupportEmailShareTheSameDomain() {

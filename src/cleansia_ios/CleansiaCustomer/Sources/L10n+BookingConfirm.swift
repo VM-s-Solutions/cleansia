@@ -164,4 +164,10 @@ extension L10n.Booking {
     static var busyBooking: String {
         L10n.localized("busy_booking")
     }
+
+    /// The contract-for-work line under the consent block; its link placeholder is pinned by the
+    /// Core consent catalog test beside the two consent sentences.
+    static var workContractNotice: String {
+        L10n.localized("booking_work_contract_notice")
+    }
 }

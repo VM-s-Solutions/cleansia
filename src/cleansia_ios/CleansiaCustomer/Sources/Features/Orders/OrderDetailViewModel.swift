@@ -88,6 +88,11 @@ final class OrderDetailViewModel: ViewModel {
         OrderStatusGroup.isCancellable(state.loadedValue?.status)
     }
 
+    /// One per crew member who accepted the contract for work; nothing before any acceptance.
+    var workContractAcceptances: [WorkContractAcceptanceLine] {
+        state.loadedValue?.workContractAcceptanceLines() ?? []
+    }
+
     /// Gates the "Make this recurring" shortcut, from the same nullable membership the
     /// recurring list resolves. Nothing on this screen used to fetch that answer, so a
     /// paid-up member lost the shortcut whenever no other screen had warmed the cache.

@@ -64,6 +64,7 @@ protocol OrderClient: Sendable {
     func getPhotos(orderId: String) async -> ApiResult<OrderPhotos>
     func confirmRecurring(orderId: String) async -> ApiResult<RecurringConfirmation>
     func cancellationQuote(orderId: String) async -> ApiResult<CancellationQuote>
+    func getWorkContract(acceptanceId: String, language: String) async -> ApiResult<WorkContract>
 }
 
 struct LiveOrderClient: OrderClient {
@@ -153,6 +154,15 @@ struct LiveOrderClient: OrderClient {
     func cancellationQuote(orderId: String) async -> ApiResult<CancellationQuote> {
         await apiResult(mapError: ApiError.fromGenerated) {
             try await CancellationQuote(CustomerOrderAPI.orderCancellationPreview(orderId: orderId))
+        }
+    }
+
+    func getWorkContract(acceptanceId: String, language: String) async -> ApiResult<WorkContract> {
+        await apiResult(mapError: ApiError.fromGenerated) {
+            try await WorkContract(CustomerOrderAPI.orderGetWorkContract(
+                acceptanceId: acceptanceId,
+                language: language
+            ))
         }
     }
 }

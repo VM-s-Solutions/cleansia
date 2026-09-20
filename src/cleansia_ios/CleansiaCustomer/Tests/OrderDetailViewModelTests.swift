@@ -580,4 +580,64 @@ final class OrderDetailViewModelTests: XCTestCase {
 
         XCTAssertNil(released, "the view model outlived its screen, so its active-order poller never stops")
     }
+
+    // MARK: - Contract for work
+
+    func testTheAcceptanceLinesFollowTheLoadedOrderPairedWithTheCrewBySeat() async {
+        let acceptedOn = Date(timeIntervalSince1970: 1_786_000_000)
+        let client = FakeOrderClient()
+        client.detailResults = [.success(OrderFixtures.detail(
+            statusCode: Code(type: "OrderStatus", name: nil, value: 2),
+            assignedEmployees: [
+                AssignedEmployeeDto(id: "seat-1", employeeId: "emp-1", fullName: "Jana", phoneNumber: nil),
+                AssignedEmployeeDto(id: "seat-2", employeeId: "emp-2", fullName: "Petr", phoneNumber: nil)
+            ],
+            workContractAcceptances: [
+                WorkContractAcceptance(
+                    id: "acc-1",
+                    orderEmployeeId: "seat-1",
+                    acceptedOn: acceptedOn,
+                    documentVersion: "2026-09-20"
+                ),
+                WorkContractAcceptance(
+                    id: "acc-9",
+                    orderEmployeeId: "seat-gone",
+                    acceptedOn: acceptedOn,
+                    documentVersion: "2026-09-20"
+                )
+            ]
+        ))]
+        let vm = makeVM(client: client)
+        XCTAssertTrue(vm.workContractAcceptances.isEmpty, "nothing to state before the order is loaded")
+
+        await vm.load()
+
+        XCTAssertEqual(
+            vm.workContractAcceptances,
+            [WorkContractAcceptanceLine(
+                id: "acc-1",
+                cleanerName: "Jana",
+                acceptedOn: acceptedOn,
+                documentVersion: "2026-09-20"
+            )]
+        )
+    }
+
+    func testAnOrderWithACrewAndNoAcceptanceYieldsNoLine() async {
+        let client = FakeOrderClient()
+        client.detailResults = [.success(OrderFixtures.detail(
+            statusCode: Code(type: "OrderStatus", name: nil, value: 2),
+            assignedEmployees: [AssignedEmployeeDto(
+                id: "seat-1",
+                employeeId: "emp-1",
+                fullName: "Jana",
+                phoneNumber: nil
+            )]
+        ))]
+        let vm = makeVM(client: client)
+
+        await vm.load()
+
+        XCTAssertTrue(vm.workContractAcceptances.isEmpty)
+    }
 }

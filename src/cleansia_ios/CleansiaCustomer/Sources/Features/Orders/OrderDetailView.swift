@@ -18,6 +18,7 @@ struct OrderDetailView: View {
     private let onReportIssue: (String) -> Void
     private let onRebook: (String) -> Void
     private let onMakeRecurring: (String) -> Void
+    private let onReadWorkContract: (String) -> Void
     private let openReviewOnLoad: Bool
     private let onReviewPromptConsumed: () -> Void
     @State private var reviewAutoOpened = false
@@ -36,7 +37,8 @@ struct OrderDetailView: View {
         mapProvider: MapProvider,
         onReportIssue: @escaping (String) -> Void,
         onRebook: @escaping (String) -> Void,
-        onMakeRecurring: @escaping (String) -> Void
+        onMakeRecurring: @escaping (String) -> Void,
+        onReadWorkContract: @escaping (String) -> Void
     ) {
         _vm = StateObject(
             wrappedValue: OrderDetailViewModel(
@@ -57,6 +59,7 @@ struct OrderDetailView: View {
         self.onReportIssue = onReportIssue
         self.onRebook = onRebook
         self.onMakeRecurring = onMakeRecurring
+        self.onReadWorkContract = onReadWorkContract
         self.openReviewOnLoad = openReviewOnLoad
         self.onReviewPromptConsumed = onReviewPromptConsumed
     }
@@ -137,10 +140,12 @@ struct OrderDetailView: View {
                     order: order,
                     markets: vm.markets,
                     photos: vm.photos,
+                    workContractAcceptances: vm.workContractAcceptances,
                     isDownloadingReceipt: vm.receiptState.isSubmitting,
                     onLeaveReview: { showReviewSheet = true },
                     onDownloadReceipt: { Task { await vm.downloadReceipt() } },
-                    onViewPhotos: { showPhotos = true }
+                    onViewPhotos: { showPhotos = true },
+                    onReadWorkContract: onReadWorkContract
                 )
                 .task(id: order.id) { await vm.ensurePhotosLoaded() }
 

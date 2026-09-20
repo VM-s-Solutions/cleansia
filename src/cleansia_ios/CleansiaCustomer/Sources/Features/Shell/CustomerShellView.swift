@@ -286,6 +286,8 @@ extension CustomerShellView {
         switch route {
         case let .orderDetail(orderId):
             orderDetail(orderId)
+        case let .workContract(acceptanceId):
+            WorkContractView(acceptanceId: acceptanceId, client: container.orderClient, snackbar: snackbar)
         case .subscribePlus:
             subscribePlus
         case .membershipSuccess:
@@ -434,7 +436,8 @@ extension CustomerShellView {
                     ShellRoute.recurringList,
                     ShellRoute.createRecurring(orderId: orderId)
                 ])
-            }
+            },
+            onReadWorkContract: { model.path.append(ShellRoute.workContract(acceptanceId: $0)) }
         )
     }
 

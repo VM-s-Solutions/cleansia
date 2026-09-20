@@ -3,6 +3,8 @@
 /// retires the iOS-16 sibling-typed-path crash class).
 enum ShellRoute: Hashable, Codable {
     case orderDetail(String)
+    /// The accepted contract for work behind one crew member's acceptance line on the order detail.
+    case workContract(acceptanceId: String)
     case subscribePlus
     case membershipSuccess
     case recurringList

@@ -10,21 +10,8 @@ public struct CleansiaConsentCheckbox: View {
 
     public init(checked: Binding<Bool>, markdown: String, toggleAccessibilityLabel: String) {
         _checked = checked
-        sentence = Self.styled(ConsentMarkdown.attributed(markdown))
+        sentence = ConsentMarkdown.styled(markdown)
         self.toggleAccessibilityLabel = toggleAccessibilityLabel
-    }
-
-    /// Colour + underline are set on the runs themselves: a `Text`-level
-    /// `foregroundColor` would otherwise flatten the links into body copy, and
-    /// colour alone is not an accessible affordance.
-    private static func styled(_ parsed: AttributedString) -> AttributedString {
-        var styled = parsed
-        let linked = styled.runs.compactMap { $0.link == nil ? nil : $0.range }
-        for range in linked {
-            styled[range].foregroundColor = CleansiaColors.primary
-            styled[range].underlineStyle = .single
-        }
-        return styled
     }
 
     public var body: some View {

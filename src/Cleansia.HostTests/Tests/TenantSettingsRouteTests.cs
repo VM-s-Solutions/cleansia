@@ -78,7 +78,7 @@ public sealed class TenantSettingsRouteTests(HostTestPostgresFixture db) : Authz
         HttpAssert.IsOk(resp);
         var body = await resp.Content.ReadFromJsonAsync<SettingsResponse>();
         Assert.NotNull(body);
-        Assert.Equal(11, body!.Settings.Count);
+        Assert.Equal(TenantSettingCatalog.All.Count, body!.Settings.Count);
         Assert.All(body.Settings, s =>
         {
             Assert.False(s.IsOverridden);

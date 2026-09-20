@@ -84,7 +84,7 @@ public sealed class TenantSettingsRouteTests(HostTestPostgresFixture db) : Authz
             Assert.False(s.IsOverridden);
             Assert.Equal(s.DefaultValue, s.EffectiveValue);
         });
-        Assert.Equal(9, body.Settings.Count(s => s.Category == "retention"));
+        Assert.Equal(TenantSettingCatalog.All.Count(d => d.Category == TenantSettingCatalog.RetentionCategory), body.Settings.Count(s => s.Category == "retention"));
         var mailbox = Assert.Single(body.Settings, s => s.Key == "notifications.admin_email");
         Assert.Equal("notifications", mailbox.Category);
         Assert.Equal(TenantSettingValueType.Email, mailbox.ValueType);

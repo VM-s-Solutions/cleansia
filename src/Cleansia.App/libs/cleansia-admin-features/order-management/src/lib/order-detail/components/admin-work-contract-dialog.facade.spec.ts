@@ -1,5 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { AdminClient, AdminLegalDocumentDto, WorkContractDto } from '@cleansia/admin-services';
+import { PermissionService, Policy } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
 import { DynamicDialogRef } from 'primeng/dynamicdialog';
 import { of, Subject, throwError } from 'rxjs';
@@ -56,6 +57,7 @@ function document(overrides: Record<string, unknown> = {}): AdminLegalDocumentDt
 describe('AdminWorkContractDialogFacade', () => {
   let getWorkContract: jest.Mock;
   let getDocument: jest.Mock;
+  let hasPolicy: jest.Mock;
   let dialogRef: { close: jest.Mock };
 
   const createFacade = (): AdminWorkContractDialogFacade => {
@@ -67,6 +69,7 @@ describe('AdminWorkContractDialogFacade', () => {
           useValue: { adminOrderClient: { getWorkContract }, adminLegalClient: { getDocument } },
         },
         { provide: DynamicDialogRef, useValue: dialogRef },
+        { provide: PermissionService, useValue: { hasPolicy } },
         { provide: TranslateService, useValue: { currentLang: 'en', instant: (k: string) => k } },
       ],
     });
@@ -77,6 +80,7 @@ describe('AdminWorkContractDialogFacade', () => {
     TestBed.resetTestingModule();
     getWorkContract = jest.fn().mockReturnValue(of(contract()));
     getDocument = jest.fn().mockReturnValue(of(document()));
+    hasPolicy = jest.fn().mockReturnValue(true);
     dialogRef = { close: jest.fn() };
   });
 
@@ -93,8 +97,30 @@ describe('AdminWorkContractDialogFacade', () => {
     expect(facade.acceptedTextHash()).toBe(HASH);
     expect(facade.loading()).toBe(false);
     expect(facade.loadFailed()).toBe(false);
-    expect(facade.factRows().map((row) => row.value)).toContain('CLS-42');
+    expect(facade.factRows()[0]).toEqual({
+      labelKey: 'pages.order_detail.work_contract.dialog.facts.order_number',
+      value: 'CLS-42',
+    });
     expect(facade.acceptanceRows().find((row) => row.labelKey === WORK_CONTRACT_HASH_ROW)?.value).toBe(HASH);
+  });
+
+  // The document read is Administrator-only while the order detail is open to every admin role; a
+  // read the session cannot make is not attempted, so no forbidden toast fires, and the row says
+  // why there is no hash.
+  it('does not read the document for a session without the legal-documents policy and says so', () => {
+    hasPolicy.mockImplementation((policy: string) => policy !== Policy.CanViewLegalDocuments);
+    const facade = createFacade();
+
+    facade.load(ACCEPTANCE_ID);
+
+    expect(hasPolicy).toHaveBeenCalledWith(Policy.CanViewLegalDocuments);
+    expect(getDocument).not.toHaveBeenCalled();
+    expect(facade.contract()).not.toBeNull();
+    expect(facade.acceptedTextHash()).toBeNull();
+    expect(facade.loadFailed()).toBe(false);
+    expect(facade.acceptanceRows().find((row) => row.labelKey === WORK_CONTRACT_HASH_ROW)?.valueKey).toBe(
+      'pages.order_detail.work_contract.dialog.acceptance.hash_not_visible'
+    );
   });
 
   it('names the rendered language beside the accepted one only when they differ', () => {

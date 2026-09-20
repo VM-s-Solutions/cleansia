@@ -748,9 +748,10 @@
             "version": "Version",
             "language": "Accepted in",
             "hash": "SHA-256 of the accepted text",
-            "hash_unavailable": "Could not be read"
+            "hash_unavailable": "Could not be read",
+            "hash_not_visible": "Not shown for your role"
           },
-          "rendered_language_differs": "Shown in {{language}} — the cleaner accepted the {{accepted}} text, whose SHA-256 is above.",
+          "rendered_language_differs": "Shown in {{language}} — the cleaner accepted the {{accepted}} text.",
           "load_failed": "The contract could not be loaded. Please try again.",
           "retry": "Try again"
         }

@@ -748,9 +748,10 @@
             "version": "Verzia",
             "language": "Prijaté v jazyku",
             "hash": "SHA-256 prijatého textu",
-            "hash_unavailable": "Nepodarilo sa načítať"
+            "hash_unavailable": "Nepodarilo sa načítať",
+            "hash_not_visible": "Pre vašu rolu sa nezobrazuje"
           },
-          "rendered_language_differs": "Zobrazené v jazyku {{language}} — upratovač(ka) prijal(a) text v jazyku {{accepted}}, ktorého SHA-256 je uvedený vyššie.",
+          "rendered_language_differs": "Zobrazené v jazyku {{language}} — upratovač(ka) prijal(a) text v jazyku {{accepted}}.",
           "load_failed": "Zmluvu sa nepodarilo načítať. Skúste to prosím znova.",
           "retry": "Skúsiť znova"
         }

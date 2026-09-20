@@ -8,3 +8,4 @@ export * from './money-formatters.utils';
 export * from './object.utils';
 export * from './storage.utils';
 export * from './string-transformation.utils';
+export * from './work-contract.utils';

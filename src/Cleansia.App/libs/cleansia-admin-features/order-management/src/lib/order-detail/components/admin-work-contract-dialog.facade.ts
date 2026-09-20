@@ -1,13 +1,14 @@
 import { computed, inject, Injectable, signal } from '@angular/core';
 import { AdminClient, WorkContractDto } from '@cleansia/admin-services';
 import { UnsubscribeControlDirective } from '@cleansia/directives';
+import { PermissionService, Policy } from '@cleansia/services';
+import { buildWorkContractFactRows, languageDisplayName } from '@cleansia/utils';
 import { TranslateService } from '@ngx-translate/core';
 import { DynamicDialogRef } from 'primeng/dynamicdialog';
 import { catchError, finalize, map, Observable, of, switchMap, takeUntil } from 'rxjs';
 import {
   buildWorkContractAcceptanceRows,
-  buildWorkContractFactRows,
-  languageDisplayName,
+  WORK_CONTRACT_FACTS_KEY,
 } from './admin-work-contract-dialog.models';
 
 interface ContractRead {
@@ -18,6 +19,7 @@ interface ContractRead {
 @Injectable()
 export class AdminWorkContractDialogFacade extends UnsubscribeControlDirective {
   private readonly adminClient = inject(AdminClient);
+  private readonly permissions = inject(PermissionService);
   private readonly translate = inject(TranslateService);
   private readonly dialogRef = inject(DynamicDialogRef);
 
@@ -27,12 +29,21 @@ export class AdminWorkContractDialogFacade extends UnsubscribeControlDirective {
   readonly loadFailed = signal(false);
   readonly language = signal<string>(this.translate.currentLang);
 
+  // The document read behind the hash is Administrator-only, while the order detail is open to
+  // every admin role; a read the session cannot make is never attempted.
+  private readonly hashReadable = this.permissions.hasPolicy(Policy.CanViewLegalDocuments);
+
   readonly factRows = computed(() =>
-    buildWorkContractFactRows(this.contract()?.facts, this.language())
+    buildWorkContractFactRows(this.contract()?.facts, this.language(), WORK_CONTRACT_FACTS_KEY)
   );
 
   readonly acceptanceRows = computed(() =>
-    buildWorkContractAcceptanceRows(this.contract(), this.acceptedTextHash(), this.language())
+    buildWorkContractAcceptanceRows(
+      this.contract(),
+      this.acceptedTextHash(),
+      this.language(),
+      this.hashReadable
+    )
   );
 
   readonly renderedLanguageNotice = computed(() => {
@@ -101,7 +112,7 @@ export class AdminWorkContractDialogFacade extends UnsubscribeControlDirective {
   private readAcceptedTextHash(contract: WorkContractDto): Observable<string | null> {
     const documentId = contract.legalDocumentId;
     const acceptedLanguage = contract.acceptance?.acceptedLanguage;
-    if (!documentId || !acceptedLanguage) return of(null);
+    if (!this.hashReadable || !documentId || !acceptedLanguage) return of(null);
 
     return this.adminClient.adminLegalClient.getDocument(documentId, acceptedLanguage).pipe(
       map((document) =>

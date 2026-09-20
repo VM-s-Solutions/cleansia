@@ -477,7 +477,6 @@ const ADMIN_SURFACE_ERROR_KEYS: readonly string[] = [
   'general.not_found',
   'validation.date_must_be_in_past',
   'validation.invalid_age',
-  'validation.invalid_availability_format',
   'validation.invalid_date',
   'validation.invalid_password',
   'validation.must_be_positive',

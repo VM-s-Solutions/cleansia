@@ -129,8 +129,6 @@
       "emergency_phone": "Telefón",
       "documents": "Nahrať požadované dokumenty",
       "upload_requirements": "Nahrajte: Fotografie, životopis, vzdelávacie certifikáty, výpis z registra trestov (ak je požadovaný), pracovné povolenie (pre občanov mimo EÚ), podpísaná zmluva/NDA",
-      "availability": "Týždenná dostupnosť",
-      "availability_description": "Nastavte si týždenné pracovné hodiny výberom časových rozsahov pre každý deň. Pomôže nám to efektívne plánovať vaše úlohy.",
       "consent": "Súhlas",
       "consent_text": "Súhlasím so spracovaním mojich osobných údajov v súlade s <a href='/gdpr' target='_blank'>GDPR</a> a českými pracovnými zákonmi.",
       "submit": "Odoslať nástupné údaje",
@@ -791,53 +789,6 @@
       "selected_files": "Vybrané súbory",
       "choose": "Vybrať súbory"
     },
-    "availability": {
-      "days": {
-        "monday": "Pondelok",
-        "tuesday": "Utorok",
-        "wednesday": "Streda",
-        "thursday": "Štvrtok",
-        "friday": "Piatok",
-        "saturday": "Sobota",
-        "sunday": "Nedeľa",
-        "monday_short": "Po",
-        "tuesday_short": "Ut",
-        "wednesday_short": "St",
-        "thursday_short": "Št",
-        "friday_short": "Pi",
-        "saturday_short": "So",
-        "sunday_short": "Ne"
-      },
-      "current_ranges": "Aktuálne časové rozsahy",
-      "no_availability": "Dostupnosť nie je nastavená",
-      "add_time_range": "Pridať časový rozsah",
-      "start_time": "Čas začiatku",
-      "end_time": "Čas konca",
-      "quick_setup": "Rýchle nastavenie",
-      "weekly_schedule": "Týždenný rozvrh",
-      "mon_fri_9_5": "Po-Pi 9-17",
-      "mon_sat_8_4": "Po-So 8-16",
-      "custom": "Vlastné",
-      "legend_working": "Pracovný",
-      "legend_custom": "Vlastné hodiny",
-      "legend_off": "Voľno",
-      "no_days_selected": "Vyberte pracovné dni pre nastavenie rozvrhu",
-      "working_day": "Pracovný deň",
-      "day_off": "Voľný deň",
-      "custom_hours": "Vlastné hodiny",
-      "exception_day_off": "Výnimka - Voľno",
-      "edit_hours": "Upraviť hodiny",
-      "remove_exception": "Odstrániť výnimku",
-      "mark_exception": "Označiť ako výnimku",
-      "set_custom_hours": "Nastaviť vlastné hodiny",
-      "mark_unavailable": "Tento deň bude označený ako nedostupný.",
-      "add_time_slot": "Pridať časový slot",
-      "schedule_setup": "Nastavenie rozvrhu",
-      "schedule_setup_desc": "Vyberte pracovné dni a nastavte si hodiny.",
-      "working_hours": "Pracovné hodiny",
-      "working_days": "Pracovné dni",
-      "apply": "Použiť"
-    },
     "brand_mark_alt": "Cleansia Partner"
   },
   "global": {
@@ -1006,13 +957,11 @@
     "categories": {
       "profile": "Informácie o profile",
       "documents": "Požadované dokumenty",
-      "availability": "Dostupnosť",
       "documents_required": "Nahrajte požadované dokumenty",
       "approval": "Schválenie administrátorom",
       "approval_awaiting_review": "Vaše dokumenty kontroluje náš tím. Akonáhle budú schválené, dáme vám vedieť.",
       "approval_rejected": "Vaša žiadosť bola zamietnutá. Skontrolujte prosím dôvod nižšie a nahrajte dokumenty znova.",
-      "approval_complete_profile_first": "Vyplňte profil a nahrajte dokumenty, aby ste mohli požiadať o schválenie.",
-      "availability_required": "Nastavte si týždenný pracovný rozvrh na príjem zákaziek."
+      "approval_complete_profile_first": "Vyplňte profil a nahrajte dokumenty, aby ste mohli požiadať o schválenie."
     }
   },
   "validation": {
@@ -1109,7 +1058,6 @@
         "invalid_format": "Neplatný formát IČO pre vybranú krajinu"
       },
       "must_be_positive": "Hodnota musí byť kladná",
-      "invalid_availability_format": "Neplatný formát dostupnosti. Dni musia byť platné názvy dní alebo dátumy (yyyy-MM-dd) a časové rozsahy musia mať začiatok pred koncom.",
       "page_must_be_positive": "Stránka musí byť väčšia ako 0",
       "page_size_must_be_positive": "Veľkosť stránky musí byť väčšia ako 0",
       "page_size_exceeded": "Veľkosť stránky nesmie prekročiť 100",

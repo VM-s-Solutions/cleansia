@@ -8,16 +8,6 @@ import {
 import { CustomValidators } from '@cleansia/services';
 import { FileTransformationUtils } from '@cleansia/utils';
 
-export interface TimeRange {
-  start: string; // HH:mm format
-  end: string; // HH:mm format
-}
-
-export interface DayAvailability {
-  day: string;
-  timeRanges: TimeRange[];
-}
-
 export interface ProfileFormData {
   employeeId?: string;
   firstName?: string;
@@ -34,21 +24,8 @@ export interface ProfileFormData {
   registrationNumber?: string;
   emergencyName?: string;
   emergencyPhone?: string;
-  availability?: Record<string, TimeRange[]>;
   consent?: boolean;
 }
-
-export const DAYS_OF_WEEK = [
-  'Monday',
-  'Tuesday',
-  'Wednesday',
-  'Thursday',
-  'Friday',
-  'Saturday',
-  'Sunday',
-] as const;
-
-export type DayOfWeek = (typeof DAYS_OF_WEEK)[number];
 
 export class ProfileFormFactory {
   static createEmployeeProfileForm(): FormGroup {
@@ -110,13 +87,6 @@ export class ProfileFormFactory {
         CustomValidators.fileCount(1, 10),
       ]),
       consent: new FormControl(false, [Validators.requiredTrue]),
-    });
-  }
-
-  static createTimeRangeFormGroup(timeRange?: TimeRange): FormGroup {
-    return new FormGroup({
-      start: new FormControl(timeRange?.start || '', [Validators.required]),
-      end: new FormControl(timeRange?.end || '', [Validators.required]),
     });
   }
 
@@ -199,10 +169,6 @@ export class ProfileFormFactory {
     command.emergencyName = formData.emergencyName;
     command.emergencyPhone = formData.emergencyPhone;
     command.documents = documents;
-    // availability is deliberately NOT set. This form never edited it — the module that pretended to
-    // was dead UI — and the real editor is the dedicated UpdateAvailability endpoint. Leaving the
-    // member absent is what tells the server "unchanged"; sending an empty map would clear the
-    // cleaner's schedule on every profile save. UpdateEmployee.cs guards the null side of that.
     command.consent = formData.consent ?? false;
 
     return command;

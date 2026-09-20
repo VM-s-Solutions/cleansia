@@ -129,8 +129,6 @@
       "emergency_phone": "Phone",
       "documents": "Upload Required Documents",
       "upload_requirements": "Upload: Photos, CV, Educational Certificates, Criminal Record Check (if required), Work Permit (for non-EU citizens), Signed Contract/NDA",
-      "availability": "Weekly Availability",
-      "availability_description": "Set your weekly working hours by selecting time ranges for each day. This helps us schedule your assignments effectively.",
       "consent": "Consent",
       "consent_text": "I agree to the processing of my personal data in accordance with <a href='/gdpr' target='_blank'>GDPR</a> and Czech labor laws.",
       "submit": "Submit Onboarding",
@@ -791,53 +789,6 @@
       "selected_files": "Selected Files",
       "choose": "Choose files"
     },
-    "availability": {
-      "days": {
-        "monday": "Monday",
-        "tuesday": "Tuesday",
-        "wednesday": "Wednesday",
-        "thursday": "Thursday",
-        "friday": "Friday",
-        "saturday": "Saturday",
-        "sunday": "Sunday",
-        "monday_short": "Mo",
-        "tuesday_short": "Tu",
-        "wednesday_short": "We",
-        "thursday_short": "Th",
-        "friday_short": "Fr",
-        "saturday_short": "Sa",
-        "sunday_short": "Su"
-      },
-      "current_ranges": "Current Ranges",
-      "no_availability": "No availability set",
-      "add_time_range": "Add Time Range",
-      "start_time": "Start Time",
-      "end_time": "End Time",
-      "quick_setup": "Quick Setup",
-      "weekly_schedule": "Weekly Schedule",
-      "mon_fri_9_5": "Mon-Fri 9-5",
-      "mon_sat_8_4": "Mon-Sat 8-4",
-      "custom": "Custom",
-      "legend_working": "Working",
-      "legend_custom": "Custom hours",
-      "legend_off": "Day off",
-      "no_days_selected": "Select working days to set up your schedule",
-      "working_day": "Working Day",
-      "day_off": "Day Off",
-      "custom_hours": "Custom Hours",
-      "exception_day_off": "Exception - Day Off",
-      "edit_hours": "Edit Hours",
-      "remove_exception": "Remove Exception",
-      "mark_exception": "Mark as Exception",
-      "set_custom_hours": "Set custom hours",
-      "mark_unavailable": "This day will be marked as unavailable.",
-      "add_time_slot": "Add Time Slot",
-      "schedule_setup": "Schedule Setup",
-      "schedule_setup_desc": "Select working days and set your hours.",
-      "working_hours": "Working Hours",
-      "working_days": "Working Days",
-      "apply": "Apply"
-    },
     "brand_mark_alt": "Cleansia Partner"
   },
   "global": {
@@ -1006,13 +957,11 @@
     "categories": {
       "profile": "Profile Information",
       "documents": "Required Documents",
-      "availability": "Availability",
       "documents_required": "Upload required documents",
       "approval": "Admin Approval",
       "approval_awaiting_review": "Your documents are being reviewed by our team. We'll notify you once approved.",
       "approval_rejected": "Your submission was rejected. Please review the reason below and re-upload.",
-      "approval_complete_profile_first": "Complete your profile and upload documents to request approval.",
-      "availability_required": "Set your weekly working schedule to receive orders."
+      "approval_complete_profile_first": "Complete your profile and upload documents to request approval."
     }
   },
   "validation": {
@@ -1109,7 +1058,6 @@
         "invalid_format": "Invalid company registration number format for the selected country"
       },
       "must_be_positive": "Value must be positive",
-      "invalid_availability_format": "Invalid availability format. Days must be valid day names or dates (yyyy-MM-dd), and time ranges must have start before end.",
       "page_must_be_positive": "Page must be greater than 0",
       "page_size_must_be_positive": "Page size must be greater than 0",
       "page_size_exceeded": "Page size cannot exceed 100",

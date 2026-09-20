@@ -14,7 +14,6 @@ styles/
 │   └── variables.scss
 ├── components/              # Shared component styles
 │   ├── index.scss                           # Imports all component styles
-│   ├── cleansia-availability.component.scss
 │   ├── cleansia-brand-name.component.scss
 │   ├── cleansia-button.component.scss
 │   ├── cleansia-dynamic-background.component.scss
@@ -143,7 +142,6 @@ All component SCSS files have been migrated from their original component direct
 7. ✅ Deleted original SCSS files from component directories
 
 ### Components Migrated (15 total)
-- cleansia-availability
 - cleansia-brand-name
 - cleansia-button
 - cleansia-dynamic-background

@@ -130,8 +130,6 @@
       "emergency_phone": "Telefon",
       "documents": "Nahrát požadované dokumenty",
       "upload_requirements": "Nahrajte: Fotografie, CV, Vzdělávací certifikáty, Výpis z trestního rejstříku (pokud je potřeba), Pracovní povolení (pro osoby mimo EU), Podepsaná smlouva/NDA",
-      "availability": "Týdenní dostupnost",
-      "availability_description": "Nastavte si své týdenní pracovní hodiny výběrem časových rozmezí pro každý den. To nám pomůže efektivně plánovat vaše úkoly.",
       "consent": "Souhlas",
       "consent_text": "Souhlasím se zpracováním svých osobních údajů v souladu s <a href='/gdpr' target='_blank'>GDPR</a> a českými pracovními zákony.",
       "submit": "Odeslat onboarding",
@@ -791,53 +789,6 @@
       "selected_files": "Vybrané soubory",
       "choose": "Vybrat soubory"
     },
-    "availability": {
-      "days": {
-        "monday": "Pondělí",
-        "tuesday": "Úterý",
-        "wednesday": "Středa",
-        "thursday": "Čtvrtek",
-        "friday": "Pátek",
-        "saturday": "Sobota",
-        "sunday": "Neděle",
-        "monday_short": "Po",
-        "tuesday_short": "Út",
-        "wednesday_short": "St",
-        "thursday_short": "Čt",
-        "friday_short": "Pá",
-        "saturday_short": "So",
-        "sunday_short": "Ne"
-      },
-      "current_ranges": "Aktuální časová rozmezí",
-      "no_availability": "Není nastavena dostupnost",
-      "add_time_range": "Přidat časové rozmezí",
-      "start_time": "Čas začátku",
-      "end_time": "Čas konce",
-      "quick_setup": "Rychlé nastavení",
-      "weekly_schedule": "Týdenní rozvrh",
-      "mon_fri_9_5": "Po-Pá 9-17",
-      "mon_sat_8_4": "Po-So 8-16",
-      "custom": "Vlastní",
-      "legend_working": "Pracovní",
-      "legend_custom": "Vlastní hodiny",
-      "legend_off": "Volno",
-      "no_days_selected": "Vyberte pracovní dny pro nastavení rozvrhu",
-      "working_day": "Pracovní den",
-      "day_off": "Volný den",
-      "custom_hours": "Vlastní hodiny",
-      "exception_day_off": "Výjimka - Volno",
-      "edit_hours": "Upravit hodiny",
-      "remove_exception": "Odebrat výjimku",
-      "mark_exception": "Označit jako výjimku",
-      "set_custom_hours": "Nastavit vlastní hodiny",
-      "mark_unavailable": "Tento den bude označen jako nedostupný.",
-      "add_time_slot": "Přidat časový slot",
-      "schedule_setup": "Nastavení rozvrhu",
-      "schedule_setup_desc": "Vyberte pracovní dny a nastavte své hodiny.",
-      "working_hours": "Pracovní hodiny",
-      "working_days": "Pracovní dny",
-      "apply": "Použít"
-    },
     "brand_mark_alt": "Cleansia Partner"
   },
   "global": {
@@ -1006,13 +957,11 @@
     "categories": {
       "profile": "Informace o profilu",
       "documents": "Požadované dokumenty",
-      "availability": "Dostupnost",
       "documents_required": "Nahrajte požadované dokumenty",
       "approval": "Schválení administrátorem",
       "approval_awaiting_review": "Vaše dokumenty kontroluje náš tým. Jakmile budou schváleny, dáme vám vědět.",
       "approval_rejected": "Vaše žádost byla zamítnuta. Zkontrolujte prosím důvod níže a nahrajte dokumenty znovu.",
-      "approval_complete_profile_first": "Vyplňte profil a nahrajte dokumenty, abyste mohli požádat o schválení.",
-      "availability_required": "Nastavte svůj týdenní pracovní rozvrh pro příjem zakázek."
+      "approval_complete_profile_first": "Vyplňte profil a nahrajte dokumenty, abyste mohli požádat o schválení."
     }
   },
   "validation": {
@@ -1109,7 +1058,6 @@
         "invalid_format": "Neplatný formát IČO pro vybranou zemi"
       },
       "must_be_positive": "Hodnota musí být kladná",
-      "invalid_availability_format": "Neplatný formát dostupnosti. Dny musí být platné názvy dnů nebo data (yyyy-MM-dd) a časové rozsahy musí mít začátek před koncem.",
       "page_must_be_positive": "Stránka musí být větší než 0",
       "page_size_must_be_positive": "Velikost stránky musí být větší než 0",
       "page_size_exceeded": "Velikost stránky nesmí překročit 100",

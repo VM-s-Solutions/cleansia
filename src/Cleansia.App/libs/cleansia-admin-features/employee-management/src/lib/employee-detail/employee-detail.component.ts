@@ -1,18 +1,15 @@
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, DestroyRef, OnDestroy, OnInit, effect, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { FormControl, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import {
-  Code,
   EmployeeDocumentItem,
   EmployeeEntityType,
   EmployeePayConfigSummaryItemDto,
 } from '@cleansia/admin-services';
-import { selectDayOfWeekCodes } from '@cleansia/admin-stores';
 import { CountryFieldLabelsService } from '@cleansia/admin-services';
 import {
-  CleansiaAvailabilityComponent,
   CleansiaButtonComponent,
   CleansiaCalendarComponent,
   CleansiaLoaderComponent,
@@ -31,7 +28,6 @@ import {
   Policy,
 } from '@cleansia/services';
 import { CleansiaPermissionDirective } from '@cleansia/directives';
-import { Store } from '@ngrx/store';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { ConfirmationService } from 'primeng/api';
 import { CheckboxModule } from 'primeng/checkbox';
@@ -49,10 +45,8 @@ import { EmployeePayoutSectionComponent } from './employee-payout-section.compon
   standalone: true,
   imports: [
     CommonModule,
-    FormsModule,
     ReactiveFormsModule,
     CleansiaButtonComponent,
-    CleansiaAvailabilityComponent,
     CleansiaCalendarComponent,
     CleansiaSelectComponent,
     CleansiaTelephoneComponent,
@@ -84,7 +78,6 @@ export class EmployeeDetailComponent implements OnInit, OnDestroy {
   protected readonly docsFacade = inject(EmployeeDocumentsFacade);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
-  private readonly store = inject(Store);
   private readonly translate = inject(TranslateService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly confirmationService = inject(ConfirmationService);
@@ -143,8 +136,6 @@ export class EmployeeDetailComponent implements OnInit, OnDestroy {
   }
 
   readonly editingConfigId = signal<string | null>(null);
-
-  readonly daysOfWeek = signal<Code[]>([]);
 
   // Reactive form backing every edit section — keyed so only the fields
   // belonging to the currently-open section are actually displayed.
@@ -234,13 +225,6 @@ export class EmployeeDetailComponent implements OnInit, OnDestroy {
       this.router.navigate([CleansiaAdminRoute.EMPLOYEE_MANAGEMENT]);
     }
 
-    this.store
-      .select(selectDayOfWeekCodes)
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((codes: Code[]) => {
-        this.daysOfWeek.set(codes);
-      });
-
     this.editForm.controls.entityType.valueChanges
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((value) => {
@@ -280,11 +264,6 @@ export class EmployeeDetailComponent implements OnInit, OnDestroy {
     if (!date) return '-';
     const dateObj = date instanceof Date ? date : new Date(date);
     return dateObj.toLocaleString('en-GB');
-  }
-
-  formatTimeRange(start: unknown, end: unknown): string {
-    if (!start || !end) return '-';
-    return `${start} - ${end}`;
   }
 
   onRejectDocument(document: EmployeeDocumentItem): void {

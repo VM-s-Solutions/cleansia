@@ -109,10 +109,6 @@ export class MembershipPlanFormComponent implements OnInit, OnDestroy {
       Validators.min(0),
       Validators.max(100),
     ]),
-    trialPeriodDays: this.fb.nonNullable.control<number>(0, [
-      Validators.required,
-      Validators.min(0),
-    ]),
     freeCancellationWindowHours: this.fb.nonNullable.control<number>(0, [
       Validators.required,
       Validators.min(0),
@@ -198,7 +194,6 @@ export class MembershipPlanFormComponent implements OnInit, OnDestroy {
         prices,
         discountPercentage: v.discountPercentage,
         freeCancellationWindowHours: v.freeCancellationWindowHours,
-        trialPeriodDays: v.trialPeriodDays,
         allowsExpressUpgrade: v.allowsExpressUpgrade,
         expressUpgradesPerMonth: v.expressUpgradesPerMonth,
       });
@@ -210,7 +205,6 @@ export class MembershipPlanFormComponent implements OnInit, OnDestroy {
         prices,
         discountPercentage: v.discountPercentage,
         freeCancellationWindowHours: v.freeCancellationWindowHours,
-        trialPeriodDays: v.trialPeriodDays,
         allowsExpressUpgrade: v.allowsExpressUpgrade,
         expressUpgradesPerMonth: v.expressUpgradesPerMonth,
       });
@@ -264,7 +258,6 @@ export class MembershipPlanFormComponent implements OnInit, OnDestroy {
       name: detail.name ?? '',
       billingInterval: toBillingIntervalWireValue(detail.billingInterval),
       discountPercentage: detail.discountPercentage ?? 0,
-      trialPeriodDays: detail.trialPeriodDays ?? 0,
       freeCancellationWindowHours: detail.freeCancellationWindowHours ?? 0,
       allowsExpressUpgrade: detail.allowsExpressUpgrade ?? false,
       expressUpgradesPerMonth: detail.expressUpgradesPerMonth ?? 0,

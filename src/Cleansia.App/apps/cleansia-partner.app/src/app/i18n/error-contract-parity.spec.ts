@@ -525,7 +525,6 @@ const PARTNER_SURFACE_ERROR_KEYS: readonly string[] = [
   'language.not_supported',
   'validation.date_must_be_in_past',
   'validation.invalid_age',
-  'validation.invalid_availability_format',
   'validation.invalid_date',
   'validation.invalid_password',
   // Country-scoped IČO/VAT format checks on the cleaner's own profile save

@@ -42,8 +42,6 @@ export const selectInvoiceStatusCodes = createCodeSelector(
   CodeTypes.INVOICE_STATUS
 );
 
-export const selectDayOfWeekCodes = createCodeSelector(CodeTypes.DAY_OF_WEEK);
-
 export function extractCodesByType(codes: Code[], type: string): Code[] {
   return codes.filter((x) => x.type?.toLowerCase() === type.toLowerCase());
 }

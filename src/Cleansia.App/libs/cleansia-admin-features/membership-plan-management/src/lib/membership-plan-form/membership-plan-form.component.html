@@ -182,27 +182,6 @@
             <div class="form-field">
               <cleansia-text-input
                 [label]="
-                  'pages.membership_plans.form.field.trial_days' | translate
-                "
-                formControlName="trialPeriodDays"
-                dataType="number"
-                [required]="true"
-              />
-              @if (
-                form.controls.trialPeriodDays.touched &&
-                form.controls.trialPeriodDays.errors?.['min']
-              ) {
-                <small class="field-error">
-                  {{
-                    'pages.membership_plans.form.validation.trial_negative'
-                      | translate
-                  }}
-                </small>
-              }
-            </div>
-            <div class="form-field">
-              <cleansia-text-input
-                [label]="
                   'pages.membership_plans.form.field.free_cancel_window'
                     | translate
                 "

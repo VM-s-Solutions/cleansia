@@ -137,48 +137,6 @@
   }
 }
 
-.availability-grid {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-
-  .availability-day {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    padding: 0.5rem;
-    border-bottom: 1px solid #eee;
-
-    &:last-child {
-      border-bottom: none;
-    }
-
-    .day-name {
-      min-width: 120px;
-      font-weight: 500;
-      color: #666;
-    }
-
-    .time-ranges {
-      display: flex;
-      gap: 0.5rem;
-      flex-wrap: wrap;
-
-      .time-range {
-        padding: 0.25rem 0.75rem;
-        background-color: #e3f2fd;
-        color: #1976d2;
-        border-radius: 4px;
-        font-size: 0.875rem;
-      }
-    }
-
-    .no-availability {
-      color: #999;
-    }
-  }
-}
-
 .contract-status-badge {
   display: inline-block;
   padding: 0.375rem 0.875rem;

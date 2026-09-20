@@ -34,7 +34,6 @@ export interface MembershipPlanCreateInput {
   prices: { [code: string]: MembershipPlanPriceEntry };
   discountPercentage: number;
   freeCancellationWindowHours: number;
-  trialPeriodDays: number;
   allowsExpressUpgrade: boolean;
   expressUpgradesPerMonth: number;
 }
@@ -43,6 +42,9 @@ export type MembershipPlanUpdateInput = Omit<
   MembershipPlanCreateInput,
   'code' | 'billingInterval'
 >;
+
+// The only trial length the server accepts → /product/business-rules#cleansia-plus
+const NO_TRIAL_DAYS = 0;
 
 @Injectable()
 export class MembershipPlanFormFacade extends UnsubscribeControlDirective {
@@ -111,7 +113,7 @@ export class MembershipPlanFormFacade extends UnsubscribeControlDirective {
     command.prices = this.buildPrices(input.prices);
     command.discountPercentage = input.discountPercentage;
     command.freeCancellationWindowHours = input.freeCancellationWindowHours;
-    command.trialPeriodDays = input.trialPeriodDays;
+    command.trialPeriodDays = NO_TRIAL_DAYS;
     command.allowsExpressUpgrade = input.allowsExpressUpgrade;
     command.expressUpgradesPerMonth = input.expressUpgradesPerMonth;
 
@@ -147,7 +149,7 @@ export class MembershipPlanFormFacade extends UnsubscribeControlDirective {
     command.prices = this.buildPrices(input.prices);
     command.discountPercentage = input.discountPercentage;
     command.freeCancellationWindowHours = input.freeCancellationWindowHours;
-    command.trialPeriodDays = input.trialPeriodDays;
+    command.trialPeriodDays = NO_TRIAL_DAYS;
     command.allowsExpressUpgrade = input.allowsExpressUpgrade;
     command.expressUpgradesPerMonth = input.expressUpgradesPerMonth;
 

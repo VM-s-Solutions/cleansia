@@ -1,5 +1,4 @@
 export * from './cleansia-address-autocomplete';
-export * from './cleansia-availability';
 export * from './cleansia-base-form';
 export * from './cleansia-brand-name';
 export * from './cleansia-button';

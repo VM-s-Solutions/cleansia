@@ -40,7 +40,7 @@ describe('MembershipPlanFormFacade', () => {
       CZK: { price: 199, monthlyEquivalentPrice: 199, stripePriceId: 'price_czk' },
     },
     discountPercentage: 10,
-    trialPeriodDays: 14,
+    trialPeriodDays: 0,
     freeCancellationWindowHours: 24,
     allowsExpressUpgrade: true,
     expressUpgradesPerMonth: 3,
@@ -54,7 +54,6 @@ describe('MembershipPlanFormFacade', () => {
     prices: { CZK: { price: 2030, stripePriceId: ' price_456 ' } },
     discountPercentage: 15,
     freeCancellationWindowHours: 24,
-    trialPeriodDays: 14,
     allowsExpressUpgrade: true,
     expressUpgradesPerMonth: 2,
   };
@@ -64,7 +63,6 @@ describe('MembershipPlanFormFacade', () => {
     prices: { CZK: { price: 249, stripePriceId: 'price_real' } },
     discountPercentage: 12,
     freeCancellationWindowHours: 48,
-    trialPeriodDays: 7,
     allowsExpressUpgrade: false,
     expressUpgradesPerMonth: 5,
   };
@@ -212,6 +210,13 @@ describe('MembershipPlanFormFacade', () => {
       expect('stripePriceId' in command.toJSON()).toBe(false);
     });
 
+    it('sends a zero trial, the only length the server accepts, without offering the field', () => {
+      facade.create(createInput);
+
+      const command: CreateMembershipPlanCommand = membershipClient.create.mock.calls[0][0];
+      expect(command.toJSON()['trialPeriodDays']).toBe(0);
+    });
+
     it('serializes an empty prices map when no block is filled — a plan may exist unpriced', () => {
       facade.create({ ...createInput, prices: {} });
 
@@ -321,6 +326,13 @@ describe('MembershipPlanFormFacade', () => {
       expect(command.toJSON()['prices']).toEqual({
         CZK: { price: 249, stripePriceId: 'price_real' },
       });
+    });
+
+    it('sends a zero trial on update as well', () => {
+      facade.update('plan-1', updateInput);
+
+      const [, command] = membershipClient.update.mock.calls[0];
+      expect(command.toJSON()['trialPeriodDays']).toBe(0);
     });
 
     it('sends the express-waiver quota it was given rather than defaulting it away', () => {

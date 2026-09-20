@@ -2,11 +2,9 @@ import { TestBed } from '@angular/core/testing';
 import {
   AdminClient,
   AdminEmployeeDetail,
-  AdminUpdateEmployeeAvailabilityRequest,
   ApproveEmployeeRequest,
   BulkCreateEmployeePayConfigsCommand,
   RejectEmployeeRequest,
-  TimeRange,
 } from '@cleansia/admin-services';
 import { SnackbarService } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
@@ -15,11 +13,10 @@ import { of, throwError } from 'rxjs';
 import { EmployeeDetailFacade } from './employee-detail.facade';
 import { EmployeeDocumentsFacade } from './employee-documents.facade';
 
-describe('EmployeeDetailFacade — approval, availability and grade commands', () => {
+describe('EmployeeDetailFacade — approval and grade commands', () => {
   let facade: EmployeeDetailFacade;
   let approveMock: jest.Mock;
   let rejectMock: jest.Mock;
-  let updateAvailabilityMock: jest.Mock;
   let detailsMock: jest.Mock;
   let bulkCreateMock: jest.Mock;
   let employeeSummaryMock: jest.Mock;
@@ -29,7 +26,6 @@ describe('EmployeeDetailFacade — approval, availability and grade commands', (
     TestBed.resetTestingModule();
     approveMock = jest.fn().mockReturnValue(of({ employeeId: 'emp-1' }));
     rejectMock = jest.fn().mockReturnValue(of({ employeeId: 'emp-1' }));
-    updateAvailabilityMock = jest.fn().mockReturnValue(of({ employeeId: 'emp-1' }));
     detailsMock = jest.fn().mockReturnValue(of(null));
     bulkCreateMock = jest.fn().mockReturnValue(of({ createdCount: 3 }));
     employeeSummaryMock = jest.fn().mockReturnValue(of(null));
@@ -44,7 +40,6 @@ describe('EmployeeDetailFacade — approval, availability and grade commands', (
             adminEmployeeClient: {
               approve: approveMock,
               reject: rejectMock,
-              updateAvailability: updateAvailabilityMock,
               details: detailsMock,
             },
             adminPayConfigClient: {
@@ -75,12 +70,10 @@ describe('EmployeeDetailFacade — approval, availability and grade commands', (
 
     facade.approveEmployee('country-1');
     facade.rejectEmployee('incomplete profile');
-    facade.saveAvailability({});
     facade.bulkApplyGrade('senior', 'cur-1', true);
 
     expect(approveMock).not.toHaveBeenCalled();
     expect(rejectMock).not.toHaveBeenCalled();
-    expect(updateAvailabilityMock).not.toHaveBeenCalled();
     expect(bulkCreateMock).not.toHaveBeenCalled();
   });
 
@@ -94,28 +87,6 @@ describe('EmployeeDetailFacade — approval, availability and grade commands', (
     approveMock.mockReturnValue(throwError(() => new Error('boom')));
     facade.approveEmployee('country-1', 'documents verified');
     expect(detailsMock).toHaveBeenCalledTimes(1);
-  });
-
-  it('leaves the availability editor open and reports the error when the save fails', () => {
-    updateAvailabilityMock.mockReturnValue(throwError(() => new Error('boom')));
-    facade.editingAvailability.set(true);
-
-    facade.saveAvailability({ monday: [] });
-
-    expect(facade.editingAvailability()).toBe(true);
-    expect(facade.savingAvailability()).toBe(false);
-    expect(snackbar.showError).toHaveBeenCalledWith(
-      'pages.employee_detail.messages.availability_save_error'
-    );
-  });
-
-  it('closes the availability editor once the save lands', () => {
-    facade.editingAvailability.set(true);
-
-    facade.saveAvailability({ monday: [] });
-
-    expect(facade.editingAvailability()).toBe(false);
-    expect(facade.savingAvailability()).toBe(false);
   });
 
   it('clears the bulk-grade flag whether the apply lands or fails', () => {
@@ -156,23 +127,6 @@ describe('EmployeeDetailFacade — approval, availability and grade commands', (
       const request: RejectEmployeeRequest = rejectMock.mock.calls[0][1];
       expect(request).toBeInstanceOf(RejectEmployeeRequest);
       expect(request.toJSON()).toEqual({ reason: 'incomplete profile' });
-    });
-
-    it('serializes the weekly availability map verbatim', () => {
-      facade.saveAvailability({
-        monday: [TimeRange.fromJS({ start: '08:00', end: '16:00' })],
-        friday: [],
-      });
-
-      const request: AdminUpdateEmployeeAvailabilityRequest =
-        updateAvailabilityMock.mock.calls[0][1];
-      expect(request).toBeInstanceOf(AdminUpdateEmployeeAvailabilityRequest);
-      expect(request.toJSON()).toEqual({
-        availability: {
-          monday: [{ start: '08:00', end: '16:00' }],
-          friday: [],
-        },
-      });
     });
 
     it('serializes a bulk grade apply with the employee, grade, currency and overwrite flag', () => {

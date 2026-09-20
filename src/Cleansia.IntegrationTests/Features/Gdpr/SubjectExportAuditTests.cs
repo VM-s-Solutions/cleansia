@@ -97,7 +97,8 @@ public class SubjectExportAuditTests(PostgresContainerFixture fixture) : BaseInt
                 Assert.Equal(0, snapshot.GetProperty("orderCount").GetInt32());
                 Assert.Equal(0, snapshot.GetProperty("disputeCount").GetInt32());
                 Assert.Equal(2, snapshot.GetProperty("customerActionCount").GetInt32());
-                Assert.Equal(5, snapshot.EnumerateObject().Count());
+                Assert.Equal(0, snapshot.GetProperty("workContractAcceptanceCount").GetInt32());
+                Assert.Equal(6, snapshot.EnumerateObject().Count());
                 Assert.DoesNotContain(SubjectEmail, audit.AfterJson, StringComparison.OrdinalIgnoreCase);
                 Assert.DoesNotContain(TestConstants.TestUserSession.TestFirstName, audit.AfterJson, StringComparison.OrdinalIgnoreCase);
                 Assert.DoesNotContain(TestConstants.TestUserSession.TestLastName, audit.AfterJson, StringComparison.OrdinalIgnoreCase);
@@ -182,7 +183,8 @@ public class SubjectExportAuditTests(PostgresContainerFixture fixture) : BaseInt
                 Assert.Equal(0, evidence.GetProperty("disputeCount").GetInt32());
                 Assert.Equal(0, evidence.GetProperty("consentCount").GetInt32());
                 Assert.Equal(2, evidence.GetProperty("customerActionCount").GetInt32());
-                Assert.Equal(4, evidence.EnumerateObject().Count());
+                Assert.Equal(0, evidence.GetProperty("workContractAcceptanceCount").GetInt32());
+                Assert.Equal(5, evidence.EnumerateObject().Count());
                 Assert.DoesNotContain(SubjectEmail, audit.PayloadJson, StringComparison.OrdinalIgnoreCase);
                 Assert.DoesNotContain(TestConstants.TestUserSession.TestFirstName, audit.PayloadJson, StringComparison.OrdinalIgnoreCase);
                 Assert.DoesNotContain("feeRate", audit.PayloadJson);

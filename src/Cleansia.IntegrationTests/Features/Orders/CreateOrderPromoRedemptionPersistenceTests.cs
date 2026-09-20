@@ -140,6 +140,7 @@ public class CreateOrderPromoRedemptionPersistenceTests(PostgresContainerFixture
     private static async Task SeedCatalogUserAndPromoCode(CleansiaDbContext context)
     {
         context.Languages.Add(Language.Create("en", "English"));
+        TestLegalDocuments.Add(context);
 
         var country = Country.Create("Czechia", "CZ", "CZ", isServiced: true);
         country.Id = CountryId;

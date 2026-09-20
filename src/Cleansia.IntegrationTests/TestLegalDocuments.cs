@@ -6,8 +6,11 @@ namespace Cleansia.IntegrationTests;
 
 /// <summary>
 /// The fixed-id contract-for-work documents for the arrange steps that book, take or read under one,
-/// so a take has a text to echo without running the real seeder. Added by the arrange step that needs
-/// them rather than after every reset: the fifty fixtures that only create orders never read them.
+/// so a take has a text to echo without running the real seeder. The in-force one is platform-wide
+/// (no market), so it resolves for whatever country a fixture invents: every arrange that books
+/// through the real <c>OrderFactory</c> needs it, since the factory refuses a booking with no
+/// contract text in force for the address's market. Added by the arrange step rather than after
+/// every reset, because the seeder's own tests count exactly what the seed lands.
 /// </summary>
 public static class TestLegalDocuments
 {

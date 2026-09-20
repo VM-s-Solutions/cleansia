@@ -146,6 +146,7 @@ public class CreateOrderSpanCapTests(PostgresContainerFixture fixture)
     private static async Task SeedCatalogAndUser(CleansiaDbContext context)
     {
         context.Languages.Add(Language.Create("en", "English"));
+        TestLegalDocuments.Add(context);
 
         var country = Country.Create("Czechia", "CZ", "CZ", isServiced: true);
         country.Id = CountryId;

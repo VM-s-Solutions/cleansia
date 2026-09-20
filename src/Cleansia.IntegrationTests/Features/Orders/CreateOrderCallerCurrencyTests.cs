@@ -368,6 +368,7 @@ public partial class CreateOrderCallerCurrencyTests(PostgresContainerFixture fix
     private static async Task SeedAsync(CleansiaDbContext context)
     {
         context.Languages.Add(Language.Create("en", "English"));
+        TestLegalDocuments.Add(context);
 
         // Each country configured for its own currency -- the link the address-to-currency rule reads.
         foreach (var (id, name, iso, code, lang) in new[]

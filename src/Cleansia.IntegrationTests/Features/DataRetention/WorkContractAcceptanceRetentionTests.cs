@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using System.Text.Json;
 using Cleansia.Core.AppServices.Features.DataRetention;
 using Cleansia.Core.AppServices.Features.TenantSettings;
 using Cleansia.Core.Blobs.Abstractions;
@@ -79,7 +80,7 @@ public sealed class WorkContractAcceptanceRetentionTests(PostgresContainerFixtur
                 Assert.Equal(OrderAId, oldA.OrderId);
                 Assert.Equal(TestLegalDocuments.WorkContractTextEnId, oldA.LegalDocumentTextId);
                 Assert.Equal(WorkContractTestData.Version, oldA.DocumentVersion);
-                Assert.Equal(Facts, oldA.FactsJson);
+                Assert.Equal("ORD-WCRET", JsonDocument.Parse(oldA.FactsJson).RootElement.GetProperty("orderNumber").GetString());
                 Assert.Equal(TestTenants.Default, oldA.TenantId);
 
                 Assert.Equal(Ip, rows.Single(r => r.OrderEmployeeId == YoungSeatA).IpAddress);

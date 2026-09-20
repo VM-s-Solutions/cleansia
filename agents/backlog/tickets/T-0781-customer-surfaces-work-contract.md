@@ -81,10 +81,10 @@ without one shows nothing new; Jest, Gradle unit tests and XCTest green.
 
 - 2026-09-20 — filed by the docs lane from the batch-9 panel; runs after T-0777 and the two partner
   mobile lanes, beside T-0784.
-- 2026-09-20 — done: **web `6588cab0`** (*the public text at /work-contract, the wizard names it at
+- 2026-09-20 — done: **web `9f634730`** (*the public text at /work-contract, the wizard names it at
   the offer, the order detail states each crew member's acceptance and opens the accepted text with
-  the frozen facts*) + **`a26546fd`** (the legal document's docstring stops counting its callers);
-  **Android `a6046331`** and **iOS `4cbd2c09`** (*the wizard names it at the offer with the public
+  the frozen facts*) + **`b96cf5f3`** (the legal document's docstring stops counting its callers);
+  **Android `a24e1595`** and **iOS `9d8ea2b5`** (*the wizard names it at the offer with the public
   page behind it, the order detail states each crew member's acceptance, and Read opens the accepted
   text with the frozen facts in-app*). The shared web fact rows live in `libs/shared/utils/src/work-contract.utils.ts`
   (the admin dialog reads the same helper).

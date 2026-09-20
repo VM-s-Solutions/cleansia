@@ -114,7 +114,7 @@ was down on the box again.
 **The one owed drop belongs to `20260919231739`**: a DEV database whose
 `__EFMigrationsHistory` records any earlier id replays the whole create script against tables that
 already exist. The legal texts need no extra step — every host seeds them at start, and since
-`efff863a` a fresh Development database is seeded once more in the boot that migrates it (the factory
+`b34dff07` a fresh Development database is seeded once more in the boot that migrates it (the factory
 now refuses a booking with no contract text in force, so a first boot must not come up without one);
 **three** documents are seeded now (terms, privacy, work contract).
 

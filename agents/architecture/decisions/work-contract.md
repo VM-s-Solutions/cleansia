@@ -23,7 +23,7 @@ plate — every one shipped as its default.
 
 ---
 
-## Current shape (the tree at `4cbd2c09`, 2026-09-20)
+## Current shape (the tree at `9d8ea2b5`, 2026-09-20)
 
 **The customer's half — the order is booked under a text.** `LegalDocumentType.WorkContract` is a
 **customer-audience** document (the panel reversed the author's `Employee` audience: the contract's

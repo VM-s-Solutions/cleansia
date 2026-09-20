@@ -57,9 +57,9 @@ accepted one; the Company settings page shows the new window with a sentence; Je
 ## Status log
 
 - 2026-09-20 — filed by the docs lane from the batch-9 panel; runs after T-0777 and T-0783, beside T-0781.
-- 2026-09-20 — done in **`2f3f5f79`** (*the order detail says per crew member whether the contract for
+- 2026-09-20 — done in **`1dd91c24`** (*the order detail says per crew member whether the contract for
   work is accepted, Read opens the accepted text with the frozen facts and the accepted row's SHA-256,
-  and the retention window has its sentence*) + **`27d9c5d9`** (*the contract dialog reads the
+  and the retention window has its sentence*) + **`0d663d1b`** (*the contract dialog reads the
   accepted text's hash only for a session that may, says so for the other roles, and takes the fact
   rows from one shared helper*). Beyond the ticket's ask: the dialog reads `adminLegalClient.getDocument`
   for the accepted language and prints that text row's SHA-256 — the hash a dispute cites (ADR-0068 D4's

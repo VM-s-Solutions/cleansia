@@ -62,7 +62,7 @@ SwiftLint/SwiftFormat clean.
 ## Status log
 
 - 2026-09-20 — filed by the docs lane from the batch-9 panel; runs after T-0777, beside T-0783.
-- 2026-09-20 — done in **`de94f094`** (*the contract for work sits under the take — every take opens
+- 2026-09-20 — done in **`32fdd5d2`** (*the contract for work sits under the take — every take opens
   the sheet and swipes the previewed text, an admin-placed seat sees the banner and accepts, the line
-  reads the accepted text*) + **`a60078c1`** (*the detail drops an acceptance row with no version and
+  reads the accepted text*) + **`53d005f8`** (*the detail drops an acceptance row with no version and
   asks for the cleaner's id alongside the fetch, not after it*). XCTest for the three targets runs in CI.

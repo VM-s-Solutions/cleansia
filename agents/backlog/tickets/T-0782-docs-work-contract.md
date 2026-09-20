@@ -19,7 +19,7 @@ sprint: —
 ## Context
 
 Docs are written at the end of a feature, once it is green. Every page below names the shipped shape
-with the commit ids and was ground-truthed against the tree at `4cbd2c09` (the batch's head), not
+with the commit ids and was ground-truthed against the tree at `9d8ea2b5` (the batch's head), not
 against the panel text: where the tree departed from ADR-0068's draft, the departure is recorded in
 the ADR's §*What shipped* and the pages describe the tree.
 
@@ -44,7 +44,7 @@ the ADR's §*What shipped* and the pages describe the tree.
 - `docs/domain/model.md` (both entities, the three FKs, 47 / 49 stamped), `docs/architecture/database.md`
   (the migration id `20260919231739`, 88 tables, the entity row), `docs/architecture/security-rules.md`
   (the new tenant-ignoring reads in ADR-0051's matrix), `docs/architecture/local-orchestration.md`
-  (the Development boot seed, `efff863a`), `docs/api/orders.md` (the three endpoints, the take's
+  (the Development boot seed, `b34dff07`), `docs/api/orders.md` (the three endpoints, the take's
   fourteen-rule chain, the two gates), `docs/flows/gdpr-and-audit.md` (the twenty-first repository
   the erasure walks; the edge-case row), the customer / partner / admin overviews, the customer
   ordering flow, the partner and admin order-management pages and the mobile features page.
@@ -95,7 +95,7 @@ orchestrator's run.
 - 2026-09-20 — filed by the docs lane from the batch-9 panel; runs last, once every other lane is green.
 - 2026-09-20 — the pages written in the docs commit that closes batch 9 (the orchestrator commits the
   path list this lane returned). The T-0783 record items were found folded into `a15d3af0`; the real
-  admin-web commits are `2f3f5f79` + `27d9c5d9`; the model has **88** tables, not the 89 the ADR's
+  admin-web commits are `1dd91c24` + `0d663d1b`; the model has **88** tables, not the 89 the ADR's
   consequence line projected — all three recorded in the ADR's §What shipped.
 - 2026-09-20 — **review fixes; the row goes back to `in_progress`** because AC1 was unmet under a
   `done` status (the contradiction the INDEX's one-status rule exists to prevent) and this pass had no

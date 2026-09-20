@@ -144,7 +144,7 @@ border) while the gates and the sweep stay filtered; the preview reads the board
 (`1067d938`); `GetWorkContract` sits under `CanViewOrderDetail` / `CanViewOrderDetailAdmin`. The
 migration regen (`20260919231739_Initial`), the three client regens and the two spec re-dumps ran in
 this lane; the DEV drop is owed at the deploy (MS-2, A1). A fresh Development database is seeded with
-the legal texts in the boot that migrates it (`efff863a`), because the factory now refuses a booking
+the legal texts in the boot that migrates it (`b34dff07`), because the factory now refuses a booking
 with no contract text in force and the hosted seeder runs before the schema exists on a first boot.
 
 **Security (Gate 3) — `security_touching: true`.** A new tenant-ignoring read family with a caller
@@ -166,6 +166,6 @@ indistinguishable from a missing one).
   full or unpaid-card job the caller is not on discloses no facts; the read trusts the FK on the
   accepted text; the resolver, audit and acceptor comments say what the code does) + **`0cb13f11`**
   (AC13 — the legal-seed guard walks the work-contract folder). The Development boot seed followed as
-  `efff863a`. Every backend test named in ADR-0068 §Verification exists in the tree (`WorkContractGateTests`
+  `b34dff07`. Every backend test named in ADR-0068 §Verification exists in the tree (`WorkContractGateTests`
   is the one file for both gates); the Postgres and host suites' first execution is CI — Docker was
   down on the development machine.

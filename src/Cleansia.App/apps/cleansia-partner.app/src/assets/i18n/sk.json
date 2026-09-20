@@ -357,7 +357,28 @@
         "clear_all": "Vymazať všetko"
       },
       "no_logs": "Žiadne časové záznamy na zobrazenie",
-      "save_log": "Uložiť záznam"
+      "save_log": "Uložiť záznam",
+      "work_contract": {
+        "title": "Zmluva o dielo",
+        "version_line": "Verzia {{version}}, účinná od {{date}}",
+        "facts": {
+          "title": "Zákazka",
+          "order_number": "Číslo objednávky",
+          "window": "Dátum a čas",
+          "price": "Cena",
+          "location": "Miesto",
+          "rooms_bathrooms": "Izby / kúpeľne",
+          "services": "Služby",
+          "packages": "Balíčky",
+          "extras": "Doplnky"
+        },
+        "accept_checkbox": "Prečítal(a) som si zmluvu o dielo k tejto zákazke a prijímam ju",
+        "accept_and_take": "Prijať a prevziať zákazku",
+        "accept_only": "Prijať zmluvu",
+        "load_failed": "Zmluvu sa nepodarilo načítať. Skúste to prosím znova.",
+        "accepted_on": "Prijaté {{date}}, verzia {{version}}",
+        "accepted_in_language": "Prijaté v jazyku: {{language}}"
+      }
     },
     "order_details": {
       "title": "Detail objednávky",
@@ -448,7 +469,14 @@
       "mark_cash_collected_confirm_warning": "Týmto bude objednávka označená ako zaplatená. Túto akciu nemožno vrátiť späť.",
       "mark_cash_collected_confirm_action": "Áno, hotovosť prijatá",
       "mark_cash_collected_gating_error": "Hotovosť možno prijať len pri prebiehajúcej a zatiaľ nezaplatenej objednávke",
-      "complete_missing_after_photos": "Objednávku nemožno dokončiť bez fotografií po upratovaní"
+      "complete_missing_after_photos": "Objednávku nemožno dokončiť bez fotografií po upratovaní",
+      "work_contract": {
+        "accepted_line": "Zmluvu o dielo ste prijali {{date}}, verzia {{version}}",
+        "read": "Prečítať zmluvu",
+        "pending_banner": "Pred začatím práce prijmite zmluvu o dielo",
+        "accept": "Prijať zmluvu",
+        "accepted_success": "Zmluva o dielo bola prijatá."
+      }
     },
     "invoices": {
       "title": "Moje mzdové faktúry",

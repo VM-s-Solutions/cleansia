@@ -82,6 +82,47 @@
       </div>
       }
 
+      <!-- The contract for work: the caller's own seat either has its acceptance or, after an
+           admin placement, still owes it. Start and Complete stay offered either way; the server
+           answers contract.acceptance_required and the same dialog opens. -->
+      @if (callerWorkContractAcceptance(); as acceptance) {
+      <div class="cleansia-order-details__contract cleansia-order-details__contract--accepted">
+        <i class="pi pi-verified"></i>
+        <span class="cleansia-order-details__contract-text">
+          {{
+            'pages.order_details.work_contract.accepted_line'
+              | translate
+                : { date: formatDateTime(acceptance.acceptedOn), version: acceptance.documentVersion }
+          }}
+        </span>
+        <cleansia-button
+          [buttonType]="'button'"
+          [style]="'basic-button'"
+          [size]="'auto-width'"
+          [title]="'pages.order_details.work_contract.read' | translate"
+          [icon]="'pi pi-file'"
+          [text]="true"
+          (clickFn)="openReadWorkContract()"
+        />
+      </div>
+      } @else if (canAcceptWorkContract()) {
+      <div class="cleansia-order-details__contract cleansia-order-details__contract--pending" role="status">
+        <i class="pi pi-exclamation-triangle"></i>
+        <span class="cleansia-order-details__contract-text">
+          {{ 'pages.order_details.work_contract.pending_banner' | translate }}
+        </span>
+        <cleansia-button
+          [buttonType]="'button'"
+          [size]="'auto-width'"
+          [title]="'pages.order_details.work_contract.accept' | translate"
+          [icon]="'pi pi-check'"
+          [severity]="'warn'"
+          (clickFn)="openAcceptWorkContract()"
+          [loading]="loading()"
+        />
+      </div>
+      }
+
       <!-- Start Order Action - Prominently placed at top -->
       @if (canStartOrder()) {
       <div class="cleansia-order-details__primary-action">

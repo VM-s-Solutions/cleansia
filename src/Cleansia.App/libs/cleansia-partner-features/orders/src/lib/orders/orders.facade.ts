@@ -9,7 +9,6 @@ import {
   SortDefinition,
   SortDirection,
   StartOrderCommand,
-  TakeOrderCommand,
 } from '@cleansia/partner-services';
 import * as OrderActions from '@cleansia/partner-stores';
 import {
@@ -26,7 +25,6 @@ import {
   catchError,
   debounceTime,
   distinctUntilChanged,
-  finalize,
   of,
   takeUntil,
 } from 'rxjs';
@@ -35,6 +33,13 @@ import {
   CompleteOrderDialogData,
   CompleteOrderDialogResult,
 } from '../components/complete-order-dialog';
+import {
+  WorkContractDialogComponent,
+  WorkContractDialogData,
+  WorkContractDialogMode,
+  WorkContractDialogOutcome,
+  WorkContractDialogResult,
+} from '../components/work-contract-dialog';
 
 @Injectable()
 export class OrdersFacade extends UnsubscribeControlDirective {
@@ -210,6 +215,9 @@ export class OrdersFacade extends UnsubscribeControlDirective {
     return !!orderId && this.takeInFlightOrderId() === orderId;
   }
 
+  // Every take passes through the contract dialog: the preview is read there, the tick is
+  // given there, and the take carries the text id the cleaner was shown. The row stays
+  // in flight while the dialog is open so the board offers no second entry.
   takeOrder(orderId: string): void {
     const employeeId = this.currentEmployeeId();
 
@@ -226,18 +234,30 @@ export class OrdersFacade extends UnsubscribeControlDirective {
 
     this.takeInFlightOrderId.set(orderId);
 
-    const command = new TakeOrderCommand();
-    command.orderId = orderId;
+    const dialogData: WorkContractDialogData = {
+      mode: WorkContractDialogMode.Take,
+      orderId,
+    };
 
-    this.partnerClient.orderClient
-      .takeOrder(command)
-      .pipe(
-        takeUntil(this.destroyed$),
-        catchError(() => of(null)),
-        finalize(() => this.takeInFlightOrderId.set(null))
-      )
-      .subscribe((response) => {
-        if (response) {
+    const ref: DynamicDialogRef | null = this.dialogService.open(
+      WorkContractDialogComponent,
+      {
+        header: undefined,
+        data: dialogData,
+        width: '720px',
+        modal: true,
+        dismissableMask: false,
+      }
+    );
+
+    ref?.onClose
+      .pipe(takeUntil(this.destroyed$))
+      .subscribe((result: WorkContractDialogResult | undefined) => {
+        this.takeInFlightOrderId.set(null);
+        if (!result) {
+          return;
+        }
+        if (result.outcome === WorkContractDialogOutcome.Accepted) {
           this.snackbarService.showSuccessTranslated(
             'pages.orders.order_taken_success'
           );

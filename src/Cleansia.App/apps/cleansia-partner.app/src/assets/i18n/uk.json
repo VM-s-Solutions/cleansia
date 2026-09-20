@@ -357,7 +357,28 @@
         "clear_all": "Очистити все"
       },
       "no_logs": "Немає записів часу для відображення",
-      "save_log": "Зберегти запис"
+      "save_log": "Зберегти запис",
+      "work_contract": {
+        "title": "Договір підряду",
+        "version_line": "Версія {{version}}, чинна з {{date}}",
+        "facts": {
+          "title": "Замовлення",
+          "order_number": "Номер замовлення",
+          "window": "Дата й час",
+          "price": "Ціна",
+          "location": "Місце",
+          "rooms_bathrooms": "Кімнати / ванні",
+          "services": "Послуги",
+          "packages": "Пакети",
+          "extras": "Додатково"
+        },
+        "accept_checkbox": "Я прочитав(ла) договір підряду для цього замовлення та приймаю його",
+        "accept_and_take": "Прийняти та взяти замовлення",
+        "accept_only": "Прийняти договір",
+        "load_failed": "Не вдалося завантажити договір. Спробуйте ще раз.",
+        "accepted_on": "Прийнято {{date}}, версія {{version}}",
+        "accepted_in_language": "Прийнято мовою: {{language}}"
+      }
     },
     "order_details": {
       "title": "Деталі замовлення",
@@ -448,7 +469,14 @@
       "mark_cash_collected_confirm_warning": "Замовлення буде позначено як оплачене. Цю дію не можна скасувати.",
       "mark_cash_collected_confirm_action": "Так, готівку отримано",
       "mark_cash_collected_gating_error": "Готівку можна отримати лише для замовлення, яке виконується та ще не оплачене",
-      "complete_missing_after_photos": "Замовлення неможливо завершити без фотографій після прибирання"
+      "complete_missing_after_photos": "Замовлення неможливо завершити без фотографій після прибирання",
+      "work_contract": {
+        "accepted_line": "Ви прийняли договір підряду {{date}}, версія {{version}}",
+        "read": "Читати договір",
+        "pending_banner": "Прийміть договір підряду, перш ніж почати",
+        "accept": "Прийняти договір",
+        "accepted_success": "Договір підряду прийнято."
+      }
     },
     "invoices": {
       "title": "Мої зарплатні рахунки",

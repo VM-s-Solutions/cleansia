@@ -1,6 +1,11 @@
 import { TranslateService } from '@ngx-translate/core';
 import { toSnakeCase } from '@cleansia/utils';
-import { AssignedEmployeeDto, OrderStatus, PaymentStatus } from '@cleansia/partner-services';
+import {
+  AssignedEmployeeDto,
+  OrderStatus,
+  PaymentStatus,
+  WorkContractAcceptanceDto,
+} from '@cleansia/partner-services';
 
 // --- Formatting helpers ---
 
@@ -209,6 +214,35 @@ export function canMarkCashCollected(
     orderStatusValue === OrderStatus.InProgress &&
     paymentStatusValue !== PaymentStatus.Paid &&
     isEmployeeAssigned(assignedEmployees, employeeId)
+  );
+}
+
+// The caller's contract for work is the row of their own seat: the acceptance names the seat,
+// the crew entry names the cleaner, and the two meet on the seat id.
+export function findCallerWorkContractAcceptance(
+  assignedEmployees: AssignedEmployeeDto[] | undefined,
+  workContractAcceptances: WorkContractAcceptanceDto[] | undefined,
+  employeeId: string
+): WorkContractAcceptanceDto | null {
+  const seatId = assignedEmployees?.find((e) => e?.employeeId === employeeId)?.id;
+  if (!seatId) return null;
+  return workContractAcceptances?.find((a) => a?.orderEmployeeId === seatId) ?? null;
+}
+
+// A seat without a row is the admin placement; the standalone acceptance mirrors
+// AcceptWorkContract.Validator — any order that is not over.
+export function canAcceptWorkContract(
+  orderStatusValue: number,
+  assignedEmployees: AssignedEmployeeDto[] | undefined,
+  workContractAcceptances: WorkContractAcceptanceDto[] | undefined,
+  employeeId: string
+): boolean {
+  const isOver =
+    orderStatusValue === OrderStatus.Completed || orderStatusValue === OrderStatus.Cancelled;
+  return (
+    !isOver &&
+    isEmployeeAssigned(assignedEmployees, employeeId) &&
+    findCallerWorkContractAcceptance(assignedEmployees, workContractAcceptances, employeeId) === null
   );
 }
 

@@ -357,7 +357,28 @@
         "clear_all": "Clear all"
       },
       "no_logs": "No time logs to display",
-      "save_log": "Save log"
+      "save_log": "Save log",
+      "work_contract": {
+        "title": "Contract for work",
+        "version_line": "Version {{version}}, effective from {{date}}",
+        "facts": {
+          "title": "The job",
+          "order_number": "Order number",
+          "window": "Date and time",
+          "price": "Price",
+          "location": "Location",
+          "rooms_bathrooms": "Rooms / bathrooms",
+          "services": "Services",
+          "packages": "Packages",
+          "extras": "Extras"
+        },
+        "accept_checkbox": "I have read and accept the contract for work for this job",
+        "accept_and_take": "Accept and take the job",
+        "accept_only": "Accept the contract",
+        "load_failed": "The contract could not be loaded. Please try again.",
+        "accepted_on": "Accepted on {{date}}, version {{version}}",
+        "accepted_in_language": "Accepted in {{language}}"
+      }
     },
     "order_details": {
       "title": "Order Details",
@@ -448,7 +469,14 @@
       "mark_cash_collected_confirm_warning": "This marks the order as paid and cannot be undone.",
       "mark_cash_collected_confirm_action": "Yes, cash collected",
       "mark_cash_collected_gating_error": "Cash can only be collected while the order is in progress and not yet paid",
-      "complete_missing_after_photos": "Order cannot be completed without after photos"
+      "complete_missing_after_photos": "Order cannot be completed without after photos",
+      "work_contract": {
+        "accepted_line": "You accepted the contract for work on {{date}}, version {{version}}",
+        "read": "Read the contract",
+        "pending_banner": "Accept the contract for work before you start",
+        "accept": "Accept the contract",
+        "accepted_success": "Contract for work accepted."
+      }
     },
     "invoices": {
       "title": "My Payroll Invoices",

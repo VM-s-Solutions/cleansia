@@ -10,16 +10,21 @@ import {
   PaymentType,
   ReportOrderIssueCommand,
   StartOrderCommand,
-  TakeOrderCommand,
-  TakeOrderResponse,
 } from '@cleansia/partner-services';
+import * as OrderActions from '@cleansia/partner-stores';
 import { SnackbarService } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
 import { Actions } from '@ngrx/effects';
-import { Store } from '@ngrx/store';
+import { Action, Store } from '@ngrx/store';
 import { DialogService } from 'primeng/dynamicdialog';
 import { EMPTY, Subject, of, throwError } from 'rxjs';
 import { MarkCashCollectedDialogComponent } from '../components/mark-cash-collected-dialog';
+import {
+  WorkContractDialogComponent,
+  WorkContractDialogMode,
+  WorkContractDialogOutcome,
+  WorkContractDialogResult,
+} from '../components/work-contract-dialog';
 import { OrderDetailsFacade } from './order-details.facade';
 
 const EMPLOYEE_ID = 'emp-1';
@@ -70,6 +75,8 @@ describe('OrderDetailsFacade', () => {
     showApiError: jest.Mock;
   };
   let dialogService: { open: jest.Mock };
+  let dispatch: jest.Mock;
+  let actions$: Subject<Action>;
 
   const createFacade = (): OrderDetailsFacade => {
     TestBed.configureTestingModule({
@@ -79,8 +86,8 @@ describe('OrderDetailsFacade', () => {
         { provide: SnackbarService, useValue: snackbar },
         { provide: DialogService, useValue: dialogService },
         { provide: TranslateService, useValue: { instant: (k: string) => k } },
-        { provide: Store, useValue: { dispatch: jest.fn() } },
-        { provide: Actions, useValue: EMPTY },
+        { provide: Store, useValue: { dispatch } },
+        { provide: Actions, useValue: actions$ },
       ],
     });
 
@@ -104,7 +111,17 @@ describe('OrderDetailsFacade', () => {
       showApiError: jest.fn(),
     };
     dialogService = { open: jest.fn() };
+    dispatch = jest.fn();
+    actions$ = new Subject<Action>();
   });
+
+  // The shape CleansiaApiController.HandleFailure puts on the wire for a validation refusal.
+  const refusal = (code: string): unknown => ({
+    detail: 'A validation problem occurred.',
+    errors: { OrderId: code },
+  });
+
+  const workContractDialogData = () => dialogService.open.mock.calls[0][1].data;
 
   describe('markCashCollected', () => {
     it('refreshes the order and reports success when the call succeeds', () => {
@@ -159,52 +176,221 @@ describe('OrderDetailsFacade', () => {
   });
 
   describe('takeOrder', () => {
-    it('confirms and re-reads the order when the take succeeds', () => {
+    let dialogClose$: Subject<WorkContractDialogResult | undefined>;
+
+    beforeEach(() => {
+      dialogClose$ = new Subject<WorkContractDialogResult | undefined>();
+      dialogService.open.mockReturnValue({ onClose: dialogClose$ });
+    });
+
+    it('opens the contract dialog in take mode instead of taking outright', () => {
       const facade = createFacade();
-      orderClient.takeOrder.mockReturnValue(
-        of(TakeOrderResponse.fromJS({ orderId: ORDER_ID, employeeId: EMPLOYEE_ID }))
-      );
 
       facade.takeOrder(ORDER_ID);
+
+      expect(dialogService.open).toHaveBeenCalledTimes(1);
+      expect(dialogService.open.mock.calls[0][0]).toBe(WorkContractDialogComponent);
+      expect(workContractDialogData()).toEqual({
+        mode: WorkContractDialogMode.Take,
+        orderId: ORDER_ID,
+      });
+      expect(orderClient.takeOrder).not.toHaveBeenCalled();
+      expect(facade.takeInFlight()).toBe(true);
+    });
+
+    it('confirms and re-reads the order exactly once when the dialog reports the take', () => {
+      const facade = createFacade();
+
+      facade.takeOrder(ORDER_ID);
+      dialogClose$.next({ outcome: WorkContractDialogOutcome.Accepted });
 
       expect(snackbar.showSuccessTranslated).toHaveBeenCalledWith(
         'pages.orders.order_taken_success'
       );
+      expect(orderClient.getById).toHaveBeenCalledTimes(1);
       expect(orderClient.getById).toHaveBeenCalledWith(ORDER_ID);
+      expect(facade.takeInFlight()).toBe(false);
     });
 
-    it('re-reads the order when the take is refused, so the button reflects the server', () => {
+    it('re-reads the order when the take was refused, so the button reflects the server', () => {
       const facade = createFacade();
-      orderClient.takeOrder.mockReturnValue(
-        throwError(() => new Error('order.no_available_spots'))
-      );
 
       facade.takeOrder(ORDER_ID);
+      dialogClose$.next({ outcome: WorkContractDialogOutcome.Refused });
 
-      expect(orderClient.getById).toHaveBeenCalledWith(ORDER_ID);
+      expect(orderClient.getById).toHaveBeenCalledTimes(1);
       expect(snackbar.showSuccessTranslated).not.toHaveBeenCalled();
       expect(facade.loading()).toBe(false);
     });
 
-    it('ignores a second click while a take is still in flight', () => {
+    it('re-reads nothing when the dialog is dismissed', () => {
       const facade = createFacade();
-      orderClient.takeOrder.mockReturnValue(new Subject<TakeOrderResponse>());
 
       facade.takeOrder(ORDER_ID);
-      facade.takeOrder(ORDER_ID);
+      dialogClose$.next(undefined);
 
-      expect(orderClient.takeOrder).toHaveBeenCalledTimes(1);
+      expect(orderClient.getById).not.toHaveBeenCalled();
+      expect(facade.takeInFlight()).toBe(false);
     });
 
-    it('never calls the endpoint without an order id', () => {
+    it('ignores a second click while the dialog is open', () => {
+      const facade = createFacade();
+
+      facade.takeOrder(ORDER_ID);
+      facade.takeOrder(ORDER_ID);
+
+      expect(dialogService.open).toHaveBeenCalledTimes(1);
+    });
+
+    it('never opens the dialog without an order id', () => {
       const facade = createFacade();
 
       facade.takeOrder('');
 
-      expect(orderClient.takeOrder).not.toHaveBeenCalled();
+      expect(dialogService.open).not.toHaveBeenCalled();
       expect(snackbar.showErrorTranslated).toHaveBeenCalledWith(
         'global.messages.orders.invalid_request'
       );
+    });
+  });
+
+  describe('the standalone acceptance after an admin placement', () => {
+    let dialogClose$: Subject<WorkContractDialogResult | undefined>;
+
+    beforeEach(() => {
+      dialogClose$ = new Subject<WorkContractDialogResult | undefined>();
+      dialogService.open.mockReturnValue({ onClose: dialogClose$ });
+    });
+
+    it('opens the dialog in accept mode for the loaded order', () => {
+      const facade = createFacade();
+      facade.orderDetails.set(buildOrder({ orderStatusValue: OrderStatus.Confirmed }));
+
+      facade.openAcceptWorkContractDialog();
+
+      expect(dialogService.open.mock.calls[0][0]).toBe(WorkContractDialogComponent);
+      expect(workContractDialogData()).toEqual({
+        mode: WorkContractDialogMode.Accept,
+        orderId: ORDER_ID,
+      });
+    });
+
+    it('confirms and re-reads the order once the contract is accepted, so the line replaces the banner', () => {
+      const facade = createFacade();
+      facade.orderDetails.set(buildOrder({ orderStatusValue: OrderStatus.Confirmed }));
+
+      facade.openAcceptWorkContractDialog();
+      dialogClose$.next({ outcome: WorkContractDialogOutcome.Accepted });
+
+      expect(snackbar.showSuccessTranslated).toHaveBeenCalledWith(
+        'pages.order_details.work_contract.accepted_success'
+      );
+      expect(orderClient.getById).toHaveBeenCalledTimes(1);
+    });
+
+    it('re-reads the order when the acceptance was refused', () => {
+      const facade = createFacade();
+      facade.orderDetails.set(buildOrder({ orderStatusValue: OrderStatus.Confirmed }));
+
+      facade.openAcceptWorkContractDialog();
+      dialogClose$.next({ outcome: WorkContractDialogOutcome.Refused });
+
+      expect(orderClient.getById).toHaveBeenCalledTimes(1);
+      expect(snackbar.showSuccessTranslated).not.toHaveBeenCalled();
+    });
+
+    it('opens the dialog in accept mode when Start is refused for a missing acceptance', () => {
+      orderClient.startOrder.mockReturnValue(
+        throwError(() => refusal('contract.acceptance_required'))
+      );
+      const facade = createFacade();
+      facade.orderDetails.set(buildOrder({ orderStatusValue: OrderStatus.Confirmed }));
+
+      facade.startOrder(ORDER_ID);
+
+      expect(workContractDialogData()).toEqual({
+        mode: WorkContractDialogMode.Accept,
+        orderId: ORDER_ID,
+      });
+      expect(facade.loading()).toBe(false);
+    });
+
+    it('opens nothing when Start is refused for another reason', () => {
+      orderClient.startOrder.mockReturnValue(
+        throwError(() => refusal('order.too_early_to_start'))
+      );
+      const facade = createFacade();
+      facade.orderDetails.set(buildOrder({ orderStatusValue: OrderStatus.Confirmed }));
+
+      facade.startOrder(ORDER_ID);
+
+      expect(dialogService.open).not.toHaveBeenCalled();
+      expect(facade.loading()).toBe(false);
+    });
+
+    it('opens the dialog in accept mode when Complete is refused for a missing acceptance', () => {
+      const facade = createFacade();
+      facade.orderDetails.set(buildOrder());
+      facade.currentEmployeeId.set(EMPLOYEE_ID);
+
+      facade.completeOrder();
+      actions$.next(
+        OrderActions.completeOrderFailure({
+          error: refusal('contract.acceptance_required') as never,
+        })
+      );
+
+      expect(dispatch).toHaveBeenCalledTimes(1);
+      expect(workContractDialogData()).toEqual({
+        mode: WorkContractDialogMode.Accept,
+        orderId: ORDER_ID,
+      });
+      expect(orderClient.getById).not.toHaveBeenCalled();
+    });
+
+    it('opens nothing when Complete is refused for another reason', () => {
+      const facade = createFacade();
+      facade.orderDetails.set(buildOrder());
+      facade.currentEmployeeId.set(EMPLOYEE_ID);
+
+      facade.completeOrder();
+      actions$.next(
+        OrderActions.completeOrderFailure({
+          error: refusal('order.after_photos.required') as never,
+        })
+      );
+
+      expect(dialogService.open).not.toHaveBeenCalled();
+    });
+
+    it('re-reads the order when Complete succeeds', () => {
+      const facade = createFacade();
+      facade.orderDetails.set(buildOrder());
+      facade.currentEmployeeId.set(EMPLOYEE_ID);
+
+      facade.completeOrder();
+      actions$.next(
+        OrderActions.completeOrderSuccess({ orderId: ORDER_ID, orderStatus: 'Completed' })
+      );
+
+      expect(orderClient.getById).toHaveBeenCalledWith(ORDER_ID);
+      expect(dialogService.open).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('reading an accepted contract', () => {
+    it('opens the dialog in read mode keyed on the acceptance', () => {
+      dialogService.open.mockReturnValue({ onClose: EMPTY });
+      const facade = createFacade();
+
+      facade.openReadWorkContractDialog('acc-1');
+
+      expect(dialogService.open.mock.calls[0][0]).toBe(WorkContractDialogComponent);
+      expect(workContractDialogData()).toEqual({
+        mode: WorkContractDialogMode.Read,
+        acceptanceId: 'acc-1',
+      });
+      expect(orderClient.getById).not.toHaveBeenCalled();
     });
   });
 
@@ -333,19 +519,6 @@ describe('OrderDetailsFacade', () => {
 
       const command: StartOrderCommand = orderClient.startOrder.mock.calls[0][0];
       expect(command).toBeInstanceOf(StartOrderCommand);
-      expect(command.toJSON()).toEqual({ orderId: ORDER_ID });
-    });
-
-    it('serializes a take with the order id', () => {
-      const facade = createFacade();
-      orderClient.takeOrder.mockReturnValue(
-        of(TakeOrderResponse.fromJS({ orderId: ORDER_ID, employeeId: EMPLOYEE_ID }))
-      );
-
-      facade.takeOrder(ORDER_ID);
-
-      const command: TakeOrderCommand = orderClient.takeOrder.mock.calls[0][0];
-      expect(command).toBeInstanceOf(TakeOrderCommand);
       expect(command.toJSON()).toEqual({ orderId: ORDER_ID });
     });
 

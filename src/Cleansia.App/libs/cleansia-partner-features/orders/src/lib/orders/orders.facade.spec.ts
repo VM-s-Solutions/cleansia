@@ -3,8 +3,6 @@ import {
   OrderStatus,
   PartnerClient,
   StartOrderCommand,
-  TakeOrderCommand,
-  TakeOrderResponse,
 } from '@cleansia/partner-services';
 import * as OrderActions from '@cleansia/partner-stores';
 import { SnackbarService } from '@cleansia/services';
@@ -12,7 +10,13 @@ import { Actions } from '@ngrx/effects';
 import { Store } from '@ngrx/store';
 import { TranslateService } from '@ngx-translate/core';
 import { DialogService } from 'primeng/dynamicdialog';
-import { EMPTY, Subject, of, throwError } from 'rxjs';
+import { EMPTY, Subject, of } from 'rxjs';
+import {
+  WorkContractDialogComponent,
+  WorkContractDialogMode,
+  WorkContractDialogOutcome,
+  WorkContractDialogResult,
+} from '../components/work-contract-dialog';
 import { OrdersFacade } from './orders.facade';
 
 const EMPLOYEE_ID = 'emp-1';
@@ -33,6 +37,8 @@ describe('OrdersFacade — take order', () => {
     showErrorTranslated: jest.Mock;
   };
   let dispatch: jest.Mock;
+  let dialogService: { open: jest.Mock };
+  let dialogClose$: Subject<WorkContractDialogResult | undefined>;
 
   const createFacade = (): OrdersFacade => {
     TestBed.configureTestingModule({
@@ -40,7 +46,7 @@ describe('OrdersFacade — take order', () => {
         OrdersFacade,
         { provide: PartnerClient, useValue: { orderClient, employeeClient } },
         { provide: SnackbarService, useValue: snackbar },
-        { provide: DialogService, useValue: { open: jest.fn() } },
+        { provide: DialogService, useValue: dialogService },
         { provide: TranslateService, useValue: { instant: (k: string) => k, onLangChange: EMPTY } },
         { provide: Store, useValue: { dispatch, select: () => EMPTY } },
         { provide: Actions, useValue: EMPTY },
@@ -64,76 +70,85 @@ describe('OrdersFacade — take order', () => {
       showSuccessTranslated: jest.fn(),
       showErrorTranslated: jest.fn(),
     };
+    dialogClose$ = new Subject<WorkContractDialogResult | undefined>();
+    dialogService = { open: jest.fn().mockReturnValue({ onClose: dialogClose$ }) };
   });
 
   afterEach(() => {
     jest.useRealTimers();
   });
 
-  it('confirms and reloads both lists when the take succeeds', () => {
+  it('opens the contract dialog in take mode for the clicked order', () => {
     const facade = createFacade();
-    orderClient.takeOrder.mockReturnValue(
-      of(TakeOrderResponse.fromJS({ orderId: ORDER_ID, employeeId: EMPLOYEE_ID }))
-    );
 
     facade.takeOrder(ORDER_ID);
 
-    expect(orderClient.takeOrder).toHaveBeenCalledTimes(1);
-    expect(orderClient.takeOrder.mock.calls[0][0].orderId).toBe(ORDER_ID);
+    expect(dialogService.open).toHaveBeenCalledTimes(1);
+    expect(dialogService.open.mock.calls[0][0]).toBe(WorkContractDialogComponent);
+    expect(dialogService.open.mock.calls[0][1].data).toEqual({
+      mode: WorkContractDialogMode.Take,
+      orderId: ORDER_ID,
+    });
+    expect(orderClient.takeOrder).not.toHaveBeenCalled();
+  });
+
+  it('confirms and reloads both lists exactly once when the dialog reports the take', () => {
+    const facade = createFacade();
+
+    facade.takeOrder(ORDER_ID);
+    dialogClose$.next({ outcome: WorkContractDialogOutcome.Accepted });
+
     expect(snackbar.showSuccessTranslated).toHaveBeenCalledWith(
       'pages.orders.order_taken_success'
     );
-    expect(loadedListKeys(dispatch)).toEqual(
-      expect.arrayContaining(['available', 'my'])
-    );
+    expect(loadedListKeys(dispatch)).toEqual(['available', 'my']);
   });
 
-  it('reloads both lists when the take is refused, so the row cannot be clicked again', () => {
+  it('reloads both lists once when the take was refused, so the row cannot be clicked again', () => {
     const facade = createFacade();
-    orderClient.takeOrder.mockReturnValue(
-      throwError(() => new Error('order.no_available_spots'))
-    );
 
     facade.takeOrder(ORDER_ID);
+    dialogClose$.next({ outcome: WorkContractDialogOutcome.Refused });
 
-    expect(loadedListKeys(dispatch)).toEqual(
-      expect.arrayContaining(['available', 'my'])
-    );
+    expect(loadedListKeys(dispatch)).toEqual(['available', 'my']);
     expect(snackbar.showSuccessTranslated).not.toHaveBeenCalled();
   });
 
-  it('clears the in-flight marker on refusal so a later take is still possible', () => {
+  it('reloads nothing when the dialog is dismissed', () => {
     const facade = createFacade();
-    orderClient.takeOrder.mockReturnValue(
-      throwError(() => new Error('order.weekly_limit_reached'))
-    );
 
     facade.takeOrder(ORDER_ID);
+    dialogClose$.next(undefined);
+
+    expect(loadedListKeys(dispatch)).toEqual([]);
+    expect(snackbar.showSuccessTranslated).not.toHaveBeenCalled();
+  });
+
+  it('clears the in-flight marker when the dialog closes so a later take is still possible', () => {
+    const facade = createFacade();
+
+    facade.takeOrder(ORDER_ID);
+    dialogClose$.next({ outcome: WorkContractDialogOutcome.Refused });
 
     expect(facade.takeInFlightOrderId()).toBeNull();
 
-    orderClient.takeOrder.mockReturnValue(
-      of(TakeOrderResponse.fromJS({ orderId: ORDER_ID, employeeId: EMPLOYEE_ID }))
-    );
     facade.takeOrder(ORDER_ID);
 
-    expect(orderClient.takeOrder).toHaveBeenCalledTimes(2);
+    expect(dialogService.open).toHaveBeenCalledTimes(2);
   });
 
-  it('ignores a second click while a take is still in flight', () => {
+  it('ignores a second click while the dialog is open', () => {
     const facade = createFacade();
-    orderClient.takeOrder.mockReturnValue(new Subject<TakeOrderResponse>());
 
     facade.takeOrder(ORDER_ID);
     facade.takeOrder(ORDER_ID);
 
-    expect(orderClient.takeOrder).toHaveBeenCalledTimes(1);
+    expect(dialogService.open).toHaveBeenCalledTimes(1);
     expect(facade.takeInFlightOrderId()).toBe(ORDER_ID);
   });
 
   it('marks only the row being taken as in flight', () => {
     const facade = createFacade();
-    orderClient.takeOrder.mockReturnValue(new Subject<TakeOrderResponse>());
 
     facade.takeOrder(ORDER_ID);
 
@@ -141,13 +156,13 @@ describe('OrdersFacade — take order', () => {
     expect(facade.isTakeInFlight('other-order')).toBe(false);
   });
 
-  it('never calls the endpoint when the employee is unknown', () => {
+  it('never opens the dialog when the employee is unknown', () => {
     employeeClient.getCurrentEmployee.mockReturnValue(of(null));
     const facade = createFacade();
 
     facade.takeOrder(ORDER_ID);
 
-    expect(orderClient.takeOrder).not.toHaveBeenCalled();
+    expect(dialogService.open).not.toHaveBeenCalled();
     expect(snackbar.showErrorTranslated).toHaveBeenCalledWith(
       'pages.orders.employee_not_found'
     );
@@ -190,19 +205,6 @@ describe('OrdersFacade — take order', () => {
   // Every member of a generated command is optional, so a dropped assignment type-checks.
   // These pin the serialized body instead (ADR-0031).
   describe('command bodies on the wire', () => {
-    it('serializes a take with the order id', () => {
-      const facade = createFacade();
-      orderClient.takeOrder.mockReturnValue(
-        of(TakeOrderResponse.fromJS({ orderId: ORDER_ID, employeeId: EMPLOYEE_ID }))
-      );
-
-      facade.takeOrder(ORDER_ID);
-
-      const command: TakeOrderCommand = orderClient.takeOrder.mock.calls[0][0];
-      expect(command).toBeInstanceOf(TakeOrderCommand);
-      expect(command.toJSON()).toEqual({ orderId: ORDER_ID });
-    });
-
     it('serializes a start with the order id', () => {
       const facade = createFacade();
       orderClient.startOrder.mockReturnValue(of({}));

@@ -357,7 +357,28 @@
         "clear_all": "Очистить все"
       },
       "no_logs": "Нет записей времени для отображения",
-      "save_log": "Сохранить запись"
+      "save_log": "Сохранить запись",
+      "work_contract": {
+        "title": "Договор подряда",
+        "version_line": "Версия {{version}}, действует с {{date}}",
+        "facts": {
+          "title": "Заказ",
+          "order_number": "Номер заказа",
+          "window": "Дата и время",
+          "price": "Цена",
+          "location": "Место",
+          "rooms_bathrooms": "Комнаты / ванные",
+          "services": "Услуги",
+          "packages": "Пакеты",
+          "extras": "Дополнительно"
+        },
+        "accept_checkbox": "Я прочитал(а) договор подряда для этого заказа и принимаю его",
+        "accept_and_take": "Принять и взять заказ",
+        "accept_only": "Принять договор",
+        "load_failed": "Не удалось загрузить договор. Попробуйте ещё раз.",
+        "accepted_on": "Принято {{date}}, версия {{version}}",
+        "accepted_in_language": "Принято на языке: {{language}}"
+      }
     },
     "order_details": {
       "title": "Детали заказа",
@@ -448,7 +469,14 @@
       "mark_cash_collected_confirm_warning": "Заказ будет отмечен как оплаченный. Это действие нельзя отменить.",
       "mark_cash_collected_confirm_action": "Да, наличные получены",
       "mark_cash_collected_gating_error": "Наличные можно принять только для выполняющегося и ещё не оплаченного заказа",
-      "complete_missing_after_photos": "Заказ нельзя завершить без фотографий после уборки"
+      "complete_missing_after_photos": "Заказ нельзя завершить без фотографий после уборки",
+      "work_contract": {
+        "accepted_line": "Вы приняли договор подряда {{date}}, версия {{version}}",
+        "read": "Читать договор",
+        "pending_banner": "Примите договор подряда, прежде чем начать",
+        "accept": "Принять договор",
+        "accepted_success": "Договор подряда принят."
+      }
     },
     "invoices": {
       "title": "Мои зарплатные счета",

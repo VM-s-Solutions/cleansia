@@ -357,6 +357,27 @@
         "filter_active": "aktivní",
         "filters_active": "aktivních",
         "clear_all": "Vymazat vše"
+      },
+      "work_contract": {
+        "title": "Smlouva o dílo",
+        "version_line": "Verze {{version}}, účinná od {{date}}",
+        "facts": {
+          "title": "Zakázka",
+          "order_number": "Číslo objednávky",
+          "window": "Datum a čas",
+          "price": "Cena",
+          "location": "Místo",
+          "rooms_bathrooms": "Pokoje / koupelny",
+          "services": "Služby",
+          "packages": "Balíčky",
+          "extras": "Doplňky"
+        },
+        "accept_checkbox": "Přečetl(a) jsem si smlouvu o dílo k této zakázce a přijímám ji",
+        "accept_and_take": "Přijmout a převzít zakázku",
+        "accept_only": "Přijmout smlouvu",
+        "load_failed": "Smlouvu se nepodařilo načíst. Zkuste to prosím znovu.",
+        "accepted_on": "Přijato {{date}}, verze {{version}}",
+        "accepted_in_language": "Přijato v jazyce: {{language}}"
       }
     },
     "order_details": {
@@ -448,7 +469,14 @@
       "mark_cash_collected_confirm_warning": "Tímto bude objednávka označena jako zaplacená. Tuto akci nelze vzít zpět.",
       "mark_cash_collected_confirm_action": "Ano, hotovost přijata",
       "mark_cash_collected_gating_error": "Hotovost lze přijmout pouze u probíhající a dosud nezaplacené objednávky",
-      "complete_missing_after_photos": "Objednávku nelze dokončit bez fotografií po úklidu"
+      "complete_missing_after_photos": "Objednávku nelze dokončit bez fotografií po úklidu",
+      "work_contract": {
+        "accepted_line": "Smlouvu o dílo jste přijal(a) {{date}}, verze {{version}}",
+        "read": "Přečíst smlouvu",
+        "pending_banner": "Před zahájením práce přijměte smlouvu o dílo",
+        "accept": "Přijmout smlouvu",
+        "accepted_success": "Smlouva o dílo byla přijata."
+      }
     },
     "invoices": {
       "title": "Moje mzdové faktury",

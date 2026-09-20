@@ -91,7 +91,7 @@ public class UpdateEmployee
                 .ValidatePassportId();
 
             RuleFor(c => c.EntityType)
-                .NotEqual(EmployeeEntityType.LegalEntity)
+                .MustAsync(NotBecomeALegalEntity)
                 .WithMessage(BusinessErrorMessage.LegalEntityNotAccepted);
 
             RuleFor(c => c.RegistrationNumber)
@@ -179,6 +179,21 @@ public class UpdateEmployee
             var employee = await _employeeRepository.GetByUserEmailAsync(
                 _userSessionProvider.GetUserEmail() ?? string.Empty, cancellationToken);
             return employee is not null;
+        }
+
+        // A cleaner contracts as a natural person; only an operator may onboard a company. What is
+        // refused is a CHANGE to a company: a row an operator already set to one is not changing anything
+        // by naming it, and the handler keeps that row's pair whatever the command carries.
+        private async Task<bool> NotBecomeALegalEntity(EmployeeEntityType entityType, CancellationToken cancellationToken)
+        {
+            if (entityType != EmployeeEntityType.LegalEntity)
+            {
+                return true;
+            }
+
+            var employee = await _employeeRepository.GetByUserEmailAsync(
+                _userSessionProvider.GetUserEmail() ?? string.Empty, cancellationToken);
+            return employee?.EntityType == EmployeeEntityType.LegalEntity;
         }
     }
 
@@ -350,10 +365,13 @@ public class UpdateEmployee
                 command.Phone,
                 command.BirthDate);
 
+            // An operator-onboarded company keeps its pair: the cleaner's own save cannot name LegalEntity,
+            // so writing the command's values here would demote the row on every save.
+            var keepsCompany = employee.EntityType == EmployeeEntityType.LegalEntity;
             employee.UpdateEmployeeDetails(
-                command.EntityType,
+                keepsCompany ? employee.EntityType : command.EntityType,
                 command.RegistrationNumber,
-                command.LegalEntityName,
+                keepsCompany ? employee.LegalEntityName : command.LegalEntityName,
                 command.NationalityId,
                 command.PassportId,
                 address,

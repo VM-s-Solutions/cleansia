@@ -79,7 +79,7 @@ public class UpdateIdentificationInfoValidatorTests
     }
 
     [Fact]
-    public async Task A_Legal_Entity_Is_Refused_With_LegalEntityNotAccepted_And_Nothing_Else()
+    public async Task A_Change_To_A_Legal_Entity_Is_Refused_With_LegalEntityNotAccepted_And_Nothing_Else()
     {
         ArrangePassingContext();
 
@@ -92,6 +92,26 @@ public class UpdateIdentificationInfoValidatorTests
         var error = Assert.Single(result.Errors);
         Assert.Equal(nameof(UpdateIdentificationInfo.Command.EntityType), error.PropertyName);
         Assert.Equal(BusinessErrorMessage.LegalEntityNotAccepted, error.ErrorMessage);
+    }
+
+    /// <summary>
+    /// The refusal is of a CHANGE to a company, not of the word: a row an operator already set to a
+    /// company is not changing anything by sending it back, and refusing it would leave that cleaner
+    /// unable to save at all — or, sending the only value on offer, silently demoted (the handler keeps
+    /// the stored pair either way).
+    /// </summary>
+    [Theory]
+    [InlineData(EmployeeEntityType.LegalEntity)]
+    [InlineData(EmployeeEntityType.NaturalPerson)]
+    public async Task A_Row_Already_A_Legal_Entity_Passes_Whatever_Type_The_Command_Carries(EmployeeEntityType sent)
+    {
+        ArrangePassingContext();
+        var employee = await _employeeRepository.Object.GetByUserEmailAsync(UserEmail);
+        employee!.UpdateBusinessIdentity(EmployeeEntityType.LegalEntity, "12345678", "Uklid s.r.o.");
+
+        var result = await CreateValidator().ValidateAsync(Valid() with { EntityType = sent, LegalEntityName = null });
+
+        Assert.True(result.IsValid);
     }
 
     [Fact]

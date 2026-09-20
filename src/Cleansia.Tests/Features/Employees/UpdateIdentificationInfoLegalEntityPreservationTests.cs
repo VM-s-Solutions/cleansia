@@ -10,7 +10,8 @@ namespace Cleansia.Tests.Features.Employees;
 
 /// <summary>
 /// The mobile partial save owes the same preservation as the full profile save: a cleaner whose row an
-/// operator set to a company can only send <c>NaturalPerson</c>, and that must not demote the row.
+/// operator set to a company passes the validator with either type and the shipped clients send
+/// <c>NaturalPerson</c>, which must not demote the row.
 /// The handler is internal and no project has InternalsVisibleTo, so it is built the way
 /// <c>CompanyVatLeverTests</c> builds its own.
 /// </summary>

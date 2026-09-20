@@ -9,10 +9,11 @@ using Moq;
 namespace Cleansia.Tests.Features.Employees;
 
 /// <summary>
-/// A cleaner's own profile save cannot name <c>LegalEntity</c> (owner ruling 2026-09-20), so a cleaner
-/// whose row an operator set to a company can only send <c>NaturalPerson</c> — and the save must not
-/// read that as a demotion. The stored pair (entity type, legal entity name) survives the save
-/// whatever the command carries; a natural person's row is written from the command as before.
+/// A cleaner's own profile save may not CHANGE the row to a company (owner ruling 2026-09-20); a row an
+/// operator already set to one passes the validator whatever type it sends back, and the shipped
+/// clients send <c>NaturalPerson</c> — so the save must not read that as a demotion. The stored pair
+/// (entity type, legal entity name) survives the save whatever the command carries; a natural
+/// person's row is written from the command as before.
 /// </summary>
 public class UpdateEmployeeLegalEntityPreservationTests
 {

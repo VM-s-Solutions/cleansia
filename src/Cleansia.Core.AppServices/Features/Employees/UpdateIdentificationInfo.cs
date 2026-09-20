@@ -137,8 +137,9 @@ public class UpdateIdentificationInfo
                 command.NationalityId,
                 command.PassportId);
 
-            // An operator-onboarded company keeps its pair: the cleaner's own save cannot name LegalEntity,
-            // so writing the command's values here would demote the row on every save.
+            // A row an operator set to a company keeps its stored pair whatever the command carries: the
+            // shipped clients send NaturalPerson, so writing the command's values here would demote the
+            // row on every save.
             var keepsCompany = employee.EntityType == EmployeeEntityType.LegalEntity;
             employee.UpdateBusinessIdentity(
                 keepsCompany ? employee.EntityType : command.EntityType,

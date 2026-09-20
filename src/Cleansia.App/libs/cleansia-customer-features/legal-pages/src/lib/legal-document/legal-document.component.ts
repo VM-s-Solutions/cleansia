@@ -19,9 +19,9 @@ import { Skeleton } from 'primeng/skeleton';
 import { LegalDocumentFacade } from './legal-document.facade';
 
 /**
- * A legal document — the Terms and the Privacy Policy are the same page with a
- * different document type, so they are one component with two callers rather
- * than two copies of forty lines that drift.
+ * A legal document — the customer's legal texts are the same page with a
+ * different document type, so they are one component with a caller per type
+ * rather than a copy of forty lines per text that drift.
  *
  * The board's shape is a contents rail beside numbered sections. That rail is
  * the point: these pages are not read, they are SEARCHED — somebody arrives

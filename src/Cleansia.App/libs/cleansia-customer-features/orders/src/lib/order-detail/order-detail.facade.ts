@@ -14,6 +14,7 @@ import {
   SubmitOrderReviewReviewLineScore,
 } from '@cleansia/customer-services';
 import { ReviewLineScore } from './order-review-lines.models';
+import { buildWorkContractAcceptanceLines } from './order-work-contract.models';
 import { SnackbarService } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
 import { catchError, finalize, of, takeUntil } from 'rxjs';
@@ -56,6 +57,9 @@ export class OrderDetailFacade extends UnsubscribeControlDirective {
     return !this.cancellationResult() && status !== undefined &&
       CANCELLABLE_ORDER_STATUSES.includes(status);
   });
+
+  /** One per crew member who accepted the contract for work; nothing before any acceptance. */
+  readonly workContractAcceptances = computed(() => buildWorkContractAcceptanceLines(this.order()));
 
   readonly canConfirmCancellation = computed(() =>
     this.canCancel() && this.cancellationOpen() && !!this.cancellationPreview() &&

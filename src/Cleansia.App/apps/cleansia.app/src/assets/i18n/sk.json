@@ -71,6 +71,7 @@
       "order": "Objednať čistenie",
       "orders": "Moje objednávky",
       "order_detail": "Detail objednávky",
+      "order_contract": "Zmluva o dielo",
       "profile": "Môj profil",
       "disputes": "Moje reklamácie",
       "rewards": "Moje odmeny",
@@ -547,6 +548,7 @@
         "help_center": "Centrum pomoci",
         "gdpr_link": "Súkromie a GDPR",
         "terms_link": "Obchodné podmienky",
+        "work_contract_link": "Zmluva o dielo",
         "description": "Profesionálne mobilné čistiace služby. Nábytok, koberce, matrace — prídeme k vám.",
         "address": "Praha, Česká republika",
         "services_col": "Služby",
@@ -1000,6 +1002,7 @@
       "summary_services": "Služby",
       "summary_with_plus": "S Plus by ste platili",
       "terms_already_accepted": "Podmienky služby a zásady ochrany osobných údajov ste odsúhlasili so svojím účtom.",
+      "work_contract_notice": "Potvrdením objednávky uzatvárate s upratovačkou či upratovačom zmluvu o dielo za <a href='/work-contract' target='_blank' rel='noopener'>týchto podmienok</a>.",
       "time_label": "Vyberte čas",
       "time_note": "Sivé časy sú dnes už mimo dojazd. Denné okná {{first}}:00–{{last}}:00.",
       "title": "Objednať čistenie",
@@ -1129,6 +1132,10 @@
       "step_refunded": "Vrátené",
       "step_not_assigned_yet": "Zatiaľ nepridelený",
       "crew_others": "a ďalší {{count}}",
+      "work_contract": {
+        "accepted_line": "Zmluvu o dielo prijal(a) {{name}} dňa {{date}}, verzia {{version}}",
+        "read": "Čítať zmluvu"
+      },
       "the_booking": "Objednávka",
       "label_when": "Termín",
       "label_address": "Adresa",
@@ -1167,6 +1174,25 @@
       },
       "estimated_hours": "odhadom {{hours}} h",
       "label_market": "Trh"
+    },
+    "order_contract": {
+      "eyebrow": "Zmluva k vašej objednávke",
+      "title": "Zmluva o dielo",
+      "back": "Späť na objednávku",
+      "facts": {
+        "title": "Zákazka, ako bola prijatá",
+        "order_number": "Číslo objednávky",
+        "window": "Dátum a čas",
+        "price": "Cena",
+        "location": "Miesto",
+        "rooms_bathrooms": "Izby / kúpeľne",
+        "services": "Služby",
+        "packages": "Balíčky",
+        "extras": "Doplnky"
+      },
+      "accepted_on": "Prijaté upratovačkou či upratovačom dňa {{date}}, verzia {{version}}",
+      "accepted_in_language": "Prijaté v jazyku: {{language}}",
+      "load_error": "Zmluvu sa nepodarilo načítať. Skúste to prosím znova."
     },
     "checkout": {
       "success": {
@@ -1794,6 +1820,9 @@
   },
   "privacy_page": {
     "title": "Zásady ochrany súkromia"
+  },
+  "work_contract_page": {
+    "title": "Zmluva o dielo"
   },
   "api": {
     "auth": {

@@ -71,6 +71,7 @@
       "order": "Замовити прибирання",
       "orders": "Мої замовлення",
       "order_detail": "Деталі замовлення",
+      "order_contract": "Договір підряду",
       "profile": "Мій профіль",
       "disputes": "Мої скарги",
       "rewards": "Мої винагороди",
@@ -547,6 +548,7 @@
         "help_center": "Центр допомоги",
         "gdpr_link": "Конфіденційність і GDPR",
         "terms_link": "Умови надання послуг",
+        "work_contract_link": "Договір підряду",
         "description": "Професійні мобільні клінінгові послуги. Меблі, килими, матраци — ми приїдемо до вас.",
         "address": "Прага, Чеська Республіка",
         "services_col": "Послуги",
@@ -1000,6 +1002,7 @@
       "summary_services": "Послуги",
       "summary_with_plus": "З Plus ви б платили",
       "terms_already_accepted": "Ви прийняли умови та політику конфіденційності під час реєстрації.",
+      "work_contract_notice": "Підтверджуючи замовлення, ви укладаєте з прибиральником чи прибиральницею договір підряду на <a href='/work-contract' target='_blank' rel='noopener'>цих умовах</a>.",
       "time_label": "Оберіть час",
       "time_note": "Сірий час уже поза строком виїзду на сьогодні. Денні вікна {{first}}:00–{{last}}:00.",
       "title": "Замовити прибирання",
@@ -1129,6 +1132,10 @@
       "step_refunded": "Повернено",
       "step_not_assigned_yet": "Ще не призначено",
       "crew_others": "і ще {{count}}",
+      "work_contract": {
+        "accepted_line": "Договір підряду прийняв(ла) {{name}} {{date}}, версія {{version}}",
+        "read": "Читати договір"
+      },
       "the_booking": "Замовлення",
       "label_when": "Коли",
       "label_address": "Адреса",
@@ -1167,6 +1174,25 @@
       },
       "estimated_hours": "приблизно {{hours}} год",
       "label_market": "Ринок"
+    },
+    "order_contract": {
+      "eyebrow": "Договір до вашого замовлення",
+      "title": "Договір підряду",
+      "back": "Назад до замовлення",
+      "facts": {
+        "title": "Замовлення, як його було прийнято",
+        "order_number": "Номер замовлення",
+        "window": "Дата й час",
+        "price": "Ціна",
+        "location": "Місце",
+        "rooms_bathrooms": "Кімнати / ванні",
+        "services": "Послуги",
+        "packages": "Пакети",
+        "extras": "Додатково"
+      },
+      "accepted_on": "Прийнято прибиральником чи прибиральницею {{date}}, версія {{version}}",
+      "accepted_in_language": "Прийнято мовою: {{language}}",
+      "load_error": "Не вдалося завантажити договір. Спробуйте ще раз."
     },
     "checkout": {
       "success": {
@@ -1794,6 +1820,9 @@
   },
   "privacy_page": {
     "title": "Політика конфіденційності"
+  },
+  "work_contract_page": {
+    "title": "Договір підряду"
   },
   "api": {
     "auth": {

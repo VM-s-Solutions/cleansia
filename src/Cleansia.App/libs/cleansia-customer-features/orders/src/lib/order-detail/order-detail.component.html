@@ -219,6 +219,35 @@
       </section>
       }
 
+      <!--
+        The contract for work each crew member accepted for this job. One line per acceptance and
+        nothing before one: the crew card already says who is coming, and "contract pending" would
+        tell the customer about a state that is the platform's to chase.
+      -->
+      @if (workContractAcceptances().length > 0) {
+      <ul class="order-detail__contracts">
+        @for (line of workContractAcceptances(); track line.id) {
+        <li class="order-detail__contract">
+          <i class="pi pi-verified" aria-hidden="true"></i>
+          <span class="order-detail__contract-text">
+            {{
+              'pages.order_detail.work_contract.accepted_line'
+                | translate
+                  : {
+                      name: line.cleanerName,
+                      date: formatDate(line.acceptedOn),
+                      version: line.documentVersion
+                    }
+            }}
+          </span>
+          <a class="order-detail__contract-link" [routerLink]="contractLink(line.id)">
+            {{ 'pages.order_detail.work_contract.read' | translate }}
+          </a>
+        </li>
+        }
+      </ul>
+      }
+
       <!-- Live mascot — only while the cleaner is on site. -->
       @if (isInProgress()) {
       <div class="order-detail__mascot-row">

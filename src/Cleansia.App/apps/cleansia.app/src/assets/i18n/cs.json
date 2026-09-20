@@ -71,6 +71,7 @@
       "order": "Objednat úklid",
       "orders": "Moje objednávky",
       "order_detail": "Detail objednávky",
+      "order_contract": "Smlouva o dílo",
       "profile": "Můj profil",
       "disputes": "Moje reklamace",
       "rewards": "Moje odměny",
@@ -547,6 +548,7 @@
         "help_center": "Centrum nápovědy",
         "gdpr_link": "Ochrana údajů a GDPR",
         "terms_link": "Obchodní podmínky",
+        "work_contract_link": "Smlouva o dílo",
         "description": "Profesionální mobilní úklidové služby. Nábytek, koberce, matrace — přijedeme k vám.",
         "address": "Praha, Česká republika",
         "services_col": "Služby",
@@ -1000,6 +1002,7 @@
       "summary_services": "Služby",
       "summary_with_plus": "S Plus byste platili",
       "terms_already_accepted": "Podmínky služby a zásady ochrany osobních údajů jste odsouhlasili se svým účtem.",
+      "work_contract_notice": "Potvrzením objednávky uzavíráte s uklízečkou či uklízečem smlouvu o dílo za <a href='/work-contract' target='_blank' rel='noopener'>těchto podmínek</a>.",
       "time_label": "Vyberte čas",
       "time_note": "Šedé časy jsou dnes už mimo dojezd. Denní okna {{first}}:00–{{last}}:00.",
       "title": "Objednat úklid",
@@ -1129,6 +1132,10 @@
       "step_refunded": "Vráceno",
       "step_not_assigned_yet": "Zatím nepřidělen",
       "crew_others": "a další {{count}}",
+      "work_contract": {
+        "accepted_line": "Smlouvu o dílo přijal(a) {{name}} dne {{date}}, verze {{version}}",
+        "read": "Číst smlouvu"
+      },
       "the_booking": "Objednávka",
       "label_when": "Termín",
       "label_address": "Adresa",
@@ -1167,6 +1174,25 @@
       },
       "estimated_hours": "odhadem {{hours}} h",
       "label_market": "Trh"
+    },
+    "order_contract": {
+      "eyebrow": "Smlouva k vaší objednávce",
+      "title": "Smlouva o dílo",
+      "back": "Zpět na objednávku",
+      "facts": {
+        "title": "Zakázka, jak byla přijata",
+        "order_number": "Číslo objednávky",
+        "window": "Datum a čas",
+        "price": "Cena",
+        "location": "Místo",
+        "rooms_bathrooms": "Pokoje / koupelny",
+        "services": "Služby",
+        "packages": "Balíčky",
+        "extras": "Doplňky"
+      },
+      "accepted_on": "Přijato uklízečkou či uklízečem dne {{date}}, verze {{version}}",
+      "accepted_in_language": "Přijato v jazyce: {{language}}",
+      "load_error": "Smlouvu se nepodařilo načíst. Zkuste to prosím znovu."
     },
     "checkout": {
       "success": {
@@ -1794,6 +1820,9 @@
   },
   "privacy_page": {
     "title": "Ochrana osobních údajů"
+  },
+  "work_contract_page": {
+    "title": "Smlouva o dílo"
   },
   "api": {
     "auth": {

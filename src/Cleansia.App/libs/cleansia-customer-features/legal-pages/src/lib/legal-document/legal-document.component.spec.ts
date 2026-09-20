@@ -7,6 +7,7 @@ import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { Observable, Subject, of, throwError } from 'rxjs';
 import { PrivacyComponent } from '../privacy/privacy.component';
 import { TermsComponent } from '../terms/terms.component';
+import { WorkContractComponent } from '../work-contract/work-contract.component';
 import { LegalDocumentComponent } from './legal-document.component';
 
 const SERVED = LegalDocumentDto.fromJS({
@@ -34,6 +35,7 @@ const DICTIONARY = {
   global: { actions: { retry: 'Retry' } },
   terms_page: { title: 'Terms of Service' },
   privacy_page: { title: 'Privacy Policy' },
+  work_contract_page: { title: 'Contract for Work' },
 };
 
 describe('LegalDocumentComponent', () => {
@@ -147,11 +149,12 @@ describe('LegalDocumentComponent', () => {
     });
   });
 
-  // The two pages are this component with a document type each; a swapped type would show the
+  // The three pages are this component with a document type each; a swapped type would show the
   // privacy text under the terms title.
   const PAGES: { page: string; component: Type<unknown>; type: LegalDocumentType; title: string }[] = [
     { page: 'terms', component: TermsComponent, type: LegalDocumentType.TermsOfService, title: 'Terms of Service' },
     { page: 'privacy', component: PrivacyComponent, type: LegalDocumentType.PrivacyPolicy, title: 'Privacy Policy' },
+    { page: 'work-contract', component: WorkContractComponent, type: LegalDocumentType.WorkContract, title: 'Contract for Work' },
   ];
   describe.each(PAGES)('the $page page', ({ component, type, title }) => {
     it('asks for its own document type in the chosen market and names itself meanwhile', async () => {

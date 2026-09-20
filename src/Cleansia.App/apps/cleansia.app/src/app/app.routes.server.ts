@@ -7,6 +7,7 @@ export const serverRoutes: ServerRoute[] = [
   // because no document was emitted for it at build time.
   { path: 'terms', renderMode: RenderMode.Server },
   { path: 'privacy', renderMode: RenderMode.Server },
+  { path: 'work-contract', renderMode: RenderMode.Server },
   { path: 'not-found', renderMode: RenderMode.Server },
   { path: '', renderMode: RenderMode.Server },
   { path: 'services', renderMode: RenderMode.Server },

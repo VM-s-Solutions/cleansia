@@ -71,6 +71,7 @@
       "order": "Заказать уборку",
       "orders": "Мои заказы",
       "order_detail": "Детали заказа",
+      "order_contract": "Договор подряда",
       "profile": "Мой профиль",
       "disputes": "Мои обращения",
       "rewards": "Мои награды",
@@ -547,6 +548,7 @@
         "help_center": "Центр помощи",
         "gdpr_link": "Конфиденциальность и GDPR",
         "terms_link": "Условия использования",
+        "work_contract_link": "Договор подряда",
         "description": "Профессиональные мобильные клининговые услуги. Мебель, ковры, матрасы — мы приедем к Вам.",
         "address": "Прага, Чешская Республика",
         "services_col": "Услуги",
@@ -1000,6 +1002,7 @@
       "summary_services": "Услуги",
       "summary_with_plus": "С Plus вы бы платили",
       "terms_already_accepted": "Вы приняли условия и политику конфиденциальности при регистрации.",
+      "work_contract_notice": "Подтверждая заказ, вы заключаете с уборщиком или уборщицей договор подряда на <a href='/work-contract' target='_blank' rel='noopener'>этих условиях</a>.",
       "time_label": "Выберите время",
       "time_note": "Серое время уже вне срока выезда на сегодня. Дневные окна {{first}}:00–{{last}}:00.",
       "title": "Заказать уборку",
@@ -1129,6 +1132,10 @@
       "step_refunded": "Возвращено",
       "step_not_assigned_yet": "Пока не назначен",
       "crew_others": "и ещё {{count}}",
+      "work_contract": {
+        "accepted_line": "Договор подряда принял(а) {{name}} {{date}}, версия {{version}}",
+        "read": "Читать договор"
+      },
       "the_booking": "Заказ",
       "label_when": "Когда",
       "label_address": "Адрес",
@@ -1167,6 +1174,25 @@
       },
       "estimated_hours": "примерно {{hours}} ч",
       "label_market": "Рынок"
+    },
+    "order_contract": {
+      "eyebrow": "Договор к вашему заказу",
+      "title": "Договор подряда",
+      "back": "Назад к заказу",
+      "facts": {
+        "title": "Заказ, как он был принят",
+        "order_number": "Номер заказа",
+        "window": "Дата и время",
+        "price": "Цена",
+        "location": "Место",
+        "rooms_bathrooms": "Комнаты / ванные",
+        "services": "Услуги",
+        "packages": "Пакеты",
+        "extras": "Дополнительно"
+      },
+      "accepted_on": "Принято уборщиком или уборщицей {{date}}, версия {{version}}",
+      "accepted_in_language": "Принято на языке: {{language}}",
+      "load_error": "Не удалось загрузить договор. Попробуйте ещё раз."
     },
     "checkout": {
       "success": {
@@ -1794,6 +1820,9 @@
   },
   "privacy_page": {
     "title": "Политика конфиденциальности"
+  },
+  "work_contract_page": {
+    "title": "Договор подряда"
   },
   "api": {
     "auth": {

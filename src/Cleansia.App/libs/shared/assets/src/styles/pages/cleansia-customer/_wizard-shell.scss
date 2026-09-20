@@ -1635,6 +1635,20 @@
   cursor: pointer;
 }
 
+// The sentence that names the contract for work. Information, not a control,
+// so it reads like the consent note above it rather than like a second tick.
+.cl-wiz__contract-note {
+  margin: 12px 0 0;
+  font-size: calc(0.875 * var(--cl-u));
+  line-height: 1.6;
+  color: var(--cl-muted);
+
+  a {
+    font-weight: 700;
+    color: var(--cl-heading);
+  }
+}
+
 @media (max-width: 720px) {
   .cl-wiz__review {
     grid-template-columns: minmax(0, 1fr);

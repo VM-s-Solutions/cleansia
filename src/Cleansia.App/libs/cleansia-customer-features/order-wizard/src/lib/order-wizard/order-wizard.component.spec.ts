@@ -17,7 +17,7 @@ import {
   SavedAddressDto,
   ServiceListItem,
 } from '@cleansia/customer-services';
-import { TranslateModule } from '@ngx-translate/core';
+import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { OrderWizardComponent } from './order-wizard.component';
 import { OrderWizardFacade } from './order-wizard.facade';
 import { ORDER_WIZARD_INITIAL_DATA, OrderWizardFormData, createAddressDto } from './order-wizard.models';
@@ -138,6 +138,10 @@ class FakeOrderWizardFacade {
   // fails every test in this file at cleanup, on a message that names neither the signal nor the
   // hook ("1 component threw errors during cleanup").
   orderPlaced = signal(false);
+  // The confirm step: the consent block branches on this, the preferred-cleaner block on the two.
+  alreadyConsented = signal(false);
+  preferredCleanerLoading = signal(false);
+  preferredCleanerVisible = signal(false);
 }
 
 describe('OrderWizardComponent (a11y)', () => {
@@ -610,6 +614,58 @@ describe('OrderWizardComponent (a11y)', () => {
 
       expect(facade.clearPromoCode).toHaveBeenCalled();
       expect(fixture.componentInstance.promoOutcome()).toBe('none');
+    });
+  });
+
+  describe('the contract for work on the confirm step', () => {
+    const CONFIRM_STEP = 5;
+
+    function contractNote(): HTMLElement | null {
+      return el.querySelector('.cl-wiz__contract-note');
+    }
+
+    /**
+     * The customer's half of the contract for work is stated at the offer as a sentence, never as
+     * a second tick, and it is not part of the consent block: an account that already consented
+     * still concludes a contract with every booking.
+     */
+    it('names the contract and links to its public text while the consent tick is asked', async () => {
+      await setup();
+      facade.activeStep.set(CONFIRM_STEP);
+      fixture.detectChanges();
+
+      expect(contractNote()).not.toBeNull();
+      expect(contractNote()?.textContent).toContain('pages.order.work_contract_notice');
+      expect(el.querySelector('.cl-wiz__consent')).not.toBeNull();
+    });
+
+    it('still names the contract when the account has already consented', async () => {
+      await setup();
+      facade.alreadyConsented.set(true);
+      facade.activeStep.set(CONFIRM_STEP);
+      fixture.detectChanges();
+
+      expect(contractNote()).not.toBeNull();
+      expect(el.querySelector('.cl-wiz__consent')).toBeNull();
+    });
+
+    it('renders the translated sentence as markup, so its link to /work-contract survives', async () => {
+      await setup();
+      TestBed.inject(TranslateService).setTranslation('en', {
+        pages: {
+          order: {
+            work_contract_notice:
+              "By confirming the order you conclude a contract for work with the cleaner on <a href='/work-contract'>these terms</a>.",
+          },
+        },
+      });
+      TestBed.inject(TranslateService).use('en');
+      facade.activeStep.set(CONFIRM_STEP);
+      fixture.detectChanges();
+
+      const link = contractNote()?.querySelector<HTMLAnchorElement>('a');
+      expect(link?.getAttribute('href')).toBe('/work-contract');
+      expect(link?.textContent).toBe('these terms');
     });
   });
 

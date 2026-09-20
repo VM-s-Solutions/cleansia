@@ -71,6 +71,7 @@
       "order": "Book a Cleaning",
       "orders": "My Orders",
       "order_detail": "Order Detail",
+      "order_contract": "Contract for work",
       "profile": "My Profile",
       "disputes": "My Disputes",
       "rewards": "My Rewards",
@@ -547,6 +548,7 @@
         "help_center": "Help Center",
         "gdpr_link": "Privacy & GDPR",
         "terms_link": "Terms of Service",
+        "work_contract_link": "Contract for work",
         "description": "Professional mobile cleaning services. Furniture, carpets, mattresses — we come to you.",
         "address": "Prague, Czech Republic",
         "services_col": "Services",
@@ -1000,6 +1002,7 @@
       "summary_services": "Services",
       "summary_with_plus": "With Plus you would pay",
       "terms_already_accepted": "You accepted our Terms of Service and Privacy Policy with your account.",
+      "work_contract_notice": "By confirming the order you conclude a contract for work with the cleaner on <a href='/work-contract' target='_blank' rel='noopener'>these terms</a>.",
       "time_label": "Select Time",
       "time_note": "Greyed times are already inside today’s lead time. Daily windows {{first}}:00–{{last}}:00.",
       "title": "Book a Cleaning",
@@ -1129,6 +1132,10 @@
       "step_refunded": "Refunded",
       "step_not_assigned_yet": "Not assigned yet",
       "crew_others": "and {{count}} more",
+      "work_contract": {
+        "accepted_line": "Contract for work accepted by {{name}} on {{date}}, version {{version}}",
+        "read": "Read the contract"
+      },
       "the_booking": "The booking",
       "label_when": "When",
       "label_address": "Address",
@@ -1167,6 +1174,25 @@
       },
       "estimated_hours": "about {{hours}} h",
       "label_market": "Market"
+    },
+    "order_contract": {
+      "eyebrow": "Your booking's contract",
+      "title": "Contract for work",
+      "back": "Back to the order",
+      "facts": {
+        "title": "The job as accepted",
+        "order_number": "Order number",
+        "window": "Date and time",
+        "price": "Price",
+        "location": "Location",
+        "rooms_bathrooms": "Rooms / bathrooms",
+        "services": "Services",
+        "packages": "Packages",
+        "extras": "Extras"
+      },
+      "accepted_on": "Accepted by the cleaner on {{date}}, version {{version}}",
+      "accepted_in_language": "Accepted in {{language}}",
+      "load_error": "We couldn't load this contract. Please try again."
     },
     "checkout": {
       "success": {
@@ -1794,6 +1820,9 @@
   },
   "privacy_page": {
     "title": "Privacy Policy"
+  },
+  "work_contract_page": {
+    "title": "Contract for Work"
   },
   "api": {
     "auth": {

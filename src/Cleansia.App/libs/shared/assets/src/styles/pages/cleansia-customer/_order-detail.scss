@@ -337,6 +337,49 @@
   color: var(--cl-muted);
 }
 
+// One line per crew member who accepted the contract for work. A list under the
+// crew card, not a card of its own: it is a fact about the people above it.
+.order-detail__contracts {
+  display: flex;
+  flex-direction: column;
+  gap: calc(0.5 * var(--cl-u));
+  margin: 0;
+  padding: 0 calc(1.75 * var(--cl-u));
+  list-style: none;
+}
+
+.order-detail__contract {
+  display: flex;
+  align-items: flex-start;
+  gap: calc(0.5 * var(--cl-u));
+  font-size: calc(0.875 * var(--cl-u));
+  line-height: 1.6;
+  color: var(--cl-muted);
+
+  > i {
+    flex-shrink: 0;
+    margin-top: 3px;
+    color: var(--cl-ok);
+  }
+}
+
+.order-detail__contract-text {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.order-detail__contract-link {
+  flex-shrink: 0;
+  font-weight: 800;
+  color: var(--cl-heading);
+  text-decoration: none;
+  white-space: nowrap;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
 .order-detail__mascot-row {
   display: flex;
   justify-content: center;

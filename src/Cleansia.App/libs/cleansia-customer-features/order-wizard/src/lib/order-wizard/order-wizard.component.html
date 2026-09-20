@@ -1058,6 +1058,13 @@
           {{ 'pages.order.terms_already_accepted' | translate }}
         </p>
         }
+
+        <!--
+          The customer's half of the contract for work, stated at the offer. Not a tick and not
+          gated on the consent above: the contract is concluded when a cleaner accepts the job, on
+          the text published at /work-contract, whether or not this account has consented before.
+        -->
+        <p class="cl-wiz__contract-note" [innerHTML]="'pages.order.work_contract_notice' | translate"></p>
       </div>
       }
 

@@ -30,6 +30,22 @@ export type {
   IPagedDataOfGetLoyaltyActivityActivityItem,
 } from './lib/client/customer-client';
 export {
+  AssignedEmployeeDto,
+  WorkContractAcceptanceDetails,
+  WorkContractAcceptanceDto,
+  WorkContractDto,
+  WorkContractFacts,
+  WorkContractFactsLine,
+} from './lib/client/customer-client';
+export type {
+  IAssignedEmployeeDto,
+  IWorkContractAcceptanceDetails,
+  IWorkContractAcceptanceDto,
+  IWorkContractDto,
+  IWorkContractFacts,
+  IWorkContractFactsLine,
+} from './lib/client/customer-client';
+export {
   OrderClient as CustomerOrderClient,
   CancelGuestOrderCommand,
   CancelOrderCommand,

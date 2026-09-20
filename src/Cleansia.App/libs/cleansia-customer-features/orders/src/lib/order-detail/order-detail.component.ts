@@ -9,7 +9,7 @@ import {
   signal,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { CleansiaButtonComponent, CleansiaTextareaComponent } from '@cleansia/components';
 import { OrderStatusLabelPipe } from '@cleansia/pipes';
 import { OrderStatus, PaymentStatus } from '@cleansia/customer-services';
@@ -74,6 +74,7 @@ interface EntryDetail {
   imports: [
     CommonModule,
     FormsModule,
+    RouterLink,
     TranslatePipe,
     SkeletonModule,
     DialogModule,
@@ -102,6 +103,7 @@ export class OrderDetailComponent implements OnInit {
   readonly membership = this.facade.membership;
   readonly reviewSubmitting = this.facade.reviewSubmitting;
   readonly downloading = this.facade.downloading;
+  readonly workContractAcceptances = this.facade.workContractAcceptances;
 
   readonly canCancel = this.facade.canCancel;
   readonly cancellationOpen = this.facade.cancellationOpen;
@@ -441,6 +443,10 @@ export class OrderDetailComponent implements OnInit {
 
   goBack(): void {
     this.router.navigate([CleansiaCustomerRoute.ORDERS]);
+  }
+
+  contractLink(acceptanceId: string): string[] {
+    return ['/', CleansiaCustomerRoute.ORDERS, this.order()?.id ?? '', 'contract', acceptanceId];
   }
 
   downloadReceipt(): void {

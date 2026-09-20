@@ -939,7 +939,8 @@
         "employee": {
           "order": {
             "cover_requested": "Запитано заміну",
-            "dropped": "Відмовився від роботи"
+            "dropped": "Відмовився від роботи",
+            "contract_accepted": "Договір підряду прийнято"
           }
         }
       }
@@ -1317,7 +1318,8 @@
       },
       "type": {
         "terms_of_service": "Умови надання послуг",
-        "privacy_policy": "Політика конфіденційності"
+        "privacy_policy": "Політика конфіденційності",
+        "work_contract": "Договір підряду"
       },
       "columns": {
         "audience": "Аудиторія",

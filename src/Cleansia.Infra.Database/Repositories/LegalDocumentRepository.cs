@@ -68,4 +68,12 @@ public class LegalDocumentRepository(CleansiaDbContext context) : BaseRepository
             .AsNoTracking()
             .FirstOrDefaultAsync(d => d.Id == id, cancellationToken);
     }
+
+    public Task<LegalDocument?> GetByTextIdWithTextsAsync(string textId, CancellationToken cancellationToken)
+    {
+        return GetDbSet()
+            .Include(d => d.Texts)
+            .AsNoTracking()
+            .FirstOrDefaultAsync(d => d.Texts.Any(t => t.Id == textId), cancellationToken);
+    }
 }

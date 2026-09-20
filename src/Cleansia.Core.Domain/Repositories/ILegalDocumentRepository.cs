@@ -24,4 +24,11 @@ public interface ILegalDocumentRepository : IRepository<LegalDocument, string>
         CancellationToken cancellationToken);
 
     Task<LegalDocument?> GetWithTextsAsync(string id, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// The document that owns a text row, with every text — how the take's echo is matched against the
+    /// order's document and how an accepted text is rendered again in another language. Null when no
+    /// text row has that id.
+    /// </summary>
+    Task<LegalDocument?> GetByTextIdWithTextsAsync(string textId, CancellationToken cancellationToken);
 }

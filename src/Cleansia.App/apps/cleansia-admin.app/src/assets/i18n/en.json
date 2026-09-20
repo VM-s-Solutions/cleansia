@@ -939,7 +939,8 @@
         "employee": {
           "order": {
             "cover_requested": "Cover requested",
-            "dropped": "Job dropped"
+            "dropped": "Job dropped",
+            "contract_accepted": "Contract for work accepted"
           }
         }
       }
@@ -1317,7 +1318,8 @@
       },
       "type": {
         "terms_of_service": "Terms of service",
-        "privacy_policy": "Privacy policy"
+        "privacy_policy": "Privacy policy",
+        "work_contract": "Contract for work"
       },
       "columns": {
         "audience": "Audience",

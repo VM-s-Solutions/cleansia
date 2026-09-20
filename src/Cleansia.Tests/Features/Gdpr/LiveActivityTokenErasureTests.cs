@@ -156,6 +156,7 @@ public sealed class LiveActivityTokenErasureTests : IDisposable
             new DeadLetterRepository(ctx),
             new OutboxMessageRepository(ctx),
             new CustomerActionAuditRepository(ctx),
+            new WorkContractAcceptanceRepository(ctx),
             Mock.Of<IRefreshTokenService>(),
             Mock.Of<IStripeClient>(),
             _blobClientFactory.Object,

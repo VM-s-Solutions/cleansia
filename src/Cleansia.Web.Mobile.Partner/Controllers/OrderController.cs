@@ -316,4 +316,48 @@ public class OrderController(IMediator mediator) : MobileApiController(mediator)
         return HandleResult<DropOrder.Response>(result);
     }
 
+    // The contract for work a cleaner reads before taking a job (ADR-0068 D3): the order's own text,
+    // the job facts the acceptance will freeze, and the text-row id the take must echo.
+    [HttpGet("GetWorkContractPreview")]
+    [Permission(Policy.CanTakeOrder)]
+    [EnableRateLimiting("interactive")]
+    [ProducesResponseType(typeof(WorkContractDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> GetWorkContractPreview([FromQuery] GetWorkContractPreview.Query query, CancellationToken cancellationToken)
+    {
+        var result = await Mediator.Send(query, cancellationToken);
+        return HandleResult<WorkContractDto>(result);
+    }
+
+    // The standalone acceptance for a seat an administrator formed: the same act the take performs
+    // inline, under the same permission, for a cleaner who was placed rather than took.
+    [HttpPost("AcceptWorkContract")]
+    [Permission(Policy.CanTakeOrder)]
+    [EnableRateLimiting("interactive")]
+    [ProducesResponseType(typeof(AcceptWorkContract.Response), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> AcceptWorkContract([FromBody] AcceptWorkContract.Command command, CancellationToken cancellationToken)
+    {
+        var result = await Mediator.Send(command, cancellationToken);
+        return HandleResult<AcceptWorkContract.Response>(result);
+    }
+
+    // The accepted contract for work, keyed on the acceptance (ADR-0068 D4): the order's customer, the
+    // cleaner who accepted it and an administrator read it; anyone else answers order.not_found.
+    [HttpGet("GetWorkContract")]
+    [Permission(Policy.CanViewOrderDetail)]
+    [EnableRateLimiting("interactive")]
+    [ProducesResponseType(typeof(WorkContractDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> GetWorkContract([FromQuery] GetWorkContract.Query query, CancellationToken cancellationToken)
+    {
+        var result = await Mediator.Send(query, cancellationToken);
+        return HandleResult<WorkContractDto>(result);
+    }
 }

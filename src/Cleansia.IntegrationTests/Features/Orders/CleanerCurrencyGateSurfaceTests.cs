@@ -83,7 +83,8 @@ public class CleanerCurrencyGateSurfaceTests(PostgresContainerFixture fixture) :
                     orderRepository,
                     provider.GetRequiredService<IEmployeeRepository>(),
                     accessService,
-                    currencyResolution);
+                    currencyResolution,
+                    provider.GetRequiredService<ILegalDocumentRepository>());
 
                 var browsable = new Dictionary<string, bool>();
                 var takeVerdicts = new Dictionary<string, string?>();
@@ -92,7 +93,7 @@ public class CleanerCurrencyGateSurfaceTests(PostgresContainerFixture fixture) :
                     var order = await orderRepository.GetByIdAsync(orderId, CancellationToken.None);
                     browsable[orderId] = await accessService.CanBrowseOrderAsync(order!, CancellationToken.None);
 
-                    var result = await validator.ValidateAsync(new TakeOrder.Command(orderId));
+                    var result = await validator.ValidateAsync(new TakeOrder.Command(orderId, TestLegalDocuments.WorkContractTextEnId));
                     takeVerdicts[orderId] = result.IsValid ? null : Assert.Single(result.Errors).ErrorMessage;
                 }
 
@@ -152,7 +153,7 @@ public class CleanerCurrencyGateSurfaceTests(PostgresContainerFixture fixture) :
             setup: ReplaceWithCallerSession,
             arrange: SeedAsync,
             act: async provider => await provider.GetRequiredService<IMediator>()
-                .Send(new TakeOrder.Command(EurOrderId)),
+                .Send(new TakeOrder.Command(EurOrderId, TestLegalDocuments.WorkContractTextEnId)),
             assert: async (CleansiaDbContext context, BusinessResult<TakeOrder.Response> result) =>
             {
                 Assert.False(result.IsSuccess);
@@ -221,6 +222,7 @@ public class CleanerCurrencyGateSurfaceTests(PostgresContainerFixture fixture) :
     private static async Task SeedAsync(CleansiaDbContext context)
     {
         context.Languages.Add(Language.Create("en", "English"));
+        TestLegalDocuments.Add(context);
 
         var country = Country.Create("Czechia", "CZ", "CZ", isServiced: true);
         country.Id = CountryId;
@@ -272,6 +274,7 @@ public class CleanerCurrencyGateSurfaceTests(PostgresContainerFixture fixture) :
         order.UpdateEstimatedTime(120);
         order.SetMaxEmployees(1);
         order.Created(TestUtilities.Constants.TestUserSession.TestUserName, DateTime.UtcNow);
+        order.SetWorkContractDocument(WorkContractTestData.Document());
         order.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.New, order));
         order.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.Confirmed, order));
         return order;

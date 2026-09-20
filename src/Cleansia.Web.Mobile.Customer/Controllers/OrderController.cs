@@ -268,4 +268,19 @@ public class OrderController(IMediator mediator) : CustomerMobileApiController(m
         var result = await Mediator.Send(command, cancellationToken);
         return HandleResult<ChoosePreferredCleaner.Response>(result);
     }
+
+    // The accepted contract for work, keyed on the acceptance (ADR-0068 D4): the order's customer, the
+    // cleaner who accepted it and an administrator read it; anyone else answers order.not_found.
+    [HttpGet("GetWorkContract")]
+    [Permission(Policy.CanViewOrderDetail)]
+    [EnableRateLimiting("interactive")]
+    [ProducesResponseType(typeof(WorkContractDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> GetWorkContract([FromQuery] GetWorkContract.Query query, CancellationToken cancellationToken)
+    {
+        var result = await Mediator.Send(query, cancellationToken);
+        return HandleResult<WorkContractDto>(result);
+    }
 }

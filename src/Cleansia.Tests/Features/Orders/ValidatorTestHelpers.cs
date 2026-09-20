@@ -4,6 +4,7 @@ using Cleansia.Core.Domain.Users;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Internationalization;
 using Moq;
+using Cleansia.TestUtilities;
 
 namespace Cleansia.Tests.Features.Orders;
 
@@ -76,6 +77,7 @@ internal static class ValidatorTestHelpers
 
         order.Id = orderId;
         order.SetMaxEmployees(maxEmployees);
+        WorkContractTestData.BookedUnderContract(order);
 
         // OrderStatusHistory: append in chronological order. The validator
         // queries by max CreatedOn, so a single entry suffices but we add
@@ -134,6 +136,7 @@ internal static class ValidatorTestHelpers
 
         order.Id = orderId;
         order.SetMaxEmployees(maxEmployees);
+        WorkContractTestData.BookedUnderContract(order);
 
         var now = DateTimeOffset.UtcNow;
         var initial = OrderStatusTrack.Create(OrderStatus.New, order);

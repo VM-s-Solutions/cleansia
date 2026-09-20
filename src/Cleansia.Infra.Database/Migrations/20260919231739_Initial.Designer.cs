@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Cleansia.Infra.Database.Migrations
 {
     [DbContext(typeof(CleansiaDbContext))]
-    [Migration("20260919142517_Initial")]
+    [Migration("20260919231739_Initial")]
     partial class Initial
     {
         /// <inheritdoc />
@@ -770,6 +770,114 @@ namespace Cleansia.Infra.Database.Migrations
                     NpgsqlIndexBuilderExtensions.AreNullsDistinct(b.HasIndex("TenantId", "Key"), false);
 
                     b.ToTable("TenantConfigurations");
+                });
+
+            modelBuilder.Entity("Cleansia.Core.Domain.Contracts.WorkContractAcceptance", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasMaxLength(26)
+                        .HasColumnType("character varying(26)");
+
+                    b.Property<DateTimeOffset>("AcceptedOn")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("ClientAudience")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<DateTimeOffset>("CreatedOn")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("DeactivatedBy")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<DateTimeOffset?>("DeactivatedOn")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("DeviceId")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<string>("DeviceLabel")
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)");
+
+                    b.Property<string>("DocumentVersion")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.Property<string>("EmployeeId")
+                        .IsRequired()
+                        .HasMaxLength(26)
+                        .HasColumnType("character varying(26)");
+
+                    b.Property<string>("FactsJson")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
+
+                    b.Property<string>("IpAddress")
+                        .HasMaxLength(45)
+                        .HasColumnType("character varying(45)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("LegalDocumentTextId")
+                        .IsRequired()
+                        .HasMaxLength(26)
+                        .HasColumnType("character varying(26)");
+
+                    b.Property<string>("OrderEmployeeId")
+                        .IsRequired()
+                        .HasMaxLength(26)
+                        .HasColumnType("character varying(26)");
+
+                    b.Property<string>("OrderId")
+                        .IsRequired()
+                        .HasMaxLength(26)
+                        .HasColumnType("character varying(26)");
+
+                    b.Property<string>("TenantId")
+                        .IsRequired()
+                        .HasMaxLength(26)
+                        .HasColumnType("character varying(26)");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<DateTimeOffset?>("UpdatedOn")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LegalDocumentTextId");
+
+                    b.HasIndex("OrderEmployeeId")
+                        .IsUnique()
+                        .HasDatabaseName("IX_WorkContractAcceptances_OrderEmployeeId");
+
+                    b.HasIndex("TenantId");
+
+                    b.HasIndex("EmployeeId", "AcceptedOn")
+                        .IsDescending(false, true)
+                        .HasDatabaseName("IX_WorkContractAcceptances_EmployeeId_AcceptedOn");
+
+                    b.HasIndex("OrderId", "EmployeeId")
+                        .HasDatabaseName("IX_WorkContractAcceptances_OrderId_EmployeeId");
+
+                    b.HasIndex("TenantId", "AcceptedOn")
+                        .HasDatabaseName("IX_WorkContractAcceptances_TenantId_AcceptedOn");
+
+                    b.ToTable("WorkContractAcceptances", (string)null);
                 });
 
             modelBuilder.Entity("Cleansia.Core.Domain.Credit.CreditAccount", b =>
@@ -4087,6 +4195,10 @@ namespace Cleansia.Infra.Database.Migrations
                         .HasPrecision(18, 2)
                         .HasColumnType("numeric(18,2)");
 
+                    b.Property<string>("WorkContractDocumentId")
+                        .HasMaxLength(26)
+                        .HasColumnType("character varying(26)");
+
                     b.HasKey("Id");
 
                     b.HasIndex("CurrencyId");
@@ -4104,6 +4216,8 @@ namespace Cleansia.Infra.Database.Migrations
                     b.HasIndex("TenantId");
 
                     b.HasIndex("UserId");
+
+                    b.HasIndex("WorkContractDocumentId");
 
                     b.HasIndex("CurrentStatus", "CleaningDateTime");
 
@@ -6684,6 +6798,28 @@ namespace Cleansia.Infra.Database.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("Cleansia.Core.Domain.Contracts.WorkContractAcceptance", b =>
+                {
+                    b.HasOne("Cleansia.Core.Domain.Legal.LegalDocumentText", null)
+                        .WithMany()
+                        .HasForeignKey("LegalDocumentTextId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK_WorkContractAcceptances_LegalDocumentTexts_TextId");
+
+                    b.HasOne("Cleansia.Core.Domain.Orders.Order", null)
+                        .WithMany()
+                        .HasForeignKey("OrderId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Cleansia.Core.Domain.Tenancy.Tenant", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("Cleansia.Core.Domain.Credit.CreditAccount", b =>
                 {
                     b.HasOne("Cleansia.Core.Domain.Tenancy.Tenant", null)
@@ -7394,6 +7530,11 @@ namespace Cleansia.Infra.Database.Migrations
                     b.HasOne("Cleansia.Core.Domain.Users.User", "User")
                         .WithMany("Orders")
                         .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("Cleansia.Core.Domain.Legal.LegalDocument", null)
+                        .WithMany()
+                        .HasForeignKey("WorkContractDocumentId")
                         .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("Currency");

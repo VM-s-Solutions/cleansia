@@ -3,6 +3,7 @@ using Cleansia.Core.AppServices.Features.Catalog;
 using Cleansia.Core.AppServices.Features.Packages;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Enums;
+using Cleansia.Core.Domain.Legal;
 using Cleansia.Core.Domain.Loyalty;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Repositories;
@@ -38,6 +39,7 @@ public sealed class OrderFactory(
     ILoyaltyService loyaltyService,
     IUserMembershipRepository userMembershipRepository,
     IPreferredCleanerHoldResolver preferredCleanerHoldResolver,
+    ILegalDocumentResolver legalDocumentResolver,
     INotificationProducer notificationProducer,
     IAdminNotifier adminNotifier,
     ILogger<OrderFactory> logger) : IOrderFactory
@@ -71,6 +73,17 @@ public sealed class OrderFactory(
                 + string.Join(", ", payCoverageGaps.Select(gap => $"{gap.Kind} '{gap.Name}'"))
                 + ". An order carrying it would show no pay to any cleaner.");
         }
+
+        // The contract-for-work text the job is offered under is fixed HERE, at booking, for the order's
+        // own market (ADR-0068 D1): a contract's terms are those the offer was made under, so a version
+        // published later applies to later bookings and never to this one. Refused before pricing for
+        // the same reason as the pay gate above — an order no contract can form on must not be booked,
+        // and the recurring materializer reaches this factory without CreateOrder's validator. Nothing
+        // is in force only when a deploy carries a future-dated folder alone; the seed test is the guard.
+        var workContract = await legalDocumentResolver.ResolveInForceAsync(
+            LegalDocumentType.WorkContract, input.Address.CountryId, cancellationToken)
+            ?? throw new InvalidOperationException(
+                $"No work-contract text is in force for market '{input.Address.CountryId}'. An order booked without one could not be accepted by any cleaner.");
 
         // Resolve the tier discount + membership discount given the user.
         // Anonymous (guest) bookings skip both and only see promo if the
@@ -162,6 +175,7 @@ public sealed class OrderFactory(
             accessMode: input.AccessMode);
 
         order.SetCurrency(input.Currency);
+        order.SetWorkContractDocument(workContract);
         order.TenantId = input.OperatorTenantId;
 
         // EVERY LINE SNAPSHOTS ITS OWN PRICE HERE, and this is the only place that happens. Before

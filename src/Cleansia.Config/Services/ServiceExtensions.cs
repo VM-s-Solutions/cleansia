@@ -295,6 +295,10 @@ public static class ServiceExtensions
         services.AddScoped<IConsentService, ConsentService>();
         // The legal text in force for a market, stamped on a consent and shown on the legal pages.
         services.AddScoped<ILegalDocumentResolver, LegalDocumentResolver>();
+        // The contract for work: the one projection of the job facts the preview and the row share, and
+        // the one writer of the acceptance row and its audit index (ADR-0068).
+        services.AddScoped<IWorkContractFactsBuilder, WorkContractFactsBuilder>();
+        services.AddScoped<IWorkContractAcceptor, WorkContractAcceptor>();
         services.AddInfrastructureServices();
 
         return services;

@@ -9,6 +9,7 @@ using Cleansia.Core.Domain.Users;
 using Microsoft.Extensions.Logging.Abstractions;
 using MockQueryable;
 using Moq;
+using Cleansia.TestUtilities;
 
 namespace Cleansia.Tests.Features.Orders;
 
@@ -36,6 +37,7 @@ public class OrderCleanerAssignedNotificationTests
     private readonly Mock<IOrderAccessService> _accessService = new();
     private readonly Mock<INotificationProducer> _notificationProducer = new();
     private readonly Mock<IEmailService> _emailService = new();
+    private readonly Mock<IWorkContractAcceptor> _workContractAcceptor = new();
     private readonly Mock<IUserSessionProvider> _session = new();
 
     private readonly List<(string UserId, string EventKey, Dictionary<string, string> Args, string? Subject)> _sent = [];
@@ -63,7 +65,7 @@ public class OrderCleanerAssignedNotificationTests
             OrderStatus.Confirmed, PaymentType.Card, PaymentStatus.Paid, maxEmployees: 1);
         ArrangeTaker();
 
-        var result = await CreateTakeHandler().Handle(new TakeOrder.Command(OrderId), CancellationToken.None);
+        var result = await CreateTakeHandler().Handle(new TakeOrder.Command(OrderId, WorkContractTestData.TextIdEn), CancellationToken.None);
 
         Assert.True(result.IsSuccess);
         var sent = Assert.Single(_sent);
@@ -87,7 +89,7 @@ public class OrderCleanerAssignedNotificationTests
             OrderStatus.New, PaymentType.Cash, PaymentStatus.Pending, maxEmployees: 1);
         ArrangeTaker();
 
-        var result = await CreateTakeHandler().Handle(new TakeOrder.Command(OrderId), CancellationToken.None);
+        var result = await CreateTakeHandler().Handle(new TakeOrder.Command(OrderId, WorkContractTestData.TextIdEn), CancellationToken.None);
 
         Assert.True(result.IsSuccess);
         Assert.Equal(OrderStatus.Confirmed, order.CurrentStatus);
@@ -101,7 +103,7 @@ public class OrderCleanerAssignedNotificationTests
         ArrangeOrder(OrderStatus.New, PaymentType.Cash, PaymentStatus.Pending, maxEmployees: 1);
         ArrangeTaker();
 
-        await CreateTakeHandler().Handle(new TakeOrder.Command(OrderId), CancellationToken.None);
+        await CreateTakeHandler().Handle(new TakeOrder.Command(OrderId, WorkContractTestData.TextIdEn), CancellationToken.None);
 
         Assert.DoesNotContain(_sent, s => s.EventKey == NotificationEventCatalog.OrderConfirmed);
     }
@@ -113,7 +115,7 @@ public class OrderCleanerAssignedNotificationTests
             OrderStatus.Confirmed, PaymentType.Card, PaymentStatus.Paid, maxEmployees: 1, userId: null);
         ArrangeTaker();
 
-        var result = await CreateTakeHandler().Handle(new TakeOrder.Command(OrderId), CancellationToken.None);
+        var result = await CreateTakeHandler().Handle(new TakeOrder.Command(OrderId, WorkContractTestData.TextIdEn), CancellationToken.None);
 
         Assert.True(result.IsSuccess);
         Assert.Empty(_sent);
@@ -245,6 +247,7 @@ public class OrderCleanerAssignedNotificationTests
             _accessService.Object,
             _notificationProducer.Object,
             _emailService.Object,
+            _workContractAcceptor.Object,
             NullLogger<TakeOrder.Handler>.Instance);
 
     private AdminReassignOrder.Handler CreateReassignHandler() =>

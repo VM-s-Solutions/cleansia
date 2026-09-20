@@ -70,7 +70,7 @@ public class RequestLogSubjectExportPathSuppressionTests
                 new GdprExportCustomerActionDto("customer.order.cancel", DateTimeOffset.UtcNow, "Order", "order-1",
                     true, null, Payload, Ip, Device),
             ],
-            new GdprExportMetadataDto(DateTimeOffset.UtcNow, "admin:admin@cleansia.test", "JSON"));
+            new GdprExportMetadataDto(DateTimeOffset.UtcNow, "admin:admin@cleansia.test", "JSON"), []);
 
     /// <summary>
     /// Anti-vacuity: the response really does carry the names and values raw, so it is the path rule

@@ -24,7 +24,7 @@ public static class AdminExportUserData
 
     // ADR-0012 D4.1 — the subject id, the scope and row counts ONLY. The exported data is exactly what
     // the audit row must never copy.
-    public record GdprExportSnapshot(string SubjectUserId, string Scope, int OrderCount, int DisputeCount, int CustomerActionCount);
+    public record GdprExportSnapshot(string SubjectUserId, string Scope, int OrderCount, int DisputeCount, int CustomerActionCount, int WorkContractAcceptanceCount);
 
     public class Validator : AbstractValidator<Command>
     {
@@ -66,7 +66,7 @@ public static class AdminExportUserData
             auditEntry.MarkCompleted(adminEmail);
 
             var snapshot = new GdprExportSnapshot(
-                request.UserId, GdprAuditReasons.ExportRequestType, export.Orders.Count, export.Disputes.Count, export.CustomerActions.Count);
+                request.UserId, GdprAuditReasons.ExportRequestType, export.Orders.Count, export.Disputes.Count, export.CustomerActions.Count, export.WorkContractAcceptances.Count);
             auditContext.RecordChange("User", request.UserId, snapshot, snapshot);
 
             return BusinessResult.Success(export);

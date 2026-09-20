@@ -22,7 +22,7 @@ public sealed class PayoutGateDeployDayTests(HostTestPostgresFixture db) : Authz
     [Fact]
     public async Task A_Cleaner_Whose_Payout_Details_Predate_The_Payout_Record_Keeps_Working()
     {
-        string employeeId = "", orderId = "";
+        string employeeId = "", orderId = "", textId = "";
         const string employeeEmail = "legacy.payout@hosttests.local";
 
         await SeedAsync(async ctx =>
@@ -37,7 +37,9 @@ public sealed class PayoutGateDeployDayTests(HostTestPostgresFixture db) : Authz
             ctx.Employees.Add(employee);
             ctx.EmployeeDocuments.Add(DomainSeed.ActiveDocument(employee.Id));
 
-            var order = DomainSeed.NewOrder(customerUser.Id, "legacycust@hosttests.local");
+            var (workContract, textEnId) = await DomainSeed.WorkContractInForceAsync(ctx);
+            textId = textEnId;
+            var order = DomainSeed.NewOrder(customerUser.Id, "legacycust@hosttests.local", workContract: workContract);
             ctx.Orders.Add(order);
 
             employeeId = employee.Id;
@@ -61,7 +63,7 @@ public sealed class PayoutGateDeployDayTests(HostTestPostgresFixture db) : Authz
             PartnerAudience, "u-legacy", employeeEmail, UserProfile.Employee, employeeId: employeeId);
 
         var response = await PartnerClient(token)
-            .PostAsync("/api/Order/TakeOrder", JsonContent.Create(new { OrderId = orderId }));
+            .PostAsync("/api/Order/TakeOrder", JsonContent.Create(new { OrderId = orderId, AcceptedWorkContractTextId = textId }));
 
         HttpAssert.IsOk(response);
 

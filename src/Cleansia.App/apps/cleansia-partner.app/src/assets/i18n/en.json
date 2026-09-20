@@ -1028,6 +1028,14 @@
     }
   },
   "api": {
+    "contract": {
+      "not_accepted": "Please read and accept the contract for work before taking the job.",
+      "text_mismatch": "The contract was updated — please read it again.",
+      "acceptance_required": "Accept the contract for work for this job before you continue."
+    },
+    "legal": {
+      "document_not_found": "This job cannot be taken right now."
+    },
     "auth": {
       "google_type_error": "This account uses Google sign-in. Use the Google button.",
       "apple_type_error": "This account uses Sign in with Apple. Use the Apple button.",

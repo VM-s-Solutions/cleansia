@@ -41,17 +41,20 @@ public class CompleteOrder
         private readonly IEmployeeRepository _employeeRepository;
         private readonly IOrderPhotoRepository _orderPhotoRepository;
         private readonly IOrderAccessService _orderAccessService;
+        private readonly IWorkContractAcceptanceRepository _workContractAcceptanceRepository;
 
         public Validator(
             IOrderRepository orderRepository,
             IEmployeeRepository employeeRepository,
             IOrderPhotoRepository orderPhotoRepository,
-            IOrderAccessService orderAccessService)
+            IOrderAccessService orderAccessService,
+            IWorkContractAcceptanceRepository workContractAcceptanceRepository)
         {
             _orderRepository = orderRepository;
             _employeeRepository = employeeRepository;
             _orderPhotoRepository = orderPhotoRepository;
             _orderAccessService = orderAccessService;
+            _workContractAcceptanceRepository = workContractAcceptanceRepository;
 
             RuleFor(x => x.OrderId)
                 .Cascade(CascadeMode.Stop)
@@ -84,6 +87,8 @@ public class CompleteOrder
                 .Cascade(CascadeMode.Stop)
                 .MustAsync(EmployeeIsAssignedToOrderAsync)
                 .WithMessage(BusinessErrorMessage.EmployeeNotAssignedToOrder)
+                .MustAsync(HasAcceptedWorkContractForSeatAsync)
+                .WithMessage(BusinessErrorMessage.WorkContractAcceptanceRequired)
                 .MustAsync(HasCompletedProfileAsync)
                 .WithMessage(BusinessErrorMessage.EmployeeProfileIncomplete)
                 .MustAsync(EmployeeIsApprovedAsync)
@@ -122,6 +127,29 @@ public class CompleteOrder
                 .FirstOrDefaultAsync(o => o.Id == command.OrderId, cancellationToken);
 
             return order?.AssignedEmployees.Any(oe => oe.EmployeeId == employeeId) ?? false;
+        }
+
+        /// <summary>
+        /// The contract gate on the act that ends the work — the last act that can still have a contract
+        /// behind it, and the one a complaint turns on. On a two-seat crew the second cleaner never starts
+        /// (the order is already in progress) but may complete, so the start gate alone never sees them.
+        /// After the assignment rule, so a non-assignee still learns nothing.
+        /// </summary>
+        private async Task<bool> HasAcceptedWorkContractForSeatAsync(Command command, CancellationToken cancellationToken)
+        {
+            var employeeId = await _orderAccessService.GetCallerEmployeeIdAsync(cancellationToken);
+            if (string.IsNullOrEmpty(employeeId)) return false;
+
+            var seatId = await _orderRepository
+                .GetQueryable()
+                .Where(o => o.Id == command.OrderId)
+                .SelectMany(o => o.AssignedEmployees)
+                .Where(oe => oe.EmployeeId == employeeId)
+                .Select(oe => oe.Id)
+                .FirstOrDefaultAsync(cancellationToken);
+
+            return seatId is not null
+                && await _workContractAcceptanceRepository.AnyForSeatAsync(seatId, cancellationToken);
         }
 
         private async Task<bool> HasCompletedProfileAsync(Command command, CancellationToken cancellationToken)

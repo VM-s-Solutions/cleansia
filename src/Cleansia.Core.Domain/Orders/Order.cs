@@ -208,6 +208,17 @@ public class Order : TenantAuditable
     public string CurrencyId { get; private set; }
     public Currency? Currency { get; private set; }
 
+    /// <summary>
+    /// The contract-for-work text this job was offered under — the customer-audience
+    /// <c>LegalDocument</c> in force for the order's market at booking, set once by the factory and never
+    /// re-resolved: a newer version applies to orders booked from its date and changes nothing here. A
+    /// cleaner's acceptance must name a text of this document. Nullable only because <c>Order.Create</c>
+    /// has a hundred and fifty test callers; the one production writer always stamps it, and the take
+    /// refuses an order without one rather than resolving one late.
+    /// </summary>
+    [MaxLength(26)]
+    public string? WorkContractDocumentId { get; private set; }
+
     public string? UserId { get; private set; }
     public User? User { get; private set; }
 
@@ -718,6 +729,12 @@ public class Order : TenantAuditable
     {
         Currency = currency;
         CurrencyId = currency.Id;
+        return this;
+    }
+
+    public Order SetWorkContractDocument(Legal.LegalDocument document)
+    {
+        WorkContractDocumentId = document.Id;
         return this;
     }
 

@@ -59,7 +59,7 @@ public sealed class LegalDocumentSeedAndReadTests(PostgresContainerFixture fixtu
         provider.GetRequiredService<IMediator>().Send(new GetLegalDocument.Query(type, countryId, language));
 
     [Fact]
-    public async Task The_Seed_Lands_Both_Documents_In_Five_Languages_And_A_Second_Run_Writes_Nothing()
+    public async Task The_Seed_Lands_The_Three_Documents_In_Five_Languages_And_A_Second_Run_Writes_Nothing()
     {
         await TestMethod(
             arrange: SeedMarketsAndTextsAsync,
@@ -69,11 +69,43 @@ public sealed class LegalDocumentSeedAndReadTests(PostgresContainerFixture fixtu
                 Assert.False(second.Changed);
 
                 var documents = await context.LegalDocuments.Include(d => d.Texts).AsNoTracking().ToListAsync();
-                Assert.Equal(2, documents.Count);
+                Assert.Equal(3, documents.Count);
                 Assert.All(documents, d => Assert.Null(d.CountryId));
                 Assert.All(documents, d => Assert.Equal(LegalDocument.VersionFor(d.EffectiveFrom), d.Version));
                 Assert.All(documents, d => Assert.Equal(5, d.Texts.Count));
-                Assert.Equal(10, await context.LegalDocumentTexts.CountAsync());
+                Assert.Equal(
+                    [LegalDocumentType.TermsOfService, LegalDocumentType.PrivacyPolicy, LegalDocumentType.WorkContract],
+                    documents.Select(d => d.Type).OrderBy(t => t));
+                Assert.Equal(15, await context.LegalDocumentTexts.CountAsync());
+            },
+            transactional: false);
+    }
+
+    /// <summary>
+    /// The contract for work is a customer-audience text (ADR-0068 D1): published where the customer's
+    /// texts are, so the wizard's sentence can link to it before anyone signs in.
+    /// </summary>
+    [Fact]
+    public async Task The_Anonymous_Read_Serves_The_Work_Contract_With_The_Markets_Currency_And_No_Figure()
+    {
+        await TestMethod(
+            setup: Anonymous,
+            arrange: SeedMarketsAndTextsAsync,
+            act: async provider => await ReadAsync(provider, LegalDocumentType.WorkContract, Czechia, "cs"),
+            assert: async (context, result) =>
+            {
+                Assert.True(result.IsSuccess, result.Error?.Message);
+                var dto = result.Value;
+                var seeded = await LegalSeed.PlatformWideAsync(context, LegalDocumentType.WorkContract);
+
+                Assert.Equal(LegalDocumentType.WorkContract, dto.Type);
+                Assert.Equal(seeded.Version, dto.Version);
+                Assert.Equal("cs", dto.Language);
+                Assert.Equal("Smlouva o dílo", dto.Title);
+                Assert.Contains(" CZK", dto.ContentHtml);
+                Assert.DoesNotContain("{{", dto.ContentHtml);
+                Assert.Contains("<blockquote>", dto.ContentHtml);
+                Assert.DoesNotContain(seeded.TextFor("cs")!.ContentMarkdown, c => char.IsDigit(c));
             },
             transactional: false);
     }

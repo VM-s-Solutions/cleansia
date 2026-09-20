@@ -59,6 +59,9 @@ public class OrderRedactionSurfaceTests
         nameof(OrderItem.ExpressWaiverForfeitedOnCancel),
         nameof(OrderItem.PreferredOffer),
         nameof(OrderItem.CustomerCompany),
+        // Who accepted the contract for work, and when, is the crew's and the customer's business; a
+        // browsing cleaner sees the seats, not the contracts behind them.
+        nameof(OrderItem.WorkContractAcceptances),
     ];
 
     private static readonly string[] DetailReshaped =
@@ -383,7 +386,12 @@ public class OrderRedactionSurfaceTests
             PreferredOffer: new PreferredOfferDetails(
                 PreferredOfferState.AwaitingConfirmation, "Petra", DateTime.UtcNow.AddHours(2), true),
             CustomerCompany: "Account company",
-            CountryId: "CZ");
+            CountryId: "CZ",
+            WorkContractAcceptances:
+            [
+                new WorkContractAcceptanceDto(
+                    "acceptance-1", "assignment-1", "employee-1", DateTimeOffset.UtcNow.AddDays(-2), "2026-09-20", "cs"),
+            ]);
 
     private static OrderListItem FullyPopulatedListItem() =>
         new(

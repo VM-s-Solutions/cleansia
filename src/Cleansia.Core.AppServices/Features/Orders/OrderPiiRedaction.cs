@@ -65,6 +65,7 @@ public static class OrderPiiRedaction
             ExpressWaiverForfeitedOnCancel = null,
             PreferredOffer = null,
             CustomerCompany = null,
+            WorkContractAcceptances = [],
         };
 
     /// <summary>

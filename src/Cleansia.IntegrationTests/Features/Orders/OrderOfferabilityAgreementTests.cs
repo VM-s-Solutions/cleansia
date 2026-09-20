@@ -98,12 +98,13 @@ public class OrderOfferabilityAgreementTests(PostgresContainerFixture fixture) :
                     orderRepository,
                     provider.GetRequiredService<IEmployeeRepository>(),
                     provider.GetRequiredService<IOrderAccessService>(),
-                    currencyResolution);
+                    currencyResolution,
+                    provider.GetRequiredService<ILegalDocumentRepository>());
 
                 var takeVerdicts = new Dictionary<string, string?>();
                 foreach (var scenario in Cases)
                 {
-                    var result = await validator.ValidateAsync(new TakeOrder.Command(scenario.OrderId));
+                    var result = await validator.ValidateAsync(new TakeOrder.Command(scenario.OrderId, TestLegalDocuments.WorkContractTextEnId));
                     takeVerdicts[scenario.OrderId] = result.IsValid
                         ? null
                         : Assert.Single(result.Errors).ErrorMessage;
@@ -261,6 +262,7 @@ public class OrderOfferabilityAgreementTests(PostgresContainerFixture fixture) :
     private static async Task SeedTheOfferabilityMatrix(CleansiaDbContext context)
     {
         context.Languages.Add(Language.Create("en", "English"));
+        TestLegalDocuments.Add(context);
 
         var country = Country.Create("Czechia", "CZ", "CZ", isServiced: true);
         country.Id = CountryId;
@@ -316,6 +318,7 @@ public class OrderOfferabilityAgreementTests(PostgresContainerFixture fixture) :
             recurringTemplateId: scenario.RecurringTemplateId);
         order.Id = scenario.OrderId;
         order.Created(TestUtilities.Constants.TestUserSession.TestUserName, DateTime.UtcNow);
+        order.SetWorkContractDocument(WorkContractTestData.Document());
 
         order.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.New, order));
         if (scenario.Status != OrderStatus.New)

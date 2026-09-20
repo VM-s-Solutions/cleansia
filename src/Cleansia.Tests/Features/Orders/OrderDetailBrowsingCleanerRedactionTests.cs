@@ -12,6 +12,7 @@ using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Users;
 using Cleansia.Tests.Common;
 using Moq;
+using Cleansia.TestUtilities;
 
 namespace Cleansia.Tests.Features.Orders;
 
@@ -360,7 +361,8 @@ public class OrderDetailBrowsingCleanerRedactionTests
             Mock.Of<IUserRepository>(),
             Mock.Of<ITenantRepository>(),
             _expressWaiverConsumer.Object,
-            Mock.Of<IUserMembershipRepository>());
+            Mock.Of<IUserMembershipRepository>(),
+            WorkContractTestData.AcceptanceRepository().Object);
 
     private void ArrangeCommon(Order order)
     {

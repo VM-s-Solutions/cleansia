@@ -13,7 +13,8 @@ public record GdprExportDto(
     List<GdprExportInvoiceDto> Invoices,
     List<GdprExportConsentDto> Consents,
     List<GdprExportCustomerActionDto> CustomerActions,
-    GdprExportMetadataDto Metadata
+    GdprExportMetadataDto Metadata,
+    List<GdprExportWorkContractAcceptanceDto> WorkContractAcceptances
 );
 
 public record GdprExportProfileDto(
@@ -89,7 +90,37 @@ public record GdprExportOrderDto(
     OrderStatus Status,
     decimal TotalPrice,
     DateTime CleaningDateTime,
-    DateTimeOffset CreatedOn
+    DateTimeOffset CreatedOn,
+    /// <summary>The customer's half of the contract for work: the version the order was booked under (ADR-0068).</summary>
+    string? WorkContractDocumentVersion = null,
+    /// <summary>The crew's acceptances of it — when, which version, in which language. No cleaner id or name: the counterparty's identity is the platform's to hold.</summary>
+    List<GdprExportOrderWorkContractAcceptanceDto>? WorkContractAcceptances = null
+);
+
+public record GdprExportOrderWorkContractAcceptanceDto(
+    DateTimeOffset AcceptedOn,
+    string DocumentVersion,
+    string Language
+);
+
+/// <summary>
+/// ADR-0068 D5 — a cleaner's own acceptances of the contract for work, row for row: the job, the seat,
+/// the exact text, the instant, the client and the request context, and the facts as frozen. After an
+/// erasure or the per-company metadata window the IP address, device label and device id read null.
+/// </summary>
+public record GdprExportWorkContractAcceptanceDto(
+    string OrderId,
+    string OrderNumber,
+    string OrderEmployeeId,
+    string LegalDocumentTextId,
+    string DocumentVersion,
+    string Language,
+    DateTimeOffset AcceptedOn,
+    string ClientAudience,
+    string? IpAddress,
+    string? DeviceLabel,
+    string? DeviceId,
+    string FactsJson
 );
 
 /// <summary>

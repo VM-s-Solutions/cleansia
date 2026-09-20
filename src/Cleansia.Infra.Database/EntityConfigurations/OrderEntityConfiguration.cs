@@ -1,4 +1,5 @@
 using Cleansia.Core.Domain.Enums;
+using Cleansia.Core.Domain.Legal;
 using Cleansia.Core.Domain.Loyalty;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Receipts;
@@ -282,5 +283,20 @@ public class OrderEntityConfiguration : TenantAuditableEntityConfiguration<Order
             .WithOne(r => r.Order)
             .HasForeignKey<OrderReceipt>(r => r.OrderId)
             .OnDelete(DeleteBehavior.Restrict);
+
+        // The contract-for-work text the job was offered under. Restrict: a document an order was
+        // booked under is never deleted out from under it (a legal text in force is immutable anyway).
+        // Indexed for the admin question "which orders were booked under version X".
+        builder.Property(o => o.WorkContractDocumentId)
+            .HasMaxLength(26)
+            .IsRequired(false);
+
+        builder.HasOne<LegalDocument>()
+            .WithMany()
+            .HasForeignKey(o => o.WorkContractDocumentId)
+            .OnDelete(DeleteBehavior.Restrict)
+            .IsRequired(false);
+
+        builder.HasIndex(o => o.WorkContractDocumentId);
     }
 }

@@ -70,19 +70,22 @@ public sealed class LegalDocumentSeederTests : IDisposable
         new(LegalDocumentAudience.Customer, type, countryIso, effectiveFrom ?? Today, language, title, body);
 
     [Fact]
-    public async Task The_Embedded_Seed_Creates_Both_Customer_Documents_In_Five_Languages_Effective_Today()
+    public async Task The_Embedded_Seed_Creates_The_Three_Customer_Documents_In_Five_Languages()
     {
         var outcome = await SeedAsync();
 
-        Assert.Equal(2, outcome.AddedDocuments);
+        Assert.Equal(3, outcome.AddedDocuments);
         var documents = await DocumentsAsync();
-        Assert.Equal(2, documents.Count);
+        Assert.Equal(3, documents.Count);
         foreach (var document in documents)
         {
             Assert.Equal(LegalDocumentAudience.Customer, document.Audience);
             Assert.Null(document.CountryId);
-            Assert.Equal(new DateOnly(2026, 9, 14), document.EffectiveFrom);
-            Assert.Equal("2026-09-14", document.Version);
+            var expectedEffectiveFrom = document.Type == LegalDocumentType.WorkContract
+                ? new DateOnly(2026, 9, 20)
+                : new DateOnly(2026, 9, 14);
+            Assert.Equal(expectedEffectiveFrom, document.EffectiveFrom);
+            Assert.Equal(LegalDocument.VersionFor(expectedEffectiveFrom), document.Version);
             Assert.Equal(new[] { "cs", "en", "ru", "sk", "uk" }, document.Texts.Select(t => t.Language).OrderBy(l => l));
             foreach (var text in document.Texts)
             {
@@ -96,7 +99,26 @@ public sealed class LegalDocumentSeederTests : IDisposable
 
         Assert.Contains(documents, d => d.Type == LegalDocumentType.TermsOfService);
         Assert.Contains(documents, d => d.Type == LegalDocumentType.PrivacyPolicy);
+        Assert.Contains(documents, d => d.Type == LegalDocumentType.WorkContract);
         Assert.Equal("Terms of Service", documents.Single(d => d.Type == LegalDocumentType.TermsOfService).TextFor("en")!.Title);
+        Assert.Equal("Contract for Work", documents.Single(d => d.Type == LegalDocumentType.WorkContract).TextFor("en")!.Title);
+    }
+
+    // The contract is a template: it names the job by what the acceptance shows and binds the figures
+    // through the frozen facts, never through a number, a name, an address or a date in the text.
+    [Fact]
+    public async Task The_Embedded_Work_Contract_Is_A_Template_With_The_Currency_Placeholder_And_No_Figure_In_Any_Language()
+    {
+        await SeedAsync();
+
+        var contract = (await DocumentsAsync()).Single(d => d.Type == LegalDocumentType.WorkContract);
+        Assert.Equal(new[] { "cs", "en", "ru", "sk", "uk" }, contract.Texts.Select(t => t.Language).OrderBy(l => l));
+        foreach (var text in contract.Texts)
+        {
+            Assert.Contains("{{currency}}", text.ContentMarkdown);
+            Assert.DoesNotContain(text.ContentMarkdown, c => char.IsDigit(c));
+            Assert.StartsWith("> ", text.ContentMarkdown);
+        }
     }
 
     // The money figure in the terms comes from the market (ADR-0060): the seed carries the placeholder,
@@ -252,10 +274,11 @@ public sealed class LegalDocumentSeederTests : IDisposable
     {
         var resources = LegalSeedResource.ReadAll();
 
-        Assert.Equal(10, resources.Count);
+        Assert.Equal(15, resources.Count);
         Assert.All(resources, r => Assert.Equal(LegalDocumentAudience.Customer, r.Audience));
         Assert.All(resources, r => Assert.Null(r.CountryIsoCode));
-        Assert.All(resources, r => Assert.Equal(new DateOnly(2026, 9, 14), r.EffectiveFrom));
+        Assert.All(resources.Where(r => r.Type != LegalDocumentType.WorkContract), r => Assert.Equal(new DateOnly(2026, 9, 14), r.EffectiveFrom));
+        Assert.All(resources.Where(r => r.Type == LegalDocumentType.WorkContract), r => Assert.Equal(new DateOnly(2026, 9, 20), r.EffectiveFrom));
     }
 
     private sealed class DefaultTenantProvider : ITenantProvider

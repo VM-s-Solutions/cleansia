@@ -5542,6 +5542,112 @@
         }
       }
     },
+    "/api/Order/GetWorkContract": {
+      "get": {
+        "tags": [
+          "Order"
+        ],
+        "operationId": "Order_GetWorkContract",
+        "parameters": [
+          {
+            "name": "AcceptanceId",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Language",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkContractDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkContractDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkContractDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/Package/GetOverview": {
       "get": {
         "tags": [
@@ -8714,6 +8820,13 @@
           },
           "metadata": {
             "$ref": "#/components/schemas/GdprExportMetadataDto"
+          },
+          "workContractAcceptances": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/GdprExportWorkContractAcceptanceDto"
+            },
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -8850,6 +8963,35 @@
           "createdOn": {
             "type": "string",
             "format": "date-time"
+          },
+          "workContractDocumentVersion": {
+            "type": "string",
+            "nullable": true
+          },
+          "workContractAcceptances": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/GdprExportOrderWorkContractAcceptanceDto"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "GdprExportOrderWorkContractAcceptanceDto": {
+        "type": "object",
+        "properties": {
+          "acceptedOn": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "documentVersion": {
+            "type": "string",
+            "nullable": true
+          },
+          "language": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -8951,6 +9093,60 @@
           "createdOn": {
             "type": "string",
             "format": "date-time"
+          }
+        },
+        "additionalProperties": false
+      },
+      "GdprExportWorkContractAcceptanceDto": {
+        "type": "object",
+        "properties": {
+          "orderId": {
+            "type": "string",
+            "nullable": true
+          },
+          "orderNumber": {
+            "type": "string",
+            "nullable": true
+          },
+          "orderEmployeeId": {
+            "type": "string",
+            "nullable": true
+          },
+          "legalDocumentTextId": {
+            "type": "string",
+            "nullable": true
+          },
+          "documentVersion": {
+            "type": "string",
+            "nullable": true
+          },
+          "language": {
+            "type": "string",
+            "nullable": true
+          },
+          "acceptedOn": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "clientAudience": {
+            "type": "string",
+            "nullable": true
+          },
+          "ipAddress": {
+            "type": "string",
+            "nullable": true
+          },
+          "deviceLabel": {
+            "type": "string",
+            "nullable": true
+          },
+          "deviceId": {
+            "type": "string",
+            "nullable": true
+          },
+          "factsJson": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -9644,13 +9840,15 @@
       "LegalDocumentType": {
         "enum": [
           0,
-          1
+          1,
+          2
         ],
         "type": "integer",
         "format": "int32",
         "x-enumNames": [
           "TermsOfService",
-          "PrivacyPolicy"
+          "PrivacyPolicy",
+          "WorkContract"
         ]
       },
       "Logout_Command": {
@@ -10414,6 +10612,13 @@
           },
           "countryId": {
             "type": "string",
+            "nullable": true
+          },
+          "workContractAcceptances": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WorkContractAcceptanceDto"
+            },
             "nullable": true
           }
         },
@@ -12255,6 +12460,179 @@
         "properties": {
           "consentType": {
             "$ref": "#/components/schemas/ConsentType"
+          }
+        },
+        "additionalProperties": false
+      },
+      "WorkContractAcceptanceDetails": {
+        "type": "object",
+        "properties": {
+          "acceptedOn": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "documentVersion": {
+            "type": "string",
+            "nullable": true
+          },
+          "acceptedLanguage": {
+            "type": "string",
+            "nullable": true
+          },
+          "orderEmployeeId": {
+            "type": "string",
+            "nullable": true
+          },
+          "employeeId": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "WorkContractAcceptanceDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "nullable": true
+          },
+          "orderEmployeeId": {
+            "type": "string",
+            "nullable": true
+          },
+          "employeeId": {
+            "type": "string",
+            "nullable": true
+          },
+          "acceptedOn": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "documentVersion": {
+            "type": "string",
+            "nullable": true
+          },
+          "language": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "WorkContractDto": {
+        "type": "object",
+        "properties": {
+          "legalDocumentTextId": {
+            "type": "string",
+            "nullable": true
+          },
+          "legalDocumentId": {
+            "type": "string",
+            "nullable": true
+          },
+          "version": {
+            "type": "string",
+            "nullable": true
+          },
+          "effectiveFrom": {
+            "type": "string",
+            "format": "date"
+          },
+          "language": {
+            "type": "string",
+            "nullable": true
+          },
+          "title": {
+            "type": "string",
+            "nullable": true
+          },
+          "contentHtml": {
+            "type": "string",
+            "nullable": true
+          },
+          "facts": {
+            "$ref": "#/components/schemas/WorkContractFacts"
+          },
+          "acceptance": {
+            "$ref": "#/components/schemas/WorkContractAcceptanceDetails"
+          }
+        },
+        "additionalProperties": false
+      },
+      "WorkContractFacts": {
+        "type": "object",
+        "properties": {
+          "orderNumber": {
+            "type": "string",
+            "nullable": true
+          },
+          "cleaningDateTimeUtc": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "estimatedMinutes": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalPrice": {
+            "type": "number",
+            "format": "double"
+          },
+          "currencyCode": {
+            "type": "string",
+            "nullable": true
+          },
+          "locationApproximate": {
+            "type": "string",
+            "nullable": true
+          },
+          "countryId": {
+            "type": "string",
+            "nullable": true
+          },
+          "rooms": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "bathrooms": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "services": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WorkContractFactsLine"
+            },
+            "nullable": true
+          },
+          "packages": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WorkContractFactsLine"
+            },
+            "nullable": true
+          },
+          "extraSlugs": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "WorkContractFactsLine": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "nullable": true
+          },
+          "name": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false

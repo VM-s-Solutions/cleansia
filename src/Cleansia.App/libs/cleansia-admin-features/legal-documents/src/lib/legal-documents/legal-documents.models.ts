@@ -17,6 +17,7 @@ const AUDIENCE_LABEL_KEYS: Readonly<Record<LegalDocumentAudience, string>> = {
 const TYPE_LABEL_KEYS: Readonly<Record<LegalDocumentType, string>> = {
   [LegalDocumentType.TermsOfService]: 'pages.legal_documents.type.terms_of_service',
   [LegalDocumentType.PrivacyPolicy]: 'pages.legal_documents.type.privacy_policy',
+  [LegalDocumentType.WorkContract]: 'pages.legal_documents.type.work_contract',
 };
 
 export function getAudienceLabelKey(audience: LegalDocumentAudience): string {

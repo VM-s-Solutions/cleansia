@@ -10,6 +10,7 @@ using Cleansia.Core.Domain.Repositories;
 using Microsoft.Extensions.Logging.Abstractions;
 using MockQueryable;
 using Moq;
+using Cleansia.TestUtilities;
 
 namespace Cleansia.Tests.Features.Orders;
 
@@ -37,13 +38,14 @@ public class TakeOrderSeatRaceTests
     private readonly Mock<INotificationProducer> _notificationProducer = new();
     private readonly Mock<IEmailService> _emailService = new();
 
+    private readonly Mock<IWorkContractAcceptor> _workContractAcceptor = new();
     [Fact]
     public async Task A_Seat_Taken_Between_Validation_And_The_Handler_Is_A_Business_Refusal_Not_A_Throw()
     {
         var order = Arrange(ValidatorTestHelpers.BuildOrder(
             OrderId, OrderStatus.Confirmed, OtherEmployeeId, maxEmployees: 1));
 
-        var result = await CreateHandler().Handle(new TakeOrder.Command(OrderId), CancellationToken.None);
+        var result = await CreateHandler().Handle(new TakeOrder.Command(OrderId, WorkContractTestData.TextIdEn), CancellationToken.None);
 
         Assert.True(result.IsFailure);
         Assert.Equal(BusinessErrorMessage.NoAvailableSpots, result.Error!.Message);
@@ -57,7 +59,7 @@ public class TakeOrderSeatRaceTests
         var order = Arrange(ValidatorTestHelpers.BuildOrder(
             OrderId, OrderStatus.New, OtherEmployeeId, maxEmployees: 1));
 
-        await CreateHandler().Handle(new TakeOrder.Command(OrderId), CancellationToken.None);
+        await CreateHandler().Handle(new TakeOrder.Command(OrderId, WorkContractTestData.TextIdEn), CancellationToken.None);
 
         Assert.NotEqual(OrderStatus.Confirmed, order.GetCurrentOrderStatus());
         _notificationProducer.Verify(
@@ -73,7 +75,7 @@ public class TakeOrderSeatRaceTests
         var order = Arrange(ValidatorTestHelpers.BuildOrder(
             OrderId, OrderStatus.New, OtherEmployeeId, maxEmployees: 2));
 
-        var result = await CreateHandler().Handle(new TakeOrder.Command(OrderId), CancellationToken.None);
+        var result = await CreateHandler().Handle(new TakeOrder.Command(OrderId, WorkContractTestData.TextIdEn), CancellationToken.None);
 
         Assert.True(result.IsSuccess);
         Assert.Equal(EmployeeId, result.Value!.EmployeeId);
@@ -106,5 +108,6 @@ public class TakeOrderSeatRaceTests
             _accessService.Object,
             _notificationProducer.Object,
             _emailService.Object,
+            _workContractAcceptor.Object,
             NullLogger<TakeOrder.Handler>.Instance);
 }

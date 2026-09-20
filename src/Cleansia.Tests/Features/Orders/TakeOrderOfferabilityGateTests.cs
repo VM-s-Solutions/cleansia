@@ -8,6 +8,7 @@ using Cleansia.Core.Domain.Users;
 using FluentValidation.Results;
 using MockQueryable;
 using Moq;
+using Cleansia.TestUtilities;
 
 namespace Cleansia.Tests.Features.Orders;
 
@@ -48,7 +49,8 @@ public class TakeOrderOfferabilityGateTests
             _orderRepository.Object,
             _employeeRepository.Object,
             _accessService.Object,
-            ValidatorTestHelpers.CurrencyResolver());
+            ValidatorTestHelpers.CurrencyResolver(),
+            WorkContractTestData.LegalDocumentRepository().Object);
     }
 
     // ── The offerability gate itself ──
@@ -58,7 +60,7 @@ public class TakeOrderOfferabilityGateTests
     {
         Arrange(ValidatorTestHelpers.BuildEmptyOrder(OrderId, OrderStatus.Cancelled, maxEmployees: 2));
 
-        var result = await _validator.ValidateAsync(new TakeOrder.Command(OrderId));
+        var result = await _validator.ValidateAsync(new TakeOrder.Command(OrderId, WorkContractTestData.TextIdEn));
 
         AssertSingleError(result, BusinessErrorMessage.TakeOrderAlreadyCancelled);
     }
@@ -68,7 +70,7 @@ public class TakeOrderOfferabilityGateTests
     {
         Arrange(ValidatorTestHelpers.BuildEmptyOrder(OrderId, OrderStatus.Completed, maxEmployees: 2));
 
-        var result = await _validator.ValidateAsync(new TakeOrder.Command(OrderId));
+        var result = await _validator.ValidateAsync(new TakeOrder.Command(OrderId, WorkContractTestData.TextIdEn));
 
         AssertSingleError(result, BusinessErrorMessage.TakeOrderAlreadyCompleted);
     }
@@ -88,7 +90,7 @@ public class TakeOrderOfferabilityGateTests
     {
         Arrange(ValidatorTestHelpers.BuildEmptyOrder(OrderId, status, maxEmployees: 2));
 
-        var result = await _validator.ValidateAsync(new TakeOrder.Command(OrderId));
+        var result = await _validator.ValidateAsync(new TakeOrder.Command(OrderId, WorkContractTestData.TextIdEn));
 
         Assert.True(
             result.IsValid,
@@ -119,7 +121,7 @@ public class TakeOrderOfferabilityGateTests
         Arrange(ValidatorTestHelpers.BuildEmptyOrder(
             OrderId, status, maxEmployees: 2, paymentType, paymentStatus, recurringTemplateId));
 
-        var result = await _validator.ValidateAsync(new TakeOrder.Command(OrderId));
+        var result = await _validator.ValidateAsync(new TakeOrder.Command(OrderId, WorkContractTestData.TextIdEn));
 
         AssertSingleError(result, BusinessErrorMessage.OrderNotTakeable);
     }
@@ -139,7 +141,7 @@ public class TakeOrderOfferabilityGateTests
         Arrange(ValidatorTestHelpers.BuildEmptyOrder(
             OrderId, status, maxEmployees: 2, paymentType, paymentStatus, recurringTemplateId));
 
-        var result = await _validator.ValidateAsync(new TakeOrder.Command(OrderId));
+        var result = await _validator.ValidateAsync(new TakeOrder.Command(OrderId, WorkContractTestData.TextIdEn));
 
         Assert.True(result.IsValid, string.Join("; ", result.Errors.Select(e => e.ErrorMessage)));
     }
@@ -159,7 +161,7 @@ public class TakeOrderOfferabilityGateTests
         _orderRepository.Setup(r => r.GetQueryable()).Returns(Array.Empty<Order>().AsQueryable().BuildMock());
         _accessService.Setup(s => s.GetCallerEmployeeIdAsync(It.IsAny<CancellationToken>())).ReturnsAsync(EmployeeId);
 
-        var result = await _validator.ValidateAsync(new TakeOrder.Command(OrderId));
+        var result = await _validator.ValidateAsync(new TakeOrder.Command(OrderId, WorkContractTestData.TextIdEn));
 
         AssertSingleError(result, BusinessErrorMessage.OrderNotFound);
     }
@@ -169,7 +171,7 @@ public class TakeOrderOfferabilityGateTests
     {
         Arrange(ValidatorTestHelpers.BuildEmptyOrder(OrderId, OrderStatus.New, maxEmployees: 2));
 
-        var result = await _validator.ValidateAsync(new TakeOrder.Command(string.Empty));
+        var result = await _validator.ValidateAsync(new TakeOrder.Command(string.Empty, WorkContractTestData.TextIdEn));
 
         AssertSingleError(result, BusinessErrorMessage.Required);
     }
@@ -179,7 +181,7 @@ public class TakeOrderOfferabilityGateTests
     {
         Arrange(ValidatorTestHelpers.BuildOrder(OrderId, OrderStatus.Confirmed, OtherEmployeeId, maxEmployees: 1));
 
-        var result = await _validator.ValidateAsync(new TakeOrder.Command(OrderId));
+        var result = await _validator.ValidateAsync(new TakeOrder.Command(OrderId, WorkContractTestData.TextIdEn));
 
         AssertSingleError(result, BusinessErrorMessage.NoAvailableSpots);
     }
@@ -194,7 +196,7 @@ public class TakeOrderOfferabilityGateTests
     {
         Arrange(ValidatorTestHelpers.BuildOrder(OrderId, OrderStatus.Cancelled, OtherEmployeeId, maxEmployees: 1));
 
-        var result = await _validator.ValidateAsync(new TakeOrder.Command(OrderId));
+        var result = await _validator.ValidateAsync(new TakeOrder.Command(OrderId, WorkContractTestData.TextIdEn));
 
         AssertSingleError(result, BusinessErrorMessage.TakeOrderAlreadyCancelled);
     }
@@ -206,7 +208,7 @@ public class TakeOrderOfferabilityGateTests
             ValidatorTestHelpers.BuildEmptyOrder(OrderId, OrderStatus.New, maxEmployees: 2),
             employeeStatus: ContractStatus.Rejected);
 
-        var result = await _validator.ValidateAsync(new TakeOrder.Command(OrderId));
+        var result = await _validator.ValidateAsync(new TakeOrder.Command(OrderId, WorkContractTestData.TextIdEn));
 
         AssertSingleError(result, BusinessErrorMessage.EmployeeNotApproved);
     }
@@ -216,7 +218,7 @@ public class TakeOrderOfferabilityGateTests
     {
         Arrange(ValidatorTestHelpers.BuildOrder(OrderId, OrderStatus.Confirmed, EmployeeId, maxEmployees: 2));
 
-        var result = await _validator.ValidateAsync(new TakeOrder.Command(OrderId));
+        var result = await _validator.ValidateAsync(new TakeOrder.Command(OrderId, WorkContractTestData.TextIdEn));
 
         AssertSingleError(result, BusinessErrorMessage.EmployeeAlreadyAssignedToOrder);
     }
@@ -234,7 +236,7 @@ public class TakeOrderOfferabilityGateTests
             weeklyCount: 99,
             weeklyOrderLimit: 3);
 
-        var result = await _validator.ValidateAsync(new TakeOrder.Command(OrderId));
+        var result = await _validator.ValidateAsync(new TakeOrder.Command(OrderId, WorkContractTestData.TextIdEn));
 
         AssertSingleError(result, BusinessErrorMessage.WeeklyOrderLimitReached);
     }
@@ -250,7 +252,7 @@ public class TakeOrderOfferabilityGateTests
             ValidatorTestHelpers.BuildEmptyOrder(OrderId, OrderStatus.New, maxEmployees: 2),
             weeklyCount: 99);
 
-        var result = await _validator.ValidateAsync(new TakeOrder.Command(OrderId));
+        var result = await _validator.ValidateAsync(new TakeOrder.Command(OrderId, WorkContractTestData.TextIdEn));
 
         Assert.True(result.IsValid);
     }
@@ -273,7 +275,7 @@ public class TakeOrderOfferabilityGateTests
         _employeeRepository.Setup(r => r.GetByIdAsync(EmployeeId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(employee);
 
-        var result = await _validator.ValidateAsync(new TakeOrder.Command(OrderId));
+        var result = await _validator.ValidateAsync(new TakeOrder.Command(OrderId, WorkContractTestData.TextIdEn));
 
         Assert.True(result.IsValid);
     }
@@ -283,7 +285,7 @@ public class TakeOrderOfferabilityGateTests
     {
         Arrange(ValidatorTestHelpers.BuildEmptyOrder(OrderId, OrderStatus.New, maxEmployees: 2), overlaps: true);
 
-        var result = await _validator.ValidateAsync(new TakeOrder.Command(OrderId));
+        var result = await _validator.ValidateAsync(new TakeOrder.Command(OrderId, WorkContractTestData.TextIdEn));
 
         AssertSingleError(result, BusinessErrorMessage.TimeConflict);
     }

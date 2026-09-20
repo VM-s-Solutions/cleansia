@@ -11,6 +11,7 @@ using Cleansia.Core.Domain.Users;
 using Cleansia.Infra.Database;
 using Cleansia.TestUtilities.MockDataFactories.EmployeePayroll;
 using Microsoft.EntityFrameworkCore;
+using Cleansia.Core.Domain.Legal;
 
 namespace Cleansia.HostTests.Infrastructure;
 
@@ -63,6 +64,19 @@ public static class DomainSeed
                     .AssignOperator(HostTestTenants.Default)
                     .SetAsDefaultMarket(true));
         }
+    }
+
+    /// <summary>
+    /// The contract-for-work document the host's boot seeded from the embedded files (the hosted
+    /// seeder runs before the host serves), with its texts — what a booked order is stamped with and
+    /// what a take echoes. The host must have booted before this is asked.
+    /// </summary>
+    public static async Task<(LegalDocument Document, string TextEnId)> WorkContractInForceAsync(CleansiaDbContext ctx)
+    {
+        var document = await ctx.LegalDocuments
+            .Include(d => d.Texts)
+            .SingleAsync(d => d.Type == LegalDocumentType.WorkContract && d.CountryId == null);
+        return (document, document.TextFor("en")!.Id);
     }
 
     public static User Customer(string email, string? tenantId = null)
@@ -197,9 +211,13 @@ public static class DomainSeed
     /// Defaults to three days out. Pass a PAST time to seed an order that can be disputed —
     /// CreateDispute refuses a clean that has not happened yet.
     /// </param>
+    /// <param name="workContract">
+    /// The document the booking is offered under, as <c>OrderFactory</c> stamps it; a take refuses an
+    /// order without one, so every take fixture passes the seeded document.
+    /// </param>
     public static Order NewOrder(
         string ownerUserId, string customerEmail, string? tenantId = null,
-        DateTime? cleaningDateTime = null)
+        DateTime? cleaningDateTime = null, LegalDocument? workContract = null)
     {
         var address = Address.Create("Order St 9", "Brno", "60200", CountryId);
         var order = Order.Create(
@@ -217,6 +235,11 @@ public static class DomainSeed
             userId: ownerUserId);
         var newTrack = OrderStatusTrack.Create(OrderStatus.New, order);
         order.AddOrderStatus(newTrack);
+        if (workContract is not null)
+        {
+            order.SetWorkContractDocument(workContract);
+        }
+
         if (tenantId is not null)
         {
             order.TenantId = tenantId;

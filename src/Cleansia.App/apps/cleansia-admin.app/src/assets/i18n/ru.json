@@ -939,7 +939,8 @@
         "employee": {
           "order": {
             "cover_requested": "Запрошена замена",
-            "dropped": "Отказался от работы"
+            "dropped": "Отказался от работы",
+            "contract_accepted": "Договор подряда принят"
           }
         }
       }
@@ -1317,7 +1318,8 @@
       },
       "type": {
         "terms_of_service": "Условия обслуживания",
-        "privacy_policy": "Политика конфиденциальности"
+        "privacy_policy": "Политика конфиденциальности",
+        "work_contract": "Договор подряда"
       },
       "columns": {
         "audience": "Аудитория",

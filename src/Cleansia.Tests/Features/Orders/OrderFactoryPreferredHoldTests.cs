@@ -221,6 +221,7 @@ public class OrderFactoryPreferredHoldTests
             _loyaltyService.Object,
             _userMembershipRepository.Object,
             resolver,
+            WorkContractResolvers.Resolver().Object,
             _notificationProducer.Object,
             Mock.Of<IAdminNotifier>(),
             NullLogger<OrderFactory>.Instance);

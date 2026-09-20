@@ -39,6 +39,7 @@ public class GdprDeletionService(
     IDeadLetterRepository deadLetterRepository,
     IOutboxMessageRepository outboxMessageRepository,
     ICustomerActionAuditRepository customerActionAuditRepository,
+    IWorkContractAcceptanceRepository workContractAcceptanceRepository,
     IRefreshTokenService refreshTokenService,
     IStripeClient stripeClient,
     IBlobContainerClientFactory blobClientFactory,
@@ -498,6 +499,11 @@ public class GdprDeletionService(
             // silent no-op and the bank account, SWIFT and holder name would survive the erasure while
             // the request returned success (ADR-0034 D1.1.2). Anonymize() only drops the gate scalar.
             await employeePayoutDetailsRepository.RemoveForEmployeeAsync(user.Employee.Id, ct);
+
+            // The contract records stay with their orders (the subject handle is a bare id the
+            // anonymised Employee row keeps); the IP, device label and device id on each are blanked
+            // in this same commit, the way the customer's own audit rows are below.
+            await workContractAcceptanceRepository.PseudonymiseForEmployeeAsync(user.Employee.Id, ct);
 
             user.Employee.Anonymize();
             user.Employee.Address?.Anonymize();

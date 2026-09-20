@@ -8,6 +8,7 @@ using Cleansia.Core.Domain.Users;
 using Microsoft.Extensions.Logging.Abstractions;
 using MockQueryable;
 using Moq;
+using Cleansia.TestUtilities;
 
 namespace Cleansia.Tests.Features.Orders;
 
@@ -30,6 +31,7 @@ public class TakeOrderAfterWalkBackTests
     private readonly Mock<INotificationProducer> _notificationProducer = new();
     private readonly Mock<IEmailService> _emailService = new();
 
+    private readonly Mock<IWorkContractAcceptor> _workContractAcceptor = new();
     [Fact]
     public async Task Taking_A_Walked_Back_Order_Confirms_It_Again_And_Sends_The_Confirmed_Email_Again()
     {
@@ -41,7 +43,7 @@ public class TakeOrderAfterWalkBackTests
         Assert.Equal(OrderStatus.New, order.CurrentStatus);
         Arrange(order);
 
-        var result = await CreateHandler().Handle(new TakeOrder.Command(OrderId), CancellationToken.None);
+        var result = await CreateHandler().Handle(new TakeOrder.Command(OrderId, WorkContractTestData.TextIdEn), CancellationToken.None);
 
         Assert.True(result.IsSuccess);
         Assert.Equal(OrderStatus.Confirmed, order.CurrentStatus);
@@ -78,5 +80,6 @@ public class TakeOrderAfterWalkBackTests
             _accessService.Object,
             _notificationProducer.Object,
             _emailService.Object,
+            _workContractAcceptor.Object,
             NullLogger<TakeOrder.Handler>.Instance);
 }

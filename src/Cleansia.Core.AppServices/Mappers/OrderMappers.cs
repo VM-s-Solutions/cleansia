@@ -241,7 +241,8 @@ public static class OrderMappers
         bool isCustomerCaller = false,
         bool? expressWaiverForfeitedOnCancel = null,
         PreferredOfferDetails? preferredOffer = null,
-        string? customerCompany = null)
+        string? customerCompany = null,
+        IEnumerable<WorkContractAcceptanceDto>? workContractAcceptances = null)
     {
         var (source, applied) = ResolveAppliedDiscount(order);
         return new OrderItem(
@@ -309,7 +310,8 @@ public static class OrderMappers
             ExpressWaiverForfeitedOnCancel: expressWaiverForfeitedOnCancel,
             PreferredOffer: preferredOffer,
             CustomerCompany: customerCompany,
-            CountryId: order.CustomerAddress?.CountryId
+            CountryId: order.CustomerAddress?.CountryId,
+            WorkContractAcceptances: workContractAcceptances ?? []
         );
     }
 

@@ -13,7 +13,8 @@ namespace Cleansia.Tests.Features.CompanyLifecycle;
 /// </summary>
 public sealed class CompanyArchiveRecordGuardTests
 {
-    private static readonly string[] ForbiddenNameParts =
+    /// <summary>Shared with <c>WorkContractFactsPiiGuardTests</c>: the facts frozen on an acceptance row are held to the same words.</summary>
+    internal static readonly string[] ForbiddenNameParts =
     [
         "Email", "Phone", "Passport", "Nationality", "EmergencyContact", "AccessInstructions", "SpecialInstructions",
         "Notes", "Description", "ResolutionNotes", "Secret", "Password", "Ip", "Device", "Token", "Message", "Evidence",
@@ -85,7 +86,7 @@ public sealed class CompanyArchiveRecordGuardTests
     /// Str<b>ip</b>e, Membersh<b>ip</b> — while every IP-address member in the domain is the word
     /// (<c>IpAddress</c>, <c>ClientIp</c>).
     /// </summary>
-    private static bool IsForbidden(string memberName) =>
+    internal static bool IsForbidden(string memberName) =>
         ForbiddenNameParts.Any(part => part == "Ip"
             ? Words(memberName).Any(word => string.Equals(word, part, StringComparison.OrdinalIgnoreCase))
             : memberName.Contains(part, StringComparison.OrdinalIgnoreCase));

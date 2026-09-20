@@ -5,7 +5,8 @@ namespace Cleansia.Core.Domain.Auditing;
 ///
 /// <para><b>Only members with a real writer belong here.</b> ADR-0045 D13 refuses data collected just
 /// in case, and an enum member nobody writes is a claim the platform records something it does not.
-/// The two below are the two commands that exist.</para>
+/// The three below have three writers: <c>RequestCover</c>, <c>DropOrder</c> and the work-contract
+/// acceptor behind <c>TakeOrder</c> and <c>AcceptWorkContract</c>.</para>
 ///
 /// <para>The two OTHER callers of <c>Order.UnassignEmployee</c> — <c>AdminReassignOrder</c> and
 /// <c>RejectEmployee</c> — are ADMIN actions and already produce an <c>AdminActionAudit</c> row. They
@@ -25,4 +26,10 @@ public enum EmployeeAuditAction
     /// to the board and the job runs with whoever is left (owner ruling 2026-09-06). → <c>DropOrder</c>
     /// </summary>
     OrderDropped = 2,
+
+    /// <summary>
+    /// The cleaner accepted the contract for work for a seat on the job. The acceptance row is the
+    /// evidence; this row is its index in the timeline. → <c>WorkContractAcceptor</c>
+    /// </summary>
+    ContractAccepted = 3,
 }

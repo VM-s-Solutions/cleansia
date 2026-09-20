@@ -8,6 +8,7 @@ using Cleansia.Core.Domain.Users;
 using MockQueryable;
 using MockQueryable.Moq;
 using Moq;
+using Cleansia.TestUtilities;
 
 namespace Cleansia.Tests.Features.Orders;
 
@@ -108,6 +109,7 @@ public class OrderSeatCapacityTests
         order.Id = OrderId;
         order.UpdateEstimatedTime(estimatedMinutes);
         order.CalculateRequiredEmployees(BookingPolicy.SpareSeatsPerOrder);
+        WorkContractTestData.BookedUnderContract(order);
 
         var initial = OrderStatusTrack.Create(OrderStatus.New, order);
         initial.Created("test", DateTimeOffset.UtcNow.AddMinutes(-10));
@@ -152,8 +154,9 @@ public class OrderSeatCapacityTests
             orderRepository.Object,
             employeeRepository.Object,
             accessService.Object,
-            ValidatorTestHelpers.CurrencyResolver());
+            ValidatorTestHelpers.CurrencyResolver(),
+            WorkContractTestData.LegalDocumentRepository().Object);
 
-        return await validator.ValidateAsync(new TakeOrder.Command(OrderId));
+        return await validator.ValidateAsync(new TakeOrder.Command(OrderId, WorkContractTestData.TextIdEn));
     }
 }

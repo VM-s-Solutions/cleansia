@@ -9,6 +9,7 @@ using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Users;
 using MockQueryable;
 using Moq;
+using Cleansia.TestUtilities;
 
 namespace Cleansia.Tests.Features.Orders;
 
@@ -40,7 +41,7 @@ public class CleanerCurrencyGateTests
     {
         var order = ValidatorTestHelpers.BuildEmptyOrder(OrderId, OrderStatus.New, maxEmployees: 2);
 
-        var result = await TakeValidator(paidIn: Eur).ValidateAsync(new TakeOrder.Command(OrderId));
+        var result = await TakeValidator(paidIn: Eur).ValidateAsync(new TakeOrder.Command(OrderId, WorkContractTestData.TextIdEn));
 
         Assert.False(result.IsValid);
         Assert.Equal(BusinessErrorMessage.OrderNotFound, Assert.Single(result.Errors).ErrorMessage);
@@ -50,7 +51,7 @@ public class CleanerCurrencyGateTests
     public async Task Taking_An_Order_In_The_Cleaners_Own_Currency_Passes_The_Gate()
     {
         var result = await TakeValidator(paidIn: ValidatorTestHelpers.CurrencyId)
-            .ValidateAsync(new TakeOrder.Command(OrderId));
+            .ValidateAsync(new TakeOrder.Command(OrderId, WorkContractTestData.TextIdEn));
 
         Assert.True(result.IsValid, string.Join("; ", result.Errors.Select(e => e.ErrorMessage)));
     }
@@ -120,7 +121,8 @@ public class CleanerCurrencyGateTests
             orderRepository.Object,
             employeeRepository.Object,
             AccessService().Object,
-            ValidatorTestHelpers.CurrencyResolver(paidIn));
+            ValidatorTestHelpers.CurrencyResolver(paidIn),
+            WorkContractTestData.LegalDocumentRepository().Object);
     }
 
     private static OrderAccessService BrowseGate(string paidIn)

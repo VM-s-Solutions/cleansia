@@ -109,9 +109,9 @@ function leafKeys(node: unknown, prefix = ''): string[] {
 describe('customer audit action catalogue', () => {
   const catalogue = [...CUSTOMER_AUDIT_ACTIONS, ...EMPLOYEE_AUDIT_ACTIONS];
 
-  it('reads a twenty-one-label customer catalogue and a two-label employee one off the lib', () => {
+  it('reads a twenty-one-label customer catalogue and a three-label employee one off the lib', () => {
     expect(new Set(CUSTOMER_AUDIT_ACTIONS).size).toBe(21);
-    expect(new Set(EMPLOYEE_AUDIT_ACTIONS).size).toBe(2);
+    expect(new Set(EMPLOYEE_AUDIT_ACTIONS).size).toBe(3);
   });
 
   it('covers every customer marker the backend carries, so no recorded act reaches the screen unlabelled', () => {

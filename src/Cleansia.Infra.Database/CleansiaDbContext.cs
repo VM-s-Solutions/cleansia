@@ -3,6 +3,7 @@ using Cleansia.Core.Domain.Auditing;
 using Cleansia.Core.Domain.Common;
 using Cleansia.Core.Domain.Company;
 using Cleansia.Core.Domain.Configuration;
+using Cleansia.Core.Domain.Contracts;
 using Cleansia.Core.Domain.DeadLettering;
 using Cleansia.Core.Domain.Devices;
 using Cleansia.Core.Domain.Credit;
@@ -430,4 +431,6 @@ public class CleansiaDbContext : DbContext, IUnitOfWork
 
     /// <summary>The customer-side table (ADR-0062), written by the same pipeline through the customer arm of the gate.</summary>
     public virtual DbSet<CustomerActionAudit> CustomerActionAudits { get; set; }
+
+    public virtual DbSet<WorkContractAcceptance> WorkContractAcceptances { get; set; }
 }

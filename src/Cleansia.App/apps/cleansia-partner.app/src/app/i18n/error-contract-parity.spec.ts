@@ -486,6 +486,13 @@ const PARTNER_SURFACE_ERROR_KEYS: readonly string[] = [
   'order.take.already_completed',
   'order.time_conflict',
   'order.weekly_limit_reached',
+  // The contract for work (ADR-0068): the take and the standalone accept refuse a missing or a
+  // foreign text, Start and Complete refuse a seat with no acceptance, and the preview answers the
+  // legal key for an order booked under no document.
+  'contract.not_accepted',
+  'contract.text_mismatch',
+  'contract.acceptance_required',
+  'legal.document_not_found',
   // Employee profile + documents
   'employee.job_radius_out_of_range',
   // A cleaner contracts as a natural person; UpdateEmployee refuses EntityType = LegalEntity. The

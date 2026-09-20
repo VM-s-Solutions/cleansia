@@ -31,6 +31,7 @@ export const CUSTOMER_AUDIT_ACTIONS = [
 export const EMPLOYEE_AUDIT_ACTIONS = [
   'employee.order.cover_requested',
   'employee.order.dropped',
+  'employee.order.contract_accepted',
 ] as const;
 
 const ACTION_LABEL_KEY_PREFIX = 'pages.audit_log.actions.';

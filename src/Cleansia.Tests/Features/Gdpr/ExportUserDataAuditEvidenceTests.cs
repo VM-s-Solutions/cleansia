@@ -75,7 +75,7 @@ public sealed class ExportUserDataAuditEvidenceTests
             [
                 new GdprExportCustomerActionDto("customer.order.cancel", DateTimeOffset.UtcNow, "Order", "order-2", true, null, "{\"feeRate\":0.5}", Ip, "iPhone 15"),
             ],
-            new GdprExportMetadataDto(DateTimeOffset.UtcNow, Email, "JSON"));
+            new GdprExportMetadataDto(DateTimeOffset.UtcNow, Email, "JSON"), []);
 
     [Fact]
     public void The_Self_Export_Carries_A_Frozen_Customer_Marker_Keyed_On_The_User()
@@ -117,7 +117,8 @@ public sealed class ExportUserDataAuditEvidenceTests
         Assert.Equal(1, payload.GetProperty("disputeCount").GetInt32());
         Assert.Equal(3, payload.GetProperty("consentCount").GetInt32());
         Assert.Equal(1, payload.GetProperty("customerActionCount").GetInt32());
-        Assert.Equal(4, payload.EnumerateObject().Count());
+        Assert.Equal(0, payload.GetProperty("workContractAcceptanceCount").GetInt32());
+        Assert.Equal(5, payload.EnumerateObject().Count());
 
         Assert.DoesNotContain(Email, snapshot.AfterJson, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain(FirstName, snapshot.AfterJson, StringComparison.OrdinalIgnoreCase);

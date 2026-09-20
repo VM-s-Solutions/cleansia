@@ -75,6 +75,7 @@ public sealed class OrderFactoryTellsAdministratorsTests
         _loyaltyService.Object,
         _userMembershipRepository.Object,
         NoPreferredCleanerHold.Resolver,
+        WorkContractResolvers.Resolver().Object,
         new Mock<INotificationProducer>().Object,
         _adminNotifier.Object,
         new CapturingLogger(_log));

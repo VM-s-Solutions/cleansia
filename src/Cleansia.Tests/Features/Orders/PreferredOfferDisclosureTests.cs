@@ -11,6 +11,7 @@ using Cleansia.Core.Domain.Users;
 using Cleansia.Tests.Common;
 using MockQueryable;
 using Moq;
+using Cleansia.TestUtilities;
 
 namespace Cleansia.Tests.Features.Orders;
 
@@ -405,7 +406,8 @@ public class PreferredOfferDisclosureTests
             Mock.Of<IUserRepository>(),
             Mock.Of<ITenantRepository>(),
             _expressWaiverConsumer.Object,
-            _userMembershipRepository.Object);
+            _userMembershipRepository.Object,
+            WorkContractTestData.AcceptanceRepository().Object);
 
     private static Employee NewCleaner(string employeeId)
     {

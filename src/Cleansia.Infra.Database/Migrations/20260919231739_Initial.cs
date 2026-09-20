@@ -1521,6 +1521,7 @@ namespace Cleansia.Infra.Database.Migrations
                     CustomerApartment = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: true),
                     AccessMode = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: true),
                     CurrencyId = table.Column<string>(type: "character varying(26)", nullable: false),
+                    WorkContractDocumentId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: true),
                     UserId = table.Column<string>(type: "character varying(26)", nullable: true),
                     ReceiptId = table.Column<string>(type: "text", nullable: true),
                     CancelledAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
@@ -1565,6 +1566,12 @@ namespace Cleansia.Infra.Database.Migrations
                         name: "FK_Orders_Currencies_CurrencyId",
                         column: x => x.CurrencyId,
                         principalTable: "Currencies",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_Orders_LegalDocuments_WorkContractDocumentId",
+                        column: x => x.WorkContractDocumentId,
+                        principalTable: "LegalDocuments",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
@@ -2813,6 +2820,54 @@ namespace Cleansia.Infra.Database.Migrations
                         name: "FK_PromoCodeRedemptions_Users_UserId",
                         column: x => x.UserId,
                         principalTable: "Users",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "WorkContractAcceptances",
+                columns: table => new
+                {
+                    Id = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
+                    OrderId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
+                    OrderEmployeeId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
+                    EmployeeId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
+                    LegalDocumentTextId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
+                    DocumentVersion = table.Column<string>(type: "character varying(32)", maxLength: 32, nullable: false),
+                    AcceptedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
+                    ClientAudience = table.Column<string>(type: "character varying(40)", maxLength: 40, nullable: false),
+                    IpAddress = table.Column<string>(type: "character varying(45)", maxLength: 45, nullable: true),
+                    DeviceLabel = table.Column<string>(type: "character varying(120)", maxLength: 120, nullable: true),
+                    DeviceId = table.Column<string>(type: "character varying(64)", maxLength: 64, nullable: true),
+                    FactsJson = table.Column<string>(type: "jsonb", nullable: false),
+                    IsActive = table.Column<bool>(type: "boolean", nullable: false),
+                    CreatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
+                    CreatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
+                    UpdatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
+                    UpdatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    DeactivatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
+                    DeactivatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_WorkContractAcceptances", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_WorkContractAcceptances_LegalDocumentTexts_TextId",
+                        column: x => x.LegalDocumentTextId,
+                        principalTable: "LegalDocumentTexts",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_WorkContractAcceptances_Orders_OrderId",
+                        column: x => x.OrderId,
+                        principalTable: "Orders",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_WorkContractAcceptances_Tenants_TenantId",
+                        column: x => x.TenantId,
+                        principalTable: "Tenants",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
                 });
@@ -4239,6 +4294,11 @@ namespace Cleansia.Infra.Database.Migrations
                 column: "UserId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_Orders_WorkContractDocumentId",
+                table: "Orders",
+                column: "WorkContractDocumentId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_OrderServices_OrderId",
                 table: "OrderServices",
                 column: "OrderId");
@@ -4749,6 +4809,38 @@ namespace Cleansia.Infra.Database.Migrations
                 table: "UserStripeCustomers",
                 columns: new[] { "UserId", "CurrencyId" },
                 unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_WorkContractAcceptances_EmployeeId_AcceptedOn",
+                table: "WorkContractAcceptances",
+                columns: new[] { "EmployeeId", "AcceptedOn" },
+                descending: new[] { false, true });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_WorkContractAcceptances_LegalDocumentTextId",
+                table: "WorkContractAcceptances",
+                column: "LegalDocumentTextId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_WorkContractAcceptances_OrderEmployeeId",
+                table: "WorkContractAcceptances",
+                column: "OrderEmployeeId",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_WorkContractAcceptances_OrderId_EmployeeId",
+                table: "WorkContractAcceptances",
+                columns: new[] { "OrderId", "EmployeeId" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_WorkContractAcceptances_TenantId",
+                table: "WorkContractAcceptances",
+                column: "TenantId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_WorkContractAcceptances_TenantId_AcceptedOn",
+                table: "WorkContractAcceptances",
+                columns: new[] { "TenantId", "AcceptedOn" });
         }
 
         /// <inheritdoc />
@@ -4825,9 +4917,6 @@ namespace Cleansia.Infra.Database.Migrations
 
             migrationBuilder.DropTable(
                 name: "GdprRequests");
-
-            migrationBuilder.DropTable(
-                name: "LegalDocumentTexts");
 
             migrationBuilder.DropTable(
                 name: "LiveActivityTokens");
@@ -4935,6 +5024,9 @@ namespace Cleansia.Infra.Database.Migrations
                 name: "UserStripeCustomers");
 
             migrationBuilder.DropTable(
+                name: "WorkContractAcceptances");
+
+            migrationBuilder.DropTable(
                 name: "Carts");
 
             migrationBuilder.DropTable(
@@ -4974,7 +5066,7 @@ namespace Cleansia.Infra.Database.Migrations
                 name: "Services");
 
             migrationBuilder.DropTable(
-                name: "LegalDocuments");
+                name: "LegalDocumentTexts");
 
             migrationBuilder.DropTable(
                 name: "MembershipPlans");
@@ -4996,6 +5088,9 @@ namespace Cleansia.Infra.Database.Migrations
 
             migrationBuilder.DropTable(
                 name: "Addresses");
+
+            migrationBuilder.DropTable(
+                name: "LegalDocuments");
 
             migrationBuilder.DropTable(
                 name: "PromoCodes");

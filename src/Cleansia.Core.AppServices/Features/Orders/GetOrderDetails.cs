@@ -42,7 +42,8 @@ public class GetOrderDetails
         IUserRepository userRepository,
         ITenantRepository tenantRepository,
         IExpressWaiverConsumer expressWaiverConsumer,
-        IUserMembershipRepository userMembershipRepository) : IQueryHandler<Query, OrderItem>
+        IUserMembershipRepository userMembershipRepository,
+        IWorkContractAcceptanceRepository workContractAcceptanceRepository) : IQueryHandler<Query, OrderItem>
     {
         public async Task<BusinessResult<OrderItem>> Handle(Query query, CancellationToken cancellationToken)
         {
@@ -128,6 +129,10 @@ public class GetOrderDetails
 
             var isAdminCaller = role == UserProfile.Administrator.ToString();
 
+            // One per CURRENT seat with a row; a dropped seat's row is history and is read by its own id.
+            var acceptances = await workContractAcceptanceRepository.GetForSeatsAsync(
+                order.AssignedEmployees.Select(ae => ae.Id).ToList(), cancellationToken);
+
             var detail = order.MapToDetail(
                 estimatedCleanerPay,
                 isAssignedToCurrentUser,
@@ -139,7 +144,8 @@ public class GetOrderDetails
                     : null,
                 isAdminCaller
                     ? await ResolveCustomerCompanyAsync(order, cancellationToken)
-                    : null);
+                    : null,
+                acceptances.Select(a => a.MapToDto()).ToList());
 
             if (!isEntitledToCustomerData)
             {

@@ -90,6 +90,7 @@ public class OrderPayCoverageGateTests
         _loyaltyService.Object,
         _userMembershipRepository.Object,
         NoPreferredCleanerHold.Resolver,
+        WorkContractResolvers.Resolver().Object,
         _notificationProducer.Object,
         Mock.Of<IAdminNotifier>(),
         NullLogger<OrderFactory>.Instance);

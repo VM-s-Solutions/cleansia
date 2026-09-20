@@ -120,15 +120,17 @@ public sealed class Ac9CrossTenantRejectionTests(HostTestPostgresFixture db) : A
     [Fact]
     public async Task Cross_tenant_take_order_returns_not_found_and_leaves_the_order_unassigned()
     {
-        string employeeId = "", orderId = "";
+        string employeeId = "", orderId = "", textId = "";
         const string empEmail = "xt-cleaner@hosttests.local";
         await SeedAsync(async ctx =>
         {
             await DomainSeed.EnsureReferenceDataAsync(ctx);
+            var (workContract, textEnId) = await DomainSeed.WorkContractInForceAsync(ctx);
+            textId = textEnId;
 
             var custA = DomainSeed.Customer("xt-ordercust@hosttests.local", tenantId: TenantA);
             ctx.Users.Add(custA);
-            var order = DomainSeed.NewOrder(custA.Id, "xt-ordercust@hosttests.local", tenantId: TenantA);
+            var order = DomainSeed.NewOrder(custA.Id, "xt-ordercust@hosttests.local", tenantId: TenantA, workContract: workContract);
             ctx.Orders.Add(order);
 
             // Approved cleaner in tenant B.
@@ -146,7 +148,7 @@ public sealed class Ac9CrossTenantRejectionTests(HostTestPostgresFixture db) : A
             UserProfile.Employee, employeeId: employeeId, tenantId: TenantB);
 
         var resp = await PartnerClient(token).PostAsync("/api/Order/TakeOrder",
-            JsonContent.Create(new { OrderId = orderId }));
+            JsonContent.Create(new { OrderId = orderId, AcceptedWorkContractTextId = textId }));
 
         Assert.NotEqual(System.Net.HttpStatusCode.OK, resp.StatusCode);
 

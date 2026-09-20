@@ -624,6 +624,14 @@ public static class BusinessErrorMessage
     /// </summary>
     public const string TermsNotAccepted = "consent.terms_not_accepted";
 
+    // Contract for work (ADR-0068)
+    /// <summary>The client sent no text id with the take or the standalone accept: a broken or stale client, shown as an error.</summary>
+    public const string WorkContractNotAccepted = "contract.not_accepted";
+    /// <summary>The echoed text is not a text of the order's own contract document — a cached id from another order, or an order with no document.</summary>
+    public const string WorkContractTextMismatch = "contract.text_mismatch";
+    /// <summary>The caller's current seat has no acceptance (an admin placed them): a product state the app answers by opening the contract sheet.</summary>
+    public const string WorkContractAcceptanceRequired = "contract.acceptance_required";
+
     // Promo codes — kept for client mapping consistency. Not used directly
     // inside the handler (which returns the PromoCodeError enum stringified).
     public const string PromoNotFound = "promo.not_found";

@@ -11,6 +11,7 @@ using Cleansia.Core.Domain.Services;
 using Cleansia.TestUtilities.MockDataFactories.Orders;
 using Cleansia.Tests.Common;
 using Moq;
+using Cleansia.TestUtilities;
 
 namespace Cleansia.Tests.Features.Orders;
 
@@ -46,7 +47,8 @@ public class GetOrderDetailsPartnerTranslationsTests
             Mock.Of<IUserRepository>(),
             Mock.Of<ITenantRepository>(),
             _expressWaiverConsumer.Object,
-            Mock.Of<IUserMembershipRepository>());
+            Mock.Of<IUserMembershipRepository>(),
+            WorkContractTestData.AcceptanceRepository().Object);
 
     private void ArrangeEmployeeCaller(Order order)
     {

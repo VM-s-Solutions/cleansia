@@ -166,7 +166,8 @@ public sealed class ColdPathCurrentStatusQueryTests : IDisposable
         var validator = new StartOrder.Validator(
             new OrderRepository(ctx),
             employeeRepository.Object,
-            accessService.Object);
+            accessService.Object,
+            WorkContractTestData.AcceptanceRepository().Object);
         return (validator, employeeId);
     }
 
@@ -287,7 +288,9 @@ public sealed class ColdPathCurrentStatusQueryTests : IDisposable
             Mock.Of<IEmployeeInvoiceRepository>(),
             Mock.Of<IEmployeePayoutDetailsRepository>(),
             consentRepository.Object,
-            new CustomerActionAuditRepository(ctx));
+            new CustomerActionAuditRepository(ctx),
+            new WorkContractAcceptanceRepository(ctx),
+            new LegalDocumentRepository(ctx));
 
         var export = await service.BuildAsync(userId, exportedBy: "admin-cold", CancellationToken.None);
 

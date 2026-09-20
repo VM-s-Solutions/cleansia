@@ -296,6 +296,7 @@ public sealed class MaterializeRecurringBookingsTenantStampingTests : IDisposabl
             // membership, so the owner is simply entitled and the real subject runs.
             EntitledMemberships(),
             holdResolver.Object,
+            WorkContractResolvers.Resolver().Object,
             new Mock<INotificationProducer>().Object,
             Mock.Of<IAdminNotifier>(),
             NullLogger<OrderFactory>.Instance);

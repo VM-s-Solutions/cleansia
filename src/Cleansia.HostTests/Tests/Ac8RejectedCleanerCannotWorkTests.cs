@@ -20,16 +20,18 @@ namespace Cleansia.HostTests.Tests;
 /// </summary>
 public sealed class Ac8RejectedCleanerCannotWorkTests(HostTestPostgresFixture db) : AuthzHostTestBase(db)
 {
-    private sealed record Arranged(string EmployeeId, string EmployeeEmail, string OrderId);
+    private sealed record Arranged(string EmployeeId, string EmployeeEmail, string OrderId, string TextId);
 
     private async Task<Arranged> ArrangeAsync(bool approved)
     {
-        string empId = "", orderId = "";
+        string empId = "", orderId = "", textId = "";
         const string empEmail = "cleaner@hosttests.local";
 
         await SeedAsync(async ctx =>
         {
             await DomainSeed.EnsureReferenceDataAsync(ctx);
+            var (workContract, textEnId) = await DomainSeed.WorkContractInForceAsync(ctx);
+            textId = textEnId;
 
             var customerUser = DomainSeed.Customer("ordercust@hosttests.local");
             var empUser = DomainSeed.EmployeeUser(empEmail);
@@ -41,14 +43,14 @@ public sealed class Ac8RejectedCleanerCannotWorkTests(HostTestPostgresFixture db
             ctx.Employees.Add(employee);
             ctx.EmployeeDocuments.Add(DomainSeed.ActiveDocument(employee.Id));
 
-            var order = DomainSeed.NewOrder(customerUser.Id, "ordercust@hosttests.local");
+            var order = DomainSeed.NewOrder(customerUser.Id, "ordercust@hosttests.local", workContract: workContract);
             ctx.Orders.Add(order);
 
             empId = employee.Id;
             orderId = order.Id;
         });
 
-        return new Arranged(empId, empEmail, orderId);
+        return new Arranged(empId, empEmail, orderId, textId);
     }
 
     [Theory]
@@ -60,7 +62,7 @@ public sealed class Ac8RejectedCleanerCannotWorkTests(HostTestPostgresFixture db
         var a = await ArrangeAsync(approved: false);
         var token = TestJwtFactory.Mint(PartnerAudience, "u-rej", a.EmployeeEmail, UserProfile.Employee, employeeId: a.EmployeeId);
 
-        var resp = await PartnerClient(token).PostAsync(endpoint, JsonContent.Create(new { OrderId = a.OrderId }));
+        var resp = await PartnerClient(token).PostAsync(endpoint, JsonContent.Create(new { OrderId = a.OrderId, AcceptedWorkContractTextId = a.TextId }));
 
         Assert.NotEqual(System.Net.HttpStatusCode.OK, resp.StatusCode);
 
@@ -76,7 +78,7 @@ public sealed class Ac8RejectedCleanerCannotWorkTests(HostTestPostgresFixture db
         var a = await ArrangeAsync(approved: true);
         var token = TestJwtFactory.Mint(PartnerAudience, "u-app", a.EmployeeEmail, UserProfile.Employee, employeeId: a.EmployeeId);
 
-        var resp = await PartnerClient(token).PostAsync("/api/Order/TakeOrder", JsonContent.Create(new { OrderId = a.OrderId }));
+        var resp = await PartnerClient(token).PostAsync("/api/Order/TakeOrder", JsonContent.Create(new { OrderId = a.OrderId, AcceptedWorkContractTextId = a.TextId }));
 
         HttpAssert.IsOk(resp);
 

@@ -1028,6 +1028,14 @@
     }
   },
   "api": {
+    "contract": {
+      "not_accepted": "Pred prevzatím zákazky si prosím prečítajte a prijmite zmluvu o dielo.",
+      "text_mismatch": "Zmluva bola aktualizovaná — prečítajte si ju prosím znova.",
+      "acceptance_required": "Skôr než budete pokračovať, prijmite zmluvu o dielo k tejto zákazke."
+    },
+    "legal": {
+      "document_not_found": "Túto zákazku teraz nie je možné prevziať."
+    },
     "auth": {
       "google_type_error": "Tento účet používa prihlásenie cez Google. Použite tlačidlo Google.",
       "apple_type_error": "Tento účet používa prihlásenie cez Apple. Použite tlačidlo Apple.",

@@ -6,6 +6,7 @@ using Cleansia.Core.Domain.Repositories;
 using MockQueryable;
 using MockQueryable.Moq;
 using Moq;
+using Cleansia.TestUtilities;
 
 namespace Cleansia.Tests.Features.Orders;
 
@@ -29,7 +30,8 @@ public class StartOrderApprovalGateTests
         _validator = new StartOrder.Validator(
             _orderRepository.Object,
             _employeeRepository.Object,
-            _accessService.Object);
+            _accessService.Object,
+            WorkContractTestData.AcceptanceRepository().Object);
     }
 
     [Theory]

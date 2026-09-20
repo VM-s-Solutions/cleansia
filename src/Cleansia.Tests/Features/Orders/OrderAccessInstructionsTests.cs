@@ -56,6 +56,7 @@ public class OrderAccessInstructionsTests
             _loyaltyService.Object,
             _userMembershipRepository.Object,
             NoPreferredCleanerHold.Resolver,
+            WorkContractResolvers.Resolver().Object,
             Mock.Of<INotificationProducer>(),
             Mock.Of<IAdminNotifier>(),
             NullLogger<OrderFactory>.Instance);

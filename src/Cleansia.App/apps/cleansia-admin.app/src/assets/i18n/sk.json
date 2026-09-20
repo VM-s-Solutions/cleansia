@@ -939,7 +939,8 @@
         "employee": {
           "order": {
             "cover_requested": "Vyžiadaný záskok",
-            "dropped": "Zákazka odhodená"
+            "dropped": "Zákazka odhodená",
+            "contract_accepted": "Zmluva o dielo prijatá"
           }
         }
       }
@@ -1317,7 +1318,8 @@
       },
       "type": {
         "terms_of_service": "Obchodné podmienky",
-        "privacy_policy": "Zásady ochrany osobných údajov"
+        "privacy_policy": "Zásady ochrany osobných údajov",
+        "work_contract": "Zmluva o dielo"
       },
       "columns": {
         "audience": "Publikum",

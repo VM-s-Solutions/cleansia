@@ -47,6 +47,11 @@ final class FakePartnerOrderClient: PartnerOrderClient {
     /// Same observation hook for `getById` (the detail VM's refetch).
     var onGetById: (() -> Void)?
 
+    /// When set, `getById` suspends until `resumeGetById()` so a test can see what the detail runs
+    /// alongside its fetch rather than after it.
+    var suspendGetById = false
+    private var getByIdGate: CheckedContinuation<Void, Never>?
+
     var pendingOffersResult: ApiResult<[PendingOfferItem]> = .success([])
     var declineResult: ApiResult<Void> = .success(())
     private(set) var pendingOffersCallCount = 0
@@ -85,6 +90,9 @@ final class FakePartnerOrderClient: PartnerOrderClient {
     func getById(orderId _: String) async -> ApiResult<OrderDetail> {
         onGetById?()
         getByIdCallCount += 1
+        if suspendGetById {
+            await withCheckedContinuation { getByIdGate = $0 }
+        }
         switch byIdResult {
         case let .success(item):
             return await apiResult { try OrderDetail(item) }
@@ -96,6 +104,11 @@ final class FakePartnerOrderClient: PartnerOrderClient {
     func resumeCommand() {
         commandGate?.resume()
         commandGate = nil
+    }
+
+    func resumeGetById() {
+        getByIdGate?.resume()
+        getByIdGate = nil
     }
 
     private func record(_ name: String, _ orderId: String) async -> ApiResult<Void> {

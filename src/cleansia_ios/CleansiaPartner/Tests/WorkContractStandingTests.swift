@@ -101,19 +101,32 @@ final class WorkContractStandingTests: XCTestCase {
         XCTAssertEqual(try OrderDetail(item).seats, [OrderSeat(id: "seat-1", employeeId: "emp-1")])
     }
 
-    func testAnAcceptanceWithoutItsIdSeatOrInstantIsDropped() throws {
+    /// The version is refused blank on the sheet's mapper; here the row is dropped for the same reason,
+    /// so the line never reads "version " over nothing.
+    func testAnAcceptanceWithoutItsIdSeatInstantOrVersionIsDropped() throws {
         var item = OrderItem.wireComplete()
         item.workContractAcceptances = [
-            WorkContractAcceptanceDto(id: "acc-1", orderEmployeeId: "seat-1", acceptedOn: acceptedOn),
-            WorkContractAcceptanceDto(id: nil, orderEmployeeId: "seat-2", acceptedOn: acceptedOn),
-            WorkContractAcceptanceDto(id: "acc-3", orderEmployeeId: nil, acceptedOn: acceptedOn),
-            WorkContractAcceptanceDto(id: "acc-4", orderEmployeeId: "seat-4", acceptedOn: nil)
+            acceptance(id: "acc-1", seatId: "seat-1", acceptedOn: acceptedOn, version: "2026-09-20"),
+            acceptance(id: nil, seatId: "seat-2", acceptedOn: acceptedOn, version: "2026-09-20"),
+            acceptance(id: "acc-3", seatId: nil, acceptedOn: acceptedOn, version: "2026-09-20"),
+            acceptance(id: "acc-4", seatId: "seat-4", acceptedOn: nil, version: "2026-09-20"),
+            acceptance(id: "acc-5", seatId: "seat-5", acceptedOn: acceptedOn, version: nil),
+            acceptance(id: "acc-6", seatId: "seat-6", acceptedOn: acceptedOn, version: " ")
         ]
 
         let rows = try OrderDetail(item).workContractAcceptances
 
         XCTAssertEqual(rows.map(\.id), ["acc-1"])
-        XCTAssertEqual(rows.first?.documentVersion, "")
+        XCTAssertEqual(rows.first?.documentVersion, "2026-09-20")
+    }
+
+    private func acceptance(
+        id: String?,
+        seatId: String?,
+        acceptedOn: Date?,
+        version: String?
+    ) -> WorkContractAcceptanceDto {
+        WorkContractAcceptanceDto(id: id, orderEmployeeId: seatId, acceptedOn: acceptedOn, documentVersion: version)
     }
 
     func testAbsentListsMapToEmptyOnes() throws {

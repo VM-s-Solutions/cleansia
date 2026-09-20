@@ -70,7 +70,8 @@ final class OrderDetailViewModel: ViewModel {
     /// The contract sheet the screen is showing, if any: a take, a standalone acceptance or a read.
     @Published private(set) var contractRequest: WorkContractRequest?
     /// The signed-in cleaner's own id, needed to pair their acceptance with their crew entry. Resolved
-    /// once per screen; nil until it is, when the standing reads as none.
+    /// alongside the fetch and kept; a resolve that failed is asked again on the next load. Nil until
+    /// it is, when the standing reads as none.
     @Published private(set) var myEmployeeId: String?
 
     private let orderId: String
@@ -125,9 +126,10 @@ final class OrderDetailViewModel: ViewModel {
         // Kick its off-main decode BEFORE the fetch so it lands while the request is in flight —
         // prewarming after the order loads shares a main-thread turn with the puck's first render.
         AnimatedMascotView.prewarm(.cleaningInProgress)
+        async let identity: Void = resolveMyEmployeeId()
         await ensureOffersFresh()
         await fetch()
-        await resolveMyEmployeeId()
+        await identity
     }
 
     /// Refusing the reservation from the job it belongs to; the same one write the offers list makes.

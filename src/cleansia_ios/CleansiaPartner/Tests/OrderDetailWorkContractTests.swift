@@ -177,6 +177,55 @@ final class OrderDetailWorkContractTests: XCTestCase {
         XCTAssertEqual(vm.contractStanding, .pending)
     }
 
+    /// The id is asked for alongside the fetch, not after it, so the banner or the line is on screen
+    /// with the order rather than one round-trip later.
+    func testMyIdIsResolvedWhileTheFetchIsStillHeld() async {
+        client.byIdResult = .success(loaded(status: 2))
+        client.suspendGetById = true
+        let vm = makeVM()
+
+        let load = Task { await vm.load() }
+        while client.getByIdCallCount == 0 {
+            await Task.yield()
+        }
+        for _ in 0 ..< 10 where client.employeeIdCallCount == 0 {
+            await Task.yield()
+        }
+
+        XCTAssertEqual(client.employeeIdCallCount, 1)
+        XCTAssertNil(vm.state.loadedValue)
+        client.resumeGetById()
+        await load.value
+        XCTAssertEqual(vm.contractStanding, .pending)
+    }
+
+    /// A resolve the network dropped leaves no standing rather than a wrong one, and the next load —
+    /// a saved note or photo, a retry from the error view — asks again.
+    func testAFailedResolveIsAskedAgainOnTheNextLoad() async {
+        client.byIdResult = .success(loaded(status: 2))
+        client.employeeIdResult = .failure(ApiError(httpStatus: 500))
+        let vm = makeVM()
+        await vm.load()
+        XCTAssertEqual(vm.contractStanding, .none)
+
+        client.employeeIdResult = .success("emp-self")
+        await vm.load()
+
+        XCTAssertEqual(client.employeeIdCallCount, 2)
+        XCTAssertEqual(vm.contractStanding, .pending)
+    }
+
+    func testAResolvedIdIsKeptAcrossLoads() async {
+        client.byIdResult = .success(loaded(status: 2))
+        let vm = makeVM()
+        await vm.load()
+
+        await vm.load()
+
+        XCTAssertEqual(client.employeeIdCallCount, 1)
+        XCTAssertEqual(vm.contractStanding, .pending)
+    }
+
     func testASeatWithARowShowsTheLine() async {
         client.byIdResult = .success(loaded(status: 2, acceptanceId: "acc-1"))
         let vm = makeVM()

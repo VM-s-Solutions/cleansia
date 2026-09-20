@@ -95,8 +95,10 @@ struct OrderSeat: Equatable {
 /// A current seat's accepted contract for work, with no name — the crew entry it pairs with by seat id
 /// is where the (already masked) identity lives.
 ///
-/// **Drop the row.** An acceptance with no id cannot be read and one with no seat id pairs with
-/// nothing; either is the pending state to this screen, never a claim.
+/// **Drop the row.** An acceptance with no id cannot be read, one with no seat id pairs with nothing,
+/// and one with no instant or no version has no line to write — the version is a NOT NULL column, so
+/// a blank is a broken wire, and the sheet's mapper refuses the same member. Any of them is the pending
+/// state to this screen, never a claim.
 struct WorkContractAcceptance: Equatable {
     let id: String
     let orderEmployeeId: String
@@ -113,12 +115,13 @@ struct WorkContractAcceptance: Equatable {
     init?(_ dto: WorkContractAcceptanceDto) {
         guard let id = dto.id, !id.isBlank,
               let orderEmployeeId = dto.orderEmployeeId, !orderEmployeeId.isBlank,
-              let acceptedOn = dto.acceptedOn
+              let acceptedOn = dto.acceptedOn,
+              let documentVersion = dto.documentVersion, !documentVersion.isBlank
         else { return nil }
         self.id = id
         self.orderEmployeeId = orderEmployeeId
         self.acceptedOn = acceptedOn
-        documentVersion = dto.documentVersion ?? ""
+        self.documentVersion = documentVersion
     }
 }
 

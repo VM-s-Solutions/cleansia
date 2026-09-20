@@ -27,6 +27,11 @@ import cz.cleansia.customer.api.model.ServiceDetails as GenServiceDetails
 import cz.cleansia.customer.api.model.ServiceListItem as GenServiceListItem
 import cz.cleansia.customer.api.model.SubmitOrderReviewCommand as GenSubmitOrderReviewCommand
 import cz.cleansia.customer.api.model.SubmitOrderReviewReviewLineScore as GenReviewLineScore
+import cz.cleansia.customer.api.model.WorkContractAcceptanceDetails as GenWorkContractAcceptanceDetails
+import cz.cleansia.customer.api.model.WorkContractAcceptanceDto as GenWorkContractAcceptanceDto
+import cz.cleansia.customer.api.model.WorkContractDto as GenWorkContractDto
+import cz.cleansia.customer.api.model.WorkContractFacts as GenWorkContractFacts
+import cz.cleansia.customer.api.model.WorkContractFactsLine as GenWorkContractFactsLine
 import cz.cleansia.core.network.mapWire
 import cz.cleansia.core.network.required
 import cz.cleansia.customer.core.user.toAppDto
@@ -108,6 +113,11 @@ class OrderApi(
     suspend fun getMyServingCleaners(): Response<List<ServingCleanerDto>> {
         val raw = orderApi.orderMyServingCleaners()
         return raw.mapWire { list -> list.orEmpty().mapNotNull { it.toAppDtoOrDrop() } }
+    }
+
+    suspend fun getWorkContract(acceptanceId: String, language: String): Response<WorkContractDto> {
+        val raw = orderApi.orderGetWorkContract(acceptanceId = acceptanceId, language = language)
+        return raw.mapWire { it.toAppDto() }
     }
 }
 
@@ -234,8 +244,61 @@ private fun GenOrderItem?.toAppDto(): OrderDetailDto {
         orderNotes = order.orderNotes?.map { it.toAppDto() },
         orderIssues = order.orderIssues?.map { it.toAppDto() },
         review = order.review?.toAppDto(),
+        workContractAcceptances = order.workContractAcceptances?.map { it.toAppDto() },
     )
 }
+
+private fun GenWorkContractAcceptanceDto.toAppDto(): WorkContractAcceptanceDto = WorkContractAcceptanceDto(
+    id = id,
+    orderEmployeeId = orderEmployeeId,
+    employeeId = employeeId,
+    acceptedOn = acceptedOn?.toString(),
+    documentVersion = documentVersion,
+    language = language,
+)
+
+/**
+ * Refuses rather than defaults: the HTML is what was accepted and the price, window and scope are
+ * what the acceptance binds, so a screen that showed "0 Kč" over an empty text would present a
+ * contract of nothing as the one the cleaner agreed to. The labels (number, currency code,
+ * location) stay nullable and render as absent.
+ */
+private fun GenWorkContractDto?.toAppDto(): WorkContractDto {
+    val contract = required("WorkContractDto")
+    return WorkContractDto(
+        legalDocumentTextId = contract.legalDocumentTextId.required("legalDocumentTextId"),
+        version = contract.version.required("version"),
+        language = contract.language,
+        title = contract.title,
+        contentHtml = contract.contentHtml.required("contentHtml"),
+        facts = contract.facts.required("facts").toAppDto(),
+        acceptance = contract.acceptance?.toAppDto(),
+    )
+}
+
+private fun GenWorkContractFacts.toAppDto(): WorkContractFactsDto = WorkContractFactsDto(
+    orderNumber = orderNumber,
+    cleaningDateTimeUtc = cleaningDateTimeUtc.required("cleaningDateTimeUtc").toString(),
+    estimatedMinutes = estimatedMinutes.required("estimatedMinutes"),
+    totalPrice = totalPrice.required("totalPrice"),
+    currencyCode = currencyCode,
+    locationApproximate = locationApproximate,
+    rooms = rooms.required("rooms"),
+    bathrooms = bathrooms.required("bathrooms"),
+    services = services.orEmpty().names(),
+    packages = packages.orEmpty().names(),
+    extraSlugs = extraSlugs.orEmpty(),
+)
+
+private fun List<GenWorkContractFactsLine>.names(): List<String> =
+    mapNotNull { it.name?.takeIf(String::isNotBlank) }
+
+private fun GenWorkContractAcceptanceDetails.toAppDto(): WorkContractAcceptanceDetailsDto =
+    WorkContractAcceptanceDetailsDto(
+        acceptedOn = acceptedOn.required("acceptedOn").toString(),
+        documentVersion = documentVersion.required("documentVersion"),
+        acceptedLanguage = acceptedLanguage,
+    )
 
 private fun GenOrderAddress.toAppDto(): OrderAddressDto = OrderAddressDto(
     street = street,

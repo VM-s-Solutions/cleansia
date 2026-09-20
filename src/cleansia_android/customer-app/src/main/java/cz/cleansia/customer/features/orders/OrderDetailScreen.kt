@@ -115,6 +115,8 @@ fun OrderDetailScreen(
     onMakeRecurring: (orderId: String) -> Unit = {},
     @Suppress("UNUSED_PARAMETER") onDownloadReceipt: () -> Unit = {},
     onViewPhotos: () -> Unit = {},
+    /** Opens the accepted contract for work behind one crew member's acceptance line. */
+    onReadWorkContract: (acceptanceId: String) -> Unit = {},
     /**
      * Raise the review sheet as soon as the order resolves — the completion prompt's landing.
      *
@@ -136,6 +138,7 @@ fun OrderDetailScreen(
     val reviewState by viewModel.reviewState.collectAsStateWithLifecycle()
     val receiptDownloadState by viewModel.receiptDownloadState.collectAsStateWithLifecycle()
     val photosState by viewModel.photos.collectAsStateWithLifecycle()
+    val workContractAcceptances by viewModel.workContractAcceptances.collectAsStateWithLifecycle()
     // Wave 3.3 — recurring-confirm flow state. Submitting → CTA hides + spinner.
     val confirmRecurringState by viewModel.confirmRecurringState.collectAsStateWithLifecycle()
 
@@ -323,6 +326,7 @@ fun OrderDetailScreen(
                 order = s.order,
                 markets = markets,
                 photosState = photosState,
+                workContractAcceptances = workContractAcceptances,
                 showCancel = isCancellable,
                 showReportIssue = canReportIssue,
                 showRebook = canRebook,
@@ -338,6 +342,7 @@ fun OrderDetailScreen(
                 onLeaveReview = { showReviewSheet = true },
                 onDownloadReceipt = { viewModel.downloadReceipt() },
                 onViewPhotos = onViewPhotos,
+                onReadWorkContract = onReadWorkContract,
                 onConfirmRecurring = { viewModel.confirmRecurring() },
             )
         }
@@ -421,6 +426,7 @@ private fun OrderDetailMapLayout(
     order: OrderDetailDto,
     markets: MarketState,
     photosState: PhotosUiState,
+    workContractAcceptances: List<WorkContractAcceptanceLine>,
     showCancel: Boolean,
     showReportIssue: Boolean,
     showRebook: Boolean,
@@ -436,6 +442,7 @@ private fun OrderDetailMapLayout(
     onLeaveReview: () -> Unit,
     onDownloadReceipt: () -> Unit,
     onViewPhotos: () -> Unit,
+    onReadWorkContract: (acceptanceId: String) -> Unit,
     onConfirmRecurring: () -> Unit,
 ) {
     val status = orderStatusFromValue(order.orderStatus?.value)
@@ -503,6 +510,7 @@ private fun OrderDetailMapLayout(
             status = status,
             scrollState = contentScroll,
             photosState = photosState,
+            workContractAcceptances = workContractAcceptances,
             showCancel = showCancel,
             showReportIssue = showReportIssue,
             showRebook = showRebook,
@@ -517,6 +525,7 @@ private fun OrderDetailMapLayout(
             onLeaveReview = onLeaveReview,
             onDownloadReceipt = onDownloadReceipt,
             onViewPhotos = onViewPhotos,
+            onReadWorkContract = onReadWorkContract,
             onConfirmRecurring = onConfirmRecurring,
         )
     }
@@ -547,6 +556,7 @@ private fun OrderDetailSheetContent(
     status: OrderStatus?,
     scrollState: ScrollState,
     photosState: PhotosUiState,
+    workContractAcceptances: List<WorkContractAcceptanceLine> = emptyList(),
     showCancel: Boolean,
     showReportIssue: Boolean,
     showRebook: Boolean,
@@ -561,6 +571,7 @@ private fun OrderDetailSheetContent(
     onLeaveReview: () -> Unit,
     onDownloadReceipt: () -> Unit,
     onViewPhotos: () -> Unit,
+    onReadWorkContract: (acceptanceId: String) -> Unit = {},
     onConfirmRecurring: () -> Unit,
 ) {
     // Wave 3.3 — Pending recurring-template orders need an explicit customer
@@ -701,6 +712,10 @@ private fun OrderDetailSheetContent(
 
             if (!order.assignedEmployees.isNullOrEmpty()) {
                 AssignedCleanersCard(order.assignedEmployees)
+            }
+
+            if (workContractAcceptances.isNotEmpty()) {
+                WorkContractCard(lines = workContractAcceptances, onRead = onReadWorkContract)
             }
 
             PriceBreakdownCard(order)

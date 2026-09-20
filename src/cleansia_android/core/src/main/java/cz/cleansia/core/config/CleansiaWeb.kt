@@ -18,4 +18,7 @@ object CleansiaWeb {
     const val TERMS_URL = "$ORIGIN/terms"
 
     const val PRIVACY_URL = "$ORIGIN/privacy"
+
+    /** The public contract-for-work template the booking wizards name at the offer. */
+    const val WORK_CONTRACT_URL = "$ORIGIN/work-contract"
 }

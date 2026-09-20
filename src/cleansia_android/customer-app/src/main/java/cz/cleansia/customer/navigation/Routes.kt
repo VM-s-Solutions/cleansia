@@ -121,6 +121,10 @@ object Routes {
     @Serializable
     data class OrderPhotos(val orderId: String)
 
+    /** The accepted contract for work behind one crew member's acceptance line on the order detail. */
+    @Serializable
+    data class WorkContract(val acceptanceId: String)
+
     // ── Loyalty ──
     @Serializable
     data object RewardsActivity

@@ -386,6 +386,21 @@
     <string name="order_photos_metadata_by">Pořídil(a) %1$s</string>
     <string name="common_close">Zavřít</string>
 
+    <!-- Contract for work: the wizard sentence at the offer, the detail line per accepting crew member, the contract screen -->
+    <string name="booking_work_contract_notice"><![CDATA[Potvrzením objednávky uzavíráte s uklízečkou či uklízečem smlouvu o dílo za <a href="cleansia://work-contract">těchto podmínek</a>.]]></string>
+    <string name="work_contract_title">Smlouva o dílo</string>
+    <string name="work_contract_accepted_line">Smlouvu o dílo přijal(a) %1$s dne %2$s, verze %3$s</string>
+    <string name="work_contract_read">Číst smlouvu</string>
+    <string name="work_contract_version">Verze %1$s</string>
+    <string name="work_contract_facts_title">Zakázka, jak byla přijata</string>
+    <string name="work_contract_order_number">Číslo objednávky</string>
+    <string name="work_contract_window">Datum a čas</string>
+    <string name="work_contract_price">Cena</string>
+    <string name="work_contract_location">Místo</string>
+    <string name="work_contract_accepted_on">Přijato uklízečkou či uklízečem dne %1$s, verze %2$s</string>
+    <string name="work_contract_accepted_in_language">Přijato v jazyce: %1$s</string>
+    <string name="work_contract_load_error">Smlouvu se nepodařilo načíst. Zkuste to prosím znovu.</string>
+
     <!-- Profile tab -->
     <string name="profile_greeting">Ahoj!</string>
     <string name="profile_email_placeholder">vy@example.com</string>

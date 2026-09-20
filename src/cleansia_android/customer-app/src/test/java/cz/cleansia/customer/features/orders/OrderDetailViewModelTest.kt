@@ -14,7 +14,9 @@ import cz.cleansia.customer.core.memberships.MembershipRepository
 import cz.cleansia.customer.core.notifications.OrderEvent
 import cz.cleansia.customer.core.notifications.OrderEventBus
 import cz.cleansia.customer.core.orders.OrderDetailDto
+import cz.cleansia.customer.core.orders.AssignedEmployeeDto
 import cz.cleansia.customer.core.orders.OrderRepository
+import cz.cleansia.customer.core.orders.WorkContractAcceptanceDto
 import cz.cleansia.customer.core.user.CodeDto
 import cz.cleansia.customer.features.recurring.RecurringAuthoringGate
 import cz.cleansia.customer.testing.MainDispatcherRule
@@ -366,5 +368,47 @@ class OrderDetailViewModelTest {
         advanceUntilIdle()
 
         coVerify(exactly = 0) { membershipRepository.refresh() }
+    }
+
+    // ── the contract for work ──
+
+    @Test
+    fun `the acceptance lines follow the loaded order, paired with the crew by seat`() = runTest {
+        val crew = listOf(
+            AssignedEmployeeDto(id = "seat-1", employeeId = "emp-1", fullName = "Jana"),
+            AssignedEmployeeDto(id = "seat-2", employeeId = "emp-2", fullName = "Petr"),
+        )
+        val row = WorkContractAcceptanceDto(
+            id = "acc-1",
+            orderEmployeeId = "seat-1",
+            employeeId = "emp-1",
+            acceptedOn = "2026-08-10T18:40:00Z",
+            documentVersion = "2026-09-20",
+            language = "cs",
+        )
+        coEvery { repository.getById(orderId) } returns ApiResult.Success(
+            order(5).copy(assignedEmployees = crew, workContractAcceptances = listOf(row)),
+        )
+
+        val vm = viewModel()
+        assertEquals(emptyList<WorkContractAcceptanceLine>(), vm.workContractAcceptances.value)
+        advanceUntilIdle()
+
+        assertEquals(
+            listOf(WorkContractAcceptanceLine("acc-1", "Jana", "2026-08-10T18:40:00Z", "2026-09-20")),
+            vm.workContractAcceptances.value,
+        )
+    }
+
+    @Test
+    fun `an order with a crew and no acceptance yields no line`() = runTest {
+        coEvery { repository.getById(orderId) } returns ApiResult.Success(
+            order(5).copy(assignedEmployees = listOf(AssignedEmployeeDto(id = "seat-1", employeeId = "emp-1", fullName = "Jana"))),
+        )
+
+        val vm = viewModel()
+        advanceUntilIdle()
+
+        assertEquals(emptyList<WorkContractAcceptanceLine>(), vm.workContractAcceptances.value)
     }
 }

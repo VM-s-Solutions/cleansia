@@ -153,6 +153,8 @@ data class OrderDetailDto(
     val orderNotes: List<OrderNoteDto>? = null,
     val orderIssues: List<OrderIssueDto>? = null,
     val review: OrderReviewDto? = null,
+    /** One per current seat whose cleaner accepted the contract for work; empty before any acceptance. */
+    val workContractAcceptances: List<WorkContractAcceptanceDto>? = null,
 )
 
 /**
@@ -177,6 +179,65 @@ data class OrderAddressDto(
 data class OrderStatusTrackDto(
     val status: CodeDto? = null,
     val createdOn: String? = null,
+)
+
+/**
+ * Mirrors backend `WorkContractAcceptanceDto` — one crew member's acceptance of the contract for
+ * work, keyed on the seat. Carries no name: the crew entry whose `id` equals [orderEmployeeId] does,
+ * already masked for the customer's eyes.
+ */
+@Serializable
+data class WorkContractAcceptanceDto(
+    val id: String? = null,
+    val orderEmployeeId: String? = null,
+    val employeeId: String? = null,
+    /** ISO-8601 date-time; parse at the UI layer. */
+    val acceptedOn: String? = null,
+    val documentVersion: String? = null,
+    val language: String? = null,
+)
+
+/**
+ * Mirrors backend `WorkContractDto` as the customer reads it: the accepted document's text in the
+ * requested language, the job facts frozen at the acceptance (never the live order), and the
+ * acceptance itself. The text, version and facts are non-null because the mapper refuses without
+ * them — a contract of nothing is not a contract to show.
+ */
+@Serializable
+data class WorkContractDto(
+    val legalDocumentTextId: String,
+    val version: String,
+    val language: String? = null,
+    val title: String? = null,
+    val contentHtml: String,
+    val facts: WorkContractFactsDto,
+    val acceptance: WorkContractAcceptanceDetailsDto? = null,
+)
+
+/** Mirrors backend `WorkContractFacts`; the scope lines are carried by name only. */
+@Serializable
+data class WorkContractFactsDto(
+    val orderNumber: String? = null,
+    /** ISO-8601 date-time; the window ends [estimatedMinutes] later. */
+    val cleaningDateTimeUtc: String,
+    val estimatedMinutes: Int,
+    val totalPrice: Double,
+    val currencyCode: String? = null,
+    val locationApproximate: String? = null,
+    val rooms: Int,
+    val bathrooms: Int,
+    val services: List<String> = emptyList(),
+    val packages: List<String> = emptyList(),
+    val extraSlugs: List<String> = emptyList(),
+)
+
+/** Mirrors backend `WorkContractAcceptanceDetails`; the ids it also carries are not the customer's to read. */
+@Serializable
+data class WorkContractAcceptanceDetailsDto(
+    /** ISO-8601 date-time. */
+    val acceptedOn: String,
+    val documentVersion: String,
+    val acceptedLanguage: String? = null,
 )
 
 /**

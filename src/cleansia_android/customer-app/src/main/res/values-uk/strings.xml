@@ -383,6 +383,21 @@
     <string name="order_photos_metadata_by">Від %1$s</string>
     <string name="common_close">Закрити</string>
 
+    <!-- Contract for work: the wizard sentence at the offer, the detail line per accepting crew member, the contract screen -->
+    <string name="booking_work_contract_notice"><![CDATA[Підтверджуючи замовлення, ви укладаєте з прибиральником чи прибиральницею договір підряду на <a href="cleansia://work-contract">цих умовах</a>.]]></string>
+    <string name="work_contract_title">Договір підряду</string>
+    <string name="work_contract_accepted_line">Договір підряду прийняв(ла) %1$s %2$s, версія %3$s</string>
+    <string name="work_contract_read">Читати договір</string>
+    <string name="work_contract_version">Версія %1$s</string>
+    <string name="work_contract_facts_title">Замовлення, як його було прийнято</string>
+    <string name="work_contract_order_number">Номер замовлення</string>
+    <string name="work_contract_window">Дата й час</string>
+    <string name="work_contract_price">Ціна</string>
+    <string name="work_contract_location">Місце</string>
+    <string name="work_contract_accepted_on">Прийнято прибиральником чи прибиральницею %1$s, версія %2$s</string>
+    <string name="work_contract_accepted_in_language">Прийнято мовою: %1$s</string>
+    <string name="work_contract_load_error">Не вдалося завантажити договір. Спробуйте ще раз.</string>
+
     <!-- Profile tab -->
     <string name="profile_greeting">Привіт!</string>
     <string name="profile_email_placeholder">ви@example.com</string>

@@ -390,6 +390,21 @@
     <string name="order_photos_metadata_by">By %1$s</string>
     <string name="common_close">Close</string>
 
+    <!-- Contract for work: the wizard sentence at the offer, the detail line per accepting crew member, the contract screen -->
+    <string name="booking_work_contract_notice"><![CDATA[By confirming the order you conclude a contract for work with the cleaner on <a href="cleansia://work-contract">these terms</a>.]]></string>
+    <string name="work_contract_title">Contract for work</string>
+    <string name="work_contract_accepted_line">Contract for work accepted by %1$s on %2$s, version %3$s</string>
+    <string name="work_contract_read">Read the contract</string>
+    <string name="work_contract_version">Version %1$s</string>
+    <string name="work_contract_facts_title">The job as accepted</string>
+    <string name="work_contract_order_number">Order number</string>
+    <string name="work_contract_window">Date and time</string>
+    <string name="work_contract_price">Price</string>
+    <string name="work_contract_location">Location</string>
+    <string name="work_contract_accepted_on">Accepted by the cleaner on %1$s, version %2$s</string>
+    <string name="work_contract_accepted_in_language">Accepted in %1$s</string>
+    <string name="work_contract_load_error">We couldn\'t load this contract. Please try again.</string>
+
     <!-- Profile tab -->
     <string name="profile_greeting">Hi, there!</string>
     <string name="profile_email_placeholder">you@example.com</string>

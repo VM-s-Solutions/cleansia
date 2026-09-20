@@ -48,7 +48,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.TextLinkStyles
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -58,6 +61,7 @@ import cz.cleansia.customer.R
 import cz.cleansia.core.format.formatOrderPrice
 import cz.cleansia.core.ui.components.CleansiaConsentCheckbox
 import cz.cleansia.core.ui.components.CleansiaTextField
+import cz.cleansia.core.ui.components.ConsentMarkup
 import cz.cleansia.customer.ui.theme.CleansiaTheme
 import cz.cleansia.customer.ui.theme.selectionTint
 import cz.cleansia.customer.ui.theme.SuccessText
@@ -391,6 +395,11 @@ fun ConfirmStep(
             Spacer(Modifier.height(16.dp))
         }
 
+        // The contract for work the confirmation concludes, named at the offer whether or not the
+        // account already consented: an information line with the public text behind it, never a tick.
+        WorkContractNotice(modifier = Modifier.fillMaxWidth())
+        Spacer(Modifier.height(16.dp))
+
         // ── Trust badges ──
         Row(
             modifier = Modifier
@@ -432,6 +441,24 @@ fun ConfirmStep(
             onApplied = { _, _ -> },
         )
     }
+}
+
+@Composable
+private fun WorkContractNotice(modifier: Modifier = Modifier) {
+    val html = stringResource(R.string.booking_work_contract_notice)
+    val linkColor = MaterialTheme.colorScheme.primary
+    val sentence = remember(html, linkColor) {
+        ConsentMarkup.annotated(
+            html,
+            TextLinkStyles(style = SpanStyle(color = linkColor, textDecoration = TextDecoration.Underline)),
+        )
+    }
+    Text(
+        text = sentence,
+        style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = modifier,
+    )
 }
 
 /**

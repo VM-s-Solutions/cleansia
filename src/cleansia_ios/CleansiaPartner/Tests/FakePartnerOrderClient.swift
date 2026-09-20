@@ -59,6 +59,15 @@ final class FakePartnerOrderClient: PartnerOrderClient {
     /// view model always issues sees the write it just made.
     var onDeclinePreferredOffer: ((String) -> Void)?
 
+    var previewResult: ApiResult<WorkContract> = .success(.sample())
+    var contractResult: ApiResult<WorkContract> = .success(.sample(acceptance: .sample()))
+    /// Every contract read, by the id it was keyed on and the language asked for.
+    private(set) var previewRequests: [(orderId: String, language: String)] = []
+    private(set) var contractRequests: [(acceptanceId: String, language: String)] = []
+    /// The text id each take or standalone acceptance echoed, in call order — the pin that a take
+    /// carries the previewed text and nothing else.
+    private(set) var echoedTextIds: [String] = []
+
     func currentEmployeeId() async -> ApiResult<String> {
         employeeIdCallCount += 1
         return employeeIdResult
@@ -111,17 +120,35 @@ final class FakePartnerOrderClient: PartnerOrderClient {
         return pendingOffersResult
     }
 
-    /// Deliberately ungated: the re-entry guard test holds a confirm mid-flight and then awaits a
-    /// decline directly, so a deleted guard has to record a call and return rather than deadlock on
-    /// the same gate the confirm is parked on.
+    /// Gated like the lifecycle commands, so a test can hold a release mid-flight and try a confirm
+    /// against it; the confirm itself never reaches the gate, because it only opens the sheet.
     func declinePreferredOffer(orderId: String) async -> ApiResult<Void> {
         pendingOfferCommands.append((name: "declinePreferredOffer", orderId: orderId))
         onDeclinePreferredOffer?(orderId)
+        if suspendCommands {
+            await withCheckedContinuation { commandGate = $0 }
+        }
         return declineResult
     }
 
-    func takeOrder(orderId: String) async -> ApiResult<Void> {
-        await record("take", orderId)
+    func takeOrder(orderId: String, acceptedWorkContractTextId: String) async -> ApiResult<Void> {
+        echoedTextIds.append(acceptedWorkContractTextId)
+        return await record("take", orderId)
+    }
+
+    func acceptWorkContract(orderId: String, acceptedWorkContractTextId: String) async -> ApiResult<Void> {
+        echoedTextIds.append(acceptedWorkContractTextId)
+        return await record("acceptWorkContract", orderId)
+    }
+
+    func getWorkContractPreview(orderId: String, language: String) async -> ApiResult<WorkContract> {
+        previewRequests.append((orderId: orderId, language: language))
+        return previewResult
+    }
+
+    func getWorkContract(acceptanceId: String, language: String) async -> ApiResult<WorkContract> {
+        contractRequests.append((acceptanceId: acceptanceId, language: language))
+        return contractResult
     }
 
     func notifyOnTheWay(orderId: String) async -> ApiResult<Void> {
@@ -195,6 +222,47 @@ final class FakePartnerOrderClient: PartnerOrderClient {
             hasBase64: false
         ))
         return await gated()
+    }
+}
+
+extension WorkContract {
+    static func sample(
+        textId: String = "text-1",
+        version: String = "2026-09-20",
+        language: String? = "en",
+        acceptance: WorkContractAcceptanceFacts? = nil
+    ) -> WorkContract {
+        WorkContract(
+            legalDocumentTextId: textId,
+            version: version,
+            language: language,
+            title: "Contract for work",
+            contentHtml: "<p>The contract.</p>",
+            facts: WorkContractJobFacts(
+                orderNumber: "CL-2026-0042",
+                cleaningDateTimeUtc: Date(timeIntervalSince1970: 1_786_200_000),
+                estimatedMinutes: 180,
+                totalPrice: 1850,
+                currencyCode: "CZK",
+                locationApproximate: "Praha 4 · 14000",
+                rooms: 3,
+                bathrooms: 1,
+                services: ["Standard cleaning"],
+                packages: [],
+                extraSlugs: ["inside-oven"]
+            ),
+            acceptance: acceptance
+        )
+    }
+}
+
+extension WorkContractAcceptanceFacts {
+    static func sample(acceptedLanguage: String? = "cs") -> WorkContractAcceptanceFacts {
+        WorkContractAcceptanceFacts(
+            acceptedOn: Date(timeIntervalSince1970: 1_786_000_000),
+            documentVersion: "2026-09-20",
+            acceptedLanguage: acceptedLanguage
+        )
     }
 }
 

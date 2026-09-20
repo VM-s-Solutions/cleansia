@@ -12,6 +12,7 @@ enum OrdersPane: CaseIterable {
 /// cache keeps serving on the next freshness check.
 enum OrdersMutation {
     case takeOrder
+    case acceptWorkContract
     case notifyOnTheWay
     case startOrder
     case markCashCollected
@@ -21,7 +22,7 @@ enum OrdersMutation {
     var affectedPanes: [OrdersPane] {
         switch self {
         case .takeOrder, .notifyOnTheWay: [.available, .active]
-        case .startOrder, .markCashCollected: [.active]
+        case .acceptWorkContract, .startOrder, .markCashCollected: [.active]
         case .completeOrder: [.active, .history]
         // The order is back with the whole board the instant the hold ends, and the cleaner's own
         // jobs did not change.

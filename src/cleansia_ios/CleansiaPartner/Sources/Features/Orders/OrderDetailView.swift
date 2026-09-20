@@ -7,6 +7,7 @@ struct OrderDetailView: View {
     @StateObject private var notesVM: OrderNotesViewModel
     @StateObject private var photosVM: OrderPhotosViewModel
     @State private var snapAnchor: SnapAnchor = .peek
+    private let client: PartnerOrderClient
     private let mapProvider: MapProvider
 
     init(
@@ -36,6 +37,7 @@ struct OrderDetailView: View {
         _photosVM = StateObject(
             wrappedValue: OrderPhotosViewModel(orderId: orderId, client: client, snackbar: snackbar)
         )
+        self.client = client
         self.mapProvider = mapProvider
     }
 
@@ -43,10 +45,25 @@ struct OrderDetailView: View {
         content
             .navigationBarTitleDisplayMode(.inline)
             .toolbar(.hidden, for: .tabBar)
+            .sheet(item: contractRequest) { request in
+                WorkContractSheet(
+                    request: request,
+                    client: client,
+                    onDismiss: vm.dismissContract,
+                    onOutcome: { outcome in Task { await vm.onWorkContractOutcome(outcome) } }
+                )
+            }
             .task { await vm.load() }
             .task(id: vm.canReadPhotos) { await photosVM.load(isAuthorized: vm.canReadPhotos) }
             .onReceive(notesVM.mutated) { Task { await vm.load() } }
             .onReceive(photosVM.mutated) { Task { await vm.load() } }
+    }
+
+    private var contractRequest: Binding<WorkContractRequest?> {
+        Binding(
+            get: { vm.contractRequest },
+            set: { if $0 == nil { vm.dismissContract() } }
+        )
     }
 
     @ViewBuilder
@@ -75,7 +92,9 @@ struct OrderDetailView: View {
                 inFlightAction: vm.inFlightAction,
                 preferredOffer: vm.preferredOffer,
                 refusal: vm.refusal,
+                contractStanding: vm.contractStanding,
                 onConfirm: { action in Task { await vm.dispatch(action) } },
+                onOpenContract: vm.openContract,
                 onDeclineOffer: { Task { await vm.declinePreferredOffer() } },
                 onDismissRefusal: vm.dismissActionError,
                 checklistVM: checklistVM,

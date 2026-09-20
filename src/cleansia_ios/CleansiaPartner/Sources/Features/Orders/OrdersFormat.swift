@@ -125,6 +125,22 @@ enum OrdersFormat {
         return mediumDateFormatter(locale: locale).string(from: date)
     }
 
+    /// The job's arrival window as the contract states it: "22 Apr · 10:00–12:00"; the start alone
+    /// when the estimate is not positive (the `formatOrderDateRange` parity).
+    static func window(_ start: Date, minutes: Int, locale: Locale = .current) -> String {
+        let day = templateFormatter("d MMM", locale: locale).string(from: start)
+        let from = templateFormatter("HH:mm", locale: locale).string(from: start)
+        guard minutes > 0 else { return "\(day) · \(from)" }
+        let end = start.addingTimeInterval(TimeInterval(minutes) * 60)
+        return "\(day) · \(from)–\(templateFormatter("HH:mm", locale: locale).string(from: end))"
+    }
+
+    /// A dated instant with its time: "22 Apr 2026 · 10:00" (the `formatOrderDateTime` parity).
+    static func dateTime(_ date: Date, locale: Locale = .current) -> String {
+        let day = templateFormatter("d MMM yyyy", locale: locale).string(from: date)
+        return "\(day) · \(templateFormatter("HH:mm", locale: locale).string(from: date))"
+    }
+
     private static func distanceString(_ kilometres: Double) -> String {
         kilometres < 1 ? String(format: "%.1f", kilometres) : "\(Int(kilometres.rounded()))"
     }

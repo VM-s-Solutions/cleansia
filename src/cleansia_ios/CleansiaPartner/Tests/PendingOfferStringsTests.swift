@@ -22,8 +22,6 @@ final class PendingOfferStringsTests: XCTestCase {
         "offer_reserved_until_date",
         "offer_reserved_ended",
         "offer_confirm",
-        "offer_slide_to_confirm",
-        "offer_confirming",
         "offer_decline",
         "offer_decline_title",
         "offer_decline_body",
@@ -133,10 +131,13 @@ final class PendingOfferStringsTests: XCTestCase {
 
     /// Every refusal `TakeOrder`'s ordered chain can answer a confirm with. The framed dialog quotes the
     /// server's own reason inside the sentence that owns the failure, so a key with no resource would
-    /// put a raw `order.weekly_limit_reached` where that reason belongs.
+    /// put a raw `order.weekly_limit_reached` where that reason belongs. The two contract keys are the
+    /// chain's first and last rules now that a confirm echoes the contract text it was shown.
     func testEveryRefusalAConfirmCanHitResolvesToASentence() {
         let localizer = ApiErrorLocalizer()
         for key in [
+            "contract.not_accepted",
+            "contract.text_mismatch",
             "order.not_found",
             "order.take.already_cancelled",
             "order.take.already_completed",

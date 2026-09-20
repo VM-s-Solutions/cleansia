@@ -52,6 +52,14 @@ struct OrdersRootView: View {
                     }
                 }
         }
+        .sheet(item: contractRequest) { request in
+            WorkContractSheet(
+                request: request,
+                client: client,
+                onDismiss: vm.dismissContract,
+                onOutcome: { outcome in Task { await vm.onWorkContractOutcome(outcome) } }
+            )
+        }
         .onReceive(vm.navigateToDetail) { orderId in
             path.append(OrderRoute.detail(orderId: orderId))
         }
@@ -65,6 +73,13 @@ struct OrdersRootView: View {
             path.append(route)
             deepLinkOrderId = nil
         }
+    }
+
+    private var contractRequest: Binding<WorkContractRequest?> {
+        Binding(
+            get: { vm.contractRequest },
+            set: { if $0 == nil { vm.dismissContract() } }
+        )
     }
 }
 

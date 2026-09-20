@@ -26,15 +26,17 @@ struct OfferAttempt: Equatable {
 /// Jobs a customer asked for this cleaner by name, held for them until a deadline the server owns.
 ///
 /// Confirming is `takeOrder` — the platform has no confirm command, and a second acquisition path
-/// would either duplicate TakeOrder's one ordered gate or be weaker than it. Because nothing gates the
-/// reservation on the weekly cap, that gate can refuse a job the cleaner was told was theirs; the
-/// refusal is kept as an `ActionState.error` beside the `attempt` it belongs to so the screen can say
-/// whose fault it is, rather than dropped on a snackbar as a bare reason.
+/// would either duplicate TakeOrder's one ordered gate or be weaker than it. The take runs inside the
+/// contract sheet, on the swipe under the text; its verdict comes back through `onWorkContractOutcome`.
+/// Because nothing gates the reservation on the weekly cap, that gate can refuse a job the cleaner was
+/// told was theirs; the refusal is kept as an `ActionState.error` beside the `attempt` it belongs to so
+/// the screen can say whose fault it is, rather than dropped on a snackbar as a bare reason.
 @MainActor
 final class PendingOffersViewModel: ViewModel {
     @Published private(set) var state: UiState<[PendingOfferItem]> = .loading
     @Published private(set) var actionState: ActionState = .idle
     @Published private(set) var attempt: OfferAttempt?
+    @Published private(set) var contractRequest: WorkContractRequest?
 
     let confirmed = PassthroughSubject<String, Never>()
 
@@ -48,18 +50,11 @@ final class PendingOffersViewModel: ViewModel {
     private var cancellables: Set<AnyCancellable> = []
 
     private let store: PendingOffersStore
-    private let client: PartnerOrderClient
     private let staleness: OrdersStaleness
     private let snackbar: SnackbarController
 
-    init(
-        store: PendingOffersStore,
-        client: PartnerOrderClient,
-        staleness: OrdersStaleness,
-        snackbar: SnackbarController
-    ) {
+    init(store: PendingOffersStore, staleness: OrdersStaleness, snackbar: SnackbarController) {
         self.store = store
-        self.client = client
         self.staleness = staleness
         self.snackbar = snackbar
         super.init()
@@ -88,12 +83,28 @@ final class PendingOffersViewModel: ViewModel {
         await fetch()
     }
 
-    func confirm(_ offer: PendingOfferItem) async {
-        await run(offer, .confirm)
+    func confirm(_ offer: PendingOfferItem) {
+        guard let orderId = offer.id, !orderId.isEmpty, !actionState.isSubmitting else { return }
+        contractRequest = .take(orderId: orderId)
+    }
+
+    func dismissContract() {
+        contractRequest = nil
+    }
+
+    /// The sheet's verdict on the offer it was opened for, framed as the confirm it stands for.
+    func onWorkContractOutcome(_ outcome: WorkContractOutcome) async {
+        contractRequest = nil
+        guard case let .take(orderId) = outcome.request else { return }
+        let displayOrderNumber = store.offer(forOrderId: orderId)?.displayOrderNumber
+        await run(orderId: orderId, displayOrderNumber: displayOrderNumber, action: .confirm) { outcome.result }
     }
 
     func decline(_ offer: PendingOfferItem) async {
-        await run(offer, .decline)
+        guard let orderId = offer.id, !orderId.isEmpty else { return }
+        await run(orderId: orderId, displayOrderNumber: offer.displayOrderNumber, action: .decline) {
+            await store.decline(orderId: orderId)
+        }
     }
 
     func dismissRefusal() {
@@ -123,18 +134,17 @@ final class PendingOffersViewModel: ViewModel {
         resolveState(store.offers)
     }
 
-    private func run(_ offer: PendingOfferItem, _ action: OfferAction) async {
-        guard let orderId = offer.id, !orderId.isEmpty else { return }
+    private func run(
+        orderId: String,
+        displayOrderNumber: String?,
+        action: OfferAction,
+        _ block: () async -> ApiResult<Void>
+    ) async {
         guard !actionState.isSubmitting else { return }
-        attempt = OfferAttempt(orderId: orderId, displayOrderNumber: offer.displayOrderNumber, action: action)
+        attempt = OfferAttempt(orderId: orderId, displayOrderNumber: displayOrderNumber, action: action)
         actionState = .submitting
 
-        let result: ApiResult<Void> = switch action {
-        case .confirm: await client.takeOrder(orderId: orderId)
-        case .decline: await store.decline(orderId: orderId)
-        }
-
-        switch result {
+        switch await block() {
         case .success:
             actionState = .idle
             attempt = nil

@@ -78,6 +78,35 @@ final class OrdersFormatTests: XCTestCase {
     func testAnEmptyBoardIsAnUnlabelledZero() {
         XCTAssertEqual(OrdersFormat.totalEarnings([]), OrdersFormat.money(0, symbol: nil))
     }
+
+    // MARK: the contract's window and instant
+
+    func testTheWindowRunsFromTheStartToTheEstimatedEnd() {
+        let window = OrdersFormat.window(instant, minutes: 180, locale: enLocale)
+
+        let start = OrdersFormat.timeOnly(instant, locale: enLocale)
+        let end = OrdersFormat.timeOnly(instant.addingTimeInterval(180 * 60), locale: enLocale)
+        XCTAssertTrue(window.hasSuffix(" · \(start)–\(end)"), window)
+        XCTAssertTrue(window.contains("Jun"), window)
+    }
+
+    func testAWindowWithNoEstimateIsTheStartAlone() {
+        let window = OrdersFormat.window(instant, minutes: 0, locale: enLocale)
+
+        XCTAssertTrue(window.hasSuffix(" · \(OrdersFormat.timeOnly(instant, locale: enLocale))"), window)
+        XCTAssertFalse(window.contains("–"), window)
+    }
+
+    func testTheWindowLocalizesTheMonthPerAppLocale() {
+        XCTAssertTrue(OrdersFormat.window(instant, minutes: 60, locale: ruLocale).contains { $0.isCyrillic })
+    }
+
+    func testTheInstantCarriesTheYearAndTheTime() {
+        let rendered = OrdersFormat.dateTime(instant, locale: enLocale)
+
+        XCTAssertTrue(rendered.contains("2021"), rendered)
+        XCTAssertTrue(rendered.hasSuffix(" · \(OrdersFormat.timeOnly(instant, locale: enLocale))"), rendered)
+    }
 }
 
 private extension Character {

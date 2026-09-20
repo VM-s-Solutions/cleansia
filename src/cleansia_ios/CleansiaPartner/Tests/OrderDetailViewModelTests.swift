@@ -283,7 +283,8 @@ final class OrderDetailViewModelTests: XCTestCase {
         let vm = makeVM()
         await vm.load()
 
-        await vm.take()
+        vm.take()
+        await vm.onWorkContractOutcome(.taken(orderId: "order-1"))
 
         XCTAssertNil(snackbar.current)
     }

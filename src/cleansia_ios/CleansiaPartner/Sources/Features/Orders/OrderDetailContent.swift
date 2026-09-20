@@ -9,7 +9,9 @@ struct OrderDetailContent: View {
     var inFlightAction: OrderAction?
     var preferredOffer: PendingOfferItem?
     var refusal: OfferRefusal?
+    var contractStanding: WorkContractStanding = .none
     var onConfirm: (OrderPrimaryAction) -> Void = { _ in }
+    var onOpenContract: (WorkContractRequest) -> Void = { _ in }
     var onDeclineOffer: () -> Void = {}
     var onDismissRefusal: () -> Void = {}
     @ObservedObject var checklistVM: CleaningChecklistViewModel
@@ -98,6 +100,11 @@ struct OrderDetailContent: View {
                         AccessCard(instructions: access)
                     }
                     CustomerCard(order: order)
+                    WorkContractCard(
+                        standing: contractStanding,
+                        onAccept: { onOpenContract(.accept(orderId: order.id)) },
+                        onRead: { onOpenContract(.read(acceptanceId: $0)) }
+                    )
                     ScopeCard(order: order)
                     if showFromCustomerCard {
                         FromCustomerNotesCard(order: order)
@@ -299,6 +306,15 @@ private struct OrderMetadataRow: View {
             rooms: 3,
             bathrooms: 2,
             crew: .spotsOpen(crewSize: 2, openSpots: 1),
+            seats: [OrderSeat(id: "seat-1", employeeId: "emp-1")],
+            workContractAcceptances: [
+                WorkContractAcceptance(
+                    id: "acc-1",
+                    orderEmployeeId: "seat-1",
+                    acceptedOn: Date(timeIntervalSinceNow: -7200),
+                    documentVersion: "2026-09-20"
+                )
+            ],
             services: [
                 OrderDetailService(id: "svc-standard", name: "Standard clean"),
                 OrderDetailService(id: "svc-window", name: "Window clean")

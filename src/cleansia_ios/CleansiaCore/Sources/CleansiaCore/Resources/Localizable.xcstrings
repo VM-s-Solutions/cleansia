@@ -1051,6 +1051,111 @@
         }
       }
     },
+    "error.contract.acceptance_required": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Než budete pokračovat, přijměte smlouvu o dílo k této zakázce."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Accept the contract for work for this job before you continue."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Прежде чем продолжить, примите договор подряда для этого заказа."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Skôr než budete pokračovať, prijmite zmluvu o dielo k tejto zákazke."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Перш ніж продовжити, прийміть договір підряду для цього замовлення."
+          }
+        }
+      }
+    },
+    "error.contract.not_accepted": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Před převzetím zakázky si prosím přečtěte a přijměte smlouvu o dílo."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Please read and accept the contract for work before taking the job."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Прежде чем взять заказ, прочитайте и примите договор подряда."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pred prevzatím zákazky si prosím prečítajte a prijmite zmluvu o dielo."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Перш ніж взяти замовлення, прочитайте та прийміть договір підряду."
+          }
+        }
+      }
+    },
+    "error.contract.text_mismatch": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Smlouva byla aktualizována — přečtěte si ji prosím znovu."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The contract was updated — please read it again."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Договор обновлён — пожалуйста, прочитайте его ещё раз."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zmluva bola aktualizovaná — prečítajte si ju prosím znova."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Договір оновлено — будь ласка, прочитайте його ще раз."
+          }
+        }
+      }
+    },
     "error.country.not_existing_id": {
       "extractionState": "manual",
       "localizations": {
@@ -2656,6 +2761,41 @@
           "stringUnit": {
             "state": "translated",
             "value": "Ця мова не підтримується."
+          }
+        }
+      }
+    },
+    "error.legal.document_not_found": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tuto zakázku nyní nelze převzít."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This job cannot be taken right now."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Этот заказ сейчас нельзя взять."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Túto zákazku teraz nie je možné prevziať."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Це замовлення зараз неможливо взяти."
           }
         }
       }

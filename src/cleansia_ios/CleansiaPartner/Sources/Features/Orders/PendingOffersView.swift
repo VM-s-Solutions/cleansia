@@ -5,6 +5,7 @@ import SwiftUI
 struct PendingOffersView: View {
     @StateObject private var vm: PendingOffersViewModel
     @State private var pendingDecline: PendingOfferItem?
+    private let client: PartnerOrderClient
     private let onOpenOrder: (String) -> Void
 
     init(
@@ -14,14 +15,8 @@ struct PendingOffersView: View {
         snackbar: SnackbarController,
         onOpenOrder: @escaping (String) -> Void
     ) {
-        _vm = StateObject(
-            wrappedValue: PendingOffersViewModel(
-                store: store,
-                client: client,
-                staleness: staleness,
-                snackbar: snackbar
-            )
-        )
+        _vm = StateObject(wrappedValue: PendingOffersViewModel(store: store, staleness: staleness, snackbar: snackbar))
+        self.client = client
         self.onOpenOrder = onOpenOrder
     }
 
@@ -31,7 +26,7 @@ struct PendingOffersView: View {
                 state: vm.state,
                 inFlight: inFlight,
                 onRetry: { Task { await vm.load() } },
-                onConfirm: { offer in Task { await vm.confirm(offer) } },
+                onConfirm: vm.confirm,
                 onDeclineRequested: { pendingDecline = $0 }
             )
             if let pendingDecline {
@@ -52,12 +47,27 @@ struct PendingOffersView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar(.hidden, for: .tabBar)
         .background(CleansiaColors.background.ignoresSafeArea())
+        .sheet(item: contractRequest) { request in
+            WorkContractSheet(
+                request: request,
+                client: client,
+                onDismiss: vm.dismissContract,
+                onOutcome: { outcome in Task { await vm.onWorkContractOutcome(outcome) } }
+            )
+        }
         .task { await vm.load() }
         .onReceive(vm.confirmed) { onOpenOrder($0) }
     }
 
     private var inFlight: OfferAttempt? {
         vm.actionState.isSubmitting ? vm.attempt : nil
+    }
+
+    private var contractRequest: Binding<WorkContractRequest?> {
+        Binding(
+            get: { vm.contractRequest },
+            set: { if $0 == nil { vm.dismissContract() } }
+        )
     }
 }
 

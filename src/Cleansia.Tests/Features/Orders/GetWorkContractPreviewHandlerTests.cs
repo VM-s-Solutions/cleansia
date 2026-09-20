@@ -15,8 +15,9 @@ namespace Cleansia.Tests.Features.Orders;
 /// ADR-0068 D3 — the preview renders the ORDER's document (never the one in force today), in the
 /// requested language or the fallback, with the order's currency in the copy and the facts the
 /// acceptance will freeze; an order with no document is refused as a missing legal document; and the
-/// order must be open to the caller exactly as the take requires, so a stranger to a held order is told
-/// nothing.
+/// order must be readable by the caller as the board's floor defines it, so a stranger to a held order
+/// is told nothing, and neither is anyone not on the crew of a cancelled, finished, full or unpaid-card
+/// job — the facts the preview discloses are the job's, and the browse gate refuses those orders.
 /// </summary>
 public sealed class GetWorkContractPreviewHandlerTests
 {
@@ -37,7 +38,7 @@ public sealed class GetWorkContractPreviewHandlerTests
     private GetWorkContractPreview.Validator CreateValidator() =>
         new(_orderRepository.Object, _accessService.Object, ValidatorTestHelpers.CurrencyResolver());
 
-    private void Arrange(Order order, string caller = EmployeeId)
+    private void Arrange(Order order, string? caller = EmployeeId)
     {
         _orderRepository.Setup(r => r.GetQueryable()).Returns(new[] { order }.AsQueryable().BuildMock());
         _accessService.Setup(s => s.GetCallerEmployeeIdAsync(It.IsAny<CancellationToken>())).ReturnsAsync(caller);
@@ -109,6 +110,58 @@ public sealed class GetWorkContractPreviewHandlerTests
         Assert.True(beneficiary.IsValid, string.Join("; ", beneficiary.Errors.Select(e => e.ErrorMessage)));
         Assert.False(stranger.IsValid);
         Assert.Equal(BusinessErrorMessage.OrderNotFound, Assert.Single(stranger.Errors).ErrorMessage);
+    }
+
+    [Theory]
+    [InlineData(OrderStatus.Cancelled)]
+    [InlineData(OrderStatus.Completed)]
+    public async Task An_Order_That_Is_Over_Is_Told_To_Nobody_Not_On_It(OrderStatus status)
+    {
+        Arrange(ValidatorTestHelpers.BuildEmptyOrder(OrderId, status));
+
+        var result = await CreateValidator().ValidateAsync(new GetWorkContractPreview.Query(OrderId));
+
+        Assert.False(result.IsValid);
+        Assert.Equal(BusinessErrorMessage.OrderNotFound, Assert.Single(result.Errors).ErrorMessage);
+    }
+
+    [Fact]
+    public async Task A_Card_Order_Whose_Money_Has_Not_Landed_Is_Told_To_Nobody_Not_On_It()
+    {
+        Arrange(ValidatorTestHelpers.BuildEmptyOrder(
+            OrderId, OrderStatus.New, paymentType: PaymentType.Card, paymentStatus: PaymentStatus.Pending));
+
+        var result = await CreateValidator().ValidateAsync(new GetWorkContractPreview.Query(OrderId));
+
+        Assert.False(result.IsValid);
+        Assert.Equal(BusinessErrorMessage.OrderNotFound, Assert.Single(result.Errors).ErrorMessage);
+    }
+
+    [Fact]
+    public async Task A_Full_In_Progress_Order_Is_Readable_By_The_Cleaner_Placed_On_It_And_By_Nobody_Else()
+    {
+        var full = ValidatorTestHelpers.BuildOrder(OrderId, OrderStatus.InProgress, EmployeeId, maxEmployees: 1);
+
+        Arrange(full, caller: EmployeeId);
+        var placed = await CreateValidator().ValidateAsync(new GetWorkContractPreview.Query(OrderId));
+
+        Arrange(full, caller: StrangerId);
+        var stranger = await CreateValidator().ValidateAsync(new GetWorkContractPreview.Query(OrderId));
+
+        Assert.True(placed.IsValid, string.Join("; ", placed.Errors.Select(e => e.ErrorMessage)));
+        Assert.False(stranger.IsValid);
+        Assert.Equal(BusinessErrorMessage.OrderNotFound, Assert.Single(stranger.Errors).ErrorMessage);
+    }
+
+    [Fact]
+    public async Task A_Caller_With_No_Employee_Is_Told_Nothing()
+    {
+        Arrange(ValidatorTestHelpers.BuildEmptyOrder(OrderId, OrderStatus.New), caller: null);
+
+        var result = await CreateValidator().ValidateAsync(new GetWorkContractPreview.Query(OrderId));
+
+        Assert.False(result.IsValid);
+        Assert.Equal(BusinessErrorMessage.OrderNotFound, Assert.Single(result.Errors).ErrorMessage);
     }
 
     [Fact]

@@ -76,13 +76,9 @@ public class GetWorkContract
                     new Error(nameof(query.AcceptanceId), BusinessErrorMessage.OrderNotFound));
             }
 
-            var document = await legalDocumentRepository.GetByTextIdWithTextsAsync(acceptance.LegalDocumentTextId, cancellationToken);
-            var accepted = document?.Texts.FirstOrDefault(t => t.Id == acceptance.LegalDocumentTextId);
-            if (document is null || accepted is null)
-            {
-                return BusinessResult.Failure<WorkContractDto>(
-                    new Error(nameof(query.AcceptanceId), BusinessErrorMessage.LegalDocumentNotFound));
-            }
+            // The text row is FK-guaranteed (Restrict) by the acceptance that names it.
+            var document = (await legalDocumentRepository.GetByTextIdWithTextsAsync(acceptance.LegalDocumentTextId, cancellationToken))!;
+            var accepted = document.Texts.First(t => t.Id == acceptance.LegalDocumentTextId);
 
             var rendered = RequestedTextOrAccepted(document, accepted, query.Language);
             var details = new WorkContractAcceptanceDetails(

@@ -5,10 +5,9 @@ namespace Cleansia.Tests.Infrastructure;
 
 /// <summary>
 /// Every <c>call</c>/<c>callvirt</c>/<c>newobj</c>/<c>ldftn</c>/<c>ldtoken</c> operand in the compiled
-/// IL of the given assemblies, resolved to the method it names — the walk <c>CustomerActionAuditImmutabilityTests</c>
-/// performs, for the append-only guards that need a fact about the compiled program rather than about
-/// source text: a helper, a lambda or a generic method reaches a member without the type's name ever
-/// appearing on the line.
+/// IL of the given assemblies, resolved to the method it names — the one walk behind the append-only
+/// guards, which need a fact about the compiled program rather than about source text: a helper, a
+/// lambda or a generic method reaches a member without the type's name ever appearing on the line.
 /// </summary>
 internal static class IlCallSites
 {

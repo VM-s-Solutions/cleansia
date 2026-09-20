@@ -4,8 +4,8 @@ using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Orders.DTOs;
 using Cleansia.Core.AppServices.Mappers;
 using Cleansia.Core.AppServices.Services.Interfaces;
-using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Repositories;
+using Cleansia.Core.Domain.Specifications;
 using Cleansia.Infra.Common.Validations;
 using FluentValidation;
 using Microsoft.EntityFrameworkCore;
@@ -15,8 +15,10 @@ namespace Cleansia.Core.AppServices.Features.Orders;
 /// <summary>
 /// The contract for work a cleaner reads before taking a job: the ORDER's document (stamped at booking),
 /// its text in the requested language or the fallback, rendered with the order's currency, and the job
-/// facts the acceptance will freeze. The order must be open to the caller exactly as the take requires
-/// it, so a held order is a missing order to everyone but its beneficiary.
+/// facts the acceptance will freeze. The order must be readable by the caller as the board's floor and
+/// the browse gate define it — on the crew, or offerable with a takeable seat, and open to the caller —
+/// so a held order is a missing order to everyone but its beneficiary, and a cancelled, finished, full
+/// or unpaid-card job the caller is not on says nothing.
 /// </summary>
 public class GetWorkContractPreview
 {
@@ -43,21 +45,32 @@ public class GetWorkContractPreview
                 .WithMessage(BusinessErrorMessage.Required)
                 .Must(query => query.Language is null || query.Language.Length <= 10)
                 .WithMessage(BusinessErrorMessage.MaxLength)
-                .MustAsync(ExistsAndIsOpenToCallerAsync)
+                .MustAsync(ExistsAndIsReadableByCallerAsync)
                 .WithMessage(BusinessErrorMessage.OrderNotFound);
         }
 
-        private async Task<bool> ExistsAndIsOpenToCallerAsync(Query query, CancellationToken cancellationToken)
+        private async Task<bool> ExistsAndIsReadableByCallerAsync(Query query, CancellationToken cancellationToken)
         {
             var employeeId = await _orderAccessService.GetCallerEmployeeIdAsync(cancellationToken);
-            var cleanerCurrencyId = string.IsNullOrEmpty(employeeId)
-                ? null
-                : (await _currencyResolutionService.ResolveCurrencyForEmployeeAsync(employeeId, cancellationToken)).Id;
+            if (string.IsNullOrEmpty(employeeId))
+            {
+                return false;
+            }
 
-            return await _orderRepository
-                .GetQueryable()
-                .Where(OrderVisibility.OpenTo(employeeId, cleanerCurrencyId, DateTime.UtcNow))
-                .AnyAsync(o => o.Id == query.OrderId, cancellationToken);
+            var cleanerCurrencyId = (await _currencyResolutionService.ResolveCurrencyForEmployeeAsync(employeeId, cancellationToken)).Id;
+
+            // The board's floor for a browsing cleaner, not the hold alone: the facts this read discloses
+            // are the job's, so an order the board would never show — cancelled, finished, crew-full,
+            // unpaid card — must not be readable to anyone holding its id, while the crew term keeps an
+            // admin-placed cleaner on a full or in-progress job able to read what they are asked to accept.
+            var readable = OrderSpecification.Create(
+                id: query.OrderId,
+                restrictToEmployeeId: employeeId,
+                notHeldFromEmployeeId: employeeId,
+                nowUtc: DateTime.UtcNow,
+                cleanerCurrencyId: cleanerCurrencyId);
+
+            return await _orderRepository.GetQueryable().AnyAsync(readable.SatisfiedBy(), cancellationToken);
         }
     }
 

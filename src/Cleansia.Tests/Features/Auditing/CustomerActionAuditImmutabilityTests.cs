@@ -1,9 +1,9 @@
 using System.Reflection;
-using System.Reflection.Emit;
 using Cleansia.Core.Domain.Auditing;
 using Cleansia.Core.Domain.Common;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Infra.Database.Repositories;
+using Cleansia.Tests.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 
 namespace Cleansia.Tests.Features.Auditing;
@@ -24,9 +24,10 @@ namespace Cleansia.Tests.Features.Auditing;
 ///
 /// <para>IL rather than source text because a call site is a fact about the compiled program: a helper,
 /// a lambda or a generic method reaches the same member without the type's name ever appearing on the
-/// line. The walk resolves every <c>call</c>/<c>callvirt</c>/<c>newobj</c>/<c>ldftn</c>/<c>ldtoken</c>
-/// operand through the declaring module, so a member reached through a generic instantiation over
-/// <c>CustomerActionAudit</c> — a type's or a method's — resolves to that instantiation.</para>
+/// line. The walk (<see cref="IlCallSites"/>) resolves every <c>call</c>/<c>callvirt</c>/<c>newobj</c>/
+/// <c>ldftn</c>/<c>ldtoken</c> operand through the declaring module, so a member reached through a
+/// generic instantiation over <c>CustomerActionAudit</c> — a type's or a method's — resolves to that
+/// instantiation.</para>
 /// </summary>
 public sealed class CustomerActionAuditImmutabilityTests
 {
@@ -43,12 +44,7 @@ public sealed class CustomerActionAuditImmutabilityTests
     private static readonly string[] ForbiddenContextMembers =
         ["Remove", "RemoveRange", "Update", "UpdateRange", "Entry"];
 
-    private sealed record CallSite(MethodBase Caller, MethodBase Callee)
-    {
-        public override string ToString() => $"{Caller.DeclaringType?.FullName}.{Caller.Name} -> {Callee.DeclaringType?.Name}.{Callee.Name}";
-    }
-
-    private static readonly Lazy<IReadOnlyList<CallSite>> Sites = new(() => AllCallSites().ToList());
+    private static readonly Lazy<IReadOnlyList<IlCallSites.CallSite>> Sites = new(() => IlCallSites.Walk(Walked));
 
     [Fact]
     public void No_Call_Site_Removes_Or_Deactivates_A_Customer_Audit_Row()
@@ -80,7 +76,7 @@ public sealed class CustomerActionAuditImmutabilityTests
         Assert.NotEmpty(handlers);
 
         var offenders = handlers
-            .Where(group => group.Any(site => accessors.Any(accessor => SameMethod(accessor, site.Callee))))
+            .Where(group => group.Any(site => accessors.Any(accessor => IlCallSites.SameMethod(accessor, site.Callee))))
             .Select(group => $"{group.Key.DeclaringType?.FullName}.{group.Key.Name}")
             .Distinct()
             .Order()
@@ -97,8 +93,8 @@ public sealed class CustomerActionAuditImmutabilityTests
         var pseudonymise = typeof(CustomerActionAudit).GetMethod(nameof(CustomerActionAudit.Pseudonymise))!;
 
         var callers = Sites.Value
-            .Where(site => SameMethod(pseudonymise, site.Callee))
-            .Select(site => OwningMethodName(site.Caller))
+            .Where(site => IlCallSites.SameMethod(pseudonymise, site.Callee))
+            .Select(site => IlCallSites.OwningMethodName(site.Caller))
             .Distinct()
             .Order()
             .ToList();
@@ -134,24 +130,11 @@ public sealed class CustomerActionAuditImmutabilityTests
             declared);
     }
 
-    /// <summary>An async method's body lives in a compiler-generated nested state machine; name the method it belongs to.</summary>
-    private static string OwningMethodName(MethodBase method)
-    {
-        var type = method.DeclaringType!;
-        if (type.IsNested && type.Name.StartsWith('<'))
-        {
-            var owner = type.Name[1..type.Name.IndexOf('>')];
-            return $"{type.DeclaringType!.FullName}.{owner}";
-        }
-
-        return $"{type.FullName}.{method.Name}";
-    }
-
-    private static bool RemovesOrDeactivatesThroughTheRepository(CallSite site) =>
+    private static bool RemovesOrDeactivatesThroughTheRepository(IlCallSites.CallSite site) =>
         ForbiddenRepositoryMembers.Contains(site.Callee.Name)
         && TargetsTheCustomerTable(site.Callee.DeclaringType);
 
-    private static bool ReachesTheRowThroughTheContext(CallSite site)
+    private static bool ReachesTheRowThroughTheContext(IlCallSites.CallSite site)
     {
         if (!ForbiddenContextMembers.Contains(site.Callee.Name)
             || site.Callee.DeclaringType is not { } declaringType
@@ -180,9 +163,6 @@ public sealed class CustomerActionAuditImmutabilityTests
         return declaringType.IsGenericType
                && declaringType.GetGenericArguments().Contains(typeof(CustomerActionAudit));
     }
-
-    private static bool SameMethod(MethodBase expected, MethodBase actual) =>
-        actual.MetadataToken == expected.MetadataToken && actual.Module == expected.Module;
 
     private static bool References(MethodBase method, Type entity)
     {
@@ -243,119 +223,4 @@ public sealed class CustomerActionAuditImmutabilityTests
         // A compiler-generated closure or state machine nested in a type that handles the row.
         return type.IsNested && type.DeclaringType is not null && References(type.DeclaringType, entity, visited);
     }
-
-    private static IEnumerable<CallSite> AllCallSites()
-    {
-        const BindingFlags all = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static | BindingFlags.DeclaredOnly;
-
-        foreach (var assembly in Walked)
-        {
-            foreach (var type in SafeTypes(assembly))
-            {
-                foreach (var method in type.GetMethods(all).Cast<MethodBase>().Concat(type.GetConstructors(all)))
-                {
-                    foreach (var callee in Callees(method))
-                    {
-                        yield return new CallSite(method, callee);
-                    }
-                }
-            }
-        }
-    }
-
-    private static IEnumerable<Type> SafeTypes(Assembly assembly)
-    {
-        try
-        {
-            return assembly.GetTypes();
-        }
-        catch (ReflectionTypeLoadException ex)
-        {
-            return ex.Types.Where(t => t is not null)!;
-        }
-    }
-
-    private static IEnumerable<MethodBase> Callees(MethodBase method)
-    {
-        byte[]? il;
-        try
-        {
-            il = method.GetMethodBody()?.GetILAsByteArray();
-        }
-        catch (Exception)
-        {
-            yield break;
-        }
-
-        if (il is null)
-        {
-            yield break;
-        }
-
-        var typeArguments = method.DeclaringType is { IsGenericType: true } declaring ? declaring.GetGenericArguments() : null;
-        var methodArguments = method.IsGenericMethod ? method.GetGenericArguments() : null;
-
-        var position = 0;
-        while (position < il.Length)
-        {
-            if (!TryReadOpCode(il, ref position, out var opCode))
-            {
-                yield break;
-            }
-
-            var operandStart = position;
-            position += OperandSize(opCode, il, position);
-
-            if (opCode.OperandType is not (OperandType.InlineMethod or OperandType.InlineTok))
-            {
-                continue;
-            }
-
-            var token = BitConverter.ToInt32(il, operandStart);
-            MethodBase? callee;
-            try
-            {
-                callee = opCode.OperandType == OperandType.InlineMethod
-                    ? method.Module.ResolveMethod(token, typeArguments, methodArguments)
-                    : method.Module.ResolveMember(token, typeArguments, methodArguments) as MethodBase;
-            }
-            catch (Exception)
-            {
-                callee = null;
-            }
-
-            if (callee is not null)
-            {
-                yield return callee;
-            }
-        }
-    }
-
-    private static readonly Dictionary<short, OpCode> OpCodeTable = typeof(OpCodes)
-        .GetFields(BindingFlags.Public | BindingFlags.Static)
-        .Select(f => (OpCode)f.GetValue(null)!)
-        .GroupBy(op => op.Value)
-        .ToDictionary(g => g.Key, g => g.First());
-
-    private static bool TryReadOpCode(byte[] il, ref int position, out OpCode opCode)
-    {
-        short value = il[position++];
-        if (value == 0xFE && position < il.Length)
-        {
-            value = (short)(0xFE00 | il[position++]);
-        }
-
-        return OpCodeTable.TryGetValue(value, out opCode);
-    }
-
-    private static int OperandSize(OpCode opCode, byte[] il, int position) =>
-        opCode.OperandType switch
-        {
-            OperandType.InlineNone => 0,
-            OperandType.ShortInlineBrTarget or OperandType.ShortInlineI or OperandType.ShortInlineVar => 1,
-            OperandType.InlineVar => 2,
-            OperandType.InlineI8 or OperandType.InlineR => 8,
-            OperandType.InlineSwitch => 4 + 4 * BitConverter.ToInt32(il, position),
-            _ => 4
-        };
 }

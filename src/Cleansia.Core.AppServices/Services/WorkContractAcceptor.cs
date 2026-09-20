@@ -50,8 +50,9 @@ public sealed class WorkContractAcceptor(
             deviceId: deviceId,
             factsJson: facts.ToJson());
 
-        // Stamped with the ORDER's company, not the ambient one: the record belongs to the books of
-        // the operator the job was booked with, whoever the cleaner's home company is.
+        // The row is a fact of the ORDER's books. Both callers load the order through the tenant filter,
+        // so this is the ambient company CommitAsync would stamp anyway; pinning it to the order keeps
+        // that true for a caller that ever loads the order outside the filter.
         acceptance.TenantId = order.TenantId;
         acceptanceRepository.Add(acceptance);
 

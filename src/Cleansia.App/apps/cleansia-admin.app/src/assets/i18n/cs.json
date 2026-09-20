@@ -722,7 +722,39 @@
       "open_customer": "Otevřít zákazníka",
       "customer_account_empty": "K této objednávce není přiřazen zákaznický účet.",
       "customer_account_error": "Zákaznický účet se nepodařilo načíst.",
-      "load_error": "Objednávku se nepodařilo načíst."
+      "load_error": "Objednávku se nepodařilo načíst.",
+      "work_contract": {
+        "label": "Smlouva o dílo",
+        "accepted": "Přijato {{date}}, v{{version}}",
+        "pending": "Smlouva čeká na přijetí",
+        "read": "Přečíst",
+        "dialog": {
+          "title": "Smlouva o dílo",
+          "version_line": "Verze {{version}}, účinná od {{date}}",
+          "facts": {
+            "title": "Zakázka",
+            "order_number": "Číslo objednávky",
+            "window": "Datum a čas",
+            "price": "Cena",
+            "location": "Místo",
+            "rooms_bathrooms": "Pokoje / koupelny",
+            "services": "Služby",
+            "packages": "Balíčky",
+            "extras": "Doplňky"
+          },
+          "acceptance": {
+            "title": "Přijetí",
+            "accepted_on": "Přijato",
+            "version": "Verze",
+            "language": "Přijato v jazyce",
+            "hash": "SHA-256 přijatého textu",
+            "hash_unavailable": "Nepodařilo se načíst"
+          },
+          "rendered_language_differs": "Zobrazeno v jazyce {{language}} — uklízeč(ka) přijal(a) text v jazyce {{accepted}}, jehož SHA-256 je uveden výše.",
+          "load_failed": "Smlouvu se nepodařilo načíst. Zkuste to prosím znovu.",
+          "retry": "Zkusit znovu"
+        }
+      }
     },
     "invoice_management": {
       "title": "Správa faktur",
@@ -1939,6 +1971,9 @@
           },
           "dispute_text": {
             "years": "Počet let po výmazu účtu zákazníka, po které se uchovává volný text jeho reklamací, než se vymaže"
+          },
+          "work_contract_metadata": {
+            "years": "Počet let po přijetí smlouvy o dílo uklízečem/uklízečkou, po které se uchovává IP adresa a údaje o zařízení, než se vymažou; samotné přijetí zůstává u objednávky"
           }
         },
         "lifecycle": {

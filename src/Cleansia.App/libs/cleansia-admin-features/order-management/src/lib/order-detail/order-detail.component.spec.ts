@@ -176,4 +176,63 @@ describe('OrderDetailComponent — incident file', () => {
     expect(customer).not.toHaveBeenCalled();
   });
 
+  // The only path to a seat with no acceptance is an admin's own placement; the line is where they
+  // learn it, and Read opens the accepted text for the seat that has one.
+  describe('the crew contract line', () => {
+    const crewOrder = (): OrderItem =>
+      OrderItem.fromJS({
+        id: 'order-1',
+        assignedEmployees: [
+          { id: 'seat-1', employeeId: 'emp-1', fullName: 'Alice', phoneNumber: '+420 1' },
+          { id: 'seat-2', employeeId: 'emp-2', fullName: 'Bob', phoneNumber: '+420 2' },
+        ],
+        workContractAcceptances: [
+          {
+            id: 'acc-1',
+            orderEmployeeId: 'seat-1',
+            employeeId: 'emp-1',
+            acceptedOn: '2026-09-21T10:00:00Z',
+            documentVersion: '2026-09-20',
+            language: 'cs',
+          },
+        ],
+      });
+
+    it('shows accepted on the seat with a row and pending on the seat without one', () => {
+      details.mockReturnValue(of(crewOrder()));
+      const fixture = render();
+
+      const cards = fixture.debugElement.queryAll(By.css('.employee-card'));
+      expect(cards).toHaveLength(2);
+
+      const accepted = cards[0].query(By.css('.employee-card__contract-state--accepted'));
+      expect(accepted).toBeTruthy();
+      expect(accepted.nativeElement.textContent).toContain('pages.order_detail.work_contract.accepted');
+      expect(cards[0].query(By.css('.employee-card__contract-read'))).toBeTruthy();
+
+      const pending = cards[1].query(By.css('.employee-card__contract-state--pending'));
+      expect(pending).toBeTruthy();
+      expect(pending.nativeElement.textContent).toContain('pages.order_detail.work_contract.pending');
+      expect(cards[1].query(By.css('.employee-card__contract-read'))).toBeNull();
+    });
+
+    it("hands Read to the facade with the seat's acceptance id", () => {
+      details.mockReturnValue(of(crewOrder()));
+      const fixture = render();
+      const facade = fixture.debugElement.injector.get(OrderDetailFacade);
+      const read = jest.spyOn(facade, 'readWorkContract').mockImplementation(() => undefined);
+
+      const button = fixture.debugElement.query(By.css('.employee-card__contract-read'));
+      (button.componentInstance as CleansiaButtonComponent).onClick.emit(new MouseEvent('click'));
+
+      expect(read).toHaveBeenCalledWith('acc-1');
+    });
+
+    it('renders no crew section for an order with no seats', () => {
+      details.mockReturnValue(of(OrderItem.fromJS({ id: 'order-1', workContractAcceptances: [{ id: 'acc-x' }] })));
+      const fixture = render();
+
+      expect(fixture.debugElement.query(By.css('.employee-card'))).toBeNull();
+    });
+  });
 });

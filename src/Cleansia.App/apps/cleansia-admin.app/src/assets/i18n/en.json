@@ -722,7 +722,39 @@
       "open_customer": "Open customer",
       "customer_account_empty": "No customer account is linked to this order.",
       "customer_account_error": "Could not load the customer account.",
-      "load_error": "Could not load the order."
+      "load_error": "Could not load the order.",
+      "work_contract": {
+        "label": "Contract for work",
+        "accepted": "Accepted {{date}}, v{{version}}",
+        "pending": "Contract pending",
+        "read": "Read",
+        "dialog": {
+          "title": "Contract for work",
+          "version_line": "Version {{version}}, effective from {{date}}",
+          "facts": {
+            "title": "The job",
+            "order_number": "Order number",
+            "window": "Date and time",
+            "price": "Price",
+            "location": "Location",
+            "rooms_bathrooms": "Rooms / bathrooms",
+            "services": "Services",
+            "packages": "Packages",
+            "extras": "Extras"
+          },
+          "acceptance": {
+            "title": "The acceptance",
+            "accepted_on": "Accepted on",
+            "version": "Version",
+            "language": "Accepted in",
+            "hash": "SHA-256 of the accepted text",
+            "hash_unavailable": "Could not be read"
+          },
+          "rendered_language_differs": "Shown in {{language}} — the cleaner accepted the {{accepted}} text, whose SHA-256 is above.",
+          "load_failed": "The contract could not be loaded. Please try again.",
+          "retry": "Try again"
+        }
+      }
     },
     "invoice_management": {
       "title": "Invoice Management",
@@ -1829,6 +1861,9 @@
           },
           "dispute_text": {
             "years": "Years after a customer's account erasure that the free text of their disputes is kept before it is blanked"
+          },
+          "work_contract_metadata": {
+            "years": "Years after a cleaner's acceptance of a contract for work that its IP address and device details are kept before they are blanked; the acceptance itself is kept with the order"
           }
         },
         "lifecycle": {

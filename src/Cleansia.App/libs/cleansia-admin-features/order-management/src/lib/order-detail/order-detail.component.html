@@ -368,24 +368,53 @@
       }
 
       <!-- Assigned Employees -->
-      @if (facade.order()?.assignedEmployees?.length) {
+      @if (facade.crew().length) {
       <cleansia-section
         [title]="'pages.order_detail.assigned_employees' | translate"
       >
-        @for (employee of facade.order()?.assignedEmployees; track employee.id)
-        {
+        @for (entry of facade.crew(); track entry.employee.id) {
         <div class="info-grid employee-card">
           <div class="info-item">
             <span class="label"
               >{{ 'pages.order_detail.employee_name' | translate }}:</span
             >
-            <span class="value">{{ employee.fullName || '-' }}</span>
+            <span class="value">{{ entry.employee.fullName || '-' }}</span>
           </div>
           <div class="info-item">
             <span class="label"
               >{{ 'pages.order_detail.employee_phone' | translate }}:</span
             >
-            <span class="value">{{ employee.phoneNumber || '-' }}</span>
+            <span class="value">{{ entry.employee.phoneNumber || '-' }}</span>
+          </div>
+          <!-- A seat with no acceptance is one an admin placed; the cleaner accepts from their app. -->
+          <div class="info-item employee-card__contract">
+            <span class="label"
+              >{{ 'pages.order_detail.work_contract.label' | translate }}:</span
+            >
+            @if (entry.acceptance; as acceptance) {
+            <span class="value employee-card__contract-state employee-card__contract-state--accepted">
+              <i class="pi pi-verified"></i>
+              {{
+                'pages.order_detail.work_contract.accepted'
+                  | translate
+                    : { date: facade.formatDateTime(acceptance.acceptedOn), version: acceptance.documentVersion }
+              }}
+              <cleansia-button
+                class="employee-card__contract-read"
+                [label]="'pages.order_detail.work_contract.read' | translate"
+                icon="pi pi-file"
+                severity="secondary"
+                [text]="true"
+                size="auto-width"
+                (onClick)="facade.readWorkContract(acceptance.id ?? '')"
+              />
+            </span>
+            } @else {
+            <span class="value employee-card__contract-state employee-card__contract-state--pending">
+              <i class="pi pi-clock"></i>
+              {{ 'pages.order_detail.work_contract.pending' | translate }}
+            </span>
+            }
           </div>
         </div>
         }

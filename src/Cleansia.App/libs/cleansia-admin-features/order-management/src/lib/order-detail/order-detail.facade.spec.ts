@@ -13,7 +13,9 @@ import {
 } from '@cleansia/admin-services';
 import { FileDownloadService, PermissionService, Policy, PhysicalPolicy, resolvePhysicalPolicy, SnackbarService } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
+import { DialogService } from 'primeng/dynamicdialog';
 import { of, Subject, throwError } from 'rxjs';
+import { AdminWorkContractDialogComponent } from './components';
 import { OrderDetailFacade } from './order-detail.facade';
 
 describe('OrderDetailFacade', () => {
@@ -30,6 +32,7 @@ describe('OrderDetailFacade', () => {
         { provide: TranslateService, useValue: { instant: (k: string) => k } },
         { provide: AdminGdprClient, useValue: { incidentFile: jest.fn() } },
         { provide: CustomerAuditClient, useValue: { timeline: jest.fn() } },
+        { provide: DialogService, useValue: { open: jest.fn() } },
       ],
     });
     facade = TestBed.inject(OrderDetailFacade);
@@ -128,6 +131,7 @@ describe('OrderDetailFacade — incident file', () => {
         { provide: TranslateService, useValue: { instant: (k: string) => k } },
         { provide: AdminGdprClient, useValue: gdprClient },
         { provide: CustomerAuditClient, useValue: auditClient },
+        { provide: DialogService, useValue: { open: jest.fn() } },
         { provide: FileDownloadService, useValue: { downloadBlob: download } },
       ],
     });
@@ -292,6 +296,7 @@ describe('OrderDetailFacade — customer account', () => {
       { provide: TranslateService, useValue: { instant: (key: string) => key } },
       { provide: Router, useValue: { navigate } },
       { provide: PermissionService, useValue: { hasPolicy } },
+      { provide: DialogService, useValue: { open: jest.fn() } },
     ] });
     facade = TestBed.inject(OrderDetailFacade);
   });
@@ -373,5 +378,60 @@ describe('OrderDetailFacade — customer account', () => {
     facade.loadOrderDetail('order');
     expect(customer).not.toHaveBeenCalled();
     expect(facade.customerLoading()).toBe(false);
+  });
+});
+
+describe('OrderDetailFacade — contract for work', () => {
+  let facade: OrderDetailFacade;
+  let open: jest.Mock;
+
+  beforeEach(() => {
+    open = jest.fn().mockReturnValue({ onClose: of(undefined) });
+    TestBed.configureTestingModule({ providers: [
+      OrderDetailFacade,
+      { provide: AdminClient, useValue: { adminOrderClient: {} } },
+      { provide: AdminGdprClient, useValue: {} },
+      { provide: CustomerAuditClient, useValue: { timeline: jest.fn() } },
+      { provide: SnackbarService, useValue: { showApiError: jest.fn() } },
+      { provide: TranslateService, useValue: { instant: (key: string) => key } },
+      { provide: Router, useValue: { navigate: jest.fn() } },
+      { provide: PermissionService, useValue: { hasPolicy: () => true } },
+      { provide: DialogService, useValue: { open } },
+    ] });
+    facade = TestBed.inject(OrderDetailFacade);
+  });
+
+  it('pairs each seat with its acceptance off the loaded order', () => {
+    facade.order.set(OrderItem.fromJS({
+      assignedEmployees: [
+        { id: 'seat-1', employeeId: 'emp-1', fullName: 'Alice' },
+        { id: 'seat-2', employeeId: 'emp-2', fullName: 'Bob' },
+      ],
+      workContractAcceptances: [
+        { id: 'acc-1', orderEmployeeId: 'seat-1', employeeId: 'emp-1', acceptedOn: '2026-09-21T10:00:00Z', documentVersion: '2026-09-20' },
+      ],
+    }));
+
+    const crew = facade.crew();
+    expect(crew.map((entry) => entry.acceptance?.id ?? null)).toEqual(['acc-1', null]);
+
+    facade.order.set(null);
+    expect(facade.crew()).toEqual([]);
+  });
+
+  it('opens the accepted contract in the read dialog keyed on the acceptance', () => {
+    facade.readWorkContract('acc-1');
+
+    expect(open).toHaveBeenCalledTimes(1);
+    expect(open).toHaveBeenCalledWith(
+      AdminWorkContractDialogComponent,
+      expect.objectContaining({ data: { acceptanceId: 'acc-1' }, modal: true })
+    );
+  });
+
+  it('opens nothing without an acceptance id', () => {
+    facade.readWorkContract('');
+
+    expect(open).not.toHaveBeenCalled();
   });
 });

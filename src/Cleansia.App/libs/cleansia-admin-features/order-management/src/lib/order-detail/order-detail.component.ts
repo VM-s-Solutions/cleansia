@@ -16,6 +16,7 @@ import {
   Policy,
 } from '@cleansia/services';
 import { TranslatePipe } from '@ngx-translate/core';
+import { DialogService } from 'primeng/dynamicdialog';
 import {
   AdminOrderOpsComponent,
   AdminOrderPhotosComponent,
@@ -39,7 +40,7 @@ import { OrderDetailFacade } from './order-detail.facade';
     CleansiaPermissionDirective,
   ],
   templateUrl: './order-detail.component.html',
-  providers: [OrderDetailFacade],
+  providers: [OrderDetailFacade, DialogService],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class OrderDetailComponent implements OnInit {

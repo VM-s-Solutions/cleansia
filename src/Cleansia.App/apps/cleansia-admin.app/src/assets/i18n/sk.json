@@ -722,7 +722,39 @@
       "open_customer": "Otvoriť zákazníka",
       "customer_account_empty": "K tejto objednávke nie je priradený zákaznícky účet.",
       "customer_account_error": "Zákaznícky účet sa nepodarilo načítať.",
-      "load_error": "Objednávku sa nepodarilo načítať."
+      "load_error": "Objednávku sa nepodarilo načítať.",
+      "work_contract": {
+        "label": "Zmluva o dielo",
+        "accepted": "Prijaté {{date}}, v{{version}}",
+        "pending": "Zmluva čaká na prijatie",
+        "read": "Prečítať",
+        "dialog": {
+          "title": "Zmluva o dielo",
+          "version_line": "Verzia {{version}}, účinná od {{date}}",
+          "facts": {
+            "title": "Zákazka",
+            "order_number": "Číslo objednávky",
+            "window": "Dátum a čas",
+            "price": "Cena",
+            "location": "Miesto",
+            "rooms_bathrooms": "Izby / kúpeľne",
+            "services": "Služby",
+            "packages": "Balíčky",
+            "extras": "Doplnky"
+          },
+          "acceptance": {
+            "title": "Prijatie",
+            "accepted_on": "Prijaté",
+            "version": "Verzia",
+            "language": "Prijaté v jazyku",
+            "hash": "SHA-256 prijatého textu",
+            "hash_unavailable": "Nepodarilo sa načítať"
+          },
+          "rendered_language_differs": "Zobrazené v jazyku {{language}} — upratovač(ka) prijal(a) text v jazyku {{accepted}}, ktorého SHA-256 je uvedený vyššie.",
+          "load_failed": "Zmluvu sa nepodarilo načítať. Skúste to prosím znova.",
+          "retry": "Skúsiť znova"
+        }
+      }
     },
     "invoice_management": {
       "title": "Správa faktúr",
@@ -1829,6 +1861,9 @@
           },
           "dispute_text": {
             "years": "Počet rokov po vymazaní účtu zákazníka, počas ktorých sa uchováva voľný text jeho reklamácií, kým sa vymaže"
+          },
+          "work_contract_metadata": {
+            "years": "Počet rokov po prijatí zmluvy o dielo upratovačom/upratovačkou, počas ktorých sa uchováva IP adresa a údaje o zariadení, kým sa vymažú; samotné prijatie zostáva pri objednávke"
           }
         },
         "lifecycle": {

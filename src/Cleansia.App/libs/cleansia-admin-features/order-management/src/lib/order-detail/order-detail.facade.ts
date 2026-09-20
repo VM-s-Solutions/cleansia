@@ -23,6 +23,7 @@ import {
   SnackbarService,
 } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
+import { DialogService } from 'primeng/dynamicdialog';
 import {
   Observable,
   Subscription,
@@ -33,8 +34,10 @@ import {
   switchMap,
   takeUntil,
 } from 'rxjs';
+import { AdminWorkContractDialogComponent, AdminWorkContractDialogData } from './components';
 import {
   INCIDENT_SUBJECT_LOOKUP_LIMIT,
+  buildCrewEntries,
   resolveIncidentSubject,
 } from './order-detail.models';
 
@@ -49,6 +52,7 @@ export class OrderDetailFacade extends UnsubscribeControlDirective {
 
   private readonly router = inject(Router);
   private readonly permissions = inject(PermissionService);
+  private readonly dialogService = inject(DialogService);
   private detailRequest?: Subscription;
 
   readonly order = signal<OrderItem | null>(null);
@@ -62,6 +66,7 @@ export class OrderDetailFacade extends UnsubscribeControlDirective {
   });
   readonly loading = signal<boolean>(false);
   readonly incidentFileExporting = signal<boolean>(false);
+  readonly crew = computed(() => buildCrewEntries(this.order()));
 
   /**
    * Entry instructions are NOT on the order payload for an admin — the server withholds them and hands
@@ -115,6 +120,17 @@ export class OrderDetailFacade extends UnsubscribeControlDirective {
   openCustomer(): void {
     const userId = this.customerId();
     if (userId) this.router.navigate([CleansiaAdminRoute.CUSTOMERS, userId]);
+  }
+
+  readWorkContract(acceptanceId: string): void {
+    if (!acceptanceId) return;
+    const data: AdminWorkContractDialogData = { acceptanceId };
+    this.dialogService.open(AdminWorkContractDialogComponent, {
+      data,
+      width: '720px',
+      modal: true,
+      dismissableMask: true,
+    });
   }
 
   revealAccessInstructions(orderId: string): void {

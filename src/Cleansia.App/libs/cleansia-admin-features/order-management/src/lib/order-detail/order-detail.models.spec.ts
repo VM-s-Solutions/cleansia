@@ -1,5 +1,5 @@
-import { TimelineEntryDto, TimelineSource } from '@cleansia/admin-services';
-import { resolveIncidentSubject } from './order-detail.models';
+import { OrderItem, TimelineEntryDto, TimelineSource } from '@cleansia/admin-services';
+import { buildCrewEntries, resolveIncidentSubject } from './order-detail.models';
 
 function entry(
   source: TimelineSource,
@@ -44,5 +44,51 @@ describe('resolveIncidentSubject', () => {
 
   it('names nobody when the trail is empty', () => {
     expect(resolveIncidentSubject([])).toBeNull();
+  });
+});
+
+// The acceptance carries no name; the crew entry it pairs with (by seat id) is where the name is.
+// A seat with no row IS the pending state — the only writer of such a seat is an admin placement.
+describe('buildCrewEntries', () => {
+  it('pairs each seat with its own acceptance and leaves the placed seat pending', () => {
+    const order = OrderItem.fromJS({
+      assignedEmployees: [
+        { id: 'seat-1', employeeId: 'emp-1', fullName: 'Alice' },
+        { id: 'seat-2', employeeId: 'emp-2', fullName: 'Bob' },
+      ],
+      workContractAcceptances: [
+        {
+          id: 'acc-1',
+          orderEmployeeId: 'seat-1',
+          employeeId: 'emp-1',
+          acceptedOn: '2026-09-21T10:00:00Z',
+          documentVersion: '2026-09-20',
+          language: 'cs',
+        },
+      ],
+    });
+
+    const crew = buildCrewEntries(order);
+
+    expect(crew.map((entry) => entry.employee.fullName)).toEqual(['Alice', 'Bob']);
+    expect(crew[0].acceptance?.id).toBe('acc-1');
+    expect(crew[1].acceptance).toBeNull();
+  });
+
+  // The row of a re-taken order names the old seat; a cleaner an admin re-added sits on a new one.
+  it('pairs by the seat, not by the cleaner', () => {
+    const order = OrderItem.fromJS({
+      assignedEmployees: [{ id: 'seat-2', employeeId: 'emp-1', fullName: 'Alice' }],
+      workContractAcceptances: [
+        { id: 'acc-old', orderEmployeeId: 'seat-1', employeeId: 'emp-1', acceptedOn: '2026-09-21T10:00:00Z' },
+      ],
+    });
+
+    expect(buildCrewEntries(order)[0].acceptance).toBeNull();
+  });
+
+  it('lists nobody without an order or a crew', () => {
+    expect(buildCrewEntries(null)).toEqual([]);
+    expect(buildCrewEntries(OrderItem.fromJS({ workContractAcceptances: [{ id: 'acc-1' }] }))).toEqual([]);
   });
 });

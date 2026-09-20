@@ -460,3 +460,44 @@ cleansia-admin-order-detail {
   min-height: 100vh;
   gap: 1rem;
 }
+
+.employee-card__contract-state {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  font-weight: 600;
+
+  i {
+    font-size: 1rem;
+  }
+
+  &--accepted {
+    color: var(--green-700, #15803d);
+  }
+
+  &--pending {
+    color: var(--cleansia-warning-800, #92400e);
+  }
+}
+
+.employee-card__contract-read {
+  margin-left: 0.25rem;
+}
+
+// The read dialog is mounted at the body, outside the page wrapper, so its two additions to the
+// shared dialog block live here at the top level.
+.work-contract-dialog__acceptance-facts {
+  background: var(--green-50, #f0fdf4);
+  border-color: var(--green-200, #bbf7d0);
+
+  .work-contract-dialog__facts-title {
+    color: var(--green-700, #15803d);
+  }
+}
+
+.work-contract-dialog__fact dd.work-contract-dialog__fact-missing {
+  font-style: italic;
+  font-weight: 500;
+  color: var(--cleansia-text-secondary);
+}

@@ -235,6 +235,7 @@ export class OrderDetailsFacade extends UnsubscribeControlDirective {
     }
 
     this.openWorkContractDialog({ mode: WorkContractDialogMode.Accept, orderId })
+      .pipe(takeUntil(this.destroyed$))
       .subscribe((result) => {
         if (!result) {
           return;
@@ -249,7 +250,9 @@ export class OrderDetailsFacade extends UnsubscribeControlDirective {
   }
 
   openReadWorkContractDialog(acceptanceId: string): void {
-    this.openWorkContractDialog({ mode: WorkContractDialogMode.Read, acceptanceId }).subscribe();
+    this.openWorkContractDialog({ mode: WorkContractDialogMode.Read, acceptanceId })
+      .pipe(takeUntil(this.destroyed$))
+      .subscribe();
   }
 
   private openWorkContractDialog(

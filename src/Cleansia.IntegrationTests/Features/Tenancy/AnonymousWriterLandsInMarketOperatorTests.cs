@@ -46,7 +46,7 @@ public sealed class AnonymousWriterLandsInMarketOperatorTests(PostgresContainerF
     [Theory]
     [InlineData(Slovakia, TestTenants.Second)]
     [InlineData(null, TestTenants.Default)]
-    public async Task Register_Lands_The_User_And_Cart_In_The_Named_Markets_Operator(string? countryId, string expectedTenant)
+    public async Task Register_Lands_The_User_In_The_Named_Markets_Operator(string? countryId, string expectedTenant)
     {
         await TestMethod(
             setup: Anonymous,
@@ -58,13 +58,12 @@ public sealed class AnonymousWriterLandsInMarketOperatorTests(PostgresContainerF
                 Assert.True(result.IsSuccess, Describe(result));
                 var user = await context.Users.IgnoreQueryFilters().SingleAsync(u => u.Email == "visitor@cleansia.test");
                 Assert.Equal(expectedTenant, user.TenantId);
-                Assert.Equal(expectedTenant, (await context.Carts.IgnoreQueryFilters().SingleAsync(c => c.UserId == user.Id)).TenantId);
             },
             transactional: false);
     }
 
     [Fact]
-    public async Task RegisterEmployee_Lands_The_User_Cart_And_Employee_In_The_Named_Markets_Operator()
+    public async Task RegisterEmployee_Lands_The_User_And_Employee_In_The_Named_Markets_Operator()
     {
         await TestMethod(
             setup: Anonymous,
@@ -76,7 +75,6 @@ public sealed class AnonymousWriterLandsInMarketOperatorTests(PostgresContainerF
                 Assert.True(result.IsSuccess, Describe(result));
                 var user = await context.Users.IgnoreQueryFilters().SingleAsync(u => u.Email == "cleaner@cleansia.test");
                 Assert.Equal(TestTenants.Second, user.TenantId);
-                Assert.Equal(TestTenants.Second, (await context.Carts.IgnoreQueryFilters().SingleAsync(c => c.UserId == user.Id)).TenantId);
                 Assert.Equal(TestTenants.Second, (await context.Employees.IgnoreQueryFilters().SingleAsync(e => e.UserId == user.Id)).TenantId);
                 Assert.Empty(await context.Users.IgnoreQueryFilters().Where(u => u.TenantId == TestTenants.Default).ToListAsync());
             },

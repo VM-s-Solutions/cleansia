@@ -511,9 +511,6 @@ public static class BusinessErrorMessage
     public const string TemplateFileSizeExceeded = "template.file_size_exceeded";
     public const string TemplateFileRequired = "template.file_required";
 
-    // Availability
-    public const string InvalidAvailabilityFormat = "validation.invalid_availability_format";
-
     // Device
     public const string InvalidPlatform = "device.invalid_platform";
     public const string DeviceNotFound = "device.not_found";

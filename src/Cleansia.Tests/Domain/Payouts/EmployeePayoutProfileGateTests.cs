@@ -28,7 +28,6 @@ public class EmployeePayoutProfileGateTests
             nationalityId: "country-cz",
             passportId: "P1234567",
             address: Address.Create("Wenceslas Square 1", "Prague", "11000", "country-cz"),
-            availability: new Dictionary<string, List<TimeRange>>(),
             emergencyContactName: null,
             emergencyContactPhone: null);
 

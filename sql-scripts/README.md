@@ -23,7 +23,7 @@ Operational SQL scripts for the Cleansia database. These are executed via the **
 > at startup in Development. Every seeded-data test reads that file and only that file. Nothing in
 > `seed/` is run by any workflow, any host or any test.
 
-Eight scripts that populate an empty database with plausible catalogue and translation data. They
+Seven scripts that populate an empty database with plausible catalogue and translation data. They
 arrived here in 2026-08 from a `Cleansia.Infra.Scripts` project that contained no C# at all — a
 compiled assembly that existed only to carry SQL, referenced by nothing. There were twenty; an audit
 on 2026-09-10 found that twelve could not run against the current schema, and all twelve were deleted
@@ -32,10 +32,11 @@ cite as evidence — `insert_users_employees.sql`, `insert_employee_payroll.sql`
 `insert_employee_invoices.sql`, `insert_disputes.sql`; ADR-0041 and ADR-0046 still read true, and
 every file is in git history).
 
-**The eight that still work** are the catalogue and translation fixtures: `insert_countries.sql`,
-`insert_languages.sql`, `insert_addresses.sql`, `insert_property_size_presets.sql`,
-`insert_email_translations.sql`, the two `insert_email_template_translations_*.sql`, and
-`update_existing_users_language.sql`.
+**The seven that still work** are the catalogue and translation fixtures: `insert_countries.sql`,
+`insert_languages.sql`, `insert_addresses.sql`, `insert_property_size_presets.sql`, the two
+`insert_email_template_translations_*.sql`, and `update_existing_users_language.sql`
+(`insert_email_translations.sql` went with the `EmailTranslations` table it seeded — the renderer
+reads `EmailTemplateTranslations`).
 
 > **`insert_languages.sql` is the prerequisite for every other script here.** It defines
 > `generate_ulid()`, which all of them call. It also populates `Languages`, and the startup seeder

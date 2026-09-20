@@ -66,9 +66,6 @@ public class GoogleAuthTests(PostgresContainerFixture fixture) : BaseIntegration
                 Assert.Equal(Constants.TestUserSession.TestLastName, user.LastName);
                 Assert.True(user.IsEmailConfirmed);
 
-                var cart = await context.Carts.FirstOrDefaultAsync(c => c.UserId == user.Id);
-                Assert.NotNull(cart);
-
                 var orders = await context.Orders.Where(o => o.UserId == user.Id).ToListAsync();
                 Assert.Empty(orders);
             });
@@ -113,7 +110,6 @@ public class GoogleAuthTests(PostgresContainerFixture fixture) : BaseIntegration
                 Assert.Equal(nameof(GoogleAuth.Command.TermsAccepted), result.Error!.Code);
 
                 Assert.Empty(await context.Users.ToListAsync());
-                Assert.Empty(await context.Carts.ToListAsync());
             });
     }
 }

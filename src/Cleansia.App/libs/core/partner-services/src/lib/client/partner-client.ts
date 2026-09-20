@@ -8882,7 +8882,6 @@ export class EmployeeItem implements IEmployeeItem {
     profilePhoto!: BlobFileDto;
     profile!: Code;
     authenticationType!: Code;
-    availability!: { [key: string]: TimeRange[]; } | undefined;
     jobRadiusKm!: number | undefined;
 
     constructor(data?: IEmployeeItem) {
@@ -8917,13 +8916,6 @@ export class EmployeeItem implements IEmployeeItem {
             this.profilePhoto = Data["profilePhoto"] ? BlobFileDto.fromJS(Data["profilePhoto"]) : undefined as any;
             this.profile = Data["profile"] ? Code.fromJS(Data["profile"]) : undefined as any;
             this.authenticationType = Data["authenticationType"] ? Code.fromJS(Data["authenticationType"]) : undefined as any;
-            if (Data["availability"]) {
-                this.availability = {} as any;
-                for (let key in Data["availability"]) {
-                    if (Data["availability"].hasOwnProperty(key))
-                        (this.availability as any)![key] = Data["availability"][key] ? Data["availability"][key].map((i: any) => TimeRange.fromJS(i)) : [];
-                }
-            }
             this.jobRadiusKm = Data["jobRadiusKm"];
         }
     }
@@ -8958,13 +8950,6 @@ export class EmployeeItem implements IEmployeeItem {
         data["profilePhoto"] = this.profilePhoto ? this.profilePhoto.toJSON() : undefined as any;
         data["profile"] = this.profile ? this.profile.toJSON() : undefined as any;
         data["authenticationType"] = this.authenticationType ? this.authenticationType.toJSON() : undefined as any;
-        if (this.availability) {
-            data["availability"] = {};
-            for (let key in this.availability) {
-                if (this.availability.hasOwnProperty(key))
-                    (data["availability"] as any)[key] = (this.availability as any)[key];
-            }
-        }
         data["jobRadiusKm"] = this.jobRadiusKm;
         return data;
     }
@@ -8992,7 +8977,6 @@ export interface IEmployeeItem {
     profilePhoto: BlobFileDto;
     profile: Code;
     authenticationType: Code;
-    availability: { [key: string]: TimeRange[]; } | undefined;
     jobRadiusKm: number | undefined;
 }
 
@@ -9622,7 +9606,6 @@ export class GdprExportEmployeeDto implements IGdprExportEmployeeDto {
     nationalityId!: string | undefined;
     emergencyContactName!: string | undefined;
     emergencyContactPhone!: string | undefined;
-    preferredCurrencyCode!: string | undefined;
     averageRating!: number;
     contractStatus!: ContractStatus;
     createdOn!: Date;
@@ -9647,7 +9630,6 @@ export class GdprExportEmployeeDto implements IGdprExportEmployeeDto {
             this.nationalityId = Data["nationalityId"];
             this.emergencyContactName = Data["emergencyContactName"];
             this.emergencyContactPhone = Data["emergencyContactPhone"];
-            this.preferredCurrencyCode = Data["preferredCurrencyCode"];
             this.averageRating = Data["averageRating"];
             this.contractStatus = Data["contractStatus"];
             this.createdOn = Data["createdOn"] ? new Date(Data["createdOn"].toString()) : undefined as any;
@@ -9672,7 +9654,6 @@ export class GdprExportEmployeeDto implements IGdprExportEmployeeDto {
         data["nationalityId"] = this.nationalityId;
         data["emergencyContactName"] = this.emergencyContactName;
         data["emergencyContactPhone"] = this.emergencyContactPhone;
-        data["preferredCurrencyCode"] = this.preferredCurrencyCode;
         data["averageRating"] = this.averageRating;
         data["contractStatus"] = this.contractStatus;
         data["createdOn"] = this.createdOn ? this.createdOn.toISOString() : undefined as any;
@@ -9690,7 +9671,6 @@ export interface IGdprExportEmployeeDto {
     nationalityId: string | undefined;
     emergencyContactName: string | undefined;
     emergencyContactPhone: string | undefined;
-    preferredCurrencyCode: string | undefined;
     averageRating: number;
     contractStatus: ContractStatus;
     createdOn: Date;
@@ -13888,7 +13868,6 @@ export interface IRegisterEmployeeCommand {
 export class RegistrationCompletionStatus implements IRegistrationCompletionStatus {
     areDocumentsUploaded!: boolean;
     hasCompletedProfile!: boolean;
-    hasSetAvailability!: boolean;
     missingFields!: string[] | undefined;
     contractStatus!: ContractStatus;
     rejectionReason!: string | undefined;
@@ -13906,7 +13885,6 @@ export class RegistrationCompletionStatus implements IRegistrationCompletionStat
         if (Data) {
             this.areDocumentsUploaded = Data["areDocumentsUploaded"];
             this.hasCompletedProfile = Data["hasCompletedProfile"];
-            this.hasSetAvailability = Data["hasSetAvailability"];
             if (Array.isArray(Data["missingFields"])) {
                 this.missingFields = [] as any;
                 for (let item of Data["missingFields"])
@@ -13928,7 +13906,6 @@ export class RegistrationCompletionStatus implements IRegistrationCompletionStat
         data = typeof data === 'object' ? data : {};
         data["areDocumentsUploaded"] = this.areDocumentsUploaded;
         data["hasCompletedProfile"] = this.hasCompletedProfile;
-        data["hasSetAvailability"] = this.hasSetAvailability;
         if (Array.isArray(this.missingFields)) {
             data["missingFields"] = [];
             for (let item of this.missingFields)
@@ -13943,7 +13920,6 @@ export class RegistrationCompletionStatus implements IRegistrationCompletionStat
 export interface IRegistrationCompletionStatus {
     areDocumentsUploaded: boolean;
     hasCompletedProfile: boolean;
-    hasSetAvailability: boolean;
     missingFields: string[] | undefined;
     contractStatus: ContractStatus;
     rejectionReason: string | undefined;
@@ -15256,46 +15232,6 @@ export interface ITimeAnalyticsDto {
     totalOrders: number;
 }
 
-export class TimeRange implements ITimeRange {
-    start!: string | undefined;
-    end!: string | undefined;
-
-    constructor(data?: ITimeRange) {
-        if (data) {
-            for (var property in data) {
-                if (data.hasOwnProperty(property))
-                    (this as any)[property] = (data as any)[property];
-            }
-        }
-    }
-
-    init(Data?: any) {
-        if (Data) {
-            this.start = Data["start"];
-            this.end = Data["end"];
-        }
-    }
-
-    static fromJS(data: any): TimeRange {
-        data = typeof data === 'object' ? data : {};
-        let result = new TimeRange();
-        result.init(data);
-        return result;
-    }
-
-    toJSON(data?: any) {
-        data = typeof data === 'object' ? data : {};
-        data["start"] = this.start;
-        data["end"] = this.end;
-        return data;
-    }
-}
-
-export interface ITimeRange {
-    start: string | undefined;
-    end: string | undefined;
-}
-
 export class Translation implements ITranslation {
     name!: string | undefined;
     description!: string | undefined;
@@ -15568,7 +15504,6 @@ export class UpdateEmployeeCommand implements IUpdateEmployeeCommand {
     emergencyPhone!: string | undefined;
     consent!: boolean;
     documents!: BlobFileDto[] | undefined;
-    availability!: { [key: string]: UpdateEmployeeTimeRangeDto[]; } | undefined;
 
     constructor(data?: IUpdateEmployeeCommand) {
         if (data) {
@@ -15603,13 +15538,6 @@ export class UpdateEmployeeCommand implements IUpdateEmployeeCommand {
                 this.documents = [] as any;
                 for (let item of Data["documents"])
                     this.documents!.push(BlobFileDto.fromJS(item));
-            }
-            if (Data["availability"]) {
-                this.availability = {} as any;
-                for (let key in Data["availability"]) {
-                    if (Data["availability"].hasOwnProperty(key))
-                        (this.availability as any)![key] = Data["availability"][key] ? Data["availability"][key].map((i: any) => UpdateEmployeeTimeRangeDto.fromJS(i)) : [];
-                }
             }
         }
     }
@@ -15646,13 +15574,6 @@ export class UpdateEmployeeCommand implements IUpdateEmployeeCommand {
             for (let item of this.documents)
                 data["documents"].push(item ? item.toJSON() : undefined as any);
         }
-        if (this.availability) {
-            data["availability"] = {};
-            for (let key in this.availability) {
-                if (this.availability.hasOwnProperty(key))
-                    (data["availability"] as any)[key] = (this.availability as any)[key];
-            }
-        }
         return data;
     }
 }
@@ -15677,7 +15598,6 @@ export interface IUpdateEmployeeCommand {
     emergencyPhone: string | undefined;
     consent: boolean;
     documents: BlobFileDto[] | undefined;
-    availability: { [key: string]: UpdateEmployeeTimeRangeDto[]; } | undefined;
 }
 
 export class UpdateEmployeeResponse implements IUpdateEmployeeResponse {
@@ -15714,46 +15634,6 @@ export class UpdateEmployeeResponse implements IUpdateEmployeeResponse {
 
 export interface IUpdateEmployeeResponse {
     employeeId: string | undefined;
-}
-
-export class UpdateEmployeeTimeRangeDto implements IUpdateEmployeeTimeRangeDto {
-    start!: string | undefined;
-    end!: string | undefined;
-
-    constructor(data?: IUpdateEmployeeTimeRangeDto) {
-        if (data) {
-            for (var property in data) {
-                if (data.hasOwnProperty(property))
-                    (this as any)[property] = (data as any)[property];
-            }
-        }
-    }
-
-    init(Data?: any) {
-        if (Data) {
-            this.start = Data["start"];
-            this.end = Data["end"];
-        }
-    }
-
-    static fromJS(data: any): UpdateEmployeeTimeRangeDto {
-        data = typeof data === 'object' ? data : {};
-        let result = new UpdateEmployeeTimeRangeDto();
-        result.init(data);
-        return result;
-    }
-
-    toJSON(data?: any) {
-        data = typeof data === 'object' ? data : {};
-        data["start"] = this.start;
-        data["end"] = this.end;
-        return data;
-    }
-}
-
-export interface IUpdateEmployeeTimeRangeDto {
-    start: string | undefined;
-    end: string | undefined;
 }
 
 export class UpdateJobRadiusCommand implements IUpdateJobRadiusCommand {

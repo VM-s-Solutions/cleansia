@@ -73,13 +73,6 @@ public class EmployeeSelfUpdateIdInertTests
         new UpdateEmergencyContact.Validator(_employees.Object, _session.Object),
         new UpdateEmergencyContact.Command(employeeId, "ICE", "+420777000000"));
 
-    private Task<ValidationResult> ValidateAvailabilityAsync(string? employeeId) => ValidateAsync(
-        new UpdateAvailability.Validator(_employees.Object, _session.Object),
-        new UpdateAvailability.Command(employeeId, new Dictionary<string, List<UpdateAvailability.TimeRangeDto>>
-        {
-            ["Monday"] = [new UpdateAvailability.TimeRangeDto("09:00", "17:00")],
-        }));
-
     private Task<ValidationResult> ValidateIdentificationInfoAsync(string? employeeId) => ValidateAsync(
         new UpdateIdentificationInfo.Validator(_countries.Object, _employees.Object, _session.Object, _taxIds.Object),
         new UpdateIdentificationInfo.Command(
@@ -90,14 +83,13 @@ public class EmployeeSelfUpdateIdInertTests
         new UpdateJobRadius.Command(employeeId, 50));
 
     public static TheoryData<string> Features =>
-        ["PersonalInfo", "AddressInfo", "EmergencyContact", "Availability", "IdentificationInfo", "JobRadius"];
+        ["PersonalInfo", "AddressInfo", "EmergencyContact", "IdentificationInfo", "JobRadius"];
 
     private Task<ValidationResult> ValidateAsync(string feature, string? employeeId) => feature switch
     {
         "PersonalInfo" => ValidatePersonalInfoAsync(employeeId),
         "AddressInfo" => ValidateAddressInfoAsync(employeeId),
         "EmergencyContact" => ValidateEmergencyContactAsync(employeeId),
-        "Availability" => ValidateAvailabilityAsync(employeeId),
         "IdentificationInfo" => ValidateIdentificationInfoAsync(employeeId),
         "JobRadius" => ValidateJobRadiusAsync(employeeId),
         _ => throw new ArgumentOutOfRangeException(nameof(feature)),

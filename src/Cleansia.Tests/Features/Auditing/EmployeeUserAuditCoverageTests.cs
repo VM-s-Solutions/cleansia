@@ -46,7 +46,6 @@ public sealed class EmployeeUserAuditCoverageTests
     [InlineData(typeof(ApproveEmployee.Command), "employee.approve")]
     [InlineData(typeof(RejectEmployee.Command), "employee.reject")]
     [InlineData(typeof(AdminUpdateEmployee.Command), "employee.update")]
-    [InlineData(typeof(AdminUpdateEmployeeAvailability.Command), "employee.availability.update")]
     [InlineData(typeof(AdminSetEmployeeWeeklyOrderLimit.Command), "employee.weekly_limit.update")]
     [InlineData(typeof(RevealEmployeePayoutDetails.Command), "employee.payout_details.reveal")]
     public void Employee_Admin_Commands_Carry_The_Frozen_User_Typed_Label(Type commandType, string expectedLabel)
@@ -203,39 +202,6 @@ public sealed class EmployeeUserAuditCoverageTests
         AssertNoSubjectPii(snapshot);
     }
 
-    // ── AdminUpdateEmployeeAvailability ───────────────────────────────────────
-
-    [Fact]
-    public async Task AdminUpdateEmployeeAvailability_Emits_Ids_Only_Never_The_Schedule_Values()
-    {
-        var auditContext = new AuditContext();
-        var employee = BuildEmployee();
-        var employeeRepository = new Mock<IEmployeeRepository>();
-        employeeRepository.Setup(r => r.GetByIdAsync(SubjectEmployeeId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(employee);
-
-        var handler = new AdminUpdateEmployeeAvailability.Handler(employeeRepository.Object, auditContext);
-        var result = await handler.Handle(
-            new AdminUpdateEmployeeAvailability.Command(
-                SubjectEmployeeId,
-                new Dictionary<string, List<AdminUpdateEmployeeAvailability.TimeRangeDto>>
-                {
-                    ["Monday"] = [new AdminUpdateEmployeeAvailability.TimeRangeDto("08:00", "12:00")]
-                }),
-            CancellationToken.None);
-
-        Assert.True(result.IsSuccess);
-        var snapshot = auditContext.DrainSnapshot();
-        Assert.NotNull(snapshot);
-        Assert.Equal("User", snapshot!.ResourceType);
-        Assert.Equal(SubjectUserId, snapshot.ResourceId);
-        Assert.Contains($"\"userId\":\"{SubjectUserId}\"", snapshot.AfterJson);
-        Assert.Contains($"\"employeeId\":\"{SubjectEmployeeId}\"", snapshot.AfterJson);
-        Assert.DoesNotContain("08:00", snapshot.AfterJson);
-        Assert.DoesNotContain("Monday", snapshot.AfterJson);
-        AssertNoSubjectPii(snapshot);
-    }
-
     // ── the admin gate still scopes the coverage (S1) ─────────────────────────
 
     [Fact]
@@ -332,7 +298,6 @@ public sealed class EmployeeUserAuditCoverageTests
             nationalityId: "country-cz",
             passportId: SubjectPassport,
             address: Address.Create("Wenceslas Square 1", "Prague", "11000", "country-cz"),
-            availability: new Dictionary<string, List<TimeRange>>(),
             emergencyContactName: null,
             emergencyContactPhone: null);
         employee.UpdateBankDetails(SubjectIban);

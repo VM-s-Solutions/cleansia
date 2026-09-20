@@ -14,7 +14,6 @@ using Cleansia.Core.Domain.Services;
 using Cleansia.Core.Domain.Users;
 using Cleansia.Infra.Common.Validations;
 using FluentValidation;
-using DayOfWeek = Cleansia.Core.Domain.Enums.DayOfWeek;
 
 namespace Cleansia.Core.AppServices.Features.Employees;
 
@@ -132,44 +131,6 @@ public class UpdateEmployee
                 // Without this the per-item rules still sniff and decode every item of a list already
                 // refused for being too long, which is the cost the count cap exists to refuse.
                 .When(command => command.Documents?.Count <= MaxDocumentsPerRequest);
-
-            RuleFor(c => c.Availability)
-                .Must(BeValidAvailability)
-                .WithMessage(BusinessErrorMessage.InvalidAvailabilityFormat)
-                .When(c => c.Availability?.Any() == true);
-        }
-
-        private bool BeValidAvailability(Dictionary<string, List<TimeRangeDto>>? availability)
-        {
-            if (availability == null || !availability.Any())
-            {
-                return true;
-            }
-
-            var validDays = Enum.GetNames(typeof(DayOfWeek));
-
-            foreach (var (key, timeRanges) in availability)
-            {
-                // Key must be either a valid day name or a valid date (yyyy-MM-dd)
-                if (!validDays.Contains(key) && !DateOnly.TryParseExact(key, "yyyy-MM-dd", out _))
-                    return false;
-
-                foreach (var timeRange in timeRanges)
-                {
-                    if (!TimeSpan.TryParse(timeRange.Start, out var start) ||
-                        !TimeSpan.TryParse(timeRange.End, out var end))
-                    {
-                        return false;
-                    }
-
-                    if (start >= end)
-                    {
-                        return false;
-                    }
-                }
-            }
-
-            return true;
         }
 
         // Not an ownership comparison — the subject is server-resolved, so there is nothing for a client
@@ -219,10 +180,7 @@ public class UpdateEmployee
         string? EmergencyName,
         string? EmergencyPhone,
         bool Consent,
-        List<BlobFileDto>? Documents = null,
-        Dictionary<string, List<TimeRangeDto>>? Availability = null) : ICommand<Response>;
-
-    public record TimeRangeDto(string Start, string End);
+        List<BlobFileDto>? Documents = null) : ICommand<Response>;
 
     public record Response(string EmployeeId);
 
@@ -249,9 +207,8 @@ public class UpdateEmployee
             await addressGeocoder.PopulateCoordinatesAsync(address, cancellationToken);
 
             await UploadDocuments(employee, command, cancellationToken);
-            var availability = ResolveAvailability(employee, command.Availability);
 
-            UpdateEmployeeDetails(employee, command, address, availability);
+            UpdateEmployeeDetails(employee, command, address);
 
             // The validator only gates on Consent == true; GDPR Art. 7(1) requires us to be able to
             // DEMONSTRATE the consent, so the grant is persisted on the same unit of work as the
@@ -309,55 +266,7 @@ public class UpdateEmployee
             }
         }
 
-        /// <summary>
-        /// A NULL availability means the caller did not send one, and that has to leave the cleaner's
-        /// schedule alone.
-        ///
-        /// <para><c>ConvertAvailability(null)</c> returns an EMPTY dictionary, which
-        /// <c>UpdateEmployeeDetails</c> then writes — so before this guard, any caller that omitted the
-        /// field silently cleared a schedule it never showed anyone. Nothing exposed that while the
-        /// partner web profile form still carried an availability editor and posted the current value
-        /// back on every save; removing that editor (dead UI — the real one is the dedicated
-        /// <c>UpdateAvailability</c> endpoint) made the web form exactly such a caller.</para>
-        ///
-        /// <para><b>Null and empty are deliberately different.</b> Null is "I am not talking about
-        /// availability"; an empty dictionary is a caller saying "clear it". Collapsing the two is the
-        /// bug. Public rather than private so the invariant can be asserted against the real code
-        /// instead of a copy of it in a test.</para>
-        /// </summary>
-        public static Dictionary<string, List<TimeRange>> ResolveAvailability(
-            Employee employee,
-            Dictionary<string, List<TimeRangeDto>>? sent)
-        {
-            return sent is null
-                ? employee.Availability.ToDictionary(pair => pair.Key, pair => pair.Value)
-                : ConvertAvailability(sent);
-        }
-
-        private static Dictionary<string, List<TimeRange>> ConvertAvailability(Dictionary<string, List<TimeRangeDto>>? availabilityDto)
-        {
-            if (availabilityDto == null || !availabilityDto.Any())
-                return new Dictionary<string, List<TimeRange>>();
-
-            var availability = new Dictionary<string, List<TimeRange>>();
-
-            foreach (var (day, timeRanges) in availabilityDto)
-            {
-                var domainTimeRanges = timeRanges
-                    .Select(dto => new TimeRange
-                    {
-                        Start = TimeSpan.Parse(dto.Start),
-                        End = TimeSpan.Parse(dto.End)
-                    })
-                    .ToList();
-
-                availability[day] = domainTimeRanges;
-            }
-
-            return availability;
-        }
-
-        private static void UpdateEmployeeDetails(Employee employee, Command command, Address address, Dictionary<string, List<TimeRange>> availability)
+        private static void UpdateEmployeeDetails(Employee employee, Command command, Address address)
         {
             employee.User!.Update(
                 command.FirstName,
@@ -376,7 +285,6 @@ public class UpdateEmployee
                 command.NationalityId,
                 command.PassportId,
                 address,
-                availability,
                 command.EmergencyName,
                 command.EmergencyPhone);
         }

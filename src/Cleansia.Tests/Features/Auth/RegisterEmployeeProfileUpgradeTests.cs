@@ -22,12 +22,11 @@ public class RegisterEmployeeProfileUpgradeTests
     private const string Language = "cs";
 
     private readonly Mock<IUserRepository> _userRepository = new();
-    private readonly Mock<ICartRepository> _cartRepository = new();
     private readonly Mock<IEmployeeRepository> _employeeRepository = new();
     private readonly Mock<IPendingDispatch> _pending = new();
 
     private RegisterEmployee.Handler CreateHandler() => new(
-        _cartRepository.Object, _userRepository.Object, _employeeRepository.Object, _pending.Object,
+        _userRepository.Object, _employeeRepository.Object, _pending.Object,
         new Mock<IConsentService>().Object);
 
     private static RegisterEmployee.Command Command() =>
@@ -44,7 +43,6 @@ public class RegisterEmployeeProfileUpgradeTests
         Assert.True(result.IsSuccess);
         Assert.Equal(UserProfile.Employee, user.Profile);
         _userRepository.Verify(r => r.Add(It.IsAny<User>()), Times.Never);
-        _cartRepository.Verify(r => r.Add(It.IsAny<Cart>()), Times.Never);
         _employeeRepository.Verify(r => r.Add(It.Is<Employee>(e => e.User == user)), Times.Once);
     }
 
@@ -69,7 +67,6 @@ public class RegisterEmployeeProfileUpgradeTests
 
         Assert.True(result.IsSuccess);
         _userRepository.Verify(r => r.Add(It.Is<User>(u => u.Profile == UserProfile.Employee)), Times.Once);
-        _cartRepository.Verify(r => r.Add(It.IsAny<Cart>()), Times.Once);
         _employeeRepository.Verify(r => r.Add(It.IsAny<Employee>()), Times.AtLeastOnce);
     }
 }

@@ -7,7 +7,6 @@ export interface RegistrationCompletionResult {
   isComplete: boolean;
   hasUploadedDocuments: boolean;
   hasCompletedProfile: boolean;
-  hasSetAvailability: boolean;
   missingRequirements: string[];
   contractStatus: ContractStatus | null;
   awaitingApproval: boolean;
@@ -34,7 +33,6 @@ export class RegistrationCompletionService {
         isComplete: false,
         hasUploadedDocuments: false,
         hasCompletedProfile: false,
-        hasSetAvailability: false,
         missingRequirements: [
           this.translate.instant('api.common.user_not_authenticated'),
         ],
@@ -50,7 +48,6 @@ export class RegistrationCompletionService {
         isComplete: false,
         hasUploadedDocuments: false,
         hasCompletedProfile: false,
-        hasSetAvailability: false,
         missingRequirements: [
           this.translate.instant('api.employee.data_not_available'),
         ],
@@ -64,15 +61,13 @@ export class RegistrationCompletionService {
     const missingRequirements: string[] = [];
     const hasUploadedDocuments = employeeStatus.areDocumentsUploaded;
     const hasCompletedProfile = employeeStatus.hasCompletedProfile;
-    const hasSetAvailability = employeeStatus.hasSetAvailability ?? false;
     const contractStatus = employeeStatus.contractStatus ?? null;
     const awaitingApproval =
-      hasCompletedProfile && hasUploadedDocuments && hasSetAvailability && contractStatus === ContractStatus.Pending;
+      hasCompletedProfile && hasUploadedDocuments && contractStatus === ContractStatus.Pending;
     const isRejected = contractStatus === ContractStatus.Rejected;
     const isComplete =
       hasCompletedProfile &&
       hasUploadedDocuments &&
-      hasSetAvailability &&
       (contractStatus === ContractStatus.Approved || contractStatus === ContractStatus.Active);
 
     // Add specific missing fields from the API
@@ -99,7 +94,6 @@ export class RegistrationCompletionService {
       isComplete,
       hasUploadedDocuments,
       hasCompletedProfile,
-      hasSetAvailability,
       missingRequirements,
       contractStatus,
       awaitingApproval,

@@ -148,9 +148,6 @@ public class AdminUpdateEmployee
                 command.NationalityId ?? employee.NationalityId ?? "",
                 command.PassportId ?? employee.PassportId ?? "",
                 address,
-                employee.Availability.ToDictionary(
-                    kvp => kvp.Key,
-                    kvp => kvp.Value.ToList()),
                 command.EmergencyName ?? employee.EmergencyContactName,
                 command.EmergencyPhone ?? employee.EmergencyContactPhone);
 

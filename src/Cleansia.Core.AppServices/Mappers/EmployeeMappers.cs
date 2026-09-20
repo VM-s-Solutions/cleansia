@@ -1,6 +1,5 @@
 ﻿using Cleansia.Core.AppServices.Features.Employees.DTOs;
 using Cleansia.Core.Domain.Users;
-using DtoTimeRange = Cleansia.Core.AppServices.Features.Employees.DTOs.TimeRange;
 
 namespace Cleansia.Core.AppServices.Mappers;
 
@@ -11,13 +10,6 @@ public static class EmployeeMappers
         return new RegistrationCompletionStatus(
             AreDocumentsUploaded: employee.Documents.Any(d => d.IsActive),
             HasCompletedProfile: employee.IsProfileComplete(),
-            // Availability is no longer part of the registration gate.
-            // The field stays on the DTO for API-contract compatibility
-            // (partner-web + the generated mobile client still expect it)
-            // but is always true so it never blocks unlock. The weekly
-            // schedule remains editable by admins and stored on the
-            // Employee for potential future matching/push features.
-            HasSetAvailability: true,
             MissingFields: employee.GetMissingProfileFields(),
             ContractStatus: employee.ContractStatus,
             RejectionReason: employee.RejectionReason);
@@ -62,13 +54,6 @@ public static class EmployeeMappers
             ProfilePhoto: employee.User.ProfilePhotoName?.MapToDto(),
             Profile: employee.User.Profile.MapToCode(),
             AuthenticationType: employee.User.AuthenticationType.MapToCode(),
-            Availability: employee.Availability?.ToDictionary(
-                kvp => kvp.Key,
-                kvp => kvp.Value.Select(tr => new DtoTimeRange(
-                    tr.Start.ToString(@"hh\:mm"),
-                    tr.End.ToString(@"hh\:mm")
-                )).ToList()
-            ),
             JobRadiusKm: employee.JobRadiusKm);
     }
 
@@ -115,13 +100,6 @@ public static class EmployeeMappers
             ContractStatus: employee.ContractStatus.ToString(),
             AverageRating: employee.AverageRating,
             ComplaintsCount: employee.ComplaintsCount,
-            Availability: employee.Availability?.ToDictionary(
-                kvp => kvp.Key,
-                kvp => kvp.Value.Select(tr => new DtoTimeRange(
-                    tr.Start.ToString(@"hh\:mm"),
-                    tr.End.ToString(@"hh\:mm")
-                )).ToList()
-            ),
             CreatedAt: employee.User.CreatedOn,
             IsProfileComplete: IsEmployeeProfileComplete(employee),
             RejectionReason: employee.RejectionReason,

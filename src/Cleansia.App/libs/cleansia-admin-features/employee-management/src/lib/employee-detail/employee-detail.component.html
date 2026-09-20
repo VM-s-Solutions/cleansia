@@ -580,68 +580,6 @@
         }
       </cleansia-section>
 
-      <!-- Availability -->
-      <cleansia-section
-        [title]="'pages.employee_detail.availability' | translate"
-      >
-        @if (facade.editingAvailability()) {
-        <!-- Edit mode -->
-        <cleansia-availability [(ngModel)]="availabilityValue" />
-        <div class="availability-actions" style="display: flex; gap: 0.5rem; margin-top: 1rem;">
-          <cleansia-button
-            [label]="'common.save' | translate"
-            [loading]="facade.savingAvailability()"
-            (onClick)="onSaveAvailability()"
-          />
-          <cleansia-button
-            [label]="'common.cancel' | translate"
-            severity="secondary"
-            [disabled]="facade.savingAvailability()"
-            (onClick)="onCancelEditAvailability()"
-          />
-        </div>
-        } @else {
-        <!-- View mode -->
-        <div style="display: flex; justify-content: flex-end; margin-bottom: 0.5rem;">
-          <cleansia-button
-            *cleansiaPermission="Policy.CanAdminUpdateEmployee"
-            [label]="'common.edit' | translate"
-            severity="secondary"
-            icon="pi pi-pencil"
-            (onClick)="onEditAvailability()"
-          />
-        </div>
-        @if (employee.availability) {
-        <div class="availability-grid">
-          @for (day of daysOfWeek(); track day.value) {
-          <div class="availability-day">
-            <span class="day-name"
-              >{{ 'pages.employee_detail.' + day.name | translate }}:</span
-            >
-            @if (employee.availability[day.name!] &&
-            employee.availability[day.name!].length > 0) {
-            <div class="time-ranges">
-              @for (range of employee.availability[day.name!]; track
-              $index) {
-              <span class="time-range">{{
-                formatTimeRange(range.start, range.end)
-              }}</span>
-              }
-            </div>
-            } @else {
-            <span class="no-availability">-</span>
-            }
-          </div>
-          }
-        </div>
-        } @else {
-        <p class="no-data">
-          {{ 'pages.employee_detail.no_availability' | translate }}
-        </p>
-        }
-        }
-      </cleansia-section>
-
       <!-- Pay Configuration -->
       <cleansia-section
         *cleansiaPermission="Policy.CanViewPayConfigs"

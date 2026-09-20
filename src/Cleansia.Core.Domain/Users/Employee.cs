@@ -204,12 +204,6 @@ public class Employee : TenantAuditable
     public string UserId { get; private set; }
     public User? User { get; private set; }
 
-    [MaxLength(10)]
-    public string? PreferredCurrencyCode { get; private set; }
-
-    private IDictionary<string, List<TimeRange>> _availability = new Dictionary<string, List<TimeRange>>();
-    public IReadOnlyDictionary<string, List<TimeRange>> Availability => _availability.ToDictionary().AsReadOnly();
-
     private ICollection<EmployeeDocument> _documents = [];
     public IReadOnlyCollection<EmployeeDocument> Documents => _documents.ToList().AsReadOnly();
 
@@ -235,7 +229,6 @@ public class Employee : TenantAuditable
         string nationalityId,
         string passportId,
         Address address,
-        Dictionary<string, List<TimeRange>> availability,
         string? emergencyContactName,
         string? emergencyContactPhone,
         ContractStatus? contractStatus = null)
@@ -248,7 +241,6 @@ public class Employee : TenantAuditable
         Address = address;
         EmergencyContactName = emergencyContactName;
         EmergencyContactPhone = emergencyContactPhone;
-        _availability = availability;
         if (contractStatus is not null)
         {
             ContractStatus = contractStatus.Value;
@@ -299,12 +291,6 @@ public class Employee : TenantAuditable
         return this;
     }
 
-    public Employee UpdateAvailability(Dictionary<string, List<TimeRange>> availability)
-    {
-        _availability = availability;
-        return this;
-    }
-
     public Employee UpdateRating(decimal newRating, int newComplaints)
     {
         AverageRating = newRating;
@@ -312,11 +298,6 @@ public class Employee : TenantAuditable
         return this;
     }
 
-    public Employee UpdatePreferredCurrency(string? preferredCurrencyCode)
-    {
-        PreferredCurrencyCode = preferredCurrencyCode;
-        return this;
-    }
 
     /// <summary>
     /// Set the country this cleaner is approved to take work in.

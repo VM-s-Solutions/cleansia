@@ -36,7 +36,7 @@ public class UserRepository(CleansiaDbContext context)
         // No blanket Include(Orders): every single-user fetch (GetUser, RefreshToken, ExportUserData,
         // admin user reads) was loading the user's entire order history, which no mapper reads. The
         // PreferredLanguage nav stays — the user DTOs render PreferredLanguage.Name. Callers that DO
-        // need a nav add it explicitly (GdprDeletionService Includes Employee/Cart).
+        // need a nav add it explicitly (GdprDeletionService Includes Employee).
         return GetDbSet()
             .Include(user => user.PreferredLanguage)
             .AsQueryable();

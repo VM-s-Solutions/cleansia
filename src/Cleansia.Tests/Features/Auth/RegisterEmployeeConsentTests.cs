@@ -25,7 +25,6 @@ public sealed class RegisterEmployeeConsentTests
     private const string Language = "cs";
 
     private readonly Mock<IUserRepository> _userRepository = new();
-    private readonly Mock<ICartRepository> _cartRepository = new();
     private readonly Mock<IEmployeeRepository> _employeeRepository = new();
     private readonly Mock<IConsentService> _consentService = new();
     private readonly IPendingDispatch _pending = new InMemoryPendingDispatch();
@@ -45,7 +44,7 @@ public sealed class RegisterEmployeeConsentTests
     }
 
     private RegisterEmployee.Handler CreateHandler() =>
-        new(_cartRepository.Object, _userRepository.Object, _employeeRepository.Object, _pending, _consentService.Object);
+        new(_userRepository.Object, _employeeRepository.Object, _pending, _consentService.Object);
 
     private static RegisterEmployee.Command Command(bool? termsAccepted) =>
         new(Email, Password, "John", "Doe", Language, TermsAccepted: termsAccepted);

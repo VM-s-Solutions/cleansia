@@ -138,7 +138,7 @@ public sealed class ArchivedCompanyWriteGuardRosterTests : IDisposable
     {
         var expected = new[]
         {
-            "AdminActionAudit", "Cart", "CustomerActionAudit", "DeadLetter", "Device", "EmployeeActionAudit", "GdprRequest",
+            "AdminActionAudit", "CustomerActionAudit", "DeadLetter", "Device", "EmployeeActionAudit", "GdprRequest",
             "LiveActivityToken", "LoyaltyAccount", "LoyaltyTransaction", "MembershipBenefitUsage", "OutboxMessage", "Referral",
             "ReferralCode", "RefreshToken", "SavedAddress", "User", "UserConsent", "UserMembership", "UserNotification",
             "UserNotificationPreferences", "UserStripeCustomer",

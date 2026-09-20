@@ -114,8 +114,6 @@ public class User : TenantAuditable
     [MaxLength(64)]
     public string? StripeCustomerId { get; private set; }
 
-    public Cart? Cart { get; private set; }
-
     public Employee? Employee { get; private set; }
 
     private ICollection<Order> _orders = [];

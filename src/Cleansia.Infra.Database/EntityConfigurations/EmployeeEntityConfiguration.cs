@@ -1,5 +1,4 @@
 ﻿using Cleansia.Core.Domain.Users;
-using Cleansia.Infra.Database.Converters;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -77,10 +76,5 @@ public class EmployeeEntityConfiguration : TenantAuditableEntityConfiguration<Em
         // indexed; an index on ContractStatus too keeps the sweep cheap
         // even as the employee table grows.
         builder.HasIndex(e => e.ContractStatus);
-
-        builder.Property(s => s.Availability)
-            .HasConversion(new JsonValueConverter<IReadOnlyDictionary<string, List<TimeRange>>>())
-            .Metadata
-            .SetValueComparer(new JsonValueComparer<IReadOnlyDictionary<string, List<TimeRange>>>());
     }
 }

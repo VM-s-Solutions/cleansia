@@ -9,7 +9,7 @@ namespace Cleansia.Tests.Features.Services;
 /// The safe retire path (ADR-0007). Deactivate soft-retires via the auditable domain
 /// primitive (IsActive=false + DeactivatedBy/On; the customer overview's Where(IsActive) hides it,
 /// history survives); Activate reverses it. Contract: deactivating an IN-USE service is ALLOWED —
-/// unlike delete it only hides the row from new orders, existing orders/carts keep their
+/// unlike delete it only hides the row from new orders, existing orders keep their
 /// references — so the handler never consults the IsInUseAsync guard. Both directions are
 /// idempotent.
 /// </summary>

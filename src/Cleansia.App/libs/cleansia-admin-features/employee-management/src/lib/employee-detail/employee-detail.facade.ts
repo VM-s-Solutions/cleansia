@@ -3,7 +3,6 @@ import {
   AdminClient,
   AdminEmployeeDetail,
   AdminSetEmployeeWeeklyOrderLimitRequest,
-  AdminUpdateEmployeeAvailabilityRequest,
   AdminUpdateEmployeeCommand,
   ApproveEmployeeRequest,
   BulkCreateEmployeePayConfigsCommand,
@@ -12,7 +11,6 @@ import {
   EmployeePayConfigDto,
   EmployeePayConfigSummaryDto,
   RejectEmployeeRequest,
-  TimeRange,
   UpdatePayConfigCommand,
 } from '@cleansia/admin-services';
 import { ICleansiaSelectOption } from '@cleansia/components';
@@ -43,8 +41,6 @@ export class EmployeeDetailFacade extends UnsubscribeControlDirective {
 
   readonly employee = signal<AdminEmployeeDetail | null>(null);
   readonly loading = signal<boolean>(false);
-  readonly editingAvailability = signal<boolean>(false);
-  readonly savingAvailability = signal<boolean>(false);
   readonly editingSection = signal<string | null>(null);
   readonly savingEmployee = signal<boolean>(false);
 
@@ -266,50 +262,6 @@ export class EmployeeDetailFacade extends UnsubscribeControlDirective {
               'pages.employee_detail.messages.weekly_limit_save_success'
             )
           );
-          this.loadEmployeeDetail(employeeId);
-        }
-      });
-  }
-
-  startEditingAvailability(): void {
-    this.editingAvailability.set(true);
-  }
-
-  cancelEditingAvailability(): void {
-    this.editingAvailability.set(false);
-  }
-
-  saveAvailability(availability: { [key: string]: TimeRange[] } | undefined): void {
-    const employeeId = this.employee()?.id;
-    if (!employeeId) return;
-
-    this.savingAvailability.set(true);
-
-    const request = new AdminUpdateEmployeeAvailabilityRequest();
-    request.availability = availability;
-
-    this.adminClient.adminEmployeeClient
-      .updateAvailability(employeeId, request)
-      .pipe(
-        takeUntil(this.destroyed$),
-        catchError(() => {
-          this.snackbarService.showError(
-            this.translate.instant(
-              'pages.employee_detail.messages.availability_save_error'
-            )
-          );
-          return of(null);
-        }),
-        finalize(() => this.savingAvailability.set(false))
-      )
-      .subscribe((response) => {
-        if (response) {
-          this.snackbarService.showSuccess(
-            this.translate.instant(
-              'pages.employee_detail.messages.availability_save_success'
-            )
-          );
-          this.editingAvailability.set(false);
           this.loadEmployeeDetail(employeeId);
         }
       });

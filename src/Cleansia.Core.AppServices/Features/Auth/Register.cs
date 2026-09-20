@@ -97,7 +97,6 @@ public class Register
         string? PrivacyVersion) : ICustomerAuditPayload;
 
     public class Handler(
-        ICartRepository cartRepository,
         IUserRepository userRepository,
         IReferralService referralService,
         IPendingDispatch pending,
@@ -122,7 +121,6 @@ public class Register
                 userEntity = User.CreateWithPassword(command.Email, command.Password, command.FirstName, command.LastName, UserProfile.Customer, command.Language);
                 rawConfirmationToken = userEntity.RawConfirmationToken!;
                 userRepository.Add(userEntity);
-                cartRepository.Add(Cart.CreateWithUser(userEntity));
 
                 // The validator's pre-check and this insert cross a snapshot boundary with no lock, so
                 // the global Email UNIQUE index is what actually arbitrates two simultaneous registrations

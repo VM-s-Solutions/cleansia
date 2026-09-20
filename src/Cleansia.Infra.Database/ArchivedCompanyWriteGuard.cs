@@ -29,7 +29,6 @@ public static class ArchivedCompanyWriteGuard
         typeof(RefreshToken),
         typeof(Device),
         typeof(LiveActivityToken),
-        typeof(Cart),
         typeof(SavedAddress),
         typeof(UserConsent),
         typeof(UserNotificationPreferences),

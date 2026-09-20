@@ -8,7 +8,6 @@ import {
   EmployeeDocumentItem,
   EmployeeEntityType,
   EmployeePayConfigSummaryItemDto,
-  TimeRange,
 } from '@cleansia/admin-services';
 import { selectDayOfWeekCodes } from '@cleansia/admin-stores';
 import { CountryFieldLabelsService } from '@cleansia/admin-services';
@@ -146,7 +145,6 @@ export class EmployeeDetailComponent implements OnInit, OnDestroy {
   readonly editingConfigId = signal<string | null>(null);
 
   readonly daysOfWeek = signal<Code[]>([]);
-  availabilityValue: { [key: string]: TimeRange[] } = {};
 
   // Reactive form backing every edit section — keyed so only the fields
   // belonging to the currently-open section are actually displayed.
@@ -291,22 +289,6 @@ export class EmployeeDetailComponent implements OnInit, OnDestroy {
 
   onRejectDocument(document: EmployeeDocumentItem): void {
     this.docsFacade.openRejectDocumentDialog(document, this.facade.employee()?.id);
-  }
-
-  onEditAvailability(): void {
-    const employee = this.facade.employee();
-    this.availabilityValue = employee?.availability
-      ? { ...employee.availability }
-      : {};
-    this.facade.startEditingAvailability();
-  }
-
-  onSaveAvailability(): void {
-    this.facade.saveAvailability(this.availabilityValue);
-  }
-
-  onCancelEditAvailability(): void {
-    this.facade.cancelEditingAvailability();
   }
 
   applyGradeMultiplier(multiplier: number): void {

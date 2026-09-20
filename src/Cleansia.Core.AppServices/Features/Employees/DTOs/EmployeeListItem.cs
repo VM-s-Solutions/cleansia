@@ -53,7 +53,6 @@ public record AdminEmployeeDetail(
     string ContractStatus,
     decimal AverageRating,
     int ComplaintsCount,
-    Dictionary<string, List<TimeRange>>? Availability,
     DateTimeOffset CreatedAt,
     bool IsProfileComplete,
     string? RejectionReason,
@@ -73,5 +72,3 @@ public record AdminEmployeeDetail(
     /// </summary>
     int? WeeklyOrderLimit
 );
-
-public record TimeRange(string Start, string End);

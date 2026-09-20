@@ -58,9 +58,6 @@ public class RegisterTests(PostgresContainerFixture fixture) : BaseIntegrationTe
                 Assert.Equal(64, user.ConfirmationCode!.Length);
                 Assert.Matches("^[0-9a-f]{64}$", user.ConfirmationCode);
 
-                var cart = await context.Carts.FirstOrDefaultAsync(c => c.UserId == user.Id);
-                Assert.NotNull(cart);
-
                 var orders = await context.Orders.Where(o => o.UserId == user.Id).ToListAsync();
                 Assert.Empty(orders);
             },

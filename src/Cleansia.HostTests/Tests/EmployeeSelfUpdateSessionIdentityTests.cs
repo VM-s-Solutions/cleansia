@@ -24,7 +24,6 @@ public sealed class EmployeeSelfUpdateSessionIdentityTests(HostTestPostgresFixtu
         PersonalInfo,
         AddressInfo,
         EmergencyContact,
-        Availability,
         BankDetails,
         IdentificationInfo,
         FullProfile,
@@ -41,7 +40,6 @@ public sealed class EmployeeSelfUpdateSessionIdentityTests(HostTestPostgresFixtu
     private const string WrittenFirstName = "Selfwritten";
     private const string WrittenStreet = "Selfwritten Street 42";
     private const string WrittenEmergencyName = "Selfwritten ICE";
-    private const string WrittenAvailabilityDay = "2026-09-01";
     private const string WrittenPassportId = "SELFPASS9";
     private const string WrittenIban = "CZ3155000000005885638003";
     private const int WrittenJobRadiusKm = 50;
@@ -73,7 +71,6 @@ public sealed class EmployeeSelfUpdateSessionIdentityTests(HostTestPostgresFixtu
         Route.PersonalInfo => "/api/Employee/UpdatePersonalInfo",
         Route.AddressInfo => "/api/Employee/UpdateAddressInfo",
         Route.EmergencyContact => "/api/Employee/UpdateEmergencyContact",
-        Route.Availability => "/api/Employee/UpdateAvailability",
         Route.BankDetails => "/api/Employee/UpdateBankDetails",
         Route.IdentificationInfo => "/api/Employee/UpdateIdentificationInfo",
         Route.FullProfile => "/api/Employee/UpdateEmployee",
@@ -105,13 +102,6 @@ public sealed class EmployeeSelfUpdateSessionIdentityTests(HostTestPostgresFixtu
         {
             ["emergencyName"] = WrittenEmergencyName,
             ["emergencyPhone"] = "+420777000001",
-        },
-        Route.Availability => new()
-        {
-            ["availability"] = new Dictionary<string, object?>
-            {
-                [WrittenAvailabilityDay] = new[] { new { start = "09:00", end = "17:00" } },
-            },
         },
         Route.BankDetails => new()
         {
@@ -148,7 +138,6 @@ public sealed class EmployeeSelfUpdateSessionIdentityTests(HostTestPostgresFixtu
             ["emergencyPhone"] = "+420777000001",
             ["consent"] = true,
             ["documents"] = null,
-            ["availability"] = null,
         },
         Route.JobRadius => new()
         {
@@ -189,9 +178,6 @@ public sealed class EmployeeSelfUpdateSessionIdentityTests(HostTestPostgresFixtu
             case Route.EmergencyContact:
                 Assert.Equal(WrittenEmergencyName, employee.EmergencyContactName);
                 break;
-            case Route.Availability:
-                Assert.Contains(WrittenAvailabilityDay, employee.Availability.Keys);
-                break;
             case Route.BankDetails:
                 Assert.Equal(WrittenIban, employee.IBAN);
                 break;
@@ -222,9 +208,6 @@ public sealed class EmployeeSelfUpdateSessionIdentityTests(HostTestPostgresFixtu
             case Route.EmergencyContact:
                 Assert.Equal(SeededEmergencyName, employee.EmergencyContactName);
                 break;
-            case Route.Availability:
-                Assert.DoesNotContain(WrittenAvailabilityDay, employee.Availability.Keys);
-                break;
             case Route.BankDetails:
                 Assert.Equal(SeededIban, employee.IBAN);
                 break;
@@ -251,7 +234,6 @@ public sealed class EmployeeSelfUpdateSessionIdentityTests(HostTestPostgresFixtu
     [InlineData(Route.PersonalInfo)]
     [InlineData(Route.AddressInfo)]
     [InlineData(Route.EmergencyContact)]
-    [InlineData(Route.Availability)]
     [InlineData(Route.BankDetails)]
     [InlineData(Route.IdentificationInfo)]
     [InlineData(Route.FullProfile)]
@@ -273,7 +255,6 @@ public sealed class EmployeeSelfUpdateSessionIdentityTests(HostTestPostgresFixtu
     [InlineData(Route.PersonalInfo)]
     [InlineData(Route.AddressInfo)]
     [InlineData(Route.EmergencyContact)]
-    [InlineData(Route.Availability)]
     [InlineData(Route.BankDetails)]
     [InlineData(Route.IdentificationInfo)]
     [InlineData(Route.FullProfile)]
@@ -297,7 +278,6 @@ public sealed class EmployeeSelfUpdateSessionIdentityTests(HostTestPostgresFixtu
     [InlineData(Route.PersonalInfo)]
     [InlineData(Route.AddressInfo)]
     [InlineData(Route.EmergencyContact)]
-    [InlineData(Route.Availability)]
     [InlineData(Route.BankDetails)]
     [InlineData(Route.IdentificationInfo)]
     [InlineData(Route.FullProfile)]

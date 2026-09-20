@@ -28,7 +28,7 @@ namespace Cleansia.Tests.Features.Auth;
 ///     resolved/provisioned is the token's email, never the attacker-claimed one;
 ///   - <see cref="User.CreateWithGoogle"/> binds <c>claims.Subject</c>, never <c>command.GoogleId</c>;
 ///   - a forged/unverifiable token (verifier returns null) fails with
-///     <see cref="BusinessErrorMessage.InvalidGoogleUserToken"/> and creates no <see cref="User"/>/<see cref="Cart"/>;
+///     <see cref="BusinessErrorMessage.InvalidGoogleUserToken"/> and creates no <see cref="User"/>;
 ///   - the legitimate flow is preserved (known active user → token; unknown email → provision
 ///     from verified claims);
 ///   - an existing account whose verified email collides but whose AuthenticationType is NOT Google
@@ -45,7 +45,6 @@ public class GoogleAuthHandlerTests
     private const string HostAudience = JwtAudiences.Customer;
 
     private readonly Mock<ITokenService> _tokenService = new();
-    private readonly Mock<ICartRepository> _cartRepository = new();
     private readonly Mock<IUserRepository> _userRepository = new();
     private readonly Mock<IGoogleTokenVerifier> _verifier = new();
     private readonly IHostAudienceProvider _hostAudience = new HostAudienceProvider(HostAudience);
@@ -62,7 +61,6 @@ public class GoogleAuthHandlerTests
             typeof(GoogleAuth.Handler),
             _verifier.Object,
             _tokenService.Object,
-            _cartRepository.Object,
             _userRepository.Object,
             _hostAudience,
             new Mock<IConsentService>().Object,
@@ -122,7 +120,7 @@ public class GoogleAuthHandlerTests
     }
 
     // Verifier returns null (forged/unverifiable token, or audience mismatch resolved
-    // to null inside the verifier) → InvalidGoogleUserToken, no JWT, no User/Cart created.
+    // to null inside the verifier) → InvalidGoogleUserToken, no JWT, no User created.
     [Fact]
     public async Task Forged_Token_Is_Rejected_With_InvalidGoogleUserToken_And_Creates_Nothing()
     {
@@ -138,11 +136,10 @@ public class GoogleAuthHandlerTests
 
         _userRepository.Verify(r => r.GetByEmailIgnoringTenantAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
         _userRepository.Verify(r => r.Add(It.IsAny<User>()), Times.Never);
-        _cartRepository.Verify(r => r.Add(It.IsAny<Cart>()), Times.Never);
         _tokenService.Verify(t => t.GenerateTokenAsync(It.IsAny<User>(), It.IsAny<bool>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
-    // Legitimate flow: known active Google user signs in → JwtTokenResponse, no new user/cart.
+    // Legitimate flow: known active Google user signs in → JwtTokenResponse, no new user.
     [Fact]
     public async Task Known_Active_User_Gets_Token_Without_Reprovisioning()
     {
@@ -162,13 +159,12 @@ public class GoogleAuthHandlerTests
 
         Assert.True(result.IsSuccess);
         _userRepository.Verify(r => r.Add(It.IsAny<User>()), Times.Never);
-        _cartRepository.Verify(r => r.Add(It.IsAny<Cart>()), Times.Never);
         _tokenService.Verify(t => t.GenerateTokenAsync(existing, true, HostAudience, It.IsAny<CancellationToken>()), Times.Once);
     }
 
-    // Legitimate flow: unknown verified email → provision User + Cart from verified claims, token issued.
+    // Legitimate flow: unknown verified email → provision the User from verified claims, token issued.
     [Fact]
-    public async Task Unknown_Verified_Email_Provisions_User_And_Cart_From_Claims()
+    public async Task Unknown_Verified_Email_Provisions_User_From_Claims()
     {
         const string verifiedEmail = "brand-new@example.com";
         const string verifiedSubject = "subject-new";
@@ -186,7 +182,6 @@ public class GoogleAuthHandlerTests
             u.Email == verifiedEmail &&
             u.GoogleId == verifiedSubject &&
             u.AuthenticationType == AuthenticationType.Google)), Times.Once);
-        _cartRepository.Verify(r => r.Add(It.IsAny<Cart>()), Times.Once);
         _tokenService.Verify(t => t.GenerateTokenAsync(It.IsAny<User>(), true, HostAudience, It.IsAny<CancellationToken>()), Times.Once);
     }
 
@@ -207,7 +202,6 @@ public class GoogleAuthHandlerTests
         Assert.Equal(BusinessErrorMessage.InvalidGoogleUserToken, result.Error!.Message);
         Assert.Equal(nameof(GoogleAuth.Command.Token), result.Error!.Code);
         _userRepository.Verify(r => r.Add(It.IsAny<User>()), Times.Never);
-        _cartRepository.Verify(r => r.Add(It.IsAny<Cart>()), Times.Never);
         _tokenService.Verify(t => t.GenerateTokenAsync(It.IsAny<User>(), It.IsAny<bool>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
@@ -238,7 +232,6 @@ public class GoogleAuthHandlerTests
         _userRepository.Verify(r => r.GetByEmailIgnoringTenantAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
         _tokenService.Verify(t => t.GenerateTokenAsync(It.IsAny<User>(), It.IsAny<bool>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
         _userRepository.Verify(r => r.Add(It.IsAny<User>()), Times.Never);
-        _cartRepository.Verify(r => r.Add(It.IsAny<Cart>()), Times.Never);
     }
 
     // The other half of that gate: it narrows the fallback, it does not remove it. A legitimate returning
@@ -299,7 +292,6 @@ public class GoogleAuthHandlerTests
         // No JWT issued for the colliding account, and nothing provisioned.
         _tokenService.Verify(t => t.GenerateTokenAsync(It.IsAny<User>(), It.IsAny<bool>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
         _userRepository.Verify(r => r.Add(It.IsAny<User>()), Times.Never);
-        _cartRepository.Verify(r => r.Add(It.IsAny<Cart>()), Times.Never);
     }
 
     // Inactive existing user is rejected (behavior preserved from the original handler).
@@ -467,7 +459,6 @@ public class GoogleAuthHandlerTests
         Assert.Equal(BusinessErrorMessage.SocialAccountNotFound, result.Error!.Message);
         Assert.Equal(nameof(GoogleAuth.Command.TermsAccepted), result.Error!.Code);
         _userRepository.Verify(r => r.Add(It.IsAny<User>()), Times.Never);
-        _cartRepository.Verify(r => r.Add(It.IsAny<Cart>()), Times.Never);
         _tokenService.Verify(t => t.GenerateTokenAsync(It.IsAny<User>(), It.IsAny<bool>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
@@ -492,6 +483,5 @@ public class GoogleAuthHandlerTests
 
         Assert.True(result.IsSuccess);
         _userRepository.Verify(r => r.Add(It.Is<User>(u => u.Email == verifiedEmail)), Times.Once);
-        _cartRepository.Verify(r => r.Add(It.IsAny<Cart>()), Times.Once);
     }
 }

@@ -75,7 +75,6 @@ public class GoogleAuth
     public class Handler(
         IGoogleTokenVerifier googleTokenVerifier,
         ITokenService tokenService,
-        ICartRepository cartRepository,
         IUserRepository userRepository,
         IHostAudienceProvider hostAudience,
         IConsentService consentService,
@@ -197,10 +196,9 @@ public class GoogleAuth
             var userEntity = User.CreateWithGoogle(claims.Email, command.FirstName, command.LastName, claims.Subject);
 
             userRepository.Add(userEntity);
-            cartRepository.Add(Cart.CreateWithUser(userEntity));
 
-            // Reached only with the tick asserted. These two rows are the registration proof (the
-            // session row is declined above), so the consent rides the same flush as the account.
+            // Reached only with the tick asserted. This row is the registration proof (the session
+            // row is declined above), so the consent rides the same flush as the account.
             await consentService.TryGrantAsync(userEntity.Id, ConsentType.TermsOfService,
                 await legalDocumentResolver.ResolveInForceAsync(LegalDocumentType.TermsOfService, command.CountryId, cancellationToken), cancellationToken);
             await consentService.TryGrantAsync(userEntity.Id, ConsentType.PrivacyPolicy,

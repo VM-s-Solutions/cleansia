@@ -30,7 +30,6 @@ public sealed class GoogleAuthHostAudienceGateTests
     private const string Subject = "google-subject";
 
     private readonly Mock<ITokenService> _tokenService = new();
-    private readonly Mock<ICartRepository> _cartRepository = new();
     private readonly Mock<IUserRepository> _userRepository = new();
     private readonly Mock<IGoogleTokenVerifier> _verifier = new();
 
@@ -44,7 +43,6 @@ public sealed class GoogleAuthHostAudienceGateTests
     private GoogleAuth.Handler Handler(string hostAudience) => new(
         _verifier.Object,
         _tokenService.Object,
-        _cartRepository.Object,
         _userRepository.Object,
         new HostAudienceProvider(hostAudience),
         new Mock<IConsentService>().Object,
@@ -88,7 +86,6 @@ public sealed class GoogleAuthHostAudienceGateTests
     private void AssertNothingProvisionedAndNoToken()
     {
         _userRepository.Verify(r => r.Add(It.IsAny<User>()), Times.Never);
-        _cartRepository.Verify(r => r.Add(It.IsAny<Cart>()), Times.Never);
         _userRepository.Verify(r => r.CommitAsync(It.IsAny<CancellationToken>()), Times.Never);
         _tokenService.Verify(t => t.GenerateTokenAsync(It.IsAny<User>(), It.IsAny<bool>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
     }
@@ -153,7 +150,6 @@ public sealed class GoogleAuthHostAudienceGateTests
 
         Assert.True(result.IsSuccess);
         _userRepository.Verify(r => r.Add(It.Is<User>(u => u.Email == "new-customer@example.com" && u.Profile == UserProfile.Customer)), Times.Once);
-        _cartRepository.Verify(r => r.Add(It.IsAny<Cart>()), Times.Once);
     }
 
     [Fact]

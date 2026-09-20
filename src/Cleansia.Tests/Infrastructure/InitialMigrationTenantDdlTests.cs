@@ -21,7 +21,7 @@ namespace Cleansia.Tests.Infrastructure;
 /// </summary>
 public sealed class InitialMigrationTenantDdlTests : IDisposable
 {
-    private const int StampedTables = 49;
+    private const int StampedTables = 48;
     private const int EnvelopeTables = 2;
 
     private readonly SqliteConnection _connection;

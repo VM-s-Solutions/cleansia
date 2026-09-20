@@ -45,7 +45,7 @@ public class GdprExportService(
                 emp.EntityType, emp.RegistrationNumber, emp.LegalEntityName,
                 emp.IBAN, emp.PassportId, emp.NationalityId,
                 emp.EmergencyContactName, emp.EmergencyContactPhone,
-                emp.PreferredCurrencyCode, emp.AverageRating, emp.ContractStatus, emp.CreatedOn);
+                emp.AverageRating, emp.ContractStatus, emp.CreatedOn);
 
         GdprExportPayoutDetailsDto? payoutDetails = null;
         if (user.Employee is not null)

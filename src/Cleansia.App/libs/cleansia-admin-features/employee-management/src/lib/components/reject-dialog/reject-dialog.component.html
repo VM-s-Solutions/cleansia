@@ -2,7 +2,9 @@
   <form [formGroup]="form" (ngSubmit)="onReject()">
     <div class="reject-dialog__header">
       <h2 class="reject-dialog__title">{{ data.title }}</h2>
-      <p class="reject-dialog__subtitle" *ngIf="data.subtitle">{{ data.subtitle }}</p>
+      @if (data.subtitle) {
+      <p class="reject-dialog__subtitle">{{ data.subtitle }}</p>
+      }
     </div>
 
     <div class="reject-dialog__content">
@@ -20,16 +22,16 @@
         <small class="reject-dialog__hint">
           {{ 'pages.employee_management.reject_dialog.reason_hint' | translate }}
         </small>
-        <small
-          class="reject-dialog__error"
-          *ngIf="form.controls.reason.touched && form.controls.reason.hasError('required')">
+        @if (form.controls.reason.touched && form.controls.reason.hasError('required')) {
+        <small class="reject-dialog__error">
           {{ 'pages.employee_management.reject_dialog.reason_required' | translate }}
         </small>
-        <small
-          class="reject-dialog__error"
-          *ngIf="form.controls.reason.touched && form.controls.reason.hasError('maxlength')">
+        }
+        @if (form.controls.reason.touched && form.controls.reason.hasError('maxlength')) {
+        <small class="reject-dialog__error">
           {{ 'pages.employee_management.reject_dialog.reason_too_long' | translate }}
         </small>
+        }
       </div>
     </div>
 

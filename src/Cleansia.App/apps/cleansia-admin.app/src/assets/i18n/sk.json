@@ -1136,7 +1136,6 @@
       "price_required": "Povinné",
       "price_optional": "Nepovinné",
       "included_services": "Zahrnuté služby",
-      "select_services": "Vyberte služby na zahrnutie",
       "weights_title": "Relatívne cenové váhy",
       "weight": "Váha",
       "derived_gross": "Odvodená hrubá cena",
@@ -1423,9 +1422,6 @@
       "iso_alpha2": "Dvojpísmenový kód",
       "iso_alpha2_placeholder": "napr. CZ, US, DE",
       "iso_alpha2_help": "ISO 3166-1 alpha-2. Zákazníci ho vidia na štítku trhu.",
-      "validation": {
-        "iso_alpha2_invalid": "Presne dve písmená."
-      },
       "market": "Trh",
       "insurance_coverage_amount": "Poistné krytie na jednu rezerváciu",
       "insurance_coverage_amount_placeholder": "Nechajte prázdne, ak sa nemá uvádzať žiadna suma",
@@ -2583,11 +2579,6 @@
           "express_upgrades_per_month_help": "Koľko expresných rezervácií dostane člen každý mesiac bez expresného príplatku. Nula znamená žiadne."
         },
         "validation": {
-          "code_invalid": "2–50 znakov: písmená, číslice alebo podčiarkovníky.",
-          "price_negative": "Cena musí byť nula alebo vyššia.",
-          "discount_range": "Zľava musí byť medzi 0 a 100.",
-          "window_negative": "Lehota musí byť nula alebo vyššia.",
-          "express_upgrades_negative": "Počet zahrnutých expresných upgradov musí byť nula alebo vyšší.",
           "price_block_half_filled": "Zadajte cenu aj Stripe Price id, alebo nechajte obe polia prázdne, aby plán v tejto mene nebol v predaji."
         },
         "submit_create": "Vytvoriť plán",
@@ -2877,6 +2868,8 @@
       "email": "Pole musí obsahovať platnú e-mailovú adresu",
       "min_length": "Pole musí obsahovať aspoň {{ minLength }} znakov",
       "max_length": "Pole môže obsahovať maximálne {{ maxLength }} znakov",
+      "min": "Hodnota musí byť aspoň {{ min }}",
+      "max": "Hodnota nesmie byť väčšia ako {{ max }}",
       "pattern": "Pole nezodpovedá požadovanému formátu",
       "phone_number": "Neplatný formát telefónneho čísla",
       "iban": "Neplatný formát IBAN",

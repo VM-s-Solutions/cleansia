@@ -2,7 +2,9 @@
   <form [formGroup]="form" (ngSubmit)="onApprove()">
     <div class="approve-dialog__header">
       <h2 class="approve-dialog__title">{{ data.title }}</h2>
-      <p class="approve-dialog__subtitle" *ngIf="data.subtitle">{{ data.subtitle }}</p>
+      @if (data.subtitle) {
+      <p class="approve-dialog__subtitle">{{ data.subtitle }}</p>
+      }
     </div>
 
     <div class="approve-dialog__content">
@@ -17,11 +19,11 @@
         <small class="approve-dialog__hint">
           {{ 'pages.employee_detail.approve_employee_dialog.work_country_hint' | translate }}
         </small>
-        <small
-          class="approve-dialog__error"
-          *ngIf="form.controls.workCountryId.touched && form.controls.workCountryId.hasError('required')">
+        @if (form.controls.workCountryId.touched && form.controls.workCountryId.hasError('required')) {
+        <small class="approve-dialog__error">
           {{ 'pages.employee_detail.approve_employee_dialog.work_country_required' | translate }}
         </small>
+        }
       </div>
 
       <div class="approve-dialog__field">

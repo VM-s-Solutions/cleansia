@@ -1,13 +1,17 @@
 <div class="cleansia-admin-profile cleansia-page">
   <div class="cleansia-admin-profile__container page-wrapper page-wrapper--narrow">
-    <cleansia-title [title]="'pages.admin_profile.title' | translate" />
+    <div class="cleansia-page-header">
+      <div class="cleansia-page-header__heading">
+        <cleansia-title [title]="'pages.admin_profile.title' | translate" [level]="1" />
+      </div>
+    </div>
 
-    <form [formGroup]="form" (ngSubmit)="onSubmit()">
+    <form [formGroup]="form" (ngSubmit)="onSubmit()" class="cleansia-form">
       <cleansia-section
         [title]="'pages.admin_profile.change_password.title' | translate"
       >
         <div class="form-grid">
-          <div class="form-field">
+          <div class="form-field form-field--third">
             <cleansia-text-input
               [label]="
                 'pages.admin_profile.change_password.current_password'
@@ -20,7 +24,7 @@
             />
           </div>
 
-          <div class="form-field">
+          <div class="form-field form-field--third">
             <cleansia-text-input
               [label]="
                 'pages.admin_profile.change_password.new_password' | translate
@@ -30,12 +34,9 @@
               autocomplete="new-password"
               [required]="true"
             />
-            <small class="form-field__hint">
-              {{ 'pages.admin_profile.change_password.password_hint' | translate }}
-            </small>
           </div>
 
-          <div class="form-field">
+          <div class="form-field form-field--third">
             <cleansia-text-input
               [label]="
                 'pages.admin_profile.change_password.confirm_password'
@@ -47,19 +48,23 @@
               [required]="true"
             />
           </div>
-        </div>
 
-        <div class="form-actions">
-          <cleansia-button
-            [label]="'pages.admin_profile.change_password.submit' | translate"
-            type="submit"
-            icon="pi pi-lock"
-            [disabled]="facade.saving()"
-            [loading]="facade.saving()"
-            (onClick)="onSubmit()"
-          />
+          <p class="form-hint">
+            {{ 'pages.admin_profile.change_password.password_hint' | translate }}
+          </p>
         </div>
       </cleansia-section>
+
+      <div class="form-actions">
+        <cleansia-button
+          [label]="'pages.admin_profile.change_password.submit' | translate"
+          type="submit"
+          icon="pi pi-lock"
+          [disabled]="facade.saving()"
+          [loading]="facade.saving()"
+          (onClick)="onSubmit()"
+        />
+      </div>
     </form>
   </div>
 </div>

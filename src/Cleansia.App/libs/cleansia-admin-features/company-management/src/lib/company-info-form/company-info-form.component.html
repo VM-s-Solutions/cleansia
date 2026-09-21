@@ -1,25 +1,24 @@
 <div class="cleansia-company-info-form cleansia-page">
   <div class="cleansia-company-info-form__container page-wrapper page-wrapper--narrow">
-    <!-- Header with Back Button -->
-    <div class="cleansia-company-info-form__header">
-      <cleansia-button
-        [label]="'global.actions.back' | translate"
-        icon="pi pi-arrow-left"
-        (onClick)="onCancel()"
-        [outlined]="true"
-      />
-      <cleansia-title [title]="pageTitle()" />
+    <div class="cleansia-page-header">
+      <div class="cleansia-page-header__heading">
+        <div class="cleansia-detail-title">
+          <cleansia-button
+            [label]="'global.actions.back' | translate"
+            icon="pi pi-arrow-left"
+            severity="secondary"
+            [outlined]="true"
+            (onClick)="onCancel()"
+          />
+          <cleansia-title [title]="pageTitle()" [level]="1" />
+        </div>
+      </div>
     </div>
 
     @if (facade.loading()) {
     <cleansia-loader />
     } @else {
-    <form
-      [formGroup]="form"
-      (ngSubmit)="onSave()"
-      class="cleansia-company-info-form__content"
-    >
-      <!-- Legal Information Section -->
+    <form [formGroup]="form" (ngSubmit)="onSave()" class="cleansia-form">
       <cleansia-section
         [title]="'pages.company_info.sections.legal_info' | translate"
       >
@@ -40,7 +39,7 @@
             />
           </div>
 
-          <div class="form-field full-width">
+          <div class="form-field form-field--full">
             <cleansia-textarea
               [label]="'pages.company_info.tagline' | translate"
               formControlName="tagline"
@@ -50,7 +49,6 @@
         </div>
       </cleansia-section>
 
-      <!-- Tax Information Section -->
       <cleansia-section
         [title]="'pages.company_info.sections.tax_info' | translate"
       >
@@ -85,19 +83,19 @@
               [label]="'pages.company_info.vat_registered_from' | translate"
               formControlName="vatRegisteredFrom"
             />
-            <small class="form-field__hint">
-              {{ 'pages.company_info.vat_registered_from_hint' | translate }}
-            </small>
           </div>
+
+          <p class="form-hint">
+            {{ 'pages.company_info.vat_registered_from_hint' | translate }}
+          </p>
         </div>
       </cleansia-section>
 
-      <!-- Address Section -->
       <cleansia-section
         [title]="'pages.company_info.sections.address' | translate"
       >
         <div class="form-grid">
-          <div class="form-field full-width">
+          <div class="form-field form-field--full">
             <cleansia-text-input
               [label]="'pages.company_info.street' | translate"
               formControlName="street"
@@ -105,7 +103,7 @@
             />
           </div>
 
-          <div class="form-field">
+          <div class="form-field form-field--third">
             <cleansia-text-input
               [label]="'pages.company_info.city' | translate"
               formControlName="city"
@@ -113,7 +111,7 @@
             />
           </div>
 
-          <div class="form-field">
+          <div class="form-field form-field--third">
             <cleansia-text-input
               [label]="'pages.company_info.zip_code' | translate"
               formControlName="zipCode"
@@ -121,7 +119,7 @@
             />
           </div>
 
-          <div class="form-field">
+          <div class="form-field form-field--third">
             <cleansia-select
               [label]="'pages.company_info.country' | translate"
               formControlName="countryId"
@@ -134,26 +132,25 @@
         </div>
       </cleansia-section>
 
-      <!-- Contact Information Section -->
       <cleansia-section
         [title]="'pages.company_info.sections.contact' | translate"
       >
         <div class="form-grid">
-          <div class="form-field">
+          <div class="form-field form-field--third">
             <cleansia-text-input
               [label]="'pages.company_info.phone' | translate"
               formControlName="phone"
             />
           </div>
 
-          <div class="form-field">
+          <div class="form-field form-field--third">
             <cleansia-text-input
               [label]="'pages.company_info.email' | translate"
               formControlName="email"
             />
           </div>
 
-          <div class="form-field">
+          <div class="form-field form-field--third">
             <cleansia-text-input
               [label]="'pages.company_info.website' | translate"
               formControlName="website"
@@ -162,7 +159,6 @@
         </div>
       </cleansia-section>
 
-      <!-- Banking Information Section -->
       <cleansia-section
         [title]="'pages.company_info.sections.banking' | translate"
       >

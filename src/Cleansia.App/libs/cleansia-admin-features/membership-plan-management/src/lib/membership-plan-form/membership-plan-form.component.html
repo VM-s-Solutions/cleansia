@@ -1,53 +1,43 @@
 <div class="cleansia-membership-plan-form cleansia-page">
   <div class="cleansia-membership-plan-form__container page-wrapper page-wrapper--narrow">
-    <div class="cleansia-membership-plan-form__header">
-      <cleansia-button
-        [label]="'global.actions.back' | translate"
-        icon="pi pi-arrow-left"
-        (onClick)="onCancel()"
-        [outlined]="true"
-      />
-      <cleansia-title [title]="pageTitle()" />
+    <div class="cleansia-page-header">
+      <div class="cleansia-page-header__heading">
+        <div class="cleansia-detail-title">
+          <cleansia-button
+            [label]="'global.actions.back' | translate"
+            icon="pi pi-arrow-left"
+            severity="secondary"
+            [outlined]="true"
+            (onClick)="onCancel()"
+          />
+          <cleansia-title [title]="pageTitle()" [level]="1" />
+        </div>
+      </div>
     </div>
 
     @if (facade.loading()) {
       <cleansia-loader />
     } @else {
-      <form
-        [formGroup]="form"
-        (ngSubmit)="onSave()"
-        class="cleansia-membership-plan-form__content"
-      >
+      <form [formGroup]="form" (ngSubmit)="onSave()" class="cleansia-form">
         <cleansia-section
           [title]="'pages.membership_plans.form.section.identity' | translate"
         >
           <div class="form-grid">
-            <div class="form-field">
+            <div class="form-field form-field--third">
               <cleansia-text-input
                 [label]="'pages.membership_plans.form.field.code' | translate"
                 formControlName="code"
                 [required]="true"
               />
-              <small class="field-help">
-                {{ 'pages.membership_plans.form.field.code_help' | translate }}
-              </small>
-              @if (form.controls.code.touched && form.controls.code.errors) {
-                <small class="field-error">
-                  {{
-                    'pages.membership_plans.form.validation.code_invalid'
-                      | translate
-                  }}
-                </small>
-              }
             </div>
-            <div class="form-field">
+            <div class="form-field form-field--third">
               <cleansia-text-input
                 [label]="'pages.membership_plans.form.field.name' | translate"
                 formControlName="name"
                 [required]="true"
               />
             </div>
-            <div class="form-field">
+            <div class="form-field form-field--third">
               <cleansia-select
                 [label]="
                   'pages.membership_plans.form.field.interval' | translate
@@ -56,15 +46,16 @@
                 [options]="intervalOptions()"
                 [showClear]="false"
               />
-              @if (isEditMode()) {
-                <small class="field-help">
-                  {{
-                    'pages.membership_plans.form.field.interval_immutable'
-                      | translate
-                  }}
-                </small>
-              }
             </div>
+            <p class="form-hint">
+              {{ 'pages.membership_plans.form.field.code_help' | translate }}
+              @if (isEditMode()) {
+                {{
+                  'pages.membership_plans.form.field.interval_immutable'
+                    | translate
+                }}
+              }
+            </p>
           </div>
         </cleansia-section>
 
@@ -98,17 +89,6 @@
                       [formControl]="priceBlock(currency.code).controls.price"
                       dataType="number"
                     />
-                    @if (
-                      priceBlock(currency.code).controls.price.touched &&
-                      priceBlock(currency.code).controls.price.errors?.['min']
-                    ) {
-                      <small class="field-error">
-                        {{
-                          'pages.membership_plans.form.validation.price_negative'
-                            | translate
-                        }}
-                      </small>
-                    }
                   </div>
                   <div class="form-field">
                     <cleansia-text-input
@@ -120,25 +100,25 @@
                         priceBlock(currency.code).controls.stripePriceId
                       "
                     />
-                    <small class="field-help">
-                      {{
-                        'pages.membership_plans.form.field.stripe_price_id_help'
-                          | translate
-                      }}
-                    </small>
                   </div>
-                </div>
-                @if (
-                  priceBlock(currency.code).touched &&
-                  priceBlock(currency.code).errors?.[halfFilledError]
-                ) {
-                  <small class="field-error">
+                  <p class="form-hint">
                     {{
-                      'pages.membership_plans.form.validation.price_block_half_filled'
+                      'pages.membership_plans.form.field.stripe_price_id_help'
                         | translate
                     }}
-                  </small>
-                }
+                  </p>
+                  @if (
+                    priceBlock(currency.code).touched &&
+                    priceBlock(currency.code).errors?.[halfFilledError]
+                  ) {
+                    <p class="form-error">
+                      {{
+                        'pages.membership_plans.form.validation.price_block_half_filled'
+                          | translate
+                      }}
+                    </p>
+                  }
+                </div>
               </div>
             } @empty {
               <div class="empty-state">
@@ -148,7 +128,7 @@
             }
           </div>
           <div class="form-grid">
-            <div class="form-field">
+            <div class="form-field form-field--third">
               <cleansia-text-input
                 [label]="
                   'pages.membership_plans.form.field.discount' | translate
@@ -157,18 +137,6 @@
                 dataType="number"
                 [required]="true"
               />
-              @if (
-                form.controls.discountPercentage.touched &&
-                (form.controls.discountPercentage.errors?.['min'] ||
-                  form.controls.discountPercentage.errors?.['max'])
-              ) {
-                <small class="field-error">
-                  {{
-                    'pages.membership_plans.form.validation.discount_range'
-                      | translate
-                  }}
-                </small>
-              }
             </div>
           </div>
         </cleansia-section>
@@ -177,7 +145,7 @@
           [title]="'pages.membership_plans.form.section.benefits' | translate"
         >
           <div class="form-grid">
-            <div class="form-field">
+            <div class="form-field form-field--third">
               <cleansia-text-input
                 [label]="
                   'pages.membership_plans.form.field.free_cancel_window'
@@ -187,19 +155,8 @@
                 dataType="number"
                 [required]="true"
               />
-              @if (
-                form.controls.freeCancellationWindowHours.touched &&
-                form.controls.freeCancellationWindowHours.errors?.['min']
-              ) {
-                <small class="field-error">
-                  {{
-                    'pages.membership_plans.form.validation.window_negative'
-                      | translate
-                  }}
-                </small>
-              }
             </div>
-            <div class="form-field">
+            <div class="form-field form-field--third">
               <cleansia-checkbox
                 [label]="
                   'pages.membership_plans.form.field.express_upgrade'
@@ -208,7 +165,7 @@
                 formControlName="allowsExpressUpgrade"
               />
             </div>
-            <div class="form-field">
+            <div class="form-field form-field--third">
               <cleansia-text-input
                 [label]="
                   'pages.membership_plans.form.field.express_upgrades_per_month'
@@ -218,24 +175,13 @@
                 dataType="number"
                 [required]="true"
               />
-              <small class="field-help">
-                {{
-                  'pages.membership_plans.form.field.express_upgrades_per_month_help'
-                    | translate
-                }}
-              </small>
-              @if (
-                form.controls.expressUpgradesPerMonth.touched &&
-                form.controls.expressUpgradesPerMonth.errors?.['min']
-              ) {
-                <small class="field-error">
-                  {{
-                    'pages.membership_plans.form.validation.express_upgrades_negative'
-                      | translate
-                  }}
-                </small>
-              }
             </div>
+            <p class="form-hint">
+              {{
+                'pages.membership_plans.form.field.express_upgrades_per_month_help'
+                  | translate
+              }}
+            </p>
           </div>
         </cleansia-section>
 

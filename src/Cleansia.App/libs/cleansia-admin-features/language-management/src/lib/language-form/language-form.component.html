@@ -1,24 +1,24 @@
 <div class="cleansia-language-form cleansia-page">
   <div class="cleansia-language-form__container page-wrapper page-wrapper--narrow">
-    <!-- Header with Back Button -->
-    <div class="cleansia-language-form__header">
-      <cleansia-button
-        [label]="'global.actions.back' | translate"
-        icon="pi pi-arrow-left"
-        (onClick)="onCancel()"
-        [outlined]="true"
-      />
-      <cleansia-title [title]="pageTitle()" />
+    <div class="cleansia-page-header">
+      <div class="cleansia-page-header__heading">
+        <div class="cleansia-detail-title">
+          <cleansia-button
+            [label]="'global.actions.back' | translate"
+            icon="pi pi-arrow-left"
+            severity="secondary"
+            [outlined]="true"
+            (onClick)="onCancel()"
+          />
+          <cleansia-title [title]="pageTitle()" [level]="1" />
+        </div>
+      </div>
     </div>
 
     @if (facade.loading()) {
     <cleansia-loader />
     } @else {
-    <form
-      [formGroup]="form"
-      (ngSubmit)="onSave()"
-      class="cleansia-language-form__content"
-    >
+    <form [formGroup]="form" (ngSubmit)="onSave()" class="cleansia-form">
       <cleansia-section [title]="'pages.language_form.basic_info' | translate">
         <div class="form-grid">
           <div class="form-field">

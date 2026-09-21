@@ -12,6 +12,7 @@ import {
   UpdatePackageCommand,
   UpdatePackageResponse,
 } from '@cleansia/admin-services';
+import { ICleansiaSelectOption } from '@cleansia/components';
 import { UnsubscribeControlDirective } from '@cleansia/directives';
 import { CleansiaAdminRoute, resolveApiErrorKey, SnackbarService } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
@@ -70,6 +71,12 @@ export class PackageFormFacade extends UnsubscribeControlDirective {
   readonly languages = signal<LanguageOption[]>([]);
   readonly currencies = signal<CurrencyOption[]>([]);
   readonly availableServices = signal<ServiceListItem[]>([]);
+
+  readonly serviceOptions = computed<ICleansiaSelectOption[]>(() =>
+    this.availableServices()
+      .filter((service): service is ServiceListItem & { id: string } => Boolean(service.id))
+      .map((service) => ({ label: service.name ?? '', value: service.id }))
+  );
 
   /**
    * Which currency the per-service gross preview is denominated in. The preview splits ONE number

@@ -1,35 +1,37 @@
 <div class="cleansia-admin-user-form cleansia-page">
   <div class="cleansia-admin-user-form__container page-wrapper page-wrapper--narrow">
-    <!-- Header with Back Button -->
-    <div class="cleansia-admin-user-form__header">
-      <cleansia-button
-        [label]="'global.actions.back' | translate"
-        icon="pi pi-arrow-left"
-        (onClick)="onCancel()"
-        [outlined]="true"
-      />
-      <cleansia-title [title]="pageTitle()" />
+    <div class="cleansia-page-header">
+      <div class="cleansia-page-header__heading">
+        <div class="cleansia-detail-title">
+          <cleansia-button
+            [label]="'global.actions.back' | translate"
+            icon="pi pi-arrow-left"
+            severity="secondary"
+            [outlined]="true"
+            (onClick)="onCancel()"
+          />
+          <cleansia-title [title]="pageTitle()" [level]="1" />
+        </div>
+      </div>
       @if (isEditMode()) {
-      <cleansia-button
-        *cleansiaPermission="Policy.CanViewAuditLog"
-        class="cleansia-admin-user-form__audit-link"
-        icon="pi pi-history"
-        severity="secondary"
-        [outlined]="true"
-        [label]="'pages.audit_log.drill_in.view_history' | translate"
-        (onClick)="viewAuditHistory()"
-      />
+      <div class="cleansia-page-header__actions">
+        <cleansia-button
+          *cleansiaPermission="Policy.CanViewAuditLog"
+          class="cleansia-admin-user-form__audit-link"
+          icon="pi pi-history"
+          severity="secondary"
+          [outlined]="true"
+          [label]="'pages.audit_log.drill_in.view_history' | translate"
+          (onClick)="viewAuditHistory()"
+        />
+      </div>
       }
     </div>
 
     @if (facade.loading()) {
     <cleansia-loader />
     } @else {
-    <form
-      [formGroup]="form"
-      (ngSubmit)="onSave()"
-      class="cleansia-admin-user-form__content"
-    >
+    <form [formGroup]="form" (ngSubmit)="onSave()" class="cleansia-form">
       <cleansia-section
         [title]="'pages.admin_user_form.account_info' | translate"
       >
@@ -61,10 +63,10 @@
               [showClear]="false"
               [required]="true"
             />
-            <small class="form-field__hint">
-              {{ 'pages.admin_user_form.role_hint' | translate }}
-            </small>
           </div>
+          <p class="form-hint">
+            {{ 'pages.admin_user_form.role_hint' | translate }}
+          </p>
           }
         </div>
       </cleansia-section>
@@ -82,14 +84,14 @@
               [options]="roleOptions()"
               [showClear]="false"
             />
-            <small class="form-field__hint">
-              @if (facade.isSelf()) {
-              {{ 'api.admin_user.cannot_change_own_role' | translate }}
-              } @else {
-              {{ 'pages.admin_user_form.role_change_hint' | translate }}
-              }
-            </small>
           </div>
+          <p class="form-hint">
+            @if (facade.isSelf()) {
+            {{ 'api.admin_user.cannot_change_own_role' | translate }}
+            } @else {
+            {{ 'pages.admin_user_form.role_change_hint' | translate }}
+            }
+          </p>
         </div>
       </cleansia-section>
       }
@@ -114,31 +116,32 @@
             />
           </div>
 
-          <div class="form-field">
+          <div class="form-field form-field--third">
             <cleansia-telephone
               [label]="'pages.admin_user_form.phone_number' | translate"
               formControlName="phoneNumber"
             />
           </div>
 
-          <div class="form-field">
+          <div class="form-field form-field--third">
             <cleansia-calendar
               [label]="'pages.admin_user_form.birth_date' | translate"
               formControlName="birthDate"
               [maxDate]="maxBirthDate"
             />
-            <small class="form-field__hint">
-              {{ 'pages.admin_user_form.birth_date_hint' | translate }}
-            </small>
           </div>
 
-          <div class="form-field">
+          <div class="form-field form-field--third">
             <cleansia-select
               [label]="'pages.admin_user_form.preferred_language' | translate"
               formControlName="preferredLanguageCode"
               [options]="facade.languageOptions()"
             />
           </div>
+
+          <p class="form-hint">
+            {{ 'pages.admin_user_form.birth_date_hint' | translate }}
+          </p>
         </div>
       </cleansia-section>
 

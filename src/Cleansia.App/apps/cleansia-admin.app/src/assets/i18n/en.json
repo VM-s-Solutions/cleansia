@@ -1136,7 +1136,6 @@
       "price_required": "Required",
       "price_optional": "Optional",
       "included_services": "Included Services",
-      "select_services": "Select services to include",
       "weights_title": "Relative price weights",
       "weight": "Weight",
       "derived_gross": "Derived gross",
@@ -1423,9 +1422,6 @@
       "iso_alpha2": "Two-letter code",
       "iso_alpha2_placeholder": "e.g. CZ, US, DE",
       "iso_alpha2_help": "ISO 3166-1 alpha-2. Customers see it on the market chip.",
-      "validation": {
-        "iso_alpha2_invalid": "Exactly two letters."
-      },
       "market": "Market",
       "insurance_coverage_amount": "Insurance coverage per booking",
       "insurance_coverage_amount_placeholder": "Leave empty to state no figure",
@@ -2583,11 +2579,6 @@
           "express_upgrades_per_month_help": "How many express bookings a member gets each month without the express surcharge. Zero means none."
         },
         "validation": {
-          "code_invalid": "2–50 characters: letters, numbers or underscores.",
-          "price_negative": "Price must be zero or more.",
-          "discount_range": "Discount must be between 0 and 100.",
-          "window_negative": "Window must be zero or more.",
-          "express_upgrades_negative": "Included express upgrades must be zero or more.",
           "price_block_half_filled": "Enter both a price and a Stripe Price id, or leave both empty to keep the plan off sale in this currency."
         },
         "submit_create": "Create plan",
@@ -2877,6 +2868,8 @@
       "email": "Field must contain a valid email address",
       "min_length": "Field must contain at least {{ minLength }} characters",
       "max_length": "Field can contain a maximum of {{ maxLength }} characters",
+      "min": "Value must be at least {{ min }}",
+      "max": "Value must be at most {{ max }}",
       "pattern": "Field does not match the required pattern",
       "phone_number": "Invalid phone number format",
       "iban": "Invalid IBAN format",

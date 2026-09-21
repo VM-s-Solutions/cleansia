@@ -1,4 +1,3 @@
-import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { CleansiaButtonComponent, CleansiaTextareaComponent } from '@cleansia/components';
@@ -20,7 +19,6 @@ export interface RejectDialogResult {
   selector: 'cleansia-reject-dialog',
   standalone: true,
   imports: [
-    CommonModule,
     ReactiveFormsModule,
     TranslateModule,
     CleansiaButtonComponent,

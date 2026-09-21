@@ -23,15 +23,15 @@ import { ServiceListItem } from '@cleansia/admin-services';
 import { CleansiaAdminRoute } from '@cleansia/services';
 import {
   CleansiaButtonComponent,
+  CleansiaCheckboxComponent,
   CleansiaLoaderComponent,
+  CleansiaMultiselectComponent,
   CleansiaSectionComponent,
   CleansiaTextareaComponent,
-  CleansiaCheckboxComponent,
   CleansiaTextInputComponent,
   CleansiaTitleComponent,
 } from '@cleansia/components';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
-import { MultiSelectModule } from 'primeng/multiselect';
 import { Tab, TabList, TabPanel, TabPanels, Tabs } from 'primeng/tabs';
 import { takeUntil } from 'rxjs';
 import { PackageFormData, PackageFormFacade } from './package-form.facade';
@@ -49,10 +49,10 @@ import { PackageFormData, PackageFormFacade } from './package-form.facade';
     Tab,
     TabPanels,
     TabPanel,
-    MultiSelectModule,
     CleansiaButtonComponent,
     CleansiaTextInputComponent,
     CleansiaCheckboxComponent,
+    CleansiaMultiselectComponent,
     CleansiaTextareaComponent,
     CleansiaLoaderComponent,
     CleansiaSectionComponent,
@@ -123,7 +123,9 @@ export class PackageFormComponent implements OnInit, OnDestroy {
     prices: this.fb.nonNullable.group({}),
   });
 
-  readonly selectedServices = signal<ServiceListItem[]>([]);
+  // The multiselect collapses its chips into PrimeNG's untranslated "{0} items selected" past
+  // its limit; a package shows every included service, so the limit sits above the option count.
+  readonly chipLimit = computed(() => this.facade.serviceOptions().length + 1);
 
   private packageLoadEffect = effect(() => {
     const pkg = this.facade.pkg();
@@ -276,14 +278,11 @@ export class PackageFormComponent implements OnInit, OnDestroy {
 
     const includedServices = pkg.includedServices;
     if (includedServices) {
-      const selected = availableServices.filter((s) =>
-        includedServices.some((is) => is.id === s.id)
-      );
-      this.selectedServices.set(selected);
       this.facade.syncWeightRows(
-        selected
-          .filter((s): s is ServiceListItem & { id: string } => Boolean(s.id))
-          .map((s) => ({ id: s.id, name: s.name ?? '' })),
+        this.selectedServices(
+          availableServices,
+          includedServices.map((s) => s.id)
+        ),
         includedServices
       );
     }
@@ -304,18 +303,21 @@ export class PackageFormComponent implements OnInit, OnDestroy {
     }
   }
 
-  onServiceSelectionChange(selected: ServiceListItem[]): void {
-    this.selectedServices.set(selected);
-    const serviceIds = selected
-      .map((s) => s.id)
-      .filter((id): id is string => !!id);
-    this.form.patchValue({ serviceIds });
+  onServiceSelectionChange(serviceIds: unknown[]): void {
     this.facade.syncWeightRows(
-      selected
-        .filter((s): s is ServiceListItem & { id: string } => Boolean(s.id))
-        .map((s) => ({ id: s.id, name: s.name ?? '' })),
+      this.selectedServices(this.facade.availableServices(), serviceIds),
       this.facade.pkg()?.includedServices
     );
+  }
+
+  private selectedServices(
+    availableServices: ServiceListItem[],
+    serviceIds: ReadonlyArray<unknown>
+  ): { id: string; name: string }[] {
+    return availableServices
+      .filter((s): s is ServiceListItem & { id: string } => Boolean(s.id))
+      .filter((s) => serviceIds.includes(s.id))
+      .map((s) => ({ id: s.id, name: s.name ?? '' }));
   }
 
   onWeightChange(serviceId: string, value: string | number): void {

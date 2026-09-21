@@ -1,24 +1,24 @@
 <div class="cleansia-package-form cleansia-page">
   <div class="cleansia-package-form__container page-wrapper page-wrapper--narrow">
-    <!-- Header with Back Button -->
-    <div class="cleansia-package-form__header">
-      <cleansia-button
-        [label]="'global.actions.back' | translate"
-        icon="pi pi-arrow-left"
-        (onClick)="onCancel()"
-        [outlined]="true"
-      />
-      <cleansia-title [title]="pageTitle()" />
+    <div class="cleansia-page-header">
+      <div class="cleansia-page-header__heading">
+        <div class="cleansia-detail-title">
+          <cleansia-button
+            [label]="'global.actions.back' | translate"
+            icon="pi pi-arrow-left"
+            severity="secondary"
+            [outlined]="true"
+            (onClick)="onCancel()"
+          />
+          <cleansia-title [title]="pageTitle()" [level]="1" />
+        </div>
+      </div>
     </div>
 
     @if (facade.loading()) {
     <cleansia-loader />
     } @else {
-    <form
-      [formGroup]="form"
-      (ngSubmit)="onSave()"
-      class="cleansia-package-form__content"
-    >
+    <form [formGroup]="form" (ngSubmit)="onSave()" class="cleansia-form">
       <cleansia-section [title]="'pages.package_form.basic_info' | translate">
         <div class="form-grid">
           <div class="form-field">
@@ -29,18 +29,18 @@
             />
           </div>
 
-          <div class="form-field full-width">
-            <cleansia-textarea
-              [label]="'pages.package_form.description' | translate"
-              formControlName="description"
-              [rows]="3"
-            />
-          </div>
-
           <div class="form-field">
             <cleansia-text-input
               [label]="'pages.package_form.tagline' | translate"
               formControlName="tagline"
+            />
+          </div>
+
+          <div class="form-field form-field--full">
+            <cleansia-textarea
+              [label]="'pages.package_form.description' | translate"
+              formControlName="description"
+              [rows]="3"
             />
           </div>
 
@@ -71,7 +71,7 @@
               >
             </h4>
             <div class="form-grid">
-              <div class="form-field">
+              <div class="form-field form-field--third">
                 <cleansia-text-input
                   [label]="'pages.package_form.price' | translate"
                   [formControlName]="currency.code"
@@ -91,67 +91,58 @@
 
       <cleansia-section [title]="'pages.package_form.services' | translate">
         <div class="form-grid">
-          <div class="form-field full-width">
-            <span class="form-label">{{
-              'pages.package_form.included_services' | translate
-            }}</span>
-            <p-multiSelect
-              [options]="facade.availableServices()"
-              [ngModel]="selectedServices()"
-              (ngModelChange)="onServiceSelectionChange($event)"
-              [ngModelOptions]="{ standalone: true }"
-              optionLabel="name"
-              [placeholder]="'pages.package_form.select_services' | translate"
-              [showClear]="true"
-              [filter]="true"
-              filterBy="name"
+          <div class="form-field form-field--full">
+            <cleansia-multiselect
+              [label]="'pages.package_form.included_services' | translate"
+              formControlName="serviceIds"
+              [options]="facade.serviceOptions()"
+              [maxSelectedLabels]="chipLimit()"
               display="chip"
-              styleClass="full-width"
+              (valueChanges)="onServiceSelectionChange($event)"
             />
           </div>
         </div>
 
         @if (facade.weightRows().length > 0) {
-        <div class="form-grid">
-          <div class="form-field full-width">
-            <span class="form-label">{{
-              'pages.package_form.weights_title' | translate
-            }}</span>
+        <div class="package-weights">
+          <h4 class="package-weights__title">
+            {{ 'pages.package_form.weights_title' | translate }}
+          </h4>
 
-            @for (row of facade.derivedGrosses(); track row.id) {
-            <div class="form-grid weight-row">
-              <div class="form-field">
-                <cleansia-text-input
-                  [id]="'weight-' + row.id"
-                  [label]="row.name"
-                  dataType="number"
-                  [ngModel]="row.weight"
-                  [ngModelOptions]="{ standalone: true }"
-                  (valueChanges)="onWeightChange(row.id, $event)"
-                />
-              </div>
-              <div class="form-field weight-row__gross">
-                <span class="form-label">{{
-                  'pages.package_form.derived_gross' | translate
-                }}</span>
-                <span class="weight-row__gross-value">{{
-                  row.gross | number : '1.2-2'
-                }}</span>
-              </div>
+          @for (row of facade.derivedGrosses(); track row.id) {
+          <div class="form-grid">
+            <div class="form-field form-field--third">
+              <cleansia-text-input
+                [id]="'weight-' + row.id"
+                [label]="row.name"
+                dataType="number"
+                [ngModel]="row.weight"
+                [ngModelOptions]="{ standalone: true }"
+                (valueChanges)="onWeightChange(row.id, $event)"
+              />
             </div>
-            }
+            <div class="form-field form-field--third package-weights__gross">
+              <span class="package-weights__gross-label">
+                {{ 'pages.package_form.derived_gross' | translate }}
+              </span>
+              <span class="package-weights__gross-value">
+                {{ row.gross | number : '1.2-2' }}
+              </span>
+            </div>
           </div>
+          }
         </div>
         }
       </cleansia-section>
 
       @if (facade.errorKey()) {
-      <cleansia-section>
-        <p class="form-error">{{ facade.errorKey()! | translate }}</p>
-      </cleansia-section>
+      <p class="form-error">{{ facade.errorKey()! | translate }}</p>
       }
 
-      <cleansia-section [title]="'pages.package_form.translations' | translate">
+      <cleansia-section
+        class="form-translations"
+        [title]="'pages.package_form.translations' | translate"
+      >
         <p-tabs
           [value]="activeLanguage()"
           (valueChange)="onLanguageTabChange($event)"
@@ -165,7 +156,7 @@
             @for (lang of facade.languages(); track lang.code) {
             <p-tabpanel [value]="lang.code">
               <div formGroupName="translations">
-                <div class="translation-form-grid" [formGroupName]="lang.code">
+                <div class="form-grid" [formGroupName]="lang.code">
                   <div class="form-field">
                     <cleansia-text-input
                       [label]="'pages.package_form.name' | translate"
@@ -175,17 +166,17 @@
                   </div>
 
                   <div class="form-field">
+                    <cleansia-text-input
+                      [label]="'pages.package_form.tagline' | translate"
+                      formControlName="tagline"
+                    />
+                  </div>
+
+                  <div class="form-field form-field--full">
                     <cleansia-textarea
                       [label]="'pages.package_form.description' | translate"
                       formControlName="description"
                       [rows]="3"
-                    />
-                  </div>
-
-                  <div class="form-field">
-                    <cleansia-text-input
-                      [label]="'pages.package_form.tagline' | translate"
-                      formControlName="tagline"
                     />
                   </div>
                 </div>

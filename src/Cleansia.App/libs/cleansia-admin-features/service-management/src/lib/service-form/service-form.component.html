@@ -1,24 +1,24 @@
 <div class="cleansia-service-form cleansia-page">
   <div class="cleansia-service-form__container page-wrapper page-wrapper--narrow">
-    <!-- Header with Back Button -->
-    <div class="cleansia-service-form__header">
-      <cleansia-button
-        [label]="'global.actions.back' | translate"
-        icon="pi pi-arrow-left"
-        (onClick)="onCancel()"
-        [outlined]="true"
-      />
-      <cleansia-title [title]="pageTitle()" />
+    <div class="cleansia-page-header">
+      <div class="cleansia-page-header__heading">
+        <div class="cleansia-detail-title">
+          <cleansia-button
+            [label]="'global.actions.back' | translate"
+            icon="pi pi-arrow-left"
+            severity="secondary"
+            [outlined]="true"
+            (onClick)="onCancel()"
+          />
+          <cleansia-title [title]="pageTitle()" [level]="1" />
+        </div>
+      </div>
     </div>
 
     @if (facade.loading()) {
     <cleansia-loader />
     } @else {
-    <form
-      [formGroup]="form"
-      (ngSubmit)="onSave()"
-      class="cleansia-service-form__content"
-    >
+    <form [formGroup]="form" (ngSubmit)="onSave()" class="cleansia-form">
       <cleansia-section [title]="'pages.service_form.basic_info' | translate">
         <div class="form-grid">
           <div class="form-field">
@@ -38,7 +38,7 @@
             />
           </div>
 
-          <div class="form-field full-width">
+          <div class="form-field form-field--full">
             <cleansia-textarea
               [label]="'pages.service_form.description' | translate"
               formControlName="description"
@@ -50,7 +50,7 @@
 
       <cleansia-section [title]="'pages.service_form.pricing' | translate">
         <div class="form-grid">
-          <div class="form-field">
+          <div class="form-field form-field--third">
             <cleansia-text-input
               [label]="'pages.service_form.estimated_time' | translate"
               formControlName="estimatedTime"
@@ -103,7 +103,10 @@
         </div>
       </cleansia-section>
 
-      <cleansia-section [title]="'pages.service_form.translations' | translate">
+      <cleansia-section
+        class="form-translations"
+        [title]="'pages.service_form.translations' | translate"
+      >
         <p-tabs
           [value]="activeLanguage()"
           (valueChange)="onLanguageTabChange($event)"
@@ -117,7 +120,7 @@
             @for (lang of facade.languages(); track lang.code) {
             <p-tabpanel [value]="lang.code">
               <div formGroupName="translations">
-                <div class="translation-form-grid" [formGroupName]="lang.code">
+                <div class="form-grid" [formGroupName]="lang.code">
                   <div class="form-field">
                     <cleansia-text-input
                       [label]="'pages.service_form.name' | translate"
@@ -126,7 +129,7 @@
                     />
                   </div>
 
-                  <div class="form-field">
+                  <div class="form-field form-field--full">
                     <cleansia-textarea
                       [label]="'pages.service_form.description' | translate"
                       formControlName="description"

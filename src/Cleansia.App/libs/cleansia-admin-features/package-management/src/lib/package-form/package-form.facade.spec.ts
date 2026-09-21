@@ -79,6 +79,19 @@ describe('PackageFormFacade', () => {
     facade = TestBed.inject(PackageFormFacade);
   });
 
+  it('offers every service with an id as a select option labelled by its name', () => {
+    facade.availableServices.set([
+      { id: 'svc-a', name: 'Windows' },
+      { id: undefined, name: 'Unsaved' },
+      { id: 'svc-b', name: undefined },
+    ] as never);
+
+    expect(facade.serviceOptions()).toEqual([
+      { label: 'Windows', value: 'svc-a' },
+      { label: '', value: 'svc-b' },
+    ]);
+  });
+
   it('derives grosses that sum exactly to the package price for weights 3/1', () => {
     facade.setPrice(100);
     facade.syncWeightRows([

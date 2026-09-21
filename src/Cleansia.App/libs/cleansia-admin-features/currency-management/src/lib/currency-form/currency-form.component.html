@@ -1,27 +1,27 @@
 <div class="cleansia-currency-form cleansia-page">
   <div class="cleansia-currency-form__container page-wrapper page-wrapper--narrow">
-    <!-- Header with Back Button -->
-    <div class="cleansia-currency-form__header">
-      <cleansia-button
-        [label]="'global.actions.back' | translate"
-        icon="pi pi-arrow-left"
-        (onClick)="onCancel()"
-        [outlined]="true"
-      />
-      <cleansia-title [title]="pageTitle()" />
+    <div class="cleansia-page-header">
+      <div class="cleansia-page-header__heading">
+        <div class="cleansia-detail-title">
+          <cleansia-button
+            [label]="'global.actions.back' | translate"
+            icon="pi pi-arrow-left"
+            severity="secondary"
+            [outlined]="true"
+            (onClick)="onCancel()"
+          />
+          <cleansia-title [title]="pageTitle()" [level]="1" />
+        </div>
+      </div>
     </div>
 
     @if (facade.loading()) {
     <cleansia-loader />
     } @else {
-    <form
-      [formGroup]="form"
-      (ngSubmit)="onSave()"
-      class="cleansia-currency-form__content"
-    >
+    <form [formGroup]="form" (ngSubmit)="onSave()" class="cleansia-form">
       <cleansia-section [title]="'pages.currency_form.basic_info' | translate">
         <div class="form-grid">
-          <div class="form-field">
+          <div class="form-field form-field--third">
             <cleansia-text-input
               [label]="'pages.currency_form.code' | translate"
               formControlName="code"
@@ -29,7 +29,7 @@
             />
           </div>
 
-          <div class="form-field">
+          <div class="form-field form-field--third">
             <cleansia-text-input
               [label]="'pages.currency_form.symbol' | translate"
               formControlName="symbol"
@@ -37,7 +37,7 @@
             />
           </div>
 
-          <div class="form-field">
+          <div class="form-field form-field--third">
             <cleansia-text-input
               [label]="'pages.currency_form.name' | translate"
               formControlName="name"

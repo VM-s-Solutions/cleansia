@@ -110,10 +110,7 @@ export function getCurrencyTableDefinition(
         id: 'isDefault',
         field: 'isDefault',
         header: translate.instant('pages.currency_management.columns.is_default'),
-        getValue: (row: AdminCurrencyListItem) =>
-          row.isDefault
-            ? translate.instant('global.yes')
-            : translate.instant('global.no'),
+        getValue: (row: AdminCurrencyListItem) => (row.isDefault ? translate.instant('global.yes') : '—'),
         width: '10%',
       },
     ],

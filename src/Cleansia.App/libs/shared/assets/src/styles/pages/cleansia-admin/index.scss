@@ -2,6 +2,7 @@
 // Import all admin page styles here
 
 @use '../../common/auth';
+@use './tab-strip.scss';
 @use './employee-management.component.scss';
 @use './employee-detail.component.scss';
 @use './order-detail.component.scss';

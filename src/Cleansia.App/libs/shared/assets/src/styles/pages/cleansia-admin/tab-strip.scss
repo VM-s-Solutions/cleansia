@@ -1,0 +1,7 @@
+// PrimeNG declares the icon-to-label gap on a tab but never makes the tab a flex row, so the gap
+// does nothing until the row is drawn here, once, for every admin tab strip.
+.p-tabs .p-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}

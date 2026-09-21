@@ -16,19 +16,24 @@
   gap: 1rem;
 }
 
-// Icon and label share the card's top edge, so the five cards read on one baseline whatever
-// each one's value line count is.
+// Each card subgrids the summary's rows, so the label row is as tall as the longest label in that
+// row of cards and every value starts on the same line whatever its own label wraps to.
 .summary-card {
-  display: flex;
-  align-items: flex-start;
-  gap: 1rem;
+  grid-row: span 3;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  grid-template-rows: subgrid;
+  column-gap: 1rem;
+  row-gap: 0.25rem;
   padding: 1.25rem;
   background: var(--cleansia-white);
   border-radius: var(--cleansia-radius-md);
   border: 1px solid var(--cleansia-primary-100);
 
   &__icon {
-    min-width: 48px;
+    grid-column: 1;
+    grid-row: 1 / -1;
+    width: 48px;
     height: 48px;
     border-radius: var(--cleansia-radius-md);
     display: flex;
@@ -43,9 +48,13 @@
   }
 
   &__content {
-    display: flex;
-    flex-direction: column;
-    gap: 0.25rem;
+    display: contents;
+  }
+
+  &__label,
+  &__value,
+  &__subline {
+    grid-column: 2;
   }
 
   &__label {

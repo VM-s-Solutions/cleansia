@@ -88,9 +88,15 @@ const LIST_STYLESHEETS = [
 
 // A column whose id names a figure, an amount or a count, or ends in a stamp's suffix.
 const FIGURE_COLUMN_ID =
-  /(price|amount|total|count|rating|discount|threshold|percentage|hours|days|points|awarded|pay|revenue|orders?|range|tender|credit|card)$|^(perUser|validity|lastModified)$/i;
+  /(price|amount|total|count|rating|discount|threshold|percentage|hours|days|points|awarded|pay|revenue|orders?|range|tender|credit|card|limit|employees|perks)$|^(perUser|validity|lastModified)$|^duration/i;
 const STAMP_COLUMN_ID = /(On|At|Date|DateTime|From)$/;
-const isNumericColumnId = (id: string): boolean => FIGURE_COLUMN_ID.test(id) || STAMP_COLUMN_ID.test(id);
+// Columns whose id names no figure but whose cell prints one; `value` cannot join the pattern
+// because the company-settings column of that id prints a setting's text.
+const NAMED_FIGURE_COLUMNS = new Set([
+  'libs/cleansia-admin-features/company-lifecycle/src/lib/company-lifecycle/company-lifecycle.models.ts → value',
+]);
+const isNumericColumn = (file: string, id: string): boolean =>
+  FIGURE_COLUMN_ID.test(id) || STAMP_COLUMN_ID.test(id) || NAMED_FIGURE_COLUMNS.has(`${file} → ${id}`);
 
 function walk(dir: string, out: string[] = []): string[] {
   for (const name of readdirSync(dir)) {
@@ -141,7 +147,7 @@ describe('admin list pages', () => {
     const offenders = files
       .flatMap(columnLiterals)
       .filter(({ body }) => /\bfield:/.test(body) && /\bheader:/.test(body))
-      .filter(({ id, body }) => isNumericColumnId(id) && !/numeric:\s*true/.test(body))
+      .filter(({ file, id, body }) => isNumericColumn(file, id) && !/numeric:\s*true/.test(body))
       .map(({ file, id }) => `${file} → ${id}`)
       .sort();
 

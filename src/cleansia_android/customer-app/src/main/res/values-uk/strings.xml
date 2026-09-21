@@ -1381,6 +1381,11 @@
     <string name="dispute_create_which_items">Що саме пішло не так?</string>
     <string name="dispute_create_which_items_hint">Необов’язково. Позначте послуги, які виконані погано — це допоможе швидше все виправити. Якщо проблемою було все прибирання — залиште порожнім.</string>
     <string name="dispute_create_item_in_package">у пакеті %1$s</string>
+    <string name="dispute_create_evidence_hint">Необов’язково. Фото або PDF до 10 МБ кожен — завантажаться під час надсилання.</string>
+    <string name="dispute_create_evidence_partial">Спір надіслано, але ці файли не вдалося завантажити: %1$s. Додайте їх знову на сторінці спору.</string>
+    <string name="dispute_evidence_remove">Видалити</string>
+    <string name="dispute_evidence_uploaded">Завантажено</string>
+    <string name="dispute_evidence_upload_failed">Не вдалося завантажити</string>
     <string name="order_review_rate_items">Оцінити кожну послугу окремо</string>
     <string name="order_review_rate_items_hint">Необов’язково. Корисно, коли одна частина вийшла добре, а інша ні — це покаже нам, куди саме дивитися.</string>
     <string name="order_review_item_in_package">у пакеті %1$s</string>

@@ -14,6 +14,7 @@ import cz.cleansia.core.network.ApiResult
 import cz.cleansia.core.snackbar.SnackbarController
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
+import java.util.UUID
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -21,12 +22,14 @@ import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 /**
  * ViewModel for CreateDisputeScreen. Reads the optional `orderId` query param
  * from the back stack, validates the user-entered reason + description, and
- * submits via [DisputeRepository.create].
+ * submits via [DisputeRepository.create], then uploads every picked evidence
+ * file to the new dispute in order.
  *
  * On success: refreshes the singleton list cache (so the new dispute shows up
  * when the user returns to the list) and emits the new dispute id on
@@ -41,7 +44,7 @@ import kotlinx.coroutines.launch
 class CreateDisputeViewModel @Inject constructor(
     private val disputeRepository: DisputeRepository,
     private val orderRepository: OrderRepository,
-    private val snackbar: SnackbarController,
+    val snackbar: SnackbarController,
     savedStateHandle: SavedStateHandle,
     @ApplicationContext private val appContext: Context,
 ) : ViewModel() {
@@ -71,6 +74,15 @@ class CreateDisputeViewModel @Inject constructor(
     private val _pickedLineKeys = MutableStateFlow<Set<String>>(emptySet())
     val pickedLineKeys: StateFlow<Set<String>> = _pickedLineKeys.asStateFlow()
 
+    private val _pickedEvidence = MutableStateFlow<List<PickedEvidence>>(emptyList())
+    val pickedEvidence: StateFlow<List<PickedEvidence>> = _pickedEvidence.asStateFlow()
+
+    /**
+     * Set the moment the server acknowledges the create. A later submit — after an upload failed —
+     * resumes from here instead of filing a second dispute about the same money.
+     */
+    private var createdId: String? = null
+
     init {
         val id = orderId
         if (id != null) {
@@ -89,6 +101,24 @@ class CreateDisputeViewModel @Inject constructor(
         }
     }
 
+    fun addEvidence(bytes: ByteArray, fileName: String, mimeType: String) {
+        if (_submitState.value is ActionState.Submitting) return
+        if (bytes.size > DisputeFormConstants.EVIDENCE_MAX_BYTES) {
+            snackbar.showError(appContext.getString(R.string.dispute_evidence_too_large))
+            return
+        }
+        if (mimeType.lowercase() !in DisputeFormConstants.EVIDENCE_ALLOWED_MIME_TYPES) {
+            snackbar.showError(appContext.getString(R.string.dispute_evidence_unsupported_type))
+            return
+        }
+        _pickedEvidence.update { it + PickedEvidence(UUID.randomUUID().toString(), fileName, mimeType, bytes) }
+    }
+
+    fun removeEvidence(key: String) {
+        if (_submitState.value is ActionState.Submitting) return
+        _pickedEvidence.update { list -> list.filterNot { it.key == key } }
+    }
+
     fun submit(reason: Int, description: String) {
         if (_submitState.value is ActionState.Submitting) return
         val id = orderId ?: run {
@@ -100,32 +130,69 @@ class CreateDisputeViewModel @Inject constructor(
 
         _submitState.value = ActionState.Submitting
         viewModelScope.launch {
-            // Only rows still on the loaded order. Nothing can go stale here today — the order is
-            // fixed by the route — but the filter costs nothing and keeps the invariant local.
-            val picked = _pickedLineKeys.value
-            val lines = _lineOptions.value
-                .filter { it.key in picked }
-                .map { DisputeLineRequest(serviceId = it.serviceId, packageId = it.packageId) }
+            val disputeId = createdId ?: create(id, reason, description) ?: return@launch
+            uploadPending(disputeId)
+            _submitState.value = ActionState.Idle
+            _createdDisputeId.emit(disputeId)
+        }
+    }
 
-            when (val result = disputeRepository.create(id, reason, description.trim(), lines)) {
-                is ApiResult.Success -> {
-                    _submitState.value = ActionState.Idle
+    private suspend fun create(orderId: String, reason: Int, description: String): String? {
+        // Only rows still on the loaded order. Nothing can go stale here today — the order is
+        // fixed by the route — but the filter costs nothing and keeps the invariant local.
+        val picked = _pickedLineKeys.value
+        val lines = _lineOptions.value
+            .filter { it.key in picked }
+            .map { DisputeLineRequest(serviceId = it.serviceId, packageId = it.packageId) }
+
+        return when (val result = disputeRepository.create(orderId, reason, description.trim(), lines)) {
+            is ApiResult.Success -> {
+                createdId = result.data
+                disputeRepository.refresh()
+                result.data
+            }
+            is ApiResult.Error -> {
+                if (result.error !is ApiError.Network) {
+                    snackbar.showError(result.error)
+                    // Anything that is not a transport failure means the server answered, so the
+                    // dispute may well exist despite the error — a refused response body is
+                    // exactly that case. Refresh so the customer finds it in the list instead of
+                    // filing a second dispute about the same money.
                     disputeRepository.refresh()
-                    _createdDisputeId.emit(result.data)
                 }
+                _submitState.value = ActionState.Error(appContext.getString(R.string.dispute_create_retry_hint))
+                null
+            }
+        }
+    }
+
+    /**
+     * One file at a time, in the order picked. A failure marks its own row and moves on: the dispute
+     * exists either way, and the customer is told which files to add again from its detail.
+     */
+    private suspend fun uploadPending(disputeId: String) {
+        val failedNames = mutableListOf<String>()
+        for (file in _pickedEvidence.value) {
+            if (file.upload == EvidenceUploadState.Uploaded) continue
+            mark(file.key, EvidenceUploadState.Uploading)
+            val result = disputeRepository.uploadEvidence(disputeId, file.bytes, file.fileName, file.mimeType)
+            when (result) {
+                is ApiResult.Success -> mark(file.key, EvidenceUploadState.Uploaded)
                 is ApiResult.Error -> {
-                    if (result.error !is ApiError.Network) {
-                        snackbar.showError(result.error)
-                        // Anything that is not a transport failure means the server answered, so the
-                        // dispute may well exist despite the error — a refused response body is
-                        // exactly that case. Refresh so the customer finds it in the list instead of
-                        // filing a second dispute about the same money. → T-0684
-                        disputeRepository.refresh()
-                    }
-                    _submitState.value = ActionState.Error(appContext.getString(R.string.dispute_create_retry_hint))
+                    mark(file.key, EvidenceUploadState.Failed)
+                    failedNames += file.fileName
                 }
             }
         }
+        if (failedNames.isNotEmpty()) {
+            snackbar.showError(
+                appContext.getString(R.string.dispute_create_evidence_partial, failedNames.joinToString(", ")),
+            )
+        }
+    }
+
+    private fun mark(key: String, upload: EvidenceUploadState) {
+        _pickedEvidence.update { list -> list.map { if (it.key == key) it.withUpload(upload) else it } }
     }
 
     fun clearError() {

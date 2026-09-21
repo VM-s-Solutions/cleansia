@@ -113,20 +113,13 @@ class DisputeDetailViewModel @Inject constructor(
         }
     }
 
-    /**
-     * Upload one evidence file.
-     *
-     * **The accepted types and the size cap mirror the backend validator**, so a doomed request never
-     * reaches the network — and if the whitelist grows there it must grow here.
-     * -> /flows/cancellation-refund-dispute
-     */
     fun uploadEvidence(bytes: ByteArray, fileName: String, mimeType: String) {
         val id = disputeId ?: return
-        if (bytes.size > MAX_EVIDENCE_BYTES) {
+        if (bytes.size > DisputeFormConstants.EVIDENCE_MAX_BYTES) {
             snackbar.showError(appContext.getString(R.string.dispute_evidence_too_large))
             return
         }
-        if (mimeType.lowercase() !in ALLOWED_EVIDENCE_MIME_TYPES) {
+        if (mimeType.lowercase() !in DisputeFormConstants.EVIDENCE_ALLOWED_MIME_TYPES) {
             snackbar.showError(appContext.getString(R.string.dispute_evidence_unsupported_type))
             return
         }
@@ -148,16 +141,5 @@ class DisputeDetailViewModel @Inject constructor(
                 }
             }
         }
-    }
-
-    companion object {
-        private const val MAX_EVIDENCE_BYTES: Int = 10 * 1024 * 1024
-        private val ALLOWED_EVIDENCE_MIME_TYPES: Set<String> = setOf(
-            "image/jpeg",
-            "image/jpg",
-            "image/png",
-            "image/webp",
-            "application/pdf",
-        )
     }
 }

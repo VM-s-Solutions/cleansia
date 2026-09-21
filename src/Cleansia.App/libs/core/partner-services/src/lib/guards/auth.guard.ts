@@ -7,7 +7,5 @@ export const authGuard: CanActivateFn = () => {
   const authService = inject(PartnerAuthService);
   const router = inject(Router);
 
-  return authService.isLoggedIn()
-    ? true
-    : router.navigate([CleansiaPartnerRoute.LOGIN]);
+  return authService.isLoggedIn() ? true : router.createUrlTree([`/${CleansiaPartnerRoute.LOGIN}`]);
 };

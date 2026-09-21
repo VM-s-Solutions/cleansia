@@ -15,10 +15,10 @@
   --cleansia-brand-aspect: 616 / 172;
 }
 
-// Hide per-page language switchers on mobile (toolbar provides it)
-// This must be global since the language switchers are in child routed components
+// A page's own language switcher yields to the toolbar's once the toolbar is up; the sign-in
+// screens have no toolbar and keep theirs. Global, because the switchers sit in routed pages.
 @media (max-width: 768px) {
-  .main-content cleansia-language-switcher {
+  .main-content__with-toolbar cleansia-language-switcher {
     display: none !important;
   }
 }

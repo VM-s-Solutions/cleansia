@@ -25,7 +25,7 @@
         type="button"
         class="sidebar-close"
         (click)="toggleSidebar()"
-        aria-label="Close menu"
+        [attr.aria-label]="'global.close_menu' | translate"
       >
         <i class="pi pi-times"></i>
       </button>
@@ -39,6 +39,7 @@
         <li
           class="menu-item"
           [class.menu-item--active]="isActiveRoute(item.route)"
+          [attr.aria-current]="isActiveRoute(item.route) ? 'page' : null"
           (click)="onMenuItemClick(item, $event)"
           (keydown.enter)="onMenuItemClick(item, $event)"
           tabindex="0"
@@ -113,6 +114,7 @@
   <li
     class="menu-item"
     [class.menu-item--active]="isActiveRoute(item.route)"
+    [attr.aria-current]="isActiveRoute(item.route) ? 'page' : null"
     (click)="onMenuItemClick(item, $event)"
     (keydown.enter)="onMenuItemClick(item, $event)"
     tabindex="0"

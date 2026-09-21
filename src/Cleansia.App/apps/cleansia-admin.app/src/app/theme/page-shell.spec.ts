@@ -20,8 +20,8 @@ function findSolutionDir(): string {
 const STYLES_DIR = join(findSolutionDir(), 'Cleansia.App/libs/shared/assets/src/styles');
 const ADMIN_PAGES_DIR = join(STYLES_DIR, 'pages/cleansia-admin');
 
-// Full-screen screens with no page wrapper: the login card and the unauthorized splash.
-const NOT_SHELL_PAGES = new Set(['index.scss', 'login.component.scss', 'unauthorized.component.scss']);
+// The one full-screen screen with no page wrapper: the unauthorized splash.
+const NOT_SHELL_PAGES = new Set(['index.scss', 'unauthorized.component.scss']);
 
 interface Block {
   selector: string;

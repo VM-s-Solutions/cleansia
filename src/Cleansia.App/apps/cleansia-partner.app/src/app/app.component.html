@@ -8,30 +8,8 @@
   />
   }
 
-  <!-- Mobile top toolbar -->
   @if (isLoggedIn() && isMobile()) {
-  <div class="mobile-toolbar">
-    <button
-      type="button"
-      class="mobile-toolbar__menu-btn"
-      (click)="openSidebar()"
-      aria-label="Open menu"
-    >
-      <i class="pi pi-bars"></i>
-    </button>
-    <div class="mobile-toolbar__brand">
-      <picture>
-        <source srcset="assets/logos/Logo.webp" type="image/webp" />
-        <img
-          src="assets/logos/Logo.png"
-          alt="Cleansia Partner"
-          width="99"
-          height="28"
-        />
-      </picture>
-    </div>
-    <cleansia-language-switcher />
-  </div>
+  <cleansia-mobile-toolbar (menuOpen)="openSidebar()" />
   }
 
   <main class="main-content" [ngClass]="{ 'main-content__margin': isLoggedIn(), 'main-content__with-toolbar': isLoggedIn() && isMobile() }">

@@ -1,7 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { PermissionService, Policy } from '@cleansia/services';
-import { TranslateModule } from '@ngx-translate/core';
+import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { readFileSync } from 'fs';
 import { join } from 'path';
 import { CleansiaSidebarMenuComponent } from './cleansia-sidebar-menu.component';
@@ -191,3 +191,55 @@ describe('CleansiaSidebarMenuComponent — permission gate', () => {
     expect(labels()).toEqual(['sidebar.notifications', 'sidebar.employees']);
   });
 });
+
+/**
+ * The rail is the one navigation both portals share, so its accessible names come from the app
+ * bundle and the active entry says so to assistive tech — `aria-current` is what a screen reader
+ * announces as "current page", the highlight class is what a sighted reader sees.
+ */
+describe('CleansiaSidebarMenuComponent — accessible names', () => {
+  let fixture: ComponentFixture<CleansiaSidebarMenuComponent>;
+  let component: CleansiaSidebarMenuComponent;
+
+  const items = () =>
+    Array.from((fixture.nativeElement as HTMLElement).querySelectorAll('.menu-item')) as HTMLElement[];
+
+  async function render(width: number, url: string): Promise<void> {
+    await TestBed.configureTestingModule({
+      imports: [CleansiaSidebarMenuComponent, TranslateModule.forRoot()],
+      providers: [provideRouter([])],
+    }).compileComponents();
+
+    const translate = TestBed.inject(TranslateService);
+    translate.setTranslation('cs', { global: { close_menu: 'Zavřít menu' }, sidebar: { orders: 'Objednávky' } });
+    translate.use('cs');
+
+    Object.defineProperty(window, 'innerWidth', { value: width, configurable: true });
+    fixture = TestBed.createComponent(CleansiaSidebarMenuComponent);
+    component = fixture.componentInstance;
+    component.onResize();
+    component.currentRoute.set(url);
+    fixture.componentRef.setInput('menuItems', [
+      { label: 'sidebar.orders', icon: 'pi pi-shopping-cart', route: '/orders' },
+      { label: 'sidebar.invoices', icon: 'pi pi-file', route: '/invoices' },
+    ]);
+    fixture.detectChanges();
+  }
+
+  it('marks the entry for the current page, and only that one, as aria-current', async () => {
+    await render(1280, '/orders/42');
+
+    expect(items().map((li) => li.getAttribute('aria-current'))).toEqual(['page', null]);
+    expect(items()[0].classList).toContain('menu-item--active');
+  });
+
+  it('names the mobile close control from the bundle', async () => {
+    await render(500, '/orders');
+    component.mobileExpanded.set(true);
+    fixture.detectChanges();
+
+    const close = (fixture.nativeElement as HTMLElement).querySelector('.sidebar-close') as HTMLElement;
+    expect(close.getAttribute('aria-label')).toBe('Zavřít menu');
+  });
+});
+

@@ -2,7 +2,7 @@ import { inject } from '@angular/core';
 import { Route } from '@angular/router';
 import { adminGuard, guestGuard, permissionGuard } from '@cleansia/admin-services';
 import { CleansiaNotFoundComponent } from '@cleansia/components';
-import { CommonRoute, PermissionService, Policy } from '@cleansia/services';
+import { CleansiaAdminRoute, CommonRoute, PermissionService, Policy } from '@cleansia/services';
 import { ADMIN_MENU_ITEMS, resolveLandingRoute } from './admin-menu';
 
 export const appRoutes: Route[] = [
@@ -12,7 +12,7 @@ export const appRoutes: Route[] = [
     pathMatch: 'full',
   },
   {
-    path: 'login',
+    path: CleansiaAdminRoute.LOGIN,
     loadChildren: () =>
       import('@cleansia/admin-features/admin-login').then(
         (m) => m.adminLoginRoutes
@@ -20,7 +20,7 @@ export const appRoutes: Route[] = [
     canActivate: [guestGuard],
   },
   {
-    path: 'employee-management',
+    path: CleansiaAdminRoute.EMPLOYEE_MANAGEMENT,
     canActivate: [adminGuard, permissionGuard],
     data: { permission: Policy.CanViewPagedEmployee },
     loadChildren: () =>
@@ -29,14 +29,14 @@ export const appRoutes: Route[] = [
       ),
   },
   {
-    path: 'pay-periods',
+    path: CleansiaAdminRoute.PAY_PERIODS,
     canActivate: [adminGuard, permissionGuard],
     data: { permission: Policy.CanViewPayPeriodsAdmin },
     loadChildren: () =>
       import('@cleansia/admin-features/pay-periods').then((m) => m.payPeriodsRoutes),
   },
   {
-    path: 'order-management',
+    path: CleansiaAdminRoute.ORDER_MANAGEMENT,
     canActivate: [adminGuard, permissionGuard],
     data: { permission: Policy.CanViewPagedOrderAdmin },
     loadChildren: () =>
@@ -45,7 +45,7 @@ export const appRoutes: Route[] = [
       ),
   },
   {
-    path: 'dispute-management',
+    path: CleansiaAdminRoute.DISPUTE_MANAGEMENT,
     canActivate: [adminGuard, permissionGuard],
     data: { permission: Policy.CanViewDisputeListAdmin },
     loadChildren: () =>
@@ -54,7 +54,7 @@ export const appRoutes: Route[] = [
       ),
   },
   {
-    path: 'invoice-management',
+    path: CleansiaAdminRoute.INVOICE_MANAGEMENT,
     canActivate: [adminGuard, permissionGuard],
     data: { permission: Policy.CanViewPagedInvoicesAdmin },
     loadChildren: () =>
@@ -63,14 +63,14 @@ export const appRoutes: Route[] = [
       ),
   },
   {
-    path: 'reports',
+    path: CleansiaAdminRoute.REPORTS,
     canActivate: [adminGuard, permissionGuard],
     data: { permission: Policy.CanViewRevenueReport },
     loadChildren: () =>
       import('@cleansia/admin-features/reports').then((m) => m.reportsRoutes),
   },
   {
-    path: 'service-management',
+    path: CleansiaAdminRoute.SERVICE_MANAGEMENT,
     canActivate: [adminGuard, permissionGuard],
     data: { permission: Policy.CanViewServices },
     loadChildren: () =>
@@ -79,7 +79,7 @@ export const appRoutes: Route[] = [
       ),
   },
   {
-    path: 'package-management',
+    path: CleansiaAdminRoute.PACKAGE_MANAGEMENT,
     canActivate: [adminGuard, permissionGuard],
     data: { permission: Policy.CanViewPackages },
     loadChildren: () =>
@@ -88,7 +88,7 @@ export const appRoutes: Route[] = [
       ),
   },
   {
-    path: 'extra-management',
+    path: CleansiaAdminRoute.EXTRA_MANAGEMENT,
     canActivate: [adminGuard, permissionGuard],
     data: { permission: Policy.CanViewExtras },
     loadChildren: () =>
@@ -97,7 +97,7 @@ export const appRoutes: Route[] = [
       ),
   },
   {
-    path: 'admin-user-management',
+    path: CleansiaAdminRoute.ADMIN_USER_MANAGEMENT,
     canActivate: [adminGuard, permissionGuard],
     data: { permission: Policy.CanViewAdminUsers },
     loadChildren: () =>
@@ -106,7 +106,7 @@ export const appRoutes: Route[] = [
       ),
   },
   {
-    path: 'language-management',
+    path: CleansiaAdminRoute.LANGUAGE_MANAGEMENT,
     canActivate: [adminGuard, permissionGuard],
     data: { permission: Policy.CanViewLanguages },
     loadChildren: () =>
@@ -115,7 +115,7 @@ export const appRoutes: Route[] = [
       ),
   },
   {
-    path: 'country-management',
+    path: CleansiaAdminRoute.COUNTRY_MANAGEMENT,
     canActivate: [adminGuard, permissionGuard],
     data: { permission: Policy.CanViewCountries },
     loadChildren: () =>
@@ -127,7 +127,7 @@ export const appRoutes: Route[] = [
     // Shares the country-management lib but is a sibling top-level route —
     // the two features are conceptually distinct (catalog vs operational
     // service area), and sidebar finding is easier this way.
-    path: 'service-area-management',
+    path: CleansiaAdminRoute.SERVICE_AREA_MANAGEMENT,
     canActivate: [adminGuard, permissionGuard],
     data: { permission: Policy.CanViewServiceCities },
     loadChildren: () =>
@@ -136,7 +136,7 @@ export const appRoutes: Route[] = [
       ),
   },
   {
-    path: 'currency-management',
+    path: CleansiaAdminRoute.CURRENCY_MANAGEMENT,
     canActivate: [adminGuard, permissionGuard],
     data: { permission: Policy.CanViewCurrencies },
     loadChildren: () =>
@@ -145,7 +145,7 @@ export const appRoutes: Route[] = [
       ),
   },
   {
-    path: 'legal-documents',
+    path: CleansiaAdminRoute.LEGAL_DOCUMENTS,
     canActivate: [adminGuard, permissionGuard],
     data: { permission: Policy.CanViewLegalDocuments },
     loadChildren: () =>
@@ -154,7 +154,7 @@ export const appRoutes: Route[] = [
       ),
   },
   {
-    path: 'employee-documents',
+    path: CleansiaAdminRoute.EMPLOYEE_DOCUMENTS,
     canActivate: [adminGuard, permissionGuard],
     data: { permission: Policy.CanViewEmployeeDocumentsAdmin },
     loadChildren: () =>
@@ -163,7 +163,7 @@ export const appRoutes: Route[] = [
       ),
   },
   {
-    path: 'company-info',
+    path: CleansiaAdminRoute.COMPANY_INFO,
     canActivate: [adminGuard, permissionGuard],
     data: { permission: Policy.CanViewCompanyInfo },
     loadChildren: () =>
@@ -172,7 +172,7 @@ export const appRoutes: Route[] = [
       ),
   },
   {
-    path: 'company-settings',
+    path: CleansiaAdminRoute.COMPANY_SETTINGS,
     canActivate: [adminGuard, permissionGuard],
     data: { permission: Policy.CanViewTenantConfigurations },
     loadChildren: () =>
@@ -181,7 +181,7 @@ export const appRoutes: Route[] = [
       ),
   },
   {
-    path: 'company-lifecycle',
+    path: CleansiaAdminRoute.COMPANY_LIFECYCLE,
     canActivate: [adminGuard, permissionGuard],
     data: { permission: Policy.CanViewCompanyLifecycle },
     loadChildren: () =>
@@ -190,7 +190,7 @@ export const appRoutes: Route[] = [
       ),
   },
   {
-    path: 'pay-config-management',
+    path: CleansiaAdminRoute.PAY_CONFIG_MANAGEMENT,
     canActivate: [adminGuard, permissionGuard],
     data: { permission: Policy.CanViewPayConfigs },
     loadChildren: () =>
@@ -199,7 +199,7 @@ export const appRoutes: Route[] = [
       ),
   },
   {
-    path: 'template-management',
+    path: CleansiaAdminRoute.TEMPLATE_MANAGEMENT,
     canActivate: [adminGuard, permissionGuard],
     data: { permission: Policy.CanViewEmailTemplates },
     loadChildren: () =>
@@ -208,7 +208,7 @@ export const appRoutes: Route[] = [
       ),
   },
   {
-    path: 'fiscal-failures',
+    path: CleansiaAdminRoute.FISCAL_FAILURES,
     canActivate: [adminGuard, permissionGuard],
     data: { permission: Policy.CanManageFiscalFailures },
     loadChildren: () =>
@@ -217,7 +217,7 @@ export const appRoutes: Route[] = [
       ),
   },
   {
-    path: 'loyalty/promos',
+    path: CleansiaAdminRoute.LOYALTY_PROMOS,
     canActivate: [adminGuard, permissionGuard],
     data: { permission: Policy.CanViewPromoCodes },
     loadChildren: () =>
@@ -226,7 +226,7 @@ export const appRoutes: Route[] = [
       ),
   },
   {
-    path: 'loyalty/tiers',
+    path: CleansiaAdminRoute.LOYALTY_TIERS,
     canActivate: [adminGuard, permissionGuard],
     data: { permission: Policy.CanViewLoyaltyTierConfigs },
     loadChildren: () =>
@@ -240,7 +240,7 @@ export const appRoutes: Route[] = [
     // reads in their address bar was describing a third of the page. The Nx library behind it is
     // still called loyalty-user-detail: renaming that touches the path alias, the project graph and
     // every import for no reader-visible gain, so it is deliberately left where it is.
-    path: 'customers',
+    path: CleansiaAdminRoute.CUSTOMERS,
     canActivate: [adminGuard, permissionGuard],
     data: { permission: Policy.CanViewOrderCustomer },
     loadChildren: () =>
@@ -249,7 +249,7 @@ export const appRoutes: Route[] = [
       ),
   },
   {
-    path: 'loyalty/referrals',
+    path: CleansiaAdminRoute.LOYALTY_REFERRALS,
     canActivate: [adminGuard, permissionGuard],
     data: { permission: Policy.CanViewReferrals },
     loadChildren: () =>
@@ -258,7 +258,7 @@ export const appRoutes: Route[] = [
       ),
   },
   {
-    path: 'membership-plan-management',
+    path: CleansiaAdminRoute.MEMBERSHIP_PLAN_MANAGEMENT,
     canActivate: [adminGuard, permissionGuard],
     data: { permission: Policy.CanViewMembershipPlans },
     loadChildren: () =>
@@ -267,7 +267,7 @@ export const appRoutes: Route[] = [
       ),
   },
   {
-    path: 'marketing',
+    path: CleansiaAdminRoute.MARKETING,
     canActivate: [adminGuard, permissionGuard],
     data: { permission: Policy.CanSendSitewidePromo },
     loadChildren: () =>
@@ -276,7 +276,7 @@ export const appRoutes: Route[] = [
       ),
   },
   {
-    path: 'data-protection',
+    path: CleansiaAdminRoute.DATA_PROTECTION,
     canActivate: [adminGuard, permissionGuard],
     data: { permission: Policy.CanViewGdprRequests },
     loadChildren: () =>
@@ -285,7 +285,7 @@ export const appRoutes: Route[] = [
       ),
   },
   {
-    path: 'audit-log',
+    path: CleansiaAdminRoute.AUDIT_LOG,
     canActivate: [adminGuard, permissionGuard],
     data: { permission: Policy.CanViewAuditLog },
     loadChildren: () =>
@@ -294,7 +294,7 @@ export const appRoutes: Route[] = [
       ),
   },
   {
-    path: 'notifications',
+    path: CleansiaAdminRoute.NOTIFICATIONS,
     canActivate: [adminGuard, permissionGuard],
     data: { permission: Policy.CanViewAdminNotifications },
     loadChildren: () =>
@@ -303,7 +303,7 @@ export const appRoutes: Route[] = [
       ),
   },
   {
-    path: 'profile',
+    path: CleansiaAdminRoute.PROFILE,
     canActivate: [adminGuard, permissionGuard],
     data: { permission: Policy.Authenticated },
     loadChildren: () =>
@@ -312,7 +312,7 @@ export const appRoutes: Route[] = [
       ),
   },
   {
-    path: 'unauthorized',
+    path: CleansiaAdminRoute.UNAUTHORIZED,
     loadComponent: () =>
       import('./unauthorized/unauthorized.component').then(
         (m) => m.UnauthorizedComponent

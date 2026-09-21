@@ -104,6 +104,8 @@
     "yes": "Yes",
     "no": "No",
     "close": "Close",
+    "open_menu": "Open menu",
+    "close_menu": "Close menu",
     "filters": {
       "title": "Filters",
       "reset": "Reset Filters",

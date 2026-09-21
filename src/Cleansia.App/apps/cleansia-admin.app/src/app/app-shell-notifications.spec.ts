@@ -79,13 +79,16 @@ describe('admin app shell notifications', () => {
     expect(component.sidebarMenuItems()[0].badge).toBeUndefined();
   });
 
-  it('draws the mobile bell beside the language switcher, behind the same policy, with the count off the badge service', () => {
+  it('projects the bell into the shared toolbar, behind the same policy, with the count off the badge service', () => {
     const html = readFileSync(join(__dirname, 'app.component.html'), 'utf-8');
 
     expect(html).toMatch(/\*cleansiaPermission="Policy\.CanViewAdminNotifications"/);
     expect(html).toMatch(/icon="pi pi-bell"[\s\S]*\[routerLink\]="notificationsRoute"/);
     expect(html).toMatch(/@if \(notificationBadge\.badgeLabel\(\); as badge\)/);
-    expect(html).toMatch(/mobile-toolbar__bell[\s\S]*<cleansia-language-switcher \/>/);
+    expect(html).toMatch(
+      /<cleansia-mobile-toolbar \(menuOpen\)="openSidebar\(\)">[\s\S]*cleansia-mobile-toolbar__action[\s\S]*cleansia-mobile-toolbar__action-count[\s\S]*<\/cleansia-mobile-toolbar>/
+    );
+    expect(html).not.toMatch(/<cleansia-language-switcher/);
     expect(html).toMatch(/\[menuItems\]="sidebarMenuItems\(\)"/);
   });
 });

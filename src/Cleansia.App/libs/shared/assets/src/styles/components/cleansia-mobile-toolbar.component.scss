@@ -1,0 +1,152 @@
+// The phone toolbar drawn by <cleansia-mobile-toolbar>: a fixed 3.25rem bar on the fixed-page band
+// of the z-index scale, under the mobile sidebar (300/301) and the filter drawer (400/401), so the
+// drawer the menu button opens slides over it. -> common/z-index.scss
+.cleansia-mobile-toolbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  height: 3.25rem;
+  padding: 0 1rem;
+  background: var(--cleansia-white);
+  border-bottom: 1px solid var(--cleansia-primary-100);
+  box-shadow: var(--cleansia-shadow-1);
+  line-height: 1;
+
+  // The two sides share the free width and the mark sits between them, so it is centred on the
+  // bar until one side outgrows its half — then it yields instead of sliding under the controls.
+  &__lead,
+  &__actions {
+    flex: 1 1 0;
+    display: flex;
+    align-items: center;
+  }
+
+  &__actions {
+    justify-content: flex-end;
+    gap: 0.5rem;
+  }
+
+  &__brand {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+  }
+
+  // The same box for every control in the bar: the menu button, a projected action and the
+  // language switcher. The 44px hit area is the ring cleansia-button grows past this box. The
+  // painted control is the inner <button>, or the anchor itself when the action is a link.
+  &__menu,
+  &__action {
+    position: relative;
+    display: flex;
+    align-items: center;
+    height: 2.25rem;
+
+    cleansia-button,
+    .cleansia-button {
+      display: flex;
+    }
+
+    .cleansia-button button.p-button,
+    a.cleansia-button.p-button {
+      width: 2.25rem;
+      height: 2.25rem;
+      min-height: 0;
+      padding: 0;
+      border: 1px solid var(--cleansia-primary-200);
+      border-radius: var(--cleansia-radius-sm);
+      background: var(--cleansia-primary-50);
+      color: var(--cleansia-primary-700);
+      box-shadow: none;
+      font-size: 1.125rem;
+      transition: background-color 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
+
+      &:hover:not(:disabled) {
+        background: var(--cleansia-primary-100);
+        border-color: var(--cleansia-primary-300);
+        color: var(--cleansia-primary-700);
+        transform: none;
+      }
+
+      &:active:not(:disabled) {
+        transform: scale(0.95);
+      }
+    }
+  }
+
+  &__action-count {
+    position: absolute;
+    top: -0.375rem;
+    right: -0.375rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 1.125rem;
+    height: 1.125rem;
+    padding: 0 0.25rem;
+    border-radius: 9999px;
+    background: var(--cleansia-red);
+    color: var(--cleansia-white);
+    font-size: 0.6875rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+    pointer-events: none;
+  }
+
+  cleansia-language-switcher {
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+    height: 2.25rem;
+
+    .cleansia-language-switcher {
+      position: static;
+      display: flex;
+      align-items: center;
+      height: 100%;
+
+      .p-select {
+        border: 1px solid var(--cleansia-primary-200);
+        background: var(--cleansia-primary-50);
+        border-radius: var(--cleansia-radius-sm);
+        box-shadow: none;
+        min-width: auto;
+        height: 2.25rem;
+      }
+    }
+  }
+}
+
+// A printed invoice or order is the page, not the shell: the rail, its backdrop and this toolbar
+// leave the sheet and the content takes the rail's margin back. Here rather than in the rail's
+// stylesheet because that one is also compiled per component, where these shell selectors would
+// only add weight.
+@media print {
+  .app-layout {
+    overflow: visible;
+    display: block;
+  }
+
+  .main-content {
+    overflow: visible;
+
+    &__margin {
+      padding-left: 0 !important;
+      margin-left: 0 !important;
+    }
+  }
+
+  cleansia-sidebar-menu,
+  .sidebar-container,
+  .sidebar,
+  .sidebar-backdrop,
+  .cleansia-mobile-toolbar {
+    display: none !important;
+  }
+}

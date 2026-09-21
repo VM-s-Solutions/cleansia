@@ -9,39 +9,21 @@
   }
 
   @if (isLoggedIn() && isMobile()) {
-  <div class="mobile-toolbar">
-    <button
-      type="button"
-      class="mobile-toolbar__menu-btn"
-      (click)="openSidebar()"
-      aria-label="Open menu"
-    >
-      <i class="pi pi-bars"></i>
-    </button>
-    <div class="mobile-toolbar__brand">
-      <picture>
-        <source srcset="assets/logos/Logo.webp" type="image/webp" />
-        <img src="assets/logos/Logo.png" alt="Cleansia" width="99" height="18" />
-      </picture>
-      <span>Admin</span>
-    </div>
-    <div class="mobile-toolbar__actions">
-      <span class="mobile-toolbar__bell" *cleansiaPermission="Policy.CanViewAdminNotifications">
-        <cleansia-button
-          icon="pi pi-bell"
-          severity="secondary"
-          [style]="'basic-button'"
-          [text]="true"
-          [routerLink]="notificationsRoute"
-          [ariaLabel]="'sidebar.notifications' | translate"
-        />
-        @if (notificationBadge.badgeLabel(); as badge) {
-        <span class="mobile-toolbar__bell-count">{{ badge }}</span>
-        }
-      </span>
-      <cleansia-language-switcher />
-    </div>
-  </div>
+  <cleansia-mobile-toolbar (menuOpen)="openSidebar()">
+    <span class="cleansia-mobile-toolbar__action" *cleansiaPermission="Policy.CanViewAdminNotifications">
+      <cleansia-button
+        icon="pi pi-bell"
+        severity="secondary"
+        [style]="'basic-button'"
+        [text]="true"
+        [routerLink]="notificationsRoute"
+        [ariaLabel]="'sidebar.notifications' | translate"
+      />
+      @if (notificationBadge.badgeLabel(); as badge) {
+      <span class="cleansia-mobile-toolbar__action-count">{{ badge }}</span>
+      }
+    </span>
+  </cleansia-mobile-toolbar>
   }
 
   <main class="main-content" [ngClass]="{ 'main-content__margin': isLoggedIn(), 'main-content__with-toolbar': isLoggedIn() && isMobile() }">

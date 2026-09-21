@@ -104,6 +104,8 @@
     "yes": "Áno",
     "no": "Nie",
     "close": "Zavrieť",
+    "open_menu": "Otvoriť menu",
+    "close_menu": "Zavrieť menu",
     "filters": {
       "title": "Filtre",
       "reset": "Obnoviť filtre",

@@ -1,5 +1,5 @@
 import { isPlatformBrowser, NgClass } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, inject, OnInit, PLATFORM_ID, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, HostListener, inject, OnInit, PLATFORM_ID, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { RouterModule } from '@angular/router';
 import { AdminAuthService, AdminNotificationBadgeService } from '@cleansia/admin-services';
@@ -8,7 +8,7 @@ import {
   CleansiaButtonComponent,
   CleansiaCookieConsentComponent,
   CleansiaDevBannerComponent,
-  CleansiaLanguageSwitcherComponent,
+  CleansiaMobileToolbarComponent,
   CleansiaSidebarMenuComponent,
   isMobileViewport,
   SidebarMenuItem,
@@ -33,7 +33,7 @@ import { ToastModule } from 'primeng/toast';
     CleansiaSidebarMenuComponent,
     CleansiaCookieConsentComponent,
     CleansiaDevBannerComponent,
-    CleansiaLanguageSwitcherComponent,
+    CleansiaMobileToolbarComponent,
     CleansiaPermissionDirective,
   ],
   selector: 'app-root',
@@ -55,7 +55,13 @@ export class AppComponent implements OnInit {
   readonly bugReportUrl = environment.bugReportUrl;
   sidebarCollapsed = signal(false);
   mobileSidebarExpanded = signal(false);
-  private mobileSignal = signal(false);
+  isMobile = signal(false);
+
+  constructor() {
+    if (this.isBrowser) {
+      this.updateMobileStatus();
+    }
+  }
 
   ngOnInit(): void {
     this.pageTitleService.initialize({
@@ -66,16 +72,17 @@ export class AppComponent implements OnInit {
     this.store.dispatch(loadAdminCodes());
 
     if (this.isBrowser) {
-      this.updateMobileStatus();
-      window.addEventListener('resize', () => this.updateMobileStatus());
       this.notificationBadge.start();
     }
   }
 
   readonly isLoggedIn = toSignal(this.authService.isLoggedIn$, { initialValue: false });
 
-  isMobile(): boolean {
-    return this.mobileSignal();
+  @HostListener('window:resize')
+  onResize(): void {
+    if (this.isBrowser) {
+      this.updateMobileStatus();
+    }
   }
 
   openSidebar(): void {
@@ -87,7 +94,7 @@ export class AppComponent implements OnInit {
   }
 
   private updateMobileStatus(): void {
-    this.mobileSignal.set(isMobileViewport(window.innerWidth));
+    this.isMobile.set(isMobileViewport(window.innerWidth));
   }
 
   // Only the notifications entry is re-created when the badge moves; every other item keeps its

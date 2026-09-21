@@ -2565,7 +2565,7 @@
         },
         "field": {
           "code": "Code",
-          "code_help": "Unique, uppercase letters/numbers/underscores. Cannot be changed later.",
+          "code_help": "Unique, 2–50 characters: uppercase letters/numbers/underscores. Cannot be changed later.",
           "name": "Name",
           "interval": "Billing interval",
           "interval_immutable": "Billing interval cannot be changed after creation.",

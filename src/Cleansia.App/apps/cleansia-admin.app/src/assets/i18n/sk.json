@@ -2565,7 +2565,7 @@
         },
         "field": {
           "code": "Kód",
-          "code_help": "Jedinečný, veľké písmená/číslice/podčiarkovníky. Neskôr ho nemožno zmeniť.",
+          "code_help": "Jedinečný, 2–50 znakov: veľké písmená/číslice/podčiarkovníky. Neskôr ho nemožno zmeniť.",
           "name": "Názov",
           "interval": "Fakturačné obdobie",
           "interval_immutable": "Fakturačné obdobie nemožno po vytvorení zmeniť.",

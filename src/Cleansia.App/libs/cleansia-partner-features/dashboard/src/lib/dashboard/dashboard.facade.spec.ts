@@ -98,7 +98,7 @@ describe('DashboardFacade', () => {
         currencyCode: 'CZK',
       });
       const earnings = facade.statCards().find((card) => card.title === 'pages.dashboard.pending_earnings');
-      expect(earnings?.value).toBe('1 250 Kč');
+      expect(earnings?.value).toBe('1 250,00 Kč');
     });
 
     it('reads no trend when last month had nothing to compare against', () => {

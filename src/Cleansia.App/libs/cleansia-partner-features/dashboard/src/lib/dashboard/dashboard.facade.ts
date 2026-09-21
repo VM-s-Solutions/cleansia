@@ -97,7 +97,9 @@ export class DashboardFacade extends UnsubscribeControlDirective {
         // The server tells us the currency; do not hardcode it. The day a second country
         // configuration exists, a hardcoded "Kč" here disagrees with the cleaner's own
         // payout invoice, which is a filed tax document. → /flows/pay-and-payouts
-        value: formatMoney(stats.currentPeriodEarnings, stats.currencyCode, localeFor(lang)),
+        value: formatMoney(stats.currentPeriodEarnings, stats.currencyCode, localeFor(lang), {
+          fractionDigits: 2,
+        }),
         icon: 'pi pi-wallet',
         route: '/invoices',
       },

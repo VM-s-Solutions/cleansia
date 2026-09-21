@@ -1,5 +1,5 @@
 <div class="cleansia-order-details cleansia-page">
-  <div class="cleansia-order-details__breadcrumb-bar page-wrapper">
+  <div class="cleansia-order-details__breadcrumb-bar page-wrapper page-wrapper--narrow">
     <nav class="cleansia-order-details__breadcrumb">
       <cleansia-button
         [icon]="'pi pi-arrow-left'"
@@ -25,7 +25,7 @@
     </nav>
   </div>
 
-  <div class="cleansia-order-details__form-card page-wrapper">
+  <div class="cleansia-order-details__form-card page-wrapper page-wrapper--narrow">
     @if (loading() && !orderDetails()) {
     <cleansia-loader />
     } @else if (error()) {
@@ -90,7 +90,6 @@
           }}
         </span>
         <cleansia-button
-          [style]="'basic-button'"
           [label]="'pages.order_details.work_contract.read' | translate"
           [icon]="'pi pi-file'"
           [text]="true"
@@ -231,15 +230,15 @@
           : 'pages.order_details.assigned_employee') | translate"
       >
         @for (employee of orderDetails()!.assignedEmployees!; track employee.id) {
-        <div class="cleansia-order-details__grid cleansia-order-details__employee-row">
-          <div class="cleansia-order-details__field">
-            <span class="cleansia-order-details__label">{{ 'pages.order_details.employee_name' | translate }}</span>
-            <span class="cleansia-order-details__value">{{ employee.fullName }}</span>
+        <div class="detail-grid cleansia-order-details__employee-row">
+          <div class="detail-grid__item">
+            <span class="detail-grid__label">{{ 'pages.order_details.employee_name' | translate }}</span>
+            <span class="detail-grid__value">{{ employee.fullName }}</span>
           </div>
           @if (employee.phoneNumber) {
-          <div class="cleansia-order-details__field">
-            <span class="cleansia-order-details__label">{{ 'pages.order_details.employee_phone' | translate }}</span>
-            <span class="cleansia-order-details__value">{{ employee.phoneNumber }}</span>
+          <div class="detail-grid__item">
+            <span class="detail-grid__label">{{ 'pages.order_details.employee_phone' | translate }}</span>
+            <span class="detail-grid__value">{{ employee.phoneNumber }}</span>
           </div>
           }
         </div>

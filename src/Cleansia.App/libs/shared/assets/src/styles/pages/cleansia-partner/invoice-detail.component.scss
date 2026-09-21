@@ -1,64 +1,28 @@
+@use './breadcrumb';
+
 .cleansia-invoice-detail {
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
 
   &__breadcrumb-bar {
-    max-width: 1200px;
-    padding: 0.75rem 1.25rem;
+    @extend %breadcrumb-bar;
   }
 
   &__breadcrumb {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    flex-wrap: wrap;
+    @extend %breadcrumb;
   }
 
   &__breadcrumb-link {
-    font-size: 0.875rem;
-    font-weight: 500;
-    color: var(--cleansia-primary-600);
-    cursor: pointer;
-    text-decoration: none;
-    transition: color 0.15s ease;
-
-    &:hover {
-      color: var(--cleansia-primary-700);
-      text-decoration: underline;
-    }
+    @extend %breadcrumb-link;
   }
 
   &__breadcrumb-sep {
-    font-size: 0.625rem;
-    color: var(--cleansia-text-secondary);
+    @extend %breadcrumb-sep;
   }
 
   &__breadcrumb-current {
-    font-size: 0.875rem;
-    font-weight: 600;
-    color: var(--cleansia-text-primary);
-  }
-
-  &__container {
-    max-width: 1200px;
-
-    // One card per section is this page's vocabulary.
-    cleansia-section {
-      display: flex;
-      flex-direction: column;
-      gap: 1.5rem;
-      background: var(--cleansia-white);
-      border-radius: 12px;
-      padding: 1.5rem;
-      border: 1px solid var(--cleansia-primary-100);
-      box-shadow: var(--cleansia-shadow-1);
-
-      @media (max-width: 768px) {
-        padding: 1rem;
-        gap: 1rem;
-      }
-    }
+    @extend %breadcrumb-current;
   }
 }
 

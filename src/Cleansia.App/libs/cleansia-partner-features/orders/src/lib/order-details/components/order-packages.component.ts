@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
+import { CleansiaSectionComponent } from '@cleansia/components';
 import { PackageDetails } from '@cleansia/partner-services';
 import { currentLanguage, formatMoney, localeFor } from '@cleansia/utils';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
@@ -14,7 +15,7 @@ interface PackageRow {
 @Component({
   selector: 'cleansia-partner-order-packages',
   standalone: true,
-  imports: [TranslatePipe],
+  imports: [CleansiaSectionComponent, TranslatePipe],
   templateUrl: './order-packages.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

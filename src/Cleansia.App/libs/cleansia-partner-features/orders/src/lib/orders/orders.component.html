@@ -135,7 +135,7 @@
     />
 
     <cleansia-section [title]="'pages.orders.available_orders' | translate">
-      <span section-actions class="status-badge status-badge--neutral">
+      <span section-actions class="cleansia-orders__count">
         {{ facade.availableTotalRecords() }}
       </span>
       <cleansia-table
@@ -145,7 +145,6 @@
         [clickableRows]="true"
         [config]="{
           paginator: true,
-          rows: 10,
           lazy: true,
           totalRecords: facade.availableTotalRecords(),
           emptyMessage: 'pages.orders.no_available_orders'
@@ -159,7 +158,7 @@
     </cleansia-section>
 
     <cleansia-section [title]="'pages.orders.my_orders' | translate">
-      <span section-actions class="status-badge status-badge--neutral">
+      <span section-actions class="cleansia-orders__count">
         {{ facade.myTotalRecords() }}
       </span>
       <cleansia-table
@@ -169,7 +168,6 @@
         [clickableRows]="true"
         [config]="{
           paginator: true,
-          rows: 10,
           lazy: true,
           totalRecords: facade.myTotalRecords(),
           emptyMessage: 'pages.orders.no_my_orders'

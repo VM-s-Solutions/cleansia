@@ -1,3 +1,5 @@
+@use './breadcrumb';
+
 // The partner order detail keeps its own vocabulary: a breadcrumb bar, one card per section and
 // read-only filled inputs for the order's facts.
 .cleansia-order-details {
@@ -6,44 +8,23 @@
   gap: 0.75rem;
 
   &__breadcrumb-bar {
-    max-width: 1200px;
-    padding: 0.75rem 1.25rem;
+    @extend %breadcrumb-bar;
   }
 
   &__breadcrumb {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    flex-wrap: wrap;
+    @extend %breadcrumb;
   }
 
   &__breadcrumb-link {
-    font-size: 0.875rem;
-    font-weight: 500;
-    color: var(--cleansia-primary-600);
-    cursor: pointer;
-    text-decoration: none;
-    transition: color 0.15s ease;
-
-    &:hover {
-      color: var(--cleansia-primary-700);
-      text-decoration: underline;
-    }
+    @extend %breadcrumb-link;
   }
 
   &__breadcrumb-sep {
-    font-size: 0.625rem;
-    color: var(--cleansia-text-secondary);
+    @extend %breadcrumb-sep;
   }
 
   &__breadcrumb-current {
-    font-size: 0.875rem;
-    font-weight: 600;
-    color: var(--cleansia-text-primary);
-  }
-
-  &__form-card {
-    max-width: 1200px;
+    @extend %breadcrumb-current;
   }
 
   &__form-content {
@@ -248,20 +229,6 @@
     }
   }
 
-  &__label {
-    display: block;
-    font-size: 0.75rem;
-    font-weight: 600;
-    color: var(--cleansia-text-muted);
-    margin-bottom: 0.25rem;
-  }
-
-  &__value {
-    display: block;
-    font-size: 0.95rem;
-    color: var(--cleansia-text-primary);
-  }
-
   &__employee-row {
     padding-bottom: 0.75rem;
     margin-bottom: 0.75rem;
@@ -274,33 +241,12 @@
     }
   }
 
-  &__packages-section {
-    h4 {
-      padding-bottom: 1.5rem;
-      color: var(--cleansia-text-primary);
-      font-size: 1.25rem;
-      font-weight: 600;
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-
-      &::before {
-        content: '';
-        width: 4px;
-        height: 1.5rem;
-        background: var(--cleansia-primary-600);
-        border-radius: 2px;
-      }
-    }
-  }
-
   &__package-item {
     padding: 1.5rem;
     background: var(--cleansia-white);
     border-radius: 12px;
     border: 1px solid var(--cleansia-primary-200);
     box-shadow: var(--cleansia-shadow-1);
-    margin-bottom: 1rem;
     transition: all var(--default-transition) ease;
 
     &:hover {
@@ -442,33 +388,13 @@
     }
   }
 
-  &__additional-services {
-    h4 {
-      padding-bottom: 1.5rem;
-      color: var(--cleansia-text-primary);
-      font-size: 1.25rem;
-      font-weight: 600;
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
+  &__services-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 1rem;
 
-      &::before {
-        content: '';
-        width: 4px;
-        height: 1.5rem;
-        background: var(--cleansia-primary-500);
-        border-radius: 2px;
-      }
-    }
-
-    .cleansia-order-details__services-list {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-      gap: 1rem;
-
-      @media (max-width: 768px) {
-        grid-template-columns: 1fr;
-      }
+    @media (max-width: 768px) {
+      grid-template-columns: 1fr;
     }
 
     .service-item {
@@ -544,33 +470,13 @@
     }
   }
 
-  &__extras {
-    h4 {
-      padding-bottom: 1.5rem;
-      color: var(--cleansia-text-primary);
-      font-size: 1.25rem;
-      font-weight: 600;
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
+  &__extras-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1rem;
 
-      &::before {
-        content: '';
-        width: 4px;
-        height: 1.5rem;
-        background: var(--cleansia-green);
-        border-radius: 2px;
-      }
-    }
-
-    &-list {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-      gap: 1rem;
-
-      @media (max-width: 768px) {
-        grid-template-columns: 1fr;
-      }
+    @media (max-width: 768px) {
+      grid-template-columns: 1fr;
     }
 
     .extra-item {

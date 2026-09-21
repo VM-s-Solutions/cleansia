@@ -1,6 +1,5 @@
 @if (extrasEntries() && extrasEntries()!.length > 0) {
-<div class="cleansia-order-details__extras">
-  <h4>{{ 'pages.order_details.extras' | translate }}</h4>
+<cleansia-section [title]="'pages.order_details.extras' | translate">
   <div class="cleansia-order-details__extras-list">
     @for (extra of extrasEntries(); track extra[0]) {
     <div class="extra-item">
@@ -9,5 +8,5 @@
     </div>
     }
   </div>
-</div>
+</cleansia-section>
 }

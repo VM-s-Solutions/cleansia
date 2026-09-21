@@ -108,7 +108,7 @@ export class CleansiaOrderDistributionChartComponent {
   }
 
   formatRevenue(value: number | undefined): string {
-    return formatMoney(value ?? 0, this.currencyCode(), localeFor(this.lang()));
+    return formatMoney(value ?? 0, this.currencyCode(), localeFor(this.lang()), { fractionDigits: 2 });
   }
 
   private updateChartData(currentData: OrderAnalyticsDto): void {

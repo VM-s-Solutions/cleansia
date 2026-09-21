@@ -1,6 +1,10 @@
 .cleansia-orders {
-  &__container {
-    max-width: 1200px;
+  // A row count beside a section title is a figure, not a status.
+  &__count {
+    font-size: 0.875rem;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    color: var(--cleansia-text-secondary);
   }
 }
 

@@ -1,5 +1,5 @@
 <div class="cleansia-invoice-detail cleansia-page">
-  <div class="cleansia-invoice-detail__breadcrumb-bar page-wrapper">
+  <div class="cleansia-invoice-detail__breadcrumb-bar page-wrapper page-wrapper--narrow">
     <nav class="cleansia-invoice-detail__breadcrumb">
       <cleansia-button
         [icon]="'pi pi-arrow-left'"
@@ -25,7 +25,7 @@
     </nav>
   </div>
 
-  <div class="cleansia-invoice-detail__container page-wrapper">
+  <div class="cleansia-invoice-detail__container page-wrapper page-wrapper--narrow">
     @if (loading() && !invoiceDetail()) {
     <cleansia-loader />
     } @else if (error()) {

@@ -1,7 +1,5 @@
 @if (rows().length > 0) {
-<div class="cleansia-order-details__packages-section">
-  <h4>{{ 'pages.order_details.selected_packages' | translate }}</h4>
-
+<cleansia-section [title]="'pages.order_details.selected_packages' | translate">
   @for (pkg of rows(); track pkg.id) {
   <div class="cleansia-order-details__package-item">
     <div class="cleansia-order-details__package-header">
@@ -31,5 +29,5 @@
     }
   </div>
   }
-</div>
+</cleansia-section>
 }

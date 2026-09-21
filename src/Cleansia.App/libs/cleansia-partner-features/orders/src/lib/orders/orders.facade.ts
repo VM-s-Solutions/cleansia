@@ -355,10 +355,10 @@ export class OrdersFacade extends UnsubscribeControlDirective {
     ]);
     // Reset to first page when sorting changes
     if (this.activeTab() === 'available') {
-      this.loadAvailableOrders(0, 10);
+      this.loadAvailableOrders();
       return;
     }
-    this.loadMyOrders(0, 10);
+    this.loadMyOrders();
   }
 
   setOrderStatus(status: number, checked: boolean): void {
@@ -425,7 +425,7 @@ export class OrdersFacade extends UnsubscribeControlDirective {
   applyFilters(filter: OrderFilter): void {
     this.currentFilter.set(filter);
     // Load both sections when filters change
-    this.loadAvailableOrders(0, 10);
-    setTimeout(() => this.loadMyOrders(0, 10), 100);
+    this.loadAvailableOrders();
+    setTimeout(() => this.loadMyOrders(), 100);
   }
 }

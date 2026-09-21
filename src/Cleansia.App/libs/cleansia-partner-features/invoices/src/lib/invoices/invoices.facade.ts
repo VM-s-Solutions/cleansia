@@ -149,7 +149,7 @@ export class InvoicesFacade extends UnsubscribeControlDirective {
       }),
     ]);
     // Reset to first page when sorting changes
-    this.loadInvoices(0, 10);
+    this.loadInvoices();
   }
 
   setInvoiceStatus(status: number, checked: boolean): void {
@@ -170,7 +170,7 @@ export class InvoicesFacade extends UnsubscribeControlDirective {
   }): void {
     this.currentFilter.set(filter);
     // Reset to first page when filters change
-    this.loadInvoices(0, 10);
+    this.loadInvoices();
   }
 
   downloadInvoice(invoice: EmployeeInvoiceDto): void {

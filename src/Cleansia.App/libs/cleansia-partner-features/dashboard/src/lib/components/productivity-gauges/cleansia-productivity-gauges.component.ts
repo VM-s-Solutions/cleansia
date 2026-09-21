@@ -39,7 +39,8 @@ export class CleansiaProductivityGaugesComponent {
     formatMoney(
       this.data()?.personalBests?.highestEarningMonth?.amount ?? 0,
       this.currencyCode(),
-      localeFor(this.lang())
+      localeFor(this.lang()),
+      { fractionDigits: 2 }
     )
   );
 

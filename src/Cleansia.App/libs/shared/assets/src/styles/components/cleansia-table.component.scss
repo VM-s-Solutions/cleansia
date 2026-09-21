@@ -261,6 +261,11 @@
             text-align: right;
             font-variant-numeric: tabular-nums;
           }
+
+          // A figure, an amount or a stamp is one token; broken across lines it reads as two values.
+          &.numeric {
+            white-space: nowrap;
+          }
         }
 
         // First row - add rounded top corners, top border and top shadow

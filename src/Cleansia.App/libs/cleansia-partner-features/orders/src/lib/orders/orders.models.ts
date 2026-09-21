@@ -1,7 +1,7 @@
 import { TemplateRef } from '@angular/core';
 import { HelpStep, StatusFlowItem, TableAction, TableColumn } from '@cleansia/components';
 import { OrderListItem, OrderStatus } from '@cleansia/partner-services';
-import { formatMoney } from '@cleansia/utils';
+import { formatDate, formatMoney, localeFor } from '@cleansia/utils';
 
 export interface FilterChip {
   key: string;
@@ -98,6 +98,7 @@ export function getAvailableOrdersTableDefinition(
     onTakeOrder: (row: OrderListItem) => void;
     isTakeInFlight: (row: OrderListItem) => boolean;
   },
+  lang: string | undefined,
   statusTemplate?: TemplateRef<OrderListItem>,
   orderStatusTemplate?: TemplateRef<OrderListItem>
 ): {
@@ -117,10 +118,7 @@ export function getAvailableOrdersTableDefinition(
         id: 'cleaningDateTime',
         field: 'cleaningDateTime',
         header: 'pages.orders.cleaning_date',
-        getValue: (row?: OrderListItem) =>
-          row?.cleaningDateTime
-            ? new Date(row.cleaningDateTime).toLocaleString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })
-            : '',
+        getValue: (row?: OrderListItem) => formatDate(row?.cleaningDateTime, lang, 'dateTime'),
         sortable: true,
         width: '12%',
       },
@@ -137,7 +135,9 @@ export function getAvailableOrdersTableDefinition(
         field: 'totalPrice',
         header: 'pages.orders.total_price',
         getValue: (row?: OrderListItem) =>
-          row?.totalPrice ? formatMoney(row.totalPrice, row.currency?.code, 'en-GB', { fractionDigits: 2 }) : '',
+          row?.totalPrice
+            ? formatMoney(row.totalPrice, row.currency?.code, localeFor(lang), { fractionDigits: 2 })
+            : '',
         sortable: true,
         width: '12%',
         align: 'right',
@@ -193,6 +193,7 @@ export function getMyOrdersTableDefinition(
     onStartOrder: (row: OrderListItem) => void;
     onCompleteOrder: (row: OrderListItem) => void;
   },
+  lang: string | undefined,
   statusTemplate?: TemplateRef<OrderListItem>,
   orderStatusTemplate?: TemplateRef<OrderListItem>
 ): {
@@ -225,10 +226,7 @@ export function getMyOrdersTableDefinition(
         id: 'cleaningDateTime',
         field: 'cleaningDateTime',
         header: 'pages.orders.cleaning_date',
-        getValue: (row?: OrderListItem) =>
-          row?.cleaningDateTime
-            ? new Date(row.cleaningDateTime).toLocaleString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })
-            : '',
+        getValue: (row?: OrderListItem) => formatDate(row?.cleaningDateTime, lang, 'dateTime'),
         sortable: true,
         width: '12%',
       },
@@ -245,7 +243,9 @@ export function getMyOrdersTableDefinition(
         field: 'totalPrice',
         header: 'pages.orders.total_price',
         getValue: (row?: OrderListItem) =>
-          row?.totalPrice ? formatMoney(row.totalPrice, row.currency?.code, 'en-GB', { fractionDigits: 2 }) : '',
+          row?.totalPrice
+            ? formatMoney(row.totalPrice, row.currency?.code, localeFor(lang), { fractionDigits: 2 })
+            : '',
         sortable: true,
         width: '12%',
         align: 'right',

@@ -1748,11 +1748,6 @@
         "requested_on": "Požiadané",
         "status": "Stav"
       },
-      "status": {
-        "pending": "Čaká",
-        "approved": "Schválené",
-        "rejected": "Zamietnuté"
-      },
       "messages": {
         "approve_success": "Dokument vymazaný",
         "reject_success": "Žiadosť zamietnutá"

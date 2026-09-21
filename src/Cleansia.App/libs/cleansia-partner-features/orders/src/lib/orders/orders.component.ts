@@ -173,6 +173,7 @@ export class OrdersComponent implements AfterViewInit {
         onTakeOrder: this.takeOrder.bind(this),
         isTakeInFlight: (row) => this.facade.isTakeInFlight(row.id),
       },
+      this.translate.currentLang,
       this.statusTemplate(),
       this.orderStatusTemplate()
     );
@@ -184,6 +185,7 @@ export class OrdersComponent implements AfterViewInit {
         onStartOrder: (row) => this.startOrder(row),
         onCompleteOrder: this.completeOrder.bind(this),
       },
+      this.translate.currentLang,
       this.statusTemplate(),
       this.orderStatusTemplate()
     );

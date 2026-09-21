@@ -1748,11 +1748,6 @@
         "requested_on": "Запрошено",
         "status": "Статус"
       },
-      "status": {
-        "pending": "В ожидании",
-        "approved": "Одобрено",
-        "rejected": "Отклонено"
-      },
       "messages": {
         "approve_success": "Документ удалён",
         "reject_success": "Запрос отклонён"

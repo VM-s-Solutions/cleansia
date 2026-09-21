@@ -1748,11 +1748,6 @@
         "requested_on": "Requested",
         "status": "Status"
       },
-      "status": {
-        "pending": "Pending",
-        "approved": "Approved",
-        "rejected": "Rejected"
-      },
       "messages": {
         "approve_success": "Document deleted",
         "reject_success": "Request rejected"

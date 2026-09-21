@@ -1850,11 +1850,6 @@
         "requested_on": "Požádáno",
         "status": "Stav"
       },
-      "status": {
-        "pending": "Čeká",
-        "approved": "Schváleno",
-        "rejected": "Zamítnuto"
-      },
       "messages": {
         "approve_success": "Dokument smazán",
         "reject_success": "Žádost zamítnuta"

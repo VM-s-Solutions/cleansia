@@ -77,15 +77,15 @@ export class DeletionRequestsComponent implements OnInit, OnDestroy {
 
   protected readonly statusOptions = computed<ICleansiaSelectOption[]>(() => [
     {
-      label: this.translate.instant('pages.document_deletion_requests.status.pending'),
+      label: this.translate.instant('enums.document_status.pending'),
       value: DocumentDeletionRequestStatus.Pending,
     },
     {
-      label: this.translate.instant('pages.document_deletion_requests.status.approved'),
+      label: this.translate.instant('enums.document_status.approved'),
       value: DocumentDeletionRequestStatus.Approved,
     },
     {
-      label: this.translate.instant('pages.document_deletion_requests.status.rejected'),
+      label: this.translate.instant('enums.document_status.rejected'),
       value: DocumentDeletionRequestStatus.Rejected,
     },
   ]);

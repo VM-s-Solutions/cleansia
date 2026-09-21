@@ -763,8 +763,8 @@ call (a broader regex risks matching hand-written classes).
 Two measurements from T-0559's sweep, recorded as **evidence for that ruling, not as a rule**. The
 largest invisible surface is `SortDefinition`: every one of its object-literal call sites constructs the
 **generated** class (e.g.
-`libs/cleansia-admin-features/audit-log/src/lib/audit-log/audit-log.component.ts:209`,
-`libs/cleansia-partner-features/orders/src/lib/orders/orders.facade.ts:201`), yet a **hand-written**
+`libs/cleansia-admin-features/audit-log/src/lib/audit-log/audit-log.facade.ts:136`,
+`libs/cleansia-partner-features/orders/src/lib/orders/orders.facade.ts:238`), yet a **hand-written**
 `SortDefinition` is still declared in `libs/shared/models/src/lib/models/sort-types.models.ts:6` and
 exported through the same `@cleansia/shared/models` barrel (at the time of the sweep it had one
 constructor of its own in `sort.models.ts`, since removed as dead). So the same identifier names a

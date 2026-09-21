@@ -162,3 +162,14 @@ T-0799. **Guard:** F11 (i18n namespaces + no `common.*`) and F12 (orphan stylesh
 
 - 2026-09-20 — filed 2026-09-20 from the UI-polish discovery; branch chore/ui-polish-and-dead-code.
   Opened the same night as phase 1's third lane, after T-0791's commit, beside T-0792.
+- 2026-09-21 — shipped as 7da4c1665; the five-locale section removals for admin and partner rode
+  along in the backend lane's f307e835 and cf4b1f98. Beyond the Doing line list, the same sweep also
+  removed (every one at zero readers, `rg` across `src/Cleansia.App`): `BaseSortDefinition`
+  `create`/`init`/`toggle`/`select`/`update`; `BaseFilter.resetFilter`/`equals`; `Page.createWith*`/
+  `createDefaultWithSpecifiedSort`/`updateSort`; `FormState` beside `isFormStateEqual`;
+  `StateAdapter.create`/`setState`; and in `template-form.component.scss` the
+  `.template-info-badges`/`.variables-*`/`.variable-item` blocks plus the three `lib-*-template-form`
+  host rules (all read only by the deleted `email-template-form`). Review fix commit retargets the
+  three `patterns-frontend.md` citations the deletions left dangling (`check-catalog-claims` C3 2 → 0),
+  the `docs/admin-app/overview.md` pay-periods alias, and the `styles/README.md` shipping rule (the
+  two `common/` mixin partials are `@use`'d directly).

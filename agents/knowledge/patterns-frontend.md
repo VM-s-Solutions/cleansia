@@ -665,7 +665,7 @@ export const SESSION_LIFECYCLE_LISTENERS =
 { provide: SESSION_LIFECYCLE_LISTENERS, useExisting: SavedAddressStore, multi: true }
 ```
 
-Same shape as `AUTH_COOKIE_KEYS` / `MAPBOX_PROXY_PATH`: shared or lower lib declares the token, the
+Same shape as `AUTH_COOKIE_KEYS` / `ADDRESS_SEARCH_PORT`: shared or lower lib declares the token, the
 app config provides the concrete. Two rules that are not optional. **Inject it `{ optional: true }`
 and default to `[]`** — every existing spec of the caller would otherwise need the provider, and a
 listener really is optional (partner and admin register none). And **pin the wiring with a spec in
@@ -761,15 +761,16 @@ silent on them. Convert them when you are in the file anyway; widening the selec
 call (a broader regex risks matching hand-written classes).
 
 Two measurements from T-0559's sweep, recorded as **evidence for that ruling, not as a rule**. The
-largest invisible surface is `SortDefinition`: 16 of its 17 object-literal call sites construct the
-**generated** class (11 admin + 5 partner — e.g.
+largest invisible surface is `SortDefinition`: every one of its object-literal call sites constructs the
+**generated** class (e.g.
 `libs/cleansia-admin-features/audit-log/src/lib/audit-log/audit-log.component.ts:209`,
-`libs/cleansia-partner-features/orders/src/lib/orders/orders.facade.ts:191`). And the 17th
-(`libs/shared/models/src/lib/models/sort.models.ts:244`) constructs a **hand-written** `SortDefinition`
-declared in `libs/shared/models/src/lib/models/sort-types.models.ts:6`. So the same identifier names a
+`libs/cleansia-partner-features/orders/src/lib/orders/orders.facade.ts:201`), yet a **hand-written**
+`SortDefinition` is still declared in `libs/shared/models/src/lib/models/sort-types.models.ts:6` and
+exported through the same `@cleansia/shared/models` barrel (at the time of the sweep it had one
+constructor of its own in `sort.models.ts`, since removed as dead). So the same identifier names a
 generated DTO and a hand-written class in one workspace, which is the concrete reason a name-only
 discriminator cannot be made both complete and false-positive-free. `OrderFilter`
-(`libs/shared/models/src/lib/models/filter.models.ts:196`, 4 literal call sites) is entirely
+(`libs/shared/models/src/lib/models/filter.models.ts:33`, 4 literal call sites) is entirely
 hand-written, so a `Filter$` widening would be 100 % false positives there.
 
 **Removal is the same rule, mirrored.** When the backend *drops* a field, a literal stops compiling
@@ -1106,8 +1107,12 @@ whatever order the effect passes:
   round-trip decision, instead of a whole-resource update silently sending the type default and
   **overwriting** the stored value.
 
-Reference: `libs/data-access/partner-stores/src/lib/user/user.effects.spec.ts` (all five shapes),
-`.../admin-stores/src/lib/code/` and `.../customer-stores/src/lib/catalog/` (effect + reducer pairs).
+Reference: `libs/data-access/admin-stores/src/lib/code/admin-code.effects.spec.ts` and
+`.../customer-stores/src/lib/catalog/catalog.effects.spec.ts` (the three pins, each beside its reducer
+spec); `libs/cleansia-customer-features/profile/src/lib/notification-preferences/notification-preferences.facade.spec.ts`
+(both command pins); `libs/core/admin-services/src/lib/client/payout-details-route-contract.spec.ts`
+(the real generated client over `provideHttpClientTesting`, `expectOne` on the URL — the shape a
+positional-query pin takes; no paged effect currently carries one).
 A reducer spec is worth writing beside the effect spec: it is where the three data states
 (empty / loading / error) are actually decided, and `customerCatalogReducer` currently makes a failed
 catalog read **byte-identical** to an empty catalog — `CustomerCatalogState` carries no error field —

@@ -132,7 +132,7 @@ sidebar array and fails an entry that carries no permission.
 | `employee-management`   | `@cleansia/admin-features/employee-management`   | Employee list + detail    |
 | `order-management`      | `@cleansia/admin-features/order-management`      | Order list + detail. The detail's crew list says per cleaner *accepted {date}, v{version}* or *contract pending* (a `workContractAcceptances` entry whose `orderEmployeeId` is that seat's `id`, ADR-0068), and **Read** opens `components/admin-work-contract-dialog` — `getWorkContract(acceptanceId, uiLanguage)`, the facts and acceptance rows from the shared `@cleansia/utils` helper, `[innerHTML]` through the sanitizer, and the accepted text row's SHA-256 read through `adminLegalClient.getDocument` only for a session holding `CanViewLegalDocuments` (the other roles see a line saying so) |
 | `invoice-management`    | `@cleansia/admin-features/invoice-management`    | Invoice list + detail     |
-| `pay-periods`           | `@cleansia.app/pay-periods`                      | Pay period management     |
+| `pay-periods`           | `@cleansia/admin-features/pay-periods`           | Pay period management     |
 | `reports`               | `@cleansia/admin-features/reports`               | Revenue & payroll reports |
 | `service-management`    | `@cleansia/admin-features/service-management`    | Service CRUD              |
 | `package-management`    | `@cleansia/admin-features/package-management`    | Package CRUD              |

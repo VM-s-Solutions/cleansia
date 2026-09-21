@@ -198,7 +198,7 @@ public class FrozenPermissionMapTests
         // removal, not the additive case or the semantic case the class doc names: no surviving route
         // changed its physical policy, and no permission was widened. -> /decisions/adr-0001
 
-        // Legal documents (ADR-0066 D3 — moved off CanViewCountryConfigurations)
+        // Legal documents (ADR-0066 D3 — its own policy, no longer the country-configuration view one)
         [Policy.CanViewLegalDocuments] = PhysicalPolicy.AdministratorOnly,
 
         // Tenant Configuration

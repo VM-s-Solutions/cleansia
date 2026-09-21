@@ -10,11 +10,21 @@ namespace Cleansia.Tests.Common;
 /// web apps to carry five translations the parity specs then assert on — thirty-six of them had
 /// accumulated before this guard existed. The scan is by name, not by dot-value: a key written as a
 /// bare literal is <c>BusinessErrorSlotContractTests</c>' concern, and a constant that is only ever
-/// equal to another constant's value is still dead.
+/// equal to another constant's value is still dead. The scan covers every project that can answer a
+/// request — the hosts, the shared startup, the Functions and the infrastructure adapters — not only
+/// <c>Cleansia.Core.AppServices</c>, so a constant a filter or a queue handler alone emits is not
+/// reported dead.
 /// </summary>
 public class BusinessErrorMessageEmittedTests
 {
-    private static readonly string[] ScannedProjectPrefixes = ["Cleansia.Core.AppServices", "Cleansia.Infra."];
+    private static readonly string[] ScannedProjectPrefixes =
+    [
+        "Cleansia.Core.AppServices",
+        "Cleansia.Infra.",
+        "Cleansia.Config",
+        "Cleansia.Web",
+        "Cleansia.Functions",
+    ];
 
     private static readonly Regex Reference = new(@"\bBusinessErrorMessage\.(\w+)\b", RegexOptions.Compiled);
 
@@ -57,7 +67,7 @@ public class BusinessErrorMessageEmittedTests
         var dead = DeclaredConstants().Where(name => !referenced.Contains(name)).ToList();
 
         Assert.True(dead.Count == 0,
-            "BusinessErrorMessage constants nothing in Cleansia.Core.AppServices or Cleansia.Infra.* emits — delete "
+            "BusinessErrorMessage constants no host, Config, Functions, AppServices or Infra.* project emits — delete "
             + "each one with its api.* rows in the three web apps' five locales, or wire it to the refusal it names:\n  "
             + string.Join("\n  ", dead));
     }
@@ -72,7 +82,11 @@ public class BusinessErrorMessageEmittedTests
             .Where(d => ScannedProjectPrefixes.Any(prefix => d.Name.StartsWith(prefix, StringComparison.Ordinal)))
             .Where(d => !d.Name.EndsWith("Tests", StringComparison.Ordinal))
             .ToList();
-        Assert.True(projects.Count >= 4, "Expected Cleansia.Core.AppServices and the Cleansia.Infra.* projects under src/");
+        foreach (var prefix in ScannedProjectPrefixes)
+        {
+            Assert.True(projects.Any(d => d.Name.StartsWith(prefix, StringComparison.Ordinal)),
+                $"No project under src/ matches the scanned prefix '{prefix}'");
+        }
 
         return projects
             .SelectMany(d => d.EnumerateFiles("*.cs", SearchOption.AllDirectories))

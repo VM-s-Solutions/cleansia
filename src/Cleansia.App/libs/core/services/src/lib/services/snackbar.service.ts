@@ -37,9 +37,6 @@ export const DEFAULT_SNACKBAR_ERROR_MAPPINGS: SnackbarErrorMappings = {
   employeenotassigned: 'api.order.employee_not_assigned',
   employeealreadyassigned: 'api.order.employee_already_assigned',
   noavailablespots: 'api.order.no_available_spots',
-  orderalreadyassigned: 'api.order.already_assigned',
-  completionnotesrequired: 'api.order.completion_notes.required',
-  actualtimemustbepositive: 'api.order.actual_time.positive',
   validationregistrationnumberinvalidformat:
     'api.validation.registration_number.invalid_format',
   // Service-areas: backend rejects address writes when the country/city

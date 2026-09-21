@@ -143,8 +143,6 @@ export const RETRY_PDF_ERROR_KEY_MAP: Readonly<Record<string, string>> = {
   'payroll.invoice.not_found': 'api.payroll.invoice.not_found',
   'payroll.invoice.pdf_generation_failed':
     'api.payroll.invoice.pdf_generation_failed',
-  'payroll.invoice.template_not_found':
-    'api.payroll.invoice.template_not_found',
   'company.not_found': 'api.company.not_found',
 };
 

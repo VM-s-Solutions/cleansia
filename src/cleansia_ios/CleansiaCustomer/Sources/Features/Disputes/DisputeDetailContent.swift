@@ -1,49 +1,5 @@
 import CleansiaCore
 import SwiftUI
-#if canImport(UIKit)
-    import UniformTypeIdentifiers
-#endif
-
-/// The Add-evidence affordance: a `.confirmationDialog` (Take Photo / Choose
-/// image / Choose PDF) over the camera/library picker + a native PDF importer.
-/// Take Photo / Choose image route through the Core `CameraOrLibraryPicker`;
-/// Choose PDF uses `.fileImporter` (the partner Documents pattern).
-struct EvidencePickers: ViewModifier {
-    @Binding var showSourceDialog: Bool
-    @Binding var showImporter: Bool
-    let onTakePhoto: () -> Void
-    let onChooseImage: () -> Void
-    let onChoosePdf: () -> Void
-    let onImportPdf: (Result<[URL], Error>) -> Void
-
-    func body(content: Content) -> some View {
-        content
-            .confirmationDialog(
-                L10n.Disputes.evidenceAddButton,
-                isPresented: $showSourceDialog,
-                titleVisibility: .visible
-            ) {
-                Button(L10n.Disputes.addEvidenceTakePhoto, action: onTakePhoto)
-                Button(L10n.Disputes.addEvidenceChooseImage, action: onChooseImage)
-                Button(L10n.Disputes.addEvidenceChoosePdf, action: onChoosePdf)
-                Button(L10n.cancel, role: .cancel) {}
-            }
-            .fileImporter(
-                isPresented: $showImporter,
-                allowedContentTypes: pdfTypes,
-                allowsMultipleSelection: false,
-                onCompletion: onImportPdf
-            )
-    }
-
-    private var pdfTypes: [UTType] {
-        #if canImport(UIKit)
-            [.pdf]
-        #else
-            []
-        #endif
-    }
-}
 
 struct DisputeThread: View {
     let detail: DisputeDetail
@@ -98,13 +54,8 @@ struct DisputeThread: View {
             }
 
             if detail.allowsMessages {
-                CleansiaOutlinedButton(
-                    uploading ? L10n.Disputes.evidenceUploading : L10n.Disputes.evidenceAddButton,
-                    leadingIcon: "paperclip",
-                    enabled: !uploading,
-                    action: onAddEvidence
-                )
-                .padding(.top, Spacing.xxs)
+                AddEvidenceButton(uploading: uploading, action: onAddEvidence)
+                    .padding(.top, Spacing.xxs)
             }
         }
     }

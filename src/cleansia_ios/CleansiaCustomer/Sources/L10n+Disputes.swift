@@ -70,6 +70,14 @@ extension L10n {
             localized("dispute_create_retry_hint")
         }
 
+        static var createEvidenceHint: String {
+            localized("dispute_create_evidence_hint")
+        }
+
+        static func createEvidencePartial(_ fileNames: String) -> String {
+            format("dispute_create_evidence_partial", fileNames)
+        }
+
         static var detailTitle: String {
             localized("dispute_detail_title")
         }
@@ -108,6 +116,18 @@ extension L10n {
 
         static var evidenceUploading: String {
             localized("dispute_evidence_uploading")
+        }
+
+        static var evidenceUploaded: String {
+            localized("dispute_evidence_uploaded")
+        }
+
+        static var evidenceUploadFailed: String {
+            localized("dispute_evidence_upload_failed")
+        }
+
+        static var evidenceRemove: String {
+            localized("dispute_evidence_remove")
         }
 
         static var evidenceTooLarge: String {

@@ -22,8 +22,15 @@ final class FakeDisputeClient: DisputeClient, @unchecked Sendable {
     var uploadResult: ApiResult<DisputeEvidence> = .success(
         DisputeEvidence(id: "ev", fileName: "f.jpg", blobURL: nil, uploadedOn: nil)
     )
+    /// Consumed in call order before `uploadResult` applies, so one batch can mix outcomes.
+    var uploadResults: [ApiResult<DisputeEvidence>] = []
     private(set) var uploadCallCount = 0
     private(set) var uploadedFiles: [URL] = []
+    private(set) var uploadedDisputeIds: [String] = []
+
+    /// Run while the call is in flight, so a test can observe the view model mid-request.
+    var onCreate: (@MainActor () -> Void)?
+    var onUpload: (@MainActor () -> Void)?
 
     func getPaged(offset: Int, limit: Int) async -> ApiResult<DisputesPage> {
         pageRequests.append((offset, limit))
@@ -49,6 +56,7 @@ final class FakeDisputeClient: DisputeClient, @unchecked Sendable {
         createCallCount += 1
         lastCreate = (orderId, reason, description)
         lastCreateLines = lines
+        if let onCreate { await onCreate() }
         return createResult
     }
 
@@ -58,9 +66,12 @@ final class FakeDisputeClient: DisputeClient, @unchecked Sendable {
         return addMessageResult
     }
 
-    func uploadEvidence(disputeId _: String, file: URL) async -> ApiResult<DisputeEvidence> {
+    func uploadEvidence(disputeId: String, file: URL) async -> ApiResult<DisputeEvidence> {
         uploadCallCount += 1
         uploadedFiles.append(file)
+        uploadedDisputeIds.append(disputeId)
+        if let onUpload { await onUpload() }
+        if !uploadResults.isEmpty { return uploadResults.removeFirst() }
         return uploadResult
     }
 }

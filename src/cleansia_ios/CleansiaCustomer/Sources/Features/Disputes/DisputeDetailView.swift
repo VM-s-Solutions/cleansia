@@ -1,10 +1,5 @@
 import CleansiaCore
 import SwiftUI
-#if canImport(UIKit)
-    import AVFoundation
-    import UIKit
-    import UniformTypeIdentifiers
-#endif
 
 struct FullscreenImageURL: Identifiable {
     let url: URL
@@ -25,12 +20,7 @@ struct DisputeDetailView: View {
     @Environment(\.snackbarController) private var snackbar
 
     @State private var draft = ""
-    @State private var showSourceDialog = false
-    @State private var showImporter = false
-    #if canImport(UIKit)
-        @State private var pickerSource: UIImagePickerController.SourceType?
-        @State private var showPermissionAlert = false
-    #endif
+    @State private var showEvidencePicker = false
     @State private var fullscreenImage: FullscreenImageURL?
     @State private var pdfPreview: EvidencePdfPreview?
 
@@ -51,33 +41,9 @@ struct DisputeDetailView: View {
         .navigationBarTitleDisplayMode(.inline)
         .background(CleansiaColors.background.ignoresSafeArea())
         .task { await vm.load() }
-        .modifier(EvidencePickers(
-            showSourceDialog: $showSourceDialog,
-            showImporter: $showImporter,
-            onTakePhoto: takePhoto,
-            onChooseImage: chooseImage,
-            onChoosePdf: { showImporter = true },
-            onImportPdf: handleImport
-        ))
-        #if canImport(UIKit)
-        .sheet(item: $pickerSource) { source in
-            CameraOrLibraryPicker(
-                sourceType: source,
-                onImagePicked: { image in
-                    pickerSource = nil
-                    Task { await vm.uploadEvidence([.image(image)]) }
-                },
-                onCancel: { pickerSource = nil }
-            )
-            .ignoresSafeArea()
+        .evidencePicker(isPresented: $showEvidencePicker) { source, _ in
+            Task { await vm.uploadEvidence([source]) }
         }
-        .alert(L10n.Disputes.cameraPermissionTitle, isPresented: $showPermissionAlert) {
-            Button(L10n.Disputes.openSettings) { openSettings() }
-            Button(L10n.cancel, role: .cancel) {}
-        } message: {
-            Text(L10n.Disputes.cameraPermissionMessage)
-        }
-        #endif
         .fullScreenCover(item: $fullscreenImage) { item in
             FullscreenSingleImage(url: item.url) { fullscreenImage = nil }
         }
@@ -99,7 +65,7 @@ struct DisputeDetailView: View {
             DisputeThread(
                 detail: detail,
                 uploading: vm.uploadState.isSubmitting,
-                onAddEvidence: { showSourceDialog = true },
+                onAddEvidence: { showEvidencePicker = true },
                 onImageTap: openImage,
                 onPdfTap: openPdf,
                 onUnknownTap: { _ in snackbar.showError(L10n.Disputes.evidenceOpenError) }
@@ -156,52 +122,4 @@ struct DisputeDetailView: View {
             EmptyView()
         #endif
     }
-
-    #if canImport(UIKit)
-        private func takePhoto() {
-            switch AVCaptureDevice.authorizationStatus(for: .video) {
-            case .authorized:
-                pickerSource = .camera
-            case .notDetermined:
-                AVCaptureDevice.requestAccess(for: .video) { granted in
-                    Task { @MainActor in
-                        if granted { pickerSource = .camera } else { showPermissionAlert = true }
-                    }
-                }
-            default:
-                showPermissionAlert = true
-            }
-        }
-
-        private func chooseImage() {
-            pickerSource = .photoLibrary
-        }
-
-        private func openSettings() {
-            guard let url = URL(string: UIApplication.openSettingsURLString) else { return }
-            UIApplication.shared.open(url)
-        }
-    #else
-        private func takePhoto() {}
-        private func chooseImage() {}
-    #endif
-
-    private func handleImport(_ result: Result<[URL], Error>) {
-        guard case let .success(urls) = result, let url = urls.first else { return }
-        let accessed = url.startAccessingSecurityScopedResource()
-        defer { if accessed { url.stopAccessingSecurityScopedResource() } }
-        guard let data = try? Data(contentsOf: url) else {
-            snackbar.showError(L10n.Disputes.evidenceOpenError)
-            return
-        }
-        Task { await vm.uploadEvidence([.pdf(data)]) }
-    }
 }
-
-#if canImport(UIKit)
-    extension UIImagePickerController.SourceType: Identifiable {
-        public var id: Int {
-            rawValue
-        }
-    }
-#endif

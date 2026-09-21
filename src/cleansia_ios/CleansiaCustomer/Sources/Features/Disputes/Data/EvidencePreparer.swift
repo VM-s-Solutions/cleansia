@@ -1,8 +1,18 @@
+import Foundation
 #if canImport(UIKit)
     import CleansiaCore
-    import Foundation
     import UIKit
+#endif
 
+/// A source picked for evidence upload, normalized before it is prepared.
+enum EvidenceSource {
+    #if canImport(UIKit)
+        case image(UIImage)
+    #endif
+    case pdf(Data)
+}
+
+#if canImport(UIKit)
     /// A prepared evidence file on disk, ready for one multipart upload. The temp
     /// URL's extension drives the multipart MIME (`.jpg` → image/jpeg, `.pdf` →
     /// application/pdf). `byteCount`/`contentType` feed the fail-closed validator.
@@ -21,6 +31,14 @@
         case rejected(EvidenceRejection)
         case encodingFailed
         case ioFailed
+
+        var message: String {
+            switch self {
+            case .rejected(.tooLarge): L10n.Disputes.evidenceTooLarge
+            case .rejected(.unsupportedType): L10n.Disputes.evidenceUnsupportedType
+            case .encodingFailed, .ioFailed: L10n.Disputes.evidenceOpenError
+            }
+        }
     }
 
     /// Turns a picked source into a temp file ready for `disputeUploadEvidence`:
@@ -32,6 +50,15 @@
     /// is left around (Gate-SEC R11). The blob name is server-controlled; only the
     /// extension travels (Gate-SEC R12).
     enum EvidencePreparer {
+        static func prepare(_ source: EvidenceSource) -> Result<PreparedEvidence, EvidencePreparationError> {
+            switch source {
+            case let .image(image):
+                prepareImage(image)
+            case let .pdf(data):
+                preparePdf(data)
+            }
+        }
+
         static func prepareImage(
             _ image: UIImage,
             directory: URL = FileManager.default.temporaryDirectory

@@ -106,32 +106,26 @@ struct DisputeRowCard: View {
     let dispute: DisputeListEntry
 
     var body: some View {
-        HStack(spacing: 0) {
-            Rectangle()
-                .fill(DisputeStatusPresentation.color(dispute.statusValue))
-                .frame(width: 4)
-
-            VStack(alignment: .leading, spacing: Spacing.xs) {
-                HStack {
-                    Text(verbatim: dispute.displayOrderNumber.map { "#\($0)" } ?? "—")
-                        .font(CleansiaTypography.titleMedium)
-                        .foregroundColor(CleansiaColors.onSurface)
-                    Spacer()
-                    DisputeStatusPill(
-                        label: DisputeStatusPresentation.label(dispute.statusName),
-                        color: DisputeStatusPresentation.color(dispute.statusValue)
-                    )
-                }
-                Text(verbatim: dispute.reasonName ?? "—")
-                    .font(CleansiaTypography.bodyMedium)
-                    .foregroundColor(CleansiaColors.onSurfaceVariant)
-                    .lineLimit(1)
-                Text(OrdersFormat.dateTime(dispute.createdOn))
-                    .font(CleansiaTypography.labelSmall)
-                    .foregroundColor(CleansiaColors.onSurfaceVariant)
+        VStack(alignment: .leading, spacing: Spacing.xs) {
+            HStack {
+                Text(verbatim: dispute.displayOrderNumber.map { "#\($0)" } ?? "—")
+                    .font(CleansiaTypography.titleMedium)
+                    .foregroundColor(CleansiaColors.onSurface)
+                Spacer()
+                DisputeStatusPill(
+                    label: DisputeStatusPresentation.label(dispute.statusName),
+                    color: DisputeStatusPresentation.color(dispute.statusValue)
+                )
             }
-            .padding(Spacing.m)
+            Text(verbatim: dispute.reasonName ?? "—")
+                .font(CleansiaTypography.bodyMedium)
+                .foregroundColor(CleansiaColors.onSurfaceVariant)
+                .lineLimit(1)
+            Text(OrdersFormat.dateTime(dispute.createdOn))
+                .font(CleansiaTypography.labelSmall)
+                .foregroundColor(CleansiaColors.onSurfaceVariant)
         }
+        .padding(Spacing.m)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(CleansiaColors.surface, in: RoundedRectangle(cornerRadius: CornerRadius.large))
         .overlay(

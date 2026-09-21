@@ -16,7 +16,6 @@ export const Policy = {
   CanViewPagedUserOrder: 'CanViewPagedUserOrder',
   CanViewOrderDetail: 'CanViewOrderDetail',
   CanViewOrderCustomer: 'CanViewOrderCustomer',
-  CanUpdateOrder: 'CanUpdateOrder',
   CanTakeOrder: 'CanTakeOrder',
   CanStartOrder: 'CanStartOrder',
   CanCompleteOrder: 'CanCompleteOrder',
@@ -30,7 +29,6 @@ export const Policy = {
   CanUpdateOrderIssue: 'CanUpdateOrderIssue',
   CanDeleteOrderIssue: 'CanDeleteOrderIssue',
   CanSubmitOrderReview: 'CanSubmitOrderReview',
-  CanViewOrderReview: 'CanViewOrderReview',
   CanCancelOrder: 'CanCancelOrder',
   CanAdminCancelOrder: 'CanAdminCancelOrder',
   CanOverrideOrderStatus: 'CanOverrideOrderStatus',
@@ -55,7 +53,6 @@ export const Policy = {
   CanGetCurrentUser: 'CanGetCurrentUser',
   CanChangeOwnPassword: 'CanChangeOwnPassword',
   CanUpdateCurrentUser: 'CanUpdateCurrentUser',
-  CanAddPhoneNumber: 'CanAddPhoneNumber',
 
   // Employee
   CanGetCurrentEmployee: 'CanGetCurrentEmployee',
@@ -83,7 +80,6 @@ export const Policy = {
   CanViewPagedInvoices: 'CanViewPagedInvoices',
   CanViewPeriodPays: 'CanViewPeriodPays',
   CanViewPagedInvoicesAdmin: 'CanViewPagedInvoicesAdmin',
-  CanCalculateOrderPay: 'CanCalculateOrderPay',
   CanGenerateInvoice: 'CanGenerateInvoice',
   CanApproveInvoice: 'CanApproveInvoice',
   CanMarkInvoicePaid: 'CanMarkInvoicePaid',
@@ -95,7 +91,6 @@ export const Policy = {
 
   // Employee Payroll — Pay Periods
   CanViewPayPeriods: 'CanViewPayPeriods',
-  CanViewPayPeriod: 'CanViewPayPeriod',
   CanViewPayPeriodsAdmin: 'CanViewPayPeriodsAdmin',
   CanViewPayPeriodAdmin: 'CanViewPayPeriodAdmin',
   CanCreatePayPeriod: 'CanCreatePayPeriod',
@@ -189,18 +184,11 @@ export const Policy = {
   CanViewEmailTemplates: 'CanViewEmailTemplates',
   CanUpdateEmailTemplate: 'CanUpdateEmailTemplate',
 
-  // Country Configuration
-  CanViewCountryConfigurations: 'CanViewCountryConfigurations',
-  CanCreateCountryConfiguration: 'CanCreateCountryConfiguration',
-  CanUpdateCountryConfiguration: 'CanUpdateCountryConfiguration',
-  CanDeleteCountryConfiguration: 'CanDeleteCountryConfiguration',
-
   // Legal documents
   CanViewLegalDocuments: 'CanViewLegalDocuments',
 
   // Tenant Configuration
   CanViewTenantConfigurations: 'CanViewTenantConfigurations',
-  CanCreateTenantConfiguration: 'CanCreateTenantConfiguration',
   CanUpdateTenantConfiguration: 'CanUpdateTenantConfiguration',
   CanDeleteTenantConfiguration: 'CanDeleteTenantConfiguration',
 
@@ -290,7 +278,6 @@ export const POLICY_MAP: Record<PolicyName, PhysicalPolicy> = {
   CanViewPagedUserOrder: PhysicalPolicy.Authenticated,
   CanViewOrderDetail: PhysicalPolicy.Authenticated,
   CanViewOrderCustomer: PhysicalPolicy.SupportOrAbove,
-  CanUpdateOrder: PhysicalPolicy.EmployeeOrAdmin,
   CanTakeOrder: PhysicalPolicy.EmployeeOrAdmin,
   CanStartOrder: PhysicalPolicy.EmployeeOrAdmin,
   CanCompleteOrder: PhysicalPolicy.EmployeeOrAdmin,
@@ -304,7 +291,6 @@ export const POLICY_MAP: Record<PolicyName, PhysicalPolicy> = {
   CanUpdateOrderIssue: PhysicalPolicy.EmployeeOrAdmin,
   CanDeleteOrderIssue: PhysicalPolicy.EmployeeOrAdmin,
   CanSubmitOrderReview: PhysicalPolicy.CustomerOnly,
-  CanViewOrderReview: PhysicalPolicy.Authenticated,
   CanCancelOrder: PhysicalPolicy.CustomerOnly,
   CanAdminCancelOrder: PhysicalPolicy.SupportOrAbove,
   CanOverrideOrderStatus: PhysicalPolicy.SupportOrAbove,
@@ -329,7 +315,6 @@ export const POLICY_MAP: Record<PolicyName, PhysicalPolicy> = {
   CanGetCurrentUser: PhysicalPolicy.Authenticated,
   CanChangeOwnPassword: PhysicalPolicy.Authenticated,
   CanUpdateCurrentUser: PhysicalPolicy.Authenticated,
-  CanAddPhoneNumber: PhysicalPolicy.Authenticated,
 
   // Employee
   CanGetCurrentEmployee: PhysicalPolicy.Authenticated,
@@ -357,7 +342,6 @@ export const POLICY_MAP: Record<PolicyName, PhysicalPolicy> = {
   CanViewPagedInvoices: PhysicalPolicy.EmployeeOrAdmin,
   CanViewPeriodPays: PhysicalPolicy.EmployeeOrAdmin,
   CanViewPagedInvoicesAdmin: PhysicalPolicy.AccountantOrAbove,
-  CanCalculateOrderPay: PhysicalPolicy.AdminOnly,
   CanGenerateInvoice: PhysicalPolicy.AccountantOrAbove,
   CanApproveInvoice: PhysicalPolicy.AccountantOrAbove,
   CanMarkInvoicePaid: PhysicalPolicy.AccountantOrAbove,
@@ -369,7 +353,6 @@ export const POLICY_MAP: Record<PolicyName, PhysicalPolicy> = {
 
   // Employee Payroll — Pay Periods
   CanViewPayPeriods: PhysicalPolicy.EmployeeOrAdmin,
-  CanViewPayPeriod: PhysicalPolicy.EmployeeOrAdmin,
   CanViewPayPeriodsAdmin: PhysicalPolicy.AccountantOrAbove,
   CanViewPayPeriodAdmin: PhysicalPolicy.AccountantOrAbove,
   CanCreatePayPeriod: PhysicalPolicy.AccountantOrAbove,
@@ -463,18 +446,11 @@ export const POLICY_MAP: Record<PolicyName, PhysicalPolicy> = {
   CanViewEmailTemplates: PhysicalPolicy.AdminOnly,
   CanUpdateEmailTemplate: PhysicalPolicy.ManagerOrAbove,
 
-  // Country Configuration
-  CanViewCountryConfigurations: PhysicalPolicy.AdminOnly,
-  CanCreateCountryConfiguration: PhysicalPolicy.ManagerOrAbove,
-  CanUpdateCountryConfiguration: PhysicalPolicy.ManagerOrAbove,
-  CanDeleteCountryConfiguration: PhysicalPolicy.ManagerOrAbove,
-
   // Legal documents
   CanViewLegalDocuments: PhysicalPolicy.AdministratorOnly,
 
   // Tenant Configuration
   CanViewTenantConfigurations: PhysicalPolicy.AdministratorOnly,
-  CanCreateTenantConfiguration: PhysicalPolicy.AdministratorOnly,
   CanUpdateTenantConfiguration: PhysicalPolicy.AdministratorOnly,
   CanDeleteTenantConfiguration: PhysicalPolicy.AdministratorOnly,
 

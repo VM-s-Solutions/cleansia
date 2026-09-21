@@ -13,7 +13,7 @@ namespace Cleansia.Web.Partner.Controllers;
 /// Partner-host pay-period surface — READ-ONLY by design. The full mutation surface
 /// (Create/Update/Delete/Open/Close/MarkPaid/Reopen) lives ONLY on the Admin host's
 /// <c>AdminPayPeriodController</c>, per the per-audience-host seam: pay periods are an admin/payroll
-/// concern, so the Partner API exposes only the two reads a partner-facing screen needs. The previously
+/// concern, so the Partner API exposes only the read a partner-facing screen needs. The previously
 /// duplicated mutation endpoints (AdminOnly-gated, so never cleaner-exploitable, but redundant write
 /// surface) were removed; authz holds regardless of host.
 /// </summary>
@@ -30,17 +30,5 @@ public class PayPeriodController(IMediator mediator) : ApiController(mediator)
     public async Task<PagedData<PayPeriodDto>> GetPagedPayPeriods([FromQuery] GetPagedPayPeriods.Request request, CancellationToken cancellationToken)
     {
         return await Mediator.Send(request, cancellationToken);
-    }
-
-    [HttpGet("GetPayPeriodById")]
-    [Permission(Policy.CanViewPayPeriod)]
-    [ProducesResponseType(typeof(PayPeriodDto), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(StatusCodes.Status403Forbidden)]
-    public async Task<IActionResult> GetPayPeriodById([FromQuery] GetPayPeriodById.Query query)
-    {
-        var result = await Mediator.Send(query);
-        return HandleResult<PayPeriodDto>(result);
     }
 }

@@ -45,7 +45,7 @@ public sealed class SavedAddressRepositorySoftDeleteTests : IDisposable
             new DefaultTenantProvider());
     }
 
-    private async Task<(string ActiveId, string DeactivatedId)> SeedOneActiveOneDeactivatedAsync(bool deactivatedIsDefault)
+    private async Task<(string ActiveId, string DeactivatedId)> SeedOneActiveOneDeactivatedAsync()
     {
         await using var ctx = NewContext();
         await TestTenants.EnsureCreatedWithRegistryAsync(ctx);
@@ -65,7 +65,7 @@ public sealed class SavedAddressRepositorySoftDeleteTests : IDisposable
 
         var active = SavedAddress.Create(UserId, activeAddress.Id, "Work", isDefault: false);
         active.Id = "saved-active";
-        var deactivated = SavedAddress.Create(UserId, deactivatedAddress.Id, "Home", isDefault: deactivatedIsDefault);
+        var deactivated = SavedAddress.Create(UserId, deactivatedAddress.Id, "Home", isDefault: false);
         deactivated.Id = "saved-deactivated";
         ctx.Add(active);
         ctx.Add(deactivated);
@@ -88,7 +88,7 @@ public sealed class SavedAddressRepositorySoftDeleteTests : IDisposable
     [Fact]
     public async Task GetByUserAsync_Excludes_Deactivated()
     {
-        var (activeId, deactivatedId) = await SeedOneActiveOneDeactivatedAsync(deactivatedIsDefault: false);
+        var (activeId, deactivatedId) = await SeedOneActiveOneDeactivatedAsync();
 
         await using var ctx = NewContext();
         var result = await new SavedAddressRepository(ctx, NewSession()).GetByUserAsync(UserId, CancellationToken.None);
@@ -99,20 +99,9 @@ public sealed class SavedAddressRepositorySoftDeleteTests : IDisposable
     }
 
     [Fact]
-    public async Task GetDefaultForUserAsync_Never_Returns_A_Deactivated_Default()
-    {
-        await SeedOneActiveOneDeactivatedAsync(deactivatedIsDefault: true);
-
-        await using var ctx = NewContext();
-        var result = await new SavedAddressRepository(ctx, NewSession()).GetDefaultForUserAsync(UserId, CancellationToken.None);
-
-        Assert.Null(result);
-    }
-
-    [Fact]
     public async Task Deactivate_Sets_IsActive_False_And_Stamps_Audit_While_Row_Survives()
     {
-        var (_, deactivatedId) = await SeedOneActiveOneDeactivatedAsync(deactivatedIsDefault: false);
+        var (_, deactivatedId) = await SeedOneActiveOneDeactivatedAsync();
 
         await using var ctx = NewContext();
         var row = await ctx.Set<SavedAddress>().IgnoreQueryFilters().FirstAsync(s => s.Id == deactivatedId);

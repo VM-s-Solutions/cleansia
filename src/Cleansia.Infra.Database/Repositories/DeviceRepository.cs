@@ -9,12 +9,6 @@ public class DeviceRepository(CleansiaDbContext context, IUserSessionProvider us
 {
     private const string SystemActor = "System";
 
-    public async Task<Device?> GetByDeviceIdAsync(string deviceId, CancellationToken cancellationToken)
-    {
-        return await context.Devices
-            .FirstOrDefaultAsync(d => d.DeviceId == deviceId && d.IsActive, cancellationToken);
-    }
-
     public async Task<Device?> GetByUserAndDeviceIdAsync(string userId, string deviceId, CancellationToken cancellationToken)
     {
         return await context.Devices

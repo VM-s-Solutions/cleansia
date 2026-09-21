@@ -73,7 +73,6 @@ public sealed class AdminRoleAccountantBehaviourTests(HostTestPostgresFixture db
         HttpAssert.IsForbidden(await client.GetAsync($"/api/AdminOrder/details/{orderId}"));
         HttpAssert.IsForbidden(await client.GetAsync("/api/AdminOrder/get-paged"));
         HttpAssert.IsForbidden(await client.GetAsync($"/api/AdminOrder/{orderId}/customer"));
-        HttpAssert.IsForbidden(await client.GetAsync($"/api/AdminUser/{CustomerId}"));
         HttpAssert.IsForbidden(await client.GetAsync($"/api/AdminEmployeeDocument/{documentId}/download"));
         HttpAssert.IsForbidden(await client.PostAsync($"/api/AdminEmployee/{employeeId}/payout-details/reveal", content: null));
         HttpAssert.IsForbidden(await client.GetAsync("/api/CustomerAudit/get-paged"));

@@ -1879,7 +1879,6 @@
       "already_completed": "This order has already been completed.",
       "in_progress_cannot_cancel": "This cleaning is already in progress and can no longer be cancelled.",
       "invalid_status_transition": "That action isn't allowed for the order's current status.",
-      "cancellation_window_closed": "The free cancellation window for this order has closed.",
       "address_exactly_one_required": "Please provide exactly one address for this order.",
       "empty": "Add at least one service or package to your order.",
       "span_exceeds_maximum": "This booking covers too much work for a single visit. Please remove some services or packages, or book them separately.",
@@ -1902,10 +1901,8 @@
       "payment": {
         "already_paid": "This order has already been paid."
       },
-      "creation_failed": "We couldn't create your order. Please try again.",
       "not_completed": "This action is only available once the cleaning is completed.",
       "review": {
-        "already_exists": "You've already reviewed this order.",
         "duplicate_tag": "The same tag was selected twice.",
         "rating_invalid": "Please choose a rating between 1 and 5.",
         "tag_rating_mismatch": "Those tags do not match the rating you gave.",
@@ -1963,17 +1960,12 @@
       "required": "A file is required.",
       "content_type_doesnt_match": "The file type doesn't match its contents.",
       "count_exceeded": "You've attached too many files.",
-      "count_too_few": "Please attach at least one file.",
-      "size_exceeded_10mb": "The file is too large. The maximum size is 10 MB.",
       "type_not_allowed": "This file type isn't allowed."
     },
     "receipt": {
-      "not_found": "We couldn't find a receipt for this order.",
-      "generation_failed": "We couldn't generate the receipt. Please try again."
+      "not_found": "We couldn't find a receipt for this order."
     },
     "gdpr": {
-      "export_failed": "We couldn't export your data. Please try again.",
-      "deletion_failed": "We couldn't delete your account. Please try again.",
       "deletion_already_pending": "An account deletion request is already in progress.",
       "deletion_blocked_by_order": "Your account can't be deleted while you have active orders.",
       "deletion_blocked_by_invoice": "Your account can't be deleted while invoices are outstanding.",
@@ -1996,10 +1988,7 @@
       "requires_account": "Sign in to use a promo code."
     },
     "referral": {
-      "not_found": "That referral code doesn't exist.",
-      "self_referral": "You can't refer yourself.",
-      "already_referred": "This account has already been referred.",
-      "inactive": "This referral code is no longer active."
+      "not_found": "That referral code doesn't exist."
     },
     "membership": {
       "plan": {
@@ -2008,8 +1997,6 @@
       },
       "already_active": "You already have an active membership.",
       "not_found": "We couldn't find your membership.",
-      "not_owned_by_user": "You can't manage this membership.",
-      "stripe_customer_required": "We couldn't reach the payment provider — please try again.",
       "stripe_customer_currency_locked": "Your Plus billing is already set up in another currency. Contact support to change it.",
       "swap_same_plan": "You're already on this plan.",
       "express_waiver": {

@@ -45,18 +45,6 @@ public abstract class BaseRepository<TEntity>(CleansiaDbContext context) : IRepo
         return query.Where(x => ids.Contains(x.Id));
     }
 
-    public virtual IQueryable<TEntity> GetPaged(int offset, int limit)
-    {
-        var query = GetQueryable();
-        return query.Skip(offset).Take(limit);
-    }
-
-    public virtual IQueryable<TEntity> GetPaged(int offset, int limit, Expression<Func<TEntity, bool>> filter)
-    {
-        var query = FilterData(filter);
-        return query.Skip(offset).Take(limit);
-    }
-
     public virtual IQueryable<TEntity> GetPagedSort<TSort>(int offset, int limit, Expression<Func<TEntity, bool>> filter, SortDefinition sort)
         where TSort : BaseSort<TEntity>
     {
@@ -134,17 +122,6 @@ public abstract class BaseRepository<TEntity>(CleansiaDbContext context) : IRepo
     public virtual void Deactivate(TEntity entity)
     {
         entity.IsActive = false;
-    }
-
-    public virtual void DeactivateRange(IEnumerable<TEntity> entities)
-    {
-        foreach (var entity in entities)
-        {
-            if (entity is BaseEntity)
-            {
-                entity.IsActive = false;
-            }
-        }
     }
 
     public virtual void Remove(TEntity entity)

@@ -9,7 +9,7 @@ namespace Cleansia.Tests.Controllers;
 /// T-0171 AC5 — the per-audience-host seam: pay-period MUTATIONS belong ONLY on the Admin host. The
 /// Partner host's <see cref="PartnerPayPeriodController"/> used to duplicate the full write surface
 /// (Create/Update/Delete/Open/Close); those were AdminOnly-gated (a cleaner got 403, not exploitable)
-/// but were redundant write surface. They are removed, leaving only the two read endpoints. The Admin
+/// but were redundant write surface. They are removed, leaving only the paged read. The Admin
 /// host's <c>AdminPayPeriodController</c> still owns the full write surface.
 ///
 /// Reflects over the controller's action methods (mirrors the host-controller reflection idiom in
@@ -69,13 +69,11 @@ public class PartnerPayPeriodRouteGoneTests
         Assert.Empty(mutatingVerbs);
     }
 
-    [Theory]
-    [InlineData("GetPagedPayPeriods")]
-    [InlineData("GetPayPeriodById")]
-    public void Read_Endpoint_Remains_On_The_Partner_Host(string actionName)
+    [Fact]
+    public void The_Paged_Read_Remains_On_The_Partner_Host()
     {
         var method = typeof(PartnerPayPeriodController)
-            .GetMethod(actionName, BindingFlags.Public | BindingFlags.Instance);
+            .GetMethod("GetPagedPayPeriods", BindingFlags.Public | BindingFlags.Instance);
 
         Assert.NotNull(method);
         Assert.Contains(

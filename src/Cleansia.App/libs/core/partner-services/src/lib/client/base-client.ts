@@ -6,32 +6,26 @@ import {
   AuthClient,
   CodeClient,
   CountryClient,
-  CurrencyClient,
   DashboardClient,
   EmployeeClient,
   EmployeePayrollClient,
   IAuthClient,
   ICodeClient,
   ICountryClient,
-  ICurrencyClient,
   IDashboardClient,
   IEmployeeClient,
   IEmployeePayrollClient,
   ILanguageClient,
   IMarketClient,
   IOrderClient,
-  IPackageClient,
   IPayPeriodClient,
   IPaymentClient,
-  IServiceClient,
   IUserClient,
   LanguageClient,
   MarketClient,
   OrderClient,
-  PackageClient,
   PayPeriodClient,
   PaymentClient,
-  ServiceClient,
   UserClient,
 } from './partner-client';
 
@@ -43,16 +37,13 @@ interface IPartnerClient {
   userClient: IUserClient;
   orderClient: IOrderClient;
   countryClient: ICountryClient;
-  currencyClient: ICurrencyClient;
   dashboardClient: IDashboardClient;
   employeeClient: IEmployeeClient;
   employeePayrollClient: IEmployeePayrollClient;
   languageClient: ILanguageClient;
   marketClient: IMarketClient;
-  packageClient: IPackageClient;
   payPeriodClient: IPayPeriodClient;
   paymentClient: IPaymentClient;
-  serviceClient: IServiceClient;
 }
 
 @Injectable({
@@ -68,10 +59,6 @@ export class PartnerClient implements IPartnerClient {
   userClient: IUserClient = new UserClient(this.httpClient, this.apiBaseUrl);
   orderClient: IOrderClient = new OrderClient(this.httpClient, this.apiBaseUrl);
   countryClient: ICountryClient = new CountryClient(
-    this.httpClient,
-    this.apiBaseUrl
-  );
-  currencyClient: ICurrencyClient = new CurrencyClient(
     this.httpClient,
     this.apiBaseUrl
   );
@@ -95,19 +82,11 @@ export class PartnerClient implements IPartnerClient {
     this.httpClient,
     this.apiBaseUrl
   );
-  packageClient: IPackageClient = new PackageClient(
-    this.httpClient,
-    this.apiBaseUrl
-  );
   payPeriodClient: IPayPeriodClient = new PayPeriodClient(
     this.httpClient,
     this.apiBaseUrl
   );
   paymentClient: IPaymentClient = new PaymentClient(
-    this.httpClient,
-    this.apiBaseUrl
-  );
-  serviceClient: IServiceClient = new ServiceClient(
     this.httpClient,
     this.apiBaseUrl
   );

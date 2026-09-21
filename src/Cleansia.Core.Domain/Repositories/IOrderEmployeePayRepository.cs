@@ -63,6 +63,4 @@ public interface IOrderEmployeePayRepository : IRepository<OrderEmployeePay, str
     /// </summary>
     Task<IReadOnlyList<OrderEmployeePay>> GetByEmployeeIdAsync(
         string employeeId, CancellationToken cancellationToken);
-
-    Task<bool> PayExistsForOrderAsync(string orderId, string employeeId, CancellationToken cancellationToken);
 }

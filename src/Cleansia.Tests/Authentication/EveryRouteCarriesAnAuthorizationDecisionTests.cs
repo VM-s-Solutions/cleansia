@@ -78,10 +78,7 @@ public class EveryRouteCarriesAnAuthorizationDecisionTests
         "Partner/CountryController.GetFieldLabels",
         "Partner/CountryController.GetOverview",
         "Partner/CountryController.GetServiced",
-        "Partner/CurrencyController.GetOverview",
         "Partner/LanguageController.GetOverview",
-        "Partner/PackageController.GetOverview",
-        "Partner/ServiceController.GetOverview",
 
         // (c) Customer money paths that resolve the subject from the caller's own token and refuse a
         //     non-owner INSIDE the request. A role policy would not help — the question is not "what

@@ -1,7 +1,6 @@
 using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Features.EmailTemplates;
 using Cleansia.Core.AppServices.Features.EmailTemplates.DTOs;
-using Cleansia.Core.AppServices.Shared.DTOs.ResponseModels;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Web.Admin.Abstractions;
 using Cleansia.Web.Admin.Attributes;
@@ -58,20 +57,6 @@ public class AdminEmailTemplateController(IMediator mediator) : ApiController(me
         }
         var result = await Mediator.Send(command, cancellationToken);
         return HandleResult<SendTestEmailByType.Response>(result);
-    }
-
-    [HttpGet("get-paged")]
-    [Permission(Policy.CanViewEmailTemplates)]
-    [ProducesResponseType(typeof(PagedData<EmailTemplateTranslationListItem>), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(StatusCodes.Status403Forbidden)]
-    public async Task<IActionResult> GetPagedEmailTemplates(
-        [FromQuery] GetPagedEmailTemplates.Request request,
-        CancellationToken cancellationToken)
-    {
-        var result = await Mediator.Send(request, cancellationToken);
-        return Ok(result);
     }
 
     [HttpGet("details/{emailTemplateId}")]

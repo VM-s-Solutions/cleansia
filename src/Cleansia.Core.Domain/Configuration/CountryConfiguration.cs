@@ -165,62 +165,10 @@ public class CountryConfiguration : Auditable
             VatNumberRequired = vatNumberRequired
         };
 
-    public CountryConfiguration UpdateVatRates(decimal standardRate, decimal? reducedRate)
-    {
-        StandardVatRate = standardRate;
-        ReducedVatRate = reducedRate;
-        return this;
-    }
-
     public CountryConfiguration UpdateRefundStripeFee(decimal? rate, decimal? fixedFee)
     {
         RefundStripeFeeRate = rate;
         RefundStripeFixedFee = fixedFee;
-        return this;
-    }
-
-    public CountryConfiguration UpdateTaxIdSettings(string? label, string? format)
-    {
-        TaxIdLabel = label;
-        TaxIdFormat = format;
-        return this;
-    }
-
-    public CountryConfiguration UpdateBusinessIdentifierSettings(
-        string? registrationNumberLabel,
-        string? registrationNumberFormat,
-        bool registrationNumberRequired,
-        string? vatNumberLabel,
-        string? vatNumberFormat,
-        bool vatNumberRequired)
-    {
-        RegistrationNumberLabel = registrationNumberLabel;
-        RegistrationNumberFormat = registrationNumberFormat;
-        RegistrationNumberRequired = registrationNumberRequired;
-        VatNumberLabel = vatNumberLabel;
-        VatNumberFormat = vatNumberFormat;
-        VatNumberRequired = vatNumberRequired;
-        return this;
-    }
-
-    public CountryConfiguration UpdateDefaults(string currencyCode, string languageCode, string? dateFormat, string? timeZoneId)
-    {
-        DefaultCurrencyCode = currencyCode;
-        DefaultLanguageCode = languageCode;
-        DateFormat = dateFormat;
-        TimeZoneId = timeZoneId;
-        return this;
-    }
-
-    public CountryConfiguration UpdatePaymentGateway(string? gateway)
-    {
-        DefaultPaymentGateway = gateway;
-        return this;
-    }
-
-    public CountryConfiguration UpdateLegalRequirements(string? legalRequirementsJson)
-    {
-        LegalRequirementsJson = legalRequirementsJson;
         return this;
     }
 

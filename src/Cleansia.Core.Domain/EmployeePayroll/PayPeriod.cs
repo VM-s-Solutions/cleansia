@@ -153,19 +153,9 @@ public class PayPeriod : TenantAuditable
         return this;
     }
 
-    public bool IsWithinPeriod(DateOnly date)
-    {
-        return date >= StartDate && date <= EndDate;
-    }
-
     public int GetPeriodDays()
     {
         return EndDate.DayNumber - StartDate.DayNumber + 1;
-    }
-
-    public bool OverlapsWith(PayPeriod other)
-    {
-        return StartDate <= other.EndDate && EndDate >= other.StartDate;
     }
 
     public string GetPeriodLabel()

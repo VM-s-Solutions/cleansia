@@ -192,16 +192,4 @@ public class PromoCode : TenantAuditable
         Description = description;
         Updated(actorId, DateTimeOffset.UtcNow);
     }
-
-    /// <summary>
-    /// True if the code is structurally redeemable at <paramref name="now"/> —
-    /// active, within the validity window, and below the global cap. Per-user
-    /// cap and minimum-order checks happen in the service layer (need extra
-    /// state).
-    /// </summary>
-    public bool IsRedeemableAt(DateTimeOffset now) =>
-        IsActive
-        && (ValidFrom == null || now >= ValidFrom)
-        && (ValidUntil == null || now <= ValidUntil)
-        && (GlobalMaxRedemptions == null || CurrentRedemptionsCount < GlobalMaxRedemptions);
 }

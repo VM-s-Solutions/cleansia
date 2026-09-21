@@ -26,7 +26,7 @@ public sealed class WorkContractAcceptanceImmutabilityTests
         typeof(WorkContractAcceptanceRepository).Assembly
     ];
 
-    private static readonly string[] ForbiddenRepositoryMembers = ["Remove", "RemoveRange", "Deactivate", "DeactivateRange"];
+    private static readonly string[] ForbiddenRepositoryMembers = ["Remove", "RemoveRange", "Deactivate"];
     private static readonly string[] ForbiddenContextMembers = ["Remove", "RemoveRange", "Update", "UpdateRange", "Entry"];
 
     private static readonly Lazy<IReadOnlyList<IlCallSites.CallSite>> Sites = new(() => IlCallSites.Walk(Walked));

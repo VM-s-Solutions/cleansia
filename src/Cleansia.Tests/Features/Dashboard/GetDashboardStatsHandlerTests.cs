@@ -251,9 +251,6 @@ public class GetDashboardStatsHandlerTests
             It.IsAny<DateTime>(), It.IsAny<DateTime>(),
             It.IsAny<DateTime>(), It.IsAny<DateTime>(),
             It.IsAny<CancellationToken>()), Times.Once);
-        _orderRepository.Verify(r => r.CountCompletedForEmployeeBetweenAsync(
-            It.IsAny<string>(), It.IsAny<DateTime>(), It.IsAny<DateTime>(), It.IsAny<CancellationToken>()),
-            Times.Never);
         _orderRepository.Verify(r => r.GetCompletedOrdersByDateRangeAsync(
             It.IsAny<string>(), It.IsAny<DateTime>(), It.IsAny<DateTime>(), It.IsAny<CancellationToken>()),
             Times.Never);

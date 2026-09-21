@@ -7,26 +7,6 @@ namespace Cleansia.Infra.Database.Repositories;
 
 public class EmployeeInvoiceRepository(CleansiaDbContext context) : BaseRepository<EmployeeInvoice>(context), IEmployeeInvoiceRepository
 {
-    public Task<EmployeeInvoice?> GetByInvoiceNumberAsync(string invoiceNumber, CancellationToken cancellationToken)
-    {
-        return GetDbSet()
-            .Include(i => i.Employee)
-            .Include(i => i.PayPeriod)
-            .Include(i => i.Currency)
-            .Include(i => i.OrderPays)
-            .FirstOrDefaultAsync(i => i.InvoiceNumber == invoiceNumber, cancellationToken);
-    }
-
-    public Task<EmployeeInvoice?> GetByVariableSymbolAsync(string variableSymbol, CancellationToken cancellationToken)
-    {
-        return GetDbSet()
-            .Include(i => i.Employee)
-            .Include(i => i.PayPeriod)
-            .Include(i => i.Currency)
-            .Include(i => i.OrderPays)
-            .FirstOrDefaultAsync(i => i.VariableSymbol == variableSymbol, cancellationToken);
-    }
-
     public async Task<IReadOnlyList<EmployeeInvoice>> GetByEmployeeIdAsync(string employeeId, CancellationToken cancellationToken)
     {
         return await GetDbSet()

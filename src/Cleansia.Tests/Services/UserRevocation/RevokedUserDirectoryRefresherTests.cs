@@ -147,8 +147,6 @@ public class RevokedUserDirectoryRefresherTests
         public Task<bool> ExistWithIdsAsync(IEnumerable<string> ids, CancellationToken cancellationToken) => throw new NotSupportedException();
         public Task<RefreshToken?> GetByIdAsync(string id, CancellationToken cancellationToken) => throw new NotSupportedException();
         public IQueryable<RefreshToken> GetByIds(IEnumerable<string> ids) => throw new NotSupportedException();
-        public IQueryable<RefreshToken> GetPaged(int offset, int limit) => throw new NotSupportedException();
-        public IQueryable<RefreshToken> GetPaged(int offset, int limit, Expression<Func<RefreshToken, bool>> filter) => throw new NotSupportedException();
         public IQueryable<RefreshToken> GetPagedSort<TSort>(int offset, int limit, Expression<Func<RefreshToken, bool>> filter, SortDefinition sort) where TSort : BaseSort<RefreshToken> => throw new NotSupportedException();
         public IQueryable<RefreshToken> GetPagedSort<TSort>(int offset, int limit, Expression<Func<RefreshToken, bool>>? filter, IEnumerable<SortDefinition> sortDefinitions) where TSort : BaseSort<RefreshToken> => throw new NotSupportedException();
         public Task<int> GetCountAsync(CancellationToken cancellationToken) => throw new NotSupportedException();
@@ -158,7 +156,6 @@ public class RevokedUserDirectoryRefresherTests
         public void Add(RefreshToken entity) => throw new NotSupportedException();
         public void AddRange(IEnumerable<RefreshToken> entities) => throw new NotSupportedException();
         public void Deactivate(RefreshToken entity) => throw new NotSupportedException();
-        public void DeactivateRange(IEnumerable<RefreshToken> entities) => throw new NotSupportedException();
         public void Remove(RefreshToken entity) => throw new NotSupportedException();
         public void RemoveRange(IEnumerable<RefreshToken> entities) => throw new NotSupportedException();
         public IQueryable<RefreshToken> GetQueryable() => throw new NotSupportedException();

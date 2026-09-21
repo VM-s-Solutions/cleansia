@@ -25,23 +25,4 @@ public class UserStripeCustomerRepository(CleansiaDbContext context)
         var rows = await GetDbSet().IgnoreQueryFilters().Where(c => c.UserId == userId).ToListAsync(cancellationToken);
         GetDbSet().RemoveRange(rows);
     }
-
-    public async Task<string?> FindUserIdByStripeCustomerIdAsync(string stripeCustomerId, CancellationToken cancellationToken)
-    {
-        var perCurrency = await GetDbSet()
-            .IgnoreQueryFilters()
-            .Where(c => c.StripeCustomerId == stripeCustomerId)
-            .Select(c => c.UserId)
-            .FirstOrDefaultAsync(cancellationToken);
-        if (perCurrency is not null)
-        {
-            return perCurrency;
-        }
-
-        return await Context.Users
-            .IgnoreQueryFilters()
-            .Where(u => u.StripeCustomerId == stripeCustomerId)
-            .Select(u => u.Id)
-            .FirstOrDefaultAsync(cancellationToken);
-    }
 }

@@ -53,13 +53,6 @@ public class SavedAddress : TenantAuditable
             Apartment = string.IsNullOrWhiteSpace(apartment) ? null : apartment.Trim(),
         };
 
-    public SavedAddress UpdateUnit(string? floor, string? apartment)
-    {
-        Floor = string.IsNullOrWhiteSpace(floor) ? null : floor.Trim();
-        Apartment = string.IsNullOrWhiteSpace(apartment) ? null : apartment.Trim();
-        return this;
-    }
-
     public SavedAddress UpdateLabel(string label)
     {
         Label = label;

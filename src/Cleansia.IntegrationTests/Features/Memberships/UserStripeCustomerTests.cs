@@ -65,37 +65,6 @@ public class UserStripeCustomerTests(PostgresContainerFixture fixture) : BaseInt
             transactional: false);
     }
 
-    [Fact]
-    public async Task A_User_Is_Found_By_The_Legacy_Customer_Id_And_By_Any_Per_Currency_One()
-    {
-        await TestMethod(
-            arrange: async ctx =>
-            {
-                await SeedAsync(ctx);
-                var userId = await ctx.Users.Select(u => u.Id).SingleAsync();
-                ctx.UserStripeCustomers.Add(UserStripeCustomer.Create(userId, EurId, "cus_eur_lookup"));
-                await ctx.CommitAsync(CancellationToken.None);
-            },
-            act: async provider =>
-            {
-                var repository = provider.GetRequiredService<IUserStripeCustomerRepository>();
-                var ctx = provider.GetRequiredService<CleansiaDbContext>();
-                var userId = await ctx.Users.Select(u => u.Id).SingleAsync();
-                return (
-                    UserId: userId,
-                    ByLegacy: await repository.FindUserIdByStripeCustomerIdAsync(LegacyCustomerId, CancellationToken.None),
-                    ByRow: await repository.FindUserIdByStripeCustomerIdAsync("cus_eur_lookup", CancellationToken.None),
-                    Unknown: await repository.FindUserIdByStripeCustomerIdAsync("cus_nobody", CancellationToken.None));
-            },
-            assert: (CleansiaDbContext _, (string UserId, string? ByLegacy, string? ByRow, string? Unknown) r) =>
-            {
-                Assert.Equal(r.UserId, r.ByLegacy);
-                Assert.Equal(r.UserId, r.ByRow);
-                Assert.Null(r.Unknown);
-                return Task.CompletedTask;
-            });
-    }
-
     /// <summary>
     /// The ruling's own case: a cancelled CZK membership on the legacy Customer, now subscribing in
     /// EUR — a second Customer is created and recorded; CZK itself adopts the legacy one.

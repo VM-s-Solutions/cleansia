@@ -17,13 +17,12 @@ namespace Cleansia.HostTests.Tests;
 /// </summary>
 public sealed class Ac2PayrollFailOpenClosedTests(HostTestPostgresFixture db) : AuthzHostTestBase(db)
 {
-    // Read-only payroll endpoints (no request body) spanning the invoice / pay-period / pay-config
-    // families — each maps to an AdminOnly or EmployeeOrAdmin physical policy.
+    // Read-only payroll endpoints (no request body) spanning the invoice / pay-period families —
+    // each maps to an EmployeeOrAdmin physical policy.
     public static TheoryData<string> PayrollEndpoints =>
     [
         "/api/EmployeePayroll/GetPagedInvoices",   // CanViewPagedInvoices = EmployeeOrAdmin
         "/api/PayPeriod/GetPagedPayPeriods",        // CanViewPayPeriods    = EmployeeOrAdmin
-        "/api/PayConfig/GetPagedPayConfigs",        // CanViewPayConfigs    = AdminOnly
     ];
 
     [Theory]

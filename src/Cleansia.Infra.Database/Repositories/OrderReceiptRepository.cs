@@ -7,18 +7,6 @@ namespace Cleansia.Infra.Database.Repositories;
 public class OrderReceiptRepository(CleansiaDbContext context)
     : BaseRepository<OrderReceipt>(context), IOrderReceiptRepository
 {
-    public async Task<OrderReceipt?> GetByOrderIdAndLanguageAsync(
-        string orderId,
-        string languageCode,
-        CancellationToken cancellationToken)
-    {
-        return await GetDbSet()
-            .Include(r => r.Order)
-            .Include(r => r.Language)
-            .FirstOrDefaultAsync(
-                r => r.OrderId == orderId && r.Language!.Code == languageCode,
-                cancellationToken);
-    }
 
     public async Task<List<OrderReceipt>> GetByOrderIdAsync(
         string orderId,

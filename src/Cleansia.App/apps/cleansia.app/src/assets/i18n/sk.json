@@ -1879,7 +1879,6 @@
       "already_completed": "Táto objednávka už bola dokončená.",
       "in_progress_cannot_cancel": "Toto upratovanie už prebieha a nedá sa zrušiť.",
       "invalid_status_transition": "Táto akcia nie je pre aktuálny stav objednávky povolená.",
-      "cancellation_window_closed": "Lehota na bezplatné zrušenie tejto objednávky vypršala.",
       "address_exactly_one_required": "Zadajte k objednávke práve jednu adresu.",
       "empty": "Pridajte do objednávky aspoň jednu službu alebo balík.",
       "span_exceeds_maximum": "Táto objednávka zahŕňa priveľa práce na jednu návštevu. Odstráňte prosím niektoré služby alebo balíky, prípadne si ich objednajte samostatne.",
@@ -1902,10 +1901,8 @@
       "payment": {
         "already_paid": "Táto objednávka už bola zaplatená."
       },
-      "creation_failed": "Objednávku sa nepodarilo vytvoriť. Skúste to prosím znova.",
       "not_completed": "Táto akcia je dostupná až po dokončení upratovania.",
       "review": {
-        "already_exists": "Túto objednávku ste už ohodnotili.",
         "duplicate_tag": "Rovnaký štítok bol vybraný dvakrát.",
         "rating_invalid": "Zvoľte hodnotenie od 1 do 5.",
         "tag_rating_mismatch": "Tieto štítky nezodpovedajú hodnoteniu, ktoré ste dali.",
@@ -1963,17 +1960,12 @@
       "required": "Súbor je povinný.",
       "content_type_doesnt_match": "Typ súboru nezodpovedá jeho obsahu.",
       "count_exceeded": "Pripojili ste príliš veľa súborov.",
-      "count_too_few": "Pripojte aspoň jeden súbor.",
-      "size_exceeded_10mb": "Súbor je príliš veľký. Maximálna veľkosť je 10 MB.",
       "type_not_allowed": "Tento typ súboru nie je povolený."
     },
     "receipt": {
-      "not_found": "K tejto objednávke sme nenašli účtenku.",
-      "generation_failed": "Účtenku sa nepodarilo vytvoriť. Skúste to prosím znova."
+      "not_found": "K tejto objednávke sme nenašli účtenku."
     },
     "gdpr": {
-      "export_failed": "Vaše údaje sa nepodarilo exportovať. Skúste to prosím znova.",
-      "deletion_failed": "Váš účet sa nepodarilo zmazať. Skúste to prosím znova.",
       "deletion_already_pending": "Žiadosť o zmazanie účtu už prebieha.",
       "deletion_blocked_by_order": "Váš účet nie je možné zmazať, kým máte aktívne objednávky.",
       "deletion_blocked_by_invoice": "Váš účet nie je možné zmazať, kým máte nevyrovnané faktúry.",
@@ -1996,10 +1988,7 @@
       "requires_account": "Na použitie zľavového kódu sa prihláste."
     },
     "referral": {
-      "not_found": "Tento odporúčací kód neexistuje.",
-      "self_referral": "Nemôžete odporučiť sami seba.",
-      "already_referred": "Tento účet už bol odporučený.",
-      "inactive": "Tento odporúčací kód už nie je aktívny."
+      "not_found": "Tento odporúčací kód neexistuje."
     },
     "membership": {
       "plan": {
@@ -2008,8 +1997,6 @@
       },
       "already_active": "Aktívne členstvo už máte.",
       "not_found": "Vaše členstvo sme nenašli.",
-      "not_owned_by_user": "Toto členstvo nemôžete spravovať.",
-      "stripe_customer_required": "Nepodarilo sa nám spojiť s platobnou bránou — skúste to prosím znova.",
       "stripe_customer_currency_locked": "Vaše platby za Plus sú už nastavené v inej mene. Pre zmenu kontaktujte podporu.",
       "swap_same_plan": "Na tomto pláne už ste.",
       "express_waiver": {

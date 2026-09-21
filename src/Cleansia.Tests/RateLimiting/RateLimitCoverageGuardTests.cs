@@ -63,10 +63,8 @@ public class RateLimitCoverageGuardTests
         // Partner host
         typeof(Cleansia.Web.Partner.Controllers.AuthController),
         typeof(Cleansia.Web.Partner.Controllers.PaymentController),
-        typeof(Cleansia.Web.Partner.Controllers.PayConfigController),
         typeof(Cleansia.Web.Partner.Controllers.PayPeriodController),
         typeof(Cleansia.Web.Partner.Controllers.EmployeePayrollController),
-        typeof(Cleansia.Web.Partner.Controllers.DisputeController),
         typeof(Cleansia.Web.Partner.Controllers.UserController),
         typeof(Cleansia.Web.Partner.Controllers.OrderController),
         typeof(Cleansia.Web.Partner.Controllers.EmployeeController),

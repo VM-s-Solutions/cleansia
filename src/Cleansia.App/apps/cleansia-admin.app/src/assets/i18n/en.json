@@ -25,7 +25,6 @@
     "cancel": "Cancel",
     "edit": "Edit",
     "delete": "Delete",
-    "loading": "Loading...",
     "confirm": "Confirm"
   },
   "page_titles": {
@@ -76,12 +75,6 @@
       "company_settings": "Company settings",
       "company_lifecycle": "Company lifecycle",
       "templates": "Templates",
-      "invoice_templates": "Invoice Templates",
-      "invoice_template_create": "Create Invoice Template",
-      "invoice_template_edit": "Edit Invoice Template",
-      "receipt_templates": "Receipt Templates",
-      "receipt_template_create": "Create Receipt Template",
-      "receipt_template_edit": "Edit Receipt Template",
       "email_templates": "Email Templates",
       "email_template_translations": "Email Template Translations",
       "fiscal_failures": "Fiscal Failures",
@@ -215,11 +208,6 @@
     "unauthorized": {
       "title": "Access Denied",
       "message": "You don't have permission to access this area. Administrator privileges are required."
-    },
-    "login": {
-      "email": "Email",
-      "password": "Password",
-      "remember_me": "Remember me"
     },
     "employee_management": {
       "title": "Employee Management",
@@ -1013,18 +1001,6 @@
       "activate_service": "Activate Service",
       "deactivate_service": "Deactivate Service",
       "deactivate_confirm": "Deactivate “{{name}}”? It will be hidden from the customer booking catalog; history is kept."
-    },
-    "service_edit": {
-      "create_title": "Create Service",
-      "edit_title": "Edit Service",
-      "basic_info": "Basic Information",
-      "translations_cs": "Czech (CS)",
-      "translations_en": "English (EN)",
-      "name": "Name",
-      "description": "Description",
-      "base_price": "Base Price (CZK)",
-      "per_room_price": "Per Room Price (CZK)",
-      "estimated_time": "Estimated Time (minutes)"
     },
     "service_form": {
       "create_title": "Create Service",
@@ -2789,13 +2765,6 @@
       }
     }
   },
-  "employees": {
-    "title": "Employee Management",
-    "list": "Employee List",
-    "pending": "Pending Approvals",
-    "approved": "Approved",
-    "rejected": "Rejected"
-  },
   "pay_periods": {
     "title": "Pay Period Management",
     "description": "Manage pay periods, close periods, and track employee payments",
@@ -2881,18 +2850,6 @@
       "close_error": "Failed to close pay period"
     }
   },
-  "orders": {
-    "title": "Order Management",
-    "list": "All Orders",
-    "assign": "Assign Order"
-  },
-  "invoices": {
-    "title": "Invoice Management",
-    "list": "All Invoices",
-    "pending": "Pending Approval",
-    "approved": "Approved",
-    "cancelled": "Cancelled"
-  },
   "validation": {
     "common": {
       "not_all_fields_filled": "Not all fields are properly filled",
@@ -2909,13 +2866,11 @@
     },
     "auth": {
       "email_not_confirmed": "Email address is not confirmed",
-      "admin_access_required": "Admin access is required to access this panel",
       "login_failed": "Login failed. Please check your credentials and try again."
     },
     "file": {
       "required": "Files are required",
       "invalid_type": "Invalid file type. Please select a valid document file.",
-      "size_too_large": "File size too large. Maximum allowed size is {{ maxSize }}MB.",
       "too_few_files": "Too few files selected. Minimum required: {{ min }}",
       "too_many_files": "Too many files selected. Maximum allowed: {{ max }}",
       "generic_error": "File validation error occurred"
@@ -3050,10 +3005,8 @@
     "employee": {
       "already_approved": "Employee has already been approved",
       "already_rejected": "Employee has already been rejected",
-      "documents_missing": "Required documents are missing",
       "documents_not_approved": "This cleaner cannot be approved until every document their work country requires has been uploaded and approved.",
       "not_allowed_to_update": "You are not allowed to update this employee",
-      "not_existing_email": "No employee found with this email",
       "not_found": "Employee not found",
       "pay_config_missing": "This cleaner has no pay configured for one or more active services or packages. Add the missing pay configuration before approving them.",
       "profile_incomplete": "Employee profile is incomplete",
@@ -3069,16 +3022,12 @@
     "file": {
       "content_type_doesnt_match": "File content type doesn't match",
       "count_exceeded": "Too many files uploaded",
-      "count_too_few": "Not enough files uploaded",
       "invalid_file_type": "Invalid file type",
       "required": "File is required",
       "size_exceeded": "File size exceeded maximum allowed size",
-      "size_exceeded_10mb": "File size must not exceed 10 MB",
       "type_not_allowed": "File type is not allowed. Accepted: PDF, JPEG, PNG, DOC, DOCX"
     },
     "gdpr": {
-      "export_failed": "We couldn't export this user's data. Please try again.",
-      "deletion_failed": "We couldn't delete this account. Please try again.",
       "deletion_already_pending": "A deletion request for this account is already in progress.",
       "deletion_blocked_by_order": "This account has active orders and cannot be deleted yet.",
       "deletion_blocked_by_credit_balance": "This customer still has a credit balance. It has to be spent or paid out before the account can be deleted.",
@@ -3119,29 +3068,22 @@
       }
     },
     "order": {
-      "actual_time": {
-        "positive": "Actual time must be positive"
-      },
       "after_photos": {
         "required": "After photos are required to complete the order"
       },
-      "already_assigned": "Order is already assigned",
       "already_cancelled": "Order has already been cancelled",
       "already_completed": "Order has already been completed",
       "cleaning_date": {
         "future": "Cleaning date must be in the future"
       },
       "completion_notes": {
-        "required": "Completion notes are required",
         "too_long": "Completion notes are too long"
       },
-      "creation_failed": "Failed to create order",
       "employee_already_assigned": "Employee is already assigned to this order",
       "employee_not_assigned": "Employee is not assigned to this order",
       "empty": "Order is empty",
       "in_progress_cannot_cancel": "An order that is in progress cannot be cancelled",
       "invalid_status_transition": "This status change is not allowed for the current order state",
-      "max_employees_exceeded": "Maximum number of employees exceeded",
       "no_available_spots": "No available spots for this order",
       "not_confirmed": "Order is not confirmed",
       "not_found": "Order not found",
@@ -3218,11 +3160,9 @@
         "reference_already_assigned": "This invoice already has a payment reference.",
         "reference_capacity_exhausted": "This year's payment references are exhausted. Contact support.",
         "reference_missing": "Assign a payment reference before recording the transfer.",
-        "reference_unavailable": "That payment reference is already in use. Please try again.",
-        "template_not_found": "Invoice template not found"
+        "reference_unavailable": "That payment reference is already in use. Please try again."
       },
       "no_active_period": "No active pay period found",
-      "no_currency": "No currency found",
       "no_pay_configuration": "No pay configuration found",
       "no_unpaid_order_pays": "No unpaid order pays found",
       "pay": {
@@ -3243,7 +3183,6 @@
       "validity_range_invalid": "The valid-from date must not be after the valid-until date."
     },
     "receipt": {
-      "generation_failed": "Failed to generate receipt",
       "not_found": "Receipt not found"
     },
     "referral": {
@@ -3286,9 +3225,6 @@
         "key_exists": "A translation with this key already exists",
         "not_found": "Email template not found"
       },
-      "file_required": "Template file is required",
-      "file_size_exceeded": "Template file size exceeded",
-      "invalid_file_type": "Invalid template file type",
       "invoice": {
         "in_use": "Cannot delete invoice template because it is currently in use",
         "not_found": "Invoice template not found"
@@ -3318,18 +3254,10 @@
     "validation": {
       "date_must_be_in_past": "Date must be in the past",
       "invalid_age": "Invalid age",
-      "invalid_contract_status": "Invalid contract status value",
       "invalid_date": "Invalid date",
-      "invalid_iban": "Invalid IBAN format",
-      "invalid_national_id": "Invalid national ID format",
       "invalid_password": "Invalid password",
-      "invalid_phone_number": "Invalid phone number format",
-      "invalid_tax_id": "Invalid tax ID format",
-      "invalid_zip_code": "Invalid zip code format",
       "must_be_positive": "Value must be positive",
-      "page_must_be_positive": "Page must be greater than 0",
       "page_size_exceeded": "Page size cannot exceed 100",
-      "page_size_must_be_positive": "Page size must be greater than 0",
       "payout": {
         "account_number_required": "Enter the account number",
         "country_not_supported": "Payouts to a bank in this country are not supported yet",
@@ -3422,23 +3350,8 @@
       "acknowledged": "That could not be done. Please try again."
     }
   },
-  "gdpr": {
-    "deletion_already_pending": "A deletion request is already in progress.",
-    "deletion_blocked_by_order": "We can't delete your account while you have an active order.",
-    "deletion_blocked_by_invoice": "We can't delete your account while you have a pending invoice.",
-    "export_failed": "Data export failed.",
-    "deletion_failed": "Account deletion failed."
-  },
-  "order": {
-    "review": {
-      "already_exists": "You've already reviewed this order."
-    }
-  },
   "recurring_booking": {
     "not_found": "That recurring booking no longer exists."
-  },
-  "admin_user": {
-    "cannot_target_admin_via_gdpr_tool": "Administrator accounts can't be targeted with the GDPR tools."
   },
   "admin_roles": {
     "administrator": "Administrator",

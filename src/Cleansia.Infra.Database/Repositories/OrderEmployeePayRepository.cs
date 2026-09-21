@@ -94,10 +94,4 @@ public class OrderEmployeePayRepository(CleansiaDbContext context) : BaseReposit
             .Where(p => p.EmployeeId == employeeId)
             .ToListAsync(cancellationToken);
     }
-
-    public Task<bool> PayExistsForOrderAsync(string orderId, string employeeId, CancellationToken cancellationToken)
-    {
-        return GetDbSet()
-            .AnyAsync(p => p.OrderId == orderId && p.EmployeeId == employeeId, cancellationToken);
-    }
 }

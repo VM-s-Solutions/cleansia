@@ -697,10 +697,6 @@ export interface IAdminCompanyClient {
      * @return OK
      */
     delete(companyInfoId: string): Observable<DeleteCompanyInfoResponse>;
-    /**
-     * @return OK
-     */
-    getCurrent(): Observable<CompanyInfoDetailDto>;
 }
 
 @Injectable({
@@ -1116,71 +1112,6 @@ export class AdminCompanyClient implements IAdminCompanyClient {
             let resultData404 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
             result404 = ProblemDetails.fromJS(resultData404);
             return throwException("Not Found", status, ResponseText, Headers, result404);
-            }));
-        } else if (status !== 200 && status !== 204) {
-            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
-            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
-            }));
-        }
-        return ObservableOf(null as any);
-    }
-
-    /**
-     * @return OK
-     */
-    getCurrent(): Observable<CompanyInfoDetailDto> {
-        let url = this.baseUrl + "/api/AdminCompany/get-current";
-        url = url.replace(/[?&]$/, "");
-
-        let options : any = {
-            observe: "response",
-            responseType: "blob",
-            headers: new HttpHeaders({
-                "Accept": "application/json"
-            })
-        };
-
-        return this.http.request("get", url, options).pipe(ObservableMergeMap((response : any) => {
-            return this.processGetCurrent(response);
-        })).pipe(ObservableCatch((response: any) => {
-            if (response instanceof HttpResponseBase) {
-                try {
-                    return this.processGetCurrent(response as any);
-                } catch (e) {
-                    return ObservableThrow(e) as any as Observable<CompanyInfoDetailDto>;
-                }
-            } else
-                return ObservableThrow(response) as any as Observable<CompanyInfoDetailDto>;
-        }));
-    }
-
-    protected processGetCurrent(response: HttpResponseBase): Observable<CompanyInfoDetailDto> {
-        const status = response.status;
-        const responseBlob =
-            response instanceof HttpResponse ? response.body :
-            (response as any).error instanceof Blob ? (response as any).error : undefined;
-
-        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
-        if (status === 200) {
-            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
-            let result200: any = null;
-            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
-            result200 = CompanyInfoDetailDto.fromJS(resultData200);
-            return ObservableOf(result200);
-            }));
-        } else if (status === 401) {
-            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
-            let result401: any = null;
-            let resultData401 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
-            result401 = ProblemDetails.fromJS(resultData401);
-            return throwException("Unauthorized", status, ResponseText, Headers, result401);
-            }));
-        } else if (status === 403) {
-            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
-            let result403: any = null;
-            let resultData403 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
-            result403 = ProblemDetails.fromJS(resultData403);
-            return throwException("Forbidden", status, ResponseText, Headers, result403);
             }));
         } else if (status !== 200 && status !== 204) {
             return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
@@ -3861,16 +3792,6 @@ export interface IAdminEmailTemplateClient {
      */
     typeDetails(emailType: EmailType): Observable<EmailTypeDetailDto>;
     /**
-     * @param searchTerm (optional) 
-     * @param emailType (optional) 
-     * @param languageId (optional) 
-     * @param sort (optional) 
-     * @param offset (optional) 
-     * @param limit (optional) 
-     * @return OK
-     */
-    getPaged(searchTerm?: string | undefined, emailType?: EmailType | undefined, languageId?: string | undefined, sort?: SortDefinition[] | undefined, offset?: number | undefined, limit?: number | undefined): Observable<PagedDataOfEmailTemplateTranslationListItem>;
-    /**
      * @return OK
      */
     details(emailTemplateId: string): Observable<EmailTemplateTranslationDetailDto>;
@@ -4024,113 +3945,6 @@ export class AdminEmailTemplateClient implements IAdminEmailTemplateClient {
             let result200: any = null;
             let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
             result200 = EmailTypeDetailDto.fromJS(resultData200);
-            return ObservableOf(result200);
-            }));
-        } else if (status === 400) {
-            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
-            let result400: any = null;
-            let resultData400 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
-            result400 = ProblemDetails.fromJS(resultData400);
-            return throwException("Bad Request", status, ResponseText, Headers, result400);
-            }));
-        } else if (status === 401) {
-            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
-            let result401: any = null;
-            let resultData401 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
-            result401 = ProblemDetails.fromJS(resultData401);
-            return throwException("Unauthorized", status, ResponseText, Headers, result401);
-            }));
-        } else if (status === 403) {
-            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
-            let result403: any = null;
-            let resultData403 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
-            result403 = ProblemDetails.fromJS(resultData403);
-            return throwException("Forbidden", status, ResponseText, Headers, result403);
-            }));
-        } else if (status !== 200 && status !== 204) {
-            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
-            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
-            }));
-        }
-        return ObservableOf(null as any);
-    }
-
-    /**
-     * @param searchTerm (optional) 
-     * @param emailType (optional) 
-     * @param languageId (optional) 
-     * @param sort (optional) 
-     * @param offset (optional) 
-     * @param limit (optional) 
-     * @return OK
-     */
-    getPaged(searchTerm?: string | undefined, emailType?: EmailType | undefined, languageId?: string | undefined, sort?: SortDefinition[] | undefined, offset?: number | undefined, limit?: number | undefined): Observable<PagedDataOfEmailTemplateTranslationListItem> {
-        let url = this.baseUrl + "/api/AdminEmailTemplate/get-paged?";
-        if (searchTerm === null)
-            throw new globalThis.Error("The parameter 'searchTerm' cannot be null.");
-        else if (searchTerm !== undefined)
-            url += "Filter.SearchTerm=" + encodeURIComponent("" + searchTerm) + "&";
-        if (emailType === null)
-            throw new globalThis.Error("The parameter 'emailType' cannot be null.");
-        else if (emailType !== undefined)
-            url += "Filter.EmailType=" + encodeURIComponent("" + emailType) + "&";
-        if (languageId === null)
-            throw new globalThis.Error("The parameter 'languageId' cannot be null.");
-        else if (languageId !== undefined)
-            url += "Filter.LanguageId=" + encodeURIComponent("" + languageId) + "&";
-        if (sort === null)
-            throw new globalThis.Error("The parameter 'sort' cannot be null.");
-        else if (sort !== undefined)
-            sort && sort.forEach((item, index) => {
-                for (const attr in item)
-        			if (item.hasOwnProperty(attr)) {
-        				url += "Sort[" + index + "]." + attr + "=" + encodeURIComponent("" + (item as any)[attr]) + "&";
-        			}
-            });
-        if (offset === null)
-            throw new globalThis.Error("The parameter 'offset' cannot be null.");
-        else if (offset !== undefined)
-            url += "Offset=" + encodeURIComponent("" + offset) + "&";
-        if (limit === null)
-            throw new globalThis.Error("The parameter 'limit' cannot be null.");
-        else if (limit !== undefined)
-            url += "Limit=" + encodeURIComponent("" + limit) + "&";
-        url = url.replace(/[?&]$/, "");
-
-        let options : any = {
-            observe: "response",
-            responseType: "blob",
-            headers: new HttpHeaders({
-                "Accept": "application/json"
-            })
-        };
-
-        return this.http.request("get", url, options).pipe(ObservableMergeMap((response : any) => {
-            return this.processGetPaged(response);
-        })).pipe(ObservableCatch((response: any) => {
-            if (response instanceof HttpResponseBase) {
-                try {
-                    return this.processGetPaged(response as any);
-                } catch (e) {
-                    return ObservableThrow(e) as any as Observable<PagedDataOfEmailTemplateTranslationListItem>;
-                }
-            } else
-                return ObservableThrow(response) as any as Observable<PagedDataOfEmailTemplateTranslationListItem>;
-        }));
-    }
-
-    protected processGetPaged(response: HttpResponseBase): Observable<PagedDataOfEmailTemplateTranslationListItem> {
-        const status = response.status;
-        const responseBlob =
-            response instanceof HttpResponse ? response.body :
-            (response as any).error instanceof Blob ? (response as any).error : undefined;
-
-        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
-        if (status === 200) {
-            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
-            let result200: any = null;
-            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
-            result200 = PagedDataOfEmailTemplateTranslationListItem.fromJS(resultData200);
             return ObservableOf(result200);
             }));
         } else if (status === 400) {
@@ -6946,11 +6760,6 @@ export interface IApiClient {
      * @return OK
      */
     adminServiceCityDelete(id: string): Observable<DeleteServiceCityResponse>;
-    /**
-     * @param orderId (optional) 
-     * @return OK
-     */
-    adminUser(userId: string, orderId?: string | undefined): Observable<UserItem>;
 }
 
 @Injectable({
@@ -7296,86 +7105,6 @@ export class ApiClient implements IApiClient {
             let resultData404 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
             result404 = ProblemDetails.fromJS(resultData404);
             return throwException("Not Found", status, ResponseText, Headers, result404);
-            }));
-        } else if (status !== 200 && status !== 204) {
-            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
-            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
-            }));
-        }
-        return ObservableOf(null as any);
-    }
-
-    /**
-     * @param orderId (optional) 
-     * @return OK
-     */
-    adminUser(userId: string, orderId?: string | undefined): Observable<UserItem> {
-        let url = this.baseUrl + "/api/AdminUser/{userId}?";
-        if (userId === undefined || userId === null)
-            throw new globalThis.Error("The parameter 'userId' must be defined.");
-        url = url.replace("{userId}", encodeURIComponent("" + userId));
-        if (orderId === null)
-            throw new globalThis.Error("The parameter 'orderId' cannot be null.");
-        else if (orderId !== undefined)
-            url += "orderId=" + encodeURIComponent("" + orderId) + "&";
-        url = url.replace(/[?&]$/, "");
-
-        let options : any = {
-            observe: "response",
-            responseType: "blob",
-            headers: new HttpHeaders({
-                "Accept": "application/json"
-            })
-        };
-
-        return this.http.request("get", url, options).pipe(ObservableMergeMap((response : any) => {
-            return this.processAdminUser(response);
-        })).pipe(ObservableCatch((response: any) => {
-            if (response instanceof HttpResponseBase) {
-                try {
-                    return this.processAdminUser(response as any);
-                } catch (e) {
-                    return ObservableThrow(e) as any as Observable<UserItem>;
-                }
-            } else
-                return ObservableThrow(response) as any as Observable<UserItem>;
-        }));
-    }
-
-    protected processAdminUser(response: HttpResponseBase): Observable<UserItem> {
-        const status = response.status;
-        const responseBlob =
-            response instanceof HttpResponse ? response.body :
-            (response as any).error instanceof Blob ? (response as any).error : undefined;
-
-        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
-        if (status === 200) {
-            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
-            let result200: any = null;
-            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
-            result200 = UserItem.fromJS(resultData200);
-            return ObservableOf(result200);
-            }));
-        } else if (status === 400) {
-            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
-            let result400: any = null;
-            let resultData400 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
-            result400 = ProblemDetails.fromJS(resultData400);
-            return throwException("Bad Request", status, ResponseText, Headers, result400);
-            }));
-        } else if (status === 401) {
-            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
-            let result401: any = null;
-            let resultData401 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
-            result401 = ProblemDetails.fromJS(resultData401);
-            return throwException("Unauthorized", status, ResponseText, Headers, result401);
-            }));
-        } else if (status === 403) {
-            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
-            let result403: any = null;
-            let resultData403 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
-            result403 = ProblemDetails.fromJS(resultData403);
-            return throwException("Forbidden", status, ResponseText, Headers, result403);
             }));
         } else if (status !== 200 && status !== 204) {
             return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
@@ -24345,70 +24074,6 @@ export interface IEmailTemplateTranslationDetailDto {
     updatedBy: string | undefined;
 }
 
-export class EmailTemplateTranslationListItem implements IEmailTemplateTranslationListItem {
-    id!: string | undefined;
-    key!: string | undefined;
-    value!: string | undefined;
-    emailType!: EmailType;
-    languageId!: string | undefined;
-    languageCode!: string | undefined;
-    createdOn!: Date;
-    updatedOn!: Date | undefined;
-
-    constructor(data?: IEmailTemplateTranslationListItem) {
-        if (data) {
-            for (var property in data) {
-                if (data.hasOwnProperty(property))
-                    (this as any)[property] = (data as any)[property];
-            }
-        }
-    }
-
-    init(Data?: any) {
-        if (Data) {
-            this.id = Data["id"];
-            this.key = Data["key"];
-            this.value = Data["value"];
-            this.emailType = Data["emailType"];
-            this.languageId = Data["languageId"];
-            this.languageCode = Data["languageCode"];
-            this.createdOn = Data["createdOn"] ? new Date(Data["createdOn"].toString()) : undefined as any;
-            this.updatedOn = Data["updatedOn"] ? new Date(Data["updatedOn"].toString()) : undefined as any;
-        }
-    }
-
-    static fromJS(data: any): EmailTemplateTranslationListItem {
-        data = typeof data === 'object' ? data : {};
-        let result = new EmailTemplateTranslationListItem();
-        result.init(data);
-        return result;
-    }
-
-    toJSON(data?: any) {
-        data = typeof data === 'object' ? data : {};
-        data["id"] = this.id;
-        data["key"] = this.key;
-        data["value"] = this.value;
-        data["emailType"] = this.emailType;
-        data["languageId"] = this.languageId;
-        data["languageCode"] = this.languageCode;
-        data["createdOn"] = this.createdOn ? this.createdOn.toISOString() : undefined as any;
-        data["updatedOn"] = this.updatedOn ? this.updatedOn.toISOString() : undefined as any;
-        return data;
-    }
-}
-
-export interface IEmailTemplateTranslationListItem {
-    id: string | undefined;
-    key: string | undefined;
-    value: string | undefined;
-    emailType: EmailType;
-    languageId: string | undefined;
-    languageCode: string | undefined;
-    createdOn: Date;
-    updatedOn: Date | undefined;
-}
-
 export class EmailTranslationByLanguageDto implements IEmailTranslationByLanguageDto {
     languageId!: string | undefined;
     languageCode!: string | undefined;
@@ -30985,62 +30650,6 @@ export interface IPagedDataOfDisputeListItem {
     pageSize: number;
     total: number;
     data: DisputeListItem[] | undefined;
-}
-
-export class PagedDataOfEmailTemplateTranslationListItem implements IPagedDataOfEmailTemplateTranslationListItem {
-    pageNumber!: number;
-    pageSize!: number;
-    total!: number;
-    data!: EmailTemplateTranslationListItem[] | undefined;
-
-    constructor(data?: IPagedDataOfEmailTemplateTranslationListItem) {
-        if (data) {
-            for (var property in data) {
-                if (data.hasOwnProperty(property))
-                    (this as any)[property] = (data as any)[property];
-            }
-        }
-    }
-
-    init(Data?: any) {
-        if (Data) {
-            this.pageNumber = Data["pageNumber"];
-            this.pageSize = Data["pageSize"];
-            this.total = Data["total"];
-            if (Array.isArray(Data["data"])) {
-                this.data = [] as any;
-                for (let item of Data["data"])
-                    this.data!.push(EmailTemplateTranslationListItem.fromJS(item));
-            }
-        }
-    }
-
-    static fromJS(data: any): PagedDataOfEmailTemplateTranslationListItem {
-        data = typeof data === 'object' ? data : {};
-        let result = new PagedDataOfEmailTemplateTranslationListItem();
-        result.init(data);
-        return result;
-    }
-
-    toJSON(data?: any) {
-        data = typeof data === 'object' ? data : {};
-        data["pageNumber"] = this.pageNumber;
-        data["pageSize"] = this.pageSize;
-        data["total"] = this.total;
-        if (Array.isArray(this.data)) {
-            data["data"] = [];
-            for (let item of this.data)
-                data["data"].push(item ? item.toJSON() : undefined as any);
-        }
-        return data;
-    }
-}
-
-export interface IPagedDataOfEmailTemplateTranslationListItem {
-    pageNumber: number;
-    pageSize: number;
-    total: number;
-    data: EmailTemplateTranslationListItem[] | undefined;
 }
 
 export class PagedDataOfEmployeeDocumentItem implements IPagedDataOfEmployeeDocumentItem {

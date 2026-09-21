@@ -25,7 +25,6 @@
     "cancel": "Zrušiť",
     "edit": "Upraviť",
     "delete": "Vymazať",
-    "loading": "Načítava sa...",
     "confirm": "Potvrdiť"
   },
   "page_titles": {
@@ -76,12 +75,6 @@
       "company_settings": "Nastavenia spoločnosti",
       "company_lifecycle": "Životný cyklus spoločnosti",
       "templates": "Šablóny",
-      "invoice_templates": "Šablóny faktúr",
-      "invoice_template_create": "Vytvoriť šablónu faktúry",
-      "invoice_template_edit": "Upraviť šablónu faktúry",
-      "receipt_templates": "Šablóny účteniek",
-      "receipt_template_create": "Vytvoriť šablónu účtenky",
-      "receipt_template_edit": "Upraviť šablónu účtenky",
       "email_templates": "E-mailové šablóny",
       "email_template_translations": "Preklady e-mailových šablón",
       "fiscal_failures": "Fiškálne zlyhania",
@@ -215,11 +208,6 @@
     "unauthorized": {
       "title": "Prístup zamietnutý",
       "message": "Nemáte oprávnenie na prístup do tejto oblasti. Vyžadujú sa administrátorské práva."
-    },
-    "login": {
-      "email": "E-mail",
-      "password": "Heslo",
-      "remember_me": "Zapamätať si ma"
     },
     "employee_management": {
       "title": "Správa zamestnancov",
@@ -1013,18 +1001,6 @@
       "activate_service": "Aktivovať službu",
       "deactivate_service": "Deaktivovať službu",
       "deactivate_confirm": "Deaktivovať „{{name}}“? Služba sa skryje z rezervačného katalógu, história zostane zachovaná."
-    },
-    "service_edit": {
-      "create_title": "Vytvoriť službu",
-      "edit_title": "Upraviť službu",
-      "basic_info": "Základné informácie",
-      "translations_cs": "Čeština (CS)",
-      "translations_en": "Angličtina (EN)",
-      "name": "Názov",
-      "description": "Popis",
-      "base_price": "Základná cena (CZK)",
-      "per_room_price": "Cena za izbu (CZK)",
-      "estimated_time": "Odhadovaný čas (minúty)"
     },
     "service_form": {
       "create_title": "Vytvoriť službu",
@@ -2789,13 +2765,6 @@
       }
     }
   },
-  "employees": {
-    "title": "Správa zamestnancov",
-    "list": "Zoznam zamestnancov",
-    "pending": "Čakajúce schválenia",
-    "approved": "Schválení",
-    "rejected": "Zamietnutí"
-  },
   "pay_periods": {
     "title": "Správa výplatných období",
     "description": "Spravujte výplatné obdobia, uzatvárajte obdobia a sledujte platby zamestnancov",
@@ -2881,18 +2850,6 @@
       "close_error": "Nepodarilo sa uzavrieť výplatné obdobie"
     }
   },
-  "orders": {
-    "title": "Správa objednávok",
-    "list": "Všetky objednávky",
-    "assign": "Priradiť objednávku"
-  },
-  "invoices": {
-    "title": "Správa faktúr",
-    "list": "Všetky faktúry",
-    "pending": "Čakajúce na schválenie",
-    "approved": "Schválené",
-    "cancelled": "Zrušené"
-  },
   "validation": {
     "common": {
       "not_all_fields_filled": "Nie sú správne vyplnené všetky polia",
@@ -2909,13 +2866,11 @@
     },
     "auth": {
       "email_not_confirmed": "E-mailová adresa nie je potvrdená",
-      "admin_access_required": "Na prístup k tomuto panelu je potrebný administrátorský prístup",
       "login_failed": "Prihlásenie zlyhalo. Skontrolujte svoje prihlasovacie údaje a skúste to znova."
     },
     "file": {
       "required": "Súbory sú povinné",
       "invalid_type": "Neplatný typ súboru. Vyberte platný súbor dokumentu.",
-      "size_too_large": "Súbor je príliš veľký. Maximálna povolená veľkosť je {{ maxSize }}MB.",
       "too_few_files": "Príliš málo vybraných súborov. Minimálny požadovaný počet: {{ min }}",
       "too_many_files": "Príliš veľa vybraných súborov. Maximálny povolený počet: {{ max }}",
       "generic_error": "Vyskytla sa chyba pri overovaní súboru"
@@ -3050,10 +3005,8 @@
     "employee": {
       "already_approved": "Zamestnanec už bol schválený",
       "already_rejected": "Zamestnanec už bol zamietnutý",
-      "documents_missing": "Chýbajú požadované dokumenty",
       "documents_not_approved": "Tohto upratovača nemožno schváliť, kým nie sú nahraté a schválené všetky dokumenty, ktoré vyžaduje krajina výkonu jeho práce.",
       "not_allowed_to_update": "Nemáte oprávnenie aktualizovať tohto zamestnanca",
-      "not_existing_email": "Zamestnanec s týmto e-mailom nebol nájdený",
       "not_found": "Zamestnanec nebol nájdený",
       "pay_config_missing": "Tento upratovač nemá nastavenú odmenu pri jednej alebo viacerých aktívnych službách či balíkoch. Pred schválením chýbajúce nastavenie doplňte.",
       "profile_incomplete": "Profil zamestnanca nie je kompletný",
@@ -3069,16 +3022,12 @@
     "file": {
       "content_type_doesnt_match": "Typ obsahu súboru sa nezhoduje",
       "count_exceeded": "Bolo nahraných príliš veľa súborov",
-      "count_too_few": "Bolo nahraných príliš málo súborov",
       "invalid_file_type": "Neplatný typ súboru",
       "required": "Súbor je povinný",
       "size_exceeded": "Veľkosť súboru prekročila maximálnu povolenú veľkosť",
-      "size_exceeded_10mb": "Veľkosť súboru nesmie prekročiť 10 MB",
       "type_not_allowed": "Typ súboru nie je povolený. Akceptované: PDF, JPEG, PNG, DOC, DOCX"
     },
     "gdpr": {
-      "export_failed": "Údaje tohto používateľa sa nepodarilo exportovať. Skúste to znova.",
-      "deletion_failed": "Tento účet sa nepodarilo zmazať. Skúste to znova.",
       "deletion_already_pending": "Žiadosť o zmazanie tohto účtu už prebieha.",
       "deletion_blocked_by_order": "Tento účet má aktívne objednávky a zatiaľ sa nedá zmazať.",
       "deletion_blocked_by_credit_balance": "Tento zákazník má stále kredit. Pred zmazaním účtu musí byť vyčerpaný alebo vyplatený.",
@@ -3119,29 +3068,22 @@
       }
     },
     "order": {
-      "actual_time": {
-        "positive": "Skutočný čas musí byť kladný"
-      },
       "after_photos": {
         "required": "Fotografie po dokončení sú povinné na dokončenie objednávky"
       },
-      "already_assigned": "Objednávka je už priradená",
       "already_cancelled": "Objednávka už bola zrušená",
       "already_completed": "Objednávka už bola dokončená",
       "cleaning_date": {
         "future": "Dátum upratovania musí byť v budúcnosti"
       },
       "completion_notes": {
-        "required": "Poznámky k dokončeniu sú povinné",
         "too_long": "Poznámky k dokončeniu sú príliš dlhé"
       },
-      "creation_failed": "Nepodarilo sa vytvoriť objednávku",
       "employee_already_assigned": "Zamestnanec je už priradený k tejto objednávke",
       "employee_not_assigned": "Zamestnanec nie je priradený k tejto objednávke",
       "empty": "Objednávka je prázdna",
       "in_progress_cannot_cancel": "Prebiehajúcu objednávku nie je možné zrušiť",
       "invalid_status_transition": "Táto zmena stavu nie je pre aktuálny stav objednávky povolená",
-      "max_employees_exceeded": "Bol prekročený maximálny počet zamestnancov",
       "no_available_spots": "Pre túto objednávku nie sú dostupné voľné miesta",
       "not_confirmed": "Objednávka nie je potvrdená",
       "not_found": "Objednávka nebola nájdená",
@@ -3218,11 +3160,9 @@
         "reference_already_assigned": "Táto faktúra už variabilný symbol má.",
         "reference_capacity_exhausted": "Variabilné symboly pre tento rok sú vyčerpané. Kontaktujte podporu.",
         "reference_missing": "Pred zaznamenaním platby priraďte variabilný symbol.",
-        "reference_unavailable": "Tento variabilný symbol sa už používa. Skúste to prosím znova.",
-        "template_not_found": "Šablóna faktúry nebola nájdená"
+        "reference_unavailable": "Tento variabilný symbol sa už používa. Skúste to prosím znova."
       },
       "no_active_period": "Nenašlo sa žiadne aktívne výplatné obdobie",
-      "no_currency": "Nebola nájdená žiadna mena",
       "no_pay_configuration": "Nebola nájdená žiadna konfigurácia odmien",
       "no_unpaid_order_pays": "Nenašli sa žiadne nevyplatené platby za objednávky",
       "pay": {
@@ -3243,7 +3183,6 @@
       "validity_range_invalid": "Dátum platnosti od nesmie byť neskorší ako dátum platnosti do."
     },
     "receipt": {
-      "generation_failed": "Nepodarilo sa vygenerovať účtenku",
       "not_found": "Účtenka nebola nájdená"
     },
     "referral": {
@@ -3286,9 +3225,6 @@
         "key_exists": "Preklad s týmto kľúčom už existuje",
         "not_found": "E-mailová šablóna nebola nájdená"
       },
-      "file_required": "Súbor šablóny je povinný",
-      "file_size_exceeded": "Veľkosť súboru šablóny bola prekročená",
-      "invalid_file_type": "Neplatný typ súboru šablóny",
       "invoice": {
         "in_use": "Nie je možné odstrániť šablónu faktúry, pretože sa práve používa",
         "not_found": "Šablóna faktúry nebola nájdená"
@@ -3318,18 +3254,10 @@
     "validation": {
       "date_must_be_in_past": "Dátum musí byť v minulosti",
       "invalid_age": "Neplatný vek",
-      "invalid_contract_status": "Neplatná hodnota stavu zmluvy",
       "invalid_date": "Neplatný dátum",
-      "invalid_iban": "Neplatný formát IBAN",
-      "invalid_national_id": "Neplatný formát národného ID",
       "invalid_password": "Neplatné heslo",
-      "invalid_phone_number": "Neplatný formát telefónneho čísla",
-      "invalid_tax_id": "Neplatný formát IČO",
-      "invalid_zip_code": "Neplatný formát PSČ",
       "must_be_positive": "Hodnota musí byť kladná",
-      "page_must_be_positive": "Stránka musí byť väčšia ako 0",
       "page_size_exceeded": "Veľkosť stránky nesmie prekročiť 100",
-      "page_size_must_be_positive": "Veľkosť stránky musí byť väčšia ako 0",
       "payout": {
         "account_number_required": "Zadajte číslo účtu",
         "country_not_supported": "Výplaty do banky v tejto krajine zatiaľ nie sú podporované",
@@ -3422,23 +3350,8 @@
       "acknowledged": "Akciu sa nepodarilo vykonať. Skúste to prosím znova."
     }
   },
-  "gdpr": {
-    "deletion_already_pending": "Žiadosť o vymazanie už prebieha.",
-    "deletion_blocked_by_order": "Účet nie je možné vymazať, kým máte aktívnu objednávku.",
-    "deletion_blocked_by_invoice": "Účet nie je možné vymazať, kým máte nevybavenú faktúru.",
-    "export_failed": "Export údajov zlyhal.",
-    "deletion_failed": "Výmaz účtu zlyhal."
-  },
-  "order": {
-    "review": {
-      "already_exists": "Túto objednávku ste už hodnotili."
-    }
-  },
   "recurring_booking": {
     "not_found": "Táto opakovaná objednávka už neexistuje."
-  },
-  "admin_user": {
-    "cannot_target_admin_via_gdpr_tool": "Na účty administrátorov nemožno použiť nástroje GDPR."
   },
   "admin_roles": {
     "administrator": "Administrátor",

@@ -51,8 +51,6 @@ public class TakeOrderValidatorTests
 
         Assert.False(result.IsValid);
         Assert.Contains(result.Errors, e => e.ErrorMessage == BusinessErrorMessage.EmployeeNotApproved);
-        // The approval failure must NOT masquerade as documents_missing.
-        Assert.DoesNotContain(result.Errors, e => e.ErrorMessage == BusinessErrorMessage.EmployeeDocumentsMissing);
     }
 
     [Fact]

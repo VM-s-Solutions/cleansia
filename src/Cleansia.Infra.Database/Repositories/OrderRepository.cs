@@ -75,20 +75,6 @@ public class OrderRepository(CleansiaDbContext context) : BaseRepository<Order>(
             .ToListAsync(cancellationToken);
     }
 
-    public Task<int> CountCompletedForEmployeeBetweenAsync(
-        string employeeId, DateTime from, DateTime to, CancellationToken cancellationToken)
-    {
-        // Counts orders the cleaner actually completed in the
-        // window. Half-open interval [from, to) matches the
-        // dashboard caller's day/week math. No Includes —
-        // pure COUNT(*) for the dashboard fast path.
-        return GetDbSet()
-            .Where(o => o.AssignedEmployees.Any(e => e.EmployeeId == employeeId)
-                && o.CompletedAt >= from
-                && o.CompletedAt < to)
-            .CountAsync(cancellationToken);
-    }
-
     public IQueryable<Order> GetQueryableForOwner(string userId)
     {
         // The caller supplies the session user or a user from an already-authorized order.

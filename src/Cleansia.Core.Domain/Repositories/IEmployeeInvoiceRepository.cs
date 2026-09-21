@@ -4,10 +4,6 @@ namespace Cleansia.Core.Domain.Repositories;
 
 public interface IEmployeeInvoiceRepository : IRepository<EmployeeInvoice, string>
 {
-    Task<EmployeeInvoice?> GetByInvoiceNumberAsync(string invoiceNumber, CancellationToken cancellationToken);
-
-    Task<EmployeeInvoice?> GetByVariableSymbolAsync(string variableSymbol, CancellationToken cancellationToken);
-
     /// <summary>
     /// All invoices belonging to an employee, projected to read-only list.
     /// Used by the GDPR export to bundle the employee's invoice history.

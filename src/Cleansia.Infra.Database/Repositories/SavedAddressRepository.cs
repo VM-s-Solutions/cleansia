@@ -21,14 +21,6 @@ public class SavedAddressRepository(CleansiaDbContext context, IUserSessionProvi
             .ToListAsync(cancellationToken);
     }
 
-    public Task<SavedAddress?> GetDefaultForUserAsync(string userId, CancellationToken cancellationToken)
-    {
-        return context.Set<SavedAddress>()
-            .Include(s => s.Address)
-                .ThenInclude(a => a!.Country)
-            .FirstOrDefaultAsync(s => s.UserId == userId && s.IsDefault && s.IsActive, cancellationToken);
-    }
-
     public async Task ClearDefaultForUserAsync(string userId, CancellationToken cancellationToken)
     {
         var existingDefaults = await context.Set<SavedAddress>()

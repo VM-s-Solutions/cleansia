@@ -1,4 +1,4 @@
-<div class="cleansia-orders">
+<div class="cleansia-orders cleansia-page">
   <div class="cleansia-orders__container page-wrapper">
     <div class="cleansia-page-header">
       <div class="cleansia-page-header__heading">
@@ -9,14 +9,14 @@
       </div>
       <div class="cleansia-page-header__actions">
         @if (isOrdersHelpDismissed() || isPaymentHelpDismissed()) {
-        <button
-          type="button"
-          class="help-restore-icon-btn"
-          (click)="restoreAllHelp()"
-          [title]="'help.show_help' | translate"
-        >
-          <i class="pi pi-question-circle"></i>
-        </button>
+        <cleansia-button
+          [icon]="'pi pi-question-circle'"
+          [text]="true"
+          [severity]="'secondary'"
+          [ariaLabel]="'help.show_help' | translate"
+          [tooltip]="'help.show_help' | translate"
+          (onClick)="restoreAllHelp()"
+        />
         }
         <cleansia-filter-drawer [state]="facade.filters">
           <form [formGroup]="facade.filterForm" class="filter-form">
@@ -134,13 +134,10 @@
       (dismissedChange)="onHelpDismissedChange()"
     />
 
-    <cleansia-section>
-      <div class="section-header">
-        <h2 class="section-title">
-          {{ 'pages.orders.available_orders' | translate }}
-          <span class="count-badge">{{ facade.availableTotalRecords() }}</span>
-        </h2>
-      </div>
+    <cleansia-section [title]="'pages.orders.available_orders' | translate">
+      <span section-actions class="status-badge status-badge--neutral">
+        {{ facade.availableTotalRecords() }}
+      </span>
       <cleansia-table
         [data]="facade.availableOrders()"
         [columns]="availableOrdersTable().columns"
@@ -161,15 +158,10 @@
       </cleansia-table>
     </cleansia-section>
 
-    <hr class="section-divider" />
-
-    <cleansia-section>
-      <div class="section-header">
-        <h2 class="section-title">
-          {{ 'pages.orders.my_orders' | translate }}
-          <span class="count-badge">{{ facade.myTotalRecords() }}</span>
-        </h2>
-      </div>
+    <cleansia-section [title]="'pages.orders.my_orders' | translate">
+      <span section-actions class="status-badge status-badge--neutral">
+        {{ facade.myTotalRecords() }}
+      </span>
       <cleansia-table
         [data]="facade.myOrders()"
         [columns]="myOrdersTable().columns"
@@ -193,13 +185,13 @@
 </div>
 
 <ng-template #statusTemplate let-item>
-  <span [class]="getStatusClass(item)">
-    {{ getTranslatedPaymentStatus(item.paymentStatus) }}
-  </span>
+  <div class="status-cell">
+    <cleansia-status-badge kind="payment" [value]="item.paymentStatus" />
+  </div>
 </ng-template>
 
 <ng-template #orderStatusTemplate let-item>
-  <span [class]="getOrderStatusClass(item)">
-    {{ getTranslatedOrderStatus(item.orderStatus) }}
-  </span>
+  <div class="status-cell">
+    <cleansia-status-badge kind="order" [value]="item.orderStatus" />
+  </div>
 </ng-template>

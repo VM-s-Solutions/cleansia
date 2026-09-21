@@ -154,10 +154,7 @@
             color="secondary"
           />
           <cleansia-label
-            [text]="
-              (data()!.personalBests.highestEarningMonth.amount
-                | number : '1.0-0') + ' ' + (currencyCode() ?? '')
-            "
+            [text]="highestEarning()"
             size="lg"
             weight="bold"
           />
@@ -189,7 +186,7 @@
           />
           @if (data()!.personalBests.mostOrdersDate) {
           <cleansia-label
-            [text]="formattedMostOrdersDate"
+            [text]="formattedMostOrdersDate()"
             size="xs"
             color="muted"
           />

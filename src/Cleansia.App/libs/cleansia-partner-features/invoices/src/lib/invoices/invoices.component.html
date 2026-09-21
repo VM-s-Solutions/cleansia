@@ -1,4 +1,4 @@
-<div class="cleansia-invoices">
+<div class="cleansia-invoices cleansia-page">
   <div class="cleansia-invoices__container page-wrapper">
     <div class="cleansia-page-header">
       <div class="cleansia-page-header__heading">
@@ -9,14 +9,14 @@
       </div>
       <div class="cleansia-page-header__actions">
         @if (isInvoicesHelpDismissed()) {
-        <button
-          type="button"
-          class="help-restore-icon-btn"
-          (click)="restoreHelp()"
-          [title]="'help.show_help' | translate"
-        >
-          <i class="pi pi-question-circle"></i>
-        </button>
+        <cleansia-button
+          [icon]="'pi pi-question-circle'"
+          [text]="true"
+          [severity]="'secondary'"
+          [ariaLabel]="'help.show_help' | translate"
+          [tooltip]="'help.show_help' | translate"
+          (onClick)="restoreHelp()"
+        />
         }
         <cleansia-filter-drawer [state]="facade.filters">
           <form [formGroup]="facade.filterForm" class="filter-form">
@@ -136,7 +136,7 @@
 </div>
 
 <ng-template #statusTemplate let-item>
-  <span [class]="getStatusClass(item)">
-    {{ getStatusLabelKey(item) | translate }}
-  </span>
+  <div class="status-cell">
+    <cleansia-status-badge kind="invoice" [value]="item.status" />
+  </div>
 </ng-template>

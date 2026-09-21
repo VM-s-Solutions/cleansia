@@ -202,7 +202,8 @@
         "avg_time": "Average time",
         "order_count": "Order count",
         "service_name": "Service name",
-        "total_time": "Total time"
+        "total_time": "Total time",
+        "avg_label": "avg {{value}}"
       },
       "order_analytics": {
         "title": "Order Analytics",
@@ -452,12 +453,6 @@
       "total_orders": "Total Orders",
       "total_amount": "Total Amount",
       "status": "Status",
-      "status_pending": "Pending",
-      "status_approved": "Approved",
-      "status_paid": "Paid",
-      "status_disputed": "Disputed",
-      "status_rejected": "Rejected",
-      "status_cancelled": "Cancelled",
       "view_details": "View Details",
       "download_pdf": "Download PDF",
       "pdf_not_available": "PDF is not yet available for this invoice",
@@ -514,10 +509,6 @@
       "pay_period": "Pay Period",
       "currency": "Currency",
       "multiple_currencies_hint": "You were paid in more than one currency this period. Pick the one to view.",
-      "period_status_open": "Open",
-      "period_status_closed": "Closed",
-      "period_status_paid": "Paid",
-      "period_status_unknown": "Unknown",
       "summary": "Period Summary",
       "total_orders": "Total Orders",
       "base_pay": "Base Pay",
@@ -742,11 +733,6 @@
       "8": "Tax Document",
       "9": "Insurance Document",
       "10": "Other"
-    },
-    "document_status": {
-      "1": "Pending Review",
-      "2": "Approved",
-      "3": "Rejected"
     },
     "show_password": "Show password",
     "hide_password": "Hide password"
@@ -1121,6 +1107,24 @@
     "payment_type": {
       "cash": "Cash",
       "card": "Card"
+    },
+    "invoice_status": {
+      "pending": "Pending",
+      "approved": "Approved",
+      "paid": "Paid",
+      "disputed": "Disputed",
+      "rejected": "Rejected",
+      "cancelled": "Cancelled"
+    },
+    "document_status": {
+      "pending": "Pending Review",
+      "approved": "Approved",
+      "rejected": "Rejected"
+    },
+    "pay_period_status": {
+      "open": "Open",
+      "closed": "Closed",
+      "paid": "Paid"
     }
   },
   "help": {

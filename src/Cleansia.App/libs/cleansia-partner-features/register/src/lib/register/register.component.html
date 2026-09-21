@@ -117,9 +117,8 @@
       <div class="cleansia-register__user-actions">
         <cleansia-button
           [buttonType]="'submit'"
-          [style]="'raised-button'"
-          [title]="'global.actions.register' | translate"
-          (clickFn)="facade.register()"
+          [label]="'global.actions.register' | translate"
+          (onClick)="facade.register()"
           [loading]="loading() ?? false"
           [disabled]="facade.formGroup.invalid"
         />

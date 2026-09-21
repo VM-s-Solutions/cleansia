@@ -1,4 +1,4 @@
-import { CommonModule } from '@angular/common';
+import { LowerCasePipe } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -34,7 +34,7 @@ import {
   selector: 'cleansia-partner-order-photos',
   standalone: true,
   imports: [
-    CommonModule,
+    LowerCasePipe,
     TranslatePipe,
     CleansiaButtonComponent,
     CleansiaSectionComponent,

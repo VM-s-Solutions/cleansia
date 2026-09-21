@@ -202,7 +202,8 @@
         "avg_time": "Среднее время",
         "order_count": "Количество заказов",
         "service_name": "Название услуги",
-        "total_time": "Общее время"
+        "total_time": "Общее время",
+        "avg_label": "в среднем {{value}}"
       },
       "order_analytics": {
         "title": "Аналитика заказов",
@@ -452,12 +453,6 @@
       "total_orders": "Всего заказов",
       "total_amount": "Общая сумма",
       "status": "Статус",
-      "status_pending": "Ожидает рассмотрения",
-      "status_approved": "Утверждён",
-      "status_paid": "Оплачен",
-      "status_disputed": "Оспорен",
-      "status_rejected": "Отклонён",
-      "status_cancelled": "Отменён",
       "view_details": "Просмотреть детали",
       "download_pdf": "Скачать PDF",
       "pdf_not_available": "PDF пока недоступен для этого счёта",
@@ -514,10 +509,6 @@
       "pay_period": "Платёжный период",
       "currency": "Валюта",
       "multiple_currencies_hint": "В этом периоде Вам было выплачено в нескольких валютах. Выберите, какую просмотреть.",
-      "period_status_open": "Открыт",
-      "period_status_closed": "Закрыт",
-      "period_status_paid": "Выплачен",
-      "period_status_unknown": "Неизвестно",
       "summary": "Итоги периода",
       "total_orders": "Всего заказов",
       "base_pay": "Базовая оплата",
@@ -742,11 +733,6 @@
       "8": "Налоговый документ",
       "9": "Страховой документ",
       "10": "Прочее"
-    },
-    "document_status": {
-      "1": "Ожидает проверки",
-      "2": "Утверждён",
-      "3": "Отклонён"
     },
     "show_password": "Показать пароль",
     "hide_password": "Скрыть пароль"
@@ -1121,6 +1107,24 @@
     "payment_type": {
       "cash": "Наличные",
       "card": "Карта"
+    },
+    "invoice_status": {
+      "pending": "Ожидает рассмотрения",
+      "approved": "Утверждён",
+      "paid": "Оплачен",
+      "disputed": "Оспорен",
+      "rejected": "Отклонён",
+      "cancelled": "Отменён"
+    },
+    "document_status": {
+      "pending": "Ожидает проверки",
+      "approved": "Утверждён",
+      "rejected": "Отклонён"
+    },
+    "pay_period_status": {
+      "open": "Открыт",
+      "closed": "Закрыт",
+      "paid": "Выплачен"
     }
   },
   "help": {

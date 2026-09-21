@@ -2,18 +2,27 @@ import { CommonModule } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
+  computed,
   effect,
+  inject,
   input,
   ViewChild,
 } from '@angular/core';
-import {
-  CleansiaLabelComponent,
-} from '@cleansia/components';
+import { CleansiaLabelComponent } from '@cleansia/components';
 import { TimeAnalyticsDto } from '@cleansia/partner-services';
+import { currentLanguage } from '@cleansia/utils';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { ChartConfiguration, ChartType } from 'chart.js';
 import { BaseChartDirective } from 'ng2-charts';
 import { Skeleton } from 'primeng/skeleton';
+import { formatHours, HOUR_TICK_STEP_MINUTES } from './time-analytics.helpers';
+
+interface ServiceTimeRow {
+  readonly serviceName: string;
+  readonly orderCount: string;
+  readonly totalHours: string;
+  readonly averageHours: string;
+}
 
 @Component({
   selector: 'cleansia-time-analytics-chart',
@@ -29,10 +38,34 @@ import { Skeleton } from 'primeng/skeleton';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CleansiaTimeAnalyticsChartComponent {
+  private readonly translate = inject(TranslateService);
+
   data = input<TimeAnalyticsDto | null>(null);
   loading = input<boolean>(false);
 
   @ViewChild(BaseChartDirective) chart?: BaseChartDirective;
+
+  private readonly lang = currentLanguage(this.translate);
+
+  readonly totalHours = computed(() => formatHours(this.data()?.totalMinutesWorked, this.lang()));
+  readonly averageHours = computed(() =>
+    formatHours(this.data()?.averageMinutesPerOrder, this.lang())
+  );
+  readonly efficiency = computed(() => `${Math.round(this.data()?.efficiencyRate ?? 0)}%`);
+  readonly totalOrders = computed(() => String(this.data()?.totalOrders ?? 0));
+
+  readonly serviceRows = computed((): ServiceTimeRow[] => {
+    const lang = this.lang();
+    const unit = this.translate.instant('pages.dashboard.time_analytics.orders').toLowerCase();
+    return (this.data()?.byServiceType ?? []).map((service) => ({
+      serviceName: service.serviceName ?? '',
+      orderCount: `${service.orderCount} ${unit}`,
+      totalHours: formatHours(service.totalMinutes, lang),
+      averageHours: this.translate.instant('pages.dashboard.time_analytics.avg_label', {
+        value: formatHours(service.averageMinutesPerOrder, lang),
+      }),
+    }));
+  });
 
   barChartType: ChartType = 'bar';
   barChartData: ChartConfiguration['data'] = {
@@ -50,11 +83,8 @@ export class CleansiaTimeAnalyticsChartComponent {
       },
       tooltip: {
         callbacks: {
-          label: (context) => {
-            const label = context.dataset.label || '';
-            const value = context.parsed.y;
-            return `${label}: ${(value ?? 0 / 60).toFixed(1)} hrs`;
-          },
+          label: (context) =>
+            `${context.dataset.label || ''}: ${formatHours(context.parsed.y, this.lang())}`,
         },
       },
     },
@@ -62,15 +92,14 @@ export class CleansiaTimeAnalyticsChartComponent {
       y: {
         beginAtZero: true,
         ticks: {
-          callback: (value) => {
-            return `${(Number(value) / 60).toFixed(0)} hrs`;
-          },
+          stepSize: HOUR_TICK_STEP_MINUTES,
+          callback: (value) => formatHours(Number(value), this.lang(), 0),
         },
       },
     },
   };
 
-  constructor(private translate: TranslateService) {
+  constructor() {
     effect(() => {
       const currentData = this.data();
       if (currentData) {

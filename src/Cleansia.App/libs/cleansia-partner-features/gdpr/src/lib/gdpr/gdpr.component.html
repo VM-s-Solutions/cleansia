@@ -1,9 +1,13 @@
-<div class="cleansia-gdpr">
-  <div class="cleansia-gdpr__card page-wrapper">
-    <cleansia-title [title]="'pages.gdpr.title' | translate" />
-    <p class="cleansia-gdpr__subtitle">
-      {{ 'pages.gdpr.subtitle' | translate }}
-    </p>
+<div class="cleansia-gdpr cleansia-page">
+  <div class="cleansia-gdpr__card page-wrapper page-wrapper--narrow">
+    <div class="cleansia-page-header">
+      <div class="cleansia-page-header__heading">
+        <cleansia-title [title]="'pages.gdpr.title' | translate" [level]="1" />
+        <p class="cleansia-page-header__description">
+          {{ 'pages.gdpr.subtitle' | translate }}
+        </p>
+      </div>
+    </div>
 
     @if (facade.isAuthenticated()) {
       <div class="cleansia-gdpr__section">
@@ -16,7 +20,6 @@
           <cleansia-button
             [label]="'pages.gdpr.export_button' | translate"
             icon="pi pi-download"
-            size="auto-width"
             [loading]="facade.exporting()"
             [disabled]="facade.exporting()"
             (onClick)="exportData()"
@@ -59,7 +62,7 @@
             [label]="'pages.gdpr.delete_button' | translate"
             icon="pi pi-trash"
             severity="danger"
-            size="auto-width"
+            [outlined]="true"
             [loading]="facade.deleting()"
             [disabled]="facade.deleting()"
             (onClick)="deleteAccount()"
@@ -95,7 +98,7 @@
 
     <div class="cleansia-gdpr__actions">
       <cleansia-button
-        [title]="'global.actions.go_back' | translate"
+        [label]="'global.actions.go_back' | translate"
         severity="secondary"
         [outlined]="true"
         routerLink="/profile"

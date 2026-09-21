@@ -138,7 +138,7 @@
 
     li {
       font-size: 0.8rem;
-      color: var(--text-color-secondary);
+      color: var(--cleansia-text-secondary);
       display: flex;
       align-items: center;
       gap: 0.375rem;
@@ -149,26 +149,26 @@
         content: '\e9b9';
         font-family: 'primeicons';
         font-size: 0.6875rem;
-        color: var(--text-color-secondary);
+        color: var(--cleansia-text-secondary);
         transition: color 0.2s ease;
       }
-    }
 
-    &--valid {
-      color: #16a34a;
+      &.cleansia-register__password-validation--valid {
+        color: var(--cleansia-success-700);
 
-      &::before {
-        content: '\e909' !important;
-        color: #16a34a !important;
+        &::before {
+          content: '\e909';
+          color: var(--cleansia-success-700);
+        }
       }
-    }
 
-    &--invalid {
-      color: #dc2626;
+      &.cleansia-register__password-validation--invalid {
+        color: var(--cleansia-error-600);
 
-      &::before {
-        content: '\e9b9' !important;
-        color: #dc2626 !important;
+        &::before {
+          content: '\e9b9';
+          color: var(--cleansia-error-600);
+        }
       }
     }
   }

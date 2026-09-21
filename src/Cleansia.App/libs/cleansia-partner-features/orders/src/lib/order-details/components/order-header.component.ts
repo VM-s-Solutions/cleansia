@@ -1,41 +1,23 @@
 import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { CleansiaButtonComponent, CleansiaStatusBadgeComponent } from '@cleansia/components';
+import { Code } from '@cleansia/partner-services';
 import { TranslatePipe } from '@ngx-translate/core';
-
-interface StatusInfo {
-  name?: string;
-  value: number;
-}
 
 @Component({
   selector: 'cleansia-partner-order-header',
   standalone: true,
-  imports: [CommonModule, TranslatePipe],
+  imports: [TranslatePipe, CleansiaButtonComponent, CleansiaStatusBadgeComponent],
   templateUrl: './order-header.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class OrderHeaderComponent {
   orderNumber = input.required<string>();
   hasInvoice = input<boolean>(false);
-  orderStatus = input<StatusInfo | null>(null);
-  paymentStatus = input<StatusInfo | null>(null);
-  orderStatusLabel = input<string>('');
-  paymentStatusLabel = input<string>('');
+  orderStatus = input<Code | null>(null);
+  paymentStatus = input<Code | null>(null);
   createdOn = input<string>('');
   confirmationCode = input<string>('');
 
   print = output<void>();
   downloadInvoice = output<void>();
-
-  getOrderStatusClass(status: StatusInfo | null): string {
-    if (!status?.name) return 'order-status-badge';
-    const statusKey = status.name.toLowerCase().replace(/\s+/g, '');
-    return `order-status-badge status-${statusKey}`;
-  }
-
-  getPaymentStatusClass(status: StatusInfo | null): string {
-    if (!status?.name) return 'payment-status-badge';
-    const statusKey = status.name.toLowerCase().replace(/\s+/g, '');
-    return `payment-status-badge status-${statusKey}`;
-  }
 }

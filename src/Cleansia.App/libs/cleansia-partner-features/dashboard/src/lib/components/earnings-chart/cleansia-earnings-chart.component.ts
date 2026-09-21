@@ -2,7 +2,9 @@ import { CommonModule } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
+  computed,
   effect,
+  inject,
   input,
   ViewChild,
 } from '@angular/core';
@@ -10,6 +12,7 @@ import {
   CleansiaLabelComponent,
 } from '@cleansia/components';
 import { EarningsAnalyticsDto } from '@cleansia/partner-services';
+import { currentLanguage, formatMoney, localeFor } from '@cleansia/utils';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { ChartConfiguration, ChartType } from 'chart.js';
 import { BaseChartDirective } from 'ng2-charts';
@@ -29,6 +32,8 @@ import { Skeleton } from 'primeng/skeleton';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CleansiaEarningsChartComponent {
+  private readonly translate = inject(TranslateService);
+
   data = input<EarningsAnalyticsDto | null>(null);
   loading = input<boolean>(false);
   /**
@@ -40,6 +45,11 @@ export class CleansiaEarningsChartComponent {
   currencyCode = input<string | undefined>(undefined);
 
   @ViewChild(BaseChartDirective) chart?: BaseChartDirective;
+
+  private readonly lang = currentLanguage(this.translate);
+
+  readonly totalEarnings = computed(() => this.money(this.data()?.totalEarnings));
+  readonly averageMonthlyEarnings = computed(() => this.money(this.data()?.averageMonthlyEarnings));
 
   lineChartType: ChartType = 'line';
   lineChartData: ChartConfiguration['data'] = {
@@ -59,14 +69,7 @@ export class CleansiaEarningsChartComponent {
         mode: 'index',
         intersect: false,
         callbacks: {
-          label: (context) => {
-            const label = context.dataset.label || '';
-            const value = context.parsed.y;
-            const locale = this.translate.currentLang || 'en-GB';
-            const formatted =
-              value != null ? value.toLocaleString(locale) : '0';
-            return `${label}: ${formatted} ${this.currencyCode() ?? ''}`.trimEnd();
-          },
+          label: (context) => `${context.dataset.label || ''}: ${this.money(context.parsed.y)}`,
         },
       },
     },
@@ -74,22 +77,23 @@ export class CleansiaEarningsChartComponent {
       y: {
         beginAtZero: true,
         ticks: {
-          callback: (value) => {
-            const locale = this.translate.currentLang || 'en-GB';
-            return `${value.toLocaleString(locale)} ${this.currencyCode() ?? ''}`.trimEnd();
-          },
+          callback: (value) => this.money(Number(value)),
         },
       },
     },
   };
 
-  constructor(private translate: TranslateService) {
+  constructor() {
     effect(() => {
       const currentData = this.data();
       if (currentData) {
         this.updateChartData(currentData);
       }
     });
+  }
+
+  private money(value: number | null | undefined): string {
+    return formatMoney(value ?? 0, this.currencyCode(), localeFor(this.lang()));
   }
 
   private updateChartData(currentData: EarningsAnalyticsDto): void {

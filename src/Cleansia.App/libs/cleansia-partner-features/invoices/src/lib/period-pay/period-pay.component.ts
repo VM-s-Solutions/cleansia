@@ -6,13 +6,14 @@ import {
   CleansiaLoaderComponent,
   CleansiaSectionComponent,
   CleansiaSelectComponent,
+  CleansiaStatusBadgeComponent,
   CleansiaTableComponent,
   CleansiaTitleComponent,
 } from '@cleansia/components';
 import { CleansiaPartnerRoute } from '@cleansia/services';
 import { TranslatePipe } from '@ngx-translate/core';
 import { PeriodPayFacade } from './period-pay.facade';
-import { getPeriodPayTableDefinition } from './period-pay.models';
+import { formatPayAmount, getPeriodPayTableDefinition } from './period-pay.models';
 
 @Component({
   selector: 'cleansia-partner-period-pay',
@@ -24,6 +25,7 @@ import { getPeriodPayTableDefinition } from './period-pay.models';
     CleansiaLoaderComponent,
     CleansiaSectionComponent,
     CleansiaSelectComponent,
+    CleansiaStatusBadgeComponent,
     CleansiaTableComponent,
     CleansiaTitleComponent,
   ],
@@ -40,8 +42,23 @@ export class PeriodPayComponent implements OnInit {
   // Computed, not a field initializer: the currency arrives with the summary, so the column formatters
   // have to be rebuilt when it does or every row would render with whatever was known at construction.
   protected readonly periodPayColumns = computed(
-    () => getPeriodPayTableDefinition(this.facade.summary()?.currencyCode).columns
+    () => getPeriodPayTableDefinition(this.facade.summary()?.currencyCode, this.facade.lang()).columns
   );
+
+  protected readonly amounts = computed(() => {
+    const summary = this.facade.summary();
+    const lang = this.facade.lang();
+    const amount = (value: number | undefined): string =>
+      formatPayAmount(value, summary?.currencyCode, lang);
+    return {
+      base: amount(summary?.totalBasePay),
+      extras: amount(summary?.totalExtrasPay),
+      expenses: amount(summary?.totalExpensesPay),
+      bonus: amount(summary?.totalBonusPay),
+      deduction: amount(summary?.totalDeductionPay),
+      grandTotal: amount(summary?.grandTotal),
+    };
+  });
 
   ngOnInit(): void {
     this.facade.connectPeriodControl(this.periodControl);

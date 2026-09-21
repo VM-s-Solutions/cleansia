@@ -1,27 +1,46 @@
-import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input, output, signal } from '@angular/core';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
-import { CleansiaLabelComponent } from '@cleansia/components';
-import { ButtonModule } from 'primeng/button';
+import { CleansiaButtonComponent, CleansiaLabelComponent } from '@cleansia/components';
+import { currentLanguage, formatDate } from '@cleansia/utils';
+
+export type DateRangePreset = 'thisMonth' | 'last3Months' | 'last6Months' | 'thisYear';
+
+interface PresetOption {
+  readonly preset: DateRangePreset;
+  readonly labelKey: string;
+}
+
+const PRESETS: readonly PresetOption[] = [
+  { preset: 'thisMonth', labelKey: 'pages.dashboard.date_range.this_month' },
+  { preset: 'last3Months', labelKey: 'pages.dashboard.date_range.last_3_months' },
+  { preset: 'last6Months', labelKey: 'pages.dashboard.date_range.last_6_months' },
+  { preset: 'thisYear', labelKey: 'pages.dashboard.date_range.this_year' },
+];
 
 @Component({
   selector: 'cleansia-date-range-selector',
   standalone: true,
-  imports: [CommonModule, ButtonModule, TranslateModule, CleansiaLabelComponent],
+  imports: [TranslateModule, CleansiaButtonComponent, CleansiaLabelComponent],
   templateUrl: './cleansia-date-range-selector.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CleansiaDateRangeSelectorComponent {
+  private readonly translate = inject(TranslateService);
+  private readonly lang = currentLanguage(this.translate);
+
   startDate = input<Date>(new Date());
   endDate = input<Date>(new Date());
   rangeChanged = output<{ startDate: Date; endDate: Date }>();
 
-  selectedPreset = 'last6Months';
+  readonly presets = PRESETS;
+  readonly selectedPreset = signal<DateRangePreset>('last6Months');
 
-  constructor(private translate: TranslateService) {}
+  readonly rangeLabel = computed(
+    () => `${formatDate(this.startDate(), this.lang())} – ${formatDate(this.endDate(), this.lang())}`
+  );
 
-  selectPreset(preset: string): void {
-    this.selectedPreset = preset;
+  selectPreset(preset: DateRangePreset): void {
+    this.selectedPreset.set(preset);
     const today = new Date();
     let startDate: Date;
     const endDate = new Date(today);
@@ -33,9 +52,6 @@ export class CleansiaDateRangeSelectorComponent {
       case 'last3Months':
         startDate = new Date(today.getFullYear(), today.getMonth() - 2, 1);
         break;
-      case 'last6Months':
-        startDate = new Date(today.getFullYear(), today.getMonth() - 5, 1);
-        break;
       case 'thisYear':
         startDate = new Date(today.getFullYear(), 0, 1);
         break;
@@ -44,14 +60,5 @@ export class CleansiaDateRangeSelectorComponent {
     }
 
     this.rangeChanged.emit({ startDate, endDate });
-  }
-
-  formatDate(date: Date): string {
-    const locale = this.translate.currentLang || 'en-GB';
-    return date.toLocaleDateString(locale, {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    });
   }
 }

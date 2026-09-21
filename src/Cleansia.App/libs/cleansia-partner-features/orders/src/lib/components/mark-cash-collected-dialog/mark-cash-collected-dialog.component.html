@@ -1,9 +1,11 @@
 <div class="mark-cash-collected-dialog">
   <div class="mark-cash-collected-dialog__header">
     <i class="pi pi-money-bill mark-cash-collected-dialog__icon"></i>
-    <h3>{{ 'pages.order_details.mark_cash_collected_confirm_title' | translate }}</h3>
+    <h2 class="mark-cash-collected-dialog__title">
+      {{ 'pages.order_details.mark_cash_collected_confirm_title' | translate }}
+    </h2>
   </div>
-  <div class="mark-cash-collected-dialog__body">
+  <div class="mark-cash-collected-dialog__content">
     @if (hasAmount) {
     <p class="mark-cash-collected-dialog__message">
       {{ 'pages.order_details.mark_cash_collected_confirm_message' | translate: { amount: data.amount } }}
@@ -19,16 +21,15 @@
     </p>
   </div>
   <div class="mark-cash-collected-dialog__footer">
-    <p-button
+    <cleansia-button
       [label]="'global.actions.cancel' | translate"
-      severity="secondary"
+      [severity]="'secondary'"
       [outlined]="true"
       (onClick)="onCancel()"
     />
-    <p-button
+    <cleansia-button
       [label]="'pages.order_details.mark_cash_collected_confirm_action' | translate"
-      severity="success"
-      icon="pi pi-check"
+      [icon]="'pi pi-check'"
       (onClick)="onConfirm()"
     />
   </div>

@@ -1,15 +1,27 @@
 import { TableColumn } from '@cleansia/components';
 import { OrderEmployeePayDto } from '@cleansia/partner-services';
+import { formatMoney, localeFor } from '@cleansia/utils';
 
 /**
- * Every row is in the invoice's currency (one invoice per currency). An absent code renders the
- * amount with no symbol rather than a guessed one: no symbol is visibly incomplete, a wrong one is not.
+ * An invoice amount in the invoice's own currency, the way the session's language writes money.
+ * An absent code renders the bare number rather than a guessed symbol: no symbol is visibly
+ * incomplete, a wrong one is not.
  */
+export function formatInvoiceAmount(
+  value: number | undefined,
+  currencyCode: string | undefined,
+  lang: string | undefined
+): string {
+  if (value === undefined || value === null) return '';
+  return formatMoney(value, currencyCode || undefined, localeFor(lang), { fractionDigits: 2 });
+}
+
+/** Every row is in the invoice's currency (one invoice per currency). */
 export function getOrderPaysTableDefinition(
-  currencyCode: string | undefined
+  currencyCode: string | undefined,
+  lang: string | undefined
 ): { columns: TableColumn<OrderEmployeePayDto>[] } {
-  const amount = (value: number | undefined): string =>
-    `${value?.toFixed(2)} ${currencyCode ?? ''}`.trimEnd();
+  const amount = (value: number | undefined): string => formatInvoiceAmount(value, currencyCode, lang);
   return {
     columns: [
       {

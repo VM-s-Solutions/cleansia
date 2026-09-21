@@ -1,4 +1,4 @@
-import { Injectable, inject } from '@angular/core';
+import { Injectable, computed, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { UnsubscribeControlDirective } from '@cleansia/directives';
 import { OrderFilter } from '@cleansia/models';
@@ -25,10 +25,11 @@ import {
   selectUpcomingOrders,
   selectUpcomingOrdersLoading,
 } from '@cleansia/partner-stores';
+import { currentLanguage, formatDate, formatMoney, localeFor } from '@cleansia/utils';
 import { Store } from '@ngrx/store';
 import { TranslateService } from '@ngx-translate/core';
 import { takeUntil } from 'rxjs';
-import { StatCard } from './dashboard.models';
+import { StatCard, UpcomingOrderCard } from './dashboard.models';
 
 @Injectable()
 export class DashboardFacade extends UnsubscribeControlDirective {
@@ -38,6 +39,7 @@ export class DashboardFacade extends UnsubscribeControlDirective {
   private readonly translate = inject(TranslateService);
   private currentEmployeeId: string | null = null;
 
+  readonly lang = currentLanguage(this.translate);
   readonly stats = this.store.selectSignal(selectDashboardStats);
   readonly upcomingOrders = this.store.selectSignal(selectUpcomingOrders);
   readonly statsLoading = this.store.selectSignal(selectDashboardStatsLoading);
@@ -64,6 +66,58 @@ export class DashboardFacade extends UnsubscribeControlDirective {
     selectProductivityMetricsLoading
   );
   readonly analyticsLoading = this.store.selectSignal(selectAnalyticsLoading);
+
+  readonly statCards = computed((): StatCard[] => {
+    const stats = this.stats();
+    if (!stats) {
+      return [];
+    }
+    const lang = this.lang();
+    return [
+      {
+        title: 'pages.dashboard.available_orders',
+        value: stats.availableOrdersCount,
+        icon: 'pi pi-inbox',
+        route: '/orders',
+      },
+      {
+        title: 'pages.dashboard.my_active_orders',
+        value: stats.myActiveOrdersCount,
+        icon: 'pi pi-clock',
+        route: '/orders',
+      },
+      {
+        title: 'pages.dashboard.completed_this_month',
+        value: stats.thisMonthCompletedOrders,
+        icon: 'pi pi-check-circle',
+        trend: this.calculateTrend(stats.thisMonthCompletedOrders, stats.lastMonthCompletedOrders),
+      },
+      {
+        title: 'pages.dashboard.pending_earnings',
+        // The server tells us the currency; do not hardcode it. The day a second country
+        // configuration exists, a hardcoded "Kč" here disagrees with the cleaner's own
+        // payout invoice, which is a filed tax document. → /flows/pay-and-payouts
+        value: formatMoney(stats.currentPeriodEarnings, stats.currencyCode, localeFor(lang)),
+        icon: 'pi pi-wallet',
+        route: '/invoices',
+      },
+    ];
+  });
+
+  readonly upcomingOrderCards = computed((): UpcomingOrderCard[] => {
+    const lang = this.lang();
+    return this.upcomingOrders().map((order) => ({
+      id: order.id ?? '',
+      displayOrderNumber: order.displayOrderNumber ?? '',
+      orderStatus: order.orderStatus,
+      customerName: order.customerName ?? '',
+      cleaningDate: formatDate(order.cleaningDateTime, lang, 'dateTime'),
+      customerAddress: order.customerAddress ?? '',
+      totalPrice: formatMoney(order.totalPrice, order.currency?.code, localeFor(lang), {
+        fractionDigits: 2,
+      }),
+    }));
+  });
 
   constructor() {
     super();
@@ -110,54 +164,6 @@ export class DashboardFacade extends UnsubscribeControlDirective {
         limit: 5,
       })
     );
-  }
-
-  getStatCards(): StatCard[] {
-    const stats = this.stats();
-    if (!stats) {
-      return [];
-    }
-
-    const trend = this.calculateTrend(
-      stats.thisMonthCompletedOrders,
-      stats.lastMonthCompletedOrders
-    );
-
-    return [
-      {
-        title: 'pages.dashboard.available_orders',
-        value: stats.availableOrdersCount,
-        icon: 'pi pi-inbox',
-        color: '#0284c7',
-        route: '/orders',
-      },
-      {
-        title: 'pages.dashboard.my_active_orders',
-        value: stats.myActiveOrdersCount,
-        icon: 'pi pi-clock',
-        color: '#f59e0b',
-        route: '/orders',
-      },
-      {
-        title: 'pages.dashboard.completed_this_month',
-        value: stats.thisMonthCompletedOrders,
-        icon: 'pi pi-check-circle',
-        color: '#10b981',
-        trend,
-      },
-      {
-        title: 'pages.dashboard.pending_earnings',
-        // The server tells us the currency; do not hardcode it. The day a second country
-        // configuration exists, a hardcoded "Kč" here disagrees with the cleaner's own
-        // payout invoice, which is a filed tax document. → /flows/pay-and-payouts
-        value: `${stats.currentPeriodEarnings.toLocaleString(
-          this.translate.currentLang || 'en-GB'
-        )} ${stats.currencyCode ?? ''}`.trim(),
-        icon: 'pi pi-wallet',
-        color: '#8b5cf6',
-        route: '/invoices',
-      },
-    ];
   }
 
   private calculateTrend(

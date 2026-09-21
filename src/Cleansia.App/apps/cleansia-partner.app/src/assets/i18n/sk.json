@@ -202,7 +202,8 @@
         "avg_time": "Priemerný čas",
         "order_count": "Počet objednávok",
         "service_name": "Názov služby",
-        "total_time": "Celkový čas"
+        "total_time": "Celkový čas",
+        "avg_label": "priemer {{value}}"
       },
       "order_analytics": {
         "title": "Analytika objednávok",
@@ -452,12 +453,6 @@
       "total_orders": "Celkom objednávok",
       "total_amount": "Celková suma",
       "status": "Stav",
-      "status_pending": "Čaká na vybavenie",
-      "status_approved": "Schválené",
-      "status_paid": "Zaplatené",
-      "status_disputed": "Sporné",
-      "status_rejected": "Zamietnuté",
-      "status_cancelled": "Zrušené",
       "view_details": "Zobraziť detail",
       "download_pdf": "Stiahnuť PDF",
       "pdf_not_available": "PDF zatiaľ nie je k dispozícii pre túto faktúru",
@@ -514,10 +509,6 @@
       "pay_period": "Platobné obdobie",
       "currency": "Mena",
       "multiple_currencies_hint": "V tomto období ste boli vyplatení vo viacerých menách. Vyberte, ktorú chcete zobraziť.",
-      "period_status_open": "Otvorené",
-      "period_status_closed": "Uzavreté",
-      "period_status_paid": "Vyplatené",
-      "period_status_unknown": "Neznáme",
       "summary": "Súhrn obdobia",
       "total_orders": "Celkom objednávok",
       "base_pay": "Základná mzda",
@@ -742,11 +733,6 @@
       "8": "Daňový dokument",
       "9": "Poistný dokument",
       "10": "Ostatné"
-    },
-    "document_status": {
-      "1": "Čaká na kontrolu",
-      "2": "Schválené",
-      "3": "Zamietnuté"
     },
     "show_password": "Zobraziť heslo",
     "hide_password": "Skryť heslo"
@@ -1121,6 +1107,24 @@
     "payment_type": {
       "cash": "Hotovosť",
       "card": "Karta"
+    },
+    "invoice_status": {
+      "pending": "Čaká na vybavenie",
+      "approved": "Schválené",
+      "paid": "Zaplatené",
+      "disputed": "Sporné",
+      "rejected": "Zamietnuté",
+      "cancelled": "Zrušené"
+    },
+    "document_status": {
+      "pending": "Čaká na kontrolu",
+      "approved": "Schválené",
+      "rejected": "Zamietnuté"
+    },
+    "pay_period_status": {
+      "open": "Otvorené",
+      "closed": "Uzavreté",
+      "paid": "Vyplatené"
     }
   },
   "help": {

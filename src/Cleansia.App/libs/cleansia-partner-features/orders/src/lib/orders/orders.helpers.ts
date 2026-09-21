@@ -1,45 +1,9 @@
-import { formatDate, toKebabCase, toSnakeCase } from '@cleansia/utils';
+import { formatDate } from '@cleansia/utils';
 import { FilterChip, ICleansiaSelectOption } from '@cleansia/components';
 import { OrderFilter } from '@cleansia/models';
-import {
-  OrderListItem,
-  OrderStatus,
-  PaymentStatus,
-} from '@cleansia/partner-services';
+import { OrderStatus, PaymentStatus } from '@cleansia/partner-services';
 import { TranslateService } from '@ngx-translate/core';
 import { OrderFilterFormValue } from './orders.models';
-
-// --- Status CSS class helpers ---
-
-export function getStatusClass(order: OrderListItem): string {
-  const statusName = toKebabCase(order.paymentStatus?.name) || 'pending';
-  return `status-badge status-${statusName}`;
-}
-
-export function getOrderStatusClass(order: OrderListItem): string {
-  const statusName = toKebabCase(order.orderStatus?.name) || 'pending';
-  return `order-status-badge status-${statusName}`;
-}
-
-// --- Translation helpers ---
-
-export function getTranslatedPaymentStatus(
-  paymentStatus: { name?: string } | null | undefined,
-  translate: TranslateService
-): string {
-  if (!paymentStatus?.name) return '';
-  const key = `enums.payment_status.${toSnakeCase(paymentStatus.name)}`;
-  return translate.instant(key);
-}
-
-export function getTranslatedOrderStatus(
-  orderStatus: { name?: string } | null | undefined,
-  translate: TranslateService
-): string {
-  if (!orderStatus?.name) return '';
-  const key = `enums.order_status.${toSnakeCase(orderStatus.name)}`;
-  return translate.instant(key);
-}
 
 // --- Filter options builders ---
 

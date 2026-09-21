@@ -1,7 +1,6 @@
 import { TableColumn } from '@cleansia/components';
 import { OrderEmployeePayDto, PeriodPaySummaryDto } from '@cleansia/partner-services';
-
-export type PeriodStatusKey = 'open' | 'closed' | 'paid' | 'unknown';
+import { formatMoney, localeFor } from '@cleansia/utils';
 
 export interface PeriodCurrency {
   id: string;
@@ -30,10 +29,11 @@ export function getPeriodCurrencies(summary: PeriodPaySummaryDto | null): Period
  */
 export function formatPayAmount(
   value: number | undefined,
-  currencyCode: string | undefined
+  currencyCode: string | undefined,
+  lang: string | undefined
 ): string {
   return value !== undefined && value !== null
-    ? `${value.toFixed(2)} ${currencyCode ?? ''}`.trimEnd()
+    ? formatMoney(value, currencyCode || undefined, localeFor(lang), { fractionDigits: 2 })
     : '';
 }
 
@@ -41,11 +41,14 @@ export function formatPayAmount(
  * A row's own currency first — the pay is in the ORDER's currency and the server names it per row —
  * and the summary's (the currency view) only for a row that carries none.
  */
-export function getPeriodPayTableDefinition(currencyCode: string | undefined): {
+export function getPeriodPayTableDefinition(
+  currencyCode: string | undefined,
+  lang: string | undefined
+): {
   columns: TableColumn<OrderEmployeePayDto>[];
 } {
   const format = (pay: OrderEmployeePayDto | undefined, value: number | undefined): string =>
-    formatPayAmount(value, pay?.currencyCode ?? currencyCode);
+    formatPayAmount(value, pay?.currencyCode ?? currencyCode, lang);
   return {
     columns: [
       {

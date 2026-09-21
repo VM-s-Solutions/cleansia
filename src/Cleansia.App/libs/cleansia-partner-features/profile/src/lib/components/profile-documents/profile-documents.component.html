@@ -38,7 +38,11 @@
       @for (doc of facade.stagedDocuments(); track $index) {
       <div class="doc-staged__item" [class.doc-staged__item--error]="showValidation && !doc.documentType">
         <div class="doc-staged__file-icon" [style.background]="getFileColor(doc.file.fileName)">
-          <span [style.color]="getFileTextColor(doc.file.fileName)">{{ getFileExtension(doc.file.fileName) }}</span>
+          @if (getFileExtension(doc.file.fileName); as extension) {
+          <span [style.color]="getFileTextColor(doc.file.fileName)">{{ extension }}</span>
+          } @else {
+          <i class="pi pi-file" [style.color]="getFileTextColor(doc.file.fileName)"></i>
+          }
         </div>
         <p class="doc-staged__name" [title]="doc.file.fileName">{{ doc.file.fileName }}</p>
         <div class="doc-staged__type-wrapper">
@@ -52,9 +56,15 @@
             [ngClass]="{ 'p-invalid': showValidation && !doc.documentType }"
           />
         </div>
-        <button class="doc-staged__remove" (click)="facade.removeStagedEmployeeDocument($index)" [title]="'pages.profile.remove' | translate">
-          <i class="pi pi-times"></i>
-        </button>
+        <cleansia-button
+          [icon]="'pi pi-times'"
+          [text]="true"
+          [severity]="'secondary'"
+          [buttonSize]="'small'"
+          [ariaLabel]="'pages.profile.remove' | translate"
+          [tooltip]="'pages.profile.remove' | translate"
+          (onClick)="facade.removeStagedEmployeeDocument($index)"
+        />
       </div>
       }
     </div>
@@ -66,10 +76,9 @@
     }
     <div class="doc-staged__actions">
       <cleansia-button
-        [style]="'raised-button'"
         icon="pi pi-upload"
-        [title]="'pages.profile.save_documents' | translate"
-        (clickFn)="onSaveDocuments()"
+        [label]="'pages.profile.save_documents' | translate"
+        (onClick)="onSaveDocuments()"
         [loading]="facade.documentsSaving()"
       />
     </div>
@@ -99,19 +108,21 @@
           @for (doc of group.docs(); track doc.documentId) {
           <div class="doc-card">
             <div class="doc-card__icon-wrapper" [style.background]="getFileColor(doc.fileName)">
-              <span class="doc-card__ext" [style.color]="getFileTextColor(doc.fileName)">{{ getFileExtension(doc.fileName) }}</span>
+              @if (getFileExtension(doc.fileName); as extension) {
+              <span class="doc-card__ext" [style.color]="getFileTextColor(doc.fileName)">{{ extension }}</span>
+              } @else {
+              <i class="pi pi-file doc-card__ext" [style.color]="getFileTextColor(doc.fileName)"></i>
+              }
             </div>
             <div class="doc-card__body">
               <div class="doc-card__header">
                 <h4 class="doc-card__name" [title]="doc.fileName">{{ doc.fileName }}</h4>
-                <span class="doc-card__badge" [ngClass]="facade.getStatusClass(doc.status!)">
-                  {{ facade.getStatusLabel(doc.status!) }}
-                </span>
+                <cleansia-status-badge kind="document" [value]="doc.status" />
               </div>
               <div class="doc-card__meta">
                 <span><i class="pi pi-tag"></i> {{ facade.getDocumentTypeLabel(doc.documentType!) }}</span>
-                <span><i class="pi pi-file"></i> {{ facade.formatFileSize(doc.fileSizeBytes!) }}</span>
-                <span><i class="pi pi-calendar"></i> {{ doc.uploadedAt | date:'dd.MM.yyyy' }}</span>
+                <span><i class="pi pi-file"></i> {{ facade.formatFileSize(doc.fileSizeBytes) }}</span>
+                <span><i class="pi pi-calendar"></i> {{ facade.formatUploadedAt(doc.uploadedAt) }}</span>
               </div>
               @if (doc.reviewNotes) {
               <div class="doc-card__review-notes">
@@ -120,33 +131,40 @@
               }
             </div>
             <div class="doc-card__actions">
-              <button class="doc-card__action-btn" (click)="facade.downloadEmployeeDocument(doc.documentId!, doc.fileName!)" title="Download">
-                <i class="pi pi-download"></i>
-              </button>
+              <cleansia-button
+                [icon]="'pi pi-download'"
+                [text]="true"
+                [severity]="'secondary'"
+                [buttonSize]="'small'"
+                [ariaLabel]="'pages.profile.download' | translate"
+                [tooltip]="'pages.profile.download' | translate"
+                (onClick)="facade.downloadEmployeeDocument(doc.documentId!, doc.fileName!)"
+              />
               <!--
                 Replacing needs no admin and is not tinted as destructive: the slot never empties, so
                 the registration lock never re-engages. Asking for removal is the one that hands the
                 decision away. Both mobile apps draw the same pair.
               -->
-              <button
-                class="doc-card__action-btn"
-                (click)="startReplace(doc.documentId!)"
+              <cleansia-button
+                [icon]="'pi pi-sync'"
+                [text]="true"
+                [severity]="'secondary'"
+                [buttonSize]="'small'"
+                [loading]="facade.replacingDocumentId() === doc.documentId"
                 [disabled]="facade.replacingDocumentId() === doc.documentId"
-                [title]="'pages.profile.replace_document' | translate"
-              >
-                @if (facade.replacingDocumentId() === doc.documentId) {
-                <i class="pi pi-spin pi-spinner"></i>
-                } @else {
-                <i class="pi pi-sync"></i>
-                }
-              </button>
-              <button
-                class="doc-card__action-btn doc-card__action-btn--danger"
-                (click)="openDeletionRequest(doc.documentId!, doc.fileName!)"
-                [title]="'pages.profile.request_deletion' | translate"
-              >
-                <i class="pi pi-trash"></i>
-              </button>
+                [ariaLabel]="'pages.profile.replace_document' | translate"
+                [tooltip]="'pages.profile.replace_document' | translate"
+                (onClick)="startReplace(doc.documentId!)"
+              />
+              <cleansia-button
+                [icon]="'pi pi-trash'"
+                [text]="true"
+                [severity]="'danger'"
+                [buttonSize]="'small'"
+                [ariaLabel]="'pages.profile.request_deletion' | translate"
+                [tooltip]="'pages.profile.request_deletion' | translate"
+                (onClick)="openDeletionRequest(doc.documentId!, doc.fileName!)"
+              />
             </div>
           </div>
           }
@@ -178,7 +196,7 @@
   </p>
 
   <cleansia-textarea
-    [(ngModel)]="deletionReason"
+    [formControl]="deletionReason"
     [label]="'pages.profile.deletion_reason' | translate"
     [rows]="3"
   ></cleansia-textarea>
@@ -187,12 +205,12 @@
     <cleansia-button
       [label]="'global.actions.cancel' | translate"
       severity="secondary"
+      [outlined]="true"
       (onClick)="closeDeletionRequest()"
     ></cleansia-button>
     <cleansia-button
       [label]="'pages.profile.request_deletion' | translate"
-      severity="danger"
-      [disabled]="!deletionReason.trim() || facade.deletionRequestInFlight()"
+      [disabled]="deletionReasonBlank() || facade.deletionRequestInFlight()"
       [loading]="facade.deletionRequestInFlight()"
       (onClick)="confirmDeletionRequest()"
     ></cleansia-button>

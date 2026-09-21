@@ -1,33 +1,31 @@
 <div class="report-issue-dialog">
-  <div class="report-issue-dialog__header">
-    <i class="pi pi-exclamation-triangle report-issue-dialog__icon"></i>
-    <h3>{{ 'pages.order_details.report_issue' | translate }}</h3>
-  </div>
-  <div class="report-issue-dialog__body">
-    <label for="report-issue-description" class="report-issue-dialog__label">
-      {{ 'pages.order_details.issue_description' | translate }}
-    </label>
-    <textarea
-      id="report-issue-description"
-      pTextarea
-      [(ngModel)]="description"
-      [rows]="5"
-      [placeholder]="'pages.order_details.issue_description_placeholder' | translate"
-      class="report-issue-dialog__textarea"
-    ></textarea>
-  </div>
-  <div class="report-issue-dialog__footer">
-    <p-button
-      [label]="'global.actions.cancel' | translate"
-      severity="secondary"
-      [outlined]="true"
-      (onClick)="onCancel()"
-    />
-    <p-button
-      [label]="'global.actions.submit' | translate"
-      severity="danger"
-      [disabled]="!description.trim()"
-      (onClick)="onSubmit()"
-    />
-  </div>
+  <form [formGroup]="form" (ngSubmit)="onSubmit()">
+    <div class="report-issue-dialog__header">
+      <i class="pi pi-exclamation-triangle report-issue-dialog__icon"></i>
+      <h2 class="report-issue-dialog__title">{{ 'pages.order_details.report_issue' | translate }}</h2>
+    </div>
+    <div class="report-issue-dialog__content">
+      <cleansia-textarea
+        formControlName="description"
+        [label]="'pages.order_details.issue_description' | translate"
+        [placeholder]="'pages.order_details.issue_description_placeholder' | translate"
+        [rows]="5"
+        [showErrors]="false"
+      />
+    </div>
+    <div class="report-issue-dialog__footer">
+      <cleansia-button
+        [label]="'global.actions.cancel' | translate"
+        [severity]="'secondary'"
+        [outlined]="true"
+        (onClick)="onCancel()"
+      />
+      <cleansia-button
+        [buttonType]="'submit'"
+        [label]="'pages.order_details.report_issue' | translate"
+        [icon]="'pi pi-send'"
+        [disabled]="form.invalid"
+      />
+    </div>
+  </form>
 </div>

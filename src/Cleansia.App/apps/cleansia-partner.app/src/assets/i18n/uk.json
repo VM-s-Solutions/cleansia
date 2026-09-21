@@ -202,7 +202,8 @@
         "avg_time": "Середній час",
         "order_count": "Кількість замовлень",
         "service_name": "Назва послуги",
-        "total_time": "Загальний час"
+        "total_time": "Загальний час",
+        "avg_label": "у середньому {{value}}"
       },
       "order_analytics": {
         "title": "Аналітика замовлень",
@@ -452,12 +453,6 @@
       "total_orders": "Усього замовлень",
       "total_amount": "Загальна сума",
       "status": "Статус",
-      "status_pending": "Очікує розгляду",
-      "status_approved": "Затверджено",
-      "status_paid": "Оплачено",
-      "status_disputed": "Оскаржено",
-      "status_rejected": "Відхилено",
-      "status_cancelled": "Скасовано",
       "view_details": "Переглянути деталі",
       "download_pdf": "Завантажити PDF",
       "pdf_not_available": "PDF ще не доступний для цього рахунку",
@@ -514,10 +509,6 @@
       "pay_period": "Платіжний період",
       "currency": "Валюта",
       "multiple_currencies_hint": "У цьому періоді Вам було виплачено в кількох валютах. Оберіть, яку переглянути.",
-      "period_status_open": "Відкритий",
-      "period_status_closed": "Закритий",
-      "period_status_paid": "Виплачений",
-      "period_status_unknown": "Невідомий",
       "summary": "Підсумок періоду",
       "total_orders": "Усього замовлень",
       "base_pay": "Базова оплата",
@@ -742,11 +733,6 @@
       "8": "Податковий документ",
       "9": "Страховий документ",
       "10": "Інше"
-    },
-    "document_status": {
-      "1": "Очікує перевірки",
-      "2": "Затверджено",
-      "3": "Відхилено"
     },
     "show_password": "Показати пароль",
     "hide_password": "Приховати пароль"
@@ -1121,6 +1107,24 @@
     "payment_type": {
       "cash": "Готівка",
       "card": "Картка"
+    },
+    "invoice_status": {
+      "pending": "Очікує розгляду",
+      "approved": "Затверджено",
+      "paid": "Оплачено",
+      "disputed": "Оскаржено",
+      "rejected": "Відхилено",
+      "cancelled": "Скасовано"
+    },
+    "document_status": {
+      "pending": "Очікує перевірки",
+      "approved": "Затверджено",
+      "rejected": "Відхилено"
+    },
+    "pay_period_status": {
+      "open": "Відкритий",
+      "closed": "Закритий",
+      "paid": "Виплачений"
     }
   },
   "help": {

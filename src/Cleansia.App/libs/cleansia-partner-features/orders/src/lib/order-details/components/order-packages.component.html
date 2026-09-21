@@ -1,26 +1,19 @@
-@if (packages() && packages()!.length > 0) {
+@if (rows().length > 0) {
 <div class="cleansia-order-details__packages-section">
   <h4>{{ 'pages.order_details.selected_packages' | translate }}</h4>
 
-  @for (pkg of packages(); track pkg.id) {
+  @for (pkg of rows(); track pkg.id) {
   <div class="cleansia-order-details__package-item">
     <div class="cleansia-order-details__package-header">
       <h5>{{ pkg.name }}</h5>
-      <!-- No code, no label. An empty currencyCode through the currency pipe renders a bare
-           string where a symbol should be, which reads as a rendering fault rather than as
-           "this order's currency did not load". -->
-      <span class="package-price">{{
-        currencyCode()
-          ? (pkg.price | currency: currencyCode() : 'symbol' : '1.2-2')
-          : (pkg.price | number: '1.2-2')
-      }}</span>
+      <span class="package-price">{{ pkg.price }}</span>
     </div>
 
     @if (pkg.description) {
     <p class="cleansia-order-details__package-description">{{ pkg.description }}</p>
     }
 
-    @if (pkg.includedServices && pkg.includedServices.length > 0) {
+    @if (pkg.includedServices.length > 0) {
     <div class="cleansia-order-details__package-services">
       <h6 class="cleansia-order-details__package-services-title">
         <i class="pi pi-check-circle"></i>

@@ -1,4 +1,3 @@
-import { DatePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, effect, inject, OnInit, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
@@ -68,7 +67,6 @@ import {
     OrderServiceDetailsComponent,
     OrderAdditionalServicesComponent,
     OrderPhotosComponent,
-    DatePipe,
   ],
   templateUrl: './order-details.component.html',
   providers: [OrderDetailsFacade, DialogService],
@@ -108,16 +106,6 @@ export class OrderDetailsComponent implements OnInit {
   protected readonly paymentTypeOptions = computed(() => {
     this.currentLang();
     return buildTranslatedOption(this.translateService, 'payment_type', this.orderDetails()?.paymentType);
-  });
-
-  protected readonly orderStatusLabel = computed(() => {
-    this.currentLang();
-    return translateEnum(this.translateService, 'order_status', this.orderDetails()?.orderStatus?.name);
-  });
-
-  protected readonly paymentStatusLabel = computed(() => {
-    this.currentLang();
-    return translateEnum(this.translateService, 'payment_status', this.orderDetails()?.paymentStatus?.name);
   });
 
   protected readonly formattedCreatedOn = computed(() =>

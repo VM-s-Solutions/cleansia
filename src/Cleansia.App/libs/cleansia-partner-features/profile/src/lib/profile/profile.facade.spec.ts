@@ -8,7 +8,7 @@ import { PartnerPayoutDetailsService } from '@cleansia/partner-services';
 import { DialogService, SnackbarService } from '@cleansia/services';
 import { Store } from '@ngrx/store';
 import { TranslateService } from '@ngx-translate/core';
-import { of, throwError } from 'rxjs';
+import { EMPTY, of, throwError } from 'rxjs';
 import { ProfileBankFacade } from './profile-bank.facade';
 import { ProfileDocumentsFacade } from './profile-documents.facade';
 import { ProfileJobRadiusFacade } from './profile-job-radius.facade';
@@ -56,7 +56,7 @@ describe('ProfileFacade — job radius seeding', () => {
         { provide: Store, useValue: { dispatch: jest.fn() } },
         {
           provide: TranslateService,
-          useValue: { instant: (key: string) => key, currentLang: 'en' },
+          useValue: { instant: (key: string) => key, currentLang: 'en', onLangChange: EMPTY },
         },
       ],
     });

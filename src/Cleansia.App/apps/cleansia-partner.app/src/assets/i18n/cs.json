@@ -202,7 +202,8 @@
         "order_count": "Počet objednávek",
         "total_time": "Celkový čas",
         "avg_time": "Průměrný čas",
-        "no_data": "Žádná data o sledování času nejsou k dispozici"
+        "no_data": "Žádná data o sledování času nejsou k dispozici",
+        "avg_label": "průměr {{value}}"
       },
       "order_analytics": {
         "title": "Analýza objednávek",
@@ -452,12 +453,6 @@
       "total_orders": "Celkem objednávek",
       "total_amount": "Celková částka",
       "status": "Stav",
-      "status_pending": "Čeká na vyřízení",
-      "status_approved": "Schváleno",
-      "status_paid": "Zaplaceno",
-      "status_disputed": "Sporné",
-      "status_rejected": "Zamítnuto",
-      "status_cancelled": "Zrušeno",
       "view_details": "Zobrazit detail",
       "download_pdf": "Stáhnout PDF",
       "pdf_not_available": "PDF zatím není k dispozici pro tuto fakturu",
@@ -514,10 +509,6 @@
       "pay_period": "Platební období",
       "currency": "Měna",
       "multiple_currencies_hint": "V tomto období jste byli vyplaceni ve více měnách. Vyberte, kterou chcete zobrazit.",
-      "period_status_open": "Otevřené",
-      "period_status_closed": "Uzavřené",
-      "period_status_paid": "Vyplacené",
-      "period_status_unknown": "Neznámé",
       "summary": "Souhrn období",
       "total_orders": "Celkem objednávek",
       "base_pay": "Základní mzda",
@@ -742,11 +733,6 @@
       "8": "Daňový dokument",
       "9": "Pojistný dokument",
       "10": "Ostatní"
-    },
-    "document_status": {
-      "1": "Čeká na kontrolu",
-      "2": "Schváleno",
-      "3": "Zamítnuto"
     },
     "show_password": "Zobrazit heslo",
     "hide_password": "Skrýt heslo"
@@ -1121,6 +1107,24 @@
     "payment_type": {
       "cash": "Hotovost",
       "card": "Karta"
+    },
+    "invoice_status": {
+      "pending": "Čeká na vyřízení",
+      "approved": "Schváleno",
+      "paid": "Zaplaceno",
+      "disputed": "Sporné",
+      "rejected": "Zamítnuto",
+      "cancelled": "Zrušeno"
+    },
+    "document_status": {
+      "pending": "Čeká na kontrolu",
+      "approved": "Schváleno",
+      "rejected": "Zamítnuto"
+    },
+    "pay_period_status": {
+      "open": "Otevřené",
+      "closed": "Uzavřené",
+      "paid": "Vyplacené"
     }
   },
   "help": {

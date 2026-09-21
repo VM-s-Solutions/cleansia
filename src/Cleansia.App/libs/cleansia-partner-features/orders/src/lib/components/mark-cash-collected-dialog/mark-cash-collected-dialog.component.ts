@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { CleansiaButtonComponent } from '@cleansia/components';
 import { TranslateModule } from '@ngx-translate/core';
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
-import { ButtonModule } from 'primeng/button';
 
 export interface MarkCashCollectedDialogData {
   orderId: string;
@@ -29,7 +29,7 @@ export interface MarkCashCollectedDialogResult {
   // their error. It is opened programmatically, so the selector is never written in a template.
   selector: 'cleansia-partner-mark-cash-collected-dialog',
   standalone: true,
-  imports: [TranslateModule, ButtonModule],
+  imports: [TranslateModule, CleansiaButtonComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './mark-cash-collected-dialog.component.html',
   styleUrl: './mark-cash-collected-dialog.component.scss',

@@ -10,7 +10,7 @@ import {
 } from '@cleansia/services';
 import { Store } from '@ngrx/store';
 import { TranslateService } from '@ngx-translate/core';
-import { of, throwError } from 'rxjs';
+import { EMPTY, of, throwError } from 'rxjs';
 import { ProfileDocumentsFacade } from './profile-documents.facade';
 
 describe('ProfileDocumentsFacade', () => {
@@ -52,7 +52,10 @@ describe('ProfileDocumentsFacade', () => {
           provide: FileValidationErrorService,
           useValue: { handleFileValidationErrors: jest.fn() },
         },
-        { provide: TranslateService, useValue: { instant: (k: string) => k } },
+        {
+          provide: TranslateService,
+          useValue: { instant: (k: string) => k, currentLang: 'cs', onLangChange: EMPTY },
+        },
         { provide: Store, useValue: { dispatch: jest.fn() } },
       ],
     });

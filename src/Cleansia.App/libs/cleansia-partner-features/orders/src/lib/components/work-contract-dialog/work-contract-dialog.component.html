@@ -84,7 +84,7 @@
       <i class="pi pi-exclamation-circle"></i>
       <p>{{ 'pages.orders.work_contract.load_failed' | translate }}</p>
       <cleansia-button
-        [title]="'global.actions.retry' | translate"
+        [label]="'global.actions.retry' | translate"
         [severity]="'secondary'"
         [icon]="'pi pi-refresh'"
         [outlined]="true"
@@ -97,21 +97,21 @@
   <div class="work-contract-dialog__footer">
     @if (isRead()) {
     <cleansia-button
-      [title]="'global.actions.close' | translate"
+      [label]="'global.actions.close' | translate"
       [severity]="'secondary'"
       [outlined]="true"
       (onClick)="onCancel()"
     />
     } @else {
     <cleansia-button
-      [title]="'global.actions.cancel' | translate"
+      [label]="'global.actions.cancel' | translate"
       [severity]="'secondary'"
       [outlined]="true"
       [disabled]="facade.submitting()"
       (onClick)="onCancel()"
     />
     <cleansia-button
-      [title]="submitLabelKey() | translate"
+      [label]="submitLabelKey() | translate"
       [icon]="'pi pi-check'"
       [disabled]="!facade.canSubmit()"
       [loading]="facade.submitting()"

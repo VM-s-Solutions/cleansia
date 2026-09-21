@@ -10,19 +10,21 @@ import {
 import { ReactiveFormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import {
+  CleansiaButtonComponent,
   CleansiaCalendarComponent,
   CleansiaCheckboxComponent,
   CleansiaFilterChipsComponent,
   CleansiaFilterDrawerComponent,
   CleansiaHelpCardComponent,
   CleansiaSectionComponent,
+  CleansiaStatusBadgeComponent,
   CleansiaTableComponent,
   CleansiaTextInputComponent,
   CleansiaTitleComponent,
 } from '@cleansia/components';
 import { OrderListItem } from '@cleansia/partner-services';
 import { CleansiaPartnerRoute } from '@cleansia/services';
-import { TranslatePipe, TranslateService } from '@ngx-translate/core';
+import { TranslatePipe } from '@ngx-translate/core';
 import { DialogService } from 'primeng/dynamicdialog';
 import { OrdersFacade } from './orders.facade';
 import {
@@ -32,18 +34,14 @@ import {
   ORDER_STATUS_FLOW,
   PAYMENT_STATUS_FLOW,
 } from './orders.models';
-import {
-  getStatusClass,
-  getOrderStatusClass,
-  getTranslatedPaymentStatus,
-  getTranslatedOrderStatus,
-} from './orders.helpers';
 
 @Component({
   selector: 'cleansia-partner-orders',
   standalone: true,
   imports: [
     TranslatePipe,
+    CleansiaButtonComponent,
+    CleansiaStatusBadgeComponent,
     CleansiaTableComponent,
     CleansiaTitleComponent,
     CleansiaSectionComponent,
@@ -62,7 +60,6 @@ import {
 export class OrdersComponent {
   private readonly router = inject(Router);
   protected readonly facade = inject(OrdersFacade);
-  private readonly translate = inject(TranslateService);
 
   private readonly statusTemplate = viewChild<TemplateRef<OrderListItem>>('statusTemplate');
   private readonly orderStatusTemplate = viewChild<TemplateRef<OrderListItem>>('orderStatusTemplate');
@@ -117,22 +114,6 @@ export class OrdersComponent {
 
   startOrder(order: OrderListItem): void {
     if (order.id) this.facade.startOrder(order.id);
-  }
-
-  getStatusClass(order: OrderListItem): string {
-    return getStatusClass(order);
-  }
-
-  getOrderStatusClass(order: OrderListItem): string {
-    return getOrderStatusClass(order);
-  }
-
-  getTranslatedPaymentStatus(paymentStatus: { name?: string } | null | undefined): string {
-    return getTranslatedPaymentStatus(paymentStatus, this.translate);
-  }
-
-  getTranslatedOrderStatus(orderStatus: { name?: string } | null | undefined): string {
-    return getTranslatedOrderStatus(orderStatus, this.translate);
   }
 
   onHelpDismissedChange(): void {

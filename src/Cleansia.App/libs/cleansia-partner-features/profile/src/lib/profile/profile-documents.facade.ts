@@ -14,7 +14,8 @@ import {
 } from '@cleansia/services';
 import { UnsubscribeControlDirective } from '@cleansia/directives';
 import { checkEmployeeCurrent } from '@cleansia/partner-stores';
-import { FileTransformationUtils } from '@cleansia/utils';
+import { currentLanguage, FileTransformationUtils, formatDate } from '@cleansia/utils';
+import { formatFileSize } from './profile-documents.helpers';
 import { Store } from '@ngrx/store';
 import { TranslateService } from '@ngx-translate/core';
 import { catchError, of, takeUntil } from 'rxjs';
@@ -58,6 +59,8 @@ export class ProfileDocumentsFacade extends UnsubscribeControlDirective {
     FileValidationErrorService
   );
   private readonly store = inject(Store);
+
+  readonly lang = currentLanguage(this.translate);
 
   // Documents state
   private readonly documentsState = signal<DocumentsState>({
@@ -336,30 +339,16 @@ export class ProfileDocumentsFacade extends UnsubscribeControlDirective {
       });
   }
 
-  formatFileSize(bytes: number): string {
-    return FileTransformationUtils.formatFileSize(bytes);
+  formatFileSize(bytes: number | undefined): string {
+    return formatFileSize(bytes, this.lang());
+  }
+
+  formatUploadedAt(date: Date | undefined): string {
+    return formatDate(date, this.lang());
   }
 
   getDocumentTypeLabel(type: DocumentType): string {
     const labelKey = `global.document_types.${type}`;
     return this.translate.instant(labelKey);
-  }
-
-  getStatusLabel(status: number): string {
-    const statusKey = `global.document_status.${status}`;
-    return this.translate.instant(statusKey);
-  }
-
-  getStatusClass(status: number): string {
-    switch (status) {
-      case 1:
-        return 'status-pending';
-      case 2:
-        return 'status-approved';
-      case 3:
-        return 'status-rejected';
-      default:
-        return '';
-    }
   }
 }

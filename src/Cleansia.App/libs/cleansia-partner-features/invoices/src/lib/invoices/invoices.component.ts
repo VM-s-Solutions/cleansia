@@ -10,12 +10,14 @@ import {
 import { ReactiveFormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import {
+  CleansiaButtonComponent,
   CleansiaCalendarComponent,
   CleansiaCheckboxComponent,
   CleansiaFilterChipsComponent,
   CleansiaFilterDrawerComponent,
   CleansiaHelpCardComponent,
   CleansiaSectionComponent,
+  CleansiaStatusBadgeComponent,
   CleansiaTableComponent,
   CleansiaTextInputComponent,
   CleansiaTitleComponent,
@@ -24,12 +26,7 @@ import { EmployeeInvoiceDto } from '@cleansia/partner-services';
 import { CleansiaPartnerRoute } from '@cleansia/services';
 import { TranslatePipe } from '@ngx-translate/core';
 import { InvoicesFacade } from './invoices.facade';
-import {
-  getInvoiceStatusClass,
-  getInvoiceStatusLabelKey,
-  INVOICES_HELP_STEPS,
-  INVOICE_STATUS_FLOW,
-} from './invoices.helpers';
+import { INVOICES_HELP_STEPS, INVOICE_STATUS_FLOW } from './invoices.helpers';
 import { getInvoicesTableDefinition } from './invoices.models';
 
 @Component({
@@ -38,6 +35,8 @@ import { getInvoicesTableDefinition } from './invoices.models';
   imports: [
     TranslatePipe,
     ReactiveFormsModule,
+    CleansiaButtonComponent,
+    CleansiaStatusBadgeComponent,
     CleansiaTableComponent,
     CleansiaTitleComponent,
     CleansiaSectionComponent,
@@ -79,14 +78,6 @@ export class InvoicesComponent {
   viewInvoiceDetails(invoice: EmployeeInvoiceDto): void {
     if (!invoice.id) return;
     this.router.navigate([CleansiaPartnerRoute.INVOICES, invoice.id]);
-  }
-
-  getStatusClass(invoice: EmployeeInvoiceDto): string {
-    return getInvoiceStatusClass(invoice);
-  }
-
-  getStatusLabelKey(invoice: EmployeeInvoiceDto): string {
-    return getInvoiceStatusLabelKey(invoice);
   }
 
   onHelpDismissedChange(): void {

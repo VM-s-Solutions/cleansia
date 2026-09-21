@@ -1,5 +1,12 @@
 import { TemplateRef } from '@angular/core';
-import { HelpStep, StatusFlowItem, TableAction, TableColumn } from '@cleansia/components';
+import {
+  HelpStep,
+  resolveStatusBadge,
+  StatusBadgeKind,
+  StatusFlowItem,
+  TableAction,
+  TableColumn,
+} from '@cleansia/components';
 import { OrderListItem, OrderStatus } from '@cleansia/partner-services';
 import { formatDate, formatMoney, localeFor } from '@cleansia/utils';
 
@@ -36,31 +43,35 @@ export const ORDERS_HELP_STEPS: HelpStep[] = [
   },
 ];
 
+// The help legend draws the same pill, in the same tone, as the table's badge for that status.
+const legendBadgeClass = (kind: StatusBadgeKind, member: string): string =>
+  `status-badge status-badge--${resolveStatusBadge(kind, member)?.tone ?? 'neutral'}`;
+
 export const ORDER_STATUS_FLOW: StatusFlowItem[] = [
   {
     statusKey: 'enums.order_status.pending',
     descriptionKey: 'help.orders.status.pending_desc',
-    colorClass: 'status-pending',
+    colorClass: legendBadgeClass('order', 'Pending'),
   },
   {
     statusKey: 'enums.order_status.confirmed',
     descriptionKey: 'help.orders.status.confirmed_desc',
-    colorClass: 'status-confirmed',
+    colorClass: legendBadgeClass('order', 'Confirmed'),
   },
   {
     statusKey: 'enums.order_status.in_progress',
     descriptionKey: 'help.orders.status.in_progress_desc',
-    colorClass: 'status-in-progress',
+    colorClass: legendBadgeClass('order', 'InProgress'),
   },
   {
     statusKey: 'enums.order_status.completed',
     descriptionKey: 'help.orders.status.completed_desc',
-    colorClass: 'status-completed',
+    colorClass: legendBadgeClass('order', 'Completed'),
   },
   {
     statusKey: 'enums.order_status.cancelled',
     descriptionKey: 'help.orders.status.cancelled_desc',
-    colorClass: 'status-cancelled',
+    colorClass: legendBadgeClass('order', 'Cancelled'),
   },
 ];
 
@@ -68,22 +79,22 @@ export const PAYMENT_STATUS_FLOW: StatusFlowItem[] = [
   {
     statusKey: 'enums.payment_status.pending',
     descriptionKey: 'help.orders.payment.pending_desc',
-    colorClass: 'status-pending',
+    colorClass: legendBadgeClass('payment', 'Pending'),
   },
   {
     statusKey: 'enums.payment_status.paid',
     descriptionKey: 'help.orders.payment.paid_desc',
-    colorClass: 'status-paid',
+    colorClass: legendBadgeClass('payment', 'Paid'),
   },
   {
     statusKey: 'enums.payment_status.failed',
     descriptionKey: 'help.orders.payment.failed_desc',
-    colorClass: 'status-failed',
+    colorClass: legendBadgeClass('payment', 'Failed'),
   },
   {
     statusKey: 'enums.payment_status.refunded',
     descriptionKey: 'help.orders.payment.refunded_desc',
-    colorClass: 'status-refunded',
+    colorClass: legendBadgeClass('payment', 'Refunded'),
   },
 ];
 

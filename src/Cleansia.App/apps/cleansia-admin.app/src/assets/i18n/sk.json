@@ -1341,7 +1341,6 @@
       "delete_confirm": "Naozaj chcete odstrániť túto krajinu? Môže to ovplyvniť existujúce dáta.",
       "set_default_market": "Nastaviť ako predvolený trh",
       "set_default_market_confirm": "Nastaviť {{name}} ako predvolený trh? Návštevníci ho uvidia, kým si nevyberú krajinu.",
-      "default_market": "Predvolený trh",
       "no_countries": "Žiadne krajiny",
       "columns": {
         "iso_code": "ISO kód",
@@ -2177,6 +2176,10 @@
           "applied": "Uplatnená zľava",
           "redeemed_on": "Uplatnené"
         }
+      },
+      "filters": {
+        "search": "Hľadať",
+        "status": "Stav"
       }
     },
     "loyalty_tiers": {
@@ -2387,7 +2390,9 @@
         "status_expired": "Expirované",
         "date_from": "Od",
         "date_to": "Do",
-        "status_reversed": "Stornované"
+        "status_reversed": "Stornované",
+        "status": "Stav",
+        "date_range": "Obdobie"
       },
       "column": {
         "referrer": "Odporúčajúci",
@@ -2521,7 +2526,9 @@
       "create_plan": "Nový plán",
       "filter": {
         "search": "Hľadať podľa kódu alebo názvu",
-        "active_only": "Iba aktívne"
+        "active_only": "Iba aktívne",
+        "search_label": "Hľadať",
+        "status": "Stav"
       },
       "load_error": "Plány členstva sa nepodarilo načítať. Skúste to neskôr.",
       "empty": "Zatiaľ žiadne plány členstva",

@@ -1443,7 +1443,6 @@
       "delete_confirm": "Opravdu chcete smazat tuto zemi? Toto může ovlivnit existující data.",
       "set_default_market": "Nastavit jako výchozí trh",
       "set_default_market_confirm": "Nastavit {{name}} jako výchozí trh? Návštěvníci jej uvidí, dokud si nevyberou zemi.",
-      "default_market": "Výchozí trh",
       "no_countries": "Žádné země nenalezeny",
       "columns": {
         "iso_code": "ISO kód",
@@ -2177,6 +2176,10 @@
           "applied": "Uplatněná sleva",
           "redeemed_on": "Uplatněno"
         }
+      },
+      "filters": {
+        "search": "Vyhledávání",
+        "status": "Stav"
       }
     },
     "loyalty_tiers": {
@@ -2387,7 +2390,9 @@
         "status_expired": "Vypršelo",
         "date_from": "Od",
         "date_to": "Do",
-        "status_reversed": "Stornováno"
+        "status_reversed": "Stornováno",
+        "status": "Stav",
+        "date_range": "Období"
       },
       "column": {
         "referrer": "Doporučující",
@@ -2521,7 +2526,9 @@
       "create_plan": "Nový plán",
       "filter": {
         "search": "Hledat podle kódu nebo názvu",
-        "active_only": "Pouze aktivní"
+        "active_only": "Pouze aktivní",
+        "search_label": "Vyhledávání",
+        "status": "Stav"
       },
       "load_error": "Plány členství se nepodařilo načíst. Zkuste to později.",
       "empty": "Zatím žádné plány členství",

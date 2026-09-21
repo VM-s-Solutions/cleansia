@@ -50,6 +50,7 @@ export function getInvoiceTableColumns(
     },
     {
       id: 'totalOrders',
+      numeric: true,
       field: 'totalOrders',
       header: 'pages.invoice_management.total_orders',
       sortable: true,
@@ -57,6 +58,7 @@ export function getInvoiceTableColumns(
     },
     {
       id: 'totalAmount',
+      numeric: true,
       field: 'totalAmount',
       header: 'pages.invoice_management.total_amount',
       sortable: true,
@@ -72,6 +74,7 @@ export function getInvoiceTableColumns(
       header: 'pages.invoice_management.status',
       sortable: true,
       width: '10%',
+      align: 'center',
       customTemplate: statusTemplate,
     },
     {
@@ -80,10 +83,12 @@ export function getInvoiceTableColumns(
       header: 'pages.invoice_management.pdf_status',
       sortable: false,
       width: '10%',
+      align: 'center',
       customTemplate: pdfStatusTemplate,
     },
     {
       id: 'generatedAt',
+      numeric: true,
       field: 'generatedAt',
       header: 'pages.invoice_management.generated_at',
       sortable: true,

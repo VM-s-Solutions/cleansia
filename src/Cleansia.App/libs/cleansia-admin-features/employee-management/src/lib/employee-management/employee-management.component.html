@@ -119,15 +119,13 @@
 </div>
 
 <ng-template #contractStatusTemplate let-item>
-  <div class="status-cell">
-    <cleansia-status-badge kind="contract" [value]="item.contractStatus" />
-    @if (!item.isProfileComplete && item.contractStatus ===
-    ContractStatus[ContractStatus.Pending]) {
-    <i
-      class="pi pi-exclamation-triangle incomplete-profile-icon"
-      [pTooltip]="'pages.employee_management.profile_incomplete_tooltip' | translate"
-      tooltipPosition="top"
-    ></i>
-    }
-  </div>
+  <cleansia-status-badge kind="contract" [value]="item.contractStatus" />
+  @if (!item.isProfileComplete && item.contractStatus ===
+  ContractStatus[ContractStatus.Pending]) {
+  <i
+    class="pi pi-exclamation-triangle incomplete-profile-icon"
+    [pTooltip]="'pages.employee_management.profile_incomplete_tooltip' | translate"
+    tooltipPosition="top"
+  ></i>
+  }
 </ng-template>

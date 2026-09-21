@@ -7,7 +7,7 @@ import {
 } from '@cleansia/admin-services';
 import { DialogService, SnackbarService } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
-import { of, throwError } from 'rxjs';
+import { EMPTY, of, throwError } from 'rxjs';
 import { MembershipPlanListFacade } from './membership-plan-list.facade';
 import { BILLING_INTERVAL_WIRE } from './membership-plan-list.models';
 
@@ -54,7 +54,10 @@ describe('MembershipPlanListFacade', () => {
         { provide: AdminMembershipClient, useValue: membershipClient },
         { provide: SnackbarService, useValue: snackbar },
         { provide: DialogService, useValue: { confirmTranslated: confirmMock } },
-        { provide: TranslateService, useValue: { instant: (k: string) => k } },
+        {
+          provide: TranslateService,
+          useValue: { instant: (k: string) => k, currentLang: 'cs', onLangChange: EMPTY },
+        },
       ],
     });
 
@@ -102,6 +105,46 @@ describe('MembershipPlanListFacade', () => {
     const args = membershipClient.getPaged.mock.calls[0];
     expect(args[2]).toBe(20);
     expect(args[3]).toBe(50);
+  });
+
+  describe('filters', () => {
+    beforeEach(() => {
+      jest.useFakeTimers();
+      membershipClient.getPaged.mockReturnValue(of(page));
+    });
+
+    afterEach(() => jest.useRealTimers());
+
+    it('sends the trimmed search once it settles and names it in one chip', () => {
+      facade.filterForm.patchValue({ search: ' plus ' });
+      jest.advanceTimersByTime(500);
+
+      const args = membershipClient.getPaged.mock.calls.at(-1);
+      expect(args?.[0]).toBeUndefined();
+      expect(args?.[1]).toBe('plus');
+      expect(args?.[2]).toBe(0);
+      expect(facade.filters.chips()).toEqual([
+        { key: 'search', label: 'pages.membership_plans.filter.search_label', value: 'plus' },
+      ]);
+    });
+
+    it('narrows to the active plans on the checkbox and names it in one chip; reset clears it', () => {
+      facade.filterForm.patchValue({ activeOnly: true });
+      jest.advanceTimersByTime(500);
+
+      expect(membershipClient.getPaged.mock.calls.at(-1)?.[0]).toBe(true);
+      expect(facade.filters.chips()).toEqual([
+        {
+          key: 'activeOnly',
+          label: 'pages.membership_plans.filter.status',
+          value: 'pages.membership_plans.filter.active_only',
+        },
+      ]);
+
+      facade.filters.reset();
+      expect(membershipClient.getPaged.mock.calls.at(-1)?.[0]).toBeUndefined();
+      expect(facade.filters.chips()).toEqual([]);
+    });
   });
 
   it('sets the error flag and clears loading on load failure', () => {

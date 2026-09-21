@@ -1,21 +1,16 @@
 <div class="cleansia-service-area-management cleansia-page">
   <div class="cleansia-service-area-management__container page-wrapper">
-    <div class="cleansia-service-area-management__header">
-      <div class="header-content">
-        <cleansia-title
-          [title]="'pages.service_area_management.title' | translate"
-        />
-        <p class="cleansia-service-area-management__description">
+    <div class="cleansia-page-header">
+      <div class="cleansia-page-header__heading">
+        <cleansia-title [title]="'pages.service_area_management.title' | translate" [level]="1" />
+        <p class="cleansia-page-header__description">
           {{ 'pages.service_area_management.description' | translate }}
         </p>
       </div>
     </div>
 
-    <div class="tabs-container">
-      <p-tabs
-        [value]="activeTabIndex()"
-        (valueChange)="onTabChange($event)"
-      >
+    <div class="cleansia-service-area-management__tabs">
+      <p-tabs [value]="activeTabIndex()" (valueChange)="onTabChange($event)">
         <p-tablist>
           <p-tab [value]="0">
             <i class="pi pi-globe"></i>
@@ -29,7 +24,6 @@
       </p-tabs>
     </div>
 
-    <!-- ─── Countries tab ───────────────────────────────────────── -->
     @if (activeTabIndex() === 0) {
       <cleansia-section>
         @if (facade.initialLoading()) {
@@ -38,52 +32,33 @@
           <p class="cleansia-service-area-management__hint">
             {{ 'pages.service_area_management.countries.hint' | translate }}
           </p>
-          <table class="service-area-table">
-            <thead>
-              <tr>
-                <th>{{ 'pages.service_area_management.columns.country' | translate }}</th>
-                <th>{{ 'pages.service_area_management.columns.iso_code' | translate }}</th>
-                <th class="serviced-toggle-col">
-                  {{ 'pages.service_area_management.columns.is_serviced' | translate }}
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              @for (country of facade.countries(); track trackCountryRow(country)) {
-                <tr>
-                  <td>{{ country.name }}</td>
-                  <td>{{ country.isoCode }}</td>
-                  <td>
-                    <p-toggleSwitch
-                      [ngModel]="isCountryServiced(country)"
-                      (ngModelChange)="onToggleServiced(country, $event)"
-                    />
-                  </td>
-                </tr>
-              }
-            </tbody>
-          </table>
+          <cleansia-table
+            [data]="facade.countries()"
+            [columns]="countryColumns()"
+            [config]="{ paginator: false, emptyMessage: 'pages.country_management.no_countries' }"
+            [loading]="facade.loading()"
+          />
         }
       </cleansia-section>
     }
 
-    <!-- ─── Cities tab ──────────────────────────────────────────── -->
     @if (activeTabIndex() === 1) {
       <cleansia-section>
         @if (servicedCountryOptions().length === 0) {
-          <p class="cleansia-service-area-management__hint">
-            {{ 'pages.service_area_management.cities.no_serviced_country' | translate }}
-          </p>
+          <div class="empty-state">
+            <i class="pi pi-map-marker"></i>
+            <p>{{ 'pages.service_area_management.cities.no_serviced_country' | translate }}</p>
+          </div>
         } @else {
-          <div class="cities-toolbar">
-            <p-select
+          <div class="cleansia-service-area-management__toolbar">
+            <cleansia-select
+              class="cleansia-service-area-management__country-picker"
+              [label]="'pages.service_area_management.cities.country_picker' | translate"
               [options]="servicedCountryOptions()"
               [ngModel]="selectedCountryId()"
               (ngModelChange)="onCountryFilterChange($event)"
-              [placeholder]="'pages.service_area_management.cities.country_picker' | translate"
-              optionLabel="label"
-              optionValue="value"
-              [style]="{ minWidth: '240px' }"
+              [showClear]="false"
+              [showErrors]="false"
             />
             <cleansia-button
               *cleansiaPermission="Policy.CanManageServiceCities"
@@ -94,72 +69,36 @@
             />
           </div>
 
-          @if (visibleCities().length === 0) {
-            <p class="cleansia-service-area-management__hint">
-              {{ 'pages.service_area_management.cities.empty' | translate }}
-            </p>
-          } @else {
-            <table class="service-area-table">
-              <thead>
-                <tr>
-                  <th>{{ 'pages.service_area_management.columns.city' | translate }}</th>
-                  <th>{{ 'pages.service_area_management.columns.zip_prefix' | translate }}</th>
-                  <th>{{ 'pages.service_area_management.columns.is_active' | translate }}</th>
-                  <th class="actions-col"></th>
-                </tr>
-              </thead>
-              <tbody>
-                @for (city of visibleCities(); track city.id) {
-                  <tr>
-                    <td>{{ city.name }}</td>
-                    <td>{{ city.zipPrefix || '—' }}</td>
-                    <td>
-                      @if (city.isActive) {
-                        <span class="badge badge-active">
-                          {{ 'pages.service_area_management.cities.active' | translate }}
-                        </span>
-                      } @else {
-                        <span class="badge badge-inactive">
-                          {{ 'pages.service_area_management.cities.inactive' | translate }}
-                        </span>
-                      }
-                    </td>
-                    <td class="actions-col">
-                      <button
-                        *cleansiaPermission="Policy.CanManageServiceCities"
-                        type="button"
-                        class="city-action-btn"
-                        (click)="openEditCityDialog(city)"
-                        [title]="'pages.service_area_management.cities.edit' | translate"
-                      >
-                        <i class="pi pi-pencil"></i>
-                      </button>
-                      <button
-                        *cleansiaPermission="Policy.CanManageServiceCities"
-                        type="button"
-                        class="city-action-btn city-action-btn--danger"
-                        (click)="confirmDeleteCity(city)"
-                        [title]="'pages.service_area_management.cities.delete' | translate"
-                      >
-                        <i class="pi pi-trash"></i>
-                      </button>
-                    </td>
-                  </tr>
-                }
-              </tbody>
-            </table>
-          }
+          <cleansia-table
+            [data]="visibleCities()"
+            [columns]="cityTable().columns"
+            [actions]="cityTable().actions"
+            [config]="{ paginator: false, emptyMessage: 'pages.service_area_management.cities.empty' }"
+          />
         }
       </cleansia-section>
     }
   </div>
 </div>
 
-<!-- ─── Create/Edit city dialog ───────────────────────────────── -->
+<ng-template #servicedTemplate let-country>
+  <p-toggleSwitch
+    [ngModel]="isCountryServiced(country)"
+    (ngModelChange)="onToggleServiced(country, $event)"
+    [ariaLabel]="'pages.service_area_management.columns.is_serviced' | translate"
+  />
+</ng-template>
+
+<ng-template #activeTemplate let-city>
+  <cleansia-status-badge kind="active" [value]="city.isActive" />
+</ng-template>
+
 <p-dialog
   [(visible)]="cityDialogOpen"
   [modal]="true"
   [closable]="true"
+  [draggable]="false"
+  [resizable]="false"
   [style]="{ width: '480px' }"
   [header]="
     (cityEditTarget()
@@ -168,33 +107,29 @@
     ) | translate
   "
 >
-  <div class="city-form">
-    <label>
-      {{ 'pages.service_area_management.cities.name_label' | translate }}
-      <input
-        type="text"
-        pInputText
-        [ngModel]="cityForm().name"
-        (ngModelChange)="updateCityFormField('name', $event)"
-        [placeholder]="'pages.service_area_management.cities.name_placeholder' | translate"
-        required
-      />
-    </label>
-    <label>
-      {{ 'pages.service_area_management.cities.zip_prefix_label' | translate }}
-      <input
-        type="text"
-        pInputText
+  <div class="cleansia-service-area-management__city-form">
+    <cleansia-text-input
+      [label]="'pages.service_area_management.cities.name_label' | translate"
+      [ngModel]="cityForm().name"
+      (ngModelChange)="updateCityFormField('name', $event)"
+      [placeholder]="'pages.service_area_management.cities.name_placeholder' | translate"
+      [required]="true"
+      [showErrors]="false"
+    />
+    <div>
+      <cleansia-text-input
+        [label]="'pages.service_area_management.cities.zip_prefix_label' | translate"
         [ngModel]="cityForm().zipPrefix"
         (ngModelChange)="updateCityFormField('zipPrefix', $event)"
         [placeholder]="'pages.service_area_management.cities.zip_prefix_placeholder' | translate"
+        [showErrors]="false"
       />
-      <small class="form-hint">
+      <p class="cleansia-service-area-management__field-hint">
         {{ 'pages.service_area_management.cities.zip_prefix_hint' | translate }}
-      </small>
-    </label>
+      </p>
+    </div>
     @if (cityEditTarget()) {
-      <div class="inline-toggle">
+      <div class="cleansia-service-area-management__active-toggle">
         <p-toggleSwitch
           inputId="service-city-active"
           [ngModel]="cityForm().isActive"
@@ -210,6 +145,7 @@
     <cleansia-button
       [label]="'pages.service_area_management.cities.cancel' | translate"
       severity="secondary"
+      [outlined]="true"
       (onClick)="cityDialogOpen.set(false)"
     />
     <cleansia-button

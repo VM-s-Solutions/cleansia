@@ -1,40 +1,63 @@
 <div class="cleansia-referrals-list cleansia-page">
   <div class="cleansia-referrals-list__container page-wrapper">
-    <div class="cleansia-referrals-list__header">
-      <div class="header-content">
-        <cleansia-title [title]="'pages.loyalty_referrals.title' | translate" />
-        <p class="cleansia-referrals-list__description">
+    <div class="cleansia-page-header">
+      <div class="cleansia-page-header__heading">
+        <cleansia-title [title]="'pages.loyalty_referrals.title' | translate" [level]="1" />
+        <p class="cleansia-page-header__description">
           {{ 'pages.loyalty_referrals.description' | translate }}
         </p>
       </div>
+      <div class="cleansia-page-header__actions">
+        <cleansia-filter-drawer [state]="facade.filters">
+          <form [formGroup]="facade.filterForm" class="filter-form">
+            <div class="filter-section">
+              <h3 class="filter-section-title">
+                {{ 'pages.loyalty_referrals.filter.status' | translate }}
+              </h3>
+              <cleansia-select
+                formControlName="status"
+                [options]="facade.statusFilterOptions()"
+                [showClear]="false"
+                [showErrors]="false"
+              />
+            </div>
+
+            <div class="filter-section">
+              <h3 class="filter-section-title">
+                {{ 'pages.loyalty_referrals.filter.date_range' | translate }}
+              </h3>
+              <div class="filter-date-range">
+                <cleansia-calendar
+                  formControlName="dateFrom"
+                  [label]="'pages.loyalty_referrals.filter.date_from' | translate"
+                  [showIcon]="true"
+                  [showErrors]="false"
+                  appendTo="body"
+                />
+                <cleansia-calendar
+                  formControlName="dateTo"
+                  [label]="'pages.loyalty_referrals.filter.date_to' | translate"
+                  [showIcon]="true"
+                  [showErrors]="false"
+                  appendTo="body"
+                />
+              </div>
+            </div>
+          </form>
+        </cleansia-filter-drawer>
+      </div>
     </div>
 
-    <cleansia-section>
-      <form [formGroup]="filterForm" class="filter-form">
-        <div class="filter-row">
-          <cleansia-select
-            formControlName="status"
-            [options]="translatedStatusOptions"
-            [showClear]="false"
-          />
-          <cleansia-calendar
-            formControlName="dateFrom"
-            [placeholder]="'pages.loyalty_referrals.filter.date_from' | translate"
-          />
-          <cleansia-calendar
-            formControlName="dateTo"
-            [placeholder]="'pages.loyalty_referrals.filter.date_to' | translate"
-          />
-        </div>
-      </form>
+    <cleansia-filter-chips [state]="facade.filters" />
 
+    <cleansia-section>
       @if (facade.initialLoading()) {
         <cleansia-loader />
       } @else {
         <cleansia-table
           [data]="facade.referrals()"
-          [columns]="referralColumns"
-          [actions]="referralActions"
+          [columns]="table().columns"
+          [actions]="table().actions"
           [config]="{
             paginator: true,
             rows: 20,
@@ -63,5 +86,5 @@
 </ng-template>
 
 <ng-template #pointsTemplate let-row>
-  <span>{{ formatPointsAwarded(row) }}</span>
+  {{ formatPointsAwarded(row) }}
 </ng-template>

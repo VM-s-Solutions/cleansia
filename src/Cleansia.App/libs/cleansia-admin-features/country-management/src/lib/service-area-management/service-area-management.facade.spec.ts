@@ -8,7 +8,7 @@ import {
 } from '@cleansia/admin-services';
 import { DialogService, SnackbarService } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
-import { of, throwError } from 'rxjs';
+import { of, Subject, throwError } from 'rxjs';
 import { ServiceAreaManagementFacade } from './service-area-management.facade';
 
 describe('ServiceAreaManagementFacade', () => {
@@ -118,23 +118,17 @@ describe('ServiceAreaManagementFacade', () => {
     );
   });
 
-  it('leaves the serviced set alone when the toggle fails, and bumps the revision so the switch snaps back', () => {
-    servicedMock.mockReturnValue(throwError(() => new Error('boom')));
-    const before = facade.servicedToggleRevision();
+  it('flips the serviced set at once and puts it back when the server refuses the toggle', () => {
+    const response = new Subject<never>();
+    servicedMock.mockReturnValue(response);
 
     facade.setCountryServiced('c-1', true);
+    expect([...facade.servicedCountryIds()]).toEqual(['c-1']);
+
+    response.error(new Error('boom'));
 
     expect(facade.servicedCountryIds().size).toBe(0);
-    expect(facade.servicedToggleRevision()).toBe(before + 1);
     expect(snackbar.showSuccessTranslated).not.toHaveBeenCalled();
-  });
-
-  it('does not bump the revision when the toggle lands', () => {
-    const before = facade.servicedToggleRevision();
-
-    facade.setCountryServiced('c-1', true);
-
-    expect(facade.servicedToggleRevision()).toBe(before);
   });
 
   it('re-reads the city list after a create', () => {

@@ -52,6 +52,7 @@ export function getPackageTableDefinition(
       },
       {
         id: 'price',
+        numeric: true,
         field: 'price',
         header: translate.instant('pages.package_management.columns.price'),
         getValue: (row: PackageListItem) => formatCurrency(row?.price),

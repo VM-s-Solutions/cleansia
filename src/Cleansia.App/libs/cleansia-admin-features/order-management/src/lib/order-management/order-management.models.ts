@@ -36,6 +36,7 @@ export function getOrderTableDefinition(
       },
       {
         id: 'cleaningDateTime',
+        numeric: true,
         field: 'cleaningDateTime',
         header: translate.instant('pages.order_management.cleaning_date'),
         sortable: true,
@@ -45,6 +46,7 @@ export function getOrderTableDefinition(
       },
       {
         id: 'totalPrice',
+        numeric: true,
         field: 'totalPrice',
         header: translate.instant('pages.order_management.total_price'),
         sortable: true,
@@ -64,6 +66,7 @@ export function getOrderTableDefinition(
         ),
         sortable: true,
         width: '10%',
+        align: 'center',
         customTemplate: orderStatusTemplate,
       },
       {
@@ -73,10 +76,12 @@ export function getOrderTableDefinition(
           'pages.order_management.payment_status_label'
         ),
         width: '10%',
+        align: 'center',
         customTemplate: paymentStatusTemplate,
       },
       {
         id: 'assignedEmployees',
+        numeric: true,
         field: 'assignedEmployees',
         header: translate.instant(
           'pages.order_management.assigned_employees'

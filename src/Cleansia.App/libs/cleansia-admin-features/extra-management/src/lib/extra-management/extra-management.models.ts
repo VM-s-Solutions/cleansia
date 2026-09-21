@@ -45,6 +45,7 @@ export function getExtraTableDefinition(
       },
       {
         id: 'price',
+        numeric: true,
         field: 'price',
         header: translate.instant('pages.extra_management.columns.price'),
         getValue: (row: ExtraListItem) => formatCurrency(row?.price),
@@ -55,6 +56,7 @@ export function getExtraTableDefinition(
       },
       {
         id: 'displayOrder',
+        numeric: true,
         field: 'displayOrder',
         header: translate.instant(
           'pages.extra_management.columns.display_order'

@@ -25,6 +25,7 @@ export function getCustomerAuditTableDefinition(
     columns: [
       {
         id: 'occurredOn',
+        numeric: true,
         field: 'occurredOn',
         header: translate.instant('pages.audit_log.customers.columns.occurred_on'),
         sortable: true,
@@ -66,6 +67,7 @@ export function getCustomerAuditTableDefinition(
         field: 'success',
         header: translate.instant('pages.audit_log.customers.columns.outcome'),
         width: '10%',
+        align: 'center',
         customTemplate: templates.outcome,
       },
     ],

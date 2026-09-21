@@ -1,9 +1,9 @@
 <div class="cleansia-company-settings cleansia-page">
   <div class="cleansia-company-settings__container page-wrapper">
-    <div class="cleansia-company-settings__header">
-      <div class="header-content">
-        <cleansia-title [title]="'pages.company_settings.title' | translate" />
-        <p class="cleansia-company-settings__description">
+    <div class="cleansia-page-header">
+      <div class="cleansia-page-header__heading">
+        <cleansia-title [title]="'pages.company_settings.title' | translate" [level]="1" />
+        <p class="cleansia-page-header__description">
           {{ 'pages.company_settings.description' | translate }}
         </p>
       </div>
@@ -13,16 +13,18 @@
       @if (facade.initialLoading()) {
       <cleansia-loader />
       } @else if (facade.hasError()) {
-      <div class="cleansia-company-settings__state">
-        <i class="pi pi-exclamation-triangle"></i>
-        <p>{{ 'pages.company_settings.load_error' | translate }}</p>
-        <cleansia-button
-          [label]="'pages.company_settings.retry' | translate"
-          icon="pi pi-refresh"
-          severity="secondary"
-          [outlined]="true"
-          (onClick)="facade.loadSettings()"
-        />
+      <div class="not-found-state">
+        <div class="not-found-state__icon"><i class="pi pi-exclamation-triangle"></i></div>
+        <p class="not-found-state__message">{{ 'pages.company_settings.load_error' | translate }}</p>
+        <div class="not-found-state__actions">
+          <cleansia-button
+            [label]="'pages.company_settings.retry' | translate"
+            icon="pi pi-refresh"
+            severity="secondary"
+            [outlined]="true"
+            (onClick)="facade.loadSettings()"
+          />
+        </div>
       </div>
       } @else {
       <cleansia-table

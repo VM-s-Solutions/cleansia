@@ -1341,7 +1341,6 @@
       "delete_confirm": "Are you sure you want to delete this country? This may affect existing data.",
       "set_default_market": "Set as default market",
       "set_default_market_confirm": "Set {{name}} as the default market? Visitors will see it until they pick a country.",
-      "default_market": "Default market",
       "no_countries": "No countries found",
       "columns": {
         "iso_code": "ISO Code",
@@ -2177,6 +2176,10 @@
           "applied": "Applied discount",
           "redeemed_on": "Redeemed on"
         }
+      },
+      "filters": {
+        "search": "Search",
+        "status": "Status"
       }
     },
     "loyalty_tiers": {
@@ -2387,7 +2390,9 @@
         "status_expired": "Expired",
         "date_from": "From",
         "date_to": "To",
-        "status_reversed": "Reversed"
+        "status_reversed": "Reversed",
+        "status": "Status",
+        "date_range": "Date range"
       },
       "column": {
         "referrer": "Referrer",
@@ -2521,7 +2526,9 @@
       "create_plan": "New plan",
       "filter": {
         "search": "Search by code or name",
-        "active_only": "Active only"
+        "active_only": "Active only",
+        "search_label": "Search",
+        "status": "Status"
       },
       "load_error": "Couldn't load membership plans. Try again later.",
       "empty": "No membership plans yet",

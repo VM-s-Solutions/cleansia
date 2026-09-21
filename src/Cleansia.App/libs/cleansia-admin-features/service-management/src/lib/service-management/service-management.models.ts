@@ -52,6 +52,7 @@ export function getServiceTableDefinition(
       },
       {
         id: 'basePrice',
+        numeric: true,
         field: 'basePrice',
         header: translate.instant(
           'pages.service_management.columns.base_price'
@@ -62,6 +63,7 @@ export function getServiceTableDefinition(
       },
       {
         id: 'perRoomPrice',
+        numeric: true,
         field: 'perRoomPrice',
         header: translate.instant(
           'pages.service_management.columns.per_room_price'

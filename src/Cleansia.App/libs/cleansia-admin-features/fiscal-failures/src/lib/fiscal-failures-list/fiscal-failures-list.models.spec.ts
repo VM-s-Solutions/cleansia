@@ -1,4 +1,4 @@
-import { getFiscalErrorKindBadge } from './fiscal-failures-list.models';
+import { getFiscalErrorKindBadge, getFiscalErrorKindClass } from './fiscal-failures-list.models';
 
 describe('getFiscalErrorKindBadge', () => {
   it.each([
@@ -20,5 +20,21 @@ describe('getFiscalErrorKindBadge', () => {
 
   it('returns no badge for an unmapped wire value', () => {
     expect(getFiscalErrorKindBadge(99)).toBeUndefined();
+  });
+});
+
+describe('getFiscalErrorKindClass', () => {
+  it.each([
+    [1, 'status-badge status-badge--warning'],
+    [2, 'status-badge status-badge--danger'],
+    [3, 'status-badge status-badge--danger'],
+    [4, 'status-badge status-badge--neutral'],
+  ])('draws wire value %i as the shared pill %s', (wireValue, className) => {
+    expect(getFiscalErrorKindClass(wireValue)).toBe(className);
+  });
+
+  it('draws no pill for None or a missing kind', () => {
+    expect(getFiscalErrorKindClass(0)).toBe('');
+    expect(getFiscalErrorKindClass(undefined)).toBe('');
   });
 });

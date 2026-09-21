@@ -1,62 +1,74 @@
-import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import {
   ChangeDetectionStrategy,
   Component,
   OnInit,
+  TemplateRef,
   computed,
   effect,
   inject,
   signal,
+  viewChild,
 } from '@angular/core';
 import { CountryListItem, ServiceCityDto } from '@cleansia/admin-services';
 import {
   CleansiaButtonComponent,
   CleansiaLoaderComponent,
   CleansiaSectionComponent,
+  CleansiaSelectComponent,
+  CleansiaStatusBadgeComponent,
+  CleansiaTableComponent,
+  CleansiaTextInputComponent,
   CleansiaTitleComponent,
+  ICleansiaSelectOption,
 } from '@cleansia/components';
 import { CleansiaPermissionDirective } from '@cleansia/directives';
+import { PermissionService, Policy } from '@cleansia/services';
+import { currentLanguage } from '@cleansia/utils';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { DialogModule } from 'primeng/dialog';
-import { ToggleSwitchModule } from 'primeng/toggleswitch';
-import { SelectModule } from 'primeng/select';
 import { TabsModule } from 'primeng/tabs';
-import { InputTextModule } from 'primeng/inputtext';
-import { Policy } from '@cleansia/services';
-import { TranslatePipe } from '@ngx-translate/core';
+import { ToggleSwitchModule } from 'primeng/toggleswitch';
 import { ServiceAreaManagementFacade } from './service-area-management.facade';
-
-interface CountryOption {
-  label: string;
-  value: string;
-}
+import {
+  EMPTY_SERVICE_CITY_FORM,
+  getServiceCityTableDefinition,
+  getServicedCountryTableColumns,
+  ServiceCityForm,
+} from './service-area-management.models';
 
 @Component({
   selector: 'cleansia-admin-service-area-management',
   standalone: true,
   imports: [
     CleansiaPermissionDirective,
-    CommonModule,
     FormsModule,
     TranslatePipe,
     CleansiaButtonComponent,
     CleansiaLoaderComponent,
     CleansiaSectionComponent,
+    CleansiaSelectComponent,
+    CleansiaStatusBadgeComponent,
+    CleansiaTableComponent,
+    CleansiaTextInputComponent,
     CleansiaTitleComponent,
     TabsModule,
     ToggleSwitchModule,
-    SelectModule,
-    InputTextModule,
     DialogModule,
   ],
   templateUrl: './service-area-management.component.html',
-  styleUrl: './service-area-management.component.scss',
   providers: [ServiceAreaManagementFacade],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ServiceAreaManagementComponent implements OnInit {
+  private readonly translate = inject(TranslateService);
+  private readonly permissions = inject(PermissionService);
   protected readonly facade = inject(ServiceAreaManagementFacade);
   protected readonly Policy = Policy;
+
+  private readonly servicedTemplate = viewChild<TemplateRef<CountryListItem>>('servicedTemplate');
+  private readonly activeTemplate = viewChild<TemplateRef<ServiceCityDto>>('activeTemplate');
+  private readonly lang = currentLanguage(this.translate);
 
   /** Tab index — 0 = Countries, 1 = Cities. */
   readonly activeTabIndex = signal(0);
@@ -64,24 +76,37 @@ export class ServiceAreaManagementComponent implements OnInit {
   /** Selected country in the Cities tab. Drives the city table filter. */
   readonly selectedCountryId = signal<string | null>(null);
 
-  /** Dialog state for create/edit city. */
   readonly cityDialogOpen = signal(false);
   readonly cityEditTarget = signal<ServiceCityDto | null>(null);
-  readonly cityForm = signal({ name: '', zipPrefix: '', isActive: true });
+  readonly cityForm = signal<ServiceCityForm>(EMPTY_SERVICE_CITY_FORM);
 
-  /** Cities filtered to the currently selected country (UI-side filter to
-   *  avoid an extra HTTP roundtrip when admin switches between countries
-   *  with the same dataset already loaded). */
+  protected readonly countryColumns = computed(() => {
+    this.lang();
+    return getServicedCountryTableColumns(this.translate, this.servicedTemplate());
+  });
+
+  protected readonly cityTable = computed(() => {
+    this.lang();
+    return getServiceCityTableDefinition(
+      {
+        canManage: this.permissions.hasPolicy(Policy.CanManageServiceCities),
+        onEdit: (row) => this.openEditCityDialog(row),
+        onDelete: (row) => this.confirmDeleteCity(row),
+      },
+      this.translate,
+      this.activeTemplate()
+    );
+  });
+
+  /** Cities narrowed to the selected country; the whole set is already loaded, so no re-read. */
   readonly visibleCities = computed(() => {
     const selected = this.selectedCountryId();
     const all = this.facade.cities();
     return selected ? all.filter((c) => c.countryId === selected) : all;
   });
 
-  /** Country options for the Cities-tab dropdown. Only countries with
-   *  IsServiced=true are eligible — there's no point managing cities for
-   *  a country we don't operate in. */
-  readonly servicedCountryOptions = computed<CountryOption[]>(() => {
+  /** Only a serviced country can carry cities, so only those are offered. */
+  readonly servicedCountryOptions = computed<ICleansiaSelectOption[]>(() => {
     const ids = this.facade.servicedCountryIds();
     return this.facade
       .countries()
@@ -93,17 +118,13 @@ export class ServiceAreaManagementComponent implements OnInit {
   });
 
   constructor() {
-    // When the user toggles a country to serviced for the first time, the
-    // Cities tab dropdown gains a new option — but only if the user is on
-    // that tab. Pre-select the first eligible country once it appears so
-    // the cities table populates without a manual select.
+    // The first eligible country is pre-selected once it appears, so the city table fills without
+    // a manual pick; a country that stops being serviced drops out of the selection with it.
     effect(() => {
       const opts = this.servicedCountryOptions();
       if (opts.length === 0) {
         this.selectedCountryId.set(null);
-      } else if (
-        !opts.find((o) => o.value === this.selectedCountryId())
-      ) {
+      } else if (!opts.find((o) => o.value === this.selectedCountryId())) {
         this.selectedCountryId.set(opts[0].value);
       }
     });
@@ -129,30 +150,17 @@ export class ServiceAreaManagementComponent implements OnInit {
     return !!country.id && this.facade.servicedCountryIds().has(country.id);
   }
 
-  trackCountryRow(country: CountryListItem): string {
-    return `${country.id}:${this.facade.servicedToggleRevision()}`;
-  }
-
   onCountryFilterChange(countryId: string | null): void {
     this.selectedCountryId.set(countryId);
   }
 
-  /**
-   * Template-friendly patch helper — Angular templates can't use the
-   * spread operator (`{ ...cityForm() }`), so the form fields call this
-   * via `(ngModelChange)`. Keeping the signal+method instead of a
-   * FormGroup since the dialog only has 3 fields.
-   */
-  updateCityFormField<K extends keyof { name: string; zipPrefix: string; isActive: boolean }>(
-    key: K,
-    value: { name: string; zipPrefix: string; isActive: boolean }[K]
-  ): void {
+  updateCityFormField<K extends keyof ServiceCityForm>(key: K, value: ServiceCityForm[K]): void {
     this.cityForm.set({ ...this.cityForm(), [key]: value });
   }
 
   openCreateCityDialog(): void {
     this.cityEditTarget.set(null);
-    this.cityForm.set({ name: '', zipPrefix: '', isActive: true });
+    this.cityForm.set(EMPTY_SERVICE_CITY_FORM);
     this.cityDialogOpen.set(true);
   }
 

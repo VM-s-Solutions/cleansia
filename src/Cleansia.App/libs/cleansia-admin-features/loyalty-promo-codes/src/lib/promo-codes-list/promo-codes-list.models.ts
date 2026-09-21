@@ -102,6 +102,7 @@ export function getPromoCodeTableDefinition(
       },
       {
         id: 'discount',
+        numeric: true,
         field: 'discountPercent',
         header: translate.instant('pages.promo_codes.column.discount'),
         getValue: (row) => formatDiscount(row),
@@ -109,6 +110,7 @@ export function getPromoCodeTableDefinition(
       },
       {
         id: 'minOrder',
+        numeric: true,
         field: 'minimumOrderAmount',
         header: translate.instant('pages.promo_codes.column.min_order'),
         getValue: (row) =>
@@ -117,6 +119,7 @@ export function getPromoCodeTableDefinition(
       },
       {
         id: 'perUser',
+        numeric: true,
         field: 'maxRedemptionsPerUser',
         header: translate.instant('pages.promo_codes.column.per_user'),
         getValue: (row) => `${row.maxRedemptionsPerUser}`,
@@ -126,11 +129,13 @@ export function getPromoCodeTableDefinition(
         id: 'global',
         field: 'globalMaxRedemptions',
         header: translate.instant('pages.promo_codes.column.global'),
+        numeric: true,
         getValue: (row) => formatGlobalLimit(row, translate),
         width: '12%',
       },
       {
         id: 'validity',
+        numeric: true,
         field: 'validUntil',
         header: translate.instant('pages.promo_codes.column.validity'),
         getValue: (row) => formatValidity(row, translate, formatDate),
@@ -141,6 +146,7 @@ export function getPromoCodeTableDefinition(
         field: 'isActive',
         header: translate.instant('pages.promo_codes.column.status'),
         getValue: (row) => getPromoCodeStatus(row),
+        align: 'center',
         customTemplate: statusTemplate,
         width: '10%',
       },

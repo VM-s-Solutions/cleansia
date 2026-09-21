@@ -100,8 +100,7 @@ export function getCountryTableDefinition(
   },
   translate: TranslateService,
   permissions: PermissionService,
-  flagTemplate?: TemplateRef<CountryListItem>,
-  defaultMarketTemplate?: TemplateRef<CountryListItem>
+  flagTemplate?: TemplateRef<CountryListItem>
 ): { columns: TableColumn<CountryListItem>[]; actions: TableAction<CountryListItem>[] } {
   return {
     columns: [
@@ -133,7 +132,7 @@ export function getCountryTableDefinition(
         header: translate.instant('pages.country_management.columns.default_market'),
         sortable: false,
         width: '15%',
-        customTemplate: defaultMarketTemplate,
+        getValue: (row: CountryListItem) => (row.isDefaultMarket ? translate.instant('global.yes') : '—'),
       },
     ],
     actions: [

@@ -97,7 +97,7 @@ describe('NotificationsComponent', () => {
     await render();
 
     expect(text()).toContain('pages.notifications.load_error');
-    (element().querySelector('.cleansia-notifications__state cleansia-button button') as HTMLButtonElement).click();
+    (element().querySelector('.not-found-state cleansia-button button') as HTMLButtonElement).click();
     fixture.detectChanges();
 
     expect(getPaged).toHaveBeenCalledTimes(2);

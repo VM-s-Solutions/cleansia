@@ -50,10 +50,12 @@ export function getDisputeTableDefinition(
         header: translate.instant('pages.disputes_management.columns.status'),
         sortable: true,
         width: '12%',
+        align: 'center',
         customTemplate: statusTemplate,
       },
       {
         id: 'refundAmount',
+        numeric: true,
         field: 'refundAmount',
         header: translate.instant('pages.disputes_management.columns.refund_amount'),
         width: '10%',
@@ -64,6 +66,7 @@ export function getDisputeTableDefinition(
       },
       {
         id: 'createdOn',
+        numeric: true,
         field: 'createdOn',
         header: translate.instant('pages.disputes_management.columns.created_on'),
         sortable: true,

@@ -22,6 +22,7 @@ export function getAuditLogTableColumns(
   return [
     {
       id: 'occurredOn',
+      numeric: true,
       field: 'occurredOn',
       header: translate.instant('pages.audit_log.columns.occurred_on'),
       sortable: true,
@@ -63,6 +64,7 @@ export function getAuditLogTableColumns(
       field: 'success',
       header: translate.instant('pages.audit_log.columns.outcome'),
       width: '10%',
+      align: 'center',
       customTemplate: outcomeTemplate,
     },
   ];
@@ -104,9 +106,7 @@ export function getOutcomeLabelKey(success: boolean): string {
 }
 
 export function getOutcomeClass(success: boolean): string {
-  return success
-    ? 'audit-outcome-badge outcome-success'
-    : 'audit-outcome-badge outcome-failure';
+  return success ? 'status-badge status-badge--success' : 'status-badge status-badge--danger';
 }
 
 export function buildOutcomeOptions(

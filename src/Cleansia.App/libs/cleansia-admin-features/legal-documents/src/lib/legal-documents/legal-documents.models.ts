@@ -74,6 +74,7 @@ export function getLegalVersionTableDefinition(
       },
       {
         id: 'effectiveFrom',
+        numeric: true,
         field: 'effectiveFrom',
         header: translate.instant('pages.legal_documents.columns.effective_from'),
         getValue: (row: LegalDocumentVersionDto) => formatEffectiveDate(row.effectiveFrom, translate.currentLang),

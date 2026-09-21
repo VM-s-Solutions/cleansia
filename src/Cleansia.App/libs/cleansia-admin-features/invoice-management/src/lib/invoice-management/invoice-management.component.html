@@ -80,13 +80,9 @@
 </div>
 
 <ng-template #statusTemplate let-item>
-  <div class="status-cell">
-    <cleansia-status-badge kind="invoice" [value]="item.status" />
-  </div>
+  <cleansia-status-badge kind="invoice" [value]="item.status" />
 </ng-template>
 
 <ng-template #pdfStatusTemplate let-item>
-  <div class="status-cell">
-    <cleansia-status-badge kind="invoicePdf" [value]="getPdfState(item)" />
-  </div>
+  <cleansia-status-badge kind="invoicePdf" [value]="getPdfState(item)" />
 </ng-template>

@@ -1,4 +1,5 @@
-import { Injectable, inject, signal } from '@angular/core';
+import { Injectable, computed, inject, signal } from '@angular/core';
+import { FormBuilder } from '@angular/forms';
 import {
   AdminClient,
   AdminReferralListItem,
@@ -6,8 +7,11 @@ import {
   ReferralStatus,
   ReverseReferralCommand,
 } from '@cleansia/admin-services';
+import { FilterChip, FilterDrawerState, ICleansiaSelectOption } from '@cleansia/components';
 import { UnsubscribeControlDirective } from '@cleansia/directives';
 import { SnackbarService } from '@cleansia/services';
+import { currentLanguage, formatDate } from '@cleansia/utils';
+import { TranslateService } from '@ngx-translate/core';
 import { catchError, finalize, of, takeUntil } from 'rxjs';
 
 export type ReferralStatusFilter =
@@ -23,10 +27,19 @@ export interface ReferralFilterParams {
   dateTo?: Date;
 }
 
+const STATUS_FILTER_LABEL_KEYS: Readonly<Record<ReferralStatusFilter, string>> = {
+  all: 'pages.loyalty_referrals.filter.status_all',
+  accepted: 'pages.loyalty_referrals.filter.status_accepted',
+  qualified: 'pages.loyalty_referrals.filter.status_qualified',
+  expired: 'pages.loyalty_referrals.filter.status_expired',
+  reversed: 'pages.loyalty_referrals.filter.status_reversed',
+};
+
 @Injectable()
 export class ReferralsListFacade extends UnsubscribeControlDirective {
   private readonly adminClient = inject(AdminClient);
   private readonly snackbar = inject(SnackbarService);
+  private readonly translate = inject(TranslateService);
 
   readonly referrals = signal<AdminReferralListItem[]>([]);
   readonly loading = signal<boolean>(false);
@@ -34,9 +47,61 @@ export class ReferralsListFacade extends UnsubscribeControlDirective {
   readonly totalRecords = signal<number>(0);
   readonly intervening = signal<boolean>(false);
 
+  readonly lang = currentLanguage(this.translate);
+  readonly statusFilterOptions = computed<ICleansiaSelectOption[]>(() => {
+    this.lang();
+    return (Object.keys(STATUS_FILTER_LABEL_KEYS) as ReferralStatusFilter[]).map((value) => ({
+      label: this.translate.instant(STATUS_FILTER_LABEL_KEYS[value]),
+      value,
+    }));
+  });
+  readonly filterForm = inject(FormBuilder).group({
+    status: ['all' as ReferralStatusFilter],
+    dateFrom: [null as Date | null],
+    dateTo: [null as Date | null],
+  });
+  readonly filters = new FilterDrawerState({
+    form: this.filterForm,
+    lang: this.lang,
+    chips: (value): FilterChip[] => [
+      ...(value.status && value.status !== 'all'
+        ? [
+            {
+              key: 'status',
+              label: this.translate.instant('pages.loyalty_referrals.filter.status'),
+              value: this.translate.instant(STATUS_FILTER_LABEL_KEYS[value.status]),
+            },
+          ]
+        : []),
+      ...(value.dateFrom || value.dateTo
+        ? [
+            {
+              key: 'dateRange',
+              label: this.translate.instant('pages.loyalty_referrals.filter.date_range'),
+              value: [value.dateFrom, value.dateTo]
+                .map((date) => formatDate(date, this.translate.currentLang))
+                .join(' – '),
+              controls: ['dateFrom', 'dateTo'],
+            },
+          ]
+        : []),
+    ],
+    apply: (value) =>
+      this.applyFilter({
+        status: value.status ?? 'all',
+        dateFrom: value.dateFrom ?? undefined,
+        dateTo: value.dateTo ?? undefined,
+      }),
+  });
+
   private currentFilter = signal<ReferralFilterParams>({ status: 'all' });
   private currentOffset = signal<number>(0);
   private currentLimit = signal<number>(20);
+
+  constructor() {
+    super();
+    this.filters.connect(this.destroyed$);
+  }
 
   loadReferrals(): void {
     this.loading.set(true);
@@ -75,12 +140,6 @@ export class ReferralsListFacade extends UnsubscribeControlDirective {
 
   applyFilter(filter: ReferralFilterParams): void {
     this.currentFilter.set(filter);
-    this.currentOffset.set(0);
-    this.loadReferrals();
-  }
-
-  resetFilter(): void {
-    this.currentFilter.set({ status: 'all' });
     this.currentOffset.set(0);
     this.loadReferrals();
   }

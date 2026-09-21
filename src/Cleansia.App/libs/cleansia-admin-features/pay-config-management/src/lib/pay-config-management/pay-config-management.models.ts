@@ -20,46 +20,44 @@ export function getPayConfigTableDefinition(
         header: translate.instant('pages.pay_config_management.columns.service'),
         getValue: (row: EmployeePayConfigDto) => row?.serviceName || row?.packageName || '-',
         sortable: true,
-        width: '20%',
+        width: '18%',
       },
       {
         id: 'basePay',
+        numeric: true,
         field: 'basePay',
         header: translate.instant('pages.pay_config_management.columns.base_pay'),
         getValue: (row: EmployeePayConfigDto) =>
           formatCurrency(row?.basePay, row?.currencyCode),
         sortable: true,
-        width: '15%',
+        width: '13%',
       },
       {
         id: 'extraPerRoom',
+        numeric: true,
         field: 'extraPerRoom',
         header: translate.instant('pages.pay_config_management.columns.per_room'),
         getValue: (row: EmployeePayConfigDto) =>
           formatCurrency(row?.extraPerRoom, row?.currencyCode),
         sortable: true,
-        width: '15%',
+        width: '13%',
       },
       {
         id: 'extraPerBathroom',
+        numeric: true,
         field: 'extraPerBathroom',
         header: translate.instant('pages.pay_config_management.columns.per_bathroom'),
         getValue: (row: EmployeePayConfigDto) =>
           formatCurrency(row?.extraPerBathroom, row?.currencyCode),
         sortable: true,
-        width: '15%',
+        width: '13%',
       },
       {
         id: 'description',
         field: 'description',
         header: translate.instant('pages.pay_config_management.columns.description'),
-        getValue: (row: EmployeePayConfigDto) => {
-          if (!row?.description) return '';
-          return row.description.length > 80
-            ? row.description.substring(0, 80) + '...'
-            : row.description;
-        },
-        width: '20%',
+        getValue: (row: EmployeePayConfigDto) => row?.description ?? '',
+        width: '27%',
       },
     ],
     actions: [

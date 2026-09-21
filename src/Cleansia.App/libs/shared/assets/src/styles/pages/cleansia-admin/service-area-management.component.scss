@@ -1,0 +1,46 @@
+.cleansia-service-area-management {
+  &__tabs {
+    .p-tab {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+  }
+
+  &__hint {
+    margin: 0;
+    max-width: 80ch;
+    color: var(--cleansia-text-secondary);
+    line-height: 1.5;
+  }
+
+  &__toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  &__country-picker {
+    flex: 0 1 20rem;
+  }
+
+  &__city-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+    padding-top: 0.5rem;
+  }
+
+  &__field-hint {
+    margin: 0.375rem 0 0;
+    font-size: 0.8125rem;
+    color: var(--cleansia-text-secondary);
+  }
+
+  &__active-toggle {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+}

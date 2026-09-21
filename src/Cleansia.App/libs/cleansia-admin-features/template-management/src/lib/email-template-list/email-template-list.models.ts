@@ -21,6 +21,7 @@ export function getEmailTypeTableDefinition(
       },
       {
         id: 'translationCount',
+        numeric: true,
         field: 'translationCount',
         header: translate.instant('pages.template_management.columns.translation_count'),
         getValue: (row: EmailTypeListItemDto) => {
@@ -37,6 +38,7 @@ export function getEmailTypeTableDefinition(
       },
       {
         id: 'lastModified',
+        numeric: true,
         field: 'lastModified',
         header: translate.instant('pages.template_management.columns.last_modified'),
         getValue: (row: EmailTypeListItemDto) => formatDate(row?.lastModified, translate.currentLang) || '-',

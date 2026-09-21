@@ -22,7 +22,6 @@ import {
 import { PermissionService, Policy } from '@cleansia/services';
 import { CleansiaPermissionDirective } from '@cleansia/directives';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
-import { TagModule } from 'primeng/tag';
 import { Subject, takeUntil } from 'rxjs';
 import { CountryManagementFacade } from './country-management.facade';
 import {
@@ -41,7 +40,6 @@ import {
     CleansiaTitleComponent,
     CleansiaLoaderComponent,
     CleansiaSectionComponent,
-    TagModule,
     CleansiaPermissionDirective,
   ],
   templateUrl: './country-management.component.html',
@@ -56,9 +54,6 @@ export class CountryManagementComponent implements AfterViewInit, OnDestroy {
   private readonly permissions = inject(PermissionService);
 
   flagTemplate = viewChild<TemplateRef<CountryListItem>>('flagTemplate');
-  defaultMarketTemplate = viewChild<TemplateRef<CountryListItem>>(
-    'defaultMarketTemplate'
-  );
 
   countryColumns!: TableColumn<CountryListItem>[];
   countryActions!: TableAction<CountryListItem>[];
@@ -92,8 +87,7 @@ export class CountryManagementComponent implements AfterViewInit, OnDestroy {
       },
       this.translate,
       this.permissions,
-      this.flagTemplate(),
-      this.defaultMarketTemplate()
+      this.flagTemplate()
     );
     this.countryColumns = tableDef.columns;
     this.countryActions = tableDef.actions;

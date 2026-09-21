@@ -1,67 +1,5 @@
 .cleansia-legal-documents {
-  &__description {
-    color: var(--cleansia-text-secondary);
-    font-size: 1rem;
-    line-height: 1.5;
-  }
-
-  &__state {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 3rem 1rem;
-    color: var(--cleansia-text-secondary);
-
-    i {
-      font-size: 2rem;
-      color: #b45309;
-    }
-  }
-
-  &__preview-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 1rem;
-    margin-bottom: 1rem;
-  }
-
-  &__section-title {
-    margin: 0;
-    font-size: 1.0625rem;
-    color: var(--cleansia-text-primary);
-  }
-
-  &__meta {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-    gap: 1rem;
-    margin: 0 0 1.5rem;
-  }
-
-  &__meta-item {
-    display: flex;
-    flex-direction: column;
-    gap: 0.25rem;
-
-    dt {
-      font-size: 0.75rem;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      color: var(--cleansia-text-secondary);
-    }
-
-    dd {
-      margin: 0;
-      font-weight: 600;
-      color: var(--cleansia-text-primary);
-      word-break: break-word;
-    }
-  }
-
   &__document {
-    margin-top: 1.5rem;
     padding-top: 1.5rem;
     border-top: 1px solid var(--cleansia-primary-200);
   }
@@ -134,11 +72,4 @@
       }
     }
   }
-}
-
-cleansia-admin-legal-documents {
-  display: flex;
-  flex-direction: column;
-  background: var(--cleansia-primary-0);
-  min-height: 100vh;
 }

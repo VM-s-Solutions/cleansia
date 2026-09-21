@@ -138,13 +138,9 @@
 </div>
 
 <ng-template #orderStatusTemplate let-item>
-  <div class="status-cell">
-    <cleansia-status-badge kind="order" [value]="item.orderStatus" />
-  </div>
+  <cleansia-status-badge kind="order" [value]="item.orderStatus" />
 </ng-template>
 
 <ng-template #paymentStatusTemplate let-item>
-  <div class="status-cell">
-    <cleansia-status-badge kind="payment" [value]="item.paymentStatus" />
-  </div>
+  <cleansia-status-badge kind="payment" [value]="item.paymentStatus" />
 </ng-template>

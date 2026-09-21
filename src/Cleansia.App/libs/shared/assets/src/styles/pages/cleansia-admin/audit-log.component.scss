@@ -1,4 +1,3 @@
-.cleansia-audit-log,
 .cleansia-audit-resource-history,
 .cleansia-audit-entry {
   &__description {
@@ -25,42 +24,6 @@
       color: #b45309;
     }
   }
-}
-
-.audit-outcome-badge {
-  display: inline-block;
-  padding: 0.375rem 0.875rem;
-  border-radius: 16px;
-  font-size: 0.8125rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.75px;
-  text-align: center;
-  line-height: 1;
-  white-space: nowrap;
-  min-width: 80px;
-
-  &.outcome-success {
-    background-color: rgba(34, 197, 94, 0.15);
-    color: #14532d;
-    border: 1px solid rgba(34, 197, 94, 0.3);
-  }
-
-  &.outcome-failure {
-    background-color: rgba(239, 68, 68, 0.15);
-    color: #991b1b;
-    border: 1px solid rgba(239, 68, 68, 0.3);
-  }
-}
-
-cleansia-admin-audit-log,
-cleansia-admin-audit-resource-history,
-cleansia-admin-audit-entry {
-  display: flex;
-  flex-direction: column;
-  background: var(--cleansia-primary-0);
-  min-height: 100vh;
-  gap: 1rem;
 }
 
 .cleansia-audit-entry {
@@ -140,9 +103,11 @@ cleansia-admin-audit-entry {
 }
 
 .cleansia-audit-log__segment {
-  display: flex;
-  justify-content: center;
-  margin: -0.5rem 0 0.5rem;
+  .p-tab {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
 }
 
 .cleansia-audit-log__guest {

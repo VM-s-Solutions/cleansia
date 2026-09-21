@@ -1,37 +1,6 @@
 @use '../../common/focus' as *;
 
 .cleansia-notifications {
-  &__state {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 3rem 1rem;
-    color: var(--cleansia-text-secondary);
-    text-align: center;
-
-    i {
-      font-size: 2rem;
-      color: #b45309;
-    }
-
-    p {
-      margin: 0;
-      font-weight: 600;
-      color: var(--cleansia-text-primary);
-    }
-
-    &--empty i {
-      color: var(--cleansia-primary-300);
-    }
-  }
-
-  &__state-hint {
-    font-size: 0.875rem;
-    line-height: 1.6;
-    max-width: 44ch;
-  }
-
   // The feed is a ledger of rows separated by hairlines, not a card grid: one unread row is louder
   // than the rest by ground and by a left rule, and nothing else on the page competes with it.
   &__feed {
@@ -199,11 +168,4 @@
       padding-top: 0;
     }
   }
-}
-
-cleansia-admin-notifications {
-  display: flex;
-  flex-direction: column;
-  background: var(--cleansia-primary-0);
-  min-height: 100vh;
 }

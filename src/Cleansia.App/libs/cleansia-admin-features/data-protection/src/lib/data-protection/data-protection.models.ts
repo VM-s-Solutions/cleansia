@@ -112,6 +112,7 @@ export function getGdprRequestTableDefinition(
       },
       {
         id: 'completedAt',
+        numeric: true,
         field: 'completedAt',
         header: translate.instant(
           'pages.data_protection.requests.columns.completed_at'
@@ -128,6 +129,7 @@ export function getGdprRequestTableDefinition(
       },
       {
         id: 'createdOn',
+        numeric: true,
         field: 'createdOn',
         header: translate.instant(
           'pages.data_protection.requests.columns.created_on'
@@ -203,6 +205,7 @@ export function getConsentTableDefinition(
       },
       {
         id: 'grantedAt',
+        numeric: true,
         field: 'grantedAt',
         header: translate.instant(
           'pages.data_protection.consents.columns.granted_at'
@@ -212,6 +215,7 @@ export function getConsentTableDefinition(
       },
       {
         id: 'withdrawnAt',
+        numeric: true,
         field: 'withdrawnAt',
         header: translate.instant(
           'pages.data_protection.consents.columns.withdrawn_at'
@@ -221,6 +225,7 @@ export function getConsentTableDefinition(
       },
       {
         id: 'createdOn',
+        numeric: true,
         field: 'createdOn',
         header: translate.instant(
           'pages.data_protection.consents.columns.created_on'

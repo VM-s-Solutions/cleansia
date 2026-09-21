@@ -1,22 +1,19 @@
-import { CommonModule } from '@angular/common';
 import {
-  AfterViewInit,
   ChangeDetectionStrategy,
-  ChangeDetectorRef,
   Component,
+  computed,
   inject,
-  OnDestroy,
+  OnInit,
   signal,
   TemplateRef,
   viewChild,
 } from '@angular/core';
-import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
-import {
-  AdminReferralListItem,
-  ReferralStatus,
-} from '@cleansia/admin-services';
+import { ReactiveFormsModule } from '@angular/forms';
+import { AdminReferralListItem } from '@cleansia/admin-services';
 import {
   CleansiaCalendarComponent,
+  CleansiaFilterChipsComponent,
+  CleansiaFilterDrawerComponent,
   CleansiaLoaderComponent,
   CleansiaSectionComponent,
   CleansiaSelectComponent,
@@ -24,35 +21,27 @@ import {
   CleansiaTableComponent,
   CleansiaTitleComponent,
   PaginationState,
-  TableAction,
-  TableColumn,
 } from '@cleansia/components';
 import { PermissionService, Policy } from '@cleansia/services';
-import { formatDate } from '@cleansia/utils';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
-import { Subject, debounceTime, distinctUntilChanged, takeUntil } from 'rxjs';
 import {
   ReferralInterventionDialogComponent,
   ReferralInterventionMode,
   ReferralInterventionSubmit,
 } from '../referral-intervention-dialog/referral-intervention-dialog.component';
-import {
-  getReferralInterventionActions,
-} from './referrals-list.models';
-import {
-  ReferralStatusFilter,
-  ReferralsListFacade,
-} from './referrals-list.facade';
+import { ReferralsListFacade } from './referrals-list.facade';
+import { getReferralInterventionActions, getReferralTableColumns } from './referrals-list.models';
 
 @Component({
   selector: 'cleansia-admin-referrals-list',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
-    CommonModule,
     ReactiveFormsModule,
     TranslatePipe,
     CleansiaCalendarComponent,
+    CleansiaFilterChipsComponent,
+    CleansiaFilterDrawerComponent,
     CleansiaLoaderComponent,
     CleansiaSectionComponent,
     CleansiaSelectComponent,
@@ -64,187 +53,42 @@ import {
   templateUrl: './referrals-list.component.html',
   providers: [ReferralsListFacade],
 })
-export class ReferralsListComponent implements AfterViewInit, OnDestroy {
-  private readonly fb = inject(FormBuilder);
+export class ReferralsListComponent implements OnInit {
   private readonly translate = inject(TranslateService);
-  private readonly cd = inject(ChangeDetectorRef);
   private readonly permissionService = inject(PermissionService);
   protected readonly facade = inject(ReferralsListFacade);
 
-  readonly ReferralStatus = ReferralStatus;
-
-  private readonly destroy$ = new Subject<void>();
-
-  statusTemplate = viewChild<TemplateRef<AdminReferralListItem>>(
-    'statusTemplate'
-  );
-  pointsTemplate = viewChild<TemplateRef<AdminReferralListItem>>(
-    'pointsTemplate'
-  );
-
-  referralColumns!: TableColumn<AdminReferralListItem>[];
-  referralActions!: TableAction<AdminReferralListItem>[];
+  private readonly statusTemplate = viewChild<TemplateRef<AdminReferralListItem>>('statusTemplate');
+  private readonly pointsTemplate = viewChild<TemplateRef<AdminReferralListItem>>('pointsTemplate');
 
   readonly dialogVisible = signal<boolean>(false);
   readonly dialogMode = signal<ReferralInterventionMode>('reverse');
   private interventionTarget: AdminReferralListItem | null = null;
 
-  filterForm = this.fb.group({
-    status: ['all' as ReferralStatusFilter],
-    dateFrom: [null as Date | null],
-    dateTo: [null as Date | null],
+  protected readonly table = computed(() => {
+    this.facade.lang();
+    return {
+      columns: getReferralTableColumns(this.translate, this.statusTemplate(), this.pointsTemplate()),
+      actions: getReferralInterventionActions(
+        {
+          canIntervene: this.permissionService.hasPolicy(Policy.CanInterveneReferral),
+          onReverse: (row) => this.openIntervention(row, 'reverse'),
+          onForceQualify: (row) => this.openIntervention(row, 'forceQualify'),
+        },
+        this.translate
+      ),
+    };
   });
 
-  statusOptions = [
-    { label: 'pages.loyalty_referrals.filter.status_all', value: 'all' },
-    {
-      label: 'pages.loyalty_referrals.filter.status_accepted',
-      value: 'accepted',
-    },
-    {
-      label: 'pages.loyalty_referrals.filter.status_qualified',
-      value: 'qualified',
-    },
-    {
-      label: 'pages.loyalty_referrals.filter.status_expired',
-      value: 'expired',
-    },
-    {
-      label: 'pages.loyalty_referrals.filter.status_reversed',
-      value: 'reversed',
-    },
-  ];
-
-  get translatedStatusOptions(): { label: string; value: string }[] {
-    return this.statusOptions.map((opt) => ({
-      label: this.translate.instant(opt.label),
-      value: opt.value,
-    }));
-  }
-
-  ngAfterViewInit(): void {
-    this.rebuildTableDefinitions();
-    this.cd.detectChanges();
-
-    this.filterForm.controls.status.valueChanges
-      .pipe(distinctUntilChanged(), takeUntil(this.destroy$))
-      .subscribe(() => this.applyFilters());
-
-    // Auto-apply on date changes with a short debounce so a user picking a
-    // date doesn't trigger two requests if they're navigating the calendar.
-    this.filterForm.controls.dateFrom.valueChanges
-      .pipe(debounceTime(250), distinctUntilChanged(), takeUntil(this.destroy$))
-      .subscribe(() => this.applyFilters());
-
-    this.filterForm.controls.dateTo.valueChanges
-      .pipe(debounceTime(250), distinctUntilChanged(), takeUntil(this.destroy$))
-      .subscribe(() => this.applyFilters());
-
-    this.translate.onLangChange
-      .pipe(takeUntil(this.destroy$))
-      .subscribe(() => {
-        this.rebuildTableDefinitions();
-        this.cd.detectChanges();
-      });
-
+  ngOnInit(): void {
     this.facade.loadReferrals();
-  }
-
-  ngOnDestroy(): void {
-    this.destroy$.next();
-    this.destroy$.complete();
-    this.facade.ngOnDestroy();
-  }
-
-  private rebuildTableDefinitions(): void {
-    this.referralActions = getReferralInterventionActions(
-      {
-        canIntervene: this.permissionService.hasPolicy(
-          Policy.CanInterveneReferral
-        ),
-        onReverse: (row) => this.openIntervention(row, 'reverse'),
-        onForceQualify: (row) => this.openIntervention(row, 'forceQualify'),
-      },
-      this.translate
-    );
-    this.referralColumns = [
-      {
-        id: 'referrer',
-        field: 'referrerEmail',
-        header: this.translate.instant('pages.loyalty_referrals.column.referrer'),
-        getValue: (row) => row.referrerEmail || '—',
-        width: '20%',
-      },
-      {
-        id: 'referred',
-        field: 'referredEmail',
-        header: this.translate.instant('pages.loyalty_referrals.column.referred'),
-        getValue: (row) => row.referredEmail || '—',
-        width: '20%',
-      },
-      {
-        id: 'status',
-        field: 'status',
-        header: this.translate.instant('pages.loyalty_referrals.column.status'),
-        customTemplate: this.statusTemplate(),
-        width: '12%',
-      },
-      {
-        id: 'acceptedOn',
-        field: 'acceptedOn',
-        header: this.translate.instant(
-          'pages.loyalty_referrals.column.accepted_on'
-        ),
-        getValue: (row) => this.formatDate(row.acceptedOn),
-        width: '14%',
-      },
-      {
-        id: 'qualifiedOn',
-        field: 'firstQualifyingOrderOn',
-        header: this.translate.instant(
-          'pages.loyalty_referrals.column.qualified_on'
-        ),
-        getValue: (row) => this.formatDate(row.firstQualifyingOrderOn),
-        width: '14%',
-      },
-      {
-        id: 'pointsAwarded',
-        field: 'pointsAwardedToReferrer',
-        header: this.translate.instant(
-          'pages.loyalty_referrals.column.points_awarded'
-        ),
-        customTemplate: this.pointsTemplate(),
-        width: '20%',
-      },
-    ];
-  }
-
-  applyFilters(): void {
-    const v = this.filterForm.value;
-    this.facade.applyFilter({
-      status: (v.status ?? 'all') as ReferralStatusFilter,
-      dateFrom: v.dateFrom ?? undefined,
-      dateTo: v.dateTo ?? undefined,
-    });
-  }
-
-  resetFilters(): void {
-    this.filterForm.reset({ status: 'all', dateFrom: null, dateTo: null });
-    this.facade.resetFilter();
   }
 
   onPageChange(event: PaginationState): void {
     this.facade.onPageChange(event.first, event.rows);
   }
 
-  formatDate(d?: Date): string {
-    return formatDate(d, this.translate.currentLang) || this.translate.instant('pages.loyalty_referrals.not_yet');
-  }
-
-  openIntervention(
-    row: AdminReferralListItem,
-    mode: ReferralInterventionMode
-  ): void {
+  openIntervention(row: AdminReferralListItem, mode: ReferralInterventionMode): void {
     this.interventionTarget = row;
     this.dialogMode.set(mode);
     this.dialogVisible.set(true);
@@ -270,10 +114,7 @@ export class ReferralsListComponent implements AfterViewInit, OnDestroy {
   }
 
   formatPointsAwarded(row: AdminReferralListItem): string {
-    if (
-      row.pointsAwardedToReferrer == null &&
-      row.pointsAwardedToReferred == null
-    ) {
+    if (row.pointsAwardedToReferrer == null && row.pointsAwardedToReferred == null) {
       return this.translate.instant('pages.loyalty_referrals.not_yet');
     }
     return this.translate.instant('pages.loyalty_referrals.points_format', {

@@ -1,10 +1,14 @@
 import { Injectable, inject, signal } from '@angular/core';
+import { FormBuilder } from '@angular/forms';
 import {
   AdminMembershipClient,
   MembershipPlanListItem,
 } from '@cleansia/admin-services';
+import { FilterChip, FilterDrawerState } from '@cleansia/components';
 import { UnsubscribeControlDirective } from '@cleansia/directives';
 import { DialogService, SnackbarService } from '@cleansia/services';
+import { currentLanguage } from '@cleansia/utils';
+import { TranslateService } from '@ngx-translate/core';
 import { catchError, filter, finalize, of, takeUntil } from 'rxjs';
 
 export interface MembershipPlanFilterParams {
@@ -17,6 +21,7 @@ export class MembershipPlanListFacade extends UnsubscribeControlDirective {
   private readonly membershipClient = inject(AdminMembershipClient);
   private readonly dialog = inject(DialogService);
   private readonly snackbar = inject(SnackbarService);
+  private readonly translate = inject(TranslateService);
 
   readonly plans = signal<MembershipPlanListItem[]>([]);
   readonly loading = signal<boolean>(false);
@@ -25,11 +30,51 @@ export class MembershipPlanListFacade extends UnsubscribeControlDirective {
   readonly hasError = signal<boolean>(false);
   readonly deactivating = signal<boolean>(false);
 
+  readonly lang = currentLanguage(this.translate);
+  readonly filterForm = inject(FormBuilder).nonNullable.group({
+    search: [''],
+    activeOnly: [false],
+  });
+  readonly filters = new FilterDrawerState({
+    form: this.filterForm,
+    lang: this.lang,
+    chips: (value): FilterChip[] => [
+      ...(value.search.trim()
+        ? [
+            {
+              key: 'search',
+              label: this.translate.instant('pages.membership_plans.filter.search_label'),
+              value: value.search.trim(),
+            },
+          ]
+        : []),
+      ...(value.activeOnly
+        ? [
+            {
+              key: 'activeOnly',
+              label: this.translate.instant('pages.membership_plans.filter.status'),
+              value: this.translate.instant('pages.membership_plans.filter.active_only'),
+            },
+          ]
+        : []),
+    ],
+    apply: (value) =>
+      this.applyFilter({
+        search: value.search.trim() || undefined,
+        active: value.activeOnly ? true : undefined,
+      }),
+  });
+
   private readonly currentFilter = signal<MembershipPlanFilterParams | null>(
     null
   );
   private readonly currentOffset = signal<number>(0);
   private readonly currentLimit = signal<number>(20);
+
+  constructor() {
+    super();
+    this.filters.connect(this.destroyed$);
+  }
 
   loadPlans(): void {
     this.loading.set(true);
@@ -70,12 +115,6 @@ export class MembershipPlanListFacade extends UnsubscribeControlDirective {
 
   applyFilter(filter: MembershipPlanFilterParams): void {
     this.currentFilter.set(filter);
-    this.currentOffset.set(0);
-    this.loadPlans();
-  }
-
-  resetFilter(): void {
-    this.currentFilter.set(null);
     this.currentOffset.set(0);
     this.loadPlans();
   }

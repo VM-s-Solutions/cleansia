@@ -23,6 +23,7 @@ export function getPayPeriodTableColumns(
     },
     {
       id: 'startDate',
+      numeric: true,
       field: 'startDate',
       header: 'pay_periods.list.columns.start_date',
       sortable: true,
@@ -31,6 +32,7 @@ export function getPayPeriodTableColumns(
     },
     {
       id: 'endDate',
+      numeric: true,
       field: 'endDate',
       header: 'pay_periods.list.columns.end_date',
       sortable: true,
@@ -39,6 +41,7 @@ export function getPayPeriodTableColumns(
     },
     {
       id: 'durationDays',
+      numeric: true,
       field: 'durationDays',
       header: 'pay_periods.list.columns.duration',
       width: '10%',
@@ -53,10 +56,12 @@ export function getPayPeriodTableColumns(
       header: 'pay_periods.list.columns.status',
       sortable: true,
       width: '12%',
+      align: 'center',
       customTemplate: statusTemplate,
     },
     {
       id: 'closedAt',
+      numeric: true,
       field: 'closedAt',
       header: 'pay_periods.list.columns.closed_at',
       width: '12%',

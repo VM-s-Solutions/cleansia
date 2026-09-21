@@ -2,7 +2,7 @@
   <div class="cleansia-document-requirements__container page-wrapper">
     <div class="cleansia-page-header">
       <div class="cleansia-page-header__heading">
-        <cleansia-title [title]="'pages.document_requirements.title' | translate" />
+        <cleansia-title [title]="'pages.document_requirements.title' | translate" [level]="1" />
         <p class="cleansia-page-header__description">
           {{ 'pages.document_requirements.description' | translate }}
         </p>
@@ -28,7 +28,7 @@
 
       @if (facade.selectedCountryId()) {
         <cleansia-section [title]="'pages.document_requirements.list_section' | translate">
-          <div class="section-actions">
+          <ng-container section-actions>
             <cleansia-button
               *cleansiaPermission="Policy.CanAdminUpdateEmployee"
               [label]="'pages.document_requirements.add' | translate"
@@ -36,7 +36,7 @@
               [disabled]="editing() !== null"
               (onClick)="startCreate()"
             />
-          </div>
+          </ng-container>
 
           <cleansia-table
             [data]="facade.requirements()"

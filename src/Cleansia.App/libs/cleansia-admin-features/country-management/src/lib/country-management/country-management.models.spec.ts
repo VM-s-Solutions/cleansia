@@ -1,4 +1,3 @@
-import { TemplateRef } from '@angular/core';
 import { CountryListItem } from '@cleansia/admin-services';
 import { PermissionService } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
@@ -17,19 +16,19 @@ describe('country-management models', () => {
       { onEdit: jest.fn(), onDelete: jest.fn(), onSetDefaultMarket: jest.fn() },
       translate,
       permissions,
-      undefined,
-      {} as TemplateRef<CountryListItem>
+      undefined
     );
   }
 
-  describe('default-market badge column', () => {
-    it('renders the badge through its template on the isDefaultMarket field', () => {
+  describe('default-market column', () => {
+    it('says yes on the default market and draws a dash, never a blank, on every other row', () => {
       const column = tableDefinition().columns.find((c) => c.id === 'isDefaultMarket');
 
       expect(column).toBeDefined();
       expect(column?.field).toBe('isDefaultMarket');
       expect(column?.header).toBe('pages.country_management.columns.default_market');
-      expect(column?.customTemplate).toBeDefined();
+      expect(column?.getValue?.(defaultRow)).toBe('global.yes');
+      expect(column?.getValue?.(otherRow)).toBe('—');
     });
   });
 

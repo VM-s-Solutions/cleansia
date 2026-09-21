@@ -106,9 +106,9 @@
       @if (facade.initialLoading()) {
       <cleansia-loader />
       } @else if (facade.hasError()) {
-      <div class="cleansia-audit-log__state">
-        <i class="pi pi-exclamation-triangle"></i>
-        <p>{{ 'pages.audit_log.customers.load_error' | translate }}</p>
+      <div class="not-found-state">
+        <div class="not-found-state__icon"><i class="pi pi-exclamation-triangle"></i></div>
+        <p class="not-found-state__message">{{ 'pages.audit_log.customers.load_error' | translate }}</p>
       </div>
       } @else {
       <cleansia-table

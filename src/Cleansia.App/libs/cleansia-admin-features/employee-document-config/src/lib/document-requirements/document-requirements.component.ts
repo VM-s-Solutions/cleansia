@@ -109,7 +109,7 @@ export class DocumentRequirementsComponent implements OnInit, OnDestroy {
       id: 'sortOrder',
       field: 'sortOrder',
       header: 'pages.document_requirements.columns.sort_order',
-      align: 'center',
+      numeric: true,
     },
   ];
 

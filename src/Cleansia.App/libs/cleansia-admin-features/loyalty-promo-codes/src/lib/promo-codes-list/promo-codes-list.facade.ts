@@ -1,11 +1,15 @@
-import { Injectable, inject, signal } from '@angular/core';
+import { Injectable, computed, inject, signal } from '@angular/core';
+import { FormBuilder } from '@angular/forms';
 import { Router } from '@angular/router';
 import {
   AdminClient,
   PromoCodeListItem,
 } from '@cleansia/admin-services';
+import { FilterChip, FilterDrawerState, ICleansiaSelectOption } from '@cleansia/components';
 import { UnsubscribeControlDirective } from '@cleansia/directives';
 import { DialogService, SnackbarService } from '@cleansia/services';
+import { currentLanguage } from '@cleansia/utils';
+import { TranslateService } from '@ngx-translate/core';
 import { catchError, filter, finalize, of, takeUntil } from 'rxjs';
 
 export type PromoCodeStatusFilter = 'all' | 'active' | 'inactive' | 'expired';
@@ -15,11 +19,19 @@ export interface PromoCodeFilterParams {
   status?: PromoCodeStatusFilter;
 }
 
+const STATUS_FILTER_LABEL_KEYS: Readonly<Record<PromoCodeStatusFilter, string>> = {
+  all: 'pages.promo_codes.status_filter_all',
+  active: 'pages.promo_codes.status_filter_active',
+  inactive: 'pages.promo_codes.status_filter_inactive',
+  expired: 'pages.promo_codes.status_filter_expired',
+};
+
 @Injectable()
 export class PromoCodesListFacade extends UnsubscribeControlDirective {
   private readonly adminClient = inject(AdminClient);
   private readonly dialog = inject(DialogService);
   private readonly snackbarService = inject(SnackbarService);
+  private readonly translate = inject(TranslateService);
   private readonly router = inject(Router);
 
   readonly promoCodes = signal<PromoCodeListItem[]>([]);
@@ -27,9 +39,56 @@ export class PromoCodesListFacade extends UnsubscribeControlDirective {
   readonly initialLoading = signal<boolean>(true);
   readonly totalRecords = signal<number>(0);
 
+  readonly lang = currentLanguage(this.translate);
+  readonly statusFilterOptions = computed<ICleansiaSelectOption[]>(() => {
+    this.lang();
+    return (Object.keys(STATUS_FILTER_LABEL_KEYS) as PromoCodeStatusFilter[]).map((value) => ({
+      label: this.translate.instant(STATUS_FILTER_LABEL_KEYS[value]),
+      value,
+    }));
+  });
+  readonly filterForm = inject(FormBuilder).nonNullable.group({
+    searchCode: [''],
+    status: ['all' as PromoCodeStatusFilter],
+  });
+  readonly filters = new FilterDrawerState({
+    form: this.filterForm,
+    lang: this.lang,
+    chips: (value): FilterChip[] => [
+      ...(value.searchCode.trim()
+        ? [
+            {
+              key: 'searchCode',
+              label: this.translate.instant('pages.promo_codes.filters.search'),
+              value: value.searchCode.trim(),
+            },
+          ]
+        : []),
+      ...(value.status !== 'all'
+        ? [
+            {
+              key: 'status',
+              label: this.translate.instant('pages.promo_codes.filters.status'),
+              value: this.translate.instant(STATUS_FILTER_LABEL_KEYS[value.status]),
+            },
+          ]
+        : []),
+    ],
+    apply: (value) =>
+      this.applyFilter({
+        searchCode: value.searchCode.trim() || undefined,
+        status: value.status,
+      }),
+  });
+
   private currentFilter = signal<PromoCodeFilterParams>({ status: 'all' });
   private currentOffset = signal<number>(0);
   private currentLimit = signal<number>(20);
+
+  constructor() {
+    super();
+    this.filters.connect(this.destroyed$);
+  }
 
   loadPromoCodes(): void {
     this.loading.set(true);
@@ -68,12 +127,6 @@ export class PromoCodesListFacade extends UnsubscribeControlDirective {
 
   applyFilter(filter: PromoCodeFilterParams): void {
     this.currentFilter.set(filter);
-    this.currentOffset.set(0);
-    this.loadPromoCodes();
-  }
-
-  resetFilter(): void {
-    this.currentFilter.set({ status: 'all' });
     this.currentOffset.set(0);
     this.loadPromoCodes();
   }

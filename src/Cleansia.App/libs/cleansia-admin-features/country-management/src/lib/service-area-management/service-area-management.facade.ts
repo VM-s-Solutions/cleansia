@@ -33,12 +33,6 @@ export class ServiceAreaManagementFacade extends UnsubscribeControlDirective {
   readonly countries = signal<CountryListItem[]>([]);
   readonly cities = signal<ServiceCityDto[]>([]);
   readonly servicedCountryIds = signal<Set<string>>(new Set());
-  /**
-   * Bumped when the server refuses a serviced toggle (`country.market_not_ready`). The switch is
-   * bound one-way to the serviced set, which the refusal leaves unchanged, so nothing would
-   * otherwise pull the flipped control back to the stored value; the row keys on this and re-renders.
-   */
-  readonly servicedToggleRevision = signal<number>(0);
   readonly loading = signal<boolean>(false);
   readonly initialLoading = signal<boolean>(true);
 
@@ -91,7 +85,12 @@ export class ServiceAreaManagementFacade extends UnsubscribeControlDirective {
       });
   }
 
+  // The switch is bound one-way to the serviced set, so the set flips before the server answers
+  // and flips back on a refusal (`country.market_not_ready`); that is what pulls the control back.
   setCountryServiced(countryId: string, isServiced: boolean): void {
+    const before = this.servicedCountryIds();
+    this.servicedCountryIds.set(this.withServiced(before, countryId, isServiced));
+
     const body = new AdminCountryControllerSetCountryServicedRequest();
     body.isServiced = isServiced;
     this.adminClient.adminCountryClient
@@ -102,17 +101,21 @@ export class ServiceAreaManagementFacade extends UnsubscribeControlDirective {
       )
       .subscribe((response) => {
         if (!response) {
-          this.servicedToggleRevision.update((revision) => revision + 1);
+          this.servicedCountryIds.set(before);
           return;
         }
-        const next = new Set(this.servicedCountryIds());
-        if (response.isServiced) next.add(countryId);
-        else next.delete(countryId);
-        this.servicedCountryIds.set(next);
+        this.servicedCountryIds.set(this.withServiced(before, countryId, !!response.isServiced));
         this.snackbarService.showSuccessTranslated(
           'pages.service_area_management.messages.country_updated'
         );
       });
+  }
+
+  private withServiced(ids: Set<string>, countryId: string, isServiced: boolean): Set<string> {
+    const next = new Set(ids);
+    if (isServiced) next.add(countryId);
+    else next.delete(countryId);
+    return next;
   }
 
   loadCities(countryId?: string): void {

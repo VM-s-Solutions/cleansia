@@ -57,7 +57,7 @@ export function getMembershipPlanTableDefinition(
         id: 'code',
         field: 'code',
         header: translate.instant('pages.membership_plans.columns.code'),
-        width: '11%',
+        width: '10%',
       },
       {
         id: 'name',
@@ -77,6 +77,7 @@ export function getMembershipPlanTableDefinition(
       },
       {
         id: 'price',
+        numeric: true,
         field: 'price',
         header: translate.instant('pages.membership_plans.columns.price'),
         getValue: (row) => formatPlanPrice(row.price, row.currencyCode),
@@ -84,23 +85,25 @@ export function getMembershipPlanTableDefinition(
       },
       {
         id: 'monthlyEquivalentPrice',
+        numeric: true,
         field: 'monthlyEquivalentPrice',
         header: translate.instant(
           'pages.membership_plans.columns.monthly_equivalent'
         ),
         getValue: (row) =>
           formatPlanPrice(row.monthlyEquivalentPrice, row.currencyCode),
-        width: '11%',
+        width: '10%',
       },
       {
         id: 'currencyCode',
         field: 'currencyCode',
         header: translate.instant('pages.membership_plans.columns.currency'),
         getValue: (row) => row.currencyCode ?? '',
-        width: '7%',
+        width: '6%',
       },
       {
         id: 'discountPercentage',
+        numeric: true,
         field: 'discountPercentage',
         header: translate.instant('pages.membership_plans.columns.discount'),
         getValue: (row) =>
@@ -109,12 +112,13 @@ export function getMembershipPlanTableDefinition(
       },
       {
         id: 'freeCancellationWindowHours',
+        numeric: true,
         field: 'freeCancellationWindowHours',
         header: translate.instant(
           'pages.membership_plans.columns.free_cancel_window'
         ),
         getValue: (row) => `${row.freeCancellationWindowHours ?? 0}`,
-        width: '8%',
+        width: '7%',
       },
       {
         id: 'allowsExpressUpgrade',
@@ -122,14 +126,15 @@ export function getMembershipPlanTableDefinition(
         header: translate.instant('pages.membership_plans.columns.express'),
         getValue: (row) =>
           translate.instant(row.allowsExpressUpgrade ? 'global.yes' : 'global.no'),
-        width: '7%',
+        width: '6%',
       },
       {
         id: 'isActive',
         field: 'isActive',
         header: translate.instant('pages.membership_plans.columns.status'),
+        align: 'center',
         customTemplate: statusTemplate,
-        width: '11%',
+        width: '10%',
       },
     ],
     actions: [

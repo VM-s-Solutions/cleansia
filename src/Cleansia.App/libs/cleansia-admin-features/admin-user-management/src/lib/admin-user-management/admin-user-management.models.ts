@@ -50,11 +50,13 @@ export function getAdminUserTableDefinition(
         id: 'status',
         field: 'isActive',
         header: translate.instant('pages.admin_user_management.columns.status'),
+        align: 'center',
         customTemplate: statusTemplate,
         width: '10%',
       },
       {
         id: 'createdAt',
+        numeric: true,
         field: 'createdAt',
         header: translate.instant('pages.admin_user_management.columns.created_at'),
         getValue: (row: AdminUserListItem) => formatDate(row.createdAt, translate.currentLang),
@@ -63,6 +65,7 @@ export function getAdminUserTableDefinition(
       },
       {
         id: 'lastLoginAt',
+        numeric: true,
         field: 'lastLoginAt',
         header: translate.instant('pages.admin_user_management.columns.last_login'),
         getValue: (row: AdminUserListItem) => formatDate(row.lastLoginAt, translate.currentLang),

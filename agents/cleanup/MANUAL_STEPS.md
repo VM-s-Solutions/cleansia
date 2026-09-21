@@ -111,7 +111,12 @@ table count is now **88** and 49 tables carry the `Tenants` FK. The Postgres int
 (`TakeOrderWorkContractTests` on the seat-race fixture, `WorkContractAcceptanceRetentionTests`,
 `CompanyArchiveBundleTests`) and the host suite (`WorkContractRouteTests`) first execute in CI — Docker
 was down on the box again.
-**The one owed drop belongs to `20260919231739`**: a DEV database whose
+The UI-polish removals (T-0791, `38312c8d`, 2026-09-20, branch `chore/ui-polish-and-dead-code` stacked on PR #255)
+regenerated `Initial` once more as **`20260920204705`**: `Employees.Availability` dropped, `Employees.PreferredCurrencyCode`
+dropped, the three `Cart*` tables and `EmailTranslations` dropped, `MembershipPlans.TrialPeriodDays` dropped (the
+owner's Q-UI-01/02 rulings); the table count is now **84** and 48 carry the `Tenants` FK. The integration suite ran
+in full locally (Docker up) and green.
+**The one owed drop belongs to `20260920204705`**: a DEV database whose
 `__EFMigrationsHistory` records any earlier id replays the whole create script against tables that
 already exist. The legal texts need no extra step — every host seeds them at start, and since
 `b34dff07` a fresh Development database is seeded once more in the boot that migrates it (the factory

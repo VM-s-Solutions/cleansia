@@ -298,4 +298,41 @@
 > with their defaults, every one shipped as its default. Open rows: none — T-0782 closed on 2026-09-20
 > once the orchestrator ran the three checks the ticket names (docs-refs, catalog-claims, the VitePress build).
 
-*Next id: **T-0785**.*
+| T-0785 | Admin shell — one page wrapper, one header, one button width, one field height, one section with an action slot, one label/value grid, the 18 referenced-but-undefined tokens, the z-index scale, one focus ring; `page-shell.spec.ts` guards it in `frontend-ci` | M | `todo` | — | phase 2, web-shared lane, first of the serial four; after T-0793 |
+| T-0786 | Shared primitives — `cleansia-status-badge` (ten kinds, five tones), `formatDate`, every money figure through `formatMoney`, table `align` honoured, the paginator hidden on zero rows, one row-action style | M | `todo` | — | phase 2, web-shared lane; after T-0785 |
+| T-0787 | Admin list pages — the 28 lists on one pattern (header, `Filtry` then `Vytvořit`, right-aligned numbers, width budgets ≤ 90 %, one row-action style, `h1`) plus the page-local defects the 1440 captures show | M | `todo` | — | phase 3, admin lane, first of four; after T-0785, T-0786, T-0794 |
+| T-0788 | Admin detail pages — the 11 details on one pattern (breadcrumb above the title, audit link on the title row's right, `[section-actions]`, `.detail-grid`, one outlined `Akce` row, no green/orange/blue fills, the 41 inline `style=""` gone, the not-found block) | L | `todo` | — | phase 3, admin lane, second of four; after T-0791, T-0796, T-0797 (the breadcrumb) |
+| T-0789 | Admin create / edit forms — the 14 forms on the pay-config shape (12-column `form-grid` in `common/`, spans not pixels, 44 px fields, row hints, `Zrušit` + primary footer), `cleansia-multiselect` adopted, the last five `*ngIf` gone | M | `todo` | — | phase 3, admin lane, third of four; after T-0785 |
+| T-0790 | Admin dialogs — the 12 `p-dialog` templates on one footer shape, the two confirmations that cannot open (*Deactivate plan*, *Erase user*) fixed, translated labels on the 11 bare `.confirm({...})` sites; the "Create pay period" stub's layout only (Q-UI-04) | S | `todo` | — | phase 3, admin lane, last of four; after T-0785, T-0796 |
+| T-0791 | Remove the availability module end to end — `TimeRange`, `DayOfWeek`, two commands, two routes, the `Employees.Availability` column, the admin section, the 1 018-line shared component, the partner-web and mobile remnants, the two wire members (Q-UI-01); **`Cart` ×3, `EmailTranslations`, `Employee.PreferredCurrencyCode`, `MembershipPlan.TrialPeriodDays` folded in (Q-UI-02)**; the batch's one `Initial` regen, three NSwag clients, both mobile spec re-dumps, the DEV drop owed at the deploy | L | `in_progress` | — | opened 2026-09-20 on the branch; phase 1, runs first and alone |
+| T-0792 | Backend dead code — `DeleteDocument`, eight unattributed `Policy` constants (one hunk across four files), 36 unemitted error keys with their 15-file locale twins, 25 repository methods, 25 domain members, three orphan files, the partner-host routes no client calls, three admin routes with no caller; `PolicyAttributionTests` + `BusinessErrorMessageEmittedTests` so it stays gone | M | `in_progress` | — | opened 2026-09-20 on the branch; phase 1, after T-0791, beside T-0793 |
+| T-0793 | Web dead code — `cleansia-menu`, the table skeleton, three pipes, two unrouted admin components, both `user` NgRx slices (one wasted `GET /User/GetCurrent` per partner login), the declaration-only exports, the dead i18n sections in five locales, the orphan stylesheets and 12+ dead `.p-datatable` blocks; the free-trial UI T-0690 left; the pre-ADR-0057 help copy rewritten | M | `in_progress` | — | opened 2026-09-20 on the branch; phase 1, after T-0791, beside T-0792 |
+| T-0794 | `cleansia-filter-drawer` — one drawer (the partner's dialog semantics), one chip row, a `FilterDrawerState` helper replacing the eleven methods re-declared in 13 admin + 2 partner components, the 55 raw drawer buttons gone with it | M | `todo` | — | phase 2, web-shared lane; after T-0785, before T-0787 |
+| T-0795 | Shell parity — `cleansia-mobile-toolbar`, one `common/auth.scss`, the print rule shared, four guards return a `UrlTree`, admin routes on `CleansiaAdminRoute`, sidebar `aria-current` + translated labels, two route titles | M | `todo` | — | phase 2, may run beside the web-shared four (disjoint files); after T-0785 |
+| T-0796 | One confirmation, one toast, one loading, one empty state — the root `DialogService` only (17 local `<p-confirmDialog>` + 18 providers gone), PrimeNG locale from the bundle, the 16 double-toast `*_ERROR_KEY_MAP`s retired, in-place skeletons, `not-found-state` + `empty-state`, one Cancel key | M | `todo` | — | phase 2, web-shared lane, last of the serial four; after T-0785 |
+| T-0797 | Partner web sweep onto the shared primitives — the `cleansia-button` legacy API deleted (one two-token customer edit), five dialogs on the admin shape, eleven raw icon buttons wrapped, `Nová` in the same pill family as `Zaplaceno`, headers on the shell rule, `cleansia-breadcrumb` (Q-UI-08), `!important` 61 → ≤ 1, `::ng-deep` 19 → 0 | M | `todo` | — | phase 3, partner lane, beside the admin lane; after T-0785, T-0786, T-0793 |
+| T-0798 | `check-consistency.mjs` — F1–F15 filed at `--warn` with today's counts, one self-test each, promoted to failing where the sweeps reach zero; `apps/` and `.html`/`.scss`/`.json` walked | S | `todo` | — | phase 4, tools lane; definitions any time, promotion after phase 3 |
+| T-0799 | Docs and living pages, last — availability out of the docs, the removed routes off the API reference and the two permission tables, `Cart` off the model, design-language + pattern pages, MS-2 / A1 to the new `Initial` id, the rows verified, the Q-UI rulings recorded, the changelog | S | `todo` | — | phase 4, docs lane, once everything is green |
+
+> **T-0785–T-0799 filed 2026-09-20** — the UI-polish and dead-code batch, on the owner's ruling of
+> that day (*"I want to polish alignments in admin app a bit on all of the overview/detail pages.
+> Also remove redundant and deprecated things that are no longer used (like availability module,
+> the same for backend). And make overall check on both apps to make them consistent"* — both = the
+> admin and partner **web** apps), planned from three scouts (visual, dead-code, consistency) whose
+> every load-bearing claim was re-grepped at `069b72ae` before a ticket was cut; only zero-reader
+> verdicts are ticketed, every OWNER verdict is a Q-UI question. Four phases on one branch
+> (`chore/ui-polish-and-dead-code`, stacked on #255): **phase 1** removals — T-0791 alone (the
+> batch's **only** `Initial` regen, three client regens, both spec re-dumps), then T-0792 ‖ T-0793;
+> **phase 2** the shared surface — T-0785 → T-0786 → T-0794 → T-0796 serial on the web-shared lane
+> (they all write under `libs/shared/`), T-0795 beside them; **phase 3** pages — the admin lane
+> T-0787 → T-0788 → T-0789 → T-0790 ‖ the partner lane T-0797; **phase 4** T-0798 then T-0799 last.
+> Removals run first so the polish tickets never restyle dead CSS. **The Q-UI defaults in force** (the
+> owner's *go* of 2026-09-20 accepted the list as put): Q-UI-01 the two availability wire members
+> drop now; **Q-UI-02 the four dead schema things fold into T-0791's regen** (the orchestrator's
+> recommendation over the analyst's park — one migration, one DEV drop, the customer client and
+> customer mobile spec join the regen list); Q-UI-03 / 04 / 05 / 12 keep; Q-UI-06 amend the design
+> language rather than load Poppins; Q-UI-08 breadcrumb; Q-UI-07 / 09 / 10 / 11 / 13 leave. All
+> thirteen are in `questions/open.md` with their defaults and on the owner plate. The DEV drop the
+> regen owes is recorded at the deploy (MS-2 shape), not run on the branch. Open rows: T-0785–T-0799.
+
+*Next id: **T-0800**.*

@@ -43,6 +43,171 @@ names the `Q-` id.** A question with no blocked row behind it is a question nobo
 > are the lawyer's to answer with the owner (01, 03, 04, 05, 07); two are the owner's alone (02, 06).
 > None blocks anything.
 
+> **Q-UI-01 … 13 were raised by the UI-polish and dead-code discovery (2026-09-20, T-0785 … T-0799
+> on `chore/ui-polish-and-dead-code`).** Each is what the code could not decide; each ships as its
+> default unless overruled before its ticket starts. **The owner's *go* of 2026-09-20 accepted the
+> list as put:** Q-UI-01 (drop the two wire members) and Q-UI-02 (**fold** the four dead schema
+> things into T-0791's regen — the orchestrator's recommendation, not the analyst's *park*) are
+> **ruled** and carried by T-0791; they are listed here only until T-0791 ships, then deleted per the
+> rule above (the ticket is the record). The other eleven stand as defaults in force — every one is
+> a *keep* / *leave* / *amend the doc* that costs nothing to overrule later. None blocks anything.
+
+## Q-UI-01 — The two availability wire members: drop now or after one mobile release?
+
+**Raised by:** the dead-code scout (DC §1.4), 2026-09-20. **Who answers:** the owner.
+**Why it needs you:** `EmployeeItem.Availability` (partner `GetCurrentEmployee`) and
+`RegistrationCompletionStatus.HasSetAvailability` are on the wire to the partner web and both
+mobile apps; no client *reads* either (the web `registration-completion.service.ts` gates on a value
+the server hard-codes `true`; Android and iOS have only wire tests). Dropping them changes the DTO
+the generated mobile models expect; with optional decoding an absent member is fine on both
+platforms, but it costs two Swift test lines in the batch's one Mac session. Options: (a) drop now —
+one clean removal, batched; (b) keep both hard-coded for one release train, then a second ticket.
+**Default: (a)** — production does not exist (CLAUDE.md), so there is no installed base to stage
+for, and (b) leaves a lie on the wire.
+**Ruled 2026-09-20 (*go*): (a).** Carried by T-0791.
+**Blocks:** nothing.
+
+## Q-UI-02 — Four schema-level dead things: fold into T-0791's `Initial` regen or park?
+
+**Raised by:** the dead-code scout (DC §2.7), 2026-09-20. **Who answers:** the owner.
+**Why it needs you:** (1) `Cart` + `CartServiceItems` + `CartPackageItems` — written once per
+registration (`Register.cs:125`, `RegisterEmployee.cs:94`, `GoogleAuth.cs:200`, `AppleAuth.cs:229`),
+erased by GDPR (`GdprDeletionService.cs:141,435-436`), **read by no feature**; the wizard builds
+orders directly; `docs/domain/model.md:102-104,162-164` still draws it. (2) `EmailTranslations` table
++ aggregate + seed (`insert_seed_data.sql:458`, `seed/insert_email_translations.sql:57`) — the
+renderer reads `EmailTemplateTranslations`; the sole touch is the language delete-guard
+`LanguageRepository.cs:32`. (3) `Employee.PreferredCurrencyCode` — the only writer is the
+never-called `UpdatePreferredCurrency`; the only reader is the GDPR export (`GdprExportService.cs:48`);
+`PayPeriodBackgroundService.cs:398` and `GenerateInvoice.cs:95` document that the currency stopped
+coming from it. (4) `MembershipPlan.TrialPeriodDays` — T-0690 made it unsettable; the column and the
+DTO member remain on four admin DTOs and the customer plan DTOs. Options: (a) drop all four inside
+T-0791's regen (one migration, one DEV drop; the customer client + customer mobile spec + the
+model/docs pages join T-0791's list); (b) park — they cost nothing at rest except one dead `Carts`
+row per registration. **The analyst's default was (b)** (proportionality: no defect behind them);
+**the orchestrator recommended (a)** — it is exactly *"remove redundant things"* and the regen is
+happening anyway.
+**Ruled 2026-09-20 (*go*): (a) — fold.** Carried by T-0791 §B; the free-trial admin UI is T-0793's.
+**Blocks:** nothing.
+
+## Q-UI-03 — Partner host `POST api/Payment/webhook` and `api/v1/Health`: delete?
+
+**Raised by:** the dead-code scout (DC §2.8), 2026-09-20. **Who answers:** the owner (a fact about
+what is registered outside the repo).
+**Why it needs you:** `docs/api/webhooks.md:122-125` registers Stripe endpoints on the customer and
+customer-mobile hosts only; `docs/deployment/environment-config.md:320` still says *"forward-to
+:5000 # Partner API"* (stale). `HealthController` (175 lines, own DB + Stripe probes) is not what
+the deploy warms (`ReadinessHealthChecks.cs:42`, `deploy-azure.yml:706` use `/health`). Both need a
+fact only you hold: does anything external (the Stripe dashboard, a monitor) point at them?
+**Default applied: keep both**; T-0799 fixes the stale doc line either way.
+**Blocks:** nothing.
+
+## Q-UI-04 — Admin endpoints with no UI: wire, remove, or leave?
+
+**Raised by:** the dead-code scout (DC §2.9), 2026-09-20. **Who answers:** the owner.
+**Why it needs you:** `AdminPayPeriodController` `create/update/delete/open` exist and
+`adminPayPeriodClient.create` is generated (`admin-client.ts:13206`), yet the admin *Create pay
+period* dialog ends in `console.warn` (`pay-period-management.component.ts:318-319`) — a dead
+button in the live UI, the visible half-feature you will notice first. `AdminEmployeeDocumentController`
+`{documentId}/versions` and `AdminPayrollController` `generate-invoice` have no screen at all.
+Options per endpoint: (a) wire the UI (a story each); (b) remove the endpoint and, for pay periods,
+the button; (c) leave.
+**Default applied: (c) — leave all three**; T-0790 aligns the dialog's *layout* only.
+**Blocks:** nothing.
+
+## Q-UI-05 — ADR-designed states with no producer: build the producer or strike the state?
+
+**Raised by:** the dead-code scout (DC §2.4), 2026-09-20. **Who answers:** the owner (with the
+architect — both are ADR terms).
+**Why it needs you:** `PayoutDetailsStatus.NeedsReconfirmation` (ADR-0034 D5; every writer sets
+`Provided`) and `RefundStatus.Failed` (no `refund.failed` webhook handler; `Refund.cs:88-100` only
+moves `Pending → Succeeded`). Build the producer, or strike the state from the ADR and the enum (a
+wire enum → NSwag + both mobile specs)?
+**Default applied: leave both**; T-0799 adds a dated *what shipped* line to ADR-0034 and ADR-0006
+saying the state has no producer.
+**Blocks:** nothing.
+
+## Q-UI-06 — Headings: load Poppins in admin / partner, or amend the design language?
+
+**Raised by:** the consistency scout (CS §5), 2026-09-20. **Who answers:** the owner.
+**Why it needs you:** the design language (§1 / §2.3) says headings are Poppins and the web matches
+the apps; neither `apps/cleansia-admin.app/src/index.html:12` nor
+`apps/cleansia-partner.app/src/index.html:12` requests it and `%cleansia-title` sets no
+`font-family` (`cleansia-title.component.scss:21-28`), so every back-office heading is Nunito 600
+(the customer `index.html:44` loads Poppins). Options: (a) request `Poppins:wght@600;700` in both
+`index.html` and set `$font-heading` on `%cleansia-title` and `.cleansia-section__title` — two
+lines, every heading changes face; (b) amend the design language to say the back-office apps are
+Nunito-only and delete `$font-heading` from the two dialogs.
+**Default applied: (b) — amend the doc** (T-0799); this is a polish pass, not a type change on every
+page. (a) is one ticket-line if you want it.
+**Blocks:** nothing.
+
+## Q-UI-07 — Neutral palette to the design language's slate now?
+
+**Raised by:** the consistency scout (CS §5), 2026-09-20. **Who answers:** the owner.
+**Why it needs you:** `common/variables.scss` neutrals are Tailwind gray (`#111827`, `#6b7280`,
+`#d1d5db`, `#f9fafb`) where DL §2.1 prescribes slate (`#334155`, `#64748B`, `#E2E8F0`, `#F8FAFC`),
+and `--cleansia-red` is Material `#f44336` vs DL `#B91C1C`. One edit cascades into **all three** web
+apps, including the customer app that had its own passes this month.
+**Default applied: not in this batch** — T-0785 defines only the missing tokens; the neutral swap
+is a one-line follow-up whenever you say.
+**Blocks:** nothing.
+
+## Q-UI-08 — The detail page's back control: a breadcrumb above the title, or the header row?
+
+**Raised by:** the visual and consistency scouts (VF 6.4 vs CS §2), 2026-09-20. **Who answers:**
+the owner.
+**Why it needs you:** the admin has a back `cleansia-button` on the title row on 19 pages; the
+partner has a hand-rolled breadcrumb on 2 (`order-details.component.html:3-26`). The visual
+scout's canonical pattern says breadcrumb (it frees the title row for title-left / actions-right);
+the consistency scout says the header row is the majority and keyboard-correct as is. Either is
+one shared component.
+**Default applied: breadcrumb** as `cleansia-breadcrumb` with a real `routerLink` (T-0797 builds it,
+T-0788 adopts it) — it is what makes the header rule uniform across lists and details. If
+overruled, the two partner breadcrumbs become the header row and the admin keeps the back button.
+**Blocks:** nothing.
+
+## Q-UI-09 — Partner order-detail vocabulary: align to the admin's `.detail-grid`, or keep?
+
+**Raised by:** the visual scout (VF §5), 2026-09-20. **Who answers:** the owner.
+**Why it needs you:** the partner order detail renders values as read-only filled inputs, one card
+per section (`order-details.component.html:275-299`), while the admin uses label/value text.
+**Default applied: keep the partner's shape** — it is a different persona's working page and the
+scout found no defect in it beyond the shared ones (shell, header, badges, dates, money — T-0797).
+**Blocks:** nothing.
+
+## Q-UI-10 — Spacing tokens / an 8-pt grid?
+
+**Raised by:** the consistency scout (CS §5d), 2026-09-20. **Who answers:** the owner.
+**Why it needs you:** `html { font-size: 14px }` makes every rem gap miss the 8-pt grid; no spacing
+tokens exist. Define `--cleansia-space-{1..8}` in px and sweep, or leave rem-based spacing?
+**Default applied: leave** — the sweep only pays once the tokens exist, and this batch is
+alignment, not rhythm.
+**Blocks:** nothing.
+
+## Q-UI-11 — Does the partner web lag mobile by design?
+
+**Raised by:** the dead-code scout (DC §6.2), 2026-09-20. **Who answers:** the owner.
+**Why it needs you:** the partner web never calls `notifyOnTheWay`, `myPendingOffers` /
+`declinePreferredOffer`, `requestCover`, `dropOrder`, `getMyDocumentRequirements` — all live on the
+mobile host and in both mobile apps. Not dead code; is the web meant to lag?
+**Default applied: no change**; if "no", each is a story.
+**Blocks:** nothing.
+
+## Q-UI-12 — `partner-auth.service.ts:105 authenticateWithGoogle`: is Google sign-in coming to the partner web?
+
+**Raised by:** the dead-code scout (DC §3.5), 2026-09-20. **Who answers:** the owner.
+**Why it needs you:** only a spec calls it; the partner login has no Google button.
+**Default applied: keep** until answered (deleting is cheap later).
+**Blocks:** nothing.
+
+## Q-UI-13 — Country form: `ISO kód` and `Dvoupísmenný kód` read as duplicates
+
+**Raised by:** the visual scout (VF §4), 2026-09-20. **Who answers:** the owner.
+**Why it needs you:** `admin-country-management__create-1440.png` shows the two fields side by side
+on `country-form.component.html`. Are they two facts (ISO 3166-1 alpha-2 vs something else) or one?
+**Default applied: layout only** in T-0789; the fields stay.
+**Blocks:** nothing.
+
 ## Q-WC-01 — Which figure is the *cena díla* on the contract record — the customer's price or the cleaner's pay?
 
 **Raised by:** ADR-0068 D2 (2026-09-20). **Who answers:** the owner, with the lawyer (and the

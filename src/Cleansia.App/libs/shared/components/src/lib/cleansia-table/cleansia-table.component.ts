@@ -319,17 +319,6 @@ export class CleansiaTableComponent<T = unknown> implements OnInit {
     this.pageChange.emit(newState);
   }
 
-  getActionColor(color?: string): string {
-    const colorMap: Record<string, string> = {
-      warning: '#f59e0b',
-      danger: '#ef4444',
-      success: '#10b981',
-      info: '#3b82f6',
-      primary: '#0ea5e9',
-    };
-    return colorMap[color || ''] || '#6b7280';
-  }
-
   trackByFn(index: number, item: T): unknown {
     return (item as { id?: unknown }).id || index;
   }

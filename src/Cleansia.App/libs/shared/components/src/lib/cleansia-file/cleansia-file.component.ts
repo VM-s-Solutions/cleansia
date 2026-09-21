@@ -6,12 +6,6 @@ import { ErrorPipe } from '@cleansia/pipes';
 import { ButtonModule } from 'primeng/button';
 import { CleansiaBaseFormInputComponent } from '../cleansia-base-form';
 
-export interface FileItem {
-  name: string;
-  size: number;
-  type: string;
-}
-
 @Component({
   selector: 'cleansia-file',
   standalone: true,

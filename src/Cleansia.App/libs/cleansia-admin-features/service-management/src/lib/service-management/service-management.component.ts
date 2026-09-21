@@ -9,8 +9,7 @@ import {
   signal,
 } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
-import { CleansiaAdminRoute, PermissionService, Policy } from '@cleansia/services';
+import { PermissionService, Policy } from '@cleansia/services';
 import { CleansiaPermissionDirective } from '@cleansia/directives';
 import {
   ServiceListItem,
@@ -64,7 +63,6 @@ import {
 })
 export class ServiceManagementComponent implements AfterViewInit, OnDestroy {
   private readonly fb = inject(FormBuilder);
-  private readonly router = inject(Router);
   protected readonly facade = inject(ServiceManagementFacade);
   protected readonly Policy = Policy;
   private readonly translate = inject(TranslateService);
@@ -155,12 +153,6 @@ export class ServiceManagementComponent implements AfterViewInit, OnDestroy {
   ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
-  }
-
-  viewServiceDetails(service: ServiceListItem): void {
-    if (service.id) {
-      this.router.navigate([CleansiaAdminRoute.SERVICE_MANAGEMENT, service.id, 'edit']);
-    }
   }
 
   applyFilters(): void {

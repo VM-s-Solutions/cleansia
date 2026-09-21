@@ -156,14 +156,6 @@ export function canManagePhotos(
   return isPhotoEligibleStatus && isEmployeeAssigned(assignedEmployees, employeeId);
 }
 
-export function canUploadPhotos(
-  orderStatusValue: number,
-  assignedEmployees: AssignedEmployeeDto[] | undefined,
-  employeeId: string
-): boolean {
-  return orderStatusValue === OrderStatus.InProgress && isEmployeeAssigned(assignedEmployees, employeeId);
-}
-
 // Before photos: allowed during Confirmed or OnTheWay (preparation phase).
 export function canUploadBeforePhotos(
   orderStatusValue: number,
@@ -244,16 +236,6 @@ export function canAcceptWorkContract(
     isEmployeeAssigned(assignedEmployees, employeeId) &&
     findCallerWorkContractAcceptance(assignedEmployees, workContractAcceptances, employeeId) === null
   );
-}
-
-// Completion requires InProgress AND at least one After photo present.
-export function canCompleteOrderWithPhotos(
-  orderStatusValue: number,
-  assignedEmployees: AssignedEmployeeDto[] | undefined,
-  employeeId: string,
-  hasAfterPhotos: boolean
-): boolean {
-  return canCompleteOrder(orderStatusValue, assignedEmployees, employeeId) && hasAfterPhotos;
 }
 
 export function computeElapsedTime(

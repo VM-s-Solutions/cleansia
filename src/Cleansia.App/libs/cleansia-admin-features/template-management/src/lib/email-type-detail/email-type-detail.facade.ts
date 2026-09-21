@@ -59,10 +59,6 @@ export class EmailTypeDetailFacade extends UnsubscribeControlDirective {
       });
   }
 
-  selectLanguage(languageCode: string): void {
-    this.selectedLanguageCode.set(languageCode);
-  }
-
   updateTranslation(
     templateId: string,
     value: string,

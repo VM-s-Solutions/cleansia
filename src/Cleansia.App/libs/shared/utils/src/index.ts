@@ -1,6 +1,5 @@
 export * from './bfcache.utils';
 export * from './city-name-match';
-export * from './cookie.utils';
 export * from './date-formatters.utils';
 export * from './file-transformation.utils';
 export * from './form.utils';

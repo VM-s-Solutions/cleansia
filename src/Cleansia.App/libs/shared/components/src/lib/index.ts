@@ -17,7 +17,6 @@ export * from './cleansia-label';
 export * from './cleansia-language-switcher';
 export * from './cleansia-market-switcher';
 export * from './cleansia-loader';
-export * from './cleansia-menu';
 export * from './cleansia-multiselect';
 export * from './cleansia-not-found';
 export * from './cleansia-section';

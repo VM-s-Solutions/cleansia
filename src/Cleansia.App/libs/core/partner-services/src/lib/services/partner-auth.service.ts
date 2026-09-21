@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { Router } from '@angular/router';
-import { AUTH_COOKIE_KEYS, CommonRoute, LocalStorageKey, Role } from '@cleansia/services';
+import { AUTH_COOKIE_KEYS, CommonRoute, LocalStorageKey } from '@cleansia/services';
 import {
   getLocalStorageValueByKeyAsJSON,
   setLocalStorageValueByKey,
@@ -189,14 +189,6 @@ export class PartnerAuthService {
     return typeof localStorage === 'undefined'
       ? null
       : localStorage.getItem(this.cookieKeys.role);
-  }
-
-  isAdminOrEditor(): boolean {
-    if (!this.isLoggedIn()) {
-      return false;
-    }
-    const role = this.getRole();
-    return role === Role.ADMINISTRATOR || role === Role.EMPLOYEE;
   }
 
   setIsWarningShown(isShown: boolean): void {

@@ -7,7 +7,7 @@ import {
   JwtTokenResponse,
   PartnerAuthService,
 } from '@cleansia/partner-services';
-import { loadUserCurrent, selectLoading } from '@cleansia/partner-stores';
+import { selectLoading } from '@cleansia/partner-stores';
 import { CleansiaPartnerRoute, SnackbarService } from '@cleansia/services';
 import { Store } from '@ngrx/store';
 import { TranslateService } from '@ngx-translate/core';
@@ -45,7 +45,6 @@ export class LoginFacade extends UnsubscribeControlDirective {
             return;
           }
           this.authService.setSession(authResult);
-          this.store.dispatch(loadUserCurrent());
           this.router.navigate([CleansiaPartnerRoute.ORDERS]);
         },
         error: (err) => {

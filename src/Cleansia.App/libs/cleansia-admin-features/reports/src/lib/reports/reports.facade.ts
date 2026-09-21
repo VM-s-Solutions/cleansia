@@ -147,14 +147,6 @@ export class ReportsFacade extends UnsubscribeControlDirective {
     }
   }
 
-  refreshCurrentReport(): void {
-    if (this.activeTab() === 'revenue') {
-      this.loadRevenueReport();
-    } else {
-      this.loadPayrollReport();
-    }
-  }
-
   resetToDefaultDateRange(): void {
     const defaultStart = this.getDefaultStartDate();
     const defaultEnd = new Date();

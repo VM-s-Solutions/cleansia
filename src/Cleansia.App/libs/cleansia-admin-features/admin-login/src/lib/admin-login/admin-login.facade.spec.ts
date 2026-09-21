@@ -1,7 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
 import { AdminAuthService } from '@cleansia/admin-services';
-import { loadUserCurrent } from '@cleansia/admin-stores';
 import { CleansiaAdminRoute, SnackbarService } from '@cleansia/services';
 import { MockStore, provideMockStore } from '@ngrx/store/testing';
 import { TranslateService } from '@ngx-translate/core';
@@ -70,17 +69,15 @@ describe('AdminLoginFacade', () => {
     expect(facade.loading()).toBe(true);
   });
 
-  it('logs in a confirmed admin: session, current user load, navigation, loading cleared', () => {
+  it('logs in a confirmed admin: session, navigation, loading cleared', () => {
     authService.login.mockReturnValue(
       of({ isEmailConfirmed: true, hasAdminAccess: true })
     );
-    const dispatchSpy = jest.spyOn(store, 'dispatch');
     fillValid();
 
     facade.login();
 
     expect(authService.setSession).toHaveBeenCalled();
-    expect(dispatchSpy).toHaveBeenCalledWith(loadUserCurrent());
     expect(router.navigate).toHaveBeenCalledWith(['/' + CleansiaAdminRoute.HOME]);
     expect(facade.loading()).toBe(false);
   });

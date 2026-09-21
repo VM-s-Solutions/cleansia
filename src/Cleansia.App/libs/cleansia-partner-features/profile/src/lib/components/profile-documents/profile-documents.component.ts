@@ -51,8 +51,6 @@ const FILE_TEXT_COLORS: Record<string, string> = {
   default: '#6b7280',
 };
 
-const IMAGE_EXTENSIONS = new Set(['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp']);
-
 interface DocumentGroup {
   key: string;
   titleKey: string;
@@ -224,12 +222,6 @@ export class ProfileDocumentsComponent implements OnInit {
     if (!fileName) return FILE_TEXT_COLORS['default'];
     const ext = fileName.split('.').pop()?.toLowerCase() || '';
     return FILE_TEXT_COLORS[ext] || FILE_TEXT_COLORS['default'];
-  }
-
-  isImageFile(fileName: string | undefined): boolean {
-    if (!fileName) return false;
-    const ext = fileName.split('.').pop()?.toLowerCase() || '';
-    return IMAGE_EXTENSIONS.has(ext);
   }
 
   private buildDocumentTypeOptions(): void {

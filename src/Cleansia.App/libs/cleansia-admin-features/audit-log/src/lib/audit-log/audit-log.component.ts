@@ -162,16 +162,6 @@ export class AuditLogComponent implements AfterViewInit, OnDestroy {
     return getOutcomeLabelKey(audit.success);
   }
 
-  viewResourceHistory(audit: AdminActionAuditDto): void {
-    if (!audit.resourceType || !audit.resourceId) return;
-    this.router.navigate([
-      CleansiaAdminRoute.AUDIT_LOG,
-      'resource',
-      audit.resourceType,
-      audit.resourceId,
-    ]);
-  }
-
   viewEntry(audit: AdminActionAuditDto): void {
     if (!audit.id) return;
     this.router.navigate([CleansiaAdminRoute.AUDIT_LOG, 'entry', audit.id]);

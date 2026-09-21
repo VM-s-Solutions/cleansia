@@ -5,11 +5,7 @@ import {
   PartnerClient,
 } from '@cleansia/partner-services';
 import { PartnerPayoutDetailsService } from '@cleansia/partner-services';
-import {
-  DialogService,
-  FileValidationErrorService,
-  SnackbarService,
-} from '@cleansia/services';
+import { DialogService, SnackbarService } from '@cleansia/services';
 import { Store } from '@ngrx/store';
 import { TranslateService } from '@ngx-translate/core';
 import { of, throwError } from 'rxjs';
@@ -57,10 +53,6 @@ describe('ProfileFacade — job radius seeding', () => {
           },
         },
         { provide: DialogService, useValue: { confirm: jest.fn() } },
-        {
-          provide: FileValidationErrorService,
-          useValue: { handleFileValidationErrors: jest.fn() },
-        },
         { provide: Store, useValue: { dispatch: jest.fn() } },
         {
           provide: TranslateService,

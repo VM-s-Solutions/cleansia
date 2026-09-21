@@ -196,21 +196,7 @@ export class DashboardFacade extends UnsubscribeControlDirective {
     }
   }
 
-  refreshAnalytics(): void {
-    if (this.currentEmployeeId) {
-      this.store.dispatch(
-        DashboardActions.refreshAllAnalytics({
-          employeeId: this.currentEmployeeId,
-        })
-      );
-    }
-  }
-
   navigateTo(route: string): void {
     this.router.navigate([route]);
-  }
-
-  refresh(): void {
-    this.loadDashboard();
   }
 }

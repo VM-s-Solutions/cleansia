@@ -48,29 +48,4 @@ export class FileValidationErrorService {
     this.snackbarService.showErrorTranslated('validation.file.generic_error');
     return true;
   }
-
-  /**
-   * Gets all file validation error messages as an array
-   * @param errors ValidationErrors from a form control
-   * @returns string array of error messages
-   */
-  getFileValidationErrors(errors: ValidationErrors | null): string[] {
-    if (!errors) {
-      return [];
-    }
-
-    const errorMessages: string[] = [];
-    const fileErrorKeys = ['fileRequired', 'fileType', 'fileSize', 'fileCount'];
-
-    for (const errorKey of fileErrorKeys) {
-      if (errors[errorKey]) {
-        const errorFn = ErrorCodesFns[errorKey];
-        if (errorFn) {
-          errorMessages.push(errorFn(this.translate, errors[errorKey]));
-        }
-      }
-    }
-
-    return errorMessages;
-  }
 }

@@ -50,10 +50,6 @@ export class DashboardComponent {
     }
   }
 
-  onRefresh(): void {
-    this.facade.refresh();
-  }
-
   onDateRangeChanged(range: { startDate: Date; endDate: Date }): void {
     this.facade.onDateRangeChanged(range.startDate, range.endDate);
   }

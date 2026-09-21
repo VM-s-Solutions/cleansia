@@ -8,10 +8,7 @@ import {
   GetCountryFieldLabelsCountryFieldLabelsDto,
   PartnerClient,
 } from '@cleansia/partner-services';
-import {
-  FileValidationErrorService,
-  SnackbarService,
-} from '@cleansia/services';
+import { SnackbarService } from '@cleansia/services';
 import { checkEmployeeCurrent } from '@cleansia/partner-stores';
 import { FileTransformationUtils, FormUtils } from '@cleansia/utils';
 import { Store } from '@ngrx/store';
@@ -38,9 +35,6 @@ export class ProfileFacade extends UnsubscribeControlDirective {
   private readonly partnerClient = inject(PartnerClient);
   private readonly translate = inject(TranslateService);
   private readonly snackbarService = inject(SnackbarService);
-  private readonly fileValidationErrorService = inject(
-    FileValidationErrorService
-  );
   private readonly store = inject(Store);
 
   readonly documentsFacade = inject(ProfileDocumentsFacade);
@@ -164,34 +158,6 @@ export class ProfileFacade extends UnsubscribeControlDirective {
   refreshProfile(): void {
     this.profileData$ = null;
     this.loadProfile();
-  }
-
-  onDocumentUpload(files: File[]): void {
-    const normalizedFiles = FileTransformationUtils.normalizeFiles(files);
-
-    if (!normalizedFiles.length) {
-      this.snackbarService.showError(
-        this.translate.instant('global.messages.profile.no_files_selected')
-      );
-      return;
-    }
-
-    // Update the form control with the selected files
-    const documentsControl = this.formGroup.get('documents');
-    documentsControl?.setValue(normalizedFiles);
-    documentsControl?.markAsTouched();
-
-    // Validate the files
-    if (documentsControl?.invalid) {
-      this.fileValidationErrorService.handleFileValidationErrors(
-        documentsControl.errors
-      );
-      return;
-    }
-
-    this.snackbarService.showSuccess(
-      this.translate.instant('global.messages.profile.documents_uploaded')
-    );
   }
 
   removeFile(fileIndex: number): void {

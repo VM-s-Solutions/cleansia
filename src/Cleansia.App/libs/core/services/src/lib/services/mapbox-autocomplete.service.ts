@@ -10,23 +10,6 @@ import {
 } from 'rxjs';
 
 /**
- * Mapbox public access token. Provide it from each app's environment.ts.
- * If empty, the autocomplete short-circuits and returns no suggestions —
- * the user can still type the address manually.
- *
- * @deprecated the browser must NEVER hold or send the Mapbox
- * token — a token in a request URL leaks into history/referrer/CDN/APM logs.
- * The token now lives server-side and is injected by a same-origin proxy
- * (see {@link MAPBOX_PROXY_PATH}). Whether autocomplete is available is
- * advertised by the token-free boolean {@link MAPBOX_AUTOCOMPLETE_ENABLED}.
- * This token is retained only for backward compatibility and is unused by the
- * service; remove it from app providers once the proxy is wired everywhere.
- */
-export const MAPBOX_ACCESS_TOKEN = new InjectionToken<string>(
-  'MAPBOX_ACCESS_TOKEN'
-);
-
-/**
  * How this library reaches address search. It is a port, not a URL, because the
  * lookup is a backend endpoint like every other one — and the typed client that
  * calls it is generated PER APP. A shared library cannot inject the customer
@@ -47,18 +30,6 @@ export interface AddressSearchPort {
 export const ADDRESS_SEARCH_PORT = new InjectionToken<AddressSearchPort>(
   'ADDRESS_SEARCH_PORT',
   { factory: (): AddressSearchPort => ({ search: () => of([]) }) }
-);
-
-/**
- * @deprecated The lookup moved off a same-origin SSR route and onto the
- * platform API, behind {@link ADDRESS_SEARCH_PORT}. The SSR route only ever
- * existed on the customer app, was never proxied by its own dev server, and had
- * no equivalent on the partner API at all. Retained so an app still providing it
- * compiles; it is read by nothing.
- */
-export const MAPBOX_PROXY_PATH = new InjectionToken<string>(
-  'MAPBOX_PROXY_PATH',
-  { factory: () => '' }
 );
 
 /**

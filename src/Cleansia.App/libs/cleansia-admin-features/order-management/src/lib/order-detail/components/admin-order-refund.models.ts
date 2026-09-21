@@ -17,11 +17,6 @@ export interface RefundLineGroup {
   lines: RefundLineOption[];
 }
 
-export interface RefundReasonOption {
-  label: string;
-  value: RefundReason;
-}
-
 export const REFUND_REASON_OPTIONS: ReadonlyArray<{
   value: RefundReason;
   labelKey: string;

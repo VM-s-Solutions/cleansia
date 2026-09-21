@@ -174,10 +174,6 @@ export class OrderPhotosComponent {
     }
   }
 
-  viewPhoto(url: string): void {
-    window.open(url, '_blank');
-  }
-
   formatDate(date: Date | string | undefined): string {
     return formatPhotoDate(date);
   }

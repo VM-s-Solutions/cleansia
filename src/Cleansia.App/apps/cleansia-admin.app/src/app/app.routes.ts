@@ -33,7 +33,7 @@ export const appRoutes: Route[] = [
     canActivate: [adminGuard, permissionGuard],
     data: { permission: Policy.CanViewPayPeriodsAdmin },
     loadChildren: () =>
-      import('@cleansia.app/pay-periods').then((m) => m.payPeriodsRoutes),
+      import('@cleansia/admin-features/pay-periods').then((m) => m.payPeriodsRoutes),
   },
   {
     path: 'order-management',

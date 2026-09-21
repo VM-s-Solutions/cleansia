@@ -138,10 +138,6 @@ export class CleansiaTelephoneComponent
     );
   }
 
-  hasValue(): boolean {
-    return !!this.phoneNumber;
-  }
-
   private emitValue(): void {
     const fullValue = this.phoneNumber
       ? `${this.selectedCountry.code} ${this.phoneNumber}`

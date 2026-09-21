@@ -48,8 +48,6 @@ export const loadUpcomingOrdersFailure = createAction(
   props<{ error: ApiException }>()
 );
 
-export const clearDashboard = createAction('[Dashboard] Clear Dashboard');
-
 // Load earnings analytics
 export const loadEarningsAnalytics = createAction(
   '[Dashboard] Load Earnings Analytics',

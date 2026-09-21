@@ -187,7 +187,5 @@ export const dashboardReducer = createReducer(
   on(DashboardActions.setDateRange, (state, { startDate, endDate }) => ({
     ...state,
     selectedDateRange: { startDate, endDate },
-  })),
-
-  on(DashboardActions.clearDashboard, () => initialState)
+  }))
 );

@@ -341,12 +341,6 @@ export class OrderDetailFacade extends UnsubscribeControlDirective {
     }
   }
 
-  getExtrasArray(): { key: string; value: boolean }[] {
-    const extras = this.order()?.extras;
-    if (!extras) return [];
-    return Object.entries(extras).map(([key, value]) => ({ key, value }));
-  }
-
   getActiveExtras(): string[] {
     const extras = this.order()?.extras;
     if (!extras) return [];

@@ -509,13 +509,6 @@ export class UserLoyaltyDetailComponent
     this.facade.expireCredit(payload, () => this.onExpireCreditDialogVisibleChange(false));
   }
 
-  /** Signed, so the ledger reads as a statement: a spend is negative, a grant is positive. */
-  creditAmountClass(amount: number | undefined): string {
-    return (amount ?? 0) < 0
-      ? 'user-loyalty-detail__credit-amount--out'
-      : 'user-loyalty-detail__credit-amount--in';
-  }
-
   creditReasonKey(reason: CreditTransactionReason | undefined): string {
     switch (reason) {
       case CreditTransactionReason.DisputeSettlement:

@@ -329,10 +329,6 @@ export class ReportsComponent implements OnInit {
     this.facade.setActiveTab(tab);
   }
 
-  refreshReport(): void {
-    this.facade.refreshCurrentReport();
-  }
-
   // Filter drawer methods
   openFilterDrawer(): void {
     this.isFilterDrawerOpen.set(true);

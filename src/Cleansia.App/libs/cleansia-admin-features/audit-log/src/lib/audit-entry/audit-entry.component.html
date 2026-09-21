@@ -1,63 +1,63 @@
 <div class="cleansia-audit-entry cleansia-page">
   <div class="cleansia-audit-entry__container page-wrapper page-wrapper--narrow">
-    <div class="cleansia-audit-entry__header">
-      <cleansia-button
-        [label]="'pages.audit_log.entry.back' | translate"
-        icon="pi pi-arrow-left"
-        severity="secondary"
-        [outlined]="true"
-        (onClick)="goBack()"
-      />
-      <cleansia-title [title]="'pages.audit_log.entry.title' | translate" />
-      <p class="cleansia-audit-entry__description">
-        {{ 'pages.audit_log.entry.description' | translate }}
-      </p>
+    <div class="cleansia-page-header">
+      <div class="cleansia-page-header__heading">
+        <div class="cleansia-detail-title">
+          <cleansia-button
+            [label]="'pages.audit_log.entry.back' | translate"
+            icon="pi pi-arrow-left"
+            severity="secondary"
+            [outlined]="true"
+            (onClick)="goBack()"
+          />
+          <cleansia-title [title]="'pages.audit_log.entry.title' | translate" [level]="1" />
+        </div>
+        <p class="cleansia-page-header__description">
+          {{ 'pages.audit_log.entry.description' | translate }}
+        </p>
+      </div>
     </div>
 
+    @if (facade.loading()) {
+    <cleansia-loader />
+    } @else if (facade.hasError() || !facade.entry()) {
+    <div class="not-found-state">
+      <div class="not-found-state__icon"><i class="pi pi-exclamation-triangle"></i></div>
+      <p class="not-found-state__message">{{ 'pages.audit_log.entry.load_error' | translate }}</p>
+    </div>
+    } @else {
     <cleansia-section>
-      @if (facade.loading()) {
-      <cleansia-loader />
-      } @else if (facade.hasError() || !facade.entry()) {
-      <div class="cleansia-audit-entry__state">
-        <i class="pi pi-exclamation-triangle"></i>
-        <p>{{ 'pages.audit_log.entry.load_error' | translate }}</p>
-      </div>
-      } @else {
-      <dl class="cleansia-audit-entry__meta">
-        <div class="cleansia-audit-entry__meta-item">
-          <dt>{{ 'pages.audit_log.columns.action' | translate }}</dt>
-          <dd>{{ facade.entry()?.action }}</dd>
+      <div class="detail-grid">
+        <div class="detail-grid__item">
+          <span class="detail-grid__label">{{ 'pages.audit_log.columns.action' | translate }}</span>
+          <span class="detail-grid__value">{{ facade.entry()?.action }}</span>
         </div>
-        <div class="cleansia-audit-entry__meta-item">
-          <dt>{{ 'pages.audit_log.columns.actor' | translate }}</dt>
-          <dd>
-            {{ facade.entry()?.actorEmail ?? facade.entry()?.actorId }}
-          </dd>
+        <div class="detail-grid__item">
+          <span class="detail-grid__label">{{ 'pages.audit_log.columns.actor' | translate }}</span>
+          <span class="detail-grid__value">{{ facade.entry()?.actorEmail ?? facade.entry()?.actorId }}</span>
         </div>
         @if (actorRoleLabelKey(); as roleKey) {
-        <div class="cleansia-audit-entry__meta-item">
-          <dt>{{ 'pages.audit_log.columns.actor_role' | translate }}</dt>
-          <dd>{{ roleKey | translate }}</dd>
+        <div class="detail-grid__item">
+          <span class="detail-grid__label">{{ 'pages.audit_log.columns.actor_role' | translate }}</span>
+          <span class="detail-grid__value">{{ roleKey | translate }}</span>
         </div>
         }
-        <div class="cleansia-audit-entry__meta-item">
-          <dt>{{ 'pages.audit_log.columns.resource' | translate }}</dt>
-          <dd>
+        <div class="detail-grid__item">
+          <span class="detail-grid__label">{{ 'pages.audit_log.columns.resource' | translate }}</span>
+          <span class="detail-grid__value">
             {{ facade.entry()?.resourceType }}
             @if (facade.entry()?.resourceId) {
             · {{ facade.entry()?.resourceId }} }
-          </dd>
+          </span>
         </div>
-        <div class="cleansia-audit-entry__meta-item">
-          <dt>{{ 'pages.audit_log.columns.occurred_on' | translate }}</dt>
-          <dd>{{ formatTimestamp(facade.entry()?.occurredOn) }}</dd>
+        <div class="detail-grid__item">
+          <span class="detail-grid__label">{{ 'pages.audit_log.columns.occurred_on' | translate }}</span>
+          <span class="detail-grid__value">{{ formatTimestamp(facade.entry()?.occurredOn) }}</span>
         </div>
-      </dl>
+      </div>
+    </cleansia-section>
 
-      <h3 class="cleansia-audit-entry__section-title">
-        {{ 'pages.audit_log.entry.changes_title' | translate }}
-      </h3>
-
+    <cleansia-section [title]="'pages.audit_log.entry.changes_title' | translate">
       @if (facade.hasChanges()) {
       <table class="cleansia-audit-entry__diff">
         <thead>
@@ -94,11 +94,12 @@
         </tbody>
       </table>
       } @else {
-      <div class="cleansia-audit-entry__state">
+      <div class="empty-state">
         <i class="pi pi-info-circle"></i>
         <p>{{ 'pages.audit_log.entry.no_changes' | translate }}</p>
       </div>
-      } }
+      }
     </cleansia-section>
+    }
   </div>
 </div>

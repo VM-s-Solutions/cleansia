@@ -11,7 +11,6 @@ import { FormsModule } from '@angular/forms';
 import { PayPeriodDto, PayPeriodStatus } from '@cleansia/admin-services';
 import {
   CleansiaButtonComponent,
-  CleansiaSectionComponent,
   CleansiaTextareaComponent,
 } from '@cleansia/components';
 import { TranslatePipe } from '@ngx-translate/core';
@@ -25,7 +24,6 @@ import { AdminPayPeriodOpsPanel } from './admin-pay-period-ops.models';
     CommonModule,
     FormsModule,
     TranslatePipe,
-    CleansiaSectionComponent,
     CleansiaTextareaComponent,
     CleansiaButtonComponent,
   ],

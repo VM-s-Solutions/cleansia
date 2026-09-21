@@ -1,15 +1,18 @@
 <div class="cleansia-promo-code-detail cleansia-page">
   <div class="cleansia-promo-code-detail__container page-wrapper page-wrapper--narrow">
-    <div class="cleansia-promo-code-detail__header">
-      <cleansia-button
-        [label]="'global.actions.back' | translate"
-        icon="pi pi-arrow-left"
-        (onClick)="onBack()"
-        [outlined]="true"
-      />
-      <cleansia-title
-        [title]="'pages.promo_codes.detail.title' | translate"
-      />
+    <div class="cleansia-page-header">
+      <div class="cleansia-page-header__heading">
+        <div class="cleansia-detail-title">
+          <cleansia-button
+            [label]="'global.actions.back' | translate"
+            icon="pi pi-arrow-left"
+            severity="secondary"
+            [outlined]="true"
+            (onClick)="onBack()"
+          />
+          <cleansia-title [title]="'pages.promo_codes.detail.title' | translate" [level]="1" />
+        </div>
+      </div>
     </div>
 
     @if (facade.loading()) {
@@ -17,6 +20,26 @@
     } @else if (facade.promoCode()) {
       @let pc = facade.promoCode()!;
       <cleansia-section [title]="pc.code ?? ''">
+        <ng-container section-actions>
+          <cleansia-button
+            *cleansiaPermission="Policy.CanUpdatePromoCode"
+            [label]="'global.actions.edit' | translate"
+            icon="pi pi-pencil"
+            severity="secondary"
+            [outlined]="true"
+            (onClick)="onEdit()"
+          />
+          @if (canDeactivate()) {
+            <cleansia-button
+              *cleansiaPermission="Policy.CanDeactivatePromoCode"
+              [label]="'pages.promo_codes.detail.deactivate_button' | translate"
+              icon="pi pi-ban"
+              severity="danger"
+              [outlined]="true"
+              (onClick)="confirmDeactivate()"
+            />
+          }
+        </ng-container>
         <div class="detail-grid">
           <div class="detail-grid__item">
             <span class="detail-grid__label">
@@ -60,9 +83,7 @@
             <span class="detail-grid__label">
               {{ 'pages.promo_codes.column.status' | translate }}
             </span>
-            <span class="detail-grid__value">
-              <cleansia-status-badge kind="promo" [value]="promoStatus()" />
-            </span>
+            <cleansia-status-badge kind="promo" [value]="promoStatus()" />
           </div>
           @if (pc.description) {
             <div class="detail-grid__item detail-grid__item--wide">
@@ -74,26 +95,6 @@
           }
         </div>
 
-        <div class="detail-actions">
-          <cleansia-button
-            *cleansiaPermission="Policy.CanUpdatePromoCode"
-            [label]="'global.actions.edit' | translate"
-            icon="pi pi-pencil"
-            (onClick)="onEdit()"
-          />
-          @if (canDeactivate()) {
-            <cleansia-button
-              *cleansiaPermission="Policy.CanDeactivatePromoCode"
-              [label]="
-                'pages.promo_codes.detail.deactivate_button' | translate
-              "
-              icon="pi pi-ban"
-              severity="danger"
-              [outlined]="true"
-              (onClick)="confirmDeactivate()"
-            />
-          }
-        </div>
       </cleansia-section>
 
       <cleansia-section

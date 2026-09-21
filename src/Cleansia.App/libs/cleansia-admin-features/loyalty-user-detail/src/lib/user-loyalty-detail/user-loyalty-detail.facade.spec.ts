@@ -322,6 +322,35 @@ describe('UserLoyaltyDetailFacade — credit', () => {
   });
 });
 
+describe('UserLoyaltyDetailFacade — credit money', () => {
+  let facade: UserLoyaltyDetailFacade;
+
+  beforeEach(() => {
+    TestBed.configureTestingModule({
+      providers: [
+        UserLoyaltyDetailFacade,
+        { provide: AdminClient, useValue: {} },
+        { provide: SnackbarService, useValue: {} },
+        { provide: TranslateService, useValue: { instant: (k: string) => k, currentLang: 'cs' } },
+        { provide: Router, useValue: { navigate: jest.fn() } },
+        { provide: AdminGdprClient, useValue: {} },
+      ],
+    });
+    facade = TestBed.inject(UserLoyaltyDetailFacade);
+  });
+
+  it('writes a balance as money in the session language', () => {
+    expect(facade.formatBalance(1250, 'CZK')).toBe('1 250 Kč');
+    expect(facade.formatBalance(0, 'CZK')).toBe('0 Kč');
+  });
+
+  it('writes a ledger amount signed, so a spend reads as a spend', () => {
+    expect(facade.formatLedgerAmount(1250, 'CZK')).toBe('+1 250 Kč');
+    expect(facade.formatLedgerAmount(-300.5, 'CZK')).toBe('-300,50 Kč');
+    expect(facade.formatLedgerAmount(undefined, 'CZK')).toBe('0 Kč');
+  });
+});
+
 describe('UserLoyaltyDetailFacade — subject export', () => {
   let facade: UserLoyaltyDetailFacade;
   let gdprClient: { export: jest.Mock };

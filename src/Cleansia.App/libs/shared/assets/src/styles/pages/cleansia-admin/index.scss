@@ -3,13 +3,13 @@
 
 @use '../../common/auth';
 @use './tab-strip.scss';
+@use './detail-page';
 @use './employee-management.component.scss';
 @use './employee-detail.component.scss';
 @use './order-detail.component.scss';
 @use './admin-order-photos.component.scss';
 @use './admin-photo-gallery.component.scss';
 @use './pay-period-management.component.scss';
-@use './pay-period-detail.component.scss';
 @use './invoice-detail.component.scss';
 @use './reports.component.scss';
 @use './service-form.component.scss';
@@ -37,3 +37,4 @@
 @use './data-protection.component.scss';
 @use './service-area-management.component.scss';
 @use './membership-plan-list.component.scss';
+@use './user-loyalty-detail.component.scss';

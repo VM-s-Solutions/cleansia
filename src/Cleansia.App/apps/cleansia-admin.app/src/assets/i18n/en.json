@@ -549,7 +549,9 @@
       "weekly_order_limit": "Weekly order limit",
       "weekly_order_limit_unlimited": "Unlimited",
       "weekly_order_limit_hint": "Leave empty for no limit",
-      "not_found": "Employee not found"
+      "not_found": "Employee not found",
+      "actions_section": "Actions",
+      "rate_format": "{{base}} + {{room}}/room + {{bath}}/bath"
     },
     "order_management": {
       "title": "Order Management",
@@ -2251,9 +2253,7 @@
       "tier_label": "Current tier",
       "lifetime_points": "Lifetime points",
       "completed_bookings_label": "Completed bookings",
-      "completed_bookings": "{{count}} cleanings completed",
       "tier_achieved_label": "Tier achieved",
-      "tier_achieved_on": "Tier achieved on {{date}}",
       "next_tier_label": "Progress",
       "points_to_next_tier": "{{count}} points to {{tier}}",
       "max_tier_reached": "Max tier reached",

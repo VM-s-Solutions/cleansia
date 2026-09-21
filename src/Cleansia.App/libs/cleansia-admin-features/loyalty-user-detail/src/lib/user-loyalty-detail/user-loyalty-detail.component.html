@@ -1,33 +1,40 @@
 <div class="cleansia-user-loyalty-detail cleansia-page">
   <div class="cleansia-user-loyalty-detail__container page-wrapper page-wrapper--narrow">
-    <div class="cleansia-user-loyalty-detail__header">
-      <cleansia-button
-        [label]="'pages.loyalty_user_detail.back' | translate"
-        icon="pi pi-arrow-left"
-        [outlined]="true"
-        (onClick)="onBack()"
-      />
-      <cleansia-title [title]="headerTitle()" />
-      <cleansia-button
-        *cleansiaPermission="Policy.CanAdminExportUserData"
-        class="cleansia-user-loyalty-detail__export"
-        [label]="'pages.customer_detail.export_subject_data' | translate"
-        icon="pi pi-download"
-        severity="secondary"
-        [outlined]="true"
-        [loading]="facade.exporting()"
-        (onClick)="exportSubjectData()"
-      />
-      <cleansia-button
-        *cleansiaPermission="Policy.CanAdminExportUserData"
-        class="cleansia-user-loyalty-detail__incident-file"
-        [label]="'pages.customer_detail.incident_file.button' | translate"
-        icon="pi pi-file-pdf"
-        severity="secondary"
-        [outlined]="true"
-        [loading]="facade.incidentFileExporting()"
-        (onClick)="exportIncidentFile()"
-      />
+    <div class="cleansia-page-header">
+      <div class="cleansia-page-header__heading">
+        <div class="cleansia-detail-title">
+          <cleansia-button
+            [label]="'pages.loyalty_user_detail.back' | translate"
+            icon="pi pi-arrow-left"
+            severity="secondary"
+            [outlined]="true"
+            (onClick)="onBack()"
+          />
+          <cleansia-title [title]="headerTitle()" [level]="1" />
+        </div>
+      </div>
+      <div class="cleansia-page-header__actions">
+        <cleansia-button
+          *cleansiaPermission="Policy.CanAdminExportUserData"
+          class="cleansia-user-loyalty-detail__export"
+          [label]="'pages.customer_detail.export_subject_data' | translate"
+          icon="pi pi-download"
+          severity="secondary"
+          [outlined]="true"
+          [loading]="facade.exporting()"
+          (onClick)="exportSubjectData()"
+        />
+        <cleansia-button
+          *cleansiaPermission="Policy.CanAdminExportUserData"
+          class="cleansia-user-loyalty-detail__incident-file"
+          [label]="'pages.customer_detail.incident_file.button' | translate"
+          icon="pi pi-file-pdf"
+          severity="secondary"
+          [outlined]="true"
+          [loading]="facade.incidentFileExporting()"
+          (onClick)="exportIncidentFile()"
+        />
+      </div>
     </div>
 
     <div
@@ -54,11 +61,9 @@
       } @else if (facade.hasSubjectOrders()) {
         <cleansia-select
           [label]="'pages.customer_detail.incident_file.order_scope' | translate"
-          [placeholder]="'pages.customer_detail.incident_file.order_scope_placeholder' | translate"
           [formControl]="incidentOrderControl"
           [options]="facade.incidentOrderOptions()"
           [filter]="true"
-          inputSize="large-width"
         />
         <small class="cleansia-user-loyalty-detail__incident-scope-hint">
           {{ 'pages.customer_detail.incident_file.order_scope_hint' | translate }}
@@ -87,53 +92,14 @@
     } @else if (facade.account()) {
       @let acc = facade.account()!;
 
-      <!-- Tier snapshot -->
-      <cleansia-section [title]="tierName()">
-        <div class="user-loyalty-detail__snapshot">
-          <div
-            class="user-loyalty-detail__tier-badge"
-            [attr.data-tier]="tierAccent(acc.currentTier)"
-          >
-            <i class="pi pi-star-fill"></i>
-            <span class="user-loyalty-detail__tier-name">{{ tierName() }}</span>
-          </div>
-
-          <div class="user-loyalty-detail__metrics">
-            <div class="user-loyalty-detail__metric">
-              <span class="metric-label">
-                {{ 'pages.loyalty_user_detail.lifetime_points' | translate }}
-              </span>
-              <span class="metric-value metric-value--big">
-                {{ acc.lifetimePoints }}
-              </span>
-            </div>
-            <div class="user-loyalty-detail__metric">
-              <span class="metric-label">
-                {{ 'pages.loyalty_user_detail.completed_bookings_label' | translate }}
-              </span>
-              <span class="metric-value">{{ completedBookingsLabel() }}</span>
-            </div>
-            <div class="user-loyalty-detail__metric">
-              <span class="metric-label">
-                {{ 'pages.loyalty_user_detail.tier_achieved_label' | translate }}
-              </span>
-              <span class="metric-value">{{ tierAchievedLabel() }}</span>
-            </div>
-            <div class="user-loyalty-detail__metric">
-              <span class="metric-label">
-                {{ 'pages.loyalty_user_detail.next_tier_label' | translate }}
-              </span>
-              <span class="metric-value">{{ pointsToNextLabel() }}</span>
-            </div>
-          </div>
-        </div>
-
-        <div class="user-loyalty-detail__actions">
+      <cleansia-section [title]="'pages.loyalty_user_detail.tier_label' | translate">
+        <ng-container section-actions>
           <cleansia-button
             *cleansiaPermission="Policy.CanGrantLoyaltyPoints"
             [label]="'pages.loyalty_user_detail.actions.grant' | translate"
             icon="pi pi-plus-circle"
-            severity="success"
+            severity="secondary"
+            [outlined]="true"
             (onClick)="openGrant()"
           />
           <cleansia-button
@@ -144,6 +110,32 @@
             [outlined]="true"
             (onClick)="openRevoke()"
           />
+        </ng-container>
+        <div class="detail-identity">
+          <div class="detail-identity__row">
+            <span class="detail-identity__name">
+              <i class="pi pi-star-fill user-loyalty-detail__tier-star" [attr.data-tier]="tierAccent(acc.currentTier)"></i>
+              {{ tierName() }}
+            </span>
+          </div>
+          <div class="detail-grid">
+            <div class="detail-grid__item">
+              <span class="detail-grid__label">{{ 'pages.loyalty_user_detail.lifetime_points' | translate }}</span>
+              <span class="detail-grid__value">{{ acc.lifetimePoints }}</span>
+            </div>
+            <div class="detail-grid__item">
+              <span class="detail-grid__label">{{ 'pages.loyalty_user_detail.completed_bookings_label' | translate }}</span>
+              <span class="detail-grid__value">{{ acc.completedBookingsCount }}</span>
+            </div>
+            <div class="detail-grid__item">
+              <span class="detail-grid__label">{{ 'pages.loyalty_user_detail.tier_achieved_label' | translate }}</span>
+              <span class="detail-grid__value">{{ formatDate(acc.tierAchievedOn) }}</span>
+            </div>
+            <div class="detail-grid__item">
+              <span class="detail-grid__label">{{ 'pages.loyalty_user_detail.next_tier_label' | translate }}</span>
+              <span class="detail-grid__value">{{ pointsToNextLabel() }}</span>
+            </div>
+          </div>
         </div>
       </cleansia-section>
 
@@ -156,64 +148,57 @@
         this?" is the question a human-in-the-loop rule exists to make answerable, and a number alone
         cannot answer it.
       -->
-      <cleansia-section
-        [title]="'pages.loyalty_user_detail.credit.title' | translate"
-      >
+      <cleansia-section [title]="'pages.loyalty_user_detail.credit.title' | translate">
+        <ng-container section-actions>
+          <cleansia-button
+            *cleansiaPermission="Policy.CanIssueCustomerCredit"
+            [label]="'pages.loyalty_user_detail.credit.actions.issue' | translate"
+            icon="pi pi-wallet"
+            (onClick)="openIssueCredit()"
+          />
+        </ng-container>
         @if (facade.creditLoading()) {
         <cleansia-loader />
         } @else {
-        <div class="user-loyalty-detail__credit">
-          <!--
-            EVERY balance, one per currency, each with its own discharge. Credit is spendable only on
-            an order in the same currency and erasure is refused while any balance is funded — so a
-            screen that showed one balance could tell an admin erasure was blocked by money it never
-            showed them. The scalars on the response (balance, currencyCode, ledger) are accounts[0]
-            and are not rendered here.
+        <!--
+          EVERY balance, one per currency, each with its own discharge. Credit is spendable only on
+          an order in the same currency and erasure is refused while any balance is funded — so a
+          screen that showed one balance could tell an admin erasure was blocked by money it never
+          showed them. The scalars on the response (balance, currencyCode, ledger) are accounts[0]
+          and are not rendered here.
 
-            "No account" and "a zero balance" mean different things to the person reading this, so the
-            never-credited state is its own block rather than an empty list.
-          -->
-          @if (facade.credit() && !facade.credit()!.hasAccount) {
-          <div class="user-loyalty-detail__credit-balance">
-            <span class="user-loyalty-detail__credit-balance-label">
-              {{ 'pages.loyalty_user_detail.credit.balance' | translate }}
-            </span>
-            <span class="user-loyalty-detail__credit-balance-value">
-              0 {{ facade.credit()?.currencyCode }}
-            </span>
-            <span class="user-loyalty-detail__credit-none">
-              {{ 'pages.loyalty_user_detail.credit.never_credited' | translate }}
-            </span>
-          </div>
-          }
-
-          <div class="user-loyalty-detail__actions">
-            <cleansia-button
-              *cleansiaPermission="Policy.CanIssueCustomerCredit"
-              [label]="'pages.loyalty_user_detail.credit.actions.issue' | translate"
-              icon="pi pi-wallet"
-              severity="success"
-              (onClick)="openIssueCredit()"
-            />
+          "No account" and "a zero balance" mean different things to the person reading this, so the
+          never-credited state is its own block rather than an empty list.
+        -->
+        @if (facade.credit() && !facade.credit()!.hasAccount) {
+        <div class="detail-ledger">
+          <div class="detail-ledger__row detail-ledger__row--total">
+            <span class="detail-ledger__label">{{ 'pages.loyalty_user_detail.credit.balance' | translate }}</span>
+            <span class="detail-ledger__value">{{ facade.formatBalance(0, facade.credit()?.currencyCode) }}</span>
           </div>
         </div>
+        <div class="empty-state">
+          <i class="pi pi-wallet"></i>
+          <p>{{ 'pages.loyalty_user_detail.credit.never_credited' | translate }}</p>
+        </div>
+        }
 
         @for (account of facade.credit()?.accounts ?? []; track account.accountId) {
         <div class="user-loyalty-detail__credit-account">
-          <div class="user-loyalty-detail__credit-balance">
-            <span class="user-loyalty-detail__credit-balance-label">
-              {{ 'pages.loyalty_user_detail.credit.balance' | translate }}
-            </span>
-            <span class="user-loyalty-detail__credit-balance-value">
-              {{ account.balance }} {{ account.currencyCode }}
-            </span>
-            <!--
-              One discharge per funded account: the server drains one currency and names it, so
-              the button sits beside the balance it takes. Absent at a zero balance rather than
-              disabled: there is nothing to discharge, and a greyed-out destructive button on a page
-              an admin visits daily is an invitation to find out what it does.
-            -->
-            @if (account.balance > 0) {
+          <div class="detail-ledger">
+            <div class="detail-ledger__row detail-ledger__row--total">
+              <span class="detail-ledger__label">{{ 'pages.loyalty_user_detail.credit.balance' | translate }}</span>
+              <span class="detail-ledger__value">{{ facade.formatBalance(account.balance, account.currencyCode) }}</span>
+            </div>
+          </div>
+          <!--
+            One discharge per funded account: the server drains one currency and names it, so
+            the button sits beside the balance it takes. Absent at a zero balance rather than
+            disabled: there is nothing to discharge, and a greyed-out destructive button on a page
+            an admin visits daily is an invitation to find out what it does.
+          -->
+          @if (account.balance > 0) {
+          <div class="detail-actions">
             <cleansia-button
               *cleansiaPermission="Policy.CanExpireCustomerCredit"
               [label]="'pages.loyalty_user_detail.credit.actions.expire' | translate"
@@ -222,8 +207,8 @@
               [outlined]="true"
               (onClick)="openExpireCredit(account)"
             />
-            }
           </div>
+          }
           <cleansia-table
             [data]="account.ledger ?? []"
             [columns]="creditColumns"
@@ -271,7 +256,7 @@
         [title]="'pages.loyalty_user_detail.referrals.title' | translate"
       >
         @if (facade.referralsError()) {
-          <div class="user-loyalty-detail__referrals-state">
+          <div class="empty-state">
             <i class="pi pi-exclamation-triangle"></i>
             <p>
               {{ 'pages.loyalty_user_detail.referrals.load_error' | translate }}

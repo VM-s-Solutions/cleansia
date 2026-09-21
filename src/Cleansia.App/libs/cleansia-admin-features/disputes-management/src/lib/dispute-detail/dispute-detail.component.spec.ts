@@ -96,7 +96,7 @@ describe('DisputeDetailComponent', () => {
     const { facade, el } = setup();
 
     expect(facade.dispute()?.id).toBe('dispute-1');
-    expect(el.querySelector('.cleansia-dispute-detail__grid')).toBeTruthy();
+    expect(el.querySelector('.detail-grid')).toBeTruthy();
   });
 
   it('renders the error state when the load fails', () => {

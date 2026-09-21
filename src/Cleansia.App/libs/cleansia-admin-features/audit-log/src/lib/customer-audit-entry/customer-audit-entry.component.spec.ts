@@ -74,7 +74,7 @@ describe('CustomerAuditEntryComponent', () => {
     );
 
     expect(el.querySelector('.cleansia-audit-entry__diff')).toBeNull();
-    expect(el.querySelector('.cleansia-audit-entry__payload-header cleansia-button')).toBeNull();
+    expect(el.querySelector('.cleansia-section__actions cleansia-button')).toBeNull();
     expect(el.textContent).toContain('order.in_progress_cannot_cancel');
   });
 });

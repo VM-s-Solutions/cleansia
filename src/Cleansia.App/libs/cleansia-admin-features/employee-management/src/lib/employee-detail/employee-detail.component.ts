@@ -12,6 +12,7 @@ import { CountryFieldLabelsService } from '@cleansia/admin-services';
 import {
   CleansiaButtonComponent,
   CleansiaCalendarComponent,
+  CleansiaCheckboxComponent,
   CleansiaLoaderComponent,
   CleansiaSectionComponent,
   CleansiaSelectComponent,
@@ -31,7 +32,6 @@ import {
 import { CleansiaPermissionDirective } from '@cleansia/directives';
 import { formatDate } from '@cleansia/utils';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
-import { CheckboxModule } from 'primeng/checkbox';
 import { DialogModule } from 'primeng/dialog';
 import { DialogService } from 'primeng/dynamicdialog';
 import { ToastModule } from 'primeng/toast';
@@ -48,6 +48,7 @@ import { EmployeePayoutSectionComponent } from './employee-payout-section.compon
     ReactiveFormsModule,
     CleansiaButtonComponent,
     CleansiaCalendarComponent,
+    CleansiaCheckboxComponent,
     CleansiaSelectComponent,
     CleansiaTelephoneComponent,
     CleansiaTextareaComponent,
@@ -57,7 +58,6 @@ import { EmployeePayoutSectionComponent } from './employee-payout-section.compon
     CleansiaLoaderComponent,
     CleansiaSectionComponent,
     CleansiaStatusBadgeComponent,
-    CheckboxModule,
     DialogModule,
     ToastModule,
     EmployeeDocumentsSectionComponent,

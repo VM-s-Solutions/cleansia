@@ -549,7 +549,9 @@
       "weekly_order_limit": "Тижневий ліміт замовлень",
       "weekly_order_limit_unlimited": "Без обмежень",
       "weekly_order_limit_hint": "Залиште порожнім — без обмежень",
-      "not_found": "Працівника не знайдено"
+      "not_found": "Працівника не знайдено",
+      "actions_section": "Дії",
+      "rate_format": "{{base}} + {{room}}/кімната + {{bath}}/ванна"
     },
     "order_management": {
       "title": "Управління замовленнями",
@@ -2251,9 +2253,7 @@
       "tier_label": "Поточний рівень",
       "lifetime_points": "Загальні бали",
       "completed_bookings_label": "Завершені прибирання",
-      "completed_bookings": "{{count}} завершених прибирань",
       "tier_achieved_label": "Рівень досягнуто",
-      "tier_achieved_on": "Рівень досягнуто {{date}}",
       "next_tier_label": "Прогрес",
       "points_to_next_tier": "{{count}} балів до {{tier}}",
       "max_tier_reached": "Найвищий рівень досягнуто",

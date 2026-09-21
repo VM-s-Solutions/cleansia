@@ -549,7 +549,9 @@
       "weekly_order_limit": "Недельный лимит заказов",
       "weekly_order_limit_unlimited": "Без ограничений",
       "weekly_order_limit_hint": "Оставьте пустым — без ограничений",
-      "not_found": "Сотрудник не найден"
+      "not_found": "Сотрудник не найден",
+      "actions_section": "Действия",
+      "rate_format": "{{base}} + {{room}}/комната + {{bath}}/ванная"
     },
     "order_management": {
       "title": "Управление заказами",
@@ -2251,9 +2253,7 @@
       "tier_label": "Текущий уровень",
       "lifetime_points": "Всего баллов",
       "completed_bookings_label": "Завершённые уборки",
-      "completed_bookings": "{{count}} завершённых уборок",
       "tier_achieved_label": "Уровень достигнут",
-      "tier_achieved_on": "Уровень достигнут {{date}}",
       "next_tier_label": "Прогресс",
       "points_to_next_tier": "{{count}} баллов до {{tier}}",
       "max_tier_reached": "Максимальный уровень достигнут",

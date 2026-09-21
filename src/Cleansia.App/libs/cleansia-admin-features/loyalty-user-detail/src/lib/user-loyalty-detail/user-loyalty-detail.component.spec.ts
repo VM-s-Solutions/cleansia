@@ -232,8 +232,8 @@ describe('UserLoyaltyDetailComponent — credit section', () => {
     expect(blocks.length).toBe(2);
     expect(blocks[0].querySelector('cleansia-table')).toBeTruthy();
     expect(blocks[1].querySelector('cleansia-table')).toBeTruthy();
-    expect(el.textContent).toContain('400 CZK');
-    expect(el.textContent).toContain('25 EUR');
+    expect(el.textContent).toContain('CZK 400');
+    expect(el.textContent).toContain('€25');
   });
 
   it('says never credited, in the platform currency, for a customer with no account', () => {
@@ -250,7 +250,7 @@ describe('UserLoyaltyDetailComponent — credit section', () => {
 
     expect(el.querySelectorAll('.user-loyalty-detail__credit-account').length).toBe(0);
     expect(el.textContent).toContain('pages.loyalty_user_detail.credit.never_credited');
-    expect(el.textContent).toContain('0 CZK');
+    expect(el.textContent).toContain('CZK 0');
   });
 
   const noAccount = () =>

@@ -1,0 +1,194 @@
+// What the admin detail pages share on top of the shared shell, header, section and grid.
+// There is no shared breadcrumb yet, so the back control sits beside the title on the header
+// row; an entity's identity is one tinted strip; its actions are one wrapped row of
+// content-sized buttons, and an action that needs input opens its panel on a full-width line
+// under that row rather than in a section of its own.
+.cleansia-detail-title {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem 1rem;
+}
+
+.detail-identity {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 1.25rem 1.5rem;
+  border-radius: var(--cleansia-radius-md);
+  background: var(--cleansia-primary-50);
+
+  &__row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 0.75rem 1.5rem;
+  }
+
+  &__name {
+    display: inline-flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    min-width: 0;
+    font-size: 1.5rem;
+    font-weight: 700;
+    line-height: 1.2;
+    color: var(--cleansia-text-primary);
+    overflow-wrap: anywhere;
+  }
+
+  &__label {
+    font-size: 0.9375rem;
+    font-weight: 500;
+    color: var(--cleansia-text-secondary);
+  }
+
+  &__badges {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+  }
+
+  &__meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem 1.5rem;
+    font-size: 0.9rem;
+    color: var(--cleansia-text-secondary);
+  }
+
+  &__meta-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+
+    i {
+      font-size: 1rem;
+    }
+
+    strong {
+      font-weight: 600;
+      font-variant-numeric: tabular-nums;
+      color: var(--cleansia-text-primary);
+    }
+  }
+
+  &__note {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+    margin: 0;
+    font-size: 0.9rem;
+    line-height: 1.5;
+
+    i {
+      margin-top: 0.15em;
+    }
+
+    &--success {
+      color: var(--cleansia-success-700);
+    }
+
+    &--warning {
+      color: var(--cleansia-warning-700);
+    }
+  }
+}
+
+.detail-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+
+  &--end {
+    justify-content: flex-end;
+  }
+
+  &__panel {
+    flex: 1 1 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    padding: 1.25rem;
+    border: 1px solid var(--cleansia-border);
+    border-radius: var(--cleansia-radius-md);
+    background: var(--cleansia-primary-25);
+
+    > cleansia-button {
+      align-self: flex-start;
+    }
+  }
+
+  &__hint {
+    margin: 0;
+    color: var(--cleansia-text-secondary);
+    line-height: 1.6;
+  }
+
+  &__error {
+    margin: 0;
+    font-weight: 500;
+    color: var(--cleansia-error-700);
+  }
+}
+
+// Money that adds up: one row per line, the total ruled off under them. The partner's my-pay
+// and invoice pages draw the same statement as `.amount-breakdown`.
+.detail-ledger {
+  display: flex;
+  flex-direction: column;
+
+  &__row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.75rem 0;
+    border-bottom: 1px solid var(--cleansia-neutral-100);
+
+    &:last-child {
+      border-bottom: none;
+    }
+
+    &--positive {
+      color: var(--cleansia-success-700);
+    }
+
+    &--negative {
+      color: var(--cleansia-error-700);
+    }
+
+    &--total {
+      margin-top: 0.5rem;
+      padding-top: 1rem;
+      border-top: 2px solid var(--cleansia-primary-500);
+      font-size: 1.125rem;
+      font-weight: 700;
+      color: var(--cleansia-primary-700);
+
+      // A total with no lines above it has nothing to be ruled off from.
+      &:first-child {
+        margin-top: 0;
+        padding-top: 0.75rem;
+        border-top: none;
+      }
+    }
+  }
+
+  &__value {
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+}
+
+// The operations components draw their toggles and panel straight into the page's action row.
+cleansia-admin-order-ops,
+cleansia-admin-pay-period-ops,
+cleansia-admin-payroll-ops {
+  display: contents;
+}

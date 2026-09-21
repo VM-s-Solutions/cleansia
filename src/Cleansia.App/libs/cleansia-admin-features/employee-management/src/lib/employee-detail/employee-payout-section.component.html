@@ -4,10 +4,11 @@
   @if (facade.loading()) {
   <cleansia-loader />
   } @else if (facade.loadFailed()) {
-  <p class="no-data">
-    {{ 'pages.employee_detail.payout_details.load_error' | translate }}
-  </p>
-  <div class="payout-details__actions">
+  <div class="empty-state">
+    <i class="pi pi-exclamation-triangle"></i>
+    <p>{{ 'pages.employee_detail.payout_details.load_error' | translate }}</p>
+  </div>
+  <div class="detail-actions">
     <cleansia-button
       [label]="'pages.employee_detail.payout_details.retry' | translate"
       icon="pi pi-refresh"
@@ -17,15 +18,16 @@
     />
   </div>
   } @else if (facade.isEmpty()) {
-  <p class="no-data">
-    {{ 'pages.employee_detail.payout_details.none' | translate }}
-  </p>
+  <div class="empty-state">
+    <i class="pi pi-wallet"></i>
+    <p>{{ 'pages.employee_detail.payout_details.none' | translate }}</p>
+  </div>
   } @else {
-  <div class="info-grid">
+  <div class="detail-grid">
     @for (row of facade.maskedRows(); track row.id) {
-    <div class="info-item">
-      <span class="label">{{ row.label }}:</span>
-      <span class="value">{{ row.value }}</span>
+    <div class="detail-grid__item">
+      <span class="detail-grid__label">{{ row.label }}</span>
+      <span class="detail-grid__value">{{ row.value }}</span>
     </div>
     }
   </div>
@@ -38,15 +40,15 @@
   </p>
 
   @if (facade.isRevealed()) {
-  <div class="info-grid payout-details__revealed">
+  <div class="detail-grid payout-details__revealed">
     @for (row of facade.revealedRows(); track row.id) {
-    <div class="info-item">
-      <span class="label">{{ row.label }}:</span>
-      <span class="value">{{ row.value }}</span>
+    <div class="detail-grid__item">
+      <span class="detail-grid__label">{{ row.label }}</span>
+      <span class="detail-grid__value">{{ row.value }}</span>
     </div>
     }
   </div>
-  <div class="payout-details__actions">
+  <div class="detail-actions">
     <cleansia-button
       [label]="'pages.employee_detail.payout_details.hide' | translate"
       icon="pi pi-eye-slash"
@@ -56,12 +58,13 @@
     />
   </div>
   } @else {
-  <div class="payout-details__actions">
+  <div class="detail-actions">
     <cleansia-button
       *cleansiaPermission="Policy.CanRevealEmployeePayoutDetails"
       [label]="'pages.employee_detail.payout_details.reveal' | translate"
       icon="pi pi-eye"
-      severity="warn"
+      severity="secondary"
+      [outlined]="true"
       [loading]="facade.revealing()"
       (onClick)="onReveal()"
     />

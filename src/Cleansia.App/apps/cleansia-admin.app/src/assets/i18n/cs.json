@@ -549,7 +549,9 @@
       "weekly_order_limit": "Týdenní limit zakázek",
       "weekly_order_limit_unlimited": "Neomezený",
       "weekly_order_limit_hint": "Ponechte prázdné pro neomezený počet",
-      "not_found": "Zaměstnanec nenalezen"
+      "not_found": "Zaměstnanec nenalezen",
+      "actions_section": "Akce",
+      "rate_format": "{{base}} + {{room}}/pokoj + {{bath}}/koupelna"
     },
     "order_management": {
       "title": "Správa objednávek",
@@ -2251,9 +2253,7 @@
       "tier_label": "Aktuální úroveň",
       "lifetime_points": "Celkové body",
       "completed_bookings_label": "Dokončené úklidy",
-      "completed_bookings": "{{count}} dokončených úklidů",
       "tier_achieved_label": "Úroveň dosažena",
-      "tier_achieved_on": "Úroveň dosažena dne {{date}}",
       "next_tier_label": "Postup",
       "points_to_next_tier": "{{count}} bodů do {{tier}}",
       "max_tier_reached": "Nejvyšší úroveň dosažena",

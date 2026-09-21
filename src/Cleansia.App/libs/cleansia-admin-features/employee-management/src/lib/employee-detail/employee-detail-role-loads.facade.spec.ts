@@ -1,5 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import { AdminClient, AdminEmployeeDetail } from '@cleansia/admin-services';
+import { AdminClient, AdminEmployeeDetail, ContractStatus } from '@cleansia/admin-services';
 import { DialogService as ConfirmDialogService, PermissionService, Policy, SnackbarService } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
 import { DialogService } from 'primeng/dynamicdialog';
@@ -89,5 +89,38 @@ describe('EmployeeDetailFacade — reads gated by the role', () => {
 
     expect(employeeSummary).not.toHaveBeenCalled();
     expect(facade.loadingPayConfigs()).toBe(false);
+  });
+
+  describe('the actions section', () => {
+    const pending = () =>
+      AdminEmployeeDetail.fromJS({
+        id: 'emp-1',
+        isProfileComplete: true,
+        contractStatus: ContractStatus[ContractStatus.Pending],
+      });
+
+    it('is offered to a role that may set the weekly cap, whatever the contract state', () => {
+      setup([Policy.CanAdminUpdateEmployee]);
+      facade.employee.set(AdminEmployeeDetail.fromJS({ id: 'emp-1', contractStatus: 'Approved' }));
+
+      expect(facade.hasEntityActions()).toBe(true);
+    });
+
+    it('is offered to an approver only while the contract awaits a decision', () => {
+      setup([Policy.CanApproveEmployee]);
+
+      facade.employee.set(pending());
+      expect(facade.hasEntityActions()).toBe(true);
+
+      facade.employee.set(AdminEmployeeDetail.fromJS({ id: 'emp-1', contractStatus: 'Approved' }));
+      expect(facade.hasEntityActions()).toBe(false);
+    });
+
+    it('is withheld from a role that holds none of the three', () => {
+      setup([Policy.CanViewPayConfigs]);
+      facade.employee.set(pending());
+
+      expect(facade.hasEntityActions()).toBe(false);
+    });
   });
 });

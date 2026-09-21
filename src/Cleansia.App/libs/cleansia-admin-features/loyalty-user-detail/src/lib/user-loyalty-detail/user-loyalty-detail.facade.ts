@@ -23,6 +23,7 @@ import {
 import { ICleansiaSelectOption } from '@cleansia/components';
 import { UnsubscribeControlDirective } from '@cleansia/directives';
 import { FileDownloadService, SnackbarService } from '@cleansia/services';
+import { formatMoney, localeFor } from '@cleansia/utils';
 import { TranslateService } from '@ngx-translate/core';
 import { catchError, finalize, of, takeUntil } from 'rxjs';
 
@@ -529,6 +530,16 @@ export class UserLoyaltyDetailFacade extends UnsubscribeControlDirective {
       new Blob([json], { type: 'application/json' }),
       fileName
     );
+  }
+
+  formatBalance(balance: number, currencyCode: string | undefined): string {
+    return formatMoney(balance, currencyCode, localeFor(this.translate.currentLang));
+  }
+
+  formatLedgerAmount(amount: number | undefined, currencyCode: string | undefined): string {
+    const value = amount ?? 0;
+    const money = formatMoney(Math.abs(value), currencyCode, localeFor(this.translate.currentLang));
+    return value > 0 ? `+${money}` : value < 0 ? `-${money}` : money;
   }
 }
 

@@ -10,13 +10,14 @@ import {
   CreatePayConfigCommand,
   EmployeePayConfigDto,
   EmployeePayConfigSummaryDto,
+  EmployeePayConfigSummaryItemDto,
   RejectEmployeeRequest,
   UpdatePayConfigCommand,
 } from '@cleansia/admin-services';
 import { ICleansiaSelectOption } from '@cleansia/components';
 import { UnsubscribeControlDirective } from '@cleansia/directives';
 import { DialogService as ConfirmDialogService, PermissionService, Policy, SnackbarService } from '@cleansia/services';
-import { formatDate } from '@cleansia/utils';
+import { formatDate, formatMoney, localeFor } from '@cleansia/utils';
 import { TranslateService } from '@ngx-translate/core';
 import { DialogService } from 'primeng/dynamicdialog';
 import { catchError, filter, finalize, of, takeUntil } from 'rxjs';
@@ -335,6 +336,15 @@ export class EmployeeDetailFacade extends UnsubscribeControlDirective {
     );
   }
 
+  hasEntityActions(): boolean {
+    if (this.permissions.hasPolicy(Policy.CanAdminUpdateEmployee)) return true;
+    return (
+      this.canApproveOrReject() &&
+      (this.permissions.hasPolicy(Policy.CanApproveEmployee) ||
+        this.permissions.hasPolicy(Policy.CanRejectEmployee))
+    );
+  }
+
   // Pay config methods
   loadEmployeePayConfigs(employeeId: string): void {
     if (!this.permissions.hasPolicy(Policy.CanViewPayConfigs)) return;
@@ -559,5 +569,21 @@ export class EmployeeDetailFacade extends UnsubscribeControlDirective {
 
   formatDateTime(date: string | Date | null | undefined): string {
     return formatDate(date, this.translate.currentLang, 'dateTime') || '-';
+  }
+
+  formatServiceRate(item: EmployeePayConfigSummaryItemDto): string {
+    return this.translate.instant('pages.employee_detail.rate_format', {
+      base: this.formatRateAmount(item.basePay, item.currencyCode),
+      room: this.formatRateAmount(item.extraPerRoom, item.currencyCode),
+      bath: this.formatRateAmount(item.extraPerBathroom, item.currencyCode),
+    });
+  }
+
+  formatPackageRate(item: EmployeePayConfigSummaryItemDto): string {
+    return this.formatRateAmount(item.basePay, item.currencyCode);
+  }
+
+  private formatRateAmount(value: number, currencyCode: string | undefined): string {
+    return formatMoney(value, currencyCode, localeFor(this.translate.currentLang));
   }
 }

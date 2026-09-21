@@ -33,7 +33,6 @@ import { Policy, SnackbarService } from '@cleansia/services';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { DialogModule } from 'primeng/dialog';
 import { Tab, TabList, TabPanel, TabPanels, Tabs } from 'primeng/tabs';
-import { TooltipModule } from 'primeng/tooltip';
 import { EmailTypeDetailFacade } from './email-type-detail.facade';
 
 @Component({
@@ -45,7 +44,6 @@ import { EmailTypeDetailFacade } from './email-type-detail.facade';
     ReactiveFormsModule,
     TranslatePipe,
     DialogModule,
-    TooltipModule,
     Tabs,
     TabList,
     Tab,

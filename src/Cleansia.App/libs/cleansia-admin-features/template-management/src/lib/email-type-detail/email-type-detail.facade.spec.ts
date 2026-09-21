@@ -19,6 +19,7 @@ describe('EmailTypeDetailFacade', () => {
   let createMock: jest.Mock;
   let deleteMock: jest.Mock;
   let sendTestByTypeMock: jest.Mock;
+  let confirmMock: jest.Mock;
   let snackbar: {
     showSuccess: jest.Mock;
     showSuccessTranslated: jest.Mock;
@@ -33,6 +34,7 @@ describe('EmailTypeDetailFacade', () => {
     createMock = jest.fn().mockReturnValue(of({ id: 'tpl-1' }));
     deleteMock = jest.fn().mockReturnValue(of({ id: 'tpl-1' }));
     sendTestByTypeMock = jest.fn().mockReturnValue(of({ id: 'tpl-1' }));
+    confirmMock = jest.fn().mockReturnValue(of(true));
     snackbar = {
       showSuccess: jest.fn(),
       showSuccessTranslated: jest.fn(),
@@ -56,7 +58,7 @@ describe('EmailTypeDetailFacade', () => {
           },
         },
         { provide: SnackbarService, useValue: snackbar },
-        { provide: DialogService, useValue: { confirmTranslated: jest.fn(() => of(true)) } },
+        { provide: DialogService, useValue: { confirmTranslated: confirmMock } },
         { provide: TranslateService, useValue: { instant: (k: string) => k } },
         { provide: Router, useValue: { navigate: jest.fn() } },
       ],
@@ -133,6 +135,23 @@ describe('EmailTypeDetailFacade', () => {
     deleteMock.mockReturnValue(throwError(() => new Error('boom')));
     facade.deleteTranslation('tpl-1', EmailType.OrderReceipt, 'key');
     expect(typeDetailsMock).toHaveBeenCalledTimes(1);
+    expect(facade.deleting()).toBe(false);
+  });
+
+  it('does nothing when the delete confirmation is declined', () => {
+    confirmMock.mockReturnValue(of(false));
+    const onComplete = jest.fn();
+
+    facade.deleteTranslation('tpl-1', EmailType.OrderReceipt, 'key', onComplete);
+
+    expect(confirmMock).toHaveBeenCalledWith(
+      'pages.template_management.dialogs.delete_translation.message',
+      'pages.template_management.dialogs.delete_translation.title',
+      { key: 'key' },
+      { danger: true, acceptLabelKey: 'global.actions.delete' }
+    );
+    expect(deleteMock).not.toHaveBeenCalled();
+    expect(onComplete).not.toHaveBeenCalled();
     expect(facade.deleting()).toBe(false);
   });
 

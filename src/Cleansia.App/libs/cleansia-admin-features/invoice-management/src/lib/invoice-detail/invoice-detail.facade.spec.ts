@@ -22,6 +22,7 @@ describe('InvoiceDetailFacade', () => {
   let cancelMock: jest.Mock;
   let regenerateMock: jest.Mock;
   let assignVariableSymbolMock: jest.Mock;
+  let confirmMock: jest.Mock;
   let snackbar: {
     showSuccess: jest.Mock;
     showSuccessTranslated: jest.Mock;
@@ -45,6 +46,7 @@ describe('InvoiceDetailFacade', () => {
         pdfBlobUrl: 'https://blob/invoice-1.pdf',
       })
     );
+    confirmMock = jest.fn().mockReturnValue(of(true));
     snackbar = {
       showSuccess: jest.fn(),
       showSuccessTranslated: jest.fn(),
@@ -71,7 +73,7 @@ describe('InvoiceDetailFacade', () => {
           },
         },
         { provide: DialogService, useValue: { open: jest.fn() } },
-        { provide: ConfirmDialogService, useValue: { confirmTranslated: jest.fn(() => of(true)) } },
+        { provide: ConfirmDialogService, useValue: { confirmTranslated: confirmMock } },
         { provide: SnackbarService, useValue: snackbar },
         {
           provide: TranslateService,
@@ -272,6 +274,22 @@ describe('InvoiceDetailFacade', () => {
 
       expect(detailsMock).toHaveBeenCalledTimes(1);
       expect(snackbar.showSuccessTranslated).not.toHaveBeenCalled();
+      expect(facade.actionLoading()).toBe(false);
+    });
+
+    it('does nothing when the confirmation is declined', () => {
+      confirmMock.mockReturnValue(of(false));
+
+      facade.assignVariableSymbol();
+
+      expect(confirmMock).toHaveBeenCalledWith(
+        'pages.invoice_detail.assign_variable_symbol_confirm.message',
+        'pages.invoice_detail.assign_variable_symbol_confirm.title',
+        undefined,
+        { acceptLabelKey: 'pages.invoice_detail.assign_variable_symbol_confirm.yes' }
+      );
+      expect(assignVariableSymbolMock).not.toHaveBeenCalled();
+      expect(detailsMock).toHaveBeenCalledTimes(1);
       expect(facade.actionLoading()).toBe(false);
     });
   });

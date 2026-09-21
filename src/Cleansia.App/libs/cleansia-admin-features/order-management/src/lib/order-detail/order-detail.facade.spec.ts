@@ -385,6 +385,26 @@ describe('OrderDetailFacade — customer account', () => {
     expect(customer).not.toHaveBeenCalled();
     expect(facade.customerLoading()).toBe(false);
   });
+
+  it('reads a missing order as not found — no error flag, no facade toast, no account read', () => {
+    details.mockReturnValue(throwError(() => ({ status: 400, detail: 'order.not_found' })));
+    facade.loadOrderDetail('does-not-exist');
+    expect(facade.order()).toBeNull();
+    expect(facade.detailError()).toBe(false);
+    expect(facade.loading()).toBe(false);
+    expect(customer).not.toHaveBeenCalled();
+    expect(TestBed.inject(SnackbarService).showApiError).not.toHaveBeenCalled();
+  });
+
+  it('flags any other detail failure and toasts the load error once', () => {
+    const error = new Error('offline');
+    details.mockReturnValue(throwError(() => error));
+    facade.loadOrderDetail('broken');
+    expect(facade.order()).toBeNull();
+    expect(facade.detailError()).toBe(true);
+    expect(facade.loading()).toBe(false);
+    expect(TestBed.inject(SnackbarService).showApiError).toHaveBeenCalledWith(error, 'pages.order_detail.load_error');
+  });
 });
 
 describe('OrderDetailFacade — contract for work', () => {

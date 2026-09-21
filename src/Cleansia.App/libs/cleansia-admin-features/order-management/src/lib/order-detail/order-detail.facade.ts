@@ -90,6 +90,8 @@ export class OrderDetailFacade extends UnsubscribeControlDirective {
     this.detailRequest = this.adminClient.adminOrderClient.details(orderId)
       .pipe(
         catchError((error: unknown) => {
+          // A missing order is the not-found block's message, not a load failure and not a second toast.
+          if (extractApiErrorCode(error) === 'order.not_found') return of(null);
           this.detailError.set(true);
           this.snackbarService.showApiError(error, 'pages.order_detail.load_error');
           return of(null);

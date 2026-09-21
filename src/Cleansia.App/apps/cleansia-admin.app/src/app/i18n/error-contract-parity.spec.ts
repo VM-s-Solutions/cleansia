@@ -423,19 +423,14 @@ function resolveKey(
   return typeof node === 'string' ? node : undefined;
 }
 
-// Admin resolves a backend error through TWO namespaces, and both are live:
-//
-//   api.*    — the shared HttpErrorInterceptorFn, which admin inherits via
-//              COMMON_INTERCEPTORS_FN. It fires for EVERY non-404/403 error and
-//              looks up `api.${dotValue}`, falling back to the generic message
-//              when the key is absent. This is the canonical path.
-//   errors.* — the per-feature XXX_ERROR_KEY_MAP resolvers that several admin
-//              features still carry (orders, disputes, refunds, referrals).
-//              Back-compat only; new work uses the interceptor path.
-//
-// A key written under only one of them when the reading path uses the other
-// reads as "An error occurred. Please try again." — the exact silent swallow
-// this guard exists to catch.
+// Admin resolves a backend error through ONE namespace, api.*: the shared
+// HttpErrorInterceptorFn, which admin inherits via COMMON_INTERCEPTORS_FN, fires
+// for EVERY non-404/403 error and looks up `api.${dotValue}`; a facade that reads
+// the code itself goes through resolveApiErrorKey, which resolves the same key.
+// A dot-value with no api.* entry reads as "An error occurred. Please try again."
+// — the exact silent swallow this guard exists to catch. The per-feature
+// errors.* resolvers that once made a second namespace are retired; the guard
+// at the end of this file keeps them so.
 // Admin-surface error contract: every BusinessErrorMessage dot-value a
 // Cleansia.Web.Admin controller can return, translated under api.* in all five
 // locales so the shared interceptor path resolves it.

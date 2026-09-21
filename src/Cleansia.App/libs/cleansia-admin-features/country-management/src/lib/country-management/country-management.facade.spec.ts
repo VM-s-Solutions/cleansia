@@ -10,6 +10,8 @@ describe('CountryManagementFacade', () => {
   let facade: CountryManagementFacade;
   let getOverviewMock: jest.Mock;
   let defaultMarketMock: jest.Mock;
+  let deleteMock: jest.Mock;
+  let confirmMock: jest.Mock;
   let snackbar: {
     showSuccess: jest.Mock;
     showSuccessTranslated: jest.Mock;
@@ -26,6 +28,8 @@ describe('CountryManagementFacade', () => {
     TestBed.resetTestingModule();
     getOverviewMock = jest.fn().mockReturnValue(of([]));
     defaultMarketMock = jest.fn();
+    deleteMock = jest.fn().mockReturnValue(of(null));
+    confirmMock = jest.fn().mockReturnValue(of(true));
     snackbar = {
       showSuccess: jest.fn(),
       showSuccessTranslated: jest.fn(),
@@ -42,12 +46,12 @@ describe('CountryManagementFacade', () => {
             adminCountryClient: {
               getOverview: getOverviewMock,
               defaultMarket: defaultMarketMock,
-              delete: jest.fn().mockReturnValue(of(null)),
+              delete: deleteMock,
             },
           },
         },
         { provide: SnackbarService, useValue: snackbar },
-        { provide: DialogService, useValue: { confirmTranslated: jest.fn(() => of(true)) } },
+        { provide: DialogService, useValue: { confirmTranslated: confirmMock } },
         { provide: TranslateService, useValue: { instant: (k: string) => k } },
         { provide: Router, useValue: { navigate: jest.fn() } },
       ],
@@ -156,5 +160,36 @@ describe('CountryManagementFacade', () => {
       expect(snackbar.showSuccessTranslated).not.toHaveBeenCalled();
       expect(getOverviewMock).not.toHaveBeenCalled();
     });
+  });
+
+  describe('deleteCountry', () => {
+    it('asks in red with a delete label, deletes, shows success and re-reads the list', () => {
+      deleteMock.mockReturnValue(of({ id: 'c-2' }));
+      getOverviewMock.mockReturnValue(of(countries));
+
+      facade.deleteCountry(countries[1]);
+
+      expect(confirmMock).toHaveBeenCalledWith(
+        'pages.country_management.delete_confirm',
+        'pages.country_management.delete_country',
+        undefined,
+        { danger: true, acceptLabelKey: 'global.actions.delete' }
+      );
+      expect(deleteMock).toHaveBeenCalledWith('c-2');
+      expect(snackbar.showSuccessTranslated).toHaveBeenCalledWith('pages.country_management.messages.delete_success');
+      expect(getOverviewMock).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  it('does nothing when the confirmation is declined', () => {
+    confirmMock.mockReturnValue(of(false));
+
+    facade.setDefaultMarket(countries[1]);
+    facade.deleteCountry(countries[1]);
+
+    expect(confirmMock).toHaveBeenCalledTimes(2);
+    expect(defaultMarketMock).not.toHaveBeenCalled();
+    expect(deleteMock).not.toHaveBeenCalled();
+    expect(getOverviewMock).not.toHaveBeenCalled();
   });
 });

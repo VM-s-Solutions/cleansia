@@ -14,6 +14,7 @@ import { BILLING_INTERVAL_WIRE } from './membership-plan-list.models';
 describe('MembershipPlanListFacade', () => {
   let facade: MembershipPlanListFacade;
   let membershipClient: { getPaged: jest.Mock; deactivate: jest.Mock };
+  let confirmMock: jest.Mock;
   let snackbar: {
     showSuccess: jest.Mock;
     showSuccessTranslated: jest.Mock;
@@ -39,6 +40,7 @@ describe('MembershipPlanListFacade', () => {
 
   beforeEach(() => {
     membershipClient = { getPaged: jest.fn(), deactivate: jest.fn() };
+    confirmMock = jest.fn().mockReturnValue(of(true));
     snackbar = {
       showSuccess: jest.fn(),
       showSuccessTranslated: jest.fn(),
@@ -51,7 +53,7 @@ describe('MembershipPlanListFacade', () => {
         MembershipPlanListFacade,
         { provide: AdminMembershipClient, useValue: membershipClient },
         { provide: SnackbarService, useValue: snackbar },
-        { provide: DialogService, useValue: { confirmTranslated: jest.fn(() => of(true)) } },
+        { provide: DialogService, useValue: { confirmTranslated: confirmMock } },
         { provide: TranslateService, useValue: { instant: (k: string) => k } },
       ],
     });
@@ -134,6 +136,22 @@ describe('MembershipPlanListFacade', () => {
   it('does not call deactivate for a row without id', () => {
     facade.deactivatePlan(MembershipPlanListItem.fromJS({}));
     expect(membershipClient.deactivate).not.toHaveBeenCalled();
+  });
+
+  it('does nothing when the confirmation is declined', () => {
+    confirmMock.mockReturnValue(of(false));
+
+    facade.deactivatePlan(MembershipPlanListItem.fromJS({ id: 'plan-1', code: 'PLUS_MONTHLY' }));
+
+    expect(confirmMock).toHaveBeenCalledWith(
+      'pages.membership_plans.deactivate_confirm.message',
+      'pages.membership_plans.deactivate_confirm.title',
+      { code: 'PLUS_MONTHLY' },
+      { acceptLabelKey: 'pages.membership_plans.deactivate_confirm.yes' }
+    );
+    expect(membershipClient.deactivate).not.toHaveBeenCalled();
+    expect(membershipClient.getPaged).not.toHaveBeenCalled();
+    expect(facade.deactivating()).toBe(false);
   });
 
   it('leaves the membership.plan.not_found refusal to the interceptor toast on deactivate failure', () => {

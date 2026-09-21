@@ -49,9 +49,8 @@ describe('confirmation dialog', () => {
     }
   });
 
-  it('is opened through DialogService, never through a feature-scoped ConfirmationService', () => {
-    expect(offenders(/providers:\s*\[[^\]]*\bConfirmationService\b/)).toEqual([]);
-    expect(offenders(/confirmationService\.confirm\(/)).toEqual([]);
+  it("is opened through DialogService — no feature imports PrimeNG's ConfirmationService or its dialog", () => {
+    expect(offenders(/\bConfirmationService\b|from 'primeng\/confirmdialog'/)).toEqual([]);
   });
 
   it('reads its Yes and No from the bundle, never from a hardcoded PrimeNG block', () => {

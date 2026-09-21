@@ -13,6 +13,7 @@ import { PromoCodesListFacade } from './promo-codes-list.facade';
 describe('PromoCodesListFacade', () => {
   let facade: PromoCodesListFacade;
   let promoCodeClient: { getPaged: jest.Mock; deactivate: jest.Mock };
+  let confirmMock: jest.Mock;
   let snackbar: {
     showSuccess: jest.Mock; showSuccessTranslated: jest.Mock;
     showApiError: jest.Mock;
@@ -23,6 +24,7 @@ describe('PromoCodesListFacade', () => {
 
   beforeEach(() => {
     promoCodeClient = { getPaged: jest.fn(), deactivate: jest.fn() };
+    confirmMock = jest.fn().mockReturnValue(of(true));
     snackbar = {
       showSuccess: jest.fn(),
       showSuccessTranslated: jest.fn(),
@@ -34,7 +36,7 @@ describe('PromoCodesListFacade', () => {
         PromoCodesListFacade,
         { provide: AdminClient, useValue: { adminPromoCodeClient: promoCodeClient } },
         { provide: SnackbarService, useValue: snackbar },
-        { provide: DialogService, useValue: { confirmTranslated: jest.fn(() => of(true)) } },
+        { provide: DialogService, useValue: { confirmTranslated: confirmMock } },
         { provide: TranslateService, useValue: { instant: (k: string) => k } },
         { provide: Router, useValue: { navigate: jest.fn() } },
       ],
@@ -73,5 +75,21 @@ describe('PromoCodesListFacade', () => {
     facade.deactivate(PromoCodeListItem.fromJS({ code: 'NOID' }));
 
     expect(promoCodeClient.deactivate).not.toHaveBeenCalled();
+  });
+
+  it('does nothing when the confirmation is declined', () => {
+    confirmMock.mockReturnValue(of(false));
+
+    facade.deactivate(item);
+
+    expect(confirmMock).toHaveBeenCalledWith(
+      'pages.promo_codes.detail.deactivate_confirm_body',
+      'pages.promo_codes.detail.deactivate_confirm_title',
+      undefined,
+      { acceptLabelKey: 'pages.promo_codes.detail.deactivate_confirm_yes' }
+    );
+    expect(promoCodeClient.deactivate).not.toHaveBeenCalled();
+    expect(promoCodeClient.getPaged).not.toHaveBeenCalled();
+    expect(facade.loading()).toBe(false);
   });
 });

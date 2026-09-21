@@ -90,13 +90,6 @@
     white-space: pre-wrap;
   }
 
-  &__empty {
-    margin: 0;
-    padding: 1.5rem 0;
-    color: var(--cleansia-text-secondary);
-    line-height: 1.6;
-  }
-
   // The thread: customer on the left in white, staff on the right on the brand
   // tint, each bubble with the corner nearest its author squared.
   &__messages {

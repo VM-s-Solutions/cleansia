@@ -9,10 +9,16 @@ import { LanguageManagementFacade } from './language-management.facade';
 describe('LanguageManagementFacade', () => {
   let facade: LanguageManagementFacade;
   let getOverviewMock: jest.Mock;
+  let deleteMock: jest.Mock;
+  let confirmMock: jest.Mock;
+  let snackbar: { showSuccessTranslated: jest.Mock };
 
   beforeEach(() => {
     TestBed.resetTestingModule();
     getOverviewMock = jest.fn().mockReturnValue(of([]));
+    deleteMock = jest.fn().mockReturnValue(of(null));
+    confirmMock = jest.fn().mockReturnValue(of(true));
+    snackbar = { showSuccessTranslated: jest.fn() };
 
     TestBed.configureTestingModule({
       providers: [
@@ -22,20 +28,12 @@ describe('LanguageManagementFacade', () => {
           useValue: {
             adminLanguageClient: {
               getOverview: getOverviewMock,
-              delete: jest.fn().mockReturnValue(of(null)),
+              delete: deleteMock,
             },
           },
         },
-        {
-          provide: SnackbarService,
-          useValue: {
-            showSuccess: jest.fn(),
-            showSuccessTranslated: jest.fn(),
-            showError: jest.fn(),
-            showErrorTranslated: jest.fn(),
-          },
-        },
-        { provide: DialogService, useValue: { confirmTranslated: jest.fn(() => of(true)) } },
+        { provide: SnackbarService, useValue: snackbar },
+        { provide: DialogService, useValue: { confirmTranslated: confirmMock } },
         {
           provide: TranslateService,
           useValue: {
@@ -94,5 +92,34 @@ describe('LanguageManagementFacade', () => {
     facade.filters.reset();
     expect(facade.languages().length).toBe(2);
     jest.useRealTimers();
+  });
+
+  describe('deleteLanguage', () => {
+    const language = LanguageListItem.fromJS({ id: 'l-2', code: 'uk' });
+
+    it('asks in red with a delete label, deletes, shows success and re-reads the list', () => {
+      deleteMock.mockReturnValue(of({ id: 'l-2' }));
+
+      facade.deleteLanguage(language);
+
+      expect(confirmMock).toHaveBeenCalledWith(
+        'pages.language_management.delete_confirm',
+        'pages.language_management.delete_language',
+        undefined,
+        { danger: true, acceptLabelKey: 'global.actions.delete' }
+      );
+      expect(deleteMock).toHaveBeenCalledWith('l-2');
+      expect(snackbar.showSuccessTranslated).toHaveBeenCalledWith('pages.language_management.messages.delete_success');
+      expect(getOverviewMock).toHaveBeenCalledTimes(1);
+    });
+
+    it('does nothing when the confirmation is declined', () => {
+      confirmMock.mockReturnValue(of(false));
+
+      facade.deleteLanguage(language);
+
+      expect(deleteMock).not.toHaveBeenCalled();
+      expect(getOverviewMock).not.toHaveBeenCalled();
+    });
   });
 });

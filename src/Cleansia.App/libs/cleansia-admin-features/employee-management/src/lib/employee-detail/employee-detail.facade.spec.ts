@@ -19,6 +19,7 @@ describe('EmployeeDetailFacade — pay config overrides', () => {
   let updateMock: jest.Mock;
   let deleteMock: jest.Mock;
   let employeeSummaryMock: jest.Mock;
+  let confirmMock: jest.Mock;
   let snackbar: {
     showSuccess: jest.Mock;
     showSuccessTranslated: jest.Mock;
@@ -40,6 +41,7 @@ describe('EmployeeDetailFacade — pay config overrides', () => {
     updateMock = jest.fn();
     deleteMock = jest.fn();
     employeeSummaryMock = jest.fn().mockReturnValue(of(null));
+    confirmMock = jest.fn().mockReturnValue(of(true));
     snackbar = {
       showSuccess: jest.fn(),
       showSuccessTranslated: jest.fn(),
@@ -64,7 +66,7 @@ describe('EmployeeDetailFacade — pay config overrides', () => {
         { provide: SnackbarService, useValue: snackbar },
         { provide: TranslateService, useValue: { instant: (k: string) => k } },
         { provide: DialogService, useValue: { open: jest.fn() } },
-        { provide: ConfirmDialogService, useValue: { confirmTranslated: jest.fn(() => of(true)) } },
+        { provide: ConfirmDialogService, useValue: { confirmTranslated: confirmMock } },
         {
           provide: EmployeeDocumentsFacade,
           useValue: { loadEmployeeDocuments: jest.fn(), ngOnDestroy: jest.fn() },
@@ -181,6 +183,21 @@ describe('EmployeeDetailFacade — pay config overrides', () => {
     expect(snackbar.showErrorTranslated).toHaveBeenCalled();
     expect(employeeSummaryMock).not.toHaveBeenCalled();
     expect(snackbar.showSuccessTranslated).not.toHaveBeenCalled();
+  });
+
+  it('does nothing when the delete confirmation is declined', () => {
+    confirmMock.mockReturnValue(of(false));
+
+    facade.deleteEmployeePayConfig('pc-1');
+
+    expect(confirmMock).toHaveBeenCalledWith(
+      'pages.employee_detail.delete_override_confirm',
+      'pages.employee_detail.delete_override',
+      undefined,
+      { danger: true, acceptLabelKey: 'global.actions.delete' }
+    );
+    expect(deleteMock).not.toHaveBeenCalled();
+    expect(employeeSummaryMock).not.toHaveBeenCalled();
   });
 });
 

@@ -62,7 +62,10 @@ export class OrderPhotosFacade extends UnsubscribeControlDirective {
 
   deletePhoto(orderId: string, photoId: string): void {
     this.dialogService
-      .confirmTranslated('pages.order_details.delete_photo_confirm')
+      .confirmTranslated('pages.order_details.delete_photo_confirm', undefined, undefined, {
+        danger: true,
+        acceptLabelKey: 'global.actions.delete',
+      })
       .pipe(takeUntil(this.destroyed$))
       .subscribe((confirmed) => {
         if (!confirmed) return;

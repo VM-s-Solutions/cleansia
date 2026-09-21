@@ -23,6 +23,7 @@ describe('PartnerGdprFacade', () => {
   };
   let consentsClient: { withdraw: jest.Mock };
   let authService: { isLoggedIn: jest.Mock; logout: jest.Mock };
+  let confirmMock: jest.Mock;
   let snackbar: {
     showSuccess: jest.Mock; showSuccessTranslated: jest.Mock;
     showError: jest.Mock; showErrorTranslated: jest.Mock;
@@ -52,7 +53,7 @@ describe('PartnerGdprFacade', () => {
         { provide: ConsentsClient, useValue: consentsClient },
         { provide: PartnerAuthService, useValue: authService },
         { provide: SnackbarService, useValue: snackbar },
-        { provide: DialogService, useValue: { confirmTranslated: jest.fn(() => of(true)) } },
+        { provide: DialogService, useValue: { confirmTranslated: confirmMock } },
         { provide: TranslateService, useValue: { instant: (k: string) => k } },
       ],
     });
@@ -69,6 +70,7 @@ describe('PartnerGdprFacade', () => {
     };
     consentsClient = { withdraw: jest.fn() };
     authService = { isLoggedIn: jest.fn(), logout: jest.fn() };
+    confirmMock = jest.fn().mockReturnValue(of(true));
     snackbar = {
       showSuccess: jest.fn(), showSuccessTranslated: jest.fn(),
       showError: jest.fn(), showErrorTranslated: jest.fn(),
@@ -272,6 +274,22 @@ describe('PartnerGdprFacade', () => {
       facade.deleteAccount();
 
       expect(gdprClient.deleteAccount).not.toHaveBeenCalled();
+    });
+
+    it('does nothing when the confirmation is declined', () => {
+      confirmMock.mockReturnValue(of(false));
+      const facade = createFacade(true);
+
+      facade.deleteAccount();
+
+      expect(confirmMock).toHaveBeenCalledWith(
+        'pages.gdpr.delete_confirm_message',
+        'pages.gdpr.delete_confirm_title',
+        undefined,
+        { danger: true, acceptLabelKey: 'pages.gdpr.delete_confirm_yes' }
+      );
+      expect(gdprClient.deleteAccount).not.toHaveBeenCalled();
+      expect(facade.deleting()).toBe(false);
     });
   });
 });

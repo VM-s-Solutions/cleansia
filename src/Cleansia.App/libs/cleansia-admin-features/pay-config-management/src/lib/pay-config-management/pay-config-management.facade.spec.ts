@@ -14,6 +14,7 @@ describe('PayConfigManagementFacade', () => {
   let facade: PayConfigManagementFacade;
   let getPagedMock: jest.Mock;
   let deleteMock: jest.Mock;
+  let confirmMock: jest.Mock;
   let snackbar: {
     showSuccess: jest.Mock;
     showSuccessTranslated: jest.Mock;
@@ -42,6 +43,7 @@ describe('PayConfigManagementFacade', () => {
   beforeEach(() => {
     getPagedMock = jest.fn().mockReturnValue(of(populatedPage));
     deleteMock = jest.fn();
+    confirmMock = jest.fn().mockReturnValue(of(true));
     snackbar = {
       showSuccess: jest.fn(),
       showSuccessTranslated: jest.fn(),
@@ -62,7 +64,7 @@ describe('PayConfigManagementFacade', () => {
           },
         },
         { provide: SnackbarService, useValue: snackbar },
-        { provide: DialogService, useValue: { confirmTranslated: jest.fn(() => of(true)) } },
+        { provide: DialogService, useValue: { confirmTranslated: confirmMock } },
         { provide: TranslateService, useValue: { instant: (k: string) => k, currentLang: 'cs' } },
         { provide: Router, useValue: { navigate: jest.fn() } },
       ],
@@ -158,6 +160,21 @@ describe('PayConfigManagementFacade', () => {
     facade.deletePayConfig(EmployeePayConfigDto.fromJS({ id: 'pc-1' }));
 
     expect(snackbar.showSuccessTranslated).not.toHaveBeenCalled();
+    expect(getPagedMock).not.toHaveBeenCalled();
+  });
+
+  it('does nothing when the confirmation is declined', () => {
+    confirmMock.mockReturnValue(of(false));
+
+    facade.deletePayConfig(EmployeePayConfigDto.fromJS({ id: 'pc-1' }));
+
+    expect(confirmMock).toHaveBeenCalledWith(
+      'pages.pay_config_management.delete_confirm',
+      'pages.pay_config_management.delete',
+      undefined,
+      { danger: true, acceptLabelKey: 'global.actions.delete' }
+    );
+    expect(deleteMock).not.toHaveBeenCalled();
     expect(getPagedMock).not.toHaveBeenCalled();
   });
 

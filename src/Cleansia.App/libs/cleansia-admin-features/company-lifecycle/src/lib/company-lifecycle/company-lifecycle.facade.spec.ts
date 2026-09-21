@@ -238,14 +238,17 @@ describe('CompanyLifecycleFacade', () => {
   });
 
   describe('deactivate', () => {
-    it('confirms what changes, deactivates, toasts and re-reads', () => {
+    it('confirms what changes in red, deactivates, toasts and re-reads', () => {
       facade.load();
 
       facade.perform(LifecycleAct.Deactivate);
 
-      expect(confirmMock).toHaveBeenCalledWith('pages.company_lifecycle.confirm.deactivate', 'pages.company_lifecycle.acts.deactivate', {
-        name: 'Cleansia CZ',
-      });
+      expect(confirmMock).toHaveBeenCalledWith(
+        'pages.company_lifecycle.confirm.deactivate',
+        'pages.company_lifecycle.acts.deactivate',
+        { name: 'Cleansia CZ' },
+        { danger: true }
+      );
       expect(deactivateMock).toHaveBeenCalledTimes(1);
       expect(snackbar.showSuccessTranslated).toHaveBeenCalledWith('pages.company_lifecycle.messages.deactivated');
       expect(facade.actInFlight()).toBeNull();
@@ -261,7 +264,8 @@ describe('CompanyLifecycleFacade', () => {
       expect(confirmMock).toHaveBeenCalledWith(
         'pages.company_lifecycle.confirm.deactivate_with_wind_down',
         'pages.company_lifecycle.acts.deactivate',
-        { name: 'Cleansia CZ', date: day(WIND_DOWN_FROM) }
+        { name: 'Cleansia CZ', date: day(WIND_DOWN_FROM) },
+        { danger: true }
       );
       expect(deactivateMock).toHaveBeenCalledTimes(1);
     });
@@ -390,32 +394,37 @@ describe('CompanyLifecycleFacade', () => {
   });
 
   describe('archive', () => {
-    it('confirms with every fact that must be zero and the horizon date, freezes, toasts and re-reads', () => {
+    it('confirms in red with every fact that must be zero and the horizon date, freezes, toasts and re-reads', () => {
       const horizon = new Date('2026-09-15T00:00:00Z');
       getMock.mockReturnValue(of(lifecycle({ state: CompanyLifecycleState.Deactivated, windDownFrom: WIND_DOWN_FROM, chargebackHorizonEndsOn: horizon })));
       facade.load();
 
       facade.perform(LifecycleAct.Archive);
 
-      expect(confirmMock).toHaveBeenCalledWith('pages.company_lifecycle.confirm.archive', 'pages.company_lifecycle.acts.archive', {
-        name: 'Cleansia CZ',
-        facts: [
-          'openOrders',
-          'activeMemberships',
-          'creditBalances',
-          'pendingRefunds',
-          'ordersAwaitingPay',
-          'ordersAwaitingReceipt',
-          'receiptsAwaitingFiscalRegistration',
-          'openPayPeriods',
-          'unpaidInvoices',
-          'uninvoicedPayRows',
-          'openDisputes',
-        ]
-          .map((id) => `pages.company_lifecycle.facts.${id}`)
-          .join(', '),
-        date: day(horizon),
-      });
+      expect(confirmMock).toHaveBeenCalledWith(
+        'pages.company_lifecycle.confirm.archive',
+        'pages.company_lifecycle.acts.archive',
+        {
+          name: 'Cleansia CZ',
+          facts: [
+            'openOrders',
+            'activeMemberships',
+            'creditBalances',
+            'pendingRefunds',
+            'ordersAwaitingPay',
+            'ordersAwaitingReceipt',
+            'receiptsAwaitingFiscalRegistration',
+            'openPayPeriods',
+            'unpaidInvoices',
+            'uninvoicedPayRows',
+            'openDisputes',
+          ]
+            .map((id) => `pages.company_lifecycle.facts.${id}`)
+            .join(', '),
+          date: day(horizon),
+        },
+        { danger: true }
+      );
       expect(archiveMock).toHaveBeenCalledTimes(1);
       expect(snackbar.showSuccessTranslated).toHaveBeenCalledWith('pages.company_lifecycle.messages.archive_requested');
       expect(getMock).toHaveBeenCalledTimes(2);
@@ -439,7 +448,8 @@ describe('CompanyLifecycleFacade', () => {
       expect(confirmMock).toHaveBeenCalledWith(
         'pages.company_lifecycle.confirm.archive_again',
         'pages.company_lifecycle.acts.build_archive_again',
-        { name: 'Cleansia CZ', frozenOn: formatDate(NOW, 'en', 'dateTime') }
+        { name: 'Cleansia CZ', frozenOn: formatDate(NOW, 'en', 'dateTime') },
+        { danger: true }
       );
       expect(archiveMock).toHaveBeenCalledTimes(1);
     });

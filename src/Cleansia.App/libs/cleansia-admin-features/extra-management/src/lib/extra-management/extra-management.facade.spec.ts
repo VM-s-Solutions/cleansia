@@ -17,6 +17,7 @@ describe('ExtraManagementFacade', () => {
   let activateMock: jest.Mock;
   let deleteMock: jest.Mock;
   let getOverviewMock: jest.Mock;
+  let confirmMock: jest.Mock;
   let snackbar: {
     showSuccess: jest.Mock;
     showSuccessTranslated: jest.Mock;
@@ -34,6 +35,7 @@ describe('ExtraManagementFacade', () => {
     deactivateMock = jest.fn();
     activateMock = jest.fn();
     deleteMock = jest.fn();
+    confirmMock = jest.fn().mockReturnValue(of(true));
     getOverviewMock = jest.fn().mockReturnValue(
       of([{ id: 'cur-eur', code: 'EUR', isDefault: true }, { id: 'cur-czk', code: 'CZK', isDefault: false }])
     );
@@ -62,7 +64,7 @@ describe('ExtraManagementFacade', () => {
           },
         },
         { provide: SnackbarService, useValue: snackbar },
-        { provide: DialogService, useValue: { confirmTranslated: jest.fn(() => of(true)) } },
+        { provide: DialogService, useValue: { confirmTranslated: confirmMock } },
         {
           provide: TranslateService,
           useValue: {
@@ -166,6 +168,18 @@ describe('ExtraManagementFacade', () => {
       'pages.extra_management.messages.delete_success'
     );
     expect(getPagedMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('does nothing when the confirmation is declined', () => {
+    confirmMock.mockReturnValue(of(false));
+
+    facade.deactivateExtra(ExtraListItem.fromJS({ id: 'ext-1' }));
+    facade.deleteExtra(ExtraListItem.fromJS({ id: 'ext-1' }));
+
+    expect(confirmMock).toHaveBeenCalledTimes(2);
+    expect(deactivateMock).not.toHaveBeenCalled();
+    expect(deleteMock).not.toHaveBeenCalled();
+    expect(getPagedMock).not.toHaveBeenCalled();
   });
 
   it('does not call deactivate, activate or delete for a row without id', () => {

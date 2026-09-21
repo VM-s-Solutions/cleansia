@@ -13,6 +13,7 @@ describe('CurrencyManagementFacade', () => {
   let deactivateMock: jest.Mock;
   let activateMock: jest.Mock;
   let deleteMock: jest.Mock;
+  let confirmMock: jest.Mock;
   let snackbar: {
     showSuccess: jest.Mock;
     showSuccessTranslated: jest.Mock;
@@ -31,6 +32,7 @@ describe('CurrencyManagementFacade', () => {
     deactivateMock = jest.fn();
     activateMock = jest.fn();
     deleteMock = jest.fn();
+    confirmMock = jest.fn().mockReturnValue(of(true));
     snackbar = {
       showSuccess: jest.fn(),
       showSuccessTranslated: jest.fn(),
@@ -54,7 +56,7 @@ describe('CurrencyManagementFacade', () => {
           },
         },
         { provide: SnackbarService, useValue: snackbar },
-        { provide: DialogService, useValue: { confirmTranslated: jest.fn(() => of(true)) } },
+        { provide: DialogService, useValue: { confirmTranslated: confirmMock } },
         { provide: TranslateService, useValue: { instant: (k: string) => k } },
         { provide: Router, useValue: { navigate: jest.fn() } },
       ],
@@ -175,6 +177,47 @@ describe('CurrencyManagementFacade', () => {
       'pages.currency_management.messages.activate_success'
     );
     expect(getOverviewMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('deletes a currency, shows success and reloads the list', () => {
+    deleteMock.mockReturnValue(of({ currencyId: 'cur-2' }));
+    getOverviewMock.mockReturnValue(of(currencies));
+
+    facade.deleteCurrency(currencies[1]);
+
+    expect(confirmMock).toHaveBeenCalledWith(
+      'pages.currency_management.delete_confirm',
+      'pages.currency_management.delete_currency',
+      undefined,
+      { danger: true, acceptLabelKey: 'global.actions.delete' }
+    );
+    expect(deleteMock).toHaveBeenCalledWith('cur-2');
+    expect(snackbar.showSuccessTranslated).toHaveBeenCalledWith('pages.currency_management.messages.delete_success');
+    expect(getOverviewMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('refuses to delete the default currency without asking', () => {
+    facade.deleteCurrency(currencies[0]);
+
+    expect(confirmMock).not.toHaveBeenCalled();
+    expect(deleteMock).not.toHaveBeenCalled();
+    expect(snackbar.showErrorTranslated).toHaveBeenCalledWith('pages.currency_management.cannot_delete_default');
+  });
+
+  it('does nothing when the confirmation is declined', () => {
+    confirmMock.mockReturnValue(of(false));
+
+    facade.setDefaultCurrency(currencies[1]);
+    facade.deactivateCurrency(currencies[1]);
+    facade.activateCurrency(currencies[1]);
+    facade.deleteCurrency(currencies[1]);
+
+    expect(confirmMock).toHaveBeenCalledTimes(4);
+    expect(setDefaultMock).not.toHaveBeenCalled();
+    expect(deactivateMock).not.toHaveBeenCalled();
+    expect(activateMock).not.toHaveBeenCalled();
+    expect(deleteMock).not.toHaveBeenCalled();
+    expect(getOverviewMock).not.toHaveBeenCalled();
   });
 
   it('does not call deactivate or activate for a row without id', () => {

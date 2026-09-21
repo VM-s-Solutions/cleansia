@@ -11,7 +11,7 @@ final class CreateDisputeViewModelTests: XCTestCase {
     private func makeVM(
         orderId: String? = "order-1",
         client: FakeDisputeClient,
-        snackbar: SnackbarController = SnackbarController()
+        snackbar: SnackbarController? = nil
     ) -> (CreateDisputeViewModel, DisputeRepository) {
         let repo = DisputeRepository(client: client, pageSize: 1)
         let vm = CreateDisputeViewModel(
@@ -19,7 +19,7 @@ final class CreateDisputeViewModelTests: XCTestCase {
             repository: repo,
             // These cases are about the submit path; the item list has its own test.
             orderClient: FakeOrderClient(),
-            snackbar: snackbar
+            snackbar: snackbar ?? SnackbarController()
         )
         return (vm, repo)
     }

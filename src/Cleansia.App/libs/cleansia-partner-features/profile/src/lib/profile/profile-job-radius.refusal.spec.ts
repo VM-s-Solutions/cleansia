@@ -63,7 +63,7 @@ describe('job radius refusal', () => {
           ProfileJobRadiusFacade,
           {
             provide: SnackbarService,
-            useValue: { showError, showSuccess: jest.fn() },
+            useValue: { showError, showSuccess: jest.fn(), showSuccessTranslated: jest.fn() },
           },
         ],
       });

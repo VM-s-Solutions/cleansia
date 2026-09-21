@@ -2,7 +2,7 @@ import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import {
   CleansiaButtonComponent,
-  CleansiaDashboardSkeletonComponent,
+  CleansiaLoaderComponent,
   CleansiaSectionComponent,
   CleansiaTitleComponent,
 } from '@cleansia/components';
@@ -23,13 +23,13 @@ import { StatCard } from './dashboard.models';
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
+    CleansiaLoaderComponent,
     CardModule,
     ButtonModule,
     CommonModule,
     TranslatePipe,
     CleansiaTitleComponent,
     CleansiaButtonComponent,
-    CleansiaDashboardSkeletonComponent,
     CleansiaSectionComponent,
     Skeleton,
     CleansiaEarningsChartComponent,

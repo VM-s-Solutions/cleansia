@@ -6,15 +6,14 @@ import {
   PromoCodeRedemptionListItem,
 } from '@cleansia/admin-services';
 import { UnsubscribeControlDirective } from '@cleansia/directives';
-import { SnackbarService } from '@cleansia/services';
-import { TranslateService } from '@ngx-translate/core';
-import { catchError, finalize, of, takeUntil } from 'rxjs';
+import { DialogService, SnackbarService } from '@cleansia/services';
+import { catchError, filter, finalize, of, takeUntil } from 'rxjs';
 
 @Injectable()
 export class PromoCodeDetailFacade extends UnsubscribeControlDirective {
   private readonly adminClient = inject(AdminClient);
+  private readonly dialog = inject(DialogService);
   private readonly snackbarService = inject(SnackbarService);
-  private readonly translate = inject(TranslateService);
   private readonly router = inject(Router);
 
   readonly promoCode = signal<PromoCodeDetailDto | null>(null);
@@ -73,20 +72,30 @@ export class PromoCodeDetailFacade extends UnsubscribeControlDirective {
   }
 
   deactivate(): void {
-    if (!this.currentId) return;
+    const id = this.currentId;
+    if (!id) return;
+
+    this.dialog
+      .confirmTranslated(
+        'pages.promo_codes.detail.deactivate_confirm_body',
+        'pages.promo_codes.detail.deactivate_confirm_title',
+        undefined,
+        { acceptLabelKey: 'pages.promo_codes.detail.deactivate_confirm_yes' }
+      )
+      .pipe(takeUntil(this.destroyed$), filter(Boolean))
+      .subscribe(() => this.deactivateConfirmed(id));
+  }
+
+  private deactivateConfirmed(id: string): void {
     this.adminClient.adminPromoCodeClient
-      .deactivate(this.currentId)
+      .deactivate(id)
       .pipe(
         takeUntil(this.destroyed$),
         catchError(() => of(null))
       )
       .subscribe((response) => {
         if (response) {
-          this.snackbarService.showSuccess(
-            this.translate.instant(
-              'pages.promo_codes.form.success.deactivated'
-            )
-          );
+          this.snackbarService.showSuccessTranslated('pages.promo_codes.form.success.deactivated');
           if (this.currentId) {
             this.loadPromoCode(this.currentId);
           }

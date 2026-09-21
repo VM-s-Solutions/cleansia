@@ -51,7 +51,7 @@ describe('RegisterFacade — the consent ticked at signup', () => {
   let facade: RegisterFacade;
   let authService: { registerEmployee: jest.Mock };
   let router: { navigate: jest.Mock };
-  let snackbar: { showError: jest.Mock };
+  let snackbar: { showError: jest.Mock; showErrorTranslated: jest.Mock };
   let partnerClient: { marketClient: { getOverview: jest.Mock } };
 
   const EMAIL = 'cleaner@example.com';
@@ -75,7 +75,7 @@ describe('RegisterFacade — the consent ticked at signup', () => {
   beforeEach(() => {
     authService = { registerEmployee: jest.fn().mockReturnValue(of(true)) };
     router = { navigate: jest.fn() };
-    snackbar = { showError: jest.fn() };
+    snackbar = { showError: jest.fn(), showErrorTranslated: jest.fn() };
     partnerClient = {
       marketClient: { getOverview: jest.fn().mockReturnValue(of([CZ])) },
     };
@@ -117,7 +117,7 @@ describe('RegisterFacade — the consent ticked at signup', () => {
     facade.register();
 
     expect(authService.registerEmployee).not.toHaveBeenCalled();
-    expect(snackbar.showError).toHaveBeenCalledTimes(1);
+    expect(snackbar.showErrorTranslated).toHaveBeenCalledTimes(1);
   });
 
   // Unreachable in the shipped form, which the test above pins: `terms` is
@@ -148,7 +148,13 @@ describe('RegisterFacade — the market picker', () => {
         { provide: Router, useValue: { navigate: jest.fn() } },
         { provide: PartnerAuthService, useValue: authService },
         { provide: PartnerClient, useValue: { marketClient: { getOverview } } },
-        { provide: SnackbarService, useValue: { showError: jest.fn() } },
+        {
+          provide: SnackbarService,
+          useValue: {
+            showError: jest.fn(),
+            showErrorTranslated: jest.fn(),
+          },
+        },
         { provide: TranslateService, useValue: translateStub(langChange) },
       ],
     });

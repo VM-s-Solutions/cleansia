@@ -49,9 +49,7 @@ export class PayPeriodDetailFacade extends UnsubscribeControlDirective {
       )
       .subscribe((response) => {
         if (response) {
-          this.snackbarService.showSuccess(
-            this.translate.instant('pay_periods.messages.close_success')
-          );
+          this.snackbarService.showSuccessTranslated('pay_periods.messages.close_success');
           // Reload the pay period to reflect the change
           this.loadPayPeriodDetail(payPeriodId);
         }

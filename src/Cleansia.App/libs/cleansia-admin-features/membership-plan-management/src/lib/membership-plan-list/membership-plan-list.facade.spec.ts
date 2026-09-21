@@ -5,7 +5,7 @@ import {
   MembershipPlanListItem,
   PagedDataOfMembershipPlanListItem,
 } from '@cleansia/admin-services';
-import { SnackbarService } from '@cleansia/services';
+import { DialogService, SnackbarService } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
 import { of, throwError } from 'rxjs';
 import { MembershipPlanListFacade } from './membership-plan-list.facade';
@@ -14,7 +14,12 @@ import { BILLING_INTERVAL_WIRE } from './membership-plan-list.models';
 describe('MembershipPlanListFacade', () => {
   let facade: MembershipPlanListFacade;
   let membershipClient: { getPaged: jest.Mock; deactivate: jest.Mock };
-  let snackbar: { showSuccess: jest.Mock; showError: jest.Mock };
+  let snackbar: {
+    showSuccess: jest.Mock;
+    showSuccessTranslated: jest.Mock;
+    showError: jest.Mock;
+    showErrorTranslated: jest.Mock;
+  };
 
   const page = PagedDataOfMembershipPlanListItem.fromJS({
     data: [
@@ -34,13 +39,19 @@ describe('MembershipPlanListFacade', () => {
 
   beforeEach(() => {
     membershipClient = { getPaged: jest.fn(), deactivate: jest.fn() };
-    snackbar = { showSuccess: jest.fn(), showError: jest.fn() };
+    snackbar = {
+      showSuccess: jest.fn(),
+      showSuccessTranslated: jest.fn(),
+      showError: jest.fn(),
+      showErrorTranslated: jest.fn(),
+    };
 
     TestBed.configureTestingModule({
       providers: [
         MembershipPlanListFacade,
         { provide: AdminMembershipClient, useValue: membershipClient },
         { provide: SnackbarService, useValue: snackbar },
+        { provide: DialogService, useValue: { confirmTranslated: jest.fn(() => of(true)) } },
         { provide: TranslateService, useValue: { instant: (k: string) => k } },
       ],
     });
@@ -114,7 +125,7 @@ describe('MembershipPlanListFacade', () => {
     );
 
     expect(membershipClient.deactivate).toHaveBeenCalledWith('plan-1');
-    expect(snackbar.showSuccess).toHaveBeenCalledWith(
+    expect(snackbar.showSuccessTranslated).toHaveBeenCalledWith(
       'pages.membership_plans.messages.deactivate_success'
     );
     expect(membershipClient.getPaged).toHaveBeenCalledTimes(1);
@@ -125,7 +136,7 @@ describe('MembershipPlanListFacade', () => {
     expect(membershipClient.deactivate).not.toHaveBeenCalled();
   });
 
-  it('maps membership.plan.not_found to its translation key on deactivate failure', () => {
+  it('leaves the membership.plan.not_found refusal to the interceptor toast on deactivate failure', () => {
     membershipClient.deactivate.mockReturnValue(
       throwError(() => ({ result: { detail: 'membership.plan.not_found' } }))
     );
@@ -134,13 +145,11 @@ describe('MembershipPlanListFacade', () => {
       MembershipPlanListItem.fromJS({ id: 'plan-1', isActive: true })
     );
 
-    expect(snackbar.showError).toHaveBeenCalledWith(
-      'api.membership.plan.not_found'
-    );
+    expect(snackbar.showErrorTranslated).not.toHaveBeenCalled();
     expect(facade.deactivating()).toBe(false);
   });
 
-  it('falls back to the generic membership error for unknown codes', () => {
+  it('leaves an unknown refusal to the interceptor toast', () => {
     membershipClient.deactivate.mockReturnValue(
       throwError(() => ({ result: { detail: 'something.unknown' } }))
     );
@@ -149,9 +158,7 @@ describe('MembershipPlanListFacade', () => {
       MembershipPlanListItem.fromJS({ id: 'plan-1', isActive: true })
     );
 
-    expect(snackbar.showError).toHaveBeenCalledWith(
-      'api.membership.plan.action_failed'
-    );
+    expect(snackbar.showErrorTranslated).not.toHaveBeenCalled();
   });
 
   it('keeps the row currency code the DTO carries — the label never comes from a second read', () => {

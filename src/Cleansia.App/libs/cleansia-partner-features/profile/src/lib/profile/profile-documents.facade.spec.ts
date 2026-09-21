@@ -20,7 +20,12 @@ describe('ProfileDocumentsFacade', () => {
     requestMyDocumentDeletion: jest.Mock;
     replaceMyDocument: jest.Mock;
   };
-  let snackbar: { showSuccess: jest.Mock; showError: jest.Mock };
+  let snackbar: {
+    showSuccess: jest.Mock;
+    showSuccessTranslated: jest.Mock;
+    showError: jest.Mock;
+    showErrorTranslated: jest.Mock;
+  };
   let facade: ProfileDocumentsFacade;
 
   beforeEach(() => {
@@ -31,7 +36,12 @@ describe('ProfileDocumentsFacade', () => {
       requestMyDocumentDeletion: jest.fn().mockReturnValue(of({})),
       replaceMyDocument: jest.fn().mockReturnValue(of({})),
     };
-    snackbar = { showSuccess: jest.fn(), showError: jest.fn() };
+    snackbar = {
+      showSuccess: jest.fn(),
+      showSuccessTranslated: jest.fn(),
+      showError: jest.fn(),
+      showErrorTranslated: jest.fn(),
+    };
 
     TestBed.configureTestingModule({
       providers: [
@@ -59,7 +69,7 @@ describe('ProfileDocumentsFacade', () => {
     await facade.saveEmployeeDocuments();
 
     expect(employeeClient.saveMyDocuments).not.toHaveBeenCalled();
-    expect(snackbar.showError).toHaveBeenCalledWith(
+    expect(snackbar.showErrorTranslated).toHaveBeenCalledWith(
       'global.messages.documents.no_documents_to_save'
     );
   });
@@ -70,7 +80,7 @@ describe('ProfileDocumentsFacade', () => {
 
     await facade.saveEmployeeDocuments();
 
-    expect(snackbar.showSuccess).toHaveBeenCalledWith(
+    expect(snackbar.showSuccessTranslated).toHaveBeenCalledWith(
       'global.messages.documents.upload_success'
     );
     expect(facade.hasStagedDocuments()).toBe(false);
@@ -118,7 +128,7 @@ describe('ProfileDocumentsFacade', () => {
     );
     expect(facade.documents()).toHaveLength(1);
     expect(facade.deletionRequestInFlight()).toBe(false);
-    expect(snackbar.showSuccess).toHaveBeenCalled();
+    expect(snackbar.showSuccessTranslated).toHaveBeenCalled();
   });
 
   // Every member of a generated body is optional, so a dropped assignment type-checks. Pin the

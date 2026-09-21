@@ -4,10 +4,8 @@ import {
   MembershipPlanListItem,
 } from '@cleansia/admin-services';
 import { UnsubscribeControlDirective } from '@cleansia/directives';
-import { SnackbarService } from '@cleansia/services';
-import { TranslateService } from '@ngx-translate/core';
-import { catchError, finalize, of, takeUntil } from 'rxjs';
-import { resolveMembershipPlanErrorKey } from './membership-plan-list.models';
+import { DialogService, SnackbarService } from '@cleansia/services';
+import { catchError, filter, finalize, of, takeUntil } from 'rxjs';
 
 export interface MembershipPlanFilterParams {
   active?: boolean;
@@ -17,8 +15,8 @@ export interface MembershipPlanFilterParams {
 @Injectable()
 export class MembershipPlanListFacade extends UnsubscribeControlDirective {
   private readonly membershipClient = inject(AdminMembershipClient);
+  private readonly dialog = inject(DialogService);
   private readonly snackbar = inject(SnackbarService);
-  private readonly translate = inject(TranslateService);
 
   readonly plans = signal<MembershipPlanListItem[]>([]);
   readonly loading = signal<boolean>(false);
@@ -83,28 +81,32 @@ export class MembershipPlanListFacade extends UnsubscribeControlDirective {
   }
 
   deactivatePlan(row: MembershipPlanListItem): void {
-    if (!row.id || this.deactivating()) return;
+    const id = row.id;
+    if (!id || this.deactivating()) return;
 
+    this.dialog
+      .confirmTranslated(
+        'pages.membership_plans.deactivate_confirm.message',
+        'pages.membership_plans.deactivate_confirm.title',
+        { code: row.code },
+        { acceptLabelKey: 'pages.membership_plans.deactivate_confirm.yes' }
+      )
+      .pipe(takeUntil(this.destroyed$), filter(Boolean))
+      .subscribe(() => this.deactivatePlanConfirmed(id));
+  }
+
+  private deactivatePlanConfirmed(id: string): void {
     this.deactivating.set(true);
     this.membershipClient
-      .deactivate(row.id)
+      .deactivate(id)
       .pipe(
         takeUntil(this.destroyed$),
-        catchError((error: unknown) => {
-          this.snackbar.showError(
-            this.translate.instant(resolveMembershipPlanErrorKey(error))
-          );
-          return of(null);
-        }),
+        catchError(() => of(null)),
         finalize(() => this.deactivating.set(false))
       )
       .subscribe((response) => {
         if (response) {
-          this.snackbar.showSuccess(
-            this.translate.instant(
-              'pages.membership_plans.messages.deactivate_success'
-            )
-          );
+          this.snackbar.showSuccessTranslated('pages.membership_plans.messages.deactivate_success');
           this.loadPlans();
         }
       });

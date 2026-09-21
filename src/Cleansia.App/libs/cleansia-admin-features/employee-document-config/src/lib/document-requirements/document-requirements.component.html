@@ -91,13 +91,13 @@
 
               <div class="form-actions">
                 <cleansia-button
-                  [label]="'common.cancel' | translate"
+                  [label]="'global.actions.cancel' | translate"
                   severity="secondary"
                   [disabled]="facade.saving()"
                   (onClick)="cancelEdit()"
                 />
                 <cleansia-button
-                  [label]="'common.save' | translate"
+                  [label]="'global.actions.save' | translate"
                   buttonType="submit"
                   [loading]="facade.saving()"
                 />
@@ -107,7 +107,5 @@
         }
       }
     }
-
-    <p-confirmDialog />
   </div>
 </div>

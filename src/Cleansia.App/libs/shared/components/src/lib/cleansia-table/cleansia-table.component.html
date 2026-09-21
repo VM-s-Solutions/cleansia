@@ -1,6 +1,6 @@
 <div class="cleansia-table" [class.cleansia-table--loading]="loading()">
   <!-- Loading Overlay -->
-  @if (loading()) {
+  @if (loading() && paginatedData().length > 0) {
   <div class="table-loading-overlay">
     <div class="table-loading-content">
       <i class="pi pi-spinner pi-spin"></i>
@@ -38,7 +38,17 @@
 
       <!-- Body Section -->
       <tbody class="table__body">
-        @if (paginatedData().length === 0 && !loading()) {
+        @if (paginatedData().length === 0 && loading()) {
+        <tr class="table__empty">
+          <td
+            [attr.colspan]="
+              columns().length + (actions() && actions().length > 0 ? 1 : 0)
+            "
+          >
+            <cleansia-loader />
+          </td>
+        </tr>
+        } @else if (paginatedData().length === 0) {
         <tr class="table__empty">
           <td
             [attr.colspan]="

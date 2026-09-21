@@ -111,9 +111,7 @@ export class ProfileBankFacade extends UnsubscribeControlDirective {
 
     const employeeId = this.employeeId();
     if (!employeeId) {
-      this.snackbarService.showError(
-        this.translate.instant('global.messages.profile.not_loaded')
-      );
+      this.snackbarService.showErrorTranslated('global.messages.profile.not_loaded');
       return;
     }
 
@@ -133,9 +131,7 @@ export class ProfileBankFacade extends UnsubscribeControlDirective {
           return;
         }
 
-        this.snackbarService.showSuccess(
-          this.translate.instant('global.messages.profile.bank_details_saved')
-        );
+        this.snackbarService.showSuccessTranslated('global.messages.profile.bank_details_saved');
         this.store.dispatch(checkEmployeeCurrent());
       });
   }

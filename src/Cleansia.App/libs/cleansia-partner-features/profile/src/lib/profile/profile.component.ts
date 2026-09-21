@@ -3,7 +3,7 @@ import { ReactiveFormsModule } from '@angular/forms';
 import {
   CleansiaButtonComponent,
   CleansiaCheckboxComponent,
-  CleansiaFormSkeletonComponent,
+  CleansiaLoaderComponent,
   CleansiaTitleComponent,
 } from '@cleansia/components';
 import { PartnerAuthService } from '@cleansia/partner-services';
@@ -26,12 +26,12 @@ import { ProfileJobRadiusFacade } from './profile-job-radius.facade';
   selector: 'cleansia-partner-profile',
   standalone: true,
   imports: [
+    CleansiaLoaderComponent,
     ToastModule,
     TranslatePipe,
     ReactiveFormsModule,
     CleansiaTitleComponent,
     CleansiaButtonComponent,
-    CleansiaFormSkeletonComponent,
     CleansiaCheckboxComponent,
     ProfilePersonalInfoComponent,
     ProfileEmergencyContactComponent,

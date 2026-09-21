@@ -15,7 +15,6 @@ import {
 } from '@cleansia/admin-services';
 import { UnsubscribeControlDirective } from '@cleansia/directives';
 import { CleansiaAdminRoute, SnackbarService } from '@cleansia/services';
-import { TranslateService } from '@ngx-translate/core';
 import { catchError, finalize, of, takeUntil } from 'rxjs';
 
 export interface LanguageOption {
@@ -66,7 +65,6 @@ export interface CategoryOption {
 export class ServiceFormFacade extends UnsubscribeControlDirective {
   private readonly adminClient = inject(AdminClient);
   private readonly snackbarService = inject(SnackbarService);
-  private readonly translate = inject(TranslateService);
   private readonly router = inject(Router);
 
   readonly service = signal<AdminServiceDetailDto | null>(null);
@@ -202,9 +200,7 @@ export class ServiceFormFacade extends UnsubscribeControlDirective {
       )
       .subscribe((response: CreateServiceResponse | null) => {
         if (response) {
-          this.snackbarService.showSuccess(
-            this.translate.instant('pages.service_form.messages.create_success')
-          );
+          this.snackbarService.showSuccessTranslated('pages.service_form.messages.create_success');
           this.router.navigate([CleansiaAdminRoute.SERVICE_MANAGEMENT]);
         }
       });
@@ -241,9 +237,7 @@ export class ServiceFormFacade extends UnsubscribeControlDirective {
       )
       .subscribe((response: UpdateServiceResponse | null) => {
         if (response) {
-          this.snackbarService.showSuccess(
-            this.translate.instant('pages.service_form.messages.update_success')
-          );
+          this.snackbarService.showSuccessTranslated('pages.service_form.messages.update_success');
           this.router.navigate([CleansiaAdminRoute.SERVICE_MANAGEMENT]);
         }
       });

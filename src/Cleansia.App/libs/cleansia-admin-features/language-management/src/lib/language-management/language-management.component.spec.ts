@@ -1,7 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { AdminClient } from '@cleansia/admin-services';
-import { SnackbarService } from '@cleansia/services';
+import { DialogService, SnackbarService } from '@cleansia/services';
 import { TranslateModule } from '@ngx-translate/core';
 import { of } from 'rxjs';
 import { LanguageManagementComponent } from './language-management.component';
@@ -15,6 +15,7 @@ describe('LanguageManagementComponent', () => {
       imports: [LanguageManagementComponent, TranslateModule.forRoot()],
       providers: [
         provideRouter([]),
+        { provide: DialogService, useValue: { confirmTranslated: jest.fn(() => of(true)) } },
         {
           provide: AdminClient,
           useValue: {
@@ -26,8 +27,8 @@ describe('LanguageManagementComponent', () => {
         {
           provide: SnackbarService,
           useValue: {
-            showSuccess: jest.fn(),
-            showError: jest.fn(),
+            showSuccess: jest.fn(), showSuccessTranslated: jest.fn(),
+            showError: jest.fn(), showErrorTranslated: jest.fn(),
             showApiError: jest.fn(),
           },
         },

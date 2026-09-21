@@ -3,16 +3,28 @@ import { TranslateService } from '@ngx-translate/core';
 import { ConfirmationService } from 'primeng/api';
 import { Observable, Subject } from 'rxjs';
 
+export interface ConfirmOptions {
+  /** A destructive act — the accept button turns red so the risk reads before the label does. */
+  danger?: boolean;
+  icon?: string;
+  acceptLabelKey?: string;
+  rejectLabelKey?: string;
+}
+
 export interface DialogConfig {
   message: string;
   header?: string;
   icon?: string;
   acceptLabel?: string;
   rejectLabel?: string;
-  acceptButtonStyleClass?: string;
-  rejectButtonStyleClass?: string;
+  danger?: boolean;
 }
 
+/**
+ * The one confirmation dialog: title, body, then a text "cancel" and one primary action, rendered by
+ * the shell's `<p-confirmDialog>`. Closing the dialog with the X or Escape resolves as a rejection,
+ * so every subscriber sees exactly one boolean and completes.
+ */
 @Injectable({
   providedIn: 'root',
 })
@@ -29,8 +41,8 @@ export class DialogService {
       icon: config.icon || 'pi pi-exclamation-triangle',
       acceptLabel: config.acceptLabel || this.translate.instant('global.actions.confirm'),
       rejectLabel: config.rejectLabel || this.translate.instant('global.actions.cancel'),
-      acceptButtonStyleClass: config.acceptButtonStyleClass || 'p-button-danger',
-      rejectButtonStyleClass: config.rejectButtonStyleClass || 'p-button-text',
+      acceptButtonProps: { severity: config.danger ? 'danger' : 'primary' },
+      rejectButtonProps: { text: true },
       accept: () => {
         result$.next(true);
         result$.complete();
@@ -47,11 +59,16 @@ export class DialogService {
   confirmTranslated(
     messageKey: string,
     headerKey?: string,
-    messageParams?: Record<string, unknown>
+    messageParams?: Record<string, unknown>,
+    options: ConfirmOptions = {}
   ): Observable<boolean> {
     return this.confirm({
       message: this.translate.instant(messageKey, messageParams),
       header: headerKey ? this.translate.instant(headerKey) : undefined,
+      icon: options.icon,
+      acceptLabel: options.acceptLabelKey ? this.translate.instant(options.acceptLabelKey) : undefined,
+      rejectLabel: options.rejectLabelKey ? this.translate.instant(options.rejectLabelKey) : undefined,
+      danger: options.danger,
     });
   }
 
@@ -65,8 +82,7 @@ export class DialogService {
       header: this.translate.instant('global.dialog.delete'),
       icon: 'pi pi-trash',
       acceptLabel: this.translate.instant('global.actions.delete'),
-      rejectLabel: this.translate.instant('global.actions.cancel'),
-      acceptButtonStyleClass: 'p-button-danger',
+      danger: true,
     });
   }
 }

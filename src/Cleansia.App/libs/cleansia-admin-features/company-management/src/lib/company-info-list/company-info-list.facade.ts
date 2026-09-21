@@ -10,10 +10,10 @@ import {
 } from '@cleansia/admin-services';
 import { FilterChip, FilterDrawerState, PaginationState, SortEvent } from '@cleansia/components';
 import { UnsubscribeControlDirective } from '@cleansia/directives';
-import { CleansiaAdminRoute, SnackbarService } from '@cleansia/services';
+import { CleansiaAdminRoute, DialogService, SnackbarService } from '@cleansia/services';
 import { currentLanguage } from '@cleansia/utils';
 import { TranslateService } from '@ngx-translate/core';
-import { catchError, finalize, of, takeUntil } from 'rxjs';
+import { catchError, filter, finalize, of, takeUntil } from 'rxjs';
 
 export interface CompanyInfoFilterParams {
   searchTerm?: string;
@@ -23,6 +23,7 @@ export interface CompanyInfoFilterParams {
 @Injectable()
 export class CompanyInfoListFacade extends UnsubscribeControlDirective {
   private readonly adminClient = inject(AdminClient);
+  private readonly dialog = inject(DialogService);
   private readonly snackbarService = inject(SnackbarService);
   private readonly translate = inject(TranslateService);
   private readonly router = inject(Router);
@@ -123,18 +124,31 @@ export class CompanyInfoListFacade extends UnsubscribeControlDirective {
   }
 
   deleteCompanyInfo(companyInfo: CompanyInfoListItem): void {
-    if (!companyInfo.id) return;
+    const id = companyInfo.id;
+    if (!id) return;
 
+    this.dialog
+      .confirmTranslated(
+        'pages.company_management.delete_confirm',
+        'pages.company_management.delete_company',
+        undefined,
+        { danger: true, acceptLabelKey: 'global.actions.delete' }
+      )
+      .pipe(takeUntil(this.destroyed$), filter(Boolean))
+      .subscribe(() => this.deleteCompanyInfoConfirmed(id));
+  }
+
+  private deleteCompanyInfoConfirmed(id: string): void {
     this.adminClient.adminCompanyClient
-      .delete(companyInfo.id)
+      .delete(id)
       .pipe(
         takeUntil(this.destroyed$),
         catchError(() => of(null))
       )
       .subscribe((response: DeleteCompanyInfoResponse | null) => {
         if (response) {
-          this.snackbarService.showSuccess(
-            this.translate.instant('pages.company_management.messages.delete_success')
+          this.snackbarService.showSuccessTranslated(
+            'pages.company_management.messages.delete_success'
           );
           this.loadCompanyInfos();
         }

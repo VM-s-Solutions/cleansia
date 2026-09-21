@@ -11,17 +11,16 @@ import {
   UserConsentDto,
   WithdrawConsentCommand,
 } from '@cleansia/partner-services';
-import { SnackbarService } from '@cleansia/services';
-import { TranslateService } from '@ngx-translate/core';
-import { catchError, finalize, of, takeUntil } from 'rxjs';
+import { DialogService, SnackbarService } from '@cleansia/services';
+import { catchError, filter, finalize, of, takeUntil } from 'rxjs';
 
 @Injectable()
 export class PartnerGdprFacade extends UnsubscribeControlDirective {
   private readonly gdprClient = inject(GdprClient);
+  private readonly dialog = inject(DialogService);
   private readonly consentsClient = inject(ConsentsClient);
   private readonly authService = inject(PartnerAuthService);
   private readonly snackbar = inject(SnackbarService);
-  private readonly translate = inject(TranslateService);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
   readonly isAuthenticated = signal<boolean>(this.authService.isLoggedIn());
@@ -79,9 +78,7 @@ export class PartnerGdprFacade extends UnsubscribeControlDirective {
       )
       .subscribe((result) => {
         if (result !== 'error') {
-          this.snackbar.showSuccess(
-            this.translate.instant('pages.gdpr.consent_updated')
-          );
+          this.snackbar.showSuccessTranslated('pages.gdpr.consent_updated');
         }
       });
   }
@@ -103,9 +100,7 @@ export class PartnerGdprFacade extends UnsubscribeControlDirective {
       .subscribe((data: GdprExportDto | null) => {
         if (data) {
           this.downloadJson(data, 'my-data-export.json');
-          this.snackbar.showSuccess(
-            this.translate.instant('pages.gdpr.export_success')
-          );
+          this.snackbar.showSuccessTranslated('pages.gdpr.export_success');
         }
       });
   }
@@ -113,6 +108,18 @@ export class PartnerGdprFacade extends UnsubscribeControlDirective {
   deleteAccount(): void {
     if (this.deleting()) return;
 
+    this.dialog
+      .confirmTranslated(
+        'pages.gdpr.delete_confirm_message',
+        'pages.gdpr.delete_confirm_title',
+        undefined,
+        { danger: true, acceptLabelKey: 'pages.gdpr.delete_confirm_yes' }
+      )
+      .pipe(takeUntil(this.destroyed$), filter(Boolean))
+      .subscribe(() => this.deleteAccountConfirmed());
+  }
+
+  private deleteAccountConfirmed(): void {
     this.deleting.set(true);
     this.gdprClient
       .deleteAccount()
@@ -131,9 +138,7 @@ export class PartnerGdprFacade extends UnsubscribeControlDirective {
         // in-person step. Saying "deleted" and signing them out was a lie the endpoint used to
         // tell truthfully and stopped being able to; they stay signed in and keep working until
         // an admin fulfils the request.
-        this.snackbar.showSuccess(
-          this.translate.instant('pages.gdpr.delete_requested')
-        );
+        this.snackbar.showSuccessTranslated('pages.gdpr.delete_requested');
       });
   }
 

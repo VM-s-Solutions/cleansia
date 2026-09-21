@@ -5,7 +5,7 @@ import {
   CreateServiceCityCommand,
   UpdateServiceCityCommand,
 } from '@cleansia/admin-services';
-import { SnackbarService } from '@cleansia/services';
+import { DialogService, SnackbarService } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
 import { of, throwError } from 'rxjs';
 import { ServiceAreaManagementFacade } from './service-area-management.facade';
@@ -19,7 +19,12 @@ describe('ServiceAreaManagementFacade', () => {
   let cityPostMock: jest.Mock;
   let cityPutMock: jest.Mock;
   let cityDeleteMock: jest.Mock;
-  let snackbar: { showSuccess: jest.Mock; showError: jest.Mock };
+  let snackbar: {
+    showSuccess: jest.Mock;
+    showSuccessTranslated: jest.Mock;
+    showError: jest.Mock;
+    showErrorTranslated: jest.Mock;
+  };
 
   beforeEach(() => {
     TestBed.resetTestingModule();
@@ -30,7 +35,12 @@ describe('ServiceAreaManagementFacade', () => {
     cityPostMock = jest.fn().mockReturnValue(of({ id: 'city-1' }));
     cityPutMock = jest.fn().mockReturnValue(of({ id: 'city-1' }));
     cityDeleteMock = jest.fn().mockReturnValue(of({ id: 'city-1' }));
-    snackbar = { showSuccess: jest.fn(), showError: jest.fn() };
+    snackbar = {
+      showSuccess: jest.fn(),
+      showSuccessTranslated: jest.fn(),
+      showError: jest.fn(),
+      showErrorTranslated: jest.fn(),
+    };
 
     TestBed.configureTestingModule({
       providers: [
@@ -52,6 +62,7 @@ describe('ServiceAreaManagementFacade', () => {
           },
         },
         { provide: SnackbarService, useValue: snackbar },
+        { provide: DialogService, useValue: { confirmTranslated: jest.fn(() => of(true)) } },
         { provide: TranslateService, useValue: { instant: (k: string) => k } },
       ],
     });
@@ -99,7 +110,7 @@ describe('ServiceAreaManagementFacade', () => {
     facade.setCountryServiced('c-1', true);
 
     expect([...facade.servicedCountryIds()]).toEqual(['c-1']);
-    expect(snackbar.showSuccess).toHaveBeenCalledWith(
+    expect(snackbar.showSuccessTranslated).toHaveBeenCalledWith(
       'pages.service_area_management.messages.country_updated'
     );
   });
@@ -112,7 +123,7 @@ describe('ServiceAreaManagementFacade', () => {
 
     expect(facade.servicedCountryIds().size).toBe(0);
     expect(facade.servicedToggleRevision()).toBe(before + 1);
-    expect(snackbar.showSuccess).not.toHaveBeenCalled();
+    expect(snackbar.showSuccessTranslated).not.toHaveBeenCalled();
   });
 
   it('does not bump the revision when the toggle lands', () => {
@@ -127,7 +138,7 @@ describe('ServiceAreaManagementFacade', () => {
     facade.createCity('c-1', 'Prague', '110');
 
     expect(cityGetMock).toHaveBeenCalledWith('c-1');
-    expect(snackbar.showSuccess).toHaveBeenCalledWith(
+    expect(snackbar.showSuccessTranslated).toHaveBeenCalledWith(
       'pages.service_area_management.messages.city_created'
     );
   });
@@ -138,7 +149,7 @@ describe('ServiceAreaManagementFacade', () => {
     facade.createCity('c-1', 'Prague', '110');
 
     expect(cityGetMock).not.toHaveBeenCalled();
-    expect(snackbar.showSuccess).not.toHaveBeenCalled();
+    expect(snackbar.showSuccessTranslated).not.toHaveBeenCalled();
   });
 
   // Seeded with `of(null)`, not a plausible array: the generated client answers a non-array 200

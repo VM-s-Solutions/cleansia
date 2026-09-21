@@ -27,7 +27,7 @@
 
   <div class="cleansia-order-details__form-card page-wrapper">
     @if (loading() && !orderDetails()) {
-    <cleansia-detail-skeleton />
+    <cleansia-loader />
     } @else if (error()) {
     <div class="not-found-state">
       <div class="not-found-state__icon">

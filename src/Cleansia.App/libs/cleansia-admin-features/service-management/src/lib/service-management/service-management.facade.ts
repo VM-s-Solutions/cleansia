@@ -10,15 +10,11 @@ import {
 } from '@cleansia/admin-services';
 import { FilterChip, FilterDrawerState, ICleansiaSelectOption, PaginationState, SortEvent } from '@cleansia/components';
 import { UnsubscribeControlDirective } from '@cleansia/directives';
-import { CleansiaAdminRoute, SnackbarService } from '@cleansia/services';
+import { CleansiaAdminRoute, DialogService, SnackbarService } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
 import { currentLanguage, formatMoney, localeFor } from '@cleansia/utils';
-import { Observable, catchError, finalize, map, of, switchMap, takeUntil, tap } from 'rxjs';
-import {
-  CatalogStatusFilter,
-  mapStatusFilterToIsActive,
-  resolveServiceErrorKey,
-} from './service-management.models';
+import { catchError, filter, finalize, map, Observable, of, switchMap, takeUntil, tap } from 'rxjs';
+import { CatalogStatusFilter, mapStatusFilterToIsActive } from './service-management.models';
 
 export interface ServiceFilterParams {
   searchTerm?: string;
@@ -28,6 +24,7 @@ export interface ServiceFilterParams {
 @Injectable()
 export class ServiceManagementFacade extends UnsubscribeControlDirective {
   private readonly adminClient = inject(AdminClient);
+  private readonly dialog = inject(DialogService);
   private readonly snackbarService = inject(SnackbarService);
   private readonly translate = inject(TranslateService);
   private readonly router = inject(Router);
@@ -184,25 +181,30 @@ export class ServiceManagementFacade extends UnsubscribeControlDirective {
   }
 
   deactivateService(service: ServiceListItem): void {
-    if (!service.id) return;
+    const id = service.id;
+    if (!id) return;
 
+    this.dialog
+      .confirmTranslated(
+        'pages.service_management.deactivate_confirm',
+        'pages.service_management.deactivate_service',
+        { name: service.name }
+      )
+      .pipe(takeUntil(this.destroyed$), filter(Boolean))
+      .subscribe(() => this.deactivateServiceConfirmed(id));
+  }
+
+  private deactivateServiceConfirmed(id: string): void {
     this.adminClient.adminServiceClient
-      .deactivate(service.id)
+      .deactivate(id)
       .pipe(
         takeUntil(this.destroyed$),
-        catchError((error: unknown) => {
-          this.snackbarService.showError(
-            this.translate.instant(resolveServiceErrorKey(error))
-          );
-          return of(null);
-        })
+        catchError(() => of(null))
       )
       .subscribe((response) => {
         if (response) {
-          this.snackbarService.showSuccess(
-            this.translate.instant(
-              'pages.service_management.messages.deactivate_success'
-            )
+          this.snackbarService.showSuccessTranslated(
+            'pages.service_management.messages.deactivate_success'
           );
           this.loadServices();
         }
@@ -216,19 +218,12 @@ export class ServiceManagementFacade extends UnsubscribeControlDirective {
       .activate(service.id)
       .pipe(
         takeUntil(this.destroyed$),
-        catchError((error: unknown) => {
-          this.snackbarService.showError(
-            this.translate.instant(resolveServiceErrorKey(error))
-          );
-          return of(null);
-        })
+        catchError(() => of(null))
       )
       .subscribe((response) => {
         if (response) {
-          this.snackbarService.showSuccess(
-            this.translate.instant(
-              'pages.service_management.messages.activate_success'
-            )
+          this.snackbarService.showSuccessTranslated(
+            'pages.service_management.messages.activate_success'
           );
           this.loadServices();
         }
@@ -236,23 +231,31 @@ export class ServiceManagementFacade extends UnsubscribeControlDirective {
   }
 
   deleteService(service: ServiceListItem): void {
-    if (!service.id) return;
+    const id = service.id;
+    if (!id) return;
 
+    this.dialog
+      .confirmTranslated(
+        'pages.service_management.delete_confirm',
+        'pages.service_management.delete_service',
+        undefined,
+        { danger: true, acceptLabelKey: 'global.actions.delete' }
+      )
+      .pipe(takeUntil(this.destroyed$), filter(Boolean))
+      .subscribe(() => this.deleteServiceConfirmed(id));
+  }
+
+  private deleteServiceConfirmed(id: string): void {
     this.adminClient.adminServiceClient
-      .delete(service.id)
+      .delete(id)
       .pipe(
         takeUntil(this.destroyed$),
-        catchError((error: unknown) => {
-          this.snackbarService.showError(
-            this.translate.instant(resolveServiceErrorKey(error))
-          );
-          return of(null);
-        })
+        catchError(() => of(null))
       )
       .subscribe((response) => {
         if (response) {
-          this.snackbarService.showSuccess(
-            this.translate.instant('pages.service_management.messages.delete_success')
+          this.snackbarService.showSuccessTranslated(
+            'pages.service_management.messages.delete_success'
           );
           this.loadServices();
         }

@@ -9,7 +9,7 @@ import { ReactiveFormsModule } from '@angular/forms';
 import {
   CleansiaBankAccountComponent,
   CleansiaButtonComponent,
-  CleansiaFormSkeletonComponent,
+  CleansiaLoaderComponent,
   CleansiaSectionComponent,
   CleansiaSelectComponent,
   CleansiaTextInputComponent,
@@ -21,6 +21,7 @@ import { ProfileBankFacade } from '../../profile/profile-bank.facade';
   selector: 'cleansia-partner-profile-bank',
   standalone: true,
   imports: [
+    CleansiaLoaderComponent,
     CommonModule,
     ReactiveFormsModule,
     TranslatePipe,
@@ -29,7 +30,6 @@ import { ProfileBankFacade } from '../../profile/profile-bank.facade';
     CleansiaTextInputComponent,
     CleansiaSelectComponent,
     CleansiaButtonComponent,
-    CleansiaFormSkeletonComponent,
   ],
   templateUrl: './profile-bank.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,

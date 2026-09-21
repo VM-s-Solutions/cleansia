@@ -114,7 +114,15 @@ describe('UserLoyaltyDetailComponent — credit section', () => {
             adminOrderClient: orderClient,
           },
         },
-        { provide: SnackbarService, useValue: { showSuccess: jest.fn(), showError: jest.fn() } },
+        {
+          provide: SnackbarService,
+          useValue: {
+            showSuccess: jest.fn(),
+            showSuccessTranslated: jest.fn(),
+            showError: jest.fn(),
+            showErrorTranslated: jest.fn(),
+          },
+        },
         {
           provide: PermissionService,
           useValue: { hasPolicy: (p: string) => grantedPolicies.has(p) },

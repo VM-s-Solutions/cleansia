@@ -1,4 +1,4 @@
-import { Injectable, InjectionToken, inject } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { TranslateService } from '@ngx-translate/core';
 import { MessageService } from 'primeng/api';
 import { extractApiErrorCode } from './api-error';
@@ -6,30 +6,10 @@ import { extractApiErrorCode } from './api-error';
 const DEFAULT_SNACKBAR_DURATION = 3_000;
 
 /**
- * Map of normalized API error keys (lowercase, alpha-only) to translation keys.
- * Apps can `provide(SNACKBAR_ERROR_MAPPINGS, { useValue: { ... } })` in their
- * `app.config.ts` to extend the built-in defaults with app-specific keys.
+ * Normalized API error keys (lowercase, alpha-only) to translation keys, read by `showApiError`
+ * for the cross-app order, validation and auth codes that do not mirror a bundle key.
  */
-export interface SnackbarErrorMappings {
-  [errorKey: string]: string;
-}
-
-/**
- * Optional injection token for app-specific snackbar error -> translation-key
- * mappings. Built-in defaults (see `DEFAULT_SNACKBAR_ERROR_MAPPINGS`) are
- * always applied; provided values are merged on top and override defaults
- * on key collision.
- */
-export const SNACKBAR_ERROR_MAPPINGS = new InjectionToken<SnackbarErrorMappings>(
-  'SNACKBAR_ERROR_MAPPINGS'
-);
-
-/**
- * Built-in fallback mappings shipped with the core service. Covers the
- * cross-app order/validation errors. Apps add app-specific keys via
- * `SNACKBAR_ERROR_MAPPINGS`.
- */
-export const DEFAULT_SNACKBAR_ERROR_MAPPINGS: SnackbarErrorMappings = {
+export const DEFAULT_SNACKBAR_ERROR_MAPPINGS: Readonly<Record<string, string>> = {
   afterphotosrequired: 'api.order.after_photos.required',
   afterphotosrequiredtocomplete: 'api.order.after_photos.required',
   ordernotinprogress: 'api.order.not_in_progress',
@@ -81,10 +61,7 @@ export const DEFAULT_SNACKBAR_ERROR_MAPPINGS: SnackbarErrorMappings = {
 export class SnackbarService {
   private readonly messageService = inject(MessageService);
   private readonly translate = inject(TranslateService);
-  private readonly errorMappings: SnackbarErrorMappings = {
-    ...DEFAULT_SNACKBAR_ERROR_MAPPINGS,
-    ...(inject(SNACKBAR_ERROR_MAPPINGS, { optional: true }) ?? {}),
-  };
+  private readonly errorMappings = DEFAULT_SNACKBAR_ERROR_MAPPINGS;
 
   showSuccess(message: string, duration?: number): void {
     this.showSnackbar(message, true, duration);
@@ -94,14 +71,20 @@ export class SnackbarService {
     this.showSnackbar(message, false, duration);
   }
 
-  showSuccessTranslated(translationKey: string, duration?: number): void {
-    const message = this.translate.instant(translationKey);
-    this.showSnackbar(message, true, duration);
+  showSuccessTranslated(
+    translationKey: string,
+    params?: Record<string, unknown>,
+    duration?: number
+  ): void {
+    this.showSnackbar(this.translate.instant(translationKey, params), true, duration);
   }
 
-  showErrorTranslated(translationKey: string, duration?: number): void {
-    const message = this.translate.instant(translationKey);
-    this.showSnackbar(message, false, duration);
+  showErrorTranslated(
+    translationKey: string,
+    params?: Record<string, unknown>,
+    duration?: number
+  ): void {
+    this.showSnackbar(this.translate.instant(translationKey, params), false, duration);
   }
 
   showInfoTranslated(translationKey: string, duration?: number): void {

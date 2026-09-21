@@ -23,8 +23,6 @@ import {
 import { PermissionService, Policy } from '@cleansia/services';
 import { CleansiaPermissionDirective } from '@cleansia/directives';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
-import { ConfirmationService } from 'primeng/api';
-import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { CompanyInfoListFacade } from './company-info-list.facade';
 import { getCompanyInfoTableDefinition } from './company-info-list.models';
 
@@ -43,11 +41,10 @@ import { getCompanyInfoTableDefinition } from './company-info-list.models';
     CleansiaFilterDrawerComponent,
     CleansiaFilterChipsComponent,
     ReactiveFormsModule,
-    ConfirmDialogModule,
     CleansiaPermissionDirective,
   ],
   templateUrl: './company-info-list.component.html',
-  providers: [CompanyInfoListFacade, ConfirmationService],
+  providers: [CompanyInfoListFacade],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CompanyInfoListComponent implements OnInit {
@@ -55,7 +52,6 @@ export class CompanyInfoListComponent implements OnInit {
   protected readonly Policy = Policy;
   private readonly translate = inject(TranslateService);
   private readonly permissions = inject(PermissionService);
-  private readonly confirmationService = inject(ConfirmationService);
 
   private readonly statusTemplate = viewChild<TemplateRef<CompanyInfoListItem>>('statusTemplate');
 
@@ -77,13 +73,6 @@ export class CompanyInfoListComponent implements OnInit {
   }
 
   confirmDeleteCompanyInfo(companyInfo: CompanyInfoListItem): void {
-    this.confirmationService.confirm({
-      message: this.translate.instant('pages.company_management.delete_confirm'),
-      header: this.translate.instant('pages.company_management.delete_company'),
-      icon: 'pi pi-exclamation-triangle',
-      accept: () => {
-        this.facade.deleteCompanyInfo(companyInfo);
-      },
-    });
+    this.facade.deleteCompanyInfo(companyInfo);
   }
 }

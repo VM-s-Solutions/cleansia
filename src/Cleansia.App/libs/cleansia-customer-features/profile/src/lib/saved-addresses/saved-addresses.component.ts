@@ -40,9 +40,12 @@ export class SavedAddressesComponent implements OnInit {
     if (!address.id) return;
     const id = address.id;
     this.dialogService
-      .confirmTranslated('pages.saved_addresses.delete_confirm', undefined, {
-        label: address.label ?? '',
-      })
+      .confirmTranslated(
+        'pages.saved_addresses.delete_confirm',
+        undefined,
+        { label: address.label ?? '' },
+        { danger: true }
+      )
       .pipe(take(1))
       .subscribe((confirmed) => {
         if (confirmed) {

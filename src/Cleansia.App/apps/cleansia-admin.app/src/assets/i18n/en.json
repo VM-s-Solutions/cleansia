@@ -20,13 +20,6 @@
       "zipCode": "Zip Code"
     }
   },
-  "common": {
-    "save": "Save",
-    "cancel": "Cancel",
-    "edit": "Edit",
-    "delete": "Delete",
-    "confirm": "Confirm"
-  },
   "page_titles": {
     "admin": {
       "default": "Admin Portal",
@@ -132,6 +125,7 @@
       "save": "Save",
       "create": "Create",
       "cancel": "Cancel",
+      "confirm": "Confirm",
       "edit": "Edit",
       "view": "View",
       "delete": "Delete",
@@ -148,6 +142,9 @@
     },
     "dialog": {
       "confirm": "Confirm",
+      "delete": "Delete",
+      "confirm_delete": "Are you sure you want to delete this item?",
+      "confirm_delete_item": "Are you sure you want to delete {{item}}?",
       "confirm_logout": "Are you sure you want to log out?"
     },
     "user": {
@@ -323,7 +320,6 @@
       "approve_dialog": {
         "title": "Approve Employee",
         "subtitle": "Pick the country this cleaner is approved to work in. This drives their currency, language and VAT defaults.",
-        "cancel_button": "Cancel",
         "approve_button": "Approve Employee"
       },
       "reject_dialog": {
@@ -334,7 +330,6 @@
         "reason_hint": "Maximum 500 characters",
         "reason_required": "Rejection reason is required",
         "reason_too_long": "Rejection reason is too long (max 500 characters)",
-        "cancel_button": "Cancel",
         "reject_button": "Reject Employee"
       },
       "messages": {
@@ -426,7 +421,6 @@
         "work_country_required": "Work country is required",
         "notes_placeholder": "Optional approval notes...",
         "notes_hint": "Maximum 1000 characters",
-        "cancel_button": "Cancel",
         "approve_button": "Approve Employee"
       },
       "reject_employee_dialog": {
@@ -437,7 +431,6 @@
         "reason_hint": "Maximum 500 characters",
         "reason_required": "Rejection reason is required",
         "reason_too_long": "Rejection reason is too long (max 500 characters)",
-        "cancel_button": "Cancel",
         "reject_button": "Reject Employee"
       },
       "reject_document_dialog": {
@@ -448,7 +441,6 @@
         "reason_hint": "Maximum 500 characters",
         "reason_required": "Rejection reason is required",
         "reason_too_long": "Rejection reason is too long (max 500 characters)",
-        "cancel_button": "Cancel",
         "reject_button": "Reject Document"
       },
       "messages": {
@@ -554,7 +546,8 @@
       },
       "weekly_order_limit": "Weekly order limit",
       "weekly_order_limit_unlimited": "Unlimited",
-      "weekly_order_limit_hint": "Leave empty for no limit"
+      "weekly_order_limit_hint": "Leave empty for no limit",
+      "not_found": "Employee not found"
     },
     "order_management": {
       "title": "Order Management",
@@ -2134,7 +2127,6 @@
         "edit_title": "Edit promo code",
         "submit_create": "Create code",
         "submit_update": "Save changes",
-        "cancel": "Cancel",
         "field": {
           "code": "Code",
           "code_help": "3–20 characters, A-Z 0-9 only",
@@ -2177,7 +2169,6 @@
         "deactivate_confirm_title": "Deactivate this code?",
         "deactivate_confirm_body": "Customers won't be able to redeem this code anymore. Existing redemptions stay.",
         "deactivate_confirm_yes": "Deactivate",
-        "deactivate_confirm_cancel": "Keep active",
         "column": {
           "user": "User",
           "order": "Order",
@@ -2210,7 +2201,6 @@
       "form": {
         "title": "Edit tier",
         "submit": "Save changes",
-        "cancel": "Cancel",
         "success": "Tier updated",
         "field": {
           "threshold": "Lifetime points threshold",
@@ -2239,7 +2229,6 @@
         "preview_results_title": "Impact preview",
         "result_row": "{{tier}}: {{currentCount}} → {{newCount}} ({{delta}})",
         "apply_button": "Apply changes",
-        "cancel_button": "Cancel",
         "applying": "Applying changes...",
         "success": "Thresholds updated",
         "error": {
@@ -3379,5 +3368,69 @@
     "manager": "Manager",
     "support": "Support",
     "accountant": "Accountant"
+  },
+  "primeng": {
+    "day_names": {
+      "sun": "Sunday",
+      "mon": "Monday",
+      "tue": "Tuesday",
+      "wed": "Wednesday",
+      "thu": "Thursday",
+      "fri": "Friday",
+      "sat": "Saturday"
+    },
+    "day_names_short": {
+      "sun": "Sun",
+      "mon": "Mon",
+      "tue": "Tue",
+      "wed": "Wed",
+      "thu": "Thu",
+      "fri": "Fri",
+      "sat": "Sat"
+    },
+    "day_names_min": {
+      "sun": "Su",
+      "mon": "Mo",
+      "tue": "Tu",
+      "wed": "We",
+      "thu": "Th",
+      "fri": "Fr",
+      "sat": "Sa"
+    },
+    "month_names": {
+      "jan": "January",
+      "feb": "February",
+      "mar": "March",
+      "apr": "April",
+      "may": "May",
+      "jun": "June",
+      "jul": "July",
+      "aug": "August",
+      "sep": "September",
+      "oct": "October",
+      "nov": "November",
+      "dec": "December"
+    },
+    "month_names_short": {
+      "jan": "Jan",
+      "feb": "Feb",
+      "mar": "Mar",
+      "apr": "Apr",
+      "may": "May",
+      "jun": "Jun",
+      "jul": "Jul",
+      "aug": "Aug",
+      "sep": "Sep",
+      "oct": "Oct",
+      "nov": "Nov",
+      "dec": "Dec"
+    },
+    "today": "Today",
+    "clear": "Clear",
+    "apply": "Apply",
+    "accept": "Yes",
+    "reject": "No",
+    "empty_message": "No results found",
+    "empty_filter_message": "No results found"
   }
 }

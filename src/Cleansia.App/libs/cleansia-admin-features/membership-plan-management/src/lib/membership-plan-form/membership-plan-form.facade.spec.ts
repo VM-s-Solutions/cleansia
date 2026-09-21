@@ -28,7 +28,12 @@ describe('MembershipPlanFormFacade', () => {
     update: jest.Mock;
   };
   let getOverviewMock: jest.Mock;
-  let snackbar: { showSuccess: jest.Mock; showError: jest.Mock };
+  let snackbar: {
+    showSuccess: jest.Mock;
+    showSuccessTranslated: jest.Mock;
+    showError: jest.Mock;
+    showErrorTranslated: jest.Mock;
+  };
   let router: { navigate: jest.Mock };
 
   const detail = MembershipPlanDetailDto.fromJS({
@@ -94,7 +99,12 @@ describe('MembershipPlanFormFacade', () => {
         AdminCurrencyListItem.fromJS({ id: 'cur-x', code: '', name: 'No code' }),
       ])
     );
-    snackbar = { showSuccess: jest.fn(), showError: jest.fn() };
+    snackbar = {
+      showSuccess: jest.fn(),
+      showSuccessTranslated: jest.fn(),
+      showError: jest.fn(),
+      showErrorTranslated: jest.fn(),
+    };
     router = { navigate: jest.fn() };
 
     TestBed.configureTestingModule({
@@ -190,7 +200,7 @@ describe('MembershipPlanFormFacade', () => {
       expect(command.toJSON()['billingInterval']).toBe(BILLING_INTERVAL_WIRE.yearly);
       expect(command.discountPercentage).toBe(15);
       expect(command.expressUpgradesPerMonth).toBe(2);
-      expect(snackbar.showSuccess).toHaveBeenCalledWith(
+      expect(snackbar.showSuccessTranslated).toHaveBeenCalledWith(
         'pages.membership_plans.form.success.created'
       );
       expect(router.navigate).toHaveBeenCalledWith([
@@ -224,7 +234,7 @@ describe('MembershipPlanFormFacade', () => {
       expect(command.toJSON()['prices']).toEqual({});
     });
 
-    it('maps membership.plan.code_already_exists on create failure', () => {
+    it('leaves the membership.plan.code_already_exists refusal to the interceptor toast on create failure', () => {
       membershipClient.create.mockReturnValue(
         throwError(() => ({
           result: { detail: 'membership.plan.code_already_exists' },
@@ -233,14 +243,12 @@ describe('MembershipPlanFormFacade', () => {
 
       facade.create(createInput);
 
-      expect(snackbar.showError).toHaveBeenCalledWith(
-        'api.membership.plan.code_already_exists'
-      );
+      expect(snackbar.showErrorTranslated).not.toHaveBeenCalled();
       expect(router.navigate).not.toHaveBeenCalled();
       expect(facade.saving()).toBe(false);
     });
 
-    it('maps membership.plan.stripe_price_already_used on create failure', () => {
+    it('leaves the membership.plan.stripe_price_already_used refusal to the interceptor toast on create failure', () => {
       membershipClient.create.mockReturnValue(
         throwError(() => ({
           result: { detail: 'membership.plan.stripe_price_already_used' },
@@ -249,22 +257,20 @@ describe('MembershipPlanFormFacade', () => {
 
       facade.create(createInput);
 
-      expect(snackbar.showError).toHaveBeenCalledWith(
-        'api.membership.plan.stripe_price_already_used'
-      );
+      expect(snackbar.showErrorTranslated).not.toHaveBeenCalled();
     });
 
-    it('maps currency.not_found — an unknown price key — on create failure', () => {
+    it('leaves the currency.not_found — an unknown price key — refusal to the interceptor toast on create failure', () => {
       membershipClient.create.mockReturnValue(
         throwError(() => ({ result: { detail: 'currency.not_found' } }))
       );
 
       facade.create(createInput);
 
-      expect(snackbar.showError).toHaveBeenCalledWith('api.currency.not_found');
+      expect(snackbar.showErrorTranslated).not.toHaveBeenCalled();
     });
 
-    it('maps membership.plan.discount_out_of_range on create failure', () => {
+    it('leaves the membership.plan.discount_out_of_range refusal to the interceptor toast on create failure', () => {
       membershipClient.create.mockReturnValue(
         throwError(() => ({
           response: JSON.stringify({
@@ -275,9 +281,7 @@ describe('MembershipPlanFormFacade', () => {
 
       facade.create(createInput);
 
-      expect(snackbar.showError).toHaveBeenCalledWith(
-        'api.membership.plan.discount_out_of_range'
-      );
+      expect(snackbar.showErrorTranslated).not.toHaveBeenCalled();
     });
 
     it('does not start a second save while one is in flight', () => {
@@ -308,7 +312,7 @@ describe('MembershipPlanFormFacade', () => {
       expect(command).toBeInstanceOf(UpdateMembershipPlanCommand);
       expect(command.membershipPlanId).toBe('plan-1');
       expect('code' in command.toJSON()).toBe(false);
-      expect(snackbar.showSuccess).toHaveBeenCalledWith(
+      expect(snackbar.showSuccessTranslated).toHaveBeenCalledWith(
         'pages.membership_plans.form.success.updated'
       );
       expect(router.navigate).toHaveBeenCalledWith([
@@ -342,7 +346,7 @@ describe('MembershipPlanFormFacade', () => {
       expect(command.toJSON()['expressUpgradesPerMonth']).toBe(3);
     });
 
-    it('maps membership.plan.stripe_price_already_used on update failure', () => {
+    it('leaves the membership.plan.stripe_price_already_used refusal to the interceptor toast on update failure', () => {
       membershipClient.update.mockReturnValue(
         throwError(() => ({
           result: { detail: 'membership.plan.stripe_price_already_used' },
@@ -351,9 +355,7 @@ describe('MembershipPlanFormFacade', () => {
 
       facade.update('plan-1', updateInput);
 
-      expect(snackbar.showError).toHaveBeenCalledWith(
-        'api.membership.plan.stripe_price_already_used'
-      );
+      expect(snackbar.showErrorTranslated).not.toHaveBeenCalled();
       expect(router.navigate).not.toHaveBeenCalled();
       expect(facade.saving()).toBe(false);
     });

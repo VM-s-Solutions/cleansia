@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { AdminClient, AdminEmployeeDetail } from '@cleansia/admin-services';
-import { PermissionService, Policy, SnackbarService } from '@cleansia/services';
+import { DialogService as ConfirmDialogService, PermissionService, Policy, SnackbarService } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
 import { DialogService } from 'primeng/dynamicdialog';
 import { of } from 'rxjs';
@@ -38,10 +38,25 @@ describe('EmployeeDetailFacade — reads gated by the role', () => {
           },
         },
         { provide: PermissionService, useValue: { hasPolicy } },
-        { provide: SnackbarService, useValue: { showSuccess: jest.fn(), showError: jest.fn() } },
+        {
+          provide: SnackbarService,
+          useValue: {
+            showSuccess: jest.fn(),
+            showSuccessTranslated: jest.fn(),
+            showError: jest.fn(),
+            showErrorTranslated: jest.fn(),
+          },
+        },
         { provide: TranslateService, useValue: { instant: (k: string) => k, currentLang: 'en' } },
         { provide: DialogService, useValue: { open: jest.fn() } },
-        { provide: EmployeeDocumentsFacade, useValue: { loadEmployeeDocuments, ngOnDestroy: jest.fn() } },
+        { provide: ConfirmDialogService, useValue: { confirmTranslated: jest.fn(() => of(true)) } },
+        {
+          provide: EmployeeDocumentsFacade,
+          useValue: {
+            loadEmployeeDocuments,
+            ngOnDestroy: jest.fn(),
+          },
+        },
       ],
     });
 

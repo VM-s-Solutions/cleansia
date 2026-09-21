@@ -17,7 +17,12 @@ describe('CountryFormFacade', () => {
   let updateMock: jest.Mock;
   let marketContentMock: jest.Mock;
   let detailsMock: jest.Mock;
-  let snackbar: { showSuccess: jest.Mock; showError: jest.Mock };
+  let snackbar: {
+    showSuccess: jest.Mock;
+    showSuccessTranslated: jest.Mock;
+    showError: jest.Mock;
+    showErrorTranslated: jest.Mock;
+  };
   let navigate: jest.Mock;
 
   const formData: CountryFormData = {
@@ -32,7 +37,12 @@ describe('CountryFormFacade', () => {
     updateMock = jest.fn().mockReturnValue(of({ id: 'country-1' }));
     marketContentMock = jest.fn().mockReturnValue(of({ countryId: 'country-1' }));
     detailsMock = jest.fn().mockReturnValue(of(null));
-    snackbar = { showSuccess: jest.fn(), showError: jest.fn() };
+    snackbar = {
+      showSuccess: jest.fn(),
+      showSuccessTranslated: jest.fn(),
+      showError: jest.fn(),
+      showErrorTranslated: jest.fn(),
+    };
     navigate = jest.fn();
 
     TestBed.configureTestingModule({
@@ -67,7 +77,7 @@ describe('CountryFormFacade', () => {
   it('reports success and returns to the list once a create lands', () => {
     facade.createCountry(formData);
 
-    expect(snackbar.showSuccess).toHaveBeenCalledWith(
+    expect(snackbar.showSuccessTranslated).toHaveBeenCalledWith(
       'pages.country_form.messages.create_success'
     );
     expect(navigate).toHaveBeenCalled();
@@ -81,7 +91,7 @@ describe('CountryFormFacade', () => {
 
     expect(facade.saving()).toBe(false);
     expect(navigate).not.toHaveBeenCalled();
-    expect(snackbar.showSuccess).not.toHaveBeenCalled();
+    expect(snackbar.showSuccessTranslated).not.toHaveBeenCalled();
   });
 
   it('leaves the loaded country untouched and returns to the list when the detail read fails', () => {
@@ -147,11 +157,11 @@ describe('CountryFormFacade', () => {
         countryId: 'country-1',
         insuranceCoverageAmount: 1000000,
       });
-      expect(snackbar.showSuccess).toHaveBeenNthCalledWith(
+      expect(snackbar.showSuccessTranslated).toHaveBeenNthCalledWith(
         1,
         'pages.country_form.messages.update_success'
       );
-      expect(snackbar.showSuccess).toHaveBeenNthCalledWith(
+      expect(snackbar.showSuccessTranslated).toHaveBeenNthCalledWith(
         2,
         'pages.country_form.messages.market_content_success'
       );
@@ -189,8 +199,8 @@ describe('CountryFormFacade', () => {
 
       facade.updateCountry('country-1', formData, { insuranceCoverageAmount: 5 });
 
-      expect(snackbar.showSuccess).toHaveBeenCalledTimes(1);
-      expect(snackbar.showSuccess).toHaveBeenCalledWith(
+      expect(snackbar.showSuccessTranslated).toHaveBeenCalledTimes(1);
+      expect(snackbar.showSuccessTranslated).toHaveBeenCalledWith(
         'pages.country_form.messages.update_success'
       );
       expect(navigate).not.toHaveBeenCalled();
@@ -201,7 +211,7 @@ describe('CountryFormFacade', () => {
       facade.updateMarketContent('country-1', { insuranceCoverageAmount: 250000 });
 
       expect(marketContentMock).toHaveBeenCalledTimes(1);
-      expect(snackbar.showSuccess).toHaveBeenCalledWith(
+      expect(snackbar.showSuccessTranslated).toHaveBeenCalledWith(
         'pages.country_form.messages.market_content_success'
       );
       expect(navigate).toHaveBeenCalledTimes(1);

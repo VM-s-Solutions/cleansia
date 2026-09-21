@@ -31,9 +31,7 @@ import {
 import { CleansiaPermissionDirective } from '@cleansia/directives';
 import { formatDate } from '@cleansia/utils';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
-import { ConfirmationService } from 'primeng/api';
 import { CheckboxModule } from 'primeng/checkbox';
-import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DialogModule } from 'primeng/dialog';
 import { DialogService } from 'primeng/dynamicdialog';
 import { ToastModule } from 'primeng/toast';
@@ -60,7 +58,6 @@ import { EmployeePayoutSectionComponent } from './employee-payout-section.compon
     CleansiaSectionComponent,
     CleansiaStatusBadgeComponent,
     CheckboxModule,
-    ConfirmDialogModule,
     DialogModule,
     ToastModule,
     EmployeeDocumentsSectionComponent,
@@ -72,7 +69,6 @@ import { EmployeePayoutSectionComponent } from './employee-payout-section.compon
     EmployeeDocumentsFacade,
     EmployeeDetailFacade,
     DialogService,
-    ConfirmationService,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -83,7 +79,6 @@ export class EmployeeDetailComponent implements OnInit, OnDestroy {
   private readonly router = inject(Router);
   private readonly translate = inject(TranslateService);
   private readonly destroyRef = inject(DestroyRef);
-  private readonly confirmationService = inject(ConfirmationService);
   private readonly countryFieldLabels = inject(CountryFieldLabelsService);
 
   /**
@@ -324,21 +319,9 @@ export class EmployeeDetailComponent implements OnInit, OnDestroy {
     this.facade.payConfigDialogOpen.set(false);
   }
 
-  onDeletePayConfig(payConfigId: string): void {
-    this.facade.deleteEmployeePayConfig(payConfigId);
-  }
-
   confirmDeletePayConfig(item: EmployeePayConfigSummaryItemDto): void {
     if (!item.configId) return;
-    const configId = item.configId;
-    this.confirmationService.confirm({
-      message: this.translate.instant(
-        'pages.employee_detail.delete_override_confirm'
-      ),
-      header: this.translate.instant('pages.employee_detail.delete_override'),
-      icon: 'pi pi-exclamation-triangle',
-      accept: () => this.onDeletePayConfig(configId),
-    });
+    this.facade.deleteEmployeePayConfig(item.configId);
   }
 
   onBulkApplyGrade(): void {

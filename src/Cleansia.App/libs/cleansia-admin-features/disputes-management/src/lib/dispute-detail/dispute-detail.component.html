@@ -25,12 +25,12 @@
     @if (facade.loading()) {
     <cleansia-loader />
     } @else if (facade.hasError() || !facade.dispute()) {
-    <cleansia-section>
-      <div class="cleansia-dispute-detail__state">
-        <i class="pi pi-exclamation-triangle"></i>
-        <p>{{ 'pages.disputes_management.detail.load_error' | translate }}</p>
-      </div>
-    </cleansia-section>
+    <div class="not-found-state">
+      <div class="not-found-state__icon"><i class="pi pi-exclamation-triangle"></i></div>
+      <p class="not-found-state__message">
+        {{ 'pages.disputes_management.detail.load_error' | translate }}
+      </p>
+    </div>
     } @else {
     <!-- Dispute summary -->
     <cleansia-section>
@@ -99,9 +99,10 @@
         {{ 'pages.disputes_management.detail.messages' | translate }}
       </h3>
       @if (!facade.dispute()?.messages?.length) {
-      <p class="cleansia-dispute-detail__empty">
-        {{ 'pages.disputes_management.detail.no_messages' | translate }}
-      </p>
+      <div class="empty-state">
+        <i class="pi pi-comments"></i>
+        <p>{{ 'pages.disputes_management.detail.no_messages' | translate }}</p>
+      </div>
       } @else {
       <ul class="cleansia-dispute-detail__messages">
         @for (msg of facade.dispute()?.messages; track msg.id) {

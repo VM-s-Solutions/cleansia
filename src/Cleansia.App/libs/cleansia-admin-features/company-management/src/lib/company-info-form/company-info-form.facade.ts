@@ -7,7 +7,6 @@ import {
 } from '@cleansia/admin-services';
 import { UnsubscribeControlDirective } from '@cleansia/directives';
 import { CleansiaAdminRoute, SnackbarService } from '@cleansia/services';
-import { TranslateService } from '@ngx-translate/core';
 import { catchError, finalize, of, takeUntil } from 'rxjs';
 import {
   buildCreateCompanyInfoCommand,
@@ -21,7 +20,6 @@ export type { CompanyInfoFormData };
 export class CompanyInfoFormFacade extends UnsubscribeControlDirective {
   private readonly adminClient = inject(AdminClient);
   private readonly snackbarService = inject(SnackbarService);
-  private readonly translate = inject(TranslateService);
   private readonly router = inject(Router);
 
   readonly companyInfo = signal<CompanyInfoDetailDto | null>(null);
@@ -73,9 +71,7 @@ export class CompanyInfoFormFacade extends UnsubscribeControlDirective {
       )
       .subscribe((response) => {
         if (response) {
-          this.snackbarService.showSuccess(
-            this.translate.instant('pages.company_info.messages.create_success')
-          );
+          this.snackbarService.showSuccessTranslated('pages.company_info.messages.create_success');
           this.router.navigate([CleansiaAdminRoute.COMPANY_INFO]);
         }
       });
@@ -95,9 +91,7 @@ export class CompanyInfoFormFacade extends UnsubscribeControlDirective {
       )
       .subscribe((response) => {
         if (response) {
-          this.snackbarService.showSuccess(
-            this.translate.instant('pages.company_info.messages.save_success')
-          );
+          this.snackbarService.showSuccessTranslated('pages.company_info.messages.save_success');
           this.router.navigate([CleansiaAdminRoute.COMPANY_INFO]);
         }
       });

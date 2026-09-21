@@ -182,9 +182,7 @@ export class ProfileDocumentsFacade extends UnsubscribeControlDirective {
         .replaceMyDocument(documentId, body)
         .toPromise();
 
-      this.snackbarService.showSuccess(
-        this.translate.instant('global.messages.documents.replace_success')
-      );
+      this.snackbarService.showSuccessTranslated('global.messages.documents.replace_success');
 
       await this.loadEmployeeDocuments();
     } finally {
@@ -212,10 +210,9 @@ export class ProfileDocumentsFacade extends UnsubscribeControlDirective {
       }));
     } catch (error) {
       console.error('Failed to stage document', error);
-      this.snackbarService.showError(
-        this.translate.instant('global.messages.documents.stage_error', {
-          fileName: file.name,
-        })
+      this.snackbarService.showErrorTranslated(
+        'global.messages.documents.stage_error',
+        { fileName: file.name, }
       );
     }
   }
@@ -240,9 +237,7 @@ export class ProfileDocumentsFacade extends UnsubscribeControlDirective {
     const staged = this.documentsState().stagedDocuments;
 
     if (staged.length === 0) {
-      this.snackbarService.showError(
-        this.translate.instant('global.messages.documents.no_documents_to_save')
-      );
+      this.snackbarService.showErrorTranslated('global.messages.documents.no_documents_to_save');
       return;
     }
 
@@ -262,9 +257,7 @@ export class ProfileDocumentsFacade extends UnsubscribeControlDirective {
         .saveMyDocuments(command)
         .toPromise();
 
-      this.snackbarService.showSuccess(
-        this.translate.instant('global.messages.documents.upload_success')
-      );
+      this.snackbarService.showSuccessTranslated('global.messages.documents.upload_success');
 
       // Clear staged documents and reload
       this.documentsState.update((s) => ({
@@ -309,9 +302,7 @@ export class ProfileDocumentsFacade extends UnsubscribeControlDirective {
         .requestMyDocumentDeletion(documentId, body)
         .toPromise();
 
-      this.snackbarService.showSuccess(
-        this.translate.instant('global.messages.documents.deletion_requested')
-      );
+      this.snackbarService.showSuccessTranslated('global.messages.documents.deletion_requested');
     } finally {
       this.documentsState.update((s) => ({ ...s, requestingDeletion: false }));
     }

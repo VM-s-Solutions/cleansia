@@ -8,14 +8,10 @@ import {
   UpdateDisputeStatusCommand,
 } from '@cleansia/admin-services';
 import { UnsubscribeControlDirective } from '@cleansia/directives';
-import { SnackbarService, extractApiErrorCode } from '@cleansia/services';
+import { SnackbarService } from '@cleansia/services';
 import { formatMoney, localeFor } from '@cleansia/utils';
 import { TranslateService } from '@ngx-translate/core';
 import { catchError, finalize, of, takeUntil } from 'rxjs';
-import {
-  DISPUTE_ERROR_KEY_MAP,
-  DISPUTE_FALLBACK_ERROR_KEY,
-} from '../disputes-management/disputes-management.models';
 
 const TERMINAL_STATUSES: ReadonlySet<DisputeStatus> = new Set([
   DisputeStatus.Resolved,
@@ -87,19 +83,12 @@ export class DisputeDetailFacade extends UnsubscribeControlDirective {
       .resolve(command)
       .pipe(
         takeUntil(this.destroyed$),
-        catchError((error: unknown) => {
-          this.snackbar.showError(
-            this.translate.instant(this.resolveErrorKey(error))
-          );
-          return of('error' as const);
-        }),
+        catchError(() => of('error' as const)),
         finalize(() => this.resolving.set(false))
       )
       .subscribe((result) => {
         if (result === 'error') return;
-        this.snackbar.showSuccess(
-          this.translate.instant('pages.disputes_management.resolve.submitted')
-        );
+        this.snackbar.showSuccessTranslated('pages.disputes_management.resolve.submitted');
         this.loadDispute(disputeId);
       });
   }
@@ -116,21 +105,12 @@ export class DisputeDetailFacade extends UnsubscribeControlDirective {
       .updateStatus(command)
       .pipe(
         takeUntil(this.destroyed$),
-        catchError((error: unknown) => {
-          this.snackbar.showError(
-            this.translate.instant(this.resolveErrorKey(error))
-          );
-          return of('error' as const);
-        }),
+        catchError(() => of('error' as const)),
         finalize(() => this.updatingStatus.set(false))
       )
       .subscribe((result) => {
         if (result === 'error') return;
-        this.snackbar.showSuccess(
-          this.translate.instant(
-            'pages.disputes_management.status_update.success'
-          )
-        );
+        this.snackbar.showSuccessTranslated('pages.disputes_management.status_update.success');
         this.loadDispute(disputeId);
       });
   }
@@ -149,29 +129,15 @@ export class DisputeDetailFacade extends UnsubscribeControlDirective {
       .addMessage(command)
       .pipe(
         takeUntil(this.destroyed$),
-        catchError((error: unknown) => {
-          this.snackbar.showError(
-            this.translate.instant(this.resolveErrorKey(error))
-          );
-          return of('error' as const);
-        }),
+        catchError(() => of('error' as const)),
         finalize(() => this.sendingMessage.set(false))
       )
       .subscribe((result) => {
         if (result === 'error') return;
-        this.snackbar.showSuccess(
-          this.translate.instant('pages.disputes_management.message.sent')
-        );
+        this.snackbar.showSuccessTranslated('pages.disputes_management.message.sent');
         onSuccess();
         this.loadDispute(disputeId);
       });
   }
 
-  private resolveErrorKey(error: unknown): string {
-    const code = extractApiErrorCode(error);
-    if (code && DISPUTE_ERROR_KEY_MAP[code]) {
-      return DISPUTE_ERROR_KEY_MAP[code];
-    }
-    return DISPUTE_FALLBACK_ERROR_KEY;
-  }
 }

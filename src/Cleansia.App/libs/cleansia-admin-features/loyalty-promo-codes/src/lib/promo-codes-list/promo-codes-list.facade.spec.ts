@@ -4,7 +4,7 @@ import {
   PagedDataOfPromoCodeListItem,
   PromoCodeListItem,
 } from '@cleansia/admin-services';
-import { SnackbarService } from '@cleansia/services';
+import { DialogService, SnackbarService } from '@cleansia/services';
 import { Router } from '@angular/router';
 import { TranslateService } from '@ngx-translate/core';
 import { of, throwError } from 'rxjs';
@@ -14,7 +14,7 @@ describe('PromoCodesListFacade', () => {
   let facade: PromoCodesListFacade;
   let promoCodeClient: { getPaged: jest.Mock; deactivate: jest.Mock };
   let snackbar: {
-    showSuccess: jest.Mock;
+    showSuccess: jest.Mock; showSuccessTranslated: jest.Mock;
     showApiError: jest.Mock;
   };
 
@@ -23,13 +23,18 @@ describe('PromoCodesListFacade', () => {
 
   beforeEach(() => {
     promoCodeClient = { getPaged: jest.fn(), deactivate: jest.fn() };
-    snackbar = { showSuccess: jest.fn(), showApiError: jest.fn() };
+    snackbar = {
+      showSuccess: jest.fn(),
+      showSuccessTranslated: jest.fn(),
+      showApiError: jest.fn(),
+    };
 
     TestBed.configureTestingModule({
       providers: [
         PromoCodesListFacade,
         { provide: AdminClient, useValue: { adminPromoCodeClient: promoCodeClient } },
         { provide: SnackbarService, useValue: snackbar },
+        { provide: DialogService, useValue: { confirmTranslated: jest.fn(() => of(true)) } },
         { provide: TranslateService, useValue: { instant: (k: string) => k } },
         { provide: Router, useValue: { navigate: jest.fn() } },
       ],
@@ -45,7 +50,7 @@ describe('PromoCodesListFacade', () => {
     facade.deactivate(item);
 
     expect(promoCodeClient.deactivate).toHaveBeenCalledWith('promo-1');
-    expect(snackbar.showSuccess).toHaveBeenCalledWith(
+    expect(snackbar.showSuccessTranslated).toHaveBeenCalledWith(
       'pages.promo_codes.form.success.deactivated'
     );
     expect(promoCodeClient.getPaged).toHaveBeenCalledTimes(1);
@@ -59,7 +64,7 @@ describe('PromoCodesListFacade', () => {
     facade.deactivate(item);
 
     expect(snackbar.showApiError).toHaveBeenCalledWith(error);
-    expect(snackbar.showSuccess).not.toHaveBeenCalled();
+    expect(snackbar.showSuccessTranslated).not.toHaveBeenCalled();
     expect(promoCodeClient.getPaged).not.toHaveBeenCalled();
     expect(facade.loading()).toBe(false);
   });

@@ -11,12 +11,12 @@ describe('AdminLoginFacade', () => {
   let facade: AdminLoginFacade;
   let store: MockStore;
   let authService: { login: jest.Mock; setSession: jest.Mock };
-  let snackbar: { showError: jest.Mock; showApiError: jest.Mock };
+  let snackbar: { showError: jest.Mock; showErrorTranslated: jest.Mock; showApiError: jest.Mock };
   let router: { navigate: jest.Mock };
 
   beforeEach(() => {
     authService = { login: jest.fn(), setSession: jest.fn() };
-    snackbar = { showError: jest.fn(), showApiError: jest.fn() };
+    snackbar = { showError: jest.fn(), showErrorTranslated: jest.fn(), showApiError: jest.fn() };
     router = { navigate: jest.fn() };
 
     TestBed.configureTestingModule({
@@ -55,7 +55,7 @@ describe('AdminLoginFacade', () => {
   it('shows a validation snackbar and does not call the API when the form is invalid', () => {
     facade.login();
 
-    expect(snackbar.showError).toHaveBeenCalled();
+    expect(snackbar.showErrorTranslated).toHaveBeenCalled();
     expect(authService.login).not.toHaveBeenCalled();
     expect(facade.loading()).toBe(false);
   });
@@ -88,7 +88,7 @@ describe('AdminLoginFacade', () => {
 
     facade.login();
 
-    expect(snackbar.showError).toHaveBeenCalledWith(
+    expect(snackbar.showErrorTranslated).toHaveBeenCalledWith(
       'validation.auth.email_not_confirmed'
     );
     expect(authService.setSession).not.toHaveBeenCalled();

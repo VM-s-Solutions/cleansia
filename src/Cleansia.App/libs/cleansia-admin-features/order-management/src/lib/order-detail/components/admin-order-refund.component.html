@@ -4,9 +4,10 @@
     {{ 'pages.order_management.refund.unavailable' | translate }}
   </p>
   } @else if (facade.lines().length === 0) {
-  <p class="refund-empty">
-    {{ 'pages.order_management.refund.no_lines' | translate }}
-  </p>
+  <div class="empty-state">
+    <i class="pi pi-receipt"></i>
+    <p>{{ 'pages.order_management.refund.no_lines' | translate }}</p>
+  </div>
   } @else {
   <div class="refund-form">
     <div class="refund-lines">

@@ -86,9 +86,10 @@
             </div>
           </div>
           } @empty {
-          <p class="currency-price-block__empty">
-            {{ 'pages.extra_form.no_currencies' | translate }}
-          </p>
+          <div class="empty-state">
+            <i class="pi pi-money-bill"></i>
+            <p>{{ 'pages.extra_form.no_currencies' | translate }}</p>
+          </div>
           }
         </div>
       </cleansia-section>

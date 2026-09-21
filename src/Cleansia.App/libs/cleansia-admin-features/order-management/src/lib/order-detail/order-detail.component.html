@@ -493,8 +493,13 @@
       }
     </div>
     } @else {
-    <div class="not-found">
-      <p>{{ (facade.detailError() ? 'pages.order_detail.load_error' : 'pages.order_detail.not_found') | translate }}</p>
+    <div class="not-found-state">
+      <div class="not-found-state__icon">
+        <i [class]="facade.detailError() ? 'pi pi-exclamation-triangle' : 'pi pi-search'"></i>
+      </div>
+      <h3 class="not-found-state__title">
+        {{ (facade.detailError() ? 'pages.order_detail.load_error' : 'pages.order_detail.not_found') | translate }}
+      </h3>
     </div>
     }
   </div>

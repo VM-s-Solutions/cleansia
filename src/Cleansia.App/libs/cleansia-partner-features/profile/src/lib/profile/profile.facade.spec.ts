@@ -47,8 +47,8 @@ describe('ProfileFacade — job radius seeding', () => {
         {
           provide: SnackbarService,
           useValue: {
-            showSuccess: jest.fn(),
-            showError: jest.fn(),
+            showSuccess: jest.fn(), showSuccessTranslated: jest.fn(),
+            showError: jest.fn(), showErrorTranslated: jest.fn(),
             showApiError: jest.fn(),
           },
         },

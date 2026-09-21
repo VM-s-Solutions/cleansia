@@ -10,7 +10,7 @@ import { ReactiveFormsModule } from '@angular/forms';
 import {
   CleansiaButtonComponent,
   CleansiaCheckboxComponent,
-  CleansiaFormSkeletonComponent,
+  CleansiaLoaderComponent,
   CleansiaSectionComponent,
   CleansiaTextInputComponent,
 } from '@cleansia/components';
@@ -25,6 +25,7 @@ import {
   selector: 'cleansia-partner-profile-job-radius',
   standalone: true,
   imports: [
+    CleansiaLoaderComponent,
     CommonModule,
     ReactiveFormsModule,
     TranslatePipe,
@@ -32,7 +33,6 @@ import {
     CleansiaCheckboxComponent,
     CleansiaTextInputComponent,
     CleansiaButtonComponent,
-    CleansiaFormSkeletonComponent,
   ],
   templateUrl: './profile-job-radius.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,

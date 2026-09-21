@@ -6,7 +6,6 @@ import {
 } from '@cleansia/admin-services';
 import { UnsubscribeControlDirective } from '@cleansia/directives';
 import { SnackbarService } from '@cleansia/services';
-import { TranslateService } from '@ngx-translate/core';
 import { catchError, finalize, of, takeUntil } from 'rxjs';
 
 @Injectable()
@@ -14,7 +13,6 @@ export class FiscalFailuresListFacade extends UnsubscribeControlDirective {
   private readonly apiClient = inject(ApiClient);
   private readonly fiscalFailureClient = inject(AdminFiscalFailureClient);
   private readonly snackbarService = inject(SnackbarService);
-  private readonly translate = inject(TranslateService);
 
   readonly failures = signal<FiscalFailureDto[]>([]);
   readonly loading = signal<boolean>(false);
@@ -46,9 +44,7 @@ export class FiscalFailuresListFacade extends UnsubscribeControlDirective {
       .pipe(takeUntil(this.destroyed$))
       .subscribe({
         next: () => {
-          this.snackbarService.showSuccess(
-            this.translate.instant('fiscal_failures.messages.retry_scheduled')
-          );
+          this.snackbarService.showSuccessTranslated('fiscal_failures.messages.retry_scheduled');
           this.loadFailures();
         },
         // The error was swallowed with catchError(() => of(null)) and the SUCCESS snackbar then fired
@@ -66,9 +62,7 @@ export class FiscalFailuresListFacade extends UnsubscribeControlDirective {
       .pipe(takeUntil(this.destroyed$))
       .subscribe({
         next: () => {
-          this.snackbarService.showSuccess(
-            this.translate.instant('fiscal_failures.messages.acknowledged')
-          );
+          this.snackbarService.showSuccessTranslated('fiscal_failures.messages.acknowledged');
           this.loadFailures();
         },
         // The error was swallowed with catchError(() => of(null)) and the SUCCESS snackbar then fired

@@ -17,14 +17,24 @@ describe('EmployeeDocumentsFacade', () => {
   let getPagedMock: jest.Mock;
   let approveMock: jest.Mock;
   let rejectMock: jest.Mock;
-  let snackbar: { showSuccess: jest.Mock; showError: jest.Mock };
+  let snackbar: {
+    showSuccess: jest.Mock;
+    showSuccessTranslated: jest.Mock;
+    showError: jest.Mock;
+    showErrorTranslated: jest.Mock;
+  };
 
   beforeEach(() => {
     TestBed.resetTestingModule();
     getPagedMock = jest.fn().mockReturnValue(of({ data: [], total: 0 }));
     approveMock = jest.fn().mockReturnValue(of({ documentId: 'doc-1' }));
     rejectMock = jest.fn().mockReturnValue(of({ documentId: 'doc-1' }));
-    snackbar = { showSuccess: jest.fn(), showError: jest.fn() };
+    snackbar = {
+      showSuccess: jest.fn(),
+      showSuccessTranslated: jest.fn(),
+      showError: jest.fn(),
+      showErrorTranslated: jest.fn(),
+    };
 
     TestBed.configureTestingModule({
       providers: [
@@ -73,7 +83,7 @@ describe('EmployeeDocumentsFacade', () => {
   it('re-reads the documents after an approve lands, and not when it fails', () => {
     facade.approveDocument('doc-1', 'emp-1');
     expect(getPagedMock).toHaveBeenCalledTimes(1);
-    expect(snackbar.showSuccess).toHaveBeenCalledWith(
+    expect(snackbar.showSuccessTranslated).toHaveBeenCalledWith(
       'pages.employee_detail.messages.document_approve_success'
     );
 

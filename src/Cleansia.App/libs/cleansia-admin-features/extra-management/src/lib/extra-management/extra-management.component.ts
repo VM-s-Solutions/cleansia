@@ -21,8 +21,6 @@ import {
   CleansiaTitleComponent,
 } from '@cleansia/components';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
-import { ConfirmationService } from 'primeng/api';
-import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { ExtraManagementFacade } from './extra-management.facade';
 import { getExtraTableDefinition } from './extra-management.models';
 
@@ -41,11 +39,10 @@ import { getExtraTableDefinition } from './extra-management.models';
     CleansiaFilterDrawerComponent,
     CleansiaFilterChipsComponent,
     ReactiveFormsModule,
-    ConfirmDialogModule,
     CleansiaPermissionDirective,
   ],
   templateUrl: './extra-management.component.html',
-  providers: [ExtraManagementFacade, ConfirmationService],
+  providers: [ExtraManagementFacade],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ExtraManagementComponent implements OnInit {
@@ -53,7 +50,6 @@ export class ExtraManagementComponent implements OnInit {
   protected readonly Policy = Policy;
   private readonly translate = inject(TranslateService);
   private readonly permissions = inject(PermissionService);
-  private readonly confirmationService = inject(ConfirmationService);
 
   protected readonly table = computed(() => {
     this.facade.lang();
@@ -76,24 +72,10 @@ export class ExtraManagementComponent implements OnInit {
   }
 
   confirmDeactivateExtra(row: ExtraListItem): void {
-    this.confirmationService.confirm({
-      message: this.translate.instant('pages.extra_management.deactivate_confirm', { name: row.name }),
-      header: this.translate.instant('pages.extra_management.deactivate_extra'),
-      icon: 'pi pi-exclamation-triangle',
-      accept: () => {
-        this.facade.deactivateExtra(row);
-      },
-    });
+    this.facade.deactivateExtra(row);
   }
 
   confirmDeleteExtra(row: ExtraListItem): void {
-    this.confirmationService.confirm({
-      message: this.translate.instant('pages.extra_management.delete_confirm'),
-      header: this.translate.instant('pages.extra_management.delete_extra'),
-      icon: 'pi pi-exclamation-triangle',
-      accept: () => {
-        this.facade.deleteExtra(row);
-      },
-    });
+    this.facade.deleteExtra(row);
   }
 }

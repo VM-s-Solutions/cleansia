@@ -157,41 +157,4 @@ export function getMembershipPlanTableDefinition(
  * never depends on the snackbar's best-effort normalization (mirrors the
  * disputes-management map).
  */
-export const MEMBERSHIP_PLAN_ERROR_KEY_MAP: Readonly<Record<string, string>> = {
-  'membership.plan.code_already_exists':
-    'api.membership.plan.code_already_exists',
-  'membership.plan.discount_out_of_range':
-    'api.membership.plan.discount_out_of_range',
-  'membership.plan.not_found': 'api.membership.plan.not_found',
-  'membership.plan.stripe_price_already_used':
-    'api.membership.plan.stripe_price_already_used',
-  'currency.not_found': 'api.currency.not_found',
-};
 
-export const MEMBERSHIP_PLAN_FALLBACK_ERROR_KEY =
-  'api.membership.plan.action_failed';
-
-export function resolveMembershipPlanErrorKey(error: unknown): string {
-  const apiError = error as {
-    result?: { detail?: string; title?: string };
-    response?: string;
-  };
-  let code = apiError?.result?.detail || apiError?.result?.title;
-
-  if (!code && apiError?.response) {
-    try {
-      const parsed = JSON.parse(apiError.response) as {
-        detail?: string;
-        title?: string;
-      };
-      code = parsed.detail || parsed.title;
-    } catch {
-      code = undefined;
-    }
-  }
-
-  if (code && MEMBERSHIP_PLAN_ERROR_KEY_MAP[code]) {
-    return MEMBERSHIP_PLAN_ERROR_KEY_MAP[code];
-  }
-  return MEMBERSHIP_PLAN_FALLBACK_ERROR_KEY;
-}

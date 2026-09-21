@@ -19,8 +19,6 @@ import {
 import { CleansiaAdminRoute, Policy } from '@cleansia/services';
 import { CleansiaPermissionDirective } from '@cleansia/directives';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
-import { ConfirmationService } from 'primeng/api';
-import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DialogService } from 'primeng/dynamicdialog';
 import { ToastModule } from 'primeng/toast';
 import {
@@ -44,12 +42,11 @@ import { getOrderPaysTableDefinition } from './invoice-detail.models';
     CleansiaStatusBadgeComponent,
     CleansiaTableComponent,
     ToastModule,
-    ConfirmDialogModule,
     CleansiaPermissionDirective,
     AdminPayrollOpsComponent,
   ],
   templateUrl: './invoice-detail.component.html',
-  providers: [InvoiceDetailFacade, DialogService, ConfirmationService],
+  providers: [InvoiceDetailFacade, DialogService],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class InvoiceDetailComponent implements OnInit, OnDestroy {
@@ -57,7 +54,6 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly translate = inject(TranslateService);
-  private readonly confirmationService = inject(ConfirmationService);
 
   readonly EmployeeInvoiceStatus = EmployeeInvoiceStatus;
   protected readonly Policy = Policy;
@@ -103,20 +99,7 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
   }
 
   confirmAssignVariableSymbol(): void {
-    this.confirmationService.confirm({
-      header: this.translate.instant(
-        'pages.invoice_detail.assign_variable_symbol_confirm.title'
-      ),
-      message: this.translate.instant(
-        'pages.invoice_detail.assign_variable_symbol_confirm.message'
-      ),
-      icon: 'pi pi-exclamation-triangle',
-      acceptLabel: this.translate.instant(
-        'pages.invoice_detail.assign_variable_symbol_confirm.yes'
-      ),
-      rejectLabel: this.translate.instant('global.actions.cancel'),
-      accept: () => this.facade.assignVariableSymbol(),
-    });
+    this.facade.assignVariableSymbol();
   }
 
   onDownload(): void {

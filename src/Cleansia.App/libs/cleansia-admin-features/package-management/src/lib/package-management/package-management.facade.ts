@@ -10,15 +10,11 @@ import {
 } from '@cleansia/admin-services';
 import { FilterChip, FilterDrawerState, ICleansiaSelectOption, PaginationState, SortEvent } from '@cleansia/components';
 import { UnsubscribeControlDirective } from '@cleansia/directives';
-import { CleansiaAdminRoute, SnackbarService } from '@cleansia/services';
+import { CleansiaAdminRoute, DialogService, SnackbarService } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
 import { currentLanguage, formatMoney, localeFor } from '@cleansia/utils';
-import { Observable, catchError, finalize, map, of, switchMap, takeUntil, tap } from 'rxjs';
-import {
-  CatalogStatusFilter,
-  mapStatusFilterToIsActive,
-  resolvePackageErrorKey,
-} from './package-management.models';
+import { catchError, filter, finalize, map, Observable, of, switchMap, takeUntil, tap } from 'rxjs';
+import { CatalogStatusFilter, mapStatusFilterToIsActive } from './package-management.models';
 
 export interface PackageFilterParams {
   searchTerm?: string;
@@ -28,6 +24,7 @@ export interface PackageFilterParams {
 @Injectable()
 export class PackageManagementFacade extends UnsubscribeControlDirective {
   private readonly adminClient = inject(AdminClient);
+  private readonly dialog = inject(DialogService);
   private readonly snackbarService = inject(SnackbarService);
   private readonly translate = inject(TranslateService);
   private readonly router = inject(Router);
@@ -184,25 +181,30 @@ export class PackageManagementFacade extends UnsubscribeControlDirective {
   }
 
   deactivatePackage(pkg: PackageListItem): void {
-    if (!pkg.id) return;
+    const id = pkg.id;
+    if (!id) return;
 
+    this.dialog
+      .confirmTranslated(
+        'pages.package_management.deactivate_confirm',
+        'pages.package_management.deactivate_package',
+        { name: pkg.name }
+      )
+      .pipe(takeUntil(this.destroyed$), filter(Boolean))
+      .subscribe(() => this.deactivatePackageConfirmed(id));
+  }
+
+  private deactivatePackageConfirmed(id: string): void {
     this.adminClient.adminPackageClient
-      .deactivate(pkg.id)
+      .deactivate(id)
       .pipe(
         takeUntil(this.destroyed$),
-        catchError((error: unknown) => {
-          this.snackbarService.showError(
-            this.translate.instant(resolvePackageErrorKey(error))
-          );
-          return of(null);
-        })
+        catchError(() => of(null))
       )
       .subscribe((response) => {
         if (response) {
-          this.snackbarService.showSuccess(
-            this.translate.instant(
-              'pages.package_management.messages.deactivate_success'
-            )
+          this.snackbarService.showSuccessTranslated(
+            'pages.package_management.messages.deactivate_success'
           );
           this.loadPackages();
         }
@@ -216,19 +218,12 @@ export class PackageManagementFacade extends UnsubscribeControlDirective {
       .activate(pkg.id)
       .pipe(
         takeUntil(this.destroyed$),
-        catchError((error: unknown) => {
-          this.snackbarService.showError(
-            this.translate.instant(resolvePackageErrorKey(error))
-          );
-          return of(null);
-        })
+        catchError(() => of(null))
       )
       .subscribe((response) => {
         if (response) {
-          this.snackbarService.showSuccess(
-            this.translate.instant(
-              'pages.package_management.messages.activate_success'
-            )
+          this.snackbarService.showSuccessTranslated(
+            'pages.package_management.messages.activate_success'
           );
           this.loadPackages();
         }
@@ -236,23 +231,31 @@ export class PackageManagementFacade extends UnsubscribeControlDirective {
   }
 
   deletePackage(pkg: PackageListItem): void {
-    if (!pkg.id) return;
+    const id = pkg.id;
+    if (!id) return;
 
+    this.dialog
+      .confirmTranslated(
+        'pages.package_management.delete_confirm',
+        'pages.package_management.delete_package',
+        undefined,
+        { danger: true, acceptLabelKey: 'global.actions.delete' }
+      )
+      .pipe(takeUntil(this.destroyed$), filter(Boolean))
+      .subscribe(() => this.deletePackageConfirmed(id));
+  }
+
+  private deletePackageConfirmed(id: string): void {
     this.adminClient.adminPackageClient
-      .delete(pkg.id)
+      .delete(id)
       .pipe(
         takeUntil(this.destroyed$),
-        catchError((error: unknown) => {
-          this.snackbarService.showError(
-            this.translate.instant(resolvePackageErrorKey(error))
-          );
-          return of(null);
-        })
+        catchError(() => of(null))
       )
       .subscribe((response) => {
         if (response) {
-          this.snackbarService.showSuccess(
-            this.translate.instant('pages.package_management.messages.delete_success')
+          this.snackbarService.showSuccessTranslated(
+            'pages.package_management.messages.delete_success'
           );
           this.loadPackages();
         }

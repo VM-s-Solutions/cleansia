@@ -17,7 +17,12 @@ describe('CompanyInfoFormFacade', () => {
   let updateMock: jest.Mock;
   let detailsMock: jest.Mock;
   let getOverviewMock: jest.Mock;
-  let snackbar: { showSuccess: jest.Mock; showError: jest.Mock };
+  let snackbar: {
+    showSuccess: jest.Mock;
+    showSuccessTranslated: jest.Mock;
+    showError: jest.Mock;
+    showErrorTranslated: jest.Mock;
+  };
   let navigate: jest.Mock;
 
   const formData: CompanyInfoFormData = {
@@ -47,7 +52,12 @@ describe('CompanyInfoFormFacade', () => {
     updateMock = jest.fn().mockReturnValue(of({ id: 'company-1' }));
     detailsMock = jest.fn().mockReturnValue(of(null));
     getOverviewMock = jest.fn().mockReturnValue(of([]));
-    snackbar = { showSuccess: jest.fn(), showError: jest.fn() };
+    snackbar = {
+      showSuccess: jest.fn(),
+      showSuccessTranslated: jest.fn(),
+      showError: jest.fn(),
+      showErrorTranslated: jest.fn(),
+    };
     navigate = jest.fn();
 
     TestBed.configureTestingModule({
@@ -100,7 +110,7 @@ describe('CompanyInfoFormFacade', () => {
   it('reports success and returns to the list once a create lands', () => {
     facade.createCompanyInfo(formData);
 
-    expect(snackbar.showSuccess).toHaveBeenCalledWith(
+    expect(snackbar.showSuccessTranslated).toHaveBeenCalledWith(
       'pages.company_info.messages.create_success'
     );
     expect(navigate).toHaveBeenCalled();
@@ -114,7 +124,7 @@ describe('CompanyInfoFormFacade', () => {
 
     expect(facade.saving()).toBe(false);
     expect(navigate).not.toHaveBeenCalled();
-    expect(snackbar.showSuccess).not.toHaveBeenCalled();
+    expect(snackbar.showSuccessTranslated).not.toHaveBeenCalled();
   });
 
   it('clears saving and stays on the form when an update fails', () => {

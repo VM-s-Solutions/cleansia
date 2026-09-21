@@ -13,16 +13,11 @@ import {
   UpdatePackageResponse,
 } from '@cleansia/admin-services';
 import { UnsubscribeControlDirective } from '@cleansia/directives';
-import {
-  CleansiaAdminRoute,
-  SnackbarService,
-  extractApiErrorCode,
-} from '@cleansia/services';
+import { CleansiaAdminRoute, resolveApiErrorKey, SnackbarService } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
 import { catchError, finalize, of, takeUntil } from 'rxjs';
 import {
   DerivedServiceGross,
-  PACKAGE_ERROR_KEY_MAP,
   PACKAGE_FALLBACK_ERROR_KEY,
   PackageServiceWeightRow,
   deriveServiceGrosses,
@@ -249,21 +244,15 @@ export class PackageFormFacade extends UnsubscribeControlDirective {
       .pipe(
         takeUntil(this.destroyed$),
         catchError((error: unknown) => {
-          this.errorKey.set(this.resolveErrorKey(error));
+          this.errorKey.set(resolveApiErrorKey(this.translate, error, PACKAGE_FALLBACK_ERROR_KEY));
           return of(null);
         }),
         finalize(() => this.saving.set(false))
       )
       .subscribe((response: CreatePackageResponse | null) => {
         if (response) {
-          this.snackbarService.showSuccess(
-            this.translate.instant('pages.package_form.messages.create_success')
-          );
+          this.snackbarService.showSuccessTranslated('pages.package_form.messages.create_success');
           this.router.navigate([CleansiaAdminRoute.PACKAGE_MANAGEMENT]);
-        } else {
-          this.snackbarService.showError(
-            this.translate.instant(this.errorKey() ?? PACKAGE_FALLBACK_ERROR_KEY)
-          );
         }
       });
   }
@@ -288,21 +277,15 @@ export class PackageFormFacade extends UnsubscribeControlDirective {
       .pipe(
         takeUntil(this.destroyed$),
         catchError((error: unknown) => {
-          this.errorKey.set(this.resolveErrorKey(error));
+          this.errorKey.set(resolveApiErrorKey(this.translate, error, PACKAGE_FALLBACK_ERROR_KEY));
           return of(null);
         }),
         finalize(() => this.saving.set(false))
       )
       .subscribe((response: UpdatePackageResponse | null) => {
         if (response) {
-          this.snackbarService.showSuccess(
-            this.translate.instant('pages.package_form.messages.update_success')
-          );
+          this.snackbarService.showSuccessTranslated('pages.package_form.messages.update_success');
           this.router.navigate([CleansiaAdminRoute.PACKAGE_MANAGEMENT]);
-        } else {
-          this.snackbarService.showError(
-            this.translate.instant(this.errorKey() ?? PACKAGE_FALLBACK_ERROR_KEY)
-          );
         }
       });
   }
@@ -327,11 +310,4 @@ export class PackageFormFacade extends UnsubscribeControlDirective {
     return translations;
   }
 
-  private resolveErrorKey(error: unknown): string {
-    const code = extractApiErrorCode(error);
-    if (code && PACKAGE_ERROR_KEY_MAP[code]) {
-      return PACKAGE_ERROR_KEY_MAP[code];
-    }
-    return PACKAGE_FALLBACK_ERROR_KEY;
-  }
 }

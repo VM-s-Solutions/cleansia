@@ -73,7 +73,12 @@ describe('UserLoyaltyDetailFacade — referrals panel', () => {
         },
         {
           provide: SnackbarService,
-          useValue: { showSuccess: jest.fn(), showError: jest.fn() },
+          useValue: {
+            showSuccess: jest.fn(),
+            showSuccessTranslated: jest.fn(),
+            showError: jest.fn(),
+            showErrorTranslated: jest.fn(),
+          },
         },
         { provide: TranslateService, useValue: { instant: (k: string) => k } },
         { provide: Router, useValue: { navigate: jest.fn() } },
@@ -212,7 +217,12 @@ describe('UserLoyaltyDetailFacade — credit', () => {
         },
         {
           provide: SnackbarService,
-          useValue: { showSuccess: jest.fn(), showError: jest.fn() },
+          useValue: {
+            showSuccess: jest.fn(),
+            showSuccessTranslated: jest.fn(),
+            showError: jest.fn(),
+            showErrorTranslated: jest.fn(),
+          },
         },
         { provide: TranslateService, useValue: { instant: (k: string) => k } },
         { provide: Router, useValue: { navigate: jest.fn() } },
@@ -298,19 +308,16 @@ describe('UserLoyaltyDetailFacade — credit', () => {
 
   it('confirms the discharge in the currency the server drained', () => {
     const snackbar = TestBed.inject(SnackbarService);
-    const translate = TestBed.inject(TranslateService);
-    const instant = jest.spyOn(translate, 'instant');
     creditClient.expire.mockReturnValue(
       of(ExpireCustomerCreditResponse.fromJS({ userId: 'user-1', amountExpired: 50, currencyCode: 'EUR' }))
     );
 
     facade.expireCredit({ currencyId: 'cur-eur', note: 'Leaving' });
 
-    expect(instant).toHaveBeenCalledWith('pages.loyalty_user_detail.credit.expire_success', {
+    expect(snackbar.showSuccessTranslated).toHaveBeenCalledWith('pages.loyalty_user_detail.credit.expire_success', {
       amount: 50,
       currency: 'EUR',
     });
-    expect(snackbar.showSuccess).toHaveBeenCalled();
     expect(creditClient.user).toHaveBeenCalledTimes(2);
   });
 });
@@ -318,7 +325,13 @@ describe('UserLoyaltyDetailFacade — credit', () => {
 describe('UserLoyaltyDetailFacade — subject export', () => {
   let facade: UserLoyaltyDetailFacade;
   let gdprClient: { export: jest.Mock };
-  let snackbar: { showSuccess: jest.Mock; showError: jest.Mock; showApiError: jest.Mock };
+  let snackbar: {
+    showSuccess: jest.Mock;
+    showSuccessTranslated: jest.Mock;
+    showError: jest.Mock;
+    showErrorTranslated: jest.Mock;
+    showApiError: jest.Mock;
+  };
   let download: jest.SpyInstance;
 
   const exportDto = GdprExportDto.fromJS({
@@ -336,7 +349,13 @@ describe('UserLoyaltyDetailFacade — subject export', () => {
 
   beforeEach(() => {
     gdprClient = { export: jest.fn().mockReturnValue(of(exportDto)) };
-    snackbar = { showSuccess: jest.fn(), showError: jest.fn(), showApiError: jest.fn() };
+    snackbar = {
+      showSuccess: jest.fn(),
+      showSuccessTranslated: jest.fn(),
+      showError: jest.fn(),
+      showErrorTranslated: jest.fn(),
+      showApiError: jest.fn(),
+    };
 
     TestBed.configureTestingModule({
       providers: [
@@ -368,7 +387,7 @@ describe('UserLoyaltyDetailFacade — subject export', () => {
 
     expect(gdprClient.export).toHaveBeenCalledWith('user-1');
     expect(download).toHaveBeenCalledWith(exportDto, 'subject-export-user-1-2026-09-13.json');
-    expect(snackbar.showSuccess).toHaveBeenCalledWith('pages.customer_detail.export_success');
+    expect(snackbar.showSuccessTranslated).toHaveBeenCalledWith('pages.customer_detail.export_success');
     expect(facade.exporting()).toBe(false);
     jest.useRealTimers();
   });
@@ -412,7 +431,13 @@ describe('UserLoyaltyDetailFacade — subject export', () => {
 describe('UserLoyaltyDetailFacade — incident file', () => {
   let facade: UserLoyaltyDetailFacade;
   let gdprClient: { export: jest.Mock; incidentFile: jest.Mock };
-  let snackbar: { showSuccess: jest.Mock; showError: jest.Mock; showApiError: jest.Mock };
+  let snackbar: {
+    showSuccess: jest.Mock;
+    showSuccessTranslated: jest.Mock;
+    showError: jest.Mock;
+    showErrorTranslated: jest.Mock;
+    showApiError: jest.Mock;
+  };
   let download: jest.Mock;
 
   const pdf = new Blob(['%PDF-1.7'], { type: 'application/pdf' });
@@ -427,7 +452,13 @@ describe('UserLoyaltyDetailFacade — incident file', () => {
       export: jest.fn(),
       incidentFile: jest.fn().mockReturnValue(of(served)),
     };
-    snackbar = { showSuccess: jest.fn(), showError: jest.fn(), showApiError: jest.fn() };
+    snackbar = {
+      showSuccess: jest.fn(),
+      showSuccessTranslated: jest.fn(),
+      showError: jest.fn(),
+      showErrorTranslated: jest.fn(),
+      showApiError: jest.fn(),
+    };
     download = jest.fn();
 
     TestBed.configureTestingModule({
@@ -454,7 +485,7 @@ describe('UserLoyaltyDetailFacade — incident file', () => {
 
     expect(gdprClient.incidentFile).toHaveBeenCalledWith('user-1', undefined);
     expect(download).toHaveBeenCalledWith(pdf, 'incident-user-1-20260914.pdf');
-    expect(snackbar.showSuccess).toHaveBeenCalledWith(
+    expect(snackbar.showSuccessTranslated).toHaveBeenCalledWith(
       'pages.customer_detail.incident_file.success'
     );
     expect(facade.incidentFileExporting()).toBe(false);
@@ -489,7 +520,7 @@ describe('UserLoyaltyDetailFacade — incident file', () => {
     facade.exportIncidentFile('order-7');
 
     expect(download).not.toHaveBeenCalled();
-    expect(snackbar.showSuccess).not.toHaveBeenCalled();
+    expect(snackbar.showSuccessTranslated).not.toHaveBeenCalled();
     expect(snackbar.showApiError).toHaveBeenCalledWith(
       error,
       'pages.customer_detail.incident_file.error'
@@ -529,7 +560,13 @@ describe('UserLoyaltyDetailFacade — incident order picker', () => {
         { provide: AdminClient, useValue: { adminOrderClient: { getPaged } } },
         {
           provide: SnackbarService,
-          useValue: { showSuccess: jest.fn(), showError: jest.fn(), showApiError: jest.fn() },
+          useValue: {
+            showSuccess: jest.fn(),
+            showSuccessTranslated: jest.fn(),
+            showError: jest.fn(),
+            showErrorTranslated: jest.fn(),
+            showApiError: jest.fn(),
+          },
         },
         { provide: TranslateService, useValue: { instant: (k: string) => k } },
         { provide: Router, useValue: { navigate: jest.fn() } },

@@ -13,13 +13,23 @@ describe('PayPeriodManagementFacade', () => {
   let facade: PayPeriodManagementFacade;
   let getPagedMock: jest.Mock;
   let closeMock: jest.Mock;
-  let snackbar: { showSuccess: jest.Mock; showError: jest.Mock };
+  let snackbar: {
+    showSuccess: jest.Mock;
+    showSuccessTranslated: jest.Mock;
+    showError: jest.Mock;
+    showErrorTranslated: jest.Mock;
+  };
 
   beforeEach(() => {
     TestBed.resetTestingModule();
     getPagedMock = jest.fn().mockReturnValue(of({ data: [], total: 0 }));
     closeMock = jest.fn().mockReturnValue(of({ payPeriodId: 'period-1' }));
-    snackbar = { showSuccess: jest.fn(), showError: jest.fn() };
+    snackbar = {
+      showSuccess: jest.fn(),
+      showSuccessTranslated: jest.fn(),
+      showError: jest.fn(),
+      showErrorTranslated: jest.fn(),
+    };
 
     TestBed.configureTestingModule({
       providers: [
@@ -31,7 +41,14 @@ describe('PayPeriodManagementFacade', () => {
           },
         },
         { provide: SnackbarService, useValue: snackbar },
-        { provide: TranslateService, useValue: { instant: (k: string) => k, currentLang: 'cs', onLangChange: EMPTY } },
+        {
+          provide: TranslateService,
+          useValue: {
+            instant: (k: string) => k,
+            currentLang: 'cs',
+            onLangChange: EMPTY,
+          },
+        },
       ],
     });
 
@@ -93,7 +110,7 @@ describe('PayPeriodManagementFacade', () => {
   it('re-reads the list after a close lands, and not when it fails', () => {
     facade.closePayPeriod('period-1', 'done');
     expect(getPagedMock).toHaveBeenCalledTimes(1);
-    expect(snackbar.showSuccess).toHaveBeenCalledWith(
+    expect(snackbar.showSuccessTranslated).toHaveBeenCalledWith(
       'pay_periods.messages.close_success'
     );
 

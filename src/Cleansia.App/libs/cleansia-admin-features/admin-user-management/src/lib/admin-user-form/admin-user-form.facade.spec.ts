@@ -24,7 +24,12 @@ describe('AdminUserFormFacade', () => {
   let detailsMock: jest.Mock;
   let getOverviewMock: jest.Mock;
   let roleMock: jest.Mock;
-  let snackbar: { showSuccess: jest.Mock; showError: jest.Mock };
+  let snackbar: {
+    showSuccess: jest.Mock;
+    showSuccessTranslated: jest.Mock;
+    showError: jest.Mock;
+    showErrorTranslated: jest.Mock;
+  };
   let navigate: jest.Mock;
   let currentUserId: string | null;
 
@@ -47,7 +52,12 @@ describe('AdminUserFormFacade', () => {
     detailsMock = jest.fn();
     getOverviewMock = jest.fn();
     roleMock = jest.fn();
-    snackbar = { showSuccess: jest.fn(), showError: jest.fn() };
+    snackbar = {
+      showSuccess: jest.fn(),
+      showSuccessTranslated: jest.fn(),
+      showError: jest.fn(),
+      showErrorTranslated: jest.fn(),
+    };
     navigate = jest.fn();
     currentUserId = 'usr-me';
 
@@ -85,7 +95,7 @@ describe('AdminUserFormFacade', () => {
     expect(command.birthDate).toEqual(birthDate);
     expect(command.preferredLanguageCode).toBe('cs');
     expect(command.email).toBe('admin@cleansia.cz');
-    expect(snackbar.showSuccess).toHaveBeenCalledWith(
+    expect(snackbar.showSuccessTranslated).toHaveBeenCalledWith(
       'pages.admin_user_form.messages.create_success'
     );
     expect(navigate).toHaveBeenCalled();
@@ -116,7 +126,7 @@ describe('AdminUserFormFacade', () => {
     expect(command.preferredLanguageCode).toBeUndefined();
   });
 
-  it('maps active languages to select options', () => {
+  it('leaves the active languages to select options refusal to the interceptor toast', () => {
     getOverviewMock.mockReturnValue(
       of([
         LanguageListItem.fromJS({ id: 'l1', code: 'cs', name: 'Čeština' }),
@@ -133,42 +143,36 @@ describe('AdminUserFormFacade', () => {
     ]);
   });
 
-  it('maps admin_user.email_exists to its translation key on create failure', () => {
+  it('leaves the admin_user.email_exists refusal to the interceptor toast on create failure', () => {
     createMock.mockReturnValue(
       throwError(() => ({ result: { detail: 'admin_user.email_exists' } }))
     );
 
     facade.createUser(fullData);
 
-    expect(snackbar.showError).toHaveBeenCalledWith(
-      'api.admin_user.email_exists'
-    );
+    expect(snackbar.showErrorTranslated).not.toHaveBeenCalled();
     expect(facade.saving()).toBe(false);
     expect(navigate).not.toHaveBeenCalled();
   });
 
-  it('maps language.not_supported to its translation key on update failure', () => {
+  it('leaves the language.not_supported refusal to the interceptor toast on update failure', () => {
     updateMock.mockReturnValue(
       throwError(() => ({ result: { detail: 'language.not_supported' } }))
     );
 
     facade.updateUser('usr-1', fullData);
 
-    expect(snackbar.showError).toHaveBeenCalledWith(
-      'api.language.not_supported'
-    );
+    expect(snackbar.showErrorTranslated).not.toHaveBeenCalled();
   });
 
-  it('falls back to the generic error for unknown codes', () => {
+  it('leaves an unknown refusal to the interceptor toast', () => {
     createMock.mockReturnValue(
       throwError(() => ({ result: { detail: 'something.unknown' } }))
     );
 
     facade.createUser(fullData);
 
-    expect(snackbar.showError).toHaveBeenCalledWith(
-      'api.common.error_occurred'
-    );
+    expect(snackbar.showErrorTranslated).not.toHaveBeenCalled();
   });
 
   // Every member of a generated command is optional, so a dropped assignment type-checks.
@@ -270,7 +274,7 @@ describe('AdminUserFormFacade', () => {
       expect(command.toJSON()).toEqual({ userId: 'usr-1', role: AdminRole.Manager });
       expect(facade.role()).toBe(AdminRole.Manager);
       expect(facade.roleSaving()).toBe(false);
-      expect(snackbar.showSuccess).toHaveBeenCalledWith('pages.admin_user_form.messages.role_success');
+      expect(snackbar.showSuccessTranslated).toHaveBeenCalledWith('pages.admin_user_form.messages.role_success');
     });
 
     it('steps the picker back to the confirmed role when the server refuses, with no toast of its own', () => {
@@ -285,7 +289,7 @@ describe('AdminUserFormFacade', () => {
       expect(facade.role()).toBe(AdminRole.Administrator);
       expect(facade.roleSaving()).toBe(false);
       expect(snackbar.showError).not.toHaveBeenCalled();
-      expect(snackbar.showSuccess).not.toHaveBeenCalled();
+      expect(snackbar.showSuccessTranslated).not.toHaveBeenCalled();
     });
 
     it('ignores a change that names the role already held', () => {

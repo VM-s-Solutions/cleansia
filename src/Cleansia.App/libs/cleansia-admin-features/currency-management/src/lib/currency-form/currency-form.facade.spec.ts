@@ -14,7 +14,12 @@ describe('CurrencyFormFacade', () => {
   let facade: CurrencyFormFacade;
   let createMock: jest.Mock;
   let updateMock: jest.Mock;
-  let snackbar: { showSuccess: jest.Mock; showError: jest.Mock };
+  let snackbar: {
+    showSuccess: jest.Mock;
+    showSuccessTranslated: jest.Mock;
+    showError: jest.Mock;
+    showErrorTranslated: jest.Mock;
+  };
   let navigate: jest.Mock;
 
   const formData: CurrencyFormData = {
@@ -29,7 +34,12 @@ describe('CurrencyFormFacade', () => {
     TestBed.resetTestingModule();
     createMock = jest.fn().mockReturnValue(of({ id: 'cur-1' }));
     updateMock = jest.fn().mockReturnValue(of({ id: 'cur-1' }));
-    snackbar = { showSuccess: jest.fn(), showError: jest.fn() };
+    snackbar = {
+      showSuccess: jest.fn(),
+      showSuccessTranslated: jest.fn(),
+      showError: jest.fn(),
+      showErrorTranslated: jest.fn(),
+    };
     navigate = jest.fn();
 
     TestBed.configureTestingModule({
@@ -57,7 +67,7 @@ describe('CurrencyFormFacade', () => {
   it('reports success and returns to the list once a create lands', () => {
     facade.createCurrency(formData);
 
-    expect(snackbar.showSuccess).toHaveBeenCalledWith(
+    expect(snackbar.showSuccessTranslated).toHaveBeenCalledWith(
       'pages.currency_form.messages.create_success'
     );
     expect(navigate).toHaveBeenCalled();
@@ -71,7 +81,7 @@ describe('CurrencyFormFacade', () => {
 
     expect(facade.saving()).toBe(false);
     expect(navigate).not.toHaveBeenCalled();
-    expect(snackbar.showSuccess).not.toHaveBeenCalled();
+    expect(snackbar.showSuccessTranslated).not.toHaveBeenCalled();
   });
 
   // Every member of a generated command is optional, so a dropped assignment type-checks.

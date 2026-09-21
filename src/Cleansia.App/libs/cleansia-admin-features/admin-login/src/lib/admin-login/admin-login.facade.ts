@@ -21,9 +21,7 @@ export class AdminLoginFacade extends UnsubscribeControlDirective {
 
   login() {
     if (this.formGroup.invalid) {
-      return this.snackbarService.showError(
-        this.translate.instant('validation.common.not_all_fields_filled')
-      );
+      return this.snackbarService.showErrorTranslated('validation.common.not_all_fields_filled');
     }
     const email = this.formGroup.get('email')?.value;
     const password = this.formGroup.get('password')?.value;
@@ -46,9 +44,7 @@ export class AdminLoginFacade extends UnsubscribeControlDirective {
           }
 
           if (!authResult.isEmailConfirmed) {
-            this.snackbarService.showError(
-              this.translate.instant('validation.auth.email_not_confirmed')
-            );
+            this.snackbarService.showErrorTranslated('validation.auth.email_not_confirmed');
             return;
           }
 

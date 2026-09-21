@@ -34,7 +34,7 @@
 
     <cleansia-section [title]="'pages.dashboard.statistics' | translate">
       @if (facade.statsLoading()) {
-      <cleansia-dashboard-skeleton />
+      <cleansia-loader />
       } @else {
       <div class="cleansia-dashboard__stats">
         @for (card of facade.getStatCards(); track card.title) {

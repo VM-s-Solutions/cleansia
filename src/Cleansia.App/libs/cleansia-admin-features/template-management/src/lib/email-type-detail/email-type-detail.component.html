@@ -89,12 +89,12 @@
                       size="auto-width"
                       severity="danger"
                       [outlined]="true"
-                      [disabled]="facade.deleting() && deletingKey() === kv.key"
-                      [loading]="facade.deleting() && deletingKey() === kv.key"
+                      [disabled]="facade.deletingKey() === kv.key"
+                      [loading]="facade.deletingKey() === kv.key"
                       [pTooltip]="'global.actions.delete' | translate"
                       tooltipPosition="top"
                       (onClick)="
-                        onDeleteTranslation($event, lang.code, kv.id!, kv.key!)
+                        onDeleteTranslation(kv.id!, kv.key!)
                       "
                     />
                   </div>
@@ -250,4 +250,3 @@
 </p-dialog>
 
 <!-- Confirm Dialog -->
-<p-confirmDialog />

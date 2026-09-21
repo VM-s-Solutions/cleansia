@@ -47,9 +47,7 @@ export class RegisterFacade extends UnsubscribeControlDirective {
 
   register() {
     if (this.formGroup.invalid) {
-      return this.snackbarService.showError(
-        this.translate.instant('validation.common.not_all_fields_filled')
-      );
+      return this.snackbarService.showErrorTranslated('validation.common.not_all_fields_filled');
     }
 
     const { email, password, firstName, lastName, countryId } =

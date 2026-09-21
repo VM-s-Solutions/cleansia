@@ -17,6 +17,13 @@ import { TranslateService } from '@ngx-translate/core';
 import { of, throwError } from 'rxjs';
 import { AdminOrderOpsFacade } from './admin-order-ops.facade';
 
+// The keys a refusal resolves to; anything else falls back, as an untranslated code does in the app.
+const TRANSLATED = new Set([
+  'api.order.invalid_status_transition',
+  'api.order.no_available_spots',
+  'api.refund.order_not_refundable',
+]);
+
 describe('AdminOrderOpsFacade', () => {
   let facade: AdminOrderOpsFacade;
   let orderClient: {
@@ -25,7 +32,12 @@ describe('AdminOrderOpsFacade', () => {
     reassign: jest.Mock;
     refund: jest.Mock;
   };
-  let snackbar: { showSuccess: jest.Mock; showError: jest.Mock };
+  let snackbar: {
+    showSuccess: jest.Mock;
+    showSuccessTranslated: jest.Mock;
+    showError: jest.Mock;
+    showErrorTranslated: jest.Mock;
+  };
 
   const cancelResponse = AdminCancelOrderResponse.fromJS({
     orderId: 'order-1',
@@ -55,7 +67,12 @@ describe('AdminOrderOpsFacade', () => {
       reassign: jest.fn(),
       refund: jest.fn(),
     };
-    snackbar = { showSuccess: jest.fn(), showError: jest.fn() };
+    snackbar = {
+      showSuccess: jest.fn(),
+      showSuccessTranslated: jest.fn(),
+      showError: jest.fn(),
+      showErrorTranslated: jest.fn(),
+    };
 
     TestBed.configureTestingModule({
       providers: [
@@ -65,7 +82,12 @@ describe('AdminOrderOpsFacade', () => {
           useValue: { adminOrderClient: orderClient },
         },
         { provide: SnackbarService, useValue: snackbar },
-        { provide: TranslateService, useValue: { instant: (k: string) => k } },
+        {
+          provide: TranslateService,
+          useValue: {
+            instant: (k: string) => (TRANSLATED.has(k) ? `${k} (translated)` : k),
+          },
+        },
       ],
     });
 
@@ -177,7 +199,7 @@ describe('AdminOrderOpsFacade', () => {
 
     facade.cancelOrder('order-1', onSuccess);
 
-    expect(snackbar.showSuccess).toHaveBeenCalledWith(
+    expect(snackbar.showSuccessTranslated).toHaveBeenCalledWith(
       'pages.order_management.ops.cancel.success'
     );
     expect(facade.activePanel()).toBeNull();
@@ -203,9 +225,7 @@ describe('AdminOrderOpsFacade', () => {
     facade.overrideStatus('order-1', jest.fn());
 
     expect(facade.errorKey()).toBe('api.order.invalid_status_transition');
-    expect(snackbar.showError).toHaveBeenCalledWith(
-      'api.order.invalid_status_transition'
-    );
+    expect(snackbar.showErrorTranslated).not.toHaveBeenCalled();
     expect(facade.submitting()).toBe(false);
   });
 
@@ -255,9 +275,7 @@ describe('AdminOrderOpsFacade', () => {
     facade.cancelOrder('order-1', onSuccess);
 
     expect(facade.errorKey()).toBe('api.common.error_occurred');
-    expect(snackbar.showError).toHaveBeenCalledWith(
-      'api.common.error_occurred'
-    );
+    expect(snackbar.showErrorTranslated).not.toHaveBeenCalled();
     expect(onSuccess).not.toHaveBeenCalled();
   });
 });

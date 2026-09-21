@@ -7,7 +7,7 @@ import { CleansiaPartnerRoute } from '@cleansia/services';
 import { OrderItem, OrderStatus } from '@cleansia/partner-services';
 import {
   CleansiaButtonComponent,
-  CleansiaDetailSkeletonComponent,
+  CleansiaLoaderComponent,
   CleansiaSectionComponent,
   CleansiaTextInputComponent,
 } from '@cleansia/components';
@@ -53,6 +53,7 @@ import {
   selector: 'cleansia-partner-order-details',
   standalone: true,
   imports: [
+    CleansiaLoaderComponent,
     TranslatePipe,
     ReactiveFormsModule,
     OrderExtrasComponent,
@@ -60,7 +61,6 @@ import {
     OrderStatusComponent,
     OrderPackagesComponent,
     CleansiaButtonComponent,
-    CleansiaDetailSkeletonComponent,
     CleansiaSectionComponent,
     OrderPaymentInfoComponent,
     CleansiaTextInputComponent,

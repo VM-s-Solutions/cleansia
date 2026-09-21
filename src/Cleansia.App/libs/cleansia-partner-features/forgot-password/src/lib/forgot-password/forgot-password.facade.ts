@@ -47,9 +47,7 @@ export class ForgotPasswordFacade extends UnsubscribeControlDirective {
 
   sendCode(): void {
     if (this.emailFormGroup.invalid) {
-      return this.snackbarService.showError(
-        this.translate.instant('pages.forgot_password.email_invalid')
-      );
+      return this.snackbarService.showErrorTranslated('pages.forgot_password.email_invalid');
     }
 
     const email = this.emailFormGroup.value.email;
@@ -87,9 +85,7 @@ export class ForgotPasswordFacade extends UnsubscribeControlDirective {
 
   changePassword(): void {
     if (this.passwordFormGroup.invalid || this.passwordMismatchError) {
-      return this.snackbarService.showError(
-        this.translate.instant('pages.forgot_password.password_invalid')
-      );
+      return this.snackbarService.showErrorTranslated('pages.forgot_password.password_invalid');
     }
 
     const { code, password } = this.passwordFormGroup.value;
@@ -118,9 +114,7 @@ export class ForgotPasswordFacade extends UnsubscribeControlDirective {
         if (result === null) {
           return;
         }
-        this.snackbarService.showSuccess(
-          this.translate.instant('pages.forgot_password.password_changed')
-        );
+        this.snackbarService.showSuccessTranslated('pages.forgot_password.password_changed');
         this.isEmailSent.set(false);
         this.emailFormGroup.reset();
         this.passwordFormGroup.reset();

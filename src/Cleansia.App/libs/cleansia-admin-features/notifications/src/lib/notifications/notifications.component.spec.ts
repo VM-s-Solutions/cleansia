@@ -46,9 +46,26 @@ describe('NotificationsComponent', () => {
     await TestBed.configureTestingModule({
       imports: [NotificationsComponent, TranslateModule.forRoot()],
       providers: [
-        { provide: AdminClient, useValue: { adminNotificationClient: { getPaged, markRead, markAllRead } } },
-        { provide: AdminNotificationBadgeService, useValue: { refresh: refreshBadge, unreadCount: signal(0) } },
-        { provide: SnackbarService, useValue: { showSuccess: jest.fn() } },
+        {
+          provide: AdminClient,
+          useValue: {
+            adminNotificationClient: { getPaged, markRead, markAllRead },
+          },
+        },
+        {
+          provide: AdminNotificationBadgeService,
+          useValue: {
+            refresh: refreshBadge,
+            unreadCount: signal(0),
+          },
+        },
+        {
+          provide: SnackbarService,
+          useValue: {
+            showSuccess: jest.fn(),
+            showSuccessTranslated: jest.fn(),
+          },
+        },
         { provide: Router, useValue: { navigate } },
       ],
     }).compileComponents();

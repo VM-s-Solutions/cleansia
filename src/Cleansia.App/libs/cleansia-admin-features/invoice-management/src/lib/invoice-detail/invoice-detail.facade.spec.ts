@@ -8,7 +8,7 @@ import {
   MarkInvoicePaidCommand,
   RegenerateInvoicePdfCommand,
 } from '@cleansia/admin-services';
-import { SnackbarService } from '@cleansia/services';
+import { DialogService as ConfirmDialogService, SnackbarService } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
 import { DialogService } from 'primeng/dynamicdialog';
 import { of, throwError } from 'rxjs';
@@ -22,8 +22,12 @@ describe('InvoiceDetailFacade', () => {
   let cancelMock: jest.Mock;
   let regenerateMock: jest.Mock;
   let assignVariableSymbolMock: jest.Mock;
-  let snackbar: { showSuccess: jest.Mock; showError: jest.Mock };
-  let translateParams: Record<string, unknown> | undefined;
+  let snackbar: {
+    showSuccess: jest.Mock;
+    showSuccessTranslated: jest.Mock;
+    showError: jest.Mock;
+    showErrorTranslated: jest.Mock;
+  };
 
   const loaded = { id: 'invoice-1', status: EmployeeInvoiceStatus.Pending };
 
@@ -41,8 +45,12 @@ describe('InvoiceDetailFacade', () => {
         pdfBlobUrl: 'https://blob/invoice-1.pdf',
       })
     );
-    snackbar = { showSuccess: jest.fn(), showError: jest.fn() };
-    translateParams = undefined;
+    snackbar = {
+      showSuccess: jest.fn(),
+      showSuccessTranslated: jest.fn(),
+      showError: jest.fn(),
+      showErrorTranslated: jest.fn(),
+    };
 
     TestBed.configureTestingModule({
       providers: [
@@ -63,16 +71,11 @@ describe('InvoiceDetailFacade', () => {
           },
         },
         { provide: DialogService, useValue: { open: jest.fn() } },
+        { provide: ConfirmDialogService, useValue: { confirmTranslated: jest.fn(() => of(true)) } },
         { provide: SnackbarService, useValue: snackbar },
         {
           provide: TranslateService,
-          useValue: {
-            instant: (k: string, params?: Record<string, unknown>) => {
-              translateParams = params;
-              return k;
-            },
-            currentLang: 'cs',
-          },
+          useValue: { instant: (k: string) => k, currentLang: 'cs' },
         },
       ],
     });
@@ -115,7 +118,7 @@ describe('InvoiceDetailFacade', () => {
 
     facade.approveInvoice();
     expect(detailsMock).toHaveBeenCalledTimes(2);
-    expect(snackbar.showSuccess).toHaveBeenCalledWith(
+    expect(snackbar.showSuccessTranslated).toHaveBeenCalledWith(
       'pages.invoice_detail.messages.approve_success'
     );
 
@@ -224,10 +227,10 @@ describe('InvoiceDetailFacade', () => {
     it('names the allocated symbol in the success message', () => {
       facade.assignVariableSymbol();
 
-      expect(snackbar.showSuccess).toHaveBeenCalledWith(
-        'pages.invoice_detail.messages.assign_variable_symbol_success'
+      expect(snackbar.showSuccessTranslated).toHaveBeenCalledWith(
+        'pages.invoice_detail.messages.assign_variable_symbol_success',
+        { variableSymbol: '2026000001' }
       );
-      expect(translateParams).toEqual({ variableSymbol: '2026000001' });
     });
 
     it('reports a durable reference on a stale document when the PDF did not regenerate', () => {
@@ -241,11 +244,11 @@ describe('InvoiceDetailFacade', () => {
 
       facade.assignVariableSymbol();
 
-      expect(snackbar.showSuccess).not.toHaveBeenCalled();
-      expect(snackbar.showError).toHaveBeenCalledWith(
-        'pages.invoice_detail.messages.assign_variable_symbol_pdf_stale'
+      expect(snackbar.showSuccessTranslated).not.toHaveBeenCalled();
+      expect(snackbar.showErrorTranslated).toHaveBeenCalledWith(
+        'pages.invoice_detail.messages.assign_variable_symbol_pdf_stale',
+        { variableSymbol: '2026000002' }
       );
-      expect(translateParams).toEqual({ variableSymbol: '2026000002' });
       expect(detailsMock).toHaveBeenCalledTimes(2);
     });
 
@@ -268,7 +271,7 @@ describe('InvoiceDetailFacade', () => {
       facade.assignVariableSymbol();
 
       expect(detailsMock).toHaveBeenCalledTimes(1);
-      expect(snackbar.showSuccess).not.toHaveBeenCalled();
+      expect(snackbar.showSuccessTranslated).not.toHaveBeenCalled();
       expect(facade.actionLoading()).toBe(false);
     });
   });

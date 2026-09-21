@@ -173,17 +173,13 @@ export class ProfileFacade extends UnsubscribeControlDirective {
       documentsControl?.setValue(newFileList);
       documentsControl?.markAsTouched();
 
-      this.snackbarService.showSuccess(
-        this.translate.instant('global.messages.profile.file_removed')
-      );
+      this.snackbarService.showSuccessTranslated('global.messages.profile.file_removed');
     }
   }
 
   onSubmit(): void {
     if (!this.formGroup.valid) {
-      this.snackbarService.showError(
-        this.translate.instant('global.messages.profile.fill_required_fields')
-      );
+      this.snackbarService.showErrorTranslated('global.messages.profile.fill_required_fields');
       FormUtils.markAllFieldsAsTouched(this.formGroup);
       return;
     }
@@ -201,10 +197,8 @@ export class ProfileFacade extends UnsubscribeControlDirective {
       .pipe(
         switchMap((transformationResult) => {
           if (!transformationResult.success) {
-            this.snackbarService.showError(
-              this.translate.instant(
-                'global.messages.profile.file_transformation_error'
-              )
+            this.snackbarService.showErrorTranslated(
+              'global.messages.profile.file_transformation_error'
             );
             return of(null);
           }
@@ -234,10 +228,8 @@ export class ProfileFacade extends UnsubscribeControlDirective {
       .subscribe({
         next: (result) => {
           if (result) {
-            this.snackbarService.showSuccess(
-              this.translate.instant(
-                'global.messages.profile.onboarding_submitted'
-              )
+            this.snackbarService.showSuccessTranslated(
+              'global.messages.profile.onboarding_submitted'
             );
             this.store.dispatch(checkEmployeeCurrent());
           }

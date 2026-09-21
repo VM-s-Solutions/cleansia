@@ -292,7 +292,6 @@
         "optional": "volitelné",
         "minutes": "min",
         "complete_button": "Dokončit objednávku",
-        "cancel_button": "Zrušit",
         "success": "Objednávka úspěšně dokončena!",
         "error": "Nepodařilo se dokončit objednávku. Zkuste to prosím znovu.",
         "actual_time_required": "Skutečný čas dokončení je povinný",
@@ -1237,5 +1236,69 @@
   },
   "recurring_booking": {
     "not_found": "Tato opakovaná objednávka už neexistuje."
+  },
+  "primeng": {
+    "day_names": {
+      "sun": "Neděle",
+      "mon": "Pondělí",
+      "tue": "Úterý",
+      "wed": "Středa",
+      "thu": "Čtvrtek",
+      "fri": "Pátek",
+      "sat": "Sobota"
+    },
+    "day_names_short": {
+      "sun": "Ne",
+      "mon": "Po",
+      "tue": "Út",
+      "wed": "St",
+      "thu": "Čt",
+      "fri": "Pá",
+      "sat": "So"
+    },
+    "day_names_min": {
+      "sun": "N",
+      "mon": "P",
+      "tue": "Ú",
+      "wed": "S",
+      "thu": "Č",
+      "fri": "P",
+      "sat": "S"
+    },
+    "month_names": {
+      "jan": "Leden",
+      "feb": "Únor",
+      "mar": "Březen",
+      "apr": "Duben",
+      "may": "Květen",
+      "jun": "Červen",
+      "jul": "Červenec",
+      "aug": "Srpen",
+      "sep": "Září",
+      "oct": "Říjen",
+      "nov": "Listopad",
+      "dec": "Prosinec"
+    },
+    "month_names_short": {
+      "jan": "Led",
+      "feb": "Úno",
+      "mar": "Bře",
+      "apr": "Dub",
+      "may": "Kvě",
+      "jun": "Čvn",
+      "jul": "Čvc",
+      "aug": "Srp",
+      "sep": "Zář",
+      "oct": "Říj",
+      "nov": "Lis",
+      "dec": "Pro"
+    },
+    "today": "Dnes",
+    "clear": "Vymazat",
+    "apply": "Použít",
+    "accept": "Ano",
+    "reject": "Ne",
+    "empty_message": "Nic nenalezeno",
+    "empty_filter_message": "Nic nenalezeno"
   }
 }

@@ -290,7 +290,6 @@
         "optional": "optional",
         "minutes": "min",
         "complete_button": "Complete Order",
-        "cancel_button": "Cancel",
         "success": "Order completed successfully!",
         "error": "Failed to complete order. Please try again.",
         "actual_time_required": "Actual completion time is required",
@@ -1237,5 +1236,69 @@
   },
   "recurring_booking": {
     "not_found": "That recurring booking no longer exists."
+  },
+  "primeng": {
+    "day_names": {
+      "sun": "Sunday",
+      "mon": "Monday",
+      "tue": "Tuesday",
+      "wed": "Wednesday",
+      "thu": "Thursday",
+      "fri": "Friday",
+      "sat": "Saturday"
+    },
+    "day_names_short": {
+      "sun": "Sun",
+      "mon": "Mon",
+      "tue": "Tue",
+      "wed": "Wed",
+      "thu": "Thu",
+      "fri": "Fri",
+      "sat": "Sat"
+    },
+    "day_names_min": {
+      "sun": "Su",
+      "mon": "Mo",
+      "tue": "Tu",
+      "wed": "We",
+      "thu": "Th",
+      "fri": "Fr",
+      "sat": "Sa"
+    },
+    "month_names": {
+      "jan": "January",
+      "feb": "February",
+      "mar": "March",
+      "apr": "April",
+      "may": "May",
+      "jun": "June",
+      "jul": "July",
+      "aug": "August",
+      "sep": "September",
+      "oct": "October",
+      "nov": "November",
+      "dec": "December"
+    },
+    "month_names_short": {
+      "jan": "Jan",
+      "feb": "Feb",
+      "mar": "Mar",
+      "apr": "Apr",
+      "may": "May",
+      "jun": "Jun",
+      "jul": "Jul",
+      "aug": "Aug",
+      "sep": "Sep",
+      "oct": "Oct",
+      "nov": "Nov",
+      "dec": "Dec"
+    },
+    "today": "Today",
+    "clear": "Clear",
+    "apply": "Apply",
+    "accept": "Yes",
+    "reject": "No",
+    "empty_message": "No results found",
+    "empty_filter_message": "No results found"
   }
 }

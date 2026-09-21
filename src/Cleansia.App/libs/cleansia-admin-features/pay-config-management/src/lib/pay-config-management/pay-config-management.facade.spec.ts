@@ -5,7 +5,7 @@ import {
   EmployeePayConfigDto,
   PagedDataOfEmployeePayConfigDto,
 } from '@cleansia/admin-services';
-import { SnackbarService } from '@cleansia/services';
+import { DialogService, SnackbarService } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
 import { of, throwError } from 'rxjs';
 import { PayConfigManagementFacade } from './pay-config-management.facade';
@@ -14,7 +14,12 @@ describe('PayConfigManagementFacade', () => {
   let facade: PayConfigManagementFacade;
   let getPagedMock: jest.Mock;
   let deleteMock: jest.Mock;
-  let snackbar: { showSuccess: jest.Mock; showError: jest.Mock };
+  let snackbar: {
+    showSuccess: jest.Mock;
+    showSuccessTranslated: jest.Mock;
+    showError: jest.Mock;
+    showErrorTranslated: jest.Mock;
+  };
 
   const populatedPage = PagedDataOfEmployeePayConfigDto.fromJS({
     data: [
@@ -37,7 +42,12 @@ describe('PayConfigManagementFacade', () => {
   beforeEach(() => {
     getPagedMock = jest.fn().mockReturnValue(of(populatedPage));
     deleteMock = jest.fn();
-    snackbar = { showSuccess: jest.fn(), showError: jest.fn() };
+    snackbar = {
+      showSuccess: jest.fn(),
+      showSuccessTranslated: jest.fn(),
+      showError: jest.fn(),
+      showErrorTranslated: jest.fn(),
+    };
 
     TestBed.configureTestingModule({
       providers: [
@@ -52,6 +62,7 @@ describe('PayConfigManagementFacade', () => {
           },
         },
         { provide: SnackbarService, useValue: snackbar },
+        { provide: DialogService, useValue: { confirmTranslated: jest.fn(() => of(true)) } },
         { provide: TranslateService, useValue: { instant: (k: string) => k, currentLang: 'cs' } },
         { provide: Router, useValue: { navigate: jest.fn() } },
       ],
@@ -135,7 +146,7 @@ describe('PayConfigManagementFacade', () => {
     facade.deletePayConfig(EmployeePayConfigDto.fromJS({ id: 'pc-1' }));
 
     expect(deleteMock).toHaveBeenCalledWith('pc-1');
-    expect(snackbar.showSuccess).toHaveBeenCalledWith(
+    expect(snackbar.showSuccessTranslated).toHaveBeenCalledWith(
       'pages.pay_config_management.messages.delete_success'
     );
     expect(getPagedMock).toHaveBeenCalledTimes(1);
@@ -146,7 +157,7 @@ describe('PayConfigManagementFacade', () => {
 
     facade.deletePayConfig(EmployeePayConfigDto.fromJS({ id: 'pc-1' }));
 
-    expect(snackbar.showSuccess).not.toHaveBeenCalled();
+    expect(snackbar.showSuccessTranslated).not.toHaveBeenCalled();
     expect(getPagedMock).not.toHaveBeenCalled();
   });
 

@@ -6,7 +6,7 @@ import {
   CreatePayConfigCommand,
   UpdatePayConfigCommand,
 } from '@cleansia/admin-services';
-import { SnackbarService } from '@cleansia/services';
+import { DialogService as ConfirmDialogService, SnackbarService } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
 import { DialogService } from 'primeng/dynamicdialog';
 import { of, throwError } from 'rxjs';
@@ -19,7 +19,12 @@ describe('EmployeeDetailFacade — pay config overrides', () => {
   let updateMock: jest.Mock;
   let deleteMock: jest.Mock;
   let employeeSummaryMock: jest.Mock;
-  let snackbar: { showSuccess: jest.Mock; showError: jest.Mock };
+  let snackbar: {
+    showSuccess: jest.Mock;
+    showSuccessTranslated: jest.Mock;
+    showError: jest.Mock;
+    showErrorTranslated: jest.Mock;
+  };
 
   const rateData = {
     basePay: 500,
@@ -35,7 +40,12 @@ describe('EmployeeDetailFacade — pay config overrides', () => {
     updateMock = jest.fn();
     deleteMock = jest.fn();
     employeeSummaryMock = jest.fn().mockReturnValue(of(null));
-    snackbar = { showSuccess: jest.fn(), showError: jest.fn() };
+    snackbar = {
+      showSuccess: jest.fn(),
+      showSuccessTranslated: jest.fn(),
+      showError: jest.fn(),
+      showErrorTranslated: jest.fn(),
+    };
 
     TestBed.configureTestingModule({
       providers: [
@@ -54,6 +64,7 @@ describe('EmployeeDetailFacade — pay config overrides', () => {
         { provide: SnackbarService, useValue: snackbar },
         { provide: TranslateService, useValue: { instant: (k: string) => k } },
         { provide: DialogService, useValue: { open: jest.fn() } },
+        { provide: ConfirmDialogService, useValue: { confirmTranslated: jest.fn(() => of(true)) } },
         {
           provide: EmployeeDocumentsFacade,
           useValue: { loadEmployeeDocuments: jest.fn(), ngOnDestroy: jest.fn() },
@@ -95,7 +106,7 @@ describe('EmployeeDetailFacade — pay config overrides', () => {
     expect(facade.payConfigDialogOpen()).toBe(false);
     expect(facade.savingPayConfig()).toBe(false);
     expect(employeeSummaryMock).toHaveBeenCalledWith('emp-1');
-    expect(snackbar.showSuccess).toHaveBeenCalled();
+    expect(snackbar.showSuccessTranslated).toHaveBeenCalled();
   });
 
   it('keeps the dialog open and reports the error when the create fails', () => {
@@ -112,8 +123,8 @@ describe('EmployeeDetailFacade — pay config overrides', () => {
 
     expect(facade.payConfigDialogOpen()).toBe(true);
     expect(facade.savingPayConfig()).toBe(false);
-    expect(snackbar.showError).toHaveBeenCalled();
-    expect(snackbar.showSuccess).not.toHaveBeenCalled();
+    expect(snackbar.showErrorTranslated).toHaveBeenCalled();
+    expect(snackbar.showSuccessTranslated).not.toHaveBeenCalled();
   });
 
   it('sends an update command keyed by config id and closes the dialog on success', () => {
@@ -138,7 +149,7 @@ describe('EmployeeDetailFacade — pay config overrides', () => {
     expect(facade.payConfigDialogOpen()).toBe(false);
     expect(facade.savingPayConfig()).toBe(false);
     expect(employeeSummaryMock).toHaveBeenCalledWith('emp-1');
-    expect(snackbar.showSuccess).toHaveBeenCalled();
+    expect(snackbar.showSuccessTranslated).toHaveBeenCalled();
   });
 
   it('keeps the dialog open and reports the error when the update fails', () => {
@@ -149,7 +160,7 @@ describe('EmployeeDetailFacade — pay config overrides', () => {
 
     expect(facade.payConfigDialogOpen()).toBe(true);
     expect(facade.savingPayConfig()).toBe(false);
-    expect(snackbar.showError).toHaveBeenCalled();
+    expect(snackbar.showErrorTranslated).toHaveBeenCalled();
   });
 
   it('deletes an override and reloads the summary on success', () => {
@@ -159,7 +170,7 @@ describe('EmployeeDetailFacade — pay config overrides', () => {
 
     expect(deleteMock).toHaveBeenCalledWith('pc-1');
     expect(employeeSummaryMock).toHaveBeenCalledWith('emp-1');
-    expect(snackbar.showSuccess).toHaveBeenCalled();
+    expect(snackbar.showSuccessTranslated).toHaveBeenCalled();
   });
 
   it('reports the error and skips reload when the delete fails', () => {
@@ -167,9 +178,9 @@ describe('EmployeeDetailFacade — pay config overrides', () => {
 
     facade.deleteEmployeePayConfig('pc-1');
 
-    expect(snackbar.showError).toHaveBeenCalled();
+    expect(snackbar.showErrorTranslated).toHaveBeenCalled();
     expect(employeeSummaryMock).not.toHaveBeenCalled();
-    expect(snackbar.showSuccess).not.toHaveBeenCalled();
+    expect(snackbar.showSuccessTranslated).not.toHaveBeenCalled();
   });
 });
 
@@ -177,12 +188,22 @@ describe('EmployeeDetailFacade — employee update', () => {
   let facade: EmployeeDetailFacade;
   let updateMock: jest.Mock;
   let detailsMock: jest.Mock;
-  let snackbar: { showSuccess: jest.Mock; showError: jest.Mock };
+  let snackbar: {
+    showSuccess: jest.Mock;
+    showSuccessTranslated: jest.Mock;
+    showError: jest.Mock;
+    showErrorTranslated: jest.Mock;
+  };
 
   beforeEach(() => {
     updateMock = jest.fn().mockReturnValue(of({ employeeId: 'emp-1' }));
     detailsMock = jest.fn().mockReturnValue(of(null));
-    snackbar = { showSuccess: jest.fn(), showError: jest.fn() };
+    snackbar = {
+      showSuccess: jest.fn(),
+      showSuccessTranslated: jest.fn(),
+      showError: jest.fn(),
+      showErrorTranslated: jest.fn(),
+    };
 
     TestBed.configureTestingModule({
       providers: [
@@ -197,6 +218,7 @@ describe('EmployeeDetailFacade — employee update', () => {
         { provide: SnackbarService, useValue: snackbar },
         { provide: TranslateService, useValue: { instant: (k: string) => k } },
         { provide: DialogService, useValue: { open: jest.fn() } },
+        { provide: ConfirmDialogService, useValue: { confirmTranslated: jest.fn(() => of(true)) } },
         {
           provide: EmployeeDocumentsFacade,
           useValue: { loadEmployeeDocuments: jest.fn(), ngOnDestroy: jest.fn() },
@@ -225,7 +247,7 @@ describe('EmployeeDetailFacade — employee update', () => {
     expect(command.firstName).toBe('Jitka');
     expect(command.lastName).toBe('Nova');
     expect(command.city).toBe('Praha');
-    expect(snackbar.showSuccess).toHaveBeenCalled();
+    expect(snackbar.showSuccessTranslated).toHaveBeenCalled();
     expect(facade.savingEmployee()).toBe(false);
   });
 
@@ -244,8 +266,8 @@ describe('EmployeeDetailFacade — employee update', () => {
 
     facade.updateEmployee({ firstName: 'Jitka' });
 
-    expect(snackbar.showError).toHaveBeenCalled();
-    expect(snackbar.showSuccess).not.toHaveBeenCalled();
+    expect(snackbar.showErrorTranslated).toHaveBeenCalled();
+    expect(snackbar.showSuccessTranslated).not.toHaveBeenCalled();
     expect(facade.editingSection()).toBe('employment');
     expect(facade.savingEmployee()).toBe(false);
   });

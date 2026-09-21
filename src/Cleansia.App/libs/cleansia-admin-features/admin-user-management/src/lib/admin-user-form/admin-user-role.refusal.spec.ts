@@ -71,7 +71,14 @@ describe('role assignment refusals', () => {
           AdminUserFormFacade,
           { provide: AdminAuthService, useValue: { getUserId: () => 'usr-me' } },
           { provide: Router, useValue: { navigate: jest.fn() } },
-          { provide: SnackbarService, useValue: { showError, showSuccess: jest.fn() } },
+          {
+            provide: SnackbarService,
+            useValue: {
+              showError,
+              showSuccess: jest.fn(),
+              showSuccessTranslated: jest.fn(),
+            },
+          },
         ],
       });
 

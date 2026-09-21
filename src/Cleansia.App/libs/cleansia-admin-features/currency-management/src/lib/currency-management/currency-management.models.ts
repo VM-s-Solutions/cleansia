@@ -51,42 +51,6 @@ export function getCurrencyFlagCode(currencyCode: string | undefined): string {
   return CURRENCY_TO_COUNTRY_MAP[lowerCode] || '';
 }
 
-export const CURRENCY_ERROR_KEY_MAP: Readonly<Record<string, string>> = {
-  'currency.not_found': 'api.currency.not_found',
-  'currency.in_use': 'api.currency.in_use',
-  'currency.cannot_delete_default': 'api.currency.cannot_delete_default',
-  'currency.cannot_deactivate_default': 'api.currency.cannot_deactivate_default',
-  'currency.invalid': 'api.currency.invalid',
-  'currency.not_priced': 'api.currency.not_priced',
-};
-
-export const CURRENCY_FALLBACK_ERROR_KEY = 'api.common.error_occurred';
-
-export function resolveCurrencyErrorKey(error: unknown): string {
-  const apiError = error as {
-    result?: { detail?: string; title?: string };
-    response?: string;
-  };
-  let code = apiError?.result?.detail || apiError?.result?.title;
-
-  if (!code && apiError?.response) {
-    try {
-      const parsed = JSON.parse(apiError.response) as {
-        detail?: string;
-        title?: string;
-      };
-      code = parsed.detail || parsed.title;
-    } catch {
-      code = undefined;
-    }
-  }
-
-  if (code && CURRENCY_ERROR_KEY_MAP[code]) {
-    return CURRENCY_ERROR_KEY_MAP[code];
-  }
-  return CURRENCY_FALLBACK_ERROR_KEY;
-}
-
 export function getCurrencyTableDefinition(
   defs: {
     onEdit: (row: AdminCurrencyListItem) => void;

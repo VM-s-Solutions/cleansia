@@ -124,8 +124,9 @@ export class NotificationsFacade extends UnsubscribeControlDirective {
       )
       .subscribe((response) => {
         if (response) {
-          this.snackbar.showSuccess(
-            this.translate.instant(`${PAGE}.messages.marked_all_read`, { count: response.markedCount ?? 0 })
+          this.snackbar.showSuccessTranslated(
+            `${PAGE}.messages.marked_all_read`,
+            { count: response.markedCount ?? 0 }
           );
           this.badge.refresh();
         }

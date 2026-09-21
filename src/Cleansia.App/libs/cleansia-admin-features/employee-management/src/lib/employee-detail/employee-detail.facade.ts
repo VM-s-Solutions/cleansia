@@ -15,11 +15,11 @@ import {
 } from '@cleansia/admin-services';
 import { ICleansiaSelectOption } from '@cleansia/components';
 import { UnsubscribeControlDirective } from '@cleansia/directives';
-import { PermissionService, Policy, SnackbarService } from '@cleansia/services';
+import { DialogService as ConfirmDialogService, PermissionService, Policy, SnackbarService } from '@cleansia/services';
 import { formatDate } from '@cleansia/utils';
 import { TranslateService } from '@ngx-translate/core';
 import { DialogService } from 'primeng/dynamicdialog';
-import { catchError, finalize, of, takeUntil } from 'rxjs';
+import { catchError, filter, finalize, of, takeUntil } from 'rxjs';
 import {
   ApproveDialogComponent,
   ApproveDialogData,
@@ -34,6 +34,7 @@ import { EmployeeDocumentsFacade } from './employee-documents.facade';
 @Injectable()
 export class EmployeeDetailFacade extends UnsubscribeControlDirective {
   private readonly adminClient = inject(AdminClient);
+  private readonly dialog = inject(ConfirmDialogService);
   private readonly snackbarService = inject(SnackbarService);
   private readonly translate = inject(TranslateService);
   private readonly dialogService = inject(DialogService);
@@ -122,10 +123,8 @@ export class EmployeeDetailFacade extends UnsubscribeControlDirective {
       )
       .subscribe((response) => {
         if (response) {
-          this.snackbarService.showSuccess(
-            this.translate.instant(
-              'pages.employee_detail.messages.employee_approve_success'
-            )
+          this.snackbarService.showSuccessTranslated(
+            'pages.employee_detail.messages.employee_approve_success'
           );
           this.loadEmployeeDetail(employeeId);
         }
@@ -183,10 +182,8 @@ export class EmployeeDetailFacade extends UnsubscribeControlDirective {
       )
       .subscribe((response) => {
         if (response) {
-          this.snackbarService.showSuccess(
-            this.translate.instant(
-              'pages.employee_detail.messages.employee_reject_success'
-            )
+          this.snackbarService.showSuccessTranslated(
+            'pages.employee_detail.messages.employee_reject_success'
           );
           this.loadEmployeeDetail(employeeId);
         }
@@ -258,10 +255,8 @@ export class EmployeeDetailFacade extends UnsubscribeControlDirective {
       .subscribe((response) => {
         if (response) {
           this.editingWeeklyLimit.set(false);
-          this.snackbarService.showSuccess(
-            this.translate.instant(
-              'pages.employee_detail.messages.weekly_limit_save_success'
-            )
+          this.snackbarService.showSuccessTranslated(
+            'pages.employee_detail.messages.weekly_limit_save_success'
           );
           this.loadEmployeeDetail(employeeId);
         }
@@ -314,10 +309,8 @@ export class EmployeeDetailFacade extends UnsubscribeControlDirective {
       .pipe(
         takeUntil(this.destroyed$),
         catchError(() => {
-          this.snackbarService.showError(
-            this.translate.instant(
-              'pages.employee_detail.messages.employee_update_error'
-            )
+          this.snackbarService.showErrorTranslated(
+            'pages.employee_detail.messages.employee_update_error'
           );
           return of(null);
         }),
@@ -325,10 +318,8 @@ export class EmployeeDetailFacade extends UnsubscribeControlDirective {
       )
       .subscribe((response) => {
         if (response) {
-          this.snackbarService.showSuccess(
-            this.translate.instant(
-              'pages.employee_detail.messages.employee_update_success'
-            )
+          this.snackbarService.showSuccessTranslated(
+            'pages.employee_detail.messages.employee_update_success'
           );
           this.editingSection.set(null);
           this.loadEmployeeDetail(employeeId);
@@ -383,8 +374,8 @@ export class EmployeeDetailFacade extends UnsubscribeControlDirective {
       .pipe(
         takeUntil(this.destroyed$),
         catchError(() => {
-          this.snackbarService.showError(
-            this.translate.instant('pages.employee_detail.messages.pay_config_save_error')
+          this.snackbarService.showErrorTranslated(
+            'pages.employee_detail.messages.pay_config_save_error'
           );
           return of(null);
         }),
@@ -392,11 +383,9 @@ export class EmployeeDetailFacade extends UnsubscribeControlDirective {
       )
       .subscribe((response) => {
         if (response) {
-          this.snackbarService.showSuccess(
-            this.translate.instant('pages.employee_detail.messages.pay_config_bulk_success', {
-              created: response.createdCount,
-              skipped: response.skippedCount,
-            })
+          this.snackbarService.showSuccessTranslated(
+            'pages.employee_detail.messages.pay_config_bulk_success',
+            { created: response.createdCount, skipped: response.skippedCount, }
           );
           this.loadPayConfigSummary(employeeId);
         }
@@ -434,8 +423,8 @@ export class EmployeeDetailFacade extends UnsubscribeControlDirective {
       .pipe(
         takeUntil(this.destroyed$),
         catchError(() => {
-          this.snackbarService.showError(
-            this.translate.instant('pages.employee_detail.messages.pay_config_save_error')
+          this.snackbarService.showErrorTranslated(
+            'pages.employee_detail.messages.pay_config_save_error'
           );
           return of(null);
         }),
@@ -443,8 +432,8 @@ export class EmployeeDetailFacade extends UnsubscribeControlDirective {
       )
       .subscribe((response) => {
         if (response) {
-          this.snackbarService.showSuccess(
-            this.translate.instant('pages.employee_detail.messages.pay_config_save_success')
+          this.snackbarService.showSuccessTranslated(
+            'pages.employee_detail.messages.pay_config_save_success'
           );
           this.payConfigDialogOpen.set(false);
           this.loadPayConfigSummary(employeeId);
@@ -507,8 +496,8 @@ export class EmployeeDetailFacade extends UnsubscribeControlDirective {
       .pipe(
         takeUntil(this.destroyed$),
         catchError(() => {
-          this.snackbarService.showError(
-            this.translate.instant('pages.employee_detail.messages.pay_config_save_error')
+          this.snackbarService.showErrorTranslated(
+            'pages.employee_detail.messages.pay_config_save_error'
           );
           return of(null);
         }),
@@ -516,8 +505,8 @@ export class EmployeeDetailFacade extends UnsubscribeControlDirective {
       )
       .subscribe((response) => {
         if (response) {
-          this.snackbarService.showSuccess(
-            this.translate.instant('pages.employee_detail.messages.pay_config_save_success')
+          this.snackbarService.showSuccessTranslated(
+            'pages.employee_detail.messages.pay_config_save_success'
           );
           this.editingSection.set(null);
           this.payConfigDialogOpen.set(false);
@@ -530,21 +519,34 @@ export class EmployeeDetailFacade extends UnsubscribeControlDirective {
     const employeeId = this.employee()?.id;
     if (!employeeId) return;
 
+    this.dialog
+      .confirmTranslated(
+        'pages.employee_detail.delete_override_confirm',
+        'pages.employee_detail.delete_override',
+        undefined,
+        { danger: true, acceptLabelKey: 'global.actions.delete' }
+      )
+      .pipe(takeUntil(this.destroyed$), filter(Boolean))
+      .subscribe(() => this.deleteEmployeePayConfigConfirmed(employeeId, payConfigId));
+  }
+
+  private deleteEmployeePayConfigConfirmed(employeeId: string, payConfigId: string): void {
+
     this.adminClient.adminPayConfigClient
       .delete(payConfigId)
       .pipe(
         takeUntil(this.destroyed$),
         catchError(() => {
-          this.snackbarService.showError(
-            this.translate.instant('pages.employee_detail.messages.pay_config_delete_error')
+          this.snackbarService.showErrorTranslated(
+            'pages.employee_detail.messages.pay_config_delete_error'
           );
           return of(null);
         })
       )
       .subscribe((response) => {
         if (response) {
-          this.snackbarService.showSuccess(
-            this.translate.instant('pages.employee_detail.messages.pay_config_delete_success')
+          this.snackbarService.showSuccessTranslated(
+            'pages.employee_detail.messages.pay_config_delete_success'
           );
           this.loadPayConfigSummary(employeeId);
         }

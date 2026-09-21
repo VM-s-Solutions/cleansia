@@ -153,9 +153,7 @@ export class PayPeriodManagementFacade extends UnsubscribeControlDirective {
       )
       .subscribe((response) => {
         if (response) {
-          this.snackbarService.showSuccess(
-            this.translate.instant('pay_periods.messages.close_success')
-          );
+          this.snackbarService.showSuccessTranslated('pay_periods.messages.close_success');
           this.loadPayPeriods();
         }
       });

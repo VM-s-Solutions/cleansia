@@ -16,7 +16,7 @@
       />
     </div>
   } @else if (!facade.loaded()) {
-    <cleansia-form-skeleton />
+    <cleansia-loader />
   } @else {
     <div class="cleansia-profile__fields" [formGroup]="facade.formGroup">
       <div class="cleansia-profile__field">

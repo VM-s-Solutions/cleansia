@@ -4,7 +4,7 @@ import {
   AdminEmployeeDetail,
   AdminSetEmployeeWeeklyOrderLimitRequest,
 } from '@cleansia/admin-services';
-import { SnackbarService } from '@cleansia/services';
+import { DialogService as ConfirmDialogService, SnackbarService } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
 import { DialogService } from 'primeng/dynamicdialog';
 import { of, throwError } from 'rxjs';
@@ -24,12 +24,22 @@ describe('EmployeeDetailFacade — weekly order limit', () => {
   let facade: EmployeeDetailFacade;
   let weeklyOrderLimitMock: jest.Mock;
   let detailsMock: jest.Mock;
-  let snackbar: { showSuccess: jest.Mock; showError: jest.Mock };
+  let snackbar: {
+    showSuccess: jest.Mock;
+    showSuccessTranslated: jest.Mock;
+    showError: jest.Mock;
+    showErrorTranslated: jest.Mock;
+  };
 
   beforeEach(() => {
     weeklyOrderLimitMock = jest.fn();
     detailsMock = jest.fn().mockReturnValue(of(null));
-    snackbar = { showSuccess: jest.fn(), showError: jest.fn() };
+    snackbar = {
+      showSuccess: jest.fn(),
+      showSuccessTranslated: jest.fn(),
+      showError: jest.fn(),
+      showErrorTranslated: jest.fn(),
+    };
 
     TestBed.configureTestingModule({
       providers: [
@@ -49,6 +59,7 @@ describe('EmployeeDetailFacade — weekly order limit', () => {
         { provide: SnackbarService, useValue: snackbar },
         { provide: TranslateService, useValue: { instant: (k: string) => k } },
         { provide: DialogService, useValue: { open: jest.fn() } },
+        { provide: ConfirmDialogService, useValue: { confirmTranslated: jest.fn(() => of(true)) } },
         {
           provide: EmployeeDocumentsFacade,
           useValue: { loadEmployeeDocuments: jest.fn(), ngOnDestroy: jest.fn() },
@@ -93,7 +104,7 @@ describe('EmployeeDetailFacade — weekly order limit', () => {
 
     expect(facade.editingWeeklyLimit()).toBe(false);
     expect(facade.savingWeeklyLimit()).toBe(false);
-    expect(snackbar.showSuccess).toHaveBeenCalledWith(
+    expect(snackbar.showSuccessTranslated).toHaveBeenCalledWith(
       'pages.employee_detail.messages.weekly_limit_save_success'
     );
     expect(detailsMock).toHaveBeenCalledWith('emp-1');
@@ -111,7 +122,7 @@ describe('EmployeeDetailFacade — weekly order limit', () => {
 
     expect(facade.editingWeeklyLimit()).toBe(true);
     expect(facade.savingWeeklyLimit()).toBe(false);
-    expect(snackbar.showSuccess).not.toHaveBeenCalled();
+    expect(snackbar.showSuccessTranslated).not.toHaveBeenCalled();
     expect(detailsMock).not.toHaveBeenCalled();
   });
 

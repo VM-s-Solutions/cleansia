@@ -29,8 +29,6 @@ import {
 import { CleansiaPermissionDirective } from '@cleansia/directives';
 import { Policy } from '@cleansia/services';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
-import { ConfirmationService } from 'primeng/api';
-import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DOCUMENT_TYPE_LABEL_KEYS } from '../document-type-labels';
 import { DocumentRequirementsFacade } from './document-requirements.facade';
 
@@ -41,7 +39,6 @@ import { DocumentRequirementsFacade } from './document-requirements.facade';
     CommonModule,
     ReactiveFormsModule,
     TranslatePipe,
-    ConfirmDialogModule,
     CleansiaButtonComponent,
     CleansiaCheckboxComponent,
     CleansiaLoaderComponent,
@@ -53,7 +50,7 @@ import { DocumentRequirementsFacade } from './document-requirements.facade';
     CleansiaPermissionDirective,
   ],
   templateUrl: './document-requirements.component.html',
-  providers: [DocumentRequirementsFacade, ConfirmationService],
+  providers: [DocumentRequirementsFacade],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class DocumentRequirementsComponent implements OnInit, OnDestroy {
@@ -62,7 +59,6 @@ export class DocumentRequirementsComponent implements OnInit, OnDestroy {
 
   private readonly fb = inject(FormBuilder);
   private readonly translate = inject(TranslateService);
-  private readonly confirmationService = inject(ConfirmationService);
   private readonly destroyRef = inject(DestroyRef);
 
   /** Null when the form is closed. Non-null while adding or editing. */
@@ -120,13 +116,13 @@ export class DocumentRequirementsComponent implements OnInit, OnDestroy {
   protected readonly actions: TableAction<DocumentRequirementDto>[] = [
     {
       icon: 'pi pi-pencil',
-      tooltip: 'common.edit',
+      tooltip: 'global.actions.edit',
       onClick: (row) => this.startEdit(row),
     },
     {
       icon: 'pi pi-trash',
       color: 'danger',
-      tooltip: 'common.delete',
+      tooltip: 'global.actions.delete',
       onClick: (row) => this.confirmDelete(row),
     },
   ];
@@ -207,15 +203,8 @@ export class DocumentRequirementsComponent implements OnInit, OnDestroy {
   }
 
   private confirmDelete(requirement: DocumentRequirementDto): void {
-    this.confirmationService.confirm({
-      header: this.translate.instant('pages.document_requirements.delete_confirm_title'),
-      message: this.translate.instant('pages.document_requirements.delete_confirm'),
-      icon: 'pi pi-exclamation-triangle',
-      accept: () => {
-        if (requirement.id) {
-          this.facade.deleteRequirement(requirement.id);
-        }
-      },
-    });
+    if (requirement.id) {
+      this.facade.deleteRequirement(requirement.id);
+    }
   }
 }

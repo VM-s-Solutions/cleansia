@@ -9,10 +9,10 @@ import {
 } from '@cleansia/admin-services';
 import { FilterChip, FilterDrawerState, PaginationState, SortEvent } from '@cleansia/components';
 import { UnsubscribeControlDirective } from '@cleansia/directives';
-import { CleansiaAdminRoute, SnackbarService } from '@cleansia/services';
+import { CleansiaAdminRoute, DialogService, SnackbarService } from '@cleansia/services';
 import { currentLanguage } from '@cleansia/utils';
 import { TranslateService } from '@ngx-translate/core';
-import { catchError, finalize, of, takeUntil } from 'rxjs';
+import { catchError, filter, finalize, of, takeUntil } from 'rxjs';
 
 export interface AdminUserFilterParams {
   searchTerm?: string;
@@ -22,6 +22,7 @@ export interface AdminUserFilterParams {
 @Injectable()
 export class AdminUserManagementFacade extends UnsubscribeControlDirective {
   private readonly adminClient = inject(AdminClient);
+  private readonly dialog = inject(DialogService);
   private readonly snackbarService = inject(SnackbarService);
   private readonly translate = inject(TranslateService);
   private readonly router = inject(Router);
@@ -132,10 +133,8 @@ export class AdminUserManagementFacade extends UnsubscribeControlDirective {
       )
       .subscribe((response) => {
         if (response) {
-          this.snackbarService.showSuccess(
-            this.translate.instant(
-              'pages.admin_user_management.messages.deactivate_success'
-            )
+          this.snackbarService.showSuccessTranslated(
+            'pages.admin_user_management.messages.deactivate_success'
           );
           this.loadUsers();
         }
@@ -153,10 +152,8 @@ export class AdminUserManagementFacade extends UnsubscribeControlDirective {
       )
       .subscribe((response) => {
         if (response) {
-          this.snackbarService.showSuccess(
-            this.translate.instant(
-              'pages.admin_user_management.messages.activate_success'
-            )
+          this.snackbarService.showSuccessTranslated(
+            'pages.admin_user_management.messages.activate_success'
           );
           this.loadUsers();
         }
@@ -164,10 +161,13 @@ export class AdminUserManagementFacade extends UnsubscribeControlDirective {
   }
 
   toggleUserStatus(user: AdminUserListItem): void {
-    if (user.isActive) {
-      this.deactivateUser(user);
-    } else {
-      this.activateUser(user);
-    }
+    const action = user.isActive ? 'deactivate' : 'activate';
+    this.dialog
+      .confirmTranslated(
+        `pages.admin_user_management.${action}_confirm`,
+        `pages.admin_user_management.${action}_user`
+      )
+      .pipe(takeUntil(this.destroyed$), filter(Boolean))
+      .subscribe(() => (user.isActive ? this.deactivateUser(user) : this.activateUser(user)));
   }
 }

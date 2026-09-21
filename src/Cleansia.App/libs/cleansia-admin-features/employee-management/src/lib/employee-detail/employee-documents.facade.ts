@@ -73,10 +73,8 @@ export class EmployeeDocumentsFacade extends UnsubscribeControlDirective {
       )
       .subscribe((response) => {
         if (response) {
-          this.snackbarService.showSuccess(
-            this.translate.instant(
-              'pages.employee_detail.messages.document_approve_success'
-            )
+          this.snackbarService.showSuccessTranslated(
+            'pages.employee_detail.messages.document_approve_success'
           );
           if (employeeId) {
             this.loadEmployeeDocuments(employeeId);
@@ -98,10 +96,8 @@ export class EmployeeDocumentsFacade extends UnsubscribeControlDirective {
       )
       .subscribe((response) => {
         if (response) {
-          this.snackbarService.showSuccess(
-            this.translate.instant(
-              'pages.employee_detail.messages.document_reject_success'
-            )
+          this.snackbarService.showSuccessTranslated(
+            'pages.employee_detail.messages.document_reject_success'
           );
           if (employeeId) {
             this.loadEmployeeDocuments(employeeId);
@@ -140,10 +136,8 @@ export class EmployeeDocumentsFacade extends UnsubscribeControlDirective {
 
   downloadDocument(employeeDocument: EmployeeDocumentItem): void {
     if (!employeeDocument.id) {
-      this.snackbarService.showError(
-        this.translate.instant(
-          'pages.employee_detail.messages.document_download_error'
-        )
+      this.snackbarService.showErrorTranslated(
+        'pages.employee_detail.messages.document_download_error'
       );
       return;
     }
@@ -160,10 +154,8 @@ export class EmployeeDocumentsFacade extends UnsubscribeControlDirective {
 
   previewDocument(employeeDocument: EmployeeDocumentItem): void {
     if (!employeeDocument.id) {
-      this.snackbarService.showError(
-        this.translate.instant(
-          'pages.employee_detail.messages.document_download_error'
-        )
+      this.snackbarService.showErrorTranslated(
+        'pages.employee_detail.messages.document_download_error'
       );
       return;
     }

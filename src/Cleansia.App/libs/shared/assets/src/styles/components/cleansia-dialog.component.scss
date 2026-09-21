@@ -42,6 +42,12 @@ $primary-hover: #0284c7;
     border: 1px solid var(--surface-border);
   }
 
+  // A confirmation reads as one column: a long message wraps at reading width instead of
+  // stretching the panel across the viewport.
+  &.p-confirmdialog {
+    max-width: min(520px, calc(100vw - 2rem));
+  }
+
   // Close button
   .p-dialog-header-actions {
     .p-button {

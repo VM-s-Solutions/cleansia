@@ -23,8 +23,6 @@ import {
 import { PermissionService, Policy } from '@cleansia/services';
 import { CleansiaPermissionDirective } from '@cleansia/directives';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
-import { ConfirmationService } from 'primeng/api';
-import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { LanguageManagementFacade } from './language-management.facade';
 import {
   getLanguageTableDefinition,
@@ -46,11 +44,10 @@ import {
     CleansiaFilterDrawerComponent,
     CleansiaFilterChipsComponent,
     ReactiveFormsModule,
-    ConfirmDialogModule,
     CleansiaPermissionDirective,
   ],
   templateUrl: './language-management.component.html',
-  providers: [LanguageManagementFacade, ConfirmationService],
+  providers: [LanguageManagementFacade],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class LanguageManagementComponent implements OnInit {
@@ -58,7 +55,6 @@ export class LanguageManagementComponent implements OnInit {
   protected readonly Policy = Policy;
   private readonly translate = inject(TranslateService);
   private readonly permissions = inject(PermissionService);
-  private readonly confirmationService = inject(ConfirmationService);
 
   private readonly flagTemplate = viewChild<TemplateRef<LanguageListItem>>('flagTemplate');
 
@@ -82,13 +78,6 @@ export class LanguageManagementComponent implements OnInit {
   }
 
   confirmDeleteLanguage(language: LanguageListItem): void {
-    this.confirmationService.confirm({
-      message: this.translate.instant('pages.language_management.delete_confirm'),
-      header: this.translate.instant('pages.language_management.delete_language'),
-      icon: 'pi pi-exclamation-triangle',
-      accept: () => {
-        this.facade.deleteLanguage(language);
-      },
-    });
+    this.facade.deleteLanguage(language);
   }
 }

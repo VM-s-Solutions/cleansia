@@ -8,9 +8,7 @@ import {
 } from '@cleansia/admin-services';
 import { UnsubscribeControlDirective } from '@cleansia/directives';
 import { SnackbarService } from '@cleansia/services';
-import { TranslateService } from '@ngx-translate/core';
 import { catchError, finalize, of, takeUntil } from 'rxjs';
-import { resolveReferralErrorKey } from './referrals-list.models';
 
 export type ReferralStatusFilter =
   | 'all'
@@ -29,7 +27,6 @@ export interface ReferralFilterParams {
 export class ReferralsListFacade extends UnsubscribeControlDirective {
   private readonly adminClient = inject(AdminClient);
   private readonly snackbar = inject(SnackbarService);
-  private readonly translate = inject(TranslateService);
 
   readonly referrals = signal<AdminReferralListItem[]>([]);
   readonly loading = signal<boolean>(false);
@@ -105,20 +102,13 @@ export class ReferralsListFacade extends UnsubscribeControlDirective {
       .reverse(referralId, command)
       .pipe(
         takeUntil(this.destroyed$),
-        catchError((error: unknown) => {
-          this.snackbar.showError(
-            this.translate.instant(resolveReferralErrorKey(error))
-          );
-          return of(null);
-        }),
+        catchError(() => of(null)),
         finalize(() => this.intervening.set(false))
       )
       .subscribe((response) => {
         if (response) {
-          this.snackbar.showSuccess(
-            this.translate.instant(
-              'pages.loyalty_referrals.intervention.success_reverse'
-            )
+          this.snackbar.showSuccessTranslated(
+            'pages.loyalty_referrals.intervention.success_reverse'
           );
           this.loadReferrals();
           onSuccess?.();
@@ -143,20 +133,13 @@ export class ReferralsListFacade extends UnsubscribeControlDirective {
       .forceQualify(referralId, command)
       .pipe(
         takeUntil(this.destroyed$),
-        catchError((error: unknown) => {
-          this.snackbar.showError(
-            this.translate.instant(resolveReferralErrorKey(error))
-          );
-          return of(null);
-        }),
+        catchError(() => of(null)),
         finalize(() => this.intervening.set(false))
       )
       .subscribe((response) => {
         if (response) {
-          this.snackbar.showSuccess(
-            this.translate.instant(
-              'pages.loyalty_referrals.intervention.success_force_qualify'
-            )
+          this.snackbar.showSuccessTranslated(
+            'pages.loyalty_referrals.intervention.success_force_qualify'
           );
           this.loadReferrals();
           onSuccess?.();

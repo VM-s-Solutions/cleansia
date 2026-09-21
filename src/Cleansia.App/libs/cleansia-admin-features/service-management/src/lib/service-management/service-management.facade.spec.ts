@@ -5,7 +5,7 @@ import {
   PagedDataOfServiceListItem,
   ServiceListItem,
 } from '@cleansia/admin-services';
-import { SnackbarService } from '@cleansia/services';
+import { DialogService, SnackbarService } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
 import { EMPTY, of, throwError } from 'rxjs';
 import { ServiceManagementFacade } from './service-management.facade';
@@ -17,7 +17,12 @@ describe('ServiceManagementFacade', () => {
   let activateMock: jest.Mock;
   let deleteMock: jest.Mock;
   let getOverviewMock: jest.Mock;
-  let snackbar: { showSuccess: jest.Mock; showError: jest.Mock };
+  let snackbar: {
+    showSuccess: jest.Mock;
+    showSuccessTranslated: jest.Mock;
+    showError: jest.Mock;
+    showErrorTranslated: jest.Mock;
+  };
 
   const page = PagedDataOfServiceListItem.fromJS({
     data: [ServiceListItem.fromJS({ id: 'svc-1', name: 'Deep clean' })],
@@ -32,7 +37,12 @@ describe('ServiceManagementFacade', () => {
     getOverviewMock = jest.fn().mockReturnValue(
       of([{ id: 'cur-eur', code: 'EUR', isDefault: true }, { id: 'cur-czk', code: 'CZK', isDefault: false }])
     );
-    snackbar = { showSuccess: jest.fn(), showError: jest.fn() };
+    snackbar = {
+      showSuccess: jest.fn(),
+      showSuccessTranslated: jest.fn(),
+      showError: jest.fn(),
+      showErrorTranslated: jest.fn(),
+    };
 
     TestBed.configureTestingModule({
       providers: [
@@ -52,7 +62,15 @@ describe('ServiceManagementFacade', () => {
           },
         },
         { provide: SnackbarService, useValue: snackbar },
-        { provide: TranslateService, useValue: { instant: (k: string) => k, currentLang: 'cs', onLangChange: EMPTY } },
+        { provide: DialogService, useValue: { confirmTranslated: jest.fn(() => of(true)) } },
+        {
+          provide: TranslateService,
+          useValue: {
+            instant: (k: string) => k,
+            currentLang: 'cs',
+            onLangChange: EMPTY,
+          },
+        },
         { provide: Router, useValue: { navigate: jest.fn() } },
       ],
     });
@@ -118,7 +136,7 @@ describe('ServiceManagementFacade', () => {
     facade.deactivateService(ServiceListItem.fromJS({ id: 'svc-1' }));
 
     expect(deactivateMock).toHaveBeenCalledWith('svc-1');
-    expect(snackbar.showSuccess).toHaveBeenCalledWith(
+    expect(snackbar.showSuccessTranslated).toHaveBeenCalledWith(
       'pages.service_management.messages.deactivate_success'
     );
     expect(getPagedMock).toHaveBeenCalledTimes(1);
@@ -131,7 +149,7 @@ describe('ServiceManagementFacade', () => {
     facade.activateService(ServiceListItem.fromJS({ id: 'svc-1' }));
 
     expect(activateMock).toHaveBeenCalledWith('svc-1');
-    expect(snackbar.showSuccess).toHaveBeenCalledWith(
+    expect(snackbar.showSuccessTranslated).toHaveBeenCalledWith(
       'pages.service_management.messages.activate_success'
     );
     expect(getPagedMock).toHaveBeenCalledTimes(1);
@@ -145,36 +163,34 @@ describe('ServiceManagementFacade', () => {
     expect(activateMock).not.toHaveBeenCalled();
   });
 
-  it('maps service.not_found to its translation key on deactivate failure', () => {
+  it('leaves the service.not_found refusal to the interceptor toast on deactivate failure', () => {
     deactivateMock.mockReturnValue(
       throwError(() => ({ result: { detail: 'service.not_found' } }))
     );
 
     facade.deactivateService(ServiceListItem.fromJS({ id: 'svc-1' }));
 
-    expect(snackbar.showError).toHaveBeenCalledWith('api.service.not_found');
+    expect(snackbar.showErrorTranslated).not.toHaveBeenCalled();
   });
 
-  it('falls back to the generic error for unknown codes on activate failure', () => {
+  it('leaves an unknown refusal to the interceptor toast on activate failure', () => {
     activateMock.mockReturnValue(
       throwError(() => ({ result: { detail: 'something.unknown' } }))
     );
 
     facade.activateService(ServiceListItem.fromJS({ id: 'svc-1' }));
 
-    expect(snackbar.showError).toHaveBeenCalledWith(
-      'api.common.error_occurred'
-    );
+    expect(snackbar.showErrorTranslated).not.toHaveBeenCalled();
   });
 
-  it('maps service.in_use to its translation key on delete failure', () => {
+  it('leaves the service.in_use refusal to the interceptor toast on delete failure', () => {
     deleteMock.mockReturnValue(
       throwError(() => ({ result: { detail: 'service.in_use' } }))
     );
 
     facade.deleteService(ServiceListItem.fromJS({ id: 'svc-1' }));
 
-    expect(snackbar.showError).toHaveBeenCalledWith('api.service.in_use');
+    expect(snackbar.showErrorTranslated).not.toHaveBeenCalled();
   });
 
   describe('the price columns name their currency', () => {

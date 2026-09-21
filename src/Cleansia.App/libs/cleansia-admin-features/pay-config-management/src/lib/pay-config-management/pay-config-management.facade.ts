@@ -2,10 +2,10 @@ import { Injectable, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { AdminClient, EmployeePayConfigDto } from '@cleansia/admin-services';
 import { UnsubscribeControlDirective } from '@cleansia/directives';
-import { CleansiaAdminRoute, SnackbarService } from '@cleansia/services';
+import { CleansiaAdminRoute, DialogService, SnackbarService } from '@cleansia/services';
 import { formatMoney, localeFor } from '@cleansia/utils';
 import { TranslateService } from '@ngx-translate/core';
-import { catchError, finalize, of, takeUntil } from 'rxjs';
+import { catchError, filter, finalize, of, takeUntil } from 'rxjs';
 
 export interface PayConfigFilterParams {
   serviceId?: string;
@@ -15,6 +15,7 @@ export interface PayConfigFilterParams {
 @Injectable()
 export class PayConfigManagementFacade extends UnsubscribeControlDirective {
   private readonly adminClient = inject(AdminClient);
+  private readonly dialog = inject(DialogService);
   private readonly snackbarService = inject(SnackbarService);
   private readonly translate = inject(TranslateService);
   private readonly router = inject(Router);
@@ -100,18 +101,31 @@ export class PayConfigManagementFacade extends UnsubscribeControlDirective {
   }
 
   deletePayConfig(payConfig: EmployeePayConfigDto): void {
-    if (!payConfig.id) return;
+    const id = payConfig.id;
+    if (!id) return;
 
+    this.dialog
+      .confirmTranslated(
+        'pages.pay_config_management.delete_confirm',
+        'pages.pay_config_management.delete',
+        undefined,
+        { danger: true, acceptLabelKey: 'global.actions.delete' }
+      )
+      .pipe(takeUntil(this.destroyed$), filter(Boolean))
+      .subscribe(() => this.deletePayConfigConfirmed(id));
+  }
+
+  private deletePayConfigConfirmed(id: string): void {
     this.adminClient.adminPayConfigClient
-      .delete(payConfig.id)
+      .delete(id)
       .pipe(
         takeUntil(this.destroyed$),
         catchError(() => of(null))
       )
       .subscribe((response) => {
         if (response) {
-          this.snackbarService.showSuccess(
-            this.translate.instant('pages.pay_config_management.messages.delete_success')
+          this.snackbarService.showSuccessTranslated(
+            'pages.pay_config_management.messages.delete_success'
           );
           this.loadPayConfigs();
         }

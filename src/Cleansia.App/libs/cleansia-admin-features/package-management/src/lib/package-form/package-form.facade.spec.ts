@@ -10,11 +10,23 @@ import { TranslateService } from '@ngx-translate/core';
 import { of, throwError } from 'rxjs';
 import { PackageFormData, PackageFormFacade } from './package-form.facade';
 
+// The keys a refusal resolves to; anything else falls back, as an untranslated code does in the app.
+const TRANSLATED = new Set([
+  'api.package.invalid_weight',
+  'api.package.in_use',
+  'api.package.update_failed',
+]);
+
 describe('PackageFormFacade', () => {
   let facade: PackageFormFacade;
   let updateMock: jest.Mock;
   let createMock: jest.Mock;
-  let snackbar: { showSuccess: jest.Mock; showError: jest.Mock };
+  let snackbar: {
+    showSuccess: jest.Mock;
+    showSuccessTranslated: jest.Mock;
+    showError: jest.Mock;
+    showErrorTranslated: jest.Mock;
+  };
   let navigate: jest.Mock;
   let getLanguagesMock: jest.Mock;
   let getCurrenciesMock: jest.Mock;
@@ -32,7 +44,12 @@ describe('PackageFormFacade', () => {
   beforeEach(() => {
     updateMock = jest.fn();
     createMock = jest.fn();
-    snackbar = { showSuccess: jest.fn(), showError: jest.fn() };
+    snackbar = {
+      showSuccess: jest.fn(),
+      showSuccessTranslated: jest.fn(),
+      showError: jest.fn(),
+      showErrorTranslated: jest.fn(),
+    };
     navigate = jest.fn();
 
     getLanguagesMock = jest.fn().mockReturnValue(of([]));
@@ -49,7 +66,12 @@ describe('PackageFormFacade', () => {
         PackageFormFacade,
         { provide: AdminClient, useValue: adminClient },
         { provide: SnackbarService, useValue: snackbar },
-        { provide: TranslateService, useValue: { instant: (k: string) => k } },
+        {
+          provide: TranslateService,
+          useValue: {
+            instant: (k: string) => (TRANSLATED.has(k) ? `${k} (translated)` : k),
+          },
+        },
         { provide: Router, useValue: { navigate } },
       ],
     });
@@ -128,7 +150,7 @@ describe('PackageFormFacade', () => {
     expect(updateMock).toHaveBeenCalledTimes(1);
     const command = updateMock.mock.calls[0][1];
     expect(command.serviceWeights).toEqual({ 'svc-a': 3, 'svc-b': 1 });
-    expect(snackbar.showSuccess).toHaveBeenCalledWith(
+    expect(snackbar.showSuccessTranslated).toHaveBeenCalledWith(
       'pages.package_form.messages.update_success'
     );
   });
@@ -153,9 +175,7 @@ describe('PackageFormFacade', () => {
     facade.updatePackage('pkg-1', formData);
 
     expect(facade.errorKey()).toBe('api.package.invalid_weight');
-    expect(snackbar.showError).toHaveBeenCalledWith(
-      'api.package.invalid_weight'
-    );
+    expect(snackbar.showErrorTranslated).not.toHaveBeenCalled();
     expect(facade.saving()).toBe(false);
   });
 
@@ -192,9 +212,7 @@ describe('PackageFormFacade', () => {
     facade.updatePackage('pkg-1', formData);
 
     expect(facade.errorKey()).toBe('api.package.update_failed');
-    expect(snackbar.showError).toHaveBeenCalledWith(
-      'api.package.update_failed'
-    );
+    expect(snackbar.showErrorTranslated).not.toHaveBeenCalled();
   });
 
   // Seeded with `of(null)`, not a plausible array: the generated client answers a non-array 200

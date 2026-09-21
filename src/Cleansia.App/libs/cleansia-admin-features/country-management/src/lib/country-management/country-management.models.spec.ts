@@ -4,7 +4,6 @@ import { PermissionService } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
 import {
   getCountryTableDefinition,
-  resolveCountryErrorKey,
 } from './country-management.models';
 
 describe('country-management models', () => {
@@ -60,44 +59,6 @@ describe('country-management models', () => {
       expect(action?.tooltip).toBe('pages.country_management.set_default_market');
       action?.onClick(otherRow);
       expect(onSetDefaultMarket).toHaveBeenCalledWith(otherRow);
-    });
-  });
-
-  describe('resolveCountryErrorKey', () => {
-    it.each([
-      ['country.not_serviced', 'api.country.not_serviced'],
-      ['country.market_not_ready', 'api.country.market_not_ready'],
-      [
-        'country.default_market_changed_concurrently',
-        'api.country.default_market_changed_concurrently',
-      ],
-      ['country.not_found', 'api.country.not_found'],
-    ])('maps %s from the parsed problem detail', (code, key) => {
-      expect(resolveCountryErrorKey({ result: { detail: code } })).toBe(key);
-    });
-
-    it('reads the title when the detail is absent', () => {
-      expect(
-        resolveCountryErrorKey({ result: { title: 'country.not_serviced' } })
-      ).toBe('api.country.not_serviced');
-    });
-
-    it('parses the raw response body when the client did not', () => {
-      expect(
-        resolveCountryErrorKey({
-          response: JSON.stringify({ detail: 'country.market_not_ready' }),
-        })
-      ).toBe('api.country.market_not_ready');
-    });
-
-    it('falls back to the generic key on an unknown code or a body that is not JSON', () => {
-      expect(resolveCountryErrorKey({ result: { detail: 'x.y' } })).toBe(
-        'api.common.error_occurred'
-      );
-      expect(resolveCountryErrorKey({ response: 'not json' })).toBe(
-        'api.common.error_occurred'
-      );
-      expect(resolveCountryErrorKey(undefined)).toBe('api.common.error_occurred');
     });
   });
 });

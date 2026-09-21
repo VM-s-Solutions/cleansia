@@ -28,8 +28,6 @@ import { CleansiaPermissionDirective } from '@cleansia/directives';
 import { Policy } from '@cleansia/services';
 import { formatDate } from '@cleansia/utils';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
-import { ConfirmationService } from 'primeng/api';
-import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { Subject, takeUntil } from 'rxjs';
 import {
   formatDiscount,
@@ -54,11 +52,10 @@ import { PromoCodeDetailFacade } from './promo-code-detail.facade';
     CleansiaStatusBadgeComponent,
     CleansiaTableComponent,
     CleansiaTitleComponent,
-    ConfirmDialogModule,
     CleansiaPermissionDirective,
   ],
   templateUrl: './promo-code-detail.component.html',
-  providers: [PromoCodeDetailFacade, ConfirmationService],
+  providers: [PromoCodeDetailFacade],
 })
 export class PromoCodeDetailComponent
   implements OnInit, AfterViewInit, OnDestroy
@@ -66,7 +63,6 @@ export class PromoCodeDetailComponent
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly translate = inject(TranslateService);
-  private readonly confirmationService = inject(ConfirmationService);
   protected readonly facade = inject(PromoCodeDetailFacade);
   protected readonly Policy = Policy;
 
@@ -195,21 +191,6 @@ export class PromoCodeDetailComponent
   }
 
   confirmDeactivate(): void {
-    this.confirmationService.confirm({
-      header: this.translate.instant(
-        'pages.promo_codes.detail.deactivate_confirm_title'
-      ),
-      message: this.translate.instant(
-        'pages.promo_codes.detail.deactivate_confirm_body'
-      ),
-      acceptLabel: this.translate.instant(
-        'pages.promo_codes.detail.deactivate_confirm_yes'
-      ),
-      rejectLabel: this.translate.instant(
-        'pages.promo_codes.detail.deactivate_confirm_cancel'
-      ),
-      icon: 'pi pi-exclamation-triangle',
-      accept: () => this.facade.deactivate(),
-    });
+    this.facade.deactivate();
   }
 }

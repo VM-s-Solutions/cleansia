@@ -13,10 +13,22 @@ import { of, throwError } from 'rxjs';
 import { AdminOrderRefundFacade } from './admin-order-refund.facade';
 import { RefundLineOption } from './admin-order-refund.models';
 
+// The keys a refusal resolves to; anything else falls back, as an untranslated code does in the app.
+const TRANSLATED = new Set([
+  'api.refund.override_reason_required',
+  'api.refund.nothing_refundable',
+  'api.refund.failed',
+]);
+
 describe('AdminOrderRefundFacade', () => {
   let facade: AdminOrderRefundFacade;
   let refundClient: { partial: jest.Mock };
-  let snackbar: { showSuccess: jest.Mock; showError: jest.Mock };
+  let snackbar: {
+    showSuccess: jest.Mock;
+    showSuccessTranslated: jest.Mock;
+    showError: jest.Mock;
+    showErrorTranslated: jest.Mock;
+  };
 
   const serviceLine: RefundLineOption = {
     kind: 'service',
@@ -45,14 +57,24 @@ describe('AdminOrderRefundFacade', () => {
 
   beforeEach(() => {
     refundClient = { partial: jest.fn() };
-    snackbar = { showSuccess: jest.fn(), showError: jest.fn() };
+    snackbar = {
+      showSuccess: jest.fn(),
+      showSuccessTranslated: jest.fn(),
+      showError: jest.fn(),
+      showErrorTranslated: jest.fn(),
+    };
 
     TestBed.configureTestingModule({
       providers: [
         AdminOrderRefundFacade,
         { provide: AdminRefundClient, useValue: refundClient },
         { provide: SnackbarService, useValue: snackbar },
-        { provide: TranslateService, useValue: { instant: (k: string) => k } },
+        {
+          provide: TranslateService,
+          useValue: {
+            instant: (k: string) => (TRANSLATED.has(k) ? `${k} (translated)` : k),
+          },
+        },
       ],
     });
 
@@ -183,7 +205,7 @@ describe('AdminOrderRefundFacade', () => {
     const onSuccess = jest.fn();
     facade.submit('order-1', onSuccess);
 
-    expect(snackbar.showSuccess).toHaveBeenCalledWith(
+    expect(snackbar.showSuccessTranslated).toHaveBeenCalledWith(
       'pages.order_management.refund.success'
     );
     expect(onSuccess).toHaveBeenCalledTimes(1);
@@ -205,9 +227,7 @@ describe('AdminOrderRefundFacade', () => {
     facade.submit('order-1', jest.fn());
 
     expect(facade.errorKey()).toBe('api.refund.override_reason_required');
-    expect(snackbar.showError).toHaveBeenCalledWith(
-      'api.refund.override_reason_required'
-    );
+    expect(snackbar.showErrorTranslated).not.toHaveBeenCalled();
     expect(facade.submitting()).toBe(false);
   });
 
@@ -249,7 +269,7 @@ describe('AdminOrderRefundFacade', () => {
     facade.submit('order-1', jest.fn());
 
     expect(facade.errorKey()).toBe('api.refund.failed');
-    expect(snackbar.showError).toHaveBeenCalledWith('api.refund.failed');
+    expect(snackbar.showErrorTranslated).not.toHaveBeenCalled();
   });
 
   it('does not call the client when nothing is selected', () => {

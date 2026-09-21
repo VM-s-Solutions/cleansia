@@ -9,7 +9,6 @@ import {
 } from '@cleansia/admin-services';
 import { UnsubscribeControlDirective } from '@cleansia/directives';
 import { CleansiaAdminRoute, SnackbarService } from '@cleansia/services';
-import { TranslateService } from '@ngx-translate/core';
 import { catchError, finalize, of, takeUntil } from 'rxjs';
 
 export interface CountryFormData {
@@ -26,7 +25,6 @@ export interface CountryMarketContentData {
 export class CountryFormFacade extends UnsubscribeControlDirective {
   private readonly adminClient = inject(AdminClient);
   private readonly snackbarService = inject(SnackbarService);
-  private readonly translate = inject(TranslateService);
   private readonly router = inject(Router);
 
   readonly country = signal<CountryDetailDto | null>(null);
@@ -70,9 +68,7 @@ export class CountryFormFacade extends UnsubscribeControlDirective {
       )
       .subscribe((response) => {
         if (response) {
-          this.snackbarService.showSuccess(
-            this.translate.instant('pages.country_form.messages.create_success')
-          );
+          this.snackbarService.showSuccessTranslated('pages.country_form.messages.create_success');
           this.router.navigate([CleansiaAdminRoute.COUNTRY_MANAGEMENT]);
         }
       });
@@ -106,9 +102,7 @@ export class CountryFormFacade extends UnsubscribeControlDirective {
           this.saving.set(false);
           return;
         }
-        this.snackbarService.showSuccess(
-          this.translate.instant('pages.country_form.messages.update_success')
-        );
+        this.snackbarService.showSuccessTranslated('pages.country_form.messages.update_success');
         if (marketContent) {
           this.updateMarketContent(countryId, marketContent);
         } else {
@@ -134,10 +128,8 @@ export class CountryFormFacade extends UnsubscribeControlDirective {
       )
       .subscribe((response) => {
         if (response) {
-          this.snackbarService.showSuccess(
-            this.translate.instant(
-              'pages.country_form.messages.market_content_success'
-            )
+          this.snackbarService.showSuccessTranslated(
+            'pages.country_form.messages.market_content_success'
           );
           this.router.navigate([CleansiaAdminRoute.COUNTRY_MANAGEMENT]);
         }

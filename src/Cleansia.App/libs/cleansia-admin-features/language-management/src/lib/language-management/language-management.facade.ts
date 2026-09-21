@@ -4,14 +4,15 @@ import { Router } from '@angular/router';
 import { AdminClient, LanguageListItem } from '@cleansia/admin-services';
 import { FilterChip, FilterDrawerState } from '@cleansia/components';
 import { UnsubscribeControlDirective } from '@cleansia/directives';
-import { CleansiaAdminRoute, SnackbarService } from '@cleansia/services';
+import { CleansiaAdminRoute, DialogService, SnackbarService } from '@cleansia/services';
 import { currentLanguage } from '@cleansia/utils';
 import { TranslateService } from '@ngx-translate/core';
-import { catchError, finalize, of, takeUntil } from 'rxjs';
+import { catchError, filter, finalize, of, takeUntil } from 'rxjs';
 
 @Injectable()
 export class LanguageManagementFacade extends UnsubscribeControlDirective {
   private readonly adminClient = inject(AdminClient);
+  private readonly dialog = inject(DialogService);
   private readonly snackbarService = inject(SnackbarService);
   private readonly translate = inject(TranslateService);
   private readonly router = inject(Router);
@@ -90,20 +91,31 @@ export class LanguageManagementFacade extends UnsubscribeControlDirective {
   }
 
   deleteLanguage(language: LanguageListItem): void {
-    if (!language.id) return;
+    const id = language.id;
+    if (!id) return;
 
+    this.dialog
+      .confirmTranslated(
+        'pages.language_management.delete_confirm',
+        'pages.language_management.delete_language',
+        undefined,
+        { danger: true, acceptLabelKey: 'global.actions.delete' }
+      )
+      .pipe(takeUntil(this.destroyed$), filter(Boolean))
+      .subscribe(() => this.deleteLanguageConfirmed(id));
+  }
+
+  private deleteLanguageConfirmed(id: string): void {
     this.adminClient.adminLanguageClient
-      .delete(language.id)
+      .delete(id)
       .pipe(
         takeUntil(this.destroyed$),
         catchError(() => of(null))
       )
       .subscribe((response) => {
         if (response) {
-          this.snackbarService.showSuccess(
-            this.translate.instant(
-              'pages.language_management.messages.delete_success'
-            )
+          this.snackbarService.showSuccessTranslated(
+            'pages.language_management.messages.delete_success'
           );
           this.loadLanguages();
         }

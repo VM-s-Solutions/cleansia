@@ -141,12 +141,10 @@
                 }
               </div>
             } @empty {
-              <p class="currency-price-block__empty">
-                {{
-                  'pages.membership_plans.form.price_block.no_currencies'
-                    | translate
-                }}
-              </p>
+              <div class="empty-state">
+                <i class="pi pi-money-bill"></i>
+                <p>{{ 'pages.membership_plans.form.price_block.no_currencies' | translate }}</p>
+              </div>
             }
           </div>
           <div class="form-grid">

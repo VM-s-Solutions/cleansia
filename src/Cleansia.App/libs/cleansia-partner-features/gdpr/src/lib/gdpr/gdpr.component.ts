@@ -7,9 +7,7 @@ import {
   CleansiaTitleComponent,
 } from '@cleansia/components';
 import { ConsentType } from '@cleansia/partner-services';
-import { TranslatePipe, TranslateService } from '@ngx-translate/core';
-import { ConfirmationService } from 'primeng/api';
-import { ConfirmDialogModule } from 'primeng/confirmdialog';
+import { TranslatePipe } from '@ngx-translate/core';
 import { ToggleSwitchModule } from 'primeng/toggleswitch';
 import { PartnerGdprFacade } from './gdpr.facade';
 
@@ -20,7 +18,6 @@ import { PartnerGdprFacade } from './gdpr.facade';
     FormsModule,
     TranslatePipe,
     ToggleSwitchModule,
-    ConfirmDialogModule,
     CleansiaButtonComponent,
     CleansiaLoaderComponent,
     CleansiaTitleComponent,
@@ -28,12 +25,10 @@ import { PartnerGdprFacade } from './gdpr.facade';
   ],
   templateUrl: './gdpr.component.html',
   styleUrl: './gdpr.component.scss',
-  providers: [PartnerGdprFacade, ConfirmationService],
+  providers: [PartnerGdprFacade],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class PartnerGdprComponent implements OnInit {
-  private readonly translate = inject(TranslateService);
-  private readonly confirmationService = inject(ConfirmationService);
   protected readonly facade = inject(PartnerGdprFacade);
 
   readonly ConsentType = ConsentType;
@@ -65,13 +60,6 @@ export class PartnerGdprComponent implements OnInit {
   }
 
   deleteAccount(): void {
-    this.confirmationService.confirm({
-      message: this.translate.instant('pages.gdpr.delete_confirm_message'),
-      header: this.translate.instant('pages.gdpr.delete_confirm_title'),
-      icon: 'pi pi-exclamation-triangle',
-      acceptLabel: this.translate.instant('pages.gdpr.delete_confirm_yes'),
-      rejectLabel: this.translate.instant('global.actions.cancel'),
-      accept: () => this.facade.deleteAccount(),
-    });
+    this.facade.deleteAccount();
   }
 }

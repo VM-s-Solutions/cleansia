@@ -166,10 +166,8 @@ export class EmployeeManagementFacade extends UnsubscribeControlDirective {
       )
       .subscribe((response) => {
         if (response) {
-          this.snackbarService.showSuccess(
-            this.translate.instant(
-              'pages.employee_management.messages.approve_success'
-            )
+          this.snackbarService.showSuccessTranslated(
+            'pages.employee_management.messages.approve_success'
           );
           this.loadEmployees();
         }
@@ -247,10 +245,8 @@ export class EmployeeManagementFacade extends UnsubscribeControlDirective {
       )
       .subscribe((response) => {
         if (response) {
-          this.snackbarService.showSuccess(
-            this.translate.instant(
-              'pages.employee_management.messages.reject_success'
-            )
+          this.snackbarService.showSuccessTranslated(
+            'pages.employee_management.messages.reject_success'
           );
           this.loadEmployees();
         }

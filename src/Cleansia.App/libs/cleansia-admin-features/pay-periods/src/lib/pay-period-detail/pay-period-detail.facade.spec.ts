@@ -9,13 +9,23 @@ describe('PayPeriodDetailFacade', () => {
   let facade: PayPeriodDetailFacade;
   let detailsMock: jest.Mock;
   let closeMock: jest.Mock;
-  let snackbar: { showSuccess: jest.Mock; showError: jest.Mock };
+  let snackbar: {
+    showSuccess: jest.Mock;
+    showSuccessTranslated: jest.Mock;
+    showError: jest.Mock;
+    showErrorTranslated: jest.Mock;
+  };
 
   beforeEach(() => {
     TestBed.resetTestingModule();
     detailsMock = jest.fn().mockReturnValue(of({ id: 'period-1' }));
     closeMock = jest.fn().mockReturnValue(of({ payPeriodId: 'period-1' }));
-    snackbar = { showSuccess: jest.fn(), showError: jest.fn() };
+    snackbar = {
+      showSuccess: jest.fn(),
+      showSuccessTranslated: jest.fn(),
+      showError: jest.fn(),
+      showErrorTranslated: jest.fn(),
+    };
 
     TestBed.configureTestingModule({
       providers: [
@@ -51,7 +61,7 @@ describe('PayPeriodDetailFacade', () => {
   it('re-reads the period after a close lands, and not when it fails', () => {
     facade.closePayPeriod('period-1', 'done');
     expect(detailsMock).toHaveBeenCalledTimes(1);
-    expect(snackbar.showSuccess).toHaveBeenCalledWith(
+    expect(snackbar.showSuccessTranslated).toHaveBeenCalledWith(
       'pay_periods.messages.close_success'
     );
 

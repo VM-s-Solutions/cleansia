@@ -10,14 +10,10 @@ import {
 } from '@cleansia/admin-services';
 import { FilterChip, FilterDrawerState, PaginationState, SortEvent } from '@cleansia/components';
 import { UnsubscribeControlDirective } from '@cleansia/directives';
-import { SnackbarService, extractApiErrorCode } from '@cleansia/services';
+import { SnackbarService } from '@cleansia/services';
 import { currentLanguage } from '@cleansia/utils';
 import { TranslateService } from '@ngx-translate/core';
 import { catchError, finalize, of, takeUntil } from 'rxjs';
-import {
-  RETRY_PDF_ERROR_KEY_MAP,
-  RETRY_PDF_FALLBACK_ERROR_KEY,
-} from './invoice-management.models';
 
 export interface InvoiceFilterParams {
   statuses?: EmployeeInvoiceStatus[];
@@ -221,31 +217,17 @@ export class InvoiceManagementFacade extends UnsubscribeControlDirective {
       .regeneratePdf(command)
       .pipe(
         takeUntil(this.destroyed$),
-        catchError((error: unknown) => {
-          this.snackbarService.showError(
-            this.translate.instant(this.resolveRetryErrorKey(error))
-          );
-          return of(null);
-        }),
+        catchError(() => of(null)),
         finalize(() => this.retryingPdf.set(false))
       )
       .subscribe((response) => {
         if (response) {
-          this.snackbarService.showSuccess(
-            this.translate.instant(
-              'pages.invoice_management.messages.retry_pdf_success'
-            )
+          this.snackbarService.showSuccessTranslated(
+            'pages.invoice_management.messages.retry_pdf_success'
           );
           this.loadInvoices();
         }
       });
   }
 
-  private resolveRetryErrorKey(error: unknown): string {
-    const code = extractApiErrorCode(error);
-    if (code && RETRY_PDF_ERROR_KEY_MAP[code]) {
-      return RETRY_PDF_ERROR_KEY_MAP[code];
-    }
-    return RETRY_PDF_FALLBACK_ERROR_KEY;
-  }
 }

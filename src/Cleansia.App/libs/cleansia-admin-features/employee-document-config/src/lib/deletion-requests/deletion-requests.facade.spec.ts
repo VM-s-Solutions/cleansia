@@ -14,13 +14,23 @@ describe('DeletionRequestsFacade', () => {
   let facade: DeletionRequestsFacade;
   let deletionRequests: jest.Mock;
   let resolve: jest.Mock;
-  let snackbar: { showSuccess: jest.Mock; showError: jest.Mock };
+  let snackbar: {
+    showSuccess: jest.Mock;
+    showSuccessTranslated: jest.Mock;
+    showError: jest.Mock;
+    showErrorTranslated: jest.Mock;
+  };
 
   beforeEach(() => {
     TestBed.resetTestingModule();
     deletionRequests = jest.fn().mockReturnValue(of([]));
     resolve = jest.fn().mockReturnValue(of({ requestId: 'r1' }));
-    snackbar = { showSuccess: jest.fn(), showError: jest.fn() };
+    snackbar = {
+      showSuccess: jest.fn(),
+      showSuccessTranslated: jest.fn(),
+      showError: jest.fn(),
+      showErrorTranslated: jest.fn(),
+    };
 
     TestBed.configureTestingModule({
       providers: [
@@ -72,12 +82,12 @@ describe('DeletionRequestsFacade', () => {
 
   it('reports an approval and a rejection differently', () => {
     facade.resolve('r1', true, 'looks fine');
-    expect(snackbar.showSuccess).toHaveBeenLastCalledWith(
+    expect(snackbar.showSuccessTranslated).toHaveBeenLastCalledWith(
       'pages.document_deletion_requests.messages.approve_success',
     );
 
     facade.resolve('r1', false, null);
-    expect(snackbar.showSuccess).toHaveBeenLastCalledWith(
+    expect(snackbar.showSuccessTranslated).toHaveBeenLastCalledWith(
       'pages.document_deletion_requests.messages.reject_success',
     );
   });
@@ -95,7 +105,7 @@ describe('DeletionRequestsFacade', () => {
 
     facade.resolve('r1', true, null);
 
-    expect(snackbar.showSuccess).not.toHaveBeenCalled();
+    expect(snackbar.showSuccessTranslated).not.toHaveBeenCalled();
     expect(facade.resolving()).toBe(false);
   });
 });

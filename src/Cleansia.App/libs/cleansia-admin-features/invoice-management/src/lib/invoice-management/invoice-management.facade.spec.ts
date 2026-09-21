@@ -20,7 +20,12 @@ describe('InvoiceManagementFacade', () => {
     regeneratePdf: jest.Mock;
   };
   let getOverviewMock: jest.Mock;
-  let snackbar: { showSuccess: jest.Mock; showError: jest.Mock };
+  let snackbar: {
+    showSuccess: jest.Mock;
+    showSuccessTranslated: jest.Mock;
+    showError: jest.Mock;
+    showErrorTranslated: jest.Mock;
+  };
 
   const CURRENCY_SLOT = 8;
 
@@ -43,7 +48,12 @@ describe('InvoiceManagementFacade', () => {
       regeneratePdf: jest.fn(),
     };
     getOverviewMock = jest.fn().mockReturnValue(of([]));
-    snackbar = { showSuccess: jest.fn(), showError: jest.fn() };
+    snackbar = {
+      showSuccess: jest.fn(),
+      showSuccessTranslated: jest.fn(),
+      showError: jest.fn(),
+      showErrorTranslated: jest.fn(),
+    };
 
     TestBed.configureTestingModule({
       providers: [
@@ -115,40 +125,36 @@ describe('InvoiceManagementFacade', () => {
 
     facade.retryPdf(invoice);
 
-    expect(snackbar.showSuccess).toHaveBeenCalledWith(
+    expect(snackbar.showSuccessTranslated).toHaveBeenCalledWith(
       'pages.invoice_management.messages.retry_pdf_success'
     );
     expect(invoiceClient.getPaged).toHaveBeenCalledTimes(1);
     expect(facade.retryingPdf()).toBe(false);
   });
 
-  it('maps a known backend error code to its translation key on retry failure', () => {
+  it('leaves the a known backend error code refusal to the interceptor toast on retry failure', () => {
     invoiceClient.regeneratePdf.mockReturnValue(
       throwError(() => ({ result: { detail: 'payroll.invoice.not_found' } }))
     );
 
     facade.retryPdf(invoice);
 
-    expect(snackbar.showError).toHaveBeenCalledWith(
-      'api.payroll.invoice.not_found'
-    );
+    expect(snackbar.showErrorTranslated).not.toHaveBeenCalled();
     expect(invoiceClient.getPaged).not.toHaveBeenCalled();
     expect(facade.retryingPdf()).toBe(false);
   });
 
-  it('falls back to result.title when detail is absent on retry failure', () => {
+  it('leaves a title-only refusal to the interceptor toast on retry failure', () => {
     invoiceClient.regeneratePdf.mockReturnValue(
       throwError(() => ({ result: { title: 'payroll.invoice.not_found' } }))
     );
 
     facade.retryPdf(invoice);
 
-    expect(snackbar.showError).toHaveBeenCalledWith(
-      'api.payroll.invoice.not_found'
-    );
+    expect(snackbar.showErrorTranslated).not.toHaveBeenCalled();
   });
 
-  it('parses the error code from a JSON response string on retry failure', () => {
+  it('leaves a JSON-string refusal to the interceptor toast on retry failure', () => {
     invoiceClient.regeneratePdf.mockReturnValue(
       throwError(() => ({
         response: JSON.stringify({ detail: 'company.not_found' }),
@@ -157,7 +163,7 @@ describe('InvoiceManagementFacade', () => {
 
     facade.retryPdf(invoice);
 
-    expect(snackbar.showError).toHaveBeenCalledWith('api.company.not_found');
+    expect(snackbar.showErrorTranslated).not.toHaveBeenCalled();
   });
 
   it('falls back to a generic error for unknown retry failures', () => {
@@ -167,9 +173,7 @@ describe('InvoiceManagementFacade', () => {
 
     facade.retryPdf(invoice);
 
-    expect(snackbar.showError).toHaveBeenCalledWith(
-      'api.common.error_occurred'
-    );
+    expect(snackbar.showErrorTranslated).not.toHaveBeenCalled();
   });
 
   it('passes the chosen currency to the list in its own slot, and clears it on reset', () => {

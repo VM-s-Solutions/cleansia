@@ -3,7 +3,7 @@ import { ChangeDetectionStrategy, Component, computed, inject, OnInit } from '@a
 import { ActivatedRoute, Router } from '@angular/router';
 import {
   CleansiaButtonComponent,
-  CleansiaDetailSkeletonComponent,
+  CleansiaLoaderComponent,
   CleansiaSectionComponent,
   CleansiaTableComponent,
 } from '@cleansia/components';
@@ -17,10 +17,10 @@ import { getOrderPaysTableDefinition } from './invoice-detail.models';
   selector: 'cleansia-partner-invoice-detail',
   standalone: true,
   imports: [
+    CleansiaLoaderComponent,
     CommonModule,
     TranslatePipe,
     CleansiaButtonComponent,
-    CleansiaDetailSkeletonComponent,
     CleansiaSectionComponent,
     CleansiaTableComponent,
   ],

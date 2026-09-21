@@ -17,15 +17,13 @@ import {
   CleansiaTitleComponent,
 } from '@cleansia/components';
 import { CleansiaPermissionDirective } from '@cleansia/directives';
-import { ConfirmationService } from 'primeng/api';
-import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DialogModule } from 'primeng/dialog';
 import { ToggleSwitchModule } from 'primeng/toggleswitch';
 import { SelectModule } from 'primeng/select';
 import { TabsModule } from 'primeng/tabs';
 import { InputTextModule } from 'primeng/inputtext';
 import { Policy } from '@cleansia/services';
-import { TranslatePipe, TranslateService } from '@ngx-translate/core';
+import { TranslatePipe } from '@ngx-translate/core';
 import { ServiceAreaManagementFacade } from './service-area-management.facade';
 
 interface CountryOption {
@@ -50,18 +48,15 @@ interface CountryOption {
     SelectModule,
     InputTextModule,
     DialogModule,
-    ConfirmDialogModule,
   ],
   templateUrl: './service-area-management.component.html',
   styleUrl: './service-area-management.component.scss',
-  providers: [ServiceAreaManagementFacade, ConfirmationService],
+  providers: [ServiceAreaManagementFacade],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ServiceAreaManagementComponent implements OnInit {
   protected readonly facade = inject(ServiceAreaManagementFacade);
   protected readonly Policy = Policy;
-  private readonly translate = inject(TranslateService);
-  private readonly confirmationService = inject(ConfirmationService);
 
   /** Tab index — 0 = Countries, 1 = Cities. */
   readonly activeTabIndex = signal(0);
@@ -195,24 +190,6 @@ export class ServiceAreaManagementComponent implements OnInit {
   }
 
   confirmDeleteCity(city: ServiceCityDto): void {
-    if (!city.id) return;
-    this.confirmationService.confirm({
-      message: this.translate.instant(
-        'pages.service_area_management.cities.delete_confirm',
-        { name: city.name }
-      ),
-      header: this.translate.instant(
-        'pages.service_area_management.cities.delete_header'
-      ),
-      icon: 'pi pi-exclamation-triangle',
-      accept: () => {
-        if (city.id) {
-          this.facade.deleteCity(
-            city.id,
-            this.selectedCountryId() ?? undefined
-          );
-        }
-      },
-    });
+    this.facade.deleteCity(city, this.selectedCountryId() ?? undefined);
   }
 }

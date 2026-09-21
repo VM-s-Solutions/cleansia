@@ -24,8 +24,6 @@ import {
 import { PermissionService, Policy } from '@cleansia/services';
 import { CleansiaPermissionDirective } from '@cleansia/directives';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
-import { ConfirmationService } from 'primeng/api';
-import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { AdminUserManagementFacade } from './admin-user-management.facade';
 import { getAdminUserTableDefinition } from './admin-user-management.models';
 
@@ -44,11 +42,10 @@ import { getAdminUserTableDefinition } from './admin-user-management.models';
     CleansiaFilterDrawerComponent,
     CleansiaFilterChipsComponent,
     ReactiveFormsModule,
-    ConfirmDialogModule,
     CleansiaPermissionDirective,
   ],
   templateUrl: './admin-user-management.component.html',
-  providers: [AdminUserManagementFacade, ConfirmationService],
+  providers: [AdminUserManagementFacade],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AdminUserManagementComponent implements OnInit {
@@ -56,7 +53,6 @@ export class AdminUserManagementComponent implements OnInit {
   protected readonly facade = inject(AdminUserManagementFacade);
   protected readonly Policy = Policy;
   private readonly translate = inject(TranslateService);
-  private readonly confirmationService = inject(ConfirmationService);
   private readonly permissions = inject(PermissionService);
 
   private readonly statusTemplate = viewChild<TemplateRef<AdminUserListItem>>('statusTemplate');
@@ -87,20 +83,6 @@ export class AdminUserManagementComponent implements OnInit {
   }
 
   confirmToggleStatus(user: AdminUserListItem): void {
-    const messageKey = user.isActive
-      ? 'pages.admin_user_management.deactivate_confirm'
-      : 'pages.admin_user_management.activate_confirm';
-    const headerKey = user.isActive
-      ? 'pages.admin_user_management.deactivate_user'
-      : 'pages.admin_user_management.activate_user';
-
-    this.confirmationService.confirm({
-      message: this.translate.instant(messageKey),
-      header: this.translate.instant(headerKey),
-      icon: 'pi pi-exclamation-triangle',
-      accept: () => {
-        this.facade.toggleUserStatus(user);
-      },
-    });
+    this.facade.toggleUserStatus(user);
   }
 }

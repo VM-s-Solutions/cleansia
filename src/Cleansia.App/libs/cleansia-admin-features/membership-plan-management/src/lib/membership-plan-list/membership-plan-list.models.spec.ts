@@ -6,7 +6,6 @@ import {
   UNPRICED_PLAN_CELL,
   formatPlanPrice,
   getMembershipPlanTableDefinition,
-  resolveMembershipPlanErrorKey,
   toBillingIntervalWireValue,
 } from './membership-plan-list.models';
 
@@ -70,18 +69,5 @@ describe('toBillingIntervalWireValue', () => {
     expect(toBillingIntervalWireValue(2)).toBe(BILLING_INTERVAL_WIRE.yearly);
     expect(toBillingIntervalWireValue(1)).toBe(BILLING_INTERVAL_WIRE.monthly);
     expect(toBillingIntervalWireValue(undefined)).toBe(BILLING_INTERVAL_WIRE.monthly);
-  });
-});
-
-describe('resolveMembershipPlanErrorKey', () => {
-  it('maps the per-currency price refusals', () => {
-    expect(
-      resolveMembershipPlanErrorKey({
-        result: { detail: 'membership.plan.stripe_price_already_used' },
-      })
-    ).toBe('api.membership.plan.stripe_price_already_used');
-    expect(
-      resolveMembershipPlanErrorKey({ result: { detail: 'currency.not_found' } })
-    ).toBe('api.currency.not_found');
   });
 });

@@ -5,14 +5,12 @@ import {
 } from '@cleansia/admin-services';
 import { UnsubscribeControlDirective } from '@cleansia/directives';
 import { SnackbarService } from '@cleansia/services';
-import { TranslateService } from '@ngx-translate/core';
 import { finalize, takeUntil, tap } from 'rxjs';
 
 @Injectable()
 export class AdminOrderPhotosFacade extends UnsubscribeControlDirective {
   private readonly adminClient = inject(AdminClient);
   private readonly snackbarService = inject(SnackbarService);
-  private readonly translate = inject(TranslateService);
 
   readonly photosData = signal<GetOrderPhotosResponse | null>(null);
   readonly loading = signal<boolean>(false);
@@ -32,9 +30,7 @@ export class AdminOrderPhotosFacade extends UnsubscribeControlDirective {
       .subscribe({
         error: (error) => {
           console.error('Error loading photos:', error);
-          this.snackbarService.showError(
-            this.translate.instant('pages.order_detail.messages.photos_error')
-          );
+          this.snackbarService.showErrorTranslated('pages.order_detail.messages.photos_error');
         },
       });
   }

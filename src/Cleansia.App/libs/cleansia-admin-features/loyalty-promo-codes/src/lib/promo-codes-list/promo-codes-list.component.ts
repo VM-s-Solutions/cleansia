@@ -27,8 +27,6 @@ import { PermissionService, Policy } from '@cleansia/services';
 import { CleansiaPermissionDirective } from '@cleansia/directives';
 import { formatDate } from '@cleansia/utils';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
-import { ConfirmationService } from 'primeng/api';
-import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { Subject, debounceTime, distinctUntilChanged, takeUntil } from 'rxjs';
 import {
   PromoCodeStatusFilter,
@@ -56,17 +54,15 @@ import {
     CleansiaTableComponent,
     CleansiaTextInputComponent,
     CleansiaTitleComponent,
-    ConfirmDialogModule,
     CleansiaPermissionDirective,
   ],
   templateUrl: './promo-codes-list.component.html',
-  providers: [PromoCodesListFacade, ConfirmationService],
+  providers: [PromoCodesListFacade],
 })
 export class PromoCodesListComponent implements AfterViewInit, OnDestroy {
   private readonly fb = inject(FormBuilder);
   private readonly translate = inject(TranslateService);
   private readonly permissions = inject(PermissionService);
-  private readonly confirmationService = inject(ConfirmationService);
   protected readonly facade = inject(PromoCodesListFacade);
   protected readonly Policy = Policy;
 
@@ -166,21 +162,6 @@ export class PromoCodesListComponent implements AfterViewInit, OnDestroy {
   }
 
   confirmDeactivate(promoCode: PromoCodeListItem): void {
-    this.confirmationService.confirm({
-      header: this.translate.instant(
-        'pages.promo_codes.detail.deactivate_confirm_title'
-      ),
-      message: this.translate.instant(
-        'pages.promo_codes.detail.deactivate_confirm_body'
-      ),
-      acceptLabel: this.translate.instant(
-        'pages.promo_codes.detail.deactivate_confirm_yes'
-      ),
-      rejectLabel: this.translate.instant(
-        'pages.promo_codes.detail.deactivate_confirm_cancel'
-      ),
-      icon: 'pi pi-exclamation-triangle',
-      accept: () => this.facade.deactivate(promoCode),
-    });
+    this.facade.deactivate(promoCode);
   }
 }

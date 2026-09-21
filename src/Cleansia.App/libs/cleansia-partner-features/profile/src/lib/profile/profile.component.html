@@ -1,5 +1,9 @@
-@if(facade.profileLoading()){
-<cleansia-form-skeleton />
+@if (facade.profileLoading()) {
+<div class="cleansia-profile">
+  <div class="cleansia-profile__form-card page-wrapper">
+    <cleansia-loader />
+  </div>
+</div>
 } @else {
 <div class="cleansia-profile">
   <form

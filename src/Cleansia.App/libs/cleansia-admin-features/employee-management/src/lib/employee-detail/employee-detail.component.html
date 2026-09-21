@@ -130,14 +130,14 @@
               'pages.employee_detail.weekly_order_limit_hint' | translate
             }}</span>
             <cleansia-button
-              [label]="'common.save' | translate"
+              [label]="'global.actions.save' | translate"
               icon="pi pi-check"
               [loading]="facade.savingWeeklyLimit()"
               [disabled]="weeklyLimitControl.invalid"
               (onClick)="saveWeeklyLimit()"
             />
             <cleansia-button
-              [label]="'common.cancel' | translate"
+              [label]="'global.actions.cancel' | translate"
               severity="secondary"
               [outlined]="true"
               (onClick)="facade.cancelEditingWeeklyLimit()"
@@ -224,12 +224,12 @@
         </div>
         <div class="section-edit-actions" style="display: flex; gap: 0.5rem; margin-top: 1rem;">
           <cleansia-button
-            [label]="'common.save' | translate"
+            [label]="'global.actions.save' | translate"
             [loading]="facade.savingEmployee()"
             (onClick)="onSaveSection()"
           />
           <cleansia-button
-            [label]="'common.cancel' | translate"
+            [label]="'global.actions.cancel' | translate"
             severity="secondary"
             [disabled]="facade.savingEmployee()"
             (onClick)="onCancelEditSection()"
@@ -239,7 +239,7 @@
         <div style="display: flex; justify-content: flex-end; margin-bottom: 0.5rem;">
           <cleansia-button
             *cleansiaPermission="Policy.CanAdminUpdateEmployee"
-            [label]="'common.edit' | translate"
+            [label]="'global.actions.edit' | translate"
             severity="secondary"
             icon="pi pi-pencil"
             (onClick)="onEditSection('personal')"
@@ -334,12 +334,12 @@
         </div>
         <div class="section-edit-actions" style="display: flex; gap: 0.5rem; margin-top: 1rem;">
           <cleansia-button
-            [label]="'common.save' | translate"
+            [label]="'global.actions.save' | translate"
             [loading]="facade.savingEmployee()"
             (onClick)="onSaveSection()"
           />
           <cleansia-button
-            [label]="'common.cancel' | translate"
+            [label]="'global.actions.cancel' | translate"
             severity="secondary"
             [disabled]="facade.savingEmployee()"
             (onClick)="onCancelEditSection()"
@@ -349,7 +349,7 @@
         <div style="display: flex; justify-content: flex-end; margin-bottom: 0.5rem;">
           <cleansia-button
             *cleansiaPermission="Policy.CanAdminUpdateEmployee"
-            [label]="'common.edit' | translate"
+            [label]="'global.actions.edit' | translate"
             severity="secondary"
             icon="pi pi-pencil"
             (onClick)="onEditSection('address')"
@@ -441,12 +441,12 @@
         </div>
         <div class="section-edit-actions" style="display: flex; gap: 0.5rem; margin-top: 1rem;">
           <cleansia-button
-            [label]="'common.save' | translate"
+            [label]="'global.actions.save' | translate"
             [loading]="facade.savingEmployee()"
             (onClick)="onSaveSection()"
           />
           <cleansia-button
-            [label]="'common.cancel' | translate"
+            [label]="'global.actions.cancel' | translate"
             severity="secondary"
             [disabled]="facade.savingEmployee()"
             (onClick)="onCancelEditSection()"
@@ -456,7 +456,7 @@
         <div style="display: flex; justify-content: flex-end; margin-bottom: 0.5rem;">
           <cleansia-button
             *cleansiaPermission="Policy.CanAdminUpdateEmployee"
-            [label]="'common.edit' | translate"
+            [label]="'global.actions.edit' | translate"
             severity="secondary"
             icon="pi pi-pencil"
             (onClick)="onEditSection('employment')"
@@ -532,12 +532,12 @@
         </div>
         <div class="section-edit-actions" style="display: flex; gap: 0.5rem; margin-top: 1rem;">
           <cleansia-button
-            [label]="'common.save' | translate"
+            [label]="'global.actions.save' | translate"
             [loading]="facade.savingEmployee()"
             (onClick)="onSaveSection()"
           />
           <cleansia-button
-            [label]="'common.cancel' | translate"
+            [label]="'global.actions.cancel' | translate"
             severity="secondary"
             [disabled]="facade.savingEmployee()"
             (onClick)="onCancelEditSection()"
@@ -547,7 +547,7 @@
         <div style="display: flex; justify-content: flex-end; margin-bottom: 0.5rem;">
           <cleansia-button
             *cleansiaPermission="Policy.CanAdminUpdateEmployee"
-            [label]="'common.edit' | translate"
+            [label]="'global.actions.edit' | translate"
             severity="secondary"
             icon="pi pi-pencil"
             (onClick)="onEditSection('emergency')"
@@ -830,6 +830,11 @@
         (rejectDocument)="onRejectDocument($event)"
       />
     </div>
+    } @else {
+    <div class="not-found-state">
+      <div class="not-found-state__icon"><i class="pi pi-search"></i></div>
+      <h3 class="not-found-state__title">{{ 'pages.employee_detail.not_found' | translate }}</h3>
+    </div>
     }
   </div>
 </div>
@@ -943,13 +948,13 @@
 
   <ng-template pTemplate="footer">
     <cleansia-button
-      [label]="'common.cancel' | translate"
+      [label]="'global.actions.cancel' | translate"
       severity="secondary"
       [outlined]="true"
       (onClick)="onCancelPayConfig()"
     />
     <cleansia-button
-      [label]="'common.save' | translate"
+      [label]="'global.actions.save' | translate"
       icon="pi pi-check"
       [loading]="facade.savingPayConfig()"
       [disabled]="facade.savingPayConfig()"
@@ -957,5 +962,3 @@
     />
   </ng-template>
 </p-dialog>
-
-<p-confirmDialog />

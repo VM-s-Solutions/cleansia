@@ -12,6 +12,7 @@ import { FormsModule } from '@angular/forms';
 import { TranslateModule } from '@ngx-translate/core';
 import { SelectModule } from 'primeng/select';
 import { TooltipModule } from 'primeng/tooltip';
+import { CleansiaLoaderComponent } from '../cleansia-loader';
 import { ICleansiaSelectOption } from '../cleansia-select';
 import {
   PaginationState,
@@ -40,7 +41,14 @@ let nextTableId = 0;
   selector: 'cleansia-table',
   standalone: true,
   templateUrl: './cleansia-table.component.html',
-  imports: [CommonModule, TranslateModule, TooltipModule, FormsModule, SelectModule],
+  imports: [
+    CommonModule,
+    TranslateModule,
+    TooltipModule,
+    FormsModule,
+    SelectModule,
+    CleansiaLoaderComponent,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CleansiaTableComponent<T = unknown> implements OnInit {

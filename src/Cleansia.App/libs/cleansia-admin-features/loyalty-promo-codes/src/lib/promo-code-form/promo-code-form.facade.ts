@@ -13,7 +13,6 @@ import {
 } from '@cleansia/admin-services';
 import { UnsubscribeControlDirective } from '@cleansia/directives';
 import { SnackbarService } from '@cleansia/services';
-import { TranslateService } from '@ngx-translate/core';
 import { catchError, finalize, of, takeUntil } from 'rxjs';
 
 export interface CurrencyOption {
@@ -54,7 +53,6 @@ export interface PromoCodeUpdateInput {
 export class PromoCodeFormFacade extends UnsubscribeControlDirective {
   private readonly adminClient = inject(AdminClient);
   private readonly snackbarService = inject(SnackbarService);
-  private readonly translate = inject(TranslateService);
   private readonly router = inject(Router);
 
   readonly promoCode = signal<PromoCodeDetailDto | null>(null);
@@ -141,9 +139,7 @@ export class PromoCodeFormFacade extends UnsubscribeControlDirective {
       )
       .subscribe((response: CreatePromoCodeResponse | null) => {
         if (response) {
-          this.snackbarService.showSuccess(
-            this.translate.instant('pages.promo_codes.form.success.created')
-          );
+          this.snackbarService.showSuccessTranslated('pages.promo_codes.form.success.created');
           if (response.promoCodeId) {
             this.router.navigate(['/loyalty/promos', response.promoCodeId]);
           } else {
@@ -178,9 +174,7 @@ export class PromoCodeFormFacade extends UnsubscribeControlDirective {
       )
       .subscribe((response: UpdatePromoCodeResponse | null) => {
         if (response) {
-          this.snackbarService.showSuccess(
-            this.translate.instant('pages.promo_codes.form.success.updated')
-          );
+          this.snackbarService.showSuccessTranslated('pages.promo_codes.form.success.updated');
           this.router.navigate(['/loyalty/promos', id]);
         }
       });
@@ -246,13 +240,9 @@ export class PromoCodeFormFacade extends UnsubscribeControlDirective {
         ? String((err as { response: unknown }).response ?? '')
         : '';
     if (detail.includes('promo_code.already_exists')) {
-      this.snackbarService.showError(
-        this.translate.instant('pages.promo_codes.form.error.already_exists')
-      );
+      this.snackbarService.showErrorTranslated('pages.promo_codes.form.error.already_exists');
     } else {
-      this.snackbarService.showError(
-        this.translate.instant('pages.promo_codes.form.error.generic')
-      );
+      this.snackbarService.showErrorTranslated('pages.promo_codes.form.error.generic');
     }
   }
 }

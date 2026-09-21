@@ -31,6 +31,7 @@ import {
   initializeTranslations,
   JsonTranslationLoader,
   MAPBOX_AUTOCOMPLETE_ENABLED,
+  providePrimeNgTranslation,
 } from '@cleansia/services';
 import { EffectsModule } from '@ngrx/effects';
 import { StoreModule } from '@ngrx/store';
@@ -58,6 +59,7 @@ export const appConfig: ApplicationConfig = {
     providePrimeNG({
       theme: { preset: CleansiaPreset, options: { darkModeSelector: false } },
     }),
+    providePrimeNgTranslation(),
     provideCharts(withDefaultRegisterables()),
     importProvidersFrom(
       TranslateModule.forRoot({

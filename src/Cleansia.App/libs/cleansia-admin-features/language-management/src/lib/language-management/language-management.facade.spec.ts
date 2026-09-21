@@ -1,7 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
 import { AdminClient, LanguageListItem } from '@cleansia/admin-services';
-import { SnackbarService } from '@cleansia/services';
+import { DialogService, SnackbarService } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
 import { EMPTY, of } from 'rxjs';
 import { LanguageManagementFacade } from './language-management.facade';
@@ -28,9 +28,22 @@ describe('LanguageManagementFacade', () => {
         },
         {
           provide: SnackbarService,
-          useValue: { showSuccess: jest.fn(), showError: jest.fn() },
+          useValue: {
+            showSuccess: jest.fn(),
+            showSuccessTranslated: jest.fn(),
+            showError: jest.fn(),
+            showErrorTranslated: jest.fn(),
+          },
         },
-        { provide: TranslateService, useValue: { instant: (k: string) => k, currentLang: 'cs', onLangChange: EMPTY } },
+        { provide: DialogService, useValue: { confirmTranslated: jest.fn(() => of(true)) } },
+        {
+          provide: TranslateService,
+          useValue: {
+            instant: (k: string) => k,
+            currentLang: 'cs',
+            onLangChange: EMPTY,
+          },
+        },
         { provide: Router, useValue: { navigate: jest.fn() } },
       ],
     });

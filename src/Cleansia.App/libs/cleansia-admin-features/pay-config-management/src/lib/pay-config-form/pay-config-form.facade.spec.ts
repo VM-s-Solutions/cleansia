@@ -16,7 +16,12 @@ describe('PayConfigFormFacade', () => {
   let detailsMock: jest.Mock;
   let createMock: jest.Mock;
   let updateMock: jest.Mock;
-  let snackbar: { showSuccess: jest.Mock; showError: jest.Mock };
+  let snackbar: {
+    showSuccess: jest.Mock;
+    showSuccessTranslated: jest.Mock;
+    showError: jest.Mock;
+    showErrorTranslated: jest.Mock;
+  };
   let navigate: jest.Mock;
 
   const formData: PayConfigFormData = {
@@ -36,7 +41,12 @@ describe('PayConfigFormFacade', () => {
     detailsMock = jest.fn();
     createMock = jest.fn();
     updateMock = jest.fn();
-    snackbar = { showSuccess: jest.fn(), showError: jest.fn() };
+    snackbar = {
+      showSuccess: jest.fn(),
+      showSuccessTranslated: jest.fn(),
+      showError: jest.fn(),
+      showErrorTranslated: jest.fn(),
+    };
     navigate = jest.fn();
 
     TestBed.configureTestingModule({
@@ -101,7 +111,7 @@ describe('PayConfigFormFacade', () => {
     expect(command.basePay).toBe(500);
     expect(command.currencyId).toBe('cur-1');
     expect(command.description).toBe('Standard rate');
-    expect(snackbar.showSuccess).toHaveBeenCalledWith(
+    expect(snackbar.showSuccessTranslated).toHaveBeenCalledWith(
       'pages.pay_config_form.messages.create_success'
     );
     expect(navigate).toHaveBeenCalledWith([
@@ -130,7 +140,7 @@ describe('PayConfigFormFacade', () => {
     expect(command).toBeInstanceOf(UpdatePayConfigCommand);
     expect(command.payConfigId).toBe('pc-1');
     expect(command.basePay).toBe(500);
-    expect(snackbar.showSuccess).toHaveBeenCalledWith(
+    expect(snackbar.showSuccessTranslated).toHaveBeenCalledWith(
       'pages.pay_config_form.messages.update_success'
     );
   });
@@ -142,7 +152,7 @@ describe('PayConfigFormFacade', () => {
 
     expect(facade.saving()).toBe(false);
     expect(navigate).not.toHaveBeenCalled();
-    expect(snackbar.showSuccess).not.toHaveBeenCalled();
+    expect(snackbar.showSuccessTranslated).not.toHaveBeenCalled();
   });
 
   it('clears saving and stays on the form when the update fails', () => {

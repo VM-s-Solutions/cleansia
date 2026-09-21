@@ -5,7 +5,7 @@ import {
   PackageListItem,
   PagedDataOfPackageListItem,
 } from '@cleansia/admin-services';
-import { SnackbarService } from '@cleansia/services';
+import { DialogService, SnackbarService } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
 import { EMPTY, of, throwError } from 'rxjs';
 import { PackageManagementFacade } from './package-management.facade';
@@ -17,7 +17,12 @@ describe('PackageManagementFacade', () => {
   let activateMock: jest.Mock;
   let deleteMock: jest.Mock;
   let getOverviewMock: jest.Mock;
-  let snackbar: { showSuccess: jest.Mock; showError: jest.Mock };
+  let snackbar: {
+    showSuccess: jest.Mock;
+    showSuccessTranslated: jest.Mock;
+    showError: jest.Mock;
+    showErrorTranslated: jest.Mock;
+  };
 
   const page = PagedDataOfPackageListItem.fromJS({
     data: [PackageListItem.fromJS({ id: 'pkg-1', name: 'Move-out bundle' })],
@@ -32,7 +37,12 @@ describe('PackageManagementFacade', () => {
     getOverviewMock = jest.fn().mockReturnValue(
       of([{ id: 'cur-eur', code: 'EUR', isDefault: true }, { id: 'cur-czk', code: 'CZK', isDefault: false }])
     );
-    snackbar = { showSuccess: jest.fn(), showError: jest.fn() };
+    snackbar = {
+      showSuccess: jest.fn(),
+      showSuccessTranslated: jest.fn(),
+      showError: jest.fn(),
+      showErrorTranslated: jest.fn(),
+    };
 
     TestBed.configureTestingModule({
       providers: [
@@ -52,7 +62,15 @@ describe('PackageManagementFacade', () => {
           },
         },
         { provide: SnackbarService, useValue: snackbar },
-        { provide: TranslateService, useValue: { instant: (k: string) => k, currentLang: 'cs', onLangChange: EMPTY } },
+        { provide: DialogService, useValue: { confirmTranslated: jest.fn(() => of(true)) } },
+        {
+          provide: TranslateService,
+          useValue: {
+            instant: (k: string) => k,
+            currentLang: 'cs',
+            onLangChange: EMPTY,
+          },
+        },
         { provide: Router, useValue: { navigate: jest.fn() } },
       ],
     });
@@ -109,7 +127,7 @@ describe('PackageManagementFacade', () => {
     facade.deactivatePackage(PackageListItem.fromJS({ id: 'pkg-1' }));
 
     expect(deactivateMock).toHaveBeenCalledWith('pkg-1');
-    expect(snackbar.showSuccess).toHaveBeenCalledWith(
+    expect(snackbar.showSuccessTranslated).toHaveBeenCalledWith(
       'pages.package_management.messages.deactivate_success'
     );
     expect(getPagedMock).toHaveBeenCalledTimes(1);
@@ -122,7 +140,7 @@ describe('PackageManagementFacade', () => {
     facade.activatePackage(PackageListItem.fromJS({ id: 'pkg-1' }));
 
     expect(activateMock).toHaveBeenCalledWith('pkg-1');
-    expect(snackbar.showSuccess).toHaveBeenCalledWith(
+    expect(snackbar.showSuccessTranslated).toHaveBeenCalledWith(
       'pages.package_management.messages.activate_success'
     );
     expect(getPagedMock).toHaveBeenCalledTimes(1);
@@ -136,36 +154,34 @@ describe('PackageManagementFacade', () => {
     expect(activateMock).not.toHaveBeenCalled();
   });
 
-  it('maps package.not_found to its translation key on deactivate failure', () => {
+  it('leaves the package.not_found refusal to the interceptor toast on deactivate failure', () => {
     deactivateMock.mockReturnValue(
       throwError(() => ({ result: { detail: 'package.not_found' } }))
     );
 
     facade.deactivatePackage(PackageListItem.fromJS({ id: 'pkg-1' }));
 
-    expect(snackbar.showError).toHaveBeenCalledWith('api.package.not_found');
+    expect(snackbar.showErrorTranslated).not.toHaveBeenCalled();
   });
 
-  it('maps package.in_use to its translation key on delete failure', () => {
+  it('leaves the package.in_use refusal to the interceptor toast on delete failure', () => {
     deleteMock.mockReturnValue(
       throwError(() => ({ result: { detail: 'package.in_use' } }))
     );
 
     facade.deletePackage(PackageListItem.fromJS({ id: 'pkg-1' }));
 
-    expect(snackbar.showError).toHaveBeenCalledWith('api.package.in_use');
+    expect(snackbar.showErrorTranslated).not.toHaveBeenCalled();
   });
 
-  it('falls back to the generic error for unknown codes', () => {
+  it('leaves an unknown refusal to the interceptor toast', () => {
     activateMock.mockReturnValue(
       throwError(() => ({ result: { detail: 'something.unknown' } }))
     );
 
     facade.activatePackage(PackageListItem.fromJS({ id: 'pkg-1' }));
 
-    expect(snackbar.showError).toHaveBeenCalledWith(
-      'api.common.error_occurred'
-    );
+    expect(snackbar.showErrorTranslated).not.toHaveBeenCalled();
   });
 
   describe('the price columns name their currency', () => {

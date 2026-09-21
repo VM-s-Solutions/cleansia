@@ -20,13 +20,6 @@
       "zipCode": "PSČ"
     }
   },
-  "common": {
-    "save": "Uložiť",
-    "cancel": "Zrušiť",
-    "edit": "Upraviť",
-    "delete": "Vymazať",
-    "confirm": "Potvrdiť"
-  },
   "page_titles": {
     "admin": {
       "default": "Administračný portál",
@@ -133,6 +126,7 @@
       "save": "Uložiť",
       "create": "Vytvoriť",
       "cancel": "Zrušiť",
+      "confirm": "Potvrdiť",
       "edit": "Upraviť",
       "view": "Zobraziť",
       "delete": "Odstrániť",
@@ -148,6 +142,9 @@
     },
     "dialog": {
       "confirm": "Potvrdiť",
+      "delete": "Vymazať",
+      "confirm_delete": "Naozaj chcete vymazať túto položku?",
+      "confirm_delete_item": "Naozaj chcete vymazať {{item}}?",
       "confirm_logout": "Naozaj sa chcete odhlásiť?"
     },
     "user": {
@@ -323,7 +320,6 @@
       "approve_dialog": {
         "title": "Schváliť zamestnanca",
         "subtitle": "Vyberte krajinu, v ktorej je tento upratovač oprávnený pracovať. Určuje predvolenú menu, jazyk a DPH.",
-        "cancel_button": "Zrušiť",
         "approve_button": "Schváliť zamestnanca"
       },
       "reject_dialog": {
@@ -334,7 +330,6 @@
         "reason_hint": "Maximálne 500 znakov",
         "reason_required": "Dôvod zamietnutia je povinný",
         "reason_too_long": "Dôvod zamietnutia je príliš dlhý (max. 500 znakov)",
-        "cancel_button": "Zrušiť",
         "reject_button": "Zamietnuť zamestnanca"
       },
       "messages": {
@@ -426,7 +421,6 @@
         "work_country_required": "Pracovná krajina je povinná",
         "notes_placeholder": "Voliteľné poznámky k schváleniu...",
         "notes_hint": "Maximálne 1000 znakov",
-        "cancel_button": "Zrušiť",
         "approve_button": "Schváliť zamestnanca"
       },
       "reject_employee_dialog": {
@@ -437,7 +431,6 @@
         "reason_hint": "Maximálne 500 znakov",
         "reason_required": "Dôvod zamietnutia je povinný",
         "reason_too_long": "Dôvod zamietnutia je príliš dlhý (max. 500 znakov)",
-        "cancel_button": "Zrušiť",
         "reject_button": "Zamietnuť zamestnanca"
       },
       "reject_document_dialog": {
@@ -448,7 +441,6 @@
         "reason_hint": "Maximálne 500 znakov",
         "reason_required": "Dôvod zamietnutia je povinný",
         "reason_too_long": "Dôvod zamietnutia je príliš dlhý (max. 500 znakov)",
-        "cancel_button": "Zrušiť",
         "reject_button": "Zamietnuť dokument"
       },
       "messages": {
@@ -554,7 +546,8 @@
       },
       "weekly_order_limit": "Týždenný limit zakázok",
       "weekly_order_limit_unlimited": "Neobmedzený",
-      "weekly_order_limit_hint": "Nechajte prázdne pre neobmedzený počet"
+      "weekly_order_limit_hint": "Nechajte prázdne pre neobmedzený počet",
+      "not_found": "Zamestnanec sa nenašiel"
     },
     "order_management": {
       "title": "Správa objednávok",
@@ -2134,7 +2127,6 @@
         "edit_title": "Upraviť promo kód",
         "submit_create": "Vytvoriť kód",
         "submit_update": "Uložiť zmeny",
-        "cancel": "Zrušiť",
         "field": {
           "code": "Kód",
           "code_help": "3–20 znakov, len A-Z 0-9",
@@ -2177,7 +2169,6 @@
         "deactivate_confirm_title": "Deaktivovať tento kód?",
         "deactivate_confirm_body": "Zákazníci už nebudú môcť tento kód uplatniť. Existujúce uplatnenia zostanú.",
         "deactivate_confirm_yes": "Deaktivovať",
-        "deactivate_confirm_cancel": "Ponechať aktívne",
         "column": {
           "user": "Používateľ",
           "order": "Objednávka",
@@ -2210,7 +2201,6 @@
       "form": {
         "title": "Upraviť úroveň",
         "submit": "Uložiť zmeny",
-        "cancel": "Zrušiť",
         "success": "Úroveň aktualizovaná",
         "field": {
           "threshold": "Limit doživotných bodov",
@@ -2239,7 +2229,6 @@
         "preview_results_title": "Náhľad dopadu",
         "result_row": "{{tier}}: {{currentCount}} → {{newCount}} ({{delta}})",
         "apply_button": "Použiť zmeny",
-        "cancel_button": "Zrušiť",
         "applying": "Prebieha ukladanie zmien...",
         "success": "Limity aktualizované",
         "error": {
@@ -3379,5 +3368,69 @@
     "manager": "Manažér",
     "support": "Podpora",
     "accountant": "Účtovník"
+  },
+  "primeng": {
+    "day_names": {
+      "sun": "Nedeľa",
+      "mon": "Pondelok",
+      "tue": "Utorok",
+      "wed": "Streda",
+      "thu": "Štvrtok",
+      "fri": "Piatok",
+      "sat": "Sobota"
+    },
+    "day_names_short": {
+      "sun": "Ne",
+      "mon": "Po",
+      "tue": "Ut",
+      "wed": "St",
+      "thu": "Št",
+      "fri": "Pi",
+      "sat": "So"
+    },
+    "day_names_min": {
+      "sun": "N",
+      "mon": "P",
+      "tue": "U",
+      "wed": "S",
+      "thu": "Š",
+      "fri": "P",
+      "sat": "S"
+    },
+    "month_names": {
+      "jan": "Január",
+      "feb": "Február",
+      "mar": "Marec",
+      "apr": "Apríl",
+      "may": "Máj",
+      "jun": "Jún",
+      "jul": "Júl",
+      "aug": "August",
+      "sep": "September",
+      "oct": "Október",
+      "nov": "November",
+      "dec": "December"
+    },
+    "month_names_short": {
+      "jan": "Jan",
+      "feb": "Feb",
+      "mar": "Mar",
+      "apr": "Apr",
+      "may": "Máj",
+      "jun": "Jún",
+      "jul": "Júl",
+      "aug": "Aug",
+      "sep": "Sep",
+      "oct": "Okt",
+      "nov": "Nov",
+      "dec": "Dec"
+    },
+    "today": "Dnes",
+    "clear": "Vymazať",
+    "apply": "Použiť",
+    "accept": "Áno",
+    "reject": "Nie",
+    "empty_message": "Nič sa nenašlo",
+    "empty_filter_message": "Nič sa nenašlo"
   }
 }

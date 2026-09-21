@@ -16,7 +16,12 @@ describe('ExtraFormFacade', () => {
   let createMock: jest.Mock;
   let updateMock: jest.Mock;
   let detailsMock: jest.Mock;
-  let snackbar: { showSuccess: jest.Mock; showError: jest.Mock };
+  let snackbar: {
+    showSuccess: jest.Mock;
+    showSuccessTranslated: jest.Mock;
+    showError: jest.Mock;
+    showErrorTranslated: jest.Mock;
+  };
   let navigate: jest.Mock;
   let getLanguagesMock: jest.Mock;
   let getCurrenciesMock: jest.Mock;
@@ -38,7 +43,12 @@ describe('ExtraFormFacade', () => {
     createMock = jest.fn().mockReturnValue(of({ extraId: 'ext-1' }));
     updateMock = jest.fn().mockReturnValue(of({ extraId: 'ext-1' }));
     detailsMock = jest.fn().mockReturnValue(of(null));
-    snackbar = { showSuccess: jest.fn(), showError: jest.fn() };
+    snackbar = {
+      showSuccess: jest.fn(),
+      showSuccessTranslated: jest.fn(),
+      showError: jest.fn(),
+      showErrorTranslated: jest.fn(),
+    };
     navigate = jest.fn();
     getLanguagesMock = jest.fn().mockReturnValue(of([]));
     getCurrenciesMock = jest.fn().mockReturnValue(of([]));
@@ -70,7 +80,7 @@ describe('ExtraFormFacade', () => {
   it('reports success and returns to the list once a create lands', () => {
     facade.createExtra(formData);
 
-    expect(snackbar.showSuccess).toHaveBeenCalledWith(
+    expect(snackbar.showSuccessTranslated).toHaveBeenCalledWith(
       'pages.extra_form.messages.create_success'
     );
     expect(navigate).toHaveBeenCalledWith(['extra-management']);
@@ -89,7 +99,7 @@ describe('ExtraFormFacade', () => {
   it('reports success and returns to the list once an update lands', () => {
     facade.updateExtra('ext-1', formData);
 
-    expect(snackbar.showSuccess).toHaveBeenCalledWith(
+    expect(snackbar.showSuccessTranslated).toHaveBeenCalledWith(
       'pages.extra_form.messages.update_success'
     );
     expect(navigate).toHaveBeenCalledWith(['extra-management']);

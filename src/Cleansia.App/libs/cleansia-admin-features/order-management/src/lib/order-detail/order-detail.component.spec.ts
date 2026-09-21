@@ -56,7 +56,16 @@ describe('OrderDetailComponent — incident file', () => {
         { provide: AdminClient, useValue: { adminOrderClient: { details, customer } } },
         { provide: AdminGdprClient, useValue: { incidentFile: jest.fn() } },
         { provide: CustomerAuditClient, useValue: { timeline: jest.fn() } },
-        { provide: SnackbarService, useValue: { showSuccess: jest.fn(), showError: jest.fn(), showApiError: jest.fn() } },
+        {
+          provide: SnackbarService,
+          useValue: {
+            showSuccess: jest.fn(),
+            showSuccessTranslated: jest.fn(),
+            showError: jest.fn(),
+            showErrorTranslated: jest.fn(),
+            showApiError: jest.fn(),
+          },
+        },
         {
           provide: PermissionService,
           useValue: { hasPolicy: (p: string) => grantedPolicies.has(p) },

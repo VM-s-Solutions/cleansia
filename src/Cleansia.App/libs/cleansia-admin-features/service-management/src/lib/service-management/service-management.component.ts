@@ -21,8 +21,6 @@ import {
   CleansiaTitleComponent,
 } from '@cleansia/components';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
-import { ConfirmationService } from 'primeng/api';
-import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { ServiceManagementFacade } from './service-management.facade';
 import { getServiceTableDefinition } from './service-management.models';
 
@@ -41,11 +39,10 @@ import { getServiceTableDefinition } from './service-management.models';
     CleansiaFilterDrawerComponent,
     CleansiaFilterChipsComponent,
     ReactiveFormsModule,
-    ConfirmDialogModule,
     CleansiaPermissionDirective,
   ],
   templateUrl: './service-management.component.html',
-  providers: [ServiceManagementFacade, ConfirmationService],
+  providers: [ServiceManagementFacade],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ServiceManagementComponent implements OnInit {
@@ -53,7 +50,6 @@ export class ServiceManagementComponent implements OnInit {
   protected readonly Policy = Policy;
   private readonly translate = inject(TranslateService);
   private readonly permissions = inject(PermissionService);
-  private readonly confirmationService = inject(ConfirmationService);
 
   protected readonly table = computed(() => {
     this.facade.lang();
@@ -76,24 +72,10 @@ export class ServiceManagementComponent implements OnInit {
   }
 
   confirmDeactivateService(row: ServiceListItem): void {
-    this.confirmationService.confirm({
-      message: this.translate.instant('pages.service_management.deactivate_confirm', { name: row.name }),
-      header: this.translate.instant('pages.service_management.deactivate_service'),
-      icon: 'pi pi-exclamation-triangle',
-      accept: () => {
-        this.facade.deactivateService(row);
-      },
-    });
+    this.facade.deactivateService(row);
   }
 
   confirmDeleteService(row: ServiceListItem): void {
-    this.confirmationService.confirm({
-      message: this.translate.instant('pages.service_management.delete_confirm'),
-      header: this.translate.instant('pages.service_management.delete_service'),
-      icon: 'pi pi-exclamation-triangle',
-      accept: () => {
-        this.facade.deleteService(row);
-      },
-    });
+    this.facade.deleteService(row);
   }
 }

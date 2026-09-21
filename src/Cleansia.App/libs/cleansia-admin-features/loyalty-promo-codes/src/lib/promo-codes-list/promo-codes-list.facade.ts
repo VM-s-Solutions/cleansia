@@ -5,9 +5,8 @@ import {
   PromoCodeListItem,
 } from '@cleansia/admin-services';
 import { UnsubscribeControlDirective } from '@cleansia/directives';
-import { SnackbarService } from '@cleansia/services';
-import { TranslateService } from '@ngx-translate/core';
-import { catchError, finalize, of, takeUntil } from 'rxjs';
+import { DialogService, SnackbarService } from '@cleansia/services';
+import { catchError, filter, finalize, of, takeUntil } from 'rxjs';
 
 export type PromoCodeStatusFilter = 'all' | 'active' | 'inactive' | 'expired';
 
@@ -19,8 +18,8 @@ export interface PromoCodeFilterParams {
 @Injectable()
 export class PromoCodesListFacade extends UnsubscribeControlDirective {
   private readonly adminClient = inject(AdminClient);
+  private readonly dialog = inject(DialogService);
   private readonly snackbarService = inject(SnackbarService);
-  private readonly translate = inject(TranslateService);
   private readonly router = inject(Router);
 
   readonly promoCodes = signal<PromoCodeListItem[]>([]);
@@ -80,12 +79,25 @@ export class PromoCodesListFacade extends UnsubscribeControlDirective {
   }
 
   deactivate(promoCode: PromoCodeListItem): void {
-    if (!promoCode.id) return;
+    const id = promoCode.id;
+    if (!id) return;
 
+    this.dialog
+      .confirmTranslated(
+        'pages.promo_codes.detail.deactivate_confirm_body',
+        'pages.promo_codes.detail.deactivate_confirm_title',
+        undefined,
+        { acceptLabelKey: 'pages.promo_codes.detail.deactivate_confirm_yes' }
+      )
+      .pipe(takeUntil(this.destroyed$), filter(Boolean))
+      .subscribe(() => this.deactivateConfirmed(id));
+  }
+
+  private deactivateConfirmed(id: string): void {
     this.loading.set(true);
 
     this.adminClient.adminPromoCodeClient
-      .deactivate(promoCode.id)
+      .deactivate(id)
       .pipe(
         takeUntil(this.destroyed$),
         catchError((error) => {
@@ -96,11 +108,7 @@ export class PromoCodesListFacade extends UnsubscribeControlDirective {
       )
       .subscribe((response) => {
         if (response) {
-          this.snackbarService.showSuccess(
-            this.translate.instant(
-              'pages.promo_codes.form.success.deactivated'
-            )
-          );
+          this.snackbarService.showSuccessTranslated('pages.promo_codes.form.success.deactivated');
           this.loadPromoCodes();
         }
       });

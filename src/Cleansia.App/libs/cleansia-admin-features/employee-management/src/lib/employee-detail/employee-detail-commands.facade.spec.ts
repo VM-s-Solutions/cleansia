@@ -6,7 +6,7 @@ import {
   BulkCreateEmployeePayConfigsCommand,
   RejectEmployeeRequest,
 } from '@cleansia/admin-services';
-import { SnackbarService } from '@cleansia/services';
+import { DialogService as ConfirmDialogService, SnackbarService } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
 import { DialogService } from 'primeng/dynamicdialog';
 import { of, throwError } from 'rxjs';
@@ -20,7 +20,12 @@ describe('EmployeeDetailFacade — approval and grade commands', () => {
   let detailsMock: jest.Mock;
   let bulkCreateMock: jest.Mock;
   let employeeSummaryMock: jest.Mock;
-  let snackbar: { showSuccess: jest.Mock; showError: jest.Mock };
+  let snackbar: {
+    showSuccess: jest.Mock;
+    showSuccessTranslated: jest.Mock;
+    showError: jest.Mock;
+    showErrorTranslated: jest.Mock;
+  };
 
   beforeEach(() => {
     TestBed.resetTestingModule();
@@ -29,7 +34,12 @@ describe('EmployeeDetailFacade — approval and grade commands', () => {
     detailsMock = jest.fn().mockReturnValue(of(null));
     bulkCreateMock = jest.fn().mockReturnValue(of({ createdCount: 3 }));
     employeeSummaryMock = jest.fn().mockReturnValue(of(null));
-    snackbar = { showSuccess: jest.fn(), showError: jest.fn() };
+    snackbar = {
+      showSuccess: jest.fn(),
+      showSuccessTranslated: jest.fn(),
+      showError: jest.fn(),
+      showErrorTranslated: jest.fn(),
+    };
 
     TestBed.configureTestingModule({
       providers: [
@@ -54,6 +64,7 @@ describe('EmployeeDetailFacade — approval and grade commands', () => {
         { provide: SnackbarService, useValue: snackbar },
         { provide: TranslateService, useValue: { instant: (k: string) => k } },
         { provide: DialogService, useValue: { open: jest.fn() } },
+        { provide: ConfirmDialogService, useValue: { confirmTranslated: jest.fn(() => of(true)) } },
         {
           provide: EmployeeDocumentsFacade,
           useValue: { loadEmployeeDocuments: jest.fn(), ngOnDestroy: jest.fn() },
@@ -80,7 +91,7 @@ describe('EmployeeDetailFacade — approval and grade commands', () => {
   it('re-reads the employee after an approve lands, and not when it fails', () => {
     facade.approveEmployee('country-1', 'documents verified');
     expect(detailsMock).toHaveBeenCalledTimes(1);
-    expect(snackbar.showSuccess).toHaveBeenCalledWith(
+    expect(snackbar.showSuccessTranslated).toHaveBeenCalledWith(
       'pages.employee_detail.messages.employee_approve_success'
     );
 
@@ -96,7 +107,7 @@ describe('EmployeeDetailFacade — approval and grade commands', () => {
     bulkCreateMock.mockReturnValue(throwError(() => new Error('boom')));
     facade.bulkApplyGrade('senior', 'cur-1', true);
     expect(facade.bulkApplyingGrade()).toBe(false);
-    expect(snackbar.showError).toHaveBeenCalled();
+    expect(snackbar.showErrorTranslated).toHaveBeenCalled();
   });
 
   describe('command bodies on the wire', () => {

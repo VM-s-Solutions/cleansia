@@ -8,7 +8,6 @@ import {
 } from '@cleansia/admin-services';
 import { UnsubscribeControlDirective } from '@cleansia/directives';
 import { SnackbarService } from '@cleansia/services';
-import { TranslateService } from '@ngx-translate/core';
 import { catchError, finalize, of, takeUntil } from 'rxjs';
 
 /**
@@ -29,7 +28,6 @@ export class DeletionRequestsFacade extends UnsubscribeControlDirective {
    */
   private readonly deletionRequestsClient = inject(DeletionRequestsClient);
   private readonly snackbarService = inject(SnackbarService);
-  private readonly translate = inject(TranslateService);
 
   readonly requests = signal<DocumentDeletionRequestDto[]>([]);
   readonly status = signal<DocumentDeletionRequestStatus | null>(
@@ -88,12 +86,10 @@ export class DeletionRequestsFacade extends UnsubscribeControlDirective {
       )
       .subscribe((response) => {
         if (response) {
-          this.snackbarService.showSuccess(
-            this.translate.instant(
-              approve
-                ? 'pages.document_deletion_requests.messages.approve_success'
-                : 'pages.document_deletion_requests.messages.reject_success',
-            ),
+          this.snackbarService.showSuccessTranslated(
+            approve
+              ? 'pages.document_deletion_requests.messages.approve_success'
+              : 'pages.document_deletion_requests.messages.reject_success'
           );
           this.load();
         }

@@ -393,27 +393,6 @@
   }
 }
 
-.empty-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 3rem 1rem;
-  text-align: center;
-  background: var(--cleansia-primary-25);
-  border-radius: 8px;
-
-  i {
-    font-size: 3rem;
-    color: var(--cleansia-text-secondary);
-  }
-
-  p {
-    color: var(--cleansia-text-secondary);
-    font-size: 1rem;
-  }
-}
-
 cleansia-partner-dashboard {
   display: block;
   background: var(--cleansia-primary-0);

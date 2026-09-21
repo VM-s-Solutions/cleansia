@@ -104,7 +104,6 @@ export class PackageFormComponent implements OnInit, OnDestroy {
 
   }
 
-
   readonly isEditMode = computed(() => this.mode() === 'edit');
   readonly pageTitle = computed(() =>
     this.isEditMode()

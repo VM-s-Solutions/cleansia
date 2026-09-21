@@ -297,8 +297,8 @@ export class UserLoyaltyDetailFacade extends UnsubscribeControlDirective {
       .pipe(
         takeUntil(this.destroyed$),
         catchError(() => {
-          this.snackbarService.showError(
-            this.translate.instant('pages.loyalty_user_detail.credit.error.generic')
+          this.snackbarService.showErrorTranslated(
+            'pages.loyalty_user_detail.credit.error.generic'
           );
           return of(null);
         }),
@@ -306,9 +306,7 @@ export class UserLoyaltyDetailFacade extends UnsubscribeControlDirective {
       )
       .subscribe((response) => {
         if (response) {
-          this.snackbarService.showSuccess(
-            this.translate.instant('pages.loyalty_user_detail.credit.success')
-          );
+          this.snackbarService.showSuccessTranslated('pages.loyalty_user_detail.credit.success');
           if (this.currentUserId) {
             this.loadCredit(this.currentUserId);
           }
@@ -346,20 +344,16 @@ export class UserLoyaltyDetailFacade extends UnsubscribeControlDirective {
       .pipe(
         takeUntil(this.destroyed$),
         catchError(() => {
-          this.snackbarService.showError(
-            this.translate.instant('pages.loyalty_user_detail.credit.expire_error')
-          );
+          this.snackbarService.showErrorTranslated('pages.loyalty_user_detail.credit.expire_error');
           return of(null);
         }),
         finalize(() => this.creditExpiring.set(false))
       )
       .subscribe((response) => {
         if (response) {
-          this.snackbarService.showSuccess(
-            this.translate.instant('pages.loyalty_user_detail.credit.expire_success', {
-              amount: response.amountExpired,
-              currency: response.currencyCode,
-            })
+          this.snackbarService.showSuccessTranslated(
+            'pages.loyalty_user_detail.credit.expire_success',
+            { amount: response.amountExpired, currency: response.currencyCode, }
           );
           if (this.currentUserId) {
             this.loadCredit(this.currentUserId);
@@ -398,10 +392,8 @@ export class UserLoyaltyDetailFacade extends UnsubscribeControlDirective {
       .pipe(
         takeUntil(this.destroyed$),
         catchError(() => {
-          this.snackbarService.showError(
-            this.translate.instant(
-              'pages.loyalty_user_detail.grant_dialog.error.generic'
-            )
+          this.snackbarService.showErrorTranslated(
+            'pages.loyalty_user_detail.grant_dialog.error.generic'
           );
           return of(null);
         }),
@@ -409,10 +401,8 @@ export class UserLoyaltyDetailFacade extends UnsubscribeControlDirective {
       )
       .subscribe((response) => {
         if (response) {
-          this.snackbarService.showSuccess(
-            this.translate.instant(
-              'pages.loyalty_user_detail.grant_dialog.success_grant'
-            )
+          this.snackbarService.showSuccessTranslated(
+            'pages.loyalty_user_detail.grant_dialog.success_grant'
           );
           this.refresh();
           onSuccess?.();
@@ -436,10 +426,8 @@ export class UserLoyaltyDetailFacade extends UnsubscribeControlDirective {
       .pipe(
         takeUntil(this.destroyed$),
         catchError(() => {
-          this.snackbarService.showError(
-            this.translate.instant(
-              'pages.loyalty_user_detail.grant_dialog.error.generic'
-            )
+          this.snackbarService.showErrorTranslated(
+            'pages.loyalty_user_detail.grant_dialog.error.generic'
           );
           return of(null);
         }),
@@ -447,10 +435,8 @@ export class UserLoyaltyDetailFacade extends UnsubscribeControlDirective {
       )
       .subscribe((response) => {
         if (response) {
-          this.snackbarService.showSuccess(
-            this.translate.instant(
-              'pages.loyalty_user_detail.grant_dialog.success_revoke'
-            )
+          this.snackbarService.showSuccessTranslated(
+            'pages.loyalty_user_detail.grant_dialog.success_revoke'
           );
           this.refresh();
           onSuccess?.();
@@ -480,9 +466,7 @@ export class UserLoyaltyDetailFacade extends UnsubscribeControlDirective {
       .subscribe((data: GdprExportDto | null) => {
         if (data) {
           this.downloadJson(data, subjectExportFileName(userId, new Date()));
-          this.snackbarService.showSuccess(
-            this.translate.instant('pages.customer_detail.export_success')
-          );
+          this.snackbarService.showSuccessTranslated('pages.customer_detail.export_success');
         }
       });
   }
@@ -517,9 +501,7 @@ export class UserLoyaltyDetailFacade extends UnsubscribeControlDirective {
             file.data,
             file.fileName ?? incidentFileName(userId, new Date())
           );
-          this.snackbarService.showSuccess(
-            this.translate.instant('pages.customer_detail.incident_file.success')
-          );
+          this.snackbarService.showSuccessTranslated('pages.customer_detail.incident_file.success');
         }
       });
   }

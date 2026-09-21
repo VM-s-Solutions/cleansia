@@ -28,7 +28,6 @@ import {
 import { CleansiaPermissionDirective } from '@cleansia/directives';
 import { CleansiaAdminRoute, PermissionService, Policy } from '@cleansia/services';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
-import { ConfirmationService } from 'primeng/api';
 import { Subject, debounceTime, distinctUntilChanged, takeUntil } from 'rxjs';
 import { MembershipPlanListFacade } from './membership-plan-list.facade';
 import { getMembershipPlanTableDefinition } from './membership-plan-list.models';
@@ -52,7 +51,7 @@ import { getMembershipPlanTableDefinition } from './membership-plan-list.models'
     CleansiaPermissionDirective,
   ],
   templateUrl: './membership-plan-list.component.html',
-  providers: [MembershipPlanListFacade, ConfirmationService],
+  providers: [MembershipPlanListFacade],
 })
 export class MembershipPlanListComponent implements AfterViewInit, OnDestroy {
   private readonly fb = inject(FormBuilder);
@@ -60,7 +59,6 @@ export class MembershipPlanListComponent implements AfterViewInit, OnDestroy {
   private readonly router = inject(Router);
   private readonly translate = inject(TranslateService);
   private readonly permissions = inject(PermissionService);
-  private readonly confirmationService = inject(ConfirmationService);
   protected readonly facade = inject(MembershipPlanListFacade);
   protected readonly Policy = Policy;
 
@@ -146,20 +144,6 @@ export class MembershipPlanListComponent implements AfterViewInit, OnDestroy {
   }
 
   private confirmDeactivate(row: MembershipPlanListItem): void {
-    this.confirmationService.confirm({
-      message: this.translate.instant(
-        'pages.membership_plans.deactivate_confirm.message',
-        { code: row.code }
-      ),
-      header: this.translate.instant(
-        'pages.membership_plans.deactivate_confirm.title'
-      ),
-      icon: 'pi pi-exclamation-triangle',
-      acceptLabel: this.translate.instant(
-        'pages.membership_plans.deactivate_confirm.yes'
-      ),
-      rejectLabel: this.translate.instant('global.actions.cancel'),
-      accept: () => this.facade.deactivatePlan(row),
-    });
+    this.facade.deactivatePlan(row);
   }
 }

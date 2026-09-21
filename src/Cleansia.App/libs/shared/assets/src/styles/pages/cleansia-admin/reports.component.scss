@@ -283,27 +283,6 @@
   }
 }
 
-.report-empty {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 4rem 2rem;
-  color: var(--cleansia-text-secondary);
-  text-align: center;
-
-  i {
-    font-size: 4rem;
-    margin-bottom: 1rem;
-    opacity: 0.5;
-  }
-
-  p {
-    font-size: 1.125rem;
-    margin: 0;
-  }
-}
-
 // PrimeNG TabView customization
 :host ::ng-deep {
   .p-tabview {

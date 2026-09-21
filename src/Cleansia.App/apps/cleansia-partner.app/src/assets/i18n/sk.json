@@ -290,7 +290,6 @@
         "optional": "voliteľné",
         "minutes": "min",
         "complete_button": "Dokončiť objednávku",
-        "cancel_button": "Zrušiť",
         "success": "Objednávka bola úspešne dokončená!",
         "error": "Nepodarilo sa dokončiť objednávku. Skúste to prosím znova.",
         "actual_time_required": "Skutočný čas dokončenia je povinný",
@@ -1237,5 +1236,69 @@
   },
   "recurring_booking": {
     "not_found": "Táto opakovaná objednávka už neexistuje."
+  },
+  "primeng": {
+    "day_names": {
+      "sun": "Nedeľa",
+      "mon": "Pondelok",
+      "tue": "Utorok",
+      "wed": "Streda",
+      "thu": "Štvrtok",
+      "fri": "Piatok",
+      "sat": "Sobota"
+    },
+    "day_names_short": {
+      "sun": "Ne",
+      "mon": "Po",
+      "tue": "Ut",
+      "wed": "St",
+      "thu": "Št",
+      "fri": "Pi",
+      "sat": "So"
+    },
+    "day_names_min": {
+      "sun": "N",
+      "mon": "P",
+      "tue": "U",
+      "wed": "S",
+      "thu": "Š",
+      "fri": "P",
+      "sat": "S"
+    },
+    "month_names": {
+      "jan": "Január",
+      "feb": "Február",
+      "mar": "Marec",
+      "apr": "Apríl",
+      "may": "Máj",
+      "jun": "Jún",
+      "jul": "Júl",
+      "aug": "August",
+      "sep": "September",
+      "oct": "Október",
+      "nov": "November",
+      "dec": "December"
+    },
+    "month_names_short": {
+      "jan": "Jan",
+      "feb": "Feb",
+      "mar": "Mar",
+      "apr": "Apr",
+      "may": "Máj",
+      "jun": "Jún",
+      "jul": "Júl",
+      "aug": "Aug",
+      "sep": "Sep",
+      "oct": "Okt",
+      "nov": "Nov",
+      "dec": "Dec"
+    },
+    "today": "Dnes",
+    "clear": "Vymazať",
+    "apply": "Použiť",
+    "accept": "Áno",
+    "reject": "Nie",
+    "empty_message": "Nič sa nenašlo",
+    "empty_filter_message": "Nič sa nenašlo"
   }
 }

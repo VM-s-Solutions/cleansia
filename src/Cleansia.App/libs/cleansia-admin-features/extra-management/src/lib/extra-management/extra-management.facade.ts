@@ -10,15 +10,11 @@ import {
 } from '@cleansia/admin-services';
 import { FilterChip, FilterDrawerState, ICleansiaSelectOption, PaginationState, SortEvent } from '@cleansia/components';
 import { UnsubscribeControlDirective } from '@cleansia/directives';
-import { CleansiaAdminRoute, SnackbarService } from '@cleansia/services';
+import { CleansiaAdminRoute, DialogService, SnackbarService } from '@cleansia/services';
 import { currentLanguage, formatMoney, localeFor } from '@cleansia/utils';
 import { TranslateService } from '@ngx-translate/core';
-import { Observable, catchError, finalize, map, of, switchMap, takeUntil, tap } from 'rxjs';
-import {
-  CatalogStatusFilter,
-  mapStatusFilterToIsActive,
-  resolveExtraErrorKey,
-} from './extra-management.models';
+import { catchError, filter, finalize, map, Observable, of, switchMap, takeUntil, tap } from 'rxjs';
+import { CatalogStatusFilter, mapStatusFilterToIsActive } from './extra-management.models';
 
 export interface ExtraFilterParams {
   searchTerm?: string;
@@ -28,6 +24,7 @@ export interface ExtraFilterParams {
 @Injectable()
 export class ExtraManagementFacade extends UnsubscribeControlDirective {
   private readonly adminClient = inject(AdminClient);
+  private readonly dialog = inject(DialogService);
   private readonly snackbarService = inject(SnackbarService);
   private readonly translate = inject(TranslateService);
   private readonly router = inject(Router);
@@ -184,25 +181,30 @@ export class ExtraManagementFacade extends UnsubscribeControlDirective {
   }
 
   deactivateExtra(extra: ExtraListItem): void {
-    if (!extra.id) return;
+    const id = extra.id;
+    if (!id) return;
 
+    this.dialog
+      .confirmTranslated(
+        'pages.extra_management.deactivate_confirm',
+        'pages.extra_management.deactivate_extra',
+        { name: extra.name }
+      )
+      .pipe(takeUntil(this.destroyed$), filter(Boolean))
+      .subscribe(() => this.deactivateExtraConfirmed(id));
+  }
+
+  private deactivateExtraConfirmed(id: string): void {
     this.adminClient.adminExtraClient
-      .deactivate(extra.id)
+      .deactivate(id)
       .pipe(
         takeUntil(this.destroyed$),
-        catchError((error: unknown) => {
-          this.snackbarService.showError(
-            this.translate.instant(resolveExtraErrorKey(error))
-          );
-          return of(null);
-        })
+        catchError(() => of(null))
       )
       .subscribe((response) => {
         if (response) {
-          this.snackbarService.showSuccess(
-            this.translate.instant(
-              'pages.extra_management.messages.deactivate_success'
-            )
+          this.snackbarService.showSuccessTranslated(
+            'pages.extra_management.messages.deactivate_success'
           );
           this.loadExtras();
         }
@@ -216,19 +218,12 @@ export class ExtraManagementFacade extends UnsubscribeControlDirective {
       .activate(extra.id)
       .pipe(
         takeUntil(this.destroyed$),
-        catchError((error: unknown) => {
-          this.snackbarService.showError(
-            this.translate.instant(resolveExtraErrorKey(error))
-          );
-          return of(null);
-        })
+        catchError(() => of(null))
       )
       .subscribe((response) => {
         if (response) {
-          this.snackbarService.showSuccess(
-            this.translate.instant(
-              'pages.extra_management.messages.activate_success'
-            )
+          this.snackbarService.showSuccessTranslated(
+            'pages.extra_management.messages.activate_success'
           );
           this.loadExtras();
         }
@@ -236,23 +231,31 @@ export class ExtraManagementFacade extends UnsubscribeControlDirective {
   }
 
   deleteExtra(extra: ExtraListItem): void {
-    if (!extra.id) return;
+    const id = extra.id;
+    if (!id) return;
 
+    this.dialog
+      .confirmTranslated(
+        'pages.extra_management.delete_confirm',
+        'pages.extra_management.delete_extra',
+        undefined,
+        { danger: true, acceptLabelKey: 'global.actions.delete' }
+      )
+      .pipe(takeUntil(this.destroyed$), filter(Boolean))
+      .subscribe(() => this.deleteExtraConfirmed(id));
+  }
+
+  private deleteExtraConfirmed(id: string): void {
     this.adminClient.adminExtraClient
-      .delete(extra.id)
+      .delete(id)
       .pipe(
         takeUntil(this.destroyed$),
-        catchError((error: unknown) => {
-          this.snackbarService.showError(
-            this.translate.instant(resolveExtraErrorKey(error))
-          );
-          return of(null);
-        })
+        catchError(() => of(null))
       )
       .subscribe((response) => {
         if (response) {
-          this.snackbarService.showSuccess(
-            this.translate.instant('pages.extra_management.messages.delete_success')
+          this.snackbarService.showSuccessTranslated(
+            'pages.extra_management.messages.delete_success'
           );
           this.loadExtras();
         }

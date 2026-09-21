@@ -10,12 +10,12 @@ import { LoginFacade } from './login.facade';
 describe('LoginFacade (partner)', () => {
   let facade: LoginFacade;
   let authService: { login: jest.Mock; setSession: jest.Mock };
-  let snackbar: { showError: jest.Mock; showApiError: jest.Mock };
+  let snackbar: { showError: jest.Mock; showErrorTranslated: jest.Mock; showApiError: jest.Mock };
   let router: { navigate: jest.Mock };
 
   beforeEach(() => {
     authService = { login: jest.fn(), setSession: jest.fn() };
-    snackbar = { showError: jest.fn(), showApiError: jest.fn() };
+    snackbar = { showError: jest.fn(), showErrorTranslated: jest.fn(), showApiError: jest.fn() };
     router = { navigate: jest.fn() };
 
     TestBed.configureTestingModule({
@@ -43,7 +43,7 @@ describe('LoginFacade (partner)', () => {
   it('shows a validation snackbar and does not call login when the form is invalid', () => {
     facade.login();
 
-    expect(snackbar.showError).toHaveBeenCalled();
+    expect(snackbar.showErrorTranslated).toHaveBeenCalled();
     expect(authService.login).not.toHaveBeenCalled();
   });
 

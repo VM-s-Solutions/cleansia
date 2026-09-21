@@ -39,13 +39,4 @@ export const REFUND_REASON_OPTIONS: ReadonlyArray<{
   },
 ];
 
-export const REFUND_ERROR_KEY_MAP: Readonly<Record<string, string>> = {
-  'refund.lines_required': 'api.refund.lines_required',
-  'refund.line_invalid': 'api.refund.line_invalid',
-  'refund.override_reason_required': 'api.refund.override_reason_required',
-  'refund.failed': 'api.refund.failed',
-  'refund.nothing_refundable': 'api.refund.nothing_refundable',
-  'refund.order_not_refundable': 'api.refund.order_not_refundable',
-};
-
 export const REFUND_FALLBACK_ERROR_KEY = 'api.refund.failed';

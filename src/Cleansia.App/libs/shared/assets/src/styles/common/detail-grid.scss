@@ -1,0 +1,44 @@
+// The label/value grid of a detail page. Labels are sentence case with no trailing colon;
+// a value that needs the room spans two columns.
+.detail-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1.25rem 2rem;
+
+  @media (max-width: 1199px) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  @media (max-width: 767px) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  &__item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    min-width: 0;
+
+    &--wide {
+      grid-column: span 2;
+
+      @media (max-width: 767px) {
+        grid-column: auto;
+      }
+    }
+  }
+
+  &__label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    line-height: 1.4;
+    color: var(--cleansia-text-muted);
+  }
+
+  &__value {
+    font-size: 0.9375rem;
+    line-height: 1.5;
+    color: var(--cleansia-text-primary);
+    overflow-wrap: anywhere;
+  }
+}

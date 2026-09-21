@@ -1,0 +1,33 @@
+// The one page header: title and its one-line subtitle in the left column, the page's
+// actions in the right, on one row. Secondary actions come before the primary so the
+// primary is the rightmost control.
+.cleansia-page-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem 1.5rem;
+
+  &__heading {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    flex: 1 1 24rem;
+    min-width: 0;
+  }
+
+  &__description {
+    margin: 0;
+    max-width: 60ch;
+    color: var(--cleansia-text-secondary);
+    font-size: 1rem;
+    line-height: 1.6;
+  }
+
+  &__actions {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+  }
+}

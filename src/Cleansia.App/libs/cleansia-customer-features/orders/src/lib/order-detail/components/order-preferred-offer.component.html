@@ -35,6 +35,7 @@
           {{ 'preferred_cleaner.choose_another_hint' | translate }}
         </p>
         <cleansia-button
+          [block]="true"
           [title]="'preferred_cleaner.choose_another' | translate"
           [icon]="'pi pi-user-plus'"
           [severity]="'secondary'"
@@ -48,6 +49,7 @@
           {{ 'preferred_cleaner.list_error' | translate }}
         </p>
         <cleansia-button
+          [block]="true"
           [title]="'global.actions.retry' | translate"
           [icon]="'pi pi-refresh'"
           [severity]="'secondary'"
@@ -58,6 +60,7 @@
           {{ 'preferred_cleaner.list_empty' | translate }}
         </p>
         <cleansia-button
+          [block]="true"
           [title]="'global.actions.close' | translate"
           [severity]="'secondary'"
           [outlined]="true"

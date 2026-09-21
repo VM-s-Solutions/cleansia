@@ -4,5 +4,7 @@
 @use './font.scss' as font;
 @use './z-index.scss' as zindex;
 @use './page-wrapper.scss' as page-wrapper;
+@use './page-header.scss' as page-header;
+@use './detail-grid.scss' as detail-grid;
 @use './status-badge.scss' as status-badge;
 @use './not-found-state.scss' as not-found-state;

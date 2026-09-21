@@ -24,6 +24,7 @@
   @if (facade.cancellationError(); as error) {
   <p role="alert" class="cl-trk__cancellation-error">{{ error | translate }}</p>
   <cleansia-button
+    [block]="true"
     [label]="'pages.track_order.cancellation.retry' | translate"
     [disabled]="facade.cancelling()"
     (onClick)="facade.openCancellation()"
@@ -216,6 +217,7 @@
         }
         @if (facade.canCancel()) {
         <cleansia-button
+          [block]="true"
           class="cl-trk__cancel"
           [label]="'pages.track_order.cancellation.action' | translate"
           severity="danger"

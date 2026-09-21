@@ -8,6 +8,3 @@
 @use 'flag-icons/sass/flag-icons' with (
   $flag-icons-path: '/assets/flags'
 );
-
-// Import page wrapper utilities
-@use '../../../libs/shared/assets/src/styles/common/page-wrapper';

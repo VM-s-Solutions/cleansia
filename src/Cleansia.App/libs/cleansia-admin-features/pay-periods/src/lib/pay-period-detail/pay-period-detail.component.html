@@ -1,5 +1,5 @@
-<div class="cleansia-pay-period-detail">
-  <div class="cleansia-pay-period-detail__container page-wrapper">
+<div class="cleansia-pay-period-detail cleansia-page">
+  <div class="cleansia-pay-period-detail__container page-wrapper page-wrapper--narrow">
     <!-- Header with Back Button -->
     <div class="cleansia-pay-period-detail__header">
       <cleansia-button
@@ -41,18 +41,14 @@
       <!-- Period Overview -->
       <cleansia-section [title]="'pay_periods.detail.overview' | translate">
         <div class="detail-grid">
-          <div class="detail-item">
-            <span class="label"
-              >{{ 'pay_periods.detail.period_label' | translate }}:</span
-            >
-            <span class="value">{{
+          <div class="detail-grid__item">
+            <span class="detail-grid__label">{{ 'pay_periods.detail.period_label' | translate }}</span>
+            <span class="detail-grid__value">{{
               facade.payPeriod()?.periodLabel || '-'
             }}</span>
           </div>
-          <div class="detail-item">
-            <span class="label"
-              >{{ 'pay_periods.detail.status' | translate }}:</span
-            >
+          <div class="detail-grid__item">
+            <span class="detail-grid__label">{{ 'pay_periods.detail.status' | translate }}</span>
             <span [class]="getStatusClass(facade.payPeriod()?.status)">
               {{
                 'pay_periods.status.' +
@@ -61,27 +57,21 @@
               }}
             </span>
           </div>
-          <div class="detail-item">
-            <span class="label"
-              >{{ 'pay_periods.detail.start_date' | translate }}:</span
-            >
-            <span class="value">{{
+          <div class="detail-grid__item">
+            <span class="detail-grid__label">{{ 'pay_periods.detail.start_date' | translate }}</span>
+            <span class="detail-grid__value">{{
               formatDate(facade.payPeriod()?.startDate)
             }}</span>
           </div>
-          <div class="detail-item">
-            <span class="label"
-              >{{ 'pay_periods.detail.end_date' | translate }}:</span
-            >
-            <span class="value">{{
+          <div class="detail-grid__item">
+            <span class="detail-grid__label">{{ 'pay_periods.detail.end_date' | translate }}</span>
+            <span class="detail-grid__value">{{
               formatDate(facade.payPeriod()?.endDate)
             }}</span>
           </div>
-          <div class="detail-item">
-            <span class="label"
-              >{{ 'pay_periods.detail.duration' | translate }}:</span
-            >
-            <span class="value"
+          <div class="detail-grid__item">
+            <span class="detail-grid__label">{{ 'pay_periods.detail.duration' | translate }}</span>
+            <span class="detail-grid__value"
               >{{ facade.payPeriod()?.durationDays || '0' }}
               {{ 'pay_periods.detail.days' | translate }}</span
             >
@@ -94,26 +84,20 @@
       {
       <cleansia-section [title]="'pay_periods.detail.closure_info' | translate">
         <div class="detail-grid">
-          <div class="detail-item">
-            <span class="label"
-              >{{ 'pay_periods.detail.closed_at' | translate }}:</span
-            >
-            <span class="value">{{
+          <div class="detail-grid__item">
+            <span class="detail-grid__label">{{ 'pay_periods.detail.closed_at' | translate }}</span>
+            <span class="detail-grid__value">{{
               formatDateTime(facade.payPeriod()?.closedAt)
             }}</span>
           </div>
-          <div class="detail-item">
-            <span class="label"
-              >{{ 'pay_periods.detail.closed_by' | translate }}:</span
-            >
-            <span class="value">{{ facade.payPeriod()?.closedBy || '-' }}</span>
+          <div class="detail-grid__item">
+            <span class="detail-grid__label">{{ 'pay_periods.detail.closed_by' | translate }}</span>
+            <span class="detail-grid__value">{{ facade.payPeriod()?.closedBy || '-' }}</span>
           </div>
           @if (facade.payPeriod()?.notes) {
-          <div class="detail-item full-width">
-            <span class="label"
-              >{{ 'pay_periods.detail.notes' | translate }}:</span
-            >
-            <span class="value">{{ facade.payPeriod()?.notes }}</span>
+          <div class="detail-grid__item detail-grid__item--wide">
+            <span class="detail-grid__label">{{ 'pay_periods.detail.notes' | translate }}</span>
+            <span class="detail-grid__value">{{ facade.payPeriod()?.notes }}</span>
           </div>
           }
         </div>

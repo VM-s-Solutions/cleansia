@@ -61,17 +61,31 @@ describe('CleansiaButtonComponent (a11y)', () => {
 });
 
 /**
- * A labelled action in a fixed-width slot shrinks to 5rem on a phone and shows an initial and an
- * ellipsis. `auto-width` is the content-sized slot; it needs both halves — the class on the host and
- * the stylesheet lifting the base min-width — or the button is still a full-row slab.
+ * A button is the width of its label unless the page asks for a slot or a full row. The fixed
+ * slots shrink to 5rem on a phone and show an initial and an ellipsis; a full-row default made
+ * every action outside a form footer a bar.
  */
 describe('CleansiaButtonComponent (content-sized action)', () => {
-  it('puts the auto-width class on the host', async () => {
+  let fixture: ComponentFixture<CleansiaButtonComponent>;
+
+  beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [CleansiaButtonComponent, TranslateModule.forRoot()],
     }).compileComponents();
-    const fixture = TestBed.createComponent(CleansiaButtonComponent);
+    fixture = TestBed.createComponent(CleansiaButtonComponent);
     fixture.componentRef.setInput('label', 'Export my data');
+  });
+
+  it('emits no width class and no block host class by default', () => {
+    fixture.detectChanges();
+
+    const classes = fixture.componentInstance.cssClasses().split(' ');
+    expect(classes.some((c) => /-width$/.test(c))).toBe(false);
+    expect(fixture.componentInstance.isBlock()).toBe(false);
+    expect(fixture.nativeElement.classList.contains('cleansia-button--block')).toBe(false);
+  });
+
+  it('puts the auto-width class on the button for that size', () => {
     fixture.componentRef.setInput('size', 'auto-width');
     fixture.detectChanges();
 
@@ -80,13 +94,26 @@ describe('CleansiaButtonComponent (content-sized action)', () => {
     expect(classes.some((c) => /-width$/.test(c) && c !== 'auto-width')).toBe(false);
   });
 
-  it('lifts the full-row minimum in the stylesheet for that size', () => {
+  it('marks the host block when asked, or when the legacy full-width slot is passed', () => {
+    fixture.componentRef.setInput('block', true);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.classList.contains('cleansia-button--block')).toBe(true);
+
+    fixture.componentRef.setInput('block', false);
+    fixture.componentRef.setInput('size', 'full-width');
+    fixture.detectChanges();
+    expect(fixture.nativeElement.classList.contains('cleansia-button--block')).toBe(true);
+  });
+
+  it('declares no full-row minimum in the stylesheet', () => {
     const scss = readFileSync(
       join(STYLES_DIR, 'components/cleansia-button.component.scss'),
       'utf-8'
     );
 
-    expect(scss).toMatch(/\.cleansia-button\.auto-width\s*\{[^}]*min-width:\s*0;/);
+    expect(scss).not.toMatch(/min-width:\s*100%/);
+    expect(scss).toMatch(/cleansia-button\s*\{[^}]*display:\s*inline-block;/);
+    expect(scss).toMatch(/cleansia-button--block\s*\{[^}]*width:\s*100%;/);
   });
 
   /**

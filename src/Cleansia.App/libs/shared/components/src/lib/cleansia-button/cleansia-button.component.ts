@@ -70,6 +70,7 @@ export type ButtonAppearance = 'default' | 'brand' | 'brand-outline';
   imports: [CommonModule, ButtonModule, TranslateModule, TooltipModule, RouterModule],
   templateUrl: './cleansia-button.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: { '[class.cleansia-button--block]': 'isBlock()' },
 })
 export class CleansiaButtonComponent {
   buttonType = input<'button' | 'submit' | 'reset'>('button');
@@ -77,7 +78,13 @@ export class CleansiaButtonComponent {
   severity = input<ButtonSeverity>('primary');
   title = input<string>('');
   label = input<string>(''); // Alias for title to match PrimeNG API
-  size = input<InputSize>('full-width');
+  /** A fixed slot width. Unset, the button is the width of its label. */
+  size = input<InputSize | undefined>(undefined);
+  /**
+   * Fills the row: the auth screens' submit and a phone footer's action. Everything else is
+   * content-sized, which is what a page's action row and a form's footer want.
+   */
+  block = input<boolean>(false);
   buttonSize = input<ButtonSize>('medium'); // Visual size (small, medium, large)
   icon = input<string | undefined>(undefined);
   iconPosition = input<'left' | 'right'>('left');
@@ -108,6 +115,8 @@ export class CleansiaButtonComponent {
 
   isLink = computed(() => this.routerLink() !== undefined || this.href() !== undefined);
 
+  isBlock = computed(() => this.block() || this.size() === 'full-width');
+
   // The rule is right in general — an output named like a DOM event reads as
   // one — but this name IS the API: it mirrors PrimeNG's own `onClick` so a
   // <cleansia-button> is a drop-in for a <p-button>, and 234 templates across
@@ -137,7 +146,7 @@ export class CleansiaButtonComponent {
   cssClasses = computed(() => {
     const appearance = this.appearance();
     return [
-      this.size(),
+      this.size() ?? '',
       'cleansia-button',
       `cleansia-button--${this.buttonSize()}`,
       this.isIconOnly() ? 'cleansia-button--icon-only' : '',

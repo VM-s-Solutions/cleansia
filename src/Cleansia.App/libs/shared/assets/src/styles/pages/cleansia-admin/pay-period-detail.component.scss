@@ -1,18 +1,4 @@
 .cleansia-pay-period-detail {
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  padding: 1rem;
-
-  &__container {
-    flex: 1;
-    padding: 2rem;
-    overflow-y: auto;
-    max-width: 1200px;
-    margin: 0 auto;
-    width: 100%;
-  }
-
   &__header {
     display: flex;
     gap: 2rem;
@@ -81,36 +67,6 @@
     padding-top: 1rem;
     margin-top: 1rem;
     border-top: 1px solid var(--cleansia-primary-200);
-  }
-}
-
-.detail-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 1.5rem;
-
-  .detail-item {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-
-    &.full-width {
-      grid-column: 1 / -1;
-    }
-
-    .label {
-      font-size: 0.875rem;
-      color: var(--cleansia-text-secondary);
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-    }
-
-    .value {
-      font-size: 1rem;
-      color: var(--cleansia-text-primary);
-      font-weight: 400;
-    }
   }
 }
 

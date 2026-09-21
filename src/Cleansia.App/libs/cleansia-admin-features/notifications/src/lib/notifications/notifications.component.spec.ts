@@ -40,7 +40,7 @@ describe('NotificationsComponent', () => {
   const text = () => element().textContent ?? '';
   const rows = () => Array.from(element().querySelectorAll('.cleansia-notifications__row')) as HTMLElement[];
   const markAllButton = () =>
-    element().querySelector('.cleansia-notifications__header cleansia-button button') as HTMLButtonElement;
+    element().querySelector('.cleansia-page-header__actions cleansia-button button') as HTMLButtonElement;
 
   async function render(): Promise<void> {
     await TestBed.configureTestingModule({

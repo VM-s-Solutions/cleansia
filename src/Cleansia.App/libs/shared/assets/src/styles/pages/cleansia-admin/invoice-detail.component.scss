@@ -1,12 +1,4 @@
 .cleansia-invoice-detail {
-  min-height: 100vh;
-  padding: 1rem;
-
-  &__container {
-    max-width: 1400px;
-    margin: 0 auto;
-  }
-
   &__header {
     display: flex;
     align-items: center;
@@ -135,7 +127,7 @@
     gap: 0.25rem;
     padding: 1rem;
     background: var(--surface-card);
-    border-radius: var(--border-radius);
+    border-radius: var(--cleansia-radius-sm);
     border: 1px solid var(--surface-border);
 
     .label {
@@ -177,7 +169,7 @@
 // Admin notes
 .admin-notes {
   background: var(--surface-hover);
-  border-radius: var(--border-radius);
+  border-radius: var(--cleansia-radius-sm);
   border-left: 4px solid var(--yellow-500);
   color: var(--text-color);
   line-height: 1.6;

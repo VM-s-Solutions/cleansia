@@ -2774,6 +2774,7 @@
       "export_error": "The subject export failed",
       "incident_file": {
         "button": "Incident file (PDF)",
+        "submit": "Build the file",
         "order_scope": "Order (optional)",
         "order_scope_placeholder": "Whole account",
         "order_scope_hint": "Leave empty for the whole account, or pick one of this customer's orders to scope the file to it.",

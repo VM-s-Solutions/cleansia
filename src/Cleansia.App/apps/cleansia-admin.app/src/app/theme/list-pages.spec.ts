@@ -5,7 +5,8 @@ import { dirname, join, relative } from 'path';
  * The admin list pages share one shape: the page header with an h1 title and the filter drawer
  * before the create action, a table whose numeric, money and date columns are right-aligned, and
  * a page stylesheet that carries only what is page-specific. Each rule pins a drift that used to
- * live on one page.
+ * live on one page. The column rule reaches the section tables of the detail pages too: they are
+ * the same table, and a figure or a stamp reads the same way on both.
  */
 
 function findSolutionDir(): string {
@@ -140,9 +141,10 @@ function columnLiterals(file: string): ColumnLiteral[] {
 const listTemplate = (path: string) => readFileSync(join(FEATURES_DIR, path), 'utf8');
 
 describe('admin list pages', () => {
-  it('right-align every numeric, money and date column', () => {
+  it('right-align every numeric, money and date column, on a list and in a detail section table', () => {
+    // The audit timeline leads each row with its stamp, which stays left-aligned as the row's anchor.
     const files = walk(FEATURES_DIR).filter(
-      (file) => /\.(models|component)\.ts$/.test(file) && !file.endsWith('.spec.ts') && !/detail|timeline/.test(file)
+      (file) => /\.(models|component)\.ts$/.test(file) && !file.endsWith('.spec.ts') && !/timeline/.test(file)
     );
     const offenders = files
       .flatMap(columnLiterals)

@@ -566,6 +566,30 @@ describe('UserLoyaltyDetailFacade — incident file', () => {
     facade.exportIncidentFile('order-7');
     expect(gdprClient.incidentFile).not.toHaveBeenCalled();
   });
+
+  it('opens the scope panel on the toggle and closes it once the file is built', () => {
+    expect(facade.incidentPanelOpen()).toBe(false);
+
+    facade.toggleIncidentPanel();
+    expect(facade.incidentPanelOpen()).toBe(true);
+    facade.toggleIncidentPanel();
+    expect(facade.incidentPanelOpen()).toBe(false);
+
+    facade.toggleIncidentPanel();
+    facade.loadCredit('user-1');
+    facade.exportIncidentFile('order-7');
+    expect(facade.incidentPanelOpen()).toBe(false);
+  });
+
+  it('leaves the scope panel open when the build is refused', () => {
+    gdprClient.incidentFile.mockReturnValue(throwError(() => new Error('boom')));
+    facade.toggleIncidentPanel();
+    facade.loadCredit('user-1');
+
+    facade.exportIncidentFile('order-7');
+
+    expect(facade.incidentPanelOpen()).toBe(true);
+  });
 });
 
 describe('UserLoyaltyDetailFacade — incident order picker', () => {

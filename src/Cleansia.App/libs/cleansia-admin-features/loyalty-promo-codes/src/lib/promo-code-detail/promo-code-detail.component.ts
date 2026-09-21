@@ -126,6 +126,7 @@ export class PromoCodeDetailComponent
         field: 'appliedDiscount',
         header: t.instant('pages.promo_codes.detail.column.applied'),
         getValue: (row) => `${row.appliedDiscount}`,
+        numeric: true,
         width: '20%',
       },
       {
@@ -133,6 +134,7 @@ export class PromoCodeDetailComponent
         field: 'redeemedOn',
         header: t.instant('pages.promo_codes.detail.column.redeemed_on'),
         getValue: (row) => this.formatDate(row.redeemedOn),
+        numeric: true,
         width: '25%',
       },
     ];

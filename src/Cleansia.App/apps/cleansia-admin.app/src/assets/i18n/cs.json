@@ -2774,6 +2774,7 @@
       "export_error": "Export dat subjektu se nezdařil",
       "incident_file": {
         "button": "Spis incidentu (PDF)",
+        "submit": "Sestavit spis",
         "order_scope": "Objednávka (volitelné)",
         "order_scope_placeholder": "Celý účet",
         "order_scope_hint": "Nechte prázdné pro celý účet, nebo vyberte jednu objednávku tohoto zákazníka a spis se omezí na ni.",

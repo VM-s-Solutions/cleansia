@@ -97,6 +97,7 @@ export class UserLoyaltyDetailFacade extends UnsubscribeControlDirective {
   readonly submitting = signal<boolean>(false);
   readonly exporting = signal<boolean>(false);
   readonly incidentFileExporting = signal<boolean>(false);
+  readonly incidentPanelOpen = signal<boolean>(false);
 
   /**
    * The account's bookings, offered as the incident file's optional scope. Every status counts —
@@ -472,6 +473,10 @@ export class UserLoyaltyDetailFacade extends UnsubscribeControlDirective {
       });
   }
 
+  toggleIncidentPanel(): void {
+    this.incidentPanelOpen.update((open) => !open);
+  }
+
   /**
    * The incident file: the server builds the PDF from the database and records the build as an
    * admin audit row. No scope asks for the whole account; a picked order id narrows it to that
@@ -503,6 +508,7 @@ export class UserLoyaltyDetailFacade extends UnsubscribeControlDirective {
             file.fileName ?? incidentFileName(userId, new Date())
           );
           this.snackbarService.showSuccessTranslated('pages.customer_detail.incident_file.success');
+          this.incidentPanelOpen.set(false);
         }
       });
   }

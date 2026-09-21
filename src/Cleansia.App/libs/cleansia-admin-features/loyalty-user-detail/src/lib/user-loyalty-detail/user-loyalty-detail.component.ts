@@ -104,7 +104,7 @@ export class UserLoyaltyDetailComponent
   readonly expireCreditAccount = signal<GetUserCreditCurrencyAccount | null>(null);
 
   activityColumns!: TableColumn<GetUserLoyaltyActivityActivityItem>[];
-  creditColumns!: TableColumn<GetUserCreditLedgerEntry>[];
+  private readonly creditColumnsByCurrency = new Map<string, TableColumn<GetUserCreditLedgerEntry>[]>();
   referralsAsReferrerColumns!: TableColumn<AdminReferralListItem>[];
   referralsAsReferredColumns!: TableColumn<AdminReferralListItem>[];
 
@@ -169,13 +169,12 @@ export class UserLoyaltyDetailComponent
   ngAfterViewInit(): void {
     this.rebuildActivityColumns();
     this.rebuildReferralColumns();
-    this.rebuildCreditColumns();
     this.translate.onLangChange
       .pipe(takeUntil(this.destroy$))
       .subscribe(() => {
         this.rebuildActivityColumns();
         this.rebuildReferralColumns();
-        this.rebuildCreditColumns();
+        this.creditColumnsByCurrency.clear();
       });
   }
 
@@ -226,10 +225,22 @@ export class UserLoyaltyDetailComponent
   /**
    * The ledger, as a statement. Amount FIRST and signed, because the question an admin brings to this
    * table is "how much, and which way" — a reason column read before the number tells them nothing.
+   * A ledger row carries no currency of its own; the account it belongs to does, so the columns are
+   * built once per currency and kept until the language changes.
    */
-  private rebuildCreditColumns(): void {
+  creditColumnsFor(account: GetUserCreditCurrencyAccount): TableColumn<GetUserCreditLedgerEntry>[] {
+    const currencyCode = account.currencyCode ?? '';
+    let columns = this.creditColumnsByCurrency.get(currencyCode);
+    if (!columns) {
+      columns = this.buildCreditColumns(account.currencyCode);
+      this.creditColumnsByCurrency.set(currencyCode, columns);
+    }
+    return columns;
+  }
+
+  private buildCreditColumns(currencyCode: string | undefined): TableColumn<GetUserCreditLedgerEntry>[] {
     const t = this.translate;
-    this.creditColumns = [
+    return [
       {
         id: 'createdOn',
         field: 'createdOn',
@@ -242,7 +253,7 @@ export class UserLoyaltyDetailComponent
         id: 'amount',
         field: 'amount',
         header: t.instant('pages.loyalty_user_detail.credit.column.amount'),
-        getValue: (row) => this.facade.formatLedgerAmount(row.amount, undefined),
+        getValue: (row) => this.facade.formatLedgerAmount(row.amount, currencyCode),
         numeric: true,
         width: '16%',
       },
@@ -507,6 +518,10 @@ export class UserLoyaltyDetailComponent
 
   exportSubjectData(): void {
     this.facade.exportSubjectData();
+  }
+
+  toggleIncidentPanel(): void {
+    this.facade.toggleIncidentPanel();
   }
 
   exportIncidentFile(): void {

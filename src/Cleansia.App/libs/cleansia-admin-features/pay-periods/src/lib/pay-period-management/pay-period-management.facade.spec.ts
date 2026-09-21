@@ -6,7 +6,7 @@ import {
 } from '@cleansia/admin-services';
 import { SnackbarService } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
-import { of, throwError } from 'rxjs';
+import { EMPTY, of, throwError } from 'rxjs';
 import { PayPeriodManagementFacade } from './pay-period-management.facade';
 
 describe('PayPeriodManagementFacade', () => {
@@ -31,7 +31,7 @@ describe('PayPeriodManagementFacade', () => {
           },
         },
         { provide: SnackbarService, useValue: snackbar },
-        { provide: TranslateService, useValue: { instant: (k: string) => k } },
+        { provide: TranslateService, useValue: { instant: (k: string) => k, currentLang: 'cs', onLangChange: EMPTY } },
       ],
     });
 
@@ -72,7 +72,7 @@ describe('PayPeriodManagementFacade', () => {
   });
 
   it('sends the filter to the server and returns to the first page', () => {
-    facade.onPageChange(40, 20);
+    facade.onPageChange({ first: 40, rows: 20, page: 2, totalRecords: 100 });
     facade.applyFilter({ status: PayPeriodStatus.Closed, year: 2026 });
 
     const [status, year, , offset] = getPagedMock.mock.calls.at(-1) ?? [];
@@ -83,7 +83,7 @@ describe('PayPeriodManagementFacade', () => {
 
   it('clears the filter on reset', () => {
     facade.applyFilter({ status: PayPeriodStatus.Closed, year: 2026 });
-    facade.resetFilter();
+    facade.applyFilter({});
 
     const [status, year] = getPagedMock.mock.calls.at(-1) ?? [];
     expect(status).toBeUndefined();

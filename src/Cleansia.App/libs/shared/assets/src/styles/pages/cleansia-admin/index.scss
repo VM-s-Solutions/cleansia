@@ -1,10 +1,6 @@
 // Cleansia Admin Pages
 // Import all admin page styles here
 
-// Shared styles
-@use './filter-drawer.scss';
-
-// Page-specific styles
 @use './employee-management.component.scss';
 @use './employee-detail.component.scss';
 @use './login.component.scss';

@@ -95,4 +95,19 @@ describe('CleansiaTableComponent — rendering', () => {
     expect(cell.classList.contains('text-right')).toBe(true);
     expect(cell.classList.contains('numeric')).toBe(true);
   });
+
+  it('gives each table its own rows-per-page id so two tables on a page keep their labels apart', () => {
+    fixture.componentRef.setInput('data', rows(1));
+    fixture.detectChanges();
+    const second = TestBed.createComponent(CleansiaTableComponent<Row>);
+    second.componentRef.setInput('columns', columns);
+    second.componentRef.setInput('data', rows(1));
+    second.detectChanges();
+
+    const idOf = (host: HTMLElement) => host.querySelector('.pagination__rows-selector label')?.getAttribute('for');
+    const first = idOf(fixture.nativeElement);
+    expect(first).toMatch(/^rows-per-page-\d+$/);
+    expect(idOf(second.nativeElement)).not.toBe(first);
+    expect(fixture.nativeElement.querySelector(`.pagination__rows-selector p-select [id="${first}"]`)).not.toBeNull();
+  });
 });

@@ -1,5 +1,6 @@
-import { Injectable, inject, signal } from '@angular/core';
-import { AbstractControl } from '@angular/forms';
+import { computed, Injectable, inject, signal } from '@angular/core';
+import { FormBuilder } from '@angular/forms';
+import { FilterChip, FilterDrawerState, PaginationState, SortEvent } from '@cleansia/components';
 import { UnsubscribeControlDirective } from '@cleansia/directives';
 import {
   EmployeeInvoiceDto,
@@ -7,10 +8,13 @@ import {
   EmployeeInvoiceStatus,
   PartnerClient,
   SortDefinition,
+  SortDirection,
 } from '@cleansia/partner-services';
 import { SnackbarService } from '@cleansia/services';
+import { currentLanguage } from '@cleansia/utils';
 import { TranslateService } from '@ngx-translate/core';
-import { catchError, debounceTime, distinctUntilChanged, of, takeUntil } from 'rxjs';
+import { catchError, of, takeUntil } from 'rxjs';
+import { buildFilterChips, buildInvoiceStatusOptions } from './invoices.helpers';
 
 @Injectable()
 export class InvoicesFacade extends UnsubscribeControlDirective {
@@ -21,6 +25,39 @@ export class InvoicesFacade extends UnsubscribeControlDirective {
   invoices = signal<EmployeeInvoiceDto[]>([]);
   loading = signal<boolean>(false);
   totalRecords = signal<number>(0);
+
+  readonly lang = currentLanguage(this.translate);
+  readonly invoiceStatusOptions = computed(() => {
+    this.lang();
+    return buildInvoiceStatusOptions(this.translate);
+  });
+  // One boolean control per status feeds the `statuses` array the query sends, so a new status
+  // needs no matching FormControl declared by hand.
+  readonly filterForm = inject(FormBuilder).group({
+    invoiceNumber: [''],
+    minAmount: [null as number | null],
+    maxAmount: [null as number | null],
+    dateFrom: [null as Date | null],
+    dateTo: [null as Date | null],
+    statuses: [[] as number[]],
+    ...Object.fromEntries(
+      buildInvoiceStatusOptions(this.translate).map((option) => [`status_${option.value}`, [false]])
+    ),
+  });
+  readonly filters = new FilterDrawerState({
+    form: this.filterForm,
+    lang: this.lang,
+    chips: (value): FilterChip[] => buildFilterChips(value, this.invoiceStatusOptions(), this.translate),
+    apply: (value) =>
+      this.applyFilters({
+        invoiceNumber: value.invoiceNumber || undefined,
+        minAmount: value.minAmount || undefined,
+        maxAmount: value.maxAmount || undefined,
+        dateFrom: value.dateFrom || undefined,
+        dateTo: value.dateTo || undefined,
+        statuses: value.statuses?.length ? value.statuses : undefined,
+      }),
+  });
 
   private currentEmployeeId = signal<string | null>(null);
   private currentSort = signal<SortDefinition[]>([]);
@@ -36,7 +73,7 @@ export class InvoicesFacade extends UnsubscribeControlDirective {
 
   constructor() {
     super();
-    // Get current employee ID
+    this.filters.connect(this.destroyed$);
     this.loadCurrentEmployee();
   }
 
@@ -100,10 +137,26 @@ export class InvoicesFacade extends UnsubscribeControlDirective {
       });
   }
 
-  updateSort(sort: SortDefinition[]): void {
-    this.currentSort.set(sort);
+  onPageChange(event: PaginationState): void {
+    this.loadInvoices(event.first, event.rows);
+  }
+
+  onSortChange(event: SortEvent): void {
+    this.currentSort.set([
+      new SortDefinition({
+        field: event.field,
+        direction: event.order === 1 ? SortDirection.Ascending : SortDirection.Descending,
+      }),
+    ]);
     // Reset to first page when sorting changes
     this.loadInvoices(0, 10);
+  }
+
+  setInvoiceStatus(status: number, checked: boolean): void {
+    const current = this.filterForm.controls.statuses.value || [];
+    this.filterForm.patchValue({
+      statuses: checked ? [...new Set([...current, status])] : current.filter((s) => s !== status),
+    });
   }
 
   applyFilters(filter: {
@@ -117,12 +170,6 @@ export class InvoicesFacade extends UnsubscribeControlDirective {
   }): void {
     this.currentFilter.set(filter);
     // Reset to first page when filters change
-    this.loadInvoices(0, 10);
-  }
-
-  resetFilters(): void {
-    this.currentFilter.set(null);
-    // Reset to first page when filters are cleared
     this.loadInvoices(0, 10);
   }
 
@@ -158,29 +205,5 @@ export class InvoicesFacade extends UnsubscribeControlDirective {
           );
         }
       });
-  }
-
-  /**
-   * Wire form valueChanges and language change subscriptions.
-   * Component lifecycle invokes this once; cleanup is handled by the
-   * facade's destroyed$ Subject (UnsubscribeControlDirective).
-   */
-  bindFormChanges(
-    formCtrl: AbstractControl,
-    onFormChangeImmediate: () => void,
-    onFormChangeDebounced: () => void,
-    onLangChange: () => void
-  ): void {
-    formCtrl.valueChanges
-      .pipe(takeUntil(this.destroyed$))
-      .subscribe(() => onFormChangeImmediate());
-
-    formCtrl.valueChanges
-      .pipe(debounceTime(500), distinctUntilChanged(), takeUntil(this.destroyed$))
-      .subscribe(() => onFormChangeDebounced());
-
-    this.translate.onLangChange
-      .pipe(takeUntil(this.destroyed$))
-      .subscribe(() => onLangChange());
   }
 }

@@ -1,8 +1,9 @@
 .cleansia-pay-period-management {
-  &__description {
-    color: var(--cleansia-text-secondary);
-    font-size: 1rem;
-    line-height: 1.5;
+  &__create-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+    padding-top: 0.5rem;
   }
 
   .filter-panel {

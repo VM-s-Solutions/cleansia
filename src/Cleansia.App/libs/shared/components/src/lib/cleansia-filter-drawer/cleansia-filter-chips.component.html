@@ -1,0 +1,21 @@
+@if (state().active()) {
+<div class="cleansia-filter-chips">
+  @for (chip of state().chips(); track chip.key) {
+  <span class="cleansia-filter-chips__chip">
+    <span class="cleansia-filter-chips__label">{{ chip.label }}:</span>
+    <span class="cleansia-filter-chips__value">{{ chip.value }}</span>
+    <button
+      type="button"
+      class="cleansia-filter-chips__remove"
+      [attr.aria-label]="chip.label + ': ' + chip.value"
+      (click)="state().removeChip(chip.key)"
+    >
+      <i class="pi pi-times" aria-hidden="true"></i>
+    </button>
+  </span>
+  }
+  <button type="button" class="cleansia-filter-chips__clear" (click)="state().reset()">
+    {{ 'global.filters.clear_all' | translate }}
+  </button>
+</div>
+}

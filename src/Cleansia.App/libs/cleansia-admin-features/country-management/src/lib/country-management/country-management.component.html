@@ -1,20 +1,13 @@
 <div class="cleansia-country-management cleansia-page">
   <div class="cleansia-country-management__container page-wrapper">
-    <div class="cleansia-country-management__header">
-      <div class="header-content">
-        <cleansia-title
-          [title]="'pages.country_management.title' | translate"
-        />
-        <p class="cleansia-country-management__description">
+    <div class="cleansia-page-header">
+      <div class="cleansia-page-header__heading">
+        <cleansia-title [title]="'pages.country_management.title' | translate" [level]="1" />
+        <p class="cleansia-page-header__description">
           {{ 'pages.country_management.description' | translate }}
         </p>
       </div>
-    </div>
-
-    <!-- Filter Header -->
-    <div class="filter-header">
-      <div class="filter-chips-inline"></div>
-      <div class="header-actions">
+      <div class="cleansia-page-header__actions">
         <cleansia-button
           *cleansiaPermission="Policy.CanCreateCountry"
           [label]="'pages.country_management.create_country' | translate"

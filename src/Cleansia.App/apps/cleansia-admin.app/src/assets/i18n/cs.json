@@ -111,6 +111,11 @@
     "yes": "Ano",
     "no": "Ne",
     "close": "Zavřít",
+    "filters": {
+      "title": "Filtry",
+      "reset": "Resetovat filtry",
+      "clear_all": "Vymazat vše"
+    },
     "all": "Vše",
     "no_data": "Žádná data k zobrazení",
     "loading": "Načítání...",
@@ -310,13 +315,10 @@
       "view_details": "Zobrazit detail",
       "no_employees": "Žádní zaměstnanci k zobrazení",
       "filters": {
-        "title": "Filtry",
         "search": "Vyhledávání",
         "search_placeholder": "Vyhledat dle jména, emailu nebo telefonu",
         "contract_status": "Stav smlouvy",
-        "active_status": "Stav aktivity",
-        "reset": "Resetovat filtry",
-        "clear_all": "Vymazat vše"
+        "active_status": "Stav aktivity"
       },
       "approve_dialog": {
         "title": "Schválit zaměstnance",
@@ -570,7 +572,6 @@
       "view_details": "Zobrazit detail",
       "no_orders": "Žádné objednávky nenalezeny",
       "filters": {
-        "title": "Filtry",
         "search": "Vyhledávání",
         "search_placeholder": "Hledat dle jména zákazníka nebo č. objednávky",
         "order_status": "Stav objednávky",
@@ -578,8 +579,6 @@
         "date_range": "Časové období",
         "date_from": "Datum od",
         "date_to": "Datum do",
-        "reset": "Resetovat filtry",
-        "clear_all": "Vymazat vše",
         "currency": "Měna"
       },
       "order_status": {
@@ -781,12 +780,9 @@
       "download": "Stáhnout PDF",
       "no_invoices": "Nebyly nalezeny žádné faktury",
       "filters": {
-        "title": "Filtry",
         "search": "Vyhledávání",
         "search_placeholder": "Hledat dle čísla faktury nebo zaměstnance",
         "status": "Stav faktury",
-        "reset": "Resetovat filtry",
-        "clear_all": "Vymazat vše",
         "currency": "Měna"
       },
       "invoice_status": {
@@ -822,7 +818,6 @@
         "failure": "Selhání"
       },
       "filters": {
-        "title": "Filtry",
         "actor": "Aktér",
         "actor_id": "ID aktéra",
         "actor_email": "E-mail aktéra",
@@ -834,8 +829,6 @@
         "date_range": "Časové období",
         "date_from": "Od",
         "date_to": "Do",
-        "reset": "Obnovit filtry",
-        "clear_all": "Vymazat vše",
         "actor_role": "Role aktéra"
       },
       "history": {
@@ -1145,11 +1138,8 @@
       "delete_confirm": "Opravdu chcete smazat tuto službu? Tuto akci nelze vrátit zpět.",
       "no_services": "Nebyly nalezeny žádné služby",
       "filters": {
-        "title": "Filtry",
         "search": "Vyhledávání",
         "search_placeholder": "Hledat dle názvu nebo popisu",
-        "reset": "Resetovat filtry",
-        "clear_all": "Vymazat vše",
         "status": "Stav",
         "status_all": "Vše",
         "status_active": "Aktivní",
@@ -1209,11 +1199,8 @@
       "delete_confirm": "Opravdu chcete smazat tento balíček? Tuto akci nelze vrátit zpět.",
       "no_packages": "Nebyly nalezeny žádné balíčky",
       "filters": {
-        "title": "Filtry",
         "search": "Vyhledávání",
         "search_placeholder": "Hledat dle názvu nebo popisu",
-        "reset": "Resetovat filtry",
-        "clear_all": "Vymazat vše",
         "status": "Stav",
         "status_all": "Vše",
         "status_active": "Aktivní",
@@ -1280,11 +1267,8 @@
       "deactivate_confirm": "Deaktivovat „{{name}}“? Doplněk se skryje z rezervačního průvodce, objednávky, které si jej koupily, zůstanou zachovány.",
       "no_extras": "Nebyly nalezeny žádné doplňky",
       "filters": {
-        "title": "Filtry",
         "search": "Vyhledávání",
         "search_placeholder": "Hledat dle identifikátoru, názvu nebo popisu",
-        "reset": "Resetovat filtry",
-        "clear_all": "Vymazat vše",
         "status": "Stav",
         "status_all": "Vše",
         "status_active": "Aktivní",
@@ -1333,11 +1317,8 @@
       "activate_confirm": "Opravdu chcete aktivovat tohoto administrátora? Znovu získá přístup do admin panelu.",
       "no_users": "Nebyli nalezeni žádní administrátoři",
       "filters": {
-        "title": "Filtry",
         "search": "Vyhledávání",
-        "search_placeholder": "Hledat dle jména nebo emailu",
-        "reset": "Resetovat filtry",
-        "clear_all": "Vymazat vše"
+        "search_placeholder": "Hledat dle jména nebo emailu"
       },
       "columns": {
         "name": "Jméno",
@@ -1392,11 +1373,8 @@
       "delete_confirm": "Opravdu chcete smazat tento jazyk? Toto může ovlivnit existující překlady.",
       "no_languages": "Žádné jazyky nenalezeny",
       "filters": {
-        "title": "Filtry",
         "search": "Vyhledávání",
-        "search_placeholder": "Hledat dle kódu nebo názvu",
-        "reset": "Resetovat filtry",
-        "clear_all": "Vymazat vše"
+        "search_placeholder": "Hledat dle kódu nebo názvu"
       },
       "columns": {
         "code": "Kód",
@@ -1864,11 +1842,8 @@
       "delete_confirm": "Opravdu chcete smazat tyto údaje o společnosti? Tuto akci nelze vrátit zpět.",
       "no_companies": "Žádné údaje o společnosti nenalezeny",
       "filters": {
-        "title": "Filtry",
         "search": "Vyhledávání",
-        "search_placeholder": "Hledat podle názvu nebo města",
-        "reset": "Resetovat filtry",
-        "clear_all": "Vymazat vše"
+        "search_placeholder": "Hledat podle názvu nebo města"
       },
       "columns": {
         "legal_name": "Právní název",
@@ -2072,10 +2047,7 @@
       "apply_filter": "Použít filtr",
       "reset": "Resetovat filtry",
       "filters": {
-        "title": "Filtry",
         "date_range": "Časové období",
-        "reset": "Resetovat filtry",
-        "clear_all": "Vymazat vše",
         "currency": "Měna"
       },
       "revenue_report": "Přehled tržeb",
@@ -2823,11 +2795,8 @@
     "create_new": "Vytvořit nové výplatní období",
     "confirm_close": "Opravdu chcete uzavřít toto platební období? Tuto akci nelze vrátit zpět.",
     "filters": {
-      "title": "Filtry",
       "status": "Stav",
-      "year": "Rok",
-      "reset": "Resetovat filtry",
-      "clear_all": "Vymazat vše"
+      "year": "Rok"
     },
     "list": {
       "title": "Platební období",

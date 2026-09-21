@@ -1,46 +1,111 @@
 <div class="cleansia-audit-log cleansia-page">
   <div class="cleansia-audit-log__container page-wrapper">
-    <div class="cleansia-audit-log__header">
-      <cleansia-title [title]="'pages.audit_log.title' | translate" />
-      <p class="cleansia-audit-log__description">
-        {{ 'pages.audit_log.description' | translate }}
-      </p>
+    <div class="cleansia-page-header">
+      <div class="cleansia-page-header__heading">
+        <cleansia-title [title]="'pages.audit_log.title' | translate" [level]="1" />
+        <p class="cleansia-page-header__description">
+          {{ 'pages.audit_log.description' | translate }}
+        </p>
+      </div>
+      <div class="cleansia-page-header__actions">
+        <cleansia-filter-drawer [state]="facade.filters">
+          <form [formGroup]="facade.filterForm" class="filter-form">
+            <div class="filter-section">
+              <h3 class="filter-section-title">
+                {{ 'pages.audit_log.filters.actor' | translate }}
+              </h3>
+              <div class="filter-fields">
+                <cleansia-text-input
+                  formControlName="actorEmail"
+                  [label]="'pages.audit_log.filters.actor_email' | translate"
+                  [showErrors]="false"
+                />
+                <cleansia-text-input
+                  formControlName="actorId"
+                  [label]="'pages.audit_log.filters.actor_id' | translate"
+                  [showErrors]="false"
+                />
+                <cleansia-select
+                  formControlName="actorAdminRole"
+                  [label]="'pages.audit_log.filters.actor_role' | translate"
+                  [options]="facade.actorRoleOptions()"
+                  [showErrors]="false"
+                  appendTo="body"
+                />
+              </div>
+            </div>
+
+            <div class="filter-section">
+              <h3 class="filter-section-title">
+                {{ 'pages.audit_log.filters.action' | translate }}
+              </h3>
+              <cleansia-text-input
+                formControlName="action"
+                [label]="'pages.audit_log.filters.action' | translate"
+                [showErrors]="false"
+              />
+            </div>
+
+            <div class="filter-section">
+              <h3 class="filter-section-title">
+                {{ 'pages.audit_log.filters.resource' | translate }}
+              </h3>
+              <div class="filter-fields">
+                <cleansia-text-input
+                  formControlName="resourceType"
+                  [label]="'pages.audit_log.filters.resource_type' | translate"
+                  [showErrors]="false"
+                />
+                <cleansia-text-input
+                  formControlName="resourceId"
+                  [label]="'pages.audit_log.filters.resource_id' | translate"
+                  [showErrors]="false"
+                />
+              </div>
+            </div>
+
+            <div class="filter-section">
+              <h3 class="filter-section-title">
+                {{ 'pages.audit_log.filters.outcome' | translate }}
+              </h3>
+              <cleansia-select
+                formControlName="success"
+                [label]="'pages.audit_log.filters.outcome' | translate"
+                [options]="facade.outcomeOptions()"
+                [showErrors]="false"
+                appendTo="body"
+              />
+            </div>
+
+            <div class="filter-section">
+              <h3 class="filter-section-title">
+                {{ 'pages.audit_log.filters.date_range' | translate }}
+              </h3>
+              <div class="filter-date-range">
+                <cleansia-calendar
+                  formControlName="occurredFrom"
+                  [label]="'pages.audit_log.filters.date_from' | translate"
+                  [showIcon]="true"
+                  [showErrors]="false"
+                  appendTo="body"
+                />
+                <cleansia-calendar
+                  formControlName="occurredTo"
+                  [label]="'pages.audit_log.filters.date_to' | translate"
+                  [showIcon]="true"
+                  [showErrors]="false"
+                  appendTo="body"
+                />
+              </div>
+            </div>
+          </form>
+        </cleansia-filter-drawer>
+      </div>
     </div>
 
     <cleansia-admin-audit-log-segment active="admin" />
 
-    <div class="filter-header">
-      <div class="filter-chips-inline">
-        @for (chip of activeFilterChips(); track chip.key) {
-        <div class="filter-chip">
-          <span class="filter-chip-label">{{ chip.label }}:</span>
-          <span class="filter-chip-value">{{ chip.value }}</span>
-          <button
-            class="filter-chip-remove"
-            (click)="removeFilterChip(chip.key)"
-          >
-            <i class="pi pi-times"></i>
-          </button>
-        </div>
-        } @if (hasActiveFilters()) {
-        <button class="filter-clear-all-btn" (click)="clearAllFilters()">
-          {{ 'pages.audit_log.filters.clear_all' | translate }}
-        </button>
-        }
-      </div>
-      <div class="filter-actions">
-        <cleansia-button
-          [label]="'pages.audit_log.filters.title' | translate"
-          icon="pi pi-filter"
-          [severity]="hasActiveFilters() ? 'primary' : 'secondary'"
-          [outlined]="!hasActiveFilters()"
-          (onClick)="openFilterDrawer()"
-        />
-        @if (hasActiveFilters()) {
-        <span class="filter-count-badge">{{ activeFilterCount() }}</span>
-        }
-      </div>
-    </div>
+    <cleansia-filter-chips [state]="facade.filters" />
 
     <cleansia-section>
       @if (facade.initialLoading()) {
@@ -53,8 +118,8 @@
       } @else {
       <cleansia-table
         [data]="facade.audits()"
-        [columns]="auditColumns"
-        [actions]="auditActions"
+        [columns]="table().columns"
+        [actions]="table().actions"
         [config]="{
           paginator: true,
           rows: 20,
@@ -64,135 +129,12 @@
           hover: true
         }"
         [loading]="facade.loading()"
-        (pageChange)="onPageChange($event)"
-        (sortChange)="onSortChange($event)"
+        (pageChange)="facade.onPageChange($event)"
+        (sortChange)="facade.onSortChange($event)"
       >
       </cleansia-table>
       }
     </cleansia-section>
-  </div>
-</div>
-
-@if (isFilterDrawerOpen()) {
-<div
-  class="filter-drawer-backdrop"
-  role="button"
-  tabindex="0"
-  [attr.aria-label]="'pages.audit_log.filters.title' | translate"
-  (click)="closeFilterDrawer()"
-  (keydown.escape)="closeFilterDrawer()"
-  (keydown.enter)="closeFilterDrawer()"
-></div>
-}
-
-<div class="filter-drawer" [class.open]="isFilterDrawerOpen()">
-  <div class="filter-drawer-header">
-    <div class="filter-drawer-title">
-      <i class="pi pi-filter"></i>
-      <span>{{ 'pages.audit_log.filters.title' | translate }}</span>
-    </div>
-    <button class="filter-drawer-close" (click)="closeFilterDrawer()">
-      <i class="pi pi-times"></i>
-    </button>
-  </div>
-
-  <div class="filter-drawer-content">
-    <form [formGroup]="filterForm" class="filter-form">
-      <div class="filter-section">
-        <h3 class="filter-section-title">
-          {{ 'pages.audit_log.filters.actor' | translate }}
-        </h3>
-        <cleansia-text-input
-          formControlName="actorEmail"
-          [label]="'pages.audit_log.filters.actor_email' | translate"
-          className="full-width"
-        />
-        <cleansia-text-input
-          formControlName="actorId"
-          [label]="'pages.audit_log.filters.actor_id' | translate"
-          className="full-width"
-        />
-        <cleansia-select
-          [label]="'pages.audit_log.filters.actor_role' | translate"
-          [options]="actorRoleOptions"
-          [ngModel]="filterForm.value.actorAdminRole"
-          [ngModelOptions]="{ standalone: true }"
-          (valueChanges)="onActorRoleChange($event)"
-        />
-      </div>
-
-      <div class="filter-section">
-        <h3 class="filter-section-title">
-          {{ 'pages.audit_log.filters.action' | translate }}
-        </h3>
-        <cleansia-text-input
-          formControlName="action"
-          [label]="'pages.audit_log.filters.action' | translate"
-          className="full-width"
-        />
-      </div>
-
-      <div class="filter-section">
-        <h3 class="filter-section-title">
-          {{ 'pages.audit_log.filters.resource' | translate }}
-        </h3>
-        <cleansia-text-input
-          formControlName="resourceType"
-          [label]="'pages.audit_log.filters.resource_type' | translate"
-          className="full-width"
-        />
-        <cleansia-text-input
-          formControlName="resourceId"
-          [label]="'pages.audit_log.filters.resource_id' | translate"
-          className="full-width"
-        />
-      </div>
-
-      <div class="filter-section">
-        <h3 class="filter-section-title">
-          {{ 'pages.audit_log.filters.outcome' | translate }}
-        </h3>
-        <cleansia-select
-          [label]="'pages.audit_log.filters.outcome' | translate"
-          [options]="outcomeOptions"
-          [ngModel]="filterForm.value.success"
-          [ngModelOptions]="{ standalone: true }"
-          (valueChanges)="onOutcomeChange($event)"
-        />
-      </div>
-
-      <div class="filter-section">
-        <h3 class="filter-section-title">
-          {{ 'pages.audit_log.filters.date_range' | translate }}
-        </h3>
-        <div class="filter-date-range">
-          <cleansia-calendar
-            formControlName="occurredFrom"
-            [label]="'pages.audit_log.filters.date_from' | translate"
-            [showIcon]="true"
-            appendTo="body"
-            className="full-width"
-          />
-          <cleansia-calendar
-            formControlName="occurredTo"
-            [label]="'pages.audit_log.filters.date_to' | translate"
-            [showIcon]="true"
-            appendTo="body"
-            className="full-width"
-          />
-        </div>
-      </div>
-    </form>
-  </div>
-
-  <div class="filter-drawer-footer">
-    <cleansia-button
-      [label]="'pages.audit_log.filters.reset' | translate"
-      icon="pi pi-times"
-      severity="secondary"
-      [outlined]="true"
-      (onClick)="resetFilters()"
-    />
   </div>
 </div>
 

@@ -1,50 +1,35 @@
-import { CommonModule } from '@angular/common';
 import {
-  AfterViewInit,
   ChangeDetectionStrategy,
   Component,
   computed,
   inject,
-  OnDestroy,
-  signal,
+  OnInit,
 } from '@angular/core';
-import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
+import { ReactiveFormsModule } from '@angular/forms';
 import { PermissionService, Policy } from '@cleansia/services';
 import { CleansiaPermissionDirective } from '@cleansia/directives';
-import {
-  ServiceListItem,
-  SortDefinition,
-  SortDirection,
-} from '@cleansia/admin-services';
+import { ServiceListItem } from '@cleansia/admin-services';
 import {
   CleansiaButtonComponent,
+  CleansiaFilterChipsComponent,
+  CleansiaFilterDrawerComponent,
   CleansiaLoaderComponent,
   CleansiaSectionComponent,
   CleansiaSelectComponent,
   CleansiaTableComponent,
   CleansiaTextInputComponent,
   CleansiaTitleComponent,
-  ICleansiaSelectOption,
-  TableColumn,
-  TableAction,
-  PaginationState,
 } from '@cleansia/components';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { ConfirmationService } from 'primeng/api';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
-import { debounceTime, distinctUntilChanged, Subject, takeUntil } from 'rxjs';
 import { ServiceManagementFacade } from './service-management.facade';
-import {
-  CatalogStatusFilter,
-  getServiceTableDefinition,
-  mapStatusFilterToIsActive,
-} from './service-management.models';
+import { getServiceTableDefinition } from './service-management.models';
 
 @Component({
   selector: 'cleansia-admin-service-management',
   standalone: true,
   imports: [
-    CommonModule,
     CleansiaButtonComponent,
     CleansiaTextInputComponent,
     CleansiaSelectComponent,
@@ -53,6 +38,8 @@ import {
     CleansiaTitleComponent,
     CleansiaLoaderComponent,
     CleansiaSectionComponent,
+    CleansiaFilterDrawerComponent,
+    CleansiaFilterChipsComponent,
     ReactiveFormsModule,
     ConfirmDialogModule,
     CleansiaPermissionDirective,
@@ -61,228 +48,52 @@ import {
   providers: [ServiceManagementFacade, ConfirmationService],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class ServiceManagementComponent implements AfterViewInit, OnDestroy {
-  private readonly fb = inject(FormBuilder);
+export class ServiceManagementComponent implements OnInit {
   protected readonly facade = inject(ServiceManagementFacade);
   protected readonly Policy = Policy;
   private readonly translate = inject(TranslateService);
   private readonly permissions = inject(PermissionService);
   private readonly confirmationService = inject(ConfirmationService);
 
-  serviceColumns!: TableColumn<ServiceListItem>[];
-  serviceActions!: TableAction<ServiceListItem>[];
-  statusFilterOptions!: ICleansiaSelectOption[];
-
-  private lastSortField: string | null = null;
-  private lastSortOrder: number | null = null;
-  private destroy$ = new Subject<void>();
-
-  filterForm = this.fb.nonNullable.group({
-    searchTerm: [''],
-    status: ['all' as CatalogStatusFilter],
-  });
-
-  // Filter drawer state
-  isFilterDrawerOpen = signal(false);
-  private filterFormVersion = signal(0);
-  activeFilterChips = computed(() => {
-    this.filterFormVersion();
-    return this.getActiveFilterChips();
-  });
-  hasActiveFilters = computed(() => this.activeFilterChips().length > 0);
-  activeFilterCount = computed(() => this.activeFilterChips().length);
-
-  ngAfterViewInit(): void {
-    this.rebuildTableDefinitions();
-
-    this.filterForm.valueChanges
-      .pipe(takeUntil(this.destroy$))
-      .subscribe(() => {
-        this.filterFormVersion.update(v => v + 1);
-      });
-
-    this.filterForm.valueChanges
-      .pipe(debounceTime(500), distinctUntilChanged(), takeUntil(this.destroy$))
-      .subscribe(() => {
-        this.applyFilters();
-      });
-
-    // Rebuild tables when language changes
-    this.translate.onLangChange
-      .pipe(takeUntil(this.destroy$))
-      .subscribe(() => {
-        this.rebuildTableDefinitions();
-      });
-
-    this.facade.loadServices();
-  }
-
-  private rebuildTableDefinitions(): void {
-    const tableDefinition = getServiceTableDefinition(
+  protected readonly table = computed(() => {
+    this.facade.lang();
+    return getServiceTableDefinition(
       {
-        onEdit: this.editService.bind(this),
-        onDelete: this.confirmDeleteService.bind(this),
-        onDeactivate: this.confirmDeactivateService.bind(this),
-        onActivate: this.activateService.bind(this),
+        onEdit: (row) => this.facade.navigateToEditService(row),
+        onDelete: (row) => this.confirmDeleteService(row),
+        onDeactivate: (row) => this.confirmDeactivateService(row),
+        onActivate: (row) => this.facade.activateService(row),
         getIsActiveFilter: () => this.facade.isActiveFilter(),
       },
       this.translate,
       this.permissions,
-      this.facade.formatCurrency.bind(this.facade)
+      (value) => this.facade.formatCurrency(value)
     );
+  });
 
-    this.serviceColumns = tableDefinition.columns;
-    this.serviceActions = tableDefinition.actions;
-
-    this.statusFilterOptions = [
-      {
-        label: this.translate.instant('pages.service_management.filters.status_all'),
-        value: 'all',
-      },
-      {
-        label: this.translate.instant('pages.service_management.filters.status_active'),
-        value: 'active',
-      },
-      {
-        label: this.translate.instant('pages.service_management.filters.status_inactive'),
-        value: 'inactive',
-      },
-    ];
+  ngOnInit(): void {
+    this.facade.loadServices();
   }
 
-  ngOnDestroy(): void {
-    this.destroy$.next();
-    this.destroy$.complete();
-  }
-
-  applyFilters(): void {
-    const formValues = this.filterForm.getRawValue();
-
-    this.facade.applyFilter({
-      searchTerm: formValues.searchTerm.trim() || undefined,
-      isActive: mapStatusFilterToIsActive(formValues.status ?? 'all'),
-    });
-  }
-
-  resetFilters(): void {
-    this.filterForm.reset({
-      searchTerm: '',
-      status: 'all',
-    });
-    this.facade.resetFilter();
-  }
-
-  onSortChange(event: { field: string; order: number }): void {
-    if (
-      event.field === this.lastSortField &&
-      event.order === this.lastSortOrder
-    ) {
-      return;
-    }
-
-    this.lastSortField = event.field;
-    this.lastSortOrder = event.order;
-
-    const sortDirection =
-      event.order === 1 ? SortDirection.Ascending : SortDirection.Descending;
-    const sort = [
-      new SortDefinition({
-        field: event.field,
-        direction: sortDirection,
-      }),
-    ];
-    this.facade.onSortChange(sort);
-  }
-
-  onPageChange(event: PaginationState): void {
-    const offset = event.first;
-    const limit = event.rows;
-    this.facade.onPageChange(offset, limit);
-  }
-
-  createService(): void {
-    this.facade.navigateToCreateService();
-  }
-
-  editService(service: ServiceListItem): void {
-    this.facade.navigateToEditService(service);
-  }
-
-  activateService(service: ServiceListItem): void {
-    this.facade.activateService(service);
-  }
-
-  confirmDeactivateService(service: ServiceListItem): void {
+  confirmDeactivateService(row: ServiceListItem): void {
     this.confirmationService.confirm({
-      message: this.translate.instant(
-        'pages.service_management.deactivate_confirm',
-        { name: service.name }
-      ),
+      message: this.translate.instant('pages.service_management.deactivate_confirm', { name: row.name }),
       header: this.translate.instant('pages.service_management.deactivate_service'),
       icon: 'pi pi-exclamation-triangle',
       accept: () => {
-        this.facade.deactivateService(service);
+        this.facade.deactivateService(row);
       },
     });
   }
 
-  confirmDeleteService(service: ServiceListItem): void {
+  confirmDeleteService(row: ServiceListItem): void {
     this.confirmationService.confirm({
       message: this.translate.instant('pages.service_management.delete_confirm'),
       header: this.translate.instant('pages.service_management.delete_service'),
       icon: 'pi pi-exclamation-triangle',
       accept: () => {
-        this.facade.deleteService(service);
+        this.facade.deleteService(row);
       },
     });
-  }
-
-  // Filter drawer methods
-  openFilterDrawer(): void {
-    this.isFilterDrawerOpen.set(true);
-  }
-
-  closeFilterDrawer(): void {
-    this.isFilterDrawerOpen.set(false);
-  }
-
-  getActiveFilterChips(): { key: string; label: string; value: string }[] {
-    const chips: { key: string; label: string; value: string }[] = [];
-    const values = this.filterForm.getRawValue();
-
-    if (values.searchTerm) {
-      chips.push({
-        key: 'searchTerm',
-        label: this.translate.instant('pages.service_management.filters.search'),
-        value: values.searchTerm,
-      });
-    }
-
-    if (values.status && values.status !== 'all') {
-      chips.push({
-        key: 'status',
-        label: this.translate.instant('pages.service_management.filters.status'),
-        value: this.translate.instant(
-          values.status === 'active'
-            ? 'pages.service_management.filters.status_active'
-            : 'pages.service_management.filters.status_inactive'
-        ),
-      });
-    }
-
-    return chips;
-  }
-
-  removeFilterChip(key: string): void {
-    if (key === 'status') {
-      this.filterForm.patchValue({ status: 'all' });
-    } else {
-      this.filterForm.patchValue({ [key]: '' });
-    }
-    this.applyFilters();
-  }
-
-  clearAllFilters(): void {
-    this.resetFilters();
   }
 }

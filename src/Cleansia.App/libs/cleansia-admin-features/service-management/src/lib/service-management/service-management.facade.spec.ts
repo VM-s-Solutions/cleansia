@@ -7,7 +7,7 @@ import {
 } from '@cleansia/admin-services';
 import { SnackbarService } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
-import { of, throwError } from 'rxjs';
+import { EMPTY, of, throwError } from 'rxjs';
 import { ServiceManagementFacade } from './service-management.facade';
 
 describe('ServiceManagementFacade', () => {
@@ -52,7 +52,7 @@ describe('ServiceManagementFacade', () => {
           },
         },
         { provide: SnackbarService, useValue: snackbar },
-        { provide: TranslateService, useValue: { instant: (k: string) => k, currentLang: 'cs' } },
+        { provide: TranslateService, useValue: { instant: (k: string) => k, currentLang: 'cs', onLangChange: EMPTY } },
         { provide: Router, useValue: { navigate: jest.fn() } },
       ],
     });
@@ -94,7 +94,7 @@ describe('ServiceManagementFacade', () => {
   it('resets offset when a filter is applied', () => {
     getPagedMock.mockReturnValue(of(page));
 
-    facade.onPageChange(40, 20);
+    facade.onPageChange({ first: 40, rows: 20, page: 2, totalRecords: 100 });
     facade.applyFilter({ isActive: true });
 
     const lastArgs = getPagedMock.mock.calls.at(-1);

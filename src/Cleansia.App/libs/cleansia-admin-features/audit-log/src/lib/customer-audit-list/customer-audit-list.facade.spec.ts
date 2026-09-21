@@ -6,7 +6,8 @@ import {
   SortDefinition,
   SortDirection,
 } from '@cleansia/admin-services';
-import { of, throwError } from 'rxjs';
+import { TranslateService } from '@ngx-translate/core';
+import { EMPTY, of, throwError } from 'rxjs';
 import { CustomerAuditListFacade } from './customer-audit-list.facade';
 
 describe('CustomerAuditListFacade', () => {
@@ -37,6 +38,7 @@ describe('CustomerAuditListFacade', () => {
     TestBed.configureTestingModule({
       providers: [
         CustomerAuditListFacade,
+        { provide: TranslateService, useValue: { instant: (k: string) => k, currentLang: 'cs', onLangChange: EMPTY } },
         { provide: CustomerAuditClient, useValue: customerAuditClient },
       ],
     });
@@ -123,31 +125,32 @@ describe('CustomerAuditListFacade', () => {
   });
 
   it('resets the offset to zero when a filter is applied or reset', () => {
-    facade.onPageChange(40, 20);
+    facade.onPageChange({ first: 40, rows: 20, page: 2, totalRecords: 100 });
     facade.applyFilter({ userId: 'user-1' });
     expect(customerAuditClient.getPaged.mock.calls.at(-1)?.at(-2)).toBe(0);
 
-    facade.onPageChange(40, 20);
-    facade.resetFilter();
+    facade.onPageChange({ first: 40, rows: 20, page: 2, totalRecords: 100 });
+    facade.applyFilter({});
     const args = customerAuditClient.getPaged.mock.calls.at(-1);
     expect(args?.at(-2)).toBe(0);
     expect(args?.[0]).toBeUndefined();
   });
 
   it('forwards offset and limit on a page change', () => {
-    facade.onPageChange(20, 50);
+    facade.onPageChange({ first: 20, rows: 50, page: 0, totalRecords: 100 });
 
     const args = customerAuditClient.getPaged.mock.calls.at(-1);
     expect(args?.at(-2)).toBe(20);
     expect(args?.at(-1)).toBe(50);
   });
 
-  it('forwards the sort definition on a sort change', () => {
-    const sort = [new SortDefinition({ field: 'action', direction: SortDirection.Ascending })];
-
-    facade.onSortChange(sort);
+  it('builds the sort definition from the table sort on a sort change', () => {
+    facade.onSortChange({ field: 'action', order: -1 });
 
     const args = customerAuditClient.getPaged.mock.calls.at(-1);
-    expect(args?.[8]).toBe(sort);
+    const sort: SortDefinition[] = args?.[8];
+    expect(sort).toHaveLength(1);
+    expect(sort[0]).toBeInstanceOf(SortDefinition);
+    expect(sort[0].toJSON()).toEqual({ field: 'action', direction: SortDirection.Descending });
   });
 });

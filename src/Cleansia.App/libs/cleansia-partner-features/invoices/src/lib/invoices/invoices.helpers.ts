@@ -1,12 +1,7 @@
-import { HelpStep, StatusFlowItem } from '@cleansia/components';
+import { FilterChip, HelpStep, StatusFlowItem } from '@cleansia/components';
 import { EmployeeInvoiceDto, EmployeeInvoiceStatus } from '@cleansia/partner-services';
+import { formatDate } from '@cleansia/utils';
 import { TranslateService } from '@ngx-translate/core';
-
-export interface FilterChip {
-  key: string;
-  label: string;
-  value: string;
-}
 
 export interface InvoiceStatusOption {
   label: string;
@@ -134,7 +129,7 @@ export function buildFilterChips(
     chips.push({
       key: 'dateFrom',
       label: translate.instant('pages.invoices.filters.date_from'),
-      value: new Date(formValue.dateFrom).toLocaleDateString(),
+      value: formatDate(formValue.dateFrom, translate.currentLang),
     });
   }
 
@@ -142,7 +137,7 @@ export function buildFilterChips(
     chips.push({
       key: 'dateTo',
       label: translate.instant('pages.invoices.filters.date_to'),
-      value: new Date(formValue.dateTo).toLocaleDateString(),
+      value: formatDate(formValue.dateTo, translate.currentLang),
     });
   }
 
@@ -171,6 +166,7 @@ export function buildFilterChips(
       key: 'statuses',
       label: translate.instant('pages.invoices.filters.invoice_status'),
       value: statusNames,
+      controls: ['statuses', ...statusOptions.map((o) => `status_${o.value}`)],
     });
   }
 

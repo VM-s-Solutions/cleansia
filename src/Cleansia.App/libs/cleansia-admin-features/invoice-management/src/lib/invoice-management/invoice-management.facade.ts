@@ -1,13 +1,17 @@
-import { Injectable, inject, signal } from '@angular/core';
+import { computed, Injectable, inject, signal } from '@angular/core';
+import { FormBuilder } from '@angular/forms';
 import {
   AdminClient,
   EmployeeInvoiceDto,
   EmployeeInvoiceStatus,
   RegenerateInvoicePdfCommand,
   SortDefinition,
+  SortDirection,
 } from '@cleansia/admin-services';
+import { FilterChip, FilterDrawerState, PaginationState, SortEvent } from '@cleansia/components';
 import { UnsubscribeControlDirective } from '@cleansia/directives';
 import { SnackbarService, extractApiErrorCode } from '@cleansia/services';
+import { currentLanguage } from '@cleansia/utils';
 import { TranslateService } from '@ngx-translate/core';
 import { catchError, finalize, of, takeUntil } from 'rxjs';
 import {
@@ -34,12 +38,71 @@ export class InvoiceManagementFacade extends UnsubscribeControlDirective {
   readonly totalRecords = signal<number>(0);
   readonly retryingPdf = signal<boolean>(false);
 
+  readonly lang = currentLanguage(this.translate);
+  readonly invoiceStatusOptions = computed(() => {
+    this.lang();
+    return [
+      EmployeeInvoiceStatus.Pending,
+      EmployeeInvoiceStatus.Approved,
+      EmployeeInvoiceStatus.Paid,
+      EmployeeInvoiceStatus.Disputed,
+      EmployeeInvoiceStatus.Rejected,
+      EmployeeInvoiceStatus.Cancelled,
+    ].map((status) => ({
+      label: this.translate.instant(
+        `pages.invoice_management.invoice_status.${EmployeeInvoiceStatus[status].toLowerCase()}`
+      ),
+      value: status,
+    }));
+  });
+  readonly filterForm = inject(FormBuilder).group({
+    status: [[] as EmployeeInvoiceStatus[]],
+    currencyId: [null as string | null],
+  });
+  readonly filters = new FilterDrawerState({
+    form: this.filterForm,
+    lang: this.lang,
+    chips: (value): FilterChip[] => [
+      ...(value.status?.length
+        ? [
+            {
+              key: 'status',
+              label: this.translate.instant('pages.invoice_management.filters.status'),
+              value: value.status
+                .map((s) => this.invoiceStatusOptions().find((o) => o.value === s)?.label)
+                .filter(Boolean)
+                .join(', '),
+            },
+          ]
+        : []),
+      ...(value.currencyId
+        ? [
+            {
+              key: 'currencyId',
+              label: this.translate.instant('pages.invoice_management.filters.currency'),
+              value: this.currencies().find((c) => c.id === value.currencyId)?.code ?? '',
+            },
+          ]
+        : []),
+    ],
+    apply: (value) =>
+      this.applyFilter({
+        statuses: value.status?.length ? value.status : undefined,
+        currencyId: value.currencyId || undefined,
+      }),
+  });
+
   private currentFilter = signal<InvoiceFilterParams | null>(null);
   private currentOffset = signal<number>(0);
   private currentLimit = signal<number>(20);
   private currentSort = signal<SortDefinition[] | undefined>(undefined);
 
   readonly currencies = signal<{ id: string; code: string; isDefault: boolean }[]>([]);
+
+  constructor() {
+    super();
+    this.filters.connect(this.destroyed$);
+  }
 
   loadCurrencies(): void {
     this.adminClient.adminCurrencyClient
@@ -53,45 +116,6 @@ export class InvoiceManagementFacade extends UnsubscribeControlDirective {
         );
       });
   }
-
-  readonly invoiceStatusOptions = [
-    {
-      label: this.translate.instant(
-        'pages.invoice_management.invoice_status.pending'
-      ),
-      value: EmployeeInvoiceStatus.Pending,
-    },
-    {
-      label: this.translate.instant(
-        'pages.invoice_management.invoice_status.approved'
-      ),
-      value: EmployeeInvoiceStatus.Approved,
-    },
-    {
-      label: this.translate.instant(
-        'pages.invoice_management.invoice_status.paid'
-      ),
-      value: EmployeeInvoiceStatus.Paid,
-    },
-    {
-      label: this.translate.instant(
-        'pages.invoice_management.invoice_status.disputed'
-      ),
-      value: EmployeeInvoiceStatus.Disputed,
-    },
-    {
-      label: this.translate.instant(
-        'pages.invoice_management.invoice_status.rejected'
-      ),
-      value: EmployeeInvoiceStatus.Rejected,
-    },
-    {
-      label: this.translate.instant(
-        'pages.invoice_management.invoice_status.cancelled'
-      ),
-      value: EmployeeInvoiceStatus.Cancelled,
-    },
-  ];
 
   loadInvoices(): void {
     this.loading.set(true);
@@ -128,14 +152,19 @@ export class InvoiceManagementFacade extends UnsubscribeControlDirective {
       });
   }
 
-  onPageChange(offset: number, limit: number): void {
-    this.currentOffset.set(offset);
-    this.currentLimit.set(limit);
+  onPageChange(event: PaginationState): void {
+    this.currentOffset.set(event.first);
+    this.currentLimit.set(event.rows);
     this.loadInvoices();
   }
 
-  onSortChange(sort: SortDefinition[] | undefined): void {
-    this.currentSort.set(sort);
+  onSortChange(event: SortEvent): void {
+    this.currentSort.set([
+      new SortDefinition({
+        field: event.field,
+        direction: event.order === 1 ? SortDirection.Ascending : SortDirection.Descending,
+      }),
+    ]);
     this.loadInvoices();
   }
 
@@ -145,10 +174,15 @@ export class InvoiceManagementFacade extends UnsubscribeControlDirective {
     this.loadInvoices();
   }
 
-  resetFilter(): void {
-    this.currentFilter.set(null);
-    this.currentOffset.set(0);
-    this.loadInvoices();
+  isStatusChecked(status: EmployeeInvoiceStatus): boolean {
+    return this.filterForm.value.status?.includes(status) ?? false;
+  }
+
+  setStatus(status: EmployeeInvoiceStatus, checked: boolean): void {
+    const current = this.filterForm.value.status || [];
+    this.filterForm.patchValue({
+      status: checked ? [...new Set([...current, status])] : current.filter((s) => s !== status),
+    });
   }
 
   downloadInvoice(invoice: EmployeeInvoiceDto): void {

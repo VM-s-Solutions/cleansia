@@ -1,4 +1,5 @@
 import { OrderStatus, PaymentStatus } from '@cleansia/admin-services';
+import { FilterChip } from '@cleansia/components';
 import { formatDate } from '@cleansia/utils';
 import { TranslateService } from '@ngx-translate/core';
 
@@ -45,12 +46,6 @@ export function buildPaymentStatusOptions(
 }
 
 // --- Filter chip helpers ---
-
-export interface FilterChip {
-  key: string;
-  label: string;
-  value: string;
-}
 
 export function buildFilterChips(
   formValues: {
@@ -118,7 +113,7 @@ export function buildFilterChips(
 
   if (formValues.currencyId) {
     chips.push({
-      key: 'currency',
+      key: 'currencyId',
       label: translate.instant('pages.order_management.filters.currency'),
       value: currencies.find((c) => c.id === formValues.currencyId)?.code ?? '',
     });
@@ -179,32 +174,4 @@ export function buildFilterPayload(formValues: {
     cleaningDateTo: formValues.cleaningDateTo ?? undefined,
     currencyId: formValues.currencyId || undefined,
   };
-}
-
-export const FILTER_FORM_DEFAULTS = {
-  orderStatus: [] as OrderStatus[],
-  paymentStatus: [] as PaymentStatus[],
-  searchTerm: '',
-  cleaningDateFrom: null as Date | null,
-  cleaningDateTo: null as Date | null,
-  currencyId: null as string | null,
-};
-
-// --- Filter chip removal helper ---
-
-export function getFilterPatchForChipRemoval(key: string): Partial<typeof FILTER_FORM_DEFAULTS> {
-  switch (key) {
-    case 'orderStatus':
-      return { orderStatus: [] };
-    case 'paymentStatus':
-      return { paymentStatus: [] };
-    case 'cleaningDateFrom':
-      return { cleaningDateFrom: null };
-    case 'cleaningDateTo':
-      return { cleaningDateTo: null };
-    case 'currency':
-      return { currencyId: null };
-    default:
-      return { searchTerm: '' };
-  }
 }

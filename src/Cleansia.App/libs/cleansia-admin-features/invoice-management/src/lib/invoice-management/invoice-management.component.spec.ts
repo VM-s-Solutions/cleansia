@@ -63,7 +63,7 @@ describe('InvoiceManagementComponent', () => {
       .mockImplementation(() => undefined);
     const invoice = EmployeeInvoiceDto.fromJS({ id: 'invoice-1' });
 
-    component.retryPdf(invoice);
+    component['table']().actions[2].onClick(invoice);
 
     expect(retrySpy).toHaveBeenCalledWith(invoice);
   });

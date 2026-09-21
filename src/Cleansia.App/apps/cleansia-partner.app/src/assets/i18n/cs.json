@@ -302,7 +302,6 @@
       "show_filters": "Zobrazit filtry",
       "hide_filters": "Skrýt filtry",
       "filters": {
-        "title": "Filtry",
         "tooltip": "Klikněte pro filtrování objednávek",
         "active_count": "{{count}} aktivních filtrů",
         "search_criteria": "Kritéria vyhledávání",
@@ -321,10 +320,8 @@
         "cleaning_date_to": "Datum úklidu do",
         "select_date": "Vyberte datum",
         "apply": "Použít filtry",
-        "reset": "Resetovat filtry",
         "filter_active": "aktivní",
-        "filters_active": "aktivních",
-        "clear_all": "Vymazat vše"
+        "filters_active": "aktivních"
       },
       "work_contract": {
         "title": "Smlouva o dílo",
@@ -468,7 +465,6 @@
       "download_failed": "Nepodařilo se stáhnout fakturu",
       "no_invoices": "Žádné faktury k zobrazení",
       "filters": {
-        "title": "Filtry",
         "tooltip": "Klikněte pro filtrování faktur",
         "active_count": "{{count}} aktivních filtrů",
         "search_criteria": "Kritéria vyhledávání",
@@ -479,9 +475,7 @@
         "amount_range": "Rozsah částky",
         "min_amount": "Minimální částka",
         "max_amount": "Maximální částka",
-        "invoice_status": "Stav faktury",
-        "reset": "Obnovit filtry",
-        "clear_all": "Vymazat vše"
+        "invoice_status": "Stav faktury"
       }
     },
     "invoice_detail": {
@@ -610,6 +604,11 @@
     "refresh": "Obnovit",
     "common": "Obecné",
     "close": "Zavřít",
+    "filters": {
+      "title": "Filtry",
+      "reset": "Resetovat filtry",
+      "clear_all": "Vymazat vše"
+    },
     "alt": {
       "photo": "Fotografie"
     },

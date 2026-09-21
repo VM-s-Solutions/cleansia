@@ -8,7 +8,7 @@ import {
 import { SnackbarService } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
 import { DialogService } from 'primeng/dynamicdialog';
-import { of, throwError } from 'rxjs';
+import { EMPTY, of, throwError } from 'rxjs';
 import { EmployeeManagementFacade } from './employee-management.facade';
 
 describe('EmployeeManagementFacade', () => {
@@ -42,7 +42,7 @@ describe('EmployeeManagementFacade', () => {
           },
         },
         { provide: SnackbarService, useValue: snackbar },
-        { provide: TranslateService, useValue: { instant: (k: string) => k } },
+        { provide: TranslateService, useValue: { instant: (k: string) => k, currentLang: 'cs', onLangChange: EMPTY } },
         { provide: DialogService, useValue: { open: jest.fn() } },
       ],
     });
@@ -105,12 +105,12 @@ describe('EmployeeManagementFacade', () => {
   });
 
   it('returns to the first page when a filter is applied and when it is reset', () => {
-    facade.onPageChange(40, 20);
+    facade.onPageChange({ first: 40, rows: 20, page: 2, totalRecords: 100 });
     facade.applyFilter({ contractStatuses: [ContractStatus.Pending] });
     expect(getPagedMock.mock.calls.at(-1)?.[5]).toBe(0);
 
-    facade.onPageChange(40, 20);
-    facade.resetFilter();
+    facade.onPageChange({ first: 40, rows: 20, page: 2, totalRecords: 100 });
+    facade.applyFilter({});
     expect(getPagedMock.mock.calls.at(-1)?.[5]).toBe(0);
   });
 

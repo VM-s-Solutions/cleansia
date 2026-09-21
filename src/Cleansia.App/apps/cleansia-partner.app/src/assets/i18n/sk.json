@@ -300,7 +300,6 @@
       "show_filters": "Zobraziť filtre",
       "hide_filters": "Skryť filtre",
       "filters": {
-        "title": "Filtre",
         "tooltip": "Kliknite pre filtrovanie objednávok",
         "active_count": "{{count}} aktívnych filtrov",
         "search_criteria": "Kritériá vyhľadávania",
@@ -319,10 +318,8 @@
         "cleaning_date_to": "Dátum upratovania do",
         "select_date": "Vyberte dátum",
         "apply": "Použiť filtre",
-        "reset": "Obnoviť filtre",
         "filter_active": "aktívny",
-        "filters_active": "aktívnych",
-        "clear_all": "Vymazať všetko"
+        "filters_active": "aktívnych"
       },
       "no_logs": "Žiadne časové záznamy na zobrazenie",
       "save_log": "Uložiť záznam",
@@ -468,7 +465,6 @@
       "download_failed": "Nepodarilo sa stiahnuť faktúru",
       "no_invoices": "Žiadne faktúry na zobrazenie",
       "filters": {
-        "title": "Filtre",
         "tooltip": "Kliknite pre filtrovanie faktúr",
         "active_count": "{{count}} aktívnych filtrov",
         "search_criteria": "Kritériá vyhľadávania",
@@ -479,9 +475,7 @@
         "amount_range": "Rozsah sumy",
         "min_amount": "Minimálna suma",
         "max_amount": "Maximálna suma",
-        "invoice_status": "Stav faktúry",
-        "reset": "Obnoviť filtre",
-        "clear_all": "Vymazať všetko"
+        "invoice_status": "Stav faktúry"
       }
     },
     "invoice_detail": {
@@ -610,6 +604,11 @@
     "refresh": "Obnoviť",
     "common": "Všeobecné",
     "close": "Zavrieť",
+    "filters": {
+      "title": "Filtre",
+      "reset": "Obnoviť filtre",
+      "clear_all": "Vymazať všetko"
+    },
     "alt": {
       "photo": "Fotografia"
     },

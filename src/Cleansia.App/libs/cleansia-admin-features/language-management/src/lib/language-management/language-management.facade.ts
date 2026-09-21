@@ -1,8 +1,11 @@
-import { Injectable, inject, signal } from '@angular/core';
+import { computed, Injectable, inject, signal } from '@angular/core';
+import { FormBuilder } from '@angular/forms';
 import { Router } from '@angular/router';
 import { AdminClient, LanguageListItem } from '@cleansia/admin-services';
+import { FilterChip, FilterDrawerState } from '@cleansia/components';
 import { UnsubscribeControlDirective } from '@cleansia/directives';
 import { CleansiaAdminRoute, SnackbarService } from '@cleansia/services';
+import { currentLanguage } from '@cleansia/utils';
 import { TranslateService } from '@ngx-translate/core';
 import { catchError, finalize, of, takeUntil } from 'rxjs';
 
@@ -13,9 +16,47 @@ export class LanguageManagementFacade extends UnsubscribeControlDirective {
   private readonly translate = inject(TranslateService);
   private readonly router = inject(Router);
 
-  readonly languages = signal<LanguageListItem[]>([]);
+  readonly lang = currentLanguage(this.translate);
   readonly loading = signal<boolean>(false);
   readonly initialLoading = signal<boolean>(true);
+
+  // The overview is one short master list, so the search filters it here rather than on the server.
+  private readonly allLanguages = signal<LanguageListItem[]>([]);
+  private readonly searchTerm = signal('');
+  readonly languages = computed(() => {
+    const term = this.searchTerm().trim().toLocaleLowerCase();
+    const all = this.allLanguages();
+    if (!term) return all;
+    return all.filter(
+      (language) =>
+        language.code?.toLocaleLowerCase().includes(term) ||
+        language.name?.toLocaleLowerCase().includes(term)
+    );
+  });
+
+  readonly filterForm = inject(FormBuilder).group({
+    searchTerm: [''],
+  });
+  readonly filters = new FilterDrawerState({
+    form: this.filterForm,
+    lang: this.lang,
+    chips: (value): FilterChip[] =>
+      value.searchTerm
+        ? [
+            {
+              key: 'searchTerm',
+              label: this.translate.instant('pages.language_management.filters.search'),
+              value: value.searchTerm,
+            },
+          ]
+        : [],
+    apply: (value) => this.searchTerm.set(value.searchTerm ?? ''),
+  });
+
+  constructor() {
+    super();
+    this.filters.connect(this.destroyed$);
+  }
 
   loadLanguages(): void {
     this.loading.set(true);
@@ -31,7 +72,7 @@ export class LanguageManagementFacade extends UnsubscribeControlDirective {
         // `?? []` — the generated client can put a NULL in a signal typed as an array; reasoned out
         // in service-management/service-form.facade.ts. Nothing dereferences it here, so the null
         // would travel as far as the language table before it threw.
-        this.languages.set(languages ?? []);
+        this.allLanguages.set(languages ?? []);
         if (this.initialLoading()) {
           this.initialLoading.set(false);
         }

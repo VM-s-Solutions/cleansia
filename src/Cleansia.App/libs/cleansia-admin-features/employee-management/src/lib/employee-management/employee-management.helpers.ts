@@ -1,4 +1,5 @@
 import { ContractStatus } from '@cleansia/admin-services';
+import { FilterChip } from '@cleansia/components';
 import { TranslateService } from '@ngx-translate/core';
 
 // --- Filter option builders ---
@@ -29,13 +30,7 @@ export function buildActiveStatusOptions(
   ];
 }
 
-// --- Filter chip types & logic ---
-
-export interface FilterChip {
-  key: string;
-  label: string;
-  value: string;
-}
+// --- Filter chip logic ---
 
 export interface EmployeeFilterValues {
   searchTerm?: string | null;

@@ -111,11 +111,11 @@
       @if (mergedConfig().rowsPerPageOptions &&
       mergedConfig().rowsPerPageOptions!.length > 0) {
       <div class="pagination__rows-selector">
-        <label for="rows-per-page-select"
+        <label [for]="rowsPerPageInputId"
           >{{ 'global.rows_per_page' | translate }}:</label
         >
         <p-select
-          inputId="rows-per-page-select"
+          [inputId]="rowsPerPageInputId"
           [options]="rowsPerPageSelectOptions()"
           [(ngModel)]="currentRowsPerPage"
           (onChange)="onRowsPerPageChange($event.value)"

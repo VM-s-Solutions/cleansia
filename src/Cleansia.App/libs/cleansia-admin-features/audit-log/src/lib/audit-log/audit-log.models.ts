@@ -3,9 +3,11 @@ import {
   ADMIN_ROLE_LABEL_KEYS,
   ADMIN_ROLES,
   AdminActionAuditDto,
+  AdminRole,
   getAdminRoleLabelKey,
 } from '@cleansia/admin-services';
 import {
+  FilterChip,
   ICleansiaSelectOption,
   TableAction,
   TableColumn,
@@ -137,4 +139,59 @@ export function buildActorRoleOptions(
     label: translate.instant(ADMIN_ROLE_LABEL_KEYS[role]),
     value: role,
   }));
+}
+
+export interface AuditLogFilterValues {
+  actorId?: string | null;
+  actorEmail?: string | null;
+  action?: string | null;
+  resourceType?: string | null;
+  resourceId?: string | null;
+  occurredFrom?: Date | null;
+  occurredTo?: Date | null;
+  success?: boolean | null;
+  actorAdminRole?: AdminRole | null;
+}
+
+export function buildAuditLogFilterChips(
+  v: AuditLogFilterValues,
+  translate: TranslateService
+): FilterChip[] {
+  const chips: FilterChip[] = [];
+  const text = (key: string, value: string | null | undefined, labelKey: string) => {
+    if (value) chips.push({ key, label: translate.instant(labelKey), value });
+  };
+
+  text('actorId', v.actorId, 'pages.audit_log.filters.actor_id');
+  text('actorEmail', v.actorEmail, 'pages.audit_log.filters.actor_email');
+  if (v.actorAdminRole != null) {
+    chips.push({
+      key: 'actorAdminRole',
+      label: translate.instant('pages.audit_log.filters.actor_role'),
+      value: formatActorRole({ actorAdminRole: v.actorAdminRole }, translate),
+    });
+  }
+  text('action', v.action, 'pages.audit_log.filters.action');
+  text('resourceType', v.resourceType, 'pages.audit_log.filters.resource_type');
+  text('resourceId', v.resourceId, 'pages.audit_log.filters.resource_id');
+  if (v.occurredFrom || v.occurredTo) {
+    chips.push({
+      key: 'dateRange',
+      label: translate.instant('pages.audit_log.filters.date_range'),
+      value: [v.occurredFrom, v.occurredTo]
+        .filter(Boolean)
+        .map((d) => formatDate(d as Date, translate.currentLang))
+        .join(' – '),
+      controls: ['occurredFrom', 'occurredTo'],
+    });
+  }
+  if (v.success != null) {
+    chips.push({
+      key: 'success',
+      label: translate.instant('pages.audit_log.filters.outcome'),
+      value: translate.instant(getOutcomeLabelKey(v.success)),
+    });
+  }
+
+  return chips;
 }

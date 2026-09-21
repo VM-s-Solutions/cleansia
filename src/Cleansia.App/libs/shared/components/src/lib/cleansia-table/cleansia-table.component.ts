@@ -23,6 +23,7 @@ import {
 
 const DEFAULT_ROWS = 20;
 const DEFAULT_ROWS_PER_PAGE_OPTIONS = [5, 10, 20, 50];
+let nextTableId = 0;
 
 /**
  * The shared table: pagination on by default, sorting, custom cell templates, row actions, loading and
@@ -58,6 +59,9 @@ export class CleansiaTableComponent<T = unknown> implements OnInit {
   actionClick = output<{ action: TableAction<T>; row: T }>();
   pageChange = output<PaginationState>();
   sortChange = output<SortEvent>();
+
+  // Two tables on one page each label their own rows-per-page select.
+  readonly rowsPerPageInputId = `rows-per-page-${nextTableId++}`;
 
   // Internal state
   currentSort = signal<SortEvent | null>(null);

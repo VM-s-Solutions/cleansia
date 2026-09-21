@@ -1,10 +1,9 @@
-import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, computed, DestroyRef, inject, OnInit, signal } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
+import { ChangeDetectionStrategy, Component, computed, inject, OnInit } from '@angular/core';
+import { ReactiveFormsModule } from '@angular/forms';
 import {
-  CleansiaButtonComponent,
   CleansiaCalendarComponent,
+  CleansiaFilterChipsComponent,
+  CleansiaFilterDrawerComponent,
   CleansiaLoaderComponent,
   CleansiaSectionComponent,
   CleansiaSelectComponent,
@@ -21,10 +20,8 @@ import {
   RevenueByPaymentType,
   RevenueByService,
 } from '@cleansia/admin-services';
-import { formatDate } from '@cleansia/utils';
 import { TranslateService } from '@ngx-translate/core';
 import { TranslatePipe } from '@ngx-translate/core';
-import { debounceTime, distinctUntilChanged } from 'rxjs';
 import { Tabs } from 'primeng/tabs';
 import { TabList } from 'primeng/tabs';
 import { Tab } from 'primeng/tabs';
@@ -37,7 +34,6 @@ import { ReportsFacade, ReportType } from './reports.facade';
   selector: 'cleansia-admin-reports',
   standalone: true,
   imports: [
-    CommonModule,
     ReactiveFormsModule,
     TranslatePipe,
     Tabs,
@@ -46,84 +42,39 @@ import { ReportsFacade, ReportType } from './reports.facade';
     TabPanels,
     TabPanel,
     TooltipModule,
-    CleansiaButtonComponent,
     CleansiaCalendarComponent,
     CleansiaLoaderComponent,
     CleansiaSectionComponent,
     CleansiaSelectComponent,
     CleansiaTableComponent,
     CleansiaTitleComponent,
+    CleansiaFilterDrawerComponent,
+    CleansiaFilterChipsComponent,
   ],
   templateUrl: './reports.component.html',
   providers: [ReportsFacade],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ReportsComponent implements OnInit {
-  private readonly fb = inject(FormBuilder);
-  private readonly cd = inject(ChangeDetectorRef);
-  private readonly destroyRef = inject(DestroyRef);
   private readonly translate = inject(TranslateService);
   protected readonly facade = inject(ReportsFacade);
-
-  dateRangeForm = this.fb.group({
-    startDate: [this.facade.dateRange().startDate],
-    endDate: [this.facade.dateRange().endDate],
-    currencyId: [null as string | null],
-  });
 
   readonly currencyOptions = computed<ICleansiaSelectOption[]>(() =>
     this.facade.currencies().map((c) => ({ label: c.code, value: c.id }))
   );
 
-  // Filter drawer state
-  isFilterDrawerOpen = signal(false);
-  private filterFormVersion = signal(0);
-  activeFilterChips = computed(() => {
-    this.filterFormVersion();
-    return this.getActiveFilterChips();
+  protected readonly tables = computed(() => {
+    this.facade.lang();
+    return this.buildTables();
   });
-  hasActiveFilters = computed(() => {
-    this.filterFormVersion();
-    // Check if current dates differ from default dates
-    const values = this.dateRangeForm.value;
-    const defaultRange = this.facade.defaultDateRange;
-    if (!values.startDate || !values.endDate) return false;
-
-    const startDiffers = values.startDate.toDateString() !== defaultRange.startDate.toDateString();
-    const endDiffers = values.endDate.toDateString() !== defaultRange.endDate.toDateString();
-    const currencyDiffers = !!values.currencyId;
-    return startDiffers || endDiffers || currencyDiffers;
-  });
-  activeFilterCount = computed(() => this.activeFilterChips().length);
-
-  // Revenue Tables
-  revenueByServiceColumns: TableColumn<RevenueByService>[] = [];
-  revenueByPackageColumns: TableColumn<RevenueByPackage>[] = [];
-  revenueByPaymentTypeColumns: TableColumn<RevenueByPaymentType>[] = [];
-
-  // Payroll Tables
-  employeeSummariesColumns: TableColumn<EmployeePayrollSummary>[] = [];
-  payrollByStatusColumns: TableColumn<PayrollByStatus>[] = [];
-  monthlyPayrollColumns: TableColumn<MonthlyPayroll>[] = [];
 
   ngOnInit(): void {
-    this.rebuildTableDefinitions();
     this.facade.loadCurrencies();
     this.facade.loadRevenueReport();
-    this.setupAutoFilter();
-
-    // Rebuild tables when language changes
-    this.translate.onLangChange
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe(() => {
-        this.rebuildTableDefinitions();
-        this.cd.detectChanges();
-      });
   }
 
-  private rebuildTableDefinitions(): void {
-    // Revenue Tables
-    this.revenueByServiceColumns = [
+  private buildTables() {
+    const revenueByService: TableColumn<RevenueByService>[] = [
       {
         id: 'serviceName',
         field: 'serviceName',
@@ -142,7 +93,7 @@ export class ReportsComponent implements OnInit {
       },
     ];
 
-    this.revenueByPackageColumns = [
+    const revenueByPackage: TableColumn<RevenueByPackage>[] = [
       {
         id: 'packageName',
         field: 'packageName',
@@ -161,7 +112,7 @@ export class ReportsComponent implements OnInit {
       },
     ];
 
-    this.revenueByPaymentTypeColumns = [
+    const revenueByPaymentType: TableColumn<RevenueByPaymentType>[] = [
       {
         id: 'paymentTypeName',
         field: 'paymentTypeName',
@@ -215,8 +166,7 @@ export class ReportsComponent implements OnInit {
       },
     ];
 
-    // Payroll Tables
-    this.employeeSummariesColumns = [
+    const employeeSummaries: TableColumn<EmployeePayrollSummary>[] = [
       {
         id: 'employeeName',
         field: 'employeeName',
@@ -258,7 +208,7 @@ export class ReportsComponent implements OnInit {
       },
     ];
 
-    this.payrollByStatusColumns = [
+    const payrollByStatus: TableColumn<PayrollByStatus>[] = [
       {
         id: 'statusName',
         field: 'statusName',
@@ -277,7 +227,7 @@ export class ReportsComponent implements OnInit {
       },
     ];
 
-    this.monthlyPayrollColumns = [
+    const monthlyPayroll: TableColumn<MonthlyPayroll>[] = [
       {
         id: 'month',
         field: 'monthName',
@@ -296,29 +246,15 @@ export class ReportsComponent implements OnInit {
         getValue: (row) => this.facade.formatPayrollAmount(row?.totalAmount),
       },
     ];
-  }
 
-  private setupAutoFilter(): void {
-    this.dateRangeForm.valueChanges
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe(() => this.filterFormVersion.update((v) => v + 1));
-
-    this.dateRangeForm.valueChanges
-      .pipe(
-        debounceTime(500),
-        distinctUntilChanged(
-          (prev, curr) =>
-            prev.startDate?.getTime() === curr.startDate?.getTime() &&
-            prev.endDate?.getTime() === curr.endDate?.getTime() &&
-            prev.currencyId === curr.currencyId
-        ),
-        takeUntilDestroyed(this.destroyRef)
-      )
-      .subscribe((value) => {
-        if (value.startDate && value.endDate) {
-          this.facade.setDateRange(value.startDate, value.endDate, value.currencyId ?? undefined);
-        }
-      });
+    return {
+      revenueByService,
+      revenueByPackage,
+      revenueByPaymentType,
+      employeeSummaries,
+      payrollByStatus,
+      monthlyPayroll,
+    };
   }
 
   activeTab: ReportType = 'revenue';
@@ -328,76 +264,5 @@ export class ReportsComponent implements OnInit {
     const tab = value as ReportType;
     this.activeTab = tab;
     this.facade.setActiveTab(tab);
-  }
-
-  // Filter drawer methods
-  openFilterDrawer(): void {
-    this.isFilterDrawerOpen.set(true);
-  }
-
-  closeFilterDrawer(): void {
-    this.isFilterDrawerOpen.set(false);
-  }
-
-  getActiveFilterChips(): { key: string; label: string; value: string }[] {
-    const chips: { key: string; label: string; value: string }[] = [];
-    const values = this.dateRangeForm.value;
-    const defaultRange = this.facade.defaultDateRange;
-
-    if (!values.startDate || !values.endDate) return chips;
-
-    const startDiffers = values.startDate.toDateString() !== defaultRange.startDate.toDateString();
-    const endDiffers = values.endDate.toDateString() !== defaultRange.endDate.toDateString();
-
-    // Only show a single "Date Range" chip if either date differs from default
-    if (startDiffers || endDiffers) {
-      chips.push({
-        key: 'dateRange',
-        label: this.translate.instant('pages.reports.filters.date_range'),
-        value: `${this.formatDate(values.startDate)} - ${this.formatDate(values.endDate)}`,
-      });
-    }
-
-    if (values.currencyId) {
-      chips.push({
-        key: 'currency',
-        label: this.translate.instant('pages.reports.filters.currency'),
-        value: this.facade.currencies().find((c) => c.id === values.currencyId)?.code ?? '',
-      });
-    }
-
-    return chips;
-  }
-
-  private formatDate(date: Date): string {
-    return formatDate(date, this.translate.currentLang);
-  }
-
-  removeFilterChip(key: string): void {
-    if (key === 'currency') {
-      this.dateRangeForm.patchValue({ currencyId: null });
-      return;
-    }
-    // For reports, removing the date range chip resets to defaults
-    if (key === 'dateRange') {
-      this.resetFilters();
-    }
-  }
-
-  clearAllFilters(): void {
-    this.resetFilters();
-  }
-
-  resetFilters(): void {
-    const defaultRange = this.facade.defaultDateRange;
-    // Create fresh dates to avoid reference issues
-    const defaultStart = new Date(defaultRange.startDate);
-    const defaultEnd = new Date(defaultRange.endDate);
-    this.dateRangeForm.patchValue({
-      startDate: defaultStart,
-      endDate: defaultEnd,
-      currencyId: null,
-    });
-    this.facade.resetToDefaultDateRange();
   }
 }

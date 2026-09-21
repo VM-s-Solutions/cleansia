@@ -300,7 +300,6 @@
       "show_filters": "Show Filters",
       "hide_filters": "Hide Filters",
       "filters": {
-        "title": "Filters",
         "tooltip": "Click to filter orders",
         "active_count": "{{count}} active filters",
         "search_criteria": "Search Criteria",
@@ -319,10 +318,8 @@
         "cleaning_date_to": "Cleaning Date To",
         "select_date": "Select date",
         "apply": "Apply Filters",
-        "reset": "Reset Filters",
         "filter_active": "active",
-        "filters_active": "active",
-        "clear_all": "Clear all"
+        "filters_active": "active"
       },
       "no_logs": "No time logs to display",
       "save_log": "Save log",
@@ -468,7 +465,6 @@
       "download_failed": "Failed to download invoice",
       "no_invoices": "No invoices to display",
       "filters": {
-        "title": "Filters",
         "tooltip": "Click to filter invoices",
         "active_count": "{{count}} active filters",
         "search_criteria": "Search Criteria",
@@ -479,9 +475,7 @@
         "amount_range": "Amount Range",
         "min_amount": "Minimum Amount",
         "max_amount": "Maximum Amount",
-        "invoice_status": "Invoice Status",
-        "reset": "Reset Filters",
-        "clear_all": "Clear all"
+        "invoice_status": "Invoice Status"
       }
     },
     "invoice_detail": {
@@ -610,6 +604,11 @@
     "refresh": "Refresh",
     "common": "Common",
     "close": "Close",
+    "filters": {
+      "title": "Filters",
+      "reset": "Reset Filters",
+      "clear_all": "Clear all"
+    },
     "alt": {
       "photo": "Photo"
     },

@@ -1,5 +1,5 @@
-import { toKebabCase, toSnakeCase } from '@cleansia/utils';
-import { ICleansiaSelectOption } from '@cleansia/components';
+import { formatDate, toKebabCase, toSnakeCase } from '@cleansia/utils';
+import { FilterChip, ICleansiaSelectOption } from '@cleansia/components';
 import { OrderFilter } from '@cleansia/models';
 import {
   OrderListItem,
@@ -7,7 +7,7 @@ import {
   PaymentStatus,
 } from '@cleansia/partner-services';
 import { TranslateService } from '@ngx-translate/core';
-import { FilterChip, OrderFilterFormValue } from './orders.models';
+import { OrderFilterFormValue } from './orders.models';
 
 // --- Status CSS class helpers ---
 
@@ -110,6 +110,7 @@ export function buildActiveFilterChips(
       key: 'orderStatuses',
       label: translate.instant('pages.orders.filters.order_status'),
       value: statusNames,
+      controls: ['orderStatuses', ...orderStatusMultiOptions.map((o) => `orderStatus_${o.value}`)],
     });
   }
 
@@ -122,6 +123,7 @@ export function buildActiveFilterChips(
       key: 'paymentStatuses',
       label: translate.instant('pages.orders.filters.payment_status'),
       value: statusNames,
+      controls: ['paymentStatuses', ...paymentStatusMultiOptions.map((o) => `paymentStatus_${o.value}`)],
     });
   }
 
@@ -129,7 +131,7 @@ export function buildActiveFilterChips(
     chips.push({
       key: 'cleaningDateFrom',
       label: translate.instant('pages.orders.filters.cleaning_date_from'),
-      value: new Date(formValue.cleaningDateFrom).toLocaleDateString(),
+      value: formatDate(formValue.cleaningDateFrom, translate.currentLang),
     });
   }
 
@@ -137,7 +139,7 @@ export function buildActiveFilterChips(
     chips.push({
       key: 'cleaningDateTo',
       label: translate.instant('pages.orders.filters.cleaning_date_to'),
-      value: new Date(formValue.cleaningDateTo).toLocaleDateString(),
+      value: formatDate(formValue.cleaningDateTo, translate.currentLang),
     });
   }
 

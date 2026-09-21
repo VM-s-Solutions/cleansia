@@ -3,7 +3,7 @@ import { Router } from '@angular/router';
 import { AdminClient, LanguageListItem } from '@cleansia/admin-services';
 import { SnackbarService } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
-import { of } from 'rxjs';
+import { EMPTY, of } from 'rxjs';
 import { LanguageManagementFacade } from './language-management.facade';
 
 describe('LanguageManagementFacade', () => {
@@ -30,7 +30,7 @@ describe('LanguageManagementFacade', () => {
           provide: SnackbarService,
           useValue: { showSuccess: jest.fn(), showError: jest.fn() },
         },
-        { provide: TranslateService, useValue: { instant: (k: string) => k } },
+        { provide: TranslateService, useValue: { instant: (k: string) => k, currentLang: 'cs', onLangChange: EMPTY } },
         { provide: Router, useValue: { navigate: jest.fn() } },
       ],
     });
@@ -59,5 +59,27 @@ describe('LanguageManagementFacade', () => {
 
     expect(facade.languages()).toEqual([]);
     expect(facade.initialLoading()).toBe(false);
+  });
+
+  it('narrows the overview to the languages whose code or name contains the search, once it settles', () => {
+    jest.useFakeTimers();
+    getOverviewMock.mockReturnValue(
+      of([
+        LanguageListItem.fromJS({ id: 'l-1', code: 'cs', name: 'Čeština' }),
+        LanguageListItem.fromJS({ id: 'l-2', code: 'uk', name: 'Українська' }),
+      ])
+    );
+    facade.loadLanguages();
+
+    facade.filterForm.patchValue({ searchTerm: 'ČEŠ' });
+    jest.advanceTimersByTime(500);
+    expect(facade.languages().map((l) => l.code)).toEqual(['cs']);
+    expect(facade.filters.chips()).toEqual([
+      { key: 'searchTerm', label: 'pages.language_management.filters.search', value: 'ČEŠ' },
+    ]);
+
+    facade.filters.reset();
+    expect(facade.languages().length).toBe(2);
+    jest.useRealTimers();
   });
 });

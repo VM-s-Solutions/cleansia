@@ -9,7 +9,7 @@ import {
 } from '@cleansia/admin-services';
 import { SnackbarService } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
-import { of, throwError } from 'rxjs';
+import { EMPTY, of, throwError } from 'rxjs';
 import { InvoiceManagementFacade } from './invoice-management.facade';
 
 describe('InvoiceManagementFacade', () => {
@@ -58,7 +58,7 @@ describe('InvoiceManagementFacade', () => {
         { provide: SnackbarService, useValue: snackbar },
         {
           provide: TranslateService,
-          useValue: { instant: (k: string) => k, currentLang: 'cs' },
+          useValue: { instant: (k: string) => k, currentLang: 'cs', onLangChange: EMPTY },
         },
       ],
     });
@@ -177,7 +177,7 @@ describe('InvoiceManagementFacade', () => {
 
     expect(invoiceClient.getPaged.mock.lastCall?.[CURRENCY_SLOT]).toBe('cur-eur');
 
-    facade.resetFilter();
+    facade.applyFilter({});
 
     expect(invoiceClient.getPaged).toHaveBeenCalledTimes(2);
     expect(invoiceClient.getPaged.mock.lastCall?.[CURRENCY_SLOT]).toBeUndefined();

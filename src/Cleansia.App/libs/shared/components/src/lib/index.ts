@@ -12,6 +12,7 @@ export * from './cleansia-dev-banner';
 export * from './cleansia-radio';
 export * from './cleansia-dynamic-background';
 export * from './cleansia-file';
+export * from './cleansia-filter-drawer';
 export * from './cleansia-help-card';
 export * from './cleansia-label';
 export * from './cleansia-language-switcher';

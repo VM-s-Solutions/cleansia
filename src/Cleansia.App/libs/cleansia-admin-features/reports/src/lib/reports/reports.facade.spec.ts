@@ -52,7 +52,13 @@ describe('ReportsFacade', () => {
   });
 
   it('passes the chosen currency to both report endpoints', () => {
-    facade.setDateRange(new Date('2026-01-01'), new Date('2026-01-31'), 'cur-eur');
+    jest.useFakeTimers();
+    facade.filterForm.patchValue({
+      startDate: new Date('2026-01-01'),
+      endDate: new Date('2026-01-31'),
+      currencyId: 'cur-eur',
+    });
+    jest.advanceTimersByTime(500);
 
     expect(revenueMock).toHaveBeenCalledWith(
       expect.any(Date),
@@ -68,12 +74,13 @@ describe('ReportsFacade', () => {
       'cur-eur'
     );
 
-    facade.resetToDefaultDateRange();
+    facade.filters.reset();
     facade.setActiveTab('revenue');
 
     expect(facade.selectedCurrencyId()).toBeUndefined();
     expect(payrollMock.mock.lastCall?.[2]).toBeUndefined();
     expect(revenueMock.mock.lastCall?.[2]).toBeUndefined();
+    jest.useRealTimers();
   });
 
   it('formats report amounts in the currency the report names', () => {

@@ -3,12 +3,6 @@ import { HelpStep, StatusFlowItem, TableAction, TableColumn } from '@cleansia/co
 import { OrderListItem, OrderStatus } from '@cleansia/partner-services';
 import { formatDate, formatMoney, localeFor } from '@cleansia/utils';
 
-export interface FilterChip {
-  key: string;
-  label: string;
-  value: string;
-}
-
 export interface OrderFilterFormValue {
   customerName?: string | null;
   customerEmail?: string | null;

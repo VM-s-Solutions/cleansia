@@ -111,6 +111,11 @@
     "yes": "Yes",
     "no": "No",
     "close": "Close",
+    "filters": {
+      "title": "Filters",
+      "reset": "Reset Filters",
+      "clear_all": "Clear All"
+    },
     "all": "All",
     "no_data": "No data to display",
     "loading": "Loading...",
@@ -310,13 +315,10 @@
       "view_details": "View Details",
       "no_employees": "No employees to display",
       "filters": {
-        "title": "Filters",
         "search": "Search",
         "search_placeholder": "Search by name, email or phone",
         "contract_status": "Contract Status",
-        "active_status": "Active Status",
-        "reset": "Reset Filters",
-        "clear_all": "Clear All"
+        "active_status": "Active Status"
       },
       "approve_dialog": {
         "title": "Approve Employee",
@@ -570,7 +572,6 @@
       "view_details": "View Details",
       "no_orders": "No orders found",
       "filters": {
-        "title": "Filters",
         "search": "Search",
         "search_placeholder": "Search by customer name or order #",
         "order_status": "Order Status",
@@ -578,8 +579,6 @@
         "date_range": "Date Range",
         "date_from": "Date From",
         "date_to": "Date To",
-        "reset": "Reset Filters",
-        "clear_all": "Clear All",
         "currency": "Currency"
       },
       "order_status": {
@@ -781,12 +780,9 @@
       "download": "Download PDF",
       "no_invoices": "No invoices found",
       "filters": {
-        "title": "Filters",
         "search": "Search",
         "search_placeholder": "Search by invoice number or employee",
         "status": "Invoice Status",
-        "reset": "Reset Filters",
-        "clear_all": "Clear All",
         "currency": "Currency"
       },
       "invoice_status": {
@@ -822,7 +818,6 @@
         "failure": "Failure"
       },
       "filters": {
-        "title": "Filters",
         "actor": "Actor",
         "actor_id": "Actor ID",
         "actor_email": "Actor Email",
@@ -834,8 +829,6 @@
         "date_range": "Date Range",
         "date_from": "From",
         "date_to": "To",
-        "reset": "Reset Filters",
-        "clear_all": "Clear All",
         "actor_role": "Actor role"
       },
       "history": {
@@ -1043,11 +1036,8 @@
       "delete_confirm": "Are you sure you want to delete this service? This action cannot be undone.",
       "no_services": "No services found",
       "filters": {
-        "title": "Filters",
         "search": "Search",
         "search_placeholder": "Search by name or description",
-        "reset": "Reset Filters",
-        "clear_all": "Clear All",
         "status": "Status",
         "status_all": "All",
         "status_active": "Active",
@@ -1107,11 +1097,8 @@
       "delete_confirm": "Are you sure you want to delete this package? This action cannot be undone.",
       "no_packages": "No packages found",
       "filters": {
-        "title": "Filters",
         "search": "Search",
         "search_placeholder": "Search by name or description",
-        "reset": "Reset Filters",
-        "clear_all": "Clear All",
         "status": "Status",
         "status_all": "All",
         "status_active": "Active",
@@ -1178,11 +1165,8 @@
       "deactivate_confirm": "Deactivate “{{name}}”? It will be hidden from the booking wizard; orders that bought it are kept.",
       "no_extras": "No extras found",
       "filters": {
-        "title": "Filters",
         "search": "Search",
         "search_placeholder": "Search by slug, name or description",
-        "reset": "Reset Filters",
-        "clear_all": "Clear All",
         "status": "Status",
         "status_all": "All",
         "status_active": "Active",
@@ -1231,11 +1215,8 @@
       "activate_confirm": "Are you sure you want to activate this administrator? They will regain access to the admin panel.",
       "no_users": "No admin users found",
       "filters": {
-        "title": "Filters",
         "search": "Search",
-        "search_placeholder": "Search by name or email",
-        "reset": "Reset Filters",
-        "clear_all": "Clear All"
+        "search_placeholder": "Search by name or email"
       },
       "columns": {
         "name": "Name",
@@ -1290,11 +1271,8 @@
       "delete_confirm": "Are you sure you want to delete this language? This may affect existing translations.",
       "no_languages": "No languages found",
       "filters": {
-        "title": "Filters",
         "search": "Search",
-        "search_placeholder": "Search by code or name",
-        "reset": "Reset Filters",
-        "clear_all": "Clear All"
+        "search_placeholder": "Search by code or name"
       },
       "columns": {
         "code": "Code",
@@ -1762,11 +1740,8 @@
       "delete_confirm": "Are you sure you want to delete this company information? This action cannot be undone.",
       "no_companies": "No company information found",
       "filters": {
-        "title": "Filters",
         "search": "Search",
-        "search_placeholder": "Search by name or city",
-        "reset": "Reset Filters",
-        "clear_all": "Clear All"
+        "search_placeholder": "Search by name or city"
       },
       "columns": {
         "legal_name": "Legal Name",
@@ -1970,10 +1945,7 @@
       "apply_filter": "Apply Filter",
       "reset": "Reset Filters",
       "filters": {
-        "title": "Filters",
         "date_range": "Date Range",
-        "reset": "Reset Filters",
-        "clear_all": "Clear All",
         "currency": "Currency"
       },
       "revenue_report": "Revenue Report",
@@ -2823,11 +2795,8 @@
     "create_new": "Create New Pay Period",
     "confirm_close": "Are you sure you want to close this pay period? This action cannot be undone.",
     "filters": {
-      "title": "Filters",
       "status": "Status",
-      "year": "Year",
-      "reset": "Reset Filters",
-      "clear_all": "Clear All"
+      "year": "Year"
     },
     "list": {
       "title": "Pay Periods",

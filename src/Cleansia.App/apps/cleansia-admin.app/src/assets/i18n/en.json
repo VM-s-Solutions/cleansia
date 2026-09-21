@@ -166,6 +166,90 @@
     "show_password": "Show password",
     "hide_password": "Hide password"
   },
+  "enums": {
+    "order_status": {
+      "new": "New",
+      "pending": "Pending",
+      "confirmed": "Confirmed",
+      "on_the_way": "On the way",
+      "in_progress": "In Progress",
+      "completed": "Completed",
+      "cancelled": "Cancelled"
+    },
+    "payment_status": {
+      "pending": "Pending",
+      "paid": "Paid",
+      "failed": "Failed",
+      "refunded": "Refunded",
+      "disputed": "Disputed",
+      "partially_refunded": "Partially refunded"
+    },
+    "contract_status": {
+      "pending": "Pending",
+      "active": "Active",
+      "terminated": "Terminated",
+      "approved": "Approved",
+      "rejected": "Rejected"
+    },
+    "invoice_status": {
+      "pending": "Pending",
+      "approved": "Approved",
+      "paid": "Paid",
+      "disputed": "Disputed",
+      "rejected": "Rejected",
+      "cancelled": "Cancelled"
+    },
+    "invoice_pdf_state": {
+      "ready": "Ready",
+      "pending": "Generating…",
+      "failed": "Failed"
+    },
+    "dispute_status": {
+      "pending": "Pending",
+      "under_review": "Under review",
+      "waiting_for_response": "Waiting for response",
+      "resolved": "Resolved",
+      "closed": "Closed",
+      "escalated": "Escalated"
+    },
+    "pay_period_status": {
+      "open": "Open",
+      "closed": "Closed",
+      "paid": "Paid"
+    },
+    "company_lifecycle_state": {
+      "operating": "Operating",
+      "winding_down": "Winding down",
+      "deactivated": "Deactivated",
+      "frozen": "Frozen",
+      "archived": "Archived"
+    },
+    "settlement_fact_status": {
+      "blocking": "Blocks the archive",
+      "settled": "Settled",
+      "informational": "Informational"
+    },
+    "referral_status": {
+      "accepted": "Accepted",
+      "qualified": "Qualified",
+      "expired": "Expired",
+      "reversed": "Reversed"
+    },
+    "document_status": {
+      "pending": "Pending",
+      "approved": "Approved",
+      "rejected": "Rejected"
+    },
+    "active_status": {
+      "active": "Active",
+      "inactive": "Inactive"
+    },
+    "promo_code_status": {
+      "active": "Active",
+      "inactive": "Inactive",
+      "expired": "Expired"
+    }
+  },
   "sidebar": {
     "employees": "Employees",
     "pay_periods": "Pay Periods",
@@ -384,12 +468,6 @@
         "pay_config_delete_error": "Failed to delete pay configuration",
         "pay_config_bulk_success": "Pay configurations applied: {{created}} created, {{skipped}} skipped",
         "weekly_limit_save_success": "Weekly order limit updated"
-      },
-      "document_status": {
-        "pending": "Pending",
-        "approved": "Approved",
-        "rejected": "Rejected",
-        "unknown": "Unknown"
       },
       "grade": "Grade",
       "document_types": {
@@ -697,11 +775,6 @@
       "total_amount": "Total Amount",
       "status": "Status",
       "pdf_status": "PDF",
-      "pdf_state": {
-        "ready": "Ready",
-        "failed": "Failed",
-        "pending": "Generating…"
-      },
       "generated_at": "Generated",
       "actions": "Actions",
       "view_details": "View Details",
@@ -1678,8 +1751,7 @@
       "status": {
         "pending": "Pending",
         "approved": "Approved",
-        "rejected": "Rejected",
-        "unknown": "Unknown"
+        "rejected": "Rejected"
       },
       "messages": {
         "approve_success": "Document deleted",
@@ -1806,13 +1878,6 @@
         "state": "State",
         "acts": "Acts",
         "facts": "Settlement facts"
-      },
-      "states": {
-        "Operating": "Operating",
-        "WindingDown": "Winding down",
-        "Deactivated": "Deactivated",
-        "Frozen": "Frozen",
-        "Archived": "Archived"
       },
       "stamps": {
         "wind_down": "Wind-down from {{from}} — requested on {{requestedOn}} by {{email}}",
@@ -2000,14 +2065,6 @@
         "cancel": "Cancel Invoice",
         "download": "Download PDF",
         "regenerate_pdf": "Regenerate PDF"
-      },
-      "invoice_status": {
-        "pending": "Pending",
-        "approved": "Approved",
-        "paid": "Paid",
-        "disputed": "Disputed",
-        "rejected": "Rejected",
-        "cancelled": "Cancelled"
       },
       "order_pays": {
         "order_number": "Order #",

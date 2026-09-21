@@ -8,7 +8,6 @@ import {
   FileResponse,
   OrderItem,
   OrderStatus,
-  PaymentStatus,
   UserItem,
   incidentFileName,
 } from '@cleansia/admin-services';
@@ -22,6 +21,7 @@ import {
   Policy,
   SnackbarService,
 } from '@cleansia/services';
+import { formatDate, formatMoney, localeFor } from '@cleansia/utils';
 import { TranslateService } from '@ngx-translate/core';
 import { DialogService } from 'primeng/dynamicdialog';
 import {
@@ -234,21 +234,17 @@ export class OrderDetailFacade extends UnsubscribeControlDirective {
   }
 
   formatDate(date: string | Date | null | undefined): string {
-    if (!date) return '-';
-    const dateObj = date instanceof Date ? date : new Date(date);
-    return dateObj.toLocaleDateString('en-GB');
+    return formatDate(date, this.translate.currentLang) || '-';
   }
 
   formatDateTime(date: string | Date | null | undefined): string {
-    if (!date) return '-';
-    const dateObj = date instanceof Date ? date : new Date(date);
-    return dateObj.toLocaleString('en-GB');
+    return formatDate(date, this.translate.currentLang, 'dateTime') || '-';
   }
 
   formatTime(date: string | Date | null | undefined): string {
     if (!date) return '-';
     const dateObj = date instanceof Date ? date : new Date(date);
-    return dateObj.toLocaleTimeString('en-GB', {
+    return dateObj.toLocaleTimeString(localeFor(this.translate.currentLang), {
       hour: '2-digit',
       minute: '2-digit',
     });
@@ -256,7 +252,9 @@ export class OrderDetailFacade extends UnsubscribeControlDirective {
 
   formatPrice(price: number | null | undefined): string {
     if (price === null || price === undefined) return '-';
-    return `${price.toFixed(2)} ${this.order()?.currency?.symbol ?? ''}`.trimEnd();
+    return formatMoney(price, this.order()?.currency?.code, localeFor(this.translate.currentLang), {
+      fractionDigits: 2,
+    });
   }
 
   formatDuration(minutes: number | null | undefined): string {
@@ -267,56 +265,6 @@ export class OrderDetailFacade extends UnsubscribeControlDirective {
       return mins > 0 ? `${hours}h ${mins}m` : `${hours}h`;
     }
     return `${mins}m`;
-  }
-
-  getOrderStatusClass(status: Code | undefined): string {
-    if (!status) return 'order-status-badge status-pending';
-    switch (status.value) {
-      case OrderStatus.New:
-        return 'order-status-badge status-new';
-      case OrderStatus.Pending:
-        return 'order-status-badge status-pending';
-      case OrderStatus.Confirmed:
-        return 'order-status-badge status-confirmed';
-      case OrderStatus.OnTheWay:
-        return 'order-status-badge status-ontheway';
-      case OrderStatus.InProgress:
-        return 'order-status-badge status-inprogress';
-      case OrderStatus.Completed:
-        return 'order-status-badge status-completed';
-      case OrderStatus.Cancelled:
-        return 'order-status-badge status-cancelled';
-      default:
-        return 'order-status-badge status-pending';
-    }
-  }
-
-  getOrderStatusLabel(status: Code | undefined): string {
-    if (!status?.name) return '';
-    const key = `pages.order_management.order_status.${status.name
-      .replace(/([A-Z])/g, '_$1')
-      .toLowerCase()
-      .replace(/^_/, '')}`;
-    const translated = this.translate.instant(key);
-    return translated === key ? status.name : translated;
-  }
-
-  getPaymentStatusClass(status: Code | undefined): string {
-    if (!status) return 'payment-status-badge status-pending';
-    switch (status.value) {
-      case PaymentStatus.Pending:
-        return 'payment-status-badge status-pending';
-      case PaymentStatus.Paid:
-        return 'payment-status-badge status-paid';
-      case PaymentStatus.Failed:
-        return 'payment-status-badge status-failed';
-      case PaymentStatus.Refunded:
-        return 'payment-status-badge status-refunded';
-      case PaymentStatus.Disputed:
-        return 'payment-status-badge status-disputed';
-      default:
-        return 'payment-status-badge status-pending';
-    }
   }
 
   getOrderStatusIcon(status: Code | undefined): string {

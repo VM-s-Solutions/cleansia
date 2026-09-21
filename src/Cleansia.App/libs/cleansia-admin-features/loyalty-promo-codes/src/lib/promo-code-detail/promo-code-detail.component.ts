@@ -18,6 +18,7 @@ import {
   CleansiaButtonComponent,
   CleansiaLoaderComponent,
   CleansiaSectionComponent,
+  CleansiaStatusBadgeComponent,
   CleansiaTableComponent,
   CleansiaTitleComponent,
   PaginationState,
@@ -25,6 +26,7 @@ import {
 } from '@cleansia/components';
 import { CleansiaPermissionDirective } from '@cleansia/directives';
 import { Policy } from '@cleansia/services';
+import { formatDate } from '@cleansia/utils';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { ConfirmationService } from 'primeng/api';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
@@ -32,10 +34,10 @@ import { Subject, takeUntil } from 'rxjs';
 import {
   formatDiscount,
   formatGlobalLimit,
-  formatStatus,
   formatType,
   formatValidity,
   getPromoCodeStatus,
+  PromoCodeStatusBadge,
 } from '../promo-codes-list/promo-codes-list.models';
 import { PromoCodeDetailFacade } from './promo-code-detail.facade';
 
@@ -49,6 +51,7 @@ import { PromoCodeDetailFacade } from './promo-code-detail.facade';
     CleansiaButtonComponent,
     CleansiaLoaderComponent,
     CleansiaSectionComponent,
+    CleansiaStatusBadgeComponent,
     CleansiaTableComponent,
     CleansiaTitleComponent,
     ConfirmDialogModule,
@@ -140,14 +143,7 @@ export class PromoCodeDetailComponent
   }
 
   formatDate(d?: Date): string {
-    if (!d) return '—';
-    return new Intl.DateTimeFormat(this.translate.currentLang ?? 'en', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    }).format(d);
+    return formatDate(d, this.translate.currentLang, 'dateTime') || '—';
   }
 
   formatType(): string {
@@ -162,10 +158,9 @@ export class PromoCodeDetailComponent
     return formatDiscount(pc as unknown as PromoCodeListItem);
   }
 
-  formatStatus(): string {
+  promoStatus(): PromoCodeStatusBadge | null {
     const pc = this.facade.promoCode();
-    if (!pc) return '';
-    return formatStatus(pc as unknown as PromoCodeListItem, this.translate);
+    return pc ? getPromoCodeStatus(pc as unknown as PromoCodeListItem) : null;
   }
 
   formatValidity(): string {

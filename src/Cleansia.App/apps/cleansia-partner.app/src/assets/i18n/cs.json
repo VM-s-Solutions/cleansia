@@ -1114,7 +1114,9 @@
       "pending": "Čeká",
       "paid": "Zaplaceno",
       "failed": "Selhalo",
-      "refunded": "Vráceno"
+      "refunded": "Vráceno",
+      "disputed": "Sporné",
+      "partially_refunded": "Částečně vráceno"
     },
     "payment_type": {
       "cash": "Hotovost",

@@ -27,7 +27,7 @@ export function getCustomerAuditTableDefinition(
         header: translate.instant('pages.audit_log.customers.columns.occurred_on'),
         sortable: true,
         width: '14%',
-        getValue: (row: CustomerActionAuditDto) => formatTimestamp(row.occurredOn),
+        getValue: (row: CustomerActionAuditDto) => formatTimestamp(row.occurredOn, translate.currentLang),
       },
       {
         id: 'user',

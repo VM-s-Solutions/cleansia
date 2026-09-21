@@ -4,6 +4,7 @@ import {
   PhotoType,
   SaveOrderPhotosPhotoToSave,
 } from '@cleansia/partner-services';
+import { formatDate } from '@cleansia/utils';
 import { GalleryPhoto } from './photo-gallery.component';
 
 export interface StagedPhoto {
@@ -44,10 +45,8 @@ export function validatePhotoFile(file: File): FileValidationResult {
   return { valid: true };
 }
 
-export function formatPhotoDate(date: Date | string | undefined): string {
-  if (!date) return '';
-  const dateObj = typeof date === 'string' ? new Date(date) : date;
-  return dateObj.toLocaleString('en-GB');
+export function formatPhotoDate(date: Date | string | undefined, lang: string | undefined): string {
+  return formatDate(date, lang, 'dateTime');
 }
 
 export function filterPhotosByType(

@@ -62,9 +62,7 @@
       <div class="document-card__icon"><i class="pi pi-file"></i></div>
       <div class="document-card__info">
         <h4 class="document-card__title">{{ doc.fileName }}</h4>
-        <span [class]="facade.getDocumentStatusClass(doc.status)">
-          {{ facade.getDocumentStatusLabel(doc.status) }}
-        </span>
+        <cleansia-status-badge kind="document" [value]="doc.status" />
       </div>
     </div>
 

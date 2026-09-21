@@ -1,6 +1,7 @@
 import { TemplateRef } from '@angular/core';
 import { PayPeriodDto, PayPeriodStatus } from '@cleansia/admin-services';
 import { TableColumn, TableAction } from '@cleansia/components';
+import { formatDate } from '@cleansia/utils';
 import { TranslateService } from '@ngx-translate/core';
 
 export interface PayPeriodFilterParams {
@@ -26,11 +27,7 @@ export function getPayPeriodTableColumns(
       header: 'pay_periods.list.columns.start_date',
       sortable: true,
       width: '12%',
-      getValue: (row: PayPeriodDto) => {
-        if (!row.startDate) return '';
-        const date = new Date(row.startDate);
-        return date.toLocaleDateString('en-GB');
-      },
+      getValue: (row: PayPeriodDto) => formatDate(row.startDate, translate.currentLang),
     },
     {
       id: 'endDate',
@@ -38,11 +35,7 @@ export function getPayPeriodTableColumns(
       header: 'pay_periods.list.columns.end_date',
       sortable: true,
       width: '12%',
-      getValue: (row: PayPeriodDto) => {
-        if (!row.endDate) return '';
-        const date = new Date(row.endDate);
-        return date.toLocaleDateString('en-GB');
-      },
+      getValue: (row: PayPeriodDto) => formatDate(row.endDate, translate.currentLang),
     },
     {
       id: 'durationDays',
@@ -67,14 +60,7 @@ export function getPayPeriodTableColumns(
       field: 'closedAt',
       header: 'pay_periods.list.columns.closed_at',
       width: '12%',
-      getValue: (row: PayPeriodDto) => {
-        if (!row.closedAt) return '-';
-        const date =
-          row.closedAt instanceof Date
-            ? row.closedAt
-            : new Date(row.closedAt);
-        return date.toLocaleDateString('en-GB');
-      },
+      getValue: (row: PayPeriodDto) => formatDate(row.closedAt, translate.currentLang) || '-',
     },
     {
       id: 'closedBy',

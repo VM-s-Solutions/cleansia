@@ -16,6 +16,7 @@ import {
 import { ICleansiaSelectOption } from '@cleansia/components';
 import { UnsubscribeControlDirective } from '@cleansia/directives';
 import { PermissionService, Policy, SnackbarService } from '@cleansia/services';
+import { formatDate } from '@cleansia/utils';
 import { TranslateService } from '@ngx-translate/core';
 import { DialogService } from 'primeng/dynamicdialog';
 import { catchError, finalize, of, takeUntil } from 'rxjs';
@@ -550,16 +551,11 @@ export class EmployeeDetailFacade extends UnsubscribeControlDirective {
       });
   }
 
-  // Format date for display
   formatDate(date: string | Date | null | undefined): string {
-    if (!date) return '-';
-    const dateObj = date instanceof Date ? date : new Date(date);
-    return dateObj.toLocaleDateString('en-GB');
+    return formatDate(date, this.translate.currentLang) || '-';
   }
 
   formatDateTime(date: string | Date | null | undefined): string {
-    if (!date) return '-';
-    const dateObj = date instanceof Date ? date : new Date(date);
-    return dateObj.toLocaleString('en-GB');
+    return formatDate(date, this.translate.currentLang, 'dateTime') || '-';
   }
 }

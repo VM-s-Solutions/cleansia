@@ -1,6 +1,7 @@
 import { TemplateRef } from '@angular/core';
 import { FiscalErrorKind, FiscalFailureDto } from '@cleansia/admin-services';
 import { TableColumn, TableAction } from '@cleansia/components';
+import { formatDate } from '@cleansia/utils';
 import { TranslateService } from '@ngx-translate/core';
 
 /**
@@ -45,12 +46,7 @@ export function getFiscalFailureTableColumns(
       field: 'issuedAt',
       header: 'fiscal_failures.list.columns.issued_at',
       width: '12%',
-      getValue: (row: FiscalFailureDto) => {
-        if (!row.issuedAt) return '';
-        const date =
-          row.issuedAt instanceof Date ? row.issuedAt : new Date(row.issuedAt);
-        return date.toLocaleString('en-GB');
-      },
+      getValue: (row: FiscalFailureDto) => formatDate(row.issuedAt, translate.currentLang, 'dateTime'),
     },
     {
       id: 'fiscalProviderKey',
@@ -85,14 +81,9 @@ export function getFiscalFailureTableColumns(
       field: 'nextRetryAt',
       header: 'fiscal_failures.list.columns.next_retry_at',
       width: '12%',
-      getValue: (row: FiscalFailureDto) => {
-        if (!row.nextRetryAt) return translate.instant('fiscal_failures.list.no_retry');
-        const date =
-          row.nextRetryAt instanceof Date
-            ? row.nextRetryAt
-            : new Date(row.nextRetryAt);
-        return date.toLocaleString('en-GB');
-      },
+      getValue: (row: FiscalFailureDto) =>
+        formatDate(row.nextRetryAt, translate.currentLang, 'dateTime') ||
+        translate.instant('fiscal_failures.list.no_retry'),
     },
   ];
 }

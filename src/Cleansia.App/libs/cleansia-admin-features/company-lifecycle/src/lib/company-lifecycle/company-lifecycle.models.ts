@@ -54,7 +54,6 @@ export interface SettlementFact {
 export interface SettlementFactRow extends SettlementFact {
   display: string;
   statusKey: string;
-  statusSeverity: StateSeverity;
 }
 
 export interface ActReason {
@@ -107,10 +106,6 @@ export function getFactNameKey(id: SettlementFactId): string {
   return `${PAGE}.facts.${id}`;
 }
 
-export function getStateKey(state: CompanyLifecycleState): string {
-  return `${PAGE}.states.${CompanyLifecycleState[state]}`;
-}
-
 export function getStateSeverity(state: CompanyLifecycleState): StateSeverity {
   switch (state) {
     case CompanyLifecycleState.Operating:
@@ -128,17 +123,6 @@ export function getStateSeverity(state: CompanyLifecycleState): StateSeverity {
 
 export function getFactStatusKey(status: SettlementFactStatus): string {
   return `${PAGE}.status.${status}`;
-}
-
-export function getFactStatusSeverity(status: SettlementFactStatus): StateSeverity {
-  switch (status) {
-    case 'blocking':
-      return 'danger';
-    case 'settled':
-      return 'success';
-    case 'informational':
-      return 'secondary';
-  }
 }
 
 export function startOfDay(instant: Date): Date {

@@ -2,6 +2,7 @@ import { TemplateRef } from '@angular/core';
 import { AdminUserListItem, getAdminRoleLabelKey } from '@cleansia/admin-services';
 import { TableColumn, TableAction } from '@cleansia/components';
 import { PermissionService, Policy } from '@cleansia/services';
+import { formatDate } from '@cleansia/utils';
 import { TranslateService } from '@ngx-translate/core';
 
 export function getAdminUserTableDefinition(
@@ -56,10 +57,7 @@ export function getAdminUserTableDefinition(
         id: 'createdAt',
         field: 'createdAt',
         header: translate.instant('pages.admin_user_management.columns.created_at'),
-        getValue: (row: AdminUserListItem) =>
-          row.createdAt
-            ? new Date(row.createdAt).toLocaleDateString()
-            : '',
+        getValue: (row: AdminUserListItem) => formatDate(row.createdAt, translate.currentLang),
         sortable: true,
         width: '15%',
       },
@@ -67,10 +65,7 @@ export function getAdminUserTableDefinition(
         id: 'lastLoginAt',
         field: 'lastLoginAt',
         header: translate.instant('pages.admin_user_management.columns.last_login'),
-        getValue: (row: AdminUserListItem) =>
-          row.lastLoginAt
-            ? new Date(row.lastLoginAt).toLocaleDateString()
-            : '',
+        getValue: (row: AdminUserListItem) => formatDate(row.lastLoginAt, translate.currentLang),
         sortable: true,
         width: '15%',
       },

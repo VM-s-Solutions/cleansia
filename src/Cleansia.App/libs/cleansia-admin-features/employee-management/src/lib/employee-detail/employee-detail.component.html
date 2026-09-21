@@ -78,13 +78,7 @@
                   'pages.employee_detail.contract_status' | translate
                 }}:</span
               >
-              <span
-                [class]="
-                  getContractStatusClass(employee.contractStatus)
-                "
-              >
-                {{ employee.contractStatus }}
-              </span>
+              <cleansia-status-badge kind="contract" [value]="employee.contractStatus" />
             </div>
             <div class="rating-info">
               <span class="label"

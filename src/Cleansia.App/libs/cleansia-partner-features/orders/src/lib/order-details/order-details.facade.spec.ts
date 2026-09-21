@@ -85,7 +85,7 @@ describe('OrderDetailsFacade', () => {
         { provide: PartnerClient, useValue: { orderClient, employeeClient } },
         { provide: SnackbarService, useValue: snackbar },
         { provide: DialogService, useValue: dialogService },
-        { provide: TranslateService, useValue: { instant: (k: string) => k } },
+        { provide: TranslateService, useValue: { instant: (k: string) => k, currentLang: 'cs' } },
         { provide: Store, useValue: { dispatch } },
         { provide: Actions, useValue: actions$ },
       ],
@@ -409,7 +409,7 @@ describe('OrderDetailsFacade', () => {
       );
       expect(dialogService.open.mock.calls[0][1].data).toEqual({
         orderId: ORDER_ID,
-        amount: '1,250.00 Kč',
+        amount: '1 250,00 Kč',
       });
     });
 

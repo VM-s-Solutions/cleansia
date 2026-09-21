@@ -29,7 +29,7 @@ describe('OrderDetailFacade', () => {
         { provide: PermissionService, useValue: { hasPolicy: () => true } },
         { provide: AdminClient, useValue: { adminOrderClient: {} } },
         { provide: SnackbarService, useValue: { showSuccess: jest.fn(), showError: jest.fn() } },
-        { provide: TranslateService, useValue: { instant: (k: string) => k } },
+        { provide: TranslateService, useValue: { instant: (k: string) => k, currentLang: 'cs' } },
         { provide: AdminGdprClient, useValue: { incidentFile: jest.fn() } },
         { provide: CustomerAuditClient, useValue: { timeline: jest.fn() } },
         { provide: DialogService, useValue: { open: jest.fn() } },
@@ -38,18 +38,24 @@ describe('OrderDetailFacade', () => {
     facade = TestBed.inject(OrderDetailFacade);
   });
 
-  it('labels a price with the symbol the order carries', () => {
+  it('labels a price with the currency the order carries, in the language of the session', () => {
     facade.order.set(OrderItem.fromJS({ currency: { symbol: '€', code: 'EUR' } }));
 
-    expect(facade.formatPrice(45)).toBe('45.00 €');
+    expect(facade.formatPrice(45)).toBe('45,00 €');
   });
 
   // The order always names its currency; a bare number is honest when it does not, "Kc" is a guess.
   it('prints a bare number rather than a currency the order does not name', () => {
     facade.order.set(OrderItem.fromJS({}));
 
-    expect(facade.formatPrice(45)).toBe('45.00');
+    expect(facade.formatPrice(45)).toBe('45,00');
     expect(facade.formatPrice(null)).toBe('-');
+  });
+
+  it('writes a stamp the way the session language does, to the minute', () => {
+    expect(facade.formatDateTime(new Date(2026, 8, 21, 10, 30))).toBe('21. 9. 2026 10:30');
+    expect(facade.formatDate(new Date(2026, 8, 21, 10, 30))).toBe('21. 9. 2026');
+    expect(facade.formatDateTime(null)).toBe('-');
   });
 });
 

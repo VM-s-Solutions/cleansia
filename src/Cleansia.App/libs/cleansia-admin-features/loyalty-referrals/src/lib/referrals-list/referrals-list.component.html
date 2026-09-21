@@ -59,10 +59,7 @@
 />
 
 <ng-template #statusTemplate let-row>
-  <p-tag
-    [value]="statusLabel(row.status)"
-    [severity]="statusSeverity(row.status)"
-  />
+  <cleansia-status-badge kind="referral" [value]="row.status" />
 </ng-template>
 
 <ng-template #pointsTemplate let-row>

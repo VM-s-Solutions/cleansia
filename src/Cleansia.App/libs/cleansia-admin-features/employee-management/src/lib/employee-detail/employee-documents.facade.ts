@@ -12,6 +12,7 @@ import {
 } from '@cleansia/admin-services';
 import { UnsubscribeControlDirective } from '@cleansia/directives';
 import { SnackbarService } from '@cleansia/services';
+import { formatDate } from '@cleansia/utils';
 import { TranslateService } from '@ngx-translate/core';
 import { DialogService } from 'primeng/dynamicdialog';
 import { catchError, finalize, of, takeUntil } from 'rxjs';
@@ -232,58 +233,10 @@ export class EmployeeDocumentsFacade extends UnsubscribeControlDirective {
     return `${mb.toFixed(1)} MB`;
   }
 
-  // Format date for display
   formatDateTime(date: string | Date | null | undefined): string {
-    if (!date) return '-';
-    const dateObj = date instanceof Date ? date : new Date(date);
-    return dateObj.toLocaleString('en-GB');
+    return formatDate(date, this.translate.currentLang, 'dateTime') || '-';
   }
 
-  // Get status badge class
-  getDocumentStatusClass(status: DocumentStatus | null | undefined): string {
-    if (!status) return 'status-badge status-unknown';
-
-    switch (status) {
-      case DocumentStatus.Pending:
-        return 'status-badge status-pending';
-      case DocumentStatus.Approved:
-        return 'status-badge status-approved';
-      case DocumentStatus.Rejected:
-        return 'status-badge status-rejected';
-      default:
-        return 'status-badge status-unknown';
-    }
-  }
-
-  // Get human-readable document status label
-  getDocumentStatusLabel(status: DocumentStatus | null | undefined): string {
-    if (!status) {
-      return this.translate.instant(
-        'pages.employee_detail.document_status.unknown'
-      );
-    }
-
-    switch (status) {
-      case DocumentStatus.Pending:
-        return this.translate.instant(
-          'pages.employee_detail.document_status.pending'
-        );
-      case DocumentStatus.Approved:
-        return this.translate.instant(
-          'pages.employee_detail.document_status.approved'
-        );
-      case DocumentStatus.Rejected:
-        return this.translate.instant(
-          'pages.employee_detail.document_status.rejected'
-        );
-      default:
-        return this.translate.instant(
-          'pages.employee_detail.document_status.unknown'
-        );
-    }
-  }
-
-  // Get human-readable document type label
   getDocumentTypeLabel(type: DocumentType | null | undefined): string {
     if (!type) {
       return this.translate.instant(

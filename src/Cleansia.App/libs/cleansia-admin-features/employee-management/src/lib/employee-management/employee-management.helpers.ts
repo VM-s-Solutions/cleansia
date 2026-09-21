@@ -1,24 +1,5 @@
-import { AdminEmployeeListItem, ContractStatus } from '@cleansia/admin-services';
+import { ContractStatus } from '@cleansia/admin-services';
 import { TranslateService } from '@ngx-translate/core';
-
-// --- Contract status helpers ---
-
-export function getContractStatusClass(employee: AdminEmployeeListItem): string {
-  const statusName =
-    employee.contractStatus?.toLowerCase().replace(/\s+/g, '-') || 'pending';
-  return `contract-status-badge status-${statusName}`;
-}
-
-export function getContractStatusLabel(
-  employee: AdminEmployeeListItem,
-  translate: TranslateService
-): string {
-  if (!employee.contractStatus) return '';
-  const statusKey = employee.contractStatus.toLowerCase();
-  return translate.instant(
-    `pages.employee_management.contract_status.${statusKey}`
-  );
-}
 
 // --- Filter option builders ---
 

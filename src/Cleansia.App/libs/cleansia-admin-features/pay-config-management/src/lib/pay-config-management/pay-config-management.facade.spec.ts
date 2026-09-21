@@ -52,7 +52,7 @@ describe('PayConfigManagementFacade', () => {
           },
         },
         { provide: SnackbarService, useValue: snackbar },
-        { provide: TranslateService, useValue: { instant: (k: string) => k } },
+        { provide: TranslateService, useValue: { instant: (k: string) => k, currentLang: 'cs' } },
         { provide: Router, useValue: { navigate: jest.fn() } },
       ],
     });
@@ -154,7 +154,7 @@ describe('PayConfigManagementFacade', () => {
   // together. The label has to follow the ROW; a fixed one prints a cleaner's EUR rate as crowns.
   describe('the money label follows the row, not the platform', () => {
     it('labels a row in its own currency', () => {
-      expect(facade.formatCurrency(1200, 'CZK')).toContain('CZK');
+      expect(facade.formatCurrency(1200, 'CZK')).toBe('1 200,00 Kč');
       expect(facade.formatCurrency(48, 'EUR')).toContain('€');
     });
 
@@ -162,8 +162,8 @@ describe('PayConfigManagementFacade', () => {
       // EmployeePayrollMappers emits "" when the Currency nav failed to load, and Intl.NumberFormat
       // raises a RangeError on an empty currency — which would take the whole table down.
       expect(() => facade.formatCurrency(1200, '')).not.toThrow();
-      expect(facade.formatCurrency(1200, '')).toBe('1200');
-      expect(facade.formatCurrency(1200, undefined)).toBe('1200');
+      expect(facade.formatCurrency(1200, '')).toBe('1 200,00');
+      expect(facade.formatCurrency(1200, undefined)).toBe('1 200,00');
     });
 
     it('still renders nothing for an absent amount', () => {

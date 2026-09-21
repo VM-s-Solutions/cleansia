@@ -1114,7 +1114,9 @@
       "pending": "Очікує",
       "paid": "Оплачено",
       "failed": "Не вдалося",
-      "refunded": "Повернуто"
+      "refunded": "Повернуто",
+      "disputed": "Оскаржено",
+      "partially_refunded": "Частково повернено"
     },
     "payment_type": {
       "cash": "Готівка",

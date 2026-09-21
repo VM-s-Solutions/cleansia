@@ -1,6 +1,7 @@
 import { TemplateRef } from '@angular/core';
 import { DisputeListItem, DisputeStatus } from '@cleansia/admin-services';
 import { TableAction, TableColumn } from '@cleansia/components';
+import { formatDate, formatMoney, localeFor } from '@cleansia/utils';
 import { TranslateService } from '@ngx-translate/core';
 
 export function getDisputeTableDefinition(
@@ -57,7 +58,9 @@ export function getDisputeTableDefinition(
         header: translate.instant('pages.disputes_management.columns.refund_amount'),
         width: '10%',
         getValue: (row: DisputeListItem) =>
-          row?.refundAmount == null ? '-' : row.refundAmount.toFixed(2),
+          row?.refundAmount == null
+            ? '-'
+            : formatMoney(row.refundAmount, null, localeFor(translate.currentLang), { fractionDigits: 2 }),
       },
       {
         id: 'createdOn',
@@ -65,14 +68,7 @@ export function getDisputeTableDefinition(
         header: translate.instant('pages.disputes_management.columns.created_on'),
         sortable: true,
         width: '12%',
-        getValue: (row: DisputeListItem) => {
-          if (!row?.createdOn) return '';
-          const date =
-            row.createdOn instanceof Date
-              ? row.createdOn
-              : new Date(row.createdOn);
-          return date.toLocaleDateString('en-GB');
-        },
+        getValue: (row: DisputeListItem) => formatDate(row?.createdOn, translate.currentLang),
       },
     ],
     actions: [
@@ -84,25 +80,6 @@ export function getDisputeTableDefinition(
       },
     ],
   };
-}
-
-export function getDisputeStatusClass(status: number | undefined | null): string {
-  switch (status) {
-    case DisputeStatus.Pending:
-      return 'dispute-status-badge status-pending';
-    case DisputeStatus.UnderReview:
-      return 'dispute-status-badge status-under-review';
-    case DisputeStatus.WaitingForResponse:
-      return 'dispute-status-badge status-waiting';
-    case DisputeStatus.Resolved:
-      return 'dispute-status-badge status-resolved';
-    case DisputeStatus.Closed:
-      return 'dispute-status-badge status-closed';
-    case DisputeStatus.Escalated:
-      return 'dispute-status-badge status-escalated';
-    default:
-      return 'dispute-status-badge status-pending';
-  }
 }
 
 export const DISPUTE_STATUS_LABEL_KEYS: Readonly<Record<number, string>> = {

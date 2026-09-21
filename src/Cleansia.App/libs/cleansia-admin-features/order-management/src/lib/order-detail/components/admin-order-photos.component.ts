@@ -13,6 +13,7 @@ import {
   CleansiaLoaderComponent,
   CleansiaSectionComponent,
 } from '@cleansia/components';
+import { formatDate } from '@cleansia/utils';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import {
   AdminPhotoGalleryComponent,
@@ -87,8 +88,6 @@ export class AdminOrderPhotosComponent {
   }
 
   formatDate(date: Date | null | undefined): string {
-    if (!date) return '';
-    const dateObj = date instanceof Date ? date : new Date(date);
-    return dateObj.toLocaleString(this.translate.currentLang || 'en-GB');
+    return formatDate(date, this.translate.currentLang, 'dateTime');
   }
 }

@@ -14,8 +14,6 @@ import {
   getActAvailability,
   getFactNameKey,
   getFactStatusKey,
-  getFactStatusSeverity,
-  getStateKey,
   getStateSeverity,
   isWindDownRunInProgress,
   LifecycleAct,
@@ -47,11 +45,6 @@ export class CompanyLifecycleFacade extends UnsubscribeControlDirective {
   private readonly readAt = signal<Date>(new Date());
   private readonly language = signal<string>(this.translate.currentLang);
 
-  readonly stateKey = computed(() => {
-    const dto = this.lifecycle();
-    return dto ? getStateKey(dto.state) : '';
-  });
-
   readonly stateSeverity = computed<StateSeverity | null>(() => {
     const dto = this.lifecycle();
     return dto ? getStateSeverity(dto.state) : null;
@@ -71,7 +64,6 @@ export class CompanyLifecycleFacade extends UnsubscribeControlDirective {
       ...fact,
       display: formatSettlementFactValue(fact, this.translate, (d) => this.day(d, lang)),
       statusKey: getFactStatusKey(fact.status),
-      statusSeverity: getFactStatusSeverity(fact.status),
     }));
   });
 
@@ -265,6 +257,6 @@ export class CompanyLifecycleFacade extends UnsubscribeControlDirective {
   }
 
   private stamp(date: Date, lang = this.language()): string {
-    return date.toLocaleString(lang, { dateStyle: 'medium', timeStyle: 'short' });
+    return formatDate(date, lang, 'dateTime');
   }
 }

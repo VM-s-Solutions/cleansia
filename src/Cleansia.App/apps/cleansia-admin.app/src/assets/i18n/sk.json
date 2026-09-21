@@ -166,6 +166,90 @@
     "show_password": "Zobraziť heslo",
     "hide_password": "Skryť heslo"
   },
+  "enums": {
+    "order_status": {
+      "new": "Nová",
+      "pending": "Čakajúca",
+      "confirmed": "Potvrdená",
+      "on_the_way": "Na ceste",
+      "in_progress": "Prebieha",
+      "completed": "Dokončená",
+      "cancelled": "Zrušená"
+    },
+    "payment_status": {
+      "pending": "Čakajúca",
+      "paid": "Zaplatená",
+      "failed": "Zlyhala",
+      "refunded": "Vrátená",
+      "disputed": "Reklamovaná",
+      "partially_refunded": "Čiastočne vrátené"
+    },
+    "contract_status": {
+      "pending": "Čakajúci",
+      "active": "Aktívny",
+      "terminated": "Ukončený",
+      "approved": "Schválený",
+      "rejected": "Zamietnutý"
+    },
+    "invoice_status": {
+      "pending": "Čakajúca",
+      "approved": "Schválená",
+      "paid": "Zaplatená",
+      "disputed": "Reklamovaná",
+      "rejected": "Zamietnutá",
+      "cancelled": "Zrušená"
+    },
+    "invoice_pdf_state": {
+      "ready": "Pripravené",
+      "pending": "Generuje sa…",
+      "failed": "Zlyhalo"
+    },
+    "dispute_status": {
+      "pending": "Čaká",
+      "under_review": "V preskúmaní",
+      "waiting_for_response": "Čaká na odpoveď",
+      "resolved": "Vyriešené",
+      "closed": "Uzavreté",
+      "escalated": "Eskalované"
+    },
+    "pay_period_status": {
+      "open": "Otvorené",
+      "closed": "Uzavreté",
+      "paid": "Zaplatené"
+    },
+    "company_lifecycle_state": {
+      "operating": "V prevádzke",
+      "winding_down": "Ukončuje sa",
+      "deactivated": "Deaktivovaná",
+      "frozen": "Zmrazená",
+      "archived": "Archivovaná"
+    },
+    "settlement_fact_status": {
+      "blocking": "Bráni archivácii",
+      "settled": "Vysporiadané",
+      "informational": "Informatívne"
+    },
+    "referral_status": {
+      "accepted": "Prijaté",
+      "qualified": "Kvalifikované",
+      "expired": "Expirované",
+      "reversed": "Stornované"
+    },
+    "document_status": {
+      "pending": "Čakajúci",
+      "approved": "Schválený",
+      "rejected": "Zamietnutý"
+    },
+    "active_status": {
+      "active": "Aktívny",
+      "inactive": "Neaktívny"
+    },
+    "promo_code_status": {
+      "active": "Aktívne",
+      "inactive": "Neaktívne",
+      "expired": "Expirované"
+    }
+  },
   "sidebar": {
     "employees": "Zamestnanci",
     "pay_periods": "Výplatné obdobia",
@@ -384,12 +468,6 @@
         "pay_config_delete_error": "Nepodarilo sa zmazať konfiguráciu platby",
         "pay_config_bulk_success": "Konfigurácie platby použité: {{created}} vytvorených, {{skipped}} preskočených",
         "weekly_limit_save_success": "Týždenný limit zakázok bol aktualizovaný"
-      },
-      "document_status": {
-        "pending": "Čakajúci",
-        "approved": "Schválený",
-        "rejected": "Zamietnutý",
-        "unknown": "Neznámy"
       },
       "grade": "Hodnosť",
       "document_types": {
@@ -697,11 +775,6 @@
       "total_amount": "Celková suma",
       "status": "Stav",
       "pdf_status": "PDF",
-      "pdf_state": {
-        "ready": "Pripravené",
-        "failed": "Zlyhalo",
-        "pending": "Generuje sa…"
-      },
       "generated_at": "Vygenerované",
       "actions": "Akcie",
       "view_details": "Zobraziť detail",
@@ -1678,8 +1751,7 @@
       "status": {
         "pending": "Čaká",
         "approved": "Schválené",
-        "rejected": "Zamietnuté",
-        "unknown": "Neznáme"
+        "rejected": "Zamietnuté"
       },
       "messages": {
         "approve_success": "Dokument vymazaný",
@@ -1806,13 +1878,6 @@
         "state": "Stav",
         "acts": "Úkony",
         "facts": "Skutočnosti na vysporiadanie"
-      },
-      "states": {
-        "Operating": "V prevádzke",
-        "WindingDown": "Ukončuje sa",
-        "Deactivated": "Deaktivovaná",
-        "Frozen": "Zmrazená",
-        "Archived": "Archivovaná"
       },
       "stamps": {
         "wind_down": "Ukončenie od {{from}} — vyžiadané {{requestedOn}}, {{email}}",
@@ -2000,14 +2065,6 @@
         "cancel": "Zrušiť faktúru",
         "download": "Stiahnuť PDF",
         "regenerate_pdf": "Obnoviť PDF"
-      },
-      "invoice_status": {
-        "pending": "Čakajúca",
-        "approved": "Schválená",
-        "paid": "Zaplatená",
-        "disputed": "Reklamovaná",
-        "rejected": "Zamietnutá",
-        "cancelled": "Zrušená"
       },
       "order_pays": {
         "order_number": "Objednávka č.",

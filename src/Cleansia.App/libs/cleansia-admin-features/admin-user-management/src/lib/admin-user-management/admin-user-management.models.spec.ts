@@ -45,6 +45,7 @@ describe('getAdminUserTableDefinition - role column', () => {
 describe('getAdminUserTableDefinition - last login column', () => {
   const translate = {
     instant: (key: string) => key,
+    currentLang: 'cs',
   } as unknown as TranslateService;
 
   const permissions = {
@@ -70,12 +71,12 @@ describe('getAdminUserTableDefinition - last login column', () => {
     expect(column.field).toBe('lastLoginAt');
   });
 
-  it('renders the formatted last login date when present', () => {
+  it('renders the last login day the way the session language writes it', () => {
     const column = getLastLoginColumn();
-    const lastLoginAt = new Date('2026-05-20T10:15:00.000Z');
+    const lastLoginAt = new Date(2026, 4, 20, 10, 15);
     const row = { lastLoginAt } as AdminUserListItem;
 
-    expect(column.getValue?.(row)).toBe(lastLoginAt.toLocaleDateString());
+    expect(column.getValue?.(row)).toBe('20. 5. 2026');
   });
 
   it('renders an empty value when last login is null', () => {

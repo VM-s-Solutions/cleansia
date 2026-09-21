@@ -2,7 +2,7 @@ import { computed, inject, Injectable, signal } from '@angular/core';
 import { AdminClient, WorkContractDto } from '@cleansia/admin-services';
 import { UnsubscribeControlDirective } from '@cleansia/directives';
 import { PermissionService, Policy } from '@cleansia/services';
-import { buildWorkContractFactRows, languageDisplayName } from '@cleansia/utils';
+import { buildWorkContractFactRows, formatDate, languageDisplayName } from '@cleansia/utils';
 import { TranslateService } from '@ngx-translate/core';
 import { DynamicDialogRef } from 'primeng/dynamicdialog';
 import { catchError, finalize, map, Observable, of, switchMap, takeUntil } from 'rxjs';
@@ -32,6 +32,10 @@ export class AdminWorkContractDialogFacade extends UnsubscribeControlDirective {
   // The document read behind the hash is Administrator-only, while the order detail is open to
   // every admin role; a read the session cannot make is never attempted.
   private readonly hashReadable = this.permissions.hasPolicy(Policy.CanViewLegalDocuments);
+
+  readonly effectiveFromLabel = computed(() =>
+    formatDate(this.contract()?.effectiveFrom, this.language(), 'utcDate')
+  );
 
   readonly factRows = computed(() =>
     buildWorkContractFactRows(this.contract()?.facts, this.language(), WORK_CONTRACT_FACTS_KEY)

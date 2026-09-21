@@ -137,8 +137,6 @@
 <!-- Status Template -->
 <ng-template #statusTemplate let-item>
   <div class="status-cell">
-    <span [class]="getActiveStatusClass(item)">
-      {{ getActiveStatusLabel(item) }}
-    </span>
+    <cleansia-status-badge kind="active" [value]="item.isActive" />
   </div>
 </ng-template>

@@ -14,7 +14,7 @@ import {
   CleansiaSectionComponent,
   CleansiaTitleComponent,
 } from '@cleansia/components';
-import { TranslatePipe } from '@ngx-translate/core';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { AuditEntryFacade } from './audit-entry.facade';
 import { AuditFieldDiff } from './audit-entry.models';
 import { formatTimestamp } from '../audit-log/audit-log.models';
@@ -37,6 +37,7 @@ import { formatTimestamp } from '../audit-log/audit-log.models';
 export class AuditEntryComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly location = inject(Location);
+  private readonly translate = inject(TranslateService);
   protected readonly facade = inject(AuditEntryFacade);
   readonly actorRoleLabelKey = computed(() =>
     getAdminRoleLabelKey(this.facade.entry()?.actorAdminRole)
@@ -50,7 +51,7 @@ export class AuditEntryComponent implements OnInit {
   }
 
   formatTimestamp(value: Date | undefined): string {
-    return formatTimestamp(value);
+    return formatTimestamp(value, this.translate.currentLang);
   }
 
   trackByField(_index: number, row: AuditFieldDiff): string {

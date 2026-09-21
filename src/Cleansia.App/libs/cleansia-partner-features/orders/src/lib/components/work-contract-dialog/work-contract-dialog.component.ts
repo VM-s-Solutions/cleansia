@@ -29,7 +29,8 @@ export class WorkContractDialogComponent implements OnInit {
   private readonly config = inject<DynamicDialogConfig<WorkContractDialogData>>(DynamicDialogConfig);
 
   protected readonly acceptanceControl = new FormControl(false, { nonNullable: true });
-  protected readonly formatDateTime = formatDateTime;
+  protected readonly formatDateTime = (date: string | Date | undefined): string =>
+    formatDateTime(date, this.facade.language());
 
   protected readonly isRead = computed(() => this.facade.mode() === WorkContractDialogMode.Read);
 

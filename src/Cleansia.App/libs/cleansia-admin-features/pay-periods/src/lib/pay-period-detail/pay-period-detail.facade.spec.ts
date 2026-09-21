@@ -65,11 +65,6 @@ describe('PayPeriodDetailFacade', () => {
     expect(facade.formatDateTime(undefined)).toBe('-');
   });
 
-  it('derives the status badge class, falling back when the status is absent', () => {
-    expect(facade.getStatusClass('Closed')).toBe('status-badge status-closed');
-    expect(facade.getStatusClass(null)).toBe('status-badge status-unknown');
-  });
-
   describe('command bodies on the wire', () => {
     it('serializes a close with the period id and the notes', () => {
       facade.closePayPeriod('period-1', 'all invoices generated');

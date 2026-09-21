@@ -15,6 +15,7 @@ import {
   CleansiaLoaderComponent,
   CleansiaSectionComponent,
   CleansiaSelectComponent,
+  CleansiaStatusBadgeComponent,
   CleansiaTelephoneComponent,
   CleansiaTextareaComponent,
   CleansiaTextInputComponent,
@@ -28,6 +29,7 @@ import {
   Policy,
 } from '@cleansia/services';
 import { CleansiaPermissionDirective } from '@cleansia/directives';
+import { formatDate } from '@cleansia/utils';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { ConfirmationService } from 'primeng/api';
 import { CheckboxModule } from 'primeng/checkbox';
@@ -56,6 +58,7 @@ import { EmployeePayoutSectionComponent } from './employee-payout-section.compon
     CleansiaTitleComponent,
     CleansiaLoaderComponent,
     CleansiaSectionComponent,
+    CleansiaStatusBadgeComponent,
     CheckboxModule,
     ConfirmDialogModule,
     DialogModule,
@@ -249,21 +252,12 @@ export class EmployeeDetailComponent implements OnInit, OnDestroy {
     );
   }
 
-  getContractStatusClass(status: string | undefined): string {
-    const statusName = status?.toLowerCase().replace(/\s+/g, '-') || 'pending';
-    return `contract-status-badge status-${statusName}`;
-  }
-
   formatDate(date: string | Date | null | undefined): string {
-    if (!date) return '-';
-    const dateObj = date instanceof Date ? date : new Date(date);
-    return dateObj.toLocaleDateString('en-GB');
+    return formatDate(date, this.translate.currentLang) || '-';
   }
 
   formatDateTime(date: string | Date | null | undefined): string {
-    if (!date) return '-';
-    const dateObj = date instanceof Date ? date : new Date(date);
-    return dateObj.toLocaleString('en-GB');
+    return formatDate(date, this.translate.currentLang, 'dateTime') || '-';
   }
 
   onRejectDocument(document: EmployeeDocumentItem): void {

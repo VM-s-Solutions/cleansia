@@ -25,6 +25,7 @@ import {
   CleansiaLoaderComponent,
   CleansiaRadioComponent,
   CleansiaSectionComponent,
+  CleansiaStatusBadgeComponent,
   CleansiaTableComponent,
   CleansiaTextInputComponent,
   CleansiaTitleComponent,
@@ -43,8 +44,6 @@ import {
   buildActiveStatusOptions,
   buildContractStatusOptions,
   buildFilterChips,
-  getContractStatusClass,
-  getContractStatusLabel,
   toggleContractStatusInList,
 } from './employee-management.helpers';
 import { getEmployeeTableDefinition } from './employee-management.models';
@@ -63,6 +62,7 @@ import { getEmployeeTableDefinition } from './employee-management.models';
     CleansiaTitleComponent,
     CleansiaLoaderComponent,
     CleansiaSectionComponent,
+    CleansiaStatusBadgeComponent,
     FormsModule,
     ReactiveFormsModule,
     ToastModule,
@@ -180,14 +180,6 @@ export class EmployeeManagementComponent implements AfterViewInit, OnDestroy {
 
   viewEmployeeDetails(employee: AdminEmployeeListItem): void {
     this.router.navigate([CleansiaAdminRoute.EMPLOYEE_MANAGEMENT, employee.id]);
-  }
-
-  getContractStatusClass(employee: AdminEmployeeListItem): string {
-    return getContractStatusClass(employee);
-  }
-
-  getContractStatusLabel(employee: AdminEmployeeListItem): string {
-    return getContractStatusLabel(employee, this.translate);
   }
 
   applyFilters(): void {

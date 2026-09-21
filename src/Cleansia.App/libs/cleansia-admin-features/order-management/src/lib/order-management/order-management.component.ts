@@ -27,6 +27,7 @@ import {
   CleansiaLoaderComponent,
   CleansiaSectionComponent,
   CleansiaSelectComponent,
+  CleansiaStatusBadgeComponent,
   CleansiaTableComponent,
   CleansiaTextInputComponent,
   CleansiaTitleComponent,
@@ -48,15 +49,9 @@ import {
   buildPaymentStatusOptions,
   FILTER_FORM_DEFAULTS,
   getFilterPatchForChipRemoval,
-  getOrderStatusLabel,
-  getPaymentStatusLabel,
   toggleStatusInArray,
 } from './order-management.helpers';
-import {
-  getOrderStatusClass,
-  getOrderTableDefinition,
-  getPaymentStatusClass,
-} from './order-management.models';
+import { getOrderTableDefinition } from './order-management.models';
 
 @Component({
   selector: 'cleansia-admin-order-management',
@@ -69,6 +64,7 @@ import {
     CleansiaSelectComponent,
     CleansiaTextInputComponent,
     TranslatePipe,
+    CleansiaStatusBadgeComponent,
     CleansiaTableComponent,
     CleansiaTitleComponent,
     CleansiaLoaderComponent,
@@ -186,22 +182,6 @@ export class OrderManagementComponent implements AfterViewInit, OnDestroy {
 
   viewOrderDetails(order: OrderListItem): void {
     this.router.navigate([CleansiaAdminRoute.ORDER_MANAGEMENT, order.id]);
-  }
-
-  getOrderStatusClass(order: OrderListItem): string {
-    return getOrderStatusClass(order);
-  }
-
-  getPaymentStatusClass(order: OrderListItem): string {
-    return getPaymentStatusClass(order);
-  }
-
-  getOrderStatusLabel(order: OrderListItem): string {
-    return getOrderStatusLabel(order, this.translate);
-  }
-
-  getPaymentStatusLabel(order: OrderListItem): string {
-    return getPaymentStatusLabel(order, this.translate);
   }
 
   applyFilters(): void {

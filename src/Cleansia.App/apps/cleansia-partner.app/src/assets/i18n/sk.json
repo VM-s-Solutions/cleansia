@@ -1114,7 +1114,9 @@
       "pending": "Čakajúce",
       "paid": "Zaplatené",
       "failed": "Zlyhalo",
-      "refunded": "Vrátené"
+      "refunded": "Vrátené",
+      "disputed": "Sporné",
+      "partially_refunded": "Čiastočne vrátené"
     },
     "payment_type": {
       "cash": "Hotovosť",

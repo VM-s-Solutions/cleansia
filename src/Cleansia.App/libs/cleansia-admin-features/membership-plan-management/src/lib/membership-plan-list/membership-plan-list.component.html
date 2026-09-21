@@ -58,16 +58,5 @@
 </div>
 
 <ng-template #statusTemplate let-item>
-  <span
-    [class]="
-      item.isActive
-        ? 'membership-plan-status-badge status-active'
-        : 'membership-plan-status-badge status-inactive'
-    "
-  >
-    {{
-      (item.isActive ? 'global.status.active' : 'global.status.inactive')
-        | translate
-    }}
-  </span>
+  <cleansia-status-badge kind="active" [value]="item.isActive" />
 </ng-template>

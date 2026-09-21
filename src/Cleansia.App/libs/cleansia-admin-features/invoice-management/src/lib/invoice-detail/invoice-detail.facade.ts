@@ -11,6 +11,7 @@ import {
 } from '@cleansia/admin-services';
 import { UnsubscribeControlDirective } from '@cleansia/directives';
 import { SnackbarService } from '@cleansia/services';
+import { formatDate, formatMoney, localeFor } from '@cleansia/utils';
 import { TranslateService } from '@ngx-translate/core';
 import { DialogService } from 'primeng/dynamicdialog';
 import { catchError, finalize, of, takeUntil } from 'rxjs';
@@ -269,48 +270,12 @@ export class InvoiceDetailFacade extends UnsubscribeControlDirective {
       });
   }
 
-  getStatusLabel(status: EmployeeInvoiceStatus | undefined): string {
-    if (!status) return '';
-    switch (status) {
-      case EmployeeInvoiceStatus.Pending:
-        return this.translate.instant(
-          'pages.invoice_detail.invoice_status.pending'
-        );
-      case EmployeeInvoiceStatus.Approved:
-        return this.translate.instant(
-          'pages.invoice_detail.invoice_status.approved'
-        );
-      case EmployeeInvoiceStatus.Paid:
-        return this.translate.instant(
-          'pages.invoice_detail.invoice_status.paid'
-        );
-      case EmployeeInvoiceStatus.Disputed:
-        return this.translate.instant(
-          'pages.invoice_detail.invoice_status.disputed'
-        );
-      case EmployeeInvoiceStatus.Rejected:
-        return this.translate.instant(
-          'pages.invoice_detail.invoice_status.rejected'
-        );
-      case EmployeeInvoiceStatus.Cancelled:
-        return this.translate.instant(
-          'pages.invoice_detail.invoice_status.cancelled'
-        );
-      default:
-        return '';
-    }
-  }
-
   formatDate(date: string | Date | null | undefined): string {
-    if (!date) return '-';
-    const dateObj = date instanceof Date ? date : new Date(date);
-    return dateObj.toLocaleDateString('en-GB');
+    return formatDate(date, this.translate.currentLang) || '-';
   }
 
   formatDateTime(date: string | Date | null | undefined): string {
-    if (!date) return '-';
-    const dateObj = date instanceof Date ? date : new Date(date);
-    return dateObj.toLocaleString('en-GB');
+    return formatDate(date, this.translate.currentLang, 'dateTime') || '-';
   }
 
   formatCurrency(
@@ -318,7 +283,9 @@ export class InvoiceDetailFacade extends UnsubscribeControlDirective {
     currencyCode?: string
   ): string {
     if (amount === null || amount === undefined) return '-';
-    return `${amount.toFixed(2)} ${currencyCode ?? ''}`.trimEnd();
+    return formatMoney(amount, currencyCode, localeFor(this.translate.currentLang), {
+      fractionDigits: 2,
+    });
   }
 
   canApprove(): boolean {

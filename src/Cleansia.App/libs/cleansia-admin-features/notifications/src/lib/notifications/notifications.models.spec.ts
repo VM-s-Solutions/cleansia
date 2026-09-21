@@ -124,12 +124,12 @@ describe('buildNotificationParams', () => {
   it('formats the day arguments as dates and leaves an unparseable one as sent', () => {
     const params = buildNotificationParams(
       { day: '2026-09-19', windDownFrom: '2026-10-01', archivedOn: 'not-a-date' },
-      'en-GB',
+      'cs',
       translate
     );
 
-    expect(params['day']).toBe(new Date(2026, 8, 19).toLocaleDateString('en-GB'));
-    expect(params['windDownFrom']).toBe(new Date(2026, 9, 1).toLocaleDateString('en-GB'));
+    expect(params['day']).toBe('19. 9. 2026');
+    expect(params['windDownFrom']).toBe('1. 10. 2026');
     expect(params['archivedOn']).toBe('not-a-date');
   });
 

@@ -10,6 +10,7 @@ import {
   WindDownCompanyResponse,
 } from '@cleansia/admin-services';
 import { DialogService, SnackbarService } from '@cleansia/services';
+import { formatDate } from '@cleansia/utils';
 import { TranslateService } from '@ngx-translate/core';
 import { of, Subject, throwError } from 'rxjs';
 import { CompanyLifecycleFacade } from './company-lifecycle.facade';
@@ -17,7 +18,7 @@ import { LifecycleAct } from './company-lifecycle.models';
 
 const NOW = new Date('2026-09-16T10:00:00Z');
 const WIND_DOWN_FROM = new Date('2026-10-01T00:00:00Z');
-const day = (date: Date) => date.toLocaleDateString('en');
+const day = (date: Date) => formatDate(date, 'en');
 
 const settled = {
   openOrders: 0,
@@ -193,7 +194,6 @@ describe('CompanyLifecycleFacade', () => {
         display: '2',
         status: 'blocking',
         statusKey: 'pages.company_lifecycle.status.blocking',
-        statusSeverity: 'danger',
         route: '/order-management',
       });
       expect(facade.facts().find((f) => f.id === 'chargebackHorizonEndsOn')).toMatchObject({
@@ -205,7 +205,6 @@ describe('CompanyLifecycleFacade', () => {
         'pages.company_lifecycle.stamps.wind_down',
         'pages.company_lifecycle.stamps.deactivated',
       ]);
-      expect(facade.stateKey()).toBe('pages.company_lifecycle.states.Deactivated');
       expect(facade.stateSeverity()).toBe('danger');
       expect(facade.runInProgress()).toBe(false);
     });
@@ -440,7 +439,7 @@ describe('CompanyLifecycleFacade', () => {
       expect(confirmMock).toHaveBeenCalledWith(
         'pages.company_lifecycle.confirm.archive_again',
         'pages.company_lifecycle.acts.build_archive_again',
-        { name: 'Cleansia CZ', frozenOn: NOW.toLocaleString('en', { dateStyle: 'medium', timeStyle: 'short' }) }
+        { name: 'Cleansia CZ', frozenOn: formatDate(NOW, 'en', 'dateTime') }
       );
       expect(archiveMock).toHaveBeenCalledTimes(1);
     });

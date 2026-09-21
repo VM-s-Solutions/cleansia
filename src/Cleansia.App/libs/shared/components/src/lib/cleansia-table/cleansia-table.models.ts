@@ -7,6 +7,8 @@ export interface TableColumn<T = unknown> {
   sortable?: boolean;
   width?: string;
   align?: 'left' | 'center' | 'right';
+  /** A count, an amount or a date: right-aligned in tabular figures so the digits line up. */
+  numeric?: boolean;
   customTemplate?: TemplateRef<unknown>;
   getValue?: (row: T) => unknown;
 }

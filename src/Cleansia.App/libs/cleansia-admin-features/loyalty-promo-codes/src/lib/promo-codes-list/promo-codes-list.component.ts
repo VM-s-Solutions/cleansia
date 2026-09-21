@@ -5,6 +5,8 @@ import {
   Component,
   inject,
   OnDestroy,
+  TemplateRef,
+  viewChild,
 } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { PromoCodeListItem } from '@cleansia/admin-services';
@@ -13,6 +15,7 @@ import {
   CleansiaLoaderComponent,
   CleansiaSectionComponent,
   CleansiaSelectComponent,
+  CleansiaStatusBadgeComponent,
   CleansiaTableComponent,
   CleansiaTextInputComponent,
   CleansiaTitleComponent,
@@ -22,6 +25,7 @@ import {
 } from '@cleansia/components';
 import { PermissionService, Policy } from '@cleansia/services';
 import { CleansiaPermissionDirective } from '@cleansia/directives';
+import { formatDate } from '@cleansia/utils';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { ConfirmationService } from 'primeng/api';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
@@ -30,7 +34,11 @@ import {
   PromoCodeStatusFilter,
   PromoCodesListFacade,
 } from './promo-codes-list.facade';
-import { getPromoCodeTableDefinition } from './promo-codes-list.models';
+import {
+  getPromoCodeStatus,
+  getPromoCodeTableDefinition,
+  PromoCodeStatusBadge,
+} from './promo-codes-list.models';
 
 @Component({
   selector: 'cleansia-admin-promo-codes-list',
@@ -44,6 +52,7 @@ import { getPromoCodeTableDefinition } from './promo-codes-list.models';
     CleansiaLoaderComponent,
     CleansiaSectionComponent,
     CleansiaSelectComponent,
+    CleansiaStatusBadgeComponent,
     CleansiaTableComponent,
     CleansiaTextInputComponent,
     CleansiaTitleComponent,
@@ -62,6 +71,8 @@ export class PromoCodesListComponent implements AfterViewInit, OnDestroy {
   protected readonly Policy = Policy;
 
   private readonly destroy$ = new Subject<void>();
+
+  private readonly statusTemplate = viewChild<TemplateRef<PromoCodeListItem>>('statusTemplate');
 
   promoCodeColumns!: TableColumn<PromoCodeListItem>[];
   promoCodeActions!: TableAction<PromoCodeListItem>[];
@@ -118,19 +129,19 @@ export class PromoCodesListComponent implements AfterViewInit, OnDestroy {
       },
       this.translate,
       this.permissions,
-      (d?: Date) => this.formatDate(d)
+      (d?: Date) => this.formatDate(d),
+      this.statusTemplate()
     );
     this.promoCodeColumns = def.columns;
     this.promoCodeActions = def.actions;
   }
 
+  promoStatus(row: PromoCodeListItem): PromoCodeStatusBadge {
+    return getPromoCodeStatus(row);
+  }
+
   private formatDate(d?: Date): string {
-    if (!d) return '—';
-    return new Intl.DateTimeFormat(this.translate.currentLang ?? 'en', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-    }).format(d);
+    return formatDate(d, this.translate.currentLang) || '—';
   }
 
   applyFilters(): void {

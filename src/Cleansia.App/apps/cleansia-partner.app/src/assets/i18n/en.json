@@ -1114,7 +1114,9 @@
       "pending": "Pending",
       "paid": "Paid",
       "failed": "Failed",
-      "refunded": "Refunded"
+      "refunded": "Refunded",
+      "disputed": "Disputed",
+      "partially_refunded": "Partially refunded"
     },
     "payment_type": {
       "cash": "Cash",

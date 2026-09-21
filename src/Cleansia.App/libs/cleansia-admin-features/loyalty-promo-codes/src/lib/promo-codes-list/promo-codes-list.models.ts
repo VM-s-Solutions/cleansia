@@ -1,3 +1,4 @@
+import { TemplateRef } from '@angular/core';
 import { PromoCodeListItem, PromoCodeType } from '@cleansia/admin-services';
 import { TableAction, TableColumn } from '@cleansia/components';
 import { PermissionService, Policy } from '@cleansia/services';
@@ -70,14 +71,6 @@ export function formatType(
   return '';
 }
 
-export function formatStatus(
-  row: PromoCodeListItem,
-  translate: TranslateService
-): string {
-  const status = getPromoCodeStatus(row);
-  return translate.instant(`pages.promo_codes.status_filter_${status}`);
-}
-
 export function getPromoCodeTableDefinition(
   defs: {
     onView: (row: PromoCodeListItem) => void;
@@ -86,7 +79,8 @@ export function getPromoCodeTableDefinition(
   },
   translate: TranslateService,
   permissions: PermissionService,
-  formatDate: (d?: Date) => string
+  formatDate: (d?: Date) => string,
+  statusTemplate?: TemplateRef<PromoCodeListItem>
 ): {
   columns: TableColumn<PromoCodeListItem>[];
   actions: TableAction<PromoCodeListItem>[];
@@ -146,7 +140,8 @@ export function getPromoCodeTableDefinition(
         id: 'status',
         field: 'isActive',
         header: translate.instant('pages.promo_codes.column.status'),
-        getValue: (row) => formatStatus(row, translate),
+        getValue: (row) => getPromoCodeStatus(row),
+        customTemplate: statusTemplate,
         width: '10%',
       },
     ],

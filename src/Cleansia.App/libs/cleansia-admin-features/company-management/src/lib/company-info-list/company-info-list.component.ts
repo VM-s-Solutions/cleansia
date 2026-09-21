@@ -22,6 +22,7 @@ import {
   CleansiaButtonComponent,
   CleansiaLoaderComponent,
   CleansiaSectionComponent,
+  CleansiaStatusBadgeComponent,
   CleansiaTableComponent,
   CleansiaTextInputComponent,
   CleansiaTitleComponent,
@@ -50,6 +51,7 @@ import { getCompanyInfoTableDefinition } from './company-info-list.models';
     CleansiaTitleComponent,
     CleansiaLoaderComponent,
     CleansiaSectionComponent,
+    CleansiaStatusBadgeComponent,
     ReactiveFormsModule,
     ConfirmDialogModule,
     CleansiaPermissionDirective,
@@ -129,18 +131,6 @@ export class CompanyInfoListComponent implements AfterViewInit, OnDestroy {
     this.companyColumns = tableDef.columns;
     this.companyActions = tableDef.actions;
     this.cd.detectChanges();
-  }
-
-  getActiveStatusLabel(company: CompanyInfoListItem): string {
-    return company.isActive
-      ? this.translate.instant('global.status.active')
-      : this.translate.instant('global.status.inactive');
-  }
-
-  getActiveStatusClass(company: CompanyInfoListItem): string {
-    return company.isActive
-      ? 'active-status-badge status-active'
-      : 'active-status-badge status-inactive';
   }
 
   ngOnDestroy(): void {

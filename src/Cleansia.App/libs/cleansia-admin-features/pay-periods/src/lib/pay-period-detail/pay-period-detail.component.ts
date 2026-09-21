@@ -6,6 +6,7 @@ import {
   CleansiaButtonComponent,
   CleansiaLoaderComponent,
   CleansiaSectionComponent,
+  CleansiaStatusBadgeComponent,
   CleansiaTitleComponent,
 } from '@cleansia/components';
 import { CleansiaAdminRoute } from '@cleansia/services';
@@ -25,6 +26,7 @@ import { PayPeriodDetailFacade } from './pay-period-detail.facade';
     CleansiaTitleComponent,
     CleansiaLoaderComponent,
     CleansiaSectionComponent,
+    CleansiaStatusBadgeComponent,
     ToastModule,
     AdminPayPeriodOpsComponent,
   ],
@@ -72,10 +74,6 @@ export class PayPeriodDetailComponent implements OnInit, OnDestroy {
 
   formatDateTime(date: string | Date | null | undefined): string {
     return this.facade.formatDateTime(date);
-  }
-
-  getStatusClass(status: string | null | undefined): string {
-    return this.facade.getStatusClass(status);
   }
 
   onOpsChanged(): void {

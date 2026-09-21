@@ -4,13 +4,15 @@ import {
   Component,
   computed,
   effect,
+  inject,
   input,
   output,
   signal,
 } from '@angular/core';
 import { PhotoType } from '@cleansia/admin-services';
 import { CleansiaButtonComponent } from '@cleansia/components';
-import { TranslatePipe } from '@ngx-translate/core';
+import { formatDate } from '@cleansia/utils';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 
 export interface GalleryPhoto {
   id?: string;
@@ -29,6 +31,8 @@ export interface GalleryPhoto {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AdminPhotoGalleryComponent {
+  private readonly translate = inject(TranslateService);
+
   readonly photos = input.required<GalleryPhoto[]>();
   readonly initialIndex = input<number>(0);
 
@@ -117,8 +121,6 @@ export class AdminPhotoGalleryComponent {
   }
 
   formatDate(date: Date | undefined): string {
-    if (!date) return '';
-    const dateObj = date instanceof Date ? date : new Date(date);
-    return dateObj.toLocaleString('en-GB');
+    return formatDate(date, this.translate.currentLang, 'dateTime');
   }
 }

@@ -1114,7 +1114,9 @@
       "pending": "Ожидает",
       "paid": "Оплачен",
       "failed": "Неудачно",
-      "refunded": "Возвращён"
+      "refunded": "Возвращён",
+      "disputed": "Оспорен",
+      "partially_refunded": "Частично возвращён"
     },
     "payment_type": {
       "cash": "Наличные",

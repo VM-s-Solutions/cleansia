@@ -33,6 +33,7 @@ import {
 } from '@cleansia/components';
 import { CleansiaPermissionDirective } from '@cleansia/directives';
 import { PermissionService, Policy } from '@cleansia/services';
+import { formatDate } from '@cleansia/utils';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { ConfirmationService } from 'primeng/api';
 import { Subject, takeUntil } from 'rxjs';
@@ -197,14 +198,7 @@ export class DataProtectionComponent implements AfterViewInit, OnDestroy {
   }
 
   formatDate(d?: Date): string {
-    if (!d) return '—';
-    return new Intl.DateTimeFormat(this.translate.currentLang ?? 'en', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    }).format(d);
+    return formatDate(d, this.translate.currentLang, 'dateTime') || '—';
   }
 
   private requireUserId(): string | null {

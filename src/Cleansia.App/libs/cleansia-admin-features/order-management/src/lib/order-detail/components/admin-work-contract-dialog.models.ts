@@ -1,5 +1,5 @@
 import { WorkContractDto } from '@cleansia/admin-services';
-import { languageDisplayName, WorkContractFactRow } from '@cleansia/utils';
+import { formatDate, languageDisplayName, WorkContractFactRow } from '@cleansia/utils';
 
 export interface AdminWorkContractDialogData {
   acceptanceId: string;
@@ -17,10 +17,6 @@ export const WORK_CONTRACT_HASH_ROW = `${ACCEPTANCE_KEY}.hash`;
 const HASH_UNAVAILABLE_KEY = `${ACCEPTANCE_KEY}.hash_unavailable`;
 const HASH_NOT_VISIBLE_KEY = `${ACCEPTANCE_KEY}.hash_not_visible`;
 
-export function formatDateTime(date: Date | undefined): string {
-  return date ? date.toLocaleString('en-GB') : '';
-}
-
 function buildHashRow(acceptedTextHash: string | null, hashReadable: boolean): WorkContractRow {
   if (!hashReadable) return { labelKey: WORK_CONTRACT_HASH_ROW, value: '', valueKey: HASH_NOT_VISIBLE_KEY };
   if (!acceptedTextHash) return { labelKey: WORK_CONTRACT_HASH_ROW, value: '', valueKey: HASH_UNAVAILABLE_KEY };
@@ -36,7 +32,7 @@ export function buildWorkContractAcceptanceRows(
   const acceptance = contract?.acceptance;
   if (!acceptance) return [];
   return [
-    { labelKey: `${ACCEPTANCE_KEY}.accepted_on`, value: formatDateTime(acceptance.acceptedOn) },
+    { labelKey: `${ACCEPTANCE_KEY}.accepted_on`, value: formatDate(acceptance.acceptedOn, lang, 'dateTime') },
     { labelKey: `${ACCEPTANCE_KEY}.version`, value: acceptance.documentVersion ?? '' },
     {
       labelKey: `${ACCEPTANCE_KEY}.language`,

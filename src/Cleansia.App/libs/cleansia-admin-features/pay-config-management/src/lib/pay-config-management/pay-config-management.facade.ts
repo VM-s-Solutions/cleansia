@@ -3,6 +3,7 @@ import { Router } from '@angular/router';
 import { AdminClient, EmployeePayConfigDto } from '@cleansia/admin-services';
 import { UnsubscribeControlDirective } from '@cleansia/directives';
 import { CleansiaAdminRoute, SnackbarService } from '@cleansia/services';
+import { formatMoney, localeFor } from '@cleansia/utils';
 import { TranslateService } from '@ngx-translate/core';
 import { catchError, finalize, of, takeUntil } from 'rxjs';
 
@@ -76,25 +77,16 @@ export class PayConfigManagementFacade extends UnsubscribeControlDirective {
   }
 
   /**
-   * THE ROW'S OWN CURRENCY, never a fixed one. This list is deliberately unfiltered by currency —
+   * The row's own currency, never a fixed one. This list is deliberately unfiltered by currency —
    * `PayConfigFilter.CurrencyId` exists and the facade passes `undefined` — so a CZK rate and a EUR
-   * rate for the same cleaner render side by side. Labelling both CZK is not "correct until the
-   * default flips"; it is wrong the moment a second currency has a pay config, which is the point of
-   * having one.
-   *
-   * `en-GB` stays: that is the grouping and decimal LOCALE, not the money label.
-   *
-   * An empty code prints the bare number rather than throwing. `EmployeePayrollMappers` emits `""`
-   * when a config's Currency failed to load, and `Intl.NumberFormat` raises a RangeError on an empty
-   * currency — which would take the whole table down to mislabel one cell.
+   * rate for the same cleaner render side by side, and labelling both CZK is wrong the moment a
+   * second currency has a pay config. An empty code prints the bare number: `EmployeePayrollMappers`
+   * emits `""` when a config's Currency failed to load, and one mislabelled cell must not take the
+   * whole table down.
    */
   formatCurrency(value: number | undefined, currencyCode?: string): string {
     if (value === undefined || value === null) return '';
-    if (!currencyCode) return String(value);
-    return new Intl.NumberFormat('en-GB', {
-      style: 'currency',
-      currency: currencyCode,
-    }).format(value);
+    return formatMoney(value, currencyCode, localeFor(this.translate.currentLang), { fractionDigits: 2 });
   }
 
   navigateToCreate(): void {

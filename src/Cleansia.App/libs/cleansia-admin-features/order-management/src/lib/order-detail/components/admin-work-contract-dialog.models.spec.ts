@@ -1,4 +1,5 @@
 import { WorkContractDto } from '@cleansia/admin-services';
+import { formatDate } from '@cleansia/utils';
 import {
   buildWorkContractAcceptanceRows,
   WORK_CONTRACT_HASH_ROW,
@@ -36,7 +37,7 @@ describe('buildWorkContractAcceptanceRows', () => {
       'pages.order_detail.work_contract.dialog.acceptance.language',
       WORK_CONTRACT_HASH_ROW,
     ]);
-    expect(rows[0].value).toBe(new Date('2026-09-21T10:00:00Z').toLocaleString('en-GB'));
+    expect(rows[0].value).toBe(formatDate(new Date('2026-09-21T10:00:00Z'), 'en', 'dateTime'));
     expect(rows[1].value).toBe('2026-09-20');
     expect(rows[2].value).toBe('Czech');
     expect(rows[3].value).toBe('a'.repeat(64));

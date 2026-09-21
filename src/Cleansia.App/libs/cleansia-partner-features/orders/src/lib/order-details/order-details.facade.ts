@@ -497,7 +497,7 @@ export class OrderDetailsFacade extends UnsubscribeControlDirective {
         header: undefined,
         data: {
           orderId,
-          amount: formatCurrency(order.totalPrice, order.currency?.symbol ?? ''),
+          amount: formatCurrency(order.totalPrice, order.currency?.code, this.translateService.currentLang),
         },
         width: '500px',
         modal: true,

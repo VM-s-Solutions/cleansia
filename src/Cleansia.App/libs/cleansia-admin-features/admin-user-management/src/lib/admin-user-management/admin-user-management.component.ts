@@ -22,6 +22,7 @@ import {
   CleansiaButtonComponent,
   CleansiaLoaderComponent,
   CleansiaSectionComponent,
+  CleansiaStatusBadgeComponent,
   CleansiaTableComponent,
   CleansiaTextInputComponent,
   CleansiaTitleComponent,
@@ -50,6 +51,7 @@ import { getAdminUserTableDefinition } from './admin-user-management.models';
     CleansiaTitleComponent,
     CleansiaLoaderComponent,
     CleansiaSectionComponent,
+    CleansiaStatusBadgeComponent,
     ReactiveFormsModule,
     ConfirmDialogModule,
     CleansiaPermissionDirective,
@@ -130,18 +132,6 @@ export class AdminUserManagementComponent implements AfterViewInit, OnDestroy {
     this.userColumns = tableDef.columns;
     this.userActions = tableDef.actions;
     this.cd.detectChanges();
-  }
-
-  getActiveStatusLabel(user: AdminUserListItem): string {
-    return user.isActive
-      ? this.translate.instant('global.status.active')
-      : this.translate.instant('global.status.inactive');
-  }
-
-  getActiveStatusClass(user: AdminUserListItem): string {
-    return user.isActive
-      ? 'active-status-badge status-active'
-      : 'active-status-badge status-inactive';
   }
 
   ngOnDestroy(): void {

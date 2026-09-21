@@ -20,6 +20,7 @@ import {
   CleansiaLoaderComponent,
   CleansiaSectionComponent,
   CleansiaSelectComponent,
+  CleansiaStatusBadgeComponent,
   CleansiaTableComponent,
   CleansiaTitleComponent,
   PaginationState,
@@ -27,8 +28,8 @@ import {
   TableColumn,
 } from '@cleansia/components';
 import { PermissionService, Policy } from '@cleansia/services';
+import { formatDate } from '@cleansia/utils';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
-import { TagModule } from 'primeng/tag';
 import { Subject, debounceTime, distinctUntilChanged, takeUntil } from 'rxjs';
 import {
   ReferralInterventionDialogComponent,
@@ -37,7 +38,6 @@ import {
 } from '../referral-intervention-dialog/referral-intervention-dialog.component';
 import {
   getReferralInterventionActions,
-  REFERRAL_STATUS_LABEL_KEYS,
 } from './referrals-list.models';
 import {
   ReferralStatusFilter,
@@ -52,11 +52,11 @@ import {
     CommonModule,
     ReactiveFormsModule,
     TranslatePipe,
-    TagModule,
     CleansiaCalendarComponent,
     CleansiaLoaderComponent,
     CleansiaSectionComponent,
     CleansiaSelectComponent,
+    CleansiaStatusBadgeComponent,
     CleansiaTableComponent,
     CleansiaTitleComponent,
     ReferralInterventionDialogComponent,
@@ -238,35 +238,7 @@ export class ReferralsListComponent implements AfterViewInit, OnDestroy {
   }
 
   formatDate(d?: Date): string {
-    if (!d) return this.translate.instant('pages.loyalty_referrals.not_yet');
-    return new Intl.DateTimeFormat(this.translate.currentLang ?? 'en', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-    }).format(d);
-  }
-
-  statusLabel(status: ReferralStatus | undefined): string {
-    if (status == null) return '';
-    const key = REFERRAL_STATUS_LABEL_KEYS[status];
-    return key ? this.translate.instant(key) : '';
-  }
-
-  statusSeverity(
-    status: ReferralStatus | undefined
-  ): 'info' | 'success' | 'warn' | 'danger' | 'secondary' {
-    switch (status) {
-      case ReferralStatus.Accepted:
-        return 'info';
-      case ReferralStatus.Qualified:
-        return 'success';
-      case ReferralStatus.Expired:
-        return 'warn';
-      case ReferralStatus.Reversed:
-        return 'danger';
-      default:
-        return 'secondary';
-    }
+    return formatDate(d, this.translate.currentLang) || this.translate.instant('pages.loyalty_referrals.not_yet');
   }
 
   openIntervention(

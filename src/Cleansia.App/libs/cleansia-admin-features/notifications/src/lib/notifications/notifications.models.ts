@@ -5,6 +5,7 @@ import {
   UserNotificationDto,
 } from '@cleansia/admin-services';
 import { CleansiaAdminRoute } from '@cleansia/services';
+import { formatDate } from '@cleansia/utils';
 
 /**
  * Mirror of the backend `AdminNotificationEventCatalog` — every key the admin feed can carry. The
@@ -119,7 +120,7 @@ function formatArg(name: string, value: string, lang: string, translate: (key: s
 function formatDay(value: string, lang: string): string {
   const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
   if (!match) return value;
-  return new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3])).toLocaleDateString(lang);
+  return formatDate(new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3])), lang);
 }
 
 function formatInstant(value: string, lang: string): string {
@@ -128,7 +129,7 @@ function formatInstant(value: string, lang: string): string {
 }
 
 function formatStamp(instant: Date, lang: string): string {
-  return instant.toLocaleString(lang, { dateStyle: 'medium', timeStyle: 'short' });
+  return formatDate(instant, lang, 'dateTime');
 }
 
 export function getNotificationRoute(eventKey: string | undefined, args: NotificationArgs): string[] | null {

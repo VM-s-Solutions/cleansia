@@ -214,36 +214,4 @@ export class InvoiceManagementFacade extends UnsubscribeControlDirective {
     }
     return RETRY_PDF_FALLBACK_ERROR_KEY;
   }
-
-  getStatusLabel(status: EmployeeInvoiceStatus | undefined): string {
-    if (!status) return '';
-    switch (status) {
-      case EmployeeInvoiceStatus.Pending:
-        return this.translate.instant(
-          'pages.invoice_management.invoice_status.pending'
-        );
-      case EmployeeInvoiceStatus.Approved:
-        return this.translate.instant(
-          'pages.invoice_management.invoice_status.approved'
-        );
-      case EmployeeInvoiceStatus.Paid:
-        return this.translate.instant(
-          'pages.invoice_management.invoice_status.paid'
-        );
-      case EmployeeInvoiceStatus.Disputed:
-        return this.translate.instant(
-          'pages.invoice_management.invoice_status.disputed'
-        );
-      case EmployeeInvoiceStatus.Rejected:
-        return this.translate.instant(
-          'pages.invoice_management.invoice_status.rejected'
-        );
-      case EmployeeInvoiceStatus.Cancelled:
-        return this.translate.instant(
-          'pages.invoice_management.invoice_status.cancelled'
-        );
-      default:
-        return '';
-    }
-  }
 }

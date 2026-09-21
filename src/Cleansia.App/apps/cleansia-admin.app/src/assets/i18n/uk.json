@@ -166,6 +166,90 @@
     "show_password": "Показати пароль",
     "hide_password": "Приховати пароль"
   },
+  "enums": {
+    "order_status": {
+      "new": "Нове",
+      "pending": "Очікує",
+      "confirmed": "Підтверджено",
+      "on_the_way": "У дорозі",
+      "in_progress": "В процесі",
+      "completed": "Завершено",
+      "cancelled": "Скасовано"
+    },
+    "payment_status": {
+      "pending": "Очікує",
+      "paid": "Оплачено",
+      "failed": "Невдала",
+      "refunded": "Повернено",
+      "disputed": "Оскаржено",
+      "partially_refunded": "Частково повернено"
+    },
+    "contract_status": {
+      "pending": "Очікує",
+      "active": "Активний",
+      "terminated": "Припинений",
+      "approved": "Схвалений",
+      "rejected": "Відхилений"
+    },
+    "invoice_status": {
+      "pending": "Очікує",
+      "approved": "Схвалений",
+      "paid": "Оплачений",
+      "disputed": "Оскаржений",
+      "rejected": "Відхилений",
+      "cancelled": "Скасований"
+    },
+    "invoice_pdf_state": {
+      "ready": "Готово",
+      "pending": "Генерується…",
+      "failed": "Помилка"
+    },
+    "dispute_status": {
+      "pending": "Очікує",
+      "under_review": "На розгляді",
+      "waiting_for_response": "Очікує відповіді",
+      "resolved": "Вирішено",
+      "closed": "Закрито",
+      "escalated": "Ескальовано"
+    },
+    "pay_period_status": {
+      "open": "Відкритий",
+      "closed": "Закритий",
+      "paid": "Оплачений"
+    },
+    "company_lifecycle_state": {
+      "operating": "Працює",
+      "winding_down": "Згортається",
+      "deactivated": "Деактивована",
+      "frozen": "Заморожена",
+      "archived": "Архівована"
+    },
+    "settlement_fact_status": {
+      "blocking": "Блокує архівування",
+      "settled": "Врегульовано",
+      "informational": "Довідково"
+    },
+    "referral_status": {
+      "accepted": "Прийнято",
+      "qualified": "Кваліфіковано",
+      "expired": "Прострочено",
+      "reversed": "Скасовано"
+    },
+    "document_status": {
+      "pending": "Очікує",
+      "approved": "Схвалений",
+      "rejected": "Відхилений"
+    },
+    "active_status": {
+      "active": "Активний",
+      "inactive": "Неактивний"
+    },
+    "promo_code_status": {
+      "active": "Активні",
+      "inactive": "Неактивні",
+      "expired": "Прострочені"
+    }
+  },
   "sidebar": {
     "employees": "Працівники",
     "pay_periods": "Розрахункові періоди",
@@ -384,12 +468,6 @@
         "pay_config_delete_error": "Не вдалося видалити конфігурацію оплати",
         "pay_config_bulk_success": "Конфігурації оплати застосовано: {{created}} створено, {{skipped}} пропущено",
         "weekly_limit_save_success": "Тижневий ліміт замовлень оновлено"
-      },
-      "document_status": {
-        "pending": "Очікує",
-        "approved": "Схвалений",
-        "rejected": "Відхилений",
-        "unknown": "Невідомий"
       },
       "grade": "Рівень",
       "document_types": {
@@ -697,11 +775,6 @@
       "total_amount": "Загальна сума",
       "status": "Статус",
       "pdf_status": "PDF",
-      "pdf_state": {
-        "ready": "Готово",
-        "failed": "Помилка",
-        "pending": "Генерується…"
-      },
       "generated_at": "Створено",
       "actions": "Дії",
       "view_details": "Переглянути деталі",
@@ -1678,8 +1751,7 @@
       "status": {
         "pending": "В очікуванні",
         "approved": "Схвалено",
-        "rejected": "Відхилено",
-        "unknown": "Невідомо"
+        "rejected": "Відхилено"
       },
       "messages": {
         "approve_success": "Документ видалено",
@@ -1806,13 +1878,6 @@
         "state": "Стан",
         "acts": "Дії",
         "facts": "Факти для врегулювання"
-      },
-      "states": {
-        "Operating": "Працює",
-        "WindingDown": "Згортається",
-        "Deactivated": "Деактивована",
-        "Frozen": "Заморожена",
-        "Archived": "Архівована"
       },
       "stamps": {
         "wind_down": "Згортання з {{from}} — запитано {{requestedOn}}, {{email}}",
@@ -2000,14 +2065,6 @@
         "cancel": "Скасувати рахунок",
         "download": "Завантажити PDF",
         "regenerate_pdf": "Перегенерувати PDF"
-      },
-      "invoice_status": {
-        "pending": "Очікує",
-        "approved": "Схвалений",
-        "paid": "Оплачений",
-        "disputed": "Оскаржений",
-        "rejected": "Відхилений",
-        "cancelled": "Скасований"
       },
       "order_pays": {
         "order_number": "Замовлення №",

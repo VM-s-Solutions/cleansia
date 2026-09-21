@@ -10,6 +10,7 @@ import {
   CleansiaButtonComponent,
   CleansiaLoaderComponent,
   CleansiaSectionComponent,
+  CleansiaStatusBadgeComponent,
   CleansiaTableComponent,
   CleansiaTitleComponent,
   TableColumn,
@@ -24,9 +25,6 @@ import { DialogService } from 'primeng/dynamicdialog';
 import { ToastModule } from 'primeng/toast';
 import {
   getInvoicePdfState,
-  getInvoicePdfStateClass,
-  getInvoicePdfStateLabelKey,
-  getInvoiceStatusClass,
   InvoicePdfState,
 } from '../invoice-management/invoice-management.models';
 import { AdminPayrollOpsComponent } from './components';
@@ -43,6 +41,7 @@ import { getOrderPaysTableDefinition } from './invoice-detail.models';
     CleansiaTitleComponent,
     CleansiaLoaderComponent,
     CleansiaSectionComponent,
+    CleansiaStatusBadgeComponent,
     CleansiaTableComponent,
     ToastModule,
     ConfirmDialogModule,
@@ -87,20 +86,8 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
     this.router.navigate([CleansiaAdminRoute.INVOICE_MANAGEMENT]);
   }
 
-  getInvoiceStatusClass(status: EmployeeInvoiceStatus | undefined): string {
-    return getInvoiceStatusClass(status);
-  }
-
   getPdfState(invoice: EmployeeInvoiceDetailDto): InvoicePdfState {
     return getInvoicePdfState(invoice);
-  }
-
-  getPdfStateClass(invoice: EmployeeInvoiceDetailDto): string {
-    return getInvoicePdfStateClass(getInvoicePdfState(invoice));
-  }
-
-  getPdfStateLabelKey(invoice: EmployeeInvoiceDetailDto): string {
-    return getInvoicePdfStateLabelKey(getInvoicePdfState(invoice));
   }
 
   onApprove(): void {

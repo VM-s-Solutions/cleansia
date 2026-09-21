@@ -49,13 +49,7 @@
           </div>
           <div class="detail-grid__item">
             <span class="detail-grid__label">{{ 'pay_periods.detail.status' | translate }}</span>
-            <span [class]="getStatusClass(facade.payPeriod()?.status)">
-              {{
-                'pay_periods.status.' +
-                  (facade.payPeriod()?.status?.toLowerCase() || 'unknown')
-                  | translate
-              }}
-            </span>
+            <cleansia-status-badge kind="payPeriod" [value]="facade.payPeriod()?.status" />
           </div>
           <div class="detail-grid__item">
             <span class="detail-grid__label">{{ 'pay_periods.detail.start_date' | translate }}</span>

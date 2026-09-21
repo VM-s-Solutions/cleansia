@@ -10,6 +10,7 @@ import {
   TableAction,
   TableColumn,
 } from '@cleansia/components';
+import { formatDate } from '@cleansia/utils';
 import { TranslateService } from '@ngx-translate/core';
 
 export function getAuditLogTableColumns(
@@ -23,7 +24,7 @@ export function getAuditLogTableColumns(
       header: translate.instant('pages.audit_log.columns.occurred_on'),
       sortable: true,
       width: '16%',
-      getValue: (row: AdminActionAuditDto) => formatTimestamp(row.occurredOn),
+      getValue: (row: AdminActionAuditDto) => formatTimestamp(row.occurredOn, translate.currentLang),
     },
     {
       id: 'actor',
@@ -80,14 +81,8 @@ export function getAuditLogTableActions(
   ];
 }
 
-export function formatTimestamp(value: Date | undefined): string {
-  if (!value) return '';
-  const date = value instanceof Date ? value : new Date(value);
-  return (
-    date.toLocaleDateString('en-GB') +
-    ' ' +
-    date.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
-  );
+export function formatTimestamp(value: Date | undefined, lang: string | undefined): string {
+  return formatDate(value, lang, 'dateTime');
 }
 
 export function formatResource(row: {

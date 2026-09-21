@@ -1,0 +1,9 @@
+@if (resolved(); as badge) {
+<span class="status-badge" [class]="'status-badge status-badge--' + badge.tone">
+  @if (badge.labelKey) {
+  {{ badge.labelKey | translate }}
+  } @else {
+  {{ badge.fallbackLabel }}
+  }
+</span>
+}

@@ -1,5 +1,5 @@
 import { TranslateService } from '@ngx-translate/core';
-import { toSnakeCase } from '@cleansia/utils';
+import { formatDate as formatSharedDate, formatMoney, localeFor, toSnakeCase } from '@cleansia/utils';
 import {
   AssignedEmployeeDto,
   OrderStatus,
@@ -9,31 +9,20 @@ import {
 
 // --- Formatting helpers ---
 
-export function formatCurrency(amount: number, currencySymbol: string): string {
-  return `${amount.toLocaleString('en-GB', {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  })} ${currencySymbol}`;
+export function formatCurrency(
+  amount: number,
+  currencyCode: string | null | undefined,
+  lang: string | undefined
+): string {
+  return formatMoney(amount, currencyCode, localeFor(lang), { fractionDigits: 2 });
 }
 
-export function formatDate(date: string | Date | undefined): string {
-  if (!date) return '';
-  const dateObj = typeof date === 'string' ? new Date(date) : date;
-  const day = dateObj.getDate().toString().padStart(2, '0');
-  const month = (dateObj.getMonth() + 1).toString().padStart(2, '0');
-  const year = dateObj.getFullYear();
-  return `${day}.${month}.${year}`;
+export function formatDate(date: string | Date | undefined, lang: string | undefined): string {
+  return formatSharedDate(date, lang);
 }
 
-export function formatDateTime(date: string | Date | undefined): string {
-  if (!date) return '';
-  const dateObj = typeof date === 'string' ? new Date(date) : date;
-  const day = dateObj.getDate().toString().padStart(2, '0');
-  const month = (dateObj.getMonth() + 1).toString().padStart(2, '0');
-  const year = dateObj.getFullYear();
-  const hours = dateObj.getHours().toString().padStart(2, '0');
-  const minutes = dateObj.getMinutes().toString().padStart(2, '0');
-  return `${day}.${month}.${year} ${hours}:${minutes}`;
+export function formatDateTime(date: string | Date | undefined, lang: string | undefined): string {
+  return formatSharedDate(date, lang, 'dateTime');
 }
 
 export function formatAddress(address: {

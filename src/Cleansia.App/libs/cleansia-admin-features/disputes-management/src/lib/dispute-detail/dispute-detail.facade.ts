@@ -9,6 +9,7 @@ import {
 } from '@cleansia/admin-services';
 import { UnsubscribeControlDirective } from '@cleansia/directives';
 import { SnackbarService, extractApiErrorCode } from '@cleansia/services';
+import { formatMoney, localeFor } from '@cleansia/utils';
 import { TranslateService } from '@ngx-translate/core';
 import { catchError, finalize, of, takeUntil } from 'rxjs';
 import {
@@ -34,6 +35,14 @@ export class DisputeDetailFacade extends UnsubscribeControlDirective {
   readonly resolving = signal<boolean>(false);
   readonly updatingStatus = signal<boolean>(false);
   readonly sendingMessage = signal<boolean>(false);
+
+  readonly refundAmountLabel = computed(() => {
+    const dispute = this.dispute();
+    if (dispute?.refundAmount == null) return '';
+    return formatMoney(dispute.refundAmount, dispute.currency?.code, localeFor(this.translate.currentLang), {
+      fractionDigits: 2,
+    });
+  });
 
   readonly isTerminal = computed(() => {
     const status = this.dispute()?.status?.value;

@@ -25,6 +25,7 @@ import {
   CleansiaLoaderComponent,
   CleansiaSectionComponent,
   CleansiaSelectComponent,
+  CleansiaStatusBadgeComponent,
   CleansiaTableComponent,
   CleansiaTitleComponent,
   ICleansiaSelectOption,
@@ -40,9 +41,6 @@ import { debounceTime, distinctUntilChanged, Subject, takeUntil } from 'rxjs';
 import { InvoiceManagementFacade } from './invoice-management.facade';
 import {
   getInvoicePdfState,
-  getInvoicePdfStateClass,
-  getInvoicePdfStateLabelKey,
-  getInvoiceStatusClass,
   getInvoiceTableColumns,
   getInvoiceTableActions,
   InvoicePdfState,
@@ -57,6 +55,7 @@ import {
     CleansiaCheckboxComponent,
     CleansiaSelectComponent,
     TranslatePipe,
+    CleansiaStatusBadgeComponent,
     CleansiaTableComponent,
     CleansiaTitleComponent,
     CleansiaLoaderComponent,
@@ -205,20 +204,8 @@ export class InvoiceManagementComponent implements AfterViewInit, OnDestroy {
     this.facade.retryPdf(invoice);
   }
 
-  getInvoiceStatusClass(invoice: EmployeeInvoiceDto): string {
-    return getInvoiceStatusClass(invoice.status);
-  }
-
   getPdfState(invoice: EmployeeInvoiceDto): InvoicePdfState {
     return getInvoicePdfState(invoice);
-  }
-
-  getPdfStateClass(invoice: EmployeeInvoiceDto): string {
-    return getInvoicePdfStateClass(getInvoicePdfState(invoice));
-  }
-
-  getPdfStateLabelKey(invoice: EmployeeInvoiceDto): string {
-    return getInvoicePdfStateLabelKey(getInvoicePdfState(invoice));
   }
 
   applyFilters(): void {

@@ -183,9 +183,7 @@
 
 <ng-template #contractStatusTemplate let-item>
   <div class="status-cell">
-    <span [class]="getContractStatusClass(item)">
-      {{ getContractStatusLabel(item) }}
-    </span>
+    <cleansia-status-badge kind="contract" [value]="item.contractStatus" />
     @if (!item.isProfileComplete && item.contractStatus ===
     ContractStatus[ContractStatus.Pending]) {
     <i

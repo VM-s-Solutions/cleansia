@@ -275,14 +275,14 @@ describe('InvoiceDetailFacade', () => {
 
   it('renders an absent amount and date as a dash', () => {
     expect(facade.formatCurrency(null)).toBe('-');
-    expect(facade.formatCurrency(12.5, 'EUR')).toBe('12.50 EUR');
+    expect(facade.formatCurrency(12.5, 'EUR')).toBe('12,50\u00a0€');
   });
 
   // The invoice always names its currency; a code that is missing is a bug upstream, and printing
   // crowns for it would turn a EUR invoice into a CZK one on screen.
   it('prints a bare number rather than a currency it was not given', () => {
-    expect(facade.formatCurrency(12.5)).toBe('12.50');
-    expect(facade.formatCurrency(12.5, '')).toBe('12.50');
+    expect(facade.formatCurrency(12.5)).toBe('12,50');
+    expect(facade.formatCurrency(12.5, '')).toBe('12,50');
     expect(facade.formatDate(null)).toBe('-');
     expect(facade.formatDateTime(undefined)).toBe('-');
   });

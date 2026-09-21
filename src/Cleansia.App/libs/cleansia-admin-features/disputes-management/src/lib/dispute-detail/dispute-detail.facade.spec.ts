@@ -44,7 +44,7 @@ describe('DisputeDetailFacade', () => {
         DisputeDetailFacade,
         { provide: AdminDisputeClient, useValue: disputeClient },
         { provide: SnackbarService, useValue: snackbar },
-        { provide: TranslateService, useValue: { instant: (k: string) => k } },
+        { provide: TranslateService, useValue: { instant: (k: string) => k, currentLang: 'cs' } },
       ],
     });
 
@@ -230,5 +230,15 @@ describe('DisputeDetailFacade', () => {
     facade.loadDispute('dispute-1');
 
     expect(facade.isTerminal()).toBe(true);
+  });
+
+  it('labels the refund with the currency the dispute carries, in the language of the session', () => {
+    facade.dispute.set(DisputeDetails.fromJS({ refundAmount: 1250, currency: { code: 'CZK', symbol: 'Kč' } }));
+
+    expect(facade.refundAmountLabel()).toBe('1 250,00 Kč');
+
+    facade.dispute.set(DisputeDetails.fromJS({}));
+
+    expect(facade.refundAmountLabel()).toBe('');
   });
 });

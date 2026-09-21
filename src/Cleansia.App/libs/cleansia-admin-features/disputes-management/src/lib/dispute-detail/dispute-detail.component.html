@@ -66,16 +66,14 @@
           <span class="field-label">
             {{ 'pages.disputes_management.columns.status' | translate }}
           </span>
-          <span [class]="getStatusClass(facade.dispute()?.status?.value)">
-            {{ getStatusLabel(facade.dispute()?.status?.value) }}
-          </span>
+          <cleansia-status-badge kind="dispute" [value]="facade.dispute()?.status" />
         </div>
         @if (hasRefundAmount()) {
         <div class="field">
           <span class="field-label">
             {{ 'pages.disputes_management.columns.refund_amount' | translate }}
           </span>
-          <span class="field-value">{{ facade.dispute()?.refundAmount }}</span>
+          <span class="field-value">{{ facade.refundAmountLabel() }}</span>
         </div>
         }
       </div>

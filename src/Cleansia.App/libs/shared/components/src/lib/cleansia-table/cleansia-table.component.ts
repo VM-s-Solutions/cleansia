@@ -21,6 +21,9 @@ import {
   TableConfig,
 } from './cleansia-table.models';
 
+const DEFAULT_ROWS = 20;
+const DEFAULT_ROWS_PER_PAGE_OPTIONS = [5, 10, 20, 50];
+
 /**
  * The shared table: pagination on by default, sorting, custom cell templates, row actions, loading and
  * empty states.
@@ -44,12 +47,7 @@ export class CleansiaTableComponent<T = unknown> implements OnInit {
   data = input.required<T[]>();
   columns = input<TableColumn<T>[]>([]);
   actions = input<TableAction<T>[]>([]);
-  config = input<TableConfig>({
-    hover: true,
-    paginator: true,
-    rows: 10,
-    rowsPerPageOptions: [1, 5, 10, 20, 50],
-  });
+  config = input<TableConfig>({});
   selectedRow = input<T | null>(null);
   loading = input(false);
   clickableRows = input(false);
@@ -65,25 +63,24 @@ export class CleansiaTableComponent<T = unknown> implements OnInit {
   currentSort = signal<SortEvent | null>(null);
   paginationState = signal<PaginationState>({
     first: 0,
-    rows: 10,
+    rows: DEFAULT_ROWS,
     page: 0,
     totalRecords: 0,
   });
-  currentRowsPerPage = signal<number>(10);
+  currentRowsPerPage = signal<number>(DEFAULT_ROWS);
 
-  // Merged config with defaults
   mergedConfig = computed(() => ({
     hover: true,
     paginator: true,
-    rows: 10,
-    rowsPerPageOptions: [5, 10, 20, 50],
+    rows: DEFAULT_ROWS,
+    rowsPerPageOptions: DEFAULT_ROWS_PER_PAGE_OPTIONS,
     lazy: false,
     ...this.config(),
   }));
 
   // Rows per page options for select component
   rowsPerPageSelectOptions = computed<ICleansiaSelectOption[]>(() => {
-    const options = this.mergedConfig().rowsPerPageOptions || [5, 10, 20, 50];
+    const options = this.mergedConfig().rowsPerPageOptions || DEFAULT_ROWS_PER_PAGE_OPTIONS;
     return options.map((option) => ({
       label: option.toString(),
       value: option,
@@ -143,6 +140,12 @@ export class CleansiaTableComponent<T = unknown> implements OnInit {
 
   currentPageNumber = computed(() => this.paginationState().page + 1);
 
+  showPaginator = computed(() => this.mergedConfig().paginator && this.totalRecords() > 0);
+
+  isFirstPage = computed(() => this.currentPageNumber() <= 1);
+
+  isLastPage = computed(() => this.currentPageNumber() >= this.totalPages());
+
   visiblePageNumbers = computed(() => {
     const total = this.totalPages();
     const current = this.currentPageNumber();
@@ -190,6 +193,10 @@ export class CleansiaTableComponent<T = unknown> implements OnInit {
   }
 
   // Methods
+  isRightAligned(column: TableColumn<T>): boolean {
+    return column.numeric === true || column.align === 'right';
+  }
+
   getCellValue(row: T, column: TableColumn<T>): unknown {
     if (column.getValue) {
       return column.getValue(row);

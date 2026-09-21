@@ -21,6 +21,7 @@ import {
   RevenueByPaymentType,
   RevenueByService,
 } from '@cleansia/admin-services';
+import { formatDate } from '@cleansia/utils';
 import { TranslateService } from '@ngx-translate/core';
 import { TranslatePipe } from '@ngx-translate/core';
 import { debounceTime, distinctUntilChanged } from 'rxjs';
@@ -369,11 +370,7 @@ export class ReportsComponent implements OnInit {
   }
 
   private formatDate(date: Date): string {
-    return date.toLocaleDateString('en-GB', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-    });
+    return formatDate(date, this.translate.currentLang);
   }
 
   removeFilterChip(key: string): void {

@@ -134,6 +134,7 @@ export class InvoicesComponent implements AfterViewInit {
   private rebuildTableDefinitions(): void {
     const def = getInvoicesTableDefinition(
       { onDownload: this.downloadInvoice.bind(this) },
+      this.translate.currentLang,
       this.statusTemplate()
     );
     this.invoicesColumns = def.columns;

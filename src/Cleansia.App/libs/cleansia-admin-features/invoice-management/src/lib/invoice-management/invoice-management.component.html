@@ -148,16 +148,12 @@
 
 <ng-template #statusTemplate let-item>
   <div class="status-cell">
-    <span [class]="getInvoiceStatusClass(item)">
-      {{ facade.getStatusLabel(item.status) }}
-    </span>
+    <cleansia-status-badge kind="invoice" [value]="item.status" />
   </div>
 </ng-template>
 
 <ng-template #pdfStatusTemplate let-item>
   <div class="status-cell">
-    <span [class]="getPdfStateClass(item)">
-      {{ getPdfStateLabelKey(item) | translate }}
-    </span>
+    <cleansia-status-badge kind="invoicePdf" [value]="getPdfState(item)" />
   </div>
 </ng-template>

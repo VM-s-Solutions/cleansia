@@ -60,7 +60,9 @@
             <span class="detail-grid__label">
               {{ 'pages.promo_codes.column.status' | translate }}
             </span>
-            <span class="detail-grid__value">{{ formatStatus() }}</span>
+            <span class="detail-grid__value">
+              <cleansia-status-badge kind="promo" [value]="promoStatus()" />
+            </span>
           </div>
           @if (pc.description) {
             <div class="detail-grid__item detail-grid__item--wide">

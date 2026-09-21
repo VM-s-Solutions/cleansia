@@ -166,6 +166,90 @@
     "show_password": "Zobrazit heslo",
     "hide_password": "Skrýt heslo"
   },
+  "enums": {
+    "order_status": {
+      "new": "Nová",
+      "pending": "Čekající",
+      "confirmed": "Potvrzeno",
+      "on_the_way": "Na cestě",
+      "in_progress": "Probíhá",
+      "completed": "Dokončeno",
+      "cancelled": "Zrušeno"
+    },
+    "payment_status": {
+      "pending": "Čekající",
+      "paid": "Zaplaceno",
+      "failed": "Selhalo",
+      "refunded": "Vráceno",
+      "disputed": "Sporné",
+      "partially_refunded": "Částečně vráceno"
+    },
+    "contract_status": {
+      "pending": "Čekající",
+      "active": "Aktivní",
+      "terminated": "Ukončeno",
+      "approved": "Schváleno",
+      "rejected": "Zamítnuto"
+    },
+    "invoice_status": {
+      "pending": "Čekající",
+      "approved": "Schváleno",
+      "paid": "Zaplaceno",
+      "disputed": "Sporováno",
+      "rejected": "Zamítnuto",
+      "cancelled": "Zrušeno"
+    },
+    "invoice_pdf_state": {
+      "ready": "Připraveno",
+      "pending": "Generuje se…",
+      "failed": "Selhalo"
+    },
+    "dispute_status": {
+      "pending": "Čeká",
+      "under_review": "V přezkoumání",
+      "waiting_for_response": "Čeká na odpověď",
+      "resolved": "Vyřešeno",
+      "closed": "Uzavřeno",
+      "escalated": "Eskalováno"
+    },
+    "pay_period_status": {
+      "open": "Otevřeno",
+      "closed": "Uzavřeno",
+      "paid": "Zaplaceno"
+    },
+    "company_lifecycle_state": {
+      "operating": "V provozu",
+      "winding_down": "Ukončuje se",
+      "deactivated": "Deaktivovaná",
+      "frozen": "Zmrazená",
+      "archived": "Archivovaná"
+    },
+    "settlement_fact_status": {
+      "blocking": "Brání archivaci",
+      "settled": "Vypořádáno",
+      "informational": "Informativní"
+    },
+    "referral_status": {
+      "accepted": "Přijato",
+      "qualified": "Kvalifikováno",
+      "expired": "Vypršelo",
+      "reversed": "Stornováno"
+    },
+    "document_status": {
+      "pending": "Čekající",
+      "approved": "Schváleno",
+      "rejected": "Zamítnuto"
+    },
+    "active_status": {
+      "active": "Aktivní",
+      "inactive": "Neaktivní"
+    },
+    "promo_code_status": {
+      "active": "Aktivní",
+      "inactive": "Neaktivní",
+      "expired": "Expirované"
+    }
+  },
   "sidebar": {
     "employees": "Zaměstnanci",
     "pay_periods": "Platební období",
@@ -384,12 +468,6 @@
         "pay_config_delete_error": "Nepodařilo se smazat konfiguraci platby",
         "pay_config_bulk_success": "Konfigurace platby použity: {{created}} vytvořeno, {{skipped}} přeskočeno",
         "weekly_limit_save_success": "Týdenní limit zakázek byl aktualizován"
-      },
-      "document_status": {
-        "pending": "Čekající",
-        "approved": "Schváleno",
-        "rejected": "Zamítnuto",
-        "unknown": "Neznámý"
       },
       "grade": "Hodnost",
       "document_types": {
@@ -697,11 +775,6 @@
       "total_amount": "Celková částka",
       "status": "Stav",
       "pdf_status": "PDF",
-      "pdf_state": {
-        "ready": "Připraveno",
-        "failed": "Selhalo",
-        "pending": "Generuje se…"
-      },
       "generated_at": "Vygenerováno",
       "actions": "Akce",
       "view_details": "Zobrazit detail",
@@ -944,14 +1017,6 @@
         "cancel": "Zrušit fakturu",
         "download": "Stáhnout PDF",
         "regenerate_pdf": "Přegenerovat PDF"
-      },
-      "invoice_status": {
-        "pending": "Čekající",
-        "approved": "Schváleno",
-        "paid": "Zaplaceno",
-        "disputed": "Sporováno",
-        "rejected": "Zamítnuto",
-        "cancelled": "Zrušeno"
       },
       "order_pays": {
         "order_number": "Objednávka #",
@@ -1788,8 +1853,7 @@
       "status": {
         "pending": "Čeká",
         "approved": "Schváleno",
-        "rejected": "Zamítnuto",
-        "unknown": "Neznámé"
+        "rejected": "Zamítnuto"
       },
       "messages": {
         "approve_success": "Dokument smazán",
@@ -1916,13 +1980,6 @@
         "state": "Stav",
         "acts": "Úkony",
         "facts": "Skutečnosti k vypořádání"
-      },
-      "states": {
-        "Operating": "V provozu",
-        "WindingDown": "Ukončuje se",
-        "Deactivated": "Deaktivovaná",
-        "Frozen": "Zmrazená",
-        "Archived": "Archivovaná"
       },
       "stamps": {
         "wind_down": "Ukončení od {{from}} — vyžádáno {{requestedOn}}, {{email}}",

@@ -33,6 +33,7 @@ import {
   TableColumn,
 } from '@cleansia/components';
 import { CleansiaAdminRoute } from '@cleansia/services';
+import { formatDate } from '@cleansia/utils';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { debounceTime, distinctUntilChanged, Subject, takeUntil } from 'rxjs';
 import {
@@ -326,7 +327,7 @@ export class CustomerAuditListComponent implements AfterViewInit, OnDestroy {
         label: this.translate.instant('pages.audit_log.filters.date_range'),
         value: [v.occurredFrom, v.occurredTo]
           .filter(Boolean)
-          .map((d) => (d as Date).toLocaleDateString('en-GB'))
+          .map((d) => formatDate(d as Date, this.translate.currentLang))
           .join(' – '),
       });
     }

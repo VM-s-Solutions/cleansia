@@ -32,7 +32,7 @@
       <div class="cleansia-company-lifecycle__banner" [attr.data-severity]="facade.stateSeverity()">
         <div class="cleansia-company-lifecycle__banner-headline">
           <span class="cleansia-company-lifecycle__company-name">{{ lifecycle.name }}</span>
-          <p-tag [value]="facade.stateKey() | translate" [severity]="facade.stateSeverity()" />
+          <cleansia-status-badge kind="company" [value]="lifecycle.state" />
           <cleansia-button
             [label]="'global.refresh' | translate"
             icon="pi pi-refresh"
@@ -115,7 +115,7 @@
 </ng-template>
 
 <ng-template #statusTemplate let-fact>
-  <p-tag [value]="fact.statusKey | translate" [severity]="fact.statusSeverity" />
+  <cleansia-status-badge kind="settlement" [value]="fact.status" />
 </ng-template>
 
 <cleansia-admin-wind-down-dialog

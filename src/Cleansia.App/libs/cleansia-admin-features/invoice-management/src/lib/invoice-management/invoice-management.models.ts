@@ -5,6 +5,7 @@ import {
   EmployeeInvoiceStatus,
 } from '@cleansia/admin-services';
 import { TableColumn, TableAction } from '@cleansia/components';
+import { formatDate, formatMoney, localeFor } from '@cleansia/utils';
 import { TranslateService } from '@ngx-translate/core';
 
 export type InvoicePdfState = 'ready' | 'failed' | 'pending';
@@ -18,14 +19,6 @@ export function getInvoicePdfState(
   if (invoice.pdfGenerationFailed) return 'failed';
   if (invoice.pdfBlobName) return 'ready';
   return 'pending';
-}
-
-export function getInvoicePdfStateLabelKey(state: InvoicePdfState): string {
-  return `pages.invoice_management.pdf_state.${state}`;
-}
-
-export function getInvoicePdfStateClass(state: InvoicePdfState): string {
-  return `invoice-pdf-badge pdf-${state}`;
 }
 
 export function getInvoiceTableColumns(
@@ -68,9 +61,10 @@ export function getInvoiceTableColumns(
       header: 'pages.invoice_management.total_amount',
       sortable: true,
       width: '12%',
-      getValue: (row: EmployeeInvoiceDto) => {
-        return `${row.totalAmount?.toFixed(2)} ${row.currencyCode ?? ''}`.trimEnd();
-      },
+      getValue: (row: EmployeeInvoiceDto) =>
+        formatMoney(row.totalAmount, row.currencyCode, localeFor(translate.currentLang), {
+          fractionDigits: 2,
+        }),
     },
     {
       id: 'status',
@@ -94,14 +88,7 @@ export function getInvoiceTableColumns(
       header: 'pages.invoice_management.generated_at',
       sortable: true,
       width: '10%',
-      getValue: (row: EmployeeInvoiceDto) => {
-        if (!row.generatedAt) return '';
-        const date =
-          row.generatedAt instanceof Date
-            ? row.generatedAt
-            : new Date(row.generatedAt);
-        return date.toLocaleDateString('en-GB');
-      },
+      getValue: (row: EmployeeInvoiceDto) => formatDate(row.generatedAt, translate.currentLang),
     },
   ];
 }
@@ -147,25 +134,3 @@ export const RETRY_PDF_ERROR_KEY_MAP: Readonly<Record<string, string>> = {
 };
 
 export const RETRY_PDF_FALLBACK_ERROR_KEY = 'api.common.error_occurred';
-
-export function getInvoiceStatusClass(
-  status: EmployeeInvoiceStatus | undefined
-): string {
-  if (!status) return 'invoice-status-badge status-pending';
-  switch (status) {
-    case EmployeeInvoiceStatus.Pending:
-      return 'invoice-status-badge status-pending';
-    case EmployeeInvoiceStatus.Approved:
-      return 'invoice-status-badge status-approved';
-    case EmployeeInvoiceStatus.Paid:
-      return 'invoice-status-badge status-paid';
-    case EmployeeInvoiceStatus.Disputed:
-      return 'invoice-status-badge status-disputed';
-    case EmployeeInvoiceStatus.Rejected:
-      return 'invoice-status-badge status-rejected';
-    case EmployeeInvoiceStatus.Cancelled:
-      return 'invoice-status-badge status-cancelled';
-    default:
-      return 'invoice-status-badge status-pending';
-  }
-}

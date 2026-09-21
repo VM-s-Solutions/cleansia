@@ -49,18 +49,8 @@
             <span class="value">{{ facade.order()?.displayOrderNumber }}</span>
           </div>
           <div class="order-statuses">
-            <span
-              [class]="facade.getOrderStatusClass(facade.order()?.orderStatus)"
-            >
-              {{ facade.getOrderStatusLabel(facade.order()?.orderStatus) }}
-            </span>
-            <span
-              [class]="
-                facade.getPaymentStatusClass(facade.order()?.paymentStatus)
-              "
-            >
-              {{ facade.order()?.paymentStatus?.name }}
-            </span>
+            <cleansia-status-badge kind="order" [value]="facade.order()?.orderStatus" />
+            <cleansia-status-badge kind="payment" [value]="facade.order()?.paymentStatus" />
           </div>
         </div>
         <div class="order-meta">
@@ -324,13 +314,7 @@
             <span class="label"
               >{{ 'pages.order_detail.payment_status' | translate }}:</span
             >
-            <span
-              [class]="
-                facade.getPaymentStatusClass(facade.order()?.paymentStatus)
-              "
-            >
-              {{ facade.order()?.paymentStatus?.name }}
-            </span>
+            <cleansia-status-badge kind="payment" [value]="facade.order()?.paymentStatus" />
           </div>
           <div class="info-item highlight">
             <span class="label"

@@ -80,22 +80,3 @@
   }
 }
 
-// Status badges
-.status-badge {
-  display: inline-flex;
-  align-items: center;
-  padding: 0.25rem 0.75rem;
-  border-radius: 9999px;
-  font-size: 0.75rem;
-  font-weight: 500;
-
-  &--active {
-    background-color: #dcfce7;
-    color: #166534;
-  }
-
-  &--inactive {
-    background-color: #f3f4f6;
-    color: #6b7280;
-  }
-}

@@ -23,17 +23,13 @@
               <span class="label"
                 >{{ 'pages.invoice_detail.status' | translate }}:</span
               >
-              <span [class]="getInvoiceStatusClass(facade.invoice()!.status)">
-                {{ facade.getStatusLabel(facade.invoice()!.status) }}
-              </span>
+              <cleansia-status-badge kind="invoice" [value]="facade.invoice()!.status" />
             </div>
             <div class="status-info">
               <span class="label"
                 >{{ 'pages.invoice_detail.pdf_status' | translate }}:</span
               >
-              <span [class]="getPdfStateClass(facade.invoice()!)">
-                {{ getPdfStateLabelKey(facade.invoice()!) | translate }}
-              </span>
+              <cleansia-status-badge kind="invoicePdf" [value]="getPdfState(facade.invoice()!)" />
             </div>
             <div class="invoice-number-info">
               <span class="label"

@@ -2,15 +2,6 @@ import { AdminReferralListItem, ReferralStatus } from '@cleansia/admin-services'
 import { TableAction } from '@cleansia/components';
 import { TranslateService } from '@ngx-translate/core';
 
-export const REFERRAL_STATUS_LABEL_KEYS: Readonly<
-  Record<ReferralStatus, string>
-> = {
-  [ReferralStatus.Accepted]: 'pages.loyalty_referrals.status.Accepted',
-  [ReferralStatus.Qualified]: 'pages.loyalty_referrals.status.Qualified',
-  [ReferralStatus.Expired]: 'pages.loyalty_referrals.status.Expired',
-  [ReferralStatus.Reversed]: 'pages.loyalty_referrals.status.Reversed',
-};
-
 export function getReferralInterventionActions(
   defs: {
     canIntervene: boolean;

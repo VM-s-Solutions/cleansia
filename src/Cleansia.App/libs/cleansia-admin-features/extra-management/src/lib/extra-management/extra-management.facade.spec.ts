@@ -52,7 +52,7 @@ describe('ExtraManagementFacade', () => {
           },
         },
         { provide: SnackbarService, useValue: snackbar },
-        { provide: TranslateService, useValue: { instant: (k: string) => k } },
+        { provide: TranslateService, useValue: { instant: (k: string) => k, currentLang: 'cs' } },
         { provide: Router, useValue: { navigate: jest.fn() } },
       ],
     });
@@ -224,7 +224,7 @@ describe('ExtraManagementFacade', () => {
       facade.loadExtras();
 
       expect(facade.defaultCurrencyCode()).toBeNull();
-      expect(facade.formatCurrency(45.1)).toBe('45.10');
+      expect(facade.formatCurrency(45.1)).toBe('45,10');
     });
   });
 });

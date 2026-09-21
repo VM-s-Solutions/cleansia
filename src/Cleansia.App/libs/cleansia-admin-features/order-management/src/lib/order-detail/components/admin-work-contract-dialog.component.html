@@ -4,12 +4,10 @@
       {{ facade.contract()?.title || ('pages.order_detail.work_contract.dialog.title' | translate) }}
     </h2>
     @if (facade.contract(); as contract) {
-    <!-- The effective date is a calendar day, so it is read in UTC like the legal-documents page. -->
     <p class="work-contract-dialog__version">
       {{
         'pages.order_detail.work_contract.dialog.version_line'
-          | translate
-            : { version: contract.version, date: contract.effectiveFrom | date: 'dd/MM/yyyy' : 'UTC' }
+          | translate : { version: contract.version, date: facade.effectiveFromLabel() }
       }}
     </p>
     }

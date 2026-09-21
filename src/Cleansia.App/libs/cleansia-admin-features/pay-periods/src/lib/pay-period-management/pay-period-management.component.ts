@@ -25,6 +25,7 @@ import {
   CleansiaLoaderComponent,
   CleansiaRadioComponent,
   CleansiaSectionComponent,
+  CleansiaStatusBadgeComponent,
   CleansiaTableComponent,
   CleansiaTitleComponent,
   TableColumn,
@@ -55,6 +56,7 @@ import {
     CleansiaTitleComponent,
     CleansiaLoaderComponent,
     CleansiaSectionComponent,
+    CleansiaStatusBadgeComponent,
     FormsModule,
     ReactiveFormsModule,
     ToastModule,
@@ -294,12 +296,6 @@ export class PayPeriodManagementComponent implements AfterViewInit, OnDestroy {
     this.filterForm.patchValue({ year: value });
   }
 
-  getPayPeriodStatusLabel(payPeriod: PayPeriodDto): string {
-    if (!payPeriod.status) return '';
-    const statusKey = payPeriod.status.toLowerCase();
-    return this.translate.instant(`pay_periods.status.${statusKey}`);
-  }
-
   openCreateDialog(): void {
     this.showCreateDialog.set(true);
     this.createStartDate.set(null);
@@ -318,11 +314,5 @@ export class PayPeriodManagementComponent implements AfterViewInit, OnDestroy {
     // TODO: Wire up to admin client create pay period endpoint once available
     console.warn('Create pay period not yet wired to backend', { startDate, endDate });
     this.closeCreateDialog();
-  }
-
-  getPayPeriodStatusClass(payPeriod: PayPeriodDto): string {
-    if (!payPeriod.status) return 'pay-period-status-badge status-open';
-    const statusKey = payPeriod.status.toLowerCase();
-    return `pay-period-status-badge status-${statusKey}`;
   }
 }

@@ -1,4 +1,3 @@
-import { DatePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject, OnInit } from '@angular/core';
 import { CleansiaButtonComponent, CleansiaLoaderComponent } from '@cleansia/components';
 import { TranslatePipe } from '@ngx-translate/core';
@@ -9,7 +8,7 @@ import { AdminWorkContractDialogData } from './admin-work-contract-dialog.models
 @Component({
   selector: 'cleansia-admin-work-contract-dialog',
   standalone: true,
-  imports: [DatePipe, TranslatePipe, CleansiaButtonComponent, CleansiaLoaderComponent],
+  imports: [TranslatePipe, CleansiaButtonComponent, CleansiaLoaderComponent],
   templateUrl: './admin-work-contract-dialog.component.html',
   providers: [AdminWorkContractDialogFacade],
   changeDetection: ChangeDetectionStrategy.OnPush,

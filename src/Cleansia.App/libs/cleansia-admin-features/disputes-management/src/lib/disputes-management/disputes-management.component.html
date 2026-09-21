@@ -39,7 +39,7 @@
 </div>
 
 <ng-template #statusTemplate let-item>
-  <span [class]="getStatusClass(item)">{{ getStatusLabel(item) }}</span>
+  <cleansia-status-badge kind="dispute" [value]="item.status" />
 </ng-template>
 
 <ng-template #reasonTemplate let-item>

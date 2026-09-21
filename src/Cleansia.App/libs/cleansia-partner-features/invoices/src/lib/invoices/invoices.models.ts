@@ -1,7 +1,7 @@
 import { TemplateRef } from '@angular/core';
 import { TableColumn, TableAction } from '@cleansia/components';
 import { EmployeeInvoiceDto } from '@cleansia/partner-services';
-import { formatMoney } from '@cleansia/utils';
+import { formatDate, formatMoney, localeFor } from '@cleansia/utils';
 
 export interface InvoicesActions {
   onDownload: (invoice: EmployeeInvoiceDto) => void;
@@ -9,6 +9,7 @@ export interface InvoicesActions {
 
 export function getInvoicesTableDefinition(
   actions: InvoicesActions,
+  lang: string | undefined,
   statusTemplate?: TemplateRef<EmployeeInvoiceDto>
 ): { columns: TableColumn<EmployeeInvoiceDto>[]; actions: TableAction<EmployeeInvoiceDto>[] } {
   return {
@@ -29,10 +30,7 @@ export function getInvoicesTableDefinition(
         id: 'generatedAt',
         field: 'generatedAt',
         header: 'pages.invoices.generated_date',
-        getValue: (invoice?: EmployeeInvoiceDto) =>
-          invoice
-            ? new Date(invoice.generatedAt).toLocaleDateString('en-GB')
-            : '',
+        getValue: (invoice?: EmployeeInvoiceDto) => formatDate(invoice?.generatedAt, lang),
         sortable: true,
       },
       {
@@ -46,7 +44,9 @@ export function getInvoicesTableDefinition(
         field: 'totalAmount',
         header: 'pages.invoices.total_amount',
         getValue: (invoice?: EmployeeInvoiceDto) =>
-          invoice ? formatMoney(invoice.totalAmount, invoice.currencyCode ?? '', 'en-GB', { fractionDigits: 2 }) : '',
+          invoice
+            ? formatMoney(invoice.totalAmount, invoice.currencyCode ?? '', localeFor(lang), { fractionDigits: 2 })
+            : '',
         sortable: true,
         align: 'right',
       },

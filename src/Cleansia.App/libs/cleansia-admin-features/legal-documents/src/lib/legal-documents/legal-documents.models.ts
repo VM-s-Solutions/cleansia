@@ -5,6 +5,7 @@ import {
   LegalDocumentVersionDto,
 } from '@cleansia/admin-services';
 import { TableAction, TableColumn } from '@cleansia/components';
+import { formatDate } from '@cleansia/utils';
 import { TranslateService } from '@ngx-translate/core';
 
 const FALLBACK_LANGUAGE = 'en';
@@ -28,12 +29,8 @@ export function getTypeLabelKey(type: LegalDocumentType): string {
   return TYPE_LABEL_KEYS[type];
 }
 
-// The wire value is a date with no time, parsed at UTC midnight; a local-zone render would show
-// the day before it west of Greenwich.
-export function formatEffectiveDate(value: Date | undefined): string {
-  if (!value) return '';
-  const date = value instanceof Date ? value : new Date(value);
-  return date.toLocaleDateString('en-GB', { timeZone: 'UTC' });
+export function formatEffectiveDate(value: Date | undefined, lang: string | undefined): string {
+  return formatDate(value, lang, 'utcDate');
 }
 
 export function pickPreviewLanguage(
@@ -79,7 +76,7 @@ export function getLegalVersionTableDefinition(
         id: 'effectiveFrom',
         field: 'effectiveFrom',
         header: translate.instant('pages.legal_documents.columns.effective_from'),
-        getValue: (row: LegalDocumentVersionDto) => formatEffectiveDate(row.effectiveFrom),
+        getValue: (row: LegalDocumentVersionDto) => formatEffectiveDate(row.effectiveFrom, translate.currentLang),
         width: '14%',
       },
       {

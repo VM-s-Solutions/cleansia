@@ -255,8 +255,6 @@
 
 <ng-template #statusTemplate let-item>
   <div class="status-cell">
-    <span [class]="getPayPeriodStatusClass(item)">
-      {{ getPayPeriodStatusLabel(item) }}
-    </span>
+    <cleansia-status-badge kind="payPeriod" [value]="item.status" />
   </div>
 </ng-template>

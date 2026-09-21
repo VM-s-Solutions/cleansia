@@ -9,7 +9,7 @@ import {
 import { UnsubscribeControlDirective } from '@cleansia/directives';
 import { CleansiaAdminRoute, SnackbarService } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
-import { formatMoney } from '@cleansia/utils';
+import { formatMoney, localeFor } from '@cleansia/utils';
 import { Observable, catchError, finalize, map, of, switchMap, takeUntil, tap } from 'rxjs';
 import { resolveServiceErrorKey } from './service-management.models';
 
@@ -110,7 +110,9 @@ export class ServiceManagementFacade extends UnsubscribeControlDirective {
 
   formatCurrency(value: number | undefined): string {
     if (value === undefined || value === null) return '';
-    return formatMoney(value, this.defaultCurrencyCode(), 'en-GB', { fractionDigits: 2 });
+    return formatMoney(value, this.defaultCurrencyCode(), localeFor(this.translate.currentLang), {
+      fractionDigits: 2,
+    });
   }
 
   navigateToCreateService(): void {

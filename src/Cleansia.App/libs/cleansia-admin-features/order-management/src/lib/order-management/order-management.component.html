@@ -211,16 +211,12 @@
 
 <ng-template #orderStatusTemplate let-item>
   <div class="status-cell">
-    <span [class]="getOrderStatusClass(item)">
-      {{ getOrderStatusLabel(item) }}
-    </span>
+    <cleansia-status-badge kind="order" [value]="item.orderStatus" />
   </div>
 </ng-template>
 
 <ng-template #paymentStatusTemplate let-item>
   <div class="status-cell">
-    <span [class]="getPaymentStatusClass(item)">
-      {{ getPaymentStatusLabel(item) }}
-    </span>
+    <cleansia-status-badge kind="payment" [value]="item.paymentStatus" />
   </div>
 </ng-template>

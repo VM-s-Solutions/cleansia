@@ -70,10 +70,11 @@ describe('CleansiaMobileToolbarComponent', () => {
 });
 
 /**
- * Every control in the bar is the same 2.25rem box in a 3.25rem bar; the 44px hit area is the
- * ring `cleansia-button` already grows past its painted box, so the stylesheet must leave that
- * ring reachable and size the box, not the hit area. The stylesheet is declared an input of this
- * project's test target.
+ * Every control in the bar is the same 2.25rem box in a 3.25rem bar. The menu button and a
+ * projected action are `cleansia-button`s, whose 44px hit area is the ring grown past the painted
+ * box in both renderings — the inner <button>, and the anchor a link action renders as (pinned in
+ * the button's own spec) — so the stylesheet must leave that ring reachable and size the box, not
+ * the hit area. The stylesheet is declared an input of this project's test target.
  */
 describe('CleansiaMobileToolbarComponent — stylesheet', () => {
   const scss = readFileSync(

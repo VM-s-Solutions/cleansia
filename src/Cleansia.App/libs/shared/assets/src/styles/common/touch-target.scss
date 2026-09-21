@@ -10,5 +10,9 @@ $touch-target-floor: 44px;
     content: '';
     position: absolute;
     inset: min(0px, calc((100% - #{$floor}) / 2));
+    // PrimeNG parks a hidden, zero-width ::after on every icon-only button to hold its line box;
+    // the ring is that pseudo-element, so it takes the box and the hit-test back.
+    width: auto;
+    visibility: inherit;
   }
 }

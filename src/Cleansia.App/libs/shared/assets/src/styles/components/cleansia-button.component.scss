@@ -376,3 +376,12 @@ a.p-button {
     text-decoration: none;
   }
 }
+
+// The anchor rendering has no inner <button>: the anchor is the painted control, so it carries
+// the same ring itself — over the clip PrimeNG puts on every .p-button, which would otherwise
+// paint the ring and keep the pointer off it.
+a.cleansia-button.p-button {
+  position: relative;
+  overflow: visible;
+  @include touch-target;
+}

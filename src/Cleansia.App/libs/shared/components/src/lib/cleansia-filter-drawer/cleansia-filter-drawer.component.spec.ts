@@ -80,7 +80,7 @@ describe('cleansia-filter-drawer', () => {
   it('closes on Escape and on the backdrop', () => {
     host.state.open();
     fixture.detectChanges();
-    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    panel().dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
     fixture.detectChanges();
     expect(host.state.isOpen()).toBe(false);
 
@@ -89,6 +89,53 @@ describe('cleansia-filter-drawer', () => {
     query('.cleansia-filter-drawer__backdrop').click();
     fixture.detectChanges();
     expect(host.state.isOpen()).toBe(false);
+  });
+
+  it('leaves an Escape a field overlay inside it already consumed', () => {
+    host.state.open();
+    fixture.detectChanges();
+    const consumed = new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true });
+    consumed.preventDefault();
+    element.querySelector('.projected')?.dispatchEvent(consumed);
+    fixture.detectChanges();
+    expect(host.state.isOpen()).toBe(true);
+  });
+
+  it('moves focus onto the panel when it opens and back onto the trigger when it closes', () => {
+    trigger().focus();
+    trigger().click();
+    fixture.detectChanges();
+    expect(document.activeElement).toBe(panel());
+
+    panel().dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    fixture.detectChanges();
+    expect(document.activeElement).toBe(trigger());
+  });
+
+  it('keeps Tab inside the open panel, wrapping between the close and reset buttons', () => {
+    host.state.open();
+    fixture.detectChanges();
+    const close = query<HTMLButtonElement>('.cleansia-filter-drawer__close button', panel());
+    const reset = query<HTMLButtonElement>('.cleansia-filter-drawer__footer button', panel());
+    const tab = (target: HTMLElement, shiftKey: boolean) => {
+      const event = new KeyboardEvent('keydown', { key: 'Tab', shiftKey, bubbles: true, cancelable: true });
+      target.dispatchEvent(event);
+      return event.defaultPrevented;
+    };
+
+    reset.focus();
+    expect(tab(reset, false)).toBe(true);
+    expect(document.activeElement).toBe(close);
+
+    expect(tab(close, true)).toBe(true);
+    expect(document.activeElement).toBe(reset);
+
+    panel().focus();
+    expect(tab(panel(), true)).toBe(true);
+    expect(document.activeElement).toBe(reset);
+
+    close.focus();
+    expect(tab(close, false)).toBe(false);
   });
 
   it('resets from the footer', () => {

@@ -24,6 +24,9 @@
   tabindex="-1"
   [attr.aria-label]="title() || ('global.filters.title' | translate)"
   [attr.inert]="state().isOpen() ? null : ''"
+  (keydown.escape)="onEscape($event)"
+  (keydown.tab)="onTab($event, false)"
+  (keydown.shift.tab)="onTab($event, true)"
 >
   <div class="cleansia-filter-drawer__header">
     <h2 class="cleansia-filter-drawer__title">
@@ -31,6 +34,7 @@
       {{ title() || ('global.filters.title' | translate) }}
     </h2>
     <cleansia-button
+      #close
       class="cleansia-filter-drawer__close"
       icon="pi pi-times"
       severity="secondary"
@@ -47,6 +51,7 @@
 
   <div class="cleansia-filter-drawer__footer">
     <cleansia-button
+      #reset
       [label]="'global.filters.reset' | translate"
       icon="pi pi-refresh"
       severity="secondary"

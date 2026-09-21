@@ -104,6 +104,8 @@
       </div>
     </div>
 
+    <cleansia-filter-chips [state]="facade.filters" />
+
     <cleansia-help-card
       #ordersHelpCard
       [titleKey]="'help.orders.title'"
@@ -131,8 +133,6 @@
       [statusFlowTitleKey]="'help.orders.payment_status_title'"
       (dismissedChange)="onHelpDismissedChange()"
     />
-
-    <cleansia-filter-chips [state]="facade.filters" />
 
     <cleansia-section>
       <div class="section-header">

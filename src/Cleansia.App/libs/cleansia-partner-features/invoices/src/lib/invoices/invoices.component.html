@@ -96,6 +96,8 @@
       </div>
     </div>
 
+    <cleansia-filter-chips [state]="facade.filters" />
+
     <cleansia-help-card
       #invoicesHelpCard
       [titleKey]="'help.invoices.title'"
@@ -109,8 +111,6 @@
       [statusFlowTitleKey]="'help.invoices.status_title'"
       (dismissedChange)="onHelpDismissedChange()"
     />
-
-    <cleansia-filter-chips [state]="facade.filters" />
 
     <cleansia-section>
       <cleansia-table

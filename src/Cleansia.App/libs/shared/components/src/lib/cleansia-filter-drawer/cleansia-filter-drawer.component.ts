@@ -1,9 +1,8 @@
 import {
+  afterRenderEffect,
   ChangeDetectionStrategy,
   Component,
-  effect,
   ElementRef,
-  HostListener,
   input,
   viewChild,
 } from '@angular/core';
@@ -35,24 +34,50 @@ export class CleansiaFilterDrawerComponent {
 
   private readonly panel = viewChild.required<ElementRef<HTMLElement>>('panel');
   private readonly trigger = viewChild.required<ElementRef<HTMLElement>>('trigger');
+  private readonly close = viewChild.required('close', { read: ElementRef<HTMLElement> });
+  private readonly reset = viewChild.required('reset', { read: ElementRef<HTMLElement> });
   private wasOpen = false;
 
   constructor() {
-    effect(() => {
+    // After render, not during it: the panel is inert until the open class lands, and an inert
+    // element refuses focus.
+    afterRenderEffect(() => {
       const open = this.state().isOpen();
       if (open) {
         this.panel().nativeElement.focus();
       } else if (this.wasOpen) {
-        this.trigger().nativeElement.querySelector('button')?.focus();
+        this.button(this.trigger())?.focus();
       }
       this.wasOpen = open;
     });
   }
 
-  @HostListener('document:keydown.escape')
-  onEscape(): void {
-    if (this.state().isOpen()) {
+  onEscape(event: Event): void {
+    // A calendar or select overlay inside the panel consumes the Escape that closes it.
+    if (!event.defaultPrevented) {
       this.state().close();
     }
+  }
+
+  // The close button is the panel's first tabbable and Reset its last by construction, so the
+  // modal's Tab ring is those two and the panel itself, which holds focus on open.
+  onTab(event: Event, backwards: boolean): void {
+    const close = this.button(this.close());
+    const reset = this.button(this.reset());
+    if (!close || !reset) {
+      return;
+    }
+    const from = event.target;
+    if (backwards && (from === close || from === this.panel().nativeElement)) {
+      reset.focus();
+      event.preventDefault();
+    } else if (!backwards && from === reset) {
+      close.focus();
+      event.preventDefault();
+    }
+  }
+
+  private button(host: ElementRef<HTMLElement>): HTMLButtonElement | null {
+    return host.nativeElement.querySelector('button');
   }
 }

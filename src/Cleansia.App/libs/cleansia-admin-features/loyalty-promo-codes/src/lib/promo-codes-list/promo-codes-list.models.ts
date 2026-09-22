@@ -13,15 +13,13 @@ export function getPromoCodeStatus(row: PromoCodeListItem): PromoCodeStatusBadge
   return 'active';
 }
 
-export function formatDiscount(row: PromoCodeListItem): string {
+export function formatDiscount(row: PromoCodeListItem, lang: string | undefined): string {
   if (row.type === PromoCodeType.PercentDiscount) {
     const pct = row.discountPercent ?? 0;
     // Backend stores percent as 0..1; UI shows 0..100.
     return `${Math.round(pct * 100)}%`;
   }
-  const amount = row.discountAmount ?? 0;
-  const code = row.currencyCode ?? '';
-  return `${amount} ${code}`.trim();
+  return formatMoney(row.discountAmount ?? 0, row.currencyCode ?? null, localeFor(lang), { fractionDigits: 2 });
 }
 
 export function formatMinimumOrder(row: PromoCodeListItem, lang: string | undefined): string {
@@ -112,7 +110,7 @@ export function getPromoCodeTableDefinition(
         numeric: true,
         field: 'discountPercent',
         header: translate.instant('pages.promo_codes.column.discount'),
-        getValue: (row) => formatDiscount(row),
+        getValue: (row) => formatDiscount(row, translate.currentLang),
         width: '10%',
       },
       {

@@ -111,29 +111,3 @@
     text-decoration: underline;
   }
 }
-
-.cleansia-wind-down-dialog {
-  &__form {
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-  }
-
-  &__lede {
-    margin: 0;
-    color: var(--cleansia-text-primary);
-    line-height: 1.5;
-  }
-
-  &__consequences-title {
-    margin: 0;
-    font-weight: 600;
-  }
-
-  &__consequences {
-    margin: 0;
-    padding-left: 1.25rem;
-    color: var(--cleansia-text-secondary);
-    line-height: 1.5;
-  }
-}

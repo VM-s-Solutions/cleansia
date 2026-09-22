@@ -1,0 +1,78 @@
+// What the admin dialogs share on top of the shared `cleansia-dialog` skin: one of three panel
+// widths, a body that reads lede → fields on the form grid → summary, a toolbar row for the
+// actions that belong inside the body, and — for a dialog that draws its own footer inside the
+// content — a footer that looks like the skin's.
+.cleansia-dialog.dialog-panel {
+  width: 480px;
+  max-width: calc(100vw - 2rem);
+
+  // Two columns of fields.
+  &--wide {
+    width: 560px;
+  }
+
+  // A document to read, not a form to fill.
+  &--reading {
+    width: 720px;
+  }
+}
+
+.dialog-body {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.dialog-lede {
+  margin: 0;
+  line-height: 1.6;
+  color: var(--cleansia-text-primary);
+}
+
+.dialog-toolbar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+
+  &__label {
+    font-size: 0.875rem;
+    color: var(--cleansia-text-secondary);
+  }
+}
+
+// What the act will do, or what a preview found: one tinted block with a title and a list.
+.dialog-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 1rem 1.25rem;
+  border: 1px solid var(--cleansia-border);
+  border-radius: var(--cleansia-radius-md);
+  background: var(--cleansia-primary-25);
+
+  &__title {
+    margin: 0;
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: var(--cleansia-primary-700);
+  }
+
+  &__list {
+    margin: 0;
+    padding-left: 1.25rem;
+    line-height: 1.6;
+    color: var(--cleansia-text-secondary);
+  }
+}
+
+// A dynamic dialog renders its footer inside the content pane; the negative margins run its
+// rule to the panel edges so it sits where the skin's own footer would.
+.cleansia-dialog .dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  margin: 1.25rem -1.5rem -1.25rem;
+  padding: 0.75rem 1.5rem 1.25rem;
+  border-top: 1px solid var(--surface-border);
+}

@@ -650,64 +650,74 @@
   [(visible)]="facade.payConfigDialogOpen"
   [modal]="true"
   [closable]="true"
-  [style]="{ width: '560px' }"
+  [draggable]="false"
+  [resizable]="false"
+  styleClass="cleansia-dialog dialog-panel dialog-panel--wide"
   [header]="'pages.employee_detail.override_dialog_title' | translate"
 >
-  <form [formGroup]="payConfigForm" class="pay-config-override-form">
-    <div class="pay-config-override-form__grid">
-      <cleansia-text-input
-        [label]="'pages.employee_detail.pay_config_base_pay' | translate"
-        formControlName="basePay"
-        dataType="number"
-        [required]="true"
-        [floatVariant]="'on'"
-      />
-      <cleansia-select
-        [options]="facade.currencies()"
-        [label]="'pages.employee_detail.pay_config_currency' | translate"
-        [floatVariant]="'on'"
-        formControlName="currencyId"
-      />
-      <cleansia-text-input
-        [label]="'pages.employee_detail.pay_config_extra_room' | translate"
-        formControlName="extraPerRoom"
-        dataType="number"
-        [floatVariant]="'on'"
-      />
-      <cleansia-text-input
-        [label]="'pages.employee_detail.pay_config_extra_bathroom' | translate"
-        formControlName="extraPerBathroom"
-        dataType="number"
-        [floatVariant]="'on'"
-      />
-      <cleansia-text-input
-        [label]="'pages.employee_detail.pay_config_distance_rate' | translate"
-        formControlName="distanceRatePerKm"
-        dataType="number"
-        [floatVariant]="'on'"
-      />
-      <cleansia-text-input
-        [label]="'pages.employee_detail.pay_config_min_pay' | translate"
-        formControlName="minimumPay"
-        dataType="number"
-        [floatVariant]="'on'"
-      />
-      <cleansia-text-input
-        [label]="'pages.employee_detail.pay_config_max_pay' | translate"
-        formControlName="maximumPay"
-        dataType="number"
-        [floatVariant]="'on'"
-      />
-      <cleansia-textarea
-        class="pay-config-override-form__wide"
-        [label]="'pages.employee_detail.pay_config_description' | translate"
-        formControlName="description"
-        [rows]="2"
-      />
+  <form [formGroup]="payConfigForm" class="dialog-body">
+    <div class="form-grid">
+      <div class="form-field">
+        <cleansia-text-input
+          [label]="'pages.employee_detail.pay_config_base_pay' | translate"
+          formControlName="basePay"
+          dataType="number"
+          [required]="true"
+        />
+      </div>
+      <div class="form-field">
+        <cleansia-select
+          [options]="facade.currencies()"
+          [label]="'pages.employee_detail.pay_config_currency' | translate"
+          formControlName="currencyId"
+        />
+      </div>
+      <div class="form-field">
+        <cleansia-text-input
+          [label]="'pages.employee_detail.pay_config_extra_room' | translate"
+          formControlName="extraPerRoom"
+          dataType="number"
+        />
+      </div>
+      <div class="form-field">
+        <cleansia-text-input
+          [label]="'pages.employee_detail.pay_config_extra_bathroom' | translate"
+          formControlName="extraPerBathroom"
+          dataType="number"
+        />
+      </div>
+      <div class="form-field">
+        <cleansia-text-input
+          [label]="'pages.employee_detail.pay_config_distance_rate' | translate"
+          formControlName="distanceRatePerKm"
+          dataType="number"
+        />
+      </div>
+      <div class="form-field">
+        <cleansia-text-input
+          [label]="'pages.employee_detail.pay_config_min_pay' | translate"
+          formControlName="minimumPay"
+          dataType="number"
+        />
+      </div>
+      <div class="form-field">
+        <cleansia-text-input
+          [label]="'pages.employee_detail.pay_config_max_pay' | translate"
+          formControlName="maximumPay"
+          dataType="number"
+        />
+      </div>
+      <div class="form-field form-field--full">
+        <cleansia-textarea
+          [label]="'pages.employee_detail.pay_config_description' | translate"
+          formControlName="description"
+          [rows]="2"
+        />
+      </div>
     </div>
 
-    <div class="pay-config-override-form__quick-fill">
-      <span class="pay-config-override-form__quick-fill-label">
+    <div class="dialog-toolbar">
+      <span class="dialog-toolbar__label">
         {{ 'pages.employee_detail.grade_quick_fill' | translate }}
       </span>
       <cleansia-button

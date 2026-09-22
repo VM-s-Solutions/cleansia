@@ -139,23 +139,27 @@
   [closable]="true"
   [draggable]="false"
   [resizable]="false"
-  [style]="{ width: '480px' }"
+  styleClass="cleansia-dialog dialog-panel"
 >
-  <div class="cleansia-pay-period-management__create-form">
-    <cleansia-calendar
-      [label]="'pay_periods.list.columns.start_date' | translate"
-      [ngModel]="createStartDate()"
-      (ngModelChange)="createStartDate.set($event)"
-      [showIcon]="true"
-      appendTo="body"
-    />
-    <cleansia-calendar
-      [label]="'pay_periods.list.columns.end_date' | translate"
-      [ngModel]="createEndDate()"
-      (ngModelChange)="createEndDate.set($event)"
-      [showIcon]="true"
-      appendTo="body"
-    />
+  <div class="dialog-body">
+    <div class="form-grid">
+      <div class="form-field">
+        <cleansia-calendar
+          [label]="'pay_periods.list.columns.start_date' | translate"
+          [ngModel]="createStartDate()"
+          (ngModelChange)="createStartDate.set($event)"
+          appendTo="body"
+        />
+      </div>
+      <div class="form-field">
+        <cleansia-calendar
+          [label]="'pay_periods.list.columns.end_date' | translate"
+          [ngModel]="createEndDate()"
+          (ngModelChange)="createEndDate.set($event)"
+          appendTo="body"
+        />
+      </div>
+    </div>
   </div>
   <ng-template pTemplate="footer">
     <cleansia-button

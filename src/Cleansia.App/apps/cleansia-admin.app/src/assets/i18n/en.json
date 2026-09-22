@@ -330,8 +330,6 @@
         "reason_label": "Rejection Reason",
         "reason_placeholder": "Enter detailed reason for rejection...",
         "reason_hint": "Maximum 500 characters",
-        "reason_required": "Rejection reason is required",
-        "reason_too_long": "Rejection reason is too long (max 500 characters)",
         "reject_button": "Reject Employee"
       },
       "messages": {
@@ -420,7 +418,7 @@
         "subtitle": "Pick the country this cleaner is approved to work in. This drives their currency, language and VAT defaults.",
         "work_country_label": "Work Country",
         "work_country_hint": "Only countries we currently service are selectable.",
-        "work_country_required": "Work country is required",
+        "notes_label": "Approval notes",
         "notes_placeholder": "Optional approval notes...",
         "notes_hint": "Maximum 1000 characters",
         "approve_button": "Approve Employee"
@@ -1392,9 +1390,7 @@
         "zip_prefix_hint": "Not enforced yet — captured for future stricter validation.",
         "active_label": "Active",
         "active": "Active",
-        "inactive": "Inactive",
-        "save": "Save",
-        "cancel": "Cancel"
+        "inactive": "Inactive"
       },
       "messages": {
         "country_updated": "Country service status updated",
@@ -2216,9 +2212,6 @@
           "perks_json_help": "Array of objects with icon and labelKey. Example: [{\"icon\":\"badge\",\"labelKey\":\"loyalty.perks.welcome_badge\"}]"
         },
         "validation": {
-          "threshold_min": "Threshold must be 0 or greater",
-          "discount_range": "Discount must be between 0 and 100",
-          "min_order_min": "Minimum order must be 0 or greater",
           "perks_json_invalid": "Perks must be valid JSON"
         },
         "error": {
@@ -2292,15 +2285,8 @@
           "reason": "Reason",
           "reason_help": "Visible in audit log."
         },
-        "validation": {
-          "points_min": "Points must be at least 1",
-          "points_max": "Points must be at most 100,000",
-          "reason_required": "Reason is required",
-          "reason_max": "Reason must be 500 characters or fewer"
-        },
         "submit_grant": "Grant",
         "submit_revoke": "Revoke",
-        "cancel": "Cancel",
         "success_grant": "Points granted",
         "success_revoke": "Points revoked",
         "error": {
@@ -2340,7 +2326,6 @@
         "dialog": {
           "title": "Issue credit",
           "lede": "This is money the company owes from the moment you confirm it. It cannot be taken back here — the customer spends it on a booking, or asks to be paid out.",
-          "cancel": "Cancel",
           "submit": "Issue credit",
           "field": {
             "currency": "Currency",
@@ -2348,13 +2333,6 @@
             "reason": "Reason",
             "note": "What happened",
             "note_help": "Recorded against your name. Write what you would want a colleague to read before compensating this customer again."
-          },
-          "validation": {
-            "currency_required": "Choose a currency.",
-            "amount_min": "Enter an amount above zero.",
-            "amount_max": "That is above the limit for a single credit. Issue it in smaller amounts.",
-            "note_required": "Say what happened.",
-            "note_max": "Keep this under 500 characters."
           }
         },
         "column": {
@@ -2420,10 +2398,6 @@
         "field": {
           "reason": "Reason",
           "reason_help": "Required. Visible in the loyalty ledger."
-        },
-        "validation": {
-          "reason_required": "Reason is required",
-          "reason_max": "Reason must be 500 characters or fewer"
         },
         "submit_reverse": "Reverse",
         "submit_force_qualify": "Qualify",

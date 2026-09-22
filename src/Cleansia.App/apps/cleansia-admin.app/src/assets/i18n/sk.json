@@ -330,8 +330,6 @@
         "reason_label": "Dôvod zamietnutia",
         "reason_placeholder": "Zadajte podrobný dôvod zamietnutia...",
         "reason_hint": "Maximálne 500 znakov",
-        "reason_required": "Dôvod zamietnutia je povinný",
-        "reason_too_long": "Dôvod zamietnutia je príliš dlhý (max. 500 znakov)",
         "reject_button": "Zamietnuť zamestnanca"
       },
       "messages": {
@@ -420,7 +418,7 @@
         "subtitle": "Vyberte krajinu, v ktorej je tento upratovač oprávnený pracovať. Určuje predvolenú menu, jazyk a DPH.",
         "work_country_label": "Pracovná krajina",
         "work_country_hint": "Vybrať možno len krajiny, v ktorých momentálne poskytujeme služby.",
-        "work_country_required": "Pracovná krajina je povinná",
+        "notes_label": "Poznámky k schváleniu",
         "notes_placeholder": "Voliteľné poznámky k schváleniu...",
         "notes_hint": "Maximálne 1000 znakov",
         "approve_button": "Schváliť zamestnanca"
@@ -1392,9 +1390,7 @@
         "zip_prefix_hint": "Zatiaľ sa nevynucuje — zachytené pre budúcu prísnejšiu validáciu.",
         "active_label": "Aktívne",
         "active": "Aktívne",
-        "inactive": "Neaktívne",
-        "save": "Uložiť",
-        "cancel": "Zrušiť"
+        "inactive": "Neaktívne"
       },
       "messages": {
         "country_updated": "Stav obsluhy krajiny aktualizovaný",
@@ -2216,9 +2212,6 @@
           "perks_json_help": "Pole objektov s ikonou a kľúčom popisku. Príklad: [{\"icon\":\"badge\",\"labelKey\":\"loyalty.perks.welcome_badge\"}]"
         },
         "validation": {
-          "threshold_min": "Limit musí byť 0 alebo viac",
-          "discount_range": "Zľava musí byť medzi 0 a 100",
-          "min_order_min": "Minimálna objednávka musí byť 0 alebo viac",
           "perks_json_invalid": "Výhody musia byť platný JSON"
         },
         "error": {
@@ -2292,15 +2285,8 @@
           "reason": "Dôvod",
           "reason_help": "Viditeľné v audit logu."
         },
-        "validation": {
-          "points_min": "Minimálne 1 bod",
-          "points_max": "Maximálne 100 000 bodov",
-          "reason_required": "Dôvod je povinný",
-          "reason_max": "Dôvod môže mať maximálne 500 znakov"
-        },
         "submit_grant": "Pridať",
         "submit_revoke": "Odobrať",
-        "cancel": "Zrušiť",
         "success_grant": "Body pridané",
         "success_revoke": "Body odobrané",
         "error": {
@@ -2340,7 +2326,6 @@
         "dialog": {
           "title": "Prideľiť kredit",
           "lede": "Od potvrdenia ide o sumu, ktorú spoločnosť zákazníkovi dlží. Odtiaľto sa nedá vziať späť — zákazník ju využije pri objednávke, alebo požiada o vyplatenie.",
-          "cancel": "Zrušiť",
           "submit": "Prideľiť kredit",
           "field": {
             "currency": "Mena",
@@ -2348,13 +2333,6 @@
             "reason": "Dôvod",
             "note": "Čo sa stalo",
             "note_help": "Zaznamenané pod vaším menom. Napíšte to, čo by ste sami chceli čítať, než tomuto zákazníkovi znova niečo prideliťe."
-          },
-          "validation": {
-            "currency_required": "Vyberte menu.",
-            "amount_min": "Zadajte sumu väčšiu ako nula.",
-            "amount_max": "To presahuje limit pre jeden kredit. Vystavte ho po menších sumách.",
-            "note_required": "Uveďte, čo sa stalo.",
-            "note_max": "Maximálne 500 znakov."
           }
         },
         "column": {
@@ -2420,10 +2398,6 @@
         "field": {
           "reason": "Dôvod",
           "reason_help": "Povinné. Viditeľné vo vernostnom denníku."
-        },
-        "validation": {
-          "reason_required": "Dôvod je povinný",
-          "reason_max": "Dôvod môže mať najviac 500 znakov"
         },
         "submit_reverse": "Stornovať",
         "submit_force_qualify": "Uznať",

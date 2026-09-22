@@ -10,7 +10,6 @@ import { TranslateModule } from '@ngx-translate/core';
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 
 export interface ApproveDialogData {
-  title: string;
   subtitle?: string;
   countries: ICleansiaSelectOption[];
 }

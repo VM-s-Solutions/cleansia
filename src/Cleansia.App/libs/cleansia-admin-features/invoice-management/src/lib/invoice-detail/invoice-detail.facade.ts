@@ -163,7 +163,6 @@ export class InvoiceDetailFacade extends UnsubscribeControlDirective {
 
   openCancelDialog(): void {
     const dialogData: RejectDialogData = {
-      title: this.translate.instant('pages.invoice_detail.cancel_dialog.title'),
       subtitle: this.translate.instant(
         'pages.invoice_detail.cancel_dialog.subtitle'
       ),
@@ -180,8 +179,11 @@ export class InvoiceDetailFacade extends UnsubscribeControlDirective {
       header: this.translate.instant(
         'pages.invoice_detail.cancel_dialog.title'
       ),
-      width: '500px',
       modal: true,
+      closable: true,
+      draggable: false,
+      resizable: false,
+      styleClass: 'cleansia-dialog dialog-panel',
     });
 
     dialogRef?.onClose.pipe(takeUntil(this.destroyed$)).subscribe((result: RejectDialogResult | undefined) => {

@@ -74,6 +74,8 @@ export class ReferralInterventionDialogComponent {
       : 'pages.loyalty_referrals.intervention.submit_force_qualify'
   );
 
+  readonly destructive = computed(() => this.mode() === 'reverse');
+
   reset(): void {
     this.form.reset({ reason: '' });
   }

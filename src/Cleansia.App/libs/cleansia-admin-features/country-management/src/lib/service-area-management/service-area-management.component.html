@@ -99,7 +99,7 @@
   [closable]="true"
   [draggable]="false"
   [resizable]="false"
-  [style]="{ width: '480px' }"
+  styleClass="cleansia-dialog dialog-panel"
   [header]="
     (cityEditTarget()
       ? 'pages.service_area_management.cities.edit_header'
@@ -107,51 +107,56 @@
     ) | translate
   "
 >
-  <div class="cleansia-service-area-management__city-form">
-    <cleansia-text-input
-      [label]="'pages.service_area_management.cities.name_label' | translate"
-      [ngModel]="cityForm().name"
-      (ngModelChange)="updateCityFormField('name', $event)"
-      [placeholder]="'pages.service_area_management.cities.name_placeholder' | translate"
-      [required]="true"
-      [showErrors]="false"
-    />
-    <div>
-      <cleansia-text-input
-        [label]="'pages.service_area_management.cities.zip_prefix_label' | translate"
-        [ngModel]="cityForm().zipPrefix"
-        (ngModelChange)="updateCityFormField('zipPrefix', $event)"
-        [placeholder]="'pages.service_area_management.cities.zip_prefix_placeholder' | translate"
-        [showErrors]="false"
-      />
-      <p class="cleansia-service-area-management__field-hint">
+  <div class="dialog-body">
+    <div class="form-grid">
+      <div class="form-field form-field--full">
+        <cleansia-text-input
+          [label]="'pages.service_area_management.cities.name_label' | translate"
+          [ngModel]="cityForm().name"
+          (ngModelChange)="updateCityFormField('name', $event)"
+          [placeholder]="'pages.service_area_management.cities.name_placeholder' | translate"
+          [required]="true"
+          [showErrors]="false"
+        />
+      </div>
+      <div class="form-field form-field--full">
+        <cleansia-text-input
+          [label]="'pages.service_area_management.cities.zip_prefix_label' | translate"
+          [ngModel]="cityForm().zipPrefix"
+          (ngModelChange)="updateCityFormField('zipPrefix', $event)"
+          [placeholder]="'pages.service_area_management.cities.zip_prefix_placeholder' | translate"
+          [showErrors]="false"
+        />
+      </div>
+      <p class="form-hint">
         {{ 'pages.service_area_management.cities.zip_prefix_hint' | translate }}
       </p>
+      @if (cityEditTarget()) {
+        <div class="cleansia-service-area-management__active-toggle">
+          <p-toggleSwitch
+            inputId="service-city-active"
+            [ngModel]="cityForm().isActive"
+            (ngModelChange)="updateCityFormField('isActive', $event)"
+          />
+          <label for="service-city-active">{{
+            'pages.service_area_management.cities.active_label' | translate
+          }}</label>
+        </div>
+      }
     </div>
-    @if (cityEditTarget()) {
-      <div class="cleansia-service-area-management__active-toggle">
-        <p-toggleSwitch
-          inputId="service-city-active"
-          [ngModel]="cityForm().isActive"
-          (ngModelChange)="updateCityFormField('isActive', $event)"
-        />
-        <label for="service-city-active">{{
-          'pages.service_area_management.cities.active_label' | translate
-        }}</label>
-      </div>
-    }
   </div>
   <ng-template pTemplate="footer">
     <cleansia-button
-      [label]="'pages.service_area_management.cities.cancel' | translate"
+      [label]="'global.actions.cancel' | translate"
       severity="secondary"
       [outlined]="true"
       (onClick)="cityDialogOpen.set(false)"
     />
     <cleansia-button
-      [label]="'pages.service_area_management.cities.save' | translate"
-      (onClick)="saveCity()"
+      [label]="'global.actions.save' | translate"
+      icon="pi pi-check"
       [disabled]="!cityForm().name.trim()"
+      (onClick)="saveCity()"
     />
   </ng-template>
 </p-dialog>

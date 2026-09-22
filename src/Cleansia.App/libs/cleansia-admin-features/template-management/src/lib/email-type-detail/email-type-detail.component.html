@@ -128,44 +128,34 @@
   </div>
 </div>
 
-<!-- Send Test Email Dialog -->
 <p-dialog
-  [header]="
-    'pages.template_management.dialogs.send_test_email.title' | translate
-  "
+  [header]="'pages.template_management.dialogs.send_test_email.title' | translate"
   [(visible)]="showTestEmailDialog"
   [modal]="true"
   [closable]="true"
-  [style]="{ width: '450px' }"
   [draggable]="false"
   [resizable]="false"
+  styleClass="cleansia-dialog dialog-panel"
 >
-  <form
-    class="cleansia-email-type-detail__form"
-    [formGroup]="testEmailForm"
-    (ngSubmit)="onSendTestEmail()"
-  >
-    <p class="dialog-description">
-      {{
-        'pages.template_management.dialogs.send_test_email.description'
-          | translate
-      }}
+  <form class="dialog-body" [formGroup]="testEmailForm" (ngSubmit)="onSendTestEmail()">
+    <p class="dialog-lede">
+      {{ 'pages.template_management.dialogs.send_test_email.description' | translate }}
     </p>
-    <div class="form-field">
-      <cleansia-text-input
-        formControlName="recipientEmail"
-        [label]="
-          'pages.template_management.dialogs.send_test_email.recipient_email'
-            | translate
-        "
-        [required]="true"
-        type="email"
-      />
+    <div class="form-grid">
+      <div class="form-field form-field--full">
+        <cleansia-text-input
+          formControlName="recipientEmail"
+          [label]="'pages.template_management.dialogs.send_test_email.recipient_email' | translate"
+          [required]="true"
+          type="email"
+        />
+      </div>
     </div>
   </form>
   <ng-template pTemplate="footer">
     <cleansia-button
       [label]="'global.actions.cancel' | translate"
+      severity="secondary"
       [outlined]="true"
       (onClick)="closeTestEmailDialog()"
     />
@@ -179,51 +169,40 @@
   </ng-template>
 </p-dialog>
 
-<!-- Add Translation Dialog -->
 <p-dialog
-  [header]="
-    'pages.template_management.dialogs.add_translation.title' | translate
-  "
+  [header]="'pages.template_management.dialogs.add_translation.title' | translate"
   [(visible)]="showAddTranslationDialog"
   [modal]="true"
   [closable]="true"
-  [style]="{ width: '500px' }"
   [draggable]="false"
   [resizable]="false"
+  styleClass="cleansia-dialog dialog-panel"
 >
-  <form
-    class="cleansia-email-type-detail__form"
-    [formGroup]="addTranslationForm"
-    (ngSubmit)="onAddTranslation()"
-  >
-    <p class="dialog-description">
-      {{
-        'pages.template_management.dialogs.add_translation.description'
-          | translate
-      }}
+  <form class="dialog-body" [formGroup]="addTranslationForm" (ngSubmit)="onAddTranslation()">
+    <p class="dialog-lede">
+      {{ 'pages.template_management.dialogs.add_translation.description' | translate }}
     </p>
-    <div class="form-field">
-      <cleansia-text-input
-        formControlName="key"
-        [label]="
-          'pages.template_management.dialogs.add_translation.key' | translate
-        "
-        [required]="true"
-      />
-    </div>
-    <div class="form-field">
-      <cleansia-text-input
-        formControlName="value"
-        [label]="
-          'pages.template_management.dialogs.add_translation.value' | translate
-        "
-        [required]="true"
-      />
+    <div class="form-grid">
+      <div class="form-field form-field--full">
+        <cleansia-text-input
+          formControlName="key"
+          [label]="'pages.template_management.dialogs.add_translation.key' | translate"
+          [required]="true"
+        />
+      </div>
+      <div class="form-field form-field--full">
+        <cleansia-text-input
+          formControlName="value"
+          [label]="'pages.template_management.dialogs.add_translation.value' | translate"
+          [required]="true"
+        />
+      </div>
     </div>
   </form>
   <ng-template pTemplate="footer">
     <cleansia-button
       [label]="'global.actions.cancel' | translate"
+      severity="secondary"
       [outlined]="true"
       (onClick)="closeAddTranslationDialog()"
     />
@@ -236,5 +215,3 @@
     />
   </ng-template>
 </p-dialog>
-
-<!-- Confirm Dialog -->

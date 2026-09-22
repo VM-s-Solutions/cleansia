@@ -81,6 +81,8 @@ export class GrantPointsDialogComponent {
       : 'pages.loyalty_user_detail.grant_dialog.submit_revoke'
   );
 
+  readonly destructive = computed(() => this.mode() === 'revoke');
+
   reset(): void {
     this.form.reset({ points: null, reason: '' });
   }

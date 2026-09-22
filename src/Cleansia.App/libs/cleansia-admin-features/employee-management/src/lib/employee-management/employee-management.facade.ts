@@ -189,9 +189,6 @@ export class EmployeeManagementFacade extends UnsubscribeControlDirective {
 
   private showApproveDialog(employeeId: string): void {
     const dialogData: ApproveDialogData = {
-      title: this.translate.instant(
-        'pages.employee_management.approve_dialog.title'
-      ),
       subtitle: this.translate.instant(
         'pages.employee_management.approve_dialog.subtitle'
       ),
@@ -203,8 +200,11 @@ export class EmployeeManagementFacade extends UnsubscribeControlDirective {
       header: this.translate.instant(
         'pages.employee_management.approve_dialog.title'
       ),
-      width: '500px',
       modal: true,
+      closable: true,
+      draggable: false,
+      resizable: false,
+      styleClass: 'cleansia-dialog dialog-panel',
     });
 
     dialogRef?.onClose.pipe(takeUntil(this.destroyed$)).subscribe((result: ApproveDialogResult | undefined) => {
@@ -258,9 +258,6 @@ export class EmployeeManagementFacade extends UnsubscribeControlDirective {
     if (!employeeId) return;
 
     const dialogData: RejectDialogData = {
-      title: this.translate.instant(
-        'pages.employee_management.reject_dialog.title'
-      ),
       subtitle: this.translate.instant(
         'pages.employee_management.reject_dialog.subtitle'
       ),
@@ -271,8 +268,11 @@ export class EmployeeManagementFacade extends UnsubscribeControlDirective {
       header: this.translate.instant(
         'pages.employee_management.reject_dialog.title'
       ),
-      width: '500px',
       modal: true,
+      closable: true,
+      draggable: false,
+      resizable: false,
+      styleClass: 'cleansia-dialog dialog-panel',
     });
 
     dialogRef?.onClose.pipe(takeUntil(this.destroyed$)).subscribe((result: RejectDialogResult | undefined) => {

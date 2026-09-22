@@ -110,9 +110,6 @@ export class EmployeeDocumentsFacade extends UnsubscribeControlDirective {
     if (!employeeDocument.id) return;
 
     const dialogData: RejectDialogData = {
-      title: this.translate.instant(
-        'pages.employee_detail.reject_document_dialog.title'
-      ),
       subtitle: this.translate.instant(
         'pages.employee_detail.reject_document_dialog.subtitle'
       ),
@@ -123,8 +120,11 @@ export class EmployeeDocumentsFacade extends UnsubscribeControlDirective {
       header: this.translate.instant(
         'pages.employee_detail.reject_document_dialog.title'
       ),
-      width: '500px',
       modal: true,
+      closable: true,
+      draggable: false,
+      resizable: false,
+      styleClass: 'cleansia-dialog dialog-panel',
     });
 
     dialogRef?.onClose.pipe(takeUntil(this.destroyed$)).subscribe((result: RejectDialogResult | undefined) => {

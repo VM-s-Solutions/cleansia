@@ -5,7 +5,6 @@ import { TranslateModule } from '@ngx-translate/core';
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 
 export interface RejectDialogData {
-  title: string;
   subtitle?: string;
   reasonLabel?: string;
   reasonPlaceholder?: string;

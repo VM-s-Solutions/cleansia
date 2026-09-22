@@ -129,9 +129,10 @@ export class OrderDetailFacade extends UnsubscribeControlDirective {
     const data: AdminWorkContractDialogData = { acceptanceId };
     this.dialogService.open(AdminWorkContractDialogComponent, {
       data,
-      width: '720px',
       modal: true,
       dismissableMask: true,
+      showHeader: false,
+      styleClass: 'cleansia-dialog dialog-panel dialog-panel--reading',
     });
   }
 

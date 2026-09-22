@@ -2,9 +2,13 @@ using System.Security.Claims;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Users;
 using Cleansia.Core.Domain.Enums;
+using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Repositories;
+using Cleansia.Core.Domain.Tenancy;
 using Cleansia.Core.Domain.Users;
+using Cleansia.TestUtilities.MockDataFactories.Orders;
 using Cleansia.TestUtilities.MockDataFactories.Users;
+using MockQueryable;
 using Moq;
 
 namespace Cleansia.Tests.Features.Users;
@@ -25,12 +29,11 @@ public class GetUserHandlerTests
 
     private readonly Mock<IUserRepository> _userRepository = new();
     private readonly Mock<IUserSessionProvider> _session = new();
+    private readonly Mock<IOrderRepository> _orderRepository = new();
+    private readonly Mock<ITenantRepository> _tenantRepository = new();
 
     private GetUser.Handler CreateHandler() =>
-        (GetUser.Handler)Activator.CreateInstance(
-            typeof(GetUser.Handler),
-            _userRepository.Object,
-            _session.Object, Mock.Of<IOrderRepository>(), Mock.Of<ITenantRepository>())!;
+        new(_userRepository.Object, _session.Object, _orderRepository.Object, _tenantRepository.Object);
 
     private void SetCaller(string sub, UserProfile role)
     {
@@ -90,5 +93,69 @@ public class GetUserHandlerTests
 
         Assert.True(result.IsSuccess);
         Assert.Equal(OtherUserId, result.Value.Id);
+    }
+
+    /// <summary>
+    /// A customer of another company sits behind the tenant filter, so the plain read misses them.
+    /// The admin's own filtered order is the proof that lets the masked panel cross it — and only an
+    /// order that belongs to that customer.
+    /// </summary>
+    private void ArrangeCustomerOfAnotherCompany(string customerId, params Order[] operatorOrders)
+    {
+        var customer = UserMockFactory.Generate();
+        customer.Id = customerId;
+        customer.TenantId = "company-a";
+        _userRepository
+            .Setup(r => r.GetByIdNoTrackingAsync(customerId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((User?)null);
+        _userRepository
+            .Setup(r => r.GetByIdIgnoringTenantAsync(customerId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(customer);
+        _orderRepository.Setup(r => r.GetQueryable()).Returns(operatorOrders.AsQueryable().BuildMock());
+        _tenantRepository
+            .Setup(r => r.GetByIdAsync("company-a", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Tenant.Create("company-a", "Company A"));
+    }
+
+    [Fact]
+    public async Task Admin_Without_An_Order_Proof_Cannot_Reach_A_Customer_Of_Another_Company()
+    {
+        ArrangeCustomerOfAnotherCompany(OtherUserId);
+        SetCaller("admin-sub-9", UserProfile.Administrator);
+
+        var result = await CreateHandler().Handle(new GetUser.Query(OtherUserId), CancellationToken.None);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal(BusinessErrorMessage.NotExistingUserWithId, result.Error!.Message);
+    }
+
+    [Fact]
+    public async Task An_Order_Of_Someone_Else_Does_Not_Prove_Access_To_The_Customer()
+    {
+        var someoneElsesOrder = OrderMockFactory.Generate(new OrderMockFactory.OrderPartial { Id = "order-1", UserId = "third-user" });
+        ArrangeCustomerOfAnotherCompany(OtherUserId, someoneElsesOrder);
+        SetCaller("admin-sub-9", UserProfile.Administrator);
+
+        var result = await CreateHandler().Handle(new GetUser.Query(OtherUserId, "order-1"), CancellationToken.None);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal(BusinessErrorMessage.NotExistingUserWithId, result.Error!.Message);
+    }
+
+    [Fact]
+    public async Task The_Customers_Own_Order_Proves_Access_To_The_Masked_Panel_Only()
+    {
+        var theCustomersOrder = OrderMockFactory.Generate(new OrderMockFactory.OrderPartial { Id = "order-1", UserId = OtherUserId });
+        ArrangeCustomerOfAnotherCompany(OtherUserId, theCustomersOrder);
+        SetCaller("admin-sub-9", UserProfile.Administrator);
+
+        var result = await CreateHandler().Handle(new GetUser.Query(OtherUserId, "order-1"), CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        Assert.NotNull(result.Value.CustomerOfAnotherCompany);
+        Assert.Equal(OtherUserId, result.Value.CustomerOfAnotherCompany!.Id);
+        Assert.Equal("Company A", result.Value.CustomerOfAnotherCompany.CompanyName);
+        Assert.Equal(string.Empty, result.Value.Email);
+        Assert.Equal(string.Empty, result.Value.LastName);
     }
 }

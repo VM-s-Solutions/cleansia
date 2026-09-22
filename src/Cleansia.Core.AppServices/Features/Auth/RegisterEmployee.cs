@@ -71,7 +71,6 @@ public class RegisterEmployee
         : ICommand, IOperatorScopedRequest;
 
     public class Handler(
-        ICartRepository cartRepository,
         IUserRepository userRepository,
         IEmployeeRepository employeeRepository,
         IPendingDispatch pending,
@@ -91,7 +90,6 @@ public class RegisterEmployee
                 userEntity = User.CreateWithPassword(command.Email, command.Password, command.FirstName, command.LastName, UserProfile.Employee, command.Language);
                 rawConfirmationToken = userEntity.RawConfirmationToken!;
                 userRepository.Add(userEntity);
-                cartRepository.Add(Cart.CreateWithUser(userEntity));
                 employeeRepository.Add(Employee.CreateWithUser(userEntity));
 
                 // The validator's pre-check and this insert cross a snapshot boundary with no lock, so

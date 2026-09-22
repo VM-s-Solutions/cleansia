@@ -29,9 +29,6 @@ public class LanguageRepository(CleansiaDbContext context) : BaseRepository<Lang
         if (await Context.Users.AnyAsync(u => u.PreferredLanguageCode == language.Code, cancellationToken))
             return true;
 
-        if (await Context.EmailTranslations.AnyAsync(e => e.LanguageId == languageId, cancellationToken))
-            return true;
-
         if (await Context.EmailTemplateTranslations.AnyAsync(e => e.LanguageId == languageId, cancellationToken))
             return true;
 

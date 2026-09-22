@@ -1,4 +1,4 @@
-import { CommonModule } from '@angular/common';
+import { LowerCasePipe } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -16,7 +16,7 @@ import {
 } from '@cleansia/components';
 import { PhotoType } from '@cleansia/partner-services';
 import { SnackbarService } from '@cleansia/services';
-import { TranslatePipe } from '@ngx-translate/core';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { OrderPhotosFacade } from './order-photos.facade';
 import { PhotoGalleryComponent } from './photo-gallery.component';
 import {
@@ -34,7 +34,7 @@ import {
   selector: 'cleansia-partner-order-photos',
   standalone: true,
   imports: [
-    CommonModule,
+    LowerCasePipe,
     TranslatePipe,
     CleansiaButtonComponent,
     CleansiaSectionComponent,
@@ -47,6 +47,7 @@ import {
 })
 export class OrderPhotosComponent {
   protected readonly facade = inject(OrderPhotosFacade);
+  private readonly translate = inject(TranslateService);
   private readonly snackbarService = inject(SnackbarService);
 
   readonly gallery = viewChild<PhotoGalleryComponent>('gallery');
@@ -174,11 +175,7 @@ export class OrderPhotosComponent {
     }
   }
 
-  viewPhoto(url: string): void {
-    window.open(url, '_blank');
-  }
-
   formatDate(date: Date | string | undefined): string {
-    return formatPhotoDate(date);
+    return formatPhotoDate(date, this.translate.currentLang);
   }
 }

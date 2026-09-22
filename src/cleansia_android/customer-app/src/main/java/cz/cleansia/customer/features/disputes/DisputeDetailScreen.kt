@@ -1,8 +1,6 @@
 package cz.cleansia.customer.features.disputes
 
 import androidx.activity.compose.BackHandler
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -37,7 +35,6 @@ import androidx.compose.material.icons.outlined.PictureAsPdf
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledIconButton
-import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
@@ -81,20 +78,13 @@ import cz.cleansia.customer.core.disputes.DisputeMessageDto
 import cz.cleansia.customer.core.disputes.openEvidencePdfFromUrl
 import cz.cleansia.core.format.disputeAllowsMessages
 import cz.cleansia.core.format.formatOrderDateTime
-import cz.cleansia.core.media.ImageCompressor
-import cz.cleansia.core.media.isImageMimeType
-import cz.cleansia.core.media.jpegFileName
-import cz.cleansia.core.media.queryDisplayName
-import cz.cleansia.core.media.queryMimeType
 import cz.cleansia.customer.ui.format.disputeStatusColor
 import cz.cleansia.customer.ui.state.ActionState
 import cz.cleansia.customer.core.orders.ReceiptOpenResult
 import cz.cleansia.core.ui.components.CleansiaPrimaryButton
 import cz.cleansia.core.snackbar.SnackbarController
 import cz.cleansia.core.ui.theme.Poppins
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 
 /**
  * Dispute detail — header, original description, message thread, inline evidence, reply bar.
@@ -125,74 +115,18 @@ fun DisputeDetailScreen(
     val snackbar: SnackbarController = viewModel.snackbar
     val noViewerMessage = stringResource(R.string.dispute_evidence_no_viewer)
     val openErrorMessage = stringResource(R.string.dispute_evidence_open_error)
-    val encodeFailedMessage = stringResource(R.string.dispute_evidence_encode_failed)
 
     // Fullscreen image preview overlay state. Holds the URL of the evidence
     // currently being viewed; null means no overlay. Same one-state-per-pager
     // pattern as the orders photo gallery, scaled down to a single image.
     var fullscreenImageUrl by remember { mutableStateOf<String?>(null) }
 
-    // System file picker. `GetMultipleContents` accepts a single MIME filter
-    // string; we use `*/*` so the user can select either images or PDFs in a
-    // single picker session. The VM rejects unsupported types with a snackbar
-    // — this is a pragmatic trade-off vs. a separate "Add image" / "Add PDF"
-    // pair of buttons that would clutter the UI.
-    val pickFiles = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.GetMultipleContents(),
-        onResult = { uris ->
-            if (uris.isEmpty()) return@rememberLauncherForActivityResult
-            // Read each URI off the main thread, then hand it to the VM. uploadEvidence
-            // is intentionally NOT single-flight-guarded: it fires each upload as its own
-            // coroutine, so a guard would drop files 2..N of a multi-file selection. The
-            // Add-evidence button is gated by uploadState (Submitting) instead.
-            coroutineScope.launch {
-                for (uri in uris) {
-                    // The provider queries are binder IPC, so they stay off the
-                    // main thread. Each is fast on its own; they add up across
-                    // a multi-file selection.
-                    val (mime, displayName) = withContext(Dispatchers.IO) {
-                        queryMimeType(context, uri) to queryDisplayName(context, uri)
-                    }
-                    if (isImageMimeType(mime)) {
-                        // Images are downscaled to 1920px and re-encoded, which
-                        // is what drops the EXIF block — capture GPS included —
-                        // and matches what iOS EvidencePreparer already does.
-                        // Note the VM's size + type checks then run on the FINAL
-                        // bytes, which is the fail-closed ordering: we never
-                        // approve one payload and upload another.
-                        val compressed = ImageCompressor.compress(context.contentResolver, uri)
-                        if (compressed == null) {
-                            snackbar.showError(encodeFailedMessage)
-                            continue
-                        }
-                        viewModel.uploadEvidence(
-                            bytes = compressed.bytes,
-                            fileName = jpegFileName(displayName ?: fallbackEvidenceName()),
-                            mimeType = compressed.contentType,
-                        )
-                        continue
-                    }
-                    // Not an image — a PDF, or a provider that declares no type
-                    // at all. Uploaded byte-identical: re-encoding a PDF as a
-                    // JPEG would destroy it.
-                    val bytes = withContext(Dispatchers.IO) {
-                        runCatching {
-                            context.contentResolver.openInputStream(uri)?.use { it.readBytes() }
-                        }.getOrNull()
-                    }
-                    if (bytes == null) {
-                        snackbar.showError(encodeFailedMessage)
-                        continue
-                    }
-                    viewModel.uploadEvidence(
-                        bytes = bytes,
-                        fileName = displayName ?: fallbackEvidenceName(),
-                        mimeType = mime ?: "application/octet-stream",
-                    )
-                }
-            }
-        },
-    )
+    // uploadEvidence is intentionally NOT single-flight-guarded: it fires each upload as its own
+    // coroutine, so a guard would drop files 2..N of a multi-file selection. The Add-evidence
+    // button is gated by uploadState (Submitting) instead.
+    val pickFiles = rememberEvidencePicker(snackbar) { bytes, fileName, mimeType ->
+        viewModel.uploadEvidence(bytes = bytes, fileName = fileName, mimeType = mimeType)
+    }
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
@@ -597,39 +531,6 @@ private fun EvidenceRow(
     }
 }
 
-/* ── Add evidence button ── */
-
-@Composable
-private fun AddEvidenceButton(
-    uploading: Boolean,
-    onClick: () -> Unit,
-) {
-    FilledTonalButton(
-        onClick = onClick,
-        enabled = !uploading,
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(12.dp),
-    ) {
-        if (uploading) {
-            CircularProgressIndicator(
-                strokeWidth = 2.dp,
-                modifier = Modifier.size(18.dp),
-                color = MaterialTheme.colorScheme.onSecondaryContainer,
-            )
-            Spacer(Modifier.width(10.dp))
-            Text(stringResource(R.string.dispute_evidence_uploading))
-        } else {
-            Icon(
-                imageVector = Icons.Outlined.AttachFile,
-                contentDescription = null,
-                modifier = Modifier.size(18.dp),
-            )
-            Spacer(Modifier.width(8.dp))
-            Text(stringResource(R.string.dispute_evidence_add_button))
-        }
-    }
-}
-
 /* ── Fullscreen image overlay ──
  *
  * Lightweight standalone preview rather than reusing FullscreenPager from the
@@ -862,11 +763,3 @@ private fun isImageEvidence(evidence: DisputeEvidenceDto): Boolean {
 
 private fun isPdfEvidence(evidence: DisputeEvidenceDto): Boolean =
     evidence.fileName?.endsWith(".pdf", ignoreCase = true) == true
-
-/**
- * Fallback name for a picked file whose provider reports no `DISPLAY_NAME`.
- *
- * The query itself now lives in `cz.cleansia.core.media.queryDisplayName`,
- * shared with the two partner upload paths.
- */
-private fun fallbackEvidenceName(): String = "evidence-${System.currentTimeMillis()}"

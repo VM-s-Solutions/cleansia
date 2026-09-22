@@ -41,22 +41,20 @@
           {{ resendCodeTimeout() }}
           }
           <cleansia-button
-            [title]="'pages.email_confirm.resend_code' | translate"
-            [style]="'raised-button'"
+            [label]="'pages.email_confirm.resend_code' | translate"
             [icon]="'pi pi-refresh'"
             [loading]="facade.isResendDisabled()"
-            (clickFn)="onResendCode()"
+            (onClick)="onResendCode()"
           />
         </div>
         <cleansia-button
           [buttonType]="'submit'"
-          [title]="'pages.email_confirm.verify_code' | translate"
+          [label]="'pages.email_confirm.verify_code' | translate"
           [severity]="'primary'"
-          [style]="'raised-button'"
           [icon]="'pi pi-check-circle'"
           [iconPosition]="'right'"
           [loading]="loading() || false"
-          (clickFn)="onVerifyCode()"
+          (onClick)="onVerifyCode()"
         />
       </div>
     </div>

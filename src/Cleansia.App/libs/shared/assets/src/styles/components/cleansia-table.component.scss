@@ -256,8 +256,15 @@
             text-align: center;
           }
 
-          &.text-right {
+          &.text-right,
+          &.numeric {
             text-align: right;
+            font-variant-numeric: tabular-nums;
+          }
+
+          // A figure, an amount or a stamp is one token; broken across lines it reads as two values.
+          &.numeric {
+            white-space: nowrap;
           }
         }
 
@@ -296,26 +303,19 @@
         }
       }
 
-      .table__empty {
-        td {
-          text-align: center;
-          padding: 3rem 1rem;
-          color: #9ca3af;
-          font-size: 0.9375rem;
-          font-weight: 500;
-          background: rgba(255, 255, 255, 0.2);
-          border: 1px solid #e5e7eb;
-          border-radius: 8px;
-          box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-          backdrop-filter: blur(5px);
-          -webkit-backdrop-filter: blur(5px);
-        }
+      .table__empty td {
+        padding: 0;
+        background: transparent;
+        border: none;
       }
     }
 
     // ===== ACTIONS COLUMN =====
+    // Shrinks to its icons, so the data columns' percent widths are the whole budget
+    // and the last icon stays inside the table's right border.
     .actions-column {
-      width: 120px;
+      width: 1%;
+      white-space: nowrap;
 
       .table__actions {
         display: flex;
@@ -580,8 +580,6 @@
       }
 
       .actions-column {
-        width: auto;
-
         .table__actions {
           gap: 0.25rem;
 

@@ -1,6 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import {
   AdminClient,
+  EmployeeDocumentItem,
   GetEmployeeDocumentsRequest,
   RejectDocumentCommand,
   SortDefinition,
@@ -17,14 +18,24 @@ describe('EmployeeDocumentsFacade', () => {
   let getPagedMock: jest.Mock;
   let approveMock: jest.Mock;
   let rejectMock: jest.Mock;
-  let snackbar: { showSuccess: jest.Mock; showError: jest.Mock };
+  let snackbar: {
+    showSuccess: jest.Mock;
+    showSuccessTranslated: jest.Mock;
+    showError: jest.Mock;
+    showErrorTranslated: jest.Mock;
+  };
 
   beforeEach(() => {
     TestBed.resetTestingModule();
     getPagedMock = jest.fn().mockReturnValue(of({ data: [], total: 0 }));
     approveMock = jest.fn().mockReturnValue(of({ documentId: 'doc-1' }));
     rejectMock = jest.fn().mockReturnValue(of({ documentId: 'doc-1' }));
-    snackbar = { showSuccess: jest.fn(), showError: jest.fn() };
+    snackbar = {
+      showSuccess: jest.fn(),
+      showSuccessTranslated: jest.fn(),
+      showError: jest.fn(),
+      showErrorTranslated: jest.fn(),
+    };
 
     TestBed.configureTestingModule({
       providers: [
@@ -73,7 +84,7 @@ describe('EmployeeDocumentsFacade', () => {
   it('re-reads the documents after an approve lands, and not when it fails', () => {
     facade.approveDocument('doc-1', 'emp-1');
     expect(getPagedMock).toHaveBeenCalledTimes(1);
-    expect(snackbar.showSuccess).toHaveBeenCalledWith(
+    expect(snackbar.showSuccessTranslated).toHaveBeenCalledWith(
       'pages.employee_detail.messages.document_approve_success'
     );
 
@@ -86,6 +97,24 @@ describe('EmployeeDocumentsFacade', () => {
     facade.approveDocument('doc-1', undefined);
 
     expect(getPagedMock).not.toHaveBeenCalled();
+  });
+
+  // The reject dialog is shared with the employee rejection; without its own submit label the
+  // primary under "Reject document" read "Reject employee".
+  it('opens the reject dialog under the document rejection title and submit label', () => {
+    const open = TestBed.inject(DialogService).open as jest.Mock;
+
+    facade.openRejectDocumentDialog(EmployeeDocumentItem.fromJS({ id: 'doc-1' }), 'emp-1');
+
+    expect(open).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({
+        header: 'pages.employee_detail.reject_document_dialog.title',
+        data: expect.objectContaining({
+          submitLabel: 'pages.employee_detail.reject_document_dialog.reject_button',
+        }),
+      })
+    );
   });
 
   describe('request bodies on the wire', () => {

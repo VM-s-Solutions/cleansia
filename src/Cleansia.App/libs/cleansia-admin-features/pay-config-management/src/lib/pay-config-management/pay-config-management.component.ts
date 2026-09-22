@@ -20,8 +20,6 @@ import {
 import { CleansiaPermissionDirective } from '@cleansia/directives';
 import { PermissionService, Policy } from '@cleansia/services';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
-import { ConfirmationService } from 'primeng/api';
-import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { Subject, takeUntil } from 'rxjs';
 import { EmployeePayConfigDto } from '@cleansia/admin-services';
 import { PayConfigManagementFacade } from './pay-config-management.facade';
@@ -39,11 +37,10 @@ import { getPayConfigTableDefinition } from './pay-config-management.models';
     CleansiaTitleComponent,
     CleansiaLoaderComponent,
     CleansiaSectionComponent,
-    ConfirmDialogModule,
   ],
   templateUrl: './pay-config-management.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  providers: [PayConfigManagementFacade, ConfirmationService],
+  providers: [PayConfigManagementFacade],
 })
 export class PayConfigManagementComponent implements AfterViewInit, OnDestroy {
   private readonly router = inject(Router);
@@ -51,7 +48,6 @@ export class PayConfigManagementComponent implements AfterViewInit, OnDestroy {
   protected readonly Policy = Policy;
   private readonly translate = inject(TranslateService);
   private readonly permissions = inject(PermissionService);
-  private readonly confirmationService = inject(ConfirmationService);
 
   payConfigColumns!: TableColumn<EmployeePayConfigDto>[];
   payConfigActions!: TableAction<EmployeePayConfigDto>[];
@@ -103,13 +99,6 @@ export class PayConfigManagementComponent implements AfterViewInit, OnDestroy {
   }
 
   confirmDelete(payConfig: EmployeePayConfigDto): void {
-    this.confirmationService.confirm({
-      message: this.translate.instant('pages.pay_config_management.delete_confirm'),
-      header: this.translate.instant('pages.pay_config_management.delete'),
-      icon: 'pi pi-exclamation-triangle',
-      accept: () => {
-        this.facade.deletePayConfig(payConfig);
-      },
-    });
+    this.facade.deletePayConfig(payConfig);
   }
 }

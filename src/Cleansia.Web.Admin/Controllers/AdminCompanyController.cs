@@ -91,16 +91,4 @@ public class AdminCompanyController(IMediator mediator) : ApiController(mediator
         var result = await Mediator.Send(new DeleteCompanyInfo.Command(companyInfoId), cancellationToken);
         return HandleResult<DeleteCompanyInfo.Response>(result);
     }
-
-    // Legacy endpoint for backward compatibility
-    [HttpGet("get-current")]
-    [Permission(Policy.CanViewCompanyInfo)]
-    [ProducesResponseType(typeof(CompanyInfoDetailDto), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(StatusCodes.Status403Forbidden)]
-    public async Task<IActionResult> GetCompanyInfo(CancellationToken cancellationToken)
-    {
-        var result = await Mediator.Send(new GetCompanyInfo.Query(), cancellationToken);
-        return HandleResult<CompanyInfoDetailDto?>(result);
-    }
 }

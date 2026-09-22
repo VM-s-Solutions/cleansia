@@ -414,7 +414,6 @@
     <string name="address_info">Address</string>
     <string name="bank_details">Bank Details</string>
     <string name="documents">Documents</string>
-    <string name="availability">Availability</string>
     <string name="personal">Personal</string>
     <string name="birth_date">Date of birth</string>
     <string name="birth_date_placeholder">Pick a date</string>
@@ -426,23 +425,6 @@
     <string name="identification_title">Identification</string>
     <string name="my_documents">My Documents</string>
     <string name="documents_summary_view">View, upload or remove</string>
-    <string name="availability_days_set">%1$d days set</string>
-    <string name="availability_helper">Toggle each weekday you can work and pick the time window.</string>
-    <!-- Availability v2 -->
-    <string name="availability_quick_setup">Quick setup</string>
-    <string name="availability_weekly_schedule">Weekly schedule</string>
-    <string name="availability_preset_mon_fri">Mon–Fri 9–5</string>
-    <string name="availability_preset_mon_sat">Mon–Sat 8–4</string>
-    <string name="availability_preset_custom">Custom</string>
-    <string name="availability_apply_to_days">Pick the days this applies to, then choose the time window.</string>
-    <string name="availability_apply">Apply</string>
-    <string name="availability_start_time">Start</string>
-    <string name="availability_end_time">End</string>
-    <string name="availability_add_slot">Add another slot</string>
-    <string name="availability_remove_slot">Remove slot</string>
-    <string name="availability_pick_time">Pick time</string>
-    <string name="availability_no_days_selected">Tap a day above to set your hours.</string>
-    <string name="availability_slot_overlap_error">Time slots can\'t overlap.</string>
     <string name="add_document">Add document</string>
     <string name="upload_document">Upload document</string>
     <string name="document_type">Document type</string>
@@ -518,20 +500,6 @@
     <string name="relationship">Relationship</string>
     <string name="contact_phone">Phone Number</string>
     <string name="contact_email">Email Address</string>
-
-    <!-- Availability -->
-    <string name="set_availability">Set Availability</string>
-    <string name="no_availability_set">No availability set</string>
-    <string name="select_time">Select Time</string>
-    <string name="date_overrides">Schedule Exceptions</string>
-    <string name="add_date_override">Add Exception</string>
-    <string name="no_date_overrides">No schedule exceptions set</string>
-    <string name="unavailable">Unavailable</string>
-    <string name="custom_hours">Custom hours</string>
-    <string name="select_date_override">Select date</string>
-    <string name="mark_unavailable">Mark as unavailable</string>
-    <string name="set_custom_hours">Set custom hours</string>
-    <string name="date_override_note">Note (optional)</string>
 
     <!-- Settings -->
     <string name="settings">Settings</string>
@@ -661,7 +629,6 @@
     <string name="onboarding_highlight_invoices">Invoices</string>
     <string name="onboarding_highlight_analytics">Analytics</string>
     <string name="onboarding_highlight_reports">Reports</string>
-    <string name="onboarding_highlight_availability">Availability</string>
     <string name="onboarding_highlight_documents">Documents</string>
     <string name="onboarding_highlight_ratings">Ratings</string>
 
@@ -783,25 +750,7 @@
     <string name="invoice_notes_admin">Admin notes</string>
     <string name="invoice_notes_bank">Bank transfer note</string>
 
-    <!-- Calendar Availability -->
-    <string name="previous_month">Previous month</string>
-    <string name="next_month">Next month</string>
-    <string name="legend_working">Working</string>
-    <string name="legend_custom">Custom</string>
-    <string name="legend_off">Off</string>
-    <string name="working_day">Working Day</string>
-    <string name="day_off">Day Off</string>
-    <string name="exception_day_off">Exception - Day Off</string>
-    <string name="edit_hours">Edit Hours</string>
-    <string name="edit_hours_desc">Adjust the working hours for this day.</string>
-    <string name="mark_as_exception">Mark as Exception</string>
-    <string name="mark_exception_desc">Override the regular schedule for this date.</string>
-    <string name="schedule_setup_title">Schedule Setup</string>
-    <string name="schedule_setup_sheet_desc">Choose your working days and hours.</string>
-    <string name="remove_exception">Remove Exception</string>
-    <string name="add_time_slot">Add time slot</string>
     <string name="remove">Remove</string>
-    <string name="weekly_schedule">Weekly Schedule</string>
     <string name="edit">Edit</string>
 
     <!-- Quick Setup Presets -->
@@ -1042,7 +991,7 @@
     <string name="tracker_headline_done">Done</string>
     <string name="tracker_step_counter">Step %1$d / %2$d</string>
 
-    <!-- Registration lock (app-wide gate until profile/availability/documents are filled and admin approves) -->
+    <!-- Registration lock (app-wide gate until profile/documents are filled and admin approves) -->
     <string name="registration_lock_title">Finish setup to start earning</string>
     <string name="registration_lock_subtitle">Complete the steps below to unlock incoming jobs.</string>
     <string name="registration_lock_progress">%1$d of %2$d steps complete</string>
@@ -1052,14 +1001,11 @@
     <string name="registration_lock_sign_out_confirm_message">Your progress is saved. You\'ll need to sign in again to finish setting up.</string>
     <string name="registration_lock_support_subject">Cleansia partner — application rejected</string>
     <string name="registration_lock_category_profile">Profile</string>
-    <string name="registration_lock_category_availability">Availability</string>
     <string name="registration_lock_category_documents">Documents</string>
     <string name="registration_lock_category_approval">Approval</string>
     <string name="registration_lock_action_complete_profile">Complete profile</string>
-    <string name="registration_lock_action_set_availability">Set weekly availability</string>
     <string name="registration_lock_action_upload_documents">Upload documents</string>
     <string name="registration_lock_action_contact_support">Contact support</string>
-    <string name="registration_lock_availability_required">Set your weekly working hours.</string>
     <string name="registration_lock_documents_required">Upload your identification documents.</string>
     <string name="registration_lock_approval_awaiting_review">Application under review by an administrator.</string>
     <string name="registration_lock_approval_complete_profile_first">Finish the steps above first — then admin can approve you.</string>
@@ -1232,7 +1178,6 @@
     <string name="error_validation_invalid_zip_code">Please enter a valid ZIP code.</string>
     <string name="error_validation_registration_number_invalid_format">Please enter a valid company registration number for the selected country.</string>
     <string name="error_validation_must_be_positive">Must be a positive number.</string>
-    <string name="error_validation_invalid_availability_format">Availability format is invalid.</string>
 
     <!-- Payout / bank details -->
     <string name="error_payout_not_found">You haven\'t added your bank details yet. Add them so we can pay you.</string>

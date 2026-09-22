@@ -1,0 +1,6 @@
+.cleansia-membership-plan-list {
+  // Ten columns and two row actions: the headers wrap so the table stays inside its box.
+  .cleansia-table .table .table__head th {
+    white-space: normal;
+  }
+}

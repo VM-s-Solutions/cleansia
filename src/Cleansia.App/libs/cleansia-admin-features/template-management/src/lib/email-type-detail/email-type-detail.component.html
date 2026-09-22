@@ -1,14 +1,18 @@
-<div class="cleansia-email-type-detail">
-  <div class="cleansia-email-type-detail__container page-wrapper">
-    <!-- Header with Back Button -->
-    <div class="cleansia-email-type-detail__header">
-      <cleansia-button
-        [label]="'global.actions.back' | translate"
-        icon="pi pi-arrow-left"
-        (onClick)="onCancel()"
-        [outlined]="true"
-      />
-      <cleansia-title [title]="pageTitle()" />
+<div class="cleansia-email-type-detail cleansia-page">
+  <div class="cleansia-email-type-detail__container page-wrapper page-wrapper--narrow">
+    <div class="cleansia-page-header">
+      <div class="cleansia-page-header__heading">
+        <div class="cleansia-detail-title">
+          <cleansia-button
+            [label]="'global.actions.back' | translate"
+            icon="pi pi-arrow-left"
+            severity="secondary"
+            [outlined]="true"
+            (onClick)="onCancel()"
+          />
+          <cleansia-title [title]="pageTitle()" [level]="1" />
+        </div>
+      </div>
     </div>
 
     @if (facade.loading()) {
@@ -20,6 +24,18 @@
       <cleansia-section
         [title]="'pages.template_management.sections.translations' | translate"
       >
+        <ng-container section-actions>
+          <cleansia-button
+            *cleansiaPermission="Policy.CanUpdateEmailTemplate"
+            [label]="'pages.template_management.actions.add_translation' | translate"
+            icon="pi pi-plus"
+            severity="secondary"
+            [outlined]="true"
+            [disabled]="facade.creating() || !activeLanguage()"
+            [loading]="facade.creating()"
+            (onClick)="openAddTranslationDialog(activeLanguage())"
+          />
+        </ng-container>
         <p-tabs
           [value]="activeLanguage()"
           (valueChange)="onLanguageTabChange($event)"
@@ -33,37 +49,19 @@
             @for (lang of languages(); track lang.code) {
             <p-tabpanel [value]="lang.code">
               @if (getFormForLanguage(lang.code); as form) {
-              <div class="translation-panel-header">
-                <cleansia-button
-                  *cleansiaPermission="Policy.CanUpdateEmailTemplate"
-                  [label]="
-                    'pages.template_management.actions.add_translation'
-                      | translate
-                  "
-                  icon="pi pi-plus"
-                  size="auto-width"
-                  [outlined]="true"
-                  [disabled]="facade.creating()"
-                  [loading]="facade.creating()"
-                  (onClick)="openAddTranslationDialog(lang.code)"
-                />
-              </div>
               <div class="translation-form-grid" [formGroup]="form">
                 @for (kv of getKeyValuesForLanguage(lang.code); track kv.id) {
                 <div class="translation-row">
-                  <button
-                    type="button"
+                  <cleansia-button
                     class="translation-key"
-                    (click)="copyVariable('{{' + kv.key + '}}')"
-                    [pTooltip]="
-                      'pages.template_management.translation_key_tooltip'
-                        | translate
-                    "
-                    tooltipPosition="top"
-                  >
-                    <code>{{ '{{' }}{{ kv.key }}{{'}}'}}</code>
-                    <i class="pi pi-copy"></i>
-                  </button>
+                    [label]="'{{' + kv.key + '}}'"
+                    icon="pi pi-copy"
+                    iconPosition="right"
+                    severity="secondary"
+                    [outlined]="true"
+                    [tooltip]="'pages.template_management.translation_key_tooltip' | translate"
+                    (onClick)="copyVariable('{{' + kv.key + '}}')"
+                  />
                   <div class="translation-input-wrapper">
                     <cleansia-text-input
                       [formControlName]="kv.key!"
@@ -78,36 +76,30 @@
                       *cleansiaPermission="Policy.CanUpdateEmailTemplate"
                       [label]="'global.actions.save' | translate"
                       icon="pi pi-check"
-                      size="auto-width"
+                      [outlined]="true"
                       [disabled]="facade.saving() && savingKey() === kv.key"
                       [loading]="facade.saving() && savingKey() === kv.key"
                       (onClick)="onSaveTranslation(lang.code, kv.id!, kv.key!)"
                     />
                     <cleansia-button
                       *cleansiaPermission="Policy.CanUpdateEmailTemplate"
+                      [label]="'global.actions.delete' | translate"
                       icon="pi pi-trash"
-                      size="auto-width"
                       severity="danger"
                       [outlined]="true"
-                      [disabled]="facade.deleting() && deletingKey() === kv.key"
-                      [loading]="facade.deleting() && deletingKey() === kv.key"
-                      [pTooltip]="'global.actions.delete' | translate"
-                      tooltipPosition="top"
-                      (onClick)="
-                        onDeleteTranslation($event, lang.code, kv.id!, kv.key!)
-                      "
+                      [disabled]="facade.deletingKey() === kv.key"
+                      [loading]="facade.deletingKey() === kv.key"
+                      (onClick)="onDeleteTranslation(kv.id!, kv.key!)"
                     />
                   </div>
                 </div>
                 }
               </div>
               } @else {
-              <p class="no-translations">
-                {{
-                  'pages.template_management.no_translations_for_language'
-                    | translate
-                }}
-              </p>
+              <div class="empty-state">
+                <i class="pi pi-language"></i>
+                <p>{{ 'pages.template_management.no_translations_for_language' | translate }}</p>
+              </div>
               }
             </p-tabpanel>
             }
@@ -116,20 +108,17 @@
       </cleansia-section>
       }
 
-      <!-- Actions -->
       <div class="form-actions">
         <cleansia-button
           [label]="'global.actions.cancel' | translate"
+          severity="secondary"
           [outlined]="true"
           (onClick)="onCancel()"
         />
         <cleansia-button
           *cleansiaPermission="Policy.CanUpdateEmailTemplate"
-          [label]="
-            'pages.template_management.actions.send_test_email' | translate
-          "
+          [label]="'pages.template_management.actions.send_test_email' | translate"
           icon="pi pi-send"
-          [outlined]="true"
           [disabled]="facade.sendingTestEmail() || languages().length === 0"
           [loading]="facade.sendingTestEmail()"
           (onClick)="openTestEmailDialog()"
@@ -140,44 +129,34 @@
   </div>
 </div>
 
-<!-- Send Test Email Dialog -->
 <p-dialog
-  [header]="
-    'pages.template_management.dialogs.send_test_email.title' | translate
-  "
+  [header]="'pages.template_management.dialogs.send_test_email.title' | translate"
   [(visible)]="showTestEmailDialog"
   [modal]="true"
   [closable]="true"
-  [style]="{ width: '450px' }"
   [draggable]="false"
   [resizable]="false"
+  styleClass="cleansia-dialog dialog-panel"
 >
-  <form
-    class="cleansia-email-type-detail__form"
-    [formGroup]="testEmailForm"
-    (ngSubmit)="onSendTestEmail()"
-  >
-    <p class="dialog-description">
-      {{
-        'pages.template_management.dialogs.send_test_email.description'
-          | translate
-      }}
+  <form class="dialog-body" [formGroup]="testEmailForm" (ngSubmit)="onSendTestEmail()">
+    <p class="dialog-lede">
+      {{ 'pages.template_management.dialogs.send_test_email.description' | translate }}
     </p>
-    <div class="form-field">
-      <cleansia-text-input
-        formControlName="recipientEmail"
-        [label]="
-          'pages.template_management.dialogs.send_test_email.recipient_email'
-            | translate
-        "
-        [required]="true"
-        type="email"
-      />
+    <div class="form-grid">
+      <div class="form-field form-field--full">
+        <cleansia-text-input
+          formControlName="recipientEmail"
+          [label]="'pages.template_management.dialogs.send_test_email.recipient_email' | translate"
+          [required]="true"
+          type="email"
+        />
+      </div>
     </div>
   </form>
   <ng-template pTemplate="footer">
     <cleansia-button
       [label]="'global.actions.cancel' | translate"
+      severity="secondary"
       [outlined]="true"
       (onClick)="closeTestEmailDialog()"
     />
@@ -191,51 +170,40 @@
   </ng-template>
 </p-dialog>
 
-<!-- Add Translation Dialog -->
 <p-dialog
-  [header]="
-    'pages.template_management.dialogs.add_translation.title' | translate
-  "
+  [header]="'pages.template_management.dialogs.add_translation.title' | translate"
   [(visible)]="showAddTranslationDialog"
   [modal]="true"
   [closable]="true"
-  [style]="{ width: '500px' }"
   [draggable]="false"
   [resizable]="false"
+  styleClass="cleansia-dialog dialog-panel"
 >
-  <form
-    class="cleansia-email-type-detail__form"
-    [formGroup]="addTranslationForm"
-    (ngSubmit)="onAddTranslation()"
-  >
-    <p class="dialog-description">
-      {{
-        'pages.template_management.dialogs.add_translation.description'
-          | translate
-      }}
+  <form class="dialog-body" [formGroup]="addTranslationForm" (ngSubmit)="onAddTranslation()">
+    <p class="dialog-lede">
+      {{ 'pages.template_management.dialogs.add_translation.description' | translate }}
     </p>
-    <div class="form-field">
-      <cleansia-text-input
-        formControlName="key"
-        [label]="
-          'pages.template_management.dialogs.add_translation.key' | translate
-        "
-        [required]="true"
-      />
-    </div>
-    <div class="form-field">
-      <cleansia-text-input
-        formControlName="value"
-        [label]="
-          'pages.template_management.dialogs.add_translation.value' | translate
-        "
-        [required]="true"
-      />
+    <div class="form-grid">
+      <div class="form-field form-field--full">
+        <cleansia-text-input
+          formControlName="key"
+          [label]="'pages.template_management.dialogs.add_translation.key' | translate"
+          [required]="true"
+        />
+      </div>
+      <div class="form-field form-field--full">
+        <cleansia-text-input
+          formControlName="value"
+          [label]="'pages.template_management.dialogs.add_translation.value' | translate"
+          [required]="true"
+        />
+      </div>
     </div>
   </form>
   <ng-template pTemplate="footer">
     <cleansia-button
       [label]="'global.actions.cancel' | translate"
+      severity="secondary"
       [outlined]="true"
       (onClick)="closeAddTranslationDialog()"
     />
@@ -248,6 +216,3 @@
     />
   </ng-template>
 </p-dialog>
-
-<!-- Confirm Dialog -->
-<p-confirmDialog />

@@ -46,7 +46,6 @@ public record GdprExportEmployeeDto(
     string? NationalityId,
     string? EmergencyContactName,
     string? EmergencyContactPhone,
-    string? PreferredCurrencyCode,
     decimal AverageRating,
     ContractStatus ContractStatus,
     DateTimeOffset CreatedOn

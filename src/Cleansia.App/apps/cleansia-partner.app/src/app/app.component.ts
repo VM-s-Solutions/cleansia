@@ -5,7 +5,7 @@ import { NavigationEnd, Router, RouterModule } from '@angular/router';
 import {
   CleansiaCookieConsentComponent,
   CleansiaDevBannerComponent,
-  CleansiaLanguageSwitcherComponent,
+  CleansiaMobileToolbarComponent,
   CleansiaSidebarMenuComponent,
   isMobileViewport,
   SidebarMenuItem,
@@ -44,7 +44,7 @@ import {
     ConfirmDialogModule,
     RouterModule,
     CleansiaSidebarMenuComponent,
-    CleansiaLanguageSwitcherComponent,
+    CleansiaMobileToolbarComponent,
     CleansiaRegistrationLockComponent,
     CleansiaCookieConsentComponent,
     CleansiaDevBannerComponent,

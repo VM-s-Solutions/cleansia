@@ -46,7 +46,7 @@ row can point at exactly the text the customer read and still find it years late
   `Register`, `GoogleAuth`/`AppleAuth` (provisioning) and the customer hosts' `GrantConsent` resolve
   the document; `RegisterEmployee` and the partner hosts' `GrantConsent` pass **none**.
 - **`GetLegalDocument`** (customer hosts, anonymous, `interactive` window) and **`AdminGetLegalVersions`
-  / `AdminGetLegalDocument`** (`CanViewCountryConfigurations`) — the reads; the customer `/terms` and
+  / `AdminGetLegalDocument`** (`CanViewLegalDocuments`, Administrator only — ADR-0066) — the reads; the customer `/terms` and
   `/privacy` pages and the admin `/legal-documents` page render them.
 - **`agents/tools/check-booking-policy-parity.mjs`** — reads the newest seed version per type for the
   no-baked-figures rule (a `1 000 000 Kč` in a legal text is a red build).

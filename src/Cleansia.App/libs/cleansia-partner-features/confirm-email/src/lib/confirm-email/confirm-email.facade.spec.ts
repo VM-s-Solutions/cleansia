@@ -1,14 +1,11 @@
 import { TestBed } from '@angular/core/testing';
 import { PartnerAuthService } from '@cleansia/partner-services';
-import { loadUserCurrent } from '@cleansia/partner-stores';
 import { SnackbarService } from '@cleansia/services';
-import { MockStore, provideMockStore } from '@ngrx/store/testing';
 import { of, throwError } from 'rxjs';
 import { ConfirmEmailFacade } from './confirm-email.facade';
 
 describe('ConfirmEmailFacade (partner)', () => {
   let facade: ConfirmEmailFacade;
-  let store: MockStore;
   let authService: {
     confirmUserEmail: jest.Mock;
     resendEmailConfirmation: jest.Mock;
@@ -33,14 +30,12 @@ describe('ConfirmEmailFacade (partner)', () => {
     TestBed.configureTestingModule({
       providers: [
         ConfirmEmailFacade,
-        provideMockStore(),
         { provide: PartnerAuthService, useValue: authService },
         { provide: SnackbarService, useValue: snackbar },
       ],
     });
 
     facade = TestBed.inject(ConfirmEmailFacade);
-    store = TestBed.inject(MockStore);
   });
 
   it('sends BOTH the code and the known email to the auth service', () => {
@@ -86,17 +81,6 @@ describe('ConfirmEmailFacade (partner)', () => {
     expect(snackbar.showErrorTranslated).toHaveBeenCalledWith(
       'validation.common.not_all_fields_filled'
     );
-  });
-
-  it('on success: reloads the current user', () => {
-    authService.confirmUserEmail.mockReturnValue(of({}));
-    const dispatchSpy = jest.spyOn(store, 'dispatch');
-    facade.setEmail('jan@example.com');
-    facade.formGroup.get('code')?.setValue('123456');
-
-    facade.confirmEmail();
-
-    expect(dispatchSpy).toHaveBeenCalledWith(loadUserCurrent());
   });
 
   it('resends using the email from state and runs the cooldown', () => {

@@ -2,16 +2,14 @@ import { Injectable, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { AdminClient, AdminCurrencyListItem } from '@cleansia/admin-services';
 import { UnsubscribeControlDirective } from '@cleansia/directives';
-import { CleansiaAdminRoute, SnackbarService } from '@cleansia/services';
-import { TranslateService } from '@ngx-translate/core';
-import { catchError, finalize, of, takeUntil } from 'rxjs';
-import { resolveCurrencyErrorKey } from './currency-management.models';
+import { CleansiaAdminRoute, DialogService, SnackbarService } from '@cleansia/services';
+import { catchError, filter, finalize, of, takeUntil } from 'rxjs';
 
 @Injectable()
 export class CurrencyManagementFacade extends UnsubscribeControlDirective {
   private readonly adminClient = inject(AdminClient);
+  private readonly dialog = inject(DialogService);
   private readonly snackbarService = inject(SnackbarService);
-  private readonly translate = inject(TranslateService);
   private readonly router = inject(Router);
 
   readonly currencies = signal<AdminCurrencyListItem[]>([]);
@@ -50,25 +48,31 @@ export class CurrencyManagementFacade extends UnsubscribeControlDirective {
   }
 
   setDefaultCurrency(currency: AdminCurrencyListItem): void {
-    if (!currency.id || currency.isDefault) return;
+    const id = currency.id;
+    if (!id || currency.isDefault) return;
 
+    this.dialog
+      .confirmTranslated(
+        'pages.currency_management.set_default_confirm',
+        'pages.currency_management.set_default',
+        { code: currency.code },
+        { icon: 'pi pi-star' }
+      )
+      .pipe(takeUntil(this.destroyed$), filter(Boolean))
+      .subscribe(() => this.setDefaultCurrencyConfirmed(id));
+  }
+
+  private setDefaultCurrencyConfirmed(id: string): void {
     this.adminClient.adminCurrencyClient
-      .setDefault(currency.id)
+      .setDefault(id)
       .pipe(
         takeUntil(this.destroyed$),
-        catchError((error: unknown) => {
-          this.snackbarService.showError(
-            this.translate.instant(resolveCurrencyErrorKey(error))
-          );
-          return of(null);
-        })
+        catchError(() => of(null))
       )
       .subscribe((response) => {
         if (response) {
-          this.snackbarService.showSuccess(
-            this.translate.instant(
-              'pages.currency_management.messages.set_default_success'
-            )
+          this.snackbarService.showSuccessTranslated(
+            'pages.currency_management.messages.set_default_success'
           );
           this.loadCurrencies();
         }
@@ -76,25 +80,30 @@ export class CurrencyManagementFacade extends UnsubscribeControlDirective {
   }
 
   deactivateCurrency(currency: AdminCurrencyListItem): void {
-    if (!currency.id) return;
+    const id = currency.id;
+    if (!id) return;
 
+    this.dialog
+      .confirmTranslated(
+        'pages.currency_management.deactivate_confirm',
+        'pages.currency_management.deactivate',
+        { code: currency.code }
+      )
+      .pipe(takeUntil(this.destroyed$), filter(Boolean))
+      .subscribe(() => this.deactivateCurrencyConfirmed(id));
+  }
+
+  private deactivateCurrencyConfirmed(id: string): void {
     this.adminClient.adminCurrencyClient
-      .deactivate(currency.id)
+      .deactivate(id)
       .pipe(
         takeUntil(this.destroyed$),
-        catchError((error: unknown) => {
-          this.snackbarService.showError(
-            this.translate.instant(resolveCurrencyErrorKey(error))
-          );
-          return of(null);
-        })
+        catchError(() => of(null))
       )
       .subscribe((response) => {
         if (response) {
-          this.snackbarService.showSuccess(
-            this.translate.instant(
-              'pages.currency_management.messages.deactivate_success'
-            )
+          this.snackbarService.showSuccessTranslated(
+            'pages.currency_management.messages.deactivate_success'
           );
           this.loadCurrencies();
         }
@@ -102,25 +111,31 @@ export class CurrencyManagementFacade extends UnsubscribeControlDirective {
   }
 
   activateCurrency(currency: AdminCurrencyListItem): void {
-    if (!currency.id) return;
+    const id = currency.id;
+    if (!id) return;
 
+    this.dialog
+      .confirmTranslated(
+        'pages.currency_management.activate_confirm',
+        'pages.currency_management.activate',
+        { code: currency.code },
+        { icon: 'pi pi-check-circle' }
+      )
+      .pipe(takeUntil(this.destroyed$), filter(Boolean))
+      .subscribe(() => this.activateCurrencyConfirmed(id));
+  }
+
+  private activateCurrencyConfirmed(id: string): void {
     this.adminClient.adminCurrencyClient
-      .activate(currency.id)
+      .activate(id)
       .pipe(
         takeUntil(this.destroyed$),
-        catchError((error: unknown) => {
-          this.snackbarService.showError(
-            this.translate.instant(resolveCurrencyErrorKey(error))
-          );
-          return of(null);
-        })
+        catchError(() => of(null))
       )
       .subscribe((response) => {
         if (response) {
-          this.snackbarService.showSuccess(
-            this.translate.instant(
-              'pages.currency_management.messages.activate_success'
-            )
+          this.snackbarService.showSuccessTranslated(
+            'pages.currency_management.messages.activate_success'
           );
           this.loadCurrencies();
         }
@@ -128,20 +143,35 @@ export class CurrencyManagementFacade extends UnsubscribeControlDirective {
   }
 
   deleteCurrency(currency: AdminCurrencyListItem): void {
-    if (!currency.id) return;
+    const id = currency.id;
+    if (!id) return;
+    if (currency.isDefault) {
+      this.snackbarService.showErrorTranslated('pages.currency_management.cannot_delete_default');
+      return;
+    }
 
+    this.dialog
+      .confirmTranslated(
+        'pages.currency_management.delete_confirm',
+        'pages.currency_management.delete_currency',
+        undefined,
+        { danger: true, acceptLabelKey: 'global.actions.delete' }
+      )
+      .pipe(takeUntil(this.destroyed$), filter(Boolean))
+      .subscribe(() => this.deleteCurrencyConfirmed(id));
+  }
+
+  private deleteCurrencyConfirmed(id: string): void {
     this.adminClient.adminCurrencyClient
-      .delete(currency.id)
+      .delete(id)
       .pipe(
         takeUntil(this.destroyed$),
         catchError(() => of(null))
       )
       .subscribe((response: unknown) => {
         if (response) {
-          this.snackbarService.showSuccess(
-            this.translate.instant(
-              'pages.currency_management.messages.delete_success'
-            )
+          this.snackbarService.showSuccessTranslated(
+            'pages.currency_management.messages.delete_success'
           );
           this.loadCurrencies();
         }

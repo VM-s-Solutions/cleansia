@@ -1,6 +1,5 @@
 @if (services() && services()!.length > 0) {
-<div class="cleansia-order-details__additional-services">
-  <h4>{{ 'pages.order_details.additional_services' | translate }}</h4>
+<cleansia-section [title]="'pages.order_details.additional_services' | translate">
   <div class="cleansia-order-details__services-list">
     @for (service of services(); track service.id) {
     <div class="service-item">
@@ -14,5 +13,5 @@
     </div>
     }
   </div>
-</div>
+</cleansia-section>
 }

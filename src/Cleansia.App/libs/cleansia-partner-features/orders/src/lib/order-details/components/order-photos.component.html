@@ -8,16 +8,14 @@
         accept="image/jpeg,image/jpg,image/png,image/webp"
         multiple
         (change)="onFilesSelected($event, 1)"
-        style="display: none"
+        hidden
       />
       @if (canUploadBefore()) {
       <cleansia-button
-        [buttonType]="'button'"
-        [style]="'raised-button'"
-        [title]="'pages.order_details.add_before_photos' | translate"
+        [label]="'pages.order_details.add_before_photos' | translate"
         [icon]="'pi pi-camera'"
         [disabled]="saving() || !canUploadBefore()"
-        (clickFn)="beforeFileInput.click()"
+        (onClick)="beforeFileInput.click()"
       />
       }
 
@@ -27,16 +25,14 @@
         accept="image/jpeg,image/jpg,image/png,image/webp"
         multiple
         (change)="onFilesSelected($event, 2)"
-        style="display: none"
+        hidden
       />
       @if (canUploadAfter()) {
       <cleansia-button
-        [buttonType]="'button'"
-        [style]="'raised-button'"
-        [title]="'pages.order_details.add_after_photos' | translate"
+        [label]="'pages.order_details.add_after_photos' | translate"
         [icon]="'pi pi-camera'"
         [disabled]="saving() || !canUploadAfter()"
-        (clickFn)="afterFileInput.click()"
+        (onClick)="afterFileInput.click()"
       />
       }
     </div>
@@ -51,20 +47,18 @@
       </p>
       <div class="order-photos__save-buttons">
         <cleansia-button
-          [buttonType]="'button'"
-          [style]="'raised-button'"
-          [title]="'pages.order_details.cancel_staged' | translate"
+          [label]="'pages.order_details.cancel_staged' | translate"
           [icon]="'pi pi-times'"
+          [severity]="'secondary'"
+          [outlined]="true"
           [disabled]="saving()"
-          (clickFn)="clearStagedPhotos()"
+          (onClick)="clearStagedPhotos()"
         />
         <cleansia-button
-          [buttonType]="'button'"
-          [style]="'raised-button'"
-          [title]="'pages.order_details.save_photos' | translate"
+          [label]="'pages.order_details.save_photos' | translate"
           [icon]="'pi pi-save'"
           [disabled]="saving()"
-          (clickFn)="savePhotos()"
+          (onClick)="savePhotos()"
         />
       </div>
     </div>
@@ -86,9 +80,9 @@
       <span class="order-photos__count-value">
         {{ beforePhotos().length + stagedBeforePhotos().length }}
         @if (stagedBeforePhotos().length > 0) {
-        <span class="order-photos__staged-indicator"
-          >(+{{ stagedBeforePhotos().length }} staged)</span
-        >
+        <span class="order-photos__staged-indicator">
+          (+{{ stagedBeforePhotos().length }} {{ 'pages.order_details.staged' | translate | lowercase }})
+        </span>
         }
       </span>
     </div>
@@ -99,9 +93,9 @@
       <span class="order-photos__count-value">
         {{ afterPhotos().length + stagedAfterPhotos().length }}
         @if (stagedAfterPhotos().length > 0) {
-        <span class="order-photos__staged-indicator"
-          >(+{{ stagedAfterPhotos().length }} staged)</span
-        >
+        <span class="order-photos__staged-indicator">
+          (+{{ stagedAfterPhotos().length }} {{ 'pages.order_details.staged' | translate | lowercase }})
+        </span>
         }
       </span>
     </div>
@@ -144,19 +138,17 @@
             }
           </div>
           @if (canDelete()) {
-          <button
-            type="button"
-            class="order-photos__delete"
-            [disabled]="deleting() === photo.id"
-            (click)="deletePhoto(photo.id!); $event.stopPropagation()"
-            [title]="'global.actions.delete' | translate"
-          >
-            @if (deleting() === photo.id) {
-            <i class="pi pi-spin pi-spinner"></i>
-            } @else {
-            <i class="pi pi-trash"></i>
-            }
-          </button>
+          <div class="order-photos__item-action">
+            <cleansia-button
+              [icon]="'pi pi-trash'"
+              [severity]="'danger'"
+              [buttonSize]="'small'"
+              [loading]="deleting() === photo.id"
+              [disabled]="deleting() === photo.id"
+              [ariaLabel]="'global.actions.delete' | translate"
+              (onClick)="deletePhoto(photo.id!); $event.stopPropagation()"
+            />
+          </div>
           }
         </div>
         }
@@ -184,14 +176,15 @@
               'pages.order_details.pending_upload' | translate
             }}</span>
           </div>
-          <button
-            type="button"
-            class="order-photos__delete"
-            (click)="removeStagedPhoto($index); $event.stopPropagation()"
-            [title]="'global.actions.remove' | translate"
-          >
-            <i class="pi pi-times"></i>
-          </button>
+          <div class="order-photos__item-action">
+            <cleansia-button
+              [icon]="'pi pi-times'"
+              [severity]="'danger'"
+              [buttonSize]="'small'"
+              [ariaLabel]="'global.actions.remove' | translate"
+              (onClick)="removeStagedPhoto($index); $event.stopPropagation()"
+            />
+          </div>
         </div>
         }
       </div>
@@ -240,19 +233,17 @@
             }
           </div>
           @if (canDelete()) {
-          <button
-            type="button"
-            class="order-photos__delete"
-            [disabled]="deleting() === photo.id"
-            (click)="deletePhoto(photo.id!); $event.stopPropagation()"
-            [title]="'global.actions.delete' | translate"
-          >
-            @if (deleting() === photo.id) {
-            <i class="pi pi-spin pi-spinner"></i>
-            } @else {
-            <i class="pi pi-trash"></i>
-            }
-          </button>
+          <div class="order-photos__item-action">
+            <cleansia-button
+              [icon]="'pi pi-trash'"
+              [severity]="'danger'"
+              [buttonSize]="'small'"
+              [loading]="deleting() === photo.id"
+              [disabled]="deleting() === photo.id"
+              [ariaLabel]="'global.actions.delete' | translate"
+              (onClick)="deletePhoto(photo.id!); $event.stopPropagation()"
+            />
+          </div>
           }
         </div>
         }
@@ -294,29 +285,30 @@
               'pages.order_details.pending_upload' | translate
             }}</span>
           </div>
-          <button
-            type="button"
-            class="order-photos__delete"
-            (click)="
-              removeStagedPhoto(
-                beforePhotos().length +
-                  stagedBeforePhotos().length +
-                  afterPhotos().length +
-                  $index
-              );
-              $event.stopPropagation()
-            "
-            [title]="'global.actions.remove' | translate"
-          >
-            <i class="pi pi-times"></i>
-          </button>
+          <div class="order-photos__item-action">
+            <cleansia-button
+              [icon]="'pi pi-times'"
+              [severity]="'danger'"
+              [buttonSize]="'small'"
+              [ariaLabel]="'global.actions.remove' | translate"
+              (onClick)="
+                removeStagedPhoto(
+                  beforePhotos().length +
+                    stagedBeforePhotos().length +
+                    afterPhotos().length +
+                    $index
+                );
+                $event.stopPropagation()
+              "
+            />
+          </div>
         </div>
         }
       </div>
     </div>
     } @if (beforePhotos().length === 0 && afterPhotos().length === 0 &&
     !hasStagedPhotos() && !loading()) {
-    <div class="order-photos__empty">
+    <div class="empty-state">
       <i class="pi pi-images"></i>
       <p>{{ 'pages.order_details.no_photos' | translate }}</p>
     </div>

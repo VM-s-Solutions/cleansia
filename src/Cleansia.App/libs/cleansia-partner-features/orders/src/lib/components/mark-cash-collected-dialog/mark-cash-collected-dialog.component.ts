@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { CleansiaButtonComponent } from '@cleansia/components';
 import { TranslateModule } from '@ngx-translate/core';
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
-import { ButtonModule } from 'primeng/button';
 
 export interface MarkCashCollectedDialogData {
   orderId: string;
@@ -17,22 +17,14 @@ export interface MarkCashCollectedDialogResult {
   confirmed: boolean;
 }
 
-/**
- * Custom confirmation for recording a cash collection. Deliberately a dedicated
- * dialog component (same pattern as ReportIssueDialogComponent / AddNoteDialogComponent)
- * rather than window.confirm or the PrimeNG default confirm dialog: the action is
- * irreversible — it flips the order to Paid — so the copy has to name the amount.
- */
+// Not the shared confirmation dialog: the act flips the order to Paid and cannot be undone, so
+// the copy has to name the amount.
 @Component({
-  // The sibling dialogs predate the lint rule and still use the bare 'cleansia-' prefix;
-  // this one is named to satisfy @angular-eslint/component-selector rather than inherit
-  // their error. It is opened programmatically, so the selector is never written in a template.
   selector: 'cleansia-partner-mark-cash-collected-dialog',
   standalone: true,
-  imports: [TranslateModule, ButtonModule],
+  imports: [TranslateModule, CleansiaButtonComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './mark-cash-collected-dialog.component.html',
-  styleUrl: './mark-cash-collected-dialog.component.scss',
 })
 export class MarkCashCollectedDialogComponent {
   private readonly dialogRef = inject(DynamicDialogRef);

@@ -14,8 +14,8 @@ import { JOB_RADIUS_STARTING_KM } from './profile-job-radius.models';
 describe('ProfileJobRadiusFacade', () => {
   let employeeClient: { updateJobRadius: jest.Mock };
   let snackbar: {
-    showSuccess: jest.Mock;
-    showError: jest.Mock;
+    showSuccess: jest.Mock; showSuccessTranslated: jest.Mock;
+    showError: jest.Mock; showErrorTranslated: jest.Mock;
     showApiError: jest.Mock;
   };
 
@@ -55,8 +55,8 @@ describe('ProfileJobRadiusFacade', () => {
         ),
     };
     snackbar = {
-      showSuccess: jest.fn(),
-      showError: jest.fn(),
+      showSuccess: jest.fn(), showSuccessTranslated: jest.fn(),
+      showError: jest.fn(), showErrorTranslated: jest.fn(),
       showApiError: jest.fn(),
     };
   });
@@ -118,7 +118,7 @@ describe('ProfileJobRadiusFacade', () => {
       const command = sentCommand();
       expect(command).toBeInstanceOf(UpdateJobRadiusCommand);
       expect(command.toJSON()).toEqual({ employeeId: 'emp-1', radiusKm: 42 });
-      expect(snackbar.showSuccess).toHaveBeenCalledWith(
+      expect(snackbar.showSuccessTranslated).toHaveBeenCalledWith(
         'global.messages.profile.job_radius_saved'
       );
       expect(facade.saving()).toBe(false);
@@ -176,7 +176,7 @@ describe('ProfileJobRadiusFacade', () => {
       facade.formGroup.setValue({ limitEnabled: true, radiusKm: '400' });
       facade.onSubmit();
 
-      expect(snackbar.showSuccess).not.toHaveBeenCalled();
+      expect(snackbar.showSuccessTranslated).not.toHaveBeenCalled();
       expect(snackbar.showApiError).not.toHaveBeenCalled();
       expect(facade.saving()).toBe(false);
     });
@@ -216,7 +216,7 @@ describe('ProfileJobRadiusFacade', () => {
       facade.onSubmit();
 
       expect(employeeClient.updateJobRadius).not.toHaveBeenCalled();
-      expect(snackbar.showError).toHaveBeenCalledWith(
+      expect(snackbar.showErrorTranslated).toHaveBeenCalledWith(
         'global.messages.profile.not_loaded'
       );
     });

@@ -5,9 +5,11 @@ import {
   DestroyRef,
   OnDestroy,
   OnInit,
+  TemplateRef,
   computed,
   inject,
   signal,
+  viewChild,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
@@ -21,6 +23,7 @@ import {
   CleansiaLoaderComponent,
   CleansiaSectionComponent,
   CleansiaSelectComponent,
+  CleansiaStatusBadgeComponent,
   CleansiaTableComponent,
   CleansiaTextareaComponent,
   CleansiaTitleComponent,
@@ -31,6 +34,7 @@ import {
 } from '@cleansia/components';
 import { CleansiaPermissionDirective } from '@cleansia/directives';
 import { Policy } from '@cleansia/services';
+import { formatDate } from '@cleansia/utils';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { DOCUMENT_TYPE_LABEL_KEYS } from '../document-type-labels';
 import { DeletionRequestsFacade } from './deletion-requests.facade';
@@ -46,6 +50,7 @@ import { DeletionRequestsFacade } from './deletion-requests.facade';
     CleansiaLoaderComponent,
     CleansiaSectionComponent,
     CleansiaSelectComponent,
+    CleansiaStatusBadgeComponent,
     CleansiaTableComponent,
     CleansiaTextareaComponent,
     CleansiaTitleComponent,
@@ -72,20 +77,22 @@ export class DeletionRequestsComponent implements OnInit, OnDestroy {
 
   protected readonly statusOptions = computed<ICleansiaSelectOption[]>(() => [
     {
-      label: this.translate.instant('pages.document_deletion_requests.status.pending'),
+      label: this.translate.instant('enums.document_status.pending'),
       value: DocumentDeletionRequestStatus.Pending,
     },
     {
-      label: this.translate.instant('pages.document_deletion_requests.status.approved'),
+      label: this.translate.instant('enums.document_status.approved'),
       value: DocumentDeletionRequestStatus.Approved,
     },
     {
-      label: this.translate.instant('pages.document_deletion_requests.status.rejected'),
+      label: this.translate.instant('enums.document_status.rejected'),
       value: DocumentDeletionRequestStatus.Rejected,
     },
   ]);
 
-  protected readonly columns: TableColumn<DocumentDeletionRequestDto>[] = [
+  private readonly statusTemplate = viewChild<TemplateRef<DocumentDeletionRequestDto>>('statusTemplate');
+
+  protected readonly columns = computed<TableColumn<DocumentDeletionRequestDto>[]>(() => [
     {
       id: 'employeeName',
       field: 'employeeName',
@@ -111,15 +118,17 @@ export class DeletionRequestsComponent implements OnInit, OnDestroy {
       id: 'createdOn',
       field: 'createdOn',
       header: 'pages.document_deletion_requests.columns.requested_on',
+      numeric: true,
+      getValue: (row) => formatDate(row.createdOn, this.translate.currentLang, 'dateTime'),
     },
     {
       id: 'status',
       field: 'status',
       header: 'pages.document_deletion_requests.columns.status',
       align: 'center',
-      getValue: (row) => this.translate.instant(this.statusLabelKey(row.status)),
+      customTemplate: this.statusTemplate(),
     },
-  ];
+  ]);
 
   protected readonly actions: TableAction<DocumentDeletionRequestDto>[] = [
     {
@@ -179,18 +188,5 @@ export class DeletionRequestsComponent implements OnInit, OnDestroy {
     return type == null
       ? 'pages.employee_detail.document_types.unknown'
       : (DOCUMENT_TYPE_LABEL_KEYS[type] ?? 'pages.employee_detail.document_types.unknown');
-  }
-
-  protected statusLabelKey(status: DocumentDeletionRequestStatus | null | undefined): string {
-    switch (status) {
-      case DocumentDeletionRequestStatus.Pending:
-        return 'pages.document_deletion_requests.status.pending';
-      case DocumentDeletionRequestStatus.Approved:
-        return 'pages.document_deletion_requests.status.approved';
-      case DocumentDeletionRequestStatus.Rejected:
-        return 'pages.document_deletion_requests.status.rejected';
-      default:
-        return 'pages.document_deletion_requests.status.unknown';
-    }
   }
 }

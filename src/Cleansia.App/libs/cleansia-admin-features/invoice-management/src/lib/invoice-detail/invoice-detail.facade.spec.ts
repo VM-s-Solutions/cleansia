@@ -8,7 +8,7 @@ import {
   MarkInvoicePaidCommand,
   RegenerateInvoicePdfCommand,
 } from '@cleansia/admin-services';
-import { SnackbarService } from '@cleansia/services';
+import { DialogService as ConfirmDialogService, SnackbarService } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
 import { DialogService } from 'primeng/dynamicdialog';
 import { of, throwError } from 'rxjs';
@@ -22,8 +22,13 @@ describe('InvoiceDetailFacade', () => {
   let cancelMock: jest.Mock;
   let regenerateMock: jest.Mock;
   let assignVariableSymbolMock: jest.Mock;
-  let snackbar: { showSuccess: jest.Mock; showError: jest.Mock };
-  let translateParams: Record<string, unknown> | undefined;
+  let confirmMock: jest.Mock;
+  let snackbar: {
+    showSuccess: jest.Mock;
+    showSuccessTranslated: jest.Mock;
+    showError: jest.Mock;
+    showErrorTranslated: jest.Mock;
+  };
 
   const loaded = { id: 'invoice-1', status: EmployeeInvoiceStatus.Pending };
 
@@ -41,8 +46,13 @@ describe('InvoiceDetailFacade', () => {
         pdfBlobUrl: 'https://blob/invoice-1.pdf',
       })
     );
-    snackbar = { showSuccess: jest.fn(), showError: jest.fn() };
-    translateParams = undefined;
+    confirmMock = jest.fn().mockReturnValue(of(true));
+    snackbar = {
+      showSuccess: jest.fn(),
+      showSuccessTranslated: jest.fn(),
+      showError: jest.fn(),
+      showErrorTranslated: jest.fn(),
+    };
 
     TestBed.configureTestingModule({
       providers: [
@@ -63,16 +73,11 @@ describe('InvoiceDetailFacade', () => {
           },
         },
         { provide: DialogService, useValue: { open: jest.fn() } },
+        { provide: ConfirmDialogService, useValue: { confirmTranslated: confirmMock } },
         { provide: SnackbarService, useValue: snackbar },
         {
           provide: TranslateService,
-          useValue: {
-            instant: (k: string, params?: Record<string, unknown>) => {
-              translateParams = params;
-              return k;
-            },
-            currentLang: 'cs',
-          },
+          useValue: { instant: (k: string) => k, currentLang: 'cs' },
         },
       ],
     });
@@ -115,7 +120,7 @@ describe('InvoiceDetailFacade', () => {
 
     facade.approveInvoice();
     expect(detailsMock).toHaveBeenCalledTimes(2);
-    expect(snackbar.showSuccess).toHaveBeenCalledWith(
+    expect(snackbar.showSuccessTranslated).toHaveBeenCalledWith(
       'pages.invoice_detail.messages.approve_success'
     );
 
@@ -224,10 +229,10 @@ describe('InvoiceDetailFacade', () => {
     it('names the allocated symbol in the success message', () => {
       facade.assignVariableSymbol();
 
-      expect(snackbar.showSuccess).toHaveBeenCalledWith(
-        'pages.invoice_detail.messages.assign_variable_symbol_success'
+      expect(snackbar.showSuccessTranslated).toHaveBeenCalledWith(
+        'pages.invoice_detail.messages.assign_variable_symbol_success',
+        { variableSymbol: '2026000001' }
       );
-      expect(translateParams).toEqual({ variableSymbol: '2026000001' });
     });
 
     it('reports a durable reference on a stale document when the PDF did not regenerate', () => {
@@ -241,11 +246,11 @@ describe('InvoiceDetailFacade', () => {
 
       facade.assignVariableSymbol();
 
-      expect(snackbar.showSuccess).not.toHaveBeenCalled();
-      expect(snackbar.showError).toHaveBeenCalledWith(
-        'pages.invoice_detail.messages.assign_variable_symbol_pdf_stale'
+      expect(snackbar.showSuccessTranslated).not.toHaveBeenCalled();
+      expect(snackbar.showErrorTranslated).toHaveBeenCalledWith(
+        'pages.invoice_detail.messages.assign_variable_symbol_pdf_stale',
+        { variableSymbol: '2026000002' }
       );
-      expect(translateParams).toEqual({ variableSymbol: '2026000002' });
       expect(detailsMock).toHaveBeenCalledTimes(2);
     });
 
@@ -268,23 +273,58 @@ describe('InvoiceDetailFacade', () => {
       facade.assignVariableSymbol();
 
       expect(detailsMock).toHaveBeenCalledTimes(1);
-      expect(snackbar.showSuccess).not.toHaveBeenCalled();
+      expect(snackbar.showSuccessTranslated).not.toHaveBeenCalled();
+      expect(facade.actionLoading()).toBe(false);
+    });
+
+    it('does nothing when the confirmation is declined', () => {
+      confirmMock.mockReturnValue(of(false));
+
+      facade.assignVariableSymbol();
+
+      expect(confirmMock).toHaveBeenCalledWith(
+        'pages.invoice_detail.assign_variable_symbol_confirm.message',
+        'pages.invoice_detail.assign_variable_symbol_confirm.title',
+        undefined,
+        { acceptLabelKey: 'pages.invoice_detail.assign_variable_symbol_confirm.yes' }
+      );
+      expect(assignVariableSymbolMock).not.toHaveBeenCalled();
+      expect(detailsMock).toHaveBeenCalledTimes(1);
       expect(facade.actionLoading()).toBe(false);
     });
   });
 
   it('renders an absent amount and date as a dash', () => {
     expect(facade.formatCurrency(null)).toBe('-');
-    expect(facade.formatCurrency(12.5, 'EUR')).toBe('12.50 EUR');
+    expect(facade.formatCurrency(12.5, 'EUR')).toBe('12,50\u00a0€');
   });
 
   // The invoice always names its currency; a code that is missing is a bug upstream, and printing
   // crowns for it would turn a EUR invoice into a CZK one on screen.
   it('prints a bare number rather than a currency it was not given', () => {
-    expect(facade.formatCurrency(12.5)).toBe('12.50');
-    expect(facade.formatCurrency(12.5, '')).toBe('12.50');
+    expect(facade.formatCurrency(12.5)).toBe('12,50');
+    expect(facade.formatCurrency(12.5, '')).toBe('12,50');
     expect(facade.formatDate(null)).toBe('-');
     expect(facade.formatDateTime(undefined)).toBe('-');
+  });
+
+  // The cancel dialog is the shared reject dialog; without its own submit label the primary under
+  // "Cancel invoice" read "Reject employee".
+  it('opens the cancel dialog under the invoice cancellation title and submit label', () => {
+    const open = TestBed.inject(DialogService).open as jest.Mock;
+
+    facade.openCancelDialog();
+
+    expect(open).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({
+        header: 'pages.invoice_detail.cancel_dialog.title',
+        data: expect.objectContaining({
+          reasonLabel: 'pages.invoice_detail.cancel_dialog.reason_label',
+          submitLabel: 'pages.invoice_detail.cancel_dialog.submit',
+        }),
+      })
+    );
   });
 
   describe('command bodies on the wire', () => {

@@ -9,7 +9,7 @@ import {
   UserConsentDto,
   WithdrawConsentCommand,
 } from '@cleansia/partner-services';
-import { SnackbarService } from '@cleansia/services';
+import { DialogService, SnackbarService } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
 import { of, throwError } from 'rxjs';
 import { PartnerGdprFacade } from './gdpr.facade';
@@ -23,9 +23,10 @@ describe('PartnerGdprFacade', () => {
   };
   let consentsClient: { withdraw: jest.Mock };
   let authService: { isLoggedIn: jest.Mock; logout: jest.Mock };
+  let confirmMock: jest.Mock;
   let snackbar: {
-    showSuccess: jest.Mock;
-    showError: jest.Mock;
+    showSuccess: jest.Mock; showSuccessTranslated: jest.Mock;
+    showError: jest.Mock; showErrorTranslated: jest.Mock;
     showApiError: jest.Mock;
   };
 
@@ -52,6 +53,7 @@ describe('PartnerGdprFacade', () => {
         { provide: ConsentsClient, useValue: consentsClient },
         { provide: PartnerAuthService, useValue: authService },
         { provide: SnackbarService, useValue: snackbar },
+        { provide: DialogService, useValue: { confirmTranslated: confirmMock } },
         { provide: TranslateService, useValue: { instant: (k: string) => k } },
       ],
     });
@@ -68,9 +70,10 @@ describe('PartnerGdprFacade', () => {
     };
     consentsClient = { withdraw: jest.fn() };
     authService = { isLoggedIn: jest.fn(), logout: jest.fn() };
+    confirmMock = jest.fn().mockReturnValue(of(true));
     snackbar = {
-      showSuccess: jest.fn(),
-      showError: jest.fn(),
+      showSuccess: jest.fn(), showSuccessTranslated: jest.fn(),
+      showError: jest.fn(), showErrorTranslated: jest.fn(),
       showApiError: jest.fn(),
     };
   });
@@ -133,7 +136,7 @@ describe('PartnerGdprFacade', () => {
         consentType: ConsentType.MarketingEmails,
       });
       expect(consentsClient.withdraw).not.toHaveBeenCalled();
-      expect(snackbar.showSuccess).toHaveBeenCalledWith(
+      expect(snackbar.showSuccessTranslated).toHaveBeenCalledWith(
         'pages.gdpr.consent_updated'
       );
       expect(gdprClient.consentsGet).toHaveBeenCalledTimes(1);
@@ -193,7 +196,7 @@ describe('PartnerGdprFacade', () => {
         expect.anything(),
         'my-data-export.json'
       );
-      expect(snackbar.showSuccess).toHaveBeenCalledWith(
+      expect(snackbar.showSuccessTranslated).toHaveBeenCalledWith(
         'pages.gdpr.export_success'
       );
       expect(facade.exporting()).toBe(false);
@@ -240,7 +243,7 @@ describe('PartnerGdprFacade', () => {
       facade.deleteAccount();
 
       expect(gdprClient.deleteAccount).toHaveBeenCalledTimes(1);
-      expect(snackbar.showSuccess).toHaveBeenCalledWith(
+      expect(snackbar.showSuccessTranslated).toHaveBeenCalledWith(
         'pages.gdpr.delete_requested'
       );
       expect(authService.logout).not.toHaveBeenCalled();
@@ -271,6 +274,22 @@ describe('PartnerGdprFacade', () => {
       facade.deleteAccount();
 
       expect(gdprClient.deleteAccount).not.toHaveBeenCalled();
+    });
+
+    it('does nothing when the confirmation is declined', () => {
+      confirmMock.mockReturnValue(of(false));
+      const facade = createFacade(true);
+
+      facade.deleteAccount();
+
+      expect(confirmMock).toHaveBeenCalledWith(
+        'pages.gdpr.delete_confirm_message',
+        'pages.gdpr.delete_confirm_title',
+        undefined,
+        { danger: true, acceptLabelKey: 'pages.gdpr.delete_confirm_yes' }
+      );
+      expect(gdprClient.deleteAccount).not.toHaveBeenCalled();
+      expect(facade.deleting()).toBe(false);
     });
   });
 });

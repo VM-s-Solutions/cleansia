@@ -1,5 +1,14 @@
-.cleansia-calendar {
-  & > span {
-    width: 100% !important;
+// PrimeNG 20 renders `<p-datepicker class="p-datepicker">` as an inline-flex box holding the
+// input and, with `iconDisplay: 'input'`, an absolutely positioned icon container. The box
+// fills its column and the input fills the box, so the icon lands inside the field.
+cleansia-calendar {
+  .p-datepicker {
+    display: flex;
+    width: 100%;
+  }
+
+  .p-datepicker-input {
+    width: 100%;
+    min-height: 44px;
   }
 }

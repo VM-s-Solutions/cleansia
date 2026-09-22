@@ -3,14 +3,17 @@
 Generated from the EF Core entity configurations, not described from memory. A relationship on a
 diagram is a `HasOne(...)` declared in a configuration file; if it is not there, it is not enforced.
 
-One diagram per area, because a single picture of all 87 entities is a picture nobody reads. Entities
+One diagram per area, because a single picture of all 84 tables is a picture nobody reads. Entities
 appear in the area they are owned by, not everywhere they are referenced.
 
 ::: tip Checking the count
 `grep -c 'migrationBuilder.CreateTable' src/Cleansia.Infra.Database/Migrations/*_Initial.cs` — the
 migration is regenerated rather than stacked, so it always reflects the current model. The count above
 was 70 for long enough to be wrong by six before anyone noticed, and then 76 for long enough to be wrong
-by five, which is why the check is written down rather than the number being trusted.
+by five, which is why the check is written down rather than the number being trusted. It fell from 88
+to 84 on 2026-09-20, when the never-read `Carts`, `CartServiceItems`, `CartPackageItems` and
+`EmailTranslations` tables were dropped along with `Employees.Availability` and
+`Employees.PreferredCurrencyCode` (`20260920204705_Initial`).
 :::
 
 ## Tenancy — who a row belongs to
@@ -42,11 +45,11 @@ serves that market: `Market/GetOverview` does not list it and an anonymous write
 `country.not_serviced`. → [Tenant](/domain/roles/tenant), [Company lifecycle](/domain/roles/company-lifecycle)
 
 **Every stamped row carries its operator, and the column is a foreign key.** A type that belongs to
-one company extends **`TenantAuditable : Auditable, ITenantEntity`** — 47 of them — or is one of the
-two `BaseEntity + ITenantEntity` audits (`AdminActionAudit`, `CustomerActionAudit`): **49 stamped
+one company extends **`TenantAuditable : Auditable, ITenantEntity`** — 46 of them — or is one of the
+two `BaseEntity + ITenantEntity` audits (`AdminActionAudit`, `CustomerActionAudit`): **48 stamped
 tables**, each with `FK_<T>_Tenants_TenantId` (`Restrict`, no navigation — the two `TenantId` arrows
-above stand in for all 49; the area diagrams below do not repeat them). The `TenantId` column is
-**NOT NULL** on 47 of them and
+above stand in for all 48; the area diagrams below do not repeat them). The `TenantId` column is
+**NOT NULL** on 46 of them and
 nullable only on `OutboxMessage` and `DeadLetter` (an envelope may have no tenant; a `NULL` passes the
 FK). The value is written at commit time from the ambient tenant — the JWT claim, the market's operator
 for an anonymous write, the user's tenant on a token mint, the row's own tenant or the registry's
@@ -58,7 +61,7 @@ grows one.
 
 | Entity | |
 |---|---|
-| `Tenant` | — ; referenced by `CountryConfiguration.OperatorTenantId` and by `TenantId` on all 49 stamped tables. `Auditable` (tenantless by construction); the lifecycle columns above; the company's state is the highest of *archived* (`ArchivedOn`), *frozen* (`ArchiveRequestedOn`), *deactivated* (`!IsActive`), *winding down* (`WindDownFrom`), *operating* → [Company lifecycle](/domain/roles/company-lifecycle) |
+| `Tenant` | — ; referenced by `CountryConfiguration.OperatorTenantId` and by `TenantId` on all 48 stamped tables. `Auditable` (tenantless by construction); the lifecycle columns above; the company's state is the highest of *archived* (`ArchivedOn`), *frozen* (`ArchiveRequestedOn`), *deactivated* (`!IsActive`), *winding down* (`WindDownFrom`), *operating* → [Company lifecycle](/domain/roles/company-lifecycle) |
 | `TenantConfiguration` | references `Tenant`; one row per `(TenantId, Key)` (unique, `NULLS NOT DISTINCT`) holding a company's override of one catalogued setting — the ten `retention.*` windows today; no row means the catalogue default. Written by the admin's *Company settings* page, read per company by the retention job → [TenantConfiguration](/domain/roles/tenant-configuration) |
 
 ## Identity and access
@@ -99,9 +102,7 @@ erDiagram
 ```mermaid
 erDiagram
   OrderNote }o--|| Order : "Order"
-  CartPackageItem }o--|| Cart : "Cart"
   SavedAddress }o--|| Address : "Address"
-  CartServiceItem }o--|| Cart : "Cart"
   OrderPhoto }o--|| Order : "Order"
   OrderIssue }o--|| Order : "Order"
   OrderService }o--|| Order : "Order"
@@ -159,9 +160,6 @@ Append-only, `TenantAuditable` stamped with the order's operator. → [ADR-0068]
 | `Address` | — |
 | `RecurringBookingTemplate` | references `User` |
 | `SavedAddress` | references `Address`, `User` |
-| `Cart` | references `User` |
-| `CartServiceItem` | references `Cart`, `Service` |
-| `CartPackageItem` | references `Cart`, `Package` |
 | `OrderService` | references `Order`, `Service` |
 | `OrderPackage` | references `Order`, `Package` |
 | `OrderStatusTrack` | references `Order` |
@@ -323,8 +321,7 @@ named on their rows: `OrderReview` and `OrderReviewLine` (declared, with delete 
 | `AdminActionAudit` | no references; `ActorAdminRole` (nullable int) records the administrator role the act ran under, read from the `admin_role` claim ([ADR-0066](/decisions/adr-0066) D5) |
 | `CountryInvoiceConfig` | references `Country` |
 | `DeadLetter` | — |
-| `EmailTemplateTranslation` | references `Language` |
-| `EmailTranslation` | — |
+| `EmailTemplateTranslation` | references `Language` — the one translation table the renderer reads |
 | `GdprRequest` | references `User`; `Status` gained a live `Failed` writer — an erasure that throws or is refused after its walk began leaves a `Failed` row written out of band (`ProcessedBy` the actor — `"self"` for the subject's own deletion *and* export (never their e-mail: the row outlives the erasure), the admin's e-mail or `"system"` — and `Notes` the exception type and message with any e-mail-shaped token blanked, **appended** per attempt within the 1 000-char bound, oldest text dropped first); a `Failed` row, or a `Processing` row older than 30 minutes, is what the daily retry sweep and the admin **Retry** re-run, and every row not yet `Completed` counts as *pending* for a second filing → [ADR-0062](/decisions/adr-0062) D5 as amended |
 | `LiveActivityToken` | — |
 | `OrderReview` | references `Order` |

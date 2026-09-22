@@ -1,4 +1,6 @@
 import { CommonModule } from '@angular/common';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { map } from 'rxjs';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -9,11 +11,12 @@ import {
   ViewChild,
   inject,
 } from '@angular/core';
-import { FormsModule } from '@angular/forms';
+import { FormControl, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import {
   CleansiaButtonComponent,
   CleansiaSectionComponent,
   CleansiaSelectComponent,
+  CleansiaStatusBadgeComponent,
   CleansiaTextareaComponent,
   ICleansiaSelectOption,
 } from '@cleansia/components';
@@ -22,6 +25,7 @@ import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { DialogModule } from 'primeng/dialog';
 import { Skeleton } from 'primeng/skeleton';
 import { MyDocument, ProfileDocumentsFacade } from '../../profile/profile-documents.facade';
+import { fileExtensionOf } from '../../profile/profile-documents.helpers';
 
 const FILE_BG_COLORS: Record<string, string> = {
   pdf: '#fef2f2',
@@ -51,8 +55,6 @@ const FILE_TEXT_COLORS: Record<string, string> = {
   default: '#6b7280',
 };
 
-const IMAGE_EXTENSIONS = new Set(['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp']);
-
 interface DocumentGroup {
   key: string;
   titleKey: string;
@@ -65,10 +67,12 @@ interface DocumentGroup {
   imports: [
     CommonModule,
     FormsModule,
+    ReactiveFormsModule,
     TranslatePipe,
     CleansiaSectionComponent,
     CleansiaButtonComponent,
     CleansiaSelectComponent,
+    CleansiaStatusBadgeComponent,
     CleansiaTextareaComponent,
     DialogModule,
     Skeleton,
@@ -95,7 +99,11 @@ export class ProfileDocumentsComponent implements OnInit {
   private replaceTargetId: string | null = null;
 
   deletionDialogVisible = false;
-  deletionReason = '';
+  readonly deletionReason = new FormControl('', { nonNullable: true, validators: [Validators.required] });
+  readonly deletionReasonBlank = toSignal(
+    this.deletionReason.valueChanges.pipe(map((value) => value.trim().length === 0)),
+    { initialValue: true }
+  );
   deletionFileName = '';
   private deletionDocumentId: string | null = null;
 
@@ -130,19 +138,19 @@ export class ProfileDocumentsComponent implements OnInit {
   openDeletionRequest(documentId: string, fileName: string): void {
     this.deletionDocumentId = documentId;
     this.deletionFileName = fileName;
-    this.deletionReason = '';
+    this.deletionReason.reset();
     this.deletionDialogVisible = true;
   }
 
   closeDeletionRequest(): void {
     this.deletionDialogVisible = false;
     this.deletionDocumentId = null;
-    this.deletionReason = '';
+    this.deletionReason.reset();
   }
 
   async confirmDeletionRequest(): Promise<void> {
     const documentId = this.deletionDocumentId;
-    const reason = this.deletionReason.trim();
+    const reason = this.deletionReason.value.trim();
     if (!documentId || !reason) {
       return;
     }
@@ -209,9 +217,7 @@ export class ProfileDocumentsComponent implements OnInit {
   }
 
   getFileExtension(fileName: string | undefined): string {
-    if (!fileName) return '?';
-    const ext = fileName.split('.').pop()?.toLowerCase() || '';
-    return ext.toUpperCase();
+    return fileExtensionOf(fileName);
   }
 
   getFileColor(fileName: string | undefined): string {
@@ -224,12 +230,6 @@ export class ProfileDocumentsComponent implements OnInit {
     if (!fileName) return FILE_TEXT_COLORS['default'];
     const ext = fileName.split('.').pop()?.toLowerCase() || '';
     return FILE_TEXT_COLORS[ext] || FILE_TEXT_COLORS['default'];
-  }
-
-  isImageFile(fileName: string | undefined): boolean {
-    if (!fileName) return false;
-    const ext = fileName.split('.').pop()?.toLowerCase() || '';
-    return IMAGE_EXTENSIONS.has(ext);
   }
 
   private buildDocumentTypeOptions(): void {

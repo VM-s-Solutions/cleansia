@@ -3,7 +3,6 @@ import { FormBuilder } from '@angular/forms';
 import { UnsubscribeControlDirective } from '@cleansia/directives';
 import { EmployeeItem, PartnerClient } from '@cleansia/partner-services';
 import { SnackbarService } from '@cleansia/services';
-import { TranslateService } from '@ngx-translate/core';
 import { catchError, finalize, of, takeUntil } from 'rxjs';
 import {
   JobRadiusFormValue,
@@ -17,7 +16,6 @@ import {
 export class ProfileJobRadiusFacade extends UnsubscribeControlDirective {
   private readonly partnerClient = inject(PartnerClient);
   private readonly snackbarService = inject(SnackbarService);
-  private readonly translate = inject(TranslateService);
 
   readonly formGroup = createJobRadiusForm(inject(FormBuilder).nonNullable);
 
@@ -59,9 +57,7 @@ export class ProfileJobRadiusFacade extends UnsubscribeControlDirective {
 
     const employeeId = this.employeeId();
     if (!employeeId) {
-      this.snackbarService.showError(
-        this.translate.instant('global.messages.profile.not_loaded')
-      );
+      this.snackbarService.showErrorTranslated('global.messages.profile.not_loaded');
       return;
     }
 
@@ -82,9 +78,7 @@ export class ProfileJobRadiusFacade extends UnsubscribeControlDirective {
         }
 
         this.render(response.radiusKm);
-        this.snackbarService.showSuccess(
-          this.translate.instant('global.messages.profile.job_radius_saved')
-        );
+        this.snackbarService.showSuccessTranslated('global.messages.profile.job_radius_saved');
       });
   }
 

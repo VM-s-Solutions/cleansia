@@ -1,16 +1,22 @@
-@if(facade.profileLoading()){
-<cleansia-form-skeleton />
+@if (facade.profileLoading()) {
+<div class="cleansia-profile cleansia-page">
+  <div class="cleansia-profile__form-card page-wrapper page-wrapper--narrow">
+    <cleansia-loader />
+  </div>
+</div>
 } @else {
-<div class="cleansia-profile">
+<div class="cleansia-profile cleansia-page">
   <form
-    class="cleansia-profile__form-card page-wrapper"
+    class="cleansia-profile__form-card page-wrapper page-wrapper--narrow"
     [formGroup]="facade.formGroup"
   >
-    <div class="cleansia-profile__header">
-      <cleansia-title [title]="'pages.profile.title' | translate" />
-      <p class="cleansia-profile__description">
-        {{ 'pages.profile.description' | translate }}
-      </p>
+    <div class="cleansia-page-header">
+      <div class="cleansia-page-header__heading">
+        <cleansia-title [title]="'pages.profile.title' | translate" [level]="1" />
+        <p class="cleansia-page-header__description">
+          {{ 'pages.profile.description' | translate }}
+        </p>
+      </div>
     </div>
 
     <!-- Personal Information Section -->
@@ -46,27 +52,20 @@
       ></span>
     </div>
 
-    <!-- Submit Button -->
     <div class="cleansia-profile__actions">
+      <cleansia-button
+        [severity]="'danger'"
+        [outlined]="true"
+        [icon]="'pi pi-sign-out'"
+        [label]="'sidebar.logout' | translate"
+        (onClick)="onLogout()"
+        [disabled]="facade.profileSubmitLoading()"
+      />
       <cleansia-button
         [buttonType]="'submit'"
-        [style]="'raised-button'"
-        [title]="'pages.profile.submit' | translate"
-        (clickFn)="facade.onSubmit()"
+        [label]="'pages.profile.submit' | translate"
+        (onClick)="facade.onSubmit()"
         [loading]="facade.profileSubmitLoading()"
-      />
-    </div>
-
-    <!-- Logout Section -->
-    <div class="cleansia-profile__actions">
-      <cleansia-button
-        [buttonType]="'button'"
-        [style]="'basic-button'"
-        [severity]="'danger'"
-        [icon]="'pi pi-sign-out'"
-        [title]="'sidebar.logout' | translate"
-        (clickFn)="onLogout()"
-        [disabled]="facade.profileSubmitLoading()"
       />
     </div>
   </form>

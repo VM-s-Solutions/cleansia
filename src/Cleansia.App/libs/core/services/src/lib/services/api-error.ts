@@ -1,3 +1,5 @@
+import { TranslateService } from '@ngx-translate/core';
+
 /**
  * Business codes that report an *optional* resource the caller has simply not
  * created yet. On a read they are an empty state the caller renders, not a
@@ -66,4 +68,24 @@ export function extractApiErrorCode(error: unknown): string | undefined {
   }
 
   return undefined;
+}
+
+export const GENERIC_API_ERROR_KEY = 'api.common.error_occurred';
+
+/**
+ * The `api.<code>` key a failure translates to, for a message rendered in place rather than
+ * toasted — the toast itself is the interceptor's. An untranslated code falls back so a raw
+ * machine key never reaches the screen.
+ */
+export function resolveApiErrorKey(
+  translate: TranslateService,
+  error: unknown,
+  fallbackKey: string = GENERIC_API_ERROR_KEY
+): string {
+  const code = extractApiErrorCode(error);
+  if (!code) {
+    return fallbackKey;
+  }
+  const key = `api.${code}`;
+  return translate.instant(key) === key ? fallbackKey : key;
 }

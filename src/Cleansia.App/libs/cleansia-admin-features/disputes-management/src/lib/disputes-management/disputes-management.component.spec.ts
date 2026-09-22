@@ -67,6 +67,6 @@ describe('DisputesManagementComponent', () => {
     const { facade, el } = setup();
 
     expect(facade.hasError()).toBe(true);
-    expect(el.querySelector('.cleansia-disputes-management__state')).toBeTruthy();
+    expect(el.querySelector('.not-found-state')).toBeTruthy();
   });
 });

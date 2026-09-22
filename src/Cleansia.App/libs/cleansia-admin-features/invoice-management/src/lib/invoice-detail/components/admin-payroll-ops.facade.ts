@@ -9,14 +9,10 @@ import {
   UpdateInvoiceAmountsResponse,
 } from '@cleansia/admin-services';
 import { UnsubscribeControlDirective } from '@cleansia/directives';
-import { SnackbarService, extractApiErrorCode } from '@cleansia/services';
+import { resolveApiErrorKey, SnackbarService } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
 import { Observable, catchError, finalize, of, takeUntil } from 'rxjs';
-import {
-  AdminPayrollOpsPanel,
-  PAYROLL_OPS_ERROR_KEY_MAP,
-  PAYROLL_OPS_FALLBACK_ERROR_KEY,
-} from './admin-payroll-ops.models';
+import { AdminPayrollOpsPanel } from './admin-payroll-ops.models';
 
 function parseAmount(value: string): number | null {
   const trimmed = value.trim();
@@ -165,21 +161,14 @@ export class AdminPayrollOpsFacade extends UnsubscribeControlDirective {
       .pipe(
         takeUntil(this.destroyed$),
         catchError((error: unknown) => {
-          this.errorKey.set(this.resolveErrorKey(error));
+          this.errorKey.set(resolveApiErrorKey(this.translate, error));
           return of(null);
         }),
         finalize(() => this.submitting.set(false))
       )
       .subscribe((response) => {
-        if (!response) {
-          this.snackbar.showError(
-            this.translate.instant(
-              this.errorKey() ?? PAYROLL_OPS_FALLBACK_ERROR_KEY
-            )
-          );
-          return;
-        }
-        this.snackbar.showSuccess(this.translate.instant(successKey));
+        if (!response) return;
+        this.snackbar.showSuccessTranslated(successKey);
         this.closePanel();
         onSuccess();
       });
@@ -194,11 +183,4 @@ export class AdminPayrollOpsFacade extends UnsubscribeControlDirective {
     this.errorKey.set(null);
   }
 
-  private resolveErrorKey(error: unknown): string {
-    const code = extractApiErrorCode(error);
-    if (code && PAYROLL_OPS_ERROR_KEY_MAP[code]) {
-      return PAYROLL_OPS_ERROR_KEY_MAP[code];
-    }
-    return PAYROLL_OPS_FALLBACK_ERROR_KEY;
-  }
 }

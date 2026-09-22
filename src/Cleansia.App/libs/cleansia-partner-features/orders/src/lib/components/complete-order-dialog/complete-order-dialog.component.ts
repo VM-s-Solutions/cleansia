@@ -1,12 +1,13 @@
-import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import {
+  CleansiaButtonComponent,
+  CleansiaTextareaComponent,
+  CleansiaTextInputComponent,
+} from '@cleansia/components';
 import { TranslateModule } from '@ngx-translate/core';
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
-import { ButtonModule } from 'primeng/button';
-import { InputTextModule } from 'primeng/inputtext';
-import { Textarea } from 'primeng/textarea';
-import { InputNumberModule } from 'primeng/inputnumber';
 
 export interface CompleteOrderDialogData {
   orderId: string;
@@ -23,13 +24,11 @@ export interface CompleteOrderDialogResult {
   selector: 'cleansia-partner-complete-order-dialog',
   standalone: true,
   imports: [
-    CommonModule,
     ReactiveFormsModule,
     TranslateModule,
-    ButtonModule,
-    InputTextModule,
-    Textarea,
-    InputNumberModule,
+    CleansiaButtonComponent,
+    CleansiaTextInputComponent,
+    CleansiaTextareaComponent,
   ],
   templateUrl: './complete-order-dialog.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -42,38 +41,24 @@ export class CompleteOrderDialogComponent {
   readonly data = this.config.data as CompleteOrderDialogData;
   readonly loading = signal(false);
 
+  // The minutes control carries a string: the text input hands over what was typed.
   readonly form = this.fb.nonNullable.group({
     actualCompletionTimeMinutes: [
-      this.data.estimatedTime,
+      String(this.data.estimatedTime),
       [Validators.required, Validators.min(1)],
     ],
     completionNotes: ['', [Validators.required, Validators.maxLength(1000)]],
   });
 
-  get estimatedTime(): number {
-    return this.data.estimatedTime;
-  }
+  private readonly formValue = toSignal(this.form.valueChanges, { initialValue: this.form.value });
 
-  get actualTime(): number {
-    return this.form.value.actualCompletionTimeMinutes || 0;
-  }
-
-  get delay(): number {
-    return this.actualTime - this.estimatedTime;
-  }
-
-  get delayPercentage(): number {
-    if (this.estimatedTime === 0) return 0;
-    return Math.round((this.delay / this.estimatedTime) * 100);
-  }
-
-  get isDelayed(): boolean {
-    return this.delay > 0;
-  }
-
-  get isOnTime(): boolean {
-    return this.delay <= 0;
-  }
+  readonly estimatedTime = this.data.estimatedTime;
+  readonly actualTime = computed(() => Number(this.formValue().actualCompletionTimeMinutes) || 0);
+  readonly delay = computed(() => this.actualTime() - this.estimatedTime);
+  readonly delayPercentage = computed(() =>
+    this.estimatedTime === 0 ? 0 : Math.round((this.delay() / this.estimatedTime) * 100)
+  );
+  readonly isDelayed = computed(() => this.delay() > 0);
 
   formatMinutes(minutes: number): string {
     const hours = Math.floor(minutes / 60);
@@ -93,7 +78,11 @@ export class CompleteOrderDialogComponent {
       return;
     }
 
-    const result: CompleteOrderDialogResult = this.form.getRawValue();
+    const { actualCompletionTimeMinutes, completionNotes } = this.form.getRawValue();
+    const result: CompleteOrderDialogResult = {
+      actualCompletionTimeMinutes: Number(actualCompletionTimeMinutes),
+      completionNotes,
+    };
 
     this.dialogRef.close(result);
   }

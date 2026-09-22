@@ -11,11 +11,9 @@ import {
 } from '@cleansia/admin-services';
 import { UnsubscribeControlDirective } from '@cleansia/directives';
 import { CleansiaAdminRoute, SnackbarService } from '@cleansia/services';
-import { TranslateService } from '@ngx-translate/core';
 import { catchError, finalize, of, takeUntil } from 'rxjs';
 import {
   BillingIntervalWireValue,
-  resolveMembershipPlanErrorKey,
 } from '../membership-plan-list/membership-plan-list.models';
 import {
   MembershipPlanPriceEntry,
@@ -34,7 +32,6 @@ export interface MembershipPlanCreateInput {
   prices: { [code: string]: MembershipPlanPriceEntry };
   discountPercentage: number;
   freeCancellationWindowHours: number;
-  trialPeriodDays: number;
   allowsExpressUpgrade: boolean;
   expressUpgradesPerMonth: number;
 }
@@ -44,12 +41,14 @@ export type MembershipPlanUpdateInput = Omit<
   'code' | 'billingInterval'
 >;
 
+// The only trial length the server accepts → /product/business-rules#cleansia-plus
+const NO_TRIAL_DAYS = 0;
+
 @Injectable()
 export class MembershipPlanFormFacade extends UnsubscribeControlDirective {
   private readonly membershipClient = inject(AdminMembershipClient);
   private readonly currencyClient = inject(AdminCurrencyClient);
   private readonly snackbar = inject(SnackbarService);
-  private readonly translate = inject(TranslateService);
   private readonly router = inject(Router);
 
   readonly plan = signal<MembershipPlanDetailDto | null>(null);
@@ -111,7 +110,7 @@ export class MembershipPlanFormFacade extends UnsubscribeControlDirective {
     command.prices = this.buildPrices(input.prices);
     command.discountPercentage = input.discountPercentage;
     command.freeCancellationWindowHours = input.freeCancellationWindowHours;
-    command.trialPeriodDays = input.trialPeriodDays;
+    command.trialPeriodDays = NO_TRIAL_DAYS;
     command.allowsExpressUpgrade = input.allowsExpressUpgrade;
     command.expressUpgradesPerMonth = input.expressUpgradesPerMonth;
 
@@ -119,19 +118,12 @@ export class MembershipPlanFormFacade extends UnsubscribeControlDirective {
       .create(command)
       .pipe(
         takeUntil(this.destroyed$),
-        catchError((error: unknown) => {
-          this.snackbar.showError(
-            this.translate.instant(resolveMembershipPlanErrorKey(error))
-          );
-          return of(null);
-        }),
+        catchError(() => of(null)),
         finalize(() => this.saving.set(false))
       )
       .subscribe((response) => {
         if (response) {
-          this.snackbar.showSuccess(
-            this.translate.instant('pages.membership_plans.form.success.created')
-          );
+          this.snackbar.showSuccessTranslated('pages.membership_plans.form.success.created');
           this.navigateBack();
         }
       });
@@ -147,7 +139,7 @@ export class MembershipPlanFormFacade extends UnsubscribeControlDirective {
     command.prices = this.buildPrices(input.prices);
     command.discountPercentage = input.discountPercentage;
     command.freeCancellationWindowHours = input.freeCancellationWindowHours;
-    command.trialPeriodDays = input.trialPeriodDays;
+    command.trialPeriodDays = NO_TRIAL_DAYS;
     command.allowsExpressUpgrade = input.allowsExpressUpgrade;
     command.expressUpgradesPerMonth = input.expressUpgradesPerMonth;
 
@@ -155,19 +147,12 @@ export class MembershipPlanFormFacade extends UnsubscribeControlDirective {
       .update(id, command)
       .pipe(
         takeUntil(this.destroyed$),
-        catchError((error: unknown) => {
-          this.snackbar.showError(
-            this.translate.instant(resolveMembershipPlanErrorKey(error))
-          );
-          return of(null);
-        }),
+        catchError(() => of(null)),
         finalize(() => this.saving.set(false))
       )
       .subscribe((response) => {
         if (response) {
-          this.snackbar.showSuccess(
-            this.translate.instant('pages.membership_plans.form.success.updated')
-          );
+          this.snackbar.showSuccessTranslated('pages.membership_plans.form.success.updated');
           this.navigateBack();
         }
       });

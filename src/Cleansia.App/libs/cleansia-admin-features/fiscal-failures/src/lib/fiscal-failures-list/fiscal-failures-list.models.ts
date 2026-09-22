@@ -1,6 +1,7 @@
 import { TemplateRef } from '@angular/core';
 import { FiscalErrorKind, FiscalFailureDto } from '@cleansia/admin-services';
 import { TableColumn, TableAction } from '@cleansia/components';
+import { formatDate } from '@cleansia/utils';
 import { TranslateService } from '@ngx-translate/core';
 
 /**
@@ -20,6 +21,20 @@ export function getFiscalErrorKindBadge(
   kind: FiscalErrorKind | number | undefined
 ): string | undefined {
   return FISCAL_ERROR_KIND_BADGES[Number(kind)];
+}
+
+// The shared status pill's tone per kind: a transient failure retries itself, a permanent or a
+// configuration one needs an administrator, an unknown one is neither yet.
+const FISCAL_ERROR_KIND_TONES: Readonly<Record<string, string>> = {
+  transient: 'warning',
+  permanent: 'danger',
+  configuration: 'danger',
+  unknown: 'neutral',
+};
+
+export function getFiscalErrorKindClass(kind: FiscalErrorKind | number | undefined): string {
+  const badge = getFiscalErrorKindBadge(kind);
+  return badge ? `status-badge status-badge--${FISCAL_ERROR_KIND_TONES[badge]}` : '';
 }
 
 export function getFiscalFailureTableColumns(
@@ -42,15 +57,11 @@ export function getFiscalFailureTableColumns(
     },
     {
       id: 'issuedAt',
+      numeric: true,
       field: 'issuedAt',
       header: 'fiscal_failures.list.columns.issued_at',
       width: '12%',
-      getValue: (row: FiscalFailureDto) => {
-        if (!row.issuedAt) return '';
-        const date =
-          row.issuedAt instanceof Date ? row.issuedAt : new Date(row.issuedAt);
-        return date.toLocaleString('en-GB');
-      },
+      getValue: (row: FiscalFailureDto) => formatDate(row.issuedAt, translate.currentLang, 'dateTime'),
     },
     {
       id: 'fiscalProviderKey',
@@ -64,6 +75,7 @@ export function getFiscalFailureTableColumns(
       field: 'errorKind',
       header: 'fiscal_failures.list.columns.error_kind',
       width: '10%',
+      align: 'center',
       customTemplate: errorKindTemplate,
     },
     {
@@ -75,6 +87,7 @@ export function getFiscalFailureTableColumns(
     },
     {
       id: 'retryCount',
+      numeric: true,
       field: 'retryCount',
       header: 'fiscal_failures.list.columns.retry_count',
       width: '8%',
@@ -82,17 +95,13 @@ export function getFiscalFailureTableColumns(
     },
     {
       id: 'nextRetryAt',
+      numeric: true,
       field: 'nextRetryAt',
       header: 'fiscal_failures.list.columns.next_retry_at',
       width: '12%',
-      getValue: (row: FiscalFailureDto) => {
-        if (!row.nextRetryAt) return translate.instant('fiscal_failures.list.no_retry');
-        const date =
-          row.nextRetryAt instanceof Date
-            ? row.nextRetryAt
-            : new Date(row.nextRetryAt);
-        return date.toLocaleString('en-GB');
-      },
+      getValue: (row: FiscalFailureDto) =>
+        formatDate(row.nextRetryAt, translate.currentLang, 'dateTime') ||
+        translate.instant('fiscal_failures.list.no_retry'),
     },
   ];
 }

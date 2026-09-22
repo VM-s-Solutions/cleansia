@@ -5,6 +5,7 @@ import {
   CleansiaButtonComponent,
   CleansiaLoaderComponent,
   CleansiaSectionComponent,
+  CleansiaStatusBadgeComponent,
 } from '@cleansia/components';
 import { CleansiaPermissionDirective } from '@cleansia/directives';
 import { Policy } from '@cleansia/services';
@@ -20,6 +21,7 @@ import { EmployeeDocumentsFacade } from './employee-documents.facade';
     CleansiaButtonComponent,
     CleansiaLoaderComponent,
     CleansiaSectionComponent,
+    CleansiaStatusBadgeComponent,
     CleansiaPermissionDirective,
   ],
   templateUrl: './employee-documents-section.component.html',

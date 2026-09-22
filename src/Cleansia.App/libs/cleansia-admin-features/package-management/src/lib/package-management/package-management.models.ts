@@ -13,38 +13,6 @@ export function mapStatusFilterToIsActive(
   return undefined;
 }
 
-export const PACKAGE_ERROR_KEY_MAP: Readonly<Record<string, string>> = {
-  'package.not_found': 'api.package.not_found',
-  'package.in_use': 'api.package.in_use',
-};
-
-export const PACKAGE_FALLBACK_ERROR_KEY = 'api.common.error_occurred';
-
-export function resolvePackageErrorKey(error: unknown): string {
-  const apiError = error as {
-    result?: { detail?: string; title?: string };
-    response?: string;
-  };
-  let code = apiError?.result?.detail || apiError?.result?.title;
-
-  if (!code && apiError?.response) {
-    try {
-      const parsed = JSON.parse(apiError.response) as {
-        detail?: string;
-        title?: string;
-      };
-      code = parsed.detail || parsed.title;
-    } catch {
-      code = undefined;
-    }
-  }
-
-  if (code && PACKAGE_ERROR_KEY_MAP[code]) {
-    return PACKAGE_ERROR_KEY_MAP[code];
-  }
-  return PACKAGE_FALLBACK_ERROR_KEY;
-}
-
 export function getPackageTableDefinition(
   defs: {
     onEdit: (row: PackageListItem) => void;
@@ -84,6 +52,7 @@ export function getPackageTableDefinition(
       },
       {
         id: 'price',
+        numeric: true,
         field: 'price',
         header: translate.instant('pages.package_management.columns.price'),
         getValue: (row: PackageListItem) => formatCurrency(row?.price),

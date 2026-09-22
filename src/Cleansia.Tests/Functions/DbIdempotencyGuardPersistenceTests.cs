@@ -229,8 +229,6 @@ public sealed class DbIdempotencyGuardPersistenceTests : IDisposable
         public Task<bool> ExistWithIdsAsync(IEnumerable<string> ids, CancellationToken ct) => Task.FromResult(false);
         public Task<ProcessedMessage?> GetByIdAsync(string id, CancellationToken ct) => Task.FromResult<ProcessedMessage?>(null);
         public IQueryable<ProcessedMessage> GetByIds(IEnumerable<string> ids) => Array.Empty<ProcessedMessage>().AsQueryable();
-        public IQueryable<ProcessedMessage> GetPaged(int offset, int limit) => Array.Empty<ProcessedMessage>().AsQueryable();
-        public IQueryable<ProcessedMessage> GetPaged(int offset, int limit, System.Linq.Expressions.Expression<Func<ProcessedMessage, bool>> filter) => Array.Empty<ProcessedMessage>().AsQueryable();
         public IQueryable<ProcessedMessage> GetPagedSort<TSort>(int offset, int limit, System.Linq.Expressions.Expression<Func<ProcessedMessage, bool>> filter, Core.Domain.Sorting.Common.SortDefinition sort) where TSort : Core.Domain.Sorting.Common.BaseSort<ProcessedMessage> => Array.Empty<ProcessedMessage>().AsQueryable();
         public IQueryable<ProcessedMessage> GetPagedSort<TSort>(int offset, int limit, System.Linq.Expressions.Expression<Func<ProcessedMessage, bool>>? filter, IEnumerable<Core.Domain.Sorting.Common.SortDefinition> sort) where TSort : Core.Domain.Sorting.Common.BaseSort<ProcessedMessage> => Array.Empty<ProcessedMessage>().AsQueryable();
         public Task<int> GetCountAsync(CancellationToken ct) => Task.FromResult(0);
@@ -241,7 +239,6 @@ public sealed class DbIdempotencyGuardPersistenceTests : IDisposable
         public void Remove(ProcessedMessage entity) { }
         public void RemoveRange(IEnumerable<ProcessedMessage> entities) { }
         public void Deactivate(ProcessedMessage entity) { }
-        public void DeactivateRange(IEnumerable<ProcessedMessage> entities) { }
         public IQueryable<ProcessedMessage> GetQueryable() => Array.Empty<ProcessedMessage>().AsQueryable();
         public IQueryable<ProcessedMessage> GetQueryableIgnoringTenant() => Array.Empty<ProcessedMessage>().AsQueryable();
         public Task<Microsoft.EntityFrameworkCore.Storage.IDbContextTransaction> BeginTransactionAsync(CancellationToken ct) => throw new NotSupportedException();

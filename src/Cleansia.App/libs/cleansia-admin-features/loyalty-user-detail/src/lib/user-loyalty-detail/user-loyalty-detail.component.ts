@@ -35,6 +35,7 @@ import {
 } from '@cleansia/components';
 import { CleansiaPermissionDirective } from '@cleansia/directives';
 import { Policy } from '@cleansia/services';
+import { formatDate } from '@cleansia/utils';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { Subject, takeUntil } from 'rxjs';
 import {
@@ -101,9 +102,13 @@ export class UserLoyaltyDetailComponent
   readonly expireCreditDialogVisible = signal<boolean>(false);
   /** The one account the open discharge dialog is about; null while it is closed. */
   readonly expireCreditAccount = signal<GetUserCreditCurrencyAccount | null>(null);
+  readonly expireCreditBalanceLabel = computed(() => {
+    const account = this.expireCreditAccount();
+    return account ? this.facade.formatBalance(account.balance, account.currencyCode) : '';
+  });
 
   activityColumns!: TableColumn<GetUserLoyaltyActivityActivityItem>[];
-  creditColumns!: TableColumn<GetUserCreditLedgerEntry>[];
+  private readonly creditColumnsByCurrency = new Map<string, TableColumn<GetUserCreditLedgerEntry>[]>();
   referralsAsReferrerColumns!: TableColumn<AdminReferralListItem>[];
   referralsAsReferredColumns!: TableColumn<AdminReferralListItem>[];
 
@@ -144,24 +149,6 @@ export class UserLoyaltyDetailComponent
     );
   });
 
-  readonly tierAchievedLabel = computed(() => {
-    const acc = this.facade.account();
-    if (!acc) return '';
-    return this.translate.instant(
-      'pages.loyalty_user_detail.tier_achieved_on',
-      { date: this.formatDate(acc.tierAchievedOn) }
-    );
-  });
-
-  readonly completedBookingsLabel = computed(() => {
-    const acc = this.facade.account();
-    if (!acc) return '';
-    return this.translate.instant(
-      'pages.loyalty_user_detail.completed_bookings',
-      { count: acc.completedBookingsCount }
-    );
-  });
-
   ngOnInit(): void {
     const id = this.route.snapshot.paramMap.get('userId');
     if (!id) {
@@ -186,13 +173,12 @@ export class UserLoyaltyDetailComponent
   ngAfterViewInit(): void {
     this.rebuildActivityColumns();
     this.rebuildReferralColumns();
-    this.rebuildCreditColumns();
     this.translate.onLangChange
       .pipe(takeUntil(this.destroy$))
       .subscribe(() => {
         this.rebuildActivityColumns();
         this.rebuildReferralColumns();
-        this.rebuildCreditColumns();
+        this.creditColumnsByCurrency.clear();
       });
   }
 
@@ -233,14 +219,7 @@ export class UserLoyaltyDetailComponent
   }
 
   formatDate(d?: Date): string {
-    if (!d) return '—';
-    return new Intl.DateTimeFormat(this.translate.currentLang ?? 'en', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    }).format(d);
+    return formatDate(d, this.translate.currentLang, 'dateTime') || '—';
   }
 
   formatPoints(value: number): string {
@@ -250,22 +229,36 @@ export class UserLoyaltyDetailComponent
   /**
    * The ledger, as a statement. Amount FIRST and signed, because the question an admin brings to this
    * table is "how much, and which way" — a reason column read before the number tells them nothing.
+   * A ledger row carries no currency of its own; the account it belongs to does, so the columns are
+   * built once per currency and kept until the language changes.
    */
-  private rebuildCreditColumns(): void {
+  creditColumnsFor(account: GetUserCreditCurrencyAccount): TableColumn<GetUserCreditLedgerEntry>[] {
+    const currencyCode = account.currencyCode ?? '';
+    let columns = this.creditColumnsByCurrency.get(currencyCode);
+    if (!columns) {
+      columns = this.buildCreditColumns(account.currencyCode);
+      this.creditColumnsByCurrency.set(currencyCode, columns);
+    }
+    return columns;
+  }
+
+  private buildCreditColumns(currencyCode: string | undefined): TableColumn<GetUserCreditLedgerEntry>[] {
     const t = this.translate;
-    this.creditColumns = [
+    return [
       {
         id: 'createdOn',
         field: 'createdOn',
         header: t.instant('pages.loyalty_user_detail.credit.column.date'),
         getValue: (row) => this.formatDate(row.createdOn),
+        numeric: true,
         width: '22%',
       },
       {
         id: 'amount',
         field: 'amount',
         header: t.instant('pages.loyalty_user_detail.credit.column.amount'),
-        getValue: (row) => this.formatCreditAmount(row.amount),
+        getValue: (row) => this.facade.formatLedgerAmount(row.amount, currencyCode),
+        numeric: true,
         width: '16%',
       },
       {
@@ -285,12 +278,6 @@ export class UserLoyaltyDetailComponent
     ];
   }
 
-  /** Signed and explicit: a spend reads as a spend without the reader decoding the reason column. */
-  private formatCreditAmount(amount: number | undefined): string {
-    const value = amount ?? 0;
-    return value > 0 ? `+${value}` : `${value}`;
-  }
-
   private rebuildActivityColumns(): void {
     const t = this.translate;
     this.activityColumns = [
@@ -299,6 +286,7 @@ export class UserLoyaltyDetailComponent
         field: 'occurredOn',
         header: t.instant('pages.loyalty_user_detail.activity.column.date'),
         getValue: (row) => this.formatDate(row.occurredOn),
+        numeric: true,
         width: '22%',
       },
       {
@@ -313,6 +301,7 @@ export class UserLoyaltyDetailComponent
         field: 'points',
         header: t.instant('pages.loyalty_user_detail.activity.column.points'),
         getValue: (row) => this.formatPoints(row.points),
+        numeric: true,
         width: '15%',
       },
       {
@@ -383,6 +372,7 @@ export class UserLoyaltyDetailComponent
         field: 'acceptedOn',
         header: t.instant('pages.loyalty_referrals.column.accepted_on'),
         getValue: (row) => this.formatDate(row.acceptedOn),
+        numeric: true,
         width: '20%',
       },
       {
@@ -390,6 +380,7 @@ export class UserLoyaltyDetailComponent
         field: 'firstQualifyingOrderOn',
         header: t.instant('pages.loyalty_referrals.column.qualified_on'),
         getValue: (row) => this.formatDate(row.firstQualifyingOrderOn),
+        numeric: true,
         width: '20%',
       },
       {
@@ -404,6 +395,7 @@ export class UserLoyaltyDetailComponent
                 referrer: row.pointsAwardedToReferrer ?? 0,
                 referred: row.pointsAwardedToReferred ?? 0,
               }),
+        numeric: true,
         width: '20%',
       },
     ];
@@ -509,13 +501,6 @@ export class UserLoyaltyDetailComponent
     this.facade.expireCredit(payload, () => this.onExpireCreditDialogVisibleChange(false));
   }
 
-  /** Signed, so the ledger reads as a statement: a spend is negative, a grant is positive. */
-  creditAmountClass(amount: number | undefined): string {
-    return (amount ?? 0) < 0
-      ? 'user-loyalty-detail__credit-amount--out'
-      : 'user-loyalty-detail__credit-amount--in';
-  }
-
   creditReasonKey(reason: CreditTransactionReason | undefined): string {
     switch (reason) {
       case CreditTransactionReason.DisputeSettlement:
@@ -537,6 +522,10 @@ export class UserLoyaltyDetailComponent
 
   exportSubjectData(): void {
     this.facade.exportSubjectData();
+  }
+
+  toggleIncidentPanel(): void {
+    this.facade.toggleIncidentPanel();
   }
 
   exportIncidentFile(): void {

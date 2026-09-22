@@ -24,6 +24,11 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.ArrowDropDown
+import androidx.compose.material.icons.outlined.CheckCircle
+import androidx.compose.material.icons.outlined.Close
+import androidx.compose.material.icons.outlined.ErrorOutline
+import androidx.compose.material.icons.outlined.Image
+import androidx.compose.material.icons.outlined.PictureAsPdf
 import androidx.compose.material.icons.outlined.Warning
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -55,6 +60,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -71,6 +77,7 @@ import cz.cleansia.customer.ui.state.ActionState
  *
  * Form fields: reason dropdown (7 enum values, 1-indexed) + description
  * textarea bounded by [DisputeFormConstants] (counter shown). Submit is gated on both.
+ * Evidence is optional and picked here; it uploads to the new dispute right after the create.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -91,6 +98,11 @@ fun CreateDisputeScreen(
     // renders nothing in either case rather than an empty box.
     val lineOptions by viewModel.lineOptions.collectAsStateWithLifecycle()
     val pickedLineKeys by viewModel.pickedLineKeys.collectAsStateWithLifecycle()
+    val pickedEvidence by viewModel.pickedEvidence.collectAsStateWithLifecycle()
+
+    val pickFiles = rememberEvidencePicker(viewModel.snackbar) { bytes, fileName, mimeType ->
+        viewModel.addEvidence(bytes = bytes, fileName = fileName, mimeType = mimeType)
+    }
 
     // Navigate out on success. SharedFlow one-shot — won't replay on
     // recomposition.
@@ -236,6 +248,35 @@ fun CreateDisputeScreen(
                 }
             }
 
+            // ── Evidence ──
+            if (viewModel.orderId != null) {
+                Spacer(Modifier.height(20.dp))
+                Text(
+                    text = stringResource(R.string.dispute_evidence_section_title),
+                    style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    text = stringResource(R.string.dispute_create_evidence_hint),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Spacer(Modifier.height(8.dp))
+                pickedEvidence.forEach { file ->
+                    PickedEvidenceRow(
+                        file = file,
+                        removable = !submitting,
+                        onRemove = { viewModel.removeEvidence(file.key) },
+                    )
+                    Spacer(Modifier.height(8.dp))
+                }
+                AddEvidenceButton(
+                    onClick = { pickFiles.launch("*/*") },
+                    enabled = !submitting,
+                )
+            }
+
             // ── Inline error ──
             val errorText = error
             if (!errorText.isNullOrBlank()) {
@@ -294,6 +335,105 @@ private fun DisputeLineRow(
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
+        }
+    }
+}
+
+/* ── One picked evidence file ── */
+
+@Composable
+private fun PickedEvidenceRow(
+    file: PickedEvidence,
+    removable: Boolean,
+    onRemove: () -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(12.dp))
+            .background(MaterialTheme.colorScheme.surface)
+            .border(
+                1.dp,
+                MaterialTheme.colorScheme.outlineVariant,
+                RoundedCornerShape(12.dp),
+            )
+            .padding(start = 12.dp, top = 8.dp, bottom = 8.dp, end = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Box(
+            modifier = Modifier
+                .size(40.dp)
+                .clip(RoundedCornerShape(8.dp))
+                .background(MaterialTheme.colorScheme.surfaceVariant),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                imageVector = if (file.isPdf) Icons.Outlined.PictureAsPdf else Icons.Outlined.Image,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(22.dp),
+            )
+        }
+        Spacer(Modifier.width(12.dp))
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = file.fileName,
+                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
+                color = MaterialTheme.colorScheme.onSurface,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            when (file.upload) {
+                EvidenceUploadState.Pending -> Unit
+                EvidenceUploadState.Uploading -> Text(
+                    text = stringResource(R.string.dispute_evidence_uploading),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                EvidenceUploadState.Uploaded -> Text(
+                    text = stringResource(R.string.dispute_evidence_uploaded),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.primary,
+                )
+                EvidenceUploadState.Failed -> Text(
+                    text = stringResource(R.string.dispute_evidence_upload_failed),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.error,
+                )
+            }
+        }
+        Spacer(Modifier.width(8.dp))
+        when (file.upload) {
+            EvidenceUploadState.Pending -> IconButton(onClick = onRemove, enabled = removable) {
+                Icon(
+                    Icons.Outlined.Close,
+                    contentDescription = stringResource(R.string.dispute_evidence_remove),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            EvidenceUploadState.Uploading -> CircularProgressIndicator(
+                strokeWidth = 2.dp,
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier
+                    .padding(end = 12.dp)
+                    .size(20.dp),
+            )
+            EvidenceUploadState.Uploaded -> Icon(
+                Icons.Outlined.CheckCircle,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier
+                    .padding(end = 12.dp)
+                    .size(22.dp),
+            )
+            EvidenceUploadState.Failed -> Icon(
+                Icons.Outlined.ErrorOutline,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.error,
+                modifier = Modifier
+                    .padding(end = 12.dp)
+                    .size(22.dp),
+            )
         }
     }
 }

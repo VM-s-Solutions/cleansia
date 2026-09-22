@@ -1,35 +1,28 @@
-import { CommonModule } from '@angular/common';
+import { NgClass } from '@angular/common';
 import {
-  AfterViewInit,
   ChangeDetectionStrategy,
-  ChangeDetectorRef,
   Component,
   computed,
   inject,
-  OnDestroy,
-  signal,
+  OnInit,
   TemplateRef,
   viewChild,
 } from '@angular/core';
-import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { ReactiveFormsModule } from '@angular/forms';
 import { LanguageListItem } from '@cleansia/admin-services';
 import {
   CleansiaButtonComponent,
+  CleansiaFilterChipsComponent,
+  CleansiaFilterDrawerComponent,
   CleansiaLoaderComponent,
   CleansiaSectionComponent,
   CleansiaTableComponent,
   CleansiaTextInputComponent,
   CleansiaTitleComponent,
-  TableColumn,
-  TableAction,
 } from '@cleansia/components';
 import { PermissionService, Policy } from '@cleansia/services';
 import { CleansiaPermissionDirective } from '@cleansia/directives';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
-import { ConfirmationService } from 'primeng/api';
-import { ConfirmDialogModule } from 'primeng/confirmdialog';
-import { debounceTime, distinctUntilChanged, Subject, takeUntil } from 'rxjs';
 import { LanguageManagementFacade } from './language-management.facade';
 import {
   getLanguageTableDefinition,
@@ -40,7 +33,7 @@ import {
   selector: 'cleansia-admin-language-management',
   standalone: true,
   imports: [
-    CommonModule,
+    NgClass,
     CleansiaButtonComponent,
     CleansiaTextInputComponent,
     TranslatePipe,
@@ -48,155 +41,43 @@ import {
     CleansiaTitleComponent,
     CleansiaLoaderComponent,
     CleansiaSectionComponent,
+    CleansiaFilterDrawerComponent,
+    CleansiaFilterChipsComponent,
     ReactiveFormsModule,
-    ConfirmDialogModule,
     CleansiaPermissionDirective,
   ],
   templateUrl: './language-management.component.html',
-  providers: [LanguageManagementFacade, ConfirmationService],
+  providers: [LanguageManagementFacade],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class LanguageManagementComponent implements AfterViewInit, OnDestroy {
-  private readonly cd = inject(ChangeDetectorRef);
-  private readonly fb = inject(FormBuilder);
-  private readonly router = inject(Router);
+export class LanguageManagementComponent implements OnInit {
   protected readonly facade = inject(LanguageManagementFacade);
   protected readonly Policy = Policy;
   private readonly translate = inject(TranslateService);
   private readonly permissions = inject(PermissionService);
-  private readonly confirmationService = inject(ConfirmationService);
 
-  flagTemplate = viewChild<TemplateRef<LanguageListItem>>('flagTemplate');
+  private readonly flagTemplate = viewChild<TemplateRef<LanguageListItem>>('flagTemplate');
 
-  languageColumns!: TableColumn<LanguageListItem>[];
-  languageActions!: TableAction<LanguageListItem>[];
+  readonly getLanguageToCountryCode = getLanguageToCountryCode;
 
-  // Expose helper function to template
-  getLanguageToCountryCode = getLanguageToCountryCode;
-
-  private lastSortField: string | null = null;
-  private lastSortOrder: number | null = null;
-  private destroy$ = new Subject<void>();
-
-  filterForm = this.fb.group({
-    searchTerm: [''],
-  });
-
-  // Filter drawer state
-  isFilterDrawerOpen = signal(false);
-  private filterFormVersion = signal(0);
-  activeFilterChips = computed(() => {
-    this.filterFormVersion();
-    return this.getActiveFilterChips();
-  });
-  hasActiveFilters = computed(() => this.activeFilterChips().length > 0);
-  activeFilterCount = computed(() => this.activeFilterChips().length);
-
-  ngAfterViewInit(): void {
-    this.rebuildTableDefinitions();
-    this.cd.detectChanges();
-
-    this.filterForm.valueChanges
-      .pipe(takeUntil(this.destroy$))
-      .subscribe(() => {
-        this.filterFormVersion.update(v => v + 1);
-      });
-
-    this.filterForm.valueChanges
-      .pipe(debounceTime(500), distinctUntilChanged(), takeUntil(this.destroy$))
-      .subscribe(() => {
-        this.applyFilters();
-      });
-
-    // Rebuild tables when language changes
-    this.translate.onLangChange
-      .pipe(takeUntil(this.destroy$))
-      .subscribe(() => {
-        this.rebuildTableDefinitions();
-        this.cd.detectChanges();
-      });
-
-    this.facade.loadLanguages();
-  }
-
-  private rebuildTableDefinitions(): void {
-    const tableDef = getLanguageTableDefinition(
+  protected readonly table = computed(() => {
+    this.facade.lang();
+    return getLanguageTableDefinition(
       {
-        onEdit: this.editLanguage.bind(this),
-        onDelete: this.confirmDeleteLanguage.bind(this),
+        onEdit: (row) => this.facade.navigateToEditLanguage(row),
+        onDelete: (row) => this.confirmDeleteLanguage(row),
       },
       this.translate,
       this.permissions,
       this.flagTemplate()
     );
-    this.languageColumns = tableDef.columns;
-    this.languageActions = tableDef.actions;
-  }
+  });
 
-  ngOnDestroy(): void {
-    this.destroy$.next();
-    this.destroy$.complete();
-  }
-
-  applyFilters(): void {
-    // Filtering is handled client-side in the table component
-  }
-
-  resetFilters(): void {
-    this.filterForm.reset({
-      searchTerm: '',
-    });
-  }
-
-  createLanguage(): void {
-    this.facade.navigateToCreateLanguage();
-  }
-
-  editLanguage(language: LanguageListItem): void {
-    this.facade.navigateToEditLanguage(language);
+  ngOnInit(): void {
+    this.facade.loadLanguages();
   }
 
   confirmDeleteLanguage(language: LanguageListItem): void {
-    this.confirmationService.confirm({
-      message: this.translate.instant('pages.language_management.delete_confirm'),
-      header: this.translate.instant('pages.language_management.delete_language'),
-      icon: 'pi pi-exclamation-triangle',
-      accept: () => {
-        this.facade.deleteLanguage(language);
-      },
-    });
-  }
-
-  // Filter drawer methods
-  openFilterDrawer(): void {
-    this.isFilterDrawerOpen.set(true);
-  }
-
-  closeFilterDrawer(): void {
-    this.isFilterDrawerOpen.set(false);
-  }
-
-  getActiveFilterChips(): { key: string; label: string; value: string }[] {
-    const chips: { key: string; label: string; value: string }[] = [];
-    const values = this.filterForm.value;
-
-    if (values.searchTerm) {
-      chips.push({
-        key: 'searchTerm',
-        label: this.translate.instant('pages.language_management.filters.search'),
-        value: values.searchTerm,
-      });
-    }
-
-    return chips;
-  }
-
-  removeFilterChip(key: string): void {
-    this.filterForm.patchValue({ [key]: '' });
-    this.applyFilters();
-  }
-
-  clearAllFilters(): void {
-    this.resetFilters();
+    this.facade.deleteLanguage(language);
   }
 }

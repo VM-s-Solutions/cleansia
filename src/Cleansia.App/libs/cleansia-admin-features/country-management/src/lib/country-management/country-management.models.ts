@@ -92,41 +92,6 @@ export function getCountryFlagCode(isoCode: string | undefined): string {
   return lowerCode;
 }
 
-export const COUNTRY_ERROR_KEY_MAP: Readonly<Record<string, string>> = {
-  'country.not_found': 'api.country.not_found',
-  'country.not_serviced': 'api.country.not_serviced',
-  'country.market_not_ready': 'api.country.market_not_ready',
-  'country.default_market_changed_concurrently':
-    'api.country.default_market_changed_concurrently',
-};
-
-export const COUNTRY_FALLBACK_ERROR_KEY = 'api.common.error_occurred';
-
-export function resolveCountryErrorKey(error: unknown): string {
-  const apiError = error as {
-    result?: { detail?: string; title?: string };
-    response?: string;
-  };
-  let code = apiError?.result?.detail || apiError?.result?.title;
-
-  if (!code && apiError?.response) {
-    try {
-      const parsed = JSON.parse(apiError.response) as {
-        detail?: string;
-        title?: string;
-      };
-      code = parsed.detail || parsed.title;
-    } catch {
-      code = undefined;
-    }
-  }
-
-  if (code && COUNTRY_ERROR_KEY_MAP[code]) {
-    return COUNTRY_ERROR_KEY_MAP[code];
-  }
-  return COUNTRY_FALLBACK_ERROR_KEY;
-}
-
 export function getCountryTableDefinition(
   defs: {
     onEdit: (row: CountryListItem) => void;
@@ -135,8 +100,7 @@ export function getCountryTableDefinition(
   },
   translate: TranslateService,
   permissions: PermissionService,
-  flagTemplate?: TemplateRef<CountryListItem>,
-  defaultMarketTemplate?: TemplateRef<CountryListItem>
+  flagTemplate?: TemplateRef<CountryListItem>
 ): { columns: TableColumn<CountryListItem>[]; actions: TableAction<CountryListItem>[] } {
   return {
     columns: [
@@ -168,7 +132,7 @@ export function getCountryTableDefinition(
         header: translate.instant('pages.country_management.columns.default_market'),
         sortable: false,
         width: '15%',
-        customTemplate: defaultMarketTemplate,
+        getValue: (row: CountryListItem) => (row.isDefaultMarket ? translate.instant('global.yes') : '—'),
       },
     ],
     actions: [

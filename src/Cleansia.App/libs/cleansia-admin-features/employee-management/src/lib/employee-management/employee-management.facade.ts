@@ -1,4 +1,5 @@
-import { Injectable, inject, signal } from '@angular/core';
+import { computed, Injectable, inject, signal } from '@angular/core';
+import { FormBuilder } from '@angular/forms';
 import {
   AdminClient,
   AdminEmployeeListItem,
@@ -6,10 +7,12 @@ import {
   ContractStatus,
   RejectEmployeeRequest,
   SortDefinition,
+  SortDirection,
 } from '@cleansia/admin-services';
-import { ICleansiaSelectOption } from '@cleansia/components';
+import { FilterChip, FilterDrawerState, ICleansiaSelectOption, PaginationState, SortEvent } from '@cleansia/components';
 import { UnsubscribeControlDirective } from '@cleansia/directives';
 import { SnackbarService } from '@cleansia/services';
+import { currentLanguage } from '@cleansia/utils';
 import { TranslateService } from '@ngx-translate/core';
 import { DialogService } from 'primeng/dynamicdialog';
 import { catchError, finalize, of, takeUntil } from 'rxjs';
@@ -21,6 +24,12 @@ import {
   RejectDialogData,
   RejectDialogResult,
 } from '../components';
+import {
+  buildActiveStatusOptions,
+  buildContractStatusOptions,
+  buildFilterChips,
+  toggleContractStatusInList,
+} from './employee-management.helpers';
 
 export interface EmployeeFilterParams {
   contractStatuses?: ContractStatus[];
@@ -41,43 +50,42 @@ export class EmployeeManagementFacade extends UnsubscribeControlDirective {
   readonly totalRecords = signal<number>(0);
   readonly countries = signal<ICleansiaSelectOption[]>([]);
 
+  readonly lang = currentLanguage(this.translate);
+  readonly contractStatusOptions = computed(() => {
+    this.lang();
+    return buildContractStatusOptions(this.translate);
+  });
+  readonly activeStatusOptions = computed(() => {
+    this.lang();
+    return buildActiveStatusOptions(this.translate);
+  });
+  readonly filterForm = inject(FormBuilder).group({
+    contractStatus: [[] as ContractStatus[]],
+    searchTerm: [''],
+    isActive: [null as boolean | null],
+  });
+  readonly filters = new FilterDrawerState({
+    form: this.filterForm,
+    lang: this.lang,
+    chips: (value): FilterChip[] =>
+      buildFilterChips(value, this.contractStatusOptions(), this.activeStatusOptions(), this.translate),
+    apply: (value) =>
+      this.applyFilter({
+        contractStatuses: value.contractStatus?.length ? value.contractStatus : undefined,
+        searchTerm: value.searchTerm?.trim() || undefined,
+        isActive: value.isActive ?? undefined,
+      }),
+  });
+
   private currentFilter = signal<EmployeeFilterParams | null>(null);
   private currentOffset = signal<number>(0);
   private currentLimit = signal<number>(20);
   private currentSort = signal<SortDefinition[] | undefined>(undefined);
 
-  readonly contractStatusOptions = [
-    {
-      label: this.translate.instant(
-        'pages.employee_management.contract_status.pending'
-      ),
-      value: ContractStatus.Pending,
-    },
-    {
-      label: this.translate.instant(
-        'pages.employee_management.contract_status.active'
-      ),
-      value: ContractStatus.Active,
-    },
-    {
-      label: this.translate.instant(
-        'pages.employee_management.contract_status.approved'
-      ),
-      value: ContractStatus.Approved,
-    },
-    {
-      label: this.translate.instant(
-        'pages.employee_management.contract_status.rejected'
-      ),
-      value: ContractStatus.Rejected,
-    },
-    {
-      label: this.translate.instant(
-        'pages.employee_management.contract_status.terminated'
-      ),
-      value: ContractStatus.Terminated,
-    },
-  ];
+  constructor() {
+    super();
+    this.filters.connect(this.destroyed$);
+  }
 
   loadEmployees(): void {
     this.loading.set(true);
@@ -110,14 +118,19 @@ export class EmployeeManagementFacade extends UnsubscribeControlDirective {
       });
   }
 
-  onPageChange(offset: number, limit: number): void {
-    this.currentOffset.set(offset);
-    this.currentLimit.set(limit);
+  onPageChange(event: PaginationState): void {
+    this.currentOffset.set(event.first);
+    this.currentLimit.set(event.rows);
     this.loadEmployees();
   }
 
-  onSortChange(sort: SortDefinition[] | undefined): void {
-    this.currentSort.set(sort);
+  onSortChange(event: SortEvent): void {
+    this.currentSort.set([
+      new SortDefinition({
+        field: event.field,
+        direction: event.order === 1 ? SortDirection.Ascending : SortDirection.Descending,
+      }),
+    ]);
     this.loadEmployees();
   }
 
@@ -127,10 +140,18 @@ export class EmployeeManagementFacade extends UnsubscribeControlDirective {
     this.loadEmployees();
   }
 
-  resetFilter(): void {
-    this.currentFilter.set(null);
-    this.currentOffset.set(0);
-    this.loadEmployees();
+  isContractStatusChecked(status: ContractStatus): boolean {
+    return this.filterForm.value.contractStatus?.includes(status) ?? false;
+  }
+
+  setContractStatus(status: ContractStatus, checked: boolean): void {
+    this.filterForm.patchValue({
+      contractStatus: toggleContractStatusInList(this.filterForm.value.contractStatus || [], status, checked),
+    });
+  }
+
+  selectActiveStatus(value: boolean | null): void {
+    this.filterForm.patchValue({ isActive: value });
   }
 
   approveEmployee(employeeId: string, workCountryId: string, notes?: string): void {
@@ -145,10 +166,8 @@ export class EmployeeManagementFacade extends UnsubscribeControlDirective {
       )
       .subscribe((response) => {
         if (response) {
-          this.snackbarService.showSuccess(
-            this.translate.instant(
-              'pages.employee_management.messages.approve_success'
-            )
+          this.snackbarService.showSuccessTranslated(
+            'pages.employee_management.messages.approve_success'
           );
           this.loadEmployees();
         }
@@ -170,9 +189,6 @@ export class EmployeeManagementFacade extends UnsubscribeControlDirective {
 
   private showApproveDialog(employeeId: string): void {
     const dialogData: ApproveDialogData = {
-      title: this.translate.instant(
-        'pages.employee_management.approve_dialog.title'
-      ),
       subtitle: this.translate.instant(
         'pages.employee_management.approve_dialog.subtitle'
       ),
@@ -184,8 +200,11 @@ export class EmployeeManagementFacade extends UnsubscribeControlDirective {
       header: this.translate.instant(
         'pages.employee_management.approve_dialog.title'
       ),
-      width: '500px',
       modal: true,
+      closable: true,
+      draggable: false,
+      resizable: false,
+      styleClass: 'cleansia-dialog dialog-panel',
     });
 
     dialogRef?.onClose.pipe(takeUntil(this.destroyed$)).subscribe((result: ApproveDialogResult | undefined) => {
@@ -226,10 +245,8 @@ export class EmployeeManagementFacade extends UnsubscribeControlDirective {
       )
       .subscribe((response) => {
         if (response) {
-          this.snackbarService.showSuccess(
-            this.translate.instant(
-              'pages.employee_management.messages.reject_success'
-            )
+          this.snackbarService.showSuccessTranslated(
+            'pages.employee_management.messages.reject_success'
           );
           this.loadEmployees();
         }
@@ -241,9 +258,6 @@ export class EmployeeManagementFacade extends UnsubscribeControlDirective {
     if (!employeeId) return;
 
     const dialogData: RejectDialogData = {
-      title: this.translate.instant(
-        'pages.employee_management.reject_dialog.title'
-      ),
       subtitle: this.translate.instant(
         'pages.employee_management.reject_dialog.subtitle'
       ),
@@ -254,8 +268,11 @@ export class EmployeeManagementFacade extends UnsubscribeControlDirective {
       header: this.translate.instant(
         'pages.employee_management.reject_dialog.title'
       ),
-      width: '500px',
       modal: true,
+      closable: true,
+      draggable: false,
+      resizable: false,
+      styleClass: 'cleansia-dialog dialog-panel',
     });
 
     dialogRef?.onClose.pipe(takeUntil(this.destroyed$)).subscribe((result: RejectDialogResult | undefined) => {

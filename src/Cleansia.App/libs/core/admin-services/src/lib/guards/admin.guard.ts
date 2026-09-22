@@ -8,11 +8,11 @@ export const adminGuard: CanActivateFn = () => {
   const router = inject(Router);
 
   if (!authService.isLoggedIn()) {
-    return router.navigate([CleansiaAdminRoute.LOGIN]);
+    return router.createUrlTree([`/${CleansiaAdminRoute.LOGIN}`]);
   }
 
   if (!authService.isAdministrator()) {
-    return router.navigate([CleansiaAdminRoute.UNAUTHORIZED]);
+    return router.createUrlTree([`/${CleansiaAdminRoute.UNAUTHORIZED}`]);
   }
 
   return true;

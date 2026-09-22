@@ -6,15 +6,6 @@ namespace Cleansia.Infra.Database.Repositories;
 
 public class EmployeeDocumentRepository(CleansiaDbContext context) : BaseRepository<EmployeeDocument>(context), IEmployeeDocumentRepository
 {
-    public Task<EmployeeDocument?> GetByIdWithVersionHistoryAsync(string id, CancellationToken cancellationToken = default)
-    {
-        return GetDbSet()
-            .Include(d => d.PreviousVersion)
-            .Include(d => d.Employee)
-                .ThenInclude(e => e!.User)
-            .FirstOrDefaultAsync(d => d.Id == id, cancellationToken);
-    }
-
     public Task<List<EmployeeDocument>> GetByEmployeeIdAsync(string employeeId, bool includeInactive = false, CancellationToken cancellationToken = default)
     {
         var query = GetDbSet()
@@ -68,15 +59,6 @@ public class EmployeeDocumentRepository(CleansiaDbContext context) : BaseReposit
         }
 
         return versions.OrderBy(v => v.Version).ToList();
-    }
-
-    public Task<EmployeeDocument?> GetLatestVersionAsync(string documentId, CancellationToken cancellationToken = default)
-    {
-        // Find all documents in the version chain and get the one with highest version
-        return GetDbSet()
-            .Where(d => d.Id == documentId || d.PreviousVersionId == documentId)
-            .OrderByDescending(d => d.Version)
-            .FirstOrDefaultAsync(cancellationToken);
     }
 
     public Task<EmployeeDocument?> GetLatestByFileNameAsync(string employeeId, string fileName, CancellationToken cancellationToken = default)

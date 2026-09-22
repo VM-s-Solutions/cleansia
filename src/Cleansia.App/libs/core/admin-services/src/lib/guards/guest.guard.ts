@@ -4,15 +4,12 @@ import { CleansiaAdminRoute } from '@cleansia/services';
 import { AdminAuthService } from '../services';
 
 /**
- * Guard that prevents authenticated admin users from accessing guest-only pages
- * (login). Redirects logged-in admins to the home route, which resolves to the
- * first page their role can see.
+ * Keeps a signed-in administrator off the guest-only screens (login) by landing them on the home
+ * route, which resolves to the first page their role can see.
  */
 export const guestGuard: CanActivateFn = () => {
   const authService = inject(AdminAuthService);
   const router = inject(Router);
 
-  return authService.isLoggedIn()
-    ? router.navigate(['/' + CleansiaAdminRoute.HOME])
-    : true;
+  return authService.isLoggedIn() ? router.createUrlTree([`/${CleansiaAdminRoute.HOME}`]) : true;
 };

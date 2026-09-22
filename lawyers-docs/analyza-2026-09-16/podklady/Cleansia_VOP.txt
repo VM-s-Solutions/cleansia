@@ -1,0 +1,148 @@
+SOURCE: lawyers-docs\SMLOUVY CleanSia\SMLOUVY\Cleansia_VOP.docx
+Paragraph IDs are extraction references, not legal clause numbers.
+
+[P001] [word/document.xml] CLEANSIA
+[P002] [word/document.xml] VŠEOBECNÉ OBCHODNÍ PODMÍNKY
+[P003] [word/document.xml] pro uživatele mobilní aplikace a webu Cleansia
+[P004] [word/document.xml] Provozovatel:
+[P005] [word/document.xml] Cleansia s.r.o., IČO: [Doplnit], sídlo: [Doplnit adresu]
+[P006] [word/document.xml] Verze:
+[P007] [word/document.xml] 1.1
+[P008] [word/document.xml] Účinnost od:
+[P009] [word/document.xml] ................................................
+[P010] [word/document.xml] Právní základ:
+[P011] [word/document.xml] § 1751 a násl. zák. č. 89/2012 Sb. (OZ); zák. č. 634/1992 Sb. (ochrana spotřebitele)
+[P012] [word/document.xml] Kontakt:
+[P013] [word/document.xml] [Doplnit e-mail]  |  [Doplnit telefon]
+[P014] [word/document.xml] Tyto VOP se vztahují na všechny objednávky úklidových služeb prostřednictvím Aplikace. Registrací v Aplikaci a/nebo podáním první objednávky zákazník potvrzuje, že se s VOP seznámil a souhlasí s nimi. Cleansia je provozovatelem technologické platformy a zprostředkovatelem — přímým poskytovatelem úklidové služby je vždy Zhotovitel (OSVČ).
+[P015] [word/document.xml] I.
+[P016] [word/document.xml] Úvodní ustanovení a definice
+[P017] [word/document.xml] 1.1  Provozovatel
+[P018] [word/document.xml] Tyto Všeobecné obchodní podmínky (dále jen "VOP") vydává společnost Cleansia s.r.o., IČO: [Doplnit], se sídlem [Doplnit adresu], zapsaná v obchodním rejstříku vedeném Městským soudem v Praze, oddíl C, vložka [Doplnit] (dále jen "Cleansia" nebo "my"). Kontaktní e-mail: [Doplnit]. Tato společnost je provozovatelem technologické platformy Cleansia a zprostředkovatelem úklidových služeb.
+[P019] [word/document.xml] 1.2  Uživatel / Zákazník
+[P020] [word/document.xml] Uživatelem (dále jen "Zákazník" nebo "vy") je každá fyzická nebo právnická osoba, která si prostřednictvím Aplikace nebo webu Cleansia objednává úklidové služby. Pokud je Zákazník fyzická osoba jednající mimo rámec své podnikatelské činnosti, je považován za spotřebitele ve smyslu zákona č. 634/1992 Sb., a požívá veškerá zákonná spotřebitelská práva.
+[P021] [word/document.xml] 1.3  Zhotovitel
+[P022] [word/document.xml] Zhotovitelem je samostatná OSVČ s platným živnostenským oprávněním, která prostřednictvím platformy Cleansia poskytuje úklidové služby Zákazníkům. Zhotovitel není zaměstnancem Cleansia. Cleansia vystupuje jako zprostředkovatel — smlouva o dílo na konkrétní úklid vzniká přímo mezi Zákazníkem a Zhotovitelem okamžikem potvrzení zakázky v Aplikaci.
+[P023] [word/document.xml] 1.4  Aplikace
+[P024] [word/document.xml] Aplikací se rozumí mobilní aplikace Cleansia dostupná pro platformy iOS a Android, jakož i webové rozhraní dostupné na [doplnit URL]. Prostřednictvím Aplikace Zákazník prochází nabídkou, objednává, platí a hodnotí úklidové služby.
+[P025] [word/document.xml] II.
+[P026] [word/document.xml] Registrace a uživatelský účet
+[P027] [word/document.xml] 2.1  Registrace
+[P028] [word/document.xml] Pro používání Aplikace je vyžadována registrace uživatelského účtu. Zákazník je povinen uvést pravdivé a úplné údaje: jméno a příjmení, e-mailovou adresu, telefonní číslo a fakturační adresu. Cleansia si vyhrazuje právo ověřit správnost uvedených údajů.
+[P029] [word/document.xml] 2.2  Věkový limit
+[P030] [word/document.xml] Služby Cleansia mohou využívat pouze osoby starší 18 let. Registrací Zákazník potvrzuje, že splňuje tento požadavek. Pokud Cleansia zjistí, že účet byl vytvořen osobou mladší 18 let, je oprávněna ho bez náhrady zrušit.
+[P031] [word/document.xml] 2.3  Zabezpečení účtu
+[P032] [word/document.xml] Zákazník je povinen udržovat své přihlašovací údaje v tajnosti a nepředávat je třetím osobám. V případě podezření na zneužití účtu je povinen tuto skutečnost okamžitě oznámit na [doplnit e-mail]. Cleansia neodpovídá za škody způsobené neoprávněným použitím účtu třetí osobou, pokud Zákazník nepřijal přiměřená bezpečnostní opatření.
+[P033] [word/document.xml] 2.4  Zrušení účtu
+[P034] [word/document.xml] Zákazník může svůj účet kdykoli zrušit prostřednictvím nastavení Aplikace nebo zasláním žádosti na [doplnit e-mail]. Cleansia si vyhrazuje právo zrušit nebo pozastavit účet, který porušuje tyto VOP. V případě zrušení účtu jsou Zákazníkovi vráceny nevyužité kredity v peněžní hodnotě.
+[P035] [word/document.xml] III.
+[P036] [word/document.xml] Objednávka úklidových služeb
+[P037] [word/document.xml] 3.1  Jak objednat
+[P038] [word/document.xml] Zákazník objednává služby prostřednictvím Aplikace následujícím způsobem: (a) vybere typ úklidu (standardní, hloubkový, po rekonstrukci, kancelářský atd.); (b) uvede adresu výkonu služby, preferovaný termín a rozsah práce; (c) zkontroluje shrnutí objednávky včetně ceny; (d) odsouhlasí VOP a Privacy Policy; (e) provede platbu prostřednictvím platební brány. Objednávka je závazná okamžikem potvrzení platby.
+[P039] [word/document.xml] 3.2  Potvrzení objednávky
+[P040] [word/document.xml] Po úspěšném podání objednávky Zákazník obdrží potvrzení e-mailem nebo push oznámením v Aplikaci. Potvrzení obsahuje shrnutí objednávky, předpokládaný termín a informace o přiděleném Zhotoviteli. Tímto potvrzením vzniká smlouva o dílo mezi Zákazníkem a Zhotovitelem.
+[P041] [word/document.xml] 3.3  Změna objednávky
+[P042] [word/document.xml] Změnu termínu nebo rozsahu objednávky je možné provést prostřednictvím Aplikace nejpozději [doplnit, např. 24 hodin] před sjednaným termínem zahájení úklidu. Změny provedené později mohou být zpoplatněny stornovacím poplatkem dle čl. V.
+[P043] [word/document.xml] 3.4  Přístup k místu výkonu služby
+[P044] [word/document.xml] Zákazník je povinen zajistit Zhotoviteli přístup k místu výkonu služby v dohodnutém čase. Pokud Zhotovitel nemůže vstoupit do prostor z důvodů na straně Zákazníka (nikdo není doma, nefungují klíče, zákazník neodpovídá na hovory po dobu více než 15 minut), má Cleansia právo považovat objednávku za zrušenou ze strany Zákazníka a uplatnit stornovací poplatek dle čl. V.
+[P045] [word/document.xml] IV.
+[P046] [word/document.xml] Ceny, platební podmínky a faktury
+[P047] [word/document.xml] 4.1  Určení ceny
+[P048] [word/document.xml] Cena úklidových služeb je stanovena na základě parametrů objednávky (typ úklidu, plocha, rozsah práce, lokalita) a zobrazena v Aplikaci před dokončením objednávky. Všechny ceny jsou uvedeny v Kč včetně DPH (je-li relevantní). Cleansia si vyhrazuje právo ceny průběžně aktualizovat; změna ceny nemá zpětnou účinnost na již potvrzené objednávky.
+[P049] [word/document.xml] 4.2  Způsob platby
+[P050] [word/document.xml] Platbu je možné provést prostřednictvím: platební karty (Visa, Mastercard, Amex) přes bezpečnou platební bránu integrovanou v Aplikaci; bankovního převodu na účet Cleansia; dalších platebních metod nabízených v Aplikaci v době objednávky. Platba v hotovosti přímo Zhotoviteli je možná pouze v případech, kde je tato možnost explicitně nabízena v Aplikaci.
+[P051] [word/document.xml] 4.3  Splatnost
+[P052] [word/document.xml] Platba je splatná před zahájením výkonu úklidové služby, pokud není v Aplikaci stanoveno jinak. Cleansia si vyhrazuje právo nezahájit poskytnutí služby před obdržením platby.
+[P053] [word/document.xml] 4.4  Daňový doklad
+[P054] [word/document.xml] Cleansia vystaví daňový doklad (fakturu) a doručí jej Zákazníkovi na e-mailovou adresu uvedenou při registraci do 15 dnů od uskutečnění zdanitelného plnění, pokud Zákazník o fakturu požádá. Daňové doklady jsou také dostupné v historii objednávek v Aplikaci.
+[P055] [word/document.xml] 4.5  Spropitné
+[P056] [word/document.xml] Zákazník má možnost ohodnotit a docenit práci Zhotovitele volitelným spropitným prostřednictvím Aplikace. Spropitné je dobrovolné, nepodléhá provizi Cleansia a je v plné výši předáno Zhotoviteli.
+[P057] [word/document.xml] V.
+[P058] [word/document.xml] Změny, zrušení objednávky a stornovací podmínky
+[P059] [word/document.xml] Stornovací podmínky jsou přehledně shrnuty v tabulce níže. Tato pravidla jsou v souladu s § 1837 písm. j) OZ — zákazník bere na vědomí, že u služeb s konkrétním termínem (tj. zakázka plánovaná na určitý čas) nemá právo na odstoupení od smlouvy bez poplatku v zákonné 14denní lhůtě, pokud byl o tomto výslovně informován a souhlasil.
+[P060] [word/document.xml] Kdy stornuješ
+[P061] [word/document.xml] Storno poplatek
+[P062] [word/document.xml] Co dostaneš zpět
+[P063] [word/document.xml] Lhůta vrácení
+[P064] [word/document.xml] Více než 24 hodin předem
+[P065] [word/document.xml] 0 %
+[P066] [word/document.xml] 100 % platby
+[P067] [word/document.xml] Do 5 pracovních dnů
+[P068] [word/document.xml] 2–24 hodin předem
+[P069] [word/document.xml] 50 % ceny zakázky
+[P070] [word/document.xml] 50 % platby nebo kredit
+[P071] [word/document.xml] Do 5 pracovních dnů
+[P072] [word/document.xml] Méně než 2 hodiny předem
+[P073] [word/document.xml] 100 % ceny zakázky
+[P074] [word/document.xml] Nic
+[P075] [word/document.xml] —
+[P076] [word/document.xml] Zhotovitel nemohl vstoupit (tvoje vina)
+[P077] [word/document.xml] 100 % ceny zakázky
+[P078] [word/document.xml] Nic
+[P079] [word/document.xml] —
+[P080] [word/document.xml] 5.4  Zrušení ze strany Cleansia
+[P081] [word/document.xml] Cleansia si vyhrazuje právo zrušit objednávku v případě: nedostupnosti Zhotovitele v požadovaném termínu; závažných provozních problémů; vis major (viz čl. XI.). V takovém případě Zákazník obdrží plnou náhradu zaplacené částky do 5 pracovních dnů nebo možnost přesunout objednávku na jiný termín.
+[P082] [word/document.xml] VI.
+[P083] [word/document.xml] Práva a povinnosti Zákazníka
+[P084] [word/document.xml] 6.1  Povinnost poskytnout správné informace
+[P085] [word/document.xml] Zákazník je povinen poskytnout při objednávce pravdivé a úplné informace o místě výkonu služby, rozsahu práce a speciálních požadavcích (domácí mazlíčci, alergeny, specifické povrchy, křehké předměty). Nepravdivé nebo neúplné informace mohou vést ke snížené kvalitě úklidu, za níž Cleansia nenese odpovědnost.
+[P086] [word/document.xml] 6.2  Bezpečné prostředí
+[P087] [word/document.xml] Zákazník je povinen zajistit, že prostředí, kde má být provedena úklidová služba, je bezpečné pro Zhotovitele: funkční elektrická instalace a vodoinstalace, žádné biologické hazardy (hmyz, plíseň ve skrytých místech) bez předchozího upozornění, volný přístup ke všem objednaným prostorám.
+[P088] [word/document.xml] 6.3  Cennosti a osobní předměty
+[P089] [word/document.xml] Cleansia doporučuje, aby Zákazník před zahájením úklidu uklidil nebo zabezpečil cennosti, finanční hotovost, šperky, elektroniku a osobní dokumenty. Cleansia ani Zhotovitel nenese odpovědnost za ztrátu nebo poškození předmětů, které byly během úklidu dostupné a zákazník je předtím nezabezpečil, pokud není prokázána přímá vina Zhotovitele.
+[P090] [word/document.xml] 6.4  Hodnocení služby
+[P091] [word/document.xml] Zákazník je oprávněn a vyzýván k hodnocení provedeného úklidu prostřednictvím hodnoticího systému v Aplikaci. Hodnocení je dobrovolné, avšak pomáhá udržovat kvalitu platformy. Zákazník se zavazuje podávat hodnocení pravdivá a věcná.
+[P092] [word/document.xml] 6.5  Zákaz zneužití
+[P093] [word/document.xml] Zákazník nesmí prostřednictvím Aplikace: dojednávat přímé služby se Zhotovitelem mimo platformu; zveřejňovat nepravdivé, urážlivé nebo hanobivé recenze; používat účet k jinému než osobnímu nebo firemnímu úklidu; pokoušet se jakýmkoli způsobem obcházet platební systém platformy.
+[P094] [word/document.xml] VII.
+[P095] [word/document.xml] Odpovědnost za škody, reklamace a pojištění
+[P096] [word/document.xml] 7.1  Odpovědnost Zhotovitele
+[P097] [word/document.xml] Přímo za provedení úklidové služby odpovídá Zhotovitel jakožto samostatná OSVČ. Zhotovitel je povinně pojištěn — minimální limit pojistného plnění činí 3 000 000 Kč na pojistnou událost. V případě prokázané škody způsobené Zhotovitelem Cleansia Zákazníkovi s vyřízením pojistné události aktivně pomáhá.
+[P098] [word/document.xml] 7.2  Odpovědnost Cleansia
+[P099] [word/document.xml] Cleansia jakožto zprostředkovatel odpovídá za: správné spárování Zákazníka se Zhotovitelem; zajištění, že Zhotovitel splňuje podmínky (pojistka, živnostenské oprávnění, školení); funkčnost a dostupnost Aplikace v přiměřené míře. Cleansia nenese odpovědnost za: kvalitu provedení úklidu Zhotovitelem; škody způsobené Zhotovitelem přesahující pojistné krytí (Zákazník se v takovém případě může obrátit přímo na Zhotovitele); škody způsobené nepravdivými informacemi Zákazníka.
+[P100] [word/document.xml] 7.3  Postup při škodě
+[P101] [word/document.xml] Pokud Zákazník zjistí škodu způsobenou během úklidu, je povinen: okamžitě (nejpozději do 24 hodin od dokončení zakázky) nahlásit škodu v Aplikaci nebo na e-mail [doplnit]; přidat fotodokumentaci; nevyhazovat ani nepřesouvat poškozený předmět do doby řešení. Škody oznámené po uplynutí 24hodinové lhůty nemusí být uznány z důvodu nemožnosti ověření jejich původu.
+[P102] [word/document.xml] 7.4  Omezení odpovědnosti
+[P103] [word/document.xml] Celková odpovědnost Cleansia jako zprostředkovatele je v každém případě omezena na výši ceny konkrétní zakázky, při níž škoda vznikla — s výjimkou případů úmyslného pochybení nebo hrubé nedbalosti Cleansia. Toto omezení se nevztahuje na spotřebitele v případech, kde by bylo v rozporu s § 1813 OZ (nekalé smluvní ujednání).
+[P104] [word/document.xml] 7.5  Reklamace
+[P105] [word/document.xml] Podrobný postup pro podávání reklamací je upraven v Reklamačním řádu Cleansia, který je dostupný na webu a v Aplikaci a je nedílnou součástí těchto VOP.
+[P106] [word/document.xml] VIII.
+[P107] [word/document.xml] Ochrana osobních údajů
+[P108] [word/document.xml] 8.1  Zásady zpracování
+[P109] [word/document.xml] Cleansia zpracovává osobní údaje Zákazníků v souladu s Nařízením EU 2016/679 (GDPR) a zákonem č. 110/2019 Sb. Podrobné informace o zpracování osobních údajů, právech Zákazníka a možnostech jejich uplatnění jsou obsaženy v Privacy Policy Cleansia dostupné na webu a v Aplikaci.
+[P110] [word/document.xml] 8.2  Souhlas a práva
+[P111] [word/document.xml] Registrací v Aplikaci Zákazník potvrzuje, že se seznámil s Privacy Policy a souhlasí se zpracováním svých osobních údajů v rozsahu a za účely v ní uvedenými. Souhlas lze kdykoli odvolat — podrobnosti viz Privacy Policy. Zákazník má právo na přístup, opravu, výmaz, přenositelnost a omezení zpracování svých OÚ dle čl. 15–21 GDPR.
+[P112] [word/document.xml] IX.
+[P113] [word/document.xml] Duševní vlastnictví a používání Aplikace
+[P114] [word/document.xml] 9.1  Práva k Aplikaci
+[P115] [word/document.xml] Veškerá autorská práva, ochranné známky a jiná práva duševního vlastnictví k Aplikaci, webu, logotypu Cleansia a obsahu platformy náleží společnosti Cleansia s.r.o. Zákazníkovi je udělena nevýhradní, nepřevoditelná licence k používání Aplikace výhradně pro osobní nebo firemní objednávání úklidových služeb.
+[P116] [word/document.xml] 9.2  Zákaz zneužití
+[P117] [word/document.xml] Zákazník nesmí Aplikaci nebo její obsah kopírovat, modifikovat, distribuovat, dekompilovat, používat ke komerčním účelům nad rámec objednávky služeb ani jinak porušovat autorská práva Cleansia. Porušení těchto povinností zakládá právo Cleansia na okamžité zrušení účtu a náhradu škody.
+[P118] [word/document.xml] X.
+[P119] [word/document.xml] Změny VOP a ukončení služby
+[P120] [word/document.xml] 10.1  Změny VOP
+[P121] [word/document.xml] Cleansia je oprávněna tyto VOP kdykoli měnit. O podstatných změnách bude Zákazník informován e-mailem nebo oznámením v Aplikaci nejpozději 14 dní před jejich účinností. Pokud Zákazník se změnami nesouhlasí, je oprávněn do této lhůty zrušit svůj účet. Pokračováním v používání Aplikace po účinnosti změny Zákazník se změnami souhlasí.
+[P122] [word/document.xml] 10.2  Ukončení služby
+[P123] [word/document.xml] Cleansia si vyhrazuje právo ukončit provoz Aplikace nebo omezit dostupnost služeb, a to s předchozím oznámením Zákazníkovi v přiměřené době (minimálně 30 dní). V případě ukončení služby budou vráceny kredity a přeplatky za již zaplacené, ale neprovedené zakázky.
+[P124] [word/document.xml] XI.
+[P125] [word/document.xml] Vyšší moc (vis major)
+[P126] [word/document.xml] 11.1  Definice
+[P127] [word/document.xml] Za okolnost vyšší moci se považuje událost, která je mimo rozumnou kontrolu Cleansia nebo Zhotovitele a která znemožňuje nebo podstatně ztěžuje plnění smluvních povinností. Zahrnuje zejména: přírodní katastrofy, epidemie, pandemie, vládní nařízení, výpadky elektrické sítě, kyberútoky nebo jiné provozní havarijní situace.
+[P128] [word/document.xml] 11.2  Následky
+[P129] [word/document.xml] V případě vyšší moci Cleansia nenese odpovědnost za prodlení nebo neplnění svých závazků po dobu trvání této okolnosti. Cleansia o ní Zákazníka bezodkladně informuje a nabídne možnost přesunout zakázku nebo ji zrušit s plným vrácením platby do 5 pracovních dnů.
+[P130] [word/document.xml] XII.
+[P131] [word/document.xml] Závěrečná ustanovení
+[P132] [word/document.xml] 12.1  Rozhodné právo
+[P133] [word/document.xml] Tyto VOP a všechny smluvní vztahy z nich plynoucí se řídí právem České republiky, zejm. zákonem č. 89/2012 Sb. (občanský zákoník) a zákonem č. 634/1992 Sb. (ochrana spotřebitele).
+[P134] [word/document.xml] 12.2  Řešení sporů
+[P135] [word/document.xml] V případě sporu se Cleansia zavazuje přednostně řešit věc smírnou cestou prostřednictvím zákaznické podpory ([doplnit e-mail]). Zákazníkovi jako spotřebiteli náleží právo obrátit se se stížností na Českou obchodní inspekci (www.coi.cz) nebo řešit spor mimosoudně prostřednictvím platformy ODR (ec.europa.eu/consumers/odr). Jinak je příslušným soudem soud dle sídla Cleansia.
+[P136] [word/document.xml] 12.3  Práva spotřebitele
+[P137] [word/document.xml] Tyto VOP jsou v souladu se zákonem č. 634/1992 Sb. o ochraně spotřebitele a směrnicí EU 2011/83/EU o právech spotřebitelů. Pokud je Zákazník spotřebitelem, platí pro něj veškerá zákonná spotřebitelská práva nad rámec práv stanovených těmito VOP. Ujednání omezující zákonná práva spotřebitele jsou neplatná.
+[P138] [word/document.xml] 12.4  Oddělenost ustanovení
+[P139] [word/document.xml] Pokud je nebo se stane některé ustanovení těchto VOP neplatným, nemá to vliv na platnost ostatních ustanovení. Neplatné ustanovení bude nahrazeno platným ujednáním, které se svým smyslem co nejvíce blíží původnímu záměru.
+[P140] [word/document.xml] 12.5  Kontakt
+[P141] [word/document.xml] Zákaznická podpora Cleansia je dostupná na: e-mail: [doplnit]; telefon: [doplnit]; chat v Aplikaci. Pracovní doba zákaznické podpory: [doplnit].
+[P142] [word/document.xml] UMÍSTĚNÍ VOP — kde musí být dostupné: (1) V patičce webu jako klikatelný odkaz 'Obchodní podmínky'. (2) V Aplikaci pod Nastavení > Právní dokumenty. (3) Jako souhlas při registraci (checkbox: 'Souhlasím s VOP a Privacy Policy Cleansia' — povinné před dokončením registrace). Bez zaregistrovaného souhlasu nelze zákazníka zaregistrovat ani mu umožnit objednání služby.
+[P143] [word/document.xml] Tyto VOP jsou účinné od [doplnit datum]. Verze 1.1.  |  Cleansia s.r.o.  |  IČO: [Doplnit]  |  [Doplnit web]
+[P144] [word/footer1.xml] VOP v1.1  |  Cleansia s.r.o.  |  Účinné od [doplnit]
+[P145] [word/header1.xml] CLEANSIA s.r.o.  |  Všeobecné obchodní podmínky  |  Verze 1.1

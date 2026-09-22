@@ -26,7 +26,6 @@ public class FrozenPermissionMapTests
         [Policy.CanViewPagedUserOrder] = PhysicalPolicy.Authenticated,
         [Policy.CanViewOrderDetail] = PhysicalPolicy.Authenticated,
         [Policy.CanViewOrderCustomer] = PhysicalPolicy.SupportOrAbove,
-        [Policy.CanUpdateOrder] = PhysicalPolicy.EmployeeOrAdmin,
         [Policy.CanTakeOrder] = PhysicalPolicy.EmployeeOrAdmin,
         [Policy.CanStartOrder] = PhysicalPolicy.EmployeeOrAdmin,
         [Policy.CanCompleteOrder] = PhysicalPolicy.EmployeeOrAdmin,
@@ -40,7 +39,6 @@ public class FrozenPermissionMapTests
         [Policy.CanUpdateOrderIssue] = PhysicalPolicy.EmployeeOrAdmin,
         [Policy.CanDeleteOrderIssue] = PhysicalPolicy.EmployeeOrAdmin,
         [Policy.CanSubmitOrderReview] = PhysicalPolicy.CustomerOnly,
-        [Policy.CanViewOrderReview] = PhysicalPolicy.Authenticated,
         [Policy.CanCancelOrder] = PhysicalPolicy.CustomerOnly,
         [Policy.CanAdminCancelOrder] = PhysicalPolicy.SupportOrAbove,   // AUD-01 admin order ops (additive)
         [Policy.CanOverrideOrderStatus] = PhysicalPolicy.SupportOrAbove, // AUD-01 admin order ops (additive)
@@ -62,7 +60,6 @@ public class FrozenPermissionMapTests
         [Policy.CanGetCurrentUser] = PhysicalPolicy.Authenticated,
         [Policy.CanChangeOwnPassword] = PhysicalPolicy.Authenticated, // additive — [OWN-DATA] authenticated change-own-password
         [Policy.CanUpdateCurrentUser] = PhysicalPolicy.Authenticated,
-        [Policy.CanAddPhoneNumber] = PhysicalPolicy.Authenticated,
 
         // Employee
         [Policy.CanGetCurrentEmployee] = PhysicalPolicy.Authenticated,
@@ -90,7 +87,6 @@ public class FrozenPermissionMapTests
         [Policy.CanViewPagedInvoices] = PhysicalPolicy.EmployeeOrAdmin,  // [OWN-DATA] (Note A)
         [Policy.CanViewPeriodPays] = PhysicalPolicy.EmployeeOrAdmin,     // [OWN-DATA]
         [Policy.CanViewPagedInvoicesAdmin] = PhysicalPolicy.AccountantOrAbove, // ADR-0066 D3 (admin-host read)
-        [Policy.CanCalculateOrderPay] = PhysicalPolicy.AdminOnly,
         [Policy.CanGenerateInvoice] = PhysicalPolicy.AccountantOrAbove,
         [Policy.CanApproveInvoice] = PhysicalPolicy.AccountantOrAbove,
         [Policy.CanMarkInvoicePaid] = PhysicalPolicy.AccountantOrAbove,
@@ -102,7 +98,6 @@ public class FrozenPermissionMapTests
 
         // Payroll — Pay Periods
         [Policy.CanViewPayPeriods] = PhysicalPolicy.EmployeeOrAdmin,     // global cycles (Note B)
-        [Policy.CanViewPayPeriod] = PhysicalPolicy.EmployeeOrAdmin,      // global cycles (Note B)
         [Policy.CanViewPayPeriodsAdmin] = PhysicalPolicy.AccountantOrAbove, // ADR-0066 D3 (admin-host read)
         [Policy.CanViewPayPeriodAdmin] = PhysicalPolicy.AccountantOrAbove,  // ADR-0066 D3 (admin-host read)
         [Policy.CanCreatePayPeriod] = PhysicalPolicy.AccountantOrAbove,
@@ -203,18 +198,11 @@ public class FrozenPermissionMapTests
         // removal, not the additive case or the semantic case the class doc names: no surviving route
         // changed its physical policy, and no permission was widened. -> /decisions/adr-0001
 
-        // Country Configuration
-        [Policy.CanViewCountryConfigurations] = PhysicalPolicy.AdminOnly,
-        [Policy.CanCreateCountryConfiguration] = PhysicalPolicy.ManagerOrAbove,
-        [Policy.CanUpdateCountryConfiguration] = PhysicalPolicy.ManagerOrAbove,
-        [Policy.CanDeleteCountryConfiguration] = PhysicalPolicy.ManagerOrAbove,
-
-        // Legal documents (ADR-0066 D3 — moved off CanViewCountryConfigurations)
+        // Legal documents (ADR-0066 D3 — its own policy, no longer the country-configuration view one)
         [Policy.CanViewLegalDocuments] = PhysicalPolicy.AdministratorOnly,
 
         // Tenant Configuration
         [Policy.CanViewTenantConfigurations] = PhysicalPolicy.AdministratorOnly,
-        [Policy.CanCreateTenantConfiguration] = PhysicalPolicy.AdministratorOnly,
         [Policy.CanUpdateTenantConfiguration] = PhysicalPolicy.AdministratorOnly,
         [Policy.CanDeleteTenantConfiguration] = PhysicalPolicy.AdministratorOnly,
 
@@ -329,10 +317,7 @@ public class FrozenPermissionMapTests
     [Fact]
     public void Entire_Payroll_Family_Is_Mapped_Closed()
     {
-        // none of these may resolve to Authenticated anymore: every row is an administrator set, and
-        // the one partner-host row (CanCalculateOrderPay) is any administrator.
-        Assert.Equal(PhysicalPolicy.AdminOnly, Policy.CanCalculateOrderPay.ToPhysicalPolicy());
-
+        // none of these may resolve to Authenticated anymore: every row is an administrator set.
         string[] accountantOrAbove =
         {
             Policy.CanGenerateInvoice, Policy.CanApproveInvoice,
@@ -355,8 +340,7 @@ public class FrozenPermissionMapTests
 
         string[] employeeOrAdmin =
         {
-            Policy.CanViewPagedInvoices, Policy.CanViewPeriodPays,
-            Policy.CanViewPayPeriods, Policy.CanViewPayPeriod,
+            Policy.CanViewPagedInvoices, Policy.CanViewPeriodPays, Policy.CanViewPayPeriods,
         };
         foreach (var p in employeeOrAdmin)
             Assert.Equal(PhysicalPolicy.EmployeeOrAdmin, p.ToPhysicalPolicy());

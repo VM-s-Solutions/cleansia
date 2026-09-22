@@ -10,7 +10,7 @@ namespace Cleansia.Core.AppServices.Features.Services;
 /// Soft-retire a service (ADR-0007): sets IsActive=false with the deactivating admin recorded via
 /// the auditable domain primitive. The service disappears from the customer booking wizard
 /// (GetServiceOverview filters IsActive) but stays referenceable — deactivating an in-use service
-/// is allowed, unlike delete, because existing orders/carts keep their line items. Idempotent —
+/// is allowed, unlike delete, because existing orders keep their line items. Idempotent —
 /// calling on an already-inactive service returns success without an error.
 /// </summary>
 public class DeactivateService

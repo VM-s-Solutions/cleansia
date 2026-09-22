@@ -23,21 +23,6 @@ export const selectUpcomingOrdersLoading = createSelector(
   (state) => state.loading.upcomingOrders
 );
 
-export const selectDashboardLoading = createSelector(
-  selectDashboardState,
-  (state) => state.loading.stats || state.loading.upcomingOrders
-);
-
-export const selectDashboardStatsError = createSelector(
-  selectDashboardState,
-  (state) => state.error.stats
-);
-
-export const selectUpcomingOrdersError = createSelector(
-  selectDashboardState,
-  (state) => state.error.upcomingOrders
-);
-
 // Analytics Selectors
 export const selectEarningsAnalytics = createSelector(
   selectDashboardState,
@@ -92,25 +77,4 @@ export const selectAnalyticsLoading = createSelector(
     state.loading.timeAnalytics ||
     state.loading.orderAnalytics ||
     state.loading.productivityMetrics
-);
-
-// Analytics Error Selectors
-export const selectEarningsAnalyticsError = createSelector(
-  selectDashboardState,
-  (state) => state.error.earningsAnalytics
-);
-
-export const selectTimeAnalyticsError = createSelector(
-  selectDashboardState,
-  (state) => state.error.timeAnalytics
-);
-
-export const selectOrderAnalyticsError = createSelector(
-  selectDashboardState,
-  (state) => state.error.orderAnalytics
-);
-
-export const selectProductivityMetricsError = createSelector(
-  selectDashboardState,
-  (state) => state.error.productivityMetrics
 );

@@ -45,24 +45,28 @@ export function getTierConfigsTableDefinition(
       },
       {
         id: 'threshold',
+        numeric: true,
         field: 'threshold',
         header: translate.instant('pages.loyalty_tiers.column.threshold'),
         width: '15%',
       },
       {
         id: 'discount',
+        numeric: true,
         field: 'discountFormatted',
         header: translate.instant('pages.loyalty_tiers.column.discount'),
         width: '15%',
       },
       {
         id: 'minOrder',
+        numeric: true,
         field: 'minOrderFormatted',
         header: translate.instant('pages.loyalty_tiers.column.min_order'),
         width: '20%',
       },
       {
         id: 'perks',
+        numeric: true,
         field: 'perksCountFormatted',
         header: translate.instant('pages.loyalty_tiers.column.perks'),
         width: '15%',

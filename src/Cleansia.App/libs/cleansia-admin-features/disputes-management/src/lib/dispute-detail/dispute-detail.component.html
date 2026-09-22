@@ -1,116 +1,99 @@
-<div class="cleansia-dispute-detail">
-  <div class="cleansia-dispute-detail__container page-wrapper">
-    <div class="cleansia-dispute-detail__header">
-      <cleansia-button
-        icon="pi pi-arrow-left"
-        severity="secondary"
-        [outlined]="true"
-        [label]="'pages.disputes_management.detail.back' | translate"
-        (onClick)="goBack()"
-      />
-      <cleansia-title
-        [title]="'pages.disputes_management.detail.title' | translate"
-      />
-      <cleansia-button
-        *cleansiaPermission="Policy.CanViewAuditLog"
-        class="cleansia-dispute-detail__audit-link"
-        icon="pi pi-history"
-        severity="secondary"
-        [outlined]="true"
-        [label]="'pages.audit_log.drill_in.view_history' | translate"
-        (onClick)="viewAuditHistory()"
-      />
+<div class="cleansia-dispute-detail cleansia-page">
+  <div class="cleansia-dispute-detail__container page-wrapper page-wrapper--narrow">
+    <div class="cleansia-page-header">
+      <div class="cleansia-page-header__heading">
+        <div class="cleansia-detail-title">
+          <cleansia-button
+            icon="pi pi-arrow-left"
+            severity="secondary"
+            [outlined]="true"
+            [label]="'pages.disputes_management.detail.back' | translate"
+            (onClick)="goBack()"
+          />
+          <cleansia-title [title]="'pages.disputes_management.detail.title' | translate" [level]="1" />
+        </div>
+      </div>
+      <div class="cleansia-page-header__actions">
+        <cleansia-button
+          *cleansiaPermission="Policy.CanViewAuditLog"
+          class="cleansia-dispute-detail__audit-link"
+          icon="pi pi-history"
+          severity="secondary"
+          [outlined]="true"
+          [label]="'pages.audit_log.drill_in.view_history' | translate"
+          (onClick)="viewAuditHistory()"
+        />
+      </div>
     </div>
 
     @if (facade.loading()) {
     <cleansia-loader />
     } @else if (facade.hasError() || !facade.dispute()) {
-    <cleansia-section>
-      <div class="cleansia-dispute-detail__state">
-        <i class="pi pi-exclamation-triangle"></i>
-        <p>{{ 'pages.disputes_management.detail.load_error' | translate }}</p>
-      </div>
-    </cleansia-section>
+    <div class="not-found-state">
+      <div class="not-found-state__icon"><i class="pi pi-exclamation-triangle"></i></div>
+      <p class="not-found-state__message">
+        {{ 'pages.disputes_management.detail.load_error' | translate }}
+      </p>
+    </div>
     } @else {
-    <!-- Dispute summary -->
-    <cleansia-section>
-      <h3 class="section-title">
-        {{ 'pages.disputes_management.detail.summary' | translate }}
-      </h3>
-      <div class="cleansia-dispute-detail__grid">
-        <div class="field">
-          <span class="field-label">
-            {{ 'pages.disputes_management.columns.order_number' | translate }}
-          </span>
-          <span class="field-value">{{ facade.dispute()?.displayOrderNumber }}</span>
+    @let dispute = facade.dispute()!;
+    <div class="detail-identity">
+      <div class="detail-identity__row">
+        <span class="detail-identity__name">
+          <span class="detail-identity__label">{{ 'pages.disputes_management.columns.order_number' | translate }}</span>
+          {{ dispute.displayOrderNumber }}
+        </span>
+        <div class="detail-identity__badges">
+          <cleansia-status-badge kind="dispute" [value]="dispute.status" />
         </div>
-        <div class="field">
-          <span class="field-label">
-            {{ 'pages.disputes_management.columns.customer_name' | translate }}
-          </span>
-          <span class="field-value">{{ facade.dispute()?.customerName }}</span>
-        </div>
-        <div class="field">
-          <span class="field-label">
-            {{ 'pages.disputes_management.columns.customer_email' | translate }}
-          </span>
-          <span class="field-value">{{ facade.dispute()?.customerEmail }}</span>
-        </div>
-        <div class="field">
-          <span class="field-label">
-            {{ 'pages.disputes_management.columns.reason' | translate }}
-          </span>
-          <span class="field-value">{{ facade.dispute()?.reason?.name }}</span>
-        </div>
-        <div class="field">
-          <span class="field-label">
-            {{ 'pages.disputes_management.columns.status' | translate }}
-          </span>
-          <span [class]="getStatusClass(facade.dispute()?.status?.value)">
-            {{ getStatusLabel(facade.dispute()?.status?.value) }}
-          </span>
+      </div>
+      <div class="detail-identity__meta">
+        <span class="detail-identity__meta-item">
+          <i class="pi pi-user"></i>
+          {{ dispute.customerName }}
+        </span>
+        <span class="detail-identity__meta-item">
+          <i class="pi pi-envelope"></i>
+          {{ dispute.customerEmail }}
+        </span>
+      </div>
+    </div>
+
+    <cleansia-section [title]="'pages.disputes_management.detail.summary' | translate">
+      <div class="detail-grid">
+        <div class="detail-grid__item">
+          <span class="detail-grid__label">{{ 'pages.disputes_management.columns.reason' | translate }}</span>
+          <span class="detail-grid__value">{{ dispute.reason?.name }}</span>
         </div>
         @if (hasRefundAmount()) {
-        <div class="field">
-          <span class="field-label">
-            {{ 'pages.disputes_management.columns.refund_amount' | translate }}
-          </span>
-          <span class="field-value">{{ facade.dispute()?.refundAmount }}</span>
+        <div class="detail-grid__item">
+          <span class="detail-grid__label">{{ 'pages.disputes_management.columns.refund_amount' | translate }}</span>
+          <span class="detail-grid__value">{{ facade.refundAmountLabel() }}</span>
+        </div>
+        }
+        <div class="detail-grid__item cleansia-dispute-detail__prose-item">
+          <span class="detail-grid__label">{{ 'pages.disputes_management.detail.description' | translate }}</span>
+          <p class="cleansia-dispute-detail__prose">{{ dispute.description }}</p>
+        </div>
+        @if (dispute.resolutionNotes) {
+        <div class="detail-grid__item cleansia-dispute-detail__prose-item">
+          <span class="detail-grid__label">{{ 'pages.disputes_management.detail.resolution_notes' | translate }}</span>
+          <p class="cleansia-dispute-detail__prose">{{ dispute.resolutionNotes }}</p>
         </div>
         }
       </div>
-      <div class="field field--full">
-        <span class="field-label">
-          {{ 'pages.disputes_management.detail.description' | translate }}
-        </span>
-        <p class="field-value">{{ facade.dispute()?.description }}</p>
-      </div>
-      @if (facade.dispute()?.resolutionNotes) {
-      <div class="field field--full">
-        <span class="field-label">
-          {{ 'pages.disputes_management.detail.resolution_notes' | translate }}
-        </span>
-        <p class="field-value">{{ facade.dispute()?.resolutionNotes }}</p>
-      </div>
-      }
     </cleansia-section>
 
-    <!-- Messages thread -->
-    <cleansia-section>
-      <h3 class="section-title">
-        {{ 'pages.disputes_management.detail.messages' | translate }}
-      </h3>
-      @if (!facade.dispute()?.messages?.length) {
-      <p class="cleansia-dispute-detail__empty">
-        {{ 'pages.disputes_management.detail.no_messages' | translate }}
-      </p>
+    <cleansia-section [title]="'pages.disputes_management.detail.messages' | translate">
+      @if (!dispute.messages?.length) {
+      <div class="empty-state">
+        <i class="pi pi-comments"></i>
+        <p>{{ 'pages.disputes_management.detail.no_messages' | translate }}</p>
+      </div>
       } @else {
       <ul class="cleansia-dispute-detail__messages">
-        @for (msg of facade.dispute()?.messages; track msg.id) {
-        <li
-          class="message"
-          [class.message--staff]="msg.isStaffMessage"
-        >
+        @for (msg of dispute.messages; track msg.id) {
+        <li class="message" [class.message--staff]="msg.isStaffMessage">
           <div class="message-header">
             <span class="message-author">{{ msg.authorName }}</span>
             @if (msg.isStaffMessage) {
@@ -128,33 +111,32 @@
       <form
         *cleansiaPermission="Policy.CanRespondToDispute"
         [formGroup]="messageForm"
-        class="cleansia-dispute-detail__message-form"
+        class="cleansia-dispute-detail__form"
         (ngSubmit)="submitMessage()"
       >
         <cleansia-textarea
           formControlName="message"
           [label]="'pages.disputes_management.message.label' | translate"
-          [placeholder]="
-            'pages.disputes_management.message.placeholder' | translate
-          "
+          [placeholder]="'pages.disputes_management.message.placeholder' | translate"
           [rows]="3"
         />
-        <cleansia-button
-          buttonType="submit"
-          icon="pi pi-send"
-          [label]="'pages.disputes_management.message.send' | translate"
-          [disabled]="!messageForm.value.message || facade.sendingMessage()"
-          [loading]="facade.sendingMessage()"
-        />
+        <div class="detail-actions">
+          <cleansia-button
+            buttonType="submit"
+            icon="pi pi-send"
+            [label]="'pages.disputes_management.message.send' | translate"
+            [disabled]="!messageForm.value.message || facade.sendingMessage()"
+            [loading]="facade.sendingMessage()"
+          />
+        </div>
       </form>
     </cleansia-section>
 
-    <!-- Status transition -->
-    <cleansia-section *cleansiaPermission="Policy.CanUpdateDisputeStatus">
-      <h3 class="section-title">
-        {{ 'pages.disputes_management.status_update.title' | translate }}
-      </h3>
-      <p class="section-hint">
+    <cleansia-section
+      *cleansiaPermission="Policy.CanUpdateDisputeStatus"
+      [title]="'pages.disputes_management.status_update.title' | translate"
+    >
+      <p class="cleansia-dispute-detail__hint">
         {{ 'pages.disputes_management.status_update.hint' | translate }}
       </p>
       <div class="cleansia-dispute-detail__status-row">
@@ -174,45 +156,41 @@
       </div>
     </cleansia-section>
 
-    <!-- Resolve + issue refund -->
-    <cleansia-section *cleansiaPermission="Policy.CanResolveDispute">
-      <h3 class="section-title">
-        {{ 'pages.disputes_management.resolve.title' | translate }}
-      </h3>
+    <cleansia-section
+      *cleansiaPermission="Policy.CanResolveDispute"
+      [title]="'pages.disputes_management.resolve.title' | translate"
+    >
       @if (facade.isTerminal()) {
-      <p class="section-hint">
+      <p class="cleansia-dispute-detail__hint">
         {{ 'pages.disputes_management.resolve.already_settled' | translate }}
       </p>
       } @else {
-      <form [formGroup]="resolveForm" class="cleansia-dispute-detail__resolve">
+      <form [formGroup]="resolveForm" class="cleansia-dispute-detail__form">
         <cleansia-text-input
           formControlName="refundAmount"
           dataType="number"
           [label]="'pages.disputes_management.resolve.refund_amount' | translate"
-          [placeholder]="
-            'pages.disputes_management.resolve.refund_amount_placeholder'
-              | translate
-          "
+          [placeholder]="'pages.disputes_management.resolve.refund_amount_placeholder' | translate"
         />
-        <p class="resolve-disclaimer">
+        <p class="cleansia-dispute-detail__disclaimer">
           <i class="pi pi-info-circle"></i>
           {{ 'pages.disputes_management.resolve.refund_disclaimer' | translate }}
         </p>
         <cleansia-textarea
           formControlName="resolutionNotes"
           [label]="'pages.disputes_management.resolve.notes' | translate"
-          [placeholder]="
-            'pages.disputes_management.resolve.notes_placeholder' | translate
-          "
+          [placeholder]="'pages.disputes_management.resolve.notes_placeholder' | translate"
           [rows]="3"
         />
-        <cleansia-button
-          icon="pi pi-check"
-          [label]="'pages.disputes_management.resolve.submit' | translate"
-          [disabled]="facade.resolving()"
-          [loading]="facade.resolving()"
-          (onClick)="submitResolve()"
-        />
+        <div class="detail-actions">
+          <cleansia-button
+            icon="pi pi-check"
+            [label]="'pages.disputes_management.resolve.submit' | translate"
+            [disabled]="facade.resolving()"
+            [loading]="facade.resolving()"
+            (onClick)="submitResolve()"
+          />
+        </div>
       </form>
       }
     </cleansia-section>

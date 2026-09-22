@@ -1,55 +1,67 @@
-<div class="cleansia-invoice-management">
+<div class="cleansia-invoice-management cleansia-page">
   <div class="cleansia-invoice-management__container page-wrapper">
-    <div class="cleansia-invoice-management__header">
-      <cleansia-title [title]="'pages.invoice_management.title' | translate" />
-      <p class="cleansia-invoice-management__description">
-        {{ 'pages.invoice_management.description' | translate }}
-      </p>
+    <div class="cleansia-page-header">
+      <div class="cleansia-page-header__heading">
+        <cleansia-title [title]="'pages.invoice_management.title' | translate" [level]="1" />
+        <p class="cleansia-page-header__description">
+          {{ 'pages.invoice_management.description' | translate }}
+        </p>
+      </div>
+      <div class="cleansia-page-header__actions">
+        <cleansia-filter-drawer [state]="facade.filters">
+          <form [formGroup]="facade.filterForm" class="filter-form">
+            <div class="filter-section">
+              <h3 class="filter-section-title">
+                {{ 'pages.invoice_management.filters.status' | translate }}
+              </h3>
+              <div class="filter-checkbox-group">
+                @for (option of facade.invoiceStatusOptions(); track option.value) {
+                <div
+                  class="filter-checkbox-item"
+                  [class.checked]="facade.isStatusChecked(option.value)"
+                  tabindex="0"
+                  (click)="toggleStatus(option.value)"
+                  (keydown.enter)="toggleStatus(option.value)"
+                >
+                  <cleansia-checkbox
+                    [label]="option.label"
+                    [ngModel]="facade.isStatusChecked(option.value)"
+                    [ngModelOptions]="{ standalone: true }"
+                    (valueChanges)="facade.setStatus(option.value, $event)"
+                  />
+                </div>
+                }
+              </div>
+            </div>
+
+            <div class="filter-section">
+              <h3 class="filter-section-title">
+                {{ 'pages.invoice_management.filters.currency' | translate }}
+              </h3>
+              <cleansia-select
+                [options]="currencyOptions()"
+                [label]="'pages.invoice_management.filters.currency' | translate"
+                [showClear]="true"
+                [showErrors]="false"
+                formControlName="currencyId"
+                appendTo="body"
+              />
+            </div>
+          </form>
+        </cleansia-filter-drawer>
+      </div>
     </div>
 
-    <!-- Filter Header - Chips left, Button right -->
-    <div class="filter-header">
-      <div class="filter-chips-inline">
-        @for (chip of activeFilterChips(); track chip.key) {
-        <div class="filter-chip">
-          <span class="filter-chip-label">{{ chip.label }}:</span>
-          <span class="filter-chip-value">{{ chip.value }}</span>
-          <button
-            class="filter-chip-remove"
-            (click)="removeFilterChip(chip.key)"
-          >
-            <i class="pi pi-times"></i>
-          </button>
-        </div>
-        } @if (hasActiveFilters()) {
-        <button class="filter-clear-all-btn" (click)="clearAllFilters()">
-          {{ 'pages.invoice_management.filters.clear_all' | translate }}
-        </button>
-        }
-      </div>
-      <div class="filter-actions">
-        <cleansia-button
-          [label]="'pages.invoice_management.filters.title' | translate"
-          icon="pi pi-filter"
-          [severity]="hasActiveFilters() ? 'primary' : 'secondary'"
-          [outlined]="!hasActiveFilters()"
-          (onClick)="openFilterDrawer()"
-        />
-        @if (hasActiveFilters()) {
-        <span class="filter-count-badge">{{ activeFilterCount() }}</span>
-        }
-      </div>
-    </div>
+    <cleansia-filter-chips [state]="facade.filters" />
 
-    <!-- Invoice Table -->
     <cleansia-section>
       @if (facade.initialLoading()) {
       <cleansia-loader />
       } @else {
       <cleansia-table
         [data]="facade.invoices()"
-        [columns]="invoiceTableColumns"
-        [actions]="invoiceTableActions"
+        [columns]="table().columns"
+        [actions]="table().actions"
         [config]="{
           paginator: true,
           rows: 20,
@@ -59,105 +71,18 @@
           emptyMessage: 'pages.invoice_management.no_invoices'
         }"
         [loading]="facade.loading()"
-        (pageChange)="onPageChange($event)"
-        (sortChange)="onSortChange($event)"
+        (pageChange)="facade.onPageChange($event)"
+        (sortChange)="facade.onSortChange($event)"
       />
       }
     </cleansia-section>
   </div>
 </div>
 
-<!-- Filter Drawer Backdrop -->
-@if (isFilterDrawerOpen()) {
-<div
-  class="filter-drawer-backdrop"
-  role="button"
-  tabindex="0"
-  (click)="closeFilterDrawer()"
-  (keydown.escape)="closeFilterDrawer()"
-  [attr.aria-label]="'global.close' | translate"
-></div>
-}
-
-<!-- Filter Drawer -->
-<div class="filter-drawer" [class.open]="isFilterDrawerOpen()">
-  <div class="filter-drawer-header">
-    <div class="filter-drawer-title">
-      <i class="pi pi-filter"></i>
-      <span>{{ 'pages.invoice_management.filters.title' | translate }}</span>
-    </div>
-    <button class="filter-drawer-close" (click)="closeFilterDrawer()">
-      <i class="pi pi-times"></i>
-    </button>
-  </div>
-
-  <div class="filter-drawer-content">
-    <form [formGroup]="filterForm" class="filter-form">
-      <!-- Status Section -->
-      <div class="filter-section">
-        <h3 class="filter-section-title">
-          {{ 'pages.invoice_management.filters.status' | translate }}
-        </h3>
-        <div class="filter-checkbox-group">
-          @for (option of invoiceStatusMultiOptions; track option.value) {
-          <div
-            class="filter-checkbox-item"
-            [class.checked]="isStatusChecked(option.value)"
-            tabindex="0"
-            (click)="toggleStatus(option.value)"
-            (keydown.enter)="toggleStatus(option.value)"
-          >
-            <cleansia-checkbox
-              [label]="option.label"
-              [ngModel]="isStatusChecked(option.value)"
-              [ngModelOptions]="{ standalone: true }"
-              (valueChanges)="onStatusChange(option.value, $event)"
-            />
-          </div>
-          }
-        </div>
-      </div>
-
-      <!-- Currency Section -->
-      <div class="filter-section">
-        <h3 class="filter-section-title">
-          {{ 'pages.invoice_management.filters.currency' | translate }}
-        </h3>
-        <cleansia-select
-          [options]="currencyOptions()"
-          [label]="'pages.invoice_management.filters.currency' | translate"
-          [floatVariant]="'on'"
-          [showClear]="true"
-          formControlName="currencyId"
-          appendTo="body"
-        />
-      </div>
-    </form>
-  </div>
-
-  <div class="filter-drawer-footer">
-    <cleansia-button
-      [label]="'pages.invoice_management.filters.reset' | translate"
-      icon="pi pi-times"
-      severity="secondary"
-      [outlined]="true"
-      (onClick)="resetFilters()"
-    />
-  </div>
-</div>
-
 <ng-template #statusTemplate let-item>
-  <div class="status-cell">
-    <span [class]="getInvoiceStatusClass(item)">
-      {{ facade.getStatusLabel(item.status) }}
-    </span>
-  </div>
+  <cleansia-status-badge kind="invoice" [value]="item.status" />
 </ng-template>
 
 <ng-template #pdfStatusTemplate let-item>
-  <div class="status-cell">
-    <span [class]="getPdfStateClass(item)">
-      {{ getPdfStateLabelKey(item) | translate }}
-    </span>
-  </div>
+  <cleansia-status-badge kind="invoicePdf" [value]="getPdfState(item)" />
 </ng-template>

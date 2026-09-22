@@ -10,20 +10,19 @@ import {
   UserConsentDto,
 } from '@cleansia/admin-services';
 import { UnsubscribeControlDirective } from '@cleansia/directives';
-import { SnackbarService } from '@cleansia/services';
-import { TranslateService } from '@ngx-translate/core';
-import { catchError, finalize, of, takeUntil } from 'rxjs';
+import { DialogService, SnackbarService } from '@cleansia/services';
+import { catchError, filter, finalize, of, takeUntil } from 'rxjs';
 
 @Injectable()
 export class DataProtectionFacade extends UnsubscribeControlDirective {
   private readonly gdprClient = inject(AdminGdprClient);
+  private readonly dialog = inject(DialogService);
   /**
    * Injected directly: NSwag split the `requests/{requestId}/retry-deletion` route into its own
    * generated client, so it is not on `AdminGdprClient` (the `DeletionRequestsClient` precedent).
    */
   private readonly requestsClient = inject(RequestsClient);
   private readonly snackbar = inject(SnackbarService);
-  private readonly translate = inject(TranslateService);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
   readonly requests = signal<GdprRequestDto[]>([]);
@@ -98,9 +97,22 @@ export class DataProtectionFacade extends UnsubscribeControlDirective {
     this.loadRequests();
   }
 
-  retryDeletion(requestId: string): void {
-    if (this.retrying()) return;
+  retryDeletion(row: GdprRequestDto): void {
+    const requestId = row.id;
+    if (!requestId || this.retrying()) return;
 
+    this.dialog
+      .confirmTranslated(
+        'pages.data_protection.requests.retry_confirm_message',
+        'pages.data_protection.requests.retry_confirm_title',
+        { userId: row.userId ?? '—' },
+        { acceptLabelKey: 'pages.data_protection.requests.retry_confirm_yes' }
+      )
+      .pipe(takeUntil(this.destroyed$), filter(Boolean))
+      .subscribe(() => this.retryDeletionConfirmed(requestId));
+  }
+
+  private retryDeletionConfirmed(requestId: string): void {
     this.retrying.set(true);
     this.requestsClient
       .retryDeletion(requestId)
@@ -117,11 +129,7 @@ export class DataProtectionFacade extends UnsubscribeControlDirective {
       )
       .subscribe((result) => {
         if (result !== 'error') {
-          this.snackbar.showSuccess(
-            this.translate.instant(
-              'pages.data_protection.requests.retry_success'
-            )
-          );
+          this.snackbar.showSuccessTranslated('pages.data_protection.requests.retry_success');
         }
         // Both branches re-read: the retry job may have finished this row first, and the refusal
         // that says so would otherwise leave a stale Failed row with a live button.
@@ -177,15 +185,37 @@ export class DataProtectionFacade extends UnsubscribeControlDirective {
       .subscribe((data: GdprExportDto | null) => {
         if (data) {
           this.downloadJson(data, `user-data-export-${trimmed}.json`);
-          this.snackbar.showSuccess(
-            this.translate.instant('pages.data_protection.export.success')
-          );
+          this.snackbar.showSuccessTranslated('pages.data_protection.export.success');
           this.loadRequests();
         }
       });
   }
 
   eraseUserAccount(userId: string): void {
+    this.dialog
+      .confirmTranslated(
+        'pages.data_protection.erase.confirm_message',
+        'pages.data_protection.erase.confirm_title',
+        { userId },
+        { danger: true, acceptLabelKey: 'pages.data_protection.erase.confirm_yes' }
+      )
+      .pipe(takeUntil(this.destroyed$), filter(Boolean))
+      .subscribe(() => this.eraseUserAccountConfirmed(userId));
+  }
+
+  fulfilDeletionRequest(userId: string): void {
+    this.dialog
+      .confirmTranslated(
+        'pages.data_protection.erase.confirm_message',
+        'pages.data_protection.requests.fulfil_title',
+        { userId },
+        { danger: true, acceptLabelKey: 'pages.data_protection.erase.confirm_yes' }
+      )
+      .pipe(takeUntil(this.destroyed$), filter(Boolean))
+      .subscribe(() => this.eraseUserAccountConfirmed(userId));
+  }
+
+  private eraseUserAccountConfirmed(userId: string): void {
     const trimmed = userId.trim();
     if (!trimmed || this.erasing()) return;
 
@@ -205,9 +235,7 @@ export class DataProtectionFacade extends UnsubscribeControlDirective {
       )
       .subscribe((result) => {
         if (result === 'error') return;
-        this.snackbar.showSuccess(
-          this.translate.instant('pages.data_protection.erase.success')
-        );
+        this.snackbar.showSuccessTranslated('pages.data_protection.erase.success');
         this.loadRequests();
       });
   }

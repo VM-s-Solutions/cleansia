@@ -491,7 +491,6 @@ const CUSTOMER_SURFACE_ERROR_KEYS: readonly string[] = [
   'order.already_completed',
   'order.in_progress_cannot_cancel',
   'order.invalid_status_transition',
-  'order.cancellation_window_closed',
   'order.address_exactly_one_required',
   'order.empty',
   'order.selected_package.invalid',
@@ -521,9 +520,7 @@ const CUSTOMER_SURFACE_ERROR_KEYS: readonly string[] = [
   // auth.invalid_apple_token does: on the money path, the string must never be
   // the thing that is missing when the button lands.
   'order.payment.already_paid',
-  'order.creation_failed',
   'order.not_completed',
-  'order.review.already_exists',
   'order.review.duplicate_tag',
   'order.review.rating_invalid',
   'order.review.tag_rating_mismatch',
@@ -568,16 +565,11 @@ const CUSTOMER_SURFACE_ERROR_KEYS: readonly string[] = [
   'file.invalid_file_type',
   'file.size_exceeded',
   'file.count_exceeded',
-  'file.count_too_few',
   'file.required',
-  'file.size_exceeded_10mb',
   'file.type_not_allowed',
   // Receipt — download
   'receipt.not_found',
-  'receipt.generation_failed',
   // GDPR — export / delete / consent
-  'gdpr.export_failed',
-  'gdpr.deletion_failed',
   'gdpr.deletion_already_pending',
   'gdpr.deletion_blocked_by_order',
   'gdpr.deletion_blocked_by_invoice',
@@ -601,16 +593,11 @@ const CUSTOMER_SURFACE_ERROR_KEYS: readonly string[] = [
   'promo.requires_account',
   // Referral — validate
   'referral.not_found',
-  'referral.self_referral',
-  'referral.already_referred',
-  'referral.inactive',
   // Membership — subscribe / cancel / swap
   'membership.plan.not_found',
   'membership.plan.not_priced_in_currency',
   'membership.already_active',
   'membership.not_found',
-  'membership.not_owned_by_user',
-  'membership.stripe_customer_required',
   'membership.stripe_customer_currency_locked',
   'membership.swap_same_plan',
   // The CreateOrder waiver rule runs BEFORE the price rule and has its own code
@@ -798,10 +785,8 @@ const SHARED_KEYS_NOT_REACHABLE_HERE: ReadonlyArray<{
 // Contract keys that no BusinessErrorMessage reference anywhere in
 // Cleansia.Core.AppServices emits — the constant is declared and dead. Asserted
 // as an exact set in both directions: a contract entry that goes dead has to be
-// listed or deleted, and one that comes back to life has to leave.
-//
-// These were declared for refusals that were never wired to a validator; their
-// strings ship ahead of the rule, the way auth.invalid_apple_token does.
+// listed or deleted, and one that comes back to life has to leave. Empty since the
+// backend's BusinessErrorMessageEmittedTests refuses a constant nothing emits.
 //
 // Seven promo.* codes used to sit here too (promo.not_found was always emitted, by
 // the admin promo features). They are emitted now: CreateOrder refuses a booking
@@ -810,21 +795,7 @@ const SHARED_KEYS_NOT_REACHABLE_HERE: ReadonlyArray<{
 // (ValidatePromoCode) still travels its own road -- it answers the PromoCodeError
 // enum name in its Response, which order-wizard.models.ts maps onto
 // pages.order.promo.error_*, never onto api.promo.*.
-const DECLARED_BUT_NEVER_EMITTED: readonly string[] = [
-  'file.count_too_few',
-  'file.size_exceeded_10mb',
-  'gdpr.deletion_failed',
-  'gdpr.export_failed',
-  'membership.not_owned_by_user',
-  'membership.stripe_customer_required',
-  'order.cancellation_window_closed',
-  'order.creation_failed',
-  'order.review.already_exists',
-  'receipt.generation_failed',
-  'referral.already_referred',
-  'referral.inactive',
-  'referral.self_referral',
-];
+const DECLARED_BUT_NEVER_EMITTED: readonly string[] = [];
 
 /**
  * Keys the shared-emitter assertion should treat as ACCOUNTED FOR because another list in this file

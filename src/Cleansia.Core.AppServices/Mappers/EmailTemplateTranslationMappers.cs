@@ -5,19 +5,6 @@ namespace Cleansia.Core.AppServices.Mappers;
 
 public static class EmailTemplateTranslationMappers
 {
-    public static EmailTemplateTranslationListItem MapToListItem(this EmailTemplateTranslation template)
-    {
-        return new EmailTemplateTranslationListItem(
-            Id: template.Id,
-            Key: template.Key,
-            Value: template.Value,
-            EmailType: template.EmailType,
-            LanguageId: template.LanguageId,
-            LanguageCode: template.Language?.Code,
-            CreatedOn: template.CreatedOn,
-            UpdatedOn: template.UpdatedOn);
-    }
-
     public static EmailTemplateTranslationDetailDto MapToDetailDto(this EmailTemplateTranslation template)
     {
         return new EmailTemplateTranslationDetailDto(

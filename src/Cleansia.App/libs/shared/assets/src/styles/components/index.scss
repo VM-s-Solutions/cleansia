@@ -2,7 +2,6 @@
 // All shared component styles imported here
 
 @use './cleansia-address-autocomplete.component.scss';
-@use './cleansia-availability.component.scss';
 @use './cleansia-brand-name.component.scss';
 @use './cleansia-button.component.scss';
 @use './cleansia-calendar.component.scss';
@@ -12,10 +11,12 @@
 @use './cleansia-dynamic-background.component.scss';
 @use './cleansia-earnings-chart.component.scss';
 @use './cleansia-file.component.scss';
+@use './cleansia-filter-drawer.component.scss';
 @use './cleansia-help-card.component.scss';
 @use './cleansia-label.component.scss';
 @use './cleansia-language-switcher.component.scss';
 @use './cleansia-market-switcher.component.scss';
+@use './cleansia-mobile-toolbar.component.scss';
 @use './cleansia-loader.component.scss';
 @use './cleansia-outcome.component.scss';
 @use './cleansia-order-distribution-chart.component.scss';

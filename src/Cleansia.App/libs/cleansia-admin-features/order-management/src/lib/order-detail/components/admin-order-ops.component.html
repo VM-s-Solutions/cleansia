@@ -1,148 +1,136 @@
-<cleansia-section [title]="'pages.order_management.ops.title' | translate">
-  <div class="order-ops">
-    <div class="order-ops__actions">
-      <cleansia-button
-        [label]="'pages.order_management.ops.cancel.action' | translate"
-        icon="pi pi-ban"
-        severity="danger"
-        [outlined]="facade.activePanel() !== 'cancel'"
-        (onClick)="togglePanel('cancel')"
-      />
-      <cleansia-button
-        [label]="'pages.order_management.ops.override_status.action' | translate"
-        icon="pi pi-sync"
-        [outlined]="facade.activePanel() !== 'overrideStatus'"
-        (onClick)="togglePanel('overrideStatus')"
-      />
-      <cleansia-button
-        [label]="'pages.order_management.ops.reassign.action' | translate"
-        icon="pi pi-users"
-        [outlined]="facade.activePanel() !== 'reassign'"
-        (onClick)="togglePanel('reassign')"
-      />
-      <cleansia-button
-        [label]="'pages.order_management.ops.refund.action' | translate"
-        icon="pi pi-replay"
-        severity="danger"
-        [outlined]="facade.activePanel() !== 'refund'"
-        (onClick)="togglePanel('refund')"
-      />
-    </div>
+<cleansia-button
+  [label]="'pages.order_management.ops.cancel.action' | translate"
+  icon="pi pi-ban"
+  severity="danger"
+  [outlined]="facade.activePanel() !== 'cancel'"
+  (onClick)="togglePanel('cancel')"
+/>
+<cleansia-button
+  [label]="'pages.order_management.ops.override_status.action' | translate"
+  icon="pi pi-sync"
+  [outlined]="facade.activePanel() !== 'overrideStatus'"
+  (onClick)="togglePanel('overrideStatus')"
+/>
+<cleansia-button
+  [label]="'pages.order_management.ops.reassign.action' | translate"
+  icon="pi pi-users"
+  [outlined]="facade.activePanel() !== 'reassign'"
+  (onClick)="togglePanel('reassign')"
+/>
+<cleansia-button
+  [label]="'pages.order_management.ops.refund.action' | translate"
+  icon="pi pi-replay"
+  severity="danger"
+  [outlined]="facade.activePanel() !== 'refund'"
+  (onClick)="togglePanel('refund')"
+/>
 
-    @if (facade.activePanel() === 'cancel') {
-    <div class="order-ops__panel">
-      <p class="order-ops__hint">
-        {{ 'pages.order_management.ops.cancel.confirm' | translate }}
-      </p>
-      <cleansia-textarea
-        [label]="'pages.order_management.ops.cancel.reason' | translate"
-        [placeholder]="
-          'pages.order_management.ops.cancel.reason_hint' | translate
-        "
-        [ngModel]="facade.cancelReason()"
-        (valueChanges)="onCancelReasonChange($event)"
-      />
-      @if (facade.errorKey()) {
-      <p class="order-ops__error">{{ facade.errorKey()! | translate }}</p>
-      }
-      <cleansia-button
-        [label]="'pages.order_management.ops.cancel.submit' | translate"
-        icon="pi pi-ban"
-        severity="danger"
-        [loading]="facade.submitting()"
-        (onClick)="submitCancel()"
-      />
-    </div>
-    }
+@if (facade.activePanel() === 'cancel') {
+<div class="detail-actions__panel">
+  <p class="detail-actions__hint">
+    {{ 'pages.order_management.ops.cancel.confirm' | translate }}
+  </p>
+  <cleansia-textarea
+    [label]="'pages.order_management.ops.cancel.reason' | translate"
+    [placeholder]="'pages.order_management.ops.cancel.reason_hint' | translate"
+    [ngModel]="facade.cancelReason()"
+    (valueChanges)="onCancelReasonChange($event)"
+  />
+  @if (facade.errorKey()) {
+  <p class="detail-actions__error">{{ facade.errorKey()! | translate }}</p>
+  }
+  <cleansia-button
+    [label]="'pages.order_management.ops.cancel.submit' | translate"
+    icon="pi pi-ban"
+    severity="danger"
+    [loading]="facade.submitting()"
+    (onClick)="submitCancel()"
+  />
+</div>
+}
 
-    @if (facade.activePanel() === 'overrideStatus') {
-    <div class="order-ops__panel">
-      <p class="order-ops__hint">
-        {{ 'pages.order_management.ops.override_status.confirm' | translate }}
-      </p>
-      <cleansia-select
-        [label]="
-          'pages.order_management.ops.override_status.target' | translate
-        "
-        [options]="statusOptions()"
-        [ngModel]="facade.targetStatus()"
-        (valueChanges)="onTargetStatusChange($event)"
-        [showClear]="false"
-      />
-      @if (facade.errorKey()) {
-      <p class="order-ops__error">{{ facade.errorKey()! | translate }}</p>
-      }
-      <cleansia-button
-        [label]="'pages.order_management.ops.override_status.submit' | translate"
-        icon="pi pi-sync"
-        [loading]="facade.submitting()"
-        [disabled]="!facade.canSubmitOverrideStatus()"
-        (onClick)="submitOverrideStatus()"
-      />
-    </div>
-    }
+@if (facade.activePanel() === 'overrideStatus') {
+<div class="detail-actions__panel">
+  <p class="detail-actions__hint">
+    {{ 'pages.order_management.ops.override_status.confirm' | translate }}
+  </p>
+  <cleansia-select
+    [label]="'pages.order_management.ops.override_status.target' | translate"
+    [options]="statusOptions()"
+    [ngModel]="facade.targetStatus()"
+    (valueChanges)="onTargetStatusChange($event)"
+    [showClear]="false"
+  />
+  @if (facade.errorKey()) {
+  <p class="detail-actions__error">{{ facade.errorKey()! | translate }}</p>
+  }
+  <cleansia-button
+    [label]="'pages.order_management.ops.override_status.submit' | translate"
+    icon="pi pi-sync"
+    [loading]="facade.submitting()"
+    [disabled]="!facade.canSubmitOverrideStatus()"
+    (onClick)="submitOverrideStatus()"
+  />
+</div>
+}
 
-    @if (facade.activePanel() === 'reassign') {
-    <div class="order-ops__panel">
-      <!--
-        No crew is the case an admin is CALLED INTO, not a reason to hide the form. The server's
-        reassign command takes a null source as "a pure add into an open spot", and requiring one here
-        made the platform's own escalation path unreachable: a job whose cleaners walked, or which
-        nobody ever took, could not be staffed by anybody.
-      -->
-      @if (!hasAssignedEmployees()) {
-      <p class="order-ops__hint">
-        {{ 'pages.order_management.ops.reassign.add_only_hint' | translate }}
-      </p>
-      } @else {
-      <p class="order-ops__hint">
-        {{ 'pages.order_management.ops.reassign.confirm' | translate }}
-      </p>
-      <cleansia-select
-        [label]="'pages.order_management.ops.reassign.from' | translate"
-        [options]="fromEmployeeOptions()"
-        [ngModel]="facade.fromEmployeeId()"
-        (valueChanges)="onFromEmployeeChange($event)"
-        [showClear]="true"
-      />
-      }
-      <cleansia-text-input
-        [label]="'pages.order_management.ops.reassign.to' | translate"
-        [placeholder]="
-          'pages.order_management.ops.reassign.to_hint' | translate
-        "
-        [ngModel]="facade.toEmployeeId()"
-        (valueChanges)="onToEmployeeChange($event)"
-      />
-      @if (facade.errorKey()) {
-      <p class="order-ops__error">{{ facade.errorKey()! | translate }}</p>
-      }
-      <cleansia-button
-        [label]="'pages.order_management.ops.reassign.submit' | translate"
-        icon="pi pi-users"
-        [loading]="facade.submitting()"
-        [disabled]="!facade.canSubmitReassign()"
-        (onClick)="submitReassign()"
-      />
-    </div>
-    }
+@if (facade.activePanel() === 'reassign') {
+<div class="detail-actions__panel">
+  <!--
+    No crew is the case an admin is CALLED INTO, not a reason to hide the form. The server's
+    reassign command takes a null source as "a pure add into an open spot", and requiring one here
+    made the platform's own escalation path unreachable: a job whose cleaners walked, or which
+    nobody ever took, could not be staffed by anybody.
+  -->
+  @if (!hasAssignedEmployees()) {
+  <p class="detail-actions__hint">
+    {{ 'pages.order_management.ops.reassign.add_only_hint' | translate }}
+  </p>
+  } @else {
+  <p class="detail-actions__hint">
+    {{ 'pages.order_management.ops.reassign.confirm' | translate }}
+  </p>
+  <cleansia-select
+    [label]="'pages.order_management.ops.reassign.from' | translate"
+    [options]="fromEmployeeOptions()"
+    [ngModel]="facade.fromEmployeeId()"
+    (valueChanges)="onFromEmployeeChange($event)"
+    [showClear]="true"
+  />
+  }
+  <cleansia-text-input
+    [label]="'pages.order_management.ops.reassign.to' | translate"
+    [placeholder]="'pages.order_management.ops.reassign.to_hint' | translate"
+    [ngModel]="facade.toEmployeeId()"
+    (valueChanges)="onToEmployeeChange($event)"
+  />
+  @if (facade.errorKey()) {
+  <p class="detail-actions__error">{{ facade.errorKey()! | translate }}</p>
+  }
+  <cleansia-button
+    [label]="'pages.order_management.ops.reassign.submit' | translate"
+    icon="pi pi-users"
+    [loading]="facade.submitting()"
+    [disabled]="!facade.canSubmitReassign()"
+    (onClick)="submitReassign()"
+  />
+</div>
+}
 
-    @if (facade.activePanel() === 'refund') {
-    <div class="order-ops__panel">
-      <p class="order-ops__hint">
-        {{ 'pages.order_management.ops.refund.confirm' | translate }}
-      </p>
-      @if (facade.errorKey()) {
-      <p class="order-ops__error">{{ facade.errorKey()! | translate }}</p>
-      }
-      <cleansia-button
-        [label]="'pages.order_management.ops.refund.submit' | translate"
-        icon="pi pi-replay"
-        severity="danger"
-        [loading]="facade.submitting()"
-        (onClick)="submitRefund()"
-      />
-    </div>
-    }
-  </div>
-</cleansia-section>
+@if (facade.activePanel() === 'refund') {
+<div class="detail-actions__panel">
+  <p class="detail-actions__hint">
+    {{ 'pages.order_management.ops.refund.confirm' | translate }}
+  </p>
+  @if (facade.errorKey()) {
+  <p class="detail-actions__error">{{ facade.errorKey()! | translate }}</p>
+  }
+  <cleansia-button
+    [label]="'pages.order_management.ops.refund.submit' | translate"
+    icon="pi pi-replay"
+    severity="danger"
+    [loading]="facade.submitting()"
+    (onClick)="submitRefund()"
+  />
+</div>
+}

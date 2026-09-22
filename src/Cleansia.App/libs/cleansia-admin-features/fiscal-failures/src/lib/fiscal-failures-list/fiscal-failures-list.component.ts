@@ -23,6 +23,7 @@ import { Subject, takeUntil } from 'rxjs';
 import { FiscalFailuresListFacade } from './fiscal-failures-list.facade';
 import {
   getFiscalErrorKindBadge,
+  getFiscalErrorKindClass,
   getFiscalFailureTableActions,
   getFiscalFailureTableColumns,
 } from './fiscal-failures-list.models';
@@ -98,10 +99,7 @@ export class FiscalFailuresListComponent implements AfterViewInit, OnDestroy {
   }
 
   getErrorKindClass(kind: FiscalErrorKind | undefined): string {
-    const badge = getFiscalErrorKindBadge(kind);
-    return badge
-      ? `fiscal-error-badge fiscal-error-${badge}`
-      : 'fiscal-error-badge';
+    return getFiscalErrorKindClass(kind);
   }
 
   getErrorKindLabel(kind: FiscalErrorKind | undefined): string {

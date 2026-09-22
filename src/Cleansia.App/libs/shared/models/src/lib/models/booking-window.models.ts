@@ -10,7 +10,7 @@
  */
 export const FIRST_WINDOW_HOUR = 8;
 export const LAST_WINDOW_HOUR = 20;
-export const BOOKING_SLOT_INTERVAL_MINUTES = 15;
+const BOOKING_SLOT_INTERVAL_MINUTES = 15;
 
 /** Minimum hours between now and cleaning start for any booking to be accepted. */
 export const EXPRESS_LEAD_TIME_HOURS = 2;

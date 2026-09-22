@@ -6,7 +6,7 @@ import {
 } from '@cleansia/admin-services';
 import { SnackbarService } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
-import { of } from 'rxjs';
+import { EMPTY, of } from 'rxjs';
 import { OrderManagementFacade } from './order-management.facade';
 
 describe('OrderManagementFacade', () => {
@@ -34,9 +34,21 @@ describe('OrderManagementFacade', () => {
         },
         {
           provide: SnackbarService,
-          useValue: { showSuccess: jest.fn(), showError: jest.fn() },
+          useValue: {
+            showSuccess: jest.fn(),
+            showSuccessTranslated: jest.fn(),
+            showError: jest.fn(),
+            showErrorTranslated: jest.fn(),
+          },
         },
-        { provide: TranslateService, useValue: { instant: (k: string) => k } },
+        {
+          provide: TranslateService,
+          useValue: {
+            instant: (k: string) => k,
+            currentLang: 'cs',
+            onLangChange: EMPTY,
+          },
+        },
       ],
     });
 
@@ -48,7 +60,7 @@ describe('OrderManagementFacade', () => {
 
     expect(getPagedMock.mock.lastCall?.[CURRENCY_SLOT]).toBe('cur-eur');
 
-    facade.resetFilter();
+    facade.applyFilter({});
 
     expect(getPagedMock).toHaveBeenCalledTimes(2);
     expect(getPagedMock.mock.lastCall?.[CURRENCY_SLOT]).toBeUndefined();

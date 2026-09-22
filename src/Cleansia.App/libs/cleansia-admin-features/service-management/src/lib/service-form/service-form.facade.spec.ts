@@ -14,7 +14,12 @@ describe('ServiceFormFacade', () => {
   let facade: ServiceFormFacade;
   let createMock: jest.Mock;
   let updateMock: jest.Mock;
-  let snackbar: { showSuccess: jest.Mock; showError: jest.Mock };
+  let snackbar: {
+    showSuccess: jest.Mock;
+    showSuccessTranslated: jest.Mock;
+    showError: jest.Mock;
+    showErrorTranslated: jest.Mock;
+  };
   let navigate: jest.Mock;
   let getLanguagesMock: jest.Mock;
   let getCategoriesMock: jest.Mock;
@@ -39,7 +44,12 @@ describe('ServiceFormFacade', () => {
     TestBed.resetTestingModule();
     createMock = jest.fn().mockReturnValue(of({ id: 'svc-1' }));
     updateMock = jest.fn().mockReturnValue(of({ id: 'svc-1' }));
-    snackbar = { showSuccess: jest.fn(), showError: jest.fn() };
+    snackbar = {
+      showSuccess: jest.fn(),
+      showSuccessTranslated: jest.fn(),
+      showError: jest.fn(),
+      showErrorTranslated: jest.fn(),
+    };
     navigate = jest.fn();
     getLanguagesMock = jest.fn().mockReturnValue(of([]));
     getCategoriesMock = jest.fn().mockReturnValue(of([]));
@@ -74,7 +84,7 @@ describe('ServiceFormFacade', () => {
   it('reports success and returns to the list once a create lands', () => {
     facade.createService(formData);
 
-    expect(snackbar.showSuccess).toHaveBeenCalledWith(
+    expect(snackbar.showSuccessTranslated).toHaveBeenCalledWith(
       'pages.service_form.messages.create_success'
     );
     expect(navigate).toHaveBeenCalled();

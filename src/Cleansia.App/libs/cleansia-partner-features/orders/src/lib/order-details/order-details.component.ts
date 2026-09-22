@@ -1,4 +1,3 @@
-import { DatePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, effect, inject, OnInit, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
@@ -7,7 +6,7 @@ import { CleansiaPartnerRoute } from '@cleansia/services';
 import { OrderItem, OrderStatus } from '@cleansia/partner-services';
 import {
   CleansiaButtonComponent,
-  CleansiaDetailSkeletonComponent,
+  CleansiaLoaderComponent,
   CleansiaSectionComponent,
   CleansiaTextInputComponent,
 } from '@cleansia/components';
@@ -53,6 +52,7 @@ import {
   selector: 'cleansia-partner-order-details',
   standalone: true,
   imports: [
+    CleansiaLoaderComponent,
     TranslatePipe,
     ReactiveFormsModule,
     OrderExtrasComponent,
@@ -60,7 +60,6 @@ import {
     OrderStatusComponent,
     OrderPackagesComponent,
     CleansiaButtonComponent,
-    CleansiaDetailSkeletonComponent,
     CleansiaSectionComponent,
     OrderPaymentInfoComponent,
     CleansiaTextInputComponent,
@@ -68,7 +67,6 @@ import {
     OrderServiceDetailsComponent,
     OrderAdditionalServicesComponent,
     OrderPhotosComponent,
-    DatePipe,
   ],
   templateUrl: './order-details.component.html',
   providers: [OrderDetailsFacade, DialogService],
@@ -110,17 +108,9 @@ export class OrderDetailsComponent implements OnInit {
     return buildTranslatedOption(this.translateService, 'payment_type', this.orderDetails()?.paymentType);
   });
 
-  protected readonly orderStatusLabel = computed(() => {
-    this.currentLang();
-    return translateEnum(this.translateService, 'order_status', this.orderDetails()?.orderStatus?.name);
-  });
-
-  protected readonly paymentStatusLabel = computed(() => {
-    this.currentLang();
-    return translateEnum(this.translateService, 'payment_status', this.orderDetails()?.paymentStatus?.name);
-  });
-
-  protected readonly formattedCreatedOn = computed(() => formatDateTime(this.orderDetails()?.createdOn));
+  protected readonly formattedCreatedOn = computed(() =>
+    formatDateTime(this.orderDetails()?.createdOn, this.translateService.currentLang)
+  );
 
   protected readonly currencyOptions = computed(() => buildCurrencyOptions(this.orderDetails()?.currency));
 
@@ -264,9 +254,12 @@ export class OrderDetailsComponent implements OnInit {
     this.router.navigate([CleansiaPartnerRoute.ORDERS]);
   }
 
-  protected formatCurrency = formatCurrency;
-  protected formatDate = formatDate;
-  protected formatDateTime = formatDateTime;
+  protected formatCurrency = (amount: number, currencyCode: string | null | undefined): string =>
+    formatCurrency(amount, currencyCode, this.translateService.currentLang);
+  protected formatDate = (date: string | Date | undefined): string =>
+    formatDate(date, this.translateService.currentLang);
+  protected formatDateTime = (date: string | Date | undefined): string =>
+    formatDateTime(date, this.translateService.currentLang);
 
   protected printOrder(): void {
     this.facade.printOrder();
@@ -385,7 +378,7 @@ export class OrderDetailsComponent implements OnInit {
         zipCode: orderDetails.address.zipCode ?? '',
         country: orderDetails.address.country ?? '',
       }),
-      cleaningDateTime: formatDateTime(orderDetails.cleaningDateTime),
+      cleaningDateTime: this.formatDateTime(orderDetails.cleaningDateTime),
       rooms: orderDetails.rooms?.toString(),
       bathrooms: orderDetails.bathrooms?.toString(),
       estimatedTime: this.translateService.instant(
@@ -393,15 +386,15 @@ export class OrderDetailsComponent implements OnInit {
         { minutes: orderDetails.estimatedTime }
       ),
       paymentType: orderDetails.paymentType.name,
-      totalPrice: formatCurrency(orderDetails.totalPrice, orderDetails.currency.symbol ?? ''),
+      totalPrice: this.formatCurrency(orderDetails.totalPrice, orderDetails.currency.code),
       currency: `${orderDetails.currency.name} (${orderDetails.currency.code})`,
       assignedEmployeeName: primaryEmployee?.fullName ?? '',
       assignedEmployeePhone: primaryEmployee?.phoneNumber ?? '',
       notes: orderDetails.notes || '',
       specialInstructions: orderDetails.specialInstructions || '',
       accessInstructions: orderDetails.accessInstructions || '',
-      createdOn: formatDateTime(orderDetails.createdOn),
-      updatedOn: orderDetails.updatedOn ? formatDateTime(orderDetails.updatedOn) : '',
+      createdOn: this.formatDateTime(orderDetails.createdOn),
+      updatedOn: this.formatDateTime(orderDetails.updatedOn),
     });
   }
 }

@@ -33,8 +33,8 @@ import {
 } from '@cleansia/components';
 import { CleansiaPermissionDirective } from '@cleansia/directives';
 import { PermissionService, Policy } from '@cleansia/services';
+import { formatDate } from '@cleansia/utils';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
-import { ConfirmationService } from 'primeng/api';
 import { Subject, takeUntil } from 'rxjs';
 import { DataProtectionFacade } from './data-protection.facade';
 import {
@@ -61,13 +61,12 @@ import {
     CleansiaPermissionDirective,
   ],
   templateUrl: './data-protection.component.html',
-  providers: [DataProtectionFacade, ConfirmationService],
+  providers: [DataProtectionFacade],
 })
 export class DataProtectionComponent implements AfterViewInit, OnDestroy {
   private readonly fb = inject(FormBuilder);
   private readonly cd = inject(ChangeDetectorRef);
   private readonly translate = inject(TranslateService);
-  private readonly confirmationService = inject(ConfirmationService);
   private readonly permissions = inject(PermissionService);
   protected readonly facade = inject(DataProtectionFacade);
   protected readonly Policy = Policy;
@@ -129,21 +128,7 @@ export class DataProtectionComponent implements AfterViewInit, OnDestroy {
     const userId = this.requireUserId();
     if (!userId) return;
 
-    this.confirmationService.confirm({
-      message: this.translate.instant(
-        'pages.data_protection.erase.confirm_message',
-        { userId }
-      ),
-      header: this.translate.instant(
-        'pages.data_protection.erase.confirm_title'
-      ),
-      icon: 'pi pi-exclamation-triangle',
-      acceptLabel: this.translate.instant(
-        'pages.data_protection.erase.confirm_yes'
-      ),
-      rejectLabel: this.translate.instant('global.actions.cancel'),
-      accept: () => this.facade.eraseUserAccount(userId),
-    });
+    this.facade.eraseUserAccount(userId);
   }
 
   /**
@@ -158,53 +143,15 @@ export class DataProtectionComponent implements AfterViewInit, OnDestroy {
     const userId = row.userId;
     if (!userId) return;
 
-    this.confirmationService.confirm({
-      message: this.translate.instant(
-        'pages.data_protection.erase.confirm_message',
-        { userId }
-      ),
-      header: this.translate.instant(
-        'pages.data_protection.requests.fulfil_title'
-      ),
-      icon: 'pi pi-exclamation-triangle',
-      acceptLabel: this.translate.instant(
-        'pages.data_protection.erase.confirm_yes'
-      ),
-      rejectLabel: this.translate.instant('global.actions.cancel'),
-      accept: () => this.facade.eraseUserAccount(userId),
-    });
+    this.facade.fulfilDeletionRequest(userId);
   }
 
   confirmRetry(row: GdprRequestDto): void {
-    const requestId = row.id;
-    if (!requestId) return;
-
-    this.confirmationService.confirm({
-      message: this.translate.instant(
-        'pages.data_protection.requests.retry_confirm_message',
-        { userId: row.userId ?? '—' }
-      ),
-      header: this.translate.instant(
-        'pages.data_protection.requests.retry_confirm_title'
-      ),
-      icon: 'pi pi-exclamation-triangle',
-      acceptLabel: this.translate.instant(
-        'pages.data_protection.requests.retry_confirm_yes'
-      ),
-      rejectLabel: this.translate.instant('global.actions.cancel'),
-      accept: () => this.facade.retryDeletion(requestId),
-    });
+    this.facade.retryDeletion(row);
   }
 
   formatDate(d?: Date): string {
-    if (!d) return '—';
-    return new Intl.DateTimeFormat(this.translate.currentLang ?? 'en', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    }).format(d);
+    return formatDate(d, this.translate.currentLang, 'dateTime') || '—';
   }
 
   private requireUserId(): string | null {

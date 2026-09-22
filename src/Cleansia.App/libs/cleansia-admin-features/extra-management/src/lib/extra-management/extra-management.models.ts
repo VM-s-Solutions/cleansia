@@ -13,38 +13,6 @@ export function mapStatusFilterToIsActive(
   return undefined;
 }
 
-export const EXTRA_ERROR_KEY_MAP: Readonly<Record<string, string>> = {
-  'extra.not_found': 'api.extra.not_found',
-  'extra.in_use': 'api.extra.in_use',
-};
-
-export const EXTRA_FALLBACK_ERROR_KEY = 'api.common.error_occurred';
-
-export function resolveExtraErrorKey(error: unknown): string {
-  const apiError = error as {
-    result?: { detail?: string; title?: string };
-    response?: string;
-  };
-  let code = apiError?.result?.detail || apiError?.result?.title;
-
-  if (!code && apiError?.response) {
-    try {
-      const parsed = JSON.parse(apiError.response) as {
-        detail?: string;
-        title?: string;
-      };
-      code = parsed.detail || parsed.title;
-    } catch {
-      code = undefined;
-    }
-  }
-
-  if (code && EXTRA_ERROR_KEY_MAP[code]) {
-    return EXTRA_ERROR_KEY_MAP[code];
-  }
-  return EXTRA_FALLBACK_ERROR_KEY;
-}
-
 export function getExtraTableDefinition(
   defs: {
     onEdit: (row: ExtraListItem) => void;
@@ -77,6 +45,7 @@ export function getExtraTableDefinition(
       },
       {
         id: 'price',
+        numeric: true,
         field: 'price',
         header: translate.instant('pages.extra_management.columns.price'),
         getValue: (row: ExtraListItem) => formatCurrency(row?.price),
@@ -87,6 +56,7 @@ export function getExtraTableDefinition(
       },
       {
         id: 'displayOrder',
+        numeric: true,
         field: 'displayOrder',
         header: translate.instant(
           'pages.extra_management.columns.display_order'

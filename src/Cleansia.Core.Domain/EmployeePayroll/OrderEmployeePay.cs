@@ -225,12 +225,6 @@ public class OrderEmployeePay : TenantAuditable
         return this;
     }
 
-    public OrderEmployeePay SetPayBreakdown(string breakdown)
-    {
-        PayBreakdown = breakdown;
-        return this;
-    }
-
     public OrderEmployeePay Anonymize()
     {
         Notes = Notes is null ? null : AnonymizationMarker.Value;

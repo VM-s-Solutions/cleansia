@@ -14,7 +14,6 @@ import {
 } from '@cleansia/admin-services';
 import {
   CleansiaButtonComponent,
-  CleansiaSectionComponent,
   CleansiaTextInputComponent,
   CleansiaTextareaComponent,
 } from '@cleansia/components';
@@ -29,7 +28,6 @@ import { AdminPayrollOpsPanel } from './admin-payroll-ops.models';
     CommonModule,
     FormsModule,
     TranslatePipe,
-    CleansiaSectionComponent,
     CleansiaTextInputComponent,
     CleansiaTextareaComponent,
     CleansiaButtonComponent,
@@ -69,10 +67,6 @@ export class AdminPayrollOpsComponent {
       status !== EmployeeInvoiceStatus.Cancelled
     );
   });
-
-  readonly hasAnyAction = computed(
-    () => this.canAdjust() || this.canDispute() || this.canReject()
-  );
 
   togglePanel(panel: AdminPayrollOpsPanel): void {
     this.facade.openPanel(panel);

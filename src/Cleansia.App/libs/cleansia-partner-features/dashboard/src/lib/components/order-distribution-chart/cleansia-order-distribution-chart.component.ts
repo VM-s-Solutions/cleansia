@@ -3,6 +3,7 @@ import {
   ChangeDetectionStrategy,
   Component,
   effect,
+  inject,
   input,
   ViewChild,
 } from '@angular/core';
@@ -10,6 +11,7 @@ import {
   CleansiaLabelComponent,
 } from '@cleansia/components';
 import { OrderAnalyticsDto } from '@cleansia/partner-services';
+import { currentLanguage, formatMoney, localeFor } from '@cleansia/utils';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { ChartConfiguration, ChartType } from 'chart.js';
 import { BaseChartDirective } from 'ng2-charts';
@@ -29,6 +31,9 @@ import { Skeleton } from 'primeng/skeleton';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CleansiaOrderDistributionChartComponent {
+  private readonly translate = inject(TranslateService);
+  private readonly lang = currentLanguage(this.translate);
+
   data = input<OrderAnalyticsDto | null>(null);
   loading = input<boolean>(false);
   /**
@@ -93,13 +98,17 @@ export class CleansiaOrderDistributionChartComponent {
     },
   };
 
-  constructor(private translate: TranslateService) {
+  constructor() {
     effect(() => {
       const currentData = this.data();
       if (currentData) {
         this.updateChartData(currentData);
       }
     });
+  }
+
+  formatRevenue(value: number | undefined): string {
+    return formatMoney(value ?? 0, this.currencyCode(), localeFor(this.lang()), { fractionDigits: 2 });
   }
 
   private updateChartData(currentData: OrderAnalyticsDto): void {

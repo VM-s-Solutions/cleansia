@@ -84,7 +84,6 @@ public static class BusinessErrorMessage
     /// cleaner took the job, and the reassign is the admin act that puts one on it.
     /// </summary>
     public const string OrderStatusConfirmedNeedsCrew = "order.status.confirmed_needs_crew";
-    public const string CancellationWindowClosed = "order.cancellation_window_closed";
     // Cash-collection gating (cleaner marks cash collected before an order can be completed).
     public const string OrderCashAlreadyCollected = "order.cash_already_collected";
     public const string OrderCashNotCollected = "order.cash_not_collected";
@@ -109,14 +108,12 @@ public static class BusinessErrorMessage
     // to the customer's payment, and the same key covers OnTheWay/InProgress, so it may never be
     // voiced as anything but "this job is no longer available".
     public const string OrderNotTakeable = "order.not_takeable";
-    public const string OrderAlreadyAssigned = "order.already_assigned";
     public const string NoAvailableSpots = "order.no_available_spots";
     public const string WeeklyOrderLimitReached = "order.weekly_limit_reached";
     public const string WeeklyOrderLimitInvalid = "employee.weekly_limit_invalid";
     public const string TimeConflict = "order.time_conflict";
     public const string EmployeeAlreadyAssignedToOrder = "order.employee_already_assigned";
     public const string EmployeeNotAssignedToOrder = "order.employee_not_assigned";
-    public const string MaxEmployeesExceeded = "order.max_employees_exceeded";
     public const string TotalPriceMustBePositive = "order.total_price.positive";
     public const string TotalPriceNotMatch = "order.total_price.not_match";
     public const string PreferredEmployeeNotEligible = "order.preferred_employee.not_eligible";
@@ -145,8 +142,6 @@ public static class BusinessErrorMessage
     public const string MembershipPlanNotFound = "membership.plan.not_found";
     public const string MembershipAlreadyActive = "membership.already_active";
     public const string MembershipNotFound = "membership.not_found";
-    public const string MembershipNotOwnedByUser = "membership.not_owned_by_user";
-    public const string MembershipStripeCustomerRequired = "membership.stripe_customer_required";
     public const string MembershipSwapSamePlan = "membership.swap_same_plan";
 
     /// <summary>
@@ -202,17 +197,13 @@ public static class BusinessErrorMessage
     public const string OrderNotConfirmed = "order.not_confirmed";
     public const string OrderTooEarlyToStart = "order.too_early_to_start";
     public const string EmployeeAlreadyHasOrderInProgress = "order.employee_already_has_order_in_progress";
-    public const string ActualTimeMustBePositive = "order.actual_time.positive";
-    public const string CompletionNotesRequired = "order.completion_notes.required";
     public const string CompletionNotesTooLong = "order.completion_notes.too_long";
     public const string AfterPhotosRequired = "order.after_photos.required";
     public const string OrderNoteContentRequired = "order.note.content_required";
     public const string OrderIssueDescriptionRequired = "order.issue.description_required";
     public const string PaymentGatewayUnavailable = "order.payment_gateway_unavailable";
     public const string OrderPaymentAlreadyPaid = "order.payment.already_paid";
-    public const string OrderCreationFailed = "order.creation_failed";
     public const string OrderNotCompleted = "order.not_completed";
-    public const string ReviewAlreadyExists = "order.review.already_exists";
     public const string ReviewRatingInvalid = "order.review.rating_invalid";
     public const string ReviewTooManyTags = "order.review.too_many_tags";
     public const string ReviewTagRatingMismatch = "order.review.tag_rating_mismatch";
@@ -229,7 +220,6 @@ public static class BusinessErrorMessage
 
     // Employee
     public const string EmployeeNotFound = "employee.not_found";
-    public const string NotExistingEmployeeWithEmail = "employee.not_existing_email";
     public const string NotAllowedToUpdateEmployee = "employee.not_allowed_to_update";
     public const string EmployeeProfileIncomplete = "employee.profile_incomplete";
 
@@ -242,14 +232,8 @@ public static class BusinessErrorMessage
     public const string EmployeeDocumentsNotApproved = "employee.documents_not_approved";
     /// <summary>The work country is operated by another company than the approving admin's (ADR-0061 D6).</summary>
     public const string EmployeeWorkCountryOperatorMismatch = "employee.work_country_operator_mismatch";
-    // RETAINED deliberately. No production code emits this any more (order actions now
-    // use EmployeeNotApproved), but it is referenced by negative-assert tests proving it is NOT emitted,
-    // and its "employee.documents_missing" locale key is STILL used by the frontend registration flow —
-    // so the const + its locale keys must NOT be deleted.
-    public const string EmployeeDocumentsMissing = "employee.documents_missing";
-    // The order-action approval gate. Distinct from
-    // EmployeeDocumentsMissing — a cleaner who is not Approved (rejected,
-    // still pending, or terminated) may not take/start/complete an order.
+    // The order-action approval gate: a cleaner who is not Approved (rejected, still pending, or
+    // terminated) may not take/start/complete an order.
     public const string EmployeeNotApproved = "employee.not_approved";
     public const string EmployeeAlreadyApproved = "employee.already_approved";
     public const string EmployeeAlreadyRejected = "employee.already_rejected";
@@ -295,10 +279,8 @@ public static class BusinessErrorMessage
     public const string NoUnpaidOrderPays = "payroll.no_unpaid_order_pays";
     public const string NoActivePeriod = "payroll.no_active_period";
     public const string NoPayConfiguration = "payroll.no_pay_configuration";
-    public const string NoCurrencyFound = "payroll.no_currency";
     public const string EmployeeNotAssigned = "payroll.employee_not_assigned";
     public const string PdfGenerationFailed = "payroll.invoice.pdf_generation_failed";
-    public const string TemplateNotFound = "payroll.invoice.template_not_found";
     public const string CannotCancelPaidInvoice = "payroll.invoice.cannot_cancel_paid";
     public const string InvoiceAlreadyCancelled = "payroll.invoice.already_cancelled";
     public const string InvoiceAlreadyPaid = "payroll.invoice.already_paid";
@@ -317,7 +299,6 @@ public static class BusinessErrorMessage
 
     // Receipt
     public const string ReceiptNotFound = "receipt.not_found";
-    public const string ReceiptGenerationFailed = "receipt.generation_failed";
 
     // Pay Period
     public const string InvalidDuration = "pay_period.invalid_duration";
@@ -349,7 +330,6 @@ public static class BusinessErrorMessage
     public const string InvalidFileType = "file.invalid_file_type";
     public const string FileSizeExceeded = "file.size_exceeded";
     public const string FileCountExceeded = "file.count_exceeded";
-    public const string FileCountTooFew = "file.count_too_few";
     public const string FileRequired = "file.required";
 
     // Address
@@ -442,11 +422,6 @@ public static class BusinessErrorMessage
     public const string InvalidDate = "validation.invalid_date";
     public const string DateMustBeInPast = "validation.date_must_be_in_past";
     public const string InvalidAge = "validation.invalid_age";
-    public const string InvalidPhoneNumber = "validation.invalid_phone_number";
-    public const string InvalidNationalId = "validation.invalid_national_id";
-    public const string InvalidTaxId = "validation.invalid_tax_id";
-    public const string InvalidIban = "validation.invalid_iban";
-    public const string InvalidZipCode = "validation.invalid_zip_code";
     // Country-scoped IČO/VAT format checks, driven by CountryConfiguration's regexes.
     public const string RegistrationNumberInvalidFormat = "validation.registration_number.invalid_format";
 
@@ -506,14 +481,6 @@ public static class BusinessErrorMessage
     public const string InvalidEmailType = "template.email.invalid_type";
     public const string InvalidEmail = "email.invalid_email";
 
-    // Template File
-    public const string InvalidTemplateFileType = "template.invalid_file_type";
-    public const string TemplateFileSizeExceeded = "template.file_size_exceeded";
-    public const string TemplateFileRequired = "template.file_required";
-
-    // Availability
-    public const string InvalidAvailabilityFormat = "validation.invalid_availability_format";
-
     // Device
     public const string InvalidPlatform = "device.invalid_platform";
     public const string DeviceNotFound = "device.not_found";
@@ -522,8 +489,6 @@ public static class BusinessErrorMessage
     public const string LiveActivityOrderNotActive = "live_activity.order_not_active";
 
     // Tenant Configuration
-    public const string TenantConfigNotFound = "tenant_config.not_found";
-    public const string TenantConfigKeyAlreadyExists = "tenant_config.key_already_exists";
     /// <summary>Only a key in <c>TenantSettingCatalog</c> may be set or reset for an operating company.</summary>
     public const string TenantSettingUnknownKey = "tenant_setting.unknown_key";
     /// <summary>The value is not of the key's type or is outside its range (a retention window is 1 to its ceiling).</summary>
@@ -558,18 +523,10 @@ public static class BusinessErrorMessage
     /// <summary>A cardholder can still dispute the company's latest card charge; the archive waits for the horizon to pass.</summary>
     public const string CompanyWithinChargebackHorizon = "company.within_chargeback_horizon";
 
-    // Country Configuration
-    public const string CountryConfigNotFound = "country_config.not_found";
-    public const string CountryConfigAlreadyExists = "country_config.already_exists_for_country";
-
     // Pagination
-    public const string PageMustBePositive = "validation.page_must_be_positive";
-    public const string PageSizeMustBePositive = "validation.page_size_must_be_positive";
     public const string PageSizeExceeded = "validation.page_size_exceeded";
-    public const string InvalidContractStatus = "validation.invalid_contract_status";
 
     // Document Upload
-    public const string FileSizeExceeded10MB = "file.size_exceeded_10mb";
     public const string FileTypeNotAllowed = "file.type_not_allowed";
 
     // Payment
@@ -585,8 +542,6 @@ public static class BusinessErrorMessage
     public const string RefundOverrideReasonRequired = "refund.override_reason_required";
 
     // GDPR
-    public const string GdprExportFailed = "gdpr.export_failed";
-    public const string GdprDeletionFailed = "gdpr.deletion_failed";
     public const string GdprDeletionAlreadyPending = "gdpr.deletion_already_pending";
     public const string GdprDeletionBlockedByOrder = "gdpr.deletion_blocked_by_order";
     public const string GdprDeletionBlockedByInvoice = "gdpr.deletion_blocked_by_invoice";
@@ -662,13 +617,8 @@ public static class BusinessErrorMessage
     public const string LoyaltyPointsExceedSanityCap = "loyalty.points_exceed_sanity_cap";
     public const string LoyaltyReasonRequired = "loyalty.reason_required";
 
-    // Referrals — kept for client mapping consistency. The Validate handler
-    // returns the ReferralValidationError enum stringified; clients map to
-    // these dot-notation keys for the i18n lookup.
+    // Referrals
     public const string ReferralNotFound = "referral.not_found";
-    public const string ReferralSelfReferral = "referral.self_referral";
-    public const string ReferralAlreadyReferred = "referral.already_referred";
-    public const string ReferralInactive = "referral.inactive";
 
     // Referrals — admin intervention (reverse / force-qualify)
     public const string ReferralNotQualified = "referral.not_qualified";

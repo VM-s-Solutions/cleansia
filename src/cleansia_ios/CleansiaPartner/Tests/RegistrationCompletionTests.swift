@@ -11,7 +11,6 @@ final class RegistrationCompletionTests: XCTestCase {
         RegistrationCompletionStatus(
             areDocumentsUploaded: documents,
             hasCompletedProfile: profile,
-            hasSetAvailability: false,
             contractStatus: contract
         )
     }
@@ -50,15 +49,6 @@ final class RegistrationCompletionTests: XCTestCase {
 
     func testContractRejectedIsLocked() {
         XCTAssertFalse(isRegistrationComplete(complete(contract: .rejected)))
-    }
-
-    func testAvailabilityIsNotAGateClause() {
-        XCTAssertTrue(isRegistrationComplete(RegistrationCompletionStatus(
-            areDocumentsUploaded: true,
-            hasCompletedProfile: true,
-            hasSetAvailability: nil,
-            contractStatus: .approved
-        )))
     }
 
     func testProfileDocsApprovedIsUnlocked() {

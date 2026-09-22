@@ -7,6 +7,7 @@ export * from './file-download.service';
 export * from './file-validation-error.service';
 export * from './google-sign-in';
 export * from './page-title.service';
+export * from './primeng-translation';
 export * from './snackbar.service';
 export * from './theme.service';
 export * from './translation-loader.service';

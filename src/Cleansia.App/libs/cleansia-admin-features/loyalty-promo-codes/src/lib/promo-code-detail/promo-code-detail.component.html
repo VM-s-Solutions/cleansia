@@ -1,95 +1,106 @@
-<div class="cleansia-promo-code-detail">
-  <div class="cleansia-promo-code-detail__container page-wrapper">
-    <div class="cleansia-promo-code-detail__header">
-      <cleansia-button
-        [label]="'global.actions.back' | translate"
-        icon="pi pi-arrow-left"
-        (onClick)="onBack()"
-        [outlined]="true"
-      />
-      <cleansia-title
-        [title]="'pages.promo_codes.detail.title' | translate"
-      />
+<div class="cleansia-promo-code-detail cleansia-page">
+  <div class="cleansia-promo-code-detail__container page-wrapper page-wrapper--narrow">
+    <div class="cleansia-page-header">
+      <div class="cleansia-page-header__heading">
+        <div class="cleansia-detail-title">
+          <cleansia-button
+            [label]="'global.actions.back' | translate"
+            icon="pi pi-arrow-left"
+            severity="secondary"
+            [outlined]="true"
+            (onClick)="onBack()"
+          />
+          <cleansia-title [title]="'pages.promo_codes.detail.title' | translate" [level]="1" />
+        </div>
+      </div>
     </div>
 
     @if (facade.loading()) {
       <cleansia-loader />
     } @else if (facade.promoCode()) {
       @let pc = facade.promoCode()!;
-      <cleansia-section [title]="pc.code ?? ''">
+      <div class="detail-identity">
+        <div class="detail-identity__row">
+          <span class="detail-identity__name">
+            <span class="detail-identity__label">{{ 'pages.promo_codes.column.code' | translate }}</span>
+            {{ pc.code }}
+          </span>
+          <div class="detail-identity__badges">
+            <cleansia-status-badge kind="promo" [value]="promoStatus()" />
+          </div>
+        </div>
+        <div class="detail-identity__meta">
+          <span class="detail-identity__meta-item">
+            <i class="pi pi-calendar"></i>
+            {{ formatValidity() }}
+          </span>
+        </div>
+      </div>
+
+      @if (facade.hasEntityActions()) {
+        <cleansia-section [title]="'pages.promo_codes.detail.actions_section' | translate">
+          <div class="detail-actions">
+            <cleansia-button
+              *cleansiaPermission="Policy.CanUpdatePromoCode"
+              [label]="'global.actions.edit' | translate"
+              icon="pi pi-pencil"
+              severity="secondary"
+              [outlined]="true"
+              (onClick)="onEdit()"
+            />
+            @if (facade.canDeactivate()) {
+              <cleansia-button
+                *cleansiaPermission="Policy.CanDeactivatePromoCode"
+                [label]="'pages.promo_codes.detail.deactivate_button' | translate"
+                icon="pi pi-ban"
+                severity="danger"
+                [outlined]="true"
+                (onClick)="confirmDeactivate()"
+              />
+            }
+          </div>
+        </cleansia-section>
+      }
+
+      <cleansia-section [title]="'pages.promo_codes.detail.details_title' | translate">
         <div class="detail-grid">
-          <div class="detail-row">
-            <span class="detail-label">
+          <div class="detail-grid__item">
+            <span class="detail-grid__label">
               {{ 'pages.promo_codes.column.type' | translate }}
             </span>
-            <span class="detail-value">{{ formatType() }}</span>
+            <span class="detail-grid__value">{{ formatType() }}</span>
           </div>
-          <div class="detail-row">
-            <span class="detail-label">
+          <div class="detail-grid__item">
+            <span class="detail-grid__label">
               {{ 'pages.promo_codes.column.discount' | translate }}
             </span>
-            <span class="detail-value">{{ formatDiscount() }}</span>
+            <span class="detail-grid__value">{{ formatDiscount() }}</span>
           </div>
-          <div class="detail-row">
-            <span class="detail-label">
+          <div class="detail-grid__item">
+            <span class="detail-grid__label">
               {{ 'pages.promo_codes.column.min_order' | translate }}
             </span>
-            <span class="detail-value">
-              {{ pc.minimumOrderAmount ?? '—' }}
-            </span>
+            <span class="detail-grid__value">{{ formatMinimumOrder() }}</span>
           </div>
-          <div class="detail-row">
-            <span class="detail-label">
+          <div class="detail-grid__item">
+            <span class="detail-grid__label">
               {{ 'pages.promo_codes.column.per_user' | translate }}
             </span>
-            <span class="detail-value">{{ pc.maxRedemptionsPerUser }}</span>
+            <span class="detail-grid__value">{{ pc.maxRedemptionsPerUser }}</span>
           </div>
-          <div class="detail-row">
-            <span class="detail-label">
+          <div class="detail-grid__item">
+            <span class="detail-grid__label">
               {{ 'pages.promo_codes.column.global' | translate }}
             </span>
-            <span class="detail-value">{{ formatGlobal() }}</span>
-          </div>
-          <div class="detail-row">
-            <span class="detail-label">
-              {{ 'pages.promo_codes.column.validity' | translate }}
-            </span>
-            <span class="detail-value">{{ formatValidity() }}</span>
-          </div>
-          <div class="detail-row">
-            <span class="detail-label">
-              {{ 'pages.promo_codes.column.status' | translate }}
-            </span>
-            <span class="detail-value">{{ formatStatus() }}</span>
+            <span class="detail-grid__value">{{ formatGlobal() }}</span>
           </div>
           @if (pc.description) {
-            <div class="detail-row full">
-              <span class="detail-label">
+            <div class="detail-grid__item detail-grid__item--wide">
+              <span class="detail-grid__label">
                 {{ 'pages.promo_codes.form.field.description' | translate }}
               </span>
-              <span class="detail-value">{{ pc.description }}</span>
+              <span class="detail-grid__value">{{ pc.description }}</span>
             </div>
-          }
-        </div>
-
-        <div class="detail-actions">
-          <cleansia-button
-            *cleansiaPermission="Policy.CanUpdatePromoCode"
-            [label]="'global.actions.edit' | translate"
-            icon="pi pi-pencil"
-            (onClick)="onEdit()"
-          />
-          @if (canDeactivate()) {
-            <cleansia-button
-              *cleansiaPermission="Policy.CanDeactivatePromoCode"
-              [label]="
-                'pages.promo_codes.detail.deactivate_button' | translate
-              "
-              icon="pi pi-ban"
-              severity="danger"
-              [outlined]="true"
-              (onClick)="confirmDeactivate()"
-            />
           }
         </div>
       </cleansia-section>
@@ -114,5 +125,3 @@
     }
   </div>
 </div>
-
-<p-confirmDialog />

@@ -18,13 +18,6 @@ import { isLocalStorageAvailable } from '@cleansia/utils';
 import { TranslateModule } from '@ngx-translate/core';
 import { ToggleSwitchModule } from 'primeng/toggleswitch';
 
-export interface CookieConsentConfig {
-  storageKey?: string;
-  showDeclineButton?: boolean;
-  policyUrl?: string;
-  position?: 'bottom' | 'top';
-}
-
 export interface CookiePreferences {
   necessary: boolean;
   analytics: boolean;
@@ -186,17 +179,6 @@ export class CleansiaCookieConsentComponent implements OnInit {
     if (syncFn) {
       syncFn(this.preferences(), status);
     }
-  }
-
-  resetConsent(): void {
-    if (this.isBrowser) {
-      localStorage.removeItem(this.storageKey());
-      localStorage.removeItem(`${this.storageKey()}-preferences`);
-    }
-    this.consentStatus.set('pending');
-    this.isVisible.set(true);
-    this.showSettings.set(false);
-    this.consentChange.emit('pending');
   }
 
   static getConsentStatus(storageKey = 'cleansia-cookie-consent'): CookieConsentStatus {

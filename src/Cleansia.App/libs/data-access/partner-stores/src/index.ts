@@ -7,4 +7,3 @@ export * from './lib/dashboard';
 export * from './lib/employee';
 export * from './lib/loading';
 export * from './lib/order';
-export * from './lib/user';

@@ -1,15 +1,26 @@
-import { Injectable, inject, signal } from '@angular/core';
+import { computed, Injectable, inject, signal } from '@angular/core';
+import { FormBuilder } from '@angular/forms';
 import {
   AdminClient,
   OrderListItem,
   OrderStatus,
   PaymentStatus,
   SortDefinition,
+  SortDirection,
 } from '@cleansia/admin-services';
+import { FilterChip, FilterDrawerState, PaginationState, SortEvent } from '@cleansia/components';
 import { UnsubscribeControlDirective } from '@cleansia/directives';
 import { SnackbarService } from '@cleansia/services';
+import { currentLanguage } from '@cleansia/utils';
 import { TranslateService } from '@ngx-translate/core';
 import { catchError, finalize, of, takeUntil } from 'rxjs';
+import {
+  buildFilterChips,
+  buildFilterPayload,
+  buildOrderStatusOptions,
+  buildPaymentStatusOptions,
+  toggleStatusInArray,
+} from './order-management.helpers';
 
 export interface OrderFilterParams {
   orderStatuses?: OrderStatus[];
@@ -33,12 +44,48 @@ export class OrderManagementFacade extends UnsubscribeControlDirective {
   readonly initialLoading = signal<boolean>(true);
   readonly totalRecords = signal<number>(0);
 
+  readonly lang = currentLanguage(this.translate);
+  readonly orderStatusOptions = computed(() => {
+    this.lang();
+    return buildOrderStatusOptions(this.translate);
+  });
+  readonly paymentStatusOptions = computed(() => {
+    this.lang();
+    return buildPaymentStatusOptions(this.translate);
+  });
+  readonly filterForm = inject(FormBuilder).group({
+    orderStatus: [[] as OrderStatus[]],
+    paymentStatus: [[] as PaymentStatus[]],
+    searchTerm: [''],
+    cleaningDateFrom: [null as Date | null],
+    cleaningDateTo: [null as Date | null],
+    currencyId: [null as string | null],
+  });
+  readonly filters = new FilterDrawerState({
+    form: this.filterForm,
+    lang: this.lang,
+    chips: (value): FilterChip[] =>
+      buildFilterChips(
+        value,
+        this.orderStatusOptions(),
+        this.paymentStatusOptions(),
+        this.currencies(),
+        this.translate
+      ),
+    apply: (value) => this.applyFilter(buildFilterPayload(value)),
+  });
+
   private currentFilter = signal<OrderFilterParams | null>(null);
   private currentOffset = signal<number>(0);
   private currentLimit = signal<number>(20);
   private currentSort = signal<SortDefinition[] | undefined>(undefined);
 
   readonly currencies = signal<{ id: string; code: string; isDefault: boolean }[]>([]);
+
+  constructor() {
+    super();
+    this.filters.connect(this.destroyed$);
+  }
 
   loadCurrencies(): void {
     this.adminClient.adminCurrencyClient
@@ -52,72 +99,6 @@ export class OrderManagementFacade extends UnsubscribeControlDirective {
         );
       });
   }
-
-  readonly orderStatusOptions = [
-    {
-      label: this.translate.instant(
-        'pages.order_management.order_status.pending'
-      ),
-      value: OrderStatus.Pending,
-    },
-    {
-      label: this.translate.instant(
-        'pages.order_management.order_status.confirmed'
-      ),
-      value: OrderStatus.Confirmed,
-    },
-    {
-      label: this.translate.instant(
-        'pages.order_management.order_status.in_progress'
-      ),
-      value: OrderStatus.InProgress,
-    },
-    {
-      label: this.translate.instant(
-        'pages.order_management.order_status.completed'
-      ),
-      value: OrderStatus.Completed,
-    },
-    {
-      label: this.translate.instant(
-        'pages.order_management.order_status.cancelled'
-      ),
-      value: OrderStatus.Cancelled,
-    },
-  ];
-
-  readonly paymentStatusOptions = [
-    {
-      label: this.translate.instant(
-        'pages.order_management.payment_status.pending'
-      ),
-      value: PaymentStatus.Pending,
-    },
-    {
-      label: this.translate.instant(
-        'pages.order_management.payment_status.paid'
-      ),
-      value: PaymentStatus.Paid,
-    },
-    {
-      label: this.translate.instant(
-        'pages.order_management.payment_status.failed'
-      ),
-      value: PaymentStatus.Failed,
-    },
-    {
-      label: this.translate.instant(
-        'pages.order_management.payment_status.refunded'
-      ),
-      value: PaymentStatus.Refunded,
-    },
-    {
-      label: this.translate.instant(
-        'pages.order_management.payment_status.disputed'
-      ),
-      value: PaymentStatus.Disputed,
-    },
-  ];
 
   loadOrders(): void {
     this.loading.set(true);
@@ -168,14 +149,19 @@ export class OrderManagementFacade extends UnsubscribeControlDirective {
       });
   }
 
-  onPageChange(offset: number, limit: number): void {
-    this.currentOffset.set(offset);
-    this.currentLimit.set(limit);
+  onPageChange(event: PaginationState): void {
+    this.currentOffset.set(event.first);
+    this.currentLimit.set(event.rows);
     this.loadOrders();
   }
 
-  onSortChange(sort: SortDefinition[] | undefined): void {
-    this.currentSort.set(sort);
+  onSortChange(event: SortEvent): void {
+    this.currentSort.set([
+      new SortDefinition({
+        field: event.field,
+        direction: event.order === 1 ? SortDirection.Ascending : SortDirection.Descending,
+      }),
+    ]);
     this.loadOrders();
   }
 
@@ -185,9 +171,24 @@ export class OrderManagementFacade extends UnsubscribeControlDirective {
     this.loadOrders();
   }
 
-  resetFilter(): void {
-    this.currentFilter.set(null);
-    this.currentOffset.set(0);
-    this.loadOrders();
+  isOrderStatusChecked(status: OrderStatus): boolean {
+    return this.filterForm.value.orderStatus?.includes(status) ?? false;
   }
+
+  setOrderStatus(status: OrderStatus, checked: boolean): void {
+    this.filterForm.patchValue({
+      orderStatus: toggleStatusInArray(this.filterForm.value.orderStatus || [], status, checked),
+    });
+  }
+
+  isPaymentStatusChecked(status: PaymentStatus): boolean {
+    return this.filterForm.value.paymentStatus?.includes(status) ?? false;
+  }
+
+  setPaymentStatus(status: PaymentStatus, checked: boolean): void {
+    this.filterForm.patchValue({
+      paymentStatus: toggleStatusInArray(this.filterForm.value.paymentStatus || [], status, checked),
+    });
+  }
+
 }

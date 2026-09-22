@@ -1,20 +1,24 @@
-<div class="cleansia-audit-resource-history">
-  <div class="cleansia-audit-resource-history__container page-wrapper">
-    <div class="cleansia-audit-resource-history__header">
-      <cleansia-button
-        [label]="'pages.audit_log.history.back' | translate"
-        icon="pi pi-arrow-left"
-        severity="secondary"
-        [outlined]="true"
-        (onClick)="goBack()"
-      />
-      <cleansia-title [title]="'pages.audit_log.history.title' | translate" />
-      <p class="cleansia-audit-resource-history__description">
-        {{ 'pages.audit_log.history.description' | translate }}
-        <span class="cleansia-audit-resource-history__resource">
-          {{ resourceType() }} · {{ resourceId() }}
-        </span>
-      </p>
+<div class="cleansia-audit-resource-history cleansia-page">
+  <div class="cleansia-audit-resource-history__container page-wrapper page-wrapper--narrow">
+    <div class="cleansia-page-header">
+      <div class="cleansia-page-header__heading">
+        <div class="cleansia-detail-title">
+          <cleansia-button
+            [label]="'pages.audit_log.history.back' | translate"
+            icon="pi pi-arrow-left"
+            severity="secondary"
+            [outlined]="true"
+            (onClick)="goBack()"
+          />
+          <cleansia-title [title]="'pages.audit_log.history.title' | translate" [level]="1" />
+        </div>
+        <p class="cleansia-page-header__description">
+          {{ 'pages.audit_log.history.description' | translate }}
+          <span class="cleansia-audit-resource-history__resource">
+            {{ resourceType() }} · {{ resourceId() }}
+          </span>
+        </p>
+      </div>
     </div>
 
     <cleansia-section>

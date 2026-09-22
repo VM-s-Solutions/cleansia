@@ -24,11 +24,14 @@
         "{workspaceRoot}/jest.polyfills.ts",
         "{workspaceRoot}/libs/shared/assets/src/styles/common/touch-target.scss",
         "{workspaceRoot}/libs/shared/assets/src/styles/components/cleansia-button.component.scss",
+        "{workspaceRoot}/libs/shared/assets/src/styles/components/cleansia-mobile-toolbar.component.scss",
         "{workspaceRoot}/libs/shared/assets/src/styles/components/cleansia-sidebar-menu.component.scss",
         "{workspaceRoot}/libs/shared/assets/src/styles/components/cleansia-table.component.scss",
         "{workspaceRoot}/libs/shared/assets/src/styles/components/cleansia-text-input.component.scss",
         "{workspaceRoot}/libs/**/*.component.html",
-        "{workspaceRoot}/apps/**/*.component.html"
+        "{workspaceRoot}/apps/**/*.component.html",
+        "{workspaceRoot}/apps/*/src/assets/i18n/*.json",
+        "{workspaceRoot}/libs/core/*-services/src/lib/client/*-client.ts"
       ]
     },
     "lint": {

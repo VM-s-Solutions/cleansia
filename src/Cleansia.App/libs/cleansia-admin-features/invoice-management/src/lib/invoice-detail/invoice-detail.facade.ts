@@ -10,10 +10,11 @@ import {
   RegenerateInvoicePdfCommand,
 } from '@cleansia/admin-services';
 import { UnsubscribeControlDirective } from '@cleansia/directives';
-import { SnackbarService } from '@cleansia/services';
+import { DialogService as ConfirmDialogService, SnackbarService } from '@cleansia/services';
+import { formatDate, formatMoney, localeFor } from '@cleansia/utils';
 import { TranslateService } from '@ngx-translate/core';
 import { DialogService } from 'primeng/dynamicdialog';
-import { catchError, finalize, of, takeUntil } from 'rxjs';
+import { catchError, filter, finalize, of, takeUntil } from 'rxjs';
 import {
   RejectDialogComponent,
   RejectDialogData,
@@ -23,6 +24,7 @@ import {
 @Injectable()
 export class InvoiceDetailFacade extends UnsubscribeControlDirective {
   private readonly adminClient = inject(AdminClient);
+  private readonly dialog = inject(ConfirmDialogService);
   private readonly dialogService = inject(DialogService);
   private readonly snackbarService = inject(SnackbarService);
   private readonly translate = inject(TranslateService);
@@ -68,10 +70,8 @@ export class InvoiceDetailFacade extends UnsubscribeControlDirective {
       )
       .subscribe((response) => {
         if (response) {
-          this.snackbarService.showSuccess(
-            this.translate.instant(
-              'pages.invoice_detail.messages.approve_success'
-            )
+          this.snackbarService.showSuccessTranslated(
+            'pages.invoice_detail.messages.approve_success'
           );
           this.loadInvoiceDetail(invoiceId);
         }
@@ -99,10 +99,8 @@ export class InvoiceDetailFacade extends UnsubscribeControlDirective {
       )
       .subscribe((response) => {
         if (response) {
-          this.snackbarService.showSuccess(
-            this.translate.instant(
-              'pages.invoice_detail.messages.mark_paid_success'
-            )
+          this.snackbarService.showSuccessTranslated(
+            'pages.invoice_detail.messages.mark_paid_success'
           );
           this.loadInvoiceDetail(invoiceId);
         }
@@ -110,6 +108,18 @@ export class InvoiceDetailFacade extends UnsubscribeControlDirective {
   }
 
   assignVariableSymbol(): void {
+    this.dialog
+      .confirmTranslated(
+        'pages.invoice_detail.assign_variable_symbol_confirm.message',
+        'pages.invoice_detail.assign_variable_symbol_confirm.title',
+        undefined,
+        { acceptLabelKey: 'pages.invoice_detail.assign_variable_symbol_confirm.yes' }
+      )
+      .pipe(takeUntil(this.destroyed$), filter(Boolean))
+      .subscribe(() => this.assignVariableSymbolConfirmed());
+  }
+
+  private assignVariableSymbolConfirmed(): void {
     const inv = this.invoice();
     if (!inv?.id) return;
     const invoiceId = inv.id;
@@ -136,18 +146,14 @@ export class InvoiceDetailFacade extends UnsubscribeControlDirective {
         // blob url means a durable number on a document that does not print it —
         // the one outcome that must not read as an unqualified success.
         if (response.pdfBlobUrl) {
-          this.snackbarService.showSuccess(
-            this.translate.instant(
-              'pages.invoice_detail.messages.assign_variable_symbol_success',
-              { variableSymbol }
-            )
+          this.snackbarService.showSuccessTranslated(
+            'pages.invoice_detail.messages.assign_variable_symbol_success',
+            { variableSymbol }
           );
         } else {
-          this.snackbarService.showError(
-            this.translate.instant(
-              'pages.invoice_detail.messages.assign_variable_symbol_pdf_stale',
-              { variableSymbol }
-            )
+          this.snackbarService.showErrorTranslated(
+            'pages.invoice_detail.messages.assign_variable_symbol_pdf_stale',
+            { variableSymbol }
           );
         }
 
@@ -157,7 +163,6 @@ export class InvoiceDetailFacade extends UnsubscribeControlDirective {
 
   openCancelDialog(): void {
     const dialogData: RejectDialogData = {
-      title: this.translate.instant('pages.invoice_detail.cancel_dialog.title'),
       subtitle: this.translate.instant(
         'pages.invoice_detail.cancel_dialog.subtitle'
       ),
@@ -167,6 +172,9 @@ export class InvoiceDetailFacade extends UnsubscribeControlDirective {
       reasonPlaceholder: this.translate.instant(
         'pages.invoice_detail.cancel_dialog.reason_placeholder'
       ),
+      submitLabel: this.translate.instant(
+        'pages.invoice_detail.cancel_dialog.submit'
+      ),
     };
 
     const dialogRef = this.dialogService.open(RejectDialogComponent, {
@@ -174,8 +182,11 @@ export class InvoiceDetailFacade extends UnsubscribeControlDirective {
       header: this.translate.instant(
         'pages.invoice_detail.cancel_dialog.title'
       ),
-      width: '500px',
       modal: true,
+      closable: true,
+      draggable: false,
+      resizable: false,
+      styleClass: 'cleansia-dialog dialog-panel',
     });
 
     dialogRef?.onClose.pipe(takeUntil(this.destroyed$)).subscribe((result: RejectDialogResult | undefined) => {
@@ -205,10 +216,8 @@ export class InvoiceDetailFacade extends UnsubscribeControlDirective {
       )
       .subscribe((response) => {
         if (response) {
-          this.snackbarService.showSuccess(
-            this.translate.instant(
-              'pages.invoice_detail.messages.cancel_success'
-            )
+          this.snackbarService.showSuccessTranslated(
+            'pages.invoice_detail.messages.cancel_success'
           );
           this.loadInvoiceDetail(invoiceId);
         }
@@ -259,58 +268,20 @@ export class InvoiceDetailFacade extends UnsubscribeControlDirective {
       )
       .subscribe((response) => {
         if (response) {
-          this.snackbarService.showSuccess(
-            this.translate.instant(
-              'pages.invoice_detail.messages.regenerate_success'
-            )
+          this.snackbarService.showSuccessTranslated(
+            'pages.invoice_detail.messages.regenerate_success'
           );
           this.loadInvoiceDetail(invoiceId);
         }
       });
   }
 
-  getStatusLabel(status: EmployeeInvoiceStatus | undefined): string {
-    if (!status) return '';
-    switch (status) {
-      case EmployeeInvoiceStatus.Pending:
-        return this.translate.instant(
-          'pages.invoice_detail.invoice_status.pending'
-        );
-      case EmployeeInvoiceStatus.Approved:
-        return this.translate.instant(
-          'pages.invoice_detail.invoice_status.approved'
-        );
-      case EmployeeInvoiceStatus.Paid:
-        return this.translate.instant(
-          'pages.invoice_detail.invoice_status.paid'
-        );
-      case EmployeeInvoiceStatus.Disputed:
-        return this.translate.instant(
-          'pages.invoice_detail.invoice_status.disputed'
-        );
-      case EmployeeInvoiceStatus.Rejected:
-        return this.translate.instant(
-          'pages.invoice_detail.invoice_status.rejected'
-        );
-      case EmployeeInvoiceStatus.Cancelled:
-        return this.translate.instant(
-          'pages.invoice_detail.invoice_status.cancelled'
-        );
-      default:
-        return '';
-    }
-  }
-
   formatDate(date: string | Date | null | undefined): string {
-    if (!date) return '-';
-    const dateObj = date instanceof Date ? date : new Date(date);
-    return dateObj.toLocaleDateString('en-GB');
+    return formatDate(date, this.translate.currentLang) || '-';
   }
 
   formatDateTime(date: string | Date | null | undefined): string {
-    if (!date) return '-';
-    const dateObj = date instanceof Date ? date : new Date(date);
-    return dateObj.toLocaleString('en-GB');
+    return formatDate(date, this.translate.currentLang, 'dateTime') || '-';
   }
 
   formatCurrency(
@@ -318,7 +289,9 @@ export class InvoiceDetailFacade extends UnsubscribeControlDirective {
     currencyCode?: string
   ): string {
     if (amount === null || amount === undefined) return '-';
-    return `${amount.toFixed(2)} ${currencyCode ?? ''}`.trimEnd();
+    return formatMoney(amount, currencyCode, localeFor(this.translate.currentLang), {
+      fractionDigits: 2,
+    });
   }
 
   canApprove(): boolean {

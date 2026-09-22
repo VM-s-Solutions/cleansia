@@ -1,12 +1,13 @@
-import { HelpStep, StatusFlowItem } from '@cleansia/components';
-import { EmployeeInvoiceDto, EmployeeInvoiceStatus } from '@cleansia/partner-services';
+import {
+  FilterChip,
+  HelpStep,
+  resolveStatusBadge,
+  StatusBadgeKind,
+  StatusFlowItem,
+} from '@cleansia/components';
+import { EmployeeInvoiceStatus } from '@cleansia/partner-services';
+import { formatDate } from '@cleansia/utils';
 import { TranslateService } from '@ngx-translate/core';
-
-export interface FilterChip {
-  key: string;
-  label: string;
-  value: string;
-}
 
 export interface InvoiceStatusOption {
   label: string;
@@ -48,70 +49,55 @@ export const INVOICES_HELP_STEPS: HelpStep[] = [
   },
 ];
 
+// The help legend draws the same pill, in the same tone, as the table's badge for that status.
+// A private copy: the orders lib's would come through a barrel that also pulls both order pages
+// into this chunk, and the helper's home is beside resolveStatusBadge in the shared tree.
+const legendBadgeClass = (kind: StatusBadgeKind, member: string): string =>
+  `status-badge status-badge--${resolveStatusBadge(kind, member)?.tone ?? 'neutral'}`;
+
 export const INVOICE_STATUS_FLOW: StatusFlowItem[] = [
   {
-    statusKey: 'pages.invoices.status_pending',
+    statusKey: 'enums.invoice_status.pending',
     descriptionKey: 'help.invoices.status.pending_desc',
-    colorClass: 'status-pending',
+    colorClass: legendBadgeClass('invoice', 'Pending'),
   },
   {
-    statusKey: 'pages.invoices.status_approved',
+    statusKey: 'enums.invoice_status.approved',
     descriptionKey: 'help.invoices.status.approved_desc',
-    colorClass: 'status-approved',
+    colorClass: legendBadgeClass('invoice', 'Approved'),
   },
   {
-    statusKey: 'pages.invoices.status_paid',
+    statusKey: 'enums.invoice_status.paid',
     descriptionKey: 'help.invoices.status.paid_desc',
-    colorClass: 'status-paid',
+    colorClass: legendBadgeClass('invoice', 'Paid'),
   },
   {
-    statusKey: 'pages.invoices.status_disputed',
+    statusKey: 'enums.invoice_status.disputed',
     descriptionKey: 'help.invoices.status.disputed_desc',
-    colorClass: 'status-disputed',
+    colorClass: legendBadgeClass('invoice', 'Disputed'),
   },
   {
-    statusKey: 'pages.invoices.status_rejected',
+    statusKey: 'enums.invoice_status.rejected',
     descriptionKey: 'help.invoices.status.rejected_desc',
-    colorClass: 'status-rejected',
+    colorClass: legendBadgeClass('invoice', 'Rejected'),
   },
   {
-    statusKey: 'pages.invoices.status_cancelled',
+    statusKey: 'enums.invoice_status.cancelled',
     descriptionKey: 'help.invoices.status.cancelled_desc',
-    colorClass: 'status-cancelled',
+    colorClass: legendBadgeClass('invoice', 'Cancelled'),
   },
 ];
 
 // --- Helper functions ---
 
-const INVOICE_STATUS_NAMES: Readonly<Record<EmployeeInvoiceStatus, string>> = {
-  [EmployeeInvoiceStatus.Pending]: 'pending',
-  [EmployeeInvoiceStatus.Approved]: 'approved',
-  [EmployeeInvoiceStatus.Paid]: 'paid',
-  [EmployeeInvoiceStatus.Disputed]: 'disputed',
-  [EmployeeInvoiceStatus.Rejected]: 'rejected',
-  [EmployeeInvoiceStatus.Cancelled]: 'cancelled',
-};
-
-export function getInvoiceStatusName(status: EmployeeInvoiceStatus): string {
-  return INVOICE_STATUS_NAMES[status] ?? INVOICE_STATUS_NAMES[EmployeeInvoiceStatus.Pending];
-}
-
-export function getInvoiceStatusLabelKey(invoice: EmployeeInvoiceDto): string {
-  return `pages.invoices.status_${getInvoiceStatusName(invoice.status)}`;
-}
-
-export function getInvoiceStatusClass(invoice: EmployeeInvoiceDto): string {
-  return `status-badge status-${getInvoiceStatusName(invoice.status)}`;
-}
-
 export function buildInvoiceStatusOptions(translate: TranslateService): InvoiceStatusOption[] {
   return [
-    { label: translate.instant('pages.invoices.status_pending'), value: EmployeeInvoiceStatus.Pending },
-    { label: translate.instant('pages.invoices.status_approved'), value: EmployeeInvoiceStatus.Approved },
-    { label: translate.instant('pages.invoices.status_paid'), value: EmployeeInvoiceStatus.Paid },
-    { label: translate.instant('pages.invoices.status_disputed'), value: EmployeeInvoiceStatus.Disputed },
-    { label: translate.instant('pages.invoices.status_rejected'), value: EmployeeInvoiceStatus.Rejected },
-    { label: translate.instant('pages.invoices.status_cancelled'), value: EmployeeInvoiceStatus.Cancelled },
+    { label: translate.instant('enums.invoice_status.pending'), value: EmployeeInvoiceStatus.Pending },
+    { label: translate.instant('enums.invoice_status.approved'), value: EmployeeInvoiceStatus.Approved },
+    { label: translate.instant('enums.invoice_status.paid'), value: EmployeeInvoiceStatus.Paid },
+    { label: translate.instant('enums.invoice_status.disputed'), value: EmployeeInvoiceStatus.Disputed },
+    { label: translate.instant('enums.invoice_status.rejected'), value: EmployeeInvoiceStatus.Rejected },
+    { label: translate.instant('enums.invoice_status.cancelled'), value: EmployeeInvoiceStatus.Cancelled },
   ];
 }
 
@@ -134,7 +120,7 @@ export function buildFilterChips(
     chips.push({
       key: 'dateFrom',
       label: translate.instant('pages.invoices.filters.date_from'),
-      value: new Date(formValue.dateFrom).toLocaleDateString(),
+      value: formatDate(formValue.dateFrom, translate.currentLang),
     });
   }
 
@@ -142,7 +128,7 @@ export function buildFilterChips(
     chips.push({
       key: 'dateTo',
       label: translate.instant('pages.invoices.filters.date_to'),
-      value: new Date(formValue.dateTo).toLocaleDateString(),
+      value: formatDate(formValue.dateTo, translate.currentLang),
     });
   }
 
@@ -171,6 +157,7 @@ export function buildFilterChips(
       key: 'statuses',
       label: translate.instant('pages.invoices.filters.invoice_status'),
       value: statusNames,
+      controls: ['statuses', ...statusOptions.map((o) => `status_${o.value}`)],
     });
   }
 

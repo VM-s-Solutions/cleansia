@@ -1,51 +1,4 @@
 .cleansia-dashboard {
-  display: flex;
-  justify-content: center;
-  padding: 1rem;
-  max-width: 100vw;
-  overflow-x: hidden;
-  position: relative;
-
-  @media (max-width: 768px) {
-    padding: 0.5rem;
-  }
-
-  &__container {
-    padding: 2rem;
-    width: 100%;
-    max-width: 1200px;
-    display: flex;
-    flex-direction: column;
-    gap: 1.25rem;
-
-    @media (max-width: 768px) {
-      padding: 0.5rem;
-      gap: 0.75rem;
-    }
-  }
-
-  &__header {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 0.25rem;
-    text-align: center;
-
-    @media (max-width: 768px) {
-      gap: 0.125rem;
-    }
-  }
-
-  &__description {
-    color: var(--cleansia-text-secondary);
-    font-size: 1rem;
-    line-height: 1.5;
-
-    @media (max-width: 768px) {
-      font-size: 0.875rem;
-    }
-  }
-
   &__stats {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
@@ -59,13 +12,13 @@
 
   &__view-all {
     display: flex;
-    justify-content: center;
+    justify-content: flex-end;
   }
 }
 
 .stat-card {
   background: var(--cleansia-primary-50);
-  border-radius: 8px;
+  border-radius: 12px;
   padding: 1.25rem;
   display: flex;
   gap: 1rem;
@@ -85,20 +38,22 @@
 
     &:hover {
       transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      box-shadow: var(--cleansia-shadow-2);
       background: var(--cleansia-white);
       border-color: var(--cleansia-primary-300);
     }
   }
 
+  // One tint for every stat: the icon names the figure, the colour does not rank it.
   &__icon {
     width: 56px;
     height: 56px;
-    border-radius: 8px;
+    border-radius: 12px;
     display: flex;
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
+    background: var(--cleansia-primary-100);
 
     @media (max-width: 640px) {
       width: 40px;
@@ -107,7 +62,7 @@
 
     i {
       font-size: 1.5rem;
-      color: white;
+      color: var(--cleansia-primary-700);
 
       @media (max-width: 640px) {
         font-size: 1.125rem;
@@ -139,6 +94,7 @@
   &__value {
     font-size: 1.5rem;
     font-weight: 700;
+    font-variant-numeric: tabular-nums;
     color: var(--cleansia-text-primary);
 
     @media (max-width: 640px) {
@@ -171,11 +127,11 @@
     }
 
     &.trend-up {
-      color: #10b981;
+      color: var(--cleansia-success-700);
     }
 
     &.trend-down {
-      color: #ef4444;
+      color: var(--cleansia-error-700);
     }
 
     &.trend-neutral {
@@ -192,7 +148,7 @@
 
 .order-card {
   background: var(--cleansia-primary-25);
-  border-radius: 8px;
+  border-radius: 12px;
   padding: 1rem;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -200,8 +156,17 @@
 
   &:hover {
     background: var(--cleansia-white);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    box-shadow: var(--cleansia-shadow-1);
     border-color: var(--cleansia-primary-300);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--cleansia-primary-600);
+    outline-offset: 2px;
+  }
+
+  &--skeleton {
+    cursor: default;
   }
 
   &__header {
@@ -213,45 +178,8 @@
 
   &__number {
     font-weight: 600;
-    color: var(--cleansia-primary-500);
+    color: var(--cleansia-primary-700);
     font-size: 1rem;
-  }
-
-  &__status {
-    .order-status-badge {
-      display: inline-block;
-      padding: 0.25rem 0.625rem;
-      border-radius: 12px;
-      font-size: 0.75rem;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-
-      &.status-pending {
-        background-color: rgba(59, 130, 246, 0.15);
-        color: #1e3a8a;
-        border: 1px solid rgba(59, 130, 246, 0.3);
-      }
-
-      &.status-confirmed {
-        background-color: rgba(147, 51, 234, 0.15);
-        color: #581c87;
-        border: 1px solid rgba(147, 51, 234, 0.3);
-      }
-
-      &.status-inprogress,
-      &.status-in-progress {
-        background-color: rgba(249, 115, 22, 0.15);
-        color: #9a3412;
-        border: 1px solid rgba(249, 115, 22, 0.3);
-      }
-
-      &.status-completed {
-        background-color: rgba(34, 197, 94, 0.15);
-        color: #14532d;
-        border: 1px solid rgba(34, 197, 94, 0.3);
-      }
-    }
   }
 
   &__details {
@@ -286,7 +214,8 @@
   &__price {
     font-weight: 700;
     font-size: 1.125rem;
-    color: var(--cleansia-primary-500);
+    font-variant-numeric: tabular-nums;
+    color: var(--cleansia-primary-700);
   }
 
   i.pi-chevron-right {
@@ -311,9 +240,9 @@
   align-items: center;
   gap: 0.75rem;
   padding: 0.875rem 1rem;
-  background: var(--cleansia-white, #ffffff);
-  border: 1px solid var(--cleansia-primary-100, #e2e8f0);
-  border-radius: 10px;
+  background: var(--cleansia-white);
+  border: 1px solid var(--cleansia-primary-100);
+  border-radius: 12px;
   cursor: pointer;
   transition: all 0.2s ease;
   text-align: left;
@@ -321,7 +250,7 @@
 
   &:hover {
     border-color: var(--cleansia-primary-300);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    box-shadow: var(--cleansia-shadow-1);
     transform: translateY(-1px);
   }
 
@@ -329,6 +258,12 @@
     transform: translateY(0);
   }
 
+  &:focus-visible {
+    outline: 2px solid var(--cleansia-primary-600);
+    outline-offset: 2px;
+  }
+
+  // A flat tint, not a gradient: the design language keeps gradients for category cards.
   &__icon {
     width: 36px;
     height: 36px;
@@ -337,22 +272,11 @@
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
+    background: var(--cleansia-primary-100);
 
     i {
       font-size: 1rem;
-      color: white;
-    }
-
-    &--orders {
-      background: linear-gradient(135deg, #3b82f6, #2563eb);
-    }
-
-    &--invoices {
-      background: linear-gradient(135deg, #8b5cf6, #7c3aed);
-    }
-
-    &--profile {
-      background: linear-gradient(135deg, #10b981, #059669);
+      color: var(--cleansia-primary-700);
     }
   }
 
@@ -393,37 +317,10 @@
   }
 }
 
-.empty-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 3rem 1rem;
-  text-align: center;
-  background: var(--cleansia-primary-25);
-  border-radius: 8px;
-
-  i {
-    font-size: 3rem;
-    color: var(--cleansia-text-secondary);
-  }
-
-  p {
-    color: var(--cleansia-text-secondary);
-    font-size: 1rem;
-  }
-}
-
 cleansia-partner-dashboard {
   display: block;
   background: var(--cleansia-primary-0);
   min-height: 100vh;
-
-  cleansia-section {
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-  }
 }
 
 .analytics-grid {

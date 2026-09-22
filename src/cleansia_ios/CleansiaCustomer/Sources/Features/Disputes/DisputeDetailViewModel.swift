@@ -1,17 +1,6 @@
 import CleansiaCore
 import Combine
 import Foundation
-#if canImport(UIKit)
-    import UIKit
-#endif
-
-/// A source picked for evidence upload, normalized before the VM prepares it.
-enum EvidenceSource {
-    #if canImport(UIKit)
-        case image(UIImage)
-    #endif
-    case pdf(Data)
-}
 
 @MainActor
 final class DisputeDetailViewModel: ViewModel {
@@ -89,11 +78,11 @@ final class DisputeDetailViewModel: ViewModel {
 
     private func uploadOne(_ source: EvidenceSource) async -> Bool {
         let prepared: PreparedEvidence
-        switch prepare(source) {
+        switch EvidencePreparer.prepare(source) {
         case let .success(file):
             prepared = file
         case let .failure(error):
-            surface(preparationError: error)
+            snackbar.showError(error.message)
             return false
         }
         defer { prepared.cleanUp() }
@@ -103,28 +92,6 @@ final class DisputeDetailViewModel: ViewModel {
         case let .failure(error):
             snackbar.showApiError(error)
             return false
-        }
-    }
-
-    private func prepare(_ source: EvidenceSource) -> Result<PreparedEvidence, EvidencePreparationError> {
-        switch source {
-        #if canImport(UIKit)
-            case let .image(image):
-                EvidencePreparer.prepareImage(image)
-        #endif
-        case let .pdf(data):
-            EvidencePreparer.preparePdf(data)
-        }
-    }
-
-    private func surface(preparationError error: EvidencePreparationError) {
-        switch error {
-        case let .rejected(.tooLarge):
-            snackbar.showError(L10n.Disputes.evidenceTooLarge)
-        case let .rejected(.unsupportedType):
-            snackbar.showError(L10n.Disputes.evidenceUnsupportedType)
-        case .encodingFailed, .ioFailed:
-            snackbar.showError(L10n.Disputes.evidenceOpenError)
         }
     }
 

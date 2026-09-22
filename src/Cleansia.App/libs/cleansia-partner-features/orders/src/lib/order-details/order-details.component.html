@@ -1,14 +1,14 @@
-<div class="cleansia-order-details">
-  <!-- Breadcrumb navigation outside the card -->
-  <div class="cleansia-order-details__breadcrumb-bar page-wrapper">
+<div class="cleansia-order-details cleansia-page">
+  <div class="cleansia-order-details__breadcrumb-bar page-wrapper page-wrapper--narrow">
     <nav class="cleansia-order-details__breadcrumb">
-      <button
-        type="button"
-        class="cleansia-order-details__back-btn"
-        (click)="navigateToOrders()"
-      >
-        <i class="pi pi-arrow-left"></i>
-      </button>
+      <cleansia-button
+        [icon]="'pi pi-arrow-left'"
+        [text]="true"
+        [severity]="'secondary'"
+        [buttonSize]="'small'"
+        [ariaLabel]="'global.actions.back' | translate"
+        (onClick)="navigateToOrders()"
+      />
       <a
         class="cleansia-order-details__breadcrumb-link"
         role="button"
@@ -25,9 +25,9 @@
     </nav>
   </div>
 
-  <div class="cleansia-order-details__form-card page-wrapper">
+  <div class="cleansia-order-details__form-card page-wrapper page-wrapper--narrow">
     @if (loading() && !orderDetails()) {
-    <cleansia-detail-skeleton />
+    <cleansia-loader />
     } @else if (error()) {
     <div class="not-found-state">
       <div class="not-found-state__icon">
@@ -37,18 +37,16 @@
       <p class="not-found-state__message">{{ error() }}</p>
       <div class="not-found-state__actions">
         <cleansia-button
-          [buttonType]="'button'"
-          [title]="'global.actions.back' | translate"
+          [label]="'global.actions.back' | translate"
           [icon]="'pi pi-arrow-left'"
           [severity]="'secondary'"
           [outlined]="true"
-          (clickFn)="navigateToOrders()"
+          (onClick)="navigateToOrders()"
         />
         <cleansia-button
-          [buttonType]="'button'"
-          [title]="'global.actions.retry' | translate"
+          [label]="'global.actions.retry' | translate"
           [icon]="'pi pi-refresh'"
-          (clickFn)="retryLoadOrder()"
+          (onClick)="retryLoadOrder()"
         />
       </div>
     </div>
@@ -60,8 +58,6 @@
         [hasInvoice]="hasInvoice()"
         [orderStatus]="orderDetails()!.orderStatus"
         [paymentStatus]="orderDetails()!.paymentStatus"
-        [orderStatusLabel]="orderStatusLabel()"
-        [paymentStatusLabel]="paymentStatusLabel()"
         [createdOn]="formattedCreatedOn()"
         [confirmationCode]="orderDetails()!.confirmationCode || ''"
         (print)="printOrder()"
@@ -72,11 +68,9 @@
       @if (canTakeOrder()) {
       <div class="cleansia-order-details__primary-action cleansia-order-details__primary-action--take">
         <cleansia-button
-          [buttonType]="'button'"
-          [style]="'raised-button'"
-          [title]="'pages.order_details.take_order' | translate"
+          [label]="'pages.order_details.take_order' | translate"
           [icon]="'pi pi-check'"
-          (clickFn)="takeOrder()"
+          (onClick)="takeOrder()"
           [loading]="loading()"
         />
       </div>
@@ -96,13 +90,10 @@
           }}
         </span>
         <cleansia-button
-          [buttonType]="'button'"
-          [style]="'basic-button'"
-          [size]="'auto-width'"
-          [title]="'pages.order_details.work_contract.read' | translate"
+          [label]="'pages.order_details.work_contract.read' | translate"
           [icon]="'pi pi-file'"
           [text]="true"
-          (clickFn)="openReadWorkContract()"
+          (onClick)="openReadWorkContract()"
         />
       </div>
       } @else if (canAcceptWorkContract()) {
@@ -112,12 +103,10 @@
           {{ 'pages.order_details.work_contract.pending_banner' | translate }}
         </span>
         <cleansia-button
-          [buttonType]="'button'"
-          [size]="'auto-width'"
-          [title]="'pages.order_details.work_contract.accept' | translate"
+          [label]="'pages.order_details.work_contract.accept' | translate"
           [icon]="'pi pi-check'"
           [severity]="'warn'"
-          (clickFn)="openAcceptWorkContract()"
+          (onClick)="openAcceptWorkContract()"
           [loading]="loading()"
         />
       </div>
@@ -127,11 +116,9 @@
       @if (canStartOrder()) {
       <div class="cleansia-order-details__primary-action">
         <cleansia-button
-          [buttonType]="'button'"
-          [style]="'raised-button'"
-          [title]="'pages.order_details.start_order' | translate"
+          [label]="'pages.order_details.start_order' | translate"
           [icon]="'pi pi-play'"
-          (clickFn)="startOrder()"
+          (onClick)="startOrder()"
           [loading]="loading()"
         />
       </div>
@@ -157,38 +144,35 @@
       <div class="cleansia-order-details__actions-row">
         @if (canMarkCashCollected()) {
         <cleansia-button
-          [buttonType]="'button'"
-          [title]="'pages.order_details.mark_cash_collected' | translate"
+          [label]="'pages.order_details.mark_cash_collected' | translate"
           [icon]="'pi pi-money-bill'"
           [outlined]="true"
           [severity]="'success'"
-          (clickFn)="openMarkCashCollected()"
+          (onClick)="openMarkCashCollected()"
           [loading]="loading()"
         />
         }
         @if (canAddNoteOrIssue()) {
         <cleansia-button
-          [title]="'pages.order_details.report_issue' | translate"
+          [label]="'pages.order_details.report_issue' | translate"
           [icon]="'pi pi-exclamation-triangle'"
           [outlined]="true"
           [severity]="'danger'"
-          (clickFn)="openReportIssue()"
+          (onClick)="openReportIssue()"
         />
         <cleansia-button
-          [title]="'pages.order_details.add_note' | translate"
+          [label]="'pages.order_details.add_note' | translate"
           [icon]="'pi pi-file-edit'"
           [outlined]="true"
-          (clickFn)="openAddNote()"
+          (onClick)="openAddNote()"
         />
         }
         @if (canCompleteOrder()) {
         <cleansia-button
-          [buttonType]="'button'"
-          [style]="'raised-button'"
-          [title]="'pages.order_details.complete_order' | translate"
+          [label]="'pages.order_details.complete_order' | translate"
           [icon]="'pi pi-check-circle'"
           [severity]="'success'"
-          (clickFn)="completeOrder()"
+          (onClick)="completeOrder()"
           [loading]="loading()"
         />
         }
@@ -246,15 +230,15 @@
           : 'pages.order_details.assigned_employee') | translate"
       >
         @for (employee of orderDetails()!.assignedEmployees!; track employee.id) {
-        <div class="cleansia-order-details__grid cleansia-order-details__employee-row">
-          <div class="cleansia-order-details__field">
-            <span class="cleansia-order-details__label">{{ 'pages.order_details.employee_name' | translate }}</span>
-            <span class="cleansia-order-details__value">{{ employee.fullName }}</span>
+        <div class="detail-grid cleansia-order-details__employee-row">
+          <div class="detail-grid__item">
+            <span class="detail-grid__label">{{ 'pages.order_details.employee_name' | translate }}</span>
+            <span class="detail-grid__value">{{ employee.fullName }}</span>
           </div>
           @if (employee.phoneNumber) {
-          <div class="cleansia-order-details__field">
-            <span class="cleansia-order-details__label">{{ 'pages.order_details.employee_phone' | translate }}</span>
-            <span class="cleansia-order-details__value">{{ employee.phoneNumber }}</span>
+          <div class="detail-grid__item">
+            <span class="detail-grid__label">{{ 'pages.order_details.employee_phone' | translate }}</span>
+            <span class="detail-grid__value">{{ employee.phoneNumber }}</span>
           </div>
           }
         </div>
@@ -321,7 +305,7 @@
             <div class="cleansia-order-details__activity-body">
               <p class="cleansia-order-details__activity-text">{{ note.content }}</p>
               <span class="cleansia-order-details__activity-date">
-                {{ note.createdOn | date:'dd.MM.yyyy HH:mm' }}
+                {{ formatDateTime(note.createdOn) }}
               </span>
             </div>
           </div>
@@ -343,14 +327,14 @@
               <p class="cleansia-order-details__activity-text">{{ issue.description }}</p>
               <div class="cleansia-order-details__activity-meta">
                 <span class="cleansia-order-details__activity-date">
-                  {{ issue.createdOn | date:'dd.MM.yyyy HH:mm' }}
+                  {{ formatDateTime(issue.createdOn) }}
                 </span>
                 @if (issue.isResolved) {
-                <span class="cleansia-order-details__activity-badge cleansia-order-details__activity-badge--resolved">
+                <span class="status-badge status-badge--success">
                   {{ 'pages.order_details.resolved' | translate }}
                 </span>
                 } @else {
-                <span class="cleansia-order-details__activity-badge cleansia-order-details__activity-badge--open">
+                <span class="status-badge status-badge--warning">
                   {{ 'pages.order_details.open_issue' | translate }}
                 </span>
                 }

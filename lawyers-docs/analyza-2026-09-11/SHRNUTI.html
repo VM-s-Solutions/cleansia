@@ -1,0 +1,288 @@
+<!doctype html>
+<html lang="cs"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>CleanSia – Shrnutí pro právníky</title><style>
+:root { color-scheme: light; }
+* { box-sizing: border-box; }
+body { margin: 0; background: #eef3f3; color: #183034; font-family: 'Segoe UI', Arial, sans-serif; font-size: 16px; line-height: 1.6; }
+main { max-width: 1120px; margin: 28px auto; padding: 42px 54px; background: white; border-top: 6px solid #12796b; box-shadow: 0 5px 25px #18303415; }
+nav { display: flex; flex-wrap: wrap; gap: 12px 24px; padding-bottom: 22px; margin-bottom: 26px; border-bottom: 1px solid #dbe5e4; font-size: 14px; }
+h1 { color: #115c53; font-size: 31px; line-height: 1.2; margin: 0 0 16px; }
+h2 { color: #115c53; font-size: 24px; line-height: 1.3; margin: 34px 0 14px; border-bottom: 1px solid #cee1dd; padding-bottom: 8px; }
+h3 { color: #174d48; font-size: 19px; line-height: 1.35; margin: 26px 0 10px; }
+h4 { font-size: 17px; margin: 23px 0 8px; }
+p { margin: 10px 0 14px; }
+li { margin: 7px 0; }
+a { color: #08685e; text-decoration-thickness: 1px; text-underline-offset: 2px; overflow-wrap: anywhere; }
+code { background: #f0f5f5; font-family: Consolas, monospace; font-size: .85em; padding: 1px 3px; overflow-wrap: anywhere; }
+table { border-collapse: collapse; width: 100%; margin: 18px 0 23px; font-size: 14px; line-height: 1.45; table-layout: fixed; }
+th { background: #e2f0ed; text-align: left; color: #124d45; font-weight: 650; }
+td, th { border: 1px solid #d2dfdd; padding: 10px 12px; vertical-align: top; overflow-wrap: anywhere; }
+tr:nth-child(even) td { background: #f8fbfa; }
+blockquote { border-left: 4px solid #12796b; margin: 20px 0; padding: 5px 20px; background: #f0f7f5; }
+.appendix a[href^="../../src/"], .appendix a[href^="../../sql-scripts/"] { font-family: Consolas, monospace; font-size: .82em; }
+.toc { background: #f5f9f8; padding: 10px 24px; font-size: 14px; border: 1px solid #dfebe8; }
+.toc ul { padding-left: 18px; }
+@media (max-width: 720px) { main { margin: 0; padding: 24px 18px; } h1 { font-size: 27px; } table { font-size: 12px; } td, th { padding: 7px; } }
+@media print {
+ @page { size: A4; margin: 15mm 15mm 18mm; }
+ body { background: white; font-size: 10.5pt; line-height: 1.42; color: #182c2c; }
+ main { max-width: none; padding: 0; margin: 0; box-shadow: none; border-top: 0; }
+ nav, .toc { display: none; }
+ h1 { font-size: 24pt; margin-bottom: 12pt; }
+ h2 { font-size: 16pt; margin: 20pt 0 9pt; }
+ h3 { font-size: 12.5pt; margin: 15pt 0 7pt; }
+ h4 { font-size: 11pt; margin: 14pt 0 7pt; }
+ p { margin: 7pt 0 9pt; orphans: 3; widows: 3; }
+ li { margin: 5pt 0; }
+ table { font-size: 9pt; line-height: 1.35; margin: 11pt 0 15pt; }
+ th, td { padding: 6pt 7pt; }
+ thead { display: table-header-group; }
+ tr, blockquote { break-inside: avoid; }
+ h1, h2, h3, h4 { break-after: avoid; }
+ a { text-decoration: none; color: #135d55; }
+}
+</style></head><body class=""><main><nav><a href="SHRNUTI.html">Shrnutí pro schůzku</a><a href="PODROBNY-ROZBOR.html">Podrobný rozbor</a><a href="SHRNUTI.pdf">Shrnutí v PDF</a><a href="PODROBNY-ROZBOR.pdf">Příloha v PDF</a><a href="podklady/INVENTAR.html">Inventář podkladů</a></nav><h1 id="cleansia-podklad-pro-jednani-s-pravniky">CleanSia: podklad pro jednání s právníky</h1>
+<p><strong>Srovnání 10 právních návrhů s procesy aplikace · 11. září 2026</strong><br />
+Kontrolovaný stav: <code>master</code>, commit <code>e1d81ea29f10939bd0a278e777d8cc3138834964</code>.</p>
+<h2 id="co-potrebujes-vedet-pred-schuzkou">Co potřebuješ vědět před schůzkou</h2>
+<p><strong>Dokumenty pokrývají základ služby, ale v současné podobě nepopisují jeden sjednocený provozní model CleanSia.</strong> Nestačí doplnit IČO, kontakty a datum. Některé podmínky přímo odporují aplikaci, část existujících funkcí nemá vlastní pravidla a některé dokumenty slibují postupy, jejichž plnění vyžaduje člověka mimo aplikaci.</p>
+<p>Na schůzce bych nejdříve rozhodl těchto pět věcí:</p>
+<ol>
+<li><strong>Kdo zákazníkovi poskytuje úklid a kdo komu fakturuje.</strong> VOP a partnerská smlouva popisují zprostředkovatele, zatímco aplikace vytváří partnerské faktury vůči CleanSia a zákaznické doklady z údajů společnosti.</li>
+<li><strong>Jaká finanční pravidla skutečně chceme.</strong> Nesedí storno, procentní provize, vypořádání hotovosti ani peněžní vracení kreditů při ukončení účtu.</li>
+<li><strong>Jaké znění zákazník přijímá a jak to prokážeme.</strong> Web zobrazuje jiné krátké návrhy než dodané Wordy; evidence souhlasů neuchovává slíbené verze a úplnou historii.</li>
+<li><strong>Jak popsat současné rozšířené služby.</strong> Plus, automatické obnovování členství, opakované rezervace, kredity, loajalita a doporučování potřebují konkrétní podmínky.</li>
+<li><strong>Kdo vlastní provozní povinnosti.</strong> Reklamace, pojištění, školení, incidenty, výmazy údajů a ukončení spolupráce potřebují reálně obsluhované postupy.</li>
+</ol>
+<p><strong>Pozitivní základ existuje:</strong> aplikace má objednávky, platby, storno a refundace, reklamace, kontrolu partnerských dokladů, průběh úklidu, fotografie, výpočet odměn, cookie lištu a nástroje pro souhlasy, export a výmaz. Problémem je především nesoulad jejich konkrétních pravidel s návrhy dokumentů.</p>
+<h2 id="1-co-je-v-jednotlivych-dokumentech">1. Co je v jednotlivých dokumentech</h2>
+<p>„Rozpor“ znamená doložené jiné chování kódu. „Částečné pokrytí“ znamená, že základ existuje, ale chybějí významné podmínky. „Mimo aplikaci“ znamená povinnost, kterou lze plnit ručně a jejíž skutečné plnění tento rozbor neověřoval.</p>
+<table>
+<thead>
+<tr>
+<th>Dokument</th>
+<th>Co řeší</th>
+<th>Výsledek a hlavní práce pro právníky</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="../SMLOUVY%20CleanSia/SMLOUVY/Cleansia_VOP.docx">VOP</a></td>
+<td>Strany smlouvy, účet, objednávku, cenu, platbu, změny, storno, odpovědnost, recenze a spory.</td>
+<td><strong>Rozpory:</strong> obchodní model, host bez účtu, storno, kredity. Doplnit Plus a další programy; sjednotit s publikovaným textem.</td>
+</tr>
+<tr>
+<td><a href="../SMLOUVY%20CleanSia/SMLOUVY/cleansia_reklamacni_rad.docx">Reklamační řád</a></td>
+<td>Vady, škody, krádež, podání a lhůty, důkazy, nápravu, refundaci, pojištění a eskalaci.</td>
+<td><strong>Částečné pokrytí + provoz:</strong> systém případů funguje; konkrétní potvrzování, lhůty, nápravný úklid a pojistný postup vyžadují sjednocení a odpovědnou obsluhu.</td>
+</tr>
+<tr>
+<td><a href="../SMLOUVY%20CleanSia/SMLOUVY/cleansia_ramcova_smlouva.docx">Rámcová smlouva</a></td>
+<td>Nezávislost OSVČ, výběr práce, vybavení, pojištění, provizi, hotovost, odpovědnost, DPA a konec spolupráce.</td>
+<td><strong>Rozpory:</strong> provize versus odměna, fakturační model. <strong>Nedostatečné pokrytí:</strong> firmy a týmy. Doplnit ceník, výplatní cyklus a podmínky aktivace partnera.</td>
+</tr>
+<tr>
+<td><a href="../SMLOUVY%20CleanSia/SMLOUVY/cleansia_bozp.docx">BOZP</a></td>
+<td>Chemikálie, ochranné pomůcky, spotřebiče, ergonomii, první pomoc, úrazy, zvířata, výšky, odpad a opakování poučení.</td>
+<td><strong>Převážně mimo aplikaci:</strong> ověřit odborný obsah, školitele, evidenci poučení, obnovy a skutečný kontakt dispečinku.</td>
+</tr>
+<tr>
+<td><a href="../SMLOUVY%20CleanSia/SMLOUVY/cleansia_kodex_chovani.docx">Kodex chování</a></td>
+<td>Vystupování, oděv a vůni, příchod a předání, fotografie, komunikaci, nalezené věci, sociální sítě a sankce.</td>
+<td><strong>Rozpory + provoz:</strong> hotovost, fotografie a některé zákazy nejsou sladěné s rámcovou smlouvou. Upozornění, pozastavení a distribuce vybavení nejsou totéž co obecná správa účtu.</td>
+</tr>
+<tr>
+<td><a href="../SMLOUVY%20CleanSia/SMLOUVY/cleansia_privacy_policy.docx">Privacy Policy</a></td>
+<td>Správce, účely a údaje, právní tituly, příjemce, retenci, bezpečnost, práva a věk.</td>
+<td><strong>Částečné pokrytí / rozpory:</strong> doplnit skutečné dodavatele a data, přepsat retenční tabulku a ověřování věku podle zamýšleného procesu.</td>
+</tr>
+<tr>
+<td><a href="../SMLOUVY%20CleanSia/SMLOUVY/cleansia_cookie_policy.docx">Cookie Policy</a></td>
+<td>Veřejný cookie text a interní implementační příručku.</td>
+<td><strong>Rozpory:</strong> názvy úložišť, evidence a platnost souhlasu. Vzorový seznam analytiky není doložený skutečnou implementací. Interní část B oddělit od veřejného dokumentu.</td>
+</tr>
+<tr>
+<td><a href="../SMLOUVY%20CleanSia/SMLOUVY/cleansia_gdpr_souhlasy.docx">GDPR souhlasy</a></td>
+<td>Checkboxy, registraci, objednávku, GPS, marketing, odvolání a historii souhlasů.</td>
+<td><strong>Zásadní rozpory:</strong> přepisovaná evidence bez verze, směšování cookies s e-maily, hostovská objednávka, význam povinného souhlasu a GPS.</td>
+</tr>
+<tr>
+<td><a href="../SMLOUVY%20CleanSia/SMLOUVY/cleansia_dpa.docx">DPA</a></td>
+<td>Zpracování zákaznických dat partnerem, přístup, mlčenlivost, retenci, incidenty, subzpracovatele a výmaz.</td>
+<td><strong>Částečné pokrytí:</strong> omezení podle přidělení existuje; historický partner má dále přístup bez sjednaného časového omezení. Podpisy a práce s kopiemi mimo aplikaci potřebují evidenci.</td>
+</tr>
+<tr>
+<td><a href="../SMLOUVY%20CleanSia/SMLOUVY/cleansia_spolecenska_smlouva.docx">Společenská smlouva</a></td>
+<td>Založení a řízení s.r.o., podíly, vklady, jednatele, hlasování, zisk, převody a zánik.</td>
+<td><strong>Samostatné korporátní téma:</strong> pracovní návrh pro notáře. Doplnit skutečné osoby a parametry, sladit hlasovací ustanovení, vyřešit práva k softwaru. Nejde o funkci aplikace.</td>
+</tr>
+</tbody>
+</table>
+<p>Napříč balíčkem zůstávají nevyplněné identifikační údaje, kontakty, účinnost a některé zásadní obchodní parametry. Číslo verze „1.1“ samo nepotvrzuje právní schválení ani shodu s tím, co vidí uživatel.</p>
+<h2 id="2-nejvetsi-rozpory-ktere-je-potreba-rozhodnout">2. Největší rozpory, které je potřeba rozhodnout</h2>
+<h3 id="a-role-stran-vznik-smlouvy-a-fakturace">A. Role stran, vznik smlouvy a fakturace</h3>
+<p>VOP 1.3 a rámcová smlouva 2.2–2.3 popisují přímý vztah zákazník–OSVČ. Už mezi návrhy je rozdíl v okamžiku vzniku smlouvy: VOP jej spojují s potvrzením/platbou, rámcová smlouva s přijetím zakázky partnerem. V aplikaci může být zakázka po platbě „Confirmed“, přestože nemá přiděleného pracovníka. Vícečlenný úklid může mít několik samostatných partnerských účtů.</p>
+<p>Partnerská faktura uvádí partnera jako dodavatele a CleanSia jako odběratele; zákaznický doklad používá údaje společnosti. <strong>Rozhodnout jeden smluvní a účetní model</strong>, identitu dodavatele, oprávnění vystavovat doklady a odpovědnost za celý tým. Samotný kód neurčuje právní kvalifikaci vztahu.</p>
+<h3 id="b-storno-je-v-dokumentu-vyrazne-drazsi">B. Storno je v dokumentu výrazně dražší</h3>
+<table>
+<thead>
+<tr>
+<th>Situace</th>
+<th>VOP čl. V</th>
+<th>Aktuální standardní pravidlo aplikace</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Více než 24 hodin před úklidem</td>
+<td>Bez poplatku</td>
+<td>Bez poplatku; zdarma je i přesně 24 hodin.</td>
+</tr>
+<tr>
+<td>4 až méně než 24 hodin</td>
+<td>50 %</td>
+<td>25 %</td>
+</tr>
+<tr>
+<td>2 až méně než 4 hodiny</td>
+<td>50 %</td>
+<td>50 %</td>
+</tr>
+<tr>
+<td>Méně než 2 hodiny</td>
+<td>100 %</td>
+<td>50 %</td>
+</tr>
+<tr>
+<td>Nikdo zakázku nepřijal</td>
+<td>Samostatná výjimka není popsána</td>
+<td>Zdarma</td>
+</tr>
+<tr>
+<td>Prvních 15 minut od objednání</td>
+<td>Samostatná výjimka není popsána</td>
+<td>Zdarma</td>
+</tr>
+</tbody>
+</table>
+<p>Tabulka ukazuje standard po přijetí zakázky, s posledními dvěma přednostními výjimkami. Plus může bezplatné storno dále zvýhodnit. Zahájenou nebo dokončenou zakázku zákaznickým stornem zrušit nelze. VOP navíc uvádějí 100 % při znemožnění přístupu; zvláštní automatický tarif pro tuto situaci v prověřené cestě není doložen.</p>
+<p><strong>Rozhodnout sazby a výjimky; teprve pak sjednotit kód, VOP a obrazovky.</strong> Zmínku o 60 minutách zdarma pro první objednávku ze starší dokumentace nepřebírat: aktuální volající tuto výhodu nepřiznává.</p>
+<h3 id="c-odmena-partnera-neni-procentni-provize-z-kazde-objednavky">C. Odměna partnera není procentní provize z každé objednávky</h3>
+<p>Rámcová smlouva čl. 7 předpokládá procentní provizi. Aplikace počítá odměnu ze sazeb za služby/balíčky, místnosti, koupelny a vzdálenost s limity a individuálními nastaveními. Nejde automaticky o zákaznickou cenu minus například 20 %. <strong>Schválit skutečný ceník, okamžik závaznosti odměny a vliv zákaznických slev.</strong></p>
+<p>Hotovost aplikace podporuje; automatické smluvní započtení platformní provize však není doloženo. Kodex přitom zakazuje platby mimo aplikaci. Vyjasnit, zda zákaz míří na zatajené zakázky, nebo i na povolené hotovostní inkaso. Fakturační evidence sama neprovádí bankovní výplatu.</p>
+<p>Automatika vytváří měsíční výplatní období navázaná na den založení prvního období; PDF faktura má splatnost 14 dní. Rámcová smlouva 7.4 zatím nechává cyklus a lhůtu výplaty nevyplněné. Potvrdit, zda to odpovídá zamýšlenému účetnímu provozu.</p>
+<h3 id="d-host-publikovane-podminky-a-dukaz-prijeti">D. Host, publikované podmínky a důkaz přijetí</h3>
+<p>VOP vyžadují registraci, ale API přijímá objednávky hostů. Hostovský checkbox na webu ukládá záznam místně a odeslání čeká na přihlášení; samotná objednávka nenese verzi přijatých podmínek. Evidence souhlasů přepisuje aktuální stav, místo aby uchovávala slíbenou neměnnou historii a verzi textu.</p>
+<p>Webové <code>/terms</code> a <code>/privacy</code> navíc používají krátké překladové návrhy s upozorněním na právní nezkontrolování a prázdným datem. <strong>Schválit jeden obsah pro web i mobilní aplikace, jeho překlady a způsob doložení přijetí pro účet i hosta.</strong> Rozlišit přijetí smlouvy, seznámení s informací a odvolatelný souhlas.</p>
+<h3 id="e-kredity-a-konec-uctu">E. Kredity a konec účtu</h3>
+<p>VOP 2.4 slibují peněžní vrácení nevyužitého kreditu. Aplikace výmaz účtu s kladným kreditem blokuje. Kredit expiruje po 12 měsících od posledního pohybu, používá se automaticky na kartovou objednávku ve stejné měně a pokryje nejvýše 70 % ceny. Samostatný peněžní výběr zůstatku nebyl doložen.</p>
+<p><strong>Oddělit bonus od peněžního nároku zákazníka</strong>, stanovit expiraci, čerpání, vypořádání a vztah k výmazu účtu. Zrušení neobsazené zakázky umí vrátit platbu a přidat registrovanému zákazníkovi 250 kreditních jednotek v základní měně; host tento kredit nedostane. To také potřebuje jasná pravidla.</p>
+<h3 id="f-fotografie-a-pristup-k-udajum-po-zakazce">F. Fotografie a přístup k údajům po zakázce</h3>
+<p>Standardní partnerské dokončení úklidu vyžaduje alespoň jednu fotografii „After“; administrátorská změna stavu má samostatnou cestu. Rámcová smlouva a Kodex pracují s fotografováním na základě souhlasu a omezenými výjimkami; nahrání fotografie samo souhlas neeviduje. <strong>Rozhodnout účel, právní titul, informování a cestu pro zákazníka, který fotografii odmítne.</strong></p>
+<p>DPA stanoví partnerovi krátké lhůty, například 24 hodin pro kontakt/adresu a 30 dní pro provozní údaje/fotografie. Historicky přidělený partner však může přes API nadále načíst detail i nové odkazy na fotografie. Delší uchování platformou není automaticky totéž co porušení partnerovy retenční povinnosti; je nutné zvlášť vyřešit <strong>platformové uchování, přístup partnera a jeho vlastní kopie</strong>.</p>
+<h3 id="g-cookies-marketing-gps-a-retence">G. Cookies, marketing, GPS a retence</h3>
+<p>Volba marketingových cookies se na serveru mapuje na souhlas s marketingovými e-maily. To směšuje dvě rozdílná rozhodnutí; nález sám nedokazuje rozesílání nevyžádaných zpráv. Lišta také neukládá slíbené datum, verzi a dobu platnosti souhlasu.</p>
+<p>Text GPS slibuje, že se poloha nesdílí s třetími stranami, ale Android při převodu souřadnic na adresu volá Mapbox. Privacy uvádí jiné retenční lhůty než výchozí automatické mazání. Návrhy pracují s hranicí 18 i 16 let, zákaznická registrace věkové ověření nemá. <strong>Připravit jednu schválenou tabulku účel–údaj–příjemce–lhůta–právní titul</strong> a podle ní upravit texty i implementaci.</p>
+<h3 id="h-reklamace-pojisteni-a-skoleni-potrebuji-dolozeny-provoz">H. Reklamace, pojištění a školení potřebují doložený provoz</h3>
+<p>Reklamační případ, přílohy, komunikace, rozhodnutí a kartová refundace existují. Kód ale nedokládá celé slibované potvrzení do 30 minut, třídenní prošetření, nápravný úklid či aktivaci pojištění. Krátké lhůty a dvě povinné fotografie z řádu nejsou shodně vynuceny; pozdní podání systém přijme.</p>
+<p>Schválení partnera ověřuje konfigurované typy dokladů. Uložený seed pro CZ/SK vyžaduje občanský průkaz; pojištění, podepsaná smlouva a školení z něj automaticky povinné nejsou. Živé nastavení může být jiné. <strong>Doložit skutečný partnerský spis, checklist, obnovy pojištění a školení, reklamační frontu a obsluhované kontakty.</strong> Chybějící automatizace není důkaz, že se nic nedělá ručně.</p>
+<h2 id="3-procesy-ktere-maji-v-dokumentech-nedostatecna-pravidla">3. Procesy, které mají v dokumentech nedostatečná pravidla</h2>
+<table>
+<thead>
+<tr>
+<th>Existující proces</th>
+<th>Co je potřeba doplnit</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Cleansia Plus</strong></td>
+<td>Cena a perioda, automatické obnovení, přechod trialu na placení, doúčtování při změně plánu, zrušení na konci období a nárok na vrácení platby.</td>
+</tr>
+<tr>
+<td><strong>Opakované rezervace</strong></td>
+<td>Rozvrh versus jednotlivá objednávka, samostatné potvrzení a platba výskytu, aktuální cena, pauza a konec série. Označení „Monthly“ dnes v generování znamená 30 dní.</td>
+</tr>
+<tr>
+<td><strong>Loajalita, doporučování a promokódy</strong></td>
+<td>Vznik a odebrání bodů, limity, kombinování slev, změny kampaní, zneužití a odlišení bodů od kreditu a peněz.</td>
+</tr>
+<tr>
+<td><strong>Cena, express, termín a tým</strong></td>
+<td>Význam odhadu ceny/délky, příplatky a rozsah balíčků, čtvrthodinový výběr v rámci 60minutového okna, počet pracovníků a nezaručená preference oblíbeného partnera.</td>
+</tr>
+<tr>
+<td><strong>Neobsazená zakázka a nedostavení</strong></td>
+<td>Automatické zrušení neobsazené zakázky po toleranci není detekce nepříchodu již přiděleného pracovníka. Popsat refundaci, kredit a lidskou eskalaci.</td>
+</tr>
+<tr>
+<td><strong>Firmy, týmy a náhradníci</strong></td>
+<td>Právnická osoba versus OSVČ, vazba členů týmu na smluvního poskytovatele, odpovědnost a přístup k datům. Žádost o zástup/opuštění je doložena na backendu, nikoli jako úplná cesta v uživatelských obrazovkách.</td>
+</tr>
+<tr>
+<td><strong>Omezení a konec spolupráce</strong></td>
+<td>Důvody omezení zakázek, přezkum člověkem, upozornění, výpověď, pozastavení, dokončení rozpracované práce a konečné vyúčtování. Technická blokace účtu nenahrazuje právní úkon.</td>
+</tr>
+<tr>
+<td><strong>Údaje zákazníků i partnerů</strong></td>
+<td>Fotky domácností, důkazy, vstupní instrukce, identity a doklady, bankovní údaje, zařízení, push tokeny, diagnostika a referral vazby; konkrétní příjemci včetně mapových služeb.</td>
+</tr>
+<tr>
+<td><strong>Práva subjektů údajů</strong></td>
+<td>Samoobslužný export obsahuje jen část evidovaných dat; určit doplnění na žádost, výjimky z výmazu, neúspěšné smazání souborů a vyřízení partnerovy žádosti člověkem.</td>
+</tr>
+</tbody>
+</table>
+<p>Opačným směrem návrhy slibují některé funkce, pro které nebyla nalezena odpovídající kompletní cesta: obecný samoobslužný přesun jednorázové objednávky, platformní spropitné, zákaznický bankovní převod a peněžní výběr kreditu. Mohou být řešeny podporou či účetní; dokument má tuto cestu popsat konkrétně.</p>
+<h2 id="4-samostatne-otazky-pro-pravni-posouzeni">4. Samostatné otázky pro právní posouzení</h2>
+<p><strong>Spotřebitelská pravidla:</strong> prověřit odkaz VOP čl. V na § 1837 písm. j) jako důvod vyloučení 14denního odstoupení u úklidu s termínem. Z oficiálního přehledu ČOI nelze převzít obecnou výjimku pro každou službu objednanou na konkrétní den; uvádí vymezené kategorie služeb. Právníci mají určit správný režim úklidu a případnou výslovnou žádost o zahájení plnění před uplynutím lhůty. <a href="https://coi.gov.cz/faq/5-odstoupeni-od-smlouvy-do-14-dnu-u-sluzeb-4/">ČOI – informace k odstoupení u služeb</a>.</p>
+<p>Dále nechat posoudit 24/48hodinové reklamační lhůty, povinné fotografie, vztah ke skrytým vadám, prodloužení 30denní lhůty pouhým oznámením, omezení odpovědnosti a smluvní sankce. To jsou otázky právní platnosti, nikoli závěr tohoto technického srovnání.</p>
+<p><strong>Zastaralý odkaz:</strong> VOP 12.2 a reklamační řád 5.4 stále odkazují na ODR. Platforma skončila 20. 7. 2025; informace o příslušném ADR tím obecně nezaniká. Text opravit. <a href="https://mpo.gov.cz/cz/ochrana-spotrebitele/mimosoudni-reseni-spotrebitelskych-sporu-adr/skoncila-informacni-povinnost-obchodniku-o-platforme-odr--288708/">MPO – ukončení ODR a trvající informační povinnost ADR</a>.</p>
+<p><strong>Společnost a zakladatelé:</strong> společenská smlouva je pracovní návrh s nevyplněnými společníky, podíly, vklady a rozhodnými limity. Čl. 5.4 uvádí pro změnu smlouvy dvoutřetinovou většinu; 10.6 souhlas všech, pokud zákon nestanoví jinak. Jejich vztah má sjednotit notář. Předmět podnikání zahrnuje zprostředkování i poskytování úklidu; samotná šíře předmětu není rozpor, ale neurčuje, jakou roli má konkrétní zákaznická smlouva.</p>
+<p>V těchto deseti souborech není doloženo vypořádání autorských práv k softwaru od zakladatelů a dodavatelů, vlastnictví domén či účtů aplikací ani podrobná dohoda pro patovou situaci mezi zakladateli. Mohou existovat jinde. <strong>Prověřit, co už je uzavřeno a co doplnit samostatně.</strong> Také instrukce pro založení společnosti, poplatky a lhůty v návrhu nechat ověřit notářem.</p>
+<h2 id="5-co-si-odnest-z-dnesniho-jednani">5. Co si odnést z dnešního jednání</h2>
+<table>
+<thead>
+<tr>
+<th>Pořadí</th>
+<th>Konkrétní výstup</th>
+<th>Kdo rozhoduje / připraví</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>Jedna stránka popisující smluvní strany, okamžik smlouvy, platby, doklady a odpovědnost týmu.</td>
+<td>Vedení + právníci + účetní</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Jedna schválená tabulka cen, storna, odměn, hotovosti, kreditů a výplat.</td>
+<td>Vedení + účetní; právní kontrola</td>
+</tr>
+<tr>
+<td>3</td>
+<td>Rozhodnutí, které služby a benefity budou při spuštění dostupné, a příslušná pravidla.</td>
+<td>Vedení + právníci</td>
+</tr>
+<tr>
+<td>4</td>
+<td>Schválený způsob přijímání textů, marketingových voleb, fotografií a uchování důkazů.</td>
+<td>Právníci + odpovědná osoba za produkt</td>
+</tr>
+<tr>
+<td>5</td>
+<td>Retenční a dodavatelská tabulka; checklist partnera, reklamací, incidentů a žádostí o údaje.</td>
+<td>Právníci + provoz + technický tým</td>
+</tr>
+<tr>
+<td>6</td>
+<td>Seznam finálních veřejných dokumentů, podpisových příloh a interních postupů s vlastníkem a datem.</td>
+<td>Právníci + vedení</td>
+</tr>
+</tbody>
+</table>
+<p>Po rozhodnutí rozdíly rozdělit na <strong>úpravu textu</strong>, <strong>změnu aplikace</strong> a <strong>provozní postup</strong>. Nesoulad není automatický pokyn změnit aplikaci podle dnešního Wordu; některé návrhy popisují jiný obchodní záměr a samy si odporují.</p>
+<h2 id="jak-byl-rozbor-proveden-a-kde-jsou-dukazy">Jak byl rozbor proveden a kde jsou důkazy</h2>
+<p>Přečteno všech deset DOCX včetně tabulek a textových částí; porovnáno s aktuálním backendem a relevantními cestami webu, Androidu a iOS. Dokumentace v <code>docs/</code> sloužila k orientaci, rozhodující byl prověřený kód. Například starší komentáře popírají automatický kredit u neobsazené zakázky, ale aktuální implementace již existuje.</p>
+<p>Jde o statické srovnání procesů a návrhů, nikoli ověření jejich právní platnosti nebo provozu nasazeného prostředí. Nebyly kontrolovány živé databáze, skutečné pojištění a podpisy, bankovní platby, cloudové smlouvy, školení ani obsluha podpory. Konfigurovatelné výchozí hodnoty nemusí odpovídat nasazení. Původní právní dokumenty a zdrojový kód zůstaly beze změny.</p>
+<p>Podrobné nálezy s články, odstavci a cestami do kódu jsou v <a href="PODROBNY-ROZBOR.html">podrobném rozboru</a>. Část ke společnosti je doložena <a href="podklady/cleansia_spolecenska_smlouva.txt">extrakcí společenské smlouvy</a>, zejména P005, P017, P031–P065, P079 a P127. Označení P je pomocné číslo odstavce extrakce, nikoli číslo článku originálu. <a href="podklady/INVENTAR.html">Soupis a kontrolní otisky podkladů</a> vážou rozbor na konkrétní soubory.</p></main></body></html>

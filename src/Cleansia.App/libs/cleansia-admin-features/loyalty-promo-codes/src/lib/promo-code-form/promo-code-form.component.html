@@ -1,38 +1,36 @@
-<div class="cleansia-promo-code-form">
-  <div class="cleansia-promo-code-form__container page-wrapper">
-    <div class="cleansia-promo-code-form__header">
-      <cleansia-button
-        [label]="'global.actions.back' | translate"
-        icon="pi pi-arrow-left"
-        (onClick)="onCancel()"
-        [outlined]="true"
-      />
-      <cleansia-title [title]="pageTitle()" />
+<div class="cleansia-promo-code-form cleansia-page">
+  <div class="cleansia-promo-code-form__container page-wrapper page-wrapper--narrow">
+    <div class="cleansia-page-header">
+      <div class="cleansia-page-header__heading">
+        <div class="cleansia-detail-title">
+          <cleansia-button
+            [label]="'global.actions.back' | translate"
+            icon="pi pi-arrow-left"
+            severity="secondary"
+            [outlined]="true"
+            (onClick)="onCancel()"
+          />
+          <cleansia-title [title]="pageTitle()" [level]="1" />
+        </div>
+      </div>
     </div>
 
     @if (facade.loading()) {
       <cleansia-loader />
     } @else {
-      <form
-        [formGroup]="form"
-        (ngSubmit)="onSave()"
-        class="cleansia-promo-code-form__content"
-      >
+      <form [formGroup]="form" (ngSubmit)="onSave()" class="cleansia-form">
         <cleansia-section
-          [title]="'pages.promo_codes.form.field.code' | translate"
+          [title]="'pages.promo_codes.form.section.identity' | translate"
         >
           <div class="form-grid">
-            <div class="form-field">
+            <div class="form-field form-field--quarter">
               <cleansia-text-input
                 [label]="'pages.promo_codes.form.field.code' | translate"
                 formControlName="code"
                 [required]="true"
               />
-              <small class="field-help">
-                {{ 'pages.promo_codes.form.field.code_help' | translate }}
-              </small>
             </div>
-            <div class="form-field">
+            <div class="form-field form-field--quarter">
               <cleansia-select
                 [label]="'pages.promo_codes.form.field.type' | translate"
                 formControlName="type"
@@ -53,7 +51,7 @@
                 />
               </div>
             } @else {
-              <div class="form-field">
+              <div class="form-field form-field--quarter">
                 <cleansia-text-input
                   [label]="
                     'pages.promo_codes.form.field.discount_amount' | translate
@@ -63,7 +61,7 @@
                   [required]="true"
                 />
               </div>
-              <div class="form-field">
+              <div class="form-field form-field--quarter">
                 <cleansia-select
                   [label]="
                     'pages.promo_codes.form.field.currency' | translate
@@ -71,24 +69,29 @@
                   formControlName="currencyId"
                   [options]="currencyOptions()"
                   [required]="true"
+                  [showClear]="false"
                 />
               </div>
             }
+
+            <p class="form-hint">
+              {{ 'pages.promo_codes.form.field.code_help' | translate }}
+            </p>
           </div>
         </cleansia-section>
 
         <cleansia-section
-          [title]="'pages.promo_codes.form.field.min_order' | translate"
+          [title]="'pages.promo_codes.form.section.limits' | translate"
         >
           <div class="form-grid">
-            <div class="form-field">
+            <div class="form-field form-field--third">
               <cleansia-text-input
                 [label]="'pages.promo_codes.form.field.min_order' | translate"
                 formControlName="minimumOrderAmount"
                 dataType="number"
               />
             </div>
-            <div class="form-field">
+            <div class="form-field form-field--third">
               <cleansia-text-input
                 [label]="
                   'pages.promo_codes.form.field.max_per_user' | translate
@@ -98,7 +101,7 @@
                 [required]="true"
               />
             </div>
-            <div class="form-field">
+            <div class="form-field form-field--third">
               <cleansia-checkbox
                 [label]="
                   'pages.promo_codes.form.field.global_max_enabled'
@@ -108,7 +111,7 @@
               />
             </div>
             @if (form.controls.globalMaxEnabled.value) {
-              <div class="form-field">
+              <div class="form-field form-field--third">
                 <cleansia-text-input
                   [label]="
                     'pages.promo_codes.form.field.global_max' | translate
@@ -123,7 +126,7 @@
         </cleansia-section>
 
         <cleansia-section
-          [title]="'pages.promo_codes.form.field.valid_from' | translate"
+          [title]="'pages.promo_codes.form.section.validity' | translate"
         >
           <div class="form-grid">
             <div class="form-field">
@@ -143,23 +146,21 @@
               />
             </div>
             @if (form.errors?.['validityRange']) {
-              <div class="form-field full-width">
-                <small class="field-error">
-                  {{
-                    'pages.promo_codes.form.validation.validity_range'
-                      | translate
-                  }}
-                </small>
-              </div>
+              <p class="form-error">
+                {{
+                  'pages.promo_codes.form.validation.validity_range'
+                    | translate
+                }}
+              </p>
             }
           </div>
         </cleansia-section>
 
         <cleansia-section
-          [title]="'pages.promo_codes.form.field.description' | translate"
+          [title]="'pages.promo_codes.form.section.notes' | translate"
         >
           <div class="form-grid">
-            <div class="form-field full-width">
+            <div class="form-field form-field--full">
               <cleansia-textarea
                 [label]="
                   'pages.promo_codes.form.field.description' | translate
@@ -179,7 +180,7 @@
 
         <div class="form-actions">
           <cleansia-button
-            [label]="'pages.promo_codes.form.cancel' | translate"
+            [label]="'global.actions.cancel' | translate"
             [outlined]="true"
             (onClick)="onCancel()"
           />

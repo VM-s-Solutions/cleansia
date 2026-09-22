@@ -11,7 +11,6 @@ import {
 } from '@cleansia/admin-services';
 import { UnsubscribeControlDirective } from '@cleansia/directives';
 import { SnackbarService } from '@cleansia/services';
-import { TranslateService } from '@ngx-translate/core';
 import {
   catchError,
   concatMap,
@@ -37,7 +36,6 @@ export interface TierConfigUpdateInput {
 export class TierConfigsFacade extends UnsubscribeControlDirective {
   private readonly adminClient = inject(AdminClient);
   private readonly snackbarService = inject(SnackbarService);
-  private readonly translate = inject(TranslateService);
 
   readonly tiers = signal<TierConfigAdminDto[]>([]);
   readonly loading = signal<boolean>(false);
@@ -92,9 +90,7 @@ export class TierConfigsFacade extends UnsubscribeControlDirective {
       )
       .subscribe((response: UpdateTierConfigResponse | null) => {
         if (response) {
-          this.snackbarService.showSuccess(
-            this.translate.instant('pages.loyalty_tiers.form.success')
-          );
+          this.snackbarService.showSuccessTranslated('pages.loyalty_tiers.form.success');
           this.loadTiers();
           onSuccess?.();
         }
@@ -120,9 +116,7 @@ export class TierConfigsFacade extends UnsubscribeControlDirective {
       .pipe(
         takeUntil(this.destroyed$),
         catchError(() => {
-          this.snackbarService.showError(
-            this.translate.instant('pages.loyalty_tiers.preview.error.preview')
-          );
+          this.snackbarService.showErrorTranslated('pages.loyalty_tiers.preview.error.preview');
           return of(null);
         }),
         finalize(() => this.previewing.set(false))
@@ -185,24 +179,18 @@ export class TierConfigsFacade extends UnsubscribeControlDirective {
       .subscribe((results) => {
         const failed = results.some((r) => r == null);
         if (failed) {
-          this.snackbarService.showError(
-            this.translate.instant('pages.loyalty_tiers.preview.error.apply')
-          );
+          this.snackbarService.showErrorTranslated('pages.loyalty_tiers.preview.error.apply');
           // Still reload to surface whatever did succeed.
           this.loadTiers();
           return;
         }
-        this.snackbarService.showSuccess(
-          this.translate.instant('pages.loyalty_tiers.preview.success')
-        );
+        this.snackbarService.showSuccessTranslated('pages.loyalty_tiers.preview.success');
         this.loadTiers();
         onAllSuccess?.();
       });
   }
 
   private handleSaveError(): void {
-    this.snackbarService.showError(
-      this.translate.instant('pages.loyalty_tiers.form.error.generic')
-    );
+    this.snackbarService.showErrorTranslated('pages.loyalty_tiers.form.error.generic');
   }
 }

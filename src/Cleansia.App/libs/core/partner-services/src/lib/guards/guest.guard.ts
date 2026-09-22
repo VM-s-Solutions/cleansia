@@ -4,15 +4,12 @@ import { CleansiaPartnerRoute } from '@cleansia/services';
 import { PartnerAuthService } from '../services';
 
 /**
- * Guard that prevents authenticated users from accessing guest-only pages
- * (login, register, forgot-password, confirm-email).
- * Redirects logged-in users to the dashboard.
+ * Keeps a signed-in cleaner off the guest-only screens (login, register, forgot-password,
+ * confirm-email) by landing them on the dashboard.
  */
 export const guestGuard: CanActivateFn = () => {
   const authService = inject(PartnerAuthService);
   const router = inject(Router);
 
-  return authService.isLoggedIn()
-    ? router.navigate([CleansiaPartnerRoute.DASHBOARD])
-    : true;
+  return authService.isLoggedIn() ? router.createUrlTree([`/${CleansiaPartnerRoute.DASHBOARD}`]) : true;
 };

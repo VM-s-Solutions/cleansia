@@ -5,6 +5,7 @@ import {
   CleansiaButtonComponent,
   CleansiaCheckboxComponent,
   CleansiaDynamicBackgroundComponent,
+  CleansiaLanguageSwitcherComponent,
   CleansiaTextInputComponent,
   CleansiaTitleComponent,
 } from '@cleansia/components';
@@ -22,6 +23,7 @@ import { AdminLoginFacade } from './admin-login.facade';
     CleansiaCheckboxComponent,
     CleansiaBrandNameComponent,
     CleansiaTextInputComponent,
+    CleansiaLanguageSwitcherComponent,
     CleansiaDynamicBackgroundComponent,
   ],
   templateUrl: './admin-login.component.html',

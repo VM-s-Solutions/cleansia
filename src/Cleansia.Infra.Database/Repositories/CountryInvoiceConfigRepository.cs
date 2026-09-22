@@ -10,9 +10,4 @@ public class CountryInvoiceConfigRepository(CleansiaDbContext context) : BaseRep
     {
         return GetDbSet().FirstOrDefaultAsync(c => c.CountryId == countryId, cancellationToken);
     }
-
-    public Task<bool> ExistsByCountryIdAsync(string countryId, CancellationToken cancellationToken)
-    {
-        return GetDbSet().AnyAsync(c => c.CountryId == countryId, cancellationToken);
-    }
 }

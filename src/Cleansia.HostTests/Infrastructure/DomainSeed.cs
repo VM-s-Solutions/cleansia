@@ -149,7 +149,6 @@ public static class DomainSeed
             nationalityId: CountryId,
             passportId: "P1234567",
             address: address,
-            availability: new Dictionary<string, List<Cleansia.Core.Domain.Users.TimeRange>>(),
             emergencyContactName: "ICE",
             emergencyContactPhone: "+420777000000");
         // The profile gate's payout term is a scalar on this row (ADR-0034 D1.1) — the legacy IBAN

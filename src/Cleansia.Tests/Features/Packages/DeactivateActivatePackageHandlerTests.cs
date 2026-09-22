@@ -8,7 +8,7 @@ namespace Cleansia.Tests.Features.Packages;
 /// <summary>
 /// Package half of the safe retire path (ADR-0007). Same contract as the service pair:
 /// deactivating an IN-USE package is ALLOWED (it only hides the row from new orders; existing
-/// orders/carts keep their references, so IsInUseAsync is never consulted), the soft-delete is
+/// orders keep their references, so IsInUseAsync is never consulted), the soft-delete is
 /// auditable, Activate reverses it, and both directions are idempotent.
 /// </summary>
 public class DeactivateActivatePackageHandlerTests

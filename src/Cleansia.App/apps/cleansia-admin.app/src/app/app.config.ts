@@ -30,6 +30,7 @@ import {
   AUTH_COOKIE_KEYS,
   initializeTranslations,
   JsonTranslationLoader,
+  providePrimeNgTranslation,
 } from '@cleansia/services';
 import { EffectsModule } from '@ngrx/effects';
 import { StoreModule } from '@ngrx/store';
@@ -56,22 +57,8 @@ export const appConfig: ApplicationConfig = {
     provideAnimationsAsync(),
     providePrimeNG({
       theme: { preset: CleansiaPreset, options: { darkModeSelector: false } },
-      translation: {
-        firstDayOfWeek: 1,
-        dayNames: ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'],
-        dayNamesShort: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
-        dayNamesMin: ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'],
-        monthNames: ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'],
-        monthNamesShort: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
-        today: 'Today',
-        clear: 'Clear',
-        apply: 'Apply',
-        accept: 'Yes',
-        reject: 'No',
-        emptyMessage: 'No results found',
-        emptyFilterMessage: 'No results found',
-      },
     }),
+    providePrimeNgTranslation(),
     importProvidersFrom(
       TranslateModule.forRoot({
         loader: {

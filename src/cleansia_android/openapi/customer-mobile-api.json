@@ -8869,10 +8869,6 @@
             "type": "string",
             "nullable": true
           },
-          "preferredCurrencyCode": {
-            "type": "string",
-            "nullable": true
-          },
           "averageRating": {
             "type": "number",
             "format": "double"

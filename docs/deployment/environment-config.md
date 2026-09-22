@@ -315,11 +315,15 @@ dotnet run --project Cleansia.AppHost
 ```
 
 ::: tip Stripe Webhooks Locally
-Use the Stripe CLI to forward webhooks to the host that owns the endpoint you are exercising:
+Use the Stripe CLI to forward webhooks to the host that owns the endpoint you are exercising — the
+two Stripe endpoints are registered on the **customer** hosts, one per charge channel
+([Webhooks — Stripe Dashboard setup](/api/webhooks#stripe-dashboard-setup)):
 ```bash
-stripe listen --forward-to http://localhost:5000/api/Payment/webhook   # Partner API
+stripe listen --forward-to http://localhost:5003/api/Payment/webhook   # Customer API — Checkout Session events (web)
+stripe listen --forward-to http://localhost:5004/api/Payment/webhook   # Customer Mobile API — PaymentIntent events (PaymentSheet)
 ```
-The CLI will print a webhook signing secret (`whsec_...`) to use as `Stripe:WebhookSecret`.
+The CLI will print a webhook signing secret (`whsec_...`) to use as that host's `Stripe:WebhookSecret`.
+The Partner API (`:5000`) also mounts `POST /api/Payment/webhook`, but no Stripe endpoint points at it.
 :::
 
 ### 6. Android App

@@ -36,9 +36,9 @@ validation runs. **No request carries a tenant id**; the market is the only thin
 
 | Request | Host | `countryId` | What it scopes |
 |---|---|---|---|
-| `POST /api/Auth/Register` | Customer, Customer Mobile — **not** the partner hosts (removed 2026-09-15; a cleaner registers through `RegisterEmployee`) | optional, last field | the new `User` and `Cart`; the "email already registered" check |
-| `POST /api/Auth/RegisterEmployee` | Partner, Partner Mobile | optional, last field | the new `User`, `Cart` and `Employee` — the cleaner is held to this company's countries at approval |
-| `POST /api/Auth/GoogleAuth` (all four hosts), `POST /api/Auth/AppleAuth` (Customer, Customer Mobile) | see left | optional, last field | the `User` and `Cart` provisioned on a **first** sign-in — **on a customer host only**. On a partner host `GoogleAuth` signs in an existing Employee or Administrator and provisions nothing: a first-time Google identity is refused `auth.social_account_not_found`, a Customer account `auth.insufficient_privileges`. An existing account keeps its own company whatever market the request names |
+| `POST /api/Auth/Register` | Customer, Customer Mobile — **not** the partner hosts (removed 2026-09-15; a cleaner registers through `RegisterEmployee`) | optional, last field | the new `User`; the "email already registered" check |
+| `POST /api/Auth/RegisterEmployee` | Partner, Partner Mobile | optional, last field | the new `User` and `Employee` — the cleaner is held to this company's countries at approval |
+| `POST /api/Auth/GoogleAuth` (all four hosts), `POST /api/Auth/AppleAuth` (Customer, Customer Mobile) | see left | optional, last field | the `User` provisioned on a **first** sign-in — **on a customer host only**. On a partner host `GoogleAuth` signs in an existing Employee or Administrator and provisions nothing: a first-time Google identity is refused `auth.social_account_not_found`, a Customer account `auth.insufficient_privileges`. An existing account keeps its own company whatever market the request names |
 | `POST /api/PromoCode/Request` | Customer | optional, last field | the `PromoCode` issued and the e-mail that carries it |
 | `POST /api/Referral/Validate` | Customer, Customer Mobile | optional, last field | which company's referral codes are searched |
 
@@ -319,7 +319,7 @@ the [AdminRoleGate](/domain/roles/admin-role-gate) card.
 
 ### RequireCompleteProfile Filter
 
-Certain partner-facing endpoints are additionally protected by the `[RequireCompleteProfile]` action filter. This filter checks whether the authenticated employee has completed their registration (profile, availability, documents, and admin approval). If the employee's profile is incomplete, the filter short-circuits the request and returns **403 Forbidden**.
+Certain partner-facing endpoints are additionally protected by the `[RequireCompleteProfile]` action filter. This filter checks whether the authenticated employee has completed their registration (profile, at least one active document, and admin approval — `ContractStatus` `Approved` or `Active`). If the employee's profile is incomplete, the filter short-circuits the request and returns **403 Forbidden**.
 
 Protected endpoint groups:
 - **Order** endpoints (browse, take, start, complete)

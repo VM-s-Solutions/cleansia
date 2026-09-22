@@ -69,10 +69,4 @@ public class ReferralCode : TenantAuditable
         TimesUsed += 1;
         Updated(actorId, DateTimeOffset.UtcNow);
     }
-
-    public void Disable(string actorId)
-    {
-        IsActive = false;
-        Updated(actorId, DateTimeOffset.UtcNow);
-    }
 }

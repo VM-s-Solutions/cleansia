@@ -1,14 +1,17 @@
 // Cleansia Partner Portal Page Styles
 // All partner portal page styles imported here
 
+@use '../../common/auth';
+// The partner dialogs take the admin dialog shape, so the panel widths, the dialog body and
+// footer and the form grid are read from the admin partials rather than copied; they belong in
+// common/ once the shared tree is open again.
+@use '../cleansia-admin/dialog';
+@use '../cleansia-admin/form-page';
 @use './confirm-email.component.scss';
 @use './dashboard.component.scss';
-@use './dispute-details.component.scss';
-@use './disputes.component.scss';
 @use './forgot-password.component.scss';
 @use './invoice-detail.component.scss';
 @use './invoices.component.scss';
-@use './login.component.scss';
 @use './order-details.component.scss';
 @use './orders.component.scss';
 @use './period-pay.component.scss';

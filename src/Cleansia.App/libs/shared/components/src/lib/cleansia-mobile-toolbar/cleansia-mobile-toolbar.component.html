@@ -1,0 +1,20 @@
+<div class="cleansia-mobile-toolbar">
+  <div class="cleansia-mobile-toolbar__lead">
+    <cleansia-button
+      class="cleansia-mobile-toolbar__menu"
+      icon="pi pi-bars"
+      severity="secondary"
+      [style]="'basic-button'"
+      [text]="true"
+      [ariaLabel]="'global.open_menu' | translate"
+      (onClick)="menuOpen.emit()"
+    />
+  </div>
+  <div class="cleansia-mobile-toolbar__brand">
+    <cleansia-brand-name />
+  </div>
+  <div class="cleansia-mobile-toolbar__actions">
+    <ng-content></ng-content>
+    <cleansia-language-switcher />
+  </div>
+</div>

@@ -11,7 +11,7 @@ import {
 } from '@cleansia/admin-services';
 import { SnackbarService } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
-import { of, throwError } from 'rxjs';
+import { EMPTY, of, throwError } from 'rxjs';
 import { ReferralsListFacade } from './referrals-list.facade';
 
 describe('ReferralsListFacade', () => {
@@ -21,7 +21,12 @@ describe('ReferralsListFacade', () => {
     reverse: jest.Mock;
     forceQualify: jest.Mock;
   };
-  let snackbar: { showSuccess: jest.Mock; showError: jest.Mock };
+  let snackbar: {
+    showSuccess: jest.Mock;
+    showSuccessTranslated: jest.Mock;
+    showError: jest.Mock;
+    showErrorTranslated: jest.Mock;
+  };
 
   const page = PagedDataOfAdminReferralListItem.fromJS({
     data: [
@@ -41,7 +46,12 @@ describe('ReferralsListFacade', () => {
       reverse: jest.fn(),
       forceQualify: jest.fn(),
     };
-    snackbar = { showSuccess: jest.fn(), showError: jest.fn() };
+    snackbar = {
+      showSuccess: jest.fn(),
+      showSuccessTranslated: jest.fn(),
+      showError: jest.fn(),
+      showErrorTranslated: jest.fn(),
+    };
 
     TestBed.configureTestingModule({
       providers: [
@@ -51,7 +61,10 @@ describe('ReferralsListFacade', () => {
           useValue: { adminReferralClient: referralClient },
         },
         { provide: SnackbarService, useValue: snackbar },
-        { provide: TranslateService, useValue: { instant: (k: string) => k } },
+        {
+          provide: TranslateService,
+          useValue: { instant: (k: string) => k, currentLang: 'cs', onLangChange: EMPTY },
+        },
       ],
     });
 
@@ -70,13 +83,63 @@ describe('ReferralsListFacade', () => {
     expect(facade.loading()).toBe(false);
   });
 
-  it('maps the reversed UI filter onto ReferralStatus.Reversed', () => {
+  it('leaves the the reversed UI filter onto ReferralStatus.Reversed refusal to the interceptor toast', () => {
     referralClient.getPaged.mockReturnValue(of(page));
 
     facade.applyFilter({ status: 'reversed' });
 
     const args = referralClient.getPaged.mock.calls[0];
     expect(args[0]).toBe(ReferralStatus.Reversed);
+  });
+
+  describe('filters', () => {
+    beforeEach(() => {
+      jest.useFakeTimers();
+      referralClient.getPaged.mockReturnValue(of(page));
+    });
+
+    afterEach(() => jest.useRealTimers());
+
+    it('sends the chosen status once it settles and names it in one chip', () => {
+      facade.filterForm.patchValue({ status: 'qualified' });
+      jest.advanceTimersByTime(500);
+
+      const args = referralClient.getPaged.mock.calls.at(-1);
+      expect(args?.[0]).toBe(ReferralStatus.Qualified);
+      expect(args?.[3]).toBe(0);
+      expect(facade.filters.chips()).toEqual([
+        {
+          key: 'status',
+          label: 'pages.loyalty_referrals.filter.status',
+          value: 'pages.loyalty_referrals.filter.status_qualified',
+        },
+      ]);
+    });
+
+    it('sends the date range and shows it as one chip that clears both dates', () => {
+      const from = new Date(2026, 8, 1);
+      const to = new Date(2026, 8, 30);
+      facade.filterForm.patchValue({ dateFrom: from, dateTo: to });
+      jest.advanceTimersByTime(500);
+
+      const args = referralClient.getPaged.mock.calls.at(-1);
+      expect(args?.[1]).toBe(from);
+      expect(args?.[2]).toBe(to);
+      expect(facade.filters.chips()).toEqual([
+        {
+          key: 'dateRange',
+          label: 'pages.loyalty_referrals.filter.date_range',
+          value: '1. 9. 2026 – 30. 9. 2026',
+          controls: ['dateFrom', 'dateTo'],
+        },
+      ]);
+
+      facade.filters.removeChip('dateRange');
+      const cleared = referralClient.getPaged.mock.calls.at(-1);
+      expect(cleared?.[1]).toBeUndefined();
+      expect(cleared?.[2]).toBeUndefined();
+      expect(facade.filters.chips()).toEqual([]);
+    });
   });
 
   it('reverses a referral with the trimmed reason and reloads on success', () => {
@@ -104,7 +167,7 @@ describe('ReferralsListFacade', () => {
       referralId: 'ref-1',
       reason: 'fraud ring',
     });
-    expect(snackbar.showSuccess).toHaveBeenCalledWith(
+    expect(snackbar.showSuccessTranslated).toHaveBeenCalledWith(
       'pages.loyalty_referrals.intervention.success_reverse'
     );
     expect(referralClient.getPaged).toHaveBeenCalledTimes(1);
@@ -117,16 +180,14 @@ describe('ReferralsListFacade', () => {
     expect(referralClient.reverse).not.toHaveBeenCalled();
   });
 
-  it('maps referral.not_qualified on reverse failure', () => {
+  it('leaves the referral.not_qualified refusal to the interceptor toast on reverse failure', () => {
     referralClient.reverse.mockReturnValue(
       throwError(() => ({ result: { detail: 'referral.not_qualified' } }))
     );
 
     facade.reverseReferral('ref-1', 'reason', jest.fn());
 
-    expect(snackbar.showError).toHaveBeenCalledWith(
-      'api.referral.not_qualified'
-    );
+    expect(snackbar.showErrorTranslated).not.toHaveBeenCalled();
     expect(facade.intervening()).toBe(false);
   });
 
@@ -152,25 +213,23 @@ describe('ReferralsListFacade', () => {
       referralId: 'ref-2',
       reason: 'legit order confirmed',
     });
-    expect(snackbar.showSuccess).toHaveBeenCalledWith(
+    expect(snackbar.showSuccessTranslated).toHaveBeenCalledWith(
       'pages.loyalty_referrals.intervention.success_force_qualify'
     );
     expect(onSuccess).toHaveBeenCalledTimes(1);
   });
 
-  it('maps referral.not_accepted on force-qualify failure', () => {
+  it('leaves the referral.not_accepted refusal to the interceptor toast on force-qualify failure', () => {
     referralClient.forceQualify.mockReturnValue(
       throwError(() => ({ result: { detail: 'referral.not_accepted' } }))
     );
 
     facade.forceQualifyReferral('ref-2', 'reason', jest.fn());
 
-    expect(snackbar.showError).toHaveBeenCalledWith(
-      'api.referral.not_accepted'
-    );
+    expect(snackbar.showErrorTranslated).not.toHaveBeenCalled();
   });
 
-  it('maps referral.reason_required on intervention failure', () => {
+  it('leaves the referral.reason_required refusal to the interceptor toast on intervention failure', () => {
     referralClient.reverse.mockReturnValue(
       throwError(() => ({
         response: JSON.stringify({ detail: 'referral.reason_required' }),
@@ -179,21 +238,17 @@ describe('ReferralsListFacade', () => {
 
     facade.reverseReferral('ref-1', 'reason', jest.fn());
 
-    expect(snackbar.showError).toHaveBeenCalledWith(
-      'api.referral.reason_required'
-    );
+    expect(snackbar.showErrorTranslated).not.toHaveBeenCalled();
   });
 
-  it('falls back to the generic referral error for unknown codes', () => {
+  it('leaves an unknown refusal to the interceptor toast', () => {
     referralClient.reverse.mockReturnValue(
       throwError(() => ({ result: { detail: 'something.unknown' } }))
     );
 
     facade.reverseReferral('ref-1', 'reason', jest.fn());
 
-    expect(snackbar.showError).toHaveBeenCalledWith(
-      'api.referral.action_failed'
-    );
+    expect(snackbar.showErrorTranslated).not.toHaveBeenCalled();
   });
 
   it('ignores a second intervention while one is in flight', () => {

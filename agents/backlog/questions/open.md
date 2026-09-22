@@ -43,6 +43,158 @@ names the `Q-` id.** A question with no blocked row behind it is a question nobo
 > are the lawyer's to answer with the owner (01, 03, 04, 05, 07); two are the owner's alone (02, 06).
 > None blocks anything.
 
+> **Q-UI-01 … 13 were raised by the UI-polish and dead-code discovery (2026-09-20, T-0785 … T-0799
+> on `chore/ui-polish-and-dead-code`, PR #260 — shipped in full by 2026-09-22).** Each is what the
+> code could not decide; each shipped as its default. **The owner's *go* of 2026-09-20 accepted the
+> list as put:** Q-UI-01 (drop the two wire members) and Q-UI-02 (**fold** the four dead schema
+> things into T-0791's regen) were ruled by that *go*, shipped in T-0791 (`38312c8d9`, `5ef4c292f`,
+> `c76523efa`; `Initial` = `20260920204705`) and are **deleted from here per the rule above — T-0791
+> is the record**. The other eleven stand as **defaults in force since 2026-09-20, unruled** — the
+> owner ruled none of them explicitly; each row below says what shipped against the default, and
+> one (Q-UI-08) shipped *against* it for a reason the row names. Every one is a *keep* / *leave* /
+> *amend the doc* that costs nothing to overrule later. None blocks anything.
+
+## Q-UI-03 — Partner host `POST api/Payment/webhook` and `api/v1/Health`: delete?
+
+**Raised by:** the dead-code scout (DC §2.8), 2026-09-20. **Who answers:** the owner (a fact about
+what is registered outside the repo).
+**Why it needs you:** `docs/api/webhooks.md:122-125` registers Stripe endpoints on the customer and
+customer-mobile hosts only; `docs/deployment/environment-config.md:320` still says *"forward-to
+:5000 # Partner API"* (stale). `HealthController` (175 lines, own DB + Stripe probes) is not what
+the deploy warms (`ReadinessHealthChecks.cs:42`, `deploy-azure.yml:706` use `/health`). Both need a
+fact only you hold: does anything external (the Stripe dashboard, a monitor) point at them?
+**Default in force since 2026-09-20, unruled: keep both.** Both controllers are in the tree
+(`src/Cleansia.Web.Partner/Controllers/PaymentController.cs`, `HealthController.cs`); T-0792 removed
+nothing of theirs; the stale `environment-config.md` line is the docs lane's (T-0799).
+**Blocks:** nothing.
+
+## Q-UI-04 — Admin endpoints with no UI: wire, remove, or leave?
+
+**Raised by:** the dead-code scout (DC §2.9), 2026-09-20. **Who answers:** the owner.
+**Why it needs you:** `AdminPayPeriodController` `create/update/delete/open` exist and
+`adminPayPeriodClient.create` is generated (`admin-client.ts:13206`), yet the admin *Create pay
+period* dialog ends in `console.warn` (`pay-period-management.component.ts:318-319`) — a dead
+button in the live UI, the visible half-feature you will notice first. `AdminEmployeeDocumentController`
+`{documentId}/versions` and `AdminPayrollController` `generate-invoice` have no screen at all.
+Options per endpoint: (a) wire the UI (a story each); (b) remove the endpoint and, for pay periods,
+the button; (c) leave.
+**Default in force since 2026-09-20, unruled: (c) — leave all three.** T-0790 (`038bc8d6a`) put the
+*Create pay period* dialog on the shared dialog shape and left its `console.warn`
+(`pay-period-management.component.ts`); the two screenless endpoints are untouched.
+**Blocks:** nothing.
+
+## Q-UI-05 — ADR-designed states with no producer: build the producer or strike the state?
+
+**Raised by:** the dead-code scout (DC §2.4), 2026-09-20. **Who answers:** the owner (with the
+architect — both are ADR terms).
+**Why it needs you:** `PayoutDetailsStatus.NeedsReconfirmation` (ADR-0034 D5; every writer sets
+`Provided`) and `RefundStatus.Failed` (no `refund.failed` webhook handler; `Refund.cs:88-100` only
+moves `Pending → Succeeded`). Build the producer, or strike the state from the ADR and the enum (a
+wire enum → NSwag + both mobile specs)?
+**Default in force since 2026-09-20, unruled: leave both.** Both members are still in
+`src/Cleansia.Core.Domain/Enums/` (`PayoutDetailsStatus.cs`, `RefundStatus.cs`); the dated *what
+shipped* lines on ADR-0034 and ADR-0006 are the docs lane's (T-0799).
+**Blocks:** nothing.
+
+## Q-UI-06 — Headings: load Poppins in admin / partner, or amend the design language?
+
+**Raised by:** the consistency scout (CS §5), 2026-09-20. **Who answers:** the owner.
+**Why it needs you:** the design language (§1 / §2.3) says headings are Poppins and the web matches
+the apps; neither `apps/cleansia-admin.app/src/index.html:12` nor
+`apps/cleansia-partner.app/src/index.html:12` requests it and `%cleansia-title` sets no
+`font-family` (`cleansia-title.component.scss:21-28`), so every back-office heading is Nunito 600
+(the customer `index.html:44` loads Poppins). Options: (a) request `Poppins:wght@600;700` in both
+`index.html` and set `$font-heading` on `%cleansia-title` and `.cleansia-section__title` — two
+lines, every heading changes face; (b) amend the design language to say the back-office apps are
+Nunito-only and delete `$font-heading` from the two dialogs.
+**Default in force since 2026-09-20, unruled: (b) — the doc is amended, not the apps.**
+`agents/knowledge/design-language.md` §2.3 now says the back-office web is Nunito-only and why;
+neither back-office `index.html` requests Poppins. The second half of (b) — deleting `$font-heading`
+from the two dialog partials — did **not** ship: `common/typography.scss` still declares it and
+`cleansia-dialog`, `cleansia-filter-drawer` and `cleansia-work-contract-dialog` still read it, which
+resolves to the Nunito fallback in the back office and to Poppins in the customer bundle (recorded
+in the doc). (a) is still one ticket-line if you want it.
+**Blocks:** nothing.
+
+## Q-UI-07 — Neutral palette to the design language's slate now?
+
+**Raised by:** the consistency scout (CS §5), 2026-09-20. **Who answers:** the owner.
+**Why it needs you:** `common/variables.scss` neutrals are Tailwind gray (`#111827`, `#6b7280`,
+`#d1d5db`, `#f9fafb`) where DL §2.1 prescribes slate (`#334155`, `#64748B`, `#E2E8F0`, `#F8FAFC`),
+and `--cleansia-red` is Material `#f44336` vs DL `#B91C1C`. One edit cascades into **all three** web
+apps, including the customer app that had its own passes this month.
+**Default in force since 2026-09-20, unruled: not in this batch.** T-0785 (`eb01bba24`) defined
+only the tokens that were read and undeclared; `variables.scss` still carries
+`--cleansia-text-primary: #111827`, `--cleansia-text-secondary: #6b7280`, `--cleansia-red: #f44336`
+(recorded in `design-language.md` §2.1). The swap is a one-line follow-up whenever you say.
+**Blocks:** nothing.
+
+## Q-UI-08 — The detail page's back control: a breadcrumb above the title, or the header row?
+
+**Raised by:** the visual and consistency scouts (VF 6.4 vs CS §2), 2026-09-20. **Who answers:**
+the owner.
+**Why it needs you:** the admin has a back `cleansia-button` on the title row on 19 pages; the
+partner has a hand-rolled breadcrumb on 2 (`order-details.component.html:3-26`). The visual
+scout's canonical pattern says breadcrumb (it frees the title row for title-left / actions-right);
+the consistency scout says the header row is the majority and keyboard-correct as is. Either is
+one shared component.
+**Default in force since 2026-09-20, unruled: breadcrumb — and it did not ship.** The shared tree
+was frozen through phase 3, so T-0797 built no `cleansia-breadcrumb` and T-0788 (`9010033e3`) put
+the back control **beside the `h1`** on the title row (`.cleansia-detail-title`,
+`pages/cleansia-admin/_detail-page.scss`, whose header says so); the two partner details keep their
+hand-rolled bar, drawn once as the `%breadcrumb*` placeholders in
+`pages/cleansia-partner/_breadcrumb.scss`. So the tree today is the *overruled* shape (admin back
+button on the row, partner breadcrumb) with the admin half uniform across its eleven details. Either
+answer is now one shared component plus one adoption sweep: say *breadcrumb* and `cleansia-breadcrumb`
+is built for both apps; say *header row* and the two partner bars become the admin row.
+**Blocks:** nothing.
+
+## Q-UI-09 — Partner order-detail vocabulary: align to the admin's `.detail-grid`, or keep?
+
+**Raised by:** the visual scout (VF §5), 2026-09-20. **Who answers:** the owner.
+**Why it needs you:** the partner order detail renders values as read-only filled inputs, one card
+per section (`order-details.component.html:275-299`), while the admin uses label/value text.
+**Default in force since 2026-09-20, unruled: keep the partner's shape.** T-0797 aligned the shell,
+header, badges, dates, money, dialogs and empty states and put the crew rows and the completion
+summary on the shared `.detail-grid`; the read-only-input sections stay the partner's own.
+**Blocks:** nothing.
+
+## Q-UI-10 — Spacing tokens / an 8-pt grid?
+
+**Raised by:** the consistency scout (CS §5d), 2026-09-20. **Who answers:** the owner.
+**Why it needs you:** `html { font-size: 14px }` makes every rem gap miss the 8-pt grid; no spacing
+tokens exist. Define `--cleansia-space-{1..8}` in px and sweep, or leave rem-based spacing?
+**Default in force since 2026-09-20, unruled: leave.** No `--cleansia-space-*` token exists;
+`common/font.scss` still sets `$base-font-size: 14px` (recorded in `design-language.md` §2.5).
+**Blocks:** nothing.
+
+## Q-UI-11 — Does the partner web lag mobile by design?
+
+**Raised by:** the dead-code scout (DC §6.2), 2026-09-20. **Who answers:** the owner.
+**Why it needs you:** the partner web never calls `notifyOnTheWay`, `myPendingOffers` /
+`declinePreferredOffer`, `requestCover`, `dropOrder`, `getMyDocumentRequirements` — all live on the
+mobile host and in both mobile apps. Not dead code; is the web meant to lag?
+**Default in force since 2026-09-20, unruled: no change.** Nothing in the batch touched the five
+calls; if "no", each is a story.
+**Blocks:** nothing.
+
+## Q-UI-12 — `partner-auth.service.ts:105 authenticateWithGoogle`: is Google sign-in coming to the partner web?
+
+**Raised by:** the dead-code scout (DC §3.5), 2026-09-20. **Who answers:** the owner.
+**Why it needs you:** only a spec calls it; the partner login has no Google button.
+**Default in force since 2026-09-20, unruled: keep.** The method is still in
+`libs/core/partner-services/src/lib/services/partner-auth.service.ts`; deleting is cheap later.
+**Blocks:** nothing.
+
+## Q-UI-13 — Country form: `ISO kód` and `Dvoupísmenný kód` read as duplicates
+
+**Raised by:** the visual scout (VF §4), 2026-09-20. **Who answers:** the owner.
+**Why it needs you:** `admin-country-management__create-1440.png` shows the two fields side by side
+on `country-form.component.html`. Are they two facts (ISO 3166-1 alpha-2 vs something else) or one?
+**Default in force since 2026-09-20, unruled: layout only.** T-0789 (`cab1cf559`) put the form on
+the twelve-column grid; both fields are still on `country-form.component.html`.
+**Blocks:** nothing.
+
 ## Q-WC-01 — Which figure is the *cena díla* on the contract record — the customer's price or the cleaner's pay?
 
 **Raised by:** ADR-0068 D2 (2026-09-20). **Who answers:** the owner, with the lawyer (and the

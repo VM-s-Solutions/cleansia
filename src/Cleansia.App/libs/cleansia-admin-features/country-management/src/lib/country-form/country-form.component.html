@@ -1,27 +1,27 @@
-<div class="cleansia-country-form">
-  <div class="cleansia-country-form__container page-wrapper">
-    <!-- Header with Back Button -->
-    <div class="cleansia-country-form__header">
-      <cleansia-button
-        [label]="'global.actions.back' | translate"
-        icon="pi pi-arrow-left"
-        (onClick)="onCancel()"
-        [outlined]="true"
-      />
-      <cleansia-title [title]="pageTitle()" />
+<div class="cleansia-country-form cleansia-page">
+  <div class="cleansia-country-form__container page-wrapper page-wrapper--narrow">
+    <div class="cleansia-page-header">
+      <div class="cleansia-page-header__heading">
+        <div class="cleansia-detail-title">
+          <cleansia-button
+            [label]="'global.actions.back' | translate"
+            icon="pi pi-arrow-left"
+            severity="secondary"
+            [outlined]="true"
+            (onClick)="onCancel()"
+          />
+          <cleansia-title [title]="pageTitle()" [level]="1" />
+        </div>
+      </div>
     </div>
 
     @if (facade.loading()) {
     <cleansia-loader />
     } @else {
-    <form
-      [formGroup]="form"
-      (ngSubmit)="onSave()"
-      class="cleansia-country-form__content"
-    >
+    <form [formGroup]="form" (ngSubmit)="onSave()" class="cleansia-form">
       <cleansia-section [title]="'pages.country_form.basic_info' | translate">
         <div class="form-grid">
-          <div class="form-field">
+          <div class="form-field form-field--third">
             <cleansia-text-input
               [label]="'pages.country_form.iso_code' | translate"
               formControlName="isoCode"
@@ -30,33 +30,26 @@
             />
           </div>
 
-          <div class="form-field">
+          <div class="form-field form-field--third">
             <cleansia-text-input
               [label]="'pages.country_form.iso_alpha2' | translate"
               formControlName="isoAlpha2"
               [placeholder]="'pages.country_form.iso_alpha2_placeholder' | translate"
               [required]="!isEditMode()"
             />
-            <small class="field-help">
-              {{ 'pages.country_form.iso_alpha2_help' | translate }}
-            </small>
-            @if (
-              form.controls.isoAlpha2.touched &&
-              form.controls.isoAlpha2.errors?.['pattern']
-            ) {
-              <small class="field-error">
-                {{ 'pages.country_form.validation.iso_alpha2_invalid' | translate }}
-              </small>
-            }
           </div>
 
-          <div class="form-field">
+          <div class="form-field form-field--third">
             <cleansia-text-input
               [label]="'pages.country_form.name' | translate"
               formControlName="name"
               [required]="true"
             />
           </div>
+
+          <p class="form-hint">
+            {{ 'pages.country_form.iso_alpha2_help' | translate }}
+          </p>
         </div>
       </cleansia-section>
 
@@ -72,15 +65,16 @@
               "
               [disabled]="!marketContentEnabled()"
             />
-            <small class="field-help">
-              {{
-                (marketContentEnabled()
-                  ? 'pages.country_form.insurance_coverage_amount_help'
-                  : 'pages.country_form.market_content_unavailable'
-                ) | translate
-              }}
-            </small>
           </div>
+
+          <p class="form-hint">
+            {{
+              (marketContentEnabled()
+                ? 'pages.country_form.insurance_coverage_amount_help'
+                : 'pages.country_form.market_content_unavailable'
+              ) | translate
+            }}
+          </p>
         </div>
       </cleansia-section>
 

@@ -525,7 +525,6 @@ const PARTNER_SURFACE_ERROR_KEYS: readonly string[] = [
   'language.not_supported',
   'validation.date_must_be_in_past',
   'validation.invalid_age',
-  'validation.invalid_availability_format',
   'validation.invalid_date',
   'validation.invalid_password',
   // Country-scoped IČO/VAT format checks on the cleaner's own profile save
@@ -717,7 +716,7 @@ describe('error-contract parity (partner app)', () => {
     const excluded = DELIBERATELY_NOT_TRANSLATED.map((e) => e.key);
 
     it('reaches real controllers and real dispatch sites', () => {
-      expect(surface.controllers).toBeGreaterThanOrEqual(15);
+      expect(surface.controllers).toBeGreaterThanOrEqual(12);
       expect(surface.sites.length).toBeGreaterThanOrEqual(60);
       expect(surface.featureClasses.size).toBeGreaterThanOrEqual(55);
       expect(surface.keys.size).toBeGreaterThanOrEqual(70);

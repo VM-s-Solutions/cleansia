@@ -14,6 +14,7 @@ import {
   CleansiaLoaderComponent,
   CleansiaSectionComponent,
   CleansiaSelectComponent,
+  CleansiaStatusBadgeComponent,
   CleansiaTextInputComponent,
   CleansiaTextareaComponent,
   CleansiaTitleComponent,
@@ -29,9 +30,7 @@ import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { DisputeDetailFacade } from './dispute-detail.facade';
 import {
   buildDisputeStatusOptions,
-  DISPUTE_STATUS_LABEL_KEYS,
   DisputeStatusOption,
-  getDisputeStatusClass,
 } from '../disputes-management/disputes-management.models';
 
 @Component({
@@ -45,6 +44,7 @@ import {
     CleansiaLoaderComponent,
     CleansiaSectionComponent,
     CleansiaSelectComponent,
+    CleansiaStatusBadgeComponent,
     CleansiaTextInputComponent,
     CleansiaTextareaComponent,
     CleansiaTitleComponent,
@@ -97,16 +97,6 @@ export class DisputeDetailComponent implements OnInit {
 
   hasRefundAmount(): boolean {
     return this.facade.dispute()?.refundAmount != null;
-  }
-
-  getStatusClass(value: number | undefined | null): string {
-    return getDisputeStatusClass(value);
-  }
-
-  getStatusLabel(value: number | undefined | null): string {
-    if (value == null) return '';
-    const key = DISPUTE_STATUS_LABEL_KEYS[value];
-    return key ? this.translate.instant(key) : '';
   }
 
   onStatusSelected(value: DisputeStatus | null): void {

@@ -10374,7 +10374,6 @@ export class GdprExportEmployeeDto implements IGdprExportEmployeeDto {
     nationalityId!: string | undefined;
     emergencyContactName!: string | undefined;
     emergencyContactPhone!: string | undefined;
-    preferredCurrencyCode!: string | undefined;
     averageRating!: number;
     contractStatus!: ContractStatus;
     createdOn!: Date;
@@ -10399,7 +10398,6 @@ export class GdprExportEmployeeDto implements IGdprExportEmployeeDto {
             this.nationalityId = Data["nationalityId"];
             this.emergencyContactName = Data["emergencyContactName"];
             this.emergencyContactPhone = Data["emergencyContactPhone"];
-            this.preferredCurrencyCode = Data["preferredCurrencyCode"];
             this.averageRating = Data["averageRating"];
             this.contractStatus = Data["contractStatus"];
             this.createdOn = Data["createdOn"] ? new Date(Data["createdOn"].toString()) : undefined as any;
@@ -10424,7 +10422,6 @@ export class GdprExportEmployeeDto implements IGdprExportEmployeeDto {
         data["nationalityId"] = this.nationalityId;
         data["emergencyContactName"] = this.emergencyContactName;
         data["emergencyContactPhone"] = this.emergencyContactPhone;
-        data["preferredCurrencyCode"] = this.preferredCurrencyCode;
         data["averageRating"] = this.averageRating;
         data["contractStatus"] = this.contractStatus;
         data["createdOn"] = this.createdOn ? this.createdOn.toISOString() : undefined as any;
@@ -10442,7 +10439,6 @@ export interface IGdprExportEmployeeDto {
     nationalityId: string | undefined;
     emergencyContactName: string | undefined;
     emergencyContactPhone: string | undefined;
-    preferredCurrencyCode: string | undefined;
     averageRating: number;
     contractStatus: ContractStatus;
     createdOn: Date;

@@ -1,6 +1,7 @@
 import { TemplateRef } from '@angular/core';
 import { EmailTypeListItemDto } from '@cleansia/admin-services';
 import { TableColumn, TableAction } from '@cleansia/components';
+import { formatDate } from '@cleansia/utils';
 import { TranslateService } from '@ngx-translate/core';
 
 export function getEmailTypeTableDefinition(
@@ -20,6 +21,7 @@ export function getEmailTypeTableDefinition(
       },
       {
         id: 'translationCount',
+        numeric: true,
         field: 'translationCount',
         header: translate.instant('pages.template_management.columns.translation_count'),
         getValue: (row: EmailTypeListItemDto) => {
@@ -36,12 +38,10 @@ export function getEmailTypeTableDefinition(
       },
       {
         id: 'lastModified',
+        numeric: true,
         field: 'lastModified',
         header: translate.instant('pages.template_management.columns.last_modified'),
-        getValue: (row: EmailTypeListItemDto) => {
-          if (!row?.lastModified) return '-';
-          return new Date(row.lastModified.toString()).toLocaleDateString();
-        },
+        getValue: (row: EmailTypeListItemDto) => formatDate(row?.lastModified, translate.currentLang) || '-',
         width: '15%',
       },
     ],

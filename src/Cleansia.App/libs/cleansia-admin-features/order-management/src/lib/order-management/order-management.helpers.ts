@@ -1,8 +1,6 @@
-import {
-  OrderListItem,
-  OrderStatus,
-  PaymentStatus,
-} from '@cleansia/admin-services';
+import { OrderStatus, PaymentStatus } from '@cleansia/admin-services';
+import { FilterChip } from '@cleansia/components';
+import { formatDate } from '@cleansia/utils';
 import { TranslateService } from '@ngx-translate/core';
 
 // --- Status label helpers ---
@@ -27,32 +25,6 @@ const PAYMENT_STATUS_TRANSLATION_MAP: Record<PaymentStatus, string> = {
     'pages.order_management.payment_status.partially_refunded',
 };
 
-export function getOrderStatusLabel(
-  order: OrderListItem,
-  translate: TranslateService
-): string {
-  // Test the OBJECT, not the number. OrderStatus.New is 0, so `!order.orderStatus?.value` was false
-  // for every freshly-booked order and the admin list rendered an empty pill where the word "New"
-  // belongs (T-0687). Every order starts New, so this was not an edge case — it was what the whole
-  // open pipeline looked like.
-  if (order.orderStatus?.value === undefined || order.orderStatus.value === null) return '';
-  const key =
-    ORDER_STATUS_TRANSLATION_MAP[order.orderStatus.value as OrderStatus];
-  return key ? translate.instant(key) : order.orderStatus?.name || '';
-}
-
-export function getPaymentStatusLabel(
-  order: OrderListItem,
-  translate: TranslateService
-): string {
-  // Same shape as above. Latent today only because PaymentStatus starts at 1 — it would break the
-  // moment a zero-valued member is added, which is exactly how the order-status bug arrived.
-  if (order.paymentStatus?.value === undefined || order.paymentStatus.value === null) return '';
-  const key =
-    PAYMENT_STATUS_TRANSLATION_MAP[order.paymentStatus.value as PaymentStatus];
-  return key ? translate.instant(key) : order.paymentStatus?.name || '';
-}
-
 // --- Filter option builders ---
 
 export function buildOrderStatusOptions(
@@ -74,12 +46,6 @@ export function buildPaymentStatusOptions(
 }
 
 // --- Filter chip helpers ---
-
-export interface FilterChip {
-  key: string;
-  label: string;
-  value: string;
-}
 
 export function buildFilterChips(
   formValues: {
@@ -133,7 +99,7 @@ export function buildFilterChips(
     chips.push({
       key: 'cleaningDateFrom',
       label: translate.instant('pages.order_management.filters.date_from'),
-      value: formValues.cleaningDateFrom.toLocaleDateString(),
+      value: formatDate(formValues.cleaningDateFrom, translate.currentLang),
     });
   }
 
@@ -141,13 +107,13 @@ export function buildFilterChips(
     chips.push({
       key: 'cleaningDateTo',
       label: translate.instant('pages.order_management.filters.date_to'),
-      value: formValues.cleaningDateTo.toLocaleDateString(),
+      value: formatDate(formValues.cleaningDateTo, translate.currentLang),
     });
   }
 
   if (formValues.currencyId) {
     chips.push({
-      key: 'currency',
+      key: 'currencyId',
       label: translate.instant('pages.order_management.filters.currency'),
       value: currencies.find((c) => c.id === formValues.currencyId)?.code ?? '',
     });
@@ -208,32 +174,4 @@ export function buildFilterPayload(formValues: {
     cleaningDateTo: formValues.cleaningDateTo ?? undefined,
     currencyId: formValues.currencyId || undefined,
   };
-}
-
-export const FILTER_FORM_DEFAULTS = {
-  orderStatus: [] as OrderStatus[],
-  paymentStatus: [] as PaymentStatus[],
-  searchTerm: '',
-  cleaningDateFrom: null as Date | null,
-  cleaningDateTo: null as Date | null,
-  currencyId: null as string | null,
-};
-
-// --- Filter chip removal helper ---
-
-export function getFilterPatchForChipRemoval(key: string): Partial<typeof FILTER_FORM_DEFAULTS> {
-  switch (key) {
-    case 'orderStatus':
-      return { orderStatus: [] };
-    case 'paymentStatus':
-      return { paymentStatus: [] };
-    case 'cleaningDateFrom':
-      return { cleaningDateFrom: null };
-    case 'cleaningDateTo':
-      return { cleaningDateTo: null };
-    case 'currency':
-      return { currencyId: null };
-    default:
-      return { searchTerm: '' };
-  }
 }

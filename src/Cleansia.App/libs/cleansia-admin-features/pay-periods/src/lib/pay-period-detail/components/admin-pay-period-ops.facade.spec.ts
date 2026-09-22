@@ -11,10 +11,22 @@ import { TranslateService } from '@ngx-translate/core';
 import { of, throwError } from 'rxjs';
 import { AdminPayPeriodOpsFacade } from './admin-pay-period-ops.facade';
 
+// The keys a refusal resolves to; anything else falls back, as an untranslated code does in the app.
+const TRANSLATED = new Set([
+  'api.pay_period.not_closed',
+  'api.pay_period.already_paid',
+  'api.payroll.pay_period.not_found',
+]);
+
 describe('AdminPayPeriodOpsFacade', () => {
   let facade: AdminPayPeriodOpsFacade;
   let payPeriodClient: { markPaid: jest.Mock; reopen: jest.Mock };
-  let snackbar: { showSuccess: jest.Mock; showError: jest.Mock };
+  let snackbar: {
+    showSuccess: jest.Mock;
+    showSuccessTranslated: jest.Mock;
+    showError: jest.Mock;
+    showErrorTranslated: jest.Mock;
+  };
 
   const markPaidResponse = MarkPayPeriodPaidResponse.fromJS({
     payPeriodId: 'period-1',
@@ -25,7 +37,12 @@ describe('AdminPayPeriodOpsFacade', () => {
 
   beforeEach(() => {
     payPeriodClient = { markPaid: jest.fn(), reopen: jest.fn() };
-    snackbar = { showSuccess: jest.fn(), showError: jest.fn() };
+    snackbar = {
+      showSuccess: jest.fn(),
+      showSuccessTranslated: jest.fn(),
+      showError: jest.fn(),
+      showErrorTranslated: jest.fn(),
+    };
 
     TestBed.configureTestingModule({
       providers: [
@@ -35,7 +52,12 @@ describe('AdminPayPeriodOpsFacade', () => {
           useValue: { adminPayPeriodClient: payPeriodClient },
         },
         { provide: SnackbarService, useValue: snackbar },
-        { provide: TranslateService, useValue: { instant: (k: string) => k } },
+        {
+          provide: TranslateService,
+          useValue: {
+            instant: (k: string) => (TRANSLATED.has(k) ? `${k} (translated)` : k),
+          },
+        },
       ],
     });
 
@@ -101,7 +123,7 @@ describe('AdminPayPeriodOpsFacade', () => {
 
     facade.markPaid('period-1', onSuccess);
 
-    expect(snackbar.showSuccess).toHaveBeenCalledWith(
+    expect(snackbar.showSuccessTranslated).toHaveBeenCalledWith(
       'pay_periods.detail.ops.mark_paid.success'
     );
     expect(facade.activePanel()).toBeNull();
@@ -124,9 +146,7 @@ describe('AdminPayPeriodOpsFacade', () => {
     facade.markPaid('period-1', jest.fn());
 
     expect(facade.errorKey()).toBe('api.pay_period.not_closed');
-    expect(snackbar.showError).toHaveBeenCalledWith(
-      'api.pay_period.not_closed'
-    );
+    expect(snackbar.showErrorTranslated).not.toHaveBeenCalled();
   });
 
   it('maps the already-paid backend code on a reopen failure', () => {

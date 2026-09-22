@@ -2,16 +2,14 @@ import { Injectable, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { AdminClient, CountryListItem } from '@cleansia/admin-services';
 import { UnsubscribeControlDirective } from '@cleansia/directives';
-import { CleansiaAdminRoute, SnackbarService } from '@cleansia/services';
-import { TranslateService } from '@ngx-translate/core';
-import { catchError, finalize, of, takeUntil } from 'rxjs';
-import { resolveCountryErrorKey } from './country-management.models';
+import { CleansiaAdminRoute, DialogService, SnackbarService } from '@cleansia/services';
+import { catchError, filter, finalize, of, takeUntil } from 'rxjs';
 
 @Injectable()
 export class CountryManagementFacade extends UnsubscribeControlDirective {
   private readonly adminClient = inject(AdminClient);
+  private readonly dialog = inject(DialogService);
   private readonly snackbarService = inject(SnackbarService);
-  private readonly translate = inject(TranslateService);
   private readonly router = inject(Router);
 
   readonly countries = signal<CountryListItem[]>([]);
@@ -50,25 +48,31 @@ export class CountryManagementFacade extends UnsubscribeControlDirective {
   }
 
   setDefaultMarket(country: CountryListItem): void {
-    if (!country.id || country.isDefaultMarket) return;
+    const id = country.id;
+    if (!id || country.isDefaultMarket) return;
 
+    this.dialog
+      .confirmTranslated(
+        'pages.country_management.set_default_market_confirm',
+        'pages.country_management.set_default_market',
+        { name: country.name },
+        { icon: 'pi pi-star' }
+      )
+      .pipe(takeUntil(this.destroyed$), filter(Boolean))
+      .subscribe(() => this.setDefaultMarketConfirmed(id));
+  }
+
+  private setDefaultMarketConfirmed(id: string): void {
     this.adminClient.adminCountryClient
-      .defaultMarket(country.id)
+      .defaultMarket(id)
       .pipe(
         takeUntil(this.destroyed$),
-        catchError((error: unknown) => {
-          this.snackbarService.showError(
-            this.translate.instant(resolveCountryErrorKey(error))
-          );
-          return of(null);
-        })
+        catchError(() => of(null))
       )
       .subscribe((response) => {
         if (response) {
-          this.snackbarService.showSuccess(
-            this.translate.instant(
-              'pages.country_management.messages.set_default_market_success'
-            )
+          this.snackbarService.showSuccessTranslated(
+            'pages.country_management.messages.set_default_market_success'
           );
           this.loadCountries();
         }
@@ -76,20 +80,31 @@ export class CountryManagementFacade extends UnsubscribeControlDirective {
   }
 
   deleteCountry(country: CountryListItem): void {
-    if (!country.id) return;
+    const id = country.id;
+    if (!id) return;
 
+    this.dialog
+      .confirmTranslated(
+        'pages.country_management.delete_confirm',
+        'pages.country_management.delete_country',
+        undefined,
+        { danger: true, acceptLabelKey: 'global.actions.delete' }
+      )
+      .pipe(takeUntil(this.destroyed$), filter(Boolean))
+      .subscribe(() => this.deleteCountryConfirmed(id));
+  }
+
+  private deleteCountryConfirmed(id: string): void {
     this.adminClient.adminCountryClient
-      .delete(country.id)
+      .delete(id)
       .pipe(
         takeUntil(this.destroyed$),
         catchError(() => of(null))
       )
       .subscribe((response) => {
         if (response) {
-          this.snackbarService.showSuccess(
-            this.translate.instant(
-              'pages.country_management.messages.delete_success'
-            )
+          this.snackbarService.showSuccessTranslated(
+            'pages.country_management.messages.delete_success'
           );
           this.loadCountries();
         }

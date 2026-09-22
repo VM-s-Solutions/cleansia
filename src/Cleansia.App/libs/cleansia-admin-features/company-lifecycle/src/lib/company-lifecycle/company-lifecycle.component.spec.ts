@@ -104,7 +104,7 @@ describe('CompanyLifecycleComponent', () => {
     await render();
 
     expect(text()).toContain('Cleansia CZ');
-    expect(text()).toContain('pages.company_lifecycle.states.Deactivated');
+    expect(text()).toContain('enums.company_lifecycle_state.deactivated');
     expect(text()).toContain('pages.company_lifecycle.stamps.wind_down');
     expect(text()).toContain('pages.company_lifecycle.stamps.deactivated');
     expect(actButtons()).toHaveLength(4);
@@ -122,7 +122,7 @@ describe('CompanyLifecycleComponent', () => {
     await render();
 
     expect(text()).toContain('f'.repeat(64));
-    expect(text()).toContain('pages.company_lifecycle.states.Archived');
+    expect(text()).toContain('enums.company_lifecycle_state.archived');
     expect(actButtons().every((b) => b.disabled)).toBe(true);
   });
 

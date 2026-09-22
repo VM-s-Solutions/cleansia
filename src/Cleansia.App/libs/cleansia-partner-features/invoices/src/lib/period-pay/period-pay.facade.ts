@@ -9,15 +9,19 @@ import {
   SortDefinition,
   SortDirection,
 } from '@cleansia/partner-services';
+import { currentLanguage } from '@cleansia/utils';
+import { TranslateService } from '@ngx-translate/core';
 import { catchError, finalize, of, takeUntil } from 'rxjs';
-import { PeriodCurrency, PeriodStatusKey, getPeriodCurrencies } from './period-pay.models';
+import { PeriodCurrency, getPeriodCurrencies } from './period-pay.models';
 
 const PERIODS_LIMIT = 26;
 
 @Injectable()
 export class PeriodPayFacade extends UnsubscribeControlDirective {
   private readonly partnerClient = inject(PartnerClient);
+  private readonly translate = inject(TranslateService);
 
+  readonly lang = currentLanguage(this.translate);
   readonly payPeriods = signal<PayPeriodDto[]>([]);
   readonly summary = signal<PeriodPaySummaryDto | null>(null);
   readonly loading = signal<boolean>(false);
@@ -43,19 +47,6 @@ export class PeriodPayFacade extends UnsubscribeControlDirective {
     () =>
       this.payPeriods().find((period) => period.id === this.selectedPeriodId()) ?? null
   );
-
-  readonly selectedPeriodStatus = computed<PeriodStatusKey>(() => {
-    switch (this.selectedPeriod()?.status?.toLowerCase()) {
-      case 'open':
-        return 'open';
-      case 'closed':
-        return 'closed';
-      case 'paid':
-        return 'paid';
-      default:
-        return 'unknown';
-    }
-  });
 
   private employeeId: string | null = null;
   private periodControl: FormControl<string | null> | null = null;

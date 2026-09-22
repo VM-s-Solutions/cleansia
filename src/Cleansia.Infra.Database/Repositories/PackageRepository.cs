@@ -22,11 +22,6 @@ public class PackageRepository(CleansiaDbContext context) : BaseRepository<Packa
         if (await Context.EmployeePayConfigs.AnyAsync(p => p.PackageId == packageId, cancellationToken))
             return true;
 
-        // A row sitting in a live, server-persisted customer cart is in use: deleting it
-        // would silently orphan the cart line — the exact cascade-orphan this guard prevents.
-        if (await Context.CartPackageItems.AnyAsync(cpi => cpi.PackageId == packageId, cancellationToken))
-            return true;
-
         // RecurringBookingTemplate stores package ids inside a JSON array column, which no foreign key
         // can guard — a deleted catalog item would leave a dangling JSON id that materializes into a
         // broken recurring booking. The column has a JSON value converter, so it cannot be filtered in

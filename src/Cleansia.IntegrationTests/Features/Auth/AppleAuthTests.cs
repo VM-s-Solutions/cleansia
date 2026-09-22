@@ -53,8 +53,6 @@ public class AppleAuthTests(PostgresContainerFixture fixture) : BaseIntegrationT
                 Assert.NotNull(user);
                 Assert.Equal(AppleSubject, user.AppleId);
                 Assert.Equal(AuthenticationType.Apple, user.AuthenticationType);
-
-                Assert.NotNull(await context.Carts.FirstOrDefaultAsync(c => c.UserId == user.Id));
             });
     }
 
@@ -86,7 +84,6 @@ public class AppleAuthTests(PostgresContainerFixture fixture) : BaseIntegrationT
                 Assert.Equal(nameof(AppleAuth.Command.TermsAccepted), result.Error!.Code);
 
                 Assert.Empty(await context.Users.ToListAsync());
-                Assert.Empty(await context.Carts.ToListAsync());
             });
     }
 

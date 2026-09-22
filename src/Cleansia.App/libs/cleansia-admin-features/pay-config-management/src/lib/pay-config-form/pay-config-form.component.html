@@ -1,42 +1,43 @@
-<div class="cleansia-pay-config-form">
-  <div class="cleansia-pay-config-form__container page-wrapper">
-    <!-- Header with Back Button -->
-    <div class="cleansia-pay-config-form__header">
-      <cleansia-button
-        [label]="'global.actions.back' | translate"
-        icon="pi pi-arrow-left"
-        (onClick)="onCancel()"
-        [outlined]="true"
-      />
-      <cleansia-title [title]="pageTitle()" />
+<div class="cleansia-pay-config-form cleansia-page">
+  <div class="cleansia-pay-config-form__container page-wrapper page-wrapper--narrow">
+    <div class="cleansia-page-header">
+      <div class="cleansia-page-header__heading">
+        <div class="cleansia-detail-title">
+          <cleansia-button
+            [label]="'global.actions.back' | translate"
+            icon="pi pi-arrow-left"
+            severity="secondary"
+            [outlined]="true"
+            (onClick)="onCancel()"
+          />
+          <cleansia-title [title]="pageTitle()" [level]="1" />
+        </div>
+      </div>
       @if (isEditMode()) {
-      <cleansia-button
-        *cleansiaPermission="Policy.CanViewAuditLog"
-        class="cleansia-pay-config-form__audit-link"
-        icon="pi pi-history"
-        severity="secondary"
-        [outlined]="true"
-        [label]="'pages.audit_log.drill_in.view_history' | translate"
-        (onClick)="viewAuditHistory()"
-      />
+      <div class="cleansia-page-header__actions">
+        <cleansia-button
+          *cleansiaPermission="Policy.CanViewAuditLog"
+          class="cleansia-pay-config-form__audit-link"
+          icon="pi pi-history"
+          severity="secondary"
+          [outlined]="true"
+          [label]="'pages.audit_log.drill_in.view_history' | translate"
+          (onClick)="viewAuditHistory()"
+        />
+      </div>
       }
     </div>
 
     @if (facade.loading()) {
     <cleansia-loader />
     } @else {
-    <form
-      [formGroup]="form"
-      (ngSubmit)="onSave()"
-      class="cleansia-pay-config-form__content"
-    >
-      <!-- Target Assignment (create only) -->
+    <form [formGroup]="form" (ngSubmit)="onSave()" class="cleansia-form">
       @if (!isEditMode()) {
       <cleansia-section
         [title]="'pages.pay_config_form.target' | translate"
       >
         <div class="form-grid">
-          <div class="form-field">
+          <div class="form-field form-field--third">
             <cleansia-select
               [options]="serviceOptions()"
               [label]="'pages.pay_config_form.service' | translate"
@@ -45,7 +46,7 @@
               formControlName="serviceId"
             />
           </div>
-          <div class="form-field">
+          <div class="form-field form-field--third">
             <cleansia-select
               [options]="packageOptions()"
               [label]="'pages.pay_config_form.package' | translate"
@@ -54,27 +55,27 @@
               formControlName="packageId"
             />
           </div>
-          <div class="form-field">
+          <div class="form-field form-field--third">
             <cleansia-select
               [options]="currencyOptions()"
               [label]="'pages.pay_config_form.currency' | translate"
               [floatVariant]="'on'"
+              [showClear]="false"
               formControlName="currencyId"
             />
           </div>
+          <p class="form-hint">
+            {{ 'pages.pay_config_form.target_hint' | translate }}
+          </p>
         </div>
-        <p class="form-hint">
-          {{ 'pages.pay_config_form.target_hint' | translate }}
-        </p>
       </cleansia-section>
       }
 
-      <!-- Pay Rates -->
       <cleansia-section
         [title]="'pages.pay_config_form.pay_rates' | translate"
       >
         <div class="form-grid">
-          <div class="form-field">
+          <div class="form-field form-field--quarter">
             <cleansia-text-input
               [label]="'pages.pay_config_form.base_pay' | translate"
               formControlName="basePay"
@@ -82,21 +83,21 @@
               [required]="true"
             />
           </div>
-          <div class="form-field">
+          <div class="form-field form-field--quarter">
             <cleansia-text-input
               [label]="'pages.pay_config_form.extra_per_room' | translate"
               formControlName="extraPerRoom"
               dataType="number"
             />
           </div>
-          <div class="form-field">
+          <div class="form-field form-field--quarter">
             <cleansia-text-input
               [label]="'pages.pay_config_form.extra_per_bathroom' | translate"
               formControlName="extraPerBathroom"
               dataType="number"
             />
           </div>
-          <div class="form-field">
+          <div class="form-field form-field--quarter">
             <cleansia-text-input
               [label]="'pages.pay_config_form.distance_rate' | translate"
               formControlName="distanceRatePerKm"
@@ -106,7 +107,6 @@
         </div>
       </cleansia-section>
 
-      <!-- Pay Limits -->
       <cleansia-section
         [title]="'pages.pay_config_form.pay_limits' | translate"
       >
@@ -125,18 +125,17 @@
               dataType="number"
             />
           </div>
+          <p class="form-hint">
+            {{ 'pages.pay_config_form.pay_limits_hint' | translate }}
+          </p>
         </div>
-        <p class="form-hint">
-          {{ 'pages.pay_config_form.pay_limits_hint' | translate }}
-        </p>
       </cleansia-section>
 
-      <!-- Description -->
       <cleansia-section
         [title]="'pages.pay_config_form.description_section' | translate"
       >
         <div class="form-grid">
-          <div class="form-field full-width">
+          <div class="form-field form-field--full">
             <cleansia-textarea
               [label]="'pages.pay_config_form.description' | translate"
               formControlName="description"
@@ -146,7 +145,6 @@
         </div>
       </cleansia-section>
 
-      <!-- Form Actions -->
       <div class="form-actions">
         <cleansia-button
           [label]="'global.actions.cancel' | translate"

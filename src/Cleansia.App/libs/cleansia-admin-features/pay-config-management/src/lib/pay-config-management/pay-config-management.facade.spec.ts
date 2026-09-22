@@ -5,7 +5,7 @@ import {
   EmployeePayConfigDto,
   PagedDataOfEmployeePayConfigDto,
 } from '@cleansia/admin-services';
-import { SnackbarService } from '@cleansia/services';
+import { DialogService, SnackbarService } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
 import { of, throwError } from 'rxjs';
 import { PayConfigManagementFacade } from './pay-config-management.facade';
@@ -14,7 +14,13 @@ describe('PayConfigManagementFacade', () => {
   let facade: PayConfigManagementFacade;
   let getPagedMock: jest.Mock;
   let deleteMock: jest.Mock;
-  let snackbar: { showSuccess: jest.Mock; showError: jest.Mock };
+  let confirmMock: jest.Mock;
+  let snackbar: {
+    showSuccess: jest.Mock;
+    showSuccessTranslated: jest.Mock;
+    showError: jest.Mock;
+    showErrorTranslated: jest.Mock;
+  };
 
   const populatedPage = PagedDataOfEmployeePayConfigDto.fromJS({
     data: [
@@ -37,7 +43,13 @@ describe('PayConfigManagementFacade', () => {
   beforeEach(() => {
     getPagedMock = jest.fn().mockReturnValue(of(populatedPage));
     deleteMock = jest.fn();
-    snackbar = { showSuccess: jest.fn(), showError: jest.fn() };
+    confirmMock = jest.fn().mockReturnValue(of(true));
+    snackbar = {
+      showSuccess: jest.fn(),
+      showSuccessTranslated: jest.fn(),
+      showError: jest.fn(),
+      showErrorTranslated: jest.fn(),
+    };
 
     TestBed.configureTestingModule({
       providers: [
@@ -52,7 +64,8 @@ describe('PayConfigManagementFacade', () => {
           },
         },
         { provide: SnackbarService, useValue: snackbar },
-        { provide: TranslateService, useValue: { instant: (k: string) => k } },
+        { provide: DialogService, useValue: { confirmTranslated: confirmMock } },
+        { provide: TranslateService, useValue: { instant: (k: string) => k, currentLang: 'cs' } },
         { provide: Router, useValue: { navigate: jest.fn() } },
       ],
     });
@@ -135,7 +148,7 @@ describe('PayConfigManagementFacade', () => {
     facade.deletePayConfig(EmployeePayConfigDto.fromJS({ id: 'pc-1' }));
 
     expect(deleteMock).toHaveBeenCalledWith('pc-1');
-    expect(snackbar.showSuccess).toHaveBeenCalledWith(
+    expect(snackbar.showSuccessTranslated).toHaveBeenCalledWith(
       'pages.pay_config_management.messages.delete_success'
     );
     expect(getPagedMock).toHaveBeenCalledTimes(1);
@@ -146,7 +159,22 @@ describe('PayConfigManagementFacade', () => {
 
     facade.deletePayConfig(EmployeePayConfigDto.fromJS({ id: 'pc-1' }));
 
-    expect(snackbar.showSuccess).not.toHaveBeenCalled();
+    expect(snackbar.showSuccessTranslated).not.toHaveBeenCalled();
+    expect(getPagedMock).not.toHaveBeenCalled();
+  });
+
+  it('does nothing when the confirmation is declined', () => {
+    confirmMock.mockReturnValue(of(false));
+
+    facade.deletePayConfig(EmployeePayConfigDto.fromJS({ id: 'pc-1' }));
+
+    expect(confirmMock).toHaveBeenCalledWith(
+      'pages.pay_config_management.delete_confirm',
+      'pages.pay_config_management.delete',
+      undefined,
+      { danger: true, acceptLabelKey: 'global.actions.delete' }
+    );
+    expect(deleteMock).not.toHaveBeenCalled();
     expect(getPagedMock).not.toHaveBeenCalled();
   });
 
@@ -154,7 +182,7 @@ describe('PayConfigManagementFacade', () => {
   // together. The label has to follow the ROW; a fixed one prints a cleaner's EUR rate as crowns.
   describe('the money label follows the row, not the platform', () => {
     it('labels a row in its own currency', () => {
-      expect(facade.formatCurrency(1200, 'CZK')).toContain('CZK');
+      expect(facade.formatCurrency(1200, 'CZK')).toBe('1 200,00 Kč');
       expect(facade.formatCurrency(48, 'EUR')).toContain('€');
     });
 
@@ -162,8 +190,8 @@ describe('PayConfigManagementFacade', () => {
       // EmployeePayrollMappers emits "" when the Currency nav failed to load, and Intl.NumberFormat
       // raises a RangeError on an empty currency — which would take the whole table down.
       expect(() => facade.formatCurrency(1200, '')).not.toThrow();
-      expect(facade.formatCurrency(1200, '')).toBe('1200');
-      expect(facade.formatCurrency(1200, undefined)).toBe('1200');
+      expect(facade.formatCurrency(1200, '')).toBe('1 200,00');
+      expect(facade.formatCurrency(1200, undefined)).toBe('1 200,00');
     });
 
     it('still renders nothing for an absent amount', () => {

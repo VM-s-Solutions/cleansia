@@ -95,16 +95,6 @@ public class Package : Auditable
         return this;
     }
 
-    public Package RemoveService(string serviceId)
-    {
-        var packageService = _includedServices.FirstOrDefault(ps => ps.ServiceId == serviceId);
-        if (packageService != null)
-        {
-            _includedServices.Remove(packageService);
-        }
-        return this;
-    }
-
     public Package ClearServices()
     {
         _includedServices = new List<PackageService>();

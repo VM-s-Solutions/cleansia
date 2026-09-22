@@ -1,22 +1,23 @@
-<div class="cleansia-notifications">
+<div class="cleansia-notifications cleansia-page">
   <div class="cleansia-notifications__container page-wrapper">
-    <div class="cleansia-notifications__header">
-      <div class="cleansia-notifications__heading">
+    <div class="cleansia-page-header">
+      <div class="cleansia-page-header__heading">
         <cleansia-title [title]="'pages.notifications.title' | translate" [level]="1" />
-        <p class="cleansia-notifications__description">
+        <p class="cleansia-page-header__description">
           {{ 'pages.notifications.description' | translate }}
         </p>
       </div>
-      <cleansia-button
-        [label]="'pages.notifications.mark_all_read' | translate"
-        icon="pi pi-check-circle"
-        severity="secondary"
-        [outlined]="true"
-        size="auto-width"
-        [disabled]="!facade.hasUnread()"
-        [loading]="facade.markingAll()"
-        (onClick)="facade.markAllRead()"
-      />
+      <div class="cleansia-page-header__actions">
+        <cleansia-button
+          [label]="'pages.notifications.mark_all_read' | translate"
+          icon="pi pi-check-circle"
+          severity="secondary"
+          [outlined]="true"
+          [disabled]="!facade.hasUnread()"
+          [loading]="facade.markingAll()"
+          (onClick)="facade.markAllRead()"
+        />
+      </div>
     </div>
 
     @if (facade.initialLoading()) {
@@ -25,25 +26,26 @@
     </cleansia-section>
     } @else if (facade.hasError()) {
     <cleansia-section>
-      <div class="cleansia-notifications__state">
-        <i class="pi pi-exclamation-triangle"></i>
-        <p>{{ 'pages.notifications.load_error' | translate }}</p>
-        <cleansia-button
-          [label]="'pages.notifications.retry' | translate"
-          icon="pi pi-refresh"
-          severity="secondary"
-          [outlined]="true"
-          size="auto-width"
-          (onClick)="facade.load()"
-        />
+      <div class="not-found-state">
+        <div class="not-found-state__icon"><i class="pi pi-exclamation-triangle"></i></div>
+        <p class="not-found-state__message">{{ 'pages.notifications.load_error' | translate }}</p>
+        <div class="not-found-state__actions">
+          <cleansia-button
+            [label]="'pages.notifications.retry' | translate"
+            icon="pi pi-refresh"
+            severity="secondary"
+            [outlined]="true"
+            (onClick)="facade.load()"
+          />
+        </div>
       </div>
     </cleansia-section>
     } @else if (facade.rows().length === 0) {
     <cleansia-section>
-      <div class="cleansia-notifications__state cleansia-notifications__state--empty">
+      <div class="empty-state">
         <i class="pi pi-bell-slash"></i>
         <p>{{ 'pages.notifications.empty' | translate }}</p>
-        <span class="cleansia-notifications__state-hint">{{ 'pages.notifications.empty_hint' | translate }}</span>
+        <p>{{ 'pages.notifications.empty_hint' | translate }}</p>
       </div>
     </cleansia-section>
     } @else {

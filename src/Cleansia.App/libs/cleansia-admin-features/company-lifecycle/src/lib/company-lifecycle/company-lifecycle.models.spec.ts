@@ -8,9 +8,7 @@ import {
   formatSettlementFactValue,
   getActAvailability,
   getFactStatusKey,
-  getFactStatusSeverity,
   getSettlementFactsTableDefinition,
-  getStateKey,
   getStateSeverity,
   isWindDownRunInProgress,
   LifecycleAct,
@@ -406,21 +404,12 @@ describe('company-lifecycle models', () => {
   });
 
   describe('fact status presentation', () => {
-    it('maps each status to its locale key and colour', () => {
+    it('maps each status to its locale key', () => {
       expect(getFactStatusKey('blocking')).toBe('pages.company_lifecycle.status.blocking');
-      expect(getFactStatusSeverity('blocking')).toBe('danger');
-      expect(getFactStatusSeverity('settled')).toBe('success');
-      expect(getFactStatusSeverity('informational')).toBe('secondary');
     });
   });
 
   describe('state presentation', () => {
-    it('maps each generated state to its locale key by enum name', () => {
-      expect(getStateKey(CompanyLifecycleState.Operating)).toBe('pages.company_lifecycle.states.Operating');
-      expect(getStateKey(CompanyLifecycleState.WindingDown)).toBe('pages.company_lifecycle.states.WindingDown');
-      expect(getStateKey(CompanyLifecycleState.Archived)).toBe('pages.company_lifecycle.states.Archived');
-    });
-
     it('colours the five states', () => {
       expect(getStateSeverity(CompanyLifecycleState.Operating)).toBe('success');
       expect(getStateSeverity(CompanyLifecycleState.WindingDown)).toBe('warn');
@@ -463,7 +452,6 @@ describe('company-lifecycle models', () => {
         ...buildSettlementFacts(dto({ openOrders: 1 }), NOW)[0],
         display: '1',
         statusKey: getFactStatusKey('blocking'),
-        statusSeverity: getFactStatusSeverity('blocking'),
       };
 
       expect(columns.map((c) => c.id)).toEqual(['fact', 'value', 'status']);

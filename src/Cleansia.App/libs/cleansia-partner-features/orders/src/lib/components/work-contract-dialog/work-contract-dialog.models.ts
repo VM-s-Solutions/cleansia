@@ -33,9 +33,9 @@ export interface WorkContractFactRow {
 
 const FACTS_KEY = 'pages.orders.work_contract.facts';
 
-export function formatCleaningWindow(start: Date | undefined, estimatedMinutes: number): string {
+export function formatCleaningWindow(start: Date | undefined, estimatedMinutes: number, lang: string): string {
   if (!start) return '';
-  const from = formatDateTime(start);
+  const from = formatDateTime(start, lang);
   if (!estimatedMinutes) return from;
   const end = new Date(start.getTime() + estimatedMinutes * 60_000);
   const hours = end.getHours().toString().padStart(2, '0');
@@ -52,7 +52,7 @@ export function buildWorkContractFactRows(
     { labelKey: `${FACTS_KEY}.order_number`, value: facts.orderNumber ?? '' },
     {
       labelKey: `${FACTS_KEY}.window`,
-      value: formatCleaningWindow(facts.cleaningDateTimeUtc, facts.estimatedMinutes),
+      value: formatCleaningWindow(facts.cleaningDateTimeUtc, facts.estimatedMinutes, lang),
     },
     {
       labelKey: `${FACTS_KEY}.price`,

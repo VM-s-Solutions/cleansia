@@ -1,19 +1,21 @@
-<div class="cleansia-disputes-management">
+<div class="cleansia-disputes-management cleansia-page">
   <div class="cleansia-disputes-management__container page-wrapper">
-    <div class="cleansia-disputes-management__header">
-      <cleansia-title [title]="'pages.disputes_management.title' | translate" />
-      <p class="cleansia-disputes-management__description">
-        {{ 'pages.disputes_management.description' | translate }}
-      </p>
+    <div class="cleansia-page-header">
+      <div class="cleansia-page-header__heading">
+        <cleansia-title [title]="'pages.disputes_management.title' | translate" [level]="1" />
+        <p class="cleansia-page-header__description">
+          {{ 'pages.disputes_management.description' | translate }}
+        </p>
+      </div>
     </div>
 
     <cleansia-section>
       @if (facade.initialLoading()) {
       <cleansia-loader />
       } @else if (facade.hasError()) {
-      <div class="cleansia-disputes-management__state">
-        <i class="pi pi-exclamation-triangle"></i>
-        <p>{{ 'pages.disputes_management.load_error' | translate }}</p>
+      <div class="not-found-state">
+        <div class="not-found-state__icon"><i class="pi pi-exclamation-triangle"></i></div>
+        <p class="not-found-state__message">{{ 'pages.disputes_management.load_error' | translate }}</p>
       </div>
       } @else {
       <cleansia-table
@@ -39,7 +41,7 @@
 </div>
 
 <ng-template #statusTemplate let-item>
-  <span [class]="getStatusClass(item)">{{ getStatusLabel(item) }}</span>
+  <cleansia-status-badge kind="dispute" [value]="item.status" />
 </ng-template>
 
 <ng-template #reasonTemplate let-item>

@@ -167,7 +167,6 @@ public sealed class ErasureAttemptMarkingTests : IDisposable
             new OrderPhotoRepository(ctx),
             new DeviceRepository(ctx, session),
             new LiveActivityTokenRepository(ctx),
-            new CartRepository(ctx),
             new UserConsentRepository(ctx),
             new GdprRequestRepository(ctx),
             new DisputeRepository(ctx),

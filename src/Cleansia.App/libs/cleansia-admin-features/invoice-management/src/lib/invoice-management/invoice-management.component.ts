@@ -1,50 +1,36 @@
-import { CommonModule } from '@angular/common';
 import {
-  AfterViewInit,
   ChangeDetectionStrategy,
-  ChangeDetectorRef,
   Component,
   computed,
   inject,
-  OnDestroy,
-  signal,
+  OnInit,
   TemplateRef,
   viewChild,
 } from '@angular/core';
-import { FormBuilder, FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
+import { EmployeeInvoiceDto, EmployeeInvoiceStatus } from '@cleansia/admin-services';
 import {
-  EmployeeInvoiceDto,
-  EmployeeInvoiceStatus,
-  SortDefinition,
-  SortDirection,
-} from '@cleansia/admin-services';
-import {
-  CleansiaButtonComponent,
   CleansiaCheckboxComponent,
+  CleansiaFilterChipsComponent,
+  CleansiaFilterDrawerComponent,
   CleansiaLoaderComponent,
   CleansiaSectionComponent,
   CleansiaSelectComponent,
+  CleansiaStatusBadgeComponent,
   CleansiaTableComponent,
   CleansiaTitleComponent,
   ICleansiaSelectOption,
-  TableColumn,
-  TableAction,
-  PaginationState,
 } from '@cleansia/components';
 import { CleansiaAdminRoute } from '@cleansia/services';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { ToastModule } from 'primeng/toast';
 import { TooltipModule } from 'primeng/tooltip';
-import { debounceTime, distinctUntilChanged, Subject, takeUntil } from 'rxjs';
 import { InvoiceManagementFacade } from './invoice-management.facade';
 import {
   getInvoicePdfState,
-  getInvoicePdfStateClass,
-  getInvoicePdfStateLabelKey,
-  getInvoiceStatusClass,
-  getInvoiceTableColumns,
   getInvoiceTableActions,
+  getInvoiceTableColumns,
   InvoicePdfState,
 } from './invoice-management.models';
 
@@ -52,15 +38,16 @@ import {
   selector: 'cleansia-admin-invoice-management',
   standalone: true,
   imports: [
-    CommonModule,
-    CleansiaButtonComponent,
     CleansiaCheckboxComponent,
     CleansiaSelectComponent,
     TranslatePipe,
+    CleansiaStatusBadgeComponent,
     CleansiaTableComponent,
     CleansiaTitleComponent,
     CleansiaLoaderComponent,
     CleansiaSectionComponent,
+    CleansiaFilterDrawerComponent,
+    CleansiaFilterChipsComponent,
     FormsModule,
     ReactiveFormsModule,
     ToastModule,
@@ -70,279 +57,49 @@ import {
   providers: [InvoiceManagementFacade],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class InvoiceManagementComponent implements AfterViewInit, OnDestroy {
-  private readonly cd = inject(ChangeDetectorRef);
-  private readonly fb = inject(FormBuilder);
+export class InvoiceManagementComponent implements OnInit {
   private readonly router = inject(Router);
   protected readonly facade = inject(InvoiceManagementFacade);
   private readonly translate = inject(TranslateService);
 
-  statusTemplate = viewChild<TemplateRef<EmployeeInvoiceDto>>('statusTemplate');
-  pdfStatusTemplate = viewChild<TemplateRef<EmployeeInvoiceDto>>('pdfStatusTemplate');
-
-  invoiceTableColumns!: TableColumn<EmployeeInvoiceDto>[];
-  invoiceTableActions!: TableAction<EmployeeInvoiceDto>[];
+  private readonly statusTemplate = viewChild<TemplateRef<EmployeeInvoiceDto>>('statusTemplate');
+  private readonly pdfStatusTemplate = viewChild<TemplateRef<EmployeeInvoiceDto>>('pdfStatusTemplate');
 
   readonly EmployeeInvoiceStatus = EmployeeInvoiceStatus;
 
-  private lastSortField: string | null = null;
-  private lastSortOrder: number | null = null;
-  private destroy$ = new Subject<void>();
-
-  filterForm = this.fb.group({
-    status: [[] as EmployeeInvoiceStatus[]],
-    currencyId: [null as string | null],
+  protected readonly table = computed(() => {
+    this.facade.lang();
+    return {
+      columns: getInvoiceTableColumns(this.translate, this.statusTemplate(), this.pdfStatusTemplate()),
+      actions: getInvoiceTableActions(
+        {
+          onViewDetails: (row) => this.viewInvoiceDetails(row),
+          onDownload: (row) => this.facade.downloadInvoice(row),
+          onRetryPdf: (row) => this.facade.retryPdf(row),
+        },
+        this.translate
+      ),
+    };
   });
 
   readonly currencyOptions = computed<ICleansiaSelectOption[]>(() =>
     this.facade.currencies().map((c) => ({ label: c.code, value: c.id }))
   );
 
-  // Invoice status options - will be rebuilt on language change
-  invoiceStatusMultiOptions: { label: string; value: EmployeeInvoiceStatus }[] = [];
-
-  // Filter drawer state
-  isFilterDrawerOpen = signal(false);
-  // Signal to trigger recalculation of filter chips when form changes
-  private filterFormVersion = signal(0);
-  activeFilterChips = computed(() => {
-    this.filterFormVersion();
-    return this.getActiveFilterChips();
-  });
-  hasActiveFilters = computed(() => this.activeFilterChips().length > 0);
-  activeFilterCount = computed(() => this.activeFilterChips().length);
-
-  ngAfterViewInit(): void {
-    this.rebuildTableDefinitions();
-    this.rebuildFilterOptions();
-    this.cd.detectChanges();
-
-    this.filterForm.valueChanges
-      .pipe(takeUntil(this.destroy$))
-      .subscribe(() => {
-        this.filterFormVersion.update(v => v + 1);
-      });
-
-    this.filterForm.valueChanges
-      .pipe(debounceTime(500), distinctUntilChanged(), takeUntil(this.destroy$))
-      .subscribe(() => {
-        this.applyFilters();
-      });
-
-    // Rebuild tables and filter options when language changes
-    this.translate.onLangChange
-      .pipe(takeUntil(this.destroy$))
-      .subscribe(() => {
-        this.rebuildTableDefinitions();
-        this.rebuildFilterOptions();
-        this.cd.detectChanges();
-      });
-
+  ngOnInit(): void {
     this.facade.loadCurrencies();
     this.facade.loadInvoices();
-  }
-
-  private rebuildTableDefinitions(): void {
-    this.invoiceTableColumns = getInvoiceTableColumns(
-      this.translate,
-      this.statusTemplate(),
-      this.pdfStatusTemplate()
-    );
-
-    this.invoiceTableActions = getInvoiceTableActions(
-      {
-        onViewDetails: this.viewInvoiceDetails.bind(this),
-        onDownload: this.downloadInvoice.bind(this),
-        onRetryPdf: this.retryPdf.bind(this),
-      },
-      this.translate
-    );
-  }
-
-  private rebuildFilterOptions(): void {
-    this.invoiceStatusMultiOptions = [
-      {
-        label: this.translate.instant('pages.invoice_management.invoice_status.pending'),
-        value: EmployeeInvoiceStatus.Pending,
-      },
-      {
-        label: this.translate.instant('pages.invoice_management.invoice_status.approved'),
-        value: EmployeeInvoiceStatus.Approved,
-      },
-      {
-        label: this.translate.instant('pages.invoice_management.invoice_status.paid'),
-        value: EmployeeInvoiceStatus.Paid,
-      },
-      {
-        label: this.translate.instant('pages.invoice_management.invoice_status.disputed'),
-        value: EmployeeInvoiceStatus.Disputed,
-      },
-      {
-        label: this.translate.instant('pages.invoice_management.invoice_status.rejected'),
-        value: EmployeeInvoiceStatus.Rejected,
-      },
-      {
-        label: this.translate.instant('pages.invoice_management.invoice_status.cancelled'),
-        value: EmployeeInvoiceStatus.Cancelled,
-      },
-    ];
-  }
-
-  ngOnDestroy(): void {
-    this.destroy$.next();
-    this.destroy$.complete();
   }
 
   viewInvoiceDetails(invoice: EmployeeInvoiceDto): void {
     this.router.navigate([CleansiaAdminRoute.INVOICE_MANAGEMENT, invoice.id]);
   }
 
-  downloadInvoice(invoice: EmployeeInvoiceDto): void {
-    this.facade.downloadInvoice(invoice);
-  }
-
-  retryPdf(invoice: EmployeeInvoiceDto): void {
-    this.facade.retryPdf(invoice);
-  }
-
-  getInvoiceStatusClass(invoice: EmployeeInvoiceDto): string {
-    return getInvoiceStatusClass(invoice.status);
-  }
-
   getPdfState(invoice: EmployeeInvoiceDto): InvoicePdfState {
     return getInvoicePdfState(invoice);
   }
 
-  getPdfStateClass(invoice: EmployeeInvoiceDto): string {
-    return getInvoicePdfStateClass(getInvoicePdfState(invoice));
-  }
-
-  getPdfStateLabelKey(invoice: EmployeeInvoiceDto): string {
-    return getInvoicePdfStateLabelKey(getInvoicePdfState(invoice));
-  }
-
-  applyFilters(): void {
-    const formValues = this.filterForm.value;
-
-    this.facade.applyFilter({
-      statuses:
-        formValues.status && formValues.status.length > 0
-          ? formValues.status
-          : undefined,
-      currencyId: formValues.currencyId || undefined,
-    });
-  }
-
-  resetFilters(): void {
-    this.filterForm.reset({
-      status: [],
-      currencyId: null,
-    });
-    this.facade.resetFilter();
-  }
-
-  onSortChange(event: { field: string; order: 1 | -1 }): void {
-    if (
-      event.field === this.lastSortField &&
-      event.order === this.lastSortOrder
-    ) {
-      return;
-    }
-
-    this.lastSortField = event.field;
-    this.lastSortOrder = event.order;
-
-    const sortDirection =
-      event.order === 1 ? SortDirection.Ascending : SortDirection.Descending;
-    const sort = [
-      new SortDefinition({
-        field: event.field,
-        direction: sortDirection,
-      }),
-    ];
-    this.facade.onSortChange(sort);
-  }
-
-  onPageChange(event: PaginationState): void {
-    const offset = event.first;
-    const limit = event.rows;
-    this.facade.onPageChange(offset, limit);
-  }
-
-  // Filter drawer methods
-  openFilterDrawer(): void {
-    this.isFilterDrawerOpen.set(true);
-  }
-
-  closeFilterDrawer(): void {
-    this.isFilterDrawerOpen.set(false);
-  }
-
-  getActiveFilterChips(): { key: string; label: string; value: string }[] {
-    const chips: { key: string; label: string; value: string }[] = [];
-    const values = this.filterForm.value;
-
-    if (values.status && values.status.length > 0) {
-      const statusLabels = values.status
-        .map((s) => this.invoiceStatusMultiOptions.find((o) => o.value === s)?.label)
-        .filter(Boolean)
-        .join(', ');
-      chips.push({
-        key: 'status',
-        label: this.translate.instant('pages.invoice_management.filters.status'),
-        value: statusLabels,
-      });
-    }
-
-    if (values.currencyId) {
-      chips.push({
-        key: 'currency',
-        label: this.translate.instant('pages.invoice_management.filters.currency'),
-        value: this.facade.currencies().find((c) => c.id === values.currencyId)?.code ?? '',
-      });
-    }
-
-    return chips;
-  }
-
-  removeFilterChip(key: string): void {
-    if (key === 'status') {
-      this.filterForm.patchValue({ status: [] });
-    }
-    if (key === 'currency') {
-      this.filterForm.patchValue({ currencyId: null });
-    }
-    this.applyFilters();
-  }
-
-  clearAllFilters(): void {
-    this.resetFilters();
-  }
-
-  // Checkbox helper methods for status
-  isStatusChecked(status: EmployeeInvoiceStatus): boolean {
-    return this.filterForm.value.status?.includes(status) ?? false;
-  }
-
   toggleStatus(status: EmployeeInvoiceStatus): void {
-    const isChecked = this.isStatusChecked(status);
-    this.onStatusChange(status, !isChecked);
-  }
-
-  onStatusChange(status: EmployeeInvoiceStatus, checked: boolean): void {
-    const currentStatuses = [...(this.filterForm.value.status || [])];
-
-    if (checked) {
-      if (!currentStatuses.includes(status)) {
-        currentStatuses.push(status);
-      }
-    } else {
-      const index = currentStatuses.indexOf(status);
-      if (index > -1) {
-        currentStatuses.splice(index, 1);
-      }
-    }
-
-    this.filterForm.patchValue({ status: currentStatuses });
+    this.facade.setStatus(status, !this.facade.isStatusChecked(status));
   }
 }

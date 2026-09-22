@@ -6,6 +6,7 @@ import {
   RevealedPayoutDetails,
 } from '@cleansia/admin-services';
 import { UnsubscribeControlDirective } from '@cleansia/directives';
+import { formatDate } from '@cleansia/utils';
 import { TranslateService } from '@ngx-translate/core';
 import { catchError, finalize, of, takeUntil } from 'rxjs';
 import {
@@ -117,7 +118,7 @@ export class EmployeePayoutFacade extends UnsubscribeControlDirective {
     const names = this.countryNames();
     return {
       translate: (key) => this.translate.instant(key),
-      formatDateTime: (value) => (value ? value.toLocaleString('en-GB') : '—'),
+      formatDateTime: (value) => formatDate(value, this.translate.currentLang, 'dateTime') || '—',
       resolveCountryName: (countryId) =>
         countryId ? names.get(countryId) ?? '' : '',
     };

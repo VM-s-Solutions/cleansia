@@ -1,11 +1,8 @@
 import { TemplateRef } from '@angular/core';
-import {
-  OrderListItem,
-  OrderStatus,
-  PaymentStatus,
-} from '@cleansia/admin-services';
+import { OrderListItem } from '@cleansia/admin-services';
 import { TableColumn, TableAction } from '@cleansia/components';
 import { TranslateService } from '@ngx-translate/core';
+import { formatDate, formatMoney, localeFor } from '@cleansia/utils';
 
 export function getOrderTableDefinition(
   defs: {
@@ -39,36 +36,27 @@ export function getOrderTableDefinition(
       },
       {
         id: 'cleaningDateTime',
+        numeric: true,
         field: 'cleaningDateTime',
         header: translate.instant('pages.order_management.cleaning_date'),
         sortable: true,
         width: '12%',
-        getValue: (row: OrderListItem) => {
-          if (!row?.cleaningDateTime) return '';
-          const date =
-            row.cleaningDateTime instanceof Date
-              ? row.cleaningDateTime
-              : new Date(row.cleaningDateTime);
-          return (
-            date.toLocaleDateString('en-GB') +
-            ' ' +
-            date.toLocaleTimeString('en-GB', {
-              hour: '2-digit',
-              minute: '2-digit',
-            })
-          );
-        },
+        getValue: (row: OrderListItem) =>
+          formatDate(row?.cleaningDateTime, translate.currentLang, 'dateTime'),
       },
       {
         id: 'totalPrice',
+        numeric: true,
         field: 'totalPrice',
         header: translate.instant('pages.order_management.total_price'),
         sortable: true,
         width: '10%',
-        getValue: (row: OrderListItem) => {
-          if (!row) return '';
-          return `${row.totalPrice?.toFixed(2)} ${row.currency?.symbol ?? ''}`.trimEnd();
-        },
+        getValue: (row: OrderListItem) =>
+          row?.totalPrice == null
+            ? ''
+            : formatMoney(row.totalPrice, row.currency?.code, localeFor(translate.currentLang), {
+                fractionDigits: 2,
+              }),
       },
       {
         id: 'orderStatus',
@@ -78,6 +66,7 @@ export function getOrderTableDefinition(
         ),
         sortable: true,
         width: '10%',
+        align: 'center',
         customTemplate: orderStatusTemplate,
       },
       {
@@ -87,10 +76,12 @@ export function getOrderTableDefinition(
           'pages.order_management.payment_status_label'
         ),
         width: '10%',
+        align: 'center',
         customTemplate: paymentStatusTemplate,
       },
       {
         id: 'assignedEmployees',
+        numeric: true,
         field: 'assignedEmployees',
         header: translate.instant(
           'pages.order_management.assigned_employees'
@@ -113,48 +104,4 @@ export function getOrderTableDefinition(
       },
     ],
   };
-}
-
-export function getOrderStatusClass(order: OrderListItem): string {
-  if (!order.orderStatus) return 'order-status-badge status-pending';
-  switch (order.orderStatus.value) {
-    // New and OnTheWay had no case and fell to the Pending default, so a brand-new order was styled
-    // as the dead Pending status and OnTheWay as "waiting". Both now have their own class, and both
-    // classes have styles — the detail page already emitted status-new and status-ontheway against
-    // nothing at all. (T-0687)
-    case OrderStatus.New:
-      return 'order-status-badge status-new';
-    case OrderStatus.Pending:
-      return 'order-status-badge status-pending';
-    case OrderStatus.OnTheWay:
-      return 'order-status-badge status-ontheway';
-    case OrderStatus.Confirmed:
-      return 'order-status-badge status-confirmed';
-    case OrderStatus.InProgress:
-      return 'order-status-badge status-inprogress';
-    case OrderStatus.Completed:
-      return 'order-status-badge status-completed';
-    case OrderStatus.Cancelled:
-      return 'order-status-badge status-cancelled';
-    default:
-      return 'order-status-badge status-pending';
-  }
-}
-
-export function getPaymentStatusClass(order: OrderListItem): string {
-  if (!order.paymentStatus) return 'payment-status-badge status-pending';
-  switch (order.paymentStatus.value) {
-    case PaymentStatus.Pending:
-      return 'payment-status-badge status-pending';
-    case PaymentStatus.Paid:
-      return 'payment-status-badge status-paid';
-    case PaymentStatus.Failed:
-      return 'payment-status-badge status-failed';
-    case PaymentStatus.Refunded:
-      return 'payment-status-badge status-refunded';
-    case PaymentStatus.Disputed:
-      return 'payment-status-badge status-disputed';
-    default:
-      return 'payment-status-badge status-pending';
-  }
 }

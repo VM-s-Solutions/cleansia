@@ -6,6 +6,7 @@ import {
   CleansiaButtonComponent,
   CleansiaLoaderComponent,
   CleansiaSectionComponent,
+  CleansiaStatusBadgeComponent,
   CleansiaTitleComponent,
 } from '@cleansia/components';
 import { CleansiaPermissionDirective } from '@cleansia/directives';
@@ -33,6 +34,7 @@ import { OrderDetailFacade } from './order-detail.facade';
     CleansiaTitleComponent,
     CleansiaLoaderComponent,
     CleansiaSectionComponent,
+    CleansiaStatusBadgeComponent,
     TranslatePipe,
     AdminOrderOpsComponent,
     AdminOrderPhotosComponent,

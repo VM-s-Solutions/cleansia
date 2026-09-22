@@ -46,8 +46,6 @@ public class UserMockFactory
 
         public AuthenticationType? AuthenticationType { get; set; }
 
-        public string? CartId { get; set; }
-
         public string? ProfilePhotoName { get; set; }
 
         public string? ConfirmationCode { get; set; }

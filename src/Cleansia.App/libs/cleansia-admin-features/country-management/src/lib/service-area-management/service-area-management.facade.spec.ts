@@ -3,11 +3,12 @@ import {
   AdminClient,
   AdminCountryControllerSetCountryServicedRequest,
   CreateServiceCityCommand,
+  ServiceCityDto,
   UpdateServiceCityCommand,
 } from '@cleansia/admin-services';
-import { SnackbarService } from '@cleansia/services';
+import { DialogService, SnackbarService } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
-import { of, throwError } from 'rxjs';
+import { of, Subject, throwError } from 'rxjs';
 import { ServiceAreaManagementFacade } from './service-area-management.facade';
 
 describe('ServiceAreaManagementFacade', () => {
@@ -19,7 +20,13 @@ describe('ServiceAreaManagementFacade', () => {
   let cityPostMock: jest.Mock;
   let cityPutMock: jest.Mock;
   let cityDeleteMock: jest.Mock;
-  let snackbar: { showSuccess: jest.Mock; showError: jest.Mock };
+  let confirmMock: jest.Mock;
+  let snackbar: {
+    showSuccess: jest.Mock;
+    showSuccessTranslated: jest.Mock;
+    showError: jest.Mock;
+    showErrorTranslated: jest.Mock;
+  };
 
   beforeEach(() => {
     TestBed.resetTestingModule();
@@ -30,7 +37,13 @@ describe('ServiceAreaManagementFacade', () => {
     cityPostMock = jest.fn().mockReturnValue(of({ id: 'city-1' }));
     cityPutMock = jest.fn().mockReturnValue(of({ id: 'city-1' }));
     cityDeleteMock = jest.fn().mockReturnValue(of({ id: 'city-1' }));
-    snackbar = { showSuccess: jest.fn(), showError: jest.fn() };
+    confirmMock = jest.fn().mockReturnValue(of(true));
+    snackbar = {
+      showSuccess: jest.fn(),
+      showSuccessTranslated: jest.fn(),
+      showError: jest.fn(),
+      showErrorTranslated: jest.fn(),
+    };
 
     TestBed.configureTestingModule({
       providers: [
@@ -52,6 +65,7 @@ describe('ServiceAreaManagementFacade', () => {
           },
         },
         { provide: SnackbarService, useValue: snackbar },
+        { provide: DialogService, useValue: { confirmTranslated: confirmMock } },
         { provide: TranslateService, useValue: { instant: (k: string) => k } },
       ],
     });
@@ -99,35 +113,29 @@ describe('ServiceAreaManagementFacade', () => {
     facade.setCountryServiced('c-1', true);
 
     expect([...facade.servicedCountryIds()]).toEqual(['c-1']);
-    expect(snackbar.showSuccess).toHaveBeenCalledWith(
+    expect(snackbar.showSuccessTranslated).toHaveBeenCalledWith(
       'pages.service_area_management.messages.country_updated'
     );
   });
 
-  it('leaves the serviced set alone when the toggle fails, and bumps the revision so the switch snaps back', () => {
-    servicedMock.mockReturnValue(throwError(() => new Error('boom')));
-    const before = facade.servicedToggleRevision();
+  it('flips the serviced set at once and puts it back when the server refuses the toggle', () => {
+    const response = new Subject<never>();
+    servicedMock.mockReturnValue(response);
 
     facade.setCountryServiced('c-1', true);
+    expect([...facade.servicedCountryIds()]).toEqual(['c-1']);
+
+    response.error(new Error('boom'));
 
     expect(facade.servicedCountryIds().size).toBe(0);
-    expect(facade.servicedToggleRevision()).toBe(before + 1);
-    expect(snackbar.showSuccess).not.toHaveBeenCalled();
-  });
-
-  it('does not bump the revision when the toggle lands', () => {
-    const before = facade.servicedToggleRevision();
-
-    facade.setCountryServiced('c-1', true);
-
-    expect(facade.servicedToggleRevision()).toBe(before);
+    expect(snackbar.showSuccessTranslated).not.toHaveBeenCalled();
   });
 
   it('re-reads the city list after a create', () => {
     facade.createCity('c-1', 'Prague', '110');
 
     expect(cityGetMock).toHaveBeenCalledWith('c-1');
-    expect(snackbar.showSuccess).toHaveBeenCalledWith(
+    expect(snackbar.showSuccessTranslated).toHaveBeenCalledWith(
       'pages.service_area_management.messages.city_created'
     );
   });
@@ -138,7 +146,34 @@ describe('ServiceAreaManagementFacade', () => {
     facade.createCity('c-1', 'Prague', '110');
 
     expect(cityGetMock).not.toHaveBeenCalled();
-    expect(snackbar.showSuccess).not.toHaveBeenCalled();
+    expect(snackbar.showSuccessTranslated).not.toHaveBeenCalled();
+  });
+
+  describe('deleteCity', () => {
+    const city = ServiceCityDto.fromJS({ id: 'city-1', name: 'Prague' });
+
+    it('asks in red with a delete label, deletes and re-reads the city list', () => {
+      facade.deleteCity(city, 'c-1');
+
+      expect(confirmMock).toHaveBeenCalledWith(
+        'pages.service_area_management.cities.delete_confirm',
+        'pages.service_area_management.cities.delete_header',
+        { name: 'Prague' },
+        { danger: true, acceptLabelKey: 'global.actions.delete' }
+      );
+      expect(cityDeleteMock).toHaveBeenCalledWith('city-1');
+      expect(snackbar.showSuccessTranslated).toHaveBeenCalledWith('pages.service_area_management.messages.city_deleted');
+      expect(cityGetMock).toHaveBeenCalledWith('c-1');
+    });
+
+    it('does nothing when the confirmation is declined', () => {
+      confirmMock.mockReturnValue(of(false));
+
+      facade.deleteCity(city, 'c-1');
+
+      expect(cityDeleteMock).not.toHaveBeenCalled();
+      expect(cityGetMock).not.toHaveBeenCalled();
+    });
   });
 
   // Seeded with `of(null)`, not a plausible array: the generated client answers a non-array 200

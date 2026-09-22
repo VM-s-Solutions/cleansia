@@ -70,7 +70,12 @@ describe('PromoCodeFormFacade', () => {
         },
         {
           provide: SnackbarService,
-          useValue: { showSuccess: jest.fn(), showError: jest.fn() },
+          useValue: {
+            showSuccess: jest.fn(),
+            showSuccessTranslated: jest.fn(),
+            showError: jest.fn(),
+            showErrorTranslated: jest.fn(),
+          },
         },
         { provide: TranslateService, useValue: { instant: (k: string) => k } },
         { provide: Router, useValue: { navigate } },

@@ -1,7 +1,7 @@
 import { computed, inject, Injectable, signal } from '@angular/core';
 import { AdminClient, CompanyLifecycleDto, CompanyLifecycleState } from '@cleansia/admin-services';
 import { UnsubscribeControlDirective } from '@cleansia/directives';
-import { DialogService, SnackbarService } from '@cleansia/services';
+import { ConfirmOptions, DialogService, SnackbarService } from '@cleansia/services';
 import { formatDate } from '@cleansia/utils';
 import { TranslateService } from '@ngx-translate/core';
 import { catchError, filter, finalize, Observable, of, Subject, switchMap, takeUntil, tap } from 'rxjs';
@@ -14,8 +14,6 @@ import {
   getActAvailability,
   getFactNameKey,
   getFactStatusKey,
-  getFactStatusSeverity,
-  getStateKey,
   getStateSeverity,
   isWindDownRunInProgress,
   LifecycleAct,
@@ -27,6 +25,7 @@ import {
 } from './company-lifecycle.models';
 
 const PAGE = 'pages.company_lifecycle';
+const DANGER: ConfirmOptions = { danger: true };
 
 @Injectable()
 export class CompanyLifecycleFacade extends UnsubscribeControlDirective {
@@ -47,11 +46,6 @@ export class CompanyLifecycleFacade extends UnsubscribeControlDirective {
   private readonly readAt = signal<Date>(new Date());
   private readonly language = signal<string>(this.translate.currentLang);
 
-  readonly stateKey = computed(() => {
-    const dto = this.lifecycle();
-    return dto ? getStateKey(dto.state) : '';
-  });
-
   readonly stateSeverity = computed<StateSeverity | null>(() => {
     const dto = this.lifecycle();
     return dto ? getStateSeverity(dto.state) : null;
@@ -71,7 +65,6 @@ export class CompanyLifecycleFacade extends UnsubscribeControlDirective {
       ...fact,
       display: formatSettlementFactValue(fact, this.translate, (d) => this.day(d, lang)),
       statusKey: getFactStatusKey(fact.status),
-      statusSeverity: getFactStatusSeverity(fact.status),
     }));
   });
 
@@ -166,11 +159,13 @@ export class CompanyLifecycleFacade extends UnsubscribeControlDirective {
 
   private deactivate(dto: CompanyLifecycleDto): void {
     const confirmed$ = dto.windDownFrom
-      ? this.dialog.confirmTranslated(`${PAGE}.confirm.deactivate_with_wind_down`, `${PAGE}.acts.deactivate`, {
-          name: dto.name,
-          date: this.day(dto.windDownFrom),
-        })
-      : this.dialog.confirmTranslated(`${PAGE}.confirm.deactivate`, `${PAGE}.acts.deactivate`, { name: dto.name });
+      ? this.dialog.confirmTranslated(
+          `${PAGE}.confirm.deactivate_with_wind_down`,
+          `${PAGE}.acts.deactivate`,
+          { name: dto.name, date: this.day(dto.windDownFrom) },
+          DANGER
+        )
+      : this.dialog.confirmTranslated(`${PAGE}.confirm.deactivate`, `${PAGE}.acts.deactivate`, { name: dto.name }, DANGER);
     this.run(
       LifecycleAct.Deactivate,
       confirmed$,
@@ -213,19 +208,26 @@ export class CompanyLifecycleFacade extends UnsubscribeControlDirective {
   private archive(dto: CompanyLifecycleDto, availability: ActAvailability): void {
     const confirmed$ =
       dto.state === CompanyLifecycleState.Frozen && dto.archiveRequestedOn
-        ? this.dialog.confirmTranslated(`${PAGE}.confirm.archive_again`, availability.labelKey, {
-            name: dto.name,
-            frozenOn: this.stamp(dto.archiveRequestedOn),
-          })
-        : this.dialog.confirmTranslated(`${PAGE}.confirm.archive`, availability.labelKey, {
-            name: dto.name,
-            facts: SETTLEMENT_FACT_DEFINITIONS.filter((d) => d.archivePrecondition && d.kind === 'count')
-              .map((d) => this.translate.instant(getFactNameKey(d.id)))
-              .join(', '),
-            date: dto.chargebackHorizonEndsOn
-              ? this.day(dto.chargebackHorizonEndsOn)
-              : this.translate.instant(`${PAGE}.values.no_horizon`),
-          });
+        ? this.dialog.confirmTranslated(
+            `${PAGE}.confirm.archive_again`,
+            availability.labelKey,
+            { name: dto.name, frozenOn: this.stamp(dto.archiveRequestedOn) },
+            DANGER
+          )
+        : this.dialog.confirmTranslated(
+            `${PAGE}.confirm.archive`,
+            availability.labelKey,
+            {
+              name: dto.name,
+              facts: SETTLEMENT_FACT_DEFINITIONS.filter((d) => d.archivePrecondition && d.kind === 'count')
+                .map((d) => this.translate.instant(getFactNameKey(d.id)))
+                .join(', '),
+              date: dto.chargebackHorizonEndsOn
+                ? this.day(dto.chargebackHorizonEndsOn)
+                : this.translate.instant(`${PAGE}.values.no_horizon`),
+            },
+            DANGER
+          );
     this.run(
       LifecycleAct.Archive,
       confirmed$,
@@ -265,6 +267,6 @@ export class CompanyLifecycleFacade extends UnsubscribeControlDirective {
   }
 
   private stamp(date: Date, lang = this.language()): string {
-    return date.toLocaleString(lang, { dateStyle: 'medium', timeStyle: 'short' });
+    return formatDate(date, lang, 'dateTime');
   }
 }

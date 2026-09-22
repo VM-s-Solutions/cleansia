@@ -1,35 +1,30 @@
-<div class="cleansia-gdpr">
-  <div class="cleansia-gdpr__card page-wrapper">
-    <cleansia-title [title]="'pages.gdpr.title' | translate" />
-    <p class="cleansia-gdpr__subtitle">
-      {{ 'pages.gdpr.subtitle' | translate }}
-    </p>
+<div class="cleansia-gdpr cleansia-page">
+  <div class="cleansia-gdpr__card page-wrapper page-wrapper--narrow">
+    <div class="cleansia-page-header">
+      <div class="cleansia-page-header__heading">
+        <cleansia-title [title]="'pages.gdpr.title' | translate" [level]="1" />
+        <p class="cleansia-page-header__description">
+          {{ 'pages.gdpr.subtitle' | translate }}
+        </p>
+      </div>
+    </div>
 
     @if (facade.isAuthenticated()) {
-      <div class="cleansia-gdpr__section">
-        <h3>
-          <i class="pi pi-download"></i>
-          {{ 'pages.gdpr.export_title' | translate }}
-        </h3>
-        <p>{{ 'pages.gdpr.export_description' | translate }}</p>
+      <cleansia-section [title]="'pages.gdpr.export_title' | translate">
+        <p class="cleansia-gdpr__text">{{ 'pages.gdpr.export_description' | translate }}</p>
         <div class="cleansia-gdpr__section-action">
           <cleansia-button
             [label]="'pages.gdpr.export_button' | translate"
             icon="pi pi-download"
-            size="auto-width"
             [loading]="facade.exporting()"
             [disabled]="facade.exporting()"
             (onClick)="exportData()"
           />
         </div>
-      </div>
+      </cleansia-section>
 
-      <div class="cleansia-gdpr__section">
-        <h3>
-          <i class="pi pi-shield"></i>
-          {{ 'pages.gdpr.consents_title' | translate }}
-        </h3>
-        <p>{{ 'pages.gdpr.consents_description' | translate }}</p>
+      <cleansia-section [title]="'pages.gdpr.consents_title' | translate">
+        <p class="cleansia-gdpr__text">{{ 'pages.gdpr.consents_description' | translate }}</p>
 
         @if (facade.loadingConsents()) {
           <cleansia-loader />
@@ -46,58 +41,47 @@
             }
           </div>
         }
-      </div>
+      </cleansia-section>
 
-      <div class="cleansia-gdpr__section cleansia-gdpr__section--danger">
-        <h3>
-          <i class="pi pi-trash"></i>
-          {{ 'pages.gdpr.delete_title' | translate }}
-        </h3>
-        <p>{{ 'pages.gdpr.delete_description' | translate }}</p>
+      <cleansia-section [title]="'pages.gdpr.delete_title' | translate">
+        <p class="cleansia-gdpr__text">{{ 'pages.gdpr.delete_description' | translate }}</p>
         <div class="cleansia-gdpr__section-action">
           <cleansia-button
             [label]="'pages.gdpr.delete_button' | translate"
             icon="pi pi-trash"
             severity="danger"
-            size="auto-width"
+            [outlined]="true"
             [loading]="facade.deleting()"
             [disabled]="facade.deleting()"
             (onClick)="deleteAccount()"
           />
         </div>
-      </div>
-
-      <p-confirmDialog styleClass="cleansia-dialog" />
+      </cleansia-section>
     }
 
-    <div class="cleansia-gdpr__section">
-      <h3>{{ 'pages.gdpr.data_collection_title' | translate }}</h3>
-      <p>{{ 'pages.gdpr.data_collection_text' | translate }}</p>
-    </div>
+    <cleansia-section [title]="'pages.gdpr.data_collection_title' | translate">
+      <p class="cleansia-gdpr__text">{{ 'pages.gdpr.data_collection_text' | translate }}</p>
+    </cleansia-section>
 
-    <div class="cleansia-gdpr__section">
-      <h3>{{ 'pages.gdpr.data_usage_title' | translate }}</h3>
-      <p>{{ 'pages.gdpr.data_usage_text' | translate }}</p>
-    </div>
+    <cleansia-section [title]="'pages.gdpr.data_usage_title' | translate">
+      <p class="cleansia-gdpr__text">{{ 'pages.gdpr.data_usage_text' | translate }}</p>
+    </cleansia-section>
 
-    <div class="cleansia-gdpr__section">
-      <h3>{{ 'pages.gdpr.data_rights_title' | translate }}</h3>
-      <p>{{ 'pages.gdpr.data_rights_text' | translate }}</p>
-    </div>
+    <cleansia-section [title]="'pages.gdpr.data_rights_title' | translate">
+      <p class="cleansia-gdpr__text">{{ 'pages.gdpr.data_rights_text' | translate }}</p>
+    </cleansia-section>
 
-    <div class="cleansia-gdpr__section">
-      <h3>{{ 'pages.gdpr.data_retention_title' | translate }}</h3>
-      <p>{{ 'pages.gdpr.data_retention_text' | translate }}</p>
-    </div>
+    <cleansia-section [title]="'pages.gdpr.data_retention_title' | translate">
+      <p class="cleansia-gdpr__text">{{ 'pages.gdpr.data_retention_text' | translate }}</p>
+    </cleansia-section>
 
-    <div class="cleansia-gdpr__section">
-      <h3>{{ 'pages.gdpr.contact_title' | translate }}</h3>
-      <p>{{ 'pages.gdpr.contact_text' | translate }}</p>
-    </div>
+    <cleansia-section [title]="'pages.gdpr.contact_title' | translate">
+      <p class="cleansia-gdpr__text">{{ 'pages.gdpr.contact_text' | translate }}</p>
+    </cleansia-section>
 
     <div class="cleansia-gdpr__actions">
       <cleansia-button
-        [title]="'global.actions.go_back' | translate"
+        [label]="'global.actions.go_back' | translate"
         severity="secondary"
         [outlined]="true"
         routerLink="/profile"

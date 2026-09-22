@@ -20,7 +20,12 @@ describe('DisputeDetailFacade', () => {
     updateStatus: jest.Mock;
     addMessage: jest.Mock;
   };
-  let snackbar: { showSuccess: jest.Mock; showError: jest.Mock };
+  let snackbar: {
+    showSuccess: jest.Mock;
+    showSuccessTranslated: jest.Mock;
+    showError: jest.Mock;
+    showErrorTranslated: jest.Mock;
+  };
 
   const details = DisputeDetails.fromJS({
     id: 'dispute-1',
@@ -37,14 +42,19 @@ describe('DisputeDetailFacade', () => {
       updateStatus: jest.fn(),
       addMessage: jest.fn(),
     };
-    snackbar = { showSuccess: jest.fn(), showError: jest.fn() };
+    snackbar = {
+      showSuccess: jest.fn(),
+      showSuccessTranslated: jest.fn(),
+      showError: jest.fn(),
+      showErrorTranslated: jest.fn(),
+    };
 
     TestBed.configureTestingModule({
       providers: [
         DisputeDetailFacade,
         { provide: AdminDisputeClient, useValue: disputeClient },
         { provide: SnackbarService, useValue: snackbar },
-        { provide: TranslateService, useValue: { instant: (k: string) => k } },
+        { provide: TranslateService, useValue: { instant: (k: string) => k, currentLang: 'cs' } },
       ],
     });
 
@@ -86,7 +96,7 @@ describe('DisputeDetailFacade', () => {
       refundAmount: 250,
       resolutionNotes: 'refund issued',
     });
-    expect(snackbar.showSuccess).toHaveBeenCalledWith(
+    expect(snackbar.showSuccessTranslated).toHaveBeenCalledWith(
       'pages.disputes_management.resolve.submitted'
     );
   });
@@ -114,51 +124,45 @@ describe('DisputeDetailFacade', () => {
     expect(facade.resolving()).toBe(false);
   });
 
-  it('maps dispute.already_resolved to its translation key on resolve failure', () => {
+  it('leaves the dispute.already_resolved refusal to the interceptor toast on resolve failure', () => {
     disputeClient.resolve.mockReturnValue(
       throwError(() => ({ result: { detail: 'dispute.already_resolved' } }))
     );
 
     facade.resolve('dispute-1', 100, 'notes');
 
-    expect(snackbar.showError).toHaveBeenCalledWith(
-      'api.dispute.already_resolved'
-    );
+    expect(snackbar.showErrorTranslated).not.toHaveBeenCalled();
     expect(facade.resolving()).toBe(false);
   });
 
-  it('falls back to result.title when detail is absent on resolve failure', () => {
+  it('leaves a title-only refusal to the interceptor toast on resolve failure', () => {
     disputeClient.resolve.mockReturnValue(
       throwError(() => ({ result: { title: 'dispute.already_resolved' } }))
     );
 
     facade.resolve('dispute-1', 100, 'notes');
 
-    expect(snackbar.showError).toHaveBeenCalledWith(
-      'api.dispute.already_resolved'
-    );
+    expect(snackbar.showErrorTranslated).not.toHaveBeenCalled();
   });
 
-  it('maps refund.failed to its translation key on resolve failure', () => {
+  it('leaves the refund.failed refusal to the interceptor toast on resolve failure', () => {
     disputeClient.resolve.mockReturnValue(
       throwError(() => ({ response: JSON.stringify({ detail: 'refund.failed' }) }))
     );
 
     facade.resolve('dispute-1', 100, 'notes');
 
-    expect(snackbar.showError).toHaveBeenCalledWith('api.refund.failed');
+    expect(snackbar.showErrorTranslated).not.toHaveBeenCalled();
   });
 
-  it('falls back to the generic dispute error for unknown codes', () => {
+  it('leaves an unknown refusal to the interceptor toast', () => {
     disputeClient.resolve.mockReturnValue(
       throwError(() => ({ result: { detail: 'something.unknown' } }))
     );
 
     facade.resolve('dispute-1', 100, 'notes');
 
-    expect(snackbar.showError).toHaveBeenCalledWith(
-      'api.dispute.action_failed'
-    );
+    expect(snackbar.showErrorTranslated).not.toHaveBeenCalled();
   });
 
   it('builds an UpdateDisputeStatusCommand with the new status', () => {
@@ -174,12 +178,12 @@ describe('DisputeDetailFacade', () => {
       disputeId: 'dispute-1',
       newStatus: DisputeStatus.UnderReview,
     });
-    expect(snackbar.showSuccess).toHaveBeenCalledWith(
+    expect(snackbar.showSuccessTranslated).toHaveBeenCalledWith(
       'pages.disputes_management.status_update.success'
     );
   });
 
-  it('maps dispute.invalid_status_transition on update-status failure', () => {
+  it('leaves the dispute.invalid_status_transition refusal to the interceptor toast on update-status failure', () => {
     disputeClient.updateStatus.mockReturnValue(
       throwError(() => ({
         result: { detail: 'dispute.invalid_status_transition' },
@@ -188,9 +192,7 @@ describe('DisputeDetailFacade', () => {
 
     facade.updateStatus('dispute-1', DisputeStatus.Closed);
 
-    expect(snackbar.showError).toHaveBeenCalledWith(
-      'api.dispute.invalid_status_transition'
-    );
+    expect(snackbar.showErrorTranslated).not.toHaveBeenCalled();
     expect(facade.updatingStatus()).toBe(false);
   });
 
@@ -210,7 +212,7 @@ describe('DisputeDetailFacade', () => {
       isStaffMessage: true,
     });
     expect(onSuccess).toHaveBeenCalledTimes(1);
-    expect(snackbar.showSuccess).toHaveBeenCalledWith(
+    expect(snackbar.showSuccessTranslated).toHaveBeenCalledWith(
       'pages.disputes_management.message.sent'
     );
   });
@@ -230,5 +232,15 @@ describe('DisputeDetailFacade', () => {
     facade.loadDispute('dispute-1');
 
     expect(facade.isTerminal()).toBe(true);
+  });
+
+  it('labels the refund with the currency the dispute carries, in the language of the session', () => {
+    facade.dispute.set(DisputeDetails.fromJS({ refundAmount: 1250, currency: { code: 'CZK', symbol: 'Kč' } }));
+
+    expect(facade.refundAmountLabel()).toBe('1 250,00 Kč');
+
+    facade.dispute.set(DisputeDetails.fromJS({}));
+
+    expect(facade.refundAmountLabel()).toBe('');
   });
 });

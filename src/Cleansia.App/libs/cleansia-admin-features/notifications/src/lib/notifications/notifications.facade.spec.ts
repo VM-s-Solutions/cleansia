@@ -43,7 +43,7 @@ describe('NotificationsFacade', () => {
   let refreshBadge: jest.Mock;
   let badgeCount: ReturnType<typeof signal<number>>;
   let navigate: jest.Mock;
-  let showSuccess: jest.Mock;
+  let showSuccessTranslated: jest.Mock;
   let onLangChange: Subject<{ lang: string }>;
 
   beforeEach(() => {
@@ -53,15 +53,26 @@ describe('NotificationsFacade', () => {
     refreshBadge = jest.fn();
     badgeCount = signal(0);
     navigate = jest.fn().mockResolvedValue(true);
-    showSuccess = jest.fn();
+    showSuccessTranslated = jest.fn();
     onLangChange = new Subject<{ lang: string }>();
 
     TestBed.configureTestingModule({
       providers: [
         NotificationsFacade,
-        { provide: AdminClient, useValue: { adminNotificationClient: { getPaged, markRead, markAllRead } } },
-        { provide: AdminNotificationBadgeService, useValue: { refresh: refreshBadge, unreadCount: badgeCount } },
-        { provide: SnackbarService, useValue: { showSuccess } },
+        {
+          provide: AdminClient,
+          useValue: {
+            adminNotificationClient: { getPaged, markRead, markAllRead },
+          },
+        },
+        {
+          provide: AdminNotificationBadgeService,
+          useValue: {
+            refresh: refreshBadge,
+            unreadCount: badgeCount,
+          },
+        },
+        { provide: SnackbarService, useValue: { showSuccessTranslated } },
         { provide: Router, useValue: { navigate } },
         {
           provide: TranslateService,
@@ -220,7 +231,7 @@ describe('NotificationsFacade', () => {
       const command: MarkAllNotificationsReadCommand = markAllRead.mock.calls[0][0];
       expect(command).toBeInstanceOf(MarkAllNotificationsReadCommand);
       expect(command.toJSON()).toEqual({ upToCreatedOn: WATERMARK_AFTER_NEWEST, audience: undefined });
-      expect(showSuccess).toHaveBeenCalledWith('pages.notifications.messages.marked_all_read:{"count":1}');
+      expect(showSuccessTranslated).toHaveBeenCalledWith('pages.notifications.messages.marked_all_read', { count: 1 });
       expect(getPaged).toHaveBeenCalledTimes(1);
       expect(refreshBadge).toHaveBeenCalledTimes(1);
       expect(facade.markingAll()).toBe(false);
@@ -260,7 +271,7 @@ describe('NotificationsFacade', () => {
 
       facade.markAllRead();
 
-      expect(showSuccess).not.toHaveBeenCalled();
+      expect(showSuccessTranslated).not.toHaveBeenCalled();
       expect(refreshBadge).not.toHaveBeenCalled();
       expect(getPaged).toHaveBeenCalledTimes(1);
       expect(facade.markingAll()).toBe(false);

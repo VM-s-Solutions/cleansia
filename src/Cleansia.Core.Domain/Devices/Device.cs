@@ -65,11 +65,6 @@ public class Device : TenantAuditable
         }
     }
 
-    public void UpdateLastActive()
-    {
-        LastActiveAt = DateTimeOffset.UtcNow;
-    }
-
     public void UpdateNotificationsEnabled(bool enabled)
     {
         NotificationsEnabled = enabled;

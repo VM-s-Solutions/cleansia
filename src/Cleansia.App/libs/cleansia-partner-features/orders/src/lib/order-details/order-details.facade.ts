@@ -261,11 +261,11 @@ export class OrderDetailsFacade extends UnsubscribeControlDirective {
     const ref: DynamicDialogRef | null = this.dialogService.open(
       WorkContractDialogComponent,
       {
-        header: undefined,
         data,
-        width: '720px',
         modal: true,
         dismissableMask: false,
+        showHeader: false,
+        styleClass: 'cleansia-dialog dialog-panel dialog-panel--reading',
       }
     );
 
@@ -369,11 +369,14 @@ export class OrderDetailsFacade extends UnsubscribeControlDirective {
     const ref: DynamicDialogRef | null = this.dialogService.open(
       ReportIssueDialogComponent,
       {
-        header: undefined,
         data: { orderId },
-        width: '500px',
+        header: this.translateService.instant('pages.order_details.report_issue'),
         modal: true,
+        closable: true,
+        draggable: false,
+        resizable: false,
         dismissableMask: true,
+        styleClass: 'cleansia-dialog dialog-panel',
       }
     );
 
@@ -425,11 +428,14 @@ export class OrderDetailsFacade extends UnsubscribeControlDirective {
     const ref: DynamicDialogRef | null = this.dialogService.open(
       AddNoteDialogComponent,
       {
-        header: undefined,
         data: { orderId },
-        width: '500px',
+        header: this.translateService.instant('pages.order_details.add_note'),
         modal: true,
+        closable: true,
+        draggable: false,
+        resizable: false,
         dismissableMask: true,
+        styleClass: 'cleansia-dialog dialog-panel',
       }
     );
 
@@ -494,14 +500,17 @@ export class OrderDetailsFacade extends UnsubscribeControlDirective {
     const ref: DynamicDialogRef | null = this.dialogService.open(
       MarkCashCollectedDialogComponent,
       {
-        header: undefined,
         data: {
           orderId,
-          amount: formatCurrency(order.totalPrice, order.currency?.symbol ?? ''),
+          amount: formatCurrency(order.totalPrice, order.currency?.code, this.translateService.currentLang),
         },
-        width: '500px',
+        header: this.translateService.instant('pages.order_details.mark_cash_collected_confirm_title'),
         modal: true,
+        closable: true,
+        draggable: false,
+        resizable: false,
         dismissableMask: true,
+        styleClass: 'cleansia-dialog dialog-panel',
       }
     );
 

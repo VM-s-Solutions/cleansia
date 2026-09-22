@@ -1,27 +1,27 @@
-import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import {
   CleansiaButtonComponent,
-  CleansiaDetailSkeletonComponent,
+  CleansiaLoaderComponent,
   CleansiaSectionComponent,
+  CleansiaStatusBadgeComponent,
   CleansiaTableComponent,
 } from '@cleansia/components';
-import { EmployeeInvoiceStatus } from '@cleansia/partner-services';
 import { CleansiaPartnerRoute } from '@cleansia/services';
-import { TranslatePipe } from '@ngx-translate/core';
+import { currentLanguage, formatDate } from '@cleansia/utils';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { InvoiceDetailFacade } from './invoice-detail.facade';
-import { getOrderPaysTableDefinition } from './invoice-detail.models';
+import { formatInvoiceAmount, getOrderPaysTableDefinition } from './invoice-detail.models';
 
 @Component({
   selector: 'cleansia-partner-invoice-detail',
   standalone: true,
   imports: [
-    CommonModule,
+    CleansiaLoaderComponent,
     TranslatePipe,
     CleansiaButtonComponent,
-    CleansiaDetailSkeletonComponent,
     CleansiaSectionComponent,
+    CleansiaStatusBadgeComponent,
     CleansiaTableComponent,
   ],
   templateUrl: './invoice-detail.component.html',
@@ -32,13 +32,39 @@ export class InvoiceDetailComponent implements OnInit {
   protected readonly facade = inject(InvoiceDetailFacade);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
+  private readonly translate = inject(TranslateService);
 
   protected readonly invoiceDetail = this.facade.invoiceDetail;
   protected readonly loading = this.facade.loading;
   protected readonly error = this.facade.error;
 
-  protected readonly orderPaysColumns = computed(() => {
-    return getOrderPaysTableDefinition(this.invoiceDetail()?.currencyCode).columns;
+  private readonly lang = currentLanguage(this.translate);
+
+  protected readonly orderPaysColumns = computed(
+    () => getOrderPaysTableDefinition(this.invoiceDetail()?.currencyCode, this.lang()).columns
+  );
+
+  protected readonly dates = computed(() => {
+    const invoice = this.invoiceDetail();
+    const lang = this.lang();
+    return {
+      generated: formatDate(invoice?.generatedAt, lang, 'dateTime'),
+      approved: formatDate(invoice?.approvedAt, lang, 'dateTime'),
+      paid: formatDate(invoice?.paidAt, lang, 'dateTime'),
+    };
+  });
+
+  protected readonly amounts = computed(() => {
+    const invoice = this.invoiceDetail();
+    const lang = this.lang();
+    const amount = (value: number | undefined): string =>
+      formatInvoiceAmount(value, invoice?.currencyCode, lang);
+    return {
+      subTotal: amount(invoice?.subTotal),
+      bonus: amount(invoice?.bonusAmount),
+      deduction: amount(invoice?.deductionAmount),
+      total: amount(invoice?.totalAmount),
+    };
   });
 
   ngOnInit(): void {
@@ -68,29 +94,4 @@ export class InvoiceDetailComponent implements OnInit {
   printInvoice(): void {
     this.facade.printInvoice();
   }
-
-  getStatusClass(status: EmployeeInvoiceStatus): string {
-    const statusString = this.getStatusString(status);
-    return `status-badge status-${statusString}`;
-  }
-
-  getStatusString(status: EmployeeInvoiceStatus): string {
-    switch (status) {
-      case EmployeeInvoiceStatus.Pending:
-        return 'pending';
-      case EmployeeInvoiceStatus.Approved:
-        return 'approved';
-      case EmployeeInvoiceStatus.Paid:
-        return 'paid';
-      case EmployeeInvoiceStatus.Disputed:
-        return 'disputed';
-      case EmployeeInvoiceStatus.Rejected:
-        return 'rejected';
-      case EmployeeInvoiceStatus.Cancelled:
-        return 'cancelled';
-      default:
-        return 'pending';
-    }
-  }
-
 }

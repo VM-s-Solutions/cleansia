@@ -310,6 +310,51 @@ Canonical shape (see `patterns-backend.md` for the full sample). **Every paged/l
   **Live (blocking):** `check-consistency.mjs` rule **E10** flags any `.kt` file constructing the
   interceptor without the redact call.
 
+## F. Web surface — templates, stylesheets and locale bundles of the admin and partner apps
+
+Written 2026-09-22 from the UI-polish batch (T-0785–T-0798). The page shapes and primitives these
+rules hold are described once in `patterns-frontend.md` §*"The back-office page shapes"*; a rule here
+is the **line-scannable** statement of one of them, and its guard is `agents/tools/check-consistency.mjs`
+rule of the same id (`checkFrontendSurface`, over `src/Cleansia.App/libs` + `src/Cleansia.App/apps`,
+skipping every customer tree — the customer app has its own shell and its own passes). **No workflow
+runs the checker** (`agents/process/enforcement.md`); it is the Reviewer's on-demand pass, so every
+F-rule is **T2-ADVISORY** as a gate whatever its mode inside the tool. What CI executes for the same
+conventions are the jest theme specs under `apps/<app>/src/app/theme/*.spec.ts` (`frontend-ci.yml`,
+`nx affected -t test`), named per rule below. Inside the checker a rule is either `add` (a hit exits 1
+on the Reviewer's run — its default-root count was zero when promoted) or `warn` (printed with its
+count; flip to `add` when a run reports zero — the count is read from the run, never from a comment).
+
+> **Two things the identifiers do not mean.** The `F1` in E1 and E8 above (*"the same F1/E8 class"*,
+> *"Parity deviation (F1, sprint-12 §7.5 Decision 5)"*) is the sprint-12 mobile parity-finding label
+> and predates this section; it is not this F1. And the F-numbers below are the checker's as shipped,
+> which differ from the numbering T-0798 was filed with (that list had F6 as inline `style=`, F7 as
+> `severity=`, F8 as `!important`) — the tool is the record, the ticket's status log names the move.
+
+| Rule | Canonical form (`C#`) / deviating form (`✗`) | Mode | CI twin |
+|---|---|---|---|
+| **F1** | A form control in a feature template is a `<cleansia-*>` wrapper. ✗ A raw `<button>`, `<input>`, `<select>` or `<textarea>` under `libs/cleansia-{admin,partner}-features/**` or an app shell; the hidden `<input type="file">` picker is the one raw input a wrapper cannot replace. | `warn` — 4 sites on 2026-09-22 (the partner dashboard's three quick-action cards, the registration-lock button) | — |
+| **F2** | A PrimeNG widget is reached through its wrapper. ✗ `<p-button>`, `<p-select>`, `<p-multiSelect>`, `<p-checkbox>`, `<p-inputNumber>`, or the `pButton` / `pTextarea` directives, outside `libs/shared/components`. (The tag list is the camelCase spelling only — a lowercase `<p-multiselect>` is not matched; see the plate.) | `add` | — |
+| **F3** | The confirmation dialog is mounted once, by the app shell. ✗ `<p-confirmDialog>` in any template but `apps/<app>/src/app/app.component.html`. | `add` | admin `feedback-idioms.spec.ts` *"confirmation dialog"* |
+| **F4** | `ConfirmationService` is the root's. ✗ `providers: [… ConfirmationService …]` on a component — a scoped one renders into no dialog. | `add` | admin `feedback-idioms.spec.ts` |
+| **F5** | A confirmation is opened by `DialogService.confirmTranslated` / `confirmDelete`. ✗ `confirmationService.confirm(` in any file but `dialog.service.ts`. | `add` | admin `feedback-idioms.spec.ts` |
+| **F6** | `<cleansia-button>` binds `(onClick)` and `[label]`. ✗ `(clickFn)`, `[title]`, or the two inputs bound to their own default (`[buttonType]="'button'"`, `[style]="'raised-button'"`). | `warn` — 3 sites on 2026-09-22, all on the admin login's submit (the `title` / `clickFn` members stay on the component until the 46 customer binders move) | — |
+| **F7** | Control flow is `@if` / `@for`; a form field is reactive. ✗ `*ngIf=`, `*ngFor=`, `[(ngModel)]` in a feature template. | `add` | — (`cleansia-table`'s `*ngTemplateOutlet` is a shared-lib template and out of reach) |
+| **F8** | A component's teardown is `UnsubscribeControlDirective` (C1 holds the facade). ✗ A `.component.ts` under the features, the shells or `libs/shared/components` that owns `new Subject<void>()`, `inject(DestroyRef)` or `takeUntilDestroyed` without extending it. | `warn` — 27 sites on 2026-09-22 | — |
+| **F9** | A `var(--cleansia-*)` a stylesheet reads is declared somewhere the bundle loads — `common/variables.scss`, an app's `styles.scss`, or another scanned stylesheet. ✗ A read with no declaration anywhere (the undefined-token class that left an invalid `cleansia-select` with no red border in any app until T-0785). | `add` | — |
+| **F10** | A radius is on the design language's scale (`6 / 12 / 16 / 24 / 32px`, `50%`, `999px`) or a `--cleansia-radius-*` token; a shadow is neutral. ✗ Any other `border-radius`; a `box-shadow` tinted with `--cleansia-primary-rgb` that is not a `0 0 0 Npx` focus ring. | `warn` — 77 off-scale radii and 6 tinted shadows on 2026-09-22 | — |
+| **F11** | An app's five locale bundles carry one key set under the fixed top-level namespaces (`global`, `pages`, `page_titles`, `components`, `sidebar`, `api`, `validation`, `auth`, `cookies`, `help`, `enums`, `primeng`). ✗ A `common` namespace (its readers moved to `global.actions.*`); a key in `en.json` missing from another locale, or present there and absent from `en.json`; a bundle that does not parse. | `add` for parity, the `common` namespace and a missing bundle; `warn` for a stray namespace — 9 on 2026-09-22 (admin: `admin_roles`, `fiscal_failures`, `pay_periods`, `profile`, `recurring_booking`; partner: `name`, `profile`, `recurring_booking`, `registration_lock`) | `apps/*/src/app/i18n/error-contract-parity.spec.ts` (the `api.*` half); admin `feedback-idioms.spec.ts` *"cancel"* (no `common.*`) |
+| **F12** | A page stylesheet under `pages/cleansia-{admin,partner}/` is named for a component that exists somewhere on the web surface. ✗ `<name>.component.scss` with no `<name>.component.ts` in the tree. | `warn` — 1 site on 2026-09-22 (`template-form.component.scss`, which holds only a `.hint` rule) | — (admin and partner `page-shell.spec.ts` hold what a page stylesheet may *contain*, not whether it is orphaned) |
+| **F13** | A page template's first `<cleansia-title>` is its `h1`. ✗ The first title of a template that carries `.cleansia-page-header`, `.page-wrapper` / `.cleansia-page` or `<cleansia-dynamic-background>` without `[level]="1"`. | `add` | admin `list-pages.spec.ts`, `detail-pages.spec.ts`, `form-pages.spec.ts` |
+| **F14** | An `aria-label` the user hears is bound to a translated key (`[attr.aria-label]="'…' \| translate"`). ✗ A literal `aria-label="…"` in a feature, shell or shared-component template. | `add` | — |
+| **F15** | The error toast is the interceptor's (`api.*`). ✗ A `*_ERROR_KEY_MAP` or a `resolveXxxErrorKey(` resolver (other than the shared `resolveApiErrorKey`) in a feature — it toasts the same failure twice. | `add` | admin `feedback-idioms.spec.ts` *"toasts"* |
+
+Self-test: `agents/tools/check-consistency.test.mjs` writes throwaway `.html` / `.scss` / `.json`
+fixtures under a temp dir inside the repo, runs the checker scoped to it with `--paths=`, and
+asserts a red case for every F-rule (an `add` rule exits 1, a `warn` rule prints and exits 0), so a
+rule that stops firing fails there before it fails to guard. The jest twins are the gate for what they cover;
+where the *CI twin* column is empty the F-rule is the only mechanical check and the Reviewer's run is
+where it is seen.
+
 ---
 
 ## Judgment calls (where we did NOT just follow the majority)

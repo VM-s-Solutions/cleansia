@@ -1,24 +1,31 @@
-import { Injectable, inject, signal } from '@angular/core';
+import { computed, Injectable, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import {
   AdminClient,
   PromoCodeDetailDto,
+  PromoCodeListItem,
   PromoCodeRedemptionListItem,
 } from '@cleansia/admin-services';
 import { UnsubscribeControlDirective } from '@cleansia/directives';
-import { SnackbarService } from '@cleansia/services';
-import { TranslateService } from '@ngx-translate/core';
-import { catchError, finalize, of, takeUntil } from 'rxjs';
+import { DialogService, PermissionService, Policy, SnackbarService } from '@cleansia/services';
+import { catchError, filter, finalize, of, takeUntil } from 'rxjs';
+import { getPromoCodeStatus } from '../promo-codes-list/promo-codes-list.models';
 
 @Injectable()
 export class PromoCodeDetailFacade extends UnsubscribeControlDirective {
   private readonly adminClient = inject(AdminClient);
+  private readonly dialog = inject(DialogService);
   private readonly snackbarService = inject(SnackbarService);
-  private readonly translate = inject(TranslateService);
   private readonly router = inject(Router);
+  private readonly permissions = inject(PermissionService);
 
   readonly promoCode = signal<PromoCodeDetailDto | null>(null);
   readonly loading = signal<boolean>(false);
+
+  readonly canDeactivate = computed(() => {
+    const pc = this.promoCode();
+    return !!pc && getPromoCodeStatus(pc as unknown as PromoCodeListItem) === 'active';
+  });
 
   readonly redemptions = signal<PromoCodeRedemptionListItem[]>([]);
   readonly redemptionsLoading = signal<boolean>(false);
@@ -72,21 +79,36 @@ export class PromoCodeDetailFacade extends UnsubscribeControlDirective {
     this.loadRedemptions(this.currentId, offset, limit);
   }
 
+  hasEntityActions(): boolean {
+    if (this.permissions.hasPolicy(Policy.CanUpdatePromoCode)) return true;
+    return this.canDeactivate() && this.permissions.hasPolicy(Policy.CanDeactivatePromoCode);
+  }
+
   deactivate(): void {
-    if (!this.currentId) return;
+    const id = this.currentId;
+    if (!id) return;
+
+    this.dialog
+      .confirmTranslated(
+        'pages.promo_codes.detail.deactivate_confirm_body',
+        'pages.promo_codes.detail.deactivate_confirm_title',
+        undefined,
+        { acceptLabelKey: 'pages.promo_codes.detail.deactivate_confirm_yes' }
+      )
+      .pipe(takeUntil(this.destroyed$), filter(Boolean))
+      .subscribe(() => this.deactivateConfirmed(id));
+  }
+
+  private deactivateConfirmed(id: string): void {
     this.adminClient.adminPromoCodeClient
-      .deactivate(this.currentId)
+      .deactivate(id)
       .pipe(
         takeUntil(this.destroyed$),
         catchError(() => of(null))
       )
       .subscribe((response) => {
         if (response) {
-          this.snackbarService.showSuccess(
-            this.translate.instant(
-              'pages.promo_codes.form.success.deactivated'
-            )
-          );
+          this.snackbarService.showSuccessTranslated('pages.promo_codes.form.success.deactivated');
           if (this.currentId) {
             this.loadPromoCode(this.currentId);
           }

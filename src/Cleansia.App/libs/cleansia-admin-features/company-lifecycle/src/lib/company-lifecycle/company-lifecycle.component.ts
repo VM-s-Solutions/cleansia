@@ -14,6 +14,7 @@ import {
   CleansiaButtonComponent,
   CleansiaLoaderComponent,
   CleansiaSectionComponent,
+  CleansiaStatusBadgeComponent,
   CleansiaTableComponent,
   CleansiaTitleComponent,
   TableColumn,
@@ -21,7 +22,6 @@ import {
 import { CleansiaPermissionDirective } from '@cleansia/directives';
 import { Policy } from '@cleansia/services';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
-import { TagModule } from 'primeng/tag';
 import { Subject, takeUntil } from 'rxjs';
 import { WindDownDialogComponent } from '../wind-down-dialog/wind-down-dialog.component';
 import { CompanyLifecycleFacade } from './company-lifecycle.facade';
@@ -34,11 +34,11 @@ import { getSettlementFactsTableDefinition, LifecycleAct, SettlementFactRow } fr
     CommonModule,
     RouterModule,
     TranslatePipe,
-    TagModule,
     CleansiaButtonComponent,
     CleansiaLoaderComponent,
     CleansiaPermissionDirective,
     CleansiaSectionComponent,
+    CleansiaStatusBadgeComponent,
     CleansiaTableComponent,
     CleansiaTitleComponent,
     WindDownDialogComponent,

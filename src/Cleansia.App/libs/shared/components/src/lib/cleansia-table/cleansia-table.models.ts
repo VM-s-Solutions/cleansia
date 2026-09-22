@@ -7,6 +7,8 @@ export interface TableColumn<T = unknown> {
   sortable?: boolean;
   width?: string;
   align?: 'left' | 'center' | 'right';
+  /** A count, an amount or a date: right-aligned in tabular figures so the digits line up. */
+  numeric?: boolean;
   customTemplate?: TemplateRef<unknown>;
   getValue?: (row: T) => unknown;
 }
@@ -53,42 +55,4 @@ export interface PaginationState {
 export interface SortEvent {
   field: string;
   order: 1 | -1;
-}
-
-// Legacy support
-export interface CleansiaTableColumn {
-  field: string;
-  header: string;
-  sortable?: boolean;
-  pipe?: 'date' | 'number' | 'currency';
-  pipeArgs?: unknown[];
-  width?: string;
-  class?: string;
-  headerClass?: string;
-}
-
-export interface CleansiaTableAction<T = unknown> {
-  label: string;
-  icon?: string;
-  class?: string;
-  action: (item: T) => void;
-  visible?: (item: T) => boolean;
-  disabled?: (item: T) => boolean;
-}
-
-export interface TableColumnAction<T = unknown> {
-  icon: string;
-  onClick: (row: T) => void;
-  buttonPalette?: string;
-  tooltip?: {
-    title: string;
-    position: 'above' | 'below' | 'left' | 'right';
-  };
-  visible?: (row: T) => boolean;
-  disabled?: (row: T) => boolean;
-}
-
-export interface TableDefinition<T = unknown> {
-  columns: TableColumn<T>[];
-  onRowClick?: (row: T) => void;
 }

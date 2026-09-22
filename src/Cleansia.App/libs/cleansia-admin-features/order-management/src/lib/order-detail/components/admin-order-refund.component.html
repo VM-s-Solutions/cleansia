@@ -1,16 +1,17 @@
 <cleansia-section [title]="'pages.order_management.refund.title' | translate">
   @if (!isRefundable()) {
-  <p class="refund-unavailable">
+  <p class="refund-form__hint">
     {{ 'pages.order_management.refund.unavailable' | translate }}
   </p>
   } @else if (facade.lines().length === 0) {
-  <p class="refund-empty">
-    {{ 'pages.order_management.refund.no_lines' | translate }}
-  </p>
+  <div class="empty-state">
+    <i class="pi pi-receipt"></i>
+    <p>{{ 'pages.order_management.refund.no_lines' | translate }}</p>
+  </div>
   } @else {
   <div class="refund-form">
     <div class="refund-lines">
-      <span class="refund-label">
+      <span class="refund-form__label">
         {{ 'pages.order_management.refund.select_lines' | translate }}
       </span>
 
@@ -73,7 +74,7 @@
     />
 
     @if (facade.errorKey()) {
-    <p class="refund-error">{{ facade.errorKey()! | translate }}</p>
+    <p class="refund-form__error">{{ facade.errorKey()! | translate }}</p>
     }
 
     <cleansia-button

@@ -12,11 +12,21 @@ import { AdminProfileFacade } from './admin-profile.facade';
 describe('AdminProfileFacade', () => {
   let facade: AdminProfileFacade;
   let changePasswordMock: jest.Mock;
-  let snackbar: { showSuccess: jest.Mock; showError: jest.Mock };
+  let snackbar: {
+    showSuccess: jest.Mock;
+    showSuccessTranslated: jest.Mock;
+    showError: jest.Mock;
+    showErrorTranslated: jest.Mock;
+  };
 
   beforeEach(() => {
     changePasswordMock = jest.fn();
-    snackbar = { showSuccess: jest.fn(), showError: jest.fn() };
+    snackbar = {
+      showSuccess: jest.fn(),
+      showSuccessTranslated: jest.fn(),
+      showError: jest.fn(),
+      showErrorTranslated: jest.fn(),
+    };
 
     TestBed.configureTestingModule({
       providers: [
@@ -65,14 +75,14 @@ describe('AdminProfileFacade', () => {
       newPassword: 'NewPass456',
     });
 
-    expect(snackbar.showSuccess).toHaveBeenCalledWith(
+    expect(snackbar.showSuccessTranslated).toHaveBeenCalledWith(
       'pages.admin_profile.messages.change_password_success'
     );
     expect(facade.passwordChanged()).toBe(1);
     expect(facade.saving()).toBe(false);
   });
 
-  it('maps auth.current_password_invalid to its translation key', () => {
+  it('leaves the auth.current_password_invalid refusal to the interceptor toast', () => {
     changePasswordMock.mockReturnValue(
       throwError(() => ({
         result: { detail: 'auth.current_password_invalid' },
@@ -84,14 +94,12 @@ describe('AdminProfileFacade', () => {
       newPassword: 'NewPass456',
     });
 
-    expect(snackbar.showError).toHaveBeenCalledWith(
-      'api.auth.current_password_invalid'
-    );
+    expect(snackbar.showErrorTranslated).not.toHaveBeenCalled();
     expect(facade.passwordChanged()).toBe(0);
     expect(facade.saving()).toBe(false);
   });
 
-  it('maps auth.invalid_password_format to its translation key', () => {
+  it('leaves the auth.invalid_password_format refusal to the interceptor toast', () => {
     changePasswordMock.mockReturnValue(
       throwError(() => ({
         result: { detail: 'auth.invalid_password_format' },
@@ -103,12 +111,10 @@ describe('AdminProfileFacade', () => {
       newPassword: 'short',
     });
 
-    expect(snackbar.showError).toHaveBeenCalledWith(
-      'api.auth.invalid_password_format'
-    );
+    expect(snackbar.showErrorTranslated).not.toHaveBeenCalled();
   });
 
-  it('falls back to the generic change-password error for unknown codes', () => {
+  it('leaves an unknown refusal to the interceptor toast', () => {
     changePasswordMock.mockReturnValue(
       throwError(() => ({ result: { detail: 'something.unknown' } }))
     );
@@ -118,9 +124,7 @@ describe('AdminProfileFacade', () => {
       newPassword: 'NewPass456',
     });
 
-    expect(snackbar.showError).toHaveBeenCalledWith(
-      'api.auth.change_password_failed'
-    );
+    expect(snackbar.showErrorTranslated).not.toHaveBeenCalled();
   });
 
   it('ignores a submit while a change is already in flight', () => {

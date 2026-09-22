@@ -43,7 +43,12 @@ describe('InvoiceManagementComponent', () => {
         },
         {
           provide: SnackbarService,
-          useValue: { showSuccess: jest.fn(), showError: jest.fn() },
+          useValue: {
+            showSuccess: jest.fn(),
+            showSuccessTranslated: jest.fn(),
+            showError: jest.fn(),
+            showErrorTranslated: jest.fn(),
+          },
         },
       ],
     }).compileComponents();
@@ -63,7 +68,7 @@ describe('InvoiceManagementComponent', () => {
       .mockImplementation(() => undefined);
     const invoice = EmployeeInvoiceDto.fromJS({ id: 'invoice-1' });
 
-    component.retryPdf(invoice);
+    component['table']().actions[2].onClick(invoice);
 
     expect(retrySpy).toHaveBeenCalledWith(invoice);
   });

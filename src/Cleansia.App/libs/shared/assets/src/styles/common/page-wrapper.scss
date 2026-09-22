@@ -1,16 +1,33 @@
-// ===== PAGE WRAPPER WITH GLASSMORPHISM =====
-.page-wrapper {
-  /* Glass morphism effect */
+// The one page shell for the back-office apps: `.cleansia-page` is the outer gutter on a
+// page's root element, `.page-wrapper` is the card. Width comes from the card's modifier,
+// never from a page stylesheet: lists are 1400, detail and form pages carry `--narrow`.
+.cleansia-page {
   position: relative;
-  background: var(--cleansia-white);
-  border-radius: 8px;
-  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
-  border: 1px solid #e5e7eb;
+  padding: 1rem;
+  max-width: 100vw;
+  overflow-x: hidden;
+}
+
+.page-wrapper {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  width: 100%;
+  max-width: 1400px;
+  margin: 0 auto;
   padding: 2rem;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  background: var(--cleansia-white);
+  border: 1px solid var(--cleansia-border);
+  border-radius: var(--cleansia-radius-md);
+  box-shadow: var(--cleansia-shadow-1);
 
   @media (max-width: 768px) {
     padding: 1.5rem;
-    margin-bottom: 1rem;
+    gap: 1.25rem;
+  }
+
+  &--narrow {
+    max-width: 1200px;
   }
 }

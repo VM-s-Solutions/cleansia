@@ -4,50 +4,54 @@
   (visibleChange)="onVisibilityChanged($event)"
   [modal]="true"
   [closable]="true"
-  [style]="{ width: '560px' }"
   [draggable]="false"
   [resizable]="false"
+  styleClass="cleansia-dialog dialog-panel"
 >
-  <form [formGroup]="form" (ngSubmit)="submit()" class="cleansia-wind-down-dialog__form">
-    <p class="cleansia-wind-down-dialog__lede">
+  <form [formGroup]="form" (ngSubmit)="submit()" class="dialog-body">
+    <p class="dialog-lede">
       {{ 'pages.company_lifecycle.wind_down_dialog.lede' | translate: { name: companyName() } }}
     </p>
 
-    <div class="form-field">
-      <cleansia-calendar
-        formControlName="fromDate"
-        [label]="'pages.company_lifecycle.wind_down_dialog.field.from_date' | translate"
-        [floatVariant]="null"
-        [minDate]="minDate()"
-        [required]="true"
-        [appendTo]="'body'"
-      />
-      <small class="field-help">
+    <div class="form-grid">
+      <div class="form-field form-field--full">
+        <cleansia-calendar
+          formControlName="fromDate"
+          [label]="'pages.company_lifecycle.wind_down_dialog.field.from_date' | translate"
+          [minDate]="minDate()"
+          [required]="true"
+          [appendTo]="'body'"
+        />
+      </div>
+      <p class="form-hint">
         {{ 'pages.company_lifecycle.wind_down_dialog.field.from_date_help' | translate }}
-      </small>
+      </p>
     </div>
 
-    <p class="cleansia-wind-down-dialog__consequences-title">
-      {{ 'pages.company_lifecycle.wind_down_dialog.consequences.title' | translate }}
-    </p>
-    <ol class="cleansia-wind-down-dialog__consequences">
-      @for (key of consequenceKeys; track key) {
-      <li>{{ key | translate }}</li>
-      }
-    </ol>
+    <div class="dialog-summary">
+      <p class="dialog-summary__title">
+        {{ 'pages.company_lifecycle.wind_down_dialog.consequences.title' | translate }}
+      </p>
+      <ol class="dialog-summary__list">
+        @for (key of consequenceKeys; track key) {
+        <li>{{ key | translate }}</li>
+        }
+      </ol>
+    </div>
   </form>
 
   <ng-template pTemplate="footer">
     <cleansia-button
       [label]="'global.actions.cancel' | translate"
-      [outlined]="true"
       severity="secondary"
+      [outlined]="true"
       (onClick)="cancel()"
     />
     <cleansia-button
       [label]="'pages.company_lifecycle.wind_down_dialog.submit' | translate"
       icon="pi pi-calendar-times"
-      severity="warn"
+      severity="danger"
+      [outlined]="true"
       [disabled]="submitting()"
       [loading]="submitting()"
       (onClick)="submit()"

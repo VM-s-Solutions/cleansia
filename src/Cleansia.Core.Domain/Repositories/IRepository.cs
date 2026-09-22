@@ -16,10 +16,6 @@ public interface IRepository<TEntity, in TKey> : IUnitOfWork
 
     IQueryable<TEntity> GetByIds(IEnumerable<TKey> ids);
 
-    IQueryable<TEntity> GetPaged(int offset, int limit);
-
-    IQueryable<TEntity> GetPaged(int offset, int limit, Expression<Func<TEntity, bool>> filter);
-
     IQueryable<TEntity> GetPagedSort<TSort>(int offset, int limit, Expression<Func<TEntity, bool>> filter, SortDefinition sort)
         where TSort : BaseSort<TEntity>;
 
@@ -43,8 +39,6 @@ public interface IRepository<TEntity, in TKey> : IUnitOfWork
     void RemoveRange(IEnumerable<TEntity> entities);
 
     void Deactivate(TEntity entity);
-
-    void DeactivateRange(IEnumerable<TEntity> entities);
 
     IQueryable<TEntity> GetQueryable();
 

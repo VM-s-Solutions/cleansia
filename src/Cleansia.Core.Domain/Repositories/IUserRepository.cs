@@ -22,8 +22,6 @@ public interface IUserRepository : IRepository<User, string>
     /// </summary>
     Task<User?> GetByIdNoTrackingAsync(string id, CancellationToken cancellationToken = default);
     Task<User?> GetByPhoneNumberAsync(string phoneNumber, CancellationToken cancellationToken = default);
-    Task<User?> GetByEmailOrPhoneNumberAsync(string email, string phoneNumber, CancellationToken cancellationToken = default);
-    Task<bool> ExistsWithEmailAsync(string email, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Anonymous-path variant of <see cref="GetByEmailAsync"/> for login / lockout / password-reset and
@@ -36,8 +34,8 @@ public interface IUserRepository : IRepository<User, string>
     Task<User?> GetByEmailIgnoringTenantAsync(string email, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Anonymous-path variant of <see cref="ExistsWithEmailAsync"/>; same contract and constraints
-    /// as <see cref="GetByEmailIgnoringTenantAsync"/>.
+    /// Anonymous-path email existence check; same contract and constraints as
+    /// <see cref="GetByEmailIgnoringTenantAsync"/>.
     /// </summary>
     Task<bool> ExistsWithEmailIgnoringTenantAsync(string email, CancellationToken cancellationToken = default);
 
@@ -65,9 +63,6 @@ public interface IUserRepository : IRepository<User, string>
     /// pin (ADR-0051 bypass-and-re-pin, ADR-0061 D4).
     /// </summary>
     Task<User?> GetByConfirmationCodeIgnoringTenantAsync(string token, CancellationToken cancellationToken = default);
-    IQueryable<User> GetUnconfirmedUsersOlderThan(DateTime cutoffDate);
-    Task<bool> ExistsWithPhoneNumberAsync(string phoneNumber, CancellationToken cancellationToken);
-    IQueryable<User> GetConfirmedUsersWithEmails(IEnumerable<string> emails);
 
     /// <summary>
     /// Cross-tenant lookup by user id. Use only from system-level triggers

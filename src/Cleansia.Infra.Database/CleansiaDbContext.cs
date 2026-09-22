@@ -344,9 +344,6 @@ public class CleansiaDbContext : DbContext, IUnitOfWork
     public virtual DbSet<EmployeePayoutDetails> EmployeePayoutDetails { get; set; }
     public virtual DbSet<User> Users { get; set; }
     public virtual DbSet<RefreshToken> RefreshTokens { get; set; }
-    public virtual DbSet<Cart> Carts { get; set; }
-    public virtual DbSet<CartServiceItem> CartServiceItems { get; set; }
-    public virtual DbSet<CartPackageItem> CartPackageItems { get; set; }
     public virtual DbSet<Service> Services { get; set; }
     public virtual DbSet<ServiceCategory> ServiceCategories { get; set; }
     public virtual DbSet<Extra> Extras { get; set; }
@@ -367,7 +364,6 @@ public class CleansiaDbContext : DbContext, IUnitOfWork
     public virtual DbSet<OrderNote> OrderNotes { get; set; }
     public virtual DbSet<OrderIssue> OrderIssues { get; set; }
     public virtual DbSet<OrderReview> OrderReviews { get; set; }
-    public virtual DbSet<EmailTranslation> EmailTranslations { get; set; }
     public virtual DbSet<EmployeePayConfig> EmployeePayConfigs { get; set; }
     public virtual DbSet<OrderEmployeePay> OrderEmployeePays { get; set; }
     public virtual DbSet<PayPeriod> PayPeriods { get; set; }

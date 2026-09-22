@@ -42,12 +42,6 @@
       "@cleansia-partner/gdpr": [
         "libs/cleansia-partner-features/gdpr/src/index.ts"
       ],
-      "@cleansia.app/pay-periods": [
-        "libs/cleansia-admin-features/pay-periods/src/index.ts"
-      ],
-      "@cleansia.app/template-management": [
-        "libs/cleansia-admin-features/template-management/src/index.ts"
-      ],
       "@cleansia/admin-features/admin-login": [
         "libs/cleansia-admin-features/admin-login/src/index.ts"
       ],
@@ -110,6 +104,9 @@
       ],
       "@cleansia/admin-features/pay-config-management": [
         "libs/cleansia-admin-features/pay-config-management/src/index.ts"
+      ],
+      "@cleansia/admin-features/pay-periods": [
+        "libs/cleansia-admin-features/pay-periods/src/index.ts"
       ],
       "@cleansia/admin-features/template-management": [
         "libs/cleansia-admin-features/template-management/src/index.ts"

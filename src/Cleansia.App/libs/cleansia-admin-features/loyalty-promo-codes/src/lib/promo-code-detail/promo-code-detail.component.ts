@@ -3,7 +3,6 @@ import {
   AfterViewInit,
   ChangeDetectionStrategy,
   Component,
-  computed,
   inject,
   OnDestroy,
   OnInit,
@@ -18,6 +17,7 @@ import {
   CleansiaButtonComponent,
   CleansiaLoaderComponent,
   CleansiaSectionComponent,
+  CleansiaStatusBadgeComponent,
   CleansiaTableComponent,
   CleansiaTitleComponent,
   PaginationState,
@@ -25,17 +25,17 @@ import {
 } from '@cleansia/components';
 import { CleansiaPermissionDirective } from '@cleansia/directives';
 import { Policy } from '@cleansia/services';
+import { formatDate } from '@cleansia/utils';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
-import { ConfirmationService } from 'primeng/api';
-import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { Subject, takeUntil } from 'rxjs';
 import {
   formatDiscount,
   formatGlobalLimit,
-  formatStatus,
+  formatMinimumOrder,
   formatType,
   formatValidity,
   getPromoCodeStatus,
+  PromoCodeStatusBadge,
 } from '../promo-codes-list/promo-codes-list.models';
 import { PromoCodeDetailFacade } from './promo-code-detail.facade';
 
@@ -49,13 +49,13 @@ import { PromoCodeDetailFacade } from './promo-code-detail.facade';
     CleansiaButtonComponent,
     CleansiaLoaderComponent,
     CleansiaSectionComponent,
+    CleansiaStatusBadgeComponent,
     CleansiaTableComponent,
     CleansiaTitleComponent,
-    ConfirmDialogModule,
     CleansiaPermissionDirective,
   ],
   templateUrl: './promo-code-detail.component.html',
-  providers: [PromoCodeDetailFacade, ConfirmationService],
+  providers: [PromoCodeDetailFacade],
 })
 export class PromoCodeDetailComponent
   implements OnInit, AfterViewInit, OnDestroy
@@ -63,7 +63,6 @@ export class PromoCodeDetailComponent
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly translate = inject(TranslateService);
-  private readonly confirmationService = inject(ConfirmationService);
   protected readonly facade = inject(PromoCodeDetailFacade);
   protected readonly Policy = Policy;
 
@@ -73,13 +72,6 @@ export class PromoCodeDetailComponent
   private promoCodeId: string | null = null;
 
   redemptionColumns!: TableColumn<PromoCodeRedemptionListItem>[];
-
-  readonly canDeactivate = computed(() => {
-    const pc = this.facade.promoCode();
-    if (!pc) return false;
-    // Reuse list-level helper by mapping the detail object onto list-shape fields.
-    return getPromoCodeStatus(pc as unknown as PromoCodeListItem) === 'active';
-  });
 
   ngOnInit(): void {
     const id = this.route.snapshot.paramMap.get('id');
@@ -127,6 +119,7 @@ export class PromoCodeDetailComponent
         field: 'appliedDiscount',
         header: t.instant('pages.promo_codes.detail.column.applied'),
         getValue: (row) => `${row.appliedDiscount}`,
+        numeric: true,
         width: '20%',
       },
       {
@@ -134,20 +127,14 @@ export class PromoCodeDetailComponent
         field: 'redeemedOn',
         header: t.instant('pages.promo_codes.detail.column.redeemed_on'),
         getValue: (row) => this.formatDate(row.redeemedOn),
+        numeric: true,
         width: '25%',
       },
     ];
   }
 
   formatDate(d?: Date): string {
-    if (!d) return '—';
-    return new Intl.DateTimeFormat(this.translate.currentLang ?? 'en', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    }).format(d);
+    return formatDate(d, this.translate.currentLang, 'dateTime') || '—';
   }
 
   formatType(): string {
@@ -159,13 +146,18 @@ export class PromoCodeDetailComponent
   formatDiscount(): string {
     const pc = this.facade.promoCode();
     if (!pc) return '';
-    return formatDiscount(pc as unknown as PromoCodeListItem);
+    return formatDiscount(pc as unknown as PromoCodeListItem, this.translate.currentLang);
   }
 
-  formatStatus(): string {
+  formatMinimumOrder(): string {
     const pc = this.facade.promoCode();
     if (!pc) return '';
-    return formatStatus(pc as unknown as PromoCodeListItem, this.translate);
+    return formatMinimumOrder(pc as unknown as PromoCodeListItem, this.translate.currentLang);
+  }
+
+  promoStatus(): PromoCodeStatusBadge | null {
+    const pc = this.facade.promoCode();
+    return pc ? getPromoCodeStatus(pc as unknown as PromoCodeListItem) : null;
   }
 
   formatValidity(): string {
@@ -200,21 +192,6 @@ export class PromoCodeDetailComponent
   }
 
   confirmDeactivate(): void {
-    this.confirmationService.confirm({
-      header: this.translate.instant(
-        'pages.promo_codes.detail.deactivate_confirm_title'
-      ),
-      message: this.translate.instant(
-        'pages.promo_codes.detail.deactivate_confirm_body'
-      ),
-      acceptLabel: this.translate.instant(
-        'pages.promo_codes.detail.deactivate_confirm_yes'
-      ),
-      rejectLabel: this.translate.instant(
-        'pages.promo_codes.detail.deactivate_confirm_cancel'
-      ),
-      icon: 'pi pi-exclamation-triangle',
-      accept: () => this.facade.deactivate(),
-    });
+    this.facade.deactivate();
   }
 }

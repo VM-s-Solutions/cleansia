@@ -45,7 +45,12 @@ describe('DisputeDetailComponent', () => {
         { provide: AdminDisputeClient, useValue: disputeClient },
         {
           provide: SnackbarService,
-          useValue: { showSuccess: jest.fn(), showError: jest.fn() },
+          useValue: {
+            showSuccess: jest.fn(),
+            showSuccessTranslated: jest.fn(),
+            showError: jest.fn(),
+            showErrorTranslated: jest.fn(),
+          },
         },
         {
           provide: ActivatedRoute,
@@ -91,7 +96,7 @@ describe('DisputeDetailComponent', () => {
     const { facade, el } = setup();
 
     expect(facade.dispute()?.id).toBe('dispute-1');
-    expect(el.querySelector('.cleansia-dispute-detail__grid')).toBeTruthy();
+    expect(el.querySelector('.detail-grid')).toBeTruthy();
   });
 
   it('renders the error state when the load fails', () => {
@@ -99,6 +104,6 @@ describe('DisputeDetailComponent', () => {
     const { facade, el } = setup();
 
     expect(facade.hasError()).toBe(true);
-    expect(el.querySelector('.cleansia-dispute-detail__state')).toBeTruthy();
+    expect(el.querySelector('.not-found-state')).toBeTruthy();
   });
 });

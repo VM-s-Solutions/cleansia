@@ -24,7 +24,7 @@ namespace Cleansia.Tests.Features.Auth;
 ///     resolved/provisioned is the token's email;
 ///   - <see cref="User.CreateWithApple"/> binds <c>claims.Subject</c> into <c>User.AppleId</c>;
 ///   - a forged/unverifiable token (verifier returns null) fails with
-///     <see cref="BusinessErrorMessage.InvalidAppleUserToken"/> and creates no <see cref="User"/>/<see cref="Cart"/>;
+///     <see cref="BusinessErrorMessage.InvalidAppleUserToken"/> and creates no <see cref="User"/>;
 ///   - an existing account whose verified email collides but whose AuthenticationType is NOT Apple
 ///     (covers BOTH Internal AND Google) is rejected — closing the verified-email-collision takeover for
 ///     Apple exactly as Google's hardening did — and the rejection message names the provider that
@@ -47,7 +47,6 @@ public class AppleAuthHandlerTests
     private const string HostAudience = "customer";
 
     private readonly Mock<ITokenService> _tokenService = new();
-    private readonly Mock<ICartRepository> _cartRepository = new();
     private readonly Mock<IUserRepository> _userRepository = new();
     private readonly Mock<IAppleTokenVerifier> _verifier = new();
     private readonly IHostAudienceProvider _hostAudience = new HostAudienceProvider(HostAudience);
@@ -69,7 +68,6 @@ public class AppleAuthHandlerTests
             typeof(AppleAuth.Handler),
             _verifier.Object,
             _tokenService.Object,
-            _cartRepository.Object,
             _userRepository.Object,
             _hostAudience,
             new Mock<IConsentService>().Object,
@@ -128,12 +126,11 @@ public class AppleAuthHandlerTests
             u.Email == verifiedEmail &&
             u.AppleId == verifiedSubject &&
             u.AuthenticationType == AuthenticationType.Apple)), Times.Once);
-        _cartRepository.Verify(r => r.Add(It.IsAny<Cart>()), Times.Once);
         _tokenService.Verify(t => t.GenerateTokenAsync(It.IsAny<User>(), true, HostAudience, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     // Verifier returns null (forged/unverifiable token, audience/issuer/nonce mismatch resolved to null
-    // inside the verifier) → InvalidAppleUserToken, no JWT, no User/Cart created.
+    // inside the verifier) → InvalidAppleUserToken, no JWT, no User created.
     [Fact]
     public async Task Forged_Token_Is_Rejected_With_InvalidAppleUserToken_And_Creates_Nothing()
     {
@@ -149,11 +146,10 @@ public class AppleAuthHandlerTests
 
         _userRepository.Verify(r => r.GetByEmailIgnoringTenantAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
         _userRepository.Verify(r => r.Add(It.IsAny<User>()), Times.Never);
-        _cartRepository.Verify(r => r.Add(It.IsAny<Cart>()), Times.Never);
         _tokenService.Verify(t => t.GenerateTokenAsync(It.IsAny<User>(), It.IsAny<bool>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
-    // Legitimate flow: known active Apple user signs in → JwtTokenResponse, no new user/cart.
+    // Legitimate flow: known active Apple user signs in → JwtTokenResponse, no new user.
     [Fact]
     public async Task Known_Active_Apple_User_Gets_Token_Without_Reprovisioning()
     {
@@ -173,13 +169,12 @@ public class AppleAuthHandlerTests
 
         Assert.True(result.IsSuccess);
         _userRepository.Verify(r => r.Add(It.IsAny<User>()), Times.Never);
-        _cartRepository.Verify(r => r.Add(It.IsAny<Cart>()), Times.Never);
         _tokenService.Verify(t => t.GenerateTokenAsync(existing, true, HostAudience, It.IsAny<CancellationToken>()), Times.Once);
     }
 
-    // Legitimate flow: unknown verified email → provision User + Cart from verified claims, token issued.
+    // Legitimate flow: unknown verified email → provision the User from verified claims, token issued.
     [Fact]
-    public async Task Unknown_Verified_Email_Provisions_User_And_Cart_From_Claims()
+    public async Task Unknown_Verified_Email_Provisions_User_From_Claims()
     {
         const string verifiedEmail = "brand-new@example.com";
         const string verifiedSubject = "apple-sub-new";
@@ -197,7 +192,6 @@ public class AppleAuthHandlerTests
             u.Email == verifiedEmail &&
             u.AppleId == verifiedSubject &&
             u.AuthenticationType == AuthenticationType.Apple)), Times.Once);
-        _cartRepository.Verify(r => r.Add(It.IsAny<Cart>()), Times.Once);
         _tokenService.Verify(t => t.GenerateTokenAsync(It.IsAny<User>(), true, HostAudience, It.IsAny<CancellationToken>()), Times.Once);
     }
 
@@ -205,7 +199,7 @@ public class AppleAuthHandlerTests
     // An Apple login MUST NOT bind into an existing account whose AuthenticationType is not Apple. This
     // covers BOTH the Internal (password) and the Google collision.
     // Two independent properties, and only the second one is new: the account is NEVER bound (no token,
-    // no user, no cart — the S1 property, unchanged), and the message names the provider that account
+    // no user — the S1 property, unchanged), and the message names the provider that account
     // ACTUALLY uses instead of always saying "use your email and password".
     [Theory]
     [InlineData(AuthenticationType.Internal, BusinessErrorMessage.InternalAuthTypeError)]
@@ -231,7 +225,6 @@ public class AppleAuthHandlerTests
         Assert.Equal(expectedMessage, result.Error!.Message);
         _tokenService.Verify(t => t.GenerateTokenAsync(It.IsAny<User>(), It.IsAny<bool>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
         _userRepository.Verify(r => r.Add(It.IsAny<User>()), Times.Never);
-        _cartRepository.Verify(r => r.Add(It.IsAny<Cart>()), Times.Never);
     }
 
     // Stricter than Google today: a verified token whose email_verified is false provisions NOTHING —
@@ -251,7 +244,6 @@ public class AppleAuthHandlerTests
         Assert.True(result.IsFailure);
         Assert.Equal(BusinessErrorMessage.InvalidAppleUserToken, result.Error!.Message);
         _userRepository.Verify(r => r.Add(It.IsAny<User>()), Times.Never);
-        _cartRepository.Verify(r => r.Add(It.IsAny<Cart>()), Times.Never);
         _tokenService.Verify(t => t.GenerateTokenAsync(It.IsAny<User>(), It.IsAny<bool>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
 
         var warning = Assert.Single(_logEntries, e => e.Level == LogLevel.Warning);
@@ -282,7 +274,6 @@ public class AppleAuthHandlerTests
         Assert.True(result.IsSuccess);
         _userRepository.Verify(r => r.GetByEmailIgnoringTenantAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
         _userRepository.Verify(r => r.Add(It.IsAny<User>()), Times.Never);
-        _cartRepository.Verify(r => r.Add(It.IsAny<Cart>()), Times.Never);
         _tokenService.Verify(t => t.GenerateTokenAsync(existing, true, HostAudience, It.IsAny<CancellationToken>()), Times.Once);
     }
 
@@ -383,7 +374,6 @@ public class AppleAuthHandlerTests
         Assert.Equal(nameof(AppleAuth.Command.IdentityToken), result.Error!.Code);
         _userRepository.Verify(r => r.GetByEmailIgnoringTenantAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
         _userRepository.Verify(r => r.Add(It.IsAny<User>()), Times.Never);
-        _cartRepository.Verify(r => r.Add(It.IsAny<Cart>()), Times.Never);
         _tokenService.Verify(t => t.GenerateTokenAsync(It.IsAny<User>(), It.IsAny<bool>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
         Assert.Single(_logEntries, e => e.Level == LogLevel.Warning);
     }
@@ -414,7 +404,6 @@ public class AppleAuthHandlerTests
         Assert.Equal("Janet", _provisionedUser.FirstName);
         Assert.Equal("Doe", _provisionedUser.LastName);
         Assert.Equal(AuthenticationType.Apple, _provisionedUser.AuthenticationType);
-        _cartRepository.Verify(r => r.Add(It.IsAny<Cart>()), Times.Once);
     }
 
     // A later Apple sign-in that provisions (e.g. the account was deleted and recreated) carries no name
@@ -865,7 +854,6 @@ public class AppleAuthHandlerTests
         _userRepository.Verify(r => r.GetByEmailIgnoringTenantAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
         _tokenService.Verify(t => t.GenerateTokenAsync(It.IsAny<User>(), It.IsAny<bool>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
         _userRepository.Verify(r => r.Add(It.IsAny<User>()), Times.Never);
-        _cartRepository.Verify(r => r.Add(It.IsAny<Cart>()), Times.Never);
     }
 
     // The other half of that gate: it narrows the fallback, it does not remove it. The first sign-in that
@@ -958,7 +946,6 @@ public class AppleAuthHandlerTests
         Assert.Equal(BusinessErrorMessage.SocialAccountNotFound, result.Error!.Message);
         Assert.Equal(nameof(AppleAuth.Command.TermsAccepted), result.Error!.Code);
         _userRepository.Verify(r => r.Add(It.IsAny<User>()), Times.Never);
-        _cartRepository.Verify(r => r.Add(It.IsAny<Cart>()), Times.Never);
         _tokenService.Verify(t => t.GenerateTokenAsync(It.IsAny<User>(), It.IsAny<bool>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
@@ -982,7 +969,6 @@ public class AppleAuthHandlerTests
 
         Assert.True(result.IsSuccess);
         _userRepository.Verify(r => r.Add(It.Is<User>(u => u.Email == verifiedEmail)), Times.Once);
-        _cartRepository.Verify(r => r.Add(It.IsAny<Cart>()), Times.Once);
     }
 
     private sealed class CapturingLogger<T>(List<(LogLevel Level, string Message)> entries) : ILogger<T>

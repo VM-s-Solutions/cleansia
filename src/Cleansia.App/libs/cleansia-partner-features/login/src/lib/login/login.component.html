@@ -48,9 +48,8 @@
       <div class="cleansia-login__user-actions">
         <cleansia-button
           [buttonType]="'submit'"
-          [style]="'raised-button'"
-          [title]="'global.actions.login' | translate"
-          (clickFn)="facade.login()"
+          [label]="'global.actions.login' | translate"
+          (onClick)="facade.login()"
           [loading]="facade.loading() ?? false"
         />
         <div>

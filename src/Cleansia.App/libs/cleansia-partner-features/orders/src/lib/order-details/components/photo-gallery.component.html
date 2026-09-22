@@ -88,20 +88,20 @@
       <div class="photo-gallery__actions">
         @if (canDelete() && !currentPhoto().isStaged) {
         <cleansia-button
-          [buttonType]="'button'"
-          [style]="'raised-button'"
-          [title]="'global.actions.delete' | translate"
+          [label]="'global.actions.delete' | translate"
           [icon]="'pi pi-trash'"
+          [severity]="'danger'"
+          [outlined]="true"
           [disabled]="deleting()"
-          (clickFn)="onDeleteClick(); $event.stopPropagation()"
+          (onClick)="onDeleteClick(); $event.stopPropagation()"
         />
         } @if (currentPhoto().isStaged) {
         <cleansia-button
-          [buttonType]="'button'"
-          [style]="'raised-button'"
-          [title]="'global.actions.remove' | translate"
+          [label]="'global.actions.remove' | translate"
           [icon]="'pi pi-times'"
-          (clickFn)="onRemoveStagedClick(); $event.stopPropagation()"
+          [severity]="'danger'"
+          [outlined]="true"
+          (onClick)="onRemoveStagedClick(); $event.stopPropagation()"
         />
         }
       </div>

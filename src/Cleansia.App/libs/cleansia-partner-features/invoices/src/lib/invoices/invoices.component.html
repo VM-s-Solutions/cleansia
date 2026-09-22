@@ -1,28 +1,103 @@
-<div class="cleansia-invoices">
+<div class="cleansia-invoices cleansia-page">
   <div class="cleansia-invoices__container page-wrapper">
-    <div class="cleansia-invoices__header">
-      <div class="header-content">
-        <div class="header-text">
-          <cleansia-title [title]="'pages.invoices.title' | translate" />
-          <p class="cleansia-invoices__description">
-            {{ 'pages.invoices.description' | translate }}
-          </p>
-        </div>
-        <!-- Help Button in Header (shows when help is dismissed) -->
+    <div class="cleansia-page-header">
+      <div class="cleansia-page-header__heading">
+        <cleansia-title [title]="'pages.invoices.title' | translate" [level]="1" />
+        <p class="cleansia-page-header__description">
+          {{ 'pages.invoices.description' | translate }}
+        </p>
+      </div>
+      <div class="cleansia-page-header__actions">
         @if (isInvoicesHelpDismissed()) {
-        <button
-          type="button"
-          class="help-restore-icon-btn"
-          (click)="restoreHelp()"
-          [title]="'help.show_help' | translate"
-        >
-          <i class="pi pi-question-circle"></i>
-        </button>
+        <cleansia-button
+          [icon]="'pi pi-question-circle'"
+          [text]="true"
+          [severity]="'secondary'"
+          [ariaLabel]="'help.show_help' | translate"
+          [tooltip]="'help.show_help' | translate"
+          (onClick)="restoreHelp()"
+        />
         }
+        <cleansia-filter-drawer [state]="facade.filters">
+          <form [formGroup]="facade.filterForm" class="filter-form">
+            <div class="filter-section">
+              <h3 class="filter-section-title">
+                {{ 'pages.invoices.filters.search_criteria' | translate }}
+              </h3>
+              <div class="filter-fields">
+                <cleansia-text-input
+                  [label]="'pages.invoices.filters.invoice_number' | translate"
+                  formControlName="invoiceNumber"
+                  [showErrors]="false"
+                />
+              </div>
+            </div>
+
+            <div class="filter-section">
+              <h3 class="filter-section-title">
+                {{ 'pages.invoices.filters.date_range' | translate }}
+              </h3>
+              <div class="filter-fields">
+                <cleansia-calendar
+                  [label]="'pages.invoices.filters.date_from' | translate"
+                  formControlName="dateFrom"
+                  [showErrors]="false"
+                  [showIcon]="true"
+                  iconDisplay="input"
+                />
+                <cleansia-calendar
+                  [label]="'pages.invoices.filters.date_to' | translate"
+                  formControlName="dateTo"
+                  [showErrors]="false"
+                  [showIcon]="true"
+                  iconDisplay="input"
+                />
+              </div>
+            </div>
+
+            <div class="filter-section">
+              <h3 class="filter-section-title">
+                {{ 'pages.invoices.filters.amount_range' | translate }}
+              </h3>
+              <div class="filter-fields">
+                <cleansia-text-input
+                  [label]="'pages.invoices.filters.min_amount' | translate"
+                  formControlName="minAmount"
+                  dataType="number"
+                  [showErrors]="false"
+                />
+                <cleansia-text-input
+                  [label]="'pages.invoices.filters.max_amount' | translate"
+                  formControlName="maxAmount"
+                  dataType="number"
+                  [showErrors]="false"
+                />
+              </div>
+            </div>
+
+            <div class="filter-section">
+              <h3 class="filter-section-title">
+                {{ 'pages.invoices.filters.invoice_status' | translate }}
+              </h3>
+              <div class="filter-checkbox-group">
+                @for (status of facade.invoiceStatusOptions(); track status.value) {
+                <cleansia-checkbox
+                  [id]="'invoice-status-' + status.value"
+                  [label]="status.label"
+                  [formControlName]="'status_' + status.value"
+                  (valueChanges)="facade.setInvoiceStatus(status.value, $event)"
+                  [showErrors]="false"
+                />
+                }
+              </div>
+            </div>
+          </form>
+        </cleansia-filter-drawer>
       </div>
     </div>
 
-    <!-- Help Card - How Invoices Work -->
+    <cleansia-filter-chips [state]="facade.filters" />
+
     <cleansia-help-card
       #invoicesHelpCard
       [titleKey]="'help.invoices.title'"
@@ -37,191 +112,21 @@
       (dismissedChange)="onHelpDismissedChange()"
     />
 
-    <!-- Filter Header - Chips left, Button right -->
-    <div class="filter-header">
-      <div class="filter-chips-inline">
-        @for (chip of activeFilterChips(); track chip.key) {
-        <div class="filter-chip">
-          <span class="filter-chip-label">{{ chip.label }}:</span>
-          <span class="filter-chip-value">{{ chip.value }}</span>
-          <button
-            class="filter-chip-remove"
-            (click)="removeFilterChip(chip.key)"
-          >
-            <i class="pi pi-times"></i>
-          </button>
-        </div>
-        } @if (hasActiveFilters()) {
-        <button class="filter-clear-all-btn" (click)="clearAllFilters()">
-          {{ 'pages.invoices.filters.clear_all' | translate }}
-        </button>
-        }
-      </div>
-      <div class="header-actions">
-        <div class="filter-actions">
-          <cleansia-button
-            [label]="'pages.invoices.filters.title' | translate"
-            icon="pi pi-filter"
-            [severity]="hasActiveFilters() ? 'primary' : 'secondary'"
-            [outlined]="!hasActiveFilters()"
-            (onClick)="openFilterDrawer()"
-          />
-          @if (hasActiveFilters()) {
-          <span class="filter-count-badge">{{ activeFilterCount() }}</span>
-          }
-        </div>
-      </div>
-    </div>
-
-    <!-- Filter Drawer Backdrop -->
-    @if (isFilterDrawerOpen()) {
-    <div
-      class="filter-drawer-backdrop"
-      role="button"
-      tabindex="0"
-      (click)="closeFilterDrawer()"
-      (keydown.escape)="closeFilterDrawer()"
-      [attr.aria-label]="'global.close' | translate"
-    ></div>
-    }
-
-    <!-- Filter Drawer -->
-    <div
-      class="filter-drawer"
-      [class.open]="isFilterDrawerOpen()"
-      role="dialog"
-      aria-modal="true"
-      [attr.aria-label]="'pages.invoices.filters.title' | translate"
-    >
-      <!-- Drawer Header -->
-      <div class="filter-drawer-header">
-        <div class="filter-drawer-title">
-          <i class="pi pi-filter"></i>
-          <span>{{ 'pages.invoices.filters.title' | translate }}</span>
-        </div>
-        <button
-          type="button"
-          class="filter-drawer-close"
-          (click)="closeFilterDrawer()"
-          [attr.aria-label]="'global.close' | translate"
-        >
-          <i class="pi pi-times"></i>
-        </button>
-      </div>
-
-      <!-- Drawer Body -->
-      <form [formGroup]="searchForm" class="filter-form">
-        <!-- Search Criteria Section -->
-        <div class="filter-section">
-          <h3 class="filter-section-title">
-            {{ 'pages.invoices.filters.search_criteria' | translate }}
-          </h3>
-          <div class="filter-fields">
-            <cleansia-text-input
-              [label]="'pages.invoices.filters.invoice_number' | translate"
-              formControlName="invoiceNumber"
-              [showErrors]="false"
-              floatVariant="on"
-            />
-          </div>
-        </div>
-
-        <!-- Date Range Section -->
-        <div class="filter-section">
-          <h3 class="filter-section-title">
-            {{ 'pages.invoices.filters.date_range' | translate }}
-          </h3>
-          <div class="filter-fields">
-            <cleansia-calendar
-              [label]="'pages.invoices.filters.date_from' | translate"
-              formControlName="dateFrom"
-              [showErrors]="false"
-              floatVariant="on"
-              [showIcon]="true"
-              iconDisplay="input"
-            />
-            <cleansia-calendar
-              [label]="'pages.invoices.filters.date_to' | translate"
-              formControlName="dateTo"
-              [showErrors]="false"
-              floatVariant="on"
-              [showIcon]="true"
-              iconDisplay="input"
-            />
-          </div>
-        </div>
-
-        <!-- Amount Range Section -->
-        <div class="filter-section">
-          <h3 class="filter-section-title">
-            {{ 'pages.invoices.filters.amount_range' | translate }}
-          </h3>
-          <div class="filter-fields">
-            <cleansia-text-input
-              [label]="'pages.invoices.filters.min_amount' | translate"
-              formControlName="minAmount"
-              dataType="number"
-              [showErrors]="false"
-              floatVariant="on"
-            />
-            <cleansia-text-input
-              [label]="'pages.invoices.filters.max_amount' | translate"
-              formControlName="maxAmount"
-              dataType="number"
-              [showErrors]="false"
-              floatVariant="on"
-            />
-          </div>
-        </div>
-
-        <!-- Invoice Status Section -->
-        <div class="filter-section">
-          <h3 class="filter-section-title">
-            {{ 'pages.invoices.filters.invoice_status' | translate }}
-          </h3>
-          <div class="filter-checkbox-group">
-            @for (status of invoiceStatusOptions; track $index) {
-            <cleansia-checkbox
-              [id]="'invoice-status-' + status.value"
-              [label]="status.label"
-              [formControlName]="'status_' + status.value"
-              (valueChanges)="onInvoiceStatusChange($event, status.value)"
-              [showErrors]="false"
-            />
-            }
-          </div>
-        </div>
-      </form>
-
-      <!-- Drawer Actions -->
-      <div class="filter-actions">
-        <cleansia-button
-          [label]="'pages.invoices.filters.reset' | translate"
-          [icon]="'pi pi-refresh'"
-          [buttonSize]="'medium'"
-          [severity]="'secondary'"
-          [outlined]="true"
-          (onClick)="resetFilters()"
-        />
-      </div>
-    </div>
-
     <cleansia-section>
       <cleansia-table
         [data]="facade.invoices()"
-        [columns]="invoicesColumns"
-        [actions]="invoicesActions"
+        [columns]="table().columns"
+        [actions]="table().actions"
         [clickableRows]="true"
         [config]="{
           paginator: true,
-          rows: 10,
           lazy: true,
           totalRecords: facade.totalRecords(),
           emptyMessage: 'pages.invoices.no_invoices'
         }"
         [loading]="facade.loading()"
-        (pageChange)="onPageChange($event)"
-        (sortChange)="onSortChange($event)"
+        (pageChange)="facade.onPageChange($event)"
+        (sortChange)="facade.onSortChange($event)"
         (rowClick)="viewInvoiceDetails($event)"
       >
       </cleansia-table>
@@ -230,7 +135,7 @@
 </div>
 
 <ng-template #statusTemplate let-item>
-  <span [class]="getStatusClass(item)">
-    {{ getStatusLabelKey(item) | translate }}
-  </span>
+  <div class="status-cell">
+    <cleansia-status-badge kind="invoice" [value]="item.status" />
+  </div>
 </ng-template>

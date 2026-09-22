@@ -7,7 +7,7 @@ import {
   SendTestEmailByTypeCommand,
   UpdateEmailTemplateCommand,
 } from '@cleansia/admin-services';
-import { SnackbarService } from '@cleansia/services';
+import { DialogService, SnackbarService } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
 import { of, throwError } from 'rxjs';
 import { EmailTypeDetailFacade } from './email-type-detail.facade';
@@ -19,7 +19,13 @@ describe('EmailTypeDetailFacade', () => {
   let createMock: jest.Mock;
   let deleteMock: jest.Mock;
   let sendTestByTypeMock: jest.Mock;
-  let snackbar: { showSuccess: jest.Mock; showError: jest.Mock };
+  let confirmMock: jest.Mock;
+  let snackbar: {
+    showSuccess: jest.Mock;
+    showSuccessTranslated: jest.Mock;
+    showError: jest.Mock;
+    showErrorTranslated: jest.Mock;
+  };
 
   beforeEach(() => {
     TestBed.resetTestingModule();
@@ -28,7 +34,13 @@ describe('EmailTypeDetailFacade', () => {
     createMock = jest.fn().mockReturnValue(of({ id: 'tpl-1' }));
     deleteMock = jest.fn().mockReturnValue(of({ id: 'tpl-1' }));
     sendTestByTypeMock = jest.fn().mockReturnValue(of({ id: 'tpl-1' }));
-    snackbar = { showSuccess: jest.fn(), showError: jest.fn() };
+    confirmMock = jest.fn().mockReturnValue(of(true));
+    snackbar = {
+      showSuccess: jest.fn(),
+      showSuccessTranslated: jest.fn(),
+      showError: jest.fn(),
+      showErrorTranslated: jest.fn(),
+    };
 
     TestBed.configureTestingModule({
       providers: [
@@ -46,6 +58,7 @@ describe('EmailTypeDetailFacade', () => {
           },
         },
         { provide: SnackbarService, useValue: snackbar },
+        { provide: DialogService, useValue: { confirmTranslated: confirmMock } },
         { provide: TranslateService, useValue: { instant: (k: string) => k } },
         { provide: Router, useValue: { navigate: jest.fn() } },
       ],
@@ -102,7 +115,7 @@ describe('EmailTypeDetailFacade', () => {
     facade.updateTranslation('tpl-1', 'body', onComplete);
     expect(onComplete).toHaveBeenCalledTimes(2);
     expect(facade.saving()).toBe(false);
-    expect(snackbar.showSuccess).toHaveBeenCalledTimes(1);
+    expect(snackbar.showSuccessTranslated).toHaveBeenCalledTimes(1);
   });
 
   it('re-reads the type detail after a create lands, and not when it fails', () => {
@@ -116,12 +129,29 @@ describe('EmailTypeDetailFacade', () => {
   });
 
   it('re-reads the type detail after a delete lands, and not when it fails', () => {
-    facade.deleteTranslation('tpl-1', EmailType.OrderReceipt);
+    facade.deleteTranslation('tpl-1', EmailType.OrderReceipt, 'key');
     expect(typeDetailsMock).toHaveBeenCalledTimes(1);
 
     deleteMock.mockReturnValue(throwError(() => new Error('boom')));
-    facade.deleteTranslation('tpl-1', EmailType.OrderReceipt);
+    facade.deleteTranslation('tpl-1', EmailType.OrderReceipt, 'key');
     expect(typeDetailsMock).toHaveBeenCalledTimes(1);
+    expect(facade.deleting()).toBe(false);
+  });
+
+  it('does nothing when the delete confirmation is declined', () => {
+    confirmMock.mockReturnValue(of(false));
+    const onComplete = jest.fn();
+
+    facade.deleteTranslation('tpl-1', EmailType.OrderReceipt, 'key', onComplete);
+
+    expect(confirmMock).toHaveBeenCalledWith(
+      'pages.template_management.dialogs.delete_translation.message',
+      'pages.template_management.dialogs.delete_translation.title',
+      { key: 'key' },
+      { danger: true, acceptLabelKey: 'global.actions.delete' }
+    );
+    expect(deleteMock).not.toHaveBeenCalled();
+    expect(onComplete).not.toHaveBeenCalled();
     expect(facade.deleting()).toBe(false);
   });
 

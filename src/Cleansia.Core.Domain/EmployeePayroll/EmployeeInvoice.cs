@@ -283,25 +283,6 @@ public class EmployeeInvoice : TenantAuditable
         return this;
     }
 
-    public EmployeeInvoice SetSpecificSymbol(string? specificSymbol)
-    {
-        SpecificSymbol = specificSymbol;
-        return this;
-    }
-
-    public EmployeeInvoice SetPaymentReference(string reference)
-    {
-        PaymentReference = reference;
-        return this;
-    }
-
-    public EmployeeInvoice AssignCountryAndLanguage(string countryId, string languageId)
-    {
-        CountryId = countryId;
-        LanguageId = languageId;
-        return this;
-    }
-
     public EmployeeInvoice Approve(string approvedBy, string? adminNotes = null)
     {
         if (Status != EmployeeInvoiceStatus.Pending && Status != EmployeeInvoiceStatus.Disputed)
@@ -393,11 +374,6 @@ public class EmployeeInvoice : TenantAuditable
         ArgumentOutOfRangeException.ThrowIfNegative(paymentTermsDays);
 
         return GeneratedAt.Date.AddDays(paymentTermsDays);
-    }
-
-    public decimal CalculateAveragePay()
-    {
-        return TotalOrders > 0 ? SubTotal / TotalOrders : 0;
     }
 
     public EmployeeInvoice Cancel(string reason, string cancelledBy)

@@ -101,13 +101,6 @@ public class EmployeeDocument : TenantAuditable
         return newVersion;
     }
 
-    public EmployeeDocument UpdateMetadata(string? description, string updatedBy)
-    {
-        Description = description;
-        Updated(updatedBy, DateTimeOffset.UtcNow);
-        return this;
-    }
-
     public EmployeeDocument Approve(string reviewedByUserId, string? notes = null)
     {
         Status = DocumentStatus.Approved;
@@ -133,6 +126,4 @@ public class EmployeeDocument : TenantAuditable
         Deactivated(deletedBy, DateTimeOffset.UtcNow);
         return this;
     }
-
-    public bool IsLatestVersion() => string.IsNullOrEmpty(PreviousVersionId) || Version > (PreviousVersion?.Version ?? 0);
 }

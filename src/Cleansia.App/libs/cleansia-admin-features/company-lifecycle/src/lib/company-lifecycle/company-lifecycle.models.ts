@@ -54,7 +54,6 @@ export interface SettlementFact {
 export interface SettlementFactRow extends SettlementFact {
   display: string;
   statusKey: string;
-  statusSeverity: StateSeverity;
 }
 
 export interface ActReason {
@@ -67,7 +66,9 @@ export interface ActAvailability {
   policy: PolicyName;
   labelKey: string;
   icon: string;
-  severity: 'primary' | 'secondary' | 'danger' | 'warn' | 'contrast';
+  severity: 'primary' | 'secondary' | 'danger';
+  /** The one filled act is the recovering one; the rest are outlined, danger in red. */
+  outlined: boolean;
   enabled: boolean;
   reasons: ActReason[];
 }
@@ -107,10 +108,6 @@ export function getFactNameKey(id: SettlementFactId): string {
   return `${PAGE}.facts.${id}`;
 }
 
-export function getStateKey(state: CompanyLifecycleState): string {
-  return `${PAGE}.states.${CompanyLifecycleState[state]}`;
-}
-
 export function getStateSeverity(state: CompanyLifecycleState): StateSeverity {
   switch (state) {
     case CompanyLifecycleState.Operating:
@@ -128,17 +125,6 @@ export function getStateSeverity(state: CompanyLifecycleState): StateSeverity {
 
 export function getFactStatusKey(status: SettlementFactStatus): string {
   return `${PAGE}.status.${status}`;
-}
-
-export function getFactStatusSeverity(status: SettlementFactStatus): StateSeverity {
-  switch (status) {
-    case 'blocking':
-      return 'danger';
-    case 'settled':
-      return 'success';
-    case 'informational':
-      return 'secondary';
-  }
 }
 
 export function startOfDay(instant: Date): Date {
@@ -214,6 +200,7 @@ export function getActAvailability(
       labelKey: `${PAGE}.acts.deactivate`,
       icon: 'pi pi-power-off',
       severity: 'danger',
+      outlined: true,
       ...withReasons(deactivateReasons(dto)),
     },
     {
@@ -222,6 +209,7 @@ export function getActAvailability(
       labelKey: `${PAGE}.acts.reactivate`,
       icon: 'pi pi-replay',
       severity: 'primary',
+      outlined: false,
       ...withReasons(reactivateReasons(dto)),
     },
     {
@@ -229,7 +217,8 @@ export function getActAvailability(
       policy: Policy.CanWindDownCompany,
       labelKey: windDownRequested ? `${PAGE}.acts.run_wind_down_again` : `${PAGE}.acts.wind_down`,
       icon: 'pi pi-calendar-times',
-      severity: 'warn',
+      severity: 'secondary',
+      outlined: true,
       ...withReasons(windDownReasons(dto, now)),
     },
     {
@@ -237,7 +226,8 @@ export function getActAvailability(
       policy: Policy.CanArchiveCompany,
       labelKey: dto.state === CompanyLifecycleState.Frozen ? `${PAGE}.acts.build_archive_again` : `${PAGE}.acts.archive`,
       icon: 'pi pi-lock',
-      severity: 'contrast',
+      severity: 'secondary',
+      outlined: true,
       ...withReasons(archiveReasons(dto, now, factName, formatDay)),
     },
   ];
@@ -348,6 +338,7 @@ export function getSettlementFactsTableDefinition(
       },
       {
         id: 'value',
+        numeric: true,
         field: 'display',
         header: translate.instant(`${PAGE}.columns.value`),
         getValue: (row: SettlementFactRow) => row.display,
@@ -359,6 +350,7 @@ export function getSettlementFactsTableDefinition(
         field: 'status',
         header: translate.instant(`${PAGE}.columns.status`),
         getValue: (row: SettlementFactRow) => translate.instant(row.statusKey),
+        align: 'center',
         customTemplate: statusTemplate,
         width: '20%',
       },

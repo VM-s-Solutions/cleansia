@@ -1,12 +1,14 @@
 #!/usr/bin/env node
 /**
- * Tests for the B10 dispute transition-guard rule and the E9 session-wipe-set advisory in
- * check-consistency.mjs.
+ * Tests for the B10 dispute transition-guard rule, the E9 session-wipe-set advisory and the F web
+ * surface rules in check-consistency.mjs.
  *
  * Dependency-free (Node's built-in assert + child_process), matching the tool itself. Writes
- * throwaway .cs/.kt fixtures under a temp dir inside the repo, runs the checker scoped to that dir
- * via --paths=, and asserts on the findings. B10 is a hard gate (exit 1); E9 is WARN-only (exit 0,
- * printed for the Reviewer). The temp dir is removed on exit.
+ * throwaway .cs/.kt/.html/.scss/.json fixtures under a temp dir inside the repo, runs the checker
+ * scoped to that dir via --paths=, and asserts on the findings. B10 and the zero-baseline F-rules
+ * are hard gates (exit 1); E9 and the F-rules that still have sites are WARN-only (exit 0, printed
+ * for the Reviewer). Every F-rule has a red case, so a rule that stops firing fails here before it
+ * fails to guard. The temp dir is removed on exit.
  *
  * Run: node agents/tools/check-consistency.test.mjs
  */
@@ -18,6 +20,8 @@ import { fileURLToPath } from "node:url";
 
 const REPO = join(fileURLToPath(import.meta.url), "..", "..", "..");
 const TOOL = join(REPO, "agents", "tools", "check-consistency.mjs");
+// The finding lines only: the `consistency:` summary names every advisory rule in its tally.
+const findingLines = (out) => out.split(/\r?\n/).filter((l) => !l.startsWith("consistency:"));
 
 // Run the checker over a single fixture file and return { code, out, b10 }.
 function run(fixtureBody) {
@@ -284,7 +288,7 @@ function runKt(code, fileName = "Fixture.kt") {
             rc = e.status ?? 1;
             out = (e.stdout ?? "") + (e.stderr ?? "");
         }
-        return { code: rc, out, e9: out.split(/\r?\n/).filter((l) => /\bE9\b/.test(l)) };
+        return { code: rc, out, e9: findingLines(out).filter((l) => /\bE9\b/.test(l)) };
     } finally {
         rmSync(root, { recursive: true, force: true });
     }
@@ -578,7 +582,7 @@ class SomeEventBus @Inject constructor() {
 // `data class *UiState`: nine hits in the tree, one defensible. These four pin both halves — that it
 // still catches the shape it exists for, and that each exemption is the one the corpus forced.
 const linesFor = (r, rule) =>
-    r.out.split(/\r?\n/).filter((l) => new RegExp(`\\b${rule}\\b`).test(l));
+    findingLines(r.out).filter((l) => new RegExp(`\\b${rule}\\b`).test(l));
 
 test("E1 flags a genuine phase bag (one in-flight flag + error + data)", () => {
     const r = runKt(`package x
@@ -703,6 +707,278 @@ export interface Thing {
     assert.equal(linesFor(r, "conv").length, 0, `expected 0 conv, got: ${r.out}`);
 });
 
+// ---------------------------------------------------------------------------- F (web surface)
+// Run the checker over a set of frontend fixtures laid out under the repo-shaped paths the F-rules
+// key on (a feature lib, an app shell, the shared styles, a locale folder). `files` maps a path
+// relative to the temp root to its content.
+function runF(files) {
+    const root = mkdtempSync(join(REPO, ".f-fixture-"));
+    try {
+        for (const [rel, content] of Object.entries(files)) {
+            const target = join(root, ...rel.split("/"));
+            mkdirSync(join(target, ".."), { recursive: true });
+            writeFileSync(target, content, "utf8");
+        }
+        const rel = relative(REPO, root).split(sep).join("/");
+        let rc = 0;
+        let out = "";
+        try {
+            out = execFileSync(process.execPath, [TOOL, "frontend", `--paths=${rel}`], { encoding: "utf8" });
+        } catch (e) {
+            rc = e.status ?? 1;
+            out = (e.stdout ?? "") + (e.stderr ?? "");
+        }
+        return { code: rc, out };
+    } finally {
+        rmSync(root, { recursive: true, force: true });
+    }
+}
+const ADMIN_TPL = "libs/cleansia-admin-features/thing/src/lib/thing/thing.component.html";
+const ADMIN_TS = "libs/cleansia-admin-features/thing/src/lib/thing/thing.component.ts";
+const ADMIN_FACADE = "libs/cleansia-admin-features/thing/src/lib/thing/thing.facade.ts";
+const SHARED_TPL = "libs/shared/components/src/lib/cleansia-thing/cleansia-thing.component.html";
+const ADMIN_PAGE_SCSS = "libs/shared/assets/src/styles/pages/cleansia-admin/thing.component.scss";
+const I18N = "apps/cleansia-thing.app/src/assets/i18n";
+const bundle = (obj) => JSON.stringify(obj);
+const fiveLocales = (obj, override = {}) =>
+    Object.fromEntries(["en", "cs", "sk", "uk", "ru"].map((l) => [`${I18N}/${l}.json`, bundle(override[l] ?? obj)]));
+// A page header with its h1, so a template fixture reads as a page without tripping F13.
+const PAGE = `<div class="cleansia-page-header"><cleansia-title [level]="1" [title]="'x' | translate" /></div>`;
+
+test("F1 warns on a raw <button> in a feature template and exits 0 (advisory)", () => {
+    const r = runF({ [ADMIN_TPL]: `${PAGE}\n<button type="button" (click)="go()">x</button>` });
+    assert.equal(linesFor(r, "F1").length, 1, `expected 1 F1, got: ${r.out}`);
+    assert.equal(r.code, 0, "F1 is advisory until its count reaches zero");
+});
+
+test("F1 does NOT flag the hidden file picker (type=file) or a raw element inside the shared wrappers", () => {
+    const r = runF({
+        [ADMIN_TPL]: `${PAGE}\n<input #picker type="file" hidden (change)="pick($event)" />`,
+        [SHARED_TPL]: `<button type="button" class="cleansia-thing__button">x</button>`,
+    });
+    assert.equal(linesFor(r, "F1").length, 0, `expected 0 F1, got: ${r.out}`);
+});
+
+test("F2 flags a bare PrimeNG widget or directive in a feature template", () => {
+    const r = runF({
+        [ADMIN_TPL]: `${PAGE}\n<p-select [options]="o" />\n<textarea pTextarea></textarea>\n<p-selectButton [options]="o" />`,
+    });
+    assert.equal(linesFor(r, "F2").length, 2, `expected 2 F2 (p-select + pTextarea; p-selectButton is not p-select), got: ${r.out}`);
+    assert.equal(r.code, 1, "F2 is a hard gate");
+});
+
+test("F2 does NOT reach the shared component library that wraps those widgets", () => {
+    const r = runF({ [SHARED_TPL]: `<p-select [options]="o" />` });
+    assert.equal(linesFor(r, "F2").length, 0, `expected 0 F2, got: ${r.out}`);
+});
+
+test("F3 flags a <p-confirmDialog> outside the app shell and allows the shell's own", () => {
+    const r = runF({
+        [ADMIN_TPL]: `${PAGE}\n<p-confirmDialog />`,
+        "apps/cleansia-thing.app/src/app/app.component.html": `<router-outlet /><p-confirmDialog styleClass="cleansia-dialog" />`,
+    });
+    const hits = linesFor(r, "F3");
+    assert.equal(hits.length, 1, `expected 1 F3, got: ${r.out}`);
+    assert.match(hits[0], /thing\.component\.html/);
+    assert.equal(r.code, 1, "F3 is a hard gate");
+});
+
+test("F4 flags ConfirmationService in a component's providers, across lines", () => {
+    const r = runF({
+        [ADMIN_TS]: `@Component({\n  selector: 'x',\n  providers: [\n    ThingFacade,\n    ConfirmationService,\n  ],\n  changeDetection: ChangeDetectionStrategy.OnPush,\n})\nexport class ThingComponent {}`,
+    });
+    assert.equal(linesFor(r, "F4").length, 1, `expected 1 F4, got: ${r.out}`);
+    assert.equal(r.code, 1, "F4 is a hard gate");
+});
+
+test("F5 flags confirmationService.confirm( outside dialog.service.ts and allows it inside", () => {
+    const r = runF({
+        [ADMIN_FACADE]: `export class ThingFacade extends UnsubscribeControlDirective {\n  ask() {\n    this.confirmationService.confirm({ accept: () => 1 });\n  }\n}`,
+        "libs/core/services/src/lib/services/dialog.service.ts": `export class DialogService {\n  confirm() {\n    this.confirmationService.confirm({});\n  }\n}`,
+    });
+    const hits = linesFor(r, "F5");
+    assert.equal(hits.length, 1, `expected 1 F5, got: ${r.out}`);
+    assert.match(hits[0], /thing\.facade\.ts/);
+    assert.equal(r.code, 1, "F5 is a hard gate");
+});
+
+test("F6 warns on each legacy <cleansia-button> binding, reading the tag across lines (advisory)", () => {
+    const r = runF({
+        [ADMIN_TPL]: `${PAGE}\n<cleansia-button\n  [buttonType]="'button'"\n  [style]="'raised-button'"\n  [title]="'x' | translate"\n  (clickFn)="go()"\n/>\n<cleansia-title [title]="'y' | translate" />`,
+    });
+    assert.equal(linesFor(r, "F6").length, 4, `expected 4 F6 (and none for [title] on cleansia-title), got: ${r.out}`);
+    assert.equal(r.code, 0, "F6 is advisory until its count reaches zero");
+});
+
+test("F6 does NOT flag the current API ([label], (onClick), a non-default buttonType)", () => {
+    const r = runF({
+        [ADMIN_TPL]: `${PAGE}\n<cleansia-button [label]="'x' | translate" [buttonType]="'submit'" (onClick)="go()" />`,
+    });
+    assert.equal(linesFor(r, "F6").length, 0, `expected 0 F6, got: ${r.out}`);
+});
+
+test("F7 flags *ngIf, *ngFor and [(ngModel)] in a feature template", () => {
+    const r = runF({
+        [ADMIN_TPL]: `${PAGE}\n<div *ngIf="a"></div>\n<li *ngFor="let x of xs"></li>\n<cleansia-text-input [(ngModel)]="v" />`,
+    });
+    assert.equal(linesFor(r, "F7").length, 3, `expected 3 F7, got: ${r.out}`);
+    assert.equal(r.code, 1, "F7 is a hard gate");
+});
+
+test("F8 warns on a component that owns its teardown and not on one extending the directive (advisory)", () => {
+    const r = runF({
+        [ADMIN_TS]: `export class ThingComponent {\n  private readonly destroy$ = new Subject<void>();\n}`,
+        "libs/cleansia-admin-features/thing/src/lib/other/other.component.ts": `export class OtherComponent extends UnsubscribeControlDirective {\n  private readonly destroyRef = inject(DestroyRef);\n}`,
+    });
+    const hits = linesFor(r, "F8");
+    assert.equal(hits.length, 1, `expected 1 F8, got: ${r.out}`);
+    assert.match(hits[0], /thing\.component\.ts/);
+    assert.equal(r.code, 0, "F8 is advisory until its count reaches zero");
+});
+
+test("F9 flags a var(--cleansia-*) declared nowhere, with or without a fallback", () => {
+    const r = runF({
+        [ADMIN_PAGE_SCSS]: `.x { color: var(--cleansia-nowhere-500); border-color: var(--cleansia-nowhere-200, red); }`,
+        [ADMIN_TS]: `export class ThingComponent {}`,
+    });
+    assert.equal(linesFor(r, "F9").length, 2, `expected 2 F9, got: ${r.out}`);
+    assert.equal(r.code, 1, "F9 is a hard gate");
+});
+
+test("F9 accepts a token declared in the shared variables or in a scanned stylesheet", () => {
+    const r = runF({
+        [ADMIN_PAGE_SCSS]: `.x { color: var(--cleansia-primary-500); aspect-ratio: var(--cleansia-fixture-only); }`,
+        "apps/cleansia-thing.app/src/styles.scss": `:root { --cleansia-fixture-only: 1 / 2; }`,
+        [ADMIN_TS]: `export class ThingComponent {}`,
+    });
+    assert.equal(linesFor(r, "F9").length, 0, `expected 0 F9, got: ${r.out}`);
+});
+
+test("F10 warns on an off-scale radius and a primary-tinted glow, not on the scale, a token or a focus ring (advisory)", () => {
+    const r = runF({
+        [ADMIN_PAGE_SCSS]: [
+            ".a { border-radius: 8px; }",
+            ".b { border-radius: 16px 16px 4px 16px; }",
+            ".c { border-radius: 12px; }",
+            ".d { border-radius: var(--cleansia-radius-lg); }",
+            ".e { border-radius: var(--p-inputtext-border-radius, 6px); }",
+            ".f { border-radius: 999px; }",
+            ".g { box-shadow: 0 4px 14px rgba(var(--cleansia-primary-rgb), 0.35); }",
+            ".h { box-shadow: 0 0 0 3px rgba(var(--cleansia-primary-rgb), 0.15); }",
+            ".i { box-shadow: 0 2px 6px rgba(15, 23, 42, 0.12); }",
+        ].join("\n"),
+        [ADMIN_TS]: `export class ThingComponent {}`,
+    });
+    const hits = linesFor(r, "F10");
+    assert.equal(hits.length, 3, `expected 3 F10 (8px, the 4px corner, the glow), got: ${r.out}`);
+    assert.equal(r.code, 0, "F10 is advisory until its count reaches zero");
+});
+
+test("F11 flags a locale whose key set differs from en.json and a `common` namespace", () => {
+    const en = { global: { actions: { save: "Save" } }, pages: { thing: { title: "Thing", extra: "Only in en" } }, common: { cancel: "Cancel" } };
+    const cs = { global: { actions: { save: "Ulozit" } }, pages: { thing: { title: "Vec", stray: "Only in cs" } } };
+    const r = runF(fiveLocales(en, { cs }));
+    const hits = linesFor(r, "F11").filter((l) => !/outside the fixed set/.test(l));
+    assert.equal(hits.length, 3, `expected 3 F11 (common, a missing key, an extra key), got: ${r.out}`);
+    assert.equal(r.code, 1, "F11 parity is a hard gate");
+});
+
+test("F11 flags a missing locale file", () => {
+    const files = fiveLocales({ global: { a: "x" } });
+    delete files[`${I18N}/uk.json`];
+    const r = runF(files);
+    assert.equal(linesFor(r, "F11").length, 1, `expected 1 F11, got: ${r.out}`);
+    assert.match(linesFor(r, "F11")[0], /uk\.json is missing/);
+    assert.equal(r.code, 1, "F11 parity is a hard gate");
+});
+
+test("F11 warns on a namespace outside the fixed set and passes five identical bundles (advisory)", () => {
+    const r = runF(fiveLocales({ global: { a: "x" }, pages: { b: "y" }, stray_ns: { c: "z" } }));
+    const hits = linesFor(r, "F11");
+    assert.equal(hits.length, 1, `expected 1 F11, got: ${r.out}`);
+    assert.match(hits[0], /'stray_ns' is outside the fixed set/);
+    assert.equal(r.code, 0, "the namespace set is advisory until the stray ones are filed");
+});
+
+test("F12 warns on a page stylesheet with no component of that name and not on one that has it (advisory)", () => {
+    const r = runF({
+        [ADMIN_PAGE_SCSS]: `.thing { display: block; }`,
+        "libs/shared/assets/src/styles/pages/cleansia-admin/gone.component.scss": `.gone { display: block; }`,
+        "libs/shared/assets/src/styles/pages/cleansia-admin/_partial.scss": `.shared { display: block; }`,
+        [ADMIN_TS]: `export class ThingComponent {}`,
+    });
+    const hits = linesFor(r, "F12");
+    assert.equal(hits.length, 1, `expected 1 F12, got: ${r.out}`);
+    assert.match(hits[0], /gone\.component\.scss/);
+    assert.equal(r.code, 0, "F12 is advisory until its count reaches zero");
+});
+
+// The Reviewer runs the checker with --paths=<changed dirs>; a stylesheet-only path holds no
+// .component.ts, so F12 has to resolve the component from the web tree or it reports every page
+// as orphaned and the advisory tally is read as the baseline. The name is a real admin page whose
+// component lives under libs/cleansia-admin-features, outside the fixture.
+test("F12 resolves the component from the web tree when --paths holds only stylesheets", () => {
+    const r = runF({
+        "libs/shared/assets/src/styles/pages/cleansia-admin/admin-order-photos.component.scss": `.x { display: block; }`,
+    });
+    assert.equal(linesFor(r, "F12").length, 0, `expected 0 F12, got: ${r.out}`);
+    assert.equal(r.code, 0);
+});
+
+test("F13 flags a page template whose first <cleansia-title> is not the h1", () => {
+    const r = runF({
+        [ADMIN_TPL]: `<div class="cleansia-page-header">\n  <cleansia-title\n    [title]="'x' | translate"\n    [level]="2"\n  />\n</div>`,
+    });
+    assert.equal(linesFor(r, "F13").length, 1, `expected 1 F13, got: ${r.out}`);
+    assert.equal(r.code, 1, "F13 is a hard gate");
+});
+
+test("F13 does NOT flag a section template (no page shell) whose title is a level 2", () => {
+    const r = runF({
+        [ADMIN_TPL]: `<cleansia-section [title]="'x' | translate"><cleansia-title [level]="2" [title]="'y' | translate" /></cleansia-section>`,
+    });
+    assert.equal(linesFor(r, "F13").length, 0, `expected 0 F13, got: ${r.out}`);
+});
+
+test("F14 flags a literal aria-label in a feature or shared template and allows a bound one", () => {
+    const r = runF({
+        [ADMIN_TPL]: `${PAGE}\n<a aria-label="Open menu"></a>\n<a [attr.aria-label]="'global.open_menu' | translate"></a>\n<a aria-label="{{ 'global.close' | translate }}"></a>\n<a aria-labelledby="x"></a>`,
+        [SHARED_TPL]: `<button type="button" aria-label="Close"></button>`,
+    });
+    assert.equal(linesFor(r, "F14").length, 2, `expected 2 F14, got: ${r.out}`);
+    assert.equal(r.code, 1, "F14 is a hard gate");
+});
+
+test("F15 flags a per-feature error-key map or resolver and allows the shared resolveApiErrorKey", () => {
+    const r = runF({
+        [ADMIN_FACADE]: `const THING_ERROR_KEY_MAP = {};\nfunction resolveThingErrorKey(e) { return resolveApiErrorKey(this.translate, e); }`,
+    });
+    assert.equal(linesFor(r, "F15").length, 2, `expected 2 F15, got: ${r.out}`);
+    assert.equal(r.code, 1, "F15 is a hard gate");
+});
+
+test("the F-rules skip the customer app and its feature libs", () => {
+    const r = runF({
+        "libs/cleansia-customer-features/thing/src/lib/thing/thing.component.html": `<button>x</button><p-select /><div *ngIf="a"></div>`,
+        "apps/cleansia.app/src/app/thing/thing.component.html": `<p-confirmDialog /><a aria-label="Literal"></a>`,
+        "libs/shared/assets/src/styles/pages/cleansia-customer/thing.component.scss": `.x { color: var(--cleansia-nowhere-500); }`,
+        // Something in scope, so the run is not an empty --paths non-run.
+        [ADMIN_TS]: `export class ThingComponent {}`,
+    });
+    assert.equal(findingLines(r.out).filter((l) => /\bF\d+\b/.test(l)).length, 0, `expected no F findings, got: ${r.out}`);
+    assert.equal(r.code, 0);
+});
+
+test("the advisory summary tallies the findings per rule — the baseline a sweep flips at", () => {
+    const r = runF({
+        [ADMIN_TPL]: `${PAGE}\n<button type="button">x</button>\n<cleansia-button (clickFn)="go()" [title]="'t'" />`,
+        [ADMIN_TS]: `export class ThingComponent {}`,
+        [ADMIN_PAGE_SCSS]: `.x { border-radius: 7px; }`,
+    });
+    assert.match(r.out, /^consistency: 4 advisory warning\(s\) \(non-blocking\) — F1 1, F6 2, F10 1$/m, r.out);
+    assert.equal(r.code, 0);
+});
+
 let failed = 0;
 for (const [name, fn] of cases) {
     try {
@@ -715,7 +991,7 @@ for (const [name, fn] of cases) {
 }
 console.log(
     failed === 0
-        ? `\ncheck-consistency rules (B1 + B10 + C3 + E9 + E1 + E5 + conv): ${cases.length} passed`
-        : `\ncheck-consistency rules (B1 + B10 + C3 + E9 + E1 + E5 + conv): ${failed}/${cases.length} FAILED`,
+        ? `\ncheck-consistency rules (B1 + B10 + C3 + E9 + E1 + E5 + conv + F1-F15): ${cases.length} passed`
+        : `\ncheck-consistency rules (B1 + B10 + C3 + E9 + E1 + E5 + conv + F1-F15): ${failed}/${cases.length} FAILED`,
 );
 process.exit(failed === 0 ? 0 : 1);

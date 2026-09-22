@@ -1,32 +1,28 @@
-<div class="add-note-dialog">
-  <div class="add-note-dialog__header">
-    <i class="pi pi-file-edit add-note-dialog__icon"></i>
-    <h3>{{ 'pages.order_details.add_note' | translate }}</h3>
+<form [formGroup]="form" (ngSubmit)="onSave()" class="dialog-body">
+  <div class="form-grid">
+    <div class="form-field form-field--full">
+      <cleansia-textarea
+        formControlName="content"
+        [label]="'pages.order_details.note_content' | translate"
+        [placeholder]="'pages.order_details.note_content_placeholder' | translate"
+        [rows]="5"
+      />
+    </div>
   </div>
-  <div class="add-note-dialog__body">
-    <label for="add-note-content" class="add-note-dialog__label">
-      {{ 'pages.order_details.note_content' | translate }}
-    </label>
-    <textarea
-      id="add-note-content"
-      pTextarea
-      [(ngModel)]="content"
-      [rows]="5"
-      [placeholder]="'pages.order_details.note_content_placeholder' | translate"
-      class="add-note-dialog__textarea"
-    ></textarea>
-  </div>
-  <div class="add-note-dialog__footer">
-    <p-button
+
+  <div class="dialog-actions">
+    <cleansia-button
+      buttonType="button"
       [label]="'global.actions.cancel' | translate"
       severity="secondary"
       [outlined]="true"
       (onClick)="onCancel()"
     />
-    <p-button
+    <cleansia-button
+      buttonType="submit"
       [label]="'global.actions.save' | translate"
-      [disabled]="!content.trim()"
-      (onClick)="onSave()"
+      icon="pi pi-check"
+      [disabled]="form.invalid"
     />
   </div>
-</div>
+</form>

@@ -61,18 +61,18 @@ This is the long path, and it is where most first-day confusion lives. A newly r
 **cannot take any work at all** until an admin approves them, and the app will show a lock screen
 saying so.
 
-Four things must be true:
+Three things must be true:
 
 1. **Profile complete** — name, phone, birth date, address, identification, entity type.
 2. **Documents uploaded** — the identity and eligibility paperwork.
-3. **Availability set** — which days and hours they work.
-4. **An admin has approved them** — in the admin app, under the cleaner's detail page.
+3. **An admin has approved them** — in the admin app, under the cleaner's detail page.
 
-Only the fourth is out of the cleaner's hands, and it is the one people forget. Until it happens the
-contract status is `Pending`, and `Pending` cannot take, start or complete an order.
+Only the third is out of the cleaner's hands, and it is the one people forget. Until it happens the
+contract status is `Pending`, and `Pending` cannot take, start or complete an order. There is no
+schedule to set: dispatch is a first-come board, and nothing asks a cleaner which days they work.
 
 ::: tip Testing both sides yourself
-Register the cleaner first, complete all three of their steps, then switch to the admin app and
+Register the cleaner first, complete both of their steps, then switch to the admin app and
 approve them. Only then go and create an order as a customer — otherwise there is nobody who can
 take it and the order sits unassigned, which looks like a bug and is not one.
 :::

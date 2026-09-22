@@ -1,0 +1,245 @@
+SOURCE: lawyers-docs\SMLOUVY CleanSia\SMLOUVY\cleansia_cookie_policy.docx
+Paragraph IDs are extraction references, not legal clause numbers.
+
+[P001] [word/document.xml] CLEANSIA
+[P002] [word/document.xml] COOKIE POLICY
+[P003] [word/document.xml] Cookie lišta — implementační příručka + právní text
+[P004] [word/document.xml] Společnost:
+[P005] [word/document.xml] Cleansia s.r.o.
+[P006] [word/document.xml] IČO:
+[P007] [word/document.xml] [Doplnit]
+[P008] [word/document.xml] Web:
+[P009] [word/document.xml] [Doplnit URL]
+[P010] [word/document.xml] Verze:
+[P011] [word/document.xml] 1.1
+[P012] [word/document.xml] Platnost od:
+[P013] [word/document.xml] ................................................
+[P014] [word/document.xml] Právní základ:
+[P015] [word/document.xml] GDPR (nařízení EU 2016/679), zákon č. 127/2005 Sb., směrnice ePrivacy 2002/58/ES
+[P016] [word/document.xml] Kontakt GDPR:
+[P017] [word/document.xml] [Doplnit e-mail]
+[P018] [word/document.xml] 📋  Tento dokument má dvě části: (A) Právní text Cookie Policy určený pro zveřejnění na webu; (B) Implementační příručka pro vývojáře popisující technické požadavky na cookie lištu. Obě části jsou nezbytné pro soulad s ePrivacy směrnicí a GDPR. Soulad s těmito požadavky kontroluje v ČR Úřad pro ochranu osobních údajů (ÚOOÚ).
+[P019] [word/document.xml] ČÁST A — COOKIE POLICY (text pro zveřejnění na webu)
+[P020] [word/document.xml] 1. Co jsou cookies a proč je používáme
+[P021] [word/document.xml] Cookies jsou malé textové soubory, které webový prohlížeč nebo mobilní aplikace ukládá do vašeho zařízení při návštěvě našeho webu nebo používání Aplikace. Jsou nezbytnou součástí moderního provozu webových služeb.
+[P022] [word/document.xml] Cleansia cookies používá k následujícím účelům:
+[P023] [word/document.xml] zajištění správné funkčnosti webu a Aplikace (přihlášení, bezpečnost, jazykové nastavení),
+[P024] [word/document.xml] analýze návštěvnosti a chování uživatelů za účelem zlepšování služeb — pouze s vaším souhlasem,
+[P025] [word/document.xml] personalizaci obsahu a marketingové komunikaci — pouze s vaším souhlasem.
+[P026] [word/document.xml] ⚖️  Právní základ pro nezbytné cookies je oprávněný zájem provozovatele ve smyslu čl. 6 odst. 1 písm. f) GDPR. Analytické a marketingové cookies jsou zpracovávány pouze na základě vašeho výslovného souhlasu dle čl. 6 odst. 1 písm. a) GDPR ve spojení s § 89 zákona č. 127/2005 Sb. (zákon o elektronických komunikacích).
+[P027] [word/document.xml] 2. Jaké cookies používáme
+[P028] [word/document.xml] 2.1  Nezbytné cookies (vždy aktivní)
+[P029] [word/document.xml] Tyto cookies jsou nezbytné pro správné fungování webu a Aplikace. Bez nich by nefungovalo přihlášení, košík, platba ani zabezpečení. Nelze je vypnout — jejich použití nepodléhá vašemu souhlasu, neboť jsou nezbytné pro poskytnutí služby, o kterou jste požádali (čl. 5 odst. 3 směrnice 2002/58/ES).
+[P030] [word/document.xml] Název cookie
+[P031] [word/document.xml] Typ
+[P032] [word/document.xml] Účel
+[P033] [word/document.xml] Poskytovatel
+[P034] [word/document.xml] Platnost
+[P035] [word/document.xml] cleansia_session
+[P036] [word/document.xml] Nezbytné
+[P037] [word/document.xml] Udržuje přihlášení zákazníka během používání webu/Aplikace
+[P038] [word/document.xml] Cleansia s.r.o.
+[P039] [word/document.xml] Session
+[P040] [word/document.xml] cleansia_csrf
+[P041] [word/document.xml] Nezbytné
+[P042] [word/document.xml] Ochrana před CSRF útoky (bezpečnost formulářů)
+[P043] [word/document.xml] Cleansia s.r.o.
+[P044] [word/document.xml] Session
+[P045] [word/document.xml] cleansia_consent
+[P046] [word/document.xml] Nezbytné
+[P047] [word/document.xml] Ukládá vaše rozhodnutí o souhlasu s cookies (aby se banner nezobrazoval opakovaně)
+[P048] [word/document.xml] Cleansia s.r.o.
+[P049] [word/document.xml] 12 měs.
+[P050] [word/document.xml] cleansia_lang
+[P051] [word/document.xml] Nezbytné
+[P052] [word/document.xml] Ukládá preferovaný jazyk rozhraní
+[P053] [word/document.xml] Cleansia s.r.o.
+[P054] [word/document.xml] 12 měs.
+[P055] [word/document.xml] 2.2  Analytické cookies (vyžadují souhlas)
+[P056] [word/document.xml] Tyto cookies nám pomáhají rozumět, jak návštěvníci používají web a Aplikaci — které stránky navštěvují, kde klikají, jak dlouho zůstávají. Tato data používáme výhradně pro zlepšování našich služeb, nikoli pro reklamu. Data jsou anonymizována nebo pseudonymizována v souladu s doporučeními ÚOOÚ a EDPB.
+[P057] [word/document.xml] Název cookie
+[P058] [word/document.xml] Typ
+[P059] [word/document.xml] Účel
+[P060] [word/document.xml] Poskytovatel
+[P061] [word/document.xml] Platnost
+[P062] [word/document.xml] _ga
+[P063] [word/document.xml] Analytické
+[P064] [word/document.xml] Google Analytics — sledování počtu návštěv a chování na webu (anonymizováno)
+[P065] [word/document.xml] Google LLC
+[P066] [word/document.xml] 2 roky
+[P067] [word/document.xml] _ga_XXXXXXX
+[P068] [word/document.xml] Analytické
+[P069] [word/document.xml] Google Analytics 4 — identifikátor měření relace
+[P070] [word/document.xml] Google LLC
+[P071] [word/document.xml] 2 roky
+[P072] [word/document.xml] _gid
+[P073] [word/document.xml] Analytické
+[P074] [word/document.xml] Google Analytics — rozlišuje uživatele v rámci 24 hodin
+[P075] [word/document.xml] Google LLC
+[P076] [word/document.xml] 24 hod.
+[P077] [word/document.xml] mp_xxxxx_mixpanel
+[P078] [word/document.xml] Analytické
+[P079] [word/document.xml] Mixpanel — analýza používání funkcionalit Aplikace (in-app události)
+[P080] [word/document.xml] Mixpanel Inc.
+[P081] [word/document.xml] 1 rok
+[P082] [word/document.xml] 2.3  Marketingové cookies (vyžadují souhlas)
+[P083] [word/document.xml] Marketingové cookies používáme k zobrazování relevantních reklam na externích platformách (např. Facebook, Google Ads) a k měření efektivity našich kampaní. Aktivujeme je výhradně po udělení vašeho souhlasu. Souhlas můžete kdykoli odvolat v Cookie centru.
+[P084] [word/document.xml] Název cookie
+[P085] [word/document.xml] Typ
+[P086] [word/document.xml] Účel
+[P087] [word/document.xml] Poskytovatel
+[P088] [word/document.xml] Platnost
+[P089] [word/document.xml] _fbp
+[P090] [word/document.xml] Marketingové
+[P091] [word/document.xml] Facebook Pixel — sledování konverzí z Facebook reklam
+[P092] [word/document.xml] Meta Platforms Inc.
+[P093] [word/document.xml] 3 měsíce
+[P094] [word/document.xml] _fbc
+[P095] [word/document.xml] Marketingové
+[P096] [word/document.xml] Facebook — identifikátor kliknutí na reklamu
+[P097] [word/document.xml] Meta Platforms Inc.
+[P098] [word/document.xml] 2 roky
+[P099] [word/document.xml] _gcl_aw
+[P100] [word/document.xml] Marketingové
+[P101] [word/document.xml] Google Ads — měření konverzí z Google kampaní
+[P102] [word/document.xml] Google LLC
+[P103] [word/document.xml] 90 dní
+[P104] [word/document.xml] IDE
+[P105] [word/document.xml] Marketingové
+[P106] [word/document.xml] Google DoubleClick — personalizace reklam na partnerských webech
+[P107] [word/document.xml] Google LLC
+[P108] [word/document.xml] 13 měs.
+[P109] [word/document.xml] 3. Jak spravovat cookies
+[P110] [word/document.xml] 3.1  Cookie centrum
+[P111] [word/document.xml] Své preference cookies můžete kdykoli změnit kliknutím na odkaz Spravovat cookies v patičce našeho webu nebo v nastavení Aplikace (Nastavení > Soukromí > Cookies). Změny se projeví okamžitě - analytické a marketingové skripty jsou deaktivovány ihned po odvolání souhlasu.
+[P112] [word/document.xml] 3.2  Nastavení prohlížeče
+[P113] [word/document.xml] Cookies můžete také spravovat přímo v nastavení vašeho prohlížeče:
+[P114] [word/document.xml] Chrome: Nastavení → Soukromí a bezpečnost → Soubory cookie a jiná data stránek
+[P115] [word/document.xml] Firefox: Možnosti → Soukromí a bezpečnost → Cookies a data stránek
+[P116] [word/document.xml] Safari: Předvolby → Soukromí → Spravovat data webů
+[P117] [word/document.xml] Edge: Nastavení → Soukromí, vyhledávání a služby → Cookies
+[P118] [word/document.xml] Upozorňujeme, že blokování všech cookies v prohlížeči může narušit funkčnost webu a Aplikace.
+[P119] [word/document.xml] 3.3  Důsledky vypnutí
+[P120] [word/document.xml] Vypnutí nezbytných cookies není možné — web by přestal správně fungovat. Vypnutí analytických a marketingových cookies nemá vliv na vaši možnost používat služby Cleansia — pouze omezuje naši schopnost službu zlepšovat a cílit relevantní reklamu.
+[P121] [word/document.xml] 4. Předávání dat do třetích zemí
+[P122] [word/document.xml] Některé cookies jsou provozovány třetími stranami se sídlem v USA (Google LLC, Meta Platforms Inc., Mixpanel Inc.). Předávání osobních údajů do USA probíhá na základě:
+[P123] [word/document.xml] Standardních smluvních doložek (SCC) schválených Evropskou komisí dle čl. 46 odst. 2 písm. c) GDPR,
+[P124] [word/document.xml] případně rozhodnutí o odpovídající ochraně dle čl. 45 GDPR (Data Privacy Framework EU–USA, je-li aplikovatelné).
+[P125] [word/document.xml] Další informace o zpracování dat jsou dostupné v Privacy Policy jednotlivých poskytovatelů:
+[P126] [word/document.xml] Google: policies.google.com/privacy
+[P127] [word/document.xml] Meta: www.facebook.com/policy
+[P128] [word/document.xml] Mixpanel: mixpanel.com/legal/privacy-policy
+[P129] [word/document.xml] 5. Vaše práva
+[P130] [word/document.xml] V souvislosti se zpracováním cookies a osobních údajů máte dle GDPR (čl. 15–22) tato práva:
+[P131] [word/document.xml] Právo na přístup k osobním údajům zpracovávaným prostřednictvím cookies,
+[P132] [word/document.xml] Právo na výmaz (právo být zapomenut) — zejm. pro data zpracovávaná na základě souhlasu,
+[P133] [word/document.xml] Právo na odvolání souhlasu kdykoli bez újmy na zákonnosti předchozího zpracování,
+[P134] [word/document.xml] Právo podat stížnost u Úřadu pro ochranu osobních údajů (ÚOOÚ, www.uoou.cz),
+[P135] [word/document.xml] Právo na omezení zpracování a právo vznést námitku.
+[P136] [word/document.xml] 6. Změny Cookie Policy
+[P137] [word/document.xml] Tuto Cookie Policy můžeme průběžně aktualizovat v reakci na změny používaných technologií nebo legislativy. Datum poslední aktualizace je vždy uvedeno v záhlaví dokumentu. Při významných změnách vás informujeme v Aplikaci nebo e-mailem s dostatečným předstihem (min. 30 dní před účinností změn ovlivňujících vaše souhlasy).
+[P138] [word/document.xml] 7. Kontakt
+[P139] [word/document.xml] S dotazy týkajícími se cookies a ochrany soukromí nás kontaktujte:
+[P140] [word/document.xml] E-mail: [Doplnit GDPR e-mail]
+[P141] [word/document.xml] Datová schránka: [Doplnit]
+[P142] [word/document.xml] Poštovní adresa: Cleansia s.r.o., [Doplnit adresu]
+[P143] [word/document.xml] Více informací o zpracování osobních údajů najdete v naší Privacy Policy dostupné na [Doplnit URL].
+[P144] [word/document.xml] ČÁST B — IMPLEMENTAČNÍ PŘÍRUČKA PRO VÝVOJÁŘE
+[P145] [word/document.xml] 8. Vizuální mockup cookie lišty
+[P146] [word/document.xml] Takto by měla cookie lišta Cleansia vypadat při první návštěvě webu — před udělením jakéhokoli souhlasu. Tlačítka musí být vizuálně rovnocenná (stejná velikost, stejná viditelnost).
+[P147] [word/document.xml] 🍪  CLEANSIA — Používáme cookies
+[P148] [word/document.xml] Pro správné fungování webu používáme nezbytné cookies. Se vaším souhlasem bychom chtěli používat také analytické cookies pro zlepšování našich služeb a marketingové cookies pro zobrazování relevantní reklamy.
+[P149] [word/document.xml] Více informací v naší Cookie Policy.
+[P150] [word/document.xml] Přijmout vše          Nastavit          Odmítnout nepovinné
+[P151] [word/document.xml] Cookie Policy  │  Privacy Policy
+[P152] [word/document.xml] warning  Zasady spravne cookie listy dle GDPR a ePrivacy: 1) Tlacitko Odmítnout musi byt stejne viditelne jako Prijmout vse. 2) Prijmout vse nesmi byt predvybrano. 3) Banner zobrazen pri kazde prvni navsteve. 4) Souhlas zaznamenavan s timestampem a verzi. 5) Odkaz na Cookie Policy klikatelny z banneru. 6) Odvolani souhlasu stejne snadne jako udeleni (cl. 7 odst. 3 GDPR).
+[P153] [word/document.xml] 9. Technické požadavky na implementaci
+[P154] [word/document.xml] 9.1  Blokování skriptů před souhlasem
+[P155] [word/document.xml] Analytický a marketingový JavaScript (GA4, Meta Pixel apod.) NESMÍ se načítat do stránky dříve, než zákazník udělí souhlas — pouhé zobrazení banneru bez čekání na souhlas je porušením ePrivacy směrnice. Všechny skripty těchto kategorií musí být blokovány (např. pomocí type='text/plain' nebo data-cookiecategory atributu) a aktivovány až po udělení souhlasu.
+[P156] [word/document.xml] 9.2  Doporučená knihovna (CMP)
+[P157] [word/document.xml] Cleansia doporučuje použít jedno z těchto ověřených řešení pro správce souhlasu (CMP):
+[P158] [word/document.xml] Cookiebot — komerční, GDPR certifikováno, automatická detekce cookies
+[P159] [word/document.xml] Usercentrics — komerční, IAB TCF 2.2 kompatibilní
+[P160] [word/document.xml] vanilla-cookieconsent — open-source (MIT licence), bez měsíčního poplatku
+[P161] [word/document.xml] Všechna uvedená řešení umožňují logování souhlasu a jsou kompatibilní se standardem IAB TCF 2.2, který vyžadují reklamní sítě (Google, Meta).
+[P162] [word/document.xml] 9.3  Ukládání souhlasu
+[P163] [word/document.xml] Souhlas musí být uložen jako nezbytná cookie cleansia_consent (viz sekce 2.1) s hodnotou obsahující:
+[P164] [word/document.xml] kategorii souhlasu (necessary / analytics / marketing),
+[P165] [word/document.xml] timestamp udělení/odvolání souhlasu (ISO 8601),
+[P166] [word/document.xml] verzi Cookie Policy platné v okamžiku udělení souhlasu.
+[P167] [word/document.xml] 9.4  Respektování GPC signálu
+[P168] [word/document.xml] Aplikace by měla respektovat Global Privacy Control (GPC) signál ze zařízení zákazníka jako platný projev odvolání souhlasu s analytickými a marketingovými cookies, v souladu s doporučením EDPB 01/2020 o zpracování na základě souhlasu.
+[P169] [word/document.xml] 9.5  Ukázka implementace — blokování GA4 před souhlasem
+[P170] [word/document.xml] <!-- Analytický skript ZABLOKOVANÝ před souhlasem -->
+[P171] [word/document.xml] <script
+[P172] [word/document.xml] type="text/plain"
+[P173] [word/document.xml] data-cookiecategory="analytics"
+[P174] [word/document.xml] async
+[P175] [word/document.xml] src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX">
+[P176] [word/document.xml] </script>
+[P177] [word/document.xml] <!-- Aktivace až po udělení souhlasu (vanilla-cookieconsent) -->
+[P178] [word/document.xml] <script>
+[P179] [word/document.xml] CookieConsent.on('consent', function(cookie) {
+[P180] [word/document.xml] if (cookie.categories.includes('analytics')) {
+[P181] [word/document.xml] gtag('config', 'G-XXXXXXXXXX'); // Aktivuj GA4
+[P182] [word/document.xml] }
+[P183] [word/document.xml] });
+[P184] [word/document.xml] </script>
+[P185] [word/document.xml] 9.6  Ukázka uložení souhlasu do cookie
+[P186] [word/document.xml] // Ukladání souhlasu s časovým razítkem a verzí
+[P187] [word/document.xml] function saveConsent(categories) {
+[P188] [word/document.xml] const consent = {
+[P189] [word/document.xml] version:    '1.1',
+[P190] [word/document.xml] timestamp:  new Date().toISOString(),
+[P191] [word/document.xml] categories: categories  // ['necessary', 'analytics', 'marketing']
+[P192] [word/document.xml] };
+[P193] [word/document.xml] document.cookie =
+[P194] [word/document.xml] 'cleansia_consent=' + encodeURIComponent(JSON.stringify(consent)) +
+[P195] [word/document.xml] '; max-age=31536000; path=/; SameSite=Lax; Secure';
+[P196] [word/document.xml] }
+[P197] [word/document.xml] 10. Kontrolní seznam před spuštěním
+[P198] [word/document.xml] Před spuštěním webu nebo po každé větší změně ověřte splnění všech níže uvedených bodů. Tento checklist slouží jako podklad pro interní audit a případnou kontrolu ze strany ÚOOÚ.
+[P199] [word/document.xml] #
+[P200] [word/document.xml] Kontrolní bod
+[P201] [word/document.xml] Hotovo
+[P202] [word/document.xml] 1
+[P203] [word/document.xml] Cookie banner se zobrazuje při KAŽDÉ první návštěvě webu (i přihlášeným uživatelům)
+[P204] [word/document.xml] [ ]
+[P205] [word/document.xml] 2
+[P206] [word/document.xml] Tlacitko Odmítnout nepovinné je stejne viditelne jako Prijmout vse
+[P207] [word/document.xml] [ ]
+[P208] [word/document.xml] 3
+[P209] [word/document.xml] Žádný analytický ani marketingový skript se nenačítá před udělením souhlasu
+[P210] [word/document.xml] [ ]
+[P211] [word/document.xml] 4
+[P212] [word/document.xml] Souhlas je ukládán do cookie cleansia_consent s timestampem a verzí Policy
+[P213] [word/document.xml] [ ]
+[P214] [word/document.xml] 5
+[P215] [word/document.xml] V paticce webu je klikatelny odkaz Cookie Policy a Spravovat cookies
+[P216] [word/document.xml] [ ]
+[P217] [word/document.xml] 6
+[P218] [word/document.xml] Cookie Policy je dostupná jako samostatná stránka na webu (trvalá URL)
+[P219] [word/document.xml] [ ]
+[P220] [word/document.xml] 7
+[P221] [word/document.xml] Tabulka cookies v Cookie Policy odpovídá skutečně používaným skriptům
+[P222] [word/document.xml] [ ]
+[P223] [word/document.xml] 8
+[P224] [word/document.xml] Po odvolání souhlasu jsou dotčené skripty okamžitě deaktivovány
+[P225] [word/document.xml] [ ]
+[P226] [word/document.xml] 9
+[P227] [word/document.xml] Implementováno logování souhlasu pro případ kontroly ÚOOÚ (min. 3 roky)
+[P228] [word/document.xml] [ ]
+[P229] [word/document.xml] 10
+[P230] [word/document.xml] Cookie Policy je propojena s Privacy Policy obousměrnými klikateltnými odkazy
+[P231] [word/document.xml] [ ]
+[P232] [word/document.xml] 11
+[P233] [word/document.xml] Aplikace respektuje GPC signál jako odvolání souhlasu
+[P234] [word/document.xml] [ ]
+[P235] [word/document.xml] 12
+[P236] [word/document.xml] Byl proveden test v anonymním okně prohlížeče (žádný tracking před souhlasem)
+[P237] [word/document.xml] [ ]
+[P238] [word/document.xml] 📅  Cookie Policy je účinná od [doplnit datum]. Verze 1.1.
+Za aktuálnost a soulad dokumentu s platnou legislativou odpovídá: [doplnit jméno / funkci].
+[P239] [word/document.xml] Cleansia s.r.o.  |  IČO: [Doplnit]  |  GDPR kontakt: [Doplnit e-mail]  |  Cookie Policy v1.1
+[P240] [word/footer1.xml] Verze 1.1  |  Cleansia s.r.o.  |  Interní dokument — nezveřejňovat v plném znění
+[P241] [word/header1.xml] CLEANSIA s.r.o.  |  Cookie Policy  |  Příloha k dokumentaci GDPR

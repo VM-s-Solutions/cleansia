@@ -1,59 +1,51 @@
-<div class="approve-dialog">
-  <form [formGroup]="form" (ngSubmit)="onApprove()">
-    <div class="approve-dialog__header">
-      <h2 class="approve-dialog__title">{{ data.title }}</h2>
-      <p class="approve-dialog__subtitle" *ngIf="data.subtitle">{{ data.subtitle }}</p>
-    </div>
+<form [formGroup]="form" (ngSubmit)="onApprove()" class="dialog-body">
+  @if (data.subtitle) {
+  <p class="dialog-lede">{{ data.subtitle }}</p>
+  }
 
-    <div class="approve-dialog__content">
-      <div class="approve-dialog__field">
-        <cleansia-select
-          [options]="data.countries"
-          [label]="'pages.employee_detail.approve_employee_dialog.work_country_label' | translate"
-          [floatVariant]="'on'"
-          [filter]="true"
-          formControlName="workCountryId"
-        />
-        <small class="approve-dialog__hint">
-          {{ 'pages.employee_detail.approve_employee_dialog.work_country_hint' | translate }}
-        </small>
-        <small
-          class="approve-dialog__error"
-          *ngIf="form.controls.workCountryId.touched && form.controls.workCountryId.hasError('required')">
-          {{ 'pages.employee_detail.approve_employee_dialog.work_country_required' | translate }}
-        </small>
-      </div>
-
-      <div class="approve-dialog__field">
-        <cleansia-textarea
-          formControlName="notes"
-          [rows]="3"
-          [placeholder]="'pages.employee_detail.approve_employee_dialog.notes_placeholder' | translate"
-          className="full-width"
-        />
-        <small class="approve-dialog__hint">
-          {{ 'pages.employee_detail.approve_employee_dialog.notes_hint' | translate }}
-        </small>
-      </div>
-    </div>
-
-    <div class="approve-dialog__footer">
-      <cleansia-button
-        buttonType="button"
-        [label]="'pages.employee_detail.approve_employee_dialog.cancel_button' | translate"
-        severity="secondary"
-        className="p-button-text p-button-secondary"
-        (onClick)="onCancel()"
-        [disabled]="loading()"
-      />
-      <cleansia-button
-        buttonType="submit"
-        [label]="'pages.employee_detail.approve_employee_dialog.approve_button' | translate"
-        icon="pi pi-check"
-        severity="success"
-        [disabled]="form.invalid || loading()"
-        [loading]="loading()"
+  <div class="form-grid">
+    <div class="form-field form-field--full">
+      <cleansia-select
+        [options]="data.countries"
+        [label]="'pages.employee_detail.approve_employee_dialog.work_country_label' | translate"
+        [filter]="true"
+        [required]="true"
+        [showClear]="false"
+        formControlName="workCountryId"
       />
     </div>
-  </form>
-</div>
+    <p class="form-hint">
+      {{ 'pages.employee_detail.approve_employee_dialog.work_country_hint' | translate }}
+    </p>
+
+    <div class="form-field form-field--full">
+      <cleansia-textarea
+        formControlName="notes"
+        [rows]="3"
+        [label]="'pages.employee_detail.approve_employee_dialog.notes_label' | translate"
+        [placeholder]="'pages.employee_detail.approve_employee_dialog.notes_placeholder' | translate"
+      />
+    </div>
+    <p class="form-hint">
+      {{ 'pages.employee_detail.approve_employee_dialog.notes_hint' | translate }}
+    </p>
+  </div>
+
+  <div class="dialog-actions">
+    <cleansia-button
+      buttonType="button"
+      [label]="'global.actions.cancel' | translate"
+      severity="secondary"
+      [outlined]="true"
+      [disabled]="loading()"
+      (onClick)="onCancel()"
+    />
+    <cleansia-button
+      buttonType="submit"
+      [label]="'pages.employee_detail.approve_employee_dialog.approve_button' | translate"
+      icon="pi pi-check"
+      [disabled]="form.invalid || loading()"
+      [loading]="loading()"
+    />
+  </div>
+</form>

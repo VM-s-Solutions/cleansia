@@ -1,47 +1,4 @@
 .cleansia-profile {
-  display: flex;
-  justify-content: center;
-  padding: 1rem;
-  max-width: 100vw;
-  overflow-x: hidden;
-  position: relative;
-
-  &__form-card {
-    padding: 2rem;
-    width: 100%;
-    max-width: 1200px;
-    display: flex;
-    flex-direction: column;
-    row-gap: 1rem;
-
-    @media (max-width: 768px) {
-      padding: 0.75rem;
-      row-gap: 0.5rem;
-    }
-  }
-
-  &__header {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 1rem;
-
-    @media (max-width: 768px) {
-      gap: 0.5rem;
-    }
-  }
-
-  &__description {
-    color: var(--cleansia-text-secondary);
-    font-size: 1rem;
-    line-height: 1.5;
-
-    @media (max-width: 768px) {
-      font-size: 0.875rem;
-    }
-  }
-
-  // Responsive grid layout for form fields
   &__fields {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
@@ -54,62 +11,6 @@
     @media (max-width: 640px) {
       grid-template-columns: 1fr;
       gap: 0.75rem;
-    }
-  }
-
-  // Legacy grid rows (used by other sections if needed)
-  &__grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    gap: 1.25rem;
-    max-width: 100%;
-
-    @media (max-width: 968px) {
-      grid-template-columns: repeat(2, 1fr);
-    }
-
-    @media (max-width: 640px) {
-      grid-template-columns: 1fr;
-      gap: 0.5rem;
-    }
-  }
-
-  &__address-row {
-    display: grid;
-    grid-column: 1 / -1;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 1.25rem;
-    width: 100%;
-
-    @media (max-width: 640px) {
-      grid-template-columns: 1fr;
-      gap: 0.5rem;
-    }
-  }
-
-  &__contact-row {
-    display: grid;
-    grid-column: 1 / -1;
-    grid-template-columns: 1fr 1fr;
-    gap: 1.25rem;
-    width: 100%;
-
-    @media (max-width: 640px) {
-      grid-template-columns: 1fr;
-      gap: 0.5rem;
-    }
-  }
-
-  &__nationality-row {
-    display: grid;
-    grid-column: 1 / -1;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 1.25rem;
-    width: 100%;
-
-    @media (max-width: 640px) {
-      grid-template-columns: 1fr;
-      gap: 0.5rem;
     }
   }
 
@@ -161,10 +62,6 @@
       margin: 0;
       color: var(--cleansia-text-secondary);
     }
-
-    cleansia-button {
-      max-width: 12rem;
-    }
   }
 
   &__label {
@@ -210,11 +107,12 @@
   }
 
   &__actions {
-    width: 100%;
+    display: flex;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    gap: 0.75rem;
   }
 
-  // Documents Section Styles
-  // ── Old document classes (kept for backwards compat) ──
   &__upload-info {
     font-size: 0.8rem;
     color: var(--cleansia-text-secondary);
@@ -223,7 +121,7 @@
 }
 
 // =============================
-// Documents — modern card design
+// Documents
 // =============================
 .doc-upload {
   display: flex;
@@ -247,46 +145,51 @@
   }
 
   &__dropzone {
-    border: 2px dashed var(--cleansia-border-color, #d1d5db);
+    border: 2px dashed var(--cleansia-border-color);
     border-radius: 12px;
     padding: 2rem 1.5rem;
     text-align: center;
     cursor: pointer;
     transition: all 0.2s ease;
-    background: var(--surface-ground, #fafafa);
+    background: var(--cleansia-background-secondary);
     display: flex;
     flex-direction: column;
     align-items: center;
     gap: 0.35rem;
 
-    &:hover, &--active {
-      border-color: var(--cleansia-primary-400, #60a5fa);
-      background: var(--cleansia-primary-50, #eff6ff);
+    &:hover,
+    &--active {
+      border-color: var(--cleansia-primary-400);
+      background: var(--cleansia-primary-50);
     }
 
     &--active {
       border-style: solid;
     }
 
+    &:focus-visible {
+      outline: 2px solid var(--cleansia-primary-600);
+      outline-offset: 2px;
+    }
+
     &-icon {
       font-size: 2rem;
-      color: var(--cleansia-primary-400, #60a5fa);
+      color: var(--cleansia-primary-400);
     }
     &-title {
       font-weight: 600;
       font-size: 0.9375rem;
-      color: var(--text-color);
+      color: var(--cleansia-text-primary);
       margin: 0;
     }
     &-subtitle {
       font-size: 0.8125rem;
-      color: var(--text-color-secondary);
+      color: var(--cleansia-text-secondary);
       margin: 0;
     }
     &-formats {
       font-size: 0.7rem;
-      color: var(--text-color-secondary);
-      opacity: 0.6;
+      color: var(--cleansia-text-muted);
     }
   }
 }
@@ -294,8 +197,8 @@
 .doc-staged {
   margin-top: 1rem;
   padding: 1rem;
-  background: var(--surface-ground, #f9fafb);
-  border-radius: 10px;
+  background: var(--cleansia-background-secondary);
+  border-radius: 12px;
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
@@ -310,7 +213,7 @@
     font-size: 0.875rem;
     font-weight: 600;
     margin: 0;
-    color: var(--text-color);
+    color: var(--cleansia-text-primary);
     display: flex;
     align-items: center;
     gap: 0.5rem;
@@ -323,8 +226,8 @@
     width: 20px;
     height: 20px;
     border-radius: 50%;
-    background: var(--primary-color, #3b82f6);
-    color: #fff;
+    background: var(--cleansia-primary-600);
+    color: var(--cleansia-white);
     font-size: 0.65rem;
     font-weight: 700;
   }
@@ -345,14 +248,14 @@
     align-items: center;
     gap: 0.625rem;
     padding: 0.5rem 0.75rem;
-    background: var(--surface-card, #fff);
+    background: var(--cleansia-white);
     border-radius: 8px;
     border: 1px solid transparent;
     transition: border-color 0.15s;
 
     &--error {
-      border-color: var(--cleansia-error-400, #f87171);
-      background: var(--cleansia-error-50, #fef2f2);
+      border-color: var(--cleansia-error-400);
+      background: var(--cleansia-error-50);
     }
   }
 
@@ -362,19 +265,23 @@
     gap: 0.35rem;
     margin: 0;
     font-size: 0.8rem;
-    color: var(--cleansia-error-600, #dc2626);
+    color: var(--cleansia-error-600);
 
-    i { font-size: 0.85rem; }
+    i {
+      font-size: 0.85rem;
+    }
   }
 
   &__file-icon {
     width: 36px;
+    min-width: 36px;
     height: 36px;
     border-radius: 6px;
     display: flex;
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
+    overflow: hidden;
 
     span {
       font-size: 0.6rem;
@@ -399,35 +306,17 @@
     width: 180px;
     flex-shrink: 0;
 
-    ::ng-deep {
-      .p-select {
-        min-height: 1.75rem;
-        font-size: 0.8rem;
-      }
-      .p-floatlabel label {
-        font-size: 0.75rem;
-      }
+    .p-select {
+      min-height: 1.75rem;
+      font-size: 0.8rem;
     }
 
-    @media (max-width: 480px) { max-width: 160px; }
-  }
+    .p-floatlabel label {
+      font-size: 0.75rem;
+    }
 
-  &__remove {
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
-    border: none;
-    background: transparent;
-    color: var(--text-color-secondary);
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.15s;
-
-    &:hover {
-      background: var(--cleansia-error-50, #fef2f2);
-      color: var(--cleansia-error-500, #ef4444);
+    @media (max-width: 480px) {
+      max-width: 160px;
     }
   }
 }
@@ -443,8 +332,8 @@
     align-items: center;
     gap: 1rem;
     padding: 1rem;
-    border: 1px solid var(--surface-border, #e5e7eb);
-    border-radius: 10px;
+    border: 1px solid var(--cleansia-border);
+    border-radius: 12px;
   }
 
   &__text {
@@ -461,10 +350,10 @@
   &__title {
     font-size: 0.9375rem;
     font-weight: 600;
-    color: var(--text-color);
+    color: var(--cleansia-text-primary);
     margin: 0 0 1rem;
     padding-bottom: 0.5rem;
-    border-bottom: 1px solid var(--surface-border, #e5e7eb);
+    border-bottom: 1px solid var(--cleansia-border);
   }
 
   &__grid {
@@ -483,23 +372,26 @@
   align-items: flex-start;
   gap: 0.75rem;
   padding: 1rem;
-  background: var(--surface-ground, #f9fafb);
+  background: var(--cleansia-background-secondary);
   border: none;
-  border-radius: 10px;
+  border-radius: 12px;
   transition: background 0.2s;
 
   &:hover {
-    background: var(--surface-hover, #f3f4f6);
+    background: var(--cleansia-primary-50);
   }
 
+  // The tile is a fixed square: a name with no extension draws a file glyph, never its own letters.
   &__icon-wrapper {
     width: 44px;
+    min-width: 44px;
     height: 44px;
     border-radius: 8px;
     display: flex;
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
+    overflow: hidden;
     opacity: 0.85;
   }
 
@@ -518,45 +410,21 @@
     gap: 0.375rem;
   }
 
+  // Name on its own line, badge under it: a long name wraps instead of losing its end.
   &__header {
     display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    flex-wrap: wrap;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.375rem;
   }
 
   &__name {
     font-weight: 600;
     font-size: 0.875rem;
+    line-height: 1.35;
     margin: 0;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    flex: 1;
     min-width: 0;
-  }
-
-  &__badge {
-    padding: 0.15rem 0.5rem;
-    border-radius: 10px;
-    font-size: 0.65rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.3px;
-    white-space: nowrap;
-
-    &.status-pending {
-      background: var(--cleansia-warning-100);
-      color: var(--cleansia-warning-800);
-    }
-    &.status-approved {
-      background: var(--cleansia-success-100);
-      color: var(--cleansia-success-800);
-    }
-    &.status-rejected {
-      background: var(--cleansia-error-100);
-      color: var(--cleansia-error-800);
-    }
+    overflow-wrap: anywhere;
   }
 
   &__meta {
@@ -564,7 +432,7 @@
     flex-wrap: wrap;
     gap: 0.75rem;
     font-size: 0.75rem;
-    color: var(--text-color-secondary);
+    color: var(--cleansia-text-secondary);
 
     span {
       display: flex;
@@ -580,7 +448,7 @@
   &__review-notes {
     margin-top: 0.25rem;
     padding: 0.5rem 0.75rem;
-    background: var(--cleansia-error-50, #fef2f2);
+    background: var(--cleansia-error-50);
     border-radius: 6px;
     font-size: 0.8rem;
     color: var(--cleansia-error-700);
@@ -599,65 +467,10 @@
     gap: 0.25rem;
     flex-shrink: 0;
   }
-
-  &__action-btn {
-    width: 32px;
-    height: 32px;
-    border-radius: 6px;
-    border: none;
-    background: transparent;
-    color: var(--text-color-secondary);
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.15s;
-    font-size: 0.875rem;
-
-    &:hover {
-      background: var(--cleansia-primary-50, #eff6ff);
-      color: var(--cleansia-primary-500, #3b82f6);
-    }
-    &--danger:hover {
-      background: var(--cleansia-error-50, #fef2f2);
-      color: var(--cleansia-error-500, #ef4444);
-    }
-  }
 }
 
 cleansia-partner-profile {
   display: block;
   background: var(--cleansia-primary-0);
   min-height: 100vh;
-
-  cleansia-section {
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-
-    @media (max-width: 768px) {
-      gap: 0.5rem;
-    }
-
-    &:last-of-type {
-      padding-bottom: 0.75rem;
-    }
-  }
-
-  .p-calendar {
-    width: 100%;
-
-    .p-inputtext {
-      width: 100%;
-      padding: 0.75rem;
-      border: 1px solid var(--cleansia-border-color);
-      border-radius: 6px;
-      font-size: 1rem;
-
-      &:focus {
-        border-color: var(--cleansia-primary-500);
-        box-shadow: 0 0 0 2px rgba(var(--cleansia-primary-rgb), 0.2);
-      }
-    }
-  }
 }

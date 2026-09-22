@@ -9,14 +9,13 @@
         {{ 'global.messages.profile.job_radius_load_error' | translate }}
       </p>
       <cleansia-button
-        [buttonType]="'button'"
-        [title]="'global.actions.retry' | translate"
+        [label]="'global.actions.retry' | translate"
         [icon]="'pi pi-refresh'"
-        (clickFn)="retry.emit()"
+        (onClick)="retry.emit()"
       />
     </div>
   } @else if (!facade.loaded()) {
-    <cleansia-form-skeleton />
+    <cleansia-loader />
   } @else {
     <div class="cleansia-profile__fields" [formGroup]="facade.formGroup">
       <div class="cleansia-profile__field">
@@ -49,12 +48,10 @@
     </div>
     <div class="cleansia-profile__actions">
       <cleansia-button
-        [buttonType]="'button'"
-        [style]="'raised-button'"
-        [title]="'global.actions.save' | translate"
+        [label]="'global.actions.save' | translate"
         [disabled]="!facade.canSubmit()"
         [loading]="facade.saving()"
-        (clickFn)="facade.onSubmit()"
+        (onClick)="facade.onSubmit()"
       />
     </div>
   }

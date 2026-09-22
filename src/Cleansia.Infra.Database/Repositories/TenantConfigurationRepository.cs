@@ -11,11 +11,6 @@ public class TenantConfigurationRepository(CleansiaDbContext context) : BaseRepo
         return GetDbSet().FirstOrDefaultAsync(c => c.Key == key, cancellationToken);
     }
 
-    public Task<bool> ExistsWithKeyAsync(string key, CancellationToken cancellationToken)
-    {
-        return GetDbSet().AnyAsync(c => c.Key == key, cancellationToken);
-    }
-
     public async Task<IReadOnlyList<TenantConfiguration>> GetAllAsync(CancellationToken cancellationToken)
     {
         return await GetDbSet()

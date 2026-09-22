@@ -4,11 +4,11 @@
 // Z-Index Scale
 // 1-9: In-page elements (tables, cards, etc.)
 // 10-99: Overlays within page context (dropdowns, tooltips)
-// 100-199: Fixed page elements (sticky headers)
-// 200-499: Modal overlays (dialogs, sidebars)
-// 500-899: PrimeNG overlays (dropdowns, calendars, multiselects)
+// 100-199: Fixed page elements (sticky headers, the desktop sidebar)
+// 200-499: Modal overlays — mobile sidebar 300/301, filter drawer 400/401
+// 500-899: PrimeNG overlays (dialogs 600/601, tooltips 550)
 // 900-999: Toasts and notifications
-// 1000+: Loader (fullscreen blocking overlay)
+// 1000+: Loader (fullscreen blocking overlay) and PrimeNG popovers (1100)
 
 // PrimeNG Overlay z-index overrides
 // These overlays are appended to body and need to appear above table headers

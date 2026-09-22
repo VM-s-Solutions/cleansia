@@ -1,0 +1,43 @@
+.user-loyalty-detail {
+  &__tier-star {
+    font-size: 1.25rem;
+    color: #cd7f32;
+
+    &[data-tier='silver'] {
+      color: #94a3b8;
+    }
+
+    &[data-tier='gold'] {
+      color: #f59e0b;
+    }
+
+    &[data-tier='platinum'] {
+      color: var(--cleansia-primary-600);
+    }
+  }
+
+  &__credit-account {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+
+    & + & {
+      padding-top: 1.5rem;
+      border-top: 1px solid var(--cleansia-border);
+    }
+  }
+
+  &__timeline-description {
+    margin: 0;
+    max-width: 80ch;
+    line-height: 1.6;
+    color: var(--cleansia-text-secondary);
+  }
+
+  &__referrals-subtitle {
+    margin: 0;
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: var(--cleansia-text-primary);
+  }
+}

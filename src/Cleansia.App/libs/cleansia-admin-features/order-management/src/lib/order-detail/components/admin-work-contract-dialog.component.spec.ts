@@ -38,6 +38,7 @@ class FacadeStub {
   readonly loading = signal(false);
   readonly loadFailed = signal(false);
   readonly language = signal('en');
+  readonly effectiveFromLabel = signal('Sep 20, 2026');
   readonly factRows = signal<WorkContractRow[]>([]);
   readonly acceptanceRows = signal<WorkContractRow[]>([]);
   readonly renderedLanguageNotice = signal<{ language: string; accepted: string } | null>(null);

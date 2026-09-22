@@ -20,14 +20,6 @@
       "zipCode": "Zip Code"
     }
   },
-  "common": {
-    "save": "Save",
-    "cancel": "Cancel",
-    "edit": "Edit",
-    "delete": "Delete",
-    "loading": "Loading...",
-    "confirm": "Confirm"
-  },
   "page_titles": {
     "admin": {
       "default": "Admin Portal",
@@ -76,12 +68,6 @@
       "company_settings": "Company settings",
       "company_lifecycle": "Company lifecycle",
       "templates": "Templates",
-      "invoice_templates": "Invoice Templates",
-      "invoice_template_create": "Create Invoice Template",
-      "invoice_template_edit": "Edit Invoice Template",
-      "receipt_templates": "Receipt Templates",
-      "receipt_template_create": "Create Receipt Template",
-      "receipt_template_edit": "Edit Receipt Template",
       "email_templates": "Email Templates",
       "email_template_translations": "Email Template Translations",
       "fiscal_failures": "Fiscal Failures",
@@ -112,59 +98,19 @@
       "go_home": "Go to the home page",
       "error_code": "Error {{code}}"
     },
-    "availability": {
-      "days": {
-        "monday": "Monday",
-        "monday_short": "Mon",
-        "tuesday": "Tuesday",
-        "tuesday_short": "Tue",
-        "wednesday": "Wednesday",
-        "wednesday_short": "Wed",
-        "thursday": "Thursday",
-        "thursday_short": "Thu",
-        "friday": "Friday",
-        "friday_short": "Fri",
-        "saturday": "Saturday",
-        "saturday_short": "Sat",
-        "sunday": "Sunday",
-        "sunday_short": "Sun"
-      },
-      "current_ranges": "Current Ranges",
-      "no_availability": "No availability set",
-      "add_time_range": "Add Time Range",
-      "start_time": "Start Time",
-      "end_time": "End Time",
-      "quick_setup": "Quick Setup",
-      "weekly_schedule": "Weekly Schedule",
-      "mon_fri_9_5": "Mon-Fri 9-5",
-      "mon_sat_8_4": "Mon-Sat 8-4",
-      "custom": "Custom",
-      "legend_working": "Working",
-      "legend_custom": "Custom hours",
-      "legend_off": "Day off",
-      "no_days_selected": "Select working days to set up the schedule",
-      "working_day": "Working Day",
-      "day_off": "Day Off",
-      "custom_hours": "Custom Hours",
-      "exception_day_off": "Exception - Day Off",
-      "edit_hours": "Edit Hours",
-      "remove_exception": "Remove Exception",
-      "mark_exception": "Mark as Exception",
-      "set_custom_hours": "Set custom hours",
-      "mark_unavailable": "This day will be marked as unavailable.",
-      "add_time_slot": "Add Time Slot",
-      "schedule_setup": "Schedule Setup",
-      "schedule_setup_desc": "Select working days and set your hours.",
-      "working_hours": "Working Hours",
-      "working_days": "Working Days",
-      "apply": "Apply"
-    },
     "brand_mark_alt": "Cleansia"
   },
   "global": {
     "yes": "Yes",
     "no": "No",
     "close": "Close",
+    "open_menu": "Open menu",
+    "close_menu": "Close menu",
+    "filters": {
+      "title": "Filters",
+      "reset": "Reset Filters",
+      "clear_all": "Clear All"
+    },
     "all": "All",
     "no_data": "No data to display",
     "loading": "Loading...",
@@ -181,6 +127,7 @@
       "save": "Save",
       "create": "Create",
       "cancel": "Cancel",
+      "confirm": "Confirm",
       "edit": "Edit",
       "view": "View",
       "delete": "Delete",
@@ -197,6 +144,9 @@
     },
     "dialog": {
       "confirm": "Confirm",
+      "delete": "Delete",
+      "confirm_delete": "Are you sure you want to delete this item?",
+      "confirm_delete_item": "Are you sure you want to delete {{item}}?",
       "confirm_logout": "Are you sure you want to log out?"
     },
     "user": {
@@ -219,6 +169,90 @@
     },
     "show_password": "Show password",
     "hide_password": "Hide password"
+  },
+  "enums": {
+    "order_status": {
+      "new": "New",
+      "pending": "Pending",
+      "confirmed": "Confirmed",
+      "on_the_way": "On the way",
+      "in_progress": "In Progress",
+      "completed": "Completed",
+      "cancelled": "Cancelled"
+    },
+    "payment_status": {
+      "pending": "Pending",
+      "paid": "Paid",
+      "failed": "Failed",
+      "refunded": "Refunded",
+      "disputed": "Disputed",
+      "partially_refunded": "Partially refunded"
+    },
+    "contract_status": {
+      "pending": "Pending",
+      "active": "Active",
+      "terminated": "Terminated",
+      "approved": "Approved",
+      "rejected": "Rejected"
+    },
+    "invoice_status": {
+      "pending": "Pending",
+      "approved": "Approved",
+      "paid": "Paid",
+      "disputed": "Disputed",
+      "rejected": "Rejected",
+      "cancelled": "Cancelled"
+    },
+    "invoice_pdf_state": {
+      "ready": "Ready",
+      "pending": "Generating…",
+      "failed": "Failed"
+    },
+    "dispute_status": {
+      "pending": "Pending",
+      "under_review": "Under review",
+      "waiting_for_response": "Waiting for response",
+      "resolved": "Resolved",
+      "closed": "Closed",
+      "escalated": "Escalated"
+    },
+    "pay_period_status": {
+      "open": "Open",
+      "closed": "Closed",
+      "paid": "Paid"
+    },
+    "company_lifecycle_state": {
+      "operating": "Operating",
+      "winding_down": "Winding down",
+      "deactivated": "Deactivated",
+      "frozen": "Frozen",
+      "archived": "Archived"
+    },
+    "settlement_fact_status": {
+      "blocking": "Blocks the archive",
+      "settled": "Settled",
+      "informational": "Informational"
+    },
+    "referral_status": {
+      "accepted": "Accepted",
+      "qualified": "Qualified",
+      "expired": "Expired",
+      "reversed": "Reversed"
+    },
+    "document_status": {
+      "pending": "Pending",
+      "approved": "Approved",
+      "rejected": "Rejected"
+    },
+    "active_status": {
+      "active": "Active",
+      "inactive": "Inactive"
+    },
+    "promo_code_status": {
+      "active": "Active",
+      "inactive": "Inactive",
+      "expired": "Expired"
+    }
   },
   "sidebar": {
     "employees": "Employees",
@@ -263,11 +297,6 @@
       "title": "Access Denied",
       "message": "You don't have permission to access this area. Administrator privileges are required."
     },
-    "login": {
-      "email": "Email",
-      "password": "Password",
-      "remember_me": "Remember me"
-    },
     "employee_management": {
       "title": "Employee Management",
       "description": "Manage employees, approve registrations, and track performance",
@@ -285,18 +314,14 @@
       "view_details": "View Details",
       "no_employees": "No employees to display",
       "filters": {
-        "title": "Filters",
         "search": "Search",
         "search_placeholder": "Search by name, email or phone",
         "contract_status": "Contract Status",
-        "active_status": "Active Status",
-        "reset": "Reset Filters",
-        "clear_all": "Clear All"
+        "active_status": "Active Status"
       },
       "approve_dialog": {
         "title": "Approve Employee",
         "subtitle": "Pick the country this cleaner is approved to work in. This drives their currency, language and VAT defaults.",
-        "cancel_button": "Cancel",
         "approve_button": "Approve Employee"
       },
       "reject_dialog": {
@@ -305,9 +330,6 @@
         "reason_label": "Rejection Reason",
         "reason_placeholder": "Enter detailed reason for rejection...",
         "reason_hint": "Maximum 500 characters",
-        "reason_required": "Rejection reason is required",
-        "reason_too_long": "Rejection reason is too long (max 500 characters)",
-        "cancel_button": "Cancel",
         "reject_button": "Reject Employee"
       },
       "messages": {
@@ -370,15 +392,6 @@
       "rejection_reason": "Rejection Reason",
       "rejected_by": "Rejected By",
       "rejected_at": "Rejected At",
-      "availability": "Weekly Availability",
-      "Monday": "Monday",
-      "Tuesday": "Tuesday",
-      "Wednesday": "Wednesday",
-      "Thursday": "Thursday",
-      "Friday": "Friday",
-      "Saturday": "Saturday",
-      "Sunday": "Sunday",
-      "no_availability": "No availability set",
       "documents": "Documents",
       "no_documents": "No documents uploaded",
       "pending_documents": "Pending Documents",
@@ -405,10 +418,9 @@
         "subtitle": "Pick the country this cleaner is approved to work in. This drives their currency, language and VAT defaults.",
         "work_country_label": "Work Country",
         "work_country_hint": "Only countries we currently service are selectable.",
-        "work_country_required": "Work country is required",
+        "notes_label": "Approval notes",
         "notes_placeholder": "Optional approval notes...",
         "notes_hint": "Maximum 1000 characters",
-        "cancel_button": "Cancel",
         "approve_button": "Approve Employee"
       },
       "reject_employee_dialog": {
@@ -419,7 +431,6 @@
         "reason_hint": "Maximum 500 characters",
         "reason_required": "Rejection reason is required",
         "reason_too_long": "Rejection reason is too long (max 500 characters)",
-        "cancel_button": "Cancel",
         "reject_button": "Reject Employee"
       },
       "reject_document_dialog": {
@@ -430,7 +441,6 @@
         "reason_hint": "Maximum 500 characters",
         "reason_required": "Rejection reason is required",
         "reason_too_long": "Rejection reason is too long (max 500 characters)",
-        "cancel_button": "Cancel",
         "reject_button": "Reject Document"
       },
       "messages": {
@@ -444,8 +454,6 @@
         "document_reject_success": "Document rejected successfully",
         "document_reject_error": "Failed to reject document",
         "document_download_error": "Failed to download document",
-        "availability_save_success": "Availability updated successfully",
-        "availability_save_error": "Failed to update availability",
         "employee_update_success": "Employee updated successfully",
         "employee_update_error": "Failed to update employee",
         "pay_config_save_success": "Pay configuration saved successfully",
@@ -454,12 +462,6 @@
         "pay_config_delete_error": "Failed to delete pay configuration",
         "pay_config_bulk_success": "Pay configurations applied: {{created}} created, {{skipped}} skipped",
         "weekly_limit_save_success": "Weekly order limit updated"
-      },
-      "document_status": {
-        "pending": "Pending",
-        "approved": "Approved",
-        "rejected": "Rejected",
-        "unknown": "Unknown"
       },
       "grade": "Grade",
       "document_types": {
@@ -544,7 +546,10 @@
       },
       "weekly_order_limit": "Weekly order limit",
       "weekly_order_limit_unlimited": "Unlimited",
-      "weekly_order_limit_hint": "Leave empty for no limit"
+      "weekly_order_limit_hint": "Leave empty for no limit",
+      "not_found": "Employee not found",
+      "actions_section": "Actions",
+      "rate_format": "{{base}} + {{room}}/room + {{bath}}/bath"
     },
     "order_management": {
       "title": "Order Management",
@@ -562,7 +567,6 @@
       "view_details": "View Details",
       "no_orders": "No orders found",
       "filters": {
-        "title": "Filters",
         "search": "Search",
         "search_placeholder": "Search by customer name or order #",
         "order_status": "Order Status",
@@ -570,8 +574,6 @@
         "date_range": "Date Range",
         "date_from": "Date From",
         "date_to": "Date To",
-        "reset": "Reset Filters",
-        "clear_all": "Clear All",
         "currency": "Currency"
       },
       "order_status": {
@@ -767,23 +769,15 @@
       "total_amount": "Total Amount",
       "status": "Status",
       "pdf_status": "PDF",
-      "pdf_state": {
-        "ready": "Ready",
-        "failed": "Failed",
-        "pending": "Generating…"
-      },
       "generated_at": "Generated",
       "actions": "Actions",
       "view_details": "View Details",
       "download": "Download PDF",
       "no_invoices": "No invoices found",
       "filters": {
-        "title": "Filters",
         "search": "Search",
         "search_placeholder": "Search by invoice number or employee",
         "status": "Invoice Status",
-        "reset": "Reset Filters",
-        "clear_all": "Clear All",
         "currency": "Currency"
       },
       "invoice_status": {
@@ -819,7 +813,6 @@
         "failure": "Failure"
       },
       "filters": {
-        "title": "Filters",
         "actor": "Actor",
         "actor_id": "Actor ID",
         "actor_email": "Actor Email",
@@ -831,8 +824,6 @@
         "date_range": "Date Range",
         "date_from": "From",
         "date_to": "To",
-        "reset": "Reset Filters",
-        "clear_all": "Clear All",
         "actor_role": "Actor role"
       },
       "history": {
@@ -1040,11 +1031,8 @@
       "delete_confirm": "Are you sure you want to delete this service? This action cannot be undone.",
       "no_services": "No services found",
       "filters": {
-        "title": "Filters",
         "search": "Search",
         "search_placeholder": "Search by name or description",
-        "reset": "Reset Filters",
-        "clear_all": "Clear All",
         "status": "Status",
         "status_all": "All",
         "status_active": "Active",
@@ -1071,18 +1059,6 @@
       "activate_service": "Activate Service",
       "deactivate_service": "Deactivate Service",
       "deactivate_confirm": "Deactivate “{{name}}”? It will be hidden from the customer booking catalog; history is kept."
-    },
-    "service_edit": {
-      "create_title": "Create Service",
-      "edit_title": "Edit Service",
-      "basic_info": "Basic Information",
-      "translations_cs": "Czech (CS)",
-      "translations_en": "English (EN)",
-      "name": "Name",
-      "description": "Description",
-      "base_price": "Base Price (CZK)",
-      "per_room_price": "Per Room Price (CZK)",
-      "estimated_time": "Estimated Time (minutes)"
     },
     "service_form": {
       "create_title": "Create Service",
@@ -1116,11 +1092,8 @@
       "delete_confirm": "Are you sure you want to delete this package? This action cannot be undone.",
       "no_packages": "No packages found",
       "filters": {
-        "title": "Filters",
         "search": "Search",
         "search_placeholder": "Search by name or description",
-        "reset": "Reset Filters",
-        "clear_all": "Clear All",
         "status": "Status",
         "status_all": "All",
         "status_active": "Active",
@@ -1151,7 +1124,7 @@
       "create_title": "Create Package",
       "edit_title": "Edit Package",
       "basic_info": "Basic Information",
-      "services": "Included Services",
+      "contents": "Package contents",
       "translations": "Translations",
       "name": "Name",
       "description": "Description",
@@ -1161,7 +1134,6 @@
       "price_required": "Required",
       "price_optional": "Optional",
       "included_services": "Included Services",
-      "select_services": "Select services to include",
       "weights_title": "Relative price weights",
       "weight": "Weight",
       "derived_gross": "Derived gross",
@@ -1187,11 +1159,8 @@
       "deactivate_confirm": "Deactivate “{{name}}”? It will be hidden from the booking wizard; orders that bought it are kept.",
       "no_extras": "No extras found",
       "filters": {
-        "title": "Filters",
         "search": "Search",
         "search_placeholder": "Search by slug, name or description",
-        "reset": "Reset Filters",
-        "clear_all": "Clear All",
         "status": "Status",
         "status_all": "All",
         "status_active": "Active",
@@ -1240,11 +1209,8 @@
       "activate_confirm": "Are you sure you want to activate this administrator? They will regain access to the admin panel.",
       "no_users": "No admin users found",
       "filters": {
-        "title": "Filters",
         "search": "Search",
-        "search_placeholder": "Search by name or email",
-        "reset": "Reset Filters",
-        "clear_all": "Clear All"
+        "search_placeholder": "Search by name or email"
       },
       "columns": {
         "name": "Name",
@@ -1299,11 +1265,8 @@
       "delete_confirm": "Are you sure you want to delete this language? This may affect existing translations.",
       "no_languages": "No languages found",
       "filters": {
-        "title": "Filters",
         "search": "Search",
-        "search_placeholder": "Search by code or name",
-        "reset": "Reset Filters",
-        "clear_all": "Clear All"
+        "search_placeholder": "Search by code or name"
       },
       "columns": {
         "code": "Code",
@@ -1377,7 +1340,6 @@
       "delete_confirm": "Are you sure you want to delete this country? This may affect existing data.",
       "set_default_market": "Set as default market",
       "set_default_market_confirm": "Set {{name}} as the default market? Visitors will see it until they pick a country.",
-      "default_market": "Default market",
       "no_countries": "No countries found",
       "columns": {
         "iso_code": "ISO Code",
@@ -1428,9 +1390,7 @@
         "zip_prefix_hint": "Not enforced yet — captured for future stricter validation.",
         "active_label": "Active",
         "active": "Active",
-        "inactive": "Inactive",
-        "save": "Save",
-        "cancel": "Cancel"
+        "inactive": "Inactive"
       },
       "messages": {
         "country_updated": "Country service status updated",
@@ -1458,9 +1418,6 @@
       "iso_alpha2": "Two-letter code",
       "iso_alpha2_placeholder": "e.g. CZ, US, DE",
       "iso_alpha2_help": "ISO 3166-1 alpha-2. Customers see it on the market chip.",
-      "validation": {
-        "iso_alpha2_invalid": "Exactly two letters."
-      },
       "market": "Market",
       "insurance_coverage_amount": "Insurance coverage per booking",
       "insurance_coverage_amount_placeholder": "Leave empty to state no figure",
@@ -1757,12 +1714,6 @@
         "requested_on": "Requested",
         "status": "Status"
       },
-      "status": {
-        "pending": "Pending",
-        "approved": "Approved",
-        "rejected": "Rejected",
-        "unknown": "Unknown"
-      },
       "messages": {
         "approve_success": "Document deleted",
         "reject_success": "Request rejected"
@@ -1777,11 +1728,8 @@
       "delete_confirm": "Are you sure you want to delete this company information? This action cannot be undone.",
       "no_companies": "No company information found",
       "filters": {
-        "title": "Filters",
         "search": "Search",
-        "search_placeholder": "Search by name or city",
-        "reset": "Reset Filters",
-        "clear_all": "Clear All"
+        "search_placeholder": "Search by name or city"
       },
       "columns": {
         "legal_name": "Legal Name",
@@ -1889,13 +1837,6 @@
         "acts": "Acts",
         "facts": "Settlement facts"
       },
-      "states": {
-        "Operating": "Operating",
-        "WindingDown": "Winding down",
-        "Deactivated": "Deactivated",
-        "Frozen": "Frozen",
-        "Archived": "Archived"
-      },
       "stamps": {
         "wind_down": "Wind-down from {{from}} — requested on {{requestedOn}} by {{email}}",
         "deactivated": "Deactivated on {{date}} by {{email}}",
@@ -1992,10 +1933,7 @@
       "apply_filter": "Apply Filter",
       "reset": "Reset Filters",
       "filters": {
-        "title": "Filters",
         "date_range": "Date Range",
-        "reset": "Reset Filters",
-        "clear_all": "Clear All",
         "currency": "Currency"
       },
       "revenue_report": "Revenue Report",
@@ -2083,14 +2021,6 @@
         "download": "Download PDF",
         "regenerate_pdf": "Regenerate PDF"
       },
-      "invoice_status": {
-        "pending": "Pending",
-        "approved": "Approved",
-        "paid": "Paid",
-        "disputed": "Disputed",
-        "rejected": "Rejected",
-        "cancelled": "Cancelled"
-      },
       "order_pays": {
         "order_number": "Order #",
         "base_pay": "Base Pay",
@@ -2105,7 +2035,8 @@
         "title": "Cancel Invoice",
         "subtitle": "Please provide a reason for cancelling this invoice",
         "reason_label": "Cancellation Reason",
-        "reason_placeholder": "Enter the reason for cancellation..."
+        "reason_placeholder": "Enter the reason for cancellation...",
+        "submit": "Cancel Invoice"
       },
       "assign_variable_symbol_confirm": {
         "title": "Assign payment reference?",
@@ -2192,7 +2123,12 @@
         "edit_title": "Edit promo code",
         "submit_create": "Create code",
         "submit_update": "Save changes",
-        "cancel": "Cancel",
+        "section": {
+          "identity": "Code and discount",
+          "limits": "Redemption rules",
+          "validity": "Validity",
+          "notes": "Notes and status"
+        },
         "field": {
           "code": "Code",
           "code_help": "3–20 characters, A-Z 0-9 only",
@@ -2229,19 +2165,24 @@
       },
       "detail": {
         "title": "Promo code details",
+        "details_title": "Details",
+        "actions_section": "Actions",
         "redemptions_title": "Redemptions",
         "redemptions_empty": "No redemptions yet",
         "deactivate_button": "Deactivate",
         "deactivate_confirm_title": "Deactivate this code?",
         "deactivate_confirm_body": "Customers won't be able to redeem this code anymore. Existing redemptions stay.",
         "deactivate_confirm_yes": "Deactivate",
-        "deactivate_confirm_cancel": "Keep active",
         "column": {
           "user": "User",
           "order": "Order",
           "applied": "Applied discount",
           "redeemed_on": "Redeemed on"
         }
+      },
+      "filters": {
+        "search": "Search",
+        "status": "Status"
       }
     },
     "loyalty_tiers": {
@@ -2268,7 +2209,6 @@
       "form": {
         "title": "Edit tier",
         "submit": "Save changes",
-        "cancel": "Cancel",
         "success": "Tier updated",
         "field": {
           "threshold": "Lifetime points threshold",
@@ -2281,9 +2221,6 @@
           "perks_json_help": "Array of objects with icon and labelKey. Example: [{\"icon\":\"badge\",\"labelKey\":\"loyalty.perks.welcome_badge\"}]"
         },
         "validation": {
-          "threshold_min": "Threshold must be 0 or greater",
-          "discount_range": "Discount must be between 0 and 100",
-          "min_order_min": "Minimum order must be 0 or greater",
           "perks_json_invalid": "Perks must be valid JSON"
         },
         "error": {
@@ -2297,7 +2234,6 @@
         "preview_results_title": "Impact preview",
         "result_row": "{{tier}}: {{currentCount}} → {{newCount}} ({{delta}})",
         "apply_button": "Apply changes",
-        "cancel_button": "Cancel",
         "applying": "Applying changes...",
         "success": "Thresholds updated",
         "error": {
@@ -2315,9 +2251,7 @@
       "tier_label": "Current tier",
       "lifetime_points": "Lifetime points",
       "completed_bookings_label": "Completed bookings",
-      "completed_bookings": "{{count}} cleanings completed",
       "tier_achieved_label": "Tier achieved",
-      "tier_achieved_on": "Tier achieved on {{date}}",
       "next_tier_label": "Progress",
       "points_to_next_tier": "{{count}} points to {{tier}}",
       "max_tier_reached": "Max tier reached",
@@ -2360,15 +2294,8 @@
           "reason": "Reason",
           "reason_help": "Visible in audit log."
         },
-        "validation": {
-          "points_min": "Points must be at least 1",
-          "points_max": "Points must be at most 100,000",
-          "reason_required": "Reason is required",
-          "reason_max": "Reason must be 500 characters or fewer"
-        },
         "submit_grant": "Grant",
         "submit_revoke": "Revoke",
-        "cancel": "Cancel",
         "success_grant": "Points granted",
         "success_revoke": "Points revoked",
         "error": {
@@ -2408,7 +2335,6 @@
         "dialog": {
           "title": "Issue credit",
           "lede": "This is money the company owes from the moment you confirm it. It cannot be taken back here — the customer spends it on a booking, or asks to be paid out.",
-          "cancel": "Cancel",
           "submit": "Issue credit",
           "field": {
             "currency": "Currency",
@@ -2416,13 +2342,6 @@
             "reason": "Reason",
             "note": "What happened",
             "note_help": "Recorded against your name. Write what you would want a colleague to read before compensating this customer again."
-          },
-          "validation": {
-            "currency_required": "Choose a currency.",
-            "amount_min": "Enter an amount above zero.",
-            "amount_max": "That is above the limit for a single credit. Issue it in smaller amounts.",
-            "note_required": "Say what happened.",
-            "note_max": "Keep this under 500 characters."
           }
         },
         "column": {
@@ -2435,7 +2354,7 @@
         "expire_error": "The balance could not be discharged.",
         "expire_dialog": {
           "title": "Discharge credit balance",
-          "lede": "This writes off the whole balance of {{amount}} {{currency}} and cannot be undone. Use it when the customer is leaving: erasure is refused while credit is outstanding.",
+          "lede": "This writes off the whole balance of {{amount}} and cannot be undone. Use it when the customer is leaving: erasure is refused while credit is outstanding.",
           "field": {
             "note": "Why",
             "note_help": "The only record of why money the company owed stopped being owed. Name the request."
@@ -2454,7 +2373,9 @@
         "status_expired": "Expired",
         "date_from": "From",
         "date_to": "To",
-        "status_reversed": "Reversed"
+        "status_reversed": "Reversed",
+        "status": "Status",
+        "date_range": "Date range"
       },
       "column": {
         "referrer": "Referrer",
@@ -2486,10 +2407,6 @@
         "field": {
           "reason": "Reason",
           "reason_help": "Required. Visible in the loyalty ledger."
-        },
-        "validation": {
-          "reason_required": "Reason is required",
-          "reason_max": "Reason must be 500 characters or fewer"
         },
         "submit_reverse": "Reverse",
         "submit_force_qualify": "Qualify",
@@ -2584,11 +2501,13 @@
     },
     "membership_plans": {
       "title": "Membership Plans",
-      "description": "Manage subscription plans: pricing, Stripe price ids, trials and benefits.",
+      "description": "Manage subscription plans: pricing, Stripe price ids and benefits.",
       "create_plan": "New plan",
       "filter": {
         "search": "Search by code or name",
-        "active_only": "Active only"
+        "active_only": "Active only",
+        "search_label": "Search",
+        "status": "Status"
       },
       "load_error": "Couldn't load membership plans. Try again later.",
       "empty": "No membership plans yet",
@@ -2599,7 +2518,6 @@
         "price": "Price",
         "monthly_equivalent": "Monthly equivalent",
         "discount": "Discount",
-        "trial_days": "Trial days",
         "free_cancel_window": "Free-cancel (h)",
         "express": "Express",
         "status": "Status",
@@ -2630,7 +2548,7 @@
         },
         "field": {
           "code": "Code",
-          "code_help": "Unique, uppercase letters/numbers/underscores. Cannot be changed later.",
+          "code_help": "Unique, 2–50 characters: uppercase letters/numbers/underscores. Cannot be changed later.",
           "name": "Name",
           "interval": "Billing interval",
           "interval_immutable": "Billing interval cannot be changed after creation.",
@@ -2638,19 +2556,12 @@
           "stripe_price_id": "Stripe Price id",
           "stripe_price_id_help": "Copy from the Stripe dashboard (price_...). The platform does not create Stripe prices.",
           "discount": "Discount (%)",
-          "trial_days": "Trial period (days)",
           "free_cancel_window": "Free-cancellation window (hours)",
           "express_upgrade": "Allows express upgrade",
           "express_upgrades_per_month": "Included express upgrades per month",
           "express_upgrades_per_month_help": "How many express bookings a member gets each month without the express surcharge. Zero means none."
         },
         "validation": {
-          "code_invalid": "2–50 characters: letters, numbers or underscores.",
-          "price_negative": "Price must be zero or more.",
-          "discount_range": "Discount must be between 0 and 100.",
-          "trial_negative": "Trial days must be zero or more.",
-          "window_negative": "Window must be zero or more.",
-          "express_upgrades_negative": "Included express upgrades must be zero or more.",
           "price_block_half_filled": "Enter both a price and a Stripe Price id, or leave both empty to keep the plan off sale in this currency."
         },
         "submit_create": "Create plan",
@@ -2837,6 +2748,7 @@
       "export_error": "The subject export failed",
       "incident_file": {
         "button": "Incident file (PDF)",
+        "submit": "Build the file",
         "order_scope": "Order (optional)",
         "order_scope_placeholder": "Whole account",
         "order_scope_hint": "Leave empty for the whole account, or pick one of this customer's orders to scope the file to it.",
@@ -2850,24 +2762,14 @@
       }
     }
   },
-  "employees": {
-    "title": "Employee Management",
-    "list": "Employee List",
-    "pending": "Pending Approvals",
-    "approved": "Approved",
-    "rejected": "Rejected"
-  },
   "pay_periods": {
     "title": "Pay Period Management",
     "description": "Manage pay periods, close periods, and track employee payments",
     "create_new": "Create New Pay Period",
     "confirm_close": "Are you sure you want to close this pay period? This action cannot be undone.",
     "filters": {
-      "title": "Filters",
       "status": "Status",
-      "year": "Year",
-      "reset": "Reset Filters",
-      "clear_all": "Clear All"
+      "year": "Year"
     },
     "list": {
       "title": "Pay Periods",
@@ -2942,18 +2844,6 @@
       "close_error": "Failed to close pay period"
     }
   },
-  "orders": {
-    "title": "Order Management",
-    "list": "All Orders",
-    "assign": "Assign Order"
-  },
-  "invoices": {
-    "title": "Invoice Management",
-    "list": "All Invoices",
-    "pending": "Pending Approval",
-    "approved": "Approved",
-    "cancelled": "Cancelled"
-  },
   "validation": {
     "common": {
       "not_all_fields_filled": "Not all fields are properly filled",
@@ -2961,6 +2851,8 @@
       "email": "Field must contain a valid email address",
       "min_length": "Field must contain at least {{ minLength }} characters",
       "max_length": "Field can contain a maximum of {{ maxLength }} characters",
+      "min": "Value must be at least {{ min }}",
+      "max": "Value must be at most {{ max }}",
       "pattern": "Field does not match the required pattern",
       "phone_number": "Invalid phone number format",
       "iban": "Invalid IBAN format",
@@ -2970,13 +2862,11 @@
     },
     "auth": {
       "email_not_confirmed": "Email address is not confirmed",
-      "admin_access_required": "Admin access is required to access this panel",
       "login_failed": "Login failed. Please check your credentials and try again."
     },
     "file": {
       "required": "Files are required",
       "invalid_type": "Invalid file type. Please select a valid document file.",
-      "size_too_large": "File size too large. Maximum allowed size is {{ maxSize }}MB.",
       "too_few_files": "Too few files selected. Minimum required: {{ min }}",
       "too_many_files": "Too many files selected. Maximum allowed: {{ max }}",
       "generic_error": "File validation error occurred"
@@ -3111,10 +3001,8 @@
     "employee": {
       "already_approved": "Employee has already been approved",
       "already_rejected": "Employee has already been rejected",
-      "documents_missing": "Required documents are missing",
       "documents_not_approved": "This cleaner cannot be approved until every document their work country requires has been uploaded and approved.",
       "not_allowed_to_update": "You are not allowed to update this employee",
-      "not_existing_email": "No employee found with this email",
       "not_found": "Employee not found",
       "pay_config_missing": "This cleaner has no pay configured for one or more active services or packages. Add the missing pay configuration before approving them.",
       "profile_incomplete": "Employee profile is incomplete",
@@ -3130,16 +3018,12 @@
     "file": {
       "content_type_doesnt_match": "File content type doesn't match",
       "count_exceeded": "Too many files uploaded",
-      "count_too_few": "Not enough files uploaded",
       "invalid_file_type": "Invalid file type",
       "required": "File is required",
       "size_exceeded": "File size exceeded maximum allowed size",
-      "size_exceeded_10mb": "File size must not exceed 10 MB",
       "type_not_allowed": "File type is not allowed. Accepted: PDF, JPEG, PNG, DOC, DOCX"
     },
     "gdpr": {
-      "export_failed": "We couldn't export this user's data. Please try again.",
-      "deletion_failed": "We couldn't delete this account. Please try again.",
       "deletion_already_pending": "A deletion request for this account is already in progress.",
       "deletion_blocked_by_order": "This account has active orders and cannot be deleted yet.",
       "deletion_blocked_by_credit_balance": "This customer still has a credit balance. It has to be spent or paid out before the account can be deleted.",
@@ -3180,29 +3064,22 @@
       }
     },
     "order": {
-      "actual_time": {
-        "positive": "Actual time must be positive"
-      },
       "after_photos": {
         "required": "After photos are required to complete the order"
       },
-      "already_assigned": "Order is already assigned",
       "already_cancelled": "Order has already been cancelled",
       "already_completed": "Order has already been completed",
       "cleaning_date": {
         "future": "Cleaning date must be in the future"
       },
       "completion_notes": {
-        "required": "Completion notes are required",
         "too_long": "Completion notes are too long"
       },
-      "creation_failed": "Failed to create order",
       "employee_already_assigned": "Employee is already assigned to this order",
       "employee_not_assigned": "Employee is not assigned to this order",
       "empty": "Order is empty",
       "in_progress_cannot_cancel": "An order that is in progress cannot be cancelled",
       "invalid_status_transition": "This status change is not allowed for the current order state",
-      "max_employees_exceeded": "Maximum number of employees exceeded",
       "no_available_spots": "No available spots for this order",
       "not_confirmed": "Order is not confirmed",
       "not_found": "Order not found",
@@ -3279,11 +3156,9 @@
         "reference_already_assigned": "This invoice already has a payment reference.",
         "reference_capacity_exhausted": "This year's payment references are exhausted. Contact support.",
         "reference_missing": "Assign a payment reference before recording the transfer.",
-        "reference_unavailable": "That payment reference is already in use. Please try again.",
-        "template_not_found": "Invoice template not found"
+        "reference_unavailable": "That payment reference is already in use. Please try again."
       },
       "no_active_period": "No active pay period found",
-      "no_currency": "No currency found",
       "no_pay_configuration": "No pay configuration found",
       "no_unpaid_order_pays": "No unpaid order pays found",
       "pay": {
@@ -3304,7 +3179,6 @@
       "validity_range_invalid": "The valid-from date must not be after the valid-until date."
     },
     "receipt": {
-      "generation_failed": "Failed to generate receipt",
       "not_found": "Receipt not found"
     },
     "referral": {
@@ -3347,9 +3221,6 @@
         "key_exists": "A translation with this key already exists",
         "not_found": "Email template not found"
       },
-      "file_required": "Template file is required",
-      "file_size_exceeded": "Template file size exceeded",
-      "invalid_file_type": "Invalid template file type",
       "invoice": {
         "in_use": "Cannot delete invoice template because it is currently in use",
         "not_found": "Invoice template not found"
@@ -3379,19 +3250,10 @@
     "validation": {
       "date_must_be_in_past": "Date must be in the past",
       "invalid_age": "Invalid age",
-      "invalid_availability_format": "Invalid availability format. Days must be valid day names or dates (yyyy-MM-dd), and time ranges must have start before end.",
-      "invalid_contract_status": "Invalid contract status value",
       "invalid_date": "Invalid date",
-      "invalid_iban": "Invalid IBAN format",
-      "invalid_national_id": "Invalid national ID format",
       "invalid_password": "Invalid password",
-      "invalid_phone_number": "Invalid phone number format",
-      "invalid_tax_id": "Invalid tax ID format",
-      "invalid_zip_code": "Invalid zip code format",
       "must_be_positive": "Value must be positive",
-      "page_must_be_positive": "Page must be greater than 0",
       "page_size_exceeded": "Page size cannot exceed 100",
-      "page_size_must_be_positive": "Page size must be greater than 0",
       "payout": {
         "account_number_required": "Enter the account number",
         "country_not_supported": "Payouts to a bank in this country are not supported yet",
@@ -3484,28 +3346,77 @@
       "acknowledged": "That could not be done. Please try again."
     }
   },
-  "gdpr": {
-    "deletion_already_pending": "A deletion request is already in progress.",
-    "deletion_blocked_by_order": "We can't delete your account while you have an active order.",
-    "deletion_blocked_by_invoice": "We can't delete your account while you have a pending invoice.",
-    "export_failed": "Data export failed.",
-    "deletion_failed": "Account deletion failed."
-  },
-  "order": {
-    "review": {
-      "already_exists": "You've already reviewed this order."
-    }
-  },
   "recurring_booking": {
     "not_found": "That recurring booking no longer exists."
-  },
-  "admin_user": {
-    "cannot_target_admin_via_gdpr_tool": "Administrator accounts can't be targeted with the GDPR tools."
   },
   "admin_roles": {
     "administrator": "Administrator",
     "manager": "Manager",
     "support": "Support",
     "accountant": "Accountant"
+  },
+  "primeng": {
+    "day_names": {
+      "sun": "Sunday",
+      "mon": "Monday",
+      "tue": "Tuesday",
+      "wed": "Wednesday",
+      "thu": "Thursday",
+      "fri": "Friday",
+      "sat": "Saturday"
+    },
+    "day_names_short": {
+      "sun": "Sun",
+      "mon": "Mon",
+      "tue": "Tue",
+      "wed": "Wed",
+      "thu": "Thu",
+      "fri": "Fri",
+      "sat": "Sat"
+    },
+    "day_names_min": {
+      "sun": "Su",
+      "mon": "Mo",
+      "tue": "Tu",
+      "wed": "We",
+      "thu": "Th",
+      "fri": "Fr",
+      "sat": "Sa"
+    },
+    "month_names": {
+      "jan": "January",
+      "feb": "February",
+      "mar": "March",
+      "apr": "April",
+      "may": "May",
+      "jun": "June",
+      "jul": "July",
+      "aug": "August",
+      "sep": "September",
+      "oct": "October",
+      "nov": "November",
+      "dec": "December"
+    },
+    "month_names_short": {
+      "jan": "Jan",
+      "feb": "Feb",
+      "mar": "Mar",
+      "apr": "Apr",
+      "may": "May",
+      "jun": "Jun",
+      "jul": "Jul",
+      "aug": "Aug",
+      "sep": "Sep",
+      "oct": "Oct",
+      "nov": "Nov",
+      "dec": "Dec"
+    },
+    "today": "Today",
+    "clear": "Clear",
+    "apply": "Apply",
+    "accept": "Yes",
+    "reject": "No",
+    "empty_message": "No results found",
+    "empty_filter_message": "No results found"
   }
 }

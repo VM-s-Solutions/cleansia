@@ -2,27 +2,20 @@
   @if (loading()) {
   <cleansia-loader />
   } @else {
-  <!-- Photo Counts -->
   @if (photosData()) {
-  <div class="order-photos__counts">
-    <div class="order-photos__count">
-      <span class="order-photos__count-label">{{
-        'pages.order_detail.before_photos' | translate
-      }}:</span>
-      <span class="order-photos__count-value">{{ beforePhotos().length }}</span>
+  <div class="detail-grid">
+    <div class="detail-grid__item">
+      <span class="detail-grid__label">{{ 'pages.order_detail.before_photos' | translate }}</span>
+      <span class="detail-grid__value">{{ beforePhotos().length }}</span>
     </div>
-    <div class="order-photos__count">
-      <span class="order-photos__count-label">{{
-        'pages.order_detail.after_photos' | translate
-      }}:</span>
-      <span class="order-photos__count-value">{{ afterPhotos().length }}</span>
+    <div class="detail-grid__item">
+      <span class="detail-grid__label">{{ 'pages.order_detail.after_photos' | translate }}</span>
+      <span class="detail-grid__value">{{ afterPhotos().length }}</span>
     </div>
   </div>
   }
 
-  <!-- Photo Gallery -->
   <div class="order-photos__gallery">
-    <!-- Before Photos -->
     @if (beforePhotos().length > 0) {
     <div class="order-photos__section">
       <h4 class="order-photos__section-title">
@@ -61,7 +54,6 @@
     </div>
     }
 
-    <!-- After Photos -->
     @if (afterPhotos().length > 0) {
     <div class="order-photos__section">
       <h4 class="order-photos__section-title">
@@ -100,7 +92,7 @@
     </div>
     } @if (beforePhotos().length === 0 && afterPhotos().length === 0 &&
     !loading()) {
-    <div class="order-photos__empty">
+    <div class="empty-state">
       <i class="pi pi-images"></i>
       <p>{{ 'pages.order_detail.no_photos' | translate }}</p>
     </div>
@@ -109,5 +101,4 @@
   }
 </cleansia-section>
 
-<!-- Photo Gallery Modal -->
 <cleansia-admin-photo-gallery #gallery [photos]="galleryPhotos()" />

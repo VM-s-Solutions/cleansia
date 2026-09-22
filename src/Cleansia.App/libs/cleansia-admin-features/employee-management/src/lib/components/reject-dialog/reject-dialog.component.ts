@@ -1,4 +1,3 @@
-import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { CleansiaButtonComponent, CleansiaTextareaComponent } from '@cleansia/components';
@@ -6,10 +5,10 @@ import { TranslateModule } from '@ngx-translate/core';
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 
 export interface RejectDialogData {
-  title: string;
   subtitle?: string;
   reasonLabel?: string;
   reasonPlaceholder?: string;
+  submitLabel?: string;
 }
 
 export interface RejectDialogResult {
@@ -20,7 +19,6 @@ export interface RejectDialogResult {
   selector: 'cleansia-reject-dialog',
   standalone: true,
   imports: [
-    CommonModule,
     ReactiveFormsModule,
     TranslateModule,
     CleansiaButtonComponent,

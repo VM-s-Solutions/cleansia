@@ -120,8 +120,8 @@ cleaner's own to read in full. A period that holds pay in more than one currency
 through an admin reassignment) shows a currency switch on My Pay, derived from the period's pay rows —
 an open period offers it before any invoice exists, and a cancelled invoice's currency is not offered.
 
-**Availability** — job radius and working country. There is **no** weekly cap by default; an admin can
-set one on a single cleaner, and does not for anyone today.
+**Where they work** — job radius and working country; there is no weekly schedule to keep. There is
+**no** weekly cap by default; an admin can set one on a single cleaner, and does not for anyone today.
 
 ## Admin
 

@@ -8,9 +8,3 @@ export const selectEmployeeConfirmation = createSelector(
   selectEmployeeState,
   (s) => s.isEmployeeConfirmed
 );
-
-export const selectEmployeeLoading = (key: string) =>
-  createSelector(selectEmployeeState, (s) => s.loading[key] ?? false);
-
-export const selectEmployeeError = (key: string) =>
-  createSelector(selectEmployeeState, (s) => s.error[key] ?? null);

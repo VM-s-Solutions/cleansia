@@ -1,8 +1,10 @@
 import { TemplateRef } from '@angular/core';
 import { CustomerActionAuditDto } from '@cleansia/admin-services';
-import { TableAction, TableColumn } from '@cleansia/components';
+import { FilterChip, TableAction, TableColumn } from '@cleansia/components';
 import { TranslateService } from '@ngx-translate/core';
-import { formatTimestamp } from '../audit-log/audit-log.models';
+import { formatDate } from '@cleansia/utils';
+import { formatTimestamp, getOutcomeLabelKey } from '../audit-log/audit-log.models';
+import { getAuditActionLabelKey } from '../customer-audit-actions';
 import { formatActionLabel } from '../timeline/timeline.models';
 
 export interface CustomerAuditTemplates {
@@ -23,11 +25,12 @@ export function getCustomerAuditTableDefinition(
     columns: [
       {
         id: 'occurredOn',
+        numeric: true,
         field: 'occurredOn',
         header: translate.instant('pages.audit_log.customers.columns.occurred_on'),
         sortable: true,
         width: '14%',
-        getValue: (row: CustomerActionAuditDto) => formatTimestamp(row.occurredOn),
+        getValue: (row: CustomerActionAuditDto) => formatTimestamp(row.occurredOn, translate.currentLang),
       },
       {
         id: 'user',
@@ -64,6 +67,7 @@ export function getCustomerAuditTableDefinition(
         field: 'success',
         header: translate.instant('pages.audit_log.customers.columns.outcome'),
         width: '10%',
+        align: 'center',
         customTemplate: templates.outcome,
       },
     ],
@@ -77,4 +81,58 @@ export function getCustomerAuditTableDefinition(
       },
     ],
   };
+}
+
+export interface CustomerAuditFilterValues {
+  userId?: string | null;
+  action?: string | null;
+  resourceType?: string | null;
+  resourceId?: string | null;
+  clientAudience?: string | null;
+  occurredFrom?: Date | null;
+  occurredTo?: Date | null;
+  success?: boolean | null;
+}
+
+export function buildCustomerAuditFilterChips(
+  v: CustomerAuditFilterValues,
+  translate: TranslateService
+): FilterChip[] {
+  const chips: FilterChip[] = [];
+  const text = (key: string, value: string | null | undefined, labelKey: string) => {
+    if (value) chips.push({ key, label: translate.instant(labelKey), value });
+  };
+
+  text('userId', v.userId, 'pages.audit_log.customers.filters.user_id');
+  if (v.action) {
+    const labelKey = getAuditActionLabelKey(v.action);
+    chips.push({
+      key: 'action',
+      label: translate.instant('pages.audit_log.customers.filters.action'),
+      value: labelKey ? translate.instant(labelKey) : v.action,
+    });
+  }
+  text('resourceType', v.resourceType, 'pages.audit_log.filters.resource_type');
+  text('resourceId', v.resourceId, 'pages.audit_log.filters.resource_id');
+  text('clientAudience', v.clientAudience, 'pages.audit_log.customers.filters.audience');
+  if (v.occurredFrom || v.occurredTo) {
+    chips.push({
+      key: 'dateRange',
+      label: translate.instant('pages.audit_log.filters.date_range'),
+      value: [v.occurredFrom, v.occurredTo]
+        .filter(Boolean)
+        .map((d) => formatDate(d as Date, translate.currentLang))
+        .join(' – '),
+      controls: ['occurredFrom', 'occurredTo'],
+    });
+  }
+  if (v.success != null) {
+    chips.push({
+      key: 'success',
+      label: translate.instant('pages.audit_log.filters.outcome'),
+      value: translate.instant(getOutcomeLabelKey(v.success)),
+    });
+  }
+
+  return chips;
 }

@@ -5,7 +5,8 @@ import {
   AdminRole,
   PagedDataOfAdminActionAuditDto,
 } from '@cleansia/admin-services';
-import { of, throwError } from 'rxjs';
+import { TranslateService } from '@ngx-translate/core';
+import { EMPTY, of, throwError } from 'rxjs';
 import { AuditLogFacade } from './audit-log.facade';
 
 describe('AuditLogFacade', () => {
@@ -38,6 +39,7 @@ describe('AuditLogFacade', () => {
     TestBed.configureTestingModule({
       providers: [
         AuditLogFacade,
+        { provide: TranslateService, useValue: { instant: (k: string) => k, currentLang: 'cs', onLangChange: EMPTY } },
         { provide: AdminAuditLogClient, useValue: auditClient },
       ],
     });
@@ -126,7 +128,7 @@ describe('AuditLogFacade', () => {
   });
 
   it('resets the offset to zero when a filter is applied', () => {
-    facade.onPageChange(40, 20);
+    facade.onPageChange({ first: 40, rows: 20, page: 2, totalRecords: 100 });
     facade.applyFilter({ actorEmail: 'admin@cleansia.cz' });
 
     const args = auditClient.getPaged.mock.calls.at(-1);
@@ -134,7 +136,7 @@ describe('AuditLogFacade', () => {
   });
 
   it('forwards offset and limit on a page change', () => {
-    facade.onPageChange(20, 50);
+    facade.onPageChange({ first: 20, rows: 50, page: 0, totalRecords: 100 });
 
     const args = auditClient.getPaged.mock.calls.at(-1);
     expect(args?.at(-2)).toBe(20);

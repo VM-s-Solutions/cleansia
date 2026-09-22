@@ -1,74 +1,6 @@
+@use '../../common/focus' as *;
+
 .cleansia-notifications {
-  display: flex;
-  justify-content: center;
-  padding: 1rem;
-  max-width: 100vw;
-  overflow-x: hidden;
-  position: relative;
-
-  &__container {
-    background: var(--cleansia-white);
-    border-radius: 12px;
-    padding: 2rem;
-    width: 100%;
-    max-width: 1100px;
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-  }
-
-  &__header {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    flex-wrap: wrap;
-    gap: 1rem 1.5rem;
-  }
-
-  &__heading {
-    flex: 1 1 24rem;
-    min-width: 0;
-  }
-
-  &__description {
-    margin: 0;
-    color: var(--cleansia-text-secondary);
-    font-size: 1rem;
-    line-height: 1.6;
-    max-width: 60ch;
-  }
-
-  &__state {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 3rem 1rem;
-    color: var(--cleansia-text-secondary);
-    text-align: center;
-
-    i {
-      font-size: 2rem;
-      color: #b45309;
-    }
-
-    p {
-      margin: 0;
-      font-weight: 600;
-      color: var(--cleansia-text-primary);
-    }
-
-    &--empty i {
-      color: var(--cleansia-primary-300);
-    }
-  }
-
-  &__state-hint {
-    font-size: 0.875rem;
-    line-height: 1.6;
-    max-width: 44ch;
-  }
-
   // The feed is a ledger of rows separated by hairlines, not a card grid: one unread row is louder
   // than the rest by ground and by a left rule, and nothing else on the page competes with it.
   &__feed {
@@ -95,17 +27,12 @@
     padding: 1rem 1rem 1rem 1.25rem;
     border-bottom: 1px solid #e2e8f0;
     border-left: 3px solid transparent;
+    @extend %focus-ring;
     cursor: pointer;
-    outline: none;
     transition: background-color 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
 
     &:hover {
       background: var(--cleansia-primary-50);
-    }
-
-    &:focus-visible {
-      box-shadow: inset 0 0 0 2px var(--cleansia-primary-600);
-      border-radius: 6px;
     }
 
     &:active {
@@ -228,12 +155,6 @@
   }
 
   @media (max-width: 768px) {
-    padding: 0.5rem;
-
-    &__container {
-      padding: 1.25rem;
-    }
-
     &__row {
       grid-template-columns: auto minmax(0, 1fr);
       padding-left: 0.75rem;
@@ -247,11 +168,4 @@
       padding-top: 0;
     }
   }
-}
-
-cleansia-admin-notifications {
-  display: flex;
-  flex-direction: column;
-  background: var(--cleansia-primary-0);
-  min-height: 100vh;
 }

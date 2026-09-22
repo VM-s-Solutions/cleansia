@@ -13,6 +13,12 @@ import { TranslateService } from '@ngx-translate/core';
 import { of, throwError } from 'rxjs';
 import { AdminPayrollOpsFacade } from './admin-payroll-ops.facade';
 
+// The keys a refusal resolves to; anything else falls back, as an untranslated code does in the app.
+const TRANSLATED = new Set([
+  'api.payroll.invoice.already_paid',
+  'api.payroll.invoice.not_found',
+]);
+
 describe('AdminPayrollOpsFacade', () => {
   let facade: AdminPayrollOpsFacade;
   let payrollClient: {
@@ -20,7 +26,12 @@ describe('AdminPayrollOpsFacade', () => {
     disputeInvoice: jest.Mock;
     rejectInvoice: jest.Mock;
   };
-  let snackbar: { showSuccess: jest.Mock; showError: jest.Mock };
+  let snackbar: {
+    showSuccess: jest.Mock;
+    showSuccessTranslated: jest.Mock;
+    showError: jest.Mock;
+    showErrorTranslated: jest.Mock;
+  };
 
   const adjustResponse = UpdateInvoiceAmountsResponse.fromJS({
     invoiceId: 'invoice-1',
@@ -38,7 +49,12 @@ describe('AdminPayrollOpsFacade', () => {
       disputeInvoice: jest.fn(),
       rejectInvoice: jest.fn(),
     };
-    snackbar = { showSuccess: jest.fn(), showError: jest.fn() };
+    snackbar = {
+      showSuccess: jest.fn(),
+      showSuccessTranslated: jest.fn(),
+      showError: jest.fn(),
+      showErrorTranslated: jest.fn(),
+    };
 
     TestBed.configureTestingModule({
       providers: [
@@ -48,7 +64,12 @@ describe('AdminPayrollOpsFacade', () => {
           useValue: { adminPayrollClient: payrollClient },
         },
         { provide: SnackbarService, useValue: snackbar },
-        { provide: TranslateService, useValue: { instant: (k: string) => k } },
+        {
+          provide: TranslateService,
+          useValue: {
+            instant: (k: string) => (TRANSLATED.has(k) ? `${k} (translated)` : k),
+          },
+        },
       ],
     });
 
@@ -196,7 +217,7 @@ describe('AdminPayrollOpsFacade', () => {
 
     facade.disputeInvoice('invoice-1', onSuccess);
 
-    expect(snackbar.showSuccess).toHaveBeenCalledWith(
+    expect(snackbar.showSuccessTranslated).toHaveBeenCalledWith(
       'pages.invoice_detail.ops.dispute.success'
     );
     expect(facade.activePanel()).toBeNull();
@@ -223,9 +244,7 @@ describe('AdminPayrollOpsFacade', () => {
     facade.adjustAmounts('invoice-1', jest.fn());
 
     expect(facade.errorKey()).toBe('api.payroll.invoice.already_paid');
-    expect(snackbar.showError).toHaveBeenCalledWith(
-      'api.payroll.invoice.already_paid'
-    );
+    expect(snackbar.showErrorTranslated).not.toHaveBeenCalled();
     expect(facade.submitting()).toBe(false);
   });
 
@@ -263,9 +282,7 @@ describe('AdminPayrollOpsFacade', () => {
     facade.rejectInvoice('invoice-1', onSuccess);
 
     expect(facade.errorKey()).toBe('api.common.error_occurred');
-    expect(snackbar.showError).toHaveBeenCalledWith(
-      'api.common.error_occurred'
-    );
+    expect(snackbar.showErrorTranslated).not.toHaveBeenCalled();
     expect(onSuccess).not.toHaveBeenCalled();
   });
 });

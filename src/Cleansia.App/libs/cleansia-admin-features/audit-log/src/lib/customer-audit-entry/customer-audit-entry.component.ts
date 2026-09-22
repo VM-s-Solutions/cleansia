@@ -50,7 +50,7 @@ export class CustomerAuditEntryComponent implements OnInit {
   }
 
   formatTimestamp(value: Date | undefined): string {
-    return formatTimestamp(value);
+    return formatTimestamp(value, this.translate.currentLang);
   }
 
   actionLabel(entry: CustomerActionAuditDetailDto): string {

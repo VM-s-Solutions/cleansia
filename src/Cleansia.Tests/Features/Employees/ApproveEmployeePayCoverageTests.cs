@@ -83,7 +83,6 @@ public class ApproveEmployeePayCoverageTests
             nationalityId: CountryId,
             passportId: "AB1234567",
             address: Address.Create("Main St 1", "Praha", "11000", CountryId),
-            availability: new Dictionary<string, List<TimeRange>>(),
             emergencyContactName: null,
             emergencyContactPhone: null);
         employee.UpdateBankDetails("CZ6508000000192000145399");

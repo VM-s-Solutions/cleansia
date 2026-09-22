@@ -9,7 +9,6 @@ const PLAN_FORM_NAMESPACE = 'pages.membership_plans.form';
 const EXPRESS_QUOTA_KEYS = [
   `${PLAN_FORM_NAMESPACE}.field.express_upgrades_per_month`,
   `${PLAN_FORM_NAMESPACE}.field.express_upgrades_per_month_help`,
-  `${PLAN_FORM_NAMESPACE}.validation.express_upgrades_negative`,
 ];
 
 function findSolutionDir(): string {

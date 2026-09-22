@@ -1,13 +1,8 @@
 import { TemplateRef } from '@angular/core';
 import { HelpStep, StatusFlowItem, TableAction, TableColumn } from '@cleansia/components';
 import { OrderListItem, OrderStatus } from '@cleansia/partner-services';
-import { formatMoney } from '@cleansia/utils';
-
-export interface FilterChip {
-  key: string;
-  label: string;
-  value: string;
-}
+import { formatDate, formatMoney, localeFor } from '@cleansia/utils';
+import { legendBadgeClass } from '../status-legend';
 
 export interface OrderFilterFormValue {
   customerName?: string | null;
@@ -46,27 +41,27 @@ export const ORDER_STATUS_FLOW: StatusFlowItem[] = [
   {
     statusKey: 'enums.order_status.pending',
     descriptionKey: 'help.orders.status.pending_desc',
-    colorClass: 'status-pending',
+    colorClass: legendBadgeClass('order', 'Pending'),
   },
   {
     statusKey: 'enums.order_status.confirmed',
     descriptionKey: 'help.orders.status.confirmed_desc',
-    colorClass: 'status-confirmed',
+    colorClass: legendBadgeClass('order', 'Confirmed'),
   },
   {
     statusKey: 'enums.order_status.in_progress',
     descriptionKey: 'help.orders.status.in_progress_desc',
-    colorClass: 'status-in-progress',
+    colorClass: legendBadgeClass('order', 'InProgress'),
   },
   {
     statusKey: 'enums.order_status.completed',
     descriptionKey: 'help.orders.status.completed_desc',
-    colorClass: 'status-completed',
+    colorClass: legendBadgeClass('order', 'Completed'),
   },
   {
     statusKey: 'enums.order_status.cancelled',
     descriptionKey: 'help.orders.status.cancelled_desc',
-    colorClass: 'status-cancelled',
+    colorClass: legendBadgeClass('order', 'Cancelled'),
   },
 ];
 
@@ -74,22 +69,22 @@ export const PAYMENT_STATUS_FLOW: StatusFlowItem[] = [
   {
     statusKey: 'enums.payment_status.pending',
     descriptionKey: 'help.orders.payment.pending_desc',
-    colorClass: 'status-pending',
+    colorClass: legendBadgeClass('payment', 'Pending'),
   },
   {
     statusKey: 'enums.payment_status.paid',
     descriptionKey: 'help.orders.payment.paid_desc',
-    colorClass: 'status-paid',
+    colorClass: legendBadgeClass('payment', 'Paid'),
   },
   {
     statusKey: 'enums.payment_status.failed',
     descriptionKey: 'help.orders.payment.failed_desc',
-    colorClass: 'status-failed',
+    colorClass: legendBadgeClass('payment', 'Failed'),
   },
   {
     statusKey: 'enums.payment_status.refunded',
     descriptionKey: 'help.orders.payment.refunded_desc',
-    colorClass: 'status-refunded',
+    colorClass: legendBadgeClass('payment', 'Refunded'),
   },
 ];
 
@@ -98,6 +93,7 @@ export function getAvailableOrdersTableDefinition(
     onTakeOrder: (row: OrderListItem) => void;
     isTakeInFlight: (row: OrderListItem) => boolean;
   },
+  lang: string | undefined,
   statusTemplate?: TemplateRef<OrderListItem>,
   orderStatusTemplate?: TemplateRef<OrderListItem>
 ): {
@@ -117,12 +113,10 @@ export function getAvailableOrdersTableDefinition(
         id: 'cleaningDateTime',
         field: 'cleaningDateTime',
         header: 'pages.orders.cleaning_date',
-        getValue: (row?: OrderListItem) =>
-          row?.cleaningDateTime
-            ? new Date(row.cleaningDateTime).toLocaleString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })
-            : '',
+        getValue: (row?: OrderListItem) => formatDate(row?.cleaningDateTime, lang, 'dateTime'),
         sortable: true,
         width: '12%',
+        numeric: true,
       },
       {
         id: 'address',
@@ -137,10 +131,12 @@ export function getAvailableOrdersTableDefinition(
         field: 'totalPrice',
         header: 'pages.orders.total_price',
         getValue: (row?: OrderListItem) =>
-          row?.totalPrice ? formatMoney(row.totalPrice, row.currency?.code, 'en-GB', { fractionDigits: 2 }) : '',
+          row?.totalPrice
+            ? formatMoney(row.totalPrice, row.currency?.code, localeFor(lang), { fractionDigits: 2 })
+            : '',
         sortable: true,
         width: '12%',
-        align: 'right',
+        numeric: true,
       },
       {
         id: 'availableSpots',
@@ -149,6 +145,7 @@ export function getAvailableOrdersTableDefinition(
         getValue: (row?: OrderListItem) =>
           `${row?.availableSpots || 0} / ${row?.maxEmployees || 0}`,
         width: '10%',
+        numeric: true,
       },
       {
         id: 'paymentStatus',
@@ -193,6 +190,7 @@ export function getMyOrdersTableDefinition(
     onStartOrder: (row: OrderListItem) => void;
     onCompleteOrder: (row: OrderListItem) => void;
   },
+  lang: string | undefined,
   statusTemplate?: TemplateRef<OrderListItem>,
   orderStatusTemplate?: TemplateRef<OrderListItem>
 ): {
@@ -225,12 +223,10 @@ export function getMyOrdersTableDefinition(
         id: 'cleaningDateTime',
         field: 'cleaningDateTime',
         header: 'pages.orders.cleaning_date',
-        getValue: (row?: OrderListItem) =>
-          row?.cleaningDateTime
-            ? new Date(row.cleaningDateTime).toLocaleString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })
-            : '',
+        getValue: (row?: OrderListItem) => formatDate(row?.cleaningDateTime, lang, 'dateTime'),
         sortable: true,
         width: '12%',
+        numeric: true,
       },
       {
         id: 'address',
@@ -245,10 +241,12 @@ export function getMyOrdersTableDefinition(
         field: 'totalPrice',
         header: 'pages.orders.total_price',
         getValue: (row?: OrderListItem) =>
-          row?.totalPrice ? formatMoney(row.totalPrice, row.currency?.code, 'en-GB', { fractionDigits: 2 }) : '',
+          row?.totalPrice
+            ? formatMoney(row.totalPrice, row.currency?.code, localeFor(lang), { fractionDigits: 2 })
+            : '',
         sortable: true,
         width: '12%',
-        align: 'right',
+        numeric: true,
       },
       {
         id: 'orderStatus',

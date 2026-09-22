@@ -1,16 +1,15 @@
 <cleansia-section [title]="'pages.profile.bank_details' | translate">
   @if (facade.loading()) {
-    <cleansia-form-skeleton />
+    <cleansia-loader />
   } @else if (facade.loadFailed()) {
     <div class="cleansia-profile__load-error">
       <p class="cleansia-profile__load-error-message">
         {{ 'global.messages.profile.bank_details_load_error' | translate }}
       </p>
       <cleansia-button
-        [buttonType]="'button'"
-        [title]="'global.actions.retry' | translate"
+        [label]="'global.actions.retry' | translate"
         [icon]="'pi pi-refresh'"
-        (clickFn)="facade.retry()"
+        (onClick)="facade.retry()"
       />
     </div>
   } @else {
@@ -88,12 +87,10 @@
     </div>
     <div class="cleansia-profile__actions">
       <cleansia-button
-        [buttonType]="'button'"
-        [style]="'raised-button'"
-        [title]="'global.actions.save' | translate"
+        [label]="'global.actions.save' | translate"
         [disabled]="!facade.canSubmit()"
         [loading]="facade.saving()"
-        (clickFn)="facade.onSubmit()"
+        (onClick)="facade.onSubmit()"
       />
     </div>
   }

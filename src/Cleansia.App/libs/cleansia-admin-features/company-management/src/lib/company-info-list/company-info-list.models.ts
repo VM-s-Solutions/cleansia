@@ -53,6 +53,7 @@ export function getCompanyInfoTableDefinition(
         id: 'isActive',
         field: 'isActive',
         header: translate.instant('pages.company_management.columns.status'),
+        align: 'center',
         customTemplate: statusTemplate,
         width: '10%',
       },

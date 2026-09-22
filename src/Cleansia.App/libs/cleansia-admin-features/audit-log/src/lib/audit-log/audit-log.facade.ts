@@ -1,12 +1,18 @@
-import { Injectable, inject, signal } from '@angular/core';
+import { computed, Injectable, inject, signal } from '@angular/core';
+import { FormBuilder } from '@angular/forms';
 import {
   AdminActionAuditDto,
   AdminAuditLogClient,
   AdminRole,
   SortDefinition,
+  SortDirection,
 } from '@cleansia/admin-services';
+import { FilterChip, FilterDrawerState, PaginationState, SortEvent } from '@cleansia/components';
 import { UnsubscribeControlDirective } from '@cleansia/directives';
+import { currentLanguage } from '@cleansia/utils';
+import { TranslateService } from '@ngx-translate/core';
 import { catchError, finalize, of, takeUntil } from 'rxjs';
+import { buildActorRoleOptions, buildAuditLogFilterChips, buildOutcomeOptions } from './audit-log.models';
 
 export interface AuditLogFilterParams {
   actorId?: string;
@@ -23,6 +29,7 @@ export interface AuditLogFilterParams {
 @Injectable()
 export class AuditLogFacade extends UnsubscribeControlDirective {
   private readonly auditClient = inject(AdminAuditLogClient);
+  private readonly translate = inject(TranslateService);
 
   readonly audits = signal<AdminActionAuditDto[]>([]);
   readonly loading = signal<boolean>(false);
@@ -30,10 +37,53 @@ export class AuditLogFacade extends UnsubscribeControlDirective {
   readonly totalRecords = signal<number>(0);
   readonly hasError = signal<boolean>(false);
 
+  readonly lang = currentLanguage(this.translate);
+  readonly outcomeOptions = computed(() => {
+    this.lang();
+    return buildOutcomeOptions(this.translate);
+  });
+  readonly actorRoleOptions = computed(() => {
+    this.lang();
+    return buildActorRoleOptions(this.translate);
+  });
+  readonly filterForm = inject(FormBuilder).group({
+    actorId: [''],
+    actorEmail: [''],
+    action: [''],
+    resourceType: [''],
+    resourceId: [''],
+    occurredFrom: [null as Date | null],
+    occurredTo: [null as Date | null],
+    success: [null as boolean | null],
+    actorAdminRole: [null as AdminRole | null],
+  });
+  readonly filters = new FilterDrawerState({
+    form: this.filterForm,
+    lang: this.lang,
+    chips: (value): FilterChip[] => buildAuditLogFilterChips(value, this.translate),
+    apply: (value) =>
+      this.applyFilter({
+        actorId: emptyToUndefined(value.actorId),
+        actorEmail: emptyToUndefined(value.actorEmail),
+        action: emptyToUndefined(value.action),
+        resourceType: emptyToUndefined(value.resourceType),
+        resourceId: emptyToUndefined(value.resourceId),
+        occurredFrom: value.occurredFrom ?? undefined,
+        occurredTo: value.occurredTo ?? undefined,
+        success: value.success ?? undefined,
+        actorAdminRole: value.actorAdminRole ?? undefined,
+      }),
+  });
+
   private readonly currentFilter = signal<AuditLogFilterParams | null>(null);
   private readonly currentOffset = signal<number>(0);
   private readonly currentLimit = signal<number>(20);
   private readonly currentSort = signal<SortDefinition[] | undefined>(undefined);
+
+  constructor() {
+    super();
+    this.filters.connect(this.destroyed$);
+  }
 
   loadAudits(): void {
     this.loading.set(true);
@@ -75,14 +125,19 @@ export class AuditLogFacade extends UnsubscribeControlDirective {
       });
   }
 
-  onPageChange(offset: number, limit: number): void {
-    this.currentOffset.set(offset);
-    this.currentLimit.set(limit);
+  onPageChange(event: PaginationState): void {
+    this.currentOffset.set(event.first);
+    this.currentLimit.set(event.rows);
     this.loadAudits();
   }
 
-  onSortChange(sort: SortDefinition[] | undefined): void {
-    this.currentSort.set(sort);
+  onSortChange(event: SortEvent): void {
+    this.currentSort.set([
+      new SortDefinition({
+        field: event.field,
+        direction: event.order === 1 ? SortDirection.Ascending : SortDirection.Descending,
+      }),
+    ]);
     this.loadAudits();
   }
 
@@ -92,9 +147,9 @@ export class AuditLogFacade extends UnsubscribeControlDirective {
     this.loadAudits();
   }
 
-  resetFilter(): void {
-    this.currentFilter.set(null);
-    this.currentOffset.set(0);
-    this.loadAudits();
-  }
+}
+
+function emptyToUndefined(value: string | null | undefined): string | undefined {
+  const trimmed = value?.trim();
+  return trimmed ? trimmed : undefined;
 }

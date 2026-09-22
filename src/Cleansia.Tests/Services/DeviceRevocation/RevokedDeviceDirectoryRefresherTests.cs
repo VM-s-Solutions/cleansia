@@ -135,7 +135,6 @@ public class RevokedDeviceDirectoryRefresherTests
             return Task.FromResult(Result);
         }
 
-        public Task<Device?> GetByDeviceIdAsync(string deviceId, CancellationToken cancellationToken) => throw new NotSupportedException();
         public Task<Device?> GetByUserAndDeviceIdAsync(string userId, string deviceId, CancellationToken cancellationToken) => throw new NotSupportedException();
         public Task<Device?> GetByUserAndDeviceIdIncludingInactiveAsync(string userId, string deviceId, CancellationToken cancellationToken) => throw new NotSupportedException();
         public Task<Device?> GetByIdAndUserAsync(string id, string userId, CancellationToken cancellationToken) => throw new NotSupportedException();
@@ -145,8 +144,6 @@ public class RevokedDeviceDirectoryRefresherTests
         public Task<bool> ExistWithIdsAsync(IEnumerable<string> ids, CancellationToken cancellationToken) => throw new NotSupportedException();
         public Task<Device?> GetByIdAsync(string id, CancellationToken cancellationToken) => throw new NotSupportedException();
         public IQueryable<Device> GetByIds(IEnumerable<string> ids) => throw new NotSupportedException();
-        public IQueryable<Device> GetPaged(int offset, int limit) => throw new NotSupportedException();
-        public IQueryable<Device> GetPaged(int offset, int limit, Expression<Func<Device, bool>> filter) => throw new NotSupportedException();
         public IQueryable<Device> GetPagedSort<TSort>(int offset, int limit, Expression<Func<Device, bool>> filter, SortDefinition sort) where TSort : BaseSort<Device> => throw new NotSupportedException();
         public IQueryable<Device> GetPagedSort<TSort>(int offset, int limit, Expression<Func<Device, bool>>? filter, IEnumerable<SortDefinition> sortDefinitions) where TSort : BaseSort<Device> => throw new NotSupportedException();
         public Task<int> GetCountAsync(CancellationToken cancellationToken) => throw new NotSupportedException();
@@ -156,7 +153,6 @@ public class RevokedDeviceDirectoryRefresherTests
         public void Add(Device entity) => throw new NotSupportedException();
         public void AddRange(IEnumerable<Device> entities) => throw new NotSupportedException();
         public void Deactivate(Device entity) => throw new NotSupportedException();
-        public void DeactivateRange(IEnumerable<Device> entities) => throw new NotSupportedException();
         public void Remove(Device entity) => throw new NotSupportedException();
         public void RemoveRange(IEnumerable<Device> entities) => throw new NotSupportedException();
         public IQueryable<Device> GetQueryable() => throw new NotSupportedException();

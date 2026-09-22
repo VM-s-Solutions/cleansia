@@ -14,7 +14,12 @@ describe('LanguageFormFacade', () => {
   let facade: LanguageFormFacade;
   let createMock: jest.Mock;
   let updateMock: jest.Mock;
-  let snackbar: { showSuccess: jest.Mock; showError: jest.Mock };
+  let snackbar: {
+    showSuccess: jest.Mock;
+    showSuccessTranslated: jest.Mock;
+    showError: jest.Mock;
+    showErrorTranslated: jest.Mock;
+  };
   let navigate: jest.Mock;
 
   const formData: LanguageFormData = { code: 'uk', name: 'Українська' };
@@ -23,7 +28,12 @@ describe('LanguageFormFacade', () => {
     TestBed.resetTestingModule();
     createMock = jest.fn().mockReturnValue(of({ id: 'lng-1' }));
     updateMock = jest.fn().mockReturnValue(of({ id: 'lng-1' }));
-    snackbar = { showSuccess: jest.fn(), showError: jest.fn() };
+    snackbar = {
+      showSuccess: jest.fn(),
+      showSuccessTranslated: jest.fn(),
+      showError: jest.fn(),
+      showErrorTranslated: jest.fn(),
+    };
     navigate = jest.fn();
 
     TestBed.configureTestingModule({
@@ -51,7 +61,7 @@ describe('LanguageFormFacade', () => {
   it('reports success and returns to the list once a create lands', () => {
     facade.createLanguage(formData);
 
-    expect(snackbar.showSuccess).toHaveBeenCalledWith(
+    expect(snackbar.showSuccessTranslated).toHaveBeenCalledWith(
       'pages.language_form.messages.create_success'
     );
     expect(navigate).toHaveBeenCalled();

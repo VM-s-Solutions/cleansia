@@ -1,55 +1,124 @@
-<div class="cleansia-order-management">
+<div class="cleansia-order-management cleansia-page">
   <div class="cleansia-order-management__container page-wrapper">
-    <div class="cleansia-order-management__header">
-      <cleansia-title [title]="'pages.order_management.title' | translate" />
-      <p class="cleansia-order-management__description">
-        {{ 'pages.order_management.description' | translate }}
-      </p>
+    <div class="cleansia-page-header">
+      <div class="cleansia-page-header__heading">
+        <cleansia-title [title]="'pages.order_management.title' | translate" [level]="1" />
+        <p class="cleansia-page-header__description">
+          {{ 'pages.order_management.description' | translate }}
+        </p>
+      </div>
+      <div class="cleansia-page-header__actions">
+        <cleansia-filter-drawer [state]="facade.filters">
+          <form [formGroup]="facade.filterForm" class="filter-form">
+            <div class="filter-section">
+              <h3 class="filter-section-title">
+                {{ 'pages.order_management.filters.search' | translate }}
+              </h3>
+              <cleansia-text-input
+                formControlName="searchTerm"
+                [label]="'pages.order_management.filters.search_placeholder' | translate"
+                [showErrors]="false"
+              />
+            </div>
+
+            <div class="filter-section">
+              <h3 class="filter-section-title">
+                {{ 'pages.order_management.filters.order_status' | translate }}
+              </h3>
+              <div class="filter-checkbox-group">
+                @for (option of facade.orderStatusOptions(); track option.value) {
+                <div
+                  class="filter-checkbox-item"
+                  [class.checked]="facade.isOrderStatusChecked(option.value)"
+                  tabindex="0"
+                  (click)="toggleOrderStatus(option.value)"
+                  (keydown.enter)="toggleOrderStatus(option.value)"
+                >
+                  <cleansia-checkbox
+                    [label]="option.label"
+                    [ngModel]="facade.isOrderStatusChecked(option.value)"
+                    [ngModelOptions]="{ standalone: true }"
+                    (valueChanges)="facade.setOrderStatus(option.value, $event)"
+                  />
+                </div>
+                }
+              </div>
+            </div>
+
+            <div class="filter-section">
+              <h3 class="filter-section-title">
+                {{ 'pages.order_management.filters.payment_status' | translate }}
+              </h3>
+              <div class="filter-checkbox-group">
+                @for (option of facade.paymentStatusOptions(); track option.value) {
+                <div
+                  class="filter-checkbox-item"
+                  [class.checked]="facade.isPaymentStatusChecked(option.value)"
+                  tabindex="0"
+                  (click)="togglePaymentStatus(option.value)"
+                  (keydown.enter)="togglePaymentStatus(option.value)"
+                >
+                  <cleansia-checkbox
+                    [label]="option.label"
+                    [ngModel]="facade.isPaymentStatusChecked(option.value)"
+                    [ngModelOptions]="{ standalone: true }"
+                    (valueChanges)="facade.setPaymentStatus(option.value, $event)"
+                  />
+                </div>
+                }
+              </div>
+            </div>
+
+            <div class="filter-section">
+              <h3 class="filter-section-title">
+                {{ 'pages.order_management.filters.date_range' | translate }}
+              </h3>
+              <div class="filter-date-range">
+                <cleansia-calendar
+                  formControlName="cleaningDateFrom"
+                  [label]="'pages.order_management.filters.date_from' | translate"
+                  [showIcon]="true"
+                  [showErrors]="false"
+                  appendTo="body"
+                />
+                <cleansia-calendar
+                  formControlName="cleaningDateTo"
+                  [label]="'pages.order_management.filters.date_to' | translate"
+                  [showIcon]="true"
+                  [showErrors]="false"
+                  appendTo="body"
+                />
+              </div>
+            </div>
+
+            <div class="filter-section">
+              <h3 class="filter-section-title">
+                {{ 'pages.order_management.filters.currency' | translate }}
+              </h3>
+              <cleansia-select
+                [options]="currencyOptions()"
+                [label]="'pages.order_management.filters.currency' | translate"
+                [showClear]="true"
+                [showErrors]="false"
+                formControlName="currencyId"
+                appendTo="body"
+              />
+            </div>
+          </form>
+        </cleansia-filter-drawer>
+      </div>
     </div>
 
-    <!-- Filter Header - Chips left, Button right -->
-    <div class="filter-header">
-      <div class="filter-chips-inline">
-        @for (chip of activeFilterChips(); track chip.key) {
-        <div class="filter-chip">
-          <span class="filter-chip-label">{{ chip.label }}:</span>
-          <span class="filter-chip-value">{{ chip.value }}</span>
-          <button
-            class="filter-chip-remove"
-            (click)="removeFilterChip(chip.key)"
-          >
-            <i class="pi pi-times"></i>
-          </button>
-        </div>
-        } @if (hasActiveFilters()) {
-        <button class="filter-clear-all-btn" (click)="clearAllFilters()">
-          {{ 'pages.order_management.filters.clear_all' | translate }}
-        </button>
-        }
-      </div>
-      <div class="filter-actions">
-        <cleansia-button
-          [label]="'pages.order_management.filters.title' | translate"
-          icon="pi pi-filter"
-          [severity]="hasActiveFilters() ? 'primary' : 'secondary'"
-          [outlined]="!hasActiveFilters()"
-          (onClick)="openFilterDrawer()"
-        />
-        @if (hasActiveFilters()) {
-        <span class="filter-count-badge">{{ activeFilterCount() }}</span>
-        }
-      </div>
-    </div>
+    <cleansia-filter-chips [state]="facade.filters" />
 
-    <!-- Order Table -->
     <cleansia-section>
       @if (facade.initialLoading()) {
       <cleansia-loader />
       } @else {
       <cleansia-table
         [data]="facade.orders()"
-        [columns]="orderColumns"
-        [actions]="orderActions"
+        [columns]="table().columns"
+        [actions]="table().actions"
         [config]="{
           paginator: true,
           rows: 20,
@@ -59,8 +128,8 @@
           hover: true
         }"
         [loading]="facade.loading()"
-        (pageChange)="onPageChange($event)"
-        (sortChange)="onSortChange($event)"
+        (pageChange)="facade.onPageChange($event)"
+        (sortChange)="facade.onSortChange($event)"
       >
       </cleansia-table>
       }
@@ -68,159 +137,10 @@
   </div>
 </div>
 
-<!-- Filter Drawer Backdrop -->
-@if (isFilterDrawerOpen()) {
-<div
-  class="filter-drawer-backdrop"
-  role="button"
-  tabindex="0"
-  (click)="closeFilterDrawer()"
-  (keydown.escape)="closeFilterDrawer()"
-  [attr.aria-label]="'global.close' | translate"
-></div>
-}
-
-<!-- Filter Drawer -->
-<div class="filter-drawer" [class.open]="isFilterDrawerOpen()">
-  <div class="filter-drawer-header">
-    <div class="filter-drawer-title">
-      <i class="pi pi-filter"></i>
-      <span>{{ 'pages.order_management.filters.title' | translate }}</span>
-    </div>
-    <button class="filter-drawer-close" (click)="closeFilterDrawer()">
-      <i class="pi pi-times"></i>
-    </button>
-  </div>
-
-  <div class="filter-drawer-content">
-    <form [formGroup]="filterForm" class="filter-form">
-      <!-- Search Section -->
-      <div class="filter-section">
-        <h3 class="filter-section-title">
-          {{ 'pages.order_management.filters.search' | translate }}
-        </h3>
-        <cleansia-text-input
-          formControlName="searchTerm"
-          [placeholder]="
-            'pages.order_management.filters.search_placeholder' | translate
-          "
-          className="full-width"
-        />
-      </div>
-
-      <!-- Order Status Section -->
-      <div class="filter-section">
-        <h3 class="filter-section-title">
-          {{ 'pages.order_management.filters.order_status' | translate }}
-        </h3>
-        <div class="filter-checkbox-group">
-          @for (option of orderStatusMultiOptions; track option.value) {
-          <div
-            class="filter-checkbox-item"
-            [class.checked]="isOrderStatusChecked(option.value)"
-            tabindex="0"
-            (click)="toggleOrderStatus(option.value)"
-            (keydown.enter)="toggleOrderStatus(option.value)"
-          >
-            <cleansia-checkbox
-              [label]="option.label"
-              [ngModel]="isOrderStatusChecked(option.value)"
-              [ngModelOptions]="{ standalone: true }"
-              (valueChanges)="onOrderStatusChange(option.value, $event)"
-            />
-          </div>
-          }
-        </div>
-      </div>
-
-      <!-- Payment Status Section -->
-      <div class="filter-section">
-        <h3 class="filter-section-title">
-          {{ 'pages.order_management.filters.payment_status' | translate }}
-        </h3>
-        <div class="filter-checkbox-group">
-          @for (option of paymentStatusMultiOptions; track option.value) {
-          <div
-            class="filter-checkbox-item"
-            [class.checked]="isPaymentStatusChecked(option.value)"
-            tabindex="0"
-            (click)="togglePaymentStatus(option.value)"
-            (keydown.enter)="togglePaymentStatus(option.value)"
-          >
-            <cleansia-checkbox
-              [label]="option.label"
-              [ngModel]="isPaymentStatusChecked(option.value)"
-              [ngModelOptions]="{ standalone: true }"
-              (valueChanges)="onPaymentStatusChange(option.value, $event)"
-            />
-          </div>
-          }
-        </div>
-      </div>
-
-      <!-- Date Range Section -->
-      <div class="filter-section">
-        <h3 class="filter-section-title">
-          {{ 'pages.order_management.filters.date_range' | translate }}
-        </h3>
-        <div class="filter-date-range">
-          <cleansia-calendar
-            formControlName="cleaningDateFrom"
-            [label]="'pages.order_management.filters.date_from' | translate"
-            [showIcon]="true"
-            appendTo="body"
-            className="full-width"
-          />
-          <cleansia-calendar
-            formControlName="cleaningDateTo"
-            [label]="'pages.order_management.filters.date_to' | translate"
-            [showIcon]="true"
-            appendTo="body"
-            className="full-width"
-          />
-        </div>
-      </div>
-
-      <!-- Currency Section -->
-      <div class="filter-section">
-        <h3 class="filter-section-title">
-          {{ 'pages.order_management.filters.currency' | translate }}
-        </h3>
-        <cleansia-select
-          [options]="currencyOptions()"
-          [label]="'pages.order_management.filters.currency' | translate"
-          [floatVariant]="'on'"
-          [showClear]="true"
-          formControlName="currencyId"
-          appendTo="body"
-        />
-      </div>
-    </form>
-  </div>
-
-  <div class="filter-drawer-footer">
-    <cleansia-button
-      [label]="'pages.order_management.filters.reset' | translate"
-      icon="pi pi-times"
-      severity="secondary"
-      [outlined]="true"
-      (onClick)="resetFilters()"
-    />
-  </div>
-</div>
-
 <ng-template #orderStatusTemplate let-item>
-  <div class="status-cell">
-    <span [class]="getOrderStatusClass(item)">
-      {{ getOrderStatusLabel(item) }}
-    </span>
-  </div>
+  <cleansia-status-badge kind="order" [value]="item.orderStatus" />
 </ng-template>
 
 <ng-template #paymentStatusTemplate let-item>
-  <div class="status-cell">
-    <span [class]="getPaymentStatusClass(item)">
-      {{ getPaymentStatusLabel(item) }}
-    </span>
-  </div>
+  <cleansia-status-badge kind="payment" [value]="item.paymentStatus" />
 </ng-template>

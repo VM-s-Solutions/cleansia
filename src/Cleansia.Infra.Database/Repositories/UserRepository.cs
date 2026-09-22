@@ -36,7 +36,7 @@ public class UserRepository(CleansiaDbContext context)
         // No blanket Include(Orders): every single-user fetch (GetUser, RefreshToken, ExportUserData,
         // admin user reads) was loading the user's entire order history, which no mapper reads. The
         // PreferredLanguage nav stays — the user DTOs render PreferredLanguage.Name. Callers that DO
-        // need a nav add it explicitly (GdprDeletionService Includes Employee/Cart).
+        // need a nav add it explicitly (GdprDeletionService Includes Employee).
         return GetDbSet()
             .Include(user => user.PreferredLanguage)
             .AsQueryable();
@@ -67,16 +67,6 @@ public class UserRepository(CleansiaDbContext context)
     public Task<User?> GetByPhoneNumberAsync(string phoneNumber, CancellationToken cancellationToken = default)
     {
         return GetDbSet().FirstOrDefaultAsync(user => user.PhoneNumber == phoneNumber, cancellationToken);
-    }
-
-    public Task<User?> GetByEmailOrPhoneNumberAsync(string email, string phoneNumber, CancellationToken cancellationToken = default)
-    {
-        return GetDbSet().FirstOrDefaultAsync(user => user.Email == email || user.PhoneNumber == phoneNumber, cancellationToken);
-    }
-
-    public Task<bool> ExistsWithEmailAsync(string email, CancellationToken cancellationToken = default)
-    {
-        return GetDbSet().AnyAsync(user => user.Email == email, cancellationToken);
     }
 
     // Login / lockout / password-reset / registration pre-checks run on ANONYMOUS requests, so the
@@ -133,25 +123,6 @@ public class UserRepository(CleansiaDbContext context)
         return GetDbSet()
             .IgnoreQueryFilters()
             .FirstOrDefaultAsync(user => user.ConfirmationCode == tokenHash, cancellationToken);
-    }
-
-    public IQueryable<User> GetUnconfirmedUsersOlderThan(DateTime cutoffDate)
-    {
-        return GetDbSet()
-            .Where(user => !user.IsEmailConfirmed && user.CreatedOn <= cutoffDate)
-            .AsQueryable();
-    }
-
-    public Task<bool> ExistsWithPhoneNumberAsync(string phoneNumber, CancellationToken cancellationToken)
-    {
-        return GetQueryable().AnyAsync(user => user.PhoneNumber == phoneNumber, cancellationToken: cancellationToken);
-    }
-
-    public IQueryable<User> GetConfirmedUsersWithEmails(IEnumerable<string> emails)
-    {
-        return GetDbSet()
-            .Where(user => user.IsEmailConfirmed)
-            .Where(user => emails.Contains(user.Email));
     }
 
     public Task<User?> GetByIdIgnoringTenantAsync(string id, CancellationToken cancellationToken = default)

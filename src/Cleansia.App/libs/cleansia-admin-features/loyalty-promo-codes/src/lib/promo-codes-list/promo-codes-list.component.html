@@ -1,44 +1,55 @@
-<div class="cleansia-promo-codes-list">
+<div class="cleansia-promo-codes-list cleansia-page">
   <div class="cleansia-promo-codes-list__container page-wrapper">
-    <div class="cleansia-promo-codes-list__header">
-      <div class="header-content">
-        <cleansia-title [title]="'pages.promo_codes.title' | translate" />
+    <div class="cleansia-page-header">
+      <div class="cleansia-page-header__heading">
+        <cleansia-title [title]="'pages.promo_codes.title' | translate" [level]="1" />
       </div>
-      <div class="header-actions">
+      <div class="cleansia-page-header__actions">
+        <cleansia-filter-drawer [state]="facade.filters">
+          <form [formGroup]="facade.filterForm" class="filter-form">
+            <div class="filter-section">
+              <h3 class="filter-section-title">
+                {{ 'pages.promo_codes.filters.search' | translate }}
+              </h3>
+              <cleansia-text-input
+                formControlName="searchCode"
+                [label]="'pages.promo_codes.search_placeholder' | translate"
+                [showErrors]="false"
+              />
+            </div>
+
+            <div class="filter-section">
+              <h3 class="filter-section-title">
+                {{ 'pages.promo_codes.filters.status' | translate }}
+              </h3>
+              <cleansia-select
+                formControlName="status"
+                [options]="facade.statusFilterOptions()"
+                [showClear]="false"
+                [showErrors]="false"
+              />
+            </div>
+          </form>
+        </cleansia-filter-drawer>
         <cleansia-button
           *cleansiaPermission="Policy.CanCreatePromoCode"
           [label]="'pages.promo_codes.new_button' | translate"
           icon="pi pi-plus"
-          (onClick)="createPromoCode()"
+          (onClick)="facade.navigateToCreate()"
         />
       </div>
     </div>
 
-    <cleansia-section>
-      <form [formGroup]="filterForm" class="filter-form">
-        <div class="filter-row">
-          <cleansia-text-input
-            formControlName="searchCode"
-            [placeholder]="
-              'pages.promo_codes.search_placeholder' | translate
-            "
-            className="full-width"
-          />
-          <cleansia-select
-            formControlName="status"
-            [options]="translatedStatusOptions"
-            [showClear]="false"
-          />
-        </div>
-      </form>
+    <cleansia-filter-chips [state]="facade.filters" />
 
+    <cleansia-section>
       @if (facade.initialLoading()) {
         <cleansia-loader />
       } @else {
         <cleansia-table
           [data]="facade.promoCodes()"
-          [columns]="promoCodeColumns"
-          [actions]="promoCodeActions"
+          [columns]="table().columns"
+          [actions]="table().actions"
           [config]="{
             paginator: true,
             rows: 20,
@@ -54,4 +65,6 @@
   </div>
 </div>
 
-<p-confirmDialog />
+<ng-template #statusTemplate let-item>
+  <cleansia-status-badge kind="promo" [value]="promoStatus(item)" />
+</ng-template>

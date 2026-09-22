@@ -68,7 +68,6 @@ const LOGIN_FIXTURE = {
 const REGISTRATION_COMPLETE_FIXTURE = {
   areDocumentsUploaded: true,
   hasCompletedProfile: true,
-  hasSetAvailability: true,
   missingFields: [],
   contractStatus: 4, // ContractStatus.Approved
   rejectionReason: null,

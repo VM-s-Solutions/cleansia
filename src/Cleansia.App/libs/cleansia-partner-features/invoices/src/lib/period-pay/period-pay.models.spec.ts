@@ -6,22 +6,23 @@ import {
 } from './period-pay.models';
 
 describe('formatPayAmount', () => {
-  it('formats an amount with two decimals and the currency suffix', () => {
-    expect(formatPayAmount(1234.5, 'CZK')).toBe('1234.50 CZK');
+  it('formats an amount with two decimals the way the session language writes money', () => {
+    expect(formatPayAmount(1234.5, 'CZK', 'cs')).toBe('1 234,50 Kč');
+    expect(formatPayAmount(1234.5, 'CZK', 'en')).toBe('CZK 1,234.50');
   });
 
   it('formats zero', () => {
-    expect(formatPayAmount(0, 'CZK')).toBe('0.00 CZK');
+    expect(formatPayAmount(0, 'CZK', 'cs')).toBe('0,00 Kč');
   });
 
   it('returns an empty string for a missing amount', () => {
-    expect(formatPayAmount(undefined, 'CZK')).toBe('');
+    expect(formatPayAmount(undefined, 'CZK', 'cs')).toBe('');
   });
 });
 
 describe('getPeriodPayTableDefinition', () => {
   it('defines the per-order pay line columns in pay-breakdown order', () => {
-    const { columns } = getPeriodPayTableDefinition('CZK');
+    const { columns } = getPeriodPayTableDefinition('CZK', 'cs');
 
     expect(columns.map((column) => column.id)).toEqual([
       'orderNumber',
@@ -37,22 +38,22 @@ describe('getPeriodPayTableDefinition', () => {
   it('renders the amount with no symbol when the server sent no currency', () => {
     // A missing code is visibly incomplete; guessing 'Kč' would be silently wrong the day a second
     // country configuration exists, which is the whole reason this argument exists.
-    expect(formatPayAmount(1234.5, undefined)).toBe('1234.50');
+    expect(formatPayAmount(1234.5, undefined, 'en')).toBe('1,234.50');
   });
 
   it('uses whatever the server sent, not a default', () => {
-    expect(formatPayAmount(99, 'EUR')).toBe('99.00 EUR');
+    expect(formatPayAmount(99, 'EUR', 'en')).toBe('€99.00');
   });
 
   // Every row now names its own currency. The summary's code is the fallback for a row that carries
   // none, never the other way round: a row's currency is the pay's, the summary's is the view's.
   it('labels a row with the currency the row carries before the summary one', () => {
-    const { columns } = getPeriodPayTableDefinition('CZK');
+    const { columns } = getPeriodPayTableDefinition('CZK', 'en');
     const total = columns.find((column) => column.id === 'totalPay');
     if (!total?.getValue) throw new Error('totalPay column missing or static');
 
-    expect(total.getValue(OrderEmployeePayDto.fromJS({ totalPay: 99, currencyCode: 'EUR' }))).toBe('99.00 EUR');
-    expect(total.getValue(OrderEmployeePayDto.fromJS({ totalPay: 99 }))).toBe('99.00 CZK');
+    expect(total.getValue(OrderEmployeePayDto.fromJS({ totalPay: 99, currencyCode: 'EUR' }))).toBe('€99.00');
+    expect(total.getValue(OrderEmployeePayDto.fromJS({ totalPay: 99 }))).toBe('CZK 99.00');
   });
 });
 

@@ -16,7 +16,12 @@ describe('EmployeePayoutFacade', () => {
   let getForEmployee: jest.Mock;
   let reveal: jest.Mock;
   let getOverview: jest.Mock;
-  let snackbar: { showSuccess: jest.Mock; showError: jest.Mock };
+  let snackbar: {
+    showSuccess: jest.Mock;
+    showSuccessTranslated: jest.Mock;
+    showError: jest.Mock;
+    showErrorTranslated: jest.Mock;
+  };
   let facade: EmployeePayoutFacade;
 
   const maskedRecord = (overrides: Record<string, unknown> = {}) =>
@@ -39,7 +44,12 @@ describe('EmployeePayoutFacade', () => {
       .mockReturnValue(
         of([{ id: 'cz-id', name: 'Czechia', isoCode: 'CZE', translations: {} }])
       );
-    snackbar = { showSuccess: jest.fn(), showError: jest.fn() };
+    snackbar = {
+      showSuccess: jest.fn(),
+      showSuccessTranslated: jest.fn(),
+      showError: jest.fn(),
+      showErrorTranslated: jest.fn(),
+    };
 
     TestBed.configureTestingModule({
       providers: [

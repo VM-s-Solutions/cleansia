@@ -122,4 +122,33 @@ describe('OrderPhotosFacade', () => {
     expect(orderClient.getPhotos).toHaveBeenCalledWith(ORDER_ID);
     expect(facade.saving()).toBe(false);
   });
+
+  describe('deletePhoto', () => {
+    it('asks in red with a delete label, deletes, toasts and re-reads the gallery', () => {
+      const facade = createFacade();
+
+      facade.deletePhoto(ORDER_ID, 'photo-1');
+
+      expect(dialogService.confirmTranslated).toHaveBeenCalledWith(
+        'pages.order_details.delete_photo_confirm',
+        undefined,
+        undefined,
+        { danger: true, acceptLabelKey: 'global.actions.delete' }
+      );
+      expect(orderClient.deletePhoto).toHaveBeenCalledWith('photo-1');
+      expect(snackbar.showSuccessTranslated).toHaveBeenCalledWith('global.messages.orders.photo_deleted');
+      expect(orderClient.getPhotos).toHaveBeenCalledWith(ORDER_ID);
+      expect(facade.deleting()).toBeNull();
+    });
+
+    it('does nothing when the confirmation is declined', () => {
+      dialogService.confirmTranslated.mockReturnValue(of(false));
+      const facade = createFacade();
+
+      facade.deletePhoto(ORDER_ID, 'photo-1');
+
+      expect(orderClient.deletePhoto).not.toHaveBeenCalled();
+      expect(orderClient.getPhotos).not.toHaveBeenCalled();
+    });
+  });
 });

@@ -287,10 +287,9 @@ export class CleansiaCustomerNavbarComponent implements OnInit, OnDestroy {
   logout(): void {
     this.userMenuOpen.set(false);
     this.dialogService
-      .confirmTranslated(
-        'global.dialog.confirm_logout',
-        'global.dialog.confirm'
-      )
+      .confirmTranslated('global.dialog.confirm_logout', 'global.dialog.confirm', undefined, {
+        danger: true,
+      })
       .subscribe((confirmed) => {
         if (confirmed) {
           // logout() returns a cold Observable — must subscribe or nothing

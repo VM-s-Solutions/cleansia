@@ -9,6 +9,7 @@ import {
   AdminGdprClient,
   GetReferralsByUserResponse,
   GetUserCreditCurrencyAccount,
+  GetUserCreditLedgerEntry,
   GetUserCreditResponse,
   GetUserLoyaltyAccountResponse,
   LoyaltyTier,
@@ -16,7 +17,7 @@ import {
 } from '@cleansia/admin-services';
 import { TimelineComponent } from '@cleansia/admin-features/audit-log';
 import { PermissionService, SnackbarService } from '@cleansia/services';
-import { TranslateModule } from '@ngx-translate/core';
+import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { of, throwError } from 'rxjs';
 import { ExpireCreditDialogComponent } from '../expire-credit-dialog/expire-credit-dialog.component';
 import { GrantPointsDialogComponent } from '../grant-points-dialog/grant-points-dialog.component';
@@ -46,9 +47,8 @@ class IssueCreditDialogStub {
 class ExpireCreditDialogStub {
   visible = input(false);
   submitting = input(false);
-  balance = input(0);
+  balanceLabel = input('');
   currencyId = input('');
-  currencyCode = input('');
   visibleChange = output<boolean>();
   submitForm = output<unknown>();
 }
@@ -114,7 +114,15 @@ describe('UserLoyaltyDetailComponent — credit section', () => {
             adminOrderClient: orderClient,
           },
         },
-        { provide: SnackbarService, useValue: { showSuccess: jest.fn(), showError: jest.fn() } },
+        {
+          provide: SnackbarService,
+          useValue: {
+            showSuccess: jest.fn(),
+            showSuccessTranslated: jest.fn(),
+            showError: jest.fn(),
+            showErrorTranslated: jest.fn(),
+          },
+        },
         {
           provide: PermissionService,
           useValue: { hasPolicy: (p: string) => grantedPolicies.has(p) },
@@ -160,6 +168,11 @@ describe('UserLoyaltyDetailComponent — credit section', () => {
     return renderFixture(credit).nativeElement as HTMLElement;
   }
 
+  function openIncidentPanel(fixture: ComponentFixture<UserLoyaltyDetailComponent>): void {
+    fixture.componentInstance.toggleIncidentPanel();
+    fixture.detectChanges();
+  }
+
   // One discharge per FUNDED account, and the dialog is told which one: the server drains the
   // currency it is named and nothing else, so a single button over two balances would have to guess.
   it('offers a discharge beside each funded balance and hands the dialog that account', () => {
@@ -170,6 +183,7 @@ describe('UserLoyaltyDetailComponent — credit section', () => {
       currencyId: 'cur-eur',
       ledger: [],
     });
+    TestBed.inject(TranslateService).use('cs');
     const fixture = renderFixture(
       GetUserCreditResponse.fromJS({
         userId: 'user-1',
@@ -198,8 +212,10 @@ describe('UserLoyaltyDetailComponent — credit section', () => {
     const dialog = fixture.debugElement.query(By.directive(ExpireCreditDialogStub))
       .componentInstance as ExpireCreditDialogStub;
     expect(dialog.currencyId()).toBe('cur-eur');
-    expect(dialog.currencyCode()).toBe('EUR');
-    expect(dialog.balance()).toBe(25);
+    // The lede names the balance in the words the ledger above it prints, so the two never disagree.
+    const facade = fixture.debugElement.injector.get(UserLoyaltyDetailFacade);
+    expect(dialog.balanceLabel()).toBe(facade.formatBalance(25, 'EUR'));
+    expect(dialog.balanceLabel()).toBe('25,00\u00a0€');
 
     fixture.componentInstance.onExpireCreditDialogVisibleChange(false);
     expect(fixture.componentInstance.expireCreditAccount()).toBeNull();
@@ -224,8 +240,50 @@ describe('UserLoyaltyDetailComponent — credit section', () => {
     expect(blocks.length).toBe(2);
     expect(blocks[0].querySelector('cleansia-table')).toBeTruthy();
     expect(blocks[1].querySelector('cleansia-table')).toBeTruthy();
-    expect(el.textContent).toContain('400 CZK');
-    expect(el.textContent).toContain('25 EUR');
+    expect(el.textContent).toContain('CZK 400');
+    expect(el.textContent).toContain('€25');
+  });
+
+  // The ledger rows carry no currency of their own; the account above them does, and a signed bare
+  // number under a balance printed as money read as two different units for one account.
+  it('prints each ledger amount in the currency of its account', () => {
+    const czkRow = GetUserCreditLedgerEntry.fromJS({ id: 'l1', amount: 1250 });
+    const eurRow = GetUserCreditLedgerEntry.fromJS({ id: 'l2', amount: -25 });
+    const czk = GetUserCreditCurrencyAccount.fromJS({
+      accountId: 'acc-czk',
+      balance: 1250,
+      currencyCode: 'CZK',
+      ledger: [czkRow],
+    });
+    const eur = GetUserCreditCurrencyAccount.fromJS({
+      accountId: 'acc-eur',
+      balance: 0,
+      currencyCode: 'EUR',
+      ledger: [eurRow],
+    });
+    const fixture = renderFixture(
+      GetUserCreditResponse.fromJS({
+        userId: 'user-1',
+        hasAccount: true,
+        balance: 1250,
+        currencyCode: 'CZK',
+        ledger: [],
+        accounts: [czk, eur],
+      })
+    );
+    const amountCell = (account: GetUserCreditCurrencyAccount, row: GetUserCreditLedgerEntry) =>
+      fixture.componentInstance
+        .creditColumnsFor(account)
+        .find((column) => column.id === 'amount')
+        ?.getValue?.(row);
+
+    expect(amountCell(czk, czkRow)).toBe('+ CZK 1,250.00');
+    expect(amountCell(eur, eurRow)).toBe('- €25.00');
+    expect(fixture.componentInstance.creditColumnsFor(czk)).toBe(fixture.componentInstance.creditColumnsFor(czk));
+
+    const blocks = (fixture.nativeElement as HTMLElement).querySelectorAll('.user-loyalty-detail__credit-account');
+    expect(blocks[0].textContent).toContain('+ CZK 1,250.00');
+    expect(blocks[1].textContent).toContain('- €25.00');
   });
 
   it('says never credited, in the platform currency, for a customer with no account', () => {
@@ -242,7 +300,7 @@ describe('UserLoyaltyDetailComponent — credit section', () => {
 
     expect(el.querySelectorAll('.user-loyalty-detail__credit-account').length).toBe(0);
     expect(el.textContent).toContain('pages.loyalty_user_detail.credit.never_credited');
-    expect(el.textContent).toContain('0 CZK');
+    expect(el.textContent).toContain('CZK 0');
   });
 
   const noAccount = () =>
@@ -289,6 +347,7 @@ describe('UserLoyaltyDetailComponent — credit section', () => {
 
     expect(orderClient.getPaged.mock.lastCall?.[18]).toBe('user-1');
     expect(el.querySelector('.cleansia-user-loyalty-detail__incident-file')).toBeTruthy();
+    openIncidentPanel(fixture);
     expect(
       el.querySelector('.cleansia-user-loyalty-detail__incident-scope cleansia-select')
     ).toBeTruthy();
@@ -308,9 +367,31 @@ describe('UserLoyaltyDetailComponent — credit section', () => {
     expect(gdprClient.incidentFile).toHaveBeenCalledWith('user-1', undefined);
   });
 
+  // The scope is an input the action needs, so it opens as the action's panel on a full-width
+  // line under the header row rather than sitting between the header and the first section.
+  it('keeps the scope panel closed until the incident file action opens it under the header', () => {
+    const fixture = renderFixture(noAccount());
+    const el = fixture.nativeElement as HTMLElement;
+
+    expect(el.querySelector('.cleansia-user-loyalty-detail__incident-scope')).toBeNull();
+
+    openIncidentPanel(fixture);
+
+    const panel = el.querySelector('.cleansia-page-header > .cleansia-user-loyalty-detail__incident-scope');
+    expect(panel?.classList.contains('detail-actions__panel')).toBe(true);
+    expect(panel?.querySelector('cleansia-select')).toBeTruthy();
+    expect(panel?.querySelector('.cleansia-user-loyalty-detail__incident-submit')).toBeTruthy();
+
+    fixture.componentInstance.toggleIncidentPanel();
+    fixture.detectChanges();
+    expect(el.querySelector('.cleansia-user-loyalty-detail__incident-scope')).toBeNull();
+  });
+
   it('says so instead of a picker when the account has no orders', () => {
     orderClient.getPaged.mockReturnValue(of(orderPage([])));
-    const el = render(noAccount());
+    const fixture = renderFixture(noAccount());
+    const el = fixture.nativeElement as HTMLElement;
+    openIncidentPanel(fixture);
 
     const scope = el.querySelector('.cleansia-user-loyalty-detail__incident-scope');
     expect(scope?.querySelector('cleansia-select')).toBeNull();
@@ -321,6 +402,7 @@ describe('UserLoyaltyDetailComponent — credit section', () => {
     orderClient.getPaged.mockReturnValueOnce(throwError(() => new Error('boom')));
     const fixture = renderFixture(noAccount());
     const el = fixture.nativeElement as HTMLElement;
+    openIncidentPanel(fixture);
 
     const scope = el.querySelector('.cleansia-user-loyalty-detail__incident-scope');
     expect(scope?.querySelector('cleansia-select')).toBeNull();
@@ -340,7 +422,9 @@ describe('UserLoyaltyDetailComponent — credit section', () => {
     orderClient.getPaged.mockReturnValue(
       of(orderPage([{ id: 'order-7', displayOrderNumber: 'ORD-7' }], 140))
     );
-    const el = render(noAccount());
+    const fixture = renderFixture(noAccount());
+    const el = fixture.nativeElement as HTMLElement;
+    openIncidentPanel(fixture);
 
     expect(el.querySelector('.cleansia-user-loyalty-detail__incident-scope')?.textContent).toContain(
       'pages.customer_detail.incident_file.orders_truncated'
@@ -349,7 +433,9 @@ describe('UserLoyaltyDetailComponent — credit section', () => {
 
   it('hides the incident file and its scope without CanAdminExportUserData', () => {
     grantedPolicies.delete('CanAdminExportUserData');
-    const el = render(noAccount());
+    const fixture = renderFixture(noAccount());
+    const el = fixture.nativeElement as HTMLElement;
+    openIncidentPanel(fixture);
 
     expect(el.querySelector('.cleansia-user-loyalty-detail__incident-file')).toBeNull();
     expect(el.querySelector('.cleansia-user-loyalty-detail__incident-scope')).toBeNull();

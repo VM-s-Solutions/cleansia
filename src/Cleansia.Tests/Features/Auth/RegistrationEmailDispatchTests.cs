@@ -33,7 +33,6 @@ public class RegistrationEmailDispatchTests
     private const string Language = "cs";
 
     private readonly Mock<IUserRepository> _userRepository = new();
-    private readonly Mock<ICartRepository> _cartRepository = new();
     private readonly Recorder _pending = new();
 
     private static SendEmailMessage Decode(PendingMessage message)
@@ -50,7 +49,7 @@ public class RegistrationEmailDispatchTests
         var referralService = new Mock<IReferralService>();
 
         var handler = new Register.Handler(
-            _cartRepository.Object, _userRepository.Object, referralService.Object, _pending,
+            _userRepository.Object, referralService.Object, _pending,
             new Mock<IConsentService>().Object, LegalDocumentFixtures.Resolver().Object, new AuditContext(), NullLogger<Register.Handler>.Instance);
 
         var result = await handler.Handle(
@@ -77,7 +76,7 @@ public class RegistrationEmailDispatchTests
         var employeeRepository = new Mock<IEmployeeRepository>();
 
         var handler = new RegisterEmployee.Handler(
-            _cartRepository.Object, _userRepository.Object, employeeRepository.Object, _pending,
+            _userRepository.Object, employeeRepository.Object, _pending,
             new Mock<IConsentService>().Object);
 
         var result = await handler.Handle(

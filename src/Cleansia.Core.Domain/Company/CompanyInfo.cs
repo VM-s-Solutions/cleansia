@@ -122,13 +122,6 @@ public class CompanyInfo : TenantAuditable
         return this;
     }
 
-    public CompanyInfo UpdateTradingInfo(string tradingName, string? tagline)
-    {
-        TradingName = tradingName;
-        Tagline = tagline;
-        return this;
-    }
-
     public CompanyInfo UpdateAddress(string street, string city, string zipCode, string countryId)
     {
         Street = street;

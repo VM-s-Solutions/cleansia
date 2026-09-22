@@ -197,8 +197,9 @@ who has a complaint settled and then finds something else is not out of options.
 ### Cleansia Plus
 
 **Every Plus benefit requires an active, PAID subscription** (owner ruling 2026-09-08, T-0690). There
-is no free trial: both seeded plans carry `TrialPeriodDays = 0` and the admin plan commands refuse
-anything else, because a trial is by definition benefits without payment.
+is no free trial: both seeded plans carry `TrialPeriodDays = 0`, the admin plan commands refuse
+anything else, and the admin plan form offers no trial field at all (it sends the zero the server
+accepts), because a trial is by definition benefits without payment.
 
 There are **six** benefits, not the three this page used to list:
 

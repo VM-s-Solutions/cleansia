@@ -29,7 +29,6 @@ public sealed class SocialSignInAuditEvidenceTests
     private const string VerifiedEmail = "social@example.com";
 
     private readonly Mock<ITokenService> _tokenService = new();
-    private readonly Mock<ICartRepository> _cartRepository = new();
     private readonly Mock<IUserRepository> _userRepository = new();
     private readonly Mock<IConsentService> _consentService = new();
     private readonly IHostAudienceProvider _hostAudience = new HostAudienceProvider(JwtAudiences.Customer);
@@ -50,7 +49,7 @@ public sealed class SocialSignInAuditEvidenceTests
         var verifier = new Mock<IGoogleTokenVerifier>();
         verifier.Setup(v => v.VerifyAsync("token", It.IsAny<CancellationToken>())).ReturnsAsync(claims);
         return new GoogleAuth.Handler(
-            verifier.Object, _tokenService.Object, _cartRepository.Object, _userRepository.Object, _hostAudience,
+            verifier.Object, _tokenService.Object, _userRepository.Object, _hostAudience,
             _consentService.Object, LegalDocumentFixtures.Resolver().Object, _auditContext, Mock.Of<ICompanySignInGate>());
     }
 
@@ -59,7 +58,7 @@ public sealed class SocialSignInAuditEvidenceTests
         var verifier = new Mock<IAppleTokenVerifier>();
         verifier.Setup(v => v.VerifyAsync("token", "nonce", It.IsAny<CancellationToken>())).ReturnsAsync(claims);
         return new AppleAuth.Handler(
-            verifier.Object, _tokenService.Object, _cartRepository.Object, _userRepository.Object, _hostAudience,
+            verifier.Object, _tokenService.Object, _userRepository.Object, _hostAudience,
             _consentService.Object, LegalDocumentFixtures.Resolver().Object, NullLogger<AppleAuth.Handler>.Instance, _auditContext, Mock.Of<ICompanySignInGate>());
     }
 

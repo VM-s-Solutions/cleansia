@@ -10,6 +10,7 @@ import {
   WindDownCompanyResponse,
 } from '@cleansia/admin-services';
 import { DialogService, SnackbarService } from '@cleansia/services';
+import { formatDate } from '@cleansia/utils';
 import { TranslateService } from '@ngx-translate/core';
 import { of, Subject, throwError } from 'rxjs';
 import { CompanyLifecycleFacade } from './company-lifecycle.facade';
@@ -17,7 +18,7 @@ import { LifecycleAct } from './company-lifecycle.models';
 
 const NOW = new Date('2026-09-16T10:00:00Z');
 const WIND_DOWN_FROM = new Date('2026-10-01T00:00:00Z');
-const day = (date: Date) => date.toLocaleDateString('en');
+const day = (date: Date) => formatDate(date, 'en');
 
 const settled = {
   openOrders: 0,
@@ -193,7 +194,6 @@ describe('CompanyLifecycleFacade', () => {
         display: '2',
         status: 'blocking',
         statusKey: 'pages.company_lifecycle.status.blocking',
-        statusSeverity: 'danger',
         route: '/order-management',
       });
       expect(facade.facts().find((f) => f.id === 'chargebackHorizonEndsOn')).toMatchObject({
@@ -205,7 +205,6 @@ describe('CompanyLifecycleFacade', () => {
         'pages.company_lifecycle.stamps.wind_down',
         'pages.company_lifecycle.stamps.deactivated',
       ]);
-      expect(facade.stateKey()).toBe('pages.company_lifecycle.states.Deactivated');
       expect(facade.stateSeverity()).toBe('danger');
       expect(facade.runInProgress()).toBe(false);
     });
@@ -239,14 +238,17 @@ describe('CompanyLifecycleFacade', () => {
   });
 
   describe('deactivate', () => {
-    it('confirms what changes, deactivates, toasts and re-reads', () => {
+    it('confirms what changes in red, deactivates, toasts and re-reads', () => {
       facade.load();
 
       facade.perform(LifecycleAct.Deactivate);
 
-      expect(confirmMock).toHaveBeenCalledWith('pages.company_lifecycle.confirm.deactivate', 'pages.company_lifecycle.acts.deactivate', {
-        name: 'Cleansia CZ',
-      });
+      expect(confirmMock).toHaveBeenCalledWith(
+        'pages.company_lifecycle.confirm.deactivate',
+        'pages.company_lifecycle.acts.deactivate',
+        { name: 'Cleansia CZ' },
+        { danger: true }
+      );
       expect(deactivateMock).toHaveBeenCalledTimes(1);
       expect(snackbar.showSuccessTranslated).toHaveBeenCalledWith('pages.company_lifecycle.messages.deactivated');
       expect(facade.actInFlight()).toBeNull();
@@ -262,7 +264,8 @@ describe('CompanyLifecycleFacade', () => {
       expect(confirmMock).toHaveBeenCalledWith(
         'pages.company_lifecycle.confirm.deactivate_with_wind_down',
         'pages.company_lifecycle.acts.deactivate',
-        { name: 'Cleansia CZ', date: day(WIND_DOWN_FROM) }
+        { name: 'Cleansia CZ', date: day(WIND_DOWN_FROM) },
+        { danger: true }
       );
       expect(deactivateMock).toHaveBeenCalledTimes(1);
     });
@@ -391,32 +394,37 @@ describe('CompanyLifecycleFacade', () => {
   });
 
   describe('archive', () => {
-    it('confirms with every fact that must be zero and the horizon date, freezes, toasts and re-reads', () => {
+    it('confirms in red with every fact that must be zero and the horizon date, freezes, toasts and re-reads', () => {
       const horizon = new Date('2026-09-15T00:00:00Z');
       getMock.mockReturnValue(of(lifecycle({ state: CompanyLifecycleState.Deactivated, windDownFrom: WIND_DOWN_FROM, chargebackHorizonEndsOn: horizon })));
       facade.load();
 
       facade.perform(LifecycleAct.Archive);
 
-      expect(confirmMock).toHaveBeenCalledWith('pages.company_lifecycle.confirm.archive', 'pages.company_lifecycle.acts.archive', {
-        name: 'Cleansia CZ',
-        facts: [
-          'openOrders',
-          'activeMemberships',
-          'creditBalances',
-          'pendingRefunds',
-          'ordersAwaitingPay',
-          'ordersAwaitingReceipt',
-          'receiptsAwaitingFiscalRegistration',
-          'openPayPeriods',
-          'unpaidInvoices',
-          'uninvoicedPayRows',
-          'openDisputes',
-        ]
-          .map((id) => `pages.company_lifecycle.facts.${id}`)
-          .join(', '),
-        date: day(horizon),
-      });
+      expect(confirmMock).toHaveBeenCalledWith(
+        'pages.company_lifecycle.confirm.archive',
+        'pages.company_lifecycle.acts.archive',
+        {
+          name: 'Cleansia CZ',
+          facts: [
+            'openOrders',
+            'activeMemberships',
+            'creditBalances',
+            'pendingRefunds',
+            'ordersAwaitingPay',
+            'ordersAwaitingReceipt',
+            'receiptsAwaitingFiscalRegistration',
+            'openPayPeriods',
+            'unpaidInvoices',
+            'uninvoicedPayRows',
+            'openDisputes',
+          ]
+            .map((id) => `pages.company_lifecycle.facts.${id}`)
+            .join(', '),
+          date: day(horizon),
+        },
+        { danger: true }
+      );
       expect(archiveMock).toHaveBeenCalledTimes(1);
       expect(snackbar.showSuccessTranslated).toHaveBeenCalledWith('pages.company_lifecycle.messages.archive_requested');
       expect(getMock).toHaveBeenCalledTimes(2);
@@ -440,7 +448,8 @@ describe('CompanyLifecycleFacade', () => {
       expect(confirmMock).toHaveBeenCalledWith(
         'pages.company_lifecycle.confirm.archive_again',
         'pages.company_lifecycle.acts.build_archive_again',
-        { name: 'Cleansia CZ', frozenOn: NOW.toLocaleString('en', { dateStyle: 'medium', timeStyle: 'short' }) }
+        { name: 'Cleansia CZ', frozenOn: formatDate(NOW, 'en', 'dateTime') },
+        { danger: true }
       );
       expect(archiveMock).toHaveBeenCalledTimes(1);
     });

@@ -14,7 +14,7 @@ import {
   pickPreviewLanguage,
 } from './legal-documents.models';
 
-const translate = { instant: (key: string) => key } as unknown as TranslateService;
+const translate = { instant: (key: string) => key, currentLang: 'cs' } as unknown as TranslateService;
 
 const texts = (...languages: string[]): LegalDocumentTextSummaryDto[] =>
   languages.map((language) =>
@@ -41,11 +41,11 @@ describe('legal-documents models', () => {
 
   describe('formatEffectiveDate', () => {
     it('renders a date-only wire value without shifting the day for the local zone', () => {
-      expect(formatEffectiveDate(new Date('2026-09-14'))).toBe('14/09/2026');
+      expect(formatEffectiveDate(new Date('2026-09-14'), 'cs')).toBe('14. 9. 2026');
     });
 
     it('is blank for a missing date', () => {
-      expect(formatEffectiveDate(undefined)).toBe('');
+      expect(formatEffectiveDate(undefined, 'cs')).toBe('');
     });
   });
 
@@ -88,7 +88,7 @@ describe('legal-documents models', () => {
       expect(valueOf('audience')).toBe('pages.legal_documents.audience.customer');
       expect(valueOf('type')).toBe('pages.legal_documents.type.privacy_policy');
       expect(valueOf('market')).toBe('pages.legal_documents.all_markets');
-      expect(valueOf('effectiveFrom')).toBe('14/09/2026');
+      expect(valueOf('effectiveFrom')).toBe('14. 9. 2026');
       expect(valueOf('isInForce')).toBe('global.yes');
       expect(valueOf('languages')).toBe('en, cs');
     });

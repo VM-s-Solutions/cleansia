@@ -1,11 +1,21 @@
-<div class="cleansia-company-lifecycle">
+<div class="cleansia-company-lifecycle cleansia-page">
   <div class="cleansia-company-lifecycle__container page-wrapper">
-    <div class="cleansia-company-lifecycle__header">
-      <div class="header-content">
-        <cleansia-title [title]="'pages.company_lifecycle.title' | translate" />
-        <p class="cleansia-company-lifecycle__description">
+    <div class="cleansia-page-header">
+      <div class="cleansia-page-header__heading">
+        <cleansia-title [title]="'pages.company_lifecycle.title' | translate" [level]="1" />
+        <p class="cleansia-page-header__description">
           {{ 'pages.company_lifecycle.description' | translate }}
         </p>
+      </div>
+      <div class="cleansia-page-header__actions">
+        <cleansia-button
+          [label]="'global.refresh' | translate"
+          icon="pi pi-refresh"
+          severity="secondary"
+          [outlined]="true"
+          [loading]="facade.loading()"
+          (onClick)="facade.load()"
+        />
       </div>
     </div>
 
@@ -15,16 +25,18 @@
     </cleansia-section>
     } @else if (facade.hasError()) {
     <cleansia-section>
-      <div class="cleansia-company-lifecycle__state">
-        <i class="pi pi-exclamation-triangle"></i>
-        <p>{{ 'pages.company_lifecycle.load_error' | translate }}</p>
-        <cleansia-button
-          [label]="'pages.company_lifecycle.retry' | translate"
-          icon="pi pi-refresh"
-          severity="secondary"
-          [outlined]="true"
-          (onClick)="facade.load()"
-        />
+      <div class="not-found-state">
+        <div class="not-found-state__icon"><i class="pi pi-exclamation-triangle"></i></div>
+        <p class="not-found-state__message">{{ 'pages.company_lifecycle.load_error' | translate }}</p>
+        <div class="not-found-state__actions">
+          <cleansia-button
+            [label]="'pages.company_lifecycle.retry' | translate"
+            icon="pi pi-refresh"
+            severity="secondary"
+            [outlined]="true"
+            (onClick)="facade.load()"
+          />
+        </div>
       </div>
     </cleansia-section>
     } @else if (facade.lifecycle(); as lifecycle) {
@@ -32,15 +44,7 @@
       <div class="cleansia-company-lifecycle__banner" [attr.data-severity]="facade.stateSeverity()">
         <div class="cleansia-company-lifecycle__banner-headline">
           <span class="cleansia-company-lifecycle__company-name">{{ lifecycle.name }}</span>
-          <p-tag [value]="facade.stateKey() | translate" [severity]="facade.stateSeverity()" />
-          <cleansia-button
-            [label]="'global.refresh' | translate"
-            icon="pi pi-refresh"
-            severity="secondary"
-            [text]="true"
-            [loading]="facade.loading()"
-            (onClick)="facade.load()"
-          />
+          <cleansia-status-badge kind="company" [value]="lifecycle.state" />
         </div>
 
         @if (facade.stamps().length > 0) {
@@ -75,6 +79,7 @@
             [label]="act.labelKey | translate"
             [icon]="act.icon"
             [severity]="act.severity"
+            [outlined]="act.outlined"
             [disabled]="!act.enabled || facade.actInFlight() !== null"
             [loading]="facade.actInFlight() === act.act"
             (onClick)="facade.perform(act.act)"
@@ -115,7 +120,7 @@
 </ng-template>
 
 <ng-template #statusTemplate let-fact>
-  <p-tag [value]="fact.statusKey | translate" [severity]="fact.statusSeverity" />
+  <cleansia-status-badge kind="settlement" [value]="fact.status" />
 </ng-template>
 
 <cleansia-admin-wind-down-dialog

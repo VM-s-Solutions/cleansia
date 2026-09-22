@@ -14,7 +14,6 @@ public class Policy
     public const string CanViewPagedUserOrder = nameof(CanViewPagedUserOrder); // Authenticated (All roles)
     public const string CanViewOrderDetail = nameof(CanViewOrderDetail); // Authenticated (All roles) + Admin + Employee
     public const string CanViewOrderDetailWithOrderNumberAndEmail = nameof(CanViewOrderDetailWithOrderNumberAndEmail); // Anonymous
-    public const string CanUpdateOrder = nameof(CanUpdateOrder); // Admin + Employee
     public const string CanCreateOrder = nameof(CanCreateOrder); // Anonymous
     public const string CanGetOrderStatus = nameof(CanGetOrderStatus); // Anonymous
     public const string CanTakeOrder = nameof(CanTakeOrder); // Employee
@@ -30,7 +29,6 @@ public class Policy
     public const string CanUpdateOrderIssue = nameof(CanUpdateOrderIssue); // Employee (own issues)
     public const string CanDeleteOrderIssue = nameof(CanDeleteOrderIssue); // Employee (own issues)
     public const string CanSubmitOrderReview = nameof(CanSubmitOrderReview); // Customer
-    public const string CanViewOrderReview = nameof(CanViewOrderReview); // Authenticated (All roles)
     public const string CanCancelOrder = nameof(CanCancelOrder); // Customer (own orders)
     public const string CanAdminCancelOrder = nameof(CanAdminCancelOrder); // SupportOrAbove (any order)
     public const string CanOverrideOrderStatus = nameof(CanOverrideOrderStatus); // SupportOrAbove (any order)
@@ -63,7 +61,6 @@ public class Policy
     public const string CanChangePassword = nameof(CanChangePassword);
     public const string CanChangeOwnPassword = nameof(CanChangeOwnPassword); // Authenticated [OWN-DATA] — subject id from the JWT only
     public const string CanUpdateCurrentUser = nameof(CanUpdateCurrentUser); // Authenticated (All roles)
-    public const string CanAddPhoneNumber = nameof(CanAddPhoneNumber); // Authenticated (All roles)
 
     // Employee
     public const string CanGetCurrentEmployee = nameof(CanGetCurrentEmployee); // Authenticated (All roles)
@@ -91,7 +88,6 @@ public class Policy
     public const string CanViewPagedInvoices = nameof(CanViewPagedInvoices); // Admin
     public const string CanViewPagedInvoicesAdmin = nameof(CanViewPagedInvoicesAdmin); // AccountantOrAbove (every cleaner's payout invoices)
     public const string CanViewPeriodPays = nameof(CanViewPeriodPays); // Admin + Employee (own data)
-    public const string CanCalculateOrderPay = nameof(CanCalculateOrderPay); // Admin
     public const string CanGenerateInvoice = nameof(CanGenerateInvoice); // AccountantOrAbove
     public const string CanApproveInvoice = nameof(CanApproveInvoice); // AccountantOrAbove
     public const string CanMarkInvoicePaid = nameof(CanMarkInvoicePaid); // AccountantOrAbove
@@ -103,7 +99,6 @@ public class Policy
 
     // Pay Period
     public const string CanViewPayPeriods = nameof(CanViewPayPeriods); // Admin + Employee
-    public const string CanViewPayPeriod = nameof(CanViewPayPeriod); // Admin + Employee
     public const string CanViewPayPeriodsAdmin = nameof(CanViewPayPeriodsAdmin); // AccountantOrAbove
     public const string CanViewPayPeriodAdmin = nameof(CanViewPayPeriodAdmin); // AccountantOrAbove
     public const string CanCreatePayPeriod = nameof(CanCreatePayPeriod); // AccountantOrAbove
@@ -201,18 +196,11 @@ public class Policy
     public const string CanViewEmailTemplates = nameof(CanViewEmailTemplates); // Admin
     public const string CanUpdateEmailTemplate = nameof(CanUpdateEmailTemplate); // ManagerOrAbove
 
-    // Country Configuration
-    public const string CanViewCountryConfigurations = nameof(CanViewCountryConfigurations); // Admin
-    public const string CanCreateCountryConfiguration = nameof(CanCreateCountryConfiguration); // ManagerOrAbove
-    public const string CanUpdateCountryConfiguration = nameof(CanUpdateCountryConfiguration); // ManagerOrAbove
-    public const string CanDeleteCountryConfiguration = nameof(CanDeleteCountryConfiguration); // ManagerOrAbove
-
     // Legal documents (read-only; the texts in force per market)
     public const string CanViewLegalDocuments = nameof(CanViewLegalDocuments); // AdministratorOnly
 
     // Tenant Configuration
     public const string CanViewTenantConfigurations = nameof(CanViewTenantConfigurations); // AdministratorOnly
-    public const string CanCreateTenantConfiguration = nameof(CanCreateTenantConfiguration); // AdministratorOnly
     public const string CanUpdateTenantConfiguration = nameof(CanUpdateTenantConfiguration); // AdministratorOnly
     public const string CanDeleteTenantConfiguration = nameof(CanDeleteTenantConfiguration); // AdministratorOnly
 

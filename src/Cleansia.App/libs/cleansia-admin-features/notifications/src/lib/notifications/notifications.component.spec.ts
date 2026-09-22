@@ -40,15 +40,32 @@ describe('NotificationsComponent', () => {
   const text = () => element().textContent ?? '';
   const rows = () => Array.from(element().querySelectorAll('.cleansia-notifications__row')) as HTMLElement[];
   const markAllButton = () =>
-    element().querySelector('.cleansia-notifications__header cleansia-button button') as HTMLButtonElement;
+    element().querySelector('.cleansia-page-header__actions cleansia-button button') as HTMLButtonElement;
 
   async function render(): Promise<void> {
     await TestBed.configureTestingModule({
       imports: [NotificationsComponent, TranslateModule.forRoot()],
       providers: [
-        { provide: AdminClient, useValue: { adminNotificationClient: { getPaged, markRead, markAllRead } } },
-        { provide: AdminNotificationBadgeService, useValue: { refresh: refreshBadge, unreadCount: signal(0) } },
-        { provide: SnackbarService, useValue: { showSuccess: jest.fn() } },
+        {
+          provide: AdminClient,
+          useValue: {
+            adminNotificationClient: { getPaged, markRead, markAllRead },
+          },
+        },
+        {
+          provide: AdminNotificationBadgeService,
+          useValue: {
+            refresh: refreshBadge,
+            unreadCount: signal(0),
+          },
+        },
+        {
+          provide: SnackbarService,
+          useValue: {
+            showSuccess: jest.fn(),
+            showSuccessTranslated: jest.fn(),
+          },
+        },
         { provide: Router, useValue: { navigate } },
       ],
     }).compileComponents();
@@ -80,7 +97,7 @@ describe('NotificationsComponent', () => {
     await render();
 
     expect(text()).toContain('pages.notifications.load_error');
-    (element().querySelector('.cleansia-notifications__state cleansia-button button') as HTMLButtonElement).click();
+    (element().querySelector('.not-found-state cleansia-button button') as HTMLButtonElement).click();
     fixture.detectChanges();
 
     expect(getPaged).toHaveBeenCalledTimes(2);

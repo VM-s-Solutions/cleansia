@@ -87,7 +87,7 @@ export class LegalDocumentsComponent implements AfterViewInit, OnDestroy {
   }
 
   effectiveDate(value: Date | undefined): string {
-    return formatEffectiveDate(value);
+    return formatEffectiveDate(value, this.translate.currentLang);
   }
 
   private rebuildTableDefinitions(): void {

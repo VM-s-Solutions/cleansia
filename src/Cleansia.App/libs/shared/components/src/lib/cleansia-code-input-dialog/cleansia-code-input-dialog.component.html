@@ -56,18 +56,21 @@
     <div class="cleansia-code-input-dialog__footer">
       @if (state().kind === 'valid') {
         <cleansia-button
+          [block]="true"
           [label]="doneKey() | translate"
           severity="primary"
           (onClick)="onDone()"
         />
       } @else {
         <cleansia-button
+          [block]="true"
           [label]="cancelKey() | translate"
           [text]="true"
           severity="secondary"
           (onClick)="onCancel()"
         />
         <cleansia-button
+          [block]="true"
           [label]="applyKey() | translate"
           severity="primary"
           [disabled]="!canApply()"

@@ -18,7 +18,6 @@ public static class PolicyBuilder
         [Policy.CanViewPagedUserOrder] = PhysicalPolicy.Authenticated,
         [Policy.CanViewOrderDetail] = PhysicalPolicy.Authenticated,
         [Policy.CanViewOrderCustomer] = PhysicalPolicy.SupportOrAbove,
-        [Policy.CanUpdateOrder] = PhysicalPolicy.EmployeeOrAdmin,
         [Policy.CanTakeOrder] = PhysicalPolicy.EmployeeOrAdmin,
         [Policy.CanStartOrder] = PhysicalPolicy.EmployeeOrAdmin,
         [Policy.CanCompleteOrder] = PhysicalPolicy.EmployeeOrAdmin,
@@ -32,7 +31,6 @@ public static class PolicyBuilder
         [Policy.CanUpdateOrderIssue] = PhysicalPolicy.EmployeeOrAdmin,
         [Policy.CanDeleteOrderIssue] = PhysicalPolicy.EmployeeOrAdmin,
         [Policy.CanSubmitOrderReview] = PhysicalPolicy.CustomerOnly,
-        [Policy.CanViewOrderReview] = PhysicalPolicy.Authenticated,
         [Policy.CanCancelOrder] = PhysicalPolicy.CustomerOnly,
         [Policy.CanAdminCancelOrder] = PhysicalPolicy.SupportOrAbove,
         [Policy.CanOverrideOrderStatus] = PhysicalPolicy.SupportOrAbove,
@@ -66,7 +64,6 @@ public static class PolicyBuilder
         // [OWN-DATA]: the handler takes the subject id from the session/JWT only.
         [Policy.CanChangeOwnPassword] = PhysicalPolicy.Authenticated,
         [Policy.CanUpdateCurrentUser] = PhysicalPolicy.Authenticated,
-        [Policy.CanAddPhoneNumber] = PhysicalPolicy.Authenticated,
 
         // Employee
         [Policy.CanGetCurrentEmployee] = PhysicalPolicy.Authenticated,
@@ -99,7 +96,6 @@ public static class PolicyBuilder
         [Policy.CanViewPagedInvoices] = PhysicalPolicy.EmployeeOrAdmin,
         [Policy.CanViewPeriodPays] = PhysicalPolicy.EmployeeOrAdmin,
         [Policy.CanViewPagedInvoicesAdmin] = PhysicalPolicy.AccountantOrAbove,
-        [Policy.CanCalculateOrderPay] = PhysicalPolicy.AdminOnly,
         [Policy.CanGenerateInvoice] = PhysicalPolicy.AccountantOrAbove,
         [Policy.CanApproveInvoice] = PhysicalPolicy.AccountantOrAbove,
         [Policy.CanMarkInvoicePaid] = PhysicalPolicy.AccountantOrAbove,
@@ -114,7 +110,6 @@ public static class PolicyBuilder
         // [OWN-DATA] CanViewPeriodPays path. The admin host lists them on its own constants below;
         // mutations are the Accountant's.
         [Policy.CanViewPayPeriods] = PhysicalPolicy.EmployeeOrAdmin,
-        [Policy.CanViewPayPeriod] = PhysicalPolicy.EmployeeOrAdmin,
         [Policy.CanViewPayPeriodsAdmin] = PhysicalPolicy.AccountantOrAbove,
         [Policy.CanViewPayPeriodAdmin] = PhysicalPolicy.AccountantOrAbove,
         [Policy.CanCreatePayPeriod] = PhysicalPolicy.AccountantOrAbove,
@@ -212,18 +207,11 @@ public static class PolicyBuilder
         [Policy.CanViewEmailTemplates] = PhysicalPolicy.AdminOnly,
         [Policy.CanUpdateEmailTemplate] = PhysicalPolicy.ManagerOrAbove,
 
-        // Country Configuration
-        [Policy.CanViewCountryConfigurations] = PhysicalPolicy.AdminOnly,
-        [Policy.CanCreateCountryConfiguration] = PhysicalPolicy.ManagerOrAbove,
-        [Policy.CanUpdateCountryConfiguration] = PhysicalPolicy.ManagerOrAbove,
-        [Policy.CanDeleteCountryConfiguration] = PhysicalPolicy.ManagerOrAbove,
-
         // Legal documents
         [Policy.CanViewLegalDocuments] = PhysicalPolicy.AdministratorOnly,
 
         // Tenant Configuration
         [Policy.CanViewTenantConfigurations] = PhysicalPolicy.AdministratorOnly,
-        [Policy.CanCreateTenantConfiguration] = PhysicalPolicy.AdministratorOnly,
         [Policy.CanUpdateTenantConfiguration] = PhysicalPolicy.AdministratorOnly,
         [Policy.CanDeleteTenantConfiguration] = PhysicalPolicy.AdministratorOnly,
 

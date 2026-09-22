@@ -23,8 +23,7 @@ import javax.inject.Inject
 /**
  * Mirrors partner-web's `RegistrationCompletionService.checkRegistrationCompletion()`
  * decision tree: a cleaner can take orders only when profile + documents
- * are filled AND admin has Approved / Active'd the contract. (Availability
- * used to be part of this gate but no longer is.)
+ * are filled AND admin has Approved / Active'd the contract.
  *
  * The categories list drives the rows on the lock screen so the cleaner sees
  * exactly what's outstanding and where to go fix it.
@@ -106,8 +105,6 @@ data class StepRow(
 fun RegistrationCompletionStatus.isRegistrationComplete(): Boolean =
     (hasCompletedProfile == true) &&
         (areDocumentsUploaded == true) &&
-        // Availability is no longer a gate — backend always reports
-        // hasSetAvailability=true now; we don't read it here either.
         (contractStatus == ContractStatus._4 /* Approved */ ||
             contractStatus == ContractStatus._2 /* Active */)
 

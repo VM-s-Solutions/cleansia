@@ -6,7 +6,8 @@ import {
   PartnerClient,
   PeriodPaySummaryDto,
 } from '@cleansia/partner-services';
-import { of, throwError } from 'rxjs';
+import { TranslateService } from '@ngx-translate/core';
+import { EMPTY, of, throwError } from 'rxjs';
 import { PeriodPayFacade } from './period-pay.facade';
 
 describe('PeriodPayFacade', () => {
@@ -58,6 +59,7 @@ describe('PeriodPayFacade', () => {
           provide: PartnerClient,
           useValue: { employeeClient, payPeriodClient, employeePayrollClient },
         },
+        { provide: TranslateService, useValue: { currentLang: 'cs', onLangChange: EMPTY } },
       ],
     });
 
@@ -83,14 +85,15 @@ describe('PeriodPayFacade', () => {
     expect(employeePayrollClient.getPeriodPays).toHaveBeenCalledWith('emp-1', 'period-2', undefined);
   });
 
-  it('derives the status key of the selected period', () => {
+  // The badge reads the period's own status name; the facade adds no vocabulary of its own.
+  it('exposes the selected period with the status the wire named', () => {
     facade.init();
 
-    expect(facade.selectedPeriodStatus()).toBe('open');
+    expect(facade.selectedPeriod()?.status).toBe('Open');
 
     facade.selectPeriod('period-1');
 
-    expect(facade.selectedPeriodStatus()).toBe('paid');
+    expect(facade.selectedPeriod()?.status).toBe('Paid');
     expect(employeePayrollClient.getPeriodPays).toHaveBeenLastCalledWith('emp-1', 'period-1', undefined);
   });
 

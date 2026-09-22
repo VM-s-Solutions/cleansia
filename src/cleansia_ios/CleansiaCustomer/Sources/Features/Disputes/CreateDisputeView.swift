@@ -5,6 +5,7 @@ struct CreateDisputeView: View {
     @StateObject private var vm: CreateDisputeViewModel
     @State private var reasonId: String?
     @State private var description = ""
+    @State private var showEvidencePicker = false
 
     let onCreated: (String) -> Void
 
@@ -43,6 +44,7 @@ struct CreateDisputeView: View {
                     reasonField
                     itemsField
                     descriptionField
+                    evidenceField
                     if let error = vm.submitState.errorMessage {
                         Text(error)
                             .font(CleansiaTypography.bodyMedium)
@@ -59,6 +61,9 @@ struct CreateDisputeView: View {
         .background(CleansiaColors.background.ignoresSafeArea())
         .onReceive(vm.created) { id in onCreated(id) }
         .task { await vm.loadLineOptions() }
+        .evidencePicker(isPresented: $showEvidencePicker) { source, fileName in
+            vm.addEvidence(source, fileName: fileName)
+        }
     }
 
     @ViewBuilder
@@ -201,6 +206,29 @@ struct CreateDisputeView: View {
         }
     }
 
+    /// Optional, like the items above. Picked here, uploaded to the new dispute right after the create.
+    @ViewBuilder
+    private var evidenceField: some View {
+        if vm.hasOrderContext {
+            VStack(alignment: .leading, spacing: Spacing.xs) {
+                Text(L10n.Disputes.evidenceSectionTitle)
+                    .font(CleansiaTypography.labelLarge)
+                    .foregroundColor(CleansiaColors.onSurfaceVariant)
+                Text(L10n.Disputes.createEvidenceHint)
+                    .font(CleansiaTypography.labelMedium)
+                    .foregroundColor(CleansiaColors.onSurfaceVariant)
+                ForEach(vm.pickedEvidence) { file in
+                    PickedEvidenceRow(file: file, removable: !vm.submitState.isSubmitting) {
+                        vm.removeEvidence(id: file.id)
+                    }
+                }
+                AddEvidenceButton(enabled: !vm.submitState.isSubmitting) {
+                    showEvidencePicker = true
+                }
+            }
+        }
+    }
+
     private var submitFooter: some View {
         VStack {
             CleansiaPrimaryButton(
@@ -215,6 +243,92 @@ struct CreateDisputeView: View {
         .padding(.horizontal, Spacing.ml)
         .padding(.vertical, Spacing.s)
         .background(CleansiaColors.surface.ignoresSafeArea(edges: .bottom))
+    }
+}
+
+private struct PickedEvidenceRow: View {
+    let file: PickedEvidence
+    let removable: Bool
+    let onRemove: () -> Void
+
+    var body: some View {
+        HStack(spacing: Spacing.s) {
+            ZStack {
+                CleansiaColors.surfaceVariant
+                Image(systemName: file.isPdf ? "doc.richtext" : "photo")
+                    .font(.system(size: 20))
+                    .foregroundColor(CleansiaColors.onSurfaceVariant)
+            }
+            .frame(width: 40, height: 40)
+            .clipShape(RoundedRectangle(cornerRadius: CornerRadius.small))
+
+            VStack(alignment: .leading, spacing: 1) {
+                Text(verbatim: file.fileName)
+                    .font(CleansiaTypography.bodyMedium)
+                    .foregroundColor(CleansiaColors.onSurface)
+                    .lineLimit(1)
+                status
+            }
+            Spacer(minLength: Spacing.xs)
+            trailing
+        }
+        .padding(.vertical, Spacing.xs)
+        .padding(.leading, Spacing.s)
+        .padding(.trailing, Spacing.xxs)
+        .background(CleansiaColors.surface, in: RoundedRectangle(cornerRadius: CornerRadius.medium))
+        .overlay(
+            RoundedRectangle(cornerRadius: CornerRadius.medium)
+                .stroke(CleansiaColors.outlineVariant, lineWidth: 1)
+        )
+    }
+
+    @ViewBuilder
+    private var status: some View {
+        switch file.upload {
+        case .pending:
+            EmptyView()
+        case .uploading:
+            Text(L10n.Disputes.evidenceUploading)
+                .font(CleansiaTypography.labelSmall)
+                .foregroundColor(CleansiaColors.onSurfaceVariant)
+        case .uploaded:
+            Text(L10n.Disputes.evidenceUploaded)
+                .font(CleansiaTypography.labelSmall)
+                .foregroundColor(CleansiaColors.primary)
+        case .failed:
+            Text(L10n.Disputes.evidenceUploadFailed)
+                .font(CleansiaTypography.labelSmall)
+                .foregroundColor(CleansiaColors.error)
+        }
+    }
+
+    @ViewBuilder
+    private var trailing: some View {
+        switch file.upload {
+        case .pending:
+            Button(action: onRemove) {
+                Image(systemName: "xmark")
+                    .font(.system(size: 16, weight: .medium))
+                    .foregroundColor(CleansiaColors.onSurfaceVariant)
+                    .frame(width: 40, height: 40)
+            }
+            .disabled(!removable)
+            .accessibilityLabel(L10n.Disputes.evidenceRemove)
+        case .uploading:
+            ProgressView()
+                .tint(CleansiaColors.primary)
+                .padding(.trailing, Spacing.s)
+        case .uploaded:
+            Image(systemName: "checkmark.circle")
+                .font(.system(size: 20))
+                .foregroundColor(CleansiaColors.primary)
+                .padding(.trailing, Spacing.s)
+        case .failed:
+            Image(systemName: "exclamationmark.circle")
+                .font(.system(size: 20))
+                .foregroundColor(CleansiaColors.error)
+                .padding(.trailing, Spacing.s)
+        }
     }
 }
 

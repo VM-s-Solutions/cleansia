@@ -2579,75 +2579,6 @@
         }
       }
     },
-    "/api/Employee/UpdateAvailability": {
-      "put": {
-        "tags": [
-          "Employee"
-        ],
-        "operationId": "Employee_UpdateAvailability",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdateAvailability_Command"
-              }
-            },
-            "text/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdateAvailability_Command"
-              }
-            },
-            "application/*+json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdateAvailability_Command"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "text/plain": {
-                "schema": {
-                  "$ref": "#/components/schemas/UpdateAvailability_Response"
-                }
-              },
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/UpdateAvailability_Response"
-                }
-              },
-              "text/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/UpdateAvailability_Response"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Bad Request",
-            "content": {
-              "text/plain": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              },
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              },
-              "text/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/api/Employee/UpdateJobRadius": {
       "put": {
         "tags": [
@@ -8329,16 +8260,6 @@
           "authenticationType": {
             "$ref": "#/components/schemas/Code"
           },
-          "availability": {
-            "type": "object",
-            "additionalProperties": {
-              "type": "array",
-              "items": {
-                "$ref": "#/components/schemas/TimeRange"
-              }
-            },
-            "nullable": true
-          },
           "jobRadiusKm": {
             "type": "integer",
             "format": "int32",
@@ -8667,10 +8588,6 @@
             "nullable": true
           },
           "emergencyContactPhone": {
-            "type": "string",
-            "nullable": true
-          },
-          "preferredCurrencyCode": {
             "type": "string",
             "nullable": true
           },
@@ -10973,9 +10890,6 @@
           "hasCompletedProfile": {
             "type": "boolean"
           },
-          "hasSetAvailability": {
-            "type": "boolean"
-          },
           "missingFields": {
             "type": "array",
             "items": {
@@ -11578,20 +11492,6 @@
         },
         "additionalProperties": false
       },
-      "TimeRange": {
-        "type": "object",
-        "properties": {
-          "start": {
-            "type": "string",
-            "nullable": true
-          },
-          "end": {
-            "type": "string",
-            "nullable": true
-          }
-        },
-        "additionalProperties": false
-      },
       "Translation": {
         "type": "object",
         "properties": {
@@ -11673,50 +11573,6 @@
         "type": "object",
         "properties": {
           "employeeId": {
-            "type": "string",
-            "nullable": true
-          }
-        },
-        "additionalProperties": false
-      },
-      "UpdateAvailability_Command": {
-        "type": "object",
-        "properties": {
-          "employeeId": {
-            "type": "string",
-            "nullable": true
-          },
-          "availability": {
-            "type": "object",
-            "additionalProperties": {
-              "type": "array",
-              "items": {
-                "$ref": "#/components/schemas/UpdateAvailability_TimeRangeDto"
-              }
-            },
-            "nullable": true
-          }
-        },
-        "additionalProperties": false
-      },
-      "UpdateAvailability_Response": {
-        "type": "object",
-        "properties": {
-          "employeeId": {
-            "type": "string",
-            "nullable": true
-          }
-        },
-        "additionalProperties": false
-      },
-      "UpdateAvailability_TimeRangeDto": {
-        "type": "object",
-        "properties": {
-          "start": {
-            "type": "string",
-            "nullable": true
-          },
-          "end": {
             "type": "string",
             "nullable": true
           }
@@ -11933,16 +11789,6 @@
               "$ref": "#/components/schemas/BlobFileDto"
             },
             "nullable": true
-          },
-          "availability": {
-            "type": "object",
-            "additionalProperties": {
-              "type": "array",
-              "items": {
-                "$ref": "#/components/schemas/UpdateEmployee_TimeRangeDto"
-              }
-            },
-            "nullable": true
           }
         },
         "additionalProperties": false
@@ -11951,20 +11797,6 @@
         "type": "object",
         "properties": {
           "employeeId": {
-            "type": "string",
-            "nullable": true
-          }
-        },
-        "additionalProperties": false
-      },
-      "UpdateEmployee_TimeRangeDto": {
-        "type": "object",
-        "properties": {
-          "start": {
-            "type": "string",
-            "nullable": true
-          },
-          "end": {
             "type": "string",
             "nullable": true
           }

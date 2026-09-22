@@ -28,7 +28,7 @@ export function getTimelineTableDefinition(
         field: 'occurredOn',
         header: translate.instant('pages.audit_log.timeline.columns.occurred_on'),
         width: '16%',
-        getValue: (row: TimelineEntryDto) => formatTimestamp(row.occurredOn),
+        getValue: (row: TimelineEntryDto) => formatTimestamp(row.occurredOn, translate.currentLang),
       },
       {
         id: 'source',

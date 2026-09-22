@@ -11,7 +11,6 @@ import { FormsModule } from '@angular/forms';
 import { OrderItem, OrderStatus } from '@cleansia/admin-services';
 import {
   CleansiaButtonComponent,
-  CleansiaSectionComponent,
   CleansiaSelectComponent,
   CleansiaTextInputComponent,
   CleansiaTextareaComponent,
@@ -31,7 +30,6 @@ import {
     CommonModule,
     FormsModule,
     TranslatePipe,
-    CleansiaSectionComponent,
     CleansiaSelectComponent,
     CleansiaTextInputComponent,
     CleansiaTextareaComponent,

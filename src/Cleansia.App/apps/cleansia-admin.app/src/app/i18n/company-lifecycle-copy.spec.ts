@@ -6,7 +6,8 @@ const LOCALES = ['en', 'cs', 'sk', 'uk', 'ru'] as const;
 type Locale = (typeof LOCALES)[number];
 
 const PAGE_ROOT = 'pages.company_lifecycle';
-const STATES_ROOT = `${PAGE_ROOT}.states`;
+const STATES_ROOT = 'enums.company_lifecycle_state';
+const stateKey = (name: string) => name.replace(/([a-z0-9])([A-Z])/g, '$1_$2').toLowerCase();
 const FACTS_ROOT = `${PAGE_ROOT}.facts`;
 
 // The server refusal sentences the act matrix reuses as its reason lines.
@@ -85,8 +86,8 @@ describe('company lifecycle copy', () => {
     expect(DATED_FACTS.filter((id) => dtoMembers.get(id) !== 'Date | undefined')).toEqual([]);
   });
 
-  it.each(LOCALES)('%s names every generated state under pages.company_lifecycle.states', (locale) => {
-    expect(untranslated(readLocale(locale), stateNames.map((name) => `${STATES_ROOT}.${name}`))).toEqual([]);
+  it.each(LOCALES)('%s names every generated state under enums.company_lifecycle_state', (locale) => {
+    expect(untranslated(readLocale(locale), stateNames.map((name) => `${STATES_ROOT}.${stateKey(name)}`))).toEqual([]);
   });
 
   it.each(LOCALES)('%s names every settlement fact under pages.company_lifecycle.facts', (locale) => {
@@ -96,7 +97,7 @@ describe('company lifecycle copy', () => {
   it('names no state and no fact the generated client does not carry', () => {
     for (const locale of LOCALES) {
       const tree = readLocale(locale);
-      expect(leafKeys(resolve(tree, STATES_ROOT)).filter((name) => !stateNames.includes(name))).toEqual([]);
+      expect(leafKeys(resolve(tree, STATES_ROOT)).filter((key) => !stateNames.map(stateKey).includes(key))).toEqual([]);
       expect(leafKeys(resolve(tree, FACTS_ROOT)).filter((id) => !factIds.includes(id))).toEqual([]);
     }
   });

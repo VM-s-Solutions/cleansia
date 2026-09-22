@@ -1394,6 +1394,11 @@
     <string name="dispute_create_which_items">Which parts went wrong?</string>
     <string name="dispute_create_which_items_hint">Optional. Tick the services that were not done properly — it helps us put it right faster. Leave it empty if the whole clean was the problem.</string>
     <string name="dispute_create_item_in_package">in %1$s</string>
+    <string name="dispute_create_evidence_hint">Optional. Photos or PDFs up to 10 MB each — they upload when you submit.</string>
+    <string name="dispute_create_evidence_partial">Your dispute was submitted, but these files could not be uploaded: %1$s. Add them again from the dispute.</string>
+    <string name="dispute_evidence_remove">Remove</string>
+    <string name="dispute_evidence_uploaded">Uploaded</string>
+    <string name="dispute_evidence_upload_failed">Upload failed</string>
     <string name="order_review_rate_items">Rate each service separately</string>
     <string name="order_review_rate_items_hint">Optional. Useful when one part went well and another did not — it tells us exactly where to look.</string>
     <string name="order_review_item_in_package">in %1$s</string>

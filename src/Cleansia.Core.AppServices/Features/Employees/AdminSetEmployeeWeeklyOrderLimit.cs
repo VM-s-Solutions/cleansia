@@ -16,8 +16,8 @@ namespace Cleansia.Core.AppServices.Features.Employees;
 /// <para><b>A narrow command rather than a field on <see cref="AdminUpdateEmployee"/>.</b> That command
 /// treats every field as nullable and merges with <c>?? existing</c>, so <see langword="null"/> there
 /// means "not supplied". It structurally cannot express <i>clear this cleaner's cap back to
-/// unlimited</i>, which is half of what this feature is for. <see cref="AdminUpdateEmployeeAvailability"/>
-/// is the in-repo precedent for a narrow admin sub-command with its own endpoint and audit label.</para>
+/// unlimited</i>, which is half of what this feature is for — hence a narrow admin sub-command with its
+/// own endpoint and audit label.</para>
 ///
 /// <para>Unlimited is the default for every cleaner and is expected to stay that way; a cap is a
 /// deliberate act against one person, not a rule the platform applies to everyone.</para>

@@ -13,8 +13,6 @@ import cz.cleansia.partner.api.model.RegistrationCompletionStatus
 import cz.cleansia.partner.api.model.SaveMyDocumentsCommand
 import cz.cleansia.partner.api.model.SaveMyDocumentsDocumentToSave
 import cz.cleansia.partner.api.model.UpdateAddressInfoCommand
-import cz.cleansia.partner.api.model.UpdateAvailabilityCommand
-import cz.cleansia.partner.api.model.UpdateAvailabilityTimeRangeDto
 import cz.cleansia.partner.api.model.UpdateBankDetailsCommand
 import cz.cleansia.partner.api.model.UpdateEmergencyContactCommand
 import cz.cleansia.partner.api.model.UpdateIdentificationInfoCommand
@@ -43,7 +41,7 @@ interface ProfileRepository {
     /**
      * Checks whether the cleaner can take orders. Returns the same shape
      * the partner web reads from `/api/Employee/CheckCurrentEmployee`:
-     * which of profile / availability / documents are complete, plus
+     * which of profile / documents are complete, plus
      * contract status (Pending/Approved/Active/Rejected). Used by the
      * registration lock that gates the Orders tab.
      */
@@ -140,12 +138,6 @@ interface ProfileRepository {
         employeeId: String,
         emergencyName: String,
         emergencyPhone: String,
-    ): ApiResult<Unit>
-
-    /** [availability] maps `Monday..Sunday` (ISO English) → list of `HH:mm-HH:mm` windows. */
-    suspend fun updateAvailability(
-        employeeId: String,
-        availability: Map<String, List<Pair<String, String>>>,
     ): ApiResult<Unit>
 
     /**
@@ -337,22 +329,6 @@ class ProfileRepositoryImpl @Inject constructor(
                 employeeId = employeeId,
                 emergencyName = emergencyName,
                 emergencyPhone = emergencyPhone,
-            ),
-        )
-    }.map { }
-
-    override suspend fun updateAvailability(
-        employeeId: String,
-        availability: Map<String, List<Pair<String, String>>>,
-    ): ApiResult<Unit> = safeApiCall(json) {
-        employeeApi.employeeUpdateAvailability(
-            UpdateAvailabilityCommand(
-                employeeId = employeeId,
-                availability = availability.mapValues { (_, ranges) ->
-                    ranges.map { (start, end) ->
-                        UpdateAvailabilityTimeRangeDto(start = start, end = end)
-                    }
-                },
             ),
         )
     }.map { }

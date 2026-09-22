@@ -5,9 +5,9 @@ import {
   ExtraListItem,
   PagedDataOfExtraListItem,
 } from '@cleansia/admin-services';
-import { SnackbarService } from '@cleansia/services';
+import { DialogService, SnackbarService } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
-import { of, throwError } from 'rxjs';
+import { EMPTY, of, throwError } from 'rxjs';
 import { ExtraManagementFacade } from './extra-management.facade';
 
 describe('ExtraManagementFacade', () => {
@@ -17,7 +17,13 @@ describe('ExtraManagementFacade', () => {
   let activateMock: jest.Mock;
   let deleteMock: jest.Mock;
   let getOverviewMock: jest.Mock;
-  let snackbar: { showSuccess: jest.Mock; showError: jest.Mock };
+  let confirmMock: jest.Mock;
+  let snackbar: {
+    showSuccess: jest.Mock;
+    showSuccessTranslated: jest.Mock;
+    showError: jest.Mock;
+    showErrorTranslated: jest.Mock;
+  };
 
   const page = PagedDataOfExtraListItem.fromJS({
     data: [ExtraListItem.fromJS({ id: 'ext-1', slug: 'inside-oven', name: 'Inside oven' })],
@@ -29,10 +35,16 @@ describe('ExtraManagementFacade', () => {
     deactivateMock = jest.fn();
     activateMock = jest.fn();
     deleteMock = jest.fn();
+    confirmMock = jest.fn().mockReturnValue(of(true));
     getOverviewMock = jest.fn().mockReturnValue(
       of([{ id: 'cur-eur', code: 'EUR', isDefault: true }, { id: 'cur-czk', code: 'CZK', isDefault: false }])
     );
-    snackbar = { showSuccess: jest.fn(), showError: jest.fn() };
+    snackbar = {
+      showSuccess: jest.fn(),
+      showSuccessTranslated: jest.fn(),
+      showError: jest.fn(),
+      showErrorTranslated: jest.fn(),
+    };
 
     TestBed.configureTestingModule({
       providers: [
@@ -52,7 +64,15 @@ describe('ExtraManagementFacade', () => {
           },
         },
         { provide: SnackbarService, useValue: snackbar },
-        { provide: TranslateService, useValue: { instant: (k: string) => k } },
+        { provide: DialogService, useValue: { confirmTranslated: confirmMock } },
+        {
+          provide: TranslateService,
+          useValue: {
+            instant: (k: string) => k,
+            currentLang: 'cs',
+            onLangChange: EMPTY,
+          },
+        },
         { provide: Router, useValue: { navigate: jest.fn() } },
       ],
     });
@@ -94,7 +114,7 @@ describe('ExtraManagementFacade', () => {
   it('resets offset when a filter is applied', () => {
     getPagedMock.mockReturnValue(of(page));
 
-    facade.onPageChange(40, 20);
+    facade.onPageChange({ first: 40, rows: 20, page: 2, totalRecords: 100 });
     facade.applyFilter({ isActive: true });
 
     const lastArgs = getPagedMock.mock.calls.at(-1);
@@ -118,7 +138,7 @@ describe('ExtraManagementFacade', () => {
     facade.deactivateExtra(ExtraListItem.fromJS({ id: 'ext-1' }));
 
     expect(deactivateMock).toHaveBeenCalledWith('ext-1');
-    expect(snackbar.showSuccess).toHaveBeenCalledWith(
+    expect(snackbar.showSuccessTranslated).toHaveBeenCalledWith(
       'pages.extra_management.messages.deactivate_success'
     );
     expect(getPagedMock).toHaveBeenCalledTimes(1);
@@ -131,7 +151,7 @@ describe('ExtraManagementFacade', () => {
     facade.activateExtra(ExtraListItem.fromJS({ id: 'ext-1' }));
 
     expect(activateMock).toHaveBeenCalledWith('ext-1');
-    expect(snackbar.showSuccess).toHaveBeenCalledWith(
+    expect(snackbar.showSuccessTranslated).toHaveBeenCalledWith(
       'pages.extra_management.messages.activate_success'
     );
     expect(getPagedMock).toHaveBeenCalledTimes(1);
@@ -144,10 +164,22 @@ describe('ExtraManagementFacade', () => {
     facade.deleteExtra(ExtraListItem.fromJS({ id: 'ext-1' }));
 
     expect(deleteMock).toHaveBeenCalledWith('ext-1');
-    expect(snackbar.showSuccess).toHaveBeenCalledWith(
+    expect(snackbar.showSuccessTranslated).toHaveBeenCalledWith(
       'pages.extra_management.messages.delete_success'
     );
     expect(getPagedMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('does nothing when the confirmation is declined', () => {
+    confirmMock.mockReturnValue(of(false));
+
+    facade.deactivateExtra(ExtraListItem.fromJS({ id: 'ext-1' }));
+    facade.deleteExtra(ExtraListItem.fromJS({ id: 'ext-1' }));
+
+    expect(confirmMock).toHaveBeenCalledTimes(2);
+    expect(deactivateMock).not.toHaveBeenCalled();
+    expect(deleteMock).not.toHaveBeenCalled();
+    expect(getPagedMock).not.toHaveBeenCalled();
   });
 
   it('does not call deactivate, activate or delete for a row without id', () => {
@@ -160,39 +192,37 @@ describe('ExtraManagementFacade', () => {
     expect(deleteMock).not.toHaveBeenCalled();
   });
 
-  it('maps extra.not_found to its translation key on deactivate failure', () => {
+  it('leaves the extra.not_found refusal to the interceptor toast on deactivate failure', () => {
     deactivateMock.mockReturnValue(
       throwError(() => ({ result: { detail: 'extra.not_found' } }))
     );
 
     facade.deactivateExtra(ExtraListItem.fromJS({ id: 'ext-1' }));
 
-    expect(snackbar.showError).toHaveBeenCalledWith('api.extra.not_found');
+    expect(snackbar.showErrorTranslated).not.toHaveBeenCalled();
   });
 
-  it('falls back to the generic error for unknown codes on activate failure', () => {
+  it('leaves an unknown refusal to the interceptor toast on activate failure', () => {
     activateMock.mockReturnValue(
       throwError(() => ({ result: { detail: 'something.unknown' } }))
     );
 
     facade.activateExtra(ExtraListItem.fromJS({ id: 'ext-1' }));
 
-    expect(snackbar.showError).toHaveBeenCalledWith(
-      'api.common.error_occurred'
-    );
+    expect(snackbar.showErrorTranslated).not.toHaveBeenCalled();
   });
 
   // An extra any order has ever bought cannot be deleted (the FK is ON DELETE RESTRICT); the
   // backend answers extra.in_use and the admin must be told to deactivate instead, not shown
   // the generic error.
-  it('maps extra.in_use to its translation key on delete failure', () => {
+  it('leaves the extra.in_use refusal to the interceptor toast on delete failure', () => {
     deleteMock.mockReturnValue(
       throwError(() => ({ result: { detail: 'extra.in_use' } }))
     );
 
     facade.deleteExtra(ExtraListItem.fromJS({ id: 'ext-1' }));
 
-    expect(snackbar.showError).toHaveBeenCalledWith('api.extra.in_use');
+    expect(snackbar.showErrorTranslated).not.toHaveBeenCalled();
   });
 
   describe('the price column names its currency', () => {
@@ -224,7 +254,7 @@ describe('ExtraManagementFacade', () => {
       facade.loadExtras();
 
       expect(facade.defaultCurrencyCode()).toBeNull();
-      expect(facade.formatCurrency(45.1)).toBe('45.10');
+      expect(facade.formatCurrency(45.1)).toBe('45,10');
     });
   });
 });

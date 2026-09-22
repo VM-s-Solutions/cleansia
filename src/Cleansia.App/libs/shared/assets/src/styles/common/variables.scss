@@ -66,6 +66,40 @@ $default-transition: 0.1s;
   --cleansia-background-secondary: #ffffff;
   --cleansia-shadow: rgba(0, 0, 0, 0.1);
   --cleansia-primary-rgb: 2, 132, 199;
+  --cleansia-primary-25: #f7fcff;
+
+  // Semantic ramps. -> agents/knowledge/design-language.md#21-colour
+  --cleansia-error-50: #fef2f2;
+  --cleansia-error-100: #fee2e2;
+  --cleansia-error-400: #f87171;
+  --cleansia-error-500: #ef4444;
+  --cleansia-error-600: #dc2626;
+  --cleansia-error-700: #b91c1c;
+  --cleansia-error-800: #991b1b;
+  --cleansia-error-rgb: 239, 68, 68;
+
+  --cleansia-success-100: #dcfce7;
+  --cleansia-success-700: #15803d;
+  --cleansia-success-800: #166534;
+
+  --cleansia-warning-100: #fef3c7;
+  --cleansia-warning-300: #fcd34d;
+  --cleansia-warning-700: #b45309;
+  --cleansia-warning-800: #92400e;
+
+  --cleansia-neutral-100: #f1f5f9;
+  --cleansia-neutral-700: #334155;
+  --cleansia-text-muted: #64748b;
+  --cleansia-text-placeholder: #94a3b8;
+  --cleansia-border: #e2e8f0;
+
+  // Shape and elevation. -> agents/knowledge/design-language.md#24-shape-and-elevation
+  --cleansia-radius-sm: 6px;
+  --cleansia-radius-md: 12px;
+  --cleansia-radius-lg: 16px;
+  --cleansia-radius-xl: 24px;
+  --cleansia-shadow-1: 0 1px 3px rgba(15, 23, 42, 0.08);
+  --cleansia-shadow-2: 0 4px 12px rgba(15, 23, 42, 0.12);
 
   --p-form-field-disabled-background: #f9fafb !important;
 }

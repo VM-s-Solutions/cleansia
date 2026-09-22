@@ -1,6 +1,6 @@
 <div class="cleansia-table" [class.cleansia-table--loading]="loading()">
   <!-- Loading Overlay -->
-  @if (loading()) {
+  @if (loading() && paginatedData().length > 0) {
   <div class="table-loading-overlay">
     <div class="table-loading-content">
       <i class="pi pi-spinner pi-spin"></i>
@@ -21,7 +21,7 @@
           <th
             [style.width]="column.width"
             [class.sortable]="column.sortable"
-            [class.text-right]="column.align === 'right'"
+            [class.text-right]="isRightAligned(column)"
             [class.text-center]="column.align === 'center'"
             (click)="onSort(column)"
           >
@@ -38,14 +38,29 @@
 
       <!-- Body Section -->
       <tbody class="table__body">
-        @if (paginatedData().length === 0 && !loading()) {
+        @if (paginatedData().length === 0 && loading()) {
         <tr class="table__empty">
           <td
             [attr.colspan]="
               columns().length + (actions() && actions().length > 0 ? 1 : 0)
             "
           >
-            {{ mergedConfig().emptyMessage || 'global.no_data' | translate }}
+            <cleansia-loader />
+          </td>
+        </tr>
+        } @else if (paginatedData().length === 0) {
+        <tr class="table__empty">
+          <td
+            [attr.colspan]="
+              columns().length + (actions() && actions().length > 0 ? 1 : 0)
+            "
+          >
+            <div class="not-found-state">
+              <div class="not-found-state__icon"><i class="pi pi-inbox"></i></div>
+              <p class="not-found-state__message">
+                {{ mergedConfig().emptyMessage || 'global.no_data' | translate }}
+              </p>
+            </div>
           </td>
         </tr>
         } @for (row of paginatedData(); track trackByFn($index, row)) {
@@ -58,8 +73,9 @@
           @for (column of columns(); track column.field) {
           <td
             [style.width]="column.width"
-            [class.text-right]="column.align === 'right'"
+            [class.text-right]="isRightAligned(column)"
             [class.text-center]="column.align === 'center'"
+            [class.numeric]="column.numeric"
           >
             @if (column.customTemplate) {
             <ng-container
@@ -99,17 +115,17 @@
   </div>
 
   <!-- Footer Section (Pagination) -->
-  @if (mergedConfig().paginator) {
+  @if (showPaginator()) {
   <div class="pagination">
     <div class="pagination__info">
       @if (mergedConfig().rowsPerPageOptions &&
       mergedConfig().rowsPerPageOptions!.length > 0) {
       <div class="pagination__rows-selector">
-        <label for="rows-per-page-select"
+        <label [for]="rowsPerPageInputId"
           >{{ 'global.rows_per_page' | translate }}:</label
         >
         <p-select
-          inputId="rows-per-page-select"
+          [inputId]="rowsPerPageInputId"
           [options]="rowsPerPageSelectOptions()"
           [(ngModel)]="currentRowsPerPage"
           (onChange)="onRowsPerPageChange($event.value)"
@@ -132,7 +148,7 @@
       <button
         type="button"
         class="pagination__btn"
-        [disabled]="currentPageNumber() === 1"
+        [disabled]="isFirstPage()"
         (click)="onPreviousPage()"
         title="{{ 'global.previous_page' | translate }}"
       >
@@ -156,7 +172,7 @@
       <button
         type="button"
         class="pagination__btn"
-        [disabled]="currentPageNumber() === totalPages()"
+        [disabled]="isLastPage()"
         (click)="onNextPage()"
         title="{{ 'global.next_page' | translate }}"
       >

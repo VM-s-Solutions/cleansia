@@ -1,4 +1,3 @@
-import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import {
@@ -11,7 +10,6 @@ import { TranslateModule } from '@ngx-translate/core';
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 
 export interface ApproveDialogData {
-  title: string;
   subtitle?: string;
   countries: ICleansiaSelectOption[];
 }
@@ -25,7 +23,6 @@ export interface ApproveDialogResult {
   selector: 'cleansia-approve-dialog',
   standalone: true,
   imports: [
-    CommonModule,
     ReactiveFormsModule,
     TranslateModule,
     CleansiaButtonComponent,

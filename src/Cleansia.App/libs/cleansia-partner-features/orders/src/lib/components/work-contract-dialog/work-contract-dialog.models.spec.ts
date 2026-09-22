@@ -36,17 +36,17 @@ describe('formatCleaningWindow', () => {
   it('renders the start and the end the estimate implies, on one line', () => {
     const start = new Date(2026, 9, 3, 10, 30);
 
-    expect(formatCleaningWindow(start, 150)).toBe('03.10.2026 10:30 – 13:00');
+    expect(formatCleaningWindow(start, 150, 'cs')).toBe('3. 10. 2026 10:30 – 13:00');
   });
 
   it('renders only the start when the estimate is missing', () => {
     const start = new Date(2026, 9, 3, 10, 30);
 
-    expect(formatCleaningWindow(start, 0)).toBe('03.10.2026 10:30');
+    expect(formatCleaningWindow(start, 0, 'cs')).toBe('3. 10. 2026 10:30');
   });
 
   it('renders nothing without a start', () => {
-    expect(formatCleaningWindow(undefined, 90)).toBe('');
+    expect(formatCleaningWindow(undefined, 90, 'cs')).toBe('');
   });
 });
 

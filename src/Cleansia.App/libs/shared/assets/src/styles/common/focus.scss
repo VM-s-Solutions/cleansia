@@ -1,0 +1,10 @@
+// The one keyboard focus ring. A control that removes the UA outline extends this so the
+// keyboard route stays visible; pointer focus draws nothing.
+%focus-ring {
+  outline: none;
+
+  &:focus-visible {
+    outline: 2px solid var(--cleansia-primary-600);
+    outline-offset: 2px;
+  }
+}

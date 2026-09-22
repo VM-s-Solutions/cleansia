@@ -1381,6 +1381,11 @@
     <string name="dispute_create_which_items">Čo konkrétne nedopadlo?</string>
     <string name="dispute_create_which_items_hint">Nepovinné. Označte služby, ktoré neboli urobené poriadne — pomôže nám to rýchlejšie napraviť. Ak bol problém celé upratovanie, nechajte prázdne.</string>
     <string name="dispute_create_item_in_package">v balíku %1$s</string>
+    <string name="dispute_create_evidence_hint">Nepovinné. Fotky alebo PDF do 10 MB každý — nahrajú sa pri odoslaní.</string>
+    <string name="dispute_create_evidence_partial">Sťažnosť bola odoslaná, ale tieto súbory sa nepodarilo nahrať: %1$s. Pridajte ich znova v detaile sťažnosti.</string>
+    <string name="dispute_evidence_remove">Odstrániť</string>
+    <string name="dispute_evidence_uploaded">Nahrané</string>
+    <string name="dispute_evidence_upload_failed">Nahrávanie zlyhalo</string>
     <string name="order_review_rate_items">Ohodnotiť každú službu zvlášť</string>
     <string name="order_review_rate_items_hint">Nepovinné. Hodí sa, keď jedna časť dopadla dobre a iná nie — povie nám presne, kam sa pozrieť.</string>
     <string name="order_review_item_in_package">v balíku %1$s</string>

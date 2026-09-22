@@ -21,6 +21,7 @@
     {{ 'pages.order_detail.cancellation.preview_error' | translate }}
   </p>
   <cleansia-button
+    [block]="true"
     [label]="'pages.order_detail.cancellation.retry' | translate"
     [disabled]="cancelling()"
     (onClick)="openCancellation()"
@@ -116,6 +117,7 @@
     <i class="pi pi-exclamation-triangle"></i>
     <h3>{{ 'pages.order_detail.not_found' | translate }}</h3>
     <cleansia-button
+      [block]="true"
       [title]="'global.actions.back' | translate"
       [severity]="'secondary'"
       (clickFn)="goBack()"

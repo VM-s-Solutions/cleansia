@@ -184,3 +184,43 @@ describe('SnackbarService.extractApiErrorMessage', () => {
     ).toBe(translated);
   });
 });
+
+describe('SnackbarService translated toasts', () => {
+  let service: SnackbarService;
+  let add: jest.Mock;
+
+  beforeEach(() => {
+    add = jest.fn();
+    TestBed.configureTestingModule({
+      providers: [
+        SnackbarService,
+        { provide: MessageService, useValue: { add, clear: jest.fn() } },
+        {
+          provide: TranslateService,
+          useValue: {
+            instant: (key: string, params?: Record<string, unknown>) =>
+              params ? `${key}:${JSON.stringify(params)}` : key,
+            currentLang: 'en',
+          },
+        },
+      ],
+    });
+    service = TestBed.inject(SnackbarService);
+  });
+
+  it('interpolates the params into a success toast', () => {
+    service.showSuccessTranslated('pages.x.saved', { name: 'Ada' });
+
+    expect(add).toHaveBeenCalledWith(
+      expect.objectContaining({ severity: 'success', detail: 'pages.x.saved:{"name":"Ada"}' })
+    );
+  });
+
+  it('interpolates the params into an error toast and honours the duration', () => {
+    service.showErrorTranslated('pages.x.failed', { name: 'Ada' }, 9_000);
+
+    expect(add).toHaveBeenCalledWith(
+      expect.objectContaining({ severity: 'error', detail: 'pages.x.failed:{"name":"Ada"}', life: 9_000 })
+    );
+  });
+});

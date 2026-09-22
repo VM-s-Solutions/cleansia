@@ -162,7 +162,6 @@ public class CompleteOrder
                 .Include(e => e.Address)
                 .FirstOrDefaultAsync(e => e.Id == employeeId, cancellationToken);
 
-            // Availability no longer gates order actions (see TakeOrder).
             return employee?.Address is not null;
         }
 

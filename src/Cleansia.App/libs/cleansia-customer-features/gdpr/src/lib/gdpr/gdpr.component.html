@@ -11,6 +11,7 @@
       </h3>
       <p>{{ 'pages.gdpr.export_description' | translate }}</p>
       <cleansia-button
+        [block]="true"
         [title]="'pages.gdpr.export_button' | translate"
         [severity]="'primary'"
         [icon]="'pi pi-download'"
@@ -54,6 +55,7 @@
       </h3>
       <p>{{ 'pages.gdpr.delete_description' | translate }}</p>
       <cleansia-button
+        [block]="true"
         [title]="'pages.gdpr.delete_button' | translate"
         [severity]="'danger'"
         [icon]="'pi pi-trash'"

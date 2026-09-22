@@ -1,15 +1,65 @@
+import { TemplateRef } from '@angular/core';
 import { AdminReferralListItem, ReferralStatus } from '@cleansia/admin-services';
-import { TableAction } from '@cleansia/components';
+import { TableAction, TableColumn } from '@cleansia/components';
+import { formatDate } from '@cleansia/utils';
 import { TranslateService } from '@ngx-translate/core';
 
-export const REFERRAL_STATUS_LABEL_KEYS: Readonly<
-  Record<ReferralStatus, string>
-> = {
-  [ReferralStatus.Accepted]: 'pages.loyalty_referrals.status.Accepted',
-  [ReferralStatus.Qualified]: 'pages.loyalty_referrals.status.Qualified',
-  [ReferralStatus.Expired]: 'pages.loyalty_referrals.status.Expired',
-  [ReferralStatus.Reversed]: 'pages.loyalty_referrals.status.Reversed',
-};
+export function getReferralTableColumns(
+  translate: TranslateService,
+  statusTemplate?: TemplateRef<AdminReferralListItem>,
+  pointsTemplate?: TemplateRef<AdminReferralListItem>
+): TableColumn<AdminReferralListItem>[] {
+  const day = (value?: Date) =>
+    formatDate(value, translate.currentLang) || translate.instant('pages.loyalty_referrals.not_yet');
+  return [
+    {
+      id: 'referrer',
+      field: 'referrerEmail',
+      header: translate.instant('pages.loyalty_referrals.column.referrer'),
+      getValue: (row) => row.referrerEmail || '—',
+      width: '20%',
+    },
+    {
+      id: 'referred',
+      field: 'referredEmail',
+      header: translate.instant('pages.loyalty_referrals.column.referred'),
+      getValue: (row) => row.referredEmail || '—',
+      width: '20%',
+    },
+    {
+      id: 'status',
+      field: 'status',
+      header: translate.instant('pages.loyalty_referrals.column.status'),
+      align: 'center',
+      customTemplate: statusTemplate,
+      width: '12%',
+    },
+    {
+      id: 'acceptedOn',
+      field: 'acceptedOn',
+      header: translate.instant('pages.loyalty_referrals.column.accepted_on'),
+      numeric: true,
+      getValue: (row) => day(row.acceptedOn),
+      width: '12%',
+    },
+    {
+      id: 'qualifiedOn',
+      field: 'firstQualifyingOrderOn',
+      header: translate.instant('pages.loyalty_referrals.column.qualified_on'),
+      numeric: true,
+      getValue: (row) => day(row.firstQualifyingOrderOn),
+      width: '12%',
+    },
+    {
+      id: 'pointsAwarded',
+      field: 'pointsAwardedToReferrer',
+      header: translate.instant('pages.loyalty_referrals.column.points_awarded'),
+      numeric: true,
+      customTemplate: pointsTemplate,
+      width: '14%',
+    },
+  ];
+}
 
 export function getReferralInterventionActions(
   defs: {
@@ -44,36 +94,4 @@ export function getReferralInterventionActions(
  * Backend BusinessErrorMessage code -> i18n key, explicit because the
  * intervention path is money-adjacent (mirrors the disputes-management map).
  */
-export const REFERRAL_ERROR_KEY_MAP: Readonly<Record<string, string>> = {
-  'referral.not_qualified': 'api.referral.not_qualified',
-  'referral.not_accepted': 'api.referral.not_accepted',
-  'referral.reason_required': 'api.referral.reason_required',
-  'referral.not_found': 'api.referral.not_found',
-};
 
-export const REFERRAL_FALLBACK_ERROR_KEY = 'api.referral.action_failed';
-
-export function resolveReferralErrorKey(error: unknown): string {
-  const apiError = error as {
-    result?: { detail?: string; title?: string };
-    response?: string;
-  };
-  let code = apiError?.result?.detail || apiError?.result?.title;
-
-  if (!code && apiError?.response) {
-    try {
-      const parsed = JSON.parse(apiError.response) as {
-        detail?: string;
-        title?: string;
-      };
-      code = parsed.detail || parsed.title;
-    } catch {
-      code = undefined;
-    }
-  }
-
-  if (code && REFERRAL_ERROR_KEY_MAP[code]) {
-    return REFERRAL_ERROR_KEY_MAP[code];
-  }
-  return REFERRAL_FALLBACK_ERROR_KEY;
-}

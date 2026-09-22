@@ -44,7 +44,7 @@ namespace Cleansia.Tests.Features.Gdpr;
 /// an inherited audit string from sweeping in the whole schema.</para>
 ///
 /// <para><b>The boundary, stated rather than implied.</b> This walk sees a table's OWN columns. A child row
-/// that reaches its subject only through a parent — <c>CartServiceItem</c>, <c>OrderService</c>,
+/// that reaches its subject only through a parent — <c>OrderService</c>,
 /// <c>OrderStatusTrack</c>, <c>LoyaltyTransaction</c>, <c>DisputeEvidence</c> — is out of the corpus and is
 /// covered by its parent's verdict and the database's own cascade. Widening to transitive reachability would
 /// pull in most of the schema and classify nothing. What remains genuinely out of reach is a subject handle
@@ -182,9 +182,6 @@ public class SubjectDataErasureRosterTests
             Verdict.AnonymizedInPlace,
             "A pay row is a financial record and is kept; its subject reference is blanked.",
             InErasure("pay.Anonymize()")),
-
-        [typeof(Core.Domain.Users.Cart)] = new(
-            Verdict.Deleted, "Working state with no record value.", InErasure("cartRepository.Remove(user.Cart)")),
 
         [typeof(Core.Domain.Users.SavedAddress)] = new(
             Verdict.Deleted, "The subject's own address book.", InErasure("savedAddressRepository.RemoveRange")),

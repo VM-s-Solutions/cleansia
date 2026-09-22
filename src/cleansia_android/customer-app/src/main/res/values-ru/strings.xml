@@ -1381,6 +1381,11 @@
     <string name="dispute_create_which_items">Что именно пошло не так?</string>
     <string name="dispute_create_which_items_hint">Необязательно. Отметьте услуги, выполненные плохо — это поможет быстрее всё исправить. Если проблемой была вся уборка — оставьте пустым.</string>
     <string name="dispute_create_item_in_package">в пакете %1$s</string>
+    <string name="dispute_create_evidence_hint">Необязательно. Фото или PDF до 10 МБ каждый — загрузятся при отправке.</string>
+    <string name="dispute_create_evidence_partial">Спор отправлен, но эти файлы не удалось загрузить: %1$s. Добавьте их снова на странице спора.</string>
+    <string name="dispute_evidence_remove">Удалить</string>
+    <string name="dispute_evidence_uploaded">Загружено</string>
+    <string name="dispute_evidence_upload_failed">Не удалось загрузить</string>
     <string name="order_review_rate_items">Оценить каждую услугу отдельно</string>
     <string name="order_review_rate_items_hint">Необязательно. Полезно, когда одна часть вышла хорошо, а другая нет — это покажет, куда смотреть.</string>
     <string name="order_review_item_in_package">в пакете %1$s</string>

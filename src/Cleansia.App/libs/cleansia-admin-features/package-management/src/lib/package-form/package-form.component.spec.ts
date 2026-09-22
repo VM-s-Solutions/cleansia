@@ -20,6 +20,7 @@ import { AdminClient } from '@cleansia/admin-services';
 import {
   CleansiaButtonComponent,
   CleansiaLoaderComponent,
+  CleansiaMultiselectComponent,
   CleansiaSectionComponent,
   CleansiaTextareaComponent,
   CleansiaTextInputComponent,
@@ -27,7 +28,6 @@ import {
 } from '@cleansia/components';
 import { SnackbarService } from '@cleansia/services';
 import { TranslateModule } from '@ngx-translate/core';
-import { MultiSelectModule } from 'primeng/multiselect';
 import { Tab, TabList, TabPanel, TabPanels, Tabs } from 'primeng/tabs';
 import { PackageFormComponent } from './package-form.component';
 import { PackageFormFacade } from './package-form.facade';
@@ -68,12 +68,14 @@ class LoaderStub {}
 @Component({ selector: 'cleansia-title', standalone: true, template: '' })
 class TitleStub {
   title = input<string>('');
+  level = input<number>();
 }
 
 @Component({ selector: 'cleansia-button', standalone: true, template: '' })
 class ButtonStub {
   label = input<string>('');
   icon = input<string>('');
+  severity = input<string>('');
   outlined = input<boolean>(false);
   loading = input<boolean>(false);
   disabled = input<boolean>(false);
@@ -107,20 +109,17 @@ class TextareaStub extends ControlStub {
 }
 
 @Component({
-  selector: 'p-multiSelect',
+  selector: 'cleansia-multiselect',
   standalone: true,
   template: '',
   providers: [valueAccessor(() => MultiSelectStub)],
 })
 class MultiSelectStub extends ControlStub {
+  label = input<string>('');
   options = input<unknown[]>([]);
-  optionLabel = input<string>('');
-  placeholder = input<string>('');
-  showClear = input<boolean>(false);
-  filter = input<boolean>(false);
-  filterBy = input<string>('');
+  maxSelectedLabels = input<number>(3);
   display = input<string>('');
-  styleClass = input<string>('');
+  valueChanges = output<unknown[]>();
 }
 
 @Component({ selector: 'p-tabs', standalone: true, template: '<ng-content />' })
@@ -174,7 +173,7 @@ const REAL_IMPORTS = [
   CleansiaLoaderComponent,
   CleansiaSectionComponent,
   CleansiaTitleComponent,
-  MultiSelectModule,
+  CleansiaMultiselectComponent,
   Tabs,
   TabList,
   Tab,
@@ -214,6 +213,7 @@ class FacadeStub {
   ]);
   readonly defaultCurrencyCode = signal<string | null>('CZK');
   readonly availableServices = signal<unknown[]>([]);
+  readonly serviceOptions = signal<{ label: string; value: string }[]>([]);
   readonly weightRows = signal<PackageServiceWeightRow[]>([]);
   readonly derivedGrosses = signal<DerivedServiceGross[]>([]);
   loadLanguages = jest.fn();
@@ -320,11 +320,31 @@ describe('PackageFormComponent', () => {
     expect(facade.setWeight).toHaveBeenCalledWith('svc-a', 4);
   });
 
-  it('delegates service selection to the facade weight sync', () => {
-    component.onServiceSelectionChange([
-      { id: 'svc-a', name: 'A' } as never,
+  it('syncs the weight rows for the services the admin picked', () => {
+    facade.availableServices.set([
+      { id: 'svc-a', name: 'A' },
+      { id: 'svc-b', name: 'B' },
     ]);
-    expect(facade.syncWeightRows).toHaveBeenCalled();
+
+    component.onServiceSelectionChange(['svc-b']);
+
+    expect(facade.syncWeightRows).toHaveBeenCalledWith(
+      [{ id: 'svc-b', name: 'B' }],
+      undefined
+    );
+  });
+
+  it('never collapses the chips: the limit sits above the option count', () => {
+    facade.serviceOptions.set([
+      { label: 'A', value: 'svc-a' },
+      { label: 'B', value: 'svc-b' },
+      { label: 'C', value: 'svc-c' },
+    ]);
+    fixture.detectChanges();
+
+    const multiselect = fixture.debugElement.query(By.directive(MultiSelectStub))
+      .componentInstance as MultiSelectStub;
+    expect(multiselect.maxSelectedLabels()).toBe(4);
   });
 
   /**
@@ -464,7 +484,12 @@ describe('PackageFormComponent (edit mode, real facade)', () => {
         { provide: AdminClient, useValue: adminClient },
         {
           provide: SnackbarService,
-          useValue: { showSuccess: jest.fn(), showError: jest.fn() },
+          useValue: {
+            showSuccess: jest.fn(),
+            showSuccessTranslated: jest.fn(),
+            showError: jest.fn(),
+            showErrorTranslated: jest.fn(),
+          },
         },
       ],
     })
@@ -489,7 +514,7 @@ describe('PackageFormComponent (edit mode, real facade)', () => {
     expect(fixture.debugElement.query(By.directive(LoaderStub))).toBeNull();
     expect(component.form.controls.name.value).toBe('Move-out bundle');
     expect(component.form.controls.isPopular.value).toBe(true);
-    expect(component.selectedServices()).toEqual([SERVICE_A, SERVICE_B]);
+    expect(component.form.controls.serviceIds.value).toEqual(['svc-a', 'svc-b']);
     expect(facade.weightRows()).toEqual([
       { id: 'svc-a', name: 'Windows', weight: 3 },
       { id: 'svc-b', name: 'Floors', weight: 1 },
@@ -497,15 +522,15 @@ describe('PackageFormComponent (edit mode, real facade)', () => {
     expect(facade.derivedGrosses().map((g) => g.gross)).toEqual([750, 250]);
   });
 
-  it('selects the included services once the service list lands after the package', () => {
+  it('builds the weight rows once the service list lands after the package', () => {
     capWeightSyncs(4);
     fixture.detectChanges();
-    expect(component.selectedServices()).toEqual([]);
+    expect(component.form.controls.serviceIds.value).toEqual(['svc-a', 'svc-b']);
+    expect(facade.weightRows()).toEqual([]);
 
     services$.next({ data: [SERVICE_A, SERVICE_B], total: 2 });
     fixture.detectChanges();
 
-    expect(component.selectedServices()).toEqual([SERVICE_A, SERVICE_B]);
     expect(facade.weightRows().map((r) => r.weight)).toEqual([3, 1]);
   });
 

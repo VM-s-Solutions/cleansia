@@ -1,436 +1,226 @@
-.cleansia-employee-detail {
-  height: 100%;
+.pay-config-bulk {
   display: flex;
   flex-direction: column;
-  padding: 1rem;
-
-  &__container {
-    flex: 1;
-    padding: 2rem;
-    overflow-y: auto;
-  }
-
-  &__header {
-    display: flex;
-    gap: 2rem;
-    align-items: baseline;
-    margin-bottom: 2rem;
-  }
-
-  &__status-banner {
-    padding: 1rem 1.5rem;
-    border-radius: 8px;
-    margin-bottom: 1.5rem;
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    font-size: 0.95rem;
-
-    i {
-      font-size: 1.25rem;
-    }
-
-    &.status-complete {
-      background-color: #d4edda;
-      color: #155724;
-      border: 1px solid #c3e6cb;
-
-      i {
-        color: #28a745;
-      }
-    }
-
-    &.status-incomplete {
-      background-color: #fff3cd;
-      color: #856404;
-      border: 1px solid #ffeeba;
-
-      i {
-        color: #ffc107;
-      }
-    }
-
-    .missing-fields {
-      margin-left: auto;
-      font-size: 0.875rem;
-
-      strong {
-        margin-right: 0.5rem;
-      }
-    }
-  }
-
-  &__contract-section {
-    .contract-status-row {
-      display: flex;
-      gap: 2rem;
-      align-items: center;
-      flex-wrap: wrap;
-
-      .status-info,
-      .rating-info,
-      .complaints-info {
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-
-        .label {
-          font-weight: 500;
-          color: #666;
-        }
-
-        .value {
-          font-weight: 600;
-          color: #333;
-        }
-
-        i {
-          color: #ffd700;
-        }
-      }
-    }
-
-    .contract-actions-row {
-      display: flex;
-      gap: 1rem;
-      margin-top: 1.5rem;
-      padding-top: 1.5rem;
-      border-top: 1px solid #e9ecef;
-    }
-  }
-
-  &__content {
-    display: flex;
-    flex-direction: column;
-
-    cleansia-section {
-      margin-bottom: 1.5rem;
-    }
-  }
-}
-
-.info-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
   gap: 1rem;
+  padding: 1.25rem;
+  border: 1px solid var(--cleansia-border);
+  border-radius: var(--cleansia-radius-md);
 
-  .info-item {
-    display: flex;
-    flex-direction: column;
-    gap: 0.25rem;
+  &__title {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 600;
+    line-height: 1.3;
+    color: var(--cleansia-text-primary);
+  }
 
-    &.full-width {
-      grid-column: 1 / -1;
-    }
+  &__hint {
+    margin: 0;
+    font-size: 0.875rem;
+    line-height: 1.6;
+    color: var(--cleansia-text-secondary);
+  }
 
-    .label {
-      font-size: 0.875rem;
-      color: #666;
-      font-weight: 500;
-    }
-
-    .value {
-      font-size: 1rem;
-      color: #333;
-      font-weight: 400;
-    }
+  // The checkbox sits on the same baseline as the two 44px fields beside it.
+  &__toggle {
+    justify-content: center;
+    min-height: 44px;
   }
 }
 
-.availability-grid {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-
-  .availability-day {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    padding: 0.5rem;
-    border-bottom: 1px solid #eee;
-
-    &:last-child {
-      border-bottom: none;
-    }
-
-    .day-name {
-      min-width: 120px;
-      font-weight: 500;
-      color: #666;
-    }
-
-    .time-ranges {
-      display: flex;
-      gap: 0.5rem;
-      flex-wrap: wrap;
-
-      .time-range {
-        padding: 0.25rem 0.75rem;
-        background-color: #e3f2fd;
-        color: #1976d2;
-        border-radius: 4px;
-        font-size: 0.875rem;
-      }
-    }
-
-    .no-availability {
-      color: #999;
-    }
-  }
-}
-
-.contract-status-badge {
-  display: inline-block;
-  padding: 0.375rem 0.875rem;
-  border-radius: 20px;
-  font-size: 0.875rem;
-  font-weight: 600;
-  text-transform: capitalize;
-
-  &.status-pending {
-    background-color: #fff3cd;
-    color: #856404;
-  }
-
-  &.status-active {
-    background-color: #d1ecf1;
-    color: #0c5460;
-  }
-
-  &.status-approved {
-    background-color: #d4edda;
-    color: #155724;
-  }
-
-  &.status-rejected {
-    background-color: #f8d7da;
-    color: #721c24;
-  }
-
-  &.status-terminated {
-    background-color: #e2e3e5;
-    color: #383d41;
-  }
-}
-
-.documents-list {
+.pay-config-list {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
 
-  .document-item {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    padding: 0.75rem;
-    background-color: #f8f9fa;
-    border-radius: 4px;
-    border: 1px solid #dee2e6;
-
-    i {
-      color: #6c757d;
-      font-size: 1.25rem;
-    }
-
-    span {
-      color: #333;
-      font-size: 0.95rem;
-    }
+  &__title {
+    margin: 0 0 0.25rem;
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: var(--cleansia-text-primary);
   }
 }
 
-.no-data {
-  color: #999;
-  font-style: italic;
-  text-align: center;
-  padding: 2rem;
+.pay-config-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--cleansia-border);
+  border-radius: var(--cleansia-radius-sm);
+
+  &__name {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex: 1 1 auto;
+    min-width: 0;
+
+    i {
+      flex-shrink: 0;
+      color: var(--cleansia-text-placeholder);
+    }
+
+    strong {
+      overflow-wrap: anywhere;
+    }
+  }
+
+  &--configured &__name i {
+    color: var(--cleansia-success-700);
+  }
+
+  &__rate {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-shrink: 0;
+  }
+
+  &__amount {
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+
+  &__unset {
+    font-style: italic;
+    color: var(--cleansia-text-secondary);
+  }
 }
 
 .payout-details {
   &__notice {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     gap: 0.5rem;
-    margin: 1rem 0 0;
+    margin: 0;
     padding: 0.75rem 1rem;
-    border-radius: 8px;
-    background-color: #fff3cd;
-    border: 1px solid #ffeeba;
-    color: #856404;
+    border-radius: var(--cleansia-radius-sm);
+    background: var(--cleansia-warning-100);
+    color: var(--cleansia-warning-800);
     font-size: 0.875rem;
+    line-height: 1.5;
+
+    i {
+      flex-shrink: 0;
+      margin-top: 0.15em;
+    }
   }
 
+  // The revealed account facts sit on their own tinted ground so a glance separates them from
+  // the masked ones above.
   &__revealed {
-    margin-top: 1rem;
-    padding: 1rem;
-    border-radius: 8px;
-    border: 1px solid #ffeeba;
-    background-color: #fffdf5;
-  }
-
-  &__actions {
-    display: flex;
-    justify-content: flex-end;
-    gap: 0.5rem;
-    margin-top: 1rem;
+    padding: 1rem 1.25rem;
+    border: 1px solid var(--cleansia-warning-300);
+    border-radius: var(--cleansia-radius-sm);
+    background: var(--cleansia-primary-25);
   }
 }
 
-// Document cards styling
 .documents-group {
-  margin-bottom: 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
 
   &__title {
-    font-size: 1.1rem;
+    margin: 0;
+    font-size: 0.9375rem;
     font-weight: 600;
-    color: #333;
-    margin-bottom: 1rem;
-    padding-bottom: 0.5rem;
+    color: var(--cleansia-text-primary);
   }
 }
 
 .documents-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 1rem;
+
+  @media (max-width: 767px) {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 
 .document-card {
-  background: #fff;
-  border: 1px solid #dee2e6;
-  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
   padding: 1.25rem;
-  transition: box-shadow 0.2s ease;
-
-  &:hover {
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  }
+  border: 1px solid var(--cleansia-border);
+  border-radius: var(--cleansia-radius-md);
+  background: var(--cleansia-white);
 
   &__header {
     display: flex;
     gap: 1rem;
-    margin-bottom: 1rem;
     padding-bottom: 1rem;
-    border-bottom: 1px solid #e9ecef;
+    border-bottom: 1px solid var(--cleansia-border);
   }
 
   &__icon {
-    flex-shrink: 0;
-    width: 48px;
-    height: 48px;
     display: flex;
     align-items: center;
     justify-content: center;
-    background-color: #f8f9fa;
-    border-radius: 8px;
+    flex-shrink: 0;
+    width: 48px;
+    height: 48px;
+    border-radius: var(--cleansia-radius-sm);
+    background: var(--cleansia-primary-50);
 
     i {
       font-size: 1.5rem;
-      color: #6c757d;
+      color: var(--cleansia-primary-600);
     }
   }
 
   &__info {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
     flex: 1;
     min-width: 0;
   }
 
   &__title {
-    font-size: 0.95rem;
+    margin: 0;
+    font-size: 0.9375rem;
     font-weight: 600;
-    color: #333;
-    margin: 0 0 0.5rem 0;
-    word-break: break-word;
+    color: var(--cleansia-text-primary);
+    overflow-wrap: anywhere;
   }
 
   &__details {
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
-    margin-bottom: 1rem;
 
     .detail-item {
       display: flex;
       justify-content: space-between;
+      gap: 1rem;
       font-size: 0.875rem;
 
       .label {
-        color: #6c757d;
+        flex-shrink: 0;
+        color: var(--cleansia-text-muted);
         font-weight: 500;
       }
 
       .value {
-        color: #333;
-        font-weight: 400;
+        color: var(--cleansia-text-primary);
         text-align: right;
+        overflow-wrap: anywhere;
+      }
+
+      &.full-width {
+        flex-direction: column;
+        gap: 0.25rem;
+
+        .value {
+          text-align: left;
+        }
       }
     }
-  }
-
-  &__review-notes {
-    margin-top: 1rem;
-    padding: 0.75rem;
-    background-color: #fff3cd;
-    border-left: 3px solid #ffc107;
-    border-radius: 4px;
-
-    .notes-label {
-      font-size: 0.875rem;
-      font-weight: 600;
-      color: #856404;
-      margin-bottom: 0.25rem;
-    }
-
-    .notes-content {
-      font-size: 0.875rem;
-      color: #856404;
-      line-height: 1.4;
-    }
-  }
-
-  &__actions {
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-  }
-
-  &__action-row {
-    display: flex;
-    gap: 0.5rem;
-    flex-wrap: wrap;
-  }
-}
-
-.status-badge {
-  display: inline-block;
-  padding: 0.25rem 0.75rem;
-  border-radius: 12px;
-  font-size: 0.75rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-
-  &.status-pending {
-    background-color: #fff3cd;
-    color: #856404;
-    border: 1px solid #ffeeba;
-  }
-
-  &.status-approved {
-    background-color: #d4edda;
-    color: #155724;
-    border: 1px solid #c3e6cb;
-  }
-
-  &.status-rejected {
-    background-color: #f8d7da;
-    color: #721c24;
-    border: 1px solid #f5c6cb;
-  }
-
-  &.status-unknown {
-    background-color: #e2e3e5;
-    color: #383d41;
-    border: 1px solid #d6d8db;
   }
 }

@@ -2,9 +2,22 @@
 // Modern, rich button design with glass morphism and smooth animations
 @use '../common/touch-target' as *;
 
+// The host is the box: it sizes to its label, or to whatever width the page gives it
+// (`flex: 1`, a stretched flex column, `[block]`), and the painted button fills it. A percentage
+// on the button alone resolved against the page, which made every button a full-row bar.
+cleansia-button {
+  display: inline-block;
+  max-width: 100%;
+
+  &.cleansia-button--block {
+    display: block;
+    width: 100%;
+  }
+}
+
 .cleansia-button {
-  min-width: 100%;
   display: inline-flex;
+  width: 100%;
 
   button {
     width: inherit;
@@ -162,8 +175,6 @@
 
   // ===== ICON-ONLY BUTTONS =====
   &--icon-only {
-    min-width: auto;
-
     button {
       aspect-ratio: 1;
       display: inline-flex;
@@ -187,13 +198,6 @@
       }
     }
   }
-}
-
-// A content-sized action. It takes its label's width and shares a row with its neighbours, the
-// way the brand appearances below do, instead of a fixed slot the label has to fit into: the
-// fixed slots shrink to 5rem on a phone, and a cs/uk label in one was an initial and an ellipsis.
-.cleansia-button.auto-width {
-  min-width: 0;
 }
 
 // ===== ANIMATIONS =====
@@ -260,11 +264,6 @@
     border-radius: 999px;
     padding-inline: 1.6rem;
     font-weight: 600;
-    // These are always inline calls to action sitting beside other content, so
-    // they size to their label rather than inheriting the base `min-width: 100%`
-    // that a form button wants.
-    min-width: 0;
-    width: auto;
   }
 
   &--brand {
@@ -376,4 +375,13 @@ a.p-button {
   &:focus-visible {
     text-decoration: none;
   }
+}
+
+// The anchor rendering has no inner <button>: the anchor is the painted control, so it carries
+// the same ring itself — over the clip PrimeNG puts on every .p-button, which would otherwise
+// paint the ring and keep the pointer off it.
+a.cleansia-button.p-button {
+  position: relative;
+  overflow: visible;
+  @include touch-target;
 }

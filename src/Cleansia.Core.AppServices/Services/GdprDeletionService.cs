@@ -28,7 +28,6 @@ public class GdprDeletionService(
     IOrderPhotoRepository orderPhotoRepository,
     IDeviceRepository deviceRepository,
     ILiveActivityTokenRepository liveActivityTokenRepository,
-    ICartRepository cartRepository,
     IUserConsentRepository userConsentRepository,
     IGdprRequestRepository gdprRequestRepository,
     IDisputeRepository disputeRepository,
@@ -138,7 +137,6 @@ public class GdprDeletionService(
     private Task<Domain.Users.User?> LoadSubjectAsync(string userId, CancellationToken cancellationToken)
         => userRepository.GetQueryable()
             .Include(u => u.Employee).ThenInclude(e => e!.Address)
-            .Include(u => u.Cart)
             .FirstOrDefaultAsync(u => u.Id == userId, cancellationToken);
 
     private async Task<BusinessResult?> FindRefusalAsync(Domain.Users.User user, CancellationToken cancellationToken)
@@ -431,9 +429,6 @@ public class GdprDeletionService(
         // everything above durable while everything below could still roll back — a half-erased subject with
         // no request on record. The whole erasure is one commit, and the tokens ride it.
         await refreshTokenService.StageRevokeAllForUserAsync(user.Id, GdprAuditReasons.RefreshTokenRevocation, ct);
-
-        if (user.Cart is not null)
-            cartRepository.Remove(user.Cart);
 
         var consents = await userConsentRepository.GetByUserIdAsync(user.Id, ct);
         foreach (var consent in consents.Where(c => c.IsGranted))

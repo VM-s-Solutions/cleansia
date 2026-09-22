@@ -13,38 +13,6 @@ export function mapStatusFilterToIsActive(
   return undefined;
 }
 
-export const SERVICE_ERROR_KEY_MAP: Readonly<Record<string, string>> = {
-  'service.not_found': 'api.service.not_found',
-  'service.in_use': 'api.service.in_use',
-};
-
-export const SERVICE_FALLBACK_ERROR_KEY = 'api.common.error_occurred';
-
-export function resolveServiceErrorKey(error: unknown): string {
-  const apiError = error as {
-    result?: { detail?: string; title?: string };
-    response?: string;
-  };
-  let code = apiError?.result?.detail || apiError?.result?.title;
-
-  if (!code && apiError?.response) {
-    try {
-      const parsed = JSON.parse(apiError.response) as {
-        detail?: string;
-        title?: string;
-      };
-      code = parsed.detail || parsed.title;
-    } catch {
-      code = undefined;
-    }
-  }
-
-  if (code && SERVICE_ERROR_KEY_MAP[code]) {
-    return SERVICE_ERROR_KEY_MAP[code];
-  }
-  return SERVICE_FALLBACK_ERROR_KEY;
-}
-
 export function getServiceTableDefinition(
   defs: {
     onEdit: (row: ServiceListItem) => void;
@@ -84,6 +52,7 @@ export function getServiceTableDefinition(
       },
       {
         id: 'basePrice',
+        numeric: true,
         field: 'basePrice',
         header: translate.instant(
           'pages.service_management.columns.base_price'
@@ -94,6 +63,7 @@ export function getServiceTableDefinition(
       },
       {
         id: 'perRoomPrice',
+        numeric: true,
         field: 'perRoomPrice',
         header: translate.instant(
           'pages.service_management.columns.per_room_price'

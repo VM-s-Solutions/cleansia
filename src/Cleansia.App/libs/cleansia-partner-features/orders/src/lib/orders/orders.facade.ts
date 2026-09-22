@@ -1,5 +1,6 @@
-import { Injectable, inject, signal } from '@angular/core';
-import { AbstractControl } from '@angular/forms';
+import { computed, Injectable, inject, signal } from '@angular/core';
+import { FormBuilder, Validators } from '@angular/forms';
+import { FilterChip, FilterDrawerState, PaginationState, SortEvent } from '@cleansia/components';
 import { UnsubscribeControlDirective } from '@cleansia/directives';
 import { OrderFilter } from '@cleansia/models';
 import {
@@ -17,17 +18,12 @@ import {
   selectOrderTotal,
 } from '@cleansia/partner-stores';
 import { SnackbarService } from '@cleansia/services';
+import { currentLanguage } from '@cleansia/utils';
 import { Actions, ofType } from '@ngrx/effects';
 import { Store } from '@ngrx/store';
 import { TranslateService } from '@ngx-translate/core';
 import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
-import {
-  catchError,
-  debounceTime,
-  distinctUntilChanged,
-  of,
-  takeUntil,
-} from 'rxjs';
+import { catchError, of, takeUntil } from 'rxjs';
 import {
   CompleteOrderDialogComponent,
   CompleteOrderDialogData,
@@ -40,6 +36,12 @@ import {
   WorkContractDialogOutcome,
   WorkContractDialogResult,
 } from '../components/work-contract-dialog';
+import {
+  buildActiveFilterChips,
+  buildOrderFilter,
+  buildOrderStatusOptions,
+  buildPaymentStatusOptions,
+} from './orders.helpers';
 
 @Injectable()
 export class OrdersFacade extends UnsubscribeControlDirective {
@@ -80,8 +82,43 @@ export class OrdersFacade extends UnsubscribeControlDirective {
   private activeTab = signal<'available' | 'my'>('available');
   private currentFilter = signal<OrderFilter | null>(null);
 
+  readonly lang = currentLanguage(this.translate);
+  readonly orderStatusOptions = computed(() => {
+    this.lang();
+    return buildOrderStatusOptions(this.translate);
+  });
+  readonly paymentStatusOptions = computed(() => {
+    this.lang();
+    return buildPaymentStatusOptions(this.translate);
+  });
+  // One boolean control per status feeds the arrays the query sends, so a new enum value needs
+  // no matching FormControl declared by hand.
+  readonly filterForm = inject(FormBuilder).group({
+    customerName: [''],
+    customerEmail: ['', [Validators.email]],
+    displayOrderNumber: [''],
+    orderStatuses: [[] as number[]],
+    paymentStatuses: [[] as number[]],
+    cleaningDateFrom: [null as Date | null],
+    cleaningDateTo: [null as Date | null],
+    ...Object.fromEntries(
+      buildOrderStatusOptions(this.translate).map((o) => [`orderStatus_${o.value}`, [false]])
+    ),
+    ...Object.fromEntries(
+      buildPaymentStatusOptions(this.translate).map((o) => [`paymentStatus_${o.value}`, [false]])
+    ),
+  });
+  readonly filters = new FilterDrawerState({
+    form: this.filterForm,
+    lang: this.lang,
+    chips: (value): FilterChip[] =>
+      buildActiveFilterChips(value, this.orderStatusOptions(), this.paymentStatusOptions(), this.translate),
+    apply: (value) => this.applyFilters(buildOrderFilter(value)),
+  });
+
   constructor() {
     super();
+    this.filters.connect(this.destroyed$);
 
     this.availableOrders$.pipe(takeUntil(this.destroyed$)).subscribe((orders) =>
       this.availableOrders.set([...(orders || [])]),
@@ -242,11 +279,11 @@ export class OrdersFacade extends UnsubscribeControlDirective {
     const ref: DynamicDialogRef | null = this.dialogService.open(
       WorkContractDialogComponent,
       {
-        header: undefined,
         data: dialogData,
-        width: '720px',
         modal: true,
         dismissableMask: false,
+        showHeader: false,
+        styleClass: 'cleansia-dialog dialog-panel dialog-panel--reading',
       }
     );
 
@@ -291,15 +328,51 @@ export class OrdersFacade extends UnsubscribeControlDirective {
     this.activeTab.set(tab);
   }
 
-  updateSort(sort: SortDefinition[]): void {
-    this.currentSort.set(sort);
-    const tab = this.activeTab();
+  onAvailableOrdersPageChange(event: PaginationState): void {
+    this.loadAvailableOrders(event.first, event.rows);
+  }
+
+  onMyOrdersPageChange(event: PaginationState): void {
+    this.loadMyOrders(event.first, event.rows);
+  }
+
+  onAvailableSortChange(event: SortEvent): void {
+    this.activeTab.set('available');
+    this.updateSort(event);
+  }
+
+  onMySortChange(event: SortEvent): void {
+    this.activeTab.set('my');
+    this.updateSort(event);
+  }
+
+  private updateSort(event: SortEvent): void {
+    this.currentSort.set([
+      new SortDefinition({
+        field: event.field,
+        direction: event.order === 1 ? SortDirection.Ascending : SortDirection.Descending,
+      }),
+    ]);
     // Reset to first page when sorting changes
-    if (tab === 'available') {
-      this.loadAvailableOrders(0, 10);
+    if (this.activeTab() === 'available') {
+      this.loadAvailableOrders();
       return;
     }
-    this.loadMyOrders(0, 10);
+    this.loadMyOrders();
+  }
+
+  setOrderStatus(status: number, checked: boolean): void {
+    const current = this.filterForm.controls.orderStatuses.value || [];
+    this.filterForm.patchValue({
+      orderStatuses: checked ? [...new Set([...current, status])] : current.filter((s) => s !== status),
+    });
+  }
+
+  setPaymentStatus(status: number, checked: boolean): void {
+    const current = this.filterForm.controls.paymentStatuses.value || [];
+    this.filterForm.patchValue({
+      paymentStatuses: checked ? [...new Set([...current, status])] : current.filter((s) => s !== status),
+    });
   }
 
   openCompleteOrderDialog(order: OrderListItem): void {
@@ -322,11 +395,14 @@ export class OrdersFacade extends UnsubscribeControlDirective {
     const ref: DynamicDialogRef | null = this.dialogService.open(
       CompleteOrderDialogComponent,
       {
-        header: undefined,
         data: dialogData,
-        width: '600px',
+        header: this.translate.instant('pages.orders.complete_order.title'),
         modal: true,
+        closable: true,
+        draggable: false,
+        resizable: false,
         dismissableMask: false,
+        styleClass: 'cleansia-dialog dialog-panel dialog-panel--wide',
       }
     );
 
@@ -352,38 +428,7 @@ export class OrdersFacade extends UnsubscribeControlDirective {
   applyFilters(filter: OrderFilter): void {
     this.currentFilter.set(filter);
     // Load both sections when filters change
-    this.loadAvailableOrders(0, 10);
-    setTimeout(() => this.loadMyOrders(0, 10), 100);
-  }
-
-  resetFilters(): void {
-    this.currentFilter.set(null);
-    // Load both sections when filters are cleared
-    this.loadAvailableOrders(0, 10);
-    setTimeout(() => this.loadMyOrders(0, 10), 100);
-  }
-
-  /**
-   * Wire form valueChanges and language change subscriptions.
-   * Component lifecycle invokes this once; cleanup is handled by the
-   * facade's destroyed$ Subject (UnsubscribeControlDirective).
-   */
-  bindFormChanges(
-    formCtrl: AbstractControl,
-    onFormChangeImmediate: () => void,
-    onFormChangeDebounced: () => void,
-    onLangChange: () => void
-  ): void {
-    formCtrl.valueChanges
-      .pipe(takeUntil(this.destroyed$))
-      .subscribe(() => onFormChangeImmediate());
-
-    formCtrl.valueChanges
-      .pipe(debounceTime(500), distinctUntilChanged(), takeUntil(this.destroyed$))
-      .subscribe(() => onFormChangeDebounced());
-
-    this.translate.onLangChange
-      .pipe(takeUntil(this.destroyed$))
-      .subscribe(() => onLangChange());
+    this.loadAvailableOrders();
+    setTimeout(() => this.loadMyOrders(), 100);
   }
 }

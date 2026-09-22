@@ -1,6 +1,8 @@
+import { TemplateRef } from '@angular/core';
 import { PromoCodeListItem, PromoCodeType } from '@cleansia/admin-services';
 import { TableAction, TableColumn } from '@cleansia/components';
 import { PermissionService, Policy } from '@cleansia/services';
+import { formatMoney, localeFor } from '@cleansia/utils';
 import { TranslateService } from '@ngx-translate/core';
 
 export type PromoCodeStatusBadge = 'active' | 'inactive' | 'expired';
@@ -11,15 +13,19 @@ export function getPromoCodeStatus(row: PromoCodeListItem): PromoCodeStatusBadge
   return 'active';
 }
 
-export function formatDiscount(row: PromoCodeListItem): string {
+export function formatDiscount(row: PromoCodeListItem, lang: string | undefined): string {
   if (row.type === PromoCodeType.PercentDiscount) {
     const pct = row.discountPercent ?? 0;
     // Backend stores percent as 0..1; UI shows 0..100.
     return `${Math.round(pct * 100)}%`;
   }
-  const amount = row.discountAmount ?? 0;
-  const code = row.currencyCode ?? '';
-  return `${amount} ${code}`.trim();
+  return formatMoney(row.discountAmount ?? 0, row.currencyCode ?? null, localeFor(lang), { fractionDigits: 2 });
+}
+
+export function formatMinimumOrder(row: PromoCodeListItem, lang: string | undefined): string {
+  return row.minimumOrderAmount == null
+    ? '—'
+    : formatMoney(row.minimumOrderAmount, row.currencyCode ?? null, localeFor(lang), { fractionDigits: 2 });
 }
 
 export function formatValidity(
@@ -70,14 +76,6 @@ export function formatType(
   return '';
 }
 
-export function formatStatus(
-  row: PromoCodeListItem,
-  translate: TranslateService
-): string {
-  const status = getPromoCodeStatus(row);
-  return translate.instant(`pages.promo_codes.status_filter_${status}`);
-}
-
 export function getPromoCodeTableDefinition(
   defs: {
     onView: (row: PromoCodeListItem) => void;
@@ -86,7 +84,8 @@ export function getPromoCodeTableDefinition(
   },
   translate: TranslateService,
   permissions: PermissionService,
-  formatDate: (d?: Date) => string
+  formatDate: (d?: Date) => string,
+  statusTemplate?: TemplateRef<PromoCodeListItem>
 ): {
   columns: TableColumn<PromoCodeListItem>[];
   actions: TableAction<PromoCodeListItem>[];
@@ -108,21 +107,23 @@ export function getPromoCodeTableDefinition(
       },
       {
         id: 'discount',
+        numeric: true,
         field: 'discountPercent',
         header: translate.instant('pages.promo_codes.column.discount'),
-        getValue: (row) => formatDiscount(row),
+        getValue: (row) => formatDiscount(row, translate.currentLang),
         width: '10%',
       },
       {
         id: 'minOrder',
+        numeric: true,
         field: 'minimumOrderAmount',
         header: translate.instant('pages.promo_codes.column.min_order'),
-        getValue: (row) =>
-          row.minimumOrderAmount != null ? `${row.minimumOrderAmount}` : '—',
+        getValue: (row) => formatMinimumOrder(row, translate.currentLang),
         width: '10%',
       },
       {
         id: 'perUser',
+        numeric: true,
         field: 'maxRedemptionsPerUser',
         header: translate.instant('pages.promo_codes.column.per_user'),
         getValue: (row) => `${row.maxRedemptionsPerUser}`,
@@ -132,11 +133,13 @@ export function getPromoCodeTableDefinition(
         id: 'global',
         field: 'globalMaxRedemptions',
         header: translate.instant('pages.promo_codes.column.global'),
+        numeric: true,
         getValue: (row) => formatGlobalLimit(row, translate),
         width: '12%',
       },
       {
         id: 'validity',
+        numeric: true,
         field: 'validUntil',
         header: translate.instant('pages.promo_codes.column.validity'),
         getValue: (row) => formatValidity(row, translate, formatDate),
@@ -146,7 +149,9 @@ export function getPromoCodeTableDefinition(
         id: 'status',
         field: 'isActive',
         header: translate.instant('pages.promo_codes.column.status'),
-        getValue: (row) => formatStatus(row, translate),
+        getValue: (row) => getPromoCodeStatus(row),
+        align: 'center',
+        customTemplate: statusTemplate,
         width: '10%',
       },
     ],

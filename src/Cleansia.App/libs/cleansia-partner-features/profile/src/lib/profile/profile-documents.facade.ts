@@ -14,7 +14,8 @@ import {
 } from '@cleansia/services';
 import { UnsubscribeControlDirective } from '@cleansia/directives';
 import { checkEmployeeCurrent } from '@cleansia/partner-stores';
-import { FileTransformationUtils } from '@cleansia/utils';
+import { currentLanguage, FileTransformationUtils, formatDate } from '@cleansia/utils';
+import { formatFileSize } from './profile-documents.helpers';
 import { Store } from '@ngrx/store';
 import { TranslateService } from '@ngx-translate/core';
 import { catchError, of, takeUntil } from 'rxjs';
@@ -58,6 +59,8 @@ export class ProfileDocumentsFacade extends UnsubscribeControlDirective {
     FileValidationErrorService
   );
   private readonly store = inject(Store);
+
+  readonly lang = currentLanguage(this.translate);
 
   // Documents state
   private readonly documentsState = signal<DocumentsState>({
@@ -182,9 +185,7 @@ export class ProfileDocumentsFacade extends UnsubscribeControlDirective {
         .replaceMyDocument(documentId, body)
         .toPromise();
 
-      this.snackbarService.showSuccess(
-        this.translate.instant('global.messages.documents.replace_success')
-      );
+      this.snackbarService.showSuccessTranslated('global.messages.documents.replace_success');
 
       await this.loadEmployeeDocuments();
     } finally {
@@ -212,10 +213,9 @@ export class ProfileDocumentsFacade extends UnsubscribeControlDirective {
       }));
     } catch (error) {
       console.error('Failed to stage document', error);
-      this.snackbarService.showError(
-        this.translate.instant('global.messages.documents.stage_error', {
-          fileName: file.name,
-        })
+      this.snackbarService.showErrorTranslated(
+        'global.messages.documents.stage_error',
+        { fileName: file.name, }
       );
     }
   }
@@ -240,9 +240,7 @@ export class ProfileDocumentsFacade extends UnsubscribeControlDirective {
     const staged = this.documentsState().stagedDocuments;
 
     if (staged.length === 0) {
-      this.snackbarService.showError(
-        this.translate.instant('global.messages.documents.no_documents_to_save')
-      );
+      this.snackbarService.showErrorTranslated('global.messages.documents.no_documents_to_save');
       return;
     }
 
@@ -262,9 +260,7 @@ export class ProfileDocumentsFacade extends UnsubscribeControlDirective {
         .saveMyDocuments(command)
         .toPromise();
 
-      this.snackbarService.showSuccess(
-        this.translate.instant('global.messages.documents.upload_success')
-      );
+      this.snackbarService.showSuccessTranslated('global.messages.documents.upload_success');
 
       // Clear staged documents and reload
       this.documentsState.update((s) => ({
@@ -309,9 +305,7 @@ export class ProfileDocumentsFacade extends UnsubscribeControlDirective {
         .requestMyDocumentDeletion(documentId, body)
         .toPromise();
 
-      this.snackbarService.showSuccess(
-        this.translate.instant('global.messages.documents.deletion_requested')
-      );
+      this.snackbarService.showSuccessTranslated('global.messages.documents.deletion_requested');
     } finally {
       this.documentsState.update((s) => ({ ...s, requestingDeletion: false }));
     }
@@ -345,30 +339,16 @@ export class ProfileDocumentsFacade extends UnsubscribeControlDirective {
       });
   }
 
-  formatFileSize(bytes: number): string {
-    return FileTransformationUtils.formatFileSize(bytes);
+  formatFileSize(bytes: number | undefined): string {
+    return formatFileSize(bytes, this.lang());
+  }
+
+  formatUploadedAt(date: Date | undefined): string {
+    return formatDate(date, this.lang());
   }
 
   getDocumentTypeLabel(type: DocumentType): string {
     const labelKey = `global.document_types.${type}`;
     return this.translate.instant(labelKey);
-  }
-
-  getStatusLabel(status: number): string {
-    const statusKey = `global.document_status.${status}`;
-    return this.translate.instant(statusKey);
-  }
-
-  getStatusClass(status: number): string {
-    switch (status) {
-      case 1:
-        return 'status-pending';
-      case 2:
-        return 'status-approved';
-      case 3:
-        return 'status-rejected';
-      default:
-        return '';
-    }
   }
 }

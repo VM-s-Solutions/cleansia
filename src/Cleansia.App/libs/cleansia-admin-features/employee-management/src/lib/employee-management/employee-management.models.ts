@@ -6,6 +6,7 @@ import {
 import { TableColumn, TableAction } from '@cleansia/components';
 import { PermissionService, Policy } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
+import { formatDate } from '@cleansia/utils';
 
 export function getEmployeeTableDefinition(
   defs: {
@@ -53,12 +54,14 @@ export function getEmployeeTableDefinition(
         id: 'contractStatus',
         field: 'contractStatus',
         header: translate.instant('pages.employee_management.status'),
+        align: 'center',
         customTemplate: contractStatusTemplate,
         sortable: true,
         width: '12%',
       },
       {
         id: 'averageRating',
+        numeric: true,
         field: 'averageRating',
         header: translate.instant('pages.employee_management.rating'),
         getValue: (row: AdminEmployeeListItem) =>
@@ -67,6 +70,7 @@ export function getEmployeeTableDefinition(
       },
       {
         id: 'complaintsCount',
+        numeric: true,
         field: 'complaintsCount',
         header: translate.instant('pages.employee_management.complaints'),
         getValue: (row: AdminEmployeeListItem) =>
@@ -75,16 +79,10 @@ export function getEmployeeTableDefinition(
       },
       {
         id: 'createdAt',
+        numeric: true,
         field: 'createdAt',
         header: translate.instant('pages.employee_management.created_at'),
-        getValue: (row: AdminEmployeeListItem) => {
-          if (!row.createdAt) return '';
-          const date =
-            row.createdAt instanceof Date
-              ? row.createdAt
-              : new Date(row.createdAt);
-          return date.toLocaleDateString('en-GB');
-        },
+        getValue: (row: AdminEmployeeListItem) => formatDate(row.createdAt, translate.currentLang),
         sortable: true,
         width: '12%',
       },

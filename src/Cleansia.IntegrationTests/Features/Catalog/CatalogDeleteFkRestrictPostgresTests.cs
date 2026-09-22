@@ -1,11 +1,11 @@
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Packages;
 using Cleansia.Core.AppServices.Features.Services;
+using Cleansia.Core.Domain.EmployeePayroll;
 using Cleansia.Core.Domain.Internationalization;
 using Cleansia.Core.Domain.Packages;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Services;
-using Cleansia.Core.Domain.Users;
 using Cleansia.Infra.Database;
 using Cleansia.Infra.Database.Repositories;
 using Cleansia.TestUtilities;
@@ -181,25 +181,24 @@ public class CatalogDeleteFkRestrictPostgresTests : IAsyncLifetime
     public async Task DeletePackage_WhenReferenceRacesPastTheCheck_FkRejects_AndMapsToPackageInUse()
     {
         string packageId;
+        string currencyId;
         await using (var seedCtx = NewContext())
         {
-            seedCtx.Add(Language.Create("en", "English"));
             var package = Package.Create("Lonely Package", "seeded");
             seedCtx.Packages.Add(package);
+            var currency = Currency.Create("CZK", "Kc", "Czech Koruna");
+            currency.IsActive = true;
+            seedCtx.Currencies.Add(currency);
             await seedCtx.CommitAsync(CancellationToken.None);
             packageId = package.Id;
+            currencyId = currency.Id;
         }
 
-        // The race: a live cart line references the package AFTER the in-use check ran (modelled by the
+        // The race: a pay-config row references the package AFTER the in-use check ran (modelled by the
         // RaceBlind repository below), so only the FK can reject the delete.
         await using (var refCtx = NewContext())
         {
-            var user = User.CreateWithPassword("buyer@cleansia.test", "Passw0rd!", "Buyer", "User");
-            var packageRef = (await refCtx.Packages.FindAsync(packageId))!;
-            var cart = Cart.CreateWithUser(user);
-            cart.AddPackage(packageRef, 1);
-            refCtx.Add(user);
-            refCtx.Add(cart);
+            refCtx.EmployeePayConfigs.Add(EmployeePayConfig.CreateForPackage(packageId, 300m, currencyId));
             await refCtx.CommitAsync(CancellationToken.None);
         }
 
@@ -214,7 +213,7 @@ public class CatalogDeleteFkRestrictPostgresTests : IAsyncLifetime
 
         await using var verifyCtx = NewContext();
         Assert.NotNull(await verifyCtx.Packages.FindAsync(packageId));
-        Assert.True(await verifyCtx.CartPackageItems.AnyAsync(cpi => cpi.PackageId == packageId));
+        Assert.True(await verifyCtx.EmployeePayConfigs.AnyAsync(p => p.PackageId == packageId));
     }
 
     // Real ServiceRepository whose in-use check reports clean, modelling the instant the pre-check ran

@@ -3,9 +3,11 @@
  * Cleansia consistency checker — project-specific rules that no off-the-shelf linter covers.
  *
  * Enforces the rules in agents/knowledge/consistency.md (sections A/B backend, C/D frontend,
- * E mobile) by line-scanning source files. Prints `file:line  RULE  message` per violation and
- * exits 1 if any are found. Dependency-free Node (works on Windows dev boxes AND ubuntu CI — the
- * repo already requires Node 22 for the frontend build).
+ * E mobile) and the F web-surface rules by line-scanning source files. The F-rules are stated in
+ * this file alone — each rule's comment is its statement — until consistency.md carries their
+ * rows. Prints `file:line  RULE  message` per violation and exits 1 if any are found.
+ * Dependency-free Node (works on Windows dev boxes AND ubuntu CI — the repo already requires
+ * Node 22 for the frontend build).
  *
  * Usage:
  *   node agents/tools/check-consistency.mjs                 # all stacks
@@ -16,6 +18,17 @@
  * These are heuristic, line-based checks: a clean run is necessary, not sufficient — the Reviewer
  * still reads the diff. Intended to graduate into backend-ci.yml / frontend-ci.yml once the existing
  * violations declared in agents/cleanup/consistency-baseline.md are cleared.
+ *
+ * What CI runs and what is local. No workflow runs this file: it is the Reviewer's on-demand pass
+ * (agents/process/enforcement.md). The web rules that CI does execute are the jest guard specs
+ * under src/Cleansia.App/apps/<app>/src/app/theme/*.spec.ts — page shell, list, detail, form and
+ * dialog shapes, the feedback idioms, the shared primitives (status badge, date, money), the filter
+ * drawer and the font stack — which frontend-ci.yml runs through `nx affected -t test`. The F-rules
+ * below are the line-scannable complement to those specs: the same conventions, over every
+ * template, stylesheet and locale bundle, without a jest boot. A rule whose default-root count is
+ * zero is a hard gate (`add`); one that still has sites is advisory (`warn`) and names its measured
+ * count so the next sweep can flip it once the count reaches zero — the advisory summary line
+ * prints that count per rule, so the baseline is read from the run, not from the comment.
  */
 import { readFileSync, readdirSync, statSync } from "node:fs";
 import { isAbsolute, join, relative, resolve, sep } from "node:path";
@@ -41,10 +54,13 @@ const add = (file, line, rule, msg) =>
 // Advisory (warn-only) findings — heuristics that can't be a hard gate (e.g. E9, which needs a
 // type-graph the line-scanner lacks). These NEVER set the exit code; they print so the Reviewer looks.
 const advisories = [];
-const warn = (file, line, rule, msg) =>
+const advisoryCounts = new Map();
+const warn = (file, line, rule, msg) => {
     advisories.push(
         `${relative(REPO, file).split(sep).join("/")}:${line}  ${rule}  ${msg}`,
     );
+    advisoryCounts.set(rule, (advisoryCounts.get(rule) ?? 0) + 1);
+};
 
 function walk(
     dir,
@@ -687,6 +703,230 @@ function checkMobile(roots) {
     return files.length;
 }
 
+// ---------------------------------------------------------------------------- FRONTEND SURFACE (F)
+// The admin and partner web surface: templates, stylesheets and locale bundles. The customer app is
+// outside every F-rule — it had its own passes, carries its own shell and spacing tokens, and the
+// jest guards that hold these conventions live under the admin and partner apps alone.
+const F_SKIP =
+    /[\\/](node_modules|dist|bin|obj|build|generated|\.angular|\.git|cleansia-customer-features|cleansia\.app|cleansia-customer)[\\/]/;
+// A template or class under a feature lib or an app shell — the surface the F-rules govern. The
+// shared component library is a wrapper over raw elements by design, so F1/F2/F6 stop at its edge;
+// the rules on strings (F14) and teardown (F8) reach it.
+const FEATURE_OR_SHELL =
+    /[\\/](cleansia-(?:admin|partner)-features|apps[\\/][^\\/]+[\\/]src[\\/]app)[\\/]/;
+const SHARED_COMPONENTS = /[\\/]libs[\\/]shared[\\/]components[\\/]/;
+const APP_SHELL_TEMPLATE = /[\\/]apps[\\/][^\\/]+[\\/]src[\\/]app[\\/]app\.component\.html$/;
+const PAGE_STYLESHEET =
+    /[\\/]pages[\\/]cleansia-(?:admin|partner)[\\/]([\w-]+)\.component\.scss$/;
+const I18N_DIR = /[\\/]assets[\\/]i18n$/;
+const LOCALES = ["en", "cs", "sk", "uk", "ru"];
+// The namespaces a bundle may carry at its top level. `common` is not one: its last reader moved
+// to `global.actions.*` and a key filed under it is read by nothing.
+const I18N_NAMESPACES = new Set([
+    "global", "pages", "page_titles", "components", "sidebar", "api", "validation", "auth",
+    "cookies", "help", "enums", "primeng",
+]);
+// A page template: it carries the shared header, the page card, or the auth backdrop.
+const PAGE_TEMPLATE_RE =
+    /class="cleansia-page-header"|class="[^"]*\b(?:page-wrapper|cleansia-page)\b|<cleansia-dynamic-background/;
+// The radius scale of the design language, plus the two pill and circle idioms and the tokens.
+const RADIUS_SCALE = new Set(["0", "6px", "12px", "16px", "24px", "32px", "50%", "999px", "9999px"]);
+const RADIUS_TOKEN_RE = /^var\(--(?:cleansia-radius-\w+|p-[\w-]+)(?:,\s*[^)]+)?\)$/;
+// The tokens every bundle declares: the shared variables plus each app's own root overrides.
+const TOKEN_DECLARATION_FILES = [
+    "src/Cleansia.App/libs/shared/assets/src/styles/common/variables.scss",
+    "src/Cleansia.App/apps/cleansia-admin.app/src/styles.scss",
+    "src/Cleansia.App/apps/cleansia-partner.app/src/styles.scss",
+];
+// The web tree: the feature and shared libs, and the app shells (toolbar, sidebar, config, locale
+// bundles) — surface too, not only the libs. The frontend rules scan it by default, and F12 resolves
+// a page's component from it whatever --paths narrows the scan to.
+const WEB_ROOTS = ["src/Cleansia.App/libs", "src/Cleansia.App/apps"];
+
+const lineOf = (text, index) => text.slice(0, index).split("\n").length;
+// Every `<tag …>` opening tag in a template with its 1-based line — the attributes of a
+// `<cleansia-button` span several lines, so a line-scan cannot see the tag as one thing.
+function openingTags(text, tagName) {
+    const out = [];
+    const re = new RegExp(`<${tagName}\\b[^>]*>`, "g");
+    let m;
+    while ((m = re.exec(text)) !== null) out.push({ tag: m[0], line: lineOf(text, m.index) });
+    return out;
+}
+const flatKeys = (obj, prefix = "") =>
+    Object.entries(obj).flatMap(([k, v]) =>
+        v !== null && typeof v === "object" && !Array.isArray(v)
+            ? flatKeys(v, `${prefix}${k}.`)
+            : [`${prefix}${k}`],
+    );
+
+function checkFrontendSurface(roots) {
+    const files = roots.flatMap((r) => walk(dir(r), [".html", ".scss", ".json", ".ts"], F_SKIP));
+    const templates = files.filter((f) => f.endsWith(".component.html"));
+    const sources = files.filter((f) => f.endsWith(".ts") && !f.endsWith(".spec.ts"));
+    const stylesheets = files.filter((f) => f.endsWith(".scss"));
+    const bundles = files.filter((f) => I18N_DIR.test(f.slice(0, f.lastIndexOf(sep))));
+
+    for (const f of templates) {
+        const text = read(f).join("\n");
+        const governed = FEATURE_OR_SHELL.test(f);
+        if (governed) {
+            // F1 — a raw form control where a <cleansia-*> wrapper exists. The hidden file picker is
+            // the one raw input a wrapper cannot replace. ADVISORY — 4 sites on 2026-09-22 (the partner
+            // dashboard's three quick-action cards and the registration-lock button); flip to `add`
+            // when a default-root run reports zero.
+            for (const { tag, line } of openingTags(text, "(?:button|input|select|textarea)")) {
+                if (/^<input\b/.test(tag) && /type="file"/.test(tag)) continue;
+                warn(f, line, "F1", `raw ${tag.match(/^<(\w+)/)[1]} in a feature template — use the <cleansia-*> wrapper`);
+            }
+            // F2 — a PrimeNG widget bound directly where a wrapper exists.
+            for (const { tag, line } of openingTags(text, "(?:p-button|p-select|p-multiSelect|p-checkbox|p-inputNumber)"))
+                add(f, line, "F2", `${tag.match(/^<([\w-]+)/)[1]} outside libs/shared/components — use the <cleansia-*> wrapper`);
+            for (const m of text.matchAll(/\b(pButton|pTextarea)\b/g))
+                add(f, lineOf(text, m.index), "F2", `${m[1]} directive outside libs/shared/components — use the <cleansia-*> wrapper`);
+            // F6 — the legacy <cleansia-button> API: (clickFn), [title], and the two inputs bound to
+            // their own default. ADVISORY — 3 sites on 2026-09-22, all on the admin login's submit;
+            // flip to `add` at zero, then delete `title` and `clickFn` from the component.
+            for (const { tag, line } of openingTags(text, "cleansia-button")) {
+                if (/\(clickFn\)=/.test(tag)) warn(f, line, "F6", "(clickFn) on <cleansia-button> — bind (onClick)");
+                if (/\[title\]=/.test(tag)) warn(f, line, "F6", "[title] on <cleansia-button> — bind [label]");
+                if (/\[buttonType\]="'button'"/.test(tag)) warn(f, line, "F6", "[buttonType]=\"'button'\" is the default — drop it");
+                if (/\[style\]="'raised-button'"/.test(tag)) warn(f, line, "F6", "[style]=\"'raised-button'\" is the default — drop it");
+            }
+            // F7 — the structural directives and two-way template binding the features left behind.
+            for (const m of text.matchAll(/\*ngIf=|\*ngFor=|\[\(ngModel\)\]/g))
+                add(f, lineOf(text, m.index), "F7", `${m[0]} in a feature template — use @if/@for and a reactive form`);
+            // F13 — a page's first title is its h1.
+            if (PAGE_TEMPLATE_RE.test(text)) {
+                const [first] = openingTags(text, "cleansia-title");
+                if (first && !/\[level\]="1"/.test(first.tag))
+                    add(f, first.line, "F13", "the first <cleansia-title> of a page template is its h1 — bind [level]=\"1\"");
+            }
+        }
+        // F3 — the confirmation dialog is mounted by the shell once; DialogService opens it.
+        if (/<p-confirmDialog\b/i.test(text) && !APP_SHELL_TEMPLATE.test(f))
+            add(f, lineOf(text, text.search(/<p-confirmDialog\b/i)), "F3", "<p-confirmDialog> outside the app shell — the root one is what DialogService opens");
+        // F14 — an aria-label the user hears must come from the bundle.
+        if (governed || SHARED_COMPONENTS.test(f))
+            for (const m of text.matchAll(/(?<=^|\s)aria-label="([^"]*)"/g))
+                if (!m[1].includes("{{"))
+                    add(f, lineOf(text, m.index), "F14", `literal aria-label="${m[1]}" — bind [attr.aria-label] to a translated key`);
+    }
+
+    for (const f of sources) {
+        const text = read(f).join("\n");
+        const base = f.split(/[\\/]/).pop();
+        if (f.endsWith(".component.ts")) {
+            // F4 — a component-scoped ConfirmationService renders into no dialog; the root provides it.
+            for (const m of text.matchAll(/providers:\s*\[[^\]]*\bConfirmationService\b[^\]]*\]/g))
+                add(f, lineOf(text, m.index), "F4", "ConfirmationService in a component's providers — the root provides it and DialogService opens it");
+            // F8 — a component with its own teardown subject or DestroyRef. ADVISORY — 27 sites on
+            // 2026-09-22; flip to `add` at zero. Facades are held to this by C1.
+            if (
+                (FEATURE_OR_SHELL.test(f) || SHARED_COMPONENTS.test(f)) &&
+                /new\s+Subject<void>\(\)|inject\(\s*DestroyRef\s*\)|takeUntilDestroyed/.test(text) &&
+                !/extends\s+UnsubscribeControlDirective/.test(text)
+            )
+                warn(f, 1, "F8", "component owns its teardown (Subject<void>/DestroyRef) — extend UnsubscribeControlDirective");
+        }
+        // F5 — PrimeNG's confirm is called from one place.
+        if (base !== "dialog.service.ts")
+            for (const m of text.matchAll(/\bconfirmationService\.confirm\s*\(/g))
+                add(f, lineOf(text, m.index), "F5", "confirmationService.confirm( outside dialog.service.ts — use DialogService.confirmTranslated/confirmDelete");
+        // F15 — the error toast is the interceptor's; a per-feature key map toasts twice.
+        if (FEATURE_OR_SHELL.test(f))
+            for (const m of text.matchAll(/\bresolve(?!Api)\w+ErrorKey\s*\(|\b\w*_ERROR_KEY_MAP\b/g))
+                add(f, lineOf(text, m.index), "F15", `${m[0].trim()} — the interceptor maps api.* keys; delete the per-feature map`);
+    }
+
+    // F9 — a var(--cleansia-*) read must be declared somewhere the bundle loads.
+    const declared = new Set();
+    for (const f of [...TOKEN_DECLARATION_FILES.map((p) => join(REPO, p)), ...stylesheets])
+        for (const m of read(f).join("\n").matchAll(/(--cleansia-[\w-]+)\s*:/g)) declared.add(m[1]);
+    // F12 asks whether a page's component exists anywhere on the web surface, so the lookup reads
+    // the whole tree, not only the scanned roots: under --paths=<a stylesheet dir> the scan holds no
+    // .component.ts at all, and every page read as orphaned. The scanned sources are unioned in so
+    // a component planted beside a fixture stylesheet is still found.
+    const componentBasenames = new Set(
+        [...sources, ...WEB_ROOTS.flatMap((r) => walk(dir(r), [".component.ts"], F_SKIP))]
+            .filter((f) => f.endsWith(".component.ts"))
+            .map((f) => f.split(/[\\/]/).pop().replace(/\.ts$/, "")),
+    );
+    for (const f of stylesheets) {
+        const text = read(f).join("\n");
+        for (const m of text.matchAll(/var\((--cleansia-[\w-]+)/g))
+            if (!declared.has(m[1]))
+                add(f, lineOf(text, m.index), "F9", `${m[1]} is read but declared nowhere — add it to common/variables.scss`);
+        // F10 — the radius scale and the colour of a shadow. ADVISORY — 77 off-scale radii and 6
+        // primary-tinted shadows on 2026-09-22; flip to `add` at zero. A `0 0 0 Npx` spread with no
+        // blur is a focus ring, not a glow.
+        for (const m of text.matchAll(/border-radius:\s*([^;!]+?)\s*(?:!important)?;/g)) {
+            const value = m[1].trim();
+            if (value === "inherit" || RADIUS_TOKEN_RE.test(value)) continue;
+            if (value.split(/\s+/).every((part) => RADIUS_SCALE.has(part))) continue;
+            warn(f, lineOf(text, m.index), "F10", `border-radius: ${value} — use 6/12/16/24/32px, 50%, 999px or a --cleansia-radius-* token`);
+        }
+        for (const m of text.matchAll(/box-shadow:\s*([^;]+);/g))
+            if (/rgba\(var\(--cleansia-primary-rgb\)/.test(m[1]) && !/^0 0 0 \d+px rgba\(var\(--cleansia-primary-rgb\)/.test(m[1].trim()))
+                warn(f, lineOf(text, m.index), "F10", "primary-tinted box-shadow — a shadow is neutral; a glow is the design language's named tell");
+        // F12 — a page stylesheet named for a component that no longer exists. ADVISORY — 1 site on
+        // 2026-09-22 (template-form.component.scss, which now holds only the `.hint` rule); flip to
+        // `add` at zero.
+        const page = f.match(PAGE_STYLESHEET);
+        if (page && !componentBasenames.has(`${page[1]}.component`))
+            warn(f, 1, "F12", `${page[1]}.component.scss has no ${page[1]}.component.ts — move its rules to a shared partial or delete it`);
+    }
+
+    // F11 — the five locale bundles of an app carry one key set under the fixed namespaces.
+    const byDir = new Map();
+    for (const f of bundles) {
+        const d = f.slice(0, f.lastIndexOf(sep));
+        const locale = f.split(/[\\/]/).pop().replace(/\.json$/, "");
+        if (!LOCALES.includes(locale)) continue;
+        if (!byDir.has(d)) byDir.set(d, new Map());
+        byDir.get(d).set(locale, f);
+    }
+    for (const [d, locales] of byDir) {
+        const parsed = new Map();
+        for (const [locale, f] of locales) {
+            try {
+                parsed.set(locale, JSON.parse(readFileSync(f, "utf8")));
+            } catch {
+                add(f, 1, "F11", `${locale}.json does not parse`);
+            }
+        }
+        const en = parsed.get("en");
+        if (!en) continue;
+        const enFile = locales.get("en");
+        const enKeys = new Set(flatKeys(en));
+        for (const ns of Object.keys(en)) {
+            if (ns === "common") add(enFile, 1, "F11", "a `common` namespace — its readers moved to global.actions.*; nothing reads it");
+            // ADVISORY — 9 stray namespaces on 2026-09-22 (admin: admin_roles, fiscal_failures,
+            // pay_periods, profile, recurring_booking; partner: name, profile, recurring_booking,
+            // registration_lock); flip to `add` once a sweep files them under pages.* or components.*.
+            else if (!I18N_NAMESPACES.has(ns)) warn(enFile, 1, "F11", `top-level namespace '${ns}' is outside the fixed set — file it under pages.* or components.*`);
+        }
+        for (const locale of LOCALES) {
+            if (locale === "en") continue;
+            const f = locales.get(locale);
+            if (!f) {
+                add(join(d, `${locale}.json`), 1, "F11", `${locale}.json is missing — every key ships in all five locales`);
+                continue;
+            }
+            const other = parsed.get(locale);
+            if (!other) continue;
+            const keys = new Set(flatKeys(other));
+            const missing = [...enKeys].filter((k) => !keys.has(k));
+            const extra = [...keys].filter((k) => !enKeys.has(k));
+            if (missing.length)
+                add(f, 1, "F11", `${missing.length} key(s) in en.json are missing here (first: ${missing[0]})`);
+            if (extra.length)
+                add(f, 1, "F11", `${extra.length} key(s) here are not in en.json (first: ${extra[0]})`);
+        }
+    }
+    return files.length;
+}
+
 // ---------------------------------------------------------------------------- run
 const DEFAULTS = {
     backend: ["src/Cleansia.Core.AppServices/Features"],
@@ -697,7 +937,7 @@ const DEFAULTS = {
         "src/Cleansia.Core.AppServices/Services",
         "src/Cleansia.Core.Domain/Disputes",
     ],
-    frontend: ["src/Cleansia.App/libs"],
+    frontend: WEB_ROOTS,
     mobile: ["src/cleansia_android"],
 };
 const custom = pathsArg ? pathsArg.split(",") : null;
@@ -706,13 +946,19 @@ if (onlyStacks.includes("backend")) {
     scanned += checkBackend(custom || DEFAULTS.backend);
     checkDisputeWrites(custom || DEFAULTS.disputeWrites);
 }
-if (onlyStacks.includes("frontend"))
+if (onlyStacks.includes("frontend")) {
     scanned += checkFrontend(custom || DEFAULTS.frontend);
+    scanned += checkFrontendSurface(custom || DEFAULTS.frontend);
+}
 if (onlyStacks.includes("mobile"))
     scanned += checkMobile(custom || DEFAULTS.mobile);
 
 if (advisories.length) {
-    console.log(`consistency: ${advisories.length} advisory warning(s) (non-blocking)`);
+    const tally = [...advisoryCounts]
+        .sort(([a], [b]) => a.localeCompare(b, undefined, { numeric: true }))
+        .map(([rule, n]) => `${rule} ${n}`)
+        .join(", ");
+    console.log(`consistency: ${advisories.length} advisory warning(s) (non-blocking) — ${tally}`);
     for (const w of advisories.sort()) console.log("  " + w);
 }
 // Explicit --paths that matched nothing is a non-run, not a pass: the caller asked for specific
@@ -723,7 +969,7 @@ if (custom && scanned === 0) {
         `consistency: NOT RUN — --paths matched no scannable files (${custom.join(", ")})`,
     );
     console.log(
-        "  Check the path exists and holds files this stack scans (backend .cs, frontend .ts, mobile .kt).",
+        "  Check the path exists and holds files this stack scans (backend .cs, frontend .ts/.html/.scss/.json, mobile .kt).",
     );
     process.exit(1);
 }

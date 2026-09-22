@@ -1,0 +1,221 @@
+SOURCE: lawyers-docs\SMLOUVY CleanSia\SMLOUVY\cleansia_kodex_chovani.docx
+Paragraph IDs are extraction references, not legal clause numbers.
+
+[P001] [word/document.xml] CLEANSIA
+[P002] [word/document.xml] KODEX CHOVÁNÍ A BRAND GUIDELINES
+[P003] [word/document.xml] Standard vystupování, vizuální identita a komunikace se zákazníkem
+[P004] [word/document.xml] Dokument:
+[P005] [word/document.xml] Příloha č. 3 k Rámcové smlouvě o spolupráci Cleansia s.r.o.
+[P006] [word/document.xml] Verze:
+[P007] [word/document.xml] 1.1
+[P008] [word/document.xml] Platnost od:
+[P009] [word/document.xml] ................................................
+[P010] [word/document.xml] Určeno:
+[P011] [word/document.xml] Všem Zhotovitelům (OSVČ) provádějícím zakázky v rámci platformy Cleansia
+[P012] [word/document.xml] Cleansia není jen úklidová služba — je to brand. Každý Zhotovitel, který vstoupí do domu nebo kanceláře zákazníka, ho reprezentuje. Tento Kodex chování definuje, jak Cleansia vypadá, voní, mluví a jedná. Dodržování těchto zásad je podmínkou spolupráce a jeho porušení může vést k sankcím dle čl. VII.
+[P013] [word/document.xml] I.
+[P014] [word/document.xml] Vizuální identita a pracovní oděv (Dress Code)
+[P015] [word/document.xml] 1.1  Pracovní oděv
+[P016] [word/document.xml] Zhotovitel je povinen při výkonu všech zakázek pro zákazníky Cleansia používat pracovní oděv v souladu s aktuálně platnými standardy Operátora. Minimální požadavky na pracovní oděv:
+[P017] [word/document.xml] Čisté, nepoškozené pracovní tričko nebo zástěra v barvách Cleansia (modrá / bílá — dle aktuálně vydaných materiálů Operátorem).
+[P018] [word/document.xml] Čisté pracovní kalhoty nebo legíny v tmavších neutrálních barvách (černá, tmavá modrá, tmavá šedá) — BEZ viditelných skvrn, děr a fadingu.
+[P019] [word/document.xml] Uzavřená protiskluzná pracovní obuv — žádné pantofle, sandály, nazouváky ani platformy.
+[P020] [word/document.xml] Vlasy sepnuté nebo zakryté síťkou / čepicí při práci v kuchyních a koupelnách.
+[P021] [word/document.xml] Minimální šperky — žádné visací náušnice ani prsteny při manipulaci s chemií nebo spotřebiči.
+[P022] [word/document.xml] 1.2  Čistota a úprava zevnějšku
+[P023] [word/document.xml] Pracovní oděv musí být před každou zakázkou čistě vyprán, bez intenzivního zápachu potu nebo cigaret. Zhotovitel přichází k zákazníkovi upravený, čistých rukou a s vhodnou osobní hygienou. Použití deodorantu je standardem — silné parfémy jsou nepřijatelné, neboť mohou obtěžovat zákazníka nebo být v konfliktu se signature vůní Cleansia.
+[P024] [word/document.xml] 1.3  Identifikační karta
+[P025] [word/document.xml] Pokud Operátor vydá identifikační kartu nebo samolepku s QR kódem, je Zhotovitel povinen ji mít při sobě během zakázky a na vyžádání zákazníka ji předložit. Identifikační karta je dokladem důvěryhodnosti Zhotovitele — její absence může být důvodem odmítnutí vstupu ze strany zákazníka.
+[P026] [word/document.xml] II.
+[P027] [word/document.xml] Signature vůně platformy Cleansia
+[P028] [word/document.xml] 2.1  Co je signature vůně
+[P029] [word/document.xml] Cleansia má definovanou signature vůni, která je součástí brandingu platformy. Tato vůně je nanášena jako lehký finish po dokončení úklidu — jejím úkolem je poskytnout zákazníkovi okamžitý senzorický zážitek a zvýšit jeho spokojenost se službou.
+[P030] [word/document.xml] Proč je vůně důležitá? Výzkumy v oblasti zákaznické zkušenosti ukazují, že čich je nejsilnější smysl spojený s pamětí a emocemi. Zákazníci, kteří asociují specifickou vůni s čistotou a profesionálním úklidem, se vracejí s vyšším hodnocením a doporučují službu dále. Signature vůně Cleansia je proto strategickým nástrojem — ne jen příjemným bonusem.
+[P031] [word/document.xml] 2.2  Povinnost použít vůni
+[P032] [word/document.xml] Zhotovitel je povinen po dokončení každé zakázky nanést signature vůni Cleansia (dodanou Operátorem) v prostorách, které byly uklizeny, dle instrukce Operátora — typicky 2–3 sprejové dávky ve vzduchu místnosti, ne přímo na povrchy nebo textil. Nikdy nestříkejte na elektrické spotřebiče, otevřená jídla, domácí mazlíčky nebo osoby.
+[P033] [word/document.xml] 2.3  Nahrazení vůně
+[P034] [word/document.xml] Zhotovitel nesmí signature vůni Cleansia nahradit vlastním parfémem, osvěžovačem vzduchu ani jiným produktem. Pokud Zhotoviteli dochází dodaná vůně, je povinen tuto skutečnost oznámit Operátorovi prostřednictvím Aplikace a vyžádat doplnění. Na zakázce bez dodané vůně od Operátora vůni nenanáší a tuto skutečnost zaznamená v Aplikaci.
+[P035] [word/document.xml] III.
+[P036] [word/document.xml] Komunikace se zákazníkem — tone of voice
+[P037] [word/document.xml] 3.1  Celkový tón komunikace
+[P038] [word/document.xml] Zhotovitel komunikuje se zákazníkem vždy: zdvořile a přívětivě, profesionálním způsobem, klidně a s rozvahou (i v případech stížností), jasně a srozumitelně (žádná technická nebo slangová mluva). Zhotovitel oslovuje zákazníka výhradně vykáním, dokud zákazník sám nepřekne na tykání.
+[P039] [word/document.xml] 3.2  Příchod a uvítání zákazníka
+[P040] [word/document.xml] Standardní postup při příchodu k zákazníkovi:
+[P041] [word/document.xml] Zazvonit a počkat, až zákazník otevře — nikdy nevstupovat bez výzvy, i když má Zhotovitel klíče.
+[P042] [word/document.xml] Přivítat se: 'Dobrý den, jsem [jméno] z Cleansie, přicházím na váš úklid v [čas].'
+[P043] [word/document.xml] Potvrdit rozsah zakázky dle Aplikace a zeptat se na specifické požadavky.
+[P044] [word/document.xml] Informovat o předpokládané době trvání úklidu.
+[P045] [word/document.xml] V případě klíčů nebo přístupového kódu potvrdit jejich převzetí zákazníkovi.
+[P046] [word/document.xml] 3.3  Během zakázky
+[P047] [word/document.xml] Zhotovitel během výkonu práce:
+[P048] [word/document.xml] Minimalizuje hlučnost — televize a hudba z vlastního telefonu jsou zakázány.
+[P049] [word/document.xml] Neruší zákazníka zbytečnými dotazy — vyjasní si vše před zahájením práce.
+[P050] [word/document.xml] Pokud narazí na neočekávaný problém (skrytá skvrna, poškozený povrch), okamžitě informuje zákazníka a navrhne řešení.
+[P051] [word/document.xml] Nepoužívá telefon k soukromým hovorům bez výzvy zákazníka.
+[P052] [word/document.xml] Pohybuje se výhradně v prostorách, které jsou součástí zakázky.
+[P053] [word/document.xml] 3.4  Předání zakázky a rozloučení
+[P054] [word/document.xml] Po dokončení úklidu Zhotovitel:
+[P055] [word/document.xml] Provede rychlou vizuální kontrolu všech uklizených prostor.
+[P056] [word/document.xml] Informuje zákazníka o dokončení práce a zeptá se, zda je spokojen.
+[P057] [word/document.xml] Upozorní zákazníka na případné zjištěné problémy (např. skvrna, která nešla odstranit).
+[P058] [word/document.xml] Nanése signature vůni Cleansia dle čl. II.
+[P059] [word/document.xml] Potvrdí ukončení zakázky v Aplikaci — s fotografiemi výsledku, pokud to zakázka vyžaduje.
+[P060] [word/document.xml] Rozloučí se zdvořile: 'Děkujeme za důvěru, na shledanou.'
+[P061] [word/document.xml] ✔  VŽDY DĚLEJ
+[P062] [word/document.xml] ✘  NIKDY NEDĚLEJ
+[P063] [word/document.xml] ✔  Vykejte zákazníkovi, dokud vás sami nevyzvou k tykání.
+[P064] [word/document.xml] ✘  Nepřijímejte spropitné ani platby mimo Aplikaci.
+[P065] [word/document.xml] ✔  Oznamte překážky (nemoc, zpoždění) co nejdříve před zahájením zakázky.
+[P066] [word/document.xml] ✘  Nehovořte o soukromých věcech zákazníka s třetími osobami.
+[P067] [word/document.xml] ✔  Informujte o případném poškození před i po úklidu a zdokumentujte fotografií.
+[P068] [word/document.xml] ✘  Nevyřizujte soukromé hovory v domácnosti zákazníka.
+[P069] [word/document.xml] ✔  Uchovávejte klíče a přístupové kódy v bezpečí.
+[P070] [word/document.xml] ✘  Nekonzumujte jídlo ani nápoje zákazníka bez explicitního pozvání.
+[P071] [word/document.xml] ✔  Potvrďte každé dokončení zakázky v Aplikaci.
+[P072] [word/document.xml] ✘  Nefotografujte prostory bez souhlasu zákazníka.
+[P073] [word/document.xml] ✔  Buďte při komunikaci se zákazníkem klidní i v konfliktní situaci.
+[P074] [word/document.xml] ✘  Nepoužívejte hrubých slov ani nevhodné komunikace.
+[P075] [word/document.xml] ✔  Při příchodu se vždy představte jménem a názvem platformy.
+[P076] [word/document.xml] ✘  Neopouštějte zakázku bez předchozího upozornění zákazníka i Operátora.
+[P077] [word/document.xml] IV.
+[P078] [word/document.xml] Používání mobilního telefonu a technologií během zakázky
+[P079] [word/document.xml] 4.1  Povolené použití telefonu
+[P080] [word/document.xml] Mobilní telefon je během zakázky povolen VÝHRADNĚ pro:
+[P081] [word/document.xml] Použití Aplikace Cleansia (přijímání zakázek, komunikace se zákazníkem, fotodokumentace, potvrzení dokončení).
+[P082] [word/document.xml] Příjem hovoru od Operátora nebo zákazníka při řešení provozních záležitostí.
+[P083] [word/document.xml] Příjem tísňového hovoru.
+[P084] [word/document.xml] Navigaci k místu zakázky před zahájením práce.
+[P085] [word/document.xml] 4.2  Co je zakázáno
+[P086] [word/document.xml] Během výkonu zakázky je zakázáno:
+[P087] [word/document.xml] Poslouchat hudbu nebo videa bez sluchátek — a se sluchátky pouze pokud to neomezuje vnímání okolí.
+[P088] [word/document.xml] Procházet sociální sítě, e-maily nebo jiný neservicní obsah.
+[P089] [word/document.xml] Fotografovat interiéry, majetek či osoby bez souhlasu zákazníka.
+[P090] [word/document.xml] Písemně komunikovat s třetími osobami v rámci soukromé komunikace.
+[P091] [word/document.xml] Používat telefon ke hrám nebo jiným činnostem nesouvisejícím se zakázkou.
+[P092] [word/document.xml] 4.3  Aplikace Cleansia — technické požadavky
+[P093] [word/document.xml] Zhotovitel je povinen mít na svém zařízení nainstalovanou a funkční Aplikaci Cleansia, mít zapnutá push oznámení a mít baterii zařízení dostatečně nabitou na průběh celé zakázky (doporučujeme minimálně 50 % před zahájením). Označení dokončení zakázky v Aplikaci je povinné po každé zakázce — bez tohoto potvrzení není zakázka považována za splněnou.
+[P094] [word/document.xml] V.
+[P095] [word/document.xml] Řešení nestandardních situací a konfliktů
+[P096] [word/document.xml] 5.1  Zpoždění k zakázce
+[P097] [word/document.xml] Pokud Zhotovitel ví, že nebude schopen dorazit na zakázku v dohodnutém čase, je povinen:
+[P098] [word/document.xml] Okamžitě informovat zákazníka prostřednictvím Aplikace nebo telefonicky.
+[P099] [word/document.xml] Současně informovat Operátora.
+[P100] [word/document.xml] Zpoždění nad 15 minut je Zhotovitel povinen hlásit vždy — nad 30 minut je Operátor oprávněn zakázku přesunout na jiného Zhotovitele bez sankce pro zákazníka.
+[P101] [word/document.xml] Opakované zpoždění bez omluvy může být důvodem pro pozastavení přístupu k novým zakázkám dle čl. VII.
+[P102] [word/document.xml] 5.2  Odmítnutí vstupu nebo opuštění zakázky
+[P103] [word/document.xml] Zhotovitel je oprávněn odmítnout vstup nebo opustit zakázku bez sankce, pokud:
+[P104] [word/document.xml] Zákazník je zjevně pod vlivem alkoholu nebo drog a jeho chování je agresivní nebo ohrožující.
+[P105] [word/document.xml] V objektu je přítomen aktuální biologický hazard (mravenci, štěnice, závažná plíseň), o němž nebyl Zhotovitel informován předem.
+[P106] [word/document.xml] Výzvy zákazníka jsou v rozporu s tímto Kodexem, jsou neetické nebo protiprávní.
+[P107] [word/document.xml] Zhotovitel se cítí ohrožen na bezpečnosti nebo zdraví.
+[P108] [word/document.xml] O každém takovém odmítnutí je Zhotovitel povinen okamžitě informovat Operátora prostřednictvím Aplikace, a to včetně stručného popisu důvodu.
+[P109] [word/document.xml] 5.3  Stížnost zákazníka na místě
+[P110] [word/document.xml] Pokud zákazník vyjádří nespokojenost během nebo po úklidu:
+[P111] [word/document.xml] Zhotovitel zklidní situaci, omluví se za nepříjemnosti a nabídne okamžitou nápravu v rámci zakázky.
+[P112] [word/document.xml] Nespěchá se zákazníkem a naslouchá jeho výtkám bez přerušování.
+[P113] [word/document.xml] Informuje Operátora o vzniklé situaci prostřednictvím Aplikace.
+[P114] [word/document.xml] Nestaví se obranným způsobem ani neobviňuje zákazníka.
+[P115] [word/document.xml] Pokud zákazník trvá na slevě nebo náhradě, odkazuje ho na Operátora — Zhotovitel sám nenabízí finanční kompenzace.
+[P116] [word/document.xml] 5.4  Nalezení cenností nebo podezřelých předmětů
+[P117] [word/document.xml] Pokud Zhotovitel při úklidu nalezne cennosti (hotovost, šperky, dokumenty):
+[P118] [word/document.xml] Okamžitě informuje zákazníka a předá předmět do jeho rukou.
+[P119] [word/document.xml] Pokud zákazník není přítomen, udělá fotografii předmětu na místě a informuje Operátora.
+[P120] [word/document.xml] Cennosti nikdy neodkládá na jiné místo, nevyndává z původní polohy bez nutnosti a nemanipuluje s nimi nad rámec nutného.
+[P121] [word/document.xml] Nalezení předmětu, který vzbudí podezření na nelegální činnost (drogy, zbraně, kompromitující materiály), Zhotovitel:
+[P122] [word/document.xml] Okamžitě opustí prostor.
+[P123] [word/document.xml] Hlásí Operátorovi a Policii ČR (158).
+[P124] [word/document.xml] Nepohybuje s předmětem ani se ho nedotýká.
+[P125] [word/document.xml] VI.
+[P126] [word/document.xml] Sociální sítě, recenze a veřejné výstupy
+[P127] [word/document.xml] 6.1  Veřejné výstupy pod značkou Cleansia
+[P128] [word/document.xml] Pokud Zhotovitel vystupuje veřejně v kontextu spolupráce s Cleansia (např. sdílení obsahu na sociálních sítích, rozhovor pro média), je povinen jednat v souladu s hodnotami a tonalitou brandu Cleansia a nepodávat zavádějící informace o platformě, cenách nebo službách.
+[P129] [word/document.xml] 6.2  Zákaz negativních veřejných komentářů
+[P130] [word/document.xml] Zhotovitel nesmí na sociálních sítích, recenzních platformách ani jinde veřejně negativně komentovat Cleansia, Operátora, jeho zaměstnance ani zákazníky — a to během spolupráce i po jejím ukončení. Tato povinnost trvá 2 roky po ukončení spolupráce. Porušení tohoto zákazu zakládá právo Cleansia na náhradu škody způsobené poškozením dobré pověsti.
+[P131] [word/document.xml] 6.3  Fotografie a video ze zakázek
+[P132] [word/document.xml] Zhotovitel nesmí zveřejňovat fotografie ani videa z prostor zákazníka na sociálních sítích ani jinde bez jeho výslovného písemného souhlasu. Ani anonymizované fotografie (bez tváře zákazníka) nesmějí být zveřejněny bez souhlasu — interiéry jsou osobními prostory zákazníka a jejich zveřejnění bez souhlasu může zakládat porušení GDPR (čl. 6 odst. 1 GDPR).
+[P133] [word/document.xml] 6.4  Tagování a mentions
+[P134] [word/document.xml] Zhotovitel je oprávněn sdílet fotografii vlastního pracovního outfitu (např. na Instagramu) s tagem @cleansia, pokud fotografie nevykazuje žádné soukromé prostory zákazníka a je v souladu s Brand Guidelines. Cleansia si vyhrazuje právo takovou fotografii nesdílet, pokud neodpovídá standardům brandu.
+[P135] [word/document.xml] VII.
+[P136] [word/document.xml] Sankce za porušení Kodexu
+[P137] [word/document.xml] 7.1  Upozornění
+[P138] [word/document.xml] Při prvním menším porušení Kodexu (např. chybějící oděv, používání telefonu ke hraní, opomenutí signature vůně) dostane Zhotovitel písemné upozornění od Operátora prostřednictvím Aplikace. Upozornění je zaznamenáno do jeho profilu a je podkladem pro hodnocení.
+[P139] [word/document.xml] 7.2  Dočasné pozastavení
+[P140] [word/document.xml] Při opakování menšího porušení nebo při závažnějším jednorázovém porušení (např. nevhodná komunikace se zákazníkem, opakované zpoždění bez omluvy, porušení pravidel o telefonech) může Operátor dočasně pozastavit přístup Zhotovitele k novým zakázkám až na 14 dnů. O pozastavení bude Zhotovitel informován prostřednictvím Aplikace.
+[P141] [word/document.xml] 7.3  Okamžité ukončení spolupráce
+[P142] [word/document.xml] Operátor je oprávněn okamžitě ukončit spolupráci bez nároku na náhradu při:
+[P143] [word/document.xml] Fotografování soukromých prostor zákazníka bez souhlasu.
+[P144] [word/document.xml] Veřejném poškozování reputace Cleansie na sociálních sítích nebo v médiích.
+[P145] [word/document.xml] Agresivním nebo obtěžujícím chování vůči zákazníkovi.
+[P146] [word/document.xml] Opakovaném a prokázaném porušení zákazu fotografování nebo zákazu obcházení platformy.
+[P147] [word/document.xml] Prokázaném podvodu, krádeži nebo jiném protiprávním jednání vůči zákazníkovi.
+[P148] [word/document.xml] Závažném porušení GDPR nebo ochrany osobních údajů zákazníka.
+[P149] [word/document.xml] Ukončení spolupráce dle tohoto článku není dotčeno právem Cleansia na náhradu škody a právo Cleansia podat trestní oznámení při závažném protiprávním jednání.
+[P150] [word/document.xml] VIII.
+[P151] [word/document.xml] Checklist potvrzení Kodexu chování
+[P152] [word/document.xml] Zhotovitel svým podpisem potvrzuje, že byl seznámen s následujícími standardy a zavazuje se je dodržovat po celou dobu spolupráce s Cleansia:
+[P153] [word/document.xml] #
+[P154] [word/document.xml] Standard
+[P155] [word/document.xml] Rozumím
+[P156] [word/document.xml] Podpis
+[P157] [word/document.xml] 1
+[P158] [word/document.xml] Pracovní oděv splňující Brand Guidelines budu nosit na každé zakázce.
+[P159] [word/document.xml] [ ]
+[P160] [word/document.xml] ............
+[P161] [word/document.xml] 2
+[P162] [word/document.xml] Signature vůni Cleansia budu nanášet dle instrukcí po každém úklidu.
+[P163] [word/document.xml] [ ]
+[P164] [word/document.xml] ............
+[P165] [word/document.xml] 3
+[P166] [word/document.xml] Se zákazníkem budu komunikovat zdvořile a profesionálním způsobem vždy.
+[P167] [word/document.xml] [ ]
+[P168] [word/document.xml] ............
+[P169] [word/document.xml] 4
+[P170] [word/document.xml] Telefon během zakázky používám výhradně pro Aplikaci nebo služební hovory.
+[P171] [word/document.xml] [ ]
+[P172] [word/document.xml] ............
+[P173] [word/document.xml] 5
+[P174] [word/document.xml] Fotografování prostor zákazníka bez jeho souhlasu je absolutně zakázáno.
+[P175] [word/document.xml] [ ]
+[P176] [word/document.xml] ............
+[P177] [word/document.xml] 6
+[P178] [word/document.xml] Zpoždění nad 15 minut okamžitě hlásím zákazníkovi i Operátorovi.
+[P179] [word/document.xml] [ ]
+[P180] [word/document.xml] ............
+[P181] [word/document.xml] 7
+[P182] [word/document.xml] Platby a spropitné mimo Aplikaci nepřijímám.
+[P183] [word/document.xml] [ ]
+[P184] [word/document.xml] ............
+[P185] [word/document.xml] 8
+[P186] [word/document.xml] Negativní veřejné komentáře na Cleansia nepublikuji ani po ukončení spolupráce.
+[P187] [word/document.xml] [ ]
+[P188] [word/document.xml] ............
+[P189] [word/document.xml] 9
+[P190] [word/document.xml] Nalezené cennosti okamžitě oznamuji zákazníkovi nebo Operátorovi.
+[P191] [word/document.xml] [ ]
+[P192] [word/document.xml] ............
+[P193] [word/document.xml] 10
+[P194] [word/document.xml] Nestandardní situace (agrese, biologický hazard, podezřelé předměty) hlásím Operátorovi okamžitě.
+[P195] [word/document.xml] [ ]
+[P196] [word/document.xml] ............
+[P197] [word/document.xml] 11
+[P198] [word/document.xml] Pracovní obuv je vždy uzavřená a protiskluzová — žádné sandály ani pantofle.
+[P199] [word/document.xml] [ ]
+[P200] [word/document.xml] ............
+[P201] [word/document.xml] 12
+[P202] [word/document.xml] Nekonzumuji jídlo ani nápoje zákazníka bez explicitního pozvání.
+[P203] [word/document.xml] [ ]
+[P204] [word/document.xml] ............
+[P205] [word/document.xml] Tento Kodex je platný po dobu 12 měsíců od data podpisu. Po uplynutí této doby je Operátor povinen zajistit opakované seznámení. Zhotovitel je rovněž povinen absolvovat mimořádné seznámení při změně Brand Guidelines nebo při závažném bezpečnostním incidentu.
+[P206] [word/document.xml] Potvrzení o seznámení s Kodexem chování
+[P207] [word/document.xml] Smluvní strany potvrzují, že Zhotovitel byl řádně seznámen s tímto Kodexem chování a Brand Guidelines Cleansia, plně jim rozumí a zavazuje se jimi řídit po celou dobu spolupráce.
+[P208] [word/document.xml] Cleansia s.r.o. — Operátor
+[P209] [word/document.xml] Jméno: ................................................................
+[P210] [word/document.xml] Podpis: ............................................
+[P211] [word/document.xml] Datum:  ............................................
+[P212] [word/document.xml] Zhotovitel (OSVČ) — jméno:
+[P213] [word/document.xml] Jméno: ................................................................
+[P214] [word/document.xml] Podpis: ............................................
+[P215] [word/document.xml] Datum:  ............................................
+[P216] [word/document.xml] Cleansia s.r.o.  |  Kodex chování a Brand Guidelines v1.1  |  Příloha č. 3 k Rámcové smlouvě
+[P217] [word/footer1.xml] Verze 1.1  |  Cleansia s.r.o.  |  Příloha č. 3 k Rámcové smlouvě
+[P218] [word/header1.xml] CLEANSIA s.r.o.  |  Kodex chování a Brand Guidelines  |  Příloha č. 3

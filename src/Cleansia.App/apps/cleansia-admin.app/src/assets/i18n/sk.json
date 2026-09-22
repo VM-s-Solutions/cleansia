@@ -20,14 +20,6 @@
       "zipCode": "PSČ"
     }
   },
-  "common": {
-    "save": "Uložiť",
-    "cancel": "Zrušiť",
-    "edit": "Upraviť",
-    "delete": "Vymazať",
-    "loading": "Načítava sa...",
-    "confirm": "Potvrdiť"
-  },
   "page_titles": {
     "admin": {
       "default": "Administračný portál",
@@ -76,12 +68,6 @@
       "company_settings": "Nastavenia spoločnosti",
       "company_lifecycle": "Životný cyklus spoločnosti",
       "templates": "Šablóny",
-      "invoice_templates": "Šablóny faktúr",
-      "invoice_template_create": "Vytvoriť šablónu faktúry",
-      "invoice_template_edit": "Upraviť šablónu faktúry",
-      "receipt_templates": "Šablóny účteniek",
-      "receipt_template_create": "Vytvoriť šablónu účtenky",
-      "receipt_template_edit": "Upraviť šablónu účtenky",
       "email_templates": "E-mailové šablóny",
       "email_template_translations": "Preklady e-mailových šablón",
       "fiscal_failures": "Fiškálne zlyhania",
@@ -112,59 +98,19 @@
       "go_home": "Na úvodnú stránku",
       "error_code": "Chyba {{code}}"
     },
-    "availability": {
-      "days": {
-        "monday": "Pondelok",
-        "monday_short": "Po",
-        "tuesday": "Utorok",
-        "tuesday_short": "Ut",
-        "wednesday": "Streda",
-        "wednesday_short": "St",
-        "thursday": "Štvrtok",
-        "thursday_short": "Št",
-        "friday": "Piatok",
-        "friday_short": "Pi",
-        "saturday": "Sobota",
-        "saturday_short": "So",
-        "sunday": "Nedeľa",
-        "sunday_short": "Ne"
-      },
-      "current_ranges": "Aktuálne rozsahy",
-      "no_availability": "Dostupnosť nie je nastavená",
-      "add_time_range": "Pridať časový rozsah",
-      "start_time": "Čas začiatku",
-      "end_time": "Čas konca",
-      "quick_setup": "Rýchle nastavenie",
-      "weekly_schedule": "Týždenný rozvrh",
-      "mon_fri_9_5": "Po-Pi 9-17",
-      "mon_sat_8_4": "Po-So 8-16",
-      "custom": "Vlastný",
-      "legend_working": "Pracovný",
-      "legend_custom": "Vlastné hodiny",
-      "legend_off": "Voľno",
-      "no_days_selected": "Vyberte pracovné dni na nastavenie rozvrhu",
-      "working_day": "Pracovný deň",
-      "day_off": "Voľný deň",
-      "custom_hours": "Vlastné hodiny",
-      "exception_day_off": "Výnimka - voľný deň",
-      "edit_hours": "Upraviť hodiny",
-      "remove_exception": "Odstrániť výnimku",
-      "mark_exception": "Označiť ako výnimku",
-      "set_custom_hours": "Nastaviť vlastné hodiny",
-      "mark_unavailable": "Tento deň bude označený ako nedostupný.",
-      "add_time_slot": "Pridať časový slot",
-      "schedule_setup": "Nastavenie rozvrhu",
-      "schedule_setup_desc": "Vyberte pracovné dni a nastavte hodiny.",
-      "working_hours": "Pracovné hodiny",
-      "working_days": "Pracovné dni",
-      "apply": "Použiť"
-    },
     "brand_mark_alt": "Cleansia"
   },
   "global": {
     "yes": "Áno",
     "no": "Nie",
     "close": "Zavrieť",
+    "open_menu": "Otvoriť menu",
+    "close_menu": "Zavrieť menu",
+    "filters": {
+      "title": "Filtre",
+      "reset": "Obnoviť filtre",
+      "clear_all": "Vymazať všetko"
+    },
     "all": "Všetko",
     "no_data": "Žiadne dáta na zobrazenie",
     "loading": "Načítava sa...",
@@ -182,6 +128,7 @@
       "save": "Uložiť",
       "create": "Vytvoriť",
       "cancel": "Zrušiť",
+      "confirm": "Potvrdiť",
       "edit": "Upraviť",
       "view": "Zobraziť",
       "delete": "Odstrániť",
@@ -197,6 +144,9 @@
     },
     "dialog": {
       "confirm": "Potvrdiť",
+      "delete": "Vymazať",
+      "confirm_delete": "Naozaj chcete vymazať túto položku?",
+      "confirm_delete_item": "Naozaj chcete vymazať {{item}}?",
       "confirm_logout": "Naozaj sa chcete odhlásiť?"
     },
     "user": {
@@ -219,6 +169,90 @@
     },
     "show_password": "Zobraziť heslo",
     "hide_password": "Skryť heslo"
+  },
+  "enums": {
+    "order_status": {
+      "new": "Nová",
+      "pending": "Čakajúca",
+      "confirmed": "Potvrdená",
+      "on_the_way": "Na ceste",
+      "in_progress": "Prebieha",
+      "completed": "Dokončená",
+      "cancelled": "Zrušená"
+    },
+    "payment_status": {
+      "pending": "Čakajúca",
+      "paid": "Zaplatená",
+      "failed": "Zlyhala",
+      "refunded": "Vrátená",
+      "disputed": "Reklamovaná",
+      "partially_refunded": "Čiastočne vrátené"
+    },
+    "contract_status": {
+      "pending": "Čakajúci",
+      "active": "Aktívny",
+      "terminated": "Ukončený",
+      "approved": "Schválený",
+      "rejected": "Zamietnutý"
+    },
+    "invoice_status": {
+      "pending": "Čakajúca",
+      "approved": "Schválená",
+      "paid": "Zaplatená",
+      "disputed": "Reklamovaná",
+      "rejected": "Zamietnutá",
+      "cancelled": "Zrušená"
+    },
+    "invoice_pdf_state": {
+      "ready": "Pripravené",
+      "pending": "Generuje sa…",
+      "failed": "Zlyhalo"
+    },
+    "dispute_status": {
+      "pending": "Čaká",
+      "under_review": "V preskúmaní",
+      "waiting_for_response": "Čaká na odpoveď",
+      "resolved": "Vyriešené",
+      "closed": "Uzavreté",
+      "escalated": "Eskalované"
+    },
+    "pay_period_status": {
+      "open": "Otvorené",
+      "closed": "Uzavreté",
+      "paid": "Zaplatené"
+    },
+    "company_lifecycle_state": {
+      "operating": "V prevádzke",
+      "winding_down": "Ukončuje sa",
+      "deactivated": "Deaktivovaná",
+      "frozen": "Zmrazená",
+      "archived": "Archivovaná"
+    },
+    "settlement_fact_status": {
+      "blocking": "Bráni archivácii",
+      "settled": "Vysporiadané",
+      "informational": "Informatívne"
+    },
+    "referral_status": {
+      "accepted": "Prijaté",
+      "qualified": "Kvalifikované",
+      "expired": "Expirované",
+      "reversed": "Stornované"
+    },
+    "document_status": {
+      "pending": "Čakajúci",
+      "approved": "Schválený",
+      "rejected": "Zamietnutý"
+    },
+    "active_status": {
+      "active": "Aktívny",
+      "inactive": "Neaktívny"
+    },
+    "promo_code_status": {
+      "active": "Aktívne",
+      "inactive": "Neaktívne",
+      "expired": "Expirované"
+    }
   },
   "sidebar": {
     "employees": "Zamestnanci",
@@ -263,11 +297,6 @@
       "title": "Prístup zamietnutý",
       "message": "Nemáte oprávnenie na prístup do tejto oblasti. Vyžadujú sa administrátorské práva."
     },
-    "login": {
-      "email": "E-mail",
-      "password": "Heslo",
-      "remember_me": "Zapamätať si ma"
-    },
     "employee_management": {
       "title": "Správa zamestnancov",
       "description": "Spravujte zamestnancov, schvaľujte registrácie a sledujte výkonnosť",
@@ -285,18 +314,14 @@
       "view_details": "Zobraziť detail",
       "no_employees": "Žiadni zamestnanci na zobrazenie",
       "filters": {
-        "title": "Filtre",
         "search": "Hľadať",
         "search_placeholder": "Hľadať podľa mena, e-mailu alebo telefónu",
         "contract_status": "Stav zmluvy",
-        "active_status": "Stav aktivity",
-        "reset": "Obnoviť filtre",
-        "clear_all": "Vymazať všetko"
+        "active_status": "Stav aktivity"
       },
       "approve_dialog": {
         "title": "Schváliť zamestnanca",
         "subtitle": "Vyberte krajinu, v ktorej je tento upratovač oprávnený pracovať. Určuje predvolenú menu, jazyk a DPH.",
-        "cancel_button": "Zrušiť",
         "approve_button": "Schváliť zamestnanca"
       },
       "reject_dialog": {
@@ -305,9 +330,6 @@
         "reason_label": "Dôvod zamietnutia",
         "reason_placeholder": "Zadajte podrobný dôvod zamietnutia...",
         "reason_hint": "Maximálne 500 znakov",
-        "reason_required": "Dôvod zamietnutia je povinný",
-        "reason_too_long": "Dôvod zamietnutia je príliš dlhý (max. 500 znakov)",
-        "cancel_button": "Zrušiť",
         "reject_button": "Zamietnuť zamestnanca"
       },
       "messages": {
@@ -370,15 +392,6 @@
       "rejection_reason": "Dôvod zamietnutia",
       "rejected_by": "Zamietol",
       "rejected_at": "Zamietnuté dňa",
-      "availability": "Týždenná dostupnosť",
-      "Monday": "Pondelok",
-      "Tuesday": "Utorok",
-      "Wednesday": "Streda",
-      "Thursday": "Štvrtok",
-      "Friday": "Piatok",
-      "Saturday": "Sobota",
-      "Sunday": "Nedeľa",
-      "no_availability": "Dostupnosť nie je nastavená",
       "documents": "Dokumenty",
       "no_documents": "Žiadne nahrané dokumenty",
       "pending_documents": "Čakajúce dokumenty",
@@ -405,10 +418,9 @@
         "subtitle": "Vyberte krajinu, v ktorej je tento upratovač oprávnený pracovať. Určuje predvolenú menu, jazyk a DPH.",
         "work_country_label": "Pracovná krajina",
         "work_country_hint": "Vybrať možno len krajiny, v ktorých momentálne poskytujeme služby.",
-        "work_country_required": "Pracovná krajina je povinná",
+        "notes_label": "Poznámky k schváleniu",
         "notes_placeholder": "Voliteľné poznámky k schváleniu...",
         "notes_hint": "Maximálne 1000 znakov",
-        "cancel_button": "Zrušiť",
         "approve_button": "Schváliť zamestnanca"
       },
       "reject_employee_dialog": {
@@ -419,7 +431,6 @@
         "reason_hint": "Maximálne 500 znakov",
         "reason_required": "Dôvod zamietnutia je povinný",
         "reason_too_long": "Dôvod zamietnutia je príliš dlhý (max. 500 znakov)",
-        "cancel_button": "Zrušiť",
         "reject_button": "Zamietnuť zamestnanca"
       },
       "reject_document_dialog": {
@@ -430,7 +441,6 @@
         "reason_hint": "Maximálne 500 znakov",
         "reason_required": "Dôvod zamietnutia je povinný",
         "reason_too_long": "Dôvod zamietnutia je príliš dlhý (max. 500 znakov)",
-        "cancel_button": "Zrušiť",
         "reject_button": "Zamietnuť dokument"
       },
       "messages": {
@@ -444,8 +454,6 @@
         "document_reject_success": "Dokument bol úspešne zamietnutý",
         "document_reject_error": "Nepodarilo sa zamietnuť dokument",
         "document_download_error": "Nepodarilo sa stiahnuť dokument",
-        "availability_save_success": "Dostupnosť bola úspešne aktualizovaná",
-        "availability_save_error": "Nepodarilo sa aktualizovať dostupnosť",
         "employee_update_success": "Zamestnanec bol úspešne aktualizovaný",
         "employee_update_error": "Nepodarilo sa aktualizovať zamestnanca",
         "pay_config_save_success": "Konfigurácia platby úspešne uložená",
@@ -454,12 +462,6 @@
         "pay_config_delete_error": "Nepodarilo sa zmazať konfiguráciu platby",
         "pay_config_bulk_success": "Konfigurácie platby použité: {{created}} vytvorených, {{skipped}} preskočených",
         "weekly_limit_save_success": "Týždenný limit zakázok bol aktualizovaný"
-      },
-      "document_status": {
-        "pending": "Čakajúci",
-        "approved": "Schválený",
-        "rejected": "Zamietnutý",
-        "unknown": "Neznámy"
       },
       "grade": "Hodnosť",
       "document_types": {
@@ -544,7 +546,10 @@
       },
       "weekly_order_limit": "Týždenný limit zakázok",
       "weekly_order_limit_unlimited": "Neobmedzený",
-      "weekly_order_limit_hint": "Nechajte prázdne pre neobmedzený počet"
+      "weekly_order_limit_hint": "Nechajte prázdne pre neobmedzený počet",
+      "not_found": "Zamestnanec sa nenašiel",
+      "actions_section": "Akcie",
+      "rate_format": "{{base}} + {{room}}/izba + {{bath}}/kúpeľňa"
     },
     "order_management": {
       "title": "Správa objednávok",
@@ -562,7 +567,6 @@
       "view_details": "Zobraziť detail",
       "no_orders": "Žiadne objednávky",
       "filters": {
-        "title": "Filtre",
         "search": "Hľadať",
         "search_placeholder": "Hľadať podľa mena zákazníka alebo čísla objednávky",
         "order_status": "Stav objednávky",
@@ -570,8 +574,6 @@
         "date_range": "Časové obdobie",
         "date_from": "Dátum od",
         "date_to": "Dátum do",
-        "reset": "Obnoviť filtre",
-        "clear_all": "Vymazať všetko",
         "currency": "Mena"
       },
       "order_status": {
@@ -767,23 +769,15 @@
       "total_amount": "Celková suma",
       "status": "Stav",
       "pdf_status": "PDF",
-      "pdf_state": {
-        "ready": "Pripravené",
-        "failed": "Zlyhalo",
-        "pending": "Generuje sa…"
-      },
       "generated_at": "Vygenerované",
       "actions": "Akcie",
       "view_details": "Zobraziť detail",
       "download": "Stiahnuť PDF",
       "no_invoices": "Žiadne faktúry",
       "filters": {
-        "title": "Filtre",
         "search": "Hľadať",
         "search_placeholder": "Hľadať podľa čísla faktúry alebo zamestnanca",
         "status": "Stav faktúry",
-        "reset": "Obnoviť filtre",
-        "clear_all": "Vymazať všetko",
         "currency": "Mena"
       },
       "invoice_status": {
@@ -819,7 +813,6 @@
         "failure": "Zlyhanie"
       },
       "filters": {
-        "title": "Filtre",
         "actor": "Aktér",
         "actor_id": "ID aktéra",
         "actor_email": "E-mail aktéra",
@@ -831,8 +824,6 @@
         "date_range": "Časové obdobie",
         "date_from": "Od",
         "date_to": "Do",
-        "reset": "Obnoviť filtre",
-        "clear_all": "Vymazať všetko",
         "actor_role": "Rola aktéra"
       },
       "history": {
@@ -1040,11 +1031,8 @@
       "delete_confirm": "Naozaj chcete odstrániť túto službu? Túto akciu nie je možné vrátiť späť.",
       "no_services": "Žiadne služby",
       "filters": {
-        "title": "Filtre",
         "search": "Hľadať",
         "search_placeholder": "Hľadať podľa názvu alebo popisu",
-        "reset": "Obnoviť filtre",
-        "clear_all": "Vymazať všetko",
         "status": "Stav",
         "status_all": "Všetko",
         "status_active": "Aktívne",
@@ -1071,18 +1059,6 @@
       "activate_service": "Aktivovať službu",
       "deactivate_service": "Deaktivovať službu",
       "deactivate_confirm": "Deaktivovať „{{name}}“? Služba sa skryje z rezervačného katalógu, história zostane zachovaná."
-    },
-    "service_edit": {
-      "create_title": "Vytvoriť službu",
-      "edit_title": "Upraviť službu",
-      "basic_info": "Základné informácie",
-      "translations_cs": "Čeština (CS)",
-      "translations_en": "Angličtina (EN)",
-      "name": "Názov",
-      "description": "Popis",
-      "base_price": "Základná cena (CZK)",
-      "per_room_price": "Cena za izbu (CZK)",
-      "estimated_time": "Odhadovaný čas (minúty)"
     },
     "service_form": {
       "create_title": "Vytvoriť službu",
@@ -1116,11 +1092,8 @@
       "delete_confirm": "Naozaj chcete odstrániť tento balíček? Túto akciu nie je možné vrátiť späť.",
       "no_packages": "Žiadne balíčky",
       "filters": {
-        "title": "Filtre",
         "search": "Hľadať",
         "search_placeholder": "Hľadať podľa názvu alebo popisu",
-        "reset": "Obnoviť filtre",
-        "clear_all": "Vymazať všetko",
         "status": "Stav",
         "status_all": "Všetko",
         "status_active": "Aktívne",
@@ -1151,7 +1124,7 @@
       "create_title": "Vytvoriť balíček",
       "edit_title": "Upraviť balíček",
       "basic_info": "Základné informácie",
-      "services": "Zahrnuté služby",
+      "contents": "Obsah balíčka",
       "translations": "Preklady",
       "name": "Názov",
       "description": "Popis",
@@ -1161,7 +1134,6 @@
       "price_required": "Povinné",
       "price_optional": "Nepovinné",
       "included_services": "Zahrnuté služby",
-      "select_services": "Vyberte služby na zahrnutie",
       "weights_title": "Relatívne cenové váhy",
       "weight": "Váha",
       "derived_gross": "Odvodená hrubá cena",
@@ -1187,11 +1159,8 @@
       "deactivate_confirm": "Deaktivovať „{{name}}“? Doplnok sa skryje z rezervačného sprievodcu, objednávky, ktoré si ho kúpili, zostanú zachované.",
       "no_extras": "Žiadne doplnky",
       "filters": {
-        "title": "Filtre",
         "search": "Hľadať",
         "search_placeholder": "Hľadať podľa identifikátora, názvu alebo popisu",
-        "reset": "Obnoviť filtre",
-        "clear_all": "Vymazať všetko",
         "status": "Stav",
         "status_all": "Všetko",
         "status_active": "Aktívne",
@@ -1240,11 +1209,8 @@
       "activate_confirm": "Naozaj chcete aktivovať tohto administrátora? Získa opäť prístup do administračného panela.",
       "no_users": "Žiadni administrátori",
       "filters": {
-        "title": "Filtre",
         "search": "Hľadať",
-        "search_placeholder": "Hľadať podľa mena alebo e-mailu",
-        "reset": "Obnoviť filtre",
-        "clear_all": "Vymazať všetko"
+        "search_placeholder": "Hľadať podľa mena alebo e-mailu"
       },
       "columns": {
         "name": "Meno",
@@ -1299,11 +1265,8 @@
       "delete_confirm": "Naozaj chcete odstrániť tento jazyk? Môže to ovplyvniť existujúce preklady.",
       "no_languages": "Žiadne jazyky",
       "filters": {
-        "title": "Filtre",
         "search": "Hľadať",
-        "search_placeholder": "Hľadať podľa kódu alebo názvu",
-        "reset": "Obnoviť filtre",
-        "clear_all": "Vymazať všetko"
+        "search_placeholder": "Hľadať podľa kódu alebo názvu"
       },
       "columns": {
         "code": "Kód",
@@ -1377,7 +1340,6 @@
       "delete_confirm": "Naozaj chcete odstrániť túto krajinu? Môže to ovplyvniť existujúce dáta.",
       "set_default_market": "Nastaviť ako predvolený trh",
       "set_default_market_confirm": "Nastaviť {{name}} ako predvolený trh? Návštevníci ho uvidia, kým si nevyberú krajinu.",
-      "default_market": "Predvolený trh",
       "no_countries": "Žiadne krajiny",
       "columns": {
         "iso_code": "ISO kód",
@@ -1428,9 +1390,7 @@
         "zip_prefix_hint": "Zatiaľ sa nevynucuje — zachytené pre budúcu prísnejšiu validáciu.",
         "active_label": "Aktívne",
         "active": "Aktívne",
-        "inactive": "Neaktívne",
-        "save": "Uložiť",
-        "cancel": "Zrušiť"
+        "inactive": "Neaktívne"
       },
       "messages": {
         "country_updated": "Stav obsluhy krajiny aktualizovaný",
@@ -1458,9 +1418,6 @@
       "iso_alpha2": "Dvojpísmenový kód",
       "iso_alpha2_placeholder": "napr. CZ, US, DE",
       "iso_alpha2_help": "ISO 3166-1 alpha-2. Zákazníci ho vidia na štítku trhu.",
-      "validation": {
-        "iso_alpha2_invalid": "Presne dve písmená."
-      },
       "market": "Trh",
       "insurance_coverage_amount": "Poistné krytie na jednu rezerváciu",
       "insurance_coverage_amount_placeholder": "Nechajte prázdne, ak sa nemá uvádzať žiadna suma",
@@ -1757,12 +1714,6 @@
         "requested_on": "Požiadané",
         "status": "Stav"
       },
-      "status": {
-        "pending": "Čaká",
-        "approved": "Schválené",
-        "rejected": "Zamietnuté",
-        "unknown": "Neznáme"
-      },
       "messages": {
         "approve_success": "Dokument vymazaný",
         "reject_success": "Žiadosť zamietnutá"
@@ -1777,11 +1728,8 @@
       "delete_confirm": "Naozaj chcete odstrániť tieto informácie o spoločnosti? Túto akciu nie je možné vrátiť späť.",
       "no_companies": "Žiadne informácie o spoločnostiach",
       "filters": {
-        "title": "Filtre",
         "search": "Hľadať",
-        "search_placeholder": "Hľadať podľa názvu alebo mesta",
-        "reset": "Obnoviť filtre",
-        "clear_all": "Vymazať všetko"
+        "search_placeholder": "Hľadať podľa názvu alebo mesta"
       },
       "columns": {
         "legal_name": "Obchodný názov",
@@ -1889,13 +1837,6 @@
         "acts": "Úkony",
         "facts": "Skutočnosti na vysporiadanie"
       },
-      "states": {
-        "Operating": "V prevádzke",
-        "WindingDown": "Ukončuje sa",
-        "Deactivated": "Deaktivovaná",
-        "Frozen": "Zmrazená",
-        "Archived": "Archivovaná"
-      },
       "stamps": {
         "wind_down": "Ukončenie od {{from}} — vyžiadané {{requestedOn}}, {{email}}",
         "deactivated": "Deaktivovaná {{date}}, {{email}}",
@@ -1992,10 +1933,7 @@
       "apply_filter": "Použiť filter",
       "reset": "Obnoviť filtre",
       "filters": {
-        "title": "Filtre",
         "date_range": "Časové obdobie",
-        "reset": "Obnoviť filtre",
-        "clear_all": "Vymazať všetko",
         "currency": "Mena"
       },
       "revenue_report": "Report príjmov",
@@ -2083,14 +2021,6 @@
         "download": "Stiahnuť PDF",
         "regenerate_pdf": "Obnoviť PDF"
       },
-      "invoice_status": {
-        "pending": "Čakajúca",
-        "approved": "Schválená",
-        "paid": "Zaplatená",
-        "disputed": "Reklamovaná",
-        "rejected": "Zamietnutá",
-        "cancelled": "Zrušená"
-      },
       "order_pays": {
         "order_number": "Objednávka č.",
         "base_pay": "Základná odmena",
@@ -2105,7 +2035,8 @@
         "title": "Zrušiť faktúru",
         "subtitle": "Uveďte dôvod zrušenia tejto faktúry",
         "reason_label": "Dôvod zrušenia",
-        "reason_placeholder": "Zadajte dôvod zrušenia..."
+        "reason_placeholder": "Zadajte dôvod zrušenia...",
+        "submit": "Zrušiť faktúru"
       },
       "assign_variable_symbol_confirm": {
         "title": "Priradiť variabilný symbol?",
@@ -2192,7 +2123,12 @@
         "edit_title": "Upraviť promo kód",
         "submit_create": "Vytvoriť kód",
         "submit_update": "Uložiť zmeny",
-        "cancel": "Zrušiť",
+        "section": {
+          "identity": "Kód a zľava",
+          "limits": "Podmienky uplatnenia",
+          "validity": "Platnosť",
+          "notes": "Poznámky a stav"
+        },
         "field": {
           "code": "Kód",
           "code_help": "3–20 znakov, len A-Z 0-9",
@@ -2229,19 +2165,24 @@
       },
       "detail": {
         "title": "Detail promo kódu",
+        "details_title": "Podrobnosti",
+        "actions_section": "Akcie",
         "redemptions_title": "Uplatnenia",
         "redemptions_empty": "Zatiaľ žiadne uplatnenia",
         "deactivate_button": "Deaktivovať",
         "deactivate_confirm_title": "Deaktivovať tento kód?",
         "deactivate_confirm_body": "Zákazníci už nebudú môcť tento kód uplatniť. Existujúce uplatnenia zostanú.",
         "deactivate_confirm_yes": "Deaktivovať",
-        "deactivate_confirm_cancel": "Ponechať aktívne",
         "column": {
           "user": "Používateľ",
           "order": "Objednávka",
           "applied": "Uplatnená zľava",
           "redeemed_on": "Uplatnené"
         }
+      },
+      "filters": {
+        "search": "Hľadať",
+        "status": "Stav"
       }
     },
     "loyalty_tiers": {
@@ -2268,7 +2209,6 @@
       "form": {
         "title": "Upraviť úroveň",
         "submit": "Uložiť zmeny",
-        "cancel": "Zrušiť",
         "success": "Úroveň aktualizovaná",
         "field": {
           "threshold": "Limit doživotných bodov",
@@ -2281,9 +2221,6 @@
           "perks_json_help": "Pole objektov s ikonou a kľúčom popisku. Príklad: [{\"icon\":\"badge\",\"labelKey\":\"loyalty.perks.welcome_badge\"}]"
         },
         "validation": {
-          "threshold_min": "Limit musí byť 0 alebo viac",
-          "discount_range": "Zľava musí byť medzi 0 a 100",
-          "min_order_min": "Minimálna objednávka musí byť 0 alebo viac",
           "perks_json_invalid": "Výhody musia byť platný JSON"
         },
         "error": {
@@ -2297,7 +2234,6 @@
         "preview_results_title": "Náhľad dopadu",
         "result_row": "{{tier}}: {{currentCount}} → {{newCount}} ({{delta}})",
         "apply_button": "Použiť zmeny",
-        "cancel_button": "Zrušiť",
         "applying": "Prebieha ukladanie zmien...",
         "success": "Limity aktualizované",
         "error": {
@@ -2315,9 +2251,7 @@
       "tier_label": "Aktuálna úroveň",
       "lifetime_points": "Celkové body",
       "completed_bookings_label": "Dokončené upratovania",
-      "completed_bookings": "{{count}} dokončených upratovaní",
       "tier_achieved_label": "Úroveň dosiahnutá",
-      "tier_achieved_on": "Úroveň dosiahnutá dňa {{date}}",
       "next_tier_label": "Postup",
       "points_to_next_tier": "{{count}} bodov do {{tier}}",
       "max_tier_reached": "Najvyššia úroveň dosiahnutá",
@@ -2360,15 +2294,8 @@
           "reason": "Dôvod",
           "reason_help": "Viditeľné v audit logu."
         },
-        "validation": {
-          "points_min": "Minimálne 1 bod",
-          "points_max": "Maximálne 100 000 bodov",
-          "reason_required": "Dôvod je povinný",
-          "reason_max": "Dôvod môže mať maximálne 500 znakov"
-        },
         "submit_grant": "Pridať",
         "submit_revoke": "Odobrať",
-        "cancel": "Zrušiť",
         "success_grant": "Body pridané",
         "success_revoke": "Body odobrané",
         "error": {
@@ -2408,7 +2335,6 @@
         "dialog": {
           "title": "Prideľiť kredit",
           "lede": "Od potvrdenia ide o sumu, ktorú spoločnosť zákazníkovi dlží. Odtiaľto sa nedá vziať späť — zákazník ju využije pri objednávke, alebo požiada o vyplatenie.",
-          "cancel": "Zrušiť",
           "submit": "Prideľiť kredit",
           "field": {
             "currency": "Mena",
@@ -2416,13 +2342,6 @@
             "reason": "Dôvod",
             "note": "Čo sa stalo",
             "note_help": "Zaznamenané pod vaším menom. Napíšte to, čo by ste sami chceli čítať, než tomuto zákazníkovi znova niečo prideliťe."
-          },
-          "validation": {
-            "currency_required": "Vyberte menu.",
-            "amount_min": "Zadajte sumu väčšiu ako nula.",
-            "amount_max": "To presahuje limit pre jeden kredit. Vystavte ho po menších sumách.",
-            "note_required": "Uveďte, čo sa stalo.",
-            "note_max": "Maximálne 500 znakov."
           }
         },
         "column": {
@@ -2435,7 +2354,7 @@
         "expire_error": "Zostatok sa nepodarilo odpísať.",
         "expire_dialog": {
           "title": "Odpísať zostatok kreditu",
-          "lede": "Odpíše celý zostatok {{amount}} {{currency}} a nedá sa to vrátiť späť. Použite, keď zákazník odchádza: kým kredit zostáva, výmaz účtu sa odmietne.",
+          "lede": "Odpíše celý zostatok {{amount}} a nedá sa to vrátiť späť. Použite, keď zákazník odchádza: kým kredit zostáva, výmaz účtu sa odmietne.",
           "field": {
             "note": "Dôvod",
             "note_help": "Jediný záznam o tom, prečo firma prestala dlžiť peniaze. Uveďte, kto o to požiadal."
@@ -2454,7 +2373,9 @@
         "status_expired": "Expirované",
         "date_from": "Od",
         "date_to": "Do",
-        "status_reversed": "Stornované"
+        "status_reversed": "Stornované",
+        "status": "Stav",
+        "date_range": "Obdobie"
       },
       "column": {
         "referrer": "Odporúčajúci",
@@ -2486,10 +2407,6 @@
         "field": {
           "reason": "Dôvod",
           "reason_help": "Povinné. Viditeľné vo vernostnom denníku."
-        },
-        "validation": {
-          "reason_required": "Dôvod je povinný",
-          "reason_max": "Dôvod môže mať najviac 500 znakov"
         },
         "submit_reverse": "Stornovať",
         "submit_force_qualify": "Uznať",
@@ -2584,11 +2501,13 @@
     },
     "membership_plans": {
       "title": "Plány členstva",
-      "description": "Správa predplatných plánov: ceny, Stripe price id, skúšobné obdobia a výhody.",
+      "description": "Správa predplatných plánov: ceny, Stripe price id a výhody.",
       "create_plan": "Nový plán",
       "filter": {
         "search": "Hľadať podľa kódu alebo názvu",
-        "active_only": "Iba aktívne"
+        "active_only": "Iba aktívne",
+        "search_label": "Hľadať",
+        "status": "Stav"
       },
       "load_error": "Plány členstva sa nepodarilo načítať. Skúste to neskôr.",
       "empty": "Zatiaľ žiadne plány členstva",
@@ -2599,7 +2518,6 @@
         "price": "Cena",
         "monthly_equivalent": "Mesačný ekvivalent",
         "discount": "Zľava",
-        "trial_days": "Skúšobné dni",
         "free_cancel_window": "Bezplatné storno (h)",
         "express": "Expres",
         "status": "Stav",
@@ -2630,7 +2548,7 @@
         },
         "field": {
           "code": "Kód",
-          "code_help": "Jedinečný, veľké písmená/číslice/podčiarkovníky. Neskôr ho nemožno zmeniť.",
+          "code_help": "Jedinečný, 2–50 znakov: veľké písmená/číslice/podčiarkovníky. Neskôr ho nemožno zmeniť.",
           "name": "Názov",
           "interval": "Fakturačné obdobie",
           "interval_immutable": "Fakturačné obdobie nemožno po vytvorení zmeniť.",
@@ -2638,19 +2556,12 @@
           "stripe_price_id": "Stripe Price id",
           "stripe_price_id_help": "Skopírujte zo Stripe dashboardu (price_...). Platforma ceny v Stripe nevytvára.",
           "discount": "Zľava (%)",
-          "trial_days": "Skúšobné obdobie (dni)",
           "free_cancel_window": "Lehota na bezplatné storno (hodiny)",
           "express_upgrade": "Umožňuje expresný upgrade",
           "express_upgrades_per_month": "Zahrnuté expresné upgrady za mesiac",
           "express_upgrades_per_month_help": "Koľko expresných rezervácií dostane člen každý mesiac bez expresného príplatku. Nula znamená žiadne."
         },
         "validation": {
-          "code_invalid": "2–50 znakov: písmená, číslice alebo podčiarkovníky.",
-          "price_negative": "Cena musí byť nula alebo vyššia.",
-          "discount_range": "Zľava musí byť medzi 0 a 100.",
-          "trial_negative": "Počet skúšobných dní musí byť nula alebo vyšší.",
-          "window_negative": "Lehota musí byť nula alebo vyššia.",
-          "express_upgrades_negative": "Počet zahrnutých expresných upgradov musí byť nula alebo vyšší.",
           "price_block_half_filled": "Zadajte cenu aj Stripe Price id, alebo nechajte obe polia prázdne, aby plán v tejto mene nebol v predaji."
         },
         "submit_create": "Vytvoriť plán",
@@ -2837,6 +2748,7 @@
       "export_error": "Export údajov subjektu zlyhal",
       "incident_file": {
         "button": "Spis incidentu (PDF)",
+        "submit": "Zostaviť spis",
         "order_scope": "Objednávka (voliteľné)",
         "order_scope_placeholder": "Celý účet",
         "order_scope_hint": "Nechajte prázdne pre celý účet, alebo vyberte jednu objednávku tohto zákazníka a spis sa obmedzí na ňu.",
@@ -2850,24 +2762,14 @@
       }
     }
   },
-  "employees": {
-    "title": "Správa zamestnancov",
-    "list": "Zoznam zamestnancov",
-    "pending": "Čakajúce schválenia",
-    "approved": "Schválení",
-    "rejected": "Zamietnutí"
-  },
   "pay_periods": {
     "title": "Správa výplatných období",
     "description": "Spravujte výplatné obdobia, uzatvárajte obdobia a sledujte platby zamestnancov",
     "create_new": "Vytvoriť nové výplatné obdobie",
     "confirm_close": "Naozaj chcete uzavrieť toto výplatné obdobie? Túto akciu nie je možné vrátiť späť.",
     "filters": {
-      "title": "Filtre",
       "status": "Stav",
-      "year": "Rok",
-      "reset": "Obnoviť filtre",
-      "clear_all": "Vymazať všetko"
+      "year": "Rok"
     },
     "list": {
       "title": "Výplatné obdobia",
@@ -2942,18 +2844,6 @@
       "close_error": "Nepodarilo sa uzavrieť výplatné obdobie"
     }
   },
-  "orders": {
-    "title": "Správa objednávok",
-    "list": "Všetky objednávky",
-    "assign": "Priradiť objednávku"
-  },
-  "invoices": {
-    "title": "Správa faktúr",
-    "list": "Všetky faktúry",
-    "pending": "Čakajúce na schválenie",
-    "approved": "Schválené",
-    "cancelled": "Zrušené"
-  },
   "validation": {
     "common": {
       "not_all_fields_filled": "Nie sú správne vyplnené všetky polia",
@@ -2961,6 +2851,8 @@
       "email": "Pole musí obsahovať platnú e-mailovú adresu",
       "min_length": "Pole musí obsahovať aspoň {{ minLength }} znakov",
       "max_length": "Pole môže obsahovať maximálne {{ maxLength }} znakov",
+      "min": "Hodnota musí byť aspoň {{ min }}",
+      "max": "Hodnota nesmie byť väčšia ako {{ max }}",
       "pattern": "Pole nezodpovedá požadovanému formátu",
       "phone_number": "Neplatný formát telefónneho čísla",
       "iban": "Neplatný formát IBAN",
@@ -2970,13 +2862,11 @@
     },
     "auth": {
       "email_not_confirmed": "E-mailová adresa nie je potvrdená",
-      "admin_access_required": "Na prístup k tomuto panelu je potrebný administrátorský prístup",
       "login_failed": "Prihlásenie zlyhalo. Skontrolujte svoje prihlasovacie údaje a skúste to znova."
     },
     "file": {
       "required": "Súbory sú povinné",
       "invalid_type": "Neplatný typ súboru. Vyberte platný súbor dokumentu.",
-      "size_too_large": "Súbor je príliš veľký. Maximálna povolená veľkosť je {{ maxSize }}MB.",
       "too_few_files": "Príliš málo vybraných súborov. Minimálny požadovaný počet: {{ min }}",
       "too_many_files": "Príliš veľa vybraných súborov. Maximálny povolený počet: {{ max }}",
       "generic_error": "Vyskytla sa chyba pri overovaní súboru"
@@ -3111,10 +3001,8 @@
     "employee": {
       "already_approved": "Zamestnanec už bol schválený",
       "already_rejected": "Zamestnanec už bol zamietnutý",
-      "documents_missing": "Chýbajú požadované dokumenty",
       "documents_not_approved": "Tohto upratovača nemožno schváliť, kým nie sú nahraté a schválené všetky dokumenty, ktoré vyžaduje krajina výkonu jeho práce.",
       "not_allowed_to_update": "Nemáte oprávnenie aktualizovať tohto zamestnanca",
-      "not_existing_email": "Zamestnanec s týmto e-mailom nebol nájdený",
       "not_found": "Zamestnanec nebol nájdený",
       "pay_config_missing": "Tento upratovač nemá nastavenú odmenu pri jednej alebo viacerých aktívnych službách či balíkoch. Pred schválením chýbajúce nastavenie doplňte.",
       "profile_incomplete": "Profil zamestnanca nie je kompletný",
@@ -3130,16 +3018,12 @@
     "file": {
       "content_type_doesnt_match": "Typ obsahu súboru sa nezhoduje",
       "count_exceeded": "Bolo nahraných príliš veľa súborov",
-      "count_too_few": "Bolo nahraných príliš málo súborov",
       "invalid_file_type": "Neplatný typ súboru",
       "required": "Súbor je povinný",
       "size_exceeded": "Veľkosť súboru prekročila maximálnu povolenú veľkosť",
-      "size_exceeded_10mb": "Veľkosť súboru nesmie prekročiť 10 MB",
       "type_not_allowed": "Typ súboru nie je povolený. Akceptované: PDF, JPEG, PNG, DOC, DOCX"
     },
     "gdpr": {
-      "export_failed": "Údaje tohto používateľa sa nepodarilo exportovať. Skúste to znova.",
-      "deletion_failed": "Tento účet sa nepodarilo zmazať. Skúste to znova.",
       "deletion_already_pending": "Žiadosť o zmazanie tohto účtu už prebieha.",
       "deletion_blocked_by_order": "Tento účet má aktívne objednávky a zatiaľ sa nedá zmazať.",
       "deletion_blocked_by_credit_balance": "Tento zákazník má stále kredit. Pred zmazaním účtu musí byť vyčerpaný alebo vyplatený.",
@@ -3180,29 +3064,22 @@
       }
     },
     "order": {
-      "actual_time": {
-        "positive": "Skutočný čas musí byť kladný"
-      },
       "after_photos": {
         "required": "Fotografie po dokončení sú povinné na dokončenie objednávky"
       },
-      "already_assigned": "Objednávka je už priradená",
       "already_cancelled": "Objednávka už bola zrušená",
       "already_completed": "Objednávka už bola dokončená",
       "cleaning_date": {
         "future": "Dátum upratovania musí byť v budúcnosti"
       },
       "completion_notes": {
-        "required": "Poznámky k dokončeniu sú povinné",
         "too_long": "Poznámky k dokončeniu sú príliš dlhé"
       },
-      "creation_failed": "Nepodarilo sa vytvoriť objednávku",
       "employee_already_assigned": "Zamestnanec je už priradený k tejto objednávke",
       "employee_not_assigned": "Zamestnanec nie je priradený k tejto objednávke",
       "empty": "Objednávka je prázdna",
       "in_progress_cannot_cancel": "Prebiehajúcu objednávku nie je možné zrušiť",
       "invalid_status_transition": "Táto zmena stavu nie je pre aktuálny stav objednávky povolená",
-      "max_employees_exceeded": "Bol prekročený maximálny počet zamestnancov",
       "no_available_spots": "Pre túto objednávku nie sú dostupné voľné miesta",
       "not_confirmed": "Objednávka nie je potvrdená",
       "not_found": "Objednávka nebola nájdená",
@@ -3279,11 +3156,9 @@
         "reference_already_assigned": "Táto faktúra už variabilný symbol má.",
         "reference_capacity_exhausted": "Variabilné symboly pre tento rok sú vyčerpané. Kontaktujte podporu.",
         "reference_missing": "Pred zaznamenaním platby priraďte variabilný symbol.",
-        "reference_unavailable": "Tento variabilný symbol sa už používa. Skúste to prosím znova.",
-        "template_not_found": "Šablóna faktúry nebola nájdená"
+        "reference_unavailable": "Tento variabilný symbol sa už používa. Skúste to prosím znova."
       },
       "no_active_period": "Nenašlo sa žiadne aktívne výplatné obdobie",
-      "no_currency": "Nebola nájdená žiadna mena",
       "no_pay_configuration": "Nebola nájdená žiadna konfigurácia odmien",
       "no_unpaid_order_pays": "Nenašli sa žiadne nevyplatené platby za objednávky",
       "pay": {
@@ -3304,7 +3179,6 @@
       "validity_range_invalid": "Dátum platnosti od nesmie byť neskorší ako dátum platnosti do."
     },
     "receipt": {
-      "generation_failed": "Nepodarilo sa vygenerovať účtenku",
       "not_found": "Účtenka nebola nájdená"
     },
     "referral": {
@@ -3347,9 +3221,6 @@
         "key_exists": "Preklad s týmto kľúčom už existuje",
         "not_found": "E-mailová šablóna nebola nájdená"
       },
-      "file_required": "Súbor šablóny je povinný",
-      "file_size_exceeded": "Veľkosť súboru šablóny bola prekročená",
-      "invalid_file_type": "Neplatný typ súboru šablóny",
       "invoice": {
         "in_use": "Nie je možné odstrániť šablónu faktúry, pretože sa práve používa",
         "not_found": "Šablóna faktúry nebola nájdená"
@@ -3379,19 +3250,10 @@
     "validation": {
       "date_must_be_in_past": "Dátum musí byť v minulosti",
       "invalid_age": "Neplatný vek",
-      "invalid_availability_format": "Neplatný formát dostupnosti. Dni musia byť platné názvy dní alebo dátumy (yyyy-MM-dd) a časové rozsahy musia mať začiatok pred koncom.",
-      "invalid_contract_status": "Neplatná hodnota stavu zmluvy",
       "invalid_date": "Neplatný dátum",
-      "invalid_iban": "Neplatný formát IBAN",
-      "invalid_national_id": "Neplatný formát národného ID",
       "invalid_password": "Neplatné heslo",
-      "invalid_phone_number": "Neplatný formát telefónneho čísla",
-      "invalid_tax_id": "Neplatný formát IČO",
-      "invalid_zip_code": "Neplatný formát PSČ",
       "must_be_positive": "Hodnota musí byť kladná",
-      "page_must_be_positive": "Stránka musí byť väčšia ako 0",
       "page_size_exceeded": "Veľkosť stránky nesmie prekročiť 100",
-      "page_size_must_be_positive": "Veľkosť stránky musí byť väčšia ako 0",
       "payout": {
         "account_number_required": "Zadajte číslo účtu",
         "country_not_supported": "Výplaty do banky v tejto krajine zatiaľ nie sú podporované",
@@ -3484,28 +3346,77 @@
       "acknowledged": "Akciu sa nepodarilo vykonať. Skúste to prosím znova."
     }
   },
-  "gdpr": {
-    "deletion_already_pending": "Žiadosť o vymazanie už prebieha.",
-    "deletion_blocked_by_order": "Účet nie je možné vymazať, kým máte aktívnu objednávku.",
-    "deletion_blocked_by_invoice": "Účet nie je možné vymazať, kým máte nevybavenú faktúru.",
-    "export_failed": "Export údajov zlyhal.",
-    "deletion_failed": "Výmaz účtu zlyhal."
-  },
-  "order": {
-    "review": {
-      "already_exists": "Túto objednávku ste už hodnotili."
-    }
-  },
   "recurring_booking": {
     "not_found": "Táto opakovaná objednávka už neexistuje."
-  },
-  "admin_user": {
-    "cannot_target_admin_via_gdpr_tool": "Na účty administrátorov nemožno použiť nástroje GDPR."
   },
   "admin_roles": {
     "administrator": "Administrátor",
     "manager": "Manažér",
     "support": "Podpora",
     "accountant": "Účtovník"
+  },
+  "primeng": {
+    "day_names": {
+      "sun": "Nedeľa",
+      "mon": "Pondelok",
+      "tue": "Utorok",
+      "wed": "Streda",
+      "thu": "Štvrtok",
+      "fri": "Piatok",
+      "sat": "Sobota"
+    },
+    "day_names_short": {
+      "sun": "Ne",
+      "mon": "Po",
+      "tue": "Ut",
+      "wed": "St",
+      "thu": "Št",
+      "fri": "Pi",
+      "sat": "So"
+    },
+    "day_names_min": {
+      "sun": "N",
+      "mon": "P",
+      "tue": "U",
+      "wed": "S",
+      "thu": "Š",
+      "fri": "P",
+      "sat": "S"
+    },
+    "month_names": {
+      "jan": "Január",
+      "feb": "Február",
+      "mar": "Marec",
+      "apr": "Apríl",
+      "may": "Máj",
+      "jun": "Jún",
+      "jul": "Júl",
+      "aug": "August",
+      "sep": "September",
+      "oct": "Október",
+      "nov": "November",
+      "dec": "December"
+    },
+    "month_names_short": {
+      "jan": "Jan",
+      "feb": "Feb",
+      "mar": "Mar",
+      "apr": "Apr",
+      "may": "Máj",
+      "jun": "Jún",
+      "jul": "Júl",
+      "aug": "Aug",
+      "sep": "Sep",
+      "oct": "Okt",
+      "nov": "Nov",
+      "dec": "Dec"
+    },
+    "today": "Dnes",
+    "clear": "Vymazať",
+    "apply": "Použiť",
+    "accept": "Áno",
+    "reject": "Nie",
+    "empty_message": "Nič sa nenašlo",
+    "empty_filter_message": "Nič sa nenašlo"
   }
 }

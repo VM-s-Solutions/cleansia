@@ -5,16 +5,22 @@ import {
   MembershipPlanListItem,
   PagedDataOfMembershipPlanListItem,
 } from '@cleansia/admin-services';
-import { SnackbarService } from '@cleansia/services';
+import { DialogService, SnackbarService } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
-import { of, throwError } from 'rxjs';
+import { EMPTY, of, throwError } from 'rxjs';
 import { MembershipPlanListFacade } from './membership-plan-list.facade';
 import { BILLING_INTERVAL_WIRE } from './membership-plan-list.models';
 
 describe('MembershipPlanListFacade', () => {
   let facade: MembershipPlanListFacade;
   let membershipClient: { getPaged: jest.Mock; deactivate: jest.Mock };
-  let snackbar: { showSuccess: jest.Mock; showError: jest.Mock };
+  let confirmMock: jest.Mock;
+  let snackbar: {
+    showSuccess: jest.Mock;
+    showSuccessTranslated: jest.Mock;
+    showError: jest.Mock;
+    showErrorTranslated: jest.Mock;
+  };
 
   const page = PagedDataOfMembershipPlanListItem.fromJS({
     data: [
@@ -34,14 +40,24 @@ describe('MembershipPlanListFacade', () => {
 
   beforeEach(() => {
     membershipClient = { getPaged: jest.fn(), deactivate: jest.fn() };
-    snackbar = { showSuccess: jest.fn(), showError: jest.fn() };
+    confirmMock = jest.fn().mockReturnValue(of(true));
+    snackbar = {
+      showSuccess: jest.fn(),
+      showSuccessTranslated: jest.fn(),
+      showError: jest.fn(),
+      showErrorTranslated: jest.fn(),
+    };
 
     TestBed.configureTestingModule({
       providers: [
         MembershipPlanListFacade,
         { provide: AdminMembershipClient, useValue: membershipClient },
         { provide: SnackbarService, useValue: snackbar },
-        { provide: TranslateService, useValue: { instant: (k: string) => k } },
+        { provide: DialogService, useValue: { confirmTranslated: confirmMock } },
+        {
+          provide: TranslateService,
+          useValue: { instant: (k: string) => k, currentLang: 'cs', onLangChange: EMPTY },
+        },
       ],
     });
 
@@ -91,6 +107,46 @@ describe('MembershipPlanListFacade', () => {
     expect(args[3]).toBe(50);
   });
 
+  describe('filters', () => {
+    beforeEach(() => {
+      jest.useFakeTimers();
+      membershipClient.getPaged.mockReturnValue(of(page));
+    });
+
+    afterEach(() => jest.useRealTimers());
+
+    it('sends the trimmed search once it settles and names it in one chip', () => {
+      facade.filterForm.patchValue({ search: ' plus ' });
+      jest.advanceTimersByTime(500);
+
+      const args = membershipClient.getPaged.mock.calls.at(-1);
+      expect(args?.[0]).toBeUndefined();
+      expect(args?.[1]).toBe('plus');
+      expect(args?.[2]).toBe(0);
+      expect(facade.filters.chips()).toEqual([
+        { key: 'search', label: 'pages.membership_plans.filter.search_label', value: 'plus' },
+      ]);
+    });
+
+    it('narrows to the active plans on the checkbox and names it in one chip; reset clears it', () => {
+      facade.filterForm.patchValue({ activeOnly: true });
+      jest.advanceTimersByTime(500);
+
+      expect(membershipClient.getPaged.mock.calls.at(-1)?.[0]).toBe(true);
+      expect(facade.filters.chips()).toEqual([
+        {
+          key: 'activeOnly',
+          label: 'pages.membership_plans.filter.status',
+          value: 'pages.membership_plans.filter.active_only',
+        },
+      ]);
+
+      facade.filters.reset();
+      expect(membershipClient.getPaged.mock.calls.at(-1)?.[0]).toBeUndefined();
+      expect(facade.filters.chips()).toEqual([]);
+    });
+  });
+
   it('sets the error flag and clears loading on load failure', () => {
     membershipClient.getPaged.mockReturnValue(
       throwError(() => new Error('boom'))
@@ -114,7 +170,7 @@ describe('MembershipPlanListFacade', () => {
     );
 
     expect(membershipClient.deactivate).toHaveBeenCalledWith('plan-1');
-    expect(snackbar.showSuccess).toHaveBeenCalledWith(
+    expect(snackbar.showSuccessTranslated).toHaveBeenCalledWith(
       'pages.membership_plans.messages.deactivate_success'
     );
     expect(membershipClient.getPaged).toHaveBeenCalledTimes(1);
@@ -125,7 +181,23 @@ describe('MembershipPlanListFacade', () => {
     expect(membershipClient.deactivate).not.toHaveBeenCalled();
   });
 
-  it('maps membership.plan.not_found to its translation key on deactivate failure', () => {
+  it('does nothing when the confirmation is declined', () => {
+    confirmMock.mockReturnValue(of(false));
+
+    facade.deactivatePlan(MembershipPlanListItem.fromJS({ id: 'plan-1', code: 'PLUS_MONTHLY' }));
+
+    expect(confirmMock).toHaveBeenCalledWith(
+      'pages.membership_plans.deactivate_confirm.message',
+      'pages.membership_plans.deactivate_confirm.title',
+      { code: 'PLUS_MONTHLY' },
+      { acceptLabelKey: 'pages.membership_plans.deactivate_confirm.yes' }
+    );
+    expect(membershipClient.deactivate).not.toHaveBeenCalled();
+    expect(membershipClient.getPaged).not.toHaveBeenCalled();
+    expect(facade.deactivating()).toBe(false);
+  });
+
+  it('leaves the membership.plan.not_found refusal to the interceptor toast on deactivate failure', () => {
     membershipClient.deactivate.mockReturnValue(
       throwError(() => ({ result: { detail: 'membership.plan.not_found' } }))
     );
@@ -134,13 +206,11 @@ describe('MembershipPlanListFacade', () => {
       MembershipPlanListItem.fromJS({ id: 'plan-1', isActive: true })
     );
 
-    expect(snackbar.showError).toHaveBeenCalledWith(
-      'api.membership.plan.not_found'
-    );
+    expect(snackbar.showErrorTranslated).not.toHaveBeenCalled();
     expect(facade.deactivating()).toBe(false);
   });
 
-  it('falls back to the generic membership error for unknown codes', () => {
+  it('leaves an unknown refusal to the interceptor toast', () => {
     membershipClient.deactivate.mockReturnValue(
       throwError(() => ({ result: { detail: 'something.unknown' } }))
     );
@@ -149,9 +219,7 @@ describe('MembershipPlanListFacade', () => {
       MembershipPlanListItem.fromJS({ id: 'plan-1', isActive: true })
     );
 
-    expect(snackbar.showError).toHaveBeenCalledWith(
-      'api.membership.plan.action_failed'
-    );
+    expect(snackbar.showErrorTranslated).not.toHaveBeenCalled();
   });
 
   it('keeps the row currency code the DTO carries — the label never comes from a second read', () => {

@@ -1,0 +1,143 @@
+SOURCE: lawyers-docs\SMLOUVY CleanSia\SMLOUVY\cleansia_reklamacni_rad.docx
+Paragraph IDs are extraction references, not legal clause numbers.
+
+[P001] [word/document.xml] CLEANSIA
+[P002] [word/document.xml] REKLAMAČNÍ ŘÁD
+[P003] [word/document.xml] Postup pro podávání a řešení reklamací úklidových služeb
+[P004] [word/document.xml] Provozovatel:
+[P005] [word/document.xml] Cleansia s.r.o., IČO: [Doplnit], sídlo: [Doplnit]
+[P006] [word/document.xml] Verze:
+[P007] [word/document.xml] 1.1
+[P008] [word/document.xml] Účinnost od:
+[P009] [word/document.xml] ................................................
+[P010] [word/document.xml] Právní základ:
+[P011] [word/document.xml] Zákon č. 89/2012 Sb. (OZ); zákon č. 634/1992 Sb. (ochrana spotřebitele)
+[P012] [word/document.xml] Reklamace:
+[P013] [word/document.xml] [Doplnit reklamační e-mail]  |  In-app formulář
+[P014] [word/document.xml] Tento Reklamační řád je nedílnou součástí Všeobecných obchodních podmínek (VOP) Cleansia s.r.o. a upravuje postup při podávání, prošetření a řešení reklamací úklidových služeb zprostředkovaných prostřednictvím platformy Cleansia. Reklamační řád je dostupný na webu Cleansia a v Aplikaci.
+[P015] [word/document.xml] I.
+[P016] [word/document.xml] Základní ustanovení
+[P017] [word/document.xml] 1.1  Provozovatel
+[P018] [word/document.xml] Poskytovatelem platformy a zprostředkovatelem úklidových služeb je Cleansia s.r.o., IČO: [Doplnit], se sídlem [Doplnit] (dále jen "Cleansia"). Přímým poskytovatelem úklidových služeb je Zhotovitel jakožto samostatná OSVČ.
+[P019] [word/document.xml] 1.2  Kdo může reklamovat
+[P020] [word/document.xml] Reklamaci je oprávněn podat každý Zákazník, který si prostřednictvím Aplikace objednal a zaplatil úklidovou službu a který je nespokojen s kvalitou jejího provedení nebo který utrpěl škodu v souvislosti s jejím výkonem.
+[P021] [word/document.xml] 1.3  Kontakty pro reklamace
+[P022] [word/document.xml] Reklamace je možné podat prostřednictvím:
+[P023] [word/document.xml] In-app formuláře v Aplikaci (sekce "Moje zakázky" → "Nahlásit problém") — doporučený způsob, umožňuje přiložit fotodokumentaci přímo k reklamaci.
+[P024] [word/document.xml] E-mailu na adresu: [doplnit reklamační e-mail].
+[P025] [word/document.xml] Písemně na adresu: [doplnit adresu sídla Cleansia].
+[P026] [word/document.xml] II.
+[P027] [word/document.xml] Co lze reklamovat
+[P028] [word/document.xml] 2.1  Oprávněné důvody reklamace
+[P029] [word/document.xml] Zákazník je oprávněn podat reklamaci zejména v následujících případech:
+[P030] [word/document.xml] Nekvalitní provedení úklidu — neuklizené prostory, vynechané oblasti zahrnuté v objednávce, viditelné skvrny po čištění.
+[P031] [word/document.xml] Poškození majetku Zákazníka — rozbité, poškrábané, potrhané nebo jinak poškozené předměty během úklidu.
+[P032] [word/document.xml] Krádež nebo ztráta majetku — pohřešování předmětů v době po výkonu zakázky.
+[P033] [word/document.xml] Chování Zhotovitele v rozporu s Kodexem chování Cleansia — nevhodná komunikace, fotografování bez souhlasu apod.
+[P034] [word/document.xml] Nedodržení dohodnutého termínu nebo rozsahu služby bez předchozího oznámení.
+[P035] [word/document.xml] Jiné závažné pochybení při výkonu zakázky.
+[P036] [word/document.xml] 2.2  Co reklamovat nelze
+[P037] [word/document.xml] Reklamace nebude uznána v následujících situacích:
+[P038] [word/document.xml] Zákazník nezajistil dostatečný přístup k místu výkonu zakázky (viz VOP čl. 3.4).
+[P039] [word/document.xml] Zákazník poskytl nepravdivé nebo neúplné informace o místě výkonu zakázky.
+[P040] [word/document.xml] Škoda vznikla na předmětu, o jehož existenci nebo umístění Zhotovitel nemohl vědět (skryté předměty).
+[P041] [word/document.xml] Zákazník reklamaci podal po uplynutí lhůty dle čl. III.
+[P042] [word/document.xml] Reklamovaná skutečnost je subjektivním estetickým hodnocením, nikoliv objektivně měřitelným nedostatkem.
+[P043] [word/document.xml] III.
+[P044] [word/document.xml] Lhůty pro podání reklamace
+[P045] [word/document.xml] 3.1  Nekvalitní úklid
+[P046] [word/document.xml] Reklamaci nekvalitního provedení úklidu je Zákazník povinen podat nejpozději do 24 hodin od dokončení zakázky potvrzeného v Aplikaci. Po uplynutí této lhůty není možné spolehlivě ověřit původ nedostatků.
+[P047] [word/document.xml] 3.2  Škoda na majetku
+[P048] [word/document.xml] Reklamaci škody na majetku Zákazníka je nutno podat nejpozději do 24 hodin od dokončení zakázky. Škody oznámené později nemusí být uznány z důvodu nemožnosti ověření původu poškození.
+[P049] [word/document.xml] 3.3  Krádež nebo ztráta předmětu
+[P050] [word/document.xml] Reklamaci krádeže nebo pohřešování předmětu Zákazník podává neprodleně po zjištění, nejpozději však do 48 hodin od dokončení zakázky. Cleansia doporučuje současně podat oznámení Policii ČR.
+[P051] [word/document.xml] 3.4  Zachování zákonných lhůt
+[P052] [word/document.xml] Bez ohledu na výše uvedená omezení platí pro Zákazníka jakožto spotřebitele zákonné lhůty stanovené zákonem č. 89/2012 Sb. (OZ) a zákonem č. 634/1992 Sb. (ochrana spotřebitele). Zákazník jako spotřebitel může vady uplatnit i po kratší smluvní lhůtě, pokud jde o skryté vady zjistitelné až později.
+[P053] [word/document.xml] Proč 24 hodin? Krátká lhůta pro nahlášení nekvalitního úklidu nebo škody na majetku chrání jak Zákazníka, tak Cleansia. Během 24 hodin je možné provést fotodokumentaci, ověřit stav před úklidem z fotodokumentace Zhotovitele a zkontaktovat Zhotovitele, dokud je zážitek čerstvý. Po uplynutí této doby se stav prostor může změnit a prokazování příčin se výrazně komplikuje.
+[P054] [word/document.xml] IV.
+[P055] [word/document.xml] Jak reklamaci správně podat
+[P056] [word/document.xml] 4.1  Povinné náležitosti reklamace
+[P057] [word/document.xml] Reklamace musí obsahovat:
+[P058] [word/document.xml] Jméno a příjmení Zákazníka a kontaktní e-mail.
+[P059] [word/document.xml] Číslo objednávky (dostupné v historii zakázek v Aplikaci).
+[P060] [word/document.xml] Datum a adresu výkonu zakázky.
+[P061] [word/document.xml] Popis reklamované vady nebo události — co přesně se stalo, kde a v jakém rozsahu.
+[P062] [word/document.xml] Fotodokumentaci — min. 2 fotografie dokumentující reklamovanou skutečnost.
+[P063] [word/document.xml] Požadovaný způsob řešení (opravný úklid, sleva, vrácení platby).
+[P064] [word/document.xml] 4.2  Fotodokumentace
+[P065] [word/document.xml] Fotodokumentace je klíčovým důkazem. Cleansia doporučuje fotografovat: celkový pohled na reklamovanou místnost nebo předmět; detail poškozené plochy, předmětu nebo skvrny; fotografie před i po úklidu, je-li Zákazník k dispozici. Bez fotodokumentace může být reklamace obtížně ověřitelná.
+[P066] [word/document.xml] 4.3  Zařazení reklamace
+[P067] [word/document.xml] Každé reklamaci bude přiděleno jedinečné referenční číslo, které Zákazník uvede v další komunikaci s Cleansia. Toto číslo Zákazník obdrží e-mailem nebo push oznámením v Aplikaci do 30 minut od podání reklamace.
+[P068] [word/document.xml] V.
+[P069] [word/document.xml] Proces řešení reklamace
+[P070] [word/document.xml] Cleansia řeší reklamace v následujících krocích:
+[P071] [word/document.xml] Krok
+[P072] [word/document.xml] Kdo jedná
+[P073] [word/document.xml] Co se děje
+[P074] [word/document.xml] Lhůta
+[P075] [word/document.xml] 1
+[P076] [word/document.xml] Zákazník podává reklamaci
+[P077] [word/document.xml] Prostřednictvím Aplikace, e-mailem nebo formulářem na webu. Přiloží fotodokumentaci a popis problému.
+[P078] [word/document.xml] Do 24 hodin od dokončení zakázky
+[P079] [word/document.xml] 2
+[P080] [word/document.xml] Cleansia potvrdí přijetí
+[P081] [word/document.xml] Zákazník obdrží automatické potvrzení o registraci reklamace s referenčním číslem.
+[P082] [word/document.xml] Okamžitě (automaticky)
+[P083] [word/document.xml] 3
+[P084] [word/document.xml] Prošetření reklamace
+[P085] [word/document.xml] Cleansia zkontaktuje Zhotovitele, vyžádá jeho vyjádření a posoudí fotodokumentaci.
+[P086] [word/document.xml] Do 3 pracovních dnů
+[P087] [word/document.xml] 4
+[P088] [word/document.xml] Rozhodnutí o reklamaci
+[P089] [word/document.xml] Cleansia sdělí Zákazníkovi výsledek: uznání nebo neuznání reklamace s odůvodněním.
+[P090] [word/document.xml] Do 30 dnů od podání
+[P091] [word/document.xml] 5
+[P092] [word/document.xml] Řešení uznané reklamace
+[P093] [word/document.xml] Cleansia nabídne jedno z opatření: opravný úklid, sleva, vrácení platby nebo kredit.
+[P094] [word/document.xml] Dle dohodnutého způsobu
+[P095] [word/document.xml] 5.1  Lhůta 30 dnů
+[P096] [word/document.xml] Cleansia je povinna rozhodnout o reklamaci a zákazníka o výsledku informovat nejpozději do 30 kalendářních dnů od podání reklamace. Tato lhůta je v souladu s § 19 zákona č. 634/1992 Sb. o ochraně spotřebitele.
+[P097] [word/document.xml] 5.2  Prodloužení lhůty
+[P098] [word/document.xml] V komplikovaných případech (např. škoda na hodnotném předmětu vyžadující odborný odhad) může Cleansia lhůtu prodloužit, avšak je povinna o tom Zákazníka před uplynutím 30 dnů informovat s odůvodněním.
+[P099] [word/document.xml] 5.3  Uznání reklamace — způsoby řešení
+[P100] [word/document.xml] Reklamace bude uznána, pokud Cleansia na základě předložených podkladů dospěje k závěru, že ke vadě nebo škodě došlo zaviněním Zhotovitele nebo porušením standardů platformy. Způsoby řešení uznané reklamace:
+[P101] [word/document.xml] Způsob řešení
+[P102] [word/document.xml] Co to v praxi znamená pro Zákazníka
+[P103] [word/document.xml] Opravný úklid
+[P104] [word/document.xml] Cleansia pošle jiného (nebo stejného) Zhotovitele, který zjedná nápravu bezplatně, v termínu dohodnutém se Zákazníkem, nejpozději do 5 pracovních dnů.
+[P105] [word/document.xml] Sleva z ceny
+[P106] [word/document.xml] Cleansia poskytne Zákazníkovi slevu z ceny zakázky odpovídající míře nedostatku. Sleva bude uplatněna formou vrácení částky nebo kreditu na další zakázku.
+[P107] [word/document.xml] Vrácení platby
+[P108] [word/document.xml] Při závažném pochybení (viz čl. 5.3) má Zákazník nárok na úplné vrácení zaplacené ceny. Vrácení bude provedeno do 14 dnů od uznání reklamace na původní platební prostředek.
+[P109] [word/document.xml] Kredit v Aplikaci
+[P110] [word/document.xml] Cleansia může dle svého uvážení nabídnout Zákazníkovi kredit v hodnotě reklamované částky nebo ve vyšší hodnotě jako gesto dobré vůle.
+[P111] [word/document.xml] 5.4  Neuznání reklamace
+[P112] [word/document.xml] Pokud Cleansia reklamaci neuzná, je povinna Zákazníkovi sdělit důvody zamítnutí. Zákazník má poté právo:
+[P113] [word/document.xml] Obrátit se na zákaznickou podporu Cleansia s dalšími podklady.
+[P114] [word/document.xml] Podat stížnost České obchodní inspekci (www.coi.cz).
+[P115] [word/document.xml] Řešit spor mimosoudně prostřednictvím platformy ODR (ec.europa.eu/consumers/odr).
+[P116] [word/document.xml] Podat žalobu k příslušnému soudu.
+[P117] [word/document.xml] VI.
+[P118] [word/document.xml] Náhrady škod a pojistné události
+[P119] [word/document.xml] 6.1  Škody do 5 000 Kč
+[P120] [word/document.xml] Škody na majetku Zákazníka v hodnotě do 5 000 Kč Cleansia zpravidla řeší přímo v rámci reklamačního procesu z vlastních prostředků nebo prostřednictvím zálohy z pojistky Zhotovitele, a to bez nutnosti formálního pojistného šetření.
+[P121] [word/document.xml] 6.2  Škody nad 5 000 Kč
+[P122] [word/document.xml] Při škodách přesahujících 5 000 Kč Cleansia aktivuje pojistnou událost u pojišťovny Zhotovitele. Zákazník bude informován o průběhu šetření pojistné události a Cleansia bude Zákazníkovi během celého procesu asistovat.
+[P123] [word/document.xml] 6.3  Dokumentace pro pojišťovnu
+[P124] [word/document.xml] Zákazník je povinen pro účely pojistné události poskytnout: popis a fotodokumentaci poškození; odhad nebo doklad o hodnotě poškozeného předmětu (účtenka, odborný posudek); prohlášení, že předmět nebyl poškozen předem.
+[P125] [word/document.xml] 6.4  Strop odpovědnosti Cleansia
+[P126] [word/document.xml] Cleansia jako zprostředkovatel neodpovídá za škody přesahující celkovou cenu dané zakázky, s výjimkou případů úmyslného pochybení nebo hrubé nedbalosti Cleansia samotné. Toto omezení se neuplatní vůči spotřebitelům v případech, kde by bylo v rozporu s § 1813 OZ.
+[P127] [word/document.xml] VII.
+[P128] [word/document.xml] Závěrečná ustanovení
+[P129] [word/document.xml] 7.1  Rozhodné právo
+[P130] [word/document.xml] Tento Reklamační řád se řídí právem České republiky, zejména zákonem č. 89/2012 Sb. (OZ) a zákonem č. 634/1992 Sb. (ochrana spotřebitele).
+[P131] [word/document.xml] 7.2  Vztah k VOP
+[P132] [word/document.xml] Tento Reklamační řád je nedílnou součástí VOP Cleansia. V případě rozporu mezi tímto Řádem a VOP má Reklamační řád přednost v oblasti reklamací.
+[P133] [word/document.xml] 7.3  Změny Reklamačního řádu
+[P134] [word/document.xml] Cleansia je oprávněna tento Reklamační řád průběžně aktualizovat. O podstatných změnách budou Zákazníci informováni e-mailem nebo v Aplikaci nejpozději 14 dní předem.
+[P135] [word/document.xml] 7.4  Účinnost
+[P136] [word/document.xml] Tento Reklamační řád je účinný od [doplnit datum] a nahrazuje všechny předchozí verze.
+[P137] [word/document.xml] UMÍSTĚNÍ REKLAMAČNÍHO ŘÁDU — kde musí být dostupný: (1) V patičce webu jako klikatelný odkaz 'Reklamační řád'. (2) V Aplikaci pod Nastavení > Právní dokumenty. (3) Odkazován z VOP (čl. 7.5 VOP). Reklamační řád musí být dostupný před a po uzavření smlouvy se Zákazníkem.
+[P138] [word/document.xml] Reklamační řád je účinný od [doplnit datum]. Verze 1.1.  |  Cleansia s.r.o.  |  IČO: [Doplnit]  |  Reklamace: [Doplnit e-mail]
+[P139] [word/footer1.xml] Reklamační řád v1.1  |  Cleansia s.r.o.  |  Účinné od [doplnit]
+[P140] [word/header1.xml] CLEANSIA s.r.o.  |  Reklamační řád  |  Verze 1.1

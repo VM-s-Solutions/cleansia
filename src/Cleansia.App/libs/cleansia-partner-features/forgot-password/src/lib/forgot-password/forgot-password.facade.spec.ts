@@ -13,14 +13,26 @@ import { ForgotPasswordFacade } from './forgot-password.facade';
 describe('ForgotPasswordFacade (partner)', () => {
   let facade: ForgotPasswordFacade;
   let userClient: { requestPasswordChange: jest.Mock; changePassword: jest.Mock };
-  let snackbar: { showError: jest.Mock; showApiError: jest.Mock; showSuccess: jest.Mock };
+  let snackbar: {
+    showError: jest.Mock;
+    showErrorTranslated: jest.Mock;
+    showApiError: jest.Mock;
+    showSuccess: jest.Mock;
+    showSuccessTranslated: jest.Mock;
+  };
   let router: { navigate: jest.Mock };
 
   beforeEach(() => {
     // sendCode arms a resend cooldown interval; fake timers keep it off the real event loop.
     jest.useFakeTimers();
     userClient = { requestPasswordChange: jest.fn(), changePassword: jest.fn() };
-    snackbar = { showError: jest.fn(), showApiError: jest.fn(), showSuccess: jest.fn() };
+    snackbar = {
+      showError: jest.fn(),
+      showErrorTranslated: jest.fn(),
+      showApiError: jest.fn(),
+      showSuccess: jest.fn(),
+      showSuccessTranslated: jest.fn(),
+    };
     router = { navigate: jest.fn() };
 
     TestBed.configureTestingModule({
@@ -51,7 +63,7 @@ describe('ForgotPasswordFacade (partner)', () => {
   it('rejects an invalid email without calling the API', () => {
     facade.sendCode();
 
-    expect(snackbar.showError).toHaveBeenCalled();
+    expect(snackbar.showErrorTranslated).toHaveBeenCalled();
     expect(userClient.requestPasswordChange).not.toHaveBeenCalled();
   });
 
@@ -91,7 +103,7 @@ describe('ForgotPasswordFacade (partner)', () => {
 
     facade.changePassword();
 
-    expect(snackbar.showSuccess).toHaveBeenCalled();
+    expect(snackbar.showSuccessTranslated).toHaveBeenCalled();
     expect(router.navigate).toHaveBeenCalled();
     expect(facade.isEmailSent()).toBe(false);
   });

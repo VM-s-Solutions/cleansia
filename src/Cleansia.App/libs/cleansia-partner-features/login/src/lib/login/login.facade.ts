@@ -7,10 +7,9 @@ import {
   JwtTokenResponse,
   PartnerAuthService,
 } from '@cleansia/partner-services';
-import { loadUserCurrent, selectLoading } from '@cleansia/partner-stores';
+import { selectLoading } from '@cleansia/partner-stores';
 import { CleansiaPartnerRoute, SnackbarService } from '@cleansia/services';
 import { Store } from '@ngrx/store';
-import { TranslateService } from '@ngx-translate/core';
 import { takeUntil } from 'rxjs';
 
 @Injectable()
@@ -19,7 +18,6 @@ export class LoginFacade extends UnsubscribeControlDirective {
   private readonly store = inject(Store);
   private readonly router = inject(Router);
   private readonly authService = inject(PartnerAuthService);
-  private readonly translate = inject(TranslateService);
   private readonly snackbarService = inject(SnackbarService);
 
   formGroup = this.createFormGroup();
@@ -27,9 +25,7 @@ export class LoginFacade extends UnsubscribeControlDirective {
 
   login(): void {
     if (this.formGroup.invalid) {
-      this.snackbarService.showError(
-        this.translate.instant('validation.common.not_all_fields_filled')
-      );
+      this.snackbarService.showErrorTranslated('validation.common.not_all_fields_filled');
       return;
     }
     const { email, password, rememberMe } = this.formGroup.getRawValue();
@@ -45,7 +41,6 @@ export class LoginFacade extends UnsubscribeControlDirective {
             return;
           }
           this.authService.setSession(authResult);
-          this.store.dispatch(loadUserCurrent());
           this.router.navigate([CleansiaPartnerRoute.ORDERS]);
         },
         error: (err) => {

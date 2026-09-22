@@ -39,36 +39,6 @@
     }
   },
   "pages": {
-    "login": {
-      "email": "Email",
-      "password": "Password",
-      "remember_me": "Remember me",
-      "forgot_password": "Forgot your password?",
-      "dont_have_account": "Don't have an account?"
-    },
-    "register": {
-      "first_name": "First Name",
-      "last_name": "Last Name",
-      "email": "Email",
-      "password": "Password",
-      "confirm_password": "Confirm Password",
-      "phone": "Phone Number",
-      "street": "Street",
-      "city": "City",
-      "zip_code": "Zip Code",
-      "country": "Country",
-      "ico": "Business ID",
-      "already_have_account": "Already have an account?",
-      "terms_and_conditions": "I agree to the <a href='/terms-and-conditions' target='_blank'>Terms and Conditions</a> and <a href='/privacy-policy' target='_blank'>Privacy Policy</a>.",
-      "have_account": "Already have an account?",
-      "remember_me": "Remember me",
-      "validation": {
-        "password_letter": "At least one letter",
-        "password_number": "Password must contain at least one number",
-        "password_min_length": "At least 8 characters",
-        "passwords_match": "Passwords must match"
-      }
-    },
     "email_confirm": {
       "title": "Email Confirmation",
       "description": "Please check your email and enter the confirmation code.",
@@ -129,8 +99,6 @@
       "emergency_phone": "Phone",
       "documents": "Upload Required Documents",
       "upload_requirements": "Upload: Photos, CV, Educational Certificates, Criminal Record Check (if required), Work Permit (for non-EU citizens), Signed Contract/NDA",
-      "availability": "Weekly Availability",
-      "availability_description": "Set your weekly working hours by selecting time ranges for each day. This helps us schedule your assignments effectively.",
       "consent": "Consent",
       "consent_text": "I agree to the processing of my personal data in accordance with <a href='/gdpr' target='_blank'>GDPR</a> and Czech labor laws.",
       "submit": "Submit Onboarding",
@@ -234,7 +202,8 @@
         "avg_time": "Average time",
         "order_count": "Order count",
         "service_name": "Service name",
-        "total_time": "Total time"
+        "total_time": "Total time",
+        "avg_label": "avg {{value}}"
       },
       "order_analytics": {
         "title": "Order Analytics",
@@ -322,17 +291,12 @@
         "optional": "optional",
         "minutes": "min",
         "complete_button": "Complete Order",
-        "cancel_button": "Cancel",
         "success": "Order completed successfully!",
-        "error": "Failed to complete order. Please try again.",
-        "actual_time_required": "Actual completion time is required",
-        "notes_required": "Completion notes are required to explain the time variance",
-        "notes_too_long": "Completion notes must be less than 1000 characters"
+        "error": "Failed to complete order. Please try again."
       },
       "show_filters": "Show Filters",
       "hide_filters": "Hide Filters",
       "filters": {
-        "title": "Filters",
         "tooltip": "Click to filter orders",
         "active_count": "{{count}} active filters",
         "search_criteria": "Search Criteria",
@@ -351,10 +315,8 @@
         "cleaning_date_to": "Cleaning Date To",
         "select_date": "Select date",
         "apply": "Apply Filters",
-        "reset": "Reset Filters",
         "filter_active": "active",
-        "filters_active": "active",
-        "clear_all": "Clear all"
+        "filters_active": "active"
       },
       "no_logs": "No time logs to display",
       "save_log": "Save log",
@@ -488,19 +450,12 @@
       "total_orders": "Total Orders",
       "total_amount": "Total Amount",
       "status": "Status",
-      "status_pending": "Pending",
-      "status_approved": "Approved",
-      "status_paid": "Paid",
-      "status_disputed": "Disputed",
-      "status_rejected": "Rejected",
-      "status_cancelled": "Cancelled",
       "view_details": "View Details",
       "download_pdf": "Download PDF",
       "pdf_not_available": "PDF is not yet available for this invoice",
       "download_failed": "Failed to download invoice",
       "no_invoices": "No invoices to display",
       "filters": {
-        "title": "Filters",
         "tooltip": "Click to filter invoices",
         "active_count": "{{count}} active filters",
         "search_criteria": "Search Criteria",
@@ -511,9 +466,7 @@
         "amount_range": "Amount Range",
         "min_amount": "Minimum Amount",
         "max_amount": "Maximum Amount",
-        "invoice_status": "Invoice Status",
-        "reset": "Reset Filters",
-        "clear_all": "Clear all"
+        "invoice_status": "Invoice Status"
       }
     },
     "invoice_detail": {
@@ -553,10 +506,6 @@
       "pay_period": "Pay Period",
       "currency": "Currency",
       "multiple_currencies_hint": "You were paid in more than one currency this period. Pick the one to view.",
-      "period_status_open": "Open",
-      "period_status_closed": "Closed",
-      "period_status_paid": "Paid",
-      "period_status_unknown": "Unknown",
       "summary": "Period Summary",
       "total_orders": "Total Orders",
       "base_pay": "Base Pay",
@@ -572,161 +521,6 @@
       "no_periods": "No pay periods are available yet",
       "load_error": "Failed to load your period pay",
       "view_invoice": "View Invoice"
-    },
-    "payslips": {
-      "title": "Payroll & Salary Management",
-      "description": "View your payslips, salary history, and manage tax benefits.",
-      "current_year_payslips": "Current Year Payslips",
-      "salary_history": "Complete Salary History",
-      "generate_payslip": "Generate Payslip",
-      "generate_from_timesheet": "Generate from Timesheet",
-      "preview": "Preview Payslip",
-      "payslip_details": "Payslip Details",
-      "no_current_payslips": "No payslips for current year",
-      "no_payslips": "No payslips to display",
-      "month": "Month",
-      "year": "Year",
-      "pay_date": "Pay Date",
-      "gross_salary": "Gross Salary",
-      "net_salary": "Net Salary",
-      "employee": "Employee",
-      "employee_info": "Employee Information",
-      "employee_name": "Employee Name",
-      "employee_email": "Employee Email",
-      "personal_number": "Personal Number",
-      "salary_breakdown": "Salary Breakdown",
-      "base_salary": "Base Salary",
-      "bonuses": "Bonuses",
-      "overtime": "Overtime",
-      "deductions": "Deductions",
-      "social_insurance": "Social Insurance",
-      "health_insurance": "Health Insurance",
-      "tax_advance": "Tax Advance",
-      "other_deductions": "Other Deductions",
-      "ytd_summary": "Year-to-Date Summary",
-      "ytd_gross": "YTD Gross Salary",
-      "ytd_net": "YTD Net Salary",
-      "ytd_tax_paid": "YTD Tax Paid",
-      "ytd_social_insurance": "YTD Social Insurance",
-      "ytd_health_insurance": "YTD Health Insurance",
-      "benefits": "Benefits",
-      "meal_vouchers": "Meal Vouchers",
-      "notes": "Notes",
-      "download": "Download PDF",
-      "status": {
-        "draft": "Draft",
-        "approved": "Approved",
-        "paid": "Paid",
-        "archived": "Archived",
-        "unknown": "Unknown"
-      },
-      "months": {
-        "january": "January",
-        "february": "February",
-        "march": "March",
-        "april": "April",
-        "may": "May",
-        "june": "June",
-        "july": "July",
-        "august": "August",
-        "september": "September",
-        "october": "October",
-        "november": "November",
-        "december": "December"
-      }
-    },
-    "tax_benefits": {
-      "title": "Tax Benefits & Deductions",
-      "description": "Manage your tax deductions and benefit preferences for payroll calculations.",
-      "tax_deductions": "Tax Deductions",
-      "benefits_enrollment": "Benefits Enrollment",
-      "tax_withholding": "Tax Withholding Preferences",
-      "spouse_deduction": "Spouse Tax Deduction",
-      "child_deduction": "Child Tax Deduction",
-      "disability_deduction": "Disability Tax Deduction",
-      "student_deduction": "Student Tax Deduction",
-      "meal_vouchers": "Meal Vouchers",
-      "meal_voucher_value": "Monthly Meal Voucher Value",
-      "pension_contribution": "Pension Contribution",
-      "pension_monthly": "Monthly Pension Contribution",
-      "life_insurance": "Life Insurance",
-      "life_insurance_monthly": "Monthly Life Insurance",
-      "transportation_benefit": "Transportation Benefit",
-      "transportation_monthly": "Monthly Transportation Benefit",
-      "tax_advance_percentage": "Requested Tax Advance Percentage",
-      "signed_declaration": "Signed Tax Declaration",
-      "notes": "Additional Notes",
-      "save_changes": "Save Changes",
-      "reset_form": "Reset Form",
-      "total_deductions": "Total Tax Deductions",
-      "total_benefits_value": "Total Monthly Benefits Value",
-      "basic_deduction": "Basic Tax Deduction"
-    },
-    "disputes": {
-      "title": "Dispute Management",
-      "description": "View and manage payment disputes and chargebacks for your orders.",
-      "table": {
-        "order_number": "Order Number",
-        "customer_name": "Customer Name",
-        "customer_email": "Customer Email",
-        "reason": "Reason",
-        "status": "Status",
-        "refund_amount": "Refund Amount",
-        "created_on": "Created Date",
-        "resolved_on": "Resolved Date",
-        "view_details": "View Details"
-      },
-      "filters": {
-        "order_id": "Order Number",
-        "customer_name": "Customer Name",
-        "customer_email": "Customer Email",
-        "status": "Dispute Status",
-        "reason": "Dispute Reason",
-        "created_from": "Created From",
-        "created_to": "Created To",
-        "reset": "Reset Filters"
-      },
-      "no_disputes": "No disputes to display"
-    },
-    "dispute_details": {
-      "title": "Dispute Details",
-      "error_loading": "Error Loading Dispute",
-      "confirm_status_update": "Are you sure you want to update the dispute status?",
-      "confirm_resolve": "Are you sure you want to resolve this dispute? This action cannot be undone.",
-      "sections": {
-        "summary": "Dispute Summary",
-        "customer_info": "Customer Information",
-        "description": "Dispute Description",
-        "resolution": "Resolution Notes"
-      },
-      "fields": {
-        "order_number": "Order Number",
-        "status": "Status",
-        "reason": "Reason",
-        "refund_amount": "Refund Amount",
-        "created_on": "Created On",
-        "resolved_on": "Resolved On",
-        "customer_name": "Customer Name",
-        "customer_email": "Customer Email",
-        "new_status": "New Status",
-        "resolution_notes": "Resolution Notes"
-      },
-      "actions": {
-        "update_status": "Update Status",
-        "resolve": "Resolve Dispute"
-      },
-      "placeholders": {
-        "resolution_notes": "Enter resolution notes explaining how the dispute was resolved..."
-      },
-      "messages": {
-        "failed_to_load": "Failed to load dispute details",
-        "no_dispute_selected": "No dispute selected",
-        "status_updated": "Dispute status updated successfully",
-        "status_update_failed": "Failed to update dispute status",
-        "dispute_resolved": "Dispute resolved successfully",
-        "resolve_failed": "Failed to resolve dispute",
-        "resolution_notes_required": "Resolution notes are required"
-      }
     },
     "gdpr": {
       "title": "Privacy Policy & GDPR",
@@ -772,9 +566,7 @@
     "orders": "Orders",
     "invoices": "Invoices",
     "my_pay": "My Pay",
-    "payroll": "Payroll",
-    "logout": "Logout",
-    "disputes": "Disputes"
+    "logout": "Logout"
   },
   "components": {
     "not_found": {
@@ -791,53 +583,6 @@
       "selected_files": "Selected Files",
       "choose": "Choose files"
     },
-    "availability": {
-      "days": {
-        "monday": "Monday",
-        "tuesday": "Tuesday",
-        "wednesday": "Wednesday",
-        "thursday": "Thursday",
-        "friday": "Friday",
-        "saturday": "Saturday",
-        "sunday": "Sunday",
-        "monday_short": "Mo",
-        "tuesday_short": "Tu",
-        "wednesday_short": "We",
-        "thursday_short": "Th",
-        "friday_short": "Fr",
-        "saturday_short": "Sa",
-        "sunday_short": "Su"
-      },
-      "current_ranges": "Current Ranges",
-      "no_availability": "No availability set",
-      "add_time_range": "Add Time Range",
-      "start_time": "Start Time",
-      "end_time": "End Time",
-      "quick_setup": "Quick Setup",
-      "weekly_schedule": "Weekly Schedule",
-      "mon_fri_9_5": "Mon-Fri 9-5",
-      "mon_sat_8_4": "Mon-Sat 8-4",
-      "custom": "Custom",
-      "legend_working": "Working",
-      "legend_custom": "Custom hours",
-      "legend_off": "Day off",
-      "no_days_selected": "Select working days to set up your schedule",
-      "working_day": "Working Day",
-      "day_off": "Day Off",
-      "custom_hours": "Custom Hours",
-      "exception_day_off": "Exception - Day Off",
-      "edit_hours": "Edit Hours",
-      "remove_exception": "Remove Exception",
-      "mark_exception": "Mark as Exception",
-      "set_custom_hours": "Set custom hours",
-      "mark_unavailable": "This day will be marked as unavailable.",
-      "add_time_slot": "Add Time Slot",
-      "schedule_setup": "Schedule Setup",
-      "schedule_setup_desc": "Select working days and set your hours.",
-      "working_hours": "Working Hours",
-      "working_days": "Working Days",
-      "apply": "Apply"
-    },
     "brand_mark_alt": "Cleansia Partner"
   },
   "global": {
@@ -846,6 +591,13 @@
     "refresh": "Refresh",
     "common": "Common",
     "close": "Close",
+    "open_menu": "Open menu",
+    "close_menu": "Close menu",
+    "filters": {
+      "title": "Filters",
+      "reset": "Reset Filters",
+      "clear_all": "Clear all"
+    },
     "alt": {
       "photo": "Photo"
     },
@@ -967,14 +719,6 @@
       "confirm_delete_item": "Are you sure you want to delete {{item}}?",
       "confirm_logout": "Are you sure you want to log out?"
     },
-    "status": {
-      "Pending": "Pending",
-      "In Progress": "In Progress",
-      "Completed": "Completed"
-    },
-    "time": {
-      "minutes": "minutes"
-    },
     "document_types": {
       "1": "Identity Card",
       "2": "Passport",
@@ -987,32 +731,22 @@
       "9": "Insurance Document",
       "10": "Other"
     },
-    "document_status": {
-      "1": "Pending Review",
-      "2": "Approved",
-      "3": "Rejected"
-    },
     "show_password": "Show password",
     "hide_password": "Hide password"
   },
   "registration_lock": {
     "title": "Profile Completion Required",
     "description": "To access this section, you need to complete your profile setup and upload required documents.",
-    "missing_requirements": "Missing Requirements:",
-    "profile_completion": "Complete Profile Information",
-    "document_upload": "Upload Required Documents",
     "complete_profile": "Complete Profile",
     "progress": "{{completed}} of {{total}} steps complete",
     "categories": {
       "profile": "Profile Information",
       "documents": "Required Documents",
-      "availability": "Availability",
       "documents_required": "Upload required documents",
       "approval": "Admin Approval",
       "approval_awaiting_review": "Your documents are being reviewed by our team. We'll notify you once approved.",
       "approval_rejected": "Your submission was rejected. Please review the reason below and re-upload.",
-      "approval_complete_profile_first": "Complete your profile and upload documents to request approval.",
-      "availability_required": "Set your weekly working schedule to receive orders."
+      "approval_complete_profile_first": "Complete your profile and upload documents to request approval."
     }
   },
   "validation": {
@@ -1023,7 +757,8 @@
       "birth_date": "Birth date is invalid. User must be younger than {{ yearsRange }} years",
       "min_length": "Field must contain at least {{ minLength }} characters",
       "max_length": "Field can contain a maximum of {{ maxLength }} characters",
-      "invalid_quantity": "Quantity for product {{ name }} is entered incorrectly",
+      "min": "Value must be at least {{ min }}",
+      "max": "Value must be at most {{ max }}",
       "pattern": "Field does not match the required pattern",
       "minimum_age": "Minimum age is {{ requiredAge }} years. Current age: {{ actualAge }} years",
       "maximum_age": "Maximum age is {{ maxAge }} years. Current age: {{ actualAge }} years",
@@ -1041,7 +776,6 @@
     "file": {
       "required": "Files are required",
       "invalid_type": "Invalid file type. Please select a valid document file.",
-      "size_too_large": "File size too large. Maximum allowed size is {{ maxSize }}MB.",
       "too_few_files": "Too few files selected. Minimum required: {{ min }}",
       "too_many_files": "Too many files selected. Maximum allowed: {{ max }}",
       "generic_error": "File validation error occurred"
@@ -1100,20 +834,11 @@
       "invalid_date": "Invalid date",
       "date_must_be_in_past": "Date must be in the past",
       "invalid_age": "Invalid age",
-      "invalid_phone_number": "Invalid phone number format",
-      "invalid_national_id": "Invalid national ID format",
-      "invalid_tax_id": "Invalid tax ID format",
-      "invalid_iban": "Invalid IBAN format",
-      "invalid_zip_code": "Invalid zip code format",
       "registration_number": {
         "invalid_format": "Invalid company registration number format for the selected country"
       },
       "must_be_positive": "Value must be positive",
-      "invalid_availability_format": "Invalid availability format. Days must be valid day names or dates (yyyy-MM-dd), and time ranges must have start before end.",
-      "page_must_be_positive": "Page must be greater than 0",
-      "page_size_must_be_positive": "Page size must be greater than 0",
       "page_size_exceeded": "Page size cannot exceed 100",
-      "invalid_contract_status": "Invalid contract status value",
       "payout": {
         "account_number_required": "Enter your account number",
         "country_not_supported": "We cannot pay out to a bank in this country yet",
@@ -1127,10 +852,6 @@
         "looks_like_card": "That looks like a payment card number. Enter your bank account number instead — you will find it on your bank statement or in your banking app.",
         "scheme_not_supported": "We cannot pay out to this kind of account yet",
         "swift_required": "Your bank is in a different country than the one you work in, so we also need your bank's SWIFT/BIC code."
-      },
-      "file": {
-        "max_size": "File \"{{fileName}}\" exceeds maximum size of {{maxSize}}MB",
-        "invalid_type": "File \"{{fileName}}\" type is not allowed. Accepted: {{acceptedTypes}}"
       }
     },
     "currency": {
@@ -1150,7 +871,6 @@
       },
       "empty": "Order is empty",
       "selected_package": {
-        "selected_packages": "Selected Packages",
         "invalid": "Invalid selected package"
       },
       "selected_services": {
@@ -1161,7 +881,6 @@
         "not_match": "Total price does not match"
       },
       "not_found": "Order not found",
-      "already_assigned": "Order is already assigned",
       "no_available_spots": "Another cleaner has already taken this job.",
       "not_takeable": "This job is no longer available.",
       "take": {
@@ -1170,29 +889,22 @@
       },
       "employee_already_assigned": "Employee is already assigned to this order",
       "employee_not_assigned": "Employee is not assigned to this order",
-      "max_employees_exceeded": "Maximum number of employees exceeded",
       "not_in_progress": "Order is not in progress",
       "not_confirmed": "Order must be in confirmed status to start",
       "too_early_to_start": "Too early to start — you can begin up to an hour before the booking.",
       "cash_not_collected": "Collect the cash and mark it as received before completing this order.",
       "cash_already_collected": "Cash has already been collected for this order.",
-      "not_cash_payment": "This isn't a cash order.",
       "payment_not_confirmed": "This order's payment hasn't been confirmed yet.",
       "card_payment_already_settled": "The card payment already went through. Refresh and complete the order — don't take cash.",
       "card_payment_in_progress": "The card payment is still being processed. Wait a moment and try again — don't take cash yet.",
       "card_payment_unverified": "We couldn't check the card payment status right now, so cash can't be recorded. Try again shortly or contact an administrator.",
-      "actual_time": {
-        "positive": "Actual time must be positive"
-      },
       "completion_notes": {
-        "required": "Completion notes are required",
         "too_long": "Completion notes are too long"
       },
       "after_photos": {
         "required": "After photos are required to complete the order"
       },
       "payment_gateway_unavailable": "Payment gateway is unavailable",
-      "creation_failed": "Failed to create order",
       "time_conflict": "This time conflicts with another booking on your schedule",
       "weekly_limit_reached": "You've reached your weekly order limit.",
       "employee_already_has_order_in_progress": "You already have another order in progress. Finish it before starting a new one."
@@ -1208,7 +920,6 @@
     },
     "employee": {
       "not_found": "Employee not found",
-      "not_existing_email": "Employee with this email does not exist",
       "not_allowed_to_update": "You are not allowed to update this employee",
       "data_not_available": "Employee data not available",
       "profile_incomplete": "Complete profile information",
@@ -1236,7 +947,6 @@
         "already_exists": "Invoice already exists",
         "already_paid": "This invoice is already paid and cannot be re-rendered",
         "pdf_generation_failed": "Failed to generate PDF",
-        "template_not_found": "Invoice template not found",
         "cannot_cancel_paid": "Cannot cancel a paid invoice",
         "already_cancelled": "Invoice has already been cancelled"
       },
@@ -1247,12 +957,10 @@
       "no_unpaid_order_pays": "No unpaid order pays found",
       "no_active_period": "No active pay period found",
       "no_pay_configuration": "No pay configuration found",
-      "no_currency": "No currency found",
       "employee_not_assigned": "Employee not assigned to this order"
     },
     "receipt": {
-      "not_found": "Receipt not found",
-      "generation_failed": "Failed to generate receipt"
+      "not_found": "Receipt not found"
     },
     "pay_period": {
       "invalid_duration": "Invalid pay period duration",
@@ -1283,9 +991,7 @@
       "invalid_file_type": "Invalid file type. Please upload valid document files.",
       "size_exceeded": "File size exceeds the maximum allowed limit.",
       "count_exceeded": "Too many files. Maximum allowed number exceeded.",
-      "count_too_few": "Not enough files. Minimum required number not met.",
       "required": "File upload is required.",
-      "size_exceeded_10mb": "File size must not exceed 10 MB",
       "type_not_allowed": "File type is not allowed. Accepted: PDF, JPEG, PNG, DOC, DOCX"
     },
     "address": {
@@ -1313,8 +1019,6 @@
     "gdpr": {
       "consent_not_found": "We could not find that consent setting",
       "consent_already_granted": "You have already granted this consent",
-      "export_failed": "We couldn't export your data. Please try again.",
-      "deletion_failed": "We couldn't delete your account. Please try again.",
       "deletion_already_pending": "An account deletion request is already in progress.",
       "deletion_blocked_by_order": "Your account can't be deleted while you have active orders.",
       "deletion_blocked_by_invoice": "Your account can't be deleted while invoices are outstanding.",
@@ -1361,9 +1065,6 @@
     },
     "template": {
       "cannot_delete_active": "Cannot delete an active template",
-      "invalid_file_type": "Invalid template file type",
-      "file_size_exceeded": "Template file size exceeded",
-      "file_required": "Template file is required",
       "invoice": {
         "not_found": "Invoice template not found",
         "in_use": "Cannot delete invoice template because it is currently in use"
@@ -1398,40 +1099,31 @@
       "pending": "Pending",
       "paid": "Paid",
       "failed": "Failed",
-      "refunded": "Refunded"
+      "refunded": "Refunded",
+      "disputed": "Disputed",
+      "partially_refunded": "Partially refunded"
     },
     "payment_type": {
       "cash": "Cash",
       "card": "Card"
     },
-    "dispute_status": {
+    "invoice_status": {
       "pending": "Pending",
-      "under_review": "Under Review",
-      "waiting_for_response": "Waiting for Response",
-      "resolved": "Resolved",
-      "closed": "Closed",
-      "escalated": "Escalated"
+      "approved": "Approved",
+      "paid": "Paid",
+      "disputed": "Disputed",
+      "rejected": "Rejected",
+      "cancelled": "Cancelled"
     },
-    "dispute_reason": {
-      "quality_issue": "Quality Issue",
-      "service_not_provided": "Service Not Provided",
-      "service_incomplete": "Service Incomplete",
-      "damaged_property": "Damaged Property",
-      "unauthorized_charge": "Unauthorized Charge",
-      "incorrect_amount": "Incorrect Amount",
-      "other": "Other"
-    }
-  },
-  "common": {
-    "actions": "Actions",
-    "confirmation": "Confirmation",
-    "retry": "Retry",
-    "cancel": "Cancel",
-    "update": "Update",
-    "validation": {
-      "required": "This field is required",
-      "min_length": "Minimum length is {{min}} characters",
-      "min_value": "Minimum value is {{min}}"
+    "document_status": {
+      "pending": "Pending Review",
+      "approved": "Approved",
+      "rejected": "Rejected"
+    },
+    "pay_period_status": {
+      "open": "Open",
+      "closed": "Closed",
+      "paid": "Paid"
     }
   },
   "help": {
@@ -1447,8 +1139,8 @@
       "step4_desc": "Your earnings are added to your next invoice for the pay period.",
       "status_title": "Order Status Explained",
       "status": {
-        "pending_desc": "Order has been created but payment is not yet confirmed. Waiting for customer payment.",
-        "confirmed_desc": "Payment received and order is confirmed. Available for employees to take.",
+        "pending_desc": "A legacy state no new order enters — every order starts as New. Whether the customer has paid is a separate payment status.",
+        "confirmed_desc": "A cleaner has taken the job. This says nothing about payment — a cash order is Confirmed before any money moves.",
         "in_progress_desc": "An employee has started working on this order. Cleaning is underway.",
         "completed_desc": "Work is finished, photos uploaded. Ready for payment processing.",
         "cancelled_desc": "Order was cancelled. No payment or work required."
@@ -1456,8 +1148,8 @@
       "payment_title": "Payment Status Guide",
       "payment_status_title": "Payment Status Explained",
       "payment": {
-        "pending_desc": "Customer has not completed payment yet. Order cannot be confirmed until paid.",
-        "paid_desc": "Customer has paid successfully. Order can proceed to be taken by employees.",
+        "pending_desc": "The customer has not paid yet. Every order starts here, cash and card alike — a cash order can still be taken.",
+        "paid_desc": "The customer has paid. Paying does not change the order status — a paid order stays New until a cleaner takes it.",
         "failed_desc": "Payment attempt failed. Customer needs to retry payment.",
         "refunded_desc": "Payment was refunded to customer. Order may have been cancelled or disputed."
       }
@@ -1483,8 +1175,7 @@
       }
     },
     "dismiss": "Got it, don't show again",
-    "show_help": "Show Help",
-    "hide_help": "Hide Help"
+    "show_help": "Show Help"
   },
   "cookies": {
     "title": "We Value Your Privacy",
@@ -1548,21 +1239,71 @@
       "resend_error": "Failed to resend confirmation email. Please try again."
     }
   },
-  "gdpr": {
-    "deletion_already_pending": "A deletion request is already in progress.",
-    "deletion_blocked_by_order": "We can't delete your account while you have an active order.",
-    "deletion_blocked_by_invoice": "We can't delete your account while you have a pending invoice.",
-    "export_failed": "Data export failed.",
-    "deletion_failed": "Account deletion failed.",
-    "consent_not_found": "Consent not found.",
-    "consent_already_granted": "This consent is already granted."
-  },
-  "order": {
-    "review": {
-      "already_exists": "You've already reviewed this order."
-    }
-  },
   "recurring_booking": {
     "not_found": "That recurring booking no longer exists."
+  },
+  "primeng": {
+    "day_names": {
+      "sun": "Sunday",
+      "mon": "Monday",
+      "tue": "Tuesday",
+      "wed": "Wednesday",
+      "thu": "Thursday",
+      "fri": "Friday",
+      "sat": "Saturday"
+    },
+    "day_names_short": {
+      "sun": "Sun",
+      "mon": "Mon",
+      "tue": "Tue",
+      "wed": "Wed",
+      "thu": "Thu",
+      "fri": "Fri",
+      "sat": "Sat"
+    },
+    "day_names_min": {
+      "sun": "Su",
+      "mon": "Mo",
+      "tue": "Tu",
+      "wed": "We",
+      "thu": "Th",
+      "fri": "Fr",
+      "sat": "Sa"
+    },
+    "month_names": {
+      "jan": "January",
+      "feb": "February",
+      "mar": "March",
+      "apr": "April",
+      "may": "May",
+      "jun": "June",
+      "jul": "July",
+      "aug": "August",
+      "sep": "September",
+      "oct": "October",
+      "nov": "November",
+      "dec": "December"
+    },
+    "month_names_short": {
+      "jan": "Jan",
+      "feb": "Feb",
+      "mar": "Mar",
+      "apr": "Apr",
+      "may": "May",
+      "jun": "Jun",
+      "jul": "Jul",
+      "aug": "Aug",
+      "sep": "Sep",
+      "oct": "Oct",
+      "nov": "Nov",
+      "dec": "Dec"
+    },
+    "today": "Today",
+    "clear": "Clear",
+    "apply": "Apply",
+    "accept": "Yes",
+    "reject": "No",
+    "empty_message": "No results found",
+    "empty_filter_message": "No results found"
   }
 }

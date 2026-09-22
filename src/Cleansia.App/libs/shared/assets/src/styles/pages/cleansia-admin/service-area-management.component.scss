@@ -1,0 +1,28 @@
+.cleansia-service-area-management {
+  &__hint {
+    margin: 0;
+    max-width: 80ch;
+    color: var(--cleansia-text-secondary);
+    line-height: 1.5;
+  }
+
+  &__toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  &__country-picker {
+    flex: 0 1 20rem;
+  }
+
+  // The toggle sits on the field baseline of its own full-width row.
+  &__active-toggle {
+    grid-column: 1 / -1;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    min-height: 44px;
+  }
+}

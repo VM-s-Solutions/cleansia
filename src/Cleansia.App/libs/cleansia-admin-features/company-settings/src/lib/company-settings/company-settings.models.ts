@@ -71,28 +71,29 @@ export function getCompanySettingsTableDefinition(
         field: 'key',
         header: translate.instant('pages.company_settings.columns.key'),
         getValue: (row: TenantSettingDto) => row.key ?? '',
-        width: '20%',
+        width: '18%',
       },
       {
         id: 'description',
         field: 'description',
         header: translate.instant('pages.company_settings.columns.description'),
         getValue: (row: TenantSettingDto) => translate.instant(getSettingDescriptionKey(row.key)),
-        width: '28%',
+        width: '24%',
       },
       {
         id: 'category',
         field: 'category',
         header: translate.instant('pages.company_settings.columns.category'),
         getValue: (row: TenantSettingDto) => translate.instant(getSettingCategoryKey(row.category)),
-        width: '10%',
+        width: '12%',
       },
       {
         id: 'range',
+        numeric: true,
         field: 'min',
         header: translate.instant('pages.company_settings.columns.range'),
         getValue: (row: TenantSettingDto) => formatSettingRange(row),
-        width: '10%',
+        width: '8%',
       },
       {
         id: 'default',
@@ -107,7 +108,7 @@ export function getCompanySettingsTableDefinition(
         header: translate.instant('pages.company_settings.columns.value'),
         getValue: (row: TenantSettingDto) => formatSettingValue(row, row.effectiveValue, translate),
         customTemplate: valueTemplate,
-        width: '14%',
+        width: '11%',
       },
       {
         id: 'source',
@@ -117,7 +118,7 @@ export function getCompanySettingsTableDefinition(
           translate.instant(
             row.isOverridden ? 'pages.company_settings.source.overridden' : 'pages.company_settings.source.default'
           ),
-        width: '10%',
+        width: '9%',
       },
     ],
     actions: [

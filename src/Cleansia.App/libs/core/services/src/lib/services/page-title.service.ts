@@ -56,14 +56,6 @@ export class PageTitleService {
     this.updateTitle(titleKey);
   }
 
-  /**
-   * Manually set the page title with a raw string (not translated)
-   */
-  setTitleRaw(title: string): void {
-    const fullTitle = title ? `${title} | ${this.baseTitle}` : this.baseTitle;
-    this.titleService.setTitle(fullTitle);
-  }
-
   private updateTitle(titleKey?: string): void {
     if (titleKey) {
       // Use stream to handle the case where translations haven't loaded yet.

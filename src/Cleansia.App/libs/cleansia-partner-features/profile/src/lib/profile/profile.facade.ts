@@ -8,10 +8,7 @@ import {
   GetCountryFieldLabelsCountryFieldLabelsDto,
   PartnerClient,
 } from '@cleansia/partner-services';
-import {
-  FileValidationErrorService,
-  SnackbarService,
-} from '@cleansia/services';
+import { SnackbarService } from '@cleansia/services';
 import { checkEmployeeCurrent } from '@cleansia/partner-stores';
 import { FileTransformationUtils, FormUtils } from '@cleansia/utils';
 import { Store } from '@ngrx/store';
@@ -38,9 +35,6 @@ export class ProfileFacade extends UnsubscribeControlDirective {
   private readonly partnerClient = inject(PartnerClient);
   private readonly translate = inject(TranslateService);
   private readonly snackbarService = inject(SnackbarService);
-  private readonly fileValidationErrorService = inject(
-    FileValidationErrorService
-  );
   private readonly store = inject(Store);
 
   readonly documentsFacade = inject(ProfileDocumentsFacade);
@@ -166,34 +160,6 @@ export class ProfileFacade extends UnsubscribeControlDirective {
     this.loadProfile();
   }
 
-  onDocumentUpload(files: File[]): void {
-    const normalizedFiles = FileTransformationUtils.normalizeFiles(files);
-
-    if (!normalizedFiles.length) {
-      this.snackbarService.showError(
-        this.translate.instant('global.messages.profile.no_files_selected')
-      );
-      return;
-    }
-
-    // Update the form control with the selected files
-    const documentsControl = this.formGroup.get('documents');
-    documentsControl?.setValue(normalizedFiles);
-    documentsControl?.markAsTouched();
-
-    // Validate the files
-    if (documentsControl?.invalid) {
-      this.fileValidationErrorService.handleFileValidationErrors(
-        documentsControl.errors
-      );
-      return;
-    }
-
-    this.snackbarService.showSuccess(
-      this.translate.instant('global.messages.profile.documents_uploaded')
-    );
-  }
-
   removeFile(fileIndex: number): void {
     const currentFiles = ProfileFormFactory.getUploadedFiles(this.formGroup);
     const updatedFiles = FileTransformationUtils.removeFileByIndex(
@@ -207,17 +173,13 @@ export class ProfileFacade extends UnsubscribeControlDirective {
       documentsControl?.setValue(newFileList);
       documentsControl?.markAsTouched();
 
-      this.snackbarService.showSuccess(
-        this.translate.instant('global.messages.profile.file_removed')
-      );
+      this.snackbarService.showSuccessTranslated('global.messages.profile.file_removed');
     }
   }
 
   onSubmit(): void {
     if (!this.formGroup.valid) {
-      this.snackbarService.showError(
-        this.translate.instant('global.messages.profile.fill_required_fields')
-      );
+      this.snackbarService.showErrorTranslated('global.messages.profile.fill_required_fields');
       FormUtils.markAllFieldsAsTouched(this.formGroup);
       return;
     }
@@ -235,10 +197,8 @@ export class ProfileFacade extends UnsubscribeControlDirective {
       .pipe(
         switchMap((transformationResult) => {
           if (!transformationResult.success) {
-            this.snackbarService.showError(
-              this.translate.instant(
-                'global.messages.profile.file_transformation_error'
-              )
+            this.snackbarService.showErrorTranslated(
+              'global.messages.profile.file_transformation_error'
             );
             return of(null);
           }
@@ -268,10 +228,8 @@ export class ProfileFacade extends UnsubscribeControlDirective {
       .subscribe({
         next: (result) => {
           if (result) {
-            this.snackbarService.showSuccess(
-              this.translate.instant(
-                'global.messages.profile.onboarding_submitted'
-              )
+            this.snackbarService.showSuccessTranslated(
+              'global.messages.profile.onboarding_submitted'
             );
             this.store.dispatch(checkEmployeeCurrent());
           }

@@ -15,7 +15,12 @@ describe('TierConfigsFacade', () => {
   let getAllMock: jest.Mock;
   let updateMock: jest.Mock;
   let previewMock: jest.Mock;
-  let snackbar: { showSuccess: jest.Mock; showError: jest.Mock };
+  let snackbar: {
+    showSuccess: jest.Mock;
+    showSuccessTranslated: jest.Mock;
+    showError: jest.Mock;
+    showErrorTranslated: jest.Mock;
+  };
 
   const input: TierConfigUpdateInput = {
     lifetimePointsThreshold: 500,
@@ -29,7 +34,12 @@ describe('TierConfigsFacade', () => {
     getAllMock = jest.fn().mockReturnValue(of({ tiers: [] }));
     updateMock = jest.fn().mockReturnValue(of({ id: 'tier-1' }));
     previewMock = jest.fn().mockReturnValue(of({ impacts: [] }));
-    snackbar = { showSuccess: jest.fn(), showError: jest.fn() };
+    snackbar = {
+      showSuccess: jest.fn(),
+      showSuccessTranslated: jest.fn(),
+      showError: jest.fn(),
+      showErrorTranslated: jest.fn(),
+    };
 
     TestBed.configureTestingModule({
       providers: [
@@ -83,7 +93,7 @@ describe('TierConfigsFacade', () => {
 
     expect(getAllMock).toHaveBeenCalledTimes(1);
     expect(onSuccess).toHaveBeenCalled();
-    expect(snackbar.showSuccess).toHaveBeenCalledWith(
+    expect(snackbar.showSuccessTranslated).toHaveBeenCalledWith(
       'pages.loyalty_tiers.form.success'
     );
     expect(facade.saving()).toBe(false);
@@ -97,7 +107,7 @@ describe('TierConfigsFacade', () => {
 
     expect(getAllMock).not.toHaveBeenCalled();
     expect(onSuccess).not.toHaveBeenCalled();
-    expect(snackbar.showError).toHaveBeenCalledWith(
+    expect(snackbar.showErrorTranslated).toHaveBeenCalledWith(
       'pages.loyalty_tiers.form.error.generic'
     );
     expect(facade.saving()).toBe(false);
@@ -120,7 +130,7 @@ describe('TierConfigsFacade', () => {
 
     expect(facade.previewResult()).toBeNull();
     expect(facade.previewing()).toBe(false);
-    expect(snackbar.showError).toHaveBeenCalledWith(
+    expect(snackbar.showErrorTranslated).toHaveBeenCalledWith(
       'pages.loyalty_tiers.preview.error.preview'
     );
   });

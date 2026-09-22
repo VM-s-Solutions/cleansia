@@ -1,10 +1,12 @@
-<div class="cleansia-fiscal-failures">
+<div class="cleansia-fiscal-failures cleansia-page">
   <div class="cleansia-fiscal-failures__container page-wrapper">
-    <div class="cleansia-fiscal-failures__header">
-      <cleansia-title [title]="'fiscal_failures.title' | translate" />
-      <p class="cleansia-fiscal-failures__description">
-        {{ 'fiscal_failures.description' | translate }}
-      </p>
+    <div class="cleansia-page-header">
+      <div class="cleansia-page-header__heading">
+        <cleansia-title [title]="'fiscal_failures.title' | translate" [level]="1" />
+        <p class="cleansia-page-header__description">
+          {{ 'fiscal_failures.description' | translate }}
+        </p>
+      </div>
     </div>
 
     <cleansia-section>

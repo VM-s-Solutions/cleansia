@@ -44,7 +44,7 @@ class CheckboxStub {
 
 @Component({ selector: 'cleansia-button', standalone: true, template: '' })
 class ButtonStub {
-  title = input<string>('');
+  label = input<string>('');
   icon = input<string | undefined>(undefined);
   severity = input<string>('');
   outlined = input<boolean>(false);
@@ -132,7 +132,7 @@ describe('WorkContractDialogComponent', () => {
     const buttons = fixture.debugElement
       .queryAll(By.directive(ButtonStub))
       .map((el) => el.componentInstance as ButtonStub);
-    return buttons.find((button) => button.title() !== 'global.actions.cancel' && button.title() !== 'global.actions.close') ?? null;
+    return buttons.find((button) => button.label() !== 'global.actions.cancel' && button.label() !== 'global.actions.close') ?? null;
   }
 
   function checkbox(): CheckboxStub | null {
@@ -183,7 +183,7 @@ describe('WorkContractDialogComponent', () => {
     it('offers the tick and a disabled "accept and take" button until ticked', () => {
       expect(checkbox()?.label()).toBe('pages.orders.work_contract.accept_checkbox');
       const button = primaryButton();
-      expect(button?.title()).toBe('pages.orders.work_contract.accept_and_take');
+      expect(button?.label()).toBe('pages.orders.work_contract.accept_and_take');
       expect(button?.disabled()).toBe(true);
 
       facade.canSubmit.set(true);
@@ -202,7 +202,7 @@ describe('WorkContractDialogComponent', () => {
       const cancel = fixture.debugElement
         .queryAll(By.directive(ButtonStub))
         .map((el) => el.componentInstance as ButtonStub)
-        .find((button) => button.title() === 'global.actions.cancel');
+        .find((button) => button.label() === 'global.actions.cancel');
 
       cancel?.onClick.emit();
 
@@ -236,7 +236,7 @@ describe('WorkContractDialogComponent', () => {
       const retry = fixture.debugElement
         .queryAll(By.directive(ButtonStub))
         .map((el) => el.componentInstance as ButtonStub)
-        .find((button) => button.title() === 'global.actions.retry');
+        .find((button) => button.label() === 'global.actions.retry');
       retry?.onClick.emit();
       expect(facade.retry).toHaveBeenCalledTimes(1);
     });
@@ -249,7 +249,7 @@ describe('WorkContractDialogComponent', () => {
       fixture.detectChanges();
 
       expect(checkbox()).not.toBeNull();
-      expect(primaryButton()?.title()).toBe('pages.orders.work_contract.accept_only');
+      expect(primaryButton()?.label()).toBe('pages.orders.work_contract.accept_only');
     });
   });
 
@@ -286,7 +286,7 @@ describe('WorkContractDialogComponent', () => {
     it('offers only a close button', () => {
       const titles = fixture.debugElement
         .queryAll(By.directive(ButtonStub))
-        .map((el) => (el.componentInstance as ButtonStub).title());
+        .map((el) => (el.componentInstance as ButtonStub).label());
       expect(titles).toEqual(['global.actions.close']);
     });
   });

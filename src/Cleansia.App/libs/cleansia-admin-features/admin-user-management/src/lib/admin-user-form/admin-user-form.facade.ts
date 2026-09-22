@@ -15,9 +15,8 @@ import {
 import { ICleansiaSelectOption } from '@cleansia/components';
 import { UnsubscribeControlDirective } from '@cleansia/directives';
 import { CleansiaAdminRoute, SnackbarService } from '@cleansia/services';
-import { TranslateService } from '@ngx-translate/core';
 import { catchError, filter, finalize, of, takeUntil } from 'rxjs';
-import { DEFAULT_ADMIN_ROLE, resolveAdminUserFormErrorKey } from './admin-user-form.models';
+import { DEFAULT_ADMIN_ROLE } from './admin-user-form.models';
 
 export interface AdminUserFormData {
   email: string;
@@ -35,7 +34,6 @@ export class AdminUserFormFacade extends UnsubscribeControlDirective {
   private readonly adminClient = inject(AdminClient);
   private readonly authService = inject(AdminAuthService);
   private readonly snackbarService = inject(SnackbarService);
-  private readonly translate = inject(TranslateService);
   private readonly router = inject(Router);
 
   readonly user = signal<AdminUserDetailDto | null>(null);
@@ -116,20 +114,13 @@ export class AdminUserFormFacade extends UnsubscribeControlDirective {
       .create(command)
       .pipe(
         takeUntil(this.destroyed$),
-        catchError((error: unknown) => {
-          this.snackbarService.showError(
-            this.translate.instant(resolveAdminUserFormErrorKey(error))
-          );
-          return of(null);
-        }),
+        catchError(() => of(null)),
         finalize(() => this.saving.set(false))
       )
       .subscribe((response: CreateAdminUserResponse | null) => {
         if (response) {
-          this.snackbarService.showSuccess(
-            this.translate.instant(
-              'pages.admin_user_form.messages.create_success'
-            )
+          this.snackbarService.showSuccessTranslated(
+            'pages.admin_user_form.messages.create_success'
           );
           this.router.navigate([CleansiaAdminRoute.ADMIN_USER_MANAGEMENT]);
         }
@@ -151,20 +142,13 @@ export class AdminUserFormFacade extends UnsubscribeControlDirective {
       .update(userId, command)
       .pipe(
         takeUntil(this.destroyed$),
-        catchError((error: unknown) => {
-          this.snackbarService.showError(
-            this.translate.instant(resolveAdminUserFormErrorKey(error))
-          );
-          return of(null);
-        }),
+        catchError(() => of(null)),
         finalize(() => this.saving.set(false))
       )
       .subscribe((response: UpdateAdminUserResponse | null) => {
         if (response) {
-          this.snackbarService.showSuccess(
-            this.translate.instant(
-              'pages.admin_user_form.messages.update_success'
-            )
+          this.snackbarService.showSuccessTranslated(
+            'pages.admin_user_form.messages.update_success'
           );
           this.router.navigate([CleansiaAdminRoute.ADMIN_USER_MANAGEMENT]);
         }
@@ -197,9 +181,7 @@ export class AdminUserFormFacade extends UnsubscribeControlDirective {
       )
       .subscribe((response) => {
         if (response) {
-          this.snackbarService.showSuccess(
-            this.translate.instant('pages.admin_user_form.messages.role_success')
-          );
+          this.snackbarService.showSuccessTranslated('pages.admin_user_form.messages.role_success');
         }
         this.syncRole(response ? response.role : this.role());
       });

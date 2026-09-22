@@ -9,7 +9,7 @@ import {
   RequestsClient,
   UserConsentDto,
 } from '@cleansia/admin-services';
-import { SnackbarService } from '@cleansia/services';
+import { DialogService, SnackbarService } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
 import { Subject, of, throwError } from 'rxjs';
 import { DataProtectionFacade } from './data-protection.facade';
@@ -23,9 +23,10 @@ describe('DataProtectionFacade', () => {
     deleteAccount: jest.Mock;
   };
   let requestsClient: { retryDeletion: jest.Mock };
+  let confirmMock: jest.Mock;
   let snackbar: {
-    showSuccess: jest.Mock;
-    showError: jest.Mock;
+    showSuccess: jest.Mock; showSuccessTranslated: jest.Mock;
+    showError: jest.Mock; showErrorTranslated: jest.Mock;
     showApiError: jest.Mock;
   };
 
@@ -62,9 +63,10 @@ describe('DataProtectionFacade', () => {
       deleteAccount: jest.fn(),
     };
     requestsClient = { retryDeletion: jest.fn() };
+    confirmMock = jest.fn().mockReturnValue(of(true));
     snackbar = {
-      showSuccess: jest.fn(),
-      showError: jest.fn(),
+      showSuccess: jest.fn(), showSuccessTranslated: jest.fn(),
+      showError: jest.fn(), showErrorTranslated: jest.fn(),
       showApiError: jest.fn(),
     };
 
@@ -74,6 +76,7 @@ describe('DataProtectionFacade', () => {
         { provide: AdminGdprClient, useValue: gdprClient },
         { provide: RequestsClient, useValue: requestsClient },
         { provide: SnackbarService, useValue: snackbar },
+        { provide: DialogService, useValue: { confirmTranslated: confirmMock } },
         { provide: TranslateService, useValue: { instant: (k: string) => k } },
       ],
     });
@@ -294,7 +297,7 @@ describe('DataProtectionFacade', () => {
         expect.anything(),
         'user-data-export-user-1.json'
       );
-      expect(snackbar.showSuccess).toHaveBeenCalledWith(
+      expect(snackbar.showSuccessTranslated).toHaveBeenCalledWith(
         'pages.data_protection.export.success'
       );
       expect(gdprClient.requests).toHaveBeenCalledTimes(1);
@@ -328,7 +331,7 @@ describe('DataProtectionFacade', () => {
       facade.eraseUserAccount('user-1');
 
       expect(gdprClient.deleteAccount).toHaveBeenCalledWith('user-1');
-      expect(snackbar.showSuccess).toHaveBeenCalledWith(
+      expect(snackbar.showSuccessTranslated).toHaveBeenCalledWith(
         'pages.data_protection.erase.success'
       );
       expect(gdprClient.requests).toHaveBeenCalledTimes(1);
@@ -353,6 +356,32 @@ describe('DataProtectionFacade', () => {
       facade.eraseUserAccount('user-1');
       expect(gdprClient.deleteAccount).not.toHaveBeenCalled();
     });
+
+    it('fulfils a deletion request through the same red confirmation and the same erase', () => {
+      gdprClient.deleteAccount.mockReturnValue(of(undefined));
+      gdprClient.requests.mockReturnValue(of(pagedRequests(requestRows, 1)));
+
+      facade.fulfilDeletionRequest('user-1');
+
+      expect(confirmMock).toHaveBeenCalledWith(
+        'pages.data_protection.erase.confirm_message',
+        'pages.data_protection.requests.fulfil_title',
+        { userId: 'user-1' },
+        { danger: true, acceptLabelKey: 'pages.data_protection.erase.confirm_yes' }
+      );
+      expect(gdprClient.deleteAccount).toHaveBeenCalledWith('user-1');
+    });
+
+    it('does nothing when the confirmation is declined', () => {
+      confirmMock.mockReturnValue(of(false));
+
+      facade.eraseUserAccount('user-1');
+      facade.fulfilDeletionRequest('user-1');
+
+      expect(confirmMock).toHaveBeenCalledTimes(2);
+      expect(gdprClient.deleteAccount).not.toHaveBeenCalled();
+      expect(facade.erasing()).toBe(false);
+    });
   });
 
   describe('deletion retry', () => {
@@ -360,10 +389,10 @@ describe('DataProtectionFacade', () => {
       requestsClient.retryDeletion.mockReturnValue(of(undefined));
       gdprClient.requests.mockReturnValue(of(pagedRequests(requestRows, 1)));
 
-      facade.retryDeletion('req-1');
+      facade.retryDeletion(GdprRequestDto.fromJS({ id: 'req-1', userId: 'user-1' }));
 
       expect(requestsClient.retryDeletion).toHaveBeenCalledWith('req-1');
-      expect(snackbar.showSuccess).toHaveBeenCalledWith(
+      expect(snackbar.showSuccessTranslated).toHaveBeenCalledWith(
         'pages.data_protection.requests.retry_success'
       );
       expect(gdprClient.requests).toHaveBeenCalledTimes(1);
@@ -375,13 +404,13 @@ describe('DataProtectionFacade', () => {
       requestsClient.retryDeletion.mockReturnValue(throwError(() => error));
       gdprClient.requests.mockReturnValue(of(pagedRequests(requestRows, 1)));
 
-      facade.retryDeletion('req-1');
+      facade.retryDeletion(GdprRequestDto.fromJS({ id: 'req-1', userId: 'user-1' }));
 
       expect(snackbar.showApiError).toHaveBeenCalledWith(
         error,
         'pages.data_protection.requests.retry_error'
       );
-      expect(snackbar.showSuccess).not.toHaveBeenCalled();
+      expect(snackbar.showSuccessTranslated).not.toHaveBeenCalled();
       expect(gdprClient.requests).toHaveBeenCalledTimes(1);
       expect(facade.retrying()).toBe(false);
     });
@@ -389,18 +418,33 @@ describe('DataProtectionFacade', () => {
     it('reports a retry in flight while the call runs', () => {
       requestsClient.retryDeletion.mockReturnValue(new Subject<void>());
 
-      facade.retryDeletion('req-1');
+      facade.retryDeletion(GdprRequestDto.fromJS({ id: 'req-1', userId: 'user-1' }));
 
       expect(facade.retrying()).toBe(true);
     });
 
     it('ignores a second retry while one is in flight', () => {
       requestsClient.retryDeletion.mockReturnValue(new Subject<void>());
-      facade.retryDeletion('req-1');
+      facade.retryDeletion(GdprRequestDto.fromJS({ id: 'req-1', userId: 'user-1' }));
 
-      facade.retryDeletion('req-2');
+      facade.retryDeletion(GdprRequestDto.fromJS({ id: 'req-2', userId: 'user-2' }));
 
       expect(requestsClient.retryDeletion).toHaveBeenCalledTimes(1);
+    });
+
+    it('does nothing when the confirmation is declined', () => {
+      confirmMock.mockReturnValue(of(false));
+
+      facade.retryDeletion(GdprRequestDto.fromJS({ id: 'req-1', userId: 'user-1' }));
+
+      expect(confirmMock).toHaveBeenCalledWith(
+        'pages.data_protection.requests.retry_confirm_message',
+        'pages.data_protection.requests.retry_confirm_title',
+        { userId: 'user-1' },
+        { acceptLabelKey: 'pages.data_protection.requests.retry_confirm_yes' }
+      );
+      expect(requestsClient.retryDeletion).not.toHaveBeenCalled();
+      expect(facade.retrying()).toBe(false);
     });
   });
 });

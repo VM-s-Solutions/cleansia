@@ -4,95 +4,71 @@
   (visibleChange)="onVisibilityChanged($event)"
   [modal]="true"
   [closable]="true"
-  [style]="{ width: '480px' }"
   [draggable]="false"
   [resizable]="false"
+  styleClass="cleansia-dialog dialog-panel"
 >
-  <form [formGroup]="form" (ngSubmit)="submit()" class="issue-credit-dialog__form">
+  <form [formGroup]="form" (ngSubmit)="submit()" class="dialog-body">
     <!--
       Said before the form, not after it: this is money the company owes from the moment the button
       is pressed, and it cannot be taken back from here.
     -->
-    <p class="issue-credit-dialog__lede">
+    <p class="dialog-lede">
       {{ 'pages.loyalty_user_detail.credit.dialog.lede' | translate }}
     </p>
 
-    <div class="form-field">
-      <cleansia-select
-        [label]="'pages.loyalty_user_detail.credit.dialog.field.currency' | translate"
-        formControlName="currencyId"
-        [options]="currencyOptions()"
-        [showClear]="false"
-        [required]="true"
-      />
-      @if (form.controls.currencyId.touched && form.controls.currencyId.errors?.['required']) {
-        <small class="field-error">
-          {{ 'pages.loyalty_user_detail.credit.dialog.validation.currency_required' | translate }}
-        </small>
-      }
-    </div>
+    <div class="form-grid">
+      <div class="form-field form-field--full">
+        <cleansia-select
+          [label]="'pages.loyalty_user_detail.credit.dialog.field.currency' | translate"
+          formControlName="currencyId"
+          [options]="currencyOptions()"
+          [showClear]="false"
+          [required]="true"
+        />
+      </div>
 
-    <div class="form-field">
-      <cleansia-text-input
-        [label]="'pages.loyalty_user_detail.credit.dialog.field.amount' | translate"
-        formControlName="amount"
-        dataType="number"
-        [required]="true"
-      />
-      @if (form.controls.amount.touched && form.controls.amount.errors?.['min']) {
-        <small class="field-error">
-          {{ 'pages.loyalty_user_detail.credit.dialog.validation.amount_min' | translate }}
-        </small>
-      }
-      @if (form.controls.amount.touched && form.controls.amount.errors?.['max']) {
-        <small class="field-error">
-          {{ 'pages.loyalty_user_detail.credit.dialog.validation.amount_max' | translate }}
-        </small>
-      }
-    </div>
+      <div class="form-field form-field--full">
+        <cleansia-text-input
+          [label]="'pages.loyalty_user_detail.credit.dialog.field.amount' | translate"
+          formControlName="amount"
+          dataType="number"
+          [required]="true"
+        />
+      </div>
 
-    <div class="form-field">
-      <cleansia-select
-        [label]="'pages.loyalty_user_detail.credit.dialog.field.reason' | translate"
-        formControlName="reason"
-        [options]="reasonOptions()"
-        [showClear]="false"
-      />
-    </div>
+      <div class="form-field form-field--full">
+        <cleansia-select
+          [label]="'pages.loyalty_user_detail.credit.dialog.field.reason' | translate"
+          formControlName="reason"
+          [options]="reasonOptions()"
+          [showClear]="false"
+        />
+      </div>
 
-    <div class="form-field">
-      <cleansia-textarea
-        [label]="'pages.loyalty_user_detail.credit.dialog.field.note' | translate"
-        formControlName="note"
-        [rows]="4"
-      />
-      <small class="field-help">
+      <div class="form-field form-field--full">
+        <cleansia-textarea
+          [label]="'pages.loyalty_user_detail.credit.dialog.field.note' | translate"
+          formControlName="note"
+          [rows]="4"
+        />
+      </div>
+      <p class="form-hint">
         {{ 'pages.loyalty_user_detail.credit.dialog.field.note_help' | translate }}
-      </small>
-      @if (form.controls.note.touched && form.controls.note.errors?.['required']) {
-        <small class="field-error">
-          {{ 'pages.loyalty_user_detail.credit.dialog.validation.note_required' | translate }}
-        </small>
-      }
-      @if (form.controls.note.touched && form.controls.note.errors?.['maxlength']) {
-        <small class="field-error">
-          {{ 'pages.loyalty_user_detail.credit.dialog.validation.note_max' | translate }}
-        </small>
-      }
+      </p>
     </div>
   </form>
 
   <ng-template pTemplate="footer">
     <cleansia-button
-      [label]="'pages.loyalty_user_detail.credit.dialog.cancel' | translate"
-      [outlined]="true"
+      [label]="'global.actions.cancel' | translate"
       severity="secondary"
+      [outlined]="true"
       (onClick)="cancel()"
     />
     <cleansia-button
       [label]="'pages.loyalty_user_detail.credit.dialog.submit' | translate"
       icon="pi pi-check"
-      severity="primary"
       [disabled]="submitting()"
       [loading]="submitting()"
       (onClick)="submit()"

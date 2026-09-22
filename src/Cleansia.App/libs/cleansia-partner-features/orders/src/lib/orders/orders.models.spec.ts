@@ -10,10 +10,10 @@ function row(status: OrderStatus, availableSpots = 1): OrderListItem {
 }
 
 function takeAction() {
-  const { actions } = getAvailableOrdersTableDefinition({
-    onTakeOrder: jest.fn(),
-    isTakeInFlight: () => false,
-  });
+  const { actions } = getAvailableOrdersTableDefinition(
+    { onTakeOrder: jest.fn(), isTakeInFlight: () => false },
+    'cs'
+  );
   return actions[0];
 }
 
@@ -55,31 +55,52 @@ describe('getAvailableOrdersTableDefinition — take action visibility', () => {
   });
 
   it('disables the row that is already being taken', () => {
-    const { actions } = getAvailableOrdersTableDefinition({
-      onTakeOrder: jest.fn(),
-      isTakeInFlight: (item) => item.id === 'ord-1',
-    });
+    const { actions } = getAvailableOrdersTableDefinition(
+      { onTakeOrder: jest.fn(), isTakeInFlight: (item) => item.id === 'ord-1' },
+      'cs'
+    );
 
     expect(actions[0].disabled?.(row(OrderStatus.New))).toBe(true);
   });
 });
 
-describe('the total price column names the order currency', () => {
-  const priceValues = (order: OrderListItem) =>
-    [
-      getAvailableOrdersTableDefinition({ onTakeOrder: jest.fn(), isTakeInFlight: () => false }),
-      getMyOrdersTableDefinition({ onStartOrder: jest.fn(), onCompleteOrder: jest.fn() }),
-    ].map((def) => def.columns.find((c) => c.id === 'totalPrice')?.getValue?.(order));
+const NBSP = String.fromCharCode(0xa0);
 
+function bothTables(lang: string | undefined) {
+  return [
+    getAvailableOrdersTableDefinition({ onTakeOrder: jest.fn(), isTakeInFlight: () => false }, lang),
+    getMyOrdersTableDefinition({ onStartOrder: jest.fn(), onCompleteOrder: jest.fn() }, lang),
+  ];
+}
+
+function cellValues(lang: string | undefined, columnId: string, order: OrderListItem): unknown[] {
+  return bothTables(lang).map((def) => def.columns.find((c) => c.id === columnId)?.getValue?.(order));
+}
+
+describe('the total price column names the order currency in the language of the session', () => {
   it('labels the total with the code the order carries', () => {
     const order = OrderListItem.fromJS({ totalPrice: 1200, currency: { code: 'EUR' } });
-    expect(priceValues(order)).toEqual(['€1,200.00', '€1,200.00']);
+    expect(cellValues('cs', 'totalPrice', order)).toEqual([`1${NBSP}200,00${NBSP}€`, `1${NBSP}200,00${NBSP}€`]);
+    expect(cellValues('en', 'totalPrice', order)).toEqual(['€1,200.00', '€1,200.00']);
   });
 
   // The server always sends the order's currency; a bare number is honest when it does not, and
   // crowns would mislabel every non-crown order.
   it('prints a bare number rather than a currency the order does not name', () => {
     const order = OrderListItem.fromJS({ totalPrice: 1200 });
-    expect(priceValues(order)).toEqual(['1,200.00', '1,200.00']);
+    expect(cellValues('cs', 'totalPrice', order)).toEqual([`1${NBSP}200,00`, `1${NBSP}200,00`]);
+  });
+});
+
+describe('the cleaning date column is the session-language stamp the order detail prints', () => {
+  const order = OrderListItem.fromJS({ cleaningDateTime: '2026-09-01T11:00:00' });
+
+  it('prints the day and the minute, not the en-GB slashes', () => {
+    expect(cellValues('cs', 'cleaningDateTime', order)).toEqual(['1. 9. 2026 11:00', '1. 9. 2026 11:00']);
+    expect(cellValues('en', 'cleaningDateTime', order)).toEqual(['Sep 1, 2026, 11:00 AM', 'Sep 1, 2026, 11:00 AM']);
+  });
+
+  it('prints nothing for an order with no date', () => {
+    expect(cellValues('cs', 'cleaningDateTime', OrderListItem.fromJS({}))).toEqual(['', '']);
   });
 });

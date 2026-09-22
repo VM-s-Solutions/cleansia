@@ -1,3 +1,5 @@
+@use '../common/focus' as *;
+
 .cleansia-file-component {
   display: flex;
   flex-direction: column;
@@ -15,15 +17,15 @@
   }
 
   .file-upload-area {
+    @extend %focus-ring;
     border: 2px dashed var(--surface-border);
-    border-radius: var(--border-radius);
+    border-radius: var(--cleansia-radius-sm);
     padding: 2rem;
     text-align: center;
     cursor: pointer;
     transition: all 0.3s ease;
     background: var(--surface-card);
     position: relative;
-    outline: none;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     min-height: 120px;
     display: flex;
@@ -144,14 +146,14 @@
         color: var(--text-color-secondary);
         padding: 0.5rem 1rem;
         background: var(--surface-100);
-        border-radius: var(--border-radius);
+        border-radius: var(--cleansia-radius-sm);
       }
     }
   }
 
   .selected-files {
     border: 1px solid var(--surface-border);
-    border-radius: var(--border-radius);
+    border-radius: var(--cleansia-radius-sm);
     background: var(--surface-card);
     overflow: hidden;
 

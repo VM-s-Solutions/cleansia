@@ -8267,6 +8267,76 @@
         }
       }
     },
+    "dispute_create_evidence_hint": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Optional. Photos or PDFs up to 10 MB each — they upload when you submit."
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nepovinné. Fotky nebo PDF do 10 MB každý — nahrají se při odeslání."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nepovinné. Fotky alebo PDF do 10 MB každý — nahrajú sa pri odoslaní."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Необов’язково. Фото або PDF до 10 МБ кожен — завантажаться під час надсилання."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Необязательно. Фото или PDF до 10 МБ каждый — загрузятся при отправке."
+          }
+        }
+      }
+    },
+    "dispute_create_evidence_partial": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your dispute was submitted, but these files could not be uploaded: %1$@. Add them again from the dispute."
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stížnost byla odeslána, ale tyto soubory se nepodařilo nahrát: %1$@. Přidejte je znovu v detailu stížnosti."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sťažnosť bola odoslaná, ale tieto súbory sa nepodarilo nahrať: %1$@. Pridajte ich znova v detaile sťažnosti."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Спір надіслано, але ці файли не вдалося завантажити: %1$@. Додайте їх знову на сторінці спору."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Спор отправлен, но эти файлы не удалось загрузить: %1$@. Добавьте их снова на странице спора."
+          }
+        }
+      }
+    },
     "dispute_create_item_in_package": {
       "extractionState": "manual",
       "localizations": {
@@ -9037,6 +9107,41 @@
         }
       }
     },
+    "dispute_evidence_remove": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remove"
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Odebrat"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Odstrániť"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Видалити"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Удалить"
+          }
+        }
+      }
+    },
     "dispute_evidence_section_title": {
       "extractionState": "stale",
       "localizations": {
@@ -9173,6 +9278,76 @@
           "stringUnit": {
             "state": "translated",
             "value": "Непідтримуваний тип файлу."
+          }
+        }
+      }
+    },
+    "dispute_evidence_upload_failed": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Upload failed"
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nahrání se nezdařilo"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nahrávanie zlyhalo"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Не вдалося завантажити"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Не удалось загрузить"
+          }
+        }
+      }
+    },
+    "dispute_evidence_uploaded": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uploaded"
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nahráno"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nahrané"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Завантажено"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Загружено"
           }
         }
       }

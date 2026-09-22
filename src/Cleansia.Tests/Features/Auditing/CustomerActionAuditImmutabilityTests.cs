@@ -10,10 +10,10 @@ namespace Cleansia.Tests.Features.Auditing;
 
 /// <summary>
 /// ADR-0062 D5 (Verification #4) — the customer audit row is append-only by DISCIPLINE, not by type:
-/// <c>IRepository&lt;T&gt;</c> hands every repository <c>Remove</c>/<c>RemoveRange</c>/<c>Deactivate</c>/
-/// <c>DeactivateRange</c>, and <c>BaseEntity.IsActive</c> is a public setter. So this walks the compiled
+/// <c>IRepository&lt;T&gt;</c> hands every repository <c>Remove</c>/<c>RemoveRange</c>/<c>Deactivate</c>,
+/// and <c>BaseEntity.IsActive</c> is a public setter. So this walks the compiled
 /// IL of the three assemblies that can touch the table and asserts that no method body invokes one of
-/// those four on the customer repository or the entity's <c>DbSet</c>, nor reaches the row through the
+/// those three on the customer repository or the entity's <c>DbSet</c>, nor reaches the row through the
 /// context itself (<c>DbContext.Remove&lt;T&gt;</c> is a generic METHOD on a non-generic type, and
 /// <c>RemoveRange(params object[])</c> / <c>Entry(object)</c> carry no type at all — the latter are
 /// flagged when the calling method handles a <c>CustomerActionAudit</c>), that no method body which
@@ -38,8 +38,7 @@ public sealed class CustomerActionAuditImmutabilityTests
         typeof(CustomerActionAuditRepository).Assembly
     ];
 
-    private static readonly string[] ForbiddenRepositoryMembers =
-        ["Remove", "RemoveRange", "Deactivate", "DeactivateRange"];
+    private static readonly string[] ForbiddenRepositoryMembers = ["Remove", "RemoveRange", "Deactivate"];
 
     private static readonly string[] ForbiddenContextMembers =
         ["Remove", "RemoveRange", "Update", "UpdateRange", "Entry"];

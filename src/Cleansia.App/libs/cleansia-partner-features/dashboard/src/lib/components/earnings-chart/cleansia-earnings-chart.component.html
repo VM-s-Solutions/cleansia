@@ -15,7 +15,7 @@
         color="secondary"
       />
       <cleansia-label 
-        [text]="(data()!.totalEarnings | number : '1.0-0') + ' ' + (currencyCode() ?? '')" 
+        [text]="totalEarnings()" 
         size="base" 
         weight="semibold"
       />
@@ -27,7 +27,7 @@
         color="secondary"
       />
       <cleansia-label 
-        [text]="(data()!.averageMonthlyEarnings | number : '1.0-0') + ' ' + (currencyCode() ?? '')" 
+        [text]="averageMonthlyEarnings()" 
         size="base" 
         weight="semibold"
       />

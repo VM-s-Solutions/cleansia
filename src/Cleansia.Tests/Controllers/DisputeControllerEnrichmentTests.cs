@@ -2,6 +2,7 @@ using System.Reflection;
 using Cleansia.Core.AppServices.Features.Disputes;
 using Cleansia.Infra.Common.Validations;
 using MediatR;
+using Microsoft.AspNetCore.Mvc;
 using Moq;
 
 namespace Cleansia.Tests.Controllers;
@@ -13,7 +14,7 @@ namespace Cleansia.Tests.Controllers;
 ///   - the Customer and Mobile.Customer <c>AddMessage</c> controllers force
 ///     <c>IsStaffMessage = false</c> — a customer can never submit a staff message;
 ///   - the new Admin <c>AddMessage</c> controller forces <c>IsStaffMessage = true</c>;
-///   - the Partner host no longer exposes an <c>AddMessage</c> action at all.
+///   - the Partner host carries no dispute controller at all.
 /// </summary>
 public class DisputeControllerEnrichmentTests
 {
@@ -75,29 +76,16 @@ public class DisputeControllerEnrichmentTests
     }
 
     [Fact]
-    public void Partner_Host_Has_No_AddMessage_Action()
+    public void Partner_Host_Has_No_Dispute_Controller()
     {
-        // the staff AddMessage endpoint is gone from the Partner host — no cleaner posts a
-        // dispute message of any kind on Partner.
-        var method = typeof(Cleansia.Web.Partner.Controllers.DisputeController)
-            .GetMethod("AddMessage", BindingFlags.Public | BindingFlags.Instance);
-        Assert.Null(method);
-    }
-
-    [Theory]
-    [InlineData("ResolveDispute")]
-    [InlineData("UpdateStatus")]
-    [InlineData("CreateDispute")]
-    [InlineData("GetDisputeById")]
-    [InlineData("GetPagedDisputes")]
-    public void Partner_Host_No_Longer_Exposes_The_Migrated_Or_Dead_Dispute_Actions(string actionName)
-    {
-        // SEC-DSP-07: the admin-policied Resolve/UpdateStatus actions and the duplicated
-        // customer-policied Create/GetById/GetPaged are gone from the Partner host. Resolve/UpdateStatus
-        // now live on the Admin host; Create/GetById/GetPaged live on the Customer host.
-        var method = typeof(Cleansia.Web.Partner.Controllers.DisputeController)
-            .GetMethod(actionName, BindingFlags.Public | BindingFlags.Instance);
-        Assert.Null(method);
+        // SEC-DSP-07: no cleaner files, views, resolves or messages a dispute on the Partner host.
+        // Resolve/UpdateStatus live on the Admin host; Create/GetById/GetPaged/AddMessage on the
+        // Customer hosts. The Partner host carries no dispute surface at all.
+        var partnerControllers = typeof(Cleansia.Web.Partner.Controllers.OrderController).Assembly
+            .GetTypes()
+            .Where(t => typeof(ControllerBase).IsAssignableFrom(t) && !t.IsAbstract)
+            .Select(t => t.Name);
+        Assert.DoesNotContain("DisputeController", partnerControllers);
     }
 
     [Theory]

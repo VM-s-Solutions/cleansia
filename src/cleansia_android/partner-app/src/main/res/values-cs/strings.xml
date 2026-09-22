@@ -354,7 +354,6 @@
     <string name="address_info">Adresa</string>
     <string name="bank_details">Bankovní údaje</string>
     <string name="documents">Dokumenty</string>
-    <string name="availability">Dostupnost</string>
     <string name="personal">Osobní</string>
     <string name="birth_date">Datum narození</string>
     <string name="birth_date_placeholder">Vyberte datum</string>
@@ -366,23 +365,6 @@
     <string name="identification_title">Identifikace</string>
     <string name="my_documents">Moje dokumenty</string>
     <string name="documents_summary_view">Zobrazit, nahrát nebo odstranit</string>
-    <string name="availability_days_set">%1$d nastavených dní</string>
-    <string name="availability_helper">Přepněte dny v týdnu, kdy můžete pracovat, a vyberte časové okno.</string>
-    <!-- Availability v2 -->
-    <string name="availability_quick_setup">Rychlé nastavení</string>
-    <string name="availability_weekly_schedule">Týdenní rozvrh</string>
-    <string name="availability_preset_mon_fri">Po–Pá 9–17</string>
-    <string name="availability_preset_mon_sat">Po–So 8–16</string>
-    <string name="availability_preset_custom">Vlastní</string>
-    <string name="availability_apply_to_days">Vyberte dny a poté zvolte časové okno.</string>
-    <string name="availability_apply">Použít</string>
-    <string name="availability_start_time">Začátek</string>
-    <string name="availability_end_time">Konec</string>
-    <string name="availability_add_slot">Přidat další okno</string>
-    <string name="availability_remove_slot">Odebrat okno</string>
-    <string name="availability_pick_time">Vyberte čas</string>
-    <string name="availability_no_days_selected">Klepnutím na den výše nastavíte hodiny.</string>
-    <string name="availability_slot_overlap_error">Časová okna se nesmí překrývat.</string>
     <string name="add_document">Přidat dokument</string>
     <string name="upload_document">Nahrát dokument</string>
     <string name="document_type">Typ dokumentu</string>
@@ -458,11 +440,6 @@
     <string name="relationship">Vztah</string>
     <string name="contact_phone">Telefonní číslo</string>
     <string name="contact_email">E-mailová adresa</string>
-
-    <!-- Availability -->
-    <string name="set_availability">Nastavit dostupnost</string>
-    <string name="no_availability_set">Dostupnost není nastavena</string>
-    <string name="select_time">Vybrat čas</string>
 
     <!-- Settings -->
     <string name="settings">Nastavení</string>
@@ -592,7 +569,6 @@
     <string name="onboarding_highlight_invoices">Faktury</string>
     <string name="onboarding_highlight_analytics">Analytika</string>
     <string name="onboarding_highlight_reports">Výkazy</string>
-    <string name="onboarding_highlight_availability">Dostupnost</string>
     <string name="onboarding_highlight_documents">Dokumenty</string>
     <string name="onboarding_highlight_ratings">Hodnocení</string>
 
@@ -762,35 +738,16 @@
 
     <!-- Schedule setup -->
     <string name="schedule_setup">Nastavení rozvrhu</string>
-    <string name="schedule_setup_title">Nastavení rozvrhu</string>
     <string name="schedule_setup_desc">Nastavte dny a časy, kdy jste k dispozici.</string>
-    <string name="schedule_setup_sheet_desc">Vyberte své pracovní dny a hodiny.</string>
-    <string name="weekly_schedule">Týdenní rozvrh</string>
     <string name="working_days">Pracovní dny</string>
-    <string name="working_day">Pracovní den</string>
     <string name="working_hours">Pracovní hodiny</string>
     <string name="todays_working_hours">Dnešní pracovní hodiny</string>
     <string name="custom_schedule">Vlastní rozvrh</string>
-    <string name="custom_hours">Vlastní hodiny</string>
-    <string name="set_custom_hours">Nastavit vlastní hodiny</string>
-    <string name="edit_hours">Upravit hodiny</string>
-    <string name="edit_hours_desc">Upravte pracovní hodiny pro tento den.</string>
-    <string name="add_time_slot">Přidat časový úsek</string>
-    <string name="mark_unavailable">Označit jako nedostupné</string>
     <string name="mon_fri_9_5">Po–Pá 9–17</string>
     <string name="mon_sat_8_4">Po–So 8–16</string>
     <string name="custom">Vlastní</string>
 
     <!-- Schedule date overrides / exceptions -->
-    <string name="date_overrides">Výjimky v rozvrhu</string>
-    <string name="add_date_override">Přidat výjimku</string>
-    <string name="remove_exception">Odebrat výjimku</string>
-    <string name="exception_day_off">Výjimka – volný den</string>
-    <string name="mark_as_exception">Označit jako výjimku</string>
-    <string name="mark_exception_desc">Přepsat běžný rozvrh pro toto datum.</string>
-    <string name="select_date_override">Vybrat datum</string>
-    <string name="date_override_note">Poznámka (volitelné)</string>
-    <string name="no_date_overrides">Žádné výjimky v rozvrhu nejsou nastaveny</string>
 
     <!-- Day labels -->
     <string name="day_mon">Po</string>
@@ -800,16 +757,11 @@
     <string name="day_fri">Pá</string>
     <string name="day_sat">So</string>
     <string name="day_sun">Ne</string>
-    <string name="day_off">Volný den</string>
     <string name="day_off_today">Dnes volno</string>
     <string name="off_today">Dnes volno</string>
     <string name="day_complete">Den dokončen</string>
-    <string name="unavailable">Nedostupné</string>
 
     <!-- Schedule legend -->
-    <string name="legend_working">Pracující</string>
-    <string name="legend_off">Volno</string>
-    <string name="legend_custom">Vlastní</string>
 
     <!-- Order list / status counts -->
     <string name="pending_orders">Čekající</string>
@@ -878,8 +830,6 @@
     <string name="current_period">Aktuální období</string>
     <string name="previous_period">Předchozí období</string>
     <string name="month_over_month">vs. minulý měsíc</string>
-    <string name="next_month">Další měsíc</string>
-    <string name="previous_month">Předchozí měsíc</string>
 
     <!-- Misc -->
     <string name="no_data">Neuvedeno</string>
@@ -1067,14 +1017,11 @@
     <string name="registration_lock_sign_out_confirm_message">Váš postup je uložený. Pro dokončení registrace se budete muset znovu přihlásit.</string>
     <string name="registration_lock_support_subject">Cleansia partner — žádost zamítnuta</string>
     <string name="registration_lock_category_profile">Profil</string>
-    <string name="registration_lock_category_availability">Dostupnost</string>
     <string name="registration_lock_category_documents">Dokumenty</string>
     <string name="registration_lock_category_approval">Schválení</string>
     <string name="registration_lock_action_complete_profile">Dokončit profil</string>
-    <string name="registration_lock_action_set_availability">Nastavit týdenní dostupnost</string>
     <string name="registration_lock_action_upload_documents">Nahrát dokumenty</string>
     <string name="registration_lock_action_contact_support">Kontaktovat podporu</string>
-    <string name="registration_lock_availability_required">Nastavte své týdenní pracovní hodiny.</string>
     <string name="registration_lock_documents_required">Nahrajte své identifikační dokumenty.</string>
     <string name="registration_lock_approval_awaiting_review">Žádost je posuzována administrátorem.</string>
     <string name="registration_lock_approval_complete_profile_first">Nejprve dokončete kroky výše — pak vás může admin schválit.</string>
@@ -1221,7 +1168,6 @@
     <string name="error_validation_invalid_zip_code">Zadejte prosím platné PSČ.</string>
     <string name="error_validation_registration_number_invalid_format">Zadejte prosím platné IČO pro vybranou zemi.</string>
     <string name="error_validation_must_be_positive">Musí být kladné číslo.</string>
-    <string name="error_validation_invalid_availability_format">Neplatný formát dostupnosti.</string>
 
     <!-- Payout / bank details -->
     <string name="error_payout_not_found">Zatím jste nezadali své bankovní údaje. Doplňte je, abychom vám mohli poslat výplatu.</string>

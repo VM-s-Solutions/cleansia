@@ -1,66 +1,69 @@
-<div class="cleansia-audit-entry">
-  <div class="cleansia-audit-entry__container page-wrapper">
-    <div class="cleansia-audit-entry__header">
-      <cleansia-button
-        [label]="'pages.audit_log.customers.entry.back' | translate"
-        icon="pi pi-arrow-left"
-        severity="secondary"
-        [outlined]="true"
-        (onClick)="goBack()"
-      />
-      <cleansia-title [title]="'pages.audit_log.customers.entry.title' | translate" />
-      <p class="cleansia-audit-entry__description">
-        {{ 'pages.audit_log.customers.entry.description' | translate }}
-      </p>
+<div class="cleansia-audit-entry cleansia-page">
+  <div class="cleansia-audit-entry__container page-wrapper page-wrapper--narrow">
+    <div class="cleansia-page-header">
+      <div class="cleansia-page-header__heading">
+        <div class="cleansia-detail-title">
+          <cleansia-button
+            [label]="'pages.audit_log.customers.entry.back' | translate"
+            icon="pi pi-arrow-left"
+            severity="secondary"
+            [outlined]="true"
+            (onClick)="goBack()"
+          />
+          <cleansia-title [title]="'pages.audit_log.customers.entry.title' | translate" [level]="1" />
+        </div>
+        <p class="cleansia-page-header__description">
+          {{ 'pages.audit_log.customers.entry.description' | translate }}
+        </p>
+      </div>
     </div>
 
+    @if (facade.loading()) {
+    <cleansia-loader />
+    } @else if (facade.hasError() || !facade.entry()) {
+    <div class="not-found-state">
+      <div class="not-found-state__icon"><i class="pi pi-exclamation-triangle"></i></div>
+      <p class="not-found-state__message">{{ 'pages.audit_log.customers.entry.load_error' | translate }}</p>
+    </div>
+    } @else {
+    @let entry = facade.entry()!;
     <cleansia-section>
-      @if (facade.loading()) {
-      <cleansia-loader />
-      } @else if (facade.hasError() || !facade.entry()) {
-      <div class="cleansia-audit-entry__state">
-        <i class="pi pi-exclamation-triangle"></i>
-        <p>{{ 'pages.audit_log.customers.entry.load_error' | translate }}</p>
-      </div>
-      } @else {
-      @let entry = facade.entry()!;
-
-      <dl class="cleansia-audit-entry__meta">
-        <div class="cleansia-audit-entry__meta-item">
-          <dt>{{ 'pages.audit_log.columns.action' | translate }}</dt>
-          <dd>
+      <div class="detail-grid">
+        <div class="detail-grid__item">
+          <span class="detail-grid__label">{{ 'pages.audit_log.columns.action' | translate }}</span>
+          <span class="detail-grid__value">
             {{ actionLabel(entry) }}
             <span class="cleansia-audit-entry__raw-action">{{ entry.action }}</span>
-          </dd>
+          </span>
         </div>
-        <div class="cleansia-audit-entry__meta-item">
-          <dt>{{ 'pages.audit_log.customers.entry.when' | translate }}</dt>
-          <dd>{{ formatTimestamp(entry.occurredOn) }}</dd>
+        <div class="detail-grid__item">
+          <span class="detail-grid__label">{{ 'pages.audit_log.customers.entry.when' | translate }}</span>
+          <span class="detail-grid__value">{{ formatTimestamp(entry.occurredOn) }}</span>
         </div>
-        <div class="cleansia-audit-entry__meta-item">
-          <dt>{{ 'pages.audit_log.customers.entry.who' | translate }}</dt>
-          <dd>
+        <div class="detail-grid__item">
+          <span class="detail-grid__label">{{ 'pages.audit_log.customers.entry.who' | translate }}</span>
+          <span class="detail-grid__value">
             @if (customerRoute(entry); as route) {
             <a class="cleansia-audit-link" [routerLink]="route">{{ entry.userId }}</a>
             } @else {
             {{ 'pages.audit_log.customers.guest' | translate }}
             }
-          </dd>
+          </span>
         </div>
-        <div class="cleansia-audit-entry__meta-item">
-          <dt>{{ 'pages.audit_log.customers.entry.outcome' | translate }}</dt>
-          <dd>
+        <div class="detail-grid__item">
+          <span class="detail-grid__label">{{ 'pages.audit_log.customers.entry.outcome' | translate }}</span>
+          <span class="detail-grid__value">
             <span [class]="outcomeClass(entry)">
               {{ outcomeLabelKey(entry) | translate }}
             </span>
             @if (entry.errorCode) {
             <span class="cleansia-audit-entry__error-code">{{ entry.errorCode }}</span>
             }
-          </dd>
+          </span>
         </div>
-        <div class="cleansia-audit-entry__meta-item">
-          <dt>{{ 'pages.audit_log.columns.resource' | translate }}</dt>
-          <dd>
+        <div class="detail-grid__item">
+          <span class="detail-grid__label">{{ 'pages.audit_log.columns.resource' | translate }}</span>
+          <span class="detail-grid__value">
             @if (resourceHistoryRoute(entry); as route) {
             <a class="cleansia-audit-link" [routerLink]="route">
               {{ entry.resourceType }} · {{ entry.resourceId }}
@@ -68,39 +71,38 @@
             } @else {
             {{ entry.resourceType || ('pages.audit_log.entry.no_value' | translate) }}
             }
-          </dd>
+          </span>
         </div>
-        <div class="cleansia-audit-entry__meta-item">
-          <dt>{{ 'pages.audit_log.customers.entry.audience' | translate }}</dt>
-          <dd>
+        <div class="detail-grid__item">
+          <span class="detail-grid__label">{{ 'pages.audit_log.customers.entry.audience' | translate }}</span>
+          <span class="detail-grid__value">
             {{ entry.clientAudience || ('pages.audit_log.entry.no_value' | translate) }}
             <small class="cleansia-audit-entry__meta-hint">
               {{ 'pages.audit_log.customers.entry.audience_hint' | translate }}
             </small>
-          </dd>
+          </span>
         </div>
-        <div class="cleansia-audit-entry__meta-item">
-          <dt>{{ 'pages.audit_log.customers.entry.ip_address' | translate }}</dt>
-          <dd>{{ entry.ipAddress || ('pages.audit_log.entry.no_value' | translate) }}</dd>
+        <div class="detail-grid__item">
+          <span class="detail-grid__label">{{ 'pages.audit_log.customers.entry.ip_address' | translate }}</span>
+          <span class="detail-grid__value">{{ entry.ipAddress || ('pages.audit_log.entry.no_value' | translate) }}</span>
         </div>
-        <div class="cleansia-audit-entry__meta-item">
-          <dt>{{ 'pages.audit_log.customers.entry.device' | translate }}</dt>
-          <dd>{{ entry.deviceLabel || ('pages.audit_log.entry.no_value' | translate) }}</dd>
+        <div class="detail-grid__item">
+          <span class="detail-grid__label">{{ 'pages.audit_log.customers.entry.device' | translate }}</span>
+          <span class="detail-grid__value">{{ entry.deviceLabel || ('pages.audit_log.entry.no_value' | translate) }}</span>
         </div>
-        <div class="cleansia-audit-entry__meta-item">
-          <dt>{{ 'pages.audit_log.customers.entry.device_id' | translate }}</dt>
-          <dd>{{ entry.deviceId || ('pages.audit_log.entry.no_value' | translate) }}</dd>
+        <div class="detail-grid__item">
+          <span class="detail-grid__label">{{ 'pages.audit_log.customers.entry.device_id' | translate }}</span>
+          <span class="detail-grid__value">{{ entry.deviceId || ('pages.audit_log.entry.no_value' | translate) }}</span>
         </div>
-        <div class="cleansia-audit-entry__meta-item">
-          <dt>{{ 'pages.audit_log.customers.entry.correlation_id' | translate }}</dt>
-          <dd>{{ entry.correlationId || ('pages.audit_log.entry.no_value' | translate) }}</dd>
+        <div class="detail-grid__item">
+          <span class="detail-grid__label">{{ 'pages.audit_log.customers.entry.correlation_id' | translate }}</span>
+          <span class="detail-grid__value">{{ entry.correlationId || ('pages.audit_log.entry.no_value' | translate) }}</span>
         </div>
-      </dl>
+      </div>
+    </cleansia-section>
 
-      <div class="cleansia-audit-entry__payload-header">
-        <h3 class="cleansia-audit-entry__section-title">
-          {{ 'pages.audit_log.customers.entry.payload_title' | translate }}
-        </h3>
+    <cleansia-section [title]="'pages.audit_log.customers.entry.payload_title' | translate">
+      <ng-container section-actions>
         @if (facade.hasPayload()) {
         <cleansia-button
           [label]="
@@ -111,15 +113,14 @@
           "
           [icon]="facade.showRawJson() ? 'pi pi-table' : 'pi pi-code'"
           severity="secondary"
-          [text]="true"
-          [size]="'auto-width'"
+          [outlined]="true"
           (onClick)="facade.toggleRawJson()"
         />
         }
-      </div>
+      </ng-container>
 
       @if (!facade.hasPayload()) {
-      <div class="cleansia-audit-entry__state">
+      <div class="empty-state">
         <i class="pi pi-info-circle"></i>
         <p>{{ 'pages.audit_log.customers.entry.no_payload' | translate }}</p>
       </div>
@@ -189,7 +190,8 @@
         </tbody>
       </table>
       }
-      } }
+      }
     </cleansia-section>
+    }
   </div>
 </div>

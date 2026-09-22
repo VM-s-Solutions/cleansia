@@ -115,7 +115,7 @@ public sealed class AdminHostPermissionCoverageTests
         [
             Policy.CanViewPagedOrder, Policy.CanViewOrderDetail, Policy.CanViewOrderPhotos,
             Policy.CanViewEmployeeDocuments, Policy.CanViewEmployeePayoutDetails,
-            Policy.CanViewPagedInvoices, Policy.CanViewPayPeriods, Policy.CanViewPayPeriod,
+            Policy.CanViewPagedInvoices, Policy.CanViewPayPeriods,
         ];
 
         var referenced = AdminControllers()

@@ -1,76 +1,29 @@
+// The in-place loading state: it sits where the content will, in the same box as the empty and
+// not-found states, and never covers the shell. The table's re-load overlay uses the same
+// spinner and label.
 .cleansia-loader {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
   display: flex;
-  justify-content: center;
+  flex-direction: column;
   align-items: center;
-  height: 100vh;
-  z-index: 1000;
-  background-color: var(--cleansia-background);
-}
+  justify-content: center;
+  gap: 0.75rem;
+  min-height: 280px;
+  padding: 3rem 2rem;
+  color: var(--cleansia-text-secondary);
+  font-size: 0.9375rem;
+  font-weight: 500;
+  background: var(--cleansia-white, #ffffff);
+  border-radius: 12px;
+  border: 1px solid var(--cleansia-primary-100, #e0f2fe);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 
-.loader {
-  width: 48px;
-  height: 48px;
-  position: relative;
-}
-
-.loader:before {
-  content: '';
-  width: 48px;
-  height: 5px;
-  background: #999;
-  position: absolute;
-  top: 60px;
-  left: 0;
-  border-radius: 50%;
-  animation: shadow324 0.5s linear infinite;
-}
-
-.loader:after {
-  content: '';
-  width: 100%;
-  height: 100%;
-  background: var(--cleansia-primary-500);
-  position: absolute;
-  top: 0;
-  left: 0;
-  border-radius: 4px;
-  animation: jump7456 0.5s linear infinite;
-}
-
-@keyframes jump7456 {
-  15% {
-    border-bottom-right-radius: 3px;
+  i {
+    font-size: 1.75rem;
+    color: var(--cleansia-primary-600);
   }
 
-  25% {
-    transform: translateY(9px) rotate(22.5deg);
-  }
-
-  50% {
-    transform: translateY(18px) scale(1, 0.9) rotate(45deg);
-    border-bottom-right-radius: 40px;
-  }
-
-  75% {
-    transform: translateY(9px) rotate(67.5deg);
-  }
-
-  100% {
-    transform: translateY(0) rotate(90deg);
-  }
-}
-
-@keyframes shadow324 {
-  0%,
-  100% {
-    transform: scale(1, 1);
-  }
-
-  50% {
-    transform: scale(1.2, 1);
+  @media (max-width: 640px) {
+    min-height: 200px;
+    padding: 2rem 1rem;
   }
 }

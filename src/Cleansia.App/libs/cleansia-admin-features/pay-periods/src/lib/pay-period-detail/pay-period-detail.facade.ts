@@ -6,6 +6,7 @@ import {
 } from '@cleansia/admin-services';
 import { UnsubscribeControlDirective } from '@cleansia/directives';
 import { SnackbarService } from '@cleansia/services';
+import { formatDate } from '@cleansia/utils';
 import { TranslateService } from '@ngx-translate/core';
 import { catchError, finalize, of, takeUntil } from 'rxjs';
 
@@ -48,33 +49,18 @@ export class PayPeriodDetailFacade extends UnsubscribeControlDirective {
       )
       .subscribe((response) => {
         if (response) {
-          this.snackbarService.showSuccess(
-            this.translate.instant('pay_periods.messages.close_success')
-          );
+          this.snackbarService.showSuccessTranslated('pay_periods.messages.close_success');
           // Reload the pay period to reflect the change
           this.loadPayPeriodDetail(payPeriodId);
         }
       });
   }
 
-  // Format date for display
   formatDate(date: string | Date | null | undefined): string {
-    if (!date) return '-';
-    const dateObj = date instanceof Date ? date : new Date(date);
-    return dateObj.toLocaleDateString('en-GB');
+    return formatDate(date, this.translate.currentLang) || '-';
   }
 
   formatDateTime(date: string | Date | null | undefined): string {
-    if (!date) return '-';
-    const dateObj = date instanceof Date ? date : new Date(date);
-    return dateObj.toLocaleString('en-GB');
-  }
-
-  // Get status badge class
-  getStatusClass(status: string | null | undefined): string {
-    if (!status) return 'status-badge status-unknown';
-
-    const statusLower = status.toLowerCase();
-    return `status-badge status-${statusLower}`;
+    return formatDate(date, this.translate.currentLang, 'dateTime') || '-';
   }
 }

@@ -51,15 +51,14 @@ public sealed class CrossMarketCustomerPanelTests(HostTestPostgresFixture db) : 
         Assert.Equal(panel.GetProperty("companyName").GetString(), detailBody.RootElement.GetProperty("customerCompany").GetString());
     }
 
-    [Theory]
-    [InlineData(null)]
-    [InlineData("unrelated-order")]
-    public async Task Cross_company_customer_requires_a_proven_operator_order(string? orderId)
+    [Fact]
+    public async Task Cross_company_customer_is_unreachable_without_an_operator_order()
     {
         var world = await SeedCustomerAsync(HostTestTenants.A, HostTestTenants.B);
         var token = TestJwtFactory.Mint(AdminAudience, "admin", "admin@hosttests.local", UserProfile.Administrator, tenantId: HostTestTenants.B);
-        var response = await AdminClient(token).GetAsync($"/api/AdminUser/{world.CustomerId}?orderId={orderId}");
+        var response = await AdminClient(token).GetAsync("/api/AdminOrder/unrelated-order/customer");
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.DoesNotContain(world.CustomerId, await response.Content.ReadAsStringAsync());
     }
 
     [Fact]
@@ -92,23 +91,6 @@ public sealed class CrossMarketCustomerPanelTests(HostTestPostgresFixture db) : 
         var response = await AdminClient(token).GetAsync($"/api/AdminOrder/{world.OrderId}/customer");
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
         Assert.DoesNotContain("traveller@", await response.Content.ReadAsStringAsync());
-    }
-
-    [Fact]
-    public async Task A_proven_order_cannot_be_used_to_read_another_customer()
-    {
-        var world = await SeedCustomerAsync(HostTestTenants.A, HostTestTenants.B);
-        string anotherCustomer = "";
-        await SeedAsync(context =>
-        {
-            var customer = DomainSeed.Customer("other@hosttests.local", HostTestTenants.A);
-            context.Users.Add(customer);
-            anotherCustomer = customer.Id;
-            return Task.CompletedTask;
-        });
-        var token = TestJwtFactory.Mint(AdminAudience, "admin", "admin@hosttests.local", UserProfile.Administrator, tenantId: HostTestTenants.B);
-        var response = await AdminClient(token).GetAsync($"/api/AdminUser/{anotherCustomer}?orderId={world.OrderId}");
-        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 
     [Theory]

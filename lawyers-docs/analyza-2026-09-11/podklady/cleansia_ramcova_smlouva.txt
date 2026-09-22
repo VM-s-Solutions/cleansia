@@ -1,0 +1,236 @@
+SOURCE: lawyers-docs\SMLOUVY CleanSia\SMLOUVY\cleansia_ramcova_smlouva.docx
+Paragraph IDs are extraction references, not legal clause numbers.
+
+[P001] [word/document.xml] CLEANSIA
+[P002] [word/document.xml] úklidová platforma
+[P003] [word/document.xml] RÁMCOVÁ SMLOUVA O SPOLUPRÁCI
+[P004] [word/document.xml] uzavřena dle ustanovení § 1746 odst. 2 zákona č. 89/2012 Sb., občanský zákoník
+[P005] [word/document.xml] B2B  |  spolupráce s osobou samostatně výdělečně činnou (OSVČ)
+[P006] [word/document.xml] Verze:
+[P007] [word/document.xml] 1.1
+[P008] [word/document.xml] Datum uzavření:
+[P009] [word/document.xml] ................................................
+[P010] [word/document.xml] Právní základ:
+[P011] [word/document.xml] § 1746 odst. 2 zák. č. 89/2012 Sb. (OZ); zák. č. 262/2006 Sb. (ZP) — výslovně vyloučen
+[P012] [word/document.xml] Přílohy:
+[P013] [word/document.xml] č. 1 DPA, č. 2 BOZP, č. 3 Kodex chování, č. 4 Ceník
+[P014] [word/document.xml] I.
+[P015] [word/document.xml] Smluvní strany
+[P016] [word/document.xml] 1. Strana první — Operátor platformy
+[P017] [word/document.xml] Obchodní firma: Cleansia s.r.o.
+[P018] [word/document.xml] IČO: [Doplnit]
+[P019] [word/document.xml] DIČ: [Doplnit]
+[P020] [word/document.xml] Sídlo: [Doplnit ulici, město, PSČ]
+[P021] [word/document.xml] Zastoupena jednatelem: [Jméno jednatele]
+[P022] [word/document.xml] Zapsána v OR: Městský soud v Praze, oddíl C, vložka [číslo]
+[P023] [word/document.xml] Kontaktní e-mail: [Doplnit]
+[P024] [word/document.xml] (dále jen "Operátor")
+[P025] [word/document.xml] 2. Strana druhá — Zhotovitel (OSVČ)
+[P026] [word/document.xml] Jméno a příjmení: ......................................
+[P027] [word/document.xml] Datum narození: ..........................................
+[P028] [word/document.xml] IČO: ......................................................
+[P029] [word/document.xml] DIČ: ......................................................
+[P030] [word/document.xml] Místo podnikání: ........................................
+[P031] [word/document.xml] Číslo účtu (IBAN): ......................................
+[P032] [word/document.xml] Kontaktní e-mail: .......................................
+[P033] [word/document.xml] Telefon: ..................................................
+[P034] [word/document.xml] (dále jen "Zhotovitel")
+[P035] [word/document.xml] Operátor a Zhotovitel se dále společně označují jako "Smluvní strany" nebo každý samostatně jako "Smluvní strana".
+[P036] [word/document.xml] II.
+[P037] [word/document.xml] Předmět a účel smlouvy
+[P038] [word/document.xml] 2.1  Účel smlouvy
+[P039] [word/document.xml] Úkolem této Smlouvy je stanovit rámcové podmínky, za nichž bude Operátor prostřednictvím své mobilní a webové aplikace Cleansia (dále jen "Aplikace") zprostředkovávat Zhotoviteli obchodní příležitosti v podobě zakázek na poskytnutí úklidových služeb koncovým zákazníkům (dále jen "Zákazníci").
+[P040] [word/document.xml] 2.2  Charakter činnosti Operátora
+[P041] [word/document.xml] Operátor je výhradně provozovatelem technologické platformy a zprostředkovatelem zakázek — není sám poskytovatelem úklidových služeb. Zhotovitel bere tuto skutečnost na vědomí a nezavazuje se ji veřejně ani vůči Zákazníkům zpochybňovat.
+[P042] [word/document.xml] 2.3  Vznik konkrétního smluvního vztahu
+[P043] [word/document.xml] Individuální smlouva o dílo na konkrétní úklidovou zakázku vzniká přímo mezi Zhotovitelem a Zákazníkem v okamžiku, kdy Zhotovitel prostřednictvím Aplikace potvrdí akceptaci dané zakázky. Podmínky každého konkrétního úklidového výkonu se podpůrně řídí Obchodními podmínkami Operátora pro Zákazníky.
+[P044] [word/document.xml] 2.4  Právní povaha smluvního vztahu
+[P045] [word/document.xml] Smluvní strany výslovně shodně prohlašují, že uzavřením této Smlouvy ani žádným z navazujících ujednání nevzniká mezi Operátorem a Zhotovitelem pracovněprávní vztah, pracovní poměr ani žádná z dohod o pracích konaných mimo pracovní poměr ve smyslu zákona č. 262/2006 Sb., zákoník práce. Zhotovitel vystupuje ryze jako nezávislý podnikatelský subjekt. Smluvní strany si jsou vědomy, že zákonnost tohoto vztahu se posuzuje především podle skutečného obsahu spolupráce, nikoli pouze podle jejího formálního označení — v souladu se zásadou přednosti skutečností (substance over form) dle doporučení MOP č. 198 z roku 2006 a judikatury NSS (sp. zn. 8 Ads 65/2024-53 ze dne 25. 2. 2025).
+[P046] [word/document.xml] 2.5  Soulad se směrnicí EU o platformové práci
+[P047] [word/document.xml] Smluvní strany berou na vědomí, že dne 11. listopadu 2024 byla v Úředním věstníku EU publikována směrnice Evropského parlamentu a Rady (EU) 2024/2831 o zlepšení pracovních podmínek při práci prostřednictvím platformy (dále jen 'Směrnice o platformové práci'). Členské státy EU, včetně České republiky, jsou povinny tuto směrnici transponovat do svého vnitrostátního práva nejpozději do 2. prosince 2026. Operátor se zavazuje, že v okamžiku nabytí účinnosti příslušné české právní úpravy přizpůsobí podmínky spolupráce se Zhotovitelem tak, aby byly v plném souladu s touto úpravou. Zhotovitel bude o případných změnách informován v souladu s čl. 13.4 této Smlouvy.
+[P048] [word/document.xml] 2.6  Odměna za zprostředkování
+[P049] [word/document.xml] Za činnost Operátora spočívající ve zprostředkování zakázek náleží Operátorovi odměna (provize), jejíž výše a způsob úhrady jsou podrobně upraveny v Článku VII. této Smlouvy.
+[P050] [word/document.xml] III.
+[P051] [word/document.xml] Status Zhotovitele, nezávislost a prevence švarcsystému
+[P052] [word/document.xml] 3.1  Podnikatelská samostatnost
+[P053] [word/document.xml] Zhotovitel výslovně prohlašuje, že: (a) je držitelem platného živnostenského oprávnění opravňujícího k výkonu úklidových služeb; (b) vykonává svoji činnost vlastním jménem, na vlastní účet, na své podnikatelské riziko a bez jakékoliv pracovněprávní závislosti na Operátorovi; (c) plně odpovídá za plnění všech svých zákonných povinností plynoucích z jeho podnikatelské činnosti, včetně povinností vůči finančnímu úřadu, správě sociálního zabezpečení a zdravotní pojišťovně.
+[P054] [word/document.xml] 3.2  Absence řízení a nadřízenosti
+[P055] [word/document.xml] Operátor není vůči Zhotoviteli v postavení nadřízeného. Operátor neurčuje Zhotoviteli pracovní úkoly, neurčuje mu pracovní dobu, nezavazuje ho k používání konkrétního vybavení (s výjimkou standardů kvality platformy), ani mu jinak nepřikazuje konkrétní postup práce nad rámec poskytnutých standardů kvality.
+[P056] [word/document.xml] 3.3  Svobodná volba zakázek
+[P057] [word/document.xml] Zhotovitel má plné právo jakoukoli zakázku nabízenou prostřednictvím Aplikace přijmout nebo odmítnout, a to bez udání důvodu. Operátor Zhotovitele za odmítnutí zakázky nijak nepenalizuje a nevyžaduje po něm minimální počet odpracovaných hodin ani minimální obrat.
+[P058] [word/document.xml] 3.4  Možnost substituce
+[P059] [word/document.xml] Zhotovitel je oprávněn plnit zakázku osobně nebo prostřednictvím svých vlastních zaměstnanců, spolupracovníků či subdodavatelů. V každém případě však Zhotovitel za takovéto třetí osoby Operátorovi i Zákazníkovi plně odpovídá, jako by plnil sám. Zhotovitel je povinen zajistit, že všechny jím použité osoby splňují standardy kvality platformy a jsou prokazatelně s těmito standardy seznámeny.
+[P060] [word/document.xml] 3.5  Odvody, daně a povinné platby
+[P061] [word/document.xml] Zhotovitel výhradně odpovídá za řádné a včasné splnění všech svých zákonných povinností, zejména za zaplacení daně z příjmů fyzických osob, pojistného na sociální zabezpečení a příspěvku na státní politiku zaměstnanosti a pojistného na veřejné zdravotní pojištění. Operátor za Zhotovitele tyto platby neprovádí a není ani k tomu právně zavázán.
+[P062] [word/document.xml] 3.6  Ekonomická nezávislost a svoboda podnikání
+[P063] [word/document.xml] Zhotovitel bere na vědomí, že není ekonomicky závislý výhradně na Operátorovi. Je plně oprávněn poskytovat své služby i dalším subjektům a jiným platformám (např. Wolt, Bolt, Helpling nebo přímým zákazníkům), a to bez souhlasu Operátora a bez jakékoliv sankce z jeho strany — s výjimkou povinností plynoucích z Článku VIII. (zákaz obcházení platformy) a Článku XII. (konkurenční doložka) této Smlouvy. Operátor aktivně nevyžaduje ani neočekává, že by příjmy z platformy Cleansia představovaly nadpoloviční většinu celkových příjmů Zhotovitele — souběžná spolupráce s jinými subjekty je výslovně vítána a v souladu s povahou tohoto smluvního vztahu.
+[P064] [word/document.xml] 3.7  Prohlášení o faktické nezávislosti
+[P065] [word/document.xml] Smluvní strany prohlašují, že vztah mezi Operátorem a Zhotovitelem vykazuje zejména tyto znaky nezávislé spolupráce (odlišující jej od závislé práce): (1) Zhotovitel si svobodně volí, které zakázky přijme a které odmítne — bez jakékoliv sankce. (2) Zhotovitel sám určuje svůj pracovní čas, tempo a metody práce. (3) Zhotovitel používá výhradně vlastní pracovní vybavení a nese vlastní náklady. (4) Zhotovitel není povinen být Operátorovi k dispozici v určitou dobu. (5) Zhotovitel může současně spolupracovat s jinými platformami a zákazníky. (6) Zhotovitel nese vlastní podnikatelské riziko a odpovídá za škody způsobené při výkonu zakázky.
+[P066] [word/document.xml] IV.
+[P067] [word/document.xml] Vybavení, pracovní pomůcky, standardy kvality a brand Cleansia
+[P068] [word/document.xml] 4.1  Vlastní vybavení
+[P069] [word/document.xml] Zhotovitel se zavazuje realizovat veškeré úklidové zakázky výhradně za použití vlastních pracovních pomůcek, čisticích prostředků a technického vybavení (vysavače, extraktory, mikrovlákna apod.) nezbytných k řádnému a odbornému provedení práce. Operátor Zhotoviteli žádné vybavení neposkytuje, pokud se Smluvní strany písemně nedohodnou jinak.
+[P070] [word/document.xml] 4.2  Náklady na vybavení
+[P071] [word/document.xml] Veškeré náklady na pořízení, údržbu, opravy, cyklické doplňování a přepravu vybavení a spotřebního materiálu nese výhradně Zhotovitel jako součást jeho podnikatelských nákladů.
+[P072] [word/document.xml] 4.3  Technická způsobilost vybavení
+[P073] [word/document.xml] Zhotovitel je povinen udržovat své vybavení v řádném technickém stavu odpovídajícím platným bezpečnostním předpisům (včetně pravidelných revizí elektrických spotřebičů dle ČSN 33 1600). Čisticí prostředky musí být v souladu s platnou legislativou, řádně označeny a nesmějí poškodit běžné povrchy v domácnostech ani komerčních prostorech.
+[P074] [word/document.xml] 4.4  Odpovědnost za volbu technického prostředku
+[P075] [word/document.xml] Zhotovitel jako odborník plně odpovídá za správnou volbu čisticích prostředků a metod čištění v závislosti na druhu plochy a povrchu u konkrétního Zákazníka. Škody na majetku Zákazníka způsobené nevhodnou volbou chemie nebo použitím technicky závadného stroje jdou k tíži Zhotovitele v plném rozsahu.
+[P076] [word/document.xml] 4.5  Standardy vizuální identity a vůně platformy
+[P077] [word/document.xml] Zhotovitel se zavazuje při provádění zakázek pro Zákazníky Operátora dodržovat standardy vizuální prezentace a Brand Guidelines Cleansia (Příloha č. 3 této Smlouvy), pokud mu byly Operátorem poskytnuty nebo doporučeny. Tyto standardy jsou součástí kvality služby poskytované Zákazníkům a jejich nedodržení může být důvodem k ukončení spolupráce dle čl. 10.3 této Smlouvy.
+[P078] [word/document.xml] Poznámka k právní povaze: Standardy vizuální identity jsou nastaveny jako smluvní požadavek na kvalitu výstupu (analogicky jako ISO certifikace subdodavatele), nikoli jako příkaz k osobnímu výkonu práce určitým způsobem. Zhotovitel si volí vlastní metody, jak standardy splnit. Toto rozlišení je klíčové pro odlišení od závislé práce (NSS sp. zn. 7 Ads 344/2024-45).
+[P079] [word/document.xml] 4.6  Systém hodnocení kvality a kontrola
+[P080] [word/document.xml] Zhotovitel bere na vědomí, že výsledky jeho zakázek jsou hodnoceny Zákazníky prostřednictvím hodnoticího systému v Aplikaci. Hodnocení odráží spokojenost Zákazníka s výsledkem díla (čistotou prostor), nikoli způsob nebo průběh jeho provedení. Dosažení průměrného hodnocení pod [doplnit, např. 4,0 hvězdičky z 5,0] po dobu delší než [doplnit, např. 30 po sobě jdoucích kalendářních dní] je považováno za opakující se neplnění smluvních standardů kvality výstupu a může vést k dočasnému pozastavení nebo ukončení spolupráce. Operátor může provádět kontroly výsledné kvality (např. metodou mystery shoppingu) — tyto kontroly ověřují výsledek díla, nikoli postup ani přítomnost Zhotovitele v konkrétní době.
+[P081] [word/document.xml] Právní poznámka: Hodnocení výsledku díla (ne způsobu provedení) odpovídá smlouvě o dílo dle § 2586 OZ, nikoli závislé práci. Kontrola průběhu práce by naopak mohla být znakem závislé práce — Operátor proto kontroluje výhradně výsledek.
+[P082] [word/document.xml] V.
+[P083] [word/document.xml] Odpovědnost za škodu a ochrana majetku Zákazníka
+[P084] [word/document.xml] 5.1  Plná objektivní odpovědnost
+[P085] [word/document.xml] Zhotovitel odpovídá v plném rozsahu za veškerou majetkovou i nemajetkovou újmu (škodu), kterou způsobí Zákazníkovi nebo třetím osobám v souvislosti s prováděním úklidových služeb, a to bez ohledu na formu zavinění (úmysl i nedbalost v jakémkoliv stupni).
+[P086] [word/document.xml] 5.2  Odpovědnost za krádež, ztrátu nebo zneužití majetku
+[P087] [word/document.xml] Zhotovitel nese výhradní odpovědnost za jakékoli neoprávněné nakládání s majetkem Zákazníka, včetně krádeže, zpronevěry, ztráty nebo ponechání majetku bez dozoru. V případě důvodného podezření na trestný čin je Zhotovitel povinen bezodkladně spolupracovat s orgány činnými v trestním řízení a neprodleně o své spolupráci informovat Operátora.
+[P088] [word/document.xml] 5.3  Regresní nárok Operátora
+[P089] [word/document.xml] Pokud bude Operátor nucen — např. na základě soudního rozhodnutí, rozhodčího nálezu nebo v rámci mimosoudního narovnání za účelem ochrany dobrého jména platformy — uhradit Zákazníkovi škodu způsobenou zaviněním Zhotovitele, zavazuje se Zhotovitel takto vyplacenou částku Operátorovi v plné výši refundovat, včetně doložených nákladů na právní zastoupení a dalších výdajů přímo souvisejících s touto událostí.
+[P090] [word/document.xml] 5.4  Dokumentace preexistujících škod
+[P091] [word/document.xml] Pokud Zhotovitel zjistí v místě úklidu preexistující poškození před zahájením práce, je povinen toto neprodleně zdokumentovat fotografiemi s časovým razítkem a informovat Zákazníka i Operátora prostřednictvím Aplikace ještě před začátkem úklidových prací. Nesplnění této povinnosti zakládá vyvratitelnou domněnku, že škoda vznikla zaviněním Zhotovitele.
+[P092] [word/document.xml] 5.5  Postup při vzniku škody
+[P093] [word/document.xml] V případě vzniku škody během zakázky je Zhotovitel povinen: (a) okamžitě přerušit práce; (b) pořídit detailní fotodokumentaci; (c) sepsat se Zákazníkem písemný záznam o popisu škody; (d) informovat Operátora prostřednictvím Aplikace nejpozději do 2 hodin od vzniku nebo zjištění škody.
+[P094] [word/document.xml] 5.6  Odpovědnost za svěřený přístup
+[P095] [word/document.xml] Pokud byly Zhotoviteli svěřeny klíče, magnetické karty, PIN kódy, přístupové kódy k bezpečnostnímu systému (alarmu) nebo jiné prostředky fyzického přístupu do objektu Zákazníka, odpovídá Zhotovitel v plném rozsahu za jejich ztrátu, odcizení nebo jakékoli neoprávněné použití. V případě ztráty nebo krádeže klíče je Zhotovitel povinen uhradit veškeré náklady na výměnu zámků či změnu bezpečnostního systému v celém objektu.
+[P096] [word/document.xml] VI.
+[P097] [word/document.xml] Povinné pojištění odpovědnosti za škodu
+[P098] [word/document.xml] 6.1  Povinnost sjednat a udržet pojištění
+[P099] [word/document.xml] Zhotovitel se zavazuje, že po celou dobu trvání této Smlouvy bude mít sjednáno, plně uhrazeno a udržováno platné pojištění odpovědnosti za škodu způsobenou třetí osobě v rámci své podnikatelské činnosti (tzv. profesní pojištění odpovědnosti za škodu OSVČ).
+[P100] [word/document.xml] 6.2  Minimální rozsah pojistné ochrany
+[P101] [word/document.xml] Pojistná smlouva musí pokrývat zejména: (a) škody na věcech a zdraví Zákazníků a třetích osob; (b) škody na svěřených či užívaných věcech (klíče, elektronické přístupové karty, svěřené prostory); (c) škody způsobené hrubou nedbalostí; (d) náklady na právní obranu (je-li dostupná jako součást produktu pojišťovny).
+[P102] [word/document.xml] 6.3  Minimální limit pojistného plnění
+[P103] [word/document.xml] Minimální limit pojistného plnění se sjednává ve výši 3 000 000 Kč na jednu pojistnou událost. Případná spoluúčast z jakékoli pojistné události nese výhradně Zhotovitel ze svých vlastních prostředků.
+[P104] [word/document.xml] 6.4  Povinnost doložit pojistku
+[P105] [word/document.xml] Zhotovitel je povinen dodat Operátorovi ověřený certifikát o pojištění nebo kopii pojistné smlouvy nejpozději před aktivací svého účtu v Aplikaci. V průběhu spolupráce je povinen Operátorovi na písemné vyžádání kdykoli dodat potvrzení o zaplacení pojistného (např. formou výpisu z účtu či potvrzení pojišťovny).
+[P106] [word/document.xml] 6.5  Povinnost informovat o zániku pojištění
+[P107] [word/document.xml] Pokud dojde k jakémukoli zániku, přerušení, pozastavení nebo významné změně rozsahu pojištění, je Zhotovitel povinen o této skutečnosti informovat Operátora bezodkladně, nejpozději však do 24 hodin od takové změny.
+[P108] [word/document.xml] 6.6  Sankce při absenci pojištění
+[P109] [word/document.xml] Pokud Zhotovitel nebude plnit povinnosti dle tohoto Článku, je Operátor oprávněn: (a) okamžitě a bez nároku Zhotovitele na jakoukoli kompenzaci pozastavit nebo trvale zablokovat jeho přístup k nabídkám v Aplikaci; (b) odstoupit od této Smlouvy s okamžitou účinností; (c) vymoci smluvní pokutu ve výši 100 000 Kč, která není dotčena nárokem na náhradu škody.
+[P110] [word/document.xml] UPOZORNĚNÍ CLEANSIA S.R.O. — Vlastní pojistka provozovatele platformy: Pojištění ze strany Zhotovitele chrání převážně nároky Zákazníků vůči Zhotoviteli. Nicméně při sporu, kde nebude prokázána vina Zhotovitele, nebo kde Zhotovitel nebude mít dostačující pojistné krytí, může být Cleansia s.r.o. jakožto provozovatel platformy vystavena vlastní odpovědnosti. Operátorovi se proto důrazně doporučuje sjednat vlastní pojištění odpovědnosti za provoz digitální platformy a zprostředkovatele služeb (limit pojištění doporučujeme min. 5 000 000 Kč). Tato pojistka jde nad rámec pojištění Zhotovitele a kryje rizika samotného Operátora jako provozovatele platformy.
+[P111] [word/document.xml] VII.
+[P112] [word/document.xml] Odměna, platební podmínky a fakturace
+[P113] [word/document.xml] 7.1  Určení ceny za úklid
+[P114] [word/document.xml] Cena každé konkrétní úklidové zakázky je stanovena v Aplikaci na základě platného ceníku. Cena se skládá ze složky odměny Zhotovitele a provize Operátora. Zákazník hradí celkovou částku Operátorovi prostřednictvím platební brány integrované do Aplikace, pokud není u konkrétní zakázky sjednána platba v hotovosti.
+[P115] [word/document.xml] 7.2  Provize Operátora
+[P116] [word/document.xml] Za zprostředkování zakázky, provoz platformy a technologické zajištění prostředí náleží Operátorovi provize ve výši [doplnit, např. 20 %] z celkové ceny zakázky zaplacené Zákazníkem, včetně DPH je-li relevantní. Operátorovi náleží rovněž provize ze zakázek, u nichž došlo k platbě v hotovosti (viz čl. 7.5). Operátor je oprávněn výši a strukturu provize jednostranně měnit, avšak s oznámením Zhotoviteli alespoň 14 dní před účinností změny.
+[P117] [word/document.xml] 7.3  Inkasní platební místo
+[P118] [word/document.xml] Smluvní strany se dohodly, že Operátor vystupuje při inkasování plateb od Zákazníků jako platební místo Zhotovitele. Operátor je povinen vybrané prostředky snížené o svou provizi a o jakékoli splatné pohledávky dle této Smlouvy (smluvní pokuty, náhrady škod, refundace apod.) vyplatit Zhotoviteli ve sjednaném fakturačním cyklu.
+[P119] [word/document.xml] 7.4  Fakturační cyklus a termíny výplat
+[P120] [word/document.xml] Vyúčtování probíhá vždy k [doplnit, např. 15. a k poslednímu] dni příslušného měsíce. Operátor zašle Zhotoviteli přehled realizovaných zakázek, účtovaných provizí a výsledné částky k výplatě. Čistá odměna je odeslána na bankovní účet Zhotovitele uvedený v záhlaví této Smlouvy nejpozději do [doplnit, např. 3] pracovních dnů od uzavření vyúčtování.
+[P121] [word/document.xml] 7.5  Platba v hotovosti na místě
+[P122] [word/document.xml] Pokud Zákazník provedl platbu za zakázku přímo Zhotoviteli v hotovosti: (a) Zhotovitel je povinen tuto skutečnost neprodleně potvrdit v Aplikaci; (b) Operátor vyúčtuje provizi z této zakázky v nejbližším fakturačním cyklu a započte ji vůči jiným bezhotovostním platbám Zhotovitele, nebo vystaví Zhotoviteli fakturu se splatností 7 dnů.
+[P123] [word/document.xml] 7.6  Daňové povinnosti
+[P124] [word/document.xml] Zhotovitel nese veškerou odpovědnost za správné a včasné zdanění svých příjmů. Je-li Zhotovitel nebo se teprve stane plátcem DPH, je povinen tuto skutečnost neprodleně oznámit Operátorovi písemně — cena v Aplikaci bude následně upravena v souladu s platným právem.
+[P125] [word/document.xml] 7.7  Započtení pohledávek
+[P126] [word/document.xml] Zhotovitel souhlasí s tím, že Operátor je oprávněn jednostranně odečíst (započíst) svou provizi a jakékoli splatné pohledávky z titulu této Smlouvy (smluvní pokuty, regresní nároky) z peněžních prostředků vybraných od Zákazníků ještě před jejich vyplacením na účet Zhotovitele.
+[P127] [word/document.xml] VIII.
+[P128] [word/document.xml] Zákaz obcházení platformy a ochrana dobrého jména
+[P129] [word/document.xml] 8.1  Zákaz přímého dojednávání zakázek
+[P130] [word/document.xml] Po dobu trvání této Smlouvy a po dobu 12 měsíců od jejího ukončení nebo od posledního doloženého kontaktu s daným Zákazníkem prostřednictvím Aplikace se Zhotovitel zavazuje, že nebude přímo ani nepřímo dojednávat, přijímat, realizovat ani nabízet úklidové či obdobné domácí služby Zákazníkům, se kterými byl uveden do kontaktu skrze Aplikaci Cleansia, mimo tuto Aplikaci.
+[P131] [word/document.xml] 8.2  Zákaz přímé komerční komunikace
+[P132] [word/document.xml] Zhotovitel nesmí Zákazníkovi nabízet, předávat ani propagovat vlastní vizitky, osobní telefonní čísla, soukromé e-mailové adresy, profily na sociálních sítích, URL adresy či jakékoli jiné kontaktní nebo komerční údaje s cílem navázat nebo sjednat budoucí spolupráci mimo platformu. Veškerá komunikace ohledně termínů prací, obsahu zakázek a plateb musí probíhat výhradně prostřednictvím rozhraní Aplikace.
+[P133] [word/document.xml] 8.3  Povinnost hlásit pokus o obcházení
+[P134] [word/document.xml] Pokud Zákazník sám iniciativně nabídne Zhotoviteli přímý spolupracovní vztah mimo platformu, je Zhotovitel povinen tuto skutečnost neprodleně písemně oznámit Operátorovi (e-mailem nebo zprávou v Aplikaci) a Zákazníka nasměrovat zpět na standardní objednávkový proces v rámci Aplikace.
+[P135] [word/document.xml] 8.4  Ochrana reputace a dobrého jména
+[P136] [word/document.xml] Zhotovitel se zavazuje jak během spolupráce, tak i po jejím ukončení jednat tak, aby nepoškodil dobrou pověst, obchodní reputaci a tržní prestiž Operátora ani platformy Cleansia. Zhotovitel nesmí v komunikaci se Zákazníky ani v jakémkoli veřejném prostoru (včetně sociálních sítí, recenzních portálů, novin nebo podcastů) šířit nepravdivá, zavádějící či dehonestující tvrzení o Operátorovi, jeho produktech, zaměstnancích nebo spolupracovnících.
+[P137] [word/document.xml] 8.5  Smluvní pokuta za obcházení
+[P138] [word/document.xml] Za každé jednotlivé porušení zákazu dle odst. 8.1 nebo 8.2 se Zhotovitel zavazuje zaplatit Operátorovi smluvní pokutu ve výši 50 000 Kč. Zaplacením smluvní pokuty není dotčen nárok Operátora na úplnou náhradu škody, a to zejména ušlého zisku z provizí, které by Operátor z dotčené zakázky obdržel.
+[P139] [word/document.xml] IX.
+[P140] [word/document.xml] Mlčenlivost, důvěrnost a ochrana osobních údajů (NDA / GDPR)
+[P141] [word/document.xml] 9.1  Rozsah důvěrných informací
+[P142] [word/document.xml] Za důvěrné informace se pro účely této Smlouvy považují veškeré skutečnosti, informace, data a dokumenty, které Zhotovitel získá v souvislosti s výkonem zakázek nebo užíváním Aplikace, a to zejména: (a) osobní a kontaktní údaje Zákazníků (jména, adresy, e-maily, telefony); (b) informace o majetkových poměrech, cennostech a vybavení domácností nebo provozoven Zákazníků; (c) přístupové kódy k bezpečnostním systémům, domofonní kódy, PIN kódy, informace o umístění klíčů; (d) obchodní, technické a provozní informace Operátora (architektura Aplikace, cenová strategie, know-how, marketingové plány); (e) osobní údaje dalších Zhotovitelů evidovaných v Aplikaci.
+[P143] [word/document.xml] 9.2  Povinnost mlčenlivosti
+[P144] [word/document.xml] Zhotovitel se zavazuje zachovávat absolutní mlčenlivost o všech důvěrných informacích ve smyslu odst. 9.1, neposkytovat je třetím osobám, nezveřejňovat je a nevyužívat je pro jiné než potřeby splnění konkrétní zakázky. Povinnost mlčenlivosti trvá po celou dobu spolupráce a dále po dobu deseti (10) let od ukončení této Smlouvy.
+[P145] [word/document.xml] 9.3  Ochrana osobních údajů a GDPR
+[P146] [word/document.xml] Smluvní strany berou na vědomí, že v rámci spolupráce dochází k předávání osobních údajů Zákazníků Zhotoviteli (minimálně jméno, adresa výkonu zakázky a kontaktní telefon). Operátor vystupuje v tomto vztahu jako správce osobních údajů, Zhotovitel jako zpracovatel ve smyslu Nařízení EU 2016/679 (GDPR). Vzájemná práva a povinnosti plynoucí z této role jsou podrobně upraveny v Zpracovatelské smlouvě uzavřené jako Příloha č. 1 této Smlouvy, jejíž podpis je podmínkou aktivace účtu v Aplikaci.
+[P147] [word/document.xml] 9.4  Povinnost uzavřít Zpracovatelskou smlouvu (DPA)
+[P148] [word/document.xml] Zhotovitel se zavazuje před zahájením první zakázky podepsat Zpracovatelskou smlouvu (Data Processing Agreement — DPA) dle čl. 28 GDPR, která tvoří Přílohu č. 1 této Smlouvy. Bez platně podepsané DPA není Operátor oprávněn zpřístupnit Zhotoviteli osobní údaje Zákazníků (adresu a kontakt k zakázce), a to ani prostřednictvím Aplikace.
+[P149] [word/document.xml] 9.5  Zákaz pořizování záznamových materiálů
+[P150] [word/document.xml] Zhotoviteli je přísně zakázáno pořizovat jakékoli obrazové (foto), zvukové nebo audiovizuální záznamy v prostorách Zákazníka bez jeho výslovného a předchozího souhlasu. Výjimku tvoří pouze fotodokumentace stavu plochy před zahájením úklidu a fotodokumentace škody dle čl. 5.4 a 5.5, která je pořizována výhradně pro účely dokazování plnění výkonu zakázky vůči Operátorovi a nesmí být zveřejněna, sdílena ani jinak použita k jinému účelu.
+[P151] [word/document.xml] 9.6  Sankce za porušení
+[P152] [word/document.xml] Porušení povinnosti mlčenlivosti nebo povinnosti dle předpisů o ochraně osobních údajů se považuje za podstatné porušení této Smlouvy a zakládá bez dalšího právo Operátora na smluvní pokutu ve výši 50 000 Kč za každý jednotlivý případ porušení, a to bez ohledu na způsobení skutečné škody. Uplatněním smluvní pokuty není dotčen nárok Operátora na náhradu škody v plné výši.
+[P153] [word/document.xml] X.
+[P154] [word/document.xml] Ukončení spolupráce
+[P155] [word/document.xml] 10.1  Způsoby ukončení smlouvy
+[P156] [word/document.xml] Tato Smlouva může platně skončit: (a) písemnou dohodou obou Smluvních stran; (b) písemnou výpovědí kterékoli Smluvní strany bez udání důvodu s dodržením výpovědní doby dle čl. 10.2; (c) písemným odstoupením od Smlouvy pro podstatné porušení smluvních povinností druhou stranou.
+[P157] [word/document.xml] 10.2  Výpovědní lhůta
+[P158] [word/document.xml] Kterákoli Smluvní strana je oprávněna Smlouvu vypovědět bez udání důvodu. Výpovědní doba činí jeden (1) měsíc a počíná běžet prvním dnem kalendářního měsíce bezprostředně následujícího po měsíci, v němž byla výpověď doručena druhé Smluvní straně. Výpověď může být platně doručena písemně, elektronicky e-mailem nebo oznámením skrze Aplikaci.
+[P159] [word/document.xml] 10.3  Oprávnění k okamžitému odstoupení
+[P160] [word/document.xml] Operátor je oprávněn od této Smlouvy odstoupit s okamžitou účinností bez jakékoliv výpovědní doby, nastane-li některý z následujících důvodů: (a) důvodné podezření na krádež, zpronevěru, podvod nebo jiné protiprávní jednání Zhotovitele vůči Zákazníkovi nebo Operátorovi; (b) prokázané porušení zákazu obcházení platformy dle čl. 8.1 nebo 8.2; (c) zánik živnostenského oprávnění nebo zrušení či pozastavení povinného pojištění Zhotovitele; (d) opakující se (minimálně dvakrát v období 90 dnů) oprávněné reklamace kvality od Zákazníků; (e) porušení povinnosti mlčenlivosti nebo GDPR dle čl. 9.; (f) Zhotovitel nekonal v souladu s Brand Guidelines nebo Kodexem chování Cleansia i po předchozím písemném upozornění Operátora; (g) Zhotovitel poškodil dobré jméno Operátora veřejným vystoupením, recenzí nebo jednáním.
+[P161] [word/document.xml] 10.4  Dokončení zakázek při ukončení
+[P162] [word/document.xml] Ukončením Smlouvy (ať už výpovědí nebo odstoupením) nezaniká povinnost Zhotovitele řádně dokončit zakázky, které již akceptoval, ledaže Operátor tyto zakázky v Aplikaci stornuje nebo je přesune na jiného Zhotovitele.
+[P163] [word/document.xml] 10.5  Deaktivace profilu
+[P164] [word/document.xml] Okamžikem doručení výpovědi nebo odstoupení je Operátor oprávněn okamžitě a bez kompenzace omezit nebo trvale zablokovat přístup Zhotovitele k novým zakázkám v Aplikaci.
+[P165] [word/document.xml] 10.6  Finální vyúčtování
+[P166] [word/document.xml] Smluvní strany se zavazují provést vzájemné finanční vypořádání, včetně vyplacení zbývajících odměn snížených o veškeré splatné pohledávky Operátora (provize, smluvní pokuty, regresní nároky), nejpozději do 30 dnů od data ukončení spolupráce.
+[P167] [word/document.xml] XI.
+[P168] [word/document.xml] Onboarding, školení a podmínky zahájení spolupráce
+[P169] [word/document.xml] 11.1  Nezbytné podmínky pro aktivaci účtu
+[P170] [word/document.xml] Před tím, než bude Zhotoviteli zpřístupněna možnost přijímat zakázky v Aplikaci, musí Zhotovitel splnit kumulativně všechny následující podmínky: (a) dodat Operátorovi platný výpis ze Živnostenského rejstříku nebo kopii živnostenského oprávnění; (b) dodat platný certifikát o sjednaném pojištění dle Článku VI. této Smlouvy; (c) podepsat tuto Rámcovou smlouvu o spolupráci včetně všech příloh (DPA, BOZP, Kodex chování); (d) úspěšně absolvovat onboardingové školení Operátora a podat potvrzení o jeho absolvování; (e) projít procesem ověření totožnosti (KYC) v Aplikaci v rozsahu požadovaném Operátorem.
+[P171] [word/document.xml] 11.2  Povinný obsah onboardingového školení
+[P172] [word/document.xml] Onboardingové školení organizované Operátorem zahrnuje zejména: (a) standardy úklidových postupů a metodiku Cleansia; (b) obsluhu a funkcionalitu Aplikace (přijímání a odmítání zakázek, komunikace se Zákazníkem, nahlašování škod, potvrzování plateb); (c) zásady bezpečnosti práce a správného nakládání s čisticími prostředky, chemikáliemi a elektrickými spotřebiči (BOZP); (d) pravidla ochrany osobních údajů Zákazníků a povinnosti Zhotovitele v roli zpracovatele dle GDPR; (e) vizuální identitu a brand Cleansia — správné používání uniformy, pracovního vybavení a signature vůně platformy.
+[P173] [word/document.xml] 11.3  Odpovědnost za školení třetích osob
+[P174] [word/document.xml] Pokud Zhotovitel používá k plnění zakázek vlastní subdodavatele nebo zaměstnance (dle čl. 3.4), je Zhotovitel povinen zajistit, že všechny takovéto osoby jsou před zahájením první zakázky prokazatelně proškoleny v rozsahu standardů Cleansia a že jsou obeznámeny s povinnostmi dle této Smlouvy a jejich příloh. Operátor za škody způsobené neproškolenými nebo nedostatečně proškolenými osobami použitými Zhotovitelem nese pouze podřízenou odpovědnost dle regresu dle čl. 5.3.
+[P175] [word/document.xml] XII.
+[P176] [word/document.xml] Konkurenční doložka
+[P177] [word/document.xml] 12.1  Rozsah platformně specifických omezení
+[P178] [word/document.xml] Po dobu [doplnit, doporučujeme 12 měsíců] od ukončení spolupráce se Zhotovitel zavazuje, že bez předchozího písemného souhlasu Operátora nebude: (a) zakládat, provozovat, spolufinancovat, spoluvlastnit ani jinak aktivně participovat na provozu platformy nebo mobilní/webové aplikace zprostředkovávající úklidové, údržbářské nebo domácí služby, která by byla srovnatelná s platformou Cleansia a působila na trhu v České republice; (b) poskytovat placenou odbornou pomoc, poradenství, know-how, technické informace nebo jinak významně přispívat ke vzniku nebo rozvoji takové konkurenční platformy; (c) aktivně oslovovat nebo přetahovat Zákazníky evidované v databázi Cleansia za účelem jejich převedení na konkurenční platformu.
+[P179] [word/document.xml] 12.2  Vymezení zákazu — co touto doložkou NENÍ omezeno
+[P180] [word/document.xml] Tato doložka Zhotovitele neomezuje v žádném z následujících jednání: (a) nadále osobně (fyzicky) poskytovat úklidové služby jako OSVČ, ať už pro přímo oslovené zákazníky nebo prostřednictvím jakékoli jiné zprostředkovatelské platformy; (b) používat jiné platformy zprostředkovávající úklidové nebo domácí služby za předpokladu, že Zhotovitel přitom nevyužívá databázi Zákazníků Cleansia ani znalosti získané v rozporu s čl. IX. této Smlouvy; (c) přijímat přímé zakázky od osob, které Zhotovitel poznal zcela mimo platformu Cleansia a u nichž je schopen prokázat, že kontakt nevznikl prostřednictvím Aplikace.
+[P181] [word/document.xml] 12.3  Přiměřenost a závaznost doložky
+[P182] [word/document.xml] Smluvní strany výslovně prohlašují, že rozsah, doba trvání (12 měsíců) a územní vymezení (území České republiky) této konkurenční doložky jsou s ohledem na legitimní obchodní zájmy Operátora přiměřené, a že doložka se týká výhradně platformní a zprostředkovatelské činnosti — nikoli provozování živnosti jako úklidového pracovníka. Pokud by příslušný soud dospěl k závěru, že některý rozsah doložky je nepřiměřeným omezením svobody podnikání, takovéto ustanovení se omezuje na zákonně přípustnou míru, aniž by to mělo vliv na platnost doložky jako celku.
+[P183] [word/document.xml] 12.4  Smluvní pokuta za porušení konkurenční doložky
+[P184] [word/document.xml] V případě prokazatelného porušení povinností dle čl. 12.1 se Zhotovitel zavazuje uhradit Operátorovi smluvní pokutu ve výši 150 000 Kč za každý prokázaný případ porušení. Zaplacením smluvní pokuty není dotčen nárok Operátora na náhradu způsobené škody v plném rozsahu, včetně ztraceného budoucího zisku (ušlého zisku z provizí).
+[P185] [word/document.xml] XIII.
+[P186] [word/document.xml] Závěrečná ustanovení
+[P187] [word/document.xml] 13.1  Rozhodné právo
+[P188] [word/document.xml] Tato Smlouva a veškeré právní vztahy z ní plynoucí se řídí právním řádem České republiky, zejména zákonem č. 89/2012 Sb., občanský zákoník, v aktuálním platném znění.
+[P189] [word/document.xml] 13.2  Řešení sporů
+[P190] [word/document.xml] Smluvní strany se zavazují řešit jakékoli spory vzniklé z této Smlouvy nebo v souvislosti s ní přednostně smírnou cestou — přímým jednáním nebo mediací. Nedojde-li k dohodě ve lhůtě 30 dnů od písemné výzvy k jednání, budou spory řešeny u věcně a místně příslušného obecného soudu v ČR, a to dle sídla Operátora.
+[P191] [word/document.xml] 13.3  Elektronická forma komunikace
+[P192] [word/document.xml] Smluvní strany se dohodly, že veškerá komunikace, včetně doručování výpovědí, oznámení, upozornění a výzev ze smlouvy, může probíhat elektronicky — e-mailem na adresy uvedené v záhlaví této Smlouvy nebo prostřednictvím notifikací v Aplikaci. Elektronické oznámení se považuje za doručené nejpozději následujícího pracovního dne po jeho odeslání.
+[P193] [word/document.xml] 13.4  Jednostranná změna smluvních podmínek
+[P194] [word/document.xml] Operátor je oprávněn tuto Rámcovou smlouvu v přiměřeném rozsahu jednostranně změnit — zejména v důsledku legislativních změn, technologického vývoje platformy nebo obchodních úprav. Změnu Operátor oznámí Zhotoviteli prostřednictvím Aplikace nebo e-mailem minimálně 14 dnů před účinností změny. Pokud Zhotovitel v Aplikaci po účinnosti změny nadále realizuje zakázky, má se za to, že se změnou souhlasí. Zhotovitel má právo Smlouvu vypovědět, pokud se změnou nesouhlasí.
+[P195] [word/document.xml] 13.5  Salvátorní klauzule
+[P196] [word/document.xml] Pokud by se některé ustanovení této Smlouvy stalo neplatným, nevymahatelným nebo zdánlivým, nebude to mít vliv na platnost ani vymahatelnost ostatních ustanovení. Smluvní strany se zavazují vadné ustanovení neprodleně nahradit novým, jež se svým obsahem a účelem co nejvíce přibližuje původnímu záměru.
+[P197] [word/document.xml] 13.6  Úplnost dohody a předchozí dohody
+[P198] [word/document.xml] Tato Smlouva, včetně všech svých příloh, představuje úplnou, výlučnou a závaznou dohodu Smluvních stran ohledně předmětu této Smlouvy a nahrazuje veškerá předchozí ústní i písemná ujednání, sliby, nabídky a korespondenci mezi nimi.
+[P199] [word/document.xml] 13.7  Platnost a účinnost smlouvy
+[P200] [word/document.xml] Tato Smlouva nabývá platnosti a účinnosti dnem podpisu oběma Smluvními stranami. Alternativně nabývá platnosti okamžikem, kdy Zhotovitel v rámci registračního procesu v Aplikaci elektronicky potvrdí souhlas s jejím zněním za podmínek, které Aplikace umožní zaznamenat jako prokazatelný souhlas.
+[P201] [word/document.xml] 13.8  Počet vyhotovení
+[P202] [word/document.xml] Tato Smlouva se sepisuje ve dvou (2) rovnocenných vyhotoveních v listinné podobě, z nichž každá Smluvní strana obdrží po jednom. Elektronické podpisy mají stejnou platnost jako podpis listinný (dle nařízení eIDAS).
+[P203] [word/document.xml] Přehled příloh tvořících nedílnou součást této Smlouvy
+[P204] [word/document.xml] Příloha
+[P205] [word/document.xml] Název dokumentu
+[P206] [word/document.xml] Stav
+[P207] [word/document.xml] Příloha č. 1
+[P208] [word/document.xml] Zpracovatelská smlouva (DPA / GDPR)
+[P209] [word/document.xml] NUTNO DODAT před první zakázkou
+[P210] [word/document.xml] Příloha č. 2
+[P211] [word/document.xml] BOZP poučení Zhotovitele
+[P212] [word/document.xml] Nutno dodat při onboardingu
+[P213] [word/document.xml] Příloha č. 3
+[P214] [word/document.xml] Kodex chování a Brand Guidelines Cleansia
+[P215] [word/document.xml] Nutno dodat — standardy uniformy, vůně, komunikace
+[P216] [word/document.xml] Příloha č. 4
+[P217] [word/document.xml] Ceník a provizní struktura
+[P218] [word/document.xml] Doplnit aktuální sazby
+[P219] [word/document.xml] Podpisy smluvních stran
+[P220] [word/document.xml] Smluvní strany tuto Rámcovou smlouvu o spolupráci přečetly, rozumí veškerému jejímu obsahu, souhlasí s ním a prohlašují, že ji podepisují svobodně, vážně, bez omylu, tísně nebo zkrácení.
+[P221] [word/document.xml] Za Operátora (Cleansia s.r.o.) — jednatel
+[P222] [word/document.xml] Jméno: ................................................................
+[P223] [word/document.xml] Podpis: ............................................
+[P224] [word/document.xml] Datum:  ............................................
+[P225] [word/document.xml] Razítko:
+[P226] [word/document.xml] Za Zhotovitele (OSVČ s IČO)
+[P227] [word/document.xml] Jméno: ................................................................
+[P228] [word/document.xml] Podpis: ............................................
+[P229] [word/document.xml] Datum:  ............................................
+[P230] [word/document.xml] IČO: ................................................
+[P231] [word/document.xml] NOVÉ / UPRAVENO = nová nebo opravená ustanovení oproti původní verzi smlouvy  |  Cleansia s.r.o.  |  Rámcová smlouva v1.1
+[P232] [word/footer1.xml] Rámcová smlouva o spolupráci v1.1  |  Cleansia s.r.o.  |  Důvěrný dokument
+[P233] [word/header1.xml] CLEANSIA s.r.o.  |  Rámcová smlouva o spolupráci  |  Verze 1.1

@@ -41,7 +41,6 @@ public class UserEmailRaceMappingTests
     private const string Password = "Password1!@abc";
 
     private readonly Mock<IUserRepository> _userRepository = new();
-    private readonly Mock<ICartRepository> _cartRepository = new();
     private readonly Mock<ITokenService> _tokenService = new();
     private readonly IPendingDispatch _pending = new InMemoryPendingDispatch();
 
@@ -59,19 +58,19 @@ public class UserEmailRaceMappingTests
             .ThrowsAsync(exception);
 
     private Register.Handler NewRegisterHandler() =>
-        new(_cartRepository.Object, _userRepository.Object, new Mock<IReferralService>().Object, _pending,
+        new(_userRepository.Object, new Mock<IReferralService>().Object, _pending,
             new Mock<IConsentService>().Object, LegalDocumentFixtures.Resolver().Object, new AuditContext(), NullLogger<Register.Handler>.Instance);
 
     private RegisterEmployee.Handler NewRegisterEmployeeHandler() =>
-        new(_cartRepository.Object, _userRepository.Object, new Mock<IEmployeeRepository>().Object, _pending,
+        new(_userRepository.Object, new Mock<IEmployeeRepository>().Object, _pending,
             new Mock<IConsentService>().Object);
 
     private GoogleAuth.Handler NewGoogleHandler(Mock<IGoogleTokenVerifier> verifier) =>
-        new(verifier.Object, _tokenService.Object, _cartRepository.Object, _userRepository.Object,
+        new(verifier.Object, _tokenService.Object, _userRepository.Object,
             new HostAudienceProvider(JwtAudiences.Customer), new Mock<IConsentService>().Object, LegalDocumentFixtures.Resolver().Object, new AuditContext(), Mock.Of<ICompanySignInGate>());
 
     private AppleAuth.Handler NewAppleHandler(Mock<IAppleTokenVerifier> verifier) =>
-        new(verifier.Object, _tokenService.Object, _cartRepository.Object, _userRepository.Object,
+        new(verifier.Object, _tokenService.Object, _userRepository.Object,
             new HostAudienceProvider(JwtAudiences.Customer), new Mock<IConsentService>().Object, LegalDocumentFixtures.Resolver().Object, NullLogger<AppleAuth.Handler>.Instance, new AuditContext(), Mock.Of<ICompanySignInGate>());
 
     private void AssertNoTokenMinted() =>

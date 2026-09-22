@@ -2,16 +2,13 @@ import { inject, Injectable, signal } from '@angular/core';
 import { FormControl, FormGroup, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { AdminAuthService, JwtTokenResponse } from '@cleansia/admin-services';
-import { loadUserCurrent } from '@cleansia/admin-stores';
 import { UnsubscribeControlDirective } from '@cleansia/directives';
 import { CleansiaAdminRoute, SnackbarService } from '@cleansia/services';
-import { Store } from '@ngrx/store';
 import { TranslateService } from '@ngx-translate/core';
 import { catchError, finalize, of, takeUntil } from 'rxjs';
 
 @Injectable()
 export class AdminLoginFacade extends UnsubscribeControlDirective {
-  private readonly store = inject(Store);
   private readonly router = inject(Router);
   private readonly authService = inject(AdminAuthService);
   private readonly translate = inject(TranslateService);
@@ -24,9 +21,7 @@ export class AdminLoginFacade extends UnsubscribeControlDirective {
 
   login() {
     if (this.formGroup.invalid) {
-      return this.snackbarService.showError(
-        this.translate.instant('validation.common.not_all_fields_filled')
-      );
+      return this.snackbarService.showErrorTranslated('validation.common.not_all_fields_filled');
     }
     const email = this.formGroup.get('email')?.value;
     const password = this.formGroup.get('password')?.value;
@@ -49,9 +44,7 @@ export class AdminLoginFacade extends UnsubscribeControlDirective {
           }
 
           if (!authResult.isEmailConfirmed) {
-            this.snackbarService.showError(
-              this.translate.instant('validation.auth.email_not_confirmed')
-            );
+            this.snackbarService.showErrorTranslated('validation.auth.email_not_confirmed');
             return;
           }
 
@@ -63,7 +56,6 @@ export class AdminLoginFacade extends UnsubscribeControlDirective {
 
           // The home route resolves to the first page this session's role can open.
           this.authService.setSession(authResult);
-          this.store.dispatch(loadUserCurrent());
           this.router.navigate(['/' + CleansiaAdminRoute.HOME]);
         },
       });

@@ -309,7 +309,7 @@ public class HandleChargebackNotificationTests
 
     // Regression for the multi-tenant blocker: a non-null-tenant dispute is read tenant-ignoring (the
     // webhook is anonymous, so a tenant-scoped read would return null and never reflect). This fails
-    // against a GetByStripeDisputeIdAsync (tenant-scoped) read.
+    // against a tenant-scoped read of the dispute.
     [Fact]
     public async Task ChargebackClosed_Lost_NonNullTenant_ReflectsViaTenantIgnoringReadAndOverride()
     {

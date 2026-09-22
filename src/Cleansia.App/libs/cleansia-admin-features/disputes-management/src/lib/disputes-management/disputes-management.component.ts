@@ -18,6 +18,7 @@ import {
 import {
   CleansiaLoaderComponent,
   CleansiaSectionComponent,
+  CleansiaStatusBadgeComponent,
   CleansiaTableComponent,
   CleansiaTitleComponent,
   PaginationState,
@@ -28,11 +29,7 @@ import { CleansiaAdminRoute } from '@cleansia/services';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { Subject, takeUntil } from 'rxjs';
 import { DisputesManagementFacade } from './disputes-management.facade';
-import {
-  DISPUTE_STATUS_LABEL_KEYS,
-  getDisputeStatusClass,
-  getDisputeTableDefinition,
-} from './disputes-management.models';
+import { getDisputeTableDefinition } from './disputes-management.models';
 
 @Component({
   selector: 'cleansia-admin-disputes-management',
@@ -44,6 +41,7 @@ import {
     CleansiaTitleComponent,
     CleansiaLoaderComponent,
     CleansiaSectionComponent,
+    CleansiaStatusBadgeComponent,
   ],
   templateUrl: './disputes-management.component.html',
   providers: [DisputesManagementFacade],
@@ -98,17 +96,6 @@ export class DisputesManagementComponent implements AfterViewInit, OnDestroy {
   viewDisputeDetails(dispute: DisputeListItem): void {
     if (!dispute.id) return;
     this.router.navigate([CleansiaAdminRoute.DISPUTE_MANAGEMENT, dispute.id]);
-  }
-
-  getStatusClass(dispute: DisputeListItem): string {
-    return getDisputeStatusClass(dispute.status?.value);
-  }
-
-  getStatusLabel(dispute: DisputeListItem): string {
-    const value = dispute.status?.value;
-    if (value == null) return '';
-    const key = DISPUTE_STATUS_LABEL_KEYS[value];
-    return key ? this.translate.instant(key) : dispute.status?.name ?? '';
   }
 
   getReasonLabel(dispute: DisputeListItem): string {

@@ -82,22 +82,4 @@ public class PropertySizePreset : Auditable
         _translations[languageCode] = new Translation { Name = name, Description = string.Empty };
         return this;
     }
-
-    public PropertySizePreset UpdateSize(int rooms, int bathrooms)
-    {
-        if (rooms < 0 || bathrooms < 0)
-        {
-            throw new ArgumentException("A property size cannot have a negative room count.");
-        }
-
-        Rooms = rooms;
-        Bathrooms = bathrooms;
-        return this;
-    }
-
-    public PropertySizePreset Reorder(int sortOrder)
-    {
-        SortOrder = sortOrder;
-        return this;
-    }
 }

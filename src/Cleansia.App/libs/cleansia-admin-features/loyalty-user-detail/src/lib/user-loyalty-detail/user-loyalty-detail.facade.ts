@@ -23,6 +23,7 @@ import {
 import { ICleansiaSelectOption } from '@cleansia/components';
 import { UnsubscribeControlDirective } from '@cleansia/directives';
 import { FileDownloadService, SnackbarService } from '@cleansia/services';
+import { formatMoney, localeFor } from '@cleansia/utils';
 import { TranslateService } from '@ngx-translate/core';
 import { catchError, finalize, of, takeUntil } from 'rxjs';
 
@@ -96,6 +97,7 @@ export class UserLoyaltyDetailFacade extends UnsubscribeControlDirective {
   readonly submitting = signal<boolean>(false);
   readonly exporting = signal<boolean>(false);
   readonly incidentFileExporting = signal<boolean>(false);
+  readonly incidentPanelOpen = signal<boolean>(false);
 
   /**
    * The account's bookings, offered as the incident file's optional scope. Every status counts —
@@ -297,8 +299,8 @@ export class UserLoyaltyDetailFacade extends UnsubscribeControlDirective {
       .pipe(
         takeUntil(this.destroyed$),
         catchError(() => {
-          this.snackbarService.showError(
-            this.translate.instant('pages.loyalty_user_detail.credit.error.generic')
+          this.snackbarService.showErrorTranslated(
+            'pages.loyalty_user_detail.credit.error.generic'
           );
           return of(null);
         }),
@@ -306,9 +308,7 @@ export class UserLoyaltyDetailFacade extends UnsubscribeControlDirective {
       )
       .subscribe((response) => {
         if (response) {
-          this.snackbarService.showSuccess(
-            this.translate.instant('pages.loyalty_user_detail.credit.success')
-          );
+          this.snackbarService.showSuccessTranslated('pages.loyalty_user_detail.credit.success');
           if (this.currentUserId) {
             this.loadCredit(this.currentUserId);
           }
@@ -346,20 +346,16 @@ export class UserLoyaltyDetailFacade extends UnsubscribeControlDirective {
       .pipe(
         takeUntil(this.destroyed$),
         catchError(() => {
-          this.snackbarService.showError(
-            this.translate.instant('pages.loyalty_user_detail.credit.expire_error')
-          );
+          this.snackbarService.showErrorTranslated('pages.loyalty_user_detail.credit.expire_error');
           return of(null);
         }),
         finalize(() => this.creditExpiring.set(false))
       )
       .subscribe((response) => {
         if (response) {
-          this.snackbarService.showSuccess(
-            this.translate.instant('pages.loyalty_user_detail.credit.expire_success', {
-              amount: response.amountExpired,
-              currency: response.currencyCode,
-            })
+          this.snackbarService.showSuccessTranslated(
+            'pages.loyalty_user_detail.credit.expire_success',
+            { amount: response.amountExpired, currency: response.currencyCode, }
           );
           if (this.currentUserId) {
             this.loadCredit(this.currentUserId);
@@ -398,10 +394,8 @@ export class UserLoyaltyDetailFacade extends UnsubscribeControlDirective {
       .pipe(
         takeUntil(this.destroyed$),
         catchError(() => {
-          this.snackbarService.showError(
-            this.translate.instant(
-              'pages.loyalty_user_detail.grant_dialog.error.generic'
-            )
+          this.snackbarService.showErrorTranslated(
+            'pages.loyalty_user_detail.grant_dialog.error.generic'
           );
           return of(null);
         }),
@@ -409,10 +403,8 @@ export class UserLoyaltyDetailFacade extends UnsubscribeControlDirective {
       )
       .subscribe((response) => {
         if (response) {
-          this.snackbarService.showSuccess(
-            this.translate.instant(
-              'pages.loyalty_user_detail.grant_dialog.success_grant'
-            )
+          this.snackbarService.showSuccessTranslated(
+            'pages.loyalty_user_detail.grant_dialog.success_grant'
           );
           this.refresh();
           onSuccess?.();
@@ -436,10 +428,8 @@ export class UserLoyaltyDetailFacade extends UnsubscribeControlDirective {
       .pipe(
         takeUntil(this.destroyed$),
         catchError(() => {
-          this.snackbarService.showError(
-            this.translate.instant(
-              'pages.loyalty_user_detail.grant_dialog.error.generic'
-            )
+          this.snackbarService.showErrorTranslated(
+            'pages.loyalty_user_detail.grant_dialog.error.generic'
           );
           return of(null);
         }),
@@ -447,10 +437,8 @@ export class UserLoyaltyDetailFacade extends UnsubscribeControlDirective {
       )
       .subscribe((response) => {
         if (response) {
-          this.snackbarService.showSuccess(
-            this.translate.instant(
-              'pages.loyalty_user_detail.grant_dialog.success_revoke'
-            )
+          this.snackbarService.showSuccessTranslated(
+            'pages.loyalty_user_detail.grant_dialog.success_revoke'
           );
           this.refresh();
           onSuccess?.();
@@ -480,11 +468,13 @@ export class UserLoyaltyDetailFacade extends UnsubscribeControlDirective {
       .subscribe((data: GdprExportDto | null) => {
         if (data) {
           this.downloadJson(data, subjectExportFileName(userId, new Date()));
-          this.snackbarService.showSuccess(
-            this.translate.instant('pages.customer_detail.export_success')
-          );
+          this.snackbarService.showSuccessTranslated('pages.customer_detail.export_success');
         }
       });
+  }
+
+  toggleIncidentPanel(): void {
+    this.incidentPanelOpen.update((open) => !open);
   }
 
   /**
@@ -517,9 +507,8 @@ export class UserLoyaltyDetailFacade extends UnsubscribeControlDirective {
             file.data,
             file.fileName ?? incidentFileName(userId, new Date())
           );
-          this.snackbarService.showSuccess(
-            this.translate.instant('pages.customer_detail.incident_file.success')
-          );
+          this.snackbarService.showSuccessTranslated('pages.customer_detail.incident_file.success');
+          this.incidentPanelOpen.set(false);
         }
       });
   }
@@ -547,6 +536,18 @@ export class UserLoyaltyDetailFacade extends UnsubscribeControlDirective {
       new Blob([json], { type: 'application/json' }),
       fileName
     );
+  }
+
+  formatBalance(balance: number, currencyCode: string | undefined): string {
+    return formatMoney(balance, currencyCode, localeFor(this.translate.currentLang), {
+      fractionDigits: 2,
+    });
+  }
+
+  formatLedgerAmount(amount: number | undefined, currencyCode: string | undefined): string {
+    const value = amount ?? 0;
+    const money = this.formatBalance(Math.abs(value), currencyCode);
+    return value > 0 ? `+ ${money}` : value < 0 ? `- ${money}` : money;
   }
 }
 

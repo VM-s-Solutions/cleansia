@@ -1,47 +1,68 @@
-<div class="cleansia-employee-detail">
-  <div class="cleansia-employee-detail__container page-wrapper">
-    <!-- Header with Back Button -->
-    <div class="cleansia-employee-detail__header">
-      <cleansia-button
-        [label]="'pages.employee_detail.back_to_list' | translate"
-        icon="pi pi-arrow-left"
-        (onClick)="goBack()"
-        [outlined]="true"
-      />
-      <cleansia-title [title]="'pages.employee_detail.title' | translate" />
-      <cleansia-button
-        *cleansiaPermission="Policy.CanViewAuditLog"
-        class="cleansia-employee-detail__audit-link"
-        icon="pi pi-history"
-        severity="secondary"
-        [outlined]="true"
-        [label]="'pages.audit_log.drill_in.view_history' | translate"
-        [disabled]="!facade.employee()?.userId"
-        (onClick)="viewAuditHistory()"
-      />
+<div class="cleansia-employee-detail cleansia-page">
+  <div class="cleansia-employee-detail__container page-wrapper page-wrapper--narrow">
+    <div class="cleansia-page-header">
+      <div class="cleansia-page-header__heading">
+        <div class="cleansia-detail-title">
+          <cleansia-button
+            [label]="'pages.employee_detail.back_to_list' | translate"
+            icon="pi pi-arrow-left"
+            severity="secondary"
+            [outlined]="true"
+            (onClick)="goBack()"
+          />
+          <cleansia-title [title]="'pages.employee_detail.title' | translate" [level]="1" />
+        </div>
+      </div>
+      <div class="cleansia-page-header__actions">
+        <cleansia-button
+          *cleansiaPermission="Policy.CanViewAuditLog"
+          class="cleansia-employee-detail__audit-link"
+          icon="pi pi-history"
+          severity="secondary"
+          [outlined]="true"
+          [label]="'pages.audit_log.drill_in.view_history' | translate"
+          [disabled]="!facade.employee()?.userId"
+          (onClick)="viewAuditHistory()"
+        />
+      </div>
     </div>
 
     @if (facade.loading()) {
     <cleansia-loader />
     } @else if (facade.employee()) {
     @let employee = facade.employee()!;
-    <div class="cleansia-employee-detail__content">
-      <!-- Profile Status Banner -->
-      <div
-        class="cleansia-employee-detail__status-banner"
-        [ngClass]="
-          employee.isProfileComplete
-            ? 'status-complete'
-            : 'status-incomplete'
-        "
+    <div class="detail-identity">
+      <div class="detail-identity__row">
+        <span class="detail-identity__name">{{ employee.firstName }} {{ employee.lastName }}</span>
+        <div class="detail-identity__badges">
+          <cleansia-status-badge kind="contract" [value]="employee.contractStatus" />
+        </div>
+      </div>
+      <div class="detail-identity__meta">
+        <span class="detail-identity__meta-item">
+          <i class="pi pi-star-fill"></i>
+          {{ 'pages.employee_detail.average_rating' | translate }}
+          <strong>{{ employee.averageRating.toFixed(1) || '0.0' }}</strong>
+        </span>
+        <span class="detail-identity__meta-item">
+          <i class="pi pi-flag"></i>
+          {{ 'pages.employee_detail.complaints_count' | translate }}
+          <strong>{{ employee.complaintsCount || 0 }}</strong>
+        </span>
+        <span class="detail-identity__meta-item">
+          <i class="pi pi-sliders-h"></i>
+          {{ 'pages.employee_detail.weekly_order_limit' | translate }}
+          <strong>{{
+            employee.weeklyOrderLimit ?? ('pages.employee_detail.weekly_order_limit_unlimited' | translate)
+          }}</strong>
+        </span>
+      </div>
+      <p
+        class="detail-identity__note"
+        [class.detail-identity__note--success]="employee.isProfileComplete"
+        [class.detail-identity__note--warning]="!employee.isProfileComplete"
       >
-        <i
-          [class]="
-            employee.isProfileComplete
-              ? 'pi pi-check-circle'
-              : 'pi pi-exclamation-triangle'
-          "
-        ></i>
+        <i [class]="employee.isProfileComplete ? 'pi pi-check-circle' : 'pi pi-exclamation-triangle'"></i>
         <span>
           {{
             (employee.isProfileComplete
@@ -49,928 +70,647 @@
               : 'pages.employee_detail.profile_incomplete'
             ) | translate
           }}
-        </span>
-        @if (!employee.isProfileComplete &&
-        (employee.missingFields?.length ?? 0) > 0) {
-        <div class="missing-fields">
-          <strong
-            >{{ 'pages.employee_detail.missing_fields' | translate }}:</strong
-          >
+          @if (!employee.isProfileComplete && (employee.missingFields?.length ?? 0) > 0) {
+          — {{ 'pages.employee_detail.missing_fields' | translate }}:
           <!--
             Translated one at a time rather than joined raw. The server sends translation KEYS
             (profile.fields.firstName), so `join` printed them verbatim — an admin read
             "profile.fields.registrationNumber" and had to know the codebase to parse it.
           -->
-          @for (field of employee.missingFields ?? []; track field; let last = $last) {<span
-            >{{ field | translate }}{{ last ? '' : ', ' }}</span
-          >}
-        </div>
+          @for (field of employee.missingFields ?? []; track field; let last = $last) {
+          {{ field | translate }}{{ last ? '' : ', ' }}
+          }
+          }
+        </span>
+      </p>
+    </div>
+
+    @if (facade.hasEntityActions()) {
+    <cleansia-section [title]="'pages.employee_detail.actions_section' | translate">
+      <div class="detail-actions">
+        @if (!facade.editingWeeklyLimit()) {
+        <cleansia-button
+          *cleansiaPermission="Policy.CanAdminUpdateEmployee"
+          [label]="'pages.employee_detail.actions.set_weekly_limit' | translate"
+          icon="pi pi-sliders-h"
+          severity="secondary"
+          [outlined]="true"
+          (onClick)="startEditingWeeklyLimit()"
+        />
         }
-      </div>
-
-      <!-- Contract Status & Actions -->
-      <cleansia-section>
-        <div class="cleansia-employee-detail__contract-section">
-          <div class="contract-status-row">
-            <div class="status-info">
-              <span class="label"
-                >{{
-                  'pages.employee_detail.contract_status' | translate
-                }}:</span
-              >
-              <span
-                [class]="
-                  getContractStatusClass(employee.contractStatus)
-                "
-              >
-                {{ employee.contractStatus }}
-              </span>
-            </div>
-            <div class="rating-info">
-              <span class="label"
-                >{{ 'pages.employee_detail.average_rating' | translate }}:</span
-              >
-              <span class="value">{{
-                employee.averageRating.toFixed(1) || '0.0'
-              }}</span>
-              <i class="pi pi-star-fill"></i>
-            </div>
-            <div class="complaints-info">
-              <span class="label"
-                >{{
-                  'pages.employee_detail.complaints_count' | translate
-                }}:</span
-              >
-              <span class="value">{{
-                employee.complaintsCount || 0
-              }}</span>
-            </div>
-            <!--
-              The weekly cap, readable at last. It was settable by one admin and visible to nobody,
-              so a second admin could not tell one existed — and the cleaner met it only as a refusal
-              at the moment they tried to take work.
-            -->
-            <div class="weekly-limit-info">
-              <span class="label"
-                >{{
-                  'pages.employee_detail.weekly_order_limit' | translate
-                }}:</span
-              >
-              <span class="value">{{
-                employee.weeklyOrderLimit ??
-                  ('pages.employee_detail.weekly_order_limit_unlimited'
-                    | translate)
-              }}</span>
-            </div>
-          </div>
-
-          @if (facade.editingWeeklyLimit()) {
-          <div class="weekly-limit-edit-row">
-            <cleansia-text-input
-              [label]="'pages.employee_detail.weekly_order_limit' | translate"
-              [floatVariant]="'on'"
-              [formControl]="weeklyLimitControl"
-              dataType="number"
-            />
-            <span class="hint">{{
-              'pages.employee_detail.weekly_order_limit_hint' | translate
-            }}</span>
+        @if (facade.canApproveOrReject()) {
+        <cleansia-button
+          *cleansiaPermission="Policy.CanApproveEmployee"
+          [label]="'pages.employee_detail.actions.approve_employee' | translate"
+          icon="pi pi-check"
+          (onClick)="facade.openApproveEmployeeDialog()"
+        />
+        <cleansia-button
+          *cleansiaPermission="Policy.CanRejectEmployee"
+          [label]="'pages.employee_detail.actions.reject_employee' | translate"
+          icon="pi pi-times"
+          severity="danger"
+          [outlined]="true"
+          (onClick)="facade.openRejectEmployeeDialog()"
+        />
+        }
+        @if (facade.editingWeeklyLimit()) {
+        <div class="detail-actions__panel">
+          <cleansia-text-input
+            [label]="'pages.employee_detail.weekly_order_limit' | translate"
+            [floatVariant]="'on'"
+            [formControl]="weeklyLimitControl"
+            dataType="number"
+          />
+          <p class="detail-actions__hint">
+            {{ 'pages.employee_detail.weekly_order_limit_hint' | translate }}
+          </p>
+          <div class="detail-actions">
             <cleansia-button
-              [label]="'common.save' | translate"
+              [label]="'global.actions.cancel' | translate"
+              severity="secondary"
+              [outlined]="true"
+              (onClick)="facade.cancelEditingWeeklyLimit()"
+            />
+            <cleansia-button
+              [label]="'global.actions.save' | translate"
               icon="pi pi-check"
               [loading]="facade.savingWeeklyLimit()"
               [disabled]="weeklyLimitControl.invalid"
               (onClick)="saveWeeklyLimit()"
             />
-            <cleansia-button
-              [label]="'common.cancel' | translate"
-              severity="secondary"
-              [outlined]="true"
-              (onClick)="facade.cancelEditingWeeklyLimit()"
-            />
-          </div>
-          } @else {
-          <div class="weekly-limit-actions-row">
-            <cleansia-button
-              *cleansiaPermission="Policy.CanAdminUpdateEmployee"
-              [label]="'pages.employee_detail.actions.set_weekly_limit' | translate"
-              icon="pi pi-sliders-h"
-              severity="secondary"
-              [outlined]="true"
-              (onClick)="startEditingWeeklyLimit()"
-            />
-          </div>
-          }
-          @if (facade.canApproveOrReject()) {
-          <div class="contract-actions-row">
-            <cleansia-button
-              *cleansiaPermission="Policy.CanApproveEmployee"
-              [label]="'pages.employee_detail.actions.approve_employee' | translate"
-              icon="pi pi-check"
-              severity="success"
-              (onClick)="facade.openApproveEmployeeDialog()"
-            />
-            <cleansia-button
-              *cleansiaPermission="Policy.CanRejectEmployee"
-              [label]="'pages.employee_detail.actions.reject_employee' | translate"
-              icon="pi pi-times"
-              severity="danger"
-              [outlined]="true"
-              (onClick)="facade.openRejectEmployeeDialog()"
-            />
-          </div>
-          }
-        </div>
-      </cleansia-section>
-
-      <!-- Personal Information -->
-      <cleansia-section
-        [title]="'pages.employee_detail.personal_info' | translate"
-      >
-        @if (facade.editingSection() === 'personal') {
-        <div class="info-grid" [formGroup]="editForm">
-          <div class="info-item">
-            <cleansia-text-input
-              [label]="'pages.employee_detail.first_name' | translate"
-              [floatVariant]="'on'"
-              formControlName="firstName"
-              dataType="text"
-            />
-          </div>
-          <div class="info-item">
-            <cleansia-text-input
-              [label]="'pages.employee_detail.last_name' | translate"
-              [floatVariant]="'on'"
-              formControlName="lastName"
-              dataType="text"
-            />
-          </div>
-          <div class="info-item">
-            <span class="label">{{ 'pages.employee_detail.email' | translate }}:</span>
-            <span class="value">{{ employee.email || '-' }}</span>
-          </div>
-          <div class="info-item">
-            <cleansia-telephone
-              [label]="'pages.employee_detail.phone' | translate"
-              [floatVariant]="'on'"
-              formControlName="phoneNumber"
-            />
-          </div>
-          <div class="info-item">
-            <cleansia-calendar
-              [label]="'pages.employee_detail.birth_date' | translate"
-              [floatVariant]="'on'"
-              formControlName="birthDate"
-            />
-          </div>
-          <div class="info-item">
-            <span class="label">{{ 'pages.employee_detail.created_at' | translate }}:</span>
-            <span class="value">{{ formatDateTime(employee.createdAt) }}</span>
-          </div>
-        </div>
-        <div class="section-edit-actions" style="display: flex; gap: 0.5rem; margin-top: 1rem;">
-          <cleansia-button
-            [label]="'common.save' | translate"
-            [loading]="facade.savingEmployee()"
-            (onClick)="onSaveSection()"
-          />
-          <cleansia-button
-            [label]="'common.cancel' | translate"
-            severity="secondary"
-            [disabled]="facade.savingEmployee()"
-            (onClick)="onCancelEditSection()"
-          />
-        </div>
-        } @else {
-        <div style="display: flex; justify-content: flex-end; margin-bottom: 0.5rem;">
-          <cleansia-button
-            *cleansiaPermission="Policy.CanAdminUpdateEmployee"
-            [label]="'common.edit' | translate"
-            severity="secondary"
-            icon="pi pi-pencil"
-            (onClick)="onEditSection('personal')"
-          />
-        </div>
-        <div class="info-grid">
-          <div class="info-item">
-            <span class="label"
-              >{{ 'pages.employee_detail.first_name' | translate }}:</span
-            >
-            <span class="value">{{ employee.firstName || '-' }}</span>
-          </div>
-          <div class="info-item">
-            <span class="label"
-              >{{ 'pages.employee_detail.last_name' | translate }}:</span
-            >
-            <span class="value">{{ employee.lastName || '-' }}</span>
-          </div>
-          <div class="info-item">
-            <span class="label"
-              >{{ 'pages.employee_detail.email' | translate }}:</span
-            >
-            <span class="value">{{ employee.email || '-' }}</span>
-          </div>
-          <div class="info-item">
-            <span class="label"
-              >{{ 'pages.employee_detail.phone' | translate }}:</span
-            >
-            <span class="value">{{
-              employee.phoneNumber || '-'
-            }}</span>
-          </div>
-          <div class="info-item">
-            <span class="label"
-              >{{ 'pages.employee_detail.birth_date' | translate }}:</span
-            >
-            <span class="value">{{
-              formatDate(employee.birthDate)
-            }}</span>
-          </div>
-          <div class="info-item">
-            <span class="label"
-              >{{ 'pages.employee_detail.created_at' | translate }}:</span
-            >
-            <span class="value">{{
-              formatDateTime(employee.createdAt)
-            }}</span>
           </div>
         </div>
         }
-      </cleansia-section>
+      </div>
+    </cleansia-section>
+    }
 
-      <!-- Address Information -->
-      <cleansia-section
-        [title]="'pages.employee_detail.address_info' | translate"
-      >
-        @if (facade.editingSection() === 'address') {
-        <div class="info-grid" [formGroup]="editForm">
-          <div class="info-item">
-            <cleansia-text-input
-              [label]="'pages.employee_detail.street' | translate"
-              [floatVariant]="'on'"
-              formControlName="street"
-              dataType="text"
-            />
-          </div>
-          <div class="info-item">
-            <cleansia-text-input
-              [label]="'pages.employee_detail.city' | translate"
-              [floatVariant]="'on'"
-              formControlName="city"
-              dataType="text"
-            />
-          </div>
-          <div class="info-item">
-            <cleansia-text-input
-              [label]="'pages.employee_detail.zip_code' | translate"
-              [floatVariant]="'on'"
-              formControlName="zipCode"
-              dataType="text"
-            />
-          </div>
-          <div class="info-item">
+    <cleansia-section [title]="'pages.employee_detail.personal_info' | translate">
+      <ng-container section-actions>
+        @if (facade.editingSection() !== 'personal') {
+        <cleansia-button
+          *cleansiaPermission="Policy.CanAdminUpdateEmployee"
+          [label]="'global.actions.edit' | translate"
+          severity="secondary"
+          [outlined]="true"
+          icon="pi pi-pencil"
+          (onClick)="onEditSection('personal')"
+        />
+        }
+      </ng-container>
+      @if (facade.editingSection() === 'personal') {
+      <div class="detail-grid" [formGroup]="editForm">
+        <div class="detail-grid__item">
+          <cleansia-text-input
+            [label]="'pages.employee_detail.first_name' | translate"
+            [floatVariant]="'on'"
+            formControlName="firstName"
+            dataType="text"
+          />
+        </div>
+        <div class="detail-grid__item">
+          <cleansia-text-input
+            [label]="'pages.employee_detail.last_name' | translate"
+            [floatVariant]="'on'"
+            formControlName="lastName"
+            dataType="text"
+          />
+        </div>
+        <div class="detail-grid__item">
+          <span class="detail-grid__label">{{ 'pages.employee_detail.email' | translate }}</span>
+          <span class="detail-grid__value">{{ employee.email || '-' }}</span>
+        </div>
+        <div class="detail-grid__item">
+          <cleansia-telephone
+            [label]="'pages.employee_detail.phone' | translate"
+            [floatVariant]="'on'"
+            formControlName="phoneNumber"
+          />
+        </div>
+        <div class="detail-grid__item">
+          <cleansia-calendar
+            [label]="'pages.employee_detail.birth_date' | translate"
+            [floatVariant]="'on'"
+            formControlName="birthDate"
+          />
+        </div>
+        <div class="detail-grid__item">
+          <span class="detail-grid__label">{{ 'pages.employee_detail.created_at' | translate }}</span>
+          <span class="detail-grid__value">{{ formatDateTime(employee.createdAt) }}</span>
+        </div>
+      </div>
+      <ng-container *ngTemplateOutlet="sectionEditActions" />
+      } @else {
+      <div class="detail-grid">
+        <div class="detail-grid__item">
+          <span class="detail-grid__label">{{ 'pages.employee_detail.first_name' | translate }}</span>
+          <span class="detail-grid__value">{{ employee.firstName || '-' }}</span>
+        </div>
+        <div class="detail-grid__item">
+          <span class="detail-grid__label">{{ 'pages.employee_detail.last_name' | translate }}</span>
+          <span class="detail-grid__value">{{ employee.lastName || '-' }}</span>
+        </div>
+        <div class="detail-grid__item">
+          <span class="detail-grid__label">{{ 'pages.employee_detail.email' | translate }}</span>
+          <span class="detail-grid__value">{{ employee.email || '-' }}</span>
+        </div>
+        <div class="detail-grid__item">
+          <span class="detail-grid__label">{{ 'pages.employee_detail.phone' | translate }}</span>
+          <span class="detail-grid__value">{{ employee.phoneNumber || '-' }}</span>
+        </div>
+        <div class="detail-grid__item">
+          <span class="detail-grid__label">{{ 'pages.employee_detail.birth_date' | translate }}</span>
+          <span class="detail-grid__value">{{ formatDate(employee.birthDate) }}</span>
+        </div>
+        <div class="detail-grid__item">
+          <span class="detail-grid__label">{{ 'pages.employee_detail.created_at' | translate }}</span>
+          <span class="detail-grid__value">{{ formatDateTime(employee.createdAt) }}</span>
+        </div>
+      </div>
+      }
+    </cleansia-section>
+
+    <cleansia-section [title]="'pages.employee_detail.address_info' | translate">
+      <ng-container section-actions>
+        @if (facade.editingSection() !== 'address') {
+        <cleansia-button
+          *cleansiaPermission="Policy.CanAdminUpdateEmployee"
+          [label]="'global.actions.edit' | translate"
+          severity="secondary"
+          [outlined]="true"
+          icon="pi pi-pencil"
+          (onClick)="onEditSection('address')"
+        />
+        }
+      </ng-container>
+      @if (facade.editingSection() === 'address') {
+      <div class="detail-grid" [formGroup]="editForm">
+        <div class="detail-grid__item">
+          <cleansia-text-input
+            [label]="'pages.employee_detail.street' | translate"
+            [floatVariant]="'on'"
+            formControlName="street"
+            dataType="text"
+          />
+        </div>
+        <div class="detail-grid__item">
+          <cleansia-text-input
+            [label]="'pages.employee_detail.city' | translate"
+            [floatVariant]="'on'"
+            formControlName="city"
+            dataType="text"
+          />
+        </div>
+        <div class="detail-grid__item">
+          <cleansia-text-input
+            [label]="'pages.employee_detail.zip_code' | translate"
+            [floatVariant]="'on'"
+            formControlName="zipCode"
+            dataType="text"
+          />
+        </div>
+        <div class="detail-grid__item">
+          <cleansia-select
+            [options]="facade.countries()"
+            [label]="'pages.employee_detail.country' | translate"
+            [floatVariant]="'on'"
+            [filter]="true"
+            formControlName="countryId"
+          />
+        </div>
+      </div>
+      <ng-container *ngTemplateOutlet="sectionEditActions" />
+      } @else {
+      <div class="detail-grid">
+        <div class="detail-grid__item">
+          <span class="detail-grid__label">{{ 'pages.employee_detail.street' | translate }}</span>
+          <span class="detail-grid__value">{{ employee.street || '-' }}</span>
+        </div>
+        <div class="detail-grid__item">
+          <span class="detail-grid__label">{{ 'pages.employee_detail.city' | translate }}</span>
+          <span class="detail-grid__value">{{ employee.city || '-' }}</span>
+        </div>
+        <div class="detail-grid__item">
+          <span class="detail-grid__label">{{ 'pages.employee_detail.zip_code' | translate }}</span>
+          <span class="detail-grid__value">{{ employee.zipCode || '-' }}</span>
+        </div>
+        <div class="detail-grid__item">
+          <span class="detail-grid__label">{{ 'pages.employee_detail.country' | translate }}</span>
+          <span class="detail-grid__value">{{ employee.countryName || '-' }}</span>
+        </div>
+      </div>
+      }
+    </cleansia-section>
+
+    <cleansia-section [title]="'pages.employee_detail.employment_info' | translate">
+      <ng-container section-actions>
+        @if (facade.editingSection() !== 'employment') {
+        <cleansia-button
+          *cleansiaPermission="Policy.CanAdminUpdateEmployee"
+          [label]="'global.actions.edit' | translate"
+          severity="secondary"
+          [outlined]="true"
+          icon="pi pi-pencil"
+          (onClick)="onEditSection('employment')"
+        />
+        }
+      </ng-container>
+      @if (facade.editingSection() === 'employment') {
+      <div class="detail-grid" [formGroup]="editForm">
+        <div class="detail-grid__item">
+          <cleansia-select
+            [options]="facade.countries()"
+            [label]="'pages.employee_detail.nationality' | translate"
+            [floatVariant]="'on'"
+            [filter]="true"
+            formControlName="nationalityId"
+          />
+        </div>
+        <div class="detail-grid__item">
+          <cleansia-text-input
+            [label]="'pages.employee_detail.passport_id' | translate"
+            [floatVariant]="'on'"
+            formControlName="passportId"
+            dataType="text"
+          />
+        </div>
+        <div class="detail-grid__item">
+          <cleansia-select
+            [options]="entityTypeOptions"
+            [label]="'pages.employee_detail.entity_type' | translate"
+            [floatVariant]="'on'"
+            formControlName="entityType"
+          />
+        </div>
+        <div class="detail-grid__item">
+          <cleansia-text-input
+            [label]="
+              fieldLabels()?.registrationNumberLabel ??
+                ('pages.employee_detail.registration_number' | translate)
+            "
+            [floatVariant]="'on'"
+            formControlName="registrationNumber"
+            dataType="text"
+          />
+        </div>
+        @if (isLegalEntity()) {
+        <div class="detail-grid__item">
+          <cleansia-text-input
+            [label]="'pages.employee_detail.legal_entity_name' | translate"
+            [floatVariant]="'on'"
+            formControlName="legalEntityName"
+            dataType="text"
+          />
+        </div>
+        }
+      </div>
+      <ng-container *ngTemplateOutlet="sectionEditActions" />
+      } @else {
+      <div class="detail-grid">
+        <div class="detail-grid__item">
+          <span class="detail-grid__label">{{ 'pages.employee_detail.nationality' | translate }}</span>
+          <span class="detail-grid__value">{{ employee.nationalityName || '-' }}</span>
+        </div>
+        <div class="detail-grid__item">
+          <span class="detail-grid__label">{{ 'pages.employee_detail.passport_id' | translate }}</span>
+          <span class="detail-grid__value">{{ employee.passportId || '-' }}</span>
+        </div>
+        <div class="detail-grid__item">
+          <span class="detail-grid__label">{{ 'pages.employee_detail.entity_type' | translate }}</span>
+          <span class="detail-grid__value">{{
+            employee.entityType === 2
+              ? ('pages.employee_detail.entity_type_legal_entity' | translate)
+              : ('pages.employee_detail.entity_type_natural_person' | translate)
+          }}</span>
+        </div>
+        <div class="detail-grid__item">
+          <span class="detail-grid__label">{{
+            fieldLabels()?.registrationNumberLabel ??
+              ('pages.employee_detail.registration_number' | translate)
+          }}</span>
+          <span class="detail-grid__value">{{ employee.registrationNumber || '-' }}</span>
+        </div>
+        @if (employee.entityType === 2) {
+        <div class="detail-grid__item">
+          <span class="detail-grid__label">{{ 'pages.employee_detail.legal_entity_name' | translate }}</span>
+          <span class="detail-grid__value">{{ employee.legalEntityName || '-' }}</span>
+        </div>
+        }
+      </div>
+      }
+    </cleansia-section>
+
+    <cleansia-section [title]="'pages.employee_detail.emergency_contact' | translate">
+      <ng-container section-actions>
+        @if (facade.editingSection() !== 'emergency') {
+        <cleansia-button
+          *cleansiaPermission="Policy.CanAdminUpdateEmployee"
+          [label]="'global.actions.edit' | translate"
+          severity="secondary"
+          [outlined]="true"
+          icon="pi pi-pencil"
+          (onClick)="onEditSection('emergency')"
+        />
+        }
+      </ng-container>
+      @if (facade.editingSection() === 'emergency') {
+      <div class="detail-grid" [formGroup]="editForm">
+        <div class="detail-grid__item">
+          <cleansia-text-input
+            [label]="'pages.employee_detail.emergency_name' | translate"
+            [floatVariant]="'on'"
+            formControlName="emergencyContactName"
+            dataType="text"
+          />
+        </div>
+        <div class="detail-grid__item">
+          <cleansia-telephone
+            [label]="'pages.employee_detail.emergency_phone' | translate"
+            [floatVariant]="'on'"
+            formControlName="emergencyContactPhone"
+          />
+        </div>
+      </div>
+      <ng-container *ngTemplateOutlet="sectionEditActions" />
+      } @else {
+      <div class="detail-grid">
+        <div class="detail-grid__item">
+          <span class="detail-grid__label">{{ 'pages.employee_detail.emergency_name' | translate }}</span>
+          <span class="detail-grid__value">{{ employee.emergencyContactName || '-' }}</span>
+        </div>
+        <div class="detail-grid__item">
+          <span class="detail-grid__label">{{ 'pages.employee_detail.emergency_phone' | translate }}</span>
+          <span class="detail-grid__value">{{ employee.emergencyContactPhone || '-' }}</span>
+        </div>
+      </div>
+      }
+    </cleansia-section>
+
+    <cleansia-section
+      *cleansiaPermission="Policy.CanViewPayConfigs"
+      [title]="'pages.employee_detail.pay_configuration' | translate"
+    >
+      @if (facade.loadingPayConfigs()) {
+      <cleansia-loader />
+      } @else { @if (facade.payConfigSummary(); as summary) {
+      <div class="detail-grid">
+        <div class="detail-grid__item">
+          <span class="detail-grid__label">{{ 'pages.employee_detail.services_configured' | translate }}</span>
+          <span class="detail-grid__value">{{ summary.configuredServices }} / {{ summary.totalServices }}</span>
+        </div>
+        <div class="detail-grid__item">
+          <span class="detail-grid__label">{{ 'pages.employee_detail.packages_configured' | translate }}</span>
+          <span class="detail-grid__value">{{ summary.configuredPackages }} / {{ summary.totalPackages }}</span>
+        </div>
+      </div>
+
+      <div class="pay-config-bulk" [formGroup]="bulkGradeForm">
+        <h4 class="pay-config-bulk__title">{{ 'pages.employee_detail.bulk_apply_grade' | translate }}</h4>
+        <p class="pay-config-bulk__hint">{{ 'pages.employee_detail.bulk_apply_grade_hint' | translate }}</p>
+        <div class="detail-grid">
+          <div class="detail-grid__item">
             <cleansia-select
-              [options]="facade.countries()"
-              [label]="'pages.employee_detail.country' | translate"
+              [options]="gradeOptions"
+              [label]="'pages.employee_detail.grade' | translate"
               [floatVariant]="'on'"
-              [filter]="true"
-              formControlName="countryId"
+              formControlName="grade"
             />
           </div>
-        </div>
-        <div class="section-edit-actions" style="display: flex; gap: 0.5rem; margin-top: 1rem;">
-          <cleansia-button
-            [label]="'common.save' | translate"
-            [loading]="facade.savingEmployee()"
-            (onClick)="onSaveSection()"
-          />
-          <cleansia-button
-            [label]="'common.cancel' | translate"
-            severity="secondary"
-            [disabled]="facade.savingEmployee()"
-            (onClick)="onCancelEditSection()"
-          />
-        </div>
-        } @else {
-        <div style="display: flex; justify-content: flex-end; margin-bottom: 0.5rem;">
-          <cleansia-button
-            *cleansiaPermission="Policy.CanAdminUpdateEmployee"
-            [label]="'common.edit' | translate"
-            severity="secondary"
-            icon="pi pi-pencil"
-            (onClick)="onEditSection('address')"
-          />
-        </div>
-        <div class="info-grid">
-          <div class="info-item">
-            <span class="label"
-              >{{ 'pages.employee_detail.street' | translate }}:</span
-            >
-            <span class="value">{{ employee.street || '-' }}</span>
-          </div>
-          <div class="info-item">
-            <span class="label"
-              >{{ 'pages.employee_detail.city' | translate }}:</span
-            >
-            <span class="value">{{ employee.city || '-' }}</span>
-          </div>
-          <div class="info-item">
-            <span class="label"
-              >{{ 'pages.employee_detail.zip_code' | translate }}:</span
-            >
-            <span class="value">{{ employee.zipCode || '-' }}</span>
-          </div>
-          <div class="info-item">
-            <span class="label"
-              >{{ 'pages.employee_detail.country' | translate }}:</span
-            >
-            <span class="value">{{
-              employee.countryName || '-'
-            }}</span>
-          </div>
-        </div>
-        }
-      </cleansia-section>
-
-      <!-- Employment Information -->
-      <cleansia-section
-        [title]="'pages.employee_detail.employment_info' | translate"
-      >
-        @if (facade.editingSection() === 'employment') {
-        <div class="info-grid" [formGroup]="editForm">
-          <div class="info-item">
+          <div class="detail-grid__item">
             <cleansia-select
-              [options]="facade.countries()"
-              [label]="'pages.employee_detail.nationality' | translate"
+              [options]="facade.currencies()"
+              [label]="'pages.employee_detail.pay_config_currency' | translate"
               [floatVariant]="'on'"
-              [filter]="true"
-              formControlName="nationalityId"
+              formControlName="currencyId"
             />
           </div>
-          <div class="info-item">
-            <cleansia-text-input
-              [label]="'pages.employee_detail.passport_id' | translate"
-              [floatVariant]="'on'"
-              formControlName="passportId"
-              dataType="text"
-            />
-          </div>
-          <div class="info-item">
-            <cleansia-select
-              [options]="entityTypeOptions"
-              [label]="'pages.employee_detail.entity_type' | translate"
-              [floatVariant]="'on'"
-              formControlName="entityType"
-            />
-          </div>
-          <div class="info-item">
-            <cleansia-text-input
-              [label]="
-                fieldLabels()?.registrationNumberLabel ??
-                  ('pages.employee_detail.registration_number' | translate)
-              "
-              [floatVariant]="'on'"
-              formControlName="registrationNumber"
-              dataType="text"
-            />
-          </div>
-          @if (isLegalEntity()) {
-            <div class="info-item">
-              <cleansia-text-input
-                [label]="'pages.employee_detail.legal_entity_name' | translate"
-                [floatVariant]="'on'"
-                formControlName="legalEntityName"
-                dataType="text"
-              />
-            </div>
-          }
-        </div>
-        <div class="section-edit-actions" style="display: flex; gap: 0.5rem; margin-top: 1rem;">
-          <cleansia-button
-            [label]="'common.save' | translate"
-            [loading]="facade.savingEmployee()"
-            (onClick)="onSaveSection()"
-          />
-          <cleansia-button
-            [label]="'common.cancel' | translate"
-            severity="secondary"
-            [disabled]="facade.savingEmployee()"
-            (onClick)="onCancelEditSection()"
-          />
-        </div>
-        } @else {
-        <div style="display: flex; justify-content: flex-end; margin-bottom: 0.5rem;">
-          <cleansia-button
-            *cleansiaPermission="Policy.CanAdminUpdateEmployee"
-            [label]="'common.edit' | translate"
-            severity="secondary"
-            icon="pi pi-pencil"
-            (onClick)="onEditSection('employment')"
-          />
-        </div>
-        <div class="info-grid">
-          <div class="info-item">
-            <span class="label"
-              >{{ 'pages.employee_detail.nationality' | translate }}:</span
-            >
-            <span class="value">{{
-              employee.nationalityName || '-'
-            }}</span>
-          </div>
-          <div class="info-item">
-            <span class="label"
-              >{{ 'pages.employee_detail.passport_id' | translate }}:</span
-            >
-            <span class="value">{{ employee.passportId || '-' }}</span>
-          </div>
-          <div class="info-item">
-            <span class="label"
-              >{{ 'pages.employee_detail.entity_type' | translate }}:</span
-            >
-            <span class="value">{{
-              employee.entityType === 2
-                ? ('pages.employee_detail.entity_type_legal_entity' | translate)
-                : ('pages.employee_detail.entity_type_natural_person' | translate)
-            }}</span>
-          </div>
-          <div class="info-item">
-            <span class="label"
-              >{{
-                fieldLabels()?.registrationNumberLabel ??
-                  ('pages.employee_detail.registration_number' | translate)
-              }}:</span
-            >
-            <span class="value">{{ employee.registrationNumber || '-' }}</span>
-          </div>
-          @if (employee.entityType === 2) {
-            <div class="info-item">
-              <span class="label"
-                >{{ 'pages.employee_detail.legal_entity_name' | translate }}:</span
-              >
-              <span class="value">{{ employee.legalEntityName || '-' }}</span>
-            </div>
-          }
-        </div>
-        }
-      </cleansia-section>
-
-      <!-- Emergency Contact -->
-      <cleansia-section
-        [title]="'pages.employee_detail.emergency_contact' | translate"
-      >
-        @if (facade.editingSection() === 'emergency') {
-        <div class="info-grid" [formGroup]="editForm">
-          <div class="info-item">
-            <cleansia-text-input
-              [label]="'pages.employee_detail.emergency_name' | translate"
-              [floatVariant]="'on'"
-              formControlName="emergencyContactName"
-              dataType="text"
-            />
-          </div>
-          <div class="info-item">
-            <cleansia-telephone
-              [label]="'pages.employee_detail.emergency_phone' | translate"
-              [floatVariant]="'on'"
-              formControlName="emergencyContactPhone"
+          <div class="detail-grid__item pay-config-bulk__toggle">
+            <cleansia-checkbox
+              formControlName="overwriteExisting"
+              [label]="'pages.employee_detail.overwrite_existing' | translate"
             />
           </div>
         </div>
-        <div class="section-edit-actions" style="display: flex; gap: 0.5rem; margin-top: 1rem;">
+        <div class="detail-actions">
           <cleansia-button
-            [label]="'common.save' | translate"
-            [loading]="facade.savingEmployee()"
-            (onClick)="onSaveSection()"
-          />
-          <cleansia-button
-            [label]="'common.cancel' | translate"
-            severity="secondary"
-            [disabled]="facade.savingEmployee()"
-            (onClick)="onCancelEditSection()"
+            *cleansiaPermission="Policy.CanCreatePayConfig"
+            [label]="'pages.employee_detail.apply_to_all' | translate"
+            icon="pi pi-check"
+            [outlined]="true"
+            [loading]="facade.bulkApplyingGrade()"
+            (onClick)="onBulkApplyGrade()"
           />
         </div>
-        } @else {
-        <div style="display: flex; justify-content: flex-end; margin-bottom: 0.5rem;">
-          <cleansia-button
-            *cleansiaPermission="Policy.CanAdminUpdateEmployee"
-            [label]="'common.edit' | translate"
-            severity="secondary"
-            icon="pi pi-pencil"
-            (onClick)="onEditSection('emergency')"
-          />
-        </div>
-        <div class="info-grid">
-          <div class="info-item">
-            <span class="label"
-              >{{ 'pages.employee_detail.emergency_name' | translate }}:</span
-            >
-            <span class="value">{{
-              employee.emergencyContactName || '-'
-            }}</span>
-          </div>
-          <div class="info-item">
-            <span class="label"
-              >{{ 'pages.employee_detail.emergency_phone' | translate }}:</span
-            >
-            <span class="value">{{
-              employee.emergencyContactPhone || '-'
-            }}</span>
-          </div>
-        </div>
-        }
-      </cleansia-section>
+      </div>
 
-      <!-- Availability -->
-      <cleansia-section
-        [title]="'pages.employee_detail.availability' | translate"
-      >
-        @if (facade.editingAvailability()) {
-        <!-- Edit mode -->
-        <cleansia-availability [(ngModel)]="availabilityValue" />
-        <div class="availability-actions" style="display: flex; gap: 0.5rem; margin-top: 1rem;">
-          <cleansia-button
-            [label]="'common.save' | translate"
-            [loading]="facade.savingAvailability()"
-            (onClick)="onSaveAvailability()"
-          />
-          <cleansia-button
-            [label]="'common.cancel' | translate"
-            severity="secondary"
-            [disabled]="facade.savingAvailability()"
-            (onClick)="onCancelEditAvailability()"
-          />
-        </div>
-        } @else {
-        <!-- View mode -->
-        <div style="display: flex; justify-content: flex-end; margin-bottom: 0.5rem;">
-          <cleansia-button
-            *cleansiaPermission="Policy.CanAdminUpdateEmployee"
-            [label]="'common.edit' | translate"
-            severity="secondary"
-            icon="pi pi-pencil"
-            (onClick)="onEditAvailability()"
-          />
-        </div>
-        @if (employee.availability) {
-        <div class="availability-grid">
-          @for (day of daysOfWeek(); track day.value) {
-          <div class="availability-day">
-            <span class="day-name"
-              >{{ 'pages.employee_detail.' + day.name | translate }}:</span
-            >
-            @if (employee.availability[day.name!] &&
-            employee.availability[day.name!].length > 0) {
-            <div class="time-ranges">
-              @for (range of employee.availability[day.name!]; track
-              $index) {
-              <span class="time-range">{{
-                formatTimeRange(range.start, range.end)
-              }}</span>
-              }
-            </div>
-            } @else {
-            <span class="no-availability">-</span>
-            }
-          </div>
-          }
-        </div>
-        } @else {
-        <p class="no-data">
-          {{ 'pages.employee_detail.no_availability' | translate }}
-        </p>
+      @if (summary.services && summary.services.length > 0) {
+      <div class="pay-config-list">
+        <h4 class="pay-config-list__title">{{ 'pages.employee_detail.services' | translate }}</h4>
+        @for (item of summary.services; track item.serviceId) {
+        <ng-container
+          *ngTemplateOutlet="payConfigRow; context: { $implicit: item, name: item.serviceName, isService: true }"
+        />
         }
-        }
-      </cleansia-section>
-
-      <!-- Pay Configuration -->
-      <cleansia-section
-        *cleansiaPermission="Policy.CanViewPayConfigs"
-        [title]="'pages.employee_detail.pay_configuration' | translate"
-      >
-        @if (facade.loadingPayConfigs()) {
-        <cleansia-loader />
-        } @else {
-        <!-- Progress summary -->
-        @if (facade.payConfigSummary(); as summary) {
-        <div class="pay-config-progress" style="display: flex; gap: 1.5rem; margin-bottom: 1rem; padding: 0.75rem 1rem; background: var(--surface-100); border-radius: 8px;">
-          <div>
-            <span class="label">{{ 'pages.employee_detail.services_configured' | translate }}:</span>
-            <strong>{{ summary.configuredServices }} / {{ summary.totalServices }}</strong>
-          </div>
-          <div>
-            <span class="label">{{ 'pages.employee_detail.packages_configured' | translate }}:</span>
-            <strong>{{ summary.configuredPackages }} / {{ summary.totalPackages }}</strong>
-          </div>
-        </div>
-
-        <!-- Bulk apply grade controls -->
-        <div class="bulk-apply-grade" [formGroup]="bulkGradeForm" style="border: 1px solid var(--surface-border); border-radius: 8px; padding: 1rem; margin-bottom: 1rem;">
-          <h4 style="margin: 0 0 0.75rem 0;">{{ 'pages.employee_detail.bulk_apply_grade' | translate }}</h4>
-          <p style="margin: 0 0 1rem 0; color: var(--text-color-secondary); font-size: 0.875rem;">
-            {{ 'pages.employee_detail.bulk_apply_grade_hint' | translate }}
-          </p>
-          <div class="info-grid">
-            <div class="info-item">
-              <cleansia-select
-                [options]="gradeOptions"
-                [label]="'pages.employee_detail.grade' | translate"
-                [floatVariant]="'on'"
-                formControlName="grade"
-              />
-            </div>
-            <div class="info-item">
-              <cleansia-select
-                [options]="facade.currencies()"
-                [label]="'pages.employee_detail.pay_config_currency' | translate"
-                [floatVariant]="'on'"
-                formControlName="currencyId"
-              />
-            </div>
-            <div class="info-item" style="display: flex; align-items: center; gap: 0.5rem;">
-              <p-checkbox
-                formControlName="overwriteExisting"
-                [binary]="true"
-                inputId="overwriteExisting"
-              />
-              <label for="overwriteExisting">{{ 'pages.employee_detail.overwrite_existing' | translate }}</label>
-            </div>
-          </div>
-          <div style="display: flex; gap: 0.5rem; margin-top: 1rem; justify-content: flex-end;">
-            <cleansia-button
-              *cleansiaPermission="Policy.CanCreatePayConfig"
-              [label]="'pages.employee_detail.apply_to_all' | translate"
-              icon="pi pi-check"
-              severity="primary"
-              [loading]="facade.bulkApplyingGrade()"
-              (onClick)="onBulkApplyGrade()"
-            />
-          </div>
-        </div>
-
-        <!-- Services table -->
-        @if (summary.services && summary.services.length > 0) {
-        <h4 style="margin-top: 1.5rem; margin-bottom: 0.5rem;">{{ 'pages.employee_detail.services' | translate }}</h4>
-        <div class="pay-config-table">
-          @for (item of summary.services; track item.serviceId) {
-          <div class="pay-config-row" [class.configured]="item.hasConfig" style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 1rem; border: 1px solid var(--surface-border); border-radius: 6px; margin-bottom: 0.5rem;">
-            <div style="display: flex; align-items: center; gap: 0.75rem; flex: 1;">
-              @if (item.hasConfig) {
-              <i class="pi pi-check-circle" style="color: var(--green-500);"></i>
-              } @else {
-              <i class="pi pi-times-circle" style="color: var(--surface-400);"></i>
-              }
-              <strong>{{ item.serviceName }}</strong>
-            </div>
-            <div style="display: flex; align-items: center; gap: 1rem;">
-              @if (item.hasConfig) {
-              <span class="value">
-                {{ item.basePay }} + {{ item.extraPerRoom }}/room + {{ item.extraPerBathroom }}/bath {{ item.currencyCode }}
-              </span>
-              } @else {
-              <span style="color: var(--text-color-secondary); font-style: italic;">
-                {{ 'pages.employee_detail.not_configured' | translate }}
-              </span>
-              }
-              <cleansia-button
-                *cleansiaPermission="Policy.CanUpdatePayConfig"
-                icon="pi pi-pencil"
-                severity="secondary"
-                buttonSize="small"
-                [outlined]="true"
-                [tooltip]="
-                  (item.hasConfig
-                    ? 'pages.employee_detail.edit_override'
-                    : 'pages.employee_detail.add_override'
-                  ) | translate
-                "
-                [ariaLabel]="
-                  (item.hasConfig
-                    ? 'pages.employee_detail.edit_override'
-                    : 'pages.employee_detail.add_override'
-                  ) | translate
-                "
-                (onClick)="onEditPayConfig(item, true)"
-              />
-              @if (item.hasConfig) {
-              <cleansia-button
-                *cleansiaPermission="Policy.CanDeletePayConfig"
-                icon="pi pi-trash"
-                severity="danger"
-                buttonSize="small"
-                [outlined]="true"
-                [tooltip]="'pages.employee_detail.delete_override' | translate"
-                [ariaLabel]="'pages.employee_detail.delete_override' | translate"
-                (onClick)="confirmDeletePayConfig(item)"
-              />
-              }
-            </div>
-          </div>
-          }
-        </div>
-        }
-
-        <!-- Packages table -->
-        @if (summary.packages && summary.packages.length > 0) {
-        <h4 style="margin-top: 1.5rem; margin-bottom: 0.5rem;">{{ 'pages.employee_detail.packages' | translate }}</h4>
-        <div class="pay-config-table">
-          @for (item of summary.packages; track item.packageId) {
-          <div class="pay-config-row" [class.configured]="item.hasConfig" style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 1rem; border: 1px solid var(--surface-border); border-radius: 6px; margin-bottom: 0.5rem;">
-            <div style="display: flex; align-items: center; gap: 0.75rem; flex: 1;">
-              @if (item.hasConfig) {
-              <i class="pi pi-check-circle" style="color: var(--green-500);"></i>
-              } @else {
-              <i class="pi pi-times-circle" style="color: var(--surface-400);"></i>
-              }
-              <strong>{{ item.packageName }}</strong>
-            </div>
-            <div style="display: flex; align-items: center; gap: 1rem;">
-              @if (item.hasConfig) {
-              <span class="value">{{ item.basePay }} {{ item.currencyCode }}</span>
-              } @else {
-              <span style="color: var(--text-color-secondary); font-style: italic;">
-                {{ 'pages.employee_detail.not_configured' | translate }}
-              </span>
-              }
-              <cleansia-button
-                *cleansiaPermission="Policy.CanUpdatePayConfig"
-                icon="pi pi-pencil"
-                severity="secondary"
-                buttonSize="small"
-                [outlined]="true"
-                [tooltip]="
-                  (item.hasConfig
-                    ? 'pages.employee_detail.edit_override'
-                    : 'pages.employee_detail.add_override'
-                  ) | translate
-                "
-                [ariaLabel]="
-                  (item.hasConfig
-                    ? 'pages.employee_detail.edit_override'
-                    : 'pages.employee_detail.add_override'
-                  ) | translate
-                "
-                (onClick)="onEditPayConfig(item, false)"
-              />
-              @if (item.hasConfig) {
-              <cleansia-button
-                *cleansiaPermission="Policy.CanDeletePayConfig"
-                icon="pi pi-trash"
-                severity="danger"
-                buttonSize="small"
-                [outlined]="true"
-                [tooltip]="'pages.employee_detail.delete_override' | translate"
-                [ariaLabel]="'pages.employee_detail.delete_override' | translate"
-                (onClick)="confirmDeletePayConfig(item)"
-              />
-              }
-            </div>
-          </div>
-          }
-        </div>
-        }
-        } @else {
-        <p class="no-data">{{ 'pages.employee_detail.no_pay_configs' | translate }}</p>
-        }
-        }
-      </cleansia-section>
-
-      <!-- Approval/Rejection History -->
-      @if (employee.approvedAt || employee.rejectedAt) { @if
-      (employee.approvedAt) {
-      <cleansia-section
-        [title]="'pages.employee_detail.approval_info' | translate"
-      >
-        <div class="info-grid">
-          <div class="info-item">
-            <span class="label"
-              >{{ 'pages.employee_detail.approved_at' | translate }}:</span
-            >
-            <span class="value">{{
-              formatDateTime(employee.approvedAt)
-            }}</span>
-          </div>
-          @if (employee.approvalNotes) {
-          <div class="info-item full-width">
-            <span class="label"
-              >{{ 'pages.employee_detail.approval_notes' | translate }}:</span
-            >
-            <span class="value">{{ employee.approvalNotes }}</span>
-          </div>
-          }
-        </div>
-      </cleansia-section>
-      } @if (employee.rejectedAt) {
-      <cleansia-section
-        [title]="'pages.employee_detail.rejection_info' | translate"
-      >
-        <div class="info-grid">
-          <div class="info-item">
-            <span class="label"
-              >{{ 'pages.employee_detail.rejected_at' | translate }}:</span
-            >
-            <span class="value">{{
-              formatDateTime(employee.rejectedAt)
-            }}</span>
-          </div>
-          @if (employee.rejectionReason) {
-          <div class="info-item full-width">
-            <span class="label"
-              >{{ 'pages.employee_detail.rejection_reason' | translate }}:</span
-            >
-            <span class="value">{{ employee.rejectionReason }}</span>
-          </div>
-          }
-        </div>
-      </cleansia-section>
-      } }
-
-      @if (employee.id) {
-      <cleansia-employee-payout-section
-        *cleansiaPermission="Policy.CanViewEmployeePayoutDetailsAdmin"
-        [employeeId]="employee.id"
-      />
+      </div>
       }
 
-      <cleansia-employee-documents-section
-        *cleansiaPermission="Policy.CanViewEmployeeDocumentsAdmin"
-        [facade]="docsFacade"
-        [employeeId]="employee?.id"
-        (rejectDocument)="onRejectDocument($event)"
-      />
+      @if (summary.packages && summary.packages.length > 0) {
+      <div class="pay-config-list">
+        <h4 class="pay-config-list__title">{{ 'pages.employee_detail.packages' | translate }}</h4>
+        @for (item of summary.packages; track item.packageId) {
+        <ng-container
+          *ngTemplateOutlet="payConfigRow; context: { $implicit: item, name: item.packageName, isService: false }"
+        />
+        }
+      </div>
+      }
+      } @else {
+      <div class="empty-state">
+        <i class="pi pi-money-bill"></i>
+        <p>{{ 'pages.employee_detail.no_pay_configs' | translate }}</p>
+      </div>
+      } }
+    </cleansia-section>
+
+    @if (employee.approvedAt) {
+    <cleansia-section [title]="'pages.employee_detail.approval_info' | translate">
+      <div class="detail-grid">
+        <div class="detail-grid__item">
+          <span class="detail-grid__label">{{ 'pages.employee_detail.approved_at' | translate }}</span>
+          <span class="detail-grid__value">{{ formatDateTime(employee.approvedAt) }}</span>
+        </div>
+        @if (employee.approvalNotes) {
+        <div class="detail-grid__item detail-grid__item--wide">
+          <span class="detail-grid__label">{{ 'pages.employee_detail.approval_notes' | translate }}</span>
+          <span class="detail-grid__value">{{ employee.approvalNotes }}</span>
+        </div>
+        }
+      </div>
+    </cleansia-section>
+    }
+
+    @if (employee.rejectedAt) {
+    <cleansia-section [title]="'pages.employee_detail.rejection_info' | translate">
+      <div class="detail-grid">
+        <div class="detail-grid__item">
+          <span class="detail-grid__label">{{ 'pages.employee_detail.rejected_at' | translate }}</span>
+          <span class="detail-grid__value">{{ formatDateTime(employee.rejectedAt) }}</span>
+        </div>
+        @if (employee.rejectionReason) {
+        <div class="detail-grid__item detail-grid__item--wide">
+          <span class="detail-grid__label">{{ 'pages.employee_detail.rejection_reason' | translate }}</span>
+          <span class="detail-grid__value">{{ employee.rejectionReason }}</span>
+        </div>
+        }
+      </div>
+    </cleansia-section>
+    }
+
+    @if (employee.id) {
+    <cleansia-employee-payout-section
+      *cleansiaPermission="Policy.CanViewEmployeePayoutDetailsAdmin"
+      [employeeId]="employee.id"
+    />
+    }
+
+    <cleansia-employee-documents-section
+      *cleansiaPermission="Policy.CanViewEmployeeDocumentsAdmin"
+      [facade]="docsFacade"
+      [employeeId]="employee?.id"
+      (rejectDocument)="onRejectDocument($event)"
+    />
+    } @else {
+    <div class="not-found-state">
+      <div class="not-found-state__icon"><i class="pi pi-search"></i></div>
+      <h3 class="not-found-state__title">{{ 'pages.employee_detail.not_found' | translate }}</h3>
     </div>
     }
   </div>
 </div>
 
+<ng-template #sectionEditActions>
+  <div class="detail-actions detail-actions--end">
+    <cleansia-button
+      [label]="'global.actions.cancel' | translate"
+      severity="secondary"
+      [outlined]="true"
+      [disabled]="facade.savingEmployee()"
+      (onClick)="onCancelEditSection()"
+    />
+    <cleansia-button
+      [label]="'global.actions.save' | translate"
+      icon="pi pi-check"
+      [loading]="facade.savingEmployee()"
+      (onClick)="onSaveSection()"
+    />
+  </div>
+</ng-template>
+
+<ng-template #payConfigRow let-item let-name="name" let-isService="isService">
+  <div class="pay-config-row" [class.pay-config-row--configured]="item.hasConfig">
+    <div class="pay-config-row__name">
+      <i [class]="item.hasConfig ? 'pi pi-check-circle' : 'pi pi-times-circle'"></i>
+      <strong>{{ name }}</strong>
+    </div>
+    <div class="pay-config-row__rate">
+      @if (item.hasConfig) {
+      <span class="pay-config-row__amount">
+        {{ isService ? facade.formatServiceRate(item) : facade.formatPackageRate(item) }}
+      </span>
+      } @else {
+      <span class="pay-config-row__unset">{{ 'pages.employee_detail.not_configured' | translate }}</span>
+      }
+      <cleansia-button
+        *cleansiaPermission="Policy.CanUpdatePayConfig"
+        icon="pi pi-pencil"
+        severity="secondary"
+        buttonSize="small"
+        [outlined]="true"
+        [tooltip]="(item.hasConfig ? 'pages.employee_detail.edit_override' : 'pages.employee_detail.add_override') | translate"
+        [ariaLabel]="(item.hasConfig ? 'pages.employee_detail.edit_override' : 'pages.employee_detail.add_override') | translate"
+        (onClick)="onEditPayConfig(item, isService)"
+      />
+      @if (item.hasConfig) {
+      <cleansia-button
+        *cleansiaPermission="Policy.CanDeletePayConfig"
+        icon="pi pi-trash"
+        severity="danger"
+        buttonSize="small"
+        [outlined]="true"
+        [tooltip]="'pages.employee_detail.delete_override' | translate"
+        [ariaLabel]="'pages.employee_detail.delete_override' | translate"
+        (onClick)="confirmDeletePayConfig(item)"
+      />
+      }
+    </div>
+  </div>
+</ng-template>
+
 <p-dialog
   [(visible)]="facade.payConfigDialogOpen"
   [modal]="true"
   [closable]="true"
-  [style]="{ width: '560px' }"
+  [draggable]="false"
+  [resizable]="false"
+  styleClass="cleansia-dialog dialog-panel dialog-panel--wide"
   [header]="'pages.employee_detail.override_dialog_title' | translate"
 >
-  <form [formGroup]="payConfigForm" class="pay-config-override-form">
-    <div
-      style="display: flex; flex-wrap: wrap; gap: 1rem; margin-top: 0.5rem;"
-    >
-      <div style="flex: 1 1 45%; min-width: 200px;">
+  <form [formGroup]="payConfigForm" class="dialog-body">
+    <div class="form-grid">
+      <div class="form-field">
         <cleansia-text-input
           [label]="'pages.employee_detail.pay_config_base_pay' | translate"
           formControlName="basePay"
           dataType="number"
           [required]="true"
-          [floatVariant]="'on'"
         />
       </div>
-      <div style="flex: 1 1 45%; min-width: 200px;">
+      <div class="form-field">
         <cleansia-select
           [options]="facade.currencies()"
           [label]="'pages.employee_detail.pay_config_currency' | translate"
-          [floatVariant]="'on'"
           formControlName="currencyId"
+          [required]="true"
+          [showClear]="false"
         />
       </div>
-      <div style="flex: 1 1 45%; min-width: 200px;">
+      <div class="form-field">
         <cleansia-text-input
           [label]="'pages.employee_detail.pay_config_extra_room' | translate"
           formControlName="extraPerRoom"
           dataType="number"
-          [floatVariant]="'on'"
         />
       </div>
-      <div style="flex: 1 1 45%; min-width: 200px;">
+      <div class="form-field">
         <cleansia-text-input
           [label]="'pages.employee_detail.pay_config_extra_bathroom' | translate"
           formControlName="extraPerBathroom"
           dataType="number"
-          [floatVariant]="'on'"
         />
       </div>
-      <div style="flex: 1 1 45%; min-width: 200px;">
+      <div class="form-field">
         <cleansia-text-input
           [label]="'pages.employee_detail.pay_config_distance_rate' | translate"
           formControlName="distanceRatePerKm"
           dataType="number"
-          [floatVariant]="'on'"
         />
       </div>
-      <div style="flex: 1 1 45%; min-width: 200px;">
+      <div class="form-field">
         <cleansia-text-input
           [label]="'pages.employee_detail.pay_config_min_pay' | translate"
           formControlName="minimumPay"
           dataType="number"
-          [floatVariant]="'on'"
         />
       </div>
-      <div style="flex: 1 1 45%; min-width: 200px;">
+      <div class="form-field">
         <cleansia-text-input
           [label]="'pages.employee_detail.pay_config_max_pay' | translate"
           formControlName="maximumPay"
           dataType="number"
-          [floatVariant]="'on'"
         />
       </div>
-      <div style="flex: 1 1 100%;">
+      <div class="form-field form-field--full">
         <cleansia-textarea
           [label]="'pages.employee_detail.pay_config_description' | translate"
           formControlName="description"
@@ -979,11 +719,9 @@
       </div>
     </div>
 
-    <div
-      style="display: flex; align-items: center; flex-wrap: wrap; gap: 0.5rem; margin-top: 1rem;"
-    >
-      <span style="color: var(--text-color-secondary); font-size: 0.875rem;">
-        {{ 'pages.employee_detail.grade_quick_fill' | translate }}:
+    <div class="dialog-toolbar">
+      <span class="dialog-toolbar__label">
+        {{ 'pages.employee_detail.grade_quick_fill' | translate }}
       </span>
       <cleansia-button
         [label]="'pages.employee_detail.grade_junior' | translate"
@@ -1011,13 +749,13 @@
 
   <ng-template pTemplate="footer">
     <cleansia-button
-      [label]="'common.cancel' | translate"
+      [label]="'global.actions.cancel' | translate"
       severity="secondary"
       [outlined]="true"
       (onClick)="onCancelPayConfig()"
     />
     <cleansia-button
-      [label]="'common.save' | translate"
+      [label]="'global.actions.save' | translate"
       icon="pi pi-check"
       [loading]="facade.savingPayConfig()"
       [disabled]="facade.savingPayConfig()"
@@ -1025,5 +763,3 @@
     />
   </ng-template>
 </p-dialog>
-
-<p-confirmDialog />

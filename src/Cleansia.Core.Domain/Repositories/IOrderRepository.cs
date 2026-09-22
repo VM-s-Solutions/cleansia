@@ -27,20 +27,10 @@ public interface IOrderRepository : IRepository<Order, string>
         string employeeId, DateTime startDate, DateTime endDate, CancellationToken cancellationToken);
 
     /// <summary>
-    /// Lightweight count of orders an employee completed in the
-    /// window [from, to). Filters directly off `Order.CompletedAt`
-    /// and the employee's assignment — does NOT require a matching
-    /// `OrderEmployeePay` row, so the dashboard "today / this week"
-    /// counts reflect the cleaner's actual completion activity even
-    /// before admin payroll has run for that order.
-    /// </summary>
-    Task<int> CountCompletedForEmployeeBetweenAsync(
-        string employeeId, DateTime from, DateTime to, CancellationToken cancellationToken);
-
-    /// <summary>
     /// The dashboard's four completion counts (this month / last month / today / this week) in ONE
-    /// grouped query. Same semantics as four <see cref="CountCompletedForEmployeeBetweenAsync"/>
-    /// calls with half-open [from, to) windows over <c>Order.CompletedAt</c>.
+    /// grouped query over half-open [from, to) windows on <c>Order.CompletedAt</c>, filtered by the
+    /// employee's assignment alone — no <c>OrderEmployeePay</c> row is required, so the counts reflect
+    /// the cleaner's completions before payroll has run for them.
     /// </summary>
     Task<CompletedOrderWindowCounts> CountCompletedForEmployeeWindowsAsync(
         string employeeId,

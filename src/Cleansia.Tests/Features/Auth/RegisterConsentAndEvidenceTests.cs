@@ -31,7 +31,6 @@ public sealed class RegisterConsentAndEvidenceTests
     private const string Market = "country-cze";
 
     private readonly Mock<IUserRepository> _userRepository = new();
-    private readonly Mock<ICartRepository> _cartRepository = new();
     private readonly Mock<IConsentService> _consentService = new();
     private readonly IPendingDispatch _pending = new InMemoryPendingDispatch();
     private readonly AuditContext _auditContext = new();
@@ -55,7 +54,7 @@ public sealed class RegisterConsentAndEvidenceTests
     }
 
     private Register.Handler CreateHandler() =>
-        new(_cartRepository.Object, _userRepository.Object, new Mock<IReferralService>().Object, _pending,
+        new(_userRepository.Object, new Mock<IReferralService>().Object, _pending,
             _consentService.Object, _legalDocuments.Object, _auditContext, NullLogger<Register.Handler>.Instance);
 
     private static Register.Command Command(bool? termsAccepted, string? referralCode = null, string? countryId = Market) =>
@@ -179,7 +178,7 @@ public sealed class RegisterConsentAndEvidenceTests
     public async Task No_Document_In_Force_Still_Registers_Grants_Unversioned_And_Records_No_Version()
     {
         var handler = new Register.Handler(
-            _cartRepository.Object, _userRepository.Object, new Mock<IReferralService>().Object, _pending,
+            _userRepository.Object, new Mock<IReferralService>().Object, _pending,
             _consentService.Object, LegalDocumentFixtures.Resolver(null, null).Object, _auditContext,
             NullLogger<Register.Handler>.Instance);
 

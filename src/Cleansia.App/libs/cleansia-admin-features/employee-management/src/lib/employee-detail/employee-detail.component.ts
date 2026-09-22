@@ -1,24 +1,22 @@
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, DestroyRef, OnDestroy, OnInit, effect, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { FormControl, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import {
-  Code,
   EmployeeDocumentItem,
   EmployeeEntityType,
   EmployeePayConfigSummaryItemDto,
-  TimeRange,
 } from '@cleansia/admin-services';
-import { selectDayOfWeekCodes } from '@cleansia/admin-stores';
 import { CountryFieldLabelsService } from '@cleansia/admin-services';
 import {
-  CleansiaAvailabilityComponent,
   CleansiaButtonComponent,
   CleansiaCalendarComponent,
+  CleansiaCheckboxComponent,
   CleansiaLoaderComponent,
   CleansiaSectionComponent,
   CleansiaSelectComponent,
+  CleansiaStatusBadgeComponent,
   CleansiaTelephoneComponent,
   CleansiaTextareaComponent,
   CleansiaTextInputComponent,
@@ -32,11 +30,8 @@ import {
   Policy,
 } from '@cleansia/services';
 import { CleansiaPermissionDirective } from '@cleansia/directives';
-import { Store } from '@ngrx/store';
+import { formatDate } from '@cleansia/utils';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
-import { ConfirmationService } from 'primeng/api';
-import { CheckboxModule } from 'primeng/checkbox';
-import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DialogModule } from 'primeng/dialog';
 import { DialogService } from 'primeng/dynamicdialog';
 import { ToastModule } from 'primeng/toast';
@@ -50,11 +45,10 @@ import { EmployeePayoutSectionComponent } from './employee-payout-section.compon
   standalone: true,
   imports: [
     CommonModule,
-    FormsModule,
     ReactiveFormsModule,
     CleansiaButtonComponent,
-    CleansiaAvailabilityComponent,
     CleansiaCalendarComponent,
+    CleansiaCheckboxComponent,
     CleansiaSelectComponent,
     CleansiaTelephoneComponent,
     CleansiaTextareaComponent,
@@ -63,8 +57,7 @@ import { EmployeePayoutSectionComponent } from './employee-payout-section.compon
     CleansiaTitleComponent,
     CleansiaLoaderComponent,
     CleansiaSectionComponent,
-    CheckboxModule,
-    ConfirmDialogModule,
+    CleansiaStatusBadgeComponent,
     DialogModule,
     ToastModule,
     EmployeeDocumentsSectionComponent,
@@ -76,7 +69,6 @@ import { EmployeePayoutSectionComponent } from './employee-payout-section.compon
     EmployeeDocumentsFacade,
     EmployeeDetailFacade,
     DialogService,
-    ConfirmationService,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -85,10 +77,8 @@ export class EmployeeDetailComponent implements OnInit, OnDestroy {
   protected readonly docsFacade = inject(EmployeeDocumentsFacade);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
-  private readonly store = inject(Store);
   private readonly translate = inject(TranslateService);
   private readonly destroyRef = inject(DestroyRef);
-  private readonly confirmationService = inject(ConfirmationService);
   private readonly countryFieldLabels = inject(CountryFieldLabelsService);
 
   /**
@@ -144,9 +134,6 @@ export class EmployeeDetailComponent implements OnInit, OnDestroy {
   }
 
   readonly editingConfigId = signal<string | null>(null);
-
-  readonly daysOfWeek = signal<Code[]>([]);
-  availabilityValue: { [key: string]: TimeRange[] } = {};
 
   // Reactive form backing every edit section — keyed so only the fields
   // belonging to the currently-open section are actually displayed.
@@ -236,13 +223,6 @@ export class EmployeeDetailComponent implements OnInit, OnDestroy {
       this.router.navigate([CleansiaAdminRoute.EMPLOYEE_MANAGEMENT]);
     }
 
-    this.store
-      .select(selectDayOfWeekCodes)
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((codes: Code[]) => {
-        this.daysOfWeek.set(codes);
-      });
-
     this.editForm.controls.entityType.valueChanges
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((value) => {
@@ -267,46 +247,16 @@ export class EmployeeDetailComponent implements OnInit, OnDestroy {
     );
   }
 
-  getContractStatusClass(status: string | undefined): string {
-    const statusName = status?.toLowerCase().replace(/\s+/g, '-') || 'pending';
-    return `contract-status-badge status-${statusName}`;
-  }
-
   formatDate(date: string | Date | null | undefined): string {
-    if (!date) return '-';
-    const dateObj = date instanceof Date ? date : new Date(date);
-    return dateObj.toLocaleDateString('en-GB');
+    return formatDate(date, this.translate.currentLang) || '-';
   }
 
   formatDateTime(date: string | Date | null | undefined): string {
-    if (!date) return '-';
-    const dateObj = date instanceof Date ? date : new Date(date);
-    return dateObj.toLocaleString('en-GB');
-  }
-
-  formatTimeRange(start: unknown, end: unknown): string {
-    if (!start || !end) return '-';
-    return `${start} - ${end}`;
+    return formatDate(date, this.translate.currentLang, 'dateTime') || '-';
   }
 
   onRejectDocument(document: EmployeeDocumentItem): void {
     this.docsFacade.openRejectDocumentDialog(document, this.facade.employee()?.id);
-  }
-
-  onEditAvailability(): void {
-    const employee = this.facade.employee();
-    this.availabilityValue = employee?.availability
-      ? { ...employee.availability }
-      : {};
-    this.facade.startEditingAvailability();
-  }
-
-  onSaveAvailability(): void {
-    this.facade.saveAvailability(this.availabilityValue);
-  }
-
-  onCancelEditAvailability(): void {
-    this.facade.cancelEditingAvailability();
   }
 
   applyGradeMultiplier(multiplier: number): void {
@@ -369,21 +319,9 @@ export class EmployeeDetailComponent implements OnInit, OnDestroy {
     this.facade.payConfigDialogOpen.set(false);
   }
 
-  onDeletePayConfig(payConfigId: string): void {
-    this.facade.deleteEmployeePayConfig(payConfigId);
-  }
-
   confirmDeletePayConfig(item: EmployeePayConfigSummaryItemDto): void {
     if (!item.configId) return;
-    const configId = item.configId;
-    this.confirmationService.confirm({
-      message: this.translate.instant(
-        'pages.employee_detail.delete_override_confirm'
-      ),
-      header: this.translate.instant('pages.employee_detail.delete_override'),
-      icon: 'pi pi-exclamation-triangle',
-      accept: () => this.onDeletePayConfig(configId),
-    });
+    this.facade.deleteEmployeePayConfig(item.configId);
   }
 
   onBulkApplyGrade(): void {

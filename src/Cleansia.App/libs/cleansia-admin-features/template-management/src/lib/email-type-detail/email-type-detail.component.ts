@@ -31,11 +31,8 @@ import {
 import { CleansiaPermissionDirective } from '@cleansia/directives';
 import { Policy, SnackbarService } from '@cleansia/services';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
-import { ConfirmationService } from 'primeng/api';
-import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DialogModule } from 'primeng/dialog';
 import { Tab, TabList, TabPanel, TabPanels, Tabs } from 'primeng/tabs';
-import { TooltipModule } from 'primeng/tooltip';
 import { EmailTypeDetailFacade } from './email-type-detail.facade';
 
 @Component({
@@ -46,9 +43,7 @@ import { EmailTypeDetailFacade } from './email-type-detail.facade';
     CommonModule,
     ReactiveFormsModule,
     TranslatePipe,
-    ConfirmDialogModule,
     DialogModule,
-    TooltipModule,
     Tabs,
     TabList,
     Tab,
@@ -62,7 +57,7 @@ import { EmailTypeDetailFacade } from './email-type-detail.facade';
   ],
   templateUrl: './email-type-detail.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  providers: [EmailTypeDetailFacade, ConfirmationService],
+  providers: [EmailTypeDetailFacade],
 })
 export class EmailTypeDetailComponent implements OnInit, OnDestroy {
   protected readonly facade = inject(EmailTypeDetailFacade);
@@ -71,7 +66,6 @@ export class EmailTypeDetailComponent implements OnInit, OnDestroy {
   private readonly route = inject(ActivatedRoute);
   private readonly translate = inject(TranslateService);
   private readonly snackbarService = inject(SnackbarService);
-  private readonly confirmationService = inject(ConfirmationService);
 
   private emailType: EmailType | null = null;
   readonly forms = new Map<string, FormGroup>();
@@ -80,7 +74,6 @@ export class EmailTypeDetailComponent implements OnInit, OnDestroy {
   showTestEmailDialog = signal(false);
   showAddTranslationDialog = signal(false);
   readonly savingKey = signal<string | null>(null);
-  readonly deletingKey = signal<string | null>(null);
   private currentLanguageForAdd: EmailTranslationByLanguageDto | null = null;
 
   readonly pageTitle = computed(() => {
@@ -185,8 +178,8 @@ export class EmailTypeDetailComponent implements OnInit, OnDestroy {
 
   copyVariable(variable: string): void {
     navigator.clipboard.writeText(variable);
-    this.snackbarService.showSuccess(
-      this.translate.instant('pages.template_management.messages.copied_to_clipboard')
+    this.snackbarService.showSuccessTranslated(
+      'pages.template_management.messages.copied_to_clipboard'
     );
   }
 
@@ -277,32 +270,8 @@ export class EmailTypeDetailComponent implements OnInit, OnDestroy {
     );
   }
 
-  onDeleteTranslation(
-    event: Event,
-    languageCode: string,
-    templateId: string,
-    key: string
-  ): void {
-    this.confirmationService.confirm({
-      target: event.target as EventTarget,
-      message: this.translate.instant(
-        'pages.template_management.dialogs.delete_translation.message',
-        { key }
-      ),
-      header: this.translate.instant(
-        'pages.template_management.dialogs.delete_translation.title'
-      ),
-      icon: 'pi pi-exclamation-triangle',
-      acceptButtonStyleClass: 'p-button-danger',
-      accept: () => {
-        if (this.emailType === null) return;
-        this.deletingKey.set(key);
-        this.facade.deleteTranslation(templateId, this.emailType, () => {
-          this.deletingKey.set(null);
-          // Clear forms so they get reinitialized with new data
-          this.forms.clear();
-        });
-      },
-    });
+  onDeleteTranslation(templateId: string, key: string): void {
+    if (this.emailType === null) return;
+    this.facade.deleteTranslation(templateId, this.emailType, key, () => this.forms.clear());
   }
 }

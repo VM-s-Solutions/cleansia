@@ -414,7 +414,6 @@
     <string name="address_info">Адрес</string>
     <string name="bank_details">Банковские реквизиты</string>
     <string name="documents">Документы</string>
-    <string name="availability">Доступность</string>
     <string name="personal">Личное</string>
     <string name="birth_date">Дата рождения</string>
     <string name="birth_date_placeholder">Выберите дату</string>
@@ -426,23 +425,6 @@
     <string name="identification_title">Идентификация</string>
     <string name="my_documents">Мои документы</string>
     <string name="documents_summary_view">Просмотр, загрузка или удаление</string>
-    <string name="availability_days_set">Установлено %1$d дней</string>
-    <string name="availability_helper">Включите дни недели, когда вы можете работать, и выберите временной интервал.</string>
-    <!-- Availability v2 -->
-    <string name="availability_quick_setup">Быстрая настройка</string>
-    <string name="availability_weekly_schedule">Недельный график</string>
-    <string name="availability_preset_mon_fri">Пн–Пт 9–17</string>
-    <string name="availability_preset_mon_sat">Пн–Сб 8–16</string>
-    <string name="availability_preset_custom">Свой</string>
-    <string name="availability_apply_to_days">Выберите дни, затем задайте временной интервал.</string>
-    <string name="availability_apply">Применить</string>
-    <string name="availability_start_time">Начало</string>
-    <string name="availability_end_time">Конец</string>
-    <string name="availability_add_slot">Добавить ещё интервал</string>
-    <string name="availability_remove_slot">Удалить интервал</string>
-    <string name="availability_pick_time">Выберите время</string>
-    <string name="availability_no_days_selected">Нажмите на день выше, чтобы настроить часы.</string>
-    <string name="availability_slot_overlap_error">Временные интервалы не должны пересекаться.</string>
     <string name="add_document">Добавить документ</string>
     <string name="upload_document">Загрузить документ</string>
     <string name="document_type">Тип документа</string>
@@ -518,20 +500,6 @@
     <string name="relationship">Степень родства</string>
     <string name="contact_phone">Номер телефона</string>
     <string name="contact_email">Электронная почта</string>
-
-    <!-- Availability -->
-    <string name="set_availability">Установить доступность</string>
-    <string name="no_availability_set">Доступность не установлена</string>
-    <string name="select_time">Выбрать время</string>
-    <string name="date_overrides">Исключения в расписании</string>
-    <string name="add_date_override">Добавить исключение</string>
-    <string name="no_date_overrides">Нет исключений в расписании</string>
-    <string name="unavailable">Недоступен</string>
-    <string name="custom_hours">Особые часы</string>
-    <string name="select_date_override">Выбрать дату</string>
-    <string name="mark_unavailable">Отметить как недоступный</string>
-    <string name="set_custom_hours">Установить особые часы</string>
-    <string name="date_override_note">Примечание (необязательно)</string>
 
     <!-- Settings -->
     <string name="settings">Настройки</string>
@@ -661,7 +629,6 @@
     <string name="onboarding_highlight_invoices">Счета</string>
     <string name="onboarding_highlight_analytics">Аналитика</string>
     <string name="onboarding_highlight_reports">Отчеты</string>
-    <string name="onboarding_highlight_availability">Доступность</string>
     <string name="onboarding_highlight_documents">Документы</string>
     <string name="onboarding_highlight_ratings">Рейтинги</string>
 
@@ -783,25 +750,7 @@
     <string name="invoice_notes_admin">Примечания администратора</string>
     <string name="invoice_notes_bank">Примечание к банковскому переводу</string>
 
-    <!-- Calendar Availability -->
-    <string name="previous_month">Предыдущий месяц</string>
-    <string name="next_month">Следующий месяц</string>
-    <string name="legend_working">Рабочий</string>
-    <string name="legend_custom">Особый</string>
-    <string name="legend_off">Выходной</string>
-    <string name="working_day">Рабочий день</string>
-    <string name="day_off">Выходной</string>
-    <string name="exception_day_off">Исключение - Выходной</string>
-    <string name="edit_hours">Редактировать часы</string>
-    <string name="edit_hours_desc">Настройте рабочие часы для этого дня.</string>
-    <string name="mark_as_exception">Отметить как исключение</string>
-    <string name="mark_exception_desc">Переопределить обычное расписание для этой даты.</string>
-    <string name="schedule_setup_title">Настройка расписания</string>
-    <string name="schedule_setup_sheet_desc">Выберите рабочие дни и часы.</string>
-    <string name="remove_exception">Удалить исключение</string>
-    <string name="add_time_slot">Добавить временной слот</string>
     <string name="remove">Удалить</string>
-    <string name="weekly_schedule">Недельное расписание</string>
     <string name="edit">Редактировать</string>
 
     <!-- Quick Setup Presets -->
@@ -1052,14 +1001,11 @@
     <string name="registration_lock_sign_out_confirm_message">Ваш прогресс сохранён. Чтобы завершить регистрацию, потребуется войти снова.</string>
     <string name="registration_lock_support_subject">Cleansia partner — заявка отклонена</string>
     <string name="registration_lock_category_profile">Профиль</string>
-    <string name="registration_lock_category_availability">Доступность</string>
     <string name="registration_lock_category_documents">Документы</string>
     <string name="registration_lock_category_approval">Одобрение</string>
     <string name="registration_lock_action_complete_profile">Заполнить профиль</string>
-    <string name="registration_lock_action_set_availability">Установить недельную доступность</string>
     <string name="registration_lock_action_upload_documents">Загрузить документы</string>
     <string name="registration_lock_action_contact_support">Связаться с поддержкой</string>
-    <string name="registration_lock_availability_required">Установите свои недельные рабочие часы.</string>
     <string name="registration_lock_documents_required">Загрузите свои документы, удостоверяющие личность.</string>
     <string name="registration_lock_approval_awaiting_review">Заявка рассматривается администратором.</string>
     <string name="registration_lock_approval_complete_profile_first">Сначала выполните шаги выше — после этого администратор сможет вас одобрить.</string>
@@ -1206,7 +1152,6 @@
     <string name="error_validation_invalid_zip_code">Введите, пожалуйста, корректный почтовый индекс.</string>
     <string name="error_validation_registration_number_invalid_format">Введите действительный регистрационный номер компании для выбранной страны.</string>
     <string name="error_validation_must_be_positive">Должно быть положительное число.</string>
-    <string name="error_validation_invalid_availability_format">Неверный формат доступности.</string>
 
     <!-- Payout / bank details -->
     <string name="error_payout_not_found">Вы ещё не добавили свои банковские реквизиты. Добавьте их, чтобы мы могли отправить вам выплату.</string>

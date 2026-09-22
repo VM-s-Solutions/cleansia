@@ -22,8 +22,8 @@ describe('ProfileBankFacade', () => {
   let countryClient: { getOverview: jest.Mock };
   let payoutDetails: { getMine: jest.Mock };
   let snackbar: {
-    showSuccess: jest.Mock;
-    showError: jest.Mock;
+    showSuccess: jest.Mock; showSuccessTranslated: jest.Mock;
+    showError: jest.Mock; showErrorTranslated: jest.Mock;
     showApiError: jest.Mock;
   };
   let dispatch: jest.Mock;
@@ -79,8 +79,8 @@ describe('ProfileBankFacade', () => {
     countryClient = { getOverview: jest.fn().mockReturnValue(of(countries)) };
     payoutDetails = { getMine: jest.fn().mockReturnValue(of(null)) };
     snackbar = {
-      showSuccess: jest.fn(),
-      showError: jest.fn(),
+      showSuccess: jest.fn(), showSuccessTranslated: jest.fn(),
+      showError: jest.fn(), showErrorTranslated: jest.fn(),
       showApiError: jest.fn(),
     };
     dispatch = jest.fn();
@@ -114,7 +114,7 @@ describe('ProfileBankFacade', () => {
         bankName: '',
         holderName: '',
       });
-      expect(snackbar.showError).not.toHaveBeenCalled();
+      expect(snackbar.showErrorTranslated).not.toHaveBeenCalled();
       expect(snackbar.showApiError).not.toHaveBeenCalled();
     });
 
@@ -304,7 +304,7 @@ describe('ProfileBankFacade', () => {
 
       facade.onSubmit();
 
-      expect(snackbar.showSuccess).toHaveBeenCalledWith(
+      expect(snackbar.showSuccessTranslated).toHaveBeenCalledWith(
         'global.messages.profile.bank_details_saved'
       );
       expect(facade.saving()).toBe(false);
@@ -325,7 +325,7 @@ describe('ProfileBankFacade', () => {
 
       facade.onSubmit();
 
-      expect(snackbar.showSuccess).not.toHaveBeenCalled();
+      expect(snackbar.showSuccessTranslated).not.toHaveBeenCalled();
       expect(snackbar.showApiError).not.toHaveBeenCalled();
       expect(facade.saving()).toBe(false);
     });
@@ -350,7 +350,7 @@ describe('ProfileBankFacade', () => {
       facade.onSubmit();
 
       expect(employeeClient.updateBankDetails).not.toHaveBeenCalled();
-      expect(snackbar.showError).toHaveBeenCalledWith(
+      expect(snackbar.showErrorTranslated).toHaveBeenCalledWith(
         'global.messages.profile.not_loaded'
       );
     });

@@ -1,4 +1,5 @@
-import { extractApiErrorCode } from './api-error';
+import { TranslateService } from '@ngx-translate/core';
+import { extractApiErrorCode, resolveApiErrorKey } from './api-error';
 
 describe('extractApiErrorCode', () => {
   it('reads the code from result.detail', () => {
@@ -149,5 +150,31 @@ describe('extractApiErrorCode', () => {
         })
       ).toBe('auth.account_locked');
     });
+  });
+});
+
+describe('resolveApiErrorKey', () => {
+  const translate = {
+    instant: (key: string) => (key === 'api.order.not_found' || key === 'api.common.error_occurred' ? `[${key}]` : key),
+  } as unknown as TranslateService;
+
+  it('maps a translated business code to its api.* key', () => {
+    expect(resolveApiErrorKey(translate, { result: { detail: 'order.not_found' } })).toBe('api.order.not_found');
+  });
+
+  it('falls back to the generic key when the code has no translation', () => {
+    expect(resolveApiErrorKey(translate, { result: { detail: 'something.unknown' } })).toBe(
+      'api.common.error_occurred'
+    );
+  });
+
+  it('falls back to the caller-named key when given one', () => {
+    expect(resolveApiErrorKey(translate, { result: { detail: 'something.unknown' } }, 'api.refund.failed')).toBe(
+      'api.refund.failed'
+    );
+  });
+
+  it('falls back when the error carries no code at all', () => {
+    expect(resolveApiErrorKey(translate, new Error('network'))).toBe('api.common.error_occurred');
   });
 });

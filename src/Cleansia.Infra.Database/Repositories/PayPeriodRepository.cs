@@ -7,11 +7,6 @@ namespace Cleansia.Infra.Database.Repositories;
 
 public class PayPeriodRepository(CleansiaDbContext context) : BaseRepository<PayPeriod>(context), IPayPeriodRepository
 {
-    public Task<PayPeriod?> GetPeriodForDateAsync(DateOnly date, CancellationToken cancellationToken)
-    {
-        return GetDbSet()
-            .FirstOrDefaultAsync(p => p.StartDate <= date && p.EndDate >= date, cancellationToken);
-    }
 
     public Task<PayPeriod?> GetActivePeriodAsync(CancellationToken cancellationToken)
     {
@@ -40,15 +35,6 @@ public class PayPeriodRepository(CleansiaDbContext context) : BaseRepository<Pay
         }
 
         return query.AnyAsync(cancellationToken);
-    }
-
-    public Task<List<PayPeriod>> GetActivePeriodsEndingInDaysAsync(int daysFromNow, CancellationToken cancellationToken = default)
-    {
-        var targetDate = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(daysFromNow));
-
-        return GetDbSet()
-            .Where(p => p.EndDate == targetDate && p.Status == PayPeriodStatus.Open)
-            .ToListAsync(cancellationToken);
     }
 
     public async Task<List<InvoiceReconciliationItem>> GetInvoiceReconciliationCandidatesAsync(

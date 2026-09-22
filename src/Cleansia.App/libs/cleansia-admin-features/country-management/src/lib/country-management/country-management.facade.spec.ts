@@ -1,7 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
 import { AdminClient, CountryListItem } from '@cleansia/admin-services';
-import { SnackbarService } from '@cleansia/services';
+import { DialogService, SnackbarService } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
 import { of, throwError } from 'rxjs';
 import { CountryManagementFacade } from './country-management.facade';
@@ -10,7 +10,14 @@ describe('CountryManagementFacade', () => {
   let facade: CountryManagementFacade;
   let getOverviewMock: jest.Mock;
   let defaultMarketMock: jest.Mock;
-  let snackbar: { showSuccess: jest.Mock; showError: jest.Mock };
+  let deleteMock: jest.Mock;
+  let confirmMock: jest.Mock;
+  let snackbar: {
+    showSuccess: jest.Mock;
+    showSuccessTranslated: jest.Mock;
+    showError: jest.Mock;
+    showErrorTranslated: jest.Mock;
+  };
 
   const countries = [
     CountryListItem.fromJS({ id: 'c-1', isoCode: 'CZE', isDefaultMarket: true }),
@@ -21,7 +28,14 @@ describe('CountryManagementFacade', () => {
     TestBed.resetTestingModule();
     getOverviewMock = jest.fn().mockReturnValue(of([]));
     defaultMarketMock = jest.fn();
-    snackbar = { showSuccess: jest.fn(), showError: jest.fn() };
+    deleteMock = jest.fn().mockReturnValue(of(null));
+    confirmMock = jest.fn().mockReturnValue(of(true));
+    snackbar = {
+      showSuccess: jest.fn(),
+      showSuccessTranslated: jest.fn(),
+      showError: jest.fn(),
+      showErrorTranslated: jest.fn(),
+    };
 
     TestBed.configureTestingModule({
       providers: [
@@ -32,11 +46,12 @@ describe('CountryManagementFacade', () => {
             adminCountryClient: {
               getOverview: getOverviewMock,
               defaultMarket: defaultMarketMock,
-              delete: jest.fn().mockReturnValue(of(null)),
+              delete: deleteMock,
             },
           },
         },
         { provide: SnackbarService, useValue: snackbar },
+        { provide: DialogService, useValue: { confirmTranslated: confirmMock } },
         { provide: TranslateService, useValue: { instant: (k: string) => k } },
         { provide: Router, useValue: { navigate: jest.fn() } },
       ],
@@ -76,7 +91,7 @@ describe('CountryManagementFacade', () => {
       facade.setDefaultMarket(countries[1]);
 
       expect(defaultMarketMock).toHaveBeenCalledWith('c-2');
-      expect(snackbar.showSuccess).toHaveBeenCalledWith(
+      expect(snackbar.showSuccessTranslated).toHaveBeenCalledWith(
         'pages.country_management.messages.set_default_market_success'
       );
       expect(snackbar.showError).not.toHaveBeenCalled();
@@ -93,30 +108,28 @@ describe('CountryManagementFacade', () => {
       facade.setDefaultMarket(countries[0]);
 
       expect(defaultMarketMock).not.toHaveBeenCalled();
-      expect(snackbar.showSuccess).not.toHaveBeenCalled();
+      expect(snackbar.showSuccessTranslated).not.toHaveBeenCalled();
     });
 
     it.each([
-      ['country.not_serviced', 'api.country.not_serviced'],
-      ['country.market_not_ready', 'api.country.market_not_ready'],
-      [
-        'country.default_market_changed_concurrently',
-        'api.country.default_market_changed_concurrently',
-      ],
-      ['country.not_found', 'api.country.not_found'],
-    ])('maps the %s refusal to its api.* key and leaves the list alone', (code, key) => {
+      'country.not_serviced',
+      'country.market_not_ready',
+      'country.default_market_changed_concurrently',
+      'country.not_found',
+    ])('leaves the %s refusal to the interceptor toast and leaves the list alone', (code) => {
       defaultMarketMock.mockReturnValue(
         throwError(() => ({ result: { detail: code } }))
       );
 
       facade.setDefaultMarket(countries[1]);
 
-      expect(snackbar.showError).toHaveBeenCalledWith(key);
-      expect(snackbar.showSuccess).not.toHaveBeenCalled();
+      expect(snackbar.showError).not.toHaveBeenCalled();
+      expect(snackbar.showErrorTranslated).not.toHaveBeenCalled();
+      expect(snackbar.showSuccessTranslated).not.toHaveBeenCalled();
       expect(getOverviewMock).not.toHaveBeenCalled();
     });
 
-    it('reads the refusal code out of an unparsed response body', () => {
+    it('leaves an unparsed refusal to the interceptor toast', () => {
       defaultMarketMock.mockReturnValue(
         throwError(() => ({
           response: JSON.stringify({ detail: 'country.market_not_ready' }),
@@ -125,19 +138,17 @@ describe('CountryManagementFacade', () => {
 
       facade.setDefaultMarket(countries[1]);
 
-      expect(snackbar.showError).toHaveBeenCalledWith(
-        'api.country.market_not_ready'
-      );
+      expect(snackbar.showErrorTranslated).not.toHaveBeenCalled();
     });
 
-    it('falls back to the generic error for an unknown code', () => {
+    it('leaves an unknown refusal to the interceptor toast', () => {
       defaultMarketMock.mockReturnValue(
         throwError(() => ({ result: { detail: 'something.unknown' } }))
       );
 
       facade.setDefaultMarket(countries[1]);
 
-      expect(snackbar.showError).toHaveBeenCalledWith('api.common.error_occurred');
+      expect(snackbar.showErrorTranslated).not.toHaveBeenCalled();
       expect(getOverviewMock).not.toHaveBeenCalled();
     });
 
@@ -146,8 +157,39 @@ describe('CountryManagementFacade', () => {
 
       facade.setDefaultMarket(countries[1]);
 
-      expect(snackbar.showSuccess).not.toHaveBeenCalled();
+      expect(snackbar.showSuccessTranslated).not.toHaveBeenCalled();
       expect(getOverviewMock).not.toHaveBeenCalled();
     });
+  });
+
+  describe('deleteCountry', () => {
+    it('asks in red with a delete label, deletes, shows success and re-reads the list', () => {
+      deleteMock.mockReturnValue(of({ id: 'c-2' }));
+      getOverviewMock.mockReturnValue(of(countries));
+
+      facade.deleteCountry(countries[1]);
+
+      expect(confirmMock).toHaveBeenCalledWith(
+        'pages.country_management.delete_confirm',
+        'pages.country_management.delete_country',
+        undefined,
+        { danger: true, acceptLabelKey: 'global.actions.delete' }
+      );
+      expect(deleteMock).toHaveBeenCalledWith('c-2');
+      expect(snackbar.showSuccessTranslated).toHaveBeenCalledWith('pages.country_management.messages.delete_success');
+      expect(getOverviewMock).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  it('does nothing when the confirmation is declined', () => {
+    confirmMock.mockReturnValue(of(false));
+
+    facade.setDefaultMarket(countries[1]);
+    facade.deleteCountry(countries[1]);
+
+    expect(confirmMock).toHaveBeenCalledTimes(2);
+    expect(defaultMarketMock).not.toHaveBeenCalled();
+    expect(deleteMock).not.toHaveBeenCalled();
+    expect(getOverviewMock).not.toHaveBeenCalled();
   });
 });

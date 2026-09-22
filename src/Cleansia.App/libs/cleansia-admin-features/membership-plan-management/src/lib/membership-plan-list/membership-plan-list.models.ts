@@ -57,7 +57,7 @@ export function getMembershipPlanTableDefinition(
         id: 'code',
         field: 'code',
         header: translate.instant('pages.membership_plans.columns.code'),
-        width: '11%',
+        width: '10%',
       },
       {
         id: 'name',
@@ -77,6 +77,7 @@ export function getMembershipPlanTableDefinition(
       },
       {
         id: 'price',
+        numeric: true,
         field: 'price',
         header: translate.instant('pages.membership_plans.columns.price'),
         getValue: (row) => formatPlanPrice(row.price, row.currencyCode),
@@ -84,23 +85,25 @@ export function getMembershipPlanTableDefinition(
       },
       {
         id: 'monthlyEquivalentPrice',
+        numeric: true,
         field: 'monthlyEquivalentPrice',
         header: translate.instant(
           'pages.membership_plans.columns.monthly_equivalent'
         ),
         getValue: (row) =>
           formatPlanPrice(row.monthlyEquivalentPrice, row.currencyCode),
-        width: '11%',
+        width: '10%',
       },
       {
         id: 'currencyCode',
         field: 'currencyCode',
         header: translate.instant('pages.membership_plans.columns.currency'),
         getValue: (row) => row.currencyCode ?? '',
-        width: '7%',
+        width: '6%',
       },
       {
         id: 'discountPercentage',
+        numeric: true,
         field: 'discountPercentage',
         header: translate.instant('pages.membership_plans.columns.discount'),
         getValue: (row) =>
@@ -108,20 +111,14 @@ export function getMembershipPlanTableDefinition(
         width: '7%',
       },
       {
-        id: 'trialPeriodDays',
-        field: 'trialPeriodDays',
-        header: translate.instant('pages.membership_plans.columns.trial_days'),
-        getValue: (row) => `${row.trialPeriodDays ?? 0}`,
-        width: '7%',
-      },
-      {
         id: 'freeCancellationWindowHours',
+        numeric: true,
         field: 'freeCancellationWindowHours',
         header: translate.instant(
           'pages.membership_plans.columns.free_cancel_window'
         ),
         getValue: (row) => `${row.freeCancellationWindowHours ?? 0}`,
-        width: '8%',
+        width: '7%',
       },
       {
         id: 'allowsExpressUpgrade',
@@ -129,14 +126,15 @@ export function getMembershipPlanTableDefinition(
         header: translate.instant('pages.membership_plans.columns.express'),
         getValue: (row) =>
           translate.instant(row.allowsExpressUpgrade ? 'global.yes' : 'global.no'),
-        width: '7%',
+        width: '6%',
       },
       {
         id: 'isActive',
         field: 'isActive',
         header: translate.instant('pages.membership_plans.columns.status'),
+        align: 'center',
         customTemplate: statusTemplate,
-        width: '11%',
+        width: '10%',
       },
     ],
     actions: [
@@ -164,41 +162,4 @@ export function getMembershipPlanTableDefinition(
  * never depends on the snackbar's best-effort normalization (mirrors the
  * disputes-management map).
  */
-export const MEMBERSHIP_PLAN_ERROR_KEY_MAP: Readonly<Record<string, string>> = {
-  'membership.plan.code_already_exists':
-    'api.membership.plan.code_already_exists',
-  'membership.plan.discount_out_of_range':
-    'api.membership.plan.discount_out_of_range',
-  'membership.plan.not_found': 'api.membership.plan.not_found',
-  'membership.plan.stripe_price_already_used':
-    'api.membership.plan.stripe_price_already_used',
-  'currency.not_found': 'api.currency.not_found',
-};
 
-export const MEMBERSHIP_PLAN_FALLBACK_ERROR_KEY =
-  'api.membership.plan.action_failed';
-
-export function resolveMembershipPlanErrorKey(error: unknown): string {
-  const apiError = error as {
-    result?: { detail?: string; title?: string };
-    response?: string;
-  };
-  let code = apiError?.result?.detail || apiError?.result?.title;
-
-  if (!code && apiError?.response) {
-    try {
-      const parsed = JSON.parse(apiError.response) as {
-        detail?: string;
-        title?: string;
-      };
-      code = parsed.detail || parsed.title;
-    } catch {
-      code = undefined;
-    }
-  }
-
-  if (code && MEMBERSHIP_PLAN_ERROR_KEY_MAP[code]) {
-    return MEMBERSHIP_PLAN_ERROR_KEY_MAP[code];
-  }
-  return MEMBERSHIP_PLAN_FALLBACK_ERROR_KEY;
-}

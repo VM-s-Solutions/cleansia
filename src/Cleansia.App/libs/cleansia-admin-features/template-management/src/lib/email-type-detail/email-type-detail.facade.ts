@@ -10,15 +10,14 @@ import {
   UpdateEmailTemplateCommand,
 } from '@cleansia/admin-services';
 import { UnsubscribeControlDirective } from '@cleansia/directives';
-import { CleansiaAdminRoute, SnackbarService } from '@cleansia/services';
-import { TranslateService } from '@ngx-translate/core';
-import { catchError, finalize, of, takeUntil } from 'rxjs';
+import { CleansiaAdminRoute, DialogService, SnackbarService } from '@cleansia/services';
+import { catchError, filter, finalize, of, takeUntil } from 'rxjs';
 
 @Injectable()
 export class EmailTypeDetailFacade extends UnsubscribeControlDirective {
   private readonly adminClient = inject(AdminClient);
+  private readonly dialog = inject(DialogService);
   private readonly snackbarService = inject(SnackbarService);
-  private readonly translate = inject(TranslateService);
   private readonly router = inject(Router);
 
   readonly emailTypeDetail = signal<EmailTypeDetailDto | null>(null);
@@ -26,6 +25,7 @@ export class EmailTypeDetailFacade extends UnsubscribeControlDirective {
   readonly saving = signal<boolean>(false);
   readonly creating = signal<boolean>(false);
   readonly deleting = signal<boolean>(false);
+  readonly deletingKey = signal<string | null>(null);
   readonly sendingTestEmail = signal<boolean>(false);
   readonly selectedLanguageCode = signal<string | null>(null);
 
@@ -59,10 +59,6 @@ export class EmailTypeDetailFacade extends UnsubscribeControlDirective {
       });
   }
 
-  selectLanguage(languageCode: string): void {
-    this.selectedLanguageCode.set(languageCode);
-  }
-
   updateTranslation(
     templateId: string,
     value: string,
@@ -86,10 +82,8 @@ export class EmailTypeDetailFacade extends UnsubscribeControlDirective {
       )
       .subscribe((response: unknown) => {
         if (response) {
-          this.snackbarService.showSuccess(
-            this.translate.instant(
-              'pages.template_management.messages.save_success'
-            )
+          this.snackbarService.showSuccessTranslated(
+            'pages.template_management.messages.save_success'
           );
         }
       });
@@ -116,13 +110,9 @@ export class EmailTypeDetailFacade extends UnsubscribeControlDirective {
       )
       .subscribe((response) => {
         if (response) {
-          this.snackbarService.showSuccess(
-            this.translate.instant(
-              'pages.template_management.messages.send_test_success',
-              {
-                email: recipientEmail,
-              }
-            )
+          this.snackbarService.showSuccessTranslated(
+            'pages.template_management.messages.send_test_success',
+            { email: recipientEmail, }
           );
         }
       });
@@ -155,10 +145,8 @@ export class EmailTypeDetailFacade extends UnsubscribeControlDirective {
       )
       .subscribe((response: unknown) => {
         if (response) {
-          this.snackbarService.showSuccess(
-            this.translate.instant(
-              'pages.template_management.messages.create_success'
-            )
+          this.snackbarService.showSuccessTranslated(
+            'pages.template_management.messages.create_success'
           );
           // Reload to get updated data
           this.loadEmailTypeDetail(emailType);
@@ -169,9 +157,28 @@ export class EmailTypeDetailFacade extends UnsubscribeControlDirective {
   deleteTranslation(
     emailTemplateId: string,
     emailType: EmailType,
+    key: string,
+    onComplete?: () => void
+  ): void {
+    this.dialog
+      .confirmTranslated(
+        'pages.template_management.dialogs.delete_translation.message',
+        'pages.template_management.dialogs.delete_translation.title',
+        { key },
+        { danger: true, acceptLabelKey: 'global.actions.delete' }
+      )
+      .pipe(takeUntil(this.destroyed$), filter(Boolean))
+      .subscribe(() => this.deleteTranslationConfirmed(emailTemplateId, emailType, key, onComplete));
+  }
+
+  private deleteTranslationConfirmed(
+    emailTemplateId: string,
+    emailType: EmailType,
+    key: string,
     onComplete?: () => void
   ): void {
     this.deleting.set(true);
+    this.deletingKey.set(key);
 
     this.adminClient.adminEmailTemplateClient
       .delete(emailTemplateId)
@@ -180,15 +187,14 @@ export class EmailTypeDetailFacade extends UnsubscribeControlDirective {
         catchError(() => of(null)),
         finalize(() => {
           this.deleting.set(false);
+          this.deletingKey.set(null);
           onComplete?.();
         })
       )
       .subscribe((response: unknown) => {
         if (response) {
-          this.snackbarService.showSuccess(
-            this.translate.instant(
-              'pages.template_management.messages.delete_success'
-            )
+          this.snackbarService.showSuccessTranslated(
+            'pages.template_management.messages.delete_success'
           );
           // Reload to get updated data
           this.loadEmailTypeDetail(emailType);

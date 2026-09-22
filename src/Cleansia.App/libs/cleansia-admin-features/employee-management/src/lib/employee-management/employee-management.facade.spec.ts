@@ -8,7 +8,7 @@ import {
 import { SnackbarService } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
 import { DialogService } from 'primeng/dynamicdialog';
-import { of, throwError } from 'rxjs';
+import { EMPTY, of, throwError } from 'rxjs';
 import { EmployeeManagementFacade } from './employee-management.facade';
 
 describe('EmployeeManagementFacade', () => {
@@ -16,14 +16,24 @@ describe('EmployeeManagementFacade', () => {
   let getPagedMock: jest.Mock;
   let approveMock: jest.Mock;
   let rejectMock: jest.Mock;
-  let snackbar: { showSuccess: jest.Mock; showError: jest.Mock };
+  let snackbar: {
+    showSuccess: jest.Mock;
+    showSuccessTranslated: jest.Mock;
+    showError: jest.Mock;
+    showErrorTranslated: jest.Mock;
+  };
 
   beforeEach(() => {
     TestBed.resetTestingModule();
     getPagedMock = jest.fn().mockReturnValue(of({ data: [], total: 0 }));
     approveMock = jest.fn().mockReturnValue(of({ employeeId: 'emp-1' }));
     rejectMock = jest.fn().mockReturnValue(of({ employeeId: 'emp-1' }));
-    snackbar = { showSuccess: jest.fn(), showError: jest.fn() };
+    snackbar = {
+      showSuccess: jest.fn(),
+      showSuccessTranslated: jest.fn(),
+      showError: jest.fn(),
+      showErrorTranslated: jest.fn(),
+    };
 
     TestBed.configureTestingModule({
       providers: [
@@ -42,7 +52,14 @@ describe('EmployeeManagementFacade', () => {
           },
         },
         { provide: SnackbarService, useValue: snackbar },
-        { provide: TranslateService, useValue: { instant: (k: string) => k } },
+        {
+          provide: TranslateService,
+          useValue: {
+            instant: (k: string) => k,
+            currentLang: 'cs',
+            onLangChange: EMPTY,
+          },
+        },
         { provide: DialogService, useValue: { open: jest.fn() } },
       ],
     });
@@ -86,7 +103,7 @@ describe('EmployeeManagementFacade', () => {
   it('re-reads the list after an approve lands, and not when it fails', () => {
     facade.approveEmployee('emp-1', 'country-1');
     expect(getPagedMock).toHaveBeenCalledTimes(1);
-    expect(snackbar.showSuccess).toHaveBeenCalledWith(
+    expect(snackbar.showSuccessTranslated).toHaveBeenCalledWith(
       'pages.employee_management.messages.approve_success'
     );
 
@@ -105,12 +122,12 @@ describe('EmployeeManagementFacade', () => {
   });
 
   it('returns to the first page when a filter is applied and when it is reset', () => {
-    facade.onPageChange(40, 20);
+    facade.onPageChange({ first: 40, rows: 20, page: 2, totalRecords: 100 });
     facade.applyFilter({ contractStatuses: [ContractStatus.Pending] });
     expect(getPagedMock.mock.calls.at(-1)?.[5]).toBe(0);
 
-    facade.onPageChange(40, 20);
-    facade.resetFilter();
+    facade.onPageChange({ first: 40, rows: 20, page: 2, totalRecords: 100 });
+    facade.applyFilter({});
     expect(getPagedMock.mock.calls.at(-1)?.[5]).toBe(0);
   });
 

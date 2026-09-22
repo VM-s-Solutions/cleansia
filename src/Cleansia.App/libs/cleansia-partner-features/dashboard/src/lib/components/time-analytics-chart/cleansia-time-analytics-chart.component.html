@@ -14,11 +14,7 @@
         size="sm"
         color="secondary"
       />
-      <cleansia-label
-        [text]="(data()!.totalMinutesWorked / 60 | number : '1.1-1') + ' hrs'"
-        size="base"
-        weight="semibold"
-      />
+      <cleansia-label [text]="totalHours()" size="base" weight="semibold" />
     </div>
     <div class="summary-item">
       <cleansia-label
@@ -26,13 +22,7 @@
         size="sm"
         color="secondary"
       />
-      <cleansia-label
-        [text]="
-          (data()!.averageMinutesPerOrder / 60 | number : '1.1-1') + ' hrs'
-        "
-        size="base"
-        weight="semibold"
-      />
+      <cleansia-label [text]="averageHours()" size="base" weight="semibold" />
     </div>
     <div class="summary-item">
       <cleansia-label
@@ -40,12 +30,7 @@
         size="sm"
         color="secondary"
       />
-      <cleansia-label
-        [text]="(data()!.efficiencyRate | number : '1.0-0') + '%'"
-        size="base"
-        weight="semibold"
-        color="warning"
-      />
+      <cleansia-label [text]="efficiency()" size="base" weight="semibold" color="warning" />
     </div>
     <div class="summary-item">
       <cleansia-label
@@ -53,11 +38,7 @@
         size="sm"
         color="secondary"
       />
-      <cleansia-label
-        [text]="data()!.totalOrders.toString()"
-        size="base"
-        weight="semibold"
-      />
+      <cleansia-label [text]="totalOrders()" size="base" weight="semibold" />
     </div>
   </div>
 
@@ -71,44 +52,19 @@
     </canvas>
   </div>
 
-  @if (data()!.byServiceType && data()!.byServiceType?.length ) {
+  @if (serviceRows().length) {
   <div class="cleansia-time-analytics__breakdown">
     <h4>{{ 'pages.dashboard.time_analytics.by_service' | translate }}</h4>
     <div class="service-list">
-      @for (service of data()!.byServiceType; track service.serviceName) {
+      @for (service of serviceRows(); track service.serviceName) {
       <div class="service-item">
         <div class="service-item__info">
-          <cleansia-label
-            [text]="service.serviceName ?? ''"
-            size="sm"
-            weight="medium"
-          />
-          <cleansia-label
-            [text]="
-              service.orderCount +
-              ' ' +
-              ('pages.dashboard.time_analytics.orders' | translate | lowercase)
-            "
-            size="sm"
-            color="secondary"
-          />
+          <cleansia-label [text]="service.serviceName" size="sm" weight="medium" />
+          <cleansia-label [text]="service.orderCount" size="sm" color="secondary" />
         </div>
         <div class="service-item__time">
-          <cleansia-label
-            [text]="(service.totalMinutes / 60 | number : '1.1-1') + ' hrs'"
-            size="sm"
-            weight="semibold"
-            color="warning"
-          />
-          <cleansia-label
-            [text]="
-              '(' +
-              (service.averageMinutesPerOrder / 60 | number : '1.1-1') +
-              ' avg)'
-            "
-            size="sm"
-            color="secondary"
-          />
+          <cleansia-label [text]="service.totalHours" size="sm" weight="semibold" color="warning" />
+          <cleansia-label [text]="service.averageHours" size="sm" color="secondary" />
         </div>
       </div>
       }

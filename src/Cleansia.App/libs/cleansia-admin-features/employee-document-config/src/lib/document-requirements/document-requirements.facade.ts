@@ -7,9 +7,8 @@ import {
   SaveDocumentRequirementRequest,
 } from '@cleansia/admin-services';
 import { UnsubscribeControlDirective } from '@cleansia/directives';
-import { SnackbarService } from '@cleansia/services';
-import { TranslateService } from '@ngx-translate/core';
-import { catchError, finalize, of, takeUntil } from 'rxjs';
+import { DialogService, SnackbarService } from '@cleansia/services';
+import { catchError, filter, finalize, of, takeUntil } from 'rxjs';
 
 /**
  * The document types a country expects of its cleaners.
@@ -21,8 +20,8 @@ import { catchError, finalize, of, takeUntil } from 'rxjs';
 @Injectable()
 export class DocumentRequirementsFacade extends UnsubscribeControlDirective {
   private readonly adminClient = inject(AdminClient);
+  private readonly dialog = inject(DialogService);
   private readonly snackbarService = inject(SnackbarService);
-  private readonly translate = inject(TranslateService);
 
   readonly countries = signal<CountryListItem[]>([]);
   readonly requirements = signal<DocumentRequirementDto[]>([]);
@@ -103,8 +102,8 @@ export class DocumentRequirementsFacade extends UnsubscribeControlDirective {
       )
       .subscribe((response) => {
         if (response) {
-          this.snackbarService.showSuccess(
-            this.translate.instant('pages.document_requirements.messages.save_success'),
+          this.snackbarService.showSuccessTranslated(
+            'pages.document_requirements.messages.save_success'
           );
           this.loadRequirements(countryId);
         }
@@ -117,6 +116,18 @@ export class DocumentRequirementsFacade extends UnsubscribeControlDirective {
    * property of the cleaner.
    */
   deleteRequirement(requirementId: string): void {
+    this.dialog
+      .confirmTranslated(
+        'pages.document_requirements.delete_confirm',
+        'pages.document_requirements.delete_confirm_title',
+        undefined,
+        { danger: true, acceptLabelKey: 'global.actions.delete' }
+      )
+      .pipe(takeUntil(this.destroyed$), filter(Boolean))
+      .subscribe(() => this.deleteRequirementConfirmed(requirementId));
+  }
+
+  private deleteRequirementConfirmed(requirementId: string): void {
     const countryId = this.selectedCountryId();
     if (!countryId) {
       return;
@@ -132,8 +143,8 @@ export class DocumentRequirementsFacade extends UnsubscribeControlDirective {
       )
       .subscribe((response) => {
         if (response) {
-          this.snackbarService.showSuccess(
-            this.translate.instant('pages.document_requirements.messages.delete_success'),
+          this.snackbarService.showSuccessTranslated(
+            'pages.document_requirements.messages.delete_success'
           );
           this.loadRequirements(countryId);
         }

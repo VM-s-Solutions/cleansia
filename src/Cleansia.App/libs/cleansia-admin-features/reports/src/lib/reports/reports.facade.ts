@@ -1,11 +1,14 @@
 import { Injectable, inject, signal, computed } from '@angular/core';
+import { FormBuilder } from '@angular/forms';
 import {
   AdminClient,
   RevenueReportDto,
   PayrollReportDto,
 } from '@cleansia/admin-services';
+import { FilterChip, FilterDrawerState } from '@cleansia/components';
 import { UnsubscribeControlDirective } from '@cleansia/directives';
 import { SnackbarService } from '@cleansia/services';
+import { currentLanguage, formatDate } from '@cleansia/utils';
 import { TranslateService } from '@ngx-translate/core';
 import { catchError, finalize, of, takeUntil } from 'rxjs';
 
@@ -47,7 +50,23 @@ export class ReportsFacade extends UnsubscribeControlDirective {
     () => this.loadingRevenue() || this.loadingPayroll()
   );
 
-  private readonly language = signal<string>(this.translate.currentLang);
+  readonly lang = currentLanguage(this.translate);
+
+  readonly filterForm = inject(FormBuilder).group({
+    startDate: [this.defaultDateRange.startDate as Date | null],
+    endDate: [this.defaultDateRange.endDate as Date | null],
+    currencyId: [null as string | null],
+  });
+  readonly filters = new FilterDrawerState({
+    form: this.filterForm,
+    lang: this.lang,
+    chips: (value): FilterChip[] => this.buildFilterChips(value),
+    apply: (value) => {
+      if (value.startDate && value.endDate) {
+        this.setDateRange(value.startDate, value.endDate, value.currencyId ?? undefined);
+      }
+    },
+  });
 
   /** The headline is the server's net figure; the page derives no money arithmetic of its own. */
   readonly revenueHeadline = computed(() =>
@@ -65,9 +84,39 @@ export class ReportsFacade extends UnsubscribeControlDirective {
 
   constructor() {
     super();
-    this.translate.onLangChange
-      .pipe(takeUntil(this.destroyed$))
-      .subscribe((event) => this.language.set(event.lang));
+    this.filters.connect(this.destroyed$);
+  }
+
+  // One chip for the range once either date leaves the default month, one for the currency.
+  private buildFilterChips(value: {
+    startDate?: Date | null;
+    endDate?: Date | null;
+    currencyId?: string | null;
+  }): FilterChip[] {
+    const chips: FilterChip[] = [];
+    if (value.startDate && value.endDate) {
+      const sameDay = (a: Date, b: Date) => a.toDateString() === b.toDateString();
+      if (
+        !sameDay(value.startDate, this.defaultDateRange.startDate) ||
+        !sameDay(value.endDate, this.defaultDateRange.endDate)
+      ) {
+        const lang = this.lang();
+        chips.push({
+          key: 'dateRange',
+          label: this.translate.instant('pages.reports.filters.date_range'),
+          value: `${formatDate(value.startDate, lang)} - ${formatDate(value.endDate, lang)}`,
+          controls: ['startDate', 'endDate'],
+        });
+      }
+    }
+    if (value.currencyId) {
+      chips.push({
+        key: 'currencyId',
+        label: this.translate.instant('pages.reports.filters.currency'),
+        value: this.currencies().find((c) => c.id === value.currencyId)?.code ?? '',
+      });
+    }
+    return chips;
   }
 
   private getDefaultStartDate(): Date {
@@ -147,20 +196,6 @@ export class ReportsFacade extends UnsubscribeControlDirective {
     }
   }
 
-  refreshCurrentReport(): void {
-    if (this.activeTab() === 'revenue') {
-      this.loadRevenueReport();
-    } else {
-      this.loadPayrollReport();
-    }
-  }
-
-  resetToDefaultDateRange(): void {
-    const defaultStart = this.getDefaultStartDate();
-    const defaultEnd = new Date();
-    this.setDateRange(defaultStart, defaultEnd);
-  }
-
   /** The revenue report's amounts, in the currency THAT report names. */
   formatRevenueAmount(value: number | undefined): string {
     return this.formatAmount(value, this.revenueReport()?.currencyCode);
@@ -177,7 +212,7 @@ export class ReportsFacade extends UnsubscribeControlDirective {
   private formatAmount(value: number | undefined, currencyCode: string | undefined): string {
     if (value === undefined || value === null) return '';
     if (!currencyCode) return String(value);
-    return new Intl.NumberFormat(this.language() || 'en-GB', {
+    return new Intl.NumberFormat(this.lang() || 'en-GB', {
       style: 'currency',
       currency: currencyCode,
     }).format(value);

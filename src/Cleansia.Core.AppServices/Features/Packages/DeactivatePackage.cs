@@ -10,7 +10,7 @@ namespace Cleansia.Core.AppServices.Features.Packages;
 /// Soft-retire a package (ADR-0007): sets IsActive=false with the deactivating admin recorded via
 /// the auditable domain primitive. The package disappears from the customer booking wizard
 /// (GetPackageOverview filters IsActive) but stays referenceable — deactivating an in-use package
-/// is allowed, unlike delete, because existing orders/carts keep their line items. Idempotent —
+/// is allowed, unlike delete, because existing orders keep their line items. Idempotent —
 /// calling on an already-inactive package returns success without an error.
 /// </summary>
 public class DeactivatePackage

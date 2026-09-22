@@ -1,11 +1,11 @@
 ---
 id: T-0791
 title: Remove the availability module end to end — domain, commands, two routes, the column, the admin section, the shared component, the partner remnants, both mobile apps; the four dead schema things folded in (Q-UI-01, Q-UI-02); the batch's one `Initial` regen
-status: in_progress
+status: done
 size: L
 owner: —
 created: 2026-09-20
-updated: 2026-09-20
+updated: 2026-09-22
 depends_on: []
 blocks: [T-0792, T-0793, T-0788, T-0799]
 stories: []
@@ -232,3 +232,13 @@ tracked; the lane copies the counts it relied on into the status log when it shi
 - 2026-09-20 — filed 2026-09-20 from the UI-polish discovery; branch chore/ui-polish-and-dead-code.
   Opened the same night as phase 1's first lane (runs alone). Q-UI-01 (drop the wire members) and
   Q-UI-02 (fold the four schema things) ruled by the owner's *go* of 2026-09-20 and carried here.
+- 2026-09-22 — **done**; shipped 2026-09-20 as three commits on chore/ui-polish-and-dead-code
+  (PR #260): backend `38312c8d9` (the availability module and the dead `Cart`, `EmailTranslations`
+  and `PreferredCurrencyCode` schema; `TrialPeriodDays` with it), web `5ef4c292f` (admin, partner and
+  shared, plus the free-trial fields the admin plan form still offered), mobile `c76523efa` (the
+  Android and iOS partner remnants). **`Initial` regenerated as `20260920204705`** — 84 tables, 48
+  carrying the `Tenants` FK; the three web clients and both mobile specs regenerated in the same
+  commits; the Postgres integration suite ran in full locally (Docker up) and green. **The DEV drop is
+  owed at the next DEV deploy** (`agents/cleanup/MANUAL_STEPS.md` MS-2, `agents/OWNER-PLATE.md` A1),
+  never run on the branch. Q-UI-01 and Q-UI-02 are deleted from `questions/open.md` — this ticket is
+  the record. The docs pages the Doing list named for T-0799 are the docs lane's commit of 2026-09-22.

@@ -1,11 +1,11 @@
 ---
 id: T-0799
 title: Docs and living pages for the UI-polish batch, last — availability out of the docs, the removed routes off the API reference and the two permission tables, the Cart off the model, the design-language and pattern pages, MS-2 / A1 to the new `Initial` id, the backlog rows flipped, the Q-UI rulings recorded
-status: todo
+status: done
 size: S
 owner: —
 created: 2026-09-20
-updated: 2026-09-20
+updated: 2026-09-22
 depends_on: [T-0785, T-0786, T-0787, T-0788, T-0789, T-0790, T-0791, T-0792, T-0793, T-0794, T-0795, T-0796, T-0797, T-0798]
 blocks: []
 stories: []
@@ -110,3 +110,29 @@ Docs CI, so rename nothing the code points at without moving the pointer.
 
 - 2026-09-20 — filed 2026-09-20 from the UI-polish discovery; branch chore/ui-polish-and-dead-code.
   Phase 4, docs lane, last.
+- 2026-09-22 — **done** (this commit — the docs lanes' commit on chore/ui-polish-and-dead-code,
+  PR #260), written last, after phases 1–4 were green. Two lanes on disjoint files. **The docs half**
+  (`docs/`, `CHANGELOG.md`, the `CountryController.cs:26` comment): the availability, endpoint,
+  free-trial and ADR-note items above — its own report names the pages. **The how-we-build + record
+  half:** `agents/knowledge/design-language.md` records Q-UI-06 / 07 / 10 as *defaults in force since
+  2026-09-20, unruled* (the back-office web is Nunito-only; the web neutrals stay Tailwind gray; no
+  spacing tokens) with what the tree actually holds; `agents/knowledge/patterns-frontend.md` gains
+  §*"The back-office page shapes"* (shell, header, list / detail / form / dialog, the feedback
+  idioms, the primitives table, the guards) and its live sample is re-copied from
+  `company-info-list` (no `ConfirmationService` provider, the drawer in the header), the retired
+  per-feature error maps are recorded; `agents/knowledge/consistency.md` gains §F with the fifteen
+  rows as the checker shipped them (the older sprint-12 `F1` label named as not this F1);
+  `libs/shared/assets/src/styles/README.md` is completed to the partials that exist today; this
+  index's fifteen rows are `done` with their commits (T-0791's from 2026-09-20; the record note
+  names the three departures from the plan — no `cleansia-breadcrumb`, the `cleansia-button` legacy
+  API kept, the checker's own F-numbering); every ticket carries its commits; Q-UI-01 / 02 are
+  deleted from `questions/open.md` (T-0791 is the record) and Q-UI-03 … 13 read *default in force
+  since 2026-09-20, unruled* with what shipped against each; the owner plate's Q-UI rows say the same,
+  A1's verification step names `20260920204705`, and a dated block *"Findings from the UI-polish lanes,
+  reported not absorbed"* lists every finding the phase-2 and phase-3 lanes and the close-out reviews
+  raised, once each; `agents/cleanup/MANUAL_STEPS.md` MS-2 already read `20260920204705` (verified,
+  unchanged); `agents/HANDOVER-2026-09-16.md` gains the 2026-09-22 checkpoint. **Two items of the
+  Doing list are not applicable as written:** `cleansia-breadcrumb` is named in `patterns-frontend.md`
+  as *not shipped* (there is no such component — Q-UI-08's default did not land; the header row is
+  the idiom); and the F-rules are the tool's fifteen, not the filing's. AC5 (docs-refs,
+  catalog-claims, the VitePress build) closes on the orchestrator's run.

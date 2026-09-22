@@ -1,11 +1,11 @@
 ---
 id: T-0793
 title: Web dead code — admin, partner and shared libs; unrouted components, the two user NgRx slices, declaration-only exports, dead i18n sections, orphan stylesheets; the free-trial UI remnants T-0690 left; the stale pre-ADR-0057 help copy
-status: in_progress
+status: done
 size: M
 owner: —
 created: 2026-09-20
-updated: 2026-09-20
+updated: 2026-09-22
 depends_on: [T-0791]
 blocks: [T-0785, T-0797, T-0799]
 stories: []
@@ -173,3 +173,7 @@ T-0799. **Guard:** F11 (i18n namespaces + no `common.*`) and F12 (orphan stylesh
   three `patterns-frontend.md` citations the deletions left dangling (`check-catalog-claims` C3 2 → 0),
   the `docs/admin-app/overview.md` pay-periods alias, and the `styles/README.md` shipping rule (the
   two `common/` mixin partials are `@use`'d directly).
+- 2026-09-22 — **done**; the commits are `7da4c1665` + the review fix `bfca22a68` on
+  chore/ui-polish-and-dead-code (PR #260). `styles/README.md` was left truthful here and completed
+  by T-0799 (the `common/` partials, the admin page-shape partials and the page partials that exist
+  today). The `cleansia-multiselect` component was kept and is adopted by T-0789's package form.

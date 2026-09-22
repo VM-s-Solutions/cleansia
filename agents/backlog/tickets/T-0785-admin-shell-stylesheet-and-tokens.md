@@ -1,11 +1,11 @@
 ---
 id: T-0785
 title: Admin shell — one page wrapper, one header, one button width, one field height, one section with an action slot, one label/value grid, the tokens that are referenced and undefined, the z-index scale, one focus ring
-status: todo
+status: done
 size: M
 owner: —
 created: 2026-09-20
-updated: 2026-09-20
+updated: 2026-09-22
 depends_on: [T-0793]
 blocks: [T-0786, T-0787, T-0788, T-0789, T-0790, T-0794, T-0795, T-0796, T-0797]
 stories: []
@@ -159,3 +159,15 @@ restyles anything. **Regen:** none. Reference captures: `admin-notifications-144
 
 - 2026-09-20 — filed 2026-09-20 from the UI-polish discovery; branch chore/ui-polish-and-dead-code.
   Phase 2, web-shared lane, first of the serial four (T-0785 → T-0786 → T-0794 → T-0796).
+- 2026-09-22 — **done**; shipped 2026-09-21 as `eb01bba24` on chore/ui-polish-and-dead-code (PR #260).
+  `common/page-wrapper.scss` (`.cleansia-page` gutter + `.page-wrapper` card, `--narrow` for detail
+  and form pages), `common/page-header.scss`, `common/detail-grid.scss`, `common/focus.scss`
+  (`%focus-ring`), the referenced-but-undefined tokens plus `--cleansia-radius-*` and
+  `--cleansia-shadow-*` in `variables.scss`, the z-index scale, the `[section-actions]` slot on
+  `cleansia-section` with its title in `--cleansia-primary-700`, `cleansia-button` sizing to its label
+  with `[block]` the one full-width variant, `cleansia-select` and `cleansia-calendar` at the text
+  input's 44 px. Guard: `apps/cleansia-admin.app/src/app/theme/page-shell.spec.ts` (frontend-ci).
+  Findings reported, not absorbed, on `agents/OWNER-PLATE.md` (the 2026-09-22 block): the
+  `size="'full-width'"` sites still mapped rather than on `[block]`, `appearance="brand"` with zero
+  consumers, the sidebar style budget. The neutral palette, Poppins and spacing tokens stayed as
+  Q-UI-07 / 06 / 10 defaults (`design-language.md`).

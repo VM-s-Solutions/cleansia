@@ -61,7 +61,7 @@ at the one seam every write crosses**, letting through only the person's rows an
   WorkCountryId, ContractStatus`. `employee-invoices.jsonl` has no `AdminNotes`; `promo-codes.jsonl` no
   `Description`; `admin-action-audits.jsonl` `ActorId`, not `ActorEmail`. **Not in the bundle:** `Users`,
   `UserConsents`, `CustomerActionAudits`, `EmployeePayoutDetails` (a bank account), `UserMemberships`,
-  notifications, devices, tokens, notes, issues, photos, reviews, saved addresses, carts, templates,
+  notifications, devices, tokens, notes, issues, photos, reviews, saved addresses, templates,
   loyalty. `CompanyArchiveRecordGuardTests` fails any record member whose name **contains** `Email, Phone,
   Passport, Nationality, EmergencyContact, AccessInstructions, SpecialInstructions, Notes, Description,
   ResolutionNotes, Secret, Password, Ip, Device, Token, Message, Evidence, Review, CustomerName, FirstName,
@@ -71,7 +71,7 @@ at the one seam every write crosses**, letting through only the person's rows an
   `ITenantEntity` whose type is **not** on the account surface; nothing touched or the gate open → save;
   otherwise one `Tenants` read per unknown company (memoised per context instance) and
   `CompanyArchivedException(tenantId)` for a frozen one. The account surface — the person's rows:
-  `User`, `RefreshToken`, `Device`, `LiveActivityToken`, `Cart`, `SavedAddress`, `UserConsent`,
+  `User`, `RefreshToken`, `Device`, `LiveActivityToken`, `SavedAddress`, `UserConsent`,
   `UserNotificationPreferences`, `UserNotification`, `GdprRequest`, `UserStripeCustomer`, `UserMembership`,
   `MembershipBenefitUsage`, `LoyaltyAccount`, `LoyaltyTransaction`, `ReferralCode`, `Referral`, the three
   audit tables, `OutboxMessage`, `DeadLetter`. **`CreditAccount` is books.** Everything else is books by

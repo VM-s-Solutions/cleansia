@@ -85,9 +85,11 @@ should be. Flattening every country to the neutral term would have cost CZ and S
 registries use.
 
 ::: info Not part of the completeness check
-**Emergency contacts** are optional. **Documents** are handled separately by the registration lock,
-and **the availability schedule is not read by matching or dispatch** — dispatch is a first-come
-pull board, so a filled-in schedule does not gate anything today.
+**Emergency contacts** are optional. **Documents** are handled separately by the registration lock.
+**There is no weekly schedule to fill in** — dispatch is a first-come pull board, and the schedule
+the employee record used to carry was read by nothing, so on 2026-09-20 it was removed: the admin
+detail section, the two update endpoints, the `availability` and `hasSetAvailability` wire members
+and the column went together.
 :::
 
 ::: tip Bank details live in their own record (ADR-0034)
@@ -218,14 +220,13 @@ Until approved, the partner can log in and access their profile, but their abili
 
 ### Registration Lock Screen
 
-Partners who have not yet been approved see a registration lock screen that displays a **progress bar** and four requirement categories:
+Partners who have not yet been approved see a registration lock screen that displays a **progress bar** and three requirement categories:
 
 1. **Profile Information** -- lists the names of any missing required fields (translated to the partner's language)
-2. **Availability** -- whether a weekly availability schedule has been set
-3. **Required Documents** -- whether at least one active (uploaded) document exists. The
+2. **Required Documents** -- whether at least one active (uploaded) document exists. The
    documents screen behind it lists what the country actually asks for, per
    [document requirements](#document-requirements)
-4. **Admin Approval** -- shows one of the following distinct states:
+3. **Admin Approval** -- shows one of the following distinct states:
    - _"Complete profile first"_ -- profile is not yet complete
    - _"Awaiting review"_ -- profile is complete and pending admin decision
    - _"Rejected: {reason}"_ -- admin has rejected the application with a reason

@@ -1,11 +1,11 @@
 ---
 id: T-0797
 title: Partner web sweep onto the shared primitives — the `cleansia-button` API unified, partner dialogs on the admin shape, raw icon buttons wrapped, `Nová` in the same pill family as `Zaplaceno`, headers on the shell rule, `cleansia-breadcrumb` (Q-UI-08), `!important` 61 → ≤ 1
-status: todo
+status: done
 size: M
 owner: —
 created: 2026-09-20
-updated: 2026-09-20
+updated: 2026-09-22
 depends_on: [T-0785, T-0786, T-0793]
 blocks: [T-0788]
 stories: []
@@ -115,3 +115,23 @@ and T-0788 keeps the back button on the title row. **Regen:** none. **Guard:** F
 - 2026-09-20 — filed 2026-09-20 from the UI-polish discovery; branch chore/ui-polish-and-dead-code.
   Phase 3, partner web lane, runs beside the admin lane (disjoint feature libs). Q-UI-08 default
   (breadcrumb), Q-UI-09 / 11 / 12 defaults (leave) in force.
+- 2026-09-22 — **done**; shipped 2026-09-21 as `049bcf400` + `188ec4fb1`, and 2026-09-22 as
+  `ab8d60437` + `e523f6888`, on chore/ui-polish-and-dead-code (PR #260). The partner pages on the
+  shared shell (width from the wrapper, `--narrow` on the details), header, badge, date, money,
+  dialog and empty idioms; the lists' table and badge ramps gone; the five partner dialogs on the
+  admin dialog shape (the partner index `@use`s the admin `_dialog` and `_form-page` partials); the
+  order detail's packages, services and extras on `cleansia-section`, the crew rows and the
+  completion summary on the detail grid (collapsing to one column on a phone); the history connector
+  starting at the first node; the dashboard on one money form; the lists right-aligning dates and
+  counts through `numeric`; `::ng-deep` out of the partner pages. Guards: partner
+  `theme/page-shell.spec.ts`, `list-pages.spec.ts`, `dialogs.spec.ts`. **Two Doing items did not
+  ship, because the shared tree was frozen for phase 3:** the `cleansia-button` legacy API stays
+  (`title` / `clickFn` on the component; 46 customer + 1 admin + 1 shared `(clickFn)` binders remain —
+  checker F6 holds the count at 3 on the governed surface) and **`cleansia-breadcrumb` (Q-UI-08) was
+  not built** — the two partner details keep their hand-rolled bar, drawn once as the placeholders in
+  `pages/cleansia-partner/_breadcrumb.scss`. Q-UI-09 kept as its default. Findings reported, not
+  absorbed, on the plate: the timeline's `STATUS_CLASS_MAP` / `STATUS_ICON_MAP` keyed on stale enum
+  numbers, the help legends' dead `Pending`, the shared-lib items the freeze kept out (the help-card
+  legend pill sizing, `formatFileSize`'s `1 Bytes`, the calendar's display format), the GDPR page's
+  `p-toggleSwitch` wanting a shared wrapper, the mark-cash dialog's filled primary on an irreversible
+  act, the `index.scss` comment that carries a phase schedule.

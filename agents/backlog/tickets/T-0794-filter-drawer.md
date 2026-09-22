@@ -1,11 +1,11 @@
 ---
 id: T-0794
 title: "`cleansia-filter-drawer` — one drawer, one chip row, one list scaffold, replacing the 60-line block copied into 13 admin and 2 partner components"
-status: todo
+status: done
 size: M
 owner: —
 created: 2026-09-20
-updated: 2026-09-20
+updated: 2026-09-22
 depends_on: [T-0785]
 blocks: [T-0787]
 stories: []
@@ -91,3 +91,15 @@ inside the page card (partner shape).
 
 - 2026-09-20 — filed 2026-09-20 from the UI-polish discovery; branch chore/ui-polish-and-dead-code.
   Phase 2, web-shared lane, third of the serial four; lands before T-0787.
+- 2026-09-22 — **done**; shipped 2026-09-21 as `ab2e28c70` + the review fix `b9c398de6` on
+  chore/ui-polish-and-dead-code (PR #260). `libs/shared/components/src/lib/cleansia-filter-drawer/`:
+  `cleansia-filter-drawer` (the trigger with its count, the side panel as a modal dialog, the
+  projected fields, the Reset footer), `cleansia-filter-chips`, and `FilterDrawerState` — owned by
+  the list facade (`new FilterDrawerState({ form, chips, apply, lang })`, `connect(destroyed$)`),
+  owning open / close / reset / chip removal and the 500 ms debounced apply. The fix moved focus
+  after render (`afterRenderEffect` — an inert panel refuses focus), kept Tab inside, left a
+  consumed Escape (a calendar or select overlay) alone, and put the partner lists on the card rhythm
+  with the chip row under the header. Guards: admin + partner `theme/filter-drawer.spec.ts`,
+  `cleansia-filter-drawer.component.spec.ts`, `filter-drawer-state.spec.ts`. Findings reported, not
+  absorbed, on the plate: the admin checkbox / radio rows' `div[tabindex][click]` wrapper (two
+  focusable controls per option), the runner's overflow false positives on a fixed closed panel.

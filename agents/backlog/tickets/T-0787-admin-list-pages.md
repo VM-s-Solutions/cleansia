@@ -1,11 +1,11 @@
 ---
 id: T-0787
 title: Admin list pages — the 28 lists on one pattern (header, toolbar order, right-aligned numbers, width budgets, one row-action style, `h1`), plus the page-local defects the captures show
-status: todo
+status: done
 size: M
 owner: —
 created: 2026-09-20
-updated: 2026-09-20
+updated: 2026-09-22
 depends_on: [T-0785, T-0786, T-0794]
 blocks: []
 stories: []
@@ -121,3 +121,17 @@ keeps its shape; the Company-lifecycle page's date format is already right (T-07
 
 - 2026-09-20 — filed 2026-09-20 from the UI-polish discovery; branch chore/ui-polish-and-dead-code.
   Phase 3, admin web lane, first of four (T-0787 → T-0788 → T-0789 → T-0790).
+- 2026-09-22 — **done**; shipped 2026-09-21 as `bd00ff694` + the review fix `bb4a7b74f`, and the
+  second-round fix `ea70c8c7e` on 2026-09-22, on chore/ui-polish-and-dead-code (PR #260). The 28
+  lists on the one shape (the shared header with an `h1`, the drawer before create, figures and stamps
+  right-aligned through `numeric`, badges centred, the shared error and empty states, a page
+  stylesheet that carries only what is page-specific); the reports KPI cards subgrid their rows;
+  `pages/cleansia-admin/tab-strip.scss` draws the tab icon gap once (in the admin pages folder, not
+  `common/` — the shared tree was frozen; a follow-up); `list-filter.scss` bounds a lone select
+  above a list; marker columns read `Ano` / `—` (a boolean fact keeps `Ano` / `Ne`; the currencies'
+  `isActive` keeps its deliberate `Ano` / `Zatím ne`); the promo minimum order prints as money.
+  Guard: admin `theme/list-pages.spec.ts` with the numeric-column guard. Findings reported, not
+  absorbed, on the plate: the disputes `Vratka` currency (backend DTO), the badge kinds the shared
+  catalogue lacks (audit outcome, fiscal error, GDPR request — page-local tone maps for now), the
+  table's nowrap headers on wide tables, the three page-local percent formatters, the membership
+  plans' `formatPlanPrice`.

@@ -459,7 +459,7 @@ stamp loop and before `SaveChangesAsync`: the distinct `TenantId`s of every `Add
 `Tenants` (one read per company per context instance, memoised; nothing at all when only the account
 surface or nothing stamped is touched), and a frozen one throws `CompanyArchivedException(tenantId)` —
 nothing of that unit of work lands. **The sort is closed on the account surface** — the person's rows:
-`User`, `RefreshToken`, `Device`, `LiveActivityToken`, `Cart`, `SavedAddress`, `UserConsent`,
+`User`, `RefreshToken`, `Device`, `LiveActivityToken`, `SavedAddress`, `UserConsent`,
 `UserNotificationPreferences`, `UserNotification`, `GdprRequest`, `UserStripeCustomer`, `UserMembership`,
 `MembershipBenefitUsage`, `LoyaltyAccount`, `LoyaltyTransaction`, `ReferralCode`, `Referral`, the three
 audit tables, `OutboxMessage`, `DeadLetter` — and **everything else is books and fails closed**, so a new

@@ -16,7 +16,7 @@ Provide cleaning partners with tools to find and manage cleaning jobs, track the
 | Order Detail | Full order info, Take/Start/Complete flow, Report Issue, Add Note. The take goes through the same contract dialog; the detail states *You accepted the contract for work on {date}, version {version}* with **Read the contract** (the dialog in `read` mode from `GetWorkContract`), or — for a cleaner an admin placed — a banner *Accept the contract for work before you start* whose button opens the dialog in `accept` mode (`AcceptWorkContract`); Start and Complete stay offered and a `contract.acceptance_required` refusal opens the same dialog; a `contract.text_mismatch` re-fetches the preview, unticks and says the contract was updated |
 | Invoices | View pay period invoices, download PDFs |
 | My Pay | A pay period's rows and totals in one currency; a period holding pay in more than one currency (after an admin reassignment) shows a currency switch derived from the period's **pay rows** — present on an open period before any invoice exists, and never offering a cancelled invoice's currency |
-| Profile | Manage personal info, availability, documents |
+| Profile | Manage personal info, payout details, documents |
 | Registration | Create account, email confirmation, profile completion |
 
 ## Sidebar Navigation
@@ -80,7 +80,7 @@ New partner registrations go through an admin approval process. After registrati
 
 All API calls use the `PartnerClient` (NSwag-generated), which contains sub-clients:
 
-- `employeeClient` -- Current employee profile, availability
+- `employeeClient` -- Current employee profile, registration status, job radius, payout details, documents
 - `orderClient` -- Order CRUD, take/start/complete, photos, notes
 - `employeePayrollClient` -- Invoices, pay period data
 

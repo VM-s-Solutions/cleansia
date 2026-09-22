@@ -1,11 +1,11 @@
 ---
 id: T-0795
 title: Shell parity between the admin and partner web — `cleansia-mobile-toolbar`, one auth stylesheet, print rules shared, guards return a `UrlTree`, admin routes on the enum, sidebar `aria-current` and translated labels, route titles
-status: todo
+status: done
 size: M
 owner: —
 created: 2026-09-20
-updated: 2026-09-20
+updated: 2026-09-22
 depends_on: [T-0785]
 blocks: []
 stories: []
@@ -100,3 +100,14 @@ before and after.
 
 - 2026-09-20 — filed 2026-09-20 from the UI-polish discovery; branch chore/ui-polish-and-dead-code.
   Phase 2, may run beside the web-shared serial four (disjoint files).
+- 2026-09-22 — **done**; shipped 2026-09-21 as `f13220965` + the review fix `27b5358b2` on
+  chore/ui-polish-and-dead-code (PR #260). `libs/shared/components/src/lib/cleansia-mobile-toolbar/`
+  (the menu button with a translated `aria-label`, `cleansia-brand-name`, the language switcher, an
+  app's own controls projected in front of it), `common/auth.scss` (one sign-in card), the print rule
+  shared, the admin route table and sidebar on `CleansiaAdminRoute`, the four guards returning a
+  `UrlTree`, the rail naming its controls from the bundle with `aria-current`. The fix: the
+  `touch-target` mixin resets PrimeNG's hidden zero-width `::after` on icon-only buttons, so the
+  admin bell and the toolbar menu answer to 44 px in both renderings of `cleansia-button`. Findings
+  reported, not absorbed, on the plate: the customer guards still `router.navigate`, the promo
+  feature's string routes, the sidebar component-style budget warning, the customer navbar's literal
+  `aria-label`.

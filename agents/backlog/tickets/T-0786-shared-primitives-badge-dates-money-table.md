@@ -1,11 +1,11 @@
 ---
 id: T-0786
 title: Shared primitives — `cleansia-status-badge`, `formatDate`, every money figure through `formatMoney`, table alignment honoured, the paginator hidden on zero rows, one row-action style
-status: todo
+status: done
 size: M
 owner: —
 created: 2026-09-20
-updated: 2026-09-20
+updated: 2026-09-22
 depends_on: [T-0785]
 blocks: [T-0787, T-0788, T-0797]
 stories: []
@@ -129,3 +129,13 @@ Depends on T-0785 for the five tone tokens. **Regen:** none. Reference captures:
 
 - 2026-09-20 — filed 2026-09-20 from the UI-polish discovery; branch chore/ui-polish-and-dead-code.
   Phase 2, web-shared lane, second of the serial four.
+- 2026-09-22 — **done**; shipped 2026-09-21 as `44c34b61b` + the review fix `8c32baa9c` on
+  chore/ui-polish-and-dead-code (PR #260). `libs/shared/components/src/lib/cleansia-status-badge/`
+  (thirteen kinds → five tones, `enums.*` labels, an uncatalogued value renders neutral under its raw
+  name; the spec pins the numbers to the admin and partner generated clients),
+  `libs/shared/utils/src/date-formatters.utils.ts` `formatDate(value, lang, 'date' | 'dateTime' |
+  'utcDate')`, the money bypasses on `formatMoney(…, { fractionDigits: 2 })`, `TableColumn.numeric`
+  (right-aligned, tabular, nowrap), the paginator hidden on zero rows and *next* disabled on the last
+  page. Guards: admin + partner `theme/shared-primitives.spec.ts`, `cleansia-status-badge.component.spec.ts`.
+  **Not done, ruled in review:** the disputes **list** `Vratka` prints without a currency —
+  `DisputeListItem` carries none; a backend DTO change + regen, filed on the plate, not here.

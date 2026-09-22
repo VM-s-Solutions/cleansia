@@ -104,41 +104,65 @@ Standalone, **OnPush**, facade provided locally, table columns/actions built by 
 @Component({
   selector: 'cleansia-admin-company-info-list',
   standalone: true,
-  imports: [CommonModule, CleansiaButtonComponent, CleansiaTextInputComponent, TranslatePipe,
-            CleansiaTableComponent, CleansiaTitleComponent, CleansiaLoaderComponent,
-            CleansiaSectionComponent, ReactiveFormsModule, CleansiaPermissionDirective],
+  imports: [CleansiaButtonComponent, CleansiaTextInputComponent, TranslatePipe, CleansiaTableComponent,
+            CleansiaTitleComponent, CleansiaLoaderComponent, CleansiaSectionComponent,
+            CleansiaStatusBadgeComponent, CleansiaFilterDrawerComponent, CleansiaFilterChipsComponent,
+            ReactiveFormsModule, CleansiaPermissionDirective],
   templateUrl: './company-info-list.component.html',
-  providers: [CompanyInfoListFacade, ConfirmationService],
+  providers: [CompanyInfoListFacade],              // the facade only — no ConfirmationService (F4)
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class CompanyInfoListComponent {
+export class CompanyInfoListComponent implements OnInit {
   protected readonly facade = inject(CompanyInfoListFacade);
   protected readonly Policy = Policy;                       // for *cleansiaPermission
-  companyColumns!: TableColumn<CompanyInfoListItem>[];
-  companyActions!: TableAction<CompanyInfoListItem>[];
-  // builds columns/actions via getCompanyInfoTableDefinition({ onEdit, onDelete }, translate, statusTemplate)
+  private readonly statusTemplate = viewChild<TemplateRef<CompanyInfoListItem>>('statusTemplate');
+  protected readonly table = computed(() => {
+    this.facade.lang();                                     // re-derive the headers on a language change
+    return getCompanyInfoTableDefinition(
+      { onEdit: (row) => this.facade.navigateToEdit(row), onDelete: (row) => this.confirmDeleteCompanyInfo(row) },
+      this.translate, this.permissions, this.statusTemplate());
+  });
 }
 ```
 
-Template uses `cleansia-*` + `cleansia-table` (lazy/server paging) + `*cleansiaPermission` + `TranslatePipe`:
+Template: the page shell and header (§*"The back-office page shapes"* below), the filter drawer in
+the header's action row before the create button, the chip row under the header, then one
+`cleansia-section` holding `cleansia-table` (lazy/server paging), `*cleansiaPermission` and
+`TranslatePipe` throughout:
 
 ```html
-<cleansia-title [title]="'pages.company_management.title' | translate" />
-<cleansia-button *cleansiaPermission="Policy.CanCreateCompanyInfo"
-  [label]="'pages.company_management.create_company' | translate" icon="pi pi-plus" (onClick)="create()" />
-
-@if (facade.initialLoading()) { <cleansia-loader /> } @else {
-  <cleansia-table
-    [data]="facade.companyInfos()" [columns]="companyColumns" [actions]="companyActions"
-    [config]="{ paginator: true, rows: 20, lazy: true, totalRecords: facade.totalRecords(), emptyMessage: 'pages.company_management.no_companies' }"
-    [loading]="facade.loading()" (pageChange)="onPageChange($event)" (sortChange)="onSortChange($event)" />
-}
+<div class="cleansia-company-management cleansia-page">
+  <div class="cleansia-company-management__container page-wrapper">
+    <div class="cleansia-page-header">
+      <div class="cleansia-page-header__heading">
+        <cleansia-title [title]="'pages.company_management.title' | translate" [level]="1" />
+        <p class="cleansia-page-header__description">{{ 'pages.company_management.description' | translate }}</p>
+      </div>
+      <div class="cleansia-page-header__actions">
+        <cleansia-filter-drawer [state]="facade.filters">
+          <form [formGroup]="facade.filterForm" class="filter-form">…</form>
+        </cleansia-filter-drawer>
+        <cleansia-button *cleansiaPermission="Policy.CanCreateCompanyInfo"
+          [label]="'pages.company_management.create_company' | translate" icon="pi pi-plus"
+          (onClick)="facade.navigateToCreate()" />
+      </div>
+    </div>
+    <cleansia-filter-chips [state]="facade.filters" />
+    <cleansia-section>
+      @if (facade.initialLoading()) { <cleansia-loader /> } @else {
+        <cleansia-table [data]="facade.companyInfos()" [columns]="table().columns" [actions]="table().actions"
+          [config]="{ paginator: true, rows: 20, lazy: true, totalRecords: facade.totalRecords(), emptyMessage: 'pages.company_management.no_companies' }"
+          [loading]="facade.loading()" (pageChange)="facade.onPageChange($event)" (sortChange)="facade.onSortChange($event)" />
+      }
+    </cleansia-section>
+  </div>
+</div>
+<ng-template #statusTemplate let-item><cleansia-status-badge kind="active" [value]="item.isActive" /></ng-template>
 ```
 
-Filter-drawer backdrops must be the lint-clean a11y variant (from `partner-features/orders`):
-`role="button" tabindex="0" (click)="closeFilterDrawer()" (keydown.escape)="closeFilterDrawer()"
-[attr.aria-label]="'global.close' | translate"` — a bare `(click)` div fails
-`click-events-have-key-events` / `interactive-supports-focus`. Lib eslint configs use selector
+The drawer's backdrop, dialog semantics (`role="dialog" aria-modal="true"`), focus management and
+the Escape handling live inside `cleansia-filter-drawer` — a list never draws its own drawer, and a
+bare `(click)` div would fail `click-events-have-key-events` / `interactive-supports-focus`. Lib eslint configs use selector
 prefix `cleansia` (not `lib`) to match the `cleansia-*` component selectors above — and the Nx
 generator default (`nx.json` `generators` → `@nx/angular:library`/`@nx/angular:component`
 `prefix: 'cleansia'`) is set so a freshly scaffolded lib/component is born compliant. Every component
@@ -199,6 +223,143 @@ form (digits-only account fields, uppercase IBAN/SWIFT). Two things to know befo
   `writeValue` therefore pushes the value onto the native input when they differ, the way
   `DefaultValueAccessor` does; pinned by `cleansia-text-input.component.spec.ts`. Don't reintroduce a
   binding-only write, and remember the trap if you add the same normalization to another CVA.
+
+## The back-office page shapes — list, detail, form, dialog (admin and partner web, T-0785–T-0798)
+
+The admin and partner web share **one shell, one header, four page shapes and one set of
+primitives**, all declared once under `libs/shared/assets/src/styles/` and guarded by the jest
+specs under `apps/<app>/src/app/theme/`. A page that re-declares any of them is the drift the
+specs pin; a new page copies the nearest one of the same shape. Everything below is read from the
+tree on 2026-09-22; the customer app is outside it (its own shell, its own passes).
+
+### The shell and the header — every page
+
+- **`.cleansia-page`** on the page's root element is the outer gutter; **`.page-wrapper`** is the one
+  card (white, `--cleansia-radius-md`, `--cleansia-shadow-1`, `max-width: 1400px`); **`.page-wrapper--narrow`**
+  (1200) on a detail or form page. Width comes from the modifier, never from a page stylesheet
+  (`common/page-wrapper.scss`).
+- **`.cleansia-page-header`** → `__heading` (the `cleansia-title` with `[level]="1"` and a one-line
+  `__description`, `max-width: 60ch`) and `__actions` (secondary before primary, so the primary is the
+  rightmost control) — `common/page-header.scss`. No centred title anywhere.
+- **`cleansia-button` sizes to its label.** The host is `inline-block`; `[block]` (`.cleansia-button--block`)
+  is the only way to a full-width button, for the auth screens and phone footers that want one
+  (`components/cleansia-button.component.scss`).
+- **`cleansia-section`** draws a header row — `h2.cleansia-section__title` in `--cleansia-primary-700`
+  over a 2 px rule — and projects **`[section-actions]`** into it, so a section's *Edit* sits on the
+  title row, not floating under the rule (`cleansia-section.component.html`).
+- **Tokens:** every colour, radius and shadow a stylesheet reads is declared in `common/variables.scss`
+  (the error / success / warning ramps, `--cleansia-text-muted`, `--cleansia-border`,
+  `--cleansia-radius-{sm,md,lg,xl}` = 6/12/16/24, `--cleansia-shadow-{1,2}`, `--cleansia-primary-25`);
+  `common/z-index.scss` is the one scale (a toast renders above an open drawer); `%focus-ring`
+  (`common/focus.scss`) replaces every `outline: none`; the `touch-target` mixin
+  (`common/touch-target.scss`) gives an icon-only button its 44 px hit box.
+
+### List page
+
+Header → `cleansia-filter-drawer` in the header's action row **before** the create button →
+`cleansia-filter-chips` under the header → optional info banner → optional tab strip
+(`pages/cleansia-admin/tab-strip.scss` draws the icon-to-label gap PrimeNG declares but never
+applies) → `cleansia-section` holding `cleansia-table` → the paginator. The sample above is the
+shape. Rules:
+
+- `rows: 20`; a count, an amount or a date column carries **`numeric: true`** (`TableColumn.numeric`)
+  and is right-aligned in tabular figures on a list and in a detail's section table alike; badges and
+  actions centred; the paginator is hidden on zero rows and *next* stays disabled on the last page.
+- A lone select above a list table is a filter, not a form row: `.cleansia-list-filter`
+  (`pages/cleansia-admin/list-filter.scss`) bounds it to a field's width.
+- A status renders through **`cleansia-status-badge`** (below); the table's own `emptyMessage` is
+  its empty state.
+- The filter drawer's state is the **facade's**: `readonly filters = new FilterDrawerState({ form,
+  chips, apply, lang })` and `this.filters.connect(this.destroyed$)` in the constructor; the helper
+  owns open / close / reset / chip removal and the 500 ms debounced apply, so no component or facade
+  re-declares them (`libs/shared/components/src/lib/cleansia-filter-drawer/filter-drawer-state.ts`).
+  The component carries the dialog semantics, moves focus after render, keeps Tab inside and leaves a
+  consumed Escape alone.
+
+### Detail page
+
+The header row with the **back control beside the `h1`** (`.cleansia-detail-title`) and the audit
+link and other secondaries on the right → **`.detail-identity`** (one tinted strip: name, badges,
+meta) → `cleansia-section`s with their edit action in `[section-actions]` → **`.detail-grid`**
+(`common/detail-grid.scss`: four columns at ≥ 1200, two, then one; `__item`, `__item--wide` spans
+two, `__label` sentence case with **no trailing colon**, `__value`) → **`.detail-actions`**: one
+wrapped row of content-sized buttons, at most one filled primary, danger as a red outline, **no
+`success` / `warn` / `info` fills**; an action that needs input opens `.detail-actions__panel` on a
+full-width line under the row. Money that adds up is a **`.detail-ledger`** (`__row`, `__row--total`,
+`__value`). All in `pages/cleansia-admin/_detail-page.scss`.
+
+**Q-UI-08 as it shipped (default in force since 2026-09-20, unruled): there is no `cleansia-breadcrumb`.**
+The admin keeps the back control on the title row (the partial's own header says so); the partner's
+two details (`orders/order-details`, `invoices/invoice-detail`) keep their hand-rolled breadcrumb
+bar, drawn once as the `%breadcrumb*` placeholders in `pages/cleansia-partner/_breadcrumb.scss`.
+Promoting either to a shared component is a ticket, not a drive-by.
+
+### Form page
+
+Header (back control beside the `h1`, no actions on the right) → sections → rows on the one
+**twelve-column `.form-grid`** (`pages/cleansia-admin/_form-page.scss`, also `@use`d by the partner
+index): a `.form-field` spans 6, `--third` 4, `--quarter` 3, `--full` the row; **never a pixel
+column**. A hint or a cross-field message is a `.form-hint` / `.form-error` on its own full-width
+line **under the row**, not under one field; a `cleansia-checkbox` sits on the row's field baseline;
+the footer is `.form-actions` — the outlined cancel **before** the primary, both content-sized. Every
+field is 44 px (`cleansia-select` and `cleansia-calendar` took the text input's height in T-0785;
+`cleansia-multiselect` and `cleansia-telephone` are patched to it inside `.form-grid` only — see the
+findings on the owner plate). `cleansia-multiselect` is adopted (the package form's included
+services). A required select shows no clear control — a required field cannot use one — and an
+optional select that may be empty starts at `null`, so PrimeNG draws no clear icon over an empty
+field (`0e9174356`, `af980e57a`, `d741296ca`).
+
+### Dialog
+
+Opened through PrimeNG's `DialogService.open(Component, { styleClass: 'cleansia-dialog dialog-panel', header, modal: true, … })`
+— the shared `cleansia-dialog` skin on one of three named panel widths (`.dialog-panel` 480,
+`--wide` 560, `--reading` 720; `pages/cleansia-admin/_dialog.scss`). The body reads `.dialog-body` →
+`.dialog-lede` → fields on `.form-grid` with hints under their row → `.dialog-summary` (what the act
+will do, or what a preview found) → **`.dialog-actions`**: the outlined cancel, then **one** primary,
+`severity="danger" [outlined]="true"` **only when the act is destructive** — wind-down,
+expire-credit and reject are the three admin templates the guard names (owner may overrule; the
+review ruling of 2026-09-22 is on T-0790). No dialog draws its own header, title or footer.
+Confirmations are the shared **`DialogService`** in `@cleansia/services` (`confirmTranslated(messageKey,
+headerKey?, params?, { danger })`, `confirmDelete(itemName?)`) over the **one**
+`<p-confirmDialog styleClass="cleansia-dialog" />` each app shell mounts; no feature provides
+`ConfirmationService` or calls `.confirm(` itself. PrimeNG's own words (Yes / No / month names / *No
+results found*) come from the bundle's `primeng.*` block through `providePrimeNgTranslation()` in each
+`app.config.ts`, re-applied on `onLangChange`.
+
+### Feedback — one of each
+
+- **Toast:** `snackbarService.showSuccessTranslated(key, params?)`; the error toast is the
+  interceptor's (`api.*`), never a second one from `catchError`.
+- **Loading:** `<cleansia-loader />` **in place** (`@if (facade.initialLoading()) { … } @else { … }`);
+  its stylesheet is no longer a fixed overlay and there is no skeleton component.
+- **Empty:** `.empty-state` (`common/empty-state.scss`) inside a section; `.not-found-state`
+  (`common/not-found-state.scss`) for a whole page whose entity is missing (`@else` on the detail's
+  load branch); a table draws its own `emptyMessage`.
+- **Cancel** is `global.actions.cancel`; the `common.*` namespace does not exist in the admin or
+  partner bundles.
+
+### The primitives every page reads
+
+| Primitive | Where | Use |
+|---|---|---|
+| `<cleansia-status-badge kind="order" [value]="row.orderStatus" />` | `libs/shared/components/src/lib/cleansia-status-badge/` | Thirteen kinds (`order`, `payment`, `contract`, `invoice`, `invoicePdf`, `dispute`, `payPeriod`, `company`, `settlement`, `referral`, `document`, `active`, `promo`) → five tones (`neutral` / `info` / `success` / `warning` / `danger`) and an `enums.*` label; `value` may be the enum number, its name, a boolean or the `{ value, name }` code pair. An uncatalogued value still renders — neutral, under its raw name — so a new enum member is visible before it is catalogued. The class is `.status-badge.status-badge--<tone>` (`common/status-badge.scss`: sentence case, radius 16, min-width 80, no hover). `cleansia-status-badge.component.spec.ts` reads the admin and partner generated clients off disk and pins every catalogued number to the enum they emit. |
+| `formatDate(value, lang, 'date' \| 'dateTime' \| 'utcDate')` | `libs/shared/utils/src/date-formatters.utils.ts` | `21. 9. 2026` / `21. 9. 2026 11:00` in the session's language via `localeFor(lang)`; seconds never print; `utcDate` for a calendar day the wire carries as midnight UTC. No `toLocaleDateString('en-GB')`, no `'dd.MM.yyyy'`. |
+| `formatMoney(value, currencyCode, localeFor(lang), { fractionDigits: 2 })` | `libs/shared/utils/src/money-formatters.utils.ts` | `1 250,00 Kč` in a table column (the `fractionDigits` pin lines the decimals up); without the option a whole amount prints whole. Never `toFixed(2)`, never the `currency` pipe, never `'en-GB'`. |
+| `cleansia-section` + `[section-actions]` | `libs/shared/components/src/lib/cleansia-section/` | The section title row with its own actions. |
+| `cleansia-filter-drawer` / `cleansia-filter-chips` / `FilterDrawerState` | `libs/shared/components/src/lib/cleansia-filter-drawer/` | The list filter (above). |
+| `cleansia-mobile-toolbar (menuOpen)` | `libs/shared/components/src/lib/cleansia-mobile-toolbar/` | The phone bar both shells render instead of the rail: menu button (translated `aria-label`), `cleansia-brand-name`, the language switcher; an app's own controls (the admin bell) are projected in front of the switcher. |
+| `cleansia-button [block]` | `libs/shared/components/src/lib/cleansia-button/` | The one full-width variant. `(clickFn)` and `[title]` are the legacy bindings — bind `(onClick)` and `[label]`. |
+
+**Enforced by:** the jest theme specs — `apps/cleansia-admin.app/src/app/theme/{page-shell,list-pages,detail-pages,form-pages,dialogs,filter-drawer,feedback-idioms,shared-primitives}.spec.ts`
+and `apps/cleansia-partner.app/src/app/theme/{page-shell,list-pages,dialogs,filter-drawer,shared-primitives}.spec.ts`
+(plus `font-stack.spec.ts` in each) — **T1-CI**, `frontend-ci.yml`'s *"Unit tests (affected)"*
+step. Each spec reads the templates, models and stylesheets off disk and fails on the drift it names
+(a card width in a page stylesheet, a `toFixed(2)`, a `<p-confirmDialog` in a feature, a filled
+`success` on a detail action, a form column in pixels). The line-scannable complement is
+`agents/tools/check-consistency.mjs` **F1–F15** (`consistency.md` §F) — **T2-ADVISORY** as a whole,
+because no workflow runs the checker; within it F2, F3, F4, F5, F7, F9, F13, F14, F15 and F11's
+parity half are hard gates (`add`) on the Reviewer's run, F1, F6, F8, F10, F12 and F11's namespace
+half are `warn` with the measured count printed per run.
 
 ## Routing
 
@@ -512,13 +673,21 @@ reuse the interceptor `api.*` path instead (EP-3 root cause was the proliferatio
    alphanumeric key and looks it up via `DEFAULT_SNACKBAR_ERROR_MAPPINGS`; when no mapping matches it
    tries the raw code **as a translation key** (root-level blocks like `membership.*`/`gdpr.*` mirror
    the code).
-2. A few features keep an explicit `XXX_ERROR_KEY_MAP` + `resolveXxxErrorKey(error)` in their
-   `*.models.ts` (see `membership-plan-list.models.ts`, `referrals-list.models.ts`, disputes upload).
-   Such a resolver must **delegate the code extraction** to the single shared
-   `extractApiErrorCode(error): string | undefined` from `@cleansia/services` (the `result.detail ||
-   result.title` → `JSON.parse(response)` walk, typed with the one shared `ApiErrorResult`) and keep
-   only its own `code → key` map + fallback — never re-implement the extraction inline. The same helper
-   backs `SnackbarService.extractApiErrorMessage`.
+2. **The per-feature `XXX_ERROR_KEY_MAP` + `resolveXxxErrorKey(error)` pairs are gone from the admin
+   and partner features (T-0796, `b3c8b4f19`)** — every one of them mapped to an `api.*` key the
+   interceptor already resolved, so each failure toasted twice. A message rendered **in place** rather
+   than toasted (an ops panel's inline error) reads the shared `resolveApiErrorKey(translate, error)`
+   from `@cleansia/services` (`services/api-error.ts`), which resolves `api.<code>` and falls back to
+   `GENERIC_API_ERROR_KEY` so a machine key never reaches the screen; the code extraction underneath
+   is the one shared `extractApiErrorCode(error)` walk (the `result.detail || result.title` →
+   `JSON.parse(response)` walk, typed with the one shared `ApiErrorResult`), which also backs
+   `SnackbarService.extractApiErrorMessage`. The customer disputes feature still carries a local map
+   (`DISPUTE_UPLOAD_ERROR_KEY_MAP`,
+   `libs/cleansia-customer-features/disputes/src/lib/disputes/disputes.models.ts:162`) — outside the
+   F15 gate, which stops at the admin and partner surface. **Enforced by:** `apps/cleansia-admin.app/src/app/theme/feedback-idioms.spec.ts`
+   *"toasts"* (no `_ERROR_KEY_MAP`, no `resolve…ErrorKey(` other than `resolveApiErrorKey`, no
+   `showSuccess(this.translate.instant(`) — **T1-CI**; `check-consistency.mjs` **F15** — **T2-ADVISORY**
+   (no workflow runs the checker).
 
 ## A server-authored disclosure block is rendered off its own ARRIVAL — the facade composes nothing (ADR-0049)
 

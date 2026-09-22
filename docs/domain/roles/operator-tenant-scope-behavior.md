@@ -25,8 +25,8 @@ is not a market and `tenant.not_found` when it is one nobody operates.
 - The `IOperatorScopedRequest` marker — the request says *which market*; it never says which tenant.
 
 ## Does NOT know
-- **What the request writes or reads.** It sets the ambient tenant and leaves; `Register`'s `User` and
-  `Cart`, `CreateOrder`'s `Order` and children, `ValidateReferral`'s filtered read all follow from that
+- **What the request writes or reads.** It sets the ambient tenant and leaves; `Register`'s `User`,
+  `CreateOrder`'s `Order` and children, `ValidateReferral`'s filtered read all follow from that
   one call.
 - **The address resolver.** `CreateOrder` exposes its country through the marker; a guest whose request
   named no country lands the default operator, and `CreateOrder.Validator`'s unconditional

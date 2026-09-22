@@ -134,7 +134,8 @@ page used to ride `CanViewCountryConfigurations`) and `CanSetAdminRole`.
   company — a Support of a two-market company sees both.
 - **The partner or customer hosts.** The `admin_role` claim rides an administrator's partner-audience token
   and is read by nothing there; an administrator of any role passes every partner-host policy an
-  administrator passed before, including `CanCalculateOrderPay` (`AdminOnly`, partner host only).
+  administrator passed before. (`CanCalculateOrderPay`, the `AdminOnly` row routed on the partner
+  host alone, went with its uncalled action on 2026-09-21.)
 - **A fifth role.** One enum value, one set, one column of the matrix, one frontend case — and a ruling.
 - **Invitations or self-service.** Administrators are created as before (`CreateAdminUser`, the seed, the
   hand tool); the role is assigned by an Administrator.

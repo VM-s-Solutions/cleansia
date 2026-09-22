@@ -1,11 +1,11 @@
 ---
 id: T-0788
 title: Admin detail pages — the 11 details on one pattern (breadcrumb above the title, audit link on the title row's right, `[section-actions]`, `.detail-grid`, one outlined `Akce` row, no green/orange/blue fills), plus the page-local defects the captures show
-status: todo
+status: done
 size: L
 owner: —
 created: 2026-09-20
-updated: 2026-09-20
+updated: 2026-09-22
 depends_on: [T-0785, T-0786, T-0791, T-0796, T-0797]
 blocks: []
 stories: []
@@ -109,3 +109,18 @@ title row instead). **Regen:** none. **Guard:** the F6 / F7-shaped rules in T-07
 
 - 2026-09-20 — filed 2026-09-20 from the UI-polish discovery; branch chore/ui-polish-and-dead-code.
   Phase 3, admin web lane, second of four. Q-UI-08 default (breadcrumb) in force.
+- 2026-09-22 — **done**; shipped as `9010033e3` + the fixes `d87842299`, `d56e48364`, `d7f33ca2c` on
+  chore/ui-polish-and-dead-code (PR #260). The eleven details on the one shape:
+  `pages/cleansia-admin/_detail-page.scss` (`.cleansia-detail-title` — the back control **beside**
+  the `h1` with the audit link on the right, `.detail-identity`, `.detail-actions` + `__panel`,
+  `.detail-ledger`), sections with their edit action in `[section-actions]`, `.detail-grid` with no
+  trailing colon, one row of content-sized actions per entity, the inline `style=""` gone, the
+  customer credit ledger and employee rates through `formatMoney`, the promo detail on the identity
+  strip. Guard: admin `theme/detail-pages.spec.ts`. **Q-UI-08 as shipped: no breadcrumb** — T-0797
+  built no `cleansia-breadcrumb` (shared tree frozen), so the title row carries the back control; the
+  partial's own header records it. Findings reported, not absorbed, on the plate: every
+  `cleansia-button` autofocuses (`[pAutoFocus]` undefined → PrimeNG sets the attribute; one line in
+  the shared template), `.detail-ledger` duplicating the partner's `.amount-breakdown`, no `@else`
+  on the promo, customer and email-type details, `entityType === 2` twice in `employee-detail`, the
+  unused `pay_periods.detail.*` keys, the order detail's raw `Paid` / `New` cells, the pastel
+  disabled primaries, the audit-entry identity on a bare grid.

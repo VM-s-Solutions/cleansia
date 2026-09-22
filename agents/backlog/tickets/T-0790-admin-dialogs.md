@@ -1,11 +1,11 @@
 ---
 id: T-0790
 title: Admin dialogs — the 12 `p-dialog` templates on one footer shape, the two confirmations that cannot open fixed, translated accept / reject labels on the 11 bare `.confirm({...})` sites; the "Create pay period" stub's layout only (Q-UI-04)
-status: todo
+status: done
 size: S
 owner: —
 created: 2026-09-20
-updated: 2026-09-20
+updated: 2026-09-22
 depends_on: [T-0785, T-0796]
 blocks: []
 stories: []
@@ -91,3 +91,20 @@ outside `dialog.service.ts`).
 
 - 2026-09-20 — filed 2026-09-20 from the UI-polish discovery; branch chore/ui-polish-and-dead-code.
   Phase 3, admin web lane, last of four. Q-UI-04 default (leave the stub) in force.
+- 2026-09-22 — **done**; shipped as `038bc8d6a` + the fixes `d741296ca`, `7e5802ed5` on
+  chore/ui-polish-and-dead-code (PR #260). The fifteen admin dialogs on the one shape:
+  `pages/cleansia-admin/_dialog.scss` (the `cleansia-dialog` skin on `.dialog-panel` 480 / `--wide`
+  560 / `--reading` 720, `.dialog-body` → `.dialog-lede` → fields on `.form-grid` → `.dialog-summary`,
+  `.dialog-actions` with the outlined cancel before one primary, red-outlined only for a destructive
+  act); the shared reject dialog names the act on its primary (`RejectDialogData.submitLabel`); the
+  expire-credit lede prints the balance through `formatMoney`; the required selects without a clear
+  control. **Review ruling 2026-09-22:** the wind-down dialog is a destructive act (its lede says the
+  date is set once; its consequence list cancels every open order) and takes the red outline like
+  expire-credit and reject; `theme/dialogs.spec.ts` names the three templates so the shape cannot
+  drift back — the owner may overrule. The *Create pay period* stub keeps its `console.warn` (Q-UI-04).
+  **Found, not fixed (shared tree frozen), on the plate:** `components/cleansia-dialog.component.scss`
+  reads PrimeNG v17 tokens (`--surface-border`, `--surface-card`, `--text-color`, …) that only the
+  customer `styles.scss` defines, so the skin's header, footer and title colour never render in the
+  admin or partner app; `components/reject-dialog.component.scss` has no reader but is still `@use`d;
+  the pay-period create and wind-down dialogs auto-open their first date picker
+  (`cleansia-calendar` has no `showOnFocus` input); two bespoke validation copies were dropped.

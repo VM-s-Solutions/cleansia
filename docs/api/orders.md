@@ -445,11 +445,13 @@ A wizard that learned the country at the address step, after the customer picked
 catalogue, re-reads the overview with the country and prunes any selection that is no longer offered;
 otherwise the next quote refuses the selection as `order.selected_services.invalid`.
 
-The Partner host's `Service/GetOverview` and `Package/GetOverview` take no `countryId` and answer in
-the platform default. A customer surface that has no country yet learns its market — country, currency
-and `isDefault` in one row — from `GET /api/Market/GetOverview` (anonymous, Customer + Customer
-Mobile); `GET /api/Currency/GetOverview` still lists the currencies with `isDefault` for admin-style
-readers. → [Markets and memberships](/api/markets-and-memberships)
+The partner hosts carry **no** catalogue overview: the Partner host's `Service/GetOverview`,
+`Package/GetOverview` and `Currency/GetOverview` — which took no `countryId` and answered in the
+platform default — were removed on 2026-09-21 with no client calling them; a cleaner's board and
+detail carry the prices on the order rows. A customer surface that has no country yet learns its
+market — country, currency and `isDefault` in one row — from `GET /api/Market/GetOverview`
+(anonymous, Customer + Customer Mobile); `GET /api/Currency/GetOverview` (anonymous, the same two
+hosts) still lists the currencies with `isDefault`. → [Markets and memberships](/api/markets-and-memberships)
 
 ---
 

@@ -55,6 +55,16 @@ From `customer-app/ui/theme/Color.kt` and `CleansiaColors.swift`.
 > repeated mistake. Near-black `Slate900` headings are what a generic template does; the app has a
 > brand heading colour and the web must use it.
 
+> **The web's neutral tokens are Tailwind gray, not the slate above — default in force since
+> 2026-09-20 (Q-UI-07), unruled.** `libs/shared/assets/src/styles/common/variables.scss` declares
+> `--cleansia-text-primary: #111827`, `--cleansia-text-secondary: #6b7280` and `--cleansia-red: #f44336`
+> (Material), where this table says `#334155`, `#64748B` and `#B91C1C`. The UI-polish batch (T-0785)
+> defined only the tokens that were read and undeclared (`--cleansia-text-muted: #64748b`,
+> `--cleansia-border: #e2e8f0`, the error/success/warning ramps, `--cleansia-radius-{sm,md,lg,xl}` =
+> 6/12/16/24, `--cleansia-shadow-{1,2}`); it did not re-colour the neutrals, because one edit there
+> cascades into all three web apps including the customer app. The swap is a one-line follow-up whenever
+> the owner says; until then a web stylesheet reads the tokens, never the hex, so the swap stays one line.
+
 ### 2.2 Gradients — categorical, never decorative
 
 `BrandGradients.kt` defines four pairs. They identify a **category of card**; they are never a hero
@@ -87,6 +97,18 @@ Web may exceed `displayLarge` for a marketing hero — the one sanctioned diverg
 line-height **1.1–1.3**, body **1.6–1.8**; those must differ (§3.2). Large headings carry deliberate
 negative tracking, never the browser default.
 
+> **The back-office web is Nunito-only — default in force since 2026-09-20 (Q-UI-06), unruled.** The
+> admin and partner apps request Nunito alone (`apps/cleansia-admin.app/src/index.html`,
+> `apps/cleansia-partner.app/src/index.html`); only the customer app's `index.html` loads Poppins.
+> `%cleansia-title` sets no `font-family`, so every back-office heading, section title and dialog title
+> is Nunito 600. `common/typography.scss` still declares `$font-heading: 'Poppins', 'Nunito', sans-serif`
+> and four shared partials read it (`cleansia-dialog`, `cleansia-filter-drawer`,
+> `cleansia-work-contract-dialog`; `cleansia-outcome` names the stack inline) — in the customer bundle
+> that resolves to Poppins, in the two back-office bundles to the Nunito fallback, which is the intended
+> reading of this rule, not a defect. The table above describes the apps and the customer web. Loading
+> Poppins in the back office is two lines (the `<link>` in each `index.html` plus `$font-heading` on
+> `%cleansia-title`) and changes every heading's face; it is a ticket, not a drive-by.
+
 ### 2.4 Shape and elevation
 
 `Shapes`: `6 · 12 · 16 · 24 · 32`. Default card **16**, sheets and hero cards **32**.
@@ -100,6 +122,14 @@ defect. Ceiling for a resting button: `0 2px 6px rgba(15,23,42,.12)`.
 
 8-pt grid with 4-pt extensions: `2 · 4 · 8 · 12 · 16 · 20 · 24 · 32 · 40`.
 **Vary it.** Identical padding on every block is a tell (§3.3).
+
+> **The web has no spacing tokens — default in force since 2026-09-20 (Q-UI-10), unruled.** No
+> `--cleansia-space-*` custom property is declared anywhere under `libs/shared/assets/src/styles/`;
+> the shared shell, header, grid and form partials space in `rem` over `$base-font-size: 14px`
+> (`common/font.scss`), so a `1rem` gap is 14 px and misses the grid above. The UI-polish batch was an
+> alignment pass, not a rhythm pass: it made every page share one shell, header, grid and footer, and
+> left the scale as it was. Defining the tokens and sweeping is its own ticket; do not start it inside
+> another one.
 
 ### 2.6 Shared components
 
@@ -276,8 +306,10 @@ Ratings become legitimate when `OrderReview` has rows and the page renders the a
 **Parity**
 - [ ] Headings are `Sky700 #0369A1` — not black, not slate
 - [ ] Primary action is `Sky600`, buttons are pills at 40/48/56
-- [ ] Poppins headings + Nunito body, Cyrillic fallback intact
-- [ ] Radius from `6/12/16/24/32`; spacing from the 8-pt scale
+- [ ] Poppins headings + Nunito body, Cyrillic fallback intact (customer web and the apps; the
+      back-office web is Nunito-only — §2.3, default in force since 2026-09-20)
+- [ ] Radius from `6/12/16/24/32`; spacing from the 8-pt scale (on the web the radius is a
+      `--cleansia-radius-*` token; there is no spacing token — §2.5)
 - [ ] Gradients used categorically, never as a hero wash
 
 **Anti-generic**

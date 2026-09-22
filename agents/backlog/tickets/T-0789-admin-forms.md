@@ -1,11 +1,11 @@
 ---
 id: T-0789
 title: Admin create / edit forms — the 14 forms on the pay-config shape (12-column `form-grid` in `common/`, spans not pixels, 44 px fields, row hints, a right-aligned `Zrušit` + primary footer), `cleansia-multiselect` adopted, the last five `*ngIf` gone
-status: todo
+status: done
 size: M
 owner: —
 created: 2026-09-20
-updated: 2026-09-20
+updated: 2026-09-22
 depends_on: [T-0785]
 blocks: []
 stories: []
@@ -96,3 +96,20 @@ membership-plan and promo-code forms have no stylesheet today and need none afte
 
 - 2026-09-20 — filed 2026-09-20 from the UI-polish discovery; branch chore/ui-polish-and-dead-code.
   Phase 3, admin web lane, third of four.
+- 2026-09-22 — **done**; shipped as `cab1cf559` + the fixes `9092bc1c3`, `0a3994159`, `0e9174356`,
+  `af980e57a` on chore/ui-polish-and-dead-code (PR #260). The thirteen admin create / edit forms on
+  the one shape (legal documents, listed in the filing, has no form): `pages/cleansia-admin/_form-page.scss`
+  — the twelve-column `.form-grid` (spans, never a pixel column), `.form-hint` / `.form-error` under
+  the row, checkboxes on the field baseline, `.form-actions` with cancel before the primary — **in
+  the admin pages folder rather than `common/`** (the shared tree was frozen; the partner index reads
+  it from there); the select and multiselect label resting on the border **in the admin app only**;
+  sections titled by content; the required selects without a clear control; the promo fixed discount
+  as money; `cleansia-multiselect` adopted on the package form. Guard: admin `theme/form-pages.spec.ts`.
+  **Found, not fixed (shared tree frozen):** `CleansiaBaseFormInputComponent` is OnPush and never
+  subscribes to its control's events, so `markAllAsTouched()` from a page re-renders nothing and an
+  empty submit prints no *required* message on any admin form (and the partner and customer ones) —
+  `libs/shared/components/src/lib/cleansia-base-form/cleansia-base-form-input.component.ts`, ~3 lines
+  in `ngOnInit`; on the plate with the multiselect stylesheet gap, the 35 px telephone box, the
+  partner's missing `validation.common.min` / `max`, the dead promo validation keys and the package
+  derived gross without a currency. The `document-requirements` and `deletion-requests` captures were
+  re-baselined by the grid (their filter selects are now bounded by T-0787's `list-filter.scss`).

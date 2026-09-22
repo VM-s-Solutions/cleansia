@@ -22,8 +22,10 @@ public class CountryController(IMediator mediator) : CustomerApiController(media
     }
 
     /// <summary>
-    /// Countries the company actually operates in. Customer pickers MUST use
-    /// this — GetOverview is only for legacy/admin paths.
+    /// Countries the company actually operates in — what the customer apps' address
+    /// and service-area pickers read. GetOverview above is the full registry; no
+    /// customer surface reads it (the partner hosts serve their own copy to the
+    /// partner profile pickers).
     /// </summary>
     [AllowAnonymous]
     [HttpGet("GetServiced")]

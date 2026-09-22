@@ -44,50 +44,15 @@ names the `Q-` id.** A question with no blocked row behind it is a question nobo
 > None blocks anything.
 
 > **Q-UI-01 … 13 were raised by the UI-polish and dead-code discovery (2026-09-20, T-0785 … T-0799
-> on `chore/ui-polish-and-dead-code`).** Each is what the code could not decide; each ships as its
-> default unless overruled before its ticket starts. **The owner's *go* of 2026-09-20 accepted the
+> on `chore/ui-polish-and-dead-code`, PR #260 — shipped in full by 2026-09-22).** Each is what the
+> code could not decide; each shipped as its default. **The owner's *go* of 2026-09-20 accepted the
 > list as put:** Q-UI-01 (drop the two wire members) and Q-UI-02 (**fold** the four dead schema
-> things into T-0791's regen — the orchestrator's recommendation, not the analyst's *park*) are
-> **ruled** and carried by T-0791; they are listed here only until T-0791 ships, then deleted per the
-> rule above (the ticket is the record). The other eleven stand as defaults in force — every one is
-> a *keep* / *leave* / *amend the doc* that costs nothing to overrule later. None blocks anything.
-
-## Q-UI-01 — The two availability wire members: drop now or after one mobile release?
-
-**Raised by:** the dead-code scout (DC §1.4), 2026-09-20. **Who answers:** the owner.
-**Why it needs you:** `EmployeeItem.Availability` (partner `GetCurrentEmployee`) and
-`RegistrationCompletionStatus.HasSetAvailability` are on the wire to the partner web and both
-mobile apps; no client *reads* either (the web `registration-completion.service.ts` gates on a value
-the server hard-codes `true`; Android and iOS have only wire tests). Dropping them changes the DTO
-the generated mobile models expect; with optional decoding an absent member is fine on both
-platforms, but it costs two Swift test lines in the batch's one Mac session. Options: (a) drop now —
-one clean removal, batched; (b) keep both hard-coded for one release train, then a second ticket.
-**Default: (a)** — production does not exist (CLAUDE.md), so there is no installed base to stage
-for, and (b) leaves a lie on the wire.
-**Ruled 2026-09-20 (*go*): (a).** Carried by T-0791.
-**Blocks:** nothing.
-
-## Q-UI-02 — Four schema-level dead things: fold into T-0791's `Initial` regen or park?
-
-**Raised by:** the dead-code scout (DC §2.7), 2026-09-20. **Who answers:** the owner.
-**Why it needs you:** (1) `Cart` + `CartServiceItems` + `CartPackageItems` — written once per
-registration (`Register.cs:125`, `RegisterEmployee.cs:94`, `GoogleAuth.cs:200`, `AppleAuth.cs:229`),
-erased by GDPR (`GdprDeletionService.cs:141,435-436`), **read by no feature**; the wizard builds
-orders directly; `docs/domain/model.md:102-104,162-164` still draws it. (2) `EmailTranslations` table
-+ aggregate + seed (`insert_seed_data.sql:458`, `seed/insert_email_translations.sql:57`) — the
-renderer reads `EmailTemplateTranslations`; the sole touch is the language delete-guard
-`LanguageRepository.cs:32`. (3) `Employee.PreferredCurrencyCode` — the only writer is the
-never-called `UpdatePreferredCurrency`; the only reader is the GDPR export (`GdprExportService.cs:48`);
-`PayPeriodBackgroundService.cs:398` and `GenerateInvoice.cs:95` document that the currency stopped
-coming from it. (4) `MembershipPlan.TrialPeriodDays` — T-0690 made it unsettable; the column and the
-DTO member remain on four admin DTOs and the customer plan DTOs. Options: (a) drop all four inside
-T-0791's regen (one migration, one DEV drop; the customer client + customer mobile spec + the
-model/docs pages join T-0791's list); (b) park — they cost nothing at rest except one dead `Carts`
-row per registration. **The analyst's default was (b)** (proportionality: no defect behind them);
-**the orchestrator recommended (a)** — it is exactly *"remove redundant things"* and the regen is
-happening anyway.
-**Ruled 2026-09-20 (*go*): (a) — fold.** Carried by T-0791 §B; the free-trial admin UI is T-0793's.
-**Blocks:** nothing.
+> things into T-0791's regen) were ruled by that *go*, shipped in T-0791 (`38312c8d9`, `5ef4c292f`,
+> `c76523efa`; `Initial` = `20260920204705`) and are **deleted from here per the rule above — T-0791
+> is the record**. The other eleven stand as **defaults in force since 2026-09-20, unruled** — the
+> owner ruled none of them explicitly; each row below says what shipped against the default, and
+> one (Q-UI-08) shipped *against* it for a reason the row names. Every one is a *keep* / *leave* /
+> *amend the doc* that costs nothing to overrule later. None blocks anything.
 
 ## Q-UI-03 — Partner host `POST api/Payment/webhook` and `api/v1/Health`: delete?
 
@@ -98,7 +63,9 @@ customer-mobile hosts only; `docs/deployment/environment-config.md:320` still sa
 :5000 # Partner API"* (stale). `HealthController` (175 lines, own DB + Stripe probes) is not what
 the deploy warms (`ReadinessHealthChecks.cs:42`, `deploy-azure.yml:706` use `/health`). Both need a
 fact only you hold: does anything external (the Stripe dashboard, a monitor) point at them?
-**Default applied: keep both**; T-0799 fixes the stale doc line either way.
+**Default in force since 2026-09-20, unruled: keep both.** Both controllers are in the tree
+(`src/Cleansia.Web.Partner/Controllers/PaymentController.cs`, `HealthController.cs`); T-0792 removed
+nothing of theirs; the stale `environment-config.md` line is the docs lane's (T-0799).
 **Blocks:** nothing.
 
 ## Q-UI-04 — Admin endpoints with no UI: wire, remove, or leave?
@@ -111,7 +78,9 @@ button in the live UI, the visible half-feature you will notice first. `AdminEmp
 `{documentId}/versions` and `AdminPayrollController` `generate-invoice` have no screen at all.
 Options per endpoint: (a) wire the UI (a story each); (b) remove the endpoint and, for pay periods,
 the button; (c) leave.
-**Default applied: (c) — leave all three**; T-0790 aligns the dialog's *layout* only.
+**Default in force since 2026-09-20, unruled: (c) — leave all three.** T-0790 (`038bc8d6a`) put the
+*Create pay period* dialog on the shared dialog shape and left its `console.warn`
+(`pay-period-management.component.ts`); the two screenless endpoints are untouched.
 **Blocks:** nothing.
 
 ## Q-UI-05 — ADR-designed states with no producer: build the producer or strike the state?
@@ -122,8 +91,9 @@ architect — both are ADR terms).
 `Provided`) and `RefundStatus.Failed` (no `refund.failed` webhook handler; `Refund.cs:88-100` only
 moves `Pending → Succeeded`). Build the producer, or strike the state from the ADR and the enum (a
 wire enum → NSwag + both mobile specs)?
-**Default applied: leave both**; T-0799 adds a dated *what shipped* line to ADR-0034 and ADR-0006
-saying the state has no producer.
+**Default in force since 2026-09-20, unruled: leave both.** Both members are still in
+`src/Cleansia.Core.Domain/Enums/` (`PayoutDetailsStatus.cs`, `RefundStatus.cs`); the dated *what
+shipped* lines on ADR-0034 and ADR-0006 are the docs lane's (T-0799).
 **Blocks:** nothing.
 
 ## Q-UI-06 — Headings: load Poppins in admin / partner, or amend the design language?
@@ -137,8 +107,13 @@ the apps; neither `apps/cleansia-admin.app/src/index.html:12` nor
 `index.html` and set `$font-heading` on `%cleansia-title` and `.cleansia-section__title` — two
 lines, every heading changes face; (b) amend the design language to say the back-office apps are
 Nunito-only and delete `$font-heading` from the two dialogs.
-**Default applied: (b) — amend the doc** (T-0799); this is a polish pass, not a type change on every
-page. (a) is one ticket-line if you want it.
+**Default in force since 2026-09-20, unruled: (b) — the doc is amended, not the apps.**
+`agents/knowledge/design-language.md` §2.3 now says the back-office web is Nunito-only and why;
+neither back-office `index.html` requests Poppins. The second half of (b) — deleting `$font-heading`
+from the two dialog partials — did **not** ship: `common/typography.scss` still declares it and
+`cleansia-dialog`, `cleansia-filter-drawer` and `cleansia-work-contract-dialog` still read it, which
+resolves to the Nunito fallback in the back office and to Poppins in the customer bundle (recorded
+in the doc). (a) is still one ticket-line if you want it.
 **Blocks:** nothing.
 
 ## Q-UI-07 — Neutral palette to the design language's slate now?
@@ -148,8 +123,10 @@ page. (a) is one ticket-line if you want it.
 `#d1d5db`, `#f9fafb`) where DL §2.1 prescribes slate (`#334155`, `#64748B`, `#E2E8F0`, `#F8FAFC`),
 and `--cleansia-red` is Material `#f44336` vs DL `#B91C1C`. One edit cascades into **all three** web
 apps, including the customer app that had its own passes this month.
-**Default applied: not in this batch** — T-0785 defines only the missing tokens; the neutral swap
-is a one-line follow-up whenever you say.
+**Default in force since 2026-09-20, unruled: not in this batch.** T-0785 (`eb01bba24`) defined
+only the tokens that were read and undeclared; `variables.scss` still carries
+`--cleansia-text-primary: #111827`, `--cleansia-text-secondary: #6b7280`, `--cleansia-red: #f44336`
+(recorded in `design-language.md` §2.1). The swap is a one-line follow-up whenever you say.
 **Blocks:** nothing.
 
 ## Q-UI-08 — The detail page's back control: a breadcrumb above the title, or the header row?
@@ -161,9 +138,15 @@ partner has a hand-rolled breadcrumb on 2 (`order-details.component.html:3-26`).
 scout's canonical pattern says breadcrumb (it frees the title row for title-left / actions-right);
 the consistency scout says the header row is the majority and keyboard-correct as is. Either is
 one shared component.
-**Default applied: breadcrumb** as `cleansia-breadcrumb` with a real `routerLink` (T-0797 builds it,
-T-0788 adopts it) — it is what makes the header rule uniform across lists and details. If
-overruled, the two partner breadcrumbs become the header row and the admin keeps the back button.
+**Default in force since 2026-09-20, unruled: breadcrumb — and it did not ship.** The shared tree
+was frozen through phase 3, so T-0797 built no `cleansia-breadcrumb` and T-0788 (`9010033e3`) put
+the back control **beside the `h1`** on the title row (`.cleansia-detail-title`,
+`pages/cleansia-admin/_detail-page.scss`, whose header says so); the two partner details keep their
+hand-rolled bar, drawn once as the `%breadcrumb*` placeholders in
+`pages/cleansia-partner/_breadcrumb.scss`. So the tree today is the *overruled* shape (admin back
+button on the row, partner breadcrumb) with the admin half uniform across its eleven details. Either
+answer is now one shared component plus one adoption sweep: say *breadcrumb* and `cleansia-breadcrumb`
+is built for both apps; say *header row* and the two partner bars become the admin row.
 **Blocks:** nothing.
 
 ## Q-UI-09 — Partner order-detail vocabulary: align to the admin's `.detail-grid`, or keep?
@@ -171,8 +154,9 @@ overruled, the two partner breadcrumbs become the header row and the admin keeps
 **Raised by:** the visual scout (VF §5), 2026-09-20. **Who answers:** the owner.
 **Why it needs you:** the partner order detail renders values as read-only filled inputs, one card
 per section (`order-details.component.html:275-299`), while the admin uses label/value text.
-**Default applied: keep the partner's shape** — it is a different persona's working page and the
-scout found no defect in it beyond the shared ones (shell, header, badges, dates, money — T-0797).
+**Default in force since 2026-09-20, unruled: keep the partner's shape.** T-0797 aligned the shell,
+header, badges, dates, money, dialogs and empty states and put the crew rows and the completion
+summary on the shared `.detail-grid`; the read-only-input sections stay the partner's own.
 **Blocks:** nothing.
 
 ## Q-UI-10 — Spacing tokens / an 8-pt grid?
@@ -180,8 +164,8 @@ scout found no defect in it beyond the shared ones (shell, header, badges, dates
 **Raised by:** the consistency scout (CS §5d), 2026-09-20. **Who answers:** the owner.
 **Why it needs you:** `html { font-size: 14px }` makes every rem gap miss the 8-pt grid; no spacing
 tokens exist. Define `--cleansia-space-{1..8}` in px and sweep, or leave rem-based spacing?
-**Default applied: leave** — the sweep only pays once the tokens exist, and this batch is
-alignment, not rhythm.
+**Default in force since 2026-09-20, unruled: leave.** No `--cleansia-space-*` token exists;
+`common/font.scss` still sets `$base-font-size: 14px` (recorded in `design-language.md` §2.5).
 **Blocks:** nothing.
 
 ## Q-UI-11 — Does the partner web lag mobile by design?
@@ -190,14 +174,16 @@ alignment, not rhythm.
 **Why it needs you:** the partner web never calls `notifyOnTheWay`, `myPendingOffers` /
 `declinePreferredOffer`, `requestCover`, `dropOrder`, `getMyDocumentRequirements` — all live on the
 mobile host and in both mobile apps. Not dead code; is the web meant to lag?
-**Default applied: no change**; if "no", each is a story.
+**Default in force since 2026-09-20, unruled: no change.** Nothing in the batch touched the five
+calls; if "no", each is a story.
 **Blocks:** nothing.
 
 ## Q-UI-12 — `partner-auth.service.ts:105 authenticateWithGoogle`: is Google sign-in coming to the partner web?
 
 **Raised by:** the dead-code scout (DC §3.5), 2026-09-20. **Who answers:** the owner.
 **Why it needs you:** only a spec calls it; the partner login has no Google button.
-**Default applied: keep** until answered (deleting is cheap later).
+**Default in force since 2026-09-20, unruled: keep.** The method is still in
+`libs/core/partner-services/src/lib/services/partner-auth.service.ts`; deleting is cheap later.
 **Blocks:** nothing.
 
 ## Q-UI-13 — Country form: `ISO kód` and `Dvoupísmenný kód` read as duplicates
@@ -205,7 +191,8 @@ mobile host and in both mobile apps. Not dead code; is the web meant to lag?
 **Raised by:** the visual scout (VF §4), 2026-09-20. **Who answers:** the owner.
 **Why it needs you:** `admin-country-management__create-1440.png` shows the two fields side by side
 on `country-form.component.html`. Are they two facts (ISO 3166-1 alpha-2 vs something else) or one?
-**Default applied: layout only** in T-0789; the fields stay.
+**Default in force since 2026-09-20, unruled: layout only.** T-0789 (`cab1cf559`) put the form on
+the twelve-column grid; both fields are still on `country-form.component.html`.
 **Blocks:** nothing.
 
 ## Q-WC-01 — Which figure is the *cena díla* on the contract record — the customer's price or the cleaner's pay?

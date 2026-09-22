@@ -1,11 +1,11 @@
 ---
 id: T-0796
 title: One confirmation, one toast, one loading, one empty state — the root `DialogService`, PrimeNG locale from the bundle, no double toasts, in-place skeletons, `not-found-state` and `empty-state`, one Cancel key
-status: todo
+status: done
 size: M
 owner: —
 created: 2026-09-20
-updated: 2026-09-20
+updated: 2026-09-22
 depends_on: [T-0785]
 blocks: [T-0788, T-0790]
 stories: []
@@ -103,3 +103,18 @@ order; whichever lands second removes the remainder. **Regen:** none.
 
 - 2026-09-20 — filed 2026-09-20 from the UI-polish discovery; branch chore/ui-polish-and-dead-code.
   Phase 2, web-shared lane, fourth of the serial four.
+- 2026-09-22 — **done**; shipped 2026-09-21 as `b3c8b4f19` + the review fix `1cce8ad0b` on
+  chore/ui-polish-and-dead-code (PR #260). One confirmation (`DialogService.confirmTranslated` /
+  `confirmDelete` over the one `<p-confirmDialog styleClass="cleansia-dialog" />` each shell mounts;
+  no feature provides `ConfirmationService`), PrimeNG's words from the bundle
+  (`providePrimeNgTranslation()` + the `primeng.*` block in both apps' five locales), one toast path
+  (the per-feature `*_ERROR_KEY_MAP`s gone; `resolveApiErrorKey` for an in-place message;
+  `showSuccessTranslated`), one loading state (**the in-place `cleansia-loader`, no longer a fixed
+  overlay — the plan's in-place skeletons became this; there is no skeleton component**), one empty
+  state (`common/empty-state.scss` + `not-found-state` on the detail's `@else`), one Cancel key. The
+  fix kept the confirmation red on every destructive act that predates it, gave every confirm gate a
+  test that fails without it, and rendered a missing order as the not-found block under one message.
+  Guard: admin `theme/feedback-idioms.spec.ts`. Findings reported, not absorbed, on the plate: the
+  customer app sets no PrimeNG translation, the order detail's 400 `order.not_found` rendering the
+  load-error copy, `cleansia-table`'s `*ngTemplateOutlet`, `unused-keys.mjs` blind to
+  template-string reads.

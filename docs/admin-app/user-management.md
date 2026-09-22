@@ -39,7 +39,6 @@ The detail page provides comprehensive information about a partner and tools for
 | Emergency Contact | Emergency contact name, phone, relationship |
 | Contract Status | Current status with approval/rejection actions |
 | Profile Completion | Whether all required fields are filled |
-| Availability | Weekly availability schedule with edit capability |
 | Pay Configuration | Per-employee rate overrides, one currency each, with bulk grade apply |
 | Payout Details | **Masked** bank destination, with an audited reveal action |
 | Documents | Uploaded documents with review workflow |
@@ -303,17 +302,6 @@ facade.openRejectEmployeeDialog();
 Rejecting an employee prevents them from accessing order management features. The rejection reason is stored and can be reviewed later.
 :::
 
-## Availability Management
-
-Admins can view and edit an employee's weekly availability schedule:
-
-1. Click "Edit Availability" to enter edit mode (`editingAvailability` signal)
-2. Modify time ranges for each day of the week
-3. Click "Save" to persist changes via `adminEmployeeClient.updateAvailability()`
-4. Click "Cancel" to discard changes
-
-The availability is stored as a map of day names to `TimeRange[]` arrays.
-
 ## Pay Configuration
 
 The Pay Configuration section on the employee detail page allows admins to manage **per-employee pay rate overrides**. This is the only place where employee-specific rates are managed — Global Rates are managed separately on the [Global Rates page](./pay-config).
@@ -447,7 +435,14 @@ interface RejectDialogResult {
 
 ## Formatting Utilities
 
-The facade provides formatting helpers:
-- `formatFileSize(bytes)` -- Converts bytes to "1.5 KB" or "2.3 MB"
-- `formatDate(date)` -- Formats as `en-GB` locale date
-- `formatDateTime(date)` -- Formats as `en-GB` locale date + time
+The facades provide formatting helpers:
+- `formatFileSize(bytes)` (`EmployeeDocumentsFacade`) -- Converts bytes to "1.5 KB" or "2.3 MB"
+- `formatDate(date)` / `formatDateTime(date)` (`EmployeeDetailFacade`) -- The shared
+  `formatDate(value, lang, style)` from `@cleansia/utils` (`'date' | 'dateTime' | 'utcDate'`; the last
+  is for a calendar day the wire carries as midnight UTC), in the **session's language** rather than a
+  pinned `en-GB` — `21. 9. 2026` and `21. 9. 2026 11:00` in Czech, `Sep 21, 2026` in English; seconds
+  never print; the helper returns `''` for an empty or invalid value and the facade prints `-` in its
+  place. The admin and partner lists and details format their dates in the session's language through
+  this helper, and money through `formatMoney` (`1 250,00 Kč`) — except the membership-plan price
+  cells, which keep a local `299.00 CZK` format, and the package form's derived gross, which prints a
+  bare number.

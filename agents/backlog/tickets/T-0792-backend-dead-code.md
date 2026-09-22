@@ -1,11 +1,11 @@
 ---
 id: T-0792
 title: Backend dead code — one never-dispatched command, eight unattributed Policy constants, 36 unemitted error keys with their locale twins, 25 repository methods, 25 domain members, three orphan files, the partner-host routes no client calls, three admin routes with no caller; two guards so it stays gone
-status: in_progress
+status: done
 size: M
 owner: —
 created: 2026-09-20
-updated: 2026-09-20
+updated: 2026-09-22
 depends_on: [T-0791]
 blocks: [T-0799]
 stories: []
@@ -138,3 +138,10 @@ rows in T-0799).
 
 - 2026-09-20 — filed 2026-09-20 from the UI-polish discovery; branch chore/ui-polish-and-dead-code.
   Opened the same night as phase 1's second lane, after T-0791's commit, beside T-0793.
+- 2026-09-22 — **done**; shipped 2026-09-21 as `f307e835f` (the dead commands, policies, error keys,
+  repository and domain members and host routes, with the admin and partner clients regenerated in
+  the same commit) + `cf4b1f981` (the last readers of the removed error keys, the dead mapper
+  parameter, the stale comments, the emitted-constants guard widened to every host) on
+  chore/ui-polish-and-dead-code (PR #260). The five-locale twins of the removed keys for admin and
+  partner rode here rather than in T-0793. The API-reference and permission-table edits the Doing
+  list left to T-0799 are the docs lane's commit of 2026-09-22.

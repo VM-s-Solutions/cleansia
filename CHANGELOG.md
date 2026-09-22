@@ -430,6 +430,48 @@ need backfilling.
 
 ### Changed
 
+- **Admin, cleaner — the admin and partner web share one look, page for page.** Every page sits in one
+  white card behind one gutter (lists 1400 px wide, details and forms 1200), with the title top-left,
+  its one-line subtitle under it and the page's actions on the same row to the right — *Filters* then
+  *Create* on a list, the audit-history link on a detail — instead of a centred heading with the buttons
+  floating below it. Buttons size to their label; only a form or dialog footer stretches one. **Every
+  list is the same list:** the filters open in one slide-in drawer on both apps (Escape closes it, Tab
+  stays inside it) with the active filters as a chip row under the header; numbers, money, dates,
+  ratings and counts are right-aligned; dates print in the session's language (`21. 9. 2026 11:00` in
+  Czech) and money with two decimals and its symbol (`1 250,00 Kč`) on every list and detail — except
+  the membership-plan price cells, which still print `299.00 CZK`, the package form's derived gross,
+  which prints a bare number, and the disputes list's refund cell, which has no currency to print —
+  where before one page showed `21/09/2026, 11:00:00`, another `1250.00 Kč` and a third `CZK 1,250.00`;
+  a status is one pill in one of five tones — the same pill on the employee list as on its detail,
+  *Approved* translated at
+  last, and on the cleaner's board *New* is a pill like *Paid*; the pager shows twenty rows by default,
+  hides on an empty result and never offers a *next* it cannot honour; an empty list, a missing record
+  and a failed load each have one shape. **Every detail is the same detail:** the back control beside
+  the title, an identity strip, sections with their *Edit* on the title row, label/value pairs on one
+  four-column grid with no trailing colons, and one row of outlined actions per record with at most one
+  filled primary — no green, orange or blue fills on the admin pages. **Every form is the same form:**
+  fields on one twelve-column grid at one height (the select and the calendar were shorter than the
+  text input, and the calendar icon hung outside its box), hints under the row, checkboxes on the row's
+  baseline, *Cancel* then the primary at the bottom right. **Every dialog is the same dialog** on both
+  apps: one skin, a lede, fields on the form grid, *Cancel* then one primary — red-outlined only when
+  the act cannot be undone (wind-down, expire credit, reject) — and the two admin confirmations that
+  could not open at all (*Deactivate plan*, *Erase user*) now open. The calendar, select and confirm
+  words are in the session's language on both apps (they were English), a failed save shows one toast
+  instead of two, the admin sign-in gains the language switcher the partner sign-in had, and the
+  partner dashboard prints one money format. Keyboard and screen-reader: one visible focus ring on
+  every control, the current page marked in the sidebar, the mobile toolbar and its menu named from
+  the translations, and every icon-only button answers to a 44 px touch target. The customer web app
+  was not restyled; it only inherits the shared rules it already used (an invalid select now shows its
+  red border there too). (T-0785–T-0790, T-0794–T-0798.)
+
+- **Customer (Android, iOS) — evidence goes on a dispute while you file it.** The new-dispute form
+  takes photos and PDFs before the dispute exists; they are held on the phone and uploaded to the
+  dispute the moment it is created, one after another, each row showing whether it went. A file that
+  fails is named and can be added again from the dispute's detail; submitting again after a failed
+  upload resumes on the same dispute rather than filing a second one. Adding evidence later, from the
+  detail, still works as before. The dispute card in the list also loses the coloured strip along its
+  edge. (Owner request, 2026-09-21.)
+
 - **Customer, cleaner, admin — a confirmed booking whose last cleaner leaves goes back to *New* and is
   re-offered.** When a cleaner drops a job, or an admin rejects a cleaner who holds future confirmed
   work, and nobody is left on the booking, its status walks back from *Confirmed* to *New* (the one
@@ -705,6 +747,45 @@ need backfilling.
   nothing should start producing it, and no order can be moved into it. (ADR-0037)
 
 ### Removed
+
+- **Cleaner, admin — the weekly availability schedule is gone.** Nothing ever read it: dispatch is a
+  first-come board, and a cleaner's days and hours gated no offer, no take and no approval. The admin's
+  employee detail loses its *Availability* section and its per-day editor, and the registration lock's
+  three requirements (profile, documents, approval) are the whole list — the docs used to name a
+  fourth. **API consumer:** `PUT /api/AdminEmployee/{employeeId}/update-availability` (admin host) and
+  `PUT /api/Employee/UpdateAvailability` (partner mobile host, `:5002`) are gone;
+  `EmployeeItem.availability`, `EmployeeListItem.availability` and
+  `RegistrationCompletionStatus.hasSetAvailability` (which the server had hard-coded `true`) left the
+  wire and the regenerated web clients and the partner mobile spec; the `dayOfWeek` enum left the code
+  overview. (T-0791; the module was read by nothing since the partner web dropped its editor.)
+
+- **Operator — four things the schema carried and nothing read were dropped in one migration.** The
+  `Carts`, `CartServiceItems` and `CartPackageItems` tables (written once per registration, never
+  read — the wizard builds orders directly), the `EmailTranslations` table and its seed (the renderer
+  reads `EmailTemplateTranslations`), `Employees.PreferredCurrencyCode` (its only writer had no caller;
+  a cleaner's invoice currency comes from the pay rows) and `Employees.Availability` above. The
+  `Initial` migration was regenerated as `20260920204705_Initial` — 84 tables, down from 88 — and the
+  DEV database drop before the next deploy covers it. `MembershipPlan.TrialPeriodDays` **stays**: still
+  a column and still on the plan DTOs, pinned at `0` by the server. (T-0791; Q-UI-02.)
+
+- **API consumer — routes no shipped client called are gone from the partner and admin hosts.**
+  Partner host (`:5000`): the `Dispute`, `PayConfig`, `Currency`, `Package` and `Service` controllers,
+  `PayPeriodController.GetPayPeriodById`, and `EmployeePayrollController.CalculateOrderPay` /
+  `RegenerateInvoicePdf`; the partner mobile host never had them. Admin host (`:5001`):
+  `GET api/AdminEmailTemplate/get-paged`, `GET api/AdminUser/{userId}` (the `details/{userId}` read
+  stays) and `GET api/AdminCompany/get-current`. The regenerated admin and partner clients no longer
+  carry them. Permission constants no route carried are gone as well (`CanUpdateOrder`,
+  `CanViewOrderReview`, `CanAddPhoneNumber`, the four Country Configuration ones,
+  `CanCreateTenantConfiguration`), and `CanCalculateOrderPay` and `CanViewPayPeriod` went with their
+  routes; the error keys no handler ever emitted left `BusinessErrorMessage` and the `api.*` blocks of
+  every web locale. The partner host's `POST /api/Payment/webhook` and `api/v1/Health` **stay**
+  (Q-UI-03), as do the admin pay-period `create`/`update`/`delete`/`open` routes, the document
+  `versions` read and `generate-invoice`, which have no screen yet (Q-UI-04). (T-0792, T-0793.)
+
+- **Admin — the membership plan form no longer offers a trial-days field, and the plan list has no
+  *Trial days* column.** Both survived the September ruling that there is no free trial; the field was
+  refused by the server on any value but 0, so it was a control that could only fail. The form sends
+  the zero the server accepts. (T-0793; owner ruling 2026-09-08 on the trial itself.)
 
 - **Partner API — the partner hosts no longer register customers.** `POST api/Auth/Register` is gone
   from the Partner and Partner Mobile hosts (a cleaner's account is opened through `RegisterEmployee`,

@@ -46,10 +46,13 @@ erased nor exported. Every order it yields goes through the same per-order path 
 photo blob and row, the customer fields, the address, the pay rows — and keeps its operator's stamp.
 **A guest booking still live is left out of the walk, not a reason to refuse**: the blocking check
 stays the account’s own live orders. Its contact data stays until the job ends and the order-PII sweep
-reaches it. **Dated correction, 2026-09-16 (T-0753):** the backend now has a guest cancellation path
-using the booking’s order number, e-mail and confirmation code. That changes the earlier “nothing
-anonymous cancels” premise, but does not change the erasure rule or answer Q-GDPR-03. An e-mail match
-alone still proves no right to cancel a booking, and the guest client flows remain in progress.
+reaches it. **Dated correction, 2026-09-16 (T-0753), amended 2026-09-22:** there is a guest
+cancellation path, and since the re-key it is held by **a per-order access token that reaches only
+the guest's mailbox** — not by the order number, e-mail and confirmation code it first shipped with.
+That changes the earlier “nothing anonymous cancels” premise, but does not change the erasure rule or
+answer Q-GDPR-03: an e-mail match alone still proves no right to cancel a booking, and now proves
+even less than it did, because the e-mail is no longer part of the key at all.
+→ [The guest access token](/flows/booking-and-pricing#guest-access-token)
 
 **The whole walk is one commit.** It used to commit once in the middle — the session revoke carries
 its own commit for the logout race — which made everything above it durable while everything below
@@ -263,13 +266,17 @@ names an account the request did not sign in as — that account's. The row hold
 money, enums and versions and never a name, a contact detail, an address line, free text or a token;
 a build-time guard walks every evidence record for a member so named.
 
-**Guest cancellation (T-0753, backend added 2026-09-16).** The `customer.order.cancel` success and
-refusal rows have `UserId = null`, even if a JWT or a snapshot names an account: the booking secret
-proves resource access, not an account actor. The complete secret is checked against a guest order
-before the request adopts that order’s operator, ahead of validation and writes. The success row
-records the standard `OrderCancellationEvidence`; `refundAmount` is the policy amount, while the
-nullable `actualRefundAmount` records the successful refund’s amount. A refusal has the error key
-and no evidence payload. The guest secret and cancellation text are not copied into the trail.
+**Guest cancellation (T-0753, backend added 2026-09-16; re-keyed 2026-09-22).** The
+`customer.order.cancel` success and refusal rows have `UserId = null`, even if a JWT or a snapshot
+names an account: the booking's **access token** proves resource access, not an account actor. The
+token is resolved against a guest order before the request adopts that order’s operator, ahead of
+validation and writes. The success row records the standard `OrderCancellationEvidence`;
+`refundAmount` is the policy amount, while the nullable `actualRefundAmount` records the successful
+refund’s amount. A refusal has the error key and no evidence payload. **The token and the
+cancellation text are not copied into the trail**: `OrderCancellationEvidence` carries tiers, money,
+enums and durations and has no member for either, and the build-time payload guard refuses a live
+credential by name.
+→ [The guest access token](/flows/booking-and-pricing#guest-access-token)
 
 **Commit boundary.** The refund service durably records a guest refund before the final cancellation
 status, audit success and durable e-mail intent commit together. If work after that refund fails,
@@ -319,7 +326,7 @@ What survives what:
 | A customer audit row for an erased customer | Survives, pseudonymised: the three request-metadata columns are blanked and nothing else changes. An erasure whose commit fails leaves the rows untouched. |
 | A contract-for-work acceptance of an erased cleaner | Survives, pseudonymised the same way: IP, device label and device id go; the seat, the exact text row, the instant and the frozen facts stay, and the cleaner's id stays as the pseudonymous handle `Employee.Anonymize` keeps. The per-company sweep blanks the same three columns three years after the acceptance for everyone else; nothing ever deletes the row. |
 | A guest's booking rows after the guest registers with the same email | Not inherited by the timeline — guest rows have no user and are reachable only from the order's history. The account's **erasure** reaches them all the same, by the e-mail: the ended booking is anonymised and its guest rows lose IP and device. |
-| A guest booking under the erased e-mail that is still live | Left out of the walk, not a refusal: its name, contact and address stay until the job ends and the order-PII sweep reaches it, its guest rows until the three-year sweep. T-0753 adds secret-keyed guest cancellation in the backend; the erasure rule is unchanged, and Q-GDPR-03 remains open. |
+| A guest booking under the erased e-mail that is still live | Left out of the walk, not a refusal: its name, contact and address stay until the job ends and the order-PII sweep reaches it, its guest rows until the three-year sweep. T-0753 added guest cancellation, keyed since 2026-09-22 on the booking's access token; the erasure rule is unchanged, and Q-GDPR-03 remains open. |
 | A guest booking placed in another market with the account's e-mail | Reached and exported all the same — the read goes past the operating-company filter, because a guest checkout is stamped with the market's company and the erasure runs under the subject's. The anonymised rows keep their own company's stamp. |
 | An anonymous refusal before the market's operator is known | No row — there is no tenant to stamp it with. The sink logs one warning instead of writing an orphan. |
 | Notification flood for one user | Capped; the overflow is pruned. |

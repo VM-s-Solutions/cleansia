@@ -185,11 +185,19 @@ materializer). The cap also bounds crew size, since `requiredEmployees = ceil(es
 {
   "id": "order-id",
   "confirmationCode": "ABC123",
-  "stripeSessionId": "https://checkout.stripe.com/..." 
+  "stripeSessionId": "https://checkout.stripe.com/...",
+  "guestAccessToken": "p8Jw2hQx…"
 }
 ```
 
 `stripeSessionId` is `null` for cash payments and a Stripe checkout URL for card payments.
+
+`guestAccessToken` is the booking's access token on a **guest** booking and `null` when the command
+carried a session — an account booking mints none, because its owner signs in to reach it. The caller
+*is* the guest, so the response body is the right channel: it is the only moment the browser can learn
+the credential without waiting for the e-mail, and the checkout success page reads the booking back
+with it. Losing it costs nothing — every later message that carries a track link mints its own.
+→ [The guest access token](/flows/booking-and-pricing#guest-access-token)
 
 ::: warning Price validation is a chain, and the order of its rules is load-bearing
 `CreateOrder.Validator` runs one `Cascade.Stop` chain over the whole command, so only the **first**
@@ -561,44 +569,69 @@ The admin host's unredacted detail is `GET /api/AdminOrder/details/{orderId}` un
 
 ### Lookup <Badge type="info" text="Customer API only" />
 
-Looks up an order by order number and email (for anonymous tracking).
+Opens a guest booking with its **access token** — the credential the guest's e-mail link carries.
 
 ```
-GET /api/Order/Lookup?displayOrderNumber=CLN-2026-001&email=jane@example.com&confirmationCode=ABC123
+POST /api/Order/Lookup
+GET  /api/Order/Lookup?token=p8Jw2hQx…
 ```
 
-**Auth:** Anonymous (rate-limited: 10 requests/minute per IP)
+**Request body (POST):**
 
-**No `countryId`, on purpose.** The read is keyed on a secret — the six-character confirmation code
-delivered only in the confirmation e-mail, checked in the same predicate as the number and the e-mail
-so a wrong code and a non-existent order are indistinguishable — and it searches **across operating
-companies**, so a guest who booked under one company finds the order without knowing which company
-that was. The secret is the pin ([ADR-0051](/decisions/adr-0051) bypass-and-re-pin cell,
-[ADR-0061](/decisions/adr-0061) D3). `LookupBatch` below is the same posture keyed on the order's
-ULID, which the browser only has because it placed the order.
+```json
+{ "accessToken": "p8Jw2hQx…" }
+```
+
+**Auth:** Anonymous · rate-limit window `interactive`. The request logger suppresses `accessToken`.
+
+**Response:** the guest projection — id, display order number, customer name, cleaning date, payment
+type and status, total, estimate, order status, `confirmationCode`, currency, the selected services
+and packages, and the order's status history. **No address and no crew**: the token opens the booking,
+not the household. `confirmationCode` is the short human reference printed on the booking; nothing
+authenticates on it, and it is served here on the guest's own order only.
+
+**No `countryId`, on purpose.** The token is 256 bits, stored as a SHA-256 digest, and the read
+resolves the booking by that digest alone **across operating companies** — so a guest who booked under
+one company finds the order without knowing which company that was. The hash is the pin
+([ADR-0051](/decisions/adr-0051) bypass-and-re-pin cell, [ADR-0061](/decisions/adr-0061) D3). An
+unknown, expired or revoked token, and a booking that belongs to an account, all answer
+`order.not_found`.
+
+::: warning The old key is gone, not deprecated
+`displayOrderNumber` + `email` + `confirmationCode` no longer open anything. The triple was not a
+secret — the display number is sequential, the e-mail is not private, and the confirmation code was
+served on the order detail to every cleaner assigned to the job.
+→ [Guest order lookup](/flows/booking-and-pricing#guest-order-lookup)
+:::
 
 ---
 
 ### LookupBatch <Badge type="info" text="Customer API only" />
 
-Looks up multiple orders at once.
+Opens the bookings a browser still holds tokens for, in one call.
 
 ```
 POST /api/Order/LookupBatch
 ```
 
-**Auth:** Anonymous (rate-limited: 10 requests/minute per IP)
+**Auth:** Anonymous · rate-limit window `interactive`
 
-**Request body:**
+**Request body** — at most **10** tokens; more than ten, or none, returns an empty list:
 
 ```json
 {
-  "lookups": [
-    { "orderNumber": "CLN-2026-001", "email": "jane@example.com" },
-    { "orderNumber": "CLN-2026-002", "email": "jane@example.com" }
-  ]
+  "accessTokens": ["p8Jw2hQx…", "Ld3Kf9Tz…"]
 }
 ```
+
+**Response:** `{ "orders": [ … ] }`, each item the same shape `Lookup` returns. A token that matches
+nothing simply yields no row, so the response never says which of the presented tokens was wrong.
+
+::: tip The same token cancels
+`POST /api/Order/GuestCancellationPreview` and `POST /api/Order/CancelGuest` take `accessToken` too,
+in the `auth` window on the customer web and customer mobile hosts. Cancelling revokes every live
+token on the booking. → [Guest cancellation](/flows/booking-and-pricing#guest-cancellation)
+:::
 
 ---
 

@@ -73,15 +73,17 @@ Both routes invoke the same `CreateOrder.Command` handler.
 {
   "id": "order-id",
   "confirmationCode": "ABC123",
-  "stripeSessionId": "https://checkout.stripe.com/c/pay/cs_test_..."
+  "stripeSessionId": "https://checkout.stripe.com/c/pay/cs_test_...",
+  "guestAccessToken": "p8Jw2hQx…"
 }
 ```
 
 | Field | Description |
 |-------|-------------|
 | `id` | The created order ID |
-| `confirmationCode` | Human-readable confirmation code |
+| `confirmationCode` | The short human reference printed on the booking. A reference, not a credential — nothing authenticates on it |
 | `stripeSessionId` | Stripe Checkout URL (card) or `null` (cash) |
+| `guestAccessToken` | The booking's access token on a **guest** booking; `null` when the command carried a session. The credential the guest tracks and cancels with → [The guest access token](/flows/booking-and-pricing#guest-access-token) |
 
 ## Stripe Checkout Session
 

@@ -145,12 +145,16 @@ When the customer clicks submit on the review step:
 **Card payment flow:**
 - `customerClient.paymentClient.createOrder(command)` is called
 - If a `stripeSessionId` (Stripe Checkout URL) is returned, the browser redirects to Stripe
-- The guest order ID + email is saved via `GuestOrderService`
+- The order id and its `guestAccessToken` are saved via `GuestOrderService`
 
 **Cash payment flow:**
 - `customerClient.orderClient.createOrder(command)` is called
 - On success, navigates to `/checkout/success?type=cash`
-- The guest order ID + email is saved via `GuestOrderService`
+- The order id and its `guestAccessToken` are saved via `GuestOrderService`
+
+`guestAccessToken` is present only on a **guest** booking; an account booking returns `null` and
+nothing is saved, because its owner signs in to reach it.
+→ [The guest access token](/flows/booking-and-pricing#guest-access-token)
 
 ## Rebook Flow
 

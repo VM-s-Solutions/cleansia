@@ -77,9 +77,11 @@ flowchart LR
 
 ### A guest cancels under the same policy
 
-The guest cancellation API needs the booking’s **order number, e-mail and confirmation code**, and
-accepts only a booking placed without an account. A wrong combination or an account-owned booking
-returns the same `order.not_found` answer. The preview and cancellation use the same fee assessment
+The guest cancellation API needs the booking’s **access token** — the one the guest's e-mail link
+carries — and accepts only a booking placed without an account. An unknown, expired or revoked token
+and an account-owned booking all return the same `order.not_found` answer. Cancelling revokes every
+token the booking had outstanding, and a token expires **30 days after the cleaning** regardless.
+The preview and cancellation use the same fee assessment
 as a signed-in customer: no fee while no cleaner is assigned, the standard 15-minute oops window,
 and the standard 24 h / 4 h fee tiers above. A guest has no Plus free-window extension. Cancellation
 is refused once cleaning is under way, completed or already cancelled.
@@ -88,7 +90,8 @@ The cancellation is confirmed by e-mail to the address stored on the booking. A 
 only when a refund was successfully issued, using that refund’s actual amount; the policy refund
 shown in a preview is not proof of a payment. The guest remains without an account, feed or push
 notification. Assigned cleaners still receive their cancellation notice.
-→ [Guest cancellation](/flows/booking-and-pricing#guest-cancellation)
+→ [Guest cancellation](/flows/booking-and-pricing#guest-cancellation),
+[the guest access token](/flows/booking-and-pricing#guest-access-token)
 
 ### The "oops window"
 
@@ -1158,8 +1161,9 @@ guest rows on it in the trail lose their IP and device. A guest booking **still 
 or under way) is **left out, not a reason to refuse**: only the account’s own live orders block an
 erasure. Its contact data stays until the job ends and the two-year order sweep reaches it. The guest
 cancellation backend added on 2026-09-16 (T-0753) changes the earlier “only an admin can cancel”
-premise, **not this erasure rule**. Cancellation still needs the booking’s complete secret; an e-mail
-match alone does not prove that the account holder placed it. Whether a live guest booking should
+premise, **not this erasure rule**. Cancellation needs the booking’s access token, which reaches only
+the guest’s mailbox; an e-mail match alone does not prove that the account holder placed the booking,
+and since the 2026-09-22 re-key the e-mail is no part of the cancellation key at all. Whether a live guest booking should
 block instead remains the open owner question Q-GDPR-03. The subject’s data export lists the same set
 of orders, the live guest booking included.
 

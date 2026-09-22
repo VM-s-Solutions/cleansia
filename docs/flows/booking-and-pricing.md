@@ -185,22 +185,73 @@ market. → [Business rules — order currency](/product/business-rules#price-st
 > schema**, so moving the sweep to another scheduler or fanning it out would have reintroduced duplicate
 > billing silently. The lease still holds; it is no longer the only thing holding.
 
-## Guest order lookup
+## Guest order lookup {#guest-order-lookup}
 
-`POST api/Order/Lookup` is anonymous and accepts **order number, e-mail and confirmation code** in
-the request body, which the request logger suppresses. The existing GET route remains compatible. All
-three are checked together; a wrong number, e-mail or code receives the same `order.not_found`
-answer. The display number and e-mail alone are not the secret. `POST api/Order/LookupBatch` takes
-at most 10 internal order-id/e-mail pairs for remembered orders; it does not accept a display number
-as a substitute for the internal id. Both reads are rate-limited.
+**A guest proves a booking with one per-order access token, and it arrives only by e-mail.** The
+token is 256 bits of URL-safe randomness, stored as a SHA-256 digest and never persisted in the
+clear; the anonymous endpoints hash what the caller sent and resolve the booking by that digest
+alone — across operating companies, so a guest who booked under one operator finds the order without
+knowing which operator that was ([ADR-0051](/decisions/adr-0051)'s bypass-and-re-pin cell, with the
+hash as the pin). A token that matches nothing, an expired or revoked one, and a booking that belongs
+to an account all answer the same `order.not_found`, so the read is never an oracle for which
+bookings exist.
+
+| Route (customer web + customer mobile) | Takes | Result |
+|---|---|---|
+| `POST api/Order/Lookup` | `accessToken` | The booking, in the projection a guest is allowed to see |
+| `GET api/Order/Lookup?token=…` | the same token on the query string | The route the e-mail link lands on |
+| `POST api/Order/LookupBatch` | up to **10** tokens | The bookings this browser still holds a token for; an unmatched token simply yields no row, so the response never says which token was wrong |
+
+Both reads sit in the `interactive` rate-limit window, and the request logger suppresses
+`accessToken` the way it suppresses a password.
+→ [Rate-limit policy](/domain/roles/rate-limit-policy)
+
+The guest projection carries no address and no crew: the token opens the **booking**, not the
+household. It does carry the `confirmationCode`, now purely as the short human reference printed on
+the booking — nothing authenticates on it, and it is served on the guest's own order only.
+
+::: warning It replaced a triple that was never a secret
+The old key was **display order number + e-mail + confirmation code**. The display number is
+sequential, the e-mail is not private, and the confirmation code was served on the order detail to
+**every cleaner assigned to the job** — so a cleaner held the whole key to their own customer's
+booking, including the cancellation that charges that customer the 25 % / 50 % tier. Re-keying closed
+the class rather than one leak; the code has left every DTO a cleaner can reach.
+:::
+
+### Where a token comes from, and how long it lives {#guest-access-token}
+
+**Every message that offers a guest a link mints its own token**, so one booking accumulates several
+live rows and none of them supersedes another. Superseding is what a single-channel design needs and
+this is not one: a guest who opened *"your cleaner is on the way"* would land on a page that can open
+nothing, and the checkout success page could not read back the booking it had just taken payment for.
+N live tokens are no weaker than one — each is 256 bits, resolved by its own hash, and scoped to the
+single booking it was minted for.
+
+| Minted by | How the guest receives it |
+|---|---|
+| `CreateOrder` | `guestAccessToken` on the checkout response — guest bookings only, `null` when the booking names an account |
+| The receipt e-mail | the *view your booking* button |
+| "A cleaner has taken your job" · "we're on our way" · "all done" | the same button on each status e-mail |
+| The cancellation e-mail | the same button |
+
+The link is `{clientDomain}/track-order?orderNumber=…&email=…&token=…`; only the `token` opens
+anything. A call site that sends a status e-mail **without** minting one ships a button that dead-ends
+on the "the link is in your e-mail" panel, which is why `GuestTrackLinkTests` walks the tree for
+senders rather than testing each handler behaviourally.
+
+A token dies **30 days after the cleaning** — long enough to cover the refund window and a question
+about the receipt afterwards, short enough that a mailbox read years later is not a live key to
+somebody's home. **Cancelling the booking revokes every live token on it at once**, because there is
+nothing left to do with them — with one deliberate exception, the cancellation e-mail itself
+([below](#guest-cancellation)). An account booking mints none at all: its owner signs in instead.
 
 ## Guest cancellation {#guest-cancellation}
 
-A guest can use the same order number, e-mail and confirmation code to preview cancellation and
-submit it without creating an account. Both operations require a guest booking (`UserId` null); an
-account-owned booking is refused with the same `order.not_found` answer as a wrong secret. The
-booking’s operator is resolved from that proven order, so the guest need not choose its market and
-an unrelated browsing or account market cannot redirect the cancellation.
+A guest previews a cancellation and submits it with **the same access token**, and no account. Both
+operations require a guest booking (`UserId` null); an account-owned booking is refused with the same
+`order.not_found` answer as an unknown token. The booking’s operator is resolved from that proven
+order, so the guest need not choose its market and an unrelated browsing or account market cannot
+redirect the cancellation.
 
 The preview shows the standard cancellation tier, fee and policy refund in the order’s currency.
 The cancellation recalculates those figures at the time it is submitted, with the same notice,
@@ -209,7 +260,8 @@ A guest has no Plus entitlement. An order already cancelled, completed or under 
 cancelled again. → [Cancellation rules](/product/business-rules#cancellation)
 
 The two anonymous routes are available on the customer web and customer mobile API hosts, both in
-the `auth` rate-limit window. Their request bodies carry the complete secret:
+the `auth` rate-limit window. Each request body carries the access token and nothing else that
+proves anything:
 
 | Route | Result |
 |---|---|
@@ -220,7 +272,15 @@ A cancellation e-mail goes to the **persisted booking address**, with a refund l
 successfully issued refund and its actual amount. A deleted or anonymised destination receives
 nothing. The guest gets no account, feed or push; assigned cleaners still receive their notice. The
 act is recorded as `customer.order.cancel` with no customer user id, even when a session accompanies
-the guest secret. → [The customer trail](/flows/gdpr-and-audit#customer-trail)
+the guest's token. → [The customer trail](/flows/gdpr-and-audit#customer-trail)
 
-**Implementation checkpoint, 2026-09-16:** the backend routes are implemented. Generated contracts
-and guest cancellation screens on web, Android and iOS remain in progress under T-0753.
+**The cancellation revokes every key, and the cancellation e-mail then carries a new one.** Those are
+the same decision rather than opposite ones: every token the guest already held is retired at the
+cancel, and the last message the booking will ever send carries the only one that still opens it, so
+the customer can read what they were refunded. It is minted and committed *before* the send, so a
+crash after it cannot leave an e-mailed token with no row behind it, and it expires on the same
+schedule as any other — 30 days past the cleaning.
+
+**Shipped on every client.** The web track page, the Android customer app and the iOS customer app
+all draw the preview (tier, fee, refund estimate) before asking for confirmation, and all three key
+it on the access token. → [Order tracking](/customer-app/order-tracking)

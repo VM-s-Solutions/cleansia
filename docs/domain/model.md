@@ -45,11 +45,11 @@ serves that market: `Market/GetOverview` does not list it and an anonymous write
 `country.not_serviced`. → [Tenant](/domain/roles/tenant), [Company lifecycle](/domain/roles/company-lifecycle)
 
 **Every stamped row carries its operator, and the column is a foreign key.** A type that belongs to
-one company extends **`TenantAuditable : Auditable, ITenantEntity`** — 46 of them — or is one of the
-two `BaseEntity + ITenantEntity` audits (`AdminActionAudit`, `CustomerActionAudit`): **48 stamped
+one company extends **`TenantAuditable : Auditable, ITenantEntity`** — 47 of them — or is one of the
+two `BaseEntity + ITenantEntity` audits (`AdminActionAudit`, `CustomerActionAudit`): **49 stamped
 tables**, each with `FK_<T>_Tenants_TenantId` (`Restrict`, no navigation — the two `TenantId` arrows
-above stand in for all 48; the area diagrams below do not repeat them). The `TenantId` column is
-**NOT NULL** on 46 of them and
+above stand in for all 49; the area diagrams below do not repeat them). The `TenantId` column is
+**NOT NULL** on 47 of them and
 nullable only on `OutboxMessage` and `DeadLetter` (an envelope may have no tenant; a `NULL` passes the
 FK). The value is written at commit time from the ambient tenant — the JWT claim, the market's operator
 for an anonymous write, the user's tenant on a token mint, the row's own tenant or the registry's
@@ -61,7 +61,7 @@ grows one.
 
 | Entity | |
 |---|---|
-| `Tenant` | — ; referenced by `CountryConfiguration.OperatorTenantId` and by `TenantId` on all 48 stamped tables. `Auditable` (tenantless by construction); the lifecycle columns above; the company's state is the highest of *archived* (`ArchivedOn`), *frozen* (`ArchiveRequestedOn`), *deactivated* (`!IsActive`), *winding down* (`WindDownFrom`), *operating* → [Company lifecycle](/domain/roles/company-lifecycle) |
+| `Tenant` | — ; referenced by `CountryConfiguration.OperatorTenantId` and by `TenantId` on all 49 stamped tables. `Auditable` (tenantless by construction); the lifecycle columns above; the company's state is the highest of *archived* (`ArchivedOn`), *frozen* (`ArchiveRequestedOn`), *deactivated* (`!IsActive`), *winding down* (`WindDownFrom`), *operating* → [Company lifecycle](/domain/roles/company-lifecycle) |
 | `TenantConfiguration` | references `Tenant`; one row per `(TenantId, Key)` (unique, `NULLS NOT DISTINCT`) holding a company's override of one catalogued setting — the ten `retention.*` windows today; no row means the catalogue default. Written by the admin's *Company settings* page, read per company by the retention job → [TenantConfiguration](/domain/roles/tenant-configuration) |
 
 ## Identity and access
@@ -119,6 +119,7 @@ erDiagram
   Order }o--o| LegalDocument : "WorkContractDocument"
   WorkContractAcceptance }o--|| Order : "Order"
   WorkContractAcceptance }o--|| LegalDocumentText : "LegalDocumentText"
+  GuestOrderAccessToken }o--|| Order : "Order"
 ```
 
 **`OrderService`, `OrderPackage` and `OrderExtra` are the order's line items** — what was actually
@@ -146,10 +147,21 @@ by the three-year sweep), `FactsJson` (the job as shown at acceptance; never a n
 Append-only, `TenantAuditable` stamped with the order's operator. → [ADR-0068](/decisions/adr-0068),
 [`work-contract-acceptance`](/domain/roles/work-contract-acceptance)
 
+**`GuestOrderAccessToken` is the credential a guest proves a booking with** — 256 bits, stored only as
+a SHA-256 digest (`TokenHash`, unique, the single lookup path), with `ExpiresOn` 30 days past the
+cleaning and a nullable `RevokedOn`. It replaced the (display number, e-mail, confirmation code)
+triple, which was not a secret: the code was served on the order detail to every assigned cleaner.
+**Several live rows per order are normal** — every message that carries a track link mints its own,
+and none supersedes another; cancelling the booking revokes all of them. An account booking has none.
+The raw value is returned to the issuing caller once, on a `[NotMapped]` carrier, and is never
+retrievable again — the same contract as `RefreshToken` and the account confirmation token.
+→ [The guest access token](/flows/booking-and-pricing#guest-access-token)
+
 | Entity | |
 |---|---|
 | `Order` | references `Currency` (Restrict), `PromoCode` (nullable, Restrict — the code that was actually honoured; a losing promo leaves it null), `WorkContractDocument` → `LegalDocument` (nullable, Restrict, indexed — the contract-for-work text the job was booked under, ADR-0068 D1), `Receipt`. `UserId` is null on a guest booking and is never attached afterwards, so **`SubjectOrders.Of(userId, email)`** (`Core.Domain/Orders`) is the one definition of a data subject's orders for the erasure and the subject export: the account's orders **or** the rows with no `UserId` whose `CustomerEmail` matches case-folded (owner ruling 2026-09-15) — asked past the tenant filter, because a guest checkout is stamped with the market's operator → [ADR-0062](/decisions/adr-0062) D5 as amended 2026-09-15 |
 | `OrderEmployee` | — |
+| `GuestOrderAccessToken` | references `Order` (Cascade — a deleted booking takes its keys with it); unique `TokenHash` (`IX_GuestOrderAccessTokens_TokenHash`, the only lookup path), indexed `(OrderId, RevokedOn)` for the revoke-on-cancellation read. `TenantAuditable`, stamped with the order's operator; resolved past the tenant filter, because a guest presents the token without knowing which operator took the booking |
 | `WorkContractAcceptance` | references `Order` (Restrict), `LegalDocumentText` (Restrict — `FK_WorkContractAcceptances_LegalDocumentTexts_TextId`; a text a cleaner accepted can never be deleted from under the row), `Tenant`; **unique `(OrderEmployeeId)`** — one contract per seat and the arbiter of a concurrent double accept; indexed `(OrderId, EmployeeId)`, `(EmployeeId, AcceptedOn DESC)`, `(TenantId, AcceptedOn)`; `OrderEmployeeId` and `EmployeeId` are bare scalars with no FK. `Pseudonymise()` (the trio) is the one mutator; no delete path → [ADR-0068](/decisions/adr-0068) D2 |
 | `OrderExtra` | references `Order` (Cascade), `Extra` (Restrict — a catalogue extra referenced by any order line cannot be deleted, only deactivated); unique `(OrderId, ExtraId)` |
 | `OrderPackageService` | references `OrderPackage` (Cascade), `Service` (Restrict); unique `(OrderPackageId, ServiceId)` |

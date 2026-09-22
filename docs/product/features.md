@@ -38,6 +38,19 @@ nothing. → [Business rules — the contract for work](/product/business-rules#
 **Tracking** — see the order move through on-the-way, in progress and completed, with push
 notifications and a Live Activity on iOS.
 
+**Tracking without an account** — a guest opens their booking from **the link in their e-mail**, and
+cancels it from there under the same policy a signed-in customer gets. The link carries a per-order
+access token: on the web, opening it *is* the lookup — nothing to type, no reference number to
+remember; in the mobile apps the guest pastes the link and the app takes the token out of it. There is
+no longer any form asking for an order number, an e-mail and a code.
+
+Every message about the booking — the receipt, *a cleaner has taken your job*, *we're on our way*,
+*all done*, the cancellation — carries a fresh working link, and a browser remembers the bookings it
+holds tokens for. A link stops working 30 days after the cleaning, and every link the guest already
+held stops at once if the booking is cancelled — the cancellation e-mail then carries a new one, so
+they can still read what they were refunded.
+→ [Guest order lookup](/flows/booking-and-pricing#guest-order-lookup)
+
 **After the job** — receipt, review, raise a dispute with evidence, request a refund. The review is
 **asked for**, not left to be found: the mobile apps raise a sheet as soon as a completed job is opened,
 with stars and a short list of tappable tags — *on time*, *thorough*, *missed areas* — so leaving one

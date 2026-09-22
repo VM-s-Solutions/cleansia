@@ -77,13 +77,20 @@ out on another job, because asking someone mid-clean whether they have set off i
 ## What a cleaner who has *not* taken the job can see
 
 A cleaner browsing the board gets **the job, not the household**. The redaction strips the customer's
-name, email, phone, address and coordinates, the confirmation code, every free-text field — notes,
-special instructions, **entry instructions**, completion notes — the review, and the crew's phone
-numbers.
+name, email, phone, address and coordinates, every free-text field — notes, special instructions,
+**entry instructions**, completion notes — the review, and the crew's phone numbers.
 
 List and detail shapes live in **one file** on purpose: when they lived apart, the detail answered with
 everything the list had just withheld. A surface test fails the build until a newly-added field is
 explicitly classified as kept or stripped.
+
+**The confirmation code is not on the list because it is no longer on the DTO.** It used to be
+redacted to an empty string for a browsing cleaner, which left it readable by every cleaner *assigned*
+to the job — and it was one third of the key the anonymous guest-cancellation endpoint accepted, so an
+assigned cleaner could cancel their own customer's booking and charge them the fee. The code has since
+left `OrderItem` entirely and authenticates nothing; a guest proves a booking with a per-order access
+token that reaches only their mailbox.
+→ [The guest access token](/flows/booking-and-pricing#guest-access-token)
 
 ## Edge cases
 

@@ -39,15 +39,20 @@ Order Wizard → submitOrder() → orderClient.createOrder()
 
 ## Guest Order Tracking
 
-Regardless of payment method, when an order is created successfully:
+Regardless of payment method, a successful **guest** create response carries the booking's access
+token, and the wizard keeps it:
 
 ```typescript
-if (response.id) {
-  this.guestOrderService.save(response.id, data.customerEmail);
+if (response.id && response.guestAccessToken) {
+  this.guestOrderService.save(response.id, response.guestAccessToken);
 }
 ```
 
-The `GuestOrderService` stores `{ orderId, email }` pairs in `localStorage`, allowing unauthenticated users to track their orders later via the `/track-order` page.
+`GuestOrderService` stores `{ orderId, accessToken, createdAt }` in `localStorage` (five entries, a
+token per entry), which is what lets an unauthenticated customer reopen the booking from
+`/track-order` without going back to their mailbox. `guestAccessToken` is `null` when the command
+carried a session — an account booking mints none, because its owner signs in instead — so nothing is
+saved for a signed-in customer. → [Order tracking](/customer-app/order-tracking)
 
 ## Checkout Routes
 
@@ -77,6 +82,18 @@ ordersRoute = this.authService.isLoggedIn()
   ? '/' + CleansiaCustomerRoute.ORDERS
   : '/' + CleansiaCustomerRoute.TRACK_ORDER;
 ```
+
+**The page shows the booking only when it can prove it.** Both paths name the booking in the URL —
+the wizard puts `?orderId=` on the cash navigation and Stripe returns it on the card one — and an id
+in a URL proves nothing, so each visitor reads it back with what they actually hold: a **guest** with
+the booking's access token out of `GuestOrderService` (through `LookupBatch`), a **signed-in**
+customer with their session (through `GetById`). A guest booking mints no token for an account and an
+account booking mints none at all, so the two reads never cross.
+
+When neither can prove it — a browser that did not place this booking, a session the booking does not
+belong to — the page keeps its headline, its three steps and its actions and simply states no figures.
+A refused read and an unknown booking answer identically, so the page cannot be asked whether somebody
+else's order exists.
 
 ### Cancel Page (`/checkout/cancel`)
 

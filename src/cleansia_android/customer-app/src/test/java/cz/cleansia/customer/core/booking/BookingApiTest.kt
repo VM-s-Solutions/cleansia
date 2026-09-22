@@ -33,6 +33,7 @@ class BookingApiTest {
         specialInstructions: String? = null,
         accessInstructions: String? = null,
         termsAccepted: Boolean? = null,
+        language: String = "en",
     ) = CreateOrderCommand(
         customerName = "Ada Lovelace",
         customerEmail = "user@example.com",
@@ -47,6 +48,7 @@ class BookingApiTest {
         specialInstructions = specialInstructions,
         accessInstructions = accessInstructions,
         termsAccepted = termsAccepted,
+        language = language,
     )
 
     private suspend fun sentFor(command: CreateOrderCommand): GenCreateOrderCommand {
@@ -70,6 +72,11 @@ class BookingApiTest {
     @Test
     fun create_leavesTheTickOffWhenTheBoxWasNotShown() = runTest {
         assertEquals(null, sentFor(command(termsAccepted = null)).termsAccepted)
+    }
+
+    @Test
+    fun create_carriesTheBookingLanguageOntoTheGeneratedCommand() = runTest {
+        assertEquals("cs", sentFor(command(language = "cs")).language)
     }
 
     @Test

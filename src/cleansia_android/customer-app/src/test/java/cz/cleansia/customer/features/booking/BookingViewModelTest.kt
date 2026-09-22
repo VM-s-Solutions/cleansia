@@ -28,6 +28,7 @@ import cz.cleansia.customer.core.promo.ValidatePromoCodeRequest
 import cz.cleansia.customer.core.promo.ValidatePromoCodeResponse
 import cz.cleansia.customer.core.referral.ReferralRepository
 import cz.cleansia.customer.core.referral.ValidateReferralResponse
+import cz.cleansia.customer.core.settings.AppSettingsRepository
 import cz.cleansia.customer.core.user.CurrentUser
 import cz.cleansia.customer.core.user.UserRepository
 import cz.cleansia.customer.testing.MainDispatcherRule
@@ -85,6 +86,7 @@ class BookingViewModelTest {
     private lateinit var catalogRepository: CatalogRepository
     private lateinit var marketRepository: cz.cleansia.customer.core.market.MarketRepository
     private lateinit var consentClient: GdprConsentClient
+    private lateinit var settings: AppSettingsRepository
     private lateinit var appContext: Context
 
     private val marketFlow = MutableStateFlow<cz.cleansia.customer.core.market.MarketState>(
@@ -133,6 +135,8 @@ class BookingViewModelTest {
         // that already consented override this per-test.
         consentClient = mockk()
         coEvery { consentClient.grantedTypes() } returns emptySet()
+        settings = mockk()
+        coEvery { settings.emailLanguageTag() } returns "en"
         appContext = mockk(relaxed = true)
 
         every { userRepository.currentUser } returns currentUserFlow
@@ -168,6 +172,7 @@ class BookingViewModelTest {
         catalogRepository = catalogRepository,
         marketRepository = marketRepository,
         consentClient = consentClient,
+        settings = settings,
         appContext = appContext,
     )
 
@@ -1693,6 +1698,16 @@ class BookingViewModelTest {
         vm.readyToPlace(termsAccepted = false)
 
         assertNull(createCommandSent(vm).termsAccepted)
+    }
+
+    /** The receipt is rendered in the booking's language ahead of the account's, so it must be the app's. */
+    @Test
+    fun submit_sendsTheLanguageTheAppIsIn() = runTest {
+        coEvery { settings.emailLanguageTag() } returns "cs"
+        val vm = newViewModel()
+        vm.readyToPlace(termsAccepted = true)
+
+        assertEquals("cs", createCommandSent(vm).language)
     }
 
     private fun quoteWith(

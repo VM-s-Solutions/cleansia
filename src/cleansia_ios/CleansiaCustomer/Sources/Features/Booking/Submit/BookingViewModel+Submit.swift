@@ -36,7 +36,8 @@ extension BookingViewModel {
                 instant: instant,
                 countryId: countryId,
                 promoIsValid: promoIsValid,
-                alreadyConsented: alreadyConsented
+                alreadyConsented: alreadyConsented,
+                language: languageTag()
             )
         )
 

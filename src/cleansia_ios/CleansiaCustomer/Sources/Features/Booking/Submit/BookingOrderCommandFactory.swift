@@ -9,6 +9,7 @@ struct ResolvedOrderInputs {
     let countryId: String?
     let promoIsValid: Bool
     let alreadyConsented: Bool
+    let language: String
 }
 
 enum BookingOrderCommandFactory {
@@ -46,6 +47,7 @@ enum BookingOrderCommandFactory {
             paymentType: (state.paymentMethod ?? .cash).paymentType,
             currencyId: resolved.quote.currencyId.isBlank ? nil : resolved.quote.currencyId,
             totalPrice: resolved.quote.totalPrice,
+            language: resolved.language,
             promoCode: promo,
             referralCode: nil,
             preferredEmployeeId: state.preferredEmployeeId,

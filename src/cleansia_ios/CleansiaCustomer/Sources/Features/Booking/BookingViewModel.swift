@@ -43,6 +43,7 @@ final class BookingViewModel: ViewModel {
     let countryResolver: CountryResolver
     let consentClient: ConsentStatusClient
     let tokenStore: TokenStore
+    let languageTag: () -> String
     let isCardPaymentAvailable: Bool
     private let quoteDebounce: DispatchQueue.SchedulerTimeType.Stride
     private let scheduler: AnySchedulerOf<DispatchQueue>
@@ -68,6 +69,7 @@ final class BookingViewModel: ViewModel {
         countryResolver: CountryResolver = LiveCountryResolver(),
         consentClient: ConsentStatusClient = LiveConsentStatusClient(),
         tokenStore: TokenStore = CustomerBookingTokenStore.shared,
+        languageTag: @escaping () -> String = { CoreL10n.languageTag },
         market: AnyPublisher<MarketState, Never> = Just(.unavailable).eraseToAnyPublisher(),
         isCardPaymentAvailable: Bool = StripeConfig.isCardPaymentAvailable,
         quoteDebounce: DispatchQueue.SchedulerTimeType.Stride = .milliseconds(400),
@@ -85,6 +87,7 @@ final class BookingViewModel: ViewModel {
         self.countryResolver = countryResolver
         self.consentClient = consentClient
         self.tokenStore = tokenStore
+        self.languageTag = languageTag
         self.isCardPaymentAvailable = isCardPaymentAvailable
         self.quoteDebounce = quoteDebounce
         self.scheduler = scheduler

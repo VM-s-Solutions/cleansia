@@ -23,6 +23,7 @@ import cz.cleansia.customer.core.promo.PromoCodeError
 import cz.cleansia.customer.core.promo.ValidatePromoCodeRequest
 import cz.cleansia.customer.core.referral.ReferralRepository
 import cz.cleansia.customer.core.referral.ReferralValidationError
+import cz.cleansia.customer.core.settings.AppSettingsRepository
 import cz.cleansia.customer.core.user.UserRepository
 import cz.cleansia.core.network.ApiResult
 import cz.cleansia.core.snackbar.SnackbarController
@@ -149,6 +150,7 @@ class BookingViewModel @Inject constructor(
     private val catalogRepository: CatalogRepository,
     private val marketRepository: cz.cleansia.customer.core.market.MarketRepository,
     private val consentClient: GdprConsentClient,
+    private val settings: AppSettingsRepository,
     @ApplicationContext private val appContext: Context,
 ) : ViewModel() {
 
@@ -549,6 +551,7 @@ class BookingViewModel @Inject constructor(
                 // normalise to null rather than persisting an empty note.
                 specialInstructions = s.specialInstructions.trim().ifBlank { null },
                 accessInstructions = s.accessInstructions.trim().ifBlank { null },
+                language = settings.emailLanguageTag(),
                 // Asserted only when the box was shown and ticked; an account that already consented
                 // saw no box and asserts nothing new.
                 termsAccepted = if (!_alreadyConsented.value && s.termsAccepted) true else null,

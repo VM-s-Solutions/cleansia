@@ -51,6 +51,23 @@ function blocks(scss: string, selector: RegExp): Block[] {
   return found;
 }
 
+// A phone media query may stack a row and let its buttons fill it; the desktop rules may not.
+function withoutMediaQueries(scss: string): string {
+  let out = scss;
+  let match: RegExpExecArray | null;
+  while ((match = /@media[^{]*\{/.exec(out)) !== null) {
+    let depth = 1;
+    let end = match.index + match[0].length;
+    while (depth > 0 && end < out.length) {
+      if (out[end] === '{') depth++;
+      else if (out[end] === '}') depth--;
+      end++;
+    }
+    out = out.slice(0, match.index) + out.slice(end);
+  }
+  return out;
+}
+
 describe('admin page shell', () => {
   it('declares the card width once, in the shared page wrapper', () => {
     const offenders = adminPageStylesheets()
@@ -90,5 +107,15 @@ describe('admin page shell', () => {
     const button = readFileSync(join(STYLES_DIR, 'components/cleansia-button.component.scss'), 'utf8');
 
     expect(button).not.toMatch(/min-width:\s*100%/);
+  });
+
+  it('lets no page stretch a button to the row outside a phone media query', () => {
+    const offenders = adminPageStylesheets()
+      .filter(({ scss }) =>
+        blocks(withoutMediaQueries(scss), /cleansia-button|\.cleansia-button/).some(({ body }) => /(min-)?width:\s*100%/.test(body))
+      )
+      .map(({ name }) => name);
+
+    expect(offenders).toEqual([]);
   });
 });

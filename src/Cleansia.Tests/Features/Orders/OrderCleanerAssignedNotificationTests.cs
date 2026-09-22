@@ -99,17 +99,6 @@ public class OrderCleanerAssignedNotificationTests
     }
 
     [Fact]
-    public async Task Taking_An_Order_Never_Claims_A_Cleaner_Through_OrderConfirmed()
-    {
-        ArrangeOrder(OrderStatus.New, PaymentType.Cash, PaymentStatus.Pending, maxEmployees: 1);
-        ArrangeTaker();
-
-        await CreateTakeHandler().Handle(new TakeOrder.Command(OrderId, WorkContractTestData.TextIdEn), CancellationToken.None);
-
-        Assert.DoesNotContain(_sent, s => s.EventKey == NotificationEventCatalog.OrderConfirmed);
-    }
-
-    [Fact]
     public async Task Taking_A_Guest_Order_Tells_Nobody()
     {
         ArrangeOrder(

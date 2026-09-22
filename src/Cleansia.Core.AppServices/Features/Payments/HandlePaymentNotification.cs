@@ -419,7 +419,7 @@ public class HandlePaymentNotification
 
             var dispute = new Cleansia.Core.Domain.Disputes.Dispute(
                 orderId: order.Id,
-                userId: order.UserId ?? string.Empty,
+                userId: order.UserId,
                 reason: DisputeReason.IncorrectAmount,
                 description: DoubleSettlementDescription,
                 createdBy: WebhookActor);
@@ -483,7 +483,7 @@ public class HandlePaymentNotification
 
             var dispute = new Cleansia.Core.Domain.Disputes.Dispute(
                 orderId: order.Id,
-                userId: order.UserId ?? string.Empty,
+                userId: order.UserId,
                 reason: DisputeReason.Chargeback, // ADR-0006 D4: a bank chargeback, not a customer claim
                 description: ChargebackDescription,
                 createdBy: WebhookActor);

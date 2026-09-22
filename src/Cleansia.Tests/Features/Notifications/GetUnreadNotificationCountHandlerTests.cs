@@ -52,12 +52,12 @@ public sealed class GetUnreadNotificationCountHandlerTests : IDisposable
             read.MarkRead(DateTimeOffset.UtcNow);
 
             seed.AddRange(
-                UserNotification.Create(UserId, NotificationEventCatalog.OrderConfirmed, "{}", null),
+                UserNotification.Create(UserId, NotificationEventCatalog.OrderCleanerAssigned, "{}", null),
                 UserNotification.Create(UserId, NotificationEventCatalog.DisputeReply, "{}", null),
                 UserNotification.Create(UserId, NotificationEventCatalog.LoyaltyTierUpgrade, "{}", null),
                 read,
                 UserNotification.Create(UserId, NotificationEventCatalog.NewJobsAvailable, "{}", null),
-                UserNotification.Create(OtherUserId, NotificationEventCatalog.OrderConfirmed, "{}", null));
+                UserNotification.Create(OtherUserId, NotificationEventCatalog.OrderCleanerAssigned, "{}", null));
             await seed.CommitAsync(CancellationToken.None);
         }
     }

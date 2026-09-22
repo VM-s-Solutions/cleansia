@@ -182,7 +182,7 @@ public sealed class AdminNotificationEmailRenderingTests
         var (service, capture) = BuildService([]);
 
         await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() =>
-            service.SendAdminNotificationEmailAsync(Recipient, NotificationEventCatalog.OrderConfirmed, new Dictionary<string, string>(), "en", CancellationToken.None));
+            service.SendAdminNotificationEmailAsync(Recipient, NotificationEventCatalog.OrderCompleted, new Dictionary<string, string>(), "en", CancellationToken.None));
 
         Assert.Equal(string.Empty, capture.HtmlContent);
     }

@@ -2206,7 +2206,7 @@ namespace Cleansia.Infra.Database.Migrations
                 {
                     Id = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
                     OrderId = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
-                    UserId = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
+                    UserId = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: true),
                     Reason = table.Column<int>(type: "integer", nullable: false),
                     Description = table.Column<string>(type: "character varying(2000)", maxLength: 2000, nullable: false),
                     Status = table.Column<int>(type: "integer", nullable: false),

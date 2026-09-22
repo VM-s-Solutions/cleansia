@@ -222,7 +222,7 @@ public partial class CreateOrderCallerCurrencyTests
                 {
                     var producer = action.ServiceProvider.GetRequiredService<INotificationProducer>();
                     var args = new Dictionary<string, string> { ["orderId"] = CrossOrderId };
-                    await producer.NotifyAsync(CustomerUserId, NotificationEventCatalog.OrderConfirmed, args, TestTenants.Second, CrossOrderId, CancellationToken.None);
+                    await producer.NotifyAsync(CustomerUserId, NotificationEventCatalog.OrderCleanerAssigned, args, TestTenants.Second, CrossOrderId, CancellationToken.None);
                     await producer.NotifyAsync(cleanerId, NotificationEventCatalog.PreferredOffer, args, TestTenants.Default, CrossOrderId, CancellationToken.None);
                     Assert.Equal(TestTenants.Second, action.ServiceProvider.GetRequiredService<ITenantProvider>().GetCurrentTenantId());
                     await action.ServiceProvider.GetRequiredService<IUnitOfWork>().CommitAsync(CancellationToken.None);
@@ -235,7 +235,7 @@ public partial class CreateOrderCallerCurrencyTests
                     var page = await mediator.Send(new GetPagedUserNotifications.Request { Audience = NotificationFeedAudience.Customer });
                     var notification = Assert.Single(page.Data);
                     notificationId = notification.Id;
-                    Assert.Equal(NotificationEventCatalog.OrderConfirmed, notification.EventKey);
+                    Assert.Equal(NotificationEventCatalog.OrderCleanerAssigned, notification.EventKey);
                     Assert.Equal(1, (await mediator.Send(new GetUnreadNotificationCount.Query(NotificationFeedAudience.Customer))).Value.Count);
                 }
                 await using (var unrelated = ReviewScope(provider, actor, unrelatedId, UserProfile.Customer, TestTenants.Default))
@@ -286,10 +286,10 @@ public partial class CreateOrderCallerCurrencyTests
                             .HandleAsync(body, CancellationToken.None);
                     }
                 }
-                Assert.Equal(muted ? 0 : 1, sent.Count(s => s.Event == NotificationEventCatalog.OrderConfirmed));
+                Assert.Equal(muted ? 0 : 1, sent.Count(s => s.Event == NotificationEventCatalog.OrderCleanerAssigned));
                 Assert.Single(sent, s => s.Event == NotificationEventCatalog.PreferredOffer);
                 Assert.DoesNotContain(sent.SelectMany(s => s.Tokens), t => t == $"token-{unrelatedId}");
-                if (!muted) Assert.Equal($"token-{CustomerUserId}", Assert.Single(Assert.Single(sent, s => s.Event == NotificationEventCatalog.OrderConfirmed).Tokens));
+                if (!muted) Assert.Equal($"token-{CustomerUserId}", Assert.Single(Assert.Single(sent, s => s.Event == NotificationEventCatalog.OrderCleanerAssigned).Tokens));
                 Assert.Equal($"token-{cleanerId}", Assert.Single(Assert.Single(sent, s => s.Event == NotificationEventCatalog.PreferredOffer).Tokens));
                 return notificationId;
             },

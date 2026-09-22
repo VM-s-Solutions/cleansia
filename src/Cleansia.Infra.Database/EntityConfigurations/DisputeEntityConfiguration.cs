@@ -16,8 +16,9 @@ public class DisputeEntityConfiguration : TenantAuditableEntityConfiguration<Dis
             .IsRequired()
             .HasMaxLength(50);
 
+        // Nullable: a bank chargeback on a GUEST order has no platform account behind it, and the
+        // webhook must still record the dispute. → Dispute.UserId
         builder.Property(d => d.UserId)
-            .IsRequired()
             .HasMaxLength(50);
 
         builder.Property(d => d.Description)

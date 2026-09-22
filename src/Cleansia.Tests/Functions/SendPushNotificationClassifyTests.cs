@@ -76,8 +76,8 @@ public class SendPushNotificationClassifyTests
         // The real wire shape today: {"messageKey","tenantId","payload":{...}}.
         var body = SerializeEnvelope(
             new SendPushNotificationMessage(
-                UserId: "USER-1", EventKey: "order.confirmed", Args: new(), TenantId: "TENANT-A"),
-            messageKey: "push:USER-1:order.confirmed",
+                UserId: "USER-1", EventKey: "order.cleaner_assigned", Args: new(), TenantId: "TENANT-A"),
+            messageKey: "push:USER-1:order.cleaner_assigned",
             tenantId: "TENANT-A");
 
         _preferencesRepository
@@ -102,7 +102,7 @@ public class SendPushNotificationClassifyTests
         // The payload WAS unwrapped: the device lookup ran for the enveloped UserId, and the push was sent.
         _deviceRepository.Verify(r => r.GetByUserIdAsync("USER-1", It.IsAny<CancellationToken>()), Times.Once);
         _pushDispatcher.Verify(p => p.SendAsync(
-            It.IsAny<IReadOnlyList<string>>(), "order.confirmed",
+            It.IsAny<IReadOnlyList<string>>(), "order.cleaner_assigned",
             It.IsAny<Dictionary<string, string>>(), It.IsAny<CancellationToken>()), Times.Once);
         // The envelope's TenantId is authoritative for the cross-tenant override.
         _tenantProvider.Verify(t => t.SetTenantOverride("TENANT-A"), Times.Once);
@@ -115,7 +115,7 @@ public class SendPushNotificationClassifyTests
 
         // In-flight pre-envelope message — must still be processed, not discarded.
         var body = Serialize(new SendPushNotificationMessage(
-            UserId: "USER-2", EventKey: "order.confirmed", Args: new(), TenantId: "TENANT-B"));
+            UserId: "USER-2", EventKey: "order.cleaner_assigned", Args: new(), TenantId: "TENANT-B"));
 
         _preferencesRepository
             .Setup(r => r.GetByUserIdAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
@@ -170,7 +170,7 @@ public class SendPushNotificationClassifyTests
         var handler = CreateHandler();
 
         var message = Serialize(new SendPushNotificationMessage(
-            UserId: "USER-1", EventKey: "order.confirmed", Args: new(), TenantId: null));
+            UserId: "USER-1", EventKey: "order.cleaner_assigned", Args: new(), TenantId: null));
 
         // Simulated infra/transient fault — the DB read blows up. This MUST propagate so the queue
         // retries up to maxDequeueCount; acking here would silently drop recoverable work.
@@ -190,7 +190,7 @@ public class SendPushNotificationClassifyTests
         var handler = CreateHandler();
 
         var message = Serialize(new SendPushNotificationMessage(
-            UserId: "USER-1", EventKey: "order.confirmed", Args: new(), TenantId: null));
+            UserId: "USER-1", EventKey: "order.cleaner_assigned", Args: new(), TenantId: null));
 
         _preferencesRepository
             .Setup(r => r.GetByUserIdAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))

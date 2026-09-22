@@ -131,6 +131,6 @@ public sealed class AdminNotificationEventCatalogTests
             Assert.Equal(key, AdminEventCatalog.Find(key).Key);
         }
 
-        Assert.Throws<ArgumentOutOfRangeException>(() => AdminEventCatalog.Find(NotificationEventCatalog.OrderConfirmed));
+        Assert.Throws<ArgumentOutOfRangeException>(() => AdminEventCatalog.Find(NotificationEventCatalog.OrderCompleted));
     }
 }

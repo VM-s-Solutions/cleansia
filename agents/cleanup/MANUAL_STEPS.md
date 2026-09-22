@@ -126,7 +126,15 @@ two FKs and its three indexes and nothing else; the table count is now **85** an
 `Tenants` FK. All three backend suites ran locally and green (6278 / 559 / 347), the integration one
 against a real Postgres built from this migration.
 
-**The one owed drop belongs to `20260922153301`**: a DEV database whose
+The guest chargeback (item 2.3 of phase 2 of `agents/FIX-PLAN-2026-09-22.md`, same branch,
+2026-09-22 — finding F71) regenerated `Initial` once more as **`20260922182416`**: `Disputes.UserId`
+becomes **nullable** (the FK into `Users` and `IX_Disputes_UserId` both stay). A bank chargeback on a
+guest booking has no account to name; the webhook used to substitute the empty string, Postgres raised
+`23503`, and Stripe retried a 500 forever while the dispute went unrecorded. The body diff against
+`20260922153301` is exactly that one column's nullability — **85 tables, 1339 columns, 169 foreign
+keys and 280 indexes are identical**, and **49** still carry the `Tenants` FK.
+
+**The one owed drop belongs to `20260922182416`**: a DEV database whose
 `__EFMigrationsHistory` records any earlier id replays the whole create script against tables that
 already exist. The legal texts need no extra step — every host seeds them at start, and since
 `b34dff07` a fresh Development database is seeded once more in the boot that migrates it (the factory

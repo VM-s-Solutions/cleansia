@@ -70,7 +70,7 @@ public class SendPushNotificationDisabledAckTests
     {
         var handler = CreateHandler();
         var message = Serialize(new SendPushNotificationMessage(
-            UserId: "USER-1", EventKey: "order.confirmed", Args: new(), TenantId: null));
+            UserId: "USER-1", EventKey: "order.cleaner_assigned", Args: new(), TenantId: null));
 
         SetupOneEligibleDevice("USER-1");
 
@@ -87,7 +87,7 @@ public class SendPushNotificationDisabledAckTests
         // The dispatcher WAS called (correct SendAsync semantics) — the handler reached the send, then
         // recognized the skip and acked rather than short-circuiting before the send.
         _pushDispatcher.Verify(p => p.SendAsync(
-            It.IsAny<IReadOnlyList<string>>(), "order.confirmed",
+            It.IsAny<IReadOnlyList<string>>(), "order.cleaner_assigned",
             It.IsAny<IReadOnlyDictionary<string, string>>(), It.IsAny<CancellationToken>()), Times.Once);
         // No dead-token prune commit on a skipped dispatch.
         _unitOfWork.Verify(u => u.CommitAsync(It.IsAny<CancellationToken>()), Times.Never);
@@ -98,7 +98,7 @@ public class SendPushNotificationDisabledAckTests
     {
         var handler = CreateHandler();
         var message = Serialize(new SendPushNotificationMessage(
-            UserId: "USER-2", EventKey: "order.confirmed", Args: new(), TenantId: null));
+            UserId: "USER-2", EventKey: "order.cleaner_assigned", Args: new(), TenantId: null));
 
         SetupOneEligibleDevice("USER-2");
 

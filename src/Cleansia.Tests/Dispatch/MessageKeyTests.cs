@@ -36,8 +36,8 @@ public class MessageKeyTests
     public void Push_Key_Follows_Frozen_Formula_With_Subject()
     {
         Assert.Equal(
-            "push:USER-1:order.confirmed:ORDER-1",
-            MessageKeys.Push("USER-1", "order.confirmed", "ORDER-1"));
+            "push:USER-1:order.cleaner_assigned:ORDER-1",
+            MessageKeys.Push("USER-1", "order.cleaner_assigned", "ORDER-1"));
     }
 
     [Fact]

@@ -130,24 +130,4 @@ public class EmployeePayConfig : TenantAuditable
 
         return this;
     }
-
-    public decimal CalculatePay(int rooms, int bathrooms, decimal distance)
-    {
-        var totalPay = BasePay
-            + (ExtraPerRoom * rooms)
-            + (ExtraPerBathroom * bathrooms)
-            + (DistanceRatePerKm * distance);
-
-        if (MinimumPay > 0 && totalPay < MinimumPay)
-        {
-            totalPay = MinimumPay;
-        }
-
-        if (MaximumPay > 0 && totalPay > MaximumPay)
-        {
-            totalPay = MaximumPay;
-        }
-
-        return totalPay;
-    }
 }

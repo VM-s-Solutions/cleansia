@@ -62,14 +62,14 @@ public class S6LoggingHygieneCharacterizationTests
             Mock.Of<IUnitOfWork>(), new NoopGuard(), Mock.Of<ITenantProvider>(), logger);
 
         var body = JsonSerializer.Serialize(
-            new SendPushNotificationMessage("USER-1", "order.confirmed", new(), TenantId: null),
+            new SendPushNotificationMessage("USER-1", "order.cleaner_assigned", new(), TenantId: null),
             CamelCase);
 
         await Assert.ThrowsAsync<TimeoutException>(() => handler.HandleAsync(body, CancellationToken.None));
 
         var entry = logger.Single(LogLevel.Error);
         Assert.Equal("USER-1", entry.Scalar("UserId"));
-        Assert.Equal("order.confirmed", entry.Scalar("EventKey"));
+        Assert.Equal("order.cleaner_assigned", entry.Scalar("EventKey"));
         Assert.DoesNotContain(body, entry.Message);
     }
 

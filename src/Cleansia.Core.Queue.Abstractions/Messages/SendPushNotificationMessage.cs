@@ -6,7 +6,7 @@ namespace Cleansia.Core.Queue.Abstractions.Messages;
 /// single event addressed to a single user.
 ///
 /// <see cref="EventKey"/> matches the mobile <c>strings.xml</c> lookup
-/// (e.g. <c>order.confirmed</c>). <see cref="Args"/> carries structured
+/// (e.g. <c>order.completed</c>). <see cref="Args"/> carries structured
 /// values to substitute into the localized template (e.g. orderId,
 /// orderNumber). NEVER include PII (customer name, address) — payload is
 /// visible on the device's lock screen.

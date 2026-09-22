@@ -1226,7 +1226,6 @@ namespace Cleansia.Infra.Database.Migrations
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("UserId")
-                        .IsRequired()
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)");
 
@@ -6752,8 +6751,7 @@ namespace Cleansia.Infra.Database.Migrations
                     b.HasOne("Cleansia.Core.Domain.Users.User", "User")
                         .WithMany()
                         .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("Order");
 

@@ -25,7 +25,7 @@ public class FcmPushDispatcherDisabledStateTests
     {
         var dispatcher = new FcmPushDispatcher(new StubFcmConfig(), new CapturingLogger());
 
-        var result = await dispatcher.SendAsync(Tokens, "order.confirmed", Data, CancellationToken.None);
+        var result = await dispatcher.SendAsync(Tokens, "order.cleaner_assigned", Data, CancellationToken.None);
 
         Assert.True(result.Skipped);
         Assert.Equal(0, result.SuccessCount);
@@ -39,7 +39,7 @@ public class FcmPushDispatcherDisabledStateTests
         var logger = new CapturingLogger();
         var dispatcher = new FcmPushDispatcher(new StubFcmConfig(), logger);
 
-        var result = await dispatcher.SendAsync([], "order.confirmed", Data, CancellationToken.None);
+        var result = await dispatcher.SendAsync([], "order.cleaner_assigned", Data, CancellationToken.None);
 
         Assert.Equal(0, result.SuccessCount);
         Assert.Equal(0, result.FailureCount);
@@ -54,7 +54,7 @@ public class FcmPushDispatcherDisabledStateTests
         var logger = new CapturingLogger();
         var dispatcher = new FcmPushDispatcher(new StubFcmConfig(), logger);
 
-        var first = await dispatcher.SendAsync(Tokens, "order.confirmed", Data, CancellationToken.None);
+        var first = await dispatcher.SendAsync(Tokens, "order.cleaner_assigned", Data, CancellationToken.None);
         var second = await dispatcher.SendAsync(Tokens, "order.started", Data, CancellationToken.None);
 
         Assert.True(first.Skipped);

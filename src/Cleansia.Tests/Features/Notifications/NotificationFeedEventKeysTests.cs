@@ -66,7 +66,6 @@ public class NotificationFeedEventKeysTests
         Assert.Equal(
             [
                 NotificationEventCatalog.OrderPaymentConfirmed,
-                NotificationEventCatalog.OrderConfirmed,
                 NotificationEventCatalog.OrderCleanerAssigned,
                 NotificationEventCatalog.OrderOnTheWay,
                 NotificationEventCatalog.OrderInProgress,

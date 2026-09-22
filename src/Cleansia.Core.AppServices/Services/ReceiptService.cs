@@ -2,6 +2,7 @@ using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Blobs.Abstractions;
 using Cleansia.Core.Domain.Company;
+using Cleansia.Core.Domain.Internationalization;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Receipts;
 using Cleansia.Core.Domain.Repositories;
@@ -159,9 +160,19 @@ public sealed class ReceiptService(
 
         var country = await countryRepository.GetByIdAsync(countryId, cancellationToken);
         // No ISO code, no regime: the empty key resolves to the default scope, never to the Czech one.
-        var isoCode = country?.IsoCode;
+        var isoCode = ToFiscalCountryCode(country?.IsoCode);
         return isoCode is null ? string.Empty : fiscalServiceResolver.Resolve(isoCode).ProviderKey;
     }
+
+    /// <summary>
+    /// Every <see cref="IFiscalService"/> declares an ISO 3166-1 alpha-2 code and the resolver keys on
+    /// it, while <c>Country.IsoCode</c> is stored alpha-3 by the seed ("CZE"). Resolving on the stored
+    /// code matched no provider in any market, so every receipt fell through to the no-op regardless of
+    /// the enforcement mode. Unmapped resolves to null, which lands on the same no-op — fail-closed,
+    /// never a guess at which authority a receipt belongs to.
+    /// </summary>
+    private static string? ToFiscalCountryCode(string? storedIsoCode) =>
+        CountryIsoCode.ToAlpha2(storedIsoCode);
 
     private async Task HandleFiscalAsync(
         Order order,
@@ -177,15 +188,17 @@ public sealed class ReceiptService(
             return;
         }
 
+        var fiscalCountryCode = ToFiscalCountryCode(countryCode);
+
         // An unresolved country resolves to the no-op provider, and the request below refuses to be
         // built for it -- the same fail-closed landing as a missing currency, never the Czech regime.
-        var fiscalService = fiscalServiceResolver.Resolve(countryCode ?? string.Empty);
+        var fiscalService = fiscalServiceResolver.Resolve(fiscalCountryCode ?? string.Empty);
 
         FiscalGoLiveGate.EnsureRegisterIdempotent(fiscalService, enforcementMode);
 
         try
         {
-            var fiscalRequest = BuildFiscalRequest(order, receipt, companyInfo, FiscalCountryCodeOf(order, countryCode));
+            var fiscalRequest = BuildFiscalRequest(order, receipt, companyInfo, FiscalCountryCodeOf(order, fiscalCountryCode));
             var result = await fiscalService.RegisterReceiptAsync(fiscalRequest, cancellationToken);
 
             if (result.IsRegistered && result.FiscalCode != null)
@@ -330,11 +343,12 @@ public sealed class ReceiptService(
             countryCode = country?.IsoCode;
         }
 
-        var fiscalService = fiscalServiceResolver.Resolve(countryCode ?? string.Empty);
+        var fiscalCountryCode = ToFiscalCountryCode(countryCode);
+        var fiscalService = fiscalServiceResolver.Resolve(fiscalCountryCode ?? string.Empty);
 
         try
         {
-            var fiscalRequest = BuildFiscalRequest(order, receipt, companyInfo, FiscalCountryCodeOf(order, countryCode));
+            var fiscalRequest = BuildFiscalRequest(order, receipt, companyInfo, FiscalCountryCodeOf(order, fiscalCountryCode));
             var result = await fiscalService.RegisterReceiptAsync(fiscalRequest, cancellationToken);
 
             if (result.IsRegistered && result.FiscalCode != null)

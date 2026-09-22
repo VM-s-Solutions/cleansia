@@ -87,6 +87,7 @@ public class CalculateOrderPay
             var order = await _orderRepository
                 .GetAll()
                 .Include(o => o.SelectedServices)
+                .Include(o => o.SelectedPackages)
                 .FirstOrDefaultAsync(o => o.Id == command.OrderId, cancellationToken);
 
             if (order is null)
@@ -117,6 +118,7 @@ public class CalculateOrderPay
             var order = await orderRepository
                 .GetAll()
                 .Include(o => o.SelectedServices)
+                .Include(o => o.SelectedPackages)
                 .FirstOrDefaultAsync(o => o.Id == command.OrderId, cancellationToken);
 
             // The validator proved the ORDER id exists with its own query; this one adds Includes and

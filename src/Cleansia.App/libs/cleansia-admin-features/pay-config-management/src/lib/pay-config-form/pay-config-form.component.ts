@@ -74,8 +74,8 @@ export class PayConfigFormComponent implements OnInit, OnDestroy {
   );
 
   readonly form = this.fb.nonNullable.group({
-    serviceId: [''],
-    packageId: [''],
+    serviceId: this.fb.control<string | null>(null),
+    packageId: this.fb.control<string | null>(null),
     basePay: [0, [Validators.required, Validators.min(0)]],
     extraPerRoom: [0, [Validators.min(0)]],
     extraPerBathroom: [0, [Validators.min(0)]],
@@ -102,8 +102,8 @@ export class PayConfigFormComponent implements OnInit, OnDestroy {
     const payConfig = this.facade.payConfig();
     if (payConfig && this.isEditMode()) {
       this.form.patchValue({
-        serviceId: payConfig.serviceId ?? '',
-        packageId: payConfig.packageId ?? '',
+        serviceId: payConfig.serviceId ?? null,
+        packageId: payConfig.packageId ?? null,
         basePay: payConfig.basePay ?? 0,
         extraPerRoom: payConfig.extraPerRoom ?? 0,
         extraPerBathroom: payConfig.extraPerBathroom ?? 0,

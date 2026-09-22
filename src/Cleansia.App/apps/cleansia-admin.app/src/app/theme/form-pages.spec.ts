@@ -40,8 +40,9 @@ const FORM_TEMPLATES = [
   'service-management/src/lib/service-form/service-form.component.html',
 ];
 
-// The two forms that are not reached from a list: the profile and the marketing push.
-const FORMS_WITHOUT_BACK = new Set([
+// The two forms that are not reached from a list, the profile and the marketing push: nothing to
+// go back to, so no back control beside the title and no cancel in the footer.
+const STANDALONE_FORMS = new Set([
   'admin-profile/src/lib/admin-profile/admin-profile.component.html',
   'marketing/src/lib/sitewide-push-form/sitewide-push-form.component.html',
 ]);
@@ -63,7 +64,7 @@ describe('admin form pages', () => {
   it('open with the shared page header and an h1 title, the back control beside it', () => {
     const offenders = FORM_TEMPLATES.filter((path) => {
       const html = formTemplate(path);
-      const backBesideTitle = FORMS_WITHOUT_BACK.has(path) || /class="cleansia-detail-title"/.test(html);
+      const backBesideTitle = STANDALONE_FORMS.has(path) || /class="cleansia-detail-title"/.test(html);
       return !/class="cleansia-page-header"/.test(html) || !/\[level\]="1"/.test(html) || !backBesideTitle;
     });
 
@@ -87,14 +88,15 @@ describe('admin form pages', () => {
     expect(offenders).toEqual([]);
   });
 
-  it('put the cancel action before the primary in one footer', () => {
+  it('put the cancel action before the primary in one footer, or carry no cancel on a standalone form', () => {
     const offenders = FORM_TEMPLATES.filter((path) => {
       const html = formTemplate(path);
       const footer = html.indexOf('class="form-actions"');
       if (footer < 0) return true;
       const cancel = html.indexOf("'global.actions.cancel' | translate", footer);
       const submit = html.indexOf('type="submit"', footer);
-      return cancel >= 0 && submit >= 0 && submit < cancel;
+      if (submit < 0) return true;
+      return STANDALONE_FORMS.has(path) ? cancel >= 0 : cancel < 0 || submit < cancel;
     });
 
     expect(offenders).toEqual([]);

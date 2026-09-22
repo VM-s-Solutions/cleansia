@@ -1124,7 +1124,7 @@
       "create_title": "Vytvoriť balíček",
       "edit_title": "Upraviť balíček",
       "basic_info": "Základné informácie",
-      "services": "Zahrnuté služby",
+      "contents": "Obsah balíčka",
       "translations": "Preklady",
       "name": "Názov",
       "description": "Popis",
@@ -2122,6 +2122,12 @@
         "edit_title": "Upraviť promo kód",
         "submit_create": "Vytvoriť kód",
         "submit_update": "Uložiť zmeny",
+        "section": {
+          "identity": "Kód a zľava",
+          "limits": "Podmienky uplatnenia",
+          "validity": "Platnosť",
+          "notes": "Poznámky a stav"
+        },
         "field": {
           "code": "Kód",
           "code_help": "3–20 znakov, len A-Z 0-9",

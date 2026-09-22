@@ -1226,7 +1226,7 @@
       "create_title": "Vytvořit balíček",
       "edit_title": "Upravit balíček",
       "basic_info": "Základní informace",
-      "services": "Zahrnuté služby",
+      "contents": "Obsah balíčku",
       "translations": "Překlady",
       "name": "Název",
       "description": "Popis",
@@ -2122,6 +2122,12 @@
         "edit_title": "Upravit promo kód",
         "submit_create": "Vytvořit kód",
         "submit_update": "Uložit změny",
+        "section": {
+          "identity": "Kód a sleva",
+          "limits": "Podmínky uplatnění",
+          "validity": "Platnost",
+          "notes": "Poznámky a stav"
+        },
         "field": {
           "code": "Kód",
           "code_help": "3–20 znaků, pouze A-Z 0-9",

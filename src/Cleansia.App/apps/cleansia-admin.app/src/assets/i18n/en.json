@@ -1124,7 +1124,7 @@
       "create_title": "Create Package",
       "edit_title": "Edit Package",
       "basic_info": "Basic Information",
-      "services": "Included Services",
+      "contents": "Package contents",
       "translations": "Translations",
       "name": "Name",
       "description": "Description",
@@ -2122,6 +2122,12 @@
         "edit_title": "Edit promo code",
         "submit_create": "Create code",
         "submit_update": "Save changes",
+        "section": {
+          "identity": "Code and discount",
+          "limits": "Redemption rules",
+          "validity": "Validity",
+          "notes": "Notes and status"
+        },
         "field": {
           "code": "Code",
           "code_help": "3–20 characters, A-Z 0-9 only",

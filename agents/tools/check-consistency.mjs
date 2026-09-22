@@ -3,9 +3,11 @@
  * Cleansia consistency checker — project-specific rules that no off-the-shelf linter covers.
  *
  * Enforces the rules in agents/knowledge/consistency.md (sections A/B backend, C/D frontend,
- * E mobile, F web surface) by line-scanning source files. Prints `file:line  RULE  message` per
- * violation and exits 1 if any are found. Dependency-free Node (works on Windows dev boxes AND
- * ubuntu CI — the repo already requires Node 22 for the frontend build).
+ * E mobile) and the F web-surface rules by line-scanning source files. The F-rules are stated in
+ * this file alone — each rule's comment is its statement — until consistency.md carries their
+ * rows. Prints `file:line  RULE  message` per violation and exits 1 if any are found.
+ * Dependency-free Node (works on Windows dev boxes AND ubuntu CI — the repo already requires
+ * Node 22 for the frontend build).
  *
  * Usage:
  *   node agents/tools/check-consistency.mjs                 # all stacks
@@ -736,6 +738,10 @@ const TOKEN_DECLARATION_FILES = [
     "src/Cleansia.App/apps/cleansia-admin.app/src/styles.scss",
     "src/Cleansia.App/apps/cleansia-partner.app/src/styles.scss",
 ];
+// The web tree: the feature and shared libs, and the app shells (toolbar, sidebar, config, locale
+// bundles) — surface too, not only the libs. The frontend rules scan it by default, and F12 resolves
+// a page's component from it whatever --paths narrows the scan to.
+const WEB_ROOTS = ["src/Cleansia.App/libs", "src/Cleansia.App/apps"];
 
 const lineOf = (text, index) => text.slice(0, index).split("\n").length;
 // Every `<tag …>` opening tag in a template with its 1-based line — the attributes of a
@@ -837,8 +843,14 @@ function checkFrontendSurface(roots) {
     const declared = new Set();
     for (const f of [...TOKEN_DECLARATION_FILES.map((p) => join(REPO, p)), ...stylesheets])
         for (const m of read(f).join("\n").matchAll(/(--cleansia-[\w-]+)\s*:/g)) declared.add(m[1]);
+    // F12 asks whether a page's component exists anywhere on the web surface, so the lookup reads
+    // the whole tree, not only the scanned roots: under --paths=<a stylesheet dir> the scan holds no
+    // .component.ts at all, and every page read as orphaned. The scanned sources are unioned in so
+    // a component planted beside a fixture stylesheet is still found.
     const componentBasenames = new Set(
-        sources.filter((f) => f.endsWith(".component.ts")).map((f) => f.split(/[\\/]/).pop().replace(/\.ts$/, "")),
+        [...sources, ...WEB_ROOTS.flatMap((r) => walk(dir(r), [".component.ts"], F_SKIP))]
+            .filter((f) => f.endsWith(".component.ts"))
+            .map((f) => f.split(/[\\/]/).pop().replace(/\.ts$/, "")),
     );
     for (const f of stylesheets) {
         const text = read(f).join("\n");
@@ -925,8 +937,7 @@ const DEFAULTS = {
         "src/Cleansia.Core.AppServices/Services",
         "src/Cleansia.Core.Domain/Disputes",
     ],
-    // The app shells (toolbar, sidebar, config, locale bundles) are surface too, not only the libs.
-    frontend: ["src/Cleansia.App/libs", "src/Cleansia.App/apps"],
+    frontend: WEB_ROOTS,
     mobile: ["src/cleansia_android"],
 };
 const custom = pathsArg ? pathsArg.split(",") : null;

@@ -913,6 +913,18 @@ test("F12 warns on a page stylesheet with no component of that name and not on o
     assert.equal(r.code, 0, "F12 is advisory until its count reaches zero");
 });
 
+// The Reviewer runs the checker with --paths=<changed dirs>; a stylesheet-only path holds no
+// .component.ts, so F12 has to resolve the component from the web tree or it reports every page
+// as orphaned and the advisory tally is read as the baseline. The name is a real admin page whose
+// component lives under libs/cleansia-admin-features, outside the fixture.
+test("F12 resolves the component from the web tree when --paths holds only stylesheets", () => {
+    const r = runF({
+        "libs/shared/assets/src/styles/pages/cleansia-admin/admin-order-photos.component.scss": `.x { display: block; }`,
+    });
+    assert.equal(linesFor(r, "F12").length, 0, `expected 0 F12, got: ${r.out}`);
+    assert.equal(r.code, 0);
+});
+
 test("F13 flags a page template whose first <cleansia-title> is not the h1", () => {
     const r = runF({
         [ADMIN_TPL]: `<div class="cleansia-page-header">\n  <cleansia-title\n    [title]="'x' | translate"\n    [level]="2"\n  />\n</div>`,

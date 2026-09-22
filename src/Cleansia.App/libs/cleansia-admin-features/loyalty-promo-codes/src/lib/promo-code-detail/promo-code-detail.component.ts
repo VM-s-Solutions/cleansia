@@ -32,6 +32,7 @@ import { Subject, takeUntil } from 'rxjs';
 import {
   formatDiscount,
   formatGlobalLimit,
+  formatMinimumOrder,
   formatType,
   formatValidity,
   getPromoCodeStatus,
@@ -154,6 +155,12 @@ export class PromoCodeDetailComponent
     const pc = this.facade.promoCode();
     if (!pc) return '';
     return formatDiscount(pc as unknown as PromoCodeListItem);
+  }
+
+  formatMinimumOrder(): string {
+    const pc = this.facade.promoCode();
+    if (!pc) return '';
+    return formatMinimumOrder(pc as unknown as PromoCodeListItem, this.translate.currentLang);
   }
 
   promoStatus(): PromoCodeStatusBadge | null {

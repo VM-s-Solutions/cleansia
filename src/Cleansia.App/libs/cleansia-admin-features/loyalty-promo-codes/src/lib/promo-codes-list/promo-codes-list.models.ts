@@ -24,6 +24,12 @@ export function formatDiscount(row: PromoCodeListItem): string {
   return `${amount} ${code}`.trim();
 }
 
+export function formatMinimumOrder(row: PromoCodeListItem, lang: string | undefined): string {
+  return row.minimumOrderAmount == null
+    ? '—'
+    : formatMoney(row.minimumOrderAmount, row.currencyCode ?? null, localeFor(lang), { fractionDigits: 2 });
+}
+
 export function formatValidity(
   row: PromoCodeListItem,
   translate: TranslateService,
@@ -114,12 +120,7 @@ export function getPromoCodeTableDefinition(
         numeric: true,
         field: 'minimumOrderAmount',
         header: translate.instant('pages.promo_codes.column.min_order'),
-        getValue: (row) =>
-          row.minimumOrderAmount == null
-            ? '—'
-            : formatMoney(row.minimumOrderAmount, row.currencyCode ?? null, localeFor(translate.currentLang), {
-                fractionDigits: 2,
-              }),
+        getValue: (row) => formatMinimumOrder(row, translate.currentLang),
         width: '10%',
       },
       {

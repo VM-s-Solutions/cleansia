@@ -57,9 +57,7 @@
             <span class="detail-grid__label">
               {{ 'pages.promo_codes.column.min_order' | translate }}
             </span>
-            <span class="detail-grid__value">
-              {{ pc.minimumOrderAmount ?? '—' }}
-            </span>
+            <span class="detail-grid__value">{{ formatMinimumOrder() }}</span>
           </div>
           <div class="detail-grid__item">
             <span class="detail-grid__label">

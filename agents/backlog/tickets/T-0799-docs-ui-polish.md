@@ -110,7 +110,7 @@ Docs CI, so rename nothing the code points at without moving the pointer.
 
 - 2026-09-20 — filed 2026-09-20 from the UI-polish discovery; branch chore/ui-polish-and-dead-code.
   Phase 4, docs lane, last.
-- 2026-09-22 — **done** (this commit — the docs lanes' commit on chore/ui-polish-and-dead-code,
+- 2026-09-22 — **done** (`fd77e08e` on chore/ui-polish-and-dead-code,
   PR #260), written last, after phases 1–4 were green. Two lanes on disjoint files. **The docs half**
   (`docs/`, `CHANGELOG.md`, the `CountryController.cs:26` comment): the availability, endpoint,
   free-trial and ADR-note items above — its own report names the pages. **The how-we-build + record

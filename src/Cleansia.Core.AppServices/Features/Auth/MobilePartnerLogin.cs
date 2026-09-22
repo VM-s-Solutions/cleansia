@@ -1,9 +1,11 @@
 using Cleansia.Core.AppServices.Abstractions;
+using Cleansia.Core.AppServices.Auditing;
 using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Common;
-using Cleansia.Core.AppServices.Features.Auth.Validators;
+using Cleansia.Core.AppServices.Common.Validators.Auth;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.AppServices.Shared.DTOs.ResponseModels;
+using Cleansia.Core.AppServices.Tenancy;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Infra.Common.Validations;
@@ -24,8 +26,9 @@ public class MobilePartnerLogin
         public Validator(
             IUserRepository userRepository,
             IRefreshTokenRepository refreshTokenRepository,
-            IRefreshTokenService refreshTokenService)
-            : base(userRepository, refreshTokenRepository, refreshTokenService,
+            IRefreshTokenService refreshTokenService,
+            IAuditContext auditContext)
+            : base(userRepository, refreshTokenRepository, refreshTokenService, auditContext,
                 c => c.Email, c => c.Password, c => c.RememberMe, c => c.TrustedDeviceToken)
         {
         }
@@ -43,6 +46,7 @@ public class MobilePartnerLogin
         IUserRepository userRepository,
         IHostAudienceProvider hostAudience,
         IRequestMetadataProvider requestMetadata,
+        ICompanySignInGate companySignInGate,
         ILogger<Handler> logger)
         : ICommandHandler<Command, JwtTokenResponse>
     {
@@ -71,6 +75,11 @@ public class MobilePartnerLogin
             {
                 return BusinessResult.Failure<JwtTokenResponse>(
                     new Error(nameof(command.Email), BusinessErrorMessage.InsufficientPrivileges));
+            }
+
+            if (await companySignInGate.RefusalForAsync(user, hostAudience.Audience, cancellationToken) is { } refusal)
+            {
+                return BusinessResult.Failure<JwtTokenResponse>(new Error(nameof(command.Email), refusal));
             }
 
             user.ResetLoginThrottle();

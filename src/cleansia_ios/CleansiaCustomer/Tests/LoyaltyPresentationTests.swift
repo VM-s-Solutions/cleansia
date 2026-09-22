@@ -38,6 +38,54 @@ final class LoyaltyPresentationTests: XCTestCase {
         XCTAssertEqual(LoyaltyPresentation.discountSummary(minOrder), .minOrder(percent: 5, minOrder: 1000))
     }
 
+    /// Where no floor applies the tier still discounts — the line loses its floor, not its percent.
+    func testAFloorThatDoesNotApplyReadsAsABasicDiscount() {
+        let minOrder = LoyaltyFixtures.tier(2, threshold: 500, discount: 0.05, minOrder: 1000)
+        XCTAssertEqual(LoyaltyPresentation.discountSummary(minOrder, floorApplies: false), .basic(percent: 5))
+    }
+
+    func testTheFloorAppliesOnlyInAMarketOnTheDefaultCurrency() {
+        let resolvedOnDefault = MarketState.resolved(selected: MarketFixtures.czechia, markets: MarketFixtures.two)
+        XCTAssertEqual(
+            LoyaltyPresentation.tierFloor(market: resolvedOnDefault, catalogDefaultCurrencyCode: "EUR"),
+            .applies(currencyCode: "CZK"),
+            "the market's own code labels it, not the catalogue's"
+        )
+
+        let resolvedElsewhere = MarketState.resolved(selected: MarketFixtures.slovakia, markets: MarketFixtures.two)
+        XCTAssertEqual(
+            LoyaltyPresentation.tierFloor(market: resolvedElsewhere, catalogDefaultCurrencyCode: "CZK"),
+            .notApplicable
+        )
+
+        let germany = MarketFixtures.market(
+            countryId: "deu", isoCode: "DEU", isoAlpha2: "DE", name: "Germany", currencyCode: "EUR", isDefault: true
+        )
+        XCTAssertEqual(
+            LoyaltyPresentation.tierFloor(
+                market: .resolved(selected: MarketFixtures.slovakia, markets: [germany, MarketFixtures.slovakia]),
+                catalogDefaultCurrencyCode: "EUR"
+            ),
+            .applies(currencyCode: "EUR"),
+            "two markets sharing the default currency both state the floor"
+        )
+
+        let noneFlagged = MarketState.resolved(selected: MarketFixtures.slovakia, markets: [MarketFixtures.slovakia])
+        XCTAssertEqual(
+            LoyaltyPresentation.tierFloor(market: noneFlagged, catalogDefaultCurrencyCode: "CZK"),
+            .notApplicable
+        )
+
+        XCTAssertEqual(
+            LoyaltyPresentation.tierFloor(market: .unavailable, catalogDefaultCurrencyCode: "CZK"),
+            .applies(currencyCode: "CZK")
+        )
+        XCTAssertEqual(
+            LoyaltyPresentation.tierFloor(market: .loading, catalogDefaultCurrencyCode: nil),
+            .applies(currencyCode: nil)
+        )
+    }
+
     func testTierStatusRelativeToCurrent() {
         XCTAssertEqual(LoyaltyPresentation.status(for: .silverMopper, current: .silverMopper), .current)
         XCTAssertEqual(LoyaltyPresentation.status(for: .bronzeCleaner, current: .silverMopper), .unlocked)

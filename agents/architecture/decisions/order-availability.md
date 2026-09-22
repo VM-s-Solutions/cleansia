@@ -7,7 +7,25 @@
 > `## Challenge` / `## Defense` / `## Verdict` trail; **this page is the evolving companion and is what
 > you read first.**
 >
-> ⚠️ **AMENDED 2026-08-03 BY THE PANEL — two amendments change the ruling itself; read them before
+> ⚠️ **THE STATUS TERM CHANGED 2026-09-08 — [ADR-0057](/decisions/adr-0057), owner ruling. Read this
+> first; everything below it that names the old term is superseded on that point alone.**
+> The rule's status half was `Confirmed ∨ (New ∧ Cash)`. It is now simply
+> `New ∨ Confirmed ∨ OnTheWay ∨ InProgress` — the plain "the work is not over" question — and the money
+> conjunct is unchanged and carries the whole payment qualification.
+>
+> **Why the `∧ Cash` was there, and why it is not any more.** `OrderStatus.Confirmed` used to be written
+> by the Stripe webhook when money settled, so a paid CARD order arrived at this rule already
+> `Confirmed` and `New` only ever needed to admit cash. Owner ruling 2026-09-08: `Confirmed` means a
+> cleaner took the job and nothing else. A paid card order now rests at `New`, and the old qualifier
+> would have taken every card job off every board — an outage that reports itself as silence.
+>
+> **This is a narrowing of MEANING, not a widening of the rule.** Exactly one input flips:
+> `New + Card + Paid`. The money conjunct still refuses `New + Card + Pending` and `New + Card + Failed`.
+>
+> The two amendments below still stand — the `NotRetractable` conjunct is the money half and is
+> untouched, and the take-gate ordering fix is structural and unrelated.
+
+> ⚠️ **AMENDED 2026-08-03 BY THE PANEL — two amendments change the ruling itself; read them before> ⚠️ **AMENDED 2026-08-03 BY THE PANEL — two amendments change the ruling itself; read them before
 > implementing anything:**
 > 1. **The predicate gained a `NotRetractable` conjunct.** The draft's `Confirmed ∨ (New ∧ Cash)` was
 >    falsified in *both* directions by two live sweeps (CH-M3, CH-M4). See §"The rule".

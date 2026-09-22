@@ -21,7 +21,7 @@ namespace Cleansia.Tests.Services;
 /// enqueued, so the watermark never moved and the same cleaner was re-notified about the same jobs on
 /// every sweep, forever (T-0529). These run the real service against a real <see cref="CleansiaDbContext"/>
 /// over SQLite with a real <see cref="EmployeeRepository"/> and a real unit of work, so the watermark is
-/// asserted where it matters — persisted — for a tenanted cleaner AND a single-tenant one.
+/// asserted where it matters — persisted — for a cleaner of the default company AND one of another.
 /// </summary>
 public sealed class NewJobsDigestTenantWatermarkTests : IDisposable
 {
@@ -44,8 +44,8 @@ public sealed class NewJobsDigestTenantWatermarkTests : IDisposable
     public void Dispose() => _connection.Dispose();
 
     [Theory]
-    [InlineData(null)]                  // single-tenant mode — behaviour must be unchanged
-    [InlineData("tenant-digest-1")]     // the tenanted cleaner the sweep could never stamp
+    [InlineData(TestTenants.Default)]   // the default operating company
+    [InlineData("tenant-digest-1")]     // another tenant's cleaner, the one the sweep could never stamp
     public async Task Sweep_Advances_The_Watermark_And_Does_Not_Re_Notify_On_The_Next_Sweep(string? tenantId)
     {
         await SeedEligibleCleanerWithOneFreshJobAsync(tenantId);
@@ -85,7 +85,7 @@ public sealed class NewJobsDigestTenantWatermarkTests : IDisposable
     /// <summary>Runs the sweep the way the timer does — a context with NO tenant claim.</summary>
     private async Task RunSweepAsync(INotificationProducer producer)
     {
-        await using var ctx = NewContext(tenantId: null);
+        await using var ctx = NewContext(tenantId: TestTenants.Default);
 
         var realOrderRepository = new OrderRepository(ctx);
         var orderRepository = new Mock<IOrderRepository>();
@@ -110,7 +110,7 @@ public sealed class NewJobsDigestTenantWatermarkTests : IDisposable
 
     private async Task<DateTimeOffset?> ReadWatermarkAsync()
     {
-        await using var ctx = NewContext(tenantId: null);
+        await using var ctx = NewContext(tenantId: TestTenants.Default);
         var employee = await ctx.Set<Employee>()
             .IgnoreQueryFilters()
             .AsNoTracking()
@@ -120,7 +120,7 @@ public sealed class NewJobsDigestTenantWatermarkTests : IDisposable
 
     private async Task SeedEligibleCleanerWithOneFreshJobAsync(string? tenantId)
     {
-        await using (var schema = NewContext(tenantId: null))
+        await using (var schema = NewContext(tenantId: TestTenants.Default))
         {
             await schema.Database.EnsureCreatedAsync();
         }
@@ -146,7 +146,6 @@ public sealed class NewJobsDigestTenantWatermarkTests : IDisposable
                 customerAddress: Address.Create("Digest St 1", "Praha", "14000", CountryId),
                 rooms: 2,
                 bathrooms: 1,
-                extras: new Dictionary<string, bool>(),
                 cleaningDateTime: DateTime.UtcNow.AddDays(2),
                 paymentType: PaymentType.Card,
                 totalPrice: 1200m,
@@ -162,7 +161,7 @@ public sealed class NewJobsDigestTenantWatermarkTests : IDisposable
             await seed.CommitAsync(CancellationToken.None);
         }
 
-        await using var verify = NewContext(tenantId: null);
+        await using var verify = NewContext(tenantId: TestTenants.Default);
         var stamped = await verify.Set<Employee>().IgnoreQueryFilters().FirstAsync(e => e.Id == EmployeeId);
         Assert.Equal(tenantId, stamped.TenantId);
         Assert.Null(stamped.LastNewJobsDigestAt);

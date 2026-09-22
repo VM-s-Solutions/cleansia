@@ -79,10 +79,15 @@ security property of the design — do not add a token to `localStorage`, to a s
 gating — the server remains the source of truth), `refreshTokenExp` (so the app can tell a live session
 from an expired one without a round-trip), and `csrfToken`.
 
-The interceptor chain therefore does two things on every request:
+The interceptor chain therefore does two things on every own-API request:
 
-1. Sends `withCredentials: true`, which carries the HttpOnly auth cookie and lets the browser accept
-   `Set-Cookie` on the way back. **Required end to end — omit it and the request is anonymous.**
+1. Sends `withCredentials: true` **where the cookie is needed** — on every state-changing method
+   (all auth routes are POSTs: login, refresh, logout, the OAuth exchanges) and on any call made with
+   a session (`isLoggedIn()`). It carries the HttpOnly auth cookie and lets the browser accept
+   `Set-Cookie` on the way back; omit it on such a call and the request is anonymous. An anonymous
+   GET deliberately goes **without** it, so Angular's SSR transfer cache — which refuses a credentialed
+   request — can serve it from the document on bootstrap; the same GET with a session is never
+   transferred. → [Frontend — SSR setup](/architecture/frontend#ssr-setup)
 2. On a state-changing method, echoes the stored CSRF token as `X-CSRF-Token`. The server verifies it
    against the cookie's half — a **double-submit pair**, which is why the CSRF token is deliberately
    JS-readable while the auth token is not.

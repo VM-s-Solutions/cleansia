@@ -119,6 +119,8 @@
           </span>
         </div>
 
+        <div class="order-row__summary">{{ market.label(order) }}</div>
+
         @if (summaryOf(order); as summary) {
         <div class="order-row__summary">{{ summary }}</div>
         }

@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Cleansia.Infra.Database.EntityConfigurations;
 
-public class OrderReviewEntityConfiguration : AuditableEntityConfiguration<OrderReview, string>
+public class OrderReviewEntityConfiguration : TenantAuditableEntityConfiguration<OrderReview, string>
 {
     public override void Configure(EntityTypeBuilder<OrderReview> builder)
     {

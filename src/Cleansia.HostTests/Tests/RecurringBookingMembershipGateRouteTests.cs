@@ -17,13 +17,18 @@ namespace Cleansia.HostTests.Tests;
 /// drive the REAL route on the REAL host — the whole finding was that a unit test on the handler cannot
 /// make that claim.
 ///
-/// <para><b>The load-bearing legs are the positive ones.</b> "No membership → 400" passes for any 400 —
-/// a renamed route, a malformed body, a rate-limit 429 that is not even a 400. What gives it meaning is
-/// that the byte-identical request succeeds once an Active membership row exists
-/// (<see cref="An_active_member_posting_the_same_bytes_is_served"/>), and that a TRIALING member is
-/// served too (<see cref="A_trialing_member_is_served"/>) — Stripe's <c>trialing</c> collapses to
-/// <c>Active</c> and only the metered express waiver is withheld during a trial, so that leg dies in the
-/// opposite direction if anyone ever harmonizes this gate with the express resolver's trial conjunct.</para>
+/// <para><b>The load-bearing leg is the positive one.</b> "No membership → 400" passes for any 400 —
+/// a renamed route, a malformed body, a rate-limit 429 that is not even a 400. What gives every negative
+/// leg its meaning is that the byte-identical request succeeds once a PAID Active membership row exists
+/// (<see cref="An_active_member_posting_the_same_bytes_is_served"/>).</para>
+///
+/// <para><b>The trialing leg flipped, exactly as this class predicted it would.</b> It used to assert a
+/// trialing member IS served, and warned that the leg "dies in the opposite direction if anyone ever
+/// harmonizes this gate with the express resolver's trial conjunct". Owner ruling 2026-09-08 (T-0690)
+/// did precisely that and went further: no Cleansia Plus benefit is granted before payment, the trial is
+/// removed outright, and all ten benefit sites now read one shared ENTITLEMENT predicate. So
+/// <see cref="A_trialing_member_is_refused"/> is the same claim inverted, and it is kept rather than
+/// deleted because <c>TrialEndsAtUtc</c> is never cleared once set and historical rows may carry one.</para>
 ///
 /// <para>Every leg posts the SAME request bytes, built once into <see cref="CreateBodyJson"/>; the only
 /// thing that varies between them is the membership row.</para>
@@ -70,7 +75,6 @@ public sealed class RecurringBookingMembershipGateRouteTests(HostTestPostgresFix
     });
 
     private static readonly string UpdateBodyJson = ReAuthorBodyFor(TemplateId);
-    private static readonly string ForeignUpdateBodyJson = ReAuthorBodyFor(ForeignTemplateId);
 
     public enum Membership { None, Active, Trialing, Cancelled, PastDue, PeriodExpired }
 
@@ -118,17 +122,19 @@ public sealed class RecurringBookingMembershipGateRouteTests(HostTestPostgresFix
         Assert.Equal(0, await CountTemplatesAsync(CustomerId));
     }
 
-    // ── L4 — the other direction. A trial withholds the METERED benefits only. ────────────────────
+    // ── L4 — a trial is benefits without payment, so it buys nothing. ─────────────────────────────
 
     [Fact]
-    public async Task A_trialing_member_is_served()
+    public async Task A_trialing_member_is_refused()
     {
         await ArrangeAsync(Membership.Trialing);
 
         var response = await PostAsync(CreateRoute, CreateBodyJson);
 
-        HttpAssert.IsOk(response);
-        Assert.Equal(1, await CountTemplatesAsync(CustomerId));
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        await HttpAssert.AssertBusinessErrorAsync(
+            response, BusinessErrorMessage.RecurringTemplateMembershipRequired);
+        Assert.Equal(0, await CountTemplatesAsync(CustomerId));
     }
 
     // ── L5 — the escape hatch stays open. Gating these would make pause a one-way door. ───────────
@@ -188,22 +194,30 @@ public sealed class RecurringBookingMembershipGateRouteTests(HostTestPostgresFix
 
     /// <summary>
     /// The entitlement link is the LAST link of the ownership chain, so a template the caller does not
-    /// own resolves as not-owned and never as "you need Plus" — otherwise the refusal is an oracle for
+    /// own resolves as not-found and never as "you need Plus" — otherwise the refusal is an oracle for
     /// whether the caller happens to be a subscriber on somebody else's id.
     /// </summary>
-    [Fact]
-    public async Task A_lapsed_subscriber_updating_someone_elses_template_is_told_not_owned_not_membership()
+    [Theory]
+    [InlineData(Membership.Cancelled)]
+    [InlineData(Membership.Active)]
+    public async Task Updating_someone_elses_template_is_not_found_regardless_of_membership(Membership membership)
     {
-        await ArrangeAsync(Membership.Cancelled, withForeignTemplate: true);
-
-        var response = await PostAsync(UpdateRoute, ForeignUpdateBodyJson);
-
-        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
-        await HttpAssert.AssertBusinessErrorAsync(
-            response, BusinessErrorMessage.RecurringTemplateNotOwnedByUser);
-        Assert.DoesNotContain(
-            BusinessErrorMessage.RecurringTemplateMembershipRequired,
-            await response.Content.ReadAsStringAsync());
+        await ArrangeAsync(membership, withForeignTemplate: true);
+        var before = (await LoadTemplateAsync(ForeignTemplateId))!;
+        foreach (var templateId in new[] { ForeignTemplateId, "missing-recurring-template" })
+        {
+            var response = await PostAsync(UpdateRoute, ReAuthorBodyFor(templateId));
+            Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+            await HttpAssert.AssertBusinessErrorAsync(response, BusinessErrorMessage.RecurringTemplateNotFound);
+            Assert.DoesNotContain(BusinessErrorMessage.RecurringTemplateMembershipRequired, await response.Content.ReadAsStringAsync());
+        }
+        var after = (await LoadTemplateAsync(ForeignTemplateId))!;
+        Assert.Equal(StrangerId, after.UserId);
+        Assert.Equal(before.Frequency, after.Frequency);
+        Assert.Equal(before.SelectedServiceIds, after.SelectedServiceIds);
+        Assert.Equal(before.LastMaterializedFor, after.LastMaterializedFor);
+        Assert.Equal(0, await CountTemplatesAsync(CustomerId));
+        Assert.Equal(1, await CountTemplatesAsync(StrangerId));
     }
 
     // ── arrange / act helpers ─────────────────────────────────────────────────────────────────────
@@ -230,6 +244,7 @@ public sealed class RecurringBookingMembershipGateRouteTests(HostTestPostgresFix
             {
                 var plan = DomainSeed.MembershipPlan();
                 ctx.MembershipPlans.Add(plan);
+                ctx.MembershipPlanPrices.Add(DomainSeed.MembershipPlanPrice(plan.Id));
                 ctx.UserMemberships.Add(BuildMembership(plan.Id, membership));
             }
 
@@ -259,6 +274,7 @@ public sealed class RecurringBookingMembershipGateRouteTests(HostTestPostgresFix
             return UserMembership.Create(
                 userId: CustomerId,
                 membershipPlanId: planId,
+                currencyId: DomainSeed.CurrencyId,
                 stripeSubscriptionId: "sub_recur_gate",
                 currentPeriodStart: now.AddDays(-60),
                 currentPeriodEnd: now.AddDays(-1));
@@ -267,6 +283,7 @@ public sealed class RecurringBookingMembershipGateRouteTests(HostTestPostgresFix
         var row = UserMembership.Create(
             userId: CustomerId,
             membershipPlanId: planId,
+            currencyId: DomainSeed.CurrencyId,
             stripeSubscriptionId: "sub_recur_gate",
             currentPeriodStart: now.AddDays(-3),
             currentPeriodEnd: now.AddDays(27),

@@ -132,7 +132,6 @@
 
     <string name="home_hero2_top">Spring is here</string>
     <string name="home_hero2_title">Deep clean + windows combo</string>
-    <string name="home_hero2_cta">Save 450 CZK</string>
 
     <string name="home_hero3_top">Invite a friend</string>
     <string name="home_hero3_title">Give a treat, get a free add-on</string>
@@ -168,8 +167,6 @@
     <string name="home_milestone_title_v2">%1$s — Progress to next tier</string>
 
     <!-- Home — seasonal -->
-    <string name="home_seasonal_title">Spring deep clean season</string>
-    <string name="home_seasonal_subtitle">Window + upholstery combo — +450 CZK this month</string>
 
     <!-- Home — quick actions -->
     <string name="home_quick_book">Book</string>
@@ -182,13 +179,10 @@
     <string name="home_services_see_all">See all</string>
 
     <string name="home_service_household_name">Household</string>
-    <string name="home_service_household_price">599 CZK</string>
 
     <string name="home_service_upholstery_name">Upholstery</string>
-    <string name="home_service_upholstery_price">799 CZK</string>
 
     <string name="home_service_windows_name">Windows</string>
-    <string name="home_service_windows_price">299 CZK</string>
 
     <!-- Home — promo carousel -->
     <string name="home_promo_title">For you</string>
@@ -396,6 +390,21 @@
     <string name="order_photos_metadata_by">By %1$s</string>
     <string name="common_close">Close</string>
 
+    <!-- Contract for work: the wizard sentence at the offer, the detail line per accepting crew member, the contract screen -->
+    <string name="booking_work_contract_notice"><![CDATA[By confirming the order you conclude a contract for work with the cleaner on <a href="cleansia://work-contract">these terms</a>.]]></string>
+    <string name="work_contract_title">Contract for work</string>
+    <string name="work_contract_accepted_line">Contract for work accepted by %1$s on %2$s, version %3$s</string>
+    <string name="work_contract_read">Read the contract</string>
+    <string name="work_contract_version">Version %1$s</string>
+    <string name="work_contract_facts_title">The job as accepted</string>
+    <string name="work_contract_order_number">Order number</string>
+    <string name="work_contract_window">Date and time</string>
+    <string name="work_contract_price">Price</string>
+    <string name="work_contract_location">Location</string>
+    <string name="work_contract_accepted_on">Accepted by the cleaner on %1$s, version %2$s</string>
+    <string name="work_contract_accepted_in_language">Accepted in %1$s</string>
+    <string name="work_contract_load_error">We couldn\'t load this contract. Please try again.</string>
+
     <!-- Profile tab -->
     <string name="profile_greeting">Hi, there!</string>
     <string name="profile_email_placeholder">you@example.com</string>
@@ -526,7 +535,8 @@
     <string name="help_faq_q2">What if I\'m not home when the cleaner arrives?</string>
     <string name="help_faq_a2">Add access instructions when booking (e.g., door code, key location). Cleaners wait up to 15 minutes; if we can\'t reach you, the booking may be cancelled.</string>
     <string name="help_faq_q3">Are cleaners insured and vetted?</string>
-    <string name="help_faq_a3">Yes. All Cleansia cleaners are background-checked and covered by insurance up to 1,000,000 CZK per booking.</string>
+    <string name="help_faq_a3">Yes. All Cleansia cleaners are background-checked and covered by insurance up to %1$s per booking.</string>
+    <string name="help_faq_a3_no_figure">Yes. All Cleansia cleaners are background-checked and covered by insurance.</string>
     <string name="help_faq_q4">How do I reschedule?</string>
     <string name="help_faq_a4">From the Orders tab, open the upcoming booking and tap \"Reschedule\". Free rescheduling up to 12 hours before the cleaning.</string>
     <string name="help_faq_q5">What\'s included in a standard cleaning?</string>
@@ -545,6 +555,8 @@
     <!-- Profile — language -->
     <string name="language_title">Language</string>
     <string name="language_hint">Changes apply immediately.</string>
+    <string name="market_title">Market</string>
+    <string name="market_hint">Prices, Cleansia Plus and our rules follow the market you browse in. The address of a booking decides what that order is charged in.</string>
     <string name="language_system">System default</string>
     <string name="language_english">English</string>
     <string name="language_czech">Czech</string>
@@ -554,6 +566,8 @@
 
     <string name="profile_row_appearance">Appearance</string>
     <string name="profile_row_language">Language</string>
+    <string name="profile_row_market">Market</string>
+    <string name="market_chip_a11y">Market: %1$s, prices in %2$s</string>
 
     <!-- Profile — security -->
     <string name="profile_security_title">Security</string>
@@ -608,7 +622,8 @@
     <!-- Booking — save address -->
     <string name="booking_save_address">Save this address</string>
     <string name="booking_set_as_default">Set as default</string>
-    <string name="booking_trust_insured">Insured up to 1M CZK</string>
+    <string name="booking_trust_insured">Insured up to %1$s</string>
+    <string name="booking_trust_insured_no_figure">Insured</string>
     <string name="booking_trust_vetted">Background-checked cleaners</string>
 
     <string name="booking_pick_service">Pick a service</string>
@@ -616,8 +631,8 @@
     <string name="booking_packages_featured">Featured packages</string>
     <string name="booking_package_includes">INCLUDES</string>
     <string name="booking_package_includes_prefix">Includes:</string>
-    <string name="booking_price_from">from %1$d CZK</string>
-    <string name="booking_price_per_room">+ %1$d CZK/room</string>
+    <string name="booking_price_from">from %1$s</string>
+    <string name="booking_price_per_room">+ %1$s/room</string>
     <string name="details_base_price">Base price</string>
     <string name="details_per_room">Per room</string>
     <string name="details_add_to_booking">Add to booking</string>
@@ -825,13 +840,13 @@
          and perk wording is provisional; lock with product before launch. -->
     <string name="membership_plus_title">Cleansia Plus</string>
     <string name="membership_plus_subtitle">A better way to keep your home clean</string>
-    <string name="membership_plus_price_per_month">199 Kč / month</string>
     <string name="membership_subscribe_cta">Try Cleansia Plus</string>
     <string name="membership_disclosure">Cancel anytime. Your subscription renews automatically until you cancel.</string>
+    <string name="plus_not_available_in_market">Plus is not available in your market yet</string>
 
     <!-- Plus subscribe page redesign (Bolt+/Wolt+ style) -->
     <string name="membership_hero_headline">Start saving today</string>
-    <string name="membership_hero_trial_price">0 Kč / first %1$d days</string>
+    <string name="membership_hero_trial_price">%1$s / first %2$d days</string>
     <string name="membership_hero_then_price">then %1$s / month</string>
     <string name="membership_hero_then_price_year">then %1$s / year</string>
     <string name="membership_social_proof_headline">How the member discount works</string>
@@ -1089,6 +1104,7 @@
     <string name="order_action_report_issue">Report issue</string>
     <string name="order_action_rebook">Book again</string>
     <string name="order_rebook_unavailable_items">Some items from your previous booking are no longer available.</string>
+    <string name="booking_market_items_unavailable">Some of your picks aren\'t offered at this address and were removed.</string>
 
     <!-- Dispute list -->
     <string name="dispute_list_title">My disputes</string>
@@ -1163,13 +1179,9 @@
     <string name="loyalty_tier_status_locked">Locked</string>
     <string name="loyalty_threshold_points">%1$d pts</string>
     <string name="loyalty_discount_basic">%1$d%% off all bookings</string>
-    <string name="loyalty_discount_min_order">%1$d%% off orders ≥%2$d CZK</string>
+    <string name="loyalty_discount_min_order">%1$d%% off orders ≥ %2$s</string>
     <string name="loyalty_no_discount_yet">No discount yet</string>
     <string name="loyalty_perks_welcome_badge">Welcome to Cleansia rewards</string>
-    <string name="loyalty_perks_discount_5_above_1000" formatted="false">5% off bookings over 1000 CZK</string>
-    <string name="loyalty_perks_discount_10" formatted="false">10% off bookings over 1000 CZK</string>
-    <string name="loyalty_perks_discount_12" formatted="false">12% off bookings over 1000 CZK</string>
-    <string name="loyalty_perks_discount_15" formatted="false">15% off bookings over 1000 CZK</string>
     <string name="loyalty_perks_priority_support">Priority customer support</string>
     <string name="loyalty_perks_dedicated_pool">Dedicated cleaner pool</string>
     <string name="loyalty_activity_title">Recent activity</string>
@@ -1215,8 +1227,8 @@
     <string name="notification_channel_dispute_reply_name">Support replies</string>
     <string name="notification_channel_dispute_reply_desc">Notifies you when support responds to your dispute.</string>
 
-    <string name="notification_order_confirmed_title">Booking confirmed ✅</string>
-    <string name="notification_order_confirmed_body">Your booking #%1$s is confirmed. Tap to see the details.</string>
+    <string name="notification_order_payment_confirmed_title">Booking confirmed ✅</string>
+    <string name="notification_order_payment_confirmed_body">Your booking #%1$s is confirmed. Tap to see the details.</string>
     <string name="notification_cleaner_assigned_title">Cleaner found! 🎉</string>
     <string name="notification_cleaner_assigned_body">A cleaner is assigned to your booking #%1$s. Tap to see the details.</string>
     <string name="notification_order_starting_soon_title">Cleaning starts soon</string>
@@ -1234,7 +1246,7 @@
     <string name="notification_order_refunded_title">Refund on its way</string>
     <string name="notification_order_refunded_body">Your refund for booking #%1$s is being processed.</string>
     <string name="notification_order_no_cleaner_refunded_title">No cleaner was available</string>
-    <string name="notification_order_no_cleaner_refunded_body">Nobody was able to take booking #%1$s, so we have refunded it in full and added 250 Kč credit towards your next clean. Sorry.</string>
+    <string name="notification_order_no_cleaner_refunded_body">Nobody was able to take booking #%1$s, so we have refunded it in full and added %2$s credit towards your next clean. Sorry.</string>
     <string name="notification_dispute_reply_title">Support replied</string>
     <string name="notification_dispute_reply_body">You have a new message about your dispute. Tap to read.</string>
     <string name="notification_recurring_scheduled_title">Confirm tomorrow\'s cleaning</string>
@@ -1282,8 +1294,22 @@
     <string name="error_auth_social_account_not_found">We couldn\'t find an account for that sign-in. Please sign up first.</string>
     <string name="error_auth_too_many_attempts">Too many attempts with this code. Request a new code and try again.</string>
     <string name="error_company_not_found">Company information not found</string>
+    <string name="error_consent_terms_not_accepted">Please accept the Terms of Service and Privacy Policy to continue.</string>
     <string name="error_country_not_existing_id">Country not found</string>
     <string name="error_currency_invalid">Invalid currency</string>
+    <string name="error_country_not_serviced">We don\'t operate in this country yet.</string>
+    <string name="error_tenant_not_found">This market is not operated by any Cleansia company yet.</string>
+    <string name="error_tenant_archived">This company\'s records are sealed for archive; nothing about them can be changed any more.</string>
+    <string name="error_order_country_operator_mismatch">This address is served by another Cleansia company and cannot be booked from this account.</string>
+    <string name="error_promo_not_found">Code not found</string>
+    <string name="error_promo_inactive">Code is no longer available</string>
+    <string name="error_promo_expired">This code has expired</string>
+    <string name="error_promo_not_yet_valid">Code is not yet active</string>
+    <string name="error_promo_global_limit_reached">Code is no longer available</string>
+    <string name="error_promo_per_user_limit_reached">You\'ve already used this code</string>
+    <string name="error_promo_below_minimum_order_amount">Order doesn\'t meet the minimum for this code</string>
+    <string name="error_promo_currency_mismatch">Code doesn\'t apply to this currency</string>
+    <string name="error_promo_requires_account">Sign in to use a promo code.</string>
     <string name="error_device_invalid_platform">Unsupported device platform.</string>
     <string name="error_dispute_already_exists">Dispute already exists for this order</string>
     <string name="error_dispute_max_length_exceeded">Maximum length exceeded</string>
@@ -1302,6 +1328,8 @@
     <string name="error_membership_not_found">Membership not found.</string>
     <string name="error_membership_plan_not_found">Membership plan not found.</string>
     <string name="error_membership_swap_same_plan">You\'re already on this plan.</string>
+    <string name="error_membership_plan_not_priced_in_currency">This plan is not on sale in your market yet.</string>
+    <string name="error_membership_stripe_customer_currency_locked">Your Plus billing is already set up in another currency. Contact support to change it.</string>
     <string name="error_order_not_completed">You can review an order only after it\'s completed.</string>
     <string name="error_order_preferred_employee_not_eligible">The selected cleaner isn\'t available for this order.</string>
     <string name="error_order_preferred_employee_membership_required">Choosing your favourite cleaner is a Cleansia Plus benefit.</string>
@@ -1361,6 +1389,8 @@
     <string name="tracker_step_counter">Step %1$d / %2$d</string>
     <string name="order_cancelled_reason_payment_not_completed">The payment wasn\'t completed, so this booking was released.</string>
     <string name="order_cancelled_reason_recurring_not_confirmed">This repeat booking wasn\'t confirmed in time, so it was cancelled free of charge.</string>
+    <string name="order_cancelled_reason_company_wind_down">The cleaning company that served your area is closing, so this booking was cancelled; anything you paid is refunded in full.</string>
+    <string name="order_cancelled_reason_no_cleaner_available">No cleaner was available for this booking, so it was cancelled.</string>
     <string name="dispute_create_which_items">Which parts went wrong?</string>
     <string name="dispute_create_which_items_hint">Optional. Tick the services that were not done properly — it helps us put it right faster. Leave it empty if the whole clean was the problem.</string>
     <string name="dispute_create_item_in_package">in %1$s</string>
@@ -1369,4 +1399,21 @@
     <string name="order_review_item_in_package">in %1$s</string>
     <string name="order_review_rate_item_star">Give %1$s %2$d stars</string>
     <string name="error_dispute_line_not_on_order">One of the services you picked is not on that booking. Reopen the form and try again.</string>
+    <string name="order_market_unknown">Market unavailable</string>
+    <string name="order_market_label">%1$s · %2$s</string>
+    <string name="notification_recurring_paused_title">Recurring schedule paused</string>
+    <string name="notification_recurring_paused_body">Your recurring schedule is paused because Plus is not active. Renew Plus to resume scheduling.</string>
+    <string name="guest_order_entry">Find a guest booking</string>
+    <string name="guest_order_title">Guest booking</string>
+    <string name="guest_order_intro">Use the booking number, email and confirmation code from your booking email.</string>
+    <string name="guest_order_number">Booking number</string>
+    <string name="guest_order_code">Confirmation code</string>
+    <string name="guest_order_lookup">Find booking</string>
+    <string name="guest_order_required">Enter the booking number, email and confirmation code.</string>
+    <string name="guest_order_empty">Your booking details will appear here after lookup.</string>
+    <string name="guest_order_loading">Finding your booking…</string>
+    <string name="guest_order_cancel">Cancel booking</string>
+    <string name="guest_order_cannot_cancel">This booking cannot be cancelled.</string>
+    <string name="guest_order_preview_required">The cancellation fee could not be checked. Try again before confirming cancellation.</string>
+    <string name="guest_order_fee_estimate">Cancellation fee: %1$s. Maximum card refund: %2$s. Only collected card payments can be refunded; your confirmation shows the actual amount.</string>
 </resources>

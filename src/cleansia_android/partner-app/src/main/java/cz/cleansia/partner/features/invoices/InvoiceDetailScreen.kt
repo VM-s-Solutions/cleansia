@@ -85,7 +85,7 @@ import java.util.Locale
 @Composable
 fun InvoiceDetailScreen(
     onNavigateBack: () -> Unit,
-    onOpenPeriodPay: ((payPeriodId: String, currencyCode: String?) -> Unit)? = null,
+    onOpenPeriodPay: ((payPeriodId: String, currencyId: String?, currencyCode: String?) -> Unit)? = null,
     viewModel: InvoiceDetailViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -164,7 +164,7 @@ fun InvoiceDetailScreen(
                         invoice = invoice,
                         onOpenPeriodPay = onOpenPeriodPay?.let { open ->
                             invoice.payPeriodId?.takeIf { it.isNotBlank() }?.let { periodId ->
-                                { open(periodId, invoice.currencyCode) }
+                                { open(periodId, invoice.currencyId, invoice.currencyCode) }
                             }
                         },
                     )

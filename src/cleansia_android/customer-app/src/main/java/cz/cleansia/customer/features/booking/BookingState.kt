@@ -69,4 +69,7 @@ data class BookingState(
     // validates eligibility (must have a Completed order with this employee) and
     // boosts the matching score. Null = no preference / not Plus.
     val preferredEmployeeId: String? = null,
+    // The review step's terms tick. Per booking, never remembered: reset() starts the next one
+    // unticked. Read only when the box is shown — see BookingViewModel.alreadyConsented.
+    val termsAccepted: Boolean = false,
 )

@@ -38,11 +38,12 @@ public static class OrderMappers
                     o.CustomerAddress.City,
                     o.CustomerAddress.ZipCode,
                     o.CustomerAddress.Latitude,
-                    o.CustomerAddress.Longitude),
+                    o.CustomerAddress.Longitude,
+                    o.CustomerAddress.CountryId),
             o.DisplayOrderNumber,
             o.Rooms,
             o.Bathrooms,
-            o.Extras,
+            o.SelectedExtras.Select(e => e.Slug).ToList(),
             o.CleaningDateTime,
             o.PaymentType,
             o.PaymentStatus,
@@ -56,24 +57,25 @@ public static class OrderMappers
             o.ConfirmationCode,
             o.CurrencyId,
             new OrderListCurrencyRow(
-                o.Currency.Id,
+                o.Currency!.Id,
                 o.Currency.Code,
                 o.Currency.Symbol,
                 o.Currency.Name,
-                o.Currency.ExchangeRate,
                 o.Currency.IsDefault),
             o.SelectedPackages.Select(op => new OrderListPackageRow(
                 op.Package!.Id,
                 op.Package!.Name,
                 op.Package!.Description,
-                op.Package!.Price,
+                // THE ORDER'S SNAPSHOT, not the catalogue's current price. These rows describe a sale
+                // that already happened; the catalogue describes what is on sale today.
+                op.LineTotal,
                 op.Package!.Translations)).ToList(),
             o.SelectedServices.Select(os => new OrderListServiceRow(
                 os.Service!.Id,
                 os.Service!.Name,
                 os.Service!.Description,
-                os.Service!.BasePrice,
-                os.Service!.PerRoomPrice,
+                os.UnitBasePrice,
+                os.UnitPerRoomPrice,
                 os.Service!.Translations,
                 new OrderListCategoryRow(
                     os.Service!.Category!.Id,
@@ -107,7 +109,7 @@ public static class OrderMappers
             DisplayOrderNumber: row.DisplayOrderNumber,
             Rooms: row.Rooms,
             Bathrooms: row.Bathrooms,
-            Extras: row.Extras.ToDictionary(kvp => kvp.Key, kvp => kvp.Value),
+            Extras: row.ExtraSlugs.ToDictionary(slug => slug, _ => true),
             CleaningDateTime: row.CleaningDateTime,
             PaymentType: row.PaymentType.MapToCode(),
             PaymentStatus: row.PaymentStatus.MapToCode(),
@@ -135,14 +137,15 @@ public static class OrderMappers
                 Translations: p.Translations.ToDictionary(),
                 // The list queries never load Package.IncludedServices, so the entity path
                 // always emitted an empty collection here — preserved for wire parity.
-                IncludedServices: Enumerable.Empty<PackageServiceSummary>())),
+                IncludedServices: Enumerable.Empty<PackageServiceSummary>(),
+                CurrencyCode: row.Currency.Code)),
             CurrencyId: row.CurrencyId,
             Currency: new CurrencyListItem(
                 Id: row.Currency.Id,
                 Code: row.Currency.Code,
                 Symbol: row.Currency.Symbol,
                 Name: row.Currency.Name,
-                ExchangeRate: row.Currency.ExchangeRate,
+                // See the note in SelectOrderListRows — 1, not the stored column.
                 IsDefault: row.Currency.IsDefault),
             AssignedEmployees: row.AssignedEmployees.Select(e => e.Id),
             SelectedServices: row.SelectedServices.Select(s => new ServiceListItem(
@@ -158,7 +161,8 @@ public static class OrderMappers
                     Translations: s.Category.Translations.ToDictionary()),
                 BasePrice: s.BasePrice,
                 PerRoomPrice: s.PerRoomPrice,
-                Translations: s.Translations.ToDictionary())),
+                Translations: s.Translations.ToDictionary(),
+                CurrencyCode: row.Currency.Code)),
             RequiredEmployees: row.RequiredEmployees,
             MaxEmployees: row.MaxEmployees,
             AvailableSpots: availableSpots,
@@ -167,7 +171,8 @@ public static class OrderMappers
             EstimatedCleanerPay: null,
             CustomerAddressLatitude: row.Address?.Latitude,
             CustomerAddressLongitude: row.Address?.Longitude,
-            HasReview: row.HasReview);
+            HasReview: row.HasReview,
+            CountryId: row.Address?.CountryId);
     }
 
     public static OrderListItem MapToDto(this Order order)
@@ -185,7 +190,7 @@ public static class OrderMappers
             DisplayOrderNumber: order.DisplayOrderNumber,
             Rooms: order.Rooms,
             Bathrooms: order.Bathrooms,
-            Extras: order.Extras.ToDictionary(kvp => kvp.Key, kvp => kvp.Value),
+            Extras: order.SelectedExtras.ToDictionary(e => e.Slug, _ => true),
             CleaningDateTime: order.CleaningDateTime,
             PaymentType: order.PaymentType.MapToCode(),
             PaymentStatus: order.PaymentStatus.MapToCode(),
@@ -200,11 +205,12 @@ public static class OrderMappers
             EstimatedTime: order.EstimatedTime,
             OrderStatus: order.GetCurrentOrderStatus().MapToCode(),
             ConfirmationCode: order.ConfirmationCode,
-            SelectedPackages: order.SelectedPackages.Select(op => op.Package.MapToDto()),
+            SelectedPackages: order.SelectedPackages.Select(op => op.Package.MapToDto(op.LineTotal, order.Currency!.Code)),
             CurrencyId: order.CurrencyId,
-            Currency: order.Currency.MapToDto(),
+            Currency: order.Currency!.MapToDto(),
             AssignedEmployees: order.AssignedEmployees.Select(e => e.Id),
-            SelectedServices: order.SelectedServices.Select(os => os.Service.MapToDto()),
+            SelectedServices: order.SelectedServices.Select(os =>
+                os.Service.MapToDto(os.UnitBasePrice, os.UnitPerRoomPrice, order.Currency!.Code)),
             RequiredEmployees: order.RequiredEmployees,
             MaxEmployees: order.MaxEmployees,
             AvailableSpots: order.AvailableSpots,
@@ -213,7 +219,8 @@ public static class OrderMappers
             EstimatedCleanerPay: null,
             CustomerAddressLatitude: order.CustomerAddress?.Latitude,
             CustomerAddressLongitude: order.CustomerAddress?.Longitude,
-            HasReview: order.Reviews.Count > 0
+            HasReview: order.Reviews.Count > 0,
+            CountryId: order.CustomerAddress?.CountryId
         );
     }
 
@@ -233,7 +240,9 @@ public static class OrderMappers
         bool hasAfterPhotos = false,
         bool isCustomerCaller = false,
         bool? expressWaiverForfeitedOnCancel = null,
-        PreferredOfferDetails? preferredOffer = null)
+        PreferredOfferDetails? preferredOffer = null,
+        string? customerCompany = null,
+        IEnumerable<WorkContractAcceptanceDto>? workContractAcceptances = null)
     {
         var (source, applied) = ResolveAppliedDiscount(order);
         return new OrderItem(
@@ -246,7 +255,7 @@ public static class OrderMappers
             CustomerAddressApproximate: BuildApproximateAddress(order.CustomerAddress),
             Rooms: order.Rooms,
             Bathrooms: order.Bathrooms,
-            Extras: order.Extras.ToDictionary(kvp => kvp.Key, kvp => kvp.Value),
+            Extras: order.SelectedExtras.ToDictionary(e => e.Slug, _ => true),
             CleaningDateTime: order.CleaningDateTime,
             PaymentType: order.PaymentType.MapToCode(),
             PaymentStatus: order.PaymentStatus.MapToCode(),
@@ -278,9 +287,10 @@ public static class OrderMappers
                 ? order.CancellationReason
                 : null,
             RecurringTemplateId: order.RecurringTemplateId,
-            SelectedPackages: order.SelectedPackages.Select(op => op.Package.MapToDetails(order.Currency.Code)),
-            Currency: order.Currency.MapToDetailDto(),
-            SelectedServices: order.SelectedServices.Select(os => os.Service.MapToDetails(order.Currency.Code)),
+            SelectedPackages: order.SelectedPackages.Select(op =>
+                op.Package.MapToDetails(order.Currency!.Code, op.LineTotal)),
+            Currency: order.Currency!.MapToDetailDto(),
+            SelectedServices: order.SelectedServices.Select(os => os.Service.MapToDetails(order.Currency!.Code)),
             StatusHistory: order.OrderStatusHistory.Select(sh => sh.MapToDto()) ?? [],
             CreatedOn: order.CreatedOn,
             UpdatedOn: order.UpdatedOn,
@@ -298,7 +308,10 @@ public static class OrderMappers
             IsAssignedToCurrentUser: isAssignedToCurrentUser,
             HasAfterPhotos: hasAfterPhotos,
             ExpressWaiverForfeitedOnCancel: expressWaiverForfeitedOnCancel,
-            PreferredOffer: preferredOffer
+            PreferredOffer: preferredOffer,
+            CustomerCompany: customerCompany,
+            CountryId: order.CustomerAddress?.CountryId,
+            WorkContractAcceptances: workContractAcceptances ?? []
         );
     }
 

@@ -39,8 +39,8 @@ public sealed class FiscalRetryService(
         {
             try
             {
-                // Reset before each receipt so an override from the previous
-                // multi-tenant receipt doesn't leak into a single-tenant one.
+                // Reset before each receipt so the previous receipt's override
+                // never outlives it.
                 tenantProvider.ClearTenantOverride();
                 if (!string.IsNullOrEmpty(receipt.TenantId))
                 {

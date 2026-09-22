@@ -7,6 +7,7 @@ import cz.cleansia.core.snackbar.SnackbarController
 import cz.cleansia.core.ui.state.ActionState
 import cz.cleansia.partner.api.model.OrderItem
 import cz.cleansia.partner.data.orders.PendingOffer
+import cz.cleansia.partner.core.auth.EmployeeIdResolver
 import cz.cleansia.partner.core.network.ApiErrorTranslator
 import cz.cleansia.partner.data.orders.OrdersRepository
 import cz.cleansia.partner.testing.MainDispatcherRule
@@ -40,6 +41,7 @@ class OrderDetailPreferredOfferTest {
     private lateinit var ordersRepository: OrdersRepository
     private lateinit var errorTranslator: ApiErrorTranslator
     private lateinit var snackbar: SnackbarController
+    private lateinit var employeeIdResolver: EmployeeIdResolver
     private lateinit var offers: MutableStateFlow<List<PendingOffer>>
 
     private val orderId = "order-1"
@@ -49,6 +51,8 @@ class OrderDetailPreferredOfferTest {
         ordersRepository = mockk(relaxed = true)
         errorTranslator = mockk()
         snackbar = mockk(relaxed = true)
+        employeeIdResolver = mockk()
+        coEvery { employeeIdResolver.resolve() } returns "employee-me"
         offers = MutableStateFlow(emptyList())
         every { ordersRepository.pendingOffers } returns offers
         every { ordersRepository.arePendingOffersStale() } returns false
@@ -57,8 +61,18 @@ class OrderDetailPreferredOfferTest {
         every { errorTranslator.translate(any()) } returns "translated error"
     }
 
-    private fun viewModel() =
-        OrderDetailViewModel(SavedStateHandle(mapOf("orderId" to orderId)), ordersRepository, errorTranslator, snackbar)
+    private fun viewModel() = OrderDetailViewModel(
+        SavedStateHandle(mapOf("orderId" to orderId)),
+        ordersRepository,
+        errorTranslator,
+        snackbar,
+        employeeIdResolver,
+    )
+
+    /** The sheet's verdict on the take it ran — the confirm is the take, and it now ends inside the sheet. */
+    private fun OrderDetailViewModel.takeRefused(key: String) = onWorkContractOutcome(
+        WorkContractOutcome.Refused(WorkContractRequest.Take(orderId), ApiError.BadRequest("nope", null, null, key)),
+    )
 
     private fun offer(id: String) = PendingOffer(
         id = id,
@@ -141,11 +155,8 @@ class OrderDetailPreferredOfferTest {
         val vm = viewModel()
         advanceUntilIdle()
         every { errorTranslator.translate(any()) } returns "You've reached your weekly order limit."
-        coEvery { ordersRepository.takeOrder(orderId) } returns ApiResult.Error(
-            ApiError.BadRequest("nope", null, null, "order.weekly_limit_reached"),
-        )
 
-        vm.take()
+        vm.takeRefused("order.weekly_limit_reached")
         advanceUntilIdle()
 
         assertEquals(
@@ -184,9 +195,7 @@ class OrderDetailPreferredOfferTest {
         offers.value = listOf(offer(orderId))
         val vm = viewModel()
         advanceUntilIdle()
-        coEvery { ordersRepository.takeOrder(orderId) } returns
-            ApiResult.Error(ApiError.BadRequest("nope", null, null, "order.weekly_limit_reached"))
-        vm.take()
+        vm.takeRefused("order.weekly_limit_reached")
         advanceUntilIdle()
         assertEquals(OfferAction.Confirm, vm.offerRefusal.value?.action)
 
@@ -205,9 +214,7 @@ class OrderDetailPreferredOfferTest {
         offers.value = listOf(offer(orderId))
         val vm = viewModel()
         advanceUntilIdle()
-        coEvery { ordersRepository.takeOrder(orderId) } returns
-            ApiResult.Error(ApiError.BadRequest("nope", null, null, "order.weekly_limit_reached"))
-        vm.take()
+        vm.takeRefused("order.weekly_limit_reached")
         advanceUntilIdle()
 
         vm.dismissOfferRefusal()
@@ -219,11 +226,7 @@ class OrderDetailPreferredOfferTest {
     fun `a refused take on an ordinary job still reaches the snackbar`() = runTest {
         val vm = viewModel()
         advanceUntilIdle()
-        coEvery { ordersRepository.takeOrder(orderId) } returns ApiResult.Error(
-            ApiError.BadRequest("nope", null, null, "order.no_available_spots"),
-        )
-
-        vm.take()
+        vm.takeRefused("order.no_available_spots")
         advanceUntilIdle()
 
         verify { snackbar.showError("translated error") }

@@ -32,7 +32,7 @@ import {
   TableAction,
   PaginationState,
 } from '@cleansia/components';
-import { CleansiaAdminRoute } from '@cleansia/services';
+import { CleansiaAdminRoute, PermissionService } from '@cleansia/services';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { DialogService } from 'primeng/dynamicdialog';
 import { ToastModule } from 'primeng/toast';
@@ -78,8 +78,9 @@ export class EmployeeManagementComponent implements AfterViewInit, OnDestroy {
   private readonly router = inject(Router);
   protected readonly facade = inject(EmployeeManagementFacade);
   private readonly translate = inject(TranslateService);
+  private readonly permissions = inject(PermissionService);
 
-  contractStatusTemplate = viewChild<TemplateRef<any>>(
+  contractStatusTemplate = viewChild<TemplateRef<AdminEmployeeListItem>>(
     'contractStatusTemplate'
   );
 
@@ -151,6 +152,7 @@ export class EmployeeManagementComponent implements AfterViewInit, OnDestroy {
         onViewDetails: this.viewEmployeeDetails.bind(this),
       },
       this.translate,
+      this.permissions,
       this.contractStatusTemplate()
     );
 

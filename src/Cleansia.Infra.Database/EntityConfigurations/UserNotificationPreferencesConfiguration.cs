@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 namespace Cleansia.Infra.Database.EntityConfigurations;
 
 public class UserNotificationPreferencesConfiguration
-    : AuditableEntityConfiguration<UserNotificationPreferences, string>
+    : TenantAuditableEntityConfiguration<UserNotificationPreferences, string>
 {
     public override void Configure(EntityTypeBuilder<UserNotificationPreferences> builder)
     {

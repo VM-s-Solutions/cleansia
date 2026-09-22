@@ -16,6 +16,7 @@ import {
   CleansiaSectionComponent,
   CleansiaTitleComponent,
 } from '@cleansia/components';
+import { CleansiaPermissionDirective } from '@cleansia/directives';
 import { ConfirmationService } from 'primeng/api';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DialogModule } from 'primeng/dialog';
@@ -23,6 +24,7 @@ import { ToggleSwitchModule } from 'primeng/toggleswitch';
 import { SelectModule } from 'primeng/select';
 import { TabsModule } from 'primeng/tabs';
 import { InputTextModule } from 'primeng/inputtext';
+import { Policy } from '@cleansia/services';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { ServiceAreaManagementFacade } from './service-area-management.facade';
 
@@ -35,6 +37,7 @@ interface CountryOption {
   selector: 'cleansia-admin-service-area-management',
   standalone: true,
   imports: [
+    CleansiaPermissionDirective,
     CommonModule,
     FormsModule,
     TranslatePipe,
@@ -56,6 +59,7 @@ interface CountryOption {
 })
 export class ServiceAreaManagementComponent implements OnInit {
   protected readonly facade = inject(ServiceAreaManagementFacade);
+  protected readonly Policy = Policy;
   private readonly translate = inject(TranslateService);
   private readonly confirmationService = inject(ConfirmationService);
 
@@ -128,6 +132,10 @@ export class ServiceAreaManagementComponent implements OnInit {
 
   isCountryServiced(country: CountryListItem): boolean {
     return !!country.id && this.facade.servicedCountryIds().has(country.id);
+  }
+
+  trackCountryRow(country: CountryListItem): string {
+    return `${country.id}:${this.facade.servicedToggleRevision()}`;
   }
 
   onCountryFilterChange(countryId: string | null): void {

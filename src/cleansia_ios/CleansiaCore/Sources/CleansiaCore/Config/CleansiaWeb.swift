@@ -20,6 +20,11 @@ public enum CleansiaWeb {
         url("/privacy")
     }
 
+    /// The public contract-for-work template the booking wizards name at the offer.
+    public static var workContractURL: URL {
+        url("/work-contract")
+    }
+
     public static func referralLink(code: String) -> String {
         "\(origin)/r/\(code)"
     }

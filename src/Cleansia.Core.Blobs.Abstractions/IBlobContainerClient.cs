@@ -8,6 +8,12 @@ public interface IBlobContainerClient
     Task<bool> ExistsAsync(string blobName, CancellationToken cancellationToken);
     Task<BlobFile> DownloadAsync(string blobName, CancellationToken cancellationToken);
     Task UploadAsync(string blobName, Stream stream, Metadata? metadata = null, CancellationToken cancellationToken = new CancellationToken());
+
+    /// <summary>
+    /// Create the blob only if nothing is there yet; false when one already is, and nothing is
+    /// overwritten. The store arbitrates, so two writers racing for one name agree on which landed.
+    /// </summary>
+    Task<bool> UploadIfAbsentAsync(string blobName, Stream stream, CancellationToken cancellationToken);
     Task DeleteAsync(string blobName, CancellationToken cancellationToken);
     Task<Stream> CreateFileForWritingAsync(string blobName, CancellationToken cancellationToken);
 

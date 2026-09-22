@@ -1,3 +1,4 @@
+using System.Net;
 using System.Net.Http.Json;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.Domain.Disputes;
@@ -14,7 +15,7 @@ namespace Cleansia.HostTests.Tests;
 ///   <item>a Customer replying to their OWN dispute (Customer host CanAddDisputeMessage) → 200, and the
 ///   message is recorded as a CUSTOMER message even if the body sets IsStaffMessage=true (the controller
 ///   forces it false and the handler re-derives it from the caller's profile);</item>
-///   <item>a Customer replying to ANOTHER customer's dispute → denied (DisputeNotOwnedByUser);</item>
+///   <item>a Customer replying to ANOTHER customer's dispute → not found, like a missing id;</item>
 ///   <item>a Customer hitting the Admin staff-reply endpoint (CanRespondToDispute = AdminOnly) → 403.</item>
 /// </list>
 /// </summary>
@@ -85,7 +86,15 @@ public sealed class Ac6DisputeMessageSplitTests(HostTestPostgresFixture db) : Au
 
         var resp = await CustomerClient(token).PostAsync("/api/Dispute/AddMessage", MessageBody(a.DisputeId, claimStaff: false));
 
-        await HttpAssert.RejectedAsync(resp, BusinessErrorMessage.DisputeNotOwnedByUser);
+        Assert.Equal(HttpStatusCode.BadRequest, resp.StatusCode);
+        await HttpAssert.AssertBusinessErrorAsync(resp, BusinessErrorMessage.DisputeNotFound);
+        var missing = await CustomerClient(token).PostAsync("/api/Dispute/AddMessage", MessageBody("missing-dispute", claimStaff: false));
+        Assert.Equal(HttpStatusCode.BadRequest, missing.StatusCode);
+        await HttpAssert.AssertBusinessErrorAsync(missing, BusinessErrorMessage.DisputeNotFound);
+        Assert.Empty(await QueryAsync(ctx => ctx.Set<DisputeMessage>().IgnoreQueryFilters().Where(m => m.DisputeId == a.DisputeId).ToListAsync()));
+        var dispute = await QueryAsync(ctx => ctx.Disputes.IgnoreQueryFilters().SingleAsync(d => d.Id == a.DisputeId));
+        Assert.Equal(a.OwnerId, dispute.UserId);
+        Assert.Equal(DisputeStatus.Pending, dispute.Status);
     }
 
     [Fact]

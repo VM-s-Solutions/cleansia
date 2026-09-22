@@ -11,7 +11,8 @@ namespace Cleansia.HostTests.Infrastructure;
 /// <c>TokenService.GenerateAccessToken</c> + <c>AuthExtensions.SetClaims</c> emit (HMAC-SHA256 over
 /// <c>JwtSettings:Secret</c>, issuer <c>cleansia</c>, the host's audience, and the
 /// <see cref="ClaimTypes.NameIdentifier"/> / <see cref="ClaimTypes.Email"/> / <see cref="ClaimTypes.Role"/>
-/// / <c>tenant_id</c> / <c>employee_id</c> claims). Because it carries the genuine claims, the host's
+/// / <c>tenant_id</c> / <c>employee_id</c> claims; the tenant defaults to <see cref="HostTestTenants.Default"/>,
+/// the company every seeded row lands in). Because it carries the genuine claims, the host's
 /// real <c>AddJwt</c> bearer validation accepts it and the real <c>AddCleansiaAuthorization</c>
 /// policies + the handler's <c>IUserSessionProvider</c>/<c>OrderAccessService</c> see the true caller —
 /// so the test exercises the full auth + authz pipeline, not a stubbed principal.
@@ -24,14 +25,23 @@ public static class TestJwtFactory
 
     public const string EmployeeIdClaimType = "employee_id";
     public const string TenantClaimType = "tenant_id";
+    public const string AdminRoleClaimType = "admin_role";
 
+    /// <summary>
+    /// An administrator token carries the <c>admin_role</c> claim the production mint emits — the
+    /// Administrator role unless a test names another, so every token minted before roles existed keeps
+    /// its meaning. <paramref name="claimlessAdministrator"/> mints the one shape production no longer
+    /// does: an Administrator with no role claim, the token of a session opened before the deploy.
+    /// </summary>
     public static string Mint(
         string audience,
         string userId,
         string email,
         UserProfile profile,
         string? employeeId = null,
-        string? tenantId = null)
+        string? tenantId = HostTestTenants.Default,
+        AdminRole? adminRole = null,
+        bool claimlessAdministrator = false)
     {
         var claims = new List<Claim>
         {
@@ -40,6 +50,9 @@ public static class TestJwtFactory
             new(ClaimTypes.Email, email),
             new(ClaimTypes.Role, profile.ToString()),
         };
+
+        if (profile == UserProfile.Administrator && !claimlessAdministrator)
+            claims.Add(new Claim(AdminRoleClaimType, (adminRole ?? AdminRole.Administrator).ToString()));
 
         if (!string.IsNullOrEmpty(tenantId))
             claims.Add(new Claim(TenantClaimType, tenantId));

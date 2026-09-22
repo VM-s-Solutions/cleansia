@@ -62,6 +62,8 @@ public class LateSettlementAfterCashCollectionTests
         _pending.Object,
         _producer.Object,
         NoPreferredCleanerHold.Resolver,
+        Mock.Of<IAdminNotifier>(),
+        Mock.Of<IUserNotificationRepository>(),
         NullLogger<HandlePaymentNotification.Handler>.Instance);
 
     private Order ArrangeOrder(bool collectedInCash)
@@ -70,10 +72,9 @@ public class LateSettlementAfterCashCollectionTests
             customerName: "Test Customer",
             customerEmail: "customer@example.com",
             customerPhone: "+420123456789",
-            customerAddress: null!,
+            customerAddress: Core.Domain.Users.Address.Create("123 Main St", "Prague", "11000", "cz"),
             rooms: 2,
             bathrooms: 1,
-            extras: new Dictionary<string, bool>(),
             cleaningDateTime: DateTime.UtcNow.AddDays(-1),
             paymentType: PaymentType.Card,
             totalPrice: 1000m,
@@ -82,6 +83,7 @@ public class LateSettlementAfterCashCollectionTests
             userId: "user-1");
         order.Id = OrderId;
         order.TenantId = TenantId;
+        order.SetCurrency(Core.Domain.Internationalization.Currency.Create("CZK", "Kč", "Czech koruna"));
 
         if (collectedInCash)
         {
@@ -150,7 +152,7 @@ public class LateSettlementAfterCashCollectionTests
     }
 
     [Fact]
-    public async Task Normal_Late_Settlement_Without_Cash_Collection_Still_Confirms_The_Order()
+    public async Task Normal_Late_Settlement_Without_Cash_Collection_Still_Settles_The_Order()
     {
         var order = ArrangeOrder(collectedInCash: false);
 
@@ -159,7 +161,10 @@ public class LateSettlementAfterCashCollectionTests
 
         Assert.True(result.IsSuccess);
         Assert.Equal(PaymentStatus.Paid, order.PaymentStatus);
-        Assert.Equal(OrderStatus.Confirmed, order.CurrentStatus);
+        // The fulfilment axis is untouched by settlement (T-0691): Confirmed means a cleaner took the
+        // job, and none has. This asserted Confirmed before the split, which is why the method was
+        // named "...Still_Confirms_The_Order" — it is the money that settles, not the booking.
+        Assert.Equal(OrderStatus.New, order.CurrentStatus);
         _disputeRepository.Verify(r => r.Add(It.IsAny<Dispute>()), Times.Never);
     }
 

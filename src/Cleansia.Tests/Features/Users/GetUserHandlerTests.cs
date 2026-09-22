@@ -30,7 +30,7 @@ public class GetUserHandlerTests
         (GetUser.Handler)Activator.CreateInstance(
             typeof(GetUser.Handler),
             _userRepository.Object,
-            _session.Object)!;
+            _session.Object, Mock.Of<IOrderRepository>(), Mock.Of<ITenantRepository>())!;
 
     private void SetCaller(string sub, UserProfile role)
     {

@@ -32,7 +32,7 @@ struct ConfirmStep: View {
     }
 
     private var currencyCode: String {
-        quote?.currencyCode ?? "CZK"
+        viewModel.displayCurrencyCode ?? ""
     }
 
     var body: some View {
@@ -50,7 +50,9 @@ struct ConfirmStep: View {
                     onSelect: setPreferredCleaner
                 )
                 CancellationPolicyCard(policy: extras.cancellationPolicy)
-                TrustBadges()
+                termsRow
+                WorkContractNotice()
+                TrustBadges(insurance: viewModel.insurance)
             }
             .padding(Spacing.l)
         }
@@ -86,6 +88,7 @@ struct ConfirmStep: View {
             membershipDiscount: membershipDiscount,
             tierDiscount: tierDiscount,
             combinedServerDiscount: combinedServerDiscount,
+            unmetTierDiscountFloor: viewModel.unmetTierDiscountFloor,
             currencyCode: currencyCode
         )
     }
@@ -166,6 +169,43 @@ struct ConfirmStep: View {
             next.preferredEmployeeId = id
             return next
         }
+    }
+
+    /// The same two documents the sign-up tick names, asked only of an account that has not already
+    /// granted both. Gates the slide-to-confirm and rides `termsAccepted` on CreateOrder.
+    @ViewBuilder
+    private var termsRow: some View {
+        if !viewModel.alreadyConsented {
+            CleansiaConsentCheckbox(
+                checked: Binding(
+                    get: { viewModel.state.termsAccepted },
+                    set: setTermsAccepted
+                ),
+                markdown: L10n.Auth.acceptTerms,
+                toggleAccessibilityLabel: L10n.Auth.acceptTermsToggle
+            )
+        }
+    }
+
+    private func setTermsAccepted(_ accepted: Bool) {
+        viewModel.update { current in
+            var next = current
+            next.termsAccepted = accepted
+            return next
+        }
+    }
+}
+
+/// The contract for work the confirmation concludes, named at the offer whether or not the account
+/// already consented: an information line with the public text behind it, never a tick.
+private struct WorkContractNotice: View {
+    var body: some View {
+        Text(ConsentMarkdown.styled(L10n.Booking.workContractNotice))
+            .font(CleansiaTypography.bodyMedium)
+            .foregroundColor(CleansiaColors.onSurfaceVariant)
+            .tint(CleansiaColors.primary)
+            .fixedSize(horizontal: false, vertical: true)
+            .frame(maxWidth: .infinity, alignment: .leading)
     }
 }
 

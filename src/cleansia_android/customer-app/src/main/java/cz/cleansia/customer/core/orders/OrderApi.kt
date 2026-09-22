@@ -27,6 +27,11 @@ import cz.cleansia.customer.api.model.ServiceDetails as GenServiceDetails
 import cz.cleansia.customer.api.model.ServiceListItem as GenServiceListItem
 import cz.cleansia.customer.api.model.SubmitOrderReviewCommand as GenSubmitOrderReviewCommand
 import cz.cleansia.customer.api.model.SubmitOrderReviewReviewLineScore as GenReviewLineScore
+import cz.cleansia.customer.api.model.WorkContractAcceptanceDetails as GenWorkContractAcceptanceDetails
+import cz.cleansia.customer.api.model.WorkContractAcceptanceDto as GenWorkContractAcceptanceDto
+import cz.cleansia.customer.api.model.WorkContractDto as GenWorkContractDto
+import cz.cleansia.customer.api.model.WorkContractFacts as GenWorkContractFacts
+import cz.cleansia.customer.api.model.WorkContractFactsLine as GenWorkContractFactsLine
 import cz.cleansia.core.network.mapWire
 import cz.cleansia.core.network.required
 import cz.cleansia.customer.core.user.toAppDto
@@ -109,6 +114,11 @@ class OrderApi(
         val raw = orderApi.orderMyServingCleaners()
         return raw.mapWire { list -> list.orEmpty().mapNotNull { it.toAppDtoOrDrop() } }
     }
+
+    suspend fun getWorkContract(acceptanceId: String, language: String): Response<WorkContractDto> {
+        val raw = orderApi.orderGetWorkContract(acceptanceId = acceptanceId, language = language)
+        return raw.mapWire { it.toAppDto() }
+    }
 }
 
 // ─── Generated → app DTO mappers ───
@@ -147,6 +157,7 @@ private fun GenPagedDataOfOrderListItem?.toAppDto(): OrderListResponseDto {
  */
 private fun GenOrderListItem.toAppDtoOrRefuse(): OrderListItemDto = OrderListItemDto(
     id = id.required("id"),
+    countryId = countryId,
     customerName = customerName,
     customerEmail = customerEmail,
     customerPhone = customerPhone,
@@ -192,6 +203,7 @@ private fun GenOrderItem?.toAppDto(): OrderDetailDto {
     val order = required("OrderItem")
     return OrderDetailDto(
         id = order.id.required("id"),
+        countryId = order.countryId,
         displayOrderNumber = order.displayOrderNumber,
         customerName = order.customerName,
         customerEmail = order.customerEmail,
@@ -232,8 +244,61 @@ private fun GenOrderItem?.toAppDto(): OrderDetailDto {
         orderNotes = order.orderNotes?.map { it.toAppDto() },
         orderIssues = order.orderIssues?.map { it.toAppDto() },
         review = order.review?.toAppDto(),
+        workContractAcceptances = order.workContractAcceptances?.map { it.toAppDto() },
     )
 }
+
+private fun GenWorkContractAcceptanceDto.toAppDto(): WorkContractAcceptanceDto = WorkContractAcceptanceDto(
+    id = id,
+    orderEmployeeId = orderEmployeeId,
+    employeeId = employeeId,
+    acceptedOn = acceptedOn?.toString(),
+    documentVersion = documentVersion,
+    language = language,
+)
+
+/**
+ * Refuses rather than defaults: the HTML is what was accepted and the price, window and scope are
+ * what the acceptance binds, so a screen that showed "0 Kč" over an empty text would present a
+ * contract of nothing as the one the cleaner agreed to. The labels (number, currency code,
+ * location) stay nullable and render as absent.
+ */
+private fun GenWorkContractDto?.toAppDto(): WorkContractDto {
+    val contract = required("WorkContractDto")
+    return WorkContractDto(
+        legalDocumentTextId = contract.legalDocumentTextId.required("legalDocumentTextId"),
+        version = contract.version.required("version"),
+        language = contract.language,
+        title = contract.title,
+        contentHtml = contract.contentHtml.required("contentHtml"),
+        facts = contract.facts.required("facts").toAppDto(),
+        acceptance = contract.acceptance?.toAppDto(),
+    )
+}
+
+private fun GenWorkContractFacts.toAppDto(): WorkContractFactsDto = WorkContractFactsDto(
+    orderNumber = orderNumber,
+    cleaningDateTimeUtc = cleaningDateTimeUtc.required("cleaningDateTimeUtc").toString(),
+    estimatedMinutes = estimatedMinutes.required("estimatedMinutes"),
+    totalPrice = totalPrice.required("totalPrice"),
+    currencyCode = currencyCode,
+    locationApproximate = locationApproximate,
+    rooms = rooms.required("rooms"),
+    bathrooms = bathrooms.required("bathrooms"),
+    services = services.orEmpty().names(),
+    packages = packages.orEmpty().names(),
+    extraSlugs = extraSlugs.orEmpty(),
+)
+
+private fun List<GenWorkContractFactsLine>.names(): List<String> =
+    mapNotNull { it.name?.takeIf(String::isNotBlank) }
+
+private fun GenWorkContractAcceptanceDetails.toAppDto(): WorkContractAcceptanceDetailsDto =
+    WorkContractAcceptanceDetailsDto(
+        acceptedOn = acceptedOn.required("acceptedOn").toString(),
+        documentVersion = documentVersion.required("documentVersion"),
+        acceptedLanguage = acceptedLanguage,
+    )
 
 private fun GenOrderAddress.toAppDto(): OrderAddressDto = OrderAddressDto(
     street = street,
@@ -329,15 +394,19 @@ private fun GenPackageDetails.toAppDto(): OrderPackageDetailsDto = OrderPackageD
 )
 
 /**
- * A zeroed `exchangeRate` is not a neutral fallback but a claim that every converted figure on the
- * screen is nothing; parity (`1.0`) would be equally invented, off by 24.75× on a CZK order.
+ * `exchangeRate` is GONE from the contract -- prices are authored per currency now rather than
+ * converted at a rate. It used to be `.required` here because neither available fallback was
+ * honest: zero claims every converted figure on the screen is nothing, and parity is off by 24.75x
+ * on a CZK order. With no rate on the wire there is nothing left to get wrong.
+ *
+ * `isDefault` stays required for the original reason: a defaulted `false` on every row is a claim
+ * the platform has no default currency.
  */
 private fun GenCurrencyListItem.toAppDto(): OrderCurrencyListItemDto = OrderCurrencyListItemDto(
     id = id,
     code = code,
     symbol = symbol,
     name = name,
-    exchangeRate = exchangeRate.required("exchangeRate"),
     isDefault = isDefault.required("isDefault"),
 )
 
@@ -346,7 +415,6 @@ private fun GenCurrencyDetailDto.toAppDto(): OrderCurrencyDetailDto = OrderCurre
     code = code,
     name = name,
     symbol = symbol,
-    exchangeRate = exchangeRate.required("exchangeRate"),
     isDefault = isDefault.required("isDefault"),
 )
 
@@ -355,7 +423,7 @@ private fun GenCurrencyDetailDto.toAppDto(): OrderCurrencyDetailDto = OrderCurre
  * they are getting nothing back on the one screen they will screenshot, and `refundInitiated = false`
  * invents a refund that was never started.
  */
-private fun GenCancelOrderResponse?.toAppDto(): CancelOrderResponse {
+internal fun GenCancelOrderResponse?.toAppDto(): CancelOrderResponse {
     val receipt = required("CancelOrderResponse")
     return CancelOrderResponse(
         orderId = receipt.orderId,
@@ -363,6 +431,7 @@ private fun GenCancelOrderResponse?.toAppDto(): CancelOrderResponse {
         refundAmount = receipt.refundAmount.required("refundAmount"),
         totalPrice = receipt.totalPrice.required("totalPrice"),
         refundInitiated = receipt.refundInitiated.required("refundInitiated"),
+        actualRefundAmount = receipt.actualRefundAmount,
     )
 }
 
@@ -370,7 +439,7 @@ private fun GenCancelOrderResponse?.toAppDto(): CancelOrderResponse {
  * The tier is refused rather than defaulted — every other field on the generated response is nullable
  * too, so ordinal 0 would quote a free cancellation on the strength of a field the server never sent.
  */
-private fun GenGetCancellationFeePreviewResponse?.toAppDto(): CancellationFeePreviewDto {
+internal fun GenGetCancellationFeePreviewResponse?.toAppDto(): CancellationFeePreviewDto {
     val quote = required("GetCancellationFeePreviewResponse")
     return CancellationFeePreviewDto(
         orderId = quote.orderId,

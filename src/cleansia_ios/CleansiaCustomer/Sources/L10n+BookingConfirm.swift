@@ -61,16 +61,24 @@ extension L10n.Booking {
         L10n.localized("booking_cancel_tier3_value")
     }
 
-    static var trustInsured: String {
-        L10n.localized("booking_trust_insured")
+    static func trustInsured(_ insuranceAmount: String) -> String {
+        L10n.format("booking_trust_insured", insuranceAmount)
+    }
+
+    static var trustInsuredNoFigure: String {
+        L10n.localized("booking_trust_insured_no_figure")
     }
 
     static var trustVetted: String {
         L10n.localized("booking_trust_vetted")
     }
 
-    static func tierDiscountMinNotMet(_ amount: Int) -> String {
+    static func tierDiscountMinNotMet(_ amount: String) -> String {
         L10n.format("booking_summary_tier_discount_min_not_met", amount)
+    }
+
+    static var marketSelectionPruned: String {
+        L10n.localized("booking_market_selection_pruned")
     }
 
     static var successTitle: String {
@@ -155,5 +163,11 @@ extension L10n.Booking {
 
     static var busyBooking: String {
         L10n.localized("busy_booking")
+    }
+
+    /// The contract-for-work line under the consent block; its link placeholder is pinned by the
+    /// Core consent catalog test beside the two consent sentences.
+    static var workContractNotice: String {
+        L10n.localized("booking_work_contract_notice")
     }
 }

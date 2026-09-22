@@ -1,6 +1,5 @@
 import {
   CreateDisputeResponse,
-  DisputeListItem,
   DisputeMessageDto,
   DisputeReason,
 } from '@cleansia/customer-services';

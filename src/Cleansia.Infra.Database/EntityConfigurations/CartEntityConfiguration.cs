@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Cleansia.Infra.Database.EntityConfigurations;
 
-public class CartEntityConfiguration : AuditableEntityConfiguration<Cart, string>
+public class CartEntityConfiguration : TenantAuditableEntityConfiguration<Cart, string>
 {
     public override void Configure(EntityTypeBuilder<Cart> builder)
     {

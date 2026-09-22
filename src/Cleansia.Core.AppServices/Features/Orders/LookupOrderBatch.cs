@@ -34,7 +34,8 @@ public class LookupOrderBatch
 
             var orderIds = items.Select(i => i.OrderId).Distinct().ToList();
 
-            var orders = await orderRepository.GetQueryable()
+            // Tenant-ignoring for the same reason as LookupOrder: the (OrderId, Email) secret is the pin.
+            var orders = await orderRepository.GetQueryableIgnoringTenant()
                 .Include(o => o.Currency)
                 .Include(o => o.OrderStatusHistory)
                 .Include(o => o.SelectedServices)

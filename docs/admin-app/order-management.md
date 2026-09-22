@@ -24,7 +24,7 @@ The order list displays all orders across the platform with:
 | Status | Current order status |
 | Payment Status | Payment state |
 | Cleaning Date | Scheduled date/time |
-| Total Price | Order amount |
+| Total Price | Order amount, labelled with the order's own currency symbol |
 | Created Date | When the order was placed |
 
 ### Filtering
@@ -36,6 +36,19 @@ Admins can filter orders by:
 - Customer name/email
 - Assigned employee
 - Service type
+- Currency (`OrderFilter.CurrencyId` on the wire — one currency id, no existence check; an unknown id is an empty page)
+
+### Money across currencies {#money-across-currencies}
+
+Every order is in the currency of its service address's country, so a page of orders can hold CZK
+and EUR rows side by side once a second market is open. Two things follow. The **currency filter**
+pins the page to one currency, and while it is set a sort on Total Price is a plain price order. With
+**no currency filter**, a click on Total Price sorts *within* currency: the server prepends
+`CurrencyId` ascending to the requested sort (`SortMapper.WithinCurrencyWhenSortedBy`), so the rows
+arrive grouped by currency and ordered by price inside each group, rather than filing 150 EUR below
+3 000 CZK as if the numbers were comparable. The column stays sortable either way — a click that
+silently does nothing is the failure the admin cannot see. The invoice list does the same on Total
+Amount with `EmployeeInvoiceFilter.CurrencyId`. → [Reporting](./reporting#currency)
 
 ::: warning The status dropdown does not cover the whole enum
 `OrderManagementFacade.orderStatusOptions` offers **Pending, Confirmed, InProgress, Completed,
@@ -62,7 +75,7 @@ The admin order detail page provides a comprehensive view of a single order with
 | Order Header | Order number, status, creation date |
 | Customer Info | Name, email, phone, address |
 | Service Details | Selected services, packages, rooms, bathrooms |
-| Employee Info | Assigned partner details |
+| Employee Info | Assigned partner details — and, per crew member, whether the **contract for work** is accepted: *accepted {date}, v{version}* or *contract pending*. **Read** on an accepted one opens the accepted text with the job facts frozen at acceptance and, for an Administrator, the accepted text row's SHA-256 (the hash a dispute cites) → [Business rules — the contract for work](/product/business-rules#work-contract) |
 | Payment Info | Method, status, amount, Stripe references |
 | Status History | Timeline of all status changes |
 | Notes | All notes added by partners and admins |
@@ -96,6 +109,12 @@ The reassignment process:
 2. Confirm the reassignment
 3. The order status and assignment are updated
 4. Both the original and new partners are notified
+
+**A reassignment writes no contract acceptance** (ADR-0068 D3): an administrator cannot accept the
+contract for work on the cleaner's behalf, so the placed cleaner's seat reads *contract pending* on
+this page until they accept it from their app — the job detail shows them a banner, and Start and
+Complete refuse them with `contract.acceptance_required` until they do. The seat they replaced keeps
+its acceptance row as history.
 
 ## Refunds
 
@@ -170,6 +189,20 @@ are refused (`order.invalid_status_transition`), as is any move out of a termina
 `OrderStatus.Pending` is refused as a target: it is dead, and this generic writer is the only way a
 new `Pending` row could appear. It stays in the handler's rank array so legacy rows holding it can
 still be ranked and moved forward.
+
+**`Confirmed` is refused as a target on an order with nobody assigned** (`order.status.confirmed_needs_crew`,
+[ADR-0067](/decisions/adr-0067)). `Confirmed` means a cleaner took the job, and a release that empties
+the crew walks it back to `New` — so this was the one door an administrator could open onto that state
+with a click. An administrator who wants a cleaner on the order reassigns, which writes `Confirmed`
+itself. The other forward moves stay open on an unstaffed order: `New → OnTheWay / InProgress /
+Completed` are the *"the cleaner is there but never tapped"* repairs, about the work's state rather
+than the crew's, and they are the administrator's own audited act — an unstaffed `OnTheWay` produced
+this way is one no sweep cancels out from under them.
+
+**An override to `Completed` stamps `CompletedAt`.** The override does not run the completion
+pipeline (pay, receipt, fiscal — that is `CompleteOrder`'s), but the revenue report reads
+`CompletedAt`, so an override that completes the order has to date it or the order is revenue of no
+month; the first stamp wins.
 
 Every override is audited (`order.status.override`, marked sensitive) and, for targets that map to a
 Live Activity event, pushes a state-card update.

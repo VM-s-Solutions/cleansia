@@ -53,8 +53,7 @@ public class ReceiptServiceFiscalIdempotencyTokenTests
             street: "Hauptstr. 1",
             city: "Berlin",
             zipCode: "10115",
-            countryId: CountryId,
-            vatNumber: "DE123456789");
+            countryId: CountryId);
         _companyInfoRepository
             .Setup(r => r.GetActiveByCountryAsync(CountryId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(company);
@@ -62,7 +61,7 @@ public class ReceiptServiceFiscalIdempotencyTokenTests
             .Setup(r => r.GetActiveCompanyInfoAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(company);
 
-        var country = Country.Create("Germany", "DE");
+        var country = Country.Create("Germany", "DE", "DE");
         _countryRepository
             .Setup(r => r.GetByIdAsync(CountryId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(country);
@@ -98,6 +97,13 @@ public class ReceiptServiceFiscalIdempotencyTokenTests
         _fiscalServiceResolver.Object,
         NullLogger<ReceiptService>.Instance);
 
+    private static Currency Euro()
+    {
+        var eur = Currency.Create("EUR", "€", "Euro");
+        eur.Id = "eur";
+        return eur;
+    }
+
     private static Order BuildOrder()
     {
         var address = Address.Create("Hauptstr. 2", "Berlin", "10115", CountryId);
@@ -108,12 +114,12 @@ public class ReceiptServiceFiscalIdempotencyTokenTests
             customerAddress: address,
             rooms: 1,
             bathrooms: 1,
-            extras: new Dictionary<string, bool>(),
             cleaningDateTime: DateTime.UtcNow.AddDays(1),
             paymentType: PaymentType.Cash,
             totalPrice: 1000m,
             currencyId: "eur",
             paymentStatus: PaymentStatus.Pending);
+        order.SetCurrency(Euro());
         order.Id = "01HZX9N6M7Q8R9S0T1V2W3X4Y5";
         return order;
     }

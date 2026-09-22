@@ -24,9 +24,9 @@ interface ParkedDraft {
  * `sessionStorage`, not `localStorage`: the draft holds a street address, a phone
  * number and an email, and it only has to survive a navigation inside the same
  * tab. Closing the tab is the customer walking away, and it takes the data with
- * them. Same defensive shape as {@link SignupConsentService} — every access
- * try/caught and platform-guarded, because storage can refuse (private mode,
- * quota) and losing a basket must never be able to break the page holding it.
+ * them. Every access is try/caught and platform-guarded, because storage can
+ * refuse (private mode, quota) and losing a basket must never be able to break
+ * the page holding it.
  *
  * It is NOT a resume-anywhere feature: one tab, one day, and the catalogue is
  * re-read on restore so a price cannot come back from the dead.

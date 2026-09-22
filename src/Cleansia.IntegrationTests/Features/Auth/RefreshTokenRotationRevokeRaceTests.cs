@@ -47,7 +47,7 @@ public class RefreshTokenRotationRevokeRaceTests : BaseIntegrationTest
         return new CleansiaDbContext(
             options,
             new TestUserSessionProvider(UserId, $"{UserId}@cleansia.test"),
-            new NullTenantProvider());
+            new DefaultTenantProvider());
     }
 
     private static RefreshTokenService NewService(CleansiaDbContext ctx)
@@ -73,6 +73,7 @@ public class RefreshTokenRotationRevokeRaceTests : BaseIntegrationTest
             SchemasToExclude = ["pg_catalog", "information_schema"]
         });
         await respawner.ResetAsync(conn);
+        await SeedTenantRegistryAsync(conn);
     }
 
     private async Task<string> SeedActiveTokenAsync()
@@ -212,7 +213,7 @@ public class RefreshTokenRotationRevokeRaceTests : BaseIntegrationTest
         return new CleansiaDbContext(
             options,
             new TestUserSessionProvider(UserId, $"{UserId}@cleansia.test"),
-            new NullTenantProvider());
+            new DefaultTenantProvider());
     }
 
     [Fact]
@@ -272,9 +273,9 @@ public class RefreshTokenRotationRevokeRaceTests : BaseIntegrationTest
         }
     }
 
-    private sealed class NullTenantProvider : ITenantProvider
+    private sealed class DefaultTenantProvider : ITenantProvider
     {
-        public string? GetCurrentTenantId() => null;
+        public string? GetCurrentTenantId() => TestTenants.Default;
         public void SetTenantOverride(string tenantId) { }
         public void ClearTenantOverride() { }
     }

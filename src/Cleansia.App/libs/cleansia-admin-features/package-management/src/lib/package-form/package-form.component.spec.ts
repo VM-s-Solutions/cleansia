@@ -2,7 +2,6 @@
    selectors so the override-imports swap is binding-compatible under the strict
    template test env. */
 /* eslint-disable @angular-eslint/component-selector */
-/* eslint-disable @angular-eslint/component-class-suffix */
 /* eslint-disable @angular-eslint/no-output-on-prefix */
 import {
   Component,
@@ -16,7 +15,8 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { NG_VALUE_ACCESSOR } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { By } from '@angular/platform-browser';
-import { Subject } from 'rxjs';
+import { of, ReplaySubject, Subject } from 'rxjs';
+import { AdminClient } from '@cleansia/admin-services';
 import {
   CleansiaButtonComponent,
   CleansiaLoaderComponent,
@@ -25,6 +25,7 @@ import {
   CleansiaTextInputComponent,
   CleansiaTitleComponent,
 } from '@cleansia/components';
+import { SnackbarService } from '@cleansia/services';
 import { TranslateModule } from '@ngx-translate/core';
 import { MultiSelectModule } from 'primeng/multiselect';
 import { Tab, TabList, TabPanel, TabPanels, Tabs } from 'primeng/tabs';
@@ -151,6 +152,36 @@ class TabPanelStub {
   value = input<string>('');
 }
 
+const STUB_IMPORTS = [
+  ButtonStub,
+  TextInputStub,
+  TextareaStub,
+  LoaderStub,
+  SectionStub,
+  TitleStub,
+  MultiSelectStub,
+  TabsStub,
+  TabListStub,
+  TabStub,
+  TabPanelsStub,
+  TabPanelStub,
+];
+
+const REAL_IMPORTS = [
+  CleansiaButtonComponent,
+  CleansiaTextInputComponent,
+  CleansiaTextareaComponent,
+  CleansiaLoaderComponent,
+  CleansiaSectionComponent,
+  CleansiaTitleComponent,
+  MultiSelectModule,
+  Tabs,
+  TabList,
+  Tab,
+  TabPanels,
+  TabPanel,
+];
+
 class FacadeStub {
   readonly destroyed$ = new Subject<void>();
   ngOnDestroy(): void {
@@ -164,10 +195,29 @@ class FacadeStub {
   readonly languages = signal<{ code: string; name: string }[]>([
     { code: 'en', name: 'English' },
   ]);
+  readonly currencies = signal<
+    {
+      code: string;
+      symbol: string;
+      name: string;
+      isDefault: boolean;
+      isActive: boolean;
+    }[]
+  >([
+    {
+      code: 'CZK',
+      symbol: 'Kc',
+      name: 'Czech koruna',
+      isDefault: true,
+      isActive: true,
+    },
+  ]);
+  readonly defaultCurrencyCode = signal<string | null>('CZK');
   readonly availableServices = signal<unknown[]>([]);
   readonly weightRows = signal<PackageServiceWeightRow[]>([]);
   readonly derivedGrosses = signal<DerivedServiceGross[]>([]);
   loadLanguages = jest.fn();
+  loadCurrencies = jest.fn();
   loadAvailableServices = jest.fn();
   loadPackage = jest.fn();
   setPrice = jest.fn();
@@ -200,37 +250,9 @@ describe('PackageFormComponent', () => {
       ],
     })
       .overrideComponent(PackageFormComponent, {
-        remove: {
-          imports: [
-            CleansiaButtonComponent,
-            CleansiaTextInputComponent,
-            CleansiaTextareaComponent,
-            CleansiaLoaderComponent,
-            CleansiaSectionComponent,
-            CleansiaTitleComponent,
-            MultiSelectModule,
-            Tabs,
-            TabList,
-            Tab,
-            TabPanels,
-            TabPanel,
-          ],
-        },
+        remove: { imports: REAL_IMPORTS },
         add: {
-          imports: [
-            ButtonStub,
-            TextInputStub,
-            TextareaStub,
-            LoaderStub,
-            SectionStub,
-            TitleStub,
-            MultiSelectStub,
-            TabsStub,
-            TabListStub,
-            TabStub,
-            TabPanelsStub,
-            TabPanelStub,
-          ],
+          imports: STUB_IMPORTS,
           providers: [{ provide: PackageFormFacade, useValue: facade }],
         },
       })
@@ -352,3 +374,153 @@ describe('PackageFormComponent', () => {
   });
 
 });
+
+/**
+ * The edit route with the REAL facade. The stubbed facade above makes `syncWeightRows` a no-op, so
+ * only a run against the real one can see the load effect feed its own dependency: it read
+ * `weightRows()` and set a fresh array in the same tracked run, re-dirtying itself forever and
+ * leaving /package-management/:id/edit without a rendered form.
+ */
+describe('PackageFormComponent (edit mode, real facade)', () => {
+  const PACKAGE_ID = 'pkg-1';
+  const SERVICE_A = { id: 'svc-a', name: 'Windows' };
+  const SERVICE_B = { id: 'svc-b', name: 'Floors' };
+
+  let fixture: ComponentFixture<PackageFormComponent>;
+  let component: PackageFormComponent;
+  let facade: PackageFormFacade;
+  let services$: ReplaySubject<{ data: typeof SERVICE_A[]; total: number }>;
+
+  /**
+   * A self-dirtying effect spins synchronously with no cap, so a regression would hang the run
+   * rather than fail it. The cap turns the hang into an assertion.
+   */
+  function capWeightSyncs(limit: number): jest.SpyInstance {
+    const original = facade.syncWeightRows.bind(facade);
+    const spy = jest.spyOn(facade, 'syncWeightRows');
+    spy.mockImplementation((selected, source) => {
+      if (spy.mock.calls.length > limit) {
+        throw new Error('the package load effect re-ran on its own write');
+      }
+      original(selected, source);
+    });
+    return spy;
+  }
+
+  beforeEach(async () => {
+    services$ = new ReplaySubject(1);
+    const adminClient = {
+      adminPackageClient: {
+        details: jest.fn().mockReturnValue(
+          of({
+            id: PACKAGE_ID,
+            name: 'Move-out bundle',
+            description: 'desc',
+            tagline: 'Handover day',
+            isPopular: true,
+            prices: { CZK: 1000 },
+            includedServices: [
+              { ...SERVICE_A, priceWeight: 3 },
+              { ...SERVICE_B, priceWeight: 1 },
+            ],
+            translations: {},
+          })
+        ),
+        update: jest.fn(),
+        create: jest.fn(),
+      },
+      adminLanguageClient: { getOverview: jest.fn().mockReturnValue(of([])) },
+      adminCurrencyClient: {
+        getOverview: jest.fn().mockReturnValue(
+          of([
+            {
+              code: 'CZK',
+              symbol: 'Kc',
+              name: 'Czech koruna',
+              isDefault: true,
+              isActive: true,
+            },
+          ])
+        ),
+      },
+      adminServiceClient: {
+        getPaged: jest.fn().mockReturnValue(services$),
+      },
+    };
+
+    await TestBed.configureTestingModule({
+      imports: [PackageFormComponent, TranslateModule.forRoot()],
+      providers: [
+        {
+          provide: ActivatedRoute,
+          useValue: {
+            snapshot: {
+              data: { mode: 'edit' },
+              paramMap: { get: () => PACKAGE_ID },
+            },
+          },
+        },
+        { provide: Router, useValue: { navigate: jest.fn() } },
+        { provide: AdminClient, useValue: adminClient },
+        {
+          provide: SnackbarService,
+          useValue: { showSuccess: jest.fn(), showError: jest.fn() },
+        },
+      ],
+    })
+      .overrideComponent(PackageFormComponent, {
+        remove: { imports: REAL_IMPORTS },
+        add: { imports: STUB_IMPORTS },
+      })
+      .compileComponents();
+
+    fixture = TestBed.createComponent(PackageFormComponent);
+    component = fixture.componentInstance;
+    facade = fixture.debugElement.injector.get(PackageFormFacade);
+  });
+
+  it('renders the loaded package instead of looping on its own weight rows', () => {
+    const sync = capWeightSyncs(3);
+    services$.next({ data: [SERVICE_A, SERVICE_B], total: 2 });
+
+    expect(() => fixture.detectChanges()).not.toThrow();
+
+    expect(sync).toHaveBeenCalledTimes(1);
+    expect(fixture.debugElement.query(By.directive(LoaderStub))).toBeNull();
+    expect(component.form.controls.name.value).toBe('Move-out bundle');
+    expect(component.form.controls.isPopular.value).toBe(true);
+    expect(component.selectedServices()).toEqual([SERVICE_A, SERVICE_B]);
+    expect(facade.weightRows()).toEqual([
+      { id: 'svc-a', name: 'Windows', weight: 3 },
+      { id: 'svc-b', name: 'Floors', weight: 1 },
+    ]);
+    expect(facade.derivedGrosses().map((g) => g.gross)).toEqual([750, 250]);
+  });
+
+  it('selects the included services once the service list lands after the package', () => {
+    capWeightSyncs(4);
+    fixture.detectChanges();
+    expect(component.selectedServices()).toEqual([]);
+
+    services$.next({ data: [SERVICE_A, SERVICE_B], total: 2 });
+    fixture.detectChanges();
+
+    expect(component.selectedServices()).toEqual([SERVICE_A, SERVICE_B]);
+    expect(facade.weightRows().map((r) => r.weight)).toEqual([3, 1]);
+  });
+
+  it('keeps a weight the admin changed', () => {
+    capWeightSyncs(3);
+    services$.next({ data: [SERVICE_A, SERVICE_B], total: 2 });
+    fixture.detectChanges();
+
+    component.onWeightChange('svc-a', 5);
+    fixture.detectChanges();
+
+    expect(facade.weightRows().map((r) => r.weight)).toEqual([5, 1]);
+    expect(facade.derivedGrosses().map((g) => g.gross)).toEqual([
+      833.33, 166.67,
+    ]);
+  });
+});
+

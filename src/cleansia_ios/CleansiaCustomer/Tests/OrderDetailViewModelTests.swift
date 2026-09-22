@@ -16,6 +16,7 @@ final class OrderDetailViewModelTests: XCTestCase {
         orderId: String = "o1",
         client: FakeOrderClient,
         membershipClient: FakeMembershipManagementClient = FakeMembershipManagementClient(),
+        marketStore: MarketStore? = nil,
         pollInterval: TimeInterval = 60
     ) -> OrderDetailViewModel {
         let repo = OrderRepository(client: client)
@@ -24,6 +25,7 @@ final class OrderDetailViewModelTests: XCTestCase {
             client: client,
             repository: repo,
             membershipRepository: MembershipRepository(client: membershipClient),
+            marketStore: marketStore ?? MarketFixtures.store().0,
             snackbar: SnackbarController(),
             eventBus: OrderEventBus(),
             liveActivity: NoopLiveActivitySync(),
@@ -61,6 +63,34 @@ final class OrderDetailViewModelTests: XCTestCase {
         XCTAssertEqual(client.detailCallCount, 0)
     }
 
+    /// The detail names the order's market off the directory, read beside the order rather than
+    /// after it, and mirrored from the store so a later market read re-resolves the label.
+    func testLoadReadsTheMarketDirectoryBesideTheOrderAndMirrorsIt() async {
+        let client = FakeOrderClient()
+        client.detailResults = [.success(OrderFixtures.detail(countryId: "svk", statusCode: Code(value: 5)))]
+        let (store, marketClient, _) = MarketFixtures.store()
+        let vm = makeVM(client: client, marketStore: store)
+        XCTAssertEqual(vm.markets, .loading)
+
+        await vm.load()
+
+        XCTAssertEqual(marketClient.callCount, 1)
+        XCTAssertEqual(vm.markets, store.state)
+        XCTAssertEqual(vm.state.loadedValue?.countryId, "svk")
+    }
+
+    func testAnUnreadableDirectoryDoesNotFailTheOrder() async {
+        let client = FakeOrderClient()
+        client.detailResults = [.success(OrderFixtures.detail(statusValue: 5))]
+        let (store, _, _) = MarketFixtures.store(.failure(ApiError(httpStatus: 500)))
+        let vm = makeVM(client: client, marketStore: store)
+
+        await vm.load()
+
+        XCTAssertEqual(vm.markets, .unavailable)
+        XCTAssertEqual(vm.state.loadedValue?.id, "o1")
+    }
+
     func testRetryReloadsToLoaded() async {
         let client = FakeOrderClient()
         client.detailResults = [.failure(ApiError(httpStatus: 500)), .success(OrderFixtures.detail(statusValue: 2))]
@@ -80,7 +110,9 @@ final class OrderDetailViewModelTests: XCTestCase {
             .success(OrderFixtures.detail(statusValue: 2)),
             .success(OrderFixtures.detail(statusValue: 6))
         ]
-        client.cancelResult = .success(OrderCancellation(refundAmount: 0, refundInitiated: false))
+        client.cancelResult = .success(
+            OrderCancellation(refundAmount: 0, refundInitiated: false, actualRefundAmount: nil)
+        )
         let vm = makeVM(client: client)
         await vm.load()
 
@@ -409,6 +441,7 @@ final class OrderDetailViewModelTests: XCTestCase {
             client: client,
             repository: repo,
             membershipRepository: MembershipRepository(client: FakeMembershipManagementClient()),
+            marketStore: MarketFixtures.store().0,
             snackbar: SnackbarController(),
             eventBus: bus,
             liveActivity: NoopLiveActivitySync(),
@@ -486,6 +519,7 @@ final class OrderDetailViewModelTests: XCTestCase {
             client: client,
             repository: OrderRepository(client: client),
             membershipRepository: memRepo,
+            marketStore: MarketFixtures.store().0,
             snackbar: SnackbarController(),
             eventBus: OrderEventBus(),
             liveActivity: NoopLiveActivitySync(),
@@ -513,6 +547,7 @@ final class OrderDetailViewModelTests: XCTestCase {
             client: client,
             repository: OrderRepository(client: client),
             membershipRepository: memRepo,
+            marketStore: MarketFixtures.store().0,
             snackbar: SnackbarController(),
             eventBus: OrderEventBus(),
             liveActivity: NoopLiveActivitySync(),
@@ -544,5 +579,65 @@ final class OrderDetailViewModelTests: XCTestCase {
         await openAndLeaveTheScreen()
 
         XCTAssertNil(released, "the view model outlived its screen, so its active-order poller never stops")
+    }
+
+    // MARK: - Contract for work
+
+    func testTheAcceptanceLinesFollowTheLoadedOrderPairedWithTheCrewBySeat() async {
+        let acceptedOn = Date(timeIntervalSince1970: 1_786_000_000)
+        let client = FakeOrderClient()
+        client.detailResults = [.success(OrderFixtures.detail(
+            statusCode: Code(type: "OrderStatus", name: nil, value: 2),
+            assignedEmployees: [
+                AssignedEmployeeDto(id: "seat-1", employeeId: "emp-1", fullName: "Jana", phoneNumber: nil),
+                AssignedEmployeeDto(id: "seat-2", employeeId: "emp-2", fullName: "Petr", phoneNumber: nil)
+            ],
+            workContractAcceptances: [
+                WorkContractAcceptance(
+                    id: "acc-1",
+                    orderEmployeeId: "seat-1",
+                    acceptedOn: acceptedOn,
+                    documentVersion: "2026-09-20"
+                ),
+                WorkContractAcceptance(
+                    id: "acc-9",
+                    orderEmployeeId: "seat-gone",
+                    acceptedOn: acceptedOn,
+                    documentVersion: "2026-09-20"
+                )
+            ]
+        ))]
+        let vm = makeVM(client: client)
+        XCTAssertTrue(vm.workContractAcceptances.isEmpty, "nothing to state before the order is loaded")
+
+        await vm.load()
+
+        XCTAssertEqual(
+            vm.workContractAcceptances,
+            [WorkContractAcceptanceLine(
+                id: "acc-1",
+                cleanerName: "Jana",
+                acceptedOn: acceptedOn,
+                documentVersion: "2026-09-20"
+            )]
+        )
+    }
+
+    func testAnOrderWithACrewAndNoAcceptanceYieldsNoLine() async {
+        let client = FakeOrderClient()
+        client.detailResults = [.success(OrderFixtures.detail(
+            statusCode: Code(type: "OrderStatus", name: nil, value: 2),
+            assignedEmployees: [AssignedEmployeeDto(
+                id: "seat-1",
+                employeeId: "emp-1",
+                fullName: "Jana",
+                phoneNumber: nil
+            )]
+        ))]
+        let vm = makeVM(client: client)
+
+        await vm.load()
+
+        XCTAssertTrue(vm.workContractAcceptances.isEmpty)
     }
 }

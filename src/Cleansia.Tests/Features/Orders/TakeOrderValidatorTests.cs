@@ -8,6 +8,7 @@ using Cleansia.Core.Domain.Users;
 using MockQueryable;
 using MockQueryable.Moq;
 using Moq;
+using Cleansia.TestUtilities;
 
 namespace Cleansia.Tests.Features.Orders;
 
@@ -33,7 +34,9 @@ public class TakeOrderValidatorTests
         _validator = new TakeOrder.Validator(
             _orderRepository.Object,
             _employeeRepository.Object,
-            _accessService.Object);
+            _accessService.Object,
+            ValidatorTestHelpers.CurrencyResolver(),
+            WorkContractTestData.LegalDocumentRepository().Object);
     }
 
     [Theory]
@@ -44,7 +47,7 @@ public class TakeOrderValidatorTests
     {
         ArrangeTakeableOrder(employeeStatus: status);
 
-        var result = await _validator.ValidateAsync(new TakeOrder.Command(OrderId));
+        var result = await _validator.ValidateAsync(new TakeOrder.Command(OrderId, WorkContractTestData.TextIdEn));
 
         Assert.False(result.IsValid);
         Assert.Contains(result.Errors, e => e.ErrorMessage == BusinessErrorMessage.EmployeeNotApproved);
@@ -58,7 +61,7 @@ public class TakeOrderValidatorTests
         // approved cleaner satisfying every existing rule still passes.
         ArrangeTakeableOrder(employeeStatus: ContractStatus.Approved);
 
-        var result = await _validator.ValidateAsync(new TakeOrder.Command(OrderId));
+        var result = await _validator.ValidateAsync(new TakeOrder.Command(OrderId, WorkContractTestData.TextIdEn));
 
         Assert.True(result.IsValid);
     }

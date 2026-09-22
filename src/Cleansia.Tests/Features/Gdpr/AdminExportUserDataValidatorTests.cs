@@ -32,7 +32,7 @@ public class AdminExportUserDataValidatorTests
 
     private static User BuildUser(string id, UserProfile profile)
     {
-        var user = User.CreateWithPassword($"{id}@example.com", "Password1", "First", "Last", profile);
+        var user = User.CreateWithPassword($"{id}@example.com", "Password1", "First", "Last", profile, adminRole: profile == UserProfile.Administrator ? AdminRole.Administrator : null);
         user.Id = id;
         return user;
     }
@@ -44,7 +44,7 @@ public class AdminExportUserDataValidatorTests
         var target = BuildUser("target-admin", UserProfile.Administrator);
         var validator = CreateValidator(target);
 
-        var result = await validator.ValidateAsync(new AdminExportUserData.Query(target.Id));
+        var result = await validator.ValidateAsync(new AdminExportUserData.Command(target.Id));
 
         Assert.False(result.IsValid);
         Assert.Contains(result.Errors, e => e.ErrorMessage == BusinessErrorMessage.CannotTargetAdminViaGdprTool);
@@ -57,7 +57,7 @@ public class AdminExportUserDataValidatorTests
         var target = BuildUser("target-customer", UserProfile.Customer);
         var validator = CreateValidator(target);
 
-        var result = await validator.ValidateAsync(new AdminExportUserData.Query(target.Id));
+        var result = await validator.ValidateAsync(new AdminExportUserData.Command(target.Id));
 
         Assert.True(result.IsValid);
     }

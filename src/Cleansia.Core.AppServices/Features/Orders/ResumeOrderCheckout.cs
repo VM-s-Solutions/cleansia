@@ -2,6 +2,7 @@ using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.Clients.Abstractions.Stripe;
 using Cleansia.Core.Domain.Enums;
+using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Infra.Common.Configuration.Interfaces;
 using Cleansia.Infra.Common.Validations;
@@ -72,21 +73,29 @@ public class ResumeOrderCheckout
 
         private async Task<bool> BeOwnedByCallerAsync(string orderId, CancellationToken cancellationToken)
         {
+            var order = await LoadOwnOrderAsync(orderId, cancellationToken);
+            return order != null && order.UserId == _userSessionProvider.GetUserId();
+        }
+
+        // The caller's own order in whichever operating company the market put it (S8: pinned by the
+        // caller's own id); null for anyone else's, so a stranger's order and a missing one read alike.
+        private Task<Order?> LoadOwnOrderAsync(string orderId, CancellationToken cancellationToken)
+        {
             var userId = _userSessionProvider.GetUserId();
-            if (string.IsNullOrEmpty(userId)) return false;
-            var order = await _orderRepository.GetByIdAsync(orderId, cancellationToken);
-            return order != null && order.UserId == userId;
+            return string.IsNullOrEmpty(userId)
+                ? Task.FromResult<Order?>(null)
+                : _orderRepository.GetByIdForOwnerAsync(orderId, userId, cancellationToken);
         }
 
         private async Task<bool> BeCardPaymentAsync(string orderId, CancellationToken cancellationToken)
         {
-            var order = await _orderRepository.GetByIdAsync(orderId, cancellationToken);
+            var order = await LoadOwnOrderAsync(orderId, cancellationToken);
             return order != null && order.PaymentType == PaymentType.Card;
         }
 
         private async Task<bool> NotAlreadyPaidAsync(string orderId, CancellationToken cancellationToken)
         {
-            var order = await _orderRepository.GetByIdAsync(orderId, cancellationToken);
+            var order = await LoadOwnOrderAsync(orderId, cancellationToken);
             // Paid, Refunded, Disputed and PartiallyRefunded all describe money that has already
             // moved. Only a Pending or Failed order has anything left to collect.
             return order != null
@@ -95,7 +104,7 @@ public class ResumeOrderCheckout
 
         private async Task<bool> NotCancelledAsync(string orderId, CancellationToken cancellationToken)
         {
-            var order = await _orderRepository.GetByIdAsync(orderId, cancellationToken);
+            var order = await LoadOwnOrderAsync(orderId, cancellationToken);
             return order != null && order.CurrentStatus != OrderStatus.Cancelled;
         }
 
@@ -107,13 +116,14 @@ public class ResumeOrderCheckout
         /// </summary>
         private async Task<bool> HaveNoPaymentIntentAsync(string orderId, CancellationToken cancellationToken)
         {
-            var order = await _orderRepository.GetByIdAsync(orderId, cancellationToken);
+            var order = await LoadOwnOrderAsync(orderId, cancellationToken);
             return order != null && string.IsNullOrEmpty(order.StripePaymentIntentId);
         }
     }
 
     public class Handler(
         IOrderRepository orderRepository,
+        IUserSessionProvider userSessionProvider,
         IStripeClientFactory stripeClientFactory,
         IStripeConfig stripeConfig,
         ILogger<Handler> logger) : ICommandHandler<Command, Response>
@@ -122,7 +132,8 @@ public class ResumeOrderCheckout
         {
             // Ownership, payment type, payment status, order status and the absence of a
             // PaymentIntent are all enforced by the Validator.
-            var order = (await orderRepository.GetByIdAsync(command.OrderId, cancellationToken))!;
+            var order = (await orderRepository.GetByIdForOwnerAsync(
+                command.OrderId, userSessionProvider.GetUserId()!, cancellationToken))!;
 
             // Resuming mints a NEW charge surface, so it is gated with the other two. -> IStripeConfig
             if (!stripeConfig.Enabled)

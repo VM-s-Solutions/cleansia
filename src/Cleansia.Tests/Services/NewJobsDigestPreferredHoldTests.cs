@@ -190,7 +190,7 @@ public sealed class NewJobsDigestPreferredHoldTests : IDisposable
 
         var handler = new NotifyLapsedPreferredOffers.Handler(
             new OrderRepository(ctx),
-            new NotificationProducer(new UserNotificationRepository(ctx), new OutboxPendingDispatch(ctx)),
+            new NotificationProducer(new UserNotificationRepository(ctx), new OutboxPendingDispatch(ctx), new UserRepository(ctx), Microsoft.Extensions.Logging.Abstractions.NullLogger<NotificationProducer>.Instance),
             tenantProvider,
             ctx,
             NullLogger<NotifyLapsedPreferredOffers.Handler>.Instance);
@@ -203,7 +203,7 @@ public sealed class NewJobsDigestPreferredHoldTests : IDisposable
 
     private async Task<IReadOnlyList<Dictionary<string, string>>> RunSweepAsync()
     {
-        await using var ctx = NewContext(tenantId: null);
+        await using var ctx = NewContext(tenantId: TestTenants.Default);
 
         var pushes = new List<Dictionary<string, string>>();
         var producer = new Mock<INotificationProducer>();
@@ -230,7 +230,7 @@ public sealed class NewJobsDigestPreferredHoldTests : IDisposable
 
     private async Task<DateTimeOffset?> ReadWatermarkAsync()
     {
-        await using var ctx = NewContext(tenantId: null);
+        await using var ctx = NewContext(tenantId: TestTenants.Default);
         var employee = await ctx.Set<Employee>()
             .IgnoreQueryFilters()
             .AsNoTracking()
@@ -246,7 +246,7 @@ public sealed class NewJobsDigestPreferredHoldTests : IDisposable
     /// </summary>
     private async Task ExpireHoldAsync(string orderId, DateTime expiredAtUtc)
     {
-        await using var ctx = NewContext(tenantId: null);
+        await using var ctx = NewContext(tenantId: TestTenants.Default);
         var order = await ctx.Set<Order>().IgnoreQueryFilters().FirstAsync(o => o.Id == orderId);
 
         typeof(Order)
@@ -259,7 +259,7 @@ public sealed class NewJobsDigestPreferredHoldTests : IDisposable
 
     private async Task CancelAsync(string orderId, DateTimeOffset cancelledAt)
     {
-        await using var ctx = NewContext(tenantId: null);
+        await using var ctx = NewContext(tenantId: TestTenants.Default);
         var order = await ctx.Set<Order>()
             .IgnoreQueryFilters()
             .Include(o => o.OrderStatusHistory)
@@ -275,12 +275,12 @@ public sealed class NewJobsDigestPreferredHoldTests : IDisposable
         string? holdBeneficiary = null,
         DateTime? withCommitmentAt = null)
     {
-        await using (var schema = NewContext(tenantId: null))
+        await using (var schema = NewContext(tenantId: TestTenants.Default))
         {
             await schema.Database.EnsureCreatedAsync();
         }
 
-        await using var seed = NewContext(tenantId: null);
+        await using var seed = NewContext(tenantId: TestTenants.Default);
 
         var user = User.CreateWithPassword(
             "hold.cleaner@cleansia.test", "Test-password-1!", "Hana", "Hold", UserProfile.Employee);
@@ -326,7 +326,6 @@ public sealed class NewJobsDigestPreferredHoldTests : IDisposable
             customerAddress: Address.Create("Hold St 5", "Praha", "14000", CountryId),
             rooms: 2,
             bathrooms: 1,
-            extras: new Dictionary<string, bool>(),
             cleaningDateTime: cleaningDateTime,
             paymentType: PaymentType.Card,
             totalPrice: 1200m,

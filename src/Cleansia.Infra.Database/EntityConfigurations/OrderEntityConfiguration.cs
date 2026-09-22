@@ -1,4 +1,5 @@
-﻿using Cleansia.Core.Domain.Enums;
+using Cleansia.Core.Domain.Enums;
+using Cleansia.Core.Domain.Legal;
 using Cleansia.Core.Domain.Loyalty;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Receipts;
@@ -9,7 +10,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace Cleansia.Infra.Database.EntityConfigurations;
 
-public class OrderEntityConfiguration : AuditableEntityConfiguration<Order, string>
+public class OrderEntityConfiguration : TenantAuditableEntityConfiguration<Order, string>
 {
     public override void Configure(EntityTypeBuilder<Order> builder)
     {
@@ -45,6 +46,64 @@ public class OrderEntityConfiguration : AuditableEntityConfiguration<Order, stri
         builder.Property(o => o.TotalPrice)
             .IsRequired()
             .HasPrecision(18, 2);
+
+        // CURRENCY -> ORDER IS RESTRICT, the same leg ServicePrices, PackagePrices, ExtraPrices,
+        // EmployeePayConfigs, EmployeeInvoices and OrderEmployeePays already declare. This one was
+        // left to convention, and convention chose the opposite: Order.Currency is a REQUIRED
+        // navigation and EF Core's default for a required relationship is Cascade, so
+        // `DELETE FROM "Currencies"` took the orders denominated in it -- and with them the nine child
+        // tables that cascade from an order.
+        //
+        // The damage was PARTIAL, which is worse than total. An order that had earned a receipt, a
+        // dispute, a refund, a loyalty transaction, a promo redemption or a pay row was protected by
+        // THOSE tables' Restrict legs and raised a confusing 23503 naming FK_OrderReceipts; a young
+        // order had none of them and simply disappeared.
+        //
+        // DeleteCurrency's IsInUseAsync is not an arbiter in front of this: it is a check-then-act with
+        // no lock and no flush, and it reads Orders through the TENANT query filter while Currencies
+        // is platform-wide. Restrict makes the database the arbiter -- the delete fails loudly instead
+        // of succeeding quietly on a paid booking.
+        //
+        // Currency carries no collection back to Order, so the unnamed WithMany() maps THIS key rather
+        // than inventing a second shadow one beside it.
+        builder.HasOne(o => o.Currency)
+            .WithMany()
+            .HasForeignKey(o => o.CurrencyId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        // THE VAT SPLIT OF THIS ORDER, AND THE RATE THAT PRODUCED IT. All three landed as bare
+        // `numeric` -- unconstrained -- while every money column around them was already (18,2). Not a
+        // tidiness point for the rate: ReceiptService makes `AppliedVatRate is not null` the fiscal
+        // discriminator, puts the rate on every line of the FiscalReceiptRequest sent to the tax
+        // authority, and prints it on the receipt PDF. Rounding it to two places would put a wrong
+        // statutory rate on a real document -- 5.5% (seeded for France) becomes 6%.
+        //
+        // So the rate is (5,4), the fraction convention `CountryConfiguration.StandardVatRate` and
+        // `ReducedVatRate` already use and the column this one is a verbatim copy of; the two amounts
+        // are (18,2) like the total they decompose.
+        builder.Property(o => o.NetAmount)
+            .HasPrecision(18, 2);
+
+        builder.Property(o => o.VatAmount)
+            .HasPrecision(18, 2);
+
+        builder.Property(o => o.AppliedVatRate)
+            .HasPrecision(5, 4);
+
+        // The cancellation pair, same omission. The fee RATE is a fraction (0.25 / 0.50 from
+        // BookingPolicy) and takes the same (5,4) as the VAT rate; the refund is money.
+        builder.Property(o => o.CancellationFeeRate)
+            .HasPrecision(5, 4);
+
+        builder.Property(o => o.CancellationRefundAmount)
+            .HasPrecision(18, 2);
+
+        // Kilometres, not money, and not a fraction -- so neither convention applies. (9,2) is ample
+        // for a distance travelled to a clean and is the only decimal in the model that is a physical
+        // measurement. Note that Address.Latitude/Longitude carry a HasPrecision(9, 6) that Npgsql
+        // silently discards because their CLR type is `double`; this one is a `decimal`, so it lands.
+        builder.Property(o => o.TravelDistance)
+            .HasPrecision(9, 2);
 
         // How much of the order the customer's credit balance settled. NOT NULL because "no credit"
         // is zero, not unknown — but with a DATABASE DEFAULT, which is the part that matters: the
@@ -120,10 +179,8 @@ public class OrderEntityConfiguration : AuditableEntityConfiguration<Order, stri
         // handler's own question and nothing wider.
         //
         // Filtered to spawned orders because every one-off order carries RecurringTemplateId NULL and
-        // they must not collide with each other. Note what the filter buys beyond that: it keeps
-        // TenantId OUT of the key. A unique index containing nullable TenantId enforces nothing in
-        // single-tenant mode — Postgres treats NULLs as distinct — which is the landmine CLAUDE.md
-        // names, and it is why this index is on two non-null columns instead.
+        // they must not collide with each other. No tenant term: a template belongs to one company, so
+        // the pair is already tenant-unique.
         builder.HasIndex(o => new { o.RecurringTemplateId, o.CleaningDateTime })
             .IsUnique()
             .HasFilter("\"RecurringTemplateId\" IS NOT NULL")
@@ -142,7 +199,8 @@ public class OrderEntityConfiguration : AuditableEntityConfiguration<Order, stri
         // is staged, so a status-less order is not constructible, and the column carrying no NULLs is
         // what keeps the status term a plain equality/IN instead of an OR.
         builder.Property(o => o.CurrentStatus)
-            .IsRequired();
+            .IsRequired()
+            .IsConcurrencyToken();
 
         // (CurrentStatus, CleaningDateTime): the leftmost prefix serves the status-set predicates
         // migrated off the per-row latest-history subquery (partner available/active dashboard
@@ -194,11 +252,6 @@ public class OrderEntityConfiguration : AuditableEntityConfiguration<Order, stri
         builder.Property(o => o.PreCleaningReminderSentAt)
             .IsRequired(false);
 
-        builder.Property(o => o.Extras)
-            .HasConversion(new JsonValueConverter<IReadOnlyDictionary<string, bool>>())
-            .Metadata
-            .SetValueComparer(new JsonValueComparer<IReadOnlyDictionary<string, bool>>());
-
         builder.Property(o => o.ConfirmationCode)
             .IsRequired()
             .HasMaxLength(50);
@@ -230,5 +283,20 @@ public class OrderEntityConfiguration : AuditableEntityConfiguration<Order, stri
             .WithOne(r => r.Order)
             .HasForeignKey<OrderReceipt>(r => r.OrderId)
             .OnDelete(DeleteBehavior.Restrict);
+
+        // The contract-for-work text the job was offered under. Restrict: a document an order was
+        // booked under is never deleted out from under it (a legal text in force is immutable anyway).
+        // Indexed for the admin question "which orders were booked under version X".
+        builder.Property(o => o.WorkContractDocumentId)
+            .HasMaxLength(26)
+            .IsRequired(false);
+
+        builder.HasOne<LegalDocument>()
+            .WithMany()
+            .HasForeignKey(o => o.WorkContractDocumentId)
+            .OnDelete(DeleteBehavior.Restrict)
+            .IsRequired(false);
+
+        builder.HasIndex(o => o.WorkContractDocumentId);
     }
 }

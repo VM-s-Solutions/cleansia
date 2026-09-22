@@ -12,7 +12,7 @@ namespace Cleansia.Core.Domain.Loyalty;
 /// on the invitee's first completed order; flips to <see cref="ReferralStatus.Expired"/>
 /// after the 90-day qualifying window if no order has been completed.
 /// </summary>
-public class Referral : Auditable, ITenantEntity
+public class Referral : TenantAuditable
 {
     [Required]
     public string ReferrerUserId { get; private set; } = default!;

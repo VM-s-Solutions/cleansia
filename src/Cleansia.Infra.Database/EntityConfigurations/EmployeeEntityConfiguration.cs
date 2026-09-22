@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Cleansia.Infra.Database.EntityConfigurations;
 
-public class EmployeeEntityConfiguration : AuditableEntityConfiguration<Employee, string>
+public class EmployeeEntityConfiguration : TenantAuditableEntityConfiguration<Employee, string>
 {
     public override void Configure(EntityTypeBuilder<Employee> builder)
     {
@@ -16,9 +16,6 @@ public class EmployeeEntityConfiguration : AuditableEntityConfiguration<Employee
             .HasDefaultValue(Core.Domain.Enums.EmployeeEntityType.NaturalPerson);
 
         builder.Property(e => e.RegistrationNumber)
-            .HasMaxLength(50);
-
-        builder.Property(e => e.VatNumber)
             .HasMaxLength(50);
 
         builder.Property(e => e.LegalEntityName)

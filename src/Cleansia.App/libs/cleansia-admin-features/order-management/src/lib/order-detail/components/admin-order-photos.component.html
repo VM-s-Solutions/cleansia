@@ -30,7 +30,13 @@
       </h4>
       <div class="order-photos__grid">
         @for (photo of beforePhotos(); track photo.id) {
-        <div class="order-photos__item" (click)="openGallery($index)">
+        <div
+          class="order-photos__item"
+          role="button"
+          tabindex="0"
+          (click)="openGallery($index)"
+          (keydown.enter)="openGallery($index)"
+        >
           <img
             [src]="photo.blobUrl"
             [alt]="photo.originalFileName || photo.fileName"
@@ -65,7 +71,10 @@
         @for (photo of afterPhotos(); track photo.id) {
         <div
           class="order-photos__item"
+          role="button"
+          tabindex="0"
           (click)="openGallery(beforePhotos().length + $index)"
+          (keydown.enter)="openGallery(beforePhotos().length + $index)"
         >
           <img
             [src]="photo.blobUrl"

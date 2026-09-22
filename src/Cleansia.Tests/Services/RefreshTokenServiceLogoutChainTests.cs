@@ -46,7 +46,7 @@ public sealed class RefreshTokenServiceLogoutChainTests : IDisposable
         return new CleansiaDbContext(
             options,
             new TestUserSessionProvider(UserId, $"{UserId}@cleansia.test"),
-            new NullTenantProvider());
+            new DefaultTenantProvider());
     }
 
     private static RefreshTokenService NewService(CleansiaDbContext ctx)
@@ -62,7 +62,7 @@ public sealed class RefreshTokenServiceLogoutChainTests : IDisposable
     private async Task SeedUsersAsync()
     {
         await using var ctx = NewContext();
-        await ctx.Database.EnsureCreatedAsync();
+        await TestTenants.EnsureCreatedWithRegistryAsync(ctx);
         ctx.Add(Language.Create("en", "English"));
         foreach (var (id, first) in new[] { (UserId, "Owner"), (OtherUserId, "Other") })
         {
@@ -256,9 +256,9 @@ public sealed class RefreshTokenServiceLogoutChainTests : IDisposable
         Assert.Empty(await LiveAsync(UserId));
     }
 
-    private sealed class NullTenantProvider : ITenantProvider
+    private sealed class DefaultTenantProvider : ITenantProvider
     {
-        public string? GetCurrentTenantId() => null;
+        public string? GetCurrentTenantId() => TestTenants.Default;
         public void SetTenantOverride(string tenantId) { }
         public void ClearTenantOverride() { }
     }

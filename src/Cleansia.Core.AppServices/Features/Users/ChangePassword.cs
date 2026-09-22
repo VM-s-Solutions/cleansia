@@ -1,17 +1,21 @@
 ﻿using Cleansia.Core.AppServices.Abstractions;
+using Cleansia.Core.AppServices.Auditing;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Common.Validators;
 using Cleansia.Core.AppServices.Extensions;
 using Cleansia.Core.AppServices.Features.Auth;
 using Cleansia.Core.AppServices.Services.Interfaces;
+using Cleansia.Core.AppServices.Tenancy;
 using Cleansia.Core.Domain.Common;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Repositories;
+using Cleansia.Core.Domain.Users;
 using Cleansia.Infra.Common.Validations;
 using FluentValidation;
 
 namespace Cleansia.Core.AppServices.Features.Users;
 
+[AuditAction("customer.password.reset_completed", Audience = AuditAudience.Customer, ResourceType = "User", AllowsAnonymousActor = true)]
 public class ChangePassword
 {
     public class Validator : AbstractValidator<Command>
@@ -23,10 +27,12 @@ public class ChangePassword
         private const string AuthTypeErrorTemplate = "{" + AuthTypeErrorPlaceholder + "}";
 
         private readonly IUserRepository _userRepository;
+        private readonly IAuditContext _auditContext;
 
-        public Validator(IUserRepository userRepository)
+        public Validator(IUserRepository userRepository, IAuditContext auditContext)
         {
             _userRepository = userRepository ?? throw new ArgumentNullException(nameof(userRepository));
+            _auditContext = auditContext ?? throw new ArgumentNullException(nameof(auditContext));
 
             RuleFor(command => command.Email)
                 .Cascade(CascadeMode.Stop)
@@ -70,7 +76,7 @@ public class ChangePassword
         private async Task<bool> UserAuthenticationTypeIsInternal(
             string email, ValidationContext<Command> context, CancellationToken cancellationToken)
         {
-            var user = await _userRepository.GetByEmailIgnoringTenantAsync(email, cancellationToken);
+            var user = await ResolveAsync(email, cancellationToken);
             if (user is not null && user.AuthenticationType == AuthenticationType.Internal)
             {
                 return true;
@@ -91,7 +97,7 @@ public class ChangePassword
         // (ADR-0003 residual: per-code attempt cap). A fresh code re-grants the budget.
         private async Task<bool> HasAttemptBudgetAsync(Command command, CancellationToken cancellationToken)
         {
-            var user = await _userRepository.GetByEmailIgnoringTenantAsync(command.Email, cancellationToken);
+            var user = await ResolveAsync(command.Email, cancellationToken);
             if (user?.ResetPasswordCode is null)
             {
                 return true;
@@ -104,7 +110,7 @@ public class ChangePassword
         {
             // lookup is (email, HASH of token). The reset token is stored hashed,
             // so hash the supplied raw code and compare — no plaintext comparison remains.
-            var user = await _userRepository.GetByEmailIgnoringTenantAsync(command.Email, cancellationToken);
+            var user = await ResolveAsync(command.Email, cancellationToken);
 
             return user is not null &&
                    user.ResetPasswordCode is not null &&
@@ -115,8 +121,20 @@ public class ChangePassword
 
         private async Task<bool> CheckIfPasswordDifferentAsync(Command command, CancellationToken cancellationToken)
         {
-            var user = await _userRepository.GetByEmailIgnoringTenantAsync(command.Email, cancellationToken);
+            var user = await ResolveAsync(command.Email, cancellationToken);
             return user is not null && !command.NewPassword.CheckIfPasswordSame(user.Password!);
+        }
+
+        // Whichever rule refuses, the account it refused is already named on the audit context.
+        private async Task<User?> ResolveAsync(string email, CancellationToken cancellationToken)
+        {
+            var user = await _userRepository.GetByEmailIgnoringTenantAsync(email, cancellationToken);
+            if (user is not null)
+            {
+                _auditContext.RecordEvidence("User", user.Id, payload: null, actorUserId: user.Id);
+            }
+
+            return user;
         }
     }
 
@@ -124,19 +142,35 @@ public class ChangePassword
         string Email,
         string NewPassword,
         string Code)
-        : ICommand<Response>;
+        : ICommand<Response>, IOperatorScopedRequest
+    {
+        // The reset names no market: a refusal for an unknown address is stamped with the default market's
+        // operator (ADR-0061 D3), and a refusal on a known account is re-stamped by the failure sink with
+        // that account's operator. Off the wire.
+        string? IOperatorScopedRequest.CountryId => null;
+    }
 
     public record Response(string Id);
 
     internal class Handler(
         IUserRepository userRepository,
-        IRefreshTokenService refreshTokenService)
+        IRefreshTokenService refreshTokenService,
+        ITenantProvider tenantProvider,
+        IAuditContext auditContext)
         : ICommandHandler<Command, Response>
     {
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
         {
             var user = await userRepository.GetByEmailIgnoringTenantAsync(command.Email, cancellationToken);
-            user!.UpdatePassword(command.NewPassword);
+
+            // Nothing mints a token here, so nothing adopts the account's operator the way TokenService does
+            // for a sign-in — and the audit row is stamped from the ambient tenant at commit (ADR-0061 D4).
+            if (!string.IsNullOrEmpty(user!.TenantId))
+            {
+                tenantProvider.SetTenantOverride(user.TenantId);
+            }
+
+            user.UpdatePassword(command.NewPassword);
             user.ClearResetPasswordToken();
 
             // Reset completion is the account-takeover recovery path: the caller proves control
@@ -145,6 +179,8 @@ public class ChangePassword
             // keep-none, unlike the authenticated change which spares the caller's session).
             await refreshTokenService.RevokeAllForUserAsync(
                 user.Id, "password_reset", exceptRawToken: null, cancellationToken);
+
+            auditContext.RecordEvidence("User", user.Id, payload: null, actorUserId: user.Id);
 
             return BusinessResult.Success(new Response(Id: user.Id));
         }

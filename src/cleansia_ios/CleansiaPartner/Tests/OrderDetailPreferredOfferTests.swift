@@ -101,6 +101,13 @@ final class OrderDetailPreferredOfferTests: XCTestCase {
         XCTAssertEqual(snackbar.current?.severity, .success)
     }
 
+    /// The take runs inside the contract sheet; its verdict reaches the detail as an outcome and is
+    /// reconciled exactly as the one-tap take was.
+    private func takeRefused(_ vm: OrderDetailViewModel, _ key: String) async {
+        vm.take()
+        await vm.onWorkContractOutcome(.refused(.take(orderId: orderId), ApiError(code: key, httpStatus: 400)))
+    }
+
     /// Nothing gates the reservation on the weekly cap, so the take gate can refuse a job the cleaner
     /// was told was theirs. On a disclosed offer that refusal is framed by the screen as the platform's
     /// mistake, so it must not also arrive as a bare snackbar line.
@@ -108,9 +115,8 @@ final class OrderDetailPreferredOfferTests: XCTestCase {
         client.pendingOffersResult = .success([.sample(id: orderId)])
         let vm = makeVM()
         await vm.load()
-        client.commandResult = .failure(ApiError(code: "order.weekly_limit_reached", httpStatus: 400))
 
-        await vm.take()
+        await takeRefused(vm, "order.weekly_limit_reached")
 
         let expected = ApiErrorLocalizer()
             .message(for: ApiError(code: "order.weekly_limit_reached", httpStatus: 400))
@@ -122,9 +128,8 @@ final class OrderDetailPreferredOfferTests: XCTestCase {
         client.pendingOffersResult = .success([])
         let vm = makeVM()
         await vm.load()
-        client.commandResult = .failure(ApiError(code: "order.no_available_spots", httpStatus: 400))
 
-        await vm.take()
+        await takeRefused(vm, "order.no_available_spots")
 
         XCTAssertEqual(snackbar.current?.severity, .error)
     }
@@ -135,9 +140,8 @@ final class OrderDetailPreferredOfferTests: XCTestCase {
         client.pendingOffersResult = .success([.sample(id: orderId)])
         let vm = makeVM()
         await vm.load()
-        client.commandResult = .failure(ApiError(code: "order.weekly_limit_reached", httpStatus: 400))
 
-        await vm.take()
+        await takeRefused(vm, "order.weekly_limit_reached")
 
         XCTAssertEqual(vm.refusal?.kind, .confirm)
         XCTAssertEqual(vm.refusal?.displayOrderNumber, "CL-\(orderId)")
@@ -188,9 +192,8 @@ final class OrderDetailPreferredOfferTests: XCTestCase {
         client.pendingOffersResult = .success([])
         let vm = makeVM()
         await vm.load()
-        client.commandResult = .failure(ApiError(code: "order.no_available_spots", httpStatus: 400))
 
-        await vm.take()
+        await takeRefused(vm, "order.no_available_spots")
 
         XCTAssertNil(vm.refusal)
     }
@@ -211,8 +214,7 @@ final class OrderDetailPreferredOfferTests: XCTestCase {
         client.pendingOffersResult = .success([.sample(id: orderId)])
         let vm = makeVM()
         await vm.load()
-        client.commandResult = .failure(ApiError(code: "order.weekly_limit_reached", httpStatus: 400))
-        await vm.take()
+        await takeRefused(vm, "order.weekly_limit_reached")
 
         vm.dismissActionError()
 

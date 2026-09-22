@@ -27,6 +27,7 @@ final class OrderDetailViewModel: ViewModel {
     @Published private(set) var receiptState: ActionState = .idle
     @Published private(set) var confirmRecurringState: ActionState = .idle
     @Published private(set) var hasMembership: Bool?
+    @Published private(set) var markets: MarketState = .loading
 
     let cancelSucceeded = PassthroughSubject<OrderCancellation, Never>()
     let reviewSucceeded = PassthroughSubject<OrderReviewDto, Never>()
@@ -37,6 +38,7 @@ final class OrderDetailViewModel: ViewModel {
     private let client: OrderClient
     private let repository: OrderRepository
     private let membershipRepository: MembershipRepository
+    private let marketStore: MarketStore
     private let snackbar: SnackbarController
     private let eventBus: OrderEventBus
     private let liveActivity: OrderLiveActivitySyncing
@@ -52,6 +54,7 @@ final class OrderDetailViewModel: ViewModel {
         client: OrderClient,
         repository: OrderRepository,
         membershipRepository: MembershipRepository,
+        marketStore: MarketStore,
         snackbar: SnackbarController,
         eventBus: OrderEventBus,
         liveActivity: OrderLiveActivitySyncing = LiveActivityBridge(),
@@ -66,6 +69,7 @@ final class OrderDetailViewModel: ViewModel {
         self.client = client
         self.repository = repository
         self.membershipRepository = membershipRepository
+        self.marketStore = marketStore
         self.snackbar = snackbar
         self.eventBus = eventBus
         self.liveActivity = liveActivity
@@ -75,7 +79,18 @@ final class OrderDetailViewModel: ViewModel {
         membershipRepository.$current
             .map { $0?.hasMembership }
             .assign(to: &$hasMembership)
+        marketStore.$state.assign(to: &$markets)
         subscribeToEvents()
+    }
+
+    /// Whether the footer offers Cancel: the server's set, read off the loaded order's status.
+    var canCancel: Bool {
+        OrderStatusGroup.isCancellable(state.loadedValue?.status)
+    }
+
+    /// One per crew member who accepted the contract for work; nothing before any acceptance.
+    var workContractAcceptances: [WorkContractAcceptanceLine] {
+        state.loadedValue?.workContractAcceptanceLines() ?? []
     }
 
     /// Gates the "Make this recurring" shortcut, from the same nullable membership the
@@ -100,10 +115,12 @@ final class OrderDetailViewModel: ViewModel {
         AnimatedMascotView.prewarm(.cleaningInProgress)
         let initial = state.loadedValue == nil
         // Concurrent, not sequential: the order is what this screen renders, and it must
-        // not wait on the answer that decides one footer button.
+        // not wait on the answer that decides one footer button or names its market.
         async let membership: Void = refreshMembership()
+        async let market: Void = marketStore.refreshIfStale()
         await fetch(initial: initial)
         await membership
+        await market
     }
 
     /// A screen that gates on membership fetches it. Reading whatever another screen

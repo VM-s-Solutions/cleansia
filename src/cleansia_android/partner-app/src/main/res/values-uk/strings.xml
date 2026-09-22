@@ -68,6 +68,7 @@
     <string name="login_subtitle">Увійдіть, щоб продовжити роботу з обліковим записом</string>
     <string name="create_account">Створити обліковий запис</string>
     <string name="register_subtitle">Приєднуйтеся до нас та починайте заробляти вже сьогодні</string>
+    <string name="register_market_label">Країна, де ви будете працювати</string>
     <string name="first_name">Ім\'я</string>
     <string name="last_name">Прізвище</string>
     <string name="phone">Номер телефону</string>
@@ -485,13 +486,9 @@
     <!-- Identification & business section -->
     <string name="identification_header_person">Особа</string>
     <string name="identification_header_business">Бізнес</string>
-    <string name="entity_type_natural_person">ФОП</string>
-    <string name="entity_type_legal_entity">Юридична особа</string>
     <string name="business_country">Країна реєстрації</string>
     <string name="registration_number_label">Реєстраційний номер</string>
     <string name="registration_number_helper">Формат залежить від обраної країни.</string>
-    <string name="vat_number_label">Номер платника ПДВ</string>
-    <string name="vat_number_helper">Необов\'язково — лише якщо ви платник ПДВ.</string>
     <string name="legal_entity_name_label">Назва юридичної особи</string>
     <string name="street">Вулиця</string>
     <string name="city">Місто</string>
@@ -617,7 +614,6 @@
     <string name="error_passport_required">Введіть номер паспорта / ID</string>
     <string name="error_pick_business_country">Виберіть країну реєстрації вашого бізнесу</string>
     <string name="error_registration_number_required">Введіть реєстраційний номер</string>
-    <string name="error_legal_entity_name_required">Введіть назву юридичної особи</string>
     <string name="error_pick_address_first">Спершу виберіть адресу на карті</string>
 
     <!-- Profile Validation -->
@@ -934,8 +930,19 @@
     <string name="history">Історія</string>
     <string name="you_earn">ви заробите</string>
     <string name="distance_unknown">Місце невідоме</string>
-    <string name="slide_to_take">Проведіть, щоб взяти замовлення</string>
-    <string name="taking_order">Беру замовлення…</string>
+    <!-- Contract for work: the sheet under the take, the standalone acceptance, the detail line and banner. -->
+    <string name="work_contract_title">Договір підряду</string>
+    <string name="work_contract_version">Версія %1$s</string>
+    <string name="work_contract_order_number">Замовлення %1$s</string>
+    <string name="work_contract_swipe_to_accept">Проведіть, щоб прийняти договір підряду</string>
+    <string name="work_contract_accepting">Приймаємо\u2026</string>
+    <string name="work_contract_load_error">Не вдалося завантажити договір підряду.</string>
+    <string name="work_contract_accepted_on">Прийнято %1$s, версія %2$s</string>
+    <string name="work_contract_accepted_in_language">Прийнято мовою: %1$s</string>
+    <string name="work_contract_accepted_line">Ви прийняли договір підряду %1$s, версія %2$s</string>
+    <string name="work_contract_pending_banner">Перш ніж почати, прийміть договір підряду</string>
+    <string name="work_contract_accept_cta">Прийняти договір</string>
+    <string name="work_contract_read">Прочитати договір</string>
     <string name="slide_to_start">Проведіть, щоб почати прибирання</string>
     <string name="starting_order">Починаю прибирання…</string>
     <string name="slide_to_complete">Проведіть, щоб завершити</string>
@@ -1098,6 +1105,7 @@
     <string name="error_auth_refresh_token_reused">З міркувань безпеки вас було вийшло з усіх пристроїв.</string>
     <string name="error_auth_current_password_invalid">Ваш поточний пароль неправильний.</string>
     <string name="error_auth_account_locked">Забагато невдалих спроб входу. Акаунт тимчасово заблоковано — спробуйте ще раз за кілька хвилин.</string>
+    <string name="error_auth_company_deactivated">Вашу компанію деактивовано, тому партнерський застосунок вам більше не доступний. Ви й далі можете експортувати або видалити свої дані в застосунку для клієнтів.</string>
 
     <string name="error_user_email_confirmed">Цю е-пошту вже підтверджено.</string>
     <string name="error_user_existing_email">Акаунт з цією е-поштою вже існує.</string>
@@ -1136,6 +1144,12 @@
     <string name="error_order_max_employees_exceeded">На цьому замовленні вже максимальна кількість прибиральників.</string>
     <string name="error_order_preferred_employee_not_eligible">Ви не маєте права прийняти це замовлення.</string>
     <string name="error_order_employee_already_has_order_in_progress">У вас уже є інше замовлення в роботі. Завершіть його перед початком нового.</string>
+
+    <!-- Contract for work: the take's echo, the seat's gate, the preview with no text in force -->
+    <string name="error_contract_not_accepted">Перш ніж взяти замовлення, прочитайте та прийміть договір підряду.</string>
+    <string name="error_contract_text_mismatch">Договір оновлено \u2014 будь ласка, прочитайте його ще раз.</string>
+    <string name="error_contract_acceptance_required">Перш ніж продовжити, прийміть договір підряду для цього замовлення.</string>
+    <string name="error_legal_document_not_found">Це замовлення зараз неможливо взяти.</string>
 
     <string name="error_order_not_in_progress">Це замовлення не в роботі.</string>
     <string name="error_order_not_confirmed">Це замовлення ще не підтверджено.</string>
@@ -1191,7 +1205,6 @@
     <string name="error_validation_invalid_iban">Введіть, будь ласка, дійсний IBAN.</string>
     <string name="error_validation_invalid_zip_code">Введіть, будь ласка, дійсний поштовий індекс.</string>
     <string name="error_validation_registration_number_invalid_format">Введіть дійсний реєстраційний номер компанії для обраної країни.</string>
-    <string name="error_validation_vat_number_invalid_format">Введіть дійсний номер ПДВ для обраної країни.</string>
     <string name="error_validation_must_be_positive">Має бути додатне число.</string>
     <string name="error_validation_invalid_availability_format">Неправильний формат доступності.</string>
 
@@ -1217,6 +1230,7 @@
     <string name="error_general_not_found">Не знайдено.</string>
 
     <string name="error_country_not_serviced">У цій країні ми поки що не працюємо.</string>
+    <string name="error_tenant_not_found">Цей ринок поки що не обслуговує жодна компанія Cleansia.</string>
     <string name="error_country_required">Виберіть, будь ласка, країну.</string>
     <string name="error_city_not_serviced">У цьому місті ми поки що не працюємо.</string>
     <string name="error_language_not_supported">Ця мова не підтримується.</string>
@@ -1235,8 +1249,8 @@
     <string name="notification_channel_dispute_reply_name">Відповіді підтримки</string>
     <string name="notification_channel_dispute_reply_desc">Сповіщає, коли підтримка відповідає на вашу скаргу.</string>
 
-    <string name="notification_order_confirmed_title">Замовлення підтверджено</string>
-    <string name="notification_order_confirmed_body">Замовлення №%1$s підтверджено. Торкніться, щоб переглянути деталі.</string>
+    <string name="notification_order_payment_confirmed_title">Замовлення підтверджено</string>
+    <string name="notification_order_payment_confirmed_body">Замовлення №%1$s підтверджено. Торкніться, щоб переглянути деталі.</string>
     <string name="notification_order_in_progress_title">Замовлення виконується</string>
     <string name="notification_order_in_progress_body">Замовлення №%1$s виконується. Торкніться, щоб стежити за ним.</string>
     <string name="notification_order_completed_title">Замовлення завершено</string>
@@ -1297,6 +1311,7 @@
     <string name="error_company_not_found">Інформацію про компанію не знайдено</string>
     <string name="error_country_not_existing_id">Країну не знайдено</string>
     <string name="error_currency_invalid">Недійсна валюта</string>
+    <string name="error_currency_not_found">Валюту не знайдено</string>
     <string name="error_dispute_max_length_exceeded">Перевищено максимальну довжину</string>
     <string name="error_employee_not_approved">Ваш обліковий запис ще не схвалено.</string>
     <string name="error_gdpr_consent_already_granted">Цю згоду вже надано.</string>
@@ -1345,8 +1360,6 @@
     <string name="offer_reserved_until_date">Ваше до %1$s, %2$s</string>
     <string name="offer_reserved_ended">Це резервування завершилося</string>
     <string name="offer_confirm">Підтвердити</string>
-    <string name="offer_slide_to_confirm">Проведіть, щоб підтвердити</string>
-    <string name="offer_confirming">Підтверджуємо\u2026</string>
     <string name="offer_decline">Відхилити</string>
     <string name="offer_decline_title">Звільнити це замовлення?</string>
     <string name="offer_decline_body">Воно одразу повернеться до всіх прибиральників. Це ніяк не зараховується вам у мінус, і поки воно вільне, ви можете взяти його зі списку.</string>
@@ -1405,4 +1418,6 @@
     <string name="open_settings">Відкрити налаштування</string>
     <string name="photo_source_title">Додати фото</string>
     <string name="camera_unavailable">На цьому пристрої немає камери.</string>
+    <string name="notification_recurring_paused_title">Розклад регулярних прибирань призупинено</string>
+    <string name="notification_recurring_paused_body">Ваш розклад регулярних прибирань призупинено, оскільки Plus неактивний. Поновіть Plus, щоб відновити планування прибирань.</string>
 </resources>

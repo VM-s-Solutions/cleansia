@@ -10,7 +10,8 @@ public class UpdateCountry
 {
     public record Command(
         string CountryId,
-        string Name) : ICommand<Response>;
+        string Name,
+        string? IsoAlpha2 = null) : ICommand<Response>;
 
     public record Response(string Id);
 
@@ -32,6 +33,11 @@ public class UpdateCountry
                 .WithMessage(BusinessErrorMessage.Required)
                 .MaximumLength(50)
                 .WithMessage(BusinessErrorMessage.MaxLength);
+
+            RuleFor(x => x.IsoAlpha2)
+                .Matches(CreateCountry.IsoAlpha2Pattern)
+                .When(x => x.IsoAlpha2 is not null)
+                .WithMessage(BusinessErrorMessage.CountryIsoAlpha2Invalid);
         }
     }
 
@@ -48,6 +54,10 @@ public class UpdateCountry
             }
 
             country.UpdateName(command.Name);
+            if (command.IsoAlpha2 is not null)
+            {
+                country.SetIsoAlpha2(command.IsoAlpha2);
+            }
 
             return BusinessResult.Success(new Response(country.Id));
         }

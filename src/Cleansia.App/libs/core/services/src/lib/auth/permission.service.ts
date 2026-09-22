@@ -1,5 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { Role } from '../enums/role.enum';
+import { ADMIN_ROLE_SETS, isAdminSetPolicy } from './admin-role-sets';
 import { AUTH_COOKIE_KEYS } from './auth-cookie-keys';
 import { PhysicalPolicy } from './physical-policy';
 import { PolicyName, resolvePhysicalPolicy } from './policy';
@@ -33,6 +34,15 @@ export class PermissionService {
     const role = this.currentRole();
     const isAuthenticated = role !== null;
 
+    if (isAdminSetPolicy(physical)) {
+      const adminRole = this.currentAdminRole();
+      return (
+        role === Role.ADMINISTRATOR &&
+        adminRole !== null &&
+        (ADMIN_ROLE_SETS[physical] as readonly string[]).includes(adminRole)
+      );
+    }
+
     switch (physical) {
       case PhysicalPolicy.Authenticated:
         return isAuthenticated;
@@ -58,5 +68,12 @@ export class PermissionService {
   currentRole(): string | null {
     if (typeof localStorage === 'undefined') return null;
     return localStorage.getItem(this.cookieKeys.role);
+  }
+
+  /** The administrator's role from the most recent login/refresh response; null for any app or
+   *  session that carries none. */
+  currentAdminRole(): string | null {
+    if (typeof localStorage === 'undefined' || !this.cookieKeys.adminRole) return null;
+    return localStorage.getItem(this.cookieKeys.adminRole);
   }
 }

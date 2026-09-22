@@ -30,7 +30,7 @@ namespace Cleansia.Core.Domain.Credit;
 /// <c>Balance == SUM(Transactions.Amount)</c> is an invariant a test asserts against real
 /// Postgres.</para>
 /// </summary>
-public class CreditAccount : Auditable, ITenantEntity
+public class CreditAccount : TenantAuditable
 {
     [Required]
     [MaxLength(26)]

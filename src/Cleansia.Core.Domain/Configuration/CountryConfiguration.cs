@@ -2,6 +2,7 @@ using System.ComponentModel.DataAnnotations;
 using Cleansia.Core.Domain.Common;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Internationalization;
+using Cleansia.Core.Domain.Tenancy;
 using Cleansia.Core.Fiscal.Abstractions;
 
 namespace Cleansia.Core.Domain.Configuration;
@@ -90,10 +91,40 @@ public class CountryConfiguration : Auditable
     public decimal? RefundStripeFeeRate { get; private set; }
 
     /// <summary>
-    /// Per-country fixed Stripe refund fee in currency units (e.g. 6 means 6 CZK). Null → fee 0, same as
-    /// <see cref="RefundStripeFeeRate"/>.
+    /// Per-country fixed Stripe refund fee, a number in the country's <see cref="DefaultCurrencyCode"/>
+    /// (6 means 6 CZK on the CZE row). Null → fee 0, same as <see cref="RefundStripeFeeRate"/>. Deducted
+    /// only from a refund in that same currency; an order priced in any other currency has the fixed part
+    /// absorbed by the platform (→ /product/business-rules#money-constants). No production writer sets
+    /// either figure today — the seed leaves both null — so the fee is 0 everywhere until one does.
     /// </summary>
     public decimal? RefundStripeFixedFee { get; private set; }
+
+    /// <summary>
+    /// The insurance ceiling per booking that customer copy states for this country, a number in
+    /// <see cref="DefaultCurrencyCode"/> (the <see cref="RefundStripeFixedFee"/> shape). Per country,
+    /// not per currency: a policy is written per jurisdiction, so two EUR countries need not share one.
+    /// Null → the clients render the copy variant that names no figure.
+    /// </summary>
+    public decimal? InsuranceCoverageAmount { get; private set; }
+
+    /// <summary>
+    /// The market a customer surface pre-selects before any choice is made (owner ruling
+    /// 2026-09-13). At most one configuration carries it, held by a partial unique index the way the
+    /// default currency is; <c>SetDefaultMarket</c> is the only writer. A pre-selection, not a pricing
+    /// invariant: <c>GetMarkets</c> falls back to the default-currency rule when nothing is flagged.
+    /// </summary>
+    public bool IsDefaultMarket { get; private set; }
+
+    /// <summary>
+    /// The operating company that serves this market (ADR-0061 D2). Null means nobody does: GetMarkets
+    /// does not list the country and an anonymous write naming it fails <c>tenant.not_found</c>.
+    /// Seed-written; no admin writer until a second operator exists. Sits beside the future HomeRegion
+    /// seam (ADR-0017 D2/D3).
+    /// </summary>
+    [MaxLength(26)]
+    public string? OperatorTenantId { get; private set; }
+
+    public Tenant? OperatorTenant { get; private set; }
 
     public static CountryConfiguration Create(
         string countryId,
@@ -196,6 +227,24 @@ public class CountryConfiguration : Auditable
     public CountryConfiguration UpdateFiscalEnforcementMode(FiscalEnforcementMode mode)
     {
         FiscalEnforcementMode = mode;
+        return this;
+    }
+
+    public CountryConfiguration UpdateMarketContent(decimal? insuranceCoverageAmount)
+    {
+        InsuranceCoverageAmount = insuranceCoverageAmount;
+        return this;
+    }
+
+    public CountryConfiguration SetAsDefaultMarket(bool isDefaultMarket)
+    {
+        IsDefaultMarket = isDefaultMarket;
+        return this;
+    }
+
+    public CountryConfiguration AssignOperator(string? tenantId)
+    {
+        OperatorTenantId = tenantId;
         return this;
     }
 }

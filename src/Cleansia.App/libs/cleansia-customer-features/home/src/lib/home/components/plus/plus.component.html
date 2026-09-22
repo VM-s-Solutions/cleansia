@@ -1,3 +1,4 @@
+@if (canStateFigures()) {
 <section class="cl-section cl-section--plus" id="plus">
   <div class="cl-section__inner">
     <div class="cl-plus">
@@ -5,40 +6,36 @@
         <span class="cl-plus__badge">{{ 'pages.home.plus.badge' | translate }}</span>
 
         <!--
-          Every figure below comes off the plan. With no plan loaded the band
-          says nothing numeric rather than falling back to constants that would
-          be right until the day a price changed — which is the drift this
-          replaced.
+          Every figure below comes off the plan, priced in the chosen market.
+          With no plan the whole band is omitted rather than falling back to
+          constants that would be right until the day a price changed — which
+          is the drift this replaced.
         -->
-        @if (canStateFigures()) {
-          <h2 class="cl-plus__title">
-            {{
-              'pages.home.plus.title'
-                | translate
-                  : {
-                      price: formatCzk(facts.monthlyPlan()!.price),
-                      days: facts.trialDays()
-                    }
-            }}
-          </h2>
+        <h2 class="cl-plus__title">
+          {{
+            'pages.home.plus.title'
+              | translate
+                : {
+                    price: formatPrice(facts.monthlyPlan()!.price),
+                    days: facts.trialDays()
+                  }
+          }}
+        </h2>
 
-          <ul class="cl-plus__perks">
+        <ul class="cl-plus__perks">
+          <li>
+            {{ 'pages.home.plus.perk1' | translate: { percent: facts.discountPercent() } }}
+          </li>
+          <li>
+            {{ 'pages.home.plus.perk2' | translate: { hours: facts.cancellationHours() } }}
+          </li>
+          @if (facts.hasExpressPerk()) {
             <li>
-              {{ 'pages.home.plus.perk1' | translate: { percent: facts.discountPercent() } }}
+              {{ 'pages.home.plus.perk3' | translate: { count: facts.expressPerMonth() } }}
             </li>
-            <li>
-              {{ 'pages.home.plus.perk2' | translate: { hours: facts.cancellationHours() } }}
-            </li>
-            @if (facts.hasExpressPerk()) {
-              <li>
-                {{ 'pages.home.plus.perk3' | translate: { count: facts.expressPerMonth() } }}
-              </li>
-            }
-            <li>{{ 'pages.home.plus.perk4' | translate }}</li>
-          </ul>
-        } @else {
-          <h2 class="cl-plus__title">{{ 'pages.home.plus.lead_plain' | translate }}</h2>
-        }
+          }
+          <li>{{ 'pages.home.plus.perk4' | translate }}</li>
+        </ul>
 
         <div class="cl-plus__actions">
           <a class="cl-btn cl-btn--inverse cl-plus__cta" [routerLink]="ctaLink()">
@@ -50,7 +47,7 @@
                 'pages.home.plus.yearly'
                   | translate
                     : {
-                        price: formatCzk(yearly.price),
+                        price: formatPrice(yearly.price),
                         percent: facts.yearlySavingsPercent()
                       }
               }}
@@ -71,3 +68,4 @@
     </div>
   </div>
 </section>
+}

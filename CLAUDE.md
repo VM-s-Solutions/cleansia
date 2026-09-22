@@ -81,9 +81,9 @@ a comment that only explains *why* belongs in `docs/` with a `→ /path#anchor` 
 | Order lifecycle — the two axes, and why `Pending` is dead | `/domain/order-lifecycle` |
 | Offerability, the preferred-cleaner hold, seat allocation | `/domain/offerability` |
 | Entities and their relationships | `/domain/model` |
-| Per-component contracts (18 of them) | `/domain/roles/` |
+| Per-component contracts (34 of them) | `/domain/roles/` |
 | The ten flows, end to end | `/flows/` |
-| Why a decision was made — 52 ADRs | `/decisions/` |
+| Why a decision was made — 64 ADRs | `/decisions/` |
 | Aspire, ports, the migrator, request logging | `/architecture/local-orchestration` |
 | The S1–S12 security laws | `/architecture/security-rules` |
 
@@ -204,17 +204,36 @@ thing that proves the model and the schema agree.
 
 Four things that look like bugs, are not, and have each cost a session:
 
-- **A unique index containing `TenantId` enforces nothing in single-tenant mode.** `TenantId` is
-  nullable and Postgres treats NULLs as distinct, so `(TenantId, …)` admits unlimited duplicates while
-  it is null — which is production today. No design may use such an index as its only concurrency
-  arbiter. `.AreNullsDistinct(false)` is shipped on five tables, but adding it to an **existing** index
-  means regenerating `Initial` and **dropping DEV**, and it fails on pre-existing duplicates.
-  → `/architecture/security-rules`
+- **`TenantId` is NOT NULL and a real foreign key on every stamped table, and `NULL` is not a
+  tenant.** A tenant is an operating company under the holding (`Tenants`, one row: `cleansia-cz`);
+  a type that belongs to one company extends **`TenantAuditable`** (or is one of the two
+  `BaseEntity + ITenantEntity` audits) and its row carries the company from its first write —
+  48 stamped tables, NOT NULL on all but `OutboxMessages` and `DeadLetters`, each with
+  `FK_<T>_Tenants_TenantId` (Restrict, no navigation). A plain `Auditable` — the 21 catalogue and
+  per-country tables (`CountryConfiguration`, `Service`, …) — **has no `TenantId` column at all**; if
+  you see one on such a type, the type is on the wrong base. Two traps this closed, and how: a
+  `(TenantId, …)` unique index used to enforce nothing because Postgres treats NULLs as distinct —
+  now the tenant term can never be null, the thirteen sole-arbiter indexes are `NULLS NOT DISTINCT`
+  in the emitted DDL anyway, and a model sweep fails any new unique index over a nullable column that
+  is not; and a `NULL`-stamped row used to vanish from every tenanted reader — now a writer that
+  forgets its market fails `23502` in DEV instead of orphaning rows, and one that invents a company
+  fails `23503`. An anonymous request names a **market** (`countryId`), never a tenant; the server
+  maps market → operator. **A company has a lifecycle, and `Tenant.IsActive` is read** (ADR-0064,
+  2026-09-16): `Tenant : Auditable` carries nine lifecycle columns; `IsActive = false` is
+  *deactivated* — its markets are not markets for every reader of "serviced" and its cleaners are
+  refused on the partner apps; `ArchiveRequestedOn` is *frozen* — `CommitAsync` throws
+  `CompanyArchivedException` on any write to that company's books (everything stamped that is not on
+  `ArchivedCompanyWriteGuard.AccountSurface`), and a new stamped table is books until sorted. The
+  registry is still seed-only; the lifecycle is written by the company's own admins.
+  → `/architecture/security-rules`, `/decisions/adr-0061`, `/decisions/adr-0064`
 
-- **System jobs run with no JWT context.** Query with `GetQueryableIgnoringTenant()`, then
-  `SetTenantOverride` per tenant group and commit **inside** the loop — rows are stamped from the
-  ambient tenant at commit time, so one deferred commit stamps every group with the last tenant seen.
-  `CleanupStalePendingOrders` is the reference shape. → `/flows/cross-cutting`
+- **System jobs run with no JWT context.** Two shapes, and the input decides which. Rows in: query
+  with `GetQueryableIgnoringTenant()`, then `SetTenantOverride` per tenant group and commit **inside**
+  the loop — rows are stamped from the ambient tenant at commit time, so one deferred commit stamps
+  every group with the last tenant seen; `CleanupStalePendingOrders` is the reference shape. Companies
+  in: loop `ITenantRepository.GetAllIdsAsync()`, set the override per company, do the work under it
+  (every filtered read and every `TenantSettingCatalog` read is that company's), commit inside;
+  `DataRetentionBackgroundService` is the reference shape. → `/flows/cross-cutting`
 
 - **Backend error keys land under `api.*`, never `errors.*`.** The shared `HttpErrorInterceptorFn`
   resolves `` `api.${dotValue}` ``. A key written under `errors.*` alone is read by nothing — the
@@ -222,10 +241,15 @@ Four things that look like bugs, are not, and have each cost a session:
   rather than a missing key. Every key needs all five locales in every app that can reach the endpoint;
   the parity guards are `apps/<app>/src/app/i18n/error-contract-parity.spec.ts`.
 
-- **`Confirmed` does not mean a cleaner is assigned.** It is deliberately overloaded — "money settled"
-  OR "cleaner took it". Read `AssignedEmployees` for crew. And `OrderStatus.Pending` is dead with no
-  production writer; the state it used to describe lives on the payment axis.
-  → `/domain/order-lifecycle`
+- **`Confirmed` means a cleaner TOOK the job — and nothing about money.** Until ADR-0057 (owner ruling
+  2026-09-08) it ALSO meant "money settled"; a paid card order now rests at `New`, like a cash one. Since
+  ADR-0067 (owner ruling 2026-09-19) a drop or an admin rejection that empties the crew of a `Confirmed`
+  order walks it back to `New` (`Order.ReturnToBoardIfUnstaffed`, the one writer) — when the writer can
+  prove the crew is empty; a cover request removes nobody, a reassign or cover swap replaces, and two
+  releases racing can still leave `Confirmed` with nobody on it. So read `AssignedEmployees` when "is
+  anyone on it?" is the question; the sweeps do, and the override refuses `Confirmed` on an unstaffed
+  order. `OrderStatus.Pending` is dead with no production writer; the state it used to describe lives on
+  the payment axis. → `/domain/order-lifecycle`, `/decisions/adr-0057`, `/decisions/adr-0067`
 
 ## Agent operating system
 

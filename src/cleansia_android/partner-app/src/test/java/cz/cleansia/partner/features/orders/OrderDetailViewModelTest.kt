@@ -3,8 +3,12 @@ package cz.cleansia.partner.features.orders
 import androidx.lifecycle.SavedStateHandle
 import cz.cleansia.core.snackbar.SnackbarController
 import cz.cleansia.core.ui.state.ActionState
+import cz.cleansia.partner.api.model.AssignedEmployeeDto
+import cz.cleansia.partner.api.model.Code
 import cz.cleansia.partner.api.model.OrderItem
+import cz.cleansia.partner.api.model.WorkContractAcceptanceDto
 import cz.cleansia.core.network.ApiError
+import cz.cleansia.partner.core.auth.EmployeeIdResolver
 import cz.cleansia.partner.core.network.ApiErrorTranslator
 import cz.cleansia.core.network.ApiResult
 import cz.cleansia.partner.data.orders.OrdersRepository
@@ -35,20 +39,45 @@ class OrderDetailViewModelTest {
     private lateinit var ordersRepository: OrdersRepository
     private lateinit var errorTranslator: ApiErrorTranslator
     private lateinit var snackbar: SnackbarController
+    private lateinit var employeeIdResolver: EmployeeIdResolver
 
     private val orderId = "order-1"
-    private val order = mockk<OrderItem>()
+
+    /** A job the caller is not on: the standing resolver reads the crew and nothing else. */
+    private fun crewless() = mockk<OrderItem> { every { assignedEmployees } returns null }
+
+    private val order = crewless()
 
     @Before
     fun setUp() {
         ordersRepository = mockk(relaxed = true)
         errorTranslator = mockk()
         snackbar = mockk(relaxed = true)
+        employeeIdResolver = mockk()
         every { errorTranslator.translate(any()) } returns "translated error"
+        coEvery { employeeIdResolver.resolve() } returns "employee-me"
     }
 
-    private fun viewModel() =
-        OrderDetailViewModel(SavedStateHandle(mapOf("orderId" to orderId)), ordersRepository, errorTranslator, snackbar)
+    private fun viewModel() = OrderDetailViewModel(
+        SavedStateHandle(mapOf("orderId" to orderId)),
+        ordersRepository,
+        errorTranslator,
+        snackbar,
+        employeeIdResolver,
+    )
+
+    private fun refusal(key: String) = ApiError.BadRequest(
+        message = "A validation problem occurred.",
+        validationErrors = mapOf("Command" to listOf(key)),
+        errorKey = key,
+    )
+
+    private fun crewOrder(status: Int, mySeatId: String = "seat-me", acceptance: WorkContractAcceptanceDto? = null) = OrderItem(
+        orderStatus = Code(value = status),
+        isAssignedToCurrentUser = true,
+        assignedEmployees = listOf(AssignedEmployeeDto(id = mySeatId, employeeId = "employee-me", fullName = "Me")),
+        workContractAcceptances = listOfNotNull(acceptance),
+    )
 
     @Test
     fun `cold init fetches and transitions Loading to Loaded`() = runTest {
@@ -140,11 +169,11 @@ class OrderDetailViewModelTest {
         io.mockk.coVerify(exactly = 1) { ordersRepository.getById(orderId) }
     }
 
+    /** Taking is accepting the contract for work: the tap opens the sheet, the swipe inside it takes. */
     @Test
-    fun `take action drives ActionState and inFlightAction then returns to Idle`() = runTest {
+    fun `take opens the contract sheet for this order and takes nothing itself`() = runTest {
         every { ordersRepository.isOrderStale(orderId) } returns true
         coEvery { ordersRepository.getById(orderId) } returns ApiResult.Success(order)
-        coEvery { ordersRepository.takeOrder(orderId) } returns ApiResult.Success(Unit)
 
         val vm = viewModel()
         advanceUntilIdle()
@@ -152,8 +181,147 @@ class OrderDetailViewModelTest {
         vm.take()
         advanceUntilIdle()
 
+        assertEquals(WorkContractRequest.Take(orderId), vm.contractRequest.value)
+        io.mockk.coVerify(exactly = 0) { ordersRepository.takeOrder(any(), any()) }
+        assertEquals(ActionState.Idle, vm.actionState.value)
+    }
+
+    @Test
+    fun `a Taken outcome closes the sheet, refetches the order and returns to Idle`() = runTest {
+        val refreshed = crewless()
+        every { ordersRepository.isOrderStale(orderId) } returns true
+        coEvery { ordersRepository.getById(orderId) } returnsMany listOf(
+            ApiResult.Success(order),
+            ApiResult.Success(refreshed),
+        )
+
+        val vm = viewModel()
+        advanceUntilIdle()
+        vm.take()
+
+        vm.onWorkContractOutcome(WorkContractOutcome.Taken(WorkContractRequest.Take(orderId)))
+        advanceUntilIdle()
+
+        assertNull(vm.contractRequest.value)
+        assertEquals(OrderDetailUiState.Loaded(refreshed), vm.uiState.value)
         assertEquals(ActionState.Idle, vm.actionState.value)
         assertNull(vm.inFlightAction.value)
+    }
+
+    @Test
+    fun `dismissing the sheet closes it without touching the order`() = runTest {
+        every { ordersRepository.isOrderStale(orderId) } returns true
+        coEvery { ordersRepository.getById(orderId) } returns ApiResult.Success(order)
+
+        val vm = viewModel()
+        advanceUntilIdle()
+        vm.take()
+
+        vm.dismissContract()
+        advanceUntilIdle()
+
+        assertNull(vm.contractRequest.value)
+        io.mockk.coVerify(exactly = 1) { ordersRepository.getById(orderId) }
+    }
+
+    /**
+     * A seat an administrator placed has no acceptance, and the start is the first act the server
+     * refuses for it. That refusal is not a message to read but the sheet to open, in accept mode,
+     * with the start's own gesture released so it can be retried once the row exists.
+     */
+    @Test
+    fun `a start refused for a missing acceptance opens the sheet in accept mode and snackbars nothing`() = runTest {
+        every { ordersRepository.isOrderStale(orderId) } returns true
+        coEvery { ordersRepository.getById(orderId) } returns ApiResult.Success(order)
+        coEvery { ordersRepository.startOrder(orderId) } returns ApiResult.Error(refusal("contract.acceptance_required"))
+
+        val vm = viewModel()
+        advanceUntilIdle()
+
+        vm.start()
+        advanceUntilIdle()
+
+        assertEquals(WorkContractRequest.Accept(orderId), vm.contractRequest.value)
+        assertEquals(ActionState.Idle, vm.actionState.value)
+        assertNull(vm.inFlightAction.value)
+        verify(exactly = 0) { snackbar.showError(any<String>()) }
+        verify(exactly = 0) { snackbar.showError(any<ApiError>()) }
+    }
+
+    @Test
+    fun `a completion refused for a missing acceptance opens the same sheet`() = runTest {
+        every { ordersRepository.isOrderStale(orderId) } returns true
+        coEvery { ordersRepository.getById(orderId) } returns ApiResult.Success(order)
+        coEvery { ordersRepository.completeOrder(orderId, null, null) } returns
+            ApiResult.Error(refusal("contract.acceptance_required"))
+
+        val vm = viewModel()
+        advanceUntilIdle()
+
+        vm.complete(null, null)
+        advanceUntilIdle()
+
+        assertEquals(WorkContractRequest.Accept(orderId), vm.contractRequest.value)
+        verify(exactly = 0) { snackbar.showError(any<String>()) }
+    }
+
+    /** Any other refusal of a start is still an error to read, exactly as before. */
+    @Test
+    fun `a start refused for another reason still snackbars and does not open the sheet`() = runTest {
+        every { ordersRepository.isOrderStale(orderId) } returns true
+        coEvery { ordersRepository.getById(orderId) } returns ApiResult.Success(order)
+        coEvery { ordersRepository.startOrder(orderId) } returns ApiResult.Error(refusal("order.too_early_to_start"))
+
+        val vm = viewModel()
+        advanceUntilIdle()
+
+        vm.start()
+        advanceUntilIdle()
+
+        assertNull(vm.contractRequest.value)
+        verify(exactly = 1) { snackbar.showError("translated error") }
+    }
+
+    @Test
+    fun `an Accepted outcome refetches so the line replaces the banner`() = runTest {
+        val before = crewOrder(status = 2)
+        val after = crewOrder(
+            status = 2,
+            acceptance = WorkContractAcceptanceDto(
+                id = "acc-1",
+                orderEmployeeId = "seat-me",
+                employeeId = "employee-me",
+                acceptedOn = "2026-08-10T18:40:00Z",
+                documentVersion = "2026-09-20",
+                language = "cs",
+            ),
+        )
+        every { ordersRepository.isOrderStale(orderId) } returns true
+        coEvery { ordersRepository.getById(orderId) } returnsMany listOf(ApiResult.Success(before), ApiResult.Success(after))
+
+        val vm = viewModel()
+        advanceUntilIdle()
+        assertEquals(WorkContractStanding.Pending, vm.contractStanding.value)
+        vm.openContract(WorkContractRequest.Accept(orderId))
+
+        vm.onWorkContractOutcome(WorkContractOutcome.Accepted(WorkContractRequest.Accept(orderId)))
+        advanceUntilIdle()
+
+        assertNull(vm.contractRequest.value)
+        assertEquals(WorkContractStanding.Accepted("acc-1", "2026-08-10T18:40:00Z", "2026-09-20"), vm.contractStanding.value)
+        assertEquals(ActionState.Idle, vm.actionState.value)
+    }
+
+    @Test
+    fun `the standing waits for the employee id and pairs by the seat`() = runTest {
+        every { ordersRepository.isOrderStale(orderId) } returns true
+        coEvery { ordersRepository.getById(orderId) } returns ApiResult.Success(crewOrder(status = 3))
+        coEvery { employeeIdResolver.resolve() } returns null
+
+        val vm = viewModel()
+        advanceUntilIdle()
+
+        assertEquals(WorkContractStanding.None, vm.contractStanding.value)
     }
 
     @Test
@@ -201,20 +369,22 @@ class OrderDetailViewModelTest {
      */
     @Test
     fun `a rejected action refetches so the footer cannot keep offering it`() = runTest {
-        val refreshed = mockk<OrderItem>()
+        val refreshed = crewless()
         every { ordersRepository.isOrderStale(orderId) } returns true
         coEvery { ordersRepository.getById(orderId) } returnsMany listOf(
             ApiResult.Success(order),
             ApiResult.Success(refreshed),
         )
-        coEvery { ordersRepository.takeOrder(orderId) } returns
-            ApiResult.Error(ApiError.BadRequest("taken", errorKey = "order.already_taken"))
-
         val vm = viewModel()
         advanceUntilIdle()
         assertEquals(OrderDetailUiState.Loaded(order), vm.uiState.value)
 
-        vm.take()
+        vm.onWorkContractOutcome(
+            WorkContractOutcome.Refused(
+                WorkContractRequest.Take(orderId),
+                ApiError.BadRequest("taken", errorKey = "order.already_taken"),
+            ),
+        )
         advanceUntilIdle()
 
         assertEquals(OrderDetailUiState.Loaded(refreshed), vm.uiState.value)
@@ -253,19 +423,19 @@ class OrderDetailViewModelTest {
     fun `action is re-entry guarded while submitting`() = runTest {
         every { ordersRepository.isOrderStale(orderId) } returns true
         coEvery { ordersRepository.getById(orderId) } returns ApiResult.Success(order)
-        var takeCalls = 0
-        coEvery { ordersRepository.takeOrder(orderId) } coAnswers {
-            takeCalls++
+        var startCalls = 0
+        coEvery { ordersRepository.startOrder(orderId) } coAnswers {
+            startCalls++
             ApiResult.Success(Unit)
         }
 
         val vm = viewModel()
         advanceUntilIdle()
 
-        vm.take()
-        vm.take()
+        vm.start()
+        vm.start()
         advanceUntilIdle()
 
-        assertEquals(1, takeCalls)
+        assertEquals(1, startCalls)
     }
 }

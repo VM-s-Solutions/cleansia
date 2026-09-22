@@ -49,7 +49,7 @@
               </tr>
             </thead>
             <tbody>
-              @for (country of facade.countries(); track country.id) {
+              @for (country of facade.countries(); track trackCountryRow(country)) {
                 <tr>
                   <td>{{ country.name }}</td>
                   <td>{{ country.isoCode }}</td>
@@ -86,6 +86,7 @@
               [style]="{ minWidth: '240px' }"
             />
             <cleansia-button
+              *cleansiaPermission="Policy.CanManageServiceCities"
               [label]="'pages.service_area_management.cities.add' | translate"
               icon="pi pi-plus"
               [disabled]="!selectedCountryId()"
@@ -125,6 +126,7 @@
                     </td>
                     <td class="actions-col">
                       <button
+                        *cleansiaPermission="Policy.CanManageServiceCities"
                         type="button"
                         class="city-action-btn"
                         (click)="openEditCityDialog(city)"
@@ -133,6 +135,7 @@
                         <i class="pi pi-pencil"></i>
                       </button>
                       <button
+                        *cleansiaPermission="Policy.CanManageServiceCities"
                         type="button"
                         class="city-action-btn city-action-btn--danger"
                         (click)="confirmDeleteCity(city)"
@@ -191,13 +194,16 @@
       </small>
     </label>
     @if (cityEditTarget()) {
-      <label class="inline-toggle">
+      <div class="inline-toggle">
         <p-toggleSwitch
+          inputId="service-city-active"
           [ngModel]="cityForm().isActive"
           (ngModelChange)="updateCityFormField('isActive', $event)"
         />
-        <span>{{ 'pages.service_area_management.cities.active_label' | translate }}</span>
-      </label>
+        <label for="service-city-active">{{
+          'pages.service_area_management.cities.active_label' | translate
+        }}</label>
+      </div>
     }
   </div>
   <ng-template pTemplate="footer">

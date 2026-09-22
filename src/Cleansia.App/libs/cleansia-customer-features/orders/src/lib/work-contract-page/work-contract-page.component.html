@@ -1,0 +1,95 @@
+<div class="cl-lgl">
+  <div class="cl-lgl__hero">
+    <a class="cl-lgl__back" [routerLink]="orderLink">
+      <i class="pi pi-arrow-left" aria-hidden="true"></i>
+      {{ 'pages.order_contract.back' | translate }}
+    </a>
+    <span class="cl-lgl__eyebrow">{{ 'pages.order_contract.eyebrow' | translate }}</span>
+    <h1 class="cl-lgl__title">
+      {{ facade.contract()?.title || ('pages.order_contract.title' | translate) }}
+    </h1>
+    @if (facade.contract(); as contract) {
+    <p class="cl-lgl__updated">
+      {{
+        'legal.effective_from'
+          | translate: { date: contract.effectiveFrom | date: 'longDate' : 'UTC' : facade.language() }
+      }}
+    </p>
+    <!-- The version verbatim: it is the string the acceptance row stamps, matched character for character. -->
+    <p class="cl-lgl__version">
+      {{ 'legal.version' | translate: { version: contract.version } }}
+    </p>
+    }
+  </div>
+  <cleansia-foam-edge variant="cap-short" [fill]="'var(--cl-surface)'" />
+</div>
+
+<div class="cl-lgl__body">
+  @if (facade.loading()) {
+  <div class="cl-lgl__page cl-lgl__page--single">
+    <div class="cl-lgl__doc" aria-busy="true">
+      @for (i of [1, 2, 3]; track i) {
+      <div class="cl-lgl__skeleton-section">
+        <p-skeleton width="45%" height="1.5rem" />
+        <p-skeleton width="100%" height="1rem" />
+        <p-skeleton width="90%" height="1rem" />
+      </div>
+      }
+    </div>
+  </div>
+  } @else if (facade.hasError()) {
+  <div class="cl-lgl__page cl-lgl__page--single">
+    <div class="cl-lgl__error" role="alert">
+      <i class="pi pi-exclamation-circle"></i>
+      <p>{{ 'pages.order_contract.load_error' | translate }}</p>
+      <cleansia-button
+        [title]="'global.actions.retry' | translate"
+        [severity]="'secondary'"
+        [icon]="'pi pi-refresh'"
+        [iconPosition]="'left'"
+        (clickFn)="facade.retry()"
+      />
+    </div>
+  </div>
+  } @else if (facade.contract(); as contract) {
+  <div class="cl-lgl__page cl-lgl__page--single">
+    <div class="cl-lgl__doc">
+      <!--
+        The job as it was when the cleaner accepted. These are the facts frozen on the acceptance
+        row, not the live order, which is what makes them the terms of this contract.
+      -->
+      <section class="cl-lgl__facts">
+        <h2 class="cl-lgl__facts-title">{{ 'pages.order_contract.facts.title' | translate }}</h2>
+        <dl class="cl-lgl__facts-list">
+          @for (row of facade.factRows(); track row.labelKey) {
+          <div class="cl-lgl__fact">
+            <dt>{{ row.labelKey | translate }}</dt>
+            <dd>{{ row.value }}</dd>
+          </div>
+          }
+        </dl>
+      </section>
+
+      @if (contract.acceptance; as acceptance) {
+      <p class="cl-lgl__acceptance">
+        <i class="pi pi-verified" aria-hidden="true"></i>
+        <span>
+          {{
+            'pages.order_contract.accepted_on'
+              | translate: { date: facade.acceptedOn(), version: acceptance.documentVersion }
+          }}
+          @if (facade.acceptedLanguageName(); as language) {
+          <span class="cl-lgl__acceptance-language">
+            {{ 'pages.order_contract.accepted_in_language' | translate: { language: language } }}
+          </span>
+          }
+        </span>
+      </p>
+      }
+
+      <!-- The server rendered our own markdown; Angular's sanitizer still walks it before it lands. -->
+      <div class="cl-lgl__content" [innerHTML]="contract.contentHtml"></div>
+    </div>
+  </div>
+  }
+</div>

@@ -11,6 +11,7 @@ flowchart TB
   subgraph FULFILMENT["FULFILMENT — Order.CurrentStatus (non-nullable)"]
     direction LR
     New["New (0)"] --> Confirmed["Confirmed (2)"] --> OnTheWay["OnTheWay (3)"] --> InProgress["InProgress (4)"] --> Completed["Completed (5)"]
+    Confirmed -->|"last cleaner leaves"| New
     New --> Cancelled["Cancelled (6)"]
     Confirmed --> Cancelled
     OnTheWay --> Cancelled
@@ -41,26 +42,48 @@ axes move independently, and the combination is what any real question is actual
 | Situation | `CurrentStatus` | `PaymentType` | `PaymentStatus` |
 |---|---|---|---|
 | Card order awaiting the Stripe webhook | `New` | `Card` | `Pending` |
-| Card order paid | `Confirmed` | `Card` | `Paid` |
+| Card order paid, nobody has taken it | `New` | `Card` | `Paid` |
 | One-off cash order, nobody has taken it | `New` | `Cash` | `Pending` |
 | Cash order a cleaner has taken | `Confirmed` | `Cash` | `Pending` |
+| Card order a cleaner has taken | `Confirmed` | `Card` | `Paid` |
 
-Note the last two rows. A cash order reaches `Confirmed` **with no money having moved**, because on a
-cash job the cleaner accepting it *is* the confirmation.
+**The two axes are genuinely independent, and the table shows it.** Paying does not move the
+fulfilment axis; a cleaner accepting does not move the money axis. A cash order reaches `Confirmed`
+with no money having moved, and a card order reaches `Paid` with nobody assigned.
 
-## `Confirmed` is deliberately overloaded
+## `Confirmed` means one thing: a cleaner took the job
 
-`Confirmed` means *either* "money settled" **or** "a cleaner took it". Four paths write it:
+**Owner ruling 2026-09-08 → [ADR-0057](/decisions/adr-0057).** It used to mean *either* "money
+settled" *or* "a cleaner took it", and this page used to record that as deliberate. It is not any
+more. Two producers stopped writing it:
 
-| Writer | What actually happened |
-|---|---|
-| `TakeOrder` | a cleaner took the job |
-| `HandlePaymentNotification` | the Stripe webhook landed; also sets `PaymentStatus.Paid` |
-| `ConfirmRecurringOrder` | the customer confirmed a recurring cash occurrence |
-| `AdminOverrideOrderStatus` | an admin forced it |
+| Writer | What actually happened | Writes `Confirmed`? |
+|---|---|---|
+| `TakeOrder` | a cleaner took the job | **yes** |
+| `AdminReassignOrder` | an admin assigned a cleaner | **yes** — added with the split |
+| `HandlePaymentNotification` | the Stripe webhook landed | no — sets `PaymentStatus.Paid` only |
+| `ConfirmRecurringOrder` | the customer confirmed a recurring occurrence | no — money axis only |
+| `AdminOverrideOrderStatus` | an admin forced it | yes — but only onto an order that has a crew; on an unstaffed one the target is refused (`order.status.confirmed_needs_crew`, ADR-0067) |
 
-> **Never read `Confirmed` as "a cleaner is on this job".** Read `AssignedEmployees` for that. A
-> card-paid order is `Confirmed` the moment Stripe says so, with nobody assigned to it at all.
+> **`Confirmed` means a cleaner took it — and since [ADR-0067](/decisions/adr-0067) (owner ruling
+> 2026-09-19) the word is walked back when that stops being true.** When the last assigned cleaner
+> leaves a `Confirmed` order — a **drop**, or an admin **rejecting** the cleaner — the order returns to
+> `New` through one domain writer, `Order.ReturnToBoardIfUnstaffed()`, and the fresh `New` row is also
+> its re-advertisement to the board. Only two writers can empty a crew: **a cover request removes
+> nobody** (the cleaner stays assigned until somebody takes the seat), and a reassign or a cover swap
+> **replaces** — remove then add, never a release. An order past `Confirmed` is never walked back: a
+> drop at `OnTheWay` or `InProgress` leaves the status where it is (a cleaner may be in the home) and
+> the company's administrators are told instead. Two releases racing on one order can still leave
+> `Confirmed` with nobody on it — `CurrentStatus` is the only concurrency token and neither commit
+> changes it — which is why every sweep, reminder and validator keeps reading `AssignedEmployees`:
+> **the crew is the fact, the status its summary.** `CancellationAssessor` does exactly that, and did
+> so even before the split. → [Business rules — when the last cleaner leaves](/product/business-rules#crew-lost)
+
+> **And `Confirmed` still says nothing about the contract for work.** Since [ADR-0068](/decisions/adr-0068)
+> (2026-09-20) a cleaner who *took* the job accepted the contract in the same act, but an admin's
+> reassignment writes `Confirmed` with **no** acceptance — the `WorkContractAcceptances` row for the
+> seat is the fact, and `StartOrder` / `CompleteOrder` read that row, never the status.
+> → [Execution and completion — the contract gate](/flows/execution-and-completion#the-contract-gate)
 
 ## `Pending (1)` is dead, and stays
 
@@ -85,6 +108,18 @@ land in the same tick.
 
 There is no history fallback and no `!= null` conjunct. Dropping those is what lets Postgres seek on
 `IX_Orders_CurrentStatus_CleaningDateTime`. **Do not reintroduce a nullable read.**
+
+**The one backward edge has one writer, and the override cannot fake the forward one.**
+`OrderStatusTrack.Create(OrderStatus.New, …)` reaches `AddOrderStatus` from exactly two places: the
+factory at creation, and `Order.ReturnToBoardIfUnstaffed()` — a no-op unless the crew is empty *and*
+the order is `Confirmed`, called by the two release writers (`DropOrder`, `RejectEmployee`) after their
+unassign and never by a swap. In the other direction, `AdminOverrideOrderStatus` keeps its strictly
+forward rank rule and gains one refusal: **`Confirmed` as a target on an order with nobody assigned is
+refused** (`order.status.confirmed_needs_crew`) — an administrator who wants a cleaner on the job
+reassigns, which writes `Confirmed` itself. The other forward moves stay open on an unstaffed order
+(`New → OnTheWay / InProgress / Completed` are the *"the cleaner is there but never tapped"* repairs);
+they are the administrator's own audited act, and an override to `Completed` now also stamps
+`CompletedAt`, because the revenue report reads it. → [Admin order management](/admin-app/order-management#order-status-override)
 
 ## Where the axes are read together
 

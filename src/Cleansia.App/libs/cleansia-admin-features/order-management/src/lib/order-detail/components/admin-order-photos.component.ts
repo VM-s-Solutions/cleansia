@@ -65,7 +65,7 @@ export class AdminOrderPhotosComponent {
     const photos = this.photosData()?.photos || [];
     return photos.map((p) => ({
       id: p.id,
-      url: p.blobUrl!,
+      url: p.blobUrl ?? '',
       fileName: p.originalFileName || p.fileName,
       capturedAt: p.capturedAt,
       capturedByEmployeeName: p.capturedByEmployeeName,

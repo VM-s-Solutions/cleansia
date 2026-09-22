@@ -85,7 +85,7 @@
                   />
                 </div>
 
-                <div class="cl-num cl-cat-pkg__price">{{ formatPrice(pkg.price) }}</div>
+                <div class="cl-num cl-cat-pkg__price">{{ formatPrice(pkg.price, pkg.currencyCode) }}</div>
                 <div class="cl-muted cl-cat-pkg__per">{{ 'pages.services.per_cleaning' | translate }}</div>
 
                 @if (getIncludedServiceNames(pkg).length > 0) {
@@ -155,11 +155,11 @@
                     @if (isPricedPerRoom(service)) {
                       <span class="cl-muted cl-cat-svc__from">{{ 'pages.services.from' | translate }}</span>
                     }
-                    {{ formatPrice(service.basePrice) }}
+                    {{ formatPrice(service.basePrice, service.currencyCode) }}
                   </span>
                   <span class="cl-muted cl-cat-svc__unit">
                     @if (isPricedPerRoom(service)) {
-                      + {{ formatPrice(service.perRoomPrice) }} {{ 'pages.services.per_room' | translate }}
+                      + {{ formatPrice(service.perRoomPrice, service.currencyCode) }} {{ 'pages.services.per_room' | translate }}
                     } @else {
                       {{ 'pages.services.per_cleaning' | translate }}
                     }

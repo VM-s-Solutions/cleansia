@@ -1,0 +1,560 @@
+{
+  "recordedAt": "2026-09-16T11:59:11.709Z",
+  "gitRevision": "Application source reviewed against 0f4d301a; the served build revision was not recorded separately, so source hashes are the retained comparison evidence.",
+  "inputs": [
+    {
+      "path": "C:/Users/cmisa/AppData/Local/Temp/cleansia-programme-20260916/web-responsiveness-routes.json",
+      "bytes": 51444,
+      "sha256": "1388c0e98271d8535d669cf9f28bf86a15440a4cf6f69469b842153d69bc576f"
+    },
+    {
+      "path": "C:/Users/cmisa/AppData/Local/Temp/cleansia-programme-20260916/audit-browser.mjs",
+      "bytes": 11940,
+      "sha256": "36d4a932008adb686bd39329efe8dec5b2c9914ff055b0f9a209d77df41637f6"
+    },
+    {
+      "path": "C:/Users/cmisa/AppData/Local/Temp/cleansia-programme-20260916/audit-contract-fixtures.mjs",
+      "bytes": 8773,
+      "sha256": "2047a39cfc951e986fcc9da395b70c87c2843fcc89e1c84c09ea670c44a9af0c"
+    },
+    {
+      "path": "C:/Users/cmisa/AppData/Local/Temp/cleansia-programme-20260916/responsiveness-resume/results.json",
+      "bytes": 2929506,
+      "sha256": "904debd92d17f08e833256d62675a4e33756975b8a863427b6302ffb611ba806"
+    },
+    {
+      "path": "C:/Users/cmisa/AppData/Local/Temp/cleansia-programme-20260916/responsiveness-guest/results.json",
+      "bytes": 36430,
+      "sha256": "7035daf892f87a80c965f19371a8e722c7db86f90baa66beacd8570fcae305cd"
+    },
+    {
+      "path": "C:/Users/cmisa/AppData/Local/Temp/cleansia-programme-20260916/responsiveness-navigation/results.json",
+      "bytes": 174340,
+      "sha256": "b08c1a0dd4ad2f5cc599b3521dccd0ba639e628f5aeb34b85f1e8ed660a5f72f"
+    },
+    {
+      "path": "C:/Users/cmisa/AppData/Local/Temp/cleansia-programme-20260916/responsiveness-focused/results.json",
+      "bytes": 2358,
+      "sha256": "ce347eb8df87873e01d78285de4fd7dfeb4f5942f4ab5063aa2e5ff2607279d9"
+    },
+    {
+      "path": "C:/Users/cmisa/AppData/Local/Temp/cleansia-programme-20260916/responsiveness-redirects/results.json",
+      "bytes": 276519,
+      "sha256": "c0ef8afe27a3b846a6a4b999c6c27ec56d742bb1bf8a9465483b2603c39ee6cb"
+    }
+  ],
+  "sourceFreeze": [
+    {
+      "path": "src/Cleansia.App/libs/shared/assets/src/styles/components/cleansia-sidebar-menu.component.scss",
+      "bytes": 11104,
+      "sha256": "20fa4ec56b6a3d570d1e33471820d7c960d08c1e12227db48a9074d304eb8f14"
+    },
+    {
+      "path": "src/Cleansia.App/libs/shared/components/src/lib/cleansia-sidebar-menu/cleansia-sidebar-menu.component.ts",
+      "bytes": 4555,
+      "sha256": "0e080b4333e60e41dff748167f89b952f586012b395402de9fffed62e0cfcbbc"
+    },
+    {
+      "path": "src/Cleansia.App/apps/cleansia-partner.app/src/app/app.component.ts",
+      "bytes": 6619,
+      "sha256": "5b77833b3c53743deac0ba8abaf6071fe05af04a72f4b64941ea2afcd37a5733"
+    },
+    {
+      "path": "src/Cleansia.App/apps/cleansia-admin.app/src/app/app.component.ts",
+      "bytes": 7165,
+      "sha256": "d309186d6a3b07d98c5dbb62373ff97c5cbbdbe840a41ee1882589afad1f09f1"
+    },
+    {
+      "path": "src/Cleansia.App/libs/cleansia-partner-features/gdpr/src/lib/gdpr/gdpr.component.html",
+      "bytes": 3637,
+      "sha256": "1c171e5cd21085989720a733f133244e4ef5d807266940579fc0636926143b3e"
+    },
+    {
+      "path": "src/Cleansia.App/libs/shared/assets/src/styles/common/sizing.scss",
+      "bytes": 1946,
+      "sha256": "c2543a0701b27a88a8173ccc958db0e0c7f12549be740d9c0412011a3cb7f871"
+    },
+    {
+      "path": "src/Cleansia.App/libs/cleansia-partner-features/invoices/src/lib/period-pay/period-pay.component.html",
+      "bytes": 4892,
+      "sha256": "73c3271df307ca5429392b1d7201de61cedf4ca047358db6fb77fbaff1356d5f"
+    },
+    {
+      "path": "src/Cleansia.App/libs/cleansia-admin-features/employee-management/src/lib/employee-detail/employee-documents-section.component.html",
+      "bytes": 5407,
+      "sha256": "ecc18bf36b279c8c13f6a1a0eea1c6a3695a85e09f9bab75d61453c85f438cc5"
+    },
+    {
+      "path": "src/Cleansia.App/libs/cleansia-admin-features/template-management/src/lib/email-type-detail/email-type-detail.component.html",
+      "bytes": 8257,
+      "sha256": "a80982b4fb805a36131adcfd76b1bc43def5711dc01dcce00d08c11c557f70bd"
+    },
+    {
+      "path": "src/Cleansia.App/libs/cleansia-admin-features/audit-log/src/lib/customer-audit-entry/customer-audit-entry.component.html",
+      "bytes": 7660,
+      "sha256": "f1a97775e95f290f264f7188e9ebd27bf89271ab8e9d6880f77b551dbfe4d425"
+    },
+    {
+      "path": "agents/knowledge/design-language.md",
+      "bytes": 15910,
+      "sha256": "ae386c670c9a4f13d70544d8707c523a5ddb3b26bafb69f9e8420da69e9f2bba"
+    },
+    {
+      "path": "src/Cleansia.App/libs/shared/assets/src/styles/components/cleansia-button.component.scss",
+      "bytes": 9934,
+      "sha256": "3e3018f40c2408bd49bc30a14cb594718bd7537453df453a9fb670f1cc481a75"
+    },
+    {
+      "path": "src/Cleansia.App/libs/cleansia-admin-features/package-management/src/lib/package-form/package-form.component.ts",
+      "bytes": 12294,
+      "sha256": "8a584a278fce39e6bcd818cea75e6fff281319f3a66a68cbd0be279cb808cc65"
+    },
+    {
+      "path": "src/Cleansia.App/libs/cleansia-admin-features/package-management/src/lib/package-form/package-form.facade.ts",
+      "bytes": 11214,
+      "sha256": "898ed79f4adf0d1211c708e817882eb41ff174841fb005067baecc64661aa6ea"
+    },
+    {
+      "path": "src/Cleansia.App/libs/shared/components/src/lib/cleansia-textarea/cleansia-textarea.component.html",
+      "bytes": 1457,
+      "sha256": "2759c2b6214145b26378e29592a5477bffde3812594c308c3776991555d5183e"
+    },
+    {
+      "path": "src/Cleansia.App/libs/cleansia-admin-features/service-management/src/lib/service-form/service-form.component.html",
+      "bytes": 5567,
+      "sha256": "db1e440872747f9b405e32130819718fca56904b717c08e9da1ba98b032566da"
+    },
+    {
+      "path": "src/Cleansia.App/libs/cleansia-admin-features/package-management/src/lib/package-form/package-form.component.html",
+      "bytes": 7584,
+      "sha256": "fcee42594b6ecefdcf0d395eb427c0f3914a0612176778e484c2e0f3ad8c7695"
+    },
+    {
+      "path": "src/Cleansia.App/libs/cleansia-admin-features/extra-management/src/lib/extra-form/extra-form.component.html",
+      "bytes": 5051,
+      "sha256": "c07e363092a75f2abecb0385dc8f366044dd6d33f1249381f0b6c37a15959e59"
+    },
+    {
+      "path": "src/Cleansia.App/libs/cleansia-customer-features/home/src/lib/lib.routes.ts",
+      "bytes": 250,
+      "sha256": "4905da2b9b68a430a1995b47c4b9cb33fde497618c6054f3c3ee6d1fcdf3f043"
+    },
+    {
+      "path": "src/Cleansia.App/libs/cleansia-customer-features/services-catalog/src/lib/lib.routes.ts",
+      "bytes": 311,
+      "sha256": "37c942cc5a6ebcddba58f452836ab5177bc04e830ca4e2f3f7b4f18347f76719"
+    },
+    {
+      "path": "src/Cleansia.App/libs/cleansia-customer-features/plus/src/lib/lib.routes.ts",
+      "bytes": 263,
+      "sha256": "8bfa73df9b7151062a0c1f39fda7592eb6f13cbaedbe0d9e76179a9558f6867e"
+    },
+    {
+      "path": "src/Cleansia.App/libs/cleansia-customer-features/login/src/lib/lib.routes.ts",
+      "bytes": 256,
+      "sha256": "1b74fe9a3096c29a3050ec060123ac268ff10d9cfcaecfb6559653d433df21e5"
+    },
+    {
+      "path": "src/Cleansia.App/libs/cleansia-customer-features/register/src/lib/lib.routes.ts",
+      "bytes": 589,
+      "sha256": "14474890e5fc8389fdfcaf9aa5145b2b6705f415fccb5bf2d1421d955b8043c8"
+    },
+    {
+      "path": "src/Cleansia.App/libs/cleansia-customer-features/confirm-email/src/lib/lib.routes.ts",
+      "bytes": 301,
+      "sha256": "a93a5f1819172c2a112f75af399b17df2344674d1bbc0b5f8fb0428bede62d09"
+    },
+    {
+      "path": "src/Cleansia.App/libs/cleansia-customer-features/forgot-password/src/lib/lib.routes.ts",
+      "bytes": 287,
+      "sha256": "8b0e16d7242f67c82ebf11d5f78c0c9d01486902b32e9ac5e41fa615b7cf017d"
+    },
+    {
+      "path": "src/Cleansia.App/apps/cleansia.app/src/app/app.routes.ts",
+      "bytes": 6899,
+      "sha256": "123e0894fed060b772a66666d17d7b836820cda8cff0c72dcd2f5860763ea7d2"
+    },
+    {
+      "path": "src/Cleansia.App/libs/cleansia-customer-features/order-wizard/src/lib/lib.routes.ts",
+      "bytes": 288,
+      "sha256": "978c29dc16616095df22808c4e44d363de32e930ce6b9297c8c8608055033d74"
+    },
+    {
+      "path": "src/Cleansia.App/libs/cleansia-customer-features/orders/src/lib/lib.routes.ts",
+      "bytes": 472,
+      "sha256": "782c5842ea2e714b7c583e3fab716e6479e1c516b7773b72859bacf297247d29"
+    },
+    {
+      "path": "src/Cleansia.App/libs/cleansia-customer-features/profile/src/lib/lib.routes.ts",
+      "bytes": 2469,
+      "sha256": "eaa2cb471504c121e928c35ceed50f429103df17b680187b30b519496fd81949"
+    },
+    {
+      "path": "src/Cleansia.App/libs/cleansia-customer-features/disputes/src/lib/lib.routes.ts",
+      "bytes": 274,
+      "sha256": "690c9eaed864f4dce7af22ebc2d27f62743a3943984edf223889942584d20e16"
+    },
+    {
+      "path": "src/Cleansia.App/libs/cleansia-customer-features/rewards/src/lib/lib.routes.ts",
+      "bytes": 489,
+      "sha256": "22dc46430abad84f8e0960c71043c6a4391567897913f85a48a0f682028500f1"
+    },
+    {
+      "path": "src/Cleansia.App/libs/cleansia-customer-features/recurring-bookings/src/lib/lib.routes.ts",
+      "bytes": 2270,
+      "sha256": "de604b66c882a7598e6e8e4373e316ece388bf6765c761bf4d29066ec64ca28e"
+    },
+    {
+      "path": "src/Cleansia.App/libs/cleansia-customer-features/checkout/src/lib/lib.routes.ts",
+      "bytes": 832,
+      "sha256": "4b6cdc8f843d95d7485c5f3ab214f1a84affc3ff787cf2985f14cab571e5712b"
+    },
+    {
+      "path": "src/Cleansia.App/libs/cleansia-customer-features/gdpr/src/lib/lib.routes.ts",
+      "bytes": 250,
+      "sha256": "0718a6e771880441707fa8c5e0db43a1ed25c9f4642e1d7fe23dc3eee7ec2f11"
+    },
+    {
+      "path": "src/Cleansia.App/libs/cleansia-customer-features/legal-pages/src/lib/lib.routes.ts",
+      "bytes": 462,
+      "sha256": "329a3c622dfdcee3951a00c951e022a782ef7da8e247f9283c484b011bd05e87"
+    },
+    {
+      "path": "src/Cleansia.App/libs/cleansia-partner-features/login/src/lib/lib.routes.ts",
+      "bytes": 255,
+      "sha256": "fede41087570ddb3a67825334c94b3fc42f3befed4fef5df082d44549ffd6462"
+    },
+    {
+      "path": "src/Cleansia.App/libs/cleansia-partner-features/register/src/lib/lib.routes.ts",
+      "bytes": 273,
+      "sha256": "288ad090518e028ed42af812b40c8ce4cb3d8a4085f152472d23ae57c9cf1ffa"
+    },
+    {
+      "path": "src/Cleansia.App/libs/cleansia-partner-features/confirm-email/src/lib/lib.routes.ts",
+      "bytes": 300,
+      "sha256": "0677121057822bad9df6737e0d2ace704ed7623e6087573fd10f9660b5826d56"
+    },
+    {
+      "path": "src/Cleansia.App/libs/cleansia-partner-features/forgot-password/src/lib/lib.routes.ts",
+      "bytes": 286,
+      "sha256": "02e237c5a426126044f2b0af13ade298c0ec315f8619b1b9cb89c9628f5074bb"
+    },
+    {
+      "path": "src/Cleansia.App/libs/cleansia-partner-features/dashboard/src/lib/dashboard.routes.ts",
+      "bytes": 282,
+      "sha256": "66395fb8a3fe074948a78d63155f7cc9c2c44b2c2a913ceaa99eee4870c5ed13"
+    },
+    {
+      "path": "src/Cleansia.App/libs/cleansia-partner-features/profile/src/lib/lib.routes.ts",
+      "bytes": 267,
+      "sha256": "2dfd59f8ec1c021df8376bacb240d55dfc820d95c5e7b757c52de72d351876fd"
+    },
+    {
+      "path": "src/Cleansia.App/libs/cleansia-partner-features/orders/src/lib/lib.routes.ts",
+      "bytes": 434,
+      "sha256": "3464b420a2af9f691028d840e08410323076b85ae75407e7422e69abae38d4c5"
+    },
+    {
+      "path": "src/Cleansia.App/libs/cleansia-partner-features/invoices/src/lib/lib.routes.ts",
+      "bytes": 731,
+      "sha256": "9a38637d6a88f348ec4142362bd4a9177cd8e2d2a1fb966cc6c3acbe170d3fb0"
+    },
+    {
+      "path": "src/Cleansia.App/libs/cleansia-partner-features/gdpr/src/lib/gdpr/gdpr.routes.ts",
+      "bytes": 208,
+      "sha256": "ae3bd85d0768036827cfb43a7b033609753511cde17feffc8c9cac09748b3870"
+    },
+    {
+      "path": "src/Cleansia.App/apps/cleansia-partner.app/src/app/app.routes.ts",
+      "bytes": 2840,
+      "sha256": "9616318f3b6dd2b1d46dc78811f168d920932fd49cdb4b5a7541825a425277b4"
+    },
+    {
+      "path": "src/Cleansia.App/libs/cleansia-admin-features/admin-login/src/lib/lib.routes.ts",
+      "bytes": 280,
+      "sha256": "f29bfc96fee68ab839ae13971f95406030814e89095546caae1a799086145d98"
+    },
+    {
+      "path": "src/Cleansia.App/libs/cleansia-admin-features/employee-management/src/lib/lib.routes.ts",
+      "bytes": 550,
+      "sha256": "d5e6ba92a281c0ebe580959acd5070612168ff64910efa045b302ec36246945c"
+    },
+    {
+      "path": "src/Cleansia.App/libs/cleansia-admin-features/pay-periods/src/lib/pay-periods.routes.ts",
+      "bytes": 576,
+      "sha256": "533ac68653cdd69bb51b8e71e1649a7395f626093b6f2523fca1c291023ee947"
+    },
+    {
+      "path": "src/Cleansia.App/libs/cleansia-admin-features/order-management/src/lib/lib.routes.ts",
+      "bytes": 514,
+      "sha256": "57e4ed6d511875fef5c6b94e8a48e6b581df369ae5aea30924ca6d2acef2bf15"
+    },
+    {
+      "path": "src/Cleansia.App/libs/cleansia-admin-features/disputes-management/src/lib/lib.routes.ts",
+      "bytes": 543,
+      "sha256": "312bcacab4847807c0b28a6c4b1b9ea795872e5480dfeab6fe7f2b7c9a30f752"
+    },
+    {
+      "path": "src/Cleansia.App/libs/cleansia-admin-features/invoice-management/src/lib/lib.routes.ts",
+      "bytes": 538,
+      "sha256": "ab4ffbfe98c4e0c1019b3acb70924ccd3a5a19893f2362cd9daad474c780ccf6"
+    },
+    {
+      "path": "src/Cleansia.App/libs/cleansia-admin-features/reports/src/lib/lib.routes.ts",
+      "bytes": 263,
+      "sha256": "47d8dff79ca4a0b56a88f4b7c00d3cdaf477aec4418f7388064b8f502749246a"
+    },
+    {
+      "path": "src/Cleansia.App/libs/cleansia-admin-features/service-management/src/lib/lib.routes.ts",
+      "bytes": 688,
+      "sha256": "9aa1d1c0daade047eca4e34f0b058aecf8d186557301eb878c741334e590162b"
+    },
+    {
+      "path": "src/Cleansia.App/libs/cleansia-admin-features/package-management/src/lib/lib.routes.ts",
+      "bytes": 688,
+      "sha256": "95bab3fe047108b6945293634ecedc25539e2da1a2b1e9ab7521b584db7d2515"
+    },
+    {
+      "path": "src/Cleansia.App/libs/cleansia-admin-features/extra-management/src/lib/lib.routes.ts",
+      "bytes": 662,
+      "sha256": "f0c0283a71942b043528d5afc9a6196d3de5370cabaa8954d398ff1dbaf323e2"
+    },
+    {
+      "path": "src/Cleansia.App/libs/cleansia-admin-features/admin-user-management/src/lib/lib.routes.ts",
+      "bytes": 718,
+      "sha256": "327d3e3008413697f8570c56f3bf75b25dd7fb00703e2ff75c382d4ac628695d"
+    },
+    {
+      "path": "src/Cleansia.App/libs/cleansia-admin-features/language-management/src/lib/lib.routes.ts",
+      "bytes": 702,
+      "sha256": "270049de5ca6892e69f5c6980cc13465a81f9908435105049de7d49e453c7770"
+    },
+    {
+      "path": "src/Cleansia.App/libs/cleansia-admin-features/country-management/src/lib/lib.routes.ts",
+      "bytes": 1252,
+      "sha256": "2014752dfa815d0fe16697315024bc0fd81a73a2b9eb623a8a63c5a2c85490c1"
+    },
+    {
+      "path": "src/Cleansia.App/libs/cleansia-admin-features/currency-management/src/lib/lib.routes.ts",
+      "bytes": 703,
+      "sha256": "1da4a7ae9f9acc9e2208a8400066e669fb4a79ab3450c569d7255f12f7054c8d"
+    },
+    {
+      "path": "src/Cleansia.App/libs/cleansia-admin-features/legal-documents/src/lib/lib.routes.ts",
+      "bytes": 300,
+      "sha256": "44857a214c2dd900c551e5d9ce989a13ca704b2092323829b2e5ada5343e7785"
+    },
+    {
+      "path": "src/Cleansia.App/libs/cleansia-admin-features/employee-document-config/src/lib/lib.routes.ts",
+      "bytes": 936,
+      "sha256": "df8e8e2c47acb1f7f7f37dd48c18ce0b47d91e3fa898844a5caa73a41a67d65a"
+    },
+    {
+      "path": "src/Cleansia.App/libs/cleansia-admin-features/company-management/src/lib/lib.routes.ts",
+      "bytes": 724,
+      "sha256": "e6c7c8877bb1b7521bcfb4e40bc75f90eeadbccbb031617ff58d194293a1378c"
+    },
+    {
+      "path": "src/Cleansia.App/libs/cleansia-admin-features/company-settings/src/lib/lib.routes.ts",
+      "bytes": 306,
+      "sha256": "1785bac7405deae173b948546191afbc76fd3fb13af29eabe1575229db18160f"
+    },
+    {
+      "path": "src/Cleansia.App/libs/cleansia-admin-features/company-lifecycle/src/lib/lib.routes.ts",
+      "bytes": 312,
+      "sha256": "ac3e55c3696dcbbcd395072d69777dad88165c22a7097662f130dc8c00a02a3c"
+    },
+    {
+      "path": "src/Cleansia.App/libs/cleansia-admin-features/pay-config-management/src/lib/lib.routes.ts",
+      "bytes": 725,
+      "sha256": "4a57a5477797f4bf03c405fae2cb99cb44d849ca17201ba5ba1a21034b8ff74a"
+    },
+    {
+      "path": "src/Cleansia.App/libs/cleansia-admin-features/template-management/src/lib/lib.routes.ts",
+      "bytes": 934,
+      "sha256": "02195d37a8539f3e4f4e275c872b12eef9d62983161c544c0cce97a543540b86"
+    },
+    {
+      "path": "src/Cleansia.App/libs/cleansia-admin-features/fiscal-failures/src/lib/fiscal-failures.routes.ts",
+      "bytes": 340,
+      "sha256": "9ee213061f9cc8db09c0857b9faaf2b34f299c75228f415e4baa0c81d0649096"
+    },
+    {
+      "path": "src/Cleansia.App/libs/cleansia-admin-features/loyalty-promo-codes/src/lib/lib.routes.ts",
+      "bytes": 909,
+      "sha256": "cdc7428e855df00aab37ba83486daa5346e74f4d2bae743bfa65ee35d5d8224c"
+    },
+    {
+      "path": "src/Cleansia.App/libs/cleansia-admin-features/loyalty-tier-configs/src/lib/lib.routes.ts",
+      "bytes": 294,
+      "sha256": "5e7ef8a47cd554bb2648a42be72a47bdb57d9336ecfaab72977d9a5df6f19a70"
+    },
+    {
+      "path": "src/Cleansia.App/libs/cleansia-admin-features/loyalty-user-detail/src/lib/lib.routes.ts",
+      "bytes": 424,
+      "sha256": "eedf9251418570ff6867d3ace0ef784f6782dbf50571ac1559d37dd4bbfe5876"
+    },
+    {
+      "path": "src/Cleansia.App/libs/cleansia-admin-features/loyalty-referrals/src/lib/lib.routes.ts",
+      "bytes": 310,
+      "sha256": "0d581c3dc0849b5244a6620e8b42494672eda6837aa30f64d147d02779a318fb"
+    },
+    {
+      "path": "src/Cleansia.App/libs/cleansia-admin-features/membership-plan-management/src/lib/lib.routes.ts",
+      "bytes": 754,
+      "sha256": "22224b05057c91a41719899c07e4b9f5d44be7c43b4a849f7a8b68d949f1dec7"
+    },
+    {
+      "path": "src/Cleansia.App/libs/cleansia-admin-features/marketing/src/lib/lib.routes.ts",
+      "bytes": 410,
+      "sha256": "e5ac786fbc36ea8f68c6de8f05b07dc74a12a8ab4bafd5c372dfc94054727fbd"
+    },
+    {
+      "path": "src/Cleansia.App/libs/cleansia-admin-features/data-protection/src/lib/lib.routes.ts",
+      "bytes": 310,
+      "sha256": "f6711b2d75bdc3985b7747c607a3729b9d3679eebea33b19faf59120ec2bae95"
+    },
+    {
+      "path": "src/Cleansia.App/libs/cleansia-admin-features/audit-log/src/lib/lib.routes.ts",
+      "bytes": 1212,
+      "sha256": "cd08868b6f6a29fa64b8f8254cd2161a6bc9756d6d0f9836d45ef62e71e181ab"
+    },
+    {
+      "path": "src/Cleansia.App/libs/cleansia-admin-features/admin-profile/src/lib/lib.routes.ts",
+      "bytes": 292,
+      "sha256": "ddfba5cda2b086c0210d05601e1f58ba775a2580d9d3b6fb0545e49c88684fd1"
+    },
+    {
+      "path": "src/Cleansia.App/apps/cleansia-admin.app/src/app/app.routes.ts",
+      "bytes": 7995,
+      "sha256": "7b9cfc1e1b1067840aeb0ef65309847639baeae4f9df5f9194d51053625f9ad8"
+    }
+  ],
+  "portableEvidence": [
+    {
+      "originalPath": "C:\\Users\\cmisa\\AppData\\Local\\Temp\\cleansia-programme-20260916\\responsiveness-routes\\partner-_gdpr-400-initial.png",
+      "artifact": "screenshots/partner-_gdpr-400-initial.png",
+      "bytes": 87746,
+      "sha256": "87f7eb0761fac7e529d49701306c2af51f40e93ec5c89667e920744c2c4cf9a8",
+      "width": 400,
+      "height": 1708
+    },
+    {
+      "originalPath": "C:\\Users\\cmisa\\AppData\\Local\\Temp\\cleansia-programme-20260916\\responsiveness-routes\\partner-_my_pay-400-initial.png",
+      "artifact": "screenshots/partner-_my_pay-400-initial.png",
+      "bytes": 67755,
+      "sha256": "6042486cb0bb8e830106458eab912f6e3eea2195d77cbe1a0809984a99b22864",
+      "width": 400,
+      "height": 1125
+    },
+    {
+      "originalPath": "C:\\Users\\cmisa\\AppData\\Local\\Temp\\cleansia-programme-20260916\\responsiveness-routes\\admin-_employee_management_employeeId-400-initial.png",
+      "artifact": "screenshots/admin-_employee_management_employeeId-400-initial.png",
+      "bytes": 219253,
+      "sha256": "4d0c32a1ea87d8f3b5ac5ef028dd399dbafb0765fded30dc336b0790ffd23bc0",
+      "width": 400,
+      "height": 4729
+    },
+    {
+      "originalPath": "C:\\Users\\cmisa\\AppData\\Local\\Temp\\cleansia-programme-20260916\\responsiveness-resume\\admin-_template_management_email_templates_emailType_translations-400-initial.png",
+      "artifact": "screenshots/admin-_template_management_email_templates_emailType_translations-400-initial.png",
+      "bytes": 30339,
+      "sha256": "65fe3f324b7d8524d4daefb195894f9e594e2d97440e829fd46ecffd9d39567e",
+      "width": 400,
+      "height": 844
+    },
+    {
+      "originalPath": "C:\\Users\\cmisa\\AppData\\Local\\Temp\\cleansia-programme-20260916\\responsiveness-resume\\admin-_audit_log_customers_entry_auditId-400-initial.png",
+      "artifact": "screenshots/admin-_audit_log_customers_entry_auditId-400-initial.png",
+      "bytes": 60305,
+      "sha256": "d02f093bbd2ae1508ff51fa44d08d8da37a62f2d8b420226e9d355631f4f6ec4",
+      "width": 400,
+      "height": 963
+    },
+    {
+      "originalPath": "C:/Users/cmisa/AppData/Local/Temp/cleansia-programme-20260916/responsiveness-navigation/partner-_dashboard-768-initial-viewport.png",
+      "artifact": "screenshots/partner-_dashboard-768-initial-viewport.png",
+      "bytes": 63829,
+      "sha256": "00d0df1b5b37550f00ec67b3b9538d801f8aac57a3f9feac8dc098d4a8bae6a0",
+      "width": 768,
+      "height": 1024
+    },
+    {
+      "originalPath": "C:/Users/cmisa/AppData/Local/Temp/cleansia-programme-20260916/responsiveness-navigation/partner-_dashboard-768-width-767-viewport.png",
+      "artifact": "screenshots/partner-_dashboard-768-width-767-viewport.png",
+      "bytes": 68545,
+      "sha256": "dd1665d32007ee62f19b8c6044f073fdc8e3dd821c665a7bc830c3fca3343b23",
+      "width": 767,
+      "height": 1024
+    },
+    {
+      "originalPath": "C:/Users/cmisa/AppData/Local/Temp/cleansia-programme-20260916/responsiveness-navigation/partner-_dashboard-768-width-769-viewport.png",
+      "artifact": "screenshots/partner-_dashboard-768-width-769-viewport.png",
+      "bytes": 75057,
+      "sha256": "16fd89c180f11944440e9b8da6765210ec4077717d2629ad951bd0e8ab129238",
+      "width": 769,
+      "height": 1024
+    },
+    {
+      "originalPath": "C:/Users/cmisa/AppData/Local/Temp/cleansia-programme-20260916/responsiveness-navigation/admin-_employee_management-768-initial-viewport.png",
+      "artifact": "screenshots/admin-_employee_management-768-initial-viewport.png",
+      "bytes": 52850,
+      "sha256": "fc465f279efc4888386015a89b20c5bb2efb189062416cdeb6916a484b6a07ed",
+      "width": 768,
+      "height": 1024
+    },
+    {
+      "originalPath": "C:/Users/cmisa/AppData/Local/Temp/cleansia-programme-20260916/responsiveness-navigation/admin-_employee_management-768-width-767-viewport.png",
+      "artifact": "screenshots/admin-_employee_management-768-width-767-viewport.png",
+      "bytes": 58390,
+      "sha256": "7aa7374d97312ae9d5b31a4525ebf179948ccc00ebf5b854940668a142bf31ce",
+      "width": 767,
+      "height": 1024
+    },
+    {
+      "originalPath": "C:/Users/cmisa/AppData/Local/Temp/cleansia-programme-20260916/responsiveness-navigation/admin-_employee_management-768-width-769-viewport.png",
+      "artifact": "screenshots/admin-_employee_management-768-width-769-viewport.png",
+      "bytes": 83752,
+      "sha256": "871e5efa7448d44ebb32be668706996d781f3fbb528767d623433faefdede7b1",
+      "width": 769,
+      "height": 1024
+    },
+    {
+      "originalPath": "C:/Users/cmisa/AppData/Local/Temp/cleansia-programme-20260916/responsiveness-navigation/admin-_employee_management-400-menu-open.png",
+      "artifact": "screenshots/admin-_employee_management-400-menu-open.png",
+      "bytes": 55346,
+      "sha256": "d8b17607f246a0da5f42ea1b4d6ae95038ccb536bc31ecfeb9e030b7c7206ab7",
+      "width": 400,
+      "height": 890
+    },
+    {
+      "originalPath": "C:\\Users\\cmisa\\AppData\\Local\\Temp\\cleansia-programme-20260916\\responsiveness-guest\\customer-_track_order-400-cancellation.png",
+      "artifact": "screenshots/customer-_track_order-400-cancellation.png",
+      "bytes": 213782,
+      "sha256": "df0dad7f904560612fd17d54b0df555dc4151e573c190c58e553d5d662b8ddcc",
+      "width": 400,
+      "height": 3256
+    },
+    {
+      "originalPath": "C:\\Users\\cmisa\\AppData\\Local\\Temp\\cleansia-programme-20260916\\responsiveness-guest\\customer-_track_order-400-success.png",
+      "artifact": "screenshots/customer-_track_order-400-success.png",
+      "bytes": 209111,
+      "sha256": "ef17607467154d9c934d683f59b51c73d82fc06612e4a34a883c7f3cbcf3896c",
+      "width": 400,
+      "height": 3367
+    },
+    {
+      "originalPath": "C:\\Users\\cmisa\\AppData\\Local\\Temp\\cleansia-programme-20260916\\responsiveness-routes\\customer-_login-400-initial.png",
+      "artifact": "screenshots/customer-_login-400-initial.png",
+      "bytes": 185888,
+      "sha256": "94cfb4d939abc0164db28223ab77043025e0acada09624f2ae82ad973c89b88c",
+      "width": 400,
+      "height": 2548
+    }
+  ],
+  "limits": [
+    "Source hashes record files read for this report, not a proof that the earlier dist build came from an identical Git revision.",
+    "The runner was read, never executed by the report-writing task.",
+    "No application code, ticket, backlog index or status changed."
+  ]
+}

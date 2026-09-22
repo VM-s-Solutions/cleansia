@@ -42,17 +42,17 @@ public sealed class ChargebackRefundableCeilingTests : IDisposable
         var options = new DbContextOptionsBuilder<CleansiaDbContext>()
             .UseSqlite(_connection)
             .Options;
-        return new CleansiaDbContext(options, NewSession(), new NullTenantProvider());
+        return new CleansiaDbContext(options, NewSession(), new DefaultTenantProvider());
     }
 
     private async Task SeedOrderWithChargebackAsync(decimal totalPrice, decimal chargebackAmount)
     {
         await using var ctx = NewContext();
-        await ctx.Database.EnsureCreatedAsync();
+        await TestTenants.EnsureCreatedWithRegistryAsync(ctx);
 
-        var currency = Currency.Create("CZK", "Kč", "Czech Koruna", 1m);
+        var currency = Currency.Create("CZK", "Kč", "Czech Koruna");
         currency.Id = "cur-1";
-        var country = Country.Create("Czechia", "CZE");
+        var country = Country.Create("Czechia", "CZE", "CZ");
         country.Id = "country-1";
         var address = Address.Create("Main Street 1", "Prague", "11000", country.Id);
         address.Id = "addr-1";
@@ -63,7 +63,6 @@ public sealed class ChargebackRefundableCeilingTests : IDisposable
             customerAddress: address,
             rooms: 2,
             bathrooms: 1,
-            extras: new Dictionary<string, bool>(),
             cleaningDateTime: DateTime.UtcNow.AddDays(1),
             paymentType: PaymentType.Card,
             totalPrice: totalPrice,
@@ -144,9 +143,9 @@ public sealed class ChargebackRefundableCeilingTests : IDisposable
         Assert.Equal(600m, consumed);
     }
 
-    private sealed class NullTenantProvider : ITenantProvider
+    private sealed class DefaultTenantProvider : ITenantProvider
     {
-        public string? GetCurrentTenantId() => null;
+        public string? GetCurrentTenantId() => TestTenants.Default;
         public void SetTenantOverride(string tenantId) { }
         public void ClearTenantOverride() { }
     }

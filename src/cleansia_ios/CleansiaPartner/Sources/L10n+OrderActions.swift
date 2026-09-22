@@ -3,14 +3,6 @@ import Foundation
 extension L10n.Orders {
     // Lifecycle actions (detail footer)
 
-    static var slideToTake: String {
-        L10n.localized("slide_to_take")
-    }
-
-    static var takingOrder: String {
-        L10n.localized("taking_order")
-    }
-
     static var notifyOnTheWay: String {
         L10n.localized("notify_on_the_way")
     }

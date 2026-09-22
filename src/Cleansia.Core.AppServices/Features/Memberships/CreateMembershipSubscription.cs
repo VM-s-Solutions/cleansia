@@ -1,4 +1,5 @@
 using Cleansia.Core.AppServices.Abstractions;
+using Cleansia.Core.AppServices.Auditing;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Clients.Abstractions.Stripe;
@@ -28,9 +29,11 @@ namespace Cleansia.Core.AppServices.Features.Memberships;
 /// The split is intentional and the endpoint is gated by <c>[Permission(Policy.CanManageMembership)]</c>
 /// and rate-limited. The confirmed branch is idempotent on a client-supplied idempotency token.
 /// </summary>
+[AuditAction("customer.membership.subscribe", Audience = AuditAudience.Customer, ResourceType = "UserMembership")]
 public class CreateMembershipSubscription
 {
-    public record Command(string PlanCode, bool PaymentMethodConfirmed = false) : ICommand<Response>
+    /// <param name="CountryId">The market the customer is subscribing in (ADR-0058 D4); null is the platform default market.</param>
+    public record Command(string PlanCode, bool PaymentMethodConfirmed = false, string? CountryId = null) : ICommand<Response>
     {
         /// <summary>
         /// Client-supplied idempotency token for the confirmed-subscribe (Phase-2) path. The mobile
@@ -53,10 +56,15 @@ public class CreateMembershipSubscription
 
     public class Validator : AbstractValidator<Command>
     {
-        public Validator()
+        public Validator(ICountryRepository countryRepository)
         {
             RuleFor(x => x.PlanCode)
                 .NotEmpty().WithMessage(BusinessErrorMessage.Required);
+
+            RuleFor(x => x.CountryId)
+                .MustAsync((countryId, ct) => countryRepository.IsServicedAsync(countryId!, ct))
+                .WithMessage(BusinessErrorMessage.CountryNotServiced)
+                .When(x => !string.IsNullOrEmpty(x.CountryId));
         }
     }
 
@@ -64,10 +72,14 @@ public class CreateMembershipSubscription
         IUserRepository userRepository,
         IUserMembershipRepository userMembershipRepository,
         IMembershipPlanRepository membershipPlanRepository,
+        IMembershipPlanPriceRepository membershipPlanPriceRepository,
+        ICurrencyResolutionService currencyResolutionService,
         IUserSessionProvider userSessionProvider,
         IStripeClient stripeClient,
         IStripeConfig stripeConfig,
         IMembershipTrialResolver membershipTrialResolver,
+        IStripeCustomerResolver stripeCustomerResolver,
+        IAuditContext auditContext,
         ILogger<Handler> logger) : ICommandHandler<Command, Response>
     {
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
@@ -104,29 +116,33 @@ public class CreateMembershipSubscription
                     nameof(UserMembership), BusinessErrorMessage.MembershipAlreadyActive));
             }
 
-            var stripeCustomerId = user.StripeCustomerId;
-            if (string.IsNullOrEmpty(stripeCustomerId))
+            var currency = await currencyResolutionService.ResolveCurrencyForCountryAsync(command.CountryId, cancellationToken);
+            var price = await membershipPlanPriceRepository.GetForPlanAsync(plan.Id, currency.Id, cancellationToken);
+            if (price == null)
             {
-                try
-                {
-                    stripeCustomerId = await stripeClient.CreateCustomerAsync(
-                        user.Id,
-                        user.Email,
-                        $"{user.FirstName} {user.LastName}".Trim(),
-                        user.PhoneNumber,
-                        cancellationToken);
-                }
-                catch (StripeException ex)
-                {
-                    logger.LogError(ex, "Stripe customer creation failed for user {UserId} (subscribe flow)", user.Id);
-                    return BusinessResult.Failure<Response>(new Error(
-                        nameof(command.PlanCode), BusinessErrorMessage.PaymentGatewayUnavailable));
-                }
-                user.AssignStripeCustomerId(stripeCustomerId);
-                logger.LogInformation(
-                    "Created Stripe customer {StripeCustomerId} for user {UserId} (subscribe flow)",
-                    stripeCustomerId, user.Id);
+                return BusinessResult.Failure<Response>(new Error(
+                    nameof(command.PlanCode), BusinessErrorMessage.MembershipPlanNotPricedInCurrency));
             }
+
+            // The Customer is per currency: Stripe locks a Customer to the currency of its first invoice,
+            // so a re-subscribe in another market needs its own (owner ruling 2026-09-13).
+            string stripeCustomerId;
+            try
+            {
+                stripeCustomerId = await stripeCustomerResolver.ResolveForCurrencyAsync(user, currency, cancellationToken);
+            }
+            catch (StripeException ex)
+            {
+                logger.LogError(ex, "Stripe customer creation failed for user {UserId} (subscribe flow)", user.Id);
+                return BusinessResult.Failure<Response>(new Error(
+                    nameof(command.PlanCode), BusinessErrorMessage.PaymentGatewayUnavailable));
+            }
+
+            // Resolved ahead of the branch so the started-subscribe row records the same trial the confirm
+            // will grant; the rule is a pure read and both branches ask it once.
+            var trial = await membershipTrialResolver.ResolveForUserAsync(user.Id, plan, cancellationToken);
+            MembershipSubscribeEvidence Evidence(bool reconciled = false) => MembershipSubscribeEvidence.For(
+                plan, price, currency.Code, command.CountryId, trial.Days, MembershipSubscribeChannel.Subscribe, reconciled);
 
             if (command.PaymentMethodConfirmed)
             {
@@ -134,13 +150,20 @@ public class CreateMembershipSubscription
                 // confirms that share it hit the same Stripe idempotency key, so Stripe replays the one
                 // subscription instead of creating a second billable one. A re-subscribe after
                 // cancellation carries a new token, so it is correctly a new subscription.
-                var attemptId = DeriveStripeAttemptId(command.IdempotencyToken, user.Id, plan.Code);
-                var trial = await membershipTrialResolver.ResolveForUserAsync(user.Id, plan, cancellationToken);
+                var attemptId = DeriveStripeAttemptId(command.IdempotencyToken, user.Id, plan.Code, currency.Code);
                 SubscriptionResult subscription;
                 try
                 {
                     subscription = await stripeClient.CreateSubscriptionAsync(
-                        stripeCustomerId, plan.StripePriceId, trial.Days, attemptId, cancellationToken);
+                        stripeCustomerId, price.StripePriceId, trial.Days, attemptId, cancellationToken);
+                }
+                catch (StripeException ex) when (StripeRefusals.IsCustomerCurrencyLocked(ex))
+                {
+                    logger.LogWarning(ex,
+                        "Stripe refused a {CurrencyCode} subscription for user {UserId}, plan {PlanCode}: the Stripe customer is locked to another currency",
+                        currency.Code, user.Id, plan.Code);
+                    return BusinessResult.Failure<Response>(new Error(
+                        nameof(command.CountryId), BusinessErrorMessage.MembershipStripeCustomerCurrencyLocked));
                 }
                 catch (StripeException ex)
                 {
@@ -160,6 +183,7 @@ public class CreateMembershipSubscription
                     logger.LogInformation(
                         "Reconciled retried confirm for user {UserId}, plan {PlanCode} to existing membership {MembershipId} (Stripe sub {SubscriptionId})",
                         user.Id, plan.Code, existingForSubscription.Id, subscription.SubscriptionId);
+                    auditContext.RecordEvidence("UserMembership", existingForSubscription.Id, Evidence(reconciled: true));
                     return BusinessResult.Success(new Response(
                         MembershipId: existingForSubscription.Id,
                         SetupIntentClientSecret: string.Empty,
@@ -183,10 +207,13 @@ public class CreateMembershipSubscription
                 var membership = UserMembership.Create(
                     userId: user.Id,
                     membershipPlanId: plan.Id,
+                    currencyId: currency.Id,
                     stripeSubscriptionId: subscription.SubscriptionId,
                     currentPeriodStart: subscription.CurrentPeriodStart,
                     currentPeriodEnd: subscription.CurrentPeriodEnd,
                     trialEndsAtUtc: subscription.TrialEnd);
+                var paidObservation = DateTime.UtcNow;
+                membership.RecordRecurringPauseState(subscription.Status, paidObservation, paidObservation);
                 userMembershipRepository.Add(membership);
 
                 // The re-check above still leaves a window where the loser sees null because the winner
@@ -213,6 +240,7 @@ public class CreateMembershipSubscription
                 logger.LogInformation(
                     "Created UserMembership {MembershipId} (Stripe sub {SubscriptionId}) for user {UserId}, plan {PlanCode}",
                     membership.Id, subscription.SubscriptionId, user.Id, plan.Code);
+                auditContext.RecordEvidence("UserMembership", membership.Id, Evidence());
 
                 return BusinessResult.Success(new Response(
                     MembershipId: membership.Id,
@@ -235,6 +263,9 @@ public class CreateMembershipSubscription
                     nameof(command.PlanCode), BusinessErrorMessage.PaymentGatewayUnavailable));
             }
 
+            // The subscribe was started, not confirmed: no membership row yet, so the resource id stays null.
+            auditContext.RecordEvidence("UserMembership", null, Evidence());
+
             return BusinessResult.Success(new Response(
                 MembershipId: string.Empty,
                 SetupIntentClientSecret: setupIntent.ClientSecret,
@@ -248,11 +279,12 @@ public class CreateMembershipSubscription
         /// retried/double-tapped confirm yields the SAME attempt id, so Stripe replays the same
         /// subscription. When the token is null/empty (web / not-yet-updated callers), fall back to a
         /// DETERMINISTIC key from stable inputs so even those callers collapse a concurrent double-tap
-        /// rather than minting two subscriptions. Never a per-call Guid.
+        /// rather than minting two subscriptions. Never a per-call Guid. The currency is part of it so a
+        /// CZK attempt cannot replay as a EUR one.
         /// </summary>
-        private static string DeriveStripeAttemptId(string? idempotencyToken, string userId, string planCode)
+        private static string DeriveStripeAttemptId(string? idempotencyToken, string userId, string planCode, string currencyCode)
             => string.IsNullOrWhiteSpace(idempotencyToken)
-                ? $"u-{userId}-p-{planCode}"
+                ? $"u-{userId}-p-{planCode}-c-{currencyCode}"
                 : $"tok-{idempotencyToken}";
 
         /// <summary>

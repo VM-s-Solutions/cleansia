@@ -110,7 +110,9 @@ public class RequestPromoCodePersistenceTests(PostgresContainerFixture fixture) 
             pending = new InvalidQueueDispatch(pending);
         }
 
-        var handler = new RequestPromoCode.Handler(repository, pending);
+        var tenantProvider = new TenantProvider(new HttpContextAccessor());
+        tenantProvider.SetTenantOverride(TestTenants.Default);
+        var handler = new RequestPromoCode.Handler(repository, pending, tenantProvider);
         var command = new RequestPromoCode.Command(email);
         var pipeline = new UnitOfWorkPipelineBehavior<
             RequestPromoCode.Command, BusinessResult<RequestPromoCode.Response>>(context);
@@ -128,7 +130,14 @@ public class RequestPromoCodePersistenceTests(PostgresContainerFixture fixture) 
         new DbContextOptionsBuilder<CleansiaDbContext>()
             .UseNpgsql(Fixture.GetConnectionString()).Options,
         new TestUserSessionProvider("system", "system@cleansia.test"),
-        new TenantProvider(new HttpContextAccessor()));
+        ScopedTenantProvider());
+
+    private static TenantProvider ScopedTenantProvider()
+    {
+        var provider = new TenantProvider(new HttpContextAccessor());
+        provider.SetTenantOverride(TestTenants.Default);
+        return provider;
+    }
 
     private async Task ResetAsync()
     {
@@ -140,6 +149,7 @@ public class RequestPromoCodePersistenceTests(PostgresContainerFixture fixture) 
             SchemasToExclude = ["pg_catalog", "information_schema"]
         });
         await respawner.ResetAsync(connection);
+        await SeedTenantRegistryAsync(connection);
     }
 
     private sealed class GatedPromoCodeRepository(CleansiaDbContext context, LookupGate gate)

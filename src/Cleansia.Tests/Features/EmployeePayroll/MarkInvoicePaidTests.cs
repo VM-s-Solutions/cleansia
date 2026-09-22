@@ -30,7 +30,8 @@ public class MarkInvoicePaidTests
             totalOrders: 2,
             subTotal: 900m,
             currencyId: "currency-1",
-            variableSymbol: PayrollMockFactory.TestVariableSymbol);
+            variableSymbol: PayrollMockFactory.TestVariableSymbol,
+            invoiceNumber: PayrollMockFactory.TestInvoiceNumber);
         invoice.Id = InvoiceId;
 
         switch (status)

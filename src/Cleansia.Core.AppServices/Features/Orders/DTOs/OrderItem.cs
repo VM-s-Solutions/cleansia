@@ -168,5 +168,19 @@ public record OrderItem(
     /// <para>Nullable + defaulted so it is additive on the wire: a client built before this field
     /// omits it and behaves exactly as before.</para>
     /// </summary>
-    string? SystemCancellationReason = null
+    string? SystemCancellationReason = null,
+
+    /// <summary>Customer company name for an admin viewing another company's customer; null otherwise.</summary>
+    string? CustomerCompany = null,
+
+    /// <summary>The booking address's country, independent of the customer's browsing market.</summary>
+    string? CountryId = null,
+
+    /// <summary>
+    /// The contract-for-work acceptances of the CURRENT seats, one per seat that has a row; a crew entry
+    /// with no matching one is the pending state. Paired with the crew by <c>OrderEmployeeId</c> ==
+    /// <c>AssignedEmployeeDto.Id</c>, which is where the name comes from (already audience-masked
+    /// there); this list carries none. Empty for a browsing cleaner.
+    /// </summary>
+    IEnumerable<WorkContractAcceptanceDto>? WorkContractAcceptances = null
 );

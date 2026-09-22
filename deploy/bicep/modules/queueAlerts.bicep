@@ -68,7 +68,9 @@ resource queueDiagnostics 'Microsoft.Insights/diagnosticSettings@2021-05-01-prev
 }
 
 // A successful PutMessage into any *-poison queue means the Functions runtime gave up on a message
-// after maxDequeueCount — durable work (receipt/invoice/email/push/pay) failed repeatedly. The alert
+// after maxDequeueCount — durable work (receipt/invoice/email/push/pay/company wind-down/company archive) failed
+// repeatedly; the `-poison` match covers every companion storage.bicep provisions, so a queue added
+// there is alerted here without a second rule. The alert
 // fires on the EVENT rather than on queue depth: the poison consumer drains the queue within
 // seconds, so a depth sample can already read 0 while the failure is real; the PutMessage log row is
 // the durable signal ("depth > 0" style without the race).

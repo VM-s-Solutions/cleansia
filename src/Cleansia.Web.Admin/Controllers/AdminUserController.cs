@@ -1,6 +1,8 @@
 using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Features.AdminUsers;
 using Cleansia.Core.AppServices.Features.AdminUsers.DTOs;
+using Cleansia.Core.AppServices.Features.Users;
+using Cleansia.Core.AppServices.Features.Users.DTOs;
 using Cleansia.Core.AppServices.Shared.DTOs.ResponseModels;
 using Cleansia.Web.Admin.Abstractions;
 using Cleansia.Web.Admin.Attributes;
@@ -110,4 +112,34 @@ public class AdminUserController(IMediator mediator) : ApiController(mediator)
         var result = await Mediator.Send(new ActivateAdminUser.Command(userId), cancellationToken);
         return HandleResult<ActivateAdminUser.Response>(result);
     }
+
+    [HttpPost("{userId}/role")]
+    [Permission(Policy.CanSetAdminRole)]
+    [ProducesResponseType(typeof(SetAdminRole.Response), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [EnableRateLimiting("auth")]
+    public async Task<IActionResult> SetAdminRole(
+        string userId,
+        [FromBody] SetAdminRole.Command command,
+        CancellationToken cancellationToken)
+    {
+        if (command.UserId != userId)
+        {
+            return BadRequest("User ID in route does not match command");
+        }
+        var result = await Mediator.Send(command, cancellationToken);
+        return HandleResult<SetAdminRole.Response>(result);
+    }
+
+    [HttpGet("{userId}")]
+    [Permission(Policy.CanViewOrderCustomer)]
+    [ProducesResponseType(typeof(UserItem), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> GetUser(string userId, [FromQuery] string? orderId, CancellationToken cancellationToken)
+        => HandleResult<UserItem>(await Mediator.Send(new GetUser.Query(userId, orderId), cancellationToken));
 }

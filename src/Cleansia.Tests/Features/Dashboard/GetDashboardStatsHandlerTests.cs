@@ -5,8 +5,10 @@ using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Dashboard;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Enums;
+using Cleansia.Core.Domain.Internationalization;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Repositories;
+using Cleansia.TestUtilities.MockDataFactories.EmployeePayroll;
 using Cleansia.TestUtilities.MockDataFactories.Orders;
 using Moq;
 
@@ -68,7 +70,7 @@ public class GetDashboardStatsHandlerTests
             .ReturnsAsync((4.5, 12));
 
         _orderEmployeePayRepository
-            .Setup(r => r.SumPendingEarningsAsync(CallerEmployeeId, It.IsAny<CancellationToken>()))
+            .Setup(r => r.SumPendingEarningsAsync(CallerEmployeeId, CzkId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(750m);
         _orderEmployeePayRepository
             .Setup(r => r.GetTotalPayByOrderIdsAsync(
@@ -76,8 +78,18 @@ public class GetDashboardStatsHandlerTests
             .ReturnsAsync(new Dictionary<string, decimal>());
 
         _currencyResolutionService
-            .Setup(s => s.ResolveCurrencyCodeForEmployeeAsync(CallerEmployeeId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync("CZK");
+            .Setup(s => s.ResolveCurrencyForEmployeeAsync(CallerEmployeeId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(CurrencyWithId("CZK", CzkId));
+    }
+
+    private const string CzkId = "currency-czk";
+    private const string EurId = "currency-eur";
+
+    private static Currency CurrencyWithId(string code, string id)
+    {
+        var currency = Currency.Create(code, code, code);
+        currency.Id = id;
+        return currency;
     }
 
     private GetDashboardStats.Handler CreateHandler() =>
@@ -92,9 +104,13 @@ public class GetDashboardStatsHandlerTests
             _currencyResolutionService.Object,
             _session.Object)!;
 
-    private static Order CompletedOrder(string orderId, DateTime completedAtUtc)
+    private static Order CompletedOrder(string orderId, DateTime completedAtUtc, string currencyId = CzkId)
     {
-        var order = OrderMockFactory.Generate(new OrderMockFactory.OrderPartial { Id = orderId });
+        // The factory stamps CurrencyId from the Currency instance it is handed (SetCurrency), so the
+        // currency must be passed as an entity rather than on the partial.
+        var order = OrderMockFactory.Generate(
+            new OrderMockFactory.OrderPartial { Id = orderId },
+            currency: CurrencyWithId(currencyId == CzkId ? "CZK" : "EUR", currencyId));
         typeof(Order).GetProperty(nameof(Order.CompletedAt))!.SetValue(order, completedAtUtc);
         return order;
     }
@@ -160,6 +176,59 @@ public class GetDashboardStatsHandlerTests
         Assert.Equal(500m, dto.TodayEarnings);
         Assert.Equal(500m, dto.WeekEarnings);
         Assert.Equal(300m, dto.LastMonthEarnings);
+    }
+
+    /// <summary>
+    /// Every money figure on the DTO is in the ONE currency it names. A EUR job completed today is
+    /// counted (a count has no unit) but is not added into a figure labelled Kč (T-0702).
+    /// </summary>
+    [Fact]
+    public async Task Earnings_Exclude_Orders_In_Another_Currency()
+    {
+        var todayNoonUtc = DateTime.UtcNow.Date.AddHours(12);
+        var czkOrder = CompletedOrder("dash-czk", todayNoonUtc);
+        var eurOrder = CompletedOrder("dash-eur", todayNoonUtc, currencyId: EurId);
+        _orderRepository
+            .Setup(r => r.GetCompletedOrdersInEitherRangeAsync(
+                CallerEmployeeId,
+                It.IsAny<DateTime>(), It.IsAny<DateTime>(),
+                It.IsAny<DateTime>(), It.IsAny<DateTime>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new[] { czkOrder, eurOrder });
+        _orderEmployeePayRepository
+            .Setup(r => r.GetTotalPayByOrderIdsAsync(
+                It.IsAny<IReadOnlyCollection<string>>(), CallerEmployeeId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new Dictionary<string, decimal> { ["dash-czk"] = 500m, ["dash-eur"] = 20m });
+
+        var result = await CreateHandler().Handle(new GetDashboardStats.Query(), CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(500m, result.Value.TodayEarnings);
+        Assert.Equal(500m, result.Value.WeekEarnings);
+        Assert.Equal("CZK", result.Value.CurrencyCode);
+        _orderEmployeePayRepository.Verify(
+            r => r.SumPendingEarningsAsync(CallerEmployeeId, CzkId, It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    /// <summary>
+    /// The latest invoice stands in for pending earnings only when it is in the display currency; its
+    /// STATUS is still reported, because a status has no unit.
+    /// </summary>
+    [Fact]
+    public async Task A_Latest_Invoice_In_Another_Currency_Does_Not_Stand_In_For_Pending_Earnings()
+    {
+        _orderEmployeePayRepository
+            .Setup(r => r.SumPendingEarningsAsync(CallerEmployeeId, CzkId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(0m);
+        _employeeInvoiceRepository
+            .Setup(r => r.GetLatestInvoiceAsync(CallerEmployeeId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(PayrollMockFactory.Invoice(subTotal: 20m, currencyId: EurId));
+
+        var result = await CreateHandler().Handle(new GetDashboardStats.Query(), CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(0m, result.Value.CurrentPeriodEarnings);
+        Assert.Equal("Pending", result.Value.LatestInvoiceStatus);
     }
 
     [Fact]

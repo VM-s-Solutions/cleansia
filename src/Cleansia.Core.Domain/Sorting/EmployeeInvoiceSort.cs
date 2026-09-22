@@ -19,6 +19,10 @@ public class EmployeeInvoiceSort(string propertyName, bool isAscending)
         {
             return x => x.TotalAmount;
         }
+        if (string.Equals(propertyName, nameof(EmployeeInvoice.CurrencyId), StringComparison.CurrentCultureIgnoreCase))
+        {
+            return x => x.CurrencyId;
+        }
         if (string.Equals(propertyName, nameof(EmployeeInvoice.Status), StringComparison.CurrentCultureIgnoreCase))
         {
             return x => x.Status;

@@ -30,14 +30,6 @@ extension L10n {
             localized("offer_confirm")
         }
 
-        static var slideToConfirm: String {
-            localized("offer_slide_to_confirm")
-        }
-
-        static var confirming: String {
-            localized("offer_confirming")
-        }
-
         static var decline: String {
             localized("offer_decline")
         }

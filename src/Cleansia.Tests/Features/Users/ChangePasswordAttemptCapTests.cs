@@ -1,3 +1,4 @@
+using Cleansia.Core.AppServices.Auditing;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Users;
 using Cleansia.Core.Domain.Common;
@@ -47,7 +48,7 @@ public class ChangePasswordAttemptCapTests
         repo.Setup(r => r.TryChargeResetPasswordCodeAttemptAsync(user.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
 
-        var result = await new ChangePassword.Validator(repo.Object)
+        var result = await new ChangePassword.Validator(repo.Object, new AuditContext())
             .ValidateAsync(new ChangePassword.Command(Email, NewPassword, raw));
 
         Assert.False(result.IsValid);
@@ -63,7 +64,7 @@ public class ChangePasswordAttemptCapTests
         repo.Setup(r => r.TryChargeResetPasswordCodeAttemptAsync(user.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
-        var result = await new ChangePassword.Validator(repo.Object)
+        var result = await new ChangePassword.Validator(repo.Object, new AuditContext())
             .ValidateAsync(new ChangePassword.Command(Email, NewPassword, "totally-wrong-code"));
 
         Assert.False(result.IsValid);
@@ -77,7 +78,7 @@ public class ChangePasswordAttemptCapTests
         var user = UserMockFactory.Generate(new UserMockFactory.UserPartial { Email = Email });
         var repo = RepoFor(user);
 
-        var result = await new ChangePassword.Validator(repo.Object)
+        var result = await new ChangePassword.Validator(repo.Object, new AuditContext())
             .ValidateAsync(new ChangePassword.Command(Email, NewPassword, "any-code"));
 
         Assert.False(result.IsValid);
@@ -93,7 +94,7 @@ public class ChangePasswordAttemptCapTests
         repo.Setup(r => r.TryChargeResetPasswordCodeAttemptAsync(user.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
-        var result = await new ChangePassword.Validator(repo.Object)
+        var result = await new ChangePassword.Validator(repo.Object, new AuditContext())
             .ValidateAsync(new ChangePassword.Command(Email, NewPassword, raw));
 
         Assert.True(result.IsValid);

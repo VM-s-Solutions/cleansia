@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Cleansia.Infra.Database.EntityConfigurations;
 
-public class FiscalCounterEntityConfiguration : AuditableEntityConfiguration<FiscalCounter, string>
+public class FiscalCounterEntityConfiguration : TenantAuditableEntityConfiguration<FiscalCounter, string>
 {
     public override void Configure(EntityTypeBuilder<FiscalCounter> builder)
     {
@@ -20,9 +20,8 @@ public class FiscalCounterEntityConfiguration : AuditableEntityConfiguration<Fis
 
         builder.Property(c => c.Value).IsRequired();
 
-        // The allocator's atomic UPSERT keys on this index. NULLS NOT DISTINCT so a single-tenant
-        // (null TenantId) deployment collapses onto ONE counter row per (Year, IssuerScope) — a plain
-        // unique index would treat each null as distinct and let duplicates in, breaking gaplessness.
+        // The allocator's atomic UPSERT keys on this index. NULLS NOT DISTINCT kept on a NOT NULL tenant
+        // term -> /decisions/adr-0061#d9-nulls-not-distinct-on-every-sole-arbiter-tenant-index-and-the-two-indexes-that-gain-a-tenant-term
         builder.HasIndex(c => new { c.TenantId, c.Year, c.IssuerScope })
             .IsUnique()
             .AreNullsDistinct(false)

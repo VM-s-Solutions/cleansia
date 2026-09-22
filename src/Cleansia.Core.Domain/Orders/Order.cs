@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Conventions;
 
 namespace Cleansia.Core.Domain.Orders;
 
-public class Order : Auditable, ITenantEntity
+public class Order : TenantAuditable
 {
     [MaxLength(100)]
     public string CustomerName { get; private set; }
@@ -206,7 +206,18 @@ public class Order : Auditable, ITenantEntity
     public string? AccessMode { get; private set; }
 
     public string CurrencyId { get; private set; }
-    public Currency Currency { get; private set; }
+    public Currency? Currency { get; private set; }
+
+    /// <summary>
+    /// The contract-for-work text this job was offered under — the customer-audience
+    /// <c>LegalDocument</c> in force for the order's market at booking, set once by the factory and never
+    /// re-resolved: a newer version applies to orders booked from its date and changes nothing here. A
+    /// cleaner's acceptance must name a text of this document. Nullable only because <c>Order.Create</c>
+    /// has a hundred and fifty test callers; the one production writer always stamps it, and the take
+    /// refuses an order without one rather than resolving one late.
+    /// </summary>
+    [MaxLength(26)]
+    public string? WorkContractDocumentId { get; private set; }
 
     public string? UserId { get; private set; }
     public User? User { get; private set; }
@@ -404,8 +415,16 @@ public class Order : Auditable, ITenantEntity
     /// </summary>
     public DateTime? PreCleaningReminderSentAt { get; private set; }
 
-    public IDictionary<string, bool> _extras = new Dictionary<string, bool>();
-    public IReadOnlyDictionary<string, bool> Extras => _extras.AsReadOnly();
+    private ICollection<OrderExtra> _selectedExtras = [];
+
+    /// <summary>
+    /// The extras this order bought, each with the price it was bought at.
+    ///
+    /// <para>Replaced a <c>public IDictionary&lt;string, bool&gt; _extras</c> field — public, mutable,
+    /// persisted as a JSON column, carrying no price and no foreign key. A row here means the extra was
+    /// selected; there is no false. See <see cref="OrderExtra"/>.</para>
+    /// </summary>
+    public IReadOnlyCollection<OrderExtra> SelectedExtras => _selectedExtras.ToList().AsReadOnly();
 
     private ICollection<OrderService> _selectedServices = [];
     public IReadOnlyCollection<OrderService> SelectedServices => _selectedServices.ToList().AsReadOnly();
@@ -444,7 +463,7 @@ public class Order : Auditable, ITenantEntity
 
     public static Order Create(string customerName, string customerEmail, string customerPhone,
         Address customerAddress, int rooms, int bathrooms,
-        Dictionary<string, bool> extras, DateTime cleaningDateTime, PaymentType paymentType,
+        DateTime cleaningDateTime, PaymentType paymentType,
         decimal totalPrice, string currencyId, PaymentStatus paymentStatus,
         // Optional: when present, links the order to the booking user so
         // CancelOrder / SubmitReview / ReportIssue can enforce ownership.
@@ -499,7 +518,6 @@ public class Order : Auditable, ITenantEntity
             CustomerApartment = string.IsNullOrWhiteSpace(customerApartment) ? null : customerApartment.Trim(),
             Rooms = rooms,
             Bathrooms = bathrooms,
-            _extras = extras,
             CleaningDateTime = cleaningDateTime,
             PaymentType = paymentType,
             TotalPrice = totalPrice,
@@ -551,6 +569,12 @@ public class Order : Auditable, ITenantEntity
     public Order AddSelectedPackages(IEnumerable<OrderPackage> selectedPackages)
     {
         _selectedPackages = selectedPackages.ToList();
+        return this;
+    }
+
+    public Order AddSelectedExtras(IEnumerable<OrderExtra> selectedExtras)
+    {
+        _selectedExtras = selectedExtras.ToList();
         return this;
     }
 
@@ -708,6 +732,12 @@ public class Order : Auditable, ITenantEntity
         return this;
     }
 
+    public Order SetWorkContractDocument(Legal.LegalDocument document)
+    {
+        WorkContractDocumentId = document.Id;
+        return this;
+    }
+
     public Order MarkEmployeePayCalculated()
     {
         EmployeePayCalculated = true;
@@ -782,6 +812,26 @@ public class Order : Auditable, ITenantEntity
         }
 
         return this;
+    }
+
+    /// <summary>
+    /// The ONLY writer of <see cref="OrderStatus.Confirmed"/> → <see cref="OrderStatus.New"/>. Confirmed
+    /// says a cleaner took the job; a release that left nobody on it makes that false, so the order goes
+    /// back on the board. Called by the release writers after their unassign, never by a swap — a swap's
+    /// transient empty crew between its remove and its add is not a release. A no-op when a crew remains
+    /// or the order is not Confirmed: an order past Confirmed is a cleaner in a home and is never walked
+    /// back by the platform. Requires <see cref="OrderStatusHistory"/> to be loaded, like every
+    /// <see cref="AddOrderStatus"/> caller. → /domain/order-lifecycle
+    /// </summary>
+    public bool ReturnToBoardIfUnstaffed()
+    {
+        if (_assignedEmployees.Count > 0 || CurrentStatus != OrderStatus.Confirmed)
+        {
+            return false;
+        }
+
+        AddOrderStatus(OrderStatusTrack.Create(OrderStatus.New, this));
+        return true;
     }
 
     /// <summary>
@@ -888,6 +938,17 @@ public class Order : Auditable, ITenantEntity
         // analytics all read this column directly instead of trying
         // to derive it from OrderStatusHistory / OrderEmployeePay.
         CompletedAt = DateTime.UtcNow;
+        return this;
+    }
+
+    /// <summary>
+    /// Dates a completion that did not come through <see cref="CompleteOrder"/> — the administrator's
+    /// override, which has no actual duration to give it. The reports read this column, so an undated
+    /// Completed order is revenue that belongs to no month. First stamp wins.
+    /// </summary>
+    public Order MarkCompletedAt(DateTime completedAtUtc)
+    {
+        CompletedAt ??= completedAtUtc;
         return this;
     }
 

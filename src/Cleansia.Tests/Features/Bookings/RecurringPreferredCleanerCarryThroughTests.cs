@@ -1,3 +1,5 @@
+using Cleansia.TestUtilities.MockDataFactories.Memberships;
+using Cleansia.Core.AppServices.Auditing;
 using Cleansia.Core.AppServices.Features.Bookings;
 using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Services.Interfaces;
@@ -14,6 +16,7 @@ using Cleansia.TestUtilities.MockDataFactories.Users;
 using Microsoft.Extensions.Logging.Abstractions;
 using MockQueryable;
 using Moq;
+using Cleansia.TestUtilities;
 
 namespace Cleansia.Tests.Features.Bookings;
 
@@ -43,19 +46,24 @@ public class RecurringPreferredCleanerCarryThroughTests
     private readonly Mock<IRecurringBookingTemplateRepository> _templateRepository = new();
     private readonly Mock<ISavedAddressRepository> _savedAddressRepository = new();
     private readonly Mock<IAddressRepository> _addressRepository = new();
-    private readonly Mock<ICurrencyRepository> _currencyRepository = new();
     private readonly Mock<IOrderRepository> _orderRepository = new();
     private readonly Mock<IOrderPricingCalculator> _pricingCalculator = new();
     private readonly Mock<IOrderFactory> _orderFactory = new();
+    private readonly Mock<IUserMembershipRepository> _memberships = new();
     private readonly Mock<ITenantProvider> _tenantProvider = new();
     private readonly Mock<IUnitOfWork> _unitOfWork = new();
     private readonly List<CreateOrderInput> _inputs = [];
 
     public RecurringPreferredCleanerCarryThroughTests()
     {
-        _currencyRepository
-            .Setup(r => r.GetDefaultAsync(It.IsAny<CancellationToken>()))
-            .ReturnsAsync(Currency.Create("CZK", "Kč", "Czech Koruna", 1m));
+        // The sweep requires a PAID membership (T-0690). This class is about the preferred cleaner
+        // carrying through to each occurrence, so the owner is simply entitled.
+        _memberships
+            .Setup(r => r.GetEntitledForUserNoTrackingAsync(
+                It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((string userId, CancellationToken _) =>
+                UserMembershipMockFactory.Paid(userId));
+
         _pricingCalculator
             .Setup(c => c.CalculateAsync(
                 It.IsAny<IEnumerable<string>>(), It.IsAny<IEnumerable<string>>(),
@@ -142,10 +150,11 @@ public class RecurringPreferredCleanerCarryThroughTests
 
         var memberships = new Mock<IUserMembershipRepository>();
         memberships
-            .Setup(r => r.GetActiveForUserNoTrackingAsync(UserId, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetEntitledForUserNoTrackingAsync(UserId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(UserMembership.Create(
                 userId: UserId,
                 membershipPlanId: "plan-plus",
+                currencyId: "currency-czk",
                 stripeSubscriptionId: "sub_1",
                 currentPeriodStart: DateTime.UtcNow.AddDays(-1),
                 currentPeriodEnd: DateTime.UtcNow.AddMonths(1)));
@@ -160,7 +169,7 @@ public class RecurringPreferredCleanerCarryThroughTests
             .Callback((RecurringBookingTemplate t) => created = t);
 
         var result = await new CreateRecurringBooking.Handler(
-                templates.Object, savedAddresses.Object, memberships.Object, session.Object)
+                templates.Object, savedAddresses.Object, memberships.Object, session.Object, OrderMarketDoubles.OperatedBy("cleansia-cz"), new AuditContext())
             .Handle(
                 new CreateRecurringBooking.Command(
                     Frequency: (int)RecurrenceFrequency.Weekly,
@@ -234,13 +243,16 @@ public class RecurringPreferredCleanerCarryThroughTests
             _templateRepository.Object,
             _savedAddressRepository.Object,
             _addressRepository.Object,
-            _currencyRepository.Object,
+            OrderMarketDoubles.Trading(Currency.Create("CZK", "Kč", "Czech Koruna")),
             _orderRepository.Object,
             _pricingCalculator.Object,
             _orderFactory.Object,
+            _memberships.Object,
+            OrderMarketDoubles.OperatedBy("cleansia-cz"),
             _tenantProvider.Object,
             _unitOfWork.Object,
-            NullLogger<MaterializeRecurringBookingTemplate.Handler>.Instance);
+            NullLogger<MaterializeRecurringBookingTemplate.Handler>.Instance,
+            Mock.Of<INotificationProducer>());
     }
 
     private static MaterializeRecurringBookingTemplate.Command SweepCommand() =>

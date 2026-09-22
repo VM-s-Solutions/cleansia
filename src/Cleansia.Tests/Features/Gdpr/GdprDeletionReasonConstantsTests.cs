@@ -82,6 +82,22 @@ public class GdprDeletionReasonConstantsTests
         Assert.Equal(GdprAuditReasons.SelfDeletion, _capturedReason);
     }
 
+    // The resolver also runs BEFORE the walk, to mark the attempt the out-of-band Failed row is written
+    // from, so the subject's live address must never be what it answers — that row outlives the erasure.
+    [Fact]
+    public async Task SelfDelete_Resolves_The_Self_Actor_Never_The_Subjects_Email()
+    {
+        _session.Setup(s => s.GetUserId()).Returns(UserId);
+
+        var result = await InvokeHandler(typeof(DeleteUserAccount), new DeleteUserAccount.Command());
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal("self", _capturedProcessedBy);
+        Assert.Equal(GdprAuditReasons.SelfActor, _capturedProcessedBy);
+        Assert.DoesNotContain("@", _capturedProcessedBy);
+        Assert.Null(_capturedNotes);
+    }
+
     [Fact]
     public async Task AdminDelete_ForwardsReason_GdprAdminDeletion_ByteIdentical()
     {
@@ -105,5 +121,21 @@ public class GdprDeletionReasonConstantsTests
         Assert.True(result.IsSuccess);
         Assert.Equal("admin", _capturedProcessedBy);
         Assert.Equal(GdprAuditReasons.FallbackAdminActor, _capturedProcessedBy);
+    }
+
+    /// <summary>
+    /// The three erasure stamps, and only those, read as an erasure — an admin's ordinary deactivation
+    /// leaves a live identity behind and the incident file must print it as such.
+    /// </summary>
+    [Theory]
+    [InlineData("GDPR_DELETION", true)]
+    [InlineData("GDPR_ADMIN_DELETION", true)]
+    [InlineData("GDPR_DELETION_RETRY", true)]
+    [InlineData("admin@cleansia.test", false)]
+    [InlineData("", false)]
+    [InlineData(null, false)]
+    public void Only_An_Erasure_Stamp_Is_An_Erasure(string? deactivatedBy, bool expected)
+    {
+        Assert.Equal(expected, GdprAuditReasons.IsErasure(deactivatedBy));
     }
 }

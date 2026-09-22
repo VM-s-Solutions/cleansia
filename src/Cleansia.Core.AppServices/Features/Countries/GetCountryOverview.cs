@@ -10,16 +10,21 @@ public class GetCountryOverview
 {
     public record Request : IRequest<IEnumerable<CountryListItem>>;
 
-    public class Handler(ICountryRepository countryRepository) : IRequestHandler<Request, IEnumerable<CountryListItem>>
+    public class Handler(
+        ICountryRepository countryRepository,
+        ICountryConfigurationRepository countryConfigurationRepository) : IRequestHandler<Request, IEnumerable<CountryListItem>>
     {
         public async Task<IEnumerable<CountryListItem>> Handle(Request request, CancellationToken cancellationToken)
         {
+            var defaultMarketCountryId = (await countryConfigurationRepository.GetDefaultMarketAsync(cancellationToken))?.CountryId;
+
             // Customer-facing — hide countries the admin has deactivated.
-            return await countryRepository.GetAll()
+            var countries = await countryRepository.GetAll()
                 .Where(c => c.IsActive)
                 .OrderBy(c => c.Name)
-                .Select(c => c.MapToDto())
                 .ToListAsync(cancellationToken);
+
+            return countries.Select(c => c.MapToDto(c.Id == defaultMarketCountryId));
         }
     }
 }

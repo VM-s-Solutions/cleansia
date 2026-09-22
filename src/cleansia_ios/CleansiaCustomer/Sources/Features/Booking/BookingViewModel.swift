@@ -2,30 +2,46 @@ import CleansiaCore
 import Combine
 import Foundation
 
+enum BookingEvent: Equatable {
+    /// The address moved the draft into a market where part of the selection is not offered; the
+    /// selection was cut down to what the reloaded catalogue still lists.
+    case selectionPrunedForMarket
+}
+
 @MainActor
 final class BookingViewModel: ViewModel {
     @Published private(set) var state = BookingState()
     @Published internal(set) var submitState: ActionState = .idle
     @Published internal(set) var quoteState: BookingQuoteState = .idle
-    @Published private(set) var promoState: PromoCodeState = .idle
-    @Published private(set) var referralState: ReferralCodeState = .idle
+    @Published internal(set) var promoState: PromoCodeState = .idle
+    @Published internal(set) var referralState: ReferralCodeState = .idle
     @Published private(set) var catalogState: UiState<Catalog> = .loading
     @Published private(set) var extrasState: UiState<[CatalogExtra]> = .loading
     @Published private(set) var membership: MembershipSnapshot?
     @Published private(set) var expressWaiverStatus: ExpressWaiverStatus = .none
+    /// Whether the account already holds the two consents the review step's tick names — Terms of
+    /// Service and Privacy Policy. Re-consenting to the same two documents on every order is noise,
+    /// so the box is shown only while this is false; it stays false on a failed read.
+    @Published internal(set) var alreadyConsented = false
+    /// The market the customer browses in — what the catalogue and the quote are priced for until
+    /// an address decides otherwise.
+    @Published private(set) var marketState: MarketState = .unavailable
 
     @Published private(set) var currentStep = 1
+
+    let events = PassthroughSubject<BookingEvent, Never>()
 
     private let catalogClient: CatalogClient
     let quoteClient: QuoteClient
     private let membershipClient: MembershipClient
     private let extraClient: ExtraClient
-    private let promoClient: PromoCodeClient
-    private let referralClient: ReferralClient
+    let promoClient: PromoCodeClient
+    let referralClient: ReferralClient
     let profileClient: ProfileClient
     let orderCreateClient: OrderCreateClient
     let paymentIntentClient: PaymentIntentClient
     let countryResolver: CountryResolver
+    let consentClient: ConsentStatusClient
     let tokenStore: TokenStore
     let isCardPaymentAvailable: Bool
     private let quoteDebounce: DispatchQueue.SchedulerTimeType.Stride
@@ -34,6 +50,8 @@ final class BookingViewModel: ViewModel {
     var lastQuoteRequest: QuoteRequest?
     private var quoteTask: Task<Void, Never>?
     private var catalogLoad: Task<Void, Never>?
+    private var marketReload: Task<Void, Never>?
+    private var countryLookup: Task<Void, Never>?
     private var membershipLoad: Task<MembershipSnapshot?, Never>?
     private var cancellables = Set<AnyCancellable>()
 
@@ -48,7 +66,9 @@ final class BookingViewModel: ViewModel {
         orderCreateClient: OrderCreateClient = LiveOrderCreateClient(),
         paymentIntentClient: PaymentIntentClient = LivePaymentIntentClient(),
         countryResolver: CountryResolver = LiveCountryResolver(),
+        consentClient: ConsentStatusClient = LiveConsentStatusClient(),
         tokenStore: TokenStore = CustomerBookingTokenStore.shared,
+        market: AnyPublisher<MarketState, Never> = Just(.unavailable).eraseToAnyPublisher(),
         isCardPaymentAvailable: Bool = StripeConfig.isCardPaymentAvailable,
         quoteDebounce: DispatchQueue.SchedulerTimeType.Stride = .milliseconds(400),
         scheduler: AnySchedulerOf<DispatchQueue> = .main
@@ -63,16 +83,38 @@ final class BookingViewModel: ViewModel {
         self.orderCreateClient = orderCreateClient
         self.paymentIntentClient = paymentIntentClient
         self.countryResolver = countryResolver
+        self.consentClient = consentClient
         self.tokenStore = tokenStore
         self.isCardPaymentAvailable = isCardPaymentAvailable
         self.quoteDebounce = quoteDebounce
         self.scheduler = scheduler
         super.init()
+        market.assign(to: &$marketState)
         startQuoteWatcher()
+        startMarketWatcher()
+    }
+
+    /// Address > chosen market > default: the address's country once one is picked, the chosen
+    /// market before that, and nothing (the platform default) when no market resolved.
+    var catalogCountryId: String? {
+        state.countryId ?? marketState.countryId
+    }
+
+    /// The insurance ceiling for the country the booking is priced in, in that country's currency;
+    /// nil renders the no-figure claim.
+    var insurance: MarketMoney? {
+        marketState.insurance(forCountryId: catalogCountryId)
     }
 
     var isFirstStep: Bool {
         currentStep <= 1
+    }
+
+    /// Past the first step the sheet's leading control steps back instead of closing, and the
+    /// swipe-down gesture is held so a half-built draft is not thrown away by a flick (Android
+    /// intercepts the system back gesture the same way).
+    var canStepBack: Bool {
+        currentStep > 1
     }
 
     var isLastStep: Bool {
@@ -91,11 +133,30 @@ final class BookingViewModel: ViewModel {
         membership?.expressUpgradesRemaining ?? 0
     }
 
+    /// The currency every wizard amount is labelled with. The quote's own code the moment one lands;
+    /// until then the catalogue's default, which is what the pre-quote catalogue prices are stated in.
+    /// Nil only before the catalogue has loaded, when there is no figure on screen to label.
+    var displayCurrencyCode: String? {
+        quoteState.quote?.currencyCode ?? catalogState.loadedValue?.currencyCode
+    }
+
     /// Best of the server's own discounts and the promo code, the single input both the summary card
     /// and the sticky price bar subtract so they cannot show two different totals.
     var effectiveDiscount: Double {
         guard let quote = quoteState.quote else { return 0 }
         return max(quote.tierDiscountAmount + quote.membershipDiscountAmount, promoState.discount)
+    }
+
+    /// The tier floor this basket falls short of, shown only while no discount is winning — otherwise
+    /// the hint contradicts the line above it (`ConfirmStep.kt` parity).
+    var unmetTierDiscountFloor: Double? {
+        guard effectiveDiscount == 0,
+              let quote = quoteState.quote,
+              let floor = quote.tierDiscountMinOrderAmount,
+              floor > 0,
+              quote.preSurchargeSubtotal < floor
+        else { return nil }
+        return floor
     }
 
     func update(_ transform: (BookingState) -> BookingState) {
@@ -127,7 +188,7 @@ final class BookingViewModel: ViewModel {
 
     @discardableResult
     func back() -> Bool {
-        guard currentStep > 1 else { return false }
+        guard canStepBack else { return false }
         currentStep -= 1
         return true
     }
@@ -143,6 +204,7 @@ final class BookingViewModel: ViewModel {
         currentStep = 1
         lastQuoteRequest = nil
         quoteTask?.cancel()
+        countryLookup?.cancel()
     }
 
     /// Single-flight: the shell prefetch and Home's catalog task can race at
@@ -167,12 +229,58 @@ final class BookingViewModel: ViewModel {
 
     private func fetchCatalog() async {
         catalogState = .loading
-        switch await catalogClient.loadCatalog() {
+        let countryId = catalogCountryId
+        switch await catalogClient.loadCatalog(countryId: countryId) {
         case let .success(catalog):
             catalogState = .loaded(catalog)
+            if catalogCountryId != countryId {
+                reloadCatalogForMarket(catalogCountryId)
+            }
         case let .failure(error):
             catalogState = .error(error)
         }
+    }
+
+    /// The address step decides the market, and the chosen market does before there is an address:
+    /// the catalogue is re-read priced for that country and the draft keeps only what it still
+    /// lists. The catalogue on screen stays until the new one lands (or the reload fails), the way a
+    /// re-quote keeps the previous total.
+    private func startMarketWatcher() {
+        Publishers.CombineLatest($state.map(\.countryId), $marketState.map(\.countryId))
+            .map { address, market in address ?? market }
+            .removeDuplicates()
+            .dropFirst()
+            .sink { [weak self] countryId in
+                self?.reloadCatalogForMarket(countryId)
+            }
+            .store(in: &cancellables)
+    }
+
+    private func reloadCatalogForMarket(_ countryId: String?) {
+        marketReload?.cancel()
+        guard case .loaded = catalogState else { return }
+        extrasState = .loading
+        marketReload = Task { [weak self] in
+            guard let self else { return }
+            let result = await catalogClient.loadCatalog(countryId: countryId)
+            if Task.isCancelled { return }
+            guard case let .success(catalog) = result else { return }
+            catalogState = .loaded(catalog)
+            pruneSelection(notListedIn: catalog)
+        }
+    }
+
+    private func pruneSelection(notListedIn catalog: Catalog) {
+        let services = state.selectedServiceIds.intersection(catalog.services.map(\.id))
+        let packages = state.selectedPackageIds.intersection(catalog.packages.map(\.id))
+        guard services != state.selectedServiceIds || packages != state.selectedPackageIds else { return }
+        update { current in
+            var next = current
+            next.selectedServiceIds = services
+            next.selectedPackageIds = packages
+            return next
+        }
+        events.send(.selectionPrunedForMarket)
     }
 
     /// The wizard's ONE read of the signed-in customer's membership — the slot grid's express-waiver
@@ -200,9 +308,17 @@ final class BookingViewModel: ViewModel {
 
     func loadExtras() async {
         if case .loaded = extrasState { return }
-        switch await extraClient.loadExtras() {
+        switch await extraClient.loadExtras(countryId: catalogCountryId) {
         case let .success(extras):
             extrasState = .loaded(extras.sorted { $0.displayOrder < $1.displayOrder })
+            let listed = Set(extras.map(\.slug))
+            if !state.selectedExtraSlugs.isSubset(of: listed) {
+                update { current in
+                    var next = current
+                    next.selectedExtraSlugs = current.selectedExtraSlugs.intersection(listed)
+                    return next
+                }
+            }
         case let .failure(error):
             extrasState = .error(error)
         }
@@ -230,6 +346,24 @@ final class BookingViewModel: ViewModel {
             next.savedAddressId = nil
             next.hydratedFromSavedId = nil
             return next
+        }
+        resolveCountry(isoCode: address.countryIsoCode)
+    }
+
+    /// The market is written only once the country is known, so a same-country re-pick never flaps
+    /// the catalogue through the default and back. A pick made in the meantime wins.
+    private func resolveCountry(isoCode: String) {
+        countryLookup?.cancel()
+        countryLookup = Task { [weak self, countryResolver] in
+            let resolved = await countryResolver.countryId(forIsoCode: isoCode)
+            guard let self, !Task.isCancelled,
+                  state.savedAddressId == nil, state.countryIsoCode == isoCode
+            else { return }
+            update { current in
+                var next = current
+                next.countryId = resolved
+                return next
+            }
         }
     }
 
@@ -267,87 +401,9 @@ final class BookingViewModel: ViewModel {
         }
     }
 
-    @discardableResult
-    func validatePromoCode(_ rawCode: String) async -> PromoCodeState {
-        let normalized = rawCode.trimmingCharacters(in: .whitespacesAndNewlines).uppercased()
-        if normalized.isEmpty {
-            promoState = .idle
-            return .idle
-        }
-        promoState = .validating
-        let quote = quoteState.quote
-        let subtotal = quote?.preSurchargeSubtotal ?? 0
-        let resolved: PromoCodeState = switch await promoClient.validate(code: normalized, orderSubtotal: subtotal) {
-        case let .success(validation):
-            if validation.isValid, let discount = validation.discountAmount {
-                .valid(discountAmount: quote?.discountAsCharged(discount) ?? discount)
-            } else {
-                .invalid(PromoCodeError.from(validation.errorCode))
-            }
-        case .failure:
-            .invalid(nil)
-        }
-        promoState = resolved
-        if case .valid = resolved {
-            update { current in
-                var next = current
-                next.promoCode = normalized
-                return next
-            }
-        }
-        return resolved
-    }
-
-    @discardableResult
-    func validateReferralCode(_ rawCode: String) async -> ReferralCodeState {
-        let normalized = rawCode.trimmingCharacters(in: .whitespacesAndNewlines).uppercased()
-        if normalized.isEmpty {
-            referralState = .idle
-            return .idle
-        }
-        referralState = .validating
-        let resolved: ReferralCodeState = switch await referralClient.validate(code: normalized) {
-        case let .success(validation):
-            if validation.isValid {
-                .valid(referrerFirstName: validation.referrerFirstName)
-            } else {
-                .invalid(ReferralValidationError.from(validation.errorCode))
-            }
-        case .failure:
-            .invalid(nil)
-        }
-        referralState = resolved
-        if case .valid = resolved {
-            update { current in
-                var next = current
-                next.referralCode = normalized
-                return next
-            }
-        }
-        return resolved
-    }
-
-    func clearPromoCode() {
-        promoState = .idle
-        update { current in
-            var next = current
-            next.promoCode = ""
-            return next
-        }
-    }
-
-    func clearReferralCode() {
-        referralState = .idle
-        update { current in
-            var next = current
-            next.referralCode = ""
-            return next
-        }
-    }
-
     private func startQuoteWatcher() {
-        $state
-            .map(\.quoteRequest)
+        Publishers.CombineLatest($state, $marketState.map(\.countryId).removeDuplicates())
+            .map { state, marketCountryId in state.quoteRequest(marketCountryId: marketCountryId) }
             .removeDuplicates()
             .debounce(for: quoteDebounce, scheduler: scheduler)
             .sink { [weak self] request in
@@ -377,6 +433,9 @@ final class BookingViewModel: ViewModel {
             case let .success(quote):
                 lastQuoteRequest = request
                 quoteState = .quoted(quote)
+                if let previousQuote, previousQuote.currencyId != quote.currencyId, case .valid = promoState {
+                    clearPromoCode()
+                }
             case .failure:
                 quoteState = previousQuote.map(BookingQuoteState.quoted) ?? .idle
             }
@@ -385,14 +444,16 @@ final class BookingViewModel: ViewModel {
 }
 
 extension BookingState {
-    var quoteRequest: QuoteRequest {
+    /// The quote is priced for the address's country once there is one, else the chosen market's.
+    func quoteRequest(marketCountryId: String?) -> QuoteRequest {
         QuoteRequest(
             serviceIds: selectedServiceIds.sorted(),
             packageIds: selectedPackageIds.sorted(),
             extraSlugs: selectedExtraSlugs.sorted(),
             rooms: rooms,
             bathrooms: bathrooms,
-            cleaningDate: selectedInstant
+            cleaningDate: selectedInstant,
+            countryId: countryId ?? marketCountryId
         )
     }
 }

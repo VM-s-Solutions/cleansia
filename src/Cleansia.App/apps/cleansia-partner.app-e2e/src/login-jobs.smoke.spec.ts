@@ -11,11 +11,19 @@ import { expect, Page, Route, test } from '@playwright/test';
  * the Postgres/seed-script dependency entirely and makes the auth + accept
  * handshake deterministic with zero external services.
  *
- * The REAL login form, the REAL orders ("jobs") page, and the REAL take-order
- * action are driven through the UI — only the network is faked. The smoke drives
- * one accept and asserts the rendered state transition (the job leaves
- * "Available Orders" and appears in "My Orders"); it stops there and touches no
- * money flow.
+ * The REAL login form, the REAL orders ("jobs") page, the REAL take-order
+ * action and the REAL contract-for-work dialog are driven through the UI — only
+ * the network is faked. The smoke drives one accept and asserts the rendered
+ * state transition (the job leaves "Available Orders" and appears in "My
+ * Orders"); it stops there and touches no money flow.
+ *
+ * CONTRACT DIALOG: a take is never a bare POST. The action opens the
+ * contract-for-work dialog, which reads the preview for that order from
+ * `/api/Order/GetWorkContractPreview`, and only once the cleaner ticks the
+ * acceptance and presses the primary button does `TakeOrder` fire — carrying the
+ * `legalDocumentTextId` the preview rendered as `acceptedWorkContractTextId`.
+ * The smoke stubs the preview and asserts that echo, because it is the one
+ * fact the server refuses the take on when it drifts.
  *
  * TRANSITION FIXTURE: the orders page loads two lists from the SAME
  * `/api/Order/GetPaged` endpoint, distinguished by query: the "my" list carries
@@ -94,6 +102,38 @@ const SEEDED_AVAILABLE_ORDER = {
   hasAvailableSpots: true,
 };
 
+const WORK_CONTRACT_TEXT_ID = '22222222-2222-2222-2222-222222222222';
+
+// The preview the dialog renders for the seeded job (`WorkContractDto`). Its
+// `legalDocumentTextId` is the value the take must echo back; `acceptance` is
+// null because a preview precedes any acceptance.
+const WORK_CONTRACT_PREVIEW_FIXTURE = {
+  legalDocumentTextId: WORK_CONTRACT_TEXT_ID,
+  legalDocumentId: '33333333-3333-3333-3333-333333333333',
+  version: '1.0',
+  effectiveFrom: '2026-01-01T00:00:00Z',
+  language: 'en',
+  title: 'Contract for work',
+  contentHtml: '<p>The contractor performs the cleaning described below.</p>',
+  facts: {
+    orderNumber: SEEDED_ORDER_NUMBER,
+    cleaningDateTimeUtc: SEEDED_AVAILABLE_ORDER.cleaningDateTime,
+    estimatedMinutes: 120,
+    totalPrice: 1500,
+    currencyCode: 'CZK',
+    locationApproximate: 'Praha 1',
+    countryId: 'cz',
+    rooms: 2,
+    bathrooms: 1,
+    services: [
+      { id: 'standard-home-cleaning', name: 'Standard Home Cleaning' },
+    ],
+    packages: [],
+    extraSlugs: [],
+  },
+  acceptance: null,
+};
+
 const pageOf = (data: unknown[]) => ({
   data,
   total: data.length,
@@ -141,6 +181,10 @@ async function stubBackend(page: Page): Promise<void> {
     return json(route, pageOf(accepted ? [] : [SEEDED_AVAILABLE_ORDER]));
   });
 
+  await page.route('**/api/Order/GetWorkContractPreview**', (route) =>
+    json(route, WORK_CONTRACT_PREVIEW_FIXTURE)
+  );
+
   await page.route('**/api/Order/TakeOrder', (route) => {
     accepted = true;
     return json(route, { orderId: SEEDED_ORDER_ID, employeeId: EMPLOYEE_ID });
@@ -156,9 +200,12 @@ function sectionByHeading(page: Page, heading: RegExp) {
 }
 
 test.beforeEach(async ({ page, context }) => {
-  // Pin English so the role/text locators are stable regardless of CI locale.
+  // Pin English so the role/text locators are stable regardless of CI locale,
+  // and answer the cookie banner up front: it floats over the contract dialog's
+  // footer and would intercept the accept click.
   await context.addInitScript(() => {
     window.localStorage.setItem('preferred_language', 'en');
+    window.localStorage.setItem('cleansia-partner-cookie-consent', 'accepted');
   });
   await stubBackend(page);
 });
@@ -199,15 +246,48 @@ test('partner can log in, accept an available job, and see it move to My Orders'
   await expect(seededRow(availableSection)).toBeVisible();
   await expect(seededRow(mySection)).toHaveCount(0);
 
-  // ── Accept it via the REAL take-order action; assert the POST actually fires
-  //    (it is what flips the fixture, so the transition is request-driven) ──
+  // ── The REAL take-order action opens the contract-for-work dialog, which
+  //    reads the preview for this order ──
+  const previewRequest = page.waitForRequest(
+    (req) =>
+      req.url().includes('/api/Order/GetWorkContractPreview') &&
+      req.method() === 'GET'
+  );
+  await seededRow(availableSection).locator('button.action-btn').click();
+  const preview = await previewRequest;
+  expect(new URL(preview.url()).searchParams.get('OrderId')).toBe(
+    SEEDED_ORDER_ID
+  );
+
+  // The page carries other `dialog` surfaces (the filters drawer, the cookie
+  // banner), so the contract dialog is picked by its heading.
+  const dialog = page.getByRole('dialog').filter({
+    has: page.getByRole('heading', { name: 'Contract for work' }),
+  });
+  await expect(dialog).toBeVisible();
+  await expect(dialog.getByText(SEEDED_ORDER_NUMBER)).toBeVisible();
+
+  // ── The primary button stays disabled until the acceptance is ticked ──
+  const acceptAndTake = dialog.getByRole('button', {
+    name: /Accept and take the job/,
+  });
+  await expect(acceptAndTake).toBeDisabled();
+  await dialog.getByRole('checkbox').check();
+  await expect(acceptAndTake).toBeEnabled();
+
+  // ── Accept: the POST fires only now (it is what flips the fixture, so the
+  //    transition is request-driven) and echoes the preview's text id ──
   const takeRequest = page.waitForRequest(
     (req) =>
       req.url().includes('/api/Order/TakeOrder') && req.method() === 'POST'
   );
-  await seededRow(availableSection).locator('button.action-btn').click();
+  await acceptAndTake.click();
   const take = await takeRequest;
-  expect(take.postDataJSON()).toMatchObject({ orderId: SEEDED_ORDER_ID });
+  expect(take.postDataJSON()).toMatchObject({
+    orderId: SEEDED_ORDER_ID,
+    acceptedWorkContractTextId: WORK_CONTRACT_TEXT_ID,
+  });
+  await expect(dialog).toHaveCount(0);
 
   // ── Post-accept transition (rendered UI, web-first waits): the job leaves the
   //    Available pool and appears in the partner's My Orders list ──

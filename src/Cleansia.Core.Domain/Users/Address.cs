@@ -4,7 +4,7 @@ using Cleansia.Core.Domain.Internationalization;
 
 namespace Cleansia.Core.Domain.Users;
 
-public class Address : Auditable, ITenantEntity
+public class Address : TenantAuditable
 {
     [Required]
     [MaxLength(255)]

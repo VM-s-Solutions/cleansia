@@ -168,7 +168,6 @@ export class CleansiaFileComponent extends CleansiaBaseFormInputComponent implem
     const acceptedTypes = this.accept().split(',').map(type => type.trim());
     const fileName = file.name.toLowerCase();
     const fileType = file.type.toLowerCase();
-    const fileExtension = '.' + fileName.split('.').pop();
 
     return acceptedTypes.some(acceptedType => {
       acceptedType = acceptedType.toLowerCase();

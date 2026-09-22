@@ -42,6 +42,7 @@ final class StringCatalogCompletenessTests: XCTestCase {
             ["cs", "sk"],
             "\"min\" is the same abbreviation in cs/sk"
         ),
+        Exception("Customer", "order_market_label", allLocalized, "two specifiers and a middle dot only"),
         Exception("Customer", "orders_filter_count", allLocalized, "format specifiers only"),
         Exception("Customer", "profile_tier_plus", allLocalized, "Cleansia Plus is the product name"),
         Exception("Partner", "action_sms", allLocalized, "SMS is the same initialism everywhere"),

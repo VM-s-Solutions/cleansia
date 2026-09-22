@@ -1,5 +1,6 @@
 using Cleansia.Core.AppServices.Features.Payments;
 using Cleansia.Web.Partner.Abstractions;
+using Cleansia.Config.Filters;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -16,6 +17,7 @@ public class PaymentController(IMediator mediator) : ApiController(mediator)
     // the rate limit is the unauthenticated-DoS cap on this side-effecting endpoint (S5).
     [AllowAnonymous]
     [EnableRateLimiting("webhook")]
+    [ArchivedCompanyWebhookAcknowledgeFilter]
     [HttpPost("webhook")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]

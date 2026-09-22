@@ -56,7 +56,7 @@ stories: [US-admin-0007]       # user stories this satisfies
 adrs: [0003, 0012]             # ADRs in force for this work
 layers: [backend, db, frontend]  # which stacks it touches → which agents run
 security_touching: false       # true → Security gate is mandatory
-manual_steps: [ef-migration, nswag-regen]   # owner-only steps this ticket needs
+manual_steps: []               # compatibility field; record routine work in the status log
 sprint: 5
 ---
 ```
@@ -126,8 +126,8 @@ developer's run and stops the backlog from rotting as it grows:
 2. **AC are present and observable** (Given/When/Then, verifiable outcomes — not "make it nicer").
 3. **Sized** S/M/L, and any `L` is **split** before it goes ready.
 4. **Dependencies known** (`depends_on` listed and either `done` or themselves tracked).
-5. **`manual_steps` assessed** — does it need an EF migration or NSwag regen? If so they're listed and
-   the owner is flagged.
+5. **Generated artifacts assessed** — plan required EF/NSwag regeneration as implementation work,
+   before dependent consumers. Track any resulting DEV drop for deployment, never branch work.
 6. **`security_touching` and `layers` set** so the PM routes and gates correctly.
 7. **The canonical archetype is identified** (which `consistency.md` rule set applies), so the
    developer mirrors the right existing feature.
@@ -156,7 +156,9 @@ A ticket is `done` only when **all** of these hold:
 1. AC each have verifiable evidence (a test, a screenshot, a log line, or a reviewer confirmation).
 2. The reviewer approved (and security/optimizer approved if they were in scope).
 3. QA executed the test plan and recorded the result.
-4. Any `manual_steps` are flagged to the owner (the agents do **not** run migrations or NSwag regen).
+4. Required migrations and clients are regenerated, committed with the change, and verified. Record
+   the steps run; keep a resulting DEV database drop tracked in `agents/cleanup/MANUAL_STEPS.md`
+   until deployment. It does not block completion of verified branch work. No production operations.
 5. The `INDEX.md` row and the sprint status doc are updated, and the status log has a line for the
    final transition.
 

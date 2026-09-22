@@ -1,4 +1,5 @@
 using System.Linq.Expressions;
+using Cleansia.Infra.Common.Specifications;
 
 namespace Cleansia.Core.Domain.Orders;
 
@@ -30,9 +31,46 @@ namespace Cleansia.Core.Domain.Orders;
 /// <para>The two forms are pinned against each other by TC-PREF-EQUIV-0 against real PostgreSQL, never
 /// by review and never by sharing one expression tree: a null caller id is UNKNOWN under SQL's
 /// three-valued logic and <c>true</c> under C# equality, so the same tree gives opposite answers.</para>
+///
+/// <para><b>The currency term</b> (owner ruling 2026-09-12: a cleaner is paid in the currency of the
+/// country they work in) is the second (order, cleaner) question this type answers, as
+/// <see cref="PayableTo(string?, string?)"/>. An order priced in another currency would produce a pay
+/// row, and then an invoice, in a currency the cleaner's payout account does not hold — one
+/// <c>ApproveInvoice</c> refuses. So it is not offered, not listed, not browsable and not takeable: the
+/// board, the browse gate and the take gate read it through <see cref="OpenTo(string?, string?, DateTime)"/>,
+/// and the pending-offer list — the hold's own beneficiary list, which needs no hold term — conjoins
+/// <c>PayableTo</c> alone. An order the cleaner is ALREADY on stays open to them whatever its
+/// currency: <c>AdminReassignOrder</c> is deliberately not gated (admin override), and an assignment
+/// made over the top of this rule must still be visible to the cleaner it was made for.</para>
 /// </summary>
 public static class OrderVisibility
 {
+    /// <summary>
+    /// The order is priced in the currency this cleaner is paid in, or the cleaner is already on it. A
+    /// null currency is nobody's currency: the term fails CLOSED, so a caller that forgot to resolve
+    /// one gets an empty board rather than every board.
+    /// </summary>
+    public static Expression<Func<Order, bool>> PayableTo(string? employeeId, string? cleanerCurrencyId)
+        => o => o.CurrencyId == cleanerCurrencyId
+             || o.AssignedEmployees.Any(ae => ae.EmployeeId == employeeId);
+
+    public static bool PayableTo(Order order, string? employeeId, string? cleanerCurrencyId)
+        => (cleanerCurrencyId is not null && order.CurrencyId == cleanerCurrencyId)
+        || (!string.IsNullOrEmpty(employeeId) && order.AssignedEmployees.Any(ae => ae.EmployeeId == employeeId));
+
+    /// <summary>
+    /// Both (order, cleaner) questions at once — the hold and the currency. The board, the take gate
+    /// and the browse gate ask this one; <see cref="NotHeldFrom(string?, DateTime)"/> alone is for the
+    /// paths that act on a hold without taking the order (declining it).
+    /// </summary>
+    public static Expression<Func<Order, bool>> OpenTo(string? employeeId, string? cleanerCurrencyId, DateTime nowUtc)
+        => (new DirectSpecification<Order>(NotHeldFrom(employeeId, nowUtc))
+            & new DirectSpecification<Order>(PayableTo(employeeId, cleanerCurrencyId)))
+            .SatisfiedBy();
+
+    public static bool OpenTo(Order order, string? employeeId, string? cleanerCurrencyId, DateTime nowUtc)
+        => NotHeldFrom(order, employeeId, nowUtc) && PayableTo(order, employeeId, cleanerCurrencyId);
+
     public static Expression<Func<Order, bool>> NotHeldFrom(string? employeeId, DateTime nowUtc)
         => o => o.PreferredHoldUntilUtc == null
              || o.PreferredEmployeeId == null

@@ -10,7 +10,7 @@ namespace Cleansia.Core.AppServices.Features.Orders;
 /// <summary>
 /// The admin's read of an order's entry instructions — <i>"key under the mat"</i>, <i>"gate code 4455"</i>.
 ///
-/// <para><b>It is a Command, and that is what makes it auditable.</b> <c>AdminMutationGate</c> records an
+/// <para><b>It is a Command, and that is what makes it auditable.</b> <c>AuditGate</c> records an
 /// admin action only when the request type name ends in <c>Command</c>; a query produces no audit row and
 /// has no commit for one to ride. Mirrors <c>RevealEmployeePayoutDetails</c> for exactly that reason —
 /// the audit trail is the compensating control for holding a value this sensitive at all, so an

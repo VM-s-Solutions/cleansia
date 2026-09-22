@@ -43,7 +43,6 @@ public class LiveActivityProducerTests
             customerAddress: address,
             rooms: 1,
             bathrooms: 1,
-            extras: new Dictionary<string, bool>(),
             cleaningDateTime: DateTime.SpecifyKind(new DateTime(2026, 7, 20, 9, 0, 0), DateTimeKind.Utc),
             paymentType: PaymentType.Card,
             totalPrice: 1000m,
@@ -110,8 +109,8 @@ public class LiveActivityProducerTests
         await using var ctx = new CleansiaDbContext(
             options,
             new TestUserSessionProvider("system", "system@cleansia.test"),
-            new NullTenantProvider());
-        await ctx.Database.EnsureCreatedAsync();
+            new DefaultTenantProvider());
+        await TestTenants.EnsureCreatedWithRegistryAsync(ctx);
 
         ctx.Add(Language.Create("en", "English")); // the User's PreferredLanguageCode FK target
         var user = User.CreateWithPassword("owner@cleansia.test", "Passw0rd!", "Owner", "User");
@@ -211,9 +210,9 @@ public class LiveActivityProducerTests
         Assert.Equal(allowed, actual);
     }
 
-    private sealed class NullTenantProvider : ITenantProvider
+    private sealed class DefaultTenantProvider : ITenantProvider
     {
-        public string? GetCurrentTenantId() => null;
+        public string? GetCurrentTenantId() => TestTenants.Default;
         public void SetTenantOverride(string tenantId) { }
         public void ClearTenantOverride() { }
     }

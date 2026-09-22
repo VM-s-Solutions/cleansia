@@ -6,6 +6,7 @@ using Cleansia.Core.Domain.Repositories;
 using MockQueryable;
 using MockQueryable.Moq;
 using Moq;
+using Cleansia.TestUtilities;
 
 namespace Cleansia.Tests.Features.Orders;
 
@@ -32,7 +33,8 @@ public class CompleteOrderValidatorTests
             _orderRepository.Object,
             _employeeRepository.Object,
             _orderPhotoRepository.Object,
-            _accessService.Object);
+            _accessService.Object,
+            WorkContractTestData.AcceptanceRepository().Object);
     }
 
     [Theory]

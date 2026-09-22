@@ -47,7 +47,7 @@ public class AdminAuthController(
         var enriched = command with
         {
             Token = RefreshTokenFromCookieOrBody(command.Token),
-            RequiredProfile = UserProfile.Administrator,
+            RequiredProfiles = [UserProfile.Administrator],
             RequiredAudience = JwtAudiences.Admin,
         };
         var result = await Mediator.Send(enriched, cancellationToken);

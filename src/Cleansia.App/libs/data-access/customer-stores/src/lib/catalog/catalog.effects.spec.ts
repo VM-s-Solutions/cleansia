@@ -1,5 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import {
+  CurrencyListItem,
   CustomerClient,
   PackageListItem,
   ServiceListItem,
@@ -12,18 +13,23 @@ import { CustomerCatalogEffects } from './catalog.effects';
 
 const SERVICES = [ServiceListItem.fromJS({ id: 'svc-1', name: 'Standard' })];
 const PACKAGES = [PackageListItem.fromJS({ id: 'pkg-1', name: 'Deep clean' })];
+const CURRENCIES = [
+  CurrencyListItem.fromJS({ id: 'cur-1', code: 'CZK', isDefault: false }),
+  CurrencyListItem.fromJS({ id: 'cur-2', code: 'EUR', isDefault: true }),
+];
 
 describe('CustomerCatalogEffects', () => {
   let actions$: Subject<Action>;
   let serviceClient: { getOverview: jest.Mock };
   let packageClient: { getOverview: jest.Mock };
+  let currencyClient: { getOverview: jest.Mock };
 
   const createEffects = (): CustomerCatalogEffects => {
     TestBed.configureTestingModule({
       providers: [
         CustomerCatalogEffects,
         provideMockActions(() => actions$),
-        { provide: CustomerClient, useValue: { serviceClient, packageClient } },
+        { provide: CustomerClient, useValue: { serviceClient, packageClient, currencyClient } },
       ],
     });
     return TestBed.inject(CustomerCatalogEffects);
@@ -41,6 +47,7 @@ describe('CustomerCatalogEffects', () => {
     actions$ = new Subject<Action>();
     serviceClient = { getOverview: jest.fn() };
     packageClient = { getOverview: jest.fn() };
+    currencyClient = { getOverview: jest.fn() };
   });
 
   describe('loadServices$', () => {
@@ -51,7 +58,7 @@ describe('CustomerCatalogEffects', () => {
       actions$.next(CatalogActions.loadCustomerServices());
 
       expect(emitted).toEqual([
-        CatalogActions.loadCustomerServicesSuccess({ services: SERVICES }),
+        CatalogActions.loadCustomerServicesSuccess({ services: SERVICES, countryId: null }),
       ]);
     });
 
@@ -62,7 +69,23 @@ describe('CustomerCatalogEffects', () => {
       actions$.next(CatalogActions.loadCustomerServices());
 
       expect(serviceClient.getOverview).toHaveBeenCalledTimes(1);
+      expect(serviceClient.getOverview).toHaveBeenCalledWith(undefined);
       expect(packageClient.getOverview).not.toHaveBeenCalled();
+    });
+
+    // The catalogue is priced per market: the server withholds what has no price in the
+    // country's currency, so the country the wizard's address names has to reach the read, and
+    // the answer has to say which country it was priced for.
+    it('asks for the country it was given and labels the answer with it', () => {
+      serviceClient.getOverview.mockReturnValue(of(SERVICES));
+
+      const emitted = collect(createEffects().loadServices$);
+      actions$.next(CatalogActions.loadCustomerServices('svk'));
+
+      expect(serviceClient.getOverview).toHaveBeenCalledWith('svk');
+      expect(emitted).toEqual([
+        CatalogActions.loadCustomerServicesSuccess({ services: SERVICES, countryId: 'svk' }),
+      ]);
     });
 
     // The generated client emits NULL — not `[]` — for a 200 with a non-array body or a 204, and
@@ -75,7 +98,7 @@ describe('CustomerCatalogEffects', () => {
       actions$.next(CatalogActions.loadCustomerServices());
 
       expect(emitted).toEqual([
-        CatalogActions.loadCustomerServicesSuccess({ services: [] }),
+        CatalogActions.loadCustomerServicesSuccess({ services: [], countryId: null }),
       ]);
     });
 
@@ -126,7 +149,7 @@ describe('CustomerCatalogEffects', () => {
       first.next([]);
 
       expect(emitted).toEqual([
-        CatalogActions.loadCustomerServicesSuccess({ services: SERVICES }),
+        CatalogActions.loadCustomerServicesSuccess({ services: SERVICES, countryId: null }),
       ]);
     });
   });
@@ -139,7 +162,19 @@ describe('CustomerCatalogEffects', () => {
       actions$.next(CatalogActions.loadCustomerPackages());
 
       expect(emitted).toEqual([
-        CatalogActions.loadCustomerPackagesSuccess({ packages: PACKAGES }),
+        CatalogActions.loadCustomerPackagesSuccess({ packages: PACKAGES, countryId: null }),
+      ]);
+    });
+
+    it('asks for the country it was given and labels the answer with it', () => {
+      packageClient.getOverview.mockReturnValue(of(PACKAGES));
+
+      const emitted = collect(createEffects().loadPackages$);
+      actions$.next(CatalogActions.loadCustomerPackages('svk'));
+
+      expect(packageClient.getOverview).toHaveBeenCalledWith('svk');
+      expect(emitted).toEqual([
+        CatalogActions.loadCustomerPackagesSuccess({ packages: PACKAGES, countryId: 'svk' }),
       ]);
     });
 
@@ -166,7 +201,7 @@ describe('CustomerCatalogEffects', () => {
       actions$.next(CatalogActions.loadCustomerPackages());
 
       expect(emitted).toEqual([
-        CatalogActions.loadCustomerPackagesSuccess({ packages: [] }),
+        CatalogActions.loadCustomerPackagesSuccess({ packages: [], countryId: null }),
       ]);
     });
 
@@ -176,6 +211,54 @@ describe('CustomerCatalogEffects', () => {
 
       expect(emitted).toEqual([]);
       expect(packageClient.getOverview).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('loadCurrencies$', () => {
+    it('emits the currencies the platform returned, default flag and all', () => {
+      currencyClient.getOverview.mockReturnValue(of(CURRENCIES));
+
+      const emitted = collect(createEffects().loadCurrencies$);
+      actions$.next(CatalogActions.loadCustomerCurrencies());
+
+      expect(emitted).toEqual([
+        CatalogActions.loadCustomerCurrenciesSuccess({ currencies: CURRENCIES }),
+      ]);
+    });
+
+    it('maps a failure to loadCustomerCurrenciesFailure and stays alive for the retry', () => {
+      currencyClient.getOverview
+        .mockReturnValueOnce(throwError(() => ({ message: 'offline' })))
+        .mockReturnValueOnce(of(CURRENCIES));
+
+      const emitted = collect(createEffects().loadCurrencies$);
+      actions$.next(CatalogActions.loadCustomerCurrencies());
+      actions$.next(CatalogActions.loadCustomerCurrencies());
+
+      expect(emitted.map((a) => a.type)).toEqual([
+        CatalogActions.loadCustomerCurrenciesFailure.type,
+        CatalogActions.loadCustomerCurrenciesSuccess.type,
+      ]);
+    });
+
+    // Same null, same reason — see loadServices$ above.
+    it('turns a null body into an empty list rather than putting null in the store', () => {
+      currencyClient.getOverview.mockReturnValue(of(null));
+
+      const emitted = collect(createEffects().loadCurrencies$);
+      actions$.next(CatalogActions.loadCustomerCurrencies());
+
+      expect(emitted).toEqual([
+        CatalogActions.loadCustomerCurrenciesSuccess({ currencies: [] }),
+      ]);
+    });
+
+    it('does not answer the services action', () => {
+      const emitted = collect(createEffects().loadCurrencies$);
+      actions$.next(CatalogActions.loadCustomerServices());
+
+      expect(emitted).toEqual([]);
+      expect(currencyClient.getOverview).not.toHaveBeenCalled();
     });
   });
 });

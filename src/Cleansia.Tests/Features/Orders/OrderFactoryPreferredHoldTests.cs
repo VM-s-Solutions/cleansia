@@ -8,6 +8,7 @@ using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Services;
 using Cleansia.TestUtilities.MockDataFactories.Users;
 using MockQueryable;
+using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 
 namespace Cleansia.Tests.Features.Orders;
@@ -209,6 +210,10 @@ public class OrderFactoryPreferredHoldTests
             _orderRepository.Object,
             _serviceRepository.Object,
             _packageRepository.Object,
+            ExtraRepositoryDouble.Empty(),
+            CataloguePriceDoubles.NoServices(),
+            CataloguePriceDoubles.NoPackages(),
+            CataloguePriceDoubles.NoExtras(),
             PayConfigRepositoryDouble.Holding(),
             _companyInfoRepository.Object,
             _countryConfigurationRepository.Object,
@@ -216,7 +221,10 @@ public class OrderFactoryPreferredHoldTests
             _loyaltyService.Object,
             _userMembershipRepository.Object,
             resolver,
-            _notificationProducer.Object);
+            WorkContractResolvers.Resolver().Object,
+            _notificationProducer.Object,
+            Mock.Of<IAdminNotifier>(),
+            NullLogger<OrderFactory>.Instance);
 
     /// <summary>
     /// A one-off CASH booking by default — the one shape that is offerable the instant it exists, which
@@ -231,14 +239,15 @@ public class OrderFactoryPreferredHoldTests
             Address: AddressMockFactory.Generate(),
             Rooms: 2,
             Bathrooms: 1,
-            Extras: new Dictionary<string, bool>(),
+            SelectedExtraSlugs: [],
             CleaningDate: Now.AddDays(3),
             PaymentType: paymentType,
-            Currency: Currency.Create("CZK", "Kč", "Czech Koruna", 1m),
+            Currency: Currency.Create("CZK", "Kč", "Czech Koruna"),
             SelectedServiceIds: ["service-1"],
             SelectedPackageIds: [],
             RawSubtotal: 1500m,
             NowUtc: Now,
             ReservedExpressWaiver: null,
+            OperatorTenantId: null,
             PreferredEmployeeId: PreferredEmployeeId);
 }

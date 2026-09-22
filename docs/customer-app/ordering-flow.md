@@ -102,6 +102,13 @@ Default: `PaymentType.Card`
 
 A summary of the entire order is displayed. The customer can navigate back to any previous step to make changes.
 
+Beneath the terms block the step states, unconditionally — whether or not the account has consented
+before, signed in or guest — that *by confirming the order you conclude a contract for work with the
+cleaner on these terms*, linking `/work-contract` (`pages.order.work_contract_notice`). It is an
+information line, not a tick: the customer's half of that contract is the terms consent plus the
+contract text the server stamps on the order at booking; the cleaner's half is written when they take
+the job. → [Business rules — the contract for work](/product/business-rules#work-contract)
+
 ## Price Calculation
 
 ::: danger The client does not compute the price

@@ -2,7 +2,7 @@
 <div class="app-layout" [attr.data-sidebar-collapsed]="sidebarCollapsed()">
   @if (isLoggedIn()) {
   <cleansia-sidebar-menu
-    [menuItems]="sidebarMenuItems"
+    [menuItems]="sidebarMenuItems()"
     [(mobileExpanded)]="mobileSidebarExpanded"
     (collapsedChange)="onSidebarCollapsedChange($event)"
   />
@@ -25,7 +25,22 @@
       </picture>
       <span>Admin</span>
     </div>
-    <cleansia-language-switcher />
+    <div class="mobile-toolbar__actions">
+      <span class="mobile-toolbar__bell" *cleansiaPermission="Policy.CanViewAdminNotifications">
+        <cleansia-button
+          icon="pi pi-bell"
+          severity="secondary"
+          [style]="'basic-button'"
+          [text]="true"
+          [routerLink]="notificationsRoute"
+          [ariaLabel]="'sidebar.notifications' | translate"
+        />
+        @if (notificationBadge.badgeLabel(); as badge) {
+        <span class="mobile-toolbar__bell-count">{{ badge }}</span>
+        }
+      </span>
+      <cleansia-language-switcher />
+    </div>
   </div>
   }
 

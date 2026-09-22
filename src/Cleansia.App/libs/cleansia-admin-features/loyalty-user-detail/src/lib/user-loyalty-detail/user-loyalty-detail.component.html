@@ -8,6 +8,78 @@
         (onClick)="onBack()"
       />
       <cleansia-title [title]="headerTitle()" />
+      <cleansia-button
+        *cleansiaPermission="Policy.CanAdminExportUserData"
+        class="cleansia-user-loyalty-detail__export"
+        [label]="'pages.customer_detail.export_subject_data' | translate"
+        icon="pi pi-download"
+        severity="secondary"
+        [outlined]="true"
+        [loading]="facade.exporting()"
+        (onClick)="exportSubjectData()"
+      />
+      <cleansia-button
+        *cleansiaPermission="Policy.CanAdminExportUserData"
+        class="cleansia-user-loyalty-detail__incident-file"
+        [label]="'pages.customer_detail.incident_file.button' | translate"
+        icon="pi pi-file-pdf"
+        severity="secondary"
+        [outlined]="true"
+        [loading]="facade.incidentFileExporting()"
+        (onClick)="exportIncidentFile()"
+      />
+    </div>
+
+    <div
+      *cleansiaPermission="Policy.CanAdminExportUserData"
+      class="cleansia-user-loyalty-detail__incident-scope"
+    >
+      @if (facade.subjectOrdersLoading()) {
+        <small class="cleansia-user-loyalty-detail__incident-scope-hint">
+          {{ 'pages.customer_detail.incident_file.orders_loading' | translate }}
+        </small>
+      } @else if (facade.subjectOrdersError()) {
+        <small class="cleansia-user-loyalty-detail__incident-scope-error">
+          <i class="pi pi-exclamation-triangle"></i>
+          {{ 'pages.customer_detail.incident_file.orders_error' | translate }}
+        </small>
+        <cleansia-button
+          class="cleansia-user-loyalty-detail__incident-scope-retry"
+          [label]="'pages.customer_detail.incident_file.orders_retry' | translate"
+          icon="pi pi-refresh"
+          severity="secondary"
+          [text]="true"
+          (onClick)="reloadSubjectOrders()"
+        />
+      } @else if (facade.hasSubjectOrders()) {
+        <cleansia-select
+          [label]="'pages.customer_detail.incident_file.order_scope' | translate"
+          [placeholder]="'pages.customer_detail.incident_file.order_scope_placeholder' | translate"
+          [formControl]="incidentOrderControl"
+          [options]="facade.incidentOrderOptions()"
+          [filter]="true"
+          inputSize="large-width"
+        />
+        <small class="cleansia-user-loyalty-detail__incident-scope-hint">
+          {{ 'pages.customer_detail.incident_file.order_scope_hint' | translate }}
+        </small>
+        @if (facade.subjectOrdersTruncated()) {
+          <small class="cleansia-user-loyalty-detail__incident-scope-hint">
+            {{
+              'pages.customer_detail.incident_file.orders_truncated'
+                | translate
+                  : {
+                      shown: facade.subjectOrders().length,
+                      total: facade.subjectOrdersTotal()
+                    }
+            }}
+          </small>
+        }
+      } @else {
+        <small class="cleansia-user-loyalty-detail__incident-scope-hint">
+          {{ 'pages.customer_detail.incident_file.no_orders' | translate }}
+        </small>
+      }
     </div>
 
     @if (facade.accountLoading() && !facade.account()) {
@@ -91,23 +163,29 @@
         <cleansia-loader />
         } @else {
         <div class="user-loyalty-detail__credit">
+          <!--
+            EVERY balance, one per currency, each with its own discharge. Credit is spendable only on
+            an order in the same currency and erasure is refused while any balance is funded — so a
+            screen that showed one balance could tell an admin erasure was blocked by money it never
+            showed them. The scalars on the response (balance, currencyCode, ledger) are accounts[0]
+            and are not rendered here.
+
+            "No account" and "a zero balance" mean different things to the person reading this, so the
+            never-credited state is its own block rather than an empty list.
+          -->
+          @if (facade.credit() && !facade.credit()!.hasAccount) {
           <div class="user-loyalty-detail__credit-balance">
             <span class="user-loyalty-detail__credit-balance-label">
               {{ 'pages.loyalty_user_detail.credit.balance' | translate }}
             </span>
             <span class="user-loyalty-detail__credit-balance-value">
-              {{ facade.credit()?.balance ?? 0 }} {{ facade.credit()?.currencyCode }}
+              0 {{ facade.credit()?.currencyCode }}
             </span>
-            <!--
-              "No account" and "a zero balance" mean different things to the person reading this, so
-              they are not collapsed into one.
-            -->
-            @if (facade.credit() && !facade.credit()!.hasAccount) {
             <span class="user-loyalty-detail__credit-none">
               {{ 'pages.loyalty_user_detail.credit.never_credited' | translate }}
             </span>
-            }
           </div>
+          }
 
           <div class="user-loyalty-detail__actions">
             <cleansia-button
@@ -117,29 +195,42 @@
               severity="success"
               (onClick)="openIssueCredit()"
             />
+          </div>
+        </div>
+
+        @for (account of facade.credit()?.accounts ?? []; track account.accountId) {
+        <div class="user-loyalty-detail__credit-account">
+          <div class="user-loyalty-detail__credit-balance">
+            <span class="user-loyalty-detail__credit-balance-label">
+              {{ 'pages.loyalty_user_detail.credit.balance' | translate }}
+            </span>
+            <span class="user-loyalty-detail__credit-balance-value">
+              {{ account.balance }} {{ account.currencyCode }}
+            </span>
             <!--
-              Absent at a zero balance rather than disabled: there is nothing to discharge, and a
-              greyed-out destructive button on a page an admin visits daily is an invitation to
-              find out what it does.
+              One discharge per funded account: the server drains one currency and names it, so
+              the button sits beside the balance it takes. Absent at a zero balance rather than
+              disabled: there is nothing to discharge, and a greyed-out destructive button on a page
+              an admin visits daily is an invitation to find out what it does.
             -->
-            @if ((facade.credit()?.balance ?? 0) > 0) {
+            @if (account.balance > 0) {
             <cleansia-button
               *cleansiaPermission="Policy.CanExpireCustomerCredit"
               [label]="'pages.loyalty_user_detail.credit.actions.expire' | translate"
               icon="pi pi-times-circle"
               severity="danger"
               [outlined]="true"
-              (onClick)="openExpireCredit()"
+              (onClick)="openExpireCredit(account)"
             />
             }
           </div>
+          <cleansia-table
+            [data]="account.ledger ?? []"
+            [columns]="creditColumns"
+            [config]="{ paginator: false, emptyMessage: 'pages.loyalty_user_detail.credit.empty' }"
+          />
         </div>
-
-        <cleansia-table
-          [data]="facade.credit()?.ledger ?? []"
-          [columns]="creditColumns"
-          [config]="{ paginator: false, emptyMessage: 'pages.loyalty_user_detail.credit.empty' }"
-        />
+        }
         }
       </cleansia-section>
 
@@ -160,6 +251,19 @@
           [loading]="facade.activityLoading()"
           (pageChange)="onActivityPageChange($event)"
         />
+      </cleansia-section>
+
+      <!-- Timeline -->
+      <cleansia-section
+        *cleansiaPermission="Policy.CanViewAuditLog"
+        [title]="'pages.customer_detail.timeline.title' | translate"
+      >
+        <p class="user-loyalty-detail__timeline-description">
+          {{ 'pages.customer_detail.timeline.description' | translate }}
+        </p>
+        @if (userId(); as id) {
+        <cleansia-admin-audit-timeline [userId]="id" />
+        }
       </cleansia-section>
 
       <!-- Referral relationships -->
@@ -219,7 +323,7 @@
   [visible]="creditDialogVisible()"
   (visibleChange)="onCreditDialogVisibleChange($event)"
   [submitting]="facade.creditSubmitting()"
-  [currencyCode]="facade.credit()?.currencyCode ?? ''"
+  [currencies]="facade.currencies()"
   (submitForm)="onIssueCredit($event)"
 />
 
@@ -231,7 +335,8 @@
   [visible]="expireCreditDialogVisible()"
   (visibleChange)="onExpireCreditDialogVisibleChange($event)"
   [submitting]="facade.creditExpiring()"
-  [balance]="facade.credit()?.balance ?? 0"
-  [currencyCode]="facade.credit()?.currencyCode ?? ''"
+  [balance]="expireCreditAccount()?.balance ?? 0"
+  [currencyId]="expireCreditAccount()?.currencyId ?? ''"
+  [currencyCode]="expireCreditAccount()?.currencyCode ?? ''"
   (submitForm)="onExpireCredit($event)"
 />

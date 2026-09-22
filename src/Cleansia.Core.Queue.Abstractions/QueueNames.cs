@@ -9,4 +9,6 @@ public static class QueueNames
     public const string CalculateOrderPay = "calculate-order-pay";
     public const string SendEmail = "send-email";
     public const string LiveActivityDispatch = "live-activity-dispatch";
+    public const string CompanyWindDown = "company-wind-down";
+    public const string CompanyArchive = "company-archive";
 }

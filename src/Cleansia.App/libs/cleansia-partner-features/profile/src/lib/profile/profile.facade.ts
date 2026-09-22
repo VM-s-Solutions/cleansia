@@ -1,9 +1,10 @@
-import { Injectable, computed, inject, signal } from '@angular/core';
+import { Injectable, inject, signal } from '@angular/core';
 import { FormGroup } from '@angular/forms';
 import { ICleansiaSelectOption } from '@cleansia/components';
 import { UnsubscribeControlDirective } from '@cleansia/directives';
 import {
   BlobFileDto,
+  EmployeeEntityType,
   GetCountryFieldLabelsCountryFieldLabelsDto,
   PartnerClient,
 } from '@cleansia/partner-services';
@@ -67,8 +68,11 @@ export class ProfileFacade extends UnsubscribeControlDirective {
   // Display only — the signed-in partner's login address. It is deliberately not a form control:
   // the onboarding command carries no email, so anything typed here could never be saved.
   email = signal('');
+  // Display only — an operator may onboard a company by hand, but this surface can only ever save a
+  // natural person, so the stored name is shown beside the form rather than edited on it.
+  legalEntityName = signal<string | null>(null);
 
-  private profileData$: Observable<any> | null = null;
+  private profileData$: Observable<unknown> | null = null;
 
   /**
    * Silent on failure and silent on 404. A country we hold no configuration for is one whose word for
@@ -113,6 +117,11 @@ export class ProfileFacade extends UnsubscribeControlDirective {
         const formData = ProfileFormFactory.mapEmployeeToFormData(employee);
         FormUtils.safePatchValue(this.formGroup, formData);
         this.email.set(employee.email ?? '');
+        this.legalEntityName.set(
+          employee.entityType === EmployeeEntityType.LegalEntity
+            ? employee.legalEntityName ?? null
+            : null
+        );
         this.jobRadiusFacade.seed(employee);
 
         // `?? []` because the generated client answers a 200 whose body is not a JSON array — an
@@ -126,11 +135,11 @@ export class ProfileFacade extends UnsubscribeControlDirective {
           (country) => {
             const translation =
               country.translations?.[this.translate.currentLang]?.name;
-            const name = translation ?? country.name!;
+            const name = translation ?? country.name ?? '';
             const iso = country.isoCode ?? '';
             return {
               label: iso ? `${name} (${iso})` : name,
-              value: country.id!,
+              value: country.id,
             };
           }
         );

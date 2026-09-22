@@ -140,8 +140,20 @@ final class OrderNotesViewModel: ViewModel {
             .success(())
         }
 
-        func takeOrder(orderId _: String) async -> ApiResult<Void> {
+        func takeOrder(orderId _: String, acceptedWorkContractTextId _: String) async -> ApiResult<Void> {
             .success(())
+        }
+
+        func acceptWorkContract(orderId _: String, acceptedWorkContractTextId _: String) async -> ApiResult<Void> {
+            .success(())
+        }
+
+        func getWorkContractPreview(orderId _: String, language _: String) async -> ApiResult<WorkContract> {
+            .success(.preview)
+        }
+
+        func getWorkContract(acceptanceId _: String, language _: String) async -> ApiResult<WorkContract> {
+            .success(.preview)
         }
 
         func notifyOnTheWay(orderId _: String) async -> ApiResult<Void> {

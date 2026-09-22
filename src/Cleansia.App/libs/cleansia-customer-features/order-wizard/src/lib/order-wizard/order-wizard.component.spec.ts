@@ -2,20 +2,22 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute } from '@angular/router';
 import { computed, signal } from '@angular/core';
 import { provideHttpClient } from '@angular/common/http';
+import { By } from '@angular/platform-browser';
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
+import { CleansiaSelectComponent } from '@cleansia/components';
 import { SnackbarService } from '@cleansia/services';
 import {
-  AddressDto,
   GetMembershipPlansResponse,
   GetMyMembershipResponse,
   PackageListItem,
   PaymentType,
   QuoteOrderResponse,
+  QuotePlusSavingsQuery,
   QuotePlusSavingsResponse,
   SavedAddressDto,
   ServiceListItem,
 } from '@cleansia/customer-services';
-import { TranslateModule } from '@ngx-translate/core';
+import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { OrderWizardComponent } from './order-wizard.component';
 import { OrderWizardFacade } from './order-wizard.facade';
 import { ORDER_WIZARD_INITIAL_DATA, OrderWizardFormData, createAddressDto } from './order-wizard.models';
@@ -67,6 +69,8 @@ class FakeOrderWizardFacade {
   isAuthenticated = signal(false);
   savedAddresses = signal<SavedAddressDto[]>([]);
   selectedSavedAddressId = signal<string | null>(null);
+  countryOptions = signal<{ label: string; value: string }[]>([]);
+  addressCountryId = signal<string | null>(null);
 
   cityServiced = signal<'idle' | 'pending' | 'ok' | 'rejected' | 'error'>('idle');
   extras = signal<unknown[]>([]);
@@ -74,6 +78,7 @@ class FakeOrderWizardFacade {
   totalPrice = signal(0);
   preSurchargeSubtotal = signal(0);
   displayedTotalPrice = signal(0);
+  currencyCode = signal<string | null>('CZK');
   // Credit lines in the summary panel. Zero by default: the overwhelming majority of these
   // cases are about a customer who has never been credited, and that is what zero renders as.
   creditBalance = signal(0);
@@ -105,6 +110,7 @@ class FakeOrderWizardFacade {
   // supplies both so the component can render without either.
   plans = signal<GetMembershipPlansResponse[]>([]);
   plusSavings = signal<QuotePlusSavingsResponse | null>(null);
+  plusUnavailable = signal(false);
   activeMembership = signal<GetMyMembershipResponse | null>(null);
   loadPlans = jest.fn();
   loadPlusSavings = jest.fn();
@@ -132,6 +138,10 @@ class FakeOrderWizardFacade {
   // fails every test in this file at cleanup, on a message that names neither the signal nor the
   // hook ("1 component threw errors during cleanup").
   orderPlaced = signal(false);
+  // The confirm step: the consent block branches on this, the preferred-cleaner block on the two.
+  alreadyConsented = signal(false);
+  preferredCleanerLoading = signal(false);
+  preferredCleanerVisible = signal(false);
 }
 
 describe('OrderWizardComponent (a11y)', () => {
@@ -219,6 +229,22 @@ describe('OrderWizardComponent (a11y)', () => {
     });
   });
 
+  describe('the calendar locale', () => {
+    it('draws the weekday initials in the active language', async () => {
+      await setup();
+      fixture.componentInstance.lang.set('cs');
+
+      expect(fixture.componentInstance.weekdayNames()[0]).toBe('Po');
+    });
+
+    it('falls back to English like every other customer page when no language is active', async () => {
+      await setup();
+      fixture.componentInstance.lang.set('');
+
+      expect(fixture.componentInstance.weekdayNames()[0]).toBe('Mon');
+    });
+  });
+
   describe('selection cards (AC1, AC2)', () => {
     it('renders service cards as focusable buttons with aria-pressed reflecting selection', async () => {
       await setup();
@@ -234,6 +260,29 @@ describe('OrderWizardComponent (a11y)', () => {
       card.click();
       fixture.detectChanges();
       expect(card.getAttribute('aria-pressed')).toBe('true');
+    });
+
+    // The catalogue is priced per market and every item says which currency it is in. A Slovak
+    // address reads a EUR catalogue while the wizard's own label is still the platform default —
+    // so the card prints the item's code, never the wizard's.
+    it("labels a service card with the item's own currency, not the wizard's", async () => {
+      await setup();
+      facade.currencyCode.set('CZK');
+      facade.services.set([
+        ServiceListItem.fromJS({ id: 's-1', name: 'Deep clean', basePrice: 40, currencyCode: 'EUR' }),
+      ]);
+      fixture.detectChanges();
+
+      const price = el.querySelector('.cl-wiz__svc-price')?.textContent ?? '';
+      expect(price).toContain('€');
+      expect(price).not.toContain('CZK');
+    });
+
+    it('falls back to the wizard label for an item that carries no code', async () => {
+      await setup();
+      facade.currencyCode.set('CZK');
+
+      expect(fixture.componentInstance.formatPrice(40, undefined)).toContain('CZK');
     });
 
     it('renders package cards as focusable buttons with aria-pressed', async () => {
@@ -271,7 +320,7 @@ describe('OrderWizardComponent (a11y)', () => {
       // which of the two valid mechanisms gives it one.
       const firstNameInput = el.querySelector<HTMLInputElement>('#wizard-first-name');
       expect(firstNameInput).toBeTruthy();
-      expect(firstNameInput!.labels?.length).toBeGreaterThan(0);
+      expect(firstNameInput?.labels?.length).toBeGreaterThan(0);
     });
 
     it('sets aria-invalid + aria-describedby when a contact field has a touched error', async () => {
@@ -299,6 +348,91 @@ describe('OrderWizardComponent (a11y)', () => {
 
       const input = el.querySelector('#wizard-first-name') as HTMLElement;
       expect(input.getAttribute('aria-invalid')).not.toBe('true');
+    });
+  });
+
+  describe('the address country picker', () => {
+    it('offers the market directory and shows the country the booking is priced for', async () => {
+      await setup();
+      facade.activeStep.set(1);
+      facade.countryOptions.set([
+        { label: 'Czechia', value: 'cze-id' },
+        { label: 'Slovakia', value: 'svk-id' },
+      ]);
+      facade.addressCountryId.set('cze-id');
+      // The value reaches the PrimeNG control through two asynchronous ngModel writes.
+      for (let round = 0; round < 3; round++) {
+        fixture.detectChanges();
+        await fixture.whenStable();
+      }
+
+      const select = fixture.debugElement
+        .queryAll(By.directive(CleansiaSelectComponent))
+        .find((debugElement) => (debugElement.componentInstance as CleansiaSelectComponent).id() === 'wizard-country');
+      expect(select).toBeTruthy();
+      const instance = select?.componentInstance as CleansiaSelectComponent;
+      expect(instance.label()).toBe('pages.order.country');
+      expect(instance.options()).toEqual([
+        { label: 'Czechia', value: 'cze-id' },
+        { label: 'Slovakia', value: 'svk-id' },
+      ]);
+      expect((select?.nativeElement as HTMLElement).querySelector('.p-select-label')?.textContent?.trim()).toBe('Czechia');
+    });
+
+    it('writes a pick made in the rendered select onto the address country', async () => {
+      await setup();
+      facade.activeStep.set(1);
+      facade.countryOptions.set([
+        { label: 'Czechia', value: 'cze-id' },
+        { label: 'Slovakia', value: 'svk-id' },
+      ]);
+      fixture.detectChanges();
+      await fixture.whenStable();
+
+      const select = fixture.debugElement
+        .queryAll(By.directive(CleansiaSelectComponent))
+        .map((debugElement) => debugElement.componentInstance as CleansiaSelectComponent)
+        .find((instance) => instance.id() === 'wizard-country');
+      expect(select).toBeTruthy();
+
+      select?.handleChange({ value: 'svk-id' });
+
+      expect(facade.formData().address.countryId).toBe('svk-id');
+    });
+  });
+
+  /**
+   * Three quotes read the booking's country — the price, the catalogue and this
+   * one — and the picker shows `addressCountryId`, which falls back to the market
+   * when the address has none yet. A quote that reads the raw address field
+   * instead is priced for no country at all while the picker shows one.
+   */
+  describe('the Plus-savings quote', () => {
+    it('is priced for the country the picker shows, market fallback included', async () => {
+      await setup();
+      facade.plans.set([
+        GetMembershipPlansResponse.fromJS({
+          code: 'plus-monthly',
+          name: 'Plus',
+          price: 199,
+          billingInterval: 0,
+          discountPercentage: 12,
+          freeCancellationWindowHours: 24,
+          expressUpgradesPerMonth: 0,
+          trialPeriodDays: 0,
+          savingsPercentVsMonthly: 0,
+          currencyCode: 'CZK',
+        }),
+      ]);
+      facade.addressCountryId.set('cze-id');
+      facade.activeStep.set(4);
+      fixture.detectChanges();
+
+      expect(facade.formData().address.countryId).toBe('');
+      expect(facade.loadPlusSavings).toHaveBeenCalled();
+      const query = facade.loadPlusSavings.mock.calls.at(-1)?.[0] as QuotePlusSavingsQuery;
+      expect(query).toBeInstanceOf(QuotePlusSavingsQuery);
+      expect(query.countryId).toBe('cze-id');
     });
   });
 
@@ -419,7 +553,9 @@ describe('OrderWizardComponent (a11y)', () => {
       const summary = el.querySelector('.cl-wiz__summary');
       expect(summary).toBeTruthy();
       expect(el.querySelector('.order-wizard__mobile-price')).toBeNull();
-      expect(panel!.compareDocumentPosition(summary!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+      expect(
+        panel && summary && panel.compareDocumentPosition(summary) & Node.DOCUMENT_POSITION_FOLLOWING
+      ).toBeTruthy();
     });
   });
 
@@ -478,6 +614,58 @@ describe('OrderWizardComponent (a11y)', () => {
 
       expect(facade.clearPromoCode).toHaveBeenCalled();
       expect(fixture.componentInstance.promoOutcome()).toBe('none');
+    });
+  });
+
+  describe('the contract for work on the confirm step', () => {
+    const CONFIRM_STEP = 5;
+
+    function contractNote(): HTMLElement | null {
+      return el.querySelector('.cl-wiz__contract-note');
+    }
+
+    /**
+     * The customer's half of the contract for work is stated at the offer as a sentence, never as
+     * a second tick, and it is not part of the consent block: an account that already consented
+     * still concludes a contract with every booking.
+     */
+    it('names the contract and links to its public text while the consent tick is asked', async () => {
+      await setup();
+      facade.activeStep.set(CONFIRM_STEP);
+      fixture.detectChanges();
+
+      expect(contractNote()).not.toBeNull();
+      expect(contractNote()?.textContent).toContain('pages.order.work_contract_notice');
+      expect(el.querySelector('.cl-wiz__consent')).not.toBeNull();
+    });
+
+    it('still names the contract when the account has already consented', async () => {
+      await setup();
+      facade.alreadyConsented.set(true);
+      facade.activeStep.set(CONFIRM_STEP);
+      fixture.detectChanges();
+
+      expect(contractNote()).not.toBeNull();
+      expect(el.querySelector('.cl-wiz__consent')).toBeNull();
+    });
+
+    it('renders the translated sentence as markup, so its link to /work-contract survives', async () => {
+      await setup();
+      TestBed.inject(TranslateService).setTranslation('en', {
+        pages: {
+          order: {
+            work_contract_notice:
+              "By confirming the order you conclude a contract for work with the cleaner on <a href='/work-contract'>these terms</a>.",
+          },
+        },
+      });
+      TestBed.inject(TranslateService).use('en');
+      facade.activeStep.set(CONFIRM_STEP);
+      fixture.detectChanges();
+
+      const link = contractNote()?.querySelector<HTMLAnchorElement>('a');
+      expect(link?.getAttribute('href')).toBe('/work-contract');
+      expect(link?.textContent).toBe('these terms');
     });
   });
 
@@ -569,6 +757,22 @@ describe('OrderWizardComponent (a11y)', () => {
       fixture.detectChanges();
 
       expect(fixture.componentInstance.hasSaving()).toBe(false);
+    });
+
+    // Every figure used to go through two module-level CZK formatters, whatever the quote said it
+    // was priced in. The label is the quote's own currency now, and a EUR quote must never print Kč.
+    it("prints every figure in the quote's own currency, not in crowns", async () => {
+      await setup();
+      facade.currencyCode.set('EUR');
+      facade.totalPrice.set(2000);
+      facade.displayedTotalPrice.set(1700);
+      fixture.detectChanges();
+
+      expect(fixture.componentInstance.priceBeforeDiscount()).toContain('€');
+      expect(fixture.componentInstance.priceBeforeDiscount()).not.toContain('CZK');
+      expect(fixture.componentInstance.savingAmount()).toContain('€');
+      expect(fixture.componentInstance.formatPrice(12.5)).toMatch(/12[.,]50/);
+      expect(el.querySelector('.cl-wiz__total')?.textContent).toContain('€');
     });
 
     /**

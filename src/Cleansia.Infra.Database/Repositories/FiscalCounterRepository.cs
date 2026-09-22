@@ -27,9 +27,7 @@ public class FiscalCounterRepository(
         // a row lock on the conflicting tuple, concurrent allocations for the same scope are serialized
         // — each RETURNING reports a distinct contiguous value. Running through the context's
         // connection joins the caller's open transaction (the phase-1 claim), so the allocated number
-        // is bound to the same commit/rollback as the receipt row. The unique index is NULLS NOT
-        // DISTINCT, so a null TenantId (single-tenant) collapses onto one counter row instead of
-        // inserting a duplicate per call.
+        // is bound to the same commit/rollback as the receipt row.
         const string sql = """
             INSERT INTO "FiscalCounters"
                 ("Id", "Year", "IssuerScope", "Value", "IsActive", "TenantId", "CreatedBy", "CreatedOn")

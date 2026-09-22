@@ -10,10 +10,12 @@ using Cleansia.Core.Fiscal.Abstractions;
 using Cleansia.Core.Queue.Abstractions;
 using Cleansia.Core.Queue.Abstractions.Messages;
 using Cleansia.Functions.Core.Handlers;
+using Cleansia.Core.AppServices.Tenancy;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Cleansia.Tests.Functions;
 
@@ -27,7 +29,7 @@ namespace Cleansia.Tests.Functions;
 /// A redelivery after the claim sees <c>order.Receipt is not null</c> and never re-burns a sequence
 /// nor re-registers (AC-F4.1/AC-F4.2). Two concurrent first-deliveries collapse on the existing
 /// unique index — the loser's PG 23505 (on EITHER <c>IX_OrderReceipts_OrderId</c> OR
-/// <c>IX_OrderReceipts_ReceiptNumber</c>) is caught and ACKED, not thrown (AC-F4.3). The D3.3 fiscal
+/// <c>IX_OrderReceipts_TenantId_ReceiptNumber</c>) is caught and ACKED, not thrown (AC-F4.3). The D3.3 fiscal
 /// carve-out classification is preserved (AC-F4.5).</para>
 ///
 /// <para>Written TEST-FIRST (RED on the pre-split handler, which calls the combined
@@ -60,6 +62,7 @@ public class GenerateReceiptHandlerFiscalIdempotencyTests
         _countryConfigurationRepository.Object,
         _unitOfWork.Object,
         _tenantProvider.Object,
+        new ArchivedCompanyDeadLetter(Mock.Of<IServiceScopeFactory>(), NullLogger<ArchivedCompanyDeadLetter>.Instance),
         NullLogger<GenerateReceiptHandler>.Instance);
 
     private static Order BuildEligibleCashOrder()
@@ -72,7 +75,6 @@ public class GenerateReceiptHandlerFiscalIdempotencyTests
             customerAddress: address,
             rooms: 1,
             bathrooms: 1,
-            extras: new Dictionary<string, bool>(),
             cleaningDateTime: DateTime.UtcNow.AddDays(1),
             paymentType: PaymentType.Cash,
             totalPrice: 1000m,
@@ -347,7 +349,7 @@ public class GenerateReceiptHandlerFiscalIdempotencyTests
     [Fact]
     public async Task AC_F4_3_Concurrent_Loser_23505_On_ReceiptNumber_Index_Is_Acked_Not_Thrown()
     {
-        await AssertLoserUniqueViolationIsAcked(MakeUniqueViolation("IX_OrderReceipts_ReceiptNumber"));
+        await AssertLoserUniqueViolationIsAcked(MakeUniqueViolation("IX_OrderReceipts_TenantId_ReceiptNumber"));
     }
 
     private async Task AssertLoserUniqueViolationIsAcked(DbUpdateException violation)

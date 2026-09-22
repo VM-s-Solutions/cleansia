@@ -104,7 +104,7 @@ public class GetAdminActionAuditByIdTests
         // shape catches any future drift that would widen the read surface beyond the stored row.
         var expected = new[]
         {
-            "Id", "ActorId", "ActorEmail", "ActorProfile", "Action", "ResourceType", "ResourceId",
+            "Id", "ActorId", "ActorEmail", "ActorProfile", "ActorAdminRole", "Action", "ResourceType", "ResourceId",
             "Success", "ErrorCode", "OccurredOn", "Reason", "CorrelationId", "BeforeJson", "AfterJson",
         };
 

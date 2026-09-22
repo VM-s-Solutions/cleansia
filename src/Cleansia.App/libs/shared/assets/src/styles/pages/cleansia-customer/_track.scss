@@ -595,6 +595,55 @@
   }
 }
 
+.cl-trk-cancellation-dialog {
+  width: min(32rem, calc(100vw - 2rem));
+
+  .p-dialog-header-actions button {
+    min-width: 44px;
+    min-height: 44px;
+  }
+}
+
+.cl-trk-cancellation-dialog .p-button,
+.cl-trk__cancel .p-button {
+  min-height: 44px;
+}
+
+.cl-trk__cancellation-figures > div {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-block: 1rem;
+
+  dd {
+    margin: 0;
+    font-weight: 700;
+  }
+}
+
+.cl-trk__cancellation-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+
+  cleansia-button {
+    flex: 1 1 12rem;
+  }
+}
+
+.cl-trk__cancellation-result {
+  padding: 1rem;
+  margin-block: 1rem;
+  background: var(--cl-tint);
+  border-radius: 1rem;
+}
+
+.cl-trk__cancellation-error {
+  color: var(--cl-body);
+  font-weight: 700;
+}
+
 // ---- Narrow ------------------------------------------------------------------
 @media (max-width: 900px) {
   .cl-trk__grid {

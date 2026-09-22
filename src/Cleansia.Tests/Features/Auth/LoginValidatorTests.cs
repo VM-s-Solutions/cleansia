@@ -1,4 +1,5 @@
-﻿using Cleansia.Core.AppServices.Common;
+﻿using Cleansia.Core.AppServices.Auditing;
+using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Auth;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Enums;
@@ -13,12 +14,13 @@ namespace Cleansia.Tests.Features.Auth;
 public class LoginValidatorTests
 {
     private readonly Mock<IUserRepository> _mockRepo;
+    private readonly AuditContext _auditContext = new();
     private readonly Login.Validator _validator;
 
     public LoginValidatorTests()
     {
         _mockRepo = new Mock<IUserRepository>();
-        _validator = new Login.Validator(_mockRepo.Object, Mock.Of<IRefreshTokenRepository>(), Mock.Of<IRefreshTokenService>());
+        _validator = new Login.Validator(_mockRepo.Object, Mock.Of<IRefreshTokenRepository>(), Mock.Of<IRefreshTokenService>(), _auditContext);
     }
 
     [Fact]
@@ -206,5 +208,57 @@ public class LoginValidatorTests
         // Assert
         Assert.True(result.IsValid);
         Assert.Empty(result.Errors);
+    }
+
+    // ── the refused account is named to the audit context ──────────────────────
+
+    /// <summary>
+    /// A refusal on a KNOWN account is that account's audit row: the validator is the only step that
+    /// resolves the typed address before refusing, so it names the subject (id only, no payload) through
+    /// the seam the handlers use — nothing of it reaches the caller.
+    /// </summary>
+    [Fact]
+    public async Task A_Wrong_Password_On_A_Known_Account_Names_That_Account_With_No_Payload()
+    {
+        var user = UserMockFactory.Generate(new UserMockFactory.UserPartial { Password = TestUtilities.Constants.TestUserSession.TestUserPassword.HashAndSaltPassword() });
+        _mockRepo.Setup(r => r.ExistsWithEmailIgnoringTenantAsync(user.Email, It.IsAny<CancellationToken>())).ReturnsAsync(true);
+        _mockRepo.Setup(r => r.GetByEmailIgnoringTenantAsync(user.Email, It.IsAny<CancellationToken>())).ReturnsAsync(user);
+
+        var result = await _validator.ValidateAsync(new Login.Command(user.Email, TestUtilities.Constants.TestUserSession.TestUserPassword + "s", true));
+
+        Assert.False(result.IsValid);
+        var snapshot = _auditContext.DrainSnapshot();
+        Assert.NotNull(snapshot);
+        Assert.Equal(user.Id, snapshot!.ActorUserId);
+        Assert.Equal("User", snapshot.ResourceType);
+        Assert.Equal(user.Id, snapshot.ResourceId);
+        Assert.Null(snapshot.AfterJson);
+    }
+
+    [Fact]
+    public async Task A_Google_Account_Refused_The_Password_Path_Is_Named_Too()
+    {
+        var user = UserMockFactory.Generate(new UserMockFactory.UserPartial { AuthenticationType = AuthenticationType.Google });
+        _mockRepo.Setup(r => r.ExistsWithEmailIgnoringTenantAsync(user.Email, It.IsAny<CancellationToken>())).ReturnsAsync(true);
+        _mockRepo.Setup(r => r.GetByEmailIgnoringTenantAsync(user.Email, It.IsAny<CancellationToken>())).ReturnsAsync(user);
+
+        var result = await _validator.ValidateAsync(new Login.Command(user.Email, "password", true));
+
+        Assert.False(result.IsValid);
+        Assert.Equal(user.Id, _auditContext.DrainSnapshot()?.ActorUserId);
+    }
+
+    /// <summary>An unknown address resolves nothing, so nothing is named — the row stays the key, the IP and the device.</summary>
+    [Fact]
+    public async Task An_Unknown_Address_Names_Nobody()
+    {
+        const string email = "nonexistent@example.com";
+        _mockRepo.Setup(r => r.ExistsWithEmailIgnoringTenantAsync(email, It.IsAny<CancellationToken>())).ReturnsAsync(false);
+        _mockRepo.Setup(r => r.GetByEmailIgnoringTenantAsync(email, It.IsAny<CancellationToken>())).ReturnsAsync((User)null);
+
+        var result = await _validator.ValidateAsync(new Login.Command(email, "password", true));
+
+        Assert.False(result.IsValid);
+        Assert.Null(_auditContext.DrainSnapshot());
     }
 }

@@ -129,13 +129,11 @@ extension L10n {
         static func milestoneSubtitle(_ pointsToNext: Int, _ nextTier: String) -> String {
             plural("home_milestone_subtitle_v2", pointsToNext, nextTier)
         }
+    }
 
-        static var seasonalTitle: String {
-            localized("home_seasonal_title")
-        }
-
-        static var seasonalSubtitle: String {
-            localized("home_seasonal_subtitle")
+    enum Market {
+        static func chipA11y(_ marketName: String, _ currencyCode: String) -> String {
+            format("market_chip_a11y", marketName, currencyCode)
         }
     }
 }

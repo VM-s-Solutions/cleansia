@@ -17,6 +17,39 @@ public class OrderController(IMediator mediator) : CustomerMobileApiController(m
 {
     [AllowAnonymous]
     [EnableRateLimiting("auth")]
+    [HttpPost("CancelGuest")]
+    [ProducesResponseType(typeof(CancelOrder.Response), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> CancelGuest(
+        [FromBody] CancelGuestOrder.Command command, CancellationToken cancellationToken)
+    {
+        return HandleResult<CancelOrder.Response>(await Mediator.Send(command, cancellationToken));
+    }
+
+    [AllowAnonymous]
+    [EnableRateLimiting("auth")]
+    [HttpPost("GuestCancellationPreview")]
+    [ProducesResponseType(typeof(GetCancellationFeePreview.Response), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> GuestCancellationPreview(
+        [FromBody] GetGuestCancellationFeePreview.Query query, CancellationToken cancellationToken)
+    {
+        return HandleResult<GetCancellationFeePreview.Response>(await Mediator.Send(query, cancellationToken));
+    }
+
+    [AllowAnonymous]
+    [EnableRateLimiting("auth")]
+    [HttpPost("Lookup")]
+    [ProducesResponseType(typeof(LookupOrder.Response), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> Lookup(
+        [FromBody] LookupOrder.Query query, CancellationToken cancellationToken)
+    {
+        return HandleResult<LookupOrder.Response>(await Mediator.Send(query, cancellationToken));
+    }
+
+    [AllowAnonymous]
+    [EnableRateLimiting("auth")]
     [HttpGet("Lookup")]
     [ProducesResponseType(typeof(LookupOrder.Response), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
@@ -234,5 +267,20 @@ public class OrderController(IMediator mediator) : CustomerMobileApiController(m
     {
         var result = await Mediator.Send(command, cancellationToken);
         return HandleResult<ChoosePreferredCleaner.Response>(result);
+    }
+
+    // The accepted contract for work, keyed on the acceptance (ADR-0068 D4): the order's customer, the
+    // cleaner who accepted it and an administrator read it; anyone else answers order.not_found.
+    [HttpGet("GetWorkContract")]
+    [Permission(Policy.CanViewOrderDetail)]
+    [EnableRateLimiting("interactive")]
+    [ProducesResponseType(typeof(WorkContractDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> GetWorkContract([FromQuery] GetWorkContract.Query query, CancellationToken cancellationToken)
+    {
+        var result = await Mediator.Send(query, cancellationToken);
+        return HandleResult<WorkContractDto>(result);
     }
 }

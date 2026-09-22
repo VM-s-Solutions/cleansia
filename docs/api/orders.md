@@ -143,10 +143,28 @@ POST /api/Order/CreateOrder
 }
 ```
 
+`currencyId` — optional. The order's currency is the **service address's country's** currency
+(owner ruling 2026-09-12); null lets the server derive it, and a value must equal it — send back the
+`currencyId` the quote returned for the same country — or create fails as `currency.invalid` before any
+pricing. The server re-prices in that currency and compares against `totalPrice`, so a total quoted
+in another market fails as `order.total_price.not_match`.
+
+**The order belongs to the operating company that serves the address's country** — the same country
+that decides its currency ([ADR-0061](/decisions/adr-0061) D6). A guest request is scoped to that
+company from `customerAddress.countryId` before validation (the market it names; a request with no
+address country lands the default market's company); a signed-in customer's company is their own. In
+both cases the address country's company must be the one the request is scoped to, or create refuses
+`order.country_operator_mismatch` on `CustomerAddress` — an order stamped with a company its own
+account cannot list is the outcome this prevents. With one company serving every market the rule
+never fires; it exists for the day a second one does, and cross-company booking on one account is the
+owner's call for that day. `country.not_serviced` (the address names a country that is not a market)
+and `tenant.not_found` (a market nobody operates) are the two refusals the scope itself can raise,
+before any other rule.
+
 | `paymentType` | Value | Behavior |
 |---------------|-------|----------|
 | `Cash` | `1` | Receipt queued. The order stays `New` + `PaymentStatus.Pending` and becomes offerable immediately; the cleaner's take is what writes `Confirmed` |
-| `Card` | `2` | Web: a Stripe Checkout Session is created. Mobile: no session — the client drives a PaymentSheet against the PaymentIntent. Either way the order stays `New` + `PaymentStatus.Pending` and is **not** offerable until the webhook writes `Paid` + `Confirmed` |
+| `Card` | `2` | Web: a Stripe Checkout Session is created. Mobile: no session — the client drives a PaymentSheet against the PaymentIntent. Either way the order stays `New` + `PaymentStatus.Pending` and is **not** offerable until the webhook writes `Paid`; the status stays `New` until a cleaner takes it (ADR-0057) |
 
 ::: warning A cash order is not auto-confirmed at creation
 `OrderPaymentDispatcher` queues a receipt for cash and nothing else — it writes neither
@@ -179,10 +197,38 @@ failure is reported:
 
 | Rule | Error key |
 |---|---|
+| Exactly one of `customerAddress` / `savedAddressId` | `order.address_exactly_one_required` |
+| The address country's operating company is the one this request is scoped to (the claim, or the market a guest named) — unconditional, guest and signed-in alike | `order.country_operator_mismatch` — error code `CustomerAddress` |
+| A named `currencyId` equals the service address's country's currency; omitted/null = that currency | `currency.invalid` |
+| The address country's currency is offerable — switched on AND priced (`ICurrencyRepository.IsOfferableAsync`) | `currency.invalid` |
 | At least one service or package | `order.empty` |
 | Booked estimate ≤ `MaxBookableOrderSpanHours` (24 h) | `order.span_exceeds_maximum` |
 | A membership express waiver the client assumed is still available | `membership.express_waiver.no_longer_available` |
 | Server-recalculated price equals the submitted `totalPrice` | `order.total_price.not_match` |
+| A `promoCode`, if any, is sent by a signed-in customer | `promo.requires_account` — error code `PromoCode` |
+| The `promoCode`, if any, would be honoured — previewed again in the address currency on the pre-surcharge subtotal | the preview's own reason: `promo.currency_mismatch`, `promo.expired`, `promo.global_limit_reached`, `promo.per_user_limit_reached`, `promo.below_minimum_order_amount`, `promo.not_found`, `promo.inactive`, `promo.not_yet_valid` — error code `PromoCode` |
+
+The two currency rules head the chain, and sit in this chain rather than in a rule of their own,
+because the calculator throws on a currency it cannot price in: a separate rule would not stop the two
+price rules from running it, and a 400 would become a 500. Separately from this chain, a selected
+service or package with no price row in the address country's currency fails as
+`order.selected_services.invalid` / `order.selected_package.invalid`.
+
+The two promo rules are last and they **refuse the booking** rather than silently dropping the code: a
+customer who applied a code and was shown a discounted price must not be charged the full price
+because the code bound to another currency, expired, or hit its cap between apply and submit. A
+redemption is recorded against a user, so an anonymous caller who names a code is refused
+(`promo.requires_account`) rather than having the code dropped and the full price charged; the honour
+rule then previews the code for the signed-in customer, and the handler applies the discount from the
+same preview the validator accepted, so the two cannot disagree.
+
+`preferredEmployeeId`, when set, runs its own `Cascade.Stop` chain after these: the caller holds an
+active, paid Plus membership (`order.preferred_employee.membership_required`), then the named cleaner is
+**eligible** — a completed order together **and** paid in the order's currency, the service address's
+country's (`order.preferred_employee.not_eligible`, one key for both terms). A cleaner paid in another
+currency does not see the order on their board and cannot take it, so a hold on them could only lapse.
+`ChoosePreferredCleaner` runs the same two rules against the existing order's currency; the recurring
+template commands run the eligibility rule against the saved address's country's currency.
 
 The waiver rule sits **before** the price rule deliberately: a Plus member who used up their last
 free express upgrade between quoting and submitting would otherwise get
@@ -230,13 +276,30 @@ POST /api/Order/Quote
   "rooms": 3,
   "bathrooms": 1,
   "selectedExtraSlugs": ["inside-oven"],
-  "currencyId": "currency-id",
+  "countryId": "country-id",
+  "currencyId": null,
   "cleaningDate": "2026-04-15T10:00:00Z"
 }
 ```
 
 `cleaningDate` is optional — omit it on the wizard's first step, before a slot is chosen, and the
 express-surcharge check is skipped.
+
+`countryId` — optional; the service address's country once the wizard has one, and the customer's
+**chosen market** before that (the home page's quick quote and the wizard's first step send the
+market's, ADR-0058). The quote is priced in that country's currency (owner ruling 2026-09-12: the
+market of an order is the address's; the market browsed in before there is one is the customer's
+choice); a country the platform does not service is refused as `country.not_serviced`. `currencyId` —
+optional; an explicit currency, which wins over `countryId` — it exists so a client can re-quote in
+exactly the currency it was first quoted in, not so it can choose one, and on create it is checked
+against the address. With neither the quote is in the platform default, which is what a client whose
+market list failed to load sends. Whichever way it resolves, the currency must be one the platform can
+quote in — switched on and carrying at least one catalogue price row — or the quote is refused as
+`currency.invalid`. The response's `currencyId` / `currencyCode` say which one was used. Prices are
+authored per currency and nothing converts, so a selected service or package with no price row in
+that currency is refused as `order.selected_services.invalid` / `order.selected_package.invalid`; an
+extra without one is dropped from the extras subtotal. `QuotePlusSavings` takes the same two fields
+and resolves them the same way.
 
 **Response:**
 
@@ -247,6 +310,7 @@ express-surcharge check is skipped.
   "originalSubtotal": 1500.00,
   "appliedDiscountSource": "Membership",
   "tierDiscountAmount": null,
+  "tierDiscountMinOrderAmount": null,
   "membershipDiscountAmount": 150.00,
   "servicesSubtotal": 1200.00,
   "packagesSubtotal": 0.00,
@@ -256,8 +320,7 @@ express-surcharge check is skipped.
   "expressSurchargeWaivedByMembership": true,
   "expressUpgradesRemaining": 1,
   "currencyId": "currency-id",
-  "currencyCode": "CZK",
-  "exchangeRate": 1.0
+  "currencyCode": "CZK"
 }
 ```
 
@@ -268,8 +331,166 @@ express-surcharge check is skipped.
 | `appliedDiscountSource` | `None` (0), `Tier` (1), `Membership` (2), `Promo` (3), `Combined` (4). Plus and tier are additive, so `Combined` is reachable; `Promo` is not produced by this endpoint |
 | `expressSurchargeWaivedByMembership` | Disambiguates `expressSurchargeApplied: false`. Without it, "waived" and "not an express slot at all" look identical |
 | `expressUpgradesRemaining` | Waivers left **this calendar month, before this booking** — server-computed. Null when the caller has no membership. A client that counts its own orders disagrees with the server the first time a cancellation releases a slot |
+| `tierDiscountMinOrderAmount` | The tier-discount floor the quote judged the order against, so a client can state the same rule. Null when no floor applied — the floor is a platform-default-currency number and is enforced only on an order in that currency |
+| `currencyId` / `currencyCode` | The currency the quote was priced in — the one named on the request, else the request's `countryId`'s, else (no country named) the platform default. A named country without a configured currency throws rather than defaulting. There is no exchange rate on the wire; nothing converts |
 
 Promo codes are **not** priced here — they are entered at checkout and applied at create time.
+
+---
+
+### QuotePlusSavings <Badge type="info" text="Customer" />
+
+What this basket would cost with a Cleansia Plus plan the caller does not have — the wizard's Plus
+step's "you would save X on today's order". Server-side for the same reason the quote is: the 12 %
+combined cap and the un-grossing of the express surcharge are not representable in a client.
+
+```
+POST /api/Order/QuotePlusSavings
+```
+
+**Auth:** Anonymous (rate-limited: `interactive` policy)
+
+**Request body:**
+
+```json
+{
+  "selectedServiceIds": ["svc-1"],
+  "selectedPackageIds": [],
+  "rooms": 3,
+  "bathrooms": 1,
+  "planCode": "PLUS_MONTHLY",
+  "selectedExtraSlugs": ["inside-oven"],
+  "countryId": "country-id",
+  "currencyId": null,
+  "cleaningDate": "2026-04-15T10:00:00Z"
+}
+```
+
+It prices the same basket the quote does, so it runs the **same rules with the same keys**, and the
+validator refuses before the calculator can throw:
+
+| Rule | Error key |
+|---|---|
+| Every selected service exists **and** has a price row in the resolved currency | `order.selected_services.invalid` |
+| Every selected package exists **and** has a price row in the resolved currency | `order.selected_package.invalid` |
+| `countryId`, if named, is a serviced country | `country.not_serviced` |
+| The resolved currency (named `currencyId`, else the country's, else the platform default) is offerable | `currency.invalid` |
+| Booked estimate ≤ `MaxBookableOrderSpanHours` (24 h) | `order.span_exceeds_maximum` |
+
+The span cap is the one `QuoteOrder` and `CreateOrder` draw (ADR-0039 D3.4): a preview must not show
+savings on a basket the booking will refuse. An empty selection still previews, as it still quotes.
+
+**Response:**
+
+```json
+{
+  "wouldSaveAmount": 75.00,
+  "wouldPayTotal": 1425.00,
+  "currentTotal": 1500.00,
+  "currencyCode": "CZK",
+  "planCode": "PLUS_MONTHLY"
+}
+```
+
+`wouldSaveAmount` is the **discount only** — the value of a waived express surcharge is not added to
+it.
+
+---
+
+### Catalogue overviews <Badge type="info" text="Customer + Customer Mobile" />
+
+The three lists the booking wizard is built from. They live on their own controllers, not on
+`Order`, but they are documented here because they take the same `countryId` the quote does and
+answer in the same currency.
+
+```
+GET /api/Service/GetOverview?countryId=country-id
+GET /api/Package/GetOverview?countryId=country-id
+GET /api/Extra/GetOverview?countryId=country-id
+```
+
+**Auth:** Anonymous
+
+`countryId` — optional; the service address's country once the wizard has one, else the customer's
+chosen market (the home strips and `/services` send the market's). A country the platform
+does not serve (unknown id, or `Country.IsServiced` false) has **no catalogue**: the overview answers an
+empty list, never the default catalogue and never an error, before any currency is resolved. A
+serviced country's overview is priced in that country's currency and **withholds** any entry that
+has no price row in it or no platform-wide pay config in it — the same two gates the quote enforces, applied before the customer can pick the
+entry. Without `countryId` the overview is in the platform default. A named country the seed has not
+configured with a real currency does **not** fall through to the default — the resolver throws (owner
+ruling 2026-09-12; a serviced country without a currency is a deploy defect, never a market), and the
+overview runs no serviced check of its own; the quote is where an unserviced country is refused as
+`country.not_serviced`. Each `ServiceListItem` / `PackageListItem` / `ExtraListItem` carries `currencyCode`, so a
+surface labels the prices it was sent rather than a currency it assumed.
+
+**Response** (service overview; the others are the same shape with one `price`):
+
+```json
+[
+  {
+    "id": "svc-1",
+    "name": "Standard clean",
+    "description": "...",
+    "category": { "id": "cat-1", "name": "Home" },
+    "basePrice": 900.00,
+    "perRoomPrice": 150.00,
+    "translations": { "cs": { "name": "Standardní úklid", "description": "..." } },
+    "currencyCode": "CZK"
+  }
+]
+```
+
+A wizard that learned the country at the address step, after the customer picked from the default
+catalogue, re-reads the overview with the country and prunes any selection that is no longer offered;
+otherwise the next quote refuses the selection as `order.selected_services.invalid`.
+
+The Partner host's `Service/GetOverview` and `Package/GetOverview` take no `countryId` and answer in
+the platform default. A customer surface that has no country yet learns its market — country, currency
+and `isDefault` in one row — from `GET /api/Market/GetOverview` (anonymous, Customer + Customer
+Mobile); `GET /api/Currency/GetOverview` still lists the currencies with `isDefault` for admin-style
+readers. → [Markets and memberships](/api/markets-and-memberships)
+
+---
+
+### PromoCode/Validate <Badge type="info" text="Customer + Customer Mobile" />
+
+The checkout preview of a promo code. It answers the question `CreateOrder` will ask again, so it
+must be asked in the same currency.
+
+```
+POST /api/PromoCode/Validate
+```
+
+**Auth:** `CanRedeemPromoCode` (Customer)
+
+**Request body:**
+
+```json
+{
+  "code": "SAVE10",
+  "orderSubtotal": 1500.00,
+  "currencyId": "currency-id"
+}
+```
+
+`orderSubtotal` is the quote's **pre-surcharge** subtotal — the base a discount is judged on.
+`currencyId` — optional; the quote's `currencyId`, which is the address country's currency. Null
+resolves to the platform default, which is only right for a quote that had no country. A code with a
+minimum is bound to one currency (its own, or the platform default when it names none), and on a
+subtotal in any other it answers `CurrencyMismatch` before the minimum is compared.
+
+**Response:**
+
+```json
+{ "isValid": false, "discountAmount": null, "errorCode": "CurrencyMismatch" }
+```
+
+`errorCode` is the enum name (`NotFound`, `Inactive`, `Expired`, `NotYetValid`, `GlobalLimitReached`,
+`PerUserLimitReached`, `BelowMinimumOrderAmount`, `CurrencyMismatch`), null when valid. The same eight
+reasons refuse the booking on create as `promo.*` keys — a client that previewed in the wrong currency
+sees the mismatch at submit instead of a silently dropped discount.
+→ [Money constants](/product/business-rules#money-constants)
 
 ---
 
@@ -281,7 +502,9 @@ Returns a paginated list of orders.
 GET /api/Order/GetPaged?page=1&pageSize=10
 ```
 
-**Auth:** `CanViewPagedOrder` (Admin, Employee) or `CanViewPagedUserOrder` (Customer -- own orders)
+**Auth:** `CanViewPagedOrder` (Employee or any administrator, on the partner hosts) or
+`CanViewPagedUserOrder` (Customer -- own orders). The admin host's list is its own route,
+`GET /api/AdminOrder/get-paged`, under `CanViewPagedOrderAdmin` (Support or above — [ADR-0066](/decisions/adr-0066)).
 
 **Response:**
 
@@ -303,6 +526,14 @@ GET /api/Order/GetPaged?page=1&pageSize=10
 }
 ```
 
+**Currency.** `OrderFilter.CurrencyId` (query parameter `currencyId`) pins the page to one currency;
+no existence check, an unknown id is an empty page. Without it a sort on `totalPrice` is served
+*within* currency — the server leads the sort with `currencyId`, so rows arrive grouped by currency and
+ordered by price inside each group, because 150 EUR does not file below 3 000 CZK. `currencyId` is
+also accepted as a sort field. For a **non-admin caller** the list is additionally scoped to the
+currency the cleaner is paid in (their work country's): an order in another currency is not on their
+board at all, unless they are already assigned to it. → [Business rules](/product/business-rules#cleaner-currency)
+
 **`hasReview`** exists so a client can decide whether to ask for a review **without fetching the order
 detail**. The mobile apps raise the completion prompt off the list, and before this flag the only way to
 know a review already existed was a second round trip per order — which meant the prompt either fired
@@ -318,7 +549,9 @@ Returns full details of a single order.
 GET /api/Order/GetById?id=order-id
 ```
 
-**Auth:** `CanViewOrderDetail` (Authenticated -- all roles)
+**Auth:** `CanViewOrderDetail` (Authenticated -- all roles; the handler redacts for a browsing cleaner).
+The admin host's unredacted detail is `GET /api/AdminOrder/details/{orderId}` under
+`CanViewOrderDetailAdmin` (Support or above — an Accountant is refused).
 
 **Response:** `OrderItem` object with full order details, address, services, packages, status history.
 
@@ -329,10 +562,18 @@ GET /api/Order/GetById?id=order-id
 Looks up an order by order number and email (for anonymous tracking).
 
 ```
-GET /api/Order/Lookup?orderNumber=CLN-2026-001&email=jane@example.com
+GET /api/Order/Lookup?displayOrderNumber=CLN-2026-001&email=jane@example.com&confirmationCode=ABC123
 ```
 
 **Auth:** Anonymous (rate-limited: 10 requests/minute per IP)
+
+**No `countryId`, on purpose.** The read is keyed on a secret — the six-character confirmation code
+delivered only in the confirmation e-mail, checked in the same predicate as the number and the e-mail
+so a wrong code and a non-existent order are indistinguishable — and it searches **across operating
+companies**, so a guest who booked under one company finds the order without knowing which company
+that was. The secret is the pin ([ADR-0051](/decisions/adr-0051) bypass-and-re-pin cell,
+[ADR-0061](/decisions/adr-0061) D3). `LookupBatch` below is the same posture keyed on the order's
+ULID, which the browser only has because it placed the order.
 
 ---
 
@@ -359,9 +600,60 @@ POST /api/Order/LookupBatch
 
 ---
 
+### GetWorkContractPreview
+
+The contract for work a cleaner reads **before** taking a job ([ADR-0068](/decisions/adr-0068) D3):
+the order's own text (stamped at booking), in the requested language or the fallback, rendered with
+the order's currency, plus the job facts the acceptance will freeze — and the **text-row id the take
+must echo**. Partner hosts only.
+
+```
+GET /api/Order/GetWorkContractPreview?orderId=order-id&language=cs
+```
+
+**Auth:** `CanTakeOrder` (Employee) · rate-limit window `interactive`
+
+**Response:** `WorkContractDto`
+
+```json
+{
+  "legalDocumentTextId": "text-row-id",
+  "legalDocumentId": "document-id",
+  "version": "2026-09-20",
+  "effectiveFrom": "2026-09-20",
+  "language": "cs",
+  "title": "Smlouva o dílo",
+  "contentHtml": "<p>…</p>",
+  "facts": {
+    "orderNumber": "CLN-2026-001",
+    "cleaningDateTimeUtc": "2026-10-01T08:00:00Z",
+    "estimatedMinutes": 180,
+    "totalPrice": 1890,
+    "currencyCode": "CZK",
+    "locationApproximate": "Praha · 120",
+    "countryId": "CZE",
+    "rooms": 3,
+    "bathrooms": 1,
+    "services": [{ "id": "…", "name": "Standard cleaning" }],
+    "packages": [],
+    "extraSlugs": ["windows"]
+  },
+  "acceptance": null
+}
+```
+
+Readable exactly where the board would show the job — on the crew, or offerable with a takeable seat
+and not held from the caller: a held order answers `order.not_found` to everyone but its beneficiary,
+and a cancelled, finished, full or unpaid-card job the caller is not on answers `order.not_found` and
+discloses no facts. An order with no text (a fixture — the production writer always stamps one)
+answers `legal.document_not_found`.
+
+---
+
 ### TakeOrder
 
-Employee accepts/claims an order.
+Employee accepts/claims an order **and, in the same act, the contract for work** the order was
+booked under ([ADR-0068](/decisions/adr-0068) D3).
 
 ```
 POST /api/Order/TakeOrder
@@ -373,9 +665,17 @@ POST /api/Order/TakeOrder
 
 ```json
 {
-  "orderId": "order-id"
+  "orderId": "order-id",
+  "acceptedWorkContractTextId": "text-row-id"
 }
 ```
+
+`acceptedWorkContractTextId` is the `legalDocumentTextId` the preview returned — the **exact text
+row** the cleaner read. It is the tick: `null` is *not accepted*, a value is *"I read this text and I
+accept it"*, and it must name a text of **this order's** document. The seat, the `Confirmed` status
+row, the `WorkContractAcceptance` (with the request's IP, device label, the session's signed device
+id and the job facts frozen) and its `employee.order.contract_accepted` audit row are **one commit** —
+a seat-race loser leaves no acceptance.
 
 **Response:** `TakeOrder.Response` with updated order state.
 
@@ -383,34 +683,117 @@ POST /api/Order/TakeOrder
 
 `TakeOrder.Validator` is **one ordered `Cascade.Stop` chain**, so exactly one error comes back — the
 first that fails. The order of the rules is deliberate: a cancelled order with a free seat must say
-*the job is gone*, not *the job is full*.
+*the job is gone*, not *the job is full*; the contract tick is judged **before** existence (it depends
+on nothing about the order, so it can leak neither existence nor the hold) and the echo **last**
+(every refusal ahead of it is a better answer than *wrong text*).
 
 | # | Rule | Error key |
 |---|---|---|
 | 1 | `orderId` present | `common.required` |
-| 2 | Order exists **and is not held from this caller** (ADR-0036) | `order.not_found` |
-| 3 | Not cancelled | `order.already_cancelled` |
-| 4 | Not completed | `order.already_completed` |
-| 5 | **Offerable** — the ADR-0037 rule, both axes | `order.not_takeable` |
-| 6 | A seat is free (`assignedEmployees.Count < maxEmployees`) | `order.no_available_spots` |
-| 7 | Caller resolves to an employee | `employee.not_found` |
-| 8 | Employee has an address on file | `employee.profile_incomplete` |
-| 9 | `ContractStatus == Approved` | `employee.not_approved` |
-| 10 | Not already assigned to this order | `order.employee_already_assigned` |
-| 11 | Weekly cap, **only if an admin set one** on this cleaner (`Employee.WeeklyOrderLimit`; null = unlimited, the default) | `order.weekly_limit_reached` |
-| 12 | No scheduling overlap with the employee's live commitments | `order.time_conflict` |
+| 2 | `acceptedWorkContractTextId` present | `contract.not_accepted` |
+| 3 | Order exists, **is not held from this caller** (ADR-0036), **and is in the currency the caller is paid in** — or the caller is already on it (`OrderVisibility.OpenTo`) | `order.not_found` |
+| 4 | Not cancelled | `order.already_cancelled` |
+| 5 | Not completed | `order.already_completed` |
+| 6 | **Offerable** — the ADR-0037 rule, both axes | `order.not_takeable` |
+| 7 | A seat is free (`assignedEmployees.Count < maxEmployees`) | `order.no_available_spots` |
+| 8 | Caller resolves to an employee | `employee.not_found` |
+| 9 | Employee has an address on file | `employee.profile_incomplete` |
+| 10 | `ContractStatus == Approved` | `employee.not_approved` |
+| 11 | Not already assigned to this order | `order.employee_already_assigned` |
+| 12 | Weekly cap, **only if an admin set one** on this cleaner (`Employee.WeeklyOrderLimit`; null = unlimited, the default) | `order.weekly_limit_reached` |
+| 13 | No scheduling overlap with the employee's live commitments | `order.time_conflict` |
+| 14 | The echoed text row belongs to **this order's** `workContractDocumentId` (an order with no document matches nothing) | `contract.text_mismatch` |
 
-::: info The preferred-cleaner hold is folded into the existence check
+On `contract.text_mismatch` the client re-runs the preview, re-renders the text, resets the gesture
+and asks again — a cached id from another order is the case it exists for.
+
+::: info The preferred-cleaner hold and the currency are folded into the existence check
 Rules 2 and 5 are separate questions. Until `preferredHoldUntilUtc`, the order's **first seat** is
 offered to `preferredEmployeeId` alone; a held order answers `order.not_found`, identical to a missing
 one, so the fact that some other cleaner was named cannot be inferred from the refusal. The hold
 releases when the deadline passes or as soon as any cleaner is assigned. `preferredEmployeeId` is
-never returned on a partner-facing DTO.
+never returned on a partner-facing DTO. The currency term answers the same way for the same reason: an
+order in a currency the caller is not paid in was never on their board, so from their side it does not
+exist (owner ruling 2026-09-12 — a cleaner is paid in the currency of the country they work in).
 :::
 
 The employee is always derived server-side from the caller, never taken from the request body. On
 failure the response is a `400` RFC 7807 Problem Details; clients resolve `errors[0]` under the
 `api.*` i18n namespace.
+
+---
+
+### AcceptWorkContract
+
+The standalone acceptance, for a cleaner an **administrator placed** on a crew (`AdminReassignOrder`
+writes no acceptance — an admin cannot accept on the cleaner's behalf). The same act the take performs
+inline, for a seat formed without one. Partner hosts only.
+
+```
+POST /api/Order/AcceptWorkContract
+```
+
+**Auth:** `CanTakeOrder` (Employee) · rate-limit window `interactive`
+
+**Request body:**
+
+```json
+{
+  "orderId": "order-id",
+  "acceptedWorkContractTextId": "text-row-id"
+}
+```
+
+**Response:** `{ orderId, acceptanceId, acceptedOn, documentVersion }`.
+
+One ordered chain: `contract.not_accepted` (blank id) → `order.not_found` → `order.employee_not_assigned`
+(the caller holds no seat on the crew) → `take_order.already_cancelled` / `take_order.already_completed`
+(**any not-over order is admitted** — a cleaner placed on an in-progress job can accept before
+completing) → `contract.text_mismatch`. A seat that already has its acceptance answers `200` with that
+row's id and writes nothing (the double tap); a concurrent double tap is arbitrated by the unique index
+on the seat at commit.
+
+---
+
+### GetWorkContract
+
+An **accepted** contract for work, keyed on the acceptance ([ADR-0068](/decisions/adr-0068) D4): the
+facts as **stored** at acceptance (never the live order), the accepted document's text in the
+requested language when it has one — else the accepted text — and the acceptance details. Routed on
+**all five hosts**.
+
+```
+GET /api/Order/GetWorkContract?acceptanceId=acceptance-id&language=en
+```
+
+**Auth:** `CanViewOrderDetail` on the two customer hosts and the two partner hosts;
+`CanViewOrderDetailAdmin` on the admin host at `/api/AdminOrder/GetWorkContract` · window
+`interactive`
+
+**Response:** the `WorkContractDto` above with `acceptance` filled:
+
+```json
+"acceptance": {
+  "acceptedOn": "2026-09-20T09:12:41.5Z",
+  "documentVersion": "2026-09-20",
+  "acceptedLanguage": "cs",
+  "orderEmployeeId": "seat-id",
+  "employeeId": "employee-id"
+}
+```
+
+`acceptedLanguage` is the language of the text row that was accepted, so a page rendering another can
+say *accepted in Czech*. Access is derived from the row: its order must exist for the caller
+(owner-pinned for a customer, the company's for staff) **and**, when the caller is a cleaner, the
+row's `employeeId` must be theirs — an ex-crew cleaner keeps reading the contract they accepted;
+anyone else answers `order.not_found`. Keyed on the acceptance rather than on (order, employee) so the
+dropped contract of a re-take stays readable and no employee id travels on the request.
+
+The order detail (`GetById`) lists the current seats' acceptances as
+`workContractAcceptances: [{ id, orderEmployeeId, employeeId, acceptedOn, documentVersion, language }]`
+— paired with `assignedEmployees` by `orderEmployeeId == assignedEmployees[].id`, which is where the
+name comes from (this member carries none); a crew entry with no match is the pending state. The
+member is **empty for a browsing cleaner**.
 
 ---
 
@@ -431,6 +814,11 @@ POST /api/Order/StartOrder
   "orderId": "order-id"
 }
 ```
+
+**Refused when the caller's seat has no accepted contract for work** — `contract.acceptance_required`,
+right after the assignment rule (a cleaner not on the crew still answers `order.employee_not_assigned`
+and learns nothing). A cleaner who took the job never meets it; a cleaner an admin placed accepts
+through `AcceptWorkContract` and starts. → [the contract gate](/flows/execution-and-completion#the-contract-gate)
 
 **Refused when the job is more than 60 minutes away** — `order.too_early_to_start`. The same gate is on
 `NotifyOnTheWay`, because both write to the customer's lock screen. Late is never blocked. The check is
@@ -456,6 +844,11 @@ POST /api/Order/CompleteOrder
   "orderId": "order-id"
 }
 ```
+
+**Refused when the caller's seat has no accepted contract for work** — `contract.acceptance_required`,
+right after the assignment rule, like `StartOrder`: on a two-seat crew the second cleaner never starts
+(the order is already in progress) but may complete, and Complete is the last act with a contract
+behind it. `NotifyOnTheWay` is not gated. → [the contract gate](/flows/execution-and-completion#the-contract-gate)
 
 ---
 

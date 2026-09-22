@@ -1,0 +1,72 @@
+@use './pref-pill' as *;
+
+// The market switcher — the language switcher's twin (ADR-0058 D6). No page-corner default: it is
+// only ever placed inside a flex row, so nothing has to undo an absolute position.
+.cleansia-market-switcher {
+  display: inline-flex;
+  align-items: center;
+
+  &__item {
+    display: inline-flex;
+    align-items: center;
+    line-height: 1;
+  }
+
+  .p-select {
+    display: inline-flex;
+    align-items: center;
+    width: auto;
+    min-width: auto;
+  }
+}
+
+// The navbar/footer pill: `pref-pill` with a map where the language pill has a globe, so the pair
+// is told apart by glyph rather than by reading the code.
+.cleansia-market-switcher--pill {
+  @include pref-pill('.cleansia-market-switcher__map');
+}
+
+:root.dark-mode .cleansia-market-switcher--pill {
+  @include pref-pill-dark('.cleansia-market-switcher__map');
+}
+
+// The quick-quote chip: `.cl-chip` geometry (the chip the same card draws for services and sizes)
+// with the chevron on the right as the pill has it. The static one-market label IS a `.cl-chip`.
+.cleansia-market-switcher--chip {
+  .p-select {
+    min-height: max(44px, calc(2.75 * var(--cl-u)));
+    height: auto;
+    border-radius: 999px;
+    border: 1px solid var(--cl-border);
+    background: var(--cl-surface);
+    box-shadow: none;
+    padding: 0 6px 0 calc(1.125 * var(--cl-u));
+    transition: border-color 0.16s ease, background 0.16s ease;
+
+    &:not(.p-disabled):hover {
+      border-color: var(--cl-accent-soft);
+      background: var(--cl-tint);
+    }
+
+    &:not(.p-disabled).p-focus {
+      outline: 2px solid var(--cl-accent);
+      outline-offset: 2px;
+      box-shadow: none;
+      border-color: var(--cl-accent);
+    }
+  }
+
+  .p-select-label {
+    padding: 0;
+    font-size: calc(0.9375 * var(--cl-u));
+    font-weight: 700;
+    color: var(--cl-body);
+    display: inline-flex;
+    align-items: center;
+  }
+
+  .p-select-dropdown {
+    width: 22px;
+    color: #64748b;
+  }
+}

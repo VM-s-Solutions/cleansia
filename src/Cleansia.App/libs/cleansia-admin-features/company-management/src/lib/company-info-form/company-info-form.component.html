@@ -72,6 +72,23 @@
               formControlName="vatNumber"
             />
           </div>
+
+          <div class="form-field">
+            <cleansia-checkbox
+              [label]="'pages.company_info.is_vat_payer' | translate"
+              formControlName="isVatPayer"
+            />
+          </div>
+
+          <div class="form-field">
+            <cleansia-calendar
+              [label]="'pages.company_info.vat_registered_from' | translate"
+              formControlName="vatRegisteredFrom"
+            />
+            <small class="form-field__hint">
+              {{ 'pages.company_info.vat_registered_from_hint' | translate }}
+            </small>
+          </div>
         </div>
       </cleansia-section>
 

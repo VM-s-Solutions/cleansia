@@ -1,6 +1,7 @@
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Employees;
 using Cleansia.Core.AppServices.Services.Interfaces;
+using Cleansia.Core.Domain.Configuration;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Internationalization;
 using Cleansia.Core.Domain.Users;
@@ -10,6 +11,7 @@ using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Cleansia.TestUtilities;
 using TestConstants = Cleansia.TestUtilities.Constants;
 
 namespace Cleansia.IntegrationTests.Features.Employees;
@@ -149,7 +151,6 @@ public class OnboardingConsentPersistenceTests(PostgresContainerFixture fixture)
         PassportId: "AB12345",
         EntityType: EmployeeEntityType.NaturalPerson,
         RegistrationNumber: "12345678",
-        VatNumber: null,
         LegalEntityName: null,
         EmergencyName: null,
         EmergencyPhone: null,
@@ -165,9 +166,11 @@ public class OnboardingConsentPersistenceTests(PostgresContainerFixture fixture)
     {
         context.Languages.Add(Language.Create("en", "English"));
 
-        var country = Country.Create("Czechia", "CZ", isServiced: true);
+        var country = Country.Create("Czechia", "CZ", "CZ", isServiced: true);
         country.Id = CountryId;
         context.Countries.Add(country);
+        // A serviced country is a market only with an operating company behind it (ADR-0064 D1).
+        context.CountryConfigurations.Add(CountryConfiguration.Create(CountryId, "CZK", "cs", 0.21m).AssignOperator(TestTenants.Default));
 
         var user = User.CreateWithPassword(
             email: TestConstants.TestUserSession.TestUserEmail,

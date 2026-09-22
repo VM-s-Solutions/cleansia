@@ -1,4 +1,5 @@
 using Cleansia.Core.AppServices.Abstractions;
+using Cleansia.Core.AppServices.Auditing;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Clients.Abstractions.Stripe;
@@ -13,17 +14,24 @@ using StripeException = Stripe.StripeException;
 
 namespace Cleansia.Core.AppServices.Features.Memberships;
 
+[AuditAction("customer.membership.subscribe", Audience = AuditAudience.Customer, ResourceType = "UserMembership")]
 public class CreateMembershipCheckoutSession
 {
-    public record Command(string PlanCode) : ICommand<Response>;
+    /// <param name="CountryId">The market the customer is subscribing in (ADR-0058 D4); null is the platform default market.</param>
+    public record Command(string PlanCode, string? CountryId = null) : ICommand<Response>;
 
     public record Response(string CheckoutUrl);
 
     public class Validator : AbstractValidator<Command>
     {
-        public Validator()
+        public Validator(ICountryRepository countryRepository)
         {
             RuleFor(x => x.PlanCode).NotEmpty().WithMessage(BusinessErrorMessage.Required);
+
+            RuleFor(x => x.CountryId)
+                .MustAsync((countryId, ct) => countryRepository.IsServicedAsync(countryId!, ct))
+                .WithMessage(BusinessErrorMessage.CountryNotServiced)
+                .When(x => !string.IsNullOrEmpty(x.CountryId));
 
             // There is deliberately nothing here about the return URLs. They used to be two more
             // NotEmpty rules over two caller-supplied strings that went straight to Stripe's
@@ -39,10 +47,14 @@ public class CreateMembershipCheckoutSession
         IUserRepository userRepository,
         IUserMembershipRepository userMembershipRepository,
         IMembershipPlanRepository membershipPlanRepository,
+        IMembershipPlanPriceRepository membershipPlanPriceRepository,
+        ICurrencyResolutionService currencyResolutionService,
         IUserSessionProvider userSessionProvider,
         IStripeClient stripeClient,
         IStripeConfig stripeConfig,
         IMembershipTrialResolver membershipTrialResolver,
+        IStripeCustomerResolver stripeCustomerResolver,
+        IAuditContext auditContext,
         ILogger<Handler> logger) : ICommandHandler<Command, Response>
     {
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
@@ -79,28 +91,26 @@ public class CreateMembershipCheckoutSession
                     nameof(command.PlanCode), BusinessErrorMessage.MembershipAlreadyActive));
             }
 
-            var stripeCustomerId = user.StripeCustomerId;
-            if (string.IsNullOrEmpty(stripeCustomerId))
+            var currency = await currencyResolutionService.ResolveCurrencyForCountryAsync(command.CountryId, cancellationToken);
+            var price = await membershipPlanPriceRepository.GetForPlanAsync(plan.Id, currency.Id, cancellationToken);
+            if (price == null)
             {
-                try
-                {
-                    stripeCustomerId = await stripeClient.CreateCustomerAsync(
-                        user.Id,
-                        user.Email,
-                        $"{user.FirstName} {user.LastName}".Trim(),
-                        user.PhoneNumber,
-                        cancellationToken);
-                }
-                catch (StripeException ex)
-                {
-                    logger.LogError(ex, "Stripe customer creation failed for user {UserId} (web checkout flow)", user.Id);
-                    return BusinessResult.Failure<Response>(new Error(
-                        nameof(command.PlanCode), BusinessErrorMessage.PaymentGatewayUnavailable));
-                }
-                user.AssignStripeCustomerId(stripeCustomerId);
-                logger.LogInformation(
-                    "Created Stripe customer {StripeCustomerId} for user {UserId} (web checkout flow)",
-                    stripeCustomerId, user.Id);
+                return BusinessResult.Failure<Response>(new Error(
+                    nameof(command.PlanCode), BusinessErrorMessage.MembershipPlanNotPricedInCurrency));
+            }
+
+            // The Customer is per currency: Stripe locks a Customer to the currency of its first invoice,
+            // so a re-subscribe in another market needs its own (owner ruling 2026-09-13).
+            string stripeCustomerId;
+            try
+            {
+                stripeCustomerId = await stripeCustomerResolver.ResolveForCurrencyAsync(user, currency, cancellationToken);
+            }
+            catch (StripeException ex)
+            {
+                logger.LogError(ex, "Stripe customer creation failed for user {UserId} (web checkout flow)", user.Id);
+                return BusinessResult.Failure<Response>(new Error(
+                    nameof(command.PlanCode), BusinessErrorMessage.PaymentGatewayUnavailable));
             }
 
             // Fresh attempt id so re-opening checkout after abandoning yields
@@ -113,12 +123,20 @@ public class CreateMembershipCheckoutSession
             {
                 url = await stripeClient.CreateMembershipCheckoutSessionAsync(
                     stripeCustomerId: stripeCustomerId,
-                    stripePriceId: plan.StripePriceId,
+                    stripePriceId: price.StripePriceId,
                     userId: user.Id,
                     membershipPlanCode: plan.Code,
                     trialPeriodDays: trial.Days,
                     idempotencyAttemptId: attemptId,
                     cancellationToken: cancellationToken);
+            }
+            catch (StripeException ex) when (StripeRefusals.IsCustomerCurrencyLocked(ex))
+            {
+                logger.LogWarning(ex,
+                    "Stripe refused a {CurrencyCode} membership checkout for user {UserId}: the Stripe customer is locked to another currency",
+                    currency.Code, user.Id);
+                return BusinessResult.Failure<Response>(new Error(
+                    nameof(command.CountryId), BusinessErrorMessage.MembershipStripeCustomerCurrencyLocked));
             }
             catch (StripeException ex)
             {
@@ -126,6 +144,10 @@ public class CreateMembershipCheckoutSession
                 return BusinessResult.Failure<Response>(new Error(
                     nameof(command.PlanCode), BusinessErrorMessage.PaymentGatewayUnavailable));
             }
+
+            // No membership row yet — the webhook provisions it — so the resource id stays null.
+            auditContext.RecordEvidence("UserMembership", null, MembershipSubscribeEvidence.For(
+                plan, price, currency.Code, command.CountryId, trial.Days, MembershipSubscribeChannel.Checkout));
 
             return BusinessResult.Success(new Response(url));
         }

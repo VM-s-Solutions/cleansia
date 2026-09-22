@@ -101,14 +101,6 @@
       />
     </div>
     <div class="cleansia-profile__field">
-      <cleansia-select
-        [options]="entityTypeOptions"
-        [label]="'pages.profile.entity_type' | translate"
-        [floatVariant]="'on'"
-        formControlName="entityType"
-      />
-    </div>
-    <div class="cleansia-profile__field">
       <cleansia-text-input
         [label]="
           facade.fieldLabels()?.registrationNumberLabel ??
@@ -119,23 +111,14 @@
         dataType="text"
       />
     </div>
-    <div class="cleansia-profile__field">
-      <cleansia-text-input
-        [label]="
-          facade.fieldLabels()?.vatNumberLabel ??
-          ('pages.profile.vat_number' | translate)
-        "
-        [floatVariant]="'on'"
-        formControlName="vatNumber"
-        dataType="text"
-      />
-    </div>
-    @if (isLegalEntity()) {
+    @if (facade.legalEntityName(); as legalEntityName) {
       <div class="cleansia-profile__field">
         <cleansia-text-input
           [label]="'pages.profile.legal_entity_name' | translate"
           [floatVariant]="'on'"
-          formControlName="legalEntityName"
+          [disabled]="true"
+          [ngModel]="legalEntityName"
+          [ngModelOptions]="{ standalone: true }"
           dataType="text"
         />
       </div>

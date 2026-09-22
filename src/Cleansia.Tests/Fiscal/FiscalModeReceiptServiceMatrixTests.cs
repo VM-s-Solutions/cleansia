@@ -62,8 +62,7 @@ public class FiscalModeReceiptServiceMatrixTests
             street: "Hauptstr. 1",
             city: "Berlin",
             zipCode: "10115",
-            countryId: DeId,
-            vatNumber: "DE123456789");
+            countryId: DeId);
         _companyInfoRepository
             .Setup(r => r.GetActiveByCountryAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(company);
@@ -73,10 +72,10 @@ public class FiscalModeReceiptServiceMatrixTests
 
         _countryRepository
             .Setup(r => r.GetByIdAsync(CzId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(Country.Create("Czechia", "CZ"));
+            .ReturnsAsync(Country.Create("Czechia", "CZ", "CZ"));
         _countryRepository
             .Setup(r => r.GetByIdAsync(DeId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(Country.Create("Germany", "DE"));
+            .ReturnsAsync(Country.Create("Germany", "DE", "DE"));
 
         _pdfService
             .Setup(p => p.GenerateReceiptPdf(It.IsAny<ReceiptPdfData>(), It.IsAny<string?>()))
@@ -116,12 +115,12 @@ public class FiscalModeReceiptServiceMatrixTests
             customerAddress: address,
             rooms: 1,
             bathrooms: 1,
-            extras: new Dictionary<string, bool>(),
             cleaningDateTime: DateTime.UtcNow.AddDays(1),
             paymentType: PaymentType.Cash,
             totalPrice: 1000m,
             currencyId: "eur",
             paymentStatus: PaymentStatus.Pending);
+        order.SetCurrency(Euro());
         order.Id = "01HZX9N6M7Q8R9S0T1V2W3X4Y5";
         return order;
     }
@@ -136,14 +135,21 @@ public class FiscalModeReceiptServiceMatrixTests
             customerAddress: address,
             rooms: 1,
             bathrooms: 1,
-            extras: new Dictionary<string, bool>(),
             cleaningDateTime: DateTime.UtcNow.AddDays(1),
             paymentType: PaymentType.Cash,
             totalPrice: 1000m,
             currencyId: "eur",
             paymentStatus: PaymentStatus.Pending);
+        order.SetCurrency(Euro());
         order.Id = "01HZX9N6M7Q8R9S0T1V2W3X4Y6";
         return order;
+    }
+
+    private static Currency Euro()
+    {
+        var eur = Currency.Create("EUR", "€", "Euro");
+        eur.Id = "eur";
+        return eur;
     }
 
     private static OrderReceipt BuildReceipt() =>

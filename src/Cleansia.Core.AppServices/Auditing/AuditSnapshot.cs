@@ -1,3 +1,5 @@
+using Cleansia.Core.Domain.Enums;
+
 namespace Cleansia.Core.AppServices.Auditing;
 
 public sealed record AuditSnapshot(
@@ -5,4 +7,6 @@ public sealed record AuditSnapshot(
     string? ResourceId,
     string? BeforeJson,
     string? AfterJson,
-    string? Reason);
+    string? Reason,
+    string? ActorUserId = null,
+    UserProfile? ActorProfile = null);

@@ -11,9 +11,11 @@ using Cleansia.Core.Fiscal.Abstractions;
 using Cleansia.Core.Queue.Abstractions;
 using Cleansia.Core.Queue.Abstractions.Messages;
 using Cleansia.Functions.Core.Handlers;
+using Cleansia.Core.AppServices.Tenancy;
 using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Cleansia.Tests.Functions;
 
@@ -51,6 +53,7 @@ public class GenerateReceiptHandlerBranchTests
         _countryConfigurationRepository.Object,
         _unitOfWork.Object,
         _tenantProvider.Object,
+        new ArchivedCompanyDeadLetter(Mock.Of<IServiceScopeFactory>(), NullLogger<ArchivedCompanyDeadLetter>.Instance),
         NullLogger<GenerateReceiptHandler>.Instance);
 
     private static Order BuildOrder(PaymentType paymentType, PaymentStatus paymentStatus, string countryId = "cz")
@@ -63,7 +66,6 @@ public class GenerateReceiptHandlerBranchTests
             customerAddress: address,
             rooms: 1,
             bathrooms: 1,
-            extras: new Dictionary<string, bool>(),
             cleaningDateTime: DateTime.UtcNow.AddDays(1),
             paymentType: paymentType,
             totalPrice: 1000m,

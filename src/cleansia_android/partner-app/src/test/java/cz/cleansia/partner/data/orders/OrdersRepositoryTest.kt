@@ -34,10 +34,18 @@ class OrdersRepositoryTest {
 
     @Test
     fun clear_resetsPaneWatermarks() = runTest {
+        // Named, so a filter the spec adds and the repository never sends lands on its default
+        // on both sides instead of shifting a positional matcher off the argument it was written for.
         coEvery {
             orderApi.orderGetPaged(
-                any(), any(), any(), any(), any(), any(), any(), any(), any(), any(),
-                any(), any(), any(), any(), any(), any(), any(), any(), any(), any(),
+                filterOrderStatuses = any(),
+                filterIsUnassigned = any(),
+                filterEmployeeId = any(),
+                filterCleaningDateFrom = any(),
+                filterCleaningDateTo = any(),
+                sort = any(),
+                offset = any(),
+                limit = any(),
             )
         } returns Response.success(mockk<PagedDataOfOrderListItem>(relaxed = true))
         val repo = newRepo()

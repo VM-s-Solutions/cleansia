@@ -193,6 +193,23 @@
 
 // Order Status styles
 .order-status-badge {
+  // Slate, deliberately not amber: New means "booked, nobody assigned yet" — a normal resting state,
+  // not a warning. Amber is reserved for Pending, which is the dead payment-limbo status.
+  &.status-new {
+    background-color: rgba(100, 116, 139, 0.15);
+    color: #334155;
+    border: 1px solid rgba(100, 116, 139, 0.3);
+    box-shadow: 0 1px 2px rgba(100, 116, 139, 0.1);
+  }
+
+  // Teal — between Confirmed (blue, taken) and InProgress (violet, working).
+  &.status-ontheway {
+    background-color: rgba(20, 184, 166, 0.15);
+    color: #115e59;
+    border: 1px solid rgba(20, 184, 166, 0.3);
+    box-shadow: 0 1px 2px rgba(20, 184, 166, 0.1);
+  }
+
   &.status-pending {
     background-color: rgba(245, 158, 11, 0.15);
     color: #b45309;

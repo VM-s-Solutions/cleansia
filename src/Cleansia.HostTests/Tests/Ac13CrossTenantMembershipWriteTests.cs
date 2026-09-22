@@ -28,8 +28,8 @@ namespace Cleansia.HostTests.Tests;
 /// </summary>
 public sealed class Ac13CrossTenantMembershipWriteTests(HostTestPostgresFixture db) : AuthzHostTestBase(db)
 {
-    private const string TenantA = "tenant-A";
-    private const string TenantB = "tenant-B";
+    private const string TenantA = HostTestTenants.A;
+    private const string TenantB = HostTestTenants.B;
 
     private sealed record Arranged(string OwnerId, string OwnerEmail);
 
@@ -42,8 +42,9 @@ public sealed class Ac13CrossTenantMembershipWriteTests(HostTestPostgresFixture 
             await DomainSeed.EnsureReferenceDataAsync(ctx);
             var owner = DomainSeed.Customer(ownerEmail, tenantId: TenantA);
             ctx.Users.Add(owner);
-            var plan = DomainSeed.MembershipPlan(tenantId: TenantA);
+            var plan = DomainSeed.MembershipPlan();
             ctx.MembershipPlans.Add(plan);
+            ctx.MembershipPlanPrices.Add(DomainSeed.MembershipPlanPrice(plan.Id));
             var membership = DomainSeed.ActiveMembership(owner.Id, plan.Id, tenantId: TenantA);
             ctx.UserMemberships.Add(membership);
             ownerId = owner.Id;

@@ -12,6 +12,7 @@ using Cleansia.Core.Domain.Users;
 using Cleansia.Tests.Common;
 using MockQueryable;
 using Moq;
+using Cleansia.TestUtilities;
 
 namespace Cleansia.Tests.Features.Orders;
 
@@ -73,7 +74,7 @@ public class PreferredOfferExitAgreementTests
             .Setup(s => s.CanAccessOrderAsync(It.IsAny<Order>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
         _employeeRepository
-            .Setup(r => r.GetQueryable())
+            .Setup(r => r.GetQueryableIgnoringTenant())
             .Returns(Array.Empty<Employee>().AsQueryable().BuildMock());
         _resolver
             .Setup(r => r.ResolveAsync(
@@ -134,7 +135,7 @@ public class PreferredOfferExitAgreementTests
         var command = new ChoosePreferredCleaner.Command(OrderId, SecondChoiceId);
 
         var validation = await new ChoosePreferredCleaner.Validator(
-                _session.Object, _userMembershipRepository.Object, _orderRepository.Object)
+                _session.Object, _userMembershipRepository.Object, _orderRepository.Object, PaidInCzk())
             .ValidateAsync(command);
 
         if (!validation.IsValid)
@@ -191,15 +192,17 @@ public class PreferredOfferExitAgreementTests
 
     private GetOrderDetails.Handler CreateDetailHandler() =>
         new(
-            _orderRepository.Object,
             _orderAccessService.Object,
             _session.Object,
             _payConfigRepository.Object,
             _orderEmployeePayRepository.Object,
             _orderPhotoRepository.Object,
             _employeeRepository.Object,
+            Mock.Of<IUserRepository>(),
+            Mock.Of<ITenantRepository>(),
             _expressWaiverConsumer.Object,
-            _userMembershipRepository.Object);
+            _userMembershipRepository.Object,
+            WorkContractTestData.AcceptanceRepository().Object);
 
     private ChoosePreferredCleaner.Handler CreateChooseHandler() =>
         new(
@@ -207,21 +210,22 @@ public class PreferredOfferExitAgreementTests
             _session.Object,
             _resolver.Object,
             Mock.Of<INotificationProducer>(),
-            _userMembershipRepository.Object);
+            _userMembershipRepository.Object,
+            Mock.Of<ITenantProvider>());
 
     private void GiveTheCallerPlus() =>
         _userMembershipRepository
-            .Setup(r => r.GetActiveForUserNoTrackingAsync(
+            .Setup(r => r.GetEntitledForUserNoTrackingAsync(
                 It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(UserMembership.Create(
-                CustomerUserId, "plan-plus", "sub_exit", DateTime.UtcNow, DateTime.UtcNow.AddMonths(1)));
+                CustomerUserId, "plan-plus", "currency-czk", "sub_exit", DateTime.UtcNow, DateTime.UtcNow.AddMonths(1)));
 
     private void Arrange(string scenario)
     {
         if (scenario == "no-plus-membership")
         {
             _userMembershipRepository
-                .Setup(r => r.GetActiveForUserNoTrackingAsync(
+                .Setup(r => r.GetEntitledForUserNoTrackingAsync(
                     It.IsAny<string>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync((UserMembership?)null);
         }
@@ -234,7 +238,6 @@ public class PreferredOfferExitAgreementTests
             customerAddress: Address.Create("Exit St 1", "Praha", "11000", "cz"),
             rooms: 2,
             bathrooms: 1,
-            extras: new Dictionary<string, bool>(),
             cleaningDateTime: DateTime.UtcNow.AddHours(cleaningInHours),
             paymentType: PaymentType.Card,
             totalPrice: 1500m,
@@ -246,7 +249,7 @@ public class PreferredOfferExitAgreementTests
         order.Id = OrderId;
         order.UpdateEstimatedTime(120);
         order.SetMaxEmployees(2);
-        order.SetCurrency(Cleansia.Core.Domain.Internationalization.Currency.Create("CZK", "Kč", "Czech Koruna", 1m));
+        order.SetCurrency(Czk);
         order.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.New, order));
 
         // The money case stays at New + Card + Pending — the state a card booking sits in until the
@@ -290,11 +293,20 @@ public class PreferredOfferExitAgreementTests
             order.AddAssignedEmployee(OrderEmployee.Create(order, NewCleaner(RivalId)));
         }
 
-        _orderRepository.Setup(r => r.GetQueryable()).Returns(new[] { order }.AsQueryable().BuildMock());
+        _orderRepository.Setup(r => r.GetQueryableForOwner(It.IsAny<string>())).Returns(new[] { order }.AsQueryable().BuildMock());
         _orderRepository
             .Setup(r => r.GetByIdAsync(OrderId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(order);
+        _orderAccessService
+            .Setup(a => a.LoadOrderForCallerAsync(OrderId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(order);
     }
+
+    private static readonly Cleansia.Core.Domain.Internationalization.Currency Czk =
+        Cleansia.Core.Domain.Internationalization.Currency.Create("CZK", "Kč", "Czech Koruna");
+
+    /// <summary>Every cleaner is paid in the order's own currency: the currency term is not this suite's subject.</summary>
+    private static ICurrencyResolutionService PaidInCzk() => OrderMarketDoubles.Trading(Czk);
 
     private static Employee NewCleaner(string employeeId)
     {

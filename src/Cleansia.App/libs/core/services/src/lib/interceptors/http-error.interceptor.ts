@@ -20,8 +20,10 @@ function resolveApiError(translate: TranslateService, errorKey: unknown): string
   return message === candidateKey ? translate.instant(GENERIC_ERROR_KEY) : message;
 }
 
-function isAbsentResourceRead(method: string, errorKey: unknown): boolean {
-  return method === 'GET' && ABSENT_RESOURCE_ERROR_CODES.has(String(errorKey));
+function isAbsentResourceRead(method: string, url: string, errorKey: unknown): boolean {
+  if (method !== 'GET') return false;
+  return ABSENT_RESOURCE_ERROR_CODES.has(String(errorKey)) ||
+    (errorKey === 'order.not_found' && /\/api\/(?:v[^/]+\/)?AdminOrder\/[^/?]+\/customer(?:\?|$)/i.test(url));
 }
 
 export const HttpErrorInterceptorFn: HttpInterceptorFn = (req, next) => {
@@ -42,7 +44,7 @@ export const HttpErrorInterceptorFn: HttpInterceptorFn = (req, next) => {
                 const errorKey = parserErrorResponse.errors
                   ? getObjectValues(parserErrorResponse.errors)[0]
                   : 'common.error_occurred';
-                if (isAbsentResourceRead(req.method, errorKey)) {
+                if (isAbsentResourceRead(req.method, req.url, errorKey)) {
                   return;
                 }
                 snackbarService.showError(resolveApiError(translate, errorKey));
@@ -54,7 +56,7 @@ export const HttpErrorInterceptorFn: HttpInterceptorFn = (req, next) => {
             const errorKey = error.error?.errors
               ? getObjectValues(error.error.errors)[0]
               : 'common.error_occurred';
-            if (!isAbsentResourceRead(req.method, errorKey)) {
+            if (!isAbsentResourceRead(req.method, req.url, errorKey)) {
               snackbarService.showError(resolveApiError(translate, errorKey));
             }
           }

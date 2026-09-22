@@ -6,11 +6,12 @@ import {
   GdprRequestDto,
   GdprRequestStatus,
   PagedDataOfGdprRequestDto,
+  RequestsClient,
   UserConsentDto,
 } from '@cleansia/admin-services';
 import { SnackbarService } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
-import { of, throwError } from 'rxjs';
+import { Subject, of, throwError } from 'rxjs';
 import { DataProtectionFacade } from './data-protection.facade';
 
 describe('DataProtectionFacade', () => {
@@ -21,6 +22,7 @@ describe('DataProtectionFacade', () => {
     export: jest.Mock;
     deleteAccount: jest.Mock;
   };
+  let requestsClient: { retryDeletion: jest.Mock };
   let snackbar: {
     showSuccess: jest.Mock;
     showError: jest.Mock;
@@ -59,6 +61,7 @@ describe('DataProtectionFacade', () => {
       export: jest.fn(),
       deleteAccount: jest.fn(),
     };
+    requestsClient = { retryDeletion: jest.fn() };
     snackbar = {
       showSuccess: jest.fn(),
       showError: jest.fn(),
@@ -69,6 +72,7 @@ describe('DataProtectionFacade', () => {
       providers: [
         DataProtectionFacade,
         { provide: AdminGdprClient, useValue: gdprClient },
+        { provide: RequestsClient, useValue: requestsClient },
         { provide: SnackbarService, useValue: snackbar },
         { provide: TranslateService, useValue: { instant: (k: string) => k } },
       ],
@@ -83,7 +87,12 @@ describe('DataProtectionFacade', () => {
 
       facade.loadRequests();
 
-      expect(gdprClient.requests).toHaveBeenCalledWith(undefined, 0, 20);
+      expect(gdprClient.requests).toHaveBeenCalledWith(
+        undefined,
+        undefined,
+        0,
+        20
+      );
       expect(facade.requests().length).toBe(1);
       expect(facade.totalRecords()).toBe(1);
       expect(facade.initialLoading()).toBe(false);
@@ -96,7 +105,119 @@ describe('DataProtectionFacade', () => {
 
       facade.onPageChange(40, 20);
 
-      expect(gdprClient.requests).toHaveBeenCalledWith(undefined, 40, 20);
+      expect(gdprClient.requests).toHaveBeenCalledWith(
+        undefined,
+        undefined,
+        40,
+        20
+      );
+    });
+
+    it('opens on every status', () => {
+      expect(facade.status()).toBeNull();
+    });
+
+    it('passes the chosen status to the server and restarts from the first page', () => {
+      gdprClient.requests.mockReturnValue(of(pagedRequests(requestRows, 1)));
+      facade.onPageChange(40, 20);
+
+      facade.selectStatus(GdprRequestStatus.Failed);
+
+      expect(facade.status()).toBe(GdprRequestStatus.Failed);
+      expect(gdprClient.requests).toHaveBeenLastCalledWith(
+        GdprRequestStatus.Failed,
+        undefined,
+        0,
+        20
+      );
+    });
+
+    it('keeps the chosen status across page changes', () => {
+      gdprClient.requests.mockReturnValue(of(pagedRequests(requestRows, 1)));
+      facade.selectStatus(GdprRequestStatus.Processing);
+
+      facade.onPageChange(20, 20);
+
+      expect(gdprClient.requests).toHaveBeenLastCalledWith(
+        GdprRequestStatus.Processing,
+        undefined,
+        20,
+        20
+      );
+    });
+
+    it('passes the zero-valued Pending status rather than dropping it as falsy', () => {
+      gdprClient.requests.mockReturnValue(of(pagedRequests(requestRows, 1)));
+
+      facade.selectStatus(GdprRequestStatus.Pending);
+
+      expect(facade.status()).toBe(GdprRequestStatus.Pending);
+      expect(gdprClient.requests).toHaveBeenLastCalledWith(
+        GdprRequestStatus.Pending,
+        undefined,
+        0,
+        20
+      );
+    });
+
+    it('drops a response the filter has already moved past, so the newer rows stay', () => {
+      const older = new Subject<PagedDataOfGdprRequestDto>();
+      const newer = new Subject<PagedDataOfGdprRequestDto>();
+      gdprClient.requests
+        .mockReturnValueOnce(older.asObservable())
+        .mockReturnValueOnce(newer.asObservable());
+      const failedRow = GdprRequestDto.fromJS({
+        id: 'req-failed',
+        status: GdprRequestStatus.Failed,
+      });
+      const staleRow = GdprRequestDto.fromJS({
+        id: 'req-stale',
+        status: GdprRequestStatus.Completed,
+      });
+
+      facade.loadRequests();
+      facade.selectStatus(GdprRequestStatus.Failed);
+      newer.next(pagedRequests([failedRow], 1));
+      newer.complete();
+      older.next(pagedRequests([staleRow], 7));
+      older.complete();
+
+      expect(facade.requests()).toEqual([failedRow]);
+      expect(facade.totalRecords()).toBe(1);
+    });
+
+    it('drops a response the page has already moved past, so the newer rows stay', () => {
+      const older = new Subject<PagedDataOfGdprRequestDto>();
+      const newer = new Subject<PagedDataOfGdprRequestDto>();
+      gdprClient.requests
+        .mockReturnValueOnce(older.asObservable())
+        .mockReturnValueOnce(newer.asObservable());
+      const secondPageRow = GdprRequestDto.fromJS({ id: 'req-page-2' });
+      const staleRow = GdprRequestDto.fromJS({ id: 'req-stale' });
+
+      facade.loadRequests();
+      facade.onPageChange(20, 20);
+      newer.next(pagedRequests([secondPageRow], 21));
+      newer.complete();
+      older.next(pagedRequests([staleRow], 21));
+      older.complete();
+
+      expect(facade.requests()).toEqual([secondPageRow]);
+    });
+
+    it('clearing the status filter asks for every status again', () => {
+      gdprClient.requests.mockReturnValue(of(pagedRequests(requestRows, 1)));
+      facade.selectStatus(GdprRequestStatus.Failed);
+
+      facade.selectStatus(null);
+
+      expect(facade.status()).toBeNull();
+      expect(gdprClient.requests).toHaveBeenLastCalledWith(
+        undefined,
+        undefined,
+        0,
+        20
+      );
     });
 
     it('uses the server-reported total record count', () => {
@@ -231,6 +352,55 @@ describe('DataProtectionFacade', () => {
       facade.erasing.set(true);
       facade.eraseUserAccount('user-1');
       expect(gdprClient.deleteAccount).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('deletion retry', () => {
+    it('retries the request, shows success and refreshes the list', () => {
+      requestsClient.retryDeletion.mockReturnValue(of(undefined));
+      gdprClient.requests.mockReturnValue(of(pagedRequests(requestRows, 1)));
+
+      facade.retryDeletion('req-1');
+
+      expect(requestsClient.retryDeletion).toHaveBeenCalledWith('req-1');
+      expect(snackbar.showSuccess).toHaveBeenCalledWith(
+        'pages.data_protection.requests.retry_success'
+      );
+      expect(gdprClient.requests).toHaveBeenCalledTimes(1);
+      expect(facade.retrying()).toBe(false);
+    });
+
+    it('surfaces the refusal and still re-reads the list, so a row the job already completed leaves the screen', () => {
+      const error = new Error('gdpr.request_not_retryable');
+      requestsClient.retryDeletion.mockReturnValue(throwError(() => error));
+      gdprClient.requests.mockReturnValue(of(pagedRequests(requestRows, 1)));
+
+      facade.retryDeletion('req-1');
+
+      expect(snackbar.showApiError).toHaveBeenCalledWith(
+        error,
+        'pages.data_protection.requests.retry_error'
+      );
+      expect(snackbar.showSuccess).not.toHaveBeenCalled();
+      expect(gdprClient.requests).toHaveBeenCalledTimes(1);
+      expect(facade.retrying()).toBe(false);
+    });
+
+    it('reports a retry in flight while the call runs', () => {
+      requestsClient.retryDeletion.mockReturnValue(new Subject<void>());
+
+      facade.retryDeletion('req-1');
+
+      expect(facade.retrying()).toBe(true);
+    });
+
+    it('ignores a second retry while one is in flight', () => {
+      requestsClient.retryDeletion.mockReturnValue(new Subject<void>());
+      facade.retryDeletion('req-1');
+
+      facade.retryDeletion('req-2');
+
+      expect(requestsClient.retryDeletion).toHaveBeenCalledTimes(1);
     });
   });
 });

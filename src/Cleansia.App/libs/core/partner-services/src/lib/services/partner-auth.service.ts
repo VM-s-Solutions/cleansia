@@ -15,11 +15,9 @@ import {
   LogoutCommand,
   PartnerLoginCommand,
   RefreshTokenCommand,
-  RegisterCommand,
   RegisterEmployeeCommand,
   ResendConfirmationEmailCommand,
 } from '../client/partner-client';
-import { SignupConsentService } from './signup-consent.service';
 
 @Injectable({
   providedIn: 'root',
@@ -29,7 +27,6 @@ export class PartnerAuthService {
   private readonly router = inject(Router);
   private readonly translate = inject(TranslateService);
   private readonly cookieKeys = inject(AUTH_COOKIE_KEYS);
-  private readonly signupConsent = inject(SignupConsentService);
 
   readonly isLoggedIn$ = new BehaviorSubject<boolean>(this.isLoggedIn());
   readonly isLoggedInAction$: Observable<boolean> = this.isLoggedIn$.pipe(
@@ -58,32 +55,17 @@ export class PartnerAuthService {
     return this.partnerClient.authClient.login(command);
   }
 
-  register(
-    email: string,
-    password: string,
-    firstName: string,
-    lastName: string,
-    referralCode?: string
-  ): Observable<boolean> {
-    const command = new RegisterCommand();
-    command.email = email;
-    command.password = password;
-    command.firstName = firstName;
-    command.lastName = lastName;
-    command.language = this.currentLanguage();
-    command.referralCode = referralCode;
-
-    // The endpoint answers 200 with no body (T-0665): the bool it used to return was `true` on
-    // every success path, because failures arrive as errors. Success is therefore "it did not
-    // throw", which is what this maps. Same shape as logout() and resendConfirmationEmail() below.
-    return this.partnerClient.authClient.register(command).pipe(map(() => true));
-  }
-
+  /**
+   * `termsAccepted` is the tick as the form holds it at submit; the server grants the two employee
+   * consents from it on the same request, so nothing is parked client-side for a later session.
+   */
   registerEmployee(
     email: string,
     password: string,
     firstName: string,
-    lastName: string
+    lastName: string,
+    termsAccepted: boolean,
+    countryId?: string | null
   ): Observable<boolean> {
     const command = new RegisterEmployeeCommand();
     command.email = email;
@@ -91,6 +73,8 @@ export class PartnerAuthService {
     command.firstName = firstName;
     command.lastName = lastName;
     command.language = this.currentLanguage();
+    command.countryId = countryId ?? undefined;
+    command.termsAccepted = termsAccepted;
 
     return this.partnerClient.authClient.registerEmployee(command).pipe(map(() => true));
   }
@@ -123,7 +107,8 @@ export class PartnerAuthService {
     googleId: string,
     email: string,
     firstName: string,
-    lastName: string
+    lastName: string,
+    countryId?: string | null
   ): Observable<JwtTokenResponse> {
     const command = new GoogleAuthCommand();
     command.token = token;
@@ -131,6 +116,7 @@ export class PartnerAuthService {
     command.email = email;
     command.firstName = firstName;
     command.lastName = lastName;
+    command.countryId = countryId ?? undefined;
 
     return this.partnerClient.authClient.googleAuth(command).pipe(
       map((authResult: JwtTokenResponse) => {
@@ -258,11 +244,6 @@ export class PartnerAuthService {
     }
 
     this.isLoggedIn$.next(true);
-
-    // The signup tick predates any session, and the identity here is the
-    // server's rather than whatever a form held.
-    this.signupConsent.flush(authResult.email);
-
     this.setWarningDialogStatus(false);
   }
 }

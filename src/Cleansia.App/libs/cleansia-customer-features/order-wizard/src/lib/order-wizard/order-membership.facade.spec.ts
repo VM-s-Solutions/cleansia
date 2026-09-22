@@ -1,6 +1,12 @@
 import { PLATFORM_ID } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { CustomerClient, GetMyMembershipResponse } from '@cleansia/customer-services';
+import {
+  CustomerClient,
+  GetMembershipPlansResponse,
+  GetMyMembershipResponse,
+} from '@cleansia/customer-services';
+import { selectMarketCountryId } from '@cleansia/customer-stores';
+import { MockStore, provideMockStore } from '@ngrx/store/testing';
 import { of, throwError } from 'rxjs';
 import { OrderMembershipFacade } from './order-membership.facade';
 
@@ -22,6 +28,7 @@ function buildMembership(fields: {
 
 describe('OrderMembershipFacade', () => {
   let facade: OrderMembershipFacade;
+  let store: MockStore;
   let membershipClient: { getMine: jest.Mock; getPlans: jest.Mock };
 
   function build(platform: 'server' | 'browser'): void {
@@ -41,11 +48,13 @@ describe('OrderMembershipFacade', () => {
     TestBed.configureTestingModule({
       providers: [
         OrderMembershipFacade,
+        provideMockStore({ selectors: [{ selector: selectMarketCountryId, value: 'cze-id' }] }),
         { provide: PLATFORM_ID, useValue: platform },
         { provide: CustomerClient, useValue: { membershipClient } },
       ],
     });
 
+    store = TestBed.inject(MockStore);
     facade = TestBed.inject(OrderMembershipFacade);
   }
 
@@ -171,6 +180,47 @@ describe('OrderMembershipFacade', () => {
       facade.loadPlans();
 
       expect(facade.plans()).toEqual([]);
+      expect(facade.plusUnavailable()).toBe(false);
+    });
+
+    // The Plus offer inside a booking follows the CHOSEN market, not the address (ADR-0058 D4).
+    it('reads the plans for the chosen market and again when it changes', () => {
+      const plan = new GetMembershipPlansResponse();
+      plan.code = 'PLUS_MONTHLY';
+      membershipClient.getPlans.mockReturnValue(of([plan]));
+
+      facade.loadPlans();
+      facade.loadPlans();
+
+      expect(membershipClient.getPlans).toHaveBeenCalledTimes(1);
+      expect(membershipClient.getPlans).toHaveBeenCalledWith('cze-id');
+      expect(facade.plans()).toEqual([plan]);
+
+      store.overrideSelector(selectMarketCountryId, 'svk-id');
+      store.refreshState();
+
+      expect(membershipClient.getPlans).toHaveBeenLastCalledWith('svk-id');
+    });
+
+    it('reports Plus unavailable when the market lists no plan, and not when the read failed', () => {
+      membershipClient.getPlans.mockReturnValue(of([]));
+      facade.loadPlans();
+      expect(facade.plusUnavailable()).toBe(true);
+
+      membershipClient.getPlans.mockReturnValue(throwError(() => new Error('offline')));
+      store.overrideSelector(selectMarketCountryId, 'svk-id');
+      store.refreshState();
+      expect(facade.plans()).toEqual([]);
+      expect(facade.plusUnavailable()).toBe(false);
+    });
+
+    it('reads nothing during a server render', () => {
+      TestBed.resetTestingModule();
+      build('server');
+
+      facade.loadPlans();
+
+      expect(membershipClient.getPlans).not.toHaveBeenCalled();
     });
   });
 

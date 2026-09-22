@@ -9,6 +9,9 @@ struct QuoteRequest: Equatable {
     let rooms: Int
     let bathrooms: Int
     let cleaningDate: Date?
+    /// The service address's country — the market the server prices and charges the booking in.
+    /// Nil until the address step yields one, which is the platform default.
+    let countryId: String?
 }
 
 protocol QuoteClient {
@@ -24,7 +27,8 @@ struct LiveQuoteClient: QuoteClient {
             bathrooms: request.bathrooms,
             currencyId: nil,
             selectedExtraSlugs: request.extraSlugs,
-            cleaningDate: request.cleaningDate
+            cleaningDate: request.cleaningDate,
+            countryId: request.countryId
         )
         return await apiResult(mapError: ApiError.fromGenerated) {
             try await BookingQuote(from: CustomerOrderAPI.orderQuote(quoteOrderCommand: command))

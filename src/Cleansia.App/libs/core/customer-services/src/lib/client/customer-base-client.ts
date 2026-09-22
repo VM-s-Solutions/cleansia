@@ -13,6 +13,8 @@ import {
   ICountryClient,
   CreditClient,
   ICreditClient,
+  CurrencyClient,
+  ICurrencyClient,
   DisputeClient,
   IDisputeClient,
   ExtraClient,
@@ -21,8 +23,12 @@ import {
   IGdprClient,
   ILanguageClient,
   LanguageClient,
+  ILegalClient,
+  LegalClient,
   ILoyaltyClient,
   LoyaltyClient,
+  IMarketClient,
+  MarketClient,
   IMembershipClient,
   MembershipClient,
   INotificationPreferencesClient,
@@ -57,7 +63,9 @@ interface ICustomerClient {
   userClient: IUserClient;
   orderClient: ICustomerOrderClient;
   countryClient: ICountryClient;
+  currencyClient: ICurrencyClient;
   languageClient: ILanguageClient;
+  legalClient: ILegalClient;
   packageClient: IPackageClient;
   paymentClient: IPaymentClient;
   serviceClient: IServiceClient;
@@ -69,6 +77,7 @@ interface ICustomerClient {
   disputeClient: IDisputeClient;
   savedAddressClient: ISavedAddressClient;
   loyaltyClient: ILoyaltyClient;
+  marketClient: IMarketClient;
   creditClient: ICreditClient;
   promoCodeClient: IPromoCodeClient;
   referralClient: IReferralClient;
@@ -108,10 +117,15 @@ export class CustomerClient implements ICustomerClient {
     this.httpClient,
     this.apiBaseUrl
   );
+  currencyClient: ICurrencyClient = new CurrencyClient(
+    this.httpClient,
+    this.apiBaseUrl
+  );
   languageClient: ILanguageClient = new LanguageClient(
     this.httpClient,
     this.apiBaseUrl
   );
+  legalClient: ILegalClient = new LegalClient(this.httpClient, this.apiBaseUrl);
   packageClient: IPackageClient = new PackageClient(
     this.httpClient,
     this.apiBaseUrl
@@ -141,6 +155,7 @@ export class CustomerClient implements ICustomerClient {
     this.httpClient,
     this.apiBaseUrl
   );
+  marketClient: IMarketClient = new MarketClient(this.httpClient, this.apiBaseUrl);
   creditClient: ICreditClient = new CreditClient(
     this.httpClient,
     this.apiBaseUrl

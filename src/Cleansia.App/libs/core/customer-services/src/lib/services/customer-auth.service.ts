@@ -19,7 +19,6 @@ import { TranslateService } from '@ngx-translate/core';
 import { Observable, catchError, map, of, tap } from 'rxjs';
 import { CustomerClient } from '../client/customer-base-client';
 import { SESSION_LIFECYCLE_LISTENERS } from './session-lifecycle';
-import { SignupConsentService } from './signup-consent.service';
 
 @Injectable({
   providedIn: 'root',
@@ -30,7 +29,6 @@ export class CustomerAuthService {
   private readonly translate = inject(TranslateService);
   private readonly sessionListeners =
     inject(SESSION_LIFECYCLE_LISTENERS, { optional: true }) ?? [];
-  private readonly signupConsent = inject(SignupConsentService);
   private readonly cookieKeys = inject(AUTH_COOKIE_KEYS);
   // Guard storage access by platform, not `typeof localStorage` — Node 22+
   // exposes a global localStorage whose methods throw during SSR.
@@ -59,12 +57,21 @@ export class CustomerAuthService {
     return this.customerClient.authClient.login(command);
   }
 
+  /**
+   * `termsAccepted` is the tick as the form holds it at submit; the server grants the two consents
+   * from it and records the assertion either way (ADR-0062 D4). `countryId` is the market the
+   * account is opened with — the operating company an anonymous request lands in (ADR-0061 D3).
+   * The caller reads it from the market store, which sits above this library; null means "let the
+   * server pick its default market".
+   */
   register(
     email: string,
     password: string,
     firstName: string,
     lastName: string,
-    referralCode?: string
+    termsAccepted: boolean,
+    referralCode?: string,
+    countryId?: string | null
   ): Observable<boolean> {
     const command = new RegisterCommand();
     command.email = email;
@@ -75,6 +82,8 @@ export class CustomerAuthService {
     command.referralCode = referralCode?.trim()
       ? referralCode.trim().toUpperCase()
       : undefined;
+    command.countryId = countryId ?? undefined;
+    command.termsAccepted = termsAccepted;
 
     // 200 with no body since T-0665 — the bool was always `true`, failures come through as
     // errors. Success is "it did not throw", matching logout() in this same service.
@@ -117,9 +126,10 @@ export class CustomerAuthService {
     googleId: string,
     email: string,
     firstName: string,
-    lastName: string
+    lastName: string,
+    countryId?: string | null
   ): Observable<JwtTokenResponse> {
-    return this.googleAuth(token, googleId, email, firstName, lastName, true);
+    return this.googleAuth(token, googleId, email, firstName, lastName, true, countryId);
   }
 
   signInWithGoogle(
@@ -127,27 +137,30 @@ export class CustomerAuthService {
     googleId: string,
     email: string,
     firstName: string,
-    lastName: string
+    lastName: string,
+    countryId?: string | null
   ): Observable<JwtTokenResponse> {
-    return this.googleAuth(token, googleId, email, firstName, lastName, false);
+    return this.googleAuth(token, googleId, email, firstName, lastName, false, countryId);
   }
 
   signUpWithApple(
     identityToken: string,
     rawNonce: string,
     firstName?: string,
-    lastName?: string
+    lastName?: string,
+    countryId?: string | null
   ): Observable<JwtTokenResponse> {
-    return this.appleAuth(identityToken, rawNonce, firstName, lastName, true);
+    return this.appleAuth(identityToken, rawNonce, firstName, lastName, true, countryId);
   }
 
   signInWithApple(
     identityToken: string,
     rawNonce: string,
     firstName?: string,
-    lastName?: string
+    lastName?: string,
+    countryId?: string | null
   ): Observable<JwtTokenResponse> {
-    return this.appleAuth(identityToken, rawNonce, firstName, lastName, false);
+    return this.appleAuth(identityToken, rawNonce, firstName, lastName, false, countryId);
   }
 
   private googleAuth(
@@ -156,7 +169,8 @@ export class CustomerAuthService {
     email: string,
     firstName: string,
     lastName: string,
-    termsAccepted: boolean
+    termsAccepted: boolean,
+    countryId: string | null | undefined
   ): Observable<JwtTokenResponse> {
     const command = new GoogleAuthCommand();
     command.token = token;
@@ -165,6 +179,7 @@ export class CustomerAuthService {
     command.firstName = firstName;
     command.lastName = lastName;
     command.termsAccepted = termsAccepted;
+    command.countryId = countryId ?? undefined;
 
     return this.customerClient.authClient.googleAuth(command).pipe(
       map((authResult: JwtTokenResponse) => {
@@ -183,7 +198,8 @@ export class CustomerAuthService {
     rawNonce: string,
     firstName: string | undefined,
     lastName: string | undefined,
-    termsAccepted: boolean
+    termsAccepted: boolean,
+    countryId: string | null | undefined
   ): Observable<JwtTokenResponse> {
     const command = new AppleAuthCommand();
     command.identityToken = identityToken;
@@ -191,6 +207,7 @@ export class CustomerAuthService {
     command.firstName = firstName;
     command.lastName = lastName;
     command.termsAccepted = termsAccepted;
+    command.countryId = countryId ?? undefined;
 
     return this.customerClient.authClient.appleAuth(command).pipe(
       map((authResult: JwtTokenResponse) => {
@@ -314,10 +331,6 @@ export class CustomerAuthService {
     }
 
     this._isLoggedIn.set(true);
-
-    // The signup tick predates any session, and the identity here is the
-    // server's rather than whatever a form held.
-    this.signupConsent.flush(authResult.email);
 
     // Preload saved addresses so the order wizard finds them warm, even when
     // the user lands there without visiting profile first. Fire-and-forget —

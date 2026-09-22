@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component } from '@angular/core';
+import { LegalDocumentType } from '@cleansia/customer-services';
 import { LegalDocumentComponent } from '../legal-document/legal-document.component';
 
 @Component({
@@ -9,5 +10,5 @@ import { LegalDocumentComponent } from '../legal-document/legal-document.compone
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class TermsComponent {
-  sections = [1, 2, 3, 4, 5, 6];
+  protected readonly LegalDocumentType = LegalDocumentType;
 }

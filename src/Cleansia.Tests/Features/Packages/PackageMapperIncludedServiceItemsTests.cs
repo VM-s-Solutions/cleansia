@@ -18,14 +18,12 @@ public class PackageMapperIncludedServiceItemsTests
             categoryId: "cat-1",
             name: name,
             description: $"{name} desc",
-            basePrice: 100m,
-            perRoomPrice: 10m,
             estimatedTime: 30);
     }
 
     private static Package BuildPackage(params Service[] services)
     {
-        var package = Package.Create("Deluxe", "Deluxe bundle", 500m);
+        var package = Package.Create("Deluxe", "Deluxe bundle");
         foreach (var service in services)
         {
             package.AddService(service);
@@ -41,7 +39,7 @@ public class PackageMapperIncludedServiceItemsTests
         var oven = BuildService("Oven");
         var package = BuildPackage(windows, oven);
 
-        var details = package.MapToDetails("CZK");
+        var details = package.MapToDetails("CZK", price: 1000m);
 
         var items = details.IncludedServiceItems.ToList();
         Assert.Equal(2, items.Count);
@@ -64,7 +62,7 @@ public class PackageMapperIncludedServiceItemsTests
     {
         var package = BuildPackage(BuildService("Windows"), BuildService("Oven"));
 
-        var details = package.MapToDetails("CZK");
+        var details = package.MapToDetails("CZK", price: 1000m);
 
         Assert.Equal(new[] { "Windows", "Oven" }, details.IncludedServices.ToList());
     }
@@ -76,7 +74,7 @@ public class PackageMapperIncludedServiceItemsTests
         var oven = BuildService("Oven");
         var package = BuildPackage(windows, oven);
 
-        var details = package.MapToDetails("CZK");
+        var details = package.MapToDetails("CZK", price: 1000m);
 
         var itemNames = details.IncludedServiceItems.Select(i => i.Name).ToList();
         Assert.Equal(details.IncludedServices.ToList(), itemNames);

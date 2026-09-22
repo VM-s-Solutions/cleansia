@@ -65,6 +65,7 @@ public class NotificationFeedEventKeysTests
         // below, and the same reasoning FcmMessageFactoryTests states for the APNs display map.
         Assert.Equal(
             [
+                NotificationEventCatalog.OrderPaymentConfirmed,
                 NotificationEventCatalog.OrderConfirmed,
                 NotificationEventCatalog.OrderCleanerAssigned,
                 NotificationEventCatalog.OrderOnTheWay,
@@ -75,6 +76,7 @@ public class NotificationFeedEventKeysTests
                 NotificationEventCatalog.OrderNoCleanerRefunded,
                 NotificationEventCatalog.DisputeReply,
                 NotificationEventCatalog.RecurringScheduled,
+                NotificationEventCatalog.RecurringPaused,
                 NotificationEventCatalog.MembershipExpiringSoon,
                 NotificationEventCatalog.MembershipCancellationEffective,
                 NotificationEventCatalog.LoyaltyTierUpgrade,

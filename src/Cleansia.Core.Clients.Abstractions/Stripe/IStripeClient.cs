@@ -1,4 +1,4 @@
-﻿using Cleansia.Core.Domain.Orders;
+using Cleansia.Core.Domain.Orders;
 
 namespace Cleansia.Core.Clients.Abstractions.Stripe;
 
@@ -219,7 +219,8 @@ public record SubscriptionResult(
     /// granted no trial on this subscription. It is what the once-per-customer trial rule reads back
     /// on the NEXT subscribe, so it is the answer Stripe gave, never the number we asked for.
     /// </summary>
-    DateTime? TrialEnd = null);
+    DateTime? TrialEnd = null,
+    string? Status = null);
 
 /// <summary>
 /// Result of <see cref="IStripeClient.CreatePaymentIntentAsync"/>. The

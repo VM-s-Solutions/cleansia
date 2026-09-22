@@ -59,6 +59,7 @@ fun SignInScreen(
     onForgotPassword: () -> Unit = {},
     onCreateAccount: () -> Unit = {},
     onGoogleSignIn: () -> Unit = {},
+    onGuestOrder: () -> Unit = {},
     loading: Boolean = false,
 ) {
     var email by remember { mutableStateOf("") }
@@ -157,6 +158,13 @@ fun SignInScreen(
         )
 
         Spacer(Modifier.height(24.dp))
+
+        CleansiaTextLink(
+            text = stringResource(R.string.guest_order_entry),
+            onClick = { if (!loading) onGuestOrder() },
+        )
+
+        Spacer(Modifier.height(16.dp))
 
         // Footer link
         Row(

@@ -6,6 +6,7 @@ import cz.cleansia.partner.core.auth.EmployeeIdResolver
 import cz.cleansia.core.network.ApiError
 import cz.cleansia.partner.core.network.ApiErrorTranslator
 import cz.cleansia.core.network.ApiResult
+import cz.cleansia.partner.data.payroll.PeriodCurrency
 import cz.cleansia.partner.data.payroll.PeriodPayRepository
 import cz.cleansia.partner.data.payroll.PeriodPaySummary
 import cz.cleansia.partner.testing.MainDispatcherRule
@@ -49,6 +50,7 @@ class PeriodPayViewModelTest {
         invoiceId = null,
         orderPays = emptyList(),
         currencyCode = "CZK",
+        availableCurrencies = listOf(PeriodCurrency(id = "cur-czk", code = "CZK")),
     )
 
     @Before
@@ -61,8 +63,13 @@ class PeriodPayViewModelTest {
         every { errorTranslator.translate(any()) } returns "translated error"
     }
 
-    private fun viewModel(payPeriodId: String = "pp-1") = PeriodPayViewModel(
-        savedStateHandle = SavedStateHandle(mapOf("payPeriodId" to payPeriodId)),
+    private fun viewModel(payPeriodId: String = "pp-1", currencyId: String? = null) = PeriodPayViewModel(
+        savedStateHandle = SavedStateHandle(
+            buildMap {
+                put("payPeriodId", payPeriodId)
+                currencyId?.let { put("currencyId", it) }
+            },
+        ),
         periodPayRepository = repository,
         employeeIdResolver = employeeIdResolver,
         errorTranslator = errorTranslator,
@@ -78,7 +85,30 @@ class PeriodPayViewModelTest {
 
         advanceUntilIdle()
         assertEquals(PeriodPayUiState.Loaded(summary), vm.state.value)
-        coVerify(exactly = 1) { repository.getPeriodPays("emp-1", "pp-1") }
+        coVerify(exactly = 1) { repository.getPeriodPays("emp-1", "pp-1", null) }
+    }
+
+    @Test
+    fun `opened from an invoice asks for that invoice's currency view`() = runTest {
+        coEvery { repository.getPeriodPays("emp-1", "pp-1", "cur-eur") } returns ApiResult.Success(summary)
+
+        val vm = viewModel(currencyId = "cur-eur")
+        advanceUntilIdle()
+
+        assertEquals(PeriodPayUiState.Loaded(summary), vm.state.value)
+        coVerify(exactly = 1) { repository.getPeriodPays("emp-1", "pp-1", "cur-eur") }
+        coVerify(exactly = 0) { repository.getPeriodPays("emp-1", "pp-1", null) }
+    }
+
+    @Test
+    fun `opened from the tab names no currency and lets the server pick`() = runTest {
+        coEvery { repository.getPeriodPays("emp-1", "pp-1", null) } returns ApiResult.Success(summary)
+
+        viewModel(currencyId = null)
+        advanceUntilIdle()
+
+        coVerify(exactly = 1) { repository.getPeriodPays("emp-1", "pp-1", null) }
+        coVerify(exactly = 0) { repository.getPeriodPays(any(), any(), match { it != null }) }
     }
 
     @Test
@@ -91,7 +121,7 @@ class PeriodPayViewModelTest {
         advanceUntilIdle()
 
         assertEquals(PeriodPayUiState.Error, vm.state.value)
-        coVerify(exactly = 0) { repository.getPeriodPays(any(), any()) }
+        coVerify(exactly = 0) { repository.getPeriodPays(any(), any(), any()) }
     }
 
     @Test

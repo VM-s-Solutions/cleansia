@@ -17,6 +17,10 @@ namespace Cleansia.Core.AppServices.Features.Bookings;
 /// <para><b>A dispatcher, not a worker.</b> It selects candidate template ids and sends one command per
 /// template, each in its OWN DI scope — and therefore its own DbContext, change tracker, tenant provider
 /// and pending-dispatch buffer. → /flows/booking-and-pricing#recurring-bookings</para>
+///
+/// <para>A deactivated company's templates are skipped (ADR-0064 D1): this is the one job that creates
+/// new business rows without a customer's act and reads no market predicate, so it asks the registry
+/// once per company instead.</para>
 /// </summary>
 public class MaterializeRecurringBookings
 {
@@ -40,6 +44,7 @@ public class MaterializeRecurringBookings
 
     public class Handler(
         IRecurringBookingTemplateRepository templateRepository,
+        ITenantRepository tenantRepository,
         IServiceScopeFactory serviceScopeFactory,
         ILogger<Handler> logger) : ICommandHandler<Command, Response>
     {
@@ -52,12 +57,27 @@ public class MaterializeRecurringBookings
 
             // Ids only. Entities loaded HERE would belong to this scope's context, and the per-template
             // command needs them tracked by its own — so the handoff is deliberately just the key.
-            var templateIds = await templateRepository.GetQueryableIgnoringTenant()
+            var candidates = await templateRepository.GetQueryableIgnoringTenant()
                 .Where(t => t.IsActive
                     && t.StartsOn <= horizon
                     && (t.EndsOn == null || t.EndsOn > now))
-                .Select(t => t.Id)
+                .Select(t => new { t.Id, t.TenantId })
                 .ToListAsync(cancellationToken);
+
+            var templateIds = new List<string>(candidates.Count);
+            foreach (var group in candidates.GroupBy(c => c.TenantId, StringComparer.Ordinal))
+            {
+                var tenant = group.Key is null ? null : await tenantRepository.GetByIdAsync(group.Key, cancellationToken);
+                if (tenant is { IsDeactivated: true })
+                {
+                    logger.LogInformation(
+                        "Recurring sweep skips {Count} active templates of deactivated company {TenantId}",
+                        group.Count(), group.Key);
+                    continue;
+                }
+
+                templateIds.AddRange(group.Select(c => c.Id));
+            }
 
             var ordersCreated = 0;
             var processed = 0;

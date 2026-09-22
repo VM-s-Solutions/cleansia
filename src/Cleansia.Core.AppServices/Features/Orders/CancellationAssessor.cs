@@ -46,12 +46,11 @@ internal static class CancellationAssessor
 
     public static CancellationAssessment Assess(Order order, CancellationPolicy policy, DateTime nowUtc)
     {
-        // An assignment row, NOT an OrderStatus.Confirmed track. Confirmed is overloaded — the payment
-        // webhook, cash auto-confirm and the admin override all write it with no cleaner involved — and
-        // it is also SILENT in the case that matters most: TakeOrder assigns unconditionally but appends
-        // its Confirmed track only from New/Pending, so a cleaner taking an already-Confirmed order
-        // leaves no new track. The row is the only durable evidence a cleaner was pulled onto the job,
-        // which is what the fee prices.
+        // An assignment row, NOT an OrderStatus.Confirmed track. The crew is the fact and the status is
+        // its summary: Confirmed is written when a cleaner takes the job and walked back when a release
+        // can prove the crew is empty, but a cleaner taking an already-Confirmed seat leaves no new
+        // track, and two releases racing can leave the summary standing. The row is the durable
+        // evidence a cleaner was pulled onto the job, which is what the fee prices.
         var hasBeenAccepted = order.AssignedEmployees.Count > 0;
 
         var tier = BookingPolicy.ClassifyCancellation(

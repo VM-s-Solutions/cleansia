@@ -41,6 +41,8 @@ import {
   canUploadAfterPhotos,
   canAddNoteOrIssue,
   canMarkCashCollected,
+  canAcceptWorkContract,
+  findCallerWorkContractAcceptance,
   computeElapsedTime,
   buildCurrencyOptions,
   hasExtras,
@@ -160,6 +162,25 @@ export class OrderDetailsComponent implements OnInit {
     if (!order || !eid) return false;
     // Per spec: Complete requires InProgress + employee assigned + at least one After photo.
     return canCompleteOrder(order.orderStatus.value, order.assignedEmployees, eid) && this.hasAfterPhotos();
+  });
+
+  protected readonly callerWorkContractAcceptance = computed(() => {
+    const order = this.orderDetails();
+    const eid = this.currentEmployeeId();
+    if (!order || !eid) return null;
+    return findCallerWorkContractAcceptance(order.assignedEmployees, order.workContractAcceptances, eid);
+  });
+
+  protected readonly canAcceptWorkContract = computed(() => {
+    const order = this.orderDetails();
+    const eid = this.currentEmployeeId();
+    if (!order || !eid) return false;
+    return canAcceptWorkContract(
+      order.orderStatus.value,
+      order.assignedEmployees,
+      order.workContractAcceptances,
+      eid
+    );
   });
 
   protected readonly hasInvoice = computed(() => !!this.orderDetails()?.receiptNumber);
@@ -298,6 +319,17 @@ export class OrderDetailsComponent implements OnInit {
 
   protected openMarkCashCollected(): void {
     this.facade.openMarkCashCollectedDialog();
+  }
+
+  protected openAcceptWorkContract(): void {
+    this.facade.openAcceptWorkContractDialog();
+  }
+
+  protected openReadWorkContract(): void {
+    const acceptanceId = this.callerWorkContractAcceptance()?.id;
+    if (acceptanceId) {
+      this.facade.openReadWorkContractDialog(acceptanceId);
+    }
   }
 
   protected getStatusHistoryClass(historyItem: { status: { value: number } }): string {

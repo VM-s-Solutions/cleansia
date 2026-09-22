@@ -279,6 +279,37 @@ describe('HttpErrorInterceptorFn (EP-1/AC4 error-key resolution + fallback)', ()
     });
   });
 
+  describe('guest order customer account', () => {
+    const body = { status: 400, title: 'Bad Request', detail: 'A validation problem occurred.', errors: { OrderNotFound: 'order.not_found' } };
+
+    it.each(['/api/AdminOrder/guest/customer', 'https://example.test/api/v1/AdminOrder/guest/customer'])('is silent only on the order-keyed GET %s', (url) => {
+      const { http, httpMock } = setup();
+      http.get(url).subscribe({ error: () => undefined });
+      httpMock.expectOne(url).flush(body, { status: 400, statusText: 'Bad Request' });
+      expect(showError).not.toHaveBeenCalled();
+    });
+
+    it('also handles the generated client blob response', async () => {
+      const url = '/api/AdminOrder/guest/customer';
+      const { http, httpMock } = setup();
+      http.get(url, { responseType: 'blob' }).subscribe({ error: () => undefined });
+      flushBlobError(httpMock, url, JSON.stringify(body));
+      await settleBlobBranch();
+      expect(showError).not.toHaveBeenCalled();
+    });
+
+    it.each([
+      ['GET', '/api/AdminOrder/guest/details', body],
+      ['POST', '/api/AdminOrder/guest/customer', body],
+      ['GET', '/api/AdminOrder/guest/customer', { errors: { failure: 'common.error_occurred' } }],
+    ])('still reports %s %s when the response is not an empty account', (method, url, response) => {
+      const { http, httpMock } = setup();
+      http.request(method as string, url as string).subscribe({ error: () => undefined });
+      httpMock.expectOne(url as string).flush(response, { status: 400, statusText: 'Bad Request' });
+      expect(showError).toHaveBeenCalledWith(FALLBACK_MESSAGE);
+    });
+  });
+
   describe('an absent optional resource on a read', () => {
     const READ_URL = '/api/Employee/GetMyPayoutDetails';
 

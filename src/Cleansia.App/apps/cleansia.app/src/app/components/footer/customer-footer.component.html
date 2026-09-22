@@ -68,6 +68,7 @@
           <li><a routerLink="/track-order">{{ 'pages.track_order.entry_link' | translate }}</a></li>
           }
           <li><a routerLink="/terms">{{ 'pages.home.footer.terms_link' | translate }}</a></li>
+          <li><a routerLink="/work-contract">{{ 'pages.home.footer.work_contract_link' | translate }}</a></li>
           <li><a routerLink="/privacy">{{ 'pages.home.footer.gdpr_link' | translate }}</a></li>
           <li>
             <button type="button" class="cl-footer__linkbtn" (click)="openCookieSettings()">
@@ -106,6 +107,12 @@
       -->
       <div class="cl-footer__prefs">
         <cleansia-language-switcher variant="globe" />
+        <cleansia-market-switcher
+          variant="pill"
+          [markets]="markets()"
+          [selected]="selectedMarketCode()"
+          (marketChange)="onMarketChange($event)"
+        />
         <button
           type="button"
           class="cl-footer__theme-toggle"

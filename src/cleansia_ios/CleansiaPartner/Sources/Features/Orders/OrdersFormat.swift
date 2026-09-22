@@ -6,9 +6,26 @@ enum OrdersFormat {
         money(order.estimatedCleanerPay ?? 0, symbol: order.currency?.symbol)
     }
 
+    /// One figure per currency on the board, joined with the list's own separator: a EUR job on a
+    /// Czech cleaner's board is still counted, it is just never added into a figure labelled Kč.
+    /// Orders with no currency form their own unlabelled group. Grouped by code, not symbol — the
+    /// symbol is display only — and ordered by first appearance so the dominant currency leads.
     static func totalEarnings(_ orders: [OrderListItem]) -> String {
-        let total = orders.reduce(0.0) { $0 + ($1.estimatedCleanerPay ?? 0) }
-        return money(total, symbol: commonSymbol(orders))
+        var codes: [String?] = []
+        var totals: [String?: (amount: Double, symbol: String?)] = [:]
+        for order in orders {
+            let code = order.currency?.code
+            if totals[code] == nil {
+                codes.append(code)
+                totals[code] = (0, order.currency?.symbol)
+            }
+            totals[code]?.amount += order.estimatedCleanerPay ?? 0
+        }
+        if codes.isEmpty { return money(0, symbol: nil) }
+        return codes
+            .compactMap { totals[$0] }
+            .map { money($0.amount, symbol: $0.symbol) }
+            .joined(separator: " · ")
     }
 
     static func money(_ amount: Double, symbol: String?) -> String {
@@ -108,13 +125,24 @@ enum OrdersFormat {
         return mediumDateFormatter(locale: locale).string(from: date)
     }
 
-    private static func distanceString(_ kilometres: Double) -> String {
-        kilometres < 1 ? String(format: "%.1f", kilometres) : "\(Int(kilometres.rounded()))"
+    /// The job's arrival window as the contract states it: "22 Apr · 10:00–12:00"; the start alone
+    /// when the estimate is not positive (the `formatOrderDateRange` parity).
+    static func window(_ start: Date, minutes: Int, locale: Locale = .current) -> String {
+        let day = templateFormatter("d MMM", locale: locale).string(from: start)
+        let from = templateFormatter("HH:mm", locale: locale).string(from: start)
+        guard minutes > 0 else { return "\(day) · \(from)" }
+        let end = start.addingTimeInterval(TimeInterval(minutes) * 60)
+        return "\(day) · \(from)–\(templateFormatter("HH:mm", locale: locale).string(from: end))"
     }
 
-    private static func commonSymbol(_ orders: [OrderListItem]) -> String? {
-        let symbols = Set(orders.compactMap { $0.currency?.symbol })
-        return symbols.count == 1 ? symbols.first : nil
+    /// A dated instant with its time: "22 Apr 2026 · 10:00" (the `formatOrderDateTime` parity).
+    static func dateTime(_ date: Date, locale: Locale = .current) -> String {
+        let day = templateFormatter("d MMM yyyy", locale: locale).string(from: date)
+        return "\(day) · \(templateFormatter("HH:mm", locale: locale).string(from: date))"
+    }
+
+    private static func distanceString(_ kilometres: Double) -> String {
+        kilometres < 1 ? String(format: "%.1f", kilometres) : "\(Int(kilometres.rounded()))"
     }
 
     private static func nonBlank(_ value: String?) -> String? {

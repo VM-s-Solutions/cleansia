@@ -1,6 +1,7 @@
 using System.Reflection;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Services.Interfaces;
+using Cleansia.Core.AppServices.Tenancy;
 using Cleansia.Core.AppServices.Shared.DTOs.ResponseModels;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Repositories;
@@ -53,7 +54,7 @@ public class RefreshTokenDoesNotRecordLoginTests
 
         var result = await Handle(new RefreshTokenCmd.Command("any")
         {
-            RequiredProfile = UserProfile.Customer,
+            RequiredProfiles = [UserProfile.Customer],
             RequiredAudience = CustomerAudience,
         });
 
@@ -71,6 +72,8 @@ public class RefreshTokenDoesNotRecordLoginTests
             _employeeRepository.Object,
             _requestMetadata.Object,
             _jwtSettings.Object,
+            Mock.Of<ITenantProvider>(),
+            Mock.Of<ICompanySignInGate>(),
             TimeProvider.System)!;
 
         var handleMethod = handlerType.GetMethod("Handle")!;

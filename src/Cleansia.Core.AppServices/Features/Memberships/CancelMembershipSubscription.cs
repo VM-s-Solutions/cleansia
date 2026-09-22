@@ -1,4 +1,5 @@
 using Cleansia.Core.AppServices.Abstractions;
+using Cleansia.Core.AppServices.Auditing;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.Clients.Abstractions.Stripe;
 using Cleansia.Core.Domain.Repositories;
@@ -10,6 +11,7 @@ using StripeException = Stripe.StripeException;
 
 namespace Cleansia.Core.AppServices.Features.Memberships;
 
+[AuditAction("customer.membership.cancel", Audience = AuditAudience.Customer, ResourceType = "UserMembership")]
 public class CancelMembershipSubscription
 {
     public record Command : ICommand<Response>;
@@ -20,10 +22,16 @@ public class CancelMembershipSubscription
 
     public record Response(DateTime EffectiveEndDate);
 
+    /// <summary>The plan being given up and the date the benefits run out (ADR-0062 D3).</summary>
+    public record MembershipCancelEvidence(
+        string? PlanCode,
+        DateTimeOffset CurrentPeriodEndsAt) : ICustomerAuditPayload;
+
     public class Handler(
         IUserMembershipRepository userMembershipRepository,
         IUserSessionProvider userSessionProvider,
         IStripeClient stripeClient,
+        IAuditContext auditContext,
         ILogger<Handler> logger) : ICommandHandler<Command, Response>
     {
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
@@ -53,6 +61,10 @@ public class CancelMembershipSubscription
             logger.LogInformation(
                 "Cancellation requested for membership {MembershipId}; effective {EndDate}",
                 membership.Id, membership.CurrentPeriodEnd);
+
+            auditContext.RecordEvidence("UserMembership", membership.Id, new MembershipCancelEvidence(
+                PlanCode: membership.MembershipPlan?.Code,
+                CurrentPeriodEndsAt: new DateTimeOffset(DateTime.SpecifyKind(membership.CurrentPeriodEnd, DateTimeKind.Utc))));
 
             return BusinessResult.Success(new Response(membership.CurrentPeriodEnd));
         }

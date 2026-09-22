@@ -84,9 +84,9 @@ class NotificationsViewModelTest {
         appContext = mockk(relaxed = true)
         every { appContext.getString(R.string.notification_new_jobs_title) } returns "New jobs available"
         every { appContext.getString(R.string.notification_new_jobs_body, 3) } returns "3 new jobs available near you."
-        every { appContext.getString(R.string.notification_order_confirmed_title) } returns "Job confirmed"
-        every { appContext.getString(R.string.notification_order_confirmed_body, "A-1042") } returns "Job #A-1042 is confirmed."
-        every { appContext.getString(R.string.notification_order_confirmed_body, "A-2000") } returns "Job #A-2000 is confirmed."
+        every { appContext.getString(R.string.notification_order_payment_confirmed_title) } returns "Job confirmed"
+        every { appContext.getString(R.string.notification_order_payment_confirmed_body, "A-1042") } returns "Job #A-1042 is confirmed."
+        every { appContext.getString(R.string.notification_order_payment_confirmed_body, "A-2000") } returns "Job #A-2000 is confirmed."
         every { appContext.getString(R.string.notification_payroll_invoice_paid_title) } returns "You've been paid"
         every { appContext.getString(R.string.notification_payroll_invoice_paid_body) } returns "Your invoice has been paid."
         every { errorTranslator.translate(any()) } returns translatedError

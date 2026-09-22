@@ -152,6 +152,27 @@
     font-size: 1.5rem;
     font-weight: 700;
     color: var(--cleansia-text-primary);
+    font-variant-numeric: tabular-nums;
+  }
+
+  &__subline {
+    font-size: 0.8125rem;
+    line-height: 1.4;
+    color: var(--cleansia-text-secondary);
+    font-variant-numeric: tabular-nums;
+  }
+
+  &__hint {
+    font-size: 0.875rem;
+    margin-left: 0.25rem;
+    vertical-align: middle;
+    cursor: help;
+    opacity: 0.7;
+    transition: opacity 0.2s;
+
+    &:hover {
+      opacity: 1;
+    }
   }
 
   &--primary {
@@ -173,6 +194,10 @@
 
     .summary-card__value {
       color: white;
+    }
+
+    .summary-card__subline {
+      color: rgba(255, 255, 255, 0.85);
     }
   }
 
@@ -205,6 +230,14 @@
   }
 }
 
+.report-description {
+  margin: 0 0 1.25rem;
+  max-width: 72ch;
+  color: var(--cleansia-text-secondary);
+  font-size: 0.9375rem;
+  line-height: 1.6;
+}
+
 .data-section {
   display: flex;
   flex-direction: column;
@@ -217,6 +250,13 @@
     margin: 0;
     padding-bottom: 0.5rem;
     border-bottom: 2px solid var(--cleansia-primary-100);
+  }
+
+  &__hint {
+    margin: -0.5rem 0 0;
+    color: var(--cleansia-text-secondary);
+    font-size: 0.875rem;
+    line-height: 1.5;
   }
 }
 

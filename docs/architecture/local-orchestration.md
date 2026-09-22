@@ -42,7 +42,10 @@ jobs failed on first run.
 
 The AppHost declares the containers so the emulator creates them at startup:
 `generated-receipts`, `generated-invoices`, `user-files`, `employee-documents`, `order-photos`,
-`dispute-evidence`. The names mirror the production Bicep.
+`dispute-evidence`. The names mirror the production Bicep. The eighth container, `company-archives`
+(the archived-company bundle, [ADR-0064](/decisions/adr-0064)), is not in the AppHost list: it has no
+read-before-write path — the archive build's first act is a streaming write, and every blob write creates
+its container if it is missing — so it appears the first time a company is archived.
 
 ## The Postgres password is fixed, not generated {#postgres-password}
 
@@ -66,6 +69,36 @@ project resources launch through the IDE's run-session service, and VS refuses t
 *"run session could not be started"*. Executables are spawned by Aspire's own orchestrator, so the same
 graph works under F5 and `dotnet run` alike. The AppHost keeps a project reference (with
 `IsAspireProjectResource=false`) purely so the migrator is compiled before the AppHost starts.
+
+## The legal texts are seeded by every host, after the type catalog {#legal-seed}
+
+The migrator owns the **schema**; the legal *texts* are **rows**, and they are written by every host
+that binds the database — the five APIs and the Functions host alike — at every start, in every
+environment. `LegalDocumentSeedHostedService` reads the markdown files embedded in
+`Cleansia.Infra.Database` (`Seed/Legal/{audience}/{type}/{ISO3|any}/{yyyy-MM-dd}/{xx}.md`) and upserts
+them into `LegalDocuments` / `LegalDocumentTexts`: a new folder is a new version, a changed file under
+a date already in force is **refused with a warning** (what a customer accepted must read the same
+forever), and a second host booting at the same moment finds the rows already there. That is why a
+new version of the terms is *a seed file plus a deploy* and nothing else — there is no admin authoring.
+→ [ADR-0063](/decisions/adr-0063)
+
+Its place in the hosted-service order is load-bearing, like the type-catalog initializer's. Hosted
+services start **sequentially**, and `NpgsqlTypeCatalogInitializer` awaits a retry loop that can span
+about two minutes while a migration is in flight; the seed is registered **after** it, so it waits
+behind the migration instead of spending its own five bounded retries against a half-built schema.
+It is a plain `IHostedService`, awaited inline — not a `BackgroundService` — because being awaited is
+what turns its position into a wait rather than a race. A host that still cannot seed logs at Error
+and **starts anyway**: a customer can book while the legal page serves the previous version — as long
+as *some* version of every text is in the table. Since [ADR-0068](/decisions/adr-0068) the contract
+for work is one of those texts, and a booking with **no** version of it in force is refused by
+`OrderFactory`; that is why the hosted seeder is not the only writer on a first local boot. Every
+hosted service starts **before** the Development migrate-and-seed pipeline in `CleansiaStartupBase`
+runs, so on a fresh Development database the seeder's five attempts all fail against no
+`LegalDocuments` table and the host would come up unable to book until restarted. `CleansiaStartupBase`
+therefore runs `LegalDocumentSeeder.SeedAsync` once more after the Development migration and the
+data seed, idempotently (a no-op on a database the hosted service already seeded). Non-Development
+deploys migrate in CI/CD before any host starts, so there the hosted service finds the table and that
+branch is never entered. Pinned by `BootDatabaseIoTests`.
 
 ## Why there are two customer hosts {#two-customer-hosts}
 

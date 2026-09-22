@@ -18,4 +18,6 @@ public record CompanyInfoDetailDto(
     string? BankName,
     string? BankAccountNumber,
     string? Iban,
-    string? Swift);
+    string? Swift,
+    bool IsVatPayer,
+    DateOnly? VatRegisteredFrom);

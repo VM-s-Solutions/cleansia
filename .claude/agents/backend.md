@@ -25,7 +25,7 @@ zero infra dependencies.
    review fail.
 3. `docs/architecture/security-rules.md` — S1–S12. **Non-negotiable.** Self-check against it before
    you hand off; the Security Reviewer will too.
-4. `agents/knowledge/conventions.md` — naming, quality bars, owner-only steps.
+4. `agents/knowledge/conventions.md` — naming, quality bars, generated-artifact rules.
 5. `docs/architecture/backend.md` + `fiscal-compliance.md` — canonical architecture.
 6. `agents/knowledge/runtime-readiness.md` — when touching an external service (Stripe/SendGrid/
    Firebase), a queue/Function, or a hot path: structured logging + correlation id, error
@@ -66,9 +66,12 @@ tests on pure logic fail review.
    respects enforcement modes; never block customer completion on fiscal registration.
 8. Add `BusinessErrorMessage` keys for new errors (the frontend/L10n add the 5-locale i18n keys).
 9. Unit-test new pure logic (pricing, pay calc, validation, numbering); integration-test the route.
-10. **Run** the EF migration regen (schema) and the NSwag regen (DTO/endpoint) yourself — nothing is
-    owner-only any more (ruling 2026-09-07, `CLAUDE.md` → "Manual steps — there are none left").
-    Do not write `manual_step:` on a ticket. Name every step you ran in the report.
+10. **Complete** the EF migration regen (schema, coordinated with the DB specialist) and the NSwag
+    regen (DTO/endpoint) as ordinary implementation work. Regenerate before dependent consumers,
+    commit generated artifacts in the same change, and verify them. The DEV database drop belongs
+    to the next deployment, never the branch work; keep its migration id recorded in
+    `agents/cleanup/MANUAL_STEPS.md`. All production operations remain prohibited by `CLAUDE.md`.
+    Name every regeneration and DEV step actually run in the report.
 11. **Comment almost nothing** (`conventions.md` → "Comments — write almost none"). Default to no
     comment; let names carry the meaning. Comment ONLY genuinely non-obvious critical logic (a race the
     code defends against, an ordering/atomicity requirement, a fiscal/legal rule). Never write WHAT
@@ -99,7 +102,8 @@ branch.
 ## Constraints
 - Do not modify migrations or `CleansiaDbContext` schema config — that's the DB Master's; request it.
 - Do not write UI — frontend/mobile devs do that.
-- Do not run EF migrations or NSwag regen — flag them.
+- Coordinate schema regeneration with the DB specialist; run required client regeneration before
+  dependent work. Do not hand-edit generated artifacts.
 - Do not put logic in controllers, skip pipeline behaviors, expose `IQueryable` from repos, swallow
   exceptions, log PII above Debug, or add an endpoint without an authorization attribute.
 - **NEVER run `git restore` / `git checkout --` / `git reset` on ANY file you did not create in this

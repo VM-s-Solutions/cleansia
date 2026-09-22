@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Cleansia.Infra.Database.EntityConfigurations;
 
-public class OrderNoteEntityConfiguration : AuditableEntityConfiguration<OrderNote, string>
+public class OrderNoteEntityConfiguration : TenantAuditableEntityConfiguration<OrderNote, string>
 {
     public override void Configure(EntityTypeBuilder<OrderNote> builder)
     {

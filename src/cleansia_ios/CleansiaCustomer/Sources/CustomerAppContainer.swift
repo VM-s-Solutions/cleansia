@@ -69,10 +69,6 @@ final class CustomerAppContainer: AppContainer {
         base.apiClient
     }
 
-    var signupConsent: SignupConsentRepository {
-        authStack.signupConsent
-    }
-
     lazy var socialSignInProvider: SocialSignInProviding = CustomerSocialSignInProvider(
         googleClientID: AppConfig.googleClientID,
         googleServerClientID: AppConfig.googleServerClientID
@@ -85,12 +81,17 @@ final class CustomerAppContainer: AppContainer {
     let orderClient: OrderClient
     let orderEventBus = OrderEventBus()
     let orderRepository: OrderRepository
+    let guestOrderClient: GuestOrderClient
 
     let loyaltyRepository: LoyaltyRepository
     let referralRepository: RewardsReferralRepository
 
     let membershipRepository: MembershipRepository
     let recurringRepository: RecurringBookingRepository
+
+    /// The market the customer browses in — a device preference beside the language, not a session
+    /// cache: it is neither wiped on sign-out nor synced to the server.
+    let marketStore: MarketStore
 
     let disputeRepository: DisputeRepository
 
@@ -122,6 +123,9 @@ final class CustomerAppContainer: AppContainer {
         apiBaseURL: URL = AppConfig.apiBaseURL
     ) {
         let sessionScopedCaches = SessionScopedCacheRegistry()
+        let settings = UserDefaultsAppSettingsStore()
+        let marketStore = MarketStore(client: LiveMarketClient(), preference: settings)
+        self.marketStore = marketStore
         let authStack = CustomerAuthSpine.make(
             apiBaseURL: apiBaseURL,
             sessionScopedCaches: sessionScopedCaches
@@ -131,11 +135,15 @@ final class CustomerAppContainer: AppContainer {
         let orderRepository = OrderRepository(client: orderClient)
         self.orderClient = orderClient
         self.orderRepository = orderRepository
+        guestOrderClient = LiveGuestOrderClient()
         let loyaltyRepository = LoyaltyRepository(client: LiveLoyaltyClient())
         let referralRepository = RewardsReferralRepository(client: LiveRewardsReferralClient())
         self.loyaltyRepository = loyaltyRepository
         self.referralRepository = referralRepository
-        let membershipRepository = MembershipRepository(client: LiveMembershipManagementClient())
+        let membershipRepository = MembershipRepository(
+            client: LiveMembershipManagementClient(),
+            market: marketStore.statePublisher
+        )
         let recurringRepository = RecurringBookingRepository(client: LiveRecurringBookingClient())
         self.membershipRepository = membershipRepository
         self.recurringRepository = recurringRepository
@@ -162,23 +170,30 @@ final class CustomerAppContainer: AppContainer {
             apiBaseURL: apiBaseURL,
             snackbar: snackbar,
             sessionScopedCaches: sessionScopedCaches,
+            appSettings: settings,
             makeAuthSpine: { _ in authStack.spine },
             makeApiClient: { seams in CustomerMobileApiClient(baseURL: seams.apiBaseURL) }
         )
-        sessionScopedCaches.register(orderRepository)
-        sessionScopedCaches.register(loyaltyRepository)
-        sessionScopedCaches.register(referralRepository)
-        sessionScopedCaches.register(membershipRepository)
-        sessionScopedCaches.register(recurringRepository)
-        sessionScopedCaches.register(disputeRepository)
-        sessionScopedCaches.register(savedAddressRepository)
-        sessionScopedCaches.register(userProfileRepository)
-        sessionScopedCaches.register(avatarCache)
-        sessionScopedCaches.register(notificationBadge)
-        sessionScopedCaches.register(pushTokenRegistrar)
+        registerSessionScopedCaches(in: sessionScopedCaches)
         authStack.spine.setPreLogout { [pushTokenRegistrar] in
             await pushTokenRegistrar.unregisterDevice()
         }
+    }
+
+    /// Every per-user cache joins the session-wipe set here, in one place, so a logout empties all of
+    /// them (S11); the market directory and the device settings are deliberately not on this list.
+    private func registerSessionScopedCaches(in registry: SessionScopedCacheRegistry) {
+        registry.register(orderRepository)
+        registry.register(loyaltyRepository)
+        registry.register(referralRepository)
+        registry.register(membershipRepository)
+        registry.register(recurringRepository)
+        registry.register(disputeRepository)
+        registry.register(savedAddressRepository)
+        registry.register(userProfileRepository)
+        registry.register(avatarCache)
+        registry.register(notificationBadge)
+        registry.register(pushTokenRegistrar)
     }
 
     func startPush() {

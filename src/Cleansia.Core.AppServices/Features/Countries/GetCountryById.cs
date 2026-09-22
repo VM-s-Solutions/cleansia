@@ -26,7 +26,9 @@ public class GetCountryById
         }
     }
 
-    internal class Handler(ICountryRepository countryRepository)
+    internal class Handler(
+        ICountryRepository countryRepository,
+        ICountryConfigurationRepository countryConfigurationRepository)
         : IQueryHandler<Query, CountryDetailDto>
     {
         public async Task<BusinessResult<CountryDetailDto>> Handle(Query query, CancellationToken cancellationToken)
@@ -38,7 +40,9 @@ public class GetCountryById
                 return BusinessResult.Failure<CountryDetailDto>(new Error(nameof(query.CountryId), BusinessErrorMessage.CountryNotFound));
             }
 
-            return BusinessResult.Success(country.MapToDetailDto());
+            var configuration = await countryConfigurationRepository.GetByCountryIdAsync(query.CountryId, cancellationToken);
+
+            return BusinessResult.Success(country.MapToDetailDto(configuration));
         }
     }
 }

@@ -148,49 +148,6 @@ struct MilestoneProgressCard: View {
     }
 }
 
-/// Static seasonal suggestion routing into the booking flow (`SeasonalCard`,
-/// `HomeTab.kt:1140-1184`).
-struct SeasonalCard: View {
-    @Environment(\.locale) private var locale
-    let onTap: () -> Void
-
-    var body: some View {
-        Button(action: onTap) {
-            HStack(spacing: Spacing.s) {
-                ZStack {
-                    Circle()
-                        .fill(CleansiaColors.secondary.opacity(0.15))
-                        .frame(width: 44, height: 44)
-                    Image(systemName: "calendar")
-                        .font(.system(size: 20))
-                        .foregroundColor(CleansiaColors.secondary)
-                }
-                VStack(alignment: .leading, spacing: Spacing.hair) {
-                    Text(L10n.Home.seasonalTitle)
-                        .font(CleansiaTypography.titleMedium)
-                        .foregroundColor(CleansiaColors.onBackground)
-                    Text(L10n.Home.seasonalSubtitle)
-                        .font(CleansiaTypography.bodyMedium)
-                        .foregroundColor(CleansiaColors.onSurfaceVariant)
-                        .multilineTextAlignment(.leading)
-                }
-                Spacer(minLength: Spacing.xs)
-                Image(systemName: "arrow.right")
-                    .font(.system(size: 16, weight: .semibold))
-                    .foregroundColor(CleansiaColors.secondary)
-            }
-            .padding(Spacing.m)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(
-                CleansiaColors.secondaryContainer.opacity(0.5),
-                in: RoundedRectangle(cornerRadius: 18)
-            )
-        }
-        .buttonStyle(.plain)
-        .id(locale.identifier)
-    }
-}
-
 /// First-paint placeholder mirroring the real layout's shapes
 /// (`HomeSkeleton`, `HomeTab.kt:1208-1297`) with the same subtle pulse.
 struct HomeSkeleton: View {
@@ -248,6 +205,7 @@ struct HomeSkeleton: View {
         static var sampleOrder: CustomerOrderSummary {
             CustomerOrderSummary(
                 id: "o1",
+                countryId: "cze",
                 displayOrderNumber: "1042",
                 statusCode: Code(type: "OrderStatus", name: "Completed", value: 5),
                 cleaningDateTime: Date(),
@@ -280,12 +238,11 @@ struct HomeSkeleton: View {
                 VStack(alignment: .leading, spacing: Spacing.l) {
                     RecentBookingsSection(orders: [sampleOrder], onOrderTap: { _ in }, onSeeAll: {})
                     MilestoneProgressCard(account: sampleAccount)
-                    SeasonalCard(onTap: {})
                 }
                 .padding(Spacing.ml)
             }
             .background(CleansiaColors.background)
-            .previewDisplayName("Recent + milestone + seasonal")
+            .previewDisplayName("Recent + milestone")
 
             HomeSkeleton()
                 .background(CleansiaColors.background)

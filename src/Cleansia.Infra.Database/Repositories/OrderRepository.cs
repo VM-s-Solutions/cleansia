@@ -1,7 +1,9 @@
-﻿using Cleansia.Core.Domain.Enums;
+﻿using System.Linq.Expressions;
+using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Receipts;
 using Cleansia.Core.Domain.Repositories;
+using Cleansia.Core.Domain.Sorting.Common;
 using Microsoft.EntityFrameworkCore;
 
 namespace Cleansia.Infra.Database.Repositories;
@@ -35,12 +37,16 @@ public class OrderRepository(CleansiaDbContext context) : BaseRepository<Order>(
     public async Task<IReadOnlyList<Order>> GetFutureConfirmedOrdersForEmployeeAsync(
         string employeeId, DateTime nowUtc, CancellationToken cancellationToken)
     {
+        // The caller appends a status row per released order, and AddOrderStatus derives Sequence from
+        // the loaded history — without it every appended row collides with the creation row's.
         return await GetDbSet()
+            .Include(o => o.OrderStatusHistory)
             .Include(o => o.AssignedEmployees)
                 .ThenInclude(ae => ae.Employee)
             .Where(o => o.CurrentStatus == OrderStatus.Confirmed
                 && o.CleaningDateTime > nowUtc
                 && o.AssignedEmployees.Any(ae => ae.EmployeeId == employeeId))
+            .AsSplitQuery()
             .ToListAsync(cancellationToken);
     }
 
@@ -83,13 +89,36 @@ public class OrderRepository(CleansiaDbContext context) : BaseRepository<Order>(
             .CountAsync(cancellationToken);
     }
 
+    public IQueryable<Order> GetQueryableForOwner(string userId)
+    {
+        // The caller supplies the session user or a user from an already-authorized order.
+        return GetQueryableIgnoringTenant().Where(o => o.UserId == userId);
+    }
+
+    public Task<Order?> GetByIdForOwnerAsync(string id, string userId, CancellationToken cancellationToken)
+    {
+        return WithDetailGraph(GetQueryableForOwner(userId))
+            .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+    }
+
+    public Task<int> GetCountForOwnerAsync(string userId, Expression<Func<Order, bool>>? filter, CancellationToken cancellationToken)
+    {
+        var query = GetQueryableForOwner(userId);
+        return (filter is null ? query : query.Where(filter)).CountAsync(cancellationToken);
+    }
+
+    public IQueryable<Order> GetPagedSortForOwner<TSort>(
+        string userId, int offset, int limit, Expression<Func<Order, bool>>? filter, IEnumerable<SortDefinition> sort)
+        where TSort : BaseSort<Order>
+        => PagedSort<TSort>(GetQueryableForOwner(userId), offset, limit, filter, sort);
+
     public async Task<CustomerProfileStats> GetCustomerProfileStatsAsync(string userId, CancellationToken cancellationToken)
     {
         // One repository call for the profile hero card: bookings placed, money
-        // saved, and the currency to render it in. GetDbSet() carries the tenant
-        // filter; UserId scopes to the caller. No Includes — aggregates and a
-        // projection only.
-        var userOrders = GetDbSet().Where(o => o.UserId == userId);
+        // saved, and the currency to render it in. UserId scopes to the caller,
+        // across every company their bookings landed in. No Includes — aggregates
+        // and a projection only.
+        var userOrders = GetQueryableForOwner(userId);
 
         // Bookings = every order the user placed, any status.
         var totalBookings = await userOrders.CountAsync(cancellationToken);
@@ -105,18 +134,18 @@ public class OrderRepository(CleansiaDbContext context) : BaseRepository<Order>(
         // Discount amounts are denominated in each order's OWN currency, so we
         // report a single figure in ONE currency — the user's most recent
         // realized order — and sum only the orders in that currency. Summing
-        // across currencies would add unlike units (CZK + EUR); for this
-        // single-country-per-user product that currency is stable, and this
+        // across currencies would add unlike units (CZK + EUR) — and a customer
+        // who books across markets holds orders in more than one — so this
         // keeps the hero stat a correct, correctly-labelled scalar.
         var savingsCurrencyCode = await realizedOrders
             .OrderByDescending(o => o.CreatedOn)
-            .Select(o => o.Currency.Code)
+            .Select(o => o.Currency!.Code)
             .FirstOrDefaultAsync(cancellationToken);
 
         var totalSavings = savingsCurrencyCode is null
             ? 0m
             : await realizedOrders
-                .Where(o => o.Currency.Code == savingsCurrencyCode)
+                .Where(o => o.Currency!.Code == savingsCurrencyCode)
                 .SumAsync(
                     o => (o.TierDiscountAmount ?? 0m)
                         + (o.PromoDiscountAmount ?? 0m)
@@ -177,7 +206,13 @@ public class OrderRepository(CleansiaDbContext context) : BaseRepository<Order>(
 
     public override Task<Order?> GetByIdAsync(string id, CancellationToken cancellationToken)
     {
-        return GetDbSet()
+        return WithDetailGraph(GetDbSet())
+            .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+    }
+
+    private static IQueryable<Order> WithDetailGraph(IQueryable<Order> orders)
+    {
+        return orders
             .Include(o => o.OrderStatusHistory)
             .Include(o => o.Currency)
             .Include(o => o.SelectedServices)
@@ -195,8 +230,7 @@ public class OrderRepository(CleansiaDbContext context) : BaseRepository<Order>(
             .Include(o => o.OrderNotes)
             .Include(o => o.OrderIssues)
             .Include(o => o.Reviews)
-            .AsSplitQuery()
-            .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+            .AsSplitQuery();
     }
 
     public Task<Order?> GetByIdIgnoringTenantAsync(string id, CancellationToken cancellationToken)
@@ -234,24 +268,55 @@ public class OrderRepository(CleansiaDbContext context) : BaseRepository<Order>(
         // charge.dispute.* event carries the payment_intent but no OrderId
         // metadata, and arrives with no tenant context. Bypass the tenant
         // filter; the caller re-scopes via SetTenantOverride before writing.
+        // The currency rides along because the administrators are told the amount in it.
         return GetDbSet()
             .IgnoreQueryFilters()
+            .Include(o => o.Currency)
             .FirstOrDefaultAsync(o => o.StripePaymentIntentId == paymentIntentId, cancellationToken);
     }
 
-    public async Task<IReadOnlyList<Order>> GetOrdersByDateRangeAsync(
-        DateTime startDate, DateTime endDate, CancellationToken cancellationToken)
+    // Paid, and every state after it. A completed order later refunded in full WAS paid — it stays in
+    // the revenue set and nets to zero rather than vanishing. An array so EF emits `= ANY(@p)`, the
+    // form the other status sets on this repository take.
+    private static readonly PaymentStatus[] PaidAtSomePoint =
+    [
+        PaymentStatus.Paid,
+        PaymentStatus.PartiallyRefunded,
+        PaymentStatus.Refunded,
+        PaymentStatus.Disputed,
+    ];
+
+    public async Task<IReadOnlyList<Order>> GetCompletedPaidOrdersByCompletionDateAsync(
+        DateTime startUtc, DateTime endUtc, string currencyId, CancellationToken cancellationToken)
     {
+        // CurrentStatus is the indexed column; CompletedAt is the axis, and the null guard keeps the
+        // range comparison honest for a Completed row that was never dated.
         return await GetDbSet()
-            .Include(o => o.OrderStatusHistory)
             .Include(o => o.SelectedServices)
                 .ThenInclude(s => s.Service)
             .Include(o => o.SelectedPackages)
                 .ThenInclude(op => op.Package)
-            .Where(o => o.CleaningDateTime >= startDate &&
-                       o.CleaningDateTime <= endDate)
+            .AsNoTracking()
+            .Where(o => o.CurrencyId == currencyId &&
+                       o.CurrentStatus == OrderStatus.Completed &&
+                       o.CompletedAt != null &&
+                       o.CompletedAt >= startUtc &&
+                       o.CompletedAt <= endUtc &&
+                       PaidAtSomePoint.Contains(o.PaymentStatus))
             .AsSplitQuery()
             .ToListAsync(cancellationToken);
+    }
+
+    public Task<int> CountCancelledBookingsInPeriodAsync(
+        DateTime startUtc, DateTime endUtc, string currencyId, CancellationToken cancellationToken)
+    {
+        return GetDbSet()
+            .Where(o => o.CurrencyId == currencyId &&
+                       o.CurrentStatus == OrderStatus.Cancelled &&
+                       o.CancelledAt != null &&
+                       o.CancelledAt >= startUtc &&
+                       o.CancelledAt <= endUtc)
+            .CountAsync(cancellationToken);
     }
 
     public async Task<int> GetEmployeeOrderCountThisWeekAsync(string employeeId, CancellationToken ct)
@@ -339,7 +404,8 @@ public class OrderRepository(CleansiaDbContext context) : BaseRepository<Order>(
         // date band) then sit together on IX_Orders_CurrentStatus_CleaningDateTime and the semi-join
         // runs on IX_OrderEmployees_OrderId. Driving from the employee index would prune the date band
         // only AFTER the join, walking each candidate's whole assignment history.
-        var busy = await LiveCommitmentsInWindow(GetDbSet(), windowStartUtc, windowEndUtc)
+        // Employee ids come from the caller's completed orders or an authorized preferred offer.
+        var busy = await LiveCommitmentsInWindow(GetQueryableIgnoringTenant(), windowStartUtc, windowEndUtc)
             .SelectMany(o => o.AssignedEmployees)
             .Where(ae => employeeIds.Contains(ae.EmployeeId))
             .Select(ae => ae.EmployeeId)
@@ -390,12 +456,24 @@ public class OrderRepository(CleansiaDbContext context) : BaseRepository<Order>(
         // actually finished. Past Completed orders qualify; in-flight
         // ones don't (you can't request "the cleaner I'm currently with" as a
         // preference for a future booking — they need to have finished one).
-        return await GetDbSet()
+        return await GetQueryableForOwner(userId)
             .Where(o => o.UserId == userId
                 && o.AssignedEmployees.Any(e => e.EmployeeId == employeeId)
                 && o.CurrentStatus == OrderStatus.Completed)
             .AnyAsync(ct);
     }
+
+    public Task<OrderOwnerAndCurrency?> GetOwnerAndCurrencyAsync(string orderId, CancellationToken cancellationToken)
+    {
+        return GetDbSet()
+            .Where(o => o.Id == orderId)
+            .Select(o => new OrderOwnerAndCurrency(o.UserId, o.CurrencyId))
+            .FirstOrDefaultAsync(cancellationToken);
+    }
+
+    public Task<OrderOwnerAndCurrency?> GetOwnerAndCurrencyAsync(string orderId, string userId, CancellationToken cancellationToken)
+        => GetQueryableForOwner(userId).Where(o => o.Id == orderId)
+            .Select(o => new OrderOwnerAndCurrency(o.UserId, o.CurrencyId)).FirstOrDefaultAsync(cancellationToken);
 
     public async Task<(double? Average, int Count)> GetAverageRatingForEmployeeAsync(
         string employeeId, CancellationToken cancellationToken)
@@ -435,6 +513,9 @@ public class OrderRepository(CleansiaDbContext context) : BaseRepository<Order>(
         // looks across tenants too, or a stale order whose receipt is registered reads as unrealized.
         var registeredReceipts = Context.Set<OrderReceipt>().IgnoreQueryFilters();
 
+        // A cancelled order is out of the sweep: its money is settled by the refund path, and a receipt
+        // for a fee it kept is the payment-time enqueue's job, not this backstop's.
+        //
         // The single-query `(Cash OR Paid)` shape forced a seq scan 288x/day — the OR defeats both
         // (PaymentType|PaymentStatus, CreatedOn) composites. Split the eligibility into one
         // index-served, CreatedOn-ordered, take-bounded arm per composite and UNION them: the global
@@ -446,6 +527,7 @@ public class OrderRepository(CleansiaDbContext context) : BaseRepository<Order>(
         var cashArm = GetDbSet()
             .IgnoreQueryFilters()
             .Where(o => o.PaymentType == PaymentType.Cash
+                && o.CurrentStatus != OrderStatus.Cancelled
                 && o.CreatedOn <= cutoff
                 && !registeredReceipts.Any(r => r.OrderId == o.Id && r.FiscalCode != null))
             .OrderBy(o => o.CreatedOn)
@@ -455,6 +537,7 @@ public class OrderRepository(CleansiaDbContext context) : BaseRepository<Order>(
         var paidArm = GetDbSet()
             .IgnoreQueryFilters()
             .Where(o => o.PaymentStatus == PaymentStatus.Paid
+                && o.CurrentStatus != OrderStatus.Cancelled
                 && o.CreatedOn <= cutoff
                 && !registeredReceipts.Any(r => r.OrderId == o.Id && r.FiscalCode != null))
             .OrderBy(o => o.CreatedOn)

@@ -34,6 +34,10 @@ extension L10n {
             localized("profile_row_language")
         }
 
+        static var rowMarket: String {
+            localized("profile_row_market")
+        }
+
         static var rowAppearance: String {
             localized("profile_row_appearance")
         }
@@ -224,6 +228,10 @@ extension L10n {
             localized("preferences_language_system")
         }
 
+        static var market: String {
+            localized("profile_row_market")
+        }
+
         static var appearance: String {
             localized("profile_row_appearance")
         }
@@ -340,8 +348,12 @@ extension L10n {
             localized("help_faq_q3")
         }
 
-        static var faqA3: String {
-            localized("help_faq_a3")
+        static func faqA3(_ insuranceAmount: String) -> String {
+            format("help_faq_a3", insuranceAmount)
+        }
+
+        static var faqA3NoFigure: String {
+            localized("help_faq_a3_no_figure")
         }
 
         static var faqQ4: String {

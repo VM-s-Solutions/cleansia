@@ -67,11 +67,6 @@ public class GetOrderPhotosServedTypeTests
     {
         var order = ValidatorTestHelpers.BuildOrder(OrderId, OrderStatus.Completed, EmployeeId);
 
-        var orderRepository = new Mock<IOrderRepository>();
-        orderRepository
-            .Setup(r => r.GetByIdAsync(OrderId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(order);
-
         var photo = OrderPhoto.Create(
             orderId: OrderId,
             photoType: PhotoType.After,
@@ -89,6 +84,9 @@ public class GetOrderPhotosServedTypeTests
 
         var accessService = new Mock<IOrderAccessService>();
         accessService
+            .Setup(s => s.LoadOrderForCallerAsync(OrderId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(order);
+        accessService
             .Setup(s => s.CanAccessOrderAsync(It.IsAny<Order>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
@@ -105,7 +103,7 @@ public class GetOrderPhotosServedTypeTests
         blobFactory.Setup(f => f.GetBlobContainerClient(It.IsAny<string>())).Returns(blobClient.Object);
 
         var handler = new GetOrderPhotos.Handler(
-            orderRepository.Object, photoRepository.Object, accessService.Object, blobFactory.Object);
+            photoRepository.Object, accessService.Object, blobFactory.Object);
 
         var result = await handler.Handle(new GetOrderPhotos.Query(OrderId), CancellationToken.None);
 

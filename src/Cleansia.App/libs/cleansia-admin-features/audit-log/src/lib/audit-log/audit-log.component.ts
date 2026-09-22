@@ -15,6 +15,7 @@ import { FormBuilder, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import {
   AdminActionAuditDto,
+  AdminRole,
   SortDefinition,
   SortDirection,
 } from '@cleansia/admin-services';
@@ -35,9 +36,12 @@ import {
 import { CleansiaAdminRoute } from '@cleansia/services';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { debounceTime, distinctUntilChanged, Subject, takeUntil } from 'rxjs';
+import { AuditLogSegmentComponent } from '../audit-log-segment/audit-log-segment.component';
 import { AuditLogFacade } from './audit-log.facade';
 import {
+  buildActorRoleOptions,
   buildOutcomeOptions,
+  formatActorRole,
   getAuditLogTableActions,
   getAuditLogTableColumns,
   getOutcomeClass,
@@ -58,6 +62,7 @@ import {
     CleansiaTitleComponent,
     CleansiaLoaderComponent,
     CleansiaSectionComponent,
+    AuditLogSegmentComponent,
     FormsModule,
     ReactiveFormsModule,
   ],
@@ -78,6 +83,7 @@ export class AuditLogComponent implements AfterViewInit, OnDestroy {
   auditColumns!: TableColumn<AdminActionAuditDto>[];
   auditActions!: TableAction<AdminActionAuditDto>[];
   outcomeOptions: ICleansiaSelectOption[] = [];
+  actorRoleOptions: ICleansiaSelectOption[] = [];
 
   private lastSortField: string | null = null;
   private lastSortOrder: number | null = null;
@@ -92,6 +98,7 @@ export class AuditLogComponent implements AfterViewInit, OnDestroy {
     occurredFrom: [null as Date | null],
     occurredTo: [null as Date | null],
     success: [null as boolean | null],
+    actorAdminRole: [null as AdminRole | null],
   });
 
   isFilterDrawerOpen = signal(false);
@@ -144,6 +151,7 @@ export class AuditLogComponent implements AfterViewInit, OnDestroy {
 
   private rebuildFilterOptions(): void {
     this.outcomeOptions = buildOutcomeOptions(this.translate);
+    this.actorRoleOptions = buildActorRoleOptions(this.translate);
   }
 
   getOutcomeClass(audit: AdminActionAuditDto): string {
@@ -180,6 +188,7 @@ export class AuditLogComponent implements AfterViewInit, OnDestroy {
       occurredFrom: values.occurredFrom ?? undefined,
       occurredTo: values.occurredTo ?? undefined,
       success: values.success ?? undefined,
+      actorAdminRole: values.actorAdminRole ?? undefined,
     });
   }
 
@@ -193,6 +202,7 @@ export class AuditLogComponent implements AfterViewInit, OnDestroy {
       occurredFrom: null,
       occurredTo: null,
       success: null,
+      actorAdminRole: null,
     });
     this.facade.resetFilter();
   }
@@ -226,6 +236,10 @@ export class AuditLogComponent implements AfterViewInit, OnDestroy {
     this.filterForm.patchValue({ success: value });
   }
 
+  onActorRoleChange(value: AdminRole | null): void {
+    this.filterForm.patchValue({ actorAdminRole: value });
+  }
+
   removeFilterChip(key: string): void {
     switch (key) {
       case 'actorId':
@@ -248,6 +262,9 @@ export class AuditLogComponent implements AfterViewInit, OnDestroy {
         break;
       case 'success':
         this.filterForm.patchValue({ success: null });
+        break;
+      case 'actorAdminRole':
+        this.filterForm.patchValue({ actorAdminRole: null });
         break;
     }
     this.applyFilters();
@@ -273,6 +290,13 @@ export class AuditLogComponent implements AfterViewInit, OnDestroy {
         key: 'actorEmail',
         label: this.translate.instant('pages.audit_log.filters.actor_email'),
         value: v.actorEmail,
+      });
+    }
+    if (v.actorAdminRole != null) {
+      chips.push({
+        key: 'actorAdminRole',
+        label: this.translate.instant('pages.audit_log.filters.actor_role'),
+        value: formatActorRole({ actorAdminRole: v.actorAdminRole }, this.translate),
       });
     }
     if (v.action) {

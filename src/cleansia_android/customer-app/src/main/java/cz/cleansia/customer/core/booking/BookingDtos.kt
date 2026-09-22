@@ -26,6 +26,12 @@ data class QuoteOrderCommand(
      * surcharge applies for this slot.
      */
     val cleaningDate: String? = null,
+    /**
+     * The service address's country. The server prices the quote in that country's currency when
+     * [currencyId] is null, and refuses a selection with no price row in it. Null until the address
+     * step has yielded one — the platform default, exactly as before.
+     */
+    val countryId: String? = null,
 )
 
 @Serializable
@@ -61,7 +67,6 @@ data class QuoteOrderResponse(
      * follow this verdict rather than re-deriving one from the clock.
      */
     val expressSurchargeWaivedByMembership: Boolean,
-    val exchangeRate: Double,
     /**
      * How long the selection is expected to take and how many cleaners that implies. Server-computed
      * from the SAME definitions the order uses, so a quote cannot promise a crew the booking will not
@@ -163,6 +168,12 @@ data class CreateOrderCommand(
     val accessInstructions: String? = null,
     @EncodeDefault(EncodeDefault.Mode.ALWAYS)
     val language: String = "en",
+    /**
+     * The review step's terms tick — the one client-asserted member on the booking's audit row.
+     * `true` only when the box was shown and ticked; null (absent on the wire) when an account that
+     * already holds both consents saw no box, so it asserts nothing new.
+     */
+    val termsAccepted: Boolean? = null,
 )
 
 @Serializable

@@ -317,7 +317,12 @@ public class DefaultReceiptLayoutBuilder : IReceiptLayoutBuilder
         if (data.IsVatPayer && data.VatAmount.HasValue && data.VatAmount.Value > 0)
         {
             var netAmount = data.NetAmount ?? data.Total - data.VatAmount.Value;
-            var vatRateDisplay = data.VatRate.HasValue ? $" {data.VatRate.Value:N0}%" : string.Empty;
+            // VatRate is a FRACTION (0.21), so it is scaled here rather than formatted directly.
+            // `:N0` on 0.21 rounds to zero and printed "VAT 0%" next to a non-zero VAT amount — a
+            // defective tax document, and the only place the convention was visible to a customer.
+            var vatRateDisplay = data.VatRate.HasValue
+                ? $" {data.VatRate.Value * 100m:N0}%"
+                : string.Empty;
 
             lines.Add(("Subtotal (excl. VAT)", $"{data.Currency}{netAmount:N2}", false));
             lines.Add(($"VAT{vatRateDisplay}", $"{data.Currency}{data.VatAmount.Value:N2}", false));

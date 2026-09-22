@@ -108,6 +108,8 @@ data class OrdersListUiState(
      * silently re-arming after release. Null when no action is running.
      */
     val inFlightActionOrderId: String? = null,
+    /** The contract sheet open over the board for a take, or null. */
+    val contractRequest: WorkContractRequest.Take? = null,
     /**
      * True once the first load (success or error) has completed.
      * Lets the screen distinguish "we're still showing the initial full-page
@@ -331,14 +333,30 @@ class OrdersListViewModel @Inject constructor(
     fun clearError() = _uiState.update { it.copy(error = null) }
 
     /**
-     * Inline row actions for the Active/Available rows. After success the
+     * Taking is accepting the contract for work, so the row's Take opens the sheet; the take itself
+     * happens on the swipe inside it and its verdict comes back through [onWorkContractOutcome].
+     */
+    fun takeOrderInline(orderId: String) {
+        if (_uiState.value.inFlightActionOrderId != null) return
+        _uiState.update { it.copy(contractRequest = WorkContractRequest.Take(orderId)) }
+    }
+
+    fun dismissContract() = _uiState.update { it.copy(contractRequest = null) }
+
+    /** The sheet's verdict, reconciled exactly as the one-tap take was. */
+    fun onWorkContractOutcome(outcome: WorkContractOutcome) {
+        _uiState.update { it.copy(contractRequest = null) }
+        val orderId = (outcome.request as? WorkContractRequest.Take)?.orderId ?: return
+        runInlineAction(orderId, OrdersMutation.TakeOrder) { outcome.asResult() }
+    }
+
+    /**
+     * Inline row actions for the Active rows. After success the
      * repo's pane watermarks for the affected panes are reset, then a
      * silent background refresh fills the new state in. The user already
      * saw the slider's spinner so no chunky pull indicator is needed.
      * Errors come back through the snackbar like every other failed call.
      */
-    fun takeOrderInline(orderId: String) =
-        runInlineAction(orderId, OrdersMutation.TakeOrder) { ordersRepository.takeOrder(orderId) }
     fun notifyOnTheWayInline(orderId: String) =
         runInlineAction(orderId, OrdersMutation.NotifyOnTheWay) { ordersRepository.notifyOnTheWay(orderId) }
     fun startOrderInline(orderId: String) =

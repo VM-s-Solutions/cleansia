@@ -7,6 +7,12 @@ namespace Cleansia.Infra.Database.Repositories;
 public class UserMembershipRepository(CleansiaDbContext context)
     : BaseRepository<UserMembership>(context), IUserMembershipRepository
 {
+    public Task<UserMembership?> GetLatestPaidForUserAsync(string userId, CancellationToken cancellationToken) =>
+        GetDbSet().Where(m => m.UserId == userId && m.PaidPeriodConfirmedAt != null)
+            .OrderByDescending(m => m.PaidPeriodConfirmedAt)
+            .ThenByDescending(m => m.CreatedOn).ThenByDescending(m => m.Id)
+            .FirstOrDefaultAsync(cancellationToken);
+
     public Task<UserMembership?> GetActiveForUserAsync(string userId, CancellationToken cancellationToken)
     {
         return ActiveForUserQuery(userId).FirstOrDefaultAsync(cancellationToken);
@@ -17,10 +23,33 @@ public class UserMembershipRepository(CleansiaDbContext context)
         return ActiveForUserQuery(userId).AsNoTracking().FirstOrDefaultAsync(cancellationToken);
     }
 
+    public Task<UserMembership?> GetEntitledForUserAsync(string userId, CancellationToken cancellationToken)
+    {
+        return EntitledForUserQuery(userId).FirstOrDefaultAsync(cancellationToken);
+    }
+
+    public Task<UserMembership?> GetEntitledForUserNoTrackingAsync(string userId, CancellationToken cancellationToken)
+    {
+        return EntitledForUserQuery(userId).AsNoTracking().FirstOrDefaultAsync(cancellationToken);
+    }
+
+    // Entitlement = a live enrolment that is also PAID. The trial conjunct is spelled out rather than
+    // calling UserMembership.IsInTrialAt, which is a computed property and would not translate — EF would
+    // either throw or, worse, evaluate it client-side after pulling the row.
+    private IQueryable<UserMembership> EntitledForUserQuery(string userId)
+    {
+        var now = DateTime.UtcNow;
+        return ActiveForUserQuery(userId)
+            // Benefits follow the account even while an authorized order is operated elsewhere.
+            .IgnoreQueryFilters()
+            .Where(m => m.TrialEndsAtUtc == null || m.TrialEndsAtUtc <= now);
+    }
+
     private IQueryable<UserMembership> ActiveForUserQuery(string userId)
     {
         return GetDbSet()
             .Include(m => m.MembershipPlan)
+            .Include(m => m.Currency)
             // IsActive on the entity is a computed property combining Status
             // AND CurrentPeriodEnd > now. Filter both server-side so we don't
             // pull cancelled rows back into memory just to drop them.
@@ -36,6 +65,12 @@ public class UserMembershipRepository(CleansiaDbContext context)
         // (UserId, Status) index on its leading column.
         return GetDbSet()
             .AnyAsync(m => m.UserId == userId && m.TrialEndsAtUtc != null, cancellationToken);
+    }
+
+    public Task<bool> HasAnyInOtherCurrencyAsync(string userId, string currencyId, CancellationToken cancellationToken)
+    {
+        return GetDbSet()
+            .AnyAsync(m => m.UserId == userId && m.CurrencyId != currencyId, cancellationToken);
     }
 
     public Task<UserMembership?> GetByStripeSubscriptionIdAsync(string stripeSubscriptionId, CancellationToken cancellationToken)
@@ -62,12 +97,12 @@ public class MembershipPlanRepository(CleansiaDbContext context)
 
     public async Task<IReadOnlyList<MembershipPlan>> GetActivePlansAsync(CancellationToken cancellationToken)
     {
-        // Order: Monthly first so it's the default selection on the switcher;
-        // then by price ascending as a tiebreaker (handy when more plans land).
+        // Monthly first so it is the default selection on the switcher; the code is the tiebreak, since
+        // a plan's price is per currency and no single one can order the list.
         return await GetDbSet()
             .Where(p => p.IsActive)
             .OrderBy(p => p.BillingInterval)
-            .ThenBy(p => p.MonthlyPriceCzk)
+            .ThenBy(p => p.Code)
             .ToListAsync(cancellationToken);
     }
 }

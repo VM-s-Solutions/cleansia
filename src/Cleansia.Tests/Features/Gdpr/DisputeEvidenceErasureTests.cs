@@ -1,8 +1,11 @@
 ﻿using Cleansia.Core.AppServices.Services;
+using Cleansia.Core.AppServices.Features.Gdpr;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Blobs.Abstractions;
 using Cleansia.Core.Clients.Abstractions.Stripe;
+using Cleansia.Core.AppServices.Features.DataRetention;
 using Cleansia.Core.Domain.Common;
+using Cleansia.Core.Domain.Configuration;
 using Cleansia.Core.Domain.Disputes;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Repositories;
@@ -32,6 +35,13 @@ namespace Cleansia.Tests.Features.Gdpr;
 /// asserts the delete carried the REAL path, which is what goes red if the two steps are ever
 /// transposed.</para>
 ///
+/// <para><b>The text is a different matter from the files</b> (owner ruling 2026-09-14). The
+/// description, the messages and the resolution notes stay readable for three years after the erasure,
+/// under a <c>TextRetainedUntil</c> stamp the retention sweep acts on — a chargeback on that order may
+/// still turn on them. The window is read from the same tenant setting family as the other retention
+/// windows, with the same floor: zero or less is a misconfiguration, not an instruction to blank at
+/// once.</para>
+///
 /// <para>Real repositories over in-memory SQLite, mirroring
 /// <c>UserNotificationRetentionAndGdprTests</c> — only the storage edge is a double, because the
 /// recorded calls against it are the assertion.</para>
@@ -45,6 +55,7 @@ public sealed class DisputeEvidenceErasureTests : IDisposable
 
     private readonly SqliteConnection _connection;
     private readonly Mock<IBlobContainerClientFactory> _blobClientFactory = new();
+    private readonly Mock<IAppConfigurationProvider> _configProvider = new();
     private readonly List<(string Container, string BlobName)> _deletes = [];
 
     public DisputeEvidenceErasureTests()
@@ -55,6 +66,10 @@ public sealed class DisputeEvidenceErasureTests : IDisposable
         using var pragma = _connection.CreateCommand();
         pragma.CommandText = "PRAGMA foreign_keys = OFF;";
         pragma.ExecuteNonQuery();
+
+        _configProvider
+            .Setup(c => c.GetTenantSettingAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((string?)null);
 
         _blobClientFactory
             .Setup(f => f.GetBlobContainerClient(It.IsAny<string>()))
@@ -106,6 +121,63 @@ public sealed class DisputeEvidenceErasureTests : IDisposable
         Assert.Equal("bystander-receipt.pdf", evidence.FileName);
     }
 
+    [Fact]
+    public async Task Erasure_Keeps_The_Disputes_Text_And_Stamps_The_Three_Year_Window()
+    {
+        await SeedAsync();
+        var before = DateTimeOffset.UtcNow;
+
+        await EraseAsync(ErasedUserId);
+
+        var dispute = await ReadDisputeAsync(ErasedUserId);
+        Assert.Equal("The bathroom was left dirty.", dispute.Description);
+        Assert.Equal("Photos attached.", Assert.Single(dispute.Messages).Message);
+        Assert.NotNull(dispute.TextRetainedUntil);
+        Assert.InRange(
+            dispute.TextRetainedUntil!.Value,
+            before.AddYears(RetentionDefaults.DefaultDisputeTextRetentionYears),
+            DateTimeOffset.UtcNow.AddYears(RetentionDefaults.DefaultDisputeTextRetentionYears));
+
+        var bystander = await ReadDisputeAsync(BystanderUserId);
+        Assert.Null(bystander.TextRetainedUntil);
+    }
+
+    [Fact]
+    public async Task The_Tenant_Setting_Widens_The_Window()
+    {
+        await SeedAsync();
+        _configProvider
+            .Setup(c => c.GetTenantSettingAsync(RetentionDefaults.DisputeTextRetentionYearsKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync("5");
+        var before = DateTimeOffset.UtcNow;
+
+        await EraseAsync(ErasedUserId);
+
+        var dispute = await ReadDisputeAsync(ErasedUserId);
+        Assert.InRange(dispute.TextRetainedUntil!.Value, before.AddYears(5), DateTimeOffset.UtcNow.AddYears(5));
+    }
+
+    [Theory]
+    [InlineData("0")]
+    [InlineData("-2")]
+    public async Task A_Window_At_Or_Below_Zero_Falls_Back_To_The_Default_Rather_Than_Blanking_At_Once(string setting)
+    {
+        await SeedAsync();
+        _configProvider
+            .Setup(c => c.GetTenantSettingAsync(RetentionDefaults.DisputeTextRetentionYearsKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(setting);
+        var before = DateTimeOffset.UtcNow;
+
+        await EraseAsync(ErasedUserId);
+
+        var dispute = await ReadDisputeAsync(ErasedUserId);
+        Assert.Equal("The bathroom was left dirty.", dispute.Description);
+        Assert.InRange(
+            dispute.TextRetainedUntil!.Value,
+            before.AddYears(RetentionDefaults.DefaultDisputeTextRetentionYears),
+            DateTimeOffset.UtcNow.AddYears(RetentionDefaults.DefaultDisputeTextRetentionYears));
+    }
+
     private async Task EraseAsync(string userId)
     {
         await using var ctx = NewContext();
@@ -119,6 +191,7 @@ public sealed class DisputeEvidenceErasureTests : IDisposable
             new CreditAccountRepository(ctx),
             new EmployeePayoutDetailsRepository(ctx),
             new UserMembershipRepository(ctx),
+            new UserStripeCustomerRepository(ctx),
             new OrderPhotoRepository(ctx),
             new DeviceRepository(ctx, session),
             new LiveActivityTokenRepository(ctx),
@@ -132,9 +205,14 @@ public sealed class DisputeEvidenceErasureTests : IDisposable
             new UserNotificationRepository(ctx),
             new DeadLetterRepository(ctx),
             new OutboxMessageRepository(ctx),
+            new CustomerActionAuditRepository(ctx),
+            new WorkContractAcceptanceRepository(ctx),
             Mock.Of<IRefreshTokenService>(),
             Mock.Of<IStripeClient>(),
             _blobClientFactory.Object,
+            _configProvider.Object,
+            new ErasureAttempt(),
+            new ArchiveWriteGate(),
             NullLogger<GdprDeletionService>.Instance);
 
         var result = await service.DeleteUserAccountAsync(
@@ -142,6 +220,15 @@ public sealed class DisputeEvidenceErasureTests : IDisposable
 
         Assert.True(result.IsSuccess);
         await ctx.CommitAsync(CancellationToken.None);
+    }
+
+    private async Task<Dispute> ReadDisputeAsync(string userId)
+    {
+        await using var ctx = NewContext();
+        return await ctx.Set<Dispute>()
+            .IgnoreQueryFilters()
+            .Include(d => d.Messages)
+            .SingleAsync(d => d.UserId == userId);
     }
 
     private async Task<DisputeEvidence> ReadEvidenceAsync(string userId)
@@ -190,6 +277,7 @@ public sealed class DisputeEvidenceErasureTests : IDisposable
             description: "The bathroom was left dirty.",
             createdBy: userId);
         dispute.AddEvidence(fileName, filePath, userId);
+        dispute.AddMessage("Photos attached.", userId, isStaff: false);
         return dispute;
     }
 
@@ -197,7 +285,7 @@ public sealed class DisputeEvidenceErasureTests : IDisposable
         new(
             new DbContextOptionsBuilder<CleansiaDbContext>().UseSqlite(_connection).Options,
             new TestUserSessionProvider("system", "system@cleansia.test"),
-            new FixedTenantProvider(null));
+            new FixedTenantProvider(TestTenants.Default));
 
     private sealed class FixedTenantProvider(string? tenantId) : ITenantProvider
     {

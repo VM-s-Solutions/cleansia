@@ -84,6 +84,7 @@ final class PartnerWireContractTests: XCTestCase {
             deductionAmount: 50,
             totalAmount: 4200,
             currencyCode: "CZK",
+            currencyId: "cur-czk",
             status: ._3,
             pdfGenerationFailed: false,
             generatedAt: Date(),
@@ -96,6 +97,64 @@ final class PartnerWireContractTests: XCTestCase {
         XCTAssertEqual(invoice.id, "inv-1")
         XCTAssertEqual(invoice.totalAmount, 4200)
         XCTAssertEqual(invoice.status, ._3)
+        XCTAssertEqual(invoice.currencyCode, "CZK")
+        XCTAssertEqual(invoice.currencyId, "cur-czk")
+    }
+
+    /// The id is what My Pay is asked for, the code is what the row is labelled with; a server that
+    /// predates the id still labels, and the screen it opens falls back to the cleaner's own currency.
+    func testAnInvoiceWithoutACurrencyIdIsNotARefusal() throws {
+        var payload = invoicePayload()
+        payload.currencyId = nil
+        let invoice = try Invoice(payload)
+        XCTAssertNil(invoice.currencyId)
+        XCTAssertEqual(invoice.currencyCode, "CZK")
+    }
+
+    // MARK: EmployeeInvoiceDetailDto — the one invoice My Pay is opened from
+
+    private func invoiceDetailPayload() -> EmployeeInvoiceDetailDto {
+        EmployeeInvoiceDetailDto(
+            id: "inv-1",
+            employeeId: "emp-1",
+            employeeName: "Jana",
+            payPeriodId: "pp-1",
+            payPeriodLabel: "1 – 15 Jun 2026",
+            invoiceNumber: "INV-2026-001",
+            totalOrders: 3,
+            subTotal: 4000,
+            bonusAmount: 250,
+            deductionAmount: 50,
+            totalAmount: 4200,
+            currencyCode: "EUR",
+            currencyId: "cur-eur",
+            status: ._3,
+            pdfGenerationFailed: false,
+            generatedAt: Date()
+        )
+    }
+
+    func testTheInvoiceDetailCarriesTheCurrencyViewMyPayIsOpenedWith() throws {
+        let detail = try InvoiceDetail(invoiceDetailPayload())
+        XCTAssertEqual(detail.payPeriodId, "pp-1")
+        XCTAssertEqual(detail.currencyCode, "EUR")
+        XCTAssertEqual(detail.currencyId, "cur-eur")
+    }
+
+    func testEveryNonNullableInvoiceDetailFigureIsRefused() {
+        for (field, break_) in [
+            ("totalAmount", { (dto: inout EmployeeInvoiceDetailDto) in dto.totalAmount = nil }),
+            ("subTotal", { dto in dto.subTotal = nil }),
+            ("bonusAmount", { dto in dto.bonusAmount = nil }),
+            ("deductionAmount", { dto in dto.deductionAmount = nil }),
+            ("totalOrders", { dto in dto.totalOrders = nil }),
+            ("status", { dto in dto.status = nil }),
+            ("pdfGenerationFailed", { dto in dto.pdfGenerationFailed = nil })
+        ] {
+            var payload = invoiceDetailPayload()
+            break_(&payload)
+            assertRefused(field) { try InvoiceDetail(payload) }
+        }
     }
 
     /// The rollup sums the rows, so a broken row must not be silently dropped out of the total.
@@ -139,7 +198,8 @@ final class PartnerWireContractTests: XCTestCase {
             orderPays: [
                 OrderEmployeePayDto(id: "line-1", orderNumber: "ORD-1", totalPay: 2100, createdOn: Date()),
                 OrderEmployeePayDto(id: "line-2", orderNumber: "ORD-2", totalPay: 2100, createdOn: Date())
-            ]
+            ],
+            currencyCode: "EUR"
         )
     }
 
@@ -147,6 +207,35 @@ final class PartnerWireContractTests: XCTestCase {
         let summary = try PeriodPaySummary(summaryPayload())
         XCTAssertEqual(summary.grandTotal, 4200)
         XCTAssertEqual(summary.orderPays.count, 2)
+        XCTAssertEqual(summary.currencyCode, "EUR")
+    }
+
+    /// The route argument is the currency the screen was opened with; the summary's own code is the
+    /// currency its figures are actually in, and it wins the moment it lands. Before that the route
+    /// argument labels, and a summary that names none leaves it in place.
+    @MainActor
+    func testASummaryInAnotherCurrencyRelabelsTheScreenOverTheRouteArgument() async throws {
+        let client = FakePayrollClient()
+        client.periodPaysResult = try .success(PeriodPaySummary(summaryPayload()))
+        let vm = PeriodPayViewModel(
+            payPeriodId: "pp-1",
+            currencyCode: "CZK",
+            currencyId: nil,
+            client: client,
+            snackbar: SnackbarController()
+        )
+        XCTAssertEqual(vm.displayCurrencyCode, "CZK")
+
+        await vm.load()
+
+        XCTAssertEqual(vm.state.loadedValue?.currencyCode, "EUR")
+        XCTAssertEqual(vm.displayCurrencyCode, "EUR")
+
+        var unlabelled = summaryPayload()
+        unlabelled.currencyCode = nil
+        client.periodPaysResult = try .success(PeriodPaySummary(unlabelled))
+        await vm.load()
+        XCTAssertEqual(vm.displayCurrencyCode, "CZK")
     }
 
     func testEveryNonNullableSummaryTotalIsRefused() {

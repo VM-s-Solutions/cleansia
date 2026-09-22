@@ -68,6 +68,7 @@
     <string name="login_subtitle">Sign in to continue to your account</string>
     <string name="create_account">Create Account</string>
     <string name="register_subtitle">Join us and start earning today</string>
+    <string name="register_market_label">Country you will work in</string>
     <string name="first_name">First Name</string>
     <string name="last_name">Last Name</string>
     <string name="phone">Phone Number</string>
@@ -485,13 +486,9 @@
     <!-- Identification & business section -->
     <string name="identification_header_person">Identity</string>
     <string name="identification_header_business">Business</string>
-    <string name="entity_type_natural_person">Self-employed</string>
-    <string name="entity_type_legal_entity">Legal entity</string>
     <string name="business_country">Business country</string>
     <string name="registration_number_label">Registration number</string>
     <string name="registration_number_helper">The format depends on the country you selected.</string>
-    <string name="vat_number_label">VAT number</string>
-    <string name="vat_number_helper">Optional — only if you\'re VAT-registered.</string>
     <string name="legal_entity_name_label">Legal entity name</string>
     <string name="street">Street</string>
     <string name="city">City</string>
@@ -617,7 +614,6 @@
     <string name="error_passport_required">Enter your passport / ID number</string>
     <string name="error_pick_business_country">Pick the country your business is registered in</string>
     <string name="error_registration_number_required">Enter your registration number</string>
-    <string name="error_legal_entity_name_required">Enter the legal entity name</string>
     <string name="error_pick_address_first">Pick your address on the map first</string>
 
     <!-- Profile Validation -->
@@ -924,8 +920,19 @@
     <string name="history">History</string>
     <string name="you_earn">you earn</string>
     <string name="distance_unknown">Location unknown</string>
-    <string name="slide_to_take">Slide to take order</string>
-    <string name="taking_order">Got it — taking…</string>
+    <!-- Contract for work: the sheet under the take, the standalone acceptance, the detail line and banner. -->
+    <string name="work_contract_title">Contract for work</string>
+    <string name="work_contract_version">Version %1$s</string>
+    <string name="work_contract_order_number">Order %1$s</string>
+    <string name="work_contract_swipe_to_accept">Swipe to accept the contract for work</string>
+    <string name="work_contract_accepting">Accepting\u2026</string>
+    <string name="work_contract_load_error">Couldn\'t load the contract for work.</string>
+    <string name="work_contract_accepted_on">Accepted on %1$s, version %2$s</string>
+    <string name="work_contract_accepted_in_language">Accepted in %1$s</string>
+    <string name="work_contract_accepted_line">You accepted the contract for work on %1$s, version %2$s</string>
+    <string name="work_contract_pending_banner">Accept the contract for work before you start</string>
+    <string name="work_contract_accept_cta">Accept the contract</string>
+    <string name="work_contract_read">Read the contract</string>
     <string name="slide_to_start">Slide to start cleaning</string>
     <string name="starting_order">Starting the job…</string>
     <string name="slide_to_complete">Slide to complete</string>
@@ -1114,6 +1121,7 @@
     <string name="error_auth_refresh_token_reused">For your security, you\'ve been signed out everywhere.</string>
     <string name="error_auth_current_password_invalid">Your current password is incorrect.</string>
     <string name="error_auth_account_locked">Too many failed login attempts. The account is temporarily locked — try again in a few minutes.</string>
+    <string name="error_auth_company_deactivated">Your company has been deactivated, so the partner app is no longer available to you. You can still export or delete your data in the customer app.</string>
 
     <!-- User -->
     <string name="error_user_email_confirmed">This email is already confirmed.</string>
@@ -1156,6 +1164,12 @@
     <string name="error_order_max_employees_exceeded">This order already has the maximum number of cleaners.</string>
     <string name="error_order_preferred_employee_not_eligible">You\'re not eligible to take this order.</string>
     <string name="error_order_employee_already_has_order_in_progress">You already have another order in progress. Finish it before starting a new one.</string>
+
+    <!-- Contract for work: the take's echo, the seat's gate, the preview with no text in force -->
+    <string name="error_contract_not_accepted">Please read and accept the contract for work before taking the job.</string>
+    <string name="error_contract_text_mismatch">The contract was updated \u2014 please read it again.</string>
+    <string name="error_contract_acceptance_required">Accept the contract for work for this job before you continue.</string>
+    <string name="error_legal_document_not_found">This job cannot be taken right now.</string>
 
     <!-- Order — completion -->
     <string name="error_order_not_in_progress">This order isn\'t in progress.</string>
@@ -1217,7 +1231,6 @@
     <string name="error_validation_invalid_iban">Please enter a valid IBAN.</string>
     <string name="error_validation_invalid_zip_code">Please enter a valid ZIP code.</string>
     <string name="error_validation_registration_number_invalid_format">Please enter a valid company registration number for the selected country.</string>
-    <string name="error_validation_vat_number_invalid_format">Please enter a valid VAT number for the selected country.</string>
     <string name="error_validation_must_be_positive">Must be a positive number.</string>
     <string name="error_validation_invalid_availability_format">Availability format is invalid.</string>
 
@@ -1246,6 +1259,7 @@
 
     <!-- Country / language scope -->
     <string name="error_country_not_serviced">We don\'t operate in this country yet.</string>
+    <string name="error_tenant_not_found">This market is not operated by any Cleansia company yet.</string>
     <string name="error_country_required">Please select a country.</string>
     <string name="error_city_not_serviced">We don\'t operate in this city yet.</string>
     <string name="error_language_not_supported">This language isn\'t supported.</string>
@@ -1265,8 +1279,8 @@
     <string name="notification_channel_dispute_reply_name">Support replies</string>
     <string name="notification_channel_dispute_reply_desc">Notifies you when support responds to your dispute.</string>
 
-    <string name="notification_order_confirmed_title">Job confirmed</string>
-    <string name="notification_order_confirmed_body">Job #%1$s is confirmed. Tap to see the details.</string>
+    <string name="notification_order_payment_confirmed_title">Job confirmed</string>
+    <string name="notification_order_payment_confirmed_body">Job #%1$s is confirmed. Tap to see the details.</string>
     <string name="notification_order_in_progress_title">Job in progress</string>
     <string name="notification_order_in_progress_body">Job #%1$s is underway. Tap to follow along.</string>
     <string name="notification_order_completed_title">Job completed</string>
@@ -1327,6 +1341,7 @@
     <string name="error_company_not_found">Company information not found</string>
     <string name="error_country_not_existing_id">Country not found</string>
     <string name="error_currency_invalid">Invalid currency</string>
+    <string name="error_currency_not_found">Currency not found</string>
     <string name="error_dispute_max_length_exceeded">Maximum length exceeded</string>
     <string name="error_employee_not_approved">Your account hasn\'t been approved yet.</string>
     <string name="error_gdpr_consent_already_granted">This consent has already been granted.</string>
@@ -1375,8 +1390,6 @@
     <string name="offer_reserved_until_date">Yours until %1$s, %2$s</string>
     <string name="offer_reserved_ended">This reservation has ended</string>
     <string name="offer_confirm">Confirm</string>
-    <string name="offer_slide_to_confirm">Slide to confirm</string>
-    <string name="offer_confirming">Confirming\u2026</string>
     <string name="offer_decline">Decline</string>
     <string name="offer_decline_title">Release this job?</string>
     <string name="offer_decline_body">It goes back to every cleaner straight away. Nothing about this is held against you, and you can still take it from the board while it is free.</string>
@@ -1435,4 +1448,6 @@
     <string name="open_settings">Open Settings</string>
     <string name="photo_source_title">Add photo</string>
     <string name="camera_unavailable">This device has no camera.</string>
+    <string name="notification_recurring_paused_title">Recurring schedule paused</string>
+    <string name="notification_recurring_paused_body">Your recurring schedule is paused because Plus is not active. Renew Plus to resume scheduling.</string>
 </resources>

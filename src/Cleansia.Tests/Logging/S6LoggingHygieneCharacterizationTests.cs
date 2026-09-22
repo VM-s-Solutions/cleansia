@@ -2,6 +2,7 @@ using System.Net;
 using System.Text.Json;
 using Cleansia.Core.AppServices.Services;
 using Cleansia.Core.AppServices.Services.Interfaces;
+using Cleansia.Core.AppServices.Tenancy;
 using Cleansia.Core.Clients.Abstractions;
 using Cleansia.Core.Clients.Abstractions.Fcm;
 using Cleansia.Core.Domain.Enums;
@@ -15,7 +16,9 @@ using Cleansia.Functions.Core.Handlers;
 using Cleansia.Infra.Common.Configuration.Interfaces;
 using Cleansia.Infra.Common.Exceptions;
 using Microsoft.EntityFrameworkCore.Storage;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 
 namespace Cleansia.Tests.Logging;
@@ -205,7 +208,7 @@ public class S6LoggingHygieneCharacterizationTests
 
         var handler = new GenerateReceiptHandler(
             orders.Object, Mock.Of<IReceiptService>(), Mock.Of<IEmailService>(),
-            Mock.Of<ICountryConfigurationRepository>(), uow.Object, Mock.Of<ITenantProvider>(), logger);
+            Mock.Of<ICountryConfigurationRepository>(), uow.Object, Mock.Of<ITenantProvider>(), DeadLetterOfFrozenCompany(), logger);
 
         var body = JsonSerializer.Serialize(
             new QueueEnvelope<GenerateReceiptMessage>(
@@ -230,7 +233,7 @@ public class S6LoggingHygieneCharacterizationTests
 
         var handler = new GenerateReceiptHandler(
             Mock.Of<IOrderRepository>(), Mock.Of<IReceiptService>(), Mock.Of<IEmailService>(),
-            Mock.Of<ICountryConfigurationRepository>(), uow.Object, Mock.Of<ITenantProvider>(), logger);
+            Mock.Of<ICountryConfigurationRepository>(), uow.Object, Mock.Of<ITenantProvider>(), DeadLetterOfFrozenCompany(), logger);
 
         // Malformed body → both envelope and bare reads throw → ReadPayload returns null → the
         // deserialize-failure throw fires. The exception message (logged at Error in the outer catch)
@@ -352,4 +355,7 @@ public class S6LoggingHygieneCharacterizationTests
     {
         public object? Scalar(string key) => Scalars.TryGetValue(key, out var value) ? value : null;
     }
+
+    private static ArchivedCompanyDeadLetter DeadLetterOfFrozenCompany() =>
+        new(Mock.Of<IServiceScopeFactory>(), NullLogger<ArchivedCompanyDeadLetter>.Instance);
 }

@@ -5,6 +5,7 @@ import Foundation
 /// from feed v1 (Q-FEED-01) and partner keys never reach this host.
 enum CustomerFeedEventKeys {
     static let all: Set<String> = [
+        "order.payment_confirmed",
         "order.confirmed",
         "order.cleaner_assigned",
         "order.on_the_way",
@@ -12,8 +13,10 @@ enum CustomerFeedEventKeys {
         "order.completed",
         "order.cancelled",
         "order.refunded",
+        "order.no_cleaner_refunded",
         "dispute.reply",
         "recurring.scheduled",
+        "recurring.paused",
         "membership.expiring_soon",
         "membership.cancellation_effective",
         "loyalty.tier_upgrade"
@@ -60,6 +63,8 @@ enum NotificationFeedTemplates {
             // Feed rendering is programmatic (D5/FCH-5), so unlike the argless
             // APNs body it can show the tier from `args.tier` — Android parity.
             L10n.NotificationsInbox.loyaltyTierBody(tierLabel(args["tier"]))
+        case "order.no_cleaner_refunded":
+            String(format: L10n.localized("push.\(eventKey).body"), args["orderNumber"] ?? "", args["amount"] ?? "")
         case _ where orderNumberEvents.contains(eventKey):
             String(format: L10n.localized("push.\(eventKey).body"), args["orderNumber"] ?? "")
         default:
@@ -68,6 +73,7 @@ enum NotificationFeedTemplates {
     }
 
     private static let orderNumberEvents: Set<String> = [
+        "order.payment_confirmed",
         "order.confirmed",
         "order.cleaner_assigned",
         "order.on_the_way",

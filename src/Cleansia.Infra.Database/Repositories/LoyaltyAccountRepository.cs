@@ -1,5 +1,6 @@
 using Cleansia.Core.Domain.Loyalty;
 using Cleansia.Core.Domain.Repositories;
+using Cleansia.Infra.Database.Extensions;
 using Microsoft.EntityFrameworkCore;
 
 namespace Cleansia.Infra.Database.Repositories;
@@ -22,22 +23,28 @@ public class LoyaltyAccountRepository(CleansiaDbContext context)
     {
         // Booking/quote hot path (LoyaltyService.ResolveTierDiscountForOrderAsync) reads only
         // CurrentTier. No-tracking + ledger-free keeps the per-quote round-trip minimal.
-        return GetDbSet()
+        return GetQueryableIgnoringTenant()
             .AsNoTracking()
+            .FirstOrDefaultAsync(a => a.UserId == userId, cancellationToken);
+    }
+
+    public Task<LoyaltyAccount?> GetByUserIdIgnoringTenantAsync(string userId, CancellationToken cancellationToken)
+    {
+        return GetQueryableIgnoringTenant()
             .FirstOrDefaultAsync(a => a.UserId == userId, cancellationToken);
     }
 
     public async Task<LoyaltyAccount> EnsureForUserAsync(string userId, CancellationToken cancellationToken)
     {
-        var existing = await GetDbSet()
-            .FirstOrDefaultAsync(a => a.UserId == userId, cancellationToken);
-
+        var existing = GetDbSet().Local.FirstOrDefault(a => a.UserId == userId)
+            ?? await GetByUserIdIgnoringTenantAsync(userId, cancellationToken);
         if (existing != null)
         {
             return existing;
         }
 
         var account = LoyaltyAccount.Create(userId);
+        account.TenantId = await Context.UserTenantIdAsync(userId, cancellationToken);
         Add(account);
         return account;
     }

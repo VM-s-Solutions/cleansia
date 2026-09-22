@@ -18,14 +18,19 @@ internal static class PayConfigRepositoryDouble
         return mock.Object;
     }
 
-    public static IEmployeePayConfigRepository CoveringServices(params string[] serviceIds) =>
+    /// <summary>
+    /// Platform-wide rates for the given entries IN ONE CURRENCY. Required first, not defaulted: the
+    /// gate filters on it, so a fixture whose order and configs disagree on the id is refused -- which
+    /// is the fixture being wrong, not the gate.
+    /// </summary>
+    public static IEmployeePayConfigRepository CoveringServices(string currencyId, params string[] serviceIds) =>
         Holding(serviceIds
-            .Select(id => EmployeePayConfig.CreateForService(id, 100m, "czk"))
+            .Select(id => EmployeePayConfig.CreateForService(id, 100m, currencyId))
             .ToArray());
 
-    public static IEmployeePayConfigRepository Covering(string[] serviceIds, string[] packageIds) =>
+    public static IEmployeePayConfigRepository Covering(string currencyId, string[] serviceIds, string[] packageIds) =>
         Holding(serviceIds
-            .Select(id => EmployeePayConfig.CreateForService(id, 100m, "czk"))
-            .Concat(packageIds.Select(id => EmployeePayConfig.CreateForPackage(id, 100m, "czk")))
+            .Select(id => EmployeePayConfig.CreateForService(id, 100m, currencyId))
+            .Concat(packageIds.Select(id => EmployeePayConfig.CreateForPackage(id, 100m, currencyId)))
             .ToArray());
 }

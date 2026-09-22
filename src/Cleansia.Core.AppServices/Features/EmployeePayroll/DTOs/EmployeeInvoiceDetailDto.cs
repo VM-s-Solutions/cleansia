@@ -18,6 +18,7 @@ public record EmployeeInvoiceDetailDto(
     decimal DeductionAmount,
     decimal TotalAmount,
     string CurrencyCode,
+    string CurrencyId,
     EmployeeInvoiceStatus Status,
     string? PdfBlobName,
     bool PdfGenerationFailed,

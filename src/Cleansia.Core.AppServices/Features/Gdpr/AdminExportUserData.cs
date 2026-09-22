@@ -1,4 +1,5 @@
 using Cleansia.Core.AppServices.Abstractions;
+using Cleansia.Core.AppServices.Auditing;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Gdpr.DTOs;
 using Cleansia.Core.AppServices.Services.Interfaces;
@@ -10,11 +11,22 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Cleansia.Core.AppServices.Features.Gdpr;
 
+/// <summary>
+/// An admin dumping another person's whole record is a PII egress, so it is a Command and audited — the
+/// <c>RevealOrderAccessInstructions</c> precedent. As a Query it left no record at all: the
+/// <c>GdprRequest("Export")</c> row it added had no commit to ride and the audit gate never saw it
+/// (ADR-0062 D6). A build that throws commits nothing; the pipeline records the failure out-of-band.
+/// </summary>
+[AuditAction("gdpr.user.export", Sensitive = true, ResourceType = "User")]
 public static class AdminExportUserData
 {
-    public record Query(string UserId) : IQuery<GdprExportDto>;
+    public record Command(string UserId) : ICommand<GdprExportDto>;
 
-    public class Validator : AbstractValidator<Query>
+    // ADR-0012 D4.1 — the subject id, the scope and row counts ONLY. The exported data is exactly what
+    // the audit row must never copy.
+    public record GdprExportSnapshot(string SubjectUserId, string Scope, int OrderCount, int DisputeCount, int CustomerActionCount, int WorkContractAcceptanceCount);
+
+    public class Validator : AbstractValidator<Command>
     {
         public Validator(IUserRepository userRepository)
         {
@@ -35,33 +47,29 @@ public static class AdminExportUserData
         }
     }
 
-    internal class Handler(
+    public class Handler(
         IUserSessionProvider userSessionProvider,
         IGdprExportService gdprExportService,
-        IGdprRequestRepository gdprRequestRepository)
-        : IQueryHandler<Query, GdprExportDto>
+        IGdprRequestRepository gdprRequestRepository,
+        IAuditContext auditContext)
+        : ICommandHandler<Command, GdprExportDto>
     {
-        public async Task<BusinessResult<GdprExportDto>> Handle(Query request, CancellationToken cancellationToken)
+        public async Task<BusinessResult<GdprExportDto>> Handle(Command request, CancellationToken cancellationToken)
         {
-            var adminEmail = userSessionProvider.GetUserEmail() ?? "admin";
+            var adminEmail = userSessionProvider.GetUserEmail() ?? GdprAuditReasons.FallbackAdminActor;
             var exportedBy = $"admin:{adminEmail}";
 
-            // Same audit-row-first pattern as ExportUserData — the request must
-            // be logged even if the build throws (GDPR Article 30).
-            var auditEntry = Core.Domain.Users.GdprRequest.Create(request.UserId, "Export");
+            var auditEntry = Core.Domain.Users.GdprRequest.Create(request.UserId, GdprAuditReasons.ExportRequestType);
             gdprRequestRepository.Add(auditEntry);
 
-            try
-            {
-                var export = await gdprExportService.BuildAsync(request.UserId, exportedBy, cancellationToken);
-                auditEntry.MarkCompleted(adminEmail);
-                return BusinessResult.Success(export);
-            }
-            catch
-            {
-                auditEntry.MarkFailed("Export build threw — see logs.");
-                throw;
-            }
+            var export = await gdprExportService.BuildAsync(request.UserId, exportedBy, cancellationToken);
+            auditEntry.MarkCompleted(adminEmail);
+
+            var snapshot = new GdprExportSnapshot(
+                request.UserId, GdprAuditReasons.ExportRequestType, export.Orders.Count, export.Disputes.Count, export.CustomerActions.Count, export.WorkContractAcceptances.Count);
+            auditContext.RecordChange("User", request.UserId, snapshot, snapshot);
+
+            return BusinessResult.Success(export);
         }
     }
 }

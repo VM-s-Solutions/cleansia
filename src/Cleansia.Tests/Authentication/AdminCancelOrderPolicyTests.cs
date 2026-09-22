@@ -10,7 +10,7 @@ using Microsoft.Extensions.DependencyInjection;
 namespace Cleansia.Tests.Authentication;
 
 /// <summary>
-/// AC7 (ADR-0001 D1/D2) — the new admin-cancel permission is <c>AdminOnly</c>, fail-closed, and mapped.
+/// ADR-0001 D1/D2, re-mapped by ADR-0066 D3 — the admin-cancel permission is <c>SupportOrAbove</c>, fail-closed, and mapped.
 /// An Administrator passes; a Customer or Employee is denied (the privileged money+lifecycle write
 /// never leaks to a non-admin role).
 /// </summary>
@@ -34,20 +34,25 @@ public class AdminCancelOrderPolicyTests
         return services.BuildServiceProvider();
     }
 
-    private static ClaimsPrincipal Principal(UserProfile role)
+    private static ClaimsPrincipal Principal(UserProfile role, AdminRole? adminRole = null)
     {
         var claims = new List<Claim>
         {
             new(ClaimTypes.NameIdentifier, "sub-1"),
             new(ClaimTypes.Role, role.ToString()),
         };
+        if (adminRole is { } value)
+        {
+            claims.Add(new Claim(AdminRoleSets.ClaimType, value.ToString()));
+        }
+
         return new ClaimsPrincipal(new ClaimsIdentity(claims, authenticationType: "Test"));
     }
 
     [Fact]
-    public void CanAdminCancelOrder_Is_Mapped_AdminOnly()
+    public void CanAdminCancelOrder_Is_Mapped_SupportOrAbove()
     {
-        Assert.Equal(PhysicalPolicy.AdminOnly, Policy.CanAdminCancelOrder.ToPhysicalPolicy());
+        Assert.Equal(PhysicalPolicy.SupportOrAbove, Policy.CanAdminCancelOrder.ToPhysicalPolicy());
     }
 
     [Fact]
@@ -58,9 +63,25 @@ public class AdminCancelOrderPolicyTests
         var physical = Policy.CanAdminCancelOrder.ToPhysicalPolicy();
 
         var result = await authz.AuthorizeAsync(
-            Principal(UserProfile.Administrator), new DefaultHttpContext(), physical);
+            Principal(UserProfile.Administrator, AdminRole.Administrator), new DefaultHttpContext(), physical);
 
         Assert.True(result.Succeeded);
+    }
+
+    // An order-ops act is Support's area: the Accountant and a claimless Administrator token are refused.
+    [Theory]
+    [InlineData(AdminRole.Accountant)]
+    [InlineData(null)]
+    public async Task Administrator_Outside_The_Support_Set_Is_Denied(AdminRole? adminRole)
+    {
+        await using var provider = BuildProvider();
+        var authz = provider.GetRequiredService<IAuthorizationService>();
+        var physical = Policy.CanAdminCancelOrder.ToPhysicalPolicy();
+
+        var result = await authz.AuthorizeAsync(
+            Principal(UserProfile.Administrator, adminRole), new DefaultHttpContext(), physical);
+
+        Assert.False(result.Succeeded);
     }
 
     [Theory]

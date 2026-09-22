@@ -1,0 +1,88 @@
+<div class="work-contract-dialog">
+  <div class="work-contract-dialog__header">
+    <h2 class="work-contract-dialog__title">
+      {{ facade.contract()?.title || ('pages.order_detail.work_contract.dialog.title' | translate) }}
+    </h2>
+    @if (facade.contract(); as contract) {
+    <!-- The effective date is a calendar day, so it is read in UTC like the legal-documents page. -->
+    <p class="work-contract-dialog__version">
+      {{
+        'pages.order_detail.work_contract.dialog.version_line'
+          | translate
+            : { version: contract.version, date: contract.effectiveFrom | date: 'dd/MM/yyyy' : 'UTC' }
+      }}
+    </p>
+    }
+  </div>
+
+  <div class="work-contract-dialog__body">
+    @if (facade.loading()) {
+    <cleansia-loader />
+    } @else if (facade.contract(); as contract) {
+      <section class="work-contract-dialog__facts">
+        <h3 class="work-contract-dialog__facts-title">
+          {{ 'pages.order_detail.work_contract.dialog.facts.title' | translate }}
+        </h3>
+        <dl class="work-contract-dialog__facts-list">
+          @for (row of facade.factRows(); track row.labelKey) {
+          <div class="work-contract-dialog__fact">
+            <dt>{{ row.labelKey | translate }}</dt>
+            <dd>{{ row.value }}</dd>
+          </div>
+          }
+        </dl>
+      </section>
+
+      <section class="work-contract-dialog__facts work-contract-dialog__acceptance-facts">
+        <h3 class="work-contract-dialog__facts-title">
+          {{ 'pages.order_detail.work_contract.dialog.acceptance.title' | translate }}
+        </h3>
+        <dl class="work-contract-dialog__facts-list">
+          @for (row of facade.acceptanceRows(); track row.labelKey) {
+          <div class="work-contract-dialog__fact">
+            <dt>{{ row.labelKey | translate }}</dt>
+            @if (row.valueKey) {
+            <dd class="work-contract-dialog__fact-missing">{{ row.valueKey | translate }}</dd>
+            } @else {
+            <dd>{{ row.value }}</dd>
+            }
+          </div>
+          }
+        </dl>
+      </section>
+
+      @if (facade.renderedLanguageNotice(); as notice) {
+      <p class="work-contract-dialog__notice" role="status">
+        <i class="pi pi-language"></i>
+        <span>{{ 'pages.order_detail.work_contract.dialog.rendered_language_differs' | translate: notice }}</span>
+      </p>
+      }
+
+      <!-- The server rendered our own markdown; Angular's sanitizer still walks it before it lands. -->
+      <div class="work-contract-dialog__content" [innerHTML]="contract.contentHtml"></div>
+    } @else if (facade.loadFailed()) {
+    <div class="work-contract-dialog__error" role="alert">
+      <i class="pi pi-exclamation-circle"></i>
+      <p>{{ 'pages.order_detail.work_contract.dialog.load_failed' | translate }}</p>
+      <cleansia-button
+        [label]="'pages.order_detail.work_contract.dialog.retry' | translate"
+        icon="pi pi-refresh"
+        severity="secondary"
+        [outlined]="true"
+        size="auto-width"
+        (onClick)="onRetry()"
+      />
+    </div>
+    }
+  </div>
+
+  <div class="work-contract-dialog__footer">
+    <cleansia-button
+      [label]="'global.actions.close' | translate"
+      severity="secondary"
+      [outlined]="true"
+      size="auto-width"
+      (onClick)="onClose()"
+    />
+  </div>
+</div>

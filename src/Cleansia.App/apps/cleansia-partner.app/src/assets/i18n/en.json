@@ -120,11 +120,7 @@
       "nationality": "Citizenship / Nationality",
       "national_id": "National ID / Passport Number",
       "tax_id": "Tax ID",
-      "entity_type": "Business Type",
-      "entity_type_natural_person": "Self-employed individual (OSVČ)",
-      "entity_type_legal_entity": "Legal entity (s.r.o., a.s., ...)",
       "registration_number": "Registration Number",
-      "vat_number": "VAT Number",
       "legal_entity_name": "Legal Entity Name",
       "bank_details": "Bank Details for Payroll",
       "iban": "IBAN",
@@ -361,7 +357,28 @@
         "clear_all": "Clear all"
       },
       "no_logs": "No time logs to display",
-      "save_log": "Save log"
+      "save_log": "Save log",
+      "work_contract": {
+        "title": "Contract for work",
+        "version_line": "Version {{version}}, effective from {{date}}",
+        "facts": {
+          "title": "The job",
+          "order_number": "Order number",
+          "window": "Date and time",
+          "price": "Price",
+          "location": "Location",
+          "rooms_bathrooms": "Rooms / bathrooms",
+          "services": "Services",
+          "packages": "Packages",
+          "extras": "Extras"
+        },
+        "accept_checkbox": "I have read and accept the contract for work for this job",
+        "accept_and_take": "Accept and take the job",
+        "accept_only": "Accept the contract",
+        "load_failed": "The contract could not be loaded. Please try again.",
+        "accepted_on": "Accepted on {{date}}, version {{version}}",
+        "accepted_in_language": "Accepted in {{language}}"
+      }
     },
     "order_details": {
       "title": "Order Details",
@@ -452,7 +469,14 @@
       "mark_cash_collected_confirm_warning": "This marks the order as paid and cannot be undone.",
       "mark_cash_collected_confirm_action": "Yes, cash collected",
       "mark_cash_collected_gating_error": "Cash can only be collected while the order is in progress and not yet paid",
-      "complete_missing_after_photos": "Order cannot be completed without after photos"
+      "complete_missing_after_photos": "Order cannot be completed without after photos",
+      "work_contract": {
+        "accepted_line": "You accepted the contract for work on {{date}}, version {{version}}",
+        "read": "Read the contract",
+        "pending_banner": "Accept the contract for work before you start",
+        "accept": "Accept the contract",
+        "accepted_success": "Contract for work accepted."
+      }
     },
     "invoices": {
       "title": "My Payroll Invoices",
@@ -527,6 +551,8 @@
       "title": "My Period Pay",
       "description": "A read-only summary of your pay for each pay period.",
       "pay_period": "Pay Period",
+      "currency": "Currency",
+      "multiple_currencies_hint": "You were paid in more than one currency this period. Pick the one to view.",
       "period_status_open": "Open",
       "period_status_closed": "Closed",
       "period_status_paid": "Paid",
@@ -1030,6 +1056,14 @@
     }
   },
   "api": {
+    "contract": {
+      "not_accepted": "Please read and accept the contract for work before taking the job.",
+      "text_mismatch": "The contract was updated — please read it again.",
+      "acceptance_required": "Accept the contract for work for this job before you continue."
+    },
+    "legal": {
+      "document_not_found": "This job cannot be taken right now."
+    },
     "auth": {
       "google_type_error": "This account uses Google sign-in. Use the Google button.",
       "apple_type_error": "This account uses Sign in with Apple. Use the Apple button.",
@@ -1047,7 +1081,8 @@
       "account_locked": "Too many failed login attempts. The account is temporarily locked — try again in a few minutes.",
       "too_many_attempts": "Too many attempts with this code. Request a new code and try again.",
       "invalid_refresh_token": "Your session has expired. Please sign in again.",
-      "refresh_token_reused": "Your session was used elsewhere. Please sign in again."
+      "refresh_token_reused": "Your session was used elsewhere. Please sign in again.",
+      "company_deactivated": "Your company has been deactivated, so the partner app is no longer available to you. You can still export or delete your data in the customer app."
     },
     "common": {
       "invalid_enum_value": "Invalid enum value",
@@ -1072,9 +1107,6 @@
       "invalid_zip_code": "Invalid zip code format",
       "registration_number": {
         "invalid_format": "Invalid company registration number format for the selected country"
-      },
-      "vat_number": {
-        "invalid_format": "Invalid VAT number format for the selected country"
       },
       "must_be_positive": "Value must be positive",
       "invalid_availability_format": "Invalid availability format. Days must be valid day names or dates (yyyy-MM-dd), and time ranges must have start before end.",
@@ -1106,8 +1138,7 @@
       "not_found": "Currency not found",
       "code_already_exists": "A currency with this code already exists",
       "in_use": "Cannot delete currency because it is currently in use",
-      "cannot_delete_default": "Cannot delete the default currency",
-      "exchange_rate_must_be_positive": "Exchange rate must be a positive number"
+      "cannot_delete_default": "Cannot delete the default currency"
     },
     "email": {
       "invalid_format": "Invalid email format",
@@ -1185,7 +1216,8 @@
       "not_approved": "Your account is not approved to work on orders",
       "already_approved": "Employee has already been approved",
       "already_rejected": "Employee has already been rejected",
-      "job_radius_out_of_range": "The travel radius you entered is outside the allowed range"
+      "job_radius_out_of_range": "The travel radius you entered is outside the allowed range",
+      "legal_entity_not_accepted": "Cleaners work with us as natural persons; a company cannot be registered here"
     },
     "employee_document": {
       "not_found": "Document not found",
@@ -1202,6 +1234,7 @@
         "not_found": "Invoice not found",
         "invalid_status": "Invalid invoice status",
         "already_exists": "Invoice already exists",
+        "already_paid": "This invoice is already paid and cannot be re-rendered",
         "pdf_generation_failed": "Failed to generate PDF",
         "template_not_found": "Invoice template not found",
         "cannot_cancel_paid": "Cannot cancel a paid invoice",
@@ -1270,6 +1303,12 @@
       "iso_code_already_exists": "A country with this ISO code already exists",
       "in_use": "Cannot delete country because it is currently in use",
       "not_serviced": "We do not operate in this country yet"
+    },
+    "tenant": {
+      "not_found": "This market is not operated by any Cleansia company yet."
+    },
+    "consent": {
+      "terms_not_accepted": "Please accept the Terms of Service and Privacy Policy to continue."
     },
     "gdpr": {
       "consent_not_found": "We could not find that consent setting",
@@ -1492,6 +1531,8 @@
       "email": "Email",
       "password": "Password",
       "confirm_password": "Confirm Password",
+      "market": "Market",
+      "market_placeholder": "Choose your market",
       "terms_agreement": "I agree to the terms",
       "terms_and_conditions": "I agree to the <a href='/gdpr'>Terms of Service and Privacy Policy</a>",
       "have_account": "Already have an account?",

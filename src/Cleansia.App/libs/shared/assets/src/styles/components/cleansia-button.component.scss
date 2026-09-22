@@ -1,5 +1,6 @@
 // ===== CLEANSIA BUTTON COMPONENT =====
 // Modern, rich button design with glass morphism and smooth animations
+@use '../common/touch-target' as *;
 
 .cleansia-button {
   min-width: 100%;
@@ -30,7 +31,10 @@
     transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
       background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     position: relative;
-    overflow: hidden;
+    // PrimeNG clips the button to its box for a ripple this stylesheet draws itself; the ripple
+    // below rounds itself instead, so the hit area can reach past the painted pill.
+    overflow: visible;
+    @include touch-target;
 
     // Enhanced shadows for depth
     &:not(.p-button-text):not(.p-button-outlined) {
@@ -47,51 +51,30 @@
       }
     }
 
-    // Ripple effect overlay
+    // Ripple: a circle growing from the centre, drawn as the background of a layer the size and
+    // shape of the button so it clips itself. Its radius is the tile's closest side, so the
+    // tile's size is the circle's diameter.
     &::before {
       content: '';
       position: absolute;
-      top: 50%;
-      left: 50%;
-      width: 0;
-      height: 0;
-      border-radius: 50%;
-      background: rgba(255, 255, 255, 0.3);
-      transform: translate(-50%, -50%);
-      transition: width 0.6s, height 0.6s;
+      inset: 0;
+      border-radius: inherit;
+      pointer-events: none;
+      background: radial-gradient(
+          circle closest-side,
+          rgba(255, 255, 255, 0.3) 99%,
+          transparent 100%
+        )
+        center / 0 0 no-repeat;
+      transition: background-size 0.6s;
     }
 
     &:active:not(:disabled)::before {
-      width: 300px;
-      height: 300px;
+      background-size: 300px 300px;
     }
 
-    // Outlined buttons with hover fill effect
     &.p-button-outlined {
       background: transparent;
-      position: relative;
-
-      &::after {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: currentColor;
-        opacity: 0;
-        transition: opacity 0.3s ease;
-        border-radius: inherit;
-        z-index: -1;
-      }
-
-      &:hover:not(:disabled)::after {
-        opacity: 0.08;
-      }
-
-      &:active:not(:disabled)::after {
-        opacity: 0.15;
-      }
     }
 
     // Text buttons with subtle background on hover
@@ -204,6 +187,13 @@
       }
     }
   }
+}
+
+// A content-sized action. It takes its label's width and shares a row with its neighbours, the
+// way the brand appearances below do, instead of a fixed slot the label has to fit into: the
+// fixed slots shrink to 5rem on a phone, and a cs/uk label in one was an initial and an ellipsis.
+.cleansia-button.auto-width {
+  min-width: 0;
 }
 
 // ===== ANIMATIONS =====

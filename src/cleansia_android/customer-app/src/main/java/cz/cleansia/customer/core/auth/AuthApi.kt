@@ -76,12 +76,23 @@ data class RegisterRequest(
     val lastName: String,
     val language: String,
     /**
+     * The signup screen's terms tick. The server grants Terms of Service and Privacy Policy in the
+     * registration's own commit off this member. Without a default for the same reason as
+     * [GoogleAuthRequest.termsAccepted].
+     */
+    val termsAccepted: Boolean,
+    /**
      * Loyalty Phase C — optional referral code entered at signup. Backend
      * accepts null/blank without failing registration; if non-null and valid,
      * a Referral row is created in Accepted state and the bonus pays out on
      * the user's first completed order.
      */
     val referralCode: String? = null,
+    /**
+     * The market the visitor chose (ADR-0058's persisted choice); the server maps it to the operating
+     * company the account is created under (ADR-0061 D3). Absent = the default market.
+     */
+    val countryId: String? = null,
 )
 
 @Serializable
@@ -98,6 +109,8 @@ data class GoogleAuthRequest(
      * nobody agreed to.
      */
     val termsAccepted: Boolean,
+    /** The market a first sign-in provisions the account under — see [RegisterRequest.countryId]. */
+    val countryId: String? = null,
 )
 
 // The email names the account the 6-digit code was issued to — the server verifies the code ONLY

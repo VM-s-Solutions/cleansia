@@ -15,15 +15,18 @@ final class CustomerErrorVoiceTests: XCTestCase {
         CustomerOnlyKey("membership.express_waiver.no_longer_available", emitters: "CreateOrder"),
         CustomerOnlyKey(
             "order.already_cancelled",
-            emitters: "CancelOrder, AdminCancelOrder, AdminOverrideOrderStatus"
+            emitters: "CancelOrder, CancelGuestOrder, GetGuestCancellationFeePreview, AdminCancelOrder, "
+                + "AdminOverrideOrderStatus"
         ),
         CustomerOnlyKey(
             "order.already_completed",
-            emitters: "CancelOrder, AdminCancelOrder, AdminOverrideOrderStatus"
+            emitters: "CancelOrder, CancelGuestOrder, GetGuestCancellationFeePreview, AdminCancelOrder, "
+                + "AdminOverrideOrderStatus"
         ),
         CustomerOnlyKey("order.span_exceeds_maximum", emitters: "CreateOrder, QuoteOrder"),
         CustomerOnlyKey("order.empty", emitters: "CreateOrder"),
         CustomerOnlyKey("order.address_exactly_one_required", emitters: "CreateOrder"),
+        CustomerOnlyKey("order.country_operator_mismatch", emitters: "CreateOrder"),
         CustomerOnlyKey("order.cleaning_date.future", emitters: "CreateOrder"),
         CustomerOnlyKey("order.cleaning_date.below_lead_time", emitters: "CreateOrder"),
         CustomerOnlyKey("order.selected_services.invalid", emitters: "CreateOrder, QuoteOrder"),
@@ -86,12 +89,15 @@ final class CustomerErrorVoiceTests: XCTestCase {
         "auth.too_many_attempts": "ChangePassword, ConfirmUserEmail",
         "city.not_serviced": "OrderAddressResolver",
         "common.invalid_enum_value": "ConfirmRecurringOrder, CreateDispute, CreateOrder +3 more",
-        "common.max_length": "AddSavedAddress, AppleAuth, BaseAuthValidator +8 more",
+        "common.max_length": "AddSavedAddress, AppleAuth, BaseAuthValidator, CancelGuestOrder +8 more",
         "common.min_length": "AddSavedAddress, CreateDispute, CreateOrder +1 more",
-        "common.required": "AddDisputeMessage, AddSavedAddress, AppleAuth +38 more",
+        "common.required": "AddDisputeMessage, AddSavedAddress, AppleAuth, CancelGuestOrder, "
+            + "GetGuestCancellationFeePreview +38 more",
         "company.not_found": "ReceiptService",
+        "consent.terms_not_accepted": "CreateOrder, Register",
         "country.not_existing_id": "AddSavedAddress, UpdateSavedAddress",
-        "country.not_serviced": "OrderAddressResolver",
+        "country.not_serviced":
+            "CreateMembershipSubscription, OperatorTenantScopeBehavior, OrderAddressResolver, QuoteOrder +1 more",
         "country.required": "OrderAddressResolver",
         "currency.invalid": "CreateOrder, QuoteOrder",
         "device.invalid_platform": "RegisterDevice",
@@ -119,16 +125,22 @@ final class CustomerErrorVoiceTests: XCTestCase {
         "membership.not_found": "CancelMembershipSubscription, SwapMembershipPlan",
         "membership.plan.not_found":
             "CreateMembershipCheckoutSession, CreateMembershipSubscription, SwapMembershipPlan",
+        "membership.plan.not_priced_in_currency":
+            "CreateMembershipCheckoutSession, CreateMembershipSubscription, SwapMembershipPlan",
+        "membership.stripe_customer_currency_locked": "CreateMembershipCheckoutSession, CreateMembershipSubscription",
         "membership.swap_same_plan": "SwapMembershipPlan",
         "order.address_exactly_one_required": "CreateOrder",
         "order.already_cancelled": "CancellationAssessor",
         "order.already_completed": "CancellationAssessor",
         "order.cleaning_date.below_lead_time": "CreateOrder",
         "order.cleaning_date.future": "CreateOrder",
+        "order.country_operator_mismatch": "CreateOrder",
         "order.empty": "CreateOrder",
-        "order.in_progress_cannot_cancel": "CancellationAssessor",
+        "order.in_progress_cannot_cancel": "CancellationAssessor via CancelOrder, CancelGuestOrder, "
+            + "GetGuestCancellationFeePreview",
         "order.not_completed": "SubmitOrderReview",
-        "order.not_found": "CancelOrder, ConfirmRecurringOrder, CreateDispute +10 more",
+        "order.not_found": "CancelGuestOrder, CancelOrder, ConfirmRecurringOrder, CreateDispute, "
+            + "GetGuestCancellationFeePreview +10 more",
         "order.payment_gateway_unavailable":
             "CancelMembershipSubscription, CreateMembershipCheckoutSession, CreateMembershipSubscription +3 more",
         "order.preferred_employee.not_eligible": "CreateOrder, CreateRecurringBooking",
@@ -138,6 +150,15 @@ final class CustomerErrorVoiceTests: XCTestCase {
         "order.span_exceeds_maximum": "CreateOrder, QuoteOrder",
         "order.total_price.not_match": "CreateOrder",
         "order.total_price.positive": "CreateOrder",
+        "promo.below_minimum_order_amount": "CreateOrder",
+        "promo.currency_mismatch": "CreateOrder",
+        "promo.expired": "CreateOrder",
+        "promo.global_limit_reached": "CreateOrder",
+        "promo.inactive": "CreateOrder",
+        "promo.not_found": "CreateOrder",
+        "promo.not_yet_valid": "CreateOrder",
+        "promo.per_user_limit_reached": "CreateOrder",
+        "promo.requires_account": "CreateOrder",
         "receipt.not_found": "DownloadOrderReceipt",
         "recurring_booking.ends_on_before_start": "CreateRecurringBooking, UpdateRecurringBooking",
         "recurring_booking.membership_required": "CreateRecurringBooking, UpdateRecurringBooking",
@@ -150,6 +171,8 @@ final class CustomerErrorVoiceTests: XCTestCase {
         "refund.failed": "RefundService",
         "refund.nothing_refundable": "RefundService",
         "refund.order_not_refundable": "RefundService",
+        "tenant.archived": "CleansiaDbContext.CommitAsync via RequestValidationExceptionFilterAttribute (409)",
+        "tenant.not_found": "OperatorTenantScopeBehavior",
         "user.email_confirmed": "ResendConfirmationEmail",
         "user.existing_email": "Register",
         "user.existing_phone_number": "UpdateCurrentUser",

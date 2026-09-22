@@ -3,18 +3,22 @@ using Cleansia.Core.Domain.Loyalty;
 namespace Cleansia.Core.AppServices.Services.Interfaces;
 
 /// <summary>
-/// Result of <see cref="ILoyaltyService.ResolveTierDiscountForOrderAsync"/>.
-/// <see cref="DiscountAmount"/> is the CZK value (not %) to subtract from the
-/// order total. <see cref="TierAtPurchase"/> is the user's tier at the
-/// resolution moment, persisted on the order even when the discount itself
-/// is zero (e.g. Silver below the 1000 CZK floor).
+/// Result of <see cref="ILoyaltyService.ResolveTierDiscountForOrderAsync"/>. <see cref="DiscountAmount"/>
+/// is an amount in the ORDER's currency to subtract from the raw subtotal. <see cref="TierAtPurchase"/>
+/// is the user's tier at the resolution moment, persisted on the order even when the discount is zero.
+/// <see cref="MinimumOrderAmount"/> is the floor that was JUDGED — null when the tier has none, or when
+/// the order is not in the platform default currency, where the floor is not applied at all
+/// (→ /product/business-rules#money-constants) — so the quote states exactly the rule the order used.
 /// </summary>
-public record TierDiscountResult(decimal DiscountAmount, LoyaltyTier? TierAtPurchase);
+public record TierDiscountResult(
+    decimal DiscountAmount,
+    LoyaltyTier? TierAtPurchase,
+    decimal? MinimumOrderAmount = null);
 
 public interface ILoyaltyService
 {
     /// <summary>
-    /// Idempotent grant of <c>floor(order.TotalPrice / 10)</c> tier-points
+    /// Idempotent grant of <c>floor(order.TotalPrice / Currency.LoyaltyPointsDivisor)</c> tier-points
     /// for a completed order. No-op if the user is anonymous, the points
     /// would be zero, or a prior earn ledger entry exists for this order.
     /// Called from <c>CompleteOrder.Handler</c>.
@@ -31,8 +35,9 @@ public interface ILoyaltyService
 
     /// <summary>
     /// Proportional loyalty clawback for a single partial refund: revokes
-    /// <c>floor(refundNet / 10)</c> points — symmetric with the earn
-    /// <c>floor(order.TotalPrice / 10)</c>, on net so the VAT portion isn't clawed back.
+    /// <c>floor(refundNet / Currency.LoyaltyPointsDivisor)</c> points — symmetric with the earn
+    /// <c>floor(order.TotalPrice / Currency.LoyaltyPointsDivisor)</c>, on net so the VAT portion isn't
+    /// clawed back. No-op with a log line when the order's currency has no divisor.
     /// <para>
     /// Unlike <see cref="RevokeForCancelledOrderAsync"/> (a one-shot full mirror that no-ops on a
     /// second call), this is keyed per refund: each distinct <paramref name="refundKey"/> revokes,
@@ -49,13 +54,14 @@ public interface ILoyaltyService
         string orderId, decimal refundNet, string refundKey, string actorId, CancellationToken cancellationToken);
 
     /// <summary>
-    /// Compute the tier discount (CZK amount, not %) for a user + total.
-    /// Returns (0, null) for anonymous users with no account, (0, tier)
-    /// when the tier qualifies but the order is below the per-tier minimum,
-    /// (discount, tier) otherwise. Called from <c>CreateOrder.Handler</c>.
+    /// Compute the tier discount (an amount in the order's currency, not %) for a user + raw subtotal.
+    /// Returns (0, null) for anonymous users with no account, (0, tier, floor) when the tier qualifies
+    /// but a default-currency order is below the per-tier floor, (discount, tier, floor) otherwise.
+    /// <paramref name="currencyId"/> is the ORDER's currency: the floor is a platform-default-currency
+    /// number and is applied only when the two agree. Called from <c>OrderFactory</c> and both quotes.
     /// </summary>
     Task<TierDiscountResult> ResolveTierDiscountForOrderAsync(
-        string userId, decimal orderTotal, CancellationToken cancellationToken);
+        string userId, decimal orderTotal, string currencyId, CancellationToken cancellationToken);
 
     /// <summary>
     /// Grant points outside the order-completion path. The loyalty account is lazily created.

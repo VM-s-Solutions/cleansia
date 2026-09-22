@@ -1,6 +1,7 @@
 using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Services;
 using Cleansia.Core.AppServices.Services.Interfaces;
+using Cleansia.Core.AppServices.Tenancy;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Users;
@@ -41,6 +42,8 @@ public class TokenServiceRecordLoginTests
         _refreshTokenService.Object,
         _employeeRepository.Object,
         _requestMetadata.Object,
+        Mock.Of<ITenantProvider>(),
+        Mock.Of<ICompanySignInGate>(),
         _timeProvider);
 
     [Fact]

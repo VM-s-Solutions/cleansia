@@ -52,7 +52,9 @@
                     </span>
                     <span class="cl-rec__pick-body">
                       <span class="cl-rec__pick-name">{{ facade.packageName(pkg.id ?? '') }}</span>
-                      <span class="cl-rec__pick-note">{{ formatMoney(pkg.price) }}</span>
+                      <span class="cl-rec__pick-note">{{
+                        formatMoney(pkg.price, pkg.currencyCode)
+                      }}</span>
                     </span>
                   </button>
                 }

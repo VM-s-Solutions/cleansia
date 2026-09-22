@@ -37,6 +37,8 @@ describe('CompanyInfoFormFacade', () => {
     bankAccountNumber: '2100123456/2010',
     iban: null,
     swift: null,
+    isVatPayer: false,
+    vatRegisteredFrom: null,
   };
 
   beforeEach(() => {
@@ -157,6 +159,8 @@ describe('CompanyInfoFormFacade', () => {
         bankAccountNumber: '2100123456/2010',
         iban: undefined,
         swift: undefined,
+        isVatPayer: false,
+        vatRegisteredFrom: undefined,
       });
     });
 
@@ -183,6 +187,8 @@ describe('CompanyInfoFormFacade', () => {
         bankAccountNumber: '2100123456/2010',
         iban: undefined,
         swift: undefined,
+        isVatPayer: false,
+        vatRegisteredFrom: undefined,
       });
     });
   });

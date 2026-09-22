@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Cleansia.Infra.Database.EntityConfigurations;
 
-public class EmployeePayoutDetailsEntityConfiguration : AuditableEntityConfiguration<EmployeePayoutDetails, string>
+public class EmployeePayoutDetailsEntityConfiguration : TenantAuditableEntityConfiguration<EmployeePayoutDetails, string>
 {
     public override void Configure(EntityTypeBuilder<EmployeePayoutDetails> builder)
     {
@@ -51,6 +51,18 @@ public class EmployeePayoutDetailsEntityConfiguration : AuditableEntityConfigura
         builder.Property(p => p.ProviderAccountRef)
             .HasMaxLength(100);
 
+        builder.Property(p => p.CurrencyId)
+            .HasMaxLength(26);
+
+        // Restrict, like every other CurrencyId in the model (OrderEmployeePay is the template and
+        // CurrencyReferenceDeleteBehaviorModelTests walks for exactly this): a currency a cleaner has
+        // declared their account in is not deletable out from under that declaration. No navigation --
+        // nothing reads one; the id is the comparison.
+        builder.HasOne<Currency>()
+            .WithMany()
+            .HasForeignKey(p => p.CurrencyId)
+            .OnDelete(DeleteBehavior.Restrict);
+
         builder.Property(p => p.Status)
             .IsRequired()
             .HasConversion<int>();
@@ -72,10 +84,9 @@ public class EmployeePayoutDetailsEntityConfiguration : AuditableEntityConfigura
             .HasForeignKey(p => p.BankCountryId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        // Cardinality one, enforced (ADR-0034 D1.3). NULLS NOT DISTINCT because single-tenant mode IS
-        // TenantId = null: a plain unique index treats each null as distinct and would let a second
-        // payout destination in for the same cleaner in the platform's default deployment. Unfiltered —
-        // nothing deactivates this row, so there is no partial-index interaction to reason about.
+        // Cardinality one, enforced (ADR-0034 D1.3). Unfiltered — nothing deactivates this row, so there
+        // is no partial-index interaction to reason about. NULLS NOT DISTINCT kept on a NOT NULL tenant
+        // term -> /decisions/adr-0061#d9-nulls-not-distinct-on-every-sole-arbiter-tenant-index-and-the-two-indexes-that-gain-a-tenant-term
         builder.HasIndex(p => new { p.TenantId, p.EmployeeId })
             .IsUnique()
             .AreNullsDistinct(false)

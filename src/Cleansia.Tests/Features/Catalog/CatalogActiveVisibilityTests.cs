@@ -1,5 +1,6 @@
 using Cleansia.Core.AppServices.Features.Packages;
 using Cleansia.Core.AppServices.Features.Services;
+using Cleansia.Core.AppServices.Services;
 using Cleansia.Core.Domain.EmployeePayroll;
 using Cleansia.Core.Domain.Internationalization;
 using Cleansia.Core.Domain.Packages;
@@ -32,6 +33,9 @@ public sealed class CatalogActiveVisibilityTests : IDisposable
 
     public void Dispose() => _connection.Dispose();
 
+    private static CurrencyResolutionService Markets(CleansiaDbContext ctx) =>
+        new(new EmployeeRepository(ctx), new CountryConfigurationRepository(ctx), new CurrencyRepository(ctx));
+
     private CleansiaDbContext NewContext()
     {
         var options = new DbContextOptionsBuilder<CleansiaDbContext>()
@@ -40,21 +44,21 @@ public sealed class CatalogActiveVisibilityTests : IDisposable
         return new CleansiaDbContext(
             options,
             new TestUserSessionProvider("system", "system@cleansia.test"),
-            new NullTenantProvider());
+            new DefaultTenantProvider());
     }
 
     private async Task<(string ActiveServiceId, string RetiredServiceId, string ActivePackageId, string RetiredPackageId)> SeedAsync()
     {
         await using var ctx = NewContext();
-        await ctx.Database.EnsureCreatedAsync();
+        await TestTenants.EnsureCreatedWithRegistryAsync(ctx);
 
         var category = ServiceCategory.Create("cat-1", "Category", "seeded");
-        var activeService = Service.Create(category.Id, "Active Service", "seeded", 1000m, 200m);
-        var retiredService = Service.Create(category.Id, "Retired Service", "seeded", 1000m, 200m);
+        var activeService = Service.Create(category.Id, "Active Service", "seeded");
+        var retiredService = Service.Create(category.Id, "Retired Service", "seeded");
         retiredService.Deactivated("admin-1", DateTimeOffset.UtcNow);
 
-        var activePackage = Package.Create("Active Package", "seeded", 500m);
-        var retiredPackage = Package.Create("Retired Package", "seeded", 500m);
+        var activePackage = Package.Create("Active Package", "seeded");
+        var retiredPackage = Package.Create("Retired Package", "seeded");
         retiredPackage.Deactivated("admin-1", DateTimeOffset.UtcNow);
 
         ctx.ServiceCategories.Add(category);
@@ -64,8 +68,20 @@ public sealed class CatalogActiveVisibilityTests : IDisposable
         // Bookable is IsActive AND quotable, so the entries this suite expects to SEE need a
         // platform-wide pay config; without one they would be withheld for the other reason and the
         // deactivation assertions would pass vacuously.
-        var currency = Currency.Create("CZK", "Kc", "Czech Koruna", 1m);
+        var currency = Currency.Create("CZK", "Kc", "Czech Koruna");
+        currency.SetAsDefault(true);
         ctx.Currencies.Add(currency);
+
+        // ...and a PRICE in that currency, for the same reason as the pay config beside it. Bookable is
+        // IsActive AND quotable AND priced; an unpriced fixture would withhold every entry and the
+        // deactivation assertions would pass without the deactivation doing any of the work. Default,
+        // because the customer overview prices in the platform default currency.
+        ctx.ServicePrices.AddRange(
+            ServicePrice.Create(activeService.Id, currency.Id, 500m, 100m),
+            ServicePrice.Create(retiredService.Id, currency.Id, 500m, 100m));
+        ctx.PackagePrices.AddRange(
+            PackagePrice.Create(activePackage.Id, currency.Id, 1000m),
+            PackagePrice.Create(retiredPackage.Id, currency.Id, 1000m));
         ctx.EmployeePayConfigs.AddRange(
             EmployeePayConfig.CreateForService(activeService.Id, 500m, currency.Id),
             EmployeePayConfig.CreateForService(retiredService.Id, 500m, currency.Id),
@@ -83,7 +99,12 @@ public sealed class CatalogActiveVisibilityTests : IDisposable
         var (activeServiceId, retiredServiceId, _, _) = await SeedAsync();
 
         await using var ctx = NewContext();
-        var overview = (await new GetServiceOverview.Handler(new ServiceRepository(ctx), new EmployeePayConfigRepository(ctx))
+        var overview = (await new GetServiceOverview.Handler(
+                new ServiceRepository(ctx),
+                new ServicePriceRepository(ctx),
+                Markets(ctx),
+                new EmployeePayConfigRepository(ctx),
+                new CountryRepository(ctx))
             .Handle(new GetServiceOverview.Request(), CancellationToken.None)).ToList();
 
         Assert.Contains(overview, s => s.Id == activeServiceId);
@@ -97,7 +118,12 @@ public sealed class CatalogActiveVisibilityTests : IDisposable
         var (_, _, activePackageId, retiredPackageId) = await SeedAsync();
 
         await using var ctx = NewContext();
-        var overview = (await new GetPackageOverview.Handler(new PackageRepository(ctx), new EmployeePayConfigRepository(ctx))
+        var overview = (await new GetPackageOverview.Handler(
+                new PackageRepository(ctx),
+                new PackagePriceRepository(ctx),
+                Markets(ctx),
+                new EmployeePayConfigRepository(ctx),
+                new CountryRepository(ctx))
             .Handle(new GetPackageOverview.Request(), CancellationToken.None)).ToList();
 
         Assert.Contains(overview, p => p.Id == activePackageId);
@@ -147,9 +173,9 @@ public sealed class CatalogActiveVisibilityTests : IDisposable
         Assert.Contains(all, p => p.Id == retiredPackageId);
     }
 
-    private sealed class NullTenantProvider : ITenantProvider
+    private sealed class DefaultTenantProvider : ITenantProvider
     {
-        public string? GetCurrentTenantId() => null;
+        public string? GetCurrentTenantId() => TestTenants.Default;
         public void SetTenantOverride(string tenantId) { }
         public void ClearTenantOverride() { }
     }

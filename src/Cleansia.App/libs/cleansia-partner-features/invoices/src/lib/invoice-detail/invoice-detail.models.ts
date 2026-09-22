@@ -1,9 +1,15 @@
 import { TableColumn } from '@cleansia/components';
 import { OrderEmployeePayDto } from '@cleansia/partner-services';
 
+/**
+ * Every row is in the invoice's currency (one invoice per currency). An absent code renders the
+ * amount with no symbol rather than a guessed one: no symbol is visibly incomplete, a wrong one is not.
+ */
 export function getOrderPaysTableDefinition(
-  currencyCode: string
+  currencyCode: string | undefined
 ): { columns: TableColumn<OrderEmployeePayDto>[] } {
+  const amount = (value: number | undefined): string =>
+    `${value?.toFixed(2)} ${currencyCode ?? ''}`.trimEnd();
   return {
     columns: [
       {
@@ -19,7 +25,7 @@ export function getOrderPaysTableDefinition(
         sortable: false,
         align: 'right',
         getValue: (pay?: OrderEmployeePayDto) =>
-          pay ? `${pay.basePay?.toFixed(2)} ${currencyCode}` : '',
+          pay ? amount(pay.basePay) : '',
       },
       {
         id: 'extrasPay',
@@ -28,7 +34,7 @@ export function getOrderPaysTableDefinition(
         sortable: false,
         align: 'right',
         getValue: (pay?: OrderEmployeePayDto) =>
-          pay ? `${pay.extrasPay?.toFixed(2)} ${currencyCode}` : '',
+          pay ? amount(pay.extrasPay) : '',
       },
       {
         id: 'expensesPay',
@@ -37,7 +43,7 @@ export function getOrderPaysTableDefinition(
         sortable: false,
         align: 'right',
         getValue: (pay?: OrderEmployeePayDto) =>
-          pay ? `${pay.expensesPay?.toFixed(2)} ${currencyCode}` : '',
+          pay ? amount(pay.expensesPay) : '',
       },
       {
         id: 'bonusPay',
@@ -46,7 +52,7 @@ export function getOrderPaysTableDefinition(
         sortable: false,
         align: 'right',
         getValue: (pay?: OrderEmployeePayDto) =>
-          pay ? `${pay.bonusPay?.toFixed(2)} ${currencyCode}` : '',
+          pay ? amount(pay.bonusPay) : '',
       },
       {
         id: 'deductionPay',
@@ -55,7 +61,7 @@ export function getOrderPaysTableDefinition(
         sortable: false,
         align: 'right',
         getValue: (pay?: OrderEmployeePayDto) =>
-          pay ? `${pay.deductionPay?.toFixed(2)} ${currencyCode}` : '',
+          pay ? amount(pay.deductionPay) : '',
       },
       {
         id: 'totalPay',
@@ -64,7 +70,7 @@ export function getOrderPaysTableDefinition(
         sortable: false,
         align: 'right',
         getValue: (pay?: OrderEmployeePayDto) =>
-          pay ? `${pay.totalPay?.toFixed(2)} ${currencyCode}` : '',
+          pay ? amount(pay.totalPay) : '',
       },
     ],
   };

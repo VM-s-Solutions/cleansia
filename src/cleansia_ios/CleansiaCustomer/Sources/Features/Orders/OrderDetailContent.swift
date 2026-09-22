@@ -3,12 +3,16 @@ import CleansiaCustomerApi
 import SwiftUI
 
 struct OrderDetailContent: View {
+    @Environment(\.locale) private var locale
     let order: CustomerOrderDetail
+    let markets: MarketState
     let photos: PhotosUiState
+    let workContractAcceptances: [WorkContractAcceptanceLine]
     let isDownloadingReceipt: Bool
     let onLeaveReview: () -> Void
     let onDownloadReceipt: () -> Void
     let onViewPhotos: () -> Void
+    let onReadWorkContract: (String) -> Void
 
     private var status: OrderStatus? {
         order.status
@@ -43,6 +47,14 @@ struct OrderDetailContent: View {
                         // The bar is a thin 4pt rule; the parent's Spacing.s alone left the facts row
                         // crowding it from below.
                         .padding(.top, Spacing.xxs)
+                    Text(OrderMarketLabel.text(
+                        countryId: order.countryId,
+                        currencyCode: order.currencyCode,
+                        markets: markets,
+                        locale: locale
+                    ))
+                    .font(CleansiaTypography.bodyMedium)
+                    .foregroundColor(CleansiaColors.onSurfaceVariant)
 
                     if let disclosure = PreferredOfferPresentation.disclosure(for: order) {
                         PreferredOfferCard(disclosure: disclosure)
@@ -70,6 +82,10 @@ struct OrderDetailContent: View {
 
                     if !order.assignedEmployees.isEmpty {
                         AssignedCleanersCard(employees: order.assignedEmployees)
+                    }
+
+                    if !workContractAcceptances.isEmpty {
+                        WorkContractCard(lines: workContractAcceptances, onRead: onReadWorkContract)
                     }
 
                     OrderPriceBreakdownCard(order: order)

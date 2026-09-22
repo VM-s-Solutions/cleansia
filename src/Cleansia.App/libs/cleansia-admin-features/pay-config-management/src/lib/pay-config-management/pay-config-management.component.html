@@ -20,6 +20,7 @@
       <div class="filter-chips-inline"></div>
       <div class="header-actions">
         <cleansia-button
+          *cleansiaPermission="Policy.CanCreatePayConfig"
           [label]="'pages.pay_config_management.create' | translate"
           icon="pi pi-plus"
           (onClick)="createPayConfig()"

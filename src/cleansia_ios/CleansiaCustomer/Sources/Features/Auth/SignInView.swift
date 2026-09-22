@@ -5,17 +5,20 @@ struct SignInView: View {
     @StateObject private var vm: CustomerAuthViewModel
     let onForgotPassword: () -> Void
     let onSignUp: () -> Void
+    let onGuestOrder: () -> Void
     let onOutcome: (AuthOutcome) -> Void
 
     init(
         makeViewModel: @escaping () -> CustomerAuthViewModel,
         onForgotPassword: @escaping () -> Void,
         onSignUp: @escaping () -> Void,
+        onGuestOrder: @escaping () -> Void,
         onOutcome: @escaping (AuthOutcome) -> Void
     ) {
         _vm = StateObject(wrappedValue: makeViewModel())
         self.onForgotPassword = onForgotPassword
         self.onSignUp = onSignUp
+        self.onGuestOrder = onGuestOrder
         self.onOutcome = onOutcome
     }
 
@@ -28,6 +31,7 @@ struct SignInView: View {
             onPasswordChange: vm.onSignInPasswordChange,
             onForgotPassword: onForgotPassword,
             onSignUp: onSignUp,
+            onGuestOrder: onGuestOrder,
             onSubmit: { Task { await vm.signIn() } },
             onApple: { Task { await vm.signInWithApple() } },
             onGoogle: { Task { await vm.signInWithGoogle() } }
@@ -44,6 +48,7 @@ private struct SignInContent: View {
     let onPasswordChange: (String) -> Void
     let onForgotPassword: () -> Void
     let onSignUp: () -> Void
+    let onGuestOrder: () -> Void
     let onSubmit: () -> Void
     let onApple: () -> Void
     let onGoogle: () -> Void
@@ -133,6 +138,11 @@ private struct SignInContent: View {
 
                 Spacer().frame(height: Spacing.l)
 
+                CleansiaTextLink(L10n.GuestOrder.entry, action: onGuestOrder)
+                    .disabled(formDisabled)
+
+                Spacer().frame(height: Spacing.m)
+
                 HStack(spacing: 0) {
                     Text(L10n.Auth.dontHaveAccount)
                         .font(CleansiaTypography.bodyMedium)
@@ -182,6 +192,7 @@ private struct SignInContent: View {
                 onPasswordChange: { _ in },
                 onForgotPassword: {},
                 onSignUp: {},
+                onGuestOrder: {},
                 onSubmit: {},
                 onApple: {},
                 onGoogle: {}

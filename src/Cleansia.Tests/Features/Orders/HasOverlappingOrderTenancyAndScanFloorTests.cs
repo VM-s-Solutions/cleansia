@@ -18,8 +18,8 @@ namespace Cleansia.Tests.Features.Orders;
 /// resolved <c>TenantId == null</c> against non-null rows, so every branch was false, the query returned
 /// nothing, and every cleaner reported FREE — the digest would advertise clashing jobs and, because the
 /// same method is the booking write gate, a genuine double-booking would be permitted (S8's third form,
-/// ADR-0039 §D6). Invisible in single-tenant mode, so every tenancy case here seeds a NON-NULL
-/// <c>TenantId</c>.
+/// ADR-0039 §D6). Invisible while a null ambient tenant could still match null rows, so every tenancy
+/// case here seeds an explicit <c>TenantId</c> and probes under that claim, another company's, and none.
 ///
 /// The second half pins the scan floor: the overlap predicate's only sargable term is the UPPER bound
 /// (<c>CleaningDateTime &lt; windowEnd</c>) — the lower side is a per-row interval computation — so
@@ -102,11 +102,11 @@ public sealed class HasOverlappingOrderTenancyAndScanFloorTests : IDisposable
     }
 
     [Fact]
-    public async Task Single_Tenant_Rows_Stay_Visible_To_Both_Variants()
+    public async Task The_Callers_Own_Tenants_Rows_Are_Visible_To_Both_Variants()
     {
-        await SeedAssignedOrderInSlotAsync("ovl-tenant-null", tenantId: null);
+        await SeedAssignedOrderInSlotAsync("ovl-tenant-own", tenantId: TestTenants.Default);
 
-        Assert.True(await ProbeScopedAsync(callerTenantId: null));
+        Assert.True(await ProbeScopedAsync(callerTenantId: TestTenants.Default));
         Assert.True(await ProbeIgnoringTenantAsync(callerTenantId: null));
     }
 
@@ -122,11 +122,11 @@ public sealed class HasOverlappingOrderTenancyAndScanFloorTests : IDisposable
     {
         await SeedAssignedOrderInSlotAsync(
             "ovl-floor-longest",
-            tenantId: null,
+            tenantId: TestTenants.Default,
             cleaningDateTime: SlotStart.AddMinutes(-(LongestProducibleOrderMinutes - 45)),
             estimatedMinutes: LongestProducibleOrderMinutes);
 
-        Assert.True(await ProbeScopedAsync(callerTenantId: null));
+        Assert.True(await ProbeScopedAsync(callerTenantId: TestTenants.Default));
     }
 
     /// <summary>The floor's edge is inclusive — an order starting exactly on it is still evaluated.</summary>
@@ -135,11 +135,11 @@ public sealed class HasOverlappingOrderTenancyAndScanFloorTests : IDisposable
     {
         await SeedAssignedOrderInSlotAsync(
             "ovl-floor-edge",
-            tenantId: null,
+            tenantId: TestTenants.Default,
             cleaningDateTime: ProbeStart.AddHours(-Order.MaxOrderSpanHours),
             estimatedMinutes: (Order.MaxOrderSpanHours * 60) + 30);
 
-        Assert.True(await ProbeScopedAsync(callerTenantId: null));
+        Assert.True(await ProbeScopedAsync(callerTenantId: TestTenants.Default));
     }
 
     /// <summary>
@@ -155,11 +155,11 @@ public sealed class HasOverlappingOrderTenancyAndScanFloorTests : IDisposable
     {
         await SeedAssignedOrderInSlotAsync(
             "ovl-floor-beyond",
-            tenantId: null,
+            tenantId: TestTenants.Default,
             cleaningDateTime: ProbeStart.AddHours(-Order.MaxOrderSpanHours).AddMinutes(-1),
             estimatedMinutes: (Order.MaxOrderSpanHours * 60) + 30);
 
-        Assert.False(await ProbeScopedAsync(callerTenantId: null));
+        Assert.False(await ProbeScopedAsync(callerTenantId: TestTenants.Default));
     }
 
     private CleansiaDbContext NewContext(string? tenantId) =>
@@ -175,7 +175,7 @@ public sealed class HasOverlappingOrderTenancyAndScanFloorTests : IDisposable
         DateTime? cleaningDateTime = null,
         int estimatedMinutes = 120)
     {
-        await using (var schema = NewContext(tenantId: null))
+        await using (var schema = NewContext(tenantId: TestTenants.Default))
         {
             await schema.Database.EnsureCreatedAsync();
         }
@@ -194,7 +194,7 @@ public sealed class HasOverlappingOrderTenancyAndScanFloorTests : IDisposable
             await seed.CommitAsync(CancellationToken.None);
         }
 
-        await using var verify = NewContext(tenantId: null);
+        await using var verify = NewContext(tenantId: TestTenants.Default);
         var stamped = await verify.Set<Order>().IgnoreQueryFilters().FirstAsync(o => o.Id == orderId);
         Assert.Equal(tenantId, stamped.TenantId);
     }
@@ -224,7 +224,6 @@ public sealed class HasOverlappingOrderTenancyAndScanFloorTests : IDisposable
             customerAddress: Address.Create("Overlap St 2", "Praha", "14000", "cz"),
             rooms: 2,
             bathrooms: 1,
-            extras: new Dictionary<string, bool>(),
             cleaningDateTime: cleaningDateTime,
             paymentType: PaymentType.Card,
             totalPrice: 1200m,

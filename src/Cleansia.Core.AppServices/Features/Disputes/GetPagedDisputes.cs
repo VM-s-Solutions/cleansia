@@ -22,32 +22,43 @@ public class GetPagedDisputes
 
     internal class Handler(
         IDisputeRepository disputeRepository,
-        IUserSessionProvider userSessionProvider)
+        IUserSessionProvider userSessionProvider,
+        ITenantProvider tenantProvider)
         : IRequestHandler<Request, PagedData<DisputeListItem>>
     {
         public async Task<PagedData<DisputeListItem>> Handle(Request request, CancellationToken cancellationToken)
         {
             var role = userSessionProvider.GetTypedUserClaim(ClaimTypes.Role)?.Value;
             var filterDto = request.Filter;
+            string? ownerId = null;
             if (role != UserProfile.Administrator.ToString())
             {
-                var userId = userSessionProvider.GetUserId() ?? string.Empty;
+                ownerId = userSessionProvider.GetUserId() ?? string.Empty;
                 filterDto = filterDto is null
-                    ? new DisputeFilter(null, userId, null, null, null, null, null, null, null, null, null, null)
-                    : filterDto with { UserId = userId, CustomerEmail = null, CustomerName = null };
+                    ? new DisputeFilter(null, ownerId, null, null, null, null, null, null, null, null, null, null)
+                    : filterDto with { UserId = ownerId, CustomerEmail = null, CustomerName = null };
             }
 
             var specification = filterDto.MapToDomain();
             var filter = specification.SatisfiedBy();
 
-            var totalItems = await disputeRepository.GetCountAsync(filter, cancellationToken);
-            var items = await disputeRepository
-                .GetPagedSort<DisputeSort>(request.Offset, request.Limit, filter, request.Sort.MapToDomain())
+            // Explicit root pins keep account navigation available for identity search without broadening access.
+            var operatorTenantId = tenantProvider.GetCurrentTenantId();
+            var totalItems = ownerId is null
+                ? await disputeRepository.GetCountForOperatorAsync(operatorTenantId, filter, cancellationToken)
+                : await disputeRepository.GetCountForOwnerAsync(ownerId, filter, cancellationToken);
+            var page = ownerId is null
+                ? disputeRepository.GetPagedSortForOperator<DisputeSort>(operatorTenantId, request.Offset, request.Limit, filter, request.Sort.MapToDomain())
+                : disputeRepository.GetPagedSortForOwner<DisputeSort>(ownerId, request.Offset, request.Limit, filter, request.Sort.MapToDomain());
+            // Establish the page under the access filter before loading its cross-company customer navigation.
+            var ids = await page.Select(d => d.Id).ToListAsync(cancellationToken);
+            var rows = await disputeRepository.GetQueryableIgnoringTenant()
+                .Where(d => ids.Contains(d.Id))
                 .Include(d => d.Order)
                 .Include(d => d.User)
                 .AsNoTracking()
-                .Select(dispute => dispute.MapToListItem())
-                .ToListAsync(cancellationToken);
+                .ToDictionaryAsync(d => d.Id, cancellationToken);
+            var items = ids.Where(rows.ContainsKey).Select(id => rows[id].MapToListItem()).ToList();
 
             return items.MapToDto(totalItems, request);
         }

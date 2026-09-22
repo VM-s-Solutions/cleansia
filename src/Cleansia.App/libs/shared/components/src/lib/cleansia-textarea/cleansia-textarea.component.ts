@@ -24,6 +24,7 @@ export class CleansiaTextareaComponent extends CleansiaBaseFormInputComponent {
   id = input<string>(this.getDefaultLabelId());
   rows = input<number>(3);
   cols = input<number | undefined>(undefined);
+  maxLength = input<number | undefined>(undefined);
   autoResize = input<boolean>(false);
   /**
    * `null` renders the label ABOVE the control instead of floating it into the

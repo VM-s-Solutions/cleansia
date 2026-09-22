@@ -1,4 +1,7 @@
 using System.Reflection;
+using System.Reflection.Emit;
+using System.Runtime.CompilerServices;
+using Cleansia.Core.AppServices.Auditing;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Routing;
 using Microsoft.AspNetCore.RateLimiting;
@@ -234,6 +237,177 @@ public class RateLimitCoverageGuardTests
             string.Join("\n  ", unknown));
     }
 
+    // ── ADR-0062 D1 / S5: a customer-marked command is a row-writer ──────────
+
+    /// <summary>
+    /// The two hosts a customer or a guest reaches. A customer-marked command dispatched from an
+    /// unlimited route is a storage amplifier: every call, refused or not, writes a row.
+    /// </summary>
+    private static IEnumerable<Type> CustomerHostControllers() =>
+        new[]
+        {
+            typeof(Cleansia.Web.Customer.Controllers.OrderController).Assembly,
+            typeof(Cleansia.Web.Mobile.Customer.Controllers.OrderController).Assembly,
+        }
+        .SelectMany(a => a.GetTypes())
+        .Where(t => t is { IsAbstract: false, IsClass: true } && typeof(ControllerBase).IsAssignableFrom(t));
+
+    private static readonly HashSet<Type> CustomerMarkedCommands = typeof(IAuditContext).Assembly
+        .GetTypes()
+        .Where(t => t.GetCustomAttribute<AuditActionAttribute>(inherit: false) is { Audience: AuditAudience.Customer })
+        .Select(t => t.GetNestedType("Command")!)
+        .ToHashSet();
+
+    private static IEnumerable<MethodInfo> ActionsOf(Type controller) =>
+        controller
+            .GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly)
+            .Where(m => m.GetCustomAttributes<HttpMethodAttribute>().Any());
+
+    /// <summary>
+    /// An action dispatches a marked command when it binds one as a parameter or constructs one in its
+    /// body. The body of an async action is the compiler-generated state machine, so its <c>MoveNext</c>
+    /// is what gets read; the scan is for <c>newobj</c> tokens that resolve to a marked command.
+    /// </summary>
+    private static IReadOnlyList<Type> MarkedCommandsDispatchedBy(MethodInfo action)
+    {
+        var bound = action.GetParameters().Select(p => p.ParameterType).Where(CustomerMarkedCommands.Contains);
+        var body = action.GetCustomAttribute<AsyncStateMachineAttribute>()?.StateMachineType
+            .GetMethod("MoveNext", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance) ?? action;
+        return bound.Concat(ConstructedTypesIn(body).Where(CustomerMarkedCommands.Contains)).Distinct().ToList();
+    }
+
+    private static IEnumerable<Type> ConstructedTypesIn(MethodInfo method)
+    {
+        var il = method.GetMethodBody()?.GetILAsByteArray();
+        if (il is null)
+        {
+            yield break;
+        }
+
+        var module = method.Module;
+        var genericArguments = method.DeclaringType?.IsGenericType == true ? method.DeclaringType.GetGenericArguments() : null;
+        for (var i = 0; i < il.Length;)
+        {
+            var code = il[i] == 0xFE ? TwoByteOpCodes[il[i + 1]] : OneByteOpCodes[il[i]];
+            i += code.Size;
+            var operandSize = OperandSizeOf(code, il, i);
+            if (code == OpCodes.Newobj)
+            {
+                Type? constructed = null;
+                try
+                {
+                    constructed = module.ResolveMethod(BitConverter.ToInt32(il, i), genericArguments, null)?.DeclaringType;
+                }
+                catch (ArgumentException)
+                {
+                }
+
+                if (constructed is not null)
+                {
+                    yield return constructed;
+                }
+            }
+
+            i += operandSize;
+        }
+    }
+
+    private static int OperandSizeOf(OpCode code, byte[] il, int operandStart) => code.OperandType switch
+    {
+        OperandType.InlineNone => 0,
+        OperandType.ShortInlineBrTarget or OperandType.ShortInlineI or OperandType.ShortInlineVar => 1,
+        OperandType.InlineVar => 2,
+        OperandType.InlineI8 or OperandType.InlineR => 8,
+        OperandType.InlineSwitch => 4 + 4 * BitConverter.ToInt32(il, operandStart),
+        _ => 4,
+    };
+
+    private static readonly OpCode[] OneByteOpCodes = new OpCode[0x100];
+    private static readonly OpCode[] TwoByteOpCodes = new OpCode[0x100];
+
+    static RateLimitCoverageGuardTests()
+    {
+        foreach (var field in typeof(OpCodes).GetFields(BindingFlags.Public | BindingFlags.Static))
+        {
+            var code = (OpCode)field.GetValue(null)!;
+            if (code.Size == 1)
+            {
+                OneByteOpCodes[code.Value & 0xFF] = code;
+            }
+            else
+            {
+                TwoByteOpCodes[code.Value & 0xFF] = code;
+            }
+        }
+    }
+
+    [Fact]
+    public void Every_Customer_Host_Action_That_Dispatches_A_Customer_Marked_Command_Carries_A_RateLimit_Window()
+    {
+        var unlimited = new List<string>();
+
+        foreach (var controller in CustomerHostControllers())
+        foreach (var action in ActionsOf(controller))
+        {
+            var dispatched = MarkedCommandsDispatchedBy(action);
+            if (dispatched.Count == 0)
+            {
+                continue;
+            }
+
+            var disabled = action.GetCustomAttribute<DisableRateLimitingAttribute>() is not null;
+            if (disabled || EffectivePolicyOf(action) is null)
+            {
+                unlimited.Add($"{controller.FullName}.{action.Name} -> {string.Join(", ", dispatched.Select(t => t.DeclaringType!.Name))}");
+            }
+        }
+
+        Assert.True(unlimited.Count == 0,
+            "ADR-0062 D1 / S5: a customer-marked command writes a CustomerActionAudits row on every call, "
+            + "refused or not. These customer-host actions dispatch one without a window:\n  "
+            + string.Join("\n  ", unlimited));
+    }
+
+    /// <summary>
+    /// Anti-vacuity for the guard above: every marked command is dispatched by some customer-host action
+    /// and every marked LABEL is reachable from BOTH customer hosts — the password sign-in is two commands
+    /// (the web one keeps the trusted-device marker off the wire, the mobile one carries it) sharing one
+    /// label, so the by-command check is per host family and the by-label check is per host. A guard that
+    /// found none would be a broken scan, not a clean surface.
+    /// </summary>
+    [Fact]
+    public void Every_Customer_Marked_Command_Is_Dispatched_On_A_Customer_Host_And_Every_Label_On_Both()
+    {
+        Assert.NotEmpty(CustomerMarkedCommands);
+
+        var dispatchedAnywhere = CustomerHostControllers()
+            .SelectMany(ActionsOf)
+            .SelectMany(MarkedCommandsDispatchedBy)
+            .ToHashSet();
+        var unreachable = CustomerMarkedCommands.Except(dispatchedAnywhere).Select(t => t.FullName).OrderBy(x => x).ToList();
+        Assert.True(unreachable.Count == 0,
+            "no customer-host action dispatches these customer-marked commands (or the IL scan missed a "
+            + "construction site):\n  " + string.Join("\n  ", unreachable));
+
+        var labels = CustomerMarkedCommands.Select(LabelOf).ToHashSet();
+        foreach (var host in new[] { typeof(Cleansia.Web.Customer.Controllers.OrderController).Assembly, typeof(Cleansia.Web.Mobile.Customer.Controllers.OrderController).Assembly })
+        {
+            var dispatched = CustomerHostControllers()
+                .Where(c => c.Assembly == host)
+                .SelectMany(ActionsOf)
+                .SelectMany(MarkedCommandsDispatchedBy)
+                .Select(LabelOf)
+                .ToHashSet();
+
+            var missing = labels.Except(dispatched).OrderBy(x => x).ToList();
+            Assert.True(missing.Count == 0,
+                $"{host.GetName().Name}: no action dispatches a command carrying these customer labels:\n  "
+                + string.Join("\n  ", missing));
+        }
+    }
+
+    private static string LabelOf(Type command) => AuditActionDescriptor.For(command).Action;
+
     // AC5 — webhooks keep their dedicated per-source-IP policy; a 429 from "auth"/"interactive"
     // would read to Stripe as a retry trigger.
     [Theory]
@@ -276,6 +450,7 @@ public class RateLimitCoverageGuardTests
     [InlineData(typeof(Cleansia.Web.Admin.Controllers.AdminPackageController), "DeactivatePackage")]
     [InlineData(typeof(Cleansia.Web.Admin.Controllers.AdminPackageController), "ActivatePackage")]
     [InlineData(typeof(Cleansia.Web.Admin.Controllers.AdminCurrencyController), "SetDefaultCurrency")]
+    [InlineData(typeof(Cleansia.Web.Admin.Controllers.AdminCountryController), "SetDefaultMarket")]
     public void Catalog_Lifecycle_Action_Keeps_Its_Auth_Window(Type controller, string action)
     {
         Assert.Equal("auth", EffectivePolicyOf(controller.GetMethod(action)!));

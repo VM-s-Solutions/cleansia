@@ -254,6 +254,16 @@ class OrderRepository @Inject constructor(
         return ApiResult.Success(resp.body().orEmpty())
     }
 
+    /**
+     * An accepted contract for work, keyed on the acceptance: the stored facts, the accepted version
+     * and the document's text in [language] where it has it. Fetcher pattern — mirrors [getById].
+     */
+    suspend fun getWorkContract(acceptanceId: String, language: String): ApiResult<WorkContractDto> = wireResult {
+        val resp = networkCall { api.getWorkContract(acceptanceId, language) } ?: return networkError()
+        if (!resp.isSuccessful) return httpError(resp.errorBody(), resp.code())
+        return ApiResult.Success(resp.requiredBody())
+    }
+
     private fun networkError(): ApiResult<Nothing> =
         ApiResult.Error(ApiError.Network(appContext.getString(R.string.error_generic_network)))
 

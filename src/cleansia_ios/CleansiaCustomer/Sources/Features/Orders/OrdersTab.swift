@@ -10,11 +10,14 @@ struct OrdersTab: View {
 
     init(
         repository: OrderRepository,
+        marketStore: MarketStore,
         snackbar: SnackbarController,
         onOrderClick: @escaping (String) -> Void,
         onBookCleaning: @escaping () -> Void
     ) {
-        _vm = StateObject(wrappedValue: OrdersListViewModel(repository: repository, snackbar: snackbar))
+        _vm = StateObject(
+            wrappedValue: OrdersListViewModel(repository: repository, marketStore: marketStore, snackbar: snackbar)
+        )
         self.onOrderClick = onOrderClick
         self.onBookCleaning = onBookCleaning
     }
@@ -76,7 +79,7 @@ private struct OrdersListContent: View {
                     Button {
                         onOrderClick(order.id)
                     } label: {
-                        OrderListCard(order: order)
+                        OrderListCard(order: order, markets: vm.markets)
                     }
                     .buttonStyle(.plain)
                     .onAppear {
@@ -154,6 +157,7 @@ private struct OrderFilterChip: View {
 struct OrderListCard: View {
     @Environment(\.locale) private var locale
     let order: CustomerOrderSummary
+    let markets: MarketState
 
     var body: some View {
         VStack(alignment: .leading, spacing: Spacing.xs) {
@@ -178,6 +182,15 @@ struct OrderListCard: View {
                     .foregroundColor(CleansiaColors.onSurfaceVariant)
                     .lineLimit(1)
             }
+
+            Text(OrderMarketLabel.text(
+                countryId: order.countryId,
+                currencyCode: order.currencyCode,
+                markets: markets,
+                locale: locale
+            ))
+            .font(CleansiaTypography.labelMedium)
+            .foregroundColor(CleansiaColors.onSurfaceVariant)
 
             HStack(alignment: .firstTextBaseline) {
                 Text(OrdersFormat.servicesSummary(order, locale: locale))
@@ -253,20 +266,36 @@ private struct OrdersEmptyView: View {
 
 #if DEBUG
     struct OrderListCard_Previews: PreviewProvider {
+        private static let czechia = Market(
+            countryId: "cze",
+            isoCode: "CZE",
+            isoAlpha2: "CZ",
+            name: "Czechia",
+            translations: [:],
+            currencyCode: "CZK",
+            isDefault: true,
+            noShowCredit: nil,
+            insuranceCoverageAmount: nil
+        )
+
         static var previews: some View {
-            OrderListCard(order: CustomerOrderSummary(
-                id: "1",
-                displayOrderNumber: "1042",
-                statusCode: Code(type: "OrderStatus", name: "OnTheWay", value: 3),
-                cleaningDateTime: Date(),
-                estimatedMinutes: 120,
-                address: "Karlovo náměstí 10, Praha",
-                total: 1290,
-                currencyCode: "CZK",
-                services: [],
-                packages: [],
-                hasReview: false
-            ))
+            OrderListCard(
+                order: CustomerOrderSummary(
+                    id: "1",
+                    countryId: "cze",
+                    displayOrderNumber: "1042",
+                    statusCode: Code(type: "OrderStatus", name: "OnTheWay", value: 3),
+                    cleaningDateTime: Date(),
+                    estimatedMinutes: 120,
+                    address: "Karlovo náměstí 10, Praha",
+                    total: 1290,
+                    currencyCode: "CZK",
+                    services: [],
+                    packages: [],
+                    hasReview: false
+                ),
+                markets: .resolved(selected: czechia, markets: [czechia])
+            )
             .padding()
             .background(CleansiaColors.background)
         }

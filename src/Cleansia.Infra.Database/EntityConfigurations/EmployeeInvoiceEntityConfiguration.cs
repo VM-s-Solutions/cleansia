@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Cleansia.Infra.Database.EntityConfigurations;
 
-public class EmployeeInvoiceEntityConfiguration : AuditableEntityConfiguration<EmployeeInvoice, string>
+public class EmployeeInvoiceEntityConfiguration : TenantAuditableEntityConfiguration<EmployeeInvoice, string>
 {
     public override void Configure(EntityTypeBuilder<EmployeeInvoice> builder)
     {
@@ -110,17 +110,29 @@ public class EmployeeInvoiceEntityConfiguration : AuditableEntityConfiguration<E
             .OnDelete(DeleteBehavior.Restrict)
             .IsRequired(false);
 
-        builder.HasIndex(e => e.InvoiceNumber)
-            .IsUnique();
-
-        builder.HasIndex(e => e.VariableSymbol)
+        // Each operating company numbers its own payout invoices, so both references are unique PER
+        // COMPANY: two companies' first invoices of a year carry the same strings by construction. Sole
+        // arbiters between allocate and insert, so NULLS NOT DISTINCT stays on even though TenantId is
+        // NOT NULL -> /decisions/adr-0061#d9-nulls-not-distinct-on-every-sole-arbiter-tenant-index-and-the-two-indexes-that-gain-a-tenant-term
+        builder.HasIndex(e => new { e.TenantId, e.InvoiceNumber })
             .IsUnique()
+            .AreNullsDistinct(false);
+
+        // Filtered, because an invoice that has not yet been given a reference (ADR-0046 D4) holds NULL
+        // and NULLS NOT DISTINCT would otherwise let a company hold exactly one of those.
+        builder.HasIndex(e => new { e.TenantId, e.VariableSymbol })
+            .IsUnique()
+            .AreNullsDistinct(false)
             .HasFilter("\"VariableSymbol\" IS NOT NULL");
 
         builder.HasIndex(e => e.EmployeeId);
         builder.HasIndex(e => e.PayPeriodId);
         builder.HasIndex(e => e.Status);
-        builder.HasIndex(e => new { e.EmployeeId, e.PayPeriodId })
+        // ONE INVOICE PER (EMPLOYEE, PERIOD, CURRENCY). A cleaner who worked a CZK job and a EUR job
+        // in one period holds pay in two units and a tax document is in one, so the period yields one
+        // invoice per currency. All three columns are NOT NULL, so this needs no AreNullsDistinct;
+        // the (EmployeeId, PayPeriodId) lookups ride its leading columns.
+        builder.HasIndex(e => new { e.EmployeeId, e.PayPeriodId, e.CurrencyId })
             .IsUnique();
         builder.HasIndex(e => new { e.Status, e.GeneratedAt });
     }

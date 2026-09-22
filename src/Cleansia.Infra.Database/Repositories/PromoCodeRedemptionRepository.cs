@@ -48,6 +48,9 @@ public class PromoCodeRedemptionRepository(CleansiaDbContext context)
 
         var redemption = PromoCodeRedemption.CreateReserved(
             promoCodeId, userId, orderId, appliedDiscount, nextOrdinal);
+        redemption.TenantId = await context.PromoCodes
+            .Where(p => p.Id == promoCodeId)
+            .Select(p => p.TenantId).SingleAsync(cancellationToken);
         Add(redemption);
         return redemption;
     }

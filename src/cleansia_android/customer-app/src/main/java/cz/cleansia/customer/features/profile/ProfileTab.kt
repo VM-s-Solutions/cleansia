@@ -37,6 +37,7 @@ import androidx.compose.material.icons.outlined.HelpOutline
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.Language
 import androidx.compose.material.icons.outlined.Lock
+import androidx.compose.material.icons.outlined.Map
 import androidx.compose.material.icons.outlined.NotificationsNone
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.WorkspacePremium
@@ -90,6 +91,8 @@ fun ProfileTab(
     modifier: Modifier = Modifier,
     user: CurrentUser? = null,
     isPlus: Boolean = false,
+    /** The Market row renders only when the directory offers a choice (ADR-0058 D6). */
+    showMarketRow: Boolean = false,
     onLogout: () -> Unit = {},
     onRowClick: (key: String) -> Unit = {},
     onAvatarLoadFailed: () -> Unit = {},
@@ -112,10 +115,11 @@ fun ProfileTab(
         // the canonical formal-complaint glyph in material-icons-extended.
         ProfileRow("disputes", Icons.Outlined.Gavel, R.string.profile_row_disputes),
     )
-    val preferencesRows = listOf(
+    val preferencesRows = listOfNotNull(
         ProfileRow("notifications", Icons.Outlined.NotificationsNone, R.string.profile_row_notifications),
         ProfileRow("appearance", Icons.Outlined.DarkMode, R.string.profile_row_appearance),
         ProfileRow("language", Icons.Outlined.Language, R.string.profile_row_language),
+        if (showMarketRow) ProfileRow("market", Icons.Outlined.Map, R.string.profile_row_market) else null,
         ProfileRow("security", Icons.Outlined.Lock, R.string.profile_row_security),
         ProfileRow("devices", Icons.Outlined.Devices, R.string.profile_row_devices),
     )

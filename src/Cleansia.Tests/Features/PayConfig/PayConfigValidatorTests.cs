@@ -72,7 +72,7 @@ public class PayConfigValidatorTests
         _serviceRepository.Setup(r => r.ExistsAsync(ServiceId, It.IsAny<CancellationToken>())).ReturnsAsync(true);
         _currencyRepository.Setup(r => r.ExistsAsync(CurrencyId, It.IsAny<CancellationToken>())).ReturnsAsync(true);
         _payConfigRepository
-            .Setup(r => r.GetByServiceIdAsync(ServiceId, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetByServiceIdAsync(ServiceId, CurrencyId, It.IsAny<CancellationToken>()))
             .ReturnsAsync((Core.Domain.EmployeePayroll.EmployeePayConfig?)null);
     }
 
@@ -153,7 +153,7 @@ public class PayConfigValidatorTests
         _currencyRepository.Setup(r => r.ExistsAsync(CurrencyId, It.IsAny<CancellationToken>())).ReturnsAsync(true);
         _serviceRepository.Setup(r => r.ExistsAsync(ServiceId, It.IsAny<CancellationToken>())).ReturnsAsync(true);
         _payConfigRepository
-            .Setup(r => r.GetByServiceIdAsync(ServiceId, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetByServiceIdAsync(ServiceId, CurrencyId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Core.Domain.EmployeePayroll.EmployeePayConfig.CreateForService(
                 ServiceId, 50m, CurrencyId, 0m, 0m, 0m, null, null));
 
@@ -192,7 +192,7 @@ public class PayConfigValidatorTests
         ArrangeConfirmedSession();
         _serviceRepository.Setup(r => r.ExistsAsync(ServiceId, It.IsAny<CancellationToken>())).ReturnsAsync(true);
         _payConfigRepository
-            .Setup(r => r.GetByServiceIdAsync(ServiceId, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetByServiceIdAsync(ServiceId, CurrencyId, It.IsAny<CancellationToken>()))
             .ReturnsAsync((Core.Domain.EmployeePayroll.EmployeePayConfig?)null);
 
         var result = await CreateValidator().ValidateAsync(ValidCreate() with { CurrencyId = string.Empty });
@@ -209,7 +209,7 @@ public class PayConfigValidatorTests
         _serviceRepository.Setup(r => r.ExistsAsync(ServiceId, It.IsAny<CancellationToken>())).ReturnsAsync(true);
         _currencyRepository.Setup(r => r.ExistsAsync(CurrencyId, It.IsAny<CancellationToken>())).ReturnsAsync(false);
         _payConfigRepository
-            .Setup(r => r.GetByServiceIdAsync(ServiceId, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetByServiceIdAsync(ServiceId, CurrencyId, It.IsAny<CancellationToken>()))
             .ReturnsAsync((Core.Domain.EmployeePayroll.EmployeePayConfig?)null);
 
         var result = await CreateValidator().ValidateAsync(ValidCreate());

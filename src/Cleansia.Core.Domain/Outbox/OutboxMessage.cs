@@ -7,7 +7,7 @@ namespace Cleansia.Core.Domain.Outbox;
 /// unit of work the pipeline commits, so a message exists if and only if the business state committed,
 /// and a single drainer later puts the body on the wire at-least-once.
 /// </summary>
-public class OutboxMessage : Auditable, ITenantEntity
+public class OutboxMessage : TenantAuditable
 {
     public string QueueName { get; private set; } = default!;
 

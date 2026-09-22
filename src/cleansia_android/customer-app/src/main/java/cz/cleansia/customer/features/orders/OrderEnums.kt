@@ -43,6 +43,16 @@ fun orderStatusFromValue(value: Int?): OrderStatus? = when (value) {
 }
 
 /**
+ * The statuses a customer may cancel from — everything the server's `CancellationAssessor` does not
+ * refuse, which is every status before a cleaner has started work. One function for the signed-in
+ * and the guest surface: the two used to stop at different statuses.
+ */
+fun customerCanCancelOrder(statusValue: Int?): Boolean = when (orderStatusFromValue(statusValue)) {
+    OrderStatus.New, OrderStatus.Pending, OrderStatus.Confirmed, OrderStatus.OnTheWay -> true
+    else -> false
+}
+
+/**
  * Localized label key for an order status value. Keep in sync with the wire
  * enum above. Returns null for unknown values so the caller can fall back to
  * the raw `name` string from the CodeDto without a phantom translation.

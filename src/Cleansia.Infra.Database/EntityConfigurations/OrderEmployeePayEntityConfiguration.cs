@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Cleansia.Infra.Database.EntityConfigurations;
 
-public class OrderEmployeePayEntityConfiguration : AuditableEntityConfiguration<OrderEmployeePay, string>
+public class OrderEmployeePayEntityConfiguration : TenantAuditableEntityConfiguration<OrderEmployeePay, string>
 {
     public override void Configure(EntityTypeBuilder<OrderEmployeePay> builder)
     {
@@ -93,6 +93,21 @@ public class OrderEmployeePayEntityConfiguration : AuditableEntityConfiguration<
             .HasForeignKey(e => e.EmployeeInvoiceId)
             .IsRequired(false)
             .OnDelete(DeleteBehavior.SetNull);
+
+        // THE UNIT OF THE EIGHT MONEY COLUMNS. Required, and FK-backed with Restrict for the same
+        // reason EmployeePayConfigs and EmployeeInvoices restrict: deleting a currency that a cleaner's
+        // recorded pay is denominated in would leave those amounts meaning nothing, and the row is an
+        // input to a tax document. CurrencyRepository.IsInUseAsync is the friendly refusal in front of
+        // it; this is what happens if anything gets past that.
+        builder.Property(e => e.CurrencyId)
+            .IsRequired()
+            .HasMaxLength(26);
+
+        builder
+            .HasOne(e => e.Currency)
+            .WithMany()
+            .HasForeignKey(e => e.CurrencyId)
+            .OnDelete(DeleteBehavior.Restrict);
 
         builder.HasIndex(e => e.OrderId);
         builder.HasIndex(e => e.EmployeeId);

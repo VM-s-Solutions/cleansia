@@ -17,6 +17,11 @@ export class OrderStatusSeverityPipe implements PipeTransform {
   transform(status: OrderStatus | { value?: number } | number | null | undefined): TagSeverity {
     const value = typeof status === 'number' ? status : status?.value;
     switch (value) {
+      // Explicit for the same reason as the icon pipe: New is a resting state, not a missing one, and
+      // after T-0691 it is where a paid card order sits. Deliberately `info` and not `warn` — nothing
+      // is wrong with a booking that is waiting for a cleaner. warn stays for the dead Pending status.
+      case OrderStatus.New:
+        return 'info';
       case OrderStatus.Pending:
         return 'warn';
       case OrderStatus.Confirmed:

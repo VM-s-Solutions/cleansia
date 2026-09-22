@@ -3,6 +3,7 @@ using Cleansia.Core.AppServices.Services;
 using Cleansia.Core.Domain.Memberships;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Users;
+using Cleansia.TestUtilities.MockDataFactories.Memberships;
 using Cleansia.Infra.Database;
 using Cleansia.Infra.Database.Repositories;
 using Cleansia.TestUtilities;
@@ -65,6 +66,7 @@ public class WebhookProvisionActiveMembershipIdempotencyTests
     private readonly Mock<IUserRepository> _userRepository = new();
     private readonly Mock<IUserMembershipRepository> _membershipRepository = new();
     private readonly Mock<IMembershipPlanRepository> _planRepository = new();
+    private readonly Mock<ICurrencyRepository> _currencyRepository = new();
     private readonly Mock<ITenantProvider> _tenantProvider = new();
 
     public WebhookProvisionActiveMembershipIdempotencyTests()
@@ -79,8 +81,6 @@ public class WebhookProvisionActiveMembershipIdempotencyTests
         var plan = MembershipPlan.Create(
             code: PlanCode,
             name: "Plus Monthly",
-            monthlyPriceCzk: 199m,
-            stripePriceId: "price_test_1",
             discountPercentage: 5m,
             freeCancellationWindowHours: 4,
             allowsExpressUpgrade: true,
@@ -90,6 +90,9 @@ public class WebhookProvisionActiveMembershipIdempotencyTests
         _planRepository
             .Setup(r => r.GetByCodeAsync(PlanCode, It.IsAny<CancellationToken>()))
             .ReturnsAsync(plan);
+        _currencyRepository
+            .Setup(r => r.GetByCodeAsync("CZK", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(MembershipPricingMockFactory.Czk());
 
         // No row matches the NEW subscription id (this is a fresh subscription.created).
         _membershipRepository
@@ -102,6 +105,7 @@ public class WebhookProvisionActiveMembershipIdempotencyTests
             _userRepository.Object,
             _membershipRepository.Object,
             _planRepository.Object,
+            _currencyRepository.Object,
             _tenantProvider.Object,
             NullLogger<StripeSubscriptionWebhookHandler>.Instance);
 
@@ -110,12 +114,13 @@ public class WebhookProvisionActiveMembershipIdempotencyTests
     /// UserId + MembershipPlanCode metadata the provisioning path reads, and a single subscription item
     /// with period bounds (matching <c>ExtractSubscriptionShape</c>'s first-item read).
     /// </summary>
-    private static Event SubscriptionCreatedEvent(string subscriptionId)
+    private static Event SubscriptionCreatedEvent(string subscriptionId, string currency = "czk")
     {
         var subscription = new Subscription
         {
             Id = subscriptionId,
             Status = "active",
+            Currency = currency,
             Metadata = new Dictionary<string, string>
             {
                 ["UserId"] = UserId,
@@ -146,6 +151,7 @@ public class WebhookProvisionActiveMembershipIdempotencyTests
         UserMembership.Create(
             userId: UserId,
             membershipPlanId: PlanId,
+            currencyId: "currency-czk",
             stripeSubscriptionId: ExistingSubId,
             currentPeriodStart: DateTime.UtcNow.AddDays(-5),
             currentPeriodEnd: DateTime.UtcNow.AddMonths(1));
@@ -187,6 +193,35 @@ public class WebhookProvisionActiveMembershipIdempotencyTests
         Assert.Single(added);
         Assert.Equal(NewSubId, added[0].StripeSubscriptionId);
         Assert.Equal(MembershipStatus.Active, added[0].Status);
+    }
+
+    // ── the currency is the subscription's own, and one the platform does not know is not provisioned ──
+
+    [Fact]
+    public async Task CleanUser_SubscriptionCreated_RecordsTheSubscriptionsCurrency()
+    {
+        _membershipRepository
+            .Setup(r => r.GetActiveForUserAsync(UserId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((UserMembership?)null);
+        var added = new List<UserMembership>();
+        _membershipRepository.Setup(r => r.Add(It.IsAny<UserMembership>())).Callback<UserMembership>(added.Add);
+
+        await CreateHandler().HandleAsync(SubscriptionCreatedEvent(NewSubId, currency: "czk"), CancellationToken.None);
+
+        Assert.Equal(MembershipPricingMockFactory.CzkCurrencyId, Assert.Single(added).CurrencyId);
+    }
+
+    [Fact]
+    public async Task ASubscriptionInACurrencyThePlatformDoesNotKnow_ProvisionsNothing()
+    {
+        _membershipRepository
+            .Setup(r => r.GetActiveForUserAsync(UserId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((UserMembership?)null);
+
+        await CreateHandler().HandleAsync(SubscriptionCreatedEvent(NewSubId, currency: "xxx"), CancellationToken.None);
+
+        _membershipRepository.Verify(r => r.Add(It.IsAny<UserMembership>()), Times.Never);
+        _membershipRepository.Verify(r => r.CommitAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 
     // ── the assert resolves in the RIGHT tenant scope: tenant override is set before the read ──
@@ -324,6 +359,7 @@ public sealed class UserMembershipActiveUniqueIndexTests : IDisposable
         UserMembership.Create(
             userId: UserId,
             membershipPlanId: PlanId,
+            currencyId: "currency-czk",
             stripeSubscriptionId: subscriptionId,
             currentPeriodStart: DateTime.UtcNow,
             currentPeriodEnd: DateTime.UtcNow.AddMonths(1));

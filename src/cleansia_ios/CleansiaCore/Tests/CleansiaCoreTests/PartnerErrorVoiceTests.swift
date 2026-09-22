@@ -30,8 +30,15 @@ final class PartnerErrorVoiceTests: XCTestCase {
         PartnerOnlyKey("order.card_payment_unverified", emitters: "MarkCashCollected"),
         PartnerOnlyKey("order.after_photos.required", emitters: "CompleteOrder"),
         PartnerOnlyKey("order.completion_notes.too_long", emitters: "CompleteOrder"),
+        PartnerOnlyKey("contract.not_accepted", emitters: "TakeOrder, AcceptWorkContract"),
+        PartnerOnlyKey("contract.text_mismatch", emitters: "TakeOrder, AcceptWorkContract"),
+        PartnerOnlyKey("contract.acceptance_required", emitters: "StartOrder, CompleteOrder"),
         PartnerOnlyKey("employee.profile_incomplete", emitters: "TakeOrder, CompleteOrder, ApproveEmployee"),
         PartnerOnlyKey("employee.not_approved", emitters: "TakeOrder, StartOrder, CompleteOrder, MarkCashCollected"),
+        PartnerOnlyKey(
+            "auth.company_deactivated",
+            emitters: "CompanySignInGate via MobilePartnerLogin, GoogleAuth, RefreshToken"
+        ),
         PartnerOnlyKey(
             "payout.not_found",
             emitters: "GetMyPayoutDetails, GetEmployeePayoutDetails, RevealEmployeePayoutDetails"
@@ -61,9 +68,10 @@ final class PartnerErrorVoiceTests: XCTestCase {
     private static let partnerReachable: [String: String] = [
         "auth.account_locked": "LoginValidator",
         "auth.apple_type_error": "AuthTypeErrorMessages",
+        "auth.company_deactivated": "CompanySignInGate via MobilePartnerLogin, GoogleAuth, RefreshToken",
         "auth.external_type_error": "AuthTypeErrorMessages",
         "auth.google_type_error": "AuthTypeErrorMessages",
-        "auth.insufficient_privileges": "MobilePartnerLogin",
+        "auth.insufficient_privileges": "ConfirmUserEmail, GoogleAuth, MobilePartnerLogin",
         "auth.internal_type_error": "AuthTypeErrorMessages",
         "auth.invalid_confirmation_code": "ConfirmUserEmail",
         "auth.invalid_google_token": "GoogleAuth",
@@ -74,8 +82,12 @@ final class PartnerErrorVoiceTests: XCTestCase {
         "common.max_length": "AddOrderNote, BaseAuthValidator, ReportOrderIssue +7 more",
         "common.required": "AddOrderNote, BaseAuthValidator, CompleteOrder +37 more",
         "company.not_found": "ReceiptService",
+        "contract.acceptance_required": "CompleteOrder, StartOrder",
+        "contract.not_accepted": "AcceptWorkContract, TakeOrder",
+        "contract.text_mismatch": "AcceptWorkContract, TakeOrder",
         "country.not_existing_id": "UpdateAddressInfo, UpdateEmployee, UpdateIdentificationInfo",
-        "country.not_serviced": "UpdateAddressInfo, UpdateEmployee",
+        "country.not_serviced": "OperatorTenantScopeBehavior, UpdateAddressInfo, UpdateEmployee",
+        "currency.not_found": "GetPeriodPays",
         "device.invalid_platform": "RegisterDevice",
         "device.not_found": "RevokeDevice",
         "dispute.max_length_exceeded": "UpdateBankDetails, UpdateEmployee, UpdateIdentificationInfo",
@@ -102,6 +114,7 @@ final class PartnerErrorVoiceTests: XCTestCase {
         "general.not_found": "DeleteOrderIssue, DeleteOrderNote, DeleteOrderPhoto +5 more",
         "language.not_found": "ReceiptService",
         "language.not_supported": "LanguageValidator, UpdateCurrentUser",
+        "legal.document_not_found": "GetWorkContractPreview",
         "order.after_photos.required": "CompleteOrder",
         "order.card_payment_already_settled": "MarkCashCollected",
         "order.card_payment_in_progress": "MarkCashCollected",
@@ -128,8 +141,9 @@ final class PartnerErrorVoiceTests: XCTestCase {
         "payroll.invoice.not_found": "DownloadInvoice, GetInvoiceById",
         "payroll.pay_period.not_found": "GetPeriodPays",
         "receipt.not_found": "DownloadOrderReceipt",
+        "tenant.not_found": "OperatorTenantScopeBehavior",
         "user.email_confirmed": "ResendConfirmationEmail",
-        "user.existing_email": "Register, RegisterEmployee",
+        "user.existing_email": "RegisterEmployee",
         "user.existing_phone_number": "UpdateCurrentUser",
         "user.not_allowed_to_update": "UpdateCurrentUser",
         "user.not_existing_email": "CheckCurrentEmployee, GdprDeletionService, LoginValidator +3 more",
@@ -182,14 +196,20 @@ final class PartnerErrorVoiceTests: XCTestCase {
     ]
 
     /// The take refusals a cleaner actually meets. Pinned because every client ships these sentences and a
-    /// silent re-word on one of them is the divergence this suite exists to stop.
+    /// silent re-word on one of them is the divergence this suite exists to stop. The contract keys are
+    /// the chain's first and last rules now that a take echoes the contract text it was shown, and the
+    /// mismatch sentence is also the notice the contract sheet shows over the re-run preview.
     private static let boundTakeRefusals = [
         "order.take.already_cancelled": "This order is already cancelled.",
         "order.take.already_completed": "This order is already completed.",
         "order.no_available_spots": "Another cleaner has already taken this job.",
         "order.not_takeable": "This job is no longer available.",
         "order.weekly_limit_reached": "You've reached your weekly order limit.",
-        "order.time_conflict": "This order conflicts with another you've already taken."
+        "order.time_conflict": "This order conflicts with another you've already taken.",
+        "contract.not_accepted": "Please read and accept the contract for work before taking the job.",
+        "contract.text_mismatch": "The contract was updated — please read it again.",
+        "contract.acceptance_required": "Accept the contract for work for this job before you continue.",
+        "legal.document_not_found": "This job cannot be taken right now."
     ]
 
     override func tearDown() {

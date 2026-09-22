@@ -3,18 +3,22 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
+  DestroyRef,
   effect,
   inject,
   OnDestroy,
   OnInit,
   signal,
 } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
   FormBuilder,
+  FormControl,
   ReactiveFormsModule,
   Validators,
 } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
+import { AdminRole } from '@cleansia/admin-services';
 import {
   CleansiaButtonComponent,
   CleansiaCalendarComponent,
@@ -35,6 +39,7 @@ import {
 } from '@cleansia/services';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { AdminUserFormData, AdminUserFormFacade } from './admin-user-form.facade';
+import { buildAdminRoleOptions, DEFAULT_ADMIN_ROLE } from './admin-user-form.models';
 
 @Component({
   selector: 'cleansia-admin-user-form',
@@ -62,11 +67,14 @@ export class AdminUserFormComponent implements OnInit, OnDestroy {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly translate = inject(TranslateService);
+  private readonly destroyRef = inject(DestroyRef);
   protected readonly facade = inject(AdminUserFormFacade);
 
   private readonly mode = signal<'create' | 'edit'>('create');
 
   protected readonly Policy = Policy;
+  readonly roleOptions = signal(buildAdminRoleOptions(this.translate));
+  readonly roleControl = new FormControl<AdminRole | null>(null);
 
   readonly isEditMode = computed(() => this.mode() === 'edit');
   readonly pageTitle = computed(() =>
@@ -87,6 +95,7 @@ export class AdminUserFormComponent implements OnInit, OnDestroy {
       CustomValidators.minimumAge(18),
     ]),
     preferredLanguageCode: this.fb.control<string | null>(null),
+    role: this.fb.control<AdminRole>(DEFAULT_ADMIN_ROLE, [Validators.required]),
   });
 
   private userLoadEffect = effect(() => {
@@ -103,8 +112,13 @@ export class AdminUserFormComponent implements OnInit, OnDestroy {
     }
 
     this.facade.loadLanguages();
+    this.translate.onLangChange
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => this.roleOptions.set(buildAdminRoleOptions(this.translate)));
 
     if (this.isEditMode()) {
+      this.facade.connectRoleControl(this.roleControl);
+
       // In edit mode, password is not required
       this.form.get('password')?.clearValidators();
       this.form.get('password')?.updateValueAndValidity();
@@ -159,6 +173,7 @@ export class AdminUserFormComponent implements OnInit, OnDestroy {
       phoneNumber: formValue.phoneNumber || undefined,
       birthDate: formValue.birthDate ?? undefined,
       preferredLanguageCode: formValue.preferredLanguageCode || undefined,
+      role: formValue.role ?? undefined,
     };
 
     if (this.isEditMode()) {

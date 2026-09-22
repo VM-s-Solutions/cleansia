@@ -3,9 +3,11 @@ using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Dashboard;
 using Cleansia.Core.AppServices.Features.Orders;
+using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.AppServices.Features.Orders.DTOs;
 using Cleansia.Core.AppServices.Features.Orders.Filters;
 using Cleansia.Core.AppServices.Shared.DTOs.ResponseModels;
+using Cleansia.Core.Domain.Configuration;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Internationalization;
 using Cleansia.Core.Domain.Orders;
@@ -84,21 +86,25 @@ public class OrderOfferabilityAgreementTests(PostgresContainerFixture fixture) :
                 var board = await mediator.Send(AvailableRequest());
 
                 var orderRepository = provider.GetRequiredService<IOrderRepository>();
+                var currencyResolution = provider.GetRequiredService<ICurrencyResolutionService>();
+                var currency = await currencyResolution.ResolveCurrencyForEmployeeAsync(EmployeeId, CancellationToken.None);
                 var counted = await orderRepository
                     .GetQueryable()
-                    .Where(DashboardSpecifications.CreateAvailableOrdersSpec(EmployeeId, DateTime.UtcNow).SatisfiedBy())
+                    .Where(DashboardSpecifications.CreateAvailableOrdersSpec(EmployeeId, currency.Id, DateTime.UtcNow).SatisfiedBy())
                     .Select(o => o.Id)
                     .ToListAsync();
 
                 var validator = new TakeOrder.Validator(
                     orderRepository,
                     provider.GetRequiredService<IEmployeeRepository>(),
-                    provider.GetRequiredService<IOrderAccessService>());
+                    provider.GetRequiredService<IOrderAccessService>(),
+                    currencyResolution,
+                    provider.GetRequiredService<ILegalDocumentRepository>());
 
                 var takeVerdicts = new Dictionary<string, string?>();
                 foreach (var scenario in Cases)
                 {
-                    var result = await validator.ValidateAsync(new TakeOrder.Command(scenario.OrderId));
+                    var result = await validator.ValidateAsync(new TakeOrder.Command(scenario.OrderId, TestLegalDocuments.WorkContractTextEnId));
                     takeVerdicts[scenario.OrderId] = result.IsValid
                         ? null
                         : Assert.Single(result.Errors).ErrorMessage;
@@ -256,12 +262,15 @@ public class OrderOfferabilityAgreementTests(PostgresContainerFixture fixture) :
     private static async Task SeedTheOfferabilityMatrix(CleansiaDbContext context)
     {
         context.Languages.Add(Language.Create("en", "English"));
+        TestLegalDocuments.Add(context);
 
-        var country = Country.Create("Czechia", "CZ", isServiced: true);
+        var country = Country.Create("Czechia", "CZ", "CZ", isServiced: true);
         country.Id = CountryId;
         context.Countries.Add(country);
+        context.CountryConfigurations.Add(CountryConfiguration.Create(CountryId, "CZK", "cs", 0.21m));
 
-        var currency = Currency.Create("CZK", "Kč", "Czech koruna", 1.0m);
+        var currency = Currency.Create("CZK", "Kč", "Czech koruna");
+        currency.IsActive = true;
         currency.Id = CurrencyId;
         currency.SetAsDefault(true);
         context.Currencies.Add(currency);
@@ -301,7 +310,6 @@ public class OrderOfferabilityAgreementTests(PostgresContainerFixture fixture) :
             customerAddress: Address.Create("Open St 1", "Brno", "60200", CountryId, latitude: 49.19506, longitude: 16.606837),
             rooms: 2,
             bathrooms: 1,
-            extras: new Dictionary<string, bool>(),
             cleaningDateTime: cleaningDateTime,
             paymentType: scenario.PaymentType,
             totalPrice: 1500m,
@@ -310,6 +318,7 @@ public class OrderOfferabilityAgreementTests(PostgresContainerFixture fixture) :
             recurringTemplateId: scenario.RecurringTemplateId);
         order.Id = scenario.OrderId;
         order.Created(TestUtilities.Constants.TestUserSession.TestUserName, DateTime.UtcNow);
+        order.SetWorkContractDocument(WorkContractTestData.Document());
 
         order.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.New, order));
         if (scenario.Status != OrderStatus.New)

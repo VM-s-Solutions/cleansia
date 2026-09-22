@@ -1,5 +1,6 @@
 package cz.cleansia.customer.features.recurring
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
@@ -55,9 +56,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -65,7 +64,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -73,12 +71,14 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cz.cleansia.customer.R
+import cz.cleansia.customer.core.catalog.PackageListItem
+import cz.cleansia.customer.core.catalog.ServiceListItem
+import cz.cleansia.customer.core.data.UserAddress
 import cz.cleansia.customer.core.recurring.RecurrenceFrequency
 import cz.cleansia.customer.features.addresses.AddressManagerSheet
 import cz.cleansia.customer.features.booking.localizedDescription
 import cz.cleansia.customer.features.booking.localizedName
 import cz.cleansia.customer.ui.state.ActionState
-import dagger.hilt.android.EntryPointAccessors
 import kotlinx.datetime.Clock
 import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.Instant
@@ -104,11 +104,19 @@ fun CreateRecurringScreen(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val submitState by viewModel.submitState.collectAsStateWithLifecycle()
+    val currentStep by viewModel.step.collectAsStateWithLifecycle()
+    val canStepBack by viewModel.canStepBack.collectAsStateWithLifecycle()
+    val canAdvance by viewModel.canAdvance.collectAsStateWithLifecycle()
+    val savedAddresses by viewModel.savedAddresses.collectAsStateWithLifecycle()
+    val services by viewModel.services.collectAsStateWithLifecycle()
+    val packages by viewModel.packages.collectAsStateWithLifecycle()
+    val catalogState by viewModel.catalogState.collectAsStateWithLifecycle()
     val submitting = submitState is ActionState.Submitting
     val isEditing = viewModel.isEditing
 
-    var currentStep by remember { mutableIntStateOf(1) }
     var addressSheetOpen by remember { mutableStateOf(false) }
+
+    BackHandler(enabled = canStepBack) { viewModel.previousStep() }
 
     // Default startsOn to "one week from today" once the form mounts so the
     // user doesn't see a blank field. They can edit via the calendar picker.
@@ -129,13 +137,6 @@ fun CreateRecurringScreen(
 
     val isPathB = viewModel.sourceOrderId != null
 
-    val canAdvance = when (currentStep) {
-        1 -> state.timeOfDay.isNotBlank()  // freq + day always have defaults
-        2 -> state.selectedServiceIds.isNotEmpty() || state.selectedPackageIds.isNotEmpty()
-        3 -> state.savedAddressId.isNotBlank() && state.startsOnIso.isNotBlank()
-        else -> false
-    }
-
     Scaffold(
         topBar = {
             WizardTopBar(
@@ -143,7 +144,7 @@ fun CreateRecurringScreen(
                 isPathB = isPathB,
                 isEditing = isEditing,
                 onBack = {
-                    if (currentStep > 1) currentStep-- else onBack()
+                    if (canStepBack) viewModel.previousStep() else onBack()
                 },
             )
         },
@@ -153,9 +154,9 @@ fun CreateRecurringScreen(
                 canAdvance = canAdvance,
                 submitting = submitting,
                 isEditing = isEditing,
-                onPrevious = { if (currentStep > 1) currentStep-- },
+                onPrevious = viewModel::previousStep,
                 onNext = {
-                    if (currentStep < TOTAL_STEPS) currentStep++ else viewModel.submit()
+                    if (currentStep < TOTAL_STEPS) viewModel.nextStep() else viewModel.submit()
                 },
             )
         },
@@ -195,9 +196,16 @@ fun CreateRecurringScreen(
                 ) {
                     when (step) {
                         1 -> WhenStep(state = state, viewModel = viewModel)
-                        2 -> WhatStep(state = state, viewModel = viewModel)
+                        2 -> WhatStep(
+                            state = state,
+                            services = services,
+                            packages = packages,
+                            catalogState = catalogState,
+                            viewModel = viewModel,
+                        )
                         3 -> WhereAndPayStep(
                             state = state,
+                            savedAddresses = savedAddresses,
                             viewModel = viewModel,
                             onOpenAddressSheet = { addressSheetOpen = true },
                             isEditing = isEditing,
@@ -220,7 +228,7 @@ fun CreateRecurringScreen(
     )
 }
 
-private const val TOTAL_STEPS = 3
+private const val TOTAL_STEPS = CreateRecurringViewModel.TOTAL_STEPS
 
 /* ─────────────── Wizard chrome ─────────────── */
 
@@ -469,15 +477,41 @@ private fun WhenStep(state: CreateRecurringFormState, viewModel: CreateRecurring
 /* ─────────────── Step 2 — What ─────────────── */
 
 @Composable
-private fun WhatStep(state: CreateRecurringFormState, viewModel: CreateRecurringViewModel) {
+private fun WhatStep(
+    state: CreateRecurringFormState,
+    services: List<ServiceListItem>,
+    packages: List<PackageListItem>,
+    catalogState: RecurringCatalogState,
+    viewModel: CreateRecurringViewModel,
+) {
     SectionLabel(stringResource(R.string.recurring_create_services_label))
     Spacer(Modifier.height(8.dp))
-    ServicesPackagesPicker(
-        selectedServiceIds = state.selectedServiceIds,
-        selectedPackageIds = state.selectedPackageIds,
-        onToggleService = viewModel::toggleService,
-        onTogglePackage = viewModel::togglePackage,
-    )
+    when (catalogState) {
+        RecurringCatalogState.Loading -> Text(
+            text = stringResource(R.string.recurring_create_services_loading),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        RecurringCatalogState.Error -> CatalogRetryBlock(
+            text = stringResource(R.string.booking_catalog_error),
+            onRetry = viewModel::retryCatalog,
+        )
+        RecurringCatalogState.Loaded -> if (services.isEmpty() && packages.isEmpty()) {
+            CatalogRetryBlock(
+                text = stringResource(R.string.booking_catalog_empty),
+                onRetry = viewModel::retryCatalog,
+            )
+        } else {
+            ServicesPackagesPicker(
+                services = services,
+                packages = packages,
+                selectedServiceIds = state.selectedServiceIds,
+                selectedPackageIds = state.selectedPackageIds,
+                onToggleService = viewModel::toggleService,
+                onTogglePackage = viewModel::togglePackage,
+            )
+        }
+    }
 
     Spacer(Modifier.height(24.dp))
 
@@ -500,6 +534,7 @@ private fun WhatStep(state: CreateRecurringFormState, viewModel: CreateRecurring
 @Composable
 private fun WhereAndPayStep(
     state: CreateRecurringFormState,
+    savedAddresses: List<UserAddress>,
     viewModel: CreateRecurringViewModel,
     onOpenAddressSheet: () -> Unit,
     isEditing: Boolean,
@@ -507,6 +542,7 @@ private fun WhereAndPayStep(
     SectionLabel(stringResource(R.string.recurring_create_address_label))
     Spacer(Modifier.height(8.dp))
     SavedAddressPicker(
+        addresses = savedAddresses,
         selectedId = state.savedAddressId,
         onSelect = viewModel::setSavedAddressId,
         onAddNew = onOpenAddressSheet,
@@ -888,20 +924,11 @@ private fun Stepper(value: Int, onChange: (Int) -> Unit) {
 
 @Composable
 private fun SavedAddressPicker(
+    addresses: List<UserAddress>,
     selectedId: String,
     onSelect: (String) -> Unit,
     onAddNew: () -> Unit,
 ) {
-    val context = LocalContext.current
-    // TODO(W3.3): refactor to VM injection — leaf private composable, would
-    // need parent screen to lift the addresses flow + add-new callback.
-    val addressRepo = remember {
-        EntryPointAccessors
-            .fromApplication(context, RecurringAddressEntryPoint::class.java)
-            .addressRepository()
-    }
-    val addresses by addressRepo.addresses.collectAsState(initial = emptyList())
-
     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
         addresses.forEach { addr ->
             val id = addr.serverId ?: return@forEach
@@ -976,6 +1003,31 @@ private fun SavedAddressPicker(
     }
 }
 
+/** The booking wizard's retry control, inline under the section label. */
+@Composable
+private fun CatalogRetryBlock(text: String, onRetry: () -> Unit) {
+    Column(
+        modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Text(
+            text = text,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Spacer(Modifier.height(12.dp))
+        Text(
+            text = stringResource(R.string.booking_catalog_retry),
+            style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold),
+            color = MaterialTheme.colorScheme.primary,
+            modifier = Modifier
+                .clip(RoundedCornerShape(999.dp))
+                .clickable(onClick = onRetry)
+                .padding(horizontal = 16.dp, vertical = 8.dp),
+        )
+    }
+}
+
 /**
  * Services + packages picker — full-width selectable cards. Package cards
  * additionally show a bulleted "Includes:" list of services contained in
@@ -984,31 +1036,13 @@ private fun SavedAddressPicker(
  */
 @Composable
 private fun ServicesPackagesPicker(
+    services: List<ServiceListItem>,
+    packages: List<PackageListItem>,
     selectedServiceIds: Set<String>,
     selectedPackageIds: Set<String>,
     onToggleService: (String) -> Unit,
     onTogglePackage: (String) -> Unit,
 ) {
-    val context = LocalContext.current
-    // TODO(W3.3): refactor to VM injection — leaf private composable, would
-    // need parent screen to lift services/packages flows down as parameters.
-    val catalog = remember {
-        EntryPointAccessors
-            .fromApplication(context, cz.cleansia.customer.core.catalog.CatalogRepositoryEntryPoint::class.java)
-            .catalogRepository()
-    }
-    val services by catalog.services.collectAsState(initial = emptyList())
-    val packages by catalog.packages.collectAsState(initial = emptyList())
-
-    if (services.isEmpty() && packages.isEmpty()) {
-        Text(
-            text = stringResource(R.string.recurring_create_services_loading),
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        return
-    }
-
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         if (packages.isNotEmpty()) {
             Text(
@@ -1354,12 +1388,4 @@ private class NotInPastSelectableDates(
     private val todayUtcMs: Long,
 ) : androidx.compose.material3.SelectableDates {
     override fun isSelectableDate(utcTimeMillis: Long): Boolean = utcTimeMillis >= todayUtcMs
-}
-
-/* ── Hilt entry points for non-VM Compose contexts ── */
-
-@dagger.hilt.EntryPoint
-@dagger.hilt.InstallIn(dagger.hilt.components.SingletonComponent::class)
-interface RecurringAddressEntryPoint {
-    fun addressRepository(): cz.cleansia.customer.core.data.AddressRepository
 }

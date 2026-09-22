@@ -175,11 +175,55 @@
     }
   }
 
+  // The contract for work on the caller's seat: the accepted line, or the banner an
+  // admin placement leaves behind until the cleaner accepts.
+  &__contract {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    border-radius: 12px;
+    font-size: 0.875rem;
+    line-height: 1.5;
+
+    > i {
+      flex-shrink: 0;
+      font-size: 1.125rem;
+    }
+
+    @media (max-width: 768px) {
+      flex-wrap: wrap;
+
+      cleansia-button {
+        width: 100%;
+      }
+    }
+  }
+
+  &__contract-text {
+    flex: 1 1 12rem;
+    min-width: 0;
+    font-weight: 600;
+  }
+
+  &__contract--accepted {
+    background: var(--green-50, #f0fdf4);
+    border: 1px solid var(--green-200, #bbf7d0);
+    color: var(--green-700, #15803d);
+  }
+
+  &__contract--pending {
+    background: var(--cleansia-warning-100, #fef3c7);
+    border: 1px solid var(--cleansia-warning-300, #fcd34d);
+    color: var(--cleansia-warning-800, #92400e);
+  }
+
   // Hide actions on print
   @media print {
     &__primary-action,
     &__actions-row,
     &__elapsed-time,
+    &__contract--pending,
     &__back-btn {
       display: none !important;
     }

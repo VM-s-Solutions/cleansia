@@ -26,6 +26,10 @@ import { CustomerAuthService } from '@cleansia/customer-services';
 import {
   loadCustomerUser,
   selectCustomerCurrentUser,
+  chooseMarket,
+  selectHasMarketChoice,
+  selectMarket,
+  selectMarkets,
 } from '@cleansia/customer-stores';
 import { DialogService, ThemeService } from '@cleansia/services';
 import { TranslateModule } from '@ngx-translate/core';
@@ -39,6 +43,7 @@ import { Subject, takeUntil } from 'rxjs';
 import { CleansiaBrandNameComponent } from '@cleansia/components/cleansia-brand-name';
 import { CleansiaButtonComponent } from '@cleansia/components/cleansia-button';
 import { CleansiaLanguageSwitcherComponent } from '@cleansia/components/cleansia-language-switcher';
+import { CleansiaMarketSwitcherComponent } from '@cleansia/components/cleansia-market-switcher';
 
 /**
  * Width at which the full bar fits inside the floating pill.
@@ -69,6 +74,7 @@ const NAV_DESKTOP_MIN_WIDTH = 1360;
     CleansiaBrandNameComponent,
     CleansiaButtonComponent,
     CleansiaLanguageSwitcherComponent,
+    CleansiaMarketSwitcherComponent,
   ],
   templateUrl: './customer-navbar.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -126,6 +132,17 @@ export class CleansiaCustomerNavbarComponent implements OnInit, OnDestroy {
   });
 
   readonly userEmail = computed(() => this.currentUser()?.email ?? null);
+
+  // The market beside the language: resolved before the first render on both branches, so the
+  // server and the hydrating client draw the same pill (or, with one market, none). -> ADR-0058
+  readonly markets = toSignal(this.store.select(selectMarkets), { initialValue: [] });
+  readonly hasMarketChoice = toSignal(this.store.select(selectHasMarketChoice), { initialValue: false });
+  private readonly market = toSignal(this.store.select(selectMarket), { initialValue: null });
+  readonly selectedMarketCode = computed(() => this.market()?.isoCode ?? null);
+
+  onMarketChange(isoCode: string): void {
+    this.store.dispatch(chooseMarket({ isoCode }));
+  }
 
   readonly userInitials = computed(() => {
     const user = this.currentUser();

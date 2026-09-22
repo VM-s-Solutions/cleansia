@@ -38,21 +38,21 @@ public sealed class CatalogInUseCartGuardTests : IDisposable
         return new CleansiaDbContext(
             options,
             new TestUserSessionProvider("system", "system@cleansia.test"),
-            new NullTenantProvider());
+            new DefaultTenantProvider());
     }
 
     private async Task<(string CartedServiceId, string FreeServiceId, string CartedPackageId, string FreePackageId)> SeedAsync()
     {
         await using var ctx = NewContext();
-        await ctx.Database.EnsureCreatedAsync();
+        await TestTenants.EnsureCreatedWithRegistryAsync(ctx);
 
         ctx.Add(Cleansia.Core.Domain.Internationalization.Language.Create("en", "English"));
 
         var category = ServiceCategory.Create("cat-1", "Category", "seeded");
-        var cartedService = Service.Create(category.Id, "Carted Service", "seeded", 1000m, 200m);
-        var freeService = Service.Create(category.Id, "Free Service", "seeded", 1000m, 200m);
-        var cartedPackage = Package.Create("Carted Package", "seeded", 500m);
-        var freePackage = Package.Create("Free Package", "seeded", 500m);
+        var cartedService = Service.Create(category.Id, "Carted Service", "seeded");
+        var freeService = Service.Create(category.Id, "Free Service", "seeded");
+        var cartedPackage = Package.Create("Carted Package", "seeded");
+        var freePackage = Package.Create("Free Package", "seeded");
 
         var user = User.CreateWithPassword("buyer@cleansia.test", "Passw0rd!", "Buyer", "User");
         user.Id = "user-1";
@@ -118,9 +118,9 @@ public sealed class CatalogInUseCartGuardTests : IDisposable
         Assert.False(inUse);
     }
 
-    private sealed class NullTenantProvider : ITenantProvider
+    private sealed class DefaultTenantProvider : ITenantProvider
     {
-        public string? GetCurrentTenantId() => null;
+        public string? GetCurrentTenantId() => TestTenants.Default;
         public void SetTenantOverride(string tenantId) { }
         public void ClearTenantOverride() { }
     }

@@ -2,6 +2,7 @@ package cz.cleansia.customer.core.orders
 
 import cz.cleansia.customer.api.client.OrderApi as GenOrderApi
 import cz.cleansia.customer.core.auth.AuthRetrofit
+import cz.cleansia.customer.core.auth.NoAuthRetrofit
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -19,6 +20,11 @@ object OrderModule {
     @Singleton
     fun provideGenOrderApi(@AuthRetrofit retrofit: Retrofit): GenOrderApi =
         retrofit.create(GenOrderApi::class.java)
+
+    @Provides
+    @Singleton
+    fun provideGuestOrderApi(@NoAuthRetrofit retrofit: Retrofit): GuestOrderApi =
+        GuestOrderApi(retrofit.create(GenOrderApi::class.java))
 
     @Provides
     @Singleton

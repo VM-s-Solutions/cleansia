@@ -45,6 +45,8 @@ public class GetInvoiceById
                 .Include(i => i.Currency)
                 .Include(i => i.OrderPays)
                     .ThenInclude(op => op.Order)
+                .Include(i => i.OrderPays)
+                    .ThenInclude(op => op.Currency)
                 .AsNoTracking()
                 .FirstOrDefaultAsync(i => i.Id == request.InvoiceId, cancellationToken);
 

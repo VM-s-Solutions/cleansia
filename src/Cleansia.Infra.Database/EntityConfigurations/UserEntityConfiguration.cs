@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Cleansia.Infra.Database.EntityConfigurations;
 
-public class UserEntityConfiguration : AuditableEntityConfiguration<User, string>
+public class UserEntityConfiguration : TenantAuditableEntityConfiguration<User, string>
 {
     public override void Configure(EntityTypeBuilder<User> builder)
     {
@@ -48,6 +48,15 @@ public class UserEntityConfiguration : AuditableEntityConfiguration<User, string
         builder.Property(u => u.Profile)
             .HasConversion<int>();
 
+        builder.Property(u => u.AdminRole)
+            .HasConversion<int?>();
+
+        // The role is an axis of the Administrator profile alone: an administrator row without one and
+        // a customer or cleaner row with one are both refused at the database, not only by the factory.
+        builder.ToTable(t => t.HasCheckConstraint(
+            "CK_Users_AdminRole_Profile",
+            "(\"Profile\" = 100) = (\"AdminRole\" IS NOT NULL)"));
+
         builder.Property(u => u.AuthenticationType)
             .HasConversion<int>();
 
@@ -89,15 +98,14 @@ public class UserEntityConfiguration : AuditableEntityConfiguration<User, string
             .HasForeignKey(o => o.UserId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        // Identity-lookup indexes. UNIQUE on Email — citext, so natively case-insensitive.
-        // DB-level uniqueness, NOT the app pre-check, is what closes the register/update TOCTOU race.
-        //
-        // Scope is (TenantId, Email), never global Email: a global unique index made tenant B's
-        // registration 500 on an unhandled 23505 when tenant A already held the address — a
-        // cross-tenant existence oracle. → /architecture/security-rules
-        builder.HasIndex(u => new { u.TenantId, u.Email })
-            .IsUnique()
-            .AreNullsDistinct(false);
+        // Identity-lookup indexes. UNIQUE on Email, globally: one identity per email across the holding
+        // (ADR-0061 D5.1) — citext, so natively case-insensitive. Every anonymous identity read (login,
+        // lockout, reset, OTP confirm, social link-by-email) resolves by email ignoring the tenant, so a
+        // per-tenant scope would make login ambiguous the day a second operator opens. DB-level
+        // uniqueness, NOT the app pre-check, is what closes the register TOCTOU race; the four writers
+        // own the 23505 (ADR-0050 D2). → /architecture/security-rules
+        builder.HasIndex(u => u.Email)
+            .IsUnique();
 
         // Non-unique indexes on the remaining nullable lookup columns. Each is FILTERED/PARTIAL
         // (WHERE "Col" IS NOT NULL, using the real PascalCase Postgres column names) so the (typically

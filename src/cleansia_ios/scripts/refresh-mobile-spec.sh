@@ -10,12 +10,10 @@
 # The two specs live under src/cleansia_android/openapi/ so both platforms stay
 # on a single source of truth.
 #
-# The CANONICAL regen of these committed specs is an owner step
-# (manual_step: mobile-spec-regen) — a re-dump is owner-run because it needs the mobile API hosts
-# running. It is NOT a blocker: the committed specs are current as of 2026-08-14 and both clients are
-# generated and wired. Formerly the specs were stale (pre-T-0272) and the
-# first real client generation is held until the owner refreshes them. This
-# script is the same plumbing a developer uses locally against a dev host.
+# Re-dumping the committed specs is ordinary work (owner ruling 2026-09-07): whoever changes a
+# mobile-facing DTO or endpoint boots the two mobile hosts, runs this script for both audiences and
+# commits the result with the change, naming the step in the report. The Swift clients are then
+# regenerated on a Mac with ./scripts/generate-api-clients.sh; Android generates its own at build.
 #
 # Usage:
 #   ./scripts/refresh-mobile-spec.sh                       # both apps, localhost

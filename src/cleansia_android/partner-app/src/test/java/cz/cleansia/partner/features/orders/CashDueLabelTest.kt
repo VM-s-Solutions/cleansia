@@ -38,8 +38,9 @@ class CashDueLabelTest {
         assertNull(cashDueLabel(-50.0, "CZK", Locale.US))
     }
 
+    /** A null code is not a koruna order: the figure is named, its unit is not guessed. */
     @Test
-    fun `a missing currency code falls back to the platform default`() {
-        assertEquals("500 Kč", cashDueLabel(500.0, null, Locale.US))
+    fun `a missing currency code names the amount without a unit`() {
+        assertEquals("500", cashDueLabel(500.0, null, Locale.US))
     }
 }

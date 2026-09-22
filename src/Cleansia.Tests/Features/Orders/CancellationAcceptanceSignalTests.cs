@@ -29,18 +29,19 @@ namespace Cleansia.Tests.Features.Orders;
 /// <summary>
 /// T-0525 — what "a cleaner accepted this job" actually means when the cancellation fee is priced.
 ///
-/// <see cref="OrderStatus.Confirmed"/> is a deliberately OVERLOADED status in this domain: it means
-/// "payment settled" OR "cleaner assigned", and four writers produce it —
-/// <c>TakeOrder</c> (a cleaner really did claim it), <c>HandlePaymentNotification</c> (the Stripe
-/// webhook), <c>ConfirmRecurringOrder</c> (cash auto-confirm) and <c>AdminOverrideOrderStatus</c>.
-/// Pricing the fee off the status track therefore charged every card customer a 25%/50% cancellation
-/// fee for a job no cleaner had ever seen. The acceptance signal is the ASSIGNMENT ROW.
+/// <see cref="OrderStatus.Confirmed"/> used to be an OVERLOADED status — "payment settled" OR "cleaner
+/// assigned", written by the Stripe webhook, the cash auto-confirm and the admin override as well as by
+/// <c>TakeOrder</c> — and pricing the fee off the status track charged every card customer a 25%/50%
+/// cancellation fee for a job no cleaner had ever seen. The word now means a cleaner took the job and
+/// the override can no longer put it on an unstaffed order, but the acceptance signal stays the
+/// ASSIGNMENT ROW: the crew is the fact, the status its summary, and a cleaner taking a seat on an
+/// already-Confirmed order leaves no new track.
 ///
-/// Where a case needs an order in <c>Confirmed</c>, it gets there by RUNNING THE REAL WRITER — a
-/// signed Stripe webhook, the real cash-confirm handler, the real admin override — never by setting a
-/// bool, so the suite pins the production wiring rather than the policy function's argument. The
-/// assignment-only cases deliberately carry no <c>Confirmed</c> track at all; that is the hole a
-/// status-based predicate cannot see.
+/// Where a case moves an order through a writer, it RUNS THE REAL WRITER — a signed Stripe webhook,
+/// the real cash-confirm handler, the real admin override — never by setting a bool, so the suite pins
+/// the production wiring rather than the policy function's argument. The assignment-only cases
+/// deliberately carry no <c>Confirmed</c> track at all; that is the hole a status-based predicate
+/// cannot see.
 /// </summary>
 public class CancellationAcceptanceSignalTests
 {
@@ -77,7 +78,7 @@ public class CancellationAcceptanceSignalTests
         // No membership → the real resolver hands the handler the standard absolute 24h window, the
         // production shape for every non-member.
         _membershipRepository
-            .Setup(r => r.GetActiveForUserNoTrackingAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetEntitledForUserNoTrackingAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((UserMembership?)null);
         _refundService
             .Setup(s => s.IssueRefundAsync(It.IsAny<RefundRequest>(), It.IsAny<CancellationToken>()))
@@ -99,15 +100,19 @@ public class CancellationAcceptanceSignalTests
 
     private CancelOrder.Handler CreateCancelHandler() =>
         new(
-            _orderRepository.Object,
+            OrderAccessDoubles.Over(_orderRepository, _session),
             _session.Object,
-            _refundService.Object,
-            _creditAccountRepository.Object,
-            _loyaltyService.Object,
-            new CancellationPolicyResolver(_membershipRepository.Object),
-            _producer.Object,
-            _liveActivityProducer.Object,
-            _expressWaiverConsumer.Object);
+            new CustomerOrderCancellation(
+                Mock.Of<ITenantProvider>(),
+                _refundService.Object,
+                Mock.Of<IRefundRepository>(),
+                _creditAccountRepository.Object,
+                _loyaltyService.Object,
+                new CancellationPolicyResolver(_membershipRepository.Object),
+                _producer.Object,
+                _liveActivityProducer.Object,
+                _expressWaiverConsumer.Object,
+                new AuditContext()));
 
     private HandlePaymentNotification.Handler CreateWebhookHandler() =>
         new(
@@ -121,19 +126,24 @@ public class CancellationAcceptanceSignalTests
             _pending.Object,
             _producer.Object,
             NoPreferredCleanerHold.Resolver,
+            Mock.Of<IAdminNotifier>(),
+            Mock.Of<IUserNotificationRepository>(),
             NullLogger<HandlePaymentNotification.Handler>.Instance);
 
     private ConfirmRecurringOrder.Handler CreateRecurringConfirmHandler() =>
         new(
-            _orderRepository.Object,
+            Cleansia.Tests.Common.OrderAccessDoubles.Over(_orderRepository, _session),
             _creditAccountRepository.Object,
             _userRepository.Object,
             _session.Object,
+            _tenantProvider.Object,
             _stripeClient.Object,
             new StripeConfig(new ConfigurationBuilder().Build()),
             _pending.Object,
             _producer.Object,
             NoPreferredCleanerHold.Resolver,
+            Mock.Of<IAdminNotifier>(),
+            new AuditContext(),
             NullLogger<ConfirmRecurringOrder.Handler>.Instance);
 
     private AdminOverrideOrderStatus.Handler CreateAdminOverrideHandler() =>
@@ -154,7 +164,7 @@ public class CancellationAcceptanceSignalTests
         PaymentType paymentType = PaymentType.Card,
         string? recurringTemplateId = null)
     {
-        var currency = Currency.Create("CZK", "Kč", "Czech Koruna", 1m);
+        var currency = Currency.Create("CZK", "Kč", "Czech Koruna");
         var order = Order.Create(
             customerName: "Cust",
             customerEmail: "c@x.test",
@@ -162,7 +172,6 @@ public class CancellationAcceptanceSignalTests
             customerAddress: null!,
             rooms: 2,
             bathrooms: 1,
-            extras: new Dictionary<string, bool>(),
             cleaningDateTime: DateTime.UtcNow.AddHours(cleaningInHours),
             paymentType: paymentType,
             totalPrice: TotalPrice,
@@ -224,10 +233,16 @@ public class CancellationAcceptanceSignalTests
         // The exact reported case: books, pays by card, changes their mind 20 minutes later (past the
         // 15-min oops window) with the cleaning 23.7h away (inside the 24h free window). Before the fix
         // the webhook's Confirmed track made this "accepted" and the customer was billed 25%.
+        //
+        // T-0691 removed that track at the source: the webhook no longer writes a fulfilment status at
+        // all, so the order rests at New + Paid. This case is now impossible to reintroduce by reading
+        // the status — but the assertion is KEPT, because the defect it pins was never really about the
+        // word. CancellationAssessor keys on AssignedEmployees, and this proves it still does.
         var order = ArrangeNewOrder(cleaningInHours: 23.7, bookedMinutesAgo: 20);
         await ConfirmThroughStripeWebhookAsync();
 
-        Assert.Equal(OrderStatus.Confirmed, order.CurrentStatus);
+        Assert.Equal(OrderStatus.New, order.CurrentStatus);
+        Assert.Equal(PaymentStatus.Paid, order.PaymentStatus);
         Assert.Empty(order.AssignedEmployees);
 
         var response = await CancelAsync();
@@ -267,7 +282,12 @@ public class CancellationAcceptanceSignalTests
             new ConfirmRecurringOrder.Command(OrderId), CancellationToken.None);
 
         Assert.True(confirm.IsSuccess);
-        Assert.Equal(OrderStatus.Confirmed, order.CurrentStatus);
+        // T-0691: confirming an occurrence settles the money and leaves fulfilment alone. The point of
+        // this case is unchanged and is now stated more directly — the cancellation fee keys on whether
+        // a cleaner ACCEPTED, never on the status word, so a paid-but-unassigned order is free to
+        // cancel whatever that word says.
+        Assert.Equal(OrderStatus.New, order.CurrentStatus);
+        Assert.Equal(PaymentStatus.Paid, order.PaymentStatus);
 
         var response = await CancelAsync();
 
@@ -277,16 +297,23 @@ public class CancellationAcceptanceSignalTests
 
     // ── AC5: an admin walking the lifecycle forward ──
 
+    /// <summary>
+    /// This case used to force Confirmed onto an unstaffed order through the override and assert the
+    /// cancellation stayed free. The override now refuses exactly that write — Confirmed means a
+    /// cleaner took the job — so the door this case guarded is closed rather than survived: the word
+    /// cannot be put on the order, the order stays New with nobody on it, and the fee is still nothing.
+    /// </summary>
     [Fact]
-    public async Task AdminOverriddenToConfirmed_NoCleanerAssigned_IsFree()
+    public async Task AdminCannotForceConfirmedOntoAnUnstaffedOrder_AndCancellationIsFree()
     {
         var order = ArrangeNewOrder(cleaningInHours: 12);
 
         var overridden = await CreateAdminOverrideHandler().Handle(
             new AdminOverrideOrderStatus.Command(OrderId, OrderStatus.Confirmed), CancellationToken.None);
 
-        Assert.True(overridden.IsSuccess);
-        Assert.Equal(OrderStatus.Confirmed, order.CurrentStatus);
+        Assert.True(overridden.IsFailure);
+        Assert.Equal(BusinessErrorMessage.OrderStatusConfirmedNeedsCrew, overridden.Error!.Message);
+        Assert.Equal(OrderStatus.New, order.CurrentStatus);
 
         var response = await CancelAsync();
 

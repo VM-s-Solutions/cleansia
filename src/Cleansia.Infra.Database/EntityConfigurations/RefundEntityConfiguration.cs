@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Cleansia.Infra.Database.EntityConfigurations;
 
-public class RefundEntityConfiguration : AuditableEntityConfiguration<Refund, string>
+public class RefundEntityConfiguration : TenantAuditableEntityConfiguration<Refund, string>
 {
     public override void Configure(EntityTypeBuilder<Refund> builder)
     {

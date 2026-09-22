@@ -9,9 +9,18 @@ import {
   OnInit,
   signal,
 } from '@angular/core';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import {
+  FormBuilder,
+  FormControl,
+  FormGroup,
+  ReactiveFormsModule,
+  Validators,
+} from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
-import { MembershipPlanDetailDto } from '@cleansia/admin-services';
+import {
+  MembershipPlanDetailDto,
+  MembershipPlanPriceDto,
+} from '@cleansia/admin-services';
 import {
   CleansiaButtonComponent,
   CleansiaCheckboxComponent,
@@ -24,6 +33,13 @@ import {
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { MembershipPlanFormFacade } from './membership-plan-form.facade';
 import {
+  MembershipPlanPriceBlockValue,
+  PRICE_BLOCK_HALF_FILLED_ERROR,
+  PlanCurrencyOption,
+  collectFilledPriceBlocks,
+  priceBlockCompleteValidator,
+} from './membership-plan-form.models';
+import {
   BILLING_INTERVAL_LABEL_KEYS,
   BILLING_INTERVAL_WIRE,
   BillingIntervalWireValue,
@@ -31,6 +47,11 @@ import {
 } from '../membership-plan-list/membership-plan-list.models';
 
 const CODE_PATTERN = /^[A-Z0-9_]{2,50}$/i;
+
+type PriceBlockGroup = FormGroup<{
+  price: FormControl<number | string | null>;
+  stripePriceId: FormControl<string>;
+}>;
 
 @Component({
   selector: 'cleansia-admin-membership-plan-form',
@@ -57,6 +78,8 @@ export class MembershipPlanFormComponent implements OnInit, OnDestroy {
   private readonly translate = inject(TranslateService);
   protected readonly facade = inject(MembershipPlanFormFacade);
 
+  protected readonly halfFilledError = PRICE_BLOCK_HALF_FILLED_ERROR;
+
   private readonly mode = signal<'create' | 'edit'>('create');
   readonly isEditMode = computed(() => this.mode() === 'edit');
   readonly pageTitle = computed(() =>
@@ -80,14 +103,7 @@ export class MembershipPlanFormComponent implements OnInit, OnDestroy {
     billingInterval: this.fb.nonNullable.control<BillingIntervalWireValue>(
       BILLING_INTERVAL_WIRE.monthly
     ),
-    monthlyPriceCzk: this.fb.control<number | null>(null, [
-      Validators.required,
-      Validators.min(0),
-    ]),
-    stripePriceId: this.fb.nonNullable.control<string>('', [
-      Validators.required,
-      Validators.maxLength(64),
-    ]),
+    prices: this.fb.nonNullable.group({}),
     discountPercentage: this.fb.nonNullable.control<number>(0, [
       Validators.required,
       Validators.min(0),
@@ -124,6 +140,17 @@ export class MembershipPlanFormComponent implements OnInit, OnDestroy {
     }
   });
 
+  private readonly currenciesEffect = effect(() => {
+    const currencies = this.facade.currencies();
+    if (currencies.length === 0) return;
+    this.buildPriceBlocks(currencies);
+    // The plan may have landed before the currency list did, with no blocks to write into yet.
+    const detail = this.facade.plan();
+    if (detail && this.isEditMode()) {
+      this.patchPrices(detail.prices);
+    }
+  });
+
   ngOnInit(): void {
     const routeMode = this.route.snapshot.data['mode'] as
       | 'create'
@@ -132,6 +159,8 @@ export class MembershipPlanFormComponent implements OnInit, OnDestroy {
     if (routeMode) {
       this.mode.set(routeMode);
     }
+
+    this.facade.loadCurrencies();
 
     if (this.isEditMode()) {
       const id = this.route.snapshot.paramMap.get('id');
@@ -149,18 +178,24 @@ export class MembershipPlanFormComponent implements OnInit, OnDestroy {
     this.facade.ngOnDestroy();
   }
 
+  priceBlock(code: string): PriceBlockGroup {
+    return this.form.controls.prices.get(code) as PriceBlockGroup;
+  }
+
   onSave(): void {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       return;
     }
     const v = this.form.getRawValue();
+    const prices = collectFilledPriceBlocks(
+      v.prices as { [code: string]: MembershipPlanPriceBlockValue }
+    );
 
     if (this.isEditMode() && this.planId) {
       this.facade.update(this.planId, {
         name: v.name,
-        monthlyPriceCzk: v.monthlyPriceCzk ?? 0,
-        stripePriceId: v.stripePriceId,
+        prices,
         discountPercentage: v.discountPercentage,
         freeCancellationWindowHours: v.freeCancellationWindowHours,
         trialPeriodDays: v.trialPeriodDays,
@@ -172,8 +207,7 @@ export class MembershipPlanFormComponent implements OnInit, OnDestroy {
         code: v.code,
         name: v.name,
         billingInterval: v.billingInterval,
-        monthlyPriceCzk: v.monthlyPriceCzk ?? 0,
-        stripePriceId: v.stripePriceId,
+        prices,
         discountPercentage: v.discountPercentage,
         freeCancellationWindowHours: v.freeCancellationWindowHours,
         trialPeriodDays: v.trialPeriodDays,
@@ -192,18 +226,49 @@ export class MembershipPlanFormComponent implements OnInit, OnDestroy {
     this.form.controls.billingInterval.disable({ emitEvent: false });
   }
 
+  private buildPriceBlocks(currencies: PlanCurrencyOption[]): void {
+    const pricesGroup = this.form.controls.prices;
+    for (const currency of currencies) {
+      if (pricesGroup.contains(currency.code)) continue;
+      pricesGroup.addControl(
+        currency.code,
+        new FormGroup(
+          {
+            price: new FormControl<number | string | null>(null, [
+              Validators.min(0),
+            ]),
+            stripePriceId: new FormControl<string>('', {
+              nonNullable: true,
+              validators: [Validators.maxLength(64)],
+            }),
+          },
+          { validators: priceBlockCompleteValidator() }
+        )
+      );
+    }
+  }
+
+  private patchPrices(prices?: { [code: string]: MembershipPlanPriceDto }): void {
+    if (!prices) return;
+    for (const [code, entry] of Object.entries(prices)) {
+      this.form.controls.prices.get(code)?.patchValue({
+        price: entry.price ?? null,
+        stripePriceId: entry.stripePriceId ?? '',
+      });
+    }
+  }
+
   private populateFormFromDetail(detail: MembershipPlanDetailDto): void {
     this.form.patchValue({
       code: detail.code ?? '',
       name: detail.name ?? '',
       billingInterval: toBillingIntervalWireValue(detail.billingInterval),
-      monthlyPriceCzk: detail.monthlyPriceCzk ?? null,
-      stripePriceId: detail.stripePriceId ?? '',
       discountPercentage: detail.discountPercentage ?? 0,
       trialPeriodDays: detail.trialPeriodDays ?? 0,
       freeCancellationWindowHours: detail.freeCancellationWindowHours ?? 0,
       allowsExpressUpgrade: detail.allowsExpressUpgrade ?? false,
       expressUpgradesPerMonth: detail.expressUpgradesPerMonth ?? 0,
     });
+    this.patchPrices(detail.prices);
   }
 }

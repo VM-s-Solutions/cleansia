@@ -32,6 +32,11 @@ data class UserAddress(
      * round-trip the country reliably.
      */
     val countryIsoCode: String = "",
+    /**
+     * The backend's country id, as the server answered it. Null for a guest-local address and for a
+     * cache written before the field existed — the platform default market either way.
+     */
+    val countryId: String? = null,
     val latitude: Double? = null,
     val longitude: Double? = null,
     val isDefault: Boolean = false,
@@ -59,6 +64,7 @@ internal fun SavedAddressDto.toUserAddress(): UserAddress = UserAddress(
     city = city,
     zipCode = zipCode,
     country = country.orEmpty(),
+    countryId = countryId,
     latitude = latitude,
     longitude = longitude,
     isDefault = isDefault,

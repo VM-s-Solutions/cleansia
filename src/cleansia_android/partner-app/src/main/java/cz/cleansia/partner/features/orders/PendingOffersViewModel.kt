@@ -42,10 +42,12 @@ private enum class LoadPhase { Loading, Ready, Failed }
  * Jobs a customer asked for this cleaner by name, held for them until a deadline the server owns.
  *
  * Confirming is [OrdersRepository.takeOrder] — the platform has no confirm command, and a second
- * acquisition path would either duplicate TakeOrder's one ordered gate or be weaker than it. Because
- * nothing gates the reservation on the weekly cap, that gate can refuse a job the cleaner was told was
- * theirs; the refusal is kept as [ActionState.Error] beside the [attempt] it belongs to so the screen
- * can say whose fault it is, rather than dropped on a snackbar as a bare reason.
+ * acquisition path would either duplicate TakeOrder's one ordered gate or be weaker than it. The
+ * take runs inside the contract sheet, on the swipe under the text; its verdict comes back through
+ * [onWorkContractOutcome]. Because nothing gates the reservation on the weekly cap, that gate can
+ * refuse a job the cleaner was told was theirs; the refusal is kept as [ActionState.Error] beside the
+ * [attempt] it belongs to so the screen can say whose fault it is, rather than dropped on a snackbar
+ * as a bare reason.
  */
 @HiltViewModel
 class PendingOffersViewModel @Inject constructor(
@@ -78,6 +80,9 @@ class PendingOffersViewModel @Inject constructor(
     private val _offerRefusal = MutableStateFlow<OfferRefusal?>(null)
     val offerRefusal: StateFlow<OfferRefusal?> = _offerRefusal.asStateFlow()
 
+    private val _contractRequest = MutableStateFlow<WorkContractRequest.Take?>(null)
+    val contractRequest: StateFlow<WorkContractRequest.Take?> = _contractRequest.asStateFlow()
+
     init {
         if (ordersRepository.arePendingOffersStale()) {
             refresh()
@@ -94,11 +99,25 @@ class PendingOffersViewModel @Inject constructor(
         if (ordersRepository.arePendingOffersStale()) refresh()
     }
 
-    fun confirm(offer: PendingOffer) =
-        runAction(offer, OfferAction.Confirm) { ordersRepository.takeOrder(it) }
+    fun confirm(offer: PendingOffer) {
+        if (_actionState.value is ActionState.Submitting) return
+        _contractRequest.value = WorkContractRequest.Take(offer.id)
+    }
+
+    fun dismissContract() {
+        _contractRequest.value = null
+    }
+
+    /** The sheet's verdict on the offer it was opened for, framed as the confirm it stands for. */
+    fun onWorkContractOutcome(outcome: WorkContractOutcome) {
+        _contractRequest.value = null
+        val orderId = (outcome.request as? WorkContractRequest.Take)?.orderId ?: return
+        val displayOrderNumber = ordersRepository.pendingOffers.value.firstOrNull { it.id == orderId }?.displayOrderNumber
+        runAction(orderId, displayOrderNumber, OfferAction.Confirm) { outcome.asResult() }
+    }
 
     fun decline(offer: PendingOffer) =
-        runAction(offer, OfferAction.Decline) { ordersRepository.declinePreferredOffer(it) }
+        runAction(offer.id, offer.displayOrderNumber, OfferAction.Decline) { ordersRepository.declinePreferredOffer(it) }
 
     fun dismissRefusal() {
         _actionState.value = ActionState.Idle
@@ -114,13 +133,13 @@ class PendingOffersViewModel @Inject constructor(
     }
 
     private fun runAction(
-        offer: PendingOffer,
+        orderId: String,
+        displayOrderNumber: String?,
         action: OfferAction,
         block: suspend (String) -> ApiResult<Unit>,
     ) {
         if (_actionState.value is ActionState.Submitting) return
-        val orderId = offer.id
-        _attempt.value = OfferAttempt(orderId, offer.displayOrderNumber, action)
+        _attempt.value = OfferAttempt(orderId, displayOrderNumber, action)
         _actionState.value = ActionState.Submitting
         _offerRefusal.value = null
 
@@ -141,7 +160,7 @@ class PendingOffersViewModel @Inject constructor(
                     val reason = errorTranslator.translate(result.error)
                     _actionState.value = ActionState.Error(reason)
                     _attempt.value = null
-                    _offerRefusal.value = OfferRefusal(action, offer.displayOrderNumber, reason)
+                    _offerRefusal.value = OfferRefusal(action, displayOrderNumber, reason)
                 }
             }
             // The server decides whether the offer survived either outcome — a confirm the cap refused

@@ -1,4 +1,5 @@
 using System.Reflection;
+using Cleansia.Core.AppServices.Auditing;
 using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Features.Auth;
 using Cleansia.Core.AppServices.Services.Interfaces;
@@ -50,7 +51,7 @@ public class LoginHandlerThrottleResetTests
         var handlerType = typeof(Login).GetNestedType("Handler", BindingFlags.NonPublic | BindingFlags.Public);
         Assert.NotNull(handlerType);
         var handler = Activator.CreateInstance(
-            handlerType!, tokenService, repo, new HostAudienceProvider(JwtAudiences.Customer))!;
+            handlerType!, tokenService, repo, new HostAudienceProvider(JwtAudiences.Customer), new AuditContext())!;
         var handleMethod = handlerType!.GetMethod("Handle");
         Assert.NotNull(handleMethod);
         return await (Task<BusinessResult<JwtTokenResponse>>)handleMethod!.Invoke(

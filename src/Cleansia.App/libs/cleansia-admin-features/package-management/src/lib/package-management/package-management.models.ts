@@ -1,5 +1,6 @@
 import { PackageListItem } from '@cleansia/admin-services';
 import { TableColumn, TableAction } from '@cleansia/components';
+import { PermissionService, Policy } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
 
 export type CatalogStatusFilter = 'all' | 'active' | 'inactive';
@@ -55,6 +56,7 @@ export function getPackageTableDefinition(
     getIsActiveFilter: () => boolean | undefined;
   },
   translate: TranslateService,
+  permissions: PermissionService,
   formatCurrency: (value: number | undefined) => string
 ): { columns: TableColumn<PackageListItem>[]; actions: TableAction<PackageListItem>[] } {
   return {
@@ -94,26 +96,30 @@ export function getPackageTableDefinition(
         icon: 'pi pi-pencil',
         tooltip: translate.instant('pages.package_management.edit_package'),
         color: 'warning',
+        visible: () => permissions.hasPolicy(Policy.CanUpdatePackage),
         onClick: (row: PackageListItem) => defs.onEdit(row),
       },
       {
         icon: 'pi pi-ban',
         tooltip: translate.instant('pages.package_management.deactivate_package'),
         color: 'danger',
-        visible: () => defs.getIsActiveFilter() !== false,
+        visible: () =>
+          defs.getIsActiveFilter() !== false && permissions.hasPolicy(Policy.CanUpdatePackage),
         onClick: (row: PackageListItem) => defs.onDeactivate(row),
       },
       {
         icon: 'pi pi-check-circle',
         tooltip: translate.instant('pages.package_management.activate_package'),
         color: 'success',
-        visible: () => defs.getIsActiveFilter() !== true,
+        visible: () =>
+          defs.getIsActiveFilter() !== true && permissions.hasPolicy(Policy.CanUpdatePackage),
         onClick: (row: PackageListItem) => defs.onActivate(row),
       },
       {
         icon: 'pi pi-trash',
         tooltip: translate.instant('pages.package_management.delete_package'),
         color: 'danger',
+        visible: () => permissions.hasPolicy(Policy.CanDeletePackage),
         onClick: (row: PackageListItem) => defs.onDelete(row),
       },
     ],

@@ -4,7 +4,7 @@ namespace Cleansia.Core.Domain.Enums;
 
 /// <summary>
 /// ADR-0034 D5. Presence of the record makes a profile complete; only <see cref="Provided"/> lets a
-/// payout invoice be issued (D7).
+/// payout invoice be approved (D7 — the gate sits at approval, not issuance, since 2026-09-12).
 /// <para>Never reorder — the integers are persisted.</para>
 /// </summary>
 [SwaggerEnumAsInt]

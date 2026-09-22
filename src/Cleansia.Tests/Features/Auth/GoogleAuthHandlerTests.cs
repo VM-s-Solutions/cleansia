@@ -1,11 +1,14 @@
+using Cleansia.Core.AppServices.Auditing;
 using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Auth;
 using Cleansia.Core.AppServices.Services.Interfaces;
+using Cleansia.Core.AppServices.Tenancy;
 using Cleansia.Core.AppServices.Shared.DTOs.ResponseModels;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Users;
+using Cleansia.Infra.Common.Configuration.Interfaces;
 using Cleansia.TestUtilities.MockDataFactories.Users;
 using Moq;
 
@@ -39,7 +42,7 @@ namespace Cleansia.Tests.Features.Auth;
 /// </summary>
 public class GoogleAuthHandlerTests
 {
-    private const string HostAudience = "customer";
+    private const string HostAudience = JwtAudiences.Customer;
 
     private readonly Mock<ITokenService> _tokenService = new();
     private readonly Mock<ICartRepository> _cartRepository = new();
@@ -61,7 +64,11 @@ public class GoogleAuthHandlerTests
             _tokenService.Object,
             _cartRepository.Object,
             _userRepository.Object,
-            _hostAudience)!;
+            _hostAudience,
+            new Mock<IConsentService>().Object,
+            new Mock<ILegalDocumentResolver>().Object,
+            new AuditContext(),
+            Mock.Of<ICompanySignInGate>())!;
 
     // Defaults to the signup screen's shape so the provisioning branch stays reachable; the sign-in
     // screen sends no tick and its tests pass termsAccepted: false explicitly.

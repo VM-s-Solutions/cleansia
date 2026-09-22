@@ -1,3 +1,4 @@
+using Cleansia.Core.Domain.Common;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Users;
 
@@ -23,7 +24,6 @@ public class EmployeePayoutProfileGateTests
         employee.UpdateEmployeeDetails(
             entityType: EmployeeEntityType.NaturalPerson,
             registrationNumber: "12345678",
-            vatNumber: null,
             legalEntityName: null,
             nationalityId: "country-cz",
             passportId: "P1234567",
@@ -74,6 +74,24 @@ public class EmployeePayoutProfileGateTests
         employee.ClearPayoutDetails();
 
         Assert.False(employee.IsProfileComplete());
+    }
+
+    /// <summary>
+    /// Erasure overwrites the legacy column with the marker rather than clearing it; the marker is not a
+    /// destination, so an anonymised cleaner does not read as payable.
+    /// </summary>
+    [Fact]
+    public void An_Anonymised_Cleaner_Has_No_Payout_Destination()
+    {
+        var employee = CompleteExceptPayout();
+        employee.UpdateBankDetails("CZ6508000000192000145399");
+        employee.MarkPayoutDetailsProvided();
+
+        employee.Anonymize();
+
+        Assert.Equal(AnonymizationMarker.Value, employee.IBAN);
+        Assert.False(employee.IsProfileComplete());
+        Assert.Contains("profile.fields.iban", employee.GetMissingProfileFields());
     }
 
     /// <summary>

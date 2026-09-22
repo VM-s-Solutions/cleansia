@@ -1,4 +1,6 @@
 using System.Text.Json;
+using Microsoft.EntityFrameworkCore;
+using Cleansia.Core.Domain.Common;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Repositories;
@@ -9,9 +11,12 @@ using Microsoft.Extensions.Logging;
 namespace Cleansia.Functions.Core.Handlers;
 
 /// <summary>
-/// Realizes the account-creation / password-reset email off the request path. The four auth handlers
-/// record this intent post-commit; this consumer resolves the template by <see cref="EmailType"/> and
-/// sends via the existing <see cref="IEmailService"/>, preserving the language the producer chose.
+/// Realizes every e-mail the send-email queue carries, off the request path. The queue holds three
+/// payload shapes told apart by their <c>messageType</c> discriminator: the bare
+/// <see cref="SendEmailMessage"/> (no discriminator; confirmation, reset, promo and the two wind-down
+/// notices, resolved by <see cref="EmailType"/>), the guest order cancellation, and the admin
+/// notification. Each is sent via the existing <see cref="IEmailService"/> in the language the
+/// producer chose.
 ///
 /// Idempotent via <see cref="IIdempotencyGuard"/> in ACT-THEN-CLAIM mode (at-least-once): non-claiming
 /// check on the deterministic key → send → claim. A FAILED send leaves the key unclaimed so the queue
@@ -27,13 +32,49 @@ public class SendEmailHandler(
     IIdempotencyGuard idempotencyGuard,
     ITenantProvider tenantProvider,
     IPromoCodeRepository promoCodeRepository,
-    ILogger<SendEmailHandler> logger)
+    ITenantRepository tenantRepository,
+    ICompanyInfoRepository companyInfoRepository,
+    ILogger<SendEmailHandler> logger,
+    IOrderRepository orderRepository)
 {
     private static readonly JsonSerializerOptions JsonOptions =
         new() { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
 
     public async Task HandleAsync(string messageText, CancellationToken ct)
     {
+        SendGuestOrderCancellationEmailMessage? guestMessage;
+        SendAdminNotificationEmailMessage? adminMessage;
+        string? discriminatedTenantId;
+        try
+        {
+            using var document = JsonDocument.Parse(messageText);
+            var root = document.RootElement;
+            if (root.ValueKind != JsonValueKind.Object) return;
+            var payload = root.TryGetProperty("payload", out var nested) ? nested : root;
+            var messageType = payload.ValueKind == JsonValueKind.Object && payload.TryGetProperty("messageType", out var kind)
+                && kind.ValueKind == JsonValueKind.String ? kind.GetString() : null;
+            guestMessage = messageType == "guest-order-cancelled"
+                ? payload.Deserialize<SendGuestOrderCancellationEmailMessage>(JsonOptions) : null;
+            adminMessage = messageType == SendAdminNotificationEmailMessage.Discriminator
+                ? payload.Deserialize<SendAdminNotificationEmailMessage>(JsonOptions) : null;
+            discriminatedTenantId = root.TryGetProperty("tenantId", out var tenant) && tenant.ValueKind == JsonValueKind.String ? tenant.GetString() : null;
+        }
+        catch (JsonException ex)
+        {
+            logger.LogWarning(ex, "Discarding email message: malformed body (permanent)");
+            return;
+        }
+        if (guestMessage is not null)
+        {
+            await SendGuestCancellationAsync(guestMessage, discriminatedTenantId, ct);
+            return;
+        }
+        if (adminMessage is not null)
+        {
+            await SendAdminNotificationAsync(adminMessage, discriminatedTenantId, ct);
+            return;
+        }
+
         SendEmailMessage? message;
         string? envelopeTenantId;
         try
@@ -116,6 +157,80 @@ public class SendEmailHandler(
         }
     }
 
+    private async Task SendGuestCancellationAsync(
+        SendGuestOrderCancellationEmailMessage message, string? envelopeTenantId, CancellationToken ct)
+    {
+        var tenantId = envelopeTenantId ?? message.TenantId;
+        if (string.IsNullOrWhiteSpace(message.OrderId) || string.IsNullOrWhiteSpace(tenantId))
+        {
+            logger.LogWarning("Discarding guest cancellation email with no order or operator");
+            return;
+        }
+        var key = MessageKeys.GuestOrderCancelledEmail(message.OrderId);
+        if (await idempotencyGuard.HasProcessedAsync(key, ct)) return;
+
+        tenantProvider.SetTenantOverride(tenantId);
+        var order = await orderRepository.GetQueryable()
+            .Include(o => o.Currency).Include(o => o.CustomerAddress)
+            .AsNoTracking()
+            .FirstOrDefaultAsync(o => o.Id == message.OrderId && o.UserId == null
+                && o.CurrentStatus == OrderStatus.Cancelled && o.CancelledBy == CancelledBy.Customer, ct);
+        if (order is null || string.IsNullOrWhiteSpace(order.CustomerEmail)
+            || order.CustomerEmail == AnonymizationMarker.Value)
+        {
+            logger.LogWarning("Discarding guest cancellation email: order {OrderId} has no eligible destination", message.OrderId);
+            return;
+        }
+
+        await emailService.SendOrderStatusUpdateEmailAsync(order.CustomerEmail, order, "Cancelled",
+            message.LanguageCode, ct, message.SuccessfulRefundAmount);
+        try
+        {
+            await idempotencyGuard.MarkProcessedAsync(key, ct);
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(ex, "Guest cancellation email sent for order {OrderId}, but its delivery claim failed", order.Id);
+        }
+    }
+
+    // Act-then-claim like the two shapes beside it: the send is the only thing that may throw, and it
+    // throws so the runtime retries and dead-letters; a body the producer could never have written acks.
+    private async Task SendAdminNotificationAsync(
+        SendAdminNotificationEmailMessage message, string? envelopeTenantId, CancellationToken ct)
+    {
+        if (string.IsNullOrWhiteSpace(message.EventKey) || string.IsNullOrWhiteSpace(message.Subject)
+            || string.IsNullOrWhiteSpace(message.Email) || message.Args is null)
+        {
+            logger.LogWarning("Discarding admin notification email with no event, subject, address or args (permanent)");
+            return;
+        }
+
+        var key = MessageKeys.AdminNotificationEmail(message.EventKey, message.Subject, message.Email);
+        if (await idempotencyGuard.HasProcessedAsync(key, ct))
+        {
+            logger.LogInformation("Admin notification email {MessageKey} already sent, skipping (idempotent)", key);
+            return;
+        }
+
+        var tenantId = envelopeTenantId ?? message.TenantId;
+        if (!string.IsNullOrWhiteSpace(tenantId))
+        {
+            tenantProvider.SetTenantOverride(tenantId);
+        }
+
+        await emailService.SendAdminNotificationEmailAsync(message.Email, message.EventKey, message.Args, message.LanguageCode, ct);
+
+        try
+        {
+            await idempotencyGuard.MarkProcessedAsync(key, ct);
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(ex, "Admin notification email {MessageKey} sent, but its delivery claim failed — acking; a redelivery may duplicate it", key);
+        }
+    }
+
     private Task SendAsync(SendEmailMessage message, CancellationToken ct) => message.EmailType switch
     {
         EmailType.ConfirmationEmail =>
@@ -126,8 +241,39 @@ public class SendEmailHandler(
         // not carry — they live on the row the command just wrote, keyed by the
         // same code. Reading them here keeps the message shape unchanged.
         EmailType.PromoCode => SendPromoAsync(message, ct),
+        // The wind-down notice names the company as its receipts do and the last day of service —
+        // both on the company's own rows, read under the override the envelope set, so the message
+        // shape stays the frozen one.
+        EmailType.CompanyWindDownCustomer => SendCompanyWindDownAsync(message, ct),
+        EmailType.CompanyWindDownCleaner => SendCompanyWindDownAsync(message, ct),
         _ => throw new InvalidOperationException($"Unsupported email type for the send-email queue: {message.EmailType}"),
     };
+
+    private async Task SendCompanyWindDownAsync(SendEmailMessage message, CancellationToken ct)
+    {
+        var tenantId = tenantProvider.GetCurrentTenantId();
+        var company = string.IsNullOrEmpty(tenantId) ? null : await tenantRepository.GetByIdAsync(tenantId, ct);
+        if (company?.WindDownFrom is not { } windDownFrom)
+        {
+            // The date was cleared by a reactivation after the notice was enqueued. Like a promo code
+            // deleted after its e-mail was queued, this throws rather than acks: the poison row is how
+            // a person learns a notice was asked for and not sent.
+            throw new InvalidOperationException(
+                $"Company {tenantId} has no wind-down date; refusing to send a wind-down notice for it.");
+        }
+
+        var companyNames = await companyInfoRepository.GetActiveLegalNamesAsync(ct);
+
+        if (message.EmailType == EmailType.CompanyWindDownCleaner)
+        {
+            await emailService.SendCompanyWindDownCleanerNoticeAsync(
+                message.Email, message.UserName, companyNames, windDownFrom, message.LanguageCode, ct);
+            return;
+        }
+
+        await emailService.SendCompanyWindDownCustomerNoticeAsync(
+            message.Email, message.UserName, companyNames, windDownFrom, message.LanguageCode, ct);
+    }
 
     private async Task SendPromoAsync(SendEmailMessage message, CancellationToken ct)
     {

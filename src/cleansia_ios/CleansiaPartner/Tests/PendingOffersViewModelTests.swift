@@ -6,9 +6,11 @@ import XCTest
 @testable import CleansiaPartner
 
 /// "Confirming IS taking" — there is no confirm endpoint, and a UI that called anything else would be a
-/// second acquisition path beside `TakeOrder`'s single ordered chain. The refusal cases matter as much
-/// as the happy one: a reservation spends no capacity, so a capped cleaner can be reserved a job and
-/// then refused the confirm, and that refusal has to read as the platform's problem.
+/// second acquisition path beside `TakeOrder`'s single ordered chain. The take itself now runs inside
+/// the contract sheet, so a confirm opens the sheet and its verdict comes back as an outcome. The
+/// refusal cases matter as much as the happy one: a reservation spends no capacity, so a capped cleaner
+/// can be reserved a job and then refused the confirm, and that refusal has to read as the platform's
+/// problem.
 @MainActor
 final class PendingOffersViewModelTests: XCTestCase {
     private var client: FakePartnerOrderClient!
@@ -28,12 +30,7 @@ final class PendingOffersViewModelTests: XCTestCase {
     }
 
     private func makeVM() -> PendingOffersViewModel {
-        PendingOffersViewModel(
-            store: store,
-            client: client,
-            staleness: ordersStaleness,
-            snackbar: snackbar
-        )
+        PendingOffersViewModel(store: store, staleness: ordersStaleness, snackbar: snackbar)
     }
 
     private func rows(_ state: UiState<[PendingOfferItem]>) -> [String] {
@@ -43,6 +40,17 @@ final class PendingOffersViewModelTests: XCTestCase {
     private func isError(_ state: UiState<[PendingOfferItem]>) -> Bool {
         if case .error = state { return true }
         return false
+    }
+
+    /// The sheet took the seat, or was refused: the offers list hears it as the confirm's verdict.
+    private func confirmed(_ vm: PendingOffersViewModel, _ id: String) async {
+        vm.confirm(.sample(id: id))
+        await vm.onWorkContractOutcome(.taken(orderId: id))
+    }
+
+    private func confirmRefused(_ vm: PendingOffersViewModel, _ id: String, _ key: String) async {
+        vm.confirm(.sample(id: id))
+        await vm.onWorkContractOutcome(.refused(.take(orderId: id), ApiError(code: key, httpStatus: 400)))
     }
 
     func testTheListRendersExactlyWhatTheServerSentCoarseAddressIncluded() async {
@@ -134,11 +142,37 @@ final class PendingOffersViewModelTests: XCTestCase {
         XCTAssertEqual(vm.actionState, .idle)
     }
 
-    /// Confirming is `TakeOrder` — the shipped command with its one ordered `Cascade.Stop` chain. A UI
-    /// that reached for anything else would have built a second, weaker take gate. This is the killer
-    /// for that: the client seam records every command by name, so a confirm routed anywhere else
-    /// changes this list.
-    func testConfirmingTakesTheOrderThroughTakeOrderAndNothingElse() async {
+    /// Confirming is `TakeOrder` — the shipped command with its one ordered `Cascade.Stop` chain, run by
+    /// the contract sheet on the swipe. A UI that reached for anything else would have built a second,
+    /// weaker take gate, so the confirm writes nothing here: it opens the sheet on the offer's own id,
+    /// and only the sheet's verdict moves the list.
+    func testConfirmingOpensTheContractSheetOnTheOfferAndWritesNothing() async {
+        client.pendingOffersResult = .success([.sample(id: "a")])
+        let vm = makeVM()
+        await vm.load()
+
+        vm.confirm(.sample(id: "a"))
+
+        XCTAssertEqual(vm.contractRequest, .take(orderId: "a"))
+        XCTAssertTrue(client.commands.isEmpty)
+        XCTAssertTrue(client.pendingOfferCommands.isEmpty, "a confirm must not reach the decline endpoint")
+        XCTAssertEqual(vm.actionState, .idle)
+    }
+
+    func testDismissingTheSheetLeavesTheOfferAsItWas() async {
+        client.pendingOffersResult = .success([.sample(id: "a")])
+        let vm = makeVM()
+        await vm.load()
+        vm.confirm(.sample(id: "a"))
+
+        vm.dismissContract()
+
+        XCTAssertNil(vm.contractRequest)
+        XCTAssertEqual(rows(vm.state), ["a"])
+        XCTAssertNil(vm.attempt)
+    }
+
+    func testATakenOutcomeClosesTheSheetAndOpensTheJob() async {
         client.pendingOffersResult = .success([.sample(id: "a")])
         let vm = makeVM()
         await vm.load()
@@ -146,12 +180,13 @@ final class PendingOffersViewModelTests: XCTestCase {
         var opened: [String] = []
         vm.confirmed.sink { opened.append($0) }.store(in: &cancellables)
 
-        await vm.confirm(.sample(id: "a"))
+        await confirmed(vm, "a")
 
-        XCTAssertEqual(client.commands.map(\.name), ["take"])
-        XCTAssertEqual(client.commands.map(\.orderId), ["a"])
+        XCTAssertNil(vm.contractRequest)
         XCTAssertTrue(client.pendingOfferCommands.isEmpty, "a confirm must not reach the decline endpoint")
         XCTAssertEqual(opened, ["a"])
+        XCTAssertEqual(vm.actionState, .idle)
+        XCTAssertNil(vm.attempt)
     }
 
     /// A confirmed offer is an ordinary job from that instant on, so the board and the job the cleaner
@@ -164,7 +199,7 @@ final class PendingOffersViewModelTests: XCTestCase {
         ordersStaleness.markPaneFresh(.active)
         ordersStaleness.markOrderFresh("a")
 
-        await vm.confirm(.sample(id: "a"))
+        await confirmed(vm, "a")
 
         XCTAssertTrue(ordersStaleness.isPaneStale(.available))
         XCTAssertTrue(ordersStaleness.isPaneStale(.active))
@@ -179,9 +214,8 @@ final class PendingOffersViewModelTests: XCTestCase {
         client.pendingOffersResult = .success([.sample(id: "a")])
         let vm = makeVM()
         await vm.load()
-        client.commandResult = .failure(ApiError(code: weeklyCapKey, httpStatus: 400))
 
-        await vm.confirm(.sample(id: "a"))
+        await confirmRefused(vm, "a", weeklyCapKey)
 
         let expected = ApiErrorLocalizer().message(for: ApiError(code: weeklyCapKey, httpStatus: 400))
         XCTAssertNotEqual(expected, weeklyCapKey, "the cap's key must resolve to a sentence, not render raw")
@@ -197,9 +231,8 @@ final class PendingOffersViewModelTests: XCTestCase {
         client.pendingOffersResult = .success([.sample(id: "a")])
         let vm = makeVM()
         await vm.load()
-        client.commandResult = .failure(ApiError(code: weeklyCapKey, httpStatus: 400))
 
-        await vm.confirm(.sample(id: "a"))
+        await confirmRefused(vm, "a", weeklyCapKey)
 
         XCTAssertNil(snackbar.current)
     }
@@ -209,9 +242,8 @@ final class PendingOffersViewModelTests: XCTestCase {
         let vm = makeVM()
         await vm.load()
         let afterLoad = client.pendingOffersCallCount
-        client.commandResult = .failure(ApiError(code: "order.no_available_spots", httpStatus: 400))
 
-        await vm.confirm(.sample(id: "a"))
+        await confirmRefused(vm, "a", "order.no_available_spots")
 
         XCTAssertEqual(client.pendingOffersCallCount, afterLoad + 1)
         XCTAssertFalse(isError(vm.state))
@@ -221,9 +253,8 @@ final class PendingOffersViewModelTests: XCTestCase {
         client.pendingOffersResult = .success([.sample(id: "a")])
         let vm = makeVM()
         await vm.load()
-        client.commandResult = .failure(ApiError(code: weeklyCapKey, httpStatus: 400))
 
-        await vm.confirm(.sample(id: "a"))
+        await confirmRefused(vm, "a", weeklyCapKey)
 
         XCTAssertEqual(vm.refusal?.kind, .confirm)
         XCTAssertEqual(vm.refusal?.displayOrderNumber, "CL-a")
@@ -247,8 +278,7 @@ final class PendingOffersViewModelTests: XCTestCase {
         client.pendingOffersResult = .success([.sample(id: "a")])
         let vm = makeVM()
         await vm.load()
-        client.commandResult = .failure(ApiError(code: weeklyCapKey, httpStatus: 400))
-        await vm.confirm(.sample(id: "a"))
+        await confirmRefused(vm, "a", weeklyCapKey)
 
         vm.dismissRefusal()
 
@@ -257,25 +287,24 @@ final class PendingOffersViewModelTests: XCTestCase {
         XCTAssertEqual(rows(vm.state), ["a"])
     }
 
-    /// The rival is awaited directly rather than raced on a second task, so its body has provably run
-    /// past the guard before anything is asserted — a "not called" assertion made before the rival
-    /// dispatched passes with no guard at all.
-    func testASecondActionWhileOneIsInFlightIsRefused() async {
+    /// A confirm while a release is still in flight opens no sheet: the sheet would take a seat under a
+    /// list that is mid-write. The take's own re-entry guard lives in the sheet.
+    func testAConfirmWhileAReleaseIsInFlightOpensNoSheet() async {
         client.pendingOffersResult = .success([.sample(id: "a"), .sample(id: "b")])
         let vm = makeVM()
         await vm.load()
         client.suspendCommands = true
 
-        let first = Task { await vm.confirm(.sample(id: "a")) }
-        while client.commands.isEmpty {
+        let first = Task { await vm.decline(.sample(id: "a")) }
+        while client.pendingOfferCommands.isEmpty {
             await Task.yield()
         }
 
-        await vm.decline(.sample(id: "b"))
+        vm.confirm(.sample(id: "b"))
 
-        XCTAssertTrue(client.pendingOfferCommands.isEmpty)
+        XCTAssertNil(vm.contractRequest)
         XCTAssertEqual(vm.actionState, .submitting)
-        XCTAssertEqual(vm.attempt?.action, .confirm)
+        XCTAssertEqual(vm.attempt?.action, .decline)
 
         client.resumeCommand()
         await first.value

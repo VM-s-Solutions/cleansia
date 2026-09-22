@@ -1,3 +1,4 @@
+using Cleansia.Core.AppServices.Auditing;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Bookings;
 using Cleansia.Core.Domain.Bookings;
@@ -5,6 +6,7 @@ using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Memberships;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Users;
+using Cleansia.Tests.Features.Orders;
 using Moq;
 
 namespace Cleansia.Tests.Features.Bookings;
@@ -51,7 +53,7 @@ public class CreateRecurringBookingPreferredCleanerTests
             .Setup(r => r.GetByUserAsync(UserId, It.IsAny<CancellationToken>()))
             .ReturnsAsync([ArrangeSavedAddress()]);
         _membershipRepository
-            .Setup(r => r.GetActiveForUserNoTrackingAsync(UserId, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetEntitledForUserNoTrackingAsync(UserId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(ArrangeActiveMembership());
     }
 
@@ -177,14 +179,21 @@ public class CreateRecurringBookingPreferredCleanerTests
     }
 
     private CreateRecurringBooking.Validator CreateValidator() =>
-        new(_orderRepository.Object, _session.Object);
+        new(
+            _orderRepository.Object,
+            _session.Object,
+            _savedAddressRepository.Object,
+            OrderMarketDoubles.Trading(CreateOrderTestData.DefaultCurrency()),
+            OrderMarketDoubles.Servicing("country-cz"));
 
     private CreateRecurringBooking.Handler CreateHandler() =>
         new(
             _templateRepository.Object,
             _savedAddressRepository.Object,
             _membershipRepository.Object,
-            _session.Object);
+            _session.Object,
+            Cleansia.Tests.Features.Orders.OrderMarketDoubles.OperatedBy("cleansia-cz"),
+            new AuditContext());
 
     private static CreateRecurringBooking.Command CommandWith(string? preferredEmployeeId) =>
         new(
@@ -217,8 +226,6 @@ public class CreateRecurringBookingPreferredCleanerTests
         var plan = MembershipPlan.Create(
             code: "PLUS",
             name: "Cleansia Plus",
-            monthlyPriceCzk: 199m,
-            stripePriceId: "price_plus",
             discountPercentage: 10m,
             freeCancellationWindowHours: 4,
             allowsExpressUpgrade: true);
@@ -226,6 +233,7 @@ public class CreateRecurringBookingPreferredCleanerTests
         return UserMembership.Create(
             userId: UserId,
             membershipPlanId: plan.Id,
+            currencyId: "currency-czk",
             stripeSubscriptionId: "sub_1",
             currentPeriodStart: DateTime.UtcNow.AddDays(-1),
             currentPeriodEnd: DateTime.UtcNow.AddMonths(1));

@@ -20,6 +20,7 @@ struct Invoice: Equatable, Identifiable {
     let totalOrders: Int
     let totalAmount: Double
     let currencyCode: String?
+    let currencyId: String?
     let status: EmployeeInvoiceStatus
     let generatedAt: Date?
     let paidAt: Date?
@@ -33,6 +34,7 @@ extension Invoice {
         totalOrders = try dto.totalOrders.require("totalOrders")
         totalAmount = try dto.totalAmount.require("totalAmount")
         currencyCode = dto.currencyCode
+        currencyId = dto.currencyId
         status = try dto.status.require("status")
         generatedAt = dto.generatedAt
         paidAt = dto.paidAt
@@ -60,6 +62,9 @@ struct InvoiceDetail: Equatable, Identifiable {
     let deductionAmount: Double
     let totalAmount: Double
     let currencyCode: String?
+    /// The currency view My Pay asks for when opened from this invoice, so the period it shows is
+    /// the one this invoice settles even when the cleaner's resolved currency is another.
+    let currencyId: String?
     let status: EmployeeInvoiceStatus
     let pdfGenerationFailed: Bool
     let generatedAt: Date?
@@ -83,6 +88,7 @@ extension InvoiceDetail {
         deductionAmount = try dto.deductionAmount.require("deductionAmount")
         totalAmount = try dto.totalAmount.require("totalAmount")
         currencyCode = dto.currencyCode
+        currencyId = dto.currencyId
         status = try dto.status.require("status")
         pdfGenerationFailed = try dto.pdfGenerationFailed.require("pdfGenerationFailed")
         generatedAt = dto.generatedAt
@@ -107,6 +113,10 @@ struct PeriodPaySummary: Equatable {
     let totalBonusPay: Double
     let totalDeductionPay: Double
     let grandTotal: Double
+    /// The one currency every figure above is in — the server's word, which the screen prefers over
+    /// the currency the route was opened with: when the period is invoiced only in another currency,
+    /// that invoice's own currency is what the summary carries.
+    let currencyCode: String?
     let orderPays: [OrderPayLine]
 }
 
@@ -120,6 +130,7 @@ extension PeriodPaySummary {
         totalBonusPay = try dto.totalBonusPay.require("totalBonusPay")
         totalDeductionPay = try dto.totalDeductionPay.require("totalDeductionPay")
         grandTotal = try dto.grandTotal.require("grandTotal")
+        currencyCode = dto.currencyCode
         orderPays = try (dto.orderPays ?? []).compactMap(OrderPayLine.init)
     }
 }

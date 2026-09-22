@@ -26,12 +26,12 @@
   </div>
   <!-- Actions row -->
   <div class="order-header-actions">
-    <button type="button" class="order-header-action-btn" (click)="onPrint.emit()">
+    <button type="button" class="order-header-action-btn" (click)="print.emit()">
       <i class="pi pi-print"></i>
       <span>{{ 'pages.order_details.print' | translate }}</span>
     </button>
     @if (hasInvoice()) {
-    <button type="button" class="order-header-action-btn" (click)="onDownloadInvoice.emit()">
+    <button type="button" class="order-header-action-btn" (click)="downloadInvoice.emit()">
       <i class="pi pi-download"></i>
       <span>{{ 'pages.order_details.download_invoice' | translate }}</span>
     </button>

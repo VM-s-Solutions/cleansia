@@ -73,6 +73,7 @@ import cz.cleansia.core.ui.components.SnapSheetState
 import cz.cleansia.core.ui.components.rememberSnapSheetState
 import cz.cleansia.core.ui.theme.Spacing
 import cz.cleansia.customer.R
+import cz.cleansia.customer.core.market.MarketState
 import cz.cleansia.customer.core.orders.OrderCurrencyDetailDto
 import cz.cleansia.customer.core.orders.OrderAddressDto
 import cz.cleansia.customer.core.orders.OrderDetailDto
@@ -114,6 +115,8 @@ fun OrderDetailScreen(
     onMakeRecurring: (orderId: String) -> Unit = {},
     @Suppress("UNUSED_PARAMETER") onDownloadReceipt: () -> Unit = {},
     onViewPhotos: () -> Unit = {},
+    /** Opens the accepted contract for work behind one crew member's acceptance line. */
+    onReadWorkContract: (acceptanceId: String) -> Unit = {},
     /**
      * Raise the review sheet as soon as the order resolves — the completion prompt's landing.
      *
@@ -125,6 +128,7 @@ fun OrderDetailScreen(
     viewModel: OrderDetailViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val markets by viewModel.markets.collectAsStateWithLifecycle()
     // Wave 4 — single ActionState replaces (cancelling, cancelError) etc.
     // The screen still derives the same boolean / message values from the
     // sealed variant; sheets receive those derived bits via their existing
@@ -134,6 +138,7 @@ fun OrderDetailScreen(
     val reviewState by viewModel.reviewState.collectAsStateWithLifecycle()
     val receiptDownloadState by viewModel.receiptDownloadState.collectAsStateWithLifecycle()
     val photosState by viewModel.photos.collectAsStateWithLifecycle()
+    val workContractAcceptances by viewModel.workContractAcceptances.collectAsStateWithLifecycle()
     // Wave 3.3 — recurring-confirm flow state. Submitting → CTA hides + spinner.
     val confirmRecurringState by viewModel.confirmRecurringState.collectAsStateWithLifecycle()
 
@@ -243,8 +248,12 @@ fun OrderDetailScreen(
                         } else {
                             com.stripe.android.paymentsheet.PaymentSheet.GooglePayConfiguration.Environment.Test
                         },
+                        // Stripe: "The two-letter ISO 3166 code of the country of your business" —
+                        // the merchant account, not the order.
                         countryCode = "CZ",
-                        currencyCode = "CZK",
+                        // The PaymentIntent's own currency wins on the sheet; this is the Google Pay
+                        // availability hint.
+                        currencyCode = (viewModel.state.value as? OrderDetailUiState.Loaded)?.order?.currency?.code,
                     ),
                     allowsDelayedPaymentMethods = false,
                 ),
@@ -270,9 +279,7 @@ fun OrderDetailScreen(
     // order to pull the status from; the other branches hide the footer.
     val loaded = state as? OrderDetailUiState.Loaded
     val status = loaded?.let { orderStatusFromValue(it.order.orderStatus?.value) }
-    val isCancellable = status == OrderStatus.New ||
-        status == OrderStatus.Pending ||
-        status == OrderStatus.Confirmed
+    val isCancellable by viewModel.canCancel.collectAsStateWithLifecycle()
     // Wave 2 Phase 6 — Report Issue is only meaningful AFTER the cleaning has
     // been picked up by a cleaner (Confirmed) and through Completed. New /
     // Pending / Cancelled are hidden because there's nothing to dispute yet.
@@ -317,7 +324,9 @@ fun OrderDetailScreen(
             LaunchedEffect(s.order.id) { viewModel.ensurePhotosLoaded() }
             OrderDetailMapLayout(
                 order = s.order,
+                markets = markets,
                 photosState = photosState,
+                workContractAcceptances = workContractAcceptances,
                 showCancel = isCancellable,
                 showReportIssue = canReportIssue,
                 showRebook = canRebook,
@@ -333,6 +342,7 @@ fun OrderDetailScreen(
                 onLeaveReview = { showReviewSheet = true },
                 onDownloadReceipt = { viewModel.downloadReceipt() },
                 onViewPhotos = onViewPhotos,
+                onReadWorkContract = onReadWorkContract,
                 onConfirmRecurring = { viewModel.confirmRecurring() },
             )
         }
@@ -414,7 +424,9 @@ fun OrderDetailScreen(
 @Composable
 private fun OrderDetailMapLayout(
     order: OrderDetailDto,
+    markets: MarketState,
     photosState: PhotosUiState,
+    workContractAcceptances: List<WorkContractAcceptanceLine>,
     showCancel: Boolean,
     showReportIssue: Boolean,
     showRebook: Boolean,
@@ -430,6 +442,7 @@ private fun OrderDetailMapLayout(
     onLeaveReview: () -> Unit,
     onDownloadReceipt: () -> Unit,
     onViewPhotos: () -> Unit,
+    onReadWorkContract: (acceptanceId: String) -> Unit,
     onConfirmRecurring: () -> Unit,
 ) {
     val status = orderStatusFromValue(order.orderStatus?.value)
@@ -493,9 +506,11 @@ private fun OrderDetailMapLayout(
     ) {
         OrderDetailSheetContent(
             order = order,
+            markets = markets,
             status = status,
             scrollState = contentScroll,
             photosState = photosState,
+            workContractAcceptances = workContractAcceptances,
             showCancel = showCancel,
             showReportIssue = showReportIssue,
             showRebook = showRebook,
@@ -510,6 +525,7 @@ private fun OrderDetailMapLayout(
             onLeaveReview = onLeaveReview,
             onDownloadReceipt = onDownloadReceipt,
             onViewPhotos = onViewPhotos,
+            onReadWorkContract = onReadWorkContract,
             onConfirmRecurring = onConfirmRecurring,
         )
     }
@@ -536,9 +552,11 @@ private fun MapFocusToggle(
 @Composable
 private fun OrderDetailSheetContent(
     order: OrderDetailDto,
+    markets: MarketState = MarketState.Unavailable,
     status: OrderStatus?,
     scrollState: ScrollState,
     photosState: PhotosUiState,
+    workContractAcceptances: List<WorkContractAcceptanceLine> = emptyList(),
     showCancel: Boolean,
     showReportIssue: Boolean,
     showRebook: Boolean,
@@ -553,6 +571,7 @@ private fun OrderDetailSheetContent(
     onLeaveReview: () -> Unit,
     onDownloadReceipt: () -> Unit,
     onViewPhotos: () -> Unit,
+    onReadWorkContract: (acceptanceId: String) -> Unit = {},
     onConfirmRecurring: () -> Unit,
 ) {
     // Wave 3.3 — Pending recurring-template orders need an explicit customer
@@ -640,6 +659,11 @@ private fun OrderDetailSheetContent(
             // Confirmation code and price. Everything that identifies the order is in the pinned
             // header above; this carries only what the header has no room for.
             OrderFactsStrip(order = order)
+            Text(
+                text = orderMarketLabel(order.countryId, order.currency?.code, markets),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
 
             // Sits right under the hero so it's the first thing the customer
             // sees after tapping the recurring-scheduled push.
@@ -688,6 +712,10 @@ private fun OrderDetailSheetContent(
 
             if (!order.assignedEmployees.isNullOrEmpty()) {
                 AssignedCleanersCard(order.assignedEmployees)
+            }
+
+            if (workContractAcceptances.isNotEmpty()) {
+                WorkContractCard(lines = workContractAcceptances, onRead = onReadWorkContract)
             }
 
             PriceBreakdownCard(order)
@@ -1150,11 +1178,15 @@ private fun SheetExpandedUkPreview() = PreviewSheet()
  * Mirrors `Cleansia.Core.Domain.Orders.OrderCancellationReasons` and the iOS twin
  * `CancellationReasonCopy`.
  */
-@Composable
-private fun cancellationReasonText(reason: String?): String? = when (reason) {
-    "order.cancelled.payment_not_completed" ->
-        stringResource(R.string.order_cancelled_reason_payment_not_completed)
-    "order.cancelled.recurring_not_confirmed" ->
-        stringResource(R.string.order_cancelled_reason_recurring_not_confirmed)
+@StringRes
+internal fun cancellationReasonRes(reason: String?): Int? = when (reason) {
+    "order.cancelled.payment_not_completed" -> R.string.order_cancelled_reason_payment_not_completed
+    "order.cancelled.recurring_not_confirmed" -> R.string.order_cancelled_reason_recurring_not_confirmed
+    "order.cancelled.company_wind_down" -> R.string.order_cancelled_reason_company_wind_down
+    "order.cancelled.no_cleaner_available" -> R.string.order_cancelled_reason_no_cleaner_available
     else -> null
 }
+
+@Composable
+private fun cancellationReasonText(reason: String?): String? =
+    cancellationReasonRes(reason)?.let { stringResource(it) }

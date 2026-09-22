@@ -1,5 +1,13 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, forwardRef, input, output } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  ChangeDetectorRef,
+  Component,
+  forwardRef,
+  inject,
+  input,
+  output,
+} from '@angular/core';
 import { FormsModule, NG_VALUE_ACCESSOR } from '@angular/forms';
 import { ErrorPipe } from '@cleansia/pipes';
 import { FloatLabelModule } from 'primeng/floatlabel';
@@ -49,9 +57,21 @@ export class CleansiaSelectComponent extends CleansiaBaseFormInputComponent {
 
   innerValue: unknown = null;
 
+  private readonly changeDetector = inject(ChangeDetectorRef);
+
+  // A value or a disabled state arrives through the accessor, not an input, so
+  // under OnPush nothing marks this view when a reactive control is set or
+  // disabled after the first render — the model would move without the rendered
+  // label following it. NgModel marks the host view itself; FormControl and
+  // FormControlName do not.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   override writeValue(value: any): void {
     this.innerValue = value ?? null;
+    this.changeDetector.markForCheck();
+  }
+
+  override setDisabledState(): void {
+    this.changeDetector.markForCheck();
   }
 
   handleChange(event: { value: unknown }): void {

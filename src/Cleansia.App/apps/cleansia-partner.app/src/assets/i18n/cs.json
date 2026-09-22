@@ -121,11 +121,7 @@
       "nationality": "Státní příslušnost",
       "national_id": "Číslo občanského průkazu / Pasu",
       "tax_id": "IČO",
-      "entity_type": "Typ podnikání",
-      "entity_type_natural_person": "Osoba samostatně výdělečně činná (OSVČ)",
-      "entity_type_legal_entity": "Právnická osoba (s.r.o., a.s., ...)",
       "registration_number": "Registrační číslo",
-      "vat_number": "DIČ",
       "legal_entity_name": "Název firmy",
       "bank_details": "Bankovní údaje pro výplatu",
       "iban": "IBAN",
@@ -361,6 +357,27 @@
         "filter_active": "aktivní",
         "filters_active": "aktivních",
         "clear_all": "Vymazat vše"
+      },
+      "work_contract": {
+        "title": "Smlouva o dílo",
+        "version_line": "Verze {{version}}, účinná od {{date}}",
+        "facts": {
+          "title": "Zakázka",
+          "order_number": "Číslo objednávky",
+          "window": "Datum a čas",
+          "price": "Cena",
+          "location": "Místo",
+          "rooms_bathrooms": "Pokoje / koupelny",
+          "services": "Služby",
+          "packages": "Balíčky",
+          "extras": "Doplňky"
+        },
+        "accept_checkbox": "Přečetl(a) jsem si smlouvu o dílo k této zakázce a přijímám ji",
+        "accept_and_take": "Přijmout a převzít zakázku",
+        "accept_only": "Přijmout smlouvu",
+        "load_failed": "Smlouvu se nepodařilo načíst. Zkuste to prosím znovu.",
+        "accepted_on": "Přijato {{date}}, verze {{version}}",
+        "accepted_in_language": "Přijato v jazyce: {{language}}"
       }
     },
     "order_details": {
@@ -452,7 +469,14 @@
       "mark_cash_collected_confirm_warning": "Tímto bude objednávka označena jako zaplacená. Tuto akci nelze vzít zpět.",
       "mark_cash_collected_confirm_action": "Ano, hotovost přijata",
       "mark_cash_collected_gating_error": "Hotovost lze přijmout pouze u probíhající a dosud nezaplacené objednávky",
-      "complete_missing_after_photos": "Objednávku nelze dokončit bez fotografií po úklidu"
+      "complete_missing_after_photos": "Objednávku nelze dokončit bez fotografií po úklidu",
+      "work_contract": {
+        "accepted_line": "Smlouvu o dílo jste přijal(a) {{date}}, verze {{version}}",
+        "read": "Přečíst smlouvu",
+        "pending_banner": "Před zahájením práce přijměte smlouvu o dílo",
+        "accept": "Přijmout smlouvu",
+        "accepted_success": "Smlouva o dílo byla přijata."
+      }
     },
     "invoices": {
       "title": "Moje mzdové faktury",
@@ -527,6 +551,8 @@
       "title": "Moje výplata za období",
       "description": "Přehled vaší výplaty za jednotlivá platební období – pouze pro čtení.",
       "pay_period": "Platební období",
+      "currency": "Měna",
+      "multiple_currencies_hint": "V tomto období jste byli vyplaceni ve více měnách. Vyberte, kterou chcete zobrazit.",
       "period_status_open": "Otevřené",
       "period_status_closed": "Uzavřené",
       "period_status_paid": "Vyplacené",
@@ -1030,6 +1056,14 @@
     }
   },
   "api": {
+    "contract": {
+      "not_accepted": "Před převzetím zakázky si prosím přečtěte a přijměte smlouvu o dílo.",
+      "text_mismatch": "Smlouva byla aktualizována — přečtěte si ji prosím znovu.",
+      "acceptance_required": "Než budete pokračovat, přijměte smlouvu o dílo k této zakázce."
+    },
+    "legal": {
+      "document_not_found": "Tuto zakázku nyní nelze převzít."
+    },
     "auth": {
       "google_type_error": "Tento účet používá přihlášení přes Google. Použijte tlačítko Google.",
       "apple_type_error": "Tento účet používá přihlášení přes Apple. Použijte tlačítko Apple.",
@@ -1047,7 +1081,8 @@
       "account_locked": "Příliš mnoho neúspěšných pokusů o přihlášení. Účet je dočasně uzamčen — zkuste to znovu za několik minut.",
       "too_many_attempts": "Příliš mnoho pokusů s tímto kódem. Vyžádejte si nový kód a zkuste to znovu.",
       "invalid_refresh_token": "Vaše relace vypršela. Přihlaste se prosím znovu.",
-      "refresh_token_reused": "Vaše relace byla použita jinde. Přihlaste se prosím znovu."
+      "refresh_token_reused": "Vaše relace byla použita jinde. Přihlaste se prosím znovu.",
+      "company_deactivated": "Vaše společnost byla deaktivována, partnerská aplikace vám proto již není k dispozici. Svá data můžete stále exportovat nebo smazat v zákaznické aplikaci."
     },
     "common": {
       "invalid_enum_value": "Neplatná hodnota výčtu",
@@ -1072,9 +1107,6 @@
       "invalid_zip_code": "Neplatný formát PSČ",
       "registration_number": {
         "invalid_format": "Neplatný formát IČO pro vybranou zemi"
-      },
-      "vat_number": {
-        "invalid_format": "Neplatný formát DIČ pro vybranou zemi"
       },
       "must_be_positive": "Hodnota musí být kladná",
       "invalid_availability_format": "Neplatný formát dostupnosti. Dny musí být platné názvy dnů nebo data (yyyy-MM-dd) a časové rozsahy musí mít začátek před koncem.",
@@ -1106,8 +1138,7 @@
       "not_found": "Měna nenalezena",
       "code_already_exists": "Měna s tímto kódem již existuje",
       "in_use": "Měnu nelze smazat, protože je aktuálně používána",
-      "cannot_delete_default": "Výchozí měnu nelze smazat",
-      "exchange_rate_must_be_positive": "Směnný kurz musí být kladné číslo"
+      "cannot_delete_default": "Výchozí měnu nelze smazat"
     },
     "email": {
       "invalid_format": "Neplatný formát e-mailu",
@@ -1185,7 +1216,8 @@
       "not_approved": "Váš účet není schválen pro práci na zakázkách",
       "already_approved": "Zaměstnanec již byl schválen",
       "already_rejected": "Zaměstnanec již byl zamítnut",
-      "job_radius_out_of_range": "Zadaný dojezdový okruh je mimo povolený rozsah"
+      "job_radius_out_of_range": "Zadaný dojezdový okruh je mimo povolený rozsah",
+      "legal_entity_not_accepted": "Úklidoví pracovníci s námi spolupracují jako fyzické osoby; firmu zde nelze registrovat"
     },
     "employee_document": {
       "not_found": "Dokument nenalezen",
@@ -1202,6 +1234,7 @@
         "not_found": "Faktura nenalezena",
         "invalid_status": "Neplatný stav faktury",
         "already_exists": "Faktura již existuje",
+        "already_paid": "Tato faktura je již zaplacena a nelze ji znovu vygenerovat",
         "pdf_generation_failed": "Nepodařilo se vygenerovat PDF",
         "template_not_found": "Šablona faktury nenalezena",
         "cannot_cancel_paid": "Nelze zrušit zaplacenou fakturu",
@@ -1270,6 +1303,12 @@
       "iso_code_already_exists": "Země s tímto ISO kódem již existuje",
       "in_use": "Zemi nelze smazat, protože je aktuálně používána",
       "not_serviced": "V této zemi zatím nepůsobíme"
+    },
+    "tenant": {
+      "not_found": "Tento trh zatím neprovozuje žádná společnost Cleansia."
+    },
+    "consent": {
+      "terms_not_accepted": "Pro pokračování prosím přijměte obchodní podmínky a zásady ochrany osobních údajů."
     },
     "gdpr": {
       "consent_not_found": "Toto nastavení souhlasu jsme nenašli",
@@ -1492,6 +1531,8 @@
       "email": "E-mail",
       "password": "Heslo",
       "confirm_password": "Potvrdit heslo",
+      "market": "Trh",
+      "market_placeholder": "Vyberte svůj trh",
       "terms_agreement": "Souhlasím s podmínkami",
       "terms_and_conditions": "Souhlasím s <a href='/gdpr' target='_blank'>Obchodními podmínkami a Zásadami ochrany osobních údajů</a>",
       "have_account": "Již máte účet?",

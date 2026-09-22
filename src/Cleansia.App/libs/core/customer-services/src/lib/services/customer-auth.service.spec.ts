@@ -2,18 +2,15 @@ import { TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
 import { AUTH_COOKIE_KEYS } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
-import { of, throwError } from 'rxjs';
+import { Observable, of } from 'rxjs';
 import { CustomerClient } from '../client/customer-base-client';
-import { ConsentType, GrantConsentCommand } from '../client/customer-client';
 import { CustomerAuthService } from './customer-auth.service';
 import { SESSION_LIFECYCLE_LISTENERS } from './session-lifecycle';
-import { SignupConsentService } from './signup-consent.service';
 
 describe('CustomerAuthService command payloads', () => {
   let service: CustomerAuthService;
   let authClient: Record<string, jest.Mock>;
   let userClient: Record<string, jest.Mock>;
-  let gdprClient: Record<string, jest.Mock>;
 
   function bodyAt(
     client: Record<string, jest.Mock>,
@@ -34,7 +31,7 @@ describe('CustomerAuthService command payloads', () => {
     TestBed.configureTestingModule({
       providers: [
         CustomerAuthService,
-        { provide: CustomerClient, useValue: { authClient, userClient, gdprClient } },
+        { provide: CustomerClient, useValue: { authClient, userClient } },
         { provide: Router, useValue: { navigate: jest.fn() } },
         {
           provide: TranslateService,
@@ -67,12 +64,6 @@ describe('CustomerAuthService command payloads', () => {
     userClient = {
       requestPasswordChange: jest.fn().mockReturnValue(of(true)),
     };
-    gdprClient = {
-      consentsGet: jest.fn().mockReturnValue(of([])),
-      consentsPost: jest.fn().mockReturnValue(of(undefined)),
-    };
-    localStorage.clear();
-
     configure('cs');
     service = TestBed.inject(CustomerAuthService);
   });
@@ -88,7 +79,7 @@ describe('CustomerAuthService command payloads', () => {
   });
 
   it('uppercases and trims the referral code on register', () => {
-    service.register('a@b.cz', 'pw', 'Jan', 'Novak', '  ref10 ').subscribe();
+    service.register('a@b.cz', 'pw', 'Jan', 'Novak', true, '  ref10 ').subscribe();
 
     expect(sentBody(authClient, 'register')).toEqual({
       email: 'a@b.cz',
@@ -97,13 +88,28 @@ describe('CustomerAuthService command payloads', () => {
       lastName: 'Novak',
       language: 'cs',
       referralCode: 'REF10',
+      termsAccepted: true,
     });
   });
 
   it('omits a whitespace-only referral code', () => {
-    service.register('a@b.cz', 'pw', 'Jan', 'Novak', '   ').subscribe();
+    service.register('a@b.cz', 'pw', 'Jan', 'Novak', true, '   ').subscribe();
 
     expect(sentBody(authClient, 'register')['referralCode']).toBeUndefined();
+  });
+
+  // The server records the tick and grants the two consents from it (ADR-0062 D4), so the
+  // assertion is a property of the register request itself — nothing client-side parks it.
+  it('asserts the ticked terms on the register request', () => {
+    service.register('a@b.cz', 'pw', 'Jan', 'Novak', true).subscribe();
+
+    expect(sentBody(authClient, 'register')['termsAccepted']).toBe(true);
+  });
+
+  it('never asserts a tick that was not given on register', () => {
+    service.register('a@b.cz', 'pw', 'Jan', 'Novak', false).subscribe();
+
+    expect(sentBody(authClient, 'register')['termsAccepted']).toBe(false);
   });
 
   it('sends the code and email on confirm', () => {
@@ -189,8 +195,7 @@ describe('CustomerAuthService command payloads', () => {
   });
 
   // Unlike email registration, both social branches settle the session inside the
-  // response pipeline — so anything the caller records in its own next handler is
-  // already too late for the flush that rides setSession.
+  // response pipeline, so a caller's next handler already acts as a signed-in user.
   it.each([
     ['google', () => service.signUpWithGoogle('tok', 'gid', 'a@b.cz', 'Jan', 'Novak')],
     ['apple', () => service.signUpWithApple('idtok', 'raw-nonce')],
@@ -200,6 +205,31 @@ describe('CustomerAuthService command payloads', () => {
     call().subscribe(() => (loggedInWhenResumed = service.isLoggedIn()));
 
     expect(loggedInWhenResumed).toBe(true);
+  });
+
+  // The market is the operator the anonymous request lands in (ADR-0061 D3); the
+  // service takes it from the caller because the store that holds the choice
+  // sits above this library.
+  it.each<[string, string, () => Observable<unknown>]>([
+    ['register', 'register', () => service.register('a@b.cz', 'pw', 'Jan', 'Novak', true, undefined, 'svk-id')],
+    ['google signup', 'googleAuth', () => service.signUpWithGoogle('tok', 'gid', 'a@b.cz', 'Jan', 'Novak', 'svk-id')],
+    ['google sign-in', 'googleAuth', () => service.signInWithGoogle('tok', 'gid', 'a@b.cz', 'Jan', 'Novak', 'svk-id')],
+    ['apple signup', 'appleAuth', () => service.signUpWithApple('idtok', 'raw-nonce', 'Jan', undefined, 'svk-id')],
+    ['apple sign-in', 'appleAuth', () => service.signInWithApple('idtok', 'raw-nonce', undefined, undefined, 'svk-id')],
+  ])('sends the chosen market on %s', (_, method, call) => {
+    call().subscribe();
+
+    expect(sentBody(authClient, method)['countryId']).toBe('svk-id');
+  });
+
+  it.each<[string, string, () => Observable<unknown>]>([
+    ['register', 'register', () => service.register('a@b.cz', 'pw', 'Jan', 'Novak', true, undefined, null)],
+    ['google signup', 'googleAuth', () => service.signUpWithGoogle('tok', 'gid', 'a@b.cz', 'Jan', 'Novak', null)],
+    ['apple signup', 'appleAuth', () => service.signUpWithApple('idtok', 'raw-nonce', 'Jan', undefined, null)],
+  ])('sends no market on %s when none is chosen, so the server picks its default', (_, method, call) => {
+    call().subscribe();
+
+    expect(sentBody(authClient, method)['countryId']).toBeUndefined();
   });
 
   it('sends the email and language on forgot password', () => {
@@ -234,74 +264,5 @@ describe('CustomerAuthService command payloads', () => {
     expect(sentBody(authClient, 'resendConfirmationEmail')['language']).toBe(
       'en'
     );
-  });
-});
-
-describe('CustomerAuthService signup consent delivery', () => {
-  let service: CustomerAuthService;
-  let signupConsent: SignupConsentService;
-  let gdprClient: Record<string, jest.Mock>;
-
-  function startSession(email: string): void {
-    service.setSession({
-      email,
-      csrfToken: 'csrf-value',
-      refreshTokenExpiresAt: new Date('2030-01-01T00:00:00Z'),
-    } as never);
-  }
-
-  beforeEach(() => {
-    localStorage.clear();
-    gdprClient = {
-      consentsGet: jest.fn().mockReturnValue(of([])),
-      consentsPost: jest.fn().mockReturnValue(of(undefined)),
-    };
-
-    TestBed.resetTestingModule();
-    TestBed.configureTestingModule({
-      providers: [
-        CustomerAuthService,
-        { provide: CustomerClient, useValue: { gdprClient } },
-        { provide: Router, useValue: { navigate: jest.fn() } },
-        {
-          provide: TranslateService,
-          useValue: { currentLang: 'cs', getDefaultLang: () => 'en' },
-        },
-        {
-          provide: AUTH_COOKIE_KEYS,
-          useValue: { csrfToken: 'csrf', refreshTokenExp: 'exp', role: 'role' },
-        },
-      ],
-    });
-
-    service = TestBed.inject(CustomerAuthService);
-    signupConsent = TestBed.inject(SignupConsentService);
-  });
-
-  it('grants the signup tick at the first session, keyed on the identity the server returned', () => {
-    signupConsent.record('jan@example.com');
-
-    startSession('jan@example.com');
-
-    const bodies = gdprClient['consentsPost'].mock.calls.map(([command]) => {
-      expect(command).toBeInstanceOf(GrantConsentCommand);
-      return (command as GrantConsentCommand).toJSON();
-    });
-    expect(bodies).toEqual([
-      { consentType: ConsentType.TermsOfService },
-      { consentType: ConsentType.PrivacyPolicy },
-    ]);
-  });
-
-  it('signs the user in even when the grant is refused', () => {
-    gdprClient['consentsPost'].mockReturnValue(
-      throwError(() => ({ errors: { '': 'common.error_occurred' } }))
-    );
-    signupConsent.record('jan@example.com');
-
-    expect(() => startSession('jan@example.com')).not.toThrow();
-
-    expect(service.isLoggedIn()).toBe(true);
-    expect(localStorage.getItem('csrf')).toBe('csrf-value');
   });
 });

@@ -1,6 +1,10 @@
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Users;
+using Cleansia.Core.AppServices.Services.Interfaces;
+using Cleansia.Core.Domain.Internationalization;
+using Moq;
+using Cleansia.TestUtilities;
 
 namespace Cleansia.Tests.Features.Orders;
 
@@ -16,6 +20,24 @@ namespace Cleansia.Tests.Features.Orders;
 /// </summary>
 internal static class ValidatorTestHelpers
 {
+    /// <summary>The currency every order built here is priced in.</summary>
+    public const string CurrencyId = "czk";
+
+    /// <summary>
+    /// A resolver that pays every cleaner in <paramref name="currencyId"/> — by default the one the
+    /// orders built here are priced in, so the currency gate is satisfied unless a case says otherwise.
+    /// </summary>
+    public static ICurrencyResolutionService CurrencyResolver(string currencyId = CurrencyId)
+    {
+        var currency = Currency.Create(currencyId.ToUpperInvariant(), currencyId, currencyId);
+        currency.Id = currencyId;
+        var resolver = new Mock<ICurrencyResolutionService>();
+        resolver
+            .Setup(s => s.ResolveCurrencyForEmployeeAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(currency);
+        return resolver.Object;
+    }
+
     /// <summary>
     /// What a built order's cleaning time defaults to when a case does not care. A day out, which is the
     /// value every call site was hard-coded to before the start-early gate existed — so the ~20 cases
@@ -47,15 +69,15 @@ internal static class ValidatorTestHelpers
             customerAddress: address,
             rooms: 1,
             bathrooms: 1,
-            extras: new Dictionary<string, bool>(),
             cleaningDateTime: cleaningDateTime ?? DefaultCleaningTime,
             paymentType: paymentType,
             totalPrice: 1000m,
-            currencyId: "czk",
+            currencyId: CurrencyId,
             paymentStatus: paymentStatus);
 
         order.Id = orderId;
         order.SetMaxEmployees(maxEmployees);
+        WorkContractTestData.BookedUnderContract(order);
 
         // OrderStatusHistory: append in chronological order. The validator
         // queries by max CreatedOn, so a single entry suffices but we add
@@ -105,7 +127,6 @@ internal static class ValidatorTestHelpers
             customerAddress: address,
             rooms: 1,
             bathrooms: 1,
-            extras: new Dictionary<string, bool>(),
             cleaningDateTime: cleaningDateTime ?? DefaultCleaningTime,
             paymentType: paymentType,
             totalPrice: 1000m,
@@ -115,6 +136,7 @@ internal static class ValidatorTestHelpers
 
         order.Id = orderId;
         order.SetMaxEmployees(maxEmployees);
+        WorkContractTestData.BookedUnderContract(order);
 
         var now = DateTimeOffset.UtcNow;
         var initial = OrderStatusTrack.Create(OrderStatus.New, order);

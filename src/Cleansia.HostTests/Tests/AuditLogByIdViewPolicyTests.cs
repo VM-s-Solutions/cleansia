@@ -22,8 +22,8 @@ namespace Cleansia.HostTests.Tests;
 /// </summary>
 public sealed class AuditLogByIdViewPolicyTests(HostTestPostgresFixture db) : AuthzHostTestBase(db)
 {
-    private const string TenantA = "tenant-A";
-    private const string TenantB = "tenant-B";
+    private const string TenantA = HostTestTenants.A;
+    private const string TenantB = HostTestTenants.B;
 
     private static string Route(string auditId) => $"/api/AdminAuditLog/get-by-id/{auditId}";
 

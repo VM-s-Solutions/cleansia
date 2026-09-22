@@ -32,6 +32,29 @@ order**, not merely on being a cleaner. A non-participant cannot advance somebod
 The customer-facing cancel is the mirror image: it is customer-only and checks `order.UserId` against
 the caller in the handler.
 
+## And not without the contract for work {#the-contract-gate}
+
+`StartOrder` **and** `CompleteOrder` refuse a cleaner whose **current seat** on the order has no
+acceptance of the contract for work — `contract.acceptance_required`, placed right after the
+assignment rule on both ([ADR-0068](/decisions/adr-0068) D3). A cleaner who *took* the job never
+meets it: the take wrote the acceptance with the seat. The gate exists for the seat an administrator
+formed — `AdminReassignOrder` writes no acceptance, because an admin cannot accept on the cleaner's
+behalf — and for a cleaner who dropped and was re-added (a new seat, no row).
+
+Both commands, not one: on a two-seat crew the second cleaner never calls Start (the order is already
+`InProgress`) but may complete, and Complete is the last act with a contract behind it — the one a
+claim turns on. `NotifyOnTheWay` is **not** gated; travel is not the work. The refusal sits **after**
+`order.employee_not_assigned`, so a cleaner not on the crew learns nothing about the contract, and
+before the clock rule, so a placed cleaner is told about the contract rather than about the time.
+
+The apps answer the key by opening the contract: the job detail already shows a banner (*Accept the
+contract for work before you start*) for an assigned cleaner with no acceptance, Start and Complete
+stay offered, and either refusal opens the same sheet in *accept* mode; `AcceptWorkContract` writes
+the row for that seat (idempotent — a second accept answers success with the same row) and the act
+proceeds. A cleaner placed on an in-progress job can accept and complete.
+→ [Offerability and the take — the take carries the acceptance](/flows/offerability-and-take#the-take-carries-the-acceptance),
+[Business rules — the contract for work](/product/business-rules#work-contract)
+
 ## And not before the job's own clock {#start-grace-window}
 
 `StartOrder` and `NotifyOnTheWay` are also gated on **time**: a job may be moved at most
@@ -67,12 +90,14 @@ explicitly classified as kept or stripped.
 | Case | What happens |
 |---|---|
 | Non-assigned cleaner tries to start/complete | Refused — the gate is assignment, not role. |
+| Admin-placed cleaner taps Start or Complete before accepting the contract | Refused with `contract.acceptance_required`; the app opens the contract, they accept, and the act goes through. A second crew member who neither starts nor completes is never prompted — the stated residual. |
 | Photos requested by a non-assignee | Refused by the strict access gate. Browsing detail is redacted; **photographs of a customer's home are not browsable at all**. |
 | Status moved out of order | Refused by the transition guard. |
 | Cleaner opens tomorrow's job and taps Start | Refused with `order.too_early_to_start` until the job is within an hour. |
 | Cleaner is early at the door — 09:50 for a 10:00 job | Allowed. The window is a grace, not an exact time; cleaners arrive early and the platform must not argue with that. |
 | Cleaner starts three hours late | Allowed and recorded. Late is a real thing that happened. |
-| Admin needs to force a status | A separate admin-only override, which is audited. |
+| Admin needs to force a status | A separate admin-only override, which is audited; strictly forward, refuses `Confirmed` on an order with nobody assigned (reassign instead), and dates an override to `Completed` so the order is revenue of a month. |
+| The last cleaner drops a job | The seat goes back on the board; a `Confirmed` order returns to `New`, one already on the way or in progress keeps its status; the company's administrators are told either way; the customer is not. → [When the last cleaner leaves](/product/business-rules#crew-lost) |
 | Live Activity token stale | The push is dropped; the activity ends on its own. |
 
 ## Entry instructions

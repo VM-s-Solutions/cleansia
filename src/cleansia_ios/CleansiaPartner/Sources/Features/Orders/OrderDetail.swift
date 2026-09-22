@@ -21,6 +21,8 @@ struct OrderDetail: Equatable {
     let rooms: Int
     let bathrooms: Int
     let crew: OrderCrew?
+    let seats: [OrderSeat]
+    let workContractAcceptances: [WorkContractAcceptance]
     let services: [OrderDetailService]
     let packages: [OrderDetailPackage]
     let extras: [String]
@@ -65,6 +67,61 @@ struct OrderDetailPackage: Equatable, Hashable {
         self.name = name
         self.price = price
         self.translations = translations
+    }
+}
+
+/// One crew entry: `id` is the SEAT (`OrderEmployee.Id`), which is what an acceptance names; the
+/// name and phone the wire also carries are not read here.
+///
+/// **Drop the row.** A seat with no id or no employee id pairs with nothing and nothing sums the
+/// crew, so a dropped entry falsifies no figure — while refusing would blank a detail the server
+/// answered correctly for every other member.
+struct OrderSeat: Equatable {
+    let id: String
+    let employeeId: String
+
+    init(id: String, employeeId: String) {
+        self.id = id
+        self.employeeId = employeeId
+    }
+
+    init?(_ dto: AssignedEmployeeDto) {
+        guard let id = dto.id, !id.isBlank, let employeeId = dto.employeeId, !employeeId.isBlank else { return nil }
+        self.id = id
+        self.employeeId = employeeId
+    }
+}
+
+/// A current seat's accepted contract for work, with no name — the crew entry it pairs with by seat id
+/// is where the (already masked) identity lives.
+///
+/// **Drop the row.** An acceptance with no id cannot be read, one with no seat id pairs with nothing,
+/// and one with no instant or no version has no line to write — the version is a NOT NULL column, so
+/// a blank is a broken wire, and the sheet's mapper refuses the same member. Any of them is the pending
+/// state to this screen, never a claim.
+struct WorkContractAcceptance: Equatable {
+    let id: String
+    let orderEmployeeId: String
+    let acceptedOn: Date
+    let documentVersion: String
+
+    init(id: String, orderEmployeeId: String, acceptedOn: Date, documentVersion: String) {
+        self.id = id
+        self.orderEmployeeId = orderEmployeeId
+        self.acceptedOn = acceptedOn
+        self.documentVersion = documentVersion
+    }
+
+    init?(_ dto: WorkContractAcceptanceDto) {
+        guard let id = dto.id, !id.isBlank,
+              let orderEmployeeId = dto.orderEmployeeId, !orderEmployeeId.isBlank,
+              let acceptedOn = dto.acceptedOn,
+              let documentVersion = dto.documentVersion, !documentVersion.isBlank
+        else { return nil }
+        self.id = id
+        self.orderEmployeeId = orderEmployeeId
+        self.acceptedOn = acceptedOn
+        self.documentVersion = documentVersion
     }
 }
 
@@ -193,6 +250,8 @@ extension OrderDetail {
         rooms = try item.rooms.require("rooms")
         bathrooms = try item.bathrooms.require("bathrooms")
         crew = try OrderCrew(item)
+        seats = item.assignedEmployees?.compactMap(OrderSeat.init) ?? []
+        workContractAcceptances = item.workContractAcceptances?.compactMap(WorkContractAcceptance.init) ?? []
         services = item.selectedServices?.compactMap { service in
             service.name.flatMap { $0.isEmpty ? nil : $0 }
                 .map { OrderDetailService(id: service.id, name: $0, translations: service.translations) }

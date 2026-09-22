@@ -11,6 +11,8 @@ struct MembershipPlan: Equatable, Identifiable {
     let allowsExpressUpgrade: Bool
     let trialPeriodDays: Int
     let savingsPercentVsMonthly: Double
+    /// The currency `price` is stated in — the market's, since a plan is priced per market.
+    let currencyCode: String
 
     var id: String {
         code
@@ -34,6 +36,11 @@ struct MyMembership: Equatable {
     let expressUpgradesPerMonth: Int?
     let expressUpgradesRemaining: Int?
     let trialEndsAtUtc: Date?
+    /// The subscription's own price and currency, fixed for its life — a market chosen later does
+    /// not relabel them. Nil without a membership, or when the plan's row in that currency is gone.
+    let price: Double?
+    let monthlyEquivalentPrice: Double?
+    let currencyCode: String?
 
     init(
         hasMembership: Bool,
@@ -47,7 +54,10 @@ struct MyMembership: Equatable {
         billingInterval: Int?,
         expressUpgradesPerMonth: Int? = nil,
         expressUpgradesRemaining: Int? = nil,
-        trialEndsAtUtc: Date? = nil
+        trialEndsAtUtc: Date? = nil,
+        price: Double? = nil,
+        monthlyEquivalentPrice: Double? = nil,
+        currencyCode: String? = nil
     ) {
         self.hasMembership = hasMembership
         self.planCode = planCode
@@ -61,6 +71,9 @@ struct MyMembership: Equatable {
         self.expressUpgradesPerMonth = expressUpgradesPerMonth
         self.expressUpgradesRemaining = expressUpgradesRemaining
         self.trialEndsAtUtc = trialEndsAtUtc
+        self.price = price
+        self.monthlyEquivalentPrice = monthlyEquivalentPrice
+        self.currencyCode = currencyCode
     }
 }
 

@@ -55,6 +55,9 @@
         <p-tabpanels>
           <!-- Revenue Report Tab -->
           <p-tabpanel value="revenue">
+            <p class="report-description">
+              {{ 'pages.reports.revenue_description' | translate }}
+            </p>
             @if (facade.loadingRevenue()) {
             <cleansia-loader />
             } @else if (facade.revenueReport()) {
@@ -67,12 +70,14 @@
                   </div>
                   <div class="summary-card__content">
                     <span class="summary-card__label">{{
-                      'pages.reports.total_revenue' | translate
+                      'pages.reports.net_revenue' | translate
                     }}</span>
                     <span class="summary-card__value">{{
-                      facade.formatCurrency(
-                        facade.revenueReport()?.totalRevenue
-                      )
+                      facade.revenueHeadline()
+                    }}</span>
+                    <span class="summary-card__subline">{{
+                      'pages.reports.gross_and_refunds'
+                        | translate : facade.revenueBreakdown()
                     }}</span>
                   </div>
                 </div>
@@ -86,23 +91,9 @@
                       'pages.reports.avg_order_value' | translate
                     }}</span>
                     <span class="summary-card__value">{{
-                      facade.formatCurrency(
+                      facade.formatRevenueAmount(
                         facade.revenueReport()?.averageOrderValue
                       )
-                    }}</span>
-                  </div>
-                </div>
-
-                <div class="summary-card">
-                  <div class="summary-card__icon">
-                    <i class="pi pi-shopping-cart"></i>
-                  </div>
-                  <div class="summary-card__content">
-                    <span class="summary-card__label">{{
-                      'pages.reports.total_orders' | translate
-                    }}</span>
-                    <span class="summary-card__value">{{
-                      facade.revenueReport()?.totalOrders || 0
                     }}</span>
                   </div>
                 </div>
@@ -113,10 +104,10 @@
                   </div>
                   <div class="summary-card__content">
                     <span class="summary-card__label">{{
-                      'pages.reports.completed_orders' | translate
+                      'pages.reports.completed_paid_orders' | translate
                     }}</span>
                     <span class="summary-card__value">{{
-                      facade.revenueReport()?.completedOrders || 0
+                      facade.revenueReport()?.totalOrders || 0
                     }}</span>
                   </div>
                 </div>
@@ -126,9 +117,14 @@
                     <i class="pi pi-times-circle"></i>
                   </div>
                   <div class="summary-card__content">
-                    <span class="summary-card__label">{{
-                      'pages.reports.cancelled_orders' | translate
-                    }}</span>
+                    <span class="summary-card__label">
+                      {{ 'pages.reports.cancelled_orders' | translate }}
+                      <i
+                        class="pi pi-info-circle summary-card__hint"
+                        [pTooltip]="'pages.reports.cancelled_orders_hint' | translate"
+                        tooltipPosition="top"
+                      ></i>
+                    </span>
                     <span class="summary-card__value">{{
                       facade.revenueReport()?.cancelledOrders || 0
                     }}</span>
@@ -204,6 +200,9 @@
                 <h3 class="data-section__title">
                   {{ 'pages.reports.revenue_by_payment_type' | translate }}
                 </h3>
+                <p class="data-section__hint">
+                  {{ 'pages.reports.revenue_by_payment_type_hint' | translate }}
+                </p>
                 <cleansia-table
                   [data]="facade.revenueReport()?.revenueByPaymentType || []"
                   [columns]="revenueByPaymentTypeColumns"
@@ -238,7 +237,7 @@
                       'pages.reports.total_payroll' | translate
                     }}</span>
                     <span class="summary-card__value">{{
-                      facade.formatCurrency(
+                      facade.formatPayrollAmount(
                         facade.payrollReport()?.totalPayroll
                       )
                     }}</span>
@@ -254,7 +253,7 @@
                       'pages.reports.avg_pay_per_employee' | translate
                     }}</span>
                     <span class="summary-card__value">{{
-                      facade.formatCurrency(
+                      facade.formatPayrollAmount(
                         facade.payrollReport()?.averagePayPerEmployee
                       )
                     }}</span>
@@ -312,7 +311,7 @@
                       'pages.reports.total_bonuses' | translate
                     }}</span>
                     <span class="summary-card__value">{{
-                      facade.formatCurrency(
+                      facade.formatPayrollAmount(
                         facade.payrollReport()?.totalBonuses
                       )
                     }}</span>
@@ -378,7 +377,14 @@
 
 <!-- Filter Drawer Backdrop -->
 @if (isFilterDrawerOpen()) {
-<div class="filter-drawer-backdrop" (click)="closeFilterDrawer()"></div>
+<div
+  class="filter-drawer-backdrop"
+  role="button"
+  tabindex="0"
+  (click)="closeFilterDrawer()"
+  (keydown.escape)="closeFilterDrawer()"
+  [attr.aria-label]="'global.close' | translate"
+></div>
 }
 
 <!-- Filter Drawer -->
@@ -402,9 +408,9 @@
         </h3>
         <div class="filter-date-range">
           <div class="filter-date-field">
-            <label>{{ 'pages.reports.start_date' | translate }}</label>
             <cleansia-calendar
               [formControl]="$any(dateRangeForm.get('startDate'))"
+              [label]="'pages.reports.start_date' | translate"
               [showErrors]="false"
               floatVariant="on"
               dateFormat="dd.mm.yy"
@@ -412,9 +418,9 @@
             />
           </div>
           <div class="filter-date-field">
-            <label>{{ 'pages.reports.end_date' | translate }}</label>
             <cleansia-calendar
               [formControl]="$any(dateRangeForm.get('endDate'))"
+              [label]="'pages.reports.end_date' | translate"
               [showErrors]="false"
               floatVariant="on"
               dateFormat="dd.mm.yy"
@@ -422,6 +428,20 @@
             />
           </div>
         </div>
+      </div>
+
+      <div class="filter-section">
+        <h3 class="filter-section-title">
+          {{ 'pages.reports.filters.currency' | translate }}
+        </h3>
+        <cleansia-select
+          [options]="currencyOptions()"
+          [label]="'pages.reports.filters.currency' | translate"
+          [floatVariant]="'on'"
+          [showClear]="true"
+          formControlName="currencyId"
+          appendTo="body"
+        />
       </div>
     </form>
   </div>

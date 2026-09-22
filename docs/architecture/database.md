@@ -165,8 +165,8 @@ public class Order : Auditable, ITenantEntity
 
     public DateTime CleaningDateTime { get; private set; }
     public decimal TotalPrice { get; private set; }
-    public string CurrencyId { get; private set; }
-    public string? TenantId { get; private set; }        // null = single-tenant mode
+    public string CurrencyId { get; private set; }       // FK Restrict; named by the caller, never derived from the address
+    public string? TenantId { get; private set; }        // NOT NULL in the DB: the operating company; set at commit
 
     // Child collections
     public IReadOnlyCollection<OrderService> SelectedServices { get; }
@@ -190,64 +190,136 @@ assignment. To ask "has a cleaner taken this job", count `AssignedEmployees` —
 The identifier type across the schema is a 26-character **ULID string**, not `Guid` — the sketches on
 this page use `Guid` for brevity where the id type is not the point.
 
-### Service and Pricing
+### Catalogue and prices
 
-Services use a two-part pricing model:
+A catalogue entry — `Service`, `Package`, `Extra` — carries **no price and no currency**. Its price
+lives in a sibling table, one row per currency the entry is sold in: `ServicePrices` (`BasePrice`,
+`PerRoomPrice`), `PackagePrices` (`Price`) and `ExtraPrices` (`Price`). Each is unique on
+`(EntryId, CurrencyId)`, cascades from its entry and restricts from its currency.
 
 ```csharp
-public class Service : AuditableEntity, ITenantEntity
+public class Service : Auditable
 {
-    public Guid Id { get; set; }
-    public string Name { get; set; }
-    public string? Description { get; set; }
-    public decimal BasePrice { get; set; }      // Fixed component
-    public decimal PerRoomPrice { get; set; }    // Multiplied by room count
-    public Guid CurrencyId { get; set; }
-    public Guid TenantId { get; set; }
+    public string Name { get; private set; }
+    public string Description { get; private set; }
+    public int EstimatedTime { get; private set; }
+    public string CategoryId { get; private set; }
+    // No BasePrice, no PerRoomPrice, no CurrencyId — the price is a ServicePrice row.
+}
 
-    public Currency Currency { get; set; }
-    public ICollection<Package> Packages { get; set; }
+public class ServicePrice : Auditable            // IX_ServicePrices_ServiceId_CurrencyId, unique
+{
+    public string ServiceId { get; private set; }
+    public string CurrencyId { get; private set; }
+    public decimal BasePrice { get; private set; }     // flat component
+    public decimal PerRoomPrice { get; private set; }  // charged per room AND per bathroom
 }
 ```
 
-::: tip Pricing Formula
-`TotalServicePrice = BasePrice + (PerRoomPrice * NumberOfRooms)`
+A price is **authored, never converted** (owner ruling 2026-09-08). There is no exchange rate
+anywhere in the schema — `Currency` lost its `ExchangeRate` column when these tables arrived — so a
+EUR price is a number somebody chose for that market, not the CZK figure multiplied by a rate.
+`OrderPricingCalculator` reads the row in the order's currency, and an entry with no row in a currency
+is not offerable in it: withheld from the catalogue, refused on quote and on create. Fail closed, never
+zero. The bulk grade apply's pay-rate multiplier reads the same row, in the admin-chosen currency;
+`ApproveEmployee` creates no pay config and only checks that a platform-wide rate exists in the
+currency resolved for the cleaner's work country.
 
-This allows flexible pricing where a "Basic Clean" might cost 500 CZK base + 100 CZK per room.
+::: tip Pricing formula
+`ServiceTotal = BasePrice + PerRoomPrice × (rooms + bathrooms)`, from the `ServicePrices` row in the
+order's currency. The seed prices General Cleaning at 500 CZK base + 150 CZK per room, so a two-room,
+one-bathroom flat quotes 500 + 150 × 3 = 950 CZK. → /product/business-rules#price-stages
 :::
+
+### Currency
+
+`Currencies` is a small table that every table denominating money points at.
+
+| Column | Meaning |
+|--------|---------|
+| `Code` | ISO 4217, `citext`, unique (`IX_Currencies_Code_Unique`); canonicalised to upper case on write because it goes onto receipts as typed |
+| `IsDefault` | Exactly one row — the partial unique index `IX_Currencies_IsDefault_Unique` on `"IsDefault" = true` |
+| `IsActive` | **The market switch, not a soft-delete flag.** A currency is created switched off; `ActivateCurrency` is the only writer of `true`, and the default cannot be switched off (`currency.cannot_deactivate_default`) |
+| `LoyaltyPointsDivisor` | `numeric(18,2)`, nullable. How much of the currency earns one loyalty point — `floor(amount / divisor)`. Authored per currency; CZK is seeded at 10, and a null divisor earns nothing |
+
+There is no `ExchangeRate` column. A currency is **offerable** — nameable on a quote or an order — when
+it exists, is active and has at least one row in any of the three price tables
+(`ICurrencyRepository.IsOfferableAsync`). The quote and create validators and `SetDefaultCurrency`'s
+promotion gate (`currency.not_priced`) ask that one predicate.
+
+The tables that denominate money carry the currency they are in:
+
+| Table | `CurrencyId` | On delete | What it means |
+|-------|--------------|-----------|---------------|
+| `Orders` | required | Restrict | Stamped from the service address's country (`CountryConfiguration.DefaultCurrencyCode`); a `CurrencyId` the caller sends must equal it or create refuses `currency.invalid` |
+| `ServicePrices` / `PackagePrices` / `ExtraPrices` | required | Restrict | Half of the unique key — one price per entry per currency |
+| `EmployeePayConfigs` | required | Restrict | In the unique index — a rate is an amount in one currency, and the pay writer reads only rows in the order's currency |
+| `OrderEmployeePays` | required | Restrict | The currency the pay row was computed in |
+| `EmployeeInvoices` | required | Restrict | In the unique index `IX_EmployeeInvoices_EmployeeId_PayPeriodId_CurrencyId` — one invoice per currency a cleaner's pay spans in a period; derived from the pay rows, never supplied |
+| `EmployeePayoutDetails` | nullable | Restrict | The currency the cleaner declares their bank account holds; null = undeclared, which `ApproveInvoice` reads as the work country's currency |
+| `CreditAccounts` | required | no FK | Unique `(UserId, CurrencyId)` — one balance per customer per currency, never converted at spend time |
+
+Because the FKs restrict, `DeleteCurrency` asks `ICurrencyRepository.IsInUseAsync` first and answers
+`currency.in_use` instead of surfacing a raw `23503` at commit.
 
 ### Supporting Entities
 
 | Entity | Purpose |
 |--------|---------|
-| `Currency` | Multi-currency support (CZK, EUR, etc.) |
+| `Currency` | The currencies the platform operates in — see [Currency](#currency). `IsActive` is the market switch, `LoyaltyPointsDivisor` is authored per currency, and there is no exchange rate |
+| `ServicePrice` / `PackagePrice` / `ExtraPrice` | A catalogue entry's price in one currency, unique on `(EntryId, CurrencyId)` — see [Catalogue and prices](#catalogue-and-prices). The entry itself carries no price |
 | `Language` | Multi-language support for service names, descriptions |
 | `Address` | Customer addresses with GPS coordinates |
-| `Package` | Bundled services at a discount |
+| `Package` | Bundled services at a discount; priced per currency in `PackagePrices` |
+| `Extra` | An add-on line keyed by `Slug` (which `OrderExtras.Slug` snapshots, so it is fixed at creation); priced per currency in `ExtraPrices` |
 | `PayPeriod` | Employee payment tracking periods |
+| `OrderEmployeePay` | One pay row per `(OrderId, EmployeeId)`, unique; carries the `CurrencyId` it was computed in |
+| `EmployeeInvoice` | A period's payout invoice for one cleaner **in one currency** — unique on `(EmployeeId, PayPeriodId, CurrencyId)`, so a cleaner whose pay spans two currencies in a period holds two invoices |
 | `EmployeeDocument` | Uploaded employee documents (contracts, IDs) |
-| `EmployeePayoutDetails` | ADR-0034 — the cleaner's bank destination. **Its own table**, one row per cleaner, `(TenantId, EmployeeId)` unique with `NULLS NOT DISTINCT`. Never `Include`d on a list query |
-| `EmployeePayConfig` | Pay rates per service/package; nullable `EmployeeId` = per-employee override, `null` = the platform-wide default. Unique on `(EmployeeId, ServiceId, PackageId)` with `NULLS NOT DISTINCT` and **no filter** — every row carries a null by construction (one config per service *or* per package, never both), so a filtered nulls-distinct index rejected nothing while excluding the platform-wide rows `CalculateOrderPay` reads with no `ORDER BY` |
+| `EmployeePayoutDetails` | ADR-0034 — the cleaner's bank destination. **Its own table**, one row per cleaner, `(TenantId, EmployeeId)` unique with `NULLS NOT DISTINCT`. Never `Include`d on a list query. Carries a nullable `CurrencyId` (FK Restrict): the currency the cleaner declares the account holds |
+| `EmployeePayConfig` | Pay rates per service/package **in one currency**; nullable `EmployeeId` = per-employee override, `null` = the platform-wide default **of one operating company** (the rows are stamped — pay rates are the operator's money). Unique `IX_EmployeePayConfigs_Tenant_Scope` on `(TenantId, EmployeeId, ServiceId, PackageId, CurrencyId)` with `NULLS NOT DISTINCT` and **no filter** — every row carries a null by construction (one config per service *or* per package, never both), so a filtered nulls-distinct index rejected nothing while excluding the platform-wide rows `CalculateOrderPay` reads with no `ORDER BY`; the leading tenant term is what lets two operators each hold a default for the same service and currency |
+| `CreditAccount` / `CreditTransaction` | A customer's credit balance, one account per `(UserId, CurrencyId)` (unique), with an append-only ledger. `Balance` is stored, not summed, because the spend is a conditional `UPDATE … WHERE Balance >= amount` |
 | `MembershipPlan` / `UserMembership` | Cleansia Plus plans and enrolments |
 | `MembershipBenefitUsage` | ADR-0035 — the metered-benefit ledger. Two indexes, and confusing them is the trap: `IX_MembershipBenefitUsages_Slot` on `(TenantId, UserId, BenefitKind, PeriodKey, SlotOrdinal)` is unique, `NULLS NOT DISTINCT`, filtered to live rows, and **is the sole arbiter of the reservation race** — the `SlotOrdinal` column is what lets a quota be N rather than 1. `IX_MembershipBenefitUsages_Quota`, the same key **without** `SlotOrdinal`, is **not unique**; it only serves the remaining-count read |
 | `OrderReceipt` | Generated receipt per order, including fiscal-registration state |
 | `FiscalCounter` | Per-issuer gapless fiscal sequence counter (see below) |
+| `WorkContractAcceptance` | ADR-0068 — one cleaner's acceptance of the contract for work for **one seat** of one job. `IX_WorkContractAcceptances_OrderEmployeeId` is **unique** (one contract per seat; the arbiter of a concurrent double accept), the seat and the cleaner are bare scalars with no FK (the seat row is hard-deleted by the next drop, the cleaner is anonymised), `LegalDocumentTextId` and `OrderId` are `Restrict` FKs, `FactsJson` is `jsonb`. Append-only: `Pseudonymise()` blanks the IP / device columns at erasure and after the per-company window; nothing deletes a row. `Orders.WorkContractDocumentId` (nullable, FK `LegalDocuments` Restrict, indexed) is the order's half |
 
 ::: danger A unique index over a nullable column enforces nothing unless it says so
 Postgres treats NULLs as DISTINCT, so a unique index containing a nullable column admits unlimited
-duplicates while that column is null — and single-tenant mode **is** `TenantId = null`, which is
-production. `.AreNullsDistinct(false)` is what makes such an index an arbiter, and **14 indexes now
-carry it**.
+duplicates while that column is null. `.AreNullsDistinct(false)` is what makes such an index an
+arbiter, and **17 indexes carry it in the emitted DDL** (`grep -n NullsDistinct …Initial.cs`) —
+thirteen with a tenant term, four without (`DisputeLines`, `LegalDocuments`, `LiveActivityTokens`,
+`OrderReviewLines`).
 
-Six were added on 2026-09-05, after a guard was rewritten from a hand-listed roster into a sweep of
-the whole model and found them: `EmployeePayConfig`, `LoyaltyTierConfig`, `LoyaltyTransaction`,
-`PromoCode`, `ReferralCode` and `TenantConfiguration`. Each had read as enforcing while enforcing
-nothing. A seventh, `FeatureFlag`, was on that list until T-0689 deleted the table outright.
+**`TenantId` is no longer the nullable column that matters.** Since ADR-0061 D8 (2026-09-13) the
+column is NOT NULL on every stamped table — only `OutboxMessages` and `DeadLetters` keep it nullable —
+and since 2026-09-15 it is a foreign key into `Tenants` on every one of them and absent from every
+tenantless table (`TenantAuditable` carries it; plain `Auditable` does not), so the tenant term of a
+`(TenantId, …)` index can never be the null that disarms it. The option is kept on those thirteen
+indexes anyway, because the model guard reads the option, not the column, and the other nullable
+terms (`EmployeeId`, `ServiceId`, `PackageId`) still need it. Two indexes *gained* a tenant term on
+activation so that two operators can coexist — `OrderReceipts (TenantId, ReceiptNumber)` (the number
+comes from a per-operator `FiscalCounter`) and `IX_EmployeePayConfigs_Tenant_Scope` — and three more
+on 2026-09-15, when each operating company started numbering its own payout invoices:
+`EmployeeInvoices (TenantId, InvoiceNumber)`, `EmployeeInvoices (TenantId, VariableSymbol)` filtered,
+and `PayoutReferenceCounters (TenantId, Year, Scope)`. One lost it: `Users (Email)` is globally unique
+with no tenant term, because one email is one identity across the holding (ADR-0061 D5.1).
+`LoyaltyTierConfig` left the list with its tenant — it is tenantless now, unique on `Tier`.
+
+Six of the seventeen were added on 2026-09-05, after a guard was rewritten from a hand-listed roster
+into a sweep of the whole model and found them: `EmployeePayConfig`, `LoyaltyTransaction`, `PromoCode`,
+`ReferralCode`, `TenantConfiguration` (and `LoyaltyTierConfig`, since reclassified). Each had read as
+enforcing while enforcing nothing. Another, `FeatureFlag`, was on that list until T-0689 deleted the
+table outright.
 
 **You do not need to remember to add it.** `NullsNotDistinctIndexModelTests` walks every unique index
 in the model, and one carrying a nullable column must either declare `NULLS NOT DISTINCT`, be filtered
 so the null cannot appear (`EmployeeInvoice`, `Order`'s recurring-template index), or be named as a
-deliberate exception (`UserMembership`, a backstop behind an authoritative read).
+deliberate exception (`UserMembership`, a backstop behind an authoritative read). `TenantIdRequiredModelTests`
+is its twin for the column itself: every `ITenantEntity` is required except the two named exemptions,
+every one is a `Restrict` foreign key into `Tenants`, and no other type carries a `TenantId`;
+`InitialMigrationTenantDdlTests` pins the same three facts on the committed migration's operations.
 
 Two shapes are worth knowing. `LoyaltyTransaction` keeps **both** a tenant term and a filter: the key
 is a caller-supplied token, so a bare global index would read a cross-tenant collision as a replay,
@@ -263,8 +335,9 @@ sequence. The receipt number is allocated from the `FiscalCounter` table, never 
 rows.
 
 `FiscalCounter` is tenant-scoped (`ITenantEntity`) and keyed by the unique index
-`(TenantId, Year, IssuerScope)` — declared `NULLS NOT DISTINCT` so a single-tenant (null `TenantId`)
-deployment collapses onto one counter row per `(Year, IssuerScope)`. `FiscalCounterRepository
+`(TenantId, Year, IssuerScope)` — one counter row per operating company, year and issuer scope, which
+is why `OrderReceipts` is unique on `(TenantId, ReceiptNumber)` rather than on the number alone: two
+operators' first receipts of a year are the same string by construction. `FiscalCounterRepository
 .AllocateNextAsync` performs a single atomic
 `INSERT … ON CONFLICT (…) DO UPDATE SET Value = Value + 1 RETURNING Value`. Postgres row-locks the
 conflicting tuple, so N concurrent allocations for one scope return N distinct contiguous numbers.
@@ -318,7 +391,15 @@ Order ────────┬──── OrderEmployee (1:N) ────�
               └──── MembershipBenefitUsage (1:0..1)
 
 Service ──────┬──── Package (1:N)
-              └──── Currency (N:1)
+              └──── ServicePrice (1:N, cascade)   # one row per currency; Package/Extra mirror this
+
+Currency ─────┬──── ServicePrice / PackagePrice / ExtraPrice (1:N, restrict)
+              ├──── Order (1:N, restrict)
+              ├──── EmployeePayConfig (1:N, restrict)
+              ├──── OrderEmployeePay (1:N, restrict)
+              ├──── EmployeeInvoice (1:N, restrict)
+              ├──── EmployeePayoutDetails (1:N, restrict, nullable)
+              └──── CreditAccount (1:N, no FK)
 
 Address ──────┬──── Order (1:N)
               └──── Customer (N:1)
@@ -400,11 +481,23 @@ dotnet ef migrations add <MigrationName> \
   --startup-project src/Cleansia.Web.Partner
 ```
 
-::: warning Owner-only, and pre-prod there is exactly ONE migration
+::: warning Pre-prod there is exactly ONE migration, and regenerating it is routine
 The committed history is a single `Initial` migration. While the platform is pre-production, schema
-changes are folded back into it rather than stacked on top, so the shipped set stays one file. Only
-the owner runs `dotnet ef migrations add` / `database update`; agents flag
-`manual_step: ef-migration` instead.
+changes are folded back into it rather than stacked on top, so the shipped set stays one file.
+Regenerating it (`dotnet ef migrations remove --force` then `add Initial`, startup project a web host)
+is ordinary work for whoever changes the model, paired with the DEV database drop and proven by the
+integration suite — owner rulings 2026-08-15, 2026-08-25 and 2026-09-07; nothing here is a manual
+step any more.
+
+Today that file is **`20260919231739_Initial`**, regenerated on 2026-09-20 for the contract for work
+([ADR-0068](/decisions/adr-0068)): the `WorkContractAcceptances` table and `Orders.WorkContractDocumentId`
+— **88 tables**, 49 of them stamped with a `Tenants` foreign key. It replaced `20260919142517` (the
+administrator roles, 2026-09-19); the chain of regenerations before that — the per-currency schema of
+2026-09-12, the customer audit and legal documents, the tenant FK, the company lifecycle, the status
+concurrency token, the recurring pause state — is kept in `agents/cleanup/MANUAL_STEPS.md` MS-2.
+Regenerating changes the migration id, so a DEV database whose `__EFMigrationsHistory` records an
+older id replays the whole create script against tables that already exist — drop it before the
+first start against the new file (MS-2 names the id the owed drop belongs to).
 :::
 
 ## Database Configuration

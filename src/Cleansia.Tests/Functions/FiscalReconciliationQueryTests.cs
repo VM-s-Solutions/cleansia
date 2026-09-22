@@ -54,7 +54,7 @@ public sealed class FiscalReconciliationQueryTests : IDisposable
         new(
             new DbContextOptionsBuilder<CleansiaDbContext>().UseSqlite(_connection).Options,
             new TestUserSessionProvider("system", "system@cleansia.test"),
-            new FixedTenantProvider(tenantId: null));
+            new FixedTenantProvider(TestTenants.Default));
 
     private async Task EnsureSchemaAsync()
     {
@@ -83,7 +83,6 @@ public sealed class FiscalReconciliationQueryTests : IDisposable
             customerAddress: address,
             rooms: 1,
             bathrooms: 1,
-            extras: new Dictionary<string, bool>(),
             cleaningDateTime: DateTime.UtcNow.AddDays(1),
             paymentType: paymentType,
             totalPrice: 1000m,
@@ -219,6 +218,32 @@ public sealed class FiscalReconciliationQueryTests : IDisposable
         Assert.Empty(due);
     }
 
+    [Fact]
+    public async Task Receipt_Recon_Skips_Cancelled_Orders_But_Still_Sweeps_Their_Stale_Twin()
+    {
+        await EnsureSchemaAsync();
+        var stale = DateTimeOffset.UtcNow.AddMinutes(-60);
+
+        await using (var seed = NewContext())
+        {
+            var cancelledCash = NewOrder("01HZX9N6M7Q8R9S0T1V2W3X41A", PaymentType.Cash, PaymentStatus.Pending, stale);
+            cancelledCash.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.Cancelled, cancelledCash));
+            var cancelledPaidCard = NewOrder("01HZX9N6M7Q8R9S0T1V2W3X41B", PaymentType.Card, PaymentStatus.Paid, stale);
+            cancelledPaidCard.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.Cancelled, cancelledPaidCard));
+            var staleCash = NewOrder("01HZX9N6M7Q8R9S0T1V2W3X41C", PaymentType.Cash, PaymentStatus.Pending, stale);
+            seed.AddRange(cancelledCash, cancelledPaidCard, staleCash);
+            await seed.CommitAsync(CancellationToken.None);
+        }
+
+        await using var ctx = NewContext();
+        var repo = new OrderRepository(ctx);
+        var cutoff = DateTime.UtcNow.AddMinutes(-15);
+        var due = await repo.GetReceiptReconciliationCandidatesAsync(cutoff, take: 50, CancellationToken.None);
+
+        var swept = Assert.Single(due);
+        Assert.Equal("01HZX9N6M7Q8R9S0T1V2W3X41C", swept.Id);
+    }
+
     // ── OR-shape regression — the sweep is now a UNION of a Cash arm and a Paid arm; an order that
     // is BOTH Cash and Paid must appear exactly once ──
 
@@ -294,6 +319,7 @@ public sealed class FiscalReconciliationQueryTests : IDisposable
                 orderId: "01HZX9N6M7Q8R9S0T1V2W3XO01",
                 employeeId: employeeId,
                 payPeriodId: payPeriodId,
+            currencyId: "czk",
                 basePay: 500m,
                 totalPay: 500m);
             seed.Add(pay);
@@ -332,11 +358,12 @@ public sealed class FiscalReconciliationQueryTests : IDisposable
                 orderId: "01HZX9N6M7Q8R9S0T1V2W3XO02",
                 employeeId: employeeId,
                 payPeriodId: payPeriodId,
+            currencyId: "czk",
                 basePay: 500m,
                 totalPay: 500m));
 
             var invoice = EmployeeInvoice.Create(employeeId, payPeriodId, totalOrders: 1, subTotal: 500m, currencyId: "czk",
-                variableSymbol: PayrollMockFactory.TestVariableSymbol);
+                variableSymbol: PayrollMockFactory.TestVariableSymbol, invoiceNumber: PayrollMockFactory.TestInvoiceNumber);
             seed.Add(invoice);
             await seed.CommitAsync(CancellationToken.None);
         }
@@ -371,6 +398,7 @@ public sealed class FiscalReconciliationQueryTests : IDisposable
                 orderId: "01HZX9N6M7Q8R9S0T1V2W3XO03",
                 employeeId: employeeId,
                 payPeriodId: payPeriodId,
+            currencyId: "czk",
                 basePay: 500m,
                 totalPay: 500m));
             await seed.CommitAsync(CancellationToken.None);

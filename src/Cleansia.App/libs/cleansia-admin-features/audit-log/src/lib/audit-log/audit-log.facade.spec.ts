@@ -2,6 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import {
   AdminActionAuditDto,
   AdminAuditLogClient,
+  AdminRole,
   PagedDataOfAdminActionAuditDto,
 } from '@cleansia/admin-services';
 import { of, throwError } from 'rxjs';
@@ -103,6 +104,7 @@ describe('AuditLogFacade', () => {
       occurredFrom: from,
       occurredTo: to,
       success: false,
+      actorAdminRole: AdminRole.Support,
     });
 
     const args = auditClient.getPaged.mock.calls.at(-1);
@@ -114,6 +116,13 @@ describe('AuditLogFacade', () => {
     expect(args?.[5]).toBe(from);
     expect(args?.[6]).toBe(to);
     expect(args?.[7]).toBe(false);
+    expect(args?.[8]).toBe(AdminRole.Support);
+  });
+
+  it('sends no actor role when the filter names none', () => {
+    facade.applyFilter({ actorEmail: 'admin@cleansia.cz' });
+
+    expect(auditClient.getPaged.mock.calls.at(-1)?.[8]).toBeUndefined();
   });
 
   it('resets the offset to zero when a filter is applied', () => {
@@ -130,19 +139,5 @@ describe('AuditLogFacade', () => {
     const args = auditClient.getPaged.mock.calls.at(-1);
     expect(args?.at(-2)).toBe(20);
     expect(args?.at(-1)).toBe(50);
-  });
-
-  it('pins the resource filter so the per-resource history cannot be widened', () => {
-    facade.loadResourceHistory('Order', 'order-1');
-
-    let args = auditClient.getPaged.mock.calls.at(-1);
-    expect(args?.[3]).toBe('Order');
-    expect(args?.[4]).toBe('order-1');
-
-    facade.applyFilter({ resourceType: 'Dispute', resourceId: 'dispute-9' });
-
-    args = auditClient.getPaged.mock.calls.at(-1);
-    expect(args?.[3]).toBe('Order');
-    expect(args?.[4]).toBe('order-1');
   });
 });

@@ -95,7 +95,7 @@ A very old receipt cannot be re-signed because the authority no longer accepts f
 
 ## Permissions
 
-The page requires the `CanManageFiscalFailures` policy, which is mapped to `PhysicalPolicy.AdminOnly` in `PolicyBuilder`. Non-admin roles receive a 403.
+The page requires the `CanManageFiscalFailures` policy, which is mapped to `PhysicalPolicy.AccountantOrAbove` in `PolicyBuilder` (ADR-0066 — *"fiscal counters"* are the Accountant's): an Administrator, a Manager or an Accountant may open it; a Support session does not see the sidebar entry, lands on `/unauthorized` if it navigates there, and receives a 403 from the API. Cleaners and customers receive a 403 as before.
 
 ## API endpoints
 

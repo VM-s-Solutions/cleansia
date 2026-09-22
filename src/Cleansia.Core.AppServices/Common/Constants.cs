@@ -11,6 +11,7 @@ public class Constants
         public const string GeneratedReceipts = "generated-receipts";
         public const string OrderPhotos = "order-photos";
         public const string DisputeEvidence = "dispute-evidence";
+        public const string CompanyArchives = "company-archives";
     }
 
     public class VirtualDirectories
@@ -68,14 +69,6 @@ public class Constants
     public class Language
     {
         public const string English = "en";
-    }
-
-    public class Currency
-    {
-        // CZK is the platform's primary fiat — fallback when an order/receipt
-        // didn't capture a currency record. Multi-currency is supported via
-        // the Currency entity; this is just the safety-net string default.
-        public const string Czk = "CZK";
     }
 
     public class PayoutInvoice

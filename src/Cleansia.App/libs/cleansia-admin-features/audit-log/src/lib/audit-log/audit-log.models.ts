@@ -1,5 +1,10 @@
 import { TemplateRef } from '@angular/core';
-import { AdminActionAuditDto } from '@cleansia/admin-services';
+import {
+  ADMIN_ROLE_LABEL_KEYS,
+  ADMIN_ROLES,
+  AdminActionAuditDto,
+  getAdminRoleLabelKey,
+} from '@cleansia/admin-services';
 import {
   ICleansiaSelectOption,
   TableAction,
@@ -29,25 +34,32 @@ export function getAuditLogTableColumns(
         row.actorEmail ?? row.actorId ?? '',
     },
     {
+      id: 'actorAdminRole',
+      field: 'actorAdminRole',
+      header: translate.instant('pages.audit_log.columns.actor_role'),
+      width: '10%',
+      getValue: (row: AdminActionAuditDto) => formatActorRole(row, translate),
+    },
+    {
       id: 'action',
       field: 'action',
       header: translate.instant('pages.audit_log.columns.action'),
       sortable: true,
-      width: '20%',
+      width: '18%',
       getValue: (row: AdminActionAuditDto) => row.action ?? '',
     },
     {
       id: 'resource',
       field: 'resourceType',
       header: translate.instant('pages.audit_log.columns.resource'),
-      width: '20%',
+      width: '16%',
       getValue: (row: AdminActionAuditDto) => formatResource(row),
     },
     {
       id: 'outcome',
       field: 'success',
       header: translate.instant('pages.audit_log.columns.outcome'),
-      width: '12%',
+      width: '10%',
       customTemplate: outcomeTemplate,
     },
   ];
@@ -78,7 +90,10 @@ export function formatTimestamp(value: Date | undefined): string {
   );
 }
 
-export function formatResource(row: AdminActionAuditDto): string {
+export function formatResource(row: {
+  resourceType?: string;
+  resourceId?: string;
+}): string {
   if (!row.resourceType) return '';
   return row.resourceId
     ? `${row.resourceType} · ${row.resourceId}`
@@ -110,4 +125,21 @@ export function buildOutcomeOptions(
       value: false,
     },
   ];
+}
+
+export function formatActorRole(
+  row: Pick<AdminActionAuditDto, 'actorAdminRole'>,
+  translate: TranslateService
+): string {
+  const key = getAdminRoleLabelKey(row.actorAdminRole);
+  return key ? translate.instant(key) : '';
+}
+
+export function buildActorRoleOptions(
+  translate: TranslateService
+): ICleansiaSelectOption[] {
+  return ADMIN_ROLES.map((role) => ({
+    label: translate.instant(ADMIN_ROLE_LABEL_KEYS[role]),
+    value: role,
+  }));
 }

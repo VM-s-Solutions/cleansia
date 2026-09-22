@@ -69,7 +69,6 @@ public class ResolveDisputeRefundSeamTests
             customerAddress: null!,
             rooms: 2,
             bathrooms: 1,
-            extras: new Dictionary<string, bool>(),
             cleaningDateTime: DateTime.UtcNow.AddDays(5),
             paymentType: PaymentType.Card,
             totalPrice: 1000m,

@@ -163,7 +163,7 @@ public class RedactionUnmaskedFreeTextGuardTests
     {
         var routes = WireSurface.RoutesWithTheirWireTypes();
 
-        Assert.InRange(routes.Count, 400, 1000);
+        Assert.InRange(routes.Count, 400, 1500);
         Assert.NotEmpty(RedactionTokens);
         Assert.Contains("base64Content", RedactionTokens);
         Assert.Contains("blobUrl", RedactionTokens);

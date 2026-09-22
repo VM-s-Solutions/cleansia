@@ -3,6 +3,7 @@ using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Features.Addresses.DTOs;
 using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Services.Interfaces;
+using Cleansia.Core.Domain.Configuration;
 using Cleansia.Core.Domain.EmployeePayroll;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Internationalization;
@@ -107,7 +108,8 @@ public class CreateOrderSeatCapacityPersistenceTests(PostgresContainerFixture fi
         PaymentType: PaymentType.Card,
         CurrencyId: CurrencyId,
         TotalPrice: totalPrice,
-        PromoCode: null);
+        PromoCode: null,
+        TermsAccepted: true);
 
     private static Task ConfigureCustomerSession(IServiceCollection services)
     {
@@ -128,14 +130,17 @@ public class CreateOrderSeatCapacityPersistenceTests(PostgresContainerFixture fi
     private static async Task SeedCatalogAndUser(CleansiaDbContext context)
     {
         context.Languages.Add(Language.Create("en", "English"));
+        TestLegalDocuments.Add(context);
 
-        var country = Country.Create("Czechia", "CZ", isServiced: true);
+        var country = Country.Create("Czechia", "CZ", "CZ", isServiced: true);
         country.Id = CountryId;
         context.Countries.Add(country);
+        context.CountryConfigurations.Add(CountryConfiguration.Create(CountryId, "CZK", "cs", 0.21m).AssignOperator(TestTenants.Default));
 
         context.Add(ServiceCity.Create(CountryId, City));
 
-        var currency = Currency.Create("CZK", "Kč", "Czech koruna", 1.0m);
+        var currency = Currency.Create("CZK", "Kč", "Czech koruna");
+        currency.IsActive = true;
         currency.Id = CurrencyId;
         currency.SetAsDefault(true);
         context.Currencies.Add(currency);
@@ -145,12 +150,12 @@ public class CreateOrderSeatCapacityPersistenceTests(PostgresContainerFixture fi
         context.Add(category);
 
         var shortService = Service.Create(
-            CategoryId, "Short Service", "One work unit", ShortServicePrice, 0m, ShortServiceMinutes);
+            CategoryId, "Short Service", "One work unit", ShortServiceMinutes);
         shortService.Id = ShortServiceId;
         context.Add(shortService);
 
         var longService = Service.Create(
-            CategoryId, "Long Service", "Pushes the order over one work unit", LongServicePrice, 0m, LongServiceMinutes);
+            CategoryId, "Long Service", "Pushes the order over one work unit", LongServiceMinutes);
         longService.Id = LongServiceId;
         context.Add(longService);
 
@@ -159,6 +164,13 @@ public class CreateOrderSeatCapacityPersistenceTests(PostgresContainerFixture fi
         context.EmployeePayConfigs.AddRange(
             EmployeePayConfig.CreateForService(ShortServiceId, 100m, CurrencyId),
             EmployeePayConfig.CreateForService(LongServiceId, 100m, CurrencyId));
+
+        // ...and its PRICE in the currency the order is placed in. A catalogue entry has no price of
+        // its own any more, and an entry with no row is not offerable — so this is the same class of
+        // arrangement as the pay config above it, not decoration.
+        context.ServicePrices.AddRange(
+            ServicePrice.Create(ShortServiceId, CurrencyId, ShortServicePrice, 0m),
+            ServicePrice.Create(LongServiceId, CurrencyId, LongServicePrice, 0m));
 
         var user = User.CreateWithPassword(
             CustomerEmail,

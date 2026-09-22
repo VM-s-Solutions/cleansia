@@ -80,8 +80,8 @@ export class OrdersComponent implements AfterViewInit {
   protected readonly facade = inject(OrdersFacade);
   private readonly translate = inject(TranslateService);
 
-  statusTemplate = viewChild<TemplateRef<any>>('statusTemplate');
-  orderStatusTemplate = viewChild<TemplateRef<any>>('orderStatusTemplate');
+  statusTemplate = viewChild<TemplateRef<OrderListItem>>('statusTemplate');
+  orderStatusTemplate = viewChild<TemplateRef<OrderListItem>>('orderStatusTemplate');
   ordersHelpCard = viewChild<CleansiaHelpCardComponent>('ordersHelpCard');
   paymentHelpCard = viewChild<CleansiaHelpCardComponent>('paymentHelpCard');
 
@@ -181,7 +181,7 @@ export class OrdersComponent implements AfterViewInit {
 
     const myOrdersDef = getMyOrdersTableDefinition(
       {
-        onStartOrder: (row) => this.facade.startOrder(row.id!),
+        onStartOrder: (row) => this.startOrder(row),
         onCompleteOrder: this.completeOrder.bind(this),
       },
       this.statusTemplate(),
@@ -236,7 +236,11 @@ export class OrdersComponent implements AfterViewInit {
   }
 
   takeOrder(order: OrderListItem): void {
-    this.facade.takeOrder(order.id!);
+    if (order.id) this.facade.takeOrder(order.id);
+  }
+
+  startOrder(order: OrderListItem): void {
+    if (order.id) this.facade.startOrder(order.id);
   }
 
   completeOrder(order: OrderListItem): void {
@@ -279,13 +283,13 @@ export class OrdersComponent implements AfterViewInit {
 
   removeFilterChip(chipKey: string): void {
     if (chipKey === 'orderStatuses') {
-      const resetValues: Record<string, any> = { orderStatuses: [] };
+      const resetValues: Record<string, boolean | number[]> = { orderStatuses: [] };
       this.orderStatusOptions.forEach((opt) => {
         resetValues[`orderStatus_${opt.value}`] = false;
       });
       this.searchForm.patchValue(resetValues);
     } else if (chipKey === 'paymentStatuses') {
-      const resetValues: Record<string, any> = { paymentStatuses: [] };
+      const resetValues: Record<string, boolean | number[]> = { paymentStatuses: [] };
       this.paymentStatusOptions.forEach((opt) => {
         resetValues[`paymentStatus_${opt.value}`] = false;
       });

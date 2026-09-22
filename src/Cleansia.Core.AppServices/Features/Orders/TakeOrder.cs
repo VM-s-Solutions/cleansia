@@ -15,7 +15,12 @@ namespace Cleansia.Core.AppServices.Features.Orders;
 
 public class TakeOrder
 {
-    public record Command(string OrderId) : ICommand<Response>;
+    /// <summary>
+    /// <see cref="Command.AcceptedWorkContractTextId"/> is the tick: the id of the exact contract-for-work
+    /// text row the cleaner was shown (ADR-0068 D3). Null is "not accepted"; a value is "I read this
+    /// text and I accept it", and it must name a text of the order's own document.
+    /// </summary>
+    public record Command(string OrderId, string? AcceptedWorkContractTextId) : ICommand<Response>;
 
     public record Response(string OrderId, string EmployeeId);
 
@@ -24,15 +29,21 @@ public class TakeOrder
         private readonly IOrderRepository _orderRepository;
         private readonly IEmployeeRepository _employeeRepository;
         private readonly IOrderAccessService _orderAccessService;
+        private readonly ICurrencyResolutionService _currencyResolutionService;
+        private readonly ILegalDocumentRepository _legalDocumentRepository;
 
         public Validator(
             IOrderRepository orderRepository,
             IEmployeeRepository employeeRepository,
-            IOrderAccessService orderAccessService)
+            IOrderAccessService orderAccessService,
+            ICurrencyResolutionService currencyResolutionService,
+            ILegalDocumentRepository legalDocumentRepository)
         {
             _orderRepository = orderRepository;
             _employeeRepository = employeeRepository;
             _orderAccessService = orderAccessService;
+            _currencyResolutionService = currencyResolutionService;
+            _legalDocumentRepository = legalDocumentRepository;
 
             // ONE ordered chain, deliberately (ADR-0037 D6). Cascade.Stop is rule-LEVEL and
             // FluentValidation's class-level default is Continue, so a second chain here would run
@@ -42,10 +53,16 @@ public class TakeOrder
             // counts, making existence inferable from the pairing. Order matters: existence (with
             // the hold) before offerability, offerability before seats, because a Cancelled order
             // with a free seat should say the job is gone, not that it is full.
+            //
+            // The contract tick sits BEFORE existence: it depends on nothing about the order, so it can
+            // leak neither existence nor the hold. The echo check sits LAST: it depends on the order, and
+            // every refusal ahead of it is a better answer than "wrong text".
             RuleFor(x => x)
                 .Cascade(CascadeMode.Stop)
                 .Must(command => !string.IsNullOrWhiteSpace(command.OrderId))
                 .WithMessage(BusinessErrorMessage.Required)
+                .Must(command => !string.IsNullOrWhiteSpace(command.AcceptedWorkContractTextId))
+                .WithMessage(BusinessErrorMessage.WorkContractNotAccepted)
                 .MustAsync(ExistsAndIsOpenToCallerAsync)
                 .WithMessage(BusinessErrorMessage.OrderNotFound)
                 .MustAsync(NotCancelledAsync)
@@ -67,7 +84,9 @@ public class TakeOrder
                 .MustAsync(NotExceedWeeklyOrderLimitAsync)
                 .WithMessage(BusinessErrorMessage.WeeklyOrderLimitReached)
                 .MustAsync(NotHaveTimeConflictAsync)
-                .WithMessage(BusinessErrorMessage.TimeConflict);
+                .WithMessage(BusinessErrorMessage.TimeConflict)
+                .MustAsync(TextBelongsToOrderContractAsync)
+                .WithMessage(BusinessErrorMessage.WorkContractTextMismatch);
         }
 
         /// <summary>
@@ -78,14 +97,22 @@ public class TakeOrder
         /// <see cref="BusinessErrorMessage.NoAvailableSpots"/>, which is the disagreement this
         /// placement exists to prevent. The employee is server-derived from the caller, never a
         /// command field; a caller with no employee id is nobody's beneficiary and is held out.
+        ///
+        /// <para>The currency term rides in the same query for the same reason: an order priced in a
+        /// currency the caller is not paid in was never on their board, so from their side it does not
+        /// exist. A caller with no employee id resolves no currency and is held out by that term too.
+        /// </para>
         /// </summary>
         private async Task<bool> ExistsAndIsOpenToCallerAsync(Command command, CancellationToken cancellationToken)
         {
             var employeeId = await _orderAccessService.GetCallerEmployeeIdAsync(cancellationToken);
+            var cleanerCurrencyId = string.IsNullOrEmpty(employeeId)
+                ? null
+                : (await _currencyResolutionService.ResolveCurrencyForEmployeeAsync(employeeId, cancellationToken)).Id;
 
             return await _orderRepository
                 .GetQueryable()
-                .Where(OrderVisibility.NotHeldFrom(employeeId, DateTime.UtcNow))
+                .Where(OrderVisibility.OpenTo(employeeId, cleanerCurrencyId, DateTime.UtcNow))
                 .AnyAsync(o => o.Id == command.OrderId, cancellationToken);
         }
 
@@ -216,6 +243,30 @@ public class TakeOrder
             return weeklyCount < limit;
         }
 
+        /// <summary>
+        /// The echoed text row is a text of the ORDER's contract document — the one stamped at booking.
+        /// An order with no document (a fixture, never a booking) matches no text and is refused here
+        /// rather than resolved late.
+        /// </summary>
+        private async Task<bool> TextBelongsToOrderContractAsync(Command command, CancellationToken cancellationToken)
+        {
+            var orderDocumentId = await _orderRepository
+                .GetQueryable()
+                .Where(o => o.Id == command.OrderId)
+                .Select(o => o.WorkContractDocumentId)
+                .FirstOrDefaultAsync(cancellationToken);
+
+            if (orderDocumentId is null)
+            {
+                return false;
+            }
+
+            var document = await _legalDocumentRepository.GetByTextIdWithTextsAsync(
+                command.AcceptedWorkContractTextId!, cancellationToken);
+
+            return document?.Id == orderDocumentId;
+        }
+
         private async Task<bool> NotHaveTimeConflictAsync(Command command, CancellationToken cancellationToken)
         {
             var employeeId = await _orderAccessService.GetCallerEmployeeIdAsync(cancellationToken);
@@ -241,6 +292,7 @@ public class TakeOrder
         IOrderAccessService orderAccessService,
         INotificationProducer notificationProducer,
         IEmailService emailService,
+        IWorkContractAcceptor workContractAcceptor,
         ILogger<Handler> logger)
         : ICommandHandler<Command, Response>
     {
@@ -299,6 +351,11 @@ public class TakeOrder
 
             var orderEmployee = OrderEmployee.Create(order, employee!);
             order.AddAssignedEmployee(orderEmployee);
+
+            // Staged before the commit below so the seat, the status row, the acceptance and its audit
+            // row are one transaction: a seat-race or cover-race loser rolls all four back, and no
+            // acceptance ever exists for a seat that was never won.
+            await workContractAcceptor.StageAsync(order, orderEmployee, command.AcceptedWorkContractTextId!, cancellationToken);
 
             var statusChanged = false;
             var currentStatus = order.GetCurrentOrderStatus();

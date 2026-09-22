@@ -31,7 +31,11 @@ export function getOrderStatusLabel(
   order: OrderListItem,
   translate: TranslateService
 ): string {
-  if (!order.orderStatus?.value) return '';
+  // Test the OBJECT, not the number. OrderStatus.New is 0, so `!order.orderStatus?.value` was false
+  // for every freshly-booked order and the admin list rendered an empty pill where the word "New"
+  // belongs (T-0687). Every order starts New, so this was not an edge case — it was what the whole
+  // open pipeline looked like.
+  if (order.orderStatus?.value === undefined || order.orderStatus.value === null) return '';
   const key =
     ORDER_STATUS_TRANSLATION_MAP[order.orderStatus.value as OrderStatus];
   return key ? translate.instant(key) : order.orderStatus?.name || '';
@@ -41,7 +45,9 @@ export function getPaymentStatusLabel(
   order: OrderListItem,
   translate: TranslateService
 ): string {
-  if (!order.paymentStatus?.value) return '';
+  // Same shape as above. Latent today only because PaymentStatus starts at 1 — it would break the
+  // moment a zero-valued member is added, which is exactly how the order-status bug arrived.
+  if (order.paymentStatus?.value === undefined || order.paymentStatus.value === null) return '';
   const key =
     PAYMENT_STATUS_TRANSLATION_MAP[order.paymentStatus.value as PaymentStatus];
   return key ? translate.instant(key) : order.paymentStatus?.name || '';
@@ -82,9 +88,11 @@ export function buildFilterChips(
     paymentStatus?: PaymentStatus[] | null;
     cleaningDateFrom?: Date | null;
     cleaningDateTo?: Date | null;
+    currencyId?: string | null;
   },
   orderStatusOptions: { label: string; value: OrderStatus }[],
   paymentStatusOptions: { label: string; value: PaymentStatus }[],
+  currencies: { id: string; code: string }[],
   translate: TranslateService
 ): FilterChip[] {
   const chips: FilterChip[] = [];
@@ -137,6 +145,14 @@ export function buildFilterChips(
     });
   }
 
+  if (formValues.currencyId) {
+    chips.push({
+      key: 'currency',
+      label: translate.instant('pages.order_management.filters.currency'),
+      value: currencies.find((c) => c.id === formValues.currencyId)?.code ?? '',
+    });
+  }
+
   return chips;
 }
 
@@ -169,12 +185,14 @@ export function buildFilterPayload(formValues: {
   searchTerm?: string | null;
   cleaningDateFrom?: Date | null;
   cleaningDateTo?: Date | null;
+  currencyId?: string | null;
 }): {
   orderStatuses?: OrderStatus[];
   paymentStatuses?: PaymentStatus[];
   searchTerm?: string;
   cleaningDateFrom?: Date;
   cleaningDateTo?: Date;
+  currencyId?: string;
 } {
   return {
     orderStatuses:
@@ -188,6 +206,7 @@ export function buildFilterPayload(formValues: {
     searchTerm: formValues.searchTerm?.trim() || undefined,
     cleaningDateFrom: formValues.cleaningDateFrom ?? undefined,
     cleaningDateTo: formValues.cleaningDateTo ?? undefined,
+    currencyId: formValues.currencyId || undefined,
   };
 }
 
@@ -197,11 +216,12 @@ export const FILTER_FORM_DEFAULTS = {
   searchTerm: '',
   cleaningDateFrom: null as Date | null,
   cleaningDateTo: null as Date | null,
+  currencyId: null as string | null,
 };
 
 // --- Filter chip removal helper ---
 
-export function getFilterPatchForChipRemoval(key: string): Record<string, any> {
+export function getFilterPatchForChipRemoval(key: string): Partial<typeof FILTER_FORM_DEFAULTS> {
   switch (key) {
     case 'orderStatus':
       return { orderStatus: [] };
@@ -211,7 +231,9 @@ export function getFilterPatchForChipRemoval(key: string): Record<string, any> {
       return { cleaningDateFrom: null };
     case 'cleaningDateTo':
       return { cleaningDateTo: null };
+    case 'currency':
+      return { currencyId: null };
     default:
-      return { [key]: '' };
+      return { searchTerm: '' };
   }
 }

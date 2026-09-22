@@ -17,16 +17,28 @@ public static class PayrollMockFactory
     /// </summary>
     public const string TestVariableSymbol = "2026000001";
 
-    private static int _variableSymbolOrdinal;
+    /// <summary>
+    /// The invoice-number twin of <see cref="TestVariableSymbol"/>: the company's <c>INV-YYYY-NNNNNN</c>
+    /// series, hand-authored here for the same reason and pinned to production by the same census.
+    /// </summary>
+    public const string TestInvoiceNumber = "INV-2026-000001";
+
+    private static int _referenceOrdinal;
 
     /// <summary>
     /// A distinct D1-compliant symbol per call, for fixtures that seed more than one invoice into a
-    /// REAL database — <c>IX_EmployeeInvoices_VariableSymbol</c> is unique, so a shared constant is a
-    /// 23505 there. Derived from <see cref="TestVariableSymbol"/> rather than a second literal, so the
+    /// REAL database — the per-company reference indexes are unique, so a shared constant is a 23505
+    /// there. Derived from <see cref="TestVariableSymbol"/> rather than a second literal, so the
     /// format still lives in exactly one place.
     /// </summary>
     public static string NextTestVariableSymbol() =>
-        TestVariableSymbol[..4] + (Interlocked.Increment(ref _variableSymbolOrdinal) + 1).ToString("D6");
+        TestVariableSymbol[..4] + NextReferenceOrdinal().ToString("D6");
+
+    /// <summary>The invoice-number twin of <see cref="NextTestVariableSymbol"/>.</summary>
+    public static string NextTestInvoiceNumber() =>
+        TestInvoiceNumber[..9] + NextReferenceOrdinal().ToString("D6");
+
+    private static int NextReferenceOrdinal() => Interlocked.Increment(ref _referenceOrdinal) + 1;
 
     public static OrderEmployeePay OrderPay(
         decimal basePay = 100m,
@@ -36,7 +48,10 @@ public static class PayrollMockFactory
         decimal deductionPay = 0m,
         string? orderId = null,
         string employeeId = EmployeeId,
-        string payPeriodId = PayPeriodId)
+        string payPeriodId = PayPeriodId,
+        // Defaulted, so all 23 existing call sites keep working while the ones that care about a
+        // second currency can name one.
+        string currencyId = CurrencyId)
     {
         var totalPay = basePay + extrasPay + expensesPay + bonusPay - deductionPay;
         if (totalPay < 0)
@@ -48,6 +63,7 @@ public static class PayrollMockFactory
             orderId: orderId ?? $"order-{Guid.NewGuid():N}",
             employeeId: employeeId,
             payPeriodId: payPeriodId,
+            currencyId: currencyId,
             basePay: basePay,
             extrasPay: extrasPay,
             expensesPay: expensesPay,
@@ -68,7 +84,8 @@ public static class PayrollMockFactory
         string currencyId = CurrencyId,
         DateTime? generatedAt = null,
         PayPeriod? payPeriod = null,
-        string variableSymbol = TestVariableSymbol)
+        string variableSymbol = TestVariableSymbol,
+        string invoiceNumber = TestInvoiceNumber)
     {
         var invoice = EmployeeInvoice.Create(
             employeeId: employeeId,
@@ -77,6 +94,7 @@ public static class PayrollMockFactory
             subTotal: subTotal,
             currencyId: currencyId,
             variableSymbol: variableSymbol,
+            invoiceNumber: invoiceNumber,
             bonusAmount: bonusAmount,
             deductionAmount: deductionAmount);
         invoice.Id = $"inv-{Guid.NewGuid():N}";

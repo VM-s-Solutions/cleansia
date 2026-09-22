@@ -1,4 +1,6 @@
 import { computed, inject, Injectable, signal } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { selectMarketCountryId } from '@cleansia/customer-stores';
 import { UnsubscribeControlDirective } from '@cleansia/directives';
 import {
   CustomerClient,
@@ -9,6 +11,7 @@ import {
   SwapMembershipPlanCommand,
 } from '@cleansia/customer-services';
 import { SnackbarService } from '@cleansia/services';
+import { Store } from '@ngrx/store';
 import { catchError, of, takeUntil } from 'rxjs';
 
 /**
@@ -33,6 +36,7 @@ export class MembershipFacade extends UnsubscribeControlDirective {
   private readonly customerClient = inject(CustomerClient);
   private readonly client = this.customerClient.membershipClient;
   private readonly snackbar = inject(SnackbarService);
+  private readonly store = inject(Store);
 
   // Management state
   loading = signal(true);
@@ -40,6 +44,23 @@ export class MembershipFacade extends UnsubscribeControlDirective {
   switching = signal(false);
   membership = signal<GetMyMembershipResponse | null>(null);
   plans = signal<GetMembershipPlansResponse[]>([]);
+  /**
+   * A subscription keeps its currency for life (ADR-0059 D2), so every figure on this screen is
+   * labelled with the membership's own code — not the market the customer is browsing in now.
+   */
+  readonly currencyCode = computed(() => this.membership()?.currencyCode ?? null);
+  /**
+   * The plans a member may switch to: those the market prices in the membership's currency. A
+   * swap is settled in that currency (the server picks that row), so a plan listed in another
+   * cannot be offered at the price the market shows.
+   */
+  readonly switchablePlans = computed(() => {
+    const currencyCode = this.currencyCode();
+    return this.plans().filter((plan) => plan.currencyCode === currencyCode);
+  });
+  private readonly marketCountryId = toSignal(this.store.select(selectMarketCountryId), {
+    initialValue: null,
+  });
 
   // Subscribe state
   submitting = signal(false);
@@ -90,7 +111,7 @@ export class MembershipFacade extends UnsubscribeControlDirective {
    */
   loadPlans(onLoaded?: (plans: GetMembershipPlansResponse[]) => void): void {
     this.client
-      .getPlans()
+      .getPlans(this.marketCountryId() ?? undefined)
       .pipe(
         takeUntil(this.destroyed$),
         catchError(() => of<GetMembershipPlansResponse[]>([])),

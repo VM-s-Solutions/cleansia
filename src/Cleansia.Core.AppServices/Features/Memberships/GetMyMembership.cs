@@ -3,6 +3,7 @@ using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Memberships;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Infra.Common.Validations;
+using Microsoft.Extensions.Logging;
 using BusinessResult = Cleansia.Infra.Common.Validations.BusinessResult;
 
 namespace Cleansia.Core.AppServices.Features.Memberships;
@@ -15,7 +16,8 @@ public class GetMyMembership
         bool HasMembership,
         string? PlanCode,
         string? PlanName,
-        decimal? MonthlyPriceCzk,
+        /// <summary>One billing period in <see cref="CurrencyCode"/>. Null when there is no membership, or when its plan's price row in that currency no longer exists.</summary>
+        decimal? Price,
         decimal? DiscountPercentage,
         int? FreeCancellationWindowHours,
         bool? AllowsExpressUpgrade,
@@ -23,7 +25,7 @@ public class GetMyMembership
         DateTime? CurrentPeriodEnd,
         bool CancelRequested,
         int? BillingInterval,
-        decimal? MonthlyEquivalentPriceCzk,
+        decimal? MonthlyEquivalentPrice,
         /// <summary>The plan's free express upgrades per calendar month. Null when there is no membership.</summary>
         int? ExpressUpgradesPerMonth = null,
         /// <summary>
@@ -45,12 +47,19 @@ public class GetMyMembership
         /// own <c>TrialPeriodDays</c>. Defaults true so a client built before this field renders exactly
         /// as it does today.
         /// </summary>
-        bool TrialEligible = true);
+        bool TrialEligible = true,
+        /// <summary>
+        /// The currency the subscription is billed in — the membership's own, not the market the customer
+        /// is browsing: a subscription keeps its currency for life. Null when there is no membership.
+        /// </summary>
+        string? CurrencyCode = null);
 
     public class Handler(
         IUserMembershipRepository userMembershipRepository,
+        IMembershipPlanPriceRepository membershipPlanPriceRepository,
         IUserSessionProvider userSessionProvider,
-        IExpressWaiverResolver expressWaiverResolver)
+        IExpressWaiverResolver expressWaiverResolver,
+        ILogger<Handler> logger)
         : ICommandHandler<Query, Response>
     {
         public async Task<BusinessResult<Response>> Handle(Query query, CancellationToken cancellationToken)
@@ -64,7 +73,7 @@ public class GetMyMembership
                     HasMembership: false,
                     PlanCode: null,
                     PlanName: null,
-                    MonthlyPriceCzk: null,
+                    Price: null,
                     DiscountPercentage: null,
                     FreeCancellationWindowHours: null,
                     AllowsExpressUpgrade: null,
@@ -72,8 +81,17 @@ public class GetMyMembership
                     CurrentPeriodEnd: null,
                     CancelRequested: false,
                     BillingInterval: null,
-                    MonthlyEquivalentPriceCzk: null,
+                    MonthlyEquivalentPrice: null,
                     TrialEligible: trialEligible));
+            }
+
+            var price = await membershipPlanPriceRepository.GetForPlanAsync(
+                membership.MembershipPlanId, membership.CurrencyId, cancellationToken);
+            if (price == null)
+            {
+                logger.LogWarning(
+                    "Membership {MembershipId} is billed in {CurrencyCode} but plan {PlanCode} has no price row in it; rendering no price",
+                    membership.Id, membership.Currency.Code, membership.MembershipPlan.Code);
             }
 
             // One collaborator, not two: the resolver is the ONE place the remaining count and the period
@@ -86,7 +104,7 @@ public class GetMyMembership
                 HasMembership: true,
                 PlanCode: membership.MembershipPlan.Code,
                 PlanName: membership.MembershipPlan.Name,
-                MonthlyPriceCzk: membership.MembershipPlan.MonthlyPriceCzk,
+                Price: price?.Price,
                 DiscountPercentage: membership.MembershipPlan.DiscountPercentage,
                 FreeCancellationWindowHours: membership.MembershipPlan.FreeCancellationWindowHours,
                 AllowsExpressUpgrade: membership.MembershipPlan.AllowsExpressUpgrade,
@@ -94,13 +112,14 @@ public class GetMyMembership
                 CurrentPeriodEnd: membership.CurrentPeriodEnd,
                 CancelRequested: membership.CancelledAt.HasValue,
                 BillingInterval: (int)membership.MembershipPlan.BillingInterval,
-                MonthlyEquivalentPriceCzk: membership.MembershipPlan.MonthlyEquivalentPriceCzk,
+                MonthlyEquivalentPrice: price == null ? null : membership.MembershipPlan.MonthlyEquivalentOf(price.Price),
                 // The resolver's quota, not the plan column: a plan with the flag off carries a number the
                 // pricing path ignores, and rendering it beside a zero remaining reads as "exhausted".
                 ExpressUpgradesPerMonth: waiver.Quota,
                 ExpressUpgradesRemaining: waiver.RemainingBeforeThisBooking,
                 TrialEndsAtUtc: membership.TrialEndsAtUtc,
-                TrialEligible: trialEligible));
+                TrialEligible: trialEligible,
+                CurrencyCode: membership.Currency.Code));
         }
     }
 }

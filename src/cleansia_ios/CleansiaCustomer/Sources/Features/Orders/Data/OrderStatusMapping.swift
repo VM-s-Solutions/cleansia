@@ -27,9 +27,12 @@ enum OrderStatusGroup {
         return status != ._5 && status != ._6
     }
 
+    /// The statuses a customer may cancel from — everything the server's `CancellationAssessor` does
+    /// not refuse, which is every status before a cleaner has started work. One function for the
+    /// signed-in and the guest surface: the two used to stop at different statuses.
     static func isCancellable(_ status: OrderStatus?) -> Bool {
         switch status {
-        case ._0, ._1, ._2: true
+        case ._0, ._1, ._2, ._3: true
         default: false
         }
     }

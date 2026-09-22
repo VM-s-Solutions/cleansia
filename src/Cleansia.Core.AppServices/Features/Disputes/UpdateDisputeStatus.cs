@@ -1,4 +1,5 @@
 using Cleansia.Core.AppServices.Abstractions;
+using Cleansia.Core.AppServices.Auditing;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Repositories;
@@ -7,6 +8,7 @@ using FluentValidation;
 
 namespace Cleansia.Core.AppServices.Features.Disputes;
 
+[AuditAction("dispute.status.update", ResourceType = "Dispute")]
 public class UpdateDisputeStatus
 {
     public class Validator : AbstractValidator<Command>

@@ -337,6 +337,49 @@
   color: var(--cl-muted);
 }
 
+// One line per crew member who accepted the contract for work. A list under the
+// crew card, not a card of its own: it is a fact about the people above it.
+.order-detail__contracts {
+  display: flex;
+  flex-direction: column;
+  gap: calc(0.5 * var(--cl-u));
+  margin: 0;
+  padding: 0 calc(1.75 * var(--cl-u));
+  list-style: none;
+}
+
+.order-detail__contract {
+  display: flex;
+  align-items: flex-start;
+  gap: calc(0.5 * var(--cl-u));
+  font-size: calc(0.875 * var(--cl-u));
+  line-height: 1.6;
+  color: var(--cl-muted);
+
+  > i {
+    flex-shrink: 0;
+    margin-top: 3px;
+    color: var(--cl-ok);
+  }
+}
+
+.order-detail__contract-text {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.order-detail__contract-link {
+  flex-shrink: 0;
+  font-weight: 800;
+  color: var(--cl-heading);
+  text-decoration: none;
+  white-space: nowrap;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
 .order-detail__mascot-row {
   display: flex;
   justify-content: center;
@@ -535,6 +578,76 @@
   &:disabled {
     opacity: 0.6;
     cursor: default;
+  }
+
+  // The one row that undoes the booking reads in the danger ink, on the same
+  // outline as its neighbours: a choice, not an alarm.
+  &--danger {
+    color: var(--cl-danger);
+    border-color: var(--cl-danger-line);
+
+    &:hover:not(:disabled) {
+      background: var(--cl-danger-soft);
+    }
+  }
+}
+
+.order-detail__cancellation-result {
+  margin-top: var(--cl-u);
+  padding: var(--cl-u);
+  border-radius: var(--cl-u);
+  background: var(--cl-tint);
+  font-size: calc(0.9375 * var(--cl-u));
+  color: var(--cl-body);
+
+  p {
+    margin: 0;
+
+    + p {
+      margin-top: calc(0.375 * var(--cl-u));
+      font-weight: 800;
+    }
+  }
+}
+
+.order-detail__cancellation-dialog {
+  width: min(32rem, calc(100vw - 2rem));
+
+  .p-dialog-header-actions button {
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  .p-button {
+    min-height: 44px;
+  }
+}
+
+.order-detail__cancellation-figures > div {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-block: 1rem;
+
+  dd {
+    margin: 0;
+    font-weight: 700;
+  }
+}
+
+.order-detail__cancellation-error {
+  color: var(--cl-body);
+  font-weight: 700;
+}
+
+.order-detail__cancellation-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+
+  cleansia-button {
+    flex: 1 1 12rem;
   }
 }
 

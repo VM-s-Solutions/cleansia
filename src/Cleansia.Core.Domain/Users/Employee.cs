@@ -8,15 +8,12 @@ using Cleansia.Core.Domain.Orders;
 
 namespace Cleansia.Core.Domain.Users;
 
-public class Employee : Auditable, ITenantEntity
+public class Employee : TenantAuditable
 {
     public EmployeeEntityType EntityType { get; private set; } = EmployeeEntityType.NaturalPerson;
 
     [MaxLength(50)]
     public string? RegistrationNumber { get; private set; }
-
-    [MaxLength(50)]
-    public string? VatNumber { get; private set; }
 
     [MaxLength(200)]
     public string? LegalEntityName { get; private set; }
@@ -31,8 +28,8 @@ public class Employee : Auditable, ITenantEntity
     /// every loader that loads an <see cref="Employee"/> at all.
     ///
     /// <para>Invariant: <c>HasPayoutDetails == (an EmployeePayoutDetails row exists for this employee)</c>.
-    /// It carries <i>presence</i>, never validity (D7) — real validation applies to writes and to payout
-    /// issuance, and never retroactively invalidates a profile.</para>
+    /// It carries <i>presence</i>, never validity (D7) — real validation applies to writes and to invoice
+    /// approval, and never retroactively invalidates a profile.</para>
     /// </summary>
     public bool HasPayoutDetails { get; private set; }
 
@@ -191,8 +188,9 @@ public class Employee : Auditable, ITenantEntity
     /// <summary>
     /// Country the cleaner is approved to take work in; drives currency, language, VAT and pay defaults.
     /// <b>Distinct from nationality (passport) and address country (residency)</b> — an EU contractor may
-    /// be CZ-national, SK-resident and approved to work in CZ. Nullable until admin approves; resolution
-    /// falls back to global defaults while null.
+    /// be CZ-national, SK-resident and approved to work in CZ. Nullable until admin approves, and
+    /// approval requires it: a cleaner is paid in this country's currency and nothing is guessed while
+    /// it is null -- the currency resolver throws rather than fall back.
     /// </summary>
     public string? WorkCountryId { get; private set; }
     public Country? WorkCountry { get; private set; }
@@ -233,7 +231,6 @@ public class Employee : Auditable, ITenantEntity
     public Employee UpdateEmployeeDetails(
         EmployeeEntityType entityType,
         string? registrationNumber,
-        string? vatNumber,
         string? legalEntityName,
         string nationalityId,
         string passportId,
@@ -245,7 +242,6 @@ public class Employee : Auditable, ITenantEntity
     {
         EntityType = entityType;
         RegistrationNumber = registrationNumber;
-        VatNumber = vatNumber;
         LegalEntityName = entityType == EmployeeEntityType.LegalEntity ? legalEntityName : null;
         NationalityId = nationalityId;
         PassportId = passportId;
@@ -271,12 +267,10 @@ public class Employee : Auditable, ITenantEntity
     public Employee UpdateBusinessIdentity(
         EmployeeEntityType entityType,
         string? registrationNumber,
-        string? vatNumber,
         string? legalEntityName)
     {
         EntityType = entityType;
         RegistrationNumber = registrationNumber;
-        VatNumber = vatNumber;
         LegalEntityName = entityType == EmployeeEntityType.LegalEntity ? legalEntityName : null;
         return this;
     }
@@ -377,7 +371,6 @@ public class Employee : Auditable, ITenantEntity
     public Employee Anonymize()
     {
         RegistrationNumber = AnonymizationMarker.Value;
-        VatNumber = null;
         LegalEntityName = null;
         IBAN = AnonymizationMarker.Value;
         PassportId = AnonymizationMarker.Value;
@@ -399,9 +392,11 @@ public class Employee : Auditable, ITenantEntity
     /// <see cref="EmployeePayoutDetails"/> and there is no backfill: reading only
     /// <see cref="HasPayoutDetails"/> would mark every one of them incomplete on deploy day and 403 them
     /// off the whole partner surface, which is the outage D7 exists to prevent. The term retires when the
-    /// legacy column does.</para>
+    /// legacy column does. <see cref="Anonymize"/> overwrites the column with the marker rather than
+    /// clearing it, and a marker is not a destination.</para>
     /// </summary>
-    private bool HasPayoutDestination() => HasPayoutDetails || !string.IsNullOrEmpty(IBAN);
+    private bool HasPayoutDestination() =>
+        HasPayoutDetails || (!string.IsNullOrEmpty(IBAN) && IBAN != AnonymizationMarker.Value);
 
     public bool IsProfileComplete()
     {

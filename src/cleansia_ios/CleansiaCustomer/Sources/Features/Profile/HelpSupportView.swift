@@ -2,13 +2,18 @@ import CleansiaCore
 import SwiftUI
 
 struct HelpSupportView: View {
-    private let faqs: [(question: String, answer: String)] = [
-        (L10n.Help.faqQ1, L10n.Help.faqA1),
-        (L10n.Help.faqQ2, L10n.Help.faqA2),
-        (L10n.Help.faqQ3, L10n.Help.faqA3),
-        (L10n.Help.faqQ4, L10n.Help.faqA4),
-        (L10n.Help.faqQ5, L10n.Help.faqA5)
-    ]
+    private let faqs: [(question: String, answer: String)]
+
+    /// `insurance` is the chosen market's ceiling; nil renders the answer without a figure.
+    init(insurance: MarketMoney?) {
+        faqs = [
+            (L10n.Help.faqQ1, L10n.Help.faqA1),
+            (L10n.Help.faqQ2, L10n.Help.faqA2),
+            (L10n.Help.faqQ3, InsuranceCopy.faqAnswer(insurance)),
+            (L10n.Help.faqQ4, L10n.Help.faqA4),
+            (L10n.Help.faqQ5, L10n.Help.faqA5)
+        ]
+    }
 
     var body: some View {
         ZStack {

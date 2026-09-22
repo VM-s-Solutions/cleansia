@@ -34,6 +34,12 @@ export class ServiceAreaManagementFacade extends UnsubscribeControlDirective {
   readonly countries = signal<CountryListItem[]>([]);
   readonly cities = signal<ServiceCityDto[]>([]);
   readonly servicedCountryIds = signal<Set<string>>(new Set());
+  /**
+   * Bumped when the server refuses a serviced toggle (`country.market_not_ready`). The switch is
+   * bound one-way to the serviced set, which the refusal leaves unchanged, so nothing would
+   * otherwise pull the flipped control back to the stored value; the row keys on this and re-renders.
+   */
+  readonly servicedToggleRevision = signal<number>(0);
   readonly loading = signal<boolean>(false);
   readonly initialLoading = signal<boolean>(true);
 
@@ -96,7 +102,10 @@ export class ServiceAreaManagementFacade extends UnsubscribeControlDirective {
         catchError(() => of(null))
       )
       .subscribe((response) => {
-        if (!response) return;
+        if (!response) {
+          this.servicedToggleRevision.update((revision) => revision + 1);
+          return;
+        }
         const next = new Set(this.servicedCountryIds());
         if (response.isServiced) next.add(countryId);
         else next.delete(countryId);

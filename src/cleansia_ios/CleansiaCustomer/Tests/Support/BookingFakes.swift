@@ -6,13 +6,15 @@ import Foundation
 final class FakeCatalogClient: CatalogClient, @unchecked Sendable {
     var result: ApiResult<Catalog>
     private(set) var callCount = 0
+    private(set) var requestedCountryIds: [String?] = []
 
     init(result: ApiResult<Catalog> = .success(.empty)) {
         self.result = result
     }
 
-    func loadCatalog() async -> ApiResult<Catalog> {
+    func loadCatalog(countryId: String?) async -> ApiResult<Catalog> {
         callCount += 1
+        requestedCountryIds.append(countryId)
         return result
     }
 }
@@ -41,8 +43,11 @@ final class FakeExtraClient: ExtraClient, @unchecked Sendable {
         self.result = result
     }
 
-    func loadExtras() async -> ApiResult<[CatalogExtra]> {
+    private(set) var requestedCountryIds: [String?] = []
+
+    func loadExtras(countryId: String?) async -> ApiResult<[CatalogExtra]> {
         callCount += 1
+        requestedCountryIds.append(countryId)
         return result
     }
 }
@@ -52,6 +57,7 @@ final class FakePromoCodeClient: PromoCodeClient, @unchecked Sendable {
     private(set) var callCount = 0
     private(set) var lastCode: String?
     private(set) var lastSubtotal: Double?
+    private(set) var lastCurrencyId: String?
 
     init(result: ApiResult<PromoValidation> = .success(PromoValidation(
         isValid: true,
@@ -61,10 +67,11 @@ final class FakePromoCodeClient: PromoCodeClient, @unchecked Sendable {
         self.result = result
     }
 
-    func validate(code: String, orderSubtotal: Double) async -> ApiResult<PromoValidation> {
+    func validate(code: String, orderSubtotal: Double, currencyId: String?) async -> ApiResult<PromoValidation> {
         callCount += 1
         lastCode = code
         lastSubtotal = orderSubtotal
+        lastCurrencyId = currencyId
         return result
     }
 }
@@ -73,6 +80,7 @@ final class FakeReferralClient: ReferralClient, @unchecked Sendable {
     var result: ApiResult<ReferralValidation>
     private(set) var callCount = 0
     private(set) var lastCode: String?
+    private(set) var lastCountryId: String?
 
     init(result: ApiResult<ReferralValidation> = .success(ReferralValidation(
         isValid: true,
@@ -82,9 +90,10 @@ final class FakeReferralClient: ReferralClient, @unchecked Sendable {
         self.result = result
     }
 
-    func validate(code: String) async -> ApiResult<ReferralValidation> {
+    func validate(code: String, countryId: String?) async -> ApiResult<ReferralValidation> {
         callCount += 1
         lastCode = code
+        lastCountryId = countryId
         return result
     }
 }
@@ -121,6 +130,21 @@ final class FakeOrderCreateClient: OrderCreateClient, @unchecked Sendable {
         callCount += 1
         commands.append(command)
         return result
+    }
+}
+
+final class FakeConsentStatusClient: ConsentStatusClient, @unchecked Sendable {
+    /// Nil is a failed read, the way the live client reports one.
+    var granted: Set<SignupConsentType>?
+    private(set) var callCount = 0
+
+    init(granted: Set<SignupConsentType>? = []) {
+        self.granted = granted
+    }
+
+    func grantedTypes() async -> Set<SignupConsentType>? {
+        callCount += 1
+        return granted
     }
 }
 
@@ -248,9 +272,24 @@ enum CatalogFixtures {
         )
     }
 
-    static let populated = Catalog(
-        services: [service(id: "s-1"), service(id: "s-2", category: category(slug: "deep", order: 1))],
-        packages: [package(id: "p-1")]
+    static let populated = catalog(currencyCode: "CZK")
+
+    static func catalog(currencyCode: String, defaultCurrencyCode: String? = nil) -> Catalog {
+        Catalog(
+            services: [service(id: "s-1"), service(id: "s-2", category: category(slug: "deep", order: 1))],
+            packages: [package(id: "p-1")],
+            currencyCode: currencyCode,
+            defaultCurrencyCode: defaultCurrencyCode ?? currencyCode
+        )
+    }
+
+    /// The Slovak market's catalogue: priced in EUR, missing `s-2` and every package, so a draft built
+    /// on the Czech catalogue has something to lose.
+    static let slovak = Catalog(
+        services: [service(id: "s-1")],
+        packages: [],
+        currencyCode: "EUR",
+        defaultCurrencyCode: "CZK"
     )
 
     static func extra(slug: String, order: Int = 0) -> CatalogExtra {

@@ -14,13 +14,31 @@ namespace Cleansia.Web.Admin.Controllers;
 [ApiController]
 public class AdminGdprController(IMediator mediator) : ApiController(mediator)
 {
-    [HttpGet("export/{userId}")]
+    [HttpPost("export/{userId}")]
     [Permission(Policy.CanAdminExportUserData)]
+    [EnableRateLimiting("auth")]
     [ProducesResponseType(typeof(GdprExportDto), StatusCodes.Status200OK)]
     public async Task<IActionResult> ExportUserData(string userId, CancellationToken cancellationToken)
     {
-        var result = await Mediator.Send(new AdminExportUserData.Query(userId), cancellationToken);
+        var result = await Mediator.Send(new AdminExportUserData.Command(userId), cancellationToken);
         return HandleResult<GdprExportDto>(result);
+    }
+
+    [HttpPost("incident-file/{userId}")]
+    [Permission(Policy.CanAdminExportUserData)]
+    [EnableRateLimiting("auth")]
+    [ProducesResponseType(typeof(FileContentResult), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> ExportCustomerIncidentFile(string userId, [FromQuery] string? orderId, CancellationToken cancellationToken)
+    {
+        var result = await Mediator.Send(new ExportCustomerIncidentFile.Command(userId, orderId), cancellationToken);
+
+        if (!result.IsSuccess)
+        {
+            return HandleResult<ExportCustomerIncidentFile.Response>(result);
+        }
+
+        return File(result.Value!.PdfBytes, "application/pdf", result.Value.FileName);
     }
 
     [HttpPost("delete-account/{userId}")]
@@ -30,6 +48,16 @@ public class AdminGdprController(IMediator mediator) : ApiController(mediator)
     public async Task<IActionResult> DeleteUserAccount(string userId, CancellationToken cancellationToken)
     {
         var result = await Mediator.Send(new AdminDeleteUserAccount.Command(userId), cancellationToken);
+        return HandleResult<object>(result);
+    }
+
+    [HttpPost("requests/{requestId}/retry-deletion")]
+    [Permission(Policy.CanAdminDeleteUserAccount)]
+    [EnableRateLimiting("auth")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public async Task<IActionResult> RetryUserDeletion(string requestId, CancellationToken cancellationToken)
+    {
+        var result = await Mediator.Send(new AdminRetryUserDeletion.Command(requestId), cancellationToken);
         return HandleResult<object>(result);
     }
 
@@ -45,6 +73,7 @@ public class AdminGdprController(IMediator mediator) : ApiController(mediator)
     [HttpGet("requests")]
     [Permission(Policy.CanViewGdprRequests)]
     [ProducesResponseType(typeof(PagedData<GdprRequestDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     public async Task<PagedData<GdprRequestDto>> GetAllGdprRequests([FromQuery] GetAllGdprRequests.Request request, CancellationToken cancellationToken)
         => await Mediator.Send(request, cancellationToken);
 }

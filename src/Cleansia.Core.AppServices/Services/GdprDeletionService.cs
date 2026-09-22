@@ -1,10 +1,14 @@
 ﻿using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Gdpr;
+using Cleansia.Core.AppServices.Features.TenantSettings;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Blobs.Abstractions;
 using Cleansia.Core.Clients.Abstractions.Stripe;
+using Cleansia.Core.Domain.Configuration;
 using Cleansia.Core.Domain.Enums;
+using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Repositories;
+using Cleansia.Core.Domain.Tenancy;
 using Cleansia.Infra.Common.Validations;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -20,6 +24,7 @@ public class GdprDeletionService(
     ICreditAccountRepository creditAccountRepository,
     IEmployeePayoutDetailsRepository employeePayoutDetailsRepository,
     IUserMembershipRepository userMembershipRepository,
+    IUserStripeCustomerRepository userStripeCustomerRepository,
     IOrderPhotoRepository orderPhotoRepository,
     IDeviceRepository deviceRepository,
     ILiveActivityTokenRepository liveActivityTokenRepository,
@@ -33,13 +38,18 @@ public class GdprDeletionService(
     IUserNotificationRepository userNotificationRepository,
     IDeadLetterRepository deadLetterRepository,
     IOutboxMessageRepository outboxMessageRepository,
+    ICustomerActionAuditRepository customerActionAuditRepository,
+    IWorkContractAcceptanceRepository workContractAcceptanceRepository,
     IRefreshTokenService refreshTokenService,
     IStripeClient stripeClient,
     IBlobContainerClientFactory blobClientFactory,
+    IAppConfigurationProvider configProvider,
+    IErasureAttempt erasureAttempt,
+    IArchiveWriteGate archiveWriteGate,
     ILogger<GdprDeletionService> logger)
     : IGdprDeletionService
 {
-    private const string DeletionRequestType = "Deletion";
+    private const string SubjectField = "userId";
 
     public async Task<BusinessResult> DeleteUserAccountAsync(
         string userId,
@@ -48,55 +58,20 @@ public class GdprDeletionService(
         bool deferEmployeeErasure,
         CancellationToken cancellationToken)
     {
-        var user = await userRepository.GetQueryable()
-            .Include(u => u.Employee).ThenInclude(e => e!.Address)
-            .Include(u => u.Cart)
-            .FirstOrDefaultAsync(u => u.Id == userId, cancellationToken);
+        var user = await LoadSubjectAsync(userId, cancellationToken);
 
         if (user is null)
             return BusinessResult.Failure(new Error(
                 nameof(userId), BusinessErrorMessage.NotExistingUserWithEmail));
 
-        var hasPending = await gdprRequestRepository.HasPendingRequestAsync(user.Id, DeletionRequestType, cancellationToken);
+        var hasPending = await gdprRequestRepository.HasPendingRequestAsync(user.Id, Domain.Users.GdprRequest.DeletionRequestType, cancellationToken);
         if (hasPending)
             return BusinessResult.Failure(new Error(
                 nameof(userId), BusinessErrorMessage.GdprDeletionAlreadyPending));
 
-        var blockingOrder = await HasBlockingOrderAsync(user.Id, cancellationToken);
-        if (blockingOrder)
-            return BusinessResult.Failure(new Error(
-                nameof(userId), BusinessErrorMessage.GdprDeletionBlockedByOrder));
-
-        // MONEY OWED BLOCKS ERASURE. Owner ruling 2026-09-05, and the same shape as the unsettled-pay
-        // guard below: a credit balance is a DEBT, not a preference, and anonymizing the person it is
-        // owed to writes it off at the exact moment they asked to be forgotten. The customer spends it
-        // or asks to be paid out, and then the erasure proceeds and the account goes with them.
-        //
-        // Applies to CUSTOMERS, which is why it sits above the employee block rather than inside it.
-        // A zero balance never blocks anything, and a customer who has never had credit has no account
-        // at all. -> /architecture/security-rules, SubjectDataErasureRosterTests
-        var creditOwed = await HasPositiveCreditBalanceAsync(user.Id, cancellationToken);
-        if (creditOwed)
-            return BusinessResult.Failure(new Error(
-                nameof(userId), BusinessErrorMessage.GdprDeletionBlockedByCreditBalance));
-
-        if (user.Employee is not null)
-        {
-            var blockingInvoice = await HasBlockingInvoiceAsync(user.Employee.Id, cancellationToken);
-            if (blockingInvoice)
-                return BusinessResult.Failure(new Error(
-                    nameof(userId), BusinessErrorMessage.GdprDeletionBlockedByInvoice));
-
-            var blockingAssignment = await HasBlockingAssignedOrderAsync(user.Employee.Id, cancellationToken);
-            if (blockingAssignment)
-                return BusinessResult.Failure(new Error(
-                    nameof(userId), BusinessErrorMessage.GdprDeletionBlockedByAssignedOrder));
-
-            var unsettledPay = await HasUnsettledPayAsync(user.Employee.Id, cancellationToken);
-            if (unsettledPay)
-                return BusinessResult.Failure(new Error(
-                    nameof(userId), BusinessErrorMessage.GdprDeletionBlockedByUnsettledPay));
-        }
+        var refusal = await FindRefusalAsync(user, cancellationToken);
+        if (refusal is not null)
+            return refusal;
 
         if (deferEmployeeErasure && user.Employee is not null)
         {
@@ -117,20 +92,114 @@ public class GdprDeletionService(
             // discard the very row this branch exists to write. The caller distinguishes "filed"
             // from "erased" by which app it is, not by the result — the partner clients say
             // "requested"; re-filing is refused by the pending-request check above.
-            var filedRequest = Domain.Users.GdprRequest.Create(user.Id, DeletionRequestType);
+            var filedRequest = Domain.Users.GdprRequest.Create(user.Id, Domain.Users.GdprRequest.DeletionRequestType);
             gdprRequestRepository.Add(filedRequest);
             return BusinessResult.Success();
         }
 
-        var auditEntry = Domain.Users.GdprRequest.Create(user.Id, DeletionRequestType);
+        var auditEntry = Domain.Users.GdprRequest.Create(user.Id, Domain.Users.GdprRequest.DeletionRequestType);
         auditEntry.MarkProcessing();
         gdprRequestRepository.Add(auditEntry);
+
+        // From here on a failure is a failed ERASURE, not a refusal: the row above rolls back with the
+        // walk, so the attempt is marked in request scope for the pipeline to put on record out of band.
+        erasureAttempt.Begin(user.Id, auditEntry.Id, resolveAuditActor(user).ProcessedBy);
+
+        return await EraseAsync(user, auditEntry, deactivationReason, resolveAuditActor, cancellationToken);
+    }
+
+    public async Task<BusinessResult> RetryDeletionAsync(
+        string requestId,
+        Func<Domain.Users.User, (string ProcessedBy, string? Notes)> resolveAuditActor,
+        CancellationToken cancellationToken)
+    {
+        var request = await gdprRequestRepository.GetByIdAsync(requestId, cancellationToken);
+        if (request is null)
+            return BusinessResult.Failure(new Error(
+                nameof(requestId), BusinessErrorMessage.GdprRequestNotFound));
+
+        var user = await LoadSubjectAsync(request.UserId, cancellationToken);
+        if (user is null)
+            return BusinessResult.Failure(new Error(
+                nameof(requestId), BusinessErrorMessage.NotExistingUserWithEmail));
+
+        // Before the checks, unlike the first attempt: the row already exists and an admin is watching it,
+        // so a refusal is stamped on it too — the note is what tells them why it is still not done.
+        erasureAttempt.Begin(user.Id, request.Id, resolveAuditActor(user).ProcessedBy);
+
+        var refusal = await FindRefusalAsync(user, cancellationToken);
+        if (refusal is not null)
+            return refusal;
+
+        request.MarkProcessing();
+        return await EraseAsync(user, request, GdprAuditReasons.RetriedDeletion, resolveAuditActor, cancellationToken);
+    }
+
+    private Task<Domain.Users.User?> LoadSubjectAsync(string userId, CancellationToken cancellationToken)
+        => userRepository.GetQueryable()
+            .Include(u => u.Employee).ThenInclude(e => e!.Address)
+            .Include(u => u.Cart)
+            .FirstOrDefaultAsync(u => u.Id == userId, cancellationToken);
+
+    private async Task<BusinessResult?> FindRefusalAsync(Domain.Users.User user, CancellationToken cancellationToken)
+    {
+        var blockingOrder = await HasBlockingOrderAsync(user, cancellationToken);
+        if (blockingOrder)
+            return BusinessResult.Failure(new Error(
+                SubjectField, BusinessErrorMessage.GdprDeletionBlockedByOrder));
+
+        // MONEY OWED BLOCKS ERASURE. Owner ruling 2026-09-05, and the same shape as the unsettled-pay
+        // guard below: a credit balance is a DEBT, not a preference, and anonymizing the person it is
+        // owed to writes it off at the exact moment they asked to be forgotten. The customer spends it
+        // or asks to be paid out, and then the erasure proceeds and the account goes with them.
+        //
+        // Applies to CUSTOMERS, which is why it sits above the employee block rather than inside it.
+        // A zero balance never blocks anything, and a customer who has never had credit has no account
+        // at all. -> /architecture/security-rules, SubjectDataErasureRosterTests
+        var creditOwed = await HasPositiveCreditBalanceAsync(user.Id, cancellationToken);
+        if (creditOwed)
+            return BusinessResult.Failure(new Error(
+                SubjectField, BusinessErrorMessage.GdprDeletionBlockedByCreditBalance));
+
+        if (user.Employee is null)
+            return null;
+
+        var blockingInvoice = await HasBlockingInvoiceAsync(user.Employee.Id, cancellationToken);
+        if (blockingInvoice)
+            return BusinessResult.Failure(new Error(
+                SubjectField, BusinessErrorMessage.GdprDeletionBlockedByInvoice));
+
+        var blockingAssignment = await HasBlockingAssignedOrderAsync(user.Employee.Id, cancellationToken);
+        if (blockingAssignment)
+            return BusinessResult.Failure(new Error(
+                SubjectField, BusinessErrorMessage.GdprDeletionBlockedByAssignedOrder));
+
+        var unsettledPay = await HasUnsettledPayAsync(user.Employee.Id, cancellationToken);
+        if (unsettledPay)
+            return BusinessResult.Failure(new Error(
+                SubjectField, BusinessErrorMessage.GdprDeletionBlockedByUnsettledPay));
+
+        return null;
+    }
+
+    private async Task<BusinessResult> EraseAsync(
+        Domain.Users.User user,
+        Domain.Users.GdprRequest request,
+        string deactivationReason,
+        Func<Domain.Users.User, (string ProcessedBy, string? Notes)> resolveAuditActor,
+        CancellationToken cancellationToken)
+    {
+        // Art. 17 does not care that the subject's company is frozen for archive: the walk below
+        // pseudonymises its orders and disputes, and the archived-company write guard must let the
+        // commit through. The commit runs in the pipeline after this returns, so the gate is left open
+        // for the rest of the request scope rather than closed at the end of the walk.
+        archiveWriteGate.OpenForLegalObligation("erasure");
 
         await CancelActiveMembershipAsync(user.Id, cancellationToken);
         await AnonymizeUserDataAsync(user, deactivationReason, cancellationToken);
 
         var (processedBy, notes) = resolveAuditActor(user);
-        auditEntry.MarkCompleted(processedBy, notes);
+        request.MarkCompleted(processedBy, notes);
         return BusinessResult.Success();
     }
 
@@ -143,6 +212,12 @@ public class GdprDeletionService(
     /// to the subject's home</b>, anonymising the customer underneath a job that stays live and staffed.
     /// It was missing from the day the set was written while the DEAD <c>Pending</c> was present.
     /// → /flows/gdpr-and-audit</para>
+    ///
+    /// <para>Only the ACCOUNT's own orders refuse. A live GUEST booking under the subject's e-mail — one of
+    /// <see cref="SubjectOrders"/>'s, which the walk below otherwise anonymises — is left out of the walk
+    /// instead: a guest can cancel only with the booking's own credentials, so a stranger's mistyped address would dead-end the
+    /// subject on "blocked by a live order" with no order of theirs to cancel. Its contact data stays
+    /// until the job ends and the order-PII sweep reaches it.</para>
     /// </summary>
     private static readonly OrderStatus[] ErasureBlockingStatuses =
     [
@@ -153,8 +228,8 @@ public class GdprDeletionService(
         OrderStatus.InProgress,
     ];
 
-    private Task<bool> HasBlockingOrderAsync(string userId, CancellationToken cancellationToken)
-        => orderRepository.GetFiltered(o => o.UserId == userId)
+    private Task<bool> HasBlockingOrderAsync(Domain.Users.User user, CancellationToken cancellationToken)
+        => orderRepository.GetFiltered(o => o.UserId == user.Id)
             .AnyAsync(o => ErasureBlockingStatuses.Contains(o.CurrentStatus), cancellationToken);
 
     /// <summary>
@@ -175,14 +250,20 @@ public class GdprDeletionService(
     /// act on. → /flows/pay-and-payouts
     /// </summary>
     /// <summary>
-    /// Does the platform still owe this customer money? Reads the balance only — the ledger is
-    /// irrelevant to the question, and a customer with no account has nothing owed.
+    /// Does the platform still owe this customer money, IN ANY CURRENCY? Reads balances only — the
+    /// ledger is irrelevant to the question, and a customer with no account has nothing owed.
+    ///
+    /// <para><b>Any currency is the whole point.</b> This used to read a single account, which under
+    /// one-account-per-customer was the same question. It is not any more: a customer holding nothing
+    /// in one currency and a positive balance in another would have passed the gate and been erased
+    /// while the platform still owed them the second balance. Erasure is irreversible and this is the
+    /// only thing standing in front of it.</para>
     /// </summary>
     private async Task<bool> HasPositiveCreditBalanceAsync(
         string userId, CancellationToken cancellationToken)
     {
-        var spendable = await creditAccountRepository.GetSpendableAsync(userId, cancellationToken);
-        return spendable is { Balance: > 0m };
+        var spendables = await creditAccountRepository.GetSpendablesForUserAsync(userId, cancellationToken);
+        return spendables.Any(s => s.Balance > 0m);
     }
 
     private Task<bool> HasUnsettledPayAsync(string employeeId, CancellationToken cancellationToken)
@@ -262,34 +343,48 @@ public class GdprDeletionService(
             await employeeDocumentRepository.RemoveForEmployeeAsync(user.Employee.Id, ct);
         }
 
-        var customerOrderIds = await orderRepository.GetFiltered(o => o.UserId == user.Id)
+        // The account's own orders AND the guest bookings under its e-mail (owner ruling 2026-09-15), read
+        // here while the e-mail is still live: User.Anonymize() at the end of the walk replaces it.
+        //
+        // Past the tenant filter, like LookupOrder (ADR-0051's asymmetric cell): a guest booking is stamped
+        // with the MARKET's operator at checkout, while this request runs under the subject's own operator,
+        // so a booking placed in another market would otherwise be silently neither erased nor exported.
+        // The predicate is the pin — the caller's own id, or their e-mail on a row that names no account —
+        // and every read below keys on the ids it yields. Modified rows keep their stamp on commit.
+        //
+        // A guest booking still LIVE is left out rather than refusing the erasure (see
+        // ErasureBlockingStatuses); the ids below are the ended ones.
+        var subjectOrders = SubjectOrders.Of(user.Id, user.Email);
+        var customerOrderIds = await orderRepository.GetQueryableIgnoringTenant()
+            .Where(subjectOrders)
+            .Where(o => !ErasureBlockingStatuses.Contains(o.CurrentStatus))
             .Select(o => o.Id)
             .ToListAsync(ct);
 
         var photoBlobClient = blobClientFactory.GetBlobContainerClient(Constants.BlobContainers.OrderPhotos);
-        foreach (var orderId in customerOrderIds)
+        var photos = await orderPhotoRepository.GetQueryableIgnoringTenant()
+            .Where(p => customerOrderIds.Contains(p.OrderId))
+            .ToListAsync(ct);
+        foreach (var photo in photos)
         {
-            var photos = await orderPhotoRepository.GetPhotosByOrderIdAsync(orderId, ct);
-            foreach (var photo in photos)
+            try
             {
-                try
-                {
-                    var blobName = ExtractBlobNameFromUrl(photo.BlobUrl);
-                    await photoBlobClient.DeleteAsync(blobName, ct);
-                }
-                catch (Exception ex)
-                {
-                    logger.LogWarning(ex, "Failed to delete order photo blob for order {OrderId}", orderId);
-                }
-
-                // The row survives the blob because the order does — and it carries the uploader's own file
-                // name and free-text note, which Order.AnonymizeCustomerData's review/note/issue walk never
-                // reached (photos are not a navigation on the aggregate it loads).
-                photo.Anonymize();
+                var blobName = ExtractBlobNameFromUrl(photo.BlobUrl);
+                await photoBlobClient.DeleteAsync(blobName, ct);
             }
+            catch (Exception ex)
+            {
+                logger.LogWarning(ex, "Failed to delete order photo blob for order {OrderId}", photo.OrderId);
+            }
+
+            // The row survives the blob because the order does — and it carries the uploader's own file
+            // name and free-text note, which Order.AnonymizeCustomerData's review/note/issue walk never
+            // reached (photos are not a navigation on the aggregate it loads).
+            photo.Anonymize();
         }
 
-        var orders = await orderRepository.GetFiltered(o => o.UserId == user.Id)
+        var orders = await orderRepository.GetQueryableIgnoringTenant()
+            .Where(o => customerOrderIds.Contains(o.Id))
             .Include(o => o.CustomerAddress)
             .Include(o => o.Reviews)
             .Include(o => o.OrderNotes)
@@ -331,8 +426,11 @@ public class GdprDeletionService(
         // live token keeps the subject's IP address, device label and device id until its own natural
         // expiry before the 90-day forensic window even begins. ADR-0027's directory is untouched: its poll
         // predicate reads the password_reset reason alone.
-        await refreshTokenService.RevokeAllForUserAsync(
-            user.Id, GdprAuditReasons.RefreshTokenRevocation, exceptRawToken: null, ct);
+        //
+        // STAGED, never the self-committing revoke: that one commits the unit of work mid-walk, which made
+        // everything above durable while everything below could still roll back — a half-erased subject with
+        // no request on record. The whole erasure is one commit, and the tokens ride it.
+        await refreshTokenService.StageRevokeAllForUserAsync(user.Id, GdprAuditReasons.RefreshTokenRevocation, ct);
 
         if (user.Cart is not null)
             cartRepository.Remove(user.Cart);
@@ -343,9 +441,11 @@ public class GdprDeletionService(
 
         var disputes = await disputeRepository.GetDisputesByUserIdAsync(user.Id, ct);
         var evidenceBlobClient = blobClientFactory.GetBlobContainerClient(Constants.BlobContainers.DisputeEvidence);
+        var disputeTextRetainedUntil = DateTimeOffset.UtcNow.AddYears(
+            await configProvider.GetAsync(TenantSettingCatalog.DisputeTextRetentionYears, ct));
         foreach (var dispute in disputes)
         {
-            // These two steps are ordered, not adjacent by accident. Anonymize() overwrites
+            // These two steps are ordered, not adjacent by accident. AnonymizeEvidence() overwrites
             // DisputeEvidence.FilePath, which is the only place the blob's name is stored — nothing else
             // in the database, the GDPR export or the audit log records it. Run it first and the delete
             // below is issued against "[DELETED]": the file survives with nothing left able to name it,
@@ -364,7 +464,12 @@ public class GdprDeletionService(
                 }
             }
 
-            dispute.Anonymize();
+            dispute.AnonymizeEvidence();
+
+            // The TEXT stays readable — the description, the messages, the resolution notes — because a
+            // chargeback or a claim on the order may still turn on it (owner ruling 2026-09-14; GDPR
+            // Art. 17(3)(e)). The stamp is what the retention sweep's DisputeText task acts on.
+            dispute.RetainTextUntil(disputeTextRetainedUntil);
         }
 
         var savedAddresses = await savedAddressRepository.GetByUserAsync(user.Id, ct);
@@ -372,8 +477,8 @@ public class GdprDeletionService(
 
         if (customerOrderIds.Count > 0)
         {
-            var employeePays = await orderEmployeePayRepository
-                .GetFiltered(p => customerOrderIds.Contains(p.OrderId))
+            var employeePays = await orderEmployeePayRepository.GetQueryableIgnoringTenant()
+                .Where(p => customerOrderIds.Contains(p.OrderId))
                 .ToListAsync(ct);
             foreach (var pay in employeePays)
                 pay.Anonymize();
@@ -395,10 +500,28 @@ public class GdprDeletionService(
             // the request returned success (ADR-0034 D1.1.2). Anonymize() only drops the gate scalar.
             await employeePayoutDetailsRepository.RemoveForEmployeeAsync(user.Employee.Id, ct);
 
+            // The contract records stay with their orders (the subject handle is a bare id the
+            // anonymised Employee row keeps); the IP, device label and device id on each are blanked
+            // in this same commit, the way the customer's own audit rows are below.
+            await workContractAcceptanceRepository.PseudonymiseForEmployeeAsync(user.Employee.Id, ct);
+
             user.Employee.Anonymize();
             user.Employee.Address?.Anonymize();
             user.Employee.Deactivated(deactivationReason, DateTimeOffset.UtcNow);
         }
+
+        // The per-currency Stripe Customer ids go with the legacy one Anonymize() clears.
+        await userStripeCustomerRepository.RemoveForUserAsync(user.Id, ct);
+
+        // The customer's own conduct record stays for defence of claims (ADR-0062 D5) — the subject id is
+        // pseudonymous once the User row below is anonymized — but the IP address, device label and
+        // device id on each row are personal data and are blanked. A tracked walk, not a set-based
+        // update, so the blanking lands in the same commit as the User row's anonymization — never a
+        // blanked trail for a customer who still exists. The guest rows are the same person one step
+        // removed: a booking placed with the account's e-mail carries no UserId, only the order id, and
+        // that order is one of the subject's.
+        await customerActionAuditRepository.PseudonymiseForSubjectAsync(user.Id, ct);
+        await customerActionAuditRepository.PseudonymiseGuestRowsForOrdersAsync(customerOrderIds, ct);
 
         user.Anonymize();
         user.Deactivated(deactivationReason, DateTimeOffset.UtcNow);

@@ -1,5 +1,6 @@
 import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
+import { errorToastSuppressingHttpClient } from '@cleansia/services';
 import {
   AccessInstructionsClient,
   IAccessInstructionsClient,
@@ -10,6 +11,8 @@ import {
   IAdminCodeClient,
   AdminCompanyClient,
   IAdminCompanyClient,
+  AdminCompanyLifecycleClient,
+  IAdminCompanyLifecycleClient,
   AdminCountryClient,
   IAdminCountryClient,
   AdminCreditClient,
@@ -22,16 +25,22 @@ import {
   IAdminEmployeeClient,
   AdminEmployeeDocumentClient,
   IAdminEmployeeDocumentClient,
+  AdminExtraClient,
+  IAdminExtraClient,
   AdminInvoiceClient,
   IAdminInvoiceClient,
   AdminLanguageClient,
   IAdminLanguageClient,
+  AdminLegalClient,
+  IAdminLegalClient,
   AdminLoyaltyClient,
   IAdminLoyaltyClient,
   AdminLoyaltyTierClient,
   IAdminLoyaltyTierClient,
   AdminMarketingClient,
   IAdminMarketingClient,
+  AdminNotificationClient,
+  IAdminNotificationClient,
   AdminOrderClient,
   IAdminOrderClient,
   AdminPackageClient,
@@ -50,6 +59,8 @@ import {
   IAdminReportClient,
   AdminServiceClient,
   IAdminServiceClient,
+  AdminTenantSettingsClient,
+  IAdminTenantSettingsClient,
   AdminUserClient,
   IAdminUserClient,
   ApiClient,
@@ -63,14 +74,17 @@ import {
 interface IAdminClient {
   adminAuthClient: IAdminAuthClient;
   adminCompanyClient: IAdminCompanyClient;
+  adminCompanyLifecycleClient: IAdminCompanyLifecycleClient;
   adminEmployeeClient: IAdminEmployeeClient;
   adminCodeClient: IAdminCodeClient;
   adminCountryClient: IAdminCountryClient;
   adminCurrencyClient: IAdminCurrencyClient;
   adminEmailTemplateClient: IAdminEmailTemplateClient;
   adminEmployeeDocumentClient: IAdminEmployeeDocumentClient;
+  adminExtraClient: IAdminExtraClient;
   adminInvoiceClient: IAdminInvoiceClient;
   adminLanguageClient: IAdminLanguageClient;
+  adminLegalClient: IAdminLegalClient;
   adminOrderClient: IAdminOrderClient;
   accessInstructionsClient: IAccessInstructionsClient;
   adminPackageClient: IAdminPackageClient;
@@ -78,6 +92,7 @@ interface IAdminClient {
   adminPayrollClient: IAdminPayrollClient;
   adminReportClient: IAdminReportClient;
   adminServiceClient: IAdminServiceClient;
+  adminTenantSettingsClient: IAdminTenantSettingsClient;
   adminUserClient: IAdminUserClient;
   emailTemplateTypesClient: ITypesClient;
   adminPayConfigClient: IAdminPayConfigClient;
@@ -86,6 +101,7 @@ interface IAdminClient {
   adminLoyaltyClient: IAdminLoyaltyClient;
   adminCreditClient: IAdminCreditClient;
   adminMarketingClient: IAdminMarketingClient;
+  adminNotificationClient: IAdminNotificationClient;
   adminReferralClient: IAdminReferralClient;
   payoutDetailsClient: IPayoutDetailsClient;
   // The kitchen-sink generated client — hosts service-city CRUD + any
@@ -109,6 +125,10 @@ export class AdminClient implements IAdminClient {
     this.httpClient,
     this.apiBaseUrl
   );
+  adminCompanyLifecycleClient: IAdminCompanyLifecycleClient = new AdminCompanyLifecycleClient(
+    this.httpClient,
+    this.apiBaseUrl
+  );
   adminEmployeeClient: IAdminEmployeeClient = new AdminEmployeeClient(
     this.httpClient,
     this.apiBaseUrl
@@ -119,6 +139,10 @@ export class AdminClient implements IAdminClient {
   );
   adminEmployeeDocumentClient: IAdminEmployeeDocumentClient =
     new AdminEmployeeDocumentClient(this.httpClient, this.apiBaseUrl);
+  adminExtraClient: IAdminExtraClient = new AdminExtraClient(
+    this.httpClient,
+    this.apiBaseUrl
+  );
   adminInvoiceClient: IAdminInvoiceClient = new AdminInvoiceClient(
     this.httpClient,
     this.apiBaseUrl
@@ -132,6 +156,10 @@ export class AdminClient implements IAdminClient {
     this.apiBaseUrl
   );
   adminCurrencyClient: IAdminCurrencyClient = new AdminCurrencyClient(
+    this.httpClient,
+    this.apiBaseUrl
+  );
+  adminLegalClient: IAdminLegalClient = new AdminLegalClient(
     this.httpClient,
     this.apiBaseUrl
   );
@@ -160,6 +188,10 @@ export class AdminClient implements IAdminClient {
     this.apiBaseUrl
   );
   adminServiceClient: IAdminServiceClient = new AdminServiceClient(
+    this.httpClient,
+    this.apiBaseUrl
+  );
+  adminTenantSettingsClient: IAdminTenantSettingsClient = new AdminTenantSettingsClient(
     this.httpClient,
     this.apiBaseUrl
   );
@@ -201,9 +233,33 @@ export class AdminClient implements IAdminClient {
     this.httpClient,
     this.apiBaseUrl
   );
+  adminNotificationClient: IAdminNotificationClient = new AdminNotificationClient(
+    this.httpClient,
+    this.apiBaseUrl
+  );
   payoutDetailsClient: IPayoutDetailsClient = new PayoutDetailsClient(
     this.httpClient,
     this.apiBaseUrl
   );
   apiClient: IApiClient = new ApiClient(this.httpClient, this.apiBaseUrl);
+}
+
+/**
+ * The same sub-clients over an `HttpClient` that opts every request out of the shared error toast.
+ * Only the sub-clients with a call site that asked for silence are exposed here: the unread-count
+ * poll behind the notification badge is made on the administrator's behalf every minute, and a toast
+ * for a failed background read is noise about something nobody asked for.
+ */
+@Injectable({
+  providedIn: 'root',
+})
+export class SilentFailureAdminClient {
+  private readonly httpClient: HttpClient = errorToastSuppressingHttpClient();
+  private readonly apiBaseUrl: string =
+    inject(ADMINAPIBASEURL, { optional: true }) ?? 'http://localhost:5001';
+
+  adminNotificationClient: IAdminNotificationClient = new AdminNotificationClient(
+    this.httpClient,
+    this.apiBaseUrl
+  );
 }

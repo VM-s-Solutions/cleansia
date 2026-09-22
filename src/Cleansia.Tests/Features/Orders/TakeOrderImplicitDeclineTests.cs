@@ -9,6 +9,7 @@ using Cleansia.Core.Domain.Users;
 using Microsoft.Extensions.Logging.Abstractions;
 using MockQueryable;
 using Moq;
+using Cleansia.TestUtilities;
 
 namespace Cleansia.Tests.Features.Orders;
 
@@ -38,13 +39,14 @@ public class TakeOrderImplicitDeclineTests
     private readonly Mock<INotificationProducer> _notificationProducer = new();
     private readonly Mock<IEmailService> _emailService = new();
 
+    private readonly Mock<IWorkContractAcceptor> _workContractAcceptor = new();
     [Fact]
     public async Task Committing_To_A_Clashing_Job_Ends_The_Reservation_It_Can_No_Longer_Honour()
     {
         var stranded = ReservedOrder(StrandedOrderId, StrandedCustomerId);
         Arrange(stranded);
 
-        await CreateHandler().Handle(new TakeOrder.Command(TakenOrderId), CancellationToken.None);
+        await CreateHandler().Handle(new TakeOrder.Command(TakenOrderId, WorkContractTestData.TextIdEn), CancellationToken.None);
 
         Assert.True(stranded.PreferredHoldUntilUtc <= DateTime.UtcNow);
     }
@@ -55,7 +57,7 @@ public class TakeOrderImplicitDeclineTests
         var stranded = ReservedOrder(StrandedOrderId, StrandedCustomerId);
         Arrange(stranded);
 
-        await CreateHandler().Handle(new TakeOrder.Command(TakenOrderId), CancellationToken.None);
+        await CreateHandler().Handle(new TakeOrder.Command(TakenOrderId, WorkContractTestData.TextIdEn), CancellationToken.None);
 
         _notificationProducer.Verify(
             p => p.NotifyAsync(
@@ -82,7 +84,7 @@ public class TakeOrderImplicitDeclineTests
         var taken = ReservedOrder(TakenOrderId, "user-taken-customer");
         Arrange(taken);
 
-        await CreateHandler().Handle(new TakeOrder.Command(TakenOrderId), CancellationToken.None);
+        await CreateHandler().Handle(new TakeOrder.Command(TakenOrderId, WorkContractTestData.TextIdEn), CancellationToken.None);
 
         _notificationProducer.Verify(
             p => p.NotifyAsync(
@@ -106,7 +108,7 @@ public class TakeOrderImplicitDeclineTests
     {
         var order = Arrange(ReservedOrder(StrandedOrderId, StrandedCustomerId));
 
-        await CreateHandler().Handle(new TakeOrder.Command(TakenOrderId), CancellationToken.None);
+        await CreateHandler().Handle(new TakeOrder.Command(TakenOrderId, WorkContractTestData.TextIdEn), CancellationToken.None);
 
         _orderRepository.Verify(
             r => r.GetLiveReservationsForBeneficiaryInWindowAsync(
@@ -150,7 +152,6 @@ public class TakeOrderImplicitDeclineTests
             customerAddress: Address.Create("Stranded St 1", "Praha", "11000", "cz"),
             rooms: 1,
             bathrooms: 1,
-            extras: new Dictionary<string, bool>(),
             cleaningDateTime: DateTime.UtcNow.AddDays(2),
             paymentType: PaymentType.Card,
             totalPrice: 1000m,
@@ -174,5 +175,6 @@ public class TakeOrderImplicitDeclineTests
             _accessService.Object,
             _notificationProducer.Object,
             _emailService.Object,
+            _workContractAcceptor.Object,
             NullLogger<TakeOrder.Handler>.Instance);
 }

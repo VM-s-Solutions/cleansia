@@ -1,10 +1,12 @@
 ﻿using Cleansia.Config;
 using Cleansia.Core.AppServices.Authentication;
+using Cleansia.Core.Domain.Common;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Infra.Common.Configuration;
 using Cleansia.Infra.Common.Configuration.Interfaces;
 using Cleansia.Infra.Database;
 using Cleansia.TestUtilities;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -44,12 +46,12 @@ public abstract class BaseIntegrationTest : BaseTransactionalPostgresSqlTest<Cle
             //
             // Pooling is OFF, and that is load-bearing rather than a preference. Every TestMethod builds
             // a fresh ServiceCollection, so AddDbContextBindings builds a fresh NpgsqlDataSource — each
-            // with its own pool — and the ServiceProvider is never disposed. Registering the data source
-            // as an externally-created singleton instance means the container would not dispose it even
-            // if it were, so the pooled connections stayed OPEN on the container for the whole run and
-            // accumulated one test at a time until "53300: sorry, too many clients already". The suite
-            // had run out of headroom: adding a single test made an unrelated one fail. Unpooled, each
-            // connection closes when its DbContext does, and the count no longer grows with the suite.
+            // with its own pool — and the ServiceProvider is never disposed (BaseTransactionalPostgresSqlTest
+            // builds it and lets it go), so the container never gets to close the data source it owns, and
+            // the pooled connections stayed OPEN on the container for the whole run and accumulated one
+            // test at a time until "53300: sorry, too many clients already". The suite had run out of
+            // headroom: adding a single test made an unrelated one fail. Unpooled, each connection closes
+            // when its DbContext does, and the count no longer grows with the suite.
             .AddInMemoryCollection(new Dictionary<string, string?>
             {
                 ["ConnectionStrings:ConnectionString"] = $"{Fixture.GetConnectionString()};Pooling=false"
@@ -122,8 +124,23 @@ public abstract class BaseIntegrationTest : BaseTransactionalPostgresSqlTest<Cle
             SchemasToExclude = ["pg_catalog", "information_schema"]
         });
         await respawner.ResetAsync(conn);
-        await base.TestMethod(Setup, arrange, act, assert, cleanup, transactional);
+        await SeedTenantRegistryAsync(conn);
+        await base.TestMethod(Setup, Arrange(), act, assert, cleanup, transactional);
         return;
+
+        // Every stamped table is NOT NULL (ADR-0061 D8) and the arrange step saves with a bare
+        // SaveChangesAsync, so the rows a test seeds are stamped here with the fixture's operating
+        // company — the same value the scoped ITenantProvider below answers, so the act and assert
+        // steps read them back through the filter.
+        Func<IServiceProvider, Task>? Arrange() => arrange is null
+            ? null
+            : async provider =>
+            {
+                var dbContext = provider.GetRequiredService<CleansiaDbContext>();
+                await arrange(dbContext);
+                StampUnstampedAdded(dbContext, TestTenants.Default);
+                await dbContext.SaveChangesAsync();
+            };
 
         async Task Setup(IServiceCollection services)
         {
@@ -133,6 +150,15 @@ public abstract class BaseIntegrationTest : BaseTransactionalPostgresSqlTest<Cle
             services.AddCoreBindings(Configuration, new TestHostEnvironment());
 
             services.Replace(ServiceDescriptor.Scoped<IUserSessionProvider>(_ => new TestUserSessionProvider(new TestClaimsPrincipalUser())));
+            // The ambient tenant of an authenticated request: the claim the test principal would carry.
+            // A test that exercises the ANONYMOUS path (the scope behaviour, ADR-0061 D3) replaces this
+            // with a bare TenantProvider in its own setup.
+            services.Replace(ServiceDescriptor.Scoped<ITenantProvider>(sp =>
+            {
+                var tenantProvider = new TenantProvider(sp.GetRequiredService<IHttpContextAccessor>());
+                tenantProvider.SetTenantOverride(TestTenants.Default);
+                return tenantProvider;
+            }));
             services.AddSingleton<IHostAudienceProvider>(new HostAudienceProvider(JwtAudiences.Customer));
             services.Replace(ServiceDescriptor.Singleton<IDatabaseConnectionString>(_ => new DatabaseConnectionString(Configuration)
             {
@@ -144,6 +170,39 @@ public abstract class BaseIntegrationTest : BaseTransactionalPostgresSqlTest<Cle
                 await setup(services);
             }
         }
+    }
+
+    /// <summary>
+    /// Stamps every Added stamped entity that carries no tenant yet — what CommitAsync does from the
+    /// ambient provider, for a seed that runs where the provider answers null (the anonymous-path tests).
+    /// </summary>
+    public static void StampUnstampedAdded(CleansiaDbContext dbContext, string tenantId)
+    {
+        foreach (var entry in dbContext.ChangeTracker.Entries<ITenantEntity>())
+        {
+            if (entry.State == EntityState.Added && string.IsNullOrEmpty(entry.Entity.TenantId))
+            {
+                entry.Entity.TenantId = tenantId;
+            }
+        }
+    }
+
+    /// <summary>
+    /// The two operating companies every fixture may point a country at (the FK on
+    /// CountryConfigurations.OperatorTenantId is the only one into Tenants). Re-inserted after every
+    /// Respawn reset, the way the seed script inserts the first one before anything that names it.
+    /// </summary>
+    public static async Task SeedTenantRegistryAsync(NpgsqlConnection conn)
+    {
+        await using var seed = new NpgsqlCommand(
+            $"""
+            INSERT INTO "Tenants" ("Id", "IsActive", "Name", "CreatedBy", "CreatedOn")
+            VALUES ('{TestTenants.Default}', true, 'Cleansia CZ s.r.o.', 'seed', now()),
+                   ('{TestTenants.Second}', true, 'Cleansia SK s.r.o.', 'seed', now())
+            ON CONFLICT ("Id") DO NOTHING;
+            """,
+            conn);
+        await seed.ExecuteNonQueryAsync();
     }
 
     protected async Task TestMethod<TResult>(

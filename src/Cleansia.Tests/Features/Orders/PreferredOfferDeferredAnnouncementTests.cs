@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Configuration;
+using Cleansia.Core.AppServices.Auditing;
 using Cleansia.Infra.Common.Configuration;
 using System.Globalization;
 using Cleansia.Core.AppServices.Features.Orders;
@@ -15,6 +16,7 @@ using Moq;
 using Stripe;
 using Constants = Cleansia.Core.AppServices.Common.Constants;
 using Dispute = Cleansia.Core.Domain.Disputes.Dispute;
+using Cleansia.Tests.Common;
 
 namespace Cleansia.Tests.Features.Orders;
 
@@ -215,7 +217,6 @@ public class PreferredOfferDeferredAnnouncementTests
             customerAddress: Core.Domain.Users.Address.Create("123 Main St", "Prague", "11000", "cz"),
             rooms: 1,
             bathrooms: 1,
-            extras: new Dictionary<string, bool>(),
             cleaningDateTime: DateTime.UtcNow.AddDays(1),
             paymentType: paymentType,
             totalPrice: 1000m,
@@ -226,6 +227,7 @@ public class PreferredOfferDeferredAnnouncementTests
             recurringTemplateId: recurringTemplateId);
         order.Id = OrderId;
         order.TenantId = TenantId;
+        order.SetCurrency(Core.Domain.Internationalization.Currency.Create("CZK", "Kč", "Czech koruna"));
         order.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.New, order));
         return order;
     }
@@ -238,15 +240,18 @@ public class PreferredOfferDeferredAnnouncementTests
         var stripeClient = new Mock<Core.Clients.Abstractions.Stripe.IStripeClient>();
 
         return new ConfirmRecurringOrder.Handler(
-            _orderRepository.Object,
+            OrderAccessDoubles.Over(_orderRepository, session),
             new Mock<ICreditAccountRepository>().Object,
             new Mock<IUserRepository>().Object,
             session.Object,
+            Mock.Of<ITenantProvider>(),
             stripeClient.Object,
             new StripeConfig(new ConfigurationBuilder().Build()),
             _pending.Object,
             _notificationProducer.Object,
             resolver,
+            Mock.Of<IAdminNotifier>(),
+            new AuditContext(),
             NullLogger<ConfirmRecurringOrder.Handler>.Instance);
     }
 
@@ -276,6 +281,8 @@ public class PreferredOfferDeferredAnnouncementTests
             _pending.Object,
             _notificationProducer.Object,
             resolver,
+            Mock.Of<IAdminNotifier>(),
+            Mock.Of<IUserNotificationRepository>(),
             NullLogger<HandlePaymentNotification.Handler>.Instance);
     }
 

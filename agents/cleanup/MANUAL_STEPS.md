@@ -8,9 +8,10 @@ step, cleared when done.
 ### MS-13 — Send one of each migrated e-mail before the next deploy — **owner**
 
 T-0677 moved all six live e-mails off hosted SendGrid templates onto
-`email-templates/` in this repository. Ten tests assert on the HTML the SDK actually serializes, so
-the bodies are proven; what is **not** proven is what a real mail client does with them, and that is
-the half a test cannot reach.
+`email-templates/` in this repository. The folder holds **ten templates now**: the original six, the
+promo-code e-mail, the two company wind-down notices (T-0762) and the administrator notification
+(T-0774). Tests assert on the HTML the SDK actually serializes, so the bodies are proven; what is
+**not** proven is what a real mail client does with them, and that is the half a test cannot reach.
 
 **Action:** with a live SendGrid key, trigger one of each and open them — ideally in Gmail and
 Outlook, which are the two that rewrite CSS:
@@ -22,6 +23,12 @@ Outlook, which are the two that rewrite CSS:
    `{{StatusClass}}` written into a class attribute)
 5. close a pay period → period-closed (check the invoice PDF)
 6. a period near its end → reminder (check the countdown reads "N days remaining")
+7. request a promo code → promo-code e-mail
+8. wind down the company from a date → the customer notice **and** the cleaner notice (one each)
+9. file a dispute as a customer → the administrator notification (`admin-notification.html`; the body
+   is one sentence with the order number substituted — check the substitution and the sign-in hint
+   line — and set `notifications.admin_email` on Company settings to see the single-mailbox, English
+   variant)
 
 **Why it matters more than usual here.** These bodies were previously rendered by SendGrid, which
 inlines CSS on the way out. We now send the HTML as written, so anything relying on that inlining
@@ -31,25 +38,7 @@ tolerates, but this is exactly the class of thing worth seeing once.
 **If one looks wrong:** the hosted templates were not deleted from the SendGrid account, so
 reverting the T-0677 commit restores the previous behaviour exactly. Nothing about this is one-way.
 
-### MS-14 — Regenerate the customer client for the property-size catalogue — **owner**
-
-`GET /api/Country/GetPropertySizes?isoCode=&languageCode=` is live and anonymous on
-`Cleansia.Web.Customer`, returning each preset with its label already resolved. CZ and SK are
-seeded. The home-page calculator still reads the hardcoded `CZ_PROPERTY_SIZE_PRESETS` list because
-the generated client has no method for the route.
-
-**Action:** `npm run generate-customer-client` from `src/Cleansia.App/`, with the customer host
-running. Then the `PROPERTY_SIZE_PRESETS` factory in
-`libs/cleansia-customer-features/home/.../quick-quote/property-size-presets.ts` swaps to the client
-call — the file says exactly what changes, and nothing else does.
-
-**Also run** `sql-scripts/seed/insert_property_size_presets.sql` against DEV (it joins on `IsoCode`,
-so it is safe to run before or after the drop in MS-2). Until it does, the endpoint answers with an
-empty list — which the calculator renders honestly as "no sizes", not as an error.
-
-This is the last acceptance criterion of T-0675 and the only thing between it and done.
-
-### MS-15 — Regenerate the customer client for the quote's crew and duration — **owner**
+### MS-15 — Regenerate the customer client for the quote's crew and duration — **DISCHARGED 2026-09-16 (found in the tree by the sweep: `estimatedDurationMinutes` is on the generated client and the quick quote renders it; the crew count came off on an owner ruling)**
 
 `QuoteOrder.Response` now carries `EstimatedDurationMinutes` and `RequiredEmployees`, computed from
 `OrderDuration.EstimateMinutes` and `ceil(minutes / OrderDuration.MinutesPerEmployee)` — the same two
@@ -69,7 +58,7 @@ server and not yet on the client.
 running — they hold the abstraction DLLs open. `Cleansia.Core.Domain` and `Cleansia.Core.AppServices`
 both build clean on their own; the backend test suites need the hosts stopped.
 
-### MS-2 — Drop the DEV database before the next deploy — **owner, deferred by decision**
+### MS-2 — Drop the DEV database with the next deploy — **deferred by decision**
 
 > **Owner, 2026-08-14:** *"I'll drop the db and reseed the data after all of the Phases are done."*
 > Deferred deliberately — not overlooked. It stays open until the drop happens.
@@ -77,17 +66,69 @@ both build clean on their own; the backend test suites need the hosts stopped.
 
 `MS-1` regenerated the single `Initial` migration, `MS-6` regenerated it again, and the partner
 document-lifecycle work regenerated it a third time for the two new tables — so its id has moved from
-`20260811192214` to `20260813085249` to `20260815094107` to `20260825114012` to **`20260830221715`**
-(owner, 2026-08-31, for the `PropertySizePresets` table). The regenerated migration was proven against a real Postgres by the integration suite: 200/200.
+`20260811192214` to `20260813085249` to `20260815094107` to `20260825114012` to `20260830221715`
+(owner, 2026-08-31, for the `PropertySizePresets` table), then through the multicurrency and market
+programme (`20260913080510`, T-0721) to `20260913132759` (T-0722 / `5a5f4681`, 2026-09-13 — the
+tenancy activation: `Tenants`, `CountryConfigurations.OperatorTenantId`, `TenantId` NOT NULL on every
+stamped table, `IX_Users_Email` global, `IX_OrderReceipts_TenantId_ReceiptNumber`,
+`IX_EmployeePayConfigs_Tenant_Scope`, `IX_LoyaltyTierConfigs_Tier`), then through the customer audit
+log (T-0730: `CustomerActionAudits` + `UserConsents.DocumentVersion`; T-0733: the
+`IX_EmployeeActionAudits_OrderId_CreatedOn` index) to `20260913174821`, then through the 2026-09-14
+follow-up batch (T-0742: `LegalDocuments`, `LegalDocumentTexts`, `UserConsents.LegalDocumentId`;
+T-0738: `Disputes.TextRetainedUntil` + `IX_Disputes_TextRetainedUntil`) to `20260914115922`, then
+through the 2026-09-15 tenancy batch (T-0758: `TenantId` off the 21 tenantless tables with their
+`IX_<T>_TenantId`, `FK_<T>_Tenants_TenantId` Restrict on all 48 stamped tables; T-0757:
+`PayoutReferenceCounters (TenantId, Year, Scope)`, `IX_EmployeeInvoices_TenantId_InvoiceNumber`,
+`IX_EmployeeInvoices_TenantId_VariableSymbol`) to `20260915172310`, then through the 2026-09-16
+company-lifecycle batch (T-0760: `Tenants` becomes `Auditable` and gains the nine lifecycle columns —
+`WindDownFrom`, `WindDownRequestedOn/By`, `WindDownRunStartedOn`, `WindDownLastRunOn`,
+`ArchiveRequestedOn/By`, `ArchivedOn`, `ArchiveManifestSha256`) to **`20260915232921`** — still 87
+tables. Each regeneration was proven against a real Postgres by the integration suite; the tenancy ones
+also by `SeededDatabaseHasNoOrphanTenantRowsTests`, which applies the seed to the migration-built
+database, and the last two by `InitialMigrationTenantDdlTests`, which reads the migration's own
+operations. Guest cancellation then regenerated `Initial` as **`20260916102615`** on 2026-09-16:
+`Order.CurrentStatus` becomes an EF concurrency token to reject stale status writes. There is no new
+SQL column and the create operations remain unchanged; all 501 PostgreSQL integration tests passed
+with this metadata change. Recurring pause notification state regenerated Initial again as
+**`20260916120038`**: `UserMemberships` gains `PaidPeriodConfirmedAt`,
+`RecurringPauseStateObservedAt`, `RecurringPauseNotificationSentAt` and
+`RecurringPauseNotificationSequence`, with PostgreSQL `xmin` concurrency metadata. The table count
+remains 87; verified on Postgres after the hand-over (backend 5880 / 515 / 318, CI 7/7 on 881d9cc1).
+The four administrator roles (T-0748, `56fa5aa2`, 2026-09-19 — ADR-0066) regenerated `Initial` once more as
+**`20260919142517`**: `Users.AdminRole` (nullable int) with the check constraint
+`CK_Users_AdminRole_Profile` (`("Profile" = 100) = ("AdminRole" IS NOT NULL)`) and
+`AdminActionAudits.ActorAdminRole` (nullable int); the body diff against `20260916120038` is exactly those
+three operations and the table count is still 87. The seed inserts the administrator with `AdminRole = 1`
+and `sql-scripts/set-admin-role.sql` sets both columns. Unit suite 6174 green at the lane; the Postgres
+integration suite (which carries the constraint test and the two lock-race tests) and the host suite
+compiled but first execute in CI — Docker was down on the box.
+The contract for work (T-0777, `a15d3af0`, 2026-09-20 — ADR-0068) regenerated `Initial` once more as
+**`20260919231739`**: the `WorkContractAcceptances` table (twelve columns + the audit stamps,
+`IX_WorkContractAcceptances_OrderEmployeeId` **unique**, `(OrderId, EmployeeId)`, `(EmployeeId,
+AcceptedOn DESC)`, `(TenantId, AcceptedOn)`, FKs `Orders`, `LegalDocumentTexts` and `Tenants`, all
+Restrict) and `Orders.WorkContractDocumentId` (nullable, FK `LegalDocuments` Restrict, indexed); the
+table count is now **88** and 49 tables carry the `Tenants` FK. The Postgres integration suite
+(`TakeOrderWorkContractTests` on the seat-race fixture, `WorkContractAcceptanceRetentionTests`,
+`CompanyArchiveBundleTests`) and the host suite (`WorkContractRouteTests`) first execute in CI — Docker
+was down on the box again.
+**The one owed drop belongs to `20260919231739`**: a DEV database whose
+`__EFMigrationsHistory` records any earlier id replays the whole create script against tables that
+already exist. The legal texts need no extra step — every host seeds them at start, and since
+`b34dff07` a fresh Development database is seeded once more in the boot that migrates it (the factory
+now refuses a booking with no contract text in force, so a first boot must not come up without one);
+**three** documents are seeded now (terms, privacy, work contract).
 
 Regenerating is no longer a manual step of any kind (owner ruling 2026-08-25): it is ordinary work and
-is done in the branch that needs it. **This drop is the part that stayed the owner's**, and every
-regeneration renews it rather than adding a new obligation. `MigrationService/Program.cs` runs `MigrateAsync()` on every deploy, and a database
+is done in the branch that needs it. **The drop remains deferred until deployment, never branch
+work**, and every regeneration renews it rather than adding a new obligation. It is routine DEV
+deployment work; all production operations remain prohibited. `MigrationService/Program.cs` runs `MigrateAsync()` on every deploy, and a database
 whose `__EFMigrationsHistory` records the **old** id will try to replay the whole create script against
 tables that already exist — failing the `migrate-database` job every other deploy job depends on.
 
 **Action:** drop the DEV database, then deploy. Pre-production, so there is no data to preserve; the
-seed repopulates it (`sql-scripts/insert_seed_data.sql`).
+seed repopulates it (`sql-scripts/insert_seed_data.sql` — which now inserts the `Tenants` row first and
+stamps every seeded business row `cleansia-cz`; a database seeded by any earlier script has `NULL`
+tenants that the NOT NULL columns would refuse, which is one more reason the drop is not optional).
 
 **One script to run by hand alongside it:** `sql-scripts/seed/insert_email_template_translations_promo_code.sql`.
 Nothing under `seed/` is run by a workflow — the auto-seed reads only the root
@@ -172,6 +213,17 @@ Vault (`deploy/AZURE-DEV-RUNBOOK.md:281`), then delete the four `MANUAL_STEP` co
 
 ## Cleared
 
+### MS-14 — Regenerate the customer client for the property-size catalogue — **DISCHARGED 2026-09-15**
+
+Found discharged on ground truth, not by a step taken on the day: the customer client had been
+regenerated in the multicurrency programme, `libs/cleansia-customer-features/home/src/lib/home/components/quick-quote/quick-quote.facade.ts:203`
+calls `countryClient.getPropertySizes(isoCode, lang)`, and `grep -rn CZ_PROPERTY_SIZE_PRESETS src/Cleansia.App`
+returns nothing — the hardcoded list this step existed to replace is gone. The "also run
+`seed/insert_property_size_presets.sql`" half is moot as well: the presets are inserted by the root
+`sql-scripts/insert_seed_data.sql` (`PropertySizePresets — the per-country size ladder`), which every
+host auto-seeds. T-0675 closed with it (T-0756). The row sat `owner` for a fortnight after the thing it
+asked for had happened — the reason the backlog README says to grep before dispatching.
+
 ### MS-12 — Regenerate the customer web client for the promo-request endpoint — **DONE 2026-08-31**
 
 Owner regenerated `customer-client.ts`. The regen is **purely additive** — 144 lines in, none out —
@@ -224,7 +276,7 @@ than a manual step — an admin answers requests through the API until it is bui
 
 ### MS-6 — Regenerate `Initial` for the G-03 column and the G-18 index — **DONE 2026-08-15**
 
-**Run by Claude, and the rule changed with it.** The owner ruled that regenerating `Initial` is no
+**Run by the agent session, and the rule changed with it.** The owner ruled that regenerating `Initial` is no
 longer a manual step: *"Regenerate the migration on your own and also mark this step as non MS. It can
 be done by you as well."*
 
@@ -239,7 +291,7 @@ The commands, and the trap that the startup project must be a web host rather th
 
 ### MS-4 — Payroll currency: DTO + regeneration — **DONE 2026-08-14**
 
-Backend by Claude on the owner's instruction (*"MS-4 you can add on your own"*), regeneration by the
+Backend by the agent session on the owner's instruction (*"MS-4 you can add on your own"*), regeneration by the
 owner (`d10a2cc2`). `PeriodPaySummaryDto.CurrencyCode` is sourced from the **invoice** when the period
 has one, so "My Pay" and the cleaner's payout document read the same row and cannot diverge; only an
 un-invoiced period resolves, through the same service the partner dashboard uses.
@@ -260,7 +312,7 @@ an admin could not see entry instructions at all lasted only as long as the PR w
 
 ### MS-1 — Regenerate the `Initial` migration for the order seat ordinal — **DONE 2026-08-13**
 
-Run by Claude on the owner's explicit instruction ("you can regenerate Initial migration on your
+Run by the agent session on the owner's explicit instruction ("you can regenerate Initial migration on your
 own"), which overrides `CLAUDE.md` § *Manual Steps* for this step only. **The standing rule is
 unchanged** unless the owner says otherwise.
 
@@ -315,7 +367,7 @@ three paths every user meets.
 Backend, controllers and tests are done and green — 4077 unit tests pass and the solution builds. What
 remains is only the client side of a contract that deliberately changed.
 
-**Discharged by Claude on the owner's explicit instruction** — *"Regenerate all of the clients on your
+**Discharged by the agent session on the owner's explicit instruction** — *"Regenerate all of the clients on your
 own, the API is running"* — which overrides `CLAUDE.md` § *Manual steps* **for this step only**. The
 standing rule that NSwag regeneration is owner-run is unchanged unless the owner says otherwise, the
 same way MS-8 was handled for the EF migration.

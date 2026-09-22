@@ -1,10 +1,12 @@
-﻿using System.Security.Claims;
+using System.Security.Claims;
 using System.Text;
 using Cleansia.Config.Services.DeviceRevocation;
 using Cleansia.Config.Services.UserRevocation;
 using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Features.Orders;
+using Cleansia.Core.AppServices.Features.Gdpr;
 using Cleansia.Core.AppServices.Services;
+using Cleansia.Core.AppServices.Tenancy;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Configuration;
 using Cleansia.Core.Domain.Enums;
@@ -62,6 +64,17 @@ public static class ServiceExtensions
                     UserProfile.Administrator.ToString()))
             .AddPolicy(PhysicalPolicy.AdminOnly,
                 p => p.RequireRole(UserProfile.Administrator.ToString()))
+            // The four administrator sets (ADR-0066 D2): the Administrator profile AND an admin_role
+            // claim inside the set. AdminOnly above stays claim-free on purpose — it is what keeps a
+            // token minted before roles existed usable on the any-administrator routes until it refreshes.
+            .AddPolicy(PhysicalPolicy.AdministratorOnly,
+                p => p.RequireAssertion(ctx => AdminRoleSets.Admits(ctx.User, AdminRoleSets.AdministratorOnly)))
+            .AddPolicy(PhysicalPolicy.ManagerOrAbove,
+                p => p.RequireAssertion(ctx => AdminRoleSets.Admits(ctx.User, AdminRoleSets.ManagerOrAbove)))
+            .AddPolicy(PhysicalPolicy.SupportOrAbove,
+                p => p.RequireAssertion(ctx => AdminRoleSets.Admits(ctx.User, AdminRoleSets.SupportOrAbove)))
+            .AddPolicy(PhysicalPolicy.AccountantOrAbove,
+                p => p.RequireAssertion(ctx => AdminRoleSets.Admits(ctx.User, AdminRoleSets.AccountantOrAbove)))
             // OwnerOrElevated (ADR-0001 §D3): elevated == Admin ONLY (the old blanket
             // IsInRole(Employee) → true grant was an employee-wide PII IDOR and is removed). A
             // non-admin caller is allowed IFF the requested subject id equals their own sub. The id is
@@ -226,27 +239,40 @@ public static class ServiceExtensions
         services.AddScoped<IPayoutDetailsValidator, PayoutDetailsValidator>();
         services.AddScoped<IVatCalculator, VatCalculator>();
         services.AddScoped<ICurrencyResolutionService, CurrencyResolutionService>();
-        // ADR-0046 — claims a payout invoice's variabilní symbol from the durable per-year counter.
+        // ADR-0046 — claims a payout invoice's variabilní symbol and invoice number from the company's
+        // durable per-year counter (per company since the 2026-09-15 ruling).
         // Registered here rather than in the Functions host because both creation paths need it: the
         // admin GenerateInvoice command and the pay-period batch.
         services.AddScoped<IPayoutReferenceAllocator, PayoutReferenceAllocator>();
         services.AddScoped<IOrderPricingCalculator, OrderPricingCalculator>();
         services.AddScoped<IOrderFactory, OrderFactory>();
         services.AddScoped<IOrderAddressResolver, OrderAddressResolver>();
+        services.AddScoped<IOperatorTenantResolver, OperatorTenantResolver>();
+        // Scoped and memoised: the issuing command and the mint share one Tenants read (ADR-0064 D1).
+        services.AddScoped<ICompanySignInGate, CompanySignInGate>();
+        // The operations record of a books write a frozen company refused where the caller cannot be
+        // refused (the Stripe webhook, a late queue consumer) — ADR-0064 D3.
+        services.AddScoped<ArchivedCompanyDeadLetter>();
         services.AddScoped<IOrderPromoApplier, OrderPromoApplier>();
         services.AddScoped<IOrderLateReferralAcceptor, OrderLateReferralAcceptor>();
         services.AddScoped<IOrderPaymentDispatcher, OrderPaymentDispatcher>();
         services.AddScoped<ILoyaltyService, LoyaltyService>();
-        // The single notify seam: feed row + outbox push, atomically, in the caller's unit of work.
+        // The push seam: feed row + outbox push, atomically, in the caller's unit of work.
         services.AddScoped<INotificationProducer, NotificationProducer>();
+        // The administrators' seam: feed rows for the NAMED company, no push, no commit.
+        services.AddScoped<IAdminNotifier, AdminNotifier>();
         // The sibling live-activity seam (ADR-0029 D2): enqueues one ActivityKit send per order
         // transition onto its own queue, gated on a registered token — no feed row, no preference gate.
         services.AddScoped<ILiveActivityProducer, LiveActivityProducer>();
         services.AddScoped<IRefundService, RefundService>();
+        // The one fee-free, full-refund cancellation body behind the admin cancel and the company wind-down.
+        services.AddScoped<IPlatformOrderCancellation, PlatformOrderCancellation>();
         services.AddScoped<IPromoCodeService, PromoCodeService>();
         services.AddScoped<IReferralService, ReferralService>();
         services.AddScoped<IStripeSubscriptionWebhookHandler, StripeSubscriptionWebhookHandler>();
         services.AddScoped<ICancellationPolicyResolver, CancellationPolicyResolver>();
+        services.AddScoped<Cleansia.Core.AppServices.Features.Orders.GuestOrderAccess>();
+        services.AddScoped<Cleansia.Core.AppServices.Features.Orders.CustomerOrderCancellation>();
         services.AddScoped<IPreferredCleanerHoldResolver, PreferredCleanerHoldResolver>();
         // ADR-0035 — the express-waiver seam. The period-key factory is SCOPED because it caches the
         // resolved platform zone for the request, and CreateOrder builds the key twice (validator and
@@ -255,13 +281,24 @@ public static class ServiceExtensions
         services.AddScoped<IExpressWaiverResolver, ExpressWaiverResolver>();
         // The one place the once-per-customer trial rule is decided, for both subscribe surfaces.
         services.AddScoped<IMembershipTrialResolver, MembershipTrialResolver>();
+        // The one place a user's Stripe Customer for a currency is decided, for both subscribe surfaces.
+        services.AddScoped<IStripeCustomerResolver, StripeCustomerResolver>();
         services.AddScoped<IExpressWaiverConsumer, ExpressWaiverConsumer>();
         services.AddScoped<IOrderAccessService, OrderAccessService>();
         services.AddScoped<IAddressGeocoder, AddressGeocoder>();
         services.AddScoped<IGdprDeletionService, GdprDeletionService>();
+        // Scoped: one erasure per request, and the pipeline's failure capture reads what the service set.
+        services.AddScoped<IErasureAttempt, ErasureAttempt>();
         services.AddScoped<IGdprExportService, GdprExportService>();
+        services.AddScoped<IIncidentFileService, IncidentFileService>();
         // The one consent-write path: the GDPR consent endpoints and the partner-onboarding checkbox.
         services.AddScoped<IConsentService, ConsentService>();
+        // The legal text in force for a market, stamped on a consent and shown on the legal pages.
+        services.AddScoped<ILegalDocumentResolver, LegalDocumentResolver>();
+        // The contract for work: the one projection of the job facts the preview and the row share, and
+        // the one writer of the acceptance row and its audit index (ADR-0068).
+        services.AddScoped<IWorkContractFactsBuilder, WorkContractFactsBuilder>();
+        services.AddScoped<IWorkContractAcceptor, WorkContractAcceptor>();
         services.AddInfrastructureServices();
 
         return services;

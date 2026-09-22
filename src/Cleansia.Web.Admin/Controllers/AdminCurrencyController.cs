@@ -15,18 +15,18 @@ public class AdminCurrencyController(IMediator mediator) : ApiController(mediato
 {
     [HttpGet("get-overview")]
     [Permission(Policy.CanViewCurrencies)]
-    [ProducesResponseType(typeof(IEnumerable<CurrencyListItem>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(IEnumerable<AdminCurrencyListItem>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
-    public async Task<IEnumerable<CurrencyListItem>> GetCurrencies(CancellationToken cancellationToken)
+    public async Task<IEnumerable<AdminCurrencyListItem>> GetCurrencies(CancellationToken cancellationToken)
     {
-        return await Mediator.Send(new GetCurrencyOverview.Request(), cancellationToken);
+        return await Mediator.Send(new GetAdminCurrencyOverview.Request(), cancellationToken);
     }
 
     [HttpGet("details/{currencyId}")]
     [Permission(Policy.CanViewCurrencies)]
-    [ProducesResponseType(typeof(CurrencyDetailDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(AdminCurrencyDetailDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
@@ -36,7 +36,7 @@ public class AdminCurrencyController(IMediator mediator) : ApiController(mediato
         CancellationToken cancellationToken)
     {
         var result = await Mediator.Send(new GetCurrencyById.Query(currencyId), cancellationToken);
-        return HandleResult<CurrencyDetailDto>(result);
+        return HandleResult<AdminCurrencyDetailDto>(result);
     }
 
     [HttpPost("create")]
@@ -89,6 +89,34 @@ public class AdminCurrencyController(IMediator mediator) : ApiController(mediato
     {
         var result = await Mediator.Send(new SetDefaultCurrency.Command(currencyId), cancellationToken);
         return HandleResult<SetDefaultCurrency.Response>(result);
+    }
+
+    [HttpPost("deactivate/{currencyId}")]
+    [Permission(Policy.CanUpdateCurrency)]
+    [EnableRateLimiting("auth")]
+    [ProducesResponseType(typeof(DeactivateCurrency.Response), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> DeactivateCurrency(string currencyId, CancellationToken cancellationToken)
+    {
+        var result = await Mediator.Send(new DeactivateCurrency.Command(currencyId), cancellationToken);
+        return HandleResult<DeactivateCurrency.Response>(result);
+    }
+
+    [HttpPost("activate/{currencyId}")]
+    [Permission(Policy.CanUpdateCurrency)]
+    [EnableRateLimiting("auth")]
+    [ProducesResponseType(typeof(ActivateCurrency.Response), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> ActivateCurrency(string currencyId, CancellationToken cancellationToken)
+    {
+        var result = await Mediator.Send(new ActivateCurrency.Command(currencyId), cancellationToken);
+        return HandleResult<ActivateCurrency.Response>(result);
     }
 
     [HttpDelete("delete/{currencyId}")]

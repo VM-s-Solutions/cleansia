@@ -1,7 +1,17 @@
-/* PrimeFlex is loaded via CDN in index.html for better performance */
+// First in the bundle, where the CDN copy used to sit in the cascade.
+@use './primeflex-subset';
+// Self-hosted, where the CDN copies used to sit: the icon font travels with
+// the bundle and the flags are copied to /assets/flags by the build. Bare
+// package paths on purpose — the builder resolves them and treats what they
+// load as a dependency, which is what keeps the package's own Sass deprecation
+// warnings out of every build.
+@use 'primeicons/primeicons';
+@use 'flag-icons/sass/flag-icons' with (
+  $flag-icons-path: '/assets/flags'
+);
 
 html {
-  // Force light color-scheme by default so PrimeFlex light-dark() picks light values.
+  // Force light color-scheme by default so the light-dark() utilities pick light values.
   // ThemeService overrides this to 'dark' when dark mode is active.
   color-scheme: light;
 }
@@ -35,8 +45,8 @@ p-dialog:empty {
   display: none;
 }
 
-// The primeicons stylesheet and font load async; until then a `.pi` icon is
-// an empty zero-width inline element. Reserving the glyph's 1em advance
+// The primeicons font file still arrives after first paint; until then a `.pi`
+// icon is an empty zero-width inline element. Reserving the glyph's 1em advance
 // keeps the layout from shifting when the font pops in.
 .pi {
   display: inline-block;

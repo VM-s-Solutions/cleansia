@@ -27,6 +27,8 @@ data class ServiceListItem(
     val perRoomPrice: Double,
     val category: CategoryDto,
     val translations: Map<String, TranslationDto>? = null,
+    /** The currency the two prices are stated in; null on a payload older than the market rule. */
+    val currencyCode: String? = null,
 )
 
 @Serializable
@@ -47,6 +49,7 @@ data class PackageListItem(
     val price: Double,
     val translations: Map<String, TranslationDto>? = null,
     val includedServices: List<PackageServiceSummary>? = null,
+    val currencyCode: String? = null,
 )
 
 /**
@@ -63,4 +66,19 @@ data class ExtraListItem(
     val price: Double,
     val displayOrder: Int = 0,
     val translations: Map<String, TranslationDto>? = null,
+    val currencyCode: String? = null,
+)
+
+/**
+ * One row of the platform's currency overview. The row flagged [isDefault] labels a catalogue row
+ * that carries no `currencyCode` of its own, and every platform-default figure (tier floor, Plus
+ * plan) that arrives with none.
+ */
+@Serializable
+data class CurrencyListItem(
+    val id: String,
+    val code: String,
+    val symbol: String,
+    val name: String,
+    val isDefault: Boolean,
 )

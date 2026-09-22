@@ -16,9 +16,7 @@ public class Service : Auditable
     public string Description { get; private set; }
 
     [Required]
-    public decimal BasePrice { get; private set; }
 
-    public decimal PerRoomPrice { get; private set; }
 
     public int EstimatedTime { get; private set; }
 
@@ -35,23 +33,19 @@ public class Service : Auditable
     private ICollection<OrderService> _includedInOrders = [];
     public IReadOnlyCollection<OrderService> IncludedInOrders => _includedInOrders.ToList().AsReadOnly();
 
-    public static Service Create(string categoryId, string name, string description, decimal basePrice, decimal perRoomPrice, int estimatedTime = 0) => new()
+    public static Service Create(string categoryId, string name, string description, int estimatedTime = 0) => new()
     {
         CategoryId = categoryId,
         Name = name,
         Description = description,
-        BasePrice = basePrice,
-        PerRoomPrice = perRoomPrice,
         EstimatedTime = estimatedTime
     };
 
-    public Service Update(string categoryId, string name, string description, decimal basePrice, decimal perRoomPrice, int estimatedTime)
+    public Service Update(string categoryId, string name, string description, int estimatedTime)
     {
         CategoryId = categoryId;
         Name = name;
         Description = description;
-        BasePrice = basePrice;
-        PerRoomPrice = perRoomPrice;
         EstimatedTime = estimatedTime;
         return this;
     }

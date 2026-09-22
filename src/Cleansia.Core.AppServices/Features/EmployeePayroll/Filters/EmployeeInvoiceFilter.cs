@@ -12,5 +12,6 @@ public record EmployeeInvoiceFilter(
     decimal? MinAmount = null,
     decimal? MaxAmount = null,
     DateTime? DateFrom = null,
-    DateTime? DateTo = null
+    DateTime? DateTo = null,
+    string? CurrencyId = null
 );

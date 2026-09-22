@@ -49,18 +49,51 @@ public sealed class OrderAddressResolver(
         return OrderAddressResolution.Ok(address);
     }
 
+    public async Task<string?> ResolveCountryIdAsync(
+        CreateOrder.Command command, string? userId, CancellationToken cancellationToken)
+    {
+        if (!string.IsNullOrEmpty(command.SavedAddressId))
+        {
+            var saved = await savedAddressRepository.GetByIdAsync(command.SavedAddressId, cancellationToken);
+            if (saved == null || string.IsNullOrEmpty(userId) || saved.UserId != userId)
+            {
+                return null;
+            }
+            var resolved = saved.Address
+                ?? await addressRepository.GetByIdAsync(saved.AddressId, cancellationToken);
+            return await ServicedOrNullAsync(resolved?.CountryId, cancellationToken);
+        }
+
+        var inlineCountryId = command.CustomerAddress?.CountryId;
+        if (!string.IsNullOrEmpty(inlineCountryId))
+        {
+            return await ServicedOrNullAsync(inlineCountryId, cancellationToken);
+        }
+
+        var servicedCountries = await countryRepository.GetServicedAsync(cancellationToken);
+        return servicedCountries.Count == 1 ? servicedCountries[0].Id : null;
+    }
+
+    /// <summary>
+    /// Only a serviced country is a market. The currency resolver throws on a country it cannot
+    /// resolve, and a country the platform does not operate in has no currency to ask for; the
+    /// booking is refused as <c>CountryNotServiced</c> by <see cref="ResolveAsync"/> either way.
+    /// </summary>
+    private async Task<string?> ServicedOrNullAsync(string? countryId, CancellationToken cancellationToken)
+        => !string.IsNullOrEmpty(countryId)
+           && await countryRepository.IsServicedAsync(countryId, cancellationToken)
+            ? countryId
+            : null;
+
     private async Task<OrderAddressResolution> ResolveAddressAsync(
         CreateOrder.Command command, string userId, CancellationToken cancellationToken)
     {
         if (!string.IsNullOrEmpty(command.SavedAddressId))
         {
             var saved = await savedAddressRepository.GetByIdAsync(command.SavedAddressId, cancellationToken);
-            if (saved == null)
-            {
-                return OrderAddressResolution.Fail(new Error(
-                    nameof(command.SavedAddressId), BusinessErrorMessage.NotFound));
-            }
-            if (!string.IsNullOrEmpty(userId) && saved.UserId != userId)
+            // A saved address belongs to a signed-in account. A guest has none, so a guest naming one is
+            // naming somebody else's; NotFound, the same answer a wrong id or another user's id gets.
+            if (saved == null || string.IsNullOrEmpty(userId) || saved.UserId != userId)
             {
                 return OrderAddressResolution.Fail(new Error(
                     nameof(command.SavedAddressId), BusinessErrorMessage.NotFound));

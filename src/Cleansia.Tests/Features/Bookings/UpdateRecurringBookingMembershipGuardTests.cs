@@ -1,9 +1,10 @@
-﻿using Cleansia.Core.AppServices.Common;
+using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Bookings;
 using Cleansia.Core.Domain.Bookings;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Memberships;
 using Cleansia.Core.Domain.Repositories;
+using Cleansia.Tests.Features.Orders;
 using Moq;
 
 namespace Cleansia.Tests.Features.Bookings;
@@ -35,18 +36,20 @@ public class UpdateRecurringBookingMembershipGuardTests
     // Only reached when a command names a preferred employee, which these membership-gate cases
     // never do — the validator still needs one to construct.
     private readonly Mock<IOrderRepository> _orderRepository = new();
+    private readonly Mock<ISavedAddressRepository> _savedAddressRepository = new();
 
     public UpdateRecurringBookingMembershipGuardTests()
     {
         _session.Setup(s => s.GetUserId()).Returns(UserId);
+        _savedAddressRepository.Setup(r => r.GetByUserAsync(UserId, It.IsAny<CancellationToken>())).ReturnsAsync(Array.Empty<Cleansia.Core.Domain.Users.SavedAddress>());
         _templateRepository
             .Setup(r => r.ExistsAsync(TemplateId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
         _templateRepository
-            .Setup(r => r.GetByIdAsync(TemplateId, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetByIdForOwnerAsync(TemplateId, It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(ArrangeTemplate(UserId));
         _membershipRepository
-            .Setup(r => r.GetActiveForUserNoTrackingAsync(UserId, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetEntitledForUserNoTrackingAsync(UserId, It.IsAny<CancellationToken>()))
             .ReturnsAsync((UserMembership?)null);
     }
 
@@ -86,7 +89,7 @@ public class UpdateRecurringBookingMembershipGuardTests
     public async Task Someone_Elses_Template_Answers_NotOwned_Not_MembershipRequired()
     {
         _templateRepository
-            .Setup(r => r.GetByIdAsync(TemplateId, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetByIdForOwnerAsync(TemplateId, It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(ArrangeTemplate(OtherUserId));
 
         var result = await CreateValidator().ValidateAsync(ValidCommand());
@@ -105,31 +108,31 @@ public class UpdateRecurringBookingMembershipGuardTests
         await CreateValidator().ValidateAsync(ValidCommand());
 
         _membershipRepository.Verify(
-            r => r.GetActiveForUserNoTrackingAsync(UserId, It.IsAny<CancellationToken>()), Times.Once);
+            r => r.GetEntitledForUserNoTrackingAsync(UserId, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     private UpdateRecurringBooking.Validator CreateValidator() =>
         new(_templateRepository.Object, _membershipRepository.Object, _session.Object,
-            _orderRepository.Object);
+            _orderRepository.Object, _savedAddressRepository.Object,
+            OrderMarketDoubles.Trading(CreateOrderTestData.DefaultCurrency()), OrderMarketDoubles.Servicing("country-cz"));
 
     private void ArrangeActiveMembership()
     {
         var plan = MembershipPlan.Create(
             code: "PLUS",
             name: "Cleansia Plus",
-            monthlyPriceCzk: 199m,
-            stripePriceId: "price_plus",
             discountPercentage: 10m,
             freeCancellationWindowHours: 4,
             allowsExpressUpgrade: true);
         var membership = UserMembership.Create(
             userId: UserId,
             membershipPlanId: plan.Id,
+            currencyId: "currency-czk",
             stripeSubscriptionId: "sub_1",
             currentPeriodStart: DateTime.UtcNow.AddDays(-1),
             currentPeriodEnd: DateTime.UtcNow.AddMonths(1));
         _membershipRepository
-            .Setup(r => r.GetActiveForUserNoTrackingAsync(UserId, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetEntitledForUserNoTrackingAsync(UserId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(membership);
     }
 

@@ -42,13 +42,20 @@ interface QuoteInputs {
   selectedExtraSlugs: string[];
   rooms: number;
   bathrooms: number;
-  currencyId: string | null;
+  /**
+   * The service address's country, or the chosen market's before an address names one
+   * (ADR-0058 D4). The server prices the booking in that country's currency, so the wizard names
+   * the country and no currency.
+   */
+  countryId: string | null;
   cleaningDate: string | null;
 }
 
 /** Dependencies the pricing engine reads from the orchestrating wizard facade. */
 interface PricingConnection {
   formData: Signal<OrderWizardFormData>;
+  /** The chosen market's country; what the quote names until the address step names one. */
+  marketCountryId: Signal<string | null>;
   /**
    * Promo amount the customer applied at checkout. The only discount the quote cannot fold in
    * itself — `QuoteOrderCommand` carries no promo code, by design (the code is entered after the
@@ -212,7 +219,7 @@ export class OrderPricingFacade extends UnsubscribeControlDirective {
       selectedExtraSlugs,
       rooms: data.rooms,
       bathrooms: data.bathrooms,
-      currencyId: null,
+      countryId: data.address.countryId || this.deps?.marketCountryId() || null,
       cleaningDate: cleaningDateIso,
     };
   });
@@ -233,7 +240,7 @@ export class OrderPricingFacade extends UnsubscribeControlDirective {
     command.selectedPackageIds = inputs.selectedPackageIds;
     command.rooms = inputs.rooms;
     command.bathrooms = inputs.bathrooms;
-    command.currencyId = inputs.currencyId ?? undefined;
+    command.countryId = inputs.countryId ?? undefined;
     command.selectedExtraSlugs = inputs.selectedExtraSlugs;
     command.cleaningDate = inputs.cleaningDate
       ? new Date(inputs.cleaningDate)

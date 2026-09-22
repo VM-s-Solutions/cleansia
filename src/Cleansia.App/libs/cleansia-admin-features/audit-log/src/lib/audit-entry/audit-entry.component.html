@@ -34,6 +34,12 @@
             {{ facade.entry()?.actorEmail ?? facade.entry()?.actorId }}
           </dd>
         </div>
+        @if (actorRoleLabelKey(); as roleKey) {
+        <div class="cleansia-audit-entry__meta-item">
+          <dt>{{ 'pages.audit_log.columns.actor_role' | translate }}</dt>
+          <dd>{{ roleKey | translate }}</dd>
+        </div>
+        }
         <div class="cleansia-audit-entry__meta-item">
           <dt>{{ 'pages.audit_log.columns.resource' | translate }}</dt>
           <dd>

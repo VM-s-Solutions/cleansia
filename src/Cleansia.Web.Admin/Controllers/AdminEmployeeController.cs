@@ -68,7 +68,7 @@ public class AdminEmployeeController(IMediator mediator) : ApiController(mediato
     }
 
     [HttpGet("{employeeId}/payout-details")]
-    [Permission(Policy.CanViewEmployeePayoutDetails)]
+    [Permission(Policy.CanViewEmployeePayoutDetailsAdmin)]
     [ProducesResponseType(typeof(MaskedPayoutDetails), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]

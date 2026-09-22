@@ -1,4 +1,5 @@
 ﻿using Cleansia.Core.Domain.Common;
+using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Users;
 using Microsoft.EntityFrameworkCore;
@@ -8,6 +9,28 @@ namespace Cleansia.Infra.Database.Repositories;
 public class UserRepository(CleansiaDbContext context)
     : BaseRepository<User>(context), IUserRepository
 {
+    private const string PostgresProvider = "Npgsql.EntityFrameworkCore.PostgreSQL";
+
+    public Task<string?> GetNotificationRecipientTenantAsync(string userId, CancellationToken cancellationToken)
+    {
+        return GetDbSet().IgnoreQueryFilters().Where(u => u.Id == userId)
+            .Select(u => u.TenantId).FirstOrDefaultAsync(cancellationToken);
+    }
+
+    public async Task<IReadOnlyList<AdministratorRecipient>> GetActiveAdministratorsAsync(string tenantId, CancellationToken cancellationToken)
+    {
+        return await GetDbSet()
+            .IgnoreQueryFilters()
+            .Where(u => u.TenantId == tenantId
+                && u.Profile == UserProfile.Administrator
+                && u.IsActive
+                && u.IsEmailConfirmed
+                && !u.Email.EndsWith(User.AnonymisedEmailSuffix))
+            .OrderBy(u => u.Id)
+            .Select(u => new AdministratorRecipient(u.Id, u.Email, u.FirstName, u.LastName, u.PreferredLanguageCode, u.AdminRole))
+            .ToListAsync(cancellationToken);
+    }
+
     public override IQueryable<User> GetQueryable()
     {
         // No blanket Include(Orders): every single-user fetch (GetUser, RefreshToken, ExportUserData,
@@ -56,11 +79,10 @@ public class UserRepository(CleansiaDbContext context)
         return GetDbSet().AnyAsync(user => user.Email == email, cancellationToken);
     }
 
-    // Login / lockout / password-reset run on ANONYMOUS requests (no tenant claim), so the global
-    // tenant filter narrows every read to TenantId == null and a tenant-stamped account could never
-    // log in. IgnoreQueryFilters(); the caller-supplied email is the scope. Registration keeps the
-    // filtered lookups — email uniqueness is per-tenant (the (TenantId, Email) unique index), so its
-    // duplicate pre-check must stay tenant-scoped.
+    // Login / lockout / password-reset / registration pre-checks run on ANONYMOUS requests, so the
+    // global tenant filter would narrow every read to the ambient tenant and a stamped account in
+    // another operating company would be invisible. IgnoreQueryFilters(); the caller-supplied email is
+    // the scope, and it is one identity across the holding (IX_Users_Email, ADR-0061 D5.1).
     public Task<User?> GetByEmailIgnoringTenantAsync(string email, CancellationToken cancellationToken = default)
     {
         return GetDbSet()
@@ -102,19 +124,15 @@ public class UserRepository(CleansiaDbContext context)
             .FirstOrDefaultAsync(user => user.GoogleId == googleId, cancellationToken);
     }
 
-    // The confirmation token is stored as a SHA-256 hash, so the incoming RAW
-    // token is hashed and matched against the stored hash. Stays inside the global tenant filter
-    // (no IgnoreQueryFilters) — a hashed token must not match cross-tenant.
-    public Task<bool> ExistsWithConfirmationCodeAsync(string token, CancellationToken cancellationToken = default)
+    // The legacy confirm link is opened anonymously while the row it confirms is tenant-stamped
+    // (ADR-0061 D4); the token is stored as a SHA-256 hash, so the incoming RAW token is hashed and
+    // the server-issued hash is the pin.
+    public Task<User?> GetByConfirmationCodeIgnoringTenantAsync(string token, CancellationToken cancellationToken = default)
     {
         var tokenHash = SecurityTokens.Hash(token);
-        return GetDbSet().AnyAsync(user => user.ConfirmationCode == tokenHash, cancellationToken);
-    }
-
-    public Task<User?> GetByConfirmationCodeAsync(string token, CancellationToken cancellationToken = default)
-    {
-        var tokenHash = SecurityTokens.Hash(token);
-        return GetDbSet().FirstOrDefaultAsync(user => user.ConfirmationCode == tokenHash, cancellationToken);
+        return GetDbSet()
+            .IgnoreQueryFilters()
+            .FirstOrDefaultAsync(user => user.ConfirmationCode == tokenHash, cancellationToken);
     }
 
     public IQueryable<User> GetUnconfirmedUsersOlderThan(DateTime cutoffDate)
@@ -141,6 +159,71 @@ public class UserRepository(CleansiaDbContext context)
         return GetDbSet()
             .IgnoreQueryFilters()
             .FirstOrDefaultAsync(u => u.Id == id, cancellationToken);
+    }
+
+    // The two last-Administrator guards. A conditional UPDATE whose WHERE asks "does another active
+    // Administrator remain?" is atomic against a second UPDATE of the SAME row, but not against one of a
+    // DIFFERENT row: under READ COMMITTED each statement's snapshot still sees the other row as an
+    // Administrator, neither blocks, and both land — write skew. So each runs inside one transaction
+    // that first takes the company's advisory lock; the second waits and its predicate reads the first's
+    // committed result. The lock is released with the transaction. The tenant filter scopes every read
+    // to the caller's company and the explicit predicate keeps the lock key and the rows on one company.
+    public async Task<int> DemoteAdministratorIfAnotherRemainsAsync(string tenantId, string userId, AdminRole role, CancellationToken cancellationToken)
+    {
+        await using var transaction = await BeginTransactionAsync(cancellationToken);
+        await LockCompanyAsync(tenantId, cancellationToken);
+
+        var rowsAffected = await GetDbSet()
+            .Where(u => u.TenantId == tenantId
+                && u.Id == userId
+                && u.Profile == UserProfile.Administrator
+                && (role == AdminRole.Administrator
+                    || GetDbSet().Any(other =>
+                        other.TenantId == tenantId
+                        && other.Id != userId
+                        && other.Profile == UserProfile.Administrator
+                        && other.IsActive
+                        && other.AdminRole == AdminRole.Administrator)))
+            .ExecuteUpdateAsync(s => s.SetProperty(u => u.AdminRole, role), cancellationToken);
+
+        await transaction.CommitAsync(cancellationToken);
+        return rowsAffected;
+    }
+
+    public async Task<int> DeactivateAdministratorIfAnotherRemainsAsync(string tenantId, string userId, string actorId, DateTimeOffset now, CancellationToken cancellationToken)
+    {
+        await using var transaction = await BeginTransactionAsync(cancellationToken);
+        await LockCompanyAsync(tenantId, cancellationToken);
+
+        var rowsAffected = await GetDbSet()
+            .Where(u => u.TenantId == tenantId
+                && u.Id == userId
+                && u.Profile == UserProfile.Administrator
+                && u.IsActive
+                && GetDbSet().Any(other =>
+                    other.TenantId == tenantId
+                    && other.Id != userId
+                    && other.Profile == UserProfile.Administrator
+                    && other.IsActive
+                    && other.AdminRole == AdminRole.Administrator))
+            .ExecuteUpdateAsync(
+                s => s
+                    .SetProperty(u => u.IsActive, false)
+                    .SetProperty(u => u.DeactivatedBy, actorId)
+                    .SetProperty(u => u.DeactivatedOn, now),
+                cancellationToken);
+
+        await transaction.CommitAsync(cancellationToken);
+        return rowsAffected;
+    }
+
+    // pg_advisory_xact_lock is Postgres; on the SQLite test backend a single connection serialises
+    // writers anyway and there is no lock to take.
+    private Task LockCompanyAsync(string tenantId, CancellationToken cancellationToken)
+    {
+        return Context.Database.ProviderName == PostgresProvider
+            ? Context.Database.ExecuteSqlAsync($"SELECT pg_advisory_xact_lock(hashtext({tenantId}))", cancellationToken)
+            : Task.CompletedTask;
     }
 
     // S7a — the lockout transition must be one atomic statement: a read-then-increment would let a

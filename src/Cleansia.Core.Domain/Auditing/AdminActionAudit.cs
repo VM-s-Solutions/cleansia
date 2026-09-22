@@ -13,6 +13,8 @@ public sealed class AdminActionAudit : BaseEntity, ITenantEntity
 
     public UserProfile ActorProfile { get; init; }
 
+    public AdminRole? ActorAdminRole { get; init; }
+
     public string Action { get; init; } = default!;
 
     public string? ResourceType { get; init; }

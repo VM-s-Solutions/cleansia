@@ -69,6 +69,16 @@ final class OrdersStalenessTests: XCTestCase {
         XCTAssertFalse(cache.isPaneStale(.history))
     }
 
+    /// The standalone acceptance changes nothing about which board a job is on — only the caller's
+    /// own row on a job they already hold.
+    func testAcceptWorkContractInvalidatesActiveOnly() {
+        let cache = freshAllPanes()
+        cache.invalidatePanes(for: .acceptWorkContract)
+        XCTAssertFalse(cache.isPaneStale(.available))
+        XCTAssertTrue(cache.isPaneStale(.active))
+        XCTAssertFalse(cache.isPaneStale(.history))
+    }
+
     func testCompleteInvalidatesActiveAndHistoryOnly() {
         let cache = freshAllPanes()
         cache.invalidatePanes(for: .completeOrder)

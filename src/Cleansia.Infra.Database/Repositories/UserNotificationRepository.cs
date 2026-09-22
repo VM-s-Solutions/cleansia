@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Cleansia.Core.Domain.Notifications;
 using Cleansia.Core.Domain.Repositories;
 using Microsoft.EntityFrameworkCore;
@@ -15,6 +16,17 @@ public class UserNotificationRepository(CleansiaDbContext context)
         return GetQueryableIgnoringTenant()
             .FirstOrDefaultAsync(
                 n => n.UserId == userId && n.EventKey == eventKey && n.ReadOn == null,
+                cancellationToken);
+    }
+
+    public Task<bool> AnyForEventAsync(string tenantId, string eventKey, string argName, string argValue, CancellationToken cancellationToken)
+    {
+        // ArgsJson is jsonb, so the match is containment (@>) on the one pair, not a text LIKE: the
+        // fragment is a JSON object the notifier's own serialiser would have written.
+        var fragment = JsonSerializer.Serialize(new Dictionary<string, string> { [argName] = argValue });
+        return GetQueryableIgnoringTenant()
+            .AnyAsync(
+                n => n.TenantId == tenantId && n.EventKey == eventKey && EF.Functions.JsonContains(n.ArgsJson, fragment),
                 cancellationToken);
     }
 

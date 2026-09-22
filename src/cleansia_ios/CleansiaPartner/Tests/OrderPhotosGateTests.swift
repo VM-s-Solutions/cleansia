@@ -125,7 +125,8 @@ final class OrderPhotosGateTests: XCTestCase {
         XCTAssertFalse(vm.canReadPhotos)
 
         client.byIdResult = .success(item(status: 2, isMine: true))
-        await vm.take()
+        vm.take()
+        await vm.onWorkContractOutcome(.taken(orderId: "order-1"))
 
         XCTAssertTrue(vm.canReadPhotos)
     }

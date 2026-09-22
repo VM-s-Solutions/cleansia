@@ -27,5 +27,8 @@ public interface IEmployeeRepository : IRepository<Employee, string>
     /// MUST call ITenantProvider.SetTenantOverride(employee.TenantId) before any
     /// subsequent mutation so child rows inherit the right tenant.
     /// </summary>
+    /// <summary>Employee reached only through a completed order belonging to this customer.</summary>
+    Task<Employee?> GetServingCustomerAsync(string employeeId, string userId, CancellationToken cancellationToken);
+
     Task<Employee?> GetByIdIgnoringTenantAsync(string id, CancellationToken cancellationToken);
 }

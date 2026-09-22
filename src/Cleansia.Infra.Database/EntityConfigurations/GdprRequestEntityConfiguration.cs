@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Cleansia.Infra.Database.EntityConfigurations;
 
-public class GdprRequestEntityConfiguration : AuditableEntityConfiguration<GdprRequest, string>
+public class GdprRequestEntityConfiguration : TenantAuditableEntityConfiguration<GdprRequest, string>
 {
     public override void Configure(EntityTypeBuilder<GdprRequest> builder)
     {

@@ -234,7 +234,10 @@ final class AuthApiClientTests: XCTestCase {
         let client = try makeClient(store: store)
         MockURLProtocol.handler = { _ in (200, Data("true".utf8)) }
 
-        _ = await client.register(email: "a@b.cz", password: "pw", firstName: "A", lastName: "B", language: "en")
+        _ = await client.register(
+            email: "a@b.cz", password: "pw", firstName: "A", lastName: "B", language: "en",
+            countryId: nil, termsAccepted: true
+        )
         _ = await client.resendConfirmation(email: "a@b.cz", language: "en")
 
         MockURLProtocol.handler = { _ in (204, Data()) }
@@ -307,7 +310,10 @@ final class AuthApiClientTests: XCTestCase {
         let client = try makeClient(store: store)
         MockURLProtocol.handler = { _ in (200, Data("true".utf8)) }
 
-        _ = await client.register(email: "a@b.cz", password: "pw", firstName: "A", lastName: "B", language: "en")
+        _ = await client.register(
+            email: "a@b.cz", password: "pw", firstName: "A", lastName: "B", language: "en",
+            countryId: nil, termsAccepted: true
+        )
         _ = await client.resendConfirmation(email: "a@b.cz", language: "en")
         MockURLProtocol.handler = { _ in (204, Data()) }
         _ = await client.forgotPassword(email: "a@b.cz", language: "en")
@@ -324,7 +330,8 @@ final class AuthApiClientTests: XCTestCase {
         MockURLProtocol.handler = { _ in (200, Data("true".utf8)) }
 
         let result = await client.register(
-            email: "a@b.cz", password: "pw", firstName: "A", lastName: "B", language: "en"
+            email: "a@b.cz", password: "pw", firstName: "A", lastName: "B", language: "en",
+            countryId: nil, termsAccepted: true
         )
 
         guard case let .success(value) = result else { return XCTFail("expected success") }
@@ -338,7 +345,8 @@ final class AuthApiClientTests: XCTestCase {
         MockURLProtocol.handler = { _ in (200, Data("true".utf8)) }
 
         let result = await client.register(
-            email: "a@b.cz", password: "pw", firstName: "A", lastName: "B", language: "en"
+            email: "a@b.cz", password: "pw", firstName: "A", lastName: "B", language: "en",
+            countryId: nil, termsAccepted: true
         )
 
         guard case let .success(value) = result else { return XCTFail("expected success") }
@@ -354,11 +362,61 @@ final class AuthApiClientTests: XCTestCase {
         MockURLProtocol.handler = { _ in (200, Data("true".utf8)) }
 
         _ = await client.register(
-            email: "a@b.cz", password: "pw", firstName: "A", lastName: "B", language: "en"
+            email: "a@b.cz", password: "pw", firstName: "A", lastName: "B", language: "en",
+            countryId: nil, termsAccepted: true
         )
 
         let request = try XCTUnwrap(MockURLProtocol.recorder.last(matching: "Register"))
         XCTAssertEqual(request.url?.path, "/api/Auth/RegisterEmployee")
+    }
+
+    /// The market rides on the registration body under the name the regenerated command declares,
+    /// and only when the app has one: an absent member is how the server is told to use the default
+    /// market, so nil must OMIT the field rather than send an explicit null.
+    func testRegisterPutsTheChosenMarketOnTheWire() async throws {
+        let client = try makeClient(store: MemTokenStore(), registerEndpoint: .customer)
+        MockURLProtocol.handler = { _ in (200, Data("true".utf8)) }
+
+        _ = await client.register(
+            email: "a@b.cz", password: "pw", firstName: "A", lastName: "B", language: "en",
+            countryId: "svk", termsAccepted: true
+        )
+
+        let body = try decodeBody(XCTUnwrap(MockURLProtocol.recorder.last(matching: "Register")))
+        XCTAssertEqual(body["countryId"] as? String, "svk")
+    }
+
+    func testRegisterWithNoMarketOmitsTheFieldSoTheServerPicksTheDefault() async throws {
+        let client = try makeClient(store: MemTokenStore())
+        MockURLProtocol.handler = { _ in (200, Data("true".utf8)) }
+
+        _ = await client.register(
+            email: "a@b.cz", password: "pw", firstName: "A", lastName: "B", language: "en",
+            countryId: nil, termsAccepted: true
+        )
+
+        let body = try decodeBody(XCTUnwrap(MockURLProtocol.recorder.last(matching: "RegisterEmployee")))
+        XCTAssertFalse(body.keys.contains("countryId"))
+    }
+
+    /// The tick is never omitted the way the market is: the server refuses an absent tick exactly as
+    /// it refuses a false one, so the body always states which of the two the form asserted. This pins
+    /// only the encoding — that `false` is written rather than dropped. A form leaving the tick
+    /// unasserted is refused by the seam's non-optional `Bool` at compile time, which no runtime test
+    /// can exercise.
+    func testRegisterAlwaysStatesTheTermsTickOnTheWire() async throws {
+        let client = try makeClient(store: MemTokenStore(), registerEndpoint: .customer)
+        MockURLProtocol.handler = { _ in (200, Data("true".utf8)) }
+
+        for tick in [true, false] {
+            _ = await client.register(
+                email: "a@b.cz", password: "pw", firstName: "A", lastName: "B", language: "en",
+                countryId: nil, termsAccepted: tick
+            )
+
+            let body = try decodeBody(XCTUnwrap(MockURLProtocol.recorder.last(matching: "Register")))
+            XCTAssertEqual(body["termsAccepted"] as? Bool, tick)
+        }
     }
 
     func testFailureSurfacesFirstBusinessKeyFromErrorsDict() async throws {
@@ -391,6 +449,12 @@ final class AuthApiClientTests: XCTestCase {
         guard case let .failure(error) = result else { return XCTFail("expected failure") }
         XCTAssertEqual(error.code, "The Email field is required.")
         XCTAssertEqual(error.message, "Bad Request")
+    }
+
+    private func decodeBody(_ request: URLRequest) throws -> [String: Any] {
+        let data = try XCTUnwrap(MockURLProtocol.body(of: request))
+        let object = try JSONSerialization.jsonObject(with: data)
+        return try XCTUnwrap(object as? [String: Any])
     }
 
     func testAuthedNonAnonPathCarriesBearerPositiveControl() async throws {

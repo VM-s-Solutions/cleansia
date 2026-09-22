@@ -48,7 +48,7 @@ public sealed class ColdPathCurrentStatusQueryTests : IDisposable
         new(
             new DbContextOptionsBuilder<CleansiaDbContext>().UseSqlite(_connection).Options,
             new TestUserSessionProvider("system", "system@cleansia.test"),
-            new FixedTenantProvider(tenantId: null));
+            new FixedTenantProvider(TestTenants.Default));
 
     private async Task EnsureSchemaAsync()
     {
@@ -166,7 +166,8 @@ public sealed class ColdPathCurrentStatusQueryTests : IDisposable
         var validator = new StartOrder.Validator(
             new OrderRepository(ctx),
             employeeRepository.Object,
-            accessService.Object);
+            accessService.Object,
+            WorkContractTestData.AcceptanceRepository().Object);
         return (validator, employeeId);
     }
 
@@ -282,10 +283,14 @@ public sealed class ColdPathCurrentStatusQueryTests : IDisposable
         var service = new GdprExportService(
             new UserRepository(ctx),
             new OrderRepository(ctx),
+            new DisputeRepository(ctx),
             Mock.Of<IEmployeeDocumentRepository>(),
             Mock.Of<IEmployeeInvoiceRepository>(),
             Mock.Of<IEmployeePayoutDetailsRepository>(),
-            consentRepository.Object);
+            consentRepository.Object,
+            new CustomerActionAuditRepository(ctx),
+            new WorkContractAcceptanceRepository(ctx),
+            new LegalDocumentRepository(ctx));
 
         var export = await service.BuildAsync(userId, exportedBy: "admin-cold", CancellationToken.None);
 
@@ -307,7 +312,6 @@ public sealed class ColdPathCurrentStatusQueryTests : IDisposable
             customerAddress: Address.Create("Cold St 1", "Praha", "14000", countryId),
             rooms: 2,
             bathrooms: 1,
-            extras: new Dictionary<string, bool>(),
             cleaningDateTime: cleaningDateTime ?? DateTime.UtcNow.AddDays(2),
             paymentType: PaymentType.Card,
             totalPrice: 1200m,

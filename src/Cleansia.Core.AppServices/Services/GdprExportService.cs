@@ -1,5 +1,8 @@
 using Cleansia.Core.AppServices.Features.Gdpr.DTOs;
 using Cleansia.Core.AppServices.Services.Interfaces;
+using Cleansia.Core.Domain.Disputes;
+using Cleansia.Core.Domain.Enums;
+using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Repositories;
 using Microsoft.EntityFrameworkCore;
 
@@ -8,10 +11,14 @@ namespace Cleansia.Core.AppServices.Services;
 public class GdprExportService(
     IUserRepository userRepository,
     IOrderRepository orderRepository,
+    IDisputeRepository disputeRepository,
     IEmployeeDocumentRepository employeeDocumentRepository,
     IEmployeeInvoiceRepository employeeInvoiceRepository,
     IEmployeePayoutDetailsRepository employeePayoutDetailsRepository,
-    IUserConsentRepository userConsentRepository) : IGdprExportService
+    IUserConsentRepository userConsentRepository,
+    ICustomerActionAuditRepository customerActionAuditRepository,
+    IWorkContractAcceptanceRepository workContractAcceptanceRepository,
+    ILegalDocumentRepository legalDocumentRepository) : IGdprExportService
 {
     public async Task<GdprExportDto> BuildAsync(
         string userId,
@@ -35,7 +42,7 @@ public class GdprExportService(
         if (user.Employee is { } emp)
             employee = new GdprExportEmployeeDto(
                 emp.Id,
-                emp.EntityType, emp.RegistrationNumber, emp.VatNumber, emp.LegalEntityName,
+                emp.EntityType, emp.RegistrationNumber, emp.LegalEntityName,
                 emp.IBAN, emp.PassportId, emp.NationalityId,
                 emp.EmergencyContactName, emp.EmergencyContactPhone,
                 emp.PreferredCurrencyCode, emp.AverageRating, emp.ContractStatus, emp.CreatedOn);
@@ -46,19 +53,65 @@ public class GdprExportService(
             var payout = await employeePayoutDetailsRepository.GetByEmployeeIdAsync(user.Employee.Id, cancellationToken);
             if (payout is not null)
                 payoutDetails = new GdprExportPayoutDetailsDto(
-                    payout.Scheme, payout.Status, payout.BankCountryId,
+                    payout.Scheme, payout.Status, payout.BankCountryId, payout.CurrencyId,
                     payout.AccountPrefix, payout.AccountNumber, payout.BankCode, payout.Iban,
                     payout.Swift, payout.BankName, payout.HolderName,
                     payout.ConfirmedAt, payout.LastRevealedAt, payout.RevealCount);
         }
 
-        var orders = await orderRepository.GetFiltered(o => o.UserId == userId)
+        // Past the tenant filter for the same reason the erasure walk reads them so: a guest booking under
+        // the subject's e-mail is stamped with the market's operator, not the subject's, and the predicate
+        // is the pin (ADR-0051).
+        var orderRows = await orderRepository.GetQueryableIgnoringTenant()
+            .Where(SubjectOrders.Of(user.Id, user.Email))
             .AsNoTracking()
+            .Select(o => new
+            {
+                o.Id, o.DisplayOrderNumber, o.CustomerName, o.CustomerEmail,
+                o.CurrentStatus, o.TotalPrice, o.CleaningDateTime, o.CreatedOn, o.WorkContractDocumentId,
+            })
+            .ToListAsync(cancellationToken);
+
+        // The customer's half of each contract for work: the version the order was booked under, and
+        // the crew's acceptances of it with no cleaner id — the live detail shows the given name.
+        var orderDocumentIds = orderRows.Where(o => o.WorkContractDocumentId != null).Select(o => o.WorkContractDocumentId!).Distinct().ToList();
+        var documentVersions = orderDocumentIds.Count == 0
+            ? new Dictionary<string, string>()
+            : await legalDocumentRepository.GetQueryable()
+                .AsNoTracking()
+                .Where(d => orderDocumentIds.Contains(d.Id))
+                .ToDictionaryAsync(d => d.Id, d => d.Version, cancellationToken);
+        var orderAcceptances = (await workContractAcceptanceRepository.GetForOrdersAsync(
+                orderRows.Select(o => o.Id).ToList(), cancellationToken))
+            .ToLookup(a => a.OrderId);
+        var orders = orderRows
             .Select(o => new GdprExportOrderDto(
                 o.Id, o.DisplayOrderNumber, o.CustomerName, o.CustomerEmail,
                 o.CurrentStatus,
-                o.TotalPrice, o.CleaningDateTime, o.CreatedOn))
+                o.TotalPrice, o.CleaningDateTime, o.CreatedOn,
+                o.WorkContractDocumentId is null ? null : documentVersions.GetValueOrDefault(o.WorkContractDocumentId),
+                orderAcceptances[o.Id]
+                    .Select(a => new GdprExportOrderWorkContractAcceptanceDto(a.AcceptedOn, a.DocumentVersion, a.Language))
+                    .ToList()))
+            .ToList();
+
+        // Filed on the account, or on one of the orders above: the second term keeps the section in step
+        // with the orders section, the first is what still finds the disputes after an erasure has taken
+        // the account off its orders. The bypass is for the order term alone: a dispute the account filed
+        // is stamped with the subject's own operator (a chargeback re-pins to the order's, which an
+        // account order shares), so the residual it guards is a dispute on a guest booking stamped with
+        // another market's operator — none is written today. The pin is the caller's own id and the ids
+        // the orders read yielded (ADR-0051).
+        var orderIds = orders.Select(o => o.Id).ToList();
+        var disputes = await disputeRepository.GetQueryableIgnoringTenant()
+            .Where(d => d.UserId == user.Id || orderIds.Contains(d.OrderId))
+            .Include(d => d.Messages)
+            .Include(d => d.Evidence)
+            .Include(d => d.Order).ThenInclude(o => o.Currency)
+            .OrderBy(d => d.CreatedOn)
+            .AsNoTracking()
             .ToListAsync(cancellationToken);
+        var disputeDtos = disputes.Select(MapDispute).ToList();
 
         var documents = new List<GdprExportDocumentDto>();
         if (user.Employee is not null)
@@ -80,13 +133,54 @@ public class GdprExportService(
 
         var consents = await userConsentRepository.GetByUserIdNoTrackingAsync(userId, cancellationToken);
         var consentDtos = consents.Select(c => new GdprExportConsentDto(
-            c.Id, c.ConsentType, c.IsGranted, c.GrantedAt, c.WithdrawnAt)).ToList();
+            c.Id, c.ConsentType, c.IsGranted, c.GrantedAt, c.WithdrawnAt,
+            c.IpAddress, c.UserAgent, c.DocumentVersion, c.LegalDocumentId)).ToList();
+
+        var customerActions = await customerActionAuditRepository.GetQueryable()
+            .Where(a => a.UserId == userId)
+            .OrderByDescending(a => a.OccurredOn)
+            .AsNoTracking()
+            .Select(a => new GdprExportCustomerActionDto(
+                a.Action, a.OccurredOn, a.ResourceType, a.ResourceId, a.Success, a.ErrorCode,
+                a.PayloadJson, a.IpAddress, a.DeviceLabel))
+            .ToListAsync(cancellationToken);
+
+        // The cleaner's own record and they are entitled to it, trio included — read null after an erasure.
+        var workContractAcceptances = new List<GdprExportWorkContractAcceptanceDto>();
+        if (user.Employee is not null)
+        {
+            var rows = await workContractAcceptanceRepository.GetByEmployeeIdNoTrackingAsync(user.Employee.Id, cancellationToken);
+            workContractAcceptances = rows
+                .Select(a => new GdprExportWorkContractAcceptanceDto(
+                    a.OrderId, a.OrderNumber, a.OrderEmployeeId, a.LegalDocumentTextId, a.DocumentVersion, a.Language,
+                    a.AcceptedOn, a.ClientAudience, a.IpAddress, a.DeviceLabel, a.DeviceId, a.FactsJson))
+                .ToList();
+        }
 
         var metadata = new GdprExportMetadataDto(
             DateTimeOffset.UtcNow, exportedBy, "JSON");
 
         return new GdprExportDto(
-            profile, address, employee, payoutDetails, orders,
-            documents, invoices, consentDtos, metadata);
+            profile, address, employee, payoutDetails, orders, disputeDtos,
+            documents, invoices, consentDtos, customerActions, metadata, workContractAcceptances);
     }
+
+    private static GdprExportDisputeDto MapDispute(Dispute dispute) =>
+        new(
+            dispute.Id,
+            dispute.OrderId,
+            dispute.Order.DisplayOrderNumber,
+            dispute.Reason.ToString(),
+            dispute.Description,
+            dispute.Status.ToString(),
+            dispute.ResolutionNotes,
+            dispute.RefundAmount,
+            dispute.Order.Currency?.Code ?? dispute.Order.CurrencyId,
+            dispute.CreatedOn,
+            dispute.ResolvedOn,
+            dispute.Messages
+                .OrderBy(m => m.CreatedOn).ThenBy(m => m.Id)
+                .Select(m => new GdprExportDisputeMessageDto(m.IsStaffMessage ? "Staff" : nameof(UserProfile.Customer), m.CreatedOn, m.Message))
+                .ToList(),
+            dispute.Evidence.OrderBy(e => e.UploadedOn).ThenBy(e => e.Id).Select(e => e.FileName).ToList());
 }

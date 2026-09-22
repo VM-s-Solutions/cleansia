@@ -7,26 +7,32 @@ struct OrdersPage: Equatable {
     let total: Int
 }
 
-/// **Refuse.** Both members are non-nullable on the server and the pair is a statement about the
-/// customer's money: coerced, `refundInitiated` reads `false` and the screen says "cancelled, no
-/// refund" over a refund the server did start. There is no page and no row here — one response.
+/// **Refuse** `refundAmount` and `refundInitiated`. Both are non-nullable on the server and the pair is
+/// a statement about the customer's money: coerced, `refundInitiated` reads `false` and the screen says
+/// "cancelled, no refund" over a refund the server did start. There is no page and no row here — one
+/// response. `actualRefundAmount` is nullable by design: it is the money the refund service confirmed,
+/// where `refundAmount` is the policy figure quoted for every cancel, including a cash order that
+/// refunds nothing — so the confirmation quotes the former and never borrows the latter.
 struct OrderCancellation: Equatable {
     let refundAmount: Double
     let refundInitiated: Bool
+    let actualRefundAmount: Double?
 
-    init(refundAmount: Double, refundInitiated: Bool) {
+    init(refundAmount: Double, refundInitiated: Bool, actualRefundAmount: Double?) {
         self.refundAmount = refundAmount
         self.refundInitiated = refundInitiated
+        self.actualRefundAmount = actualRefundAmount
     }
 
     init(_ response: CancelOrderResponse) throws {
         refundAmount = try response.refundAmount.require("refundAmount")
         refundInitiated = try response.refundInitiated.require("refundInitiated")
+        actualRefundAmount = response.actualRefundAmount
     }
 
     var refunded: Double? {
-        guard refundInitiated, refundAmount > 0 else { return nil }
-        return refundAmount
+        guard refundInitiated, let amount = actualRefundAmount, amount > 0 else { return nil }
+        return amount
     }
 }
 
@@ -58,6 +64,7 @@ protocol OrderClient: Sendable {
     func getPhotos(orderId: String) async -> ApiResult<OrderPhotos>
     func confirmRecurring(orderId: String) async -> ApiResult<RecurringConfirmation>
     func cancellationQuote(orderId: String) async -> ApiResult<CancellationQuote>
+    func getWorkContract(acceptanceId: String, language: String) async -> ApiResult<WorkContract>
 }
 
 struct LiveOrderClient: OrderClient {
@@ -147,6 +154,15 @@ struct LiveOrderClient: OrderClient {
     func cancellationQuote(orderId: String) async -> ApiResult<CancellationQuote> {
         await apiResult(mapError: ApiError.fromGenerated) {
             try await CancellationQuote(CustomerOrderAPI.orderCancellationPreview(orderId: orderId))
+        }
+    }
+
+    func getWorkContract(acceptanceId: String, language: String) async -> ApiResult<WorkContract> {
+        await apiResult(mapError: ApiError.fromGenerated) {
+            try await WorkContract(CustomerOrderAPI.orderGetWorkContract(
+                acceptanceId: acceptanceId,
+                language: language
+            ))
         }
     }
 }

@@ -4,6 +4,8 @@ import {
   AdminGdprClient,
   GdprExportDto,
   GdprRequestDto,
+  GdprRequestStatus,
+  RequestsClient,
   SortDefinition,
   UserConsentDto,
 } from '@cleansia/admin-services';
@@ -15,6 +17,11 @@ import { catchError, finalize, of, takeUntil } from 'rxjs';
 @Injectable()
 export class DataProtectionFacade extends UnsubscribeControlDirective {
   private readonly gdprClient = inject(AdminGdprClient);
+  /**
+   * Injected directly: NSwag split the `requests/{requestId}/retry-deletion` route into its own
+   * generated client, so it is not on `AdminGdprClient` (the `DeletionRequestsClient` precedent).
+   */
+  private readonly requestsClient = inject(RequestsClient);
   private readonly snackbar = inject(SnackbarService);
   private readonly translate = inject(TranslateService);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
@@ -24,6 +31,8 @@ export class DataProtectionFacade extends UnsubscribeControlDirective {
   readonly initialLoading = signal<boolean>(true);
   readonly totalRecords = signal<number>(0);
   readonly hasError = signal<boolean>(false);
+  readonly status = signal<GdprRequestStatus | null>(null);
+  readonly retrying = signal<boolean>(false);
 
   readonly consents = signal<UserConsentDto[]>([]);
   readonly consentsUserId = signal<string | null>(null);
@@ -39,9 +48,16 @@ export class DataProtectionFacade extends UnsubscribeControlDirective {
   loadRequests(): void {
     this.loading.set(true);
     this.hasError.set(false);
+    const requested = this.status();
+    const offset = this.currentOffset;
 
     this.gdprClient
-      .requests(this.currentSort, this.currentOffset, this.currentLimit)
+      .requests(
+        requested ?? undefined,
+        this.currentSort,
+        offset,
+        this.currentLimit
+      )
       .pipe(
         takeUntil(this.destroyed$),
         catchError((error: unknown) => {
@@ -55,7 +71,12 @@ export class DataProtectionFacade extends UnsubscribeControlDirective {
         finalize(() => this.loading.set(false))
       )
       .subscribe((response) => {
-        if (response) {
+        // Drop a response the filter or the page has already moved past.
+        if (
+          response &&
+          this.status() === requested &&
+          this.currentOffset === offset
+        ) {
           this.requests.set(response.data ?? []);
           this.totalRecords.set(response.total ?? 0);
         }
@@ -69,6 +90,43 @@ export class DataProtectionFacade extends UnsubscribeControlDirective {
     this.currentOffset = offset;
     this.currentLimit = limit;
     this.loadRequests();
+  }
+
+  selectStatus(status: GdprRequestStatus | null): void {
+    this.status.set(status);
+    this.currentOffset = 0;
+    this.loadRequests();
+  }
+
+  retryDeletion(requestId: string): void {
+    if (this.retrying()) return;
+
+    this.retrying.set(true);
+    this.requestsClient
+      .retryDeletion(requestId)
+      .pipe(
+        takeUntil(this.destroyed$),
+        catchError((error: unknown) => {
+          this.snackbar.showApiError(
+            error,
+            'pages.data_protection.requests.retry_error'
+          );
+          return of('error' as const);
+        }),
+        finalize(() => this.retrying.set(false))
+      )
+      .subscribe((result) => {
+        if (result !== 'error') {
+          this.snackbar.showSuccess(
+            this.translate.instant(
+              'pages.data_protection.requests.retry_success'
+            )
+          );
+        }
+        // Both branches re-read: the retry job may have finished this row first, and the refusal
+        // that says so would otherwise leave a stale Failed row with a live button.
+        this.loadRequests();
+      });
   }
 
   loadConsents(userId: string): void {

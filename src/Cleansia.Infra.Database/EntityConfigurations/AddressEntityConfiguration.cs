@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Cleansia.Infra.Database.EntityConfigurations;
 
-public class AddressEntityConfiguration : AuditableEntityConfiguration<Address, string>
+public class AddressEntityConfiguration : TenantAuditableEntityConfiguration<Address, string>
 {
     public override void Configure(EntityTypeBuilder<Address> builder)
     {

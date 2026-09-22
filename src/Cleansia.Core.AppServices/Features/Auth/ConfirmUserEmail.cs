@@ -1,17 +1,28 @@
 using Cleansia.Core.AppServices.Abstractions;
+using Cleansia.Core.AppServices.Auditing;
 using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.AppServices.Shared.DTOs.ResponseModels;
+using Cleansia.Core.AppServices.Tenancy;
 using Cleansia.Core.Domain.Common;
+using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Users;
+using Cleansia.Infra.Common.Configuration.Interfaces;
 using Cleansia.Infra.Common.Validations;
 using FluentValidation;
 using Microsoft.Extensions.Logging;
 
 namespace Cleansia.Core.AppServices.Features.Auth;
 
+/// <summary>
+/// Proves the typed code against the named account and opens its first session. The partner hosts route
+/// it for their cleaners, and a host that is not a customer host confirms an Employee or an Administrator
+/// only — whom it signs in is <see cref="PartnerLogin"/>'s rule, and a Customer's code presented there
+/// would otherwise mint a partner-audience session for an account that has no business on that host.
+/// </summary>
+[AuditAction("customer.account.email_confirmed", Audience = AuditAudience.Customer, ResourceType = "User", AllowsAnonymousActor = true)]
 public class ConfirmUserEmail
 {
     // Two disjoint wire shapes (see SecurityTokens): the typed OTP is exactly 6 digits; the legacy
@@ -22,11 +33,13 @@ public class ConfirmUserEmail
     {
         private readonly IUserRepository _userRepository;
         private readonly ILogger<Validator> _logger;
+        private readonly IAuditContext _auditContext;
 
-        public Validator(IUserRepository userRepository, ILogger<Validator> logger)
+        public Validator(IUserRepository userRepository, ILogger<Validator> logger, IAuditContext auditContext)
         {
             _userRepository = userRepository;
             _logger = logger;
+            _auditContext = auditContext;
 
             // A 6-digit OTP is guessable in isolation, so it is NEVER resolved by the bare code — the
             // email names the single account whose stored hash the code is compared against.
@@ -103,8 +116,17 @@ public class ConfirmUserEmail
             return true;
         }
 
-        private Task<User?> ResolveAsync(Command command, CancellationToken cancellationToken)
-            => Resolve(_userRepository, command, cancellationToken);
+        // Whichever rule refuses, the account it refused is already named on the audit context.
+        private async Task<User?> ResolveAsync(Command command, CancellationToken cancellationToken)
+        {
+            var user = await Resolve(_userRepository, command, cancellationToken);
+            if (user is not null)
+            {
+                _auditContext.RecordEvidence("User", user.Id, payload: null, actorUserId: user.Id);
+            }
+
+            return user;
+        }
     }
 
     /// <param name="Code">The 6-digit typed verification code (or a legacy 22-char link token still
@@ -112,18 +134,49 @@ public class ConfirmUserEmail
     /// <param name="Email">The account the code was issued to. REQUIRED with a 6-digit code (the code
     /// only proves possession relative to a named account); ignored on the legacy-token branch, which
     /// keeps the old code-only wire shape so existing clients and in-flight emails stay valid.</param>
-    public record Command(string Code, string? Email = null) : ICommand<JwtTokenResponse>;
+    public record Command(string Code, string? Email = null) : ICommand<JwtTokenResponse>, IOperatorScopedRequest
+    {
+        // The confirmation names no market: a refusal that resolved no account is stamped with the default
+        // market's operator (ADR-0061 D3), and one on a known account is re-stamped by the failure sink
+        // with that account's operator. Off the wire.
+        string? IOperatorScopedRequest.CountryId => null;
+    }
+
+    /// <summary>Which wire shape confirmed the address: the typed code, or a link minted before the OTP switch.</summary>
+    public record EmailConfirmationEvidence(string Method) : ICustomerAuditPayload
+    {
+        public const string OtpMethod = "Otp";
+        public const string LegacyLinkMethod = "LegacyLink";
+    }
 
     public class Handler(
         ITokenService tokenService,
         IUserRepository userRepository,
-        IHostAudienceProvider hostAudience) : ICommandHandler<Command, JwtTokenResponse>
+        IHostAudienceProvider hostAudience,
+        IAuditContext auditContext) : ICommandHandler<Command, JwtTokenResponse>
     {
+        private bool IsCustomerHost => hostAudience.Audience == JwtAudiences.Customer;
+
         public async Task<BusinessResult<JwtTokenResponse>> Handle(Command command, CancellationToken cancellationToken)
         {
             // Same resolution the validator proved — a diverging load here would NRE into a 500.
             var user = await Resolve(userRepository, command, cancellationToken);
+
+            // Behind the proven code on purpose, not a validator rule ahead of it: refused before the code
+            // is checked, the key would tell an anonymous caller which addresses hold a Customer account.
+            if (!IsCustomerHost && user!.Profile is not (UserProfile.Employee or UserProfile.Administrator))
+            {
+                return BusinessResult.Failure<JwtTokenResponse>(
+                    new Error(nameof(Command.Email), BusinessErrorMessage.InsufficientPrivileges));
+            }
+
             user!.ConfirmEmail();
+
+            auditContext.RecordEvidence(
+                "User",
+                user.Id,
+                new EmailConfirmationEvidence(IsOtp(command.Code) ? EmailConfirmationEvidence.OtpMethod : EmailConfirmationEvidence.LegacyLinkMethod),
+                actorUserId: user.Id);
 
             return BusinessResult.Success(await tokenService.GenerateTokenAsync(user, rememberMe: true, hostAudience.Audience, cancellationToken));
         }
@@ -132,14 +185,16 @@ public class ConfirmUserEmail
     // The single account-resolution seam BOTH the validator and the handler use (a validator/handler
     // query divergence is an NRE factory — see the RefreshToken post-mortem).
     //   - OTP: by email, anonymous path → tenant-ignoring (same posture as the ChangePassword reset
-    //     flow; email uniqueness is per-tenant, and the hash compare disambiguates in practice).
-    //   - Legacy 128-bit token: by code hash alone — safe only because 128 bits cannot be guessed
-    //     into someone else's account; kept so in-flight pre-OTP emails still confirm.
+    //     flow; email is one identity across the holding, ADR-0061 D5.1).
+    //   - Legacy 128-bit token: by code hash alone, tenant-ignoring — the link is clicked anonymously
+    //     while the row it confirms is stamped (ADR-0061 D4), and the pin is the server-issued hash,
+    //     which 128 bits cannot be guessed into someone else's account. Kept so in-flight pre-OTP
+    //     emails still confirm.
     private static Task<User?> Resolve(IUserRepository userRepository, Command command, CancellationToken cancellationToken)
     {
         if (!IsOtp(command.Code))
         {
-            return userRepository.GetByConfirmationCodeAsync(command.Code, cancellationToken);
+            return userRepository.GetByConfirmationCodeIgnoringTenantAsync(command.Code, cancellationToken);
         }
 
         return string.IsNullOrEmpty(command.Email)

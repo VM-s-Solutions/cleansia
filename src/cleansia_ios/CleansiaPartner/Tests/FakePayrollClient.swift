@@ -18,6 +18,7 @@ final class FakePayrollClient: PartnerPayrollClient {
 
     private(set) var periodPaysEmployeeId: String?
     private(set) var periodPaysPayPeriodId: String?
+    private(set) var periodPaysCurrencyId: String?
     private(set) var invoicesEmployeeId: String?
     private(set) var lastInvoiceId: String?
     private(set) var lastDownloadId: String?
@@ -27,10 +28,15 @@ final class FakePayrollClient: PartnerPayrollClient {
         return employeeIdResult
     }
 
-    func getPeriodPays(employeeId: String, payPeriodId: String) async -> ApiResult<PeriodPaySummary> {
+    func getPeriodPays(
+        employeeId: String,
+        payPeriodId: String,
+        currencyId: String?
+    ) async -> ApiResult<PeriodPaySummary> {
         periodPaysCallCount += 1
         periodPaysEmployeeId = employeeId
         periodPaysPayPeriodId = payPeriodId
+        periodPaysCurrencyId = currencyId
         return periodPaysResult
     }
 

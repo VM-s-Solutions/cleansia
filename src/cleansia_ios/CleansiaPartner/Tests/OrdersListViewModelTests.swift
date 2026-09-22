@@ -293,24 +293,98 @@ final class OrdersListViewModelTests: XCTestCase {
         XCTAssertEqual(vm.inlineAction(for: .sample(id: "c", status: ._4)), .complete)
     }
 
-    func testRunInlineTakeSendsCommandForRowIdAndInvalidatesPanes() async {
+    /// Taking is accepting the contract for work: the row's Take opens the sheet for that row's id and
+    /// writes nothing itself — the take happens on the swipe inside the sheet.
+    func testRunInlineTakeOpensTheContractSheetForTheRowAndWritesNothing() async {
         client.pagedResult = .success([.sample(id: "o1", status: ._2)])
         let vm = makeVM()
         await vm.onAppear()
-        for pane in OrdersPane.allCases {
-            staleness.markPaneFresh(pane)
-        }
 
         await vm.runInlineAction(.take, on: .sample(id: "o1", status: ._2))
 
-        XCTAssertEqual(client.commands.map(\.name), ["take"])
-        XCTAssertEqual(client.commands.first?.orderId, "o1")
+        XCTAssertEqual(vm.contractRequest, .take(orderId: "o1"))
+        XCTAssertTrue(client.commands.isEmpty)
+        XCTAssertNil(vm.inFlightActionOrderId)
+    }
+
+    func testDismissingTheSheetClearsTheRequest() async {
+        let vm = makeVM()
+        await vm.runInlineAction(.take, on: .sample(id: "o1", status: ._2))
+
+        vm.dismissContract()
+
+        XCTAssertNil(vm.contractRequest)
+    }
+
+    func testATakeIsNotOfferedWhileAnotherRowIsInFlight() async {
+        client.pagedResult = .success([.sample(id: "o1", status: ._3)])
+        client.suspendCommands = true
+        let vm = makeVM()
+        await vm.selectTab(.active)
+        let first = Task { await vm.runInlineAction(.start, on: .sample(id: "o1", status: ._3)) }
+        while client.commands.isEmpty {
+            await Task.yield()
+        }
+
+        await vm.runInlineAction(.take, on: .sample(id: "o2", status: ._2))
+
+        XCTAssertNil(vm.contractRequest)
+        client.resumeCommand()
+        await first.value
+    }
+
+    /// The sheet's verdict is reconciled exactly as the one-tap take was.
+    func testATakenOutcomeInvalidatesThePanesAndRefreshesTheBoard() async {
+        client.pagedResult = .success([.sample(id: "o1", status: ._2)])
+        let vm = makeVM()
+        await vm.onAppear()
+        await vm.runInlineAction(.take, on: .sample(id: "o1", status: ._2))
+        for pane in OrdersPane.allCases {
+            staleness.markPaneFresh(pane)
+        }
+        let fetchesBefore = client.getPagedCallCount
+
+        await vm.onWorkContractOutcome(.taken(orderId: "o1"))
+
+        XCTAssertNil(vm.contractRequest)
+        XCTAssertEqual(client.getPagedCallCount, fetchesBefore + 1)
         // Take invalidates [available, active]; the current pane (available) is
         // then refetched (fresh again), so only the OTHER affected pane (active)
         // stays stale; history is untouched.
         XCTAssertFalse(staleness.isPaneStale(.available))
         XCTAssertTrue(staleness.isPaneStale(.active))
         XCTAssertFalse(staleness.isPaneStale(.history))
+        XCTAssertNil(vm.inFlightActionOrderId)
+    }
+
+    func testInFlightHeldThroughTheOutcomesRefresh() async {
+        client.pagedResult = .success([.sample(id: "o1", status: ._2)])
+        let vm = makeVM()
+        await vm.onAppear()
+        await vm.runInlineAction(.take, on: .sample(id: "o1", status: ._2))
+
+        var inFlightDuringRefresh: String?
+        client.onGetPaged = { inFlightDuringRefresh = vm.inFlightActionOrderId }
+        await vm.onWorkContractOutcome(.taken(orderId: "o1"))
+
+        XCTAssertEqual(inFlightDuringRefresh, "o1")
+        XCTAssertNil(vm.inFlightActionOrderId)
+    }
+
+    func testARefusedTakeOutcomeSnackbarsAndRefreshesTheBoard() async {
+        client.pagedResult = .success([.sample(id: "o1", status: ._2)])
+        let vm = makeVM()
+        await vm.onAppear()
+        await vm.runInlineAction(.take, on: .sample(id: "o1", status: ._2))
+        let fetchesBefore = client.getPagedCallCount
+
+        await vm.onWorkContractOutcome(
+            .refused(.take(orderId: "o1"), ApiError(code: "order.no_available_spots", httpStatus: 400))
+        )
+
+        XCTAssertNil(vm.contractRequest)
+        XCTAssertEqual(snackbar.current?.severity, .error)
+        XCTAssertEqual(client.getPagedCallCount, fetchesBefore + 1)
         XCTAssertNil(vm.inFlightActionOrderId)
     }
 
@@ -332,12 +406,12 @@ final class OrdersListViewModelTests: XCTestCase {
     }
 
     func testInlineActionPerRowInFlightThenClears() async {
-        client.pagedResult = .success([.sample(id: "o1", status: ._2)])
+        client.pagedResult = .success([.sample(id: "o1", status: ._3)])
         client.suspendCommands = true
         let vm = makeVM()
-        await vm.onAppear()
+        await vm.selectTab(.active)
 
-        let task = Task { await vm.runInlineAction(.take, on: .sample(id: "o1", status: ._2)) }
+        let task = Task { await vm.runInlineAction(.start, on: .sample(id: "o1", status: ._3)) }
         while client.commands.isEmpty {
             await Task.yield()
         }
@@ -349,16 +423,16 @@ final class OrdersListViewModelTests: XCTestCase {
     }
 
     func testInlineActionReentryGuardDropsSecond() async {
-        client.pagedResult = .success([.sample(id: "o1", status: ._2)])
+        client.pagedResult = .success([.sample(id: "o1", status: ._3)])
         client.suspendCommands = true
         let vm = makeVM()
-        await vm.onAppear()
+        await vm.selectTab(.active)
 
-        let first = Task { await vm.runInlineAction(.take, on: .sample(id: "o1", status: ._2)) }
+        let first = Task { await vm.runInlineAction(.start, on: .sample(id: "o1", status: ._3)) }
         while client.commands.isEmpty {
             await Task.yield()
         }
-        await vm.runInlineAction(.take, on: .sample(id: "o2", status: ._2)) // dropped
+        await vm.runInlineAction(.start, on: .sample(id: "o2", status: ._3)) // dropped
         XCTAssertEqual(client.commands.count, 1)
 
         client.resumeCommand()
@@ -366,12 +440,12 @@ final class OrdersListViewModelTests: XCTestCase {
     }
 
     func testInlineActionFailureSnackbarsAndRefreshes() async {
-        client.pagedResult = .success([.sample(id: "o1", status: ._2)])
+        client.pagedResult = .success([.sample(id: "o1", status: ._3)])
         let vm = makeVM()
-        await vm.onAppear()
-        client.commandResult = .failure(ApiError(httpStatus: 409)) // already-taken (O4)
+        await vm.selectTab(.active)
+        client.commandResult = .failure(ApiError(httpStatus: 409)) // already-started (O4)
 
-        await vm.runInlineAction(.take, on: .sample(id: "o1", status: ._2))
+        await vm.runInlineAction(.start, on: .sample(id: "o1", status: ._3))
 
         XCTAssertEqual(snackbar.current?.severity, .error)
         XCTAssertNil(vm.inFlightActionOrderId)
@@ -418,6 +492,7 @@ final class OrdersListViewModelTests: XCTestCase {
         await vm.onAppear()
 
         await vm.runInlineAction(.take, on: .sample(id: "o1", status: ._2))
+        await vm.onWorkContractOutcome(.taken(orderId: "o1"))
 
         XCTAssertNil(snackbar.current)
     }
@@ -438,15 +513,25 @@ final class OrdersListViewModelTests: XCTestCase {
     // MARK: TC-IOS-ORDERS-OWNERSHIP (O1 / O2)
 
     func testInlineActionActsOnlyOnRowIdNoEmployeeId() async {
+        client.pagedResult = .success([.sample(id: "row-id", status: ._3)])
+        let vm = makeVM()
+        await vm.selectTab(.active)
+
+        await vm.runInlineAction(.start, on: .sample(id: "row-id", status: ._3))
+
+        // O1: the command surface carries only orderId. O2: the carried id is
+        // the row's own id from the list response.
+        XCTAssertEqual(client.commands.first?.orderId, "row-id")
+    }
+
+    func testTheContractSheetIsOpenedOnTheRowsOwnIdAlone() async {
         client.pagedResult = .success([.sample(id: "row-id", status: ._2)])
         let vm = makeVM()
         await vm.onAppear()
 
         await vm.runInlineAction(.take, on: .sample(id: "row-id", status: ._2))
 
-        // O1: the command surface carries only orderId. O2: the carried id is
-        // the row's own id from the list response.
-        XCTAssertEqual(client.commands.first?.orderId, "row-id")
+        XCTAssertEqual(vm.contractRequest, .take(orderId: "row-id"))
     }
 
     // MARK: - Location (distance on the Available rows)

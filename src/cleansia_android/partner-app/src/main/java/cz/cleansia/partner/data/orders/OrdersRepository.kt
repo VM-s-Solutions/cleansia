@@ -1,6 +1,7 @@
 package cz.cleansia.partner.data.orders
 
 import cz.cleansia.partner.api.client.OrderApi
+import cz.cleansia.partner.api.model.AcceptWorkContractCommand
 import cz.cleansia.partner.api.model.AddOrderNoteCommand
 import cz.cleansia.partner.api.model.BlobFileDto
 import cz.cleansia.partner.api.model.CompleteOrderCommand
@@ -76,7 +77,21 @@ interface OrdersRepository {
 
     suspend fun getById(orderId: String): ApiResult<OrderItem>
 
-    suspend fun takeOrder(orderId: String): ApiResult<Unit>
+    /**
+     * The take echoes the text row the cleaner was shown: the server records the acceptance of that
+     * exact text beside the seat, and refuses a take that names none or another order's text.
+     */
+    suspend fun takeOrder(orderId: String, acceptedWorkContractTextId: String): ApiResult<Unit>
+
+    /** The standalone acceptance for a seat an administrator placed — the same echo, no seat taken. */
+    suspend fun acceptWorkContract(orderId: String, acceptedWorkContractTextId: String): ApiResult<Unit>
+
+    /** The order's contract text with the job's live facts, in [language] where the document has it. */
+    suspend fun getWorkContractPreview(orderId: String, language: String): ApiResult<WorkContract>
+
+    /** An accepted contract: the stored facts and the accepted version, keyed on the acceptance. */
+    suspend fun getWorkContract(acceptanceId: String, language: String): ApiResult<WorkContract>
+
     suspend fun startOrder(orderId: String): ApiResult<Unit>
     suspend fun markCashCollected(orderId: String): ApiResult<Unit>
     suspend fun notifyOnTheWay(orderId: String): ApiResult<Unit>
@@ -136,8 +151,8 @@ interface OrdersRepository {
     /**
      * Drop the staleness watermark for [orderId], forcing the next
      * freshness check to fall through to a network fetch. Called after
-     * any mutation (take/start/notifyOnTheWay/complete, photo upload /
-     * delete, note / issue add / update / delete) so the detail view
+     * any mutation (take/acceptWorkContract/start/notifyOnTheWay/complete,
+     * photo upload / delete, note / issue add / update / delete) so the detail view
      * refetches the canonical server state.
      */
     fun invalidateOrder(orderId: String)
@@ -295,9 +310,27 @@ class OrdersRepositoryImpl @Inject constructor(
                 if (result is ApiResult.Success) stalenessFor(orderId).markFresh()
             }
 
-    override suspend fun takeOrder(orderId: String): ApiResult<Unit> = safeApiCall(json) {
-        orderApi.orderTakeOrder(TakeOrderCommand(orderId = orderId))
-    }.map { }.also { if (it is ApiResult.Success) invalidateOrder(orderId) }
+    override suspend fun takeOrder(orderId: String, acceptedWorkContractTextId: String): ApiResult<Unit> =
+        safeApiCall(json) {
+            orderApi.orderTakeOrder(
+                TakeOrderCommand(orderId = orderId, acceptedWorkContractTextId = acceptedWorkContractTextId),
+            )
+        }.map { }.also { if (it is ApiResult.Success) invalidateOrder(orderId) }
+
+    override suspend fun acceptWorkContract(orderId: String, acceptedWorkContractTextId: String): ApiResult<Unit> =
+        safeApiCall(json) {
+            orderApi.orderAcceptWorkContract(
+                AcceptWorkContractCommand(orderId = orderId, acceptedWorkContractTextId = acceptedWorkContractTextId),
+            )
+        }.map { }.also { if (it is ApiResult.Success) invalidateOrder(orderId) }
+
+    override suspend fun getWorkContractPreview(orderId: String, language: String): ApiResult<WorkContract> =
+        safeApiCall(json) { orderApi.orderGetWorkContractPreview(orderId = orderId, language = language) }
+            .mapWire { it.toDomain() }
+
+    override suspend fun getWorkContract(acceptanceId: String, language: String): ApiResult<WorkContract> =
+        safeApiCall(json) { orderApi.orderGetWorkContract(acceptanceId = acceptanceId, language = language) }
+            .mapWire { it.toDomain() }
 
     override suspend fun startOrder(orderId: String): ApiResult<Unit> = safeApiCall(json) {
         orderApi.orderStartOrder(StartOrderCommand(orderId = orderId))

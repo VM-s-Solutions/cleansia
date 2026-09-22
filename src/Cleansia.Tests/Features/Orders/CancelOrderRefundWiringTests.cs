@@ -1,3 +1,4 @@
+using Cleansia.Core.AppServices.Auditing;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Services.Interfaces;
@@ -60,15 +61,19 @@ public class CancelOrderRefundWiringTests
 
     private CancelOrder.Handler CreateHandler() =>
         new(
-            _orderRepository.Object,
+            OrderAccessDoubles.Over(_orderRepository, _session),
             _session.Object,
-            _refundService.Object,
-            _creditAccountRepository.Object,
-            _loyaltyService.Object,
-            _policyResolver.Object,
-            _producer.Object,
-            _liveActivityProducer.Object,
-            _expressWaiverConsumer.Object);
+            new CustomerOrderCancellation(
+                Mock.Of<ITenantProvider>(),
+                _refundService.Object,
+                Mock.Of<IRefundRepository>(),
+                _creditAccountRepository.Object,
+                _loyaltyService.Object,
+                _policyResolver.Object,
+                _producer.Object,
+                _liveActivityProducer.Object,
+                _expressWaiverConsumer.Object,
+                new AuditContext()));
 
     private void Arrange(Order order) =>
         _orderRepository

@@ -58,9 +58,10 @@ export class ApproveDialogComponent {
       return;
     }
 
+    const { workCountryId, notes } = this.form.getRawValue();
     const result: ApproveDialogResult = {
-      workCountryId: this.form.value.workCountryId!,
-      notes: this.form.value.notes?.trim() ? this.form.value.notes : undefined,
+      workCountryId,
+      notes: notes.trim() ? notes : undefined,
     };
 
     this.dialogRef.close(result);

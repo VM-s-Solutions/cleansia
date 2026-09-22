@@ -4,10 +4,11 @@
     <h3>{{ 'pages.order_details.add_note' | translate }}</h3>
   </div>
   <div class="add-note-dialog__body">
-    <label class="add-note-dialog__label">
+    <label for="add-note-content" class="add-note-dialog__label">
       {{ 'pages.order_details.note_content' | translate }}
     </label>
     <textarea
+      id="add-note-content"
       pTextarea
       [(ngModel)]="content"
       [rows]="5"

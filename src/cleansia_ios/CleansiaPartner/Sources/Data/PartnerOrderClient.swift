@@ -29,7 +29,16 @@ protocol PartnerOrderClient: AnyObject {
     /// whole board.
     func declinePreferredOffer(orderId: String) async -> ApiResult<Void>
 
-    func takeOrder(orderId: String) async -> ApiResult<Void>
+    /// The take echoes the text row the cleaner was shown: the server records the acceptance of that
+    /// exact text beside the seat, and refuses a take that names none or another order's text.
+    func takeOrder(orderId: String, acceptedWorkContractTextId: String) async -> ApiResult<Void>
+    /// The standalone acceptance for a seat an administrator placed — the same echo, no seat taken.
+    func acceptWorkContract(orderId: String, acceptedWorkContractTextId: String) async -> ApiResult<Void>
+    /// The order's contract text with the job's live facts, in `language` where the document has it.
+    func getWorkContractPreview(orderId: String, language: String) async -> ApiResult<WorkContract>
+    /// An accepted contract: the stored facts and the accepted version, keyed on the acceptance.
+    func getWorkContract(acceptanceId: String, language: String) async -> ApiResult<WorkContract>
+
     func notifyOnTheWay(orderId: String) async -> ApiResult<Void>
     func startOrder(orderId: String) async -> ApiResult<Void>
     func markCashCollected(orderId: String) async -> ApiResult<Void>
@@ -126,9 +135,37 @@ final class LivePartnerOrderClient: PartnerOrderClient {
         }
     }
 
-    func takeOrder(orderId: String) async -> ApiResult<Void> {
+    func takeOrder(orderId: String, acceptedWorkContractTextId: String) async -> ApiResult<Void> {
         await apiResult(mapError: ApiError.fromGenerated) {
-            _ = try await PartnerOrderAPI.orderTakeOrder(takeOrderCommand: TakeOrderCommand(orderId: orderId))
+            _ = try await PartnerOrderAPI.orderTakeOrder(
+                takeOrderCommand: TakeOrderCommand(
+                    orderId: orderId,
+                    acceptedWorkContractTextId: acceptedWorkContractTextId
+                )
+            )
+        }
+    }
+
+    func acceptWorkContract(orderId: String, acceptedWorkContractTextId: String) async -> ApiResult<Void> {
+        await apiResult(mapError: ApiError.fromGenerated) {
+            _ = try await PartnerOrderAPI.orderAcceptWorkContract(
+                acceptWorkContractCommand: AcceptWorkContractCommand(
+                    orderId: orderId,
+                    acceptedWorkContractTextId: acceptedWorkContractTextId
+                )
+            )
+        }
+    }
+
+    func getWorkContractPreview(orderId: String, language: String) async -> ApiResult<WorkContract> {
+        await apiResult(mapError: ApiError.fromGenerated) {
+            try await WorkContract(PartnerOrderAPI.orderGetWorkContractPreview(orderId: orderId, language: language))
+        }
+    }
+
+    func getWorkContract(acceptanceId: String, language: String) async -> ApiResult<WorkContract> {
+        await apiResult(mapError: ApiError.fromGenerated) {
+            try await WorkContract(PartnerOrderAPI.orderGetWorkContract(acceptanceId: acceptanceId, language: language))
         }
     }
 

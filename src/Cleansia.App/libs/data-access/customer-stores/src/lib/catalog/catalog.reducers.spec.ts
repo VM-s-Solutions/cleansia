@@ -1,18 +1,30 @@
-import { PackageListItem, ServiceListItem } from '@cleansia/customer-services';
+import { CurrencyListItem, PackageListItem, ServiceListItem } from '@cleansia/customer-services';
 import * as CatalogActions from './catalog.actions';
 import { customerCatalogReducer } from './catalog.reducers';
 import { customerCatalogInitialState } from './catalog.state';
-import { selectCustomerCatalogLoading } from './catalog.selectors';
+import {
+  selectCustomerCatalogLoading,
+  selectCustomerDefaultCurrencyCode,
+  selectCustomerPackagesCatalogue,
+  selectCustomerServicesCatalogue,
+} from './catalog.selectors';
 
 const SERVICES = [ServiceListItem.fromJS({ id: 'svc-1', name: 'Standard' })];
 const PACKAGES = [PackageListItem.fromJS({ id: 'pkg-1', name: 'Deep clean' })];
+const CURRENCIES = [
+  CurrencyListItem.fromJS({ id: 'cur-1', code: 'CZK', isDefault: false }),
+  CurrencyListItem.fromJS({ id: 'cur-2', code: 'EUR', isDefault: true }),
+];
 const API_ERROR = { message: 'offline' } as never;
 
 describe('customerCatalogReducer', () => {
-  it('starts with both lists empty and nothing loading', () => {
+  it('starts with every list empty and nothing loading', () => {
     expect(customerCatalogReducer(undefined, { type: '@@init' })).toEqual({
       services: [],
+      servicesCountryId: null,
       packages: [],
+      packagesCountryId: null,
+      currencies: [],
       loading: {},
     });
   });
@@ -28,7 +40,7 @@ describe('customerCatalogReducer', () => {
     );
     const servicesArrived = customerCatalogReducer(
       loadingBoth,
-      CatalogActions.loadCustomerServicesSuccess({ services: SERVICES }),
+      CatalogActions.loadCustomerServicesSuccess({ services: SERVICES, countryId: null }),
     );
 
     expect(servicesArrived.loading).toEqual({ services: false, packages: true });
@@ -39,12 +51,15 @@ describe('customerCatalogReducer', () => {
   it('holds the packages on success without disturbing the services', () => {
     const loaded = customerCatalogReducer(
       { ...customerCatalogInitialState, services: SERVICES },
-      CatalogActions.loadCustomerPackagesSuccess({ packages: PACKAGES }),
+      CatalogActions.loadCustomerPackagesSuccess({ packages: PACKAGES, countryId: null }),
     );
 
     expect(loaded).toEqual({
       services: SERVICES,
+      servicesCountryId: null,
       packages: PACKAGES,
+      packagesCountryId: null,
+      currencies: [],
       loading: { packages: false },
     });
   });
@@ -76,7 +91,7 @@ describe('customerCatalogReducer', () => {
     );
     const emptyButFine = customerCatalogReducer(
       customerCatalogInitialState,
-      CatalogActions.loadCustomerServicesSuccess({ services: [] }),
+      CatalogActions.loadCustomerServicesSuccess({ services: [], countryId: null }),
     );
 
     expect(failed).toEqual(emptyButFine);
@@ -98,10 +113,35 @@ describe('customerCatalogReducer', () => {
 
     customerCatalogReducer(
       before,
-      CatalogActions.loadCustomerServicesSuccess({ services: SERVICES }),
+      CatalogActions.loadCustomerServicesSuccess({ services: SERVICES, countryId: null }),
     );
 
-    expect(before).toEqual({ services: [], packages: [], loading: {} });
+    expect(before).toEqual({
+      services: [],
+      servicesCountryId: null,
+      packages: [],
+      packagesCountryId: null,
+      currencies: [],
+      loading: {},
+    });
+  });
+
+  // Each list remembers the country it was priced for on its own: the two reads land in either
+  // order, and a reader pruning a basket against one must not be told the other has arrived.
+  it('remembers per list which country the loaded catalogue is priced for', () => {
+    const servicesForSlovakia = customerCatalogReducer(
+      customerCatalogInitialState,
+      CatalogActions.loadCustomerServicesSuccess({ services: SERVICES, countryId: 'svk' }),
+    );
+
+    expect(selectCustomerServicesCatalogue.projector(servicesForSlovakia)).toEqual({
+      services: SERVICES,
+      countryId: 'svk',
+    });
+    expect(selectCustomerPackagesCatalogue.projector(servicesForSlovakia)).toEqual({
+      packages: [],
+      countryId: null,
+    });
   });
 
   it('reports loading while either half is in flight', () => {
@@ -111,5 +151,48 @@ describe('customerCatalogReducer', () => {
     );
 
     expect(selectCustomerCatalogLoading.projector(loadingPackages)).toBe(true);
+  });
+
+  it('reports loading while the currencies are in flight, so a catalogue price is never shown unlabelled', () => {
+    const loadingCurrencies = customerCatalogReducer(
+      customerCatalogInitialState,
+      CatalogActions.loadCustomerCurrencies(),
+    );
+
+    expect(selectCustomerCatalogLoading.projector(loadingCurrencies)).toBe(true);
+    expect(loadingCurrencies.loading).toEqual({ currencies: true });
+  });
+
+  it('holds the currencies on success and clears their loading flag', () => {
+    const loaded = customerCatalogReducer(
+      customerCatalogReducer(customerCatalogInitialState, CatalogActions.loadCustomerCurrencies()),
+      CatalogActions.loadCustomerCurrenciesSuccess({ currencies: CURRENCIES }),
+    );
+
+    expect(loaded.currencies).toEqual(CURRENCIES);
+    expect(loaded.loading).toEqual({ currencies: false });
+  });
+
+  it('clears the currencies loading flag on failure', () => {
+    const failed = customerCatalogReducer(
+      customerCatalogReducer(customerCatalogInitialState, CatalogActions.loadCustomerCurrencies()),
+      CatalogActions.loadCustomerCurrenciesFailure({ error: API_ERROR }),
+    );
+
+    expect(failed.loading).toEqual({ currencies: false });
+    expect(failed.currencies).toEqual([]);
+  });
+
+  // The catalogue is priced in the platform DEFAULT currency, and the default is a flag on the
+  // list rather than a position in it — the seeded CZK is first, and the day EUR becomes the
+  // default it must be EUR that labels every price.
+  it('names the default currency by its flag, not its position', () => {
+    const loaded = { ...customerCatalogInitialState, currencies: CURRENCIES };
+
+    expect(selectCustomerDefaultCurrencyCode.projector(loaded)).toBe('EUR');
+  });
+
+  it('has no default currency until the list arrives', () => {
+    expect(selectCustomerDefaultCurrencyCode.projector(customerCatalogInitialState)).toBeNull();
   });
 });

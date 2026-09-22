@@ -24,14 +24,15 @@ import {
   TableAction,
   PaginationState,
 } from '@cleansia/components';
-import { SortDefinition, SortDirection } from '@cleansia/partner-services';
+import { EmployeeInvoiceDto, SortDefinition, SortDirection } from '@cleansia/partner-services';
 import { CleansiaPartnerRoute } from '@cleansia/services';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
-import { EmployeeInvoice, InvoicesFacade } from './invoices.facade';
+import { InvoicesFacade } from './invoices.facade';
 import {
   buildFilterChips,
   buildInvoiceStatusOptions,
   getInvoiceStatusClass,
+  getInvoiceStatusLabelKey,
   INVOICES_HELP_STEPS,
   INVOICE_STATUS_FLOW,
 } from './invoices.helpers';
@@ -63,11 +64,11 @@ export class InvoicesComponent implements AfterViewInit {
   protected readonly facade = inject(InvoicesFacade);
   private readonly translate = inject(TranslateService);
 
-  statusTemplate = viewChild<TemplateRef<any>>('statusTemplate');
+  statusTemplate = viewChild<TemplateRef<EmployeeInvoiceDto>>('statusTemplate');
   invoicesHelpCard = viewChild<CleansiaHelpCardComponent>('invoicesHelpCard');
 
-  invoicesColumns!: TableColumn<EmployeeInvoice>[];
-  invoicesActions!: TableAction<EmployeeInvoice>[];
+  invoicesColumns!: TableColumn<EmployeeInvoiceDto>[];
+  invoicesActions!: TableAction<EmployeeInvoiceDto>[];
 
   private lastSortField: string | null = null;
   private lastSortOrder: number | null = null;
@@ -162,16 +163,21 @@ export class InvoicesComponent implements AfterViewInit {
     ]);
   }
 
-  viewInvoiceDetails(invoice: EmployeeInvoice): void {
+  viewInvoiceDetails(invoice: EmployeeInvoiceDto): void {
+    if (!invoice.id) return;
     this.router.navigate([CleansiaPartnerRoute.INVOICES, invoice.id]);
   }
 
-  downloadInvoice(invoice: EmployeeInvoice): void {
+  downloadInvoice(invoice: EmployeeInvoiceDto): void {
     this.facade.downloadInvoice(invoice);
   }
 
-  getStatusClass(invoice: EmployeeInvoice): string {
+  getStatusClass(invoice: EmployeeInvoiceDto): string {
     return getInvoiceStatusClass(invoice);
+  }
+
+  getStatusLabelKey(invoice: EmployeeInvoiceDto): string {
+    return getInvoiceStatusLabelKey(invoice);
   }
 
   applyFilters(): void {
@@ -210,7 +216,7 @@ export class InvoicesComponent implements AfterViewInit {
 
   removeFilterChip(chipKey: string): void {
     if (chipKey === 'statuses') {
-      const resetValues: Record<string, any> = { statuses: [] };
+      const resetValues: Record<string, boolean | number[]> = { statuses: [] };
       this.invoiceStatusOptions.forEach((opt) => {
         resetValues[`status_${opt.value}`] = false;
       });

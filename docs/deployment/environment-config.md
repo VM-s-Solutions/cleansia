@@ -285,7 +285,7 @@ dotnet ef database update \
 ```
 
 ::: warning Migrations are owner-run
-Claude never runs `dotnet ef migrations add` / `database update` — it flags
+The agent never runs `dotnet ef migrations add` / `database update` — it flags
 `manual_step: ef-migration` instead. Running the Aspire AppHost applies migrations automatically via
 `Cleansia.MigrationService`, so this step is only for a standalone single-API run.
 :::

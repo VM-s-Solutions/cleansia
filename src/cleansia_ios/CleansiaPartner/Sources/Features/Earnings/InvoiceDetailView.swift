@@ -16,13 +16,13 @@ struct InvoiceDetailView: View {
     @StateObject private var vm: InvoiceDetailViewModel
     @State private var pdf: PreviewablePdf?
     private let snackbar: SnackbarController
-    private let onOpenPeriodPay: (String, String?) -> Void
+    private let onOpenPeriodPay: OpenPeriodPay
 
     init(
         invoiceId: String,
         client: PartnerPayrollClient,
         snackbar: SnackbarController,
-        onOpenPeriodPay: @escaping (String, String?) -> Void
+        onOpenPeriodPay: @escaping OpenPeriodPay
     ) {
         _vm = StateObject(wrappedValue: InvoiceDetailViewModel(
             invoiceId: invoiceId,
@@ -115,7 +115,7 @@ private struct InvoiceDetailErrorView: View {
                 invoice: sample,
                 canOpenPdf: true,
                 isDownloading: false,
-                onOpenPeriodPay: { _, _ in },
+                onOpenPeriodPay: { _, _, _ in },
                 onOpenPdf: {},
                 onCopy: { _ in }
             )
@@ -136,6 +136,7 @@ private struct InvoiceDetailErrorView: View {
                 deductionAmount: 50,
                 totalAmount: 4200,
                 currencyCode: "CZK",
+                currencyId: "cur-czk",
                 status: ._3,
                 pdfGenerationFailed: false,
                 generatedAt: Date(),

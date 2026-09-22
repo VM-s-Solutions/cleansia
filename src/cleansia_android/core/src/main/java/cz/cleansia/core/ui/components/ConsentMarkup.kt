@@ -6,7 +6,7 @@ import androidx.compose.ui.text.fromHtml
 import cz.cleansia.core.config.CleansiaWeb
 
 /**
- * The link targets a consent sentence may carry. Translators write the
+ * The link targets a legal sentence may carry. Translators write the
  * placeholder, never the real address — a URL baked into a translation is one
  * that ten `strings.xml` files would each have to be re-translated to change.
  *
@@ -16,6 +16,7 @@ import cz.cleansia.core.config.CleansiaWeb
 enum class ConsentLink(val placeholder: String, val url: String) {
     TERMS("cleansia://terms", CleansiaWeb.TERMS_URL),
     PRIVACY("cleansia://privacy", CleansiaWeb.PRIVACY_URL),
+    WORK_CONTRACT("cleansia://work-contract", CleansiaWeb.WORK_CONTRACT_URL),
 }
 
 /**

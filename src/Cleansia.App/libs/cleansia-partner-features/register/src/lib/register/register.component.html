@@ -92,6 +92,17 @@
         </div>
         }
       </div>
+      @if (facade.hasMarketChoice()) {
+      <cleansia-select
+        [label]="'auth.register.market' | translate"
+        [placeholder]="'auth.register.market_placeholder' | translate"
+        [floatVariant]="'on'"
+        formControlName="countryId"
+        [options]="facade.marketOptions()"
+        [showClear]="false"
+        [showErrors]="false"
+      />
+      }
       <div class="cleansia-register__terms">
         <cleansia-checkbox
           [title]="'auth.register.terms_agreement' | translate"

@@ -30,7 +30,7 @@ namespace Cleansia.Tests.Features.Orders;
 public sealed class CleanupStalePendingOrdersSweepTests : IDisposable
 {
     private readonly SqliteConnection _connection;
-    private readonly FixedTenantProvider _tenantProvider = new(null);
+    private readonly FixedTenantProvider _tenantProvider = new(TestTenants.Default);
 
     public CleanupStalePendingOrdersSweepTests()
     {
@@ -74,7 +74,6 @@ public sealed class CleanupStalePendingOrdersSweepTests : IDisposable
             customerAddress: address,
             rooms: 1,
             bathrooms: 1,
-            extras: new Dictionary<string, bool>(),
             cleaningDateTime: DateTime.UtcNow.Add(cleaningIn),
             paymentType: paymentType,
             totalPrice: 1000m,
@@ -112,6 +111,14 @@ public sealed class CleanupStalePendingOrdersSweepTests : IDisposable
     private async Task SeedAsync(params Order[] orders)
     {
         await using var ctx = NewContext();
+        foreach (var order in orders.Where(o => o.UserId is not null).GroupBy(o => o.UserId).Select(g => g.First()))
+        {
+            if (await ctx.Users.IgnoreQueryFilters().AnyAsync(u => u.Id == order.UserId)) continue;
+            var user = User.CreateWithPassword($"{order.UserId}@test.local", "Password123!", "Test", "Customer");
+            user.Id = order.UserId!;
+            user.TenantId = order.TenantId ?? TestTenants.Default;
+            ctx.Users.Add(user);
+        }
         ctx.Orders.AddRange(orders);
         await ctx.CommitAsync(CancellationToken.None);
     }
@@ -122,7 +129,7 @@ public sealed class CleanupStalePendingOrdersSweepTests : IDisposable
         var handler = new CleanupStalePendingOrders.Handler(
             new OrderRepository(ctx),
             new CreditAccountRepository(ctx),
-            new NotificationProducer(new UserNotificationRepository(ctx), new OutboxPendingDispatch(ctx)),
+            new NotificationProducer(new UserNotificationRepository(ctx), new OutboxPendingDispatch(ctx), new UserRepository(ctx), Microsoft.Extensions.Logging.Abstractions.NullLogger<NotificationProducer>.Instance),
             _tenantProvider,
             ctx,
             NullLogger<CleanupStalePendingOrders.Handler>.Instance);
@@ -139,7 +146,7 @@ public sealed class CleanupStalePendingOrdersSweepTests : IDisposable
         var handler = new AutoCancelStaleRecurringOrders.Handler(
             new OrderRepository(ctx),
             new CreditAccountRepository(ctx),
-            new NotificationProducer(new UserNotificationRepository(ctx), new OutboxPendingDispatch(ctx)),
+            new NotificationProducer(new UserNotificationRepository(ctx), new OutboxPendingDispatch(ctx), new UserRepository(ctx), Microsoft.Extensions.Logging.Abstractions.NullLogger<NotificationProducer>.Instance),
             _tenantProvider,
             ctx,
             NullLogger<AutoCancelStaleRecurringOrders.Handler>.Instance);
@@ -323,14 +330,14 @@ public sealed class CleanupStalePendingOrdersSweepTests : IDisposable
 
         var tenanted = AbandonedOneOffCardCheckout("01HZX9N6M7Q8R9S0T1V2W3Y411", "user-11");
         tenanted.TenantId = "tenant-a";
-        var legacy = AbandonedOneOffCardCheckout("01HZX9N6M7Q8R9S0T1V2W3Y412", "user-12");
-        await SeedAsync(tenanted, legacy);
+        var other = AbandonedOneOffCardCheckout("01HZX9N6M7Q8R9S0T1V2W3Y412", "user-12");
+        await SeedAsync(tenanted, other);
 
         await RunSweepAsync();
 
         var feed = await ReadFeedAsync();
         Assert.Equal("tenant-a", Assert.Single(feed, f => f.UserId == "user-11").TenantId);
-        Assert.Null(Assert.Single(feed, f => f.UserId == "user-12").TenantId);
+        Assert.Equal(TestTenants.Default, Assert.Single(feed, f => f.UserId == "user-12").TenantId);
 
         await using var ctx = NewContext();
         var tracks = await ctx.Set<OrderStatusTrack>()
@@ -338,7 +345,7 @@ public sealed class CleanupStalePendingOrdersSweepTests : IDisposable
             .Where(t => t.Status == OrderStatus.Cancelled)
             .ToListAsync();
         Assert.Equal("tenant-a", Assert.Single(tracks, t => t.OrderId == "01HZX9N6M7Q8R9S0T1V2W3Y411").TenantId);
-        Assert.Null(Assert.Single(tracks, t => t.OrderId == "01HZX9N6M7Q8R9S0T1V2W3Y412").TenantId);
+        Assert.Equal(TestTenants.Default, Assert.Single(tracks, t => t.OrderId == "01HZX9N6M7Q8R9S0T1V2W3Y412").TenantId);
     }
 
     private sealed class FixedTenantProvider(string? tenantId) : ITenantProvider

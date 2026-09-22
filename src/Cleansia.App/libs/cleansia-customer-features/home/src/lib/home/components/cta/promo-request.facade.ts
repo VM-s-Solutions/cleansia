@@ -1,10 +1,13 @@
 import { computed, inject, Injectable, signal } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { UnsubscribeControlDirective } from '@cleansia/directives';
 import {
   CustomerClient,
   RequestPromoCodeCommand,
 } from '@cleansia/customer-services';
+import { selectMarketCountryId } from '@cleansia/customer-stores';
 import { extractApiErrorCode } from '@cleansia/services';
+import { Store } from '@ngrx/store';
 import { TranslateService } from '@ngx-translate/core';
 import { catchError, of, takeUntil } from 'rxjs';
 
@@ -15,6 +18,11 @@ export type PromoRequestState = 'idle' | 'sending' | 'sent' | 'error';
 export class PromoRequestFacade extends UnsubscribeControlDirective {
   private readonly client = inject(CustomerClient);
   private readonly translate = inject(TranslateService);
+  private readonly store = inject(Store);
+  // The code is issued by the market's operating company (ADR-0061 D3).
+  private readonly marketCountryId = toSignal(this.store.select(selectMarketCountryId), {
+    initialValue: null,
+  });
 
   private readonly _state = signal<PromoRequestState>('idle');
   readonly state = this._state.asReadonly();
@@ -36,6 +44,7 @@ export class PromoRequestFacade extends UnsubscribeControlDirective {
     // reading the site in rather than letting the backend default to English.
     command.languageCode =
       this.translate.currentLang || this.translate.getDefaultLang();
+    command.countryId = this.marketCountryId() ?? undefined;
 
     this._failureMessageKey.set('pages.home.cta.promo_failed');
     this._state.set('sending');

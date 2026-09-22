@@ -28,6 +28,34 @@ struct LanguagePickerView: View {
     }
 }
 
+/// The Language picker's twin over the same list: one row per listed market, "Česko · CZK", the
+/// chosen one checked. Selecting writes the preference and every market reader re-dispatches.
+struct MarketPickerView: View {
+    @ObservedObject var market: MarketStore
+    @Environment(\.locale) private var locale
+    let onSelected: () -> Void
+
+    var body: some View {
+        PreferencePickerList(
+            title: L10n.Preferences.market,
+            options: market.markets.map {
+                PreferenceOption(id: $0.isoCode, label: MarketPickerLabel.row($0, locale: locale))
+            },
+            selectedId: market.selected?.isoCode ?? "",
+            onSelect: { isoCode in
+                market.select(isoCode: isoCode)
+                onSelected()
+            }
+        )
+    }
+}
+
+enum MarketPickerLabel {
+    static func row(_ market: Market, locale: Locale) -> String {
+        "\(market.localizedName(for: locale)) · \(market.currencyCode)"
+    }
+}
+
 struct AppearancePickerView: View {
     @ObservedObject var preferences: CustomerPreferencesModel
     let onSelected: () -> Void

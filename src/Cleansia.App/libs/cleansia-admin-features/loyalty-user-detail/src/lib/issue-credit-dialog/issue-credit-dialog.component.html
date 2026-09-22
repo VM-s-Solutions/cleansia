@@ -18,11 +18,23 @@
     </p>
 
     <div class="form-field">
+      <cleansia-select
+        [label]="'pages.loyalty_user_detail.credit.dialog.field.currency' | translate"
+        formControlName="currencyId"
+        [options]="currencyOptions()"
+        [showClear]="false"
+        [required]="true"
+      />
+      @if (form.controls.currencyId.touched && form.controls.currencyId.errors?.['required']) {
+        <small class="field-error">
+          {{ 'pages.loyalty_user_detail.credit.dialog.validation.currency_required' | translate }}
+        </small>
+      }
+    </div>
+
+    <div class="form-field">
       <cleansia-text-input
-        [label]="
-          'pages.loyalty_user_detail.credit.dialog.field.amount'
-            | translate: { currency: currencyCode() }
-        "
+        [label]="'pages.loyalty_user_detail.credit.dialog.field.amount' | translate"
         formControlName="amount"
         dataType="number"
         [required]="true"

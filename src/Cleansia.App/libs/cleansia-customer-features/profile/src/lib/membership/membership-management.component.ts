@@ -3,7 +3,6 @@ import {
   ChangeDetectionStrategy,
   Component,
   OnInit,
-  computed,
   inject,
   input,
 } from '@angular/core';
@@ -13,6 +12,7 @@ import { CleansiaCustomerRoute } from '@cleansia/services';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { FoamEdgeComponent } from '@cleansia-customer/home';
 import { GetMembershipPlansResponse, GetMyMembershipResponse } from '@cleansia/customer-services';
+import { formatMoney, localeFor } from '@cleansia/utils';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { ConfirmationService } from 'primeng/api';
 import { SkeletonModule } from 'primeng/skeleton';
@@ -58,7 +58,7 @@ export class MembershipManagementComponent implements OnInit {
   readonly cancelling = this.facade.cancelling;
   readonly switching = this.facade.switching;
   readonly membership = this.facade.membership;
-  readonly plans = this.facade.plans;
+  readonly plans = this.facade.switchablePlans;
   readonly expressUpgradesRemaining = this.facade.expressUpgradesRemaining;
   readonly expressWaiverAvailable = this.facade.expressWaiverAvailable;
   readonly expressWaiverExhausted = this.facade.expressWaiverExhausted;
@@ -91,28 +91,9 @@ export class MembershipManagementComponent implements OnInit {
     });
   }
 
-  /**
-   * Grouped, and in the reader's locale. It was `amount.toFixed(0) + ' Kč'`,
-   * which prints 2030 where the board prints 2 030 — a four-figure price is
-   * read wrong for a beat without the separator.
-   */
-  formatCzk(amount: number): string {
-    return new Intl.NumberFormat(this.getLocale(), {
-      style: 'currency',
-      currency: 'CZK',
-      maximumFractionDigits: amount % 1 === 0 ? 0 : 2,
-    }).format(amount);
-  }
-
-  private getLocale(): string {
-    const localeMap: Record<string, string> = {
-      en: 'en-US',
-      cs: 'cs-CZ',
-      sk: 'sk-SK',
-      uk: 'uk-UA',
-      ru: 'ru-RU',
-    };
-    return localeMap[this.translate.currentLang] || 'en-US';
+  /** Every figure here is in the membership's own currency (ADR-0059 D2). */
+  formatPrice(amount: number): string {
+    return formatMoney(amount, this.facade.currencyCode(), localeFor(this.translate.currentLang));
   }
 
   /**
@@ -138,14 +119,9 @@ export class MembershipManagementComponent implements OnInit {
       : 'pages.membership.cadence.monthly';
   }
 
-  /**
-   * What the next charge will be. The membership response carries the monthly
-   * figure and the interval; the plan list carries the actual charge, so it is
-   * read from there when the codes match and falls back to the monthly one.
-   */
+  /** What the next charge will be: the membership's own row, in its own currency. */
   currentPrice(m: GetMyMembershipResponse): number {
-    const plan = this.plans().find((p) => p.code === m.planCode);
-    return plan?.price ?? m.monthlyPriceCzk ?? 0;
+    return m.price ?? 0;
   }
 
   /** Any plan, not only the annual one — the board offers both directions. */
@@ -154,7 +130,7 @@ export class MembershipManagementComponent implements OnInit {
     if (!plan) return;
     this.confirmService.confirm({
       message: this.translate.instant('pages.membership.switch_dialog_message', {
-        price: this.formatCzk(plan.price),
+        price: this.formatPrice(plan.price),
       }),
       header: this.translate.instant('pages.membership.switch_dialog_title'),
       icon: 'pi pi-arrow-up-right',
@@ -166,7 +142,7 @@ export class MembershipManagementComponent implements OnInit {
 
   formatDate(date: Date | undefined): string {
     if (!date) return '';
-    return new Date(date).toLocaleDateString(this.getLocale(), {
+    return new Date(date).toLocaleDateString(localeFor(this.translate.currentLang), {
       day: 'numeric',
       month: 'long',
       year: 'numeric',

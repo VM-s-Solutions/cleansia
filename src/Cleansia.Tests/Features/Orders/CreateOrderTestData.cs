@@ -3,6 +3,9 @@ using Cleansia.Core.AppServices.Features.Addresses.DTOs;
 using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Enums;
+using Cleansia.Core.Domain.Internationalization;
+using Cleansia.Core.Domain.Repositories;
+using Moq;
 
 namespace Cleansia.Tests.Features.Orders;
 
@@ -16,7 +19,32 @@ internal static class CreateOrderTestData
     public const string ServiceId = "service-1";
     public const string PackageId = "package-1";
     public const string CurrencyId = "czk";
+
+    /// <summary>
+    /// The platform default currency with <see cref="CurrencyId"/> as its id, so a command that names
+    /// no currency, a pay config created with <see cref="CurrencyId"/>, and a price row keyed on this
+    /// instance all agree on ONE id. The pay gate and the price lookup both filter on it now; two
+    /// <c>Currency.Create</c> calls are two different currencies and would find each other's rows
+    /// missing.
+    /// </summary>
+    public static Currency DefaultCurrency()
+    {
+        var currency = Currency.Create("CZK", "Kč", "Czech Koruna");
+        currency.Id = CurrencyId;
+        currency.IsActive = true;
+        currency.SetAsDefault(true);
+        return currency;
+    }
     public const decimal MatchingTotalPrice = 1500m;
+
+    /// <summary>The languages the platform speaks, for the validator's language rule; anything else is refused.</summary>
+    public static ILanguageRepository Speaking(params string[] codes)
+    {
+        var mock = new Mock<ILanguageRepository>();
+        mock.Setup(r => r.ExistsWithCodeAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((string code, CancellationToken _) => codes.Contains(code));
+        return mock.Object;
+    }
 
     public static AddressDto InlineAddress(string? countryId = "cz") =>
         new(
@@ -28,7 +56,8 @@ internal static class CreateOrderTestData
 
     /// <summary>
     /// A fully valid command: a future cleaning date above the lead time, a positive total that
-    /// matches <see cref="MatchingPricing"/>, exactly the inline address, and one of each catalog id.
+    /// matches <see cref="MatchingPricing"/>, exactly the inline address, one of each catalog id, and
+    /// the terms tick asserted — the fixture books as a guest, and a guest without the tick is refused.
     /// </summary>
     public static CreateOrder.Command ValidCommand(
         AddressDto? customerAddress = null,
@@ -42,7 +71,8 @@ internal static class CreateOrderTestData
         string? promoCode = null,
         string? referralCode = null,
         string? specialInstructions = null,
-        string? accessInstructions = null) =>
+        string? accessInstructions = null,
+        bool? termsAccepted = true) =>
         new(
             CustomerName: "Test Customer",
             CustomerEmail: "customer@example.com",
@@ -63,7 +93,8 @@ internal static class CreateOrderTestData
             ReferralCode: referralCode,
             PreferredEmployeeId: preferredEmployeeId,
             SpecialInstructions: specialInstructions,
-            AccessInstructions: accessInstructions);
+            AccessInstructions: accessInstructions,
+            TermsAccepted: termsAccepted);
 
     public static OrderPricingResult MatchingPricing(decimal totalPrice = MatchingTotalPrice) =>
         new(
@@ -74,6 +105,5 @@ internal static class CreateOrderTestData
             PackagesSubtotal: 500m,
             ExtrasSubtotal: 0m,
             ExpressSurchargeApplied: false,
-            ExpressSurchargeAmount: 0m,
-            ExchangeRate: 1m);
+            ExpressSurchargeAmount: 0m);
 }

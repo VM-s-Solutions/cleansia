@@ -8,10 +8,13 @@ public record GdprExportDto(
     GdprExportEmployeeDto? Employee,
     GdprExportPayoutDetailsDto? PayoutDetails,
     List<GdprExportOrderDto> Orders,
+    List<GdprExportDisputeDto> Disputes,
     List<GdprExportDocumentDto> Documents,
     List<GdprExportInvoiceDto> Invoices,
     List<GdprExportConsentDto> Consents,
-    GdprExportMetadataDto Metadata
+    List<GdprExportCustomerActionDto> CustomerActions,
+    GdprExportMetadataDto Metadata,
+    List<GdprExportWorkContractAcceptanceDto> WorkContractAcceptances
 );
 
 public record GdprExportProfileDto(
@@ -37,7 +40,6 @@ public record GdprExportEmployeeDto(
     string Id,
     EmployeeEntityType EntityType,
     string? RegistrationNumber,
-    string? VatNumber,
     string? LegalEntityName,
     string? IBAN,
     string? PassportId,
@@ -59,6 +61,7 @@ public record GdprExportPayoutDetailsDto(
     PayoutScheme? Scheme,
     PayoutDetailsStatus Status,
     string? BankCountryId,
+    string? CurrencyId,
     string? AccountPrefix,
     string? AccountNumber,
     string? BankCode,
@@ -71,6 +74,14 @@ public record GdprExportPayoutDetailsDto(
     int RevealCount
 );
 
+/// <summary>
+/// One row per order that is the subject's under <c>SubjectOrders</c> — the orders booked on the account
+/// AND the guest bookings placed with the account's e-mail address (owner ruling 2026-09-15), in any
+/// market. The orders section and the erasure walk read the same set, so an order the erasure would
+/// anonymise is an order this lists (a guest booking still live is listed here and left for the sweep
+/// there); a guest booking under another address is never listed, whoever asks. The trail section is
+/// narrower: the account's own rows only, never the guest rows the erasure blanks on these orders.
+/// </summary>
 public record GdprExportOrderDto(
     string Id,
     string DisplayOrderNumber,
@@ -79,7 +90,73 @@ public record GdprExportOrderDto(
     OrderStatus Status,
     decimal TotalPrice,
     DateTime CleaningDateTime,
-    DateTimeOffset CreatedOn
+    DateTimeOffset CreatedOn,
+    /// <summary>The customer's half of the contract for work: the version the order was booked under (ADR-0068).</summary>
+    string? WorkContractDocumentVersion = null,
+    /// <summary>The crew's acceptances of it — when, which version, in which language. No cleaner id or name: the counterparty's identity is the platform's to hold.</summary>
+    List<GdprExportOrderWorkContractAcceptanceDto>? WorkContractAcceptances = null
+);
+
+public record GdprExportOrderWorkContractAcceptanceDto(
+    DateTimeOffset AcceptedOn,
+    string DocumentVersion,
+    string Language
+);
+
+/// <summary>
+/// ADR-0068 D5 — a cleaner's own acceptances of the contract for work, row for row: the job, the seat,
+/// the exact text, the instant, the client and the request context, and the facts as frozen. After an
+/// erasure or the per-company metadata window the IP address, device label and device id read null.
+/// </summary>
+public record GdprExportWorkContractAcceptanceDto(
+    string OrderId,
+    string OrderNumber,
+    string OrderEmployeeId,
+    string LegalDocumentTextId,
+    string DocumentVersion,
+    string Language,
+    DateTimeOffset AcceptedOn,
+    string ClientAudience,
+    string? IpAddress,
+    string? DeviceLabel,
+    string? DeviceId,
+    string FactsJson
+);
+
+/// <summary>
+/// One row per dispute that is the subject's: filed on the account, or on an order of
+/// <c>SubjectOrders</c> — so the section follows the orders section, and an erased subject, whose
+/// orders no longer name the account, still gets the disputes the account filed. Reason and status are
+/// the enum NAMES, not the wire integers the other sections carry: this document is read by the
+/// subject, not by a client. The text is exported as stored — the description, the messages and the
+/// resolution notes until the retention window closes and the marker after the sweep, the evidence
+/// names as the marker from the erasure on. A message carries its author's role and never the staff
+/// member's id. The order term only ever matches a dispute the account itself filed today:
+/// <c>CreateDispute</c> refuses an order the account does not own, and a chargeback on a guest
+/// booking fails the dispute's account key. The day that path opens, such a dispute is a stranger's
+/// card chargeback on a booking placed under the subject's e-mail, and this predicate must be
+/// re-examined before it is.
+/// </summary>
+public record GdprExportDisputeDto(
+    string Id,
+    string OrderId,
+    string OrderDisplayNumber,
+    string Reason,
+    string Description,
+    string Status,
+    string? ResolutionNotes,
+    decimal? RefundAmount,
+    string CurrencyCode,
+    DateTimeOffset CreatedOn,
+    DateTimeOffset? ResolvedOn,
+    List<GdprExportDisputeMessageDto> Messages,
+    List<string> EvidenceFileNames
+);
+
+public record GdprExportDisputeMessageDto(
+    string AuthorRole,
+    DateTimeOffset SentAt,
+    string Text
 );
 
 public record GdprExportDocumentDto(
@@ -102,7 +179,29 @@ public record GdprExportConsentDto(
     ConsentType ConsentType,
     bool IsGranted,
     DateTimeOffset? GrantedAt,
-    DateTimeOffset? WithdrawnAt
+    DateTimeOffset? WithdrawnAt,
+    string? IpAddress,
+    string? UserAgent,
+    string? DocumentVersion,
+    string? LegalDocumentId
+);
+
+/// <summary>
+/// ADR-0062 D5 — the subject's own conduct record, row for row as the platform holds it: the act, its
+/// outcome, the evidence payload and the request context. After an erasure the IP address and device
+/// label read null because the row was pseudonymised, and the payload is still there because it is
+/// what a dispute is answered from.
+/// </summary>
+public record GdprExportCustomerActionDto(
+    string Action,
+    DateTimeOffset OccurredOn,
+    string? ResourceType,
+    string? ResourceId,
+    bool Success,
+    string? ErrorCode,
+    string? PayloadJson,
+    string? IpAddress,
+    string? DeviceLabel
 );
 
 public record GdprExportMetadataDto(

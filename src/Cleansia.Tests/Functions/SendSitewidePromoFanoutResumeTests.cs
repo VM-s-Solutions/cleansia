@@ -50,7 +50,7 @@ public sealed class SendSitewidePromoFanoutResumeTests : IDisposable
         new(
             new DbContextOptionsBuilder<CleansiaDbContext>().UseSqlite(_connection).Options,
             new TestUserSessionProvider("system", "system@cleansia.test"),
-            new FixedTenantProvider(tenantId: null));
+            new FixedTenantProvider(TestTenants.Default));
 
     private async Task SeedOptedInUserAsync(string userId)
     {
@@ -59,14 +59,14 @@ public sealed class SendSitewidePromoFanoutResumeTests : IDisposable
 
         var prefs = UserNotificationPreferences.CreateDefaults(userId);
         prefs.Set(NotificationCategory.Promo, true);
-        prefs.TenantId = null;
+        prefs.TenantId = TestTenants.Default;
         prefs.Created("system", DateTimeOffset.UtcNow);
         ctx.Add(prefs);
 
         var user = User.CreateWithPassword(
             email: $"{userId}@cleansia.test", password: "Password1", firstName: "F", lastName: "L");
         user.Id = userId;
-        user.TenantId = null;
+        user.TenantId = TestTenants.Default;
         user.Created("system", DateTimeOffset.UtcNow);
         ctx.Add(user);
 
@@ -83,7 +83,7 @@ public sealed class SendSitewidePromoFanoutResumeTests : IDisposable
             new UserRepository(ctx),
             queueClient,
             _progress,
-            new FixedTenantProvider(tenantId: null),
+            new FixedTenantProvider(TestTenants.Default),
             NullLogger<SendSitewidePromoFanoutHandler>.Instance,
             pageSize);
     }
@@ -91,7 +91,7 @@ public sealed class SendSitewidePromoFanoutResumeTests : IDisposable
     private static SendSitewidePromoMessage Campaign() => new(
         TitleByLocale: new() { ["en"] = "Promo!" },
         BodyByLocale: new() { ["en"] = "Big sale." },
-        TenantId: null,
+        TenantId: TestTenants.Default,
         CampaignId: CampaignId);
 
     private static string Serialize(SendSitewidePromoMessage campaign) =>

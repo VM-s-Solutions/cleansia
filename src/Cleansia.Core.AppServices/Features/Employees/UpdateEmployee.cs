@@ -90,6 +90,10 @@ public class UpdateEmployee
             RuleFor(c => c.PassportId)
                 .ValidatePassportId();
 
+            RuleFor(c => c.EntityType)
+                .MustAsync(NotBecomeALegalEntity)
+                .WithMessage(BusinessErrorMessage.LegalEntityNotAccepted);
+
             RuleFor(c => c.RegistrationNumber)
                 .MaximumLength(50)
                 .WithMessage(BusinessErrorMessage.MaxLengthExceeded);
@@ -102,28 +106,6 @@ public class UpdateEmployee
                     return result.IsValid;
                 })
                 .WithMessage(BusinessErrorMessage.RegistrationNumberInvalidFormat);
-
-            RuleFor(c => c.VatNumber)
-                .MaximumLength(50)
-                .WithMessage(BusinessErrorMessage.MaxLengthExceeded)
-                .When(c => !string.IsNullOrWhiteSpace(c.VatNumber));
-
-            RuleFor(c => c.VatNumber)
-                .MustAsync(async (command, value, ct) =>
-                {
-                    var result = await _taxIdValidator.ValidateVatNumberAsync(
-                        command.CountryId, value, ct);
-                    return result.IsValid;
-                })
-                .WithMessage(BusinessErrorMessage.VatNumberInvalidFormat)
-                .When(c => !string.IsNullOrWhiteSpace(c.VatNumber));
-
-            RuleFor(c => c.LegalEntityName)
-                .NotEmpty()
-                .WithMessage(BusinessErrorMessage.Required)
-                .MaximumLength(200)
-                .WithMessage(BusinessErrorMessage.MaxLengthExceeded)
-                .When(c => c.EntityType == EmployeeEntityType.LegalEntity);
 
             RuleFor(c => c.EmergencyName)
                 .ValidateEmergencyName()
@@ -198,6 +180,21 @@ public class UpdateEmployee
                 _userSessionProvider.GetUserEmail() ?? string.Empty, cancellationToken);
             return employee is not null;
         }
+
+        // A cleaner contracts as a natural person; only an operator may onboard a company. What is
+        // refused is a CHANGE to a company: a row an operator already set to one is not changing anything
+        // by naming it, and the handler keeps that row's pair whatever the command carries.
+        private async Task<bool> NotBecomeALegalEntity(EmployeeEntityType entityType, CancellationToken cancellationToken)
+        {
+            if (entityType != EmployeeEntityType.LegalEntity)
+            {
+                return true;
+            }
+
+            var employee = await _employeeRepository.GetByUserEmailAsync(
+                _userSessionProvider.GetUserEmail() ?? string.Empty, cancellationToken);
+            return employee?.EntityType == EmployeeEntityType.LegalEntity;
+        }
     }
 
     public record Command(
@@ -218,7 +215,6 @@ public class UpdateEmployee
         string PassportId,
         EmployeeEntityType EntityType,
         string RegistrationNumber,
-        string? VatNumber,
         string? LegalEntityName,
         string? EmergencyName,
         string? EmergencyPhone,
@@ -260,7 +256,7 @@ public class UpdateEmployee
             // The validator only gates on Consent == true; GDPR Art. 7(1) requires us to be able to
             // DEMONSTRATE the consent, so the grant is persisted on the same unit of work as the
             // profile it belongs to. Re-saving an already-consented profile is a no-op.
-            await consentService.TryGrantAsync(employee.UserId, ConsentType.DataProcessing, cancellationToken);
+            await consentService.TryGrantAsync(employee.UserId, ConsentType.DataProcessing, document: null, cancellationToken);
 
             return BusinessResult.Success(new Response(employee.Id));
         }
@@ -369,11 +365,14 @@ public class UpdateEmployee
                 command.Phone,
                 command.BirthDate);
 
+            // A row an operator set to a company keeps its stored pair whatever the command carries: the
+            // shipped clients send NaturalPerson, so writing the command's values here would demote the
+            // row on every save.
+            var keepsCompany = employee.EntityType == EmployeeEntityType.LegalEntity;
             employee.UpdateEmployeeDetails(
-                command.EntityType,
+                keepsCompany ? employee.EntityType : command.EntityType,
                 command.RegistrationNumber,
-                command.VatNumber,
-                command.LegalEntityName,
+                keepsCompany ? employee.LegalEntityName : command.LegalEntityName,
                 command.NationalityId,
                 command.PassportId,
                 address,

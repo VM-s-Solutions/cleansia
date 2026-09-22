@@ -120,7 +120,7 @@
             }
             <span class="cl-wiz__pack-spacer"></span>
             <span class="cl-wiz__pack-foot">
-              <span class="cl-num cl-wiz__pack-price">{{ formatPrice(pkg.price) }}</span>
+              <span class="cl-num cl-wiz__pack-price">{{ formatPrice(pkg.price, pkg.currencyCode) }}</span>
               <span class="cl-muted">{{ 'pages.order.per_cleaning' | translate }}</span>
             </span>
             <span class="cl-chip cl-wiz__pack-cta">
@@ -142,7 +142,7 @@
               <div class="cl-muted cl-wiz__svc-desc">{{ desc }}</div>
               }
             </div>
-            <div class="cl-num cl-wiz__svc-price">{{ formatPrice(service.basePrice) }}</div>
+            <div class="cl-num cl-wiz__svc-price">{{ formatPrice(service.basePrice, service.currencyCode) }}</div>
             <button
               type="button"
               class="cl-chip cl-wiz__svc-add"
@@ -211,6 +211,22 @@
         @if (!facade.isAuthenticated() || isCustomAddress() || facade.savedAddresses().length === 0) {
         <div class="cl-wiz__addr">
           <div class="cl-wiz__addr-main">
+            <!--
+              The market directory, showing the chosen market until a country
+              is picked here. What it shows is what the booking is priced in.
+            -->
+            <div class="cl-wiz__field">
+              <cleansia-select
+                [floatVariant]="null"
+                id="wizard-country"
+                [label]="'pages.order.country' | translate"
+                [options]="facade.countryOptions()"
+                [ngModel]="facade.addressCountryId()"
+                (ngModelChange)="updateAddressField('countryId', $event)"
+                [showClear]="false"
+                inputSize="full-width"
+              />
+            </div>
             <div class="cl-wiz__field">
               <span class="cl-lbl">{{ 'pages.order.address_field_label' | translate }}</span>
               <cleansia-address-autocomplete
@@ -785,14 +801,46 @@
       @if (facade.activeStep() === 4) {
       <div class="cl-wiz__step-body">
         <h1 class="cl-d2 cl-wiz__title">{{ 'pages.order.step_plus_title' | translate }}</h1>
+        <!--
+          Not on sale in the chosen market: the catalogue's empty pattern above
+          the decline row, and nothing else — no price, no button. Next and
+          Back walk past this step; it is only seen from the stepper.
+        -->
+        @if (facade.plusUnavailable()) {
+        <div class="cl-cat__empty">
+          <img
+            class="cl-cat__empty-mascot"
+            src="assets/images/mascot/mascot-leaning.webp"
+            alt=""
+            width="400"
+            height="400"
+          />
+          <h2 class="cl-h3">{{ 'pages.plus.not_available_in_market' | translate }}</h2>
+        </div>
+        } @else {
+        <!--
+          The saving is in the BASKET's currency (the address's) and the plan's
+          price in the chosen MARKET's (ADR-0058 D4); each is labelled with its
+          own code, and when they differ that is honest, not a defect.
+        -->
         @if (plusSavings(); as savings) {
         <p class="cl-body cl-wiz__lead">
           {{ 'pages.order.plus_lead_before' | translate }}
-          <strong class="cl-wiz__plus-amount">{{ formatPrice(savings.wouldSaveAmount) }}</strong
-          >{{ 'pages.order.plus_lead_after' | translate: { days: trialDays() } }}
+          <strong class="cl-wiz__plus-amount">{{ formatPrice(savings.wouldSaveAmount, savings.currencyCode) }}</strong>
+          @if (trialDays() > 0) {
+            {{ 'pages.order.plus_lead_after' | translate: { days: trialDays() } }}
+          } @else {
+            {{ 'pages.order.plus_lead_after_no_trial' | translate }}
+          }
         </p>
         } @else {
-        <p class="cl-body cl-wiz__lead">{{ 'pages.order.plus_lead_plain' | translate: { days: trialDays() } }}</p>
+        <p class="cl-body cl-wiz__lead">
+          @if (trialDays() > 0) {
+            {{ 'pages.order.plus_lead_plain' | translate: { days: trialDays() } }}
+          } @else {
+            {{ 'pages.order.plus_lead_plain_no_trial' | translate }}
+          }
+        </p>
         }
 
         <div class="cl-wiz__plans">
@@ -802,12 +850,12 @@
             <span class="cl-wiz__plan-badge">{{ 'pages.order.plus_best_value' | translate }}</span>
             }
             <div class="cl-lbl cl-wiz__plan-period">{{ 'pages.order.plus_interval.' + plan.billingInterval | translate }}</div>
-            <div class="cl-num cl-wiz__plan-price">{{ formatPrice(plan.price) }}</div>
+            <div class="cl-num cl-wiz__plan-price">{{ formatPrice(plan.price, plan.currencyCode) }}</div>
             <div class="cl-muted cl-wiz__plan-per">{{ 'pages.order.plus_interval.' + plan.billingInterval | translate }}</div>
             <p class="cl-wiz__plan-note">
               @if (plan.savingsPercentVsMonthly > 0) {
               {{ 'pages.order.plus_saves_vs_monthly' | translate: { percent: plan.savingsPercentVsMonthly } }}
-              } @else {
+              } @else if (plan.trialPeriodDays > 0) {
               {{ 'pages.order.plus_trial_free' | translate: { days: plan.trialPeriodDays } }}
               }
             </p>
@@ -870,6 +918,7 @@
           </span>
         </div>
         }
+        }
 
         <!--
           The way past, given the same weight as the way in. A step that only
@@ -913,7 +962,7 @@
               <div class="cl-muted cl-wiz__cross-desc">{{ desc }}</div>
               }
             </div>
-            <div class="cl-num cl-wiz__cross-price">{{ formatPrice(service.basePrice) }}</div>
+            <div class="cl-num cl-wiz__cross-price">{{ formatPrice(service.basePrice, service.currencyCode) }}</div>
             <button
               type="button"
               class="cl-chip cl-wiz__cross-add"
@@ -982,10 +1031,11 @@
         ></textarea>
 
         <!--
-          Recorded, not just ticked. The same two documents the sign-up tick
-          names, through the same service — which parks a consent taken before
-          there is a session and delivers it at the first one there is, because
-          a booking does not require an account.
+          The same two documents the sign-up tick names. The tick gates the
+          review step and rides `termsAccepted` on the create-order command,
+          where the server records it on the booking's audit row (ADR-0062 D4);
+          nothing is parked client-side, because a booking does not require an
+          account.
 
           Not asked of an account that has already granted both. Owner ruling,
           2026-09-03: re-consenting to the same two documents on every order is
@@ -1008,6 +1058,13 @@
           {{ 'pages.order.terms_already_accepted' | translate }}
         </p>
         }
+
+        <!--
+          The customer's half of the contract for work, stated at the offer. Not a tick and not
+          gated on the consent above: the contract is concluded when a cleaner accepts the job, on
+          the text published at /work-contract, whether or not this account has consented before.
+        -->
+        <p class="cl-wiz__contract-note" [innerHTML]="'pages.order.work_contract_notice' | translate"></p>
       </div>
       }
 
@@ -1158,7 +1215,7 @@
         @if (savings.wouldSaveAmount > 0) {
         <div class="cl-wiz__summary-plus">
           <span>{{ 'pages.order.summary_with_plus' | translate }}</span>
-          <span class="cl-num cl-wiz__summary-plus-value">{{ formatPrice(savings.wouldPayTotal) }}</span>
+          <span class="cl-num cl-wiz__summary-plus-value">{{ formatPrice(savings.wouldPayTotal, savings.currencyCode) }}</span>
         </div>
         }
         }

@@ -36,7 +36,10 @@ describe('InvoiceManagementComponent', () => {
       providers: [
         {
           provide: AdminClient,
-          useValue: { adminInvoiceClient: invoiceClient },
+          useValue: {
+            adminInvoiceClient: invoiceClient,
+            adminCurrencyClient: { getOverview: jest.fn().mockReturnValue(of([])) },
+          },
         },
         {
           provide: SnackbarService,

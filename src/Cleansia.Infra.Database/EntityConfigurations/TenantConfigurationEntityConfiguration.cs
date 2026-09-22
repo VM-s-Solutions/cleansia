@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Cleansia.Infra.Database.EntityConfigurations;
 
-public class TenantConfigurationEntityConfiguration : AuditableEntityConfiguration<TenantConfiguration, string>
+public class TenantConfigurationEntityConfiguration : TenantAuditableEntityConfiguration<TenantConfiguration, string>
 {
     public override void Configure(EntityTypeBuilder<TenantConfiguration> builder)
     {
@@ -24,11 +24,9 @@ public class TenantConfigurationEntityConfiguration : AuditableEntityConfigurati
         builder.Property(e => e.Category)
             .HasMaxLength(50);
 
-        // One value per key per tenant. NULLS NOT DISTINCT because single-tenant mode is
-        // TenantId = null. The table has no writer today and that is the whole point: it costs one
-        // builder call now, on a migration already being regenerated, and spares the first writer a
-        // constraint that reads as enforcing while GetTenantSettingAsync picks between two
-        // configured values with FirstOrDefault and no ORDER BY.
+        // One value per key per tenant: GetTenantSettingAsync picks between two configured values with
+        // FirstOrDefault and no ORDER BY, so the index must hold. NULLS NOT DISTINCT kept on a NOT NULL
+        // tenant term -> /decisions/adr-0061#d9-nulls-not-distinct-on-every-sole-arbiter-tenant-index-and-the-two-indexes-that-gain-a-tenant-term
         builder.HasIndex(e => new { e.TenantId, e.Key })
             .IsUnique()
             .AreNullsDistinct(false);

@@ -66,7 +66,7 @@
           {{
             'pages.membership.next_payment'
               | translate
-                : { amount: formatCzk(currentPrice(m)), date: formatDate(m.currentPeriodEnd) }
+                : { amount: formatPrice(currentPrice(m)), date: formatDate(m.currentPeriodEnd) }
           }}
         </p>
 
@@ -194,7 +194,7 @@
             <span class="cl-mbr__option-flag">{{ 'pages.membership.your_plan' | translate }}</span>
             }
           </span>
-          <span class="cl-mbr__option-price cl-num">{{ formatCzk(plan.price) }}</span>
+          <span class="cl-mbr__option-price cl-num">{{ formatPrice(plan.price) }}</span>
           <span class="cl-mbr__option-note">
             {{
               plan.savingsPercentVsMonthly > 0

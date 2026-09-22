@@ -1,15 +1,16 @@
 import { TemplateRef } from '@angular/core';
 import { TableColumn, TableAction } from '@cleansia/components';
-import { EmployeeInvoice } from './invoices.facade';
+import { EmployeeInvoiceDto } from '@cleansia/partner-services';
+import { formatMoney } from '@cleansia/utils';
 
 export interface InvoicesActions {
-  onDownload: (invoice: EmployeeInvoice) => void;
+  onDownload: (invoice: EmployeeInvoiceDto) => void;
 }
 
 export function getInvoicesTableDefinition(
   actions: InvoicesActions,
-  statusTemplate?: TemplateRef<any>
-): { columns: TableColumn<EmployeeInvoice>[]; actions: TableAction<EmployeeInvoice>[] } {
+  statusTemplate?: TemplateRef<EmployeeInvoiceDto>
+): { columns: TableColumn<EmployeeInvoiceDto>[]; actions: TableAction<EmployeeInvoiceDto>[] } {
   return {
     columns: [
       {
@@ -28,7 +29,7 @@ export function getInvoicesTableDefinition(
         id: 'generatedAt',
         field: 'generatedAt',
         header: 'pages.invoices.generated_date',
-        getValue: (invoice?: EmployeeInvoice) =>
+        getValue: (invoice?: EmployeeInvoiceDto) =>
           invoice
             ? new Date(invoice.generatedAt).toLocaleDateString('en-GB')
             : '',
@@ -44,13 +45,8 @@ export function getInvoicesTableDefinition(
         id: 'totalAmount',
         field: 'totalAmount',
         header: 'pages.invoices.total_amount',
-        getValue: (invoice?: EmployeeInvoice) =>
-          invoice
-            ? new Intl.NumberFormat('en-GB', {
-                style: 'currency',
-                currency: invoice.currencyCode || 'CZK',
-              }).format(invoice.totalAmount)
-            : '',
+        getValue: (invoice?: EmployeeInvoiceDto) =>
+          invoice ? formatMoney(invoice.totalAmount, invoice.currencyCode ?? '', 'en-GB', { fractionDigits: 2 }) : '',
         sortable: true,
         align: 'right',
       },
@@ -67,7 +63,7 @@ export function getInvoicesTableDefinition(
         icon: 'pi pi-download',
         tooltip: 'pages.invoices.download_pdf',
         onClick: actions.onDownload,
-        disabled: (invoice: EmployeeInvoice) => !invoice.pdfBlobName,
+        disabled: (invoice: EmployeeInvoiceDto) => !invoice.pdfBlobName,
       },
     ],
   };

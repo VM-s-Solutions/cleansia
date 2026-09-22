@@ -11,6 +11,9 @@ struct BookingState: Equatable {
     var city: String = ""
     var zipCode: String = ""
     var countryIsoCode: String = ""
+    /// The resolved id of the address's country, the market every quote and catalogue read is made
+    /// in. A saved address carries its own; an inline one resolves from `countryIsoCode` once picked.
+    var countryId: String?
     var savedAddressId: String?
     /// The saved-address id the last preferred-address hydration seeded. Lets a
     /// re-open re-hydrate a still-auto-hydrated draft when the user's preferred
@@ -28,4 +31,8 @@ struct BookingState: Equatable {
     var referralCode: String = ""
 
     var preferredEmployeeId: String?
+
+    /// The review step's terms tick. Per booking, never remembered: `reset()` starts the next one
+    /// unticked. Read only when the box is shown — see `BookingViewModel.alreadyConsented`.
+    var termsAccepted = false
 }

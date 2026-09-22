@@ -562,6 +562,13 @@ cleansia-hero {
 }
 
 // The price row's own pieces, at the artboard's sizes.
+// The amount and the market chip that is its unit, on one row (design spec §1.1).
+.cl-quote__amount-row {
+  display: flex;
+  align-items: center;
+  gap: calc(0.75 * var(--cl-u));
+}
+
 .cl-quote__amount {
   font-family: $font-heading;
   font-weight: 700;

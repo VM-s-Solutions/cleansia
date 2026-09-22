@@ -5,9 +5,12 @@ namespace Cleansia.Core.Domain.Auditing;
 /// action transaction never commits, so a row added to the scoped DbContext would be discarded with it.
 /// The sink writes the <c>Success = false</c> row in its own short-lived, independently-committed scope.
 /// It is best-effort and SWALLOWED by the behavior: a failure to record a failed action must never
-/// convert into a different error returned to the admin (D2.2).
+/// convert into a different error returned to the caller (D2.2). The customer overload (ADR-0062 D1) is
+/// the same seam for the customer table.
 /// </summary>
 public interface IAuditFailureSink
 {
     Task RecordFailureAsync(AdminActionAudit entry, CancellationToken cancellationToken);
+
+    Task RecordFailureAsync(CustomerActionAudit entry, CancellationToken cancellationToken);
 }

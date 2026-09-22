@@ -76,8 +76,11 @@ public class AddSavedAddress
             When(x => !string.IsNullOrEmpty(x.CountryId), () =>
             {
                 RuleFor(x => x.CountryId!)
+                    .Cascade(CascadeMode.Stop)
                     .MustAsync(countryRepository.ExistsAsync)
-                    .WithMessage(BusinessErrorMessage.NotExistingCountryWithId);
+                    .WithMessage(BusinessErrorMessage.NotExistingCountryWithId)
+                    .MustAsync(countryRepository.IsServicedAsync)
+                    .WithMessage(BusinessErrorMessage.CountryNotServiced);
             });
         }
     }

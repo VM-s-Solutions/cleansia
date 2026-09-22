@@ -42,6 +42,10 @@ public class UpdateIdentificationInfo
             RuleFor(c => c.PassportId)
                 .ValidatePassportId();
 
+            RuleFor(c => c.EntityType)
+                .MustAsync(NotBecomeALegalEntity)
+                .WithMessage(BusinessErrorMessage.LegalEntityNotAccepted);
+
             // CountryId scopes the IČO/VAT format check — different countries
             // have different patterns. Required because the validator below
             // can't run without it.
@@ -73,30 +77,6 @@ public class UpdateIdentificationInfo
                 })
                 .WithMessage(BusinessErrorMessage.RegistrationNumberInvalidFormat)
                 .When(c => !string.IsNullOrWhiteSpace(c.RegistrationNumber));
-
-            RuleFor(c => c.VatNumber)
-                .MaximumLength(50)
-                .WithMessage(BusinessErrorMessage.MaxLengthExceeded)
-                .When(c => !string.IsNullOrWhiteSpace(c.VatNumber));
-
-            RuleFor(c => c.VatNumber)
-                .MustAsync(async (command, value, ct) =>
-                {
-                    var result = await _taxIdValidator.ValidateVatNumberAsync(
-                        command.BusinessCountryId, value, ct);
-                    return result.IsValid;
-                })
-                .WithMessage(BusinessErrorMessage.VatNumberInvalidFormat)
-                .When(c => !string.IsNullOrWhiteSpace(c.VatNumber));
-
-            // Legal entity name only required when EntityType=LegalEntity.
-            // For natural persons the field is ignored (handler clears it).
-            RuleFor(c => c.LegalEntityName)
-                .NotEmpty()
-                .WithMessage(BusinessErrorMessage.Required)
-                .MaximumLength(200)
-                .WithMessage(BusinessErrorMessage.MaxLengthExceeded)
-                .When(c => c.EntityType == EmployeeEntityType.LegalEntity);
         }
 
         // Not an ownership comparison — the subject is server-resolved, so there is nothing for a client
@@ -106,6 +86,21 @@ public class UpdateIdentificationInfo
             var employee = await _employeeRepository.GetByUserEmailAsync(
                 _userSessionProvider.GetUserEmail() ?? string.Empty, cancellationToken);
             return employee is not null;
+        }
+
+        // A cleaner contracts as a natural person; only an operator may onboard a company. What is
+        // refused is a CHANGE to a company: a row an operator already set to one is not changing anything
+        // by naming it, and the handler keeps that row's pair whatever the command carries.
+        private async Task<bool> NotBecomeALegalEntity(EmployeeEntityType entityType, CancellationToken cancellationToken)
+        {
+            if (entityType != EmployeeEntityType.LegalEntity)
+            {
+                return true;
+            }
+
+            var employee = await _employeeRepository.GetByUserEmailAsync(
+                _userSessionProvider.GetUserEmail() ?? string.Empty, cancellationToken);
+            return employee?.EntityType == EmployeeEntityType.LegalEntity;
         }
     }
 
@@ -119,7 +114,6 @@ public class UpdateIdentificationInfo
         EmployeeEntityType EntityType,
         string BusinessCountryId,
         string RegistrationNumber,
-        string? VatNumber,
         string? LegalEntityName) : ICommand<Response>;
 
     public record Response(string EmployeeId);
@@ -143,15 +137,14 @@ public class UpdateIdentificationInfo
                 command.NationalityId,
                 command.PassportId);
 
-            // Business identity is a separate domain method — keeps the
-            // "who you are" (nationality + passport) and "how your business
-            // is registered" (entity type + IČO + VAT + legal name)
-            // concerns aligned with how the Employee aggregate exposes them.
+            // A row an operator set to a company keeps its stored pair whatever the command carries: the
+            // shipped clients send NaturalPerson, so writing the command's values here would demote the
+            // row on every save.
+            var keepsCompany = employee.EntityType == EmployeeEntityType.LegalEntity;
             employee.UpdateBusinessIdentity(
-                command.EntityType,
+                keepsCompany ? employee.EntityType : command.EntityType,
                 command.RegistrationNumber,
-                command.VatNumber,
-                command.LegalEntityName);
+                keepsCompany ? employee.LegalEntityName : command.LegalEntityName);
 
             return BusinessResult.Success(new Response(employee.Id));
         }

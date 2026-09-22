@@ -1,0 +1,56 @@
+<p-dialog
+  [header]="'pages.company_lifecycle.wind_down_dialog.title' | translate"
+  [visible]="visible()"
+  (visibleChange)="onVisibilityChanged($event)"
+  [modal]="true"
+  [closable]="true"
+  [style]="{ width: '560px' }"
+  [draggable]="false"
+  [resizable]="false"
+>
+  <form [formGroup]="form" (ngSubmit)="submit()" class="cleansia-wind-down-dialog__form">
+    <p class="cleansia-wind-down-dialog__lede">
+      {{ 'pages.company_lifecycle.wind_down_dialog.lede' | translate: { name: companyName() } }}
+    </p>
+
+    <div class="form-field">
+      <cleansia-calendar
+        formControlName="fromDate"
+        [label]="'pages.company_lifecycle.wind_down_dialog.field.from_date' | translate"
+        [floatVariant]="null"
+        [minDate]="minDate()"
+        [required]="true"
+        [appendTo]="'body'"
+      />
+      <small class="field-help">
+        {{ 'pages.company_lifecycle.wind_down_dialog.field.from_date_help' | translate }}
+      </small>
+    </div>
+
+    <p class="cleansia-wind-down-dialog__consequences-title">
+      {{ 'pages.company_lifecycle.wind_down_dialog.consequences.title' | translate }}
+    </p>
+    <ol class="cleansia-wind-down-dialog__consequences">
+      @for (key of consequenceKeys; track key) {
+      <li>{{ key | translate }}</li>
+      }
+    </ol>
+  </form>
+
+  <ng-template pTemplate="footer">
+    <cleansia-button
+      [label]="'global.actions.cancel' | translate"
+      [outlined]="true"
+      severity="secondary"
+      (onClick)="cancel()"
+    />
+    <cleansia-button
+      [label]="'pages.company_lifecycle.wind_down_dialog.submit' | translate"
+      icon="pi pi-calendar-times"
+      severity="warn"
+      [disabled]="submitting()"
+      [loading]="submitting()"
+      (onClick)="submit()"
+    />
+  </ng-template>
+</p-dialog>

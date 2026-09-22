@@ -77,6 +77,7 @@ fun PendingOffersScreen(
     val actionState by viewModel.actionState.collectAsStateWithLifecycle()
     val attempt by viewModel.attempt.collectAsStateWithLifecycle()
     val refusal by viewModel.offerRefusal.collectAsStateWithLifecycle()
+    val contractRequest by viewModel.contractRequest.collectAsStateWithLifecycle()
 
     var pendingDecline by remember { mutableStateOf<PendingOffer?>(null) }
 
@@ -94,6 +95,14 @@ fun PendingOffersScreen(
         onDeclineRequested = { pendingDecline = it },
         onDismissRefusal = viewModel::dismissRefusal,
     )
+
+    contractRequest?.let { request ->
+        WorkContractSheet(
+            request = request,
+            onDismiss = viewModel::dismissContract,
+            onOutcome = viewModel::onWorkContractOutcome,
+        )
+    }
 
     pendingDecline?.let { offer ->
         CleansiaDialog(

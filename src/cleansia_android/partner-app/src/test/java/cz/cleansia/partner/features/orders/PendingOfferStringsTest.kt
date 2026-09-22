@@ -38,8 +38,6 @@ class PendingOfferStringsTest {
         "offer_reserved_until_date",
         "offer_reserved_ended",
         "offer_confirm",
-        "offer_slide_to_confirm",
-        "offer_confirming",
         "offer_decline",
         "offer_decline_title",
         "offer_decline_body",
@@ -130,12 +128,14 @@ class PendingOfferStringsTest {
     /**
      * Every refusal `TakeOrder`'s ordered chain can answer a confirm with. The screen quotes the
      * server's own reason inside the sentence that owns the failure, so a key with no resource would
-     * put a raw `order.weekly_limit_reached` where that reason belongs.
+     * put a raw `order.weekly_limit_reached` where that reason belongs. The two contract keys are the
+     * chain's first and last rules now that a confirm echoes the contract text it was shown.
      */
     @Test
     fun `every refusal a confirm can hit resolves to a sentence`() {
         val declared = strings("values")
         listOf(
+            "contract.not_accepted",
             "order.not_found",
             "order.take.already_cancelled",
             "order.take.already_completed",
@@ -144,6 +144,7 @@ class PendingOfferStringsTest {
             "order.employee_already_assigned",
             "order.weekly_limit_reached",
             "order.time_conflict",
+            "contract.text_mismatch",
         ).forEach { key ->
             val normalized = key.replace('.', '_').replace('-', '_').lowercase()
             assertTrue(

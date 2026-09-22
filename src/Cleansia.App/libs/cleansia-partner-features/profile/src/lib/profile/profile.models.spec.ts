@@ -18,7 +18,6 @@ describe('ProfileFormFactory', () => {
     countryId: 'cz',
     nationalityId: 'cz',
     passportId: 'AB1234567',
-    entityType: EmployeeEntityType.NaturalPerson,
     registrationNumber: '12345678',
     emergencyName: 'Petr Novak',
     emergencyPhone: '+420333222111',
@@ -30,6 +29,13 @@ describe('ProfileFormFactory', () => {
 
     expect(form.get('iban')).toBeNull();
     expect(Object.keys(form.controls)).not.toContain('iban');
+  });
+
+  it('offers no entity-type choice and no legal-name field — a cleaner contracts as a natural person', () => {
+    const form = ProfileFormFactory.createEmployeeProfileForm();
+
+    expect(form.get('entityType')).toBeNull();
+    expect(form.get('legalEntityName')).toBeNull();
   });
 
   it('is valid once the profile fields are filled, with nothing payout-shaped left to satisfy', () => {
@@ -65,6 +71,21 @@ describe('ProfileFormFactory', () => {
     expect(formData.zipCode).toBe('11000');
     expect(formData.emergencyName).toBe('Petr Novak');
     expect(formData).not.toHaveProperty('iban');
+  });
+
+  it('does not put an admin-set legal entity on the editable form', () => {
+    const employee = EmployeeItem.fromJS({
+      id: 'emp-1',
+      entityType: EmployeeEntityType.LegalEntity,
+      legalEntityName: 'Uklid Praha s.r.o.',
+      registrationNumber: '12345678',
+    });
+
+    const formData = ProfileFormFactory.mapEmployeeToFormData(employee);
+
+    expect(formData).not.toHaveProperty('entityType');
+    expect(formData).not.toHaveProperty('legalEntityName');
+    expect(formData.registrationNumber).toBe('12345678');
   });
 
   it('builds an update command that carries no payout identifier', () => {
@@ -108,6 +129,24 @@ describe('ProfileFormFactory', () => {
         documents: [],
         consent: true,
       });
+    });
+
+    /// The server refuses LegalEntity on every cleaner-facing write and nulls the legal name for a
+    /// natural person, so the only body this surface can send is the natural-person one. A stored
+    /// name reaching the form value must not travel: it belongs to a choice that is not on offer here.
+    it('sends NaturalPerson and no legal name, whatever the form value carries', () => {
+      const command = ProfileFormFactory.createUpdateCommand(
+        {
+          ...completeFormValue,
+          entityType: EmployeeEntityType.LegalEntity,
+          legalEntityName: 'Uklid Praha s.r.o.',
+        } as never,
+        []
+      );
+
+      const body = command.toJSON();
+      expect(body.entityType).toBe(EmployeeEntityType.NaturalPerson);
+      expect(body.legalEntityName).toBeUndefined();
     });
 
     /// This form does not edit availability and must not appear to. The module that pretended to was

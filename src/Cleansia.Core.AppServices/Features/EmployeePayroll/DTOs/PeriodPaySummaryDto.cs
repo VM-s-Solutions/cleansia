@@ -26,4 +26,13 @@ public record PeriodPaySummaryDto(
     /// so it is additive on the wire.</para>
     /// → /flows/pay-and-payouts
     /// </summary>
-    string? CurrencyCode = null);
+    string? CurrencyCode = null,
+    /// <summary>
+    /// The currencies this period can be VIEWED in: the view currency first, then every other
+    /// currency a pay row of this employee and period is denominated in, ordered by code. One entry
+    /// means there is nothing to switch to. Sourced from pay rows, not invoices: an open period has
+    /// no invoice yet and a cancelled one is a document over rows that may no longer be there. The
+    /// view leads so the switch always contains the value it shows. Nullable + defaulted so it is
+    /// additive on the wire.
+    /// </summary>
+    IReadOnlyList<PeriodCurrencyDto>? AvailableCurrencies = null);

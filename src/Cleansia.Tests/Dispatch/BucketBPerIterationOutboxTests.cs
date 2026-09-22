@@ -51,7 +51,7 @@ public sealed class BucketBPerIterationOutboxTests : IDisposable
         new(
             new DbContextOptionsBuilder<CleansiaDbContext>().UseSqlite(_connection).Options,
             new TestUserSessionProvider("system", "system@cleansia.test"),
-            new FixedTenantProvider(null));
+            new FixedTenantProvider(TestTenants.Default));
 
     private async Task EnsureSchemaAsync()
     {
@@ -69,7 +69,6 @@ public sealed class BucketBPerIterationOutboxTests : IDisposable
             customerAddress: address,
             rooms: 1,
             bathrooms: 1,
-            extras: new Dictionary<string, bool>(),
             cleaningDateTime: DateTime.UtcNow.AddMinutes(30),
             paymentType: PaymentType.Card,
             totalPrice: 1000m,
@@ -85,6 +84,14 @@ public sealed class BucketBPerIterationOutboxTests : IDisposable
     private async Task SeedAsync(params Order[] orders)
     {
         await using var ctx = NewContext();
+        foreach (var order in orders.Where(o => o.UserId is not null).GroupBy(o => o.UserId).Select(g => g.First()))
+        {
+            if (await ctx.Users.IgnoreQueryFilters().AnyAsync(u => u.Id == order.UserId)) continue;
+            var user = User.CreateWithPassword($"{order.UserId}@test.local", "Password123!", "Test", "Customer");
+            user.Id = order.UserId!;
+            user.TenantId = order.TenantId ?? TestTenants.Default;
+            ctx.Users.Add(user);
+        }
         ctx.Orders.AddRange(orders);
         await ctx.CommitAsync(CancellationToken.None);
     }
@@ -95,8 +102,8 @@ public sealed class BucketBPerIterationOutboxTests : IDisposable
         var handler = new AutoCancelStaleRecurringOrders.Handler(
             new OrderRepository(ctx),
             new CreditAccountRepository(ctx),
-            new NotificationProducer(new UserNotificationRepository(ctx), new OutboxPendingDispatch(ctx)),
-            new FixedTenantProvider(null),
+            new NotificationProducer(new UserNotificationRepository(ctx), new OutboxPendingDispatch(ctx), new UserRepository(ctx), Microsoft.Extensions.Logging.Abstractions.NullLogger<NotificationProducer>.Instance),
+            new FixedTenantProvider(TestTenants.Default),
             ctx,
             NullLogger<AutoCancelStaleRecurringOrders.Handler>.Instance);
 

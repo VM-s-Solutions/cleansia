@@ -25,6 +25,16 @@ public static class HttpAssert
     public static void IsNotFound(HttpResponseMessage response) =>
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
 
+    /// <summary>The permission gate admitted the caller: the answer is neither a policy denial (401/403)
+    /// nor a 404 — a business not-found is a 400 on this codebase, so a 404 here can only be a route that
+    /// resolves to nothing, which would otherwise pass a "not forbidden" assertion silently.</summary>
+    public static void ClearedTheGate(HttpResponseMessage response)
+    {
+        Assert.NotEqual(HttpStatusCode.Unauthorized, response.StatusCode);
+        Assert.NotEqual(HttpStatusCode.Forbidden, response.StatusCode);
+        Assert.NotEqual(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
     /// <summary>The request was NOT served the resource — it is either a policy denial (401/403) or a
     /// business not-found/ownership rejection (400 carrying <paramref name="expectedErrorCode"/>).
     /// Never 200. This is the "→ 403/404, never the other user's resource" contract from the ACs,

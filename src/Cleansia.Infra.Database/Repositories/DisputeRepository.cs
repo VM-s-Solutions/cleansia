@@ -1,6 +1,8 @@
+using System.Linq.Expressions;
 using Cleansia.Core.Domain.Disputes;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Repositories;
+using Cleansia.Core.Domain.Sorting.Common;
 using Microsoft.EntityFrameworkCore;
 
 namespace Cleansia.Infra.Database.Repositories;
@@ -49,9 +51,56 @@ public class DisputeRepository(CleansiaDbContext context) : BaseRepository<Dispu
             .FirstOrDefaultAsync(d => d.StripeDisputeId == stripeDisputeId, cancellationToken);
     }
 
-    public Task<Dispute?> GetDisputeWithDetailsAsync(string disputeId, CancellationToken cancellationToken)
+    public IQueryable<Dispute> GetQueryableForOwner(string userId)
     {
-        return GetDbSet()
+        // Past the tenant filter: the dispute carries its order's operator, which for a cross-market
+        // booking is not the customer's own company. The pin is the caller's own id — a caller
+        // obligation this method cannot verify, so every caller reads it off the JWT.
+        return GetQueryableIgnoringTenant().Where(d => d.UserId == userId);
+    }
+
+    public Task<Dispute?> GetDisputeWithDetailsForOwnerAsync(string disputeId, string userId, CancellationToken cancellationToken)
+    {
+        return WithDetailGraph(GetQueryableForOwner(userId))
+            .FirstOrDefaultAsync(d => d.Id == disputeId, cancellationToken);
+    }
+
+    private IQueryable<Dispute> ForOperator(string? operatorTenantId)
+        => GetQueryableIgnoringTenant().Where(d => operatorTenantId != null && d.TenantId == operatorTenantId);
+
+    public Task<int> GetCountForOperatorAsync(string? operatorTenantId, Expression<Func<Dispute, bool>>? filter, CancellationToken cancellationToken)
+    {
+        var query = ForOperator(operatorTenantId);
+        return (filter is null ? query : query.Where(filter)).CountAsync(cancellationToken);
+    }
+
+    public IQueryable<Dispute> GetPagedSortForOperator<TSort>(
+        string? operatorTenantId, int offset, int limit, Expression<Func<Dispute, bool>>? filter, IEnumerable<SortDefinition> sort)
+        where TSort : BaseSort<Dispute>
+        => PagedSort<TSort>(ForOperator(operatorTenantId), offset, limit, filter, sort);
+
+    public Task<int> GetCountForOwnerAsync(string userId, Expression<Func<Dispute, bool>>? filter, CancellationToken cancellationToken)
+    {
+        var query = GetQueryableForOwner(userId);
+        return (filter is null ? query : query.Where(filter)).CountAsync(cancellationToken);
+    }
+
+    public IQueryable<Dispute> GetPagedSortForOwner<TSort>(
+        string userId, int offset, int limit, Expression<Func<Dispute, bool>>? filter, IEnumerable<SortDefinition> sort)
+        where TSort : BaseSort<Dispute>
+        => PagedSort<TSort>(GetQueryableForOwner(userId), offset, limit, filter, sort);
+
+    public async Task<Dispute?> GetDisputeWithDetailsAsync(string disputeId, CancellationToken cancellationToken)
+    {
+        if (!await GetDbSet().AnyAsync(d => d.Id == disputeId, cancellationToken)) return null;
+        // Prove the operator's root access before loading its cross-company message authors.
+        return await WithDetailGraph(GetQueryableIgnoringTenant())
+            .FirstOrDefaultAsync(d => d.Id == disputeId, cancellationToken);
+    }
+
+    private static IQueryable<Dispute> WithDetailGraph(IQueryable<Dispute> disputes)
+    {
+        return disputes
             // The order's CURRENCY comes with it: a dispute's agreed refund is money off that
             // order, and without this the detail screen has nothing to format it in.
             .Include(d => d.Order)
@@ -73,8 +122,7 @@ public class DisputeRepository(CleansiaDbContext context) : BaseRepository<Dispu
                 .ThenInclude(m => m.Author)
             .Include(d => d.Evidence)
             .AsSplitQuery()
-            .AsNoTracking()
-            .FirstOrDefaultAsync(d => d.Id == disputeId, cancellationToken);
+            .AsNoTracking();
     }
 
     public Task<Dispute?> GetForUpdateAsync(string disputeId, CancellationToken cancellationToken)
@@ -84,9 +132,10 @@ public class DisputeRepository(CleansiaDbContext context) : BaseRepository<Dispu
             .FirstOrDefaultAsync(d => d.Id == disputeId, cancellationToken);
     }
 
-    public override Task<Dispute?> GetByIdAsync(string id, CancellationToken cancellationToken)
+    public override async Task<Dispute?> GetByIdAsync(string id, CancellationToken cancellationToken)
     {
-        return GetDbSet()
+        if (!await GetDbSet().AnyAsync(d => d.Id == id, cancellationToken)) return null;
+        return await GetQueryableIgnoringTenant()
             .Include(d => d.Order)
             .Include(d => d.User)
             .Include(d => d.Messages)

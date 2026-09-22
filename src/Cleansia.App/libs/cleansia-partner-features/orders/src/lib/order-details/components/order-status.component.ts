@@ -10,7 +10,7 @@ import { TranslatePipe } from '@ngx-translate/core';
 import { ICleansiaSelectOption } from '@cleansia/components';
 
 @Component({
-  selector: 'order-status',
+  selector: 'cleansia-partner-order-status',
   standalone: true,
   imports: [
     CommonModule,

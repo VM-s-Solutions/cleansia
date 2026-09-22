@@ -2,6 +2,13 @@ import XCTest
 @testable import CleansiaPartner
 
 final class PartnerNotificationDeepLinkTests: XCTestCase {
+    func testRecurringPauseDoesNotInventAPartnerMembershipDestination() {
+        XCTAssertNil(PartnerNotificationDeepLink.resolve(eventKey: "recurring.paused", orderId: nil))
+        XCTAssertNil(PartnerNotificationDeepLink.resolve(eventKey: "recurring.paused", orderId: "unrelated-order"))
+        let userInfo = alertCarryingUserInfo(eventKey: "recurring.paused", locArgs: [], extra: [:])
+        XCTAssertNil(PartnerNotificationDeepLink.resolve(userInfo))
+    }
+
     func testOrderEventWithIdResolvesToOrderDestination() {
         let destination = PartnerNotificationDeepLink.resolve(eventKey: "order.confirmed", orderId: "ord-1")
         XCTAssertEqual(destination, .order(orderId: "ord-1"))
@@ -9,6 +16,7 @@ final class PartnerNotificationDeepLinkTests: XCTestCase {
 
     func testAllOrderScopedEventsResolveToOrder() {
         let keys = [
+            "order.payment_confirmed",
             "order.confirmed",
             "order.in_progress",
             "order.completed",
@@ -46,6 +54,7 @@ final class PartnerNotificationDeepLinkTests: XCTestCase {
     }
 
     func testOrderEventWithoutIdResolvesToNil() {
+        XCTAssertNil(PartnerNotificationDeepLink.resolve(eventKey: "order.payment_confirmed", orderId: nil))
         XCTAssertNil(PartnerNotificationDeepLink.resolve(eventKey: "order.confirmed", orderId: nil))
     }
 

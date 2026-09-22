@@ -22,7 +22,7 @@ export const userReducer = createReducer(
       {
         ...state,
         page: state.page.updateDataAndTotalAndPageNumberAndPageSize(
-          page.data!,
+          page.data ?? [],
           page.total,
           page.pageNumber,
           page.pageSize,

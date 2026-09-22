@@ -23,9 +23,11 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 import retrofit2.Retrofit
 import retrofit2.converter.kotlinx.serialization.asConverterFactory
+import cz.cleansia.customer.api.client.CurrencyApi as GenCurrencyApi
 import cz.cleansia.customer.api.client.ExtraApi as GenExtraApi
 import cz.cleansia.customer.api.client.PackageApi as GenPackageApi
 import cz.cleansia.customer.api.client.ServiceApi as GenServiceApi
+import cz.cleansia.customer.api.model.CurrencyListItem as GenCurrencyListItem
 import cz.cleansia.customer.api.model.ExtraListItem as GenExtraListItem
 import cz.cleansia.customer.api.model.PackageListItem as GenPackageListItem
 import cz.cleansia.customer.api.model.ServiceListItem as GenServiceListItem
@@ -72,6 +74,7 @@ class CatalogWireTest {
                 retrofit.create(GenServiceApi::class.java),
                 retrofit.create(GenPackageApi::class.java),
                 retrofit.create(GenExtraApi::class.java),
+                retrofit.create(GenCurrencyApi::class.java),
             )
             call(api).also { onRequest(server.takeRequest()) }
         } finally {
@@ -87,6 +90,9 @@ class CatalogWireTest {
 
     private suspend fun extras(body: String, code: Int = 200) =
         serving(body, code) { it.getExtras() }.body()
+
+    private suspend fun currencies(body: String, code: Int = 200) =
+        serving(body, code) { it.getCurrencies() }.body()
 
     /**
      * Services and packages refuse by throwing now, so the assertion is on the field the refusal
@@ -130,6 +136,11 @@ class CatalogWireTest {
     }
 
     @Test
+    fun currencyDtoSerialNamesAreExactlyTheSpecProperties() {
+        assertEquals(CURRENCY_SPEC_PROPERTIES, serialNames(GenCurrencyListItem.serializer().descriptor))
+    }
+
+    @Test
     fun theRequestsKeepThePathsTheServerBinds() = runTest {
         var path: String? = null
         serving(CAPTURED_SERVICES, onRequest = { path = it.path }) { it.getServices() }
@@ -140,6 +151,44 @@ class CatalogWireTest {
 
         serving(CAPTURED_EXTRAS, onRequest = { path = it.path }) { it.getExtras() }
         assertEquals("/api/Extra/GetOverview", path)
+
+        serving(CAPTURED_CURRENCIES, onRequest = { path = it.path }) { it.getCurrencies() }
+        assertEquals("/api/Currency/GetOverview", path)
+    }
+
+    /**
+     * The country is the booking's market: the server prices the overview in that country's currency
+     * and withholds what has no price row in it. Absent, the platform default answers as before.
+     */
+    @Test
+    fun theOverviewsCarryTheCountryTheServerPricesFor() = runTest {
+        var path: String? = null
+        serving(CAPTURED_SERVICES, onRequest = { path = it.path }) { it.getServices(countryId = "svk") }
+        assertEquals("/api/Service/GetOverview?countryId=svk", path)
+
+        serving(CAPTURED_PACKAGES, onRequest = { path = it.path }) { it.getPackages(countryId = "svk") }
+        assertEquals("/api/Package/GetOverview?countryId=svk", path)
+
+        serving(CAPTURED_EXTRAS, onRequest = { path = it.path }) { it.getExtras(countryId = "svk") }
+        assertEquals("/api/Extra/GetOverview?countryId=svk", path)
+    }
+
+    // --- the currency each row is priced in ---------------------------------------
+
+    @Test
+    fun everyCatalogRowKeepsTheCurrencyItIsPricedIn() = runTest {
+        assertEquals(listOf("EUR", "EUR"), loadedServices(CAPTURED_SERVICES).map { it.currencyCode })
+        assertEquals(listOf("EUR", "EUR"), packages(CAPTURED_PACKAGES)?.map { it.currencyCode })
+        assertEquals(listOf("EUR", "EUR"), extras(CAPTURED_EXTRAS)?.map { it.currencyCode })
+    }
+
+    /** Older payloads carry no code; the row still prices and the label falls to the default. */
+    @Test
+    fun aRowWithoutACurrencyCodeStillPrices() = runTest {
+        val service = loadedServices(servicesWithFirstRow { it - "currencyCode" }).first()
+
+        assertNull(service.currencyCode)
+        assertEquals(2900.00, service.basePrice, 0.0)
     }
 
     // --- rule 1: money is never coerced -----------------------------------------
@@ -176,10 +225,49 @@ class CatalogWireTest {
         refuses("basePrice") { services(servicesWithFirstRow { it + ("basePrice" to JsonNull) }) }
     }
 
-    // --- rule 2: booleans follow the money rule ---------------------------------
+    // --- the currency the whole price list is stated in ---------------------------
     //
-    // No catalog schema carries a `nullable: false` boolean; the rule is exercised on the quote and
-    // order wires (BookingQuoteWireTest, OrderWireTest).
+    // The catalogue rows carry no currency of their own; this overview's `isDefault` row is the one
+    // fact that turns every figure above into a price. A wrong label here mislabels the whole list.
+
+    @Test
+    fun everyCurrencyArrivesWithItsLiteralValue() = runTest {
+        val list = currencies(CAPTURED_CURRENCIES)
+
+        assertEquals(listOf("cur-czk", "cur-eur"), list?.map { it.id })
+        assertEquals(listOf("CZK", "EUR"), list?.map { it.code })
+        assertEquals(listOf("Kč", "€"), list?.map { it.symbol })
+        assertEquals(listOf("Czech koruna", "Euro"), list?.map { it.name })
+        assertEquals(listOf(true, false), list?.map { it.isDefault })
+    }
+
+    @Test
+    fun aCurrencyWithoutItsCodeRefusesThePageBecauseTheCodeIsTheLabel() = runTest {
+        refuses("code") { currencies(currenciesWithFirstRow { it - "code" }) }
+    }
+
+    // --- rule 2: booleans follow the money rule ---------------------------------
+
+    /** `false` is a real state — a non-default currency — so a missing flag is never read as one. */
+    @Test
+    fun aCurrencyWithoutItsDefaultFlagRefusesThePage() = runTest {
+        refuses("isDefault") { currencies(currenciesWithFirstRow { it - "isDefault" }) }
+    }
+
+    @Test
+    fun aCurrencyWithoutAnIdRefusesThePage() = runTest {
+        refuses("id") { currencies(currenciesWithFirstRow { it - "id" }) }
+    }
+
+    @Test
+    fun aBodylessCurrencyOverviewRefuses() = runTest {
+        refuses("CurrencyListItem[]") { currencies("", code = 204) }
+    }
+
+    @Test
+    fun anEmptyCurrencyOverviewIsAnAnswerTheRepositoryDecidesOn() = runTest {
+        assertEquals(emptyList<CurrencyListItem>(), currencies("[]"))
+    }
 
     // --- rule 3: identity is refused, never synthesized --------------------------
 
@@ -290,6 +378,9 @@ class CatalogWireTest {
     private fun extrasWithFirstRow(transform: (JsonObject) -> JsonObject) =
         rowsWithFirst(CAPTURED_EXTRAS, transform)
 
+    private fun currenciesWithFirstRow(transform: (JsonObject) -> JsonObject) =
+        rowsWithFirst(CAPTURED_CURRENCIES, transform)
+
     private operator fun JsonObject.minus(key: String) =
         JsonObject(toMutableMap().apply { remove(key) })
 
@@ -319,7 +410,8 @@ class CatalogWireTest {
                 },
                 "basePrice": 2900.00,
                 "perRoomPrice": 180.00,
-                "translations": { "cs": { "name": "Bezny uklid", "description": "Pokoje a koupelny" } }
+                "translations": { "cs": { "name": "Bezny uklid", "description": "Pokoje a koupelny" } },
+                "currencyCode": "EUR"
               },
               {
                 "id": "svc-2",
@@ -335,7 +427,8 @@ class CatalogWireTest {
                 },
                 "basePrice": 4200.00,
                 "perRoomPrice": 260.00,
-                "translations": { "cs": { "name": "Generalni uklid", "description": "Vse" } }
+                "translations": { "cs": { "name": "Generalni uklid", "description": "Vse" } },
+                "currencyCode": "EUR"
               }
             ]
         """.trimIndent()
@@ -351,7 +444,8 @@ class CatalogWireTest {
                 "includedServices": [
                   { "name": "Standard clean",
                     "translations": { "cs": { "name": "Bezny uklid", "description": "Pokoje" } } }
-                ]
+                ],
+                "currencyCode": "EUR"
               },
               {
                 "id": "pkg-2",
@@ -362,7 +456,8 @@ class CatalogWireTest {
                 "includedServices": [
                   { "name": "Deep clean",
                     "translations": { "cs": { "name": "Generalni uklid", "description": "Vse" } } }
-                ]
+                ],
+                "currencyCode": "EUR"
               }
             ]
         """.trimIndent()
@@ -376,7 +471,8 @@ class CatalogWireTest {
                 "description": "Degrease the oven cavity",
                 "price": 300.00,
                 "displayOrder": 2,
-                "translations": { "cs": { "name": "Vnitrek trouby", "description": "Odmasteni" } }
+                "translations": { "cs": { "name": "Vnitrek trouby", "description": "Odmasteni" } },
+                "currencyCode": "EUR"
               },
               {
                 "id": "ext-2",
@@ -385,21 +481,33 @@ class CatalogWireTest {
                 "description": "Empty and wipe the fridge",
                 "price": 240.00,
                 "displayOrder": 5,
-                "translations": { "cs": { "name": "Vnitrek lednice", "description": "Vytreni" } }
+                "translations": { "cs": { "name": "Vnitrek lednice", "description": "Vytreni" } },
+                "currencyCode": "EUR"
               }
             ]
         """.trimIndent()
 
-        val SERVICE_SPEC_PROPERTIES =
-            setOf("id", "name", "description", "category", "basePrice", "perRoomPrice", "translations")
+        /** Both members non-default; the default flag differs between the rows so neither is a guess. */
+        val CAPTURED_CURRENCIES = """
+            [
+              { "id": "cur-czk", "code": "CZK", "symbol": "Kč", "name": "Czech koruna", "isDefault": true },
+              { "id": "cur-eur", "code": "EUR", "symbol": "€", "name": "Euro", "isDefault": false }
+            ]
+        """.trimIndent()
 
-        val PACKAGE_SPEC_PROPERTIES =
-            setOf("id", "name", "description", "price", "translations", "includedServices",
-            "tagline",
-            "isPopular",
+        val SERVICE_SPEC_PROPERTIES = setOf(
+            "id", "name", "description", "category", "basePrice", "perRoomPrice", "translations", "currencyCode",
         )
 
-        val EXTRA_SPEC_PROPERTIES =
-            setOf("id", "slug", "name", "description", "price", "displayOrder", "translations")
+        val PACKAGE_SPEC_PROPERTIES = setOf(
+            "id", "name", "description", "price", "translations", "includedServices", "tagline", "isPopular",
+            "currencyCode",
+        )
+
+        val EXTRA_SPEC_PROPERTIES = setOf(
+            "id", "slug", "name", "description", "price", "displayOrder", "translations", "currencyCode",
+        )
+
+        val CURRENCY_SPEC_PROPERTIES = setOf("id", "code", "symbol", "name", "isDefault")
     }
 }

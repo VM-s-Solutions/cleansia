@@ -3,10 +3,12 @@ using System.Text.RegularExpressions;
 using Cleansia.Core.Queue.Abstractions;
 using Cleansia.Core.Queue.Abstractions.Messages;
 using Cleansia.Core.AppServices.Services.Interfaces;
+using Cleansia.Core.AppServices.Tenancy;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Receipts;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.SeedWork;
+using Cleansia.Core.Domain.Tenancy;
 using Cleansia.Core.Fiscal.Abstractions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -20,6 +22,7 @@ public class GenerateReceiptHandler(
     ICountryConfigurationRepository countryConfigurationRepository,
     IUnitOfWork unitOfWork,
     ITenantProvider tenantProvider,
+    ArchivedCompanyDeadLetter archivedCompanyDeadLetter,
     ILogger<GenerateReceiptHandler> logger)
 {
     private static readonly JsonSerializerOptions JsonOptions =
@@ -118,7 +121,7 @@ public class GenerateReceiptHandler(
                 {
                     // ADR-0004 D-F4.1(b) — DB backstop. Two concurrent first-deliveries can both pass the
                     // guard above and both attempt this claim commit. A unique index makes the loser throw
-                    // PG 23505 — on EITHER IX_OrderReceipts_OrderId OR IX_OrderReceipts_ReceiptNumber.
+                    // PG 23505 — on EITHER IX_OrderReceipts_OrderId OR IX_OrderReceipts_TenantId_ReceiptNumber.
                     // Treat that as ALREADY-CLAIMED and collapse to an ACK: the winner owns the single
                     // row, the single register, and the single email; the loser must NOT throw (no poison
                     // loop) and its rolled-back transaction returns the allocated number to the pool.
@@ -174,6 +177,12 @@ public class GenerateReceiptHandler(
 
             logger.LogInformation("Receipt generated and email sent for order {OrderId}", message.OrderId);
         }
+        catch (CompanyArchivedException ex)
+        {
+            // Permanent: the company's books are frozen for archive, and a redelivery cannot thaw
+            // them. The dead-letter row is the operations record of the receipt that was never issued.
+            await archivedCompanyDeadLetter.RecordAsync(QueueNames.GenerateReceipt, messageText, ex, ct);
+        }
         catch (Exception ex)
         {
             // S6: log the correlation OrderId only — the raw body carries receipt/fiscal detail.
@@ -187,7 +196,7 @@ public class GenerateReceiptHandler(
     /// ADR-0004 D-F4.1(b) — true when the <see cref="DbUpdateException"/> was caused by a Postgres
     /// unique-constraint violation (SQLSTATE 23505): the existing unique index rejecting a concurrent
     /// loser's claim insert, on EITHER <c>IX_OrderReceipts_OrderId</c> OR
-    /// <c>IX_OrderReceipts_ReceiptNumber</c>. Either is "already-claimed" → ack, not poison. Detected
+    /// <c>IX_OrderReceipts_TenantId_ReceiptNumber</c>. Either is "already-claimed" → ack, not poison. Detected
     /// provider-agnostically by duck-typing the inner exception's public <c>SqlState</c> property (this
     /// library carries no hard Npgsql reference), walking the whole inner chain because EF may wrap the
     /// provider exception more than one level deep. Mirrors

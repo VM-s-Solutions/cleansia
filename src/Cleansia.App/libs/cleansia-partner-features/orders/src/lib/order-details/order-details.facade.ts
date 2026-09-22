@@ -2,22 +2,20 @@ import { Injectable, inject, signal } from '@angular/core';
 import { UnsubscribeControlDirective } from '@cleansia/directives';
 import {
   AddOrderNoteCommand,
-  CompleteOrderCommand,
   MarkCashCollectedCommand,
   OrderItem,
   OrderStatus,
   PartnerClient,
   ReportOrderIssueCommand,
   StartOrderCommand,
-  TakeOrderCommand,
 } from '@cleansia/partner-services';
 import * as OrderActions from '@cleansia/partner-stores';
-import { SnackbarService } from '@cleansia/services';
+import { extractApiErrorCode, SnackbarService } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
 import { Actions, ofType } from '@ngrx/effects';
 import { Store } from '@ngrx/store';
 import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
-import { catchError, finalize, of, take, takeUntil, tap } from 'rxjs';
+import { catchError, EMPTY, finalize, Observable, of, take, takeUntil, tap } from 'rxjs';
 import {
   ReportIssueDialogComponent,
   ReportIssueDialogResult,
@@ -30,7 +28,16 @@ import {
   MarkCashCollectedDialogComponent,
   MarkCashCollectedDialogResult,
 } from '../components/mark-cash-collected-dialog';
+import {
+  WorkContractDialogComponent,
+  WorkContractDialogData,
+  WorkContractDialogMode,
+  WorkContractDialogOutcome,
+  WorkContractDialogResult,
+} from '../components/work-contract-dialog';
 import { canMarkCashCollected, formatCurrency } from './order-details.helpers';
+
+const ACCEPTANCE_REQUIRED = 'contract.acceptance_required';
 
 @Injectable()
 export class OrderDetailsFacade extends UnsubscribeControlDirective {
@@ -174,12 +181,17 @@ export class OrderDetailsFacade extends UnsubscribeControlDirective {
           // Reload order details to reflect new status
           this.loadOrderDetails(orderId);
         }),
-        catchError(() => of(null)),
+        catchError((error) => {
+          this.openAcceptDialogWhenRequired(error);
+          return of(null);
+        }),
         finalize(() => this.loading.set(false))
       )
       .subscribe();
   }
 
+  // Every take passes through the contract dialog: the preview is read there, the tick is
+  // given there, and the take carries the text id the cleaner was shown.
   takeOrder(orderId: string): void {
     if (!orderId) {
       this.snackbarService.showErrorTranslated(
@@ -193,29 +205,77 @@ export class OrderDetailsFacade extends UnsubscribeControlDirective {
     }
 
     this.takeInFlight.set(true);
-    this.loading.set(true);
 
-    const command = new TakeOrderCommand();
-    command.orderId = orderId;
-
-    this.partnerClient.orderClient
-      .takeOrder(command)
-      .pipe(
-        takeUntil(this.destroyed$),
-        catchError(() => of(null)),
-        finalize(() => this.takeInFlight.set(false))
-      )
-      .subscribe((response) => {
-        if (response) {
+    this.openWorkContractDialog({ mode: WorkContractDialogMode.Take, orderId })
+      .subscribe((result) => {
+        this.takeInFlight.set(false);
+        if (!result) {
+          return;
+        }
+        if (result.outcome === WorkContractDialogOutcome.Accepted) {
           this.snackbarService.showSuccessTranslated(
             'pages.orders.order_taken_success'
           );
         }
         // Re-read on refusal as well as on success so the button reflects the
-        // server instead of staying armed for another click. The re-read owns
-        // `loading` from here, keeping the spinner unbroken.
+        // server instead of staying armed for another click.
         this.loadOrderDetails(orderId);
       });
+  }
+
+  // The seat an admin placed has no acceptance; the cleaner gives it here, and the
+  // re-read swaps the banner for the line.
+  openAcceptWorkContractDialog(): void {
+    const orderId = this.orderDetails()?.id;
+    if (!orderId) {
+      this.snackbarService.showErrorTranslated(
+        'global.messages.orders.invalid_request'
+      );
+      return;
+    }
+
+    this.openWorkContractDialog({ mode: WorkContractDialogMode.Accept, orderId })
+      .pipe(takeUntil(this.destroyed$))
+      .subscribe((result) => {
+        if (!result) {
+          return;
+        }
+        if (result.outcome === WorkContractDialogOutcome.Accepted) {
+          this.snackbarService.showSuccessTranslated(
+            'pages.order_details.work_contract.accepted_success'
+          );
+        }
+        this.loadOrderDetails(orderId);
+      });
+  }
+
+  openReadWorkContractDialog(acceptanceId: string): void {
+    this.openWorkContractDialog({ mode: WorkContractDialogMode.Read, acceptanceId })
+      .pipe(takeUntil(this.destroyed$))
+      .subscribe();
+  }
+
+  private openWorkContractDialog(
+    data: WorkContractDialogData
+  ): Observable<WorkContractDialogResult | undefined> {
+    const ref: DynamicDialogRef | null = this.dialogService.open(
+      WorkContractDialogComponent,
+      {
+        header: undefined,
+        data,
+        width: '720px',
+        modal: true,
+        dismissableMask: false,
+      }
+    );
+
+    return (ref?.onClose ?? EMPTY).pipe(takeUntil(this.destroyed$));
+  }
+
+  private openAcceptDialogWhenRequired(error: unknown): void {
+    if (extractApiErrorCode(error) === ACCEPTANCE_REQUIRED) {
+      this.openAcceptWorkContractDialog();
+    }
   }
 
   reset(): void {
@@ -226,9 +286,10 @@ export class OrderDetailsFacade extends UnsubscribeControlDirective {
 
   completeOrder(): void {
     const order = this.orderDetails();
+    const orderId = order?.id;
     const employeeId = this.currentEmployeeId();
 
-    if (!order || !employeeId) {
+    if (!order || !orderId || !employeeId) {
       this.snackbarService.showErrorTranslated(
         'global.messages.orders.invalid_request'
       );
@@ -255,13 +316,15 @@ export class OrderDetailsFacade extends UnsubscribeControlDirective {
       )
       .subscribe((action) => {
         if (action.type === OrderActions.completeOrderSuccess.type) {
-          this.loadOrderDetails(order.id!);
+          this.loadOrderDetails(orderId);
+          return;
         }
+        this.openAcceptDialogWhenRequired(action.error);
       });
 
     this.store.dispatch(
       OrderActions.completeOrder({
-        orderId: order.id!,
+        orderId,
         actualCompletionTimeMinutes: actualMinutes,
         completionNotes: '',
       })
@@ -286,8 +349,9 @@ export class OrderDetailsFacade extends UnsubscribeControlDirective {
 
   openReportIssueDialog(): void {
     const order = this.orderDetails();
+    const orderId = order?.id;
 
-    if (!order) {
+    if (!order || !orderId) {
       this.snackbarService.showErrorTranslated(
         'global.messages.orders.invalid_request'
       );
@@ -306,7 +370,7 @@ export class OrderDetailsFacade extends UnsubscribeControlDirective {
       ReportIssueDialogComponent,
       {
         header: undefined,
-        data: { orderId: order.id },
+        data: { orderId },
         width: '500px',
         modal: true,
         dismissableMask: true,
@@ -318,7 +382,7 @@ export class OrderDetailsFacade extends UnsubscribeControlDirective {
         this.loading.set(true);
 
         const command = new ReportOrderIssueCommand();
-        command.orderId = order.id;
+        command.orderId = orderId;
         command.description = result.description;
 
         this.partnerClient.orderClient
@@ -329,7 +393,7 @@ export class OrderDetailsFacade extends UnsubscribeControlDirective {
               this.snackbarService.showSuccessTranslated(
                 'global.messages.orders.issue_reported'
               );
-              this.loadOrderDetails(order.id!);
+              this.loadOrderDetails(orderId);
             }),
             catchError(() => of(null)),
             finalize(() => this.loading.set(false))
@@ -341,8 +405,9 @@ export class OrderDetailsFacade extends UnsubscribeControlDirective {
 
   openAddNoteDialog(): void {
     const order = this.orderDetails();
+    const orderId = order?.id;
 
-    if (!order) {
+    if (!order || !orderId) {
       this.snackbarService.showErrorTranslated(
         'global.messages.orders.invalid_request'
       );
@@ -361,7 +426,7 @@ export class OrderDetailsFacade extends UnsubscribeControlDirective {
       AddNoteDialogComponent,
       {
         header: undefined,
-        data: { orderId: order.id },
+        data: { orderId },
         width: '500px',
         modal: true,
         dismissableMask: true,
@@ -373,7 +438,7 @@ export class OrderDetailsFacade extends UnsubscribeControlDirective {
         this.loading.set(true);
 
         const command = new AddOrderNoteCommand();
-        command.orderId = order.id;
+        command.orderId = orderId;
         command.content = result.content;
 
         this.partnerClient.orderClient
@@ -384,7 +449,7 @@ export class OrderDetailsFacade extends UnsubscribeControlDirective {
               this.snackbarService.showSuccessTranslated(
                 'global.messages.orders.note_added'
               );
-              this.loadOrderDetails(order.id!);
+              this.loadOrderDetails(orderId);
             }),
             catchError(() => of(null)),
             finalize(() => this.loading.set(false))
@@ -400,9 +465,10 @@ export class OrderDetailsFacade extends UnsubscribeControlDirective {
    */
   openMarkCashCollectedDialog(): void {
     const order = this.orderDetails();
+    const orderId = order?.id;
     const employeeId = this.currentEmployeeId();
 
-    if (!order || !employeeId) {
+    if (!order || !orderId || !employeeId) {
       this.snackbarService.showErrorTranslated(
         'global.messages.orders.invalid_request'
       );
@@ -430,7 +496,7 @@ export class OrderDetailsFacade extends UnsubscribeControlDirective {
       {
         header: undefined,
         data: {
-          orderId: order.id,
+          orderId,
           amount: formatCurrency(order.totalPrice, order.currency?.symbol ?? ''),
         },
         width: '500px',
@@ -443,7 +509,7 @@ export class OrderDetailsFacade extends UnsubscribeControlDirective {
       .pipe(takeUntil(this.destroyed$))
       .subscribe((result: MarkCashCollectedDialogResult) => {
         if (result?.confirmed) {
-          this.markCashCollected(order.id!);
+          this.markCashCollected(orderId);
         }
       });
   }

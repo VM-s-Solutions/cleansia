@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Npgsql;
 
 namespace Cleansia.HostTests.Infrastructure;
@@ -26,13 +28,19 @@ public sealed class HostTestApplicationFactory<TEntryPoint> : WebApplicationFact
     where TEntryPoint : class
 {
     private readonly string _connectionString;
+    private readonly Action<IServiceCollection>? _configureTestServices;
 
-    public HostTestApplicationFactory(string connectionString)
+    /// <param name="configureTestServices">
+    /// Runs AFTER the host's own registrations, so a test can swap one outbound seam (a Stripe client
+    /// that records instead of calling out) while every other registration stays the production one.
+    /// </param>
+    public HostTestApplicationFactory(string connectionString, Action<IServiceCollection>? configureTestServices = null)
     {
-        // Cap this host's Npgsql pool. Many hosts boot against the one shared test container over the
-        // serial run; an unbounded pool per host (default max 100) let the aggregate cross the
-        // container's connection ceiling. A small cap per host is plenty for a test's request volume
-        // and keeps the total bounded regardless of how many hosts a class boots.
+        _configureTestServices = configureTestServices;
+        // Cap this host's Npgsql pool. A class keeps up to four hosts alive at once against the one shared
+        // test container, and the default 100 per host would let the aggregate cross its connection
+        // ceiling; a small cap per host is plenty for a test's request volume. A disposed host takes its
+        // pool with it — the data source is container-owned — so the count no longer grows with the run.
         _connectionString = new NpgsqlConnectionStringBuilder(connectionString)
         {
             MaxPoolSize = 20,
@@ -55,5 +63,10 @@ public sealed class HostTestApplicationFactory<TEntryPoint> : WebApplicationFact
                 ["ConnectionStrings:ConnectionString"] = _connectionString,
             });
         });
+
+        if (_configureTestServices is not null)
+        {
+            builder.ConfigureTestServices(_configureTestServices);
+        }
     }
 }

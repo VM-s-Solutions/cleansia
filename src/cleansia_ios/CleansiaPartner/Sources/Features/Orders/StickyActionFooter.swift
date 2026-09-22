@@ -32,13 +32,16 @@ struct StickyActionFooter: View {
                     if let preferredOffer {
                         ReservedForYouRow(respondByUtc: preferredOffer.respondByUtc)
                     }
-                    // On a job reserved for them by name the gesture is the same command with a
-                    // different word: confirming IS taking.
-                    SlideToConfirm(
-                        idleLabel: preferredOffer == nil ? L10n.Orders.slideToTake : L10n.Offers.slideToConfirm,
-                        busyLabel: preferredOffer == nil ? L10n.Orders.takingOrder : L10n.Offers.confirming,
-                        isBusy: isBusy(.take),
-                        onConfirm: { onConfirm(.take) }
+                    // Opens the contract sheet; the deliberate gesture sits under the text it
+                    // accepts, and a slide that opened a second slide would ask twice. On a job
+                    // reserved for them by name the sheet runs the same command with a different
+                    // word: confirming IS taking. Spins while the host reconciles the order after
+                    // the sheet's verdict, so it cannot reopen the sheet on a job already taken.
+                    CleansiaPrimaryButton(
+                        preferredOffer == nil ? L10n.Orders.takeOrder : L10n.Offers.confirm,
+                        loading: isBusy(.take),
+                        enabled: inFlightAction == nil,
+                        action: { onConfirm(.take) }
                     )
                     if preferredOffer != nil {
                         CleansiaTextLink(L10n.Offers.decline, action: onDeclineOffer)

@@ -2,10 +2,13 @@ using System.Security.Claims;
 using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Dashboard;
+using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.EmployeePayroll;
 using Cleansia.Core.Domain.Enums;
+using Cleansia.Core.Domain.Internationalization;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Repositories;
+using Cleansia.TestUtilities.MockDataFactories.EmployeePayroll;
 using Moq;
 
 namespace Cleansia.Tests.Features.Dashboard;
@@ -32,6 +35,7 @@ public class GetProductivityMetricsHandlerTests
     private readonly Mock<IEmployeeInvoiceRepository> _invoiceRepository = new();
     private readonly Mock<IOrderAccessService> _orderAccessService = new();
     private readonly Mock<IUserSessionProvider> _session = new();
+    private readonly Mock<ICurrencyResolutionService> _currencyResolution = new();
 
     public GetProductivityMetricsHandlerTests()
     {
@@ -46,6 +50,12 @@ public class GetProductivityMetricsHandlerTests
             .Setup(r => r.GetByEmployeeAndDateRangeAsync(
                 It.IsAny<string>(), It.IsAny<DateTime>(), It.IsAny<DateTime>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Array.Empty<EmployeeInvoice>());
+
+        var czk = Currency.Create("CZK", "Kč", "Czech koruna");
+        czk.Id = PayrollMockFactory.CurrencyId;
+        _currencyResolution
+            .Setup(s => s.ResolveCurrencyForEmployeeAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(czk);
     }
 
     private GetProductivityMetrics.Handler CreateHandler() =>
@@ -54,7 +64,8 @@ public class GetProductivityMetricsHandlerTests
             _orderRepository.Object,
             _invoiceRepository.Object,
             _orderAccessService.Object,
-            _session.Object)!;
+            _session.Object,
+            _currencyResolution.Object)!;
 
     private void SetCaller(UserProfile role) =>
         _session.Setup(s => s.GetTypedUserClaim(ClaimTypes.Role))
@@ -87,6 +98,35 @@ public class GetProductivityMetricsHandlerTests
         _invoiceRepository.Verify(r => r.GetByEmployeeAndDateRangeAsync(
             CallerEmployeeId, It.IsAny<DateTime>(), It.IsAny<DateTime>(), It.IsAny<CancellationToken>()),
             Times.Once);
+    }
+
+    /// <summary>
+    /// HighestEarningMonth is rendered with the dashboard's currency code, so it is chosen among the
+    /// invoices in that currency: a month that was "highest" only because it mixed units is not a
+    /// personal best (T-0702).
+    /// </summary>
+    [Fact]
+    public async Task Highest_Earning_Month_Is_Chosen_Within_The_Employees_Currency()
+    {
+        SetCaller(UserProfile.Employee);
+        _orderAccessService
+            .Setup(s => s.GetCallerEmployeeIdAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(CallerEmployeeId);
+        _invoiceRepository
+            .Setup(r => r.GetByEmployeeAndDateRangeAsync(
+                CallerEmployeeId, It.IsAny<DateTime>(), It.IsAny<DateTime>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(
+            [
+                PayrollMockFactory.Invoice(subTotal: 500m, generatedAt: new DateTime(2026, 1, 15, 0, 0, 0, DateTimeKind.Utc)),
+                PayrollMockFactory.Invoice(subTotal: 900m, currencyId: "currency-eur", generatedAt: new DateTime(2026, 2, 15, 0, 0, 0, DateTimeKind.Utc)),
+            ]);
+
+        var result = await CreateHandler().Handle(QueryFor(null), CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        Assert.NotNull(result.Value.PersonalBests.HighestEarningMonth);
+        Assert.Equal(500m, result.Value.PersonalBests.HighestEarningMonth!.Amount);
+        Assert.Equal(1, result.Value.PersonalBests.HighestEarningMonth.Month);
     }
 
     [Fact]

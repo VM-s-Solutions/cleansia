@@ -1,9 +1,11 @@
 package cz.cleansia.customer.core.catalog
 
+import cz.cleansia.customer.api.client.CurrencyApi as GenCurrencyApi
 import cz.cleansia.customer.api.client.ExtraApi as GenExtraApi
 import cz.cleansia.customer.api.client.PackageApi as GenPackageApi
 import cz.cleansia.customer.api.client.ServiceApi as GenServiceApi
 import cz.cleansia.customer.api.model.CategoryDto as GenCategoryDto
+import cz.cleansia.customer.api.model.CurrencyListItem as GenCurrencyListItem
 import cz.cleansia.customer.api.model.ExtraListItem as GenExtraListItem
 import cz.cleansia.customer.api.model.PackageListItem as GenPackageListItem
 import cz.cleansia.customer.api.model.PackageServiceSummary as GenPackageServiceSummary
@@ -24,6 +26,7 @@ class CatalogApi(
     private val serviceApi: GenServiceApi,
     private val packageApi: GenPackageApi,
     private val extraApi: GenExtraApi,
+    private val currencyApi: GenCurrencyApi,
 ) {
     /**
      * The body is refused, not defaulted to empty, and the three conditions a collection payload has
@@ -33,14 +36,14 @@ class CatalogApi(
      * `ConfirmStep.kt:103` renders the pre-quote subtotal from these rows. And the affordance read
      * off its emptiness — a booking flow with no service to pick — is one the customer takes as fact.
      */
-    suspend fun getServices(): Response<List<ServiceListItem>> {
-        val raw = serviceApi.serviceGetOverview()
+    suspend fun getServices(countryId: String? = null): Response<List<ServiceListItem>> {
+        val raw = serviceApi.serviceGetOverview(countryId = countryId)
         return raw.mapWire { items -> items.required("ServiceListItem[]").map { it.toAppDto() } }
     }
 
     /** Same three failures as [getServices]; `ConfirmStep.kt:104` sums these rows beside those. */
-    suspend fun getPackages(): Response<List<PackageListItem>> {
-        val raw = packageApi.packageGetOverview()
+    suspend fun getPackages(countryId: String? = null): Response<List<PackageListItem>> {
+        val raw = packageApi.packageGetOverview(countryId = countryId)
         return raw.mapWire { items -> items.required("PackageListItem[]").map { it.toAppDto() } }
     }
 
@@ -55,9 +58,18 @@ class CatalogApi(
      * So a broken extras row degrades to no card rather than refusing, and the endpoint's own
      * failure is already handled that way at `CatalogRepository.kt:87`. Never a wrong add-on price.
      */
-    suspend fun getExtras(): Response<List<ExtraListItem>> {
-        val raw = extraApi.extraGetOverview()
+    suspend fun getExtras(countryId: String? = null): Response<List<ExtraListItem>> {
+        val raw = extraApi.extraGetOverview(countryId = countryId)
         return raw.degrading page@{ items -> items.orEmpty().map { it.toAppDto() ?: return@page null } }
+    }
+
+    /**
+     * Refused like [getServices]: the default row here is the currency every catalogue figure is
+     * stated in, so a price list this cannot label is a price list the customer was never shown.
+     */
+    suspend fun getCurrencies(): Response<List<CurrencyListItem>> {
+        val raw = currencyApi.currencyGetOverview()
+        return raw.mapWire { items -> items.required("CurrencyListItem[]").map { it.toAppDto() } }
     }
 }
 
@@ -95,6 +107,7 @@ private fun GenServiceListItem.toAppDto(): ServiceListItem =
         perRoomPrice = perRoomPrice.required("perRoomPrice"),
         category = category.required("category").toAppDto(),
         translations = translations?.mapValues { it.value.toAppDto() },
+        currencyCode = currencyCode,
     )
 
 private fun GenPackageListItem.toAppDto(): PackageListItem =
@@ -105,6 +118,7 @@ private fun GenPackageListItem.toAppDto(): PackageListItem =
         price = price.required("price"),
         translations = translations?.mapValues { it.value.toAppDto() },
         includedServices = includedServices?.map { it.toAppDto() },
+        currencyCode = currencyCode,
     )
 
 private fun GenExtraListItem.toAppDto(): ExtraListItem? {
@@ -119,6 +133,7 @@ private fun GenExtraListItem.toAppDto(): ExtraListItem? {
         price = price ?: return null,
         displayOrder = displayOrder ?: return null,
         translations = translations?.mapValues { it.value.toAppDto() },
+        currencyCode = currencyCode,
     )
 }
 
@@ -145,3 +160,12 @@ private fun GenPackageServiceSummary.toAppDto(): PackageServiceSummary =
 
 private fun GenTranslation.toAppDto(): TranslationDto =
     TranslationDto(name = name.orEmpty(), description = description)
+
+private fun GenCurrencyListItem.toAppDto(): CurrencyListItem =
+    CurrencyListItem(
+        id = id.required("id"),
+        code = code.required("code"),
+        symbol = symbol.required("symbol"),
+        name = name.required("name"),
+        isDefault = isDefault.required("isDefault"),
+    )

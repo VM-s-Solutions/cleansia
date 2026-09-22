@@ -50,9 +50,6 @@ public class UpdateEmployeeValidatorTests
         _taxIdValidator
             .Setup(v => v.ValidateRegistrationNumberAsync(It.IsAny<string>(), It.IsAny<EmployeeEntityType>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(TaxIdValidationResult.Valid());
-        _taxIdValidator
-            .Setup(v => v.ValidateVatNumberAsync(It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(TaxIdValidationResult.Valid());
     }
 
     private static UpdateEmployee.Command Valid() => new(
@@ -70,7 +67,6 @@ public class UpdateEmployeeValidatorTests
         PassportId: "AB12345",
         EntityType: EmployeeEntityType.NaturalPerson,
         RegistrationNumber: "12345678",
-        VatNumber: null,
         LegalEntityName: null,
         EmergencyName: null,
         EmergencyPhone: null,
@@ -113,6 +109,63 @@ public class UpdateEmployeeValidatorTests
         ArrangePassingContext();
 
         var result = await CreateValidator().ValidateAsync(Valid() with { EmployeeId = employeeId });
+
+        Assert.True(result.IsValid);
+    }
+
+    /// <summary>
+    /// A cleaner contracts with the platform as a natural person (owner ruling 2026-09-20, on the
+    /// lawyer's advice). The enum member and the columns stay for the rows that already carry it and
+    /// for the administrator, who may still onboard a company by hand; the cleaner's own writes refuse
+    /// it with one reason, and nothing else — a second "legal entity name is required" would send the
+    /// cleaner to fill in a field for a choice that is not on offer.
+    /// </summary>
+    [Fact]
+    public async Task A_Change_To_A_Legal_Entity_Is_Refused_With_LegalEntityNotAccepted_And_Nothing_Else()
+    {
+        ArrangePassingContext();
+
+        var result = await CreateValidator().ValidateAsync(Valid() with
+        {
+            EntityType = EmployeeEntityType.LegalEntity,
+            LegalEntityName = null,
+        });
+
+        var error = Assert.Single(result.Errors);
+        Assert.Equal(nameof(UpdateEmployee.Command.EntityType), error.PropertyName);
+        Assert.Equal(BusinessErrorMessage.LegalEntityNotAccepted, error.ErrorMessage);
+    }
+
+    /// <summary>
+    /// The refusal is of a CHANGE to a company, not of the word: a row an operator already set to a
+    /// company is not changing anything by sending it back, and refusing it would leave that cleaner
+    /// unable to save at all — or, sending the only value on offer, silently demoted (the handler keeps
+    /// the stored pair either way).
+    /// </summary>
+    [Theory]
+    [InlineData(EmployeeEntityType.LegalEntity)]
+    [InlineData(EmployeeEntityType.NaturalPerson)]
+    public async Task A_Row_Already_A_Legal_Entity_Passes_Whatever_Type_The_Command_Carries(EmployeeEntityType sent)
+    {
+        ArrangePassingContext();
+        var employee = await _employeeRepository.Object.GetByUserEmailAsync(UserEmail);
+        employee!.UpdateBusinessIdentity(EmployeeEntityType.LegalEntity, "12345678", "Uklid s.r.o.");
+
+        var result = await CreateValidator().ValidateAsync(Valid() with { EntityType = sent, LegalEntityName = null });
+
+        Assert.True(result.IsValid);
+    }
+
+    [Fact]
+    public async Task A_Natural_Person_Passes_Whatever_LegalEntityName_Carries()
+    {
+        ArrangePassingContext();
+
+        var result = await CreateValidator().ValidateAsync(Valid() with
+        {
+            EntityType = EmployeeEntityType.NaturalPerson,
+            LegalEntityName = new string('x', 201),
+        });
 
         Assert.True(result.IsValid);
     }

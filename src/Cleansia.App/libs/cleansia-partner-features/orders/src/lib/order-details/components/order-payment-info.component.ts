@@ -10,7 +10,7 @@ import {
 import { TranslatePipe } from '@ngx-translate/core';
 
 @Component({
-  selector: 'order-payment-info',
+  selector: 'cleansia-partner-order-payment-info',
   standalone: true,
   imports: [
     CommonModule,

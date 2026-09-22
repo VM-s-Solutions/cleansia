@@ -131,7 +131,6 @@
 
     <string name="home_hero2_top">Jar je tu</string>
     <string name="home_hero2_title">Hĺbkové upratovanie + okná v jednom</string>
-    <string name="home_hero2_cta">Ušetríte 450 Kč</string>
 
     <string name="home_hero3_top">Pozvite kamaráta</string>
     <string name="home_hero3_title">Dajte mu bonus, získajte doplnok zdarma</string>
@@ -166,8 +165,6 @@
     <string name="home_milestone_title_v2">%1$s — Pokrok k ďalšej úrovni</string>
 
     <!-- Home — seasonal -->
-    <string name="home_seasonal_title">Sezóna jarného upratovania</string>
-    <string name="home_seasonal_subtitle">Kombinácia okien + čalúnenia — tento mesiac +450 Kč</string>
 
     <!-- Home — quick actions -->
     <string name="home_quick_book">Rezervovať</string>
@@ -180,13 +177,10 @@
     <string name="home_services_see_all">Zobraziť všetko</string>
 
     <string name="home_service_household_name">Domáce</string>
-    <string name="home_service_household_price">599 Kč</string>
 
     <string name="home_service_upholstery_name">Čalúnenie</string>
-    <string name="home_service_upholstery_price">799 Kč</string>
 
     <string name="home_service_windows_name">Okná</string>
-    <string name="home_service_windows_price">299 Kč</string>
 
     <!-- Home — promo carousel -->
     <string name="home_promo_title">Pre vás</string>
@@ -389,6 +383,21 @@
     <string name="order_photos_metadata_by">Vyhotovil(a) %1$s</string>
     <string name="common_close">Zavrieť</string>
 
+    <!-- Contract for work: the wizard sentence at the offer, the detail line per accepting crew member, the contract screen -->
+    <string name="booking_work_contract_notice"><![CDATA[Potvrdením objednávky uzatvárate s upratovačkou či upratovačom zmluvu o dielo za <a href="cleansia://work-contract">týchto podmienok</a>.]]></string>
+    <string name="work_contract_title">Zmluva o dielo</string>
+    <string name="work_contract_accepted_line">Zmluvu o dielo prijal(a) %1$s dňa %2$s, verzia %3$s</string>
+    <string name="work_contract_read">Čítať zmluvu</string>
+    <string name="work_contract_version">Verzia %1$s</string>
+    <string name="work_contract_facts_title">Zákazka, ako bola prijatá</string>
+    <string name="work_contract_order_number">Číslo objednávky</string>
+    <string name="work_contract_window">Dátum a čas</string>
+    <string name="work_contract_price">Cena</string>
+    <string name="work_contract_location">Miesto</string>
+    <string name="work_contract_accepted_on">Prijaté upratovačkou či upratovačom dňa %1$s, verzia %2$s</string>
+    <string name="work_contract_accepted_in_language">Prijaté v jazyku: %1$s</string>
+    <string name="work_contract_load_error">Zmluvu sa nepodarilo načítať. Skúste to prosím znova.</string>
+
     <!-- Profile tab -->
     <string name="profile_greeting">Ahoj!</string>
     <string name="profile_email_placeholder">vy@example.com</string>
@@ -519,7 +528,8 @@
     <string name="help_faq_q2">Čo ak nebudem doma, keď príde upratovačka?</string>
     <string name="help_faq_a2">Pri rezervácii pridajte pokyny ku vstupu (napr. kód pri dverách, miesto kľúča). Upratovačky čakajú až 15 minút; ak vás nemôžeme zastihnúť, rezervácia môže byť zrušená.</string>
     <string name="help_faq_q3">Sú upratovačky poistené a preverené?</string>
-    <string name="help_faq_a3">Áno. Všetky upratovačky Cleansia sú preverené a poistené až do výšky 1 000 000 Kč na rezerváciu.</string>
+    <string name="help_faq_a3">Áno. Všetky upratovačky Cleansia sú preverené a poistené až do výšky %1$s na rezerváciu.</string>
+    <string name="help_faq_a3_no_figure">Áno. Všetky upratovačky Cleansia sú preverené a poistené.</string>
     <string name="help_faq_q4">Ako zmením termín?</string>
     <string name="help_faq_a4">V záložke Objednávky otvorte nadchádzajúcu rezerváciu a klepnite na \"Zmeniť termín\". Zmena zdarma až 12 hodín pred upratovaním.</string>
     <string name="help_faq_q5">Čo je zahrnuté v štandardnom upratovaní?</string>
@@ -538,6 +548,8 @@
     <!-- Profile — language -->
     <string name="language_title">Jazyk</string>
     <string name="language_hint">Zmeny sa použijú okamžite.</string>
+    <string name="market_title">Trh</string>
+    <string name="market_hint">Ceny, Cleansia Plus aj naše pravidlá sa riadia trhom, ktorý si prezeráte. O tom, v čom sa objednávka účtuje, rozhoduje jej adresa.</string>
     <string name="language_system">Podľa systému</string>
     <string name="language_english">Angličtina</string>
     <string name="language_czech">Čeština</string>
@@ -547,6 +559,8 @@
 
     <string name="profile_row_appearance">Vzhľad</string>
     <string name="profile_row_language">Jazyk</string>
+    <string name="profile_row_market">Trh</string>
+    <string name="market_chip_a11y">Trh: %1$s, ceny v %2$s</string>
 
     <!-- Profile — security -->
     <string name="profile_security_title">Zabezpečenie</string>
@@ -597,7 +611,8 @@
     <!-- Booking — save address -->
     <string name="booking_save_address">Uložiť túto adresu</string>
     <string name="booking_set_as_default">Nastaviť ako predvolenú</string>
-    <string name="booking_trust_insured">Poistené až do 1M Kč</string>
+    <string name="booking_trust_insured">Poistené až do %1$s</string>
+    <string name="booking_trust_insured_no_figure">Poistené</string>
     <string name="booking_trust_vetted">Preverené upratovačky</string>
 
     <string name="booking_pick_service">Vyberte službu</string>
@@ -605,8 +620,8 @@
     <string name="booking_packages_featured">Odporúčané balíčky</string>
     <string name="booking_package_includes">OBSAHUJE</string>
     <string name="booking_package_includes_prefix">Obsahuje:</string>
-    <string name="booking_price_from">od %1$d Kč</string>
-    <string name="booking_price_per_room">+ %1$d Kč/izba</string>
+    <string name="booking_price_from">od %1$s</string>
+    <string name="booking_price_per_room">+ %1$s/izba</string>
     <string name="details_base_price">Základná cena</string>
     <string name="details_per_room">Za izbu</string>
     <string name="details_add_to_booking">Pridať do rezervácie</string>
@@ -809,13 +824,13 @@
     <!-- Cleansia Plus subscription -->
     <string name="membership_plus_title">Cleansia Plus</string>
     <string name="membership_plus_subtitle">Lepší spôsob, ako udržiavať domov čistý</string>
-    <string name="membership_plus_price_per_month">199 Kč / mesiac</string>
     <string name="membership_subscribe_cta">Vyskúšať Cleansia Plus</string>
     <string name="membership_disclosure">Môžete kedykoľvek zrušiť. Predplatné sa obnovuje automaticky, kým ho nezrušíte.</string>
+    <string name="plus_not_available_in_market">Plus zatiaľ nie je na vašom trhu k dispozícii</string>
 
     <!-- Plus subscribe page redesign -->
     <string name="membership_hero_headline">Začnite šetriť ešte dnes</string>
-    <string name="membership_hero_trial_price">0 Kč / prvých %1$d dní</string>
+    <string name="membership_hero_trial_price">%1$s / prvých %2$d dní</string>
     <string name="membership_hero_then_price">potom %1$s / mesiac</string>
     <string name="membership_hero_then_price_year">potom %1$s / rok</string>
     <string name="membership_social_proof_headline">Ako funguje členská zľava</string>
@@ -1066,6 +1081,7 @@
     <string name="order_action_report_issue">Nahlásiť problém</string>
     <string name="order_action_rebook">Objednať znova</string>
     <string name="order_rebook_unavailable_items">Niektoré položky z vašej predchádzajúcej objednávky už nie sú dostupné.</string>
+    <string name="booking_market_items_unavailable">Niektoré vybrané položky sa na tejto adrese neponúkajú a boli odobraté.</string>
 
     <!-- Dispute list -->
     <string name="dispute_list_title">Moje sťažnosti</string>
@@ -1137,13 +1153,9 @@
     <string name="loyalty_tier_status_locked">Zamknuté</string>
     <string name="loyalty_threshold_points">%1$d b.</string>
     <string name="loyalty_discount_basic">%1$d %% zľava na všetky objednávky</string>
-    <string name="loyalty_discount_min_order">%1$d %% zľava na objednávky od %2$d Kč</string>
+    <string name="loyalty_discount_min_order">%1$d %% zľava na objednávky od %2$s</string>
     <string name="loyalty_no_discount_yet">Zatiaľ bez zľavy</string>
     <string name="loyalty_perks_welcome_badge">Vitajte v odmenách Cleansia</string>
-    <string name="loyalty_perks_discount_5_above_1000" formatted="false">5% zľava na objednávky nad 1000 Kč</string>
-    <string name="loyalty_perks_discount_10" formatted="false">10% zľava na objednávky nad 1000 Kč</string>
-    <string name="loyalty_perks_discount_12" formatted="false">12% zľava na objednávky nad 1000 Kč</string>
-    <string name="loyalty_perks_discount_15" formatted="false">15% zľava na objednávky nad 1000 Kč</string>
     <string name="loyalty_perks_priority_support">Prednostná zákaznícka podpora</string>
     <string name="loyalty_perks_dedicated_pool">Vlastný tím upratovačiek</string>
     <string name="loyalty_activity_title">Nedávna aktivita</string>
@@ -1186,8 +1198,8 @@
     <string name="notification_channel_dispute_reply_name">Odpovede podpory</string>
     <string name="notification_channel_dispute_reply_desc">Upozorní vás, keď podpora odpovie na vašu reklamáciu.</string>
 
-    <string name="notification_order_confirmed_title">Rezervácia potvrdená ✅</string>
-    <string name="notification_order_confirmed_body">Vaša rezervácia #%1$s je potvrdená. Ťuknutím zobrazíte detaily.</string>
+    <string name="notification_order_payment_confirmed_title">Rezervácia potvrdená ✅</string>
+    <string name="notification_order_payment_confirmed_body">Vaša rezervácia #%1$s je potvrdená. Ťuknutím zobrazíte detaily.</string>
     <string name="notification_cleaner_assigned_title">Upratovač nájdený! 🎉</string>
     <string name="notification_cleaner_assigned_body">K vašej rezervácii #%1$s je priradený upratovač. Ťuknutím zobrazíte detaily.</string>
     <string name="notification_order_starting_soon_title">Upratovanie čoskoro začína</string>
@@ -1205,7 +1217,7 @@
     <string name="notification_order_refunded_title">Vrátenie peňazí</string>
     <string name="notification_order_refunded_body">Vaše vrátenie peňazí za rezerváciu #%1$s sa spracováva.</string>
     <string name="notification_order_no_cleaner_refunded_title">Žiadny upratovač nebol k dispozícii</string>
-    <string name="notification_order_no_cleaner_refunded_body">Objednávku #%1$s nikto nestihol prevziať, preto vám vraciame celú sumu a pridávame kredit 250 Kč na ďalšie upratovanie. Ospravedlňujeme sa.</string>
+    <string name="notification_order_no_cleaner_refunded_body">Objednávku #%1$s nikto nestihol prevziať, preto vám vraciame celú sumu a pridávame kredit %2$s na ďalšie upratovanie. Ospravedlňujeme sa.</string>
     <string name="notification_dispute_reply_title">Podpora odpovedala</string>
     <string name="notification_dispute_reply_body">Máte novú správu k vašej reklamácii. Ťuknutím si ju prečítate.</string>
     <string name="notification_recurring_scheduled_title">Potvrďte zajtrajšie upratovanie</string>
@@ -1253,8 +1265,22 @@
     <string name="error_auth_social_account_not_found">K tomuto prihláseniu sme nenašli žiadny účet. Najprv sa zaregistrujte.</string>
     <string name="error_auth_too_many_attempts">Príliš veľa pokusov s týmto kódom. Vyžiadajte si nový kód a skúste to znova.</string>
     <string name="error_company_not_found">Informácie o spoločnosti neboli nájdené</string>
+    <string name="error_consent_terms_not_accepted">Pre pokračovanie prosím prijmite obchodné podmienky a zásady ochrany súkromia.</string>
     <string name="error_country_not_existing_id">Krajina nebola nájdená</string>
     <string name="error_currency_invalid">Neplatná mena</string>
+    <string name="error_country_not_serviced">V tejto krajine zatiaľ nepôsobíme.</string>
+    <string name="error_tenant_not_found">Tento trh zatiaľ neprevádzkuje žiadna spoločnosť Cleansia.</string>
+    <string name="error_tenant_archived">Záznamy tejto spoločnosti sú zapečatené na archiváciu; nič na nich už nemožno meniť.</string>
+    <string name="error_order_country_operator_mismatch">Túto adresu obsluhuje iná spoločnosť Cleansia a z tohto účtu ju nie je možné objednať.</string>
+    <string name="error_promo_not_found">Kód nebol nájdený</string>
+    <string name="error_promo_inactive">Kód už nie je dostupný</string>
+    <string name="error_promo_expired">Tento kód vypršal</string>
+    <string name="error_promo_not_yet_valid">Kód ešte nie je aktívny</string>
+    <string name="error_promo_global_limit_reached">Kód už nie je dostupný</string>
+    <string name="error_promo_per_user_limit_reached">Tento kód ste už použili</string>
+    <string name="error_promo_below_minimum_order_amount">Objednávka nespĺňa minimálnu sumu pre tento kód</string>
+    <string name="error_promo_currency_mismatch">Kód neplatí pre túto menu</string>
+    <string name="error_promo_requires_account">Na použitie zľavového kódu sa prihláste.</string>
     <string name="error_device_invalid_platform">Nepodporovaná platforma zariadenia.</string>
     <string name="error_dispute_already_exists">Reklamácia pre túto objednávku už existuje</string>
     <string name="error_dispute_max_length_exceeded">Bola prekročená maximálna dĺžka</string>
@@ -1273,6 +1299,8 @@
     <string name="error_membership_not_found">Členstvo nebolo nájdené.</string>
     <string name="error_membership_plan_not_found">Plán členstva sa nenašiel.</string>
     <string name="error_membership_swap_same_plan">Tento plán už máte.</string>
+    <string name="error_membership_plan_not_priced_in_currency">Tento plán zatiaľ nie je na vašom trhu v predaji.</string>
+    <string name="error_membership_stripe_customer_currency_locked">Vaše platby za Plus sú už nastavené v inej mene. Pre zmenu kontaktujte podporu.</string>
     <string name="error_order_not_completed">Objednávku možno hodnotiť až po dokončení.</string>
     <string name="error_order_preferred_employee_not_eligible">Vybraná upratovačka nie je pre túto objednávku k dispozícii.</string>
     <string name="error_order_preferred_employee_membership_required">Výber obľúbeného upratovača je výhoda Cleansia Plus.</string>
@@ -1348,6 +1376,8 @@
     <string name="tracker_step_counter">Krok %1$d / %2$d</string>
     <string name="order_cancelled_reason_payment_not_completed">Platba nebola dokončená, a preto bola táto rezervácia uvoľnená.</string>
     <string name="order_cancelled_reason_recurring_not_confirmed">Táto opakovaná rezervácia nebola včas potvrdená, a preto bola zadarmo zrušená.</string>
+    <string name="order_cancelled_reason_company_wind_down">Upratovacia spoločnosť, ktorá pôsobila vo vašej oblasti, končí, a preto bola táto rezervácia zrušená; všetko, čo ste zaplatili, vám vraciame v plnej výške.</string>
+    <string name="order_cancelled_reason_no_cleaner_available">Pre túto rezerváciu nebol k dispozícii žiadny upratovač, a preto bola zrušená.</string>
     <string name="dispute_create_which_items">Čo konkrétne nedopadlo?</string>
     <string name="dispute_create_which_items_hint">Nepovinné. Označte služby, ktoré neboli urobené poriadne — pomôže nám to rýchlejšie napraviť. Ak bol problém celé upratovanie, nechajte prázdne.</string>
     <string name="dispute_create_item_in_package">v balíku %1$s</string>
@@ -1356,4 +1386,21 @@
     <string name="order_review_item_in_package">v balíku %1$s</string>
     <string name="order_review_rate_item_star">Dať službe %1$s %2$d hviezdičiek</string>
     <string name="error_dispute_line_not_on_order">Jedna z vybraných služieb na tej objednávke nie je. Otvorte formulár znova a skúste to ešte raz.</string>
+    <string name="order_market_unknown">Trh nie je k dispozícii</string>
+    <string name="order_market_label">%1$s · %2$s</string>
+    <string name="notification_recurring_paused_title">Plán opakovaných upratovaní pozastavený</string>
+    <string name="notification_recurring_paused_body">Váš plán opakovaných upratovaní je pozastavený, pretože Plus nie je aktívne. Obnovte Plus a plánovanie upratovaní bude pokračovať.</string>
+    <string name="guest_order_entry">Nájsť rezerváciu bez účtu</string>
+    <string name="guest_order_title">Rezervácia bez účtu</string>
+    <string name="guest_order_intro">Zadajte číslo rezervácie, e-mail a potvrdzovací kód z potvrdzovacieho e-mailu.</string>
+    <string name="guest_order_number">Číslo rezervácie</string>
+    <string name="guest_order_code">Potvrdzovací kód</string>
+    <string name="guest_order_lookup">Nájsť rezerváciu</string>
+    <string name="guest_order_required">Zadajte číslo rezervácie, e-mail a potvrdzovací kód.</string>
+    <string name="guest_order_empty">Po vyhľadaní sa tu zobrazia podrobnosti rezervácie.</string>
+    <string name="guest_order_loading">Hľadáme vašu rezerváciu…</string>
+    <string name="guest_order_cancel">Zrušiť rezerváciu</string>
+    <string name="guest_order_cannot_cancel">Túto rezerváciu nemožno zrušiť.</string>
+    <string name="guest_order_preview_required">Poplatok za zrušenie sa nepodarilo overiť. Pred potvrdením zrušenia to skúste znova.</string>
+    <string name="guest_order_fee_estimate">Storno poplatok: %1$s. Maximálne vrátenie platby kartou: %2$s. Vrátiť možno iba prijaté platby kartou; v potvrdení uvidíte skutočne vrátenú sumu.</string>
 </resources>

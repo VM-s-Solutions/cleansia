@@ -8,8 +8,9 @@ import {
   PLATFORM_ID,
   signal,
 } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
-import { CleansiaButtonComponent } from '@cleansia/components';
+import { FormsModule } from '@angular/forms';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { CleansiaButtonComponent, CleansiaTextareaComponent } from '@cleansia/components';
 import { OrderStatusLabelPipe } from '@cleansia/pipes';
 import { OrderStatus, PaymentStatus } from '@cleansia/customer-services';
 import {
@@ -17,15 +18,21 @@ import {
   RecurringPrefillParams,
 } from '@cleansia-customer/recurring-bookings';
 import { CleansiaCustomerRoute } from '@cleansia/services';
+import { formatMoney, localeFor } from '@cleansia/utils';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
+import { DialogModule } from 'primeng/dialog';
 import { SkeletonModule } from 'primeng/skeleton';
 import { OrderPreferredOfferComponent } from './components/order-preferred-offer.component';
 import { OrderDetailFacade } from './order-detail.facade';
+import { OrderMarketFacade } from '../order-market.facade';
 import {
   buildReviewLineOptions,
   ReviewLineOption,
 } from './order-review-lines.models';
 import { OrderPreferredOfferFacade } from './order-preferred-offer.facade';
+
+/** The cap `CancelOrder.Validator` puts on the reason; the box stops where the server would refuse. */
+const CANCELLATION_REASON_MAX_LENGTH = 500;
 
 /** One row on either status axis. -> the Detail artboard's "Kde to je" card. */
 interface TimelineStep {
@@ -66,17 +73,22 @@ interface EntryDetail {
   standalone: true,
   imports: [
     CommonModule,
+    FormsModule,
+    RouterLink,
     TranslatePipe,
     SkeletonModule,
+    DialogModule,
     CleansiaButtonComponent,
+    CleansiaTextareaComponent,
     OrderStatusLabelPipe,
     OrderPreferredOfferComponent,
   ],
-  providers: [OrderDetailFacade, OrderPreferredOfferFacade],
+  providers: [OrderDetailFacade, OrderPreferredOfferFacade, OrderMarketFacade],
   templateUrl: './order-detail.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class OrderDetailComponent implements OnInit {
+  protected readonly market = inject(OrderMarketFacade);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly translate = inject(TranslateService);
@@ -91,6 +103,27 @@ export class OrderDetailComponent implements OnInit {
   readonly membership = this.facade.membership;
   readonly reviewSubmitting = this.facade.reviewSubmitting;
   readonly downloading = this.facade.downloading;
+  readonly workContractAcceptances = this.facade.workContractAcceptances;
+
+  readonly canCancel = this.facade.canCancel;
+  readonly cancellationOpen = this.facade.cancellationOpen;
+  readonly previewLoading = this.facade.previewLoading;
+  readonly cancellationPreview = this.facade.cancellationPreview;
+  readonly cancellationPreviewFailed = this.facade.cancellationPreviewFailed;
+  readonly cancelling = this.facade.cancelling;
+  readonly canConfirmCancellation = this.facade.canConfirmCancellation;
+  readonly cancellationResult = this.facade.cancellationResult;
+  readonly cancellationReasonMaxLength = CANCELLATION_REASON_MAX_LENGTH;
+  readonly cancellationReason = signal('');
+
+  /**
+   * The figure the confirmation names is what the server actually refunded, never the preview's
+   * estimate: a cash booking or an uncollected card refunds nothing, and the estimate was a ceiling.
+   */
+  readonly actualRefundAmount = computed(() => {
+    const amount = this.cancellationResult()?.actualRefundAmount;
+    return amount !== undefined && Number.isFinite(amount) && amount > 0 ? amount : null;
+  });
 
   // Rating
   reviewRating = signal(0);
@@ -412,8 +445,25 @@ export class OrderDetailComponent implements OnInit {
     this.router.navigate([CleansiaCustomerRoute.ORDERS]);
   }
 
+  contractLink(acceptanceId: string): string[] {
+    return ['/', CleansiaCustomerRoute.ORDERS, this.order()?.id ?? '', 'contract', acceptanceId];
+  }
+
   downloadReceipt(): void {
     this.facade.downloadReceipt();
+  }
+
+  openCancellation(): void {
+    this.cancellationReason.set('');
+    this.facade.openCancellation();
+  }
+
+  closeCancellation(): void {
+    this.facade.closeCancellation();
+  }
+
+  confirmCancellation(): void {
+    this.facade.cancelOrder(this.cancellationReason());
   }
 
   reportIssue(): void {
@@ -452,26 +502,18 @@ export class OrderDetailComponent implements OnInit {
     // Only rows the customer actually scored. An unscored row is not a zero — the server would reject
     // a rating outside 1..5, and "not scored" is a real answer that simply carries no line.
     const scores = this.reviewLineScores();
-    const lines = this.reviewLineOptions()
-      .filter((option) => scores.has(option.key))
-      .map((option) => ({
-        serviceId: option.serviceId,
-        packageId: option.packageId,
-        rating: scores.get(option.key)!,
-      }));
+    const lines = this.reviewLineOptions().flatMap((option) => {
+      const rating = scores.get(option.key);
+      return rating === undefined
+        ? []
+        : [{ serviceId: option.serviceId, packageId: option.packageId, rating }];
+    });
 
     this.facade.submitReview(this.reviewRating(), this.reviewComment(), lines);
   }
 
   protected getLocale(): string {
-    const localeMap: Record<string, string> = {
-      cs: 'cs-CZ',
-      en: 'en-US',
-      sk: 'sk-SK',
-      uk: 'uk-UA',
-      ru: 'ru-RU',
-    };
-    return localeMap[this.translate.currentLang] || 'en-US';
+    return localeFor(this.translate.currentLang);
   }
 
   formatDate(date: Date | undefined): string {
@@ -487,12 +529,7 @@ export class OrderDetailComponent implements OnInit {
 
   formatPrice(price: number | undefined): string {
     if (price == null) return '';
-    const code = this.order()?.currency?.code || 'CZK';
-    return new Intl.NumberFormat(this.getLocale(), {
-      style: 'currency',
-      currency: code,
-      minimumFractionDigits: 0,
-    }).format(price);
+    return formatMoney(price, this.order()?.currency?.code, this.getLocale());
   }
 
   /**
@@ -509,7 +546,7 @@ export class OrderDetailComponent implements OnInit {
    * costs more trust than a missing sentence.
    *
    * Mirrors `Cleansia.Core.Domain.Orders.OrderCancellationReasons`, iOS `CancellationReasonCopy` and
-   * Android `cancellationReasonText`.
+   * Android `cancellationReasonRes`.
    */
   protected cancellationReasonKey(): string | null {
     const reason = this.order()?.systemCancellationReason;
@@ -518,6 +555,10 @@ export class OrderDetailComponent implements OnInit {
         return 'pages.order_detail.cancellation_reason.payment_not_completed';
       case 'order.cancelled.recurring_not_confirmed':
         return 'pages.order_detail.cancellation_reason.recurring_not_confirmed';
+      case 'order.cancelled.company_wind_down':
+        return 'pages.order_detail.cancellation_reason.company_wind_down';
+      case 'order.cancelled.no_cleaner_available':
+        return 'pages.order_detail.cancellation_reason.no_cleaner_available';
       default:
         return null;
     }

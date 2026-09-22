@@ -194,13 +194,16 @@ at startup. Without a binding the worker process aborts.
 services.AddSingleton<IHostAudienceProvider>(new HostAudienceProvider("cleansia.functions"));
 ```
 
-## 4. EF tenant filter — null/null case
+## 4. EF tenant filter — a consumer with no tenant reads nothing
 
-`null = null` in SQL is `NULL` (not `true`), which would hide every row in
-single-tenant deployments and queue/webhook contexts. The global query
-filter at `CleansiaDbContext.ApplyTenantQueryFilters` has an explicit
-`(currentTenantId == null && e.TenantId == null)` branch to make
-single-tenant mode work.
+The Functions host has no JWT, so `GetCurrentTenantId()` is `null` until a consumer sets the override
+from the envelope it is processing (`SendEmailHandler`, the push producers). Since ADR-0061 every
+stamped row carries a non-null `TenantId`, so the filter's `(currentTenantId == null && e.TenantId ==
+null)` branch matches nothing here: a consumer that forgets its override reads an **empty** set — a
+user with no device, an order with no rows — and a producer that writes under no tenant fails `23502`.
+Set the override from the envelope's tenant before the first tenanted read; the envelope carries it
+because the producer passed `tenantProvider.GetCurrentTenantId()` (or the row's own tenant) when it
+enqueued. → [Cross-cutting concerns — tenancy](/flows/cross-cutting#tenancy)
 
 ## 5. Emulator setup
 
@@ -244,14 +247,92 @@ resources, so the two must stay in step.
 
 Several keys exist as separate keys for reasons that are easy to undo by "simplifying" them.
 
+### The admin audience: a feed and an e-mail, never a push {#admin-audience}
+
+The in-app feed has **three** audiences, and the host controller sets which one a request serves —
+`NotificationFeedAudience { Customer, Partner, Admin }` — so a dual-role user's console can never read,
+count or mark-read a row of their partner-app feed. The customer and partner keysets are lists that
+trail their clients' templates (a key belongs in a keyset only once the audience's clients render it,
+or the badge counts a row the app drops unrendered). **The admin keyset is the catalogue by
+construction** — `NotificationFeedEventKeys.Admin = AdminNotificationEventCatalog.All`, the nine
+`admin.*` keys ([ADR-0065](/decisions/adr-0065)) — because the console is built to render every key of
+its catalogue, and a spec walks the C# file so a key added on the server fails the admin build without
+its five-locale sentence.
+
+Three things separate this audience from the other two:
+
+| | Customer / partner | Admin |
+|---|---|---|
+| Writer | `NotificationProducer.NotifyAsync` — the feed row **and** an unconditional push | `AdminNotifier.NotifyAsync` — the feed row and an outbox **e-mail**; no push, ever. `IsFeedEvent` does not know the admin keys: the push seam cannot write them |
+| Recipient | one user, resolved from the persisted row | every eligible administrator of the **named** company, one row each, read by argument past the tenant filter |
+| Category / mute | `GetCategoryFor(key)` → a mutable category, or non-mutable | every `admin.*` key maps to **null**: no category, no preference, nothing to mute — an administrator who does not want order e-mails is a company that sets the mailbox |
+
+**Why no push.** `NotificationProducer` enqueues a `SendPushNotificationMessage` on every call, an
+administrator may hold a partner-app device row, and a push would reach an app that cannot render an
+`admin.*` key — the admin console is a browser, and it polls `unread-count` once a minute while the tab
+is visible instead. **The e-mail rides the same `send-email` queue** as every other message, as a second
+message shape the consumer tells apart by a `messageType` discriminator (`admin-notification`), the way
+the guest cancellation e-mail already did: one `EmailType.AdminNotification`, one embedded template
+(`admin-notification.html`), and per-event subject and body copy in five locales keyed
+`{eventKey}.Subject` / `.Body` (the crew-lost event adds `.BodyUnderWay` and two `.Cause.*` phrases),
+layered under the admin e-mail-template page's rows like the wind-down notices. Its message key is
+`admin-email:{eventKey}:{subject}:{hash(address)}` — the address hashed so no recipient appears in a
+key or a log line — which is why an event's **subject must be unique per logical event across
+requests**: the outbox index fails the second commit rather than collapsing it. **Args are never PII**,
+the same rule as the two client feeds: ids, numbers, enum names, dates and money, and the catalogue
+entry declares the exact set a site may pass, so a site cannot smuggle a name in. Rows fall under
+`retention.notifications.days` like every other feed row.
+
+**The customer keyset is unchanged by the walk-back**, and one consequence is named rather than hidden:
+when a `Confirmed` order loses its last cleaner and goes back to `New` ([ADR-0067](/decisions/adr-0067)),
+no customer push, e-mail or feed row is written — but the next take is a `New → Confirmed` transition
+again, so the customer receives a **second** "your order is confirmed" e-mail on top of the assignment
+push. A new cleaner is a new confirmation; the e-mail is true when it is sent (default O-D2-1).
+→ [Business rules — administrators are told](/product/business-rules#admin-notifications),
+[Admin notifier](/domain/roles/admin-notifier)
+
 ### Why the cleaner-assigned event is not the confirmed event {#assigned-vs-confirmed}
 
-`OrderConfirmed` is [overloaded](/domain/order-lifecycle#confirmed-is-deliberately-overloaded) — it
-means *money settled* **or** *cleaner assigned*. Two of its producers, the Stripe webhook and the
-recurring cash confirmation, have no cleaner at all.
+`order.payment_confirmed` records the payment-side confirmation. The Stripe webhook settles a card
+payment; recurring cash confirmation accepts the occurrence before onsite collection. Neither means
+a cleaner accepted the job, and since [ADR-0057](/decisions/adr-0057) neither writes a fulfilment status.
+The key therefore says “confirmed”, rather than claiming cash has already been received.
+→ [the order lifecycle](/domain/order-lifecycle)
+
+The previous `order.confirmed` key remains a compatibility entry for persisted feed rows, pending
+queue envelopes and notifications already held by devices. Both keys retain identical copy,
+arguments, preference category and booking tap destination. New events use the new key; existing
+rows and idempotency keys are not rewritten or re-enqueued.
+
+Ship mobile clients carrying both keys before enabling new backend emission. An older binary cannot
+resolve the new Android template or APNs localization key; server-side compatibility entries do not
+update a device's bundled strings. This follows [ADR-0025's version-skew constraint](/decisions/adr-0025).
 
 Widening that key to carry "a cleaner is committed to your booking" would repeat the overloading one
 layer up, in the thing that writes to a customer's lock screen.
+
+### A recurring schedule pauses once per paid lapse {#recurring-paused}
+
+When materialization skips a recurring template because paid Plus is inactive, `recurring.paused`
+tells the account owner to renew. The template stays saved and existing occurrences stay booked.
+The notification belongs to the account's operator, even when a template serves another market.
+It uses the existing recurring-notification preference; a muted push still leaves the feed item.
+
+The membership stores the notice timestamp and a permanent sequence. The sequence participates in
+the dispatch identity, so feed retention and a later recovery cannot make an earlier delivery eligible
+again. The notice, outbox intent and membership latch commit together; PostgreSQL concurrency checking
+allows only one competing template or sweep to acquire that latch.
+
+An authoritative Stripe `active` observation for a live, non-trial period establishes paid-period
+proof. The account's latest proven-paid membership owns its lapse; an unsuccessful new subscription
+cannot replace it with a fresh latch. Paid and unpaid observations retain their provider chronology,
+so a delayed genuine recovery can rearm the next lapse while an older replay cannot. Equal or missing
+event chronology does not rearm. Existing entitlement reconciliation is unchanged.
+
+No payment history is inferred for an unmarked membership: it continues to follow existing scheduling
+rules but receives this notice only after an authoritative paid observation establishes proof. There
+is no historical-data backfill. Both mobile apps carry the five-locale display copy; the customer's
+feed and tap route lead to membership renewal.
 
 ### Why the preferred-offer-closed message is one sentence {#one-sentence}
 
@@ -284,7 +365,8 @@ missed message is theirs. A cleaner not turning up is somebody else's morning.
 | Your job starts in about two hours | `order.reminder_soon` | The last point at which a cleaner can still travel, or tell us they cannot |
 | Your job starts soon and you have not set off | `order.reminder_not_started` | The platform's last chance to prevent a no-show. Suppressed for a cleaner already out on **another** job |
 
-The three reminders are non-mutable **on the owner's ruling**, on the same reasoning as the two above and
+The three reminders are non-mutable **on the owner's ruling** (2026-09-15, Q-PUSH-01 — the evening
+digest included; it was the one the ADR had escalated), on the same reasoning as the two above and
 recorded in ADR-0054: they are not marketing, they carry no offer, and each one is about work the cleaner
 already agreed to do.
 

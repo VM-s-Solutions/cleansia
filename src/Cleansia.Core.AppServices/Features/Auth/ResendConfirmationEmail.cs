@@ -25,7 +25,7 @@ public class ResendConfirmationEmail
                 .NotEmpty()
                 .WithMessage(BusinessErrorMessage.Required)
                 .WithErrorCode(nameof(Command.Email))
-                .MustAsync(userRepository.ExistsWithEmailAsync)
+                .MustAsync(userRepository.ExistsWithEmailIgnoringTenantAsync)
                 .WithMessage(BusinessErrorMessage.NotExistingUserWithEmail)
                 .WithErrorCode(nameof(Command.Email))
                 .MustAsync(HasUnconfirmedEmailAsync)
@@ -38,7 +38,7 @@ public class ResendConfirmationEmail
 
         private async Task<bool> HasUnconfirmedEmailAsync(string email, CancellationToken cancellationToken)
         {
-            var user = await _userRepository.GetByEmailAsync(email, cancellationToken);
+            var user = await _userRepository.GetByEmailIgnoringTenantAsync(email, cancellationToken);
             return user?.IsEmailConfirmed == false;
         }
     }
@@ -51,7 +51,7 @@ public class ResendConfirmationEmail
     {
         public async Task<BusinessResult> Handle(Command command, CancellationToken cancellationToken)
         {
-            var user = await userRepository.GetByEmailAsync(command.Email, cancellationToken);
+            var user = await userRepository.GetByEmailIgnoringTenantAsync(command.Email, cancellationToken);
             var userName = $"{user!.FirstName} {user.LastName}";
             // Email the RAW token returned by the generator; the row keeps the hash.
             var rawConfirmationToken = user.UpdateConfirmationCode();

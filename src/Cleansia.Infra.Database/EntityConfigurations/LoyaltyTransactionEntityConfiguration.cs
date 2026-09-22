@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Cleansia.Infra.Database.EntityConfigurations;
 
-public class LoyaltyTransactionEntityConfiguration : AuditableEntityConfiguration<LoyaltyTransaction, string>
+public class LoyaltyTransactionEntityConfiguration : TenantAuditableEntityConfiguration<LoyaltyTransaction, string>
 {
     public override void Configure(EntityTypeBuilder<LoyaltyTransaction> builder)
     {
@@ -63,10 +63,9 @@ public class LoyaltyTransactionEntityConfiguration : AuditableEntityConfiguratio
         // CLIENT token, so two tenants can legitimately produce the same value — a bare GLOBAL unique
         // index would collapse tenant B's grant onto tenant A's row. Filtered on NOT NULL so the
         // order-driven and referral rows (NULL key) are unaffected. → /architecture/security-rules
-        // NULLS NOT DISTINCT is what makes this the arbiter its own name claims. Single-tenant mode
-        // is TenantId = null, so a nulls-distinct index never fires and
-        // FlushCollapsingUniqueViolationAsync — which exists solely to catch this index's 23505 —
-        // never runs. The live callers are server-generated deterministic keys, not a UI:
+        // NULLS NOT DISTINCT kept on a NOT NULL tenant term -> /decisions/adr-0061#d9-nulls-not-distinct-on-every-sole-arbiter-tenant-index-and-the-two-indexes-that-gain-a-tenant-term
+        // FlushCollapsingUniqueViolationAsync exists solely to catch this index's 23505. The live
+        // callers are server-generated deterministic keys, not a UI:
         // ForceQualifyReferral, ReverseReferral, and the partial-refund clawback keyed on
         // RefundService's refundKey, which is driven from Stripe webhooks and therefore genuinely
         // retried and genuinely concurrent.

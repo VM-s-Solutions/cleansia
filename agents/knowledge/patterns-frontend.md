@@ -245,8 +245,11 @@ For a line only the owner can supply or retire (a publication date, a "pending r
 it its own key with `""` as the shipped value and render it under `@if ('page.key' | translate; as
 value)`. ngx-translate only falls back for an **undefined** value, so `""` passes through as falsy and
 the block disappears — the owner turns the line on or off by editing five JSON values, with no code
-change and no boolean flag in the component. Used by `legal-pages` for `last_updated_date` and
-`review_notice`.
+change and no boolean flag in the component. **No user today**: `legal-pages` used it for
+`last_updated_date` and `review_notice` until the legal texts became stored documents rendered from
+`GET api/Legal/GetDocument` (ADR-0063, T-0742) — the effective date is now data and the draft notice
+lives in the seed markdown. The idiom stays here for the next owner-supplied line; it is not the way to
+version a legal text.
 
 ### Retiring a claim the product does not deliver — pin the absence, don't just delete it
 
@@ -290,6 +293,16 @@ Keep the five-locale key-set parity assertion from the absence version; add a no
 each new key, so "the perk is advertised again" is pinned rather than assumed. Mutation-prove the
 inverted spec with one mutation per property — the copy going false, the number going hard, the gate
 going away — not just by deleting a key.
+
+**The money-figure form of property 2 is now the rule for every customer-facing amount** (ADR-0060
+D0, built in T-0715): a locale string carries `{{amount}}` / `{{currency}}` and nothing else that is
+money; the component formats the market's figure with the shared `formatMoney(value, currencyCode,
+locale)` and renders a second key when the market has no figure. The reference is
+`home/.../rules/rules.component.ts` — `creditAmount` is a `computed` over `selectMarketNoShowCredit`
+and `selectMarketCurrencyCode`, null when the credit is null, zero or no market resolved, and the
+template branches to `we_cancel_value_refund_only` on null. The repo-wide pin is
+`agents/tools/check-booking-policy-parity.mjs` (`pinPlaceholderCopy`: placeholder present, no integer
+and no currency word after the placeholder slot is stripped, five locales × three clients).
 
 ### Error-contract → i18n: the one canonical path is the interceptor `api.*` namespace
 

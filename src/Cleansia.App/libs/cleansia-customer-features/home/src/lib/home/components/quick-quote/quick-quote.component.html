@@ -31,21 +31,28 @@
     </div>
   </div>
 
+  <!--
+    The market's own presets, labelled by the server for the language. Not
+    drawn without a market: there is no set to choose from, and the calculator
+    prices a default home instead.
+  -->
+  @if (facade.sizes().length > 0) {
   <div class="cl-quote__field">
     <span class="cl-quote__label">{{ 'pages.home.quote.size_label' | translate }}</span>
     <div class="cl-quote__chips">
-      @for (size of facade.sizes; track size.code) {
+      @for (size of facade.sizes(); track size.code) {
       <button
         type="button"
         class="cl-chip cl-quote__chip"
         [class.cl-chip--on]="facade.selectedSize().code === size.code"
         (click)="onSize(size)"
       >
-        {{ size.labelKey | translate }}
+        {{ size.label }}
       </button>
       }
     </div>
   </div>
+  }
 
   <div class="cl-quote__field">
     <span class="cl-quote__label">{{ 'pages.home.quote.date_label' | translate }}</span>
@@ -88,11 +95,25 @@
     -->
     <div class="cl-quote__price" [class.cl-quote__price--busy]="facade.isLoading()" aria-live="polite">
       <span class="cl-quote__label">{{ facade.priceLabelKey() | translate }}</span>
-      @if (facade.displayPrice() !== null) {
-      <strong class="cl-num cl-quote__amount">{{ facade.displayPrice() }} {{ facade.currencyCode() }}</strong>
-      } @else {
-      <span class="cl-quote__amount cl-quote__amount--empty">&mdash;</span>
-      }
+      <!--
+        The market chip is the amount's unit (ADR-0058 D6): a label with one
+        market, the selector with two or more, absent without a market — in
+        which case the quote's own code prints beside the number as before.
+        Inside the live region so the announcement keeps its unit.
+      -->
+      <span class="cl-quote__amount-row">
+        @if (facade.amountLabel(); as amount) {
+        <strong class="cl-num cl-quote__amount">{{ amount }}</strong>
+        } @else {
+        <span class="cl-quote__amount cl-quote__amount--empty">&mdash;</span>
+        }
+        <cleansia-market-switcher
+          variant="chip"
+          [markets]="facade.markets()"
+          [selected]="facade.selectedMarketCode()"
+          (marketChange)="facade.chooseMarket($event)"
+        />
+      </span>
       <!--
         "2 uklízeči · odhad 4 hodiny" — the artboard's subline. Both numbers come
         from the quote endpoint, computed by the same OrderDuration the order

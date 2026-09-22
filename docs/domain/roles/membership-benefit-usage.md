@@ -45,8 +45,9 @@ row or `null`), stamp the resulting order onto it, release it, and count the liv
   **[WAS WRONG]** *This card said `OrderFactory`.* **AM-9 moved consumption out of the factory** so the
   factory gains zero collaborators, and a thin consumer seam was interposed; `OrderFactory` never
   reserves. `roles/express-waiver-resolver.md` records the same amendment.
-- **Release callers: `CancelOrder.cs:145` and `AdminCancelOrder.cs:146`** (both via
-  `ExpressWaiverConsumer.ReleaseForOrderAsync`), plus the orphan reclaim
+- **Release callers: `CustomerOrderCancellation.cs:65` and `PlatformOrderCancellation.cs:63`**
+  (signed-in and guest cancellation share the former; admin cancellation and the wind-down sweep
+  share the latter; both via `ExpressWaiverConsumer.ReleaseForOrderAsync`), plus the orphan reclaim
   **`ReleaseOrphanedBenefitReservations.cs:46`**.
   **[WAS WRONG]** *This card named `CleanupStalePendingOrders` as a release caller.* It is not one and
   **structurally cannot be**: it queries `Orders`, and an orphan is by definition a row whose order
@@ -80,10 +81,11 @@ row or `null`), stamp the resulting order onto it, release it, and count the liv
    tenants is a billing defect.
 2. The unique index is **filtered on `IsActive` and `NULLS NOT DISTINCT`**
    (`…EntityConfiguration.cs:62-66`). Without the filter a released row keeps its ordinal and the
-   release frees nothing; without `.AreNullsDistinct(false)` the index never fires in single-tenant mode
-   (`TenantId = null`, the platform's default deployment) and quota 2 silently becomes quota 3+ under
-   concurrency. It is the **sole arbiter** of the race, which is what makes it mandatory rather than
-   stylistic (`consistency.md` §*"Tenant-scoped unique indexes"*, first bullet).
+   release frees nothing. The option was what made the index fire at all while every row carried
+   `TenantId = null`; since ADR-0061 D8 the tenant term is NOT NULL and the option is kept because the
+   model guard reads it and a roster that lies is worse than a redundant annotation. It is the **sole
+   arbiter** of the race, which is what makes it mandatory rather than stylistic (`consistency.md`
+   §*"Tenant-scoped unique indexes"*, first bullet).
 3. The ordinal is the **smallest free** one, derived **inside** the reservation statement over **live**
    rows — `generate_series(0, @max-1)` + `NOT EXISTS` + `ORDER BY g LIMIT 1`
    (`MembershipBenefitUsageRepository.cs:38-63`, rationale `:17-37`) — never from a pre-read count in
@@ -94,12 +96,14 @@ row or `null`), stamp the resulting order onto it, release it, and count the liv
    doc-comment above; `MembershipBenefitUsage.cs:46-52` states it on the column.)*
 4. A full quota returns **`null`** — a result, never an exception that surfaces at the order's commit
    (`MembershipBenefitUsageRepository.cs:109-112`, and the short-circuit at `:74-77`).
-5. The nullable `TenantId` parameter is sent as an **explicit `NpgsqlDbType.Text`** —
+5. The `TenantId` parameter is sent as an **explicit `NpgsqlDbType.Text`** —
    **`MembershipBenefitUsageRepository.cs:95-101`**, whose own comment names the failure: `@tenantId`
    is used bare in the `INSERT … SELECT` list *and* in `IS NOT DISTINCT FROM`, so untyped with a NULL
-   value PostgreSQL deduces two types for one parameter and refuses the whole statement with `42P08`
-   — **in single-tenant mode only**, which is why the promo path shipped that bug past a tenanted test
-   run. `FiscalCounterRepository.cs:49-54` pins the same parameter pre-emptively and says why.
+   value PostgreSQL deduces two types for one parameter and refuses the whole statement with `42P08`.
+   That fired **only while the tenant was null**, which is why the promo path shipped the bug past a
+   tenanted test run; the tenant is never null on a stamped row since ADR-0061, and the explicit type
+   stays because raw SQL is typed by the caller and the CLR property is still `string?`.
+   `FiscalCounterRepository.cs:49-54` pins the same parameter pre-emptively and says why.
    ⚠️ **[CITATION WAS DEAD]** *This invariant cited "`PromoCodeRedemptionRepository.cs:85-93`".* That file
    is **65 lines** and has held no raw SQL since `da88b695`. The invariant is true; only its evidence
    had rotted — the worst combination, because a reader who checks a dead citation concludes the

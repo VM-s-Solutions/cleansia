@@ -26,21 +26,23 @@ namespace Cleansia.HostTests.Tests;
 /// </summary>
 public sealed class Ac14CrossTenantAndUserOrderWriteMobileTests(HostTestPostgresFixture db) : AuthzHostTestBase(db)
 {
-    private const string TenantA = "tenant-A";
-    private const string TenantB = "tenant-B";
+    private const string TenantA = HostTestTenants.A;
+    private const string TenantB = HostTestTenants.B;
 
     [Fact]
     public async Task Cross_tenant_take_order_on_mobile_host_is_rejected_and_leaves_the_order_unassigned()
     {
-        string employeeId = "", orderId = "";
+        string employeeId = "", orderId = "", textId = "";
         const string empEmail = "m-xt-cleaner@hosttests.local";
         await SeedAsync(async ctx =>
         {
             await DomainSeed.EnsureReferenceDataAsync(ctx);
 
+            var (workContract, textEnId) = await DomainSeed.WorkContractInForceAsync(ctx);
+            textId = textEnId;
             var cust = DomainSeed.Customer("m-xt-cust@hosttests.local", tenantId: TenantA);
             ctx.Users.Add(cust);
-            var order = DomainSeed.NewOrder(cust.Id, "m-xt-cust@hosttests.local", tenantId: TenantA);
+            var order = DomainSeed.NewOrder(cust.Id, "m-xt-cust@hosttests.local", tenantId: TenantA, workContract: workContract);
             ctx.Orders.Add(order);
 
             var empUser = DomainSeed.EmployeeUser(empEmail, tenantId: TenantB);
@@ -57,7 +59,7 @@ public sealed class Ac14CrossTenantAndUserOrderWriteMobileTests(HostTestPostgres
             UserProfile.Employee, employeeId: employeeId, tenantId: TenantB);
 
         var resp = await MobileClient(token).PostAsync("/api/Order/TakeOrder",
-            JsonContent.Create(new { OrderId = orderId }));
+            JsonContent.Create(new { OrderId = orderId, AcceptedWorkContractTextId = textId }));
 
         await HttpAssert.RejectedAsync(resp, BusinessErrorMessage.OrderNotFound);
 
@@ -129,15 +131,17 @@ public sealed class Ac14CrossTenantAndUserOrderWriteMobileTests(HostTestPostgres
     [Fact]
     public async Task In_tenant_approved_cleaner_takes_an_order_on_mobile_host_and_the_assignment_is_recorded()
     {
-        string employeeId = "", orderId = "";
+        string employeeId = "", orderId = "", textId = "";
         const string empEmail = "m-legit-cleaner@hosttests.local";
         await SeedAsync(async ctx =>
         {
             await DomainSeed.EnsureReferenceDataAsync(ctx);
 
+            var (workContract, textEnId) = await DomainSeed.WorkContractInForceAsync(ctx);
+            textId = textEnId;
             var cust = DomainSeed.Customer("m-legit-cust@hosttests.local", tenantId: TenantA);
             ctx.Users.Add(cust);
-            var order = DomainSeed.NewOrder(cust.Id, "m-legit-cust@hosttests.local", tenantId: TenantA);
+            var order = DomainSeed.NewOrder(cust.Id, "m-legit-cust@hosttests.local", tenantId: TenantA, workContract: workContract);
             ctx.Orders.Add(order);
 
             var empUser = DomainSeed.EmployeeUser(empEmail, tenantId: TenantA);
@@ -154,7 +158,7 @@ public sealed class Ac14CrossTenantAndUserOrderWriteMobileTests(HostTestPostgres
             UserProfile.Employee, employeeId: employeeId, tenantId: TenantA);
 
         var resp = await MobileClient(token).PostAsync("/api/Order/TakeOrder",
-            JsonContent.Create(new { OrderId = orderId }));
+            JsonContent.Create(new { OrderId = orderId, AcceptedWorkContractTextId = textId }));
 
         HttpAssert.IsOk(resp);
 

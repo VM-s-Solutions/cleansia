@@ -304,8 +304,14 @@ fun PartnerNavHost(navController: NavHostController) {
         composable<NavRoute.InvoiceDetail> {
             InvoiceDetailScreen(
                 onNavigateBack = { navController.popBackStack() },
-                onOpenPeriodPay = { payPeriodId, currencyCode ->
-                    navController.navigate(NavRoute.PeriodPay(payPeriodId, currencyCode))
+                onOpenPeriodPay = { payPeriodId, currencyId, currencyCode ->
+                    navController.navigate(
+                        NavRoute.PeriodPay(
+                            payPeriodId = payPeriodId,
+                            currencyCode = currencyCode,
+                            currencyId = currencyId,
+                        ),
+                    )
                 },
             )
         }

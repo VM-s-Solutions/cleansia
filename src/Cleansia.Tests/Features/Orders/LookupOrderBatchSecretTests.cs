@@ -35,7 +35,7 @@ public class LookupOrderBatchSecretTests
     private static Order BuildOrder(string id, string customerEmail)
     {
         var address = Address.Create("Street 1", "Praha", "14000", "country-1");
-        var currency = Cleansia.Core.Domain.Internationalization.Currency.Create("CZK", "Kč", "Czech Koruna", 1m);
+        var currency = Cleansia.Core.Domain.Internationalization.Currency.Create("CZK", "Kč", "Czech Koruna");
 
         var order = Order.Create(
             customerName: "Alice",
@@ -44,7 +44,6 @@ public class LookupOrderBatchSecretTests
             customerAddress: address,
             rooms: 2,
             bathrooms: 1,
-            extras: new Dictionary<string, bool>(),
             cleaningDateTime: new DateTime(2026, 6, 10, 9, 0, 0, DateTimeKind.Utc),
             paymentType: PaymentType.Cash,
             totalPrice: 1000m,
@@ -60,7 +59,7 @@ public class LookupOrderBatchSecretTests
     }
 
     private void SeedOrders(params Order[] orders) =>
-        _orderRepository.Setup(r => r.GetQueryable()).Returns(orders.AsQueryable().BuildMock());
+        _orderRepository.Setup(r => r.GetQueryableIgnoringTenant()).Returns(orders.AsQueryable().BuildMock());
 
     private LookupOrderBatch.Handler CreateHandler() => new(_orderRepository.Object);
 
@@ -80,7 +79,7 @@ public class LookupOrderBatchSecretTests
 
         Assert.True(result.IsSuccess);
         Assert.Empty(result.Value!.Orders);
-        _orderRepository.Verify(r => r.GetQueryable(), Times.Never);
+        _orderRepository.Verify(r => r.GetQueryableIgnoringTenant(), Times.Never);
     }
 
     [Fact]

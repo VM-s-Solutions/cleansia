@@ -1,6 +1,7 @@
 using System.Reflection;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Services.Interfaces;
+using Cleansia.Core.AppServices.Tenancy;
 using Cleansia.Core.AppServices.Shared.DTOs.ResponseModels;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Repositories;
@@ -41,6 +42,8 @@ public class RefreshTokenProfileGateHandlerTests
             _employeeRepository.Object,
             _requestMetadata.Object,
             _jwtSettings.Object,
+            Mock.Of<ITenantProvider>(),
+            Mock.Of<ICompanySignInGate>(),
             TimeProvider.System)!;
 
         var handleMethod = handlerType.GetMethod("Handle")!;
@@ -67,14 +70,14 @@ public class RefreshTokenProfileGateHandlerTests
     }
 
     [Fact]
-    public async Task RequiredProfile_Mismatch_Rejects_With_InvalidRefreshToken()
+    public async Task Profile_Outside_The_Required_Set_Rejects_With_InvalidRefreshToken()
     {
         var demoted = UserMockFactory.Generate(new UserMockFactory.UserPartial { Profile = UserProfile.Employee });
         ArrangeRotation(demoted);
 
         var result = await Handle(new RefreshTokenCmd.Command("any")
         {
-            RequiredProfile = UserProfile.Customer,
+            RequiredProfiles = [UserProfile.Customer],
             RequiredAudience = CustomerAudience,
         });
 
@@ -83,19 +86,36 @@ public class RefreshTokenProfileGateHandlerTests
     }
 
     [Fact]
-    public async Task RequiredProfile_Match_Succeeds_With_New_Token()
+    public async Task Profile_In_The_Required_Set_Succeeds_With_New_Token()
     {
         var customer = UserMockFactory.Generate(new UserMockFactory.UserPartial { Profile = UserProfile.Customer });
         ArrangeRotation(customer);
 
         var result = await Handle(new RefreshTokenCmd.Command("any")
         {
-            RequiredProfile = UserProfile.Customer,
+            RequiredProfiles = [UserProfile.Customer],
             RequiredAudience = CustomerAudience,
         });
 
         Assert.True(result.IsSuccess);
         Assert.False(string.IsNullOrEmpty(result.Value.Token));
         Assert.False(string.IsNullOrEmpty(result.Value.RefreshToken));
+    }
+
+    [Fact]
+    public async Task An_Empty_Required_Set_Refuses_Every_Profile_So_A_Mis_Pinned_Host_Fails_Closed()
+    {
+        var customer = UserMockFactory.Generate(new UserMockFactory.UserPartial { Profile = UserProfile.Customer });
+        ArrangeRotation(customer);
+
+        var result = await Handle(new RefreshTokenCmd.Command("any")
+        {
+            RequiredProfiles = [],
+            RequiredAudience = CustomerAudience,
+        });
+
+        Assert.True(result.IsFailure);
+        Assert.Equal(BusinessErrorMessage.InvalidRefreshToken, result.Error!.Message);
+        _refreshTokenService.Verify(s => s.CommitRotationAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 }

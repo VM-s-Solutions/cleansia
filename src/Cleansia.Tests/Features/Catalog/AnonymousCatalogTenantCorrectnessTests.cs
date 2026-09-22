@@ -65,15 +65,15 @@ public sealed class AnonymousCatalogTenantCorrectnessTests : IDisposable
 
         if (!await ctx.Countries.IgnoreQueryFilters().AnyAsync(c => c.Id == CountryId))
         {
-            var country = Country.Create("Czechia", "CZE", isServiced: true);
+            var country = Country.Create("Czechia", "CZE", "CZ", isServiced: true);
             country.Id = CountryId;
             ctx.Countries.Add(country);
         }
 
         var category = ServiceCategory.Create($"cat-{suffix}", $"Category {suffix}", "seeded");
-        var service = Service.Create(category.Id, $"Service {suffix}", "seeded", 1000m, 200m);
-        var package = Package.Create($"Package {suffix}", "seeded", 500m);
-        var extra = Extra.Create($"extra-{suffix}", $"Extra {suffix}", "seeded", 50m);
+        var service = Service.Create(category.Id, $"Service {suffix}", "seeded");
+        var package = Package.Create($"Package {suffix}", "seeded");
+        var extra = Extra.Create($"extra-{suffix}", $"Extra {suffix}", "seeded");
         var city = ServiceCity.Create(CountryId, $"City {suffix}");
 
         ctx.ServiceCategories.Add(category);

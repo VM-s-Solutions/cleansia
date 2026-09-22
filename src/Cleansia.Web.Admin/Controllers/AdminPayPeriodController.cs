@@ -15,7 +15,7 @@ namespace Cleansia.Web.Admin.Controllers;
 public class AdminPayPeriodController(IMediator mediator) : ApiController(mediator)
 {
     [HttpGet("get-paged")]
-    [Permission(Policy.CanViewPayPeriods)]
+    [Permission(Policy.CanViewPayPeriodsAdmin)]
     [ProducesResponseType(typeof(PagedData<PayPeriodDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -27,7 +27,7 @@ public class AdminPayPeriodController(IMediator mediator) : ApiController(mediat
     }
 
     [HttpGet("details/{payPeriodId}")]
-    [Permission(Policy.CanViewPayPeriod)]
+    [Permission(Policy.CanViewPayPeriodAdmin)]
     [ProducesResponseType(typeof(PayPeriodDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]

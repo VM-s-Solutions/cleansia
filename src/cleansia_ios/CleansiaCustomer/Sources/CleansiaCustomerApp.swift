@@ -44,6 +44,7 @@ struct CleansiaCustomerApp: App {
                     }
                     container.startPush()
                     container.startLanguageReconcile()
+                    Task { await container.marketStore.refresh() }
                     // The registration-token delegate misses cached tokens; pull it
                     // explicitly and let it retry as the APNs token settles.
                     appDelegate.requestFcmToken()

@@ -8,7 +8,7 @@ interface StatusInfo {
 }
 
 @Component({
-  selector: 'order-header',
+  selector: 'cleansia-partner-order-header',
   standalone: true,
   imports: [CommonModule, TranslatePipe],
   templateUrl: './order-header.component.html',
@@ -24,8 +24,8 @@ export class OrderHeaderComponent {
   createdOn = input<string>('');
   confirmationCode = input<string>('');
 
-  onPrint = output<void>();
-  onDownloadInvoice = output<void>();
+  print = output<void>();
+  downloadInvoice = output<void>();
 
   getOrderStatusClass(status: StatusInfo | null): string {
     if (!status?.name) return 'order-status-badge';

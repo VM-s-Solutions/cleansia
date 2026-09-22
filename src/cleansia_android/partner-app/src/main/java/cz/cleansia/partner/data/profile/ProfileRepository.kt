@@ -95,8 +95,9 @@ interface ProfileRepository {
 
     /**
      * Saves nationality + passport AND the cleaner's business identity
-     * (entity type, IČO/registration number, optional VAT number, legal
-     * entity name when applicable) in one server call.
+     * (IČO/registration number under its business country) in one server
+     * call. The entity is always the natural person: the server refuses
+     * anything else on a cleaner-facing write.
      *
      * [businessCountryId] scopes the IČO/VAT format check on the server —
      * different countries have different patterns. The UI defaults this
@@ -106,11 +107,8 @@ interface ProfileRepository {
         employeeId: String,
         nationalityId: String,
         passportId: String,
-        entityType: EmployeeEntityType,
         businessCountryId: String,
         registrationNumber: String,
-        vatNumber: String?,
-        legalEntityName: String?,
     ): ApiResult<Unit>
 
     /**
@@ -280,22 +278,18 @@ class ProfileRepositoryImpl @Inject constructor(
         employeeId: String,
         nationalityId: String,
         passportId: String,
-        entityType: EmployeeEntityType,
         businessCountryId: String,
         registrationNumber: String,
-        vatNumber: String?,
-        legalEntityName: String?,
     ): ApiResult<Unit> = safeApiCall(json) {
         employeeApi.employeeUpdateIdentificationInfo(
             UpdateIdentificationInfoCommand(
                 employeeId = employeeId,
                 nationalityId = nationalityId,
                 passportId = passportId,
-                entityType = entityType,
+                entityType = EmployeeEntityType._1,
                 businessCountryId = businessCountryId,
                 registrationNumber = registrationNumber,
-                vatNumber = vatNumber,
-                legalEntityName = legalEntityName,
+                legalEntityName = null,
             ),
         )
     }.map { }

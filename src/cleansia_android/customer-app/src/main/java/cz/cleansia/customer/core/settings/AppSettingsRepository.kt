@@ -22,6 +22,7 @@ class AppSettingsRepository(private val context: Context) {
     private object Keys {
         val THEME = stringPreferencesKey("theme")
         val LANGUAGE = stringPreferencesKey("language")
+        val MARKET = stringPreferencesKey("market")
     }
 
     val settings: Flow<AppSettings> = context.dataStore.data.map { prefs -> prefs.toAppSettings() }
@@ -32,6 +33,10 @@ class AppSettingsRepository(private val context: Context) {
 
     suspend fun setLanguage(language: LanguagePreference) {
         context.dataStore.edit { it[Keys.LANGUAGE] = language.name }
+    }
+
+    suspend fun setMarket(isoCode: String) {
+        context.dataStore.edit { it[Keys.MARKET] = isoCode }
     }
 
     /**
@@ -86,6 +91,6 @@ class AppSettingsRepository(private val context: Context) {
             ?: ThemePreference.System
         val language = this[Keys.LANGUAGE]?.let { runCatching { LanguagePreference.valueOf(it) }.getOrNull() }
             ?: LanguagePreference.System
-        return AppSettings(theme = theme, language = language)
+        return AppSettings(theme = theme, language = language, market = this[Keys.MARKET])
     }
 }

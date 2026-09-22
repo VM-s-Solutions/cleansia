@@ -3,7 +3,7 @@ using Cleansia.Core.Domain.Common;
 
 namespace Cleansia.Core.Domain.Orders;
 
-public class OrderIssue : Auditable, ITenantEntity
+public class OrderIssue : TenantAuditable
 {
     [Required]
     [MaxLength(26)]

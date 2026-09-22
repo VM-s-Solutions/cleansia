@@ -25,7 +25,13 @@
 
       <div class="cl-rules__card cl-rules__card--solid">
         <span class="cl-rules__label">{{ 'pages.home.rules.we_cancel_label' | translate }}</span>
-        <p class="cl-rules__value">{{ 'pages.home.rules.we_cancel_value' | translate }}</p>
+        <p class="cl-rules__value">
+          @if (creditAmount(); as amount) {
+            {{ 'pages.home.rules.we_cancel_value' | translate: { amount: amount } }}
+          } @else {
+            {{ 'pages.home.rules.we_cancel_value_refund_only' | translate }}
+          }
+        </p>
         <p class="cl-rules__desc">{{ 'pages.home.rules.we_cancel_desc' | translate }}</p>
       </div>
     </div>

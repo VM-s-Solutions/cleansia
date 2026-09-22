@@ -34,6 +34,17 @@ class CancelConfirmGateTest {
     ) = cancelConfirmEnabled(previewState, hasReason, isOtherReason, notes, isSubmitting)
 
     @Test
+    fun `guest confirmation requires a known quote and currency`() {
+        fun guest(state: CancellationPreviewUiState) =
+            cancelConfirmEnabled(state, true, false, "", false, requireValidPreview = true)
+        assertFalse(guest(CancellationPreviewUiState.Error))
+        assertFalse(guest(CancellationPreviewUiState.Loading))
+        assertFalse(guest(CancellationPreviewUiState.Loaded(loaded.preview.copy(tier = 99))))
+        assertFalse(guest(CancellationPreviewUiState.Loaded(loaded.preview.copy(currencyCode = null))))
+        assertTrue(guest(loaded))
+    }
+
+    @Test
     fun `a failed preview still lets the customer cancel`() {
         assertTrue(enabled(CancellationPreviewUiState.Error))
     }

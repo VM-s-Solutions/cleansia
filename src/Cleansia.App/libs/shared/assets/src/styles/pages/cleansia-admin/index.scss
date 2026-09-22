@@ -21,6 +21,8 @@
 @use './service-form.component.scss';
 @use './package-management.component.scss';
 @use './package-form.component.scss';
+@use './extra-management.component.scss';
+@use './extra-form.component.scss';
 @use './pay-config-management.component.scss';
 @use './pay-config-form.component.scss';
 @use './admin-user-management.component.scss';
@@ -32,8 +34,11 @@
 @use './country-form.component.scss';
 @use './currency-management.component.scss';
 @use './currency-form.component.scss';
+@use './legal-documents.component.scss';
 @use './company-info.component.scss';
 @use './company-management.component.scss';
+@use './company-settings.component.scss';
+@use './company-lifecycle.component.scss';
 @use './template-management.component.scss';
 @use './template-list.component.scss';
 @use './template-form.component.scss';
@@ -41,3 +46,6 @@
 @use './unauthorized.component.scss';
 @use './sitewide-push.component.scss';
 @use './audit-log.component.scss';
+@use './disputes-management.component.scss';
+@use './dispute-detail.component.scss';
+@use './notifications.component.scss';

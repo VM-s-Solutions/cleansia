@@ -7,6 +7,7 @@ import Foundation
 /// spinner (the `OrderAction` parity).
 enum OrderAction: Equatable {
     case take
+    case acceptContract
     case notifyOnTheWay
     case start
     case markCashCollected
@@ -19,13 +20,14 @@ enum OrderAction: Equatable {
         switch self {
         case .take: .confirm
         case .declineOffer: .release
-        case .notifyOnTheWay, .start, .markCashCollected, .complete: nil
+        case .acceptContract, .notifyOnTheWay, .start, .markCashCollected, .complete: nil
         }
     }
 
     var mutation: OrdersMutation {
         switch self {
         case .take: .takeOrder
+        case .acceptContract: .acceptWorkContract
         case .notifyOnTheWay: .notifyOnTheWay
         case .start: .startOrder
         case .markCashCollected: .markCashCollected
@@ -44,7 +46,7 @@ enum OrderAction: Equatable {
         case .markCashCollected: L10n.Orders.cashCollectedToast
         case .complete: L10n.Orders.orderCompletedToast
         case .declineOffer: L10n.Offers.declinedToast
-        case .take: nil
+        case .take, .acceptContract: nil
         }
     }
 }
@@ -65,6 +67,12 @@ final class OrderDetailViewModel: ViewModel {
     /// failure and readable only through `refusal`, which is itself gated on the error — so a value
     /// left over from a previous attempt cannot be observed and never needs clearing.
     @Published private var refusedAction: OrderAction?
+    /// The contract sheet the screen is showing, if any: a take, a standalone acceptance or a read.
+    @Published private(set) var contractRequest: WorkContractRequest?
+    /// The signed-in cleaner's own id, needed to pair their acceptance with their crew entry. Resolved
+    /// alongside the fetch and kept; a resolve that failed is asked again on the next load. Nil until
+    /// it is, when the standing reads as none.
+    @Published private(set) var myEmployeeId: String?
 
     private let orderId: String
     private let client: PartnerOrderClient
@@ -96,6 +104,11 @@ final class OrderDetailViewModel: ViewModel {
         state.loadedValue?.showsWorkSections == true
     }
 
+    /// The caller's own acceptance, paired through their crew entry — the line, the banner, or nothing.
+    var contractStanding: WorkContractStanding {
+        state.loadedValue?.workContractStanding(myEmployeeId: myEmployeeId) ?? .none
+    }
+
     /// The one valid primary action for the loaded order (the shared machine).
     var primaryAction: OrderPrimaryAction {
         guard let order = state.loadedValue else { return .none }
@@ -113,8 +126,10 @@ final class OrderDetailViewModel: ViewModel {
         // Kick its off-main decode BEFORE the fetch so it lands while the request is in flight —
         // prewarming after the order loads shares a main-thread turn with the puck's first render.
         AnimatedMascotView.prewarm(.cleaningInProgress)
+        async let identity: Void = resolveMyEmployeeId()
         await ensureOffersFresh()
         await fetch()
+        await identity
     }
 
     /// Refusing the reservation from the job it belongs to; the same one write the offers list makes.
@@ -141,9 +156,21 @@ final class OrderDetailViewModel: ViewModel {
         _ = await pendingOffers.refresh()
     }
 
+    private func resolveMyEmployeeId() async {
+        guard myEmployeeId == nil, case let .success(id) = await client.currentEmployeeId() else { return }
+        myEmployeeId = id
+    }
+
+    /// A start or a completion on a seat with no acceptance is not an error to read but a contract to
+    /// accept: the same sheet opens, in accept mode, and the gesture springs back to be retried once
+    /// the row exists.
+    private func opensContractInstead(_ action: OrderAction, _ error: ApiError) -> Bool {
+        (action == .start || action == .complete) && error.code == WorkContractErrorKey.acceptanceRequired
+    }
+
     func dispatch(_ action: OrderPrimaryAction) async {
         switch action {
-        case .take: await take()
+        case .take: take()
         case .notifyOnTheWay: await notifyOnTheWay()
         case .start: await start()
         case .collectCash: await markCashCollected()
@@ -152,8 +179,25 @@ final class OrderDetailViewModel: ViewModel {
         }
     }
 
-    func take() async {
-        await run(.take) { await self.client.takeOrder(orderId: self.orderId) }
+    /// Taking is accepting the contract: the take happens inside the sheet, on the swipe.
+    func take() {
+        contractRequest = .take(orderId: orderId)
+    }
+
+    func openContract(_ request: WorkContractRequest) {
+        contractRequest = request
+    }
+
+    func dismissContract() {
+        contractRequest = nil
+    }
+
+    /// The sheet's verdict, handled exactly as the one-tap take used to be: a success refreshes the
+    /// order, a refusal is framed (on a disclosed offer) or snackbarred and reconciled.
+    func onWorkContractOutcome(_ outcome: WorkContractOutcome) async {
+        contractRequest = nil
+        let action: OrderAction = if case .accept = outcome.request { .acceptContract } else { .take }
+        await run(action) { outcome.result }
     }
 
     func notifyOnTheWay() async {
@@ -215,6 +259,11 @@ final class OrderDetailViewModel: ViewModel {
             // surface the message, keep the screen, refresh so a stale
             // "takeable" state corrects (e.g. already-taken order).
             inFlightAction = nil
+            if opensContractInstead(action, error) {
+                actionState = .idle
+                contractRequest = .accept(orderId: orderId)
+                return
+            }
             refusedAction = action
             // Whatever the screen frames, it frames alone: a snackbar carrying the same bare reason
             // would land on top of the sentence that explains which promise broke.

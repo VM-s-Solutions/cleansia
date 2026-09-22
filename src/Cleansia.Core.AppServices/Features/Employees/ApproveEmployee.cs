@@ -1,7 +1,9 @@
 ﻿using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Auditing;
+using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.PayConfig;
+using Cleansia.Core.AppServices.Tenancy;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Infra.Common.Validations;
@@ -22,7 +24,10 @@ public class ApproveEmployee
             IServiceRepository serviceRepository,
             IPackageRepository packageRepository,
             IEmployeePayConfigRepository payConfigRepository,
-            IEmployeeDocumentRequirementRepository documentRequirementRepository)
+            IEmployeeDocumentRequirementRepository documentRequirementRepository,
+            ICurrencyResolutionService currencyResolutionService,
+            IOperatorTenantResolver operatorTenantResolver,
+            ITenantProvider tenantProvider)
         {
             RuleFor(x => x.EmployeeId)
                 .Cascade(CascadeMode.Stop)
@@ -121,7 +126,14 @@ public class ApproveEmployee
                 .MustAsync(countryRepository.ExistsAsync)
                     .WithMessage(BusinessErrorMessage.CountryNotFound)
                 .MustAsync(countryRepository.IsServicedAsync)
-                    .WithMessage(BusinessErrorMessage.CountryNotServiced);
+                    .WithMessage(BusinessErrorMessage.CountryNotServiced)
+                // The cleaner is employed by the operating company of the country they work in, and
+                // the employee row is loaded through the filter, so its tenant IS the admin's claim: the
+                // work country's operator must be that claim (ADR-0061 D6).
+                .MustAsync(async (workCountryId, cancellationToken) =>
+                    (await operatorTenantResolver.ResolveAsync(workCountryId, cancellationToken)).OperatorTenantId
+                    == tenantProvider.GetCurrentTenantId())
+                    .WithMessage(BusinessErrorMessage.EmployeeWorkCountryOperatorMismatch);
 
             When(x => !string.IsNullOrEmpty(x.Notes), () =>
             {
@@ -143,9 +155,16 @@ public class ApproveEmployee
                         return;
                     }
 
+                    // IN THE CURRENCY THE CLEANER WILL BE PAID IN -- the work country's, by the same
+                    // chain that labels their earnings, entered at the country because this very
+                    // command is what assigns the employee's WorkCountryId. A rate in another currency
+                    // is not a rate on their board.
+                    var payCurrency = await currencyResolutionService.ResolveCurrencyForCountryAsync(
+                        command.WorkCountryId, cancellationToken);
+
                     var gaps = await PayCoverageLookup.FindActiveCatalogueGapsAsync(
                         serviceRepository, packageRepository, payConfigRepository,
-                        command.EmployeeId, cancellationToken);
+                        command.EmployeeId, payCurrency.Id, cancellationToken);
 
                     foreach (var gap in gaps)
                     {
@@ -177,7 +196,8 @@ public class ApproveEmployee
         IAuditContext auditContext,
         IServiceRepository serviceRepository,
         IPackageRepository packageRepository,
-        IEmployeePayConfigRepository payConfigRepository)
+        IEmployeePayConfigRepository payConfigRepository,
+        ICurrencyResolutionService currencyResolutionService)
         : ICommandHandler<Command, Response>
     {
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
@@ -212,8 +232,12 @@ public class ApproveEmployee
                     BusinessErrorMessage.EmployeeProfileIncomplete));
             }
 
+            // Same currency the validator asked in -- see the rule above.
+            var payCurrency = await currencyResolutionService.ResolveCurrencyForCountryAsync(
+                command.WorkCountryId, cancellationToken);
             var payCoverageGaps = await PayCoverageLookup.FindActiveCatalogueGapsAsync(
-                serviceRepository, packageRepository, payConfigRepository, employee.Id, cancellationToken);
+                serviceRepository, packageRepository, payConfigRepository, employee.Id, payCurrency.Id,
+                cancellationToken);
 
             if (payCoverageGaps.Count > 0)
             {

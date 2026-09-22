@@ -95,12 +95,29 @@ Offerable (New+Cash, or Confirmed+settled)
 
 - Called via `OrderDetailsFacade.takeOrder(orderId, employeeId)` or `OrdersFacade.takeOrder(orderId)`
 - A **Take Order** button is available on the order detail page for available orders
-- Sends `TakeOrderCommand` to the API
-- On success the partner is added to `AssignedEmployees`. A `New` order also gets a `Confirmed` status
-  track and the customer is notified; an order that was **already** `Confirmed` (a settled card
-  booking) gets **no** status track at all — only the assignment row changes
+- **Every take opens the contract-for-work dialog first** (`components/work-contract-dialog/`,
+  ADR-0068): it loads `GetWorkContractPreview` — the job facts and the contract text the order was
+  booked under — and enables *Accept and take the job* only once *I have read and accept the contract
+  for work for this job* is ticked
+- Sends `TakeOrderCommand` with `acceptedWorkContractTextId` = the preview's `legalDocumentTextId`
+  (the exact text row shown); a `contract.text_mismatch` re-fetches the preview, unticks and says the
+  contract was updated; `legal.document_not_found` leaves the button disabled
+- On success the partner is added to `AssignedEmployees` and the acceptance is recorded in the same
+  commit. A `New` order also gets a `Confirmed` status track and the customer is notified; an order
+  that was **already** `Confirmed` (a settled card booking) gets **no** status track at all — only
+  the assignment row and the acceptance change
 - The order moves from the "Available Orders" table to the "My Orders" table
-- The order list is refreshed
+- The order list is refreshed once
+
+#### The contract on the detail
+
+The detail pairs the caller's `assignedEmployees` entry with `workContractAcceptances` by seat id.
+With a row: *You accepted the contract for work on {date}, version {version}* and **Read the
+contract** (the dialog in `read` mode from `GetWorkContract(acceptanceId)` — the stored facts, the
+accepted version, no tick). Without one while assigned — a seat an administrator formed — a banner
+*Accept the contract for work before you start* opens the dialog in `accept` mode
+(`AcceptWorkContract`); Start and Complete stay offered, and a `contract.acceptance_required` refusal
+opens the same dialog. → [Business rules — the contract for work](/product/business-rules#work-contract)
 
 #### Take Order Validations
 
@@ -144,6 +161,11 @@ a week.
 and `ContractStatus == Approved` (`employee.not_approved`). A rejected, still-pending or terminated
 cleaner is turned away. Document upload alone is not the gate.
 
+**The contract for work** (ADR-0068) — a take without `acceptedWorkContractTextId` is
+`contract.not_accepted`, judged before existence; a text row that is not of this order's document is
+`contract.text_mismatch`, judged last. The dialog makes both unreachable from the web app; they are
+what a stale or broken client sees.
+
 ### Seats
 
 `RequiredEmployees = ceil(estimatedTime / 120)` and `MaxEmployees = RequiredEmployees + 0` —
@@ -154,6 +176,9 @@ two seats and no more, so a partner will never find an extra slot on a job that 
 
 - Called via `OrderDetailsFacade.startOrder(orderId, employeeId)`
 - Sends `StartOrderCommand` to the API
+- Refused with `contract.acceptance_required` when the caller's seat has no accepted contract for
+  work (a seat an admin formed) — the facade opens the contract dialog in `accept` mode; the same
+  gate is on Complete
 - Changes status to `InProgress`
 - Records the start timestamp for elapsed time calculation
 

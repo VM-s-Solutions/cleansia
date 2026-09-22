@@ -26,6 +26,8 @@ final class OrdersListViewModel: ViewModel {
     /// The order whose inline action is currently in flight — drives the per-row
     /// spinner so the cleaner can't double-fire. Nil when no action is running.
     @Published private(set) var inFlightActionOrderId: String?
+    /// The contract sheet open over the board for a take, or nil.
+    @Published private(set) var contractRequest: WorkContractRequest?
 
     let navigateToDetail = PassthroughSubject<String, Never>()
 
@@ -156,13 +158,35 @@ final class OrdersListViewModel: ViewModel {
 
     /// Run a row's inline lifecycle action. O2: acts ONLY on `order.id` — the id
     /// the list response carried for that row; never a synthesized/echoed id.
+    ///
+    /// Taking is accepting the contract for work, so the row's Take opens the sheet; the take itself
+    /// happens on the swipe inside it and its verdict comes back through `onWorkContractOutcome`.
     func runInlineAction(_ action: OrderPrimaryAction, on order: OrderListItem) async {
         guard inFlightActionOrderId == nil, let orderId = order.id else { return }
         guard let orderAction = action.orderAction else { return }
+        if action == .take {
+            contractRequest = .take(orderId: orderId)
+            return
+        }
 
         inFlightActionOrderId = orderId
         let result = await command(for: action, orderId: orderId)
+        await settle(orderAction, orderId: orderId, result: result)
+    }
 
+    func dismissContract() {
+        contractRequest = nil
+    }
+
+    /// The sheet's verdict, reconciled exactly as the one-tap take was.
+    func onWorkContractOutcome(_ outcome: WorkContractOutcome) async {
+        contractRequest = nil
+        guard inFlightActionOrderId == nil, case let .take(orderId) = outcome.request else { return }
+        inFlightActionOrderId = orderId
+        await settle(.take, orderId: orderId, result: outcome.result)
+    }
+
+    private func settle(_ orderAction: OrderAction, orderId: String, result: ApiResult<Void>) async {
         switch result {
         case .success:
             if let confirmation = orderAction.successFeedback {
@@ -187,12 +211,11 @@ final class OrdersListViewModel: ViewModel {
 
     private func command(for action: OrderPrimaryAction, orderId: String) async -> ApiResult<Void> {
         switch action {
-        case .take: await client.takeOrder(orderId: orderId)
         case .notifyOnTheWay: await client.notifyOnTheWay(orderId: orderId)
         case .start: await client.startOrder(orderId: orderId)
         case .collectCash: await client.markCashCollected(orderId: orderId)
         case .complete: await client.completeOrder(orderId: orderId, actualMinutes: nil, notes: nil)
-        case .completeBlocked, .none: .failure(ApiError(code: "orders.no_action"))
+        case .take, .completeBlocked, .none: .failure(ApiError(code: "orders.no_action"))
         }
     }
 

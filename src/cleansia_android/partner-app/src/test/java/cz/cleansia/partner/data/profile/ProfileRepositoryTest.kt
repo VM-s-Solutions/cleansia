@@ -3,10 +3,13 @@ package cz.cleansia.partner.data.profile
 import cz.cleansia.core.auth.SessionScopedCache
 import cz.cleansia.core.network.ApiResult
 import cz.cleansia.partner.api.client.EmployeeApi
+import cz.cleansia.partner.api.model.EmployeeEntityType
 import cz.cleansia.partner.api.model.MyPayoutDetails
 import cz.cleansia.partner.api.model.RegistrationCompletionStatus
 import cz.cleansia.partner.api.model.UpdateBankDetailsCommand
 import cz.cleansia.partner.api.model.UpdateBankDetailsResponse
+import cz.cleansia.partner.api.model.UpdateIdentificationInfoCommand
+import cz.cleansia.partner.api.model.UpdateIdentificationInfoResponse
 import cz.cleansia.partner.api.model.UpdateJobRadiusCommand
 import cz.cleansia.partner.api.model.UpdateJobRadiusResponse
 import io.mockk.coEvery
@@ -143,6 +146,39 @@ class ProfileRepositoryTest {
                 swift = "GIBACZPX",
                 bankName = "Česká spořitelna",
                 holderName = "Jan Novák",
+            ),
+            command.captured,
+        )
+    }
+
+    /**
+     * The server refuses LegalEntity on every cleaner-facing write and this app no longer asks, so
+     * the only entity the command can name is the natural person — pinned on the generated command,
+     * where a dropped line would otherwise send a null the server reads as "not a natural person".
+     */
+    @Test
+    fun updateIdentification_sendsTheNaturalPersonAndNoLegalName() = runTest {
+        val command = slot<UpdateIdentificationInfoCommand>()
+        coEvery { employeeApi.employeeUpdateIdentificationInfo(capture(command)) } returns
+            Response.success(UpdateIdentificationInfoResponse(employeeId = "emp-1"))
+
+        newRepo().updateIdentification(
+            employeeId = "emp-1",
+            nationalityId = "country-cz",
+            passportId = "AB1234567",
+            businessCountryId = "country-cz",
+            registrationNumber = "12345678",
+        )
+
+        assertEquals(
+            UpdateIdentificationInfoCommand(
+                employeeId = "emp-1",
+                nationalityId = "country-cz",
+                passportId = "AB1234567",
+                entityType = EmployeeEntityType._1,
+                businessCountryId = "country-cz",
+                registrationNumber = "12345678",
+                legalEntityName = null,
             ),
             command.captured,
         )

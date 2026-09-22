@@ -18,6 +18,7 @@ struct OrderDetailView: View {
     private let onReportIssue: (String) -> Void
     private let onRebook: (String) -> Void
     private let onMakeRecurring: (String) -> Void
+    private let onReadWorkContract: (String) -> Void
     private let openReviewOnLoad: Bool
     private let onReviewPromptConsumed: () -> Void
     @State private var reviewAutoOpened = false
@@ -29,13 +30,15 @@ struct OrderDetailView: View {
         client: OrderClient,
         repository: OrderRepository,
         membershipRepository: MembershipRepository,
+        marketStore: MarketStore,
         snackbar: SnackbarController,
         eventBus: OrderEventBus,
         paymentSheet: PaymentSheetPresenting,
         mapProvider: MapProvider,
         onReportIssue: @escaping (String) -> Void,
         onRebook: @escaping (String) -> Void,
-        onMakeRecurring: @escaping (String) -> Void
+        onMakeRecurring: @escaping (String) -> Void,
+        onReadWorkContract: @escaping (String) -> Void
     ) {
         _vm = StateObject(
             wrappedValue: OrderDetailViewModel(
@@ -43,6 +46,7 @@ struct OrderDetailView: View {
                 client: client,
                 repository: repository,
                 membershipRepository: membershipRepository,
+                marketStore: marketStore,
                 snackbar: snackbar,
                 eventBus: eventBus
             )
@@ -55,6 +59,7 @@ struct OrderDetailView: View {
         self.onReportIssue = onReportIssue
         self.onRebook = onRebook
         self.onMakeRecurring = onMakeRecurring
+        self.onReadWorkContract = onReadWorkContract
         self.openReviewOnLoad = openReviewOnLoad
         self.onReviewPromptConsumed = onReviewPromptConsumed
     }
@@ -133,11 +138,14 @@ struct OrderDetailView: View {
             VStack(spacing: 0) {
                 OrderDetailContent(
                     order: order,
+                    markets: vm.markets,
                     photos: vm.photos,
+                    workContractAcceptances: vm.workContractAcceptances,
                     isDownloadingReceipt: vm.receiptState.isSubmitting,
                     onLeaveReview: { showReviewSheet = true },
                     onDownloadReceipt: { Task { await vm.downloadReceipt() } },
-                    onViewPhotos: { showPhotos = true }
+                    onViewPhotos: { showPhotos = true },
+                    onReadWorkContract: onReadWorkContract
                 )
                 .task(id: order.id) { await vm.ensurePhotosLoaded() }
 
@@ -162,7 +170,7 @@ struct OrderDetailView: View {
                     order.status,
                     authoring: vm.recurringAuthoring
                 ),
-                showCancel: OrderStatusGroup.isCancellable(order.status),
+                showCancel: vm.canCancel,
                 showReportIssue: OrderStatusGroup.isReportable(order.status),
                 cancelEnabled: !vm.cancelState.isSubmitting,
                 onRebook: { onRebook(orderId) },
@@ -334,9 +342,9 @@ enum OrderDetailFooterActions {
 /// outlined rather than filled so it cannot out-rank the primary Book again CTA
 /// above it on a completed order.
 ///
-/// Cancel carries the same tint, and Confirmed is the one status that offers
-/// both, so on that screen the glyphs are the entire differentiator between
-/// cancelling a booking and filing a complaint.
+/// Cancel carries the same tint, and Confirmed and OnTheWay both offer the two
+/// side by side, so on those screens the glyphs are the entire differentiator
+/// between cancelling a booking and filing a complaint.
 struct OrderDetailFooterStyle {
     let icon: String
     let tint: Color

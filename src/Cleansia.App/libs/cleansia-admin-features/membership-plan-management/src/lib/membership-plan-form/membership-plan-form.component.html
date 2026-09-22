@@ -71,53 +71,85 @@
         <cleansia-section
           [title]="'pages.membership_plans.form.section.pricing' | translate"
         >
-          <div class="form-grid">
-            <div class="form-field">
-              <cleansia-text-input
-                [label]="'pages.membership_plans.form.field.price' | translate"
-                formControlName="monthlyPriceCzk"
-                dataType="number"
-                [required]="true"
-              />
-              @if (
-                form.controls.monthlyPriceCzk.touched &&
-                form.controls.monthlyPriceCzk.errors?.['min']
-              ) {
-                <small class="field-error">
-                  {{
-                    'pages.membership_plans.form.validation.price_negative'
-                      | translate
-                  }}
-                </small>
-              }
-            </div>
-            <div class="form-field">
-              <cleansia-text-input
-                [label]="
-                  'pages.membership_plans.form.field.stripe_price_id'
-                    | translate
-                "
-                formControlName="stripePriceId"
-                [required]="true"
-              />
-              <small class="field-help">
+          <div>
+            @for (currency of facade.currencies(); track currency.code) {
+              <div class="currency-price-block">
+                <h4 class="currency-price-block__title">
+                  {{ currency.name }} ({{ currency.symbol }})
+                  <span
+                    class="currency-price-block__badge"
+                    [class.currency-price-block__badge--optional]="
+                      !currency.isActive
+                    "
+                    >{{
+                      (currency.isActive
+                        ? 'pages.membership_plans.form.price_block.active'
+                        : 'pages.membership_plans.form.price_block.optional'
+                      ) | translate
+                    }}</span
+                  >
+                </h4>
+                <div class="form-grid">
+                  <div class="form-field">
+                    <cleansia-text-input
+                      [label]="
+                        'pages.membership_plans.form.field.price' | translate
+                      "
+                      [formControl]="priceBlock(currency.code).controls.price"
+                      dataType="number"
+                    />
+                    @if (
+                      priceBlock(currency.code).controls.price.touched &&
+                      priceBlock(currency.code).controls.price.errors?.['min']
+                    ) {
+                      <small class="field-error">
+                        {{
+                          'pages.membership_plans.form.validation.price_negative'
+                            | translate
+                        }}
+                      </small>
+                    }
+                  </div>
+                  <div class="form-field">
+                    <cleansia-text-input
+                      [label]="
+                        'pages.membership_plans.form.field.stripe_price_id'
+                          | translate
+                      "
+                      [formControl]="
+                        priceBlock(currency.code).controls.stripePriceId
+                      "
+                    />
+                    <small class="field-help">
+                      {{
+                        'pages.membership_plans.form.field.stripe_price_id_help'
+                          | translate
+                      }}
+                    </small>
+                  </div>
+                </div>
+                @if (
+                  priceBlock(currency.code).touched &&
+                  priceBlock(currency.code).errors?.[halfFilledError]
+                ) {
+                  <small class="field-error">
+                    {{
+                      'pages.membership_plans.form.validation.price_block_half_filled'
+                        | translate
+                    }}
+                  </small>
+                }
+              </div>
+            } @empty {
+              <p class="currency-price-block__empty">
                 {{
-                  'pages.membership_plans.form.field.stripe_price_id_help'
+                  'pages.membership_plans.form.price_block.no_currencies'
                     | translate
                 }}
-              </small>
-              @if (
-                form.controls.stripePriceId.touched &&
-                form.controls.stripePriceId.errors?.['required']
-              ) {
-                <small class="field-error">
-                  {{
-                    'pages.membership_plans.form.validation.stripe_price_id_required'
-                      | translate
-                  }}
-                </small>
-              }
-            </div>
+              </p>
+            }
+          </div>
+          <div class="form-grid">
             <div class="form-field">
               <cleansia-text-input
                 [label]="

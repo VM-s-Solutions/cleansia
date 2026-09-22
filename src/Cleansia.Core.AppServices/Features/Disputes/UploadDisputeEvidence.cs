@@ -41,13 +41,13 @@ public class UploadDisputeEvidence
 
     public class Validator : AbstractValidator<Command>
     {
-        public Validator(IDisputeRepository disputeRepository)
+        public Validator(IDisputeRepository disputeRepository, IUserSessionProvider userSessionProvider)
         {
             RuleFor(x => x.DisputeId)
                 .Cascade(CascadeMode.Stop)
                 .NotEmpty()
                 .WithMessage(BusinessErrorMessage.Required)
-                .MustAsync(disputeRepository.ExistsAsync)
+                .MustAsync((id, ct) => DisputeReads.ExistsForCallerAsync(disputeRepository, userSessionProvider, id, ct))
                 .WithMessage(BusinessErrorMessage.DisputeNotFound);
 
             RuleFor(x => x.FileName)
@@ -84,7 +84,7 @@ public class UploadDisputeEvidence
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
         {
             var userId = userSessionProvider.GetUserId()!;
-            var dispute = await disputeRepository.GetQueryable()
+            var dispute = await disputeRepository.GetQueryableForOwner(userId)
                 .FirstOrDefaultAsync(d => d.Id == command.DisputeId, cancellationToken);
 
             if (dispute == null)

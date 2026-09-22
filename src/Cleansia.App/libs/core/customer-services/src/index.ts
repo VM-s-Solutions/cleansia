@@ -30,7 +30,30 @@ export type {
   IPagedDataOfGetLoyaltyActivityActivityItem,
 } from './lib/client/customer-client';
 export {
+  AssignedEmployeeDto,
+  WorkContractAcceptanceDetails,
+  WorkContractAcceptanceDto,
+  WorkContractDto,
+  WorkContractFacts,
+  WorkContractFactsLine,
+} from './lib/client/customer-client';
+export type {
+  IAssignedEmployeeDto,
+  IWorkContractAcceptanceDetails,
+  IWorkContractAcceptanceDto,
+  IWorkContractDto,
+  IWorkContractFacts,
+  IWorkContractFactsLine,
+} from './lib/client/customer-client';
+export {
   OrderClient as CustomerOrderClient,
+  CancelGuestOrderCommand,
+  CancelOrderCommand,
+  CancelOrderResponse,
+  CancellationFeeTier,
+  GetCancellationFeePreviewResponse,
+  GetGuestCancellationFeePreviewQuery,
+  LookupOrderQuery,
   LookupOrderResponse,
   LookupOrderBatchQuery,
   LookupOrderBatchResponse,
@@ -110,6 +133,18 @@ export type {
   IRegisterCommand,
 } from './lib/client/customer-client';
 export {
+  MarketClient,
+  MarketListItem,
+  GetPropertySizePresetsPropertySizePresetDto,
+} from './lib/client/customer-client';
+export type {
+  IMarketClient,
+  IMarketListItem,
+  IGetPropertySizePresetsPropertySizePresetDto,
+} from './lib/client/customer-client';
+export { LegalClient, LegalDocumentDto, LegalDocumentType } from './lib/client/customer-client';
+export type { ILegalClient, ILegalDocumentDto } from './lib/client/customer-client';
+export {
   MembershipClient,
   MembershipStatus,
   GetMyMembershipResponse,
@@ -179,6 +214,8 @@ export {
   ServiceListItem,
   CategoryDto,
   CountryListItem,
+  CurrencyClient,
+  CurrencyListItem,
   JwtTokenResponse,
   ChangePasswordCommand,
   RequestPasswordChangeCommand,
@@ -195,6 +232,8 @@ export type {
   IBlobFileDto,
   ICategoryDto,
   ICountryListItem,
+  ICurrencyClient,
+  ICurrencyListItem,
   IUpdateCurrentUserCommand,
   IUpdateCurrentUserPhotoCommand,
   IUserConsentDto,

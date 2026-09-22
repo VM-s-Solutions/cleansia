@@ -4,6 +4,7 @@ using Cleansia.Core.Domain.LiveActivities;
 using Cleansia.Core.Domain.Users;
 using Cleansia.Infra.Common.Validations;
 using Cleansia.Infra.Database;
+using Cleansia.TestUtilities;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -23,7 +24,7 @@ namespace Cleansia.IntegrationTests.Features.Gdpr;
 [Collection("PostgresCollection")]
 public class LiveActivityTokenErasureTests(PostgresContainerFixture fixture) : BaseIntegrationTest(fixture)
 {
-    private const string RegistrationTenantId = "tenant-alpha";
+    private const string RegistrationTenantId = TestTenants.Second;
     private const string SubjectDeviceId = "device-erase-la-int";
     private const string SubjectUpdateToken = "apns-update-token-erased-int";
     private const string SubjectPushToStartToken = "apns-pts-token-erased-int";

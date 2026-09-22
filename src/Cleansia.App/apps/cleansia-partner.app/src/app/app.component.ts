@@ -7,6 +7,7 @@ import {
   CleansiaDevBannerComponent,
   CleansiaLanguageSwitcherComponent,
   CleansiaSidebarMenuComponent,
+  isMobileViewport,
   SidebarMenuItem,
 } from '@cleansia/components';
 import { CleansiaRegistrationLockComponent } from './components/registration-lock/registration-lock.component';
@@ -133,7 +134,7 @@ export class AppComponent implements OnInit, OnDestroy {
   }
 
   private updateMobileStatus() {
-    this.isMobile.set(window.innerWidth < 768);
+    this.isMobile.set(isMobileViewport(window.innerWidth));
   }
 
   onSidebarCollapsedChange(collapsed: boolean): void {

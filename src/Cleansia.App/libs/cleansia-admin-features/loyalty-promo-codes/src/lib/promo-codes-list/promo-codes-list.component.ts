@@ -20,7 +20,7 @@ import {
   TableAction,
   TableColumn,
 } from '@cleansia/components';
-import { Policy } from '@cleansia/services';
+import { PermissionService, Policy } from '@cleansia/services';
 import { CleansiaPermissionDirective } from '@cleansia/directives';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { ConfirmationService } from 'primeng/api';
@@ -56,6 +56,7 @@ import { getPromoCodeTableDefinition } from './promo-codes-list.models';
 export class PromoCodesListComponent implements AfterViewInit, OnDestroy {
   private readonly fb = inject(FormBuilder);
   private readonly translate = inject(TranslateService);
+  private readonly permissions = inject(PermissionService);
   private readonly confirmationService = inject(ConfirmationService);
   protected readonly facade = inject(PromoCodesListFacade);
   protected readonly Policy = Policy;
@@ -116,6 +117,7 @@ export class PromoCodesListComponent implements AfterViewInit, OnDestroy {
         onDeactivate: (row) => this.confirmDeactivate(row),
       },
       this.translate,
+      this.permissions,
       (d?: Date) => this.formatDate(d)
     );
     this.promoCodeColumns = def.columns;

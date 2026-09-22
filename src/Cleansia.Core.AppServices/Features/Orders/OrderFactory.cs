@@ -1,10 +1,14 @@
 ﻿using Cleansia.Core.AppServices.Features.PayConfig;
+using Cleansia.Core.AppServices.Features.Catalog;
+using Cleansia.Core.AppServices.Features.Packages;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Enums;
+using Cleansia.Core.Domain.Legal;
 using Cleansia.Core.Domain.Loyalty;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Repositories;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using Order = Cleansia.Core.Domain.Orders.Order;
 using OrderService = Cleansia.Core.Domain.Orders.OrderService;
 
@@ -24,6 +28,10 @@ public sealed class OrderFactory(
     IOrderRepository orderRepository,
     IServiceRepository serviceRepository,
     IPackageRepository packageRepository,
+    IExtraRepository extraRepository,
+    IServicePriceRepository servicePriceRepository,
+    IPackagePriceRepository packagePriceRepository,
+    IExtraPriceRepository extraPriceRepository,
     IEmployeePayConfigRepository payConfigRepository,
     ICompanyInfoRepository companyInfoRepository,
     ICountryConfigurationRepository countryConfigurationRepository,
@@ -31,7 +39,10 @@ public sealed class OrderFactory(
     ILoyaltyService loyaltyService,
     IUserMembershipRepository userMembershipRepository,
     IPreferredCleanerHoldResolver preferredCleanerHoldResolver,
-    INotificationProducer notificationProducer) : IOrderFactory
+    ILegalDocumentResolver legalDocumentResolver,
+    INotificationProducer notificationProducer,
+    IAdminNotifier adminNotifier,
+    ILogger<OrderFactory> logger) : IOrderFactory
 {
     /// <summary>
     /// Hard cap on the combined (Plus + tier) discount, as a fraction of raw subtotal. <b>12% is an
@@ -49,26 +60,39 @@ public sealed class OrderFactory(
         // CreateOrder.Validator because the recurring materializer reaches this factory without running
         // that validator — the same reason the booked-span cap is enforced in both places. First,
         // before any pricing work, so the refusal costs one query.
+        // IN THE ORDER'S CURRENCY: input.Currency is what the order is stamped with, and the pay
+        // writer reads only rates denominated in it.
         var payCoverageGaps = await PayCoverageLookup.FindSelectionGapsAsync(
             serviceRepository, packageRepository, payConfigRepository,
-            input.SelectedServiceIds, input.SelectedPackageIds, cancellationToken);
+            input.SelectedServiceIds, input.SelectedPackageIds, input.Currency.Id, cancellationToken);
 
         if (payCoverageGaps.Count > 0)
         {
             throw new InvalidOperationException(
-                "No platform-wide EmployeePayConfig covers: "
+                $"No platform-wide EmployeePayConfig in {input.Currency.Code} covers: "
                 + string.Join(", ", payCoverageGaps.Select(gap => $"{gap.Kind} '{gap.Name}'"))
                 + ". An order carrying it would show no pay to any cleaner.");
         }
+
+        // The contract-for-work text the job is offered under is fixed HERE, at booking, for the order's
+        // own market (ADR-0068 D1): a contract's terms are those the offer was made under, so a version
+        // published later applies to later bookings and never to this one. Refused before pricing for
+        // the same reason as the pay gate above — an order no contract can form on must not be booked,
+        // and the recurring materializer reaches this factory without CreateOrder's validator. Nothing
+        // is in force only when a deploy carries a future-dated folder alone; the seed test is the guard.
+        var workContract = await legalDocumentResolver.ResolveInForceAsync(
+            LegalDocumentType.WorkContract, input.Address.CountryId, cancellationToken)
+            ?? throw new InvalidOperationException(
+                $"No work-contract text is in force for market '{input.Address.CountryId}'. An order booked without one could not be accepted by any cleaner.");
 
         // Resolve the tier discount + membership discount given the user.
         // Anonymous (guest) bookings skip both and only see promo if the
         // caller already validated one. Snapshot stays on the Order so
         // receipts stay accurate even if the user's tier later changes.
         //
-        // Tier discount respects the per-tier floor (today 1000 CZK uniformly,
-        // enforced in LoyaltyService). Plus discount has no floor — paying
-        // subscribers always see value, even on small orders.
+        // Tier discount respects the per-tier floor on a default-currency order only
+        // (LoyaltyService; → /product/business-rules#money-constants). Plus discount has
+        // no floor — paying subscribers always see value, even on small orders.
         decimal tierDiscount = 0m;
         LoyaltyTier? tierAtPurchase = null;
         decimal membershipDiscount = 0m;
@@ -77,12 +101,12 @@ public sealed class OrderFactory(
         if (!string.IsNullOrEmpty(input.UserId))
         {
             var tierResult = await loyaltyService.ResolveTierDiscountForOrderAsync(
-                input.UserId, input.RawSubtotal, cancellationToken);
+                input.UserId, input.RawSubtotal, input.Currency.Id, cancellationToken);
             tierAtPurchase = tierResult.TierAtPurchase;
             tierDiscount = tierResult.DiscountAmount > 0m ? tierResult.DiscountAmount : 0m;
 
             var activeMembership = await userMembershipRepository
-                .GetActiveForUserAsync(input.UserId, cancellationToken);
+                .GetEntitledForUserAsync(input.UserId, cancellationToken);
             if (activeMembership != null)
             {
                 membershipDiscount = input.RawSubtotal
@@ -114,14 +138,22 @@ public sealed class OrderFactory(
         string? appliedMembershipPlanId = applied.MembershipAmount > 0m ? membershipPlanId : null;
         LoyaltyTier? appliedTierAtPurchase = applied.TierAmount > 0m ? tierAtPurchase : null;
 
+        // Saved addresses remain on the account; the operator needs its own visible address snapshot.
+        var address = input.Address;
+        if (address.TenantId is not null && input.OperatorTenantId is not null && address.TenantId != input.OperatorTenantId)
+        {
+            address = Core.Domain.Users.Address.Create(address.Street, address.City, address.ZipCode,
+                address.CountryId, address.State, address.Latitude, address.Longitude);
+            address.TenantId = input.OperatorTenantId;
+        }
+
         var order = Order.Create(
             input.CustomerName,
             input.CustomerEmail,
             input.CustomerPhone,
-            input.Address,
+            address,
             input.Rooms,
             input.Bathrooms,
-            input.Extras,
             input.CleaningDate,
             input.PaymentType,
             finalTotalPrice,
@@ -143,20 +175,90 @@ public sealed class OrderFactory(
             accessMode: input.AccessMode);
 
         order.SetCurrency(input.Currency);
+        order.SetWorkContractDocument(workContract);
+        order.TenantId = input.OperatorTenantId;
 
-        var selectedServices = await serviceRepository
+        // EVERY LINE SNAPSHOTS ITS OWN PRICE HERE, and this is the only place that happens. Before
+        // these columns existed the lines were pure join rows, so the refund allocator, the receipt PDF
+        // and the fiscal line items all went back to the LIVE catalogue to find out what a historical
+        // order had cost — and an admin price edit silently restated all three.
+        //
+        // The prices come from the price ROW for THIS ORDER'S currency. A catalogue entry has no price
+        // of its own; it has a price per currency, and the order's currency is what selects which one.
+        var unitCount = input.Rooms + input.Bathrooms;
+
+        var services = await serviceRepository
             .GetByIds(input.SelectedServiceIds)
-            .Select(s => OrderService.Create(order, s))
             .ToListAsync(cancellationToken);
-        var selectedPackages = await packageRepository
+        var servicePrices = await CataloguePriceLookup.ForServicesAsync(
+            servicePriceRepository, services.Select(s => s.Id).ToList(), input.Currency.Id, cancellationToken);
+        var selectedServices = services
+            .Select(s =>
+            {
+                var price = RequirePrice(servicePrices, s.Id, input.Currency.Code, "service");
+                return OrderService.Create(
+                    order,
+                    s,
+                    unitBasePrice: price.BasePrice,
+                    unitPerRoomPrice: price.PerRoomPrice,
+                    lineTotal: price.BasePrice + price.PerRoomPrice * unitCount);
+            })
+            .ToList();
+
+        var packages = await packageRepository
             .GetByIds(input.SelectedPackageIds)
             .Include(p => p.IncludedServices)
                 .ThenInclude(s => s.Service)
-            .Select(p => OrderPackage.Create(order, p))
             .ToListAsync(cancellationToken);
+        var packagePrices = await CataloguePriceLookup.ForPackagesAsync(
+            packagePriceRepository, packages.Select(p => p.Id).ToList(), input.Currency.Id, cancellationToken);
+        var selectedPackages = packages
+            .Select(p =>
+            {
+                var packagePrice = RequireAmount(packagePrices, p.Id, input.Currency.Code, "package");
+                var line = OrderPackage.Create(order, p, lineTotal: packagePrice);
+
+                // The SPLIT is snapshotted too, not just the total. It is derived from
+                // PackageService.PriceWeight, and both the weights and the package's composition are
+                // editable through the admin package form — so a package re-weighted or re-composed
+                // after ordering would otherwise still move the refund split between a historical
+                // order's bundled lines. The derived share is stored rather than the weight, because a
+                // weight only means anything against the other weights present at the same moment.
+                var included = p.IncludedServices.ToList();
+                if (included.Count > 0)
+                {
+                    var grosses = PackagePricing.DeriveIncludedServiceGrosses(
+                        included.Select(s => s.PriceWeight).ToList(), packagePrice);
+                    line.AddIncludedServiceLines(included
+                        .Select((s, i) => OrderPackageService.Create(line, s.ServiceId, grosses[i]))
+                        .ToList());
+                }
+
+                return line;
+            })
+            .ToList();
+
+        // IsActive is filtered here exactly as the pricing calculator filters it, so an inactive extra
+        // is absent from the total AND from the order. The refund path used to read the same catalogue
+        // WITHOUT that filter, so an extra deactivated after ordering was excluded from TotalPrice and
+        // included in the refund denominator, inflating every other line's share. Rows the order owns
+        // settle it: there is only one list now. An extra unpriced in the order's currency is dropped
+        // on the same terms, below -- the calculator priced without it, so the order carries it without
+        // it too.
+        var selectedExtras = input.SelectedExtraSlugs.Count == 0
+            ? []
+            : await extraRepository.GetAll()
+                .Where(e => e.IsActive && input.SelectedExtraSlugs.Contains(e.Slug))
+                .ToListAsync(cancellationToken);
 
         order.AddSelectedServices(selectedServices);
         order.AddSelectedPackages(selectedPackages);
+        var extraPrices = await CataloguePriceLookup.ForExtrasAsync(
+            extraPriceRepository, selectedExtras.Select(e => e.Id).ToList(), input.Currency.Id, cancellationToken);
+        order.AddSelectedExtras(selectedExtras
+            .Where(e => extraPrices.ContainsKey(e.Id))
+            .Select(e => OrderExtra.Create(order, e, unitPrice: extraPrices[e.Id]))
+            .ToList());
 
         var estimatedTime = OrderDuration.EstimateMinutes(
             selectedServices.Select(s => s.Service!),
@@ -200,9 +302,11 @@ public sealed class OrderFactory(
 
         // VAT breakdown — gracefully degrade when there's no company info
         // configured for the country (sets net = total, vat = 0).
+        // The issuer is pinned to the address-market operator.
         var countryId = input.Address.CountryId;
-        var companyInfo = await companyInfoRepository.GetActiveByCountryAsync(countryId, cancellationToken)
-                          ?? await companyInfoRepository.GetActiveCompanyInfoAsync(cancellationToken);
+        var companyInfo = (input.OperatorTenantId is { } operatorTenantId
+                              ? await companyInfoRepository.GetActiveForOperatorAsync(operatorTenantId, countryId, cancellationToken)
+                              : await companyInfoRepository.GetActiveByCountryAsync(countryId, cancellationToken));
         if (companyInfo != null)
         {
             var countryConfig = await countryConfigurationRepository.GetByCountryIdAsync(countryId, cancellationToken);
@@ -226,6 +330,7 @@ public sealed class OrderFactory(
         // the moment it exists, which is why it is the only shape announced here.
         await PreferredOfferNotifier.NotifyIfOfferableAsync(
             order, preferredCleaner.Recipient, notificationProducer, cancellationToken);
+        await NewOrderAdminNotifier.NotifyIfOfferableAsync(order, adminNotifier, logger, cancellationToken);
 
         orderRepository.Add(order);
         return order;
@@ -305,4 +410,29 @@ public sealed class OrderFactory(
                 Charged(MembershipAmount), Charged(TierAmount), Charged(PromoAmount), Charged(TotalAmount));
         }
     }
+
+    /// <summary>
+    /// FAIL CLOSED, and this is the third layer rather than the first. The customer catalogue withholds
+    /// an entry with no price row in the currency being quoted, and the order validators reject one; a
+    /// selection that arrives here unpriced has bypassed both -- a recurring materialization, or an id
+    /// the client was never shown. That is a platform bug, not bad input, which is why it throws rather
+    /// than returning a BusinessResult, exactly as the pay-coverage backstop above it does.
+    /// </summary>
+    private static CataloguePriceLookup.ServiceAmount RequirePrice(
+        IReadOnlyDictionary<string, CataloguePriceLookup.ServiceAmount> prices,
+        string itemId,
+        string currencyCode,
+        string kind) =>
+        prices.TryGetValue(itemId, out var price)
+            ? price
+            : throw new InvalidOperationException(
+                $"No {kind} price for '{itemId}' in {currencyCode}. It is not offerable in that currency.");
+
+    private static decimal RequireAmount(
+        IReadOnlyDictionary<string, decimal> prices, string itemId, string currencyCode, string kind) =>
+        prices.TryGetValue(itemId, out var price)
+            ? price
+            : throw new InvalidOperationException(
+                $"No {kind} price for '{itemId}' in {currencyCode}. It is not offerable in that currency.");
+
 }

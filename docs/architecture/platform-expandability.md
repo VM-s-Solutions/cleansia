@@ -20,12 +20,35 @@
 > §7b's instruction to the PM to create a ticket "before scheduling", which is the failure this project
 > has already paid for once: four lanes dispatched at 24 already-shipped tickets.
 >
-> **Currency-display (§7c) is the one that is still open.**
+> **Currency-display (§7c) shipped too, on 2026-09-13** — as ADR-0059, with the customer-market
+> programme (ADR-0058, ADR-0060). §2 "Customer surfaces", §5, §7c and §8 describe that state.
+>
+> ### Tenancy was ACTIVATED on 2026-09-13 (ADR-0061)
+>
+> The tenancy axis below used to read *"forward-compat scaffolding, not operational"*. It is
+> operational: a tenant is an **operating company** under the holding (`Tenants`, one row —
+> `cleansia-cz`), each market is mapped to the company that serves it
+> (`CountryConfiguration.OperatorTenantId`), `TenantId` is **NOT NULL** on every stamped table, and every
+> anonymous write resolves its operator from the market it names. §0's row, §1 and §8 step 3 are
+> rewritten to that state; the classification doctrine (§1's three buckets, §6) is unchanged in
+> substance and gains ADR-0061 D7's one-sentence rule. The *"spoof-resistant inbound tenant resolution"*
+> §8 used to name as the missing piece was never built and is not needed: an anonymous request names a
+> **market**, not a tenant, and the server maps it.
 >
 > **Architect verdict (this pass):** the wider three-axis picture **CONFIRMS** ADR-0001 Addendum A1's
 > Option-A ruling for T-0113 and broadens it into a general entity-classification rule (§6). It does
-> **not revise** A1. Only one ground-truth correction was needed: there are **40** `ITenantEntity`
-> entities, not 41 (§1).
+> **not revise** A1. Only one ground-truth correction was needed at the time: there were **40** `ITenantEntity`
+> entities, not 41 (46 today — §1 carries the current list).
+>
+> ### The currency axis was rewritten 2026-09-12
+>
+> §2, and the currency clauses of §0, §3, §4, §5, §6, §7c, §8, §9 and §10, now describe what the
+> multicurrency programme shipped: prices authored per currency, `Currency.IsActive` as the market
+> switch, the order currency derived from the service address's country, per-currency pay coverage, a
+> cleaner's board scoped to the currency they are paid in, and one payout invoice per currency. The
+> `Currency.ExchangeRate` column and the conversion path those sections used to describe no longer
+> exist, and neither does the interim "the caller names the currency" contract that stood for three days.
+> The tenancy material, and the country material except where it names a currency, is unchanged.
 
 ---
 
@@ -35,13 +58,19 @@ Cleansia has **three independent expansion axes**, each at a different maturity 
 
 | Axis | Mechanism in code | Actually used today? | Verdict |
 |---|---|---|---|
-| **Tenancy** | `ITenantEntity` on 40 entities + EF global query filter + JWT `tenant_id` | **No** — runs effectively single-tenant (`TenantId = null` everywhere) | **Forward-compat scaffolding** |
-| **Currency** | `Currency` platform entity (Code/Symbol/ExchangeRate/IsDefault) + per-record `CurrencyId` + `ExchangeRate` conversion | **Partially** — 12 currencies + rates seeded; resolution + conversion code live; but every catalog price is authored in CZK and only CZK is the default | **Real mechanism, single-currency operation** |
+| **Tenancy** | `Tenants` registry (seed-only) + `CountryConfiguration.OperatorTenantId` (market → operating company) + `ITenantEntity` on 46 entities with `TenantId` **NOT NULL** + EF global query filter + JWT `tenant_id` + `OperatorTenantScopeBehavior` for anonymous writes | **Yes** — one operating company (`cleansia-cz`) serving one market; every business row carries it from its first write (ADR-0061, 2026-09-13) | **Real mechanism, single-operator operation — a second company is six data steps, no code** |
+| **Currency** | `Currency` platform entity (Code/Symbol/Name/IsDefault/IsActive/LoyaltyPointsDivisor) + per-currency price rows (`ServicePrices`/`PackagePrices`/`ExtraPrices`) + per-record `CurrencyId` on every money-carrying row; **nothing converts** | **Partially** — the whole path is live (order currency from the service address's country, cleaner currency from the work country, per-currency pay coverage, a board scoped to the cleaner's currency, one payout invoice per currency), but CZK is the only active currency; EUR is seeded switched off with no prices | **Real mechanism, single-currency operation — adding a market is data, not code** |
 | **Region/Country** | `Country` + `CountryConfiguration` + `CountryInvoiceConfig` platform entities, keyed by `CountryId` | **Partially** — config seeded for ~10 countries; consumed by VAT/tax-id/fiscal/invoice code; but only CZE is `IsServiced` | **Real mechanism, single-country operation** |
 
-The three axes are **separate, not coupled**. Currency is resolved from **country** (not tenant);
-country is independent of tenant; tenant is independent of both. There is no place in the code where
-currency is derived from tenant, or where country is derived from tenant.
+The three axes are **separate, not coupled** — but currency is **downstream of country**. Every
+currency the platform decides is derived from a country through one chain
+(`CountryConfiguration.DefaultCurrencyCode` → `Currency`): an order's from its service address's
+country, a cleaner's from their work country. Nothing else decides one — not the customer, not the
+caller (a `currencyId` on the wire is checked against the address, never trusted), not the tenant.
+**Tenant is downstream of country too, by the same read**: the operating company of a row is the
+operator of the country the transaction is legally in (`CountryConfiguration.OperatorTenantId`), which
+is why an order's tenant and its currency can never disagree — they are two facts read from one row.
+Nothing derives currency from tenant, and nothing derives country from tenant; the arrow runs one way.
 
 **The classification rule (the doctrine):** an entity is **platform config** if it is shared catalog/
 reference data read on `[AllowAnonymous]` paths (or otherwise global); **tenant-scoped** only if it is
@@ -52,49 +81,72 @@ country-keyed (e.g. `CountryConfiguration`), but a single entity should not be b
 
 ---
 
-## 1. Axis 1 — Multi-TENANCY (forward-compat scaffolding, not operational)
+## 1. Axis 1 — Multi-TENANCY (active since 2026-09-13 — ADR-0061)
 
-**Mechanism (real):**
-- **40 domain entity classes** implement `ITenantEntity` — file-verified by exact-string count of
-  `: Auditable, ITenantEntity` across `Cleansia.Core.Domain` (verified sample: `Order`, `Employee`,
-  `Service`, `Package`, `Extra`, `ServiceCity`, `ServiceCategory`, `MembershipPlan`, `LoyaltyTierConfig`,
-  `PromoCode`, `EmployeePayConfig`, `EmployeeInvoice`, plus the per-tenant key/value store
-  `TenantConfiguration : Auditable, ITenantEntity`).
-  - **Count correction (was "41"):** the orchestrator's ground truth said 41; the real number is **40**.
-    The 41st `ITenantEntity` text occurrence is `Common/ITenantEntity.cs` — the **interface declaration
-    itself**, not an entity. Separately, `ProcessedStripeEvent : BaseEntity` deliberately does **not**
-    implement `ITenantEntity` (`ProcessedStripeEventRepository.cs:13` notes the global filter does not
-    apply to it) — the Stripe idempotency ledger is correctly platform-global, not tenant-scoped. So the
-    canonical number is **40 tenant-scoped entity classes**.
-- EF global query filter auto-scopes reads: `CleansiaDbContext.ApplyTenantQueryFilters`
-  (`CleansiaDbContext.cs:111-179`). The filter is:
+**What a tenant is:** an **operating company** under the holding — the legal entity that contracts the
+customer, employs the cleaner, issues the receipt and pays the payout (owner ruling 2026-09-13: *"We'll
+make a holding company and more companies under it for each region"*). A country is served by at most
+one operator; an operator serves one or more countries.
+
+**Mechanism (real, and running):**
+- **`Tenants`** — a three-column registry (`Id varchar(26)` assigned not generated, `Name`, `IsActive`),
+  seed-only, one row (`cleansia-cz`, "Cleansia CZ s.r.o."). No repository, no DTO, no admin surface.
+- **`CountryConfiguration.OperatorTenantId`** — the market → operator map (nullable, FK Restrict,
+  indexed). CZE → `cleansia-cz`; every other configured country → nobody, and a market nobody serves
+  is not listed by `Market/GetOverview`, cannot be flagged the default, and refuses anonymous writes
+  (`tenant.not_found`).
+- **48 domain entity classes** implement `ITenantEntity` — 46 through `TenantAuditable`
+  (`grep -rn ": TenantAuditable" src/Cleansia.Core.Domain`) plus the two audits that name the interface
+  directly (`grep -rn ", ITenantEntity"`) — and the `TenantId` column is **NOT NULL and a `Restrict`
+  foreign key into `Tenants`** on all of them, nullable only on `OutboxMessage` and `DeadLetter` (an
+  envelope may have no tenant). A plain `Auditable` has no tenant column (since 2026-09-15). The CLR
+  property stays `string?` because the value is written at commit time. `LoyaltyTierConfig` left the
+  interface on activation (the brand's programme,
+  the `MembershipPlan` sibling); `ProcessedStripeEvent : BaseEntity` deliberately never implemented it
+  (the Stripe idempotency ledger is platform-global).
+- EF global query filter auto-scopes reads: `CleansiaDbContext.ApplyTenantQueryFilters`. The filter is:
   `tenantProvider == null  ||  (currentTenantId == null && e.TenantId == null)  ||  e.TenantId == currentTenantId`.
-  The **middle clause** is what makes single-tenant mode work — without it `null == null` is SQL `NULL`
-  (not true) and every row would be filtered out.
-- `TenantProvider` resolves the tenant **only** from the JWT `tenant_id` claim or an explicit
-  `_override`. `SetTenantOverride` is used **only by background services** iterating tenants
-  (recurring/cleanup/payments/fiscal/pay-period). **There is no inbound host/subdomain
-  tenant-resolution middleware for web requests.**
+  The **middle clause now matches nothing** on a stamped table — a reader with no tenant reads an
+  empty set, the safe direction — and is kept because three ADRs pin the filter diff-empty.
+- `TenantProvider` resolves the tenant from the JWT `tenant_id` claim or an explicit override, and the
+  override has **three** writers, each for one reason: `OperatorTenantScopeBehavior` (an anonymous
+  request that writes names a **market** — `countryId`, or the default market — and gets that market's
+  operator before validation runs; `country.not_serviced` for a non-market, `tenant.not_found` for a
+  market nobody operates), `TokenService` / `RefreshToken.Handler` (a request that authenticates a user
+  adopts the user's tenant before writing the `RefreshToken`), and background services / webhooks
+  (per row or per tenant group, committing inside the loop). **There is no inbound host/subdomain
+  tenant-resolution middleware for web requests, and there will not be** — the request names a market,
+  never a tenant (S1).
+- **Tenant, country and currency agree by construction** — read from the same country — and two
+  validators refuse the cases that could break it: `order.country_operator_mismatch` (a customer or
+  guest booking an address another company serves) and `employee.work_country_operator_mismatch` (an
+  admin approving a cleaner for a country their company does not serve).
+- **One identity per email across the holding**: `Users (Email)` is globally unique with no tenant term.
 
-**Operational reality:** the app runs **effectively single-tenant**. Seed data writes `TenantId = NULL`
-on every tenant-scoped row (e.g. `ServiceCities … TenantId … NULL`, `MembershipPlans … TenantId … NULL`).
-With no live second tenant, the null-slice **is** the only tenant, so the filter is correct today by
-coincidence of single-tenancy, not by design intent for anonymous routes. CLAUDE.md states the contract:
-"Backward compatible: null TenantId = single-tenant mode."
+**Operational reality:** one operating company, one market. Every seeded business row — `CompanyInfo`,
+the platform-default `EmployeePayConfigs`, the three `PromoCodes`, the dev admin — is stamped
+`cleansia-cz`; the seed inserts the `Tenants` row first and `SeededDatabaseHasNoOrphanTenantRowsTests`
+proves closure (zero `NULL`s, every tenant in `Tenants`, an operator on the default market).
+`SecondTenantIsolationHostTests` seeds a second company whole and proves a CZ admin sees none of it.
 
-**Consequence (the bug class):** any `[AllowAnonymous]` route reading an `ITenantEntity` is correct
-**only** while single-tenant. With no JWT, `GetCurrentTenantId()` is null → filter collapses to
-`TenantId == null`. The day a second tenant exists: (1) the anonymous read returns only the null-tenant
-slice (wrong/empty), and (2) any `TenantId == null` "shared" row leaks to every tenant's anonymous page.
-This is exactly T-0113 (`MembershipPlan`) and its four siblings.
+**The bug class §1 used to name — an `[AllowAnonymous]` route reading an `ITenantEntity` — is closed
+from both sides.** The anonymous catalogues are tenantless (T-0113 and the siblings, §7a/§7b), and the
+anonymous *writers* have a tenant before their first read (the scope behaviour). What remains is the
+classification rule, now stated in one sentence (ADR-0061 D7):
 
-**The 40 entities sorted into three buckets (the classification this doctrine acts on):**
+> A table is **stamped** when its rows are created by or for one operator's customers, cleaners or
+> money — or when the row *is* the operator's own legal or financial configuration (its issuer
+> identity, its pay rates, its fiscal counter, its campaigns). It is **tenantless** when it is the
+> brand's catalogue or programme definition that every operator sells identically, or a per-country
+> fact.
+
+**The 48 entities sorted into three buckets (the classification this doctrine acts on):**
 
 | Bucket | Count | Members | Verdict |
 |---|---|---|---|
-| **1 — Genuinely tenant-owned** (private per-operator operational data; correct as `ITenantEntity`) | 33 | Order, OrderNote, OrderIssue, OrderReview, OrderStatusTrack, OrderPhoto, OrderReceipt, OrderEmployeePay, User, Employee, EmployeeDocument, Address, SavedAddress, Cart, RefreshToken, UserConsent, GdprRequest, UserNotificationPreferences, Device, Dispute, RecurringBookingTemplate, UserMembership, LoyaltyAccount, LoyaltyTransaction, PromoCode, PromoCodeRedemption, ReferralCode, Referral, PayPeriod, EmployeePayConfig, EmployeeInvoice, CompanyInfo, LoyaltyTierConfig | **Keep `ITenantEntity`.** (CompanyInfo + LoyaltyTierConfig are tenant-*level config* but genuinely vary per operator and are reached only behind `tenant_id`-bearing JWTs — they stay.) |
-| **2 — Catalog/config that is tenant-scoped-but-shouldn't-be** (the T-0113 + sibling-catalog class) | 6 | **Service, ServiceCategory, Package, Extra, ServiceCity, MembershipPlan** | **Drop `ITenantEntity` → platform config** (Option A). `[AllowAnonymous]` + `ITenantEntity` is the bug; correct today only by single-tenant coincidence. |
-| **3 — Infra** (tenancy is the entity's whole purpose) | 1 | **TenantConfiguration** (per-tenant key/value store) | **Keep `ITenantEntity`.** Never anonymous; exists to hold per-tenant overrides. |
+| **1 — Genuinely operator-owned** (one company's customers, cleaners, money, or its own legal/financial configuration) | 46 | Order, OrderNote, OrderIssue, OrderReview, OrderStatusTrack, OrderPhoto, OrderReceipt, OrderEmployeePay, User, Employee, EmployeeDocument, DocumentDeletionRequest, Address, SavedAddress, Cart, RefreshToken, UserConsent, GdprRequest, UserNotification, UserNotificationPreferences, Device, LiveActivityToken, Dispute, Refund, RecurringBookingTemplate, UserMembership, MembershipBenefitUsage, UserStripeCustomer, CreditAccount, LoyaltyAccount, LoyaltyTransaction, PromoCode, PromoCodeRedemption, ReferralCode, Referral, PayPeriod, EmployeePayConfig, EmployeePayoutDetails, EmployeeInvoice, FiscalCounter, **PayoutReferenceCounter** (per company since 2026-09-15 — each company numbers its own payout invoices), CompanyInfo, **TenantConfiguration** (a company's own overrides of catalogued settings — writer, rows and catalogue since 2026-09-15), AdminActionAudit, CustomerActionAudit, EmployeeActionAudit | **`TenantAuditable` (or `BaseEntity + ITenantEntity` for the admin and customer audits), NOT NULL, FK'd to `Tenants`.** (`CompanyInfo` is the s.r.o. itself; the pay defaults and promo codes are the operator's money; the three audit tables are per operator by ADR-0012 / ADR-0062.) |
+| **2 — The brand's catalogue and programme, and per-country facts** | — | **Service, ServiceCategory, Package, Extra, ServiceCity, MembershipPlan, MembershipPlanPrice, LoyaltyTierConfig**, `Country*`, `Currency`, `PropertySizePreset`, `EmployeeDocumentRequirement`, `Email*Translation`, … | **Tenantless** (`Auditable` if admin-edited, `BaseEntity` if seed-only) — **no tenant column at all** since 2026-09-15 — each saying why in a one-line comment naming its sibling. `LoyaltyTierConfig` joined this bucket on activation. |
+| **3 — Infra** | 2 | **OutboxMessage**, **DeadLetter** (stamped when the envelope has a tenant; the two nullable exemptions — a `NULL` passes the FK) | **Keep `ITenantEntity`.** |
 
 (`ProcessedStripeEvent` is the deliberate **platform-global ledger** outside all three buckets — correctly
 `: BaseEntity`, never tenant-scoped, with `IgnoreQueryFilters()` as belt-and-braces. It is precedent, not
@@ -104,50 +156,298 @@ a defect.)
 
 ## 2. Axis 2 — Multi-CURRENCY (real mechanism, single-currency operation)
 
-**Mechanism (real):**
-- `Currency : Auditable` (NOT `ITenantEntity`) — **platform config**. Fields: `Code`, `Symbol`,
-  `Name`, `ExchangeRate` (default `1.0m`), `IsDefault` (`Currency.cs`).
-- Seeded with **12 currencies** with real exchange rates relative to CZK
-  (`insert_seed_data.sql:230-248`: CZK=1.0 `IsDefault=true`, EUR=0.041, USD=0.044, GBP, PLN, CHF, SEK,
-  NOK, DKK, HUF, RON, BGN). Exactly one default (CZK).
-- `CurrencyId` is **per-record** on `Order` (`Order.cs:111`), `PromoCode` (`PromoCode.cs:28`, nullable —
-  fixed-discount codes only), `EmployeePayConfig` (`EmployeePayConfig.cs:34`, required),
-  `EmployeeInvoice` (`EmployeeInvoice.cs:37`, required). **Not per-tenant.**
-- `CurrencyRepository.GetDefaultAsync` returns the `IsDefault` row; `IsInUseAsync` checks Order/
-  EmployeePayConfig/EmployeeInvoice referential use before delete.
+**The model in one sentence: a price is authored per currency, and nothing converts.** `Service`,
+`Package` and `Extra` carry no price columns. Prices live in `ServicePrices` (`BasePrice`,
+`PerRoomPrice`), `PackagePrices` (`Price`) and `ExtraPrices` (`Price`) — one row per (entry, currency),
+unique on `(EntryId, CurrencyId)`. `Currency` has no `ExchangeRate` column; there is no rate anywhere in
+the platform and no code path that multiplies one currency into another. The previous design multiplied
+a CZK-authored basket by a hand-typed rate with no feed, no history and no per-order snapshot, so editing
+the rate silently restated every historical order that referenced it. The owner ruled on 2026-09-08 that
+a price is authored per currency, never converted; the fourteen multiplication sites went on 2026-09-09
+and the column went with the per-currency price tables. `OrderPricingCalculatorNoConversionTests` is
+the guard that nothing scales.
 
-**How display currency is resolved — CONFIRMED per-record, NOT per-tenant:**
-- **Orders / receipts / emails:** the record's own `CurrencyId` → `Order.Currency`. Receipt and email
-  render `order.Currency?.Code ?? "CZK"` and `order.Currency?.Symbol ?? "Kč"` (`ReceiptService.cs:120,
-  227, 311`; `EmailService.cs:94, 270, 316`). Order currency is chosen at create time:
-  `CreateOrder` uses `command.CurrencyId` if supplied, else `GetDefaultAsync` (`CreateOrder.cs:292-294`).
-- **Employee-facing money (dashboard, pay):** resolved by `CurrencyResolutionService`
-  (`CurrencyResolutionService.cs`). Chain: **`Employee.WorkCountryId` →
-  `CountryConfiguration.DefaultCurrencyCode` → platform default `Currency`.** This is the explicit link
-  proving **currency derives from COUNTRY, not tenant** (`ICurrencyResolutionService.cs` documents the
-  exact chain; `GetDashboardStats.cs:201-209` consumes it).
-- **Invoices (PDF):** `EmployeeInvoice.CurrencyId` → `currency?.Code ?? Constants.Currency.Czk`,
-  `currency?.Symbol ?? "Kč"` (`FileExtensions.CreatePdfData:50-51`).
+### The currency entity and the market switch {#market-switch}
+
+**Mechanism (real):**
+- `Currency : Auditable` (NOT `ITenantEntity`) — **platform config**. Fields: `Code` (citext,
+  canonicalised to upper case because it travels onto receipts and fiscal requests), `Symbol`, `Name`,
+  `IsDefault`, `IsActive`, `LoyaltyPointsDivisor` (nullable — how much of the currency earns one loyalty
+  point; CZK is seeded at 10, a currency with no divisor earns nothing and logs). The admin form
+  (`AdminCurrencyDetailDto`) authors the divisor and shows `IsActive`; the `CurrencyDetailDto` that rides
+  orders and disputes on every host is `Id`/`Code`/`Name`/`Symbol`/`IsDefault` and nothing else.
+- Seeded with **five currencies**: CZK (`IsDefault`, active, divisor 10) and EUR, PLN, GBP, USD (all
+  **inactive**, no catalogue prices, no divisor) — the four are there so that every code a seeded
+  `CountryConfiguration` names is a real row, which the resolver now insists on. The ten rate-carrying
+  rows (USD, GBP, PLN, CHF, SEK, NOK, DKK, HUF, RON, BGN) were removed on 2026-09-09: each was seeded
+  active with a hand-typed rate nobody had reviewed, and until the same change any authenticated caller
+  could name one on the quote and create paths; the three that came back on 2026-09-13 carry no rate
+  and stay off until an admin activates them.
+- **A currency is switched on deliberately, and not before it can earn.** `Currency.Create` makes a
+  row inactive; `ActivateCurrency` / `DeactivateCurrency` (Admin → Currencies, `CanUpdateCurrency`,
+  audited; `POST api/AdminCurrency/activate/{id}` and `deactivate/{id}`) flip it, and the default cannot
+  be switched off (`currency.cannot_deactivate_default`). Activation refuses a currency whose
+  `LoyaltyPointsDivisor` is unset or not positive (`currency.loyalty_divisor_missing`), and
+  `UpdateCurrency` refuses to clear the divisor on an active one with the same key: an order completed
+  while the divisor is null earns nothing, permanently, and nothing re-fires the grant when the divisor
+  is set later — so the platform refuses to open a market in that state rather than log about it after
+  customers have lost points. Switching a currency on makes every catalogue save require a price in it
+  (`MustCoverAllActiveCurrencies` on the service, package and extra create/update validators —
+  `service.missing_price_for_currency`). `SetDefaultCurrency` refuses a currency that is inactive
+  (`currency.invalid`) or that has no price row in any of the three price tables (`currency.not_priced`)
+  — "offerable" is both, and the booking path checks the same pair.
+- **Offerable is one predicate**, `ICurrencyRepository.IsOfferableAsync`: the currency exists, `IsActive`
+  is true, and at least one row in `ServicePrices`, `PackagePrices` or `ExtraPrices` is in it. The
+  `QuoteOrder`, `CreateOrder` and `QuotePlusSavings` validators ask it of the currency the address
+  country resolved to, and `SetDefaultCurrency`'s promotion gate asks it of the candidate default, so
+  the star and the quote cannot disagree about what "offerable" means. On a Currency,
+  `IsActive` is the **market switch**, not the soft-delete flag it is on services and packages —
+  `DeleteCurrency` hard-deletes, and an in-use currency may be switched off (everything already
+  denominated in it is untouched; only new pricing, booking and promotion stop). The admin list carries
+  activate/deactivate row actions, and the star (set default) is hidden on a row that is not operated.
+- `CurrencyId` is **per-record** on every money-carrying row: `Order` (required;
+  `FK_Orders_Currencies_CurrencyId` is ON DELETE RESTRICT), `OrderEmployeePay`, `EmployeePayConfig`,
+  `EmployeeInvoice`, `CreditAccount` (one account per customer per currency), `PromoCode` (nullable — a
+  fixed-amount code always names one; a percent code with no minimum is global), `EmployeePayoutDetails`
+  (nullable — the currency the cleaner's account holds) and the three price tables. **Not per-tenant.**
+  `DeleteCurrency` answers `currency.in_use` when any of those tables references the row
+  (`CurrencyRepository.IsInUseAsync`), so the RESTRICT foreign keys are never reached as a raw 23503.
+- `CurrencyRepository.GetDefaultAsync` returns the `IsDefault` row and throws when there is none. The
+  partial unique index `IX_Currencies_IsDefault_Unique` holds exactly-one-default in the database, and
+  `SetDefaultCurrency` clears and promotes inside one transaction so the window is unobservable.
+
+### The order currency follows the service address's country {#order-currency}
+
+**The market of an order is the address's country; the market a customer browses in is chosen,
+defaulting to the default market** (owner rulings 2026-09-12; ADR-0058). A customer has no currency
+of their own: the address they are booking for has a country, and the country has a currency — that
+is the whole rule for an order, and it is the cleaner-side rule mirrored: both ends of an order
+resolve through `CountryConfiguration.DefaultCurrencyCode`, so a Slovak address is priced in EUR and
+taken by a cleaner who is paid in EUR. Before there is an address, a customer surface reads the
+**chosen market** instead (§"Customer surfaces" below) and sends its `countryId`; the address
+overrides it the moment there is one. → /product/business-rules#market
+
+- **Quote.** `QuoteOrder` and `QuotePlusSavings` take an optional `CountryId` — the service address's
+  country once the wizard has one — and resolve the currency from it
+  (`ICurrencyResolutionService.ResolveCurrencyForCountryAsync`); with no country the quote is in the
+  platform default, which is what the wizard's first step and the home page's quick quote get. A
+  country the platform does not service is `country.not_serviced`, judged before the currency is
+  resolved; a serviced country with no configured currency is not a case the quote handles — the
+  resolver throws (see [currency resolution](#currency-resolution)). An explicit `CurrencyId` on the
+  quote wins over the country, because the create path echoes the quote's currency back and the two
+  must resolve identically. Whichever way it resolves, the currency must be offerable
+  (`currency.invalid`), and that rule runs before pricing so the calculator is never asked to price in a
+  currency it cannot. → /api/orders#quote
+- **Create.** `CreateOrder` resolves the address (`IOrderAddressResolver.ResolveCountryIdAsync` — the
+  saved row's country or the inline one, else the single serviced country) and derives the currency
+  from it. A `CurrencyId` the client sends is **checked, not trusted**: one that is not the address
+  country's is refused as `currency.invalid` before anything is priced, which is what makes the ruling a
+  rule rather than a default. The server then re-prices in the address currency and compares against
+  the client's `totalPrice`, so a total quoted in another market fails as
+  `order.total_price.not_match`. The resolved row's id is stamped on `Order.CurrencyId`, so the price
+  and the stamp cannot disagree.
+- **Catalogue.** `GET api/Service|Package|Extra/GetOverview?countryId=` (Customer and Mobile.Customer
+  hosts) prices the overview in that country's currency and withholds any entry without a price row or
+  a pay config in it; the list items carry `currencyCode`, so a surface labels what it was sent. With
+  no `countryId` the overview is in the platform default; a named country the platform does not serve
+  (unknown, or not `IsServiced`) has no catalogue and the overview answers an empty list before the
+  resolver is asked — a client-supplied id can never turn the anonymous read into an error, and a
+  serviced country the seed has not configured throws by the resolver's rule. The Partner host's
+  overviews are untouched and stay in the default.
+- **Item level.** Prices are authored per currency and nothing converts, so a selected service or
+  package with no price row in the resolved currency is refused on quote and create as
+  `order.selected_services.invalid` / `order.selected_package.invalid` — a 400, never the calculator's
+  throw. An extra without a row is dropped from the line items by the calculator and the factory
+  alike, because no extras-level error key exists on the wire.
+- **Recurring.** `MaterializeRecurringBookingTemplate` resolves the currency from the template's saved
+  address's country, so a standing booking on a Slovak flat materialises EUR orders. The template
+  carries no currency of its own and needs none.
+- `OrderPricingCalculator` resolves the currency **first** — it is an input to the prices, not a label
+  applied afterwards — then reads the `ServicePrices` / `PackagePrices` / `ExtraPrices` rows in it. A
+  service line is `BasePrice + PerRoomPrice × (rooms + bathrooms)` from its row; a package or an extra
+  is its row's `Price`. Every figure the calculator returns is in that currency; the quote carries
+  `currencyId` and `currencyCode` and nothing else about currency.
+- **Pay coverage is per currency, and it is a second offerability gate.** `EmployeePayConfig` rows carry
+  a `CurrencyId` (the unique index is `(EmployeeId, ServiceId, PackageId, CurrencyId)`, NULLS NOT
+  DISTINCT). One predicate, `PayCoverage.Applies(config, employeeId, currencyId)`, serves both the
+  catalogue gate and the pay writer: an entry is offered in a currency only when every line has a
+  platform-wide pay config **in that currency**, and `CalculateOrderPay` reads only rows in the order's
+  currency. A rate in another currency counts for nothing — without the currency term every gate
+  admitted a EUR order on the strength of a CZK rate, and the writer then found nothing: an order on
+  every board with no pay on any of them. `ApproveEmployee` creates no pay config: it resolves the
+  cleaner's currency from the work country (`ResolveCurrencyForCountryAsync`) and refuses approval
+  (`employee.pay_config_missing`) while any active catalogue entry lacks a platform-wide rate in it. The
+  bulk grade apply is what creates per-employee configs, multiplying the `ServicePrices` /
+  `PackagePrices` row in the admin-chosen currency and skipping an entry with no row in it.
+  → /product/business-rules#cleaner-pay
+- **The promo preview asks in the same currency.** `ValidatePromoCode` takes the quote's `currencyId`
+  (null resolves to the platform default) so a code bound to another currency answers
+  `CurrencyMismatch` at checkout, and `CreateOrder`'s last rule previews the code again in the address
+  currency and refuses the booking (`promo.currency_mismatch`, or whichever reason the preview gives)
+  rather than charging a full price the customer did not consent to.
+
+### The cleaner's currency is resolved from country — never from tenant {#currency-resolution}
+
+- `ICurrencyResolutionService.ResolveCurrencyForEmployeeAsync` returns the `Currency` **entity**, never
+  null. Chain: **`Employee.WorkCountryId` → `CountryConfiguration.DefaultCurrencyCode` → the `Currency`
+  row it names; a null country → platform default.** The same body serves the order side as
+  `ResolveCurrencyForCountryAsync(countryId)`. **A named country has no fallback** (owner ruling
+  2026-09-12, "throw instead, 100 %"): a country with no `CountryConfiguration` row, a blank
+  `DefaultCurrencyCode`, or a code naming no `Currency` row throws `InvalidOperationException` naming
+  the country and the code. The column is free text with no foreign key — three characters the seed
+  authors — so a typo, or a currency deleted after the country was configured, used to fall through to
+  the platform default with an error log; it now fails on every partner money screen, board read and
+  invoice approval for that country, because paying a cleaner in the platform default is the outcome
+  the ruling forbids and a loud failure is the one that gets the seed fixed. The platform default is
+  reached only through a **null** country: an unapproved cleaner with no `WorkCountryId`, or a customer
+  quote before an address is known. The lookup is deliberately **not** filtered on `IsActive`: a
+  country configured for EUR resolves to EUR as soon as the EUR row exists, switched on or not, rather
+  than reading as broken until the market opens.
+- **The cleaner's board is scoped to that currency** (owner ruling 2026-09-12: a cleaner is paid in the
+  currency of the country they work in). `OrderVisibility.PayableTo(employeeId, currencyId)` — the
+  order is in the cleaner's currency, or the cleaner is already on it — is conjoined with the
+  preferred-cleaner hold into `OpenTo`, which the available-jobs preview and count, the paged order list
+  for a non-admin caller, the browse gate and `TakeOrder` all read; the pending-offer list conjoins
+  `PayableTo` alone. A foreign-currency order therefore does not exist from that cleaner's side (a take
+  is `order.not_found`, like a held order), so every pay row a cleaner earns is in their currency and a
+  period closes into one invoice. `AdminReassignOrder` is deliberately **not** gated — it is the admin
+  override — and an order the cleaner is already on stays visible to them whatever its currency.
+- Every partner-facing money aggregate is scoped to that currency and labelled with its code: dashboard
+  stats, the earnings chart, personal bests, order-distribution money columns, the available-jobs
+  headline, pending earnings and My Pay. Counts stay over all orders. My Pay (`GetPeriodPays`) also
+  takes an explicit `currencyId` view, so a client that opened it from an invoice shows that invoice's
+  currency exactly; each pay row on it carries `currencyCode`.
+- **The preferred-cleaner request is gated on the same currency.** A customer may name a cleaner
+  only if they have completed an order together **and** the cleaner is paid in the order's currency —
+  `CreateOrder` and `ChoosePreferredCleaner` compare `ResolveCurrencyForEmployeeAsync` against the
+  order's currency, `CreateRecurringBooking` and `UpdateRecurringBooking` against the saved address's
+  country's currency, all as one rule with one key (`order.preferred_employee.not_eligible`, judged after
+  the completed-order term). Without it the hold could only lapse: the push would go out, the seat be
+  withheld for the whole hold, and the cleaner unable to take a job their board does not show.
+- **No money is rendered with a guessed unit.** Every path reads the record's own currency row. The
+  order e-mails (`EmailService.cs`) and the customer receipt PDF (`ReceiptService.cs`) render
+  `Order.Currency.Symbol`, and when the navigation was not loaded they print the **bare number with no
+  unit** (`order.Currency?.Symbol ?? string.Empty`) — an unloaded navigation is a loader omission, not a
+  CZK order. The two money-of-record paths **refuse** instead: an invoice PDF with no resolved
+  `EmployeeInvoice.Currency` records `PdfGenerationError` (`FileExtensions.CreatePdfData`), and a fiscal
+  request for an order with no resolved currency throws before it is built and lands as a recorded
+  failed attempt on the receipt row. The `?? "Kč"` fallbacks are gone from every path (§5).
+- **The fiscal regime is never guessed either.** The receipt's country comes from
+  `Order.CustomerAddress.CountryId`; an order whose country cannot be resolved is refused on the same
+  landing as a missing currency — `FiscalCountryCodeOf` throws inside `HandleFiscalAsync`'s try, the
+  receipt is marked `FiscalRegistrationFailed`, and the retry job sees it — never registered under the
+  Czech authority by default. The receipt-number counter follows the same rule: with no ISO code there
+  is no provider key, and `FiscalSequenceScope.Resolve` maps the empty key to the `DEFAULT` issuer scope
+  (no annual reset), not to the Czech provider's.
 
 There is **no per-tenant currency setting anywhere**. The only tenant-shaped currency surface is the
-per-record `CurrencyId`, and even that is populated from country/default, not from a tenant config.
+per-record `CurrencyId`, and it is populated from the address country (orders), from the pay rows
+(invoices) or from the work country (pay configs, dashboards, the board) — never from a tenant config.
 
-**How `ExchangeRate` is actually used (important nuance):** `OrderPricingCalculator` computes the base
-subtotal from catalog prices (`Service.BasePrice`, `Package.Price`, `Extra.Price`) **as authored**, then
-multiplies the whole total by the selected currency's `ExchangeRate`
-(`OrderPricingCalculator.cs:46-66`: `totalPrice = (baseSubtotal + surcharge) * exchangeRate`). So
-multi-currency today is a **flat conversion of CZK-authored prices**, not per-currency catalog pricing.
-Catalog prices have no `CurrencyId` — they are implicitly in the default currency (CZK). The Quote
-response surfaces `ExchangeRate` and `CurrencyCode` so a client could display a converted price.
+### Payroll: one invoice per (employee, period, currency) {#payroll-per-currency}
 
-**Verdict:** the **exchange-rate multi-currency MECHANISM is real and wired end-to-end** (entity, seed
-data with rates, per-record stamping, resolution service, conversion in pricing, symbol/code on
-receipts/invoices/emails). But **operation is single-currency**: every catalog price is authored in CZK,
-CZK is the sole default, and CZE is the only serviced country, so in practice `ExchangeRate` is always
-`1.0` on the live path. The CZK/"Kč" hardcoding is a **safety-net fallback string** for when a record
-has no currency row (`Constants.Currency.Czk` comment: "Multi-currency is supported via the Currency
-entity; this is just the safety-net string default"), not a design assumption that the platform is
-CZK-only.
+- The unique index is `IX_EmployeeInvoices_EmployeeId_PayPeriodId_CurrencyId`. `GenerateInvoice` groups
+  the cleaner's unassigned pay by currency, allocates every payout reference first, writes one invoice
+  per group and flushes them together (`Response.InvoiceIds`); its already-exists guard is per currency.
+  The auto-close batch (`PayPeriodBackgroundService`) does the same per cleaner and sends one
+  period-closed e-mail per invoice document, because the template carries one attachment. The
+  reconciliation sweep's anti-join is per currency, so a half-invoiced pair is still a candidate. An
+  invoice's currency is derived from the pay rows it invoices (`EmployeeInvoice.CreateFromOrderPays`),
+  never supplied; the old refusal `InvoiceSpansMultipleCurrencies` is gone.
+- **The cleaner declares the currency their payout account holds**: `EmployeePayoutDetails.CurrencyId`
+  (nullable, FK Restrict), written only by `UpdateBankDetails` (`currency.invalid` when it names no
+  currency; absent on the wire means unchanged, because two shipped mobile clients cannot send it yet),
+  shown on `MyPayoutDetails`, `MaskedPayoutDetails` and the GDPR export. `ApproveInvoice` runs two
+  rules on the record, in this order: **presence** — the record exists, `Scheme` is set and `Status` is
+  `Provided`, else `payroll.invoice.payout_details_missing` — and then **currency** — the declared
+  currency, or the work country's currency when undeclared (the normal case), equals the invoice's,
+  else `payroll.invoice.payout_currency_mismatch`. Presence is judged first so a cleaner with no record
+  is told that, not told their currency is wrong. This is ADR-0034 D7's issuance block, relocated from
+  invoice generation to approval (the ADR carries a dated correction banner): generation would withhold
+  a numbered tax document the cleaner needs, approval only withholds the admin's commitment to
+  transfer, and the document is issued on time either way. Approval is the last point the platform can
+  refuse: the transfer is keyed by hand in a bank and `MarkInvoicePaid` only records it. There is **no
+  payout execution path** (no bank file, no Stripe Connect, no SEPA). → /flows/pay-and-payouts#the-path
+
+### Customer surfaces: every figure is labelled from its payload {#customer-default-currency}
+
+- A customer surface never assumes a currency. The catalogue overviews carry `currencyCode` (the
+  named `countryId`'s currency, else the platform default), and the web app has one shared
+  `formatMoney(value, currencyCode, locale)`; every quote, order, dispute, credit and membership
+  figure is labelled from its payload's `currencyCode`. The Android and iOS customer apps mirror this.
+- **Before there is an address, the surface reads the customer's chosen market** (ADR-0058). The
+  Customer and Mobile.Customer hosts expose an anonymous `GET api/Market/GetOverview`
+  (`MarketListItem`: the serviced country joined to its active configured currency, `isDefault`, the
+  alpha-2 the chip prints, and the two copy figures) — one call that replaces the older pair of
+  `Country/GetServiced` + `Currency/GetOverview` for every pre-address surface (the currency overview
+  is still served for admin-style readers). Each client resolves stored-if-listed → `isDefault` →
+  first, persists the ISO code per device (the web in one cookie so SSR and the browser agree), and
+  sends the market's `countryId` to the catalogue overviews, the quote, `Membership/GetPlans` and the
+  subscribe commands. Address wins from the wizard's address step on. `isDefault` is the configuration
+  flagged `IsDefaultMarket` (owner ruling 2026-09-13; the admin PUT moves it), the default-currency rule
+  only the logged fallback. → /product/business-rules#market
+- **SSR and the transfer cache.** The customer app's server render reads only the request (the market
+  and language cookies), and the browser reuses what the server fetched **only for anonymous own-API
+  GETs**: `CustomerAuthInterceptorFn` sends `withCredentials` solely on state-changing methods and on
+  calls made with a session, and Angular's transfer cache skips any credentialed request. So the
+  market directory, the catalogue overviews, the plans, the property sizes and the serviced countries
+  are rendered once on the server and served from the document on bootstrap for a visitor; the same
+  GET for a signed-in customer carries the cookie, is never transferred and is re-fetched — which is
+  what keeps one user's response out of another's document. A new market-aware read that must be
+  SSR-cheap has to be anonymous and credential-less; a read that varies by session must not be.
+- There is **no *currency* picker** on any customer surface — there is a **market selector**, whose
+  currency follows: the customer picks a country (navbar/footer pill and quick-quote chip on the web,
+  Profile → Preferences → Market and a home-tab chip on mobile), never a unit. SK and DE will share
+  EUR but not copy, presets or legal text, which is why the choice is the country. Known residual:
+  the order payment sheets on both mobile apps still pin the merchant `countryCode` to CZ (correct —
+  it is the merchant's, not the customer's; the Android Plus sheet reads the market's alpha-2, a
+  reported deviation).
+- **Money figures in customer copy come from the market, not from the translation** (ADR-0060): the
+  no-show credit and the insurance ceiling ride `MarketListItem`, every locale string carries a
+  placeholder, and `check-booking-policy-parity.mjs` fails a locale that types a figure back in.
+
+**Admin surfaces** follow the same rule. Revenue and payroll reports answer in **one** currency
+(`ReportFilter.CurrencyId`, null = platform default, `currency.not_found` for an unknown one) and carry
+`currencyCode`; there is no "all currencies" report, because a sum across two currencies is not a
+number. The order and invoice lists take a `currencyId` filter, and a sort on a money column with no
+currency filter runs *within* currency (led by `CurrencyId`) rather than filing 150 EUR below 3 000
+CZK. `IssueCustomerCredit` and `ExpireCustomerCredit` each name their currency (`currency.not_found`
+when unknown; issue additionally requires it active): a customer holds one credit account per currency,
+the customer detail shows one balance block per account, and a discharge takes one account's whole
+balance and leaves the others alone. The catalogue lists are priced in the platform default and carry
+its code. → /admin-app/reporting
+
+### What is still bound to the platform default {#default-bound-numbers}
+
+Two numbers are authored in one currency and enforced only on an order in it: the tier floor
+`LoyaltyTierConfig.MinimumOrderAmountForDiscount` (1000; no floor applies elsewhere) and the minimum on
+a promo code that names no currency (on an order in any other currency the validate preview answers the
+`CurrencyMismatch` error code and the create path refuses the booking with `promo.currency_mismatch`).
+Promoting a different default with `SetDefaultCurrency` re-denominates both **and moves the default
+market** (the pre-selection is the market on the default currency, ADR-0058 D2) — an owner-level event,
+not an admin click. The no-show credit left this list in 2026-09: it is `Currency.NoShowCredit`,
+authored per currency (CZK 250, others null = none paid), paid by `CancelUnfilledOrders` in the order's
+own currency. Loyalty earning is per currency through `Currency.LoyaltyPointsDivisor`; Plus is priced
+per currency through `MembershipPlanPrice` (ADR-0059); `IssueCustomerCredit.SanityCap = 10 000` is a
+unit-free typo guard in whatever currency the grant names; `CountryConfiguration.RefundStripeFixedFee`
+and `CountryConfiguration.InsuranceCoverageAmount` are numbers in the country's own currency, the first
+deducted only from a refund in it, the second only ever printed. The figures and the reasoning live on
+the business-rules page. → /product/business-rules#money-constants
+
+**Verdict:** the **per-record currency mechanism is real and wired end-to-end** — entity, per-currency
+price rows, order currency from the address country, cleaner currency from the work country and a
+board scoped to it, per-currency pay coverage, one invoice per currency, declared payout currency,
+labelled DTOs on every host. Adding a market is data, not code (§8). There is no conversion half, and
+it is not coming back.
+
+**Operation is single-currency and the platform enforces it** rather than merely happening to be it:
+CZE is the only serviced country, so every address resolves to CZK; CZK is the only active currency and
+EUR is seeded switched off and unpriced, so a booking could not be priced in anything else even if a
+second country were switched on — and the default cannot be moved to a currency the catalogue is not
+priced in. No runtime "Kč" literal remains (§5): a record with no currency row renders a bare number
+on the display paths and is refused on the money-of-record paths, and nothing assumes the platform is
+CZK-only — `MembershipPlan`, the last structurally CZK-bound entity, lost its `…Czk` columns to
+`MembershipPlanPrice` in 2026-09 (ADR-0059).
 
 ---
 
@@ -165,12 +465,22 @@ CZK-only.
   (`CountryInvoiceConfig.cs`). Repo `CountryInvoiceConfigRepository.cs`.
 - `Employee.WorkCountryId` — the jurisdiction a cleaner is approved to work in; set at admin approval
   (`ApproveEmployee.cs:54-60, 114`, required + must be `IsServiced`). Distinct from `NationalityId`
-  (passport) and `Address.CountryId` (residency) — see the Employee XML doc (`Employee.cs:68-81`).
-  Employee also has a `PreferredCurrencyCode` (`Employee.cs:92`) — a manual override field.
+  (passport) and `Address.CountryId` (residency) — see the Employee XML doc (`Employee.cs`).
+  Employee also still carries a `PreferredCurrencyCode` column, but it overrides nothing: its setter
+  (`UpdatePreferredCurrency`) has no caller, nothing money-related reads it — `GenerateInvoice` and
+  `PayPeriodBackgroundService` say so explicitly, the invoice currency comes from the pay rows — and
+  its only reader is the GDPR export. Whether the column survives is an open owner question.
 
 **What per-country config actually DRIVES today (all verified consumers):**
-1. **Currency defaulting** — `CountryConfiguration.DefaultCurrencyCode` is step 2 of the employee
-   currency-resolution chain (§2).
+1. **The market's currency** — `CountryConfiguration.DefaultCurrencyCode` is step 2 of the one
+   currency-resolution chain (§2), on both sides of an order: it is the currency a booking at an address
+   in this country is priced, charged and stamped in, the currency the country's catalogue overview is
+   shown in, and the currency a cleaner working in this country is paid in, sees their board in and is
+   approved against. It has to name a real `Currency` row — a serviced country with no row, a blank
+   code or a code naming no currency makes the resolver **throw** rather than fall through (owner
+   ruling 2026-09-12), so an unconfigured serviced country is a deploy-blocking defect; nothing in the
+   platform writes it — the seed authors it (CZE→CZK, SVK→EUR, POL→PLN) and must for every serviced
+   country. Its other reader is the refund fee rule (item 7).
 2. **VAT calculation** — `VatCalculator.Calculate` reads `CountryConfiguration.StandardVatRate` (gross-
    inclusive formula); returns `NotApplicable` if `countryConfig == null` or company isn't a VAT payer
    (`VatCalculator.cs:14-34`).
@@ -187,12 +497,30 @@ CZK-only.
    `FileExtensions.CreatePdfData`). Seeded for ~10 countries with localized disclaimers + VAT rates.
 6. **Date format** — `CountryConfiguration.DateFormat` on the invoice PDF (`RegenerateInvoicePdf.cs:85-90`).
    Also carries `TimeZoneId`, `PhonePrefix`, `DefaultPaymentGateway`, `DefaultLanguageCode`.
+7. **Stripe refund fee** — `IssuePartialRefund` deducts `RefundStripeFeeRate` (unit-free) plus
+   `RefundStripeFixedFee`, a number in the country's `DefaultCurrencyCode`. The fixed part is deducted
+   only when the order's currency code equals the country's — which it does by construction now that
+   the order's currency comes from the same column; the guard covers an order stamped before the
+   country's code was re-pointed at another currency (a code naming no row no longer falls through —
+   it throws), and there the fixed part is absorbed. Dormant today: no production writer sets either
+   figure.
+8. **The market directory and the customer copy** — `Market/GetOverview` (ADR-0058) lists a serviced
+   country only when `DefaultCurrencyCode` names an active currency, prints `Country.IsoAlpha2` on the
+   market chip, and carries `CountryConfiguration.InsuranceCoverageAmount` (ADR-0060 — the insurance
+   ceiling the mobile trust badge and FAQ state, a number in the country's currency; null today, the
+   admin country form's Market section writes it — the **only** column of `CountryConfiguration` with
+   an admin writer). `SetCountryServiced(true)` refuses `country.market_not_ready` without that active
+   currency.
 
 **Verdict:** the **per-country mechanism is real and consumed by live VAT/tax/fiscal/invoice code**, and
 seed data exists for ~10 countries. But **operation is single-country**: only CZE is `IsServiced`, so
-order creation rejects any non-serviced country (`CreateOrder.ResolveAddressAsync:452-470`, defaults to
-the single serviced country when exactly one exists). Multi-country is "flip `IsServiced` + ensure
-`CountryConfiguration`/`CountryInvoiceConfig` rows exist," not a code change.
+order creation rejects any non-serviced country (`OrderAddressResolver`, defaults to the single
+serviced country when exactly one exists) and the quote refuses one as `country.not_serviced`.
+Multi-country is "flip `IsServiced` + ensure `CountryConfiguration`/`CountryInvoiceConfig` rows exist,"
+not a code change — and because the country's `DefaultCurrencyCode` is now what prices every booking
+at its addresses, flipping a country whose currency is not switched on, priced and covered by pay
+configs makes every booking there refuse as `currency.invalid`. The §8 checklist is the order to do it
+in.
 
 ---
 
@@ -215,10 +543,16 @@ Country, Language}**, **mobile = {Service, Package, Extra, MembershipPlan}**.
 | `ServiceCity` GET (**web only**) | ServiceCity | Yes (`ServiceCity.cs:18`) | Yes (`GetServiceCities.cs:21-23`) | same (mobile requires auth) | **BUG — catalog batch** |
 | `Membership/GetPlans` (web+mobile) | MembershipPlan | Yes (`MembershipPlan.cs:24`) | Yes (`GetMembershipPlans.cs:42`) | plans-missing + leak + write-side webhook mismatch | **BUG — T-0113 (Option A)** |
 | `Country/GetOverview`+`GetServiced` (**web only**) | Country | **No** (`Country.cs:7`) | No | none | **CORRECT (platform config)** |
+| `Market/GetOverview` (web+mobile, added 2026-09-13, ADR-0058) | Country + CountryConfiguration + Currency | **No** — all three platform config | No | none; the read omits and logs an unready country, never throws | **CORRECT (platform config)** |
 | `Language/GetOverview` (**web only**) | Language | **No** (`Language.cs:6`) | No | none | **CORRECT (platform config)** |
 | `Order/Lookup`+`LookupBatch` (web+mobile) | Order (+Service/Package) | Yes | Yes but **credentialed** by `DisplayOrderNumber`+`CustomerEmail` (`LookupOrder.cs:51-53`) | collapse fails it **shut** (hides), cannot enumerate | **CREDENTIALED — different risk class (this is the backlog's "BSP-9" / T-0123 LookupBatch item)** |
 | `Order/Quote` (web+mobile) | Service/Package/Extra (pricing) | Yes | Yes — loads catalog by id (`OrderPricingCalculator.cs:41-48`) | resolves only null-slice catalog when pricing anonymously | **BUG — catalog batch (pricing path), PANEL-MISSED** |
-| `Referral/Validate` (web+mobile) | ReferralCode + User | Yes (`ReferralCode.cs:14`, `User.cs:12`) | Yes (`ValidateReferral.cs:43-52`) | validates only null-tenant codes/users at sign-up | **BUG — anon tenant-scoped read, PANEL-MISSED** |
+| `Referral/Validate` (web+mobile) | ReferralCode + User | Yes (`ReferralCode.cs:14`, `User.cs:12`) | Yes (`ValidateReferral.cs:43-52`) | validates only null-tenant codes/users at sign-up | **BUG — anon tenant-scoped read, PANEL-MISSED** → **CLOSED 2026-09-13 (ADR-0061 D3):** the request is `IOperatorScopedRequest`; it names a market (`countryId`, default market when absent) and reads that market operator's codes |
+
+> **The table above is the 2026-06 analysis and is kept as the record.** Every row marked BUG is
+> closed: the catalogue batch by making the entities tenantless (§7a/§7b), `Referral/Validate` by
+> the market scope. The "collapse" column describes a null-tenant world that no longer exists — an
+> anonymous request that reads a stamped table now has a tenant before its first read, or is refused.
 
 **Two reads the catalog batch must NOT forget (both are anonymous reads of `ITenantEntity` data the
 original prose did not enumerate):**
@@ -248,12 +582,17 @@ the filter works — it is **not** an anonymous-tenant bug despite carrying a `C
 TENANT  ──(JWT tenant_id)──►  EF global filter on ITenantEntity        [private per-operator data]
 COUNTRY ──(CountryId)──────►  CountryConfiguration / CountryInvoiceConfig   [legal/fiscal jurisdiction]
             │
-            └──(DefaultCurrencyCode)──► CURRENCY ──(per-record CurrencyId + ExchangeRate)──► display/convert
+            ├──(Address.CountryId → DefaultCurrencyCode, order side)───┐
+            └──(Employee.WorkCountryId → DefaultCurrencyCode, cleaner side)──┴──► CURRENCY ──(price rows per currency + per-record CurrencyId)──► price / label / board
+                                                                     nothing converts; no country known (a first-step quote) means the platform default;
+                                                                     a named country with no configured currency throws — it never defaults
 ```
 
-- **Currency depends on COUNTRY**, never on tenant (`Employee.WorkCountryId →
-  CountryConfiguration.DefaultCurrencyCode → default Currency`). Confirmed in
-  `CurrencyResolutionService` + its interface doc.
+- **Currency is always derived from COUNTRY**, never from tenant and never from a person
+  (`CountryConfiguration.DefaultCurrencyCode → Currency`, in `CurrencyResolutionService`). The order
+  side reads the service address's country; the cleaner side reads the work country (§2). A customer
+  has no currency of their own, and a `currencyId` a client sends is checked against the address, not
+  trusted.
 - **Country is independent of tenant.** `Country`/`CountryConfiguration`/`CountryInvoiceConfig` are all
   platform config (no `ITenantEntity`). A tenant does not own a country; a country's VAT/fiscal rules are
   the jurisdiction's, shared by all operators in it.
@@ -270,17 +609,27 @@ class does NOT touch currency or country**, because currency display was never p
 
 | Location | Hardcoded? | Nature |
 |---|---|---|
-| `Constants.Currency.Czk = "CZK"` | hardcoded **fallback string** | safety-net only; comment says multi-currency is via `Currency` entity |
-| `ReceiptService.cs:120,227,311` | `order.Currency?.Code ?? "CZK"` / `?? "Kč"` | configurable primary, hardcoded fallback |
-| `EmailService.cs:94,270,316` | `order.Currency?.Symbol ?? "Kč"` | configurable primary, hardcoded fallback |
-| `FileExtensions.CreatePdfData:50-51` | `currency?.Code ?? Constants.Currency.Czk` / `?? "Kč"` | configurable primary, hardcoded fallback |
-| `GetDashboardStats.cs:115-116` | "0 Kč" in a code **comment** only | not runtime |
-| `MembershipPlan.MonthlyPriceCzk` / `MonthlyEquivalentPriceCzk` | **genuinely CZK-only** (field name + XML doc "Display price in CZK") | see §7 |
-| Catalog prices (`Service.BasePrice`, `Package.Price`, `Extra.Price`) | implicitly CZK (no `CurrencyId`) — converted by `ExchangeRate` | implicitly default-currency |
+| `Constants.Currency.Czk` | **deleted 2026-09-13** — it had no reader; nothing falls back to a string default | gone |
+| `CurrencyResolutionService` — a named country's currency | **no fallback** — a serviced country with no `CountryConfiguration`, a blank `DefaultCurrencyCode` or a code naming no `Currency` row throws `InvalidOperationException` (owner ruling 2026-09-12); only a null country reads the platform default | fails closed |
+| `ReceiptService.cs` — the fiscal request's currency | **no fallback** — a receipt whose order has no resolved currency is recorded as a failed fiscal attempt, never registered as CZK | fails closed |
+| `ReceiptService.cs` — the fiscal regime and the receipt-number counter scope | **no fallback** — an order whose country cannot be resolved is refused on the same landing (recorded failed attempt, retried by the job), never declared to the Czech authority; the counter resolves an empty provider key to the `DEFAULT` issuer scope, not `cz-eet2` | fails closed |
+| `ReceiptService.cs` — the receipt PDF symbol | `order.Currency?.Symbol ?? string.Empty` — the bare number, no unit | configurable, no hardcoded fallback |
+| `EmailService.cs` — order e-mail amounts | `order.Currency?.Symbol ?? string.Empty` — the bare number, no unit | configurable, no hardcoded fallback |
+| `FileExtensions.CreatePdfData` | **no fallback** — an invoice with no resolved currency refuses to render and records `PdfGenerationError` | fails closed |
+| Plan prices (`MembershipPlanPrices`) | **not hardcoded** — one row per (plan, currency) carrying the price and the Stripe Price id; `MembershipPlan` has no price column (ADR-0059) | authored per currency, never converted; a plan with no row is not on sale in that market |
+| Catalogue prices (`ServicePrices`, `PackagePrices`, `ExtraPrices`) | **not hardcoded** — one row per (entry, currency), each row carries `CurrencyId` | authored per currency, never converted |
+| `Currency.NoShowCredit`, `CountryConfiguration.InsuranceCoverageAmount` | **not hardcoded** — authored per currency / per country, null = none; customer copy carries a placeholder and formats the market's figure (ADR-0060) | authored, never converted |
+| `LoyaltyTierConfig.MinimumOrderAmountForDiscount`, a promo minimum on a code with no `CurrencyId` | **bound to the platform default** — enforced only on an order in it | §2 "What is still bound to the platform default" |
+| Customer clients — the order payment sheets' merchant `countryCode` | `CZ` as the **merchant's** country per Stripe, not the customer's | correct; the Android Plus sheet reads the market's alpha-2 instead (reported deviation, ADR-0058) |
+| Customer locale copy | **no money figure and no currency word** in any placeholder key — pinned by `check-booking-policy-parity.mjs` across five locales × three clients | data, not content |
 
-**Net:** outside MembershipPlan, CZK/"Kč" appears only as a *fallback* when a record has no `Currency`
-row. The configurable path (record `CurrencyId` → `Currency.Symbol/Code`) is always preferred. The one
-**structurally** CZK-bound surface is **MembershipPlan**.
+**Net:** "Kč" does not appear at runtime at all (`grep '"Kč"'` over `Cleansia.Core.AppServices`
+finds only a comment). A record with no `Currency` row renders a bare number on the two display paths
+(order e-mails, receipt PDF) and is refused on the two money-of-record paths (invoice PDF, fiscal
+request); the fiscal regime is likewise never defaulted. The only path is the configurable one —
+record `CurrencyId` → `Currency.Symbol/Code`, or the price row in the order's currency. No entity is
+structurally CZK-bound any more; the two default-bound numbers are CZK today because CZK is the
+default, not because they name it.
 
 ---
 
@@ -288,23 +637,36 @@ row. The configurable path (record `CurrencyId` → `Currency.Symbol/Code`) is a
 
 Decide along the orthogonal axes:
 
-1. **Platform config vs tenant-scoped:**
-   - **Platform config** (NOT `ITenantEntity`) if it is *shared catalog / reference data*, especially if
-     read on **any `[AllowAnonymous]` path**. Precedent: `Currency`, `Language`, `Country`.
-   - **Tenant-scoped** (`ITenantEntity`) only if it is *private per-operator data behind authenticated,
-     `tenant_id`-bearing routes*. Precedent: `Order`, `Employee`, `EmployeeInvoice`, `PromoCode`.
-   - **Hard rule (ADR-0001 Addendum A1, D-A1.1):** an entity must **never** be both `[AllowAnonymous]`
-     **and** `ITenantEntity` with no spoof-resistant inbound tenant-resolution. Today no such resolution
-     exists (the `Host` header is client-controlled → S3), so anonymous catalogs **must** be platform
-     config.
+1. **Platform config vs tenant-scoped (ADR-0061 D7 is the sentence; the rest is precedent):**
+   - **Platform config** (NOT `ITenantEntity`) if it is *the brand's catalogue or programme definition
+     that every operating company sells identically, or a per-country fact*. Precedent: `Currency`,
+     `Language`, `Country`, `Service`, `MembershipPlan`, `LoyaltyTierConfig`. Say why in a one-line
+     comment naming the sibling.
+   - **Tenant-scoped** (`ITenantEntity`, `TenantId` NOT NULL) if its rows are *created by or for one
+     operating company's customers, cleaners or money — or the row is the company's own legal or
+     financial configuration* (its issuer identity, its pay rates, its fiscal counter, its campaigns).
+     Precedent: `Order`, `Employee`, `EmployeeInvoice`, `PromoCode`, `CompanyInfo`, `EmployeePayConfig`.
+     The sort: does a scenario exist in which two companies legitimately hold *different* rows for the
+     same key? Yes ⇒ stamped; no ⇒ platform config.
+   - **Hard rule (ADR-0001 Addendum A1 D-A1.1, restated after ADR-0061):** an anonymous request may
+     touch an `ITenantEntity` only through the market scope — the request implements
+     `IOperatorScopedRequest`, names a `countryId`, and `OperatorTenantScopeBehavior` gives it the
+     market operator's tenant before validation. An anonymous *read* of a stamped table with no market
+     and no secret pin is still the bug class A1 named; anonymous catalogues stay platform config
+     because they are the brand's, not because resolution is missing.
 2. **Country-keyed?** Add a `CountryId` (platform-config, keyed by country) when the data varies by
    legal/fiscal jurisdiction (VAT, tax-id format, fiscal mode, invoice template). Precedent:
    `CountryConfiguration`, `CountryInvoiceConfig`. This is **independent** of axis 1 — country-keyed
    config is still platform config, not tenant-scoped.
-3. **Currency-bearing?** Add a per-record `CurrencyId` only on *money-carrying transactional records*
-   (orders, invoices, pay configs, fixed-amount promos). Resolve the value from country/default, never
-   from tenant. Do **not** put `CurrencyId` on catalog entities — they are authored in the default
-   currency and converted by `ExchangeRate`.
+3. **Currency-bearing?** Add a per-record `CurrencyId` on every *money-carrying record* — orders, pay
+   rows, pay configs, invoices, credit accounts, payout details, fixed-amount promos — stamped at write
+   time from the address country (orders), from the rows being aggregated (invoices) or from the work
+   country (pay configs, dashboards), never from tenant and never from a customer preference, because
+   no such preference exists. A **catalogue entity carries no price**: its price
+   lives in a sibling row table keyed `(EntryId, CurrencyId)`, one row per currency the platform
+   operates in, and nothing converts between rows. Precedent: `ServicePrice`, `PackagePrice`,
+   `ExtraPrice`. A scalar that cannot be per-currency (the no-show credit, the tier floor) is bound to
+   the platform default and enforced only on orders in it — say so where it is declared.
 
 ---
 
@@ -353,7 +715,7 @@ path; if yes it joins the batch, if no it stays untouched (parity with the `Loya
 
 **Marching order (per ADR-0001 Addendum A1 D-A1.4):** apply the **same Option-A treatment** — drop
 `ITenantEntity`, make them platform config, swap any `(TenantId, …)` unique indexes to drop `TenantId`.
-They are the same bug class as MembershipPlan and correct today only by single-tenant coincidence. Keep
+They were the same bug class as MembershipPlan, correct at the time only because every row was `NULL`. Keep
 them in **their own batch** (do NOT fold into T-0113 — scope discipline avoids the double-fix collision
 the T-0113 ticket itself warns of). One doctrine (this doc + A1 D-A1.1) governs both; cross-reference it.
 
@@ -365,54 +727,135 @@ the T-0113 ticket itself warns of). One doctrine (this doc + A1 D-A1.1) governs 
 > is capped at 10 items and keyed on the internal GUID rather than the human-typed number. Kept as the
 > record of a real risk that was handled, not as an action.
 
-### 7c. What multi-currency PLANS would require (if ever needed)
+### 7c. Multi-currency PLANS — SHIPPED 2026-09-13 (ADR-0059)
 
-> ⚠ **DEFERRED OPTION SKETCH — NOT approved work. Do not implement without a fresh ticket and a committed
-> product need.**
+> This section used to be a deferred option sketch. The owner ruled on 2026-09-12 (*"Cleansia Plus
+> should be per currency and per region"*) and it shipped as ADR-0059; what follows is the current
+> state, and the sketch's option (a) is the one that was built.
 
-Not needed now (plans are CZK-only by design; Stripe holds the canonical price and charge currency per
-`StripePriceId`). If a future product wants plan prices shown/charged in multiple currencies, the
-**minimum** change set (consistent with §6) would be:
-- Register **one Stripe Price per (plan × currency)** — Stripe already supports multi-currency Prices;
-  this is the real source of truth and the bulk of the work is Stripe-side, not schema-side.
-- Either (a) add a per-currency price **mirror** table keyed by `(PlanCode, CurrencyCode)` for
-  no-round-trip display, or (b) rename the `*Czk` display fields to currency-neutral and resolve the
-  display currency the same way orders do — from **country** (`CountryConfiguration.DefaultCurrencyCode`)
-  or an explicit user preference (`Employee.PreferredCurrencyCode` has a customer-side analog), **never**
-  from tenant.
-- **This is fully decoupled from the T-0113 tenancy fix.** Tenancy (who owns the plan) and currency
-  (what denomination it's shown in) are separate axes (§4). Doing A now does not block or complicate a
-  future multi-currency-plans feature, and a future multi-currency-plans feature does not require
-  re-tenanting plans.
+- **`MembershipPlanPrices`** — one row per (plan, currency), unique on `(MembershipPlanId, CurrencyId)`
+  and on `StripePriceId`, carrying the charge for one billing period and the **Stripe Price id in that
+  currency** (Stripe Prices are single-currency; the admin enters one id per row, Stripe objects are
+  created out of band). `MembershipPlan` has no price column; the `*Czk` fields are gone from the
+  entity and from every wire.
+- **The display currency is resolved from a country, exactly as the catalogue's is** — the customer's
+  chosen market (ADR-0058), which the wizard's Plus step follows even inside a booking priced in the
+  address's currency, because a subscription belongs to the customer, not to the booking. Never from
+  tenant.
+- **`UserMembership.CurrencyId`** records the currency the subscription was created in and never
+  changes; a swap picks the target plan's row in it. The benefits are currency-free, so one
+  subscription serves orders in every currency.
+- **A plan with no row in a currency is not on sale in that market** — the admin form does not require
+  every active currency (unlike the catalogue forms), `ActivateCurrency` does not check plans, and the
+  clients render "Plus is not available in your market yet".
+- **Still decoupled from tenancy.** `MembershipPlan` and `MembershipPlanPrice` are platform config
+  (structural test); `UserMembership` stays tenant-scoped.
 
 ---
 
-## 8. The expansion path (single-tenant → multi-tenant → multi-region/currency, WITHOUT a rewrite)
+## 8. The expansion path (one operator → a second market → a second operating company → multi-region, WITHOUT a rewrite) {#expansion-path}
 
 The scaffolding is deliberately built so each axis flips on independently:
 
-1. **Today — single everything.** One implicit tenant (`TenantId = null`), CZK default, CZE serviced.
-   All mechanisms present and exercised on the single-value path.
-2. **Multi-COUNTRY (smallest next step, no code).** Flip `Country.IsServiced` for the new country; ensure
-   its `CountryConfiguration` + `CountryInvoiceConfig` rows exist (seed already covers ~10). VAT, tax-id
-   validation, fiscal mode, invoice template, date format, default currency all activate automatically
-   via the existing consumers (§3). Order creation already gates on `IsServiced`.
-3. **Multi-CURRENCY (no code for the conversion path).** Already on: a non-CZK country's
-   `DefaultCurrencyCode` flows through `CurrencyResolutionService`; orders/invoices stamp the resolved
-   `CurrencyId`; `ExchangeRate` converts CZK-authored catalog prices. *Optional* upgrade later:
-   per-currency catalog pricing (add `CurrencyId` to catalog prices) instead of flat `ExchangeRate`
-   conversion — but only if rate-based conversion proves insufficient.
-4. **Multi-TENANT (the one axis that needs new infrastructure).** The `ITenantEntity` filter + JWT claim
-   already scope authenticated reads. The **single missing piece** is **spoof-resistant inbound tenant
-   resolution for anonymous routes** (vetted-proxy header / allow-listed host registry / SNI pinning —
-   never the raw `Host` header). This is *unavoidable the day ANY anonymous catalog goes per-tenant*, so
-   building it later loses nothing — which is exactly why T-0113/the catalogs drop `ITenantEntity` now
-   rather than half-build resolution for a zero-row table.
+1. **Today — one of everything, and every mechanism live.** One operating company (`cleansia-cz`,
+   stamped on every business row), CZK the default and the only active currency, CZE the only serviced
+   country and the default market. All mechanisms present and exercised on the single-value path.
+2. **Multi-COUNTRY and multi-CURRENCY are one step, and the order inside it matters.** A market is a
+   country plus its currency, and switching one on is data, not code. What opening SK (or PL) actually
+   takes, in the order that keeps every intermediate state refusing cleanly rather than half-working:
+   1. **The currency row exists and is switched off.** EUR is seeded that way; a new one is created
+      through Admin → Currencies and is born inactive.
+   2. **`CountryConfiguration.DefaultCurrencyCode` names it** (SVK → `EUR` is seeded). Nothing in the
+      platform writes this column; the seed or a SQL script does (the admin country form writes only
+      the market-content field, step 8). Until it names a real row every resolution for that country —
+      a booking at an address there, a cleaner approved for it, their board and every money screen —
+      throws rather than defaulting (owner ruling 2026-09-12), which is why this step precedes
+      servicing the country and not the other way round. The country's **`IsoAlpha2`** must be set —
+      it is seeded for every row and required on the admin create form; the market chip prints it.
+   3. **Author `LoyaltyPointsDivisor`** on the currency form. `ActivateCurrency` refuses without it
+      (`currency.loyalty_divisor_missing`) — **gate 1**.
+   4. **Price the catalogue in it** — every service, package and extra that should be sold there needs
+      a row in `ServicePrices` / `PackagePrices` / `ExtraPrices`. An entry without one is withheld
+      from that country's overview and refused on quote and create; once the currency is active every
+      later catalogue save requires the row (`service.missing_price_for_currency`).
+   5. **Add a platform-wide `EmployeePayConfig` per entry in it**, or the entry is withheld from that
+      currency's catalogue by the pay-coverage gate, and no cleaner in that country can be approved
+      (`employee.pay_config_missing`).
+   6. **Switch the currency on** (`ActivateCurrency`). It is now offerable.
+   7. **Optional — price Plus in it:** a `MembershipPlanPrices` row per plan (the price and the Stripe
+      Price id the owner minted in that currency) on the admin plan form. Without them Plus is simply
+      not on sale in that market (ADR-0059); nothing gates on it.
+   8. **Optional — the market content:** `NoShowCredit` on the currency form (null = no apology credit
+      is paid in that currency) and `InsuranceCoverageAmount` on the country form's Market section
+      (null = the copy names no figure) (ADR-0060). Nothing gates on either.
+   9. **Flip `Country.IsServiced`**, with `CountryInvoiceConfig` in place — **gate 2**:
+      `SetCountryServiced(true)` refuses `country.market_not_ready` unless the configuration from
+      step 2 names a currency that step 6 switched on, because `Country/GetServiced` feeds the
+      wizard's address step and an unpriceable serviced country is a customer-visible dead end
+      (ADR-0058 D7). Switching off is never gated. On success the country appears in
+      `Market/GetOverview`, the market selector lists it and the chip can show it; VAT, tax-id
+      validation, fiscal mode, invoice template and date format activate through the existing
+      consumers (§3).
+   10. **Optional — flag it as the default market** (`PUT api/AdminCountry/{id}/default-market`,
+       owner ruling 2026-09-13) if the new country is what a visitor who has chosen nothing should
+       land on. One configuration carries `IsDefaultMarket` (CZE today); the PUT moves it, and refuses
+       a country that step 9 has not serviced, whose currency step 6 has not switched on, or that no
+       operating company serves (step 11 — `country.market_not_ready` in every case). Opening a second
+       market does **not** move the
+       default by itself — CZ stays the landing page until an admin says otherwise, and promoting the
+       default *currency* no longer moves it either.
+   11. **Assign the operating company — gate 3** (`CountryConfiguration.OperatorTenantId`, ADR-0061 D2).
+       Until a company serves the country it is **not listed** by `Market/GetOverview` however serviced
+       and priced it is, cannot be the default, and every anonymous write naming it is refused
+       `tenant.not_found`. If the **existing** company will serve it, this is one value on the
+       configuration row (`'cleansia-cz'`) and the market is open. If a **new** company will, see
+       step 3. The seed or a SQL script writes it; no admin form does until a second operator exists.
 
-**The doctrine that keeps this rewrite-free:** keep **anonymous-readable catalogs as platform config**
-(not tenant-scoped) until the day the product genuinely needs per-tenant catalogs — and on that day,
-build the spoof-resistant resolver once and re-tenant. Currency and country need no such gate because
-they were never tenant-coupled.
+   Gate 2 makes flipping `IsServiced` before step 6 impossible rather than merely pointless, and gate
+   3 makes a serviced market invisible until someone is legally on the hook for it. From step 11 on, a
+   booking at a Slovak address is quoted and charged in EUR with no client change, a customer who
+   chooses the SK market browses the EUR-priced catalogue before entering any address, cleaners
+   approved for SK are paid in EUR, see only EUR orders on their board, declare EUR (or nothing) on
+   their payout account, and their periods close into EUR invoices — all under whichever company
+   step 11 named. **What stays bound to the platform default** until someone decides otherwise: the
+   tier floor and any promo minimum on a code without a currency (§2, "What is still bound to the
+   platform default"). The default market is bound to nothing but its flag (step 10); the
+   default-currency rule is only the logged fallback when no configuration is flagged.
+3. **A second OPERATING COMPANY (ADR-0061 D12 — six data steps, no code).** Tenancy is live, so the
+   question is no longer "how do we turn it on" but "what does the second company cost". In order,
+   with the two that are genuinely per company named as such:
+   1. **A `Tenants` seed row** — `('cleansia-sk', 'Cleansia SK s.r.o.')`. There is no admin writer; the
+      ticket that onboards the company adds the row and decides whether one is needed after it.
+   2. **`OperatorTenantId = 'cleansia-sk'` on the country's configuration** (step 11 above, with the new
+      id). The country must already be a market — steps 1–9.
+   3. **A `CompanyInfo` row stamped `cleansia-sk`** — the legal issuer on every receipt and invoice.
+      Without it receipts and payout invoices in that market have no issuer; this is genuinely per
+      company, not "nothing else".
+   4. **The first admin of the new company, by SQL** — `CreateAdminUser` stamps the *creating* admin's
+      tenant, and no holding-level admin exists (an admin sees, edits and audits one company's rows).
+      This is the named reason the **holding-level cross-tenant view** is the next tenancy ticket,
+      filed when the second company is real, not before.
+   5. **Pay defaults for the new market, entered by that admin** through the existing pay-config
+      screen, in the market's currency, in their own tenant (`IX_EmployeePayConfigs_Tenant_Scope` is
+      what lets two companies each hold a default for the same service and currency).
+   6. **The clients send the chosen market** on register, Google/Apple sign-up, promo request and
+      referral check (T-0728 — `countryId` on the six anonymous requests; the partner apps gain a
+      market picker that reads `Market/GetOverview`, not `Country/GetServiced`, because the latter still
+      lists a serviced country nobody operates). Required **before** the second market opens, or its
+      visitors register into `cleansia-cz`; not a go-live gate for the first.
+
+   Nothing else: no schema, no host, no filter, no job, no webhook change. What a customer of one
+   company sees of the other: nothing — a CZ account booking an SK address is refused
+   (`order.country_operator_mismatch`) rather than given an order it cannot list, and cross-company
+   booking on one account is the owner's call for that day (Q-TENANCY-01). One email is one identity
+   across both companies.
+
+**The doctrine that keeps this rewrite-free:** keep **the brand's catalogues and programmes as platform
+config** (tenantless) and **the operator's customers, cleaners, money and legal configuration stamped**
+(ADR-0061 D7) — sort the next table by that sentence, not by which route reads it. An anonymous request
+names a **market**, never a tenant, so no inbound tenant-resolution middleware is needed on any axis.
+Currency and country need no such gate because they were never tenant-coupled; tenant is downstream of
+country by the same read that decides currency.
 
 > **Reversal cost is NOT uniform across the six catalogs (corrected per architect panel, file-verified).**
 > "Symmetric and cheap" is true **only for `MembershipPlan`** — zero rows at launch, `(TenantId, Code)` →
@@ -438,12 +881,13 @@ they were never tenant-coupled.
   hardening, a *different* finding from the four-catalog fix.
 - **Security law S3** (`docs/architecture/security-rules.md`) — anonymous routes must not serve
   tenant-scoped data without deliberate, spoof-resistant resolution.
-- **Real-code anchors:** `Currency.cs`, `Country.cs`, `Language.cs`, `CountryConfiguration.cs`,
-  `CountryInvoiceConfig.cs`, `CurrencyResolutionService.cs`, `OrderPricingCalculator.cs:46-66`,
-  `CleansiaDbContext.cs:111-179`, `TenantProvider.cs`, `MembershipPlan.cs:24`, `Employee.cs:68-93`,
-  `ProcessedStripeEvent.cs:11-20`, `ProcessedStripeEventRepository.cs:12-19`,
-  `insert_seed_data.sql` (currencies :230-248, countries :82-127, invoice configs :1543-1614, country
-  configs :1619+, plans :2445-2470).
+- **Real-code anchors:** `Currency.cs`, `ServicePrice.cs` / `PackagePrice.cs` / `ExtraPrice.cs`,
+  `CurrencyRepository.cs` (`IsOfferableAsync`, `IsInUseAsync`), `PayCoverage.cs`,
+  `CurrencyResolutionService.cs`, `OrderPricingCalculator.cs`, `Country.cs`, `Language.cs`,
+  `CountryConfiguration.cs`, `CountryInvoiceConfig.cs`, `CleansiaDbContext.cs:111-179`,
+  `TenantProvider.cs`, `MembershipPlan.cs:24`, `Employee.cs`, `ProcessedStripeEvent.cs:11-20`,
+  `ProcessedStripeEventRepository.cs:12-19`, `insert_seed_data.sql` (countries :76+, currencies
+  :517-541, price rows :748-810, invoice configs :940+, country configs :1030+, plans :1819+).
 
 ---
 
@@ -452,21 +896,33 @@ they were never tenant-coupled.
 Recorded by the authoring architect on top of ADR-0001 Addendum A1, having verified every load-bearing
 premise against real code. This is the single scannable sign-off.
 
-1. **Current-state map (3 axes):** done — §0 table + §1/§2/§3. **Tenancy = forward-compat scaffolding**
-   (40 `ITenantEntity` entities, EF filter, JWT claim — but no inbound resolution, every row null-tenant,
-   one implicit tenant). **Currency = real exchange-rate mechanism, single-currency operation** (platform
-   `Currency` + per-record `CurrencyId`, resolved from **country**, never tenant; flat `ExchangeRate`
-   conversion of CZK-authored prices). **Country = real mechanism, single-country operation** (platform
+1. **Current-state map (3 axes):** done — §0 table + §1/§2/§3. **Tenancy = real mechanism,
+   single-operator operation** (as rewritten 2026-09-13 for ADR-0061: a `Tenants` registry, a
+   market → operating-company map, 48 `ITenantEntity` entities with `TenantId` NOT NULL and FK'd to
+   `Tenants` (2026-09-15), the EF filter, the JWT claim, and an anonymous write scoped by the market it
+   names — one company today).
+   **Currency = real per-currency-price mechanism, single-currency operation**
+   (platform `Currency` with `IsActive` as the market switch, prices authored per currency in sibling
+   row tables, per-record `CurrencyId` on every money-carrying row; the order currency resolved from
+   the service address's **country** and the cleaner's from the work **country**, never from a person
+   and never from tenant; nothing converts — as rewritten 2026-09-12). **Country = real mechanism,
+   single-country operation** (platform
    `Country`/`CountryConfiguration`/`CountryInvoiceConfig` drive live VAT/tax-id/fiscal/invoice; only CZE
    `IsServiced`). The three axes are **orthogonal** (§4).
 2. **Entity classification rule:** done — §6. Platform-config (incl. country-keyed) vs tenant-scoped vs
-   currency-bearing, with the hard rule: **never `[AllowAnonymous]` + `ITenantEntity` without
-   spoof-resistant resolution** (which does not exist today). The 40 are bucketed 33/6/1 in §1.
-3. **Expansion path (no rewrite):** done — §8. single → multi-country (flip `IsServiced`, no code) →
-   multi-currency (already on the conversion path, no code) → multi-tenant (**the one new piece of infra
-   = spoof-resistant inbound tenant resolution** — vetted-proxy header / host-allow-list / SNI pinning,
-   never the raw `Host`). Everything else (filter, claim, write-stamping, per-record currency, country
-   config) is reused as-is.
+   currency-bearing, with the hard rule as it stands after ADR-0061: **an anonymous request that
+   touches an `ITenantEntity` names a market and is scoped to its operator before validation** (the
+   `IOperatorScopedRequest` marker); a tenantless table is one the brand defines identically for every
+   operator. The 46 are bucketed 43/–/3 in §1.
+3. **Expansion path (no rewrite):** done — §8. single → a new market (one data step: currency row,
+   country's `DefaultCurrencyCode` + alpha-2, divisor, prices, pay configs, switch the currency on,
+   optionally Plus prices and market content, flip `IsServiced` behind the readiness gate — no code;
+   the customer picks the market from the selector, ADR-0058; **assign the operating company** —
+   gate 3, ADR-0061) → a second operating company (six data steps, ADR-0061 D12 — no infra: the
+   request names a market and the server maps it, so the "spoof-resistant inbound tenant resolution"
+   this item used to name as the one new piece was never built and is not needed). Everything else
+   (filter, claim, write-stamping, per-currency price rows, per-record currency, country config) is
+   reused as-is.
 4. **T-0113 Option A — CONFIRMED, not revised.** The broader view *strengthens* A1: dropping
    `MembershipPlan.ITenantEntity` → platform config puts it in the same bucket as Currency/Language/
    Country, is currency-neutral (plans are CZK-only by design, no `CurrencyId`, currency was never

@@ -3,20 +3,30 @@ import { TestBed } from '@angular/core/testing';
 import {
   CustomerClient,
   DeleteRecurringBookingCommand,
+  PackageListItem,
+  QuoteOrderResponse,
   RecurringBookingTemplateDto,
   SavedAddressDto,
+  ServiceListItem,
   SetRecurringBookingActiveCommand,
 } from '@cleansia/customer-services';
 import {
+  loadCustomerPackages,
+  loadCustomerServices,
   SavedAddressStore,
   selectCustomerPackages,
+  selectCustomerPackagesCatalogue,
   selectCustomerServices,
+  selectCustomerServicesCatalogue,
+  selectMarketCountryId,
 } from '@cleansia/customer-stores';
 import { SnackbarService } from '@cleansia/services';
+import { Action } from '@ngrx/store';
 import { provideMockStore, MockStore } from '@ngrx/store/testing';
 import { TranslateService } from '@ngx-translate/core';
 import { Observable, of, throwError } from 'rxjs';
 import { RecurringBookingsFacade } from './recurring-bookings.facade';
+import { RecurringPrefillParams } from './recurring-bookings.models';
 
 describe('RecurringBookingsFacade', () => {
   let facade: RecurringBookingsFacade;
@@ -27,6 +37,7 @@ describe('RecurringBookingsFacade', () => {
     setActive: jest.Mock;
     delete: jest.Mock;
   };
+  let orderClient: { quote: jest.Mock };
   let savedAddressStore: {
     addresses: ReturnType<typeof signal<SavedAddressDto[]>>;
     loaded: ReturnType<typeof signal<boolean>>;
@@ -35,6 +46,7 @@ describe('RecurringBookingsFacade', () => {
   let snackbar: {
     showError: jest.Mock;
     showSuccess: jest.Mock;
+    showInfoTranslated: jest.Mock;
   };
 
   const template = (overrides?: Partial<RecurringBookingTemplateDto>): RecurringBookingTemplateDto =>
@@ -51,6 +63,7 @@ describe('RecurringBookingsFacade', () => {
       setActive: jest.fn().mockReturnValue(of(undefined)),
       delete: jest.fn().mockReturnValue(of(undefined)),
     };
+    orderClient = { quote: jest.fn() };
     savedAddressStore = {
       addresses: signal<SavedAddressDto[]>([]),
       loaded: signal(true),
@@ -59,13 +72,21 @@ describe('RecurringBookingsFacade', () => {
     snackbar = {
       showError: jest.fn(),
       showSuccess: jest.fn(),
+      showInfoTranslated: jest.fn(),
     };
 
     TestBed.configureTestingModule({
       providers: [
         RecurringBookingsFacade,
         provideMockStore(),
-        { provide: CustomerClient, useValue: { recurringBookingClient: client } },
+        {
+          provide: CustomerClient,
+          useValue: {
+            recurringBookingClient: client,
+            orderClient,
+            membershipClient: { getMine: jest.fn().mockReturnValue(of({ hasMembership: true })) },
+          },
+        },
         { provide: SavedAddressStore, useValue: savedAddressStore },
         { provide: SnackbarService, useValue: snackbar },
         { provide: TranslateService, useValue: { instant: (k: string) => k } },
@@ -75,7 +96,327 @@ describe('RecurringBookingsFacade', () => {
     store = TestBed.inject(MockStore);
     store.overrideSelector(selectCustomerServices, []);
     store.overrideSelector(selectCustomerPackages, []);
+    store.overrideSelector(selectCustomerServicesCatalogue, { services: [], countryId: null });
+    store.overrideSelector(selectCustomerPackagesCatalogue, { packages: [], countryId: null });
+    store.overrideSelector(selectMarketCountryId, null);
     facade = TestBed.inject(RecurringBookingsFacade);
+  });
+
+  // The catalogue is priced per market and the server withholds what has no price in the saved
+  // address's currency, so the form re-reads it for the country of the address chosen and trims
+  // the selection to what that list offers.
+  describe('the catalogue follows the saved address country', () => {
+    const slovakAddress = SavedAddressDto.fromJS({ id: 'addr-sk', countryId: 'svk' });
+    const otherSlovakAddress = SavedAddressDto.fromJS({ id: 'addr-sk-2', countryId: 'svk' });
+
+    it('reads the catalogue for the platform default once before an address is chosen', async () => {
+      const dispatch = jest.spyOn(store, 'dispatch');
+
+      await facade.initialize();
+      TestBed.flushEffects();
+
+      expect(dispatch).toHaveBeenCalledWith(loadCustomerServices(null));
+      expect(dispatch).toHaveBeenCalledWith(loadCustomerPackages(null));
+      const dispatched = dispatch.mock.calls.map(([action]) => action as unknown as Action);
+      expect(dispatched.filter((action) => action.type === loadCustomerServices.type)).toHaveLength(1);
+    });
+
+    it('prices the form for the chosen market before an address is chosen', async () => {
+      store.overrideSelector(selectMarketCountryId, 'svk');
+      store.refreshState();
+      const dispatch = jest.spyOn(store, 'dispatch');
+
+      await facade.initialize();
+      TestBed.flushEffects();
+
+      expect(dispatch).toHaveBeenCalledWith(loadCustomerServices('svk'));
+      expect(dispatch).toHaveBeenCalledWith(loadCustomerPackages('svk'));
+    });
+
+    it("re-reads services and packages for the chosen address's country", async () => {
+      await facade.initialize();
+      savedAddressStore.addresses.set([slovakAddress]);
+      jest.spyOn(store, 'dispatch');
+
+      facade.updateFormData({ savedAddressId: 'addr-sk' });
+      TestBed.flushEffects();
+
+      expect(store.dispatch).toHaveBeenCalledWith(loadCustomerServices('svk'));
+      expect(store.dispatch).toHaveBeenCalledWith(loadCustomerPackages('svk'));
+    });
+
+    it('does not re-read when another address in the same country is chosen', async () => {
+      await facade.initialize();
+      savedAddressStore.addresses.set([slovakAddress, otherSlovakAddress]);
+      facade.updateFormData({ savedAddressId: 'addr-sk' });
+      TestBed.flushEffects();
+      jest.spyOn(store, 'dispatch');
+
+      facade.updateFormData({ savedAddressId: 'addr-sk-2' });
+      TestBed.flushEffects();
+
+      expect(store.dispatch).not.toHaveBeenCalled();
+    });
+
+    it('drops a selected service the country does not offer and says so', async () => {
+      await facade.initialize();
+      savedAddressStore.addresses.set([slovakAddress]);
+      facade.updateFormData({ selectedServiceIds: ['s1', 's2'], savedAddressId: 'addr-sk' });
+
+      store.overrideSelector(selectCustomerServicesCatalogue, {
+        services: [ServiceListItem.fromJS({ id: 's1' })],
+        countryId: 'svk',
+      });
+      store.refreshState();
+
+      expect(facade.formData().selectedServiceIds).toEqual(['s1']);
+      expect(snackbar.showInfoTranslated).toHaveBeenCalledWith(
+        'pages.order.wizard.catalogue_changed_for_country',
+      );
+    });
+
+    it('drops a selected package the country does not offer and says so', async () => {
+      await facade.initialize();
+      savedAddressStore.addresses.set([slovakAddress]);
+      facade.updateFormData({ selectedPackageIds: ['p1', 'p2'], savedAddressId: 'addr-sk' });
+
+      store.overrideSelector(selectCustomerPackagesCatalogue, {
+        packages: [PackageListItem.fromJS({ id: 'p2' })],
+        countryId: 'svk',
+      });
+      store.refreshState();
+
+      expect(facade.formData().selectedPackageIds).toEqual(['p2']);
+      expect(snackbar.showInfoTranslated).toHaveBeenCalledWith(
+        'pages.order.wizard.catalogue_changed_for_country',
+      );
+    });
+
+    it('keeps the selection while the list on screen is still the default-priced one', async () => {
+      await facade.initialize();
+      savedAddressStore.addresses.set([slovakAddress]);
+      facade.updateFormData({ selectedServiceIds: ['s1', 's2'], savedAddressId: 'addr-sk' });
+
+      store.overrideSelector(selectCustomerServicesCatalogue, {
+        services: [ServiceListItem.fromJS({ id: 's1' })],
+        countryId: null,
+      });
+      store.refreshState();
+
+      expect(facade.formData().selectedServiceIds).toEqual(['s1', 's2']);
+      expect(snackbar.showInfoTranslated).not.toHaveBeenCalled();
+    });
+
+    it('says nothing when every selection survives the new country', async () => {
+      await facade.initialize();
+      savedAddressStore.addresses.set([slovakAddress]);
+      facade.updateFormData({ selectedServiceIds: ['s1'], savedAddressId: 'addr-sk' });
+
+      store.overrideSelector(selectCustomerServicesCatalogue, {
+        services: [ServiceListItem.fromJS({ id: 's1' }), ServiceListItem.fromJS({ id: 's2' })],
+        countryId: 'svk',
+      });
+      store.refreshState();
+
+      expect(facade.formData().selectedServiceIds).toEqual(['s1']);
+      expect(snackbar.showInfoTranslated).not.toHaveBeenCalled();
+    });
+  });
+
+  // "Make this recurring" arrives with the order's services before the customer has touched the
+  // address, and the default-priced list lands before the one priced for their address. Checking
+  // the prefill against the first list and again against the second told the customer twice.
+  describe('a prefill from an order is checked once, against the list priced for the address', () => {
+    const slovakAddress = SavedAddressDto.fromJS({ id: 'addr-sk', countryId: 'svk', isDefault: true });
+    const prefill = (overrides?: Partial<RecurringPrefillParams>): RecurringPrefillParams => ({
+      selectedServiceIds: ['s1', 's2'],
+      selectedPackageIds: [],
+      selectedServiceNames: ['Basic', 'Windows'],
+      selectedPackageNames: [],
+      rooms: 3,
+      bathrooms: 1,
+      paymentType: 2,
+      timeOfDay: '09:00',
+      ...overrides,
+    });
+    const listLands = (services: string[], countryId: string | null) => {
+      store.overrideSelector(selectCustomerServices, services.map((id) => ServiceListItem.fromJS({ id })));
+      store.overrideSelector(selectCustomerServicesCatalogue, {
+        services: services.map((id) => ServiceListItem.fromJS({ id })),
+        countryId,
+      });
+      store.overrideSelector(selectCustomerPackagesCatalogue, { packages: [], countryId });
+      store.refreshState();
+      TestBed.flushEffects();
+    };
+
+    it('holds the prefill while the list on screen is priced for another market than the address', async () => {
+      savedAddressStore.addresses.set([slovakAddress]);
+      await facade.initialize();
+      facade.prefill(prefill());
+
+      listLands(['s1'], null);
+
+      expect(facade.formData().selectedServiceIds).toEqual([]);
+      expect(snackbar.showSuccess).not.toHaveBeenCalled();
+      expect(snackbar.showInfoTranslated).not.toHaveBeenCalled();
+    });
+
+    it('trims once against the address list and says so once', async () => {
+      savedAddressStore.addresses.set([slovakAddress]);
+      await facade.initialize();
+      facade.prefill(prefill());
+      listLands(['s1'], null);
+
+      listLands(['s1'], 'svk');
+
+      expect(facade.formData()).toMatchObject({
+        selectedServiceIds: ['s1'],
+        rooms: 3,
+        bathrooms: 1,
+        paymentType: 2,
+        timeOfDay: '09:00',
+      });
+      expect(snackbar.showSuccess).toHaveBeenCalledTimes(1);
+      expect(snackbar.showSuccess).toHaveBeenCalledWith('recurring_booking.prefill_dropped_items');
+      expect(snackbar.showInfoTranslated).not.toHaveBeenCalled();
+    });
+
+    it('applies once and never again when the list is re-read later', async () => {
+      savedAddressStore.addresses.set([slovakAddress]);
+      await facade.initialize();
+      facade.prefill(prefill());
+      listLands(['s1', 's2'], 'svk');
+      facade.updateFormData({ selectedServiceIds: ['s1'] });
+
+      listLands(['s1', 's2'], 'svk');
+
+      expect(facade.formData().selectedServiceIds).toEqual(['s1']);
+      expect(snackbar.showSuccess).not.toHaveBeenCalled();
+    });
+
+    it('checks against the default-priced list when the customer has no saved address', async () => {
+      await facade.initialize();
+      facade.prefill(prefill());
+
+      listLands(['s2'], null);
+
+      expect(facade.formData().selectedServiceIds).toEqual(['s2']);
+      expect(snackbar.showSuccess).toHaveBeenCalledTimes(1);
+    });
+
+    it('holds the prefill until the addresses have loaded, since they decide the market', async () => {
+      savedAddressStore.loaded.set(false);
+      let finishLoading: (value: boolean) => void = () => undefined;
+      savedAddressStore.refresh.mockReturnValue(
+        new Promise<boolean>((resolve) => {
+          finishLoading = resolve;
+        }),
+      );
+      const loading = facade.ensureAddresses();
+      facade.prefill(prefill());
+
+      listLands(['s1'], null);
+      expect(facade.formData().selectedServiceIds).toEqual([]);
+
+      savedAddressStore.addresses.set([slovakAddress]);
+      finishLoading(true);
+      await loading;
+      TestBed.flushEffects();
+      listLands(['s1'], 'svk');
+
+      expect(facade.formData().selectedServiceIds).toEqual(['s1']);
+      expect(snackbar.showSuccess).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('the currency a schedule is priced in', () => {
+    it('prices a quote that names no currency as a bare number, never in a guessed unit', async () => {
+      orderClient.quote.mockReturnValue(
+        of(QuoteOrderResponse.fromJS({ totalPrice: 1000, finalPriceAfterDiscount: 900 })),
+      );
+      facade.updateFormData({ selectedServiceIds: ['s1'] });
+
+      await facade.quoteForm();
+
+      expect(facade.formPrice()).toEqual({ amount: 900, currency: '' });
+    });
+
+    // The form's price threaded the quote's currency on one line and hardcoded CZK on the next.
+    it("carries the quote's own currency onto the form price", async () => {
+      orderClient.quote.mockReturnValue(
+        of(QuoteOrderResponse.fromJS({ totalPrice: 1000, finalPriceAfterDiscount: 900, currencyCode: 'EUR' })),
+      );
+      facade.updateFormData({ selectedServiceIds: ['s1'] });
+
+      await facade.quoteForm();
+
+      expect(facade.formPrice()).toEqual({ amount: 900, currency: 'EUR' });
+    });
+
+    it('prices a card in the currency its quote came back in', async () => {
+      orderClient.quote.mockReturnValue(
+        of(QuoteOrderResponse.fromJS({ totalPrice: 1000, finalPriceAfterDiscount: 1000, currencyCode: 'EUR' })),
+      );
+
+      await facade.quoteTemplate(template({ selectedServiceIds: ['s1'] }));
+
+      expect(facade.templatePrices()['t1']).toEqual({ amount: 1000, currency: 'EUR' });
+    });
+  });
+
+  // A schedule is priced in the currency of the country its saved address is in — the server
+  // derives it from the country the quote names, and from the saved address itself on create.
+  describe('the market a schedule is quoted for', () => {
+    const slovakAddress = SavedAddressDto.fromJS({ id: 'addr-sk', countryId: 'svk' });
+    const quoted = () =>
+      of(QuoteOrderResponse.fromJS({ totalPrice: 40, finalPriceAfterDiscount: 40, currencyCode: 'EUR' }));
+
+    it("names the chosen saved address's country on the form quote", async () => {
+      savedAddressStore.addresses.set([slovakAddress]);
+      orderClient.quote.mockReturnValue(quoted());
+      facade.updateFormData({ selectedServiceIds: ['s1'], savedAddressId: 'addr-sk' });
+
+      await facade.quoteForm();
+
+      expect(orderClient.quote.mock.calls[0][0]).toMatchObject({ countryId: 'svk' });
+      expect(orderClient.quote.mock.calls[0][0].currencyId).toBeUndefined();
+    });
+
+    it("names the template's saved address country on a card quote", async () => {
+      savedAddressStore.addresses.set([slovakAddress]);
+      orderClient.quote.mockReturnValue(quoted());
+
+      await facade.quoteTemplate(template({ selectedServiceIds: ['s1'], savedAddressId: 'addr-sk' }));
+
+      expect(orderClient.quote.mock.calls[0][0].countryId).toBe('svk');
+    });
+
+    it('names no country before an address is chosen, which the server reads as the default', async () => {
+      orderClient.quote.mockReturnValue(quoted());
+      facade.updateFormData({ selectedServiceIds: ['s1'], savedAddressId: null });
+
+      await facade.quoteForm();
+
+      expect(orderClient.quote.mock.calls[0][0].countryId).toBeUndefined();
+    });
+
+    it('sends no currency on create — the server derives it from the saved address', async () => {
+      savedAddressStore.addresses.set([slovakAddress]);
+      client.create.mockReturnValue(of(template({ id: 't-new' })));
+      facade.updateFormData({
+        selectedServiceIds: ['s1'],
+        savedAddressId: 'addr-sk',
+        startsOn: new Date('2026-10-01T00:00:00Z'),
+      });
+
+      await facade.submit();
+
+      expect(client.create).toHaveBeenCalledTimes(1);
+      const body = JSON.parse(JSON.stringify(client.create.mock.calls[0][0]));
+      expect(body).not.toHaveProperty('currencyId');
+      expect(body.savedAddressId).toBe('addr-sk');
+    });
   });
 
   describe('refreshList — the three data states', () => {

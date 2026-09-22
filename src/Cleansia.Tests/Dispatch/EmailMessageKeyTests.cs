@@ -32,6 +32,20 @@ public class EmailMessageKeyTests
     }
 
     [Fact]
+    public void Admin_Notification_Key_Hashes_The_Address_And_Discriminates_By_Event_Subject_And_Address()
+    {
+        var key = MessageKeys.AdminNotificationEmail("admin.dispute.filed", "dispute-1", "Ops@Example.com");
+
+        Assert.StartsWith("admin-email:admin.dispute.filed:dispute-1:", key, StringComparison.Ordinal);
+        Assert.DoesNotContain("@", key);
+        Assert.DoesNotContain("example", key, StringComparison.OrdinalIgnoreCase);
+        Assert.Equal(key, MessageKeys.AdminNotificationEmail("admin.dispute.filed", "dispute-1", " ops@example.com "));
+        Assert.NotEqual(key, MessageKeys.AdminNotificationEmail("admin.dispute.filed", "dispute-2", "ops@example.com"));
+        Assert.NotEqual(key, MessageKeys.AdminNotificationEmail("admin.dispute.chargeback", "dispute-1", "ops@example.com"));
+        Assert.NotEqual(key, MessageKeys.AdminNotificationEmail("admin.dispute.filed", "dispute-1", "other@example.com"));
+    }
+
+    [Fact]
     public void Email_Key_Is_Deterministic_For_Same_Inputs()
     {
         Assert.Equal(

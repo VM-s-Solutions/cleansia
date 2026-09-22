@@ -12,6 +12,10 @@ public sealed class AuditContextTests
 
     private sealed record RefundAfter(string OrderId, decimal Refunded);
 
+    private enum Tier { Standard = 0, Plus = 1 }
+
+    private sealed record TierChange(string OrderId, Tier Tier);
+
     [Fact]
     public void RecordChange_Then_Drain_Returns_The_Typed_Snapshot_Serialized_To_Camelcase()
     {
@@ -27,6 +31,24 @@ public sealed class AuditContextTests
         Assert.Contains("\"orderId\":\"ORD-1\"", snapshot.BeforeJson);
         Assert.Contains("\"total\":100", snapshot.BeforeJson);
         Assert.Contains("\"refunded\":25", snapshot.AfterJson);
+    }
+
+    // A row is read by a support agent three years later and by a lawyer's file; "plus" survives an
+    // enum renumbering and needs no lookup, "1" does neither (ADR-0062 D3: enums by name).
+    [Fact]
+    public void Enums_Are_Serialized_By_Camelcase_Name_On_Both_Record_Paths()
+    {
+        var context = new AuditContext();
+
+        context.RecordChange("Order", "ORD-1", new TierChange("ORD-1", Tier.Standard), new TierChange("ORD-1", Tier.Plus));
+        var change = context.DrainSnapshot();
+
+        context.RecordEvidence("Order", "ORD-1", new TierChange("ORD-1", Tier.Plus));
+        var evidence = context.DrainSnapshot();
+
+        Assert.Contains("\"tier\":\"standard\"", change!.BeforeJson);
+        Assert.Contains("\"tier\":\"plus\"", change.AfterJson);
+        Assert.Contains("\"tier\":\"plus\"", evidence!.AfterJson);
     }
 
     [Fact]

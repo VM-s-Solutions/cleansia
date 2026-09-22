@@ -8,16 +8,15 @@
  * second. The one thing this cannot cover — that eslint really reports what the fixtures claim — is
  * covered by the gate's own run in the same workflow, over the real workspace.
  *
- * The shipped KNOWN set is NON-empty (18 entries, 19 violations — three rule classes that predate
- * this tool and each need their own decision), so the ratchet has a live subject and the scenarios
- * below drive it directly rather than through an injected copy.
+ * The shipped KNOWN set is empty. Test that zero baseline directly, then inject the historical
+ * 18-entry baseline into a temporary copy to exercise both directions of the ratchet.
  *
  * Stub the tool's body to `process.exit(0)` and every scenario that expects exit 1 goes red.
  *
  *   node agents/tools/check-module-boundaries.test.mjs
  */
 import { spawnSync } from "node:child_process";
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -26,9 +25,9 @@ const HERE = dirname(fileURLToPath(import.meta.url));
 const TOOL = join(HERE, "check-module-boundaries.mjs");
 const RULE = "@nx/enforce-module-boundaries";
 
-const WS = "/repo/src/Cleansia.App";
+const WS = join(tmpdir(), "repo", "src", "Cleansia.App");
 
-/** The shipped KNOWN set, as eslint would report it. Kept here so a drift in either goes red. */
+/** Historical violations used to exercise a non-empty ratchet without relaxing the shipped gate. */
 const BASELINE = [
     ["apps/cleansia-partner.app/src/app/app.component.ts", "Static imports of lazy-loaded libraries are forbidden.\n\nLibrary \"components\" is lazy-loaded", 1],
     ["apps/cleansia.app/src/app/app.ts", "Static imports of lazy-loaded libraries are forbidden.", 1],
@@ -61,19 +60,19 @@ function baselineReport(extra = [], { padTo = 900 } = {}) {
     const files = [];
     for (const [rel, message, count] of BASELINE) {
         files.push({
-            filePath: `${WS}/${rel}`,
+            filePath: join(WS, rel),
             messages: Array.from({ length: count }, () => ({ ruleId: RULE, severity: 2, message })),
         });
     }
     for (const [rel, message] of extra) {
         files.push({
-            filePath: `${WS}/${rel}`,
+            filePath: join(WS, rel),
             messages: [{ ruleId: RULE, severity: 2, message }],
         });
     }
     while (files.length < padTo) {
         files.push({
-            filePath: `${WS}/libs/filler/src/lib/file-${files.length}.ts`,
+            filePath: join(WS, "libs/filler/src/lib", `file-${files.length}.ts`),
             // A file with unrelated findings must not register as a boundary violation.
             messages: [{ ruleId: "@typescript-eslint/no-explicit-any", severity: 1, message: "Unexpected any." }],
         });
@@ -83,17 +82,31 @@ function baselineReport(extra = [], { padTo = 900 } = {}) {
 
 /** The baseline minus one recorded entry — i.e. somebody fixed it and left the entry behind. */
 function baselineMissing(rel) {
-    return baselineReport().filter((f) => f.filePath !== `${WS}/${rel}`);
+    return baselineReport().filter((f) => f.filePath !== join(WS, rel));
 }
 
 let failed = 0;
 const root = mkdtempSync(join(tmpdir(), "module-boundaries-selftest-"));
+const fixtureTool = join(root, "check-module-boundaries.mjs");
+const source = readFileSync(TOOL, "utf8");
+if (!source.includes("const KNOWN = [];")) {
+    rmSync(root, { recursive: true, force: true });
+    throw new Error("The shipped zero baseline changed; review the self-test fixture.");
+}
+const knownFixture = BASELINE.map(([file, message, count]) => ({
+    file,
+    class: message.startsWith("Static imports") ? "static-import-of-lazy"
+        : message.startsWith("Buildable libraries") ? "buildable-from-non-buildable"
+        : "deep-relative-import",
+    count,
+}));
+writeFileSync(fixtureTool, source.replace("const KNOWN = [];", `const KNOWN = ${JSON.stringify(knownFixture)};`));
 
-function scenario(name, { report, args = [], expectExit, expectText = [], rejectText = [] }) {
+function scenario(name, { report, args = [], expectExit, expectText = [], rejectText = [], tool = fixtureTool }) {
     const path = join(root, `report-${Math.random().toString(36).slice(2)}.json`);
     try {
         writeFileSync(path, typeof report === "string" ? report : JSON.stringify(report));
-        const r = spawnSync(process.execPath, [TOOL, `--report=${path}`, ...args], { encoding: "utf8" });
+        const r = spawnSync(process.execPath, [tool, `--report=${path}`, ...args], { encoding: "utf8" });
         const out = `${r.stdout}${r.stderr}`;
         const okExit = r.status === expectExit;
         const okText = expectText.every((t) => out.includes(t));
@@ -117,6 +130,21 @@ function scenario(name, { report, args = [], expectExit, expectText = [], reject
 }
 
 console.log("check-module-boundaries self-test:");
+
+scenario("the shipped zero baseline accepts a complete clean report", {
+    tool: TOOL,
+    report: baselineReport().map((f) => ({ ...f, messages: [] })),
+    expectExit: 0,
+    expectText: ["0 known", "0 drift"],
+});
+
+scenario("the shipped zero baseline rejects every historical violation", {
+    tool: TOOL,
+    report: baselineReport(),
+    expectExit: 1,
+    expectText: ["0 known", "18 drift(s)", "NEW"],
+    rejectText: ["\n  STALE ", "\n  CHANGED "],
+});
 
 scenario("the recorded state is clean, and the run states the corpus it read", {
     report: baselineReport(),
@@ -181,7 +209,7 @@ scenario("a recorded file whose count DROPS -> RED too, not a quiet improvement"
 
 scenario("a recorded violation that MOVES to another file is two drifts, not zero", {
     report: baselineMissing("libs/shared/components/src/lib/cleansia-radio/cleansia-radio.component.ts").concat([{
-        filePath: `${WS}/libs/shared/components/src/lib/cleansia-radio-v2/cleansia-radio-v2.component.ts`,
+        filePath: join(WS, "libs/shared/components/src/lib/cleansia-radio-v2/cleansia-radio-v2.component.ts"),
         messages: [{ ruleId: RULE, severity: 2, message: "Buildable libraries cannot import or export from non-buildable libraries" }],
     }]),
     expectExit: 1,

@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Cleansia.Infra.Database.EntityConfigurations;
 
-public class OrderReceiptEntityConfiguration : AuditableEntityConfiguration<OrderReceipt, string>
+public class OrderReceiptEntityConfiguration : TenantAuditableEntityConfiguration<OrderReceipt, string>
 {
     public override void Configure(EntityTypeBuilder<OrderReceipt> builder)
     {
@@ -36,9 +36,14 @@ public class OrderReceiptEntityConfiguration : AuditableEntityConfiguration<Orde
             .HasForeignKey(r => r.LanguageId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        builder.HasIndex(r => r.ReceiptNumber)
+        // The number is Format(Pattern, year, sequence) from a PER-TENANT FiscalCounter, so two
+        // operators' first receipts of a year are the same string by construction (ADR-0061 D9). The
+        // index is the sole arbiter between allocate and insert, so NULLS NOT DISTINCT stays on even
+        // though the column is NOT NULL: the model guard reads the option, not the column.
+        builder.HasIndex(r => new { r.TenantId, r.ReceiptNumber })
             .IsUnique()
-            .HasDatabaseName("IX_OrderReceipts_ReceiptNumber");
+            .AreNullsDistinct(false)
+            .HasDatabaseName("IX_OrderReceipts_TenantId_ReceiptNumber");
 
         builder.HasIndex(r => new { r.OrderId, r.LanguageId })
             .HasDatabaseName("IX_OrderReceipts_Order_Language");

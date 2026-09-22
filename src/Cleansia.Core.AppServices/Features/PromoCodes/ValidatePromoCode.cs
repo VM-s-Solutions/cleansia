@@ -25,7 +25,8 @@ public class ValidatePromoCode
 
     public record Command(
         string Code,
-        decimal OrderSubtotal) : ICommand<Response>;
+        decimal OrderSubtotal,
+        string? CurrencyId = null) : ICommand<Response>;
 
     public record Response(
         bool IsValid,
@@ -40,13 +41,20 @@ public class ValidatePromoCode
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
         {
             var userId = userSessionProvider.GetUserId()!;
-            var defaultCurrency = await currencyRepository.GetDefaultAsync(cancellationToken);
+
+            // The preview must ask the question the create asks: the quote's currency -- the service
+            // address's country's -- is what CreateOrder previews in, and a code bound to another
+            // currency previews valid against the platform default only to be refused at checkout.
+            // Null is a client that quoted with no currency, which resolved to the default.
+            var currencyId = string.IsNullOrEmpty(command.CurrencyId)
+                ? (await currencyRepository.GetDefaultAsync(cancellationToken))?.Id
+                : command.CurrencyId;
 
             var preview = await promoCodeService.PreviewAsync(
                 command.Code,
                 userId,
                 command.OrderSubtotal,
-                defaultCurrency?.Id,
+                currencyId,
                 cancellationToken);
 
             return BusinessResult.Success(new Response(

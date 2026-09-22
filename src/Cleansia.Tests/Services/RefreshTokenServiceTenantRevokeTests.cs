@@ -27,8 +27,7 @@ namespace Cleansia.Tests.Services;
 /// </summary>
 public sealed class RefreshTokenServiceTenantRevokeTests : IDisposable
 {
-    private const string TenantA = "tenant-A";
-    private const string TenantB = "tenant-B";
+    private const string TenantA = TestTenants.Second;
     private const string UserA = "user-A";
     private const string UserB = "user-B";
     private const string Audience = JwtAudiences.Mobile;
@@ -83,13 +82,14 @@ public sealed class RefreshTokenServiceTenantRevokeTests : IDisposable
     }
 
     /// <summary>
-    /// Seeds two users (one per tenant) each holding a refresh token whose row is stamped
-    /// <c>TenantId == null</c> — exactly what the anonymous issuance path produces today.
+    /// Seeds two users each holding a refresh token stamped with the default operating company —
+    /// what the anonymous issuance path produces once TokenService adopts the user's tenant
+    /// (ADR-0061 D4). The revoke below runs under ANOTHER tenant's claim, so it proves the bypass.
     /// </summary>
     private async Task SeedAsync()
     {
-        await using var ctx = NewContext(tenantId: null);
-        await ctx.Database.EnsureCreatedAsync();
+        await using var ctx = NewContext(tenantId: TestTenants.Default);
+        await TestTenants.EnsureCreatedWithRegistryAsync(ctx);
 
         ctx.Add(Language.Create("en", "English"));
 
@@ -105,13 +105,13 @@ public sealed class RefreshTokenServiceTenantRevokeTests : IDisposable
 
         await ctx.CommitAsync(CancellationToken.None);
 
-        await using var verify = NewContext(tenantId: null);
+        await using var verify = NewContext(tenantId: TestTenants.Default);
         var seeded = await verify.Set<RefreshToken>().IgnoreQueryFilters().FirstAsync(t => t.Id == "tok-A");
-        Assert.Null(seeded.TenantId);
+        Assert.Equal(TestTenants.Default, seeded.TenantId);
     }
 
     [Fact]
-    public async Task RevokeByDeviceAsync_FromTenantContext_ActuallyRevokesNullStampedToken()
+    public async Task RevokeByDeviceAsync_FromTenantContext_ActuallyRevokesDefaultStampedToken()
     {
         await SeedAsync();
 
@@ -121,7 +121,7 @@ public sealed class RefreshTokenServiceTenantRevokeTests : IDisposable
             await ctx.CommitAsync(CancellationToken.None);
         }
 
-        await using var assertCtx = NewContext(tenantId: null);
+        await using var assertCtx = NewContext(tenantId: TestTenants.Default);
         var tokenA = await assertCtx.Set<RefreshToken>().IgnoreQueryFilters().FirstAsync(t => t.Id == "tok-A");
 
         Assert.NotNull(tokenA.RevokedAt);
@@ -130,15 +130,15 @@ public sealed class RefreshTokenServiceTenantRevokeTests : IDisposable
     }
 
     [Fact]
-    public async Task RevokeAsync_Logout_FromTenantContext_ActuallyRevokesNullStampedToken()
+    public async Task RevokeAsync_Logout_FromTenantContext_ActuallyRevokesDefaultStampedToken()
     {
         await SeedAsync();
 
-        // Issue a fresh token on the anonymous path (TenantId stamped null), keeping its raw value.
+        // Issue a fresh token on the anonymous path (stamped with the ambient default), keeping its raw value.
         string rawA;
-        await using (var issueCtx = NewContext(tenantId: null))
+        await using (var issueCtx = NewContext(tenantId: TestTenants.Default))
         {
-            await issueCtx.Database.EnsureCreatedAsync();
+            await TestTenants.EnsureCreatedWithRegistryAsync(issueCtx);
             rawA = NewService(issueCtx).Issue(UserA, rememberMe: true, audience: Audience, deviceId: DeviceA).RawToken;
             await issueCtx.CommitAsync(CancellationToken.None);
         }
@@ -149,7 +149,7 @@ public sealed class RefreshTokenServiceTenantRevokeTests : IDisposable
             await ctx.CommitAsync(CancellationToken.None);
         }
 
-        await using var assertCtx = NewContext(tenantId: null);
+        await using var assertCtx = NewContext(tenantId: TestTenants.Default);
         var hash = NewService(assertCtx).HashToken(rawA);
         var issued = await assertCtx.Set<RefreshToken>().IgnoreQueryFilters().FirstAsync(t => t.TokenHash == hash);
 
@@ -171,7 +171,7 @@ public sealed class RefreshTokenServiceTenantRevokeTests : IDisposable
             await ctx.CommitAsync(CancellationToken.None);
         }
 
-        await using var assertCtx = NewContext(tenantId: null);
+        await using var assertCtx = NewContext(tenantId: TestTenants.Default);
         var tokenB = await assertCtx.Set<RefreshToken>().IgnoreQueryFilters().FirstAsync(t => t.Id == "tok-B");
 
         Assert.True(tokenB.IsAlive);

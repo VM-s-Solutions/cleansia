@@ -43,12 +43,11 @@ public class MembershipPlanPlatformConfigStructuralTests
     public void MembershipPlan_MatchesPlatformConfigPrecedent_AuditableButNotITenantEntity()
     {
         // Exact precedent parity with Currency (already platform config — Auditable, NOT ITenantEntity).
-        // Note: the TenantId property itself lives on the Auditable base and is shared by ALL entities
-        // (Currency has it too); what makes something tenant-scoped is the ITenantEntity MARKER, which is
-        // what the EF global filter (CleansiaDbContext.ApplyTenantQueryFilters) keys off. So the contract
-        // is "is Auditable, is NOT ITenantEntity" — the dormant TenantId column is the owner's migration
-        // to drop, not a C#-visible difference.
+        // The tenant column lives on TenantAuditable, so a plain Auditable type has no TenantId at all;
+        // the ITenantEntity marker is what the EF global filter (CleansiaDbContext.ApplyTenantQueryFilters)
+        // keys off.
         Assert.True(typeof(Auditable).IsAssignableFrom(typeof(MembershipPlan)));
+        Assert.False(typeof(TenantAuditable).IsAssignableFrom(typeof(MembershipPlan)));
         Assert.False(typeof(ITenantEntity).IsAssignableFrom(typeof(MembershipPlan)));
 
         // The platform-config precedent the panel cited (Currency) has exactly this shape.
@@ -57,13 +56,21 @@ public class MembershipPlanPlatformConfigStructuralTests
     }
 
     [Fact]
-    public void LoyaltyTierConfig_StaysTenantScoped_NoAnonymousReadPath_AC4()
+    public void MembershipPlanPrice_IsPlatformConfigLikeThePlanItPrices()
     {
-        // LoyaltyTierConfig is the same shape but has NO anonymous read path, so it stays
-        // ITenantEntity (untouched by this ticket). This pins that decision: if someone drops the
-        // interface from LoyaltyTierConfig too, that is a SEPARATE decision and this test catches it.
-        Assert.True(
+        // The anonymous GetPlans read joins the price rows; a tenant dimension there would collapse to
+        // the null-tenant slice exactly as the plan's once did.
+        Assert.True(typeof(Auditable).IsAssignableFrom(typeof(MembershipPlanPrice)));
+        Assert.False(typeof(ITenantEntity).IsAssignableFrom(typeof(MembershipPlanPrice)));
+    }
+
+    [Fact]
+    public void LoyaltyTierConfig_IsTenantless_TheBrandsProgramme_AC4()
+    {
+        // The brand's loyalty programme, sold identically by every operating company — the
+        // MembershipPlan sibling (ADR-0061 D7). Seeded once, read by every tenant.
+        Assert.False(
             typeof(ITenantEntity).IsAssignableFrom(typeof(LoyaltyTierConfig)),
-            "LoyaltyTierConfig must remain ITenantEntity — it has no anonymous read path, so the platform-config carve-out does not apply.");
+            "LoyaltyTierConfig is platform config (ADR-0061 D7): the tier thresholds and discounts are the brand's, not an operator's.");
     }
 }

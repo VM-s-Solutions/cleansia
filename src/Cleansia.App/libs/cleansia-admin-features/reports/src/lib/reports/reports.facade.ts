@@ -29,6 +29,10 @@ export class ReportsFacade extends UnsubscribeControlDirective {
 
   readonly activeTab = signal<ReportType>('revenue');
 
+  readonly currencies = signal<{ id: string; code: string; isDefault: boolean }[]>([]);
+  /** undefined = let the server use the platform default. */
+  readonly selectedCurrencyId = signal<string | undefined>(undefined);
+
   readonly dateRange = signal<DateRangeFilter>({
     startDate: this.getDefaultStartDate(),
     endDate: new Date(),
@@ -43,10 +47,46 @@ export class ReportsFacade extends UnsubscribeControlDirective {
     () => this.loadingRevenue() || this.loadingPayroll()
   );
 
+  private readonly language = signal<string>(this.translate.currentLang);
+
+  /** The headline is the server's net figure; the page derives no money arithmetic of its own. */
+  readonly revenueHeadline = computed(() =>
+    this.formatRevenueAmount(this.revenueReport()?.netRevenue)
+  );
+
+  readonly revenueBreakdown = computed(() => {
+    const report = this.revenueReport();
+    return {
+      gross: this.formatRevenueAmount(report?.totalRevenue),
+      refunded: this.formatRevenueAmount(report?.totalRefunded),
+      credit: this.formatRevenueAmount(report?.totalReturnedToCredit),
+    };
+  });
+
+  constructor() {
+    super();
+    this.translate.onLangChange
+      .pipe(takeUntil(this.destroyed$))
+      .subscribe((event) => this.language.set(event.lang));
+  }
+
   private getDefaultStartDate(): Date {
     const date = new Date();
     date.setMonth(date.getMonth() - 1);
     return date;
+  }
+
+  loadCurrencies(): void {
+    this.adminClient.adminCurrencyClient
+      .getOverview()
+      .pipe(takeUntil(this.destroyed$), catchError(() => of([])))
+      .subscribe((currencies) => {
+        this.currencies.set(
+          (currencies ?? []).flatMap((c) =>
+            c.id && c.code ? [{ id: c.id, code: c.code, isDefault: !!c.isDefault }] : []
+          )
+        );
+      });
   }
 
   loadRevenueReport(): void {
@@ -54,7 +94,7 @@ export class ReportsFacade extends UnsubscribeControlDirective {
     const { startDate, endDate } = this.dateRange();
 
     this.adminClient.adminReportClient
-      .revenue(startDate, endDate)
+      .revenue(startDate, endDate, this.selectedCurrencyId())
       .pipe(
         takeUntil(this.destroyed$),
         catchError(() => of(null)),
@@ -72,7 +112,7 @@ export class ReportsFacade extends UnsubscribeControlDirective {
     const { startDate, endDate } = this.dateRange();
 
     this.adminClient.adminReportClient
-      .payroll(startDate, endDate)
+      .payroll(startDate, endDate, this.selectedCurrencyId())
       .pipe(
         takeUntil(this.destroyed$),
         catchError(() => of(null)),
@@ -94,7 +134,8 @@ export class ReportsFacade extends UnsubscribeControlDirective {
     }
   }
 
-  setDateRange(startDate: Date, endDate: Date): void {
+  setDateRange(startDate: Date, endDate: Date, currencyId?: string): void {
+    this.selectedCurrencyId.set(currencyId);
     this.dateRange.set({ startDate, endDate });
     this.revenueReport.set(null);
     this.payrollReport.set(null);
@@ -120,13 +161,25 @@ export class ReportsFacade extends UnsubscribeControlDirective {
     this.setDateRange(defaultStart, defaultEnd);
   }
 
-  formatCurrency(value: number | undefined): string {
-    if (value === undefined || value === null) return '0 Kč';
-    return new Intl.NumberFormat('cs-CZ', {
+  /** The revenue report's amounts, in the currency THAT report names. */
+  formatRevenueAmount(value: number | undefined): string {
+    return this.formatAmount(value, this.revenueReport()?.currencyCode);
+  }
+
+  /** The payroll report's amounts, in the currency THAT report names. */
+  formatPayrollAmount(value: number | undefined): string {
+    return this.formatAmount(value, this.payrollReport()?.currencyCode);
+  }
+
+  // The server names the currency; nothing here assumes one. No fraction-digit override: the
+  // per-tender columns, net on tender above all, reconcile against a Stripe statement to the cent,
+  // and rounding 45.10 € to 45 € is how lines stop summing.
+  private formatAmount(value: number | undefined, currencyCode: string | undefined): string {
+    if (value === undefined || value === null) return '';
+    if (!currencyCode) return String(value);
+    return new Intl.NumberFormat(this.language() || 'en-GB', {
       style: 'currency',
-      currency: 'CZK',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
+      currency: currencyCode,
     }).format(value);
   }
 

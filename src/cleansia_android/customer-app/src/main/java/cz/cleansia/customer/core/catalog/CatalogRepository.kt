@@ -7,6 +7,7 @@ import cz.cleansia.customer.core.auth.ApiErrorParser
 import cz.cleansia.core.network.ApiError
 import cz.cleansia.core.network.ApiResult
 import cz.cleansia.core.network.networkCall
+import cz.cleansia.core.network.required
 import cz.cleansia.core.network.requiredBody
 import cz.cleansia.core.network.wireResult
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -17,7 +18,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
 /**
- * In-memory cache of the public services and packages catalog.
+ * In-memory cache of the public services and packages catalog, of the platform's default currency,
+ * and of the country the loaded catalogue is priced for.
  *
  * Category derivation lives at the call site — the services flow already carries the data, and a second
  * derived flow would be a second thing to keep in step.
@@ -30,16 +32,35 @@ class CatalogRepository @Inject constructor(
     private val _services = MutableStateFlow<List<ServiceListItem>>(emptyList())
     private val _packages = MutableStateFlow<List<PackageListItem>>(emptyList())
     private val _extras = MutableStateFlow<List<ExtraListItem>>(emptyList())
+    private val _currencyCode = MutableStateFlow<String?>(null)
+    private val _countryId = MutableStateFlow<String?>(null)
     private val _loading = MutableStateFlow(false)
     private val _loaded = MutableStateFlow(false)
 
     val services: StateFlow<List<ServiceListItem>> = _services.asStateFlow()
     val packages: StateFlow<List<PackageListItem>> = _packages.asStateFlow()
     val extras: StateFlow<List<ExtraListItem>> = _extras.asStateFlow()
+
+    /**
+     * The platform's default currency — what a catalogue row with no `currencyCode` of its own and
+     * every default-bound figure is stated in. Null until the catalogue has loaded, and [loaded] never
+     * flips true without it.
+     */
+    val currencyCode: StateFlow<String?> = _currencyCode.asStateFlow()
+
+    /**
+     * The country the loaded rows are priced for — null is the platform default. Set only by a
+     * successful [refresh], so it always describes the rows actually on screen.
+     */
+    val countryId: StateFlow<String?> = _countryId.asStateFlow()
     val loading: StateFlow<Boolean> = _loading.asStateFlow()
     val loaded: StateFlow<Boolean> = _loaded.asStateFlow()
 
-    suspend fun refresh(): ApiResult<Unit> = wireResult {
+    /**
+     * [countryId] is the booking's market: the server prices the overview in that country's currency
+     * and withholds every entry with no price row in it. Null asks for the platform default.
+     */
+    suspend fun refresh(countryId: String? = null): ApiResult<Unit> = wireResult {
         if (_loading.value) {
             Log.d(TAG, "refresh: already loading, skipping")
             return ApiResult.Success(Unit)
@@ -47,21 +68,25 @@ class CatalogRepository @Inject constructor(
         _loading.value = true
         Log.d(TAG, "refresh: start")
         try {
-            val servicesResp = networkCall(TAG) { api.getServices() }
+            val servicesResp = networkCall(TAG) { api.getServices(countryId) }
                 ?: return networkError()
 
-            val packagesResp = networkCall(TAG) { api.getPackages() }
+            val packagesResp = networkCall(TAG) { api.getPackages(countryId) }
+                ?: return networkError()
+
+            val currenciesResp = networkCall(TAG) { api.getCurrencies() }
                 ?: return networkError()
 
             // Extras are best-effort — if the call fails (e.g. backend rolled
             // back before the Extras table shipped to this env) the wizard
             // still functions, just without the add-on section. Don't fail
             // the whole catalog refresh on this one.
-            val extrasResp = networkCall(TAG) { api.getExtras() }
+            val extrasResp = networkCall(TAG) { api.getExtras(countryId) }
 
             Log.d(TAG, "refresh: services http=${servicesResp.code()} ok=${servicesResp.isSuccessful}")
             Log.d(TAG, "refresh: packages http=${packagesResp.code()} ok=${packagesResp.isSuccessful}")
             Log.d(TAG, "refresh: extras http=${extrasResp?.code()} ok=${extrasResp?.isSuccessful}")
+            Log.d(TAG, "refresh: currencies http=${currenciesResp.code()} ok=${currenciesResp.isSuccessful}")
 
             if (!servicesResp.isSuccessful) {
                 return httpError(servicesResp.errorBody(), servicesResp.code())
@@ -71,12 +96,21 @@ class CatalogRepository @Inject constructor(
                 return httpError(packagesResp.errorBody(), packagesResp.code())
             }
 
-            // Both bodies are total now — CatalogApi refuses a price list it cannot map faithfully,
+            if (!currenciesResp.isSuccessful) {
+                return httpError(currenciesResp.errorBody(), currenciesResp.code())
+            }
+
+            // These bodies are total now — CatalogApi refuses a price list it cannot map faithfully,
             // and the refusal arrives here as a WireContractViolation naming the field rather than as
             // a null this layer has to guess about. `requiredBody` covers the one case left, a 2xx
             // that carried no body at all, and names the endpoint.
             val servicesBody = servicesResp.requiredBody()
             val packagesBody = packagesResp.requiredBody()
+            // An overview with no default row leaves every catalogue figure unlabelled, and a label
+            // guessed here is the CZK fallback this read exists to remove — so it refuses too.
+            val defaultCurrency = currenciesResp.requiredBody()
+                .firstOrNull { it.isDefault }
+                .required("CurrencyListItem[isDefault]")
             // Extras stay best-effort by existing design: a refusal here degrades to no add-on
             // section, which is the same thing the customer sees when the endpoint is down, and never
             // a wrong add-on price.
@@ -86,8 +120,10 @@ class CatalogRepository @Inject constructor(
             _services.value = servicesBody
             _packages.value = packagesBody
             _extras.value = extrasBody.orEmpty()
+            _currencyCode.value = defaultCurrency.code
+            _countryId.value = countryId
             _loaded.value = true
-            Log.d(TAG, "refresh: DONE, _services=${_services.value.size} _packages=${_packages.value.size} _extras=${_extras.value.size} _loaded=true")
+            Log.d(TAG, "refresh: DONE, _services=${_services.value.size} _packages=${_packages.value.size} _extras=${_extras.value.size} currency=${defaultCurrency.code} _loaded=true")
             return ApiResult.Success(Unit)
         } finally {
             _loading.value = false

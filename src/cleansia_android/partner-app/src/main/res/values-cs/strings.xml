@@ -66,6 +66,7 @@
     <string name="login_subtitle">Přihlaste se pro pokračování do svého účtu</string>
     <string name="create_account">Vytvořit účet</string>
     <string name="register_subtitle">Připojte se k nám a začněte vydělávat</string>
+    <string name="register_market_label">Země, kde budete pracovat</string>
     <string name="first_name">Jméno</string>
     <string name="last_name">Příjmení</string>
     <string name="phone">Telefonní číslo</string>
@@ -425,13 +426,9 @@
     <!-- Identification & business section -->
     <string name="identification_header_person">Totožnost</string>
     <string name="identification_header_business">Podnikání</string>
-    <string name="entity_type_natural_person">OSVČ</string>
-    <string name="entity_type_legal_entity">Právnická osoba</string>
     <string name="business_country">Země registrace</string>
     <string name="registration_number_label">Registrační číslo</string>
     <string name="registration_number_helper">Formát závisí na zvolené zemi.</string>
-    <string name="vat_number_label">DIČ</string>
-    <string name="vat_number_helper">Nepovinné — pouze pokud jste plátce DPH.</string>
     <string name="legal_entity_name_label">Název právnické osoby</string>
     <string name="street">Ulice</string>
     <string name="city">Město</string>
@@ -548,7 +545,6 @@
     <string name="error_passport_required">Zadejte číslo pasu / OP</string>
     <string name="error_pick_business_country">Vyberte zemi, kde je vaše podnikání registrováno</string>
     <string name="error_registration_number_required">Zadejte IČO</string>
-    <string name="error_legal_entity_name_required">Zadejte název právnické osoby</string>
     <string name="error_pick_address_first">Nejprve vyberte adresu na mapě</string>
 
     <!-- Profile Validation -->
@@ -949,8 +945,19 @@
     <string name="history">Historie</string>
     <string name="you_earn">vyděláte</string>
     <string name="distance_unknown">Lokalita neznámá</string>
-    <string name="slide_to_take">Posunutím vezměte zakázku</string>
-    <string name="taking_order">Beru zakázku…</string>
+    <!-- Contract for work: the sheet under the take, the standalone acceptance, the detail line and banner. -->
+    <string name="work_contract_title">Smlouva o dílo</string>
+    <string name="work_contract_version">Verze %1$s</string>
+    <string name="work_contract_order_number">Objednávka %1$s</string>
+    <string name="work_contract_swipe_to_accept">Přejetím přijmete smlouvu o dílo</string>
+    <string name="work_contract_accepting">Přijímám\u2026</string>
+    <string name="work_contract_load_error">Smlouvu o dílo se nepodařilo načíst.</string>
+    <string name="work_contract_accepted_on">Přijato %1$s, verze %2$s</string>
+    <string name="work_contract_accepted_in_language">Přijato v jazyce: %1$s</string>
+    <string name="work_contract_accepted_line">Smlouvu o dílo jste přijali %1$s, verze %2$s</string>
+    <string name="work_contract_pending_banner">Než začnete, přijměte smlouvu o dílo</string>
+    <string name="work_contract_accept_cta">Přijmout smlouvu</string>
+    <string name="work_contract_read">Přečíst smlouvu</string>
     <string name="slide_to_start">Posunutím začněte úklid</string>
     <string name="starting_order">Začínám úklid…</string>
     <string name="slide_to_complete">Posunutím dokončete</string>
@@ -1113,6 +1120,7 @@
     <string name="error_auth_refresh_token_reused">Z bezpečnostních důvodů jste byli odhlášeni ze všech zařízení.</string>
     <string name="error_auth_current_password_invalid">Vaše stávající heslo není správné.</string>
     <string name="error_auth_account_locked">Příliš mnoho neúspěšných pokusů o přihlášení. Účet je dočasně uzamčen — zkuste to znovu za několik minut.</string>
+    <string name="error_auth_company_deactivated">Vaše společnost byla deaktivována, partnerská aplikace vám proto již není k dispozici. Svá data můžete stále exportovat nebo smazat v zákaznické aplikaci.</string>
 
     <string name="error_user_email_confirmed">Tento e-mail je již potvrzen.</string>
     <string name="error_user_existing_email">Účet s tímto e-mailem již existuje.</string>
@@ -1151,6 +1159,12 @@
     <string name="error_order_max_employees_exceeded">Tato zakázka již má maximální počet uklízečů.</string>
     <string name="error_order_preferred_employee_not_eligible">Nejste oprávněni přijmout tuto zakázku.</string>
     <string name="error_order_employee_already_has_order_in_progress">Již máte jinou zakázku v průběhu. Před zahájením nové ji prosím dokončete.</string>
+
+    <!-- Contract for work: the take's echo, the seat's gate, the preview with no text in force -->
+    <string name="error_contract_not_accepted">Před převzetím zakázky si prosím přečtěte a přijměte smlouvu o dílo.</string>
+    <string name="error_contract_text_mismatch">Smlouva byla aktualizována \u2014 přečtěte si ji prosím znovu.</string>
+    <string name="error_contract_acceptance_required">Než budete pokračovat, přijměte smlouvu o dílo k této zakázce.</string>
+    <string name="error_legal_document_not_found">Tuto zakázku nyní nelze převzít.</string>
 
     <string name="error_order_not_in_progress">Tato zakázka není v průběhu.</string>
     <string name="error_order_not_confirmed">Tato zakázka ještě není potvrzena.</string>
@@ -1206,7 +1220,6 @@
     <string name="error_validation_invalid_iban">Zadejte prosím platný IBAN.</string>
     <string name="error_validation_invalid_zip_code">Zadejte prosím platné PSČ.</string>
     <string name="error_validation_registration_number_invalid_format">Zadejte prosím platné IČO pro vybranou zemi.</string>
-    <string name="error_validation_vat_number_invalid_format">Zadejte prosím platné DIČ pro vybranou zemi.</string>
     <string name="error_validation_must_be_positive">Musí být kladné číslo.</string>
     <string name="error_validation_invalid_availability_format">Neplatný formát dostupnosti.</string>
 
@@ -1232,6 +1245,7 @@
     <string name="error_general_not_found">Nenalezeno.</string>
 
     <string name="error_country_not_serviced">V této zemi zatím nepůsobíme.</string>
+    <string name="error_tenant_not_found">Tento trh zatím neprovozuje žádná společnost Cleansia.</string>
     <string name="error_country_required">Zvolte prosím zemi.</string>
     <string name="error_city_not_serviced">V tomto městě zatím nepůsobíme.</string>
     <string name="error_language_not_supported">Tento jazyk není podporován.</string>
@@ -1250,8 +1264,8 @@
     <string name="notification_channel_dispute_reply_name">Odpovědi podpory</string>
     <string name="notification_channel_dispute_reply_desc">Upozorní vás, když podpora odpoví na vaši stížnost.</string>
 
-    <string name="notification_order_confirmed_title">Zakázka potvrzena</string>
-    <string name="notification_order_confirmed_body">Zakázka č. %1$s je potvrzena. Klepnutím zobrazíte podrobnosti.</string>
+    <string name="notification_order_payment_confirmed_title">Zakázka potvrzena</string>
+    <string name="notification_order_payment_confirmed_body">Zakázka č. %1$s je potvrzena. Klepnutím zobrazíte podrobnosti.</string>
     <string name="notification_order_in_progress_title">Zakázka probíhá</string>
     <string name="notification_order_in_progress_body">Zakázka č. %1$s právě probíhá. Klepnutím ji můžete sledovat.</string>
     <string name="notification_order_completed_title">Zakázka dokončena</string>
@@ -1312,6 +1326,7 @@
     <string name="error_company_not_found">Informace o společnosti nenalezeny</string>
     <string name="error_country_not_existing_id">Země nenalezena</string>
     <string name="error_currency_invalid">Neplatná měna</string>
+    <string name="error_currency_not_found">Měna nebyla nalezena</string>
     <string name="error_dispute_max_length_exceeded">Překročena maximální délka</string>
     <string name="error_employee_not_approved">Váš účet zatím nebyl schválen.</string>
     <string name="error_gdpr_consent_already_granted">Tento souhlas již byl udělen.</string>
@@ -1360,8 +1375,6 @@
     <string name="offer_reserved_until_date">Vaše do %1$s, %2$s</string>
     <string name="offer_reserved_ended">Tato rezervace skončila</string>
     <string name="offer_confirm">Potvrdit</string>
-    <string name="offer_slide_to_confirm">Přejetím potvrdit</string>
-    <string name="offer_confirming">Potvrzuji\u2026</string>
     <string name="offer_decline">Odmítnout</string>
     <string name="offer_decline_title">Uvolnit tuto zakázku?</string>
     <string name="offer_decline_body">Ihned se vrátí všem uklízečům. Nijak se vám to nezapočítává a dokud je volná, můžete si ji z nabídky vzít i vy.</string>
@@ -1420,4 +1433,6 @@
     <string name="open_settings">Otevřít nastavení</string>
     <string name="photo_source_title">Přidat foto</string>
     <string name="camera_unavailable">Toto zařízení nemá fotoaparát.</string>
+    <string name="notification_recurring_paused_title">Plán opakovaných úklidů pozastaven</string>
+    <string name="notification_recurring_paused_body">Váš plán opakovaných úklidů je pozastaven, protože Plus není aktivní. Obnovte Plus a plánování úklidů bude pokračovat.</string>
 </resources>

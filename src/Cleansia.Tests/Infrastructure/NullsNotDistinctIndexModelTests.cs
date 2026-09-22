@@ -1,3 +1,5 @@
+using Cleansia.Core.Domain.Configuration;
+using Cleansia.Core.Domain.EmployeePayroll;
 using Cleansia.Core.Domain.Loyalty;
 using Cleansia.Core.Domain.Memberships;
 using Cleansia.Core.Domain.Receipts;
@@ -12,10 +14,11 @@ using Microsoft.EntityFrameworkCore.Metadata;
 namespace Cleansia.Tests.Infrastructure;
 
 /// <summary>
-/// Single-tenant mode <b>is</b> <c>TenantId == null</c>, and PostgreSQL treats NULLs in a UNIQUE index
-/// as distinct — so a tenant-scoped unique index that is the sole arbiter of a concurrent claim does
-/// not fire at all in the platform's default deployment unless it is declared NULLS NOT DISTINCT
-/// (ADR-0035 AM-6, ADR-0034 D1.3, ADR-0038 §D5.2).
+/// PostgreSQL treats NULLs in a UNIQUE index as distinct — so a tenant-scoped unique index that is the
+/// sole arbiter of a concurrent claim fires only if it is declared NULLS NOT DISTINCT (ADR-0035 AM-6,
+/// ADR-0034 D1.3, ADR-0038 §D5.2). TenantId is NOT NULL on every stamped table since ADR-0061 D8, so
+/// the option is vacuous on the tenant term — it is kept because this roster reads the option, not
+/// the column, and the non-tenant nullable terms (EmployeeId, ServiceId, PackageId) still need it.
 ///
 /// <para>The option is one builder call and one annotation, invisible in a diff and silently
 /// consequence-free in every SQLite test. This asserts it on each index that must have it, so dropping
@@ -55,7 +58,15 @@ public sealed class NullsNotDistinctIndexModelTests : IDisposable
     [InlineData(typeof(PromoCodeRedemption), new[] { "TenantId", "PromoCodeId", "UserId", "SlotOrdinal" })]
     [InlineData(typeof(MembershipBenefitUsage),
         new[] { "TenantId", "UserId", "BenefitKind", "PeriodKey", "SlotOrdinal" })]
-    [InlineData(typeof(User), new[] { "TenantId", "Email" })]
+    [InlineData(typeof(LoyaltyTransaction), new[] { "TenantId", "IdempotencyKey" })]
+    [InlineData(typeof(PromoCode), new[] { "TenantId", "Code" })]
+    [InlineData(typeof(ReferralCode), new[] { "TenantId", "Code" })]
+    [InlineData(typeof(TenantConfiguration), new[] { "TenantId", "Key" })]
+    [InlineData(typeof(OrderReceipt), new[] { "TenantId", "ReceiptNumber" })]
+    [InlineData(typeof(EmployeePayConfig), new[] { "TenantId", "EmployeeId", "ServiceId", "PackageId", "CurrencyId" })]
+    [InlineData(typeof(PayoutReferenceCounter), new[] { "TenantId", "Year", "Scope" })]
+    [InlineData(typeof(EmployeeInvoice), new[] { "TenantId", "InvoiceNumber" })]
+    [InlineData(typeof(EmployeeInvoice), new[] { "TenantId", "VariableSymbol" })]
     public void A_Sole_Arbiter_Unique_Index_Is_Declared_Nulls_Not_Distinct(Type entityClrType, string[] columns)
     {
         using var ctx = NewContext();
@@ -65,7 +76,7 @@ public sealed class NullsNotDistinctIndexModelTests : IDisposable
         Assert.False(
             index.GetAreNullsDistinct(),
             $"{entityClrType.Name} ({string.Join(", ", columns)}) is the sole arbiter of a concurrent "
-            + "claim, so it must be declared .AreNullsDistinct(false) or it never fires when TenantId is null.");
+            + "claim, so it must be declared .AreNullsDistinct(false) or a null term in the key stops it firing.");
     }
 
     /// <summary>
@@ -100,6 +111,37 @@ public sealed class NullsNotDistinctIndexModelTests : IDisposable
         Assert.Equal("\"IsActive\" = TRUE", index.GetFilter());
     }
 
+    /// <summary>
+    /// An invoice that has not yet been given a reference (ADR-0046 D4) holds NULL, and the filter is
+    /// what keeps those rows out of the per-company uniqueness — without it NULLS NOT DISTINCT would
+    /// let one company hold exactly one reference-less invoice.
+    /// </summary>
+    [Fact]
+    public void The_Payout_Reference_Index_Is_Filtered_To_Referenced_Rows()
+    {
+        using var ctx = NewContext();
+        var index = FindIndex(ctx, typeof(EmployeeInvoice), ["TenantId", "VariableSymbol"]);
+
+        Assert.Equal("\"VariableSymbol\" IS NOT NULL", index.GetFilter());
+    }
+
+    /// <summary>
+    /// The five-column pay-config key is the one whose EF default name overruns Postgres's 63-character
+    /// identifier limit. A 23505 names the index that fired, and a truncated <c>..._PackageId_~</c> is
+    /// not a name anyone can read off the log line or grep for.
+    /// </summary>
+    [Fact]
+    public void The_Pay_Config_Scope_Index_Carries_A_Readable_Name()
+    {
+        using var ctx = NewContext();
+        var index = FindIndex(
+            ctx,
+            typeof(EmployeePayConfig),
+            ["TenantId", "EmployeeId", "ServiceId", "PackageId", "CurrencyId"]);
+
+        Assert.Equal("IX_EmployeePayConfigs_Tenant_Scope", index.GetDatabaseName());
+    }
+
 
     /// <summary>
     /// Unique indexes whose nullable column is removed from the index by a FILTER, so declaring
@@ -107,8 +149,6 @@ public sealed class NullsNotDistinctIndexModelTests : IDisposable
     /// </summary>
     private static readonly HashSet<string> NullsDistinctIsFine = new(StringComparer.Ordinal)
     {
-        // Filtered "VariableSymbol" IS NOT NULL, so no indexed row can hold a null in it.
-        "EmployeeInvoice (VariableSymbol)",
         // Filtered "RecurringTemplateId" IS NOT NULL — the nullable column cannot be null in an indexed row.
         "Order (RecurringTemplateId, CleaningDateTime)",
         // The documented backstop behind GetActiveForUserAsync, deliberately left nulls-distinct.
@@ -119,9 +159,9 @@ public sealed class NullsNotDistinctIndexModelTests : IDisposable
     /// Unique indexes knowingly left unenforced.
     ///
     /// <para><b>Empty, and that is the point.</b> It held seven — every unique index carrying an
-    /// unfiltered nullable column, which in single-tenant mode (TenantId null, i.e. production)
-    /// enforced nothing at all. All seven now declare NULLS NOT DISTINCT, so the set emptied rather
-    /// than being maintained.</para>
+    /// unfiltered nullable column, which enforced nothing at all while that column (then a nullable
+    /// TenantId) was null. All seven now declare NULLS NOT DISTINCT, so the set emptied rather than
+    /// being maintained.</para>
     /// </summary>
     private static readonly HashSet<string> KnownUnenforced = new(StringComparer.Ordinal)
     {

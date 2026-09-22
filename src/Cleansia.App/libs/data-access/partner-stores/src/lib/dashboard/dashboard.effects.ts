@@ -60,6 +60,8 @@ export class DashboardEffects {
             filter?.hasAvailableSpots,
             filter?.isUnassigned,
             filter?.excludeEmployeeId,
+            undefined, // currencyId: the board is scoped server-side to the cleaner's currency
+            undefined, // userId: an admin-only scope; a cleaner never enumerates one account's bookings
             sort,
             offset,
             limit

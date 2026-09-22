@@ -27,15 +27,18 @@ public class StartOrder
         private readonly IOrderRepository _orderRepository;
         private readonly IEmployeeRepository _employeeRepository;
         private readonly IOrderAccessService _orderAccessService;
+        private readonly IWorkContractAcceptanceRepository _workContractAcceptanceRepository;
 
         public Validator(
             IOrderRepository orderRepository,
             IEmployeeRepository employeeRepository,
-            IOrderAccessService orderAccessService)
+            IOrderAccessService orderAccessService,
+            IWorkContractAcceptanceRepository workContractAcceptanceRepository)
         {
             _orderRepository = orderRepository;
             _employeeRepository = employeeRepository;
             _orderAccessService = orderAccessService;
+            _workContractAcceptanceRepository = workContractAcceptanceRepository;
 
             RuleFor(x => x.OrderId)
                 .Cascade(CascadeMode.Stop)
@@ -52,6 +55,8 @@ public class StartOrder
                 .WithMessage(BusinessErrorMessage.EmployeeNotApproved)
                 .MustAsync(EmployeeIsAssignedToOrderAsync)
                 .WithMessage(BusinessErrorMessage.EmployeeNotAssignedToOrder)
+                .MustAsync(HasAcceptedWorkContractForSeatAsync)
+                .WithMessage(BusinessErrorMessage.WorkContractAcceptanceRequired)
                 .MustAsync(EmployeeHasNoOrderInProgressAsync)
                 .WithMessage(BusinessErrorMessage.EmployeeAlreadyHasOrderInProgress)
                 .MustAsync(NotTooEarlyToStartAsync)
@@ -112,6 +117,28 @@ public class StartOrder
                 .FirstOrDefaultAsync(o => o.Id == command.OrderId, cancellationToken);
 
             return order?.AssignedEmployees.Any(oe => oe.EmployeeId == employeeId) ?? false;
+        }
+
+        /// <summary>
+        /// The contract gate, after the assignment rule so a non-assignee still learns nothing. A cleaner
+        /// who took the job accepted with the take; one an admin placed has no row for their seat until
+        /// they accept it themselves (ADR-0068 D3). Keyed on the SEAT: a re-add after a drop is a new seat.
+        /// </summary>
+        private async Task<bool> HasAcceptedWorkContractForSeatAsync(Command command, CancellationToken cancellationToken)
+        {
+            var employeeId = await _orderAccessService.GetCallerEmployeeIdAsync(cancellationToken);
+            if (string.IsNullOrEmpty(employeeId)) return false;
+
+            var seatId = await _orderRepository
+                .GetQueryable()
+                .Where(o => o.Id == command.OrderId)
+                .SelectMany(o => o.AssignedEmployees)
+                .Where(oe => oe.EmployeeId == employeeId)
+                .Select(oe => oe.Id)
+                .FirstOrDefaultAsync(cancellationToken);
+
+            return seatId is not null
+                && await _workContractAcceptanceRepository.AnyForSeatAsync(seatId, cancellationToken);
         }
 
         private async Task<bool> EmployeeHasNoOrderInProgressAsync(Command command, CancellationToken cancellationToken)

@@ -20,6 +20,9 @@ public class EmailTemplateRendererTests
     [InlineData("order-status-update.html")]
     [InlineData("close-period-notification.html")]
     [InlineData("closure-period-reminder.html")]
+    [InlineData("company-wind-down-customer.html")]
+    [InlineData("company-wind-down-cleaner.html")]
+    [InlineData("admin-notification.html")]
     public void Every_template_in_the_repository_folder_is_embedded(string templateName)
     {
         var html = renderer.Render(templateName, new Dictionary<string, string?>());

@@ -32,6 +32,8 @@ export class CustomerOrderEffects {
             undefined, // hasAvailableSpots
             undefined, // isUnassigned
             undefined, // excludeEmployeeId
+            undefined, // currencyId
+            undefined, // userId
             action.sort,
             action.offset,
             action.limit

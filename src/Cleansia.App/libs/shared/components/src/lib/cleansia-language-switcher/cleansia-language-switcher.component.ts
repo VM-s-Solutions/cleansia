@@ -97,7 +97,7 @@ export class CleansiaLanguageSwitcherComponent implements OnInit {
       if (name && name !== lang) {
         return name.charAt(0).toUpperCase() + name.slice(1);
       }
-    } catch (e) {
+    } catch {
       // If locale not supported or error
     }
     return lang.toUpperCase();

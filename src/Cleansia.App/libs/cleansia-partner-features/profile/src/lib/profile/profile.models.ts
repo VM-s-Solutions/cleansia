@@ -4,7 +4,6 @@ import {
   EmployeeEntityType,
   EmployeeItem,
   UpdateEmployeeCommand,
-  UpdateEmployeeTimeRangeDto,
 } from '@cleansia/partner-services';
 import { CustomValidators } from '@cleansia/services';
 import { FileTransformationUtils } from '@cleansia/utils';
@@ -32,10 +31,7 @@ export interface ProfileFormData {
   countryId?: string;
   nationalityId?: string;
   passportId?: string;
-  entityType?: EmployeeEntityType;
   registrationNumber?: string;
-  vatNumber?: string;
-  legalEntityName?: string;
   emergencyName?: string;
   emergencyPhone?: string;
   availability?: Record<string, TimeRange[]>;
@@ -100,16 +96,10 @@ export class ProfileFormFactory {
         Validators.maxLength(20),
         CustomValidators.passportId(),
       ]),
-      entityType: new FormControl<EmployeeEntityType>(
-        EmployeeEntityType.NaturalPerson,
-        [Validators.required]
-      ),
       registrationNumber: new FormControl(undefined, [
         Validators.required,
         Validators.maxLength(50),
       ]),
-      vatNumber: new FormControl(undefined, [Validators.maxLength(50)]),
-      legalEntityName: new FormControl(undefined, [Validators.maxLength(200)]),
       emergencyName: new FormControl(undefined, [Validators.maxLength(100)]),
       emergencyPhone: new FormControl(undefined, [
         CustomValidators.phoneNumber(),
@@ -143,10 +133,7 @@ export class ProfileFormFactory {
       countryId: employee.countryId || undefined,
       nationalityId: employee.nationalityId || undefined,
       passportId: employee.passportId || undefined,
-      entityType: employee.entityType ?? EmployeeEntityType.NaturalPerson,
       registrationNumber: employee.registrationNumber || undefined,
-      vatNumber: employee.vatNumber || undefined,
-      legalEntityName: employee.legalEntityName || undefined,
       emergencyName: employee.emergencyContactName || undefined,
       emergencyPhone: employee.emergencyContactPhone || undefined,
     };
@@ -206,13 +193,9 @@ export class ProfileFormFactory {
     command.state = formData.state;
     command.nationalityId = formData.nationalityId;
     command.passportId = formData.passportId;
-    command.entityType = formData.entityType ?? EmployeeEntityType.NaturalPerson;
+    // A cleaner contracts as a natural person; the server refuses anything else on this surface.
+    command.entityType = EmployeeEntityType.NaturalPerson;
     command.registrationNumber = formData.registrationNumber;
-    command.vatNumber = formData.vatNumber || undefined;
-    command.legalEntityName =
-      formData.entityType === EmployeeEntityType.LegalEntity
-        ? formData.legalEntityName
-        : undefined;
     command.emergencyName = formData.emergencyName;
     command.emergencyPhone = formData.emergencyPhone;
     command.documents = documents;

@@ -174,6 +174,13 @@ export const appRoutes: Route[] = [
     loadChildren: () =>
       import('@cleansia-customer/legal-pages').then((m) => m.privacyRoutes),
   },
+  {
+    // The contract for work a booking is concluded under. Public like the other
+    // two: the customer is bound at booking, so it is published beside their texts.
+    path: 'work-contract',
+    loadChildren: () =>
+      import('@cleansia-customer/legal-pages').then((m) => m.workContractRoutes),
+  },
 
   // 404
   {

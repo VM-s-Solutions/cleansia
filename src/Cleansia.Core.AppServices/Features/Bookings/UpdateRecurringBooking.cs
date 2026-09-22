@@ -1,6 +1,9 @@
 using Cleansia.Core.AppServices.Abstractions;
+using Cleansia.Core.AppServices.Auditing;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Bookings.DTOs;
+using Cleansia.Core.AppServices.Services.Interfaces;
+using Cleansia.Core.AppServices.Tenancy;
 using Cleansia.Core.Domain.Bookings;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Repositories;
@@ -9,6 +12,8 @@ using FluentValidation;
 
 namespace Cleansia.Core.AppServices.Features.Bookings;
 
+[AuditAction("customer.recurring.update", Audience = AuditAudience.Customer, ResourceType = "RecurringBookingTemplate",
+    ResourceIdProperty = nameof(UpdateRecurringBooking.Command.TemplateId))]
 public class UpdateRecurringBooking
 {
     public record Command(
@@ -34,17 +39,26 @@ public class UpdateRecurringBooking
         private readonly IUserMembershipRepository _userMembershipRepository;
         private readonly IUserSessionProvider _userSessionProvider;
         private readonly IOrderRepository _orderRepository;
+        private readonly ISavedAddressRepository _savedAddressRepository;
+        private readonly ICurrencyResolutionService _currencyResolutionService;
+        private readonly ICountryRepository _countryRepository;
 
         public Validator(
             IRecurringBookingTemplateRepository templateRepository,
             IUserMembershipRepository userMembershipRepository,
             IUserSessionProvider userSessionProvider,
-            IOrderRepository orderRepository)
+            IOrderRepository orderRepository,
+            ISavedAddressRepository savedAddressRepository,
+            ICurrencyResolutionService currencyResolutionService,
+            ICountryRepository countryRepository)
         {
             _templateRepository = templateRepository;
             _userMembershipRepository = userMembershipRepository;
             _userSessionProvider = userSessionProvider;
             _orderRepository = orderRepository;
+            _savedAddressRepository = savedAddressRepository;
+            _currencyResolutionService = currencyResolutionService;
+            _countryRepository = countryRepository;
 
             // The entitlement link is the LAST link of THIS chain, never a second RuleFor: the
             // class-level default is Continue, so a parallel chain would answer "you need Plus" for a
@@ -54,7 +68,7 @@ public class UpdateRecurringBooking
                 .Cascade(CascadeMode.Stop)
                 .NotEmpty()
                 .WithMessage(BusinessErrorMessage.Required)
-                .MustAsync(_templateRepository.ExistsAsync)
+                .MustAsync(async (id, ct) => await _templateRepository.GetByIdForOwnerAsync(id, _userSessionProvider.GetUserId() ?? string.Empty, ct) is not null)
                 .WithMessage(BusinessErrorMessage.RecurringTemplateNotFound)
                 .MustAsync(BeOwnedByCallerAsync)
                 .WithMessage(BusinessErrorMessage.RecurringTemplateNotOwnedByUser)
@@ -90,7 +104,9 @@ public class UpdateRecurringBooking
             RuleFor(x => x.Rooms).GreaterThanOrEqualTo(0).WithMessage(BusinessErrorMessage.InvalidEnumValue);
             RuleFor(x => x.Bathrooms).GreaterThanOrEqualTo(0).WithMessage(BusinessErrorMessage.InvalidEnumValue);
 
-            RuleFor(x => x.SavedAddressId).NotEmpty().WithMessage(BusinessErrorMessage.Required);
+            RuleFor(x => x.SavedAddressId).Cascade(CascadeMode.Stop)
+                .NotEmpty().WithMessage(BusinessErrorMessage.Required)
+                .MustAsync(SavedAddressCountryIsServicedAsync).WithMessage(BusinessErrorMessage.CountryNotServiced);
 
             RuleFor(x => x.PaymentType)
                 .Must(p => Enum.IsDefined(typeof(PaymentType), p))
@@ -108,6 +124,11 @@ public class UpdateRecurringBooking
             });
         }
 
+        /// <summary>
+        /// The same two terms as <c>CreateRecurringBooking</c>. The currency is the one the template's
+        /// saved address resolves to AFTER this update -- the update rewrites the address from the
+        /// command, and every occurrence from now on is priced by that address's country.
+        /// </summary>
         private async Task<bool> PreferredEmployeeIsEligibleAsync(
             Command command,
             CancellationToken cancellationToken)
@@ -116,15 +137,43 @@ public class UpdateRecurringBooking
 
             return !string.IsNullOrEmpty(userId)
                 && await _orderRepository.UserHasCompletedOrderWithEmployeeAsync(
-                    userId, command.PreferredEmployeeId!, cancellationToken);
+                    userId, command.PreferredEmployeeId!, cancellationToken)
+                && await PreferredEmployeeIsPaidInTheAddressCurrencyAsync(
+                    userId, command.SavedAddressId, command.PreferredEmployeeId!, cancellationToken);
+        }
+
+        private async Task<bool> PreferredEmployeeIsPaidInTheAddressCurrencyAsync(
+            string userId, string savedAddressId, string employeeId, CancellationToken cancellationToken)
+        {
+            var addresses = await _savedAddressRepository.GetByUserAsync(userId, cancellationToken);
+            var address = addresses.FirstOrDefault(a => a.Id == savedAddressId);
+            if (address?.Address is null)
+            {
+                return true;
+            }
+
+            var orderCurrency = await _currencyResolutionService.ResolveCurrencyForCountryAsync(
+                address.Address.CountryId, cancellationToken);
+            var cleanerCurrency = await _currencyResolutionService.ResolveCurrencyForServingEmployeeAsync(
+                userId, employeeId, cancellationToken);
+            return cleanerCurrency?.Id == orderCurrency.Id;
         }
 
         private async Task<bool> BeOwnedByCallerAsync(string id, CancellationToken cancellationToken)
         {
             var userId = _userSessionProvider.GetUserId();
             if (string.IsNullOrEmpty(userId)) return false;
-            var template = await _templateRepository.GetByIdAsync(id, cancellationToken);
+            var template = await _templateRepository.GetByIdForOwnerAsync(id, userId, cancellationToken);
             return template != null && template.UserId == userId;
+        }
+
+        private async Task<bool> SavedAddressCountryIsServicedAsync(string savedAddressId, CancellationToken cancellationToken)
+        {
+            var userId = _userSessionProvider.GetUserId();
+            if (string.IsNullOrEmpty(userId)) return false;
+            var address = (await _savedAddressRepository.GetByUserAsync(userId, cancellationToken))
+                .FirstOrDefault(a => a.Id == savedAddressId)?.Address;
+            return address is null || await _countryRepository.IsServicedAsync(address.CountryId, cancellationToken);
         }
 
         /// <summary>
@@ -139,14 +188,16 @@ public class UpdateRecurringBooking
             var userId = _userSessionProvider.GetUserId();
             if (string.IsNullOrEmpty(userId)) return false;
             return await _userMembershipRepository
-                .GetActiveForUserNoTrackingAsync(userId, cancellationToken) is not null;
+                .GetEntitledForUserNoTrackingAsync(userId, cancellationToken) is not null;
         }
     }
 
     public class Handler(
         IRecurringBookingTemplateRepository templateRepository,
         ISavedAddressRepository savedAddressRepository,
-        IUserSessionProvider userSessionProvider) : ICommandHandler<Command, RecurringBookingTemplateDto>
+        IUserSessionProvider userSessionProvider,
+        IOperatorTenantResolver operatorTenantResolver,
+        IAuditContext auditContext) : ICommandHandler<Command, RecurringBookingTemplateDto>
     {
         public async Task<BusinessResult<RecurringBookingTemplateDto>> Handle(Command command, CancellationToken cancellationToken)
         {
@@ -155,7 +206,7 @@ public class UpdateRecurringBooking
             // it's a different entity and would need its own MustAsync rule;
             // tracked as a small follow-up cleanup.
             var userId = userSessionProvider.GetUserId()!;
-            var existing = (await templateRepository.GetByIdAsync(command.TemplateId, cancellationToken))!;
+            var existing = (await templateRepository.GetByIdForOwnerAsync(command.TemplateId, userId, cancellationToken))!;
 
             var addresses = await savedAddressRepository.GetByUserAsync(userId, cancellationToken);
             var address = addresses.FirstOrDefault(a => a.Id == command.SavedAddressId);
@@ -165,6 +216,8 @@ public class UpdateRecurringBooking
                     nameof(command.SavedAddressId),
                     BusinessErrorMessage.RecurringTemplateSavedAddressNotFound));
             }
+
+            var before = RecurringTemplateFacts.Of(existing);
 
             // Mutate in place so the template's Id survives an update. Clients
             // caching the template by id (mobile list, web facade) stay valid.
@@ -181,6 +234,10 @@ public class UpdateRecurringBooking
                 startsOn: command.StartsOn,
                 endsOn: command.EndsOn,
                 preferredEmployeeId: command.PreferredEmployeeId);
+            existing.TenantId = (await operatorTenantResolver.ResolveAsync(address.Address.CountryId, cancellationToken)).OperatorTenantId;
+
+            auditContext.RecordEvidence("RecurringBookingTemplate", existing.Id,
+                new RecurringTemplateEvidence(before, RecurringTemplateFacts.Of(existing)));
 
             var line = $"{address.Address.Street}, {address.Address.City} {address.Address.ZipCode}";
 

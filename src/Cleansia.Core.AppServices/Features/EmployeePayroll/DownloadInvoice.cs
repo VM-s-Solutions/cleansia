@@ -58,7 +58,7 @@ public class DownloadInvoice
             }
 
             var blobClient = clientFactory.GetBlobContainerClient(Constants.BlobContainers.GeneratedInvoices);
-            var blobDownload = await blobClient.DownloadAsync(invoice.PdfBlobUrl, cancellationToken);
+            var blobDownload = await blobClient.DownloadAsync(BlobNameOf(invoice.PdfBlobUrl), cancellationToken);
 
             using var memoryStream = new MemoryStream();
             await blobDownload.Content.CopyToAsync(memoryStream, cancellationToken);
@@ -67,6 +67,22 @@ public class DownloadInvoice
             var fileName = $"Invoice_{invoice.InvoiceNumber}.pdf";
 
             return BusinessResult.Success(new Response(pdfBytes, fileName));
+        }
+
+        // The row holds the absolute address the writers get back from the container (the archive
+        // copies by it), while the client reads by name within the container: the name is what
+        // follows the container segment, unescaped the way the address escaped it.
+        private static string BlobNameOf(string pdfBlobUrl)
+        {
+            if (!Uri.TryCreate(pdfBlobUrl, UriKind.Absolute, out var address))
+            {
+                return pdfBlobUrl;
+            }
+
+            var path = Uri.UnescapeDataString(address.AbsolutePath);
+            var container = $"/{Constants.BlobContainers.GeneratedInvoices}/";
+            var start = path.IndexOf(container, StringComparison.Ordinal);
+            return start < 0 ? pdfBlobUrl : path[(start + container.Length)..];
         }
     }
 }

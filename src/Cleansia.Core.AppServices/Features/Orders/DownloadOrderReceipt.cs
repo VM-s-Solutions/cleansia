@@ -20,43 +20,40 @@ public class DownloadOrderReceipt
 
     public class Validator : AbstractValidator<Query>
     {
-        private readonly IOrderReceiptRepository _receiptRepository;
+        private readonly IOrderAccessService _orderAccessService;
 
-        public Validator(
-            IOrderRepository orderRepository,
-            IOrderReceiptRepository receiptRepository)
+        public Validator(IOrderAccessService orderAccessService)
         {
-            _receiptRepository = receiptRepository;
+            _orderAccessService = orderAccessService;
 
             RuleFor(x => x.OrderId)
                 .Cascade(CascadeMode.Stop)
                 .NotEmpty()
                 .WithMessage(BusinessErrorMessage.Required)
-                .MustAsync(orderRepository.ExistsAsync)
+                .MustAsync(orderAccessService.OrderExistsForCallerAsync)
                 .WithMessage(BusinessErrorMessage.OrderNotFound)
                 .MustAsync(OrderHasReceiptAsync)
                 .WithMessage(BusinessErrorMessage.ReceiptNotFound);
         }
 
-        private async Task<bool> OrderHasReceiptAsync(string orderId, CancellationToken cancellationToken)
+        // The receipt is reached through the order the caller may read, never on its own: it carries
+        // the order's operator, which for a booking made across the border is not the customer's company.
+        private Task<bool> OrderHasReceiptAsync(string orderId, CancellationToken cancellationToken)
         {
-            var receipt = await _receiptRepository
-                .GetQueryable()
-                .FirstOrDefaultAsync(r => r.OrderId == orderId, cancellationToken);
-
-            return receipt != null;
+            return _orderAccessService
+                .OrdersForCaller()
+                .AnyAsync(o => o.Id == orderId && o.Receipt != null, cancellationToken);
         }
     }
 
     public class Handler(
-        IOrderRepository orderRepository,
         IOrderAccessService orderAccessService,
         IReceiptService receiptService) : IQueryHandler<Query, Response>
     {
         public async Task<BusinessResult<Response>> Handle(Query query, CancellationToken cancellationToken)
         {
-            var order = await orderRepository
-                .GetQueryable()
+            var order = await orderAccessService
+                .OrdersForCaller()
                 .Include(o => o.Receipt)
                 .Include(o => o.AssignedEmployees)
                 .FirstOrDefaultAsync(o => o.Id == query.OrderId, cancellationToken);

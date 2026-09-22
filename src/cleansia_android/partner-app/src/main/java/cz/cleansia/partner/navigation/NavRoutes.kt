@@ -52,11 +52,16 @@ sealed interface NavRoute {
     @Serializable data class InvoiceDetail(val invoiceId: String) : NavRoute
 
     /**
-     * Read-only "my period pay" breakdown for one pay period — reached from
-     * an invoice's period card. [currencyCode] rides along because the
-     * period-pay DTO carries no currency of its own.
+     * Read-only "my period pay" breakdown for one pay period. [currencyId] names the currency view
+     * the server answers with — the launching invoice's, so a cleaner with a koruna and a euro
+     * invoice in one period is shown the one they tapped; null (the My Pay tab) lets the server
+     * pick. [currencyCode] is only the label fallback for a response that carries none.
      */
-    @Serializable data class PeriodPay(val payPeriodId: String, val currencyCode: String? = null) : NavRoute
+    @Serializable data class PeriodPay(
+        val payPeriodId: String,
+        val currencyCode: String? = null,
+        val currencyId: String? = null,
+    ) : NavRoute
 
     /**
      * Pay & Earnings summary — destination from the dashboard earnings

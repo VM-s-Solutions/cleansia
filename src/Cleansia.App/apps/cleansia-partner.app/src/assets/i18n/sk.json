@@ -292,10 +292,7 @@
         "minutes": "min",
         "complete_button": "Dokončiť objednávku",
         "success": "Objednávka bola úspešne dokončená!",
-        "error": "Nepodarilo sa dokončiť objednávku. Skúste to prosím znova.",
-        "actual_time_required": "Skutočný čas dokončenia je povinný",
-        "notes_required": "Poznámky k dokončeniu sú povinné na vysvetlenie časového rozdielu",
-        "notes_too_long": "Poznámky k dokončeniu musia byť kratšie ako 1000 znakov"
+        "error": "Nepodarilo sa dokončiť objednávku. Skúste to prosím znova."
       },
       "show_filters": "Zobraziť filtre",
       "hide_filters": "Skryť filtre",
@@ -760,6 +757,8 @@
       "birth_date": "Dátum narodenia je neplatný. Používateľ musí byť mladší ako {{ yearsRange }} rokov",
       "min_length": "Pole musí obsahovať aspoň {{ minLength }} znakov",
       "max_length": "Pole môže obsahovať maximálne {{ maxLength }} znakov",
+      "min": "Hodnota musí byť aspoň {{ min }}",
+      "max": "Hodnota nesmie byť väčšia ako {{ max }}",
       "pattern": "Pole nezodpovedá požadovanému vzoru",
       "minimum_age": "Minimálny vek je {{ requiredAge }} rokov. Aktuálny vek: {{ actualAge }} rokov",
       "maximum_age": "Maximálny vek je {{ maxAge }} rokov. Aktuálny vek: {{ actualAge }} rokov",

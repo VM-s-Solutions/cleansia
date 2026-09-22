@@ -1,14 +1,8 @@
 import { TemplateRef } from '@angular/core';
-import {
-  HelpStep,
-  resolveStatusBadge,
-  StatusBadgeKind,
-  StatusFlowItem,
-  TableAction,
-  TableColumn,
-} from '@cleansia/components';
+import { HelpStep, StatusFlowItem, TableAction, TableColumn } from '@cleansia/components';
 import { OrderListItem, OrderStatus } from '@cleansia/partner-services';
 import { formatDate, formatMoney, localeFor } from '@cleansia/utils';
+import { legendBadgeClass } from '../status-legend';
 
 export interface OrderFilterFormValue {
   customerName?: string | null;
@@ -42,10 +36,6 @@ export const ORDERS_HELP_STEPS: HelpStep[] = [
     descriptionKey: 'help.orders.step4_desc',
   },
 ];
-
-// The help legend draws the same pill, in the same tone, as the table's badge for that status.
-const legendBadgeClass = (kind: StatusBadgeKind, member: string): string =>
-  `status-badge status-badge--${resolveStatusBadge(kind, member)?.tone ?? 'neutral'}`;
 
 export const ORDER_STATUS_FLOW: StatusFlowItem[] = [
   {
@@ -126,6 +116,7 @@ export function getAvailableOrdersTableDefinition(
         getValue: (row?: OrderListItem) => formatDate(row?.cleaningDateTime, lang, 'dateTime'),
         sortable: true,
         width: '12%',
+        numeric: true,
       },
       {
         id: 'address',
@@ -145,7 +136,7 @@ export function getAvailableOrdersTableDefinition(
             : '',
         sortable: true,
         width: '12%',
-        align: 'right',
+        numeric: true,
       },
       {
         id: 'availableSpots',
@@ -154,6 +145,7 @@ export function getAvailableOrdersTableDefinition(
         getValue: (row?: OrderListItem) =>
           `${row?.availableSpots || 0} / ${row?.maxEmployees || 0}`,
         width: '10%',
+        numeric: true,
       },
       {
         id: 'paymentStatus',
@@ -234,6 +226,7 @@ export function getMyOrdersTableDefinition(
         getValue: (row?: OrderListItem) => formatDate(row?.cleaningDateTime, lang, 'dateTime'),
         sortable: true,
         width: '12%',
+        numeric: true,
       },
       {
         id: 'address',
@@ -253,7 +246,7 @@ export function getMyOrdersTableDefinition(
             : '',
         sortable: true,
         width: '12%',
-        align: 'right',
+        numeric: true,
       },
       {
         id: 'orderStatus',

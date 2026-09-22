@@ -18,10 +18,10 @@ describe('getOrderPaysTableDefinition', () => {
     expect(totalOf(undefined, 'en', OrderEmployeePayDto.fromJS({ totalPay: 99 }))).toBe('99.00');
   });
 
-  it('right-aligns every amount column', () => {
+  it('right-aligns every amount column in tabular figures', () => {
     const { columns } = getOrderPaysTableDefinition('CZK', 'cs');
     for (const column of columns.filter((c) => c.id !== 'orderNumber')) {
-      expect(column.align).toBe('right');
+      expect(column.numeric).toBe(true);
     }
   });
 });

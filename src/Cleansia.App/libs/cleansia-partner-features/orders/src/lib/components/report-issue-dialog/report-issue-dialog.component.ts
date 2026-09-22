@@ -19,7 +19,6 @@ export interface ReportIssueDialogResult {
   imports: [ReactiveFormsModule, TranslateModule, CleansiaButtonComponent, CleansiaTextareaComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './report-issue-dialog.component.html',
-  styleUrl: './report-issue-dialog.component.scss',
 })
 export class ReportIssueDialogComponent {
   private readonly fb = inject(FormBuilder);

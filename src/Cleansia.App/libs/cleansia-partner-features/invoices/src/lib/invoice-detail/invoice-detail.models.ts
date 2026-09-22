@@ -35,7 +35,7 @@ export function getOrderPaysTableDefinition(
         field: 'basePay',
         header: 'pages.invoice_detail.base_pay',
         sortable: false,
-        align: 'right',
+        numeric: true,
         getValue: (pay?: OrderEmployeePayDto) =>
           pay ? amount(pay.basePay) : '',
       },
@@ -44,7 +44,7 @@ export function getOrderPaysTableDefinition(
         field: 'extrasPay',
         header: 'pages.invoice_detail.extras_pay',
         sortable: false,
-        align: 'right',
+        numeric: true,
         getValue: (pay?: OrderEmployeePayDto) =>
           pay ? amount(pay.extrasPay) : '',
       },
@@ -53,7 +53,7 @@ export function getOrderPaysTableDefinition(
         field: 'expensesPay',
         header: 'pages.invoice_detail.expenses_pay',
         sortable: false,
-        align: 'right',
+        numeric: true,
         getValue: (pay?: OrderEmployeePayDto) =>
           pay ? amount(pay.expensesPay) : '',
       },
@@ -62,7 +62,7 @@ export function getOrderPaysTableDefinition(
         field: 'bonusPay',
         header: 'pages.invoice_detail.bonus_pay',
         sortable: false,
-        align: 'right',
+        numeric: true,
         getValue: (pay?: OrderEmployeePayDto) =>
           pay ? amount(pay.bonusPay) : '',
       },
@@ -71,7 +71,7 @@ export function getOrderPaysTableDefinition(
         field: 'deductionPay',
         header: 'pages.invoice_detail.deduction_pay',
         sortable: false,
-        align: 'right',
+        numeric: true,
         getValue: (pay?: OrderEmployeePayDto) =>
           pay ? amount(pay.deductionPay) : '',
       },
@@ -80,7 +80,7 @@ export function getOrderPaysTableDefinition(
         field: 'totalPay',
         header: 'pages.invoice_detail.total_pay',
         sortable: false,
-        align: 'right',
+        numeric: true,
         getValue: (pay?: OrderEmployeePayDto) =>
           pay ? amount(pay.totalPay) : '',
       },

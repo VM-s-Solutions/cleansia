@@ -279,11 +279,11 @@ export class OrdersFacade extends UnsubscribeControlDirective {
     const ref: DynamicDialogRef | null = this.dialogService.open(
       WorkContractDialogComponent,
       {
-        header: undefined,
         data: dialogData,
-        width: '720px',
         modal: true,
         dismissableMask: false,
+        showHeader: false,
+        styleClass: 'cleansia-dialog dialog-panel dialog-panel--reading',
       }
     );
 
@@ -395,11 +395,14 @@ export class OrdersFacade extends UnsubscribeControlDirective {
     const ref: DynamicDialogRef | null = this.dialogService.open(
       CompleteOrderDialogComponent,
       {
-        header: undefined,
         data: dialogData,
-        width: '600px',
+        header: this.translate.instant('pages.orders.complete_order.title'),
         modal: true,
+        closable: true,
+        draggable: false,
+        resizable: false,
         dismissableMask: false,
+        styleClass: 'cleansia-dialog dialog-panel dialog-panel--wide',
       }
     );
 

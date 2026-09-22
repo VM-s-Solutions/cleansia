@@ -32,12 +32,14 @@ export function getInvoicesTableDefinition(
         header: 'pages.invoices.generated_date',
         getValue: (invoice?: EmployeeInvoiceDto) => formatDate(invoice?.generatedAt, lang),
         sortable: true,
+        numeric: true,
       },
       {
         id: 'totalOrders',
         field: 'totalOrders',
         header: 'pages.invoices.total_orders',
         sortable: true,
+        numeric: true,
       },
       {
         id: 'totalAmount',
@@ -48,7 +50,7 @@ export function getInvoicesTableDefinition(
             ? formatMoney(invoice.totalAmount, invoice.currencyCode ?? '', localeFor(lang), { fractionDigits: 2 })
             : '',
         sortable: true,
-        align: 'right',
+        numeric: true,
       },
       {
         id: 'status',

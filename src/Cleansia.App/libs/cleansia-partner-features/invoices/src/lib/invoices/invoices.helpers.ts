@@ -1,10 +1,5 @@
-import {
-  FilterChip,
-  HelpStep,
-  resolveStatusBadge,
-  StatusBadgeKind,
-  StatusFlowItem,
-} from '@cleansia/components';
+import { FilterChip, HelpStep, StatusFlowItem } from '@cleansia/components';
+import { legendBadgeClass } from '@cleansia-partner/orders';
 import { EmployeeInvoiceStatus } from '@cleansia/partner-services';
 import { formatDate } from '@cleansia/utils';
 import { TranslateService } from '@ngx-translate/core';
@@ -48,10 +43,6 @@ export const INVOICES_HELP_STEPS: HelpStep[] = [
     descriptionKey: 'help.invoices.step4_desc',
   },
 ];
-
-// The help legend draws the same pill, in the same tone, as the table's badge for that status.
-const legendBadgeClass = (kind: StatusBadgeKind, member: string): string =>
-  `status-badge status-badge--${resolveStatusBadge(kind, member)?.tone ?? 'neutral'}`;
 
 export const INVOICE_STATUS_FLOW: StatusFlowItem[] = [
   {

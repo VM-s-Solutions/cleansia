@@ -51,8 +51,6 @@ export class CompleteOrderDialogComponent {
   });
 
   private readonly formValue = toSignal(this.form.valueChanges, { initialValue: this.form.value });
-  // Every control event, so a touch from markAllAsTouched re-reads the errors as a value change does.
-  private readonly formEvents = toSignal(this.form.events);
 
   readonly estimatedTime = this.data.estimatedTime;
   readonly actualTime = computed(() => Number(this.formValue().actualCompletionTimeMinutes) || 0);
@@ -61,22 +59,6 @@ export class CompleteOrderDialogComponent {
     this.estimatedTime === 0 ? 0 : Math.round((this.delay() / this.estimatedTime) * 100)
   );
   readonly isDelayed = computed(() => this.delay() > 0);
-
-  readonly showActualTimeError = computed(() => {
-    this.formEvents();
-    const control = this.form.controls.actualCompletionTimeMinutes;
-    return control.touched && control.invalid;
-  });
-  readonly showNotesRequiredError = computed(() => {
-    this.formEvents();
-    const control = this.form.controls.completionNotes;
-    return control.touched && control.hasError('required');
-  });
-  readonly showNotesTooLongError = computed(() => {
-    this.formEvents();
-    const control = this.form.controls.completionNotes;
-    return control.touched && control.hasError('maxlength');
-  });
 
   formatMinutes(minutes: number): string {
     const hours = Math.floor(minutes / 60);

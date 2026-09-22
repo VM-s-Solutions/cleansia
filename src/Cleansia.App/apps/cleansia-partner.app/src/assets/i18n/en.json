@@ -292,10 +292,7 @@
         "minutes": "min",
         "complete_button": "Complete Order",
         "success": "Order completed successfully!",
-        "error": "Failed to complete order. Please try again.",
-        "actual_time_required": "Actual completion time is required",
-        "notes_required": "Completion notes are required to explain the time variance",
-        "notes_too_long": "Completion notes must be less than 1000 characters"
+        "error": "Failed to complete order. Please try again."
       },
       "show_filters": "Show Filters",
       "hide_filters": "Hide Filters",
@@ -760,6 +757,8 @@
       "birth_date": "Birth date is invalid. User must be younger than {{ yearsRange }} years",
       "min_length": "Field must contain at least {{ minLength }} characters",
       "max_length": "Field can contain a maximum of {{ maxLength }} characters",
+      "min": "Value must be at least {{ min }}",
+      "max": "Value must be at most {{ max }}",
       "pattern": "Field does not match the required pattern",
       "minimum_age": "Minimum age is {{ requiredAge }} years. Current age: {{ actualAge }} years",
       "maximum_age": "Maximum age is {{ maxAge }} years. Current age: {{ actualAge }} years",

@@ -509,6 +509,7 @@
     }
   }
 
+  // The connector starts at the first node's centre and ends at the last one's.
   .status-history-timeline {
     display: flex;
     flex-direction: column;
@@ -520,8 +521,8 @@
       content: '';
       position: absolute;
       left: 15px;
-      top: 0;
-      bottom: 0;
+      top: 1rem;
+      bottom: 1rem;
       width: 2px;
       background: var(--cleansia-primary-200);
     }
@@ -531,7 +532,11 @@
     display: flex;
     gap: 1rem;
     position: relative;
-    padding: 1rem 0;
+    padding: 0.5rem 0;
+
+    &:first-child {
+      padding-top: 0;
+    }
 
     &:last-child {
       padding-bottom: 0;
@@ -561,6 +566,8 @@
       flex-direction: column;
       gap: 0.25rem;
       flex: 1;
+      min-height: 32px;
+      justify-content: center;
       padding-left: 0.5rem;
 
       .status-name {

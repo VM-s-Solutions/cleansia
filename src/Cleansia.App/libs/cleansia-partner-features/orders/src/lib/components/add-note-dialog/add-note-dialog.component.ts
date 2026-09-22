@@ -19,7 +19,6 @@ export interface AddNoteDialogResult {
   imports: [ReactiveFormsModule, TranslateModule, CleansiaButtonComponent, CleansiaTextareaComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './add-note-dialog.component.html',
-  styleUrl: './add-note-dialog.component.scss',
 })
 export class AddNoteDialogComponent {
   private readonly fb = inject(FormBuilder);

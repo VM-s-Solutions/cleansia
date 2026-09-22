@@ -2,9 +2,10 @@ import { FormControl } from '@angular/forms';
 import { notBlank } from './dialog-validators';
 
 describe('notBlank', () => {
-  it('refuses text that is only whitespace', () => {
-    expect(notBlank(new FormControl('   '))).toEqual({ blank: true });
-    expect(notBlank(new FormControl('\n\t'))).toEqual({ blank: true });
+  // Whitespace-only text is a missing note, so it reads as the control's own required message.
+  it('refuses text that is only whitespace as a missing value', () => {
+    expect(notBlank(new FormControl('   '))).toEqual({ required: true });
+    expect(notBlank(new FormControl('\n\t'))).toEqual({ required: true });
   });
 
   it('accepts text with a character in it, even padded', () => {

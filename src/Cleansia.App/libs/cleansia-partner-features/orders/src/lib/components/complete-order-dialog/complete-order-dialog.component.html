@@ -1,108 +1,84 @@
-<div class="complete-order-dialog">
-  <form [formGroup]="form" (ngSubmit)="onComplete()">
-    <div class="complete-order-dialog__header">
-      <h2 class="complete-order-dialog__title">
-        {{ 'pages.orders.complete_order.title' | translate }}
-      </h2>
-      <p class="complete-order-dialog__subtitle">
-        {{ 'pages.orders.complete_order.order_number' | translate }}: {{ data.orderNumber }}
-      </p>
-    </div>
+<form [formGroup]="form" (ngSubmit)="onComplete()" class="dialog-body">
+  <p class="dialog-lede">
+    {{ 'pages.orders.complete_order.order_number' | translate }}: {{ data.orderNumber }}
+  </p>
 
-    <div class="complete-order-dialog__content">
-      <div class="complete-order-dialog__time-comparison">
-        <div class="time-comparison-item">
-          <span class="time-comparison-item__label">
-            {{ 'pages.orders.complete_order.estimated_time' | translate }}
-          </span>
-          <span class="time-comparison-item__value">
-            {{ formatMinutes(estimatedTime) }}
-          </span>
-        </div>
+  <div class="dialog-summary">
+    <div class="detail-grid complete-order-dialog__times">
+      <div class="detail-grid__item">
+        <span class="detail-grid__label">
+          {{ 'pages.orders.complete_order.estimated_time' | translate }}
+        </span>
+        <span class="detail-grid__value">{{ formatMinutes(estimatedTime) }}</span>
+      </div>
 
-        <div class="time-comparison-item time-comparison-item--actual">
-          <span class="time-comparison-item__label">
-            {{ 'pages.orders.complete_order.actual_time' | translate }}
-          </span>
-          <span class="time-comparison-item__value">
-            {{ formatMinutes(actualTime()) }}
-          </span>
-        </div>
+      <div class="detail-grid__item">
+        <span class="detail-grid__label">
+          {{ 'pages.orders.complete_order.actual_time' | translate }}
+        </span>
+        <span class="detail-grid__value">{{ formatMinutes(actualTime()) }}</span>
+      </div>
 
-        <div
-          class="time-comparison-item"
-          [class.time-comparison-item--delayed]="isDelayed()"
-          [class.time-comparison-item--on-time]="!isDelayed()"
-        >
-          <span class="time-comparison-item__label">
-            @if (isDelayed()) {
-            {{ 'pages.orders.complete_order.delay' | translate }}
-            } @else {
-            {{ 'pages.orders.complete_order.status' | translate }}
-            }
-          </span>
-          <span class="time-comparison-item__value">
-            @if (isDelayed()) {
+      <div class="detail-grid__item">
+        <span class="detail-grid__label">
+          @if (isDelayed()) {
+          {{ 'pages.orders.complete_order.delay' | translate }}
+          } @else {
+          {{ 'pages.orders.complete_order.status' | translate }}
+          }
+        </span>
+        <span class="detail-grid__value">
+          @if (isDelayed()) {
+          <span class="status-badge status-badge--warning">
             +{{ formatMinutes(delay()) }} (+{{ delayPercentage() }}%)
-            } @else {
-            {{ 'pages.orders.complete_order.on_time' | translate }} ✓
-            }
           </span>
-        </div>
-      </div>
-
-      <div class="complete-order-dialog__field">
-        <cleansia-text-input
-          formControlName="actualCompletionTimeMinutes"
-          dataType="number"
-          [label]="'pages.orders.complete_order.actual_time_input' | translate"
-          [showErrors]="false"
-        />
-        @if (showActualTimeError()) {
-        <small class="complete-order-dialog__error">
-          {{ 'pages.orders.complete_order.actual_time_required' | translate }}
-        </small>
-        }
-      </div>
-
-      <div class="complete-order-dialog__field">
-        <cleansia-textarea
-          formControlName="completionNotes"
-          [label]="'pages.orders.complete_order.completion_notes' | translate"
-          [placeholder]="'pages.orders.complete_order.completion_notes_placeholder' | translate"
-          [rows]="4"
-          [showErrors]="false"
-        />
-        <small class="complete-order-dialog__hint">
-          {{ 'pages.orders.complete_order.notes_hint' | translate }}
-        </small>
-        @if (showNotesRequiredError()) {
-        <small class="complete-order-dialog__error">
-          {{ 'pages.orders.complete_order.notes_required' | translate }}
-        </small>
-        } @if (showNotesTooLongError()) {
-        <small class="complete-order-dialog__error">
-          {{ 'pages.orders.complete_order.notes_too_long' | translate }}
-        </small>
-        }
+          } @else {
+          <span class="status-badge status-badge--success">
+            {{ 'pages.orders.complete_order.on_time' | translate }}
+          </span>
+          }
+        </span>
       </div>
     </div>
+  </div>
 
-    <div class="complete-order-dialog__footer">
-      <cleansia-button
-        [label]="'global.actions.cancel' | translate"
-        [severity]="'secondary'"
-        [outlined]="true"
-        [disabled]="loading()"
-        (onClick)="onCancel()"
-      />
-      <cleansia-button
-        [buttonType]="'submit'"
-        [label]="'pages.orders.complete_order.complete_button' | translate"
-        [icon]="'pi pi-check'"
-        [disabled]="form.invalid || loading()"
-        [loading]="loading()"
+  <div class="form-grid">
+    <div class="form-field form-field--full">
+      <cleansia-text-input
+        formControlName="actualCompletionTimeMinutes"
+        dataType="number"
+        [label]="'pages.orders.complete_order.actual_time_input' | translate"
       />
     </div>
-  </form>
-</div>
+
+    <div class="form-field form-field--full">
+      <cleansia-textarea
+        formControlName="completionNotes"
+        [label]="'pages.orders.complete_order.completion_notes' | translate"
+        [placeholder]="'pages.orders.complete_order.completion_notes_placeholder' | translate"
+        [rows]="4"
+      />
+    </div>
+    <p class="form-hint">
+      {{ 'pages.orders.complete_order.notes_hint' | translate }}
+    </p>
+  </div>
+
+  <div class="dialog-actions">
+    <cleansia-button
+      buttonType="button"
+      [label]="'global.actions.cancel' | translate"
+      severity="secondary"
+      [outlined]="true"
+      [disabled]="loading()"
+      (onClick)="onCancel()"
+    />
+    <cleansia-button
+      buttonType="submit"
+      [label]="'pages.orders.complete_order.complete_button' | translate"
+      icon="pi pi-check"
+      [disabled]="form.invalid || loading()"
+      [loading]="loading()"
+    />
+  </div>
+</form>

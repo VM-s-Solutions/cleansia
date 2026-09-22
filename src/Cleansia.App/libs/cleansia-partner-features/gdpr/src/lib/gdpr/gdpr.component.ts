@@ -4,6 +4,7 @@ import { RouterModule } from '@angular/router';
 import {
   CleansiaButtonComponent,
   CleansiaLoaderComponent,
+  CleansiaSectionComponent,
   CleansiaTitleComponent,
 } from '@cleansia/components';
 import { ConsentType } from '@cleansia/partner-services';
@@ -20,6 +21,7 @@ import { PartnerGdprFacade } from './gdpr.facade';
     ToggleSwitchModule,
     CleansiaButtonComponent,
     CleansiaLoaderComponent,
+    CleansiaSectionComponent,
     CleansiaTitleComponent,
     RouterModule,
   ],

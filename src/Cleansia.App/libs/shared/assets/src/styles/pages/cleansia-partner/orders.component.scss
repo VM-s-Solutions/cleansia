@@ -15,3 +15,9 @@ cleansia-partner-orders {
   min-height: 100vh;
   gap: 1rem;
 }
+
+// The completion dialog compares three times side by side; on the detail grid's four columns the
+// last would sit empty and the labels would wrap.
+.complete-order-dialog__times.detail-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}

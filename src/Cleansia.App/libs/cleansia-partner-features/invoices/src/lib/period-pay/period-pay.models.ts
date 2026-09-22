@@ -62,7 +62,7 @@ export function getPeriodPayTableDefinition(
         field: 'basePay',
         header: 'pages.period_pay.base_pay',
         sortable: false,
-        align: 'right',
+        numeric: true,
         getValue: (pay?: OrderEmployeePayDto) => format(pay, pay?.basePay),
       },
       {
@@ -70,7 +70,7 @@ export function getPeriodPayTableDefinition(
         field: 'extrasPay',
         header: 'pages.period_pay.extras_pay',
         sortable: false,
-        align: 'right',
+        numeric: true,
         getValue: (pay?: OrderEmployeePayDto) => format(pay, pay?.extrasPay),
       },
       {
@@ -78,7 +78,7 @@ export function getPeriodPayTableDefinition(
         field: 'expensesPay',
         header: 'pages.period_pay.expenses_pay',
         sortable: false,
-        align: 'right',
+        numeric: true,
         getValue: (pay?: OrderEmployeePayDto) => format(pay, pay?.expensesPay),
       },
       {
@@ -86,7 +86,7 @@ export function getPeriodPayTableDefinition(
         field: 'bonusPay',
         header: 'pages.period_pay.bonus_pay',
         sortable: false,
-        align: 'right',
+        numeric: true,
         getValue: (pay?: OrderEmployeePayDto) => format(pay, pay?.bonusPay),
       },
       {
@@ -94,7 +94,7 @@ export function getPeriodPayTableDefinition(
         field: 'deductionPay',
         header: 'pages.period_pay.deduction_pay',
         sortable: false,
-        align: 'right',
+        numeric: true,
         getValue: (pay?: OrderEmployeePayDto) => format(pay, pay?.deductionPay),
       },
       {
@@ -102,7 +102,7 @@ export function getPeriodPayTableDefinition(
         field: 'totalPay',
         header: 'pages.period_pay.total_pay',
         sortable: false,
-        align: 'right',
+        numeric: true,
         getValue: (pay?: OrderEmployeePayDto) => format(pay, pay?.totalPay),
       },
     ],

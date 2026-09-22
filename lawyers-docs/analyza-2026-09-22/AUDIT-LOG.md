@@ -1,6 +1,6 @@
 # Záznam auditu — 22. 9. 2026
 
-**Auditovaný stav zdrojového kódu · commit `6792f0c256e81e1473908308bd73881004853be4` (`master`, 22. 9. 2026).** Všechny čtyři dokumenty ve složce popisují výhradně tento commit; commity, které `master` přijal po něm, auditovány nejsou.
+**Auditovaný stav zdrojového kódu · commit `6792f0c256e81e1473908308bd73881004853be4` (`master`, 22. 9. 2026).** Všech pět dokumentů ve složce popisuje výhradně tento commit; commity, které `master` přijal po něm, auditovány nejsou. Pátý dokument — [PODKLADY-KOLEGU-VS-KOD.md](PODKLADY-KOLEGU-VS-KOD.md) — staví tři obchodní podklady ze složky `colleague-documents/` proti témuž stromu a otevírá rozhodnutí R22–R27.
 
 | položka | hodnota |
 |---|---|
@@ -57,7 +57,7 @@ Deset DOCX v `lawyers-docs/SMLOUVY CleanSia/SMLOUVY/` má 22. 9. 2026 stejný SH
 
 ## Kontrola citací
 
-Výstup skriptu: `1594 citací · 114 bez identifikátoru · 0 nevyřešených`
+Výstup skriptu: `1676 citací · 136 bez identifikátoru · 0 nevyřešených`
 
 ## Rozsah dokumentů
 
@@ -69,7 +69,8 @@ Příkaz: `wc -w lawyers-docs/analyza-2026-09-22/*.md`
 | ROZPORY-DOKUMENTY-VS-KOD.md | 7 844 | 8 000 |
 | TECHNICKE-MEZERY.md | 4 130 | 5 000 |
 | OBCHODNI-MEZERY-A-HRANICNI-PRIPADY.md | 4 031 | 5 000 |
-| AUDIT-LOG.md | 1 187 | 1 500 |
+| AUDIT-LOG.md | 1 215 | 1 500 |
+| PODKLADY-KOLEGU-VS-KOD.md | 2 819 | 3 500 |
 
 ## Rozdíl 7acea58b → 6792f0c2
 

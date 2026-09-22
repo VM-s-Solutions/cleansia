@@ -40,8 +40,8 @@ blockquote { border-left: 4px solid #12796b; margin: 20px 0; padding: 5px 20px; 
  h1, h2, h3, h4 { break-after: avoid; }
  a { text-decoration: none; color: #135d55; }
 }
-</style></head><body><main><nav><a href="PROVOZ-PLATFORMY.html">Jak platforma funguje</a><a href="ROZPORY-DOKUMENTY-VS-KOD.html">Dokumenty vs. aplikace</a><a href="TECHNICKE-MEZERY.html">Technické mezery</a><a href="OBCHODNI-MEZERY-A-HRANICNI-PRIPADY.html">Obchodní mezery a hraniční případy</a><a href="AUDIT-LOG.html">Záznam auditu</a><a href="PROVOZ-PLATFORMY.pdf">Jak platforma funguje (PDF)</a><a href="ROZPORY-DOKUMENTY-VS-KOD.pdf">Dokumenty vs. aplikace (PDF)</a><a href="TECHNICKE-MEZERY.pdf">Technické mezery (PDF)</a><a href="OBCHODNI-MEZERY-A-HRANICNI-PRIPADY.pdf">Obchodní mezery a hraniční případy (PDF)</a><a href="AUDIT-LOG.pdf">Záznam auditu (PDF)</a><a href="podklady/INVENTAR.html">Inventář podkladů</a></nav><h1 id="zaznam-auditu-22-9-2026">Záznam auditu — 22. 9. 2026</h1>
-<p><strong>Auditovaný stav zdrojového kódu · commit <code>6792f0c256e81e1473908308bd73881004853be4</code> (<code>master</code>, 22. 9. 2026).</strong> Všechny čtyři dokumenty ve složce popisují výhradně tento commit; commity, které <code>master</code> přijal po něm, auditovány nejsou.</p>
+</style></head><body><main><nav><a href="PROVOZ-PLATFORMY.html">Jak platforma funguje</a><a href="ROZPORY-DOKUMENTY-VS-KOD.html">Dokumenty vs. aplikace</a><a href="TECHNICKE-MEZERY.html">Technické mezery</a><a href="OBCHODNI-MEZERY-A-HRANICNI-PRIPADY.html">Obchodní mezery a hraniční případy</a><a href="AUDIT-LOG.html">Záznam auditu</a><a href="PODKLADY-KOLEGU-VS-KOD.html">Podklady kolegu vs kod</a><a href="PROVOZ-PLATFORMY.pdf">Jak platforma funguje (PDF)</a><a href="ROZPORY-DOKUMENTY-VS-KOD.pdf">Dokumenty vs. aplikace (PDF)</a><a href="TECHNICKE-MEZERY.pdf">Technické mezery (PDF)</a><a href="OBCHODNI-MEZERY-A-HRANICNI-PRIPADY.pdf">Obchodní mezery a hraniční případy (PDF)</a><a href="AUDIT-LOG.pdf">Záznam auditu (PDF)</a><a href="PODKLADY-KOLEGU-VS-KOD.pdf">Podklady kolegu vs kod (PDF)</a><a href="podklady/INVENTAR.html">Inventář podkladů</a></nav><h1 id="zaznam-auditu-22-9-2026">Záznam auditu — 22. 9. 2026</h1>
+<p><strong>Auditovaný stav zdrojového kódu · commit <code>6792f0c256e81e1473908308bd73881004853be4</code> (<code>master</code>, 22. 9. 2026).</strong> Všech pět dokumentů ve složce popisuje výhradně tento commit; commity, které <code>master</code> přijal po něm, auditovány nejsou. Pátý dokument — <a href="PODKLADY-KOLEGU-VS-KOD.md">PODKLADY-KOLEGU-VS-KOD.md</a> — staví tři obchodní podklady ze složky <code>colleague-documents/</code> proti témuž stromu a otevírá rozhodnutí R22–R27.</p>
 <table>
 <thead>
 <tr>
@@ -229,7 +229,7 @@ blockquote { border-left: 4px solid #12796b; margin: 20px 0; padding: 5px 20px; 
 <li>Kontroly jménem: <code>skript citací</code> (<code>python lawyers-docs/check-citations.py analyza-2026-09-22 6792f0c2…</code>: cesta v commitu, mez řádku, identifikátor do ±3 řádků, řádek <code>[Pxxx]</code>, buňka ≤ 40 slov, zakázaná slova) a <code>wc -w</code>.</li>
 </ol>
 <h2 id="kontrola-citaci">Kontrola citací</h2>
-<p>Výstup skriptu: <code>1594 citací · 114 bez identifikátoru · 0 nevyřešených</code></p>
+<p>Výstup skriptu: <code>1676 citací · 136 bez identifikátoru · 0 nevyřešených</code></p>
 <h2 id="rozsah-dokumentu">Rozsah dokumentů</h2>
 <p>Příkaz: <code>wc -w lawyers-docs/analyza-2026-09-22/*.md</code></p>
 <table>
@@ -263,8 +263,13 @@ blockquote { border-left: 4px solid #12796b; margin: 20px 0; padding: 5px 20px; 
 </tr>
 <tr>
 <td>AUDIT-LOG.md</td>
-<td style="text-align: right;">1 187</td>
+<td style="text-align: right;">1 215</td>
 <td style="text-align: right;">1 500</td>
+</tr>
+<tr>
+<td>PODKLADY-KOLEGU-VS-KOD.md</td>
+<td style="text-align: right;">2 819</td>
+<td style="text-align: right;">3 500</td>
 </tr>
 </tbody>
 </table>

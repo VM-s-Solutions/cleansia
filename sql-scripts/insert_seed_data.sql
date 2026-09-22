@@ -1694,7 +1694,7 @@ INSERT INTO public."LoyaltyTierConfigs" (
 )
 SELECT '01LTYGOLD0000000000000000A', true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
     3, 2000, 0.1000, NULL,
-    '[{"icon":"badge","labelKey":"loyalty.perks.welcome_badge"},{"icon":"percent","labelKey":"loyalty.perks.discount_10"},{"icon":"support","labelKey":"loyalty.perks.priority_support"}]'
+    '[{"icon":"badge","labelKey":"loyalty.perks.welcome_badge"},{"icon":"percent","labelKey":"loyalty.perks.discount_10"}]'
 WHERE NOT EXISTS (SELECT 1 FROM public."LoyaltyTierConfigs" WHERE "Tier" = 3);
 
 INSERT INTO public."LoyaltyTierConfigs" (
@@ -1705,7 +1705,7 @@ INSERT INTO public."LoyaltyTierConfigs" (
 )
 SELECT '01LTYPLATINUM0000000000000', true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
     4, 5000, 0.1200, 1000.00,
-    '[{"icon":"badge","labelKey":"loyalty.perks.welcome_badge"},{"icon":"percent","labelKey":"loyalty.perks.discount_12"},{"icon":"support","labelKey":"loyalty.perks.priority_support"},{"icon":"star","labelKey":"loyalty.perks.dedicated_pool"}]'
+    '[{"icon":"badge","labelKey":"loyalty.perks.welcome_badge"},{"icon":"percent","labelKey":"loyalty.perks.discount_12"}]'
 WHERE NOT EXISTS (SELECT 1 FROM public."LoyaltyTierConfigs" WHERE "Tier" = 4);
 
 -- LOY-003 — keep the seed in sync with the live tier values. Idempotent
@@ -1720,13 +1720,14 @@ UPDATE public."LoyaltyTierConfigs"
 
 UPDATE public."LoyaltyTierConfigs"
    SET "DiscountPercent" = 0.1000,
-       "MinimumOrderAmountForDiscount" = 1000.00
+       "MinimumOrderAmountForDiscount" = 1000.00,
+       "PerksJson" = '[{"icon":"badge","labelKey":"loyalty.perks.welcome_badge"},{"icon":"percent","labelKey":"loyalty.perks.discount_10"}]'
  WHERE "Tier" = 3;
 
 UPDATE public."LoyaltyTierConfigs"
    SET "DiscountPercent" = 0.1200,
        "MinimumOrderAmountForDiscount" = 1000.00,
-       "PerksJson" = '[{"icon":"badge","labelKey":"loyalty.perks.welcome_badge"},{"icon":"percent","labelKey":"loyalty.perks.discount_12"},{"icon":"support","labelKey":"loyalty.perks.priority_support"},{"icon":"star","labelKey":"loyalty.perks.dedicated_pool"}]'
+       "PerksJson" = '[{"icon":"badge","labelKey":"loyalty.perks.welcome_badge"},{"icon":"percent","labelKey":"loyalty.perks.discount_12"}]'
  WHERE "Tier" = 4;
 
 -- ============================================================

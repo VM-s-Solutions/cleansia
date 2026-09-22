@@ -1138,7 +1138,6 @@
       "step4_desc": "Vaše výdělky budou přidány na další fakturu za platební období.",
       "status_title": "Vysvětlení stavů objednávek",
       "status": {
-        "pending_desc": "Zastaralý stav, do kterého nová objednávka nevstupuje — každá objednávka začíná jako Nová. Zda zákazník zaplatil, ukazuje samostatný stav platby.",
         "confirmed_desc": "Uklízeč převzal zakázku. O platbě to nic neříká — hotovostní objednávka je Potvrzená dřív, než se pohnou jakékoli peníze.",
         "in_progress_desc": "Zaměstnanec začal pracovat na této objednávce. Úklid probíhá.",
         "completed_desc": "Práce je dokončena, fotografie nahrány. Připraveno ke zpracování platby.",

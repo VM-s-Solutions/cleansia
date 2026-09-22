@@ -287,7 +287,11 @@
               @if (facade.submitting()) {
                 <i class="pi pi-spin pi-spinner" aria-hidden="true"></i>
               }
-              {{ 'pages.plus.cta_try_free' | translate }}
+              @if (facade.trialDays() > 0) {
+                {{ 'pages.plus.cta_try_free' | translate }}
+              } @else {
+                {{ 'pages.plus.cta_subscribe' | translate }}
+              }
             </button>
           </div>
         }
@@ -320,7 +324,11 @@
               @if (facade.submitting()) {
                 <i class="pi pi-spin pi-spinner" aria-hidden="true"></i>
               }
-              {{ 'pages.plus.cta_try_free' | translate }}
+              @if (facade.trialDays() > 0) {
+                {{ 'pages.plus.cta_try_free' | translate }}
+              } @else {
+                {{ 'pages.plus.cta_subscribe' | translate }}
+              }
             </button>
           </div>
         }
@@ -384,8 +392,7 @@
 
       <!--
         "Cancel", not "pause". There is no pause: cancel-at-period-end is the
-        only exit, and Stripe honours a trial once per customer, so someone who
-        leaves and comes back does not get another free period.
+        only exit.
       -->
       <div class="cl-plusp__qa">
         <i class="pi pi-question-circle"></i>

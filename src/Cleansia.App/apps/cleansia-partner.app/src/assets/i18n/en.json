@@ -1138,7 +1138,6 @@
       "step4_desc": "Your earnings are added to your next invoice for the pay period.",
       "status_title": "Order Status Explained",
       "status": {
-        "pending_desc": "A legacy state no new order enters — every order starts as New. Whether the customer has paid is a separate payment status.",
         "confirmed_desc": "A cleaner has taken the job. This says nothing about payment — a cash order is Confirmed before any money moves.",
         "in_progress_desc": "An employee has started working on this order. Cleaning is underway.",
         "completed_desc": "Work is finished, photos uploaded. Ready for payment processing.",

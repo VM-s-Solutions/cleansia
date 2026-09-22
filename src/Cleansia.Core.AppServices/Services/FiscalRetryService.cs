@@ -80,7 +80,7 @@ public sealed class FiscalRetryService(
                         // unmarked (which would re-send). The accepted residual is a rare lost email on a
                         // crash between this claim commit and the send.
                         receipt.ClaimEmailSend();
-                        var guestAccessToken = await guestAccessTokenIssuer.IssueForGuestAsync(order, cancellationToken);
+                        var guestAccessToken = guestAccessTokenIssuer.IssueForGuest(order);
                         await unitOfWork.CommitAsync(cancellationToken);
 
                         var messageId = await emailService.SendOrderReceiptEmailAsync(

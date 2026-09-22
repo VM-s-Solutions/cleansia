@@ -6,6 +6,7 @@ using Cleansia.Core.AppServices.Features.Addresses.DTOs;
 using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Auditing;
+using Cleansia.Core.Domain.Common;
 using Cleansia.Core.Domain.Configuration;
 using Cleansia.Core.Domain.EmployeePayroll;
 using Cleansia.Core.Domain.Enums;
@@ -101,6 +102,15 @@ public class CreateOrderGuestAuditTests(PostgresContainerFixture fixture) : Base
                 Assert.True(result.IsSuccess, $"CreateOrder failed with: {string.Join("; ", (result as IValidationResult)?.Errors.Select(e => $"{e.Code}={e.Message}") ?? [result.Error?.Message])}");
                 var order = await context.Orders.IgnoreQueryFilters().SingleAsync(o => o.Id == result.Value.Id);
                 Assert.Null(order.UserId);
+
+                // The checkout response is the guest's ONLY synchronous channel for the credential, and
+                // without it the success page cannot read back the booking it has just taken payment
+                // for. Committed with the order, so the two exist together or not at all.
+                Assert.False(string.IsNullOrEmpty(result.Value.GuestAccessToken));
+                var accessToken = Assert.Single(
+                    await context.GuestOrderAccessTokens.IgnoreQueryFilters().Where(t => t.OrderId == order.Id).ToListAsync());
+                Assert.Equal(SecurityTokens.Hash(result.Value.GuestAccessToken!), accessToken.TokenHash);
+                Assert.True(accessToken.IsLive(DateTimeOffset.UtcNow));
 
                 var row = Assert.Single(await CustomerRows(context));
                 Assert.Equal("customer.order.create", row.Action);

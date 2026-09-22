@@ -144,7 +144,7 @@ public class GenerateReceiptHandler(
             // The guest's booking credential, minted in the one place their confirmation e-mail is
             // composed, and staged so the commit below makes it durable BEFORE the send: a crash after
             // the send can then never leave an e-mailed token with no row behind it.
-            var guestAccessToken = await guestAccessTokenIssuer.IssueForGuestAsync(order, ct);
+            var guestAccessToken = guestAccessTokenIssuer.IssueForGuest(order);
 
             // Persist the fiscal stamp (FiscalCode / failure markers) written during realize. The dedup
             // is already secured by the claim commit; this second commit records the fiscal result.

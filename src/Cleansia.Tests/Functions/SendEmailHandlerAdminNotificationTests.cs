@@ -7,6 +7,8 @@ using Cleansia.Core.Queue.Abstractions.Messages;
 using Cleansia.Functions.Core.Handlers;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
+using Cleansia.Tests.Infrastructure;
+using Cleansia.Core.Domain.SeedWork;
 
 namespace Cleansia.Tests.Functions;
 
@@ -38,7 +40,9 @@ public sealed class SendEmailHandlerAdminNotificationTests
         Mock.Of<ITenantRepository>(),
         Mock.Of<ICompanyInfoRepository>(),
         NullLogger<SendEmailHandler>.Instance,
-        Mock.Of<IOrderRepository>());
+        Mock.Of<IOrderRepository>(),
+        TestGuestOrderAccessTokenIssuer.WithNoLiveTokens(),
+        Mock.Of<IUnitOfWork>());
 
     private static SendAdminNotificationEmailMessage DisputeFiled(string subject = "dispute-1", string language = "cs") =>
         new(

@@ -109,17 +109,15 @@ public class GuestOrderAccessTokenTests
     }
 
     [Fact]
-    public async Task The_Issuer_Mints_For_A_Guest_Booking_And_Stamps_Its_Company()
+    public void The_Issuer_Mints_For_A_Guest_Booking_And_Stamps_Its_Company()
     {
         var repository = new Mock<IGuestOrderAccessTokenRepository>();
-        repository.Setup(r => r.GetLiveForOrderIgnoringTenantAsync("ord-1", It.IsAny<DateTimeOffset>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync([]);
         GuestOrderAccessToken? added = null;
         repository.Setup(r => r.Add(It.IsAny<GuestOrderAccessToken>()))
             .Callback<GuestOrderAccessToken>(t => added = t);
 
-        var raw = await new GuestOrderAccessTokenIssuer(repository.Object)
-            .IssueForGuestAsync(GuestOrder(tenantId: "cleansia-cz"), CancellationToken.None);
+        var raw = new GuestOrderAccessTokenIssuer(repository.Object)
+            .IssueForGuest(GuestOrder(tenantId: "cleansia-cz"));
 
         Assert.NotNull(raw);
         Assert.NotNull(added);
@@ -129,30 +127,46 @@ public class GuestOrderAccessTokenTests
     }
 
     [Fact]
-    public async Task The_Issuer_Mints_Nothing_For_An_Account_Booking()
+    public void The_Issuer_Mints_Nothing_For_An_Account_Booking()
     {
         var repository = new Mock<IGuestOrderAccessTokenRepository>(MockBehavior.Strict);
 
-        var raw = await new GuestOrderAccessTokenIssuer(repository.Object)
-            .IssueForGuestAsync(GuestOrder(userId: "user-1"), CancellationToken.None);
+        var raw = new GuestOrderAccessTokenIssuer(repository.Object).IssueForGuest(GuestOrder(userId: "user-1"));
 
         Assert.Null(raw);
         repository.VerifyNoOtherCalls();
     }
 
+    /// <summary>
+    /// Re-issuing used to supersede, and that is the defect the second issuance channel exposed: every
+    /// later message with a track link killed the link in the message before it, so "your cleaner is on
+    /// the way" retired the confirmation e-mail's link and the checkout response's with it. Each issue
+    /// is now an independent 256-bit credential and they all stay live.
+    /// </summary>
     [Fact]
-    public async Task Re_Issuing_Supersedes_Whatever_Was_Live()
+    public void Re_Issuing_Supersedes_Nothing_And_Both_Stay_Live()
     {
-        var previous = GuestOrderAccessToken.Issue("ord-1", DateTimeOffset.UtcNow.AddDays(30));
         var repository = new Mock<IGuestOrderAccessTokenRepository>();
-        repository.Setup(r => r.GetLiveForOrderIgnoringTenantAsync("ord-1", It.IsAny<DateTimeOffset>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync([previous]);
+        var minted = new List<GuestOrderAccessToken>();
+        repository.Setup(r => r.Add(It.IsAny<GuestOrderAccessToken>()))
+            .Callback<GuestOrderAccessToken>(minted.Add);
+        var issuer = new GuestOrderAccessTokenIssuer(repository.Object);
+        // A cleaning still to come: the expiry hangs off it, so a fixture booked in the past mints
+        // tokens that were never live and the liveness assertion below would prove nothing.
+        var order = GuestOrder(cleaningDateTime: DateTime.UtcNow.AddDays(3));
 
-        var raw = await new GuestOrderAccessTokenIssuer(repository.Object)
-            .IssueForGuestAsync(GuestOrder(), CancellationToken.None);
+        var first = issuer.IssueForGuest(order);
+        var second = issuer.IssueForGuest(order);
 
-        Assert.NotNull(previous.RevokedOn);
-        Assert.NotEqual(previous.TokenHash, SecurityTokens.Hash(raw!));
+        Assert.Equal(2, minted.Count);
+        Assert.NotEqual(first, second);
+        Assert.All(minted, t => Assert.True(t.IsLive(DateTimeOffset.UtcNow)));
+        Assert.Equal([SecurityTokens.Hash(first!), SecurityTokens.Hash(second!)], minted.Select(t => t.TokenHash));
+        // Minting reads nothing: the row it would have had to revoke is the whole reason it used to.
+        repository.Verify(
+            r => r.GetLiveForOrderIgnoringTenantAsync(
+                It.IsAny<string>(), It.IsAny<DateTimeOffset>(), It.IsAny<CancellationToken>()),
+            Times.Never);
     }
 
     [Fact]

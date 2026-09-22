@@ -20,6 +20,7 @@ using Cleansia.Tests.Common;
 using Cleansia.Tests.Domain.Legal;
 using Moq;
 using StripeException = Stripe.StripeException;
+using Cleansia.Tests.Infrastructure;
 
 namespace Cleansia.Tests.Features.Orders;
 
@@ -164,6 +165,7 @@ public class CreateOrderHandlerCharacterizationTests
                 new OrderChannelProvider(channel),
                 new StripeConfig(new ConfigurationBuilder().Build()),
                 NullLogger<OrderPaymentDispatcher>.Instance),
+            TestGuestOrderAccessTokenIssuer.WithNoLiveTokens(),
             _expressWaiverConsumer.Object,
             // No credit account: these suites characterize pricing, dispatch and the waiver slot, and
             // an unconfigured Mock returns null from GetSpendableAsync - which is exactly what a

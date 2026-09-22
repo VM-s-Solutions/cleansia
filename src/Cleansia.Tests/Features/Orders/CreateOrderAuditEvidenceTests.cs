@@ -20,6 +20,7 @@ using Cleansia.Tests.Common;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
+using Cleansia.Tests.Infrastructure;
 
 namespace Cleansia.Tests.Features.Orders;
 
@@ -111,6 +112,7 @@ public sealed class CreateOrderAuditEvidenceTests
             new OrderPaymentDispatcher(
                 _stripeClientFactory.Object, _pending.Object, new OrderChannelProvider(OrderChannel.Web),
                 new StripeConfig(new ConfigurationBuilder().Build()), NullLogger<OrderPaymentDispatcher>.Instance),
+            TestGuestOrderAccessTokenIssuer.WithNoLiveTokens(),
             _expressWaiverConsumer.Object,
             _creditAccountRepository.Object,
             new CancellationPolicyResolver(_membershipRepository.Object),

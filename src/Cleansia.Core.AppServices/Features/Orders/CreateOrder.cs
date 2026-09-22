@@ -780,7 +780,20 @@ public class CreateOrder
     public record Response(
         string Id,
         string ConfirmationCode,
-        string? StripeSessionId);
+        // The wire contract's name, kept: it has always carried the Checkout URL the browser is
+        // redirected to, and the web client reads it as one.
+        string? StripeSessionId,
+        /// <summary>
+        /// The booking's access token, on a GUEST booking only — null when the customer has an
+        /// account and signs in to reach it instead.
+        ///
+        /// <para>The caller IS the guest, so the response body is the right channel for it: this is
+        /// the only moment the browser can learn the credential without waiting for the e-mail, and
+        /// without it the checkout success page cannot read back the booking it just paid for. Every
+        /// later message that carries a track link mints its own, so this one being lost costs
+        /// nothing.</para>
+        /// </summary>
+        string? GuestAccessToken = null);
 
     /// <summary>
     /// The booking as the server priced and stored it (ADR-0062 D3): every figure is read off the
@@ -894,6 +907,7 @@ public class CreateOrder
         IOrderPromoApplier orderPromoApplier,
         IOrderLateReferralAcceptor orderLateReferralAcceptor,
         IOrderPaymentDispatcher orderPaymentDispatcher,
+        GuestOrderAccessTokenIssuer guestAccessTokenIssuer,
         IExpressWaiverConsumer expressWaiverConsumer,
         ICreditAccountRepository creditAccountRepository,
         ICancellationPolicyResolver cancellationPolicyResolver,
@@ -1081,9 +1095,10 @@ public class CreateOrder
             return BusinessResult.Success(new Response(
                 Id: order.Id,
                 ConfirmationCode: order.ConfirmationCode,
-                // The wire contract's name, kept: it has always carried the Checkout URL the
-                // browser is redirected to, and the web client reads it as one.
-                StripeSessionId: dispatch.CheckoutUrl));
+                StripeSessionId: dispatch.CheckoutUrl,
+                // Staged, never committed here: it rides the pipeline's commit with the order it
+                // belongs to, so a booking that does not exist cannot leave a key behind.
+                GuestAccessToken: guestAccessTokenIssuer.IssueForGuest(order)));
         }
 
         /// <summary>

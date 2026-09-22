@@ -45,6 +45,7 @@ public class GuestOrderAccessTokenTests(PostgresContainerFixture fixture) : Base
     private string _accessToken = null!;
     private string _displayOrderNumber = null!;
     private string _confirmationCode = null!;
+    private string[] _laterTokens = [];
 
     [Fact]
     public async Task A_Guest_Reads_And_Cancels_With_The_Token_And_The_Booking_Retires_It()
@@ -101,6 +102,48 @@ public class GuestOrderAccessTokenTests(PostgresContainerFixture fixture) : Base
                     GuestOrderAccessToken.ExpiryFor(order.CleaningDateTime),
                     token.ExpiresOn,
                     TimeSpan.FromSeconds(1));
+            },
+            transactional: false);
+    }
+
+    /// <summary>
+    /// A booking accumulates one credential per message that had to carry a working link, and they all
+    /// keep working. The first cut superseded on every issue, which meant the link in the message the
+    /// guest most likely still had — the confirmation e-mail — died the moment their cleaner set off.
+    /// </summary>
+    [Fact]
+    public async Task Every_Credential_The_Booking_Ever_Issued_Keeps_Opening_It()
+    {
+        await TestMethod<bool>(
+            setup: Anonymous,
+            arrange: SeedGuestOrderWithACrew,
+            act: async (IServiceProvider provider) =>
+            {
+                var issuer = provider.GetRequiredService<GuestOrderAccessTokenIssuer>();
+                var db = provider.GetRequiredService<CleansiaDbContext>();
+                var order = await db.Orders.IgnoreQueryFilters().SingleAsync();
+
+                _laterTokens = [issuer.IssueForGuest(order)!, issuer.IssueForGuest(order)!];
+                await db.CommitAsync(CancellationToken.None);
+
+                var mediator = provider.GetRequiredService<IMediator>();
+                foreach (var token in _laterTokens.Prepend(_accessToken))
+                {
+                    var lookup = await mediator.Send(new LookupOrder.Query(token));
+                    Assert.True(lookup.IsSuccess, lookup.Error?.Message);
+                    Assert.Equal(OrderId, lookup.Value.Id);
+                }
+
+                // …and the cancellation empties the set in one act.
+                Assert.True((await mediator.Send(new CancelGuestOrder.Command(_accessToken))).IsSuccess);
+                return true;
+            },
+            assert: async (CleansiaDbContext db, bool _) =>
+            {
+                var tokens = await db.GuestOrderAccessTokens.IgnoreQueryFilters().ToListAsync();
+                Assert.Equal(3, tokens.Count);
+                Assert.Equal(3, tokens.Select(t => t.TokenHash).Distinct().Count());
+                Assert.All(tokens, t => Assert.NotNull(t.RevokedOn));
             },
             transactional: false);
     }

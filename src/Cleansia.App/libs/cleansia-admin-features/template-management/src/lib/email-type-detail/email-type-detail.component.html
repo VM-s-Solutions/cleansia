@@ -76,6 +76,7 @@
                       *cleansiaPermission="Policy.CanUpdateEmailTemplate"
                       [label]="'global.actions.save' | translate"
                       icon="pi pi-check"
+                      [outlined]="true"
                       [disabled]="facade.saving() && savingKey() === kv.key"
                       [loading]="facade.saving() && savingKey() === kv.key"
                       (onClick)="onSaveTranslation(lang.code, kv.id!, kv.key!)"

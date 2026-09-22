@@ -497,6 +497,7 @@
             *cleansiaPermission="Policy.CanCreatePayConfig"
             [label]="'pages.employee_detail.apply_to_all' | translate"
             icon="pi pi-check"
+            [outlined]="true"
             [loading]="facade.bulkApplyingGrade()"
             (onClick)="onBulkApplyGrade()"
           />

@@ -339,15 +339,15 @@ describe('UserLoyaltyDetailFacade — credit money', () => {
     facade = TestBed.inject(UserLoyaltyDetailFacade);
   });
 
-  it('writes a balance as money in the session language', () => {
-    expect(facade.formatBalance(1250, 'CZK')).toBe('1 250 Kč');
-    expect(facade.formatBalance(0, 'CZK')).toBe('0 Kč');
+  it('writes a balance as money to two places in the session language, as every admin detail does', () => {
+    expect(facade.formatBalance(1250, 'CZK')).toBe('1 250,00 Kč');
+    expect(facade.formatBalance(0, 'CZK')).toBe('0,00 Kč');
   });
 
-  it('writes a ledger amount signed, so a spend reads as a spend', () => {
-    expect(facade.formatLedgerAmount(1250, 'CZK')).toBe('+1 250 Kč');
-    expect(facade.formatLedgerAmount(-300.5, 'CZK')).toBe('-300,50 Kč');
-    expect(facade.formatLedgerAmount(undefined, 'CZK')).toBe('0 Kč');
+  it('writes a ledger amount signed with a space, the way the invoice ledger does, so a spend reads as a spend', () => {
+    expect(facade.formatLedgerAmount(1250, 'CZK')).toBe('+ 1 250,00 Kč');
+    expect(facade.formatLedgerAmount(-300.5, 'CZK')).toBe('- 300,50 Kč');
+    expect(facade.formatLedgerAmount(undefined, 'CZK')).toBe('0,00 Kč');
   });
 });
 

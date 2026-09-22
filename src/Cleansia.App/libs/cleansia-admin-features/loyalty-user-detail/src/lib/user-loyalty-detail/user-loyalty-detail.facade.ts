@@ -539,13 +539,15 @@ export class UserLoyaltyDetailFacade extends UnsubscribeControlDirective {
   }
 
   formatBalance(balance: number, currencyCode: string | undefined): string {
-    return formatMoney(balance, currencyCode, localeFor(this.translate.currentLang));
+    return formatMoney(balance, currencyCode, localeFor(this.translate.currentLang), {
+      fractionDigits: 2,
+    });
   }
 
   formatLedgerAmount(amount: number | undefined, currencyCode: string | undefined): string {
     const value = amount ?? 0;
-    const money = formatMoney(Math.abs(value), currencyCode, localeFor(this.translate.currentLang));
-    return value > 0 ? `+${money}` : value < 0 ? `-${money}` : money;
+    const money = this.formatBalance(Math.abs(value), currencyCode);
+    return value > 0 ? `+ ${money}` : value < 0 ? `- ${money}` : money;
   }
 }
 

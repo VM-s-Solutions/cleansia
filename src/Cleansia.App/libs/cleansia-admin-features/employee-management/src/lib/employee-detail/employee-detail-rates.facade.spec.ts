@@ -58,22 +58,22 @@ describe('EmployeeDetailFacade — pay rate lines', () => {
       ...overrides,
     });
 
-  it('writes a service rate as three money amounts through the bundle template', () => {
+  it('writes a service rate as three money amounts to two places through the bundle template', () => {
     expect(facade.formatServiceRate(item({}))).toBe(
-      'pages.employee_detail.rate_format:500 Kč|50 Kč|30,50 Kč'
+      'pages.employee_detail.rate_format:500,00 Kč|50,00 Kč|30,50 Kč'
     );
     expect(instant).toHaveBeenCalledWith('pages.employee_detail.rate_format', {
-      base: '500 Kč',
-      room: '50 Kč',
+      base: '500,00 Kč',
+      room: '50,00 Kč',
       bath: '30,50 Kč',
     });
   });
 
   it('writes a package rate as the base pay alone', () => {
-    expect(facade.formatPackageRate(item({ basePay: 1250 }))).toBe('1 250 Kč');
+    expect(facade.formatPackageRate(item({ basePay: 1250 }))).toBe('1 250,00 Kč');
   });
 
-  it('prints a bare number when the row carries no currency', () => {
-    expect(facade.formatPackageRate(item({ basePay: 80, currencyCode: undefined }))).toBe('80');
+  it('prints a bare number to two places when the row carries no currency', () => {
+    expect(facade.formatPackageRate(item({ basePay: 80, currencyCode: undefined }))).toBe('80,00');
   });
 });

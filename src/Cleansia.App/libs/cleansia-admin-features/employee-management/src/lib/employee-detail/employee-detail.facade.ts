@@ -584,6 +584,8 @@ export class EmployeeDetailFacade extends UnsubscribeControlDirective {
   }
 
   private formatRateAmount(value: number, currencyCode: string | undefined): string {
-    return formatMoney(value, currencyCode, localeFor(this.translate.currentLang));
+    return formatMoney(value, currencyCode, localeFor(this.translate.currentLang), {
+      fractionDigits: 2,
+    });
   }
 }

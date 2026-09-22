@@ -275,13 +275,13 @@ describe('UserLoyaltyDetailComponent — credit section', () => {
         .find((column) => column.id === 'amount')
         ?.getValue?.(row);
 
-    expect(amountCell(czk, czkRow)).toBe('+CZK 1,250');
-    expect(amountCell(eur, eurRow)).toBe('-€25');
+    expect(amountCell(czk, czkRow)).toBe('+ CZK 1,250.00');
+    expect(amountCell(eur, eurRow)).toBe('- €25.00');
     expect(fixture.componentInstance.creditColumnsFor(czk)).toBe(fixture.componentInstance.creditColumnsFor(czk));
 
     const blocks = (fixture.nativeElement as HTMLElement).querySelectorAll('.user-loyalty-detail__credit-account');
-    expect(blocks[0].textContent).toContain('+CZK 1,250');
-    expect(blocks[1].textContent).toContain('-€25');
+    expect(blocks[0].textContent).toContain('+ CZK 1,250.00');
+    expect(blocks[1].textContent).toContain('- €25.00');
   });
 
   it('says never credited, in the platform currency, for a customer with no account', () => {

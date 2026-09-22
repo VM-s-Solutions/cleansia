@@ -2158,6 +2158,8 @@
       },
       "detail": {
         "title": "Detail promo kódu",
+        "details_title": "Podrobnosti",
+        "actions_section": "Akcie",
         "redemptions_title": "Uplatnenia",
         "redemptions_empty": "Zatiaľ žiadne uplatnenia",
         "deactivate_button": "Deaktivovať",

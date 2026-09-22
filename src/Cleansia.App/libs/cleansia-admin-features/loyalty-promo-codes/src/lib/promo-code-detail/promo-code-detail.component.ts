@@ -3,7 +3,6 @@ import {
   AfterViewInit,
   ChangeDetectionStrategy,
   Component,
-  computed,
   inject,
   OnDestroy,
   OnInit,
@@ -73,13 +72,6 @@ export class PromoCodeDetailComponent
   private promoCodeId: string | null = null;
 
   redemptionColumns!: TableColumn<PromoCodeRedemptionListItem>[];
-
-  readonly canDeactivate = computed(() => {
-    const pc = this.facade.promoCode();
-    if (!pc) return false;
-    // Reuse list-level helper by mapping the detail object onto list-shape fields.
-    return getPromoCodeStatus(pc as unknown as PromoCodeListItem) === 'active';
-  });
 
   ngOnInit(): void {
     const id = this.route.snapshot.paramMap.get('id');

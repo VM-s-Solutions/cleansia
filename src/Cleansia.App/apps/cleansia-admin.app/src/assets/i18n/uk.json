@@ -2158,6 +2158,8 @@
       },
       "detail": {
         "title": "Деталі промо-коду",
+        "details_title": "Деталі",
+        "actions_section": "Дії",
         "redemptions_title": "Використання",
         "redemptions_empty": "Використань ще немає",
         "deactivate_button": "Деактивувати",

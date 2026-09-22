@@ -2158,6 +2158,8 @@
       },
       "detail": {
         "title": "Promo code details",
+        "details_title": "Details",
+        "actions_section": "Actions",
         "redemptions_title": "Redemptions",
         "redemptions_empty": "No redemptions yet",
         "deactivate_button": "Deactivate",

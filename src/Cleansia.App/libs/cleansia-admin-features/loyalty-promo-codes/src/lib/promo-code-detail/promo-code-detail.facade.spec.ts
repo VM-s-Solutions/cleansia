@@ -1,7 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
 import { AdminClient, PromoCodeDetailDto } from '@cleansia/admin-services';
-import { DialogService, SnackbarService } from '@cleansia/services';
+import { DialogService, PermissionService, Policy, PolicyName, SnackbarService } from '@cleansia/services';
 import { of } from 'rxjs';
 import { PromoCodeDetailFacade } from './promo-code-detail.facade';
 
@@ -12,6 +12,7 @@ describe('PromoCodeDetailFacade', () => {
   let confirmMock: jest.Mock;
   let snackbar: { showSuccessTranslated: jest.Mock };
   let router: { navigate: jest.Mock };
+  let granted: PolicyName[];
 
   const detail = PromoCodeDetailDto.fromJS({ id: 'promo-1', code: 'SPRING', isActive: true });
 
@@ -22,6 +23,7 @@ describe('PromoCodeDetailFacade', () => {
     confirmMock = jest.fn().mockReturnValue(of(true));
     snackbar = { showSuccessTranslated: jest.fn() };
     router = { navigate: jest.fn() };
+    granted = [Policy.CanUpdatePromoCode, Policy.CanDeactivatePromoCode];
 
     TestBed.configureTestingModule({
       providers: [
@@ -30,6 +32,7 @@ describe('PromoCodeDetailFacade', () => {
         { provide: SnackbarService, useValue: snackbar },
         { provide: DialogService, useValue: { confirmTranslated: confirmMock } },
         { provide: Router, useValue: router },
+        { provide: PermissionService, useValue: { hasPolicy: (policy: PolicyName) => granted.includes(policy) } },
       ],
     });
 
@@ -48,6 +51,36 @@ describe('PromoCodeDetailFacade', () => {
     facade.loadPromoCode('promo-gone');
 
     expect(router.navigate).toHaveBeenCalledWith(['/loyalty/promos']);
+  });
+
+  describe('entity actions', () => {
+    it('offers deactivation only while the code is active', () => {
+      expect(facade.canDeactivate()).toBe(true);
+
+      facade.promoCode.set(PromoCodeDetailDto.fromJS({ id: 'promo-1', code: 'SPRING', isActive: false }));
+      expect(facade.canDeactivate()).toBe(false);
+
+      facade.promoCode.set(
+        PromoCodeDetailDto.fromJS({ id: 'promo-1', code: 'SPRING', isActive: true, validUntil: '2020-01-01T00:00:00Z' })
+      );
+      expect(facade.canDeactivate()).toBe(false);
+    });
+
+    it('shows the action row only when the admin can edit, or can deactivate an active code', () => {
+      expect(facade.hasEntityActions()).toBe(true);
+
+      granted = [Policy.CanDeactivatePromoCode];
+      expect(facade.hasEntityActions()).toBe(true);
+
+      facade.promoCode.set(PromoCodeDetailDto.fromJS({ id: 'promo-1', code: 'SPRING', isActive: false }));
+      expect(facade.hasEntityActions()).toBe(false);
+
+      granted = [Policy.CanUpdatePromoCode];
+      expect(facade.hasEntityActions()).toBe(true);
+
+      granted = [];
+      expect(facade.hasEntityActions()).toBe(false);
+    });
   });
 
   describe('deactivate', () => {

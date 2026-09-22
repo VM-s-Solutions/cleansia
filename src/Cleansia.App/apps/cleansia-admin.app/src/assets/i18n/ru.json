@@ -2158,6 +2158,8 @@
       },
       "detail": {
         "title": "Детали промо-кода",
+        "details_title": "Подробности",
+        "actions_section": "Действия",
         "redemptions_title": "Использования",
         "redemptions_empty": "Использований пока нет",
         "deactivate_button": "Деактивировать",

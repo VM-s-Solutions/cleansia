@@ -118,7 +118,7 @@
           *cleansiaPermission="Policy.CanApproveEmployeeDocument"
           [label]="'pages.employee_detail.actions.approve_document' | translate"
           icon="pi pi-check"
-          [outlined]="showApproveOnly"
+          [outlined]="true"
           (onClick)="facade.approveDocument(doc.id!, employeeId)"
         />
         @if (!showApproveOnly) {

@@ -1,13 +1,15 @@
-import { Injectable, inject, signal } from '@angular/core';
+import { computed, Injectable, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import {
   AdminClient,
   PromoCodeDetailDto,
+  PromoCodeListItem,
   PromoCodeRedemptionListItem,
 } from '@cleansia/admin-services';
 import { UnsubscribeControlDirective } from '@cleansia/directives';
-import { DialogService, SnackbarService } from '@cleansia/services';
+import { DialogService, PermissionService, Policy, SnackbarService } from '@cleansia/services';
 import { catchError, filter, finalize, of, takeUntil } from 'rxjs';
+import { getPromoCodeStatus } from '../promo-codes-list/promo-codes-list.models';
 
 @Injectable()
 export class PromoCodeDetailFacade extends UnsubscribeControlDirective {
@@ -15,9 +17,15 @@ export class PromoCodeDetailFacade extends UnsubscribeControlDirective {
   private readonly dialog = inject(DialogService);
   private readonly snackbarService = inject(SnackbarService);
   private readonly router = inject(Router);
+  private readonly permissions = inject(PermissionService);
 
   readonly promoCode = signal<PromoCodeDetailDto | null>(null);
   readonly loading = signal<boolean>(false);
+
+  readonly canDeactivate = computed(() => {
+    const pc = this.promoCode();
+    return !!pc && getPromoCodeStatus(pc as unknown as PromoCodeListItem) === 'active';
+  });
 
   readonly redemptions = signal<PromoCodeRedemptionListItem[]>([]);
   readonly redemptionsLoading = signal<boolean>(false);
@@ -69,6 +77,11 @@ export class PromoCodeDetailFacade extends UnsubscribeControlDirective {
   onRedemptionsPageChange(offset: number, limit: number): void {
     if (!this.currentId) return;
     this.loadRedemptions(this.currentId, offset, limit);
+  }
+
+  hasEntityActions(): boolean {
+    if (this.permissions.hasPolicy(Policy.CanUpdatePromoCode)) return true;
+    return this.canDeactivate() && this.permissions.hasPolicy(Policy.CanDeactivatePromoCode);
   }
 
   deactivate(): void {

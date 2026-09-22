@@ -1,0 +1,218 @@
+SOURCE: lawyers-docs\SMLOUVY CleanSia\SMLOUVY\cleansia_dpa.docx
+Paragraph IDs are extraction references, not legal clause numbers.
+
+[P001] [word/document.xml] CLEANSIA
+[P002] [word/document.xml] ZPRACOVATELSKÁ SMLOUVA
+[P003] [word/document.xml] Data Processing Agreement (DPA)
+[P004] [word/document.xml] uzavřena dle článku 28 Nařízení EU 2016/679 (GDPR)
+[P005] [word/document.xml] Dokument:
+[P006] [word/document.xml] Příloha č. 1 k Rámcové smlouvě o spolupráci Cleansia s.r.o.
+[P007] [word/document.xml] Verze:
+[P008] [word/document.xml] 1.1
+[P009] [word/document.xml] Datum uzavření:
+[P010] [word/document.xml] ................................................
+[P011] [word/document.xml] Právní základ:
+[P012] [word/document.xml] Článek 28 Nařízení EU 2016/679 (GDPR); zákon č. 110/2019 Sb.
+[P013] [word/document.xml] Správce:
+[P014] [word/document.xml] Cleansia s.r.o., IČO: [Doplnit]
+[P015] [word/document.xml] Zpracovatel:
+[P016] [word/document.xml] [Jméno a příjmení / obchodní firma Zhotovitele]
+[P017] [word/document.xml] Tato Zpracovatelská smlouva (DPA) je nezbytnou součástí každého smluvního vztahu, v němž Cleansia s.r.o. jakožto Správce osobních údajů pověřuje Zhotovitele (OSVČ) jakožto Zpracovatele zpracováním osobních údajů Zákazníků platformy. Uzavření DPA je povinné dle čl. 28 odst. 3 GDPR. Zpracování osobních údajů bez platné DPA je porušením GDPR a může vést k sankcím ze strany Úřadu pro ochranu osobních údajů (ÚOOÚ).
+[P018] [word/document.xml] Preambule
+[P019] [word/document.xml] Tato Zpracovatelská smlouva (dále jen "DPA" nebo "Smlouva") je uzavřena v souladu s článkem 28 Nařízení Evropského parlamentu a Rady (EU) 2016/679 ze dne 27. dubna 2016 o ochraně fyzických osob v souvislosti se zpracováním osobních údajů a o volném pohybu těchto údajů (dále jen "GDPR"), a dále v souladu se zákonem č. 110/2019 Sb., o zpracování osobních údajů, ve znění pozdějších předpisů.
+[P020] [word/document.xml] DPA je uzavřena mezi níže uvedenými smluvními stranami jako Příloha č. 1 k Rámcové smlouvě o spolupráci. Jejím úkolem je upravit práva a povinnosti smluvních stran v oblasti zpracování osobních údajů fyzických osob — Zákazníků platformy Cleansia — ke kterému dochází v rámci realizace úklidových zakázek zprostředkovaných prostřednictvím Aplikace Cleansia.
+[P021] [word/document.xml] Smluvní strany shodně prohlašují, že si jsou vědomy svého postavení ve smyslu GDPR a zavazují se plnit veškeré povinnosti z toho vyplývající.
+[P022] [word/document.xml] 1F4E79  Směrnice EU 2024/2831 o platformové práci (účinná od 11. 11. 2024, transpozice do 2. 12. 2026) zavádí pro digitální pracovní platformy nové povinnosti v oblasti zpracování osobních údajů pracovníků platformy — včetně OSVČ. Tato DPA bude v souladu s čl. 13.4 Rámcové smlouvy aktualizována po implementaci směrnice do českého právního řádu.
+[P023] [word/document.xml] I.
+[P024] [word/document.xml] Smluvní strany
+[P025] [word/document.xml] Správce osobních údajů
+[P026] [word/document.xml] Role:
+[P027] [word/document.xml] SPRÁVCE osobních údajů ve smyslu čl. 4 odst. 7 GDPR
+[P028] [word/document.xml] Obchodní firma:
+[P029] [word/document.xml] Cleansia s.r.o.
+[P030] [word/document.xml] IČO:
+[P031] [word/document.xml] [Doplnit]
+[P032] [word/document.xml] Sídlo:
+[P033] [word/document.xml] [Doplnit adresu]
+[P034] [word/document.xml] Zastoupena:
+[P035] [word/document.xml] [Jméno jednatele / jednatelů]
+[P036] [word/document.xml] DIČ:
+[P037] [word/document.xml] [Doplnit]
+[P038] [word/document.xml] E-mail (GDPR):
+[P039] [word/document.xml] [Doplnit kontakt pro GDPR otázky]
+[P040] [word/document.xml] Zápis v OR:
+[P041] [word/document.xml] [Doplnit — např. OR vedený Městským soudem v Praze, oddíl C, vložka XXXX]
+[P042] [word/document.xml] (dále jen:
+[P043] [word/document.xml] Správce)
+[P044] [word/document.xml] Zpracovatel osobních údajů
+[P045] [word/document.xml] Role:
+[P046] [word/document.xml] ZPRACOVATEL osobních údajů ve smyslu čl. 4 odst. 8 GDPR
+[P047] [word/document.xml] Jméno a příjmení:
+[P048] [word/document.xml] ..............................................................
+[P049] [word/document.xml] IČO:
+[P050] [word/document.xml] ..............................................................
+[P051] [word/document.xml] Místo podnikání:
+[P052] [word/document.xml] ..............................................................
+[P053] [word/document.xml] E-mail:
+[P054] [word/document.xml] ..............................................................
+[P055] [word/document.xml] Telefon:
+[P056] [word/document.xml] ..............................................................
+[P057] [word/document.xml] (dále jen:
+[P058] [word/document.xml] Zpracovatel)
+[P059] [word/document.xml] Správce a Zpracovatel se dále společně označují jako "Smluvní strany".
+[P060] [word/document.xml] II.
+[P061] [word/document.xml] Předmět a účel zpracování
+[P062] [word/document.xml] 2.1  Předmět DPA
+[P063] [word/document.xml] Tato Smlouva upravuje podmínky, za nichž Správce pověřuje Zpracovatele zpracováním osobních údajů fyzických osob — Zákazníků platformy Cleansia — v rozsahu nezbytném pro realizaci úklidových zakázek zprostředkovaných prostřednictvím Aplikace Cleansia.
+[P064] [word/document.xml] 2.2  Právní titul zpracování
+[P065] [word/document.xml] Zpracovatel zpracovává osobní údaje Zákazníků výhradně na základě a v rozsahu pověření Správce, přičemž Správce zpracovává tyto údaje na následujících právních titulech dle čl. 6 GDPR:
+[P066] [word/document.xml] Plnění smlouvy se Zákazníkem (čl. 6 odst. 1 písm. b) GDPR) — realizace úklidové zakázky.
+[P067] [word/document.xml] Oprávněný zájem Správce (čl. 6 odst. 1 písm. f) GDPR) — bezpečnost a dokumentace plnění.
+[P068] [word/document.xml] Právní povinnost Správce (čl. 6 odst. 1 písm. c) GDPR) — vedení záznamů o činnostech zpracování dle čl. 30 GDPR.
+[P069] [word/document.xml] 2.3  Omezení účelu
+[P070] [word/document.xml] Zpracovatel smí osobní údaje Zákazníků zpracovávat výhradně za účelem splnění konkrétní úklidové zakázky, která mu byla přidělena prostřednictvím Aplikace. Jakékoliv další zpracování osobních údajů je zakázáno, zejm.:
+[P071] [word/document.xml] jakýkoliv marketing nebo oslovování Zákazníků mimo platformu Cleansia,
+[P072] [word/document.xml] archivace osobních údajů nad rámec dob uchování stanovených článkem III. této DPA,
+[P073] [word/document.xml] předávání osobních údajů třetím osobám bez předchozího písemného souhlasu Správce.
+[P074] [word/document.xml] 2.4  Povaha zpracování
+[P075] [word/document.xml] V rámci plnění zakázek Zpracovatel zpracovává osobní údaje zejména následujícími operacemi: nahlížení (čtení), používání pro přístup ke místu zakázky, dočasné uložení v Aplikaci a na zařízení, a vymazání po uplynutí dob retence dle čl. III.
+[P076] [word/document.xml] III.
+[P077] [word/document.xml] Kategorie subjektů údajů, typy OÚ a doby uchování
+[P078] [word/document.xml] Zpracovatel bude v rámci plnění zakázek zpracovávat následující kategorie osobních údajů:
+[P079] [word/document.xml] Kategorie OÚ
+[P080] [word/document.xml] Konkrétní typy údajů
+[P081] [word/document.xml] Účel zpracování
+[P082] [word/document.xml] Doba uchování
+[P083] [word/document.xml] Identifikační a kontaktní údaje Zákazníka
+[P084] [word/document.xml] jméno, příjmení, telefon, e-mail
+[P085] [word/document.xml] Identifikace Zákazníka a zahájení komunikace před zahájením úklidu
+[P086] [word/document.xml] Po dobu zakázky + 24 h
+[P087] [word/document.xml] Adresní údaje
+[P088] [word/document.xml] ulice, č.p., město, PSČ, patro, kód domu/domofonu
+[P089] [word/document.xml] Fyzický přístup ke místu výkonu zakázky
+[P090] [word/document.xml] Po dobu zakázky + 24 h
+[P091] [word/document.xml] Přístupové a bezpečnostní údaje
+[P092] [word/document.xml] PIN alarmu, kód trezoru, instrukce ke klíči, údaje o domácích mazlíčcích
+[P093] [word/document.xml] Zabezpečení přístupu do objektu a bezpečnost výkonu práce
+[P094] [word/document.xml] Po dobu zakázky — po skončení neprodleně vymazat
+[P095] [word/document.xml] Provozní údaje zakázky
+[P096] [word/document.xml] čas zahájení/ukončení, fotodokumentace škody nebo stavu plochy
+[P097] [word/document.xml] Dokazování řádného plnění díla Operátorovi a ochrana před nároky
+[P098] [word/document.xml] Max. 30 dní od ukončení zakázky
+[P099] [word/document.xml] ZÁKAZ ZPRACOVÁNÍ ZVLÁŠTNÍCH KATEGORIÍ OÚ (čl. 9 GDPR): Zpracovatel nesmí bez výslovného souhlasu Správce zpracovávat tzv. zvláštní kategorie osobních údajů (zdravotní stav, náboženství, politické názory, genetické údaje, biometrické údaje apod.). Pokud Zákazník sdělí Zpracovateli takové údaje (např. alergii na čisticí prostředek, pohybové omezení), je Zpracovatel povinen je použít výhradně pro bezpečný výkon zakázky a neprodleně po skončení zakázky trvale vymazat. Jakékoliv další zpracování zvláštních kategorií OÚ zakládá odpovědnost Zpracovatele dle čl. 82 GDPR.
+[P100] [word/document.xml] IV.
+[P101] [word/document.xml] Povinnosti Zpracovatele
+[P102] [word/document.xml] 4.1  Zpracování pouze dle pokynů
+[P103] [word/document.xml] Zpracovatel se zavazuje zpracovávat osobní údaje výhradně na základě doložených pokynů Správce a v souladu s touto DPA. Zpracovatel nesmí zpracovávat osobní údaje způsobem, který by byl v rozporu s touto DPA nebo pokyny Správce. Pokud je Zpracovatel povinen zpracovávat údaje na základě práva EU nebo členského státu, informuje o této povinnosti Správce před zpracováním, pokud to dotčené právo nezakazuje.
+[P104] [word/document.xml] 4.2  Zachování důvěrnosti
+[P105] [word/document.xml] Zpracovatel zajistí, že veškeré osoby oprávněné zpracovávat osobní údaje Zákazníků jsou zavázány povinností mlčenlivosti — ať již smluvní nebo ze zákona. Tato povinnost mlčenlivosti trvá i po ukončení spolupráce na dobu neurčitou. Za porušení mlčenlivosti třetími osobami, jimž Zpracovatel údaje zpřístupnil v rozporu s touto DPA, odpovídá Zpracovatel, jako by porušil povinnost sám.
+[P106] [word/document.xml] 4.3  Technická a organizační bezpečnostní opatření (TOB)
+[P107] [word/document.xml] Zpracovatel je povinen přijmout přiměřená technická a organizační opatření k zabezpečení osobních údajů dle čl. 32 GDPR, a to s přihlédnutím k povaze, rozsahu, kontextu a účelům zpracování a k rizikům spojeným se zpracováním. Minimální požadovaná opatření zahrnují:
+[P108] [word/document.xml] Nepředávat adresy, přístupové kódy ani jiné OÚ Zákazníků třetím osobám mimo plnění konkrétní zakázky.
+[P109] [word/document.xml] Nepřenášet osobní údaje prostřednictvím nezabezpečené komunikace (např. veřejné chat skupiny, SMS bez šifrování).
+[P110] [word/document.xml] Nepoužívat osobní údaje Zákazníků k jinému účelu než k dokončení příslušné zakázky.
+[P111] [word/document.xml] Neprodleně vymazat z osobních zařízení veškeré OÚ Zákazníka po uplynutí dob retence dle čl. III. této DPA.
+[P112] [word/document.xml] Chránit mobilní zařízení heslem, PINem nebo biometrikou (viz také čl. 7.2).
+[P113] [word/document.xml] Nepoužívat k ukládání OÚ Zákazníků nezabezpečené aplikace (poznámky bez hesla, veřejně sdílené dokumenty apod.).
+[P114] [word/document.xml] Správce je oprávněn požadovat od Zpracovatele dokladování plnění těchto opatření, a to i formou písemného čestného prohlášení.
+[P115] [word/document.xml] F39C12  Důležité omezení (ochrana před nadměrným sledováním): Správce není oprávněn prostřednictvím Aplikace sledovat polohu Zhotovitele mimo dobu aktivní zakázky, zaznamenávat jeho pracovní dobu, tempo nebo metody práce. Monitoring je omezen výhradně na údaje nezbytné k realizaci zakázky (příchod, odchod, fotodokumentace výsledku). Nadměrné sledování by mohlo být hodnoceno jako znak závislé práce (čl. 12 a 13 směrnice EU 2024/2831).
+[P116] [word/document.xml] 4.4  Používání dalších zpracovatelů (sub-zpracování)
+[P117] [word/document.xml] Zpracovatel nesmí bez předchozího písemného souhlasu Správce pověřit zpracováním osobních údajů Zákazníků dalšího zpracovatele (sub-zpracovatele). V případě udělení souhlasu Správce je Zpracovatel povinen:
+[P118] [word/document.xml] přenést na sub-zpracovatele stejné povinnosti v oblasti ochrany OÚ, jaké jsou stanoveny touto DPA,
+[P119] [word/document.xml] informovat Správce o jakýchkoliv plánovaných změnách týkajících se sub-zpracování (nahrazení nebo přidání sub-zpracovatele),
+[P120] [word/document.xml] odpovídat za splnění povinností sub-zpracovatele jako by je plnil sám.
+[P121] [word/document.xml] 4.5  Pomoc Správci při plnění práv subjektů údajů
+[P122] [word/document.xml] Zpracovatel se zavazuje poskytnout Správci přiměřenou pomoc při plnění jeho povinnosti reagovat na žádosti subjektů údajů uplatněných dle kapitoly III. GDPR (právo na přístup čl. 15, opravu čl. 16, výmaz čl. 17, přenositelnost čl. 20, omezení zpracování čl. 18, vznesení námitky čl. 21). V případě, že Zákazník uplatní taková práva přímo u Zpracovatele, je Zpracovatel povinen:
+[P123] [word/document.xml] informovat Správce nejpozději do 48 hodin od obdržení takové žádosti,
+[P124] [word/document.xml] neprovádět žádné kroky k vyřízení žádosti bez pokynů Správce,
+[P125] [word/document.xml] poskytnout Správci veškeré informace potřebné k vyřízení žádosti.
+[P126] [word/document.xml] 4.6  Oznamování incidentů bezpečnosti OÚ
+[P127] [word/document.xml] Zpracovatel je povinen informovat Správce bez zbytečného odkladu — nejpozději do 24 hodin od zjištění — o veškerých bezpečnostních incidentech, které se týkají OÚ Zákazníků. Oznámení musí obsahovat:
+[P128] [word/document.xml] popis povahy incidentu (co, kdy, jak došlo k incidentu),
+[P129] [word/document.xml] přibližný počet dotčených osob a kategorií OÚ,
+[P130] [word/document.xml] pravděpodobné následky incidentu,
+[P131] [word/document.xml] navržená nebo přijatá opatření k nápravě a k omezení jeho dopadů.
+[P132] [word/document.xml] Správce je povinen následně posoudit, zda incident zakládá povinnost oznámení ÚOOÚ (čl. 33 GDPR, lhůta 72 hodin od zjištění Správcem) nebo oznámení dotčeným osobám (čl. 34 GDPR).
+[P133] [word/document.xml] 4.7  Výmaz nebo vrácení OÚ po skončení spolupráce
+[P134] [word/document.xml] Po ukončení spolupráce nebo na základě písemné výzvy Správce je Zpracovatel povinen buď (a) trvale a bezpečně vymazat veškeré OÚ Zákazníků, které má uložené v jakémkoli zařízení nebo aplikaci, nebo (b) je vrátit Správci v dohodnutém formátu. Zpracovatel vypracuje o provedení výmazu písemné potvrzení (nebo potvrzení v Aplikaci) a doručí ho Správci nejpozději do 14 dnů od ukončení spolupráce či od výzvy.
+[P135] [word/document.xml] 4.8  Audit a kontrola ze strany Správce
+[P136] [word/document.xml] Zpracovatel umožní Správci nebo jím pověřenému auditorovi provádět audity a inspekce zahrnující ověření plnění povinností dle této DPA. Zpracovatel je povinen poskytnout k auditu plnou součinnost a zpřístupnit veškeré relevantní informace. Náklady na audit nese Správce, ledaže audit prokáže závažné porušení povinností ze strany Zpracovatele — v takovém případě nese náklady Zpracovatel.
+[P137] [word/document.xml] 4.9  Záznamy o činnostech zpracování
+[P138] [word/document.xml] Zpracovatel je povinen vést záznamy o všech kategoriích činností zpracování prováděných jménem Správce dle čl. 30 odst. 2 GDPR, pokud se na něj tato povinnost vztahuje (tj. zpracovává OÚ pravidelně nebo ve velkém rozsahu). Záznamy musí být k dispozici na vyžádání Správce nebo ÚOOÚ.
+[P139] [word/document.xml] 4.10  Algoritmické řízení a ochrana OÚ Zpracovatele
+[P140] [word/document.xml] Správce (Cleansia s.r.o.) bere na vědomí, že směrnice EU 2024/2831 o platformové práci (čl. 6–13) stanoví zvláštní povinnosti při zpracování osobních údajů osob vykonávajících práci prostřednictvím platformy, a to včetně OSVČ. Správce se zavazuje, že: (a) nebude prostřednictvím automatizovaných monitorovacích nebo rozhodovacích systémů zpracovávat OÚ Zpracovatele nad rámec nezbytný pro realizaci zakázek; (b) nebude sledovat polohu ani chování Zpracovatele mimo dobu aktivní zakázky; (c) zajistí lidský dohled nad automatizovanými rozhodnutími majícími podstatný vliv na přístup Zpracovatele k zakázkám (blokace, pozastavení). Po implementaci směrnice do českého právního řádu bude tato DPA aktualizována v souladu s novými povinnostmi.
+[P141] [word/document.xml] V.
+[P142] [word/document.xml] Povinnosti Správce
+[P143] [word/document.xml] 5.1  Právní titul zpracování
+[P144] [word/document.xml] Správce prohlašuje, že osobní údaje Zákazníků zpracovává na základě platného právního titulu dle čl. 6 GDPR a že Zákazníkům poskytl veškeré informace požadované dle čl. 13 GDPR — zejména prostřednictvím Privacy Policy Cleansia zveřejněné na webu Cleansia.
+[P145] [word/document.xml] 5.2  Pokyny ke zpracování
+[P146] [word/document.xml] Správce se zavazuje předávat Zpracovateli pouze OÚ, které jsou nezbytné pro realizaci konkrétní zakázky, a to v rozsahu a způsobem stanoveným touto DPA a v rámci Aplikace. Správce nesmí Zpracovatele pověřit zpracováním OÚ, k němuž nemá sám platný právní titul.
+[P147] [word/document.xml] 5.3  Notifikace změn
+[P148] [word/document.xml] Správce informuje Zpracovatele o všech změnách týkajících se zpracování OÚ, které by mohly mít vliv na povinnosti Zpracovatele dle této DPA, a to s přiměřeným předstihem.
+[P149] [word/document.xml] 5.4  Posouzení dopadu na ochranu údajů (DPIA)
+[P150] [word/document.xml] Pokud navržená činnost zpracování pravděpodobně povede k vysokému riziku pro práva a svobody fyzických osob, je Správce povinen před zahájením zpracování provést posouzení dopadu na ochranu osobních údajů (DPIA) dle čl. 35 GDPR. Zpracovatel je povinen poskytnout Správci při provádění DPIA potřebnou součinnost.
+[P151] [word/document.xml] VI.
+[P152] [word/document.xml] Předávání osobních údajů do třetích zemí
+[P153] [word/document.xml] 6.1  Zákaz předávání bez souhlasu
+[P154] [word/document.xml] Zpracovatel nesmí předávat OÚ Zákazníků do třetích zemí (zemí mimo EHP — Evropský hospodářský prostor) ani mezinárodním organizacím bez předchozího písemného souhlasu Správce.
+[P155] [word/document.xml] 6.2  Podmínky předávání
+[P156] [word/document.xml] V případě udělení souhlasu Správcem musí být každé předávání údajů do třetí země v souladu s kapitolou V. GDPR, tj. na základě:
+[P157] [word/document.xml] rozhodnutí Evropské komise o přiměřenosti (čl. 45 GDPR),
+[P158] [word/document.xml] standardních smluvních doložek (SCC) schválených Evropskou komisí (čl. 46 odst. 2 písm. c) GDPR),
+[P159] [word/document.xml] závazných podnikových pravidel (BCR) schválených příslušným dozorujícím orgánem (čl. 47 GDPR),
+[P160] [word/document.xml] nebo jiné vhodné záruky dle čl. 46 GDPR.
+[P161] [word/document.xml] VII.
+[P162] [word/document.xml] Bezpečnost zpracování
+[P163] [word/document.xml] 7.1  Minimální bezpečnostní standard
+[P164] [word/document.xml] Zpracovatel se zavazuje, že OÚ Zákazníků nebudou ukládány do nezabezpečených aplikací (např. poznámky v telefonu bez hesla, veřejně sdílené dokumenty), nebudou sdělovány třetím osobám prostřednictvím nezabezpečené komunikace a budou uchovávány pouze po nezbytnou dobu dle čl. III. této DPA. Zpracovatel nesmí OÚ Zákazníků sdělovat žádným třetím osobám, včetně členů rodiny, spolupracovníků nebo jiných osob, které nejsou součástí plnění konkrétní zakázky.
+[P165] [word/document.xml] 7.2  Zabezpečení zařízení
+[P166] [word/document.xml] Mobilní zařízení, prostřednictvím kterého Zpracovatel přistupuje k Aplikaci a OÚ Zákazníků, musí být chráněno heslem, PINem nebo biometrikou. V případě ztráty nebo odcizení zařízení je Zpracovatel povinen tuto skutečnost neprodleně — nejpozději do 24 hodin — oznámit Správci. Správce je oprávněn v takovém případě vzdáleně odhlásit zařízení z Aplikace.
+[P167] [word/document.xml] 7.3  Fyzická bezpečnost
+[P168] [word/document.xml] Zpracovatel je povinen s přístupovými údaji Zákazníků (adresy, kódy, klíče) naložit s náležitou péčí. Adresu Zákazníka nesmí veřejně zobrazovat, nesmí ji vyzradit třetím osobám a nesmí ji uchovávat nad rámec stanovených dob retence. V případě, že je Zpracovateli svěřen fyzický klíč od nemovitosti Zákazníka, je povinen jej uchovat na bezpečném místě a po skončení zakázky nebo na vyžádání Zákazníka / Správce neprodleně vrátit.
+[P169] [word/document.xml] VIII.
+[P170] [word/document.xml] Odpovědnost a sankce
+[P171] [word/document.xml] 8.1  Odpovědnost Zpracovatele
+[P172] [word/document.xml] Zpracovatel je odpovědný za škody způsobené zpracováním OÚ v případě, že:
+[P173] [word/document.xml] nejednal v souladu s povinnostmi dle GDPR a této DPA,
+[P174] [word/document.xml] jednal v rozporu se zákonnými pokyny Správce,
+[P175] [word/document.xml] překročil nebo ignoroval pokyny Správce ohledně účelu nebo způsobu zpracování.
+[P176] [word/document.xml] Rozsah odpovědnosti se řídí čl. 82 GDPR. Zpracovatel se odpovědnosti zprostí, pokud prokáže, že za vznik škody neodpovídá.
+[P177] [word/document.xml] 8.2  Smluvní pokuta
+[P178] [word/document.xml] Za každé prokázané porušení povinností dle čl. IV. této DPA (zejména předání OÚ třetím osobám bez souhlasu, použití OÚ k jinému účelu, nevymazání OÚ po skončení zakázky, porušení mlčenlivosti) je Zpracovatel povinen uhradit Správci smluvní pokutu ve výši 50 000 Kč za každý jednotlivý případ porušení. Uhrazením smluvní pokuty není dotčen nárok Správce ani dotčených Zákazníků na náhradu způsobené škody v plné výši dle občanského zákoníku a čl. 82 GDPR.
+[P179] [word/document.xml] 8.3  Spolupráce při vyšetření incidentu
+[P180] [word/document.xml] V případě incidentu bezpečnosti OÚ jsou obě Smluvní strany povinny vzájemně spolupracovat při objasňování příčiny a rozsahu incidentu, při plnění notifikačních povinností dle čl. 33 a 34 GDPR a při realizaci opatření k minimalizaci škod. Žádná ze Smluvních stran nesmí jednostranně sdílet informace o incidentu s veřejností bez souhlasu druhé Smluvní strany, s výjimkou plnění zákonných povinností.
+[P181] [word/document.xml] IX.
+[P182] [word/document.xml] Závěrečná ustanovení
+[P183] [word/document.xml] 9.1  Vztah k Rámcové smlouvě
+[P184] [word/document.xml] Tato DPA je nedílnou součástí Rámcové smlouvy o spolupráci uzavřené mezi Smluvními stranami a tvoří její Přílohu č. 1. V případě rozporu mezi ustanoveními DPA a Rámcové smlouvy mají ustanovení této DPA přednost v oblasti ochrany osobních údajů.
+[P185] [word/document.xml] 9.2  Účinnost a trvání
+[P186] [word/document.xml] Tato DPA nabývá platnosti a účinnosti dnem podpisu oběma Smluvními stranami a je účinná po celou dobu trvání spolupráce na základě Rámcové smlouvy. Po ukončení spolupráce:
+[P187] [word/document.xml] zanikají povinnosti zpracování OÚ,
+[P188] [word/document.xml] povinnost výmazu OÚ dle čl. 4.7 trvá až do prokazatelného splnění,
+[P189] [word/document.xml] povinnost mlčenlivosti dle čl. 4.2 trvá na dobu neurčitou.
+[P190] [word/document.xml] 9.3  Změny DPA
+[P191] [word/document.xml] Tato DPA může být měněna pouze písemným dodatkem podepsaným oběma Smluvními stranami. Výjimku tvoří změny, které vyplývají přímo ze změny platné legislativy (GDPR, zákon č. 110/2019 Sb., pokyny EDPB apod.) — v takovém případě je Správce oprávněn DPA jednostranně aktualizovat s oznámením Zpracovateli minimálně 14 dní předem.
+[P192] [word/document.xml] 9.4  Rozhodné právo a řešení sporů
+[P193] [word/document.xml] Tato DPA se řídí právem České republiky a příslušnými ustanoveními GDPR. Veškeré spory vyplývající z této DPA nebo v souvislosti s ní budou řešeny přednostně dohodou Smluvních stran. Pokud nedojde k dohodě, jsou příslušné soudy České republiky.
+[P194] [word/document.xml] 9.5  Salvátorní klauzule
+[P195] [word/document.xml] Neplatnost nebo nevymahatelnost jednotlivých ustanovení této DPA nemá vliv na platnost a účinnost zbytku dokumentu. Neplatné ustanovení bude nahrazeno platným ustanovením, které se mu svým smyslem a účelem co nejvíce blíží.
+[P196] [word/document.xml] 9.6  Počet vyhotovení
+[P197] [word/document.xml] Tato DPA se sepisuje ve dvou stejnopisech, z nichž každá Smluvní strana obdrží jedno vyhotovení. V případě elektronického podpisu postačí jedno vyhotovení podepsané elektronicky uznaným elektronickým podpisem dle nařízení eIDAS.
+[P198] [word/document.xml] DOPORUČENÍ PRO CLEANSIA — Jmenování DPO / kontaktu pro GDPR: Cleansia s.r.o. by měla zvážit jmenování osoby odpovědné za ochranu osobních údajů (DPO nebo GDPR kontaktu) a tuto osobu uvést v Příloze k této DPA. Rovněž doporučujeme vést Záznamy o činnostech zpracování (ROPA) dle čl. 30 GDPR — toto je povinné pro všechny firmy, které zpracovávají osobní údaje v rozsahu odpovídajícím provozu platformy jako Cleansia. Jmenování DPO je povinné dle čl. 37 GDPR, pokud dochází ke zpracování OÚ ve velkém měřítku.
+[P199] [word/document.xml] Podpisy smluvních stran
+[P200] [word/document.xml] Smluvní strany prohlašují, že si tuto Zpracovatelskou smlouvu přečetly, rozumí jejímu obsahu, souhlasí s ním a podepisují ji svobodně a dobrovolně.
+[P201] [word/document.xml] Správce — Cleansia s.r.o.
+[P202] [word/document.xml] Zastoupen jednatelem:
+[P203] [word/document.xml] Jméno: ................................................................
+[P204] [word/document.xml] Podpis: ............................................
+[P205] [word/document.xml] Datum:  ............................................
+[P206] [word/document.xml] Razítko:
+[P207] [word/document.xml] Zpracovatel — Zhotovitel (OSVČ)
+[P208] [word/document.xml] Jméno a příjmení / obchodní firma:
+[P209] [word/document.xml] ...............................................................
+[P210] [word/document.xml] Podpis: ............................................
+[P211] [word/document.xml] Datum:  ............................................
+[P212] [word/document.xml] IČO: ................................................
+[P213] [word/document.xml] Cleansia s.r.o.  |  DPA v1.1  |  Příloha č. 1 k Rámcové smlouvě o spolupráci  |  Důvěrný dokument
+[P214] [word/footer1.xml] DPA v1.1  |  Cleansia s.r.o.  |  Důvěrný dokument
+[P215] [word/header1.xml] CLEANSIA s.r.o.  |  Zpracovatelská smlouva (DPA)  |  Příloha č. 1 k Rámcové smlouvě o spolupráci

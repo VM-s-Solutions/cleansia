@@ -1,0 +1,184 @@
+SOURCE: lawyers-docs\SMLOUVY CleanSia\SMLOUVY\cleansia_bozp.docx
+Paragraph IDs are extraction references, not legal clause numbers.
+
+[P001] [word/document.xml] CLEANSIA
+[P002] [word/document.xml] BOZP POUČENÍ ZHOTOVITELE
+[P003] [word/document.xml] Bezpečnost a ochrana zdraví při práci
+[P004] [word/document.xml] Dokument:
+[P005] [word/document.xml] Příloha č. 2 k Rámcové smlouvě o spolupráci Cleansia s.r.o.
+[P006] [word/document.xml] Verze:
+[P007] [word/document.xml] 1.1
+[P008] [word/document.xml] Datum poučení:
+[P009] [word/document.xml] ................................................
+[P010] [word/document.xml] Právní základ:
+[P011] [word/document.xml] Zákon č. 309/2006 Sb., zákon č. 262/2006 Sb. (zákoník práce), nařízení vlády č. 361/2007 Sb.
+[P012] [word/document.xml] Toto poučení je určeno všem Zhotovitelům (OSVČ), kteří provádějí úklidové služby v rámci platformy Cleansia. Poučení zahrnuje zásady bezpečnosti práce, správného nakládání s čistícími prostředky a chemikáliemi, poskytování první pomoci a povinnosti při nastalých úrazech.
+[P013] [word/document.xml] 📋  Zhotovitel potvrzuje svým podpisem, že byl s tímto poučením řádně seznámen, rozumí jeho obsahu a zavazuje se jím řídit při každém výkonu úklidových zakázek v rámci platformy Cleansia. Odmítnutí nebo neplnění povinností stanovených tímto poučením může vést k ukončení spolupráce.
+[P014] [word/document.xml] Článek I. — Nakládání s čistícími prostředky a chemikáliemi
+[P015] [word/document.xml] 1.1  Základní zásady
+[P016] [word/document.xml] Zhotovitel je povinen používat výhradně čisticí prostředky, které splňují všechny níže uvedené podmínky (v souladu s § 101 a násl. zákoníku práce a zákonem č. 309/2006 Sb.):
+[P017] [word/document.xml] jsou registrovány v souladu s platnou legislativou EU a ČR (zejm. nařízení ES č. 1907/2006 — REACH, nařízení ES č. 1272/2008 — CLP),
+[P018] [word/document.xml] jsou řádně označeny v souladu s nařízením CLP (piktogramy, signální slova, H a P věty),
+[P019] [word/document.xml] mají platný bezpečnostní list (SDS) v českém jazyce dostupný Zhotoviteli,
+[P020] [word/document.xml] nejsou používány způsobem, který by byl v rozporu s instrukcemi výrobce nebo SDS.
+[P021] [word/document.xml] 1.2  Chování při práci s chemikáliemi
+[P022] [word/document.xml] Při práci s čistícími prostředky je Zhotovitel VŽDY povinen:
+[P023] [word/document.xml] používat osobní ochranné pracovní pomůcky (OOPP) — minimálně jednorázové nebo víceužívatelské gumové rukavice odolné vůči čisticí chemii,
+[P024] [word/document.xml] nepracovat s čistícími prostředky v uzavřených prostorách bez zajištění dostatečného přirozeného nebo mechanického větrání,
+[P025] [word/document.xml] používat ochrannou masku při práci s práškovými nebo silně vonícími prostředky (dezinfekce, chlor apod.),
+[P026] [word/document.xml] nepracovat s chemikáliemi v kontaktu s potravinami, nádobím ani dětskými hračkami bez vhodného ochranného krytu nebo ubrousku,
+[P027] [word/document.xml] NIKDY nemíchat různé čisticí prostředky — může dojít k nebezpečné chemické reakci.
+[P028] [word/document.xml] 🚫  ZAKÁZÁNO — Nikdy nesměšujte následující prostředky:• Bělicí prostředky (chlor, Savo) + ocet nebo kyseliny = uvolňování toxického chlorovodíku• Bělicí prostředky + prostředky s amoniakem = chloraminové plyny• H₂O₂ (peroxid) + ocet = kyselina peroxooctová (korozivní)Při podezření na otravu chemikálií okamžitě opusťte prostory, zavolejte 155 (ZZS) a informujte Operátora.
+[P029] [word/document.xml] 1.3  Skladování a přeprava
+[P030] [word/document.xml] Čisticí prostředky nesmí být přepravovány ve vozidlech bez zajištěného uložení (hrozba vylití a poleptání). Nesmějí být uloženy bez uzavřených víček a nesmějí být ponechány bez dozoru v dosahu dětí nebo domácích mazlíčků Zákazníka. Přeprava nebezpečných chemikálií musí být v souladu s příslušnými předpisy (ADR, je-li aplikovatelné).
+[P031] [word/document.xml] 1.4  Postup při polití chemikálie na kůži nebo do očí
+[P032] [word/document.xml] V případě kontaktu chemikálie s kůží: okamžitě oplachujte postiženou oblast čistou vodou po dobu minimálně 15 minut, odstraňte potřísněný oděv. V případě zasažení očí: vyplachujte oči čistou vlažnou vodou minimálně 15 minut a neprodleně vyhledejte lékařskou pomoc. O každém incidentu neprodleně informujte Operátora.
+[P033] [word/document.xml] Článek II. — Bezpečná práce s elektrickými spotřebiči
+[P034] [word/document.xml] 2.1  Technický stav spotřebičů
+[P035] [word/document.xml] Zhotovitel smí při práci používat výhradně elektrické spotřebiče (vysavače, extraktory, parní mopy apod.), které:
+[P036] [word/document.xml] jsou v řádném technickém stavu,
+[P037] [word/document.xml] mají platnou elektrickou revizi dle ČSN 33 1600 a ČSN EN 50699 (revize přenosných spotřebičů),
+[P038] [word/document.xml] jsou viditelně nepoškozeny (nepoškozený kabel, neporušená izolace, funkční kryt).
+[P039] [word/document.xml] 2.2  Zákazy při používání spotřebičů
+[P040] [word/document.xml] Zhotovitel nesmí:
+[P041] [word/document.xml] používat spotřebič s poškozeným napájecím kabelem nebo zástrčkou,
+[P042] [word/document.xml] používat spotřebiče v mokrém prostředí bez certifikované ochrany IP (dle ČSN EN 60529),
+[P043] [word/document.xml] nechat spotřebič bez dozoru v zapnutém stavu,
+[P044] [word/document.xml] používat prodlužovací kabely, které nejsou dimenzovány pro daný výkon spotřebiče,
+[P045] [word/document.xml] provádět jakékoliv opravy nebo úpravy elektrických spotřebičů svépomocí.
+[P046] [word/document.xml] 2.3  Použití spotřebiče Zákazníka
+[P047] [word/document.xml] Pokud Zhotovitel používá vysavač nebo jiný spotřebič Zákazníka, je povinen před použitím zkontrolovat jeho zjevný technický stav. Pokud je spotřebič zjevně poškozen, je Zhotovitel povinen odmítnout jeho použití, informovat Zákazníka a tuto skutečnost zaznamenat.
+[P048] [word/document.xml] Článek III. — Osobní ochranné pracovní pomůcky (OOPP)
+[P049] [word/document.xml] 3.1  Minimální povinné OOPP
+[P050] [word/document.xml] Zhotovitel je povinen mít při výkonu zakázek k dispozici a aktivně používat následující OOPP (v souladu s nařízením vlády č. 390/2021 Sb. o bližších podmínkách poskytování OOPP):
+[P051] [word/document.xml] Ochranné rukavice odolné vůči chemii (latexové, nitrilové nebo vinylové) — VŽDY při práci s čistícími prostředky.
+[P052] [word/document.xml] Ochranná obuv s protiskluznou podrážkou — VŽDY při výkonu zakázky na mokrých podlahách.
+[P053] [word/document.xml] Ochranný oděv (zástěra nebo pracovní oděv) — chrání před postříkáním chemií a nečistotami.
+[P054] [word/document.xml] Ochranné brýle nebo štít — při práci s agresivními prostředky (descaler, odstraňovač rzi, silné dezinfekční přípravky).
+[P055] [word/document.xml] Ochranná maska FFP2 — při práci v silně prašných prostředích nebo s chemikáliemi s výrazným zápachem.
+[P056] [word/document.xml] 3.2  Údržba a evidence OOPP
+[P057] [word/document.xml] Zhotovitel je povinen OOPP udržovat v řádném stavu, pravidelně je vyměňovat (jednorázové po každém použití, víceuživatelské dle instrukce výrobce) a neskladovat je v kontaktu s čisticí chemií. Zhotovitel si pořizuje OOPP na vlastní náklady, není-li v rámcové smlouvě dohodnuto jinak.
+[P058] [word/document.xml] Článek IV. — Ergonomie a prevence úrazů z přetížení
+[P059] [word/document.xml] 4.1  Správné zdvíhání zátěže
+[P060] [word/document.xml] Zhotovitel je povinen při manipulaci s těžší zátěží (kbelíky s vodou, čisticí stroje) dodržovat ergonomické zásady dle nařízení vlády č. 361/2007 Sb.:
+[P061] [word/document.xml] ohýbat kolena (nikoliv záda), udržovat zátěž blízko těla,
+[P062] [word/document.xml] nepřekračovat doporučené maximální zvedané hmotnosti: 25 kg pro muže, 15 kg pro ženy (při příležitostném zdvihání),
+[P063] [word/document.xml] u větší zátěže využít pomocné nástroje (vozík, kolečko) nebo požádat o pomoc,
+[P064] [word/document.xml] při manipulaci s těžkými spotřebiči či nábytkem vždy nejprve informovat Zákazníka.
+[P065] [word/document.xml] 4.2  Práce v nevhodných polohách
+[P066] [word/document.xml] Při práci ve skrčených polohách (čištění spodních stran nábytku, van apod.) je Zhotovitel povinen používat koleníky nebo podložky a pravidelně se protahovat, aby předešel bolestem zad, kolenních kloubů a svalovým křečím. Zhotovitel by měl střídat pracovní polohy a nepracovat déle než 2 hodiny v jedné nucené poloze bez přestávky.
+[P067] [word/document.xml] 4.3  Mokré podlahy a riziko pádu
+[P068] [word/document.xml] Při čištění podlah je Zhotovitel povinen:
+[P069] [word/document.xml] používat výstražné cedule MOKRÁ PODLAHA (nebo jiný viditelný vizuální znak),
+[P070] [word/document.xml] zajistit prostor tak, aby nikdo nevstoupil na kluzkou plochu — zejm. v přístupových koridorech a u vstupů,
+[P071] [word/document.xml] sám používat protiskluzovou obuv po celou dobu výkonu zakázky.
+[P072] [word/document.xml] Článek V. — První pomoc a postup při úrazech
+[P073] [word/document.xml] 5.1  Povinnost poskytnout první pomoc
+[P074] [word/document.xml] Zhotovitel je povinen v míře odpovídající jeho znalostem a možnostem poskytnout první pomoc sobě i osobě, která se zranila v souvislosti s výkonem úklidových služeb. Odmítnutí první pomoci při ohrožení života zakládá trestní odpovědnost dle § 150 trestního zákoníku (zákon č. 40/2009 Sb.).
+[P075] [word/document.xml] 5.2  Tísňová telefonní čísla
+[P076] [word/document.xml] Zhotovitel je povinen mít vždy v dosahu následující kontakty:
+[P077] [word/document.xml] Číslo
+[P078] [word/document.xml] Složka / služba
+[P079] [word/document.xml] Použití
+[P080] [word/document.xml] 155
+[P081] [word/document.xml] Zdravotnická záchranná služba (ZZS)
+[P082] [word/document.xml] Úraz, zdravotní příhoda
+[P083] [word/document.xml] 150
+[P084] [word/document.xml] Hasiči
+[P085] [word/document.xml] Požár, chemická havárie
+[P086] [word/document.xml] 158
+[P087] [word/document.xml] Policie ČR
+[P088] [word/document.xml] Trestný čin, ohrožení bezpečnosti
+[P089] [word/document.xml] 112
+[P090] [word/document.xml] Jednotné evropské tísňové číslo
+[P091] [word/document.xml] Obecná tísňová situace
+[P092] [word/document.xml] [doplnit]
+[P093] [word/document.xml] Dispečink / Operátor Cleansia
+[P094] [word/document.xml] Hlášení incidentů a úrazů
+[P095] [word/document.xml] 5.3  Postup při úrazu Zhotovitele
+[P096] [word/document.xml] V případě úrazu Zhotovitele během zakázky je Zhotovitel nebo jiná přítomná osoba povinna:
+[P097] [word/document.xml] poskytnout nebo přivolat první pomoc (155),
+[P098] [word/document.xml] zabezpečit místo úrazu,
+[P099] [word/document.xml] informovat Operátora neprodleně prostřednictvím Aplikace nebo telefonu,
+[P100] [word/document.xml] v případě pracovního úrazu vyplnit záznam o úrazu (vzor viz příloha).
+[P101] [word/document.xml] Jako OSVČ Zhotovitel oznamuje pracovní úraz své zdravotní pojišťovně a příslušné správě sociálního zabezpečení v souladu s § 10 zákona č. 309/2006 Sb.
+[P102] [word/document.xml] 5.4  Postup při úrazu Zákazníka nebo třetí osoby
+[P103] [word/document.xml] Pokud dojde k úrazu Zákazníka nebo třetí osoby v důsledku činnosti Zhotovitele (např. mokrá podlaha bez označení), je Zhotovitel povinen:
+[P104] [word/document.xml] neprodleně poskytnout Zákazníkovi pomoc a přivolat ZZS (155),
+[P105] [word/document.xml] zabezpečit místo incidentu a zdokumentovat stav před jeho změnou (fotodokumentace),
+[P106] [word/document.xml] neopouštět místo incidentu do příjezdu záchranné služby nebo do vydání pokynů Operátorem,
+[P107] [word/document.xml] informovat Operátora nejpozději do 2 hodin od incidentu.
+[P108] [word/document.xml] 5.5  Záznam o úrazu a nová povinnost hlášení od 1. 1. 2026
+[P109] [word/document.xml] Každý pracovní úraz (i drobný) musí být zaznamenán. Zhotovitel je povinen uchovávat nebo poskytnout Operátorovi na vyžádání základní informace o úrazech: datum, místo, popis okolností, druh zranění a přivolanou pomoc. Záznamy je Zhotovitel povinen uchovávat po dobu minimálně 5 let (dle § 17 zákona č. 309/2006 Sb.).
+[P110] [word/document.xml] 0E6655  NOVINKA od 1. 1. 2026: Povinné hlášení pracovních úrazů. Zhotovitel jako OSVČ je povinen ohlásit pracovní úraz s hospitalizací delší než 5 dnů příslušné zdravotní pojišťovně a OSSZ. Operátor je povinen uchovávat záznamy o úrazech osob pracujících prostřednictvím platformy. Obě Smluvní strany se zavazují splnit nové povinnosti v souladu s novelou zákona č. 309/2006 Sb. účinnou od 1. 1. 2026.
+[P111] [word/document.xml] Článek VI. — Specifická rizika při úklidových službách
+[P112] [word/document.xml] 6.1  Čištění výše položených ploch
+[P113] [word/document.xml] Zhotovitel NESMÍ používat improvizované podstavce (židle, krabice, nestabilní předměty). Je povinen používat výhradně stabilní žebřík nebo stupačky s protiskluzovou podrážkou, které odpovídají normě ČSN EN 131. Žebřík musí být vždy zajištěn před sklouznutím.
+[P114] [word/document.xml] 6.2  Práce v uzavřených prostorách
+[P115] [word/document.xml] Čištění uzavřených prostor (sklepy, kotelny, malé koupelny bez okna) s čistícími prostředky s intenzivním výparem nesmí probíhat bez zajištění ventilace. Zhotovitel je povinen po dobu čištění udržovat větrací otvor otevřený, případně použít ventilátor. Při pocitu nevolnosti je Zhotovitel povinen okamžitě opustit prostor.
+[P116] [word/document.xml] 6.3  Manipulace s cizím majetkem
+[P117] [word/document.xml] Zhotovitel nesmí přenášet, stěhovat ani překlápět nábytek a spotřebiče bez vědomí Zákazníka, pokud to není součástí zakázky. Pohyb hodnotných nebo křehkých předmětů (starožitnosti, elektronika, umělecké předměty) musí být vždy konzultován se Zákazníkem před zahájením práce. Zhotovitel je povinen při příchodu na zakázku zdokumentovat (fotodokumentace) preexistující poškození viditelná pouhým okem.
+[P118] [word/document.xml] 6.4  Domácí mazlíčci Zákazníka
+[P119] [word/document.xml] Pokud jsou v místě zakázky přítomni domácí mazlíčci, je Zhotovitel povinen:
+[P120] [word/document.xml] informovat Zákazníka před zahájením práce a ověřit, zda jsou zvířata zabezpečena,
+[P121] [word/document.xml] nepoužívat čisticí prostředky toxické pro zvířata (např. některé silice, tea tree oil, výrobky s obsahem fenolu),
+[P122] [word/document.xml] v případě alergie na zvířata odmítnout zakázku ještě před její akceptací v Aplikaci.
+[P123] [word/document.xml] 6.5  Nakládání s odpadem
+[P124] [word/document.xml] Zhotovitel je povinen nakládat s odpadem vzniklým při výkonu zakázky v souladu s pokyny Zákazníka a platnými předpisy (zákon č. 541/2020 Sb., o odpadech). Použité chemikálie a kontaminované materiály nesmějí být vyhazovány do běžného komunálního odpadu, pokud to příslušné předpisy zakazují.
+[P125] [word/document.xml] Článek VII. — Checklist potvrzení BOZP poučení
+[P126] [word/document.xml] Zhotovitel svým podpisem potvrzuje, že byl seznámen a porozuměl následujícím okruhům:
+[P127] [word/document.xml] #
+[P128] [word/document.xml] Povinnost / požadavek
+[P129] [word/document.xml] Potvrzuji
+[P130] [word/document.xml] 1
+[P131] [word/document.xml] Zásady správného používání čistících prostředků a chemikálií, včetně zákazu míchání agresivních látek
+[P132] [word/document.xml] ANO  /  NE
+[P133] [word/document.xml] 2
+[P134] [word/document.xml] Povinnost používat OOPP (rukavice, obuv, masku, brýle) při práci s čisticí chemií a v prašném prostředí
+[P135] [word/document.xml] ANO  /  NE
+[P136] [word/document.xml] 3
+[P137] [word/document.xml] Zásady bezpečné práce s elektrickými spotřebiči a povinnost pravidelných revizí vlastních spotřebičů
+[P138] [word/document.xml] ANO  /  NE
+[P139] [word/document.xml] 4
+[P140] [word/document.xml] Ergonomické zásady zdvihání zátěže a práce v nevhodných polohách (prevence úrazů pohybového aparátu)
+[P141] [word/document.xml] ANO  /  NE
+[P142] [word/document.xml] 5
+[P143] [word/document.xml] Povinnost označovat mokré podlahy a používat protiskluzovou obuv
+[P144] [word/document.xml] ANO  /  NE
+[P145] [word/document.xml] 6
+[P146] [word/document.xml] Postup při polití chemikálie na kůži nebo do očí (oplach čistou vodou, lékařská pomoc)
+[P147] [word/document.xml] ANO  /  NE
+[P148] [word/document.xml] 7
+[P149] [word/document.xml] Tísňová čísla: ZZS 155, Hasiči 150, Policie 158, Evropská tísňová linka 112
+[P150] [word/document.xml] ANO  /  NE
+[P151] [word/document.xml] 8
+[P152] [word/document.xml] Povinnost neprodleně oznámit každý pracovní úraz Operátorovi prostřednictvím Aplikace nebo telefonu
+[P153] [word/document.xml] ANO  /  NE
+[P154] [word/document.xml] 9
+[P155] [word/document.xml] Zákaz používání nestabilních podstavců při čištění výše položených ploch; povinnost používat certifikovaný žebřík
+[P156] [word/document.xml] ANO  /  NE
+[P157] [word/document.xml] 10
+[P158] [word/document.xml] Zásady bezpečného zacházení s majetkem Zákazníka a povinnost zdokumentovat preexistující poškození
+[P159] [word/document.xml] ANO  /  NE
+[P160] [word/document.xml] 11
+[P161] [word/document.xml] Povinnost nakládat s odpadem v souladu se zákonem č. 541/2020 Sb. a pokyny Zákazníka
+[P162] [word/document.xml] ANO  /  NE
+[P163] [word/document.xml] 12
+[P164] [word/document.xml] Specifická rizika při práci s domácími mazlíčky a v uzavřených prostorách
+[P165] [word/document.xml] ANO  /  NE
+[P166] [word/document.xml] 1F4E79  Směrnice EU 2024/2831 o platformové práci (čl. 9–11): Po implementaci do českého práva (nejpozději 2. 12. 2026) budou digitální pracovní platformy povinny zajistit, aby pracovníci platformy — včetně OSVČ — měli přístup k informacím o BOZP specifickým pro jejich typ práce. Toto BOZP poučení bude aktualizováno v souladu s novou právní úpravou.
+[P167] [word/document.xml] 🔄  Pravidelná aktualizace poučení: Toto poučení je platné po dobu 12 měsíců od data podpisu. Po uplynutí této doby je Operátor povinen zajistit opakované poučení Zhotovitele. Zhotovitel je rovněž povinen absolvovat mimořádné poučení při: (a) změně používaných čistících prostředků; (b) zahájení práce v novém typu prostoru (zdravotnické zařízení, průmyslový objekt); (c) pracovním úrazu či bezpečnostním incidentu.
+[P168] [word/document.xml] Potvrzení o absolvování BOZP poučení
+[P169] [word/document.xml] Svým podpisem Zhotovitel potvrzuje, že byl s tímto BOZP poučením řádně seznámen, porozuměl všem jeho částem, obdržel jeho kopii a zavazuje se jím řídit při výkonu všech úklidových zakázek v rámci platformy Cleansia. Zhotovitel bere na vědomí, že neplnění povinností vyplývajících z tohoto poučení může být důvodem pro okamžité ukončení spolupráce a může zakládat jeho občanskoprávní odpovědnost za způsobenou škodu.
+[P170] [word/document.xml] Provedl poučení (Operátor / pověřený zaměstnanec):
+[P171] [word/document.xml] Jméno a příjmení: ................................................................
+[P172] [word/document.xml] Podpis: .............................
+[P173] [word/document.xml] Datum: ..............................
+[P174] [word/document.xml] Poučená osoba (Zhotovitel / OSVČ):
+[P175] [word/document.xml] Jméno a příjmení: ................................................................
+[P176] [word/document.xml] Podpis: .............................
+[P177] [word/document.xml] Datum: ..............................
+[P178] [word/document.xml] Cleansia s.r.o.  |  BOZP Poučení v1.1  |  Příloha č. 2 k Rámcové smlouvě o spolupráci
+[P179] [word/comments.xml] na tohle můžu vytvořit featuru, kde to bude přímo v aplikaci
+[P180] [word/footer1.xml] Strana   |  Verze 1.1  |  Cleansia s.r.o.
+[P181] [word/header1.xml] CLEANSIA s.r.o.  |  BOZP Poučení zhotovitele — Příloha č. 2

@@ -1,0 +1,167 @@
+SOURCE: lawyers-docs\SMLOUVY CleanSia\SMLOUVY\cleansia_spolecenska_smlouva.docx
+Paragraph IDs are extraction references, not legal clause numbers.
+
+[P001] [word/document.xml] SPOLEČENSKÁ SMLOUVA
+[P002] [word/document.xml] společnosti s ručením omezeným
+[P003] [word/document.xml] CLEANSIA s.r.o.
+[P004] [word/document.xml] uzavřena dle ustanovení § 146 a násl. zákona č. 90/2012 Sb., o obchodních korporacích (ZOK)
+[P005] [word/document.xml] POZOR: Tento dokument je pracovní návrh — NENÍ právně závazný bez notářského zápisu!
+
+Společenská smlouva s.r.o. musí být dle § 8 ZOK sepsána ve formě notářského zápisu. Tento dokument je obsahovým návrhem pro notáře — notář ho přepíše do oficiální formy a ověří podpisy zakládajících společníků. Bez notářského zápisu společnost NEVZNIKNE. Po podpisu u notáře je nutno podat návrh na zápis do obchodního rejstříku (OR) na příslušném krajském soudu.
+[P006] [word/document.xml] Typ dokumentu:
+[P007] [word/document.xml] Pracovní návrh — k finalizaci u notáře
+[P008] [word/document.xml] Právní základ:
+[P009] [word/document.xml] § 146 a násl. zák. č. 90/2012 Sb. (ZOK)
+[P010] [word/document.xml] Datum:
+[P011] [word/document.xml] ................................................
+[P012] [word/document.xml] I.
+[P013] [word/document.xml] Základní ustanovení
+[P014] [word/document.xml] 1.1  Firma společnosti
+[P015] [word/document.xml] Firma společnosti je: Cleansia s.r.o.
+[P016] [word/document.xml] 1.2  Sídlo společnosti
+[P017] [word/document.xml] Sídlem společnosti je: [Doplnit ulici a č.p., PSČ, město] — Česká republika.
+[P018] [word/document.xml] 1.3  Předmět podnikání
+[P019] [word/document.xml] Předmětem podnikání společnosti je:
+[P020] [word/document.xml] Výkon zprostředkovatelské činnosti v oblasti služeb pro domácnost a firmy prostřednictvím digitální platformy (mobilní a webové aplikace).
+[P021] [word/document.xml] Poskytování úklidových služeb.
+[P022] [word/document.xml] Reklamní činnost a marketing.
+[P023] [word/document.xml] Výkon činnosti obchodního zástupce.
+[P024] [word/document.xml] Vývoj softwaru, poradenství v oblasti informačních technologií, zpracování dat, provoz databází.
+[P025] [word/document.xml] 1.4  Právní forma
+[P026] [word/document.xml] Společnost je založena jako společnost s ručením omezeným dle zákona č. 90/2012 Sb., o obchodních korporacích, ve znění pozdějších předpisů (dále jen "ZOK").
+[P027] [word/document.xml] 1.5  Trvání společnosti
+[P028] [word/document.xml] Společnost se zakládá na dobu neurčitou.
+[P029] [word/document.xml] II.
+[P030] [word/document.xml] Společníci
+[P031] [word/document.xml] Zakladateli a společníky společnosti jsou:
+[P032] [word/document.xml] Společník
+[P033] [word/document.xml] Bydliště / sídlo
+[P034] [word/document.xml] Obchodní podíl
+[P035] [word/document.xml] Vklad
+[P036] [word/document.xml] [Jméno Příjmení]
+dat. nar.: [Doplnit]
+[P037] [word/document.xml] [Ulice, č.p., PSČ, Město]
+[P038] [word/document.xml] [xx] %
+[P039] [word/document.xml] [xx.000] Kč
+[P040] [word/document.xml] [Jméno Příjmení]
+dat. nar.: [Doplnit]
+[P041] [word/document.xml] [Ulice, č.p., PSČ, Město]
+[P042] [word/document.xml] [xx] %
+[P043] [word/document.xml] [xx.000] Kč
+[P044] [word/document.xml] III.
+[P045] [word/document.xml] Základní kapitál a vklady
+[P046] [word/document.xml] 3.1  Výše základního kapitálu
+[P047] [word/document.xml] Základní kapitál společnosti činí celkem [Doplnit, např. 200 000] Kč (slovy: [Doplnit slovy] korun českých). Základní kapitál je tvořen peněžitými vklady společníků.
+[P048] [word/document.xml] 3.2  Minimální základní kapitál
+[P049] [word/document.xml] Základní kapitál splňuje minimální zákonný požadavek dle § 142 ZOK, který činí 1 Kč. Společnost doporučuje zvolit základní kapitál odpovídající reálnému podnikatelskému záměru a věřitelskému charakteru.
+[P050] [word/document.xml] 3.3  Správce vkladu
+[P051] [word/document.xml] Správcem vkladu před zápisem společnosti do obchodního rejstříku je ustaven: [Jméno správce vkladu, např. jeden ze zakladatelů nebo notář]. Správce vkladu je povinen vklady uchovat a poskytnout je společnosti po jejím vzniku.
+[P052] [word/document.xml] 3.4  Splacení vkladů
+[P053] [word/document.xml] Vklady společníků musí být splaceny v plné výši před podáním návrhu na zápis společnosti do obchodního rejstříku, pokud se společníci nedohodnou jinak v souladu se ZOK. Vklady budou splaceny na speciální bankovní účet zřízený za tímto účelem.
+[P054] [word/document.xml] 3.5  Obchodní podíly
+[P055] [word/document.xml] Obchodní podíl každého společníka odpovídá poměrné části základního kapitálu, která odpovídá jeho vkladu. Podíly jsou převoditelné dle podmínek stanovených v čl. VII. této Smlouvy.
+[P056] [word/document.xml] IV.
+[P057] [word/document.xml] Jednatel a statutární orgán
+[P058] [word/document.xml] 4.1  Statutární orgán
+[P059] [word/document.xml] Statutárním orgánem společnosti je jednatel (jeden nebo více jednatelů dle rozhodnutí společníků). Každý jednatel jedná jménem společnosti samostatně, pokud tato Smlouva nebo rozhodnutí valné hromady nestanoví jinak.
+[P060] [word/document.xml] 4.2  První jednatel
+[P061] [word/document.xml] Prvním jednatelem společnosti se ustavuje: [Jméno a příjmení], datum narození: [Doplnit], bydliště: [Doplnit adresu]. Jednatel potvrzuje svůj souhlas s funkcí svým podpisem na této Smlouvě nebo v přistoupovém prohlášení.
+[P062] [word/document.xml] 4.3  Funkce jednatele
+[P063] [word/document.xml] Jednatel je oprávněn a povinen řídit každodenní činnost společnosti, jednat jejím jménem ve všech věcech, uzavírat smlouvy, zastavovat majetek, zastupovat společnost před orgány veřejné správy a soudy a přijímat a propouštět zaměstnance.
+[P064] [word/document.xml] 4.4  Omezení jednatelských oprávnění
+[P065] [word/document.xml] Jednatel je povinen předchozí souhlas valné hromady získat pro následující úkony: (a) zcizení nebo zatížení nemovitých věcí nebo podniku; (b) uzavření úvěru nebo půjčky přesahující [doplnit, např. 500 000 Kč]; (c) poskytnutí zajištění nebo ručení za dluhy třetích osob nad [doplnit, např. 200 000 Kč]; (d) zahájení nebo ukončení soudního sporu s hodnotou předmětu nad [doplnit, např. 100 000 Kč].
+[P066] [word/document.xml] 4.5  Odměna jednatele
+[P067] [word/document.xml] Odměna jednatele je stanovena smlouvou o výkonu funkce schválenou valnou hromadou. Bez platné smlouvy o výkonu funkce schválené valnou hromadou vykonává jednatel funkci bez nároku na odměnu dle § 59 ZOK.
+[P068] [word/document.xml] 4.6  Odpovědnost jednatele
+[P069] [word/document.xml] Jednatel odpovídá za škodu způsobenou společnosti porušením svých povinností dle § 51 a násl. ZOK. Jednatel je povinen vykonávat svoji funkci s péčí řádného hospodáře a loajálně k zájmům společnosti.
+[P070] [word/document.xml] V.
+[P071] [word/document.xml] Valná hromada
+[P072] [word/document.xml] 5.1  Nejvyšší orgán
+[P073] [word/document.xml] Nejvyšším orgánem společnosti je valná hromada všech společníků. Rozhoduje o nejdůležitějších otázkách společnosti.
+[P074] [word/document.xml] 5.2  Působnost valné hromady
+[P075] [word/document.xml] Do působnosti valné hromady náleží zejména: (a) schválení účetních závěrek a rozdělení zisku nebo úhrady ztrát; (b) změny společenské smlouvy; (c) jmenování, odvolání a odměňování jednatelů; (d) vyloučení společníka; (e) zrušení společnosti s likvidací; (f) schválení fúze, rozdělení nebo změny právní formy; (g) další úkony vyhrazené ZOK nebo touto Smlouvou.
+[P076] [word/document.xml] 5.3  Svolávání valné hromady
+[P077] [word/document.xml] Řádná valná hromada se koná nejpozději do 6 měsíců od skončení účetního období. Mimořádná valná hromada se koná dle potřeby nebo na žádost společníků disponujících alespoň 10 % základního kapitálu. Svolává ji jednatel písemnou pozvánkou doručenou všem společníkům nejpozději 15 dní před jejím konáním.
+[P078] [word/document.xml] 5.4  Kvórum a hlasování
+[P079] [word/document.xml] Valná hromada je usnášeníschopná, jsou-li přítomni společníci disponující alespoň 50 % + 1 všech hlasů. Rozhoduje nadpoloviční většinou všech hlasů společníků, pokud ZOK nebo tato Smlouva nevyžadují vyšší kvórum. Pro změnu společenské smlouvy se vyžaduje souhlas alespoň dvoutřetinové většiny všech hlasů společníků.
+[P080] [word/document.xml] 5.5  Hlasovací práva
+[P081] [word/document.xml] Každý společník má jeden hlas za každých 1 Kč svého vkladu (nebo v poměru k velikosti svého obchodního podílu), pokud tato Smlouva nestanoví jinak.
+[P082] [word/document.xml] 5.6  Per rollam
+[P083] [word/document.xml] Pokud s tím souhlasí všichni společníci, může valná hromada rozhodovat per rollam (bez fyzického setkání, např. e-mailem nebo jinou prokazatelnou elektronickou formou). Lhůta pro hlasování per rollam činí nejméně 15 dní.
+[P084] [word/document.xml] VI.
+[P085] [word/document.xml] Rozdělení zisku a úhrady ztrát
+[P086] [word/document.xml] 6.1  Zisk
+[P087] [word/document.xml] O rozdělení zisku rozhoduje valná hromada na základě schválené řádné účetní závěrky. Zisk se rozděluje mezi společníky v poměru jejich obchodních podílů, pokud valná hromada nerozhodne jinak.
+[P088] [word/document.xml] 6.2  Rezervní fond
+[P089] [word/document.xml] Společnost není povinna ze zákona zřizovat rezervní fond. Valná hromada však může rozhodnout o tvorbě dobrovolného rezervního fondu nebo jiného fondu ze zisku.
+[P090] [word/document.xml] 6.3  Úhrady ztrát
+[P091] [word/document.xml] Ztráta z podnikání se uhrazuje z nerozděleného zisku minulých let nebo z jiného vlastního kapitálu. Pokud tato možnost nestačí, rozhoduje o způsobu úhrady ztrát valná hromada.
+[P092] [word/document.xml] VII.
+[P093] [word/document.xml] Obchodní podíly a jejich převod
+[P094] [word/document.xml] 7.1  Volný převod podílu
+[P095] [word/document.xml] Převod obchodního podílu na jiného společníka je možný bez omezení, pokud tato Smlouva nestanoví jinak.
+[P096] [word/document.xml] 7.2  Převod na třetí osobu
+[P097] [word/document.xml] Převod obchodního podílu na osobu, která není společníkem, podléhá souhlasu valné hromady. Ostatní společníci mají předkupní právo na nabývaný podíl za podmínek stanovených ZOK a touto Smlouvou. Předkupní právo musí být uplatněno do 30 dní od oznámení nabídky ostatním společníkům.
+[P098] [word/document.xml] 7.3  Dědění podílu
+[P099] [word/document.xml] Obchodní podíl je způsobilý k dědění. V případě dědění podílu musí dědic splnit podmínky stanovené ZOK a touto Smlouvou. Ostatní společníci mají právo vykoupit podíl od dědice za tržní cenu stanovenou znaleckým posudkem do 3 měsíců od přechodu podílu.
+[P100] [word/document.xml] 7.4  Zakázané převody
+[P101] [word/document.xml] Převody obchodních podílů, které by vedly k protiprávním stavům (např. obtížení podílu ve prospěch třetích stran bez souhlasu valné hromady), jsou zakázány.
+[P102] [word/document.xml] VIII.
+[P103] [word/document.xml] Zánik účasti společníka
+[P104] [word/document.xml] 8.1  Způsoby zániku účasti
+[P105] [word/document.xml] Účast společníka ve společnosti zaniká zejm.: (a) převodem obchodního podílu dle čl. VII.; (b) vyloučením společníka dle § 204 ZOK; (c) smrtí nebo zánikem právnické osoby (společníka); (d) uplynutím lhůty, byla-li účast sjednána na dobu určitou; (e) zánikem společnosti.
+[P106] [word/document.xml] 8.2  Vypořádací podíl
+[P107] [word/document.xml] V případě zániku účasti společníka (jinak než převodem) má bývalý společník nebo jeho právní nástupce nárok na vypořádací podíl odpovídající jeho podílu na čistém obchodním jmění společnosti, stanoveném ke dni zániku účasti znaleckým posudkem.
+[P108] [word/document.xml] IX.
+[P109] [word/document.xml] Zrušení a zánik společnosti
+[P110] [word/document.xml] 9.1  Důvody zrušení
+[P111] [word/document.xml] Společnost se zruší: (a) usnesením valné hromady; (b) z důvodů stanovených zákonem (insolvence, ztráta oprávnění k činnosti apod.); (c) rozhodnutím soudu.
+[P112] [word/document.xml] 9.2  Likvidace
+[P113] [word/document.xml] Při zrušení společnosti s likvidací valná hromada jmenuje likvidátora. Likvidátor je povinen provést likvidaci v souladu se ZOK, uhradit veškeré dluhy společnosti a likvidační zůstatek rozdělit mezi společníky v poměru jejich podílů.
+[P114] [word/document.xml] X.
+[P115] [word/document.xml] Další ujednání
+[P116] [word/document.xml] 10.1  Zápis do OR
+[P117] [word/document.xml] Společnost vzniká dnem zapsání do obchodního rejstříku vedeného příslušným krajským soudem. Jednatel je povinen podat návrh na zápis do OR bez zbytečného odkladu po uzavření této Smlouvy, nejpozději však do 6 měsíců od jejího uzavření.
+[P118] [word/document.xml] 10.2  Účetní období
+[P119] [word/document.xml] Účetním obdobím společnosti je kalendářní rok (1. 1. — 31. 12.). První účetní období počíná dnem vzniku společnosti a končí 31. 12. téhož roku nebo následujícího roku, je-li vznik společnosti po 1. říjnu.
+[P120] [word/document.xml] 10.3  Sídlo a korespondence
+[P121] [word/document.xml] Veškerá korespondence společníkům se zasílá na adresy uvedené v této Smlouvě. Společníci jsou povinni Cleansia bez odkladu informovat o změně své adresy. Elektronická komunikace prostřednictvím e-mailu je platná, pokud není touto Smlouvou nebo ZOK vyžadována písemná forma.
+[P122] [word/document.xml] 10.4  Rozhodné právo a řešení sporů
+[P123] [word/document.xml] Tato Smlouva se řídí právem České republiky, zejm. ZOK a občanským zákoníkem. Sporné otázky vyplývající z této Smlouvy budou řešeny přednostně smírnou cestou. Nedojde-li k dohodě, bude spor řešen příslušným obecným soudem v ČR.
+[P124] [word/document.xml] 10.5  Salvátorní klauzule
+[P125] [word/document.xml] Pokud se některé ustanovení této Smlouvy stane neplatným nebo nevymahatelným, nebude to mít vliv na platnost zbytku Smlouvy.
+[P126] [word/document.xml] 10.6  Změny Smlouvy
+[P127] [word/document.xml] Změny této Smlouvy vyžadují formu notářského zápisu a souhlas všech společníků, pokud ZOK nestanoví jinak.
+[P128] [word/document.xml] 10.7  Úplnost
+[P129] [word/document.xml] Tato Smlouva představuje úplnou dohodu společníků ohledně založení společnosti a nahrazuje veškerá předchozí ujednání.
+[P130] [word/document.xml] Prohlášení jednatele o souhlasu s funkcí
+[P131] [word/document.xml] Níže podepsaný prohlašuje, že souhlasí s tím, že byl ustaven jednatelem společnosti Cleansia s.r.o., že splňuje podmínky pro výkon funkce jednatele dle ZOK, že u něj není dána žádná překážka výkonu funkce (insolvence, trestní odsouzení za hospodářské delikty apod.) a že je srozuměn s obsahem této Společenské smlouvy.
+[P132] [word/document.xml] Jméno jednatele:
+[P133] [word/document.xml] ...............................................................................
+[P134] [word/document.xml] Datum narození:
+[P135] [word/document.xml] ...............................................................................
+[P136] [word/document.xml] Bydliště:
+[P137] [word/document.xml] ...............................................................................
+[P138] [word/document.xml] Podpis jednatele + datum: .............................................
+[P139] [word/document.xml] Podpisy zakládajících společníků
+[P140] [word/document.xml] Zakládající společníci prohlašují, že si tuto Společenskou smlouvu přečetli, souhlasí s jejím obsahem a podepisují ji svobodně a dobrovolně.
+[P141] [word/document.xml] Společník 1:
+[P142] [word/document.xml] Jméno: ................................................................
+[P143] [word/document.xml] Datum nar.: ....................................................
+[P144] [word/document.xml] Podpis: ............................................
+[P145] [word/document.xml] Datum:  ............................................
+[P146] [word/document.xml] Společník 2 (je-li):
+[P147] [word/document.xml] Jméno: ................................................................
+[P148] [word/document.xml] Datum nar.: ....................................................
+[P149] [word/document.xml] Podpis: ............................................
+[P150] [word/document.xml] Datum:  ............................................
+[P151] [word/document.xml] Další kroky po podpisu u notáře:
+1) Notářský zápis Společenské smlouvy — smluvte termín u notáře; vezměte s sebou: platné OP všech společníků, výběr jména firmy (ověření dostupnosti na justice.cz), rozhodnutí o sídle (potřebný souhlas vlastníka objektu).
+2) Splacení vkladu — vložit základní kapitál na specializovaný bankovní účet správce vkladu nebo notáře.
+3) Návrh na zápis do OR — podat u příslušného krajského soudu do 6 měsíců (online nebo papírově, soudní poplatek 6 000 Kč).
+4) Registrace na finančním úřadě — do 15 dnů od vzniku společnosti.
+5) Registrace k sociálnímu pojištění a zdravotní pojišťovně zaměstnanců (pokud bude mít společnost zaměstnance).
+6) Zřízení firemního bankovního účtu na IČO.
+[P152] [word/document.xml] PRACOVNÍ NÁVRH — před notářským zápisem bez právní účinnosti  |  Cleansia s.r.o.
+[P153] [word/footer1.xml] Společenská smlouva — pracovní návrh  |  Cleansia s.r.o.
+[P154] [word/header1.xml] CLEANSIA s.r.o.  |  Společenská smlouva  |  PRACOVNÍ NÁVRH — bez notářského zápisu bez právní účinnosti

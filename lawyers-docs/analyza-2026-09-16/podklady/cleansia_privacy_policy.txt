@@ -1,0 +1,175 @@
+SOURCE: lawyers-docs\SMLOUVY CleanSia\SMLOUVY\cleansia_privacy_policy.docx
+Paragraph IDs are extraction references, not legal clause numbers.
+
+[P001] [word/document.xml] CLEANSIA
+[P002] [word/document.xml] PRIVACY POLICY
+[P003] [word/document.xml] Zásady ochrany osobních údajů
+[P004] [word/document.xml] Správce OÚ:
+[P005] [word/document.xml] Cleansia s.r.o., IČO: [Doplnit], sídlo: [Doplnit adresu]
+[P006] [word/document.xml] Zápis v OR:
+[P007] [word/document.xml] OR vedený Městským soudem v Praze, oddíl C, vložka [Doplnit]
+[P008] [word/document.xml] Kontakt GDPR:
+[P009] [word/document.xml] [Doplnit e-mail]
+[P010] [word/document.xml] DPO:
+[P011] [word/document.xml] [Doplnit jméno a kontakt, nebo: nejmenován]
+[P012] [word/document.xml] Verze:
+[P013] [word/document.xml] 1.1
+[P014] [word/document.xml] Platnost od:
+[P015] [word/document.xml] ................................................
+[P016] [word/document.xml] Vaše důvěra je pro nás důležitá. Tato Privacy Policy vysvětluje, jaké osobní údaje o vás shromažďujeme, proč, jak dlouho je ukládáme, s kým je sdílíme a jaká máte práva. Používáte-li naši Aplikaci nebo web, přečtěte si prosím tuto Privacy Policy. Zpracování vašich osobních údajů probíhá v souladu s nařízením EU 2016/679 (GDPR) a zákonem č. 110/2019 Sb., o zpracování osobních údajů.
+[P017] [word/document.xml] I.
+[P018] [word/document.xml] Kdo jsme a jak nás kontaktovat
+[P019] [word/document.xml] 1.1  Správce osobních údajů
+[P020] [word/document.xml] Správcem vašich osobních údajů je společnost Cleansia s.r.o., IČO: [Doplnit], se sídlem [Doplnit adresu], zapsaná v obchodním rejstříku vedeném Městským soudem v Praze, oddíl C, vložka [Doplnit] (dále jen 'Cleansia', 'my' nebo 'nás'). Cleansia provozuje platformu pro zprostředkování úklidových služeb dostupnou prostřednictvím mobilní Aplikace a webu.
+[P021] [word/document.xml] 1.2  Kontaktní údaje pro GDPR
+[P022] [word/document.xml] S dotazy týkajícími se vašich osobních údajů nás můžete kontaktovat:
+[P023] [word/document.xml] E-mail: [Doplnit GDPR e-mail]
+[P024] [word/document.xml] Poštovní adresa: [Doplnit adresu, k rukám GDPR kontaktu]
+[P025] [word/document.xml] Datová schránka: [Doplnit, je-li zřízena]
+[P026] [word/document.xml] Na vaše žádosti odpovíme bezplatně bez zbytečného odkladu, nejpozději do 30 dnů. Ve složitých případech lze lhůtu prodloužit o další 2 měsíce (celkem max. 3 měsíce), o čemž vás budeme informovat do 30 dnů od obdržení žádosti.
+[P027] [word/document.xml] 1.3  Pověřenec pro ochranu osobních údajů (DPO)
+[P028] [word/document.xml] Cleansia [doplnit: jmenovala / nejmenovala] pověřence pro ochranu osobních údajů (DPO) dle čl. 37 GDPR. [Pokud ano: Kontakt na DPO: [jméno, e-mail].] Jmenování DPO je povinné dle čl. 37 GDPR mimo jiné v případě, že dochází ke zpracování OÚ ve velkém měřítku — Cleansia doporučuje tuto povinnost pravidelně přehodnocovat s ohledem na růst platformy.
+[P029] [word/document.xml] II.
+[P030] [word/document.xml] Jaké osobní údaje zpracováváme a proč
+[P031] [word/document.xml] Zpracováváme pouze údaje, které jsou nezbytné pro poskytnutí služby nebo které nám umožňují zlepšovat platformu. Řídíme se zásadou minimalizace dat (čl. 5 odst. 1 písm. c) GDPR) — neshromažďujeme více údajů, než je nezbytně nutné. Přehled všech kategorií osobních údajů, účelů zpracování, právních titulů a dob uchování:
+[P032] [word/document.xml] Kategorie OÚ
+[P033] [word/document.xml] Konkrétní typy
+[P034] [word/document.xml] Účel zpracování
+[P035] [word/document.xml] Právní základ
+[P036] [word/document.xml] Doba uchování
+[P037] [word/document.xml] Identifikační údaje
+[P038] [word/document.xml] jméno, příjmení, e-mail, telefon
+[P039] [word/document.xml] Registrace, komunikace, vystavení daňového dokladu
+[P040] [word/document.xml] čl. 6(1)(b) GDPR — plnění smlouvy
+[P041] [word/document.xml] Po dobu trvání účtu + 3 roky po jeho zrušení (účetní povinnost)
+[P042] [word/document.xml] Adresní údaje
+[P043] [word/document.xml] adresa výkonu úklidu, fakturační adresa
+[P044] [word/document.xml] Plnění zakázky, doručení daňového dokladu
+[P045] [word/document.xml] čl. 6(1)(b) GDPR — plnění smlouvy
+[P046] [word/document.xml] Po dobu zakázky; fakturační adresa 10 let (zákon č. 563/1991 Sb.)
+[P047] [word/document.xml] Platební údaje
+[P048] [word/document.xml] typ karty, poslední 4 číslice, stav transakce
+[P049] [word/document.xml] Zpracování platby, ověření, reklamace
+[P050] [word/document.xml] čl. 6(1)(b) GDPR — plnění smlouvy
+[P051] [word/document.xml] 5 let (zákon o platebním styku č. 370/2017 Sb.)
+[P052] [word/document.xml] Provozní údaje
+[P053] [word/document.xml] historie objednávek, hodnocení Zhotovitelů, komunikace v Aplikaci
+[P054] [word/document.xml] Provoz platformy, řešení sporů, zlepšování služby
+[P055] [word/document.xml] čl. 6(1)(f) GDPR — oprávněný zájem
+[P056] [word/document.xml] 3 roky od poslední aktivity
+[P057] [word/document.xml] Technická data
+[P058] [word/document.xml] IP adresa, typ zařízení, OS, verze Aplikace, log aktivit
+[P059] [word/document.xml] Bezpečnost, ladění, detekce podvodu
+[P060] [word/document.xml] čl. 6(1)(f) GDPR — oprávněný zájem
+[P061] [word/document.xml] 12 měsíců
+[P062] [word/document.xml] Lokalizační data
+[P063] [word/document.xml] poloha zařízení (pouze při aktivním používání Aplikace)
+[P064] [word/document.xml] Navigace Zhotovitele, zobrazení dostupných služeb v okolí
+[P065] [word/document.xml] čl. 6(1)(a) GDPR — souhlas
+[P066] [word/document.xml] Po dobu zakázky; agregovaná statistika 12 měsíců
+[P067] [word/document.xml] Marketingová data
+[P068] [word/document.xml] e-mail pro zasílání novinek a nabídek (jen s explicitním souhlasem)
+[P069] [word/document.xml] Zasílání obchodních sdělení
+[P070] [word/document.xml] čl. 6(1)(a) GDPR — souhlas
+[P071] [word/document.xml] Do odvolání souhlasu
+[P072] [word/document.xml] Nikdy neprodáváme vaše údaje. Cleansia vaše osobní údaje nikdy neprodává třetím stranám za komerční účely. Údaje předáváme pouze subjektům nutným k poskytnutí služby (viz čl. IV.) a orgánům veřejné moci v situacích, kde nám to ukládá zákon.
+[P073] [word/document.xml] III.
+[P074] [word/document.xml] Cookies a sledovací technologie
+[P075] [word/document.xml] 3.1  Co jsou cookies
+[P076] [word/document.xml] Cookies jsou malé textové soubory ukládané vaším prohlížečem na vašem zařízení. Používáme je k zajištění funkčnosti webu a Aplikace, analýze návštěvnosti a personalizaci obsahu. Podrobné informace o konkrétních cookies, jejich poskytovatelích a dobách platnosti jsou uvedeny v naší Cookie Policy dostupné na [doplnit URL].
+[P077] [word/document.xml] 3.2  Typy cookies, které používáme
+[P078] [word/document.xml] Nezbytné cookies — zajišťují základní funkčnost webu (přihlášení, košík, bezpečnost). Nelze je vypnout, jejich použití nevyžaduje souhlas (čl. 5 odst. 3 směrnice 2002/58/ES).
+[P079] [word/document.xml] Analytické cookies — pomáhají nám rozumět, jak návštěvníci používají web (např. Google Analytics). Aktivují se až po vašem souhlasu.
+[P080] [word/document.xml] Marketingové cookies — umožňují zobrazovat relevantní reklamu. Aktivují se až po vašem souhlasu.
+[P081] [word/document.xml] 3.3  Správa cookies
+[P082] [word/document.xml] Souhlas s nepovinnými cookies lze udělit nebo odvolat kdykoli prostřednictvím cookie lišty na webu nebo nastavení v Aplikaci (Nastavení → Soukromí → Cookies). Podrobný seznam všech cookies je dostupný v naší Cookie Policy. Odvolání souhlasu s cookies je stejně snadné jako jeho udělení — v souladu s čl. 7 odst. 3 GDPR.
+[P083] [word/document.xml] IV.
+[P084] [word/document.xml] Komu vaše údaje předáváme
+[P085] [word/document.xml] 4.1  Zhotovitelé (OSVČ)
+[P086] [word/document.xml] Za účelem realizace zakázky předáváme Zhotoviteli nezbytné kontaktní a adresní údaje (jméno, telefon, adresa výkonu úklidu). Zpracování těchto údajů Zhotovitelem se řídí Zpracovatelskou smlouvou (DPA) uzavřenou mezi Cleansia a Zhotovitelem v souladu s čl. 28 GDPR. Zhotovitel je oprávněn tyto údaje používat výhradně pro účely plnění konkrétní zakázky a je povinen je po jejím skončení vymazat.
+[P087] [word/document.xml] 4.2  Platební zprostředkovatelé
+[P088] [word/document.xml] Platby zpracováváme prostřednictvím certifikovaného poskytovatele platební brány [doplnit: např. Stripe, Comgate, GoPay], který je držitelem licence platební instituce. Čísla karet ani kompletní platební údaje Cleansia neuchovává — jsou zpracovávány přímo poskytovatelem platební brány v souladu se standardem PCI DSS.
+[P089] [word/document.xml] 4.3  Provozní a techničtí dodavatelé
+[P090] [word/document.xml] Pro provoz platformy využíváme služby těchto kategorií zpracovatelů (všichni jsou vázáni zpracovatelskými smlouvami dle čl. 28 GDPR):
+[P091] [word/document.xml] Poskytovatel cloudové infrastruktury: [doplnit, např. AWS, Google Cloud]
+[P092] [word/document.xml] Analytické nástroje: [doplnit, např. Google Analytics, Mixpanel]
+[P093] [word/document.xml] E-mailový provider: [doplnit, např. Mailchimp, Sendgrid]
+[P094] [word/document.xml] Zákaznická podpora: [doplnit, např. Intercom, Zendesk]
+[P095] [word/document.xml] Účetní a fakturační systém: [doplnit]
+[P096] [word/document.xml] 4.4  Orgány veřejné moci
+[P097] [word/document.xml] Osobní údaje můžeme poskytnout orgánům činným v trestním řízení, soudům nebo jiným veřejným institucím, pokud nám to ukládá zákon nebo je-li to nezbytné pro ochranu oprávněných zájmů. O každém takovém předání vedeme záznam.
+[P098] [word/document.xml] 4.5  Předávání mimo EHP
+[P099] [word/document.xml] Někteří naši techničtí dodavatelé mohou zpracovávat údaje mimo Evropský hospodářský prostor (např. USA). V takovém případě zajišťujeme přiměřené záruky dle kapitoly V. GDPR:
+[P100] [word/document.xml] Rozhodnutí Evropské komise o přiměřenosti (čl. 45 GDPR), např. EU–USA Data Privacy Framework.
+[P101] [word/document.xml] Standardní smluvní doložky (SCC) schválené Evropskou komisí (čl. 46 odst. 2 písm. c) GDPR).
+[P102] [word/document.xml] Informace o konkrétních zárukách pro jednotlivé zpracovatele jsou dostupné na vyžádání na [doplnit GDPR e-mail].
+[P103] [word/document.xml] V.
+[P104] [word/document.xml] Bezpečnost vašich údajů
+[P105] [word/document.xml] 5.1  Technická opatření
+[P106] [word/document.xml] Implementujeme přiměřená technická a organizační opatření na ochranu vašich osobních údajů před neoprávněným přístupem, ztrátou nebo zničením dle čl. 32 GDPR, včetně:
+[P107] [word/document.xml] Šifrování dat při přenosu (TLS 1.2+ / HTTPS).
+[P108] [word/document.xml] Šifrování uložených citlivých dat (at rest encryption).
+[P109] [word/document.xml] Řízení přístupu k údajům — k OÚ zákazníků mají přístup pouze oprávnění zaměstnanci na základě principu nejmenšího oprávnění.
+[P110] [word/document.xml] Pravidelných bezpečnostních auditů a penetračních testů.
+[P111] [word/document.xml] Dvoufaktorové autentizace pro přístup k produkčním systémům.
+[P112] [word/document.xml] Vedení záznamů o přístupech a aktivitách v systémech (audit log).
+[P113] [word/document.xml] 5.2  Oznámení o incidentu
+[P114] [word/document.xml] V případě bezpečnostního incidentu, který by mohl ohrozit vaše údaje, vás budeme informovat v souladu s povinnostmi dle čl. 33 a 34 GDPR — zpravidla do 72 hodin od zjištění incidentu (oznámení ÚOOÚ) a bez zbytečného odkladu v případě vysokého rizika pro vaše práva (oznámení vám jako subjektu údajů). Oznámení bude obsahovat popis povahy incidentu, pravděpodobné následky a přijatá opatření.
+[P115] [word/document.xml] VI.
+[P116] [word/document.xml] Vaše práva v oblasti ochrany osobních údajů
+[P117] [word/document.xml] Jako subjekt údajů máte následující práva, která můžete uplatnit zasláním žádosti na [doplnit GDPR e-mail] nebo poštou na adresu Cleansia s.r.o. Na vaše žádosti odpovíme bezplatně do 30 dnů.
+[P118] [word/document.xml] Vaše právo
+[P119] [word/document.xml] Co to znamená
+[P120] [word/document.xml] Právo na přístup (čl. 15)
+[P121] [word/document.xml] Můžete nás požádat o potvrzení, zda zpracováváme vaše OÚ, a o kopii těchto OÚ včetně informací o účelu, kategoriích a příjemcích.
+[P122] [word/document.xml] Právo na opravu (čl. 16)
+[P123] [word/document.xml] Můžete nás požádat o opravu nepřesných nebo neúplných OÚ. Opravu provedeme bez zbytečného odkladu.
+[P124] [word/document.xml] Právo na výmaz (čl. 17)
+[P125] [word/document.xml] Můžete nás požádat o výmaz vašich OÚ, pokud již nejsou potřebné, odvolali jste souhlas nebo námítáte zpracování (právo není absolutní — omezuje ho např. zákonná archivační povinnost).
+[P126] [word/document.xml] Právo na omezení zpracování (čl. 18)
+[P127] [word/document.xml] Můžete nás požádat o dočasné omezení zpracování, např. během ověření správnosti OÚ nebo po vznesení námitky.
+[P128] [word/document.xml] Právo na přenositelnost (čl. 20)
+[P129] [word/document.xml] Můžete získat své OÚ ve strukturovaném, strojově čitelném formátu (JSON nebo CSV) a předat je jinému správci. Toto právo se vztahuje pouze na OÚ zpracovávané automaticky na základě souhlasu nebo smlouvy.
+[P130] [word/document.xml] Právo vznést námitku (čl. 21)
+[P131] [word/document.xml] Můžete vznést námitku proti zpracování OÚ na základě oprávněného zájmu. Zpracování pak zastavíme, pokud nepřeváží naše oprávněné důvody nebo jde o určení, výkon nebo obhajobu právních nároků.
+[P132] [word/document.xml] Právo odvolat souhlas (čl. 7(3))
+[P133] [word/document.xml] Pokud je zpracování založeno na souhlasu, můžete ho kdykoli odvolat — odvolání nemá zpětný účinek na zákonnost předchozího zpracování.
+[P134] [word/document.xml] Právo podat stížnost (čl. 77)
+[P135] [word/document.xml] Můžete podat stížnost k Úřadu pro ochranu osobních údajů (ÚOOÚ), Pplk. Sochora 27, 170 00 Praha 7, www.uoou.cz, tel.: +420 234 665 111.
+[P136] [word/document.xml] Na vaše žádosti odpovíme bezplatně do 30 dnů. Ve zdůvodněných případech můžeme tuto lhůtu prodloužit o další 2 měsíce (max. celkem 3 měsíce) s odůvodněním. Pokud je žádost zjevně nedůvodná nebo nepřiměřená (zejm. kvůli své opakované povaze), jsme oprávněni účtovat přiměřený poplatek nebo žádost odmítnout (čl. 12 odst. 5 GDPR).
+[P137] [word/document.xml] VII.
+[P138] [word/document.xml] Údaje dětí
+[P139] [word/document.xml] 7.1  Věkový limit
+[P140] [word/document.xml] Naše služby jsou určeny osobám starším 18 let. Vědomě nezpracováváme osobní údaje dětí mladších 18 let. Při registraci ověřujeme věk zákazníka. Pokud se dozvíme, že jsme zpracovávali údaje dítěte bez souhlasu rodiče nebo zákonného zástupce, tyto údaje okamžitě vymažeme a zákonného zástupce informujeme.
+[P141] [word/document.xml] 7.2  Hlášení porušení
+[P142] [word/document.xml] Pokud máte podezření, že jsme zpracovávali údaje dítěte, kontaktujte nás prosím neprodleně na [doplnit e-mail]. Věnujeme těmto hlášením nejvyšší prioritu.
+[P143] [word/document.xml] VIII.
+[P144] [word/document.xml] Automatizované rozhodování a profilování
+[P145] [word/document.xml] 8.1  Automatizované rozhodování
+[P146] [word/document.xml] Cleansia nevyužívá plně automatizované rozhodování, které by mělo pro zákazníka právní účinky nebo by ho jinak významně ovlivňovalo ve smyslu čl. 22 GDPR.
+[P147] [word/document.xml] 8.2  Profilování
+[P148] [word/document.xml] Za účelem zlepšování služby a personalizace zobrazovaných nabídek může Cleansia provádět omezenou formu profilování (např. doporučení Zhotovitelů v okolí zákazníka na základě polohy a hodnocení). Toto profilování nevede k automatizovaným rozhodnutím s právními účinky. Zákazník může proti profilování vznést námitku dle čl. 21 GDPR.
+[P149] [word/document.xml] IX.
+[P150] [word/document.xml] Změny Privacy Policy
+[P151] [word/document.xml] 9.1  Aktualizace
+[P152] [word/document.xml] Tuto Privacy Policy můžeme průběžně aktualizovat v reakci na legislativní změny, změny naší činnosti nebo doporučení regulátorů. O podstatných změnách vás budeme informovat e-mailem nebo oznámením v Aplikaci nejpozději 14 dní předem. Datum poslední aktualizace je vždy uveden v záhlaví dokumentu. Doporučujeme Privacy Policy pravidelně procházet.
+[P153] [word/document.xml] 9.2  Archivace předchozích verzí
+[P154] [word/document.xml] Předchozí verze Privacy Policy archivujeme a jsou dostupné na vyžádání na [doplnit GDPR e-mail]. Zákazníci mají právo vědět, za jakých podmínek byly jejich údaje zpracovávány v minulosti.
+[P155] [word/document.xml] 9.3  Směrnice EU o platformové práci
+[P156] [word/document.xml] Cleansia jako digitální pracovní platforma bere na vědomí, že směrnice EU 2024/2831 o zlepšení pracovních podmínek při práci prostřednictvím platformy (publikována 11. 11. 2024) zavádí nová pravidla pro zpracování osobních údajů pracovníků platformy. Po implementaci této směrnice do českého právního řádu (nejpozději do 2. 12. 2026) bude tato Privacy Policy aktualizována tak, aby zahrnovala: (a) informace o automatizovaných monitorovacích a rozhodovacích systémech a jejich dopadu na pracovníky platformy; (b) práva pracovníků platformy ve vztahu k algoritmickému řízení; (c) povinný lidský dohled nad automatizovanými rozhodnutími. O této aktualizaci budou zákazníci i Zhotovitelé informováni v souladu s čl. 9.1.
+[P157] [word/document.xml] X.
+[P158] [word/document.xml] Závěrečná ustanovení
+[P159] [word/document.xml] 10.1  Rozhodné právo
+[P160] [word/document.xml] Tato Privacy Policy se řídí právem České republiky a příslušnými ustanoveními GDPR. Veškeré spory vyplývající z této Privacy Policy budou řešeny přednostně mimosoudně. Zákazník má vždy právo obrátit se na ÚOOÚ.
+[P161] [word/document.xml] 10.2  Platnost
+[P162] [word/document.xml] Tato Privacy Policy je účinná od [doplnit datum] a nahrazuje všechny předchozí verze.
+[P163] [word/document.xml] UMÍSTĚNÍ PRIVACY POLICY — kde musí být dostupná:
+(1) V patičce webu jako klikatelný odkaz 'Ochrana osobních údajů' nebo 'Privacy Policy'.
+(2) V Aplikaci pod Nastavení → Právní dokumenty.
+(3) Jako odkaz při registraci (společně s VOP v checkboxu).
+(4) V cookie liště odkazována jako zdroj informací o zpracování dat.
+
+Bez těchto umístění Cleansia porušuje čl. 12 a 13 GDPR — povinnost informovat subjekty údajů.
+[P164] [word/document.xml] Tato Privacy Policy je účinná od [doplnit datum]. Verze 1.1.  |  Cleansia s.r.o.  |  IČO: [Doplnit]  |  GDPR kontakt: [Doplnit e-mail]
+[P165] [word/footer1.xml] Verze 1.1  |  Cleansia s.r.o.  |  www.[doplnit].cz
+[P166] [word/header1.xml] CLEANSIA s.r.o.  |  Privacy Policy — Zásady ochrany osobních údajů

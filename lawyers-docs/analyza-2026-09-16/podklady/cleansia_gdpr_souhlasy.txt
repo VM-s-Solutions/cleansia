@@ -1,0 +1,201 @@
+SOURCE: lawyers-docs\SMLOUVY CleanSia\SMLOUVY\cleansia_gdpr_souhlasy.docx
+Paragraph IDs are extraction references, not legal clause numbers.
+
+[P001] [word/document.xml] CLEANSIA
+[P002] [word/document.xml] GDPR SOUHLASY ZÁKAZNÍKA
+[P003] [word/document.xml] Implementační příručka + vzory textů pro web a Aplikaci
+[P004] [word/document.xml] Společnost:
+[P005] [word/document.xml] Cleansia s.r.o.
+[P006] [word/document.xml] IČO:
+[P007] [word/document.xml] [Doplnit]
+[P008] [word/document.xml] Verze:
+[P009] [word/document.xml] 1.1
+[P010] [word/document.xml] Platnost od:
+[P011] [word/document.xml] ................................................
+[P012] [word/document.xml] Právní základ:
+[P013] [word/document.xml] GDPR (nařízení EU 2016/679), zákon č. 110/2019 Sb., ePrivacy 2002/58/ES
+[P014] [word/document.xml] GDPR kontakt:
+[P015] [word/document.xml] [Doplnit e-mail]
+[P016] [word/document.xml] Tento dokument slouží jako implementační příručka pro vývojáře a produktový tým Cleansia. Definuje, které souhlasy jsou potřeba, jak mají fungovat technicky, a obsahuje hotové vzory textů pro checkboxy a dialogová okna v Aplikaci a na webu. Správná implementace souhlasů je zákonnou povinností dle GDPR (čl. 7) a směrnice ePrivacy 2002/58/ES.
+[P017] [word/document.xml] I.
+[P018] [word/document.xml] Přehled všech souhlasů a právních titulů
+[P019] [word/document.xml] Cleansia zpracovává osobní údaje Zákazníků na dvou různých právních titulech. Je důležité je odlišovat — různé tituly mají různé nároky na implementaci:
+[P020] [word/document.xml] PLNĚNÍ SMLOUVY (čl. 6(1)(b) GDPR) — souhlas NENÍ potřeba
+Pro zpracování OÚ nezbytné k realizaci služby (jméno, kontakt, adresa zakázky, platba) souhlas zákazníka není vyžadován. Zákazník uzavírá smlouvu a zpracování je nezbytné pro její plnění. Stačí informovat zákazníka v Privacy Policy.
+[P021] [word/document.xml] SOUHLAS (čl. 6(1)(a) GDPR) — souhlas JE potřeba
+Pro zpracování OÚ nad rámec realizace služby (marketing, GPS, analytické cookies) je vyžadován svobodný, konkrétní, informovaný a jednoznačný souhlas. Musí být: dobrovolný (bez podmínění služby), granulární (každý účel zvlášť), kdykoli odvolatelný a prokazatelně zaznamenaný.
+[P022] [word/document.xml] Úplný přehled všech zpracovávaných OÚ, právních titulů, dob uchování a možností odvolání:
+[P023] [word/document.xml] Účel zpracování
+[P024] [word/document.xml] Popis
+[P025] [word/document.xml] Právní základ
+[P026] [word/document.xml] Doba uchování
+[P027] [word/document.xml] Způsob odvolání
+[P028] [word/document.xml] Souhlas s VOP a Privacy Policy
+[P029] [word/document.xml] Povinný souhlas — bez něj nelze dokončit registraci
+[P030] [word/document.xml] Plnění smlouvy čl. 6(1)(b) GDPR
+[P031] [word/document.xml] Po dobu trvání účtu + 3 roky
+[P032] [word/document.xml] Odvoláním = zrušení účtu
+[P033] [word/document.xml] Zpracování OÚ pro realizaci zakázek
+[P034] [word/document.xml] Identifikační, kontaktní a adresní údaje předávané Zhotoviteli
+[P035] [word/document.xml] Plnění smlouvy čl. 6(1)(b) GDPR
+[P036] [word/document.xml] Po dobu zakázky + 24 h (adresa)
+[P037] [word/document.xml] Nelze odvolat bez ukončení služby
+[P038] [word/document.xml] Lokalizační data (GPS)
+[P039] [word/document.xml] Poloha pro zobrazení dostupných Zhotovitelů a navigaci
+[P040] [word/document.xml] Souhlas čl. 6(1)(a) GDPR
+[P041] [word/document.xml] Po dobu zakázky; statistiky 12 měs.
+[P042] [word/document.xml] Kdykoli v nastavení zařízení
+[P043] [word/document.xml] Zasílání obchodních sdělení e-mailem
+[P044] [word/document.xml] Novinky, nabídky, slevové kódy Cleansia
+[P045] [word/document.xml] Souhlas čl. 6(1)(a) GDPR
+[P046] [word/document.xml] Do odvolání souhlasu
+[P047] [word/document.xml] Odkazem v e-mailu nebo v Aplikaci
+[P048] [word/document.xml] Push notifikace v Aplikaci
+[P049] [word/document.xml] Potvrzení zakázky, hodnocení, aktualizace stavu
+[P050] [word/document.xml] Souhlas čl. 6(1)(a) GDPR
+[P051] [word/document.xml] Do odvolání souhlasu
+[P052] [word/document.xml] V nastavení Aplikace nebo OS
+[P053] [word/document.xml] Analytické cookies a sledování chování
+[P054] [word/document.xml] Zlepšování UX a funkčnosti platformy (Google Analytics apod.)
+[P055] [word/document.xml] Souhlas čl. 6(1)(a) GDPR
+[P056] [word/document.xml] 12 měsíců
+[P057] [word/document.xml] Odvolání v cookie nastavení
+[P058] [word/document.xml] II.
+[P059] [word/document.xml] Registrační formulář — povinné checkboxy
+[P060] [word/document.xml] Při registraci zákazníka v Aplikaci nebo na webu musí být zobrazeny následující checkboxy. Červeně označené jsou povinné — bez jejich zaškrtnutí nelze dokončit registraci. Modré jsou volitelné.
+[P061] [word/document.xml] ☐  Souhlasím s Všeobecnými obchodními podmínkami a Privacy Policy Cleansia.   ● POVINNÉ
+[P062] [word/document.xml] Odkaz na VOP: [URL]  |  Odkaz na Privacy Policy: [URL]  |  Bez tohoto souhlasu nelze pokračovat v registraci.
+[P063] [word/document.xml] ☐  Souhlasím se zpracováním svých osobních údajů za účelem realizace úklidových zakázek.   ● POVINNÉ
+[P064] [word/document.xml] Vaše jméno, telefon a adresa zakázky budou předány Zhotoviteli výhradně za účelem provedení objednaného úklidu. Více informací v Privacy Policy.
+[P065] [word/document.xml] ☐  Souhlasím se zasíláním obchodních sdělení (newsletter, nabídky, slevové kódy) na můj e-mail.   ○ volitelné
+[P066] [word/document.xml] Svůj souhlas můžete kdykoli odvolat klikem na odkaz v každém e-mailu nebo v nastavení Aplikace. Zasílání neovlivní vaši možnost používat služby Cleansia.
+[P067] [word/document.xml] ☐  Souhlasím s použitím analytických a marketingových cookies pro zlepšení služby a personalizaci obsahu.   ○ volitelné
+[P068] [word/document.xml] Cookies lze spravovat kdykoli v nastavení Aplikace nebo webu. Více informací v Cookie Policy.
+[P069] [word/document.xml] DŮLEŽITÉ — Předem zaškrtnuté checkboxy jsou zakázány!
+Dle GDPR (čl. 7 odst. 1) a směrnice ePrivacy nesmí být žádný checkbox pro souhlas předvyplněn (zaškrtnut). Zákazník musí všechny souhlasy aktivně potvrdit vlastním klikem. Předvyplněné checkboxy jsou nezákonné a mohou vést k pokutě až 20 mil. EUR nebo 4 % globálního obratu (čl. 83 odst. 5 GDPR).
+[P070] [word/document.xml] III.
+[P071] [word/document.xml] Souhlas při dokončení objednávky
+[P072] [word/document.xml] Před potvrzením každé objednávky musí být zákazníkovi zobrazeno následující krátké upozornění (není checkbox — jde o informaci dle čl. 13 GDPR). Text musí být zobrazen přímo nad tlačítkem potvrzení, nikoli skrytý v patičce stránky.
+[P073] [word/document.xml] VZOR TEXTU — zobrazit nad tlačítkem 'Potvrdit objednávku':
+[P074] [word/document.xml] Kliknutím na 'Potvrdit objednávku' uzavíráte smlouvu o dílo se Zhotovitelem a souhlasíte s tím, že vaše jméno, telefon a adresa výkonu úklidu budou předány Zhotoviteli za účelem realizace zakázky. Více informací v naší Privacy Policy.
+[P075] [word/document.xml] Tento text není souhlasem ve smyslu čl. 6(1)(a) GDPR — jde o informační povinnost dle čl. 13 GDPR. Zákazník kliknutím na tlačítko uzavírá smlouvu, jejíž součástí je nezbytné předání OÚ Zhotoviteli (čl. 6(1)(b) GDPR). Samostatný checkbox proto není vyžadován.
+[P076] [word/document.xml] IV.
+[P077] [word/document.xml] Souhlas s lokalizací (GPS)
+[P078] [word/document.xml] Přístup k poloze zařízení vyžaduje souhlas na úrovni operačního systému (iOS / Android). Před zobrazením systémového dialogu OS musí Aplikace zobrazit vlastní vysvětlující dialog — tzv. pre-permission dialog. Tento krok výrazně zvyšuje míru udělení souhlasu a je doporučen EDPB.
+[P079] [word/document.xml] VZOR DIALOGU — in-app dialog před systémovým souhlasem GPS:
+[P080] [word/document.xml] Cleansia potřebuje přístup k vaší poloze
+
+Vaši polohu používáme pouze během aktivního používání Aplikace k zobrazení dostupných Zhotovitelů ve vašem okolí. Vaši polohu neukládáme ani nesdílíme s třetími stranami. Polohu můžete kdykoli vypnout v nastavení zařízení.
+[P081] [word/document.xml] [ Povolit polohu ]     |     [ Nyní ne ]
+[P082] [word/document.xml] Technická poznámka: Při použití polohy pouze během aktivního používání Aplikace (foreground) požadujte oprávnění ACCESS_FINE_LOCATION (Android) nebo When In Use (iOS). Požadavek na polohu na pozadí (background) vyžaduje zvláštní odůvodnění a schválení obchody s aplikacemi.
+[P083] [word/document.xml] V.
+[P084] [word/document.xml] Marketingový souhlas a jeho správa
+[P085] [word/document.xml] 5.1  Double opt-in
+[P086] [word/document.xml] Pro marketingovou komunikaci e-mailem Cleansia musí implementovat double opt-in: po registraci zákazník obdrží ověřovací e-mail s odkazem pro potvrzení souhlasu se zasíláním marketingového obsahu. Odkaz musí být platný minimálně 48 hodin. Tato metoda je nejrobustnějším důkazem uděleného souhlasu a je doporučena ÚOOÚ i EDPB. Marketing nesmí být zasílán dříve, než zákazník odkaz potvrdí.
+[P087] [word/document.xml] 5.2  Unsubscribe
+[P088] [word/document.xml] Každý marketingový e-mail musí obsahovat viditelný odkaz 'Odhlásit se z odběru' nebo 'Manage preferences' — umístěný v patičce e-mailu, nikoli skrytý nebo minimalizovaný. Po kliknutí musí být souhlas odvolán nejpozději do 10 pracovních dnů (doporučujeme technicky do 24 hodin). Odvolání musí být potvrzeno e-mailem zákazníkovi.
+[P089] [word/document.xml] 5.3  Správa souhlasů v Aplikaci
+[P090] [word/document.xml] V sekci Nastavení → Oznámení a soukromí musí být zákazníkovi dostupné přepínače (toggles) pro:
+[P091] [word/document.xml] marketing e-mailem (výchozí stav: vypnuto, pokud zákazník souhlas neudělil),
+[P092] [word/document.xml] push notifikace (výchozí stav dle preference zákazníka při registraci),
+[P093] [word/document.xml] lokalizační data / GPS (výchozí stav: vypnuto).
+[P094] [word/document.xml] Každý přepínač musí okamžitě zaznamenávat změnu souhlasu do databáze s časovým razítkem a verzí textu souhlasu platnou v okamžiku změny.
+[P095] [word/document.xml] 5.4  Věkové omezení a souhlas nezletilých
+[P096] [word/document.xml] Dle čl. 8 GDPR je zpracování osobních údajů dítěte na základě souhlasu zákonné pouze pokud je dítěti alespoň 16 let (v ČR platí tato hranice bez snížení). Pro zákazníky mladší 16 let je vyžadován souhlas zákonného zástupce. Aplikace musí při registraci ověřit věk zákazníka a v případě potřeby vyžádat souhlas zákonného zástupce.
+[P097] [word/document.xml] VI.
+[P098] [word/document.xml] Záznamy o souhlasech (Consent Log)
+[P099] [word/document.xml] 6.1  Povinnost vést záznamy
+[P100] [word/document.xml] Cleansia je povinna uchovávat prokazatelné záznamy o všech udělených souhlasech dle čl. 7 odst. 1 GDPR a čl. 5 odst. 2 GDPR (zásada odpovědnosti). Bez těchto záznamů není možné doložit zákonnost zpracování při kontrole ÚOOÚ. Záznamy musí být uchovávány po dobu trvání souhlasu a minimálně 3 roky po jeho odvolání.
+[P101] [word/document.xml] 6.2  Co musí záznam obsahovat
+[P102] [word/document.xml] Pro každý udělený souhlas musí být zaznamenáno:
+[P103] [word/document.xml] ID zákazníka (UUID, nikoli jméno — z důvodu minimalizace dat),
+[P104] [word/document.xml] typ souhlasu (např. 'marketing_email', 'gps', 'analytics'),
+[P105] [word/document.xml] stav souhlasu: udělen / odvolán (boolean),
+[P106] [word/document.xml] datum a čas udělení / odvolání souhlasu (timestamp s časovou zónou),
+[P107] [word/document.xml] verze textu souhlasu, se kterou zákazník souhlasil,
+[P108] [word/document.xml] způsob udělení (checkbox, API call, OS dialog),
+[P109] [word/document.xml] IP adresa a identifikátor zařízení (pseudonymizovaně),
+[P110] [word/document.xml] hash nebo plný text souhlasu platný v okamžiku udělení (SHA-256).
+[P111] [word/document.xml] 6.3  Technická implementace
+[P112] [word/document.xml] Consent Log musí být vedena jako samostatná tabulka v databázi s immutable záznamy — žádné UPDATE operace, pouze INSERT. Každá změna stavu souhlasu (udělení i odvolání) vytváří nový záznam. Tabulka musí být pravidelně zálohována a přístup k ní musí být auditován. Doporučujeme šifrování sloupců obsahujících IP adresy.
+[P113] [word/document.xml] CREATE TABLE consent_log (
+[P114] [word/document.xml] id                UUID         PRIMARY KEY DEFAULT gen_random_uuid(),
+[P115] [word/document.xml] user_id           UUID         NOT NULL REFERENCES users(id),
+[P116] [word/document.xml] consent_type      VARCHAR(64)  NOT NULL,   -- 'marketing_email', 'gps', 'analytics'
+[P117] [word/document.xml] granted           BOOLEAN      NOT NULL,   -- TRUE = udeleno, FALSE = odvolano
+[P118] [word/document.xml] consent_text_hash VARCHAR(64),             -- SHA-256 textu souhlasu
+[P119] [word/document.xml] consent_version   VARCHAR(16),             -- napr. '1.1'
+[P120] [word/document.xml] ip_address        INET,                    -- pseudonymizovano
+[P121] [word/document.xml] device_id         VARCHAR(128),
+[P122] [word/document.xml] method            VARCHAR(32),             -- 'checkbox', 'api', 'os_dialog'
+[P123] [word/document.xml] created_at        TIMESTAMPTZ  NOT NULL DEFAULT NOW()
+[P124] [word/document.xml] );
+[P125] [word/document.xml] -- Zakaz UPDATE (immutabilita zaznamu)
+[P126] [word/document.xml] CREATE RULE no_update_consent AS ON UPDATE TO consent_log DO INSTEAD NOTHING;
+[P127] [word/document.xml] VII.
+[P128] [word/document.xml] Odvolání souhlasu a mazání dat
+[P129] [word/document.xml] 7.1  Právo na odvolání
+[P130] [word/document.xml] Zákazník má právo kdykoli odvolat svůj souhlas, aniž by to mělo vliv na zákonnost zpracování před odvoláním (čl. 7 odst. 3 GDPR). Odvolání musí být stejně snadné jako udělení souhlasu. Cleansia je povinna odvolání zpracovat nejpozději do 30 dnů, doporučujeme technicky do 24 hodin.
+[P131] [word/document.xml] 7.2  Způsoby odvolání
+[P132] [word/document.xml] Cleansia musí zákazníkovi umožnit odvolat souhlas následujícími způsoby:
+[P133] [word/document.xml] V Aplikaci: Nastavení → Soukromí → příslušný přepínač,
+[P134] [word/document.xml] Klikem na odkaz v každém marketingovém e-mailu (unsubscribe link),
+[P135] [word/document.xml] Zasláním žádosti na [doplnit GDPR e-mail] — vyřízení do 30 dnů,
+[P136] [word/document.xml] V nastavení zařízení (pro GPS a push notifikace).
+[P137] [word/document.xml] 7.3  Mazání dat po odvolání
+[P138] [word/document.xml] Po odvolání souhlasu se zasíláním marketingu Cleansia přestane zasílat komunikaci nejpozději do 10 pracovních dnů (technicky doporučujeme do 24 hodin). Po odvolání souhlasu s analytickými cookies Cleansia přestane sledovat chování zákazníka od okamžiku odvolání. Odvolání neúčelového souhlasu nemá vliv na uživatelský účet ani možnost objednávat služby.
+[P139] [word/document.xml] 7.4  Právo na výmaz (right to be forgotten)
+[P140] [word/document.xml] Pokud zákazník požádá o úplné vymazání svého účtu a všech osobních údajů (čl. 17 GDPR), Cleansia je povinna toto provést do 30 dnů, pokud neexistuje zákonný důvod pro uchování (např. účetní povinnost 10 let pro faktury dle zákona č. 563/1991 Sb., o účetnictví). Zákazník musí být o průběhu a výsledku vymazání informován. Záznamy v Consent Logu musí být anonymizovány (nikoliv smazány — jsou důkazem zákonnosti zpracování).
+[P141] [word/document.xml] 7.5  Lhůty pro vyřízení žádostí subjektů údajů
+[P142] [word/document.xml] Cleansia je povinna reagovat na veškeré žádosti subjektů údajů dle kapitoly III. GDPR (přístup, oprava, výmaz, přenositelnost, omezení zpracování, námitka) do 30 dnů od obdržení žádosti. Tuto lhůtu lze ve složitých případech prodloužit o další 2 měsíce, přičemž zákazník musí být o prodloužení informován do 30 dnů od žádosti.
+[P143] [word/document.xml] VIII.
+[P144] [word/document.xml] Závěrečná ustanovení a kontrolní seznam
+[P145] [word/document.xml] Před spuštěním Aplikace a webu ověřit splnění všech níže uvedených bodů. Tento kontrolní seznam slouží jako podklad pro interní audit a případnou kontrolu ze strany ÚOOÚ.
+[P146] [word/document.xml] #
+[P147] [word/document.xml] Kontrolní bod
+[P148] [word/document.xml] Hotovo
+[P149] [word/document.xml] 1
+[P150] [word/document.xml] Registrační formulář má 2 povinné + 2 volitelné checkboxy (žádný předvyplněný)
+[P151] [word/document.xml] [ ]
+[P152] [word/document.xml] 2
+[P153] [word/document.xml] Texty checkboxů obsahují klikatelné odkazy na VOP a Privacy Policy
+[P154] [word/document.xml] [ ]
+[P155] [word/document.xml] 3
+[P156] [word/document.xml] Tlačítko 'Potvrdit objednávku' má nad sebou informační text o předání OÚ Zhotoviteli
+[P157] [word/document.xml] [ ]
+[P158] [word/document.xml] 4
+[P159] [word/document.xml] GPS dialog zobrazuje vlastní vysvětlující text před systémovým dialogem OS
+[P160] [word/document.xml] [ ]
+[P161] [word/document.xml] 5
+[P162] [word/document.xml] Všechny udělené souhlasy jsou logovány do Consent Log tabulky s časovým razítkem
+[P163] [word/document.xml] [ ]
+[P164] [word/document.xml] 6
+[P165] [word/document.xml] Sekce Nastavení → Soukromí obsahuje přepínače pro marketing, push notifikace a GPS
+[P166] [word/document.xml] [ ]
+[P167] [word/document.xml] 7
+[P168] [word/document.xml] Marketingové e-maily obsahují funkční odkaz pro odhlášení (unsubscribe)
+[P169] [word/document.xml] [ ]
+[P170] [word/document.xml] 8
+[P171] [word/document.xml] Po odvolání souhlasu je zpracování zastaveno max. do 10 pracovních dnů
+[P172] [word/document.xml] [ ]
+[P173] [word/document.xml] 9
+[P174] [word/document.xml] Implementován double opt-in pro marketingovou komunikaci
+[P175] [word/document.xml] [ ]
+[P176] [word/document.xml] 10
+[P177] [word/document.xml] Consent Log je immutable (žádné UPDATE, pouze INSERT)
+[P178] [word/document.xml] [ ]
+[P179] [word/document.xml] 11
+[P180] [word/document.xml] Záznamy souhlasů jsou uchovávány min. 3 roky po odvolání souhlasu
+[P181] [word/document.xml] [ ]
+[P182] [word/document.xml] 12
+[P183] [word/document.xml] Lhůty pro vyřízení žádostí subjektů údajů jsou nastaveny do 30 dnů
+[P184] [word/document.xml] [ ]
+[P185] [word/document.xml] 13
+[P186] [word/document.xml] Věkové ověření při registraci — zpracování OÚ dětí do 16 let pouze se souhlasem zákonného zástupce
+[P187] [word/document.xml] [ ]
+[P188] [word/document.xml] Tento dokument je účinný od [doplnit datum]. Verze 1.1.
+Za aktuálnost a soulad s platnou legislativou odpovídá: [doplnit jméno / funkci].
+Doporučujeme provést roční přezkum v reakci na aktualizace pokynů EDPB a rozhodnutí ÚOOÚ.
+[P189] [word/document.xml] Cleansia s.r.o.  |  IČO: [Doplnit]  |  GDPR kontakt: [Doplnit e-mail]  |  GDPR Souhlasy v1.1
+[P190] [word/footer1.xml] Verze 1.1  |  Cleansia s.r.o.  |  Interní dokument
+[P191] [word/header1.xml] CLEANSIA s.r.o.  |  GDPR Souhlasy Zákazníka  |  Implementační příručka

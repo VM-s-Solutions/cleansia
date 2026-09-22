@@ -108,6 +108,31 @@ describe('admin dialogs', () => {
     expect(offenders(/severity="(success|warn|info)"/, dialogTemplates)).toEqual([]);
   });
 
+  // The acts that cannot be undone: a wind-down date is set once and cancels every open order,
+  // an expiry writes off the whole balance, a rejection or cancellation closes the record.
+  it('put the primary of every irreversible act on the red outline', () => {
+    const destructive = ['wind-down-dialog.component.html', 'expire-credit-dialog.component.html', 'reject-dialog.component.html'];
+    const found = dialogTemplates.filter((file) => destructive.some((name) => file.endsWith(name)));
+    expect(found.map((file) => file.split(/[\\/]/).pop()).sort()).toEqual([...destructive].sort());
+
+    const offenders = found
+      .filter((file) => {
+        const html = read(file);
+        const footers = [
+          ...blocks(html, /<ng-template pTemplate="footer">/, '</ng-template>'),
+          ...blocks(html, /<div class="dialog-actions">/, '</div>'),
+        ];
+        return footers.some((footer) => {
+          const primary = blocks(footer, /<cleansia-button/, '/>').pop() ?? '';
+          return !/severity="danger"/.test(primary) || !/\[outlined\]="true"/.test(primary);
+        });
+      })
+      .map(rel)
+      .sort();
+
+    expect(offenders).toEqual([]);
+  });
+
   it('open every footer with the outlined cancel or close, the primary after it', () => {
     const offenders = dialogTemplates
       .filter((file) => {

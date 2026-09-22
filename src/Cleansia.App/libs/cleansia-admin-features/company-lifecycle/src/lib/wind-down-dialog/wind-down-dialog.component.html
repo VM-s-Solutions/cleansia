@@ -50,6 +50,8 @@
     <cleansia-button
       [label]="'pages.company_lifecycle.wind_down_dialog.submit' | translate"
       icon="pi pi-calendar-times"
+      severity="danger"
+      [outlined]="true"
       [disabled]="submitting()"
       [loading]="submitting()"
       (onClick)="submit()"

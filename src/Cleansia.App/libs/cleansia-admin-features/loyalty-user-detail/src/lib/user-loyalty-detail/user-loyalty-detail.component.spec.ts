@@ -17,7 +17,7 @@ import {
 } from '@cleansia/admin-services';
 import { TimelineComponent } from '@cleansia/admin-features/audit-log';
 import { PermissionService, SnackbarService } from '@cleansia/services';
-import { TranslateModule } from '@ngx-translate/core';
+import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { of, throwError } from 'rxjs';
 import { ExpireCreditDialogComponent } from '../expire-credit-dialog/expire-credit-dialog.component';
 import { GrantPointsDialogComponent } from '../grant-points-dialog/grant-points-dialog.component';
@@ -183,6 +183,7 @@ describe('UserLoyaltyDetailComponent — credit section', () => {
       currencyId: 'cur-eur',
       ledger: [],
     });
+    TestBed.inject(TranslateService).use('cs');
     const fixture = renderFixture(
       GetUserCreditResponse.fromJS({
         userId: 'user-1',
@@ -214,6 +215,7 @@ describe('UserLoyaltyDetailComponent — credit section', () => {
     // The lede names the balance in the words the ledger above it prints, so the two never disagree.
     const facade = fixture.debugElement.injector.get(UserLoyaltyDetailFacade);
     expect(dialog.balanceLabel()).toBe(facade.formatBalance(25, 'EUR'));
+    expect(dialog.balanceLabel()).toBe('25,00\u00a0€');
 
     fixture.componentInstance.onExpireCreditDialogVisibleChange(false);
     expect(fixture.componentInstance.expireCreditAccount()).toBeNull();

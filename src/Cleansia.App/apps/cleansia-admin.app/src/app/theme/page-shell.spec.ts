@@ -52,7 +52,7 @@ function blocks(scss: string, selector: RegExp): Block[] {
 }
 
 // A phone media query may stack a row and let its buttons fill it; the desktop rules may not.
-function withoutMediaQueries(scss: string): string {
+function withoutMediaQueryBlocks(scss: string): string {
   let out = scss;
   let match: RegExpExecArray | null;
   while ((match = /@media[^{]*\{/.exec(out)) !== null) {
@@ -112,7 +112,7 @@ describe('admin page shell', () => {
   it('lets no page stretch a button to the row outside a phone media query', () => {
     const offenders = adminPageStylesheets()
       .filter(({ scss }) =>
-        blocks(withoutMediaQueries(scss), /cleansia-button|\.cleansia-button/).some(({ body }) => /(min-)?width:\s*100%/.test(body))
+        blocks(withoutMediaQueryBlocks(scss), /cleansia-button|\.cleansia-button/).some(({ body }) => /(min-)?width:\s*100%/.test(body))
       )
       .map(({ name }) => name);
 

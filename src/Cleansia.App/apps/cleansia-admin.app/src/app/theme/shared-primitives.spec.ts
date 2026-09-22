@@ -26,10 +26,11 @@ const ADMIN_PAGES_DIR = join(STYLES_DIR, 'pages/cleansia-admin');
 
 // The one amount still printed with toFixed: the membership plan price, "199.00 CZK" where the
 // ledger prints "199,00 Kč". It reads formatMoney once its list ticket lands; until then it is
-// named here so the rule holds everywhere else.
-const AMOUNT_BYPASS_TOLERATED = new Set([
+// named here so the rule holds everywhere else, and the rule reads it back so the entry cannot
+// outlive the bypass.
+const AMOUNT_BYPASS_TOLERATED = [
   'libs/cleansia-admin-features/membership-plan-management/src/lib/membership-plan-list/membership-plan-list.models.ts',
-]);
+];
 
 function walk(dir: string, pattern: RegExp, out: string[] = []): string[] {
   for (const name of readdirSync(dir)) {
@@ -83,9 +84,7 @@ describe('admin dates', () => {
 
 describe('admin money', () => {
   it('print through formatMoney in the row currency — no toFixed on an amount, no en-GB pin', () => {
-    const amounts = [...sources, ...templates].filter((file) => !AMOUNT_BYPASS_TOLERATED.has(rel(file)));
-    expect(offenders(/\.toFixed\(2\)/, amounts)).toEqual([]);
+    expect(offenders(/\.toFixed\(2\)/, [...sources, ...templates])).toEqual(AMOUNT_BYPASS_TOLERATED);
     expect(offenders(/Intl\.NumberFormat\(\s*['"]en-GB['"]/, sources)).toEqual([]);
-    expect([...AMOUNT_BYPASS_TOLERATED].filter((path) => !existsSync(join(APP_DIR, path)))).toEqual([]);
   });
 });

@@ -20,6 +20,8 @@ import { fileURLToPath } from "node:url";
 
 const REPO = join(fileURLToPath(import.meta.url), "..", "..", "..");
 const TOOL = join(REPO, "agents", "tools", "check-consistency.mjs");
+// The finding lines only: the `consistency:` summary names every advisory rule in its tally.
+const findingLines = (out) => out.split(/\r?\n/).filter((l) => !l.startsWith("consistency:"));
 
 // Run the checker over a single fixture file and return { code, out, b10 }.
 function run(fixtureBody) {
@@ -286,7 +288,7 @@ function runKt(code, fileName = "Fixture.kt") {
             rc = e.status ?? 1;
             out = (e.stdout ?? "") + (e.stderr ?? "");
         }
-        return { code: rc, out, e9: out.split(/\r?\n/).filter((l) => /\bE9\b/.test(l)) };
+        return { code: rc, out, e9: findingLines(out).filter((l) => /\bE9\b/.test(l)) };
     } finally {
         rmSync(root, { recursive: true, force: true });
     }
@@ -580,7 +582,7 @@ class SomeEventBus @Inject constructor() {
 // `data class *UiState`: nine hits in the tree, one defensible. These four pin both halves — that it
 // still catches the shape it exists for, and that each exemption is the one the corpus forced.
 const linesFor = (r, rule) =>
-    r.out.split(/\r?\n/).filter((l) => new RegExp(`\\b${rule}\\b`).test(l));
+    findingLines(r.out).filter((l) => new RegExp(`\\b${rule}\\b`).test(l));
 
 test("E1 flags a genuine phase bag (one in-flight flag + error + data)", () => {
     const r = runKt(`package x
@@ -951,7 +953,17 @@ test("the F-rules skip the customer app and its feature libs", () => {
         // Something in scope, so the run is not an empty --paths non-run.
         [ADMIN_TS]: `export class ThingComponent {}`,
     });
-    assert.equal(r.out.split(/\r?\n/).filter((l) => /\bF\d+\b/.test(l)).length, 0, `expected no F findings, got: ${r.out}`);
+    assert.equal(findingLines(r.out).filter((l) => /\bF\d+\b/.test(l)).length, 0, `expected no F findings, got: ${r.out}`);
+    assert.equal(r.code, 0);
+});
+
+test("the advisory summary tallies the findings per rule — the baseline a sweep flips at", () => {
+    const r = runF({
+        [ADMIN_TPL]: `${PAGE}\n<button type="button">x</button>\n<cleansia-button (clickFn)="go()" [title]="'t'" />`,
+        [ADMIN_TS]: `export class ThingComponent {}`,
+        [ADMIN_PAGE_SCSS]: `.x { border-radius: 7px; }`,
+    });
+    assert.match(r.out, /^consistency: 4 advisory warning\(s\) \(non-blocking\) — F1 1, F6 2, F10 1$/m, r.out);
     assert.equal(r.code, 0);
 });
 

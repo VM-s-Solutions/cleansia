@@ -25,7 +25,8 @@
  * below are the line-scannable complement to those specs: the same conventions, over every
  * template, stylesheet and locale bundle, without a jest boot. A rule whose default-root count is
  * zero is a hard gate (`add`); one that still has sites is advisory (`warn`) and names its measured
- * count so the next sweep can flip it once the count reaches zero.
+ * count so the next sweep can flip it once the count reaches zero — the advisory summary line
+ * prints that count per rule, so the baseline is read from the run, not from the comment.
  */
 import { readFileSync, readdirSync, statSync } from "node:fs";
 import { isAbsolute, join, relative, resolve, sep } from "node:path";
@@ -51,10 +52,13 @@ const add = (file, line, rule, msg) =>
 // Advisory (warn-only) findings — heuristics that can't be a hard gate (e.g. E9, which needs a
 // type-graph the line-scanner lacks). These NEVER set the exit code; they print so the Reviewer looks.
 const advisories = [];
-const warn = (file, line, rule, msg) =>
+const advisoryCounts = new Map();
+const warn = (file, line, rule, msg) => {
     advisories.push(
         `${relative(REPO, file).split(sep).join("/")}:${line}  ${rule}  ${msg}`,
     );
+    advisoryCounts.set(rule, (advisoryCounts.get(rule) ?? 0) + 1);
+};
 
 function walk(
     dir,
@@ -841,7 +845,7 @@ function checkFrontendSurface(roots) {
         for (const m of text.matchAll(/var\((--cleansia-[\w-]+)/g))
             if (!declared.has(m[1]))
                 add(f, lineOf(text, m.index), "F9", `${m[1]} is read but declared nowhere — add it to common/variables.scss`);
-        // F10 — the radius scale and the colour of a shadow. ADVISORY — 176 off-scale radii and 6
+        // F10 — the radius scale and the colour of a shadow. ADVISORY — 77 off-scale radii and 6
         // primary-tinted shadows on 2026-09-22; flip to `add` at zero. A `0 0 0 Npx` spread with no
         // blur is a focus ring, not a glow.
         for (const m of text.matchAll(/border-radius:\s*([^;!]+?)\s*(?:!important)?;/g)) {
@@ -939,7 +943,11 @@ if (onlyStacks.includes("mobile"))
     scanned += checkMobile(custom || DEFAULTS.mobile);
 
 if (advisories.length) {
-    console.log(`consistency: ${advisories.length} advisory warning(s) (non-blocking)`);
+    const tally = [...advisoryCounts]
+        .sort(([a], [b]) => a.localeCompare(b, undefined, { numeric: true }))
+        .map(([rule, n]) => `${rule} ${n}`)
+        .join(", ");
+    console.log(`consistency: ${advisories.length} advisory warning(s) (non-blocking) — ${tally}`);
     for (const w of advisories.sort()) console.log("  " + w);
 }
 // Explicit --paths that matched nothing is a non-run, not a pass: the caller asked for specific

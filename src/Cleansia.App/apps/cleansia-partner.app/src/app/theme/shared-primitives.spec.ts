@@ -26,11 +26,11 @@ const PARTNER_PAGES_DIR = join(APP_DIR, 'libs/shared/assets/src/styles/pages/cle
 // The one date still printed through DatePipe: the work-contract version line's effective day,
 // "21.09.2026" in every language where the admin dialog prints "21. 9. 2026". It reads
 // formatDate(…, 'utcDate') once its dialog ticket lands; until then it is named here so the rule
-// holds everywhere else.
-const DATE_PIPE_TOLERATED = new Set([
+// holds everywhere else, and the rule reads it back so the entry cannot outlive the bypass.
+const DATE_PIPE_TOLERATED = [
   'libs/cleansia-partner-features/orders/src/lib/components/work-contract-dialog/work-contract-dialog.component.html',
   'libs/cleansia-partner-features/orders/src/lib/components/work-contract-dialog/work-contract-dialog.component.ts',
-]);
+];
 
 function walk(dir: string, pattern: RegExp, out: string[] = []): string[] {
   for (const name of readdirSync(dir)) {
@@ -71,9 +71,7 @@ describe('partner status badge', () => {
 describe('partner dates', () => {
   it('print through formatDate in the session language — no toLocale call, no DatePipe pattern', () => {
     expect(offenders(/\.toLocale(Date)?String\(/, [...sources, ...templates])).toEqual([]);
-    const dates = [...sources, ...templates].filter((file) => !DATE_PIPE_TOLERATED.has(rel(file)));
-    expect(offenders(/\bDatePipe\b|\|\s*date\s*:/, dates)).toEqual([]);
-    expect([...DATE_PIPE_TOLERATED].filter((path) => !existsSync(join(APP_DIR, path)))).toEqual([]);
+    expect(offenders(/\bDatePipe\b|\|\s*date\s*:/, [...sources, ...templates])).toEqual(DATE_PIPE_TOLERATED);
   });
 });
 

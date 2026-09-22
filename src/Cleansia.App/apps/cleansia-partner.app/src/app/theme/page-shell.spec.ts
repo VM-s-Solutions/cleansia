@@ -48,7 +48,12 @@ function blocks(scss: string, selector: RegExp): Block[] {
   return found;
 }
 
-function withoutMediaQueries(scss: string): string {
+// The viewport header is not a card width; the rules inside the query still are.
+function withoutMediaQueryHeaders(scss: string): string {
+  return scss.replace(/@media[^{]*\{/g, '{');
+}
+
+function withoutMediaQueryBlocks(scss: string): string {
   let out = scss;
   let match: RegExpExecArray | null;
   while ((match = /@media[^{]*\{/.exec(out)) !== null) {
@@ -67,7 +72,7 @@ function withoutMediaQueries(scss: string): string {
 describe('partner page shell', () => {
   it('declares the card width once, in the shared page wrapper', () => {
     const offenders = partnerPageStylesheets()
-      .filter(({ scss }) => /max-width:\s*1[0-9]{3}px/.test(withoutMediaQueries(scss)))
+      .filter(({ scss }) => /max-width:\s*1[0-9]{3}px/.test(withoutMediaQueryHeaders(scss)))
       .map(({ name }) => name);
 
     expect(offenders).toEqual([]);
@@ -76,7 +81,7 @@ describe('partner page shell', () => {
   it('lets no page stretch a button to the row outside a phone media query', () => {
     const offenders = partnerPageStylesheets()
       .filter(({ scss }) =>
-        blocks(withoutMediaQueries(scss), /cleansia-button|\.cleansia-button/).some(({ body }) => /(min-)?width:\s*100%/.test(body))
+        blocks(withoutMediaQueryBlocks(scss), /cleansia-button|\.cleansia-button/).some(({ body }) => /(min-)?width:\s*100%/.test(body))
       )
       .map(({ name }) => name);
 

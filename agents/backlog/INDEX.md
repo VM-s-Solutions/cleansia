@@ -335,6 +335,14 @@
 > thirteen are in `questions/open.md` with their defaults and on the owner plate. The DEV drop the
 > regen owes is recorded at the deploy (MS-2 shape), not run on the branch.
 >
+> **Merged 2026-09-22.** PR #255 (`fix/remove-membership-free-trial`, twelve programmes) went into `master` as
+> `96f38aa9`, PR #260 (`chore/ui-polish-and-dead-code`, the batch below) as `cd73566b`, in that order; both
+> branches are deleted. Every row above or below that reads *not yet merged* against one of those two
+> branches is merged as of that date — the rows are not rewritten one by one, this note is the record.
+> One commit rode along that no row owns: `34ba1233` (test only) joins the field-labels read in the Android
+> `IdentificationSectionViewModelTest` so a `Dispatchers.IO` hop no longer resumes on a reset `Main` and fails
+> the next test with `UncaughtExceptionsBeforeTest` (plate F67).
+>
 > **T-0785–T-0799 shipped 2026-09-20 … 2026-09-22 on PR #260** (stacked on #255; the commits are in
 > the rows; the head is the docs commit that closes T-0799). Phase 1 ran as planned, with the
 > customer-mobile dispute evidence fixes (`f4f598ed8`, `291731c03`, `2f8fe2d67` — an owner request,

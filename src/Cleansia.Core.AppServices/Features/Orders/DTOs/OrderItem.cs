@@ -50,7 +50,6 @@ public record OrderItem(
     DateTime? CompletedAt,
     string? CompletionNotes,
     Code OrderStatus,
-    string ConfirmationCode,
     string? Notes,
     string? SpecialInstructions,
     string? AccessInstructions,

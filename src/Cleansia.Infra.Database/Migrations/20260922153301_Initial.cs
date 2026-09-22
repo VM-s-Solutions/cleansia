@@ -2249,6 +2249,41 @@ namespace Cleansia.Infra.Database.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "GuestOrderAccessTokens",
+                columns: table => new
+                {
+                    Id = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
+                    OrderId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
+                    TokenHash = table.Column<string>(type: "character varying(64)", maxLength: 64, nullable: false),
+                    ExpiresOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
+                    RevokedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    IsActive = table.Column<bool>(type: "boolean", nullable: false),
+                    CreatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
+                    CreatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
+                    UpdatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
+                    UpdatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    DeactivatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
+                    DeactivatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_GuestOrderAccessTokens", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_GuestOrderAccessTokens_Orders_OrderId",
+                        column: x => x.OrderId,
+                        principalTable: "Orders",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_GuestOrderAccessTokens_Tenants_TenantId",
+                        column: x => x.TenantId,
+                        principalTable: "Tenants",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "LoyaltyTransactions",
                 columns: table => new
                 {
@@ -3729,6 +3764,22 @@ namespace Cleansia.Infra.Database.Migrations
                 column: "UserId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_GuestOrderAccessTokens_OrderId_RevokedOn",
+                table: "GuestOrderAccessTokens",
+                columns: new[] { "OrderId", "RevokedOn" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_GuestOrderAccessTokens_TenantId",
+                table: "GuestOrderAccessTokens",
+                column: "TenantId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_GuestOrderAccessTokens_TokenHash",
+                table: "GuestOrderAccessTokens",
+                column: "TokenHash",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
                 name: "IX_LegalDocuments_Audience_Type_CountryId_Version",
                 table: "LegalDocuments",
                 columns: new[] { "Audience", "Type", "CountryId", "Version" },
@@ -4750,6 +4801,9 @@ namespace Cleansia.Infra.Database.Migrations
 
             migrationBuilder.DropTable(
                 name: "GdprRequests");
+
+            migrationBuilder.DropTable(
+                name: "GuestOrderAccessTokens");
 
             migrationBuilder.DropTable(
                 name: "LiveActivityTokens");

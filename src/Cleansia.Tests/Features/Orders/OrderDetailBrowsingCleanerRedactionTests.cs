@@ -146,14 +146,6 @@ public class OrderDetailBrowsingCleanerRedactionTests
     }
 
     [Fact]
-    public async Task Browsing_Cleaner_Gets_No_Confirmation_Code()
-    {
-        var detail = await BrowsingCleanerDetailAsync();
-
-        Assert.Equal(string.Empty, detail.ConfirmationCode);
-    }
-
-    [Fact]
     public async Task Browsing_Cleaner_Gets_No_Receipt_Number()
     {
         var detail = await BrowsingCleanerDetailAsync();
@@ -227,7 +219,6 @@ public class OrderDetailBrowsingCleanerRedactionTests
         Assert.Equal(SpecialInstructions, detail.SpecialInstructions);
         Assert.Equal(CustomerNotes, detail.Notes);
         Assert.Equal(CompletionNotes, detail.CompletionNotes);
-        Assert.NotEmpty(detail.ConfirmationCode);
         Assert.Equal(ReceiptNumber, detail.ReceiptNumber);
         Assert.Single(detail.OrderNotes, n => n.Content == NoteContent);
         Assert.Single(detail.OrderIssues, i => i.Description == IssueDescription);

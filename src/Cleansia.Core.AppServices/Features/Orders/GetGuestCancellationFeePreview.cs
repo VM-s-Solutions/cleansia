@@ -10,7 +10,7 @@ namespace Cleansia.Core.AppServices.Features.Orders;
 
 public class GetGuestCancellationFeePreview
 {
-    public record Query(string DisplayOrderNumber, string Email, string ConfirmationCode)
+    public record Query(string AccessToken)
         : IQuery<GetCancellationFeePreview.Response>, IGuestOrderScopedRequest
     {
         string? IOperatorScopedRequest.CountryId => null;
@@ -20,9 +20,7 @@ public class GetGuestCancellationFeePreview
     {
         public Validator()
         {
-            RuleFor(x => x.DisplayOrderNumber).NotEmpty().WithMessage(BusinessErrorMessage.Required);
-            RuleFor(x => x.Email).NotEmpty().WithMessage(BusinessErrorMessage.Required);
-            RuleFor(x => x.ConfirmationCode).NotEmpty().WithMessage(BusinessErrorMessage.Required);
+            RuleFor(x => x.AccessToken).NotEmpty().WithMessage(BusinessErrorMessage.Required);
         }
     }
 
@@ -44,13 +42,13 @@ public class GetGuestCancellationFeePreview
             if (order is null)
             {
                 return BusinessResult.Failure<GetCancellationFeePreview.Response>(
-                    new Error(nameof(query.DisplayOrderNumber), BusinessErrorMessage.OrderNotFound));
+                    new Error(nameof(query.AccessToken), BusinessErrorMessage.OrderNotFound));
             }
 
             if (CancellationAssessor.BlockedReason(order) is { } blockedReason)
             {
                 return BusinessResult.Failure<GetCancellationFeePreview.Response>(
-                    new Error(nameof(query.DisplayOrderNumber), blockedReason));
+                    new Error(nameof(query.AccessToken), blockedReason));
             }
 
             var policy = await cancellationPolicyResolver.ResolveForUserAsync(null, cancellationToken);

@@ -54,7 +54,6 @@ public static class OrderMappers
             o.CreditAppliedAmount,
             o.EstimatedTime,
             o.CurrentStatus,
-            o.ConfirmationCode,
             o.CurrencyId,
             new OrderListCurrencyRow(
                 o.Currency!.Id,
@@ -123,7 +122,6 @@ public static class OrderMappers
             AmountDueOnCard: row.TotalPrice - row.CreditAppliedAmount,
             EstimatedTime: row.EstimatedTime,
             OrderStatus: row.OrderStatus.MapToCode(),
-            ConfirmationCode: row.ConfirmationCode,
             SelectedPackages: row.SelectedPackages.Select(p => new PackageListItem(
                 Id: p.Id,
                 Name: p.Name,
@@ -204,7 +202,6 @@ public static class OrderMappers
             AmountDueOnCard: order.AmountDueOnCard,
             EstimatedTime: order.EstimatedTime,
             OrderStatus: order.GetCurrentOrderStatus().MapToCode(),
-            ConfirmationCode: order.ConfirmationCode,
             SelectedPackages: order.SelectedPackages.Select(op => op.Package.MapToDto(op.LineTotal, order.Currency!.Code)),
             CurrencyId: order.CurrencyId,
             Currency: order.Currency!.MapToDto(),
@@ -272,7 +269,6 @@ public static class OrderMappers
             CompletedAt: order.CompletedAt,
             CompletionNotes: order.CompletionNotes,
             OrderStatus: order.GetCurrentOrderStatus().MapToCode(),
-            ConfirmationCode: order.ConfirmationCode,
             Notes: order.Notes,
             SpecialInstructions: order.SpecialInstructions,
             AccessInstructions: order.AccessInstructions,

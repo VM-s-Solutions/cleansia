@@ -2,6 +2,7 @@ using System.Text.Json;
 using System.Text.RegularExpressions;
 using Cleansia.Core.Queue.Abstractions;
 using Cleansia.Core.Queue.Abstractions.Messages;
+using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.AppServices.Tenancy;
 using Cleansia.Core.Domain.Enums;
@@ -19,6 +20,7 @@ public class GenerateReceiptHandler(
     IOrderRepository orderRepository,
     IReceiptService receiptService,
     IEmailService emailService,
+    GuestOrderAccessTokenIssuer guestAccessTokenIssuer,
     ICountryConfigurationRepository countryConfigurationRepository,
     IUnitOfWork unitOfWork,
     ITenantProvider tenantProvider,
@@ -139,6 +141,11 @@ public class GenerateReceiptHandler(
             // committed claim above, so the authority is never registered twice for this OrderId.
             await receiptService.RealizeFiscalAndPdfAsync(order, receipt, message.LanguageCode, ct);
 
+            // The guest's booking credential, minted in the one place their confirmation e-mail is
+            // composed, and staged so the commit below makes it durable BEFORE the send: a crash after
+            // the send can then never leave an e-mailed token with no row behind it.
+            var guestAccessToken = await guestAccessTokenIssuer.IssueForGuestAsync(order, ct);
+
             // Persist the fiscal stamp (FiscalCode / failure markers) written during realize. The dedup
             // is already secured by the claim commit; this second commit records the fiscal result.
             await unitOfWork.CommitAsync(ct);
@@ -165,7 +172,8 @@ public class GenerateReceiptHandler(
             logger.LogInformation("Receipt PDF downloaded ({Size} bytes), sending email...", pdfBytes.Length);
 
             var emailMessageId = await emailService.SendOrderReceiptEmailAsync(
-                order.CustomerEmail, order, pdfBytes, receipt.FileName, message.LanguageCode, ct);
+                order.CustomerEmail, order, pdfBytes, receipt.FileName, message.LanguageCode, ct,
+                guestAccessToken);
 
             // Best-effort metadata stamp. The dedup is already secured by the claim commit above; this
             // commit only records the provider message id for observability and never re-opens the

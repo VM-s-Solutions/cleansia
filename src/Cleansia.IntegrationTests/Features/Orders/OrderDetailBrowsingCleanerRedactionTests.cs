@@ -66,7 +66,6 @@ public class OrderDetailBrowsingCleanerRedactionTests(PostgresContainerFixture f
     private const string SpecialInstructions = "Use the eco products under the sink.";
     private const string CustomerNotes = "Cat is friendly.";
     private const string CompletionNotes = "Balcony door was jammed.";
-    private const string ConfirmationCode = "H-SECRET-4242";
     private const string LiveReceiptNumber = "CZ-2026-000123";
     private const string FinishedReceiptNumber = "CZ-2026-000124";
     private const string NoteContent = "Second bathroom needed a re-do.";
@@ -97,7 +96,6 @@ public class OrderDetailBrowsingCleanerRedactionTests(PostgresContainerFixture f
                 Assert.Equal(string.Empty, detail.CustomerEmail);
                 Assert.Equal(string.Empty, detail.CustomerPhone);
                 Assert.Null(detail.Address);
-                Assert.Equal(string.Empty, detail.ConfirmationCode);
                 Assert.Null(detail.AccessInstructions);
                 Assert.Null(detail.SpecialInstructions);
                 Assert.Null(detail.Notes);
@@ -152,7 +150,6 @@ public class OrderDetailBrowsingCleanerRedactionTests(PostgresContainerFixture f
                 Assert.Equal(Latitude, detail.Address.Latitude);
                 Assert.Equal(Longitude, detail.Address.Longitude);
                 Assert.Equal(ApproximateAddress, detail.CustomerAddressApproximate);
-                Assert.Equal(ConfirmationCode, detail.ConfirmationCode);
                 Assert.Equal(AccessInstructions, detail.AccessInstructions);
                 Assert.Equal(SpecialInstructions, detail.SpecialInstructions);
                 Assert.Equal(CustomerNotes, detail.Notes);
@@ -322,7 +319,6 @@ public class OrderDetailBrowsingCleanerRedactionTests(PostgresContainerFixture f
         // Two required seats, no spare — the cap that leaves seat two open after A takes it alone.
         order.CalculateRequiredEmployees(BookingPolicy.SpareSeatsPerOrder);
 
-        typeof(Order).GetProperty(nameof(Order.ConfirmationCode))!.SetValue(order, ConfirmationCode);
         typeof(Order).GetProperty(nameof(Order.Notes))!.SetValue(order, CustomerNotes);
 
         order.AddAssignedEmployee(OrderEmployee.Create(order, cleanerA));

@@ -1,4 +1,5 @@
 using Cleansia.Core.AppServices.Common;
+using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.SeedWork;
@@ -13,6 +14,7 @@ public sealed class FiscalRetryService(
     ICountryConfigurationRepository countryConfigurationRepository,
     IReceiptService receiptService,
     IEmailService emailService,
+    GuestOrderAccessTokenIssuer guestAccessTokenIssuer,
     IUnitOfWork unitOfWork,
     ITenantProvider tenantProvider,
     ILogger<FiscalRetryService> logger)
@@ -78,10 +80,12 @@ public sealed class FiscalRetryService(
                         // unmarked (which would re-send). The accepted residual is a rare lost email on a
                         // crash between this claim commit and the send.
                         receipt.ClaimEmailSend();
+                        var guestAccessToken = await guestAccessTokenIssuer.IssueForGuestAsync(order, cancellationToken);
                         await unitOfWork.CommitAsync(cancellationToken);
 
                         var messageId = await emailService.SendOrderReceiptEmailAsync(
-                            order.CustomerEmail, order, pdfBytes, receipt.FileName, languageCode, cancellationToken);
+                            order.CustomerEmail, order, pdfBytes, receipt.FileName, languageCode, cancellationToken,
+                            guestAccessToken);
 
                         // Best-effort metadata stamp. The at-most-once guarantee is already secured by the
                         // committed claim above; this records the provider message id for observability.

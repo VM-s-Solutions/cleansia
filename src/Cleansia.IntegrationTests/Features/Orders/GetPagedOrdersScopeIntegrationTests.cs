@@ -48,7 +48,6 @@ public class GetPagedOrdersScopeIntegrationTests(PostgresContainerFixture fixtur
     private const string AssignedToAOrderId = "order-assigned-a-gpscope";
     private const string AvailableOrderId = "order-available-gpscope";
 
-    private const string ConfidentialConfirmationCode = "B-SECRET-9999";
     private const double SecretLatitude = 50.073658;
     private const double SecretLongitude = 14.418540;
 
@@ -73,8 +72,7 @@ public class GetPagedOrdersScopeIntegrationTests(PostgresContainerFixture fixtur
                 // The whole point: B's exclusive (assigned-to-B, no-spot) order never appears for A.
                 Assert.DoesNotContain(rows, r => r.Id == AssignedToBOrderId);
 
-                // And the leak channels are gone — no row carries B's coordinates or confirmation code.
-                Assert.DoesNotContain(rows, r => r.ConfirmationCode == ConfidentialConfirmationCode);
+                // And the leak channel is gone — no row carries B's coordinates.
                 Assert.DoesNotContain(rows, r =>
                     r.CustomerAddressLatitude == SecretLatitude || r.CustomerAddressLongitude == SecretLongitude);
 
@@ -130,9 +128,8 @@ public class GetPagedOrdersScopeIntegrationTests(PostgresContainerFixture fixtur
                 var available = Assert.Single(rows, r => r.Id == AvailableOrderId);
                 Assert.DoesNotContain(rows, r => r.Id == AssignedToBOrderId);
 
-                // Pre-accept: full PII + exact coords + confirmation code hidden; coarse area still shown.
+                // Pre-accept: full PII + exact coords hidden; coarse area still shown.
                 Assert.Equal(string.Empty, available.CustomerName);
-                Assert.Equal(string.Empty, available.ConfirmationCode);
                 Assert.Null(available.CustomerAddressLatitude);
                 Assert.Null(available.CustomerAddressLongitude);
                 Assert.NotEqual(string.Empty, available.CustomerAddressApproximate);
@@ -159,7 +156,6 @@ public class GetPagedOrdersScopeIntegrationTests(PostgresContainerFixture fixtur
                 var rows = page.Data!.ToList();
                 var bRow = Assert.Single(rows, r => r.Id == AssignedToBOrderId);
                 // Admin keeps the full read — its policy already permits cross-employee access.
-                Assert.Equal(ConfidentialConfirmationCode, bRow.ConfirmationCode);
                 Assert.Equal(SecretLatitude, bRow.CustomerAddressLatitude);
                 return Task.CompletedTask;
             });
@@ -300,13 +296,6 @@ public class GetPagedOrdersScopeIntegrationTests(PostgresContainerFixture fixtur
             paymentStatus: PaymentStatus.Paid);
         order.Id = orderId;
         order.Created(Constants.TestUserSession.TestUserName, DateTime.UtcNow);
-
-        if (withSecretCoords)
-        {
-            typeof(Order)
-                .GetProperty(nameof(Order.ConfirmationCode))!
-                .SetValue(order, ConfidentialConfirmationCode);
-        }
 
         order.AddOrderStatus(OrderStatusTrack.Create(status, order));
         return order;

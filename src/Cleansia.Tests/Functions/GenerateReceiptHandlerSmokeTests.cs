@@ -8,6 +8,8 @@ using Cleansia.Core.AppServices.Tenancy;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using Microsoft.Extensions.DependencyInjection;
+using Cleansia.Core.AppServices.Features.Orders;
+using Cleansia.Tests.Infrastructure;
 
 namespace Cleansia.Tests.Functions;
 
@@ -36,6 +38,7 @@ public class GenerateReceiptHandlerSmokeTests
         _orderRepository.Object,
         _receiptService.Object,
         _emailService.Object,
+        TestGuestOrderAccessTokenIssuer.WithNoLiveTokens(),
         _countryConfigurationRepository.Object,
         _unitOfWork.Object,
         _tenantProvider.Object,

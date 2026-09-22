@@ -33,7 +33,6 @@ public sealed record OrderListRow(
     decimal CreditAppliedAmount,
     int EstimatedTime,
     OrderStatus OrderStatus,
-    string ConfirmationCode,
     string CurrencyId,
     OrderListCurrencyRow Currency,
     List<OrderListPackageRow> SelectedPackages,

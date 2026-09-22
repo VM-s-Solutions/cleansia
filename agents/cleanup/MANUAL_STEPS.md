@@ -116,7 +116,17 @@ regenerated `Initial` once more as **`20260920204705`**: `Employees.Availability
 dropped, the three `Cart*` tables and `EmailTranslations` dropped, `MembershipPlans.TrialPeriodDays` dropped (the
 owner's Q-UI-01/02 rulings); the table count is now **84** and 48 carry the `Tenants` FK. The integration suite ran
 in full locally (Docker up) and green.
-**The one owed drop belongs to `20260920204705`**: a DEV database whose
+The guest access re-key (phase 1 of `agents/FIX-PLAN-2026-09-22.md`, branch `fix/audit-findings-2026-09-22`,
+2026-09-22 — finding F69) regenerated `Initial` once more as **`20260922153301`**: one new table,
+`GuestOrderAccessTokens` (`OrderId`, `TokenHash`, `ExpiresOn`, `RevokedOn` + the audit stamps and
+`TenantId` NOT NULL), with `IX_GuestOrderAccessTokens_TokenHash` **unique**,
+`IX_GuestOrderAccessTokens_OrderId_RevokedOn`, `IX_GuestOrderAccessTokens_TenantId` and FKs `Orders`
+(Cascade) and `Tenants` (Restrict). The body diff against `20260920204705` is exactly that table, its
+two FKs and its three indexes and nothing else; the table count is now **85** and **49** carry the
+`Tenants` FK. All three backend suites ran locally and green (6278 / 559 / 347), the integration one
+against a real Postgres built from this migration.
+
+**The one owed drop belongs to `20260922153301`**: a DEV database whose
 `__EFMigrationsHistory` records any earlier id replays the whole create script against tables that
 already exist. The legal texts need no extra step — every host seeds them at start, and since
 `b34dff07` a fresh Development database is seeded once more in the boot that migrates it (the factory

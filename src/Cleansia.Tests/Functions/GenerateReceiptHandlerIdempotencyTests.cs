@@ -15,6 +15,8 @@ using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using Microsoft.Extensions.DependencyInjection;
+using Cleansia.Core.AppServices.Features.Orders;
+using Cleansia.Tests.Infrastructure;
 
 namespace Cleansia.Tests.Functions;
 
@@ -64,6 +66,7 @@ public class GenerateReceiptHandlerIdempotencyTests
         _orderRepository.Object,
         _receiptService.Object,
         _emailService.Object,
+        TestGuestOrderAccessTokenIssuer.WithNoLiveTokens(),
         _countryConfigurationRepository.Object,
         _unitOfWork.Object,
         _tenantProvider.Object,
@@ -146,7 +149,7 @@ public class GenerateReceiptHandlerIdempotencyTests
         _emailService
             .Setup(s => s.SendOrderReceiptEmailAsync(
                 order.CustomerEmail, order, It.IsAny<byte[]?>(), It.IsAny<string>(),
-                LanguageCode, It.IsAny<CancellationToken>()))
+                LanguageCode, It.IsAny<CancellationToken>(), It.IsAny<string?>()))
             .ReturnsAsync("email-msg-id");
 
         return (order, receipt);
@@ -171,7 +174,7 @@ public class GenerateReceiptHandlerIdempotencyTests
         _emailService.Verify(
             s => s.SendOrderReceiptEmailAsync(
                 It.IsAny<string>(), It.IsAny<Order>(), It.IsAny<byte[]?>(), It.IsAny<string>(),
-                It.IsAny<string>(), It.IsAny<CancellationToken>()),
+                It.IsAny<string>(), It.IsAny<CancellationToken>(), It.IsAny<string?>()),
             Times.Once);
     }
 
@@ -192,7 +195,7 @@ public class GenerateReceiptHandlerIdempotencyTests
         _emailService.Verify(
             s => s.SendOrderReceiptEmailAsync(
                 It.IsAny<string>(), It.IsAny<Order>(), It.IsAny<byte[]?>(), It.IsAny<string>(),
-                It.IsAny<string>(), It.IsAny<CancellationToken>()),
+                It.IsAny<string>(), It.IsAny<CancellationToken>(), It.IsAny<string?>()),
             Times.Once);
     }
 
@@ -252,7 +255,7 @@ public class GenerateReceiptHandlerIdempotencyTests
         _emailService
             .Setup(s => s.SendOrderReceiptEmailAsync(
                 It.IsAny<string>(), It.IsAny<Order>(), It.IsAny<byte[]?>(), It.IsAny<string>(),
-                It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                It.IsAny<string>(), It.IsAny<CancellationToken>(), It.IsAny<string?>()))
             .Callback(() => emailSent = true)
             .ReturnsAsync("email-msg-id");
 
@@ -268,7 +271,7 @@ public class GenerateReceiptHandlerIdempotencyTests
         _emailService.Verify(
             s => s.SendOrderReceiptEmailAsync(
                 It.IsAny<string>(), It.IsAny<Order>(), It.IsAny<byte[]?>(), It.IsAny<string>(),
-                It.IsAny<string>(), It.IsAny<CancellationToken>()),
+                It.IsAny<string>(), It.IsAny<CancellationToken>(), It.IsAny<string?>()),
             Times.Once);
     }
 

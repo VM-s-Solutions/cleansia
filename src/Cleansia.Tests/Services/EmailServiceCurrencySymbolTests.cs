@@ -22,6 +22,7 @@ namespace Cleansia.Tests.Services;
 public class EmailServiceCurrencySymbolTests
 {
     private const string Recipient = "customer@example.com";
+    private const string GuestToken = "Bo0g5sHqYk3Xz9-A_1n2mQr4tUvWxYz6AbCdEfGhIjK";
 
     [Fact]
     public async Task The_Receipt_Email_Prints_The_Total_With_The_Orders_Own_Symbol()
@@ -77,18 +78,20 @@ public class EmailServiceCurrencySymbolTests
         var order = BuildOrder(Euro());
         var (service, values) = BuildService(EmailType.OrderStatusUpdate);
         await service.SendOrderStatusUpdateEmailAsync(Recipient, order, "Cancelled", language,
-            CancellationToken.None, 400m);
+            CancellationToken.None, 400m, guestAccessToken: GuestToken);
         Assert.Contains(cancelled, values["StatusMessage"]);
         Assert.Contains(refundLabel, values["StatusMessage"]);
         Assert.Contains($"€{400m:N2}", values["StatusMessage"]);
         Assert.DoesNotContain($"{order.TotalPrice:N2}", values["StatusMessage"]);
-        Assert.Contains($"confirmationCode={Uri.EscapeDataString(order.ConfirmationCode)}", values["OrderStatusLink"]);
+        Assert.Contains($"token={Uri.EscapeDataString(GuestToken)}", values["OrderStatusLink"]);
+        Assert.DoesNotContain(order.ConfirmationCode, values["OrderStatusLink"], StringComparison.Ordinal);
         Assert.False(string.IsNullOrWhiteSpace(values["ButtonText"]));
         Assert.False(string.IsNullOrWhiteSpace(values["StatusLabel"]));
         Assert.DoesNotContain("{{", string.Join(" ", values.Values));
 
         await service.SendOrderStatusUpdateEmailAsync(Recipient, order, "Cancelled", language,
             CancellationToken.None, null);
+        Assert.DoesNotContain("token=", values["OrderStatusLink"], StringComparison.Ordinal);
         Assert.Equal(cancelled, values["StatusMessage"]);
         Assert.DoesNotContain(refundLabel, values["StatusMessage"]);
     }

@@ -74,18 +74,32 @@ public sealed partial class EmailService : IEmailService
             ct);
     }
 
+    /// <summary>
+    /// The link the e-mail's button points at. A guest's copy carries their per-order access token —
+    /// the ONE channel the credential travels on, which is why only the caller that just minted it can
+    /// supply one; every other caller passes null and the link lands on the lookup form.
+    /// </summary>
+    private string BuildOrderStatusLink(string displayOrderNumber, string email, string? guestAccessToken)
+    {
+        var link = $"{sendGridConfig.ClientDomainUrl}/track-order?orderNumber={Uri.EscapeDataString(displayOrderNumber)}&email={Uri.EscapeDataString(email)}";
+        return string.IsNullOrEmpty(guestAccessToken)
+            ? link
+            : link + $"&token={Uri.EscapeDataString(guestAccessToken)}";
+    }
+
     public async Task<string> SendOrderReceiptEmailAsync(
         string email,
         Order order,
         byte[]? pdfBytes = null,
         string fileName = "receipt.pdf",
         string languageCode = Constants.Language.English,
-        CancellationToken ct = default)
+        CancellationToken ct = default,
+        string? guestAccessToken = null)
     {
         var translations = await emailTemplateTranslationRepository
             .GetTranslationsByTypeAndLanguageAsync(EmailType.OrderReceipt, languageCode, ct);
 
-        var orderStatusLink = $"{sendGridConfig.ClientDomainUrl}/track-order?orderNumber={Uri.EscapeDataString(order.DisplayOrderNumber)}&email={Uri.EscapeDataString(email)}";
+        var orderStatusLink = BuildOrderStatusLink(order.DisplayOrderNumber, email, guestAccessToken);
 
         var values = BuildTemplateValues(translations, new
         {
@@ -121,7 +135,7 @@ public sealed partial class EmailService : IEmailService
         var translations = await emailTemplateTranslationRepository
             .GetTranslationsByTypeAndLanguageAsync(EmailType.OrderReceipt, languageCode, ct);
 
-        var orderStatusLink = $"{sendGridConfig.ClientDomainUrl}/track-order?orderNumber={Uri.EscapeDataString(orderNumber)}&email={Uri.EscapeDataString(email)}";
+        var orderStatusLink = BuildOrderStatusLink(orderNumber, email, null);
 
         var values = BuildTemplateValues(translations, new
         {
@@ -344,7 +358,8 @@ public sealed partial class EmailService : IEmailService
         string newStatus,
         string languageCode = Constants.Language.English,
         CancellationToken ct = default,
-        decimal? refundedAmount = null)
+        decimal? refundedAmount = null,
+        string? guestAccessToken = null)
     {
         var translations = await emailTemplateTranslationRepository
             .GetTranslationsByTypeAndLanguageAsync(EmailType.OrderStatusUpdate, languageCode, ct);
@@ -359,11 +374,7 @@ public sealed partial class EmailService : IEmailService
             }
         }
 
-        var orderStatusLink = $"{sendGridConfig.ClientDomainUrl}/track-order?orderNumber={Uri.EscapeDataString(order.DisplayOrderNumber)}&email={Uri.EscapeDataString(email)}";
-        if (string.IsNullOrEmpty(order.UserId))
-        {
-            orderStatusLink += $"&confirmationCode={Uri.EscapeDataString(order.ConfirmationCode)}";
-        }
+        var orderStatusLink = BuildOrderStatusLink(order.DisplayOrderNumber, email, guestAccessToken);
         var address = order.CustomerAddress != null
             ? $"{order.CustomerAddress.Street}, {order.CustomerAddress.City}"
             : "";

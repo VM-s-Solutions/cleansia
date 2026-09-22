@@ -37,6 +37,9 @@ public sealed class ArchivedCompanyWriteGuardRosterTests : IDisposable
         typeof(Cleansia.Core.Domain.EmployeePayroll.EmployeePayConfig),
         typeof(EmployeePayoutDetails),
         typeof(Cleansia.Core.Domain.Receipts.FiscalCounter),
+        // The guest's key to one of the company's bookings: it is minted with the booking's
+        // confirmation e-mail and retired with the booking, so it freezes with them.
+        typeof(GuestOrderAccessToken),
         typeof(Order),
         typeof(Cleansia.Core.Domain.EmployeePayroll.OrderEmployeePay),
         typeof(OrderIssue),

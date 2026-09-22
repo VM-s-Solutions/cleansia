@@ -1,6 +1,7 @@
 package cz.cleansia.partner.features.profile
 
 import android.content.Context
+import androidx.lifecycle.viewModelScope
 import app.cash.turbine.ReceiveTurbine
 import app.cash.turbine.test
 import cz.cleansia.core.network.ApiError
@@ -20,6 +21,7 @@ import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.job
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.Json
@@ -96,6 +98,10 @@ class IdentificationSectionViewModelTest {
             awaitLoaded()
             cancelAndIgnoreRemainingEvents()
         }
+        // Loaded is published before the field-labels read, which hops to Dispatchers.IO and
+        // resumes on Main after the rule has reset it — so every child the load launched is
+        // joined here, or the next test in the JVM inherits its uncaught exception.
+        viewModelScope.coroutineContext.job.children.forEach { it.join() }
         return (uiState.value as IdentificationSectionUiState.Loaded).form
     }
 

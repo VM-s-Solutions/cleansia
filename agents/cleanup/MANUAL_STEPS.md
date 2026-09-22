@@ -134,7 +134,25 @@ guest booking has no account to name; the webhook used to substitute the empty s
 `20260922153301` is exactly that one column's nullability — **85 tables, 1339 columns, 169 foreign
 keys and 280 indexes are identical**, and **49** still carry the `Tenants` FK.
 
-**The one owed drop belongs to `20260922182416`**: a DEV database whose
+The receipts (phase 3 of `agents/FIX-PLAN-2026-09-22.md`, same branch, 2026-09-22 — finding F77)
+regenerated `Initial` once more as **`20260922220828`**, adding two columns to `Orders`:
+
+- `ExpressSurchargeAmount` (item 3.1), `numeric(18,2)` NOT NULL with a database default of `0` — the
+  same shape `CreditAppliedAmount` carries, for the same reason (the integration suite's raw-SQL order
+  inserts name their columns explicitly). A receipt's lines are raw catalogue prices and its stored
+  discounts are already measured against the charged price, so the surcharge is the term between them.
+  It is stored rather than derived as `Total − lines + discounts` because the derivation would print
+  any gap — a line a loader missed, a rounding cent — as a surcharge the customer never paid.
+- `LanguageCode` (item 3.3), `character varying(5)` NULL — the language the booking request was made
+  in. The receipt is written in it before the account's stored preference; null on a recurring
+  occurrence, which has no request of its own.
+
+The body diff against `20260922182416` is exactly those two columns (Designer: the migration id and
+those two properties) — **85 tables** and **49** carrying the `Tenants` FK, unchanged; `dotnet ef
+migrations has-pending-model-changes` reports none. An intermediate regeneration in the same phase
+(`20260922200233`, surcharge only) was never committed.
+
+**The one owed drop belongs to `20260922220828`**: a DEV database whose
 `__EFMigrationsHistory` records any earlier id replays the whole create script against tables that
 already exist. The legal texts need no extra step — every host seeds them at start, and since
 `b34dff07` a fresh Development database is seeded once more in the boot that migrates it (the factory

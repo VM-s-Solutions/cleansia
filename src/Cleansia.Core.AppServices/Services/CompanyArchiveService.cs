@@ -355,6 +355,7 @@ public sealed class CompanyArchiveService(
         o.AppliedVatRate,
         o.CurrencyId,
         o.CreditAppliedAmount,
+        o.ExpressSurchargeAmount,
         o.TierDiscountAmount,
         o.TierAtPurchase,
         o.PromoDiscountAmount,

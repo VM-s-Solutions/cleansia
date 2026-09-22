@@ -1,3 +1,4 @@
+using System.Globalization;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Blobs.Abstractions;
@@ -85,7 +86,7 @@ public sealed class ReceiptService(
     // ADR-0004 D-F4.1 phase 2 — REALIZE the external effects for an already-claimed receipt:
     // register with the authority (stamp on success / mark failed on failure), then generate + upload
     // the PDF. Called AFTER the claim commit, so a redelivery is already deduped by the committed row.
-    public async Task RealizeFiscalAndPdfAsync(Order order, OrderReceipt receipt, string languageCode, CancellationToken cancellationToken = default)
+    public async Task RealizeFiscalAndPdfAsync(Order order, OrderReceipt receipt, CancellationToken cancellationToken = default)
     {
         var countryId = order.CustomerAddress?.CountryId;
         var companyInfo = countryId != null
@@ -99,11 +100,10 @@ public sealed class ReceiptService(
             throw new InvalidOperationException(BusinessErrorMessage.CompanyInfoNotFound);
         }
 
-        var receiptData = CreateReceiptData(order, receipt.ReceiptNumber, companyInfo);
-
         // Resolve country ISO code + fiscal enforcement mode.
         string? countryCode = null;
         var enforcementMode = FiscalEnforcementMode.None;
+        string? timeZoneId = null;
         if (countryId != null)
         {
             var country = await countryRepository.GetByIdAsync(countryId, cancellationToken);
@@ -113,8 +113,16 @@ public sealed class ReceiptService(
             if (countryConfig != null)
             {
                 enforcementMode = countryConfig.FiscalEnforcementMode;
+                timeZoneId = countryConfig.TimeZoneId;
             }
         }
+
+        var receiptData = CreateReceiptData(
+            order,
+            receipt,
+            companyInfo,
+            await ResolveDocumentLanguageAsync(receipt, cancellationToken),
+            TimeZoneResolution.Resolve(timeZoneId));
 
         // Mode-aware fiscal handling. For async/lenient modes, we try once and regardless
         // of outcome hand back to the caller so the customer flow continues. For blocking
@@ -123,19 +131,91 @@ public sealed class ReceiptService(
         await HandleFiscalAsync(order, receipt, companyInfo, countryCode, enforcementMode, cancellationToken);
 
         // Stamp the fiscal code into the PDF only when it was actually issued.
-        if (receipt.FiscalCode != null)
+        StampFiscalData(receiptData, receipt);
+
+        await UploadAsync(receipt, pdfService.GenerateReceiptPdf(receiptData, countryCode), cancellationToken);
+    }
+
+    /// <summary>
+    /// Re-renders an already-issued receipt from the order as it stands now, over the same number, the
+    /// same blob and the same language. The fiscal registration is deliberately not re-attempted: the
+    /// sale was registered (or is on the retry job's list) under this number already, and a second
+    /// register is what the claim-first ordering in ADR-0004 exists to prevent.
+    /// </summary>
+    public async Task RegenerateReceiptPdfAsync(Order order, OrderReceipt receipt, CancellationToken cancellationToken = default)
+    {
+        var countryId = order.CustomerAddress?.CountryId;
+        var companyInfo = countryId != null
+            ? await companyInfoRepository.GetActiveByCountryAsync(countryId, cancellationToken)
+            : null;
+
+        companyInfo ??= await companyInfoRepository.GetActiveCompanyInfoAsync(cancellationToken);
+
+        if (companyInfo == null)
         {
-            receiptData.FiscalProviderKey = receipt.FiscalProviderKey;
-            receiptData.FiscalCode = receipt.FiscalCode;
-            receiptData.FiscalRegisteredAt = receipt.FiscalRegisteredAt?.ToString("d");
+            throw new InvalidOperationException(BusinessErrorMessage.CompanyInfoNotFound);
         }
 
-        var pdfBytes = pdfService.GenerateReceiptPdf(receiptData, countryCode);
+        var receiptData = CreateReceiptData(
+            order,
+            receipt,
+            companyInfo,
+            await ResolveDocumentLanguageAsync(receipt, cancellationToken),
+            await MarketZoneAsync(countryId, cancellationToken));
 
+        StampFiscalData(receiptData, receipt);
+
+        string? countryCode = null;
+        if (countryId != null)
+        {
+            countryCode = (await countryRepository.GetByIdAsync(countryId, cancellationToken))?.IsoCode;
+        }
+
+        // Rendered BEFORE the writer opens. Opening it re-creates the blob empty, so a render that threw
+        // after that point would leave the customer's only copy of the receipt at zero bytes.
+        var pdf = pdfService.GenerateReceiptPdf(receiptData, countryCode);
+
+        // The blob already exists: UploadAsync creates only, and would refuse this write on every attempt.
+        var blobClient = blobClientFactory.GetBlobContainerClient(Constants.BlobContainers.GeneratedReceipts);
+        await using var stored = await blobClient.CreateFileForWritingAsync(receipt.BlobName, cancellationToken);
+        await stored.WriteAsync(pdf, cancellationToken);
+    }
+
+    private async Task UploadAsync(OrderReceipt receipt, byte[] pdfBytes, CancellationToken cancellationToken)
+    {
         var blobClient = blobClientFactory.GetBlobContainerClient(Constants.BlobContainers.GeneratedReceipts);
         using var pdfStream = new MemoryStream(pdfBytes);
         await blobClient.UploadAsync(receipt.BlobName, pdfStream, cancellationToken: cancellationToken);
     }
+
+    private static void StampFiscalData(ReceiptPdfData receiptData, OrderReceipt receipt)
+    {
+        if (receipt.FiscalCode == null)
+        {
+            return;
+        }
+
+        receiptData.FiscalProviderKey = receipt.FiscalProviderKey;
+        receiptData.FiscalCode = receipt.FiscalCode;
+        receiptData.FiscalRegisteredAt = receipt.FiscalRegisteredAt?.ToString("dd.MM.yyyy", CultureInfo.InvariantCulture);
+    }
+
+    /// <summary>
+    /// Read from the receipt row, not from the current caller: a re-render reproduces the document the
+    /// customer was issued, it does not re-decide it.
+    /// </summary>
+    private async Task<string> ResolveDocumentLanguageAsync(OrderReceipt receipt, CancellationToken cancellationToken)
+    {
+        var language = await languageRepository.GetByIdAsync(receipt.LanguageId, cancellationToken);
+        return language?.Code ?? Constants.Language.English;
+    }
+
+    /// <summary>The market's own clock, so a receipt issued just after local midnight carries the local day.</summary>
+    private async Task<TimeZoneInfo> MarketZoneAsync(string? countryId, CancellationToken cancellationToken) =>
+        countryId is null
+            ? TimeZoneInfo.Utc
+            : TimeZoneResolution.Resolve(
+                (await countryConfigurationRepository.GetByCountryIdAsync(countryId, cancellationToken))?.TimeZoneId);
 
     private async Task<FiscalEnforcementMode> ResolveEnforcementModeAsync(string? countryId, CancellationToken cancellationToken)
     {
@@ -359,15 +439,15 @@ public sealed class ReceiptService(
                     DateTime.TryParse(result.RegisteredAt, out var parsedAt) ? parsedAt : DateTime.UtcNow);
 
                 // Regenerate the PDF with the fiscal code and re-upload it.
-                var receiptData = CreateReceiptData(order, receipt.ReceiptNumber, companyInfo);
-                receiptData.FiscalProviderKey = receipt.FiscalProviderKey;
-                receiptData.FiscalCode = receipt.FiscalCode;
-                receiptData.FiscalRegisteredAt = receipt.FiscalRegisteredAt?.ToString("d");
+                var receiptData = CreateReceiptData(
+                    order,
+                    receipt,
+                    companyInfo,
+                    await ResolveDocumentLanguageAsync(receipt, cancellationToken),
+                    await MarketZoneAsync(countryId, cancellationToken));
+                StampFiscalData(receiptData, receipt);
 
-                var pdfBytes = pdfService.GenerateReceiptPdf(receiptData, countryCode);
-                var blobClient = blobClientFactory.GetBlobContainerClient(Constants.BlobContainers.GeneratedReceipts);
-                using var pdfStream = new MemoryStream(pdfBytes);
-                await blobClient.UploadAsync(receipt.BlobName, pdfStream, cancellationToken: cancellationToken);
+                await UploadAsync(receipt, pdfService.GenerateReceiptPdf(receiptData, countryCode), cancellationToken);
 
                 logger.LogInformation(
                     "Fiscal retry succeeded for ReceiptNumber={ReceiptNumber} Provider={ProviderKey} Attempt={Attempt}",
@@ -394,36 +474,74 @@ public sealed class ReceiptService(
         }
     }
 
-    private static ReceiptPdfData CreateReceiptData(Order order, string receiptNumber, CompanyInfo companyInfo)
+    /// <summary>
+    /// A catalogue entry's name in the document's language: its own translation, then the English one,
+    /// then the base name it was created with.
+    /// </summary>
+    private static string NameIn(
+        string languageCode, IReadOnlyDictionary<string, Translation> translations, string baseName)
+    {
+        if (translations.TryGetValue(languageCode, out var requested) && !string.IsNullOrWhiteSpace(requested.Name))
+        {
+            return requested.Name;
+        }
+
+        if (translations.TryGetValue(Constants.Language.English, out var english) && !string.IsNullOrWhiteSpace(english.Name))
+        {
+            return english.Name;
+        }
+
+        return baseName;
+    }
+
+    private static ReceiptPdfData CreateReceiptData(
+        Order order, OrderReceipt receipt, CompanyInfo companyInfo, string languageCode, TimeZoneInfo marketZone)
     {
         return new ReceiptPdfData
         {
-            ReceiptNumber = receiptNumber,
+            LanguageCode = languageCode,
+            ReceiptNumber = receipt.ReceiptNumber,
             OrderNumber = order.DisplayOrderNumber,
-            IssuedDate = DateTime.UtcNow.ToString("d"),
+            // The row's date, not the render's: a restated receipt keeps the date it was issued on.
+            IssuedDate = TimeZoneInfo.ConvertTimeFromUtc(receipt.IssuedAt, marketZone)
+                .ToString("dd.MM.yyyy", CultureInfo.InvariantCulture),
             CustomerName = order.CustomerName,
             CustomerEmail = order.CustomerEmail,
             CustomerPhone = order.CustomerPhone,
             CustomerAddress = $"{order.CustomerAddress?.Street}, {order.CustomerAddress?.City}, {order.CustomerAddress?.ZipCode}",
-            // Snapshot prices, catalogue names — see BuildFiscalLineItems.
+            // Snapshot prices, catalogue names — see BuildFiscalLineItems. An unloaded catalogue row is a
+            // loader omission, printed as the line's own id rather than an English word.
             Services = order.SelectedServices
-                .Select(s => new ReceiptLineItem(s.Service?.Name ?? "Service", s.LineTotal))
+                .Select(s => new ReceiptLineItem(
+                    s.Service is { } service ? NameIn(languageCode, service.Translations, service.Name) : s.ServiceId,
+                    s.LineTotal))
                 .ToList(),
             Packages = order.SelectedPackages
-                .Select(p => new ReceiptLineItem(p.Package?.Name ?? "Package", p.LineTotal))
+                .Select(p => new ReceiptLineItem(
+                    p.Package is { } package ? NameIn(languageCode, package.Translations, package.Name) : p.PackageId,
+                    p.LineTotal))
                 .ToList(),
             Extras = order.SelectedExtras
-                .Select(e => e.Slug)
+                .Select(e => new ReceiptLineItem(
+                    e.Extra is { } extra ? NameIn(languageCode, extra.Translations, extra.Name) : e.Slug,
+                    e.UnitPrice))
                 .ToList(),
+            // The surcharge was applied to the lines' sum and each discount came off the result, so the
+            // stored discounts are measured against the charged price. → OrderFactory.DiscountResolution
+            ExpressSurcharge = order.ExpressSurchargeAmount,
+            TierDiscount = order.TierDiscountAmount ?? 0m,
+            MembershipDiscount = order.MembershipDiscountAmount ?? 0m,
+            PromoDiscount = order.PromoDiscountAmount ?? 0m,
             Total = order.TotalPrice,
             // The sale above, how it was settled below. -> ReceiptPdfData.CreditApplied
             CreditApplied = order.CreditAppliedAmount,
             AmountDueOnCard = order.AmountDueOnCard,
             // An unloaded Currency navigation is a loader omission, not a CZK order: no unit rather than a guessed one. → /architecture/platform-expandability#_5-where-czk-kc-is-hardcoded-vs-configurable
             Currency = order.Currency?.Symbol ?? string.Empty,
-            PaymentStatus = order.PaymentStatus.ToString(),
-            PaymentType = order.ActualPaymentType.ToString(),
-            CleaningDate = order.CleaningDateTime.ToString("dd.MM.yyyy HH:mm"),
+            // The VALUES, not their names: the layout picks the word in the document's language.
+            PaymentStatus = order.PaymentStatus,
+            PaymentType = order.ActualPaymentType,
+            CleaningDate = order.CleaningDateTime.ToString("dd.MM.yyyy HH:mm", CultureInfo.InvariantCulture),
             Rooms = order.Rooms,
             Bathrooms = order.Bathrooms,
             EstimatedTime = order.EstimatedTime,
@@ -433,7 +551,6 @@ public sealed class ReceiptService(
             NetAmount = VatApplied(order) ? order.NetAmount : null,
             VatAmount = VatApplied(order) ? order.VatAmount : null,
             VatRate = order.AppliedVatRate,
-            NonVatPayerNotice = VatApplied(order) ? null : "Nejsme plátci DPH",
             Company = new CompanyInfoData
             {
                 LegalName = companyInfo.LegalName,

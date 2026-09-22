@@ -115,6 +115,14 @@ public class OrderEntityConfiguration : TenantAuditableEntityConfiguration<Order
             .HasPrecision(18, 2)
             .HasDefaultValue(0m);
 
+        // The express surcharge charged at booking. NOT NULL with a database default for the same
+        // reason as CreditAppliedAmount above: "no surcharge" is zero, not unknown, and the raw-SQL
+        // inserts in the integration suite name their columns explicitly.
+        builder.Property(o => o.ExpressSurchargeAmount)
+            .IsRequired()
+            .HasPrecision(18, 2)
+            .HasDefaultValue(0m);
+
         // Loyalty tier discount applied at create-time. Nullable; not
         // required on existing/anon orders.
         builder.Property(o => o.TierDiscountAmount)

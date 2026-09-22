@@ -133,7 +133,7 @@ public class ReceiptServiceFiscalIdempotencyTokenTests
         var order = BuildOrder();
         var receipt = BuildReceipt();
 
-        await CreateService().RealizeFiscalAndPdfAsync(order, receipt, LanguageCode, CancellationToken.None);
+        await CreateService().RealizeFiscalAndPdfAsync(order, receipt, CancellationToken.None);
 
         Assert.Single(_provider.SeenKeys);
         Assert.Equal(ReceiptNumber, _provider.SeenKeys[0]);
@@ -146,7 +146,7 @@ public class ReceiptServiceFiscalIdempotencyTokenTests
         var receipt = BuildReceipt();
         var service = CreateService();
 
-        await service.RealizeFiscalAndPdfAsync(order, receipt, LanguageCode, CancellationToken.None);
+        await service.RealizeFiscalAndPdfAsync(order, receipt, CancellationToken.None);
         await service.RetryFiscalRegistrationAsync(receipt, order, CancellationToken.None);
 
         Assert.Equal(2, _provider.SeenKeys.Count);

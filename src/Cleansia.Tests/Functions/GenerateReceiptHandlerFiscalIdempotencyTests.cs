@@ -130,7 +130,7 @@ public class GenerateReceiptHandlerFiscalIdempotencyTests
 
         // Realize stamps the fiscal code on success (mirrors SetFiscalData clearing retry-eligibility).
         _receiptService
-            .Setup(s => s.RealizeFiscalAndPdfAsync(order, receipt, LanguageCode, It.IsAny<CancellationToken>()))
+            .Setup(s => s.RealizeFiscalAndPdfAsync(order, receipt, It.IsAny<CancellationToken>()))
             .Callback(() => receipt.SetFiscalData("cz-eet2", "FIK-123", DateTime.UtcNow))
             .Returns(Task.CompletedTask);
 
@@ -163,7 +163,7 @@ public class GenerateReceiptHandlerFiscalIdempotencyTests
             s => s.ReserveReceiptAsync(It.IsAny<Order>(), It.IsAny<string>(), It.IsAny<CancellationToken>()),
             Times.Once);
         _receiptService.Verify(
-            s => s.RealizeFiscalAndPdfAsync(It.IsAny<Order>(), It.IsAny<OrderReceipt>(), It.IsAny<string>(), It.IsAny<CancellationToken>()),
+            s => s.RealizeFiscalAndPdfAsync(It.IsAny<Order>(), It.IsAny<OrderReceipt>(), It.IsAny<CancellationToken>()),
             Times.Once);
         _emailService.Verify(
             s => s.SendOrderReceiptEmailAsync(
@@ -198,7 +198,7 @@ public class GenerateReceiptHandlerFiscalIdempotencyTests
             .Returns(Task.CompletedTask);
 
         _receiptService
-            .Setup(s => s.RealizeFiscalAndPdfAsync(order, receipt, LanguageCode, It.IsAny<CancellationToken>()))
+            .Setup(s => s.RealizeFiscalAndPdfAsync(order, receipt, It.IsAny<CancellationToken>()))
             .Callback(() =>
             {
                 // Realize (which performs the irreversible authority register) must NOT run before the
@@ -252,7 +252,7 @@ public class GenerateReceiptHandlerFiscalIdempotencyTests
         // First delivery: register succeeds, then we simulate a crash by throwing right after.
         var firstRealizeDone = false;
         _receiptService
-            .Setup(s => s.RealizeFiscalAndPdfAsync(order, receipt, LanguageCode, It.IsAny<CancellationToken>()))
+            .Setup(s => s.RealizeFiscalAndPdfAsync(order, receipt, It.IsAny<CancellationToken>()))
             .Callback(() =>
             {
                 receipt.SetFiscalData("cz-eet2", "FIK-123", DateTime.UtcNow);
@@ -278,7 +278,7 @@ public class GenerateReceiptHandlerFiscalIdempotencyTests
         await handler.HandleAsync(body, CancellationToken.None);
 
         _receiptService.Verify(
-            s => s.RealizeFiscalAndPdfAsync(It.IsAny<Order>(), It.IsAny<OrderReceipt>(), It.IsAny<string>(), It.IsAny<CancellationToken>()),
+            s => s.RealizeFiscalAndPdfAsync(It.IsAny<Order>(), It.IsAny<OrderReceipt>(), It.IsAny<CancellationToken>()),
             Times.Once);
     }
 
@@ -313,7 +313,7 @@ public class GenerateReceiptHandlerFiscalIdempotencyTests
             });
 
         _receiptService
-            .Setup(s => s.RealizeFiscalAndPdfAsync(order, receipt, LanguageCode, It.IsAny<CancellationToken>()))
+            .Setup(s => s.RealizeFiscalAndPdfAsync(order, receipt, It.IsAny<CancellationToken>()))
             .Callback(() => receipt.SetFiscalData("cz-eet2", "FIK-123", DateTime.UtcNow))
             .Returns(Task.CompletedTask);
         _receiptService
@@ -331,13 +331,13 @@ public class GenerateReceiptHandlerFiscalIdempotencyTests
         // First delivery crashes BEFORE the claim is durable → no register happened yet.
         await Assert.ThrowsAsync<InvalidOperationException>(() => handler.HandleAsync(body, CancellationToken.None));
         _receiptService.Verify(
-            s => s.RealizeFiscalAndPdfAsync(It.IsAny<Order>(), It.IsAny<OrderReceipt>(), It.IsAny<string>(), It.IsAny<CancellationToken>()),
+            s => s.RealizeFiscalAndPdfAsync(It.IsAny<Order>(), It.IsAny<OrderReceipt>(), It.IsAny<CancellationToken>()),
             Times.Never);
 
         // Redelivery completes: exactly one register total across both deliveries.
         await handler.HandleAsync(body, CancellationToken.None);
         _receiptService.Verify(
-            s => s.RealizeFiscalAndPdfAsync(It.IsAny<Order>(), It.IsAny<OrderReceipt>(), It.IsAny<string>(), It.IsAny<CancellationToken>()),
+            s => s.RealizeFiscalAndPdfAsync(It.IsAny<Order>(), It.IsAny<OrderReceipt>(), It.IsAny<CancellationToken>()),
             Times.Once);
     }
 
@@ -380,7 +380,7 @@ public class GenerateReceiptHandlerFiscalIdempotencyTests
 
         // The loser never registers nor emails — exactly one of each happens (on the winner).
         _receiptService.Verify(
-            s => s.RealizeFiscalAndPdfAsync(It.IsAny<Order>(), It.IsAny<OrderReceipt>(), It.IsAny<string>(), It.IsAny<CancellationToken>()),
+            s => s.RealizeFiscalAndPdfAsync(It.IsAny<Order>(), It.IsAny<OrderReceipt>(), It.IsAny<CancellationToken>()),
             Times.Never);
         _emailService.Verify(
             s => s.SendOrderReceiptEmailAsync(

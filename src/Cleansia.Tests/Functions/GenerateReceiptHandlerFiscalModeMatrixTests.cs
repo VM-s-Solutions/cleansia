@@ -123,7 +123,7 @@ public class GenerateReceiptHandlerFiscalModeMatrixTests
             .Callback(() => AttachReceipt(order, receipt))
             .Returns(Task.CompletedTask);
         _receiptService
-            .Setup(s => s.RealizeFiscalAndPdfAsync(order, receipt, LanguageCode, It.IsAny<CancellationToken>()))
+            .Setup(s => s.RealizeFiscalAndPdfAsync(order, receipt, It.IsAny<CancellationToken>()))
             .Callback(() =>
             {
                 if (signed)

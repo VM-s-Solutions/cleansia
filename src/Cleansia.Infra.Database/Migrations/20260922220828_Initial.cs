@@ -1462,6 +1462,8 @@ namespace Cleansia.Infra.Database.Migrations
                     CancellationFeeRate = table.Column<decimal>(type: "numeric(5,4)", precision: 5, scale: 4, nullable: true),
                     CancelledBy = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: true),
                     CancellationReason = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),
+                    ExpressSurchargeAmount = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: false, defaultValue: 0m),
+                    LanguageCode = table.Column<string>(type: "character varying(5)", maxLength: 5, nullable: true),
                     TierDiscountAmount = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: true),
                     TierAtPurchase = table.Column<int>(type: "integer", nullable: true),
                     PromoDiscountAmount = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: true),

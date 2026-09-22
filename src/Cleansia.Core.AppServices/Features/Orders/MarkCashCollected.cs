@@ -5,6 +5,8 @@ using Cleansia.Core.Clients.Abstractions.Stripe;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Repositories;
+using Cleansia.Core.Queue.Abstractions;
+using Cleansia.Core.Queue.Abstractions.Messages;
 using Cleansia.Infra.Common.Validations;
 using FluentValidation;
 using Microsoft.EntityFrameworkCore;
@@ -116,6 +118,7 @@ public class MarkCashCollected
         IOrderRepository orderRepository,
         IOrderAccessService orderAccessService,
         IStripeClient stripeClient,
+        IPendingDispatch pending,
         ILogger<Handler> logger)
         : ICommandHandler<Command, Response>
     {
@@ -123,6 +126,7 @@ public class MarkCashCollected
         {
             var order = await orderRepository
                 .GetQueryable()
+                .Include(o => o.Receipt)
                 .FirstOrDefaultAsync(o => o.Id == command.OrderId, cancellationToken);
 
             if (order is null)
@@ -162,6 +166,19 @@ public class MarkCashCollected
             // The validator guarantees an Approved, assigned caller, so the employee id is present.
             var employeeId = await orderAccessService.GetCallerEmployeeIdAsync(cancellationToken);
             order.MarkCashCollected(employeeId!);
+
+            // A cash sale's receipt was issued at booking, before any money moved, so it says the sale is
+            // awaiting payment. Staged as intent, so only a committed collection restates it.
+            if (order.Receipt is not null)
+            {
+                pending.Enqueue(
+                    QueueNames.GenerateReceipt,
+                    new QueueEnvelope<GenerateReceiptMessage>(
+                        MessageKeys.ReceiptReissue(order.Id),
+                        order.TenantId,
+                        new GenerateReceiptMessage(order.Id, LanguageCode: string.Empty, Reissue: true)),
+                    MessageKeys.ReceiptReissue(order.Id));
+            }
 
             return BusinessResult.Success(new Response(order.Id, order.PaymentStatus));
         }

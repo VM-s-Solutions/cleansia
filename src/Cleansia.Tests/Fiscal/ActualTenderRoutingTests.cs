@@ -96,10 +96,10 @@ public class ActualTenderRoutingTests
         var order = BuildOrder(bookedType, collectedInCash);
 
         await CreateService().RealizeFiscalAndPdfAsync(
-            order, BuildReceipt(), LanguageCode, CancellationToken.None);
+            order, BuildReceipt(), CancellationToken.None);
 
         Assert.Equal(expectedTender, _provider.LastRequest!.PaymentMethod);
-        Assert.Equal(expectedTender, _pdfData!.PaymentType);
+        Assert.Equal(expectedTender, _pdfData!.PaymentType.ToString());
         Assert.Equal(bookedType, order.PaymentType);
     }
 

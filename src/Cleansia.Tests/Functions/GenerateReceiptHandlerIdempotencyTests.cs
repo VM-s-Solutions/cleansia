@@ -131,7 +131,7 @@ public class GenerateReceiptHandlerIdempotencyTests
 
         // Realize the fiscal register + PDF for the now-claimed receipt (CZ today = None mode no-op).
         _receiptService
-            .Setup(s => s.RealizeFiscalAndPdfAsync(order, receipt, LanguageCode, It.IsAny<CancellationToken>()))
+            .Setup(s => s.RealizeFiscalAndPdfAsync(order, receipt, It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
 
         // Claim-first: the receipt row is durable after the commit that PRECEDES the send. Model the
@@ -231,7 +231,7 @@ public class GenerateReceiptHandlerIdempotencyTests
             .Setup(s => s.ReserveReceiptAsync(order, LanguageCode, It.IsAny<CancellationToken>()))
             .ReturnsAsync(receipt);
         _receiptService
-            .Setup(s => s.RealizeFiscalAndPdfAsync(order, receipt, LanguageCode, It.IsAny<CancellationToken>()))
+            .Setup(s => s.RealizeFiscalAndPdfAsync(order, receipt, It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
         _receiptService
             .Setup(s => s.DownloadReceiptPdfAsync(receipt, It.IsAny<CancellationToken>()))

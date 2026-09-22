@@ -128,7 +128,7 @@ public class ReceiptServiceCurrencyFailClosedTests
     {
         var receipt = BuildReceipt();
 
-        await CreateService().RealizeFiscalAndPdfAsync(BuildOrder(Euro()), receipt, LanguageCode, CancellationToken.None);
+        await CreateService().RealizeFiscalAndPdfAsync(BuildOrder(Euro()), receipt, CancellationToken.None);
 
         Assert.Equal("EUR", Assert.Single(_provider.Seen).CurrencyCode);
         Assert.Equal("SIG-OK", receipt.FiscalCode);
@@ -140,7 +140,7 @@ public class ReceiptServiceCurrencyFailClosedTests
         var receipt = BuildReceipt();
 
         var ex = await Record.ExceptionAsync(() =>
-            CreateService().RealizeFiscalAndPdfAsync(BuildOrder(currency: null), receipt, LanguageCode, CancellationToken.None));
+            CreateService().RealizeFiscalAndPdfAsync(BuildOrder(currency: null), receipt, CancellationToken.None));
 
         Assert.Null(ex);
         Assert.Empty(_provider.Seen);
@@ -152,7 +152,7 @@ public class ReceiptServiceCurrencyFailClosedTests
     [Fact]
     public async Task The_Receipt_Pdf_Carries_The_Orders_Own_Currency_Symbol()
     {
-        await CreateService().RealizeFiscalAndPdfAsync(BuildOrder(Euro()), BuildReceipt(), LanguageCode, CancellationToken.None);
+        await CreateService().RealizeFiscalAndPdfAsync(BuildOrder(Euro()), BuildReceipt(), CancellationToken.None);
 
         Assert.Equal("€", Assert.Single(_renderedPdfs).Currency);
     }
@@ -164,7 +164,7 @@ public class ReceiptServiceCurrencyFailClosedTests
     [Fact]
     public async Task The_Receipt_Pdf_For_An_Order_Without_Its_Currency_Carries_No_Unit()
     {
-        await CreateService().RealizeFiscalAndPdfAsync(BuildOrder(currency: null), BuildReceipt(), LanguageCode, CancellationToken.None);
+        await CreateService().RealizeFiscalAndPdfAsync(BuildOrder(currency: null), BuildReceipt(), CancellationToken.None);
 
         var rendered = Assert.Single(_renderedPdfs);
         Assert.Equal(string.Empty, rendered.Currency);
@@ -208,7 +208,7 @@ public class ReceiptServiceCurrencyFailClosedTests
         var receipt = BuildReceipt();
 
         var ex = await Record.ExceptionAsync(() =>
-            CreateService().RealizeFiscalAndPdfAsync(BuildOrder(Euro()), receipt, LanguageCode, CancellationToken.None));
+            CreateService().RealizeFiscalAndPdfAsync(BuildOrder(Euro()), receipt, CancellationToken.None));
 
         Assert.Null(ex);
         Assert.Empty(_provider.Seen);

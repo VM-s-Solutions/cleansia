@@ -93,7 +93,7 @@ public class FiscalCountryCodeResolutionTests
         _fiscalServiceResolver.Setup(r => r.Resolve(It.IsAny<string>())).Returns(provider);
 
         await CreateService().RealizeFiscalAndPdfAsync(
-            BuildOrder(), BuildReceipt(), LanguageCode, CancellationToken.None);
+            BuildOrder(), BuildReceipt(), CancellationToken.None);
 
         _fiscalServiceResolver.Verify(r => r.Resolve("CZ"), Times.Once);
         Assert.Equal("CZ", provider.DeclaredCountryCodeOnRequest);
@@ -107,7 +107,7 @@ public class FiscalCountryCodeResolutionTests
         _fiscalServiceResolver.Setup(r => r.Resolve(It.IsAny<string>())).Returns(new RecordingFiscalService());
 
         await CreateService().RealizeFiscalAndPdfAsync(
-            BuildOrder(), BuildReceipt(), LanguageCode, CancellationToken.None);
+            BuildOrder(), BuildReceipt(), CancellationToken.None);
 
         _fiscalServiceResolver.Verify(r => r.Resolve("CZ"), Times.Once);
     }
@@ -123,7 +123,7 @@ public class FiscalCountryCodeResolutionTests
         _fiscalServiceResolver.Setup(r => r.Resolve(It.IsAny<string>())).Returns(new RecordingFiscalService());
 
         await CreateService().RealizeFiscalAndPdfAsync(
-            BuildOrder(), BuildReceipt(), LanguageCode, CancellationToken.None);
+            BuildOrder(), BuildReceipt(), CancellationToken.None);
 
         _fiscalServiceResolver.Verify(r => r.Resolve(string.Empty), Times.Once);
     }

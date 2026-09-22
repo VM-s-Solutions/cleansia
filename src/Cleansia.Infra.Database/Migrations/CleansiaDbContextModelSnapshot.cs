@@ -4058,8 +4058,18 @@ namespace Cleansia.Infra.Database.Migrations
                     b.Property<int>("EstimatedTime")
                         .HasColumnType("integer");
 
+                    b.Property<decimal>("ExpressSurchargeAmount")
+                        .ValueGeneratedOnAdd()
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasDefaultValue(0m);
+
                     b.Property<bool>("IsActive")
                         .HasColumnType("boolean");
+
+                    b.Property<string>("LanguageCode")
+                        .HasMaxLength(5)
+                        .HasColumnType("character varying(5)");
 
                     b.Property<int>("MaxEmployees")
                         .HasColumnType("integer");

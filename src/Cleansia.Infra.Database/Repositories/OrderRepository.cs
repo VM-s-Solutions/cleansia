@@ -231,12 +231,15 @@ public class OrderRepository(CleansiaDbContext context) : BaseRepository<Order>(
                 .ThenInclude(op => op.Package)
                     .ThenInclude(p => p.IncludedServices)
                         .ThenInclude(s => s.Service)
+            .Include(o => o.SelectedExtras)
+                .ThenInclude(e => e.Extra)
             .Include(o => o.AssignedEmployees)
                 .ThenInclude(ae => ae.Employee)
                     .ThenInclude(e => e.User)
             .Include(o => o.Receipt)
             .Include(o => o.CustomerAddress)
                 .ThenInclude(ca => ca.Country)
+            .Include(o => o.User)
             .AsSplitQuery()
             .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
     }

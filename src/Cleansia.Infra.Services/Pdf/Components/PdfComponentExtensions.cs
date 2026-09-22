@@ -1,3 +1,4 @@
+using System.Globalization;
 using Cleansia.Infra.Services.Pdf.Theme;
 using QuestPDF.Fluent;
 using QuestPDF.Helpers;
@@ -284,7 +285,14 @@ public static class PdfComponentExtensions
             });
     }
 
-    public static void StandardFooter(this IContainer container, string companyName, string? contactInfo, DateTime? generatedAt = null)
+    public static void StandardFooter(
+        this IContainer container,
+        string companyName,
+        string? contactInfo,
+        string thanksBeforeName,
+        string thanksAfterName,
+        string generatedLabel,
+        DateTime? generatedAt = null)
     {
         container.BorderTop(1).BorderColor(CleansiaPdfTheme.BorderLight)
             .PaddingTop(CleansiaPdfTheme.InnerPadding)
@@ -293,9 +301,9 @@ public static class PdfComponentExtensions
             {
                 col.Item().AlignCenter().Text(text =>
                 {
-                    text.Span("Thank you for choosing ").FontSize(CleansiaPdfTheme.FontSizeBody).FontColor(CleansiaPdfTheme.TextSecondary);
+                    text.Span(thanksBeforeName).FontSize(CleansiaPdfTheme.FontSizeBody).FontColor(CleansiaPdfTheme.TextSecondary);
                     text.Span(companyName.ToUpperInvariant()).FontSize(CleansiaPdfTheme.FontSizeBody).FontColor(CleansiaPdfTheme.TextPrimary).Bold();
-                    text.Span(" for your cleaning needs!").FontSize(CleansiaPdfTheme.FontSizeBody).FontColor(CleansiaPdfTheme.TextSecondary);
+                    text.Span(thanksAfterName).FontSize(CleansiaPdfTheme.FontSizeBody).FontColor(CleansiaPdfTheme.TextSecondary);
                 });
 
                 if (!string.IsNullOrWhiteSpace(contactInfo))
@@ -307,7 +315,7 @@ public static class PdfComponentExtensions
 
                 if (generatedAt.HasValue)
                 {
-                    col.Item().PaddingTop(4).AlignCenter().Text($"Generated: {generatedAt.Value:dd.MM.yyyy HH:mm} UTC")
+                    col.Item().PaddingTop(4).AlignCenter().Text($"{generatedLabel}: {generatedAt.Value.ToString("dd.MM.yyyy HH:mm", CultureInfo.InvariantCulture)} UTC")
                         .FontSize(CleansiaPdfTheme.FontSizeSmall)
                         .FontColor(CleansiaPdfTheme.TextSecondary);
                 }

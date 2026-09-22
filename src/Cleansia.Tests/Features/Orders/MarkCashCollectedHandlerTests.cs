@@ -5,6 +5,7 @@ using Cleansia.Core.Clients.Abstractions.Stripe;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Repositories;
+using Cleansia.Core.Queue.Abstractions;
 using Microsoft.Extensions.Logging.Abstractions;
 using MockQueryable;
 using MockQueryable.Moq;
@@ -37,6 +38,7 @@ public class MarkCashCollectedHandlerTests
     private readonly Mock<IOrderRepository> _orderRepository = new();
     private readonly Mock<IOrderAccessService> _accessService = new();
     private readonly Mock<IStripeClient> _stripeClient = new();
+    private readonly Mock<IPendingDispatch> _pending = new();
 
     public MarkCashCollectedHandlerTests()
     {
@@ -49,6 +51,7 @@ public class MarkCashCollectedHandlerTests
         _orderRepository.Object,
         _accessService.Object,
         _stripeClient.Object,
+        _pending.Object,
         NullLogger<MarkCashCollected.Handler>.Instance);
 
     private Order ArrangeOrder(PaymentType paymentType, bool withStripeSurface)

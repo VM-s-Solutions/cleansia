@@ -142,7 +142,7 @@ public class GenerateReceiptHandlerBranchTests
             .ReturnsAsync(receipt);
         // Realize does NOT stamp a code (the authority hasn't signed yet) — FiscalCode remains null.
         _receiptService
-            .Setup(s => s.RealizeFiscalAndPdfAsync(order, receipt, LanguageCode, It.IsAny<CancellationToken>()))
+            .Setup(s => s.RealizeFiscalAndPdfAsync(order, receipt, It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
         _unitOfWork
             .Setup(u => u.CommitAsync(It.IsAny<CancellationToken>()))

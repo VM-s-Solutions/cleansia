@@ -1033,7 +1033,8 @@ public class CreateOrder
                 AccessInstructions: command.AccessInstructions,
                 CustomerFloor: command.CustomerFloor,
                 CustomerApartment: command.CustomerApartment,
-                AccessMode: command.AccessMode), cancellationToken);
+                AccessMode: command.AccessMode,
+                LanguageCode: command.Language), cancellationToken);
 
             if (reservation != null)
             {

@@ -299,6 +299,28 @@ public class Order : TenantAuditable
     public string? CancellationReason { get; private set; }
 
     /// <summary>
+    /// The express surcharge this booking was charged, in the order's currency. Zero when none applied.
+    /// The receipt's term between its raw catalogue lines and its discounts, which are measured against
+    /// the charged price.
+    ///
+    /// <para>Stored rather than derived as <c>Total − lines + discounts</c>: that derivation would print
+    /// any gap between the lines and the total — a line a loader did not read, a rounding cent — as an
+    /// express surcharge the customer was never charged.</para>
+    /// </summary>
+    public decimal ExpressSurchargeAmount { get; private set; }
+
+    /// <summary>
+    /// The language the customer booked in, as the booking request stated it. Null where no customer
+    /// made a request — a recurring occurrence — and on orders booked before it was recorded.
+    ///
+    /// <para>The customer's documents read this before the account's stored preference: a guest has no
+    /// account to read, and an account's preference is only as current as the last client that wrote it.
+    /// → GenerateReceiptHandler.DocumentLanguage</para>
+    /// </summary>
+    [MaxLength(5)]
+    public string? LanguageCode { get; private set; }
+
+    /// <summary>
     /// Loyalty tier discount applied at create-time (CZK amount, not %).
     /// Null when no loyalty discount applied (legacy/anon orders, Bronze tier, or no qualifying account).
     /// </summary>
@@ -756,6 +778,23 @@ public class Order : TenantAuditable
         NetAmount = netAmount;
         VatAmount = vatAmount;
         AppliedVatRate = appliedRate;
+        return this;
+    }
+
+    /// <summary>
+    /// Records the express surcharge charged on this booking. Zero is the normal case.
+    /// </summary>
+    public Order SetExpressSurcharge(decimal amount)
+    {
+        ArgumentOutOfRangeException.ThrowIfLessThan(amount, 0m);
+
+        ExpressSurchargeAmount = amount;
+        return this;
+    }
+
+    public Order SetLanguage(string? languageCode)
+    {
+        LanguageCode = languageCode;
         return this;
     }
 

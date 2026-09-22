@@ -2,6 +2,7 @@ using System.Text.Json;
 using System.Text.RegularExpressions;
 using Cleansia.Core.Queue.Abstractions;
 using Cleansia.Core.Queue.Abstractions.Messages;
+using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.AppServices.Tenancy;
@@ -52,7 +53,9 @@ public class GenerateReceiptHandler(
             // The idempotency key is deterministic from the order id (envelope or synthesized) — used
             // for log correlation; the load-bearing dedup is the receipt-creation guard below (the
             // committed receipt row IS the claim, written before the email — claim-first, D2.2).
-            var messageKey = MessageKeys.Receipt(message.OrderId ?? string.Empty);
+            var messageKey = message.Reissue
+                ? MessageKeys.ReceiptReissue(message.OrderId ?? string.Empty)
+                : MessageKeys.Receipt(message.OrderId ?? string.Empty);
 
             if (string.IsNullOrEmpty(message.OrderId) || !UlidPattern.IsMatch(message.OrderId))
             {
@@ -81,6 +84,28 @@ public class GenerateReceiptHandler(
                 tenantProvider.SetTenantOverride(order.TenantId);
             }
 
+            // RE-ISSUE — the document exists and a fact printed on it has moved. It restates the same
+            // number over the same blob and stops there: no sequence is allocated, no authority is
+            // called, no e-mail is sent, so a redelivery only restates it again. It sits ahead of the
+            // eligibility guard on purpose — the guard asks whether an order has EARNED a receipt, and
+            // this order already has one.
+            if (message.Reissue)
+            {
+                if (order.Receipt is null)
+                {
+                    logger.LogWarning(
+                        "Receipt re-issue for order {OrderId} found no receipt to restate; discarding (key {MessageKey})",
+                        message.OrderId, messageKey);
+                    return;
+                }
+
+                await receiptService.RegenerateReceiptPdfAsync(order, order.Receipt, ct);
+                logger.LogInformation(
+                    "Receipt {ReceiptNumber} restated for order {OrderId} (key {MessageKey})",
+                    order.Receipt.ReceiptNumber, message.OrderId, messageKey);
+                return;
+            }
+
             if (order.PaymentType != PaymentType.Cash && order.PaymentStatus != PaymentStatus.Paid)
             {
                 logger.LogWarning("Discarding receipt message for order {OrderId}: not eligible (PaymentType={Type}, PaymentStatus={Status})",
@@ -99,6 +124,8 @@ public class GenerateReceiptHandler(
                 return;
             }
 
+            var languageCode = DocumentLanguage(order, message.LanguageCode);
+
             // ── ADR-0004 D-F4.1 phase 1 — RESERVE + COMMIT THE CLAIM (before the irreversible effect) ──
             // Allocate the sequence + stage the receipt row (born retry-eligible for any fiscal mode !=
             // None), then COMMIT it NOW — before the authority register and before the PDF. This is the
@@ -112,7 +139,7 @@ public class GenerateReceiptHandler(
             OrderReceipt receipt;
             await using (var claimTransaction = await unitOfWork.BeginTransactionAsync(ct))
             {
-                receipt = await receiptService.ReserveReceiptAsync(order, message.LanguageCode, ct);
+                receipt = await receiptService.ReserveReceiptAsync(order, languageCode, ct);
 
                 try
                 {
@@ -139,7 +166,7 @@ public class GenerateReceiptHandler(
             // Register with the fiscal authority (stamp on success / mark failed on failure) and
             // generate + upload the PDF. A redelivery during/after this step is already deduped by the
             // committed claim above, so the authority is never registered twice for this OrderId.
-            await receiptService.RealizeFiscalAndPdfAsync(order, receipt, message.LanguageCode, ct);
+            await receiptService.RealizeFiscalAndPdfAsync(order, receipt, ct);
 
             // The guest's booking credential, minted in the one place their confirmation e-mail is
             // composed, and staged so the commit below makes it durable BEFORE the send: a crash after
@@ -172,7 +199,7 @@ public class GenerateReceiptHandler(
             logger.LogInformation("Receipt PDF downloaded ({Size} bytes), sending email...", pdfBytes.Length);
 
             var emailMessageId = await emailService.SendOrderReceiptEmailAsync(
-                order.CustomerEmail, order, pdfBytes, receipt.FileName, message.LanguageCode, ct,
+                order.CustomerEmail, order, pdfBytes, receipt.FileName, languageCode, ct,
                 guestAccessToken);
 
             // Best-effort metadata stamp. The dedup is already secured by the claim commit above; this
@@ -257,6 +284,16 @@ public class GenerateReceiptHandler(
             return null;
         }
     }
+
+    /// <summary>
+    /// The language the customer booked in, then the account's stored preference (a recurring occurrence
+    /// has no booking request of its own), then whatever the producer passed. The booking wins over the
+    /// account because the preference is only as current as the last client that wrote it, and most
+    /// producers — the card webhook among them — pass English for everyone. The receipt row records the
+    /// result, so every later render reproduces it.
+    /// </summary>
+    private static string DocumentLanguage(Cleansia.Core.Domain.Orders.Order order, string requestedLanguageCode) =>
+        EmailLocale.Resolve(order.LanguageCode ?? order.User?.PreferredLanguageCode ?? requestedLanguageCode);
 
     private static readonly Regex UlidPattern = new("^[0-9A-HJKMNP-TV-Z]{26}$", RegexOptions.Compiled);
 

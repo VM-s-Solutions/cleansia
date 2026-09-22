@@ -66,6 +66,22 @@
   }
 }
 
+// The text input, textarea and calendar always render a placeholder attribute, which PrimeNG's
+// float label reads as "rest on the border" even while the field is empty; a select or multiselect
+// has no such input, so its label sat inside the box until a value was chosen while the labels
+// beside it sat on the border. One resting place for every label in the admin app until the
+// shared select and multiselect stylesheets carry it.
+cleansia-select .p-floatlabel-on label,
+cleansia-multiselect .p-floatlabel-on label {
+  top: 0;
+  transform: translateY(-50%);
+  border-radius: var(--p-floatlabel-on-border-radius);
+  background: var(--p-floatlabel-on-active-background);
+  padding: var(--p-floatlabel-on-active-padding);
+  font-size: var(--p-floatlabel-active-font-size);
+  font-weight: var(--p-floatlabel-active-font-weight);
+}
+
 .form-hint {
   margin: 0;
   font-size: 0.875rem;

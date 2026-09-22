@@ -28,7 +28,7 @@
     />
     <cleansia-button
       buttonType="submit"
-      [label]="'pages.employee_management.reject_dialog.reject_button' | translate"
+      [label]="data.submitLabel || ('pages.employee_management.reject_dialog.reject_button' | translate)"
       icon="pi pi-times"
       severity="danger"
       [outlined]="true"

@@ -1,6 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import {
   AdminClient,
+  EmployeeDocumentItem,
   GetEmployeeDocumentsRequest,
   RejectDocumentCommand,
   SortDefinition,
@@ -96,6 +97,24 @@ describe('EmployeeDocumentsFacade', () => {
     facade.approveDocument('doc-1', undefined);
 
     expect(getPagedMock).not.toHaveBeenCalled();
+  });
+
+  // The reject dialog is shared with the employee rejection; without its own submit label the
+  // primary under "Reject document" read "Reject employee".
+  it('opens the reject dialog under the document rejection title and submit label', () => {
+    const open = TestBed.inject(DialogService).open as jest.Mock;
+
+    facade.openRejectDocumentDialog(EmployeeDocumentItem.fromJS({ id: 'doc-1' }), 'emp-1');
+
+    expect(open).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({
+        header: 'pages.employee_detail.reject_document_dialog.title',
+        data: expect.objectContaining({
+          submitLabel: 'pages.employee_detail.reject_document_dialog.reject_button',
+        }),
+      })
+    );
   });
 
   describe('request bodies on the wire', () => {

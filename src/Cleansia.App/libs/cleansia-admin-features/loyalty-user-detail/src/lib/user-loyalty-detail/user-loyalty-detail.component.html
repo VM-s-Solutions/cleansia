@@ -327,8 +327,7 @@
   [visible]="expireCreditDialogVisible()"
   (visibleChange)="onExpireCreditDialogVisibleChange($event)"
   [submitting]="facade.creditExpiring()"
-  [balance]="expireCreditAccount()?.balance ?? 0"
+  [balanceLabel]="expireCreditBalanceLabel()"
   [currencyId]="expireCreditAccount()?.currencyId ?? ''"
-  [currencyCode]="expireCreditAccount()?.currencyCode ?? ''"
   (submitForm)="onExpireCredit($event)"
 />

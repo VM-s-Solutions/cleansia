@@ -308,6 +308,25 @@ describe('InvoiceDetailFacade', () => {
     expect(facade.formatDateTime(undefined)).toBe('-');
   });
 
+  // The cancel dialog is the shared reject dialog; without its own submit label the primary under
+  // "Cancel invoice" read "Reject employee".
+  it('opens the cancel dialog under the invoice cancellation title and submit label', () => {
+    const open = TestBed.inject(DialogService).open as jest.Mock;
+
+    facade.openCancelDialog();
+
+    expect(open).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({
+        header: 'pages.invoice_detail.cancel_dialog.title',
+        data: expect.objectContaining({
+          reasonLabel: 'pages.invoice_detail.cancel_dialog.reason_label',
+          submitLabel: 'pages.invoice_detail.cancel_dialog.submit',
+        }),
+      })
+    );
+  });
+
   describe('command bodies on the wire', () => {
     beforeEach(() => facade.loadInvoiceDetail('invoice-1'));
 

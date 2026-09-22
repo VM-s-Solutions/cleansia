@@ -2035,7 +2035,8 @@
         "title": "Cancel Invoice",
         "subtitle": "Please provide a reason for cancelling this invoice",
         "reason_label": "Cancellation Reason",
-        "reason_placeholder": "Enter the reason for cancellation..."
+        "reason_placeholder": "Enter the reason for cancellation...",
+        "submit": "Cancel Invoice"
       },
       "assign_variable_symbol_confirm": {
         "title": "Assign payment reference?",
@@ -2353,7 +2354,7 @@
         "expire_error": "The balance could not be discharged.",
         "expire_dialog": {
           "title": "Discharge credit balance",
-          "lede": "This writes off the whole balance of {{amount}} {{currency}} and cannot be undone. Use it when the customer is leaving: erasure is refused while credit is outstanding.",
+          "lede": "This writes off the whole balance of {{amount}} and cannot be undone. Use it when the customer is leaving: erasure is refused while credit is outstanding.",
           "field": {
             "note": "Why",
             "note_help": "The only record of why money the company owed stopped being owed. Name the request."

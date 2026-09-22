@@ -113,6 +113,9 @@ export class EmployeeDocumentsFacade extends UnsubscribeControlDirective {
       subtitle: this.translate.instant(
         'pages.employee_detail.reject_document_dialog.subtitle'
       ),
+      submitLabel: this.translate.instant(
+        'pages.employee_detail.reject_document_dialog.reject_button'
+      ),
     };
 
     const dialogRef = this.dialogService.open(RejectDialogComponent, {

@@ -671,6 +671,8 @@
           [options]="facade.currencies()"
           [label]="'pages.employee_detail.pay_config_currency' | translate"
           formControlName="currencyId"
+          [required]="true"
+          [showClear]="false"
         />
       </div>
       <div class="form-field">

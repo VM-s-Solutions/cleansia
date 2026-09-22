@@ -102,6 +102,10 @@ export class UserLoyaltyDetailComponent
   readonly expireCreditDialogVisible = signal<boolean>(false);
   /** The one account the open discharge dialog is about; null while it is closed. */
   readonly expireCreditAccount = signal<GetUserCreditCurrencyAccount | null>(null);
+  readonly expireCreditBalanceLabel = computed(() => {
+    const account = this.expireCreditAccount();
+    return account ? this.facade.formatBalance(account.balance, account.currencyCode) : '';
+  });
 
   activityColumns!: TableColumn<GetUserLoyaltyActivityActivityItem>[];
   private readonly creditColumnsByCurrency = new Map<string, TableColumn<GetUserCreditLedgerEntry>[]>();

@@ -8,6 +8,7 @@ export interface RejectDialogData {
   subtitle?: string;
   reasonLabel?: string;
   reasonPlaceholder?: string;
+  submitLabel?: string;
 }
 
 export interface RejectDialogResult {

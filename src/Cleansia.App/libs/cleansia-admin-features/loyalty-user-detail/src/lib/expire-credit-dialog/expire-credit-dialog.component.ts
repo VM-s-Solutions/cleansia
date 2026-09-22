@@ -59,13 +59,12 @@ export class ExpireCreditDialogComponent {
   readonly submitting = input<boolean>(false);
 
   /**
-   * What is about to be discharged, shown back to the admin. The dialog does not compute it — the
-   * balance it names must be the one the ledger above it shows, or the two disagree on screen. One
-   * account per currency, so the currency IS the choice of which balance goes.
+   * What is about to be discharged, shown back to the admin as the ledger above prints it. The
+   * dialog does not format it — the balance it names must be the one the ledger shows, or the two
+   * disagree on screen. One account per currency, so the currency IS the choice of which balance goes.
    */
-  readonly balance = input<number>(0);
+  readonly balanceLabel = input<string>('');
   readonly currencyId = input<string>('');
-  readonly currencyCode = input<string>('');
 
   /** The account's currency and the note: the amount is always that account's whole balance. */
   readonly submitForm = output<ExpireCreditDialogSubmit>();

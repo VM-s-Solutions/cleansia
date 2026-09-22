@@ -2035,7 +2035,8 @@
         "title": "Zrušiť faktúru",
         "subtitle": "Uveďte dôvod zrušenia tejto faktúry",
         "reason_label": "Dôvod zrušenia",
-        "reason_placeholder": "Zadajte dôvod zrušenia..."
+        "reason_placeholder": "Zadajte dôvod zrušenia...",
+        "submit": "Zrušiť faktúru"
       },
       "assign_variable_symbol_confirm": {
         "title": "Priradiť variabilný symbol?",
@@ -2353,7 +2354,7 @@
         "expire_error": "Zostatok sa nepodarilo odpísať.",
         "expire_dialog": {
           "title": "Odpísať zostatok kreditu",
-          "lede": "Odpíše celý zostatok {{amount}} {{currency}} a nedá sa to vrátiť späť. Použite, keď zákazník odchádza: kým kredit zostáva, výmaz účtu sa odmietne.",
+          "lede": "Odpíše celý zostatok {{amount}} a nedá sa to vrátiť späť. Použite, keď zákazník odchádza: kým kredit zostáva, výmaz účtu sa odmietne.",
           "field": {
             "note": "Dôvod",
             "note_help": "Jediný záznam o tom, prečo firma prestala dlžiť peniaze. Uveďte, kto o to požiadal."

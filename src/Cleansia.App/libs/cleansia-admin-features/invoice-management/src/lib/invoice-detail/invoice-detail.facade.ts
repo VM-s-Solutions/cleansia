@@ -172,6 +172,9 @@ export class InvoiceDetailFacade extends UnsubscribeControlDirective {
       reasonPlaceholder: this.translate.instant(
         'pages.invoice_detail.cancel_dialog.reason_placeholder'
       ),
+      submitLabel: this.translate.instant(
+        'pages.invoice_detail.cancel_dialog.submit'
+      ),
     };
 
     const dialogRef = this.dialogService.open(RejectDialogComponent, {

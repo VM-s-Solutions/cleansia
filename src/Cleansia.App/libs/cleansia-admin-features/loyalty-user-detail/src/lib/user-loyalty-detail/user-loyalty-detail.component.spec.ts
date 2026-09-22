@@ -47,9 +47,8 @@ class IssueCreditDialogStub {
 class ExpireCreditDialogStub {
   visible = input(false);
   submitting = input(false);
-  balance = input(0);
+  balanceLabel = input('');
   currencyId = input('');
-  currencyCode = input('');
   visibleChange = output<boolean>();
   submitForm = output<unknown>();
 }
@@ -212,8 +211,9 @@ describe('UserLoyaltyDetailComponent — credit section', () => {
     const dialog = fixture.debugElement.query(By.directive(ExpireCreditDialogStub))
       .componentInstance as ExpireCreditDialogStub;
     expect(dialog.currencyId()).toBe('cur-eur');
-    expect(dialog.currencyCode()).toBe('EUR');
-    expect(dialog.balance()).toBe(25);
+    // The lede names the balance in the words the ledger above it prints, so the two never disagree.
+    const facade = fixture.debugElement.injector.get(UserLoyaltyDetailFacade);
+    expect(dialog.balanceLabel()).toBe(facade.formatBalance(25, 'EUR'));
 
     fixture.componentInstance.onExpireCreditDialogVisibleChange(false);
     expect(fixture.componentInstance.expireCreditAccount()).toBeNull();

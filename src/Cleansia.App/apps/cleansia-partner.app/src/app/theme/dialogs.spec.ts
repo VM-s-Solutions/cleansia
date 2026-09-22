@@ -22,7 +22,8 @@ function findSolutionDir(): string {
 
 const APP_DIR = join(findSolutionDir(), 'Cleansia.App');
 const FEATURES_DIR = join(APP_DIR, 'libs/cleansia-partner-features');
-const PARTNER_PAGES_INDEX = join(APP_DIR, 'libs/shared/assets/src/styles/pages/cleansia-partner/index.scss');
+const PARTNER_PAGES_DIR = join(APP_DIR, 'libs/shared/assets/src/styles/pages/cleansia-partner');
+const PARTNER_PAGES_INDEX = join(PARTNER_PAGES_DIR, 'index.scss');
 
 function walk(dir: string, pattern: RegExp, out: string[] = []): string[] {
   for (const name of readdirSync(dir)) {
@@ -128,5 +129,22 @@ describe('partner dialogs', () => {
     const index = read(PARTNER_PAGES_INDEX);
     expect(index).toMatch(/@use '[^']*\/dialog';/);
     expect(index).toMatch(/@use '[^']*\/form-page';/);
+  });
+
+  it('collapse the completion summary to one column on a phone, as the detail grid it sits on does', () => {
+    // A page rule that re-declares the grid's columns on two classes outweighs the shared
+    // breakpoints, so it must restate the phone collapse or the three columns hold at 390px.
+    const scss = read(join(PARTNER_PAGES_DIR, 'orders.component.scss'));
+    const start = scss.indexOf('.complete-order-dialog__times.detail-grid {');
+    expect(start).toBeGreaterThanOrEqual(0);
+    let depth = 0;
+    let end = start;
+    for (; end < scss.length; end++) {
+      if (scss[end] === '{') depth++;
+      if (scss[end] === '}' && --depth === 0) break;
+    }
+    const rule = scss.slice(start, end + 1);
+
+    expect(rule).toMatch(/@media \(max-width: 767px\) \{\s*grid-template-columns: minmax\(0, 1fr\);/);
   });
 });

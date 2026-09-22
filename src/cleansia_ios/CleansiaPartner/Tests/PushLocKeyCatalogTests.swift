@@ -17,7 +17,6 @@ final class PushLocKeyCatalogTests: XCTestCase {
     private let languages = ["en", "cs", "sk", "uk", "ru"]
     private let events = [
         "order.payment_confirmed",
-        "order.confirmed",
         "order.cleaner_assigned",
         "order.on_the_way",
         "order.in_progress",
@@ -51,7 +50,6 @@ final class PushLocKeyCatalogTests: XCTestCase {
     /// backend put in it.
     private let orderNumberArgEvents: Set<String> = [
         "order.payment_confirmed",
-        "order.confirmed",
         "order.cleaner_assigned",
         "order.on_the_way",
         "order.in_progress",
@@ -210,17 +208,6 @@ final class PushLocKeyCatalogTests: XCTestCase {
                         "\(key) says \(word) in \(language): \(value)"
                     )
                 }
-            }
-        }
-    }
-
-    func testPaymentConfirmationRetainsTheLegacyCopyInEveryLanguage() throws {
-        for language in languages {
-            let table = try localizableTable(for: language)
-            for suffix in ["title", "body"] {
-                let current = try XCTUnwrap(table["push.order.payment_confirmed.\(suffix)"], language)
-                let legacy = try XCTUnwrap(table["push.order.confirmed.\(suffix)"], language)
-                XCTAssertEqual(current, legacy, language)
             }
         }
     }

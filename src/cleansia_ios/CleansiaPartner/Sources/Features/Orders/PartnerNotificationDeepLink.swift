@@ -26,7 +26,6 @@ enum PartnerNotificationDeepLink {
     ) -> PartnerNotificationDestination? {
         switch eventKey {
         case "order.payment_confirmed",
-             "order.confirmed",
              "order.in_progress",
              "order.completed",
              "order.cancelled",

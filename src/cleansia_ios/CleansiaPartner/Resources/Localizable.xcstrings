@@ -16991,41 +16991,6 @@
         }
       }
     },
-    "push.order.confirmed.body": {
-      "extractionState": "manual",
-      "localizations": {
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Zakázka č. %1$@ je potvrzena. Klepnutím zobrazíte podrobnosti."
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Job #%1$@ is confirmed. Tap to see the details."
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Заказ №%1$@ подтверждён. Нажмите, чтобы посмотреть детали."
-          }
-        },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Zákazka č. %1$@ je potvrdená. Ťuknutím zobrazíte podrobnosti."
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Замовлення №%1$@ підтверджено. Торкніться, щоб переглянути деталі."
-          }
-        }
-      }
-    },
     "push.order.payment_confirmed.body": {
       "extractionState": "manual",
       "localizations": {
@@ -17057,41 +17022,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Замовлення №%1$@ підтверджено. Торкніться, щоб переглянути деталі."
-          }
-        }
-      }
-    },
-    "push.order.confirmed.title": {
-      "extractionState": "manual",
-      "localizations": {
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Zakázka potvrzena"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Job confirmed"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Заказ подтверждён"
-          }
-        },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Zákazka potvrdená"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Замовлення підтверджено"
           }
         }
       }

@@ -190,7 +190,7 @@ final class NotificationsInboxViewModelTests: XCTestCase {
 
     func testTapRowWithoutTargetMarksReadWithoutNavigating() async {
         client.pageResults = [NotificationFixtures.page([
-            NotificationFixtures.item(id: "n-1", eventKey: "order.confirmed", args: [:])
+            NotificationFixtures.item(id: "n-1", eventKey: "order.payment_confirmed", args: [:])
         ])]
         let vm = makeVM()
         await vm.onOpen()

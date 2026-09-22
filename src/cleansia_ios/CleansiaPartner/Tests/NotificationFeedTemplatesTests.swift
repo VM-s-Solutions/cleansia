@@ -86,7 +86,7 @@ final class NotificationFeedTemplatesTests: XCTestCase {
     }
 
     func testUnknownEventKeyHidesTheRow() {
-        XCTAssertNil(NotificationFeedTemplates.render(eventKey: "order.confirmed", args: [:]))
+        XCTAssertNil(NotificationFeedTemplates.render(eventKey: "order.payment_confirmed", args: [:]))
         XCTAssertNil(NotificationFeedTemplates.render(eventKey: "promo.new_sitewide", args: [:]))
         XCTAssertNil(NotificationFeedTemplates.render(eventKey: "some.future_event", args: [:]))
     }

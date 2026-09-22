@@ -40,7 +40,7 @@ final class FakeNotificationFeedClient: NotificationFeedClient, @unchecked Senda
 enum NotificationFixtures {
     static func item(
         id: String = "n-1",
-        eventKey: String = "order.confirmed",
+        eventKey: String = "order.payment_confirmed",
         args: [String: String] = ["orderId": "o-1", "orderNumber": "A-1042"],
         createdOn: Date = Date(timeIntervalSince1970: 1_000_000),
         readOn: Date? = nil

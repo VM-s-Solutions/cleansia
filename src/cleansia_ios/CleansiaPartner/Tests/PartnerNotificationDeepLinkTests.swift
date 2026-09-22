@@ -10,14 +10,13 @@ final class PartnerNotificationDeepLinkTests: XCTestCase {
     }
 
     func testOrderEventWithIdResolvesToOrderDestination() {
-        let destination = PartnerNotificationDeepLink.resolve(eventKey: "order.confirmed", orderId: "ord-1")
+        let destination = PartnerNotificationDeepLink.resolve(eventKey: "order.payment_confirmed", orderId: "ord-1")
         XCTAssertEqual(destination, .order(orderId: "ord-1"))
     }
 
     func testAllOrderScopedEventsResolveToOrder() {
         let keys = [
             "order.payment_confirmed",
-            "order.confirmed",
             "order.in_progress",
             "order.completed",
             "order.cancelled",
@@ -55,7 +54,6 @@ final class PartnerNotificationDeepLinkTests: XCTestCase {
 
     func testOrderEventWithoutIdResolvesToNil() {
         XCTAssertNil(PartnerNotificationDeepLink.resolve(eventKey: "order.payment_confirmed", orderId: nil))
-        XCTAssertNil(PartnerNotificationDeepLink.resolve(eventKey: "order.confirmed", orderId: nil))
     }
 
     func testAssignmentEventsWithoutIdResolveToNil() {
@@ -121,7 +119,7 @@ final class PartnerNotificationDeepLinkTests: XCTestCase {
 
     func testResolveFromAlertCarryingUserInfoStillResolvesOrder() {
         let userInfo = alertCarryingUserInfo(
-            eventKey: "order.confirmed",
+            eventKey: "order.payment_confirmed",
             locArgs: ["A-1042"],
             extra: ["orderId": "ord-1"]
         )

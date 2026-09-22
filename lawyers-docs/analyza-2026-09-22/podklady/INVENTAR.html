@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="cs"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Inventář podkladů</title><style>
+:root { color-scheme: light; }
+* { box-sizing: border-box; }
+body { margin: 0; background: #eef3f3; color: #183034; font-family: 'Segoe UI', Arial, sans-serif; font-size: 16px; line-height: 1.6; }
+main { max-width: 1120px; margin: 28px auto; padding: 42px 54px; background: white; border-top: 6px solid #12796b; box-shadow: 0 5px 25px #18303415; }
+nav { display: flex; flex-wrap: wrap; gap: 12px 24px; padding-bottom: 22px; margin-bottom: 26px; border-bottom: 1px solid #dbe5e4; font-size: 14px; }
+h1 { color: #115c53; font-size: 31px; line-height: 1.2; margin: 0 0 16px; }
+h2 { color: #115c53; font-size: 24px; line-height: 1.3; margin: 34px 0 14px; border-bottom: 1px solid #cee1dd; padding-bottom: 8px; }
+h3 { color: #174d48; font-size: 19px; line-height: 1.35; margin: 26px 0 10px; }
+h4 { font-size: 17px; margin: 23px 0 8px; }
+p { margin: 10px 0 14px; }
+li { margin: 7px 0; }
+a { color: #08685e; text-decoration-thickness: 1px; text-underline-offset: 2px; overflow-wrap: anywhere; }
+code { background: #f0f5f5; font-family: Consolas, monospace; font-size: .85em; padding: 1px 3px; overflow-wrap: anywhere; }
+table { border-collapse: collapse; width: 100%; margin: 18px 0 23px; font-size: 14px; line-height: 1.45; table-layout: fixed; }
+th { background: #e2f0ed; text-align: left; color: #124d45; font-weight: 650; }
+td, th { border: 1px solid #d2dfdd; padding: 10px 12px; vertical-align: top; overflow-wrap: anywhere; }
+tr:nth-child(even) td { background: #f8fbfa; }
+blockquote { border-left: 4px solid #12796b; margin: 20px 0; padding: 5px 20px; background: #f0f7f5; }
+.appendix a[href^="../../src/"], .appendix a[href^="../../sql-scripts/"] { font-family: Consolas, monospace; font-size: .82em; }
+.toc { background: #f5f9f8; padding: 10px 24px; font-size: 14px; border: 1px solid #dfebe8; }
+.toc ul { padding-left: 18px; }
+@media (max-width: 720px) { main { margin: 0; padding: 24px 18px; } h1 { font-size: 27px; } table { font-size: 12px; } td, th { padding: 7px; } }
+@media print {
+ @page { size: A4; margin: 15mm 15mm 18mm; }
+ body { background: white; font-size: 10.5pt; line-height: 1.42; color: #182c2c; }
+ main { max-width: none; padding: 0; margin: 0; box-shadow: none; border-top: 0; }
+ nav, .toc { display: none; }
+ h1 { font-size: 24pt; margin-bottom: 12pt; }
+ h2 { font-size: 16pt; margin: 20pt 0 9pt; }
+ h3 { font-size: 12.5pt; margin: 15pt 0 7pt; }
+ h4 { font-size: 11pt; margin: 14pt 0 7pt; }
+ p { margin: 7pt 0 9pt; orphans: 3; widows: 3; }
+ li { margin: 5pt 0; }
+ table { font-size: 9pt; line-height: 1.35; margin: 11pt 0 15pt; }
+ th, td { padding: 6pt 7pt; }
+ thead { display: table-header-group; }
+ tr, blockquote { break-inside: avoid; }
+ h1, h2, h3, h4 { break-after: avoid; }
+ a { text-decoration: none; color: #135d55; }
+}
+</style></head><body><main><nav><a href="../PROVOZ-PLATFORMY.html">Jak platforma funguje</a><a href="../ROZPORY-DOKUMENTY-VS-KOD.html">Dokumenty vs. aplikace</a><a href="../TECHNICKE-MEZERY.html">Technické mezery</a><a href="../OBCHODNI-MEZERY-A-HRANICNI-PRIPADY.html">Obchodní mezery a hraniční případy</a><a href="../AUDIT-LOG.html">Záznam auditu</a><a href="../PROVOZ-PLATFORMY.pdf">Jak platforma funguje (PDF)</a><a href="../ROZPORY-DOKUMENTY-VS-KOD.pdf">Dokumenty vs. aplikace (PDF)</a><a href="../TECHNICKE-MEZERY.pdf">Technické mezery (PDF)</a><a href="../OBCHODNI-MEZERY-A-HRANICNI-PRIPADY.pdf">Obchodní mezery a hraniční případy (PDF)</a><a href="../AUDIT-LOG.pdf">Záznam auditu (PDF)</a><a href="../podklady/INVENTAR.html">Inventář podkladů</a></nav><h1 id="inventar-podkladu">Inventář podkladů</h1>
+<p>Kontrola 22. 9. 2026 proti commitu <code>6792f0c256e81e1473908308bd73881004853be4</code> (<code>master</code>). Všech deset DOCX ve složce <code>lawyers-docs/SMLOUVY CleanSia/SMLOUVY</code> má stejný SHA-256 jako při rozboru 11. 9. 2026; textové extrakce a číslování odstavců Pxxx se přebírají beze změny z <a href="../../analyza-2026-09-11/podklady/INVENTAR.md">../../analyza-2026-09-11/podklady/</a>. Odkazy Pxxx v tomto rozboru vedou tam.</p>
+<table>
+<thead>
+<tr>
+<th>Originál</th>
+<th>Textová extrakce (11. 9. 2026)</th>
+<th style="text-align: right;">Odstavce</th>
+<th>SHA-256 22. 9. 2026</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="../../SMLOUVY%20CleanSia/SMLOUVY/cleansia_bozp.docx">cleansia_bozp.docx</a></td>
+<td><a href="../../analyza-2026-09-11/podklady/cleansia_bozp.txt">cleansia_bozp.txt</a></td>
+<td style="text-align: right;">181</td>
+<td><code>dfb0171c9f4259b8f73e31b0635a05144000b625298c8aa34ae42b976e21b851</code></td>
+</tr>
+<tr>
+<td><a href="../../SMLOUVY%20CleanSia/SMLOUVY/cleansia_cookie_policy.docx">cleansia_cookie_policy.docx</a></td>
+<td><a href="../../analyza-2026-09-11/podklady/cleansia_cookie_policy.txt">cleansia_cookie_policy.txt</a></td>
+<td style="text-align: right;">241</td>
+<td><code>90fd65c0ecbe8e1af23281ecadf0415c7c50365ae237ccdfce71a6258d10a5f3</code></td>
+</tr>
+<tr>
+<td><a href="../../SMLOUVY%20CleanSia/SMLOUVY/cleansia_dpa.docx">cleansia_dpa.docx</a></td>
+<td><a href="../../analyza-2026-09-11/podklady/cleansia_dpa.txt">cleansia_dpa.txt</a></td>
+<td style="text-align: right;">215</td>
+<td><code>b2fb767e8a3b35336dfb0d0657277265ba7b36890249856d55ad4d84fc16eee1</code></td>
+</tr>
+<tr>
+<td><a href="../../SMLOUVY%20CleanSia/SMLOUVY/cleansia_gdpr_souhlasy.docx">cleansia_gdpr_souhlasy.docx</a></td>
+<td><a href="../../analyza-2026-09-11/podklady/cleansia_gdpr_souhlasy.txt">cleansia_gdpr_souhlasy.txt</a></td>
+<td style="text-align: right;">191</td>
+<td><code>c500f2a252964a43b3f018f867506757a32351cd7f844c0efb79da3c96690634</code></td>
+</tr>
+<tr>
+<td><a href="../../SMLOUVY%20CleanSia/SMLOUVY/cleansia_kodex_chovani.docx">cleansia_kodex_chovani.docx</a></td>
+<td><a href="../../analyza-2026-09-11/podklady/cleansia_kodex_chovani.txt">cleansia_kodex_chovani.txt</a></td>
+<td style="text-align: right;">218</td>
+<td><code>6ca7be5aba6a73bf7b86dea7fb729da3bf077564c0fa589d557b3d2bb71b09a3</code></td>
+</tr>
+<tr>
+<td><a href="../../SMLOUVY%20CleanSia/SMLOUVY/cleansia_privacy_policy.docx">cleansia_privacy_policy.docx</a></td>
+<td><a href="../../analyza-2026-09-11/podklady/cleansia_privacy_policy.txt">cleansia_privacy_policy.txt</a></td>
+<td style="text-align: right;">166</td>
+<td><code>73e209dd4406df1161ff3f5013f3c71ae295d36cba6beacd99dfeb59c8609de8</code></td>
+</tr>
+<tr>
+<td><a href="../../SMLOUVY%20CleanSia/SMLOUVY/cleansia_ramcova_smlouva.docx">cleansia_ramcova_smlouva.docx</a></td>
+<td><a href="../../analyza-2026-09-11/podklady/cleansia_ramcova_smlouva.txt">cleansia_ramcova_smlouva.txt</a></td>
+<td style="text-align: right;">233</td>
+<td><code>9fc06314343272154914dab65fe31e75d827e64cc453ef56248035c11f1fcc6e</code></td>
+</tr>
+<tr>
+<td><a href="../../SMLOUVY%20CleanSia/SMLOUVY/cleansia_reklamacni_rad.docx">cleansia_reklamacni_rad.docx</a></td>
+<td><a href="../../analyza-2026-09-11/podklady/cleansia_reklamacni_rad.txt">cleansia_reklamacni_rad.txt</a></td>
+<td style="text-align: right;">140</td>
+<td><code>521c299d3ddb96f27b83d68d62206b459310a5c1b4cd743f1546ea13a6cfcdf1</code></td>
+</tr>
+<tr>
+<td><a href="../../SMLOUVY%20CleanSia/SMLOUVY/cleansia_spolecenska_smlouva.docx">cleansia_spolecenska_smlouva.docx</a></td>
+<td><a href="../../analyza-2026-09-11/podklady/cleansia_spolecenska_smlouva.txt">cleansia_spolecenska_smlouva.txt</a></td>
+<td style="text-align: right;">154</td>
+<td><code>1516003ee93e63e4fa9960d2c25371855ceac4f65d89e2213babe9cae53c5a69</code></td>
+</tr>
+<tr>
+<td><a href="../../SMLOUVY%20CleanSia/SMLOUVY/Cleansia_VOP.docx">Cleansia_VOP.docx</a></td>
+<td><a href="../../analyza-2026-09-11/podklady/Cleansia_VOP.txt">Cleansia_VOP.txt</a></td>
+<td style="text-align: right;">145</td>
+<td><code>a28ea098203bb3dd78c215823a1f5912575d0bc687a3aeec9f8d7e734601c119</code></td>
+</tr>
+</tbody>
+</table>
+<p>Ověření: <code>sha256sum "lawyers-docs/SMLOUVY CleanSia/SMLOUVY/"*.docx</code> porovnané se sloupcem SHA-256 v inventáři z 11. 9. 2026 — deset shod, nula rozdílů.</p></main></body></html>

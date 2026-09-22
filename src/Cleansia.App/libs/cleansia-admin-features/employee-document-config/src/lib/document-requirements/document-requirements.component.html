@@ -13,16 +13,14 @@
       <cleansia-loader />
     } @else {
       <cleansia-section [title]="'pages.document_requirements.country_section' | translate">
-        <div class="form-grid">
-          <div class="form-field">
-            <cleansia-select
-              [label]="'pages.document_requirements.country' | translate"
-              [options]="countryOptions()"
-              [filter]="true"
-              [showClear]="true"
-              [formControl]="countryControl"
-            />
-          </div>
+        <div class="cleansia-list-filter">
+          <cleansia-select
+            [label]="'pages.document_requirements.country' | translate"
+            [options]="countryOptions()"
+            [filter]="true"
+            [showClear]="true"
+            [formControl]="countryControl"
+          />
         </div>
       </cleansia-section>
 

@@ -13,15 +13,13 @@
       <cleansia-loader />
     } @else {
       <cleansia-section [title]="'pages.document_deletion_requests.list_section' | translate">
-        <div class="form-grid">
-          <div class="form-field">
-            <cleansia-select
-              [label]="'pages.document_deletion_requests.columns.status' | translate"
-              [options]="statusOptions()"
-              [showClear]="true"
-              [formControl]="statusControl"
-            />
-          </div>
+        <div class="cleansia-list-filter">
+          <cleansia-select
+            [label]="'pages.document_deletion_requests.columns.status' | translate"
+            [options]="statusOptions()"
+            [showClear]="true"
+            [formControl]="statusControl"
+          />
         </div>
 
         <cleansia-table

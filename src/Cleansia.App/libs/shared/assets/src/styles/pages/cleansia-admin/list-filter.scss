@@ -1,0 +1,5 @@
+// A lone select above a list table is a filter, not a form row: it takes a field's width, the
+// same on every list that carries one, and never stretches across the card.
+.cleansia-list-filter {
+  max-width: 24rem;
+}

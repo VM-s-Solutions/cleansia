@@ -2,6 +2,7 @@ import { TemplateRef } from '@angular/core';
 import { PromoCodeListItem, PromoCodeType } from '@cleansia/admin-services';
 import { TableAction, TableColumn } from '@cleansia/components';
 import { PermissionService, Policy } from '@cleansia/services';
+import { formatMoney, localeFor } from '@cleansia/utils';
 import { TranslateService } from '@ngx-translate/core';
 
 export type PromoCodeStatusBadge = 'active' | 'inactive' | 'expired';
@@ -114,7 +115,11 @@ export function getPromoCodeTableDefinition(
         field: 'minimumOrderAmount',
         header: translate.instant('pages.promo_codes.column.min_order'),
         getValue: (row) =>
-          row.minimumOrderAmount != null ? `${row.minimumOrderAmount}` : '—',
+          row.minimumOrderAmount == null
+            ? '—'
+            : formatMoney(row.minimumOrderAmount, row.currencyCode ?? null, localeFor(translate.currentLang), {
+                fractionDigits: 2,
+              }),
         width: '10%',
       },
       {

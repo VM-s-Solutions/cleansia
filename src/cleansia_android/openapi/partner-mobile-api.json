@@ -9813,10 +9813,6 @@
           "orderStatus": {
             "$ref": "#/components/schemas/Code"
           },
-          "confirmationCode": {
-            "type": "string",
-            "nullable": true
-          },
           "notes": {
             "type": "string",
             "nullable": true
@@ -10065,10 +10061,6 @@
           },
           "orderStatus": {
             "$ref": "#/components/schemas/Code"
-          },
-          "confirmationCode": {
-            "type": "string",
-            "nullable": true
           },
           "selectedPackages": {
             "type": "array",

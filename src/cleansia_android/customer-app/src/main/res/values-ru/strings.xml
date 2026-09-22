@@ -273,7 +273,6 @@
     <string name="order_detail_error_title">Не удалось загрузить этот заказ</string>
     <string name="order_detail_error_message">Проверьте подключение к интернету и попробуйте снова.</string>
     <string name="order_detail_error_retry">Попробовать снова</string>
-    <string name="order_detail_code_label">Код</string>
     <string name="order_detail_discount_tier">Скидка за лояльность применена</string>
     <string name="order_detail_discount_membership">Скидка Cleansia Plus применена</string>
     <string name="order_detail_discount_promo">Промокод применён</string>
@@ -1397,11 +1396,10 @@
     <string name="notification_recurring_paused_body">Ваше расписание регулярных уборок приостановлено, поскольку Plus неактивен. Продлите Plus, чтобы возобновить планирование уборок.</string>
     <string name="guest_order_entry">Найти бронирование без учётной записи</string>
     <string name="guest_order_title">Бронирование без учётной записи</string>
-    <string name="guest_order_intro">Введите номер бронирования, электронную почту и код подтверждения из письма о бронировании.</string>
-    <string name="guest_order_number">Номер бронирования</string>
-    <string name="guest_order_code">Код подтверждения</string>
+    <string name="guest_order_intro">Вставьте ссылку для отслеживания из письма о бронировании. Она откроет ваше бронирование — больше ничего вводить не нужно.</string>
+    <string name="guest_order_link">Ссылка для отслеживания из письма</string>
     <string name="guest_order_lookup">Найти бронирование</string>
-    <string name="guest_order_required">Введите номер бронирования, электронную почту и код подтверждения.</string>
+    <string name="guest_order_required">Вставьте ссылку для отслеживания из письма о бронировании.</string>
     <string name="guest_order_empty">После поиска здесь появятся сведения о бронировании.</string>
     <string name="guest_order_loading">Ищем ваше бронирование…</string>
     <string name="guest_order_cancel">Отменить бронирование</string>

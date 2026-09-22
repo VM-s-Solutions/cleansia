@@ -146,7 +146,7 @@
   color: var(--cl-muted);
 }
 
-// ---- The form ----------------------------------------------------------------
+// ---- The card the page answers in --------------------------------------------
 .cl-trk__card {
   margin-top: calc(2.125 * var(--cl-u));
   padding: calc(2.125 * var(--cl-u)) calc(2.25 * var(--cl-u)) calc(2 * var(--cl-u));
@@ -156,24 +156,38 @@
   text-align: left;
 }
 
-// Two across, as the board draws it. The code takes the full second row: it is
-// the field nobody expects, and a full-width row is where the eye stops.
-.cl-trk__fields {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: var(--cl-u);
+.cl-trk__state {
+  margin: 0;
+  font-size: calc(0.875 * var(--cl-u));
+  color: var(--cl-muted);
 }
 
-.cl-trk__field--wide {
-  grid-column: 1 / -1;
+.cl-trk__need-link {
+  display: flex;
+  align-items: flex-start;
+  gap: calc(0.875 * var(--cl-u));
+
+  i {
+    flex-shrink: 0;
+    margin-top: calc(0.25 * var(--cl-u));
+    font-size: calc(1.25 * var(--cl-u));
+    color: var(--cl-accent);
+  }
+
+  p {
+    margin: calc(0.375 * var(--cl-u)) 0 0;
+    font-size: calc(0.875 * var(--cl-u));
+    line-height: 1.6;
+    color: var(--cl-muted);
+  }
 }
 
-.cl-trk__submit {
+.cl-trk__retry {
   display: block;
   margin-top: calc(1.375 * var(--cl-u));
 }
 
-// Nothing failed — the three values simply matched no order — so this is the
+// Nothing failed — the link simply no longer opens a booking — so this is the
 // colour of "check that again", not the colour of an error.
 .cl-trk__miss {
   display: flex;
@@ -652,7 +666,6 @@
 }
 
 @media (max-width: 640px) {
-  .cl-trk__fields,
   .cl-trk__axes {
     grid-template-columns: minmax(0, 1fr);
   }

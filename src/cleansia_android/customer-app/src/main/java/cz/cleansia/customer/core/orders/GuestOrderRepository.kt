@@ -16,20 +16,18 @@ class GuestOrderRepository @Inject constructor(
     private val api: GuestOrderApi,
     @ApplicationContext private val context: Context,
 ) {
-    suspend fun lookup(number: String, email: String, code: String): ApiResult<GuestOrderDto> =
-        request { api.lookup(number, email, code) }
+    suspend fun lookup(accessToken: String): ApiResult<GuestOrderDto> =
+        request { api.lookup(accessToken) }
 
-    suspend fun preview(number: String, email: String, code: String): ApiResult<CancellationFeePreviewDto> =
-        request { api.preview(number, email, code) }
+    suspend fun preview(accessToken: String): ApiResult<CancellationFeePreviewDto> =
+        request { api.preview(accessToken) }
 
     suspend fun cancel(
-        number: String,
-        email: String,
-        code: String,
+        accessToken: String,
         reason: String?,
         language: String,
     ): ApiResult<CancelOrderResponse> =
-        request { api.cancel(number, email, code, reason, language) }
+        request { api.cancel(accessToken, reason, language) }
 
     private suspend fun <T : Any> request(call: suspend () -> Response<T>): ApiResult<T> = wireResult {
         val response = networkCall { call() }

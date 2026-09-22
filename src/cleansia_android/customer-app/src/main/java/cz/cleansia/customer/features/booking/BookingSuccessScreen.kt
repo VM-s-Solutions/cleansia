@@ -116,12 +116,9 @@ fun BookingSuccessScreen(
 ) {
     val uiState by viewModel.state.collectAsStateWithLifecycle()
 
-    // Prefer the freshly-loaded confirmation code if it differs from the nav arg
-    // (e.g. backend trims whitespace). Falls back to the nav-arg value so the
-    // pill still renders in Loading/Error states.
+    // The code comes from the create response and from nowhere else: the order detail stopped
+    // carrying it when it stopped being a credential.
     val loadedOrder = (uiState as? BookingSuccessUiState.Loaded)?.order
-    val effectiveCode = loadedOrder?.confirmationCode?.takeIf { it.isNotBlank() }
-        ?: confirmationCode
 
     // Timeline reflects the actual order's status + cleaner assignment.
     // Before the detail loads, falls back to a "just placed, searching for a
@@ -169,7 +166,7 @@ fun BookingSuccessScreen(
             textAlign = TextAlign.Center,
         )
 
-        if (effectiveCode.isNotBlank()) {
+        if (confirmationCode.isNotBlank()) {
             Spacer(Modifier.height(14.dp))
             Column(
                 modifier = Modifier
@@ -188,7 +185,7 @@ fun BookingSuccessScreen(
                 Spacer(Modifier.height(2.dp))
                 androidx.compose.foundation.text.selection.SelectionContainer {
                     Text(
-                        effectiveCode,
+                        confirmationCode,
                         style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
                         color = MaterialTheme.colorScheme.primary,
                         textAlign = TextAlign.Center,

@@ -10682,41 +10682,6 @@
         }
       }
     },
-    "guest_order_code": {
-      "extractionState": "manual",
-      "localizations": {
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Potvrzovací kód"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Confirmation code"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Код подтверждения"
-          }
-        },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Potvrdzovací kód"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Код підтвердження"
-          }
-        }
-      }
-    },
     "guest_order_empty": {
       "extractionState": "manual",
       "localizations": {
@@ -10828,31 +10793,31 @@
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Zadejte číslo rezervace, e-mail a potvrzovací kód z potvrzovacího e-mailu."
+            "value": "Vložte odkaz na sledování z potvrzovacího e-mailu. Otevře vaši rezervaci — nic dalšího zadávat nemusíte."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Use the booking number, email and confirmation code from your booking email."
+            "value": "Paste the tracking link from your booking email. It opens your booking — there is nothing else to enter."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Введите номер бронирования, электронную почту и код подтверждения из письма о бронировании."
+            "value": "Вставьте ссылку для отслеживания из письма о бронировании. Она откроет ваше бронирование — больше ничего вводить не нужно."
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Zadajte číslo rezervácie, e-mail a potvrdzovací kód z potvrdzovacieho e-mailu."
+            "value": "Vložte odkaz na sledovanie z potvrdzovacieho e-mailu. Otvorí vašu rezerváciu — nič ďalšie zadávať nemusíte."
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Введіть номер бронювання, електронну пошту та код підтвердження з листа про бронювання."
+            "value": "Вставте посилання для відстеження з листа про бронювання. Воно відкриє ваше бронювання — більше нічого вводити не треба."
           }
         }
       }
@@ -10927,37 +10892,37 @@
         }
       }
     },
-    "guest_order_number": {
+    "guest_order_link": {
       "extractionState": "manual",
       "localizations": {
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Číslo rezervace"
+            "value": "Odkaz na sledování z e-mailu"
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Booking number"
+            "value": "Tracking link from your email"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Номер бронирования"
+            "value": "Ссылка для отслеживания из письма"
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Číslo rezervácie"
+            "value": "Odkaz na sledovanie z e-mailu"
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Номер бронювання"
+            "value": "Посилання для відстеження з листа"
           }
         }
       }
@@ -11003,31 +10968,31 @@
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Zadejte číslo rezervace, e-mail a potvrzovací kód."
+            "value": "Vložte odkaz na sledování z potvrzovacího e-mailu."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Enter the booking number, email and confirmation code."
+            "value": "Paste the tracking link from your booking email."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Введите номер бронирования, электронную почту и код подтверждения."
+            "value": "Вставьте ссылку для отслеживания из письма о бронировании."
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Zadajte číslo rezervácie, e-mail a potvrdzovací kód."
+            "value": "Vložte odkaz na sledovanie z potvrdzovacieho e-mailu."
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Введіть номер бронювання, електронну пошту та код підтвердження."
+            "value": "Вставте посилання для відстеження з листа про бронювання."
           }
         }
       }
@@ -20134,41 +20099,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Ваш клінер"
-          }
-        }
-      }
-    },
-    "order_detail_code_label": {
-      "extractionState": "stale",
-      "localizations": {
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Kód"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Code"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Код"
-          }
-        },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Kód"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Код"
           }
         }
       }

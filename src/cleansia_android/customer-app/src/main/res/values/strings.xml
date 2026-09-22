@@ -276,7 +276,6 @@
     <string name="order_detail_error_title">Couldn\'t load this order</string>
     <string name="order_detail_error_message">Check your internet connection and try again.</string>
     <string name="order_detail_error_retry">Try again</string>
-    <string name="order_detail_code_label">Code</string>
     <string name="order_detail_discount_tier">Loyalty discount applied</string>
     <string name="order_detail_discount_membership">Cleansia Plus discount applied</string>
     <string name="order_detail_discount_promo">Promo code applied</string>
@@ -1410,11 +1409,10 @@
     <string name="notification_recurring_paused_body">Your recurring schedule is paused because Plus is not active. Renew Plus to resume scheduling.</string>
     <string name="guest_order_entry">Find a guest booking</string>
     <string name="guest_order_title">Guest booking</string>
-    <string name="guest_order_intro">Use the booking number, email and confirmation code from your booking email.</string>
-    <string name="guest_order_number">Booking number</string>
-    <string name="guest_order_code">Confirmation code</string>
+    <string name="guest_order_intro">Paste the tracking link from your booking email. It opens your booking — there is nothing else to enter.</string>
+    <string name="guest_order_link">Tracking link from your email</string>
     <string name="guest_order_lookup">Find booking</string>
-    <string name="guest_order_required">Enter the booking number, email and confirmation code.</string>
+    <string name="guest_order_required">Paste the tracking link from your booking email.</string>
     <string name="guest_order_empty">Your booking details will appear here after lookup.</string>
     <string name="guest_order_loading">Finding your booking…</string>
     <string name="guest_order_cancel">Cancel booking</string>

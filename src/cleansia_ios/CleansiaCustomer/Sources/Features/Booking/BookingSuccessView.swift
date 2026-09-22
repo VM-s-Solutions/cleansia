@@ -43,9 +43,8 @@ struct BookingSuccessView: View {
                         .foregroundColor(CleansiaColors.onSurfaceVariant)
                         .multilineTextAlignment(.center)
                 }
-                let code = orderVM.effectiveCode(fallback: confirmationCode)
-                if !code.isBlank {
-                    confirmationCard(code)
+                if !confirmationCode.isBlank {
+                    confirmationCard(confirmationCode)
                 }
                 enrichment
                 timelineCard

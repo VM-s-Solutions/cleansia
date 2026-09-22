@@ -103,12 +103,11 @@ struct OrderPriceBreakdown: Equatable {
     }
 }
 
-/// The headline facts about an order: the code the cleaner asks for at the
-/// door, the price, and the struck-through subtotal when something came off it.
-/// Read by both heroes — the static card renders them inline, the live progress
-/// card renders none of them and `OrderHeroFactsStrip` carries them instead.
+/// The headline facts about an order: the price, and the struck-through subtotal
+/// when something came off it. Read by both heroes — the static card renders them
+/// inline, the live progress card renders none of them and `OrderHeroFactsStrip`
+/// carries them instead.
 struct OrderHeroFacts: Equatable {
-    let confirmationCode: String?
     let total: Double
     let struckSubtotal: Double?
     let discountChips: [OrderDiscountSource]
@@ -118,7 +117,6 @@ struct OrderHeroFacts: Equatable {
         let original = order.originalSubtotal
         let discounted = order.appliedDiscountSource.map { $0 != ._0 } ?? false
         return OrderHeroFacts(
-            confirmationCode: order.confirmationCode.flatMap { $0.isBlank ? nil : $0 },
             total: order.total,
             struckSubtotal: discounted && original > order.total ? original : nil,
             discountChips: OrderDiscountSource.chips(for: order.appliedDiscountSource),
@@ -178,8 +176,7 @@ struct OrderPriceBreakdownCard: View {
 /// The facts the live progress hero leaves out. Android fills the same gap with
 /// `OrderMetaStrip(showFacts = liveHero)`; here the pinned
 /// `OrderDetailCompactHeader` already carries the order number and schedule, so
-/// this strip is the remainder — and it is the only route to the confirmation
-/// code for the three statuses in which a cleaner is on the way.
+/// this strip is the remainder: what the booking costs, and what came off it.
 struct OrderHeroFactsStrip: View {
     let order: CustomerOrderDetail
 
@@ -190,14 +187,6 @@ struct OrderHeroFactsStrip: View {
     var body: some View {
         VStack(alignment: .leading, spacing: Spacing.xxs) {
             HStack(alignment: .firstTextBaseline, spacing: Spacing.xs) {
-                if let code = facts.confirmationCode {
-                    Text(L10n.OrderDetail.codeLabel)
-                        .font(CleansiaTypography.labelSmall)
-                        .foregroundColor(CleansiaColors.onSurfaceVariant)
-                    Text(code)
-                        .font(CleansiaTypography.titleMedium)
-                        .foregroundColor(CleansiaColors.onSurface)
-                }
                 Spacer(minLength: Spacing.xs)
                 Text(OrdersFormat.price(facts.total, currencyCode: facts.currencyCode))
                     .font(CleansiaTypography.titleMedium)
@@ -250,7 +239,6 @@ struct OrderDiscountChip: View {
             tierDiscountAmount: 210,
             membershipDiscountAmount: 300,
             estimatedTime: 180,
-            confirmationCode: "CLN-12345",
             currency: CurrencyDetailDto(code: "CZK")
         ))
 

@@ -1,7 +1,8 @@
 <!--
   Track an order — three states on ONE page, as the board draws them:
-  the form ("Vyhledání objednávky"), the order it found ("Sledování"), and the
-  empty answer ("Nenalezeno"), which is the form wearing an amber panel.
+  the booking it opened ("Sledování"), the link that no longer opens one
+  ("Nenalezeno", an amber panel), and the visitor who arrived without a link at
+  all, who is told where the link is.
 
   This page is now the only guest lookup. `/orders/lookup` was a second form and
   a second result screen doing the same job; it redirects here.
@@ -167,8 +168,7 @@
       <!--
         The facts a guest is allowed to see. The board also draws the address
         and the assigned cleaner; the guest lookup returns neither, on purpose
-        — it answers to an order number, an e-mail and a code, so it withholds
-        what those three should not unlock. -> LookupOrder.cs
+        — the token opens the booking, not the household. -> LookupOrder.cs
       -->
       <section class="cl-trk__panel">
         <h2 class="cl-trk__panel-title">{{ 'pages.track_order.the_order' | translate }}</h2>
@@ -257,17 +257,17 @@
 </div>
 } @else {
 
-<!-- ============================ THE FORM ============================ -->
+<!-- ======================= NO BOOKING ON SCREEN ======================= -->
 <section class="cl-trk">
   <div class="cl-trk__ask">
     <h1 class="cl-trk__title">{{ 'pages.track_order.title' | translate }}</h1>
     <p class="cl-trk__lead">{{ 'pages.track_order.lead' | translate }}</p>
 
     <!--
-      Orders this browser remembers. Not on the board, but a real feature: the
-      wizard writes each guest booking to local storage, so a returning visitor
-      should not have to type a number nobody asked them to keep. A row opens
-      the order in place — the answer is this page.
+      Orders this browser remembers. Not on the board, but a real feature: a
+      booking opened from its e-mail link is kept here with the token it was
+      opened with, so a returning visitor does not have to go back to the
+      mailbox. A row opens the order in place — the answer is this page.
     -->
     @if (recentOrders().length > 0) {
     <div class="cl-trk__recent">
@@ -285,81 +285,49 @@
     </div>
     }
 
-    <!--
-      The submit is the FORM's, not the button's. The button is
-      `buttonType="submit"`, so binding clickFn as well fired the lookup twice
-      per press — two requests against a rate-limited endpoint, and the second
-      cleared the first one's answer before replacing it.
-    -->
-    <form class="cl-trk__card" [formGroup]="form" (ngSubmit)="lookup()">
-      <div class="cl-trk__fields">
-        <cleansia-text-input
-          [floatVariant]="null"
-          [label]="'pages.track_order.order_number' | translate"
-          [placeholder]="'pages.track_order.order_number_placeholder' | translate"
-          formControlName="orderNumber"
-          [required]="true"
-          [showErrors]="true"
-        />
-        <cleansia-text-input
-          [floatVariant]="null"
-          [label]="'pages.track_order.email' | translate"
-          [placeholder]="'pages.track_order.email_placeholder' | translate"
-          formControlName="email"
-          dataType="email"
-          [required]="true"
-          [showErrors]="true"
-        />
-        <!--
-          The third factor, and the reason this endpoint is safe to leave open.
-          An order number is sequential and an e-mail is not a secret; the code
-          only ever reaches the inbox that booked the clean. Six hex characters,
-          so the field says so rather than letting the customer spend a round
-          trip finding out. The board draws two fields — it predates the third
-          factor, and the server requires it. -> LookupOrder.cs
-        -->
-        <cleansia-text-input
-          class="cl-trk__field--wide"
-          [floatVariant]="null"
-          [label]="'pages.track_order.confirmation_code' | translate"
-          [placeholder]="'pages.track_order.confirmation_code_placeholder' | translate"
-          formControlName="confirmationCode"
-          [required]="true"
-          [showErrors]="true"
-        />
-      </div>
-
+    <div class="cl-trk__card">
+      @if (loading()) {
+      <p class="cl-trk__state" role="status">{{ 'pages.track_order.loading' | translate }}</p>
+      } @else if (error(); as message) {
       <!--
-        The empty answer sits between the fields and the button, where the
-        values that produced it can be corrected. Amber, not red: nothing
-        failed — the three simply matched no order.
+        Amber, not red: nothing failed. A link stops opening a booking 30 days
+        after the clean, and at once when the booking is cancelled.
       -->
-      @if (error(); as message) {
       <div class="cl-trk__miss" role="status">
         <i class="pi pi-question-circle"></i>
-        <p>{{ message }}</p>
+        <p>{{ message | translate }}</p>
       </div>
-      }
-
+      @if (hasLink()) {
       <cleansia-button
-        class="cl-trk__submit"
-        [buttonType]="'submit'"
-        [title]="(error() ? 'pages.track_order.retry' : 'pages.track_order.search') | translate"
+        class="cl-trk__retry"
+        [label]="'pages.track_order.retry' | translate"
         [severity]="'primary'"
         [size]="'full-width'"
-        [loading]="loading()"
+        (onClick)="retry()"
       />
+      }
+      } @else {
+      <div class="cl-trk__need-link">
+        <i class="pi pi-envelope"></i>
+        <div>
+          <h2 class="cl-trk__panel-title">
+            {{ 'pages.track_order.need_link_title' | translate }}
+          </h2>
+          <p>{{ 'pages.track_order.need_link_body' | translate }}</p>
+        </div>
+      </div>
+      }
 
       <p class="cl-trk__hint">
         <i class="pi pi-envelope"></i>
         <span>
-          {{ (error() ? 'pages.track_order.hint_missed' : 'pages.track_order.hint') | translate }}
+          {{ 'pages.track_order.hint' | translate }}
           <a [routerLink]="'/' + routes.DISPUTES">
             {{ 'pages.track_order.write_us' | translate }}</a
           >{{ 'pages.track_order.hint_end' | translate }}
         </span>
       </p>
-    </form>
+    </div>
 
     <p class="cl-trk__account">
       {{ 'pages.track_order.have_account' | translate }}

@@ -31,38 +31,38 @@ final class GuestOrderViewModelTests: XCTestCase {
     }
 
     private func lookupAndOpen() async {
-        await vm.lookup(number: "CZ-123", email: "guest@example.test", code: "secret")
+        await vm.lookup(pasted: "tok-1")
         await vm.openCancellation()
     }
 
     // MARK: Lookup
 
-    func testABlankFieldNeverReachesTheTransportAndAValidLookupTrimsEveryCredential() async {
-        await vm.lookup(number: " ", email: "guest@example.test", code: "code")
+    func testABlankFieldNeverReachesTheTransportAndAPastedLinkIsReducedToItsToken() async {
+        await vm.lookup(pasted: "   ")
 
         XCTAssertEqual(vm.state, .error(L10n.GuestOrder.required))
         XCTAssertTrue(client.lookupKeys.isEmpty)
 
-        await vm.lookup(number: " CZ-123 ", email: " guest@example.test ", code: " secret ")
+        await vm.lookup(pasted: " https://cleansia.cz/track-order?orderNumber=CZ-123&token=tok-1 ")
 
         XCTAssertEqual(vm.state, .loaded(GuestOrderFixtures.order()))
         XCTAssertEqual(client.lookupKeys, [GuestOrderFixtures.key].compactMap { $0 })
     }
 
-    func testEditingTheCredentialsClearsTheOrderAndALateLookupCannotRestoreIt() async {
+    func testEditingTheLinkClearsTheOrderAndALateLookupCannotRestoreIt() async {
         let gate = AsyncGate()
         client.lookupGate = gate
         client.lookupResult = .success(GuestOrderFixtures.order(id: "stale"))
-        let stale = Task { await vm.lookup(number: "old", email: "guest@example.test", code: "secret") }
+        let stale = Task { await vm.lookup(pasted: "tok-old") }
         await drain()
         XCTAssertEqual(vm.state, .loading)
 
-        vm.onCredentialsChanged()
+        vm.onLinkChanged()
         XCTAssertEqual(vm.state, .empty)
 
         client.lookupGate = nil
         client.lookupResult = .success(GuestOrderFixtures.order())
-        await vm.lookup(number: "new", email: "guest@example.test", code: "new-secret")
+        await vm.lookup(pasted: "tok-new")
         gate.open()
         await stale.value
 
@@ -70,16 +70,16 @@ final class GuestOrderViewModelTests: XCTestCase {
     }
 
     func testALookupFailureReplacesThePreviousDetailsAndIsRetryable() async {
-        await vm.lookup(number: "CZ-123", email: "guest@example.test", code: "secret")
-        vm.onCredentialsChanged()
+        await vm.lookup(pasted: "tok-1")
+        vm.onLinkChanged()
         client.lookupResult = .failure(ApiError(code: "order.not_found", httpStatus: 400))
 
-        await vm.lookup(number: "wrong", email: "guest@example.test", code: "secret")
+        await vm.lookup(pasted: "tok-wrong")
 
         XCTAssertEqual(vm.state, .error("order.not_found"))
 
         client.lookupResult = .success(GuestOrderFixtures.order())
-        await vm.lookup(number: "CZ-123", email: "guest@example.test", code: "secret")
+        await vm.lookup(pasted: "tok-1")
 
         XCTAssertNotNil(vm.state.loadedOrder)
     }
@@ -87,7 +87,7 @@ final class GuestOrderViewModelTests: XCTestCase {
     // MARK: Quote
 
     func testAFailedUnknownOrMismatchedQuoteCannotSubmitACancellation() async {
-        await vm.lookup(number: "CZ-123", email: "guest@example.test", code: "secret")
+        await vm.lookup(pasted: "tok-1")
         let rejected: [ApiResult<GuestCancellationQuote>] = [
             .failure(ApiError(code: "order.not_found", httpStatus: 400)),
             .success(GuestOrderFixtures.quote(orderId: "other")),
@@ -111,7 +111,7 @@ final class GuestOrderViewModelTests: XCTestCase {
     }
 
     func testAQuoteRefusalSurfacesTheServersReasonOnTheSheet() async {
-        await vm.lookup(number: "CZ-123", email: "guest@example.test", code: "secret")
+        await vm.lookup(pasted: "tok-1")
         client.quoteResult = .failure(ApiError(code: "order.in_progress_cannot_cancel", httpStatus: 400))
 
         await vm.openCancellation()
@@ -123,13 +123,13 @@ final class GuestOrderViewModelTests: XCTestCase {
     func testALateQuoteAfterEditingOrDismissingCannotExposeAFee() async {
         let gate = AsyncGate()
         client.quoteGate = gate
-        await vm.lookup(number: "CZ-123", email: "guest@example.test", code: "secret")
+        await vm.lookup(pasted: "tok-1")
         let late = Task { await vm.openCancellation() }
         await drain()
         XCTAssertTrue(vm.isCancellationPresented)
 
         vm.dismissCancellation()
-        vm.onCredentialsChanged()
+        vm.onLinkChanged()
         gate.open()
         await late.value
 
@@ -142,10 +142,10 @@ final class GuestOrderViewModelTests: XCTestCase {
 
     // MARK: Cancel
 
-    func testSubmitIsGuardedSynchronouslyAndSendsTheLookupCredentialsWithTheSelectedLanguage() async throws {
+    func testSubmitIsGuardedSynchronouslyAndSendsTheLookedUpTokenWithTheSelectedLanguage() async throws {
         let gate = AsyncGate()
         client.cancelGate = gate
-        await vm.lookup(number: " CZ-123 ", email: " guest@example.test ", code: " secret ")
+        await vm.lookup(pasted: " tok-1 ")
         await vm.openCancellation()
 
         let first = Task { await vm.cancel(reason: "schedule_changed") }
@@ -211,7 +211,7 @@ final class GuestOrderViewModelTests: XCTestCase {
     func testTheReasonLimitAndAMissingQuoteAreEnforcedBeyondTheButton() async {
         let gate = AsyncGate()
         client.quoteGate = gate
-        await vm.lookup(number: "CZ-123", email: "guest@example.test", code: "secret")
+        await vm.lookup(pasted: "tok-1")
         await vm.cancel(reason: "schedule_changed")
         let opening = Task { await vm.openCancellation() }
         await drain()
@@ -250,20 +250,20 @@ final class GuestOrderViewModelTests: XCTestCase {
     func testTerminalAndUnknownOrdersNeverOpenCancellation() async {
         for status in [4, 5, 6, 99] {
             client.lookupResult = .success(GuestOrderFixtures.order(statusValue: status))
-            await vm.lookup(number: "CZ-123", email: "guest@example.test", code: "secret")
+            await vm.lookup(pasted: "tok-1")
 
             await vm.openCancellation()
             await vm.loadQuote()
 
             XCTAssertFalse(vm.isCancellationPresented, "status \(status)")
-            vm.onCredentialsChanged()
+            vm.onLinkChanged()
         }
         XCTAssertEqual(client.quoteCallCount, 0)
     }
 
     func testAnOnTheWayGuestBookingIsStillCancellable() async {
         client.lookupResult = .success(GuestOrderFixtures.order(statusValue: 3))
-        await vm.lookup(number: "CZ-123", email: "guest@example.test", code: "secret")
+        await vm.lookup(pasted: "tok-1")
 
         await vm.openCancellation()
 
@@ -272,7 +272,7 @@ final class GuestOrderViewModelTests: XCTestCase {
 
     /// The view has no trigger of its own: opening the sheet is what loads the quote, exactly once.
     func testOpeningTheCancellationLoadsTheQuoteItself() async {
-        await vm.lookup(number: "CZ-123", email: "guest@example.test", code: "secret")
+        await vm.lookup(pasted: "tok-1")
 
         await vm.openCancellation()
 

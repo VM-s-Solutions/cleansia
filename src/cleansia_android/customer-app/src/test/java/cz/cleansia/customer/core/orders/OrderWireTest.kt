@@ -445,7 +445,6 @@ class OrderWireTest {
               "promoDiscountAmount": 88.00,
               "estimatedTime": 240,
               "orderStatus": { "type": "OrderStatus", "name": "Confirmed", "value": 2 },
-              "confirmationCode": "ABC123",
               "selectedPackages": [
                 { "id": "pkg-1", "name": "Deep clean", "description": "Everything", "price": 450.00 }
               ],
@@ -522,7 +521,6 @@ class OrderWireTest {
               "completedAt": "2026-08-12T13:55:00Z",
               "completionNotes": "All done.",
               "orderStatus": { "type": "OrderStatus", "name": "Completed", "value": 5 },
-              "confirmationCode": "ABC123",
               "notes": "Ring twice.",
               "specialInstructions": "Gate code 1234.",
               "accessInstructions": "Side gate, key box 4417.",
@@ -631,7 +629,6 @@ class OrderWireTest {
             "promoDiscountAmount",
             "estimatedTime",
             "orderStatus",
-            "confirmationCode",
             "selectedPackages",
             "currencyId",
             "currency",

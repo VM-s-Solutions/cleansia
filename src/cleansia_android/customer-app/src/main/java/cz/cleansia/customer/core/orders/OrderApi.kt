@@ -177,7 +177,6 @@ private fun GenOrderListItem.toAppDtoOrRefuse(): OrderListItemDto = OrderListIte
     promoDiscountAmount = promoDiscountAmount,
     estimatedTime = estimatedTime.required("estimatedTime"),
     orderStatus = orderStatus?.toAppDto().required("orderStatus"),
-    confirmationCode = confirmationCode,
     stripeSessionId = null, // not exposed on generated OrderListItem
     selectedPackages = selectedPackages?.map { it.toListSummary() },
     currencyId = currencyId,
@@ -226,7 +225,6 @@ private fun GenOrderItem?.toAppDto(): OrderDetailDto {
         completedAt = order.completedAt?.toString(),
         completionNotes = order.completionNotes,
         orderStatus = order.orderStatus?.toAppDto().required("orderStatus"),
-        confirmationCode = order.confirmationCode,
         stripeSessionId = null, // not exposed on generated OrderItem
         notes = order.notes,
         specialInstructions = order.specialInstructions,

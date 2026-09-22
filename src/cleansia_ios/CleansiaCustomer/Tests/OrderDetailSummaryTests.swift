@@ -104,16 +104,6 @@ final class OrderDetailSummaryTests: XCTestCase {
 
     // MARK: - Hero facts
 
-    func testTheCodeIsCarriedForwardSoTheLiveHeroCanShowIt() {
-        let order = OrderFixtures.detail(confirmationCode: "CLN-777")
-        XCTAssertEqual(OrderHeroFacts.resolve(order).confirmationCode, "CLN-777")
-    }
-
-    func testABlankCodeIsNoCode() {
-        XCTAssertNil(OrderHeroFacts.resolve(OrderFixtures.detail(confirmationCode: "  ")).confirmationCode)
-        XCTAssertNil(OrderHeroFacts.resolve(OrderFixtures.detail()).confirmationCode)
-    }
-
     func testTheStruckSubtotalNeedsBothADiscountSourceAndAHigherSubtotal() {
         XCTAssertNil(OrderHeroFacts.resolve(
             OrderFixtures.detail(total: 1890, originalSubtotal: 2100, appliedDiscountSource: ._0)

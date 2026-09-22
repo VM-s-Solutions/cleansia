@@ -57,7 +57,6 @@ export {
   LookupOrderResponse,
   LookupOrderBatchQuery,
   LookupOrderBatchResponse,
-  LookupOrderBatchOrderLookupItem,
 } from './lib/client/customer-client';
 export {
   SavedAddressClient,

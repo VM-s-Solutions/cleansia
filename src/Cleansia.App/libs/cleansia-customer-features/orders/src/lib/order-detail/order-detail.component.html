@@ -364,25 +364,6 @@
         </div>
         }
 
-        <!-- The code read on the doorstep. It closes this card because it is
-             the last fact of the same booking — a floating band of its own read
-             as a notification about something else. It is an instruction for a
-             clean that is still coming, so it goes once the order is over. -->
-        @if (order()!.confirmationCode && !isCompleted() && !isCancelled()) {
-        <div class="order-detail__code">
-          <div class="order-detail__code-text">
-            <span class="order-detail__fact-label">
-              {{ 'pages.order_detail.confirmation_code' | translate }}
-            </span>
-            <p class="order-detail__code-hint">
-              {{ 'pages.order_detail.confirmation_code_hint' | translate }}
-            </p>
-          </div>
-          <span class="order-detail__code-value cl-num">
-            {{ order()!.confirmationCode }}
-          </span>
-        </div>
-        }
       </section>
 
       <!-- Rating, once the clean is over. -->

@@ -21,8 +21,8 @@ import {
   selectMarketCountryId,
   selectMarkets,
 } from '@cleansia/customer-stores';
-import { CleansiaCustomerRoute, SnackbarService } from '@cleansia/services';
 import { GuestOrderService } from '@cleansia-customer/orders';
+import { CleansiaCustomerRoute, SnackbarService } from '@cleansia/services';
 import { provideMockStore, MockStore } from '@ngrx/store/testing';
 import { TranslateService } from '@ngx-translate/core';
 import { of, Subject, throwError } from 'rxjs';
@@ -98,9 +98,9 @@ describe('OrderWizardFacade', () => {
       getPlans: jest.fn().mockReturnValue(of([])),
     };
     authService = { isLoggedIn: jest.fn().mockReturnValue(false) };
+    guestOrderService = { save: jest.fn() };
     snackbar = { showError: jest.fn(), showInfoTranslated: jest.fn() };
     router = { navigate: jest.fn() };
-    guestOrderService = { save: jest.fn() };
     langChange = new Subject<{ lang: string }>();
     savedAddressStore = {
       addresses: signal([]),
@@ -135,9 +135,9 @@ describe('OrderWizardFacade', () => {
           },
         },
         { provide: CustomerAuthService, useValue: authService },
+        { provide: GuestOrderService, useValue: guestOrderService },
         { provide: SnackbarService, useValue: snackbar },
         { provide: Router, useValue: router },
-        { provide: GuestOrderService, useValue: guestOrderService },
         {
           provide: SavedAddressStore,
           useValue: savedAddressStore,
@@ -941,10 +941,9 @@ describe('OrderWizardFacade', () => {
       await facade.submitOrder();
 
       expect(paymentClient.createOrder).toHaveBeenCalledTimes(1);
-      expect(guestOrderService.save).toHaveBeenCalledWith('order-1', 'a@b.com');
       expect(router.navigate).toHaveBeenCalledWith(
         [CleansiaCustomerRoute.CHECKOUT_SUCCESS],
-        { queryParams: { type: 'card' } },
+        { queryParams: { type: 'card', orderId: 'order-1' } },
       );
       expect(facade.submitting()).toBe(false);
     });
@@ -957,10 +956,39 @@ describe('OrderWizardFacade', () => {
       expect(orderClient.createOrder).toHaveBeenCalledTimes(1);
       expect(router.navigate).toHaveBeenCalledWith(
         [CleansiaCustomerRoute.CHECKOUT_SUCCESS],
-        { queryParams: { type: 'cash' } },
+        { queryParams: { type: 'cash', orderId: 'order-1' } },
       );
       expect(facade.submitting()).toBe(false);
     });
+
+    // The create response is the only moment a guest's browser can learn the booking's access
+    // token without waiting for the e-mail, and it is what the success page reads the booking back
+    // with. An account booking answers with no token and leaves nothing behind.
+    it.each([PaymentType.Cash, PaymentType.Card])(
+      'remembers the access token a guest booking answers with (%s)',
+      async paymentType => {
+        facade.updateFormData({ paymentType });
+        const answer = of({ id: 'order-1', stripeSessionId: '', guestAccessToken: 'tok-1' });
+        orderClient.createOrder.mockReturnValue(answer);
+        paymentClient.createOrder.mockReturnValue(answer);
+
+        await facade.submitOrder();
+
+        expect(guestOrderService.save).toHaveBeenCalledWith('order-1', 'tok-1');
+      },
+    );
+
+    it.each([PaymentType.Cash, PaymentType.Card])(
+      'remembers nothing when the booking answers with no token (%s)',
+      async paymentType => {
+        facade.updateFormData({ paymentType });
+        paymentClient.createOrder.mockReturnValue(of({ id: 'order-1', stripeSessionId: '' }));
+
+        await facade.submitOrder();
+
+        expect(guestOrderService.save).not.toHaveBeenCalled();
+      },
+    );
 
     // The wizard collected this and the summary step rendered it back, but the
     // command never carried it, so every note typed on web was dropped at

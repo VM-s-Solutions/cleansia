@@ -10423,7 +10423,6 @@ export class OrderItem implements IOrderItem {
     completedAt!: Date | undefined;
     completionNotes!: string | undefined;
     orderStatus!: Code;
-    confirmationCode!: string | undefined;
     notes!: string | undefined;
     specialInstructions!: string | undefined;
     accessInstructions!: string | undefined;
@@ -10501,7 +10500,6 @@ export class OrderItem implements IOrderItem {
             this.completedAt = Data["completedAt"] ? new Date(Data["completedAt"].toString()) : undefined as any;
             this.completionNotes = Data["completionNotes"];
             this.orderStatus = Data["orderStatus"] ? Code.fromJS(Data["orderStatus"]) : undefined as any;
-            this.confirmationCode = Data["confirmationCode"];
             this.notes = Data["notes"];
             this.specialInstructions = Data["specialInstructions"];
             this.accessInstructions = Data["accessInstructions"];
@@ -10607,7 +10605,6 @@ export class OrderItem implements IOrderItem {
         data["completedAt"] = this.completedAt ? this.completedAt.toISOString() : undefined as any;
         data["completionNotes"] = this.completionNotes;
         data["orderStatus"] = this.orderStatus ? this.orderStatus.toJSON() : undefined as any;
-        data["confirmationCode"] = this.confirmationCode;
         data["notes"] = this.notes;
         data["specialInstructions"] = this.specialInstructions;
         data["accessInstructions"] = this.accessInstructions;
@@ -10700,7 +10697,6 @@ export interface IOrderItem {
     completedAt: Date | undefined;
     completionNotes: string | undefined;
     orderStatus: Code;
-    confirmationCode: string | undefined;
     notes: string | undefined;
     specialInstructions: string | undefined;
     accessInstructions: string | undefined;
@@ -10760,7 +10756,6 @@ export class OrderListItem implements IOrderListItem {
     amountDueOnCard!: number;
     estimatedTime!: number;
     orderStatus!: Code;
-    confirmationCode!: string | undefined;
     selectedPackages!: PackageListItem[] | undefined;
     currencyId!: string | undefined;
     currency!: CurrencyListItem;
@@ -10817,7 +10812,6 @@ export class OrderListItem implements IOrderListItem {
             this.amountDueOnCard = Data["amountDueOnCard"];
             this.estimatedTime = Data["estimatedTime"];
             this.orderStatus = Data["orderStatus"] ? Code.fromJS(Data["orderStatus"]) : undefined as any;
-            this.confirmationCode = Data["confirmationCode"];
             if (Array.isArray(Data["selectedPackages"])) {
                 this.selectedPackages = [] as any;
                 for (let item of Data["selectedPackages"])
@@ -10886,7 +10880,6 @@ export class OrderListItem implements IOrderListItem {
         data["amountDueOnCard"] = this.amountDueOnCard;
         data["estimatedTime"] = this.estimatedTime;
         data["orderStatus"] = this.orderStatus ? this.orderStatus.toJSON() : undefined as any;
-        data["confirmationCode"] = this.confirmationCode;
         if (Array.isArray(this.selectedPackages)) {
             data["selectedPackages"] = [];
             for (let item of this.selectedPackages)
@@ -10942,7 +10935,6 @@ export interface IOrderListItem {
     amountDueOnCard: number;
     estimatedTime: number;
     orderStatus: Code;
-    confirmationCode: string | undefined;
     selectedPackages: PackageListItem[] | undefined;
     currencyId: string | undefined;
     currency: CurrencyListItem;

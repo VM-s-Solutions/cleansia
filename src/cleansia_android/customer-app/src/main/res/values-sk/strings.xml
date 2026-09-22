@@ -273,7 +273,6 @@
     <string name="order_detail_error_title">Objednávku sa nepodarilo načítať</string>
     <string name="order_detail_error_message">Skontrolujte pripojenie na internet a skúste to znova.</string>
     <string name="order_detail_error_retry">Skúsiť znova</string>
-    <string name="order_detail_code_label">Kód</string>
     <string name="order_detail_discount_tier">Vernostná zľava uplatnená</string>
     <string name="order_detail_discount_membership">Zľava Cleansia Plus uplatnená</string>
     <string name="order_detail_discount_promo">Zľavový kód uplatnený</string>
@@ -1397,11 +1396,10 @@
     <string name="notification_recurring_paused_body">Váš plán opakovaných upratovaní je pozastavený, pretože Plus nie je aktívne. Obnovte Plus a plánovanie upratovaní bude pokračovať.</string>
     <string name="guest_order_entry">Nájsť rezerváciu bez účtu</string>
     <string name="guest_order_title">Rezervácia bez účtu</string>
-    <string name="guest_order_intro">Zadajte číslo rezervácie, e-mail a potvrdzovací kód z potvrdzovacieho e-mailu.</string>
-    <string name="guest_order_number">Číslo rezervácie</string>
-    <string name="guest_order_code">Potvrdzovací kód</string>
+    <string name="guest_order_intro">Vložte odkaz na sledovanie z potvrdzovacieho e-mailu. Otvorí vašu rezerváciu — nič ďalšie zadávať nemusíte.</string>
+    <string name="guest_order_link">Odkaz na sledovanie z e-mailu</string>
     <string name="guest_order_lookup">Nájsť rezerváciu</string>
-    <string name="guest_order_required">Zadajte číslo rezervácie, e-mail a potvrdzovací kód.</string>
+    <string name="guest_order_required">Vložte odkaz na sledovanie z potvrdzovacieho e-mailu.</string>
     <string name="guest_order_empty">Po vyhľadaní sa tu zobrazia podrobnosti rezervácie.</string>
     <string name="guest_order_loading">Hľadáme vašu rezerváciu…</string>
     <string name="guest_order_cancel">Zrušiť rezerváciu</string>

@@ -33,7 +33,7 @@ final class AsyncGate: @unchecked Sendable {
 }
 
 enum GuestOrderFixtures {
-    static let key = GuestOrderKey(number: "CZ-123", email: "guest@example.test", code: "secret")
+    static let key = GuestOrderKey(pasted: "tok-1")
 
     static func order(id: String = "o-1", statusValue: Int = 2, currencyCode: String = "EUR") -> GuestOrder {
         GuestOrder(

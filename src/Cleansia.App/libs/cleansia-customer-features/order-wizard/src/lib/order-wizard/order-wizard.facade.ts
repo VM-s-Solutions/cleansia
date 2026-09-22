@@ -6,6 +6,7 @@ import {
   AddressDto,
   CategoryDto,
   CreateOrderCommand,
+  CreateOrderResponse,
   CustomerAddress,
   CustomerAuthService,
   ConsentType,
@@ -31,13 +32,13 @@ import {
   selectMarketCountryId,
   selectMarkets,
 } from '@cleansia/customer-stores';
+import { GuestOrderService } from '@cleansia-customer/orders';
 import {
   CleansiaCustomerRoute,
   extractApiErrorCode,
   marketCountryOptions,
   SnackbarService,
 } from '@cleansia/services';
-import { GuestOrderService } from '@cleansia-customer/orders';
 import { Store } from '@ngrx/store';
 import { TranslateService } from '@ngx-translate/core';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
@@ -929,15 +930,13 @@ export class OrderWizardFacade extends UnsubscribeControlDirective {
         )
         .subscribe((response) => {
           if (!response) return;
-          if (response.id) {
-            this.guestOrderService.save(response.id, data.customerEmail);
-          }
+          this.rememberGuestBooking(response);
           this.orderPlaced.set(true);
           if (response.stripeSessionId) {
             if (this.isBrowser) window.location.href = response.stripeSessionId;
           } else {
             this.router.navigate([CleansiaCustomerRoute.CHECKOUT_SUCCESS], {
-              queryParams: { type: 'card' },
+              queryParams: { type: 'card', orderId: response.id },
             });
           }
         });
@@ -954,14 +953,23 @@ export class OrderWizardFacade extends UnsubscribeControlDirective {
         )
         .subscribe((response) => {
           if (!response) return;
-          if (response.id) {
-            this.guestOrderService.save(response.id, data.customerEmail);
-          }
+          this.rememberGuestBooking(response);
           this.orderPlaced.set(true);
           this.router.navigate([CleansiaCustomerRoute.CHECKOUT_SUCCESS], {
-            queryParams: { type: 'cash' },
+            queryParams: { type: 'cash', orderId: response.id },
           });
         });
+    }
+  }
+
+  /**
+   * The create response is the only moment a guest's browser learns the booking's access token
+   * without waiting for the e-mail; the confirmation page reads the booking back with it. An
+   * account booking answers with none — its owner signs in instead.
+   */
+  private rememberGuestBooking(response: CreateOrderResponse): void {
+    if (response.id && response.guestAccessToken) {
+      this.guestOrderService.save(response.id, response.guestAccessToken);
     }
   }
 

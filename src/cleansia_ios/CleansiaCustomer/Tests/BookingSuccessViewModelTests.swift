@@ -80,5 +80,4 @@ final class BookingSuccessViewModelTests: XCTestCase {
 
         XCTAssertEqual(recorder.warmCount, 1)
     }
-
 }

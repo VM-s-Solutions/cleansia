@@ -130,7 +130,7 @@ Queues decouple the APIs from long-running operations (PDF generation). Each que
 
 | Queue | Poison Queue | Producer | Consumer |
 |-------|-------------|----------|----------|
-| `generate-receipt` | `generate-receipt-poison` | Customer API (after payment) | `GenerateReceipt` function |
+| `generate-receipt` | `generate-receipt-poison` | Every issue of an order's receipt, keyed `receipt:{orderId}`: the customer hosts' `CreateOrder` (a cash booking) and `ConfirmRecurringOrder` (a cash occurrence), the Stripe webhook on each host that runs it (a card payment settles), the partner hosts' `CompleteOrder` (an order with no receipt yet) and the `FiscalReconciliation` timer (one that never landed). The partner hosts' `MarkCashCollected` restates an issued receipt under `receipt-reissue:{orderId}` → [what the receipt says](/flows/payment-and-fiscal#what-the-receipt-says) | `GenerateReceipt` function |
 | `generate-invoice` | `generate-invoice-poison` | Admin API (period close) | `GenerateInvoice` function |
 | `company-wind-down` | `company-wind-down-poison` | Admin API (`WindDownCompany`, and `DeactivateCompany` when a date is set) — one message per act, keyed `wind-down:{tenantId}:{request instant}` | `CompanyWindDown` function — the idempotent sweep ([ADR-0064](/decisions/adr-0064) D2) |
 | `company-archive` | `company-archive-poison` | Admin API (`ArchiveCompany`) — keyed `archive:{tenantId}:{request instant}` | `CompanyArchive` function — builds the bundle into `company-archives` and stamps the manifest hash (ADR-0064 D3) |
@@ -142,11 +142,15 @@ in `storage.bicep`'s `queueBaseNames` and an alert in `queueAlerts.bicep`.
 ### Queue Message Format
 
 ```json
-// generate-receipt queue message
+// generate-receipt queue message — a QueueEnvelope<GenerateReceiptMessage>
 {
-  "orderId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-  "tenantId": "a1b2c3d4-...",
-  "locale": "cs-CZ"
+  "messageKey": "receipt:01J9Z3K4M5N6P7Q8R9S0T1V2W3",
+  "tenantId": "cleansia-cz",
+  "payload": {
+    "orderId": "01J9Z3K4M5N6P7Q8R9S0T1V2W3",
+    "languageCode": "cs",   // a fallback only: the order's own language wins
+    "reissue": false        // true = restate the issued receipt, key receipt-reissue:{orderId}
+  }
 }
 
 // generate-invoice queue message
@@ -208,7 +212,7 @@ had never fired at all — see [the schedule tokens](#timer-schedules) below.
 
 | Function | Queue | Purpose |
 |---|---|---|
-| `GenerateReceipt` | `generate-receipt` | Receipt PDF via QuestPDF → blob storage → SendGrid |
+| `GenerateReceipt` | `generate-receipt` | Issues the receipt: number, fiscal registration, PDF via QuestPDF → blob storage → SendGrid. A restate (`reissue`) re-renders the stored PDF and sends nothing |
 | `GenerateInvoice` | `generate-invoice` | Employee invoice PDF → blob storage |
 | `CalculateOrderPay` | `calculate-order-pay` | Computes a cleaner's pay for a finished order |
 | `SendEmail` | `send-email` | SendGrid delivery |
@@ -290,26 +294,25 @@ RUN apt-get update && apt-get install -y \
 
 ### Example: GenerateReceipt Function
 
+The trigger is a thin shell. The body is `GenerateReceiptHandler` in `Cleansia.Functions.Core`, where
+it can be tested without the Functions host:
+
 ```csharp
-public class GenerateReceiptFunction(
-    ISender sender,
-    ILogger<GenerateReceiptFunction> logger)
+public class GenerateReceiptFunction(GenerateReceiptHandler handler)
 {
     [Function("GenerateReceipt")]
-    public async Task Run(
-        [QueueTrigger("generate-receipt")] GenerateReceiptMessage message)
-    {
-        logger.LogInformation("Generating receipt for order {OrderId}", message.OrderId);
-
-        var result = await sender.Send(new GenerateReceipt.Command(
-            message.OrderId, message.TenantId, message.Locale));
-
-        if (!result.IsSuccess)
-            throw new InvalidOperationException(
-                $"Receipt generation failed: {result.Error!.Message}");
-    }
+    public Task Run(
+        [QueueTrigger("generate-receipt", Connection = "QueueStorageConnectionString")] string messageText,
+        CancellationToken ct)
+        => handler.HandleAsync(messageText, ct);
 }
 ```
+
+The handler reads the envelope, or a bare message from an older deploy. A `reissue` message restates
+the stored PDF and stops. Any other message is discarded unless the order is a cash booking or paid,
+and is a no-op once the order has its receipt. Otherwise it claims the receipt number, registers it
+with the fiscal authority, renders the PDF and e-mails it. A failure rethrows so the queue retries; a
+write refused by a frozen company is dead-lettered instead.
 
 ## Service Integrations
 
@@ -337,7 +340,7 @@ Used for all transactional emails via Dynamic Templates.
 | Template | Trigger |
 |----------|---------|
 | Order Confirmation | After order creation |
-| Receipt | After payment (with PDF attachment) |
+| Receipt | When the receipt is issued (with PDF attachment): at booking for cash, on settlement for card. A restate sends nothing |
 | Pay Period Reminder | 3 days before period end |
 | Welcome Email | After registration |
 | Password Reset | On password reset request |

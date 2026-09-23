@@ -35,7 +35,7 @@ The list page shows all global rates with:
 |---|---|
 | Service / Package | Target name |
 | Base Pay | Flat rate per job |
-| Per Room | Bonus per bedroom |
+| Per Room | Bonus per room after the first |
 | Per Bathroom | Bonus per bathroom |
 | Description | Optional internal notes |
 | Actions | Edit, Delete |
@@ -71,7 +71,7 @@ You must select **either** a Service or a Package — not both. The backend vali
 | Field | Description |
 |---|---|
 | Base Pay | Required. Flat rate paid per completed order. |
-| Extra Per Room | Optional. Bonus added per bedroom in the order. |
+| Extra Per Room | Optional. Added for every room after the first (the first is inside Base Pay). |
 | Extra Per Bathroom | Optional. Bonus added per bathroom in the order. |
 | Distance Rate (per km) | Optional. Reimbursement per kilometer of travel. |
 
@@ -79,10 +79,10 @@ You must select **either** a Service or a Package — not both. The backend vali
 
 | Field | Description |
 |---|---|
-| Minimum Pay | Optional. If set, calculated pay is clamped to at least this amount. |
-| Maximum Pay | Optional. If set, calculated pay is clamped to at most this amount. |
+| Minimum Pay | Optional. The order's summed pay is clamped once, to at least the highest Minimum Pay among the configs on the order. |
+| Maximum Pay | Optional. The same single clamp, to at most the lowest Maximum Pay among the configs on the order. |
 
-Leave both as `0` for no limits.
+Leave both as `0` for no limits. → [Calculation formula](#calculation-formula)
 
 #### Notes
 
@@ -90,22 +90,20 @@ Internal description field for admin reference. Not visible to employees.
 
 ## Calculation Formula
 
-The full pay calculation for one service/package on one order:
+The pay for one service/package on one order — the first room is inside `BasePay`, so `ExtraPerRoom`
+pays for every room after it:
 
 ```
 pay = BasePay
-    + (ExtraPerRoom × rooms)
+    + (ExtraPerRoom × max(0, rooms − 1))
     + (ExtraPerBathroom × bathrooms)
     + (DistanceRatePerKm × distance)
-
-if MinimumPay > 0 and pay < MinimumPay:
-    pay = MinimumPay
-
-if MaximumPay > 0 and pay > MaximumPay:
-    pay = MaximumPay
 ```
 
-Multiple services/packages on the same order are summed together to produce the final `OrderEmployeePay.TotalPay`.
+Multiple services/packages on the same order are summed, and the sum is then clamped once: to at
+least the highest `MinimumPay` and at most the lowest `MaximumPay` among the configs involved (`0` on
+either means no bound). The result is the order's `OrderEmployeePay.TotalPay`, one row per assigned
+cleaner. → [Business rules — cleaner pay](/product/business-rules#cleaner-pay)
 
 ## API Endpoints
 

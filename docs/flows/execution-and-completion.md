@@ -19,9 +19,13 @@ sequenceDiagram
   API->>O: InProgress
   O-->>N: push (+ Live Activity on iOS)
   C->>API: photos, notes
+  opt cash taken at the door
+    C->>API: cash collected
+    API->>O: Paid (an issued receipt is restated as paid)
+  end
   C->>API: complete
   API->>O: Completed
-  O-->>N: push + receipt
+  O-->>N: push (+ receipt if none was issued yet)
 ```
 
 ## Only the assigned cleaner may move the job
@@ -97,6 +101,7 @@ token that reaches only their mailbox.
 | Case | What happens |
 |---|---|
 | Non-assigned cleaner tries to start/complete | Refused — the gate is assignment, not role. |
+| Cleaner records the cash (`MarkCashCollected`) | Only while `InProgress`, and only by an approved cleaner on the crew. The order becomes `Paid`. If it already has its receipt (a cash booking gets one at booking), that receipt is restated as paid under the same number. → [The restate](/flows/payment-and-fiscal#cash-receipt-restated) |
 | Admin-placed cleaner taps Start or Complete before accepting the contract | Refused with `contract.acceptance_required`; the app opens the contract, they accept, and the act goes through. A second crew member who neither starts nor completes is never prompted — the stated residual. |
 | Photos requested by a non-assignee | Refused by the strict access gate. Browsing detail is redacted; **photographs of a customer's home are not browsable at all**. |
 | Status moved out of order | Refused by the transition guard. |

@@ -119,6 +119,20 @@ consent plus the stamped document. What the cleaner accepts against that stamp, 
 story → [Offerability and the take](/flows/offerability-and-take#the-take-carries-the-acceptance),
 [ADR-0068](/decisions/adr-0068) D1.
 
+## The order records the language it was booked in {#booking-language}
+
+`CreateOrder` carries the customer's `language` — one of the seeded codes, `en` when a client sends
+none — and `OrderFactory` stores it on the order as `Order.LanguageCode`. Every client sends what the
+customer is reading. The web sends its UI language. The Android and iOS customer apps send the
+language the app is displaying: the one chosen in the app's language setting, else the first of the
+device's languages the app supports, else English.
+
+The order's documents read it first. The receipt is written in the order's language, then the
+account's preferred language, then whatever its producer passed — so a guest, who has no account to
+read, gets a receipt in the language they booked in. A recurring occurrence has no booking request of
+its own: its `LanguageCode` is null and its receipt follows the account's preference.
+→ [What the receipt says](/flows/payment-and-fiscal#what-the-receipt-says)
+
 ## Responsive quote previews
 
 The home calculator requests its quote immediately. Booking groups rapid selection changes into a

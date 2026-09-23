@@ -22,6 +22,21 @@ because nothing can be booked in it. The "earns nothing and logs" branch remains
 answer for a row that reaches that state anyway.
 → [Money constants](/product/business-rules#money-constants)
 
+## Tiers {#tiers}
+
+**A tier follows the points total, both ways.** `LoyaltyAccount` recomputes its tier from
+`LifetimePoints` against the tier thresholds every time points move. A grant can raise it, and a revoke
+lowers the total and can lower the tier. Revokes include a partial refund's clawback, an
+administrator's manual revoke and a reversed referral. Nothing ratchets. The web rewards page says so:
+the ladder states that the tier follows the current points total, and the balance note says a tier can
+drop.
+
+**A tier's perks are what the rewards page can name.** The page renders each tier's `PerksJson` as
+stored. As seeded, that is the welcome badge on every tier plus the tier's discount from the second
+tier up. No tier lists priority support or a dedicated cleaner pool, because nothing in the platform
+provides either. The customer web's `loyalty-tier-claim` spec fails if a seeded perk has no copy in one of the
+five locales, or if the copy promises that a tier cannot drop.
+
 ## Cleansia Plus
 
 A membership buys a discount, a wider free-cancellation window, and a quota of express-surcharge
@@ -180,5 +195,6 @@ alone. You cannot redeem your own code, and you cannot be referred twice.
 | Swap to a plan unpriced in the membership's currency | `membership.plan.not_priced_in_currency`; the clients do not offer the switch. |
 | Webhook names a currency the platform does not know | Nothing is provisioned; an error is logged. |
 | Points granted twice by a retry | Rejected by the idempotency index. |
+| A revoke takes the total below the current tier's threshold | The tier drops to the one the total now reaches, and its achieved date moves with it. |
 | Order in a currency with no points divisor | Unreachable through the admin surface — activation refuses without a divisor and an active currency cannot have it cleared (`currency.loyalty_divisor_missing`). A row that reaches the state anyway earns nothing and logs a warning; nothing is borrowed from another currency's rate. |
 | Self-referral | Refused. |

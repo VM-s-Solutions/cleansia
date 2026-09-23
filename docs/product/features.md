@@ -51,6 +51,12 @@ held stops at once if the booking is cancelled — the cancellation e-mail then 
 they can still read what they were refunded.
 → [Guest order lookup](/flows/booking-and-pricing#guest-order-lookup)
 
+**The receipt** — one per order, in the language the customer booked in, with a line per service,
+package and extra, the express surcharge and each discount on lines of their own, summing to the
+total. A sale that charged no VAT prints the non-payer notice and no VAT number. A cash
+booking's receipt, issued before any money moves, is restated as paid — same number — once the cleaner
+records the cash. → [What the receipt says](/flows/payment-and-fiscal#what-the-receipt-says)
+
 **After the job** — receipt, review, raise a dispute with evidence, request a refund. The review is
 **asked for**, not left to be found: the mobile apps raise a sheet as soon as a completed job is opened,
 with stars and a short list of tappable tags — *on time*, *thorough*, *missed areas* — so leaving one
@@ -64,6 +70,10 @@ three complaints this month"* answerable.
 express-surcharge waivers. Priced per market: the Plus page, the wizard's Plus step and the mobile
 Subscribe screens show the plans priced in the chosen market's currency, a market with no priced plan
 says so instead of showing a price, and a subscription keeps the currency it was started in for life.
+No plan has a free trial, and the web's Plus page, home band and recurring-bookings gate offer none.
+The Android and iOS customer apps still show trial copy that no plan honours, on two surfaces each:
+the home Plus card (*Save on every cleaning. 14 days free.* / *Try Plus free*) and the membership
+card a non-member sees (*Try free for 14 days*).
 → [Business rules — Cleansia Plus](/product/business-rules#cleansia-plus)
 
 **Honest copy** — the money figures in the customer copy (the apology credit when a cleaner never
@@ -71,6 +81,10 @@ comes, the insurance ceiling on the mobile trust badge and FAQ, the currency nam
 from the market, not from the translation; a market with no figure gets the sentence without one.
 
 **Loyalty and referrals** — earn points, move through tiers, share a referral code, redeem promo codes.
+The tier follows the current points total both ways: points taken back — a refund's clawback, an
+administrator's revoke — can lower it, and the web rewards page says the tier follows the total. As
+seeded, a tier's perks are the welcome badge and, above the first tier, its discount.
+→ [Loyalty — tiers](/flows/loyalty-and-memberships#tiers)
 
 **Account and privacy** — saved addresses, notification preferences, five languages, data export and
 account erasure. The export carries the customer's own conduct record — every booking, cancellation,

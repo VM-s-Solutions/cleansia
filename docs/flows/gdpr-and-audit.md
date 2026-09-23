@@ -202,7 +202,10 @@ subject is a cleaner, **orders** (the account's and the guest bookings under its
 the erasure reaches, a live guest booking included), **disputes** (owner ruling 2026-09-15 — every
 dispute filed on the account or on one of those orders: reason and status by name, the description,
 the resolution notes, the refund with its currency code, every message as author role, time and text,
-the evidence file names; text as stored, so the three-year window's marker once the sweep has run),
+the evidence file names; text as stored, so the three-year window's marker once the sweep has run —
+and, through the order term, any dispute on one of the guest bookings, which names no customer; a bank
+chargeback on a guest booking is not among them, because none is recorded →
+[Cancellation, refund and dispute](/flows/cancellation-refund-dispute#dispute)),
 documents, invoices, consents (with IP, user agent, version and document id), the customer trail
 (`customerActions` — the account's own rows only, not the guest rows on its orders: their IP and device
 belong to whoever placed the booking, a stranger's when the address is a typo) and the metadata.

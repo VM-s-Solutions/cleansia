@@ -143,6 +143,12 @@ POST /api/Order/CreateOrder
 }
 ```
 
+`language` — the language the customer is booking in, one of the seeded language codes (`en` when
+omitted; an unknown code is refused by the `LanguageValidator`). It is **stored on the order**
+(`Order.LanguageCode`) and decides the language of the order's receipt ahead of the account's
+preference. The web sends its UI language; the Android and iOS customer apps send the language the
+app is displaying. → [The order records its language](/flows/booking-and-pricing#booking-language)
+
 `currencyId` — optional. The order's currency is the **service address's country's** currency
 (owner ruling 2026-09-12); null lets the server derive it, and a value must equal it — send back the
 `currencyId` the quote returned for the same country — or create fails as `currency.invalid` before any
@@ -256,8 +262,10 @@ as follows, then `BookingPolicy.ApplyExpressSurcharge` grosses the **discounted*
 3. The express surcharge (+20 %) is applied **after** the discount, and only when the booking is in
    the 2–4 h lead window and no membership waiver was reserved.
 
-`QuoteOrder` runs the same ordering, which is why the wizard's quote and the receipted saving cannot
-drift apart.
+`QuoteOrder` runs the same ordering, which is why the wizard's quote and the receipted saving agree —
+to within one cent: the order stores each discount rounded to the cent so the receipt's lines add up
+to its total, while the quote reports the discounts unrounded.
+→ [Business rules — the express-surcharge correction](/product/business-rules#discount-express-correction)
 
 Separate lead-time rules run first on `cleaningDate`: `order.cleaning_date.future`, then
 `order.cleaning_date.below_lead_time` (under 2 h lead).
@@ -1068,7 +1076,7 @@ GET /api/Order/DownloadReceipt?orderId=order-id
 **Response:** Binary PDF file (`application/pdf`).
 
 ::: tip Receipt Generation
-Receipts are generated asynchronously via an Azure Queue message (`GenerateReceipt`) processed by Azure Functions. The PDF is stored in Azure Blob Storage.
+Receipts are generated asynchronously via an Azure Queue message (`GenerateReceipt`) processed by Azure Functions. The PDF is stored in Azure Blob Storage, and this endpoint returns the stored copy — for a cash booking whose collection a cleaner has recorded, the copy restated as paid. The number, the issue date and the language are fixed when the receipt is issued. → [What the receipt says](/flows/payment-and-fiscal#what-the-receipt-says)
 :::
 
 ## Error Responses

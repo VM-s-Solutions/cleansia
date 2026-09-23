@@ -121,7 +121,7 @@ After `MaxFiscalRetries = 10` attempts, `FiscalNextRetryAt` is cleared and the r
 ### Abstractions (`Cleansia.Core.Fiscal.Abstractions`)
 
 - **`IFiscalService`** — Contract every country implementation satisfies: `Task<FiscalResult> RegisterReceiptAsync(FiscalReceiptRequest, CancellationToken)` plus the `RegisterIsIdempotent` capability flag (see Register Idempotency above).
-- **`IFiscalServiceResolver`** — Routes a country ISO code to the right `IFiscalService`.
+- **`IFiscalServiceResolver`** — Routes a country to the right `IFiscalService` by the ISO 3166-1 **alpha-2** code the service declares (`CZ`). `Country.IsoCode` is stored alpha-3 (`CZE`), so `ReceiptService` translates it through `CountryIsoCode.ToAlpha2` before every resolve; a code with no alpha-2 is treated as an unresolved country. → [Payment and fiscal — the regime](/flows/payment-and-fiscal#no-guessed-unit-no-guessed-regime)
 - **`FiscalGoLiveGate`** — Enforces that a provider may only run under a blocking enforcement mode if its register is idempotent on the receipt number.
 - **`FiscalResult`** — Carries `IsRegistered`, `FiscalCode`, `RegisteredAt`, `ErrorKind`, `ErrorCode`, `ErrorMessage`. Factories: `Success`, `NotRequired`, `TransientError`, `PermanentError`, `ConfigurationError`, `UnknownError`.
 - **`FiscalEnforcementMode`**, **`FiscalErrorKind`** — Enums described above.

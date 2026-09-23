@@ -431,12 +431,21 @@ maxPay      = min(config.MaximumPay > 0)     # the tightest cap wins;        0 =
 TotalPay    = max(0, clamp(base + extras + expenses, minPay, maxPay) + bonus - deduction)
 ```
 
-Two things that surprise people:
+`CalculateOrderPay` writes the pay row, and it reads the order's packages beside its services — so a
+package-only order is paid like any other, and one with no rate for any of its lines in its currency
+is refused (`payroll.no_pay_configuration`). There is one formula, in `PayCalculatorExtensions`, and
+the first room is inside `BasePay` everywhere it is applied.
 
-- **`extrasPay` is rooms and bathrooms, not the `Order.Extras` dictionary.** A separate
-  `CalculateExtrasPay` does count those flags and has **no caller** on this path.
+Three things that surprise people:
+
+- **`extrasPay` is rooms and bathrooms, not the extras the customer bought.** The order's extra lines
+  (`OrderExtra`) are read by nothing on this path; they earn the cleaner no pay.
 - **The clamp bounds are persisted on the pay row.** A later bonus or deduction re-clamps the same
   core identically, instead of silently dropping the clamp.
+- **Every assigned cleaner is paid the whole figure.** Pay is one row per assigned cleaner with no
+  crew-size term, so a job with a crew of three pays its rates three times against one customer price.
+  Whether a rate describes the job or one cleaner is an open owner question; until it is answered,
+  this is the rule. → [Pay and payouts](/flows/pay-and-payouts)
 
 ### Per-employee rates
 
@@ -555,6 +564,10 @@ gross, cancelled ones included. The rules, each one a line of the query or the h
   credit, and **`NetOnTender = taken − refunded to card` — the figure to reconcile against a Stripe
   statement**, because the gateway never saw the credit. Every derived figure is derived, never
   summed a second time, so the columns close.
+- **The daily series and the per-service and per-package splits are net of both legs too.** Each
+  day's amount is that day's completions less their card refunds and their returned credit, with both
+  legs beside it as `refunded`, so the days add up to `NetRevenue` and growth compares net with net.
+  Of the breakdowns, only the by-tender and the by-payment-status tables are gross.
 - **Cancelled bookings are counted on their own axis, not in revenue** — by `CancelledAt` in the
   period, so an abandoned card checkout (a `Cancelled` track with no `CancelledAt`) is not a booking
   and is not counted; an accountant reading the order list should not file the difference as a bug.
@@ -610,9 +623,22 @@ under-states the saving: the customer would have paid `raw × 1.2` and pays `(ra
 actually saved `d × 1.2`.
 
 Every consumer composes the amount with the surcharge-inclusive price — the mappers' original-subtotal,
-the lifetime-savings sum, every client's `totalPrice − discount` — and **the order carries no express
-flag for any of them to correct with**. So the correction can only be made once, before the amount is
-persisted.
+the lifetime-savings sum, every client's `totalPrice − discount` — and reads the stored discount as the
+saving. So the correction is made once, before the amount is persisted, and no consumer re-applies it.
+
+**The order stores every term of its price in cents, and the terms add up.** `OrderFactory` stores
+the surcharge it charged as an amount — `Order.ExpressSurchargeAmount` = `raw × 1.2 − raw` rounded to
+the cent, zero when none applied — and each discount rounded to the cent on its own, with whatever cent
+the three roundings leave over added to the largest source. The result holds exactly:
+
+```
+Σ lines + ExpressSurchargeAmount
+        − (TierDiscountAmount + MembershipDiscountAmount + PromoDiscountAmount) = TotalPrice
+```
+
+That identity is what the receipt prints, line by line. The quote reports the discounts before this
+rounding, so on a currency with cents the discount a wizard shows can differ by one cent from the one
+stored. → [What the receipt says](/flows/payment-and-fiscal#what-the-receipt-says)
 
 ### Which discounts know what currency they are in
 

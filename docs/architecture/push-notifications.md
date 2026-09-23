@@ -299,14 +299,15 @@ a cleaner accepted the job, and since [ADR-0057](/decisions/adr-0057) neither wr
 The key therefore says “confirmed”, rather than claiming cash has already been received.
 → [the order lifecycle](/domain/order-lifecycle)
 
-The previous `order.confirmed` key remains a compatibility entry for persisted feed rows, pending
-queue envelopes and notifications already held by devices. Both keys retain identical copy,
-arguments, preference category and booking tap destination. New events use the new key; existing
-rows and idempotency keys are not rewritten or re-enqueued.
+`order.payment_confirmed` is the one key for this event. The earlier `order.confirmed` is gone from
+`NotificationEventCatalog`, from the customer feed keyset and from the web, Android and iOS clients:
+nothing produces it, no client carries a template for it, and a feed row that still names it sits
+outside the keyset, so the feed neither lists nor counts it. Existing rows and idempotency keys are
+not rewritten.
 
-Ship mobile clients carrying both keys before enabling new backend emission. An older binary cannot
-resolve the new Android template or APNs localization key; server-side compatibility entries do not
-update a device's bundled strings. This follows [ADR-0025's version-skew constraint](/decisions/adr-0025).
+A rename like this one still ships clients first. An older binary cannot resolve an Android template
+or APNs localization key it does not bundle, and nothing on the server updates a device's strings —
+[ADR-0025's version-skew constraint](/decisions/adr-0025).
 
 Widening that key to carry "a cleaner is committed to your booking" would repeat the overloading one
 layer up, in the thing that writes to a customer's lock screen.

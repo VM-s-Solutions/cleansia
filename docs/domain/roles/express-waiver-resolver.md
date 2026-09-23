@@ -31,15 +31,16 @@ express surcharge on this booking, and how many waivers are left in this period?
 
 ## Collaborators
 
-- `IUserMembershipRepository.GetActiveForUserNoTrackingAsync` — the **one** live-membership predicate
-  (`UserMembershipRepository.ActiveForUserQuery:20-31` / `UserMembership.IsActive:84-85`). It creates
-  no second predicate. **`PastDue` and `Paused` are excluded by it** — settled by owner ruling
-  2026-08-03 (ADR-0035 AM-17); this resolver adds **nothing** for that case.
-- `UserMembership.IsInTrial` (`TrialEndsAtUtc`) — **the one conjunct this resolver adds on top of the
-  shared predicate**, per the owner's 2026-08-03 ruling: *no express waivers during the 14-day trial*.
-  The trial **keeps** the discount and the cancellation window, so this narrowing lives **here and
-  nowhere else**. ⚠️ **Never push `IsInTrial` down into `ActiveForUserQuery`** — that would strip the two
-  benefits the owner preserved (ADR-0035 AM-18).
+- `IUserMembershipRepository.GetEntitledForUserNoTrackingAsync` — the **one** entitlement predicate,
+  shared with every other benefit (`UserMembershipRepository.EntitledForUserQuery:39-46`, which narrows
+  the live-enrolment `UserMembershipRepository.ActiveForUserQuery:48-60`). It creates no second
+  predicate. **`PastDue` and `Paused` are excluded by it** — settled by owner ruling 2026-08-03
+  (ADR-0035 AM-17) — and so is a **trialing** enrolment: `TrialEndsAtUtc` must be null or past (owner
+  ruling 2026-09-08, T-0690). This resolver adds **nothing** for either case.
+- **There is no trial.** Both admin plan commands refuse a non-zero `TrialPeriodDays`
+  (`membership.plan.trial_not_permitted`), and the entitlement predicate refuses a trialing enrolment
+  for every benefit at once. The resolver holds no trial check of its own. ⚠️ **Do not re-add one
+  here:** a benefit-specific trial narrowing would split what T-0690 made one rule for all benefits.
 - `MembershipPlan.AllowsExpressUpgrade` + `ExpressUpgradesPerMonth` — the gate and the number.
   **Read from the CURRENT plan at the moment of the call**, so a mid-month plan swap changes the quota
   without touching the count (ADR-0035 AM-19).
@@ -79,8 +80,8 @@ express surcharge on this booking, and how many waivers are left in this period?
 
 1. **Zero writes.** Grep the implementation for `Add` / `Commit` / `ExecuteSql` / `TryReserve` — none.
 2. **Short-circuits like its sibling:** `string.IsNullOrEmpty(userId)` → no waiver
-   (`CancellationPolicyResolver.cs:27-30`); no active membership (**incl. `PastDue`/`Paused`, by the
-   shared predicate**), **`membership.IsInTrial`**, `!AllowsExpressUpgrade`, or
+   (`CancellationPolicyResolver.cs:27-30`); no entitled membership (**incl. `PastDue`/`Paused` and a
+   trialing enrolment, all by the shared predicate**), `!AllowsExpressUpgrade`, or
    `ExpressUpgradesPerMonth <= 0` → no waiver (`:35-39`'s shape).
 2b. **`UserMembershipId` appears nowhere in this class.** Grep it: zero hits. Any occurrence is the
    AM-19 violation — a quota that silently resets on a plan swap or a re-subscribe.
@@ -92,8 +93,10 @@ express surcharge on this booking, and how many waivers are left in this period?
    `max(0, currentPlan.ExpressUpgradesPerMonth − live rows in the PeriodKey)` — **live rows in the
    period**, not live rows with ordinal `< quota`, or it disagrees with the claim path after a plan
    downgrade (AM-19).
-6. **During the trial it returns `Remaining = 0`, not `null`.** `null` means *no membership*; a trialing
-   customer has one. The client renders "starts on {`TrialEndsAtUtc`}", not a bare zero.
+6. **A trialing enrolment gets the no-membership answer.** The shared predicate refuses it, so the
+   resolver returns the same zero quota and zero remaining it returns for a guest. There is no separate
+   trial state for a client to render, and none can arise while both admin plan commands refuse a
+   non-zero trial (T-0690).
 
 ## Watch-list
 

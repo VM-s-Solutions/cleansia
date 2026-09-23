@@ -108,10 +108,10 @@ Orders have a `PaymentStatus` enum tracked throughout their lifecycle, **indepen
 | Status | Value | Description |
 |---|---|---|
 | `Pending` | `1` | Payment not yet received |
-| `Paid` | `2` | Payment confirmed — the webhook also writes `OrderStatus.Confirmed` |
+| `Paid` | `2` | Payment confirmed — the order stays at `OrderStatus.New` until a cleaner takes it ([ADR-0057](/decisions/adr-0057)) |
 | `Failed` | `3` | Payment attempt failed, or the stale-order sweep gave up on it |
 | `Refunded` | `4` | Payment was refunded |
-| `Disputed` | `5` | Payment is under dispute |
+| `Disputed` | `5` | Reserved; nothing writes it. A chargeback is recorded as a `Chargeback` dispute, not on this axis |
 | `PartiallyRefunded` | `6` | Part of the payment was refunded |
 
 ::: warning An abandoned checkout is swept, not left forever

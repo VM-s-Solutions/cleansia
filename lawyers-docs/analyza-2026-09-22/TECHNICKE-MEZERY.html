@@ -1,0 +1,1073 @@
+<!doctype html>
+<html lang="cs"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Technické mezery a rizika</title><style>
+:root { color-scheme: light; }
+* { box-sizing: border-box; }
+body { margin: 0; background: #eef3f3; color: #183034; font-family: 'Segoe UI', Arial, sans-serif; font-size: 16px; line-height: 1.6; }
+main { max-width: 1120px; margin: 28px auto; padding: 42px 54px; background: white; border-top: 6px solid #12796b; box-shadow: 0 5px 25px #18303415; }
+nav { display: flex; flex-wrap: wrap; gap: 12px 24px; padding-bottom: 22px; margin-bottom: 26px; border-bottom: 1px solid #dbe5e4; font-size: 14px; }
+h1 { color: #115c53; font-size: 31px; line-height: 1.2; margin: 0 0 16px; }
+h2 { color: #115c53; font-size: 24px; line-height: 1.3; margin: 34px 0 14px; border-bottom: 1px solid #cee1dd; padding-bottom: 8px; }
+h3 { color: #174d48; font-size: 19px; line-height: 1.35; margin: 26px 0 10px; }
+h4 { font-size: 17px; margin: 23px 0 8px; }
+p { margin: 10px 0 14px; }
+li { margin: 7px 0; }
+a { color: #08685e; text-decoration-thickness: 1px; text-underline-offset: 2px; overflow-wrap: anywhere; }
+code { background: #f0f5f5; font-family: Consolas, monospace; font-size: .85em; padding: 1px 3px; overflow-wrap: anywhere; }
+table { border-collapse: collapse; width: 100%; margin: 18px 0 23px; font-size: 14px; line-height: 1.45; table-layout: fixed; }
+th { background: #e2f0ed; text-align: left; color: #124d45; font-weight: 650; }
+td, th { border: 1px solid #d2dfdd; padding: 10px 12px; vertical-align: top; overflow-wrap: anywhere; }
+tr:nth-child(even) td { background: #f8fbfa; }
+blockquote { border-left: 4px solid #12796b; margin: 20px 0; padding: 5px 20px; background: #f0f7f5; }
+.appendix a[href^="../../src/"], .appendix a[href^="../../sql-scripts/"] { font-family: Consolas, monospace; font-size: .82em; }
+.toc { background: #f5f9f8; padding: 10px 24px; font-size: 14px; border: 1px solid #dfebe8; }
+.toc ul { padding-left: 18px; }
+@media (max-width: 720px) { main { margin: 0; padding: 24px 18px; } h1 { font-size: 27px; } table { font-size: 12px; } td, th { padding: 7px; } }
+@media print {
+ @page { size: A4; margin: 15mm 15mm 18mm; }
+ body { background: white; font-size: 10.5pt; line-height: 1.42; color: #182c2c; }
+ main { max-width: none; padding: 0; margin: 0; box-shadow: none; border-top: 0; }
+ nav, .toc { display: none; }
+ h1 { font-size: 24pt; margin-bottom: 12pt; }
+ h2 { font-size: 16pt; margin: 20pt 0 9pt; }
+ h3 { font-size: 12.5pt; margin: 15pt 0 7pt; }
+ h4 { font-size: 11pt; margin: 14pt 0 7pt; }
+ p { margin: 7pt 0 9pt; orphans: 3; widows: 3; }
+ li { margin: 5pt 0; }
+ table { font-size: 9pt; line-height: 1.35; margin: 11pt 0 15pt; }
+ th, td { padding: 6pt 7pt; }
+ thead { display: table-header-group; }
+ tr, blockquote { break-inside: avoid; }
+ h1, h2, h3, h4 { break-after: avoid; }
+ a { text-decoration: none; color: #135d55; }
+}
+</style></head><body><main><nav><a href="PROVOZ-PLATFORMY.html">Jak platforma funguje</a><a href="ROZPORY-DOKUMENTY-VS-KOD.html">Dokumenty vs. aplikace</a><a href="TECHNICKE-MEZERY.html">Technické mezery</a><a href="OBCHODNI-MEZERY-A-HRANICNI-PRIPADY.html">Obchodní mezery a hraniční případy</a><a href="AUDIT-LOG.html">Záznam auditu</a><a href="PODKLADY-KOLEGU-VS-KOD.html">Podklady kolegu vs kod</a><a href="PROVOZ-PLATFORMY.pdf">Jak platforma funguje (PDF)</a><a href="ROZPORY-DOKUMENTY-VS-KOD.pdf">Dokumenty vs. aplikace (PDF)</a><a href="TECHNICKE-MEZERY.pdf">Technické mezery (PDF)</a><a href="OBCHODNI-MEZERY-A-HRANICNI-PRIPADY.pdf">Obchodní mezery a hraniční případy (PDF)</a><a href="AUDIT-LOG.pdf">Záznam auditu (PDF)</a><a href="PODKLADY-KOLEGU-VS-KOD.pdf">Podklady kolegu vs kod (PDF)</a><a href="podklady/INVENTAR.html">Inventář podkladů</a></nav><h1 id="technicke-mezery-a-rizika">Technické mezery a rizika</h1>
+<p><strong>Stav zdrojového kódu · commit 6792f0c256e81e1473908308bd73881004853be4 (master, 22. 9. 2026)</strong></p>
+<p>Slovník: úklidník = „Zhotovitel" (VOP, RS, RŘ, Kodex) = <code>Employee</code> (kód) = „uklízeč" (UI); zákazník = „Zákazník / Spotřebitel / Uživatel" = <code>User</code>; host = zákazník bez účtu (<code>Order.UserId = null</code>); provozní společnost = „Provozovatel / Cleansia s.r.o." = <code>Tenant</code>; administrátor = <code>Administrator / Manager / Support / Accountant</code>.</p>
+<p>Závažnost: <strong>kritická</strong> = ztráta peněz, porušení právní povinnosti nebo únik údajů jiné osoby možné dnes; <strong>vysoká</strong> = totéž v reálném scénáři vyžadujícím rozhodnutí; <strong>střední</strong> = chybné chování, malá oprava; <strong>nízká</strong> = hygiena, mrtvý kód.</p>
+<h2 id="deset-mezer">Deset mezer</h2>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>mezera</th>
+<th>proč</th>
+<th>závažnost</th>
+<th>citace</th>
+<th>→ Rn</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td><code>CalculateOrderPay.Handler</code> includuje jen <code>SelectedServices</code>, čte <code>SelectedPackages</code> prázdné — balíček bez odměny</td>
+<td>úklidník na balíčkové zakázce nedostane balíčkovou sazbu</td>
+<td>kritická</td>
+<td><a href="../../src/Cleansia.Core.AppServices/Features/EmployeePayroll/CalculateOrderPay.cs#L117-L120">CalculateOrderPay.cs:117-120</a>; <a href="../../src/Cleansia.Core.AppServices/Features/EmployeePayroll/CalculateOrderPay.cs#L139-L140">CalculateOrderPay.cs:139-140</a></td>
+<td><code>Include(SelectedPackages)</code> v <code>CalculateOrderPay</code></td>
+</tr>
+<tr>
+<td>2</td>
+<td>Adresa je řádek deduplikovaný na <code>Street</code>, <code>City</code>, <code>ZipCode</code>, <code>CountryId</code>; <code>CustomerAddress.Anonymize()</code> při výmazu i sweepu jej přepíše sousedům</td>
+<td>poškození údajů jiných zákazníků</td>
+<td>kritická</td>
+<td><a href="../../src/Cleansia.Infra.Database/Repositories/AddressRepository.cs#L9-L16">AddressRepository.cs:9-16</a>; <a href="../../src/Cleansia.Core.AppServices/Services/GdprDeletionService.cs#L393-L396">GdprDeletionService.cs:393-396</a></td>
+<td>adresa per zákazník</td>
+</tr>
+<tr>
+<td>3</td>
+<td><code>ResolveDispute</code> ignoruje selhání refundu: spor je <code>Resolved</code> s <code>RefundAmount</code>, peníze neodešly, příkaz vrací úspěch</td>
+<td>zákazník bez peněz, rozhodnutí vypadá vykonaně</td>
+<td>kritická</td>
+<td><a href="../../src/Cleansia.Core.AppServices/Features/Disputes/ResolveDispute.cs#L77-L81">ResolveDispute.cs:77-81</a></td>
+<td>selhání refundu jako chyba příkazu</td>
+</tr>
+<tr>
+<td>4</td>
+<td>Doklad: řádky jen <code>SelectedServices</code>/<code>SelectedPackages</code>, sleva a <code>ApplyExpressSurcharge</code> bez řádku; hotovostní doklad <code>Payment Status: Pending</code></td>
+<td>součet řádků ≠ <code>Total</code>; hotovost bez dokladu o zaplacení</td>
+<td>vysoká</td>
+<td><a href="../../src/Cleansia.Core.AppServices/Services/ReceiptService.cs#L395-L404">ReceiptService.cs:395-404</a>; <a href="../../src/Cleansia.Core.AppServices/Services/ReceiptService.cs#L410">ReceiptService.cs:410</a></td>
+<td>→ R1</td>
+</tr>
+<tr>
+<td>5</td>
+<td>Právní texty s bannerem <code>Návrh — toto znění zatím neprošlo právní kontrolou</code> zapisuje <code>LegalDocumentSeedHostedService</code> při každém startu v každém prostředí</td>
+<td>souhlasy a přijetí se vážou k neschválenému znění</td>
+<td>vysoká</td>
+<td><a href="../../src/Cleansia.Infra.Database/Seed/Legal/LegalDocumentSeedHostedService.cs#L16-L20">LegalDocumentSeedHostedService.cs:16-20</a>; <a href="../../src/Cleansia.Infra.Database/Seed/Legal/customer/terms-of-service/any/2026-09-14/cs.md#L5">cs.md:5</a></td>
+<td>→ R3</td>
+</tr>
+<tr>
+<td>6</td>
+<td>Přiřazený úklidník čte <code>ConfirmationCode</code>, <code>CustomerEmail</code>, <code>DisplayOrderNumber</code> hostovy objednávky — klíč anonymního <code>CancelGuest</code></td>
+<td>úklidník může zrušit hostovu objednávku jménem hosta</td>
+<td>kritická</td>
+<td><a href="../../src/Cleansia.Core.AppServices/Mappers/OrderMappers.cs#L250-L275">OrderMappers.cs:250-275</a>; <a href="../../src/Cleansia.Core.AppServices/Features/Orders/GuestOrderAccess.cs#L21-L24">GuestOrderAccess.cs:21-24</a></td>
+<td>redakce <code>ConfirmationCode</code> pro úklidníka</td>
+</tr>
+<tr>
+<td>7</td>
+<td>Řádek <code>Tenants</code> nemá zapisovače: <code>Tenant.Create</code> volají jen testy, katalog admin příkazy má (<code>CreateCountry</code>, <code>CreateService</code>), provozní společnost ne</td>
+<td>společnost nelze založit aplikační cestou</td>
+<td>vysoká</td>
+<td>grep -rn "Tenant.Create(" src --glob "*.cs" → 0 mimo testy; <a href="../../src/Cleansia.Core.Domain/Tenancy/Tenant.cs#L68-L71">Tenant.cs:68-71</a></td>
+<td>→ R2</td>
+</tr>
+<tr>
+<td>8</td>
+<td>Administrátor bez druhého faktoru: jen heslo, limit 10/min/IP a lockout 5×/15 min</td>
+<td>ukradené heslo administrátora = celá provozní společnost</td>
+<td>vysoká</td>
+<td>rg -n "TwoFactor|Totp|Mfa" src/ → 0; <a href="../../src/Cleansia.Core.Domain/Users/User.cs#L14-L17">User.cs:14-17</a></td>
+<td>2FA administrátora</td>
+</tr>
+<tr>
+<td>9</td>
+<td>Cookie lišta u přihlášeného mapuje „analytics" na <code>ConsentType.DataProcessing</code> a „marketing" na <code>MarketingEmails</code> — klik na liště uděluje a odvolává souhlas se zpracováním údajů</td>
+<td>souhlas odvolán bez vědomí zákazníka</td>
+<td>vysoká</td>
+<td><a href="../../src/Cleansia.App/libs/core/customer-services/src/lib/services/consent-sync.service.ts#L36-L41">consent-sync.service.ts:36-41</a></td>
+<td>→ R9</td>
+</tr>
+<tr>
+<td>10</td>
+<td>Hotovost: storno zapíše <code>FeeRate</code> na objednávku, refund běží jen pro <code>PaymentType.Card</code> a inkaso neexistuje; vybraná hotovost (<code>MarkCashCollected</code>) se nezapočítává proti odměně</td>
+<td>poplatek se nevybere, tržbu drží úklidník</td>
+<td>vysoká</td>
+<td><a href="../../src/Cleansia.Core.AppServices/Features/Orders/CustomerOrderCancellation.cs#L90-L95">CustomerOrderCancellation.cs:90-95</a>; <a href="../../src/Cleansia.Core.AppServices/Features/Orders/MarkCashCollected.cs#L164">MarkCashCollected.cs:164</a></td>
+<td>→ R6</td>
+</tr>
+</tbody>
+</table>
+<h2 id="1-bezpecnost">1. Bezpečnost</h2>
+<table>
+<thead>
+<tr>
+<th>pravidlo</th>
+<th>jedna věta</th>
+<th>citace</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>S1 UserId is server-truth</td>
+<td>Identita se čte z JWT claimu <code>NameIdentifier</code>, nikdy z těla; anonymní zápis jmenuje trh, server mapuje přes <code>SetTenantOverride</code></td>
+<td><a href="../../src/Cleansia.Infra.Database/UserSessionProvider.cs#L29-L32">UserSessionProvider.cs:29-32</a>; <a href="../../src/Cleansia.Core.AppServices/Tenancy/OperatorTenantScopeBehavior.cs#L53-L69">OperatorTenantScopeBehavior.cs:53-69</a></td>
+</tr>
+<tr>
+<td>S2 Authorization on every endpoint</td>
+<td>Výchozí politika <code>RequireAuthenticatedUser</code> na všech pěti hostech; test odmítne admin akci bez <code>[Permission]</code> mimo <code>AllowList</code></td>
+<td><a href="../../src/Cleansia.Config/Services/ServiceExtensions.cs#L44-L47">ServiceExtensions.cs:44-47</a>; <a href="../../src/Cleansia.HostTests/Tests/AdminHostPermissionCoverageTests.cs#L62-L66">AdminHostPermissionCoverageTests.cs:62-66</a></td>
+</tr>
+<tr>
+<td>S3 Resource-by-id ownership</td>
+<td><code>CanAccessOrderAsync</code> vrací true jen vlastníkovi, přiřazenému úklidníkovi nebo administrátorovi; zákazník čte přes <code>GetQueryableForOwner(userId)</code></td>
+<td><a href="../../src/Cleansia.Core.AppServices/Authentication/OrderAccessService.cs#L64-L95">OrderAccessService.cs:64-95</a>; <a href="../../src/Cleansia.Core.AppServices/Authentication/OrderAccessService.cs#L38-L44">OrderAccessService.cs:38-44</a></td>
+</tr>
+<tr>
+<td>S4 DTO leak prevention</td>
+<td><code>OrderPiiRedaction.RedactForBrowsingCleaner</code> nuluje jméno, e-mail, telefon, adresu, kód a instrukce pro prohlížejícího úklidníka; test drží seznam <code>DetailBlanked</code></td>
+<td><a href="../../src/Cleansia.Core.AppServices/Features/Orders/OrderPiiRedaction.cs#L41-L69">OrderPiiRedaction.cs:41-69</a>; <a href="../../src/Cleansia.Tests/Features/Orders/OrderRedactionSurfaceTests.cs#L34-L43">OrderRedactionSurfaceTests.cs:34-43</a></td>
+</tr>
+<tr>
+<td>S5 Rate limiting</td>
+<td>Politiky <code>auth</code> 10/min IP, <code>interactive</code> 60/min, <code>webhook</code> 60/min, strop 20 000 anonymních/min; <code>KnownUncovered</code> prázdný</td>
+<td><a href="../../src/Cleansia.Config/RateLimiting/RateLimitPolicies.cs#L43-L51">RateLimitPolicies.cs:43-51</a>; <a href="../../src/Cleansia.Tests/RateLimiting/RateLimitCoverageGuardTests.cs#L142-L144">RateLimitCoverageGuardTests.cs:142-144</a></td>
+</tr>
+<tr>
+<td>S6 Logging hygiene</td>
+<td><code>SafeBody</code> rediguje <code>SensitiveFieldRegex</code> a <code>ContactIdentityFieldRegex</code>; cesty z <code>IsSensitivePath</code> potlačeny celé; test padne na neredigovaném DTO</td>
+<td><a href="../../src/Cleansia.Web.Customer/Middleware/RequestLoggingMiddleware.cs#L197-L210">RequestLoggingMiddleware.cs:197-210</a>; <a href="../../src/Cleansia.Tests/Logging/RequestLogPiiSurfaceGuardTests.cs#L98-L103">RequestLogPiiSurfaceGuardTests.cs:98-103</a></td>
+</tr>
+<tr>
+<td>S7 Idempotency</td>
+<td>Webhook Stripe: <code>HasProcessedAsync(stripeEvent.Id)</code> před účinky; refundace drží unikátní <code>RefundKey</code>, kolize 23505 = existující řádek</td>
+<td><a href="../../src/Cleansia.Core.AppServices/Features/Payments/HandlePaymentNotification.cs#L158-L173">HandlePaymentNotification.cs:158-173</a>; <a href="../../src/Cleansia.Core.AppServices/Services/RefundService.cs#L97-L118">RefundService.cs:97-118</a></td>
+</tr>
+<tr>
+<td>S8 Tenant isolation</td>
+<td>Globální EF filtr (<code>SetQueryFilter</code>) <code>e.TenantId == currentTenantId</code>; <code>CommitAsync</code> razítkuje <code>TenantId</code> a odmítne zápis do zmrazené společnosti</td>
+<td><a href="../../src/Cleansia.Infra.Database/CleansiaDbContext.cs#L307-L328">CleansiaDbContext.cs:307-328</a>; <a href="../../src/Cleansia.Infra.Database/CleansiaDbContext.cs#L103-L116">CleansiaDbContext.cs:103-116</a></td>
+</tr>
+<tr>
+<td>S9 Migration &amp; DTO-contract safety</td>
+<td>Jediná migrace <code>Initial</code>; test drží 48 razítkovaných tabulek (<code>StampedTables</code>) s FK <code>_Tenants_TenantId</code> a NOT NULL mimo dvě obálkové (<code>EnvelopeTables</code>); <code>TenantId</code> je cizí klíč do <code>Tenants</code></td>
+<td><a href="../../src/Cleansia.Tests/Infrastructure/InitialMigrationTenantDdlTests.cs#L24-L25">InitialMigrationTenantDdlTests.cs:24-25</a>; <a href="../../src/Cleansia.Tests/Infrastructure/TenantIdRequiredModelTests.cs#L15-L16">TenantIdRequiredModelTests.cs:15-16</a></td>
+</tr>
+<tr>
+<td>S10 Soft-delete / IsActive</td>
+<td>Bez globálního filtru; čtenář filtruje sám, např. <code>Where(s =&gt; s.IsActive)</code> u uložených adres</td>
+<td><a href="../../src/Cleansia.Infra.Database/Repositories/SavedAddressRepository.cs#L18">SavedAddressRepository.cs:18</a></td>
+</tr>
+<tr>
+<td>S11 Mobile session wipe</td>
+<td>Android <code>clearSessionCaches()</code> při vynuceném 401; iOS <code>SessionScopedCacheRegistry.clearAll()</code> při odhlášení i zamítnutém refreshi</td>
+<td><a href="../../src/cleansia_android/core/src/main/java/cz/cleansia/core/auth/AuthAuthenticator.kt#L116-L119">AuthAuthenticator.kt:116-119</a>; <a href="../../src/cleansia_ios/CleansiaCore/Sources/CleansiaCore/Auth/SessionScopedCache.swift#L19-L31">SessionScopedCache.swift:19-31</a></td>
+</tr>
+<tr>
+<td>S12 Stored artifact disclosure</td>
+<td>Roster <code>ExpectedIntakes</code> 17 upload tras, 15 z nich s pravidlem obsahu (dvě <code>BlobFileSize only</code>); <code>ImageMetadata.Scrub(byte[])</code> vybírá walker podle bytů, nic nedekóduje</td>
+<td><a href="../../src/Cleansia.Tests/Common/Validators/UploadIntakeRosterTests.cs#L39-L60">UploadIntakeRosterTests.cs:39-60</a>; <a href="../../src/Cleansia.Core.AppServices/Common/Media/ImageMetadata.cs#L35-L57">ImageMetadata.cs:35-57</a></td>
+</tr>
+</tbody>
+</table>
+<table>
+<thead>
+<tr>
+<th>mezera</th>
+<th>doklad</th>
+<th>kdo je vystaven</th>
+<th>závažnost</th>
+<th>dlužné rozhodnutí nebo oprava</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Přiřazený úklidník čte <code>ConfirmationCode</code>, <code>CustomerEmail</code>, <code>DisplayOrderNumber</code> hostovy objednávky — klíč anonymního <code>CancelGuest</code></td>
+<td><a href="../../src/Cleansia.Core.AppServices/Mappers/OrderMappers.cs#L250-L275">OrderMappers.cs:250-275</a>; <a href="../../src/Cleansia.Core.AppServices/Features/Orders/GuestOrderAccess.cs#L21-L24">GuestOrderAccess.cs:21-24</a></td>
+<td>zákazník (host)</td>
+<td>kritická</td>
+<td>redakce <code>ConfirmationCode</code> pro úklidníka</td>
+</tr>
+<tr>
+<td><code>GetOrderDetails</code> vrací přiřazenému úklidníkovi (<code>isEntitledToCustomerData</code>) detail bez redakce; <code>CancelGuest</code> je <code>[AllowAnonymous]</code>, blokuje jen Cancelled/Completed/InProgress</td>
+<td><a href="../../src/Cleansia.Core.AppServices/Features/Orders/GetOrderDetails.cs#L150-L158">GetOrderDetails.cs:150-158</a>; <a href="../../src/Cleansia.Web.Customer/Controllers/OrderController.cs#L18-L23">OrderController.cs:18-23</a></td>
+<td>zákazník (host)</td>
+<td>kritická</td>
+<td>tatáž oprava</td>
+</tr>
+<tr>
+<td>Administrátorské přeřazení načte cílového úklidníka podle id a ověří jen <code>EmployeeNotFound</code> a <code>EmployeeAlreadyAssignedToOrder</code>; schválení (<code>EmployeeNotApproved</code>), které vyžaduje převzetí, ani měnu úklidníka nečte</td>
+<td><a href="../../src/Cleansia.Core.AppServices/Features/Orders/AdminReassignOrder.cs#L74-L87">AdminReassignOrder.cs:74-87</a>; <a href="../../src/Cleansia.Core.AppServices/Features/Orders/TakeOrder.cs#L80-L85">TakeOrder.cs:80-85</a></td>
+<td>zákazník / společnost</td>
+<td>vysoká</td>
+<td>kontrola schválení při přeřazení</td>
+</tr>
+<tr>
+<td>Administrátor bez druhého faktoru: jen heslo, limit 10/min/IP, lockout 5×/15 min</td>
+<td>rg -n "TwoFactor|Totp|Mfa" src/ → 0; <a href="../../src/Cleansia.Core.Domain/Users/User.cs#L14-L17">User.cs:14-17</a></td>
+<td>společnost</td>
+<td>vysoká</td>
+<td>2FA administrátora</td>
+</tr>
+<tr>
+<td>Zákaznický a partnerský web neinstalují <code>AddUserRevocationEnforcement</code> ani <code>AddDeviceRevocationEnforcement</code>; jejich přístupový token 1 440 min platí i po resetu hesla</td>
+<td><a href="../../src/Cleansia.Config/Services/UserRevocation/UserRevocationServiceExtensions.cs#L13-L21">UserRevocationServiceExtensions.cs:13-21</a>; <a href="../../src/Cleansia.Web.Customer/appsettings.Production.json#L20">appsettings.Production.json:20</a></td>
+<td>zákazník / úklidník</td>
+<td>střední</td>
+<td>revokace na webových hostech</td>
+</tr>
+<tr>
+<td>Deaktivace společnosti nezneplatní existující JWT úklidníků: <code>IsDeactivated</code> se čte jen v <code>RefusalForAsync</code> při přihlášení, výsledkem je <code>CompanyDeactivated</code></td>
+<td><a href="../../src/Cleansia.Core.AppServices/Tenancy/CompanySignInGate.cs#L27-L41">CompanySignInGate.cs:27-41</a></td>
+<td>společnost</td>
+<td>střední</td>
+<td>kontrola <code>IsActive</code> na každém tokenu</td>
+</tr>
+<tr>
+<td>Přiřazený úklidník má přístup k adrese a instrukcím i po dokončení bez časového limitu; <code>CanAccessOrderAsync</code> čte jen <code>AssignedEmployees</code></td>
+<td><a href="../../src/Cleansia.Core.AppServices/Authentication/OrderAccessService.cs#L88-L94">OrderAccessService.cs:88-94</a></td>
+<td>zákazník</td>
+<td>střední</td>
+<td>→ R8</td>
+</tr>
+<tr>
+<td>Kód hosta je 6 hex znaků (16,7 mil. kombinací) v čitelné podobě na <code>Order.ConfirmationCode</code></td>
+<td><a href="../../src/Cleansia.Core.Domain/Extensions/OrderExtensions.cs#L7">OrderExtensions.cs:7</a>; <a href="../../src/Cleansia.Core.Domain/Orders/Order.cs#L151">Order.cs:151</a></td>
+<td>zákazník (host)</td>
+<td>nízká</td>
+<td>→ R5</td>
+</tr>
+<tr>
+<td>Registrace (<code>ExistingUserWithEmail</code>) i reset hesla (<code>NotExistingUserWithEmail</code>) prozrazují existenci e-mailu anonymnímu volajícímu</td>
+<td><a href="../../src/Cleansia.Core.AppServices/Features/Auth/Register.cs#L42-L44">Register.cs:42-44</a>; <a href="../../src/Cleansia.Core.AppServices/Features/Users/RequestPasswordChange.cs#L46-L48">RequestPasswordChange.cs:46-48</a></td>
+<td>zákazník</td>
+<td>nízká</td>
+<td>neutrální odpověď</td>
+</tr>
+<tr>
+<td>DEV nasazení <code>Logging__LogLevel__Cleansia=Information</code>; <code>RequestLoggingMiddleware</code> pod ni spadá, těla požadavků jdou do App Insights</td>
+<td><a href="../../deploy/bicep/main.bicep#L541">main.bicep:541</a>; <a href="../../src/Cleansia.Web.Customer/Middleware/RequestLoggingMiddleware.cs#L7-L9">RequestLoggingMiddleware.cs:7-9</a></td>
+<td>všichni (DEV)</td>
+<td>nízká</td>
+<td>úroveň Warning i v DEV</td>
+</tr>
+<tr>
+<td>Mapbox veřejný token <code>pk.eyJ</code> ve 4 commitech historie; ve stromu jen placeholder runbooku</td>
+<td>git log -S "pk.eyJ" --oneline → 4; <a href="../../deploy/AZURE-DEV-RUNBOOK.md#L324">AZURE-DEV-RUNBOOK.md:324</a></td>
+<td>společnost</td>
+<td>nízká</td>
+<td>rotace tokenu</td>
+</tr>
+<tr>
+<td>Heslo lokálního Postgresu (<code>Host=localhost</code>) v trackovaném <code>local.settings.json</code></td>
+<td><a href="../../src/Cleansia.Functions/local.settings.json#L27">local.settings.json:27</a></td>
+<td>společnost</td>
+<td>nízká</td>
+<td>user secrets místo souboru</td>
+</tr>
+<tr>
+<td>Postgres v PRO má zapnutý veřejný endpoint (<code>publicNetworkAccess</code>) a v prod parametrech zakomentovaný <code>privateNetworkingEnabled</code>; pravidlo <code>AllowAllAzureServicesAndResources</code> (0.0.0.0) je přepínač provozu uvnitř Azure</td>
+<td><a href="../../deploy/bicep/modules/postgres.bicep#L144-L151">postgres.bicep:144-151</a>; <a href="../../deploy/bicep/weu.prod.bicepparam#L64-L68">weu.prod.bicepparam:64-68</a></td>
+<td>společnost</td>
+<td>střední</td>
+<td>privátní síť</td>
+</tr>
+<tr>
+<td>Aplikace se připojuje jako administrátor serveru <code>cleansia_admin</code> s <code>Trust Server Certificate=true</code></td>
+<td><a href="../../deploy/bicep/modules/derivedSecrets.bicep#L48">derivedSecrets.bicep:48</a>; <a href="../../deploy/bicep/weu.prod.bicepparam#L74">weu.prod.bicepparam:74</a></td>
+<td>společnost</td>
+<td>střední</td>
+<td>aplikační role; ověření certifikátu</td>
+</tr>
+<tr>
+<td>Bez auditu závislostí v CI (<code>npm audit</code>/<code>--vulnerable</code> 0); jen měsíční (<code>monthly</code>) security-updates pro <code>npm</code></td>
+<td>rg -n "npm audit|--vulnerable" .github/ → 0; <a href="../../.github/dependabot.yml#L26-L31">dependabot.yml:26-31</a></td>
+<td>společnost</td>
+<td>střední</td>
+<td>audit závislostí v CI</td>
+</tr>
+<tr>
+<td>API hosty ani zákaznický SSR nenastavují HSTS ani CSP; partnerský a admin SWA nesou <code>globalHeaders</code> <code>X-Content-Type-Options</code>, <code>X-Frame-Options</code>, <code>Referrer-Policy</code></td>
+<td>rg -n "UseHsts|Content-Security-Policy|helmet" src --glob "<em>.cs" --glob "</em>.ts" → 0; <a href="../../src/Cleansia.App/apps/cleansia-partner.app/src/staticwebapp.config.json#L12-L15">staticwebapp.config.json:12-15</a></td>
+<td>všichni</td>
+<td>nízká</td>
+<td>bezpečnostní hlavičky</td>
+</tr>
+<tr>
+<td>Fotky interiéru se vydávají SAS odkazem (<code>GenerateSasUri</code>) s platností 1 h — přeposlatelný nositelský odkaz</td>
+<td><a href="../../src/Cleansia.Core.AppServices/Features/Orders/GetOrderPhotos.cs#L129">GetOrderPhotos.cs:129</a></td>
+<td>zákazník</td>
+<td>nízká</td>
+<td>→ R7</td>
+</tr>
+<tr>
+<td>Bez virového skenu nahraných souborů; jen magic-byte <code>AcceptedByIntake</code></td>
+<td>rg -in "clamav|antivirus|malware" src --glob "*.cs" → 0; <a href="../../src/Cleansia.Core.AppServices/Common/Validators/SniffedContentType.cs#L70-L87">SniffedContentType.cs:70-87</a></td>
+<td>společnost</td>
+<td>nízká</td>
+<td>AV sken uploadů</td>
+</tr>
+<tr>
+<td>154 tenant-ignorujících čtení (105 v repozitářích) bez rosteru, např. <code>ExistsIgnoringTenantAsync</code> na objednávce; účinek se projeví u druhé provozní společnosti</td>
+<td><code>rg -n "IgnoreQueryFilters()|GetQueryableIgnoringTenant()" src/Cleansia.Infra.Database src/Cleansia.Core.AppServices src/Cleansia.Functions*</code> → 154; <a href="../../src/Cleansia.Infra.Database/Repositories/OrderRepository.cs#L244-L248">OrderRepository.cs:244-248</a></td>
+<td>společnost</td>
+<td>střední</td>
+<td>roster tenant-ignorujících čtení</td>
+</tr>
+<tr>
+<td>Hesla s 10 000 iteracemi (<code>LegacyIterations</code>) jsou platná vedle 600 000; povýšení umí jen <code>NeedsRehash</code>, které nikdo nevolá</td>
+<td>rg -n "NeedsRehash" src --glob "*.cs" → 1 deklarace + 1 test; <a href="../../src/Cleansia.Core.Domain/Extensions/PasswordExtensions.cs#L9-L14">PasswordExtensions.cs:9-14</a></td>
+<td>zákazník / úklidník</td>
+<td>nízká</td>
+<td>povýšení hashe při přihlášení</td>
+</tr>
+</tbody>
+</table>
+<h2 id="2-penize-a-ucetnictvi">2. Peníze a účetnictví</h2>
+<table>
+<thead>
+<tr>
+<th>mezera</th>
+<th>doklad</th>
+<th>kdo je vystaven</th>
+<th>závažnost</th>
+<th>dlužné rozhodnutí nebo oprava</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Účtenka tiskne řádky jen za <code>SelectedServices</code> a <code>SelectedPackages</code>; sleva a <code>ApplyExpressSurcharge</code> +20 % bez řádku; <code>SelectedExtras</code> jen <code>Slug</code> bez ceny</td>
+<td><a href="../../src/Cleansia.Core.AppServices/Services/ReceiptService.cs#L395-L404">ReceiptService.cs:395-404</a>; <a href="../../src/Cleansia.Core.AppServices/Features/Orders/OrderFactory.cs#L129-L130">OrderFactory.cs:129-130</a></td>
+<td>zákazník / společnost</td>
+<td>vysoká</td>
+<td>řádek slevy, příplatku a ceny doplňku</td>
+</tr>
+<tr>
+<td>Řádkové ceny (<code>lineTotal</code>) jsou katalogové před slevou; objednávka nenese příznak expres (<code>AsChargedAgainst</code>); součet řádků ≠ <code>Total</code></td>
+<td><a href="../../src/Cleansia.Core.AppServices/Features/Orders/OrderFactory.cs#L199-L204">OrderFactory.cs:199-204</a>; <a href="../../src/Cleansia.Core.AppServices/Features/Orders/OrderFactory.cs#L400-L405">OrderFactory.cs:400-405</a></td>
+<td>zákazník / společnost</td>
+<td>vysoká</td>
+<td>příznak expres na objednávce</td>
+</tr>
+<tr>
+<td>Fiskální položky (<code>BuildFiscalLineItems</code>) jen služby a balíčky — bez extras, slev a příplatku; účinek je latentní, dokud je fiskalizace vypnutá</td>
+<td><a href="../../src/Cleansia.Core.AppServices/Services/ReceiptService.cs#L275-L299">ReceiptService.cs:275-299</a></td>
+<td>společnost</td>
+<td>vysoká</td>
+<td>fiskální položky = řádky dokladu</td>
+</tr>
+<tr>
+<td>Hotovostní účtenka vzniká při vytvoření objednávky s <code>Payment Status: Pending</code>; při dokončení se negeneruje znovu</td>
+<td><a href="../../src/Cleansia.Core.AppServices/Features/Orders/OrderPaymentDispatcher.cs#L82-L91">OrderPaymentDispatcher.cs:82-91</a>; <a href="../../src/Cleansia.Core.AppServices/Services/ReceiptService.cs#L410">ReceiptService.cs:410</a></td>
+<td>zákazník / společnost</td>
+<td>vysoká</td>
+<td>→ R6</td>
+</tr>
+<tr>
+<td>Bez dobropisu při refundaci; refund je jen řádek <code>Refund</code> a stav objednávky</td>
+<td>rg -in "creditnote|credit_note|dobropis" src --glob "*.cs" → 0; <a href="../../src/Cleansia.Core.Domain/Payments/Refund.cs#L81">Refund.cs:81</a></td>
+<td>zákazník / společnost</td>
+<td>vysoká</td>
+<td>→ R1</td>
+</tr>
+<tr>
+<td>Číslo účtenky <code>RCP-{rok}-{NNNN}</code> (<code>ReceiptNumberFormat</code>); při <code>FiscalEnforcementMode.None</code> vrací <code>FiscalSequenceScope</code> <code>NoAnnualResetYear</code> — pořadí pokračuje přes roky</td>
+<td><a href="../../src/Cleansia.Core.AppServices/Services/ReceiptService.cs#L60-L64">ReceiptService.cs:60-64</a>; <a href="../../src/Cleansia.Core.Fiscal.Abstractions/FiscalSequenceScope.cs#L22-L27">FiscalSequenceScope.cs:22-27</a></td>
+<td>společnost</td>
+<td>střední</td>
+<td>roční reset číselné řady</td>
+</tr>
+<tr>
+<td>Doklad tiskne <code>VAT #</code> (DIČ <code>CZ12345678</code>) při <code>IsVatPayer = false</code> vedle „Nejsme plátci DPH"</td>
+<td><a href="../../src/Cleansia.Infra.Services/Pdf/Layouts/DefaultReceiptLayoutBuilder.cs#L161-L162">DefaultReceiptLayoutBuilder.cs:161-162</a>; <a href="../../sql-scripts/insert_seed_data.sql#L1162-L1163">insert_seed_data.sql:1162-1163</a></td>
+<td>zákazník</td>
+<td>střední</td>
+<td>→ R2</td>
+</tr>
+<tr>
+<td>Handler i validátor (<code>ConfigsExistAsync</code>) <code>CalculateOrderPay</code> includují jen <code>SelectedServices</code> a čtou <code>SelectedPackages</code> prázdné — balíčková zakázka je bez balíčkové sazby</td>
+<td><a href="../../src/Cleansia.Core.AppServices/Features/EmployeePayroll/CalculateOrderPay.cs#L87-L90">CalculateOrderPay.cs:87-90</a>; <a href="../../src/Cleansia.Core.AppServices/Features/EmployeePayroll/CalculateOrderPay.cs#L117-L120">CalculateOrderPay.cs:117-120</a></td>
+<td>úklidník</td>
+<td>kritická</td>
+<td><code>Include(SelectedPackages)</code> v <code>CalculateOrderPay</code></td>
+</tr>
+<tr>
+<td>Administrátorský přepis na <code>Completed</code> neposílá <code>CalculateOrderPayMessage</code> — úklidník bez odměny</td>
+<td>rg -n "CalculateOrderPayMessage(" src/ → jen <code>CompleteOrder.cs:347</code>; <a href="../../src/Cleansia.Core.AppServices/Features/Orders/AdminOverrideOrderStatus.cs#L141-L147">AdminOverrideOrderStatus.cs:141-147</a></td>
+<td>úklidník</td>
+<td>vysoká</td>
+<td>výpočet odměny i z override</td>
+</tr>
+<tr>
+<td><code>ResolveDispute</code> ignoruje selhání refundu: spor <code>Resolved</code> s <code>RefundAmount</code>, peníze neodešly, výsledek Success</td>
+<td><a href="../../src/Cleansia.Core.AppServices/Features/Disputes/ResolveDispute.cs#L77-L81">ResolveDispute.cs:77-81</a>; <a href="../../src/Cleansia.Core.AppServices/Features/Disputes/ResolveDispute.cs#L89-L100">ResolveDispute.cs:89-100</a></td>
+<td>zákazník</td>
+<td>kritická</td>
+<td>selhání refundu jako chyba příkazu</td>
+</tr>
+<tr>
+<td>Chargeback i dvojí úhrada hostovy objednávky: <code>Dispute.UserId</code> required, <code>order.UserId ?? ""</code> → 23503 → webhook 500, Stripe opakuje</td>
+<td><a href="../../src/Cleansia.Core.AppServices/Features/Payments/HandlePaymentNotification.cs#L484-L489">HandlePaymentNotification.cs:484-489</a>; <a href="../../src/Cleansia.Infra.Database/EntityConfigurations/DisputeEntityConfiguration.cs#L19-L21">DisputeEntityConfiguration.cs:19-21</a></td>
+<td>společnost</td>
+<td>vysoká</td>
+<td><code>Dispute.UserId</code> volitelné pro hosta</td>
+</tr>
+<tr>
+<td>Prohraný chargeback jen zavře spor (<code>DisputeStatus.Closed</code>); <code>PaymentStatus</code> <code>Paid</code> se nemění, bez refund řádku, bez dopadu na odměnu</td>
+<td><a href="../../src/Cleansia.Core.AppServices/Features/Payments/HandlePaymentNotification.cs#L604-L609">HandlePaymentNotification.cs:604-609</a>; rg -n "OrderEmployeePay" src/Cleansia.Core.AppServices/Features/Payments/HandlePaymentNotification.cs → 0</td>
+<td>společnost</td>
+<td>vysoká</td>
+<td>chargeback jako pohyb peněz</td>
+</tr>
+<tr>
+<td><code>Refund.StripeRefundId</code> vždy null; id refundu ze Stripe se neukládá</td>
+<td><a href="../../src/Cleansia.Core.AppServices/Services/RefundService.cs#L170">RefundService.cs:170</a></td>
+<td>společnost</td>
+<td>střední</td>
+<td>uložení <code>StripeRefundId</code></td>
+</tr>
+<tr>
+<td>Storno u hotovosti zapisuje <code>FeeRate</code> 25/50 % přes <code>order.Cancel</code>; refund běží jen pro <code>PaymentType.Card</code>; inkaso poplatku neexistuje</td>
+<td><a href="../../src/Cleansia.Core.AppServices/Features/Orders/CustomerOrderCancellation.cs#L49">CustomerOrderCancellation.cs:49</a>; <a href="../../src/Cleansia.Core.AppServices/Features/Orders/CustomerOrderCancellation.cs#L90-L95">CustomerOrderCancellation.cs:90-95</a></td>
+<td>společnost</td>
+<td>vysoká</td>
+<td>→ R6</td>
+</tr>
+<tr>
+<td>Vybraná hotovost se nezapočítává proti odměně: složkami jsou <code>BasePay</code>, <code>ExtrasPay</code>, <code>ExpensesPay</code>, <code>BonusPay</code>, <code>DeductionPay</code>; lhůta odvodu neexistuje</td>
+<td>rg -rn "CashCollected|SettledInCash" src/Cleansia.Core.AppServices/Features/EmployeePayroll → 0; <a href="../../src/Cleansia.Core.Domain/EmployeePayroll/OrderEmployeePay.cs#L38-L46">OrderEmployeePay.cs:38-46</a></td>
+<td>společnost</td>
+<td>vysoká</td>
+<td>→ R6</td>
+</tr>
+<tr>
+<td>Plus člen plánu <code>PLUS_MONTHLY</code> (<code>freeWindow</code> 4 h) nikdy neplatí 25 %: <code>h &gt;= freeWindow</code> zdarma, jinak <code>LastMinute</code> 50 %</td>
+<td><a href="../../src/Cleansia.Core.AppServices/Features/Orders/BookingPolicy.cs#L344-L351">BookingPolicy.cs:344-351</a>; <a href="../../sql-scripts/insert_seed_data.sql#L1804-L1805">insert_seed_data.sql:1804-1805</a></td>
+<td>zákazník</td>
+<td>střední</td>
+<td>→ R4</td>
+</tr>
+<tr>
+<td>Fiskalizace vypnuta (<code>Fiscal:CzechEet2:Enabled=false</code>); <code>CzechEet2FiscalService</code> je stub, výchozí <code>NoOpFiscalService</code></td>
+<td><a href="../../src/Cleansia.Web.Customer/appsettings.json#L85">appsettings.json:85</a>; <a href="../../src/Cleansia.Infra.Fiscal/Countries/Czechia/CzechEet2FiscalService.cs#L8-L12">CzechEet2FiscalService.cs:8-12</a></td>
+<td>společnost</td>
+<td>střední</td>
+<td>→ R21</td>
+</tr>
+<tr>
+<td>Fiskální resolver: <code>Country.IsoCode</code> alpha-3 („CZE") vs <code>CountryCode</code> „CZ" — česká služba by nebyla nalezena</td>
+<td><a href="../../src/Cleansia.Core.AppServices/Services/ReceiptService.cs#L162-L163">ReceiptService.cs:162-163</a>; <a href="../../src/Cleansia.Infra.Fiscal/Countries/Czechia/CzechEet2FiscalService.cs#L23">CzechEet2FiscalService.cs:23</a></td>
+<td>společnost</td>
+<td>střední</td>
+<td>shoda kódu země</td>
+</tr>
+<tr>
+<td>Jeden Stripe účet (<code>Stripe:SecretKey</code>) pro celý holding; per-společnost účet 0 — vyrovnání mezi společnostmi mimo software</td>
+<td><a href="../../src/Cleansia.Infra.Clients/Stripe/StripeClient.cs#L34">StripeClient.cs:34</a>; rg -n "StripeAccount|OnBehalfOf|TransferData" src/Cleansia.Core.AppServices src/Cleansia.Infra.Clients → 0</td>
+<td>společnost</td>
+<td>střední</td>
+<td>→ R2</td>
+</tr>
+<tr>
+<td>Období lze znovu otevřít, není-li <code>Paid</code>; faktura se generuje bez ohledu na stav období (<code>PayPeriodId</code> jen <code>ExistsAsync</code>)</td>
+<td><a href="../../src/Cleansia.Core.AppServices/Features/PayPeriods/ReopenPayPeriod.cs#L40-L44">ReopenPayPeriod.cs:40-44</a>; <a href="../../src/Cleansia.Core.AppServices/Features/EmployeePayroll/GenerateInvoice.cs#L42-L47">GenerateInvoice.cs:42-47</a></td>
+<td>úklidník / společnost</td>
+<td>střední</td>
+<td>brána stavu období</td>
+</tr>
+<tr>
+<td>Úprava částek faktury volá <code>UpdateAmounts</code> a končí — handler drží jediný <code>IEmployeeInvoiceRepository</code>, vydané PDF nese starou částku; přegenerování je samostatný příkaz s <code>LanguageCode</code></td>
+<td><a href="../../src/Cleansia.Core.AppServices/Features/EmployeePayroll/UpdateInvoiceAmounts.cs#L57">UpdateInvoiceAmounts.cs:57</a>; <a href="../../src/Cleansia.Core.AppServices/Features/EmployeePayroll/RegenerateInvoicePdf.cs#L59">RegenerateInvoicePdf.cs:59</a></td>
+<td>úklidník</td>
+<td>střední</td>
+<td>→ R18</td>
+</tr>
+<tr>
+<td>Hromadné mzdové sazby (<code>BulkCreateEmployeePayConfigs</code>) výchozí <code>Math.Round</code> (ToEven); výpočet mzdy (<code>decimal</code> součty) bez zaokrouhlení</td>
+<td><a href="../../src/Cleansia.Core.AppServices/Features/PayConfig/BulkCreateEmployeePayConfigs.cs#L140-L141">BulkCreateEmployeePayConfigs.cs:140-141</a>; <a href="../../src/Cleansia.Core.Domain/Extensions/PayCalculatorExtensions.cs#L44-L52">PayCalculatorExtensions.cs:44-52</a></td>
+<td>úklidník</td>
+<td>nízká</td>
+<td>jednotné zaokrouhlení</td>
+</tr>
+<tr>
+<td>Seed <code>CompanyInfo</code> IČO <code>12345678</code>, DIČ <code>CZ12345678</code>, účet <code>123456789/0800</code> „REPLACE WITH ACTUAL" — tisknou se na účtenky (<code>RegistrationNumber</code>, <code>VatNumber</code>)</td>
+<td><a href="../../sql-scripts/insert_seed_data.sql#L1158-L1174">insert_seed_data.sql:1158-1174</a>; <a href="../../src/Cleansia.Core.AppServices/Services/ReceiptService.cs#L423-L429">ReceiptService.cs:423-429</a></td>
+<td>zákazník / společnost</td>
+<td>střední</td>
+<td>→ R2</td>
+</tr>
+<tr>
+<td>Swap plánu maže lokální <code>CancelledAt</code>, ale <code>SubscriptionUpdateOptions</code> <code>cancel_at_period_end</code> neruší; předplatné na Stripe dál končí</td>
+<td><a href="../../src/Cleansia.Core.Domain/Memberships/UserMembership.cs#L302-L304">UserMembership.cs:302-304</a>; <a href="../../src/Cleansia.Infra.Clients/Stripe/StripeClient.cs#L368-L379">StripeClient.cs:368-379</a></td>
+<td>zákazník</td>
+<td>střední</td>
+<td>zrušení <code>cancel_at_period_end</code> při swapu</td>
+</tr>
+<tr>
+<td>„First-order" promokód (<code>maxRedemptionsPerUser</code> 1) nekontroluje, zda jde o první objednávku</td>
+<td><a href="../../src/Cleansia.Core.AppServices/Features/PromoCodes/RequestPromoCode.cs#L84-L91">RequestPromoCode.cs:84-91</a></td>
+<td>společnost</td>
+<td>střední</td>
+<td>kontrola první objednávky</td>
+</tr>
+</tbody>
+</table>
+<h2 id="3-data-a-retence">3. Data a retence</h2>
+<table>
+<thead>
+<tr>
+<th>mezera</th>
+<th>doklad</th>
+<th>kdo je vystaven</th>
+<th>závažnost</th>
+<th>dlužné rozhodnutí nebo oprava</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Adresy se deduplikují na <code>Street</code>, <code>City</code>, <code>ZipCode</code>, <code>CountryId</code>; jeden řádek (<code>CustomerAddress</code>) sdílí celý dům</td>
+<td><a href="../../src/Cleansia.Infra.Database/Repositories/AddressRepository.cs#L9-L16">AddressRepository.cs:9-16</a>; <a href="../../src/Cleansia.Core.Domain/Orders/Order.cs#L172-L174">Order.cs:172-174</a></td>
+<td>zákazník</td>
+<td>kritická</td>
+<td>adresa per zákazník</td>
+</tr>
+<tr>
+<td>Výmaz i retenční sweep volají <code>CustomerAddress.Anonymize()</code> na sdíleném řádku — přepíše adresu sousedům a jejich objednávkám</td>
+<td><a href="../../src/Cleansia.Core.AppServices/Services/GdprDeletionService.cs#L393-L396">GdprDeletionService.cs:393-396</a>; <a href="../../src/Cleansia.Core.AppServices/Features/DataRetention/DataRetentionBackgroundService.cs#L186-L187">DataRetentionBackgroundService.cs:186-187</a></td>
+<td>zákazník</td>
+<td>kritická</td>
+<td>tatáž oprava</td>
+</tr>
+<tr>
+<td>Změna telefonu (<code>GetOrdersByPhoneNumberAsync</code>) přepíše <code>CustomerPhone</code> všech objednávek se stejným číslem bez ohledu na <code>UserId</code></td>
+<td><a href="../../src/Cleansia.Core.AppServices/Features/Users/UpdateCurrentUser.cs#L151-L176">UpdateCurrentUser.cs:151-176</a>; <a href="../../src/Cleansia.Infra.Database/Repositories/OrderRepository.cs#L13-L17">OrderRepository.cs:13-17</a></td>
+<td>zákazník</td>
+<td>vysoká</td>
+<td>filtr <code>UserId</code> při přepisu</td>
+</tr>
+<tr>
+<td>Retenční sweep anonymizuje jen objednávky s historií <code>Completed</code>; zrušené a nesplněné se neanonymizují nikdy</td>
+<td><a href="../../src/Cleansia.Core.AppServices/Features/DataRetention/DataRetentionBackgroundService.cs#L171-L174">DataRetentionBackgroundService.cs:171-174</a></td>
+<td>zákazník</td>
+<td>střední</td>
+<td>sweep i pro zrušené</td>
+</tr>
+<tr>
+<td>Fotky objednávek (<code>OrderPhoto</code>) retenční sweep neřeší; blob se maže jen při výmazu účtu</td>
+<td>rg -n "OrderPhoto|photo" src/Cleansia.Core.AppServices/Features/DataRetention/DataRetentionBackgroundService.cs → 0; <a href="../../src/Cleansia.Core.AppServices/Services/GdprDeletionService.cs#L368-L381">GdprDeletionService.cs:368-381</a></td>
+<td>zákazník</td>
+<td>střední</td>
+<td>→ R7</td>
+</tr>
+<tr>
+<td><code>DeleteOrderPhoto</code> bez <code>[AuditAction]</code> a bez brány na stav zakázky (jen <code>AssignedEmployees.Any</code>); smaže i fotografii „po", na níž dokončení stálo</td>
+<td><a href="../../src/Cleansia.Core.AppServices/Features/Orders/DeleteOrderPhoto.cs#L12">DeleteOrderPhoto.cs:12</a>; <a href="../../src/Cleansia.Core.AppServices/Features/Orders/DeleteOrderPhoto.cs#L56-L71">DeleteOrderPhoto.cs:56-71</a></td>
+<td>zákazník / společnost</td>
+<td>střední</td>
+<td>→ R7</td>
+</tr>
+<tr>
+<td>Retenční okno má jen zákaznický audit (<code>DeleteExpiredAsync</code> podle <code>CustomerAuditRetentionYears</code>); auditní tabulky administrátorů a úklidníků okno nemají</td>
+<td><a href="../../src/Cleansia.Core.AppServices/Features/DataRetention/DataRetentionBackgroundService.cs#L319-L325">DataRetentionBackgroundService.cs:319-325</a></td>
+<td>úklidník / společnost</td>
+<td>nízká</td>
+<td>okno pro auditní tabulky</td>
+</tr>
+<tr>
+<td>Dokumenty úklidníka (PDF a Office) <code>ImageMetadata</code> nescrubuje; administrátor je stahuje (<code>DownloadEmployeeDocument</code>) i s metadaty autora</td>
+<td><a href="../../src/Cleansia.Core.AppServices/Common/Media/ImageMetadata.cs#L28-L31">ImageMetadata.cs:28-31</a>; <a href="../../src/Cleansia.Web.Admin/Controllers/AdminEmployeeDocumentController.cs#L93-L99">AdminEmployeeDocumentController.cs:93-99</a></td>
+<td>úklidník</td>
+<td>nízká</td>
+<td>scrub dokumentů, nebo popis v DPA</td>
+</tr>
+<tr>
+<td>Právní texty s bannerem <code>Návrh — toto znění zatím neprošlo právní kontrolou</code> seeduje <code>LegalDocumentSeedHostedService</code> při každém startu v každém prostředí</td>
+<td><a href="../../src/Cleansia.Infra.Database/Seed/Legal/LegalDocumentSeedHostedService.cs#L16-L20">LegalDocumentSeedHostedService.cs:16-20</a>; <a href="../../src/Cleansia.Infra.Database/Seed/Legal/customer/terms-of-service/any/2026-09-14/cs.md#L5">cs.md:5</a></td>
+<td>společnost</td>
+<td>vysoká</td>
+<td>→ R3</td>
+</tr>
+<tr>
+<td>Souhlas úklidníka s podmínkami odkazuje na žádný text (<code>document: null</code>); dokument <code>LegalDocumentAudience.Employee</code> neexistuje</td>
+<td><a href="../../src/Cleansia.Core.AppServices/Features/Auth/RegisterEmployee.cs#L121-L126">RegisterEmployee.cs:121-126</a>; <a href="../../src/Cleansia.Infra.Database/Seed/Legal/LegalSeedResource.cs#L28">LegalSeedResource.cs:28</a></td>
+<td>úklidník / společnost</td>
+<td>vysoká</td>
+<td>→ R3</td>
+</tr>
+<tr>
+<td>Admin příkaz na novou verzi právního dokumentu neexistuje; <code>AdminLegalController</code> jen čte (<code>CanViewLegalDocuments</code>)</td>
+<td>rg -rn "ICommand&lt;" src/Cleansia.Core.AppServices/Features/Legal → 0; <a href="../../src/Cleansia.Web.Admin/Controllers/AdminLegalController.cs#L21">AdminLegalController.cs:21</a></td>
+<td>společnost</td>
+<td>střední</td>
+<td>→ R3</td>
+</tr>
+<tr>
+<td>Tick na objednávce neobnoví odvolaný souhlas: <code>AssertedOrAlreadyConsentedAsync</code> ho přijme, <code>OrderBookingEvidence</code> zaznamená, <code>UserConsents</code> se nepíše</td>
+<td><a href="../../src/Cleansia.Core.AppServices/Features/Orders/CreateOrder.cs#L314-L317">CreateOrder.cs:314-317</a>; <a href="../../src/Cleansia.Core.AppServices/Features/Orders/CreateOrder.cs#L1076-L1079">CreateOrder.cs:1076-1079</a></td>
+<td>společnost</td>
+<td>střední</td>
+<td>→ R3</td>
+</tr>
+<tr>
+<td><code>MarketingEmails</code> bez čtenáře v AppServices; marketingový push čte jen <code>Promo</code></td>
+<td>grep -rn "MarketingEmails" src/Cleansia.Core.AppServices → 0; <a href="../../src/Cleansia.Functions.Core/Handlers/SendSitewidePromoFanoutHandler.cs#L104">SendSitewidePromoFanoutHandler.cs:104</a></td>
+<td>zákazník</td>
+<td>vysoká</td>
+<td>→ R9</td>
+</tr>
+<tr>
+<td>Fan-out kampaně nefiltruje profil: úklidník s <code>Promo = true</code> dostane zákaznický marketing</td>
+<td><a href="../../src/Cleansia.Functions.Core/Handlers/SendSitewidePromoFanoutHandler.cs#L103-L109">SendSitewidePromoFanoutHandler.cs:103-109</a></td>
+<td>úklidník</td>
+<td>střední</td>
+<td>filtr profilu ve fan-outu</td>
+</tr>
+<tr>
+<td>Komentář <code>IStripeConfig</code> tvrdí, že <code>GdprDeletionService</code> maže Stripe Customer; kód volá jen <code>RemoveForUserAsync</code> na lokální id</td>
+<td><a href="../../src/Cleansia.Infra.Common/Configuration/Interfaces/IStripeConfig.cs#L30">IStripeConfig.cs:30</a>; <a href="../../src/Cleansia.Core.AppServices/Services/GdprDeletionService.cs#L508-L509">GdprDeletionService.cs:508-509</a></td>
+<td>zákazník</td>
+<td>střední</td>
+<td>→ R9</td>
+</tr>
+<tr>
+<td><code>RecordAsync</code> ukládá surové tělo <code>RawBody</code> (fronta <code>SendEmail</code> nese adresu a živý kód) bez retence</td>
+<td><a href="../../src/Cleansia.Infra.Database/DeadLetterStore.cs#L20-L25">DeadLetterStore.cs:20-25</a>; rg -n "DeadLetter" src/Cleansia.Core.AppServices/Features/DataRetention/PruneOutbox.cs → 0</td>
+<td>zákazník / úklidník</td>
+<td>střední</td>
+<td>retenční okno <code>DeadLetters</code></td>
+</tr>
+<tr>
+<td>Export zákazníka obsahuje <code>ResolutionNotes</code> administrátora a <code>IpAddress</code> + <code>UserAgent</code> souhlasů</td>
+<td><a href="../../src/Cleansia.Core.AppServices/Services/GdprExportService.cs#L176">GdprExportService.cs:176</a>; <a href="../../src/Cleansia.Core.AppServices/Services/GdprExportService.cs#L135-L137">GdprExportService.cs:135-137</a></td>
+<td>společnost</td>
+<td>nízká</td>
+<td>rozsah exportu</td>
+</tr>
+</tbody>
+</table>
+<h2 id="4-odolnost-a-provoz">4. Odolnost a provoz</h2>
+<table>
+<thead>
+<tr>
+<th>mezera</th>
+<th>doklad</th>
+<th>kdo je vystaven</th>
+<th>závažnost</th>
+<th>dlužné rozhodnutí nebo oprava</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Dead letters nikdo nečte: <code>DeadLetter</code> v admin kontrolerech 0, repozitář jen <code>RemoveForSubjectAsync</code></td>
+<td>rg -n "DeadLetter" src/Cleansia.Web.*/Controllers → 0; <a href="../../src/Cleansia.Infra.Database/Repositories/DeadLetterRepository.cs#L20">DeadLetterRepository.cs:20</a></td>
+<td>společnost</td>
+<td>střední</td>
+<td>admin čtenář <code>DeadLetters</code></td>
+</tr>
+<tr>
+<td>Outbox po 10 pokusech (backoff 30 s × 2ⁿ) označí <code>Failed</code> a dead-letteruje; jediná signalizace <code>LogError</code></td>
+<td><a href="../../src/Cleansia.Core.AppServices/Services/OutboxDrainerService.cs#L79-L86">OutboxDrainerService.cs:79-86</a>; <a href="../../src/Cleansia.Infra.Common/Configuration/OutboxDrainerConfig.cs#L14-L15">OutboxDrainerConfig.cs:14-15</a></td>
+<td>všichni</td>
+<td>střední</td>
+<td>alert na <code>Failed</code></td>
+</tr>
+<tr>
+<td>Alerty jen objemové: 5xx &gt; 5 / 5 min, výjimky &gt; 10</td>
+<td><a href="../../deploy/bicep/modules/alerts.bicep#L44-L52">alerts.bicep:44-52</a></td>
+<td>společnost</td>
+<td>střední</td>
+<td>alert na <code>Failed</code> a dead-letter</td>
+</tr>
+<tr>
+<td>Jediným kanálem poplachu je <code>emailReceivers</code> jedné skupiny; poison fronta hlásí <code>GreaterThan</code> práh 0, tedy každou zprávu</td>
+<td><a href="../../deploy/bicep/modules/alerts.bicep#L66-L72">alerts.bicep:66-72</a>; <a href="../../deploy/bicep/modules/queueAlerts.bicep#L93-L96">queueAlerts.bicep:93-96</a></td>
+<td>společnost</td>
+<td>střední</td>
+<td>SMS/pager kanál</td>
+</tr>
+<tr>
+<td>Naplnění PRO: <code>SeedDevelopmentData</code> běží jen pod <code>IsDevelopment</code> a <code>insert_seed_data.sql</code> proti PRO workflow odmítá; katalog admin příkazy má, řádek <code>Tenants</code> zapisovače nemá</td>
+<td><a href="../../src/Cleansia.Config/Abstractions/CleansiaStartupBase.cs#L242">CleansiaStartupBase.cs:242</a>; <a href="../../.github/workflows/execute-sql.yml#L49-L58">execute-sql.yml:49-58</a></td>
+<td>společnost</td>
+<td>vysoká</td>
+<td>→ R2</td>
+</tr>
+<tr>
+<td>Nepříchod posádky zapisuje jediná cesta: kredit <code>CleanerNoShow</code> píše automatický běh <code>CancelUnfilledOrders</code>; host s prázdným <code>UserId</code> jej nedostane</td>
+<td><a href="../../src/Cleansia.Core.AppServices/Features/Orders/CancelUnfilledOrders.cs#L297-L300">CancelUnfilledOrders.cs:297-300</a>; <a href="../../src/Cleansia.Core.AppServices/Features/Orders/CancelUnfilledOrders.cs#L276-L279">CancelUnfilledOrders.cs:276-279</a></td>
+<td>zákazník</td>
+<td>střední</td>
+<td>→ R15</td>
+</tr>
+<tr>
+<td>Jediný region <code>weu → westeurope</code>; prod parametry „AUTHORED, NOT DEPLOYED"</td>
+<td><a href="../../deploy/bicep/main.bicep#L224-L227">main.bicep:224-227</a>; <a href="../../deploy/bicep/weu.prod.bicepparam#L3">weu.prod.bicepparam:3</a></td>
+<td>společnost</td>
+<td>střední</td>
+<td>nasazení PRO</td>
+</tr>
+<tr>
+<td>Záloha PRO 35 dní, geo-redundantní, HA <code>ZoneRedundant</code>; postup obnovy v <code>deploy/</code> 0</td>
+<td><a href="../../deploy/bicep/weu.prod.bicepparam#L56-L58">weu.prod.bicepparam:56-58</a>; rg -in "flexible-server restore|point-in-time|disaster" deploy/ → 0</td>
+<td>společnost</td>
+<td>střední</td>
+<td>postup obnovy</td>
+</tr>
+<tr>
+<td>Provozní <code>runbook</code> jen pro DEV (787 řádků); PRO <code>posture</code> 196 řádků bez incident/on-call postupu</td>
+<td><a href="../../deploy/AZURE-DEV-RUNBOOK.md#L1">AZURE-DEV-RUNBOOK.md:1</a>; rg -in "incident|on-call" deploy/AZURE-PROD-POSTURE.md → 0</td>
+<td>společnost</td>
+<td>střední</td>
+<td>→ R10</td>
+</tr>
+<tr>
+<td>Jediný poskytovatel bez záložního: <code>SendGrid</code> (e-mail), FCM (push, no-op bez tajemství), Stripe, <code>Mapbox</code> (geokódování)</td>
+<td><a href="../../src/Cleansia.Infra.Clients/SendGrid/SendGridClientFactory.cs#L16">SendGridClientFactory.cs:16</a>; <a href="../../src/Cleansia.Infra.Services/Geocoding/MapboxGeocodingService.cs#L14-L16">MapboxGeocodingService.cs:14-16</a></td>
+<td>všichni</td>
+<td>střední</td>
+<td>záložní poskytovatel e-mailu</td>
+</tr>
+<tr>
+<td><code>PeriodReminderBackgroundService</code> bez dedup razítka (čte <code>GetQueryableIgnoringTenant</code>, nic nezapisuje); opakovaný běh pošle e-mail znovu</td>
+<td><a href="../../src/Cleansia.Core.AppServices/Services/PeriodReminderBackgroundService.cs#L49-L55">PeriodReminderBackgroundService.cs:49-55</a></td>
+<td>úklidník</td>
+<td>střední</td>
+<td>razítko odeslání</td>
+</tr>
+<tr>
+<td>Bez události pro zákazníka: odchod úklidníka (<code>DropOrder</code> → <code>SeatOpenedNotifier</code>) i při <code>OnTheWay</code>; storno administrátorem (<code>CancelledBy.Admin</code>) nese <code>Reason</code>, který nikam neodchází</td>
+<td><a href="../../src/Cleansia.Core.AppServices/Features/Orders/DropOrder.cs#L153-L172">DropOrder.cs:153-172</a>; <a href="../../src/Cleansia.Core.AppServices/Features/Orders/AdminCancelOrder.cs#L92-L98">AdminCancelOrder.cs:92-98</a></td>
+<td>zákazník</td>
+<td>vysoká</td>
+<td>→ R18</td>
+</tr>
+<tr>
+<td>Zamítnutá reklamace bez refundu nikoho neupozorní — oznámení jde jen při <code>refund.IsSuccess</code>; zamítnutí úklidníka volá <code>Reject</code> a zapíše <code>ContractSnapshot</code>, nic víc</td>
+<td><a href="../../src/Cleansia.Core.AppServices/Features/Disputes/ResolveDispute.cs#L100-L104">ResolveDispute.cs:100-104</a>; <a href="../../src/Cleansia.Core.AppServices/Features/Employees/RejectEmployee.cs#L87-L95">RejectEmployee.cs:87-95</a></td>
+<td>zákazník / úklidník</td>
+<td>střední</td>
+<td>→ R18</td>
+</tr>
+<tr>
+<td><code>ReportOrderIssue.Handler</code> nikoho neupozorní (jen <code>IOrderRepository</code> a <code>IOrderAccessService</code>, žádný notifikátor)</td>
+<td><a href="../../src/Cleansia.Core.AppServices/Features/Orders/ReportOrderIssue.cs#L42-L44">ReportOrderIssue.cs:42-44</a></td>
+<td>zákazník / společnost</td>
+<td>střední</td>
+<td>→ R10</td>
+</tr>
+<tr>
+<td>E-maily Confirmed/Started/Completed (<code>EmailService</code>, typ 6 bez seedu, bez per-locale defaults) jdou anglicky každému jazyku</td>
+<td><a href="../../src/Cleansia.Core.AppServices/Services/EmailService.cs#L375-L390">EmailService.cs:375-390</a>; grep -n "true, 6, '" sql-scripts/insert_seed_data.sql → 0</td>
+<td>zákazník</td>
+<td>střední</td>
+<td>lokalizace e-mailů</td>
+</tr>
+<tr>
+<td>Produkční Customer Mobile host posílá reset hesla na <code>partner.cleansia.cz</code></td>
+<td><a href="../../src/Cleansia.Web.Mobile.Customer/appsettings.Production.json#L30-L31">appsettings.Production.json:30-31</a></td>
+<td>zákazník</td>
+<td>střední</td>
+<td>oprava URL</td>
+</tr>
+<tr>
+<td>Vývojová fixtura zakládá administrátora <code>admin@cleansia.local</code> se známým heslem <code>Admin123!</code>; čte se jen uvnitř <code>IsDevelopment</code></td>
+<td><a href="../../sql-scripts/insert_seed_data.sql#L1890">insert_seed_data.sql:1890</a>; <a href="../../src/Cleansia.Config/Abstractions/CleansiaStartupBase.cs#L223">CleansiaStartupBase.cs:223</a></td>
+<td>společnost</td>
+<td>nízká</td>
+<td>jiné heslo mimo DEV</td>
+</tr>
+</tbody>
+</table>
+<h2 id="5-mobilni-aplikace">5. Mobilní aplikace</h2>
+<table>
+<thead>
+<tr>
+<th>mezera</th>
+<th>doklad</th>
+<th>kdo je vystaven</th>
+<th>závažnost</th>
+<th>dlužné rozhodnutí nebo oprava</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Uvolnění místa (<code>DropOrder</code>) i žádost o zástup (<code>RequestCover</code>) server nese na partnerském webovém i mobilním hostu</td>
+<td><a href="../../src/Cleansia.Web.Partner/Controllers/OrderController.cs#L240-L271">OrderController.cs:240-271</a>; <a href="../../src/Cleansia.Web.Mobile.Partner/Controllers/OrderController.cs#L285-L317">OrderController.cs:285-317</a></td>
+<td>úklidník</td>
+<td>střední</td>
+<td>→ R10</td>
+</tr>
+<tr>
+<td>Trasy <code>DropOrder</code> a <code>RequestCover</code> nevolá žádná aplikace: partnerský web 0, Android <code>partner-app</code> 0, iOS <code>CleansiaPartner</code> 0; žijí jen v generovaných artefaktech (<code>partner-client.ts</code>, <code>partner-mobile-api.json</code>)</td>
+<td>rg -n "dropOrder|requestCover|DropOrder|RequestCover" src/Cleansia.App/apps/cleansia-partner.app src/cleansia_android/partner-app/src/main src/cleansia_ios/CleansiaPartner/Sources → 0; <a href="../../src/cleansia_android/openapi/partner-mobile-api.json#L6620">partner-mobile-api.json:6620</a></td>
+<td>úklidník</td>
+<td>střední</td>
+<td>→ R10</td>
+</tr>
+<tr>
+<td>Prázdná nástěnka partner iOS (<code>dash_no_jobs_yet_subtitle</code>, <code>L10n.Dashboard.noJobsYetSubtitle</code>) říká „update your availability"; obrazovka dostupnosti neexistuje</td>
+<td><a href="../../src/cleansia_ios/CleansiaPartner/Resources/Localizable.xcstrings#L3624-L3636">Localizable.xcstrings:3624-3636</a>; <a href="../../src/cleansia_ios/CleansiaPartner/Sources/Features/Dashboard/DashboardView.swift#L323">DashboardView.swift:323</a></td>
+<td>úklidník</td>
+<td>nízká</td>
+<td>text bez odkazu na dostupnost</td>
+</tr>
+<tr>
+<td>Google Pay (<code>GooglePayConfiguration</code>) v Android <code>PaymentSheet</code>; Apple Pay na iOS 0</td>
+<td><a href="../../src/cleansia_android/customer-app/src/main/java/cz/cleansia/customer/features/booking/BookingBottomSheet.kt#L597-L606">BookingBottomSheet.kt:597-606</a>; rg -n "applePay|PKPayment" src/cleansia_ios → 0</td>
+<td>zákazník</td>
+<td>nízká</td>
+<td>Apple Pay v <code>PaymentSheet</code></td>
+</tr>
+<tr>
+<td>8 push událostí bez kategorie (<code>GetCategoryFor</code> → null) nelze vypnout: <code>OrderAssigned</code>, <code>ReminderSoon</code>, <code>InvoicePaid</code>, <code>EmployeeWeeklyLimitSet</code>…</td>
+<td><a href="../../src/Cleansia.Core.Domain/Notifications/NotificationEventCatalog.cs#L228-L253">NotificationEventCatalog.cs:228-253</a></td>
+<td>úklidník</td>
+<td>nízká</td>
+<td>→ R9</td>
+</tr>
+<tr>
+<td>Kategorie <code>NewJobsAvailable</code> vypnutelná, ale žádný partnerský endpoint (<code>UpdateNotificationPreferences</code>) ji úklidníkovi nenastaví</td>
+<td><a href="../../src/Cleansia.Core.Domain/Notifications/NotificationEventCatalog.cs#L249-L251">NotificationEventCatalog.cs:249-251</a>; rg -rn "UpdateNotificationPreferences" src/Cleansia.Web.Partner src/Cleansia.Web.Mobile.Partner → 0</td>
+<td>úklidník</td>
+<td>nízká</td>
+<td>endpoint preferencí pro úklidníka</td>
+</tr>
+<tr>
+<td>Bez certificate pinningu, root/jailbreak detekce a biometrie (Android i iOS 0); tokeny v <code>EncryptedSharedPreferences</code> (Android), Keychain (iOS)</td>
+<td>rg -n "CertificatePinner|SecTrustEvaluate|RootBeer|Jailbreak|BiometricPrompt|LAContext" src/cleansia_android src/cleansia_ios → 0; <a href="../../src/cleansia_android/core/src/main/java/cz/cleansia/core/auth/TokenStore.kt#L44-L54">TokenStore.kt:44-54</a></td>
+<td>zákazník / úklidník</td>
+<td>nízká</td>
+<td>pinning; biometrický zámek</td>
+</tr>
+<tr>
+<td>Android posílá souřadnice zařízení na <code>api.mapbox.com</code> s <code>access_token</code>, který je v APK jako <code>MAPBOX_ACCESS_TOKEN</code></td>
+<td><a href="../../src/cleansia_android/core/src/main/java/cz/cleansia/core/location/ReverseGeocodingService.kt#L28-L33">ReverseGeocodingService.kt:28-33</a>; <a href="../../src/cleansia_android/partner-app/build.gradle.kts#L54-L57">build.gradle.kts:54-57</a></td>
+<td>zákazník / úklidník</td>
+<td>střední</td>
+<td>→ R9</td>
+</tr>
+<tr>
+<td>Partnerská Android aplikace má <code>allowBackup="true"</code> (zákaznická <code>false</code>); ochranu nese jen výčet v <code>backup_rules</code></td>
+<td><a href="../../src/cleansia_android/partner-app/src/main/AndroidManifest.xml#L33-L37">AndroidManifest.xml:33-37</a></td>
+<td>úklidník</td>
+<td>nízká</td>
+<td>zákaz zálohy partnerské aplikace</td>
+</tr>
+</tbody>
+</table>
+<h2 id="6-web">6. Web</h2>
+<table>
+<thead>
+<tr>
+<th>mezera</th>
+<th>doklad</th>
+<th>kdo je vystaven</th>
+<th>závažnost</th>
+<th>dlužné rozhodnutí nebo oprava</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Před souhlasem se načítají Google Fonts (<code>fonts.googleapis.com</code>, <code>fonts.gstatic.com</code>) — IP návštěvníka odchází Googlu</td>
+<td><a href="../../src/Cleansia.App/apps/cleansia.app/src/index.html#L22-L23">index.html:22-23</a>; <a href="../../src/Cleansia.App/apps/cleansia.app/src/index.html#L43-L49">index.html:43-49</a></td>
+<td>zákazník</td>
+<td>střední</td>
+<td>→ R9</td>
+</tr>
+<tr>
+<td>Cookie „analytics" se u přihlášeného mapuje na <code>ConsentType.DataProcessing</code>, „marketing" na <code>MarketingEmails</code> — cookie klik uděluje/odvolává e-mailový souhlas</td>
+<td><a href="../../src/Cleansia.App/libs/core/customer-services/src/lib/services/consent-sync.service.ts#L36-L41">consent-sync.service.ts:36-41</a></td>
+<td>zákazník</td>
+<td>vysoká</td>
+<td>→ R9</td>
+</tr>
+<tr>
+<td>Úklidník přihlášený v zákaznickém webu (<code>JwtAudiences.Customer</code> přijímá každý profil) odmítnutím cookies volá <code>withdrawConsent</code> na <code>DataProcessing</code></td>
+<td><a href="../../src/Cleansia.App/libs/core/customer-services/src/lib/services/consent-sync.service.ts#L46-L50">consent-sync.service.ts:46-50</a>; <a href="../../src/Cleansia.Core.AppServices/Services/TokenService.cs#L93">TokenService.cs:93</a></td>
+<td>úklidník</td>
+<td>vysoká</td>
+<td>→ R9</td>
+</tr>
+<tr>
+<td>Žádný analytický tag neexistuje; banner (<code>categories</code>) přesto nabízí analytics/marketing/preferences</td>
+<td>rg -in "gtag|googletagmanager|clarity|hotjar" src/Cleansia.App/apps/cleansia.app → 0; <a href="../../src/Cleansia.App/libs/shared/components/src/lib/cleansia-cookie-consent/cleansia-cookie-consent.component.ts#L88-L109">cleansia-cookie-consent.component.ts:88-109</a></td>
+<td>zákazník</td>
+<td>nízká</td>
+<td>→ R9</td>
+</tr>
+<tr>
+<td>Souhlas anonymního návštěvníka jen v <code>localStorage</code>, bez serverového záznamu</td>
+<td><a href="../../src/Cleansia.App/libs/shared/components/src/lib/cleansia-cookie-consent/cleansia-cookie-consent.component.ts#L167-L172">cleansia-cookie-consent.component.ts:167-172</a></td>
+<td>zákazník</td>
+<td>nízká</td>
+<td>→ R9</td>
+</tr>
+<tr>
+<td>Okno rezervace 08:00–20:00 vynucují jen klienti (<code>FIRST_WINDOW_HOUR</code>, Android); server konstanty <code>FirstWindowHour</code>/<code>LastWindowHour</code> nečte</td>
+<td><a href="../../src/Cleansia.App/libs/shared/models/src/lib/models/booking-window.models.ts#L11">booking-window.models.ts:11</a>; <a href="../../src/Cleansia.Core.AppServices/Features/Orders/BookingPolicy.cs#L42-L43">BookingPolicy.cs:42-43</a></td>
+<td>společnost</td>
+<td>střední</td>
+<td>serverová validace okna</td>
+</tr>
+<tr>
+<td>Web tvrdí, že stupeň <code>nikdy neklesne</code>; <code>RecomputeTier</code> stupeň při odebrání bodů snižuje</td>
+<td><a href="../../src/Cleansia.App/apps/cleansia.app/src/assets/i18n/cs.json#L1344">cs.json:1344</a>; <a href="../../src/Cleansia.Core.Domain/Loyalty/LoyaltyAccount.cs#L120">LoyaltyAccount.cs:120</a></td>
+<td>zákazník</td>
+<td>střední</td>
+<td>→ R17</td>
+</tr>
+<tr>
+<td>Zákaznický web slibuje zkušební dobu textem <code>trial_disclosure</code> („Prvních {{days}} dní zdarma"), server ale plán s <code>TrialPeriodDays</code> odmítá</td>
+<td><a href="../../src/Cleansia.App/apps/cleansia.app/src/assets/i18n/cs.json#L1414">cs.json:1414</a>; <a href="../../src/Cleansia.Core.AppServices/Features/Memberships/Admin/CreateMembershipPlan.cs#L86-L88">CreateMembershipPlan.cs:86-88</a></td>
+<td>zákazník</td>
+<td>nízká</td>
+<td>odstranění trial copy</td>
+</tr>
+</tbody>
+</table>
+<h2 id="7-dluh">7. Dluh</h2>
+<table>
+<thead>
+<tr>
+<th>mezera</th>
+<th>doklad</th>
+<th>kdo je vystaven</th>
+<th>závažnost</th>
+<th>dlužné rozhodnutí nebo oprava</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>OrderStatus.Pending</code> bez producenta: 0 zápisů, a přesto je v <code>ErasureBlockingStatuses</code> — drží výmaz účtu</td>
+<td>rg -n "OrderStatus.Pending" src --glob "*.cs" → 0 zápisů mimo deklaraci; <a href="../../src/Cleansia.Core.AppServices/Services/GdprDeletionService.cs#L220-L223">GdprDeletionService.cs:220-223</a></td>
+<td>společnost</td>
+<td>nízká</td>
+<td>odstranění členu</td>
+</tr>
+<tr>
+<td><code>PaymentStatus.Disputed</code> a <code>RefundStatus.Failed</code> bez zapisovatele</td>
+<td>grep -rn "PaymentStatus.Disputed|RefundStatus.Failed" src --glob "*.cs" → 0 zápisů mimo testy; <a href="../../src/Cleansia.Core.Domain/Enums/PaymentStatus.cs#L12">PaymentStatus.cs:12</a></td>
+<td>společnost</td>
+<td>nízká</td>
+<td>odstranění, nebo zapisovač</td>
+</tr>
+<tr>
+<td><code>ContractStatus.Active</code> a <code>Terminated</code> bez zapisovače; čtenáři je rozlišují (<code>PeriodReminderBackgroundService</code>)</td>
+<td><a href="../../src/Cleansia.Core.Domain/Enums/ContractStatus.cs#L9-L10">ContractStatus.cs:9-10</a>; <a href="../../src/Cleansia.Core.AppServices/Services/PeriodReminderBackgroundService.cs#L83">PeriodReminderBackgroundService.cs:83</a></td>
+<td>společnost</td>
+<td>nízká</td>
+<td>odstranění, nebo zapisovač</td>
+</tr>
+<tr>
+<td><code>IsFirstTimeCustomer = false</code> natvrdo — <code>OopsWindowMinutesFirstTime</code> 60 min se nikdy neuplatní</td>
+<td><a href="../../src/Cleansia.Core.AppServices/Features/Orders/CancellationAssessor.cs#L32">CancellationAssessor.cs:32</a>; <a href="../../src/Cleansia.Core.AppServices/Features/Orders/BookingPolicy.cs#L82">BookingPolicy.cs:82</a></td>
+<td>zákazník</td>
+<td>nízká</td>
+<td>→ R4</td>
+</tr>
+<tr>
+<td><code>order.confirmed</code> v katalogu, feed sadě i APNs mapě bez producenta</td>
+<td><a href="../../src/Cleansia.Core.Domain/Notifications/NotificationEventCatalog.cs#L11-L12">NotificationEventCatalog.cs:11-12</a>; grep -rn "OrderConfirmed" src/Cleansia.Core.AppServices → 0</td>
+<td>společnost</td>
+<td>nízká</td>
+<td>odstranění události</td>
+</tr>
+<tr>
+<td>Operátora trhu nastavuje jen <code>AssignOperator</code> bez produkčního volajícího; <code>OperatorTenantId</code> tak zapisuje pouze seed</td>
+<td>grep -rn "AssignOperator(" src --glob "*.cs" → 0 mimo testy; <a href="../../src/Cleansia.Core.Domain/Configuration/CountryConfiguration.cs#L193-L195">CountryConfiguration.cs:193-195</a></td>
+<td>společnost</td>
+<td>nízká</td>
+<td>→ R2</td>
+</tr>
+<tr>
+<td><code>Order.SetTravelDistance</code> bez produkčního volajícího; <code>DistanceRatePerKm</code> nikdy neplatí</td>
+<td><a href="../../src/Cleansia.Core.Domain/Orders/Order.cs#L762">Order.cs:762</a>; <a href="../../src/Cleansia.Core.Domain/Extensions/PayCalculatorExtensions.cs#L15">PayCalculatorExtensions.cs:15</a></td>
+<td>úklidník</td>
+<td>nízká</td>
+<td>→ R6</td>
+</tr>
+<tr>
+<td>Trial mrtvý kód: sloupce <code>TrialPeriodDays</code>, <code>TrialEndsAtUtc</code> a trial větve Stripe klienta</td>
+<td><a href="../../src/Cleansia.Infra.Database/Migrations/20260920204705_Initial.cs#L149">20260920204705_Initial.cs:149</a>; <a href="../../src/Cleansia.Infra.Clients/Stripe/StripeClient.cs#L331-L334">StripeClient.cs:331-334</a></td>
+<td>společnost</td>
+<td>nízká</td>
+<td>odstranění trial kódu</td>
+</tr>
+<tr>
+<td>i18n bez čtenáře: <code>components.availability</code> 22 klíčů × 5 jazyků; partnerská nápověda popisuje <code>Pending</code> jako „legacy state"</td>
+<td>git grep "components.availability" -- src/Cleansia.App --include=<em>.ts --include=</em>.html → 0; <a href="../../src/Cleansia.App/apps/cleansia.app/src/assets/i18n/en.json#L1724-L1725">en.json:1724-1725</a></td>
+<td>společnost</td>
+<td>nízká</td>
+<td>odstranění klíčů</td>
+</tr>
+<tr>
+<td>iOS <code>CleansiaCore</code> 21 chybových klíčů bez emitujícího hosta (<code>error.order.cancellation_window_closed</code>…); Android 26 (<code>error_referral_self_referral</code>…)</td>
+<td>git grep -F "order.cancellation_window_closed" -- 'src/*.cs' → 0; <a href="../../src/cleansia_ios/CleansiaCore/Sources/CleansiaCore/Resources/Localizable.xcstrings#L3362">Localizable.xcstrings:3362</a></td>
+<td>společnost</td>
+<td>nízká</td>
+<td>odstranění klíčů</td>
+</tr>
+<tr>
+<td>Zastaralé komentáře: <code>RecurringBookingTemplate</code> „No UI exists today" (endpoint <code>Create</code> existuje); <code>CancellationPolicyResolver</code> „no Plus product live" (plány seedovány)</td>
+<td><a href="../../src/Cleansia.Core.Domain/Bookings/RecurringBookingTemplate.cs#L14-L15">RecurringBookingTemplate.cs:14-15</a>; <a href="../../src/Cleansia.Core.AppServices/Services/CancellationPolicyResolver.cs#L10-L12">CancellationPolicyResolver.cs:10-12</a></td>
+<td>společnost</td>
+<td>nízká</td>
+<td>oprava komentářů</td>
+</tr>
+<tr>
+<td>Komentář <code>ConfirmRecurringOrder</code> „webhook flips it to Confirmed" — webhook zapisuje jen <code>Paid</code>; <code>Order.MembershipDiscountAmount</code> tvrdí výlučnost slev, <code>DiscountResolution</code> je skládá</td>
+<td><a href="../../src/Cleansia.Core.AppServices/Features/Orders/ConfirmRecurringOrder.cs#L273-L275">ConfirmRecurringOrder.cs:273-275</a>; <a href="../../src/Cleansia.Core.Domain/Orders/Order.cs#L327-L333">Order.cs:327-333</a></td>
+<td>společnost</td>
+<td>nízká</td>
+<td>oprava komentářů</td>
+</tr>
+<tr>
+<td>Název společnosti na 3 místech: <code>Tenants.Name</code> „Cleansia CZ s.r.o.", <code>CompanyInfo.LegalName</code> „Cleansia s.r.o.", patička webu a e-mailů „Cleansia s.r.o."</td>
+<td><a href="../../sql-scripts/insert_seed_data.sql#L63-L64">insert_seed_data.sql:63-64</a>; <a href="../../sql-scripts/insert_seed_data.sql#L1147-L1158">insert_seed_data.sql:1147-1158</a></td>
+<td>zákazník / společnost</td>
+<td>střední</td>
+<td>→ R2</td>
+</tr>
+</tbody>
+</table></main></body></html>

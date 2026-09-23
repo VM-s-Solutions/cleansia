@@ -1,5 +1,6 @@
 ﻿using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Gdpr;
+using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Features.TenantSettings;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Blobs.Abstractions;
@@ -39,6 +40,8 @@ public class GdprDeletionService(
     IOutboxMessageRepository outboxMessageRepository,
     ICustomerActionAuditRepository customerActionAuditRepository,
     IWorkContractAcceptanceRepository workContractAcceptanceRepository,
+    IAddressRepository addressRepository,
+    GuestOrderAccessTokenIssuer guestOrderAccessTokenIssuer,
     IRefreshTokenService refreshTokenService,
     IStripeClient stripeClient,
     IBlobContainerClientFactory blobClientFactory,
@@ -389,10 +392,32 @@ public class GdprDeletionService(
             .Include(o => o.OrderIssues)
             .ToListAsync(ct);
 
+        var savedAddresses = await savedAddressRepository.GetByUserAsync(user.Id, ct);
+        var sourceAddresses = orders.Where(o => o.CustomerAddress is not null)
+            .Select(o => o.CustomerAddress!)
+            .Concat(user.Employee?.Address is { } employeeAddress ? [employeeAddress] : [])
+            .DistinctBy(a => a.Id).ToList();
+
+        // These subject-owned references are all removed or replaced before the same commit.
+        var sharedAddressIds = await addressRepository.GetReferencedElsewhereAsync(
+            sourceAddresses.Select(a => a.Id).ToList(), customerOrderIds,
+            savedAddresses.Select(s => s.Id).ToList(), user.Employee?.Id, ct);
+
         foreach (var order in orders)
         {
+            // The key is the guest's; an account order never carried one. Read before the anonymisation
+            // below clears UserId, and only for these ended orders — a live booking keeps its cancel path.
+            if (order.UserId is null)
+            {
+                await guestOrderAccessTokenIssuer.RevokeAsync(order, ct);
+            }
+
             order.AnonymizeCustomerData();
-            order.CustomerAddress?.Anonymize();
+            var addressCopy = order.AnonymizeCustomerAddress();
+            if (addressCopy is not null)
+            {
+                addressRepository.Add(addressCopy);
+            }
         }
 
         // Every device row, not the active ones: logout soft-deletes a device and leaves the row present so
@@ -467,7 +492,6 @@ public class GdprDeletionService(
             dispute.RetainTextUntil(disputeTextRetainedUntil);
         }
 
-        var savedAddresses = await savedAddressRepository.GetByUserAsync(user.Id, ct);
         savedAddressRepository.RemoveRange(savedAddresses);
 
         if (customerOrderIds.Count > 0)
@@ -501,9 +525,20 @@ public class GdprDeletionService(
             await workContractAcceptanceRepository.PseudonymiseForEmployeeAsync(user.Employee.Id, ct);
 
             user.Employee.Anonymize();
-            user.Employee.Address?.Anonymize();
+            if (user.Employee.Address is { } address)
+            {
+                var copy = Domain.Users.Address.Create(
+                    Domain.Common.AnonymizationMarker.Value, Domain.Common.AnonymizationMarker.Value,
+                    Domain.Common.AnonymizationMarker.Value, address.CountryId).Anonymize();
+                copy.TenantId = user.Employee.TenantId;
+                user.Employee.UpdateAddress(copy);
+                addressRepository.Add(copy);
+            }
             user.Employee.Deactivated(deactivationReason, DateTimeOffset.UtcNow);
         }
+
+        // A reference created after the census makes the FK refuse deletion instead of losing its address.
+        addressRepository.RemoveRange(sourceAddresses.Where(a => !sharedAddressIds.Contains(a.Id)));
 
         // The per-currency Stripe Customer ids go with the legacy one Anonymize() clears.
         await userStripeCustomerRepository.RemoveForUserAsync(user.Id, ct);

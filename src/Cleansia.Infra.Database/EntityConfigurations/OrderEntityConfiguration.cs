@@ -32,6 +32,11 @@ public class OrderEntityConfiguration : TenantAuditableEntityConfiguration<Order
             .IsRequired()
             .HasMaxLength(20);
 
+        builder.HasOne(o => o.CustomerAddress)
+            .WithMany()
+            .HasForeignKey(o => o.CustomerAddressId)
+            .OnDelete(DeleteBehavior.Restrict);
+
         // Floor and door. Nullable: a house has neither, and an order booked
         // before this shipped has neither either.
         builder.Property(o => o.CustomerFloor)
@@ -241,9 +246,8 @@ public class OrderEntityConfiguration : TenantAuditableEntityConfiguration<Order
         // (GetByStripePaymentIntentIdIgnoringTenantAsync) on an anonymous hot path.
         builder.HasIndex(o => o.StripePaymentIntentId);
 
-        // UpdateCurrentUser back-fills a phone change onto historical orders matched by
-        // CustomerPhone (including anonymous orders sharing the phone, so it cannot become a
-        // UserId-keyed lookup without changing semantics).
+        // UpdateCurrentUser back-fills a phone change onto the caller's own orders matched by
+        // CustomerPhone.
         builder.HasIndex(o => o.CustomerPhone);
 
         // Stamped by the 24h-ahead reminder sweep. Indexed alongside

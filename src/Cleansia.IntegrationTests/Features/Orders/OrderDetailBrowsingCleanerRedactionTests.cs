@@ -2,6 +2,7 @@ using System.Security.Claims;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Features.Orders.DTOs;
+using Cleansia.Core.Domain.Auditing;
 using Cleansia.Core.Domain.Configuration;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Internationalization;
@@ -13,8 +14,10 @@ using Cleansia.Infra.Common.Validations;
 using Cleansia.Infra.Database;
 using Cleansia.TestUtilities;
 using MediatR;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Npgsql;
 using TestConstants = Cleansia.TestUtilities.Constants;
 
 namespace Cleansia.IntegrationTests.Features.Orders;
@@ -165,7 +168,8 @@ public class OrderDetailBrowsingCleanerRedactionTests(PostgresContainerFixture f
                 Assert.True(detail.IsAssignedToCurrentUser);
 
                 return Task.CompletedTask;
-            });
+            },
+            transactional: false);
     }
 
     /// <summary>
@@ -218,6 +222,182 @@ public class OrderDetailBrowsingCleanerRedactionTests(PostgresContainerFixture f
                 Assert.True(result.IsSuccess);
                 return Task.CompletedTask;
             });
+    }
+
+    /// <summary>
+    /// The administrator's reveal leaves an audit row; the cleaner's read of the same door code through the
+    /// detail used to leave nothing. Committed for real (not in the test's transaction), because the row is
+    /// written from a context of its own: a query has no commit to ride. Read twice, recorded once, even
+    /// when the same cleaner accepted the contract, another cleaner read this job, and this cleaner read
+    /// another job already: all three dimensions belong to the identity of the evidence.
+    /// </summary>
+    [Fact]
+    public async Task The_Assigned_Cleaners_First_Read_Of_The_Entry_Instructions_Is_Recorded_Once_Under_The_Orders_Company()
+    {
+        await TestMethod(
+            setup: services => ReplaceWithEmployeeSession(services, UserAId, EmployeeAEmail, EmployeeAId),
+            arrange: async context =>
+            {
+                await SeedBothHalfCrewedOrders(context);
+                var finished = await context.Orders.Include(o => o.AssignedEmployees)
+                    .SingleAsync(o => o.Id == FinishedOrderId);
+                var secondCleaner = await context.Employees.SingleAsync(e => e.Id == EmployeeBId);
+                finished.AddAssignedEmployee(OrderEmployee.Create(finished, secondCleaner));
+                context.EmployeeActionAudits.AddRange(
+                    EmployeeActionAudit.Create(EmployeeAId, FinishedOrderId, EmployeeAuditAction.ContractAccepted),
+                    EmployeeActionAudit.Create(EmployeeBId, FinishedOrderId, EmployeeAuditAction.AccessInstructionsRead),
+                    EmployeeActionAudit.Create(EmployeeAId, LiveOrderId, EmployeeAuditAction.AccessInstructionsRead));
+                await context.CommitAsync(CancellationToken.None);
+            },
+            act: async provider =>
+            {
+                var first = await FetchDetailAsync(provider, FinishedOrderId);
+                var second = await FetchDetailAsync(provider, FinishedOrderId);
+                return (First: first, Second: second);
+            },
+            assert: async (CleansiaDbContext context, (BusinessResult<OrderItem> First, BusinessResult<OrderItem> Second) reads) =>
+            {
+                Assert.Equal(AccessInstructions, reads.First.Value!.AccessInstructions);
+                Assert.Equal(AccessInstructions, reads.Second.Value!.AccessInstructions);
+
+                var rows = await context.EmployeeActionAudits.IgnoreQueryFilters().ToListAsync();
+                Assert.Equal(4, rows.Count);
+                var row = Assert.Single(rows, a => a.EmployeeId == EmployeeAId
+                    && a.OrderId == FinishedOrderId && a.Action == EmployeeAuditAction.AccessInstructionsRead);
+                Assert.Equal(EmployeeAId, row.EmployeeId);
+                Assert.Equal(FinishedOrderId, row.OrderId);
+                Assert.Equal(EmployeeAuditAction.AccessInstructionsRead, row.Action);
+                Assert.Equal(TestTenants.Default, row.TenantId);
+                Assert.Equal(UserAId, row.CreatedBy);
+            },
+            transactional: false);
+    }
+
+    [Fact]
+    public async Task Concurrent_First_Reads_Leave_One_Audit_Row()
+    {
+        await TestMethod(
+            setup: services => ReplaceWithEmployeeSession(services, UserAId, EmployeeAEmail, EmployeeAId),
+            arrange: SeedBothHalfCrewedOrders,
+            act: async provider =>
+            {
+                var blocker = provider.GetRequiredService<CleansiaDbContext>();
+                await using var held = await blocker.Database.BeginTransactionAsync();
+                await blocker.Database.ExecuteSqlRawAsync("LOCK TABLE \"EmployeeActionAudits\" IN SHARE MODE");
+
+                async Task<BusinessResult<OrderItem>> ReadInOwnScopeAsync()
+                {
+                    await using var scope = provider.CreateAsyncScope();
+                    return await FetchDetailAsync(scope.ServiceProvider, FinishedOrderId);
+                }
+
+                var reads = Task.WhenAll(ReadInOwnScopeAsync(), ReadInOwnScopeAsync());
+                try
+                {
+                    // Reads can see the empty audit table while inserts wait. Without serialization both
+                    // calls pass the absence check and queue an insert; with it, the second caller waits
+                    // on the first one's order lock. Releasing the wedge must leave one row in either case.
+                    await using var observer = new NpgsqlConnection(Fixture.GetConnectionString() + ";Pooling=false");
+                    await observer.OpenAsync();
+                    await using var waiting = new NpgsqlCommand("""
+                        SELECT count(*) FROM pg_stat_activity
+                        WHERE datname = current_database()
+                          AND wait_event_type = 'Lock'
+                          AND (query LIKE '%"EmployeeActionAudits"%' OR query LIKE '%"Orders"%')
+                        """, observer);
+                    var deadline = DateTime.UtcNow.AddSeconds(15);
+                    long waiters;
+                    do
+                    {
+                        waiters = (long)(await waiting.ExecuteScalarAsync())!;
+                        if (waiters == 2 || reads.IsCompleted)
+                            break;
+                        await Task.Delay(10);
+                    } while (DateTime.UtcNow < deadline);
+
+                    Assert.Equal(2L, waiters);
+                    Assert.False(reads.IsCompleted);
+                }
+                finally
+                {
+                    await held.RollbackAsync();
+                    await reads.WaitAsync(TimeSpan.FromSeconds(30));
+                }
+
+                return await reads;
+            },
+            assert: async (CleansiaDbContext context, BusinessResult<OrderItem>[] reads) =>
+            {
+                Assert.All(reads, read =>
+                {
+                    Assert.True(read.IsSuccess, read.Error?.Message);
+                    Assert.Equal(AccessInstructions, read.Value!.AccessInstructions);
+                });
+                var row = Assert.Single(await context.EmployeeActionAudits.IgnoreQueryFilters().ToListAsync());
+                Assert.Equal(EmployeeAId, row.EmployeeId);
+                Assert.Equal(FinishedOrderId, row.OrderId);
+                Assert.Equal(EmployeeAuditAction.AccessInstructionsRead, row.Action);
+                Assert.Equal(TestTenants.Default, row.TenantId);
+                Assert.Equal(UserAId, row.CreatedBy);
+            },
+            transactional: false);
+    }
+
+    [Fact]
+    public async Task A_Browsing_Cleaner_Is_Served_No_Instructions_And_Leaves_No_Row()
+    {
+        await TestMethod(
+            setup: services => ReplaceWithEmployeeSession(services, UserBId, EmployeeBEmail, EmployeeBId),
+            arrange: SeedBothHalfCrewedOrders,
+            act: provider => FetchDetailAsync(provider, LiveOrderId),
+            assert: async (CleansiaDbContext context, BusinessResult<OrderItem> result) =>
+            {
+                Assert.Null(result.Value!.AccessInstructions);
+                Assert.Empty(await context.EmployeeActionAudits.IgnoreQueryFilters().ToListAsync());
+            },
+            transactional: false);
+    }
+
+    [Fact]
+    public async Task The_Assigned_Cleaners_Read_Of_A_Job_With_No_Instructions_Leaves_No_Row()
+    {
+        await TestMethod(
+            setup: services => ReplaceWithEmployeeSession(services, UserAId, EmployeeAEmail, EmployeeAId),
+            arrange: async context =>
+            {
+                await SeedBothHalfCrewedOrders(context);
+                var live = await context.Orders.SingleAsync(o => o.Id == LiveOrderId);
+                typeof(Order).GetProperty(nameof(Order.AccessInstructions))!.SetValue(live, null);
+            },
+            act: provider => FetchDetailAsync(provider, LiveOrderId),
+            assert: async (CleansiaDbContext context, BusinessResult<OrderItem> result) =>
+            {
+                Assert.True(result.Value!.IsAssignedToCurrentUser);
+                Assert.Null(result.Value.AccessInstructions);
+                Assert.Empty(await context.EmployeeActionAudits.IgnoreQueryFilters().ToListAsync());
+            },
+            transactional: false);
+    }
+
+    [Fact]
+    public async Task An_Administrators_Read_Leaves_No_Cleaner_Row()
+    {
+        await TestMethod(
+            setup: services =>
+            {
+                services.Replace(ServiceDescriptor.Scoped<IUserSessionProvider>(_ => new TestUserSessionProvider(
+                    "admin-detred", "admin-detred@cleansia.test",
+                    [new Claim(ClaimTypes.Role, UserProfile.Administrator.ToString())])));
+                return Task.CompletedTask;
+            },
+            arrange: SeedBothHalfCrewedOrders,
+            act: provider => FetchDetailAsync(provider, FinishedOrderId),
+            assert: async (CleansiaDbContext context, BusinessResult<OrderItem> result) =>
+            {
+                Assert.True(result.IsSuccess, result.Error?.Message);
+                Assert.Empty(await context.EmployeeActionAudits.IgnoreQueryFilters().ToListAsync());
+            },
+            transactional: false);
     }
 
     private static async Task<BusinessResult<OrderItem>> FetchDetailAsync(

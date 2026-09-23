@@ -964,7 +964,8 @@
           "order": {
             "cover_requested": "Cover requested",
             "dropped": "Job dropped",
-            "contract_accepted": "Contract for work accepted"
+            "contract_accepted": "Contract for work accepted",
+            "access_instructions_read": "Access instructions read"
           }
         }
       }
@@ -1804,6 +1805,15 @@
           },
           "notifications": {
             "days": "Days a notification stays in the in-app feed"
+          },
+          "order_photos": {
+            "days": "Days after completion that order photos are kept; unresolved disputes hold the photos until they close"
+          },
+          "admin_audit": {
+            "years": "Years an administrator audit row is kept"
+          },
+          "employee_audit": {
+            "years": "Years a cleaner audit row is kept"
           },
           "customer_audit": {
             "years": "Years a customer audit row is kept"

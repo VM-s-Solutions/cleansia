@@ -407,7 +407,8 @@ public class PreferredOfferDisclosureTests
             Mock.Of<ITenantRepository>(),
             _expressWaiverConsumer.Object,
             _userMembershipRepository.Object,
-            WorkContractTestData.AcceptanceRepository().Object);
+            WorkContractTestData.AcceptanceRepository().Object,
+            Mock.Of<IEmployeeActionAuditRepository>());
 
     private static Employee NewCleaner(string employeeId)
     {

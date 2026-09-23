@@ -1,4 +1,5 @@
 ﻿using Cleansia.Core.AppServices.Features.Gdpr;
+using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Services;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Blobs.Abstractions;
@@ -209,6 +210,8 @@ public sealed class SubjectResidueErasureTests : IDisposable
             new OutboxMessageRepository(ctx),
             new CustomerActionAuditRepository(ctx),
             new WorkContractAcceptanceRepository(ctx),
+            new AddressRepository(ctx),
+            new GuestOrderAccessTokenIssuer(new GuestOrderAccessTokenRepository(ctx)),
             _refreshTokenService.Object,
             Mock.Of<IStripeClient>(),
             _blobClientFactory.Object,

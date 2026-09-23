@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Cleansia.Infra.Database.Migrations
 {
     [DbContext(typeof(CleansiaDbContext))]
-    [Migration("20260922220828_Initial")]
+    [Migration("20260923064534_Initial")]
     partial class Initial
     {
         /// <inheritdoc />
@@ -7392,7 +7392,7 @@ namespace Cleansia.Infra.Database.Migrations
                     b.HasOne("Cleansia.Core.Domain.Users.Address", "CustomerAddress")
                         .WithMany()
                         .HasForeignKey("CustomerAddressId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("Cleansia.Core.Domain.Loyalty.PromoCode", null)

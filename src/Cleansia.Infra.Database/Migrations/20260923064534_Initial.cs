@@ -1495,7 +1495,7 @@ namespace Cleansia.Infra.Database.Migrations
                         column: x => x.CustomerAddressId,
                         principalTable: "Addresses",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
                         name: "FK_Orders_Currencies_CurrencyId",
                         column: x => x.CurrencyId,

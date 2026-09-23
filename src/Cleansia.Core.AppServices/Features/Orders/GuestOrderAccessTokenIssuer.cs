@@ -17,7 +17,8 @@ namespace Cleansia.Core.AppServices.Features.Orders;
 ///
 /// <para>The raw value exists only in the message the caller is about to send, which is why the caller
 /// stages and commits BEFORE sending. <see cref="RevokeAsync"/> is the one place the set shrinks, and
-/// it empties it: a cancelled booking retires every key that was outstanding.</para>
+/// it empties it: a cancelled booking, or one an account erasure anonymises, retires every key that was
+/// outstanding.</para>
 /// </summary>
 public sealed class GuestOrderAccessTokenIssuer(IGuestOrderAccessTokenRepository repository)
 {

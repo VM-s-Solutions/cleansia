@@ -43,7 +43,7 @@ public class UpdateCurrentUserProfilePhotoTests
             .Setup(r => r.GetByIdAsync(UserId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(user);
         _orderRepository
-            .Setup(r => r.GetOrdersByPhoneNumberAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetOwnOrdersByPhoneNumberAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Array.Empty<Order>());
 
         _blobFactory

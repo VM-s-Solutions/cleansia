@@ -7389,7 +7389,7 @@ namespace Cleansia.Infra.Database.Migrations
                     b.HasOne("Cleansia.Core.Domain.Users.Address", "CustomerAddress")
                         .WithMany()
                         .HasForeignKey("CustomerAddressId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("Cleansia.Core.Domain.Loyalty.PromoCode", null)

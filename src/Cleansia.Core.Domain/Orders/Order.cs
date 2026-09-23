@@ -1019,4 +1019,24 @@ public class Order : TenantAuditable
         }
         return this;
     }
+
+    /// <summary>
+    /// Moves this order to an anonymised copy without modifying its deduped source address.
+    /// The caller stages the copy and deletes the source only when no other owner needs it.
+    /// </summary>
+    public Address? AnonymizeCustomerAddress()
+    {
+        if (CustomerAddress is null)
+        {
+            return null;
+        }
+
+        var copy = Address.Create(
+            AnonymizationMarker.Value, AnonymizationMarker.Value, AnonymizationMarker.Value, CustomerAddress.CountryId)
+            .Anonymize();
+        copy.TenantId = TenantId;
+        CustomerAddress = copy;
+        CustomerAddressId = copy.Id;
+        return copy;
+    }
 }

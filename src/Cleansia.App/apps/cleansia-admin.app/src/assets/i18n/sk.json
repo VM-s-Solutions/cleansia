@@ -964,7 +964,8 @@
           "order": {
             "cover_requested": "Vyžiadaný záskok",
             "dropped": "Zákazka odhodená",
-            "contract_accepted": "Zmluva o dielo prijatá"
+            "contract_accepted": "Zmluva o dielo prijatá",
+            "access_instructions_read": "Prečítané pokyny na vstup"
           }
         }
       }
@@ -1804,6 +1805,15 @@
           },
           "notifications": {
             "days": "Počet dní, počas ktorých notifikácia zostáva v prehľade v aplikácii"
+          },
+          "order_photos": {
+            "days": "Počet dní od dokončenia upratovania, počas ktorých sa uchovávajú fotografie zákazky; pri nevyriešenej reklamácii zostávajú až do jej uzavretia"
+          },
+          "admin_audit": {
+            "years": "Počet rokov uchovania záznamu o činnosti administrátora"
+          },
+          "employee_audit": {
+            "years": "Počet rokov uchovania záznamu o činnosti upratovača"
           },
           "customer_audit": {
             "years": "Počet rokov, počas ktorých sa uchováva auditný záznam zákazníka"

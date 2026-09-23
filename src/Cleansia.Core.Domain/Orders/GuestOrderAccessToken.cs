@@ -17,7 +17,8 @@ namespace Cleansia.Core.Domain.Orders;
 /// <para>Durable, not single-use: the guest tracks the booking with it and cancels with it. It dies
 /// either at <see cref="ExpiresOn"/> — <see cref="LifetimeDaysAfterCleaning"/> days past the cleaning,
 /// which covers the refund window and the month the receipt belongs to — or when the booking is
-/// cancelled and there is nothing left to do with it.</para>
+/// cancelled, or anonymised by the erasure of the account whose e-mail it was placed under, and there is
+/// nothing left to do with it. The retention sweep deletes the row once it is dead.</para>
 /// </summary>
 public class GuestOrderAccessToken : TenantAuditable
 {

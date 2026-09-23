@@ -5,6 +5,7 @@ using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Orders.DTOs;
 using Cleansia.Core.AppServices.Mappers;
 using Cleansia.Core.AppServices.Services.Interfaces;
+using Cleansia.Core.Domain.Auditing;
 using Cleansia.Core.Domain.EmployeePayroll;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Orders;
@@ -43,7 +44,8 @@ public class GetOrderDetails
         ITenantRepository tenantRepository,
         IExpressWaiverConsumer expressWaiverConsumer,
         IUserMembershipRepository userMembershipRepository,
-        IWorkContractAcceptanceRepository workContractAcceptanceRepository) : IQueryHandler<Query, OrderItem>
+        IWorkContractAcceptanceRepository workContractAcceptanceRepository,
+        IEmployeeActionAuditRepository employeeActionAuditRepository) : IQueryHandler<Query, OrderItem>
     {
         public async Task<BusinessResult<OrderItem>> Handle(Query query, CancellationToken cancellationToken)
         {
@@ -75,10 +77,11 @@ public class GetOrderDetails
 
             decimal? estimatedCleanerPay = null;
             var isAssignedToCurrentUser = false;
+            string? callerEmployeeId = null;
 
             if (isEmployeeCaller)
             {
-                var callerEmployeeId = await orderAccessService.GetCallerEmployeeIdAsync(cancellationToken);
+                callerEmployeeId = await orderAccessService.GetCallerEmployeeIdAsync(cancellationToken);
                 if (!string.IsNullOrEmpty(callerEmployeeId))
                 {
                     isAssignedToCurrentUser = order.AssignedEmployees
@@ -150,6 +153,14 @@ public class GetOrderDetails
             if (!isEntitledToCustomerData)
             {
                 return BusinessResult.Success(detail.RedactForBrowsingCleaner());
+            }
+
+            // First read only: the partner app fetches this detail again on every resume and refresh.
+            if (isAssignedToCurrentUser && !string.IsNullOrWhiteSpace(detail.AccessInstructions))
+            {
+                var read = EmployeeActionAudit.Create(callerEmployeeId!, order.Id, EmployeeAuditAction.AccessInstructionsRead);
+                read.TenantId = order.TenantId;
+                await employeeActionAuditRepository.RecordOnceOutOfBandAsync(read, cancellationToken);
             }
 
             // The customer wrote these instructions and the assigned cleaner is standing at the door;

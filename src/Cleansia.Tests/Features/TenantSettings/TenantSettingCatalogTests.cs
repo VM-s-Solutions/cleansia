@@ -1,12 +1,13 @@
 using Cleansia.Core.AppServices.Features.DataRetention;
 using Cleansia.Core.AppServices.Features.TenantSettings;
+using Cleansia.Core.Domain.Orders;
 
 namespace Cleansia.Tests.Features.TenantSettings;
 
 /// <summary>
 /// The catalogue is the whole contract of what an operating company may configure: a key outside it
 /// is refused, a value outside its range is refused, and a missing or unusable row resolves to the
-/// default the sweeps were written against. The ten retention windows are its first category; each
+/// default the sweeps were written against. The thirteen retention windows are its first category; each
 /// entry's default is the <c>RetentionDefaults</c> constant, so the two can never disagree. The
 /// lifecycle category holds the archive's chargeback horizon (ADR-0064 D3); the notifications
 /// category holds the shared mailbox admin events are e-mailed to (ADR-0065 D3), an address whose
@@ -25,6 +26,9 @@ public sealed class TenantSettingCatalogTests
     [InlineData("retention.customer_audit.years", "3")]
     [InlineData("retention.dispute_text.years", "3")]
     [InlineData("retention.work_contract_metadata.years", "3")]
+    [InlineData("retention.order_photos.days", "7")]
+    [InlineData("retention.admin_audit.years", "3")]
+    [InlineData("retention.employee_audit.years", "3")]
     public void Every_Retention_Window_Is_Catalogued_Under_Its_Contracted_Key_With_The_Sweeps_Default(
         string key, string expectedDefault)
     {
@@ -49,6 +53,9 @@ public sealed class TenantSettingCatalogTests
         Assert.Same(TenantSettingCatalog.CustomerAuditRetentionYears, TenantSettingCatalog.Find(RetentionDefaults.CustomerAuditRetentionYearsKey));
         Assert.Same(TenantSettingCatalog.DisputeTextRetentionYears, TenantSettingCatalog.Find(RetentionDefaults.DisputeTextRetentionYearsKey));
         Assert.Same(TenantSettingCatalog.WorkContractMetadataRetentionYears, TenantSettingCatalog.Find(RetentionDefaults.WorkContractMetadataRetentionYearsKey));
+        Assert.Same(TenantSettingCatalog.OrderPhotosDays, TenantSettingCatalog.Find(RetentionDefaults.OrderPhotosDaysKey));
+        Assert.Same(TenantSettingCatalog.AdminAuditRetentionYears, TenantSettingCatalog.Find(RetentionDefaults.AdminAuditRetentionYearsKey));
+        Assert.Same(TenantSettingCatalog.EmployeeAuditRetentionYears, TenantSettingCatalog.Find(RetentionDefaults.EmployeeAuditRetentionYearsKey));
 
         Assert.Equal(RetentionDefaults.DefaultExpiredCodesEnabled, TenantSettingCatalog.ExpiredCodesEnabled.Default);
         Assert.Equal(RetentionDefaults.DefaultStaleDevicesDays, TenantSettingCatalog.StaleDevicesDays.Default);
@@ -60,14 +67,17 @@ public sealed class TenantSettingCatalogTests
         Assert.Equal(RetentionDefaults.DefaultCustomerAuditRetentionYears, TenantSettingCatalog.CustomerAuditRetentionYears.Default);
         Assert.Equal(RetentionDefaults.DefaultDisputeTextRetentionYears, TenantSettingCatalog.DisputeTextRetentionYears.Default);
         Assert.Equal(RetentionDefaults.DefaultWorkContractMetadataRetentionYears, TenantSettingCatalog.WorkContractMetadataRetentionYears.Default);
+        Assert.Equal(RetentionDefaults.DefaultOrderPhotosDays, TenantSettingCatalog.OrderPhotosDays.Default);
+        Assert.Equal(RetentionDefaults.DefaultAdminAuditRetentionYears, TenantSettingCatalog.AdminAuditRetentionYears.Default);
+        Assert.Equal(RetentionDefaults.DefaultEmployeeAuditRetentionYears, TenantSettingCatalog.EmployeeAuditRetentionYears.Default);
     }
 
     [Fact]
-    public void The_Catalogue_Holds_Exactly_The_Ten_Retention_Keys_The_Lifecycle_Horizon_The_Admin_Mailbox_And_No_Duplicate()
+    public void The_Catalogue_Holds_Exactly_The_Thirteen_Retention_Keys_The_Lifecycle_Horizon_The_Admin_Mailbox_And_No_Duplicate()
     {
-        Assert.Equal(12, TenantSettingCatalog.All.Count);
+        Assert.Equal(15, TenantSettingCatalog.All.Count);
         Assert.Equal(TenantSettingCatalog.All.Count, TenantSettingCatalog.All.Select(d => d.Key).Distinct(StringComparer.Ordinal).Count());
-        Assert.Equal(10, TenantSettingCatalog.All.Count(d => d.Category == TenantSettingCatalog.RetentionCategory));
+        Assert.Equal(13, TenantSettingCatalog.All.Count(d => d.Category == TenantSettingCatalog.RetentionCategory));
         Assert.Equal(1, TenantSettingCatalog.All.Count(d => d.Category == TenantSettingCatalog.LifecycleCategory));
         Assert.Equal(1, TenantSettingCatalog.All.Count(d => d.Category == TenantSettingCatalog.NotificationsCategory));
     }
@@ -163,10 +173,25 @@ public sealed class TenantSettingCatalogTests
             .Where(w => w.Category == TenantSettingCatalog.RetentionCategory)
             .ToList();
 
-        Assert.Equal(9, windows.Count);
+        Assert.Equal(12, windows.Count);
         Assert.All(windows, w => Assert.Equal(1, w.Min));
         Assert.All(windows.Where(w => w.Key.EndsWith(".years", StringComparison.Ordinal)), w => Assert.Equal(100, w.Max));
         Assert.All(windows.Where(w => w.Key.EndsWith(".days", StringComparison.Ordinal)), w => Assert.Equal(36_500, w.Max));
+    }
+
+    /// <summary>
+    /// The order-PII sweep never has to retire a guest's booking link, because it cannot reach an order
+    /// before every link to it has expired: the shortest window a company may set outlives the link's
+    /// lifetime past the cleaning. Shorten the floor or lengthen the link past it and the sweep would blank
+    /// a booking a live link still opens.
+    /// </summary>
+    [Fact]
+    public void The_Shortest_Order_Pii_Window_Outlives_Every_Guest_Booking_Link()
+    {
+        var cleaning = new DateTime(2026, 1, 31, 10, 0, 0, DateTimeKind.Utc);
+
+        Assert.True(cleaning.AddYears(TenantSettingCatalog.OrderPiiYears.Min!.Value)
+            > GuestOrderAccessToken.ExpiryFor(cleaning).UtcDateTime);
     }
 
     [Theory]

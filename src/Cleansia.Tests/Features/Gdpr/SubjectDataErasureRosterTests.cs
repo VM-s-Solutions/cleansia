@@ -124,9 +124,12 @@ public class SubjectDataErasureRosterTests
             InErasure("user.Employee.Anonymize()")),
 
         [typeof(Address)] = new(
-            Verdict.AnonymizedInPlace,
-            "A home address with no subject id of its own — reached through its two parents.",
-            InErasure("order.CustomerAddress?.Anonymize()"), InErasure("user.Employee.Address?.Anonymize()")),
+            Verdict.Deleted,
+            "A home address with no subject id of its own — reached through its two parents. The row is deduped "
+                + "across everyone at the street. Subject-owned references move to anonymised copies; an original "
+                + "is deleted only when no other order, saved address or employee needs it.",
+            InErasure("order.AnonymizeCustomerAddress("), InErasure("user.Employee.UpdateAddress(copy)"),
+            InErasure("addressRepository.RemoveRange(sourceAddresses")),
 
         [typeof(Core.Domain.Orders.Order)] = new(
             Verdict.AnonymizedInPlace,

@@ -10,10 +10,10 @@ namespace Cleansia.Infra.Database.Repositories;
 
 public class OrderRepository(CleansiaDbContext context) : BaseRepository<Order>(context), IOrderRepository
 {
-    public async Task<IReadOnlyList<Order>> GetOrdersByPhoneNumberAsync(string phoneNumber, CancellationToken cancellationToken)
+    public async Task<IReadOnlyList<Order>> GetOwnOrdersByPhoneNumberAsync(string userId, string phoneNumber, CancellationToken cancellationToken)
     {
         return await GetDbSet()
-            .Where(x => x.CustomerPhone == phoneNumber)
+            .Where(x => x.UserId == userId && x.CustomerPhone == phoneNumber)
             .ToListAsync(cancellationToken);
     }
 

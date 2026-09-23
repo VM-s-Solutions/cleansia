@@ -1,4 +1,5 @@
-﻿using System.Reflection;
+﻿using Cleansia.Core.AppServices.Features.Orders;
+using System.Reflection;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Gdpr;
 using Cleansia.Core.AppServices.Services;
@@ -210,6 +211,8 @@ public sealed class ErasureBlockingOrderStatusTests : IDisposable
             new OutboxMessageRepository(ctx),
             new CustomerActionAuditRepository(ctx),
             new WorkContractAcceptanceRepository(ctx),
+            new AddressRepository(ctx),
+            new GuestOrderAccessTokenIssuer(new GuestOrderAccessTokenRepository(ctx)),
             Mock.Of<IRefreshTokenService>(),
             Mock.Of<IStripeClient>(),
             _blobClientFactory.Object,

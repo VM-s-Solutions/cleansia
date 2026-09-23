@@ -1,6 +1,6 @@
 # Záznam auditu - 23. 9. 2026
 
-**Auditovaný commit `9e970917e1c7270a0baa0ea1ab07693990340914`, 23. 9. 2026, větev `fix/audit-findings-2026-09-22`.** Pět věcných rozborů a obchodní shrnutí popisují tento strom. Následující dokumentační commity nemění auditovaný kód. Cíl PR je `master`; jeho ověřený stav při připnutí je `6792f0c256e81e1473908308bd73881004853be4`. Složka zachovává datum původního auditu.
+**Auditovaný commit `865549b026b02602d11648a3a7e9a12aa2878198`, 23. 9. 2026, větev `fix/audit-findings-2026-09-22`.** Pět věcných rozborů a obchodní shrnutí popisují tento strom. Následující dokumentační commity nemění auditovaný kód. Cíl PR je `master`; jeho ověřený stav při připnutí je `6792f0c256e81e1473908308bd73881004853be4`. Složka zachovává datum původního auditu.
 
 ## Inventář
 
@@ -55,7 +55,7 @@ Deset DOCX znovu ověřeno 23. 9. 2026: všechny SHA-256 souhlasí s 11. 9. 2026
 
 Čtecí průchody pokryly identitu, smlouvy, objednávky, ceny, platby, doklady, vratky, spory, úklidníky, členství, věrnost, komunikaci, společnosti a retenci. Znovu byly ověřeny také nezměněné výroky, právní citáty a rozhodnutí R1-R27. Souřadnice citací byly přeneseny porovnáním stromů; tvrzení následně ověřena proti zdrojům. Oponentura odděluje věcnou pravdivost od srozumitelnosti a rozsahu. PDF procházejí vizuální kontrolou.
 
-Kontrola: `python lawyers-docs/check-citations.py analyza-2026-09-22 9e970917e1c7270a0baa0ea1ab07693990340914`.
+Kontrola: `python lawyers-docs/check-citations.py analyza-2026-09-22 865549b026b02602d11648a3a7e9a12aa2878198`.
 
 Výstup skriptu: **1706 citací · 199 bez identifikátoru · 0 nevyřešených**.
 
@@ -67,7 +67,7 @@ Příkaz pro rozsah: `wc -w lawyers-docs/analyza-2026-09-22/*.md`.
 | ROZPORY-DOKUMENTY-VS-KOD | 7888 | 8 000 |
 | TECHNICKE-MEZERY | 3701 | 5 000 |
 | OBCHODNI-MEZERY-A-HRANICNI-PRIPADY | 4032 | 5 000 |
-| AUDIT-LOG | 1203 | 1 500 |
+| AUDIT-LOG | 1234 | 1 500 |
 | PODKLADY-KOLEGU-VS-KOD | 2824 | 3 500 |
 
 ## Rozdíl 7acea58b → 6792f0c2
@@ -85,9 +85,9 @@ Příkaz pro rozsah: `wc -w lawyers-docs/analyza-2026-09-22/*.md`.
 | Aktualizace závislostí qs a @humanfs/node | #263, #251 | `452d1e517`, `140690822` | bez vlivu na dokumenty |
 | Záznam sloučení předchozích PR | #261 | `3f694a861` | bez vlivu na dokumenty |
 
-## Rozdíl 6792f0c2 → 9e970917
+## Rozdíl 6792f0c2 → 865549b0
 
-20 commitů včetně dokumentační větve a jejího sloučení; 430 souborů, +20 813 / -3 262 řádků. Poslední aplikační změna je `1858d77ef`; sloučení auditu aplikační strom nemění.
+23 commitů včetně dokumentační větve a jejího sloučení; 433 souborů, +21 416 / -3 263 řádků. Poslední změna chování aplikace je `1858d77ef`; závěrečný `865549b02` odstraňuje pouze prázdný řádek iOS testu kvůli formátovací kontrole CI.
 
 | změna | commit | dotčený rozbor |
 |---|---|---|
@@ -98,5 +98,6 @@ Příkaz pro rozsah: `wc -w lawyers-docs/analyza-2026-09-22/*.md`.
 | Pravdivější webová nabídka Plus a věrnosti; odstranění nefunkčních seedovaných benefitů | `08581591c` | PROVOZ §9, TECHNICKE, PODKLADY |
 | Limity velikosti, doplňky ve vratce, místní čas účtenky, povinné DIČ plátce, odstranění mrtvých členů, klientská oprava seat-open | `fcd0751d5`, `1858d77ef` | PROVOZ, TECHNICKE, OBCHODNI |
 | Dokumentace oprav, místní ověření a sloučení původního auditu | `83c5319fa`, `7a3a9cd21`, `d467f72f5`, `9e970917e` | celý soubor rozborů |
+| Nové připnutí, vizuální obchodní shrnutí a formátování iOS testu | `fd45d65f0`, `a4e09c1d3`, `865549b02` | celý soubor rozborů; obchodní pravidla beze změny |
 
 Rozhodovací varianty nebyly implementovány: mimo jiné model posádky, hotovostní vyrovnání, první storno okno, serverová časová mřížka, sjednocení živých sazeb DPH a význam měsíčního opakování.

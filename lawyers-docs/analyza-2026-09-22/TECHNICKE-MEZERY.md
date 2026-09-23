@@ -1,6 +1,6 @@
 # Technické mezery a rizika
 
-**Stav zdrojového kódu · commit 9e970917e1c7270a0baa0ea1ab07693990340914 (fix/audit-findings-2026-09-22, 23. 9. 2026)**
+**Stav zdrojového kódu · commit 865549b026b02602d11648a3a7e9a12aa2878198 (fix/audit-findings-2026-09-22, 23. 9. 2026)**
 
 Slovník: úklidník = „Zhotovitel" (VOP, RS, RŘ, Kodex) = `Employee` (kód) = „uklízeč" (UI); zákazník = „Zákazník / Spotřebitel / Uživatel" = `User`; host = zákazník bez účtu (`Order.UserId = null`); provozní společnost = „Provozovatel / Cleansia s.r.o." = `Tenant`; administrátor = `Administrator / Manager / Support / Accountant`.
 

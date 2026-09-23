@@ -41,7 +41,7 @@ blockquote { border-left: 4px solid #12796b; margin: 20px 0; padding: 5px 20px; 
  a { text-decoration: none; color: #135d55; }
 }
 </style></head><body><main><nav><a href="PROVOZ-PLATFORMY.html">Jak platforma funguje</a><a href="ROZPORY-DOKUMENTY-VS-KOD.html">Dokumenty vs. aplikace</a><a href="TECHNICKE-MEZERY.html">Technické mezery</a><a href="OBCHODNI-MEZERY-A-HRANICNI-PRIPADY.html">Obchodní mezery a hraniční případy</a><a href="AUDIT-LOG.html">Záznam auditu</a><a href="SHRNUTI.html">Shrnutí</a><a href="PODKLADY-KOLEGU-VS-KOD.html">Podklady kolegu vs kod</a><a href="PROVOZ-PLATFORMY.pdf">Jak platforma funguje (PDF)</a><a href="ROZPORY-DOKUMENTY-VS-KOD.pdf">Dokumenty vs. aplikace (PDF)</a><a href="TECHNICKE-MEZERY.pdf">Technické mezery (PDF)</a><a href="OBCHODNI-MEZERY-A-HRANICNI-PRIPADY.pdf">Obchodní mezery a hraniční případy (PDF)</a><a href="AUDIT-LOG.pdf">Záznam auditu (PDF)</a><a href="SHRNUTI.pdf">Shrnutí (PDF)</a><a href="PODKLADY-KOLEGU-VS-KOD.pdf">Podklady kolegu vs kod (PDF)</a><a href="podklady/INVENTAR.html">Inventář podkladů</a></nav><h1 id="zaznam-auditu-23-9-2026">Záznam auditu - 23. 9. 2026</h1>
-<p><strong>Auditovaný commit <code>9e970917e1c7270a0baa0ea1ab07693990340914</code>, 23. 9. 2026, větev <code>fix/audit-findings-2026-09-22</code>.</strong> Pět věcných rozborů a obchodní shrnutí popisují tento strom. Následující dokumentační commity nemění auditovaný kód. Cíl PR je <code>master</code>; jeho ověřený stav při připnutí je <code>6792f0c256e81e1473908308bd73881004853be4</code>. Složka zachovává datum původního auditu.</p>
+<p><strong>Auditovaný commit <code>865549b026b02602d11648a3a7e9a12aa2878198</code>, 23. 9. 2026, větev <code>fix/audit-findings-2026-09-22</code>.</strong> Pět věcných rozborů a obchodní shrnutí popisují tento strom. Následující dokumentační commity nemění auditovaný kód. Cíl PR je <code>master</code>; jeho ověřený stav při připnutí je <code>6792f0c256e81e1473908308bd73881004853be4</code>. Složka zachovává datum původního auditu.</p>
 <h2 id="inventar">Inventář</h2>
 <table>
 <thead>
@@ -234,7 +234,7 @@ blockquote { border-left: 4px solid #12796b; margin: 20px 0; padding: 5px 20px; 
 <p>„Výslovně porovnáno“ počítá odlišná Pxxx v seznamu Shoda a řádcích §1; nezahrnuje Mimo aplikaci. Nahrazuje nereprodukovatelné souhrnné počty původního logu.</p>
 <h2 id="metoda-a-kontroly">Metoda a kontroly</h2>
 <p>Čtecí průchody pokryly identitu, smlouvy, objednávky, ceny, platby, doklady, vratky, spory, úklidníky, členství, věrnost, komunikaci, společnosti a retenci. Znovu byly ověřeny také nezměněné výroky, právní citáty a rozhodnutí R1-R27. Souřadnice citací byly přeneseny porovnáním stromů; tvrzení následně ověřena proti zdrojům. Oponentura odděluje věcnou pravdivost od srozumitelnosti a rozsahu. PDF procházejí vizuální kontrolou.</p>
-<p>Kontrola: <code>python lawyers-docs/check-citations.py analyza-2026-09-22 9e970917e1c7270a0baa0ea1ab07693990340914</code>.</p>
+<p>Kontrola: <code>python lawyers-docs/check-citations.py analyza-2026-09-22 865549b026b02602d11648a3a7e9a12aa2878198</code>.</p>
 <p>Výstup skriptu: <strong>1706 citací · 199 bez identifikátoru · 0 nevyřešených</strong>.</p>
 <p>Příkaz pro rozsah: <code>wc -w lawyers-docs/analyza-2026-09-22/*.md</code>.</p>
 <table>
@@ -268,7 +268,7 @@ blockquote { border-left: 4px solid #12796b; margin: 20px 0; padding: 5px 20px; 
 </tr>
 <tr>
 <td>AUDIT-LOG</td>
-<td style="text-align: right;">1203</td>
+<td style="text-align: right;">1234</td>
 <td style="text-align: right;">1 500</td>
 </tr>
 <tr>
@@ -340,8 +340,8 @@ blockquote { border-left: 4px solid #12796b; margin: 20px 0; padding: 5px 20px; 
 </tr>
 </tbody>
 </table>
-<h2 id="rozdil-6792f0c2-9e970917">Rozdíl 6792f0c2 → 9e970917</h2>
-<p>20 commitů včetně dokumentační větve a jejího sloučení; 430 souborů, +20 813 / -3 262 řádků. Poslední aplikační změna je <code>1858d77ef</code>; sloučení auditu aplikační strom nemění.</p>
+<h2 id="rozdil-6792f0c2-865549b0">Rozdíl 6792f0c2 → 865549b0</h2>
+<p>23 commitů včetně dokumentační větve a jejího sloučení; 433 souborů, +21 416 / -3 263 řádků. Poslední změna chování aplikace je <code>1858d77ef</code>; závěrečný <code>865549b02</code> odstraňuje pouze prázdný řádek iOS testu kvůli formátovací kontrole CI.</p>
 <table>
 <thead>
 <tr>
@@ -385,6 +385,11 @@ blockquote { border-left: 4px solid #12796b; margin: 20px 0; padding: 5px 20px; 
 <td>Dokumentace oprav, místní ověření a sloučení původního auditu</td>
 <td><code>83c5319fa</code>, <code>7a3a9cd21</code>, <code>d467f72f5</code>, <code>9e970917e</code></td>
 <td>celý soubor rozborů</td>
+</tr>
+<tr>
+<td>Nové připnutí, vizuální obchodní shrnutí a formátování iOS testu</td>
+<td><code>fd45d65f0</code>, <code>a4e09c1d3</code>, <code>865549b02</code></td>
+<td>celý soubor rozborů; obchodní pravidla beze změny</td>
 </tr>
 </tbody>
 </table>

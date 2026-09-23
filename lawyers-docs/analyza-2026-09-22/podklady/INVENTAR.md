@@ -1,6 +1,6 @@
 # Inventář podkladů
 
-Kontrola 23. 9. 2026 proti commitu `9e970917e1c7270a0baa0ea1ab07693990340914` (`fix/audit-findings-2026-09-22`). Všech deset DOCX ve složce `lawyers-docs/SMLOUVY CleanSia/SMLOUVY` má stejný SHA-256 jako při rozboru 11. 9. 2026; textové extrakce a číslování odstavců Pxxx se přebírají beze změny z [../../analyza-2026-09-11/podklady/](../../analyza-2026-09-11/podklady/INVENTAR.md). Odkazy Pxxx v tomto rozboru vedou tam.
+Kontrola 23. 9. 2026 proti commitu `865549b026b02602d11648a3a7e9a12aa2878198` (`fix/audit-findings-2026-09-22`). Všech deset DOCX ve složce `lawyers-docs/SMLOUVY CleanSia/SMLOUVY` má stejný SHA-256 jako při rozboru 11. 9. 2026; textové extrakce a číslování odstavců Pxxx se přebírají beze změny z [../../analyza-2026-09-11/podklady/](../../analyza-2026-09-11/podklady/INVENTAR.md). Odkazy Pxxx v tomto rozboru vedou tam.
 
 | Originál | Textová extrakce (11. 9. 2026) | Odstavce | SHA-256 23. 9. 2026 |
 |---|---|---:|---|

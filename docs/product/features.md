@@ -248,18 +248,19 @@ of one language with its content hash. There is no authoring: a new version is a
 deploy. → [ADR-0063](/decisions/adr-0063), [ADR-0068](/decisions/adr-0068)
 
 **Company settings** — a page under the configuration area where an admin sets **their own operating
-company's** values for the platform settings that may differ per company: today the ten data-retention
+company's** values for the platform settings that may differ per company: today the thirteen data-retention
 windows (how long stale devices, old notifications, withdrawn consents, superseded documents, completed
-GDPR requests, order contact details, customer audit rows, an erased customer's dispute text and the
+GDPR requests, order contact details and photos, customer/admin/cleaner audit rows, an erased customer's dispute text and the
 IP and device details on a cleaner's contract acceptance are kept, and whether expired codes are
 cleared). One row per setting shows what it means, its allowed
 range, the platform default, the value in force and whether the company has overridden it; edit is
 inline with a number field or a checkbox, *Reset* puts a setting back on the default, and every change
 is on the admin audit trail with the before and after values. A setting outside the catalogue cannot be
 created and a value outside its range is refused, so the page can never hold a number nothing reads.
-The retention sweeps read each company's own windows. An eleventh setting, the **chargeback horizon** (180
-days by default), is the one the company's archive waits on — below. A twelfth, the **administrator
-notification mailbox**, is the first that is an address rather than a number: edited in an e-mail
+The fourteen retention tasks read each company's own windows; guest tokens use their own expiry or
+revocation instead of a separate setting. Two further settings bring the catalogue to fifteen: the
+**chargeback horizon** (180 days by default), which the company's archive waits on — below — and the
+**administrator notification mailbox**, edited in an e-mail
 field, refused when malformed, and shown as *every administrator* while unset.
 → [Business rules — retention](/product/business-rules#customer-record),
 [ADR-0061](/decisions/adr-0061) O-4 as ruled

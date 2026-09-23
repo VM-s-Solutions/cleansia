@@ -152,8 +152,14 @@ While selecting services, room and bathroom counts are editable above the sticky
 On smaller screens those controls appear before the packages and services, so they are visible
 without scrolling through the catalogue. Both layouts edit the same selection.
 
+The server accepts at most **eight rooms and four bathrooms**. The same upper bounds apply to
+booking, quote, Plus-savings quote and recurring-template creation or update, with
+`order.size_exceeds_maximum` when either is exceeded. Existing lower-bound rules are unchanged.
+
 Web, Android, and iOS offer starts every 15 minutes from 08:00 through 19:45. The two-hour minimum
 lead time and the express window still apply to the exact selected instant, including its minutes.
+The picker range and grid are not additional API restrictions today; enforcing them on API callers
+awaits an owner decision.
 
 ## Edge cases
 
@@ -188,6 +194,15 @@ the chosen market before an address is picked, then trims any selected service o
 longer offers (with a notice to the customer), like the one-off wizard — otherwise the server would refuse the quote as
 `order.selected_services.invalid` / `order.selected_package.invalid` for an entry with no price in that
 market. → [Business rules — order currency](/product/business-rules#price-stages)
+
+The materialiser calculates a raw subtotal without a cleaning date; `OrderFactory` then applies
+the express surcharge once, from that occurrence's date and lead time. Recurring templates carry no
+extras, and this path reserves no monthly express waiver. The undated pricing call does not mean
+that a short-notice occurrence is exempt from the surcharge.
+
+The `Monthly` frequency currently adds 30 days and then advances to the selected weekday, normally
+an interval of 35 days. Calendar-month semantics, including short months, await an owner decision;
+"every 30 days" would not describe the current algorithm either.
 
 > The materialiser decides "did I already spawn this occurrence?" with an unlocked read, and **the
 > answer is enforced by a unique index** — `IX_Orders_RecurringTemplateId_CleaningDateTime`, on the
@@ -255,9 +270,13 @@ senders rather than testing each handler behaviourally.
 
 A token dies **30 days after the cleaning** — long enough to cover the refund window and a question
 about the receipt afterwards, short enough that a mailbox read years later is not a live key to
-somebody's home. **Cancelling the booking revokes every live token on it at once**, because there is
+somebody's home. **`CancelGuestOrder` revokes every existing live token on the booking at once**, because there is
 nothing left to do with them — with one deliberate exception, the cancellation e-mail itself
 ([below](#guest-cancellation)). An account booking mints none at all: its owner signs in instead.
+Erasing an ended guest booking also revokes its live tokens in the same database commit as its
+personal data is anonymised. Live guest bookings excluded from erasure keep their tokens. The weekly
+retention sweep deletes expired or revoked token rows; it does not extend their lifetime.
+→ [GDPR, retention and audit](/flows/gdpr-and-audit#retention)
 
 ## Guest cancellation {#guest-cancellation}
 
@@ -288,7 +307,7 @@ nothing. The guest gets no account, feed or push; assigned cleaners still receiv
 act is recorded as `customer.order.cancel` with no customer user id, even when a session accompanies
 the guest's token. → [The customer trail](/flows/gdpr-and-audit#customer-trail)
 
-**The cancellation revokes every key, and the cancellation e-mail then carries a new one.** Those are
+**`CancelGuestOrder` revokes every existing live key, and the cancellation e-mail then carries a new one.** Those are
 the same decision rather than opposite ones: every token the guest already held is retired at the
 cancel, and the last message the booking will ever send carries the only one that still opens it, so
 the customer can read what they were refunded. It is minted and committed *before* the send, so a

@@ -14,13 +14,21 @@ All values below are the shipped ones, read from `BookingPolicy` and the pay cal
 | Standard lead time | **4 h** before the cleaning starts |
 | Express lead time | **2 h** — the hard floor; below this a booking is refused |
 | Express surcharge | **+20 %** of the base price |
-| Bookable hours | **08:00 – 20:00**, in 60-minute customer-facing windows |
+| Client start-time picker | **08:00 – 19:45**, in 15-minute increments |
+| Maximum home size | **8 rooms and 4 bathrooms** |
 | Start grace window | **60 min** — a cleaner may start a job at most this far ahead of its time |
 
 Between 2 and 4 hours' notice a booking is accepted but carries the express surcharge. Under 2 hours
 it is refused outright — not priced higher, refused.
 
-The customer-facing window is 60 minutes; the internal scheduling grid stays at 30.
+The start-time range and grid are client-picker limits today. `FirstWindowHour` and `LastWindowHour`
+remain the client-parity authority; enforcing that same range and grid on API bookings awaits an owner
+decision. The two-hour lead-time floor above is enforced by the server.
+
+The size limit is enforced by `CreateOrder`, `QuoteOrder`, `QuotePlusSavings`, `CreateRecurringBooking`
+and `UpdateRecurringBooking`, with `order.size_exceeds_maximum` when either count exceeds its limit.
+It matches the largest selection offered by the web picker. This adds upper bounds only; existing
+lower-bound validation is unchanged.
 
 ### The start grace window — 60 min, and why it is not zero {#start-grace-window}
 
@@ -79,7 +87,7 @@ flowchart LR
 
 The guest cancellation API needs the booking’s **access token** — the one the guest's e-mail link
 carries — and accepts only a booking placed without an account. An unknown, expired or revoked token
-and an account-owned booking all return the same `order.not_found` answer. Cancelling revokes every
+and an account-owned booking all return the same `order.not_found` answer. `CancelGuestOrder` revokes every
 token the booking had outstanding, and a token expires **30 days after the cleaning** regardless.
 The preview and cancellation use the same fee assessment
 as a signed-in customer: no fee while no cleaner is assigned, the standard 15-minute oops window,
@@ -95,9 +103,11 @@ notification. Assigned cleaners still receive their cancellation notice.
 
 ### The "oops window"
 
-Free cancellation within **15 minutes** of booking, regardless of how close the cleaning is —
-**60 minutes** for a first-time customer. It protects against an accidental tap, and the longer
-first-time window buys trust from someone who has not used the platform before.
+Free cancellation within **15 minutes** of booking, regardless of how close the cleaning is. It
+protects against an accidental tap. The policy also contains a **60-minute** first-time-customer window,
+but `CancellationAssessor` currently always selects the standard window. Whether to enable the longer
+window, how to identify a first customer and how guests count await an owner decision; it is not a
+benefit the current booking path grants.
 
 ### When the cleaner cancels or no-shows
 
@@ -262,6 +272,11 @@ membership lapses the sweep stops generating new occurrences. Three deliberate l
   they are left alone — retracting them is a refund path that does not exist.
 - **The customer is warned before it happens**, by the existing `membership.expiring_soon`
   notification. There is no dedicated "your schedule has stopped" event yet.
+
+**Monthly recurrence still needs a policy decision.** The materialiser currently adds 30 days and
+then advances to the template's chosen weekday, normally producing a 35-day interval. It is neither
+a fixed 30-day interval nor a calendar-month rule. Choosing a calendar date, a weekday occurrence or
+a fixed interval, including the handling of short months, remains an owner decision.
 
 ## Crew size
 
@@ -788,6 +803,14 @@ chain defaults. A named country with no configured currency does not fall throug
 throws, because the seed configures every serviced country and a gap is a deploy defect, not a market
 ([Money constants](#money-constants)).
 
+### Sales VAT and cleaner-invoice VAT {#vat-sources}
+
+Customer sales read `CountryConfiguration.StandardVatRate`; cleaner invoices read
+`CountryInvoiceConfig.VatRate`. They remain separate live values. Whether both must use one market
+standard rate, or whether cleaner invoices may differ, awaits an owner decision. The unused
+`ReducedVatRate` has been removed from the domain, database model and seed; that removal does not
+choose between the two live rates or change an order's stored VAT snapshot.
+
 ## The market a customer browses in {#market}
 
 Before there is a service address, every customer surface has a **market**: a serviced country whose
@@ -1133,12 +1156,15 @@ evidence table on the next tick). Per row, not three years after the customer's 
 the anchor form would have kept an active customer's IP addresses for the life of the account. Legal
 basis: legitimate interest, defence of claims (GDPR Art. 6(1)(f), Art. 17(3)(e)); three years is the
 Czech Civil Code's general subjective limitation period (§ 629) and covers card-scheme chargeback
-windows. The admin and cleaner audit tables have **no** window (ADR-0012 D6) and the sweep never
-touches them.
+windows. **Owner ruling, 2026-09-22:** admin and cleaner audit rows also have a **three-year default**,
+under separate company settings, measured from each row's own act. This supersedes the earlier
+no-auto-delete default in [ADR-0012 D6](/decisions/adr-0012#audit-retention-2026-09-22). All three
+settings currently permit one to one hundred years; whether the admin and cleaner floors must be
+three years is still an owner question.
 
 **Every retention window is per operating company** (owner ruling 2026-09-15, Q-TENANCY-04). The
-ten windows below are the platform defaults; an admin sets **their own company's** value on the admin
-app's *Company settings* page, inside the range shown, and resets it to the default. The sweep runs
+thirteen retention settings below are the platform defaults; an admin sets **their own company's**
+value on the admin app's *Company settings* page, inside the range shown, and resets it to the default. The sweep runs
 once per company under that company's values, so two companies keep different windows and neither can
 see or set the other's. A value outside the range is refused at the page, and a stored value the
 catalogue no longer accepts falls back to the default rather than to zero.
@@ -1155,12 +1181,22 @@ catalogue no longer accepts falls back to the default rather than to zero.
 | Customer audit rows | `retention.customer_audit.years` | 3 | 1 – 100 years | per row, from its own act |
 | Dispute text after erasure | `retention.dispute_text.years` | 3 | 1 – 100 years | the description, messages and resolution notes of an **erased** customer's disputes, from the erasure |
 | Contract-acceptance metadata | `retention.work_contract_metadata.years` | 3 | 1 – 100 years | the IP address, device label and device id on a cleaner's acceptance of the contract for work, from the acceptance; the acceptance itself is kept with the order → [The contract for work](#work-contract) |
+| Order photos | `retention.order_photos.days` | 7 | 1 – 36 500 days | photo rows and blobs, from the order's completion, held while any dispute is unresolved |
+| Admin audit rows | `retention.admin_audit.years` | 3 | 1 – 100 years | per row, from `OccurredOn` |
+| Cleaner audit rows | `retention.employee_audit.years` | 3 | 1 – 100 years | per row, from `CreatedOn` |
 
-An eleventh catalogue key sits beside them on the same page under its own category, `lifecycle`: the
+The weekly sweep has **fourteen tasks**: the thirteen settings above plus expired or revoked guest
+access tokens, whose own timestamps decide deletion. Photo eligibility begins seven days after
+`CompletedAt`; deletion is attempted on the first weekly run after that window. An existing
+dispute holds them until it is `Resolved` or `Closed`. Orders without a completion timestamp are
+outside this photo rule. A later dispute cannot recover photos already deleted; the adequacy of
+that window for later claims remains an owner question.
+
+Two further keys bring the catalogue to **fifteen**. Under `lifecycle` sits the
 **chargeback horizon** (`lifecycle.chargeback_horizon_days`, default **180**, range **0 – 730** days —
 zero means no horizon), counted from the company's latest card-paid cleaning; the company cannot be
-archived until it has passed → [A company's lifecycle](#company-lifecycle). A twelfth, under
-`notifications`, is the first that is not a number: the **shared mailbox for administrator notices**
+archived until it has passed → [A company's lifecycle](#company-lifecycle). Under
+`notifications` sits the **shared mailbox for administrator notices**
 (`notifications.admin_email`, an e-mail address; empty by default, which means every administrator is
 e-mailed individually) → [Administrators are told](#admin-notifications).
 
@@ -1182,9 +1218,10 @@ guest booking is never attached to an account, so the e-mail is the only link �
 it: the subject's orders are the account's own **plus** every booking that names no account and
 carries the account's e-mail (matched case-insensitively; a booking another account placed with that
 address in its contact field is that account's and never matches), in any market. An **ended** guest
-booking is anonymised like the account's own — name, contact, address, photos, pay rows — and the
-guest rows on it in the trail lose their IP and device. A guest booking **still live** (booked, taken
-or under way) is **left out, not a reason to refuse**: only the account’s own live orders block an
+booking is anonymised like the account's own — name, contact, address, photos, pay rows — its live
+access tokens are revoked in the same commit, and the guest rows on it in the trail lose their IP and
+device. A guest booking **still live** (booked, taken or under way) is **left out, not a reason to
+refuse**: only the account’s own live orders block an
 erasure. Its contact data stays until the job ends and the two-year order sweep reaches it. The guest
 cancellation backend added on 2026-09-16 (T-0753) changes the earlier “only an admin can cancel”
 premise, **not this erasure rule**. Cancellation needs the booking’s access token, which reaches only

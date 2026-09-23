@@ -117,6 +117,19 @@ token that reaches only their mailbox.
 `AccessInstructions` is free text of the form *"key under the mat"*. It is correctly withheld from a
 browsing cleaner and needed by an assigned one.
 
+The first detail response serving nonempty instructions to an assigned cleaner records
+`employee.order.access_instructions_read`. It names the cleaner and order, never the instructions.
+`GetOrderDetails` awaits a separate audit transaction before returning the text: the query has no
+UnitOfWork commit, and the separate context cannot flush its tracked order graph. The audit writer
+locks the order row before checking and inserting, so concurrent first reads produce one entry per
+cleaner and job. A failed audit write fails the response. This is a disclosure-recording exception
+to query immutability, not a change to who can see the instructions.
+
+The cleaner trail now has four labels: `employee.order.cover_requested`, `employee.order.dropped`,
+`employee.order.contract_accepted` and `employee.order.access_instructions_read`. Its rows expire
+under the company's cleaner-audit window, default three years. Time-boxing the cleaner's access
+after completion remains an owner decision; recording a read does not introduce that restriction.
+
 > **An admin does not get it with the order.** It is withheld from an administrator read and comes only
 > from a reveal — `POST /AdminOrder/{orderId}/access-instructions/reveal` — which is a **command**
 > precisely so the audit engine records who asked and when. The order payload carries a

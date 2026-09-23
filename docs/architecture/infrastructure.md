@@ -206,7 +206,7 @@ had never fired at all — see [the schedule tokens](#timer-schedules) below.
 | `PruneOutbox` | daily 04:00 UTC | Deletes drained outbox rows |
 | `RetryFailedUserDeletions` | daily 05:00 UTC | Re-runs every GDPR erasure left `Failed` (or `Processing` for over 30 min), once per row per day, in its own scope per row; logs a still-failed one at Error. Under `DataRetention__Enabled` |
 | `SendPeriodEndReminders` | daily 09:00 UTC | Emails employees whose pay period ends in 3 days |
-| `DataRetentionCleanup` | weekly, Sun 03:00 UTC | GDPR — deletes expired user data, anonymizes old orders, expires customer audit rows (3 y per row) and blanks an erased customer's dispute text once its 3-year window is past (`DisputeText`). Runs **once per operating company** under that company's own windows (its *Company settings*; the platform defaults where none are set) |
+| `DataRetentionCleanup` | weekly, Sun 03:00 UTC | Fourteen tasks under thirteen retention settings: expired user data, old-order PII, customer/admin/cleaner audit rows (3 y per row by default), dispute text after erasure, contract-acceptance metadata, completed-order photos (7 d by default, held by unresolved disputes), and expired or revoked guest access tokens. Runs **once per operating company** under that company's own settings; token expiry/revocation needs no separate setting → [Retention](/flows/gdpr-and-audit#retention) |
 
 #### Queue consumers
 
@@ -254,7 +254,7 @@ deployed database while reporting success (T-0685).
 
 | Setting | Turns off | Keeps working |
 |---|---|---|
-| `DataRetention__Enabled` | The weekly GDPR retention sweep (Sun 03:00) — expired codes, stale devices, old GDPR requests, order PII anonymisation, withdrawn consents, superseded documents, notifications, customer audit rows, erased customers' dispute text — **and** the daily failed-erasure retry (05:00) | Everything else |
+| `DataRetention__Enabled` | All fourteen weekly GDPR retention tasks (Sun 03:00), including order photos, all three audit tables, contract-acceptance metadata and dead guest access tokens — **and** the daily failed-erasure retry (05:00) | Everything else |
 | `PayPeriodClosing__Enabled` | The nightly pay-period job (02:00) — closing expired periods, opening the next, **and generating + emailing an invoice per employee** | `EnsureOpenPeriodAsync`, called inline by pay calculation, so pay-calc never fails with `NoActivePeriod` |
 | `Stripe__Enabled` | **All seven card-charge surfaces** — web checkout, resume checkout, mobile PaymentSheet, recurring-occurrence confirm, membership subscribe, membership checkout, membership plan swap | **Cash orders**, and everything that returns or releases money: refunds, cash-collection intent cancellation, membership cancellation, and GDPR erasure of the Stripe customer |
 

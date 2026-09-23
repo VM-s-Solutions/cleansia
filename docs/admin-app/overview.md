@@ -78,7 +78,7 @@ lifecycle* or *Marketing* (`admin-role-visibility.spec.ts` pins both lists):
 | `/country-management`     | Countries    | Country configuration                         |
 | `/currency-management`    | Currencies   | Currency configuration                        |
 | `/company-info`           | Company Info | Company details                               |
-| `/company-settings`       | Company settings | The admin's own operating company's overrides of the catalogued platform settings (the ten retention windows, the chargeback horizon, and the administrator notification mailbox); entry gated by `CanViewTenantConfigurations` |
+| `/company-settings`       | Company settings | The admin's own operating company's overrides of fifteen catalogued platform settings (thirteen retention settings, the chargeback horizon, and the administrator notification mailbox); entry gated by `CanViewTenantConfigurations` |
 | `/company-lifecycle`      | Company lifecycle | The admin's own operating company's state (operating, winding down, deactivated, frozen, archived) with every stamp and actor, the sixteen settlement facts with links to the lists that settle them and the date the archive becomes admissible, and the four acts — Deactivate, Reactivate, Wind down from a date, Archive — each behind a confirmation; entry gated by `CanViewCompanyLifecycle` (ADR-0064) |
 | `/template-management`    | Templates    | Email/notification templates                  |
 | `/fiscal-failures`        | Fiscal Failures | Action queue for failed fiscal registrations (retry / acknowledge) |

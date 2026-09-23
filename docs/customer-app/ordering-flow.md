@@ -29,8 +29,12 @@ The customer selects from available cleaning services and/or packages, and speci
 |---|---|---|---|
 | `selectedServiceIds` | `string[]` | `[]` | At least one service or package required |
 | `selectedPackageIds` | `string[]` | `[]` | (combined with above) |
-| `rooms` | `number` | `1` | Minimum 1, increment/decrement buttons |
-| `bathrooms` | `number` | `1` | Minimum 1, increment/decrement buttons |
+| `rooms` | `number` | `1` | Minimum 1 in the picker; API maximum 8 |
+| `bathrooms` | `number` | `1` | Minimum 1 in the picker; API maximum 4 |
+
+The same upper limits apply to booking, price quotes, Plus-savings previews and recurring-template
+creation/update. The API returns `order.size_exceeds_maximum` when either is exceeded. Mobile
+steppers still permit larger values; they receive the translated refusal rather than a local clamp.
 
 Services and packages support **translations** -- the component reads the user's current locale to display translated names/descriptions.
 

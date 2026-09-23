@@ -116,7 +116,14 @@ applied), and the receipt reads the order, never the live company row. A sale th
 the subtotal without VAT, the VAT at its rate and the total, and the issuer block carries the company's
 VAT number. A sale that charged none prints the total, the statutory non-payer notice (*„Nejsme plátci
 DPH"* in Czech) and **no** VAT-number line, even when the company row holds a number: the two
-statements contradict each other. A VAT sale whose company row holds no number prints neither.
+statements contradict each other. Creating or updating a company with `IsVatPayer = true` requires
+a nonblank VAT number. A historical VAT sale whose company row still holds no number prints neither;
+the validation does not repair stored company identities.
+
+**Its cleaning time is local to the market.** The stored UTC `CleaningDateTime` is converted with the
+receipt's resolved market zone before formatting, including daylight-saving offsets and date rollover.
+Initial issuance and later renders use the same conversion: a Prague summer booking at 08:00 UTC
+prints 10:00, and 22:30 UTC prints 00:30 on the next day.
 
 **It is in the customer's language.** Every label comes from the document's language: headings, line
 captions, the payment status and the payment method. Status and method print as words, never as enum

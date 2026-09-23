@@ -20,9 +20,11 @@ flowchart LR
   class F,R free
 ```
 
-The oops window is **15 minutes** from booking, or **60** for a first-time customer, regardless of how
-close the cleaning is. A Plus membership can widen the free window. The fee ladder itself is priced in
-exactly one place.
+The oops window is **15 minutes** from booking, regardless of how close the cleaning is.
+`BookingPolicy` also declares a 60-minute first-customer window, but `CancellationAssessor` always
+passes `IsFirstTimeCustomer = false`, so that wider window is unreachable. Whether to enable it and
+how to count guest history, or remove it, remains an owner decision. A Plus membership can widen
+the free cancellation notice window. The fee ladder itself is priced in exactly one place.
 
 When the **cleaner** cancels or no-shows, the customer is refunded *and* credited the apology figure
 authored for the order's currency — `Currency.NoShowCredit`, 250 on a CZK order, paid into the
@@ -63,6 +65,13 @@ amount     = min(requested, refundable)      refuse if ≤ 0
 `Refunded` or `PartiallyRefunded` depending on whether the total is now covered.
 
 Re-driving an existing refund row clamps it to what remains rather than issuing a second one.
+
+**Partial line refunds load every component of the split.** `IssuePartialRefund` uses the order's
+persisted service, package and extra snapshots. The detail repository includes `SelectedExtras`, so
+their value remains in the denominator even when the selected refund line is a service. On an
+undiscounted order with a 1,000 service and a 200 extra, the split allocates 1,000 to that service,
+before any applicable processing fee, instead of the whole 1,200. The refund service still applies
+its remaining-money ceiling.
 
 ## Dispute
 

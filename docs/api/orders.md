@@ -149,6 +149,10 @@ omitted; an unknown code is refused by the `LanguageValidator`). It is **stored 
 preference. The web sends its UI language; the Android and iOS customer apps send the language the
 app is displaying. → [The order records its language](/flows/booking-and-pricing#booking-language)
 
+`rooms` / `bathrooms` — maximum **8 rooms** and **4 bathrooms**. Exceeding either returns
+`order.size_exceeds_maximum` on the corresponding field. The same upper bounds apply to `QuoteOrder`,
+`QuotePlusSavings`, `CreateRecurringBooking` and `UpdateRecurringBooking`.
+
 `currencyId` — optional. The order's currency is the **service address's country's** currency
 (owner ruling 2026-09-12); null lets the server derive it, and a value must equal it — send back the
 `currencyId` the quote returned for the same country — or create fails as `currency.invalid` before any
@@ -301,6 +305,9 @@ POST /api/Order/Quote
 `cleaningDate` is optional — omit it on the wizard's first step, before a slot is chosen, and the
 express-surcharge check is skipped.
 
+`rooms` / `bathrooms` must be nonnegative and no greater than 8 / 4 respectively. Oversized baskets
+are refused as `order.size_exceeds_maximum`, using the same upper bounds as order creation.
+
 `countryId` — optional; the service address's country once the wizard has one, and the customer's
 **chosen market** before that (the home page's quick quote and the wizard's first step send the
 market's, ADR-0058). The quote is priced in that country's currency (owner ruling 2026-09-12: the
@@ -392,6 +399,7 @@ validator refuses before the calculator can throw:
 | `countryId`, if named, is a serviced country | `country.not_serviced` |
 | The resolved currency (named `currencyId`, else the country's, else the platform default) is offerable | `currency.invalid` |
 | Booked estimate ≤ `MaxBookableOrderSpanHours` (24 h) | `order.span_exceeds_maximum` |
+| At most 8 rooms and 4 bathrooms | `order.size_exceeds_maximum` |
 
 The span cap is the one `QuoteOrder` and `CreateOrder` draw (ADR-0039 D3.4): a preview must not show
 savings on a basket the booking will refuse. An empty selection still previews, as it still quotes.

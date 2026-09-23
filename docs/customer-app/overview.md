@@ -186,7 +186,7 @@ NgRx with `customerReducers` / `customerEffects` from `@cleansia/customer-stores
   `document.cookie` in the browser), persisted only by the browser branch, never throws, retried on
   the next `NavigationEnd` while `loadFailed`. Selectors: `selectMarkets`, `selectMarket`,
   `selectMarketCountryId` (null when unresolved — every reader then sends no `countryId`),
-  `selectMarketCurrencyCode`, `selectMarketNoShowCredit`, `selectMarketInsuranceCoverageAmount`,
+  `selectMarketCurrencyCode`, `selectMarketNoShowCredit`,
   `selectMarketLoadFailed`, `selectHasMarketChoice` (two or more markets — what draws the selector).
 
 **The market cookie.** `preferred_market` holds the ISO alpha-3 code of the chosen market

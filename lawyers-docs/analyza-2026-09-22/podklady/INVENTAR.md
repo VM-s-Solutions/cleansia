@@ -1,8 +1,8 @@
 # Inventář podkladů
 
-Kontrola 22. 9. 2026 proti commitu `6792f0c256e81e1473908308bd73881004853be4` (`master`). Všech deset DOCX ve složce `lawyers-docs/SMLOUVY CleanSia/SMLOUVY` má stejný SHA-256 jako při rozboru 11. 9. 2026; textové extrakce a číslování odstavců Pxxx se přebírají beze změny z [../../analyza-2026-09-11/podklady/](../../analyza-2026-09-11/podklady/INVENTAR.md). Odkazy Pxxx v tomto rozboru vedou tam.
+Kontrola 23. 9. 2026 proti commitu `9e970917e1c7270a0baa0ea1ab07693990340914` (`fix/audit-findings-2026-09-22`). Všech deset DOCX ve složce `lawyers-docs/SMLOUVY CleanSia/SMLOUVY` má stejný SHA-256 jako při rozboru 11. 9. 2026; textové extrakce a číslování odstavců Pxxx se přebírají beze změny z [../../analyza-2026-09-11/podklady/](../../analyza-2026-09-11/podklady/INVENTAR.md). Odkazy Pxxx v tomto rozboru vedou tam.
 
-| Originál | Textová extrakce (11. 9. 2026) | Odstavce | SHA-256 22. 9. 2026 |
+| Originál | Textová extrakce (11. 9. 2026) | Odstavce | SHA-256 23. 9. 2026 |
 |---|---|---:|---|
 | [cleansia_bozp.docx](../../SMLOUVY%20CleanSia/SMLOUVY/cleansia_bozp.docx) | [cleansia_bozp.txt](../../analyza-2026-09-11/podklady/cleansia_bozp.txt) | 181 | `dfb0171c9f4259b8f73e31b0635a05144000b625298c8aa34ae42b976e21b851` |
 | [cleansia_cookie_policy.docx](../../SMLOUVY%20CleanSia/SMLOUVY/cleansia_cookie_policy.docx) | [cleansia_cookie_policy.txt](../../analyza-2026-09-11/podklady/cleansia_cookie_policy.txt) | 241 | `90fd65c0ecbe8e1af23281ecadf0415c7c50365ae237ccdfce71a6258d10a5f3` |

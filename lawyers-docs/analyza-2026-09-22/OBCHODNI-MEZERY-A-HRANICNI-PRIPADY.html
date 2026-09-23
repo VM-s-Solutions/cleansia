@@ -41,10 +41,10 @@ blockquote { border-left: 4px solid #12796b; margin: 20px 0; padding: 5px 20px; 
  a { text-decoration: none; color: #135d55; }
 }
 </style></head><body><main><nav><a href="PROVOZ-PLATFORMY.html">Jak platforma funguje</a><a href="ROZPORY-DOKUMENTY-VS-KOD.html">Dokumenty vs. aplikace</a><a href="TECHNICKE-MEZERY.html">Technické mezery</a><a href="OBCHODNI-MEZERY-A-HRANICNI-PRIPADY.html">Obchodní mezery a hraniční případy</a><a href="AUDIT-LOG.html">Záznam auditu</a><a href="PODKLADY-KOLEGU-VS-KOD.html">Podklady kolegu vs kod</a><a href="PROVOZ-PLATFORMY.pdf">Jak platforma funguje (PDF)</a><a href="ROZPORY-DOKUMENTY-VS-KOD.pdf">Dokumenty vs. aplikace (PDF)</a><a href="TECHNICKE-MEZERY.pdf">Technické mezery (PDF)</a><a href="OBCHODNI-MEZERY-A-HRANICNI-PRIPADY.pdf">Obchodní mezery a hraniční případy (PDF)</a><a href="AUDIT-LOG.pdf">Záznam auditu (PDF)</a><a href="PODKLADY-KOLEGU-VS-KOD.pdf">Podklady kolegu vs kod (PDF)</a><a href="podklady/INVENTAR.html">Inventář podkladů</a></nav><h1 id="obchodni-mezery-a-hranicni-pripady">Obchodní mezery a hraniční případy</h1>
-<p><strong>Co se dnes v aplikaci stane · commit 6792f0c256e81e1473908308bd73881004853be4 (master, 22. 9. 2026)</strong></p>
+<p><strong>Co se v aplikaci stane · commit 9e970917e1c7270a0baa0ea1ab07693990340914 (fix/audit-findings-2026-09-22, 23. 9. 2026)</strong></p>
 <p>Slovník: úklidník = „Zhotovitel" (VOP, RS, RŘ, Kodex) = <code>Employee</code> (kód) = „uklízeč" (UI); zákazník = „Zákazník / Spotřebitel / Uživatel" = <code>User</code>; host = zákazník bez účtu (<code>Order.UserId = null</code>); provozní společnost = „Provozovatel / Cleansia s.r.o." = <code>Tenant</code>; administrátor = <code>Administrator</code>, <code>Manager</code>, <code>Support</code>, <code>Accountant</code>. Odkaz <code>Pxxx</code> = odstavec textové extrakce návrhu; <code>→ Rn</code> = rozhodnutí z registru.</p>
 <h2 id="shrnuti">Shrnutí</h2>
-<p>Scénáře níže stojí na těchto rozhodnutích: <strong>R1</strong>, <strong>R2</strong>, <strong>R3</strong>, <strong>R4</strong>, <strong>R5</strong>, <strong>R6</strong>, <strong>R7</strong>, <strong>R8</strong>, <strong>R9</strong>, <strong>R10</strong>, <strong>R11</strong>, <strong>R12</strong>, <strong>R13</strong>, <strong>R14</strong>, <strong>R15</strong>, <strong>R16</strong>, <strong>R17</strong>, <strong>R18</strong>, <strong>R19</strong>, <strong>R20</strong>. Každé číslo, o které se scénář opírá, nese řádek, v němž je použito, spolu s řádkem kódu, který je zapisuje.</p>
+<p>Scénáře odkazují na R1–R21 a R26. R2 určuje holdingový model, R11 smlouvu o dílo a R16 neplátcovství úklidníka; související rozpory návrhů vyžadují úpravu textů. Retence fotografií a živých auditů má stanovené výchozí lhůty, ostatní otázky R7–R9 tím nejsou uzavřeny.</p>
 <h2 id="1-zakaznik">1. Zákazník</h2>
 <table>
 <thead>
@@ -59,37 +59,51 @@ blockquote { border-left: 4px solid #12796b; margin: 20px 0; padding: 5px 20px; 
 <tbody>
 <tr>
 <td>host bez účtu objednává</td>
-<td><code>CreateOrder</code> hosta přijme (<code>IsGuest</code>); host nemá kredit, body, stažení dokladu ani reklamaci (<code>[Permission]</code> → 401) <a href="../../src/Cleansia.Core.AppServices/Features/Orders/CreateOrder.cs#L175-L180">CreateOrder.cs:175-180</a>; <a href="../../src/Cleansia.Web.Customer/Controllers/DisputeController.cs#L17-L18">DisputeController.cs:17-18</a></td>
+<td>Host objedná přes <code>IsGuest</code>, ale <code>CanCreateDispute</code> i stažení dokladu vyžadují přihlášení. <a href="../../src/Cleansia.Core.AppServices/Features/Orders/CreateOrder.cs#L451">CreateOrder.cs:451</a>; <a href="../../src/Cleansia.Web.Customer/Controllers/DisputeController.cs#L18">DisputeController.cs:18</a></td>
 <td><a href="../analyza-2026-09-11/podklady/Cleansia_VOP.txt">VOP P028</a> „jméno a příjmení, e-mailovou adresu, telefonní číslo a fakturační adresu"; <a href="../analyza-2026-09-11/podklady/cleansia_reklamacni_rad.txt">RŘ P020</a> „objednal a zaplatil"</td>
-<td>host zaplatil a v aplikaci reklamovat nemůže; VOP registraci předpokládají</td>
+<td>host nemá stejné samoobslužné možnosti jako účet; doklad může obdržet e-mailem</td>
 <td>→ R5</td>
 </tr>
 <tr>
 <td>host a smlouva o dílo</td>
-<td><code>GetWorkContract</code> je za <code>Policy.CanViewOrderDetail</code>; host nemá čím se prokázat a znění neotevře <a href="../../src/Cleansia.Web.Customer/Controllers/OrderController.cs#L293-L294">OrderController.cs:293-294</a></td>
+<td><code>GetWorkContract</code> je za <code>Policy.CanViewOrderDetail</code>; tato operace nepřijímá hostův přístupový token <a href="../../src/Cleansia.Web.Customer/Controllers/OrderController.cs#L290-L291">OrderController.cs:290-291</a></td>
 <td>mlčí</td>
 <td>host uzavírá dílo, jehož text v aplikaci nepřečte</td>
 <td>→ R11</td>
 </tr>
 <tr>
 <td>klíč hostovské objednávky</td>
-<td><code>ConfirmationCode</code> (6 hex znaků, na objednávce otevřeně) vidí přidělený úklidník; s číslem a e-mailem stačí ke stornu <a href="../../src/Cleansia.Core.AppServices/Features/Orders/OrderPiiRedaction.cs#L48">OrderPiiRedaction.cs:48</a>; <a href="../../src/Cleansia.Core.AppServices/Features/Orders/GuestOrderAccess.cs#L12-L24">GuestOrderAccess.cs:12-24</a></td>
+<td>Přístup vyžaduje živý neodvolaný token, uložený jen hashem; vydání vytváří nezávislé klíče. <a href="../../src/Cleansia.Core.AppServices/Features/Orders/GuestOrderAccess.cs#L39">GuestOrderAccess.cs:39</a>; <a href="../../src/Cleansia.Core.AppServices/Features/Orders/GuestOrderAccessTokenIssuer.cs#L36">GuestOrderAccessTokenIssuer.cs:36</a></td>
 <td>mlčí</td>
-<td>přidělený úklidník může hostovskou objednávku stornovat</td>
+<td>držitel přeposlaného odkazu může číst i stornovat; nejde o jednorázový klíč</td>
 <td>→ R5</td>
 </tr>
 <tr>
+<td>odvolání klíčů hosta</td>
+<td><code>RevokeAsync</code> při hostově stornu a výmazu ukončených objednávek odvolá klíče; sweep odstraňuje tokeny s <code>RevokedOn</code> nebo po expiraci. <a href="../../src/Cleansia.Core.AppServices/Features/Orders/CancelGuestOrder.cs#L61">CancelGuestOrder.cs:61</a>; <a href="../../src/Cleansia.Core.AppServices/Features/DataRetention/DataRetentionBackgroundService.cs#L471">DataRetentionBackgroundService.cs:471</a></td>
+<td>mlčí</td>
+<td>jiné cesty storna revokaci nesdílejí; potvrzení hostova storna vydává nový čtecí odkaz</td>
+<td>→ R5</td>
+</tr>
+<tr>
+<td>výmaz detailů domácnosti</td>
+<td><code>AnonymizeCustomerData</code> ponechává podlaží a byt; fotky při výmazu zachovává s anonymizovaným původním názvem a vymazanou poznámkou. <a href="../../src/Cleansia.Core.Domain/Orders/Order.cs#L980">Order.cs:980</a>; <a href="../../src/Cleansia.Core.AppServices/Services/GdprDeletionService.cs#L384">GdprDeletionService.cs:384</a></td>
+<td>mlčí</td>
+<td>neúplné odstranění osobních údajů; pokus o smazání blobu má chybnou extrakci cesty</td>
+<td>→ R9</td>
+</tr>
+<tr>
 <td>host se později registruje týmž e-mailem</td>
-<td>hostovská objednávka se k účtu nepřipojí (<code>UserId</code> zapisuje jen založení a anonymizace); export i výmaz ji pod e-mailem zahrnou (<code>SubjectOrders</code>) <a href="../../src/Cleansia.Core.Domain/Orders/Order.cs#L526">Order.cs:526</a>; <a href="../../src/Cleansia.Core.AppServices/Features/Gdpr/DTOs/GdprExportDto.cs#L77-L83">GdprExportDto.cs:77-83</a></td>
+<td>hostovská objednávka se k účtu nepřipojí (<code>UserId</code> zapisuje jen založení a anonymizace); export i výmaz ji pod e-mailem zahrnou (<code>SubjectOrders</code>) <a href="../../src/Cleansia.Core.Domain/Orders/Order.cs#L546">Order.cs:546</a>; <a href="../../src/Cleansia.Core.AppServices/Features/Gdpr/DTOs/GdprExportDto.cs#L77-L83">GdprExportDto.cs:77-83</a></td>
 <td>mlčí</td>
 <td>cizí překlep e-mailu = cizí objednávka v exportu i výmazu</td>
 <td>→ R5</td>
 </tr>
 <tr>
 <td>zákazník s CZ účtem objednává na SK adresu</td>
-<td>operátora (<code>OperatorTenantId</code>) nese v seedu jen CZE (<code>cleansia-cz</code>); SVK, POL, DEU, AUT a GBR mají <code>NULL</code> <a href="../../sql-scripts/insert_seed_data.sql#L1014">insert_seed_data.sql:1014</a>; <a href="../../sql-scripts/insert_seed_data.sql#L1017-L1024">insert_seed_data.sql:1017-1024</a></td>
+<td>Registrovaný zákazník může objednat v jiném obsluhovaném trhu; adresa určuje operátora. V DEV seedu má operátora jen CZE. <a href="../../src/Cleansia.Core.AppServices/Features/Orders/CreateOrder.cs#L180">CreateOrder.cs:180</a>; <a href="../../sql-scripts/insert_seed_data.sql#L1017">insert_seed_data.sql:1017</a></td>
 <td><a href="../analyza-2026-09-11/podklady/Cleansia_VOP.txt">VOP P048</a> „Všechny ceny jsou uvedeny v Kč"</td>
-<td>objednávka je odmítnuta: <code>TenantNotFound</code> zákazníkovi, <code>OrderCountryOperatorMismatch</code> hostu <a href="../../src/Cleansia.Core.AppServices/Features/Orders/CreateOrder.cs#L175-L190">CreateOrder.cs:175-190</a> — mechanika čeká na druhý trh</td>
+<td>SK adresa v DEV nemá operátora; pravidla objednávky mimo trh účtu vyžadují rozhodnutí</td>
 <td>→ R19</td>
 </tr>
 <tr>
@@ -101,51 +115,51 @@ blockquote { border-left: 4px solid #12796b; margin: 20px 0; padding: 5px 20px; 
 </tr>
 <tr>
 <td>storno před převzetím úklidníkem</td>
-<td>bez <code>AssignedEmployees</code> vždy zdarma (<code>FreeNotAccepted</code>), v jakémkoli předstihu <a href="../../src/Cleansia.Core.AppServices/Features/Orders/BookingPolicy.cs#L333-L336">BookingPolicy.cs:333-336</a></td>
+<td>bez <code>AssignedEmployees</code> vždy zdarma (<code>FreeNotAccepted</code>), v jakémkoli předstihu <a href="../../src/Cleansia.Core.AppServices/Features/Orders/BookingPolicy.cs#L334-L337">BookingPolicy.cs:334-337</a></td>
 <td><a href="../analyza-2026-09-11/podklady/Cleansia_VOP.txt">VOP P072</a> „Méně než 2 hodiny předem" <a href="../analyza-2026-09-11/podklady/Cleansia_VOP.txt">VOP P073</a> „100 % ceny zakázky"</td>
 <td>VOP počítají jen čas; kód bez úklidníka neúčtuje nic</td>
 <td>→ R4</td>
 </tr>
 <tr>
 <td>storno 10 h před termínem, úklidník přidělen</td>
-<td>pásmo 4–24 h = 25 % (<code>PartialCancellationFeeRate</code>), vratka <code>TotalPrice × 0,75</code> <a href="../../src/Cleansia.Core.AppServices/Features/Orders/BookingPolicy.cs#L67">BookingPolicy.cs:67</a>; <a href="../../src/Cleansia.Core.AppServices/Features/Orders/CancellationAssessor.cs#L69-L77">CancellationAssessor.cs:69-77</a></td>
+<td>pásmo 4–24 h = 25 % (<code>PartialCancellationFeeRate</code>), vratka <code>TotalPrice × 0,75</code> <a href="../../src/Cleansia.Core.AppServices/Features/Orders/BookingPolicy.cs#L68">BookingPolicy.cs:68</a>; <a href="../../src/Cleansia.Core.AppServices/Features/Orders/CancellationAssessor.cs#L69-L77">CancellationAssessor.cs:69-77</a></td>
 <td><a href="../analyza-2026-09-11/podklady/Cleansia_VOP.txt">VOP P068</a> „2–24 hodin předem" <a href="../analyza-2026-09-11/podklady/Cleansia_VOP.txt">VOP P069</a> „50 % ceny zakázky"</td>
 <td>25 % vs 50 %</td>
 <td>→ R4</td>
 </tr>
 <tr>
 <td>storno 3 h před termínem, hotovost vs. karta</td>
-<td>50 % (<code>LastMinuteCancellationFeeRate</code>); karta: vratka 50 %; hotovost: <code>FeeRate</code> zapsán, refund jen <code>PaymentType.Card</code> <a href="../../src/Cleansia.Core.AppServices/Features/Orders/BookingPolicy.cs#L70">BookingPolicy.cs:70</a>; <a href="../../src/Cleansia.Core.AppServices/Features/Orders/CustomerOrderCancellation.cs#L90-L95">CustomerOrderCancellation.cs:90-95</a></td>
+<td>50 % (<code>LastMinuteCancellationFeeRate</code>); karta: vratka 50 %; hotovost: <code>FeeRate</code> zapsán, refund jen <code>PaymentType.Card</code> <a href="../../src/Cleansia.Core.AppServices/Features/Orders/BookingPolicy.cs#L71">BookingPolicy.cs:71</a>; <a href="../../src/Cleansia.Core.AppServices/Features/Orders/CustomerOrderCancellation.cs#L90-L95">CustomerOrderCancellation.cs:90-95</a></td>
 <td><a href="../analyza-2026-09-11/podklady/Cleansia_VOP.txt">VOP P069</a> „50 % ceny zakázky"</td>
 <td>u hotovosti poplatek jen v záznamu (grep -rn "CancellationFeeRate" src/ → čtenář jen archiv)</td>
 <td>→ R4</td>
 </tr>
 <tr>
 <td>storno 1 h před termínem</td>
-<td><code>CancellationFeeRateFor</code> vrací nejvýše <code>LastMinuteCancellationFeeRate</code> 50 %; sazba 100 % neexistuje <a href="../../src/Cleansia.Core.AppServices/Features/Orders/BookingPolicy.cs#L355-L360">BookingPolicy.cs:355-360</a></td>
+<td><code>CancellationFeeRateFor</code> vrací nejvýše <code>LastMinuteCancellationFeeRate</code> 50 %; sazba 100 % neexistuje <a href="../../src/Cleansia.Core.AppServices/Features/Orders/BookingPolicy.cs#L356-L361">BookingPolicy.cs:356-361</a></td>
 <td><a href="../analyza-2026-09-11/podklady/Cleansia_VOP.txt">VOP P073</a> „100 % ceny zakázky" <a href="../analyza-2026-09-11/podklady/Cleansia_VOP.txt">VOP P074</a> „Nic"</td>
 <td>50 % vs 100 %</td>
 <td>→ R4</td>
 </tr>
 <tr>
 <td>storno ve stavu <code>OnTheWay</code></td>
-<td><code>BlockedReason</code> blokuje jen <code>Cancelled</code>, <code>Completed</code>, <code>InProgress</code>; úklidník na cestě = storno se sazbou 50 % <a href="../../src/Cleansia.Core.AppServices/Features/Orders/CancellationAssessor.cs#L39-L45">CancellationAssessor.cs:39-45</a></td>
+<td><code>BlockedReason</code> blokuje pouze Cancelled, Completed a InProgress; OnTheWay prochází běžnou sazbou i výjimkami. <a href="../../src/Cleansia.Core.AppServices/Features/Orders/CancellationAssessor.cs#L39">CancellationAssessor.cs:39</a></td>
 <td>mlčí</td>
-<td>dokumenty storno na cestě neznají</td>
+<td>dokumenty storno na cestě neznají; nejde vždy o 50 %</td>
 <td>→ R4</td>
 </tr>
 <tr>
 <td>první objednávka: 60 min zdarma</td>
-<td><code>OopsWindowMinutesFirstTime</code> 60 min deklarováno, <code>IsFirstTimeCustomer</code> je konstanta <code>false</code>; platí 15 min <a href="../../src/Cleansia.Core.AppServices/Features/Orders/BookingPolicy.cs#L82">BookingPolicy.cs:82</a>; <a href="../../src/Cleansia.Core.AppServices/Features/Orders/CancellationAssessor.cs#L32">CancellationAssessor.cs:32</a></td>
+<td><code>OopsWindowMinutesFirstTime</code> 60 min deklarováno, <code>IsFirstTimeCustomer</code> je konstanta <code>false</code>; platí 15 min <a href="../../src/Cleansia.Core.AppServices/Features/Orders/BookingPolicy.cs#L83">BookingPolicy.cs:83</a>; <a href="../../src/Cleansia.Core.AppServices/Features/Orders/CancellationAssessor.cs#L32">CancellationAssessor.cs:32</a></td>
 <td>mlčí</td>
 <td>60 min nikdo nedostane</td>
 <td>→ R4</td>
 </tr>
 <tr>
 <td>zakázka, kterou nikdo nevzal</td>
-<td>30 min (<code>GraceMinutes</code>) po začátku sweep stornuje, plná vratka, kredit <code>NoShowCredit</code> 250 Kč registrovanému; host nic <a href="../../src/Cleansia.Core.AppServices/Features/Orders/CancelUnfilledOrders.cs#L63">CancelUnfilledOrders.cs:63</a>; <a href="../../src/Cleansia.Core.AppServices/Features/Orders/CancelUnfilledOrders.cs#L274-L279">CancelUnfilledOrders.cs:274-279</a></td>
+<td>Sweep po 30 minutách vybírá nezačaté objednávky bez posádky; registrovanému může připsat měnový <code>NoShowCredit</code>, v DEV CZK 250 Kč. <a href="../../src/Cleansia.Core.AppServices/Features/Orders/CancelUnfilledOrders.cs#L63">CancelUnfilledOrders.cs:63</a>; <a href="../../sql-scripts/insert_seed_data.sql#L490">insert_seed_data.sql:490</a></td>
 <td><a href="../analyza-2026-09-11/podklady/Cleansia_VOP.txt">VOP P081</a> „možnost přesunout objednávku na jiný termín"</td>
-<td>přesun termínu neexistuje (grep -rn "Reschedule" src/Cleansia.Web.Customer/Controllers → 0); 5 dnů nikdo nehlídá</td>
+<td>bez přesunu termínu; kredit vyžaduje účet a částku nastavenou pro měnu</td>
 <td>→ R15</td>
 </tr>
 <tr>
@@ -164,9 +178,9 @@ blockquote { border-left: 4px solid #12796b; margin: 20px 0; padding: 5px 20px; 
 </tr>
 <tr>
 <td>administrátor objednávku zrušil</td>
-<td><code>AdminCancelOrder</code> předává <code>PlatformOrderCancellation</code>: <code>feeRate</code> 0, vratka <code>TotalPrice</code>; <code>SystemCancellationReason</code> je null, ruší-li člověk <a href="../../src/Cleansia.Core.AppServices/Services/PlatformOrderCancellation.cs#L28-L35">PlatformOrderCancellation.cs:28-35</a>; <a href="../../src/Cleansia.Core.AppServices/Mappers/OrderMappers.cs#L283-L288">OrderMappers.cs:283-288</a></td>
+<td>Storno používá <code>feeRate: 0</code> a plnou vratku; úspěšnou vratku registrovanému oznamuje <code>OrderRefunded</code>. <a href="../../src/Cleansia.Core.AppServices/Services/PlatformOrderCancellation.cs#L33">PlatformOrderCancellation.cs:33</a>; <a href="../../src/Cleansia.Core.AppServices/Services/PlatformOrderCancellation.cs#L97">PlatformOrderCancellation.cs:97</a></td>
 <td><a href="../analyza-2026-09-11/podklady/Cleansia_VOP.txt">VOP P081</a> „plnou náhradu zaplacené částky do 5 pracovních dnů"</td>
-<td>důvod ani omluvný kredit zákazník nedostane</td>
+<td>zákazník nedostane důvod storna ani automatický omluvný kredit</td>
 <td>→ R15</td>
 </tr>
 <tr>
@@ -185,7 +199,7 @@ blockquote { border-left: 4px solid #12796b; margin: 20px 0; padding: 5px 20px; 
 </tr>
 <tr>
 <td>objednávka nad 120 minut</td>
-<td>posádka <code>RequiredEmployees = ⌈minuty/120⌉</code>, rezervní sedadlo žádné (<code>SpareSeatsPerOrder</code> 0) <a href="../../src/Cleansia.Core.Domain/Orders/Order.cs#L847-L850">Order.cs:847-850</a>; <a href="../../src/Cleansia.Core.AppServices/Features/Orders/BookingPolicy.cs#L135">BookingPolicy.cs:135</a></td>
+<td>posádka <code>RequiredEmployees = ⌈minuty/120⌉</code>, rezervní sedadlo žádné (<code>SpareSeatsPerOrder</code> 0) <a href="../../src/Cleansia.Core.Domain/Orders/Order.cs#L872-L875">Order.cs:872-875</a>; <a href="../../src/Cleansia.Core.AppServices/Features/Orders/BookingPolicy.cs#L136">BookingPolicy.cs:136</a></td>
 <td><a href="../analyza-2026-09-11/podklady/cleansia_ramcova_smlouva.txt">RS P059</a> „plnit zakázku osobně"; seedovaná smlouva „provádí dílo osobně" <a href="../../src/Cleansia.Infra.Database/Seed/Legal/customer/work-contract/any/2026-09-20/cs.md#L23">cs.md:23</a></td>
 <td>každé sedadlo nese celou <code>TotalPrice</code>; zákazník posádku nevolí <a href="../../src/Cleansia.Core.AppServices/Services/WorkContractFactsBuilder.cs#L46">WorkContractFactsBuilder.cs:46</a></td>
 <td>→ R13</td>
@@ -206,16 +220,16 @@ blockquote { border-left: 4px solid #12796b; margin: 20px 0; padding: 5px 20px; 
 </tr>
 <tr>
 <td>mazání a retence fotografií</td>
-<td>přidělený úklidník smaže kteroukoli fotku i po dokončení (<code>photoRepository.Remove</code>), bez auditu; retenční úloha <code>CleanOrderCustomerPiiAsync</code> fotky nemaže (grep -n "Photo" DataRetentionBackgroundService.cs → 0) <a href="../../src/Cleansia.Core.AppServices/Features/Orders/DeleteOrderPhoto.cs#L56-L71">DeleteOrderPhoto.cs:56-71</a>; <a href="../../src/Cleansia.Core.AppServices/Features/DataRetention/DataRetentionBackgroundService.cs#L162-L196">DataRetentionBackgroundService.cs:162-196</a></td>
+<td><code>DefaultOrderPhotosDays</code> určuje 7 dní po dokončení; spor mimo <code>Resolved</code> a <code>Closed</code> drží fotografie. <a href="../../src/Cleansia.Core.AppServices/Features/DataRetention/RetentionDefaults.cs#L29">RetentionDefaults.cs:29</a>; <a href="../../src/Cleansia.Infra.Database/Repositories/OrderPhotoRepository.cs#L43">OrderPhotoRepository.cs:43</a></td>
 <td><a href="../analyza-2026-09-11/podklady/cleansia_dpa.txt">DPA P098</a> „Max. 30 dní od ukončení zakázky"</td>
-<td>fotky u platformy bez limitu, úklidníkem mazatelné kdykoli</td>
+<td>ruční <code>Remove</code> nemá audit ani časovou bránu; výmaz účtu má chybný <code>ExtractBlobNameFromUrl</code>. <a href="../../src/Cleansia.Core.AppServices/Features/Orders/DeleteOrderPhoto.cs#L71">DeleteOrderPhoto.cs:71</a>; <a href="../../src/Cleansia.Core.AppServices/Services/GdprDeletionService.cs#L560">GdprDeletionService.cs:560</a></td>
 <td>→ R7</td>
 </tr>
 <tr>
 <td>adresa a instrukce po dokončení</td>
-<td>přidělený úklidník (<code>AssignedEmployees</code>) čte jméno, adresu i <code>AccessInstructions</code>, dokud drží sedadlo; časový člen není <a href="../../src/Cleansia.Core.AppServices/Authentication/OrderAccessService.cs#L88-L94">OrderAccessService.cs:88-94</a>; <a href="../../src/Cleansia.Core.AppServices/Features/Orders/GetOrderDetails.cs#L155-L160">GetOrderDetails.cs:155-160</a></td>
+<td>Přidělení opravňuje číst údaje i po dokončení; první čtení neprázdných instrukcí se audituje. <a href="../../src/Cleansia.Core.AppServices/Authentication/OrderAccessService.cs#L94">OrderAccessService.cs:94</a>; <a href="../../src/Cleansia.Core.AppServices/Features/Orders/GetOrderDetails.cs#L163">GetOrderDetails.cs:163</a></td>
 <td><a href="../analyza-2026-09-11/podklady/cleansia_dpa.txt">DPA P090</a> „Po dobu zakázky + 24 h"; <a href="../analyza-2026-09-11/podklady/cleansia_dpa.txt">DPA P094</a> „po skončení neprodleně vymazat"</td>
-<td>přístup bez konce; partnerský token <code>AccessTokenExpMinutes</code> 1440 min <a href="../../src/Cleansia.Web.Partner/appsettings.json#L20">appsettings.json:20</a></td>
+<td>samotné oprávnění nemá lhůtu po dokončení; audit jej neomezuje</td>
 <td>→ R8</td>
 </tr>
 <tr>
@@ -227,23 +241,23 @@ blockquote { border-left: 4px solid #12796b; margin: 20px 0; padding: 5px 20px; 
 </tr>
 <tr>
 <td>reklamace zamítnuta</td>
-<td><code>ResolveDispute</code> pošle jen <code>order.refunded</code> při refundu &gt; 0; jediná zákaznická událost sporu je <code>dispute.reply</code> <a href="../../src/Cleansia.Core.AppServices/Features/Disputes/ResolveDispute.cs#L89-L126">ResolveDispute.cs:89-126</a></td>
+<td><code>ResolveDispute</code> pošle jen <code>order.refunded</code> při refundu &gt; 0; jediná zákaznická událost sporu je <code>dispute.reply</code> <a href="../../src/Cleansia.Core.AppServices/Features/Disputes/ResolveDispute.cs#L83-L139">ResolveDispute.cs:83-139</a></td>
 <td><a href="../analyza-2026-09-11/podklady/cleansia_reklamacni_rad.txt">RŘ P112</a> „povinna Zákazníkovi sdělit důvody zamítnutí"</td>
 <td>důvod zamítnutí zákazníkovi nejde</td>
 <td>→ R18</td>
 </tr>
 <tr>
 <td>reklamace uznána, peníze neodejdou</td>
-<td><code>dispute.Resolve</code> zapíše <code>refundAmount</code> a koncový stav ještě před refundem; neúspěch <code>IssueRefundAsync</code> stav nevrací zpět <a href="../../src/Cleansia.Core.AppServices/Features/Disputes/ResolveDispute.cs#L77-L100">ResolveDispute.cs:77-100</a></td>
+<td><code>IssueRefundAsync</code> předchází <code>Resolve</code>; <code>IsFailure</code> vrátí chybu a ponechá spor otevřený. Úspěšné rozhodnutí ukládá požadovanou částku. <a href="../../src/Cleansia.Core.AppServices/Features/Disputes/ResolveDispute.cs#L94">ResolveDispute.cs:94</a>; <a href="../../src/Cleansia.Core.AppServices/Features/Disputes/ResolveDispute.cs#L102">ResolveDispute.cs:102</a></td>
 <td><a href="../analyza-2026-09-11/podklady/cleansia_reklamacni_rad.txt">RŘ P108</a> „do 14 dnů od uznání reklamace na původní platební prostředek"</td>
-<td>uznaná reklamace může skončit bez vrácení peněz a nic to nesignalizuje</td>
+<td>požadovaná částka ve sporu nemusí odpovídat skutečné vratce po omezení platebním zůstatkem</td>
 <td>→ R10</td>
 </tr>
 <tr>
 <td>částečná refundace</td>
-<td><code>IssuePartialRefund</code> po řádcích, okno <code>RefundWindowDays</code> 14 dní od <code>CompletedAt</code> (mimo okno <code>OverrideReason</code>); <code>Handler</code> zákazníka neinformuje <a href="../../src/Cleansia.Core.AppServices/Features/Refunds/RefundPolicy.cs#L17">RefundPolicy.cs:17</a>; <a href="../../src/Cleansia.Core.AppServices/Features/Refunds/IssuePartialRefund.cs#L80-L89">IssuePartialRefund.cs:80-89</a></td>
+<td><code>IssuePartialRefund</code> načítá i <code>SelectedExtras</code>; výpočet podílu předchází případnému poplatku. Okno je 14 dní, s odůvodněnou výjimkou. <a href="../../src/Cleansia.Infra.Database/Repositories/OrderRepository.cs#L204">OrderRepository.cs:204</a>; <a href="../../src/Cleansia.Core.AppServices/Features/Refunds/RefundPolicy.cs#L17">RefundPolicy.cs:17</a></td>
 <td><a href="../analyza-2026-09-11/podklady/cleansia_reklamacni_rad.txt">RŘ P108</a> „do 14 dnů … na původní platební prostředek"</td>
-<td>peníze přijdou bez zprávy; body se odeberou</td>
+<td>zákazník nedostane oznámení; body se odeberou podle potvrzené vratky</td>
 <td>→ R18</td>
 </tr>
 <tr>
@@ -254,11 +268,11 @@ blockquote { border-left: 4px solid #12796b; margin: 20px 0; padding: 5px 20px; 
 <td>→ R18</td>
 </tr>
 <tr>
-<td>chargeback na hostovskou objednávku</td>
-<td><code>Dispute.UserId</code> je povinný FK, <code>order.UserId ?? ""</code> → 23503, webhook 500, Stripe opakuje <a href="../../src/Cleansia.Core.AppServices/Features/Payments/HandlePaymentNotification.cs#L484-L489">HandlePaymentNotification.cs:484-489</a>; <a href="../../src/Cleansia.Infra.Database/EntityConfigurations/DisputeEntityConfiguration.cs#L19-L21">DisputeEntityConfiguration.cs:19-21</a></td>
+<td>chargeback přes webový Checkout</td>
+<td><code>Dispute.UserId</code> připouští hosta; webhook hledá objednávku jen podle PaymentIntent, zatímco web používá <code>AssignStripeSessionId</code>. <a href="../../src/Cleansia.Core.AppServices/Features/Payments/HandlePaymentNotification.cs#L463">HandlePaymentNotification.cs:463</a>; <a href="../../src/Cleansia.Core.AppServices/Features/Orders/OrderPaymentDispatcher.cs#L66">OrderPaymentDispatcher.cs:66</a></td>
 <td>mlčí</td>
-<td>spor hosta nevznikne; totéž u dvojí úhrady (<code>userId: order.UserId ?? string.Empty</code>) <a href="../../src/Cleansia.Core.AppServices/Features/Payments/HandlePaymentNotification.cs#L420-L425">HandlePaymentNotification.cs:420-425</a></td>
-<td>→ R5</td>
+<td>webový chargeback může skončit bez lokálního sporu</td>
+<td>→ R18</td>
 </tr>
 <tr>
 <td>zaplaceno hotově i kartou</td>
@@ -269,23 +283,16 @@ blockquote { border-left: 4px solid #12796b; margin: 20px 0; padding: 5px 20px; 
 </tr>
 <tr>
 <td>hotovostní objednávka a doklad</td>
-<td><code>QueueNames.GenerateReceipt</code> se zařadí už při objednání s <code>PaymentStatus</code> <code>Pending</code>; po inkasu se doklad negeneruje znovu (grep -rn "QueueNames.GenerateReceipt" src/ → žádný producent v <code>MarkCashCollected</code>) <a href="../../src/Cleansia.Core.AppServices/Features/Orders/OrderPaymentDispatcher.cs#L82-L92">OrderPaymentDispatcher.cs:82-92</a>; <a href="../../src/Cleansia.Core.AppServices/Services/ReceiptService.cs#L410">ReceiptService.cs:410</a></td>
+<td>Doklad při vytvoření rozlišuje nezaplacený stav; inkaso zařadí <code>GenerateReceipt</code>; doklad používá <code>ActualPaymentType</code>. <a href="../../src/Cleansia.Core.AppServices/Features/Orders/MarkCashCollected.cs#L175">MarkCashCollected.cs:175</a>; <a href="../../src/Cleansia.Core.AppServices/Services/ReceiptService.cs#L543">ReceiptService.cs:543</a></td>
 <td><a href="../analyza-2026-09-11/podklady/Cleansia_VOP.txt">VOP P054</a> „do 15 dnů … pokud Zákazník o fakturu požádá"</td>
-<td>doklad nese „Payment Status: Pending"; částka hotovosti se neukládá</td>
+<td>skutečně vybraná částka se neukládá; hotovost není započtena do výplaty</td>
 <td>→ R6</td>
 </tr>
 <tr>
-<td>řádky dokladu se nesčítají</td>
-<td>doklad nese <code>Services</code> a <code>Packages</code> s <code>LineTotal</code>, <code>Extras</code> jen názvem bez ceny, <code>Total</code> = <code>TotalPrice</code>; sleva ani express nemají řádek <a href="../../src/Cleansia.Core.AppServices/Services/ReceiptService.cs#L395-L404">ReceiptService.cs:395-404</a></td>
-<td>mlčí</td>
-<td>součet řádků dokladu se nerovná částce, kterou doklad uvádí</td>
-<td>→ R1</td>
-</tr>
-<tr>
 <td>doklad v jazyce zákazníka</td>
-<td>jediný layout <code>DefaultReceiptLayoutBuilder</code> anglicky (<code>DocumentTitle("Receipt")</code>), <code>LanguageId</code> bez čtenáře; věta <code>NonVatPayerNotice</code> „Nejsme plátci DPH" česky na každém trhu <a href="../../src/Cleansia.Infra.Services/Pdf/Layouts/DefaultReceiptLayoutBuilder.cs#L47">DefaultReceiptLayoutBuilder.cs:47</a>; <a href="../../src/Cleansia.Core.AppServices/Services/ReceiptService.cs#L422">ReceiptService.cs:422</a></td>
+<td>PDF používá jazyk zákazníka a místní čas trhu včetně letního času; zobrazuje ceny doplňků, slevy i expres. <a href="../../src/Cleansia.Core.AppServices/Services/ReceiptService.cs#L502">ReceiptService.cs:502</a>; <a href="../../src/Cleansia.Core.AppServices/Services/ReceiptService.cs#L544">ReceiptService.cs:544</a></td>
 <td><a href="../analyza-2026-09-11/podklady/Cleansia_VOP.txt">VOP P048</a> „včetně DPH (je-li relevantní)"</td>
-<td>slovensky mluvící zákazník dostane anglický doklad s českou větou</td>
+<td>fiskální položky mají samostatný neúplný výpočet; shoda PDF neprokazuje fiskální shodu</td>
 <td>→ R1</td>
 </tr>
 <tr>
@@ -297,28 +304,28 @@ blockquote { border-left: 4px solid #12796b; margin: 20px 0; padding: 5px 20px; 
 </tr>
 <tr>
 <td>změna telefonu v profilu</td>
-<td><code>GetOrdersByPhoneNumberAsync</code> vybírá podle <code>CustomerPhone</code> bez podmínky na <code>UserId</code>; přepis dopadne na každou takovou objednávku <a href="../../src/Cleansia.Core.AppServices/Features/Users/UpdateCurrentUser.cs#L151-L176">UpdateCurrentUser.cs:151-176</a>; <a href="../../src/Cleansia.Infra.Database/Repositories/OrderRepository.cs#L13-L17">OrderRepository.cs:13-17</a></td>
+<td><code>GetOwnOrdersByPhoneNumberAsync</code> omezuje změnu na vlastní objednávky. <a href="../../src/Cleansia.Infra.Database/Repositories/OrderRepository.cs#L13">OrderRepository.cs:13</a></td>
 <td><a href="../analyza-2026-09-11/podklady/cleansia_privacy_policy.txt">PP P123</a> „Opravu provedeme bez zbytečného odkladu"</td>
-<td>nové číslo dostane i objednávka hosta a jiného registrovaného zákazníka s týmž číslem</td>
-<td>→ R5</td>
+<td>zápis do zmrazené společnosti může odmítnout i změnu telefonu</td>
+<td>→ R9</td>
 </tr>
 <tr>
 <td>výmaz účtu s kreditem nebo živou objednávkou</td>
-<td>blokováno: <code>GdprDeletionBlockedByCreditBalance</code>; živá objednávka <code>New</code> … <code>InProgress</code> <a href="../../src/Cleansia.Core.AppServices/Services/GdprDeletionService.cs#L157-L160">GdprDeletionService.cs:157-160</a>; <a href="../../src/Cleansia.Core.AppServices/Services/GdprDeletionService.cs#L220-L231">GdprDeletionService.cs:220-231</a></td>
+<td>blokováno: <code>GdprDeletionBlockedByCreditBalance</code>; živá objednávka <code>New</code> … <code>InProgress</code> <a href="../../src/Cleansia.Core.AppServices/Services/GdprDeletionService.cs#L160-L163">GdprDeletionService.cs:160-163</a>; <a href="../../src/Cleansia.Core.AppServices/Services/GdprDeletionService.cs#L223-L234">GdprDeletionService.cs:223-234</a></td>
 <td><a href="../analyza-2026-09-11/podklady/cleansia_privacy_policy.txt">PP P117</a> „do 30 dnů"</td>
 <td>zákazník s kreditem účet nesmaže, dokud kredit neutratí nebo nepropadne</td>
 <td>→ R4</td>
 </tr>
 <tr>
 <td>výmaz a sdílený řádek adresy</td>
-<td><code>GetAddressAsync</code> dohledá <code>Address</code> podle ulice, města a PSČ a sdílí jej mezi zákazníky; výmaz na něm volá <code>Anonymize</code> <a href="../../src/Cleansia.Core.AppServices/Features/Orders/OrderAddressResolver.cs#L145-L147">OrderAddressResolver.cs:145-147</a>; <a href="../../src/Cleansia.Core.AppServices/Services/GdprDeletionService.cs#L392-L395">GdprDeletionService.cs:392-395</a></td>
+<td>Objednávky a profil úklidníka dostávají anonymní kopii; cizí reference zůstávají nedotčené. <a href="../../src/Cleansia.Core.AppServices/Services/GdprDeletionService.cs#L416">GdprDeletionService.cs:416</a>; <a href="../../src/Cleansia.Core.Domain/Orders/Order.cs#L1013">Order.cs:1013</a></td>
 <td>mlčí</td>
-<td>výmaz jednoho zákazníka anonymizuje adresu i na objednávkách cizích zákazníků</td>
+<td>samostatný řádek adresy uložené bez objednávky či profilu úklidníka není zahrnut; souběžná reference může výmaz odmítnout</td>
 <td>→ R9</td>
 </tr>
 <tr>
 <td>retence údajů zrušené objednávky</td>
-<td>sweep bere jen objednávku, jejíž <code>OrderStatusHistory</code> nese <code>Completed</code> <a href="../../src/Cleansia.Core.AppServices/Features/DataRetention/DataRetentionBackgroundService.cs#L174">DataRetentionBackgroundService.cs:174</a></td>
+<td>sweep bere jen objednávku, jejíž <code>OrderStatusHistory</code> nese <code>Completed</code> <a href="../../src/Cleansia.Core.AppServices/Features/DataRetention/DataRetentionBackgroundService.cs#L183">DataRetentionBackgroundService.cs:183</a></td>
 <td>mlčí</td>
 <td>zrušená a neobsazená objednávka drží jméno, adresu a telefon bez lhůty</td>
 <td>→ R9</td>
@@ -346,30 +353,30 @@ blockquote { border-left: 4px solid #12796b; margin: 20px 0; padding: 5px 20px; 
 </tr>
 <tr>
 <td>promokód a host</td>
-<td>kód „na první objednávku" dostane kdokoli e-mailem, uplatnit jej smí jen přihlášený (<code>PromoNamesASignedInCustomer</code>) <a href="../../src/Cleansia.Core.AppServices/Features/Orders/CreateOrder.cs#L667-L669">CreateOrder.cs:667-669</a></td>
+<td>kód „na první objednávku" dostane kdokoli e-mailem, uplatnit jej smí jen přihlášený (<code>PromoNamesASignedInCustomer</code>) <a href="../../src/Cleansia.Core.AppServices/Features/Orders/CreateOrder.cs#L672-L674">CreateOrder.cs:672-674</a></td>
 <td>mlčí</td>
 <td>host slíbenou slevu neuplatní, aniž se zaregistruje</td>
 <td>→ R5</td>
 </tr>
 <tr>
 <td>odstoupení do 14 dnů</td>
-<td>žádná cesta odstoupení; objednávku propouští obecný souhlas s VOP a zásadami (<code>ConsentType</code>, <code>IsGranted</code>) <a href="../../src/Cleansia.Core.AppServices/Features/Orders/CreateOrder.cs#L325-L329">CreateOrder.cs:325-329</a></td>
+<td>žádná cesta odstoupení; objednávku propouští obecný souhlas s VOP a zásadami (<code>ConsentType</code>, <code>IsGranted</code>) <a href="../../src/Cleansia.Core.AppServices/Features/Orders/CreateOrder.cs#L330-L334">CreateOrder.cs:330-334</a></td>
 <td><a href="../analyza-2026-09-11/podklady/Cleansia_VOP.txt">VOP P059</a> § 1837 písm. j) „pokud byl o tomto výslovně informován a souhlasil"</td>
 <td>výslovné poučení o ztrátě 14denní lhůty se nezaznamenává</td>
 <td>→ R3</td>
 </tr>
 <tr>
 <td>nová verze VOP</td>
-<td>objednávka projde s jakýmkoli uděleným souhlasem (<code>WithdrawnAt is null</code>); verze přijatého znění se neporovnává <a href="../../src/Cleansia.Core.AppServices/Features/Orders/CreateOrder.cs#L325-L329">CreateOrder.cs:325-329</a></td>
+<td>objednávka projde s jakýmkoli uděleným souhlasem (<code>WithdrawnAt is null</code>); verze přijatého znění se neporovnává <a href="../../src/Cleansia.Core.AppServices/Features/Orders/CreateOrder.cs#L330-L334">CreateOrder.cs:330-334</a></td>
 <td><a href="../analyza-2026-09-11/podklady/Cleansia_VOP.txt">VOP P121</a> „nejpozději 14 dní před jejich účinností"</td>
 <td>opětovné přijetí nové verze neexistuje</td>
 <td>→ R3</td>
 </tr>
 <tr>
 <td>věrnostní stupeň klesne</td>
-<td>odebrání bodů (storno, částečný refund) volá <code>RecomputeTier</code>; pokles je tichý; web <code>spent_note</code> tvrdí „stupeň už vám nikdy neklesne" <a href="../../src/Cleansia.Core.Domain/Loyalty/LoyaltyAccount.cs#L120">LoyaltyAccount.cs:120</a>; <a href="../../src/Cleansia.App/apps/cleansia.app/src/assets/i18n/cs.json#L1344">cs.json:1344</a></td>
+<td>Odebrání bodů volá <code>RecomputeTier</code>; webový <code>spent_note</code> pokles připouští. <a href="../../src/Cleansia.Core.Domain/Loyalty/LoyaltyAccount.cs#L87">LoyaltyAccount.cs:87</a>; <a href="../../src/Cleansia.App/apps/cleansia.app/src/assets/i18n/cs.json#L1344">cs.json:1344</a></td>
 <td>mlčí</td>
-<td>text webu vs. kód</td>
+<td>pokles nemá vlastní oznámení; pravidlo poklesu je obchodní otázka</td>
 <td>→ R17</td>
 </tr>
 <tr>
@@ -409,21 +416,21 @@ blockquote { border-left: 4px solid #12796b; margin: 20px 0; padding: 5px 20px; 
 </tr>
 <tr>
 <td>schválení / zamítnutí účtu bez oznámení</td>
-<td><code>ApproveEmployee.Handle</code> nic neposílá; <code>ContractStatus</code> vidí až dotazem <code>CheckCurrentEmployee</code> <a href="../../src/Cleansia.Core.AppServices/Features/Employees/ApproveEmployee.cs#L205-L206">ApproveEmployee.cs:205-206</a>; <a href="../../src/Cleansia.Core.AppServices/Features/Employees/DTOs/RegistrationCompletionStatus.cs#L5-L10">RegistrationCompletionStatus.cs:5-10</a></td>
+<td>Schválení nemá vlastní oznámení. Zamítnutí může oznámit odebrané budoucí zakázky, nikoli výsledek schvalování účtu. <a href="../../src/Cleansia.Core.AppServices/Features/Employees/ApproveEmployee.cs#L253">ApproveEmployee.cs:253</a>; <a href="../../src/Cleansia.Core.AppServices/Features/Employees/RejectEmployee.cs#L167">RejectEmployee.cs:167</a></td>
 <td><a href="../analyza-2026-09-11/podklady/cleansia_ramcova_smlouva.txt">RS P192</a> „prostřednictvím notifikací v Aplikaci"</td>
-<td>oznámení, které RS předpokládá, neexistuje</td>
+<td>oznámení výsledku schvalování účtu chybí</td>
 <td>→ R18</td>
 </tr>
 <tr>
 <td>doklad zamítnut bez oznámení</td>
-<td><code>document.Reject</code> nic neposílá; <code>EmployeeDocument</code> nese <code>FileName</code> a <code>FilePath</code>, žádné datum platnosti <a href="../../src/Cleansia.Core.AppServices/Features/EmployeeDocuments/RejectDocument.cs#L66">RejectDocument.cs:66</a>; <a href="../../src/Cleansia.Core.Domain/Documents/EmployeeDocument.cs#L8-L14">EmployeeDocument.cs:8-14</a></td>
+<td><code>document.Reject</code> neposílá zprávu; doklad má typ <code>InsuranceDocument</code>, nemá datum platnosti. <a href="../../src/Cleansia.Core.AppServices/Features/EmployeeDocuments/RejectDocument.cs#L66">RejectDocument.cs:66</a>; <a href="../../src/Cleansia.Core.Domain/Enums/DocumentType.cs#L16">DocumentType.cs:16</a></td>
 <td><a href="../analyza-2026-09-11/podklady/cleansia_ramcova_smlouva.txt">RS P105</a> „certifikát o pojištění … před aktivací svého účtu"</td>
-<td>pojištění se neeviduje; expiraci dokladu nikdo nehlídá</td>
+<td>povinnost a expirace pojištění nejsou vyřešeny pouhou existencí typu dokladu</td>
 <td>→ R18</td>
 </tr>
 <tr>
 <td>ukončení spolupráce</td>
-<td><code>ContractStatus.Terminated</code> ani <code>Active</code> nemají v kódu zapisovače; zapisují se jen <code>Approved</code> a <code>Rejected</code> <a href="../../src/Cleansia.Core.Domain/Enums/ContractStatus.cs#L9-L10">ContractStatus.cs:9-10</a>; <a href="../../src/Cleansia.Core.Domain/Users/Employee.cs#L326-L340">Employee.cs:326-340</a></td>
+<td><code>ContractStatus.Terminated</code> ani <code>Active</code> nemají aplikačního zapisovače; běžný tok zapisuje jen <code>Approved</code> a <code>Rejected</code> <a href="../../src/Cleansia.Core.Domain/Enums/ContractStatus.cs#L9-L10">ContractStatus.cs:9-10</a>; <a href="../../src/Cleansia.Core.Domain/Users/Employee.cs#L326-L340">Employee.cs:326-340</a></td>
 <td><a href="../analyza-2026-09-11/podklady/cleansia_ramcova_smlouva.txt">RS P158</a> „Výpovědní doba činí jeden (1) měsíc … oznámením skrze Aplikaci"</td>
 <td>výpověď ani její doručení aplikací nejsou postavené</td>
 <td>→ R10</td>
@@ -464,11 +471,11 @@ blockquote { border-left: 4px solid #12796b; margin: 20px 0; padding: 5px 20px; 
 <td>→ R6</td>
 </tr>
 <tr>
-<td>zakázka s balíčkem → odměna</td>
-<td><code>CalculateOrderPay</code> načítá jen <code>SelectedServices</code>, <code>SelectedPackages</code> prázdné → balíček v odměně chybí; odhad na nástěnce (<code>OrderPayEstimator</code>, <code>CalculateAggregatedPay</code>) balíčky počítá <a href="../../src/Cleansia.Core.AppServices/Features/EmployeePayroll/CalculateOrderPay.cs#L117-L120">CalculateOrderPay.cs:117-120</a>; <a href="../../src/Cleansia.Core.AppServices/Features/Orders/OrderPayEstimator.cs#L88-L107">OrderPayEstimator.cs:88-107</a></td>
+<td>balíčky a odměna celé posádky</td>
+<td>Výpočet zahrnuje služby i balíčky; každý člen posádky dostává plnou odměnu ze svých sazeb. <a href="../../src/Cleansia.Core.AppServices/Features/EmployeePayroll/CalculateOrderPay.cs#L90">CalculateOrderPay.cs:90</a>; <a href="../../src/Cleansia.Core.AppServices/Features/Orders/CompleteOrder.cs#L346">CompleteOrder.cs:346</a></td>
 <td><a href="../analyza-2026-09-11/podklady/cleansia_ramcova_smlouva.txt">RS P218</a> „Doplnit aktuální sazby"</td>
-<td>úklidník vidí jinou odměnu, než dostane</td>
-<td>→ R6</td>
+<td>více členů posádky znamená více plných odměn proti jedné ceně zákazníka</td>
+<td>→ R26</td>
 </tr>
 <tr>
 <td>doplňky a express bez odměny</td>
@@ -479,14 +486,14 @@ blockquote { border-left: 4px solid #12796b; margin: 20px 0; padding: 5px 20px; 
 </tr>
 <tr>
 <td>sazba za kilometr</td>
-<td><code>SetTravelDistance</code> nemá mimo testy volajícího, <code>TravelDistance</code> je tedy vždy nula <a href="../../src/Cleansia.Core.Domain/Orders/Order.cs#L762-L769">Order.cs:762-769</a></td>
+<td><code>TravelDistance</code> nemá aplikační zapisovač; výpočet čte uloženou hodnotu, jinak nulu. <a href="../../src/Cleansia.Core.Domain/Orders/Order.cs#L108">Order.cs:108</a>; <a href="../../src/Cleansia.Core.Domain/Extensions/PayCalculatorExtensions.cs#L15">PayCalculatorExtensions.cs:15</a></td>
 <td><a href="../analyza-2026-09-11/podklady/cleansia_ramcova_smlouva.txt">RS P218</a> „Doplnit aktuální sazby"</td>
-<td><code>DistanceRatePerKm</code> je ve výpočtu, ale nikdy se neprojeví</td>
+<td>běžná objednávka nemá vzdálenost pro kilometrovou odměnu</td>
 <td>→ R6</td>
 </tr>
 <tr>
 <td>hotovost vybrána</td>
-<td><code>MarkCashCollected</code> zapíše <code>CashCollectedAt</code> a <code>CollectedByEmployeeId</code>, žádnou částku; nevratné; výplatní řádek má jen <code>BasePay</code> … <code>TotalPay</code>, bez započtení (grep -rn "CashCollected" Features/EmployeePayroll → 0) <a href="../../src/Cleansia.Core.Domain/Orders/Order.cs#L693-L700">Order.cs:693-700</a>; <a href="../../src/Cleansia.Core.Domain/EmployeePayroll/OrderEmployeePay.cs#L38-L58">OrderEmployeePay.cs:38-58</a></td>
+<td><code>MarkCashCollected</code> zapíše <code>CashCollectedAt</code> a <code>CollectedByEmployeeId</code>, žádnou částku; nevratné; výplatní řádek má jen <code>BasePay</code> … <code>TotalPay</code>, bez započtení (grep -rn "CashCollected" Features/EmployeePayroll → 0) <a href="../../src/Cleansia.Core.Domain/Orders/Order.cs#L713-L720">Order.cs:713-720</a>; <a href="../../src/Cleansia.Core.Domain/EmployeePayroll/OrderEmployeePay.cs#L38-L58">OrderEmployeePay.cs:38-58</a></td>
 <td><a href="../analyza-2026-09-11/podklady/cleansia_ramcova_smlouva.txt">RS P122</a> „neprodleně potvrdit v Aplikaci"; <a href="../analyza-2026-09-11/podklady/cleansia_ramcova_smlouva.txt">RS P126</a> „jednostranně odečíst (započíst) svou provizi"</td>
 <td>odvod hotovosti nikde (grep -rn "CashRemit" src/ → 0)</td>
 <td>→ R6</td>
@@ -499,10 +506,10 @@ blockquote { border-left: 4px solid #12796b; margin: 20px 0; padding: 5px 20px; 
 <td>→ R18</td>
 </tr>
 <tr>
-<td>úklidník plátce DPH</td>
-<td><code>cleanersAreVatPayers = false</code> natvrdo; DIČ úklidníka se na faktuře nepoužije; PDF tiskne „Nejsme plátci DPH" <a href="../../src/Cleansia.Core.AppServices/Extensions/FileExtensions.cs#L119">FileExtensions.cs:119</a>; <a href="../../src/Cleansia.Core.AppServices/Extensions/FileExtensions.cs#L132">FileExtensions.cs:132</a></td>
+<td>úklidník v neplátcovském modelu</td>
+<td>Dodavatel na výplatní faktuře má <code>cleanersAreVatPayers = false</code>; DIČ úklidníka se nepoužije. <a href="../../src/Cleansia.Core.AppServices/Extensions/FileExtensions.cs#L119">FileExtensions.cs:119</a></td>
 <td><a href="../analyza-2026-09-11/podklady/cleansia_ramcova_smlouva.txt">RS P124</a> „stane plátcem DPH, je povinen tuto skutečnost neprodleně oznámit"</td>
-<td>RS slibuje úpravu ceny, která neexistuje</td>
+<td>R16 určuje neplátcovský model; RS P124 s ním není sladěn</td>
 <td>→ R16</td>
 </tr>
 <tr>
@@ -514,7 +521,7 @@ blockquote { border-left: 4px solid #12796b; margin: 20px 0; padding: 5px 20px; 
 </tr>
 <tr>
 <td>nástěnka a preferovaný úklidník</td>
-<td>hold <code>PreferredHoldFraction</code> 10 % předstihu, strop 12 h, zakázka ostatním skryta; volba vyžaduje Plus a dokončenou zakázku (<code>PreferredEmployeeIsEligibleAsync</code>) <a href="../../src/Cleansia.Core.AppServices/Features/Orders/BookingPolicy.cs#L216-L217">BookingPolicy.cs:216-217</a>; <a href="../../src/Cleansia.Core.AppServices/Features/Orders/CreateOrder.cs#L292-L301">CreateOrder.cs:292-301</a></td>
+<td>hold <code>PreferredHoldFraction</code> 10 % předstihu, strop 12 h, zakázka ostatním skryta; volba vyžaduje Plus a dokončenou zakázku (<code>PreferredEmployeeIsEligibleAsync</code>) <a href="../../src/Cleansia.Core.AppServices/Features/Orders/BookingPolicy.cs#L217-L218">BookingPolicy.cs:217-218</a>; <a href="../../src/Cleansia.Core.AppServices/Features/Orders/CreateOrder.cs#L297-L306">CreateOrder.cs:297-306</a></td>
 <td><a href="../analyza-2026-09-11/podklady/cleansia_privacy_policy.txt">PP P148</a> „doporučení Zhotovitelů v okolí zákazníka na základě polohy a hodnocení"</td>
 <td>výběr podle historie, ne polohy a hodnocení</td>
 <td>→ R9</td>
@@ -563,16 +570,16 @@ blockquote { border-left: 4px solid #12796b; margin: 20px 0; padding: 5px 20px; 
 </tr>
 <tr>
 <td>Plus a storno 4 h</td>
-<td><code>freeWindow</code> 4 h (<code>FreeCancellationWindowHours</code>) nahrazuje 24 h; <code>h &gt;= freeWindow</code> zdarma, jinak rovnou 50 % — pásmo 25 % člen nikdy neplatí <a href="../../src/Cleansia.Core.AppServices/Features/Orders/BookingPolicy.cs#L344-L351">BookingPolicy.cs:344-351</a>; <a href="../../sql-scripts/insert_seed_data.sql#L1799-L1805">insert_seed_data.sql:1799-1805</a></td>
+<td><code>freeWindow</code> 4 h (<code>FreeCancellationWindowHours</code>) nahrazuje 24 h; <code>h &gt;= freeWindow</code> zdarma, jinak rovnou 50 % — pásmo 25 % člen nikdy neplatí <a href="../../src/Cleansia.Core.AppServices/Features/Orders/BookingPolicy.cs#L345-L352">BookingPolicy.cs:345-352</a>; <a href="../../sql-scripts/insert_seed_data.sql#L1800-L1806">insert_seed_data.sql:1800-1806</a></td>
 <td><a href="../analyza-2026-09-11/podklady/Cleansia_VOP.txt">VOP P068</a> „2–24 hodin předem" <a href="../analyza-2026-09-11/podklady/Cleansia_VOP.txt">VOP P069</a> „50 % ceny zakázky"</td>
 <td>VOP Plus neznají</td>
 <td>→ R4</td>
 </tr>
 <tr>
 <td>Plus: zkušební období</td>
-<td>plán <code>PLUS_MONTHLY</code> má <code>TrialPeriodDays</code> 0; web nabízí <code>cta_trial</code> „Vyzkoušet {{days}} dní zdarma" <a href="../../sql-scripts/insert_seed_data.sql#L1801-L1807">insert_seed_data.sql:1801-1807</a>; <a href="../../src/Cleansia.App/apps/cleansia.app/src/assets/i18n/cs.json#L1661">cs.json:1661</a></td>
+<td>DEV <code>PLUS_MONTHLY</code> má nulový trial; web neoznamuje bezpodmínečný trial. Android home text nabízí 14 dní zdarma. <a href="../../sql-scripts/insert_seed_data.sql#L1805">insert_seed_data.sql:1805</a>; <a href="../../src/cleansia_android/customer-app/src/main/res/values/strings.xml#L121">strings.xml:121</a></td>
 <td>mlčí</td>
-<td>zkušební období, které web slibuje, žádný plán nemá</td>
+<td>mobilní slib vyžaduje sladění; backend trial není hotový obchodní produkt</td>
 <td>→ —</td>
 </tr>
 <tr>
@@ -591,30 +598,30 @@ blockquote { border-left: 4px solid #12796b; margin: 20px 0; padding: 5px 20px; 
 </tr>
 <tr>
 <td>kredit na objednávce</td>
-<td>čerpá se automaticky, jen karta, stejná měna, nejvýše <code>MaxCreditShareOfOrder</code> 70 % <code>TotalPrice</code>; <code>TotalPrice</code>, DPH a body se nemění <a href="../../src/Cleansia.Core.AppServices/Features/Orders/BookingPolicy.cs#L97">BookingPolicy.cs:97</a>; <a href="../../src/Cleansia.Core.Domain/Orders/Order.cs#L236-L239">Order.cs:236-239</a></td>
+<td>čerpá se automaticky, jen karta, stejná měna, nejvýše <code>MaxCreditShareOfOrder</code> 70 % <code>TotalPrice</code>; <code>TotalPrice</code>, DPH a body se nemění <a href="../../src/Cleansia.Core.AppServices/Features/Orders/BookingPolicy.cs#L98">BookingPolicy.cs:98</a>; <a href="../../src/Cleansia.Core.Domain/Orders/Order.cs#L236-L239">Order.cs:236-239</a></td>
 <td><a href="../analyza-2026-09-11/podklady/Cleansia_VOP.txt">VOP P070</a> „50 % platby nebo kredit"; <a href="../analyza-2026-09-11/podklady/cleansia_reklamacni_rad.txt">RŘ P106</a> „vrácení částky nebo kreditu"</td>
-<td>zákazník kredit nevolí; hotovost s kreditem odmítnuta (<code>CashNotCollectableOnCreditOrder</code>) <a href="../../src/Cleansia.Core.AppServices/Features/Orders/MarkCashCollected.cs#L143-L151">MarkCashCollected.cs:143-151</a></td>
+<td>zákazník kredit nevolí; hotovost s kreditem odmítnuta (<code>CashNotCollectableOnCreditOrder</code>) <a href="../../src/Cleansia.Core.AppServices/Features/Orders/MarkCashCollected.cs#L147-L155">MarkCashCollected.cs:147-155</a></td>
 <td>→ R4</td>
 </tr>
 <tr>
 <td>kredit per měna</td>
-<td><code>CreditAccount</code> (<code>Balance</code> nikdy záporný) per zákazník a měnu; <code>GetSpendableAsync</code> pro měnu objednávky, jiná měna = 0 <a href="../../src/Cleansia.Core.Domain/Credit/CreditAccount.cs#L35-L53">CreditAccount.cs:35-53</a>; <a href="../../src/Cleansia.Core.AppServices/Features/Orders/CreateOrder.cs#L1116-L1121">CreateOrder.cs:1116-1121</a></td>
+<td>Účet má <code>CurrencyId</code>; platba přes <code>GetSpendableAsync</code> použije pouze zůstatek v měně objednávky. <a href="../../src/Cleansia.Core.Domain/Credit/CreditAccount.cs#L53">CreditAccount.cs:53</a>; <a href="../../src/Cleansia.Core.AppServices/Features/Orders/CreateOrder.cs#L1137">CreateOrder.cs:1137</a></td>
 <td>mlčí</td>
-<td>EUR objednávka nevznikne — EUR, PLN, GBP a USD jsou seedovány neaktivní <a href="../../sql-scripts/insert_seed_data.sql#L491-L494">insert_seed_data.sql:491-494</a>; mechanika čeká na druhý trh</td>
+<td>DEV seed má EUR, PLN, GBP a USD neaktivní; aktivace a ceny jsou samostatné podmínky trhu</td>
 <td>→ R19</td>
 </tr>
 <tr>
 <td>body za objednávku v cizí měně</td>
-<td>body = floor(částka / <code>LoyaltyPointsDivisor</code>); EUR, PLN, GBP a USD mají dělitel <code>NULL</code> <a href="../../src/Cleansia.Core.AppServices/Services/LoyaltyService.cs#L417-L430">LoyaltyService.cs:417-430</a>; <a href="../../sql-scripts/insert_seed_data.sql#L491-L494">insert_seed_data.sql:491-494</a></td>
+<td>Body vycházejí z měnového <code>LoyaltyPointsDivisor</code>; aktivace měny vyžaduje kladný dělitel. <a href="../../src/Cleansia.Core.AppServices/Services/LoyaltyService.cs#L421">LoyaltyService.cs:421</a>; <a href="../../src/Cleansia.Core.AppServices/Features/Currencies/ActivateCurrency.cs#L43">ActivateCurrency.cs:43</a></td>
 <td>mlčí</td>
-<td>taková objednávka dnes nevznikne; dělitel čeká na druhý trh</td>
+<td>DEV měny bez dělitele nelze aktivovat; nejde o zákaz všech budoucích cizoměnových objednávek</td>
 <td>→ R19</td>
 </tr>
 <tr>
 <td>věrnostní stupně: výhody</td>
-<td><code>PerksJson</code> stupňů 3 a 4 slibuje <code>priority_support</code> a <code>dedicated_pool</code>; v kódu je nečte nic <a href="../../sql-scripts/insert_seed_data.sql#L1697">insert_seed_data.sql:1697</a>; <a href="../../sql-scripts/insert_seed_data.sql#L1708">insert_seed_data.sql:1708</a></td>
+<td>Seed nabízí slevy, například <code>loyalty.perks.discount_10</code>, a odznak; administrace přijímá volný <code>PerksJson</code>. <a href="../../sql-scripts/insert_seed_data.sql#L1697">insert_seed_data.sql:1697</a>; <a href="../../src/Cleansia.Core.AppServices/Features/Loyalty/Admin/UpdateTierConfig.cs#L23">UpdateTierConfig.cs:23</a></td>
 <td>mlčí</td>
-<td>prioritní podpora ani vyhrazený tým nejsou postavené</td>
+<td>obsah administrátorských perků může slíbit nepodporovanou službu</td>
 <td>→ R17</td>
 </tr>
 <tr>
@@ -647,9 +654,9 @@ blockquote { border-left: 4px solid #12796b; margin: 20px 0; padding: 5px 20px; 
 <tbody>
 <tr>
 <td>deaktivace společnosti</td>
-<td>úklidníci odmítnuti při přihlášení (<code>RefusedProfiles = { Employee }</code>, <code>auth.company_deactivated</code>), administrátoři ne; příkaz <code>DeactivateCompany</code> (<code>company.deactivate</code>) nic neruší a nikomu nepíše <a href="../../src/Cleansia.Core.AppServices/Tenancy/CompanySignInGate.cs#L17-L41">CompanySignInGate.cs:17-41</a>; <a href="../../src/Cleansia.Core.AppServices/Features/CompanyLifecycle/DeactivateCompany.cs#L26-L29">DeactivateCompany.cs:26-29</a></td>
+<td><code>RefusalForAsync</code> odmítá přihlášení i refresh úklidníka; deaktivace při <code>IsWindDownRequested</code> zařadí další běh. <a href="../../src/Cleansia.Core.AppServices/Features/Auth/RefreshToken.cs#L102">RefreshToken.cs:102</a>; <a href="../../src/Cleansia.Core.AppServices/Features/CompanyLifecycle/DeactivateCompany.cs#L90">DeactivateCompany.cs:90</a></td>
 <td>mlčí</td>
-<td>živé zakázky čekají na útlum; vydané JWT úklidníků běží dál (<code>RefusalForAsync</code> jen při přihlášení) <a href="../../src/Cleansia.Core.AppServices/Tenancy/CompanySignInGate.cs#L27-L41">CompanySignInGate.cs:27-41</a></td>
+<td>již vydané přístupové JWT nemají průběžnou kontrolu deaktivace</td>
 <td>→ R18</td>
 </tr>
 <tr>
@@ -674,17 +681,17 @@ blockquote { border-left: 4px solid #12796b; margin: 20px 0; padding: 5px 20px; 
 <td>→ —</td>
 </tr>
 <tr>
-<td>jeden Stripe účet holdingu</td>
+<td>sdílená konfigurace Stripe</td>
 <td>klient staví z jediného <code>config.SecretKey</code>; sekce <code>Stripe</code> je globální, ne per společnost <a href="../../src/Cleansia.Infra.Clients/Stripe/StripeClient.cs#L34">StripeClient.cs:34</a>; <a href="../../src/Cleansia.Infra.Common/Configuration/StripeConfig.cs#L6-L11">StripeConfig.cs:6-11</a></td>
 <td>mlčí</td>
-<td>peníze všech společností na jednom účtu, doklad per společnost (<code>CompanyInfo</code>)</td>
+<td>bez směrování na účet jednotlivé společnosti; vlastnictví účtu kód nedokládá, doklad je per společnost (<code>CompanyInfo</code>)</td>
 <td>→ R1</td>
 </tr>
 <tr>
 <td><code>CompanyInfo</code> na dokladech</td>
-<td>IČO <code>12345678</code>, DIČ <code>CZ12345678</code> „REPLACE WITH ACTUAL", <code>IsVatPayer</code> false; PDF tiskne „VAT #" (<code>VatNumber</code>) vedle „Nejsme plátci DPH" <a href="../../sql-scripts/insert_seed_data.sql#L1161-L1163">insert_seed_data.sql:1161-1163</a>; <a href="../../src/Cleansia.Infra.Services/Pdf/Layouts/DefaultReceiptLayoutBuilder.cs#L161-L162">DefaultReceiptLayoutBuilder.cs:161-162</a></td>
+<td>DEV seed používá IČO <code>12345678</code> a zástupný účet; účtenka tiskne DIČ jen při <code>IsVatPayer</code>. <a href="../../sql-scripts/insert_seed_data.sql#L1161">insert_seed_data.sql:1161</a>; <a href="../../src/Cleansia.Infra.Services/Pdf/Layouts/DefaultReceiptLayoutBuilder.cs#L155">DefaultReceiptLayoutBuilder.cs:155</a></td>
 <td><a href="../analyza-2026-09-11/podklady/Cleansia_VOP.txt">VOP P018</a> „oddíl C, vložka [Doplnit]"</td>
-<td>zástupné identifikátory na každém DEV dokladu</td>
+<td>DEV údaje nelze převzít jako skutečné identifikátory společnosti</td>
 <td>→ R2</td>
 </tr>
 <tr>
@@ -696,7 +703,7 @@ blockquote { border-left: 4px solid #12796b; margin: 20px 0; padding: 5px 20px; 
 </tr>
 <tr>
 <td>patička e-mailů</td>
-<td><code>FooterText</code> „© Cleansia s.r.o." natvrdo v kódu pro každou společnost; seed <code>FooterText</code> „© 2026 Cleansia. All rights reserved." <a href="../../src/Cleansia.Core.AppServices/Services/EmailService.cs#L691">EmailService.cs:691</a>; <a href="../../sql-scripts/insert_seed_data.sql#L1202">insert_seed_data.sql:1202</a></td>
+<td><code>FooterText</code> „© Cleansia s.r.o." natvrdo v kódu pro každou společnost; seed <code>FooterText</code> „© 2026 Cleansia. All rights reserved." <a href="../../src/Cleansia.Core.AppServices/Services/EmailService.cs#L713">EmailService.cs:713</a>; <a href="../../sql-scripts/insert_seed_data.sql#L1202">insert_seed_data.sql:1202</a></td>
 <td>mlčí</td>
 <td>e-mail každé společnosti pod holdingem podepsán jednou s.r.o.</td>
 <td>→ R2</td>

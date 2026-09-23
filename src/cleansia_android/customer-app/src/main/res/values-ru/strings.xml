@@ -1156,8 +1156,6 @@
     <string name="loyalty_discount_min_order">%1$d%% скидка на заказы ≥ %2$s</string>
     <string name="loyalty_no_discount_yet">Пока без скидки</string>
     <string name="loyalty_perks_welcome_badge">Добро пожаловать в награды Cleansia</string>
-    <string name="loyalty_perks_priority_support">Приоритетная поддержка клиентов</string>
-    <string name="loyalty_perks_dedicated_pool">Выделенная команда клинеров</string>
     <string name="loyalty_activity_title">Недавняя активность</string>
     <string name="loyalty_activity_view_all">Вся активность</string>
     <string name="loyalty_tx_earn_order">+%1$d б. — Уборка №%2$s</string>

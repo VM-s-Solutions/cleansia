@@ -1159,8 +1159,6 @@
     <string name="loyalty_discount_min_order">%1$d %% sleva na objednávky od %2$s</string>
     <string name="loyalty_no_discount_yet">Zatím bez slevy</string>
     <string name="loyalty_perks_welcome_badge">Vítejte v odměnách Cleansia</string>
-    <string name="loyalty_perks_priority_support">Přednostní zákaznická podpora</string>
-    <string name="loyalty_perks_dedicated_pool">Vlastní tým uklízečů</string>
     <string name="loyalty_activity_title">Nedávná aktivita</string>
     <string name="loyalty_activity_view_all">Zobrazit všechnu aktivitu</string>
     <string name="loyalty_tx_earn_order">+%1$d b. — Úklid č. %2$s</string>

@@ -1182,8 +1182,6 @@
     <string name="loyalty_discount_min_order">%1$d%% off orders ≥ %2$s</string>
     <string name="loyalty_no_discount_yet">No discount yet</string>
     <string name="loyalty_perks_welcome_badge">Welcome to Cleansia rewards</string>
-    <string name="loyalty_perks_priority_support">Priority customer support</string>
-    <string name="loyalty_perks_dedicated_pool">Dedicated cleaner pool</string>
     <string name="loyalty_activity_title">Recent activity</string>
     <string name="loyalty_activity_view_all">See all activity</string>
     <string name="loyalty_tx_earn_order">+%1$d pts — Cleaning #%2$s</string>

@@ -216,9 +216,11 @@ class NotificationTemplatesTest {
     }
 
     @Test
-    fun `templateFor returns null for an unknown key - drop parity`() {
+    fun `templateFor drops unknown and customer-only keys`() {
         assertNull(NotificationTemplates.templateFor("promo.new_sitewide"))
         assertNull(NotificationTemplates.templateFor("loyalty.tier_upgrade"))
+        assertNull(NotificationTemplates.templateFor("order.on_the_way"))
+        assertFalse(PartnerFeedEventKeys.contains("order.on_the_way"))
     }
 
     @Test
@@ -329,8 +331,9 @@ class NotificationTemplatesTest {
     }
 
     @Test
-    fun `deep link resolves an unknown key to null`() {
+    fun `deep link ignores unknown and customer-only keys`() {
         assertNull(NotificationDeepLink.resolve("promo.new_sitewide", null, null))
+        assertNull(NotificationDeepLink.resolve("order.on_the_way", "order-1", null))
     }
 
     /**

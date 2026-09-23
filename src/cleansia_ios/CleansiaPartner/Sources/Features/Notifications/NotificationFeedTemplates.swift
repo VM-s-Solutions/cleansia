@@ -1,11 +1,11 @@
 import Foundation
 
 /// The partner half of the backend's audience keysets (D2): everything the
-/// partner mobile host serves into the feed. v1 is the availability digest
-/// only; customer keys never reach this host.
+/// partner mobile host serves into the feed; customer keys never reach this host.
 enum PartnerFeedEventKeys {
     static let all: Set<String> = [
         "order.new_available",
+        "order.seat_open",
         "order.reminder_tomorrow",
         "order.preferred_offer",
         "order.assignment_cancelled",
@@ -51,7 +51,7 @@ enum NotificationFeedTemplates {
         switch eventKey {
         case "order.new_available", "order.reminder_tomorrow":
             String(format: L10n.localized("push.\(eventKey).body"), args["count"] ?? "")
-        case "order.assignment_cancelled", "order.preferred_offer":
+        case "order.assignment_cancelled", "order.preferred_offer", "order.seat_open":
             String(format: L10n.localized("push.\(eventKey).body"), args["orderNumber"] ?? "")
         default:
             L10n.localized("push.\(eventKey).body")

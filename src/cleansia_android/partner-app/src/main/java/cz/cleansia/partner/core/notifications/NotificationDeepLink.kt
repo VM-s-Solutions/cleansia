@@ -60,7 +60,6 @@ object NotificationDeepLink {
         "order.in_progress",
         "order.completed",
         "order.cancelled",
-        "order.on_the_way",
         "dispute.reply",
         "order.assignment_cancelled",
         "order.assigned",

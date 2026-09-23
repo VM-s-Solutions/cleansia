@@ -127,6 +127,7 @@ final class CustomerNotificationDeepLinkTests: XCTestCase {
     func testPartnerOnlyEventsResolveToNil() {
         for key in [
             "order.new_available",
+            "order.seat_open",
             "order.assigned",
             "order.assignment_revoked",
             "order.assignment_cancelled",
@@ -146,6 +147,15 @@ final class CustomerNotificationDeepLinkTests: XCTestCase {
                 key
             )
         }
+    }
+
+    func testSeatOpenAlertDoesNotOpenAPartnersJobInTheCustomerApp() {
+        let userInfo = alertCarryingUserInfo(
+            eventKey: "order.seat_open",
+            locArgs: ["A-2201"],
+            extra: ["orderId": "ord-1", "orderNumber": "A-2201"]
+        )
+        XCTAssertNil(CustomerNotificationDeepLink.resolve(userInfo))
     }
 
     func testResolveFromUserInfoMapsEventKeyAndOrderId() {

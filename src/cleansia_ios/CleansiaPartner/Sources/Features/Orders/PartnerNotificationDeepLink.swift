@@ -31,6 +31,7 @@ enum PartnerNotificationDeepLink {
              "order.cancelled",
              "order.on_the_way",
              "order.assignment_cancelled",
+             "order.seat_open",
              "order.assigned",
              // Still the order detail even though the cleaner is off the job: the copy says the job
              // moved, and the detail is where they read which day just came off their schedule.

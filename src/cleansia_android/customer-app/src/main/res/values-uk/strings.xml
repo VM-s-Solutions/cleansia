@@ -1156,8 +1156,6 @@
     <string name="loyalty_discount_min_order">%1$d%% знижка на замовлення ≥ %2$s</string>
     <string name="loyalty_no_discount_yet">Поки без знижки</string>
     <string name="loyalty_perks_welcome_badge">Ласкаво просимо до винагород Cleansia</string>
-    <string name="loyalty_perks_priority_support">Пріоритетна підтримка клієнтів</string>
-    <string name="loyalty_perks_dedicated_pool">Спеціалізована команда клінерів</string>
     <string name="loyalty_activity_title">Остання активність</string>
     <string name="loyalty_activity_view_all">Уся активність</string>
     <string name="loyalty_tx_earn_order">+%1$d б. — Прибирання №%2$s</string>

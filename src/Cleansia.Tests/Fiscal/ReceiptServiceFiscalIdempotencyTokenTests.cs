@@ -61,7 +61,7 @@ public class ReceiptServiceFiscalIdempotencyTokenTests
             .Setup(r => r.GetActiveCompanyInfoAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(company);
 
-        var country = Country.Create("Germany", "DE", "DE");
+        var country = Country.Create("Germany", "DEU", "DE");
         _countryRepository
             .Setup(r => r.GetByIdAsync(CountryId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(country);

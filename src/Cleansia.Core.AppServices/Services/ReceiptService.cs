@@ -541,7 +541,8 @@ public sealed class ReceiptService(
             // The VALUES, not their names: the layout picks the word in the document's language.
             PaymentStatus = order.PaymentStatus,
             PaymentType = order.ActualPaymentType,
-            CleaningDate = order.CleaningDateTime.ToString("dd.MM.yyyy HH:mm", CultureInfo.InvariantCulture),
+            CleaningDate = TimeZoneInfo.ConvertTimeFromUtc(order.CleaningDateTime, marketZone)
+                .ToString("dd.MM.yyyy HH:mm", CultureInfo.InvariantCulture),
             Rooms = order.Rooms,
             Bathrooms = order.Bathrooms,
             EstimatedTime = order.EstimatedTime,

@@ -72,10 +72,10 @@ public class FiscalModeReceiptServiceMatrixTests
 
         _countryRepository
             .Setup(r => r.GetByIdAsync(CzId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(Country.Create("Czechia", "CZ", "CZ"));
+            .ReturnsAsync(Country.Create("Czechia", "CZE", "CZ"));
         _countryRepository
             .Setup(r => r.GetByIdAsync(DeId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(Country.Create("Germany", "DE", "DE"));
+            .ReturnsAsync(Country.Create("Germany", "DEU", "DE"));
 
         _pdfService
             .Setup(p => p.GenerateReceiptPdf(It.IsAny<ReceiptPdfData>(), It.IsAny<string?>()))

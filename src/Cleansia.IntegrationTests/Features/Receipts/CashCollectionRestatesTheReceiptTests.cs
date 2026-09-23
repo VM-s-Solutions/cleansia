@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Security.Claims;
 using System.Text.Json;
 using Cleansia.Core.AppServices.Features.Orders;
@@ -46,6 +47,42 @@ public class CashCollectionRestatesTheReceiptTests(PostgresContainerFixture fixt
     private const string CleanerUserId = "user-cash-restate";
     private const string CleanerEmployeeId = "employee-cash-restate";
     private const string CleanerEmail = "cleaner-cash-restate@cleansia.test";
+
+    [Theory]
+    [InlineData("2026-07-15T08:00:00Z", "15.07.2026 10:00")]
+    [InlineData("2026-01-15T09:00:00Z", "15.01.2026 10:00")]
+    [InlineData("2026-07-15T22:30:00Z", "16.07.2026 00:30")]
+    public async Task The_Issued_And_Regenerated_Receipt_Print_The_Markets_Cleaning_Time(
+        string cleaningUtc, string expectedLocalTime)
+    {
+        var rendered = new List<ReceiptPdfData>();
+        var cleaning = DateTime.Parse(cleaningUtc, CultureInfo.InvariantCulture,
+            DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal);
+        await TestMethod(
+            setup: services => AssignedCleanerWithCapturedReceipts(services, rendered),
+            arrange: context => SeedCashOrderInProgressAsync(context, cleaning),
+            act: async provider =>
+            {
+                await HandleReceiptMessageAsync(provider, JsonSerializer.Serialize(
+                    new GenerateReceiptMessage(OrderId, "en"),
+                    new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase }));
+
+                using var scope = provider.CreateScope();
+                var order = await scope.ServiceProvider.GetRequiredService<IOrderRepository>()
+                    .GetByIdAsync(OrderId, CancellationToken.None);
+                await scope.ServiceProvider.GetRequiredService<IReceiptService>()
+                    .RegenerateReceiptPdfAsync(order!, order!.Receipt!, CancellationToken.None);
+                return order.CleaningDateTime;
+            },
+            assert: (_, storedUtc) =>
+            {
+                Assert.Equal(cleaning, storedUtc);
+                Assert.Equal(2, rendered.Count);
+                Assert.All(rendered, data => Assert.Equal(expectedLocalTime, data.CleaningDate));
+                return Task.CompletedTask;
+            },
+            transactional: false);
+    }
 
     [Fact]
     public async Task Collecting_The_Cash_Restates_The_Issued_Receipt_As_Paid_Under_Its_Number()
@@ -122,14 +159,18 @@ public class CashCollectionRestatesTheReceiptTests(PostgresContainerFixture fixt
         return Task.CompletedTask;
     }
 
-    private static async Task SeedCashOrderInProgressAsync(CleansiaDbContext context)
+    private static Task SeedCashOrderInProgressAsync(CleansiaDbContext context) =>
+        SeedCashOrderInProgressAsync(context, DateTime.UtcNow);
+
+    private static async Task SeedCashOrderInProgressAsync(CleansiaDbContext context, DateTime cleaningDateTime)
     {
         context.Languages.Add(Language.Create("en", "English"));
 
         var country = Country.Create("Czechia", "CZE", "CZ", isServiced: true);
         country.Id = CountryId;
         context.Countries.Add(country);
-        context.CountryConfigurations.Add(CountryConfiguration.Create(CountryId, "CZK", "cs", 0.21m));
+        context.CountryConfigurations.Add(CountryConfiguration.Create(
+            CountryId, "CZK", "cs", 0.21m, timeZoneId: "Europe/Prague"));
 
         var currency = Currency.Create("CZK", "Kč", "Czech koruna");
         currency.Id = CurrencyId;
@@ -158,7 +199,7 @@ public class CashCollectionRestatesTheReceiptTests(PostgresContainerFixture fixt
             customerAddress: Address.Create("Vinohradska 12", "Praha", "12000", CountryId),
             rooms: 2,
             bathrooms: 1,
-            cleaningDateTime: DateTime.UtcNow,
+            cleaningDateTime: cleaningDateTime,
             paymentType: PaymentType.Cash,
             totalPrice: 1500m,
             currencyId: CurrencyId,

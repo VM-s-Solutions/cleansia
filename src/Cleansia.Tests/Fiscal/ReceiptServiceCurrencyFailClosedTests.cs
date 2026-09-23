@@ -60,7 +60,7 @@ public class ReceiptServiceCurrencyFailClosedTests
 
         _countryRepository
             .Setup(r => r.GetByIdAsync(DeId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(Country.Create("Germany", "DE", "DE"));
+            .ReturnsAsync(Country.Create("Germany", "DEU", "DE"));
         _countryConfigurationRepository
             .Setup(r => r.GetByCountryIdAsync(DeId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(CountryConfiguration

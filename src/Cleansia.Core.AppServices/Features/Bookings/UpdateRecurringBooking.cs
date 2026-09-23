@@ -2,6 +2,7 @@ using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Auditing;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Bookings.DTOs;
+using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.AppServices.Tenancy;
 using Cleansia.Core.Domain.Bookings;
@@ -101,8 +102,10 @@ public class UpdateRecurringBooking
                 .Must(t => TimeOnly.TryParse(t, out _))
                 .WithMessage(BusinessErrorMessage.InvalidEnumValue);
 
-            RuleFor(x => x.Rooms).GreaterThanOrEqualTo(0).WithMessage(BusinessErrorMessage.InvalidEnumValue);
-            RuleFor(x => x.Bathrooms).GreaterThanOrEqualTo(0).WithMessage(BusinessErrorMessage.InvalidEnumValue);
+            RuleFor(x => x.Rooms).GreaterThanOrEqualTo(0).WithMessage(BusinessErrorMessage.InvalidEnumValue)
+                .LessThanOrEqualTo(BookingPolicy.MaxRooms).WithMessage(BusinessErrorMessage.OrderSizeExceedsMaximum);
+            RuleFor(x => x.Bathrooms).GreaterThanOrEqualTo(0).WithMessage(BusinessErrorMessage.InvalidEnumValue)
+                .LessThanOrEqualTo(BookingPolicy.MaxBathrooms).WithMessage(BusinessErrorMessage.OrderSizeExceedsMaximum);
 
             RuleFor(x => x.SavedAddressId).Cascade(CascadeMode.Stop)
                 .NotEmpty().WithMessage(BusinessErrorMessage.Required)

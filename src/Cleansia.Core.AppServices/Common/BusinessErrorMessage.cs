@@ -136,6 +136,7 @@ public static class BusinessErrorMessage
     /// </summary>
     public const string PreferredOfferClosed = "order.preferred_offer_closed";
     public const string OrderSpanExceedsMaximum = "order.span_exceeds_maximum";
+    public const string OrderSizeExceedsMaximum = "order.size_exceeds_maximum";
 
     // Cleansia Plus / membership errors. Surfaced by the subscribe + cancel
     // flows; the customer UI maps each key to a localized snackbar string.

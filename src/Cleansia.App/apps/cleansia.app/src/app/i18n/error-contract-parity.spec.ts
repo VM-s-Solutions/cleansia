@@ -501,6 +501,7 @@ const CUSTOMER_SURFACE_ERROR_KEYS: readonly string[] = [
   'order.time_conflict',
   'order.total_price.positive',
   'order.total_price.not_match',
+  'order.size_exceeds_maximum',
   'order.span_exceeds_maximum',
   'order.payment_gateway_unavailable',
   'currency.invalid',

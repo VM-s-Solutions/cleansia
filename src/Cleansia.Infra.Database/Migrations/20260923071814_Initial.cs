@@ -694,7 +694,6 @@ namespace Cleansia.Infra.Database.Migrations
                     TimeZoneId = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: true),
                     PhonePrefix = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: true),
                     StandardVatRate = table.Column<decimal>(type: "numeric(5,4)", precision: 5, scale: 4, nullable: false),
-                    ReducedVatRate = table.Column<decimal>(type: "numeric(5,4)", precision: 5, scale: 4, nullable: true),
                     TaxIdLabel = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: true),
                     TaxIdFormat = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true),
                     RegistrationNumberLabel = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: true),

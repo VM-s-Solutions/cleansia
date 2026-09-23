@@ -347,10 +347,9 @@ public class Order : TenantAuditable
     public string? PromoCodeId { get; private set; }
 
     /// <summary>
-    /// Membership discount applied at create-time (CZK amount, not %). Null
-    /// when no membership discount applied (no active membership, or tier/promo
-    /// won the best-wins comparison). Mutually exclusive with TierDiscountAmount
-    /// and PromoDiscountAmount — only one of the three can be non-null.
+    /// Membership discount applied at create-time in the order's currency. Adds to
+    /// TierDiscountAmount under the combined cap; a larger promo replaces both.
+    /// Null when no membership discount applied.
     /// </summary>
     public decimal? MembershipDiscountAmount { get; private set; }
 
@@ -498,12 +497,11 @@ public class Order : TenantAuditable
         decimal? tierDiscountAmount = null,
         LoyaltyTier? tierAtPurchase = null,
         // Promo: optional snapshot of the promo discount applied at booking
-        // time. Mutually exclusive with tierDiscountAmount in practice — the
-        // CreateOrder handler picks best-wins between tier and promo.
+        // time. A larger promo replaces the combined membership and tier discount.
         decimal? promoDiscountAmount = null,
         string? promoCodeId = null,
         // Membership: optional snapshot of the Cleansia Plus discount applied
-        // at booking time. Mutually exclusive with tier/promo via best-wins.
+        // at booking time. Adds to the tier discount under the combined cap.
         decimal? membershipDiscountAmount = null,
         string? membershipPlanIdAtPurchase = null,
         // Optional customer-requested cleaner. Used as a matching hint;
@@ -797,18 +795,6 @@ public class Order : TenantAuditable
         LanguageCode = languageCode;
         return this;
     }
-
-    public Order SetTravelDistance(decimal distance)
-    {
-        if (distance < 0)
-        {
-            throw new ArgumentException("Travel distance cannot be negative", nameof(distance));
-        }
-
-        TravelDistance = distance;
-        return this;
-    }
-
 
     /// <summary>
     /// Seats a cleaner and stamps which seat they took — the smallest FREE ordinal, not a count, so an

@@ -32,9 +32,10 @@ public static class BookingPolicy
     public const decimal ExpressSurchargeRate = 0.20m;
 
     /// <summary>
-    /// Arrival-window duration; clients offer start times every 15 minutes.
+    /// Largest home supported by the booking picker and every basket validator.
     /// </summary>
-    public const int WindowDurationMinutes = 60;
+    public const int MaxRooms = 8;
+    public const int MaxBathrooms = 4;
 
     /// <summary>
     /// Daily client booking range: 08:00 inclusive to 20:00 exclusive.

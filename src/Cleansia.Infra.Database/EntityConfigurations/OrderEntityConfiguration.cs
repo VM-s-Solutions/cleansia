@@ -81,10 +81,10 @@ public class OrderEntityConfiguration : TenantAuditableEntityConfiguration<Order
         // tidiness point for the rate: ReceiptService makes `AppliedVatRate is not null` the fiscal
         // discriminator, puts the rate on every line of the FiscalReceiptRequest sent to the tax
         // authority, and prints it on the receipt PDF. Rounding it to two places would put a wrong
-        // statutory rate on a real document -- 5.5% (seeded for France) becomes 6%.
+        // statutory rate on a real document -- 5.5% becomes 6%.
         //
-        // So the rate is (5,4), the fraction convention `CountryConfiguration.StandardVatRate` and
-        // `ReducedVatRate` already use and the column this one is a verbatim copy of; the two amounts
+        // So the rate is (5,4), the fraction convention `CountryConfiguration.StandardVatRate`
+        // already uses and the column this one is a verbatim copy of; the two amounts
         // are (18,2) like the total they decompose.
         builder.Property(o => o.NetAmount)
             .HasPrecision(18, 2);

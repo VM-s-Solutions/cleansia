@@ -158,7 +158,10 @@ retention now move affected records to blank address copies before deleting an u
 if another booking attaches concurrently, the FK refuses deletion instead of deleting that booking.
 The same drop also reseeds the phase-5 loyalty perks.
 
-**The one owed drop belongs to `20260923064534`**: a DEV database whose
+Phase 6A (2026-09-23) regenerates `Initial` as **`20260923071814`**, removing the unread
+`CountryConfigurations.ReducedVatRate` column while retaining both live VAT rates.
+
+**The one owed drop belongs to `20260923071814`**: a DEV database whose
 `__EFMigrationsHistory` records any earlier id replays the whole create script against tables that
 already exist. The legal texts need no extra step — every host seeds them at start, and since
 `b34dff07` a fresh Development database is seeded once more in the boot that migrates it (the factory

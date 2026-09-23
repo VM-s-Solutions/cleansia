@@ -4584,6 +4584,41 @@
         }
       }
     },
+    "error.order.size_exceeds_maximum": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jedna objednávka může zahrnovat nejvýše 8 pokojů a 4 koupelny."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A booking can include up to 8 rooms and 4 bathrooms."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "В одном заказе может быть не более 8 комнат и 4 ванных комнат."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jedna objednávka môže zahŕňať najviac 8 izieb a 4 kúpeľne."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "В одному замовленні може бути не більше 8 кімнат і 4 ванних кімнат."
+          }
+        }
+      }
+    },
     "error.order.span_exceeds_maximum": {
       "extractionState": "manual",
       "localizations": {

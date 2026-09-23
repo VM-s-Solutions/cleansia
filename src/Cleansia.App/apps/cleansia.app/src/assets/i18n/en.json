@@ -1871,6 +1871,7 @@
       "invalid_status_transition": "That action isn't allowed for the order's current status.",
       "address_exactly_one_required": "Please provide exactly one address for this order.",
       "empty": "Add at least one service or package to your order.",
+      "size_exceeds_maximum": "A booking can include up to 8 rooms and 4 bathrooms.",
       "span_exceeds_maximum": "This booking covers too much work for a single visit. Please remove some services or packages, or book them separately.",
       "selected_package": {
         "invalid": "One of the selected packages is no longer available."

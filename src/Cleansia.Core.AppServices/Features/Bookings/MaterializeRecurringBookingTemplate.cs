@@ -237,10 +237,9 @@ public class MaterializeRecurringBookingTemplate
                 return BusinessResult.Success(new Response(0));
             }
 
-            // Recurring orders are scheduled days/weeks in advance,
-            // so the express surcharge never applies — pass null
-            // CleaningDate to skip the surcharge check. Extras aren't
-            // part of the recurring template today; pass empty.
+            // This calculation supplies the shared raw subtotal. The factory applies the surcharge
+            // separately from each occurrence's lead time; a dated price here would charge it twice.
+            // Recurring templates carry no extras.
             var rawSubtotalResult = await pricingCalculator.CalculateAsync(
                 template.SelectedServiceIds,
                 template.SelectedPackageIds,
@@ -249,11 +248,6 @@ public class MaterializeRecurringBookingTemplate
                 template.Bathrooms,
                 currency.Id,
                 cleaningDateUtc: null,
-                // Priced as a guest — null user, null cleaning date — so this background job cannot
-                // spend the member's monthly express waivers on occurrences they never asked to be
-                // express. It reaches here only for a PAID member (the entitlement gate above), so the
-                // guest price is now a deliberate no-waiver choice rather than the lapsed-member
-                // fallback it used to be.
                 userId: null,
                 nowUtc: now,
                 cancellationToken);

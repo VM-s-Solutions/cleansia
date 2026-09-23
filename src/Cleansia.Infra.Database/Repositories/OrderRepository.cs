@@ -201,6 +201,7 @@ public class OrderRepository(CleansiaDbContext context) : BaseRepository<Order>(
         return orders
             .Include(o => o.OrderStatusHistory)
             .Include(o => o.Currency)
+            .Include(o => o.SelectedExtras)
             .Include(o => o.SelectedServices)
                 .ThenInclude(s => s.Service)
             .Include(o => o.SelectedPackages)

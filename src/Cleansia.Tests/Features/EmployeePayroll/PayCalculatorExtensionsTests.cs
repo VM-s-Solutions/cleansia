@@ -82,7 +82,8 @@ public class PayCalculatorExtensionsTests
 
         if (travelDistance.HasValue)
         {
-            order.SetTravelDistance(travelDistance.Value);
+            typeof(Order).GetProperty(nameof(Order.TravelDistance))!
+                .SetValue(order, travelDistance.Value);
         }
 
         return order;

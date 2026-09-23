@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Cleansia.Infra.Database.Migrations
 {
     [DbContext(typeof(CleansiaDbContext))]
-    [Migration("20260923064534_Initial")]
+    [Migration("20260923071814_Initial")]
     partial class Initial
     {
         /// <inheritdoc />
@@ -563,10 +563,6 @@ namespace Cleansia.Infra.Database.Migrations
                     b.Property<string>("PhonePrefix")
                         .HasMaxLength(20)
                         .HasColumnType("character varying(20)");
-
-                    b.Property<decimal?>("ReducedVatRate")
-                        .HasPrecision(5, 4)
-                        .HasColumnType("numeric(5,4)");
 
                     b.Property<decimal?>("RefundStripeFeeRate")
                         .HasPrecision(5, 4)

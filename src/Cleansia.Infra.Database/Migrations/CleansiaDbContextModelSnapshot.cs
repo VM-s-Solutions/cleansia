@@ -561,10 +561,6 @@ namespace Cleansia.Infra.Database.Migrations
                         .HasMaxLength(20)
                         .HasColumnType("character varying(20)");
 
-                    b.Property<decimal?>("ReducedVatRate")
-                        .HasPrecision(5, 4)
-                        .HasColumnType("numeric(5,4)");
-
                     b.Property<decimal?>("RefundStripeFeeRate")
                         .HasPrecision(5, 4)
                         .HasColumnType("numeric(5,4)");

@@ -23,6 +23,10 @@ final class CustomerErrorVoiceTests: XCTestCase {
             emitters: "CancelOrder, CancelGuestOrder, GetGuestCancellationFeePreview, AdminCancelOrder, "
                 + "AdminOverrideOrderStatus"
         ),
+        CustomerOnlyKey(
+            "order.size_exceeds_maximum",
+            emitters: "CreateOrder, QuoteOrder, QuotePlusSavings, CreateRecurringBooking, UpdateRecurringBooking"
+        ),
         CustomerOnlyKey("order.span_exceeds_maximum", emitters: "CreateOrder, QuoteOrder"),
         CustomerOnlyKey("order.empty", emitters: "CreateOrder"),
         CustomerOnlyKey("order.address_exactly_one_required", emitters: "CreateOrder"),
@@ -147,6 +151,8 @@ final class CustomerErrorVoiceTests: XCTestCase {
         "order.review.rating_invalid": "SubmitOrderReview",
         "order.selected_package.invalid": "CreateOrder, QuoteOrder",
         "order.selected_services.invalid": "CreateOrder, QuoteOrder",
+        "order.size_exceeds_maximum":
+            "CreateOrder, QuoteOrder, QuotePlusSavings, CreateRecurringBooking, UpdateRecurringBooking",
         "order.span_exceeds_maximum": "CreateOrder, QuoteOrder",
         "order.total_price.not_match": "CreateOrder",
         "order.total_price.positive": "CreateOrder",

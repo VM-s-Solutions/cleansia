@@ -123,6 +123,10 @@ public class GuestCancellationRouteTests(HostTestPostgresFixture fixture) : Auth
         var preview = await client.PostAsJsonAsync(PreviewPath,
             new GetGuestCancellationFeePreview.Query(seeded.Command.AccessToken));
         HttpAssert.IsOk(preview);
+        using (var quote = System.Text.Json.JsonDocument.Parse(await preview.Content.ReadAsStringAsync()))
+        {
+            Assert.Equal(15, quote.RootElement.GetProperty("oopsWindowMinutes").GetInt32());
+        }
         Assert.Equal(OrderStatus.New, await QueryAsync(db => db.Orders.IgnoreQueryFilters().Select(x => x.CurrentStatus).SingleAsync()));
         Assert.Equal(0, await QueryAsync(db => db.OutboxMessages.IgnoreQueryFilters().CountAsync()));
         var cancelled = await client.PostAsJsonAsync(CancelPath, seeded.Command);

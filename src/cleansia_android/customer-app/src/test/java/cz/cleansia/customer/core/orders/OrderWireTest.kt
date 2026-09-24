@@ -661,6 +661,7 @@ class OrderWireTest {
             "totalPrice",
             "currencyCode",
             "expressWaiverForfeitedOnCancel",
+            "oopsWindowMinutes",
         )
 
         val LIST_ROW_REQUIRED_MONEY = listOf("totalPrice", "originalSubtotal", "appliedDiscountSource")

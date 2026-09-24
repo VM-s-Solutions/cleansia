@@ -27,7 +27,8 @@ public class GetGuestCancellationFeePreview
     public class Handler(
         GuestOrderAccess guestOrderAccess,
         ICancellationPolicyResolver cancellationPolicyResolver,
-        IExpressWaiverConsumer expressWaiverConsumer)
+        IExpressWaiverConsumer expressWaiverConsumer,
+        TimeProvider timeProvider)
         : IQueryHandler<Query, GetCancellationFeePreview.Response>
     {
         public async Task<BusinessResult<GetCancellationFeePreview.Response>> Handle(
@@ -52,12 +53,19 @@ public class GetGuestCancellationFeePreview
             }
 
             var policy = await cancellationPolicyResolver.ResolveForUserAsync(null, cancellationToken);
-            var assessment = CancellationAssessor.Assess(order, policy, DateTime.UtcNow);
+            var assessment = CancellationAssessor.Assess(order, policy, timeProvider.GetUtcNow().UtcDateTime);
             var forfeit = await expressWaiverConsumer.WouldForfeitOnCustomerCancelAsync(
                 order.Id, assessment.HasBeenAccepted, cancellationToken);
             return BusinessResult.Success(new GetCancellationFeePreview.Response(
-                order.Id, assessment.Tier, assessment.FeeRate, assessment.FeeAmount,
-                assessment.RefundAmount, order.TotalPrice, order.Currency!.Code, forfeit));
+                OrderId: order.Id,
+                Tier: assessment.Tier,
+                FeeRate: assessment.FeeRate,
+                FeeAmount: assessment.FeeAmount,
+                RefundAmount: assessment.RefundAmount,
+                TotalPrice: order.TotalPrice,
+                CurrencyCode: order.Currency!.Code,
+                ExpressWaiverForfeitedOnCancel: forfeit,
+                OopsWindowMinutes: policy.OopsWindowMinutes));
         }
     }
 }

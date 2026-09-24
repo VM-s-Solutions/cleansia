@@ -46,7 +46,8 @@ public class CancelOrderRefundSeamTests
                 FreeCancellationHours: 48,
                 PartialCancellationHours: 24,
                 PartialCancellationFeeRate: 0.25m,
-                LastMinuteCancellationFeeRate: 0.5m));
+                LastMinuteCancellationFeeRate: 0.5m,
+                OopsWindowMinutes: BookingPolicy.OopsWindowMinutesStandard));
     }
 
     private CancelOrder.Handler CreateHandler() =>
@@ -63,7 +64,8 @@ public class CancelOrderRefundSeamTests
                 _producer.Object,
                 _liveActivityProducer.Object,
                 _expressWaiverConsumer.Object,
-                new AuditContext()));
+                new AuditContext(),
+                TimeProvider.System));
 
     private Order ArrangeCardPaidPendingOrder()
     {

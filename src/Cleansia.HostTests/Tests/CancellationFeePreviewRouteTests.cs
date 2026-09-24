@@ -68,6 +68,7 @@ public sealed class CancellationFeePreviewRouteTests(HostTestPostgresFixture db)
             body.GetProperty("totalPrice").GetDecimal(),
             body.GetProperty("refundAmount").GetDecimal());
         Assert.Equal("CZK", body.GetProperty("currencyCode").GetString());
+        Assert.Equal(15, body.GetProperty("oopsWindowMinutes").GetInt32());
     }
 
     [Fact]

@@ -9161,6 +9161,10 @@
           },
           "expressWaiverForfeitedOnCancel": {
             "type": "boolean"
+          },
+          "oopsWindowMinutes": {
+            "type": "integer",
+            "format": "int32"
           }
         },
         "additionalProperties": false

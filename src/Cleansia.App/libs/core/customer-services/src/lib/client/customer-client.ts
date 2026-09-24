@@ -10889,6 +10889,7 @@ export class GetCancellationFeePreviewResponse implements IGetCancellationFeePre
     totalPrice!: number;
     currencyCode!: string | undefined;
     expressWaiverForfeitedOnCancel!: boolean;
+    oopsWindowMinutes!: number;
 
     constructor(data?: IGetCancellationFeePreviewResponse) {
         if (data) {
@@ -10909,6 +10910,7 @@ export class GetCancellationFeePreviewResponse implements IGetCancellationFeePre
             this.totalPrice = Data["totalPrice"];
             this.currencyCode = Data["currencyCode"];
             this.expressWaiverForfeitedOnCancel = Data["expressWaiverForfeitedOnCancel"];
+            this.oopsWindowMinutes = Data["oopsWindowMinutes"];
         }
     }
 
@@ -10929,6 +10931,7 @@ export class GetCancellationFeePreviewResponse implements IGetCancellationFeePre
         data["totalPrice"] = this.totalPrice;
         data["currencyCode"] = this.currencyCode;
         data["expressWaiverForfeitedOnCancel"] = this.expressWaiverForfeitedOnCancel;
+        data["oopsWindowMinutes"] = this.oopsWindowMinutes;
         return data;
     }
 }
@@ -10942,6 +10945,7 @@ export interface IGetCancellationFeePreviewResponse {
     totalPrice: number;
     currencyCode: string | undefined;
     expressWaiverForfeitedOnCancel: boolean;
+    oopsWindowMinutes: number;
 }
 
 export class GetCurrentUserQuery implements IGetCurrentUserQuery {

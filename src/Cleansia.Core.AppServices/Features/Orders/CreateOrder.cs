@@ -899,21 +899,25 @@ public class CreateOrder
 
     /// <summary>
     /// The cancellation schedule the booking was made under: the platform figures, plus the free window
-    /// this customer actually had (a Plus window is narrower than the standard 24 h).
+    /// and the oops window this customer had AT BOOKING (a Plus free window is narrower than the standard
+    /// 24 h, a Plus oops window longer than 15 minutes). The cancellation re-resolves both live, so its
+    /// own evidence row is what explains a given cancellation.
     /// </summary>
     public record CancellationPolicyShown(
         int FreeHours,
         int PartialHours,
         decimal PartialRate,
         decimal LastMinuteRate,
-        int FreeHoursForThisCustomer)
+        int FreeHoursForThisCustomer,
+        int OopsMinutesForThisCustomer)
     {
         public static CancellationPolicyShown From(CancellationPolicy policy) => new(
-            BookingPolicy.FreeCancellationHours,
-            BookingPolicy.PartialCancellationHours,
-            BookingPolicy.PartialCancellationFeeRate,
-            BookingPolicy.LastMinuteCancellationFeeRate,
-            policy.FreeCancellationHours);
+            FreeHours: BookingPolicy.FreeCancellationHours,
+            PartialHours: BookingPolicy.PartialCancellationHours,
+            PartialRate: BookingPolicy.PartialCancellationFeeRate,
+            LastMinuteRate: BookingPolicy.LastMinuteCancellationFeeRate,
+            FreeHoursForThisCustomer: policy.FreeCancellationHours,
+            OopsMinutesForThisCustomer: policy.OopsWindowMinutes);
     }
 
     public class Handler(

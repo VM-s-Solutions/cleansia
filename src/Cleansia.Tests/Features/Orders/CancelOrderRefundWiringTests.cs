@@ -51,7 +51,8 @@ public class CancelOrderRefundWiringTests
                 FreeCancellationHours: BookingPolicy.FreeCancellationHours,
                 PartialCancellationHours: BookingPolicy.PartialCancellationHours,
                 PartialCancellationFeeRate: BookingPolicy.PartialCancellationFeeRate,
-                LastMinuteCancellationFeeRate: BookingPolicy.LastMinuteCancellationFeeRate));
+                LastMinuteCancellationFeeRate: BookingPolicy.LastMinuteCancellationFeeRate,
+                OopsWindowMinutes: BookingPolicy.OopsWindowMinutesStandard));
         _refundService
             .Setup(s => s.IssueRefundAsync(It.IsAny<RefundRequest>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((RefundRequest req, CancellationToken _) =>
@@ -73,7 +74,8 @@ public class CancelOrderRefundWiringTests
                 _producer.Object,
                 _liveActivityProducer.Object,
                 _expressWaiverConsumer.Object,
-                new AuditContext()));
+                new AuditContext(),
+                TimeProvider.System));
 
     private void Arrange(Order order) =>
         _orderRepository

@@ -43,6 +43,7 @@ public class CancelOrder
         decimal HoursBeforeCleaning,
         decimal MinutesSinceBooking,
         int FreeCancellationHoursApplied,
+        int OopsMinutesApplied,
         CancellationPolicyFigures PolicyFigures,
         bool ExpressWaiverReleased,
         bool RefundInitiated,
@@ -57,7 +58,7 @@ public class CancelOrder
         decimal PartialRate,
         decimal LastMinuteRate,
         int OopsMinutesStandard,
-        int OopsMinutesFirstTime)
+        int OopsMinutesPlus)
     {
         public static CancellationPolicyFigures Current() => new(
             BookingPolicy.FreeCancellationHours,
@@ -65,7 +66,7 @@ public class CancelOrder
             BookingPolicy.PartialCancellationFeeRate,
             BookingPolicy.LastMinuteCancellationFeeRate,
             BookingPolicy.OopsWindowMinutesStandard,
-            BookingPolicy.OopsWindowMinutesFirstTime);
+            BookingPolicy.OopsWindowMinutesPlus);
     }
 
     public class Validator : AbstractValidator<Command>

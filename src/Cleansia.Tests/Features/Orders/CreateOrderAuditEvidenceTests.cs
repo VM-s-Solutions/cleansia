@@ -195,6 +195,7 @@ public sealed class CreateOrderAuditEvidenceTests
         Assert.Equal(BookingPolicy.PartialCancellationFeeRate, shown.GetProperty("partialRate").GetDecimal());
         Assert.Equal(BookingPolicy.LastMinuteCancellationFeeRate, shown.GetProperty("lastMinuteRate").GetDecimal());
         Assert.Equal(BookingPolicy.FreeCancellationHours, shown.GetProperty("freeHoursForThisCustomer").GetInt32());
+        Assert.Equal(BookingPolicy.OopsWindowMinutesStandard, shown.GetProperty("oopsMinutesForThisCustomer").GetInt32());
 
         var members = payload.EnumerateObject().Select(p => p.Name).ToList();
         Assert.DoesNotContain("quotedTotalPrice", members);
@@ -240,6 +241,9 @@ public sealed class CreateOrderAuditEvidenceTests
         var payload = Payload(snapshot);
         Assert.False(payload.GetProperty("isGuest").GetBoolean());
         Assert.Equal(4, payload.GetProperty("cancellationPolicyShown").GetProperty("freeHoursForThisCustomer").GetInt32());
+        Assert.Equal(
+            BookingPolicy.OopsWindowMinutesPlus,
+            payload.GetProperty("cancellationPolicyShown").GetProperty("oopsMinutesForThisCustomer").GetInt32());
         Assert.Equal("card", payload.GetProperty("paymentType").GetString());
         Assert.DoesNotContain("emp-favourite", snapshot!.AfterJson!);
     }

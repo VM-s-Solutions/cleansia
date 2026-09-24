@@ -136,6 +136,14 @@ public static class BookingPolicy
     public const int SpareSeatsPerOrder = 0;
 
     /// <summary>
+    /// Owner ruling 2026-09-24: cash is taken only from a signed-in customer on a job one cleaner does
+    /// alone; a guest, or a booking whose REQUIRED crew is two or more, pays by card. Spare seats never
+    /// count — capacity is not a second cleaner the work needs.
+    /// </summary>
+    public static bool AllowsCash(bool signedIn, int requiredEmployees)
+        => signedIn && requiredEmployees == 1;
+
+    /// <summary>
     /// Longest span a booking may be created with. <b>A DISCLOSURE bound, not a double-booking one</b>
     /// — an uncapped caller-chosen window pointed at the preferred-cleaner availability answer is a
     /// binary-search primitive over a cleaner's private schedule. Read it as a double-booking guard and

@@ -453,9 +453,7 @@ public class QuoteOrder
             };
 
             var estimatedMinutes = result.EstimatedDurationMinutes;
-            var requiredEmployees = estimatedMinutes <= 0
-                ? 1
-                : (int)Math.Ceiling(estimatedMinutes / (double)OrderDuration.MinutesPerEmployee);
+            var requiredEmployees = OrderDuration.RequiredEmployees(estimatedMinutes);
 
             var creditBalance = await ResolveCreditBalanceAsync(result.CurrencyId, cancellationToken);
 

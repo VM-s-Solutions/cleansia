@@ -50,12 +50,14 @@ public class BookingSizeBoundsTests
                 new QuotePlusSavings.Query([], [], rooms, bathrooms, "plus")),
             "recurring-create" => await ValidateSize(new CreateRecurringBooking.Validator(
                     Mock.Of<IOrderRepository>(), Mock.Of<IUserSessionProvider>(), Mock.Of<ISavedAddressRepository>(),
-                    Mock.Of<ICurrencyResolutionService>(), Mock.Of<ICountryRepository>()),
+                    Mock.Of<ICurrencyResolutionService>(), Mock.Of<ICountryRepository>(),
+                    Bookings.CatalogueDoubles.Services(), Bookings.CatalogueDoubles.Packages()),
                 new CreateRecurringBooking.Command(1, 1, "10:00", rooms, bathrooms, "address", [], [], 1, DateTime.UtcNow)),
             "recurring-update" => await ValidateSize(new UpdateRecurringBooking.Validator(
                     Mock.Of<IRecurringBookingTemplateRepository>(), Mock.Of<IUserMembershipRepository>(),
                     Mock.Of<IUserSessionProvider>(), Mock.Of<IOrderRepository>(), Mock.Of<ISavedAddressRepository>(),
-                    Mock.Of<ICurrencyResolutionService>(), Mock.Of<ICountryRepository>()),
+                    Mock.Of<ICurrencyResolutionService>(), Mock.Of<ICountryRepository>(),
+                    Bookings.CatalogueDoubles.Services(), Bookings.CatalogueDoubles.Packages()),
                 new UpdateRecurringBooking.Command("template", 1, 1, "10:00", rooms, bathrooms,
                     "address", [], [], 1, DateTime.UtcNow)),
             _ => throw new ArgumentOutOfRangeException(nameof(endpoint)),

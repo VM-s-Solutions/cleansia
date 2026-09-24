@@ -216,11 +216,12 @@ public partial class CreateOrderCallerCurrencyTests
                 var created = await provider.GetRequiredService<IMediator>().Send(
                     BuildCommand(Slovakia, currencyId: null, EurServicePrice + EurPackagePrice) with
                     {
-                        PaymentType = PaymentType.Cash,
+                        PaymentType = PaymentType.Card,
                         Language = "cs",
                     });
                 Assert.True(created.IsSuccess, created.Error?.Message);
 
+                await MarkPaidAsTheWebhookWouldAsync(provider, created.Value.Id);
                 await IssueReceiptInAFreshScopeAsync(provider, created.Value.Id);
                 return created.Value.Id;
             },
@@ -252,6 +253,15 @@ public partial class CreateOrderCallerCurrencyTests
         services.Replace(ServiceDescriptor.Singleton(blobs.Object));
         services.Replace(ServiceDescriptor.Scoped<IEmailService>(_ => Mock.Of<IEmailService>()));
         return Task.CompletedTask;
+    }
+
+    private static async Task MarkPaidAsTheWebhookWouldAsync(IServiceProvider provider, string orderId)
+    {
+        using var scope = provider.GetRequiredService<IServiceScopeFactory>().CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<CleansiaDbContext>();
+        var order = await context.Orders.IgnoreQueryFilters().SingleAsync(o => o.Id == orderId);
+        order.UpdatePaymentStatus(PaymentStatus.Paid);
+        await context.SaveChangesAsync();
     }
 
     /// <summary>

@@ -5,7 +5,9 @@ using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.AppServices.Tenancy;
 using System.Globalization;
 using Cleansia.Core.Domain.Bookings;
+using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Notifications;
+using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Queue.Abstractions;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.SeedWork;
@@ -251,6 +253,21 @@ public class MaterializeRecurringBookingTemplate
                 userId: null,
                 nowUtc: now,
                 cancellationToken);
+
+            // A cash template authored before the one-cleaner rule. Owner ruling 2026-09-24: never switch
+            // its payment for the customer and never charge a card; create nothing until they correct it,
+            // which UpdateSchedule does, clearing the marker. The marker is left alone here so a later
+            // catalogue edit that makes the selection eligible again loses no occurrence in the window.
+            var requiredEmployees = OrderDuration.RequiredEmployees(rawSubtotalResult.EstimatedDurationMinutes);
+            if (template.PaymentType == PaymentType.Cash
+                && !BookingPolicy.AllowsCash(!string.IsNullOrEmpty(template.UserId), requiredEmployees))
+            {
+                logger.LogWarning(
+                    "Template {TemplateId} skipped: it pays cash for a job needing {RequiredEmployees} cleaners. "
+                    + "The schedule is preserved and resumes once its owner moves it to card or a one-cleaner selection",
+                    template.Id, requiredEmployees);
+                return BusinessResult.Success(new Response(0));
+            }
 
             var customerName = string.Join(" ",
                 new[] { template.User.FirstName, template.User.LastName }

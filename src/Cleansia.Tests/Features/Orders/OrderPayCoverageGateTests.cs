@@ -108,7 +108,7 @@ public class OrderPayCoverageGateTests
                 Bathrooms: 1,
                 SelectedExtraSlugs: [],
                 CleaningDate: DateTime.UtcNow.AddDays(3),
-                PaymentType: PaymentType.Cash,
+                PaymentType: PaymentType.Card,
                 Currency: Czk,
                 SelectedServiceIds: serviceIds ?? [ServiceId],
                 SelectedPackageIds: packageIds ?? [],

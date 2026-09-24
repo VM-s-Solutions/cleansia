@@ -43,6 +43,8 @@ public class UpdateRecurringBooking
         private readonly ISavedAddressRepository _savedAddressRepository;
         private readonly ICurrencyResolutionService _currencyResolutionService;
         private readonly ICountryRepository _countryRepository;
+        private readonly IServiceRepository _serviceRepository;
+        private readonly IPackageRepository _packageRepository;
 
         public Validator(
             IRecurringBookingTemplateRepository templateRepository,
@@ -51,7 +53,9 @@ public class UpdateRecurringBooking
             IOrderRepository orderRepository,
             ISavedAddressRepository savedAddressRepository,
             ICurrencyResolutionService currencyResolutionService,
-            ICountryRepository countryRepository)
+            ICountryRepository countryRepository,
+            IServiceRepository serviceRepository,
+            IPackageRepository packageRepository)
         {
             _templateRepository = templateRepository;
             _userMembershipRepository = userMembershipRepository;
@@ -60,6 +64,8 @@ public class UpdateRecurringBooking
             _savedAddressRepository = savedAddressRepository;
             _currencyResolutionService = currencyResolutionService;
             _countryRepository = countryRepository;
+            _serviceRepository = serviceRepository;
+            _packageRepository = packageRepository;
 
             // The entitlement link is the LAST link of THIS chain, never a second RuleFor: the
             // class-level default is Continue, so a parallel chain would answer "you need Plus" for a
@@ -111,9 +117,15 @@ public class UpdateRecurringBooking
                 .NotEmpty().WithMessage(BusinessErrorMessage.Required)
                 .MustAsync(SavedAddressCountryIsServicedAsync).WithMessage(BusinessErrorMessage.CountryNotServiced);
 
+            // Judged on the command alone: the update replaces the selection and the payment type
+            // together, so a legacy cash template that needs two cleaners is correctable only by an
+            // edit that moves it to card or to a one-cleaner selection.
             RuleFor(x => x.PaymentType)
+                .Cascade(CascadeMode.Stop)
                 .Must(p => Enum.IsDefined(typeof(PaymentType), p))
-                .WithMessage(BusinessErrorMessage.InvalidEnumValue);
+                .WithMessage(BusinessErrorMessage.InvalidEnumValue)
+                .MustAsync(CashIsAvailableForSelectionAsync)
+                .WithMessage(BusinessErrorMessage.OrderCashNotAvailable);
 
             RuleFor(x => x)
                 .Must(c => c.SelectedServiceIds.Count > 0 || c.SelectedPackageIds.Count > 0)
@@ -161,6 +173,14 @@ public class UpdateRecurringBooking
                 userId, employeeId, cancellationToken);
             return cleanerCurrency?.Id == orderCurrency.Id;
         }
+
+        private async Task<bool> CashIsAvailableForSelectionAsync(
+            Command command, int paymentType, CancellationToken cancellationToken)
+            => paymentType != (int)PaymentType.Cash
+               || (await RecurringCashEligibility.LoadAsync(
+                       _serviceRepository, _packageRepository,
+                       command.SelectedServiceIds, command.SelectedPackageIds, cancellationToken))
+                   .Allows(command.SelectedServiceIds, command.SelectedPackageIds);
 
         private async Task<bool> BeOwnedByCallerAsync(string id, CancellationToken cancellationToken)
         {

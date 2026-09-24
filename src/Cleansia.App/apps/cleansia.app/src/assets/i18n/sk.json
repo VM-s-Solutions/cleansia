@@ -1888,6 +1888,7 @@
         "not_match": "Celková cena objednávky sa zmenila — skontrolujte objednávku a skúste to znova."
       },
       "payment_gateway_unavailable": "Platby sú dočasne nedostupné. Skúste to prosím o chvíľu.",
+      "cash_not_available": "Platba v hotovosti je možná len po prihlásení a pri objednávke, ktorú zvládne jeden upratovač.",
       "country_operator_mismatch": "Túto adresu obsluhuje iná spoločnosť Cleansia, preto ju tu nie je možné objednať.",
       "payment": {
         "already_paid": "Táto objednávka už bola zaplatená."

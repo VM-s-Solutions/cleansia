@@ -11501,6 +11501,9 @@
           "preferredEmployeeId": {
             "type": "string",
             "nullable": true
+          },
+          "requiresPaymentMethodChange": {
+            "type": "boolean"
           }
         },
         "additionalProperties": false

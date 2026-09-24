@@ -22,6 +22,7 @@ namespace Cleansia.Tests.Features.Orders;
 public class OrderFactoryPreferredHoldTests
 {
     private const string PreferredEmployeeId = "employee-favourite";
+    private const string CustomerUserId = "user-customer-favourite";
 
     private static readonly DateTime Now = new(2026, 8, 4, 9, 0, 0, DateTimeKind.Utc);
 
@@ -53,6 +54,10 @@ public class OrderFactoryPreferredHoldTests
         _packageRepository
             .Setup(r => r.GetByIds(It.IsAny<IEnumerable<string>>()))
             .Returns(Array.Empty<Package>().AsQueryable().BuildMock());
+        _loyaltyService
+            .Setup(s => s.ResolveTierDiscountForOrderAsync(
+                It.IsAny<string>(), It.IsAny<decimal>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new TierDiscountResult(0m, null));
     }
 
     [Fact]
@@ -227,12 +232,12 @@ public class OrderFactoryPreferredHoldTests
             NullLogger<OrderFactory>.Instance);
 
     /// <summary>
-    /// A one-off CASH booking by default — the one shape that is offerable the instant it exists, which
-    /// is why the announcement rides creation for it and for nothing else.
+    /// A signed-in customer's one-off CASH booking by default — the one shape that is offerable the
+    /// instant it exists, which is why the announcement rides creation for it and for nothing else.
     /// </summary>
     private static CreateOrderInput Input(PaymentType paymentType = PaymentType.Cash) =>
         new(
-            UserId: null,
+            UserId: CustomerUserId,
             CustomerName: "Test Customer",
             CustomerEmail: "customer@example.com",
             CustomerPhone: "+420123456789",

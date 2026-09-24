@@ -367,7 +367,7 @@ public class ReceiptLinesReconcileTests
 
         return await factory.CreateAsync(
             new CreateOrderInput(
-                UserId: booking.PlusPercentage > 0m || booking.Tier > 0m ? UserId : null,
+                UserId: UserId,
                 CustomerName: "Jan Novák",
                 CustomerEmail: "jan@example.com",
                 CustomerPhone: "+420123456789",

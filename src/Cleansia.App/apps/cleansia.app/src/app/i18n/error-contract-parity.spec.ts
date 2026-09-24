@@ -504,6 +504,9 @@ const CUSTOMER_SURFACE_ERROR_KEYS: readonly string[] = [
   'order.size_exceeds_maximum',
   'order.span_exceeds_maximum',
   'order.payment_gateway_unavailable',
+  // Cash only for a signed-in customer whose booking needs one cleaner (owner ruling 2026-09-24):
+  // CreateOrder, CreateRecurringBooking, UpdateRecurringBooking and ConfirmRecurringOrder.
+  'order.cash_not_available',
   'currency.invalid',
   // The ambient tenant (the claim, or the market's operator for a guest) must be the operator of the
   // address country; a booking in another operating company's country is refused (ADR-0061 D6).

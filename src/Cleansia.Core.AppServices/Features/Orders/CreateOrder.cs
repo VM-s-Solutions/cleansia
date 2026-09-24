@@ -254,6 +254,9 @@ public class CreateOrder
                 .WithMessage(BusinessErrorMessage.ExpressWaiverNoLongerAvailable)
                 .MustAsync(PriceMatchesAsync)
                 .WithMessage(BusinessErrorMessage.TotalPriceNotMatch)
+                .Must(CashIsAvailable)
+                .WithMessage(BusinessErrorMessage.OrderCashNotAvailable)
+                .WithErrorCode(nameof(Command.PaymentType))
                 .Must(PromoNamesASignedInCustomer)
                 .WithMessage(BusinessErrorMessage.PromoRequiresAccount)
                 .WithErrorCode(nameof(Command.PromoCode))
@@ -652,6 +655,16 @@ public class CreateOrder
 
         private static OrderPricingResult CachedPricing(ValidationContext<Command> context)
             => (OrderPricingResult)context.RootContextData[PricingResultKey];
+
+        /// <summary>
+        /// Judged on the calculator's duration -- the same catalogue sum the factory staffs the order
+        /// with -- because the command carries no duration or crew a client could be trusted for.
+        /// </summary>
+        private bool CashIsAvailable(Command command, Command _, ValidationContext<Command> context)
+            => command.PaymentType != PaymentType.Cash
+               || BookingPolicy.AllowsCash(
+                   signedIn: !IsGuest(),
+                   OrderDuration.RequiredEmployees(CachedPricing(context).EstimatedDurationMinutes));
 
         // The promo rule cannot pick its message up front: which refusal applies is only known after
         // the preview inside the predicate. So the predicate hands the resolved message key to the rule

@@ -14824,6 +14824,7 @@ export class RecurringBookingTemplateDto implements IRecurringBookingTemplateDto
     lastMaterializedFor!: Date | undefined;
     isActive!: boolean;
     preferredEmployeeId!: string | undefined;
+    requiresPaymentMethodChange!: boolean;
 
     constructor(data?: IRecurringBookingTemplateDto) {
         if (data) {
@@ -14860,6 +14861,7 @@ export class RecurringBookingTemplateDto implements IRecurringBookingTemplateDto
             this.lastMaterializedFor = Data["lastMaterializedFor"] ? new Date(Data["lastMaterializedFor"].toString()) : undefined as any;
             this.isActive = Data["isActive"];
             this.preferredEmployeeId = Data["preferredEmployeeId"];
+            this.requiresPaymentMethodChange = Data["requiresPaymentMethodChange"];
         }
     }
 
@@ -14896,6 +14898,7 @@ export class RecurringBookingTemplateDto implements IRecurringBookingTemplateDto
         data["lastMaterializedFor"] = this.lastMaterializedFor ? this.lastMaterializedFor.toISOString() : undefined as any;
         data["isActive"] = this.isActive;
         data["preferredEmployeeId"] = this.preferredEmployeeId;
+        data["requiresPaymentMethodChange"] = this.requiresPaymentMethodChange;
         return data;
     }
 }
@@ -14917,6 +14920,7 @@ export interface IRecurringBookingTemplateDto {
     lastMaterializedFor: Date | undefined;
     isActive: boolean;
     preferredEmployeeId: string | undefined;
+    requiresPaymentMethodChange: boolean;
 }
 
 export enum ReferralStatus {

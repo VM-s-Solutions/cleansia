@@ -25,7 +25,8 @@ namespace Cleansia.Core.AppServices.Features.Orders;
 /// immediately and queues the receipt.
 ///
 /// <para>Refuses orders that are not pending, not owned by the caller, or not linked to a template —
-/// those belong on the standard booking flow. → /flows/booking-and-pricing#recurring-bookings</para>
+/// those belong on the standard booking flow — and a cash occurrence whose job needs more than one
+/// cleaner. → /flows/booking-and-pricing#recurring-bookings</para>
 /// </summary>
 [AuditAction("customer.order.recurring.confirm", Audience = AuditAudience.Customer, ResourceType = "Order")]
 public class ConfirmRecurringOrder
@@ -106,6 +107,16 @@ public class ConfirmRecurringOrder
             {
                 return BusinessResult.Failure<Response>(new Error(
                     nameof(order.PaymentStatus), BusinessErrorMessage.OrderPaymentAlreadyPaid));
+            }
+
+            // An occurrence materialized before the one-cleaner cash rule. It is neither confirmed as cash
+            // nor switched to card: the customer cancels it (free while nobody has taken it) and moves the
+            // template to card. → /flows/booking-and-pricing#recurring-bookings
+            if (order.PaymentType == PaymentType.Cash
+                && !BookingPolicy.AllowsCash(!string.IsNullOrEmpty(order.UserId), order.RequiredEmployees))
+            {
+                return BusinessResult.Failure<Response>(new Error(
+                    nameof(order.PaymentType), BusinessErrorMessage.OrderCashNotAvailable));
             }
 
             var result = order.PaymentType switch

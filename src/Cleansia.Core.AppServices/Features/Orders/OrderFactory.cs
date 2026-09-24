@@ -286,6 +286,15 @@ public sealed class OrderFactory(
         order.UpdateEstimatedTime(estimatedTime);
         order.CalculateRequiredEmployees(BookingPolicy.SpareSeatsPerOrder);
 
+        // CreateOrder.Validator and the recurring materializer refuse this first, where someone can react.
+        if (input.PaymentType == PaymentType.Cash
+            && !BookingPolicy.AllowsCash(!string.IsNullOrEmpty(input.UserId), order.RequiredEmployees))
+        {
+            throw new InvalidOperationException(
+                $"Cash is not available for this order: signed in = {!string.IsNullOrEmpty(input.UserId)}, "
+                + $"required cleaners = {order.RequiredEmployees}. Only a signed-in customer's one-cleaner job may pay cash.");
+        }
+
         // The factory never assigns either hold column itself — it hands the resolver's answer to the
         // aggregate, which owns the (beneficiary, deadline) pair. A declined hold is not a failure:
         // the preference is still stored, and the order goes straight to the open board.

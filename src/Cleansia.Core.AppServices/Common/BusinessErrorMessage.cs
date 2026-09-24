@@ -87,6 +87,8 @@ public static class BusinessErrorMessage
     // Cash-collection gating (cleaner marks cash collected before an order can be completed).
     public const string OrderCashAlreadyCollected = "order.cash_already_collected";
     public const string OrderCashNotCollected = "order.cash_not_collected";
+    /// <summary>Cash is only for a signed-in customer whose booking needs one cleaner; anything else pays by card.</summary>
+    public const string OrderCashNotAvailable = "order.cash_not_available";
     public const string OrderPaymentNotConfirmed = "order.payment_not_confirmed";
     // Reconciliation outcomes when the cleaner tries to take cash for an order booked on a card: the
     // handler asks Stripe what really happened before any second tender is recorded.

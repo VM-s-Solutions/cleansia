@@ -111,10 +111,6 @@ public class Order : TenantAuditable
 
     public int MaxEmployees { get; private set; } = 1;
 
-    // One number, named on OrderDuration. It was 120 here and 120 in the quote,
-    // which is two copies of a rule that must not drift.
-    private const int StandardWorkUnitMinutes = OrderDuration.MinutesPerEmployee;
-
     /// <summary>
     /// Query floor for the overlap scan. <b>It may only ever be too GENEROUS</b> — too generous costs a
     /// wider scan of a near-empty band; too tight makes an overlapping order invisible on the booking
@@ -869,9 +865,7 @@ public class Order : TenantAuditable
     {
         ArgumentOutOfRangeException.ThrowIfNegative(spareSeats);
 
-        RequiredEmployees = EstimatedTime <= 0
-            ? 1
-            : (int)Math.Ceiling((double)EstimatedTime / StandardWorkUnitMinutes);
+        RequiredEmployees = OrderDuration.RequiredEmployees(EstimatedTime);
         MaxEmployees = RequiredEmployees + spareSeats;
 
         return this;

@@ -70,7 +70,9 @@ public class CreateRecurringBookingClosedMarketTests
             _session.Object,
             _savedAddressRepository.Object,
             OrderMarketDoubles.Trading(CreateOrderTestData.DefaultCurrency()),
-            countryRepository ?? OrderMarketDoubles.Servicing(OpenCountryId));
+            countryRepository ?? OrderMarketDoubles.Servicing(OpenCountryId),
+            CatalogueDoubles.Services(),
+            CatalogueDoubles.Packages());
 
     private static CreateRecurringBooking.Command CommandAt(string savedAddressId) =>
         new(

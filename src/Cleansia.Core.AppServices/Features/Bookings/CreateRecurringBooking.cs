@@ -38,19 +38,25 @@ public class CreateRecurringBooking
         private readonly ISavedAddressRepository _savedAddressRepository;
         private readonly ICurrencyResolutionService _currencyResolutionService;
         private readonly ICountryRepository _countryRepository;
+        private readonly IServiceRepository _serviceRepository;
+        private readonly IPackageRepository _packageRepository;
 
         public Validator(
             IOrderRepository orderRepository,
             IUserSessionProvider userSessionProvider,
             ISavedAddressRepository savedAddressRepository,
             ICurrencyResolutionService currencyResolutionService,
-            ICountryRepository countryRepository)
+            ICountryRepository countryRepository,
+            IServiceRepository serviceRepository,
+            IPackageRepository packageRepository)
         {
             _orderRepository = orderRepository;
             _userSessionProvider = userSessionProvider;
             _savedAddressRepository = savedAddressRepository;
             _currencyResolutionService = currencyResolutionService;
             _countryRepository = countryRepository;
+            _serviceRepository = serviceRepository;
+            _packageRepository = packageRepository;
 
             RuleFor(x => x.Frequency)
                 .Must(f => Enum.IsDefined(typeof(RecurrenceFrequency), f))
@@ -79,8 +85,11 @@ public class CreateRecurringBooking
                 .WithMessage(BusinessErrorMessage.CountryNotServiced);
 
             RuleFor(x => x.PaymentType)
+                .Cascade(CascadeMode.Stop)
                 .Must(p => Enum.IsDefined(typeof(PaymentType), p))
-                .WithMessage(BusinessErrorMessage.InvalidEnumValue);
+                .WithMessage(BusinessErrorMessage.InvalidEnumValue)
+                .MustAsync(CashIsAvailableForSelectionAsync)
+                .WithMessage(BusinessErrorMessage.OrderCashNotAvailable);
 
             RuleFor(x => x)
                 .Must(c => c.SelectedServiceIds.Count > 0 || c.SelectedPackageIds.Count > 0)
@@ -164,6 +173,14 @@ public class CreateRecurringBooking
             return address is null
                 || await _countryRepository.IsServicedAsync(address.CountryId, cancellationToken);
         }
+
+        private async Task<bool> CashIsAvailableForSelectionAsync(
+            Command command, int paymentType, CancellationToken cancellationToken)
+            => paymentType != (int)PaymentType.Cash
+               || (await RecurringCashEligibility.LoadAsync(
+                       _serviceRepository, _packageRepository,
+                       command.SelectedServiceIds, command.SelectedPackageIds, cancellationToken))
+                   .Allows(command.SelectedServiceIds, command.SelectedPackageIds);
 
         private async Task<Address?> FindSavedAddressAsync(string userId, string savedAddressId, CancellationToken cancellationToken)
         {

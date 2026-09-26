@@ -133,6 +133,8 @@ const policy = {
   ExpressSurchargeRate: readCsConst(policySource, 'ExpressSurchargeRate'),
   FirstWindowHour: readCsConst(policySource, 'FirstWindowHour'),
   LastWindowHour: readCsConst(policySource, 'LastWindowHour'),
+  OopsWindowMinutesStandard: readCsConst(policySource, 'OopsWindowMinutesStandard'),
+  OopsWindowMinutesPlus: readCsConst(policySource, 'OopsWindowMinutesPlus'),
 };
 
 for (const [name, value] of Object.entries(policy)) {
@@ -249,6 +251,33 @@ for (const locale of LOCALES) {
     } else if (!percentagesIn(value).includes(expected)) {
       note(`ios/${locale}`, `${key} = "${value}" does not state ${expected}%`);
     }
+  }
+}
+
+// ─── 2b. The grace after booking the three clients state (owner ruling 2026-09-24) ─────────
+// Free cancellation for 15 minutes after booking, 60 for an entitled Cleansia Plus member. Each
+// sentence below names both figures (or, for the web comparison rows, one each), so the SET of
+// integers it states must contain the policy's — reordering by a translator is fine.
+const graceStandard = policy.OopsWindowMinutesStandard;
+const gracePlus = policy.OopsWindowMinutesPlus;
+function checkGrace(where, key, value, expected) {
+  if (value === null || value === undefined) {
+    note(where, `${key} is missing`);
+    return;
+  }
+  const stated = amountsIn(value);
+  for (const figure of expected) {
+    if (!stated.includes(figure)) note(where, `${key} = "${value}" does not state ${figure} minutes`);
+  }
+}
+for (const locale of LOCALES) {
+  const web = JSON.parse(read(join(WEB_I18N, `${locale}.json`)));
+  checkGrace(`web/${locale}`, 'pages.plus.row_grace_without', web.pages?.plus?.row_grace_without, [graceStandard]);
+  checkGrace(`web/${locale}`, 'pages.plus.row_grace_with', web.pages?.plus?.row_grace_with, [gracePlus]);
+  checkGrace(`web/${locale}`, 'pages.order.plus_perk_grace', web.pages?.order?.plus_perk_grace, [graceStandard, gracePlus]);
+  for (const key of ['booking_cancel_grace_note', 'membership_perk_grace_desc']) {
+    checkGrace(`android/${ANDROID_DIRS[locale]}`, key, androidString(ANDROID_DIRS[locale], key), [graceStandard, gracePlus]);
+    checkGrace(`ios/${locale}`, key, iosString(iosCatalog, key, locale), [graceStandard, gracePlus]);
   }
 }
 
@@ -450,7 +479,7 @@ if (findings.length) {
   const seedVersions = LEGAL_SEED_TYPES.map((type) => newestSeedVersion(REPO, type)).join(' / ');
   console.log(
     `booking-policy-parity: ${LOCALES.length} locale(s) × web + android + ios agree with ` +
-      `BookingPolicy — cancellation ${partialPct}%/${lastMinutePct}%, express +${expressPct}% ` +
+      `BookingPolicy — cancellation ${partialPct}%/${lastMinutePct}%, grace ${graceStandard}/${gracePlus} min, express +${expressPct}% ` +
       `from ${policy.ExpressLeadTimeHours} h, window ${policy.FirstWindowHour}:00–${policy.LastWindowHour}:00; ` +
       `money figures in copy come from the market; legal seed ${seedVersions} carries the placeholders; ` +
       `${reasons.length - REASONS_NOT_YET_RENDERED.size} cancellation reason(s) render on every client`,

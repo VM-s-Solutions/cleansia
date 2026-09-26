@@ -129,7 +129,12 @@ public sealed class OrderFactory(
         var finalTotalPrice = BookingPolicy.ApplyExpressSurcharge(
             input.RawSubtotal - resolution.TotalAmount, surchargeApplies);
 
-        var applied = resolution.AsChargedAgainst(surchargeApplies);
+        var expressSurcharge = Cents(
+            BookingPolicy.ApplyExpressSurcharge(input.RawSubtotal, surchargeApplies) - input.RawSubtotal);
+
+        var applied = resolution
+            .AsChargedAgainst(surchargeApplies)
+            .InCents(chargedDiscount: input.RawSubtotal + expressSurcharge - Cents(finalTotalPrice));
 
         decimal? appliedTierDiscount = applied.TierAmount > 0m ? applied.TierAmount : null;
         decimal? appliedMembershipDiscount = applied.MembershipAmount > 0m ? applied.MembershipAmount : null;
@@ -175,6 +180,8 @@ public sealed class OrderFactory(
             accessMode: input.AccessMode);
 
         order.SetCurrency(input.Currency);
+        order.SetExpressSurcharge(expressSurcharge);
+        order.SetLanguage(input.LanguageCode);
         order.SetWorkContractDocument(workContract);
         order.TenantId = input.OperatorTenantId;
 
@@ -278,6 +285,15 @@ public sealed class OrderFactory(
 
         order.UpdateEstimatedTime(estimatedTime);
         order.CalculateRequiredEmployees(BookingPolicy.SpareSeatsPerOrder);
+
+        // CreateOrder.Validator and the recurring materializer refuse this first, where someone can react.
+        if (input.PaymentType == PaymentType.Cash
+            && !BookingPolicy.AllowsCash(!string.IsNullOrEmpty(input.UserId), order.RequiredEmployees))
+        {
+            throw new InvalidOperationException(
+                $"Cash is not available for this order: signed in = {!string.IsNullOrEmpty(input.UserId)}, "
+                + $"required cleaners = {order.RequiredEmployees}. Only a signed-in customer's one-cleaner job may pay cash.");
+        }
 
         // The factory never assigns either hold column itself — it hands the resolver's answer to the
         // aggregate, which owns the (beneficiary, deadline) pair. A declined hold is not a failure:
@@ -397,9 +413,10 @@ public sealed class OrderFactory(
         /// <summary>
         /// The resolution restated against the price actually charged — <b>the ONE form that may be
         /// reported, persisted or rendered.</b> Resolution happens on the raw pre-surcharge subtotal, but
-        /// the price it comes off carries the surcharge, so the raw figure under-states the saving. <b>The
-        /// order carries no express flag for any consumer to correct with, so the correction can only be
-        /// made HERE, before the amount is written.</b>
+        /// the price it comes off carries the surcharge, so the raw figure under-states the saving. Every
+        /// consumer that composes a discount with the total (the mappers' original subtotal, the savings
+        /// sums, the clients) reads the stored amount as the saving, so the correction is made HERE,
+        /// before the amount is written.
         /// → /product/business-rules#discount-express-correction
         /// </summary>
         internal DiscountResolution AsChargedAgainst(bool surchargeApplies)
@@ -409,7 +426,43 @@ public sealed class OrderFactory(
             return new DiscountResolution(
                 Charged(MembershipAmount), Charged(TierAmount), Charged(PromoAmount), Charged(TotalAmount));
         }
+
+        /// <summary>
+        /// The amounts as the order's <c>numeric(18,2)</c> columns will hold them, summing to exactly
+        /// <paramref name="chargedDiscount"/>. Each column rounds on its own, so three independently
+        /// rounded sources could miss the stored total by a cent and the receipt would print lines that
+        /// do not add up to it. The residue lands on the largest source, where a cent moves the least.
+        /// </summary>
+        internal DiscountResolution InCents(decimal chargedDiscount)
+        {
+            var membership = Cents(MembershipAmount);
+            var tier = Cents(TierAmount);
+            var promo = Cents(PromoAmount);
+            var residue = chargedDiscount - (membership + tier + promo);
+            var largest = Math.Max(PromoAmount, Math.Max(MembershipAmount, TierAmount));
+
+            if (residue != 0m && largest > 0m)
+            {
+                if (PromoAmount == largest)
+                {
+                    promo += residue;
+                }
+                else if (MembershipAmount == largest)
+                {
+                    membership += residue;
+                }
+                else
+                {
+                    tier += residue;
+                }
+            }
+
+            return new DiscountResolution(membership, tier, promo, membership + tier + promo);
+        }
     }
+
+    /// <summary>What a <c>numeric(18,2)</c> money column keeps of a value written to it.</summary>
+    private static decimal Cents(decimal amount) => Math.Round(amount, 2, MidpointRounding.AwayFromZero);
 
     /// <summary>
     /// FAIL CLOSED, and this is the third layer rather than the first. The customer catalogue withholds

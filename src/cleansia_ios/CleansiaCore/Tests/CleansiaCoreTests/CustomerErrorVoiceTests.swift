@@ -23,6 +23,10 @@ final class CustomerErrorVoiceTests: XCTestCase {
             emitters: "CancelOrder, CancelGuestOrder, GetGuestCancellationFeePreview, AdminCancelOrder, "
                 + "AdminOverrideOrderStatus"
         ),
+        CustomerOnlyKey(
+            "order.size_exceeds_maximum",
+            emitters: "CreateOrder, QuoteOrder, QuotePlusSavings, CreateRecurringBooking, UpdateRecurringBooking"
+        ),
         CustomerOnlyKey("order.span_exceeds_maximum", emitters: "CreateOrder, QuoteOrder"),
         CustomerOnlyKey("order.empty", emitters: "CreateOrder"),
         CustomerOnlyKey("order.address_exactly_one_required", emitters: "CreateOrder"),
@@ -33,6 +37,10 @@ final class CustomerErrorVoiceTests: XCTestCase {
         CustomerOnlyKey("order.selected_package.invalid", emitters: "CreateOrder, QuoteOrder"),
         CustomerOnlyKey("order.preferred_employee.not_eligible", emitters: "CreateOrder"),
         CustomerOnlyKey("order.total_price.not_match", emitters: "CreateOrder"),
+        CustomerOnlyKey(
+            "order.cash_not_available",
+            emitters: "CreateOrder, CreateRecurringBooking, UpdateRecurringBooking, ConfirmRecurringOrder"
+        ),
         CustomerOnlyKey(
             "recurring_booking.not_found",
             emitters: "UpdateRecurringBooking, SetRecurringBookingActive, DeleteRecurringBooking"
@@ -132,6 +140,8 @@ final class CustomerErrorVoiceTests: XCTestCase {
         "order.address_exactly_one_required": "CreateOrder",
         "order.already_cancelled": "CancellationAssessor",
         "order.already_completed": "CancellationAssessor",
+        "order.cash_not_available":
+            "CreateOrder, CreateRecurringBooking, UpdateRecurringBooking, ConfirmRecurringOrder",
         "order.cleaning_date.below_lead_time": "CreateOrder",
         "order.cleaning_date.future": "CreateOrder",
         "order.country_operator_mismatch": "CreateOrder",
@@ -147,6 +157,8 @@ final class CustomerErrorVoiceTests: XCTestCase {
         "order.review.rating_invalid": "SubmitOrderReview",
         "order.selected_package.invalid": "CreateOrder, QuoteOrder",
         "order.selected_services.invalid": "CreateOrder, QuoteOrder",
+        "order.size_exceeds_maximum":
+            "CreateOrder, QuoteOrder, QuotePlusSavings, CreateRecurringBooking, UpdateRecurringBooking",
         "order.span_exceeds_maximum": "CreateOrder, QuoteOrder",
         "order.total_price.not_match": "CreateOrder",
         "order.total_price.positive": "CreateOrder",

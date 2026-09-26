@@ -156,7 +156,6 @@ enum OrderFixtures {
         displayOrderNumber: String? = nil,
         cleaningDateTime: Date? = nil,
         completedAt: Date? = nil,
-        confirmationCode: String? = nil,
         receiptNumber: String? = nil,
         recurringTemplateId: String? = nil,
         address: OrderAddress? = nil,
@@ -192,7 +191,6 @@ enum OrderFixtures {
             statusCode: statusCode,
             cleaningDateTime: cleaningDateTime,
             completedAt: completedAt,
-            confirmationCode: confirmationCode,
             receiptNumber: receiptNumber,
             recurringTemplateId: recurringTemplateId,
             address: address,
@@ -298,7 +296,8 @@ enum OrderFixtures {
             feeAmount: fee,
             refundAmount: refund,
             currencyCode: "CZK",
-            forfeitsExpressWaiver: forfeitsExpressWaiver
+            forfeitsExpressWaiver: forfeitsExpressWaiver,
+            oopsWindowMinutes: 15
         )
     }
 

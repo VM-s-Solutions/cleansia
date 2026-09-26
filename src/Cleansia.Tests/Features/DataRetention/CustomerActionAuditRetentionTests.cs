@@ -12,6 +12,7 @@ using Cleansia.TestUtilities;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 
@@ -22,9 +23,9 @@ namespace Cleansia.Tests.Features.DataRetention;
 /// window is per row, never "three years after the customer's last act": that anchor kept an active
 /// customer's IP addresses for the life of the account (panel C7). So a row at cutoff - 1 day goes and
 /// a row at cutoff + 1 day stays for the SAME user; a guest row (<c>UserId</c> null) expires the same
-/// way; the admin and employee tables are never touched (ADR-0012 D6 stands); the tenant setting
-/// widens the window; the master switch stops it; and a backlog larger than one batch is drained in
-/// one run. Real repositories over SQLite, the <c>UserNotificationRetentionAndGdprTests</c> shape —
+/// way; the customer window reaches the customer table alone, the admin and employee tables keeping to
+/// windows of their own; the tenant setting widens the window; the master switch stops it; and a backlog
+/// larger than one batch is drained in one run. Real repositories over SQLite, the <c>UserNotificationRetentionAndGdprTests</c> shape —
 /// the assertions are on rows, never on a mock verification.
 /// </summary>
 public sealed class CustomerActionAuditRetentionTests : IDisposable
@@ -139,23 +140,26 @@ public sealed class CustomerActionAuditRetentionTests : IDisposable
     }
 
     [Fact]
-    public async Task The_Admin_And_Employee_Tables_Are_Never_Touched()
+    public async Task The_Customer_Window_Reaches_The_Customer_Table_Alone()
     {
         await EnsureSchemaAsync();
-        var cutoff = DateTimeOffset.UtcNow.AddYears(-DefaultYears);
+        _configProvider
+            .Setup(c => c.GetTenantSettingAsync(RetentionDefaults.CustomerAuditRetentionYearsKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync("1");
+        var twoYearsAgo = DateTimeOffset.UtcNow.AddYears(-2);
 
         await using (var seed = NewContext())
         {
             seed.AdminActionAudits.Add(new AdminActionAudit
             {
                 ActorId = "admin-1", ActorProfile = UserProfile.Administrator, Action = "order.refund",
-                Success = true, OccurredOn = cutoff.AddYears(-1), TenantId = TestTenants.Default
+                Success = true, OccurredOn = twoYearsAgo, TenantId = TestTenants.Default
             });
             var employeeRow = EmployeeActionAudit.Create("employee-1", "ORD-1", EmployeeAuditAction.OrderDropped);
             employeeRow.TenantId = TestTenants.Default;
-            employeeRow.Created("employee-1", cutoff.AddYears(-1));
+            employeeRow.Created("employee-1", twoYearsAgo);
             seed.EmployeeActionAudits.Add(employeeRow);
-            seed.CustomerActionAudits.Add(Row(cutoff.AddDays(-1), UserId, "ORD-OLD"));
+            seed.CustomerActionAudits.Add(Row(twoYearsAgo, UserId, "ORD-OLD"));
             await seed.CommitAsync(CancellationToken.None);
         }
 
@@ -261,6 +265,11 @@ public sealed class CustomerActionAuditRetentionTests : IDisposable
             new CustomerActionAuditRepository(ctx),
             new DisputeRepository(ctx),
             new WorkContractAcceptanceRepository(ctx),
+            new AddressRepository(ctx),
+            new OrderPhotoRepository(ctx),
+            new AdminActionAuditRepository(ctx),
+            new EmployeeActionAuditRepository(ctx, Mock.Of<IServiceScopeFactory>()),
+            new GuestOrderAccessTokenRepository(ctx),
             new TenantRepository(ctx),
             tenantProvider,
             _configProvider.Object,

@@ -44,6 +44,24 @@ final class NotificationFeedTemplatesTests: XCTestCase {
         XCTAssertFalse(rendered.body.contains("%"))
     }
 
+    func testSeatOpenRowRendersWithTheOrderNumberAndPreservesItsState() throws {
+        let notification = NotificationFixtures.item(
+            id: "seat-open",
+            eventKey: "order.seat_open",
+            args: ["orderNumber": "A-2201", "orderId": "ord-1"]
+        )
+        let rows = NotificationFeedTemplates.rows(from: [notification])
+        XCTAssertEqual(rows.count, 1)
+        let row = try XCTUnwrap(rows.first)
+        XCTAssertEqual(row.id, notification.id)
+        XCTAssertEqual(row.createdOn, notification.createdOn)
+        XCTAssertTrue(row.isUnread)
+        XCTAssertEqual(row.title, L10n.localized("push.order.seat_open.title"))
+        XCTAssertEqual(row.body, String(format: L10n.localized("push.order.seat_open.body"), "A-2201"))
+        XCTAssertTrue(row.body.contains("A-2201"))
+        XCTAssertFalse(row.body.contains("%"))
+    }
+
     func testPreferredOfferRowRendersWithTheOrderNumber() throws {
         let rendered = try XCTUnwrap(NotificationFeedTemplates.render(
             eventKey: "order.preferred_offer",
@@ -86,7 +104,7 @@ final class NotificationFeedTemplatesTests: XCTestCase {
     }
 
     func testUnknownEventKeyHidesTheRow() {
-        XCTAssertNil(NotificationFeedTemplates.render(eventKey: "order.confirmed", args: [:]))
+        XCTAssertNil(NotificationFeedTemplates.render(eventKey: "order.payment_confirmed", args: [:]))
         XCTAssertNil(NotificationFeedTemplates.render(eventKey: "promo.new_sitewide", args: [:]))
         XCTAssertNil(NotificationFeedTemplates.render(eventKey: "some.future_event", args: [:]))
     }

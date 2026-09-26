@@ -18,7 +18,10 @@ public enum CancellationFeeTier
     /// <summary>No cleaner has been pulled onto the job, so there is no one's time to compensate.</summary>
     FreeNotAccepted = 0,
 
-    /// <summary>Cancelled within the "oops window" of booking — an accidental tap, not a cancellation.</summary>
+    /// <summary>
+    /// Cancelled within the customer's "oops window" after booking — 15 minutes, or 60 for an entitled
+    /// Plus member (<c>CancellationPolicy.OopsWindowMinutes</c>). The name is persisted in audit evidence.
+    /// </summary>
     FreeOopsWindow = 1,
 
     /// <summary>Cancelled early enough to fall outside the caller's free-cancellation window.</summary>

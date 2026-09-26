@@ -26,11 +26,8 @@ public enum CreditTransactionReason
     OrderPaymentReturned = 11,
 
     /// <summary>
-    /// Taken because it expired, or because an admin discharged it at the customer's request.
-    ///
-    /// <para>One reason for both: the movement and its consequence are identical, and the note on the
-    /// row says which it was. An admin discharging a balance is how a customer who wants to be erased
-    /// gets past the positive-balance refusal. → CreditAccount.ExpiryMonths</para>
+    /// Taken because it expired, an admin discharged it, or account erasure forfeited it.
+    /// The ledger note records which reason applied.
     /// </summary>
     Expired = 12,
 }

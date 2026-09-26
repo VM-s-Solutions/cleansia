@@ -52,6 +52,11 @@ Client                    API
 
 Cash orders are immediately confirmed without any payment gateway interaction.
 
+**Who may choose cash.** Only a signed-in customer whose selection needs exactly one cleaner
+(`BookingPolicy.AllowsCash`); a guest, or a booking whose duration needs two cleaners or more, is
+refused with `order.cash_not_available` before anything is reserved, debited or dispatched, and pays by
+card. → [Paying in cash](/product/business-rules#cash)
+
 ## Endpoints
 
 ### Create Payment (via CreateOrder)
@@ -73,15 +78,17 @@ Both routes invoke the same `CreateOrder.Command` handler.
 {
   "id": "order-id",
   "confirmationCode": "ABC123",
-  "stripeSessionId": "https://checkout.stripe.com/c/pay/cs_test_..."
+  "stripeSessionId": "https://checkout.stripe.com/c/pay/cs_test_...",
+  "guestAccessToken": "p8Jw2hQx…"
 }
 ```
 
 | Field | Description |
 |-------|-------------|
 | `id` | The created order ID |
-| `confirmationCode` | Human-readable confirmation code |
+| `confirmationCode` | The short human reference printed on the booking. A reference, not a credential — nothing authenticates on it |
 | `stripeSessionId` | Stripe Checkout URL (card) or `null` (cash) |
+| `guestAccessToken` | The booking's access token on a **guest** booking; `null` when the command carried a session. The credential the guest tracks and cancels with → [The guest access token](/flows/booking-and-pricing#guest-access-token) |
 
 ## Stripe Checkout Session
 
@@ -129,10 +136,10 @@ payment initiated, waiting for the webhook" is `PaymentStatus.Pending` while `Or
 | Status | Value | Description |
 |--------|-------|-------------|
 | `Pending` | `1` | Order created, awaiting payment. **Every order starts here, cash included** — cash is not marked `Paid` at creation |
-| `Paid` | `2` | Card webhook settled, or a recurring cash occurrence was confirmed. The same write appends `OrderStatus.Confirmed` |
+| `Paid` | `2` | Card webhook settled; a recurring cash occurrence was confirmed; or the assigned cleaner recorded the cash (`MarkCashCollected`), which also restates an issued receipt as paid. `OrderStatus` does not move: a paid order stays `New` until a cleaner takes it ([ADR-0057](/decisions/adr-0057)) |
 | `Failed` | `3` | Payment failed, or `CleanupStalePendingOrders` gave up on an abandoned checkout |
 | `Refunded` | `4` | Full refund issued |
-| `Disputed` | `5` | Chargeback opened (`charge.dispute.*`) |
+| `Disputed` | `5` | Reserved; nothing writes it. A chargeback is recorded as a `Chargeback` dispute, not on this axis |
 | `PartiallyRefunded` | `6` | Partial refund issued |
 
 A cash order therefore stays `New` + `Pending` until a cleaner takes it — and it is still offerable,

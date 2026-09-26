@@ -12,9 +12,21 @@ public class Dispute : TenantAuditable
     public string OrderId { get; private set; }
     public Order Order { get; private set; }
 
-    [Required]
-    public string UserId { get; private set; }
-    public User User { get; private set; }
+    /// <summary>
+    /// The customer the dispute belongs to, or NULL when there is no platform account behind it.
+    ///
+    /// <para>A dispute hangs off the ORDER, and a guest order has no user. The one writer that can
+    /// produce such a row is the bank: a chargeback on a guest booking arrives at the Stripe webhook,
+    /// which resolves the order by payment intent and has no customer to name. It used to substitute
+    /// the empty string against a required foreign key, so Postgres raised 23503, the webhook answered
+    /// 500, Stripe retried forever and the chargeback was never recorded anywhere an administrator
+    /// could see it.</para>
+    ///
+    /// <para>Every ownership read compares this against the caller's id, so a null simply matches
+    /// nobody — which is the right answer for a row no customer owns.</para>
+    /// </summary>
+    public string? UserId { get; private set; }
+    public User? User { get; private set; }
 
     [Required]
     public DisputeReason Reason { get; private set; }
@@ -83,7 +95,7 @@ public class Dispute : TenantAuditable
 
     public Dispute(
         string orderId,
-        string userId,
+        string? userId,
         DisputeReason reason,
         string description,
         string createdBy)

@@ -39,11 +39,6 @@ export const ORDERS_HELP_STEPS: HelpStep[] = [
 
 export const ORDER_STATUS_FLOW: StatusFlowItem[] = [
   {
-    statusKey: 'enums.order_status.pending',
-    descriptionKey: 'help.orders.status.pending_desc',
-    colorClass: legendBadgeClass('order', 'Pending'),
-  },
-  {
     statusKey: 'enums.order_status.confirmed',
     descriptionKey: 'help.orders.status.confirmed_desc',
     colorClass: legendBadgeClass('order', 'Confirmed'),

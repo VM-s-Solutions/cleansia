@@ -15,7 +15,7 @@ import { TrackOrderFacade } from './track-order.facade';
 
 function order(id = 'first', status = OrderStatus.New): LookupOrderResponse {
   return LookupOrderResponse.fromJS({
-    id, displayOrderNumber: `CLS-${id}`, confirmationCode: `code-${id}`,
+    id, displayOrderNumber: `CLS-${id}`,
     orderStatus: { value: status }, currency: { code: 'EUR' },
   });
 }
@@ -32,14 +32,15 @@ describe('guest cancellation selection and confirmation', () => {
   let previewCall: jest.SpyInstance;
   let cancelCall: jest.SpyInstance;
   let lookupCall: jest.SpyInstance;
-  const remembered = { getAll: jest.fn() };
+  const remembered = { getAll: jest.fn(), save: jest.fn() };
 
   beforeEach(() => {
     TestBed.resetTestingModule();
     remembered.getAll.mockReturnValue([
-      { orderId: 'first', email: 'first@example.test' },
-      { orderId: 'second', email: 'second@example.test' },
+      { orderId: 'first', accessToken: 'tok-first' },
+      { orderId: 'second', accessToken: 'tok-second' },
     ]);
+    remembered.save.mockReset();
     TestBed.configureTestingModule({ providers: [
       TrackOrderFacade, FormBuilder, provideHttpClient(),
       { provide: CUSTOMER_API_BASE_URL, useValue: 'https://api.test' },
@@ -63,17 +64,14 @@ describe('guest cancellation selection and confirmation', () => {
     jest.restoreAllMocks();
   });
 
-  it('uses every selected credential for preview and cancellation, including the requested language', () => {
-    facade.selectOrder(order(), ' typed@example.test ', ' typed-code ');
+  it('uses the selected access token for preview and cancellation, including the requested language', () => {
+    facade.selectOrder(order(), ' tok-typed ');
     facade.openCancellation();
-    expect(previewCall.mock.calls[0][0].toJSON()).toEqual({
-      displayOrderNumber: 'CLS-first', email: 'typed@example.test', confirmationCode: 'typed-code',
-    });
+    expect(previewCall.mock.calls[0][0].toJSON()).toEqual({ accessToken: 'tok-typed' });
     expect(facade.canConfirmCancellation()).toBe(true);
     facade.cancelBooking('sk');
     expect(cancelCall.mock.calls[0][0].toJSON()).toEqual({
-      displayOrderNumber: 'CLS-first', email: 'typed@example.test', confirmationCode: 'typed-code',
-      language: 'sk', reason: undefined,
+      accessToken: 'tok-typed', language: 'sk', reason: undefined,
     });
     expect(facade.selectedOrder()?.orderStatus?.value).toBe(OrderStatus.Cancelled);
     expect(facade.cancellationResult()?.actualRefundAmount).toBe(40);
@@ -81,17 +79,20 @@ describe('guest cancellation selection and confirmation', () => {
     expect(facade.canCancel()).toBe(false);
   });
 
-  it('joins a remembered order to its own email and returned code instead of the last manual lookup', () => {
-    facade.selectOrder(order(), 'typed@example.test', 'typed-code');
+  it('remembers the token an order was opened with, so the browser can find it again', () => {
+    facade.selectOrder(order(), 'tok-typed');
+    expect(remembered.save).toHaveBeenCalledWith('first', 'tok-typed');
+  });
+
+  it('joins a remembered order to its own stored token instead of the last lookup', () => {
+    facade.selectOrder(order(), 'tok-typed');
     facade.selectRememberedOrder(order('second'));
     previewCall.mockReturnValue(of(preview('second')));
     facade.openCancellation();
-    expect(previewCall.mock.calls[0][0].toJSON()).toEqual({
-      displayOrderNumber: 'CLS-second', email: 'second@example.test', confirmationCode: 'code-second',
-    });
+    expect(previewCall.mock.calls[0][0].toJSON()).toEqual({ accessToken: 'tok-second' });
   });
 
-  it('does not offer cancellation when a remembered order has no matching stored email', () => {
+  it('does not offer cancellation when a remembered order has no stored token', () => {
     facade.selectRememberedOrder(order('unknown'));
     facade.openCancellation();
     expect(facade.canCancel()).toBe(false);
@@ -99,7 +100,7 @@ describe('guest cancellation selection and confirmation', () => {
   });
 
   it.each([OrderStatus.InProgress, OrderStatus.Completed, OrderStatus.Cancelled])('hides cancellation for status %s', status => {
-    facade.selectOrder(order('first', status), 'first@example.test', 'code');
+    facade.selectOrder(order('first', status), 'tok-first');
     facade.openCancellation();
     expect(facade.canCancel()).toBe(false);
     expect(previewCall).not.toHaveBeenCalled();
@@ -176,13 +177,13 @@ describe('guest cancellation selection and confirmation', () => {
     expect(cancelCall).toHaveBeenCalledTimes(1);
   });
 
-  it('retains a confirmed cancellation if refreshing the order fails', () => {
-    lookupCall.mockReturnValue(throwError(() => new Error('offline')));
+  it('shows the cancelled booking without re-reading it, because cancelling revokes the token', () => {
     facade.selectRememberedOrder(order());
     facade.openCancellation();
     facade.cancelBooking('en');
     expect(facade.selectedOrder()?.orderStatus?.value).toBe(OrderStatus.Cancelled);
     expect(facade.cancellationResult()).not.toBeNull();
+    expect(lookupCall).not.toHaveBeenCalled();
   });
 
   it.each([undefined, 0, 40])('renders only actual issued refund money (%s)', actualRefundAmount => {
@@ -197,13 +198,12 @@ describe('guest cancellation selection and confirmation', () => {
     }
   });
 
-  it('does not restore a late manual lookup after the form is reset', () => {
+  it('does not restore a late lookup after the page is reset', () => {
     const pending = new Subject<LookupOrderResponse>();
     lookupCall.mockReturnValue(pending);
     const component = TestBed.runInInjectionContext(() => new TrackOrderComponent());
-    component.form.setValue({ orderNumber: 'CLS-first', email: 'first@example.test', confirmationCode: 'ABC123' });
-    component.lookup();
-    component.lookup();
+    component.lookup('tok-first');
+    component.lookup('tok-first');
     expect(lookupCall).toHaveBeenCalledTimes(1);
     component.reset();
     pending.next(order());
@@ -211,18 +211,16 @@ describe('guest cancellation selection and confirmation', () => {
     expect(component.loading()).toBe(false);
   });
 
-  it('keeps a remembered selection when an earlier manual lookup returns late', () => {
+  it('keeps a remembered selection when an earlier lookup returns late', () => {
     const pending = new Subject<LookupOrderResponse>();
     lookupCall.mockReturnValue(pending);
     const component = TestBed.runInInjectionContext(() => new TrackOrderComponent());
-    component.form.setValue({ orderNumber: 'CLS-first', email: 'first@example.test', confirmationCode: 'ABC123' });
-    component.lookup();
+    component.lookup('tok-first');
     component.showOrder(order('second'));
     pending.next(order());
     expect(component.manualResult()?.id).toBe('second');
     previewCall.mockReturnValue(of(preview('second')));
     facade.openCancellation();
-    expect(previewCall.mock.calls[0][0].email).toBe('second@example.test');
-    expect(previewCall.mock.calls[0][0].confirmationCode).toBe('code-second');
+    expect(previewCall.mock.calls[0][0].accessToken).toBe('tok-second');
   });
 });

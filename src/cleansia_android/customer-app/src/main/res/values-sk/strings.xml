@@ -273,7 +273,6 @@
     <string name="order_detail_error_title">Objednávku sa nepodarilo načítať</string>
     <string name="order_detail_error_message">Skontrolujte pripojenie na internet a skúste to znova.</string>
     <string name="order_detail_error_retry">Skúsiť znova</string>
-    <string name="order_detail_code_label">Kód</string>
     <string name="order_detail_discount_tier">Vernostná zľava uplatnená</string>
     <string name="order_detail_discount_membership">Zľava Cleansia Plus uplatnená</string>
     <string name="order_detail_discount_promo">Zľavový kód uplatnený</string>
@@ -294,7 +293,7 @@
     <string name="order_action_cancel">Zrušiť objednávku</string>
     <string name="order_cancel_title">Zrušiť toto upratovanie?</string>
     <string name="order_cancel_fee_not_accepted">Zrušenie zdarma — túto rezerváciu zatiaľ neprevzal žiadny upratovač.</string>
-    <string name="order_cancel_fee_oops">Zrušenie zdarma — objednali ste pred malou chvíľou.</string>
+    <string name="order_cancel_fee_oops">Objednávka je v ochrannej lehote na bezplatné zrušenie.</string>
     <string name="order_cancel_fee_outside_window">Zrušenie zdarma — rušíte s dostatočným predstihom.</string>
     <string name="order_cancel_fee_partial">Na tejto zákazke už pracuje upratovač, takže je zrušenie spoplatnené.</string>
     <string name="order_cancel_fee_last_minute">Toto je zrušenie na poslednú chvíľu, poplatok je preto vyšší.</string>
@@ -304,6 +303,12 @@
     <string name="order_cancel_fee_unavailable">Poplatok za zrušenie sa teraz nepodarilo zistiť. Zrušiť môžete aj tak — sumu potvrdíme pri zrušení.</string>
     <string name="order_cancel_fee_retry">Skúsiť znova</string>
     <string name="order_cancel_fee_recheck_note">Toto je cena v tejto chvíli — pri potvrdení ju overíme znova.</string>
+    <plurals name="order_cancel_fee_grace_note">
+        <item quantity="one">Zrušenie do %1$d minúty od objednania je zadarmo, aj keď už objednávku prijal upratovač.</item>
+        <item quantity="few">Zrušenie do %1$d minút od objednania je zadarmo, aj keď už objednávku prijal upratovač.</item>
+        <item quantity="many">Zrušenie do %1$d minúty od objednania je zadarmo, aj keď už objednávku prijal upratovač.</item>
+        <item quantity="other">Zrušenie do %1$d minút od objednania je zadarmo, aj keď už objednávku prijal upratovač.</item>
+    </plurals>
     <string name="order_cancel_express_waiver_forfeit">Zrušením tiež vyčerpáte jednu z expresných objednávok zahrnutých vo vašom členstve na tento mesiac.</string>
     <string name="order_cancel_fee_neutral">Naozaj chcete túto rezerváciu zrušiť?</string>
     <string name="order_cancel_reason_label">Dôvod (nepovinný)</string>
@@ -524,7 +529,7 @@
     <string name="help_email_desc">support@cleansia.cz</string>
     <string name="help_faq_title">Často kladené otázky</string>
     <string name="help_faq_q1">Ako môžem zrušiť rezerváciu?</string>
-    <string name="help_faq_a1">Otvorte rezerváciu v záložke Objednávky a klepnite na \"Zrušiť\". Zrušenie zdarma až 24 hodín pred začiatkom upratovania.</string>
+    <string name="help_faq_a1">Otvorte rezerváciu v záložke Objednávky a klepnite na \"Zrušiť\". Zrušenie zdarma až 24 hodín pred začiatkom upratovania. Do 15 minút od objednania neplatíte nič — s Cleansia Plus do 60 minút.</string>
     <string name="help_faq_q2">Čo ak nebudem doma, keď príde upratovačka?</string>
     <string name="help_faq_a2">Pri rezervácii pridajte pokyny ku vstupu (napr. kód pri dverách, miesto kľúča). Upratovačky čakajú až 15 minút; ak vás nemôžeme zastihnúť, rezervácia môže byť zrušená.</string>
     <string name="help_faq_q3">Sú upratovačky poistené a preverené?</string>
@@ -607,6 +612,7 @@
     <string name="booking_cancel_tier3_value">50% poplatok</string>
     <string name="booking_cancel_plus_badge">VÝHODA PLUS</string>
     <string name="booking_cancel_plus_subtitle">Ako člen Plus môžete zrušiť zadarmo až %1$d hodiny vopred.</string>
+    <string name="booking_cancel_grace_note">Do 15 minút od objednania neplatíte nič — s Cleansia Plus do 60 minút.</string>
 
     <!-- Booking — save address -->
     <string name="booking_save_address">Uložiť túto adresu</string>
@@ -757,6 +763,10 @@
     <string name="booking_pay_card_desc">Bezpečne cez Stripe</string>
     <string name="booking_pay_cash">Hotovosťou</string>
     <string name="booking_pay_cash_desc">Platba pri dodaní</string>
+    <string name="booking_cash_needs_account">V hotovosti môžu platiť len prihlásení zákazníci. Prihláste sa, ak chcete platiť v hotovosti, alebo zaplaťte kartou.</string>
+    <string name="booking_cash_needs_card">Počet upratovačov potrebných pre túto objednávku: %1$d. V hotovosti sa dá platiť len za objednávky, ktoré zvládne jeden upratovač, túto preto zaplatíte kartou.</string>
+    <string name="booking_cash_pending">Či môžete platiť v hotovosti, potvrdíme, keď bude známa cena.</string>
+    <string name="booking_cash_cleared">Platba v hotovosti už pre túto objednávku nie je možná, preto nie je vybraný žiadny spôsob platby. Zvoľte, ako chcete platiť.</string>
     <string name="booking_special_instructions_hint">Špeciálne požiadavky? (nepovinné)</string>
     <string name="booking_access_instructions_hint">Pokyny ku vstupu? (nepovinné)</string>
 
@@ -798,7 +808,7 @@
     <!-- Account deletion -->
     <string name="profile_delete_account">Zmazať účet</string>
     <string name="delete_account_title">Zmazať váš účet</string>
-    <string name="delete_account_subtitle">Tým trvale zmažete svoj účet a všetky súvisiace údaje. Túto akciu nie je možné vrátiť späť.</string>
+    <string name="delete_account_subtitle">Tým trvale zmažete svoj účet a všetky súvisiace údaje. Nevyčerpaný kredit vymazaním účtu prepadá — nedá sa vyplatiť ani obnoviť. Túto akciu nie je možné vrátiť späť.</string>
     <string name="delete_account_what_happens">Čo bude zmazané</string>
     <string name="delete_account_item_profile">• Váš profil (meno, e-mail, telefón, fotka)</string>
     <string name="delete_account_item_addresses">• Všetky uložené adresy</string>
@@ -811,7 +821,7 @@
     <string name="delete_account_confirm_button">Trvale zmazať účet</string>
     <string name="delete_account_success">Váš účet bol zmazaný.</string>
     <string name="delete_account_dialog_title">Odstrániť účet?</string>
-    <string name="delete_account_dialog_message">Týmto natrvalo odstránite svoj účet a údaje. Toto nie je možné vrátiť späť.</string>
+    <string name="delete_account_dialog_message">Týmto natrvalo odstránite svoj účet a údaje. Toto nie je možné vrátiť späť. Nevyčerpaný kredit na účte dokončením vymazania prepadá — nedá sa vyplatiť ani obnoviť.</string>
     <string name="delete_account_dialog_confirm">Odstrániť</string>
 
     <!-- Error handling — generics -->
@@ -863,6 +873,8 @@
     <string name="membership_perk_recurring_desc">Nastavte raz — každý druhý štvrtok o 10:00, automaticky.</string>
     <string name="membership_perk_cancellation_title">Bezplatné zrušenie</string>
     <string name="membership_perk_cancellation_desc">Zrušte až 4 hodiny pred upratovaním bez poplatkov.</string>
+    <string name="membership_perk_grace_title">Zrušenie zadarmo po objednaní</string>
+    <string name="membership_perk_grace_desc">60 minút po objednaní na bezplatné zrušenie namiesto 15 minút</string>
     <string name="membership_perk_discount_title" formatted="false">5% členská zľava</string>
     <string name="membership_perk_discount_desc" formatted="false">Z každého upratovania. V kombinácii s vernostným programom je obmedzená na 12%.</string>
     <string name="membership_perk_express_title">Expresné termíny bez príplatku</string>
@@ -911,6 +923,10 @@
     <string name="recurring_bookings_empty_title">Zatiaľ žiadne opakované rozvrhy</string>
     <string name="recurring_bookings_empty_subtitle">Nastavte si týždenné alebo dvojtýždenné upratovanie z minulej objednávky a vyhnite sa opätovnému objednávaniu.</string>
     <string name="recurring_bookings_paused_badge">POZASTAVENÉ</string>
+    <string name="recurring_status_needs_change">Vyžaduje úpravu</string>
+    <string name="recurring_cash_change_title">Tento rozvrh sa už nedá platiť v hotovosti</string>
+    <string name="recurring_cash_change_body">Každé upratovanie potrebuje viac ako jedného upratovača a v hotovosti sa dá platiť len za upratovania, ktoré zvládne jeden upratovač, preto sa z neho neobjednávajú žiadne nové upratovania, kým ho nezmeníte. Prepnite ho na platbu kartou alebo vyberte služby či balíky, ktoré zvládne jeden upratovač. Upratovanie, ktoré je z neho už objednané, môžete v Objednávkach zrušiť zadarmo, kým ho neprijme žiadny upratovač.</string>
+    <string name="recurring_cash_change_action">Upraviť rozvrh</string>
     <string name="recurring_bookings_pause">Pozastaviť</string>
     <string name="recurring_bookings_resume">Obnoviť</string>
     <string name="recurring_bookings_delete">Zmazať</string>
@@ -950,6 +966,11 @@
     <string name="recurring_create_payment_label">Platba</string>
     <string name="recurring_create_pay_cash">Hotovosťou</string>
     <string name="recurring_create_pay_card">Kartou</string>
+    <string name="recurring_cash_needs_card">Počet upratovačov potrebných na každé upratovanie: %1$d. V hotovosti sa dá platiť len za upratovania, ktoré zvládne jeden upratovač, tento rozvrh preto platíte kartou.</string>
+    <string name="recurring_cash_pending">Či sa dá tento rozvrh platiť v hotovosti, potvrdíme, keď bude známa cena.</string>
+    <string name="recurring_cash_cleared">Platba v hotovosti už pre tento rozvrh nie je možná, preto nie je vybraný žiadny spôsob platby. Zvoľte, ako chcete platiť.</string>
+    <string name="recurring_cash_unchecked">Nepodarilo sa overiť, či sa dá tento rozvrh platiť v hotovosti. Uložte ho o chvíľu znova alebo zvoľte kartu.</string>
+    <string name="recurring_create_payment_missing">Zvoľte, ako sa bude rozvrh platiť.</string>
     <string name="recurring_create_starts_label">Začína</string>
     <string name="recurring_create_starts_change">Zmeniť</string>
     <string name="recurring_create_address_add_new">Pridať novú adresu</string>
@@ -1043,6 +1064,7 @@
     <string name="error_order_in_progress_cannot_cancel">Rezervácia prebieha a nie je možné ju zrušiť.</string>
     <string name="error_order_cancellation_window_closed">Lehota na zrušenie už uplynula.</string>
     <string name="error_order_empty">Objednávka je prázdna. Pridajte prosím aspoň jednu službu.</string>
+    <string name="error_order_size_exceeds_maximum">Jedna objednávka môže zahŕňať najviac 8 izieb a 4 kúpeľne.</string>
     <string name="error_order_span_exceeds_maximum">Táto objednávka zahŕňa priveľa práce na jednu návštevu. Odstráňte prosím niektoré služby alebo balíky, prípadne si ich objednajte samostatne.</string>
     <string name="error_order_selected_package_invalid">Jeden z vybraných balíčkov už nie je dostupný.</string>
     <string name="error_order_selected_services_invalid">Jedna z vybraných služieb už nie je dostupná.</string>
@@ -1054,6 +1076,7 @@
     <string name="error_order_payment_gateway_unavailable">Platobná služba je dočasne nedostupná.</string>
     <string name="error_order_payment_already_paid">Táto objednávka už bola zaplatená.</string>
     <string name="error_order_creation_failed">Nie je možné vytvoriť rezerváciu. Skúste to znova.</string>
+    <string name="error_order_cash_not_available">Platba v hotovosti je možná len po prihlásení a pri objednávke, ktorú zvládne jeden upratovač.</string>
     <string name="error_order_review_already_exists">Túto rezerváciu ste už hodnotili.</string>
     <string name="error_order_review_rating_invalid">Hodnotenie musí byť medzi 1 a 5.</string>
     <string name="error_order_not_owned_by_user">K tejto rezervácii nemáte prístup.</string>
@@ -1156,8 +1179,6 @@
     <string name="loyalty_discount_min_order">%1$d %% zľava na objednávky od %2$s</string>
     <string name="loyalty_no_discount_yet">Zatiaľ bez zľavy</string>
     <string name="loyalty_perks_welcome_badge">Vitajte v odmenách Cleansia</string>
-    <string name="loyalty_perks_priority_support">Prednostná zákaznícka podpora</string>
-    <string name="loyalty_perks_dedicated_pool">Vlastný tím upratovačiek</string>
     <string name="loyalty_activity_title">Nedávna aktivita</string>
     <string name="loyalty_activity_view_all">Zobraziť celú aktivitu</string>
     <string name="loyalty_tx_earn_order">+%1$d b. — Upratovanie č. %2$s</string>
@@ -1397,11 +1418,10 @@
     <string name="notification_recurring_paused_body">Váš plán opakovaných upratovaní je pozastavený, pretože Plus nie je aktívne. Obnovte Plus a plánovanie upratovaní bude pokračovať.</string>
     <string name="guest_order_entry">Nájsť rezerváciu bez účtu</string>
     <string name="guest_order_title">Rezervácia bez účtu</string>
-    <string name="guest_order_intro">Zadajte číslo rezervácie, e-mail a potvrdzovací kód z potvrdzovacieho e-mailu.</string>
-    <string name="guest_order_number">Číslo rezervácie</string>
-    <string name="guest_order_code">Potvrdzovací kód</string>
+    <string name="guest_order_intro">Vložte odkaz na sledovanie z potvrdzovacieho e-mailu. Otvorí vašu rezerváciu — nič ďalšie zadávať nemusíte.</string>
+    <string name="guest_order_link">Odkaz na sledovanie z e-mailu</string>
     <string name="guest_order_lookup">Nájsť rezerváciu</string>
-    <string name="guest_order_required">Zadajte číslo rezervácie, e-mail a potvrdzovací kód.</string>
+    <string name="guest_order_required">Vložte odkaz na sledovanie z potvrdzovacieho e-mailu.</string>
     <string name="guest_order_empty">Po vyhľadaní sa tu zobrazia podrobnosti rezervácie.</string>
     <string name="guest_order_loading">Hľadáme vašu rezerváciu…</string>
     <string name="guest_order_cancel">Zrušiť rezerváciu</string>

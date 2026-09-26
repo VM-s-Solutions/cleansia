@@ -38,7 +38,7 @@ public class CreditAccountEntityConfiguration : TenantAuditableEntityConfigurati
         // is a real constraint with nothing to fold — no .AreNullsDistinct(false) needed.
         //
         // UserId leads so the same index also serves the currency-BLIND reads: "every account this
-        // customer holds", which is what the GDPR erasure gate and the admin discharge must ask.
+        // customer holds", which is what the erasure forfeiture and the admin discharge must ask.
         //
         // The 1:1 it replaces was not merely restrictive, it was wrong: a balance is denominated, and
         // one row per customer forced every currency's money into whichever one the customer's first

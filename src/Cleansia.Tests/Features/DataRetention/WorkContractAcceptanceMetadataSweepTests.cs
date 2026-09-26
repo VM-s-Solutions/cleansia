@@ -10,6 +10,7 @@ using Cleansia.TestUtilities;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 
@@ -208,6 +209,11 @@ public sealed class WorkContractAcceptanceMetadataSweepTests : IDisposable
             new CustomerActionAuditRepository(ctx),
             new DisputeRepository(ctx),
             new WorkContractAcceptanceRepository(ctx),
+            new AddressRepository(ctx),
+            new OrderPhotoRepository(ctx),
+            new AdminActionAuditRepository(ctx),
+            new EmployeeActionAuditRepository(ctx, Mock.Of<IServiceScopeFactory>()),
+            new GuestOrderAccessTokenRepository(ctx),
             new TenantRepository(ctx),
             tenantProvider,
             _configProvider.Object,

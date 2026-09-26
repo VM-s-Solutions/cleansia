@@ -3,6 +3,7 @@ using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Features.Orders.DTOs;
 using Cleansia.Core.AppServices.Services.Interfaces;
+using Cleansia.Core.Domain.Auditing;
 using Cleansia.Core.Domain.EmployeePayroll;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Internationalization;
@@ -62,6 +63,7 @@ public class OrderDetailBrowsingCleanerRedactionTests
     private readonly Mock<IOrderPhotoRepository> _orderPhotoRepository = new();
     private readonly Mock<IEmployeeRepository> _employeeRepository = new();
     private readonly Mock<IExpressWaiverConsumer> _expressWaiverConsumer = ExpressWaiverMocks.NoConsumer();
+    private readonly Mock<IEmployeeActionAuditRepository> _employeeActionAuditRepository = new();
 
     // ── The browsing cleaner: admitted by the loose gate, entitled to nothing about the customer ──
 
@@ -146,14 +148,6 @@ public class OrderDetailBrowsingCleanerRedactionTests
     }
 
     [Fact]
-    public async Task Browsing_Cleaner_Gets_No_Confirmation_Code()
-    {
-        var detail = await BrowsingCleanerDetailAsync();
-
-        Assert.Equal(string.Empty, detail.ConfirmationCode);
-    }
-
-    [Fact]
     public async Task Browsing_Cleaner_Gets_No_Receipt_Number()
     {
         var detail = await BrowsingCleanerDetailAsync();
@@ -227,7 +221,6 @@ public class OrderDetailBrowsingCleanerRedactionTests
         Assert.Equal(SpecialInstructions, detail.SpecialInstructions);
         Assert.Equal(CustomerNotes, detail.Notes);
         Assert.Equal(CompletionNotes, detail.CompletionNotes);
-        Assert.NotEmpty(detail.ConfirmationCode);
         Assert.Equal(ReceiptNumber, detail.ReceiptNumber);
         Assert.Single(detail.OrderNotes, n => n.Content == NoteContent);
         Assert.Single(detail.OrderIssues, i => i.Description == IssueDescription);
@@ -324,6 +317,64 @@ public class OrderDetailBrowsingCleanerRedactionTests
         Assert.True(detail.HasAccessInstructions);
     }
 
+    // ── The assigned cleaner's read of the entry instructions leaves the evidence an admin reveal leaves ──
+
+    [Fact]
+    public async Task The_Assigned_Cleaners_Read_Of_The_Entry_Instructions_Is_Recorded_Against_Them_And_The_Order()
+    {
+        var order = BuildFullyPopulatedOrder();
+        order.TenantId = "tenant-red";
+
+        var detail = await AssignedCleanerDetailAsync(order);
+
+        Assert.Equal(AccessInstructions, detail.AccessInstructions);
+        _employeeActionAuditRepository.Verify(r => r.RecordOnceOutOfBandAsync(
+            It.Is<EmployeeActionAudit>(a => a.EmployeeId == AssignedEmployeeId
+                && a.OrderId == OrderId
+                && a.Action == EmployeeAuditAction.AccessInstructionsRead
+                && a.TenantId == "tenant-red"),
+            It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task A_Detail_Without_Entry_Instructions_Records_Nothing()
+    {
+        var order = BuildFullyPopulatedOrder();
+        typeof(Order).GetProperty(nameof(Order.AccessInstructions))!.SetValue(order, null);
+
+        var detail = await AssignedCleanerDetailAsync(order);
+
+        Assert.Null(detail.AccessInstructions);
+        _employeeActionAuditRepository.Verify(
+            r => r.RecordOnceOutOfBandAsync(It.IsAny<EmployeeActionAudit>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task A_Browsing_Cleaner_Is_Served_No_Instructions_And_Nothing_Is_Recorded()
+    {
+        var detail = await BrowsingCleanerDetailAsync();
+
+        Assert.Null(detail.AccessInstructions);
+        _employeeActionAuditRepository.Verify(
+            r => r.RecordOnceOutOfBandAsync(It.IsAny<EmployeeActionAudit>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Theory]
+    [InlineData(UserProfile.Administrator, false)]
+    [InlineData(UserProfile.Customer, true)]
+    public async Task No_Cleaner_Row_Is_Recorded_For_An_Administrator_Or_The_Customer(UserProfile role, bool isCustomer)
+    {
+        var order = BuildFullyPopulatedOrder();
+        ArrangeCommon(order);
+        ArrangeCaller(order, role, callerEmployeeId: null, isEntitled: true, isCustomer: isCustomer);
+
+        var result = await CreateHandler().Handle(new GetOrderDetails.Query(OrderId), CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        _employeeActionAuditRepository.Verify(
+            r => r.RecordOnceOutOfBandAsync(It.IsAny<EmployeeActionAudit>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
     // ── Arrangement ──
 
     private async Task<OrderItem> BrowsingCleanerDetailAsync(Order? seed = null)
@@ -338,9 +389,9 @@ public class OrderDetailBrowsingCleanerRedactionTests
         return result.Value!;
     }
 
-    private async Task<OrderItem> AssignedCleanerDetailAsync()
+    private async Task<OrderItem> AssignedCleanerDetailAsync(Order? seed = null)
     {
-        var order = BuildFullyPopulatedOrder();
+        var order = seed ?? BuildFullyPopulatedOrder();
         ArrangeCommon(order);
         ArrangeCaller(order, UserProfile.Employee, AssignedEmployeeId, isEntitled: true, isCustomer: false);
 
@@ -362,7 +413,8 @@ public class OrderDetailBrowsingCleanerRedactionTests
             Mock.Of<ITenantRepository>(),
             _expressWaiverConsumer.Object,
             Mock.Of<IUserMembershipRepository>(),
-            WorkContractTestData.AcceptanceRepository().Object);
+            WorkContractTestData.AcceptanceRepository().Object,
+            _employeeActionAuditRepository.Object);
 
     private void ArrangeCommon(Order order)
     {

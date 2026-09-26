@@ -79,32 +79,30 @@ class NotificationTemplatesTest {
 
 
     @Test
-    fun `payment confirmation and saved legacy notifications share a template`() {
+    fun `payment confirmation renders under order updates`() {
         val current = NotificationTemplates.templateFor("order.payment_confirmed")
         assertNotNull(current)
-        assertEquals(NotificationTemplates.templateFor("order.confirmed"), current)
         assertEquals(NotificationCategoryDto.OrderUpdates, current?.category)
     }
 
     @Test
-    fun `payment confirmation formats the order number for both wire keys`() {
+    fun `payment confirmation formats the order number into the body`() {
         val context = mockk<Context>()
         val bodyRes = R.string.notification_order_payment_confirmed_body
         every { context.getString(bodyRes, "A-1042") } returns "Booking A-1042"
-        listOf("order.payment_confirmed", "order.confirmed").forEach { key ->
-            assertEquals(
-                "Booking A-1042",
-                NotificationTemplates.formatBody(context, key, bodyRes, mapOf("orderNumber" to "A-1042")),
-            )
-        }
+        assertEquals(
+            "Booking A-1042",
+            NotificationTemplates.formatBody(context, "order.payment_confirmed", bodyRes, mapOf("orderNumber" to "A-1042")),
+        )
     }
 
     @Test
-    fun `payment confirmation and saved legacy taps require and open the booking`() {
-        listOf("order.payment_confirmed", "order.confirmed").forEach { key ->
-            assertEquals(Routes.OrderDetail("ord-7"), NotificationDeepLink.resolve(key, mapOf("orderId" to "ord-7")))
-            assertNull(NotificationDeepLink.resolve(key, emptyMap()))
-        }
+    fun `a payment confirmation tap requires an order id and opens the booking`() {
+        assertEquals(
+            Routes.OrderDetail("ord-7"),
+            NotificationDeepLink.resolve("order.payment_confirmed", mapOf("orderId" to "ord-7")),
+        )
+        assertNull(NotificationDeepLink.resolve("order.payment_confirmed", emptyMap()))
     }
 
     @Test
@@ -123,9 +121,8 @@ class NotificationTemplatesTest {
     }
 
     @Test
-    fun `current and persisted legacy payment notifications both remain in the customer feed`() {
+    fun `payment confirmations remain in the customer feed`() {
         assertTrue(CustomerFeedEventKeys.contains("order.payment_confirmed"))
-        assertTrue(CustomerFeedEventKeys.contains("order.confirmed"))
     }
 
 

@@ -26,7 +26,8 @@ platform does its last checking (below).
 spare seat and why the order seat needs a database-level arbiter — a second cleaner on a one-seat job
 is a second full wage against an unchanged customer price.
 
-The formula, and why `extrasPay` is not what it sounds like, is in
+The formula, why `extrasPay` is not what it sounds like, and why nothing is paid for distance
+(`ExpensesPay` is 0 on every new row; older rows keep what they were calculated with) are in
 [Business rules](/product/business-rules#cleaner-pay). A rate is an amount in a currency, and the pay
 writer reads only rates in the order's currency — so every pay row is in the currency of the order that
 earned it.

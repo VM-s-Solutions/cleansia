@@ -93,6 +93,40 @@ internal static class StripeWebhookTestPayloads
         """;
     }
 
+    /// <summary>
+    /// A bank chargeback. Carries the payment intent and no order metadata at all — that is the whole
+    /// shape of the event, and the reason the handler resolves the order by intent.
+    /// </summary>
+    public static string ChargeDisputeCreatedBody(
+        string eventId, string stripeDisputeId, string paymentIntentId, long amountMinorUnits = 150000)
+    {
+        var created = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+        return $$"""
+        {
+          "id": "{{eventId}}",
+          "object": "event",
+          "api_version": "2024-06-20",
+          "type": "charge.dispute.created",
+          "created": {{created}},
+          "livemode": false,
+          "pending_webhooks": 0,
+          "request": null,
+          "data": {
+            "object": {
+              "id": "{{stripeDisputeId}}",
+              "object": "dispute",
+              "amount": {{amountMinorUnits}},
+              "currency": "czk",
+              "reason": "fraudulent",
+              "status": "warning_needs_response",
+              "payment_intent": "{{paymentIntentId}}"
+            },
+            "previous_attributes": null
+          }
+        }
+        """;
+    }
+
     /// <summary>A valid Stripe signature header (<c>t=…,v1=HMAC</c>) for the body, signed with the secret.</summary>
     public static string Sign(string body, string secret)
     {

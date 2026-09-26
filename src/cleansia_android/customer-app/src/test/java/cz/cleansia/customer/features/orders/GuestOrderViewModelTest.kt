@@ -45,35 +45,35 @@ class GuestOrderViewModelTest {
         every { context.getString(any()) } answers { "string:" + firstArg<Int>() }
         every { context.getString(R.string.order_cancel_success_with_refund, any()) } returns "issued refund"
         coEvery { settings.emailLanguageTag() } returns "sk"
-        coEvery { repository.lookup(any(), any(), any()) } returns ApiResult.Success(order)
-        coEvery { repository.preview(any(), any(), any()) } returns ApiResult.Success(quote)
-        coEvery { repository.cancel(any(), any(), any(), any(), any()) } returns ApiResult.Success(receipt)
+        coEvery { repository.lookup(any()) } returns ApiResult.Success(order)
+        coEvery { repository.preview(any()) } returns ApiResult.Success(quote)
+        coEvery { repository.cancel(any(), any(), any()) } returns ApiResult.Success(receipt)
         vm = GuestOrderViewModel(repository, settings, context)
     }
 
     @Test
-    fun `blank lookup never calls transport and valid lookup trims all credentials`() = runTest {
-        vm.lookup(" ", "guest@example.test", "code")
+    fun `blank input never calls transport and a pasted link is reduced to its token`() = runTest {
+        vm.lookup("  ")
         assertTrue(vm.state.value is GuestOrderUiState.Error)
-        coVerify(exactly = 0) { repository.lookup(any(), any(), any()) }
-        vm.lookup(" CZ-123 ", " guest@example.test ", " secret ")
+        coVerify(exactly = 0) { repository.lookup(any()) }
+        vm.lookup(" https://cleansia.cz/track-order?orderNumber=CZ-123&token=tok-1 ")
         assertEquals(GuestOrderUiState.Loading, vm.state.value)
         advanceUntilIdle()
         assertEquals(GuestOrderUiState.Loaded(order), vm.state.value)
-        coVerify(exactly = 1) { repository.lookup("CZ-123", "guest@example.test", "secret") }
+        coVerify(exactly = 1) { repository.lookup("tok-1") }
     }
 
     @Test
-    fun `editing credentials clears old order and late lookup cannot restore it`() = runTest {
+    fun `editing the link clears the old order and a late lookup cannot restore it`() = runTest {
         val pending = CompletableDeferred<ApiResult<GuestOrderDto>>()
-        coEvery { repository.lookup("old", any(), any()) } coAnswers {
+        coEvery { repository.lookup("old") } coAnswers {
             withContext(NonCancellable) { pending.await() }
         }
-        vm.lookup("old", "guest@example.test", "secret")
+        vm.lookup("old")
         runCurrent()
-        vm.onCredentialsChanged()
+        vm.onLinkChanged()
         assertEquals(GuestOrderUiState.Empty, vm.state.value)
-        vm.lookup("new", "guest@example.test", "new-secret")
+        vm.lookup("new")
         runCurrent()
         pending.complete(ApiResult.Success(order.copy(id = "stale")))
         advanceUntilIdle()
@@ -82,22 +82,22 @@ class GuestOrderViewModelTest {
 
     @Test
     fun `lookup failure replaces previous details and is retryable`() = runTest {
-        vm.lookup("CZ-123", "guest@example.test", "secret")
+        vm.lookup("tok-1")
         advanceUntilIdle()
-        vm.onCredentialsChanged()
-        coEvery { repository.lookup(any(), any(), any()) } returns ApiResult.Error(ApiError.NotFound("Booking not found"))
-        vm.lookup("wrong", "guest@example.test", "secret")
+        vm.onLinkChanged()
+        coEvery { repository.lookup(any()) } returns ApiResult.Error(ApiError.NotFound("Booking not found"))
+        vm.lookup("wrong")
         advanceUntilIdle()
         assertEquals(GuestOrderUiState.Error("Booking not found"), vm.state.value)
-        coEvery { repository.lookup(any(), any(), any()) } returns ApiResult.Success(order)
-        vm.lookup("CZ-123", "guest@example.test", "secret")
+        coEvery { repository.lookup(any()) } returns ApiResult.Success(order)
+        vm.lookup("tok-1")
         advanceUntilIdle()
         assertTrue(vm.state.value is GuestOrderUiState.Loaded)
     }
 
     @Test
     fun `failed unknown and mismatched previews cannot submit cancellation`() = runTest {
-        vm.lookup("CZ-123", "guest@example.test", "secret")
+        vm.lookup("tok-1")
         advanceUntilIdle()
         val results = listOf(
             ApiResult.Error(ApiError.NotFound("Booking not found")),
@@ -106,15 +106,15 @@ class GuestOrderViewModelTest {
             ApiResult.Success(quote.copy(currencyCode = "CZK")),
         )
         for (result in results) {
-            coEvery { repository.preview(any(), any(), any()) } returns result
+            coEvery { repository.preview(any()) } returns result
             vm.openCancellation()
             advanceUntilIdle()
             assertEquals(CancellationPreviewUiState.Error, vm.preview.value)
             vm.cancel("schedule_changed")
         }
         advanceUntilIdle()
-        coVerify(exactly = 0) { repository.cancel(any(), any(), any(), any(), any()) }
-        coEvery { repository.preview(any(), any(), any()) } returns ApiResult.Success(quote)
+        coVerify(exactly = 0) { repository.cancel(any(), any(), any()) }
+        coEvery { repository.preview(any()) } returns ApiResult.Success(quote)
         vm.loadPreview()
         advanceUntilIdle()
         assertEquals(CancellationPreviewUiState.Loaded(quote), vm.preview.value)
@@ -123,27 +123,27 @@ class GuestOrderViewModelTest {
     @Test
     fun `late preview after editing or dismissing cannot expose a fee`() = runTest {
         val pending = CompletableDeferred<ApiResult<CancellationFeePreviewDto>>()
-        coEvery { repository.preview(any(), any(), any()) } coAnswers {
+        coEvery { repository.preview(any()) } coAnswers {
             withContext(NonCancellable) { pending.await() }
         }
-        vm.lookup("CZ-123", "guest@example.test", "secret")
+        vm.lookup("tok-1")
         runCurrent()
         vm.openCancellation()
         runCurrent()
         vm.dismissCancellation()
-        vm.onCredentialsChanged()
+        vm.onLinkChanged()
         pending.complete(ApiResult.Success(quote))
         advanceUntilIdle()
         assertEquals(GuestOrderUiState.Empty, vm.state.value)
         assertFalse(vm.showCancellation.value)
         assertEquals(CancellationPreviewUiState.Loading, vm.preview.value)
         vm.cancel("schedule_changed")
-        coVerify(exactly = 0) { repository.cancel(any(), any(), any(), any(), any()) }
+        coVerify(exactly = 0) { repository.cancel(any(), any(), any()) }
     }
 
     @Test
-    fun `submit is guarded synchronously and uses lookup credentials plus selected language`() = runTest {
-        vm.lookup(" CZ-123 ", " guest@example.test ", " secret ")
+    fun `submit is guarded synchronously and uses the looked-up token plus selected language`() = runTest {
+        vm.lookup(" tok-1 ")
         advanceUntilIdle()
         vm.openCancellation()
         advanceUntilIdle()
@@ -153,14 +153,14 @@ class GuestOrderViewModelTest {
         vm.dismissCancellation()
         assertTrue(vm.showCancellation.value)
         advanceUntilIdle()
-        coVerify(exactly = 1) { repository.cancel("CZ-123", "guest@example.test", "secret", "schedule_changed", "sk") }
+        coVerify(exactly = 1) { repository.cancel("tok-1", "schedule_changed", "sk") }
         assertEquals(GuestOrderUiState.Cancelled("issued refund"), vm.state.value)
-        coVerify(exactly = 0) { repository.lookup("", "", "") }
+        coVerify(exactly = 0) { repository.lookup("") }
     }
 
     @Test
     fun `success formats actual refund in order currency and never policy refund`() = runTest {
-        vm.lookup("CZ-123", "guest@example.test", "secret")
+        vm.lookup("tok-1")
         advanceUntilIdle()
         vm.openCancellation()
         advanceUntilIdle()
@@ -177,9 +177,9 @@ class GuestOrderViewModelTest {
     @Test
     fun `null or zero actual refund uses success copy without a made up amount`() = runTest {
         for (amount in listOf(null, 0.0)) {
-            coEvery { repository.cancel(any(), any(), any(), any(), any()) } returns
+            coEvery { repository.cancel(any(), any(), any()) } returns
                 ApiResult.Success(receipt.copy(actualRefundAmount = amount))
-            vm.lookup("CZ-123", "guest@example.test", "secret")
+            vm.lookup("tok-1")
             advanceUntilIdle()
             vm.openCancellation()
             advanceUntilIdle()
@@ -195,9 +195,9 @@ class GuestOrderViewModelTest {
 
     @Test
     fun `failed cancellation retains error and requires a fresh quote before retry`() = runTest {
-        coEvery { repository.cancel(any(), any(), any(), any(), any()) } returns
+        coEvery { repository.cancel(any(), any(), any()) } returns
             ApiResult.Error(ApiError.BadRequest("Unable to cancel"))
-        vm.lookup("CZ-123", "guest@example.test", "secret")
+        vm.lookup("tok-1")
         advanceUntilIdle()
         vm.openCancellation()
         advanceUntilIdle()
@@ -208,12 +208,12 @@ class GuestOrderViewModelTest {
         assertTrue(vm.state.value is GuestOrderUiState.Loaded)
         vm.cancel("schedule_changed")
         advanceUntilIdle()
-        coVerify(exactly = 1) { repository.cancel(any(), any(), any(), any(), any()) }
+        coVerify(exactly = 1) { repository.cancel(any(), any(), any()) }
     }
 
     @Test
     fun `reason limit and missing quote are enforced beyond the button`() = runTest {
-        vm.lookup("CZ-123", "guest@example.test", "secret")
+        vm.lookup("tok-1")
         advanceUntilIdle()
         vm.cancel("schedule_changed")
         vm.openCancellation()
@@ -222,19 +222,19 @@ class GuestOrderViewModelTest {
         vm.cancel("x".repeat(501))
         vm.cancel(" ")
         advanceUntilIdle()
-        coVerify(exactly = 0) { repository.cancel(any(), any(), any(), any(), any()) }
+        coVerify(exactly = 0) { repository.cancel(any(), any(), any()) }
         vm.cancel("x".repeat(500))
         advanceUntilIdle()
-        coVerify(exactly = 1) { repository.cancel(any(), any(), any(), any(), any()) }
+        coVerify(exactly = 1) { repository.cancel(any(), any(), any()) }
     }
 
     @Test
     fun `leaving the screen prevents a late cancellation response from exposing the previous order`() = runTest {
         val pending = CompletableDeferred<ApiResult<CancelOrderResponse>>()
-        coEvery { repository.cancel(any(), any(), any(), any(), any()) } coAnswers {
+        coEvery { repository.cancel(any(), any(), any()) } coAnswers {
             withContext(NonCancellable) { pending.await() }
         }
-        vm.lookup("CZ-123", "guest@example.test", "secret")
+        vm.lookup("tok-1")
         runCurrent()
         vm.openCancellation()
         runCurrent()
@@ -250,12 +250,12 @@ class GuestOrderViewModelTest {
     @Test
     fun `terminal and unknown orders never open cancellation`() = runTest {
         for (status in listOf(4, 5, 6, 99)) {
-            coEvery { repository.lookup(any(), any(), any()) } returns ApiResult.Success(order.copy(status = status))
-            vm.lookup("CZ-123", "guest@example.test", "secret")
+            coEvery { repository.lookup(any()) } returns ApiResult.Success(order.copy(status = status))
+            vm.lookup("tok-1")
             advanceUntilIdle()
             vm.openCancellation()
             assertFalse(vm.showCancellation.value)
         }
-        coVerify(exactly = 0) { repository.preview(any(), any(), any()) }
+        coVerify(exactly = 0) { repository.preview(any()) }
     }
 }

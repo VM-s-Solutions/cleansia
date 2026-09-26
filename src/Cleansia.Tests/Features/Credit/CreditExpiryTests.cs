@@ -6,8 +6,8 @@ namespace Cleansia.Tests.Features.Credit;
 /// When a credit balance dies, and what resets the clock.
 ///
 /// <para>Owner ruling 2026-09-05: credit EXPIRES rather than being paid out. Cleansia does not do
-/// Stripe payouts, so the alternative is a debt that sits on the books forever and a customer who
-/// cannot be erased because of it. Twelve months from the customer's LAST movement.</para>
+/// Stripe payouts, so the alternative is a debt that sits on the books forever. Twelve months from
+/// the customer's LAST movement.</para>
 ///
 /// <para>The rule the tests below actually protect is the one the customer is shown: <b>every
 /// movement resets the clock.</b> Get that wrong and a customer who was credited in January, spent

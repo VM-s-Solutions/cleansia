@@ -7,8 +7,10 @@ struct ResolvedOrderInputs {
     let quote: BookingQuote
     let instant: Date
     let countryId: String?
+    let paymentMethod: PaymentMethod
     let promoIsValid: Bool
     let alreadyConsented: Bool
+    let language: String
 }
 
 enum BookingOrderCommandFactory {
@@ -43,9 +45,10 @@ enum BookingOrderCommandFactory {
             bathrooms: state.bathrooms,
             extras: state.selectedExtraSlugs.reduce(into: [:]) { $0[$1] = true },
             cleaningDate: resolved.instant,
-            paymentType: (state.paymentMethod ?? .cash).paymentType,
+            paymentType: resolved.paymentMethod.paymentType,
             currencyId: resolved.quote.currencyId.isBlank ? nil : resolved.quote.currencyId,
             totalPrice: resolved.quote.totalPrice,
+            language: resolved.language,
             promoCode: promo,
             referralCode: nil,
             preferredEmployeeId: state.preferredEmployeeId,

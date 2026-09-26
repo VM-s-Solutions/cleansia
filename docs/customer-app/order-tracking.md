@@ -1,73 +1,143 @@
 # Order Tracking
 
-The order tracking feature allows both authenticated and **unauthenticated** customers to check the status of their orders. It is implemented in the `TrackOrderComponent` within the `@cleansia-customer/orders` library.
-
-## Route
+`/track-order` is the customer web app's guest surface: the page a booking's e-mail link lands on. It
+is implemented by `TrackOrderComponent` + `TrackOrderFacade` in `@cleansia-customer/orders`, and it is
+public — no auth guard.
 
 ```
-/track-order    # Public -- no auth guard
+/track-order                   Public — no auth guard
+/orders/lookup                 → redirect /track-order (pathMatch full)
+/orders/lookup/:orderId        → redirect /track-order (pathMatch full)
 ```
 
-This route is accessible without authentication, making it suitable for guest customers who placed orders without creating an account.
+`/orders/lookup` used to be a second form and a second result screen doing the same job. Both
+literals now redirect here.
 
-## How It Works
+## One page, three states
 
-### Automatic Guest Order Lookup
+The page has no toggle and no form. What it shows is decided by what the visitor arrived with:
 
-When a guest (unauthenticated) user places an order, the `GuestOrderService` saves the `{ orderId, email }` pair to `localStorage`. When the user visits `/track-order`:
+| State | When | What is on screen |
+|---|---|---|
+| **The booking** | the token opened one | the two axes (order progress and payment), what was booked, the facts, the total, and **Cancel booking** when the status allows it |
+| **Not found** | a token that opens nothing | an amber panel — nothing failed; a link stops working 30 days after the clean, and every link the guest already held stops at once when the booking is cancelled — plus **Try again** |
+| **No link** | the visitor arrived with no token at all | a panel saying where the link is (the confirmation e-mail), the remembered bookings this browser still holds tokens for, a way to write in, and a link to sign in |
 
-1. `GuestOrderService.getAll()` retrieves all saved guest orders
-2. A **batch lookup** request is sent using `CustomerOrderClient.lookupBatch()`
-3. Results are displayed as a list of recent orders
+Amber, not red, on the middle state: a link that has expired is the system working as designed, and a
+red error panel would say otherwise.
 
-All API calls use `CustomerOrderClient` (not raw `HttpClient`) to ensure consistent error handling, authentication headers, and base URL resolution.
+## The credential
 
-```typescript
-const items = guestOrders.map(o =>
-  new LookupOrderBatch_OrderLookupItem({
-    orderId: o.orderId,
-    email: o.email,
-  })
-);
-this.orderClient.lookupBatch(new LookupOrderBatch_Query({ items }));
+**One factor: the per-order access token.** The page reads it off `?token=` on load and looks the
+booking up with it.
+
+```
+/track-order?orderNumber=CLN-2026-001&email=jane@example.com&token=p8Jw2hQx…
 ```
 
-If no guest orders exist in localStorage, the manual lookup form is shown automatically.
+The page reads **only `token`**. `orderNumber` and `email` are on the URL because `EmailService`
+builds one link shape for every order e-mail; nothing on this page reads either of them, and neither
+opens anything. The lookup is `POST /api/Order/Lookup` with `{ accessToken }`; a failure leaves the
+token in a signal so **Try again** can retry without going back to the mailbox.
 
-### Manual Lookup
-
-Users can also look up any order by entering:
-
-| Field | Description |
-|---|---|
-| `orderNumber` | The display order number (e.g., `CLN-20260402-001`) |
-| `email` | The email address used when placing the order |
-
-The lookup calls `CustomerOrderClient.lookup(orderNumber, email)` which returns a `LookupOrder_Response` with full order details.
-
-::: warning Rate Limiting
-Lookup endpoints are rate-limited to **10 requests per minute** per IP address. Exceeding this limit returns a `429 Too Many Requests` response.
+::: warning The three-field lookup form is gone
+The page used to ask for an order number, an e-mail and a confirmation code. That triple was not a
+secret: the display number is sequential, the e-mail is not private, and the confirmation code was
+served on the order detail to every cleaner assigned to the job — so a cleaner could open, and cancel,
+their own customer's booking. There is nothing to type on this page any more.
+→ [Guest order lookup](/flows/booking-and-pricing#guest-order-lookup)
 :::
 
-### URL Query Parameters
+## Remembered bookings
 
-The tracking page supports direct linking with pre-filled fields, and **auto-fills from email link query params**:
+`GuestOrderService` keeps, in `localStorage` under `cleansia_guest_orders`, the bookings **this
+browser can still prove** — at most five, newest first:
 
+```typescript
+interface GuestOrder {
+  orderId: string;
+  accessToken: string;
+  createdAt: string;
+}
 ```
-/track-order?orderNumber=CLN-20260402-001&email=customer@example.com
+
+The token is what makes an entry worth keeping, so an entry without one — a bundle written by an
+earlier release — is dropped on read. Entries are written from two places: the wizard, out of
+`CreateOrder`'s `guestAccessToken`, and the track page itself when a link opens a booking.
+
+```typescript
+guestOrderService.save(orderId, accessToken);
+guestOrderService.getAll();   // GuestOrder[]
+guestOrderService.clear();    // e.g. after sign-in
 ```
 
-When both query parameters are present, the lookup is triggered automatically on page load. This is commonly used in order confirmation emails to provide one-click tracking.
+On load the page sends every remembered token to `POST /api/Order/LookupBatch` (cap: 10) and lists
+what comes back. A row opens that booking **in place** — the batch already returned the whole order,
+so there is no second screen, no cache to keep in step and no extra round trip. A failed batch is
+silent by design: the remembered list is a convenience and the rest of the page still reads.
 
-## Order Status Display
+::: warning Device-specific
+`localStorage` is per browser. Clearing site data, or switching device, loses the list — the e-mail
+link is the durable route back, and every status e-mail carries a fresh one.
+:::
 
-Each order displays a status timeline using PrimeNG's `Timeline` component. Status values use the
-`OrderStatus` enum, mapped by the shared `OrderStatusIconPipe` / `OrderStatusSeverityPipe`
-(`libs/shared/pipes/src/lib/order-status/`) — one source of truth across customer, partner and admin:
+## Cancelling from the page
 
-| Status | Value | Icon | Severity |
+`TrackOrderFacade` holds the selected booking's token and the cancellation state in signals. **Cancel
+booking** appears only while the status is `New`, `Confirmed` or `OnTheWay` and a token is held. It
+opens a dialog that first fetches `POST /api/Order/GuestCancellationPreview` with the same token and
+shows the tier, the fee (amount and rate) and the refund estimate before anything is submitted — with
+the preview's `oopsWindowMinutes` stated as *Cancelling within {minutes} minutes of booking is free,
+even after a cleaner has accepted* (15 for a guest; the signed-in order detail prints the same line,
+60 for an entitled Plus member); confirming sends `POST /api/Order/CancelGuest`.
+
+Both calls go through `errorToastSuppressingHttpClient()` — they answer **inline**, so they opt out of
+the shared error snackbar. A red *"An error occurred"* toast over an amber panel that already explains
+the outcome contradicts it. Four backend keys are surfaced verbatim (`order.not_found`,
+`order.already_cancelled`, `order.in_progress_cannot_cancel`, `order.already_completed`); anything else
+falls back to the page's own message. Backend keys resolve under `api.*`.
+
+After a successful cancellation the page flips the booking to `Cancelled` locally, states the refund
+amount when one was actually issued, and hides the cancel action. Server-side the booking's
+outstanding tokens are revoked at that point — including the one this page is holding — so the link
+in hand opens nothing on a later visit. The cancellation e-mail carries a fresh one.
+→ [Guest cancellation](/flows/booking-and-pricing#guest-cancellation)
+
+## What the page draws
+
+**Two axes, not one list.** An order's progress and its money move independently — a cash job reaches
+`Completed` while still unpaid, and a card job is paid before anyone is assigned — so merging them
+would interleave two sequences with no order between them.
+→ [Order lifecycle](/domain/order-lifecycle)
+
+The **order axis** is drawn as the whole journey, not only the stops already made, with each step's
+timestamp read off the order's own `statusHistory` rather than inferred (an order can skip a state —
+a cash job confirmed and started in one motion — and a timeline that infers timestamps invents them).
+`Pending` is deliberately absent: it has no production writer.
+
+The **payment axis** carries no timestamps. The guest lookup returns `statusHistory` for the order
+only; the payment has no history of its own on the response, and borrowing the order's clock would
+date a different event. Its rows say what state the money is in and what happens next.
+
+| Also on the page | |
+|---|---|
+| Facts | cleaning date and time, estimated duration, payment type |
+| What was booked | every selected service and package, as chips |
+| Total | formatted with the **order's** currency code and the UI language's locale, with a note that says *paid* or *settled with the cleaner* — saying the wrong one is the difference between having your wallet ready and not |
+| Actions | *Need help* → `/disputes`, *Look up another* (clears the selection), and for a visitor with no session a link to register |
+
+**No address and no crew.** The signed-in order board draws both; the guest lookup returns neither, on
+purpose.
+
+## Status pipes
+
+Status values are mapped by the shared `OrderStatusIconPipe` / `OrderStatusLabelPipe` /
+`OrderStatusSeverityPipe` (`libs/shared/pipes/src/lib/order-status/`) — one source of truth across
+customer, partner and admin.
+
+| `OrderStatus` | Value | Icon | Severity |
 |---|---|---|---|
-| `New` | `0` | `pi pi-circle` (default arm) | `info` (default arm) |
+| `New` | `0` | `pi pi-inbox` | `info` |
 | `Pending` | `1` | `pi pi-clock` | `warn` |
 | `Confirmed` | `2` | `pi pi-check` | `info` |
 | `OnTheWay` | `3` | `pi pi-send` | `info` |
@@ -75,70 +145,20 @@ Each order displays a status timeline using PrimeNG's `Timeline` component. Stat
 | `Completed` | `5` | `pi pi-check-circle` | `success` |
 | `Cancelled` | `6` | `pi pi-times-circle` | `danger` |
 
-::: warning `New` is the status a freshly booked order actually has
-Both pipes handle `New` only through their `default` arm, and nothing in production ever writes
-`Pending` (ADR-0037 D5) — so the `pi pi-clock` / `warn` row is effectively dead while the state a
-customer sees right after booking falls through to the generic icon.
-:::
+`New` has an explicit arm in both pipes, not the default one: it is the resting state of every booking
+nobody has taken yet — **including a card order the customer has already paid for** — and falling
+through to the generic dot rendered it as an absence. It is `info`, not `warn`: nothing is wrong with
+a booking that is waiting for a cleaner. The `warn` row belongs to `Pending`, which has no production
+writer. → [Order lifecycle](/domain/order-lifecycle)
 
-## Payment Status
+`PaymentStatus` is the axis that carries *"card payment initiated, waiting for the webhook"* — a card
+order sits at `OrderStatus.New` with `PaymentStatus.Pending` until Stripe confirms.
 
-Payment status is shown alongside order status. **This is the axis that carries "card payment
-initiated, waiting for the webhook"** — a card order sits at `OrderStatus.New` with
-`PaymentStatus.Pending` until Stripe confirms.
-
-| Payment Status | Value | Severity |
-|---|---|---|
-| `Pending` | `1` | `warn` |
-| `Paid` | `2` | `success` |
-| `Failed` | `3` | `danger` |
-| `Refunded` | `4` | `info` |
-| `Disputed` | `5` | `danger` |
-| `PartiallyRefunded` | `6` | — |
-
-## Data Displayed
-
-For each tracked order, the following information is shown:
-
-- Order number
-- Order status (with PrimeNG `Tag`)
-- Payment status
-- Cleaning date/time
-- Total price (formatted per order currency)
-- Status timeline (history of status changes)
-- Service details
-
-::: tip
-Prices are formatted using the order's currency code with `Intl.NumberFormat`. The locale is derived from the current translation language (`cs` maps to `cs-CZ`, `en` to `en-US`).
-:::
-
-## Guest Order Storage
-
-The `GuestOrderService` manages guest order tracking data:
-
-```typescript
-// Save after order creation
-guestOrderService.save(orderId, email);
-
-// Retrieve all saved orders
-guestOrderService.getAll(); // returns { orderId, email }[]
-
-// Clear all (e.g., after login)
-guestOrderService.clear();
-```
-
-::: warning
-Guest order data is stored in `localStorage` and is device-specific. If the user clears browser data or uses a different device, they must use the manual lookup form with their order number and email.
-:::
-
-## Error Handling
-
-- If the batch lookup fails, the manual lookup form is shown as a fallback
-- If a manual lookup fails (404), an error message is displayed: "Order not found"
-- Network errors show a generic error state
-
-## Navigation
-
-From the tracking page, users can:
-- Navigate to the order wizard to place a new order
-- Toggle between the guest order list and manual lookup form
+| `PaymentStatus` | Value |
+|---|---|
+| `Pending` | `1` |
+| `Paid` | `2` |
+| `Failed` | `3` |
+| `Refunded` | `4` |
+| `Disputed` | `5` |
+| `PartiallyRefunded` | `6` |

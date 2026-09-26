@@ -18,6 +18,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Moq;
+using Cleansia.Core.Domain.Common;
 
 namespace Cleansia.HostTests.Tests;
 
@@ -52,7 +53,7 @@ public sealed class SecondTenantIsolationHostTests(HostTestPostgresFixture db) :
         string CzAdminId, string CzAdminEmail,
         string CzCustomerId, string CzCustomerEmail,
         string SkCustomerId, string SkCustomerEmail,
-        string SkEmployeeId, string SkOrderId, string SkOrderNumber, string SkOrderCode,
+        string SkEmployeeId, string SkOrderId, string SkOrderNumber, string SkGuestOrderToken,
         string SkPayConfigId, string SkPromoCodeId, string SkCompanyInfoId,
         string CzPayConfigId, string CzPromoCodeId, string CzCompanyInfoId);
 
@@ -98,6 +99,14 @@ public sealed class SecondTenantIsolationHostTests(HostTestPostgresFixture db) :
             var receiptOwner = receiptOwnedByCzCustomer ? czCustomer : skCustomer;
             var skOrder = DomainSeed.NewOrder(receiptOwner.Id, receiptOwner.Email, tenantId: HostTestTenants.B);
             ctx.Orders.Add(skOrder);
+            // A guest booking of the second company, reachable only by the token its confirmation
+            // e-mail carried — the shape the anonymous lookup answers to.
+            var skGuestOrder = DomainSeed.NewOrder(null!, "sk-guest@hosttests.local", tenantId: HostTestTenants.B);
+            ctx.Orders.Add(skGuestOrder);
+            var skGuestToken = Stamp(
+                GuestOrderAccessToken.Issue(skGuestOrder.Id, GuestOrderAccessToken.ExpiryFor(skGuestOrder.CleaningDateTime)),
+                HostTestTenants.B);
+            ctx.GuestOrderAccessTokens.Add(skGuestToken);
             var language = ctx.Languages.Local.FirstOrDefault(l => l.Code == DomainSeed.LanguageCode)
                 ?? await ctx.Languages.SingleAsync(l => l.Code == DomainSeed.LanguageCode);
             var skReceipt = Stamp(OrderReceipt.Create(skOrder.Id, "R-2026-000001", "receipt.pdf", "receipts/r.pdf", language.Id), HostTestTenants.B);
@@ -116,7 +125,7 @@ public sealed class SecondTenantIsolationHostTests(HostTestPostgresFixture db) :
             arranged = new Arranged(
                 czAdmin.Id, czAdmin.Email, czCustomer.Id, czCustomer.Email,
                 skCustomer.Id, skCustomer.Email, skCleaner.Id,
-                skOrder.Id, skOrder.DisplayOrderNumber, skOrder.ConfirmationCode,
+                skOrder.Id, skOrder.DisplayOrderNumber, skGuestToken.RawToken!,
                 skPay.Id, skPromo.Id, skCompany.Id,
                 czPay.Id, czPromo.Id, czCompany.Id);
         });
@@ -238,12 +247,12 @@ public sealed class SecondTenantIsolationHostTests(HostTestPostgresFixture db) :
         var anonymous = CustomerClientAnonymous();
 
         var bySecret = await anonymous.GetAsync(
-            $"/api/Order/Lookup?orderNumber={a.SkOrderNumber}&email={Uri.EscapeDataString(a.SkCustomerEmail)}&confirmationCode={a.SkOrderCode}");
+            $"/api/Order/Lookup?token={Uri.EscapeDataString(a.SkGuestOrderToken)}");
         HttpAssert.IsOk(bySecret);
 
-        var byOwnEmail = await anonymous.GetAsync(
-            $"/api/Order/Lookup?orderNumber={a.SkOrderNumber}&email={Uri.EscapeDataString(a.CzCustomerEmail)}&confirmationCode={a.SkOrderCode}");
-        await HttpAssert.RejectedAsync(byOwnEmail, BusinessErrorMessage.OrderNotFound);
+        var byAnotherToken = await anonymous.GetAsync(
+            $"/api/Order/Lookup?token={Uri.EscapeDataString(SecurityTokens.Generate(SecurityTokens.DurableTokenByteLength))}");
+        await HttpAssert.RejectedAsync(byAnotherToken, BusinessErrorMessage.OrderNotFound);
 
         var czCustomer = TestJwtFactory.Mint(CustomerAudience, a.CzCustomerId, a.CzCustomerEmail, UserProfile.Customer, tenantId: HostTestTenants.A);
         await HttpAssert.RejectedAsync(

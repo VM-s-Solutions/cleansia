@@ -9,6 +9,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 using MockQueryable;
 using Moq;
 using Cleansia.TestUtilities;
+using Cleansia.Tests.Infrastructure;
 
 namespace Cleansia.Tests.Features.Orders;
 
@@ -50,9 +51,12 @@ public class TakeOrderAfterWalkBackTests
         Assert.Equal(
             [OrderStatus.New, OrderStatus.Confirmed, OrderStatus.New, OrderStatus.Confirmed],
             order.OrderStatusHistory.OrderBy(s => s.Sequence).Select(s => s.Status));
+        // A guest booking, so the "a cleaner has taken your job" e-mail carries its own credential —
+        // a re-take after a walk-back is a second issuance and must not be a dead link either.
         _emailService.Verify(
             e => e.SendOrderStatusUpdateEmailAsync(
-                order.CustomerEmail!, order, "Confirmed", It.IsAny<string>(), It.IsAny<CancellationToken>(), null),
+                order.CustomerEmail!, order, "Confirmed", It.IsAny<string>(), It.IsAny<CancellationToken>(), null,
+                It.Is<string?>(token => !string.IsNullOrEmpty(token))),
             Times.Once);
     }
 
@@ -80,6 +84,7 @@ public class TakeOrderAfterWalkBackTests
             _accessService.Object,
             _notificationProducer.Object,
             _emailService.Object,
+            TestGuestOrderAccessTokenIssuer.WithNoLiveTokens(),
             _workContractAcceptor.Object,
             NullLogger<TakeOrder.Handler>.Instance);
 }

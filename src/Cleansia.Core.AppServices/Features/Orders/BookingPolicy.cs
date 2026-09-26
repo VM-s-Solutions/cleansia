@@ -32,9 +32,10 @@ public static class BookingPolicy
     public const decimal ExpressSurchargeRate = 0.20m;
 
     /// <summary>
-    /// Arrival-window duration; clients offer start times every 15 minutes.
+    /// Largest home supported by the booking picker and every basket validator.
     /// </summary>
-    public const int WindowDurationMinutes = 60;
+    public const int MaxRooms = 8;
+    public const int MaxBathrooms = 4;
 
     /// <summary>
     /// Daily client booking range: 08:00 inclusive to 20:00 exclusive.
@@ -73,13 +74,17 @@ public static class BookingPolicy
     public const int PartialCancellationHours = 4;
 
     /// <summary>
-    /// "Oops window" — free cancellation within N minutes of booking regardless of execution time.
-    /// Protects against accidental taps.
+    /// "Oops window" — free cancellation within N minutes of booking, even with a cleaner already on the
+    /// job. Owner ruling 2026-09-24: this for every customer, guests and first-time customers included;
+    /// <see cref="OopsWindowMinutesPlus"/> for an entitled Plus member.
     /// </summary>
     public const int OopsWindowMinutesStandard = 15;
 
-    /// <summary>"Oops window" for first-time customers. More lenient to build trust.</summary>
-    public const int OopsWindowMinutesFirstTime = 60;
+    /// <summary>
+    /// The oops window of an entitled, paid Plus member. MINUTES after booking — a separate benefit from
+    /// the plan's <c>FreeCancellationWindowHours</c> before the cleaning, and never derived from it.
+    /// </summary>
+    public const int OopsWindowMinutesPlus = 60;
 
     /// <summary>
     /// The most of one order a customer's credit balance may settle. The rest goes on the card.
@@ -133,6 +138,14 @@ public static class BookingPolicy
     /// full wage against an unchanged customer price. → /product/business-rules#crew-size
     /// </summary>
     public const int SpareSeatsPerOrder = 0;
+
+    /// <summary>
+    /// Owner ruling 2026-09-24: cash is taken only from a signed-in customer on a job one cleaner does
+    /// alone; a guest, or a booking whose REQUIRED crew is two or more, pays by card. Spare seats never
+    /// count — capacity is not a second cleaner the work needs.
+    /// </summary>
+    public static bool AllowsCash(bool signedIn, int requiredEmployees)
+        => signedIn && requiredEmployees == 1;
 
     /// <summary>
     /// Longest span a booking may be created with. <b>A DISCLOSURE bound, not a double-booking one</b>
@@ -280,7 +293,10 @@ public static class BookingPolicy
     /// <param name="cleaningUtc">Order's scheduled start time.</param>
     /// <param name="bookingCreatedUtc">When the order was created.</param>
     /// <param name="cancelUtc">Current time / proposed cancel time.</param>
-    /// <param name="isFirstTimeCustomer">Whether the customer has 0 prior completed orders.</param>
+    /// <param name="oopsWindowMinutes">
+    /// This customer's oops window, inclusive — <c>CancellationPolicy.OopsWindowMinutes</c>. No default,
+    /// so a caller that has not resolved the customer cannot silently fall back to the standard window.
+    /// </param>
     /// <param name="hasBeenAccepted">
     /// True if a cleaner has actually been pulled onto the job — i.e. the order carries at least one
     /// ASSIGNMENT row (<c>Order.AssignedEmployees</c>), which is what <c>CancelOrder</c> passes.
@@ -291,8 +307,8 @@ public static class BookingPolicy
     /// </param>
     /// <param name="freeCancellationHoursOverride">
     /// Absolute free-cancellation threshold in hours that REPLACES
-    /// <see cref="FreeCancellationHours"/> when set. The sole caller
-    /// (<c>CancelOrder</c>) passes <c>CancellationPolicy.FreeCancellationHours</c>,
+    /// <see cref="FreeCancellationHours"/> when set. The production caller
+    /// (<c>CancellationAssessor</c>) passes <c>CancellationPolicy.FreeCancellationHours</c>,
     /// which the resolver fills with the absolute window: 24 for the standard tier,
     /// the membership's <c>FreeCancellationWindowHours</c> for a Plus member. A
     /// SMALLER threshold is MORE generous (a member can cancel free closer to the
@@ -305,14 +321,14 @@ public static class BookingPolicy
         DateTime cleaningUtc,
         DateTime bookingCreatedUtc,
         DateTime cancelUtc,
-        bool isFirstTimeCustomer,
+        int oopsWindowMinutes,
         bool hasBeenAccepted,
         int? freeCancellationHoursOverride = null)
         => CancellationFeeRateFor(ClassifyCancellation(
             cleaningUtc,
             bookingCreatedUtc,
             cancelUtc,
-            isFirstTimeCustomer,
+            oopsWindowMinutes,
             hasBeenAccepted,
             freeCancellationHoursOverride));
 
@@ -326,7 +342,7 @@ public static class BookingPolicy
         DateTime cleaningUtc,
         DateTime bookingCreatedUtc,
         DateTime cancelUtc,
-        bool isFirstTimeCustomer,
+        int oopsWindowMinutes,
         bool hasBeenAccepted,
         int? freeCancellationHoursOverride = null)
     {
@@ -335,8 +351,7 @@ public static class BookingPolicy
             return CancellationFeeTier.FreeNotAccepted;
         }
 
-        var oopsMinutes = isFirstTimeCustomer ? OopsWindowMinutesFirstTime : OopsWindowMinutesStandard;
-        if ((cancelUtc - bookingCreatedUtc).TotalMinutes <= oopsMinutes)
+        if ((cancelUtc - bookingCreatedUtc).TotalMinutes <= oopsWindowMinutes)
         {
             return CancellationFeeTier.FreeOopsWindow;
         }

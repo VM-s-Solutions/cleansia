@@ -72,10 +72,10 @@ public class FiscalModeReceiptServiceMatrixTests
 
         _countryRepository
             .Setup(r => r.GetByIdAsync(CzId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(Country.Create("Czechia", "CZ", "CZ"));
+            .ReturnsAsync(Country.Create("Czechia", "CZE", "CZ"));
         _countryRepository
             .Setup(r => r.GetByIdAsync(DeId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(Country.Create("Germany", "DE", "DE"));
+            .ReturnsAsync(Country.Create("Germany", "DEU", "DE"));
 
         _pdfService
             .Setup(p => p.GenerateReceiptPdf(It.IsAny<ReceiptPdfData>(), It.IsAny<string?>()))
@@ -164,7 +164,7 @@ public class FiscalModeReceiptServiceMatrixTests
         var order = BuildOrder(CzId);
         var receipt = BuildReceipt();
 
-        await CreateService().RealizeFiscalAndPdfAsync(order, receipt, LanguageCode, CancellationToken.None);
+        await CreateService().RealizeFiscalAndPdfAsync(order, receipt, CancellationToken.None);
 
         _fiscalServiceResolver.Verify(r => r.Resolve(It.IsAny<string>()), Times.Never);
         Assert.Null(receipt.FiscalCode);
@@ -178,7 +178,7 @@ public class FiscalModeReceiptServiceMatrixTests
         var order = BuildOrder(CzId);
         var receipt = BuildReceipt();
 
-        await CreateService().RealizeFiscalAndPdfAsync(order, receipt, LanguageCode, CancellationToken.None);
+        await CreateService().RealizeFiscalAndPdfAsync(order, receipt, CancellationToken.None);
 
         _fiscalServiceResolver.Verify(r => r.Resolve(It.IsAny<string>()), Times.Never);
         Assert.Null(receipt.FiscalCode);
@@ -190,7 +190,7 @@ public class FiscalModeReceiptServiceMatrixTests
         var order = BuildOrderWithNullCountry();
         var receipt = BuildReceipt();
 
-        await CreateService().RealizeFiscalAndPdfAsync(order, receipt, LanguageCode, CancellationToken.None);
+        await CreateService().RealizeFiscalAndPdfAsync(order, receipt, CancellationToken.None);
 
         _fiscalServiceResolver.Verify(r => r.Resolve(It.IsAny<string>()), Times.Never);
         Assert.Null(receipt.FiscalCode);
@@ -212,7 +212,7 @@ public class FiscalModeReceiptServiceMatrixTests
         var order = BuildOrder(DeId);
         var receipt = BuildReceipt();
 
-        await CreateService().RealizeFiscalAndPdfAsync(order, receipt, LanguageCode, CancellationToken.None);
+        await CreateService().RealizeFiscalAndPdfAsync(order, receipt, CancellationToken.None);
 
         Assert.Equal(1, provider.RegisterCallCount);
         Assert.Equal("SIG-OK", receipt.FiscalCode);
@@ -238,7 +238,7 @@ public class FiscalModeReceiptServiceMatrixTests
         var receipt = BuildReceipt();
 
         var ex = await Record.ExceptionAsync(() =>
-            CreateService().RealizeFiscalAndPdfAsync(order, receipt, LanguageCode, CancellationToken.None));
+            CreateService().RealizeFiscalAndPdfAsync(order, receipt, CancellationToken.None));
 
         Assert.Null(ex);
         Assert.Equal(1, provider.RegisterCallCount);
@@ -263,7 +263,7 @@ public class FiscalModeReceiptServiceMatrixTests
         var receipt = BuildReceipt();
 
         var ex = await Record.ExceptionAsync(() =>
-            CreateService().RealizeFiscalAndPdfAsync(order, receipt, LanguageCode, CancellationToken.None));
+            CreateService().RealizeFiscalAndPdfAsync(order, receipt, CancellationToken.None));
 
         Assert.Null(ex);
         Assert.Equal(1, provider.RegisterCallCount);

@@ -191,6 +191,20 @@ class BookingQuoteWireTest {
         assertEquals(true, quote.expressSurchargeApplied)
     }
 
+    /**
+     * The crew decides whether cash is offered. A defaulted crew of one offers cash on every booking,
+     * including the multi-cleaner ones the server refuses it on.
+     */
+    @Test
+    fun theRequiredCrewArrivesWithItsLiteralValue() = runTest {
+        assertEquals(2, quoted(CAPTURED_QUOTE).requiredEmployees)
+    }
+
+    @Test
+    fun aMissingRequiredCrewRefusesTheQuoteRatherThanOfferingCash() = runTest {
+        assertQuoteRefused("requiredEmployees", withoutKey(CAPTURED_QUOTE, "requiredEmployees"))
+    }
+
     // --- rule 3: identity is refused, never synthesized --------------------------
 
     @Test
@@ -289,7 +303,8 @@ class BookingQuoteWireTest {
               "expressSurchargeApplied": true,
               "expressSurchargeAmount": 730.00,
               "expressSurchargeWaivedByMembership": false,
-              "expressUpgradesRemaining": 2
+              "expressUpgradesRemaining": 2,
+              "requiredEmployees": 2
             }
         """.trimIndent()
 

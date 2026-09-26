@@ -165,21 +165,57 @@ public class ResolveDisputeRefundSeamTests
         Assert.Equal(DisputeId, capturedArgs["disputeId"]);
     }
 
+    /// <summary>
+    /// The upheld complaint whose money never moved. The refund is attempted FIRST and the resolution
+    /// is written only once Stripe has confirmed, so a refused refund leaves the dispute exactly where
+    /// it was — still open, no RefundAmount, no resolution notes, nobody told the customer they were
+    /// paid — and the command answers the seam's own error rather than success.
+    /// </summary>
     [Fact]
-    public async Task Resolve_WhenRefundFails_DoesNotDispatchNotification()
+    public async Task Resolve_WhenRefundFails_LeavesTheDisputeUnresolved_AndReturnsTheSeamsError()
     {
-        ArrangeDispute();
+        var dispute = ArrangeDispute();
         _refundService
             .Setup(s => s.IssueRefundAsync(It.IsAny<RefundRequest>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(BusinessResult.Failure<RefundResult>(
                 new Error(nameof(RefundRequest.Amount), BusinessErrorMessage.RefundFailed)));
 
-        await CreateHandler().Handle(
+        var result = await CreateHandler().Handle(
             new ResolveDispute.Command(DisputeId, 250m, "approved"), CancellationToken.None);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal(BusinessErrorMessage.RefundFailed, result.Error!.Message);
+        Assert.Equal(DisputeStatus.Pending, dispute.Status);
+        Assert.Null(dispute.RefundAmount);
+        Assert.Null(dispute.ResolutionNotes);
+        Assert.Null(dispute.ResolvedOn);
+        Assert.Null(_auditContext.DrainSnapshot());
 
         _producer.Verify(p => p.NotifyAsync(
             It.IsAny<string>(), It.IsAny<string>(), It.IsAny<Dictionary<string, string>>(),
             It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    /// <summary>
+    /// A refund the seam refuses for a reason of its own — nothing left to refund — propagates that
+    /// reason, not a flattened <c>refund.failed</c>: the administrator needs to know the order has
+    /// already been refunded rather than that Stripe was unreachable.
+    /// </summary>
+    [Fact]
+    public async Task Resolve_WhenNothingIsRefundable_PropagatesThatReason()
+    {
+        var dispute = ArrangeDispute();
+        _refundService
+            .Setup(s => s.IssueRefundAsync(It.IsAny<RefundRequest>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(BusinessResult.Failure<RefundResult>(
+                new Error(nameof(RefundRequest.Amount), BusinessErrorMessage.RefundNothingRefundable)));
+
+        var result = await CreateHandler().Handle(
+            new ResolveDispute.Command(DisputeId, 250m, "approved"), CancellationToken.None);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal(BusinessErrorMessage.RefundNothingRefundable, result.Error!.Message);
+        Assert.Equal(DisputeStatus.Pending, dispute.Status);
     }
 
     [Fact]

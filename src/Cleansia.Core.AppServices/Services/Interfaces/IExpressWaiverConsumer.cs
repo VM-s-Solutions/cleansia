@@ -47,7 +47,8 @@ public interface IExpressWaiverConsumer
     /// Whether cancelling this order right now would forfeit a live express waiver — a live slot attached
     /// to the order AND a release rule that would not fire for a customer-initiated cancel. The customer
     /// must be told before they confirm, because the cases where the forfeiture is invisible (inside the
-    /// 15-minute oops window, or on any cash order) are exactly the ones where the cancellation fee is 0.
+    /// customer's oops window, <see cref="CancellationPolicy.OopsWindowMinutes"/>, or on any cash order)
+    /// are exactly the ones where the cancellation fee is 0.
     /// </summary>
     Task<bool> WouldForfeitOnCustomerCancelAsync(
         string orderId,

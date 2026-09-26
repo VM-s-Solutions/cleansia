@@ -1,10 +1,8 @@
 namespace Cleansia.Core.AppServices.Services.Interfaces;
 
 /// <summary>
-/// Resolves the cancellation policy that should apply to a given customer.
-/// Plus members get a wider free-cancellation window than non-members; this
-/// service returns the right window so callers (CancelOrder handler, future
-/// cancellation-preview UI) don't have to know about Plus directly.
+/// Resolves the cancellation policy that applies to a given customer, so callers (the cancel paths,
+/// both previews, the booking evidence) don't have to know about Plus directly.
 /// </summary>
 public interface ICancellationPolicyResolver
 {
@@ -16,12 +14,14 @@ public interface ICancellationPolicyResolver
 }
 
 /// <summary>
-/// Snapshot of the cancellation rules that apply to a given customer at a
-/// given point in time. Keeps the partial-fee window and rates fixed (Plus
-/// only widens the free window, doesn't change the rest).
+/// The cancellation rules that apply to one customer at one moment. An entitled Plus membership moves
+/// two things, independently: the oops window after booking (<c>BookingPolicy.OopsWindowMinutesPlus</c>)
+/// and, when the plan sets one, the free window before the cleaning. The partial and last-minute
+/// thresholds and rates never move.
 /// </summary>
 public record CancellationPolicy(
     int FreeCancellationHours,
     int PartialCancellationHours,
     decimal PartialCancellationFeeRate,
-    decimal LastMinuteCancellationFeeRate);
+    decimal LastMinuteCancellationFeeRate,
+    int OopsWindowMinutes);

@@ -14,8 +14,8 @@ import org.w3c.dom.Element
 class GuestOrderStringsTest {
     private val locales = listOf("values", "values-cs", "values-sk", "values-uk", "values-ru")
     private val keys = listOf(
-        "guest_order_entry", "guest_order_title", "guest_order_intro", "guest_order_number",
-        "guest_order_code", "guest_order_lookup", "guest_order_required", "guest_order_empty",
+        "guest_order_entry", "guest_order_title", "guest_order_intro", "guest_order_link",
+        "guest_order_lookup", "guest_order_required", "guest_order_empty",
         "guest_order_loading", "guest_order_cancel", "guest_order_cannot_cancel", "guest_order_preview_required",
         "guest_order_fee_estimate",
     )
@@ -47,7 +47,7 @@ class GuestOrderStringsTest {
     }
 
     @Test
-    fun `guest route has no serialized credential arguments`() {
+    fun `guest route carries no credential argument`() {
         assertEquals("{}", Json.encodeToString(Routes.GuestOrder))
     }
 

@@ -16,14 +16,15 @@ flowchart LR
   D --> E["Anonymise the subject's orders — the account's, and the ENDED guest bookings under its e-mail — with their photos, pay rows and guest audit rows; stamp the disputes' text window"]
   E --> F[Stage the revoke of every session]
   F --> G[Hard-delete payout identifiers]
-  G --> H[ONE commit]
+  G --> K["Forfeit unused credit, every currency — an Expired ledger row per account"]
+  K --> H[ONE commit]
   H -- throws --> X[Failed request row, written out of band — retried tomorrow or by an admin]
 
   classDef stop fill:#fee2e2,stroke:#b91c1c,color:#7f1d1d
   class C,X stop
 ```
 
-Twenty-one repositories are walked: cart, devices, disputes, employee documents, invoices, payout
+The erasure walks devices, disputes, employee documents, invoices, payout
 details, GDPR requests, live-activity tokens, pay rows, order photos, orders, outbox, recurring
 templates, saved addresses, consents, memberships, notifications, users, dead letters — the
 customer audit trail, which is **pseudonymised, not deleted**: a tracked load of every row of the
@@ -33,7 +34,8 @@ outcome, the evidence and the subject id stay) → [The customer trail](#custome
 cleaner, their **contract-for-work acceptances**, pseudonymised the same way (the same three columns
 go; the seat, the text, the instant and the frozen job facts stay — the row is the formation record of
 a retained order, ADR-0068 D5) through a tracked load past the tenant filter riding the one commit. A
-customer's erasure leaves the acceptances on their orders untouched: they name no customer.
+customer's erasure leaves the acceptances on their orders untouched: they name no customer. Guest
+access-token revocation and address replacement also participate in that same database commit.
 
 **Whose orders.** One predicate, `SubjectOrders.Of(userId, email)`, answers it for the erasure and
 for the subject export alike (owner ruling 2026-09-15): the orders booked on the account, **or** the
@@ -46,10 +48,46 @@ erased nor exported. Every order it yields goes through the same per-order path 
 photo blob and row, the customer fields, the address, the pay rows — and keeps its operator's stamp.
 **A guest booking still live is left out of the walk, not a reason to refuse**: the blocking check
 stays the account’s own live orders. Its contact data stays until the job ends and the order-PII sweep
-reaches it. **Dated correction, 2026-09-16 (T-0753):** the backend now has a guest cancellation path
-using the booking’s order number, e-mail and confirmation code. That changes the earlier “nothing
-anonymous cancels” premise, but does not change the erasure rule or answer Q-GDPR-03. An e-mail match
-alone still proves no right to cancel a booking, and the guest client flows remain in progress.
+reaches it. **Dated correction, 2026-09-16 (T-0753), amended 2026-09-22:** there is a guest
+cancellation path, and since the re-key it is held by **a per-order access token that reaches only
+the guest's mailbox** — not by the order number, e-mail and confirmation code it first shipped with.
+That changes the earlier “nothing anonymous cancels” premise, but does not change the erasure rule or
+answer Q-GDPR-03: an e-mail match alone still proves no right to cancel a booking, and now proves
+even less than it did, because the e-mail is no longer part of the key at all.
+→ [The guest access token](/flows/booking-and-pricing#guest-access-token)
+
+**An address shared with somebody else is never blanked in place.** Each affected order, and the
+erased cleaner's employee record, receives its own anonymised address copy, preserving its country
+and operating-company stamp. A reference census across companies determines which original address
+rows can be deleted after those replacements and removal of the subject's active saved-address
+rows. Other orders, saved addresses and employees keep their original row. The completed-order PII
+sweep uses the same copy-before-delete rule; even the subject's own newer order or saved address
+protects its original there.
+
+If another reference commits between the census and deletion, the foreign key refuses deletion and the database
+commit fails instead of blanking somebody else's address or deleting their new order. The order's
+address foreign key uses `Restrict`; if deletion wins the race, the competing reference cannot commit
+against the deleted row. This does not extend the erasure to saved-address-only originals
+or inactive saved-address rows; those remain reported gaps.
+
+**An erased guest booking loses its access keys with its personal data.** The ended guest orders
+in the walk have every live token revoked before anonymisation, staged into the same commit. A live
+guest booking left out of the walk keeps its cancellation path. The order-PII sweep starts at least
+one year after the cleaning, beyond the token's fixed 30-day lifetime, so it cannot erase an order
+while one of those tokens is still live.
+
+**Unused credit is forfeited, last** (owner ruling 2026-09-24). After the Stripe membership cancel and
+the blob deletes, `ForfeitCreditAsync` locks the subject's user row and credit accounts, drains every
+positive balance in every currency and writes one `Expired` ledger row per account under
+`account-deletion:<account id>`, noted with the deletion reason; the lock is held to the commit. Nothing
+is paid out. Because every writer that puts credit on an account — a refund's or a cancellation's
+credit share, checkout compensation, a grant, the no-show apology — takes the same owner lock and
+refuses an erased (anonymised and deactivated) owner, a return that committed first is drained here,
+and one that waits finds the erased owner and moves nothing; no account is ever recreated for the
+subject. A merely inactive account still receives credit. A card
+refund is unaffected: its card share still goes back to the card, and the credit share is simply not
+returned. A refused, deferred or failed deletion keeps the balance. Positive credit used to **refuse**
+the erasure; it no longer does. → [Credit on a deleted account](/product/business-rules#credit-on-account-deletion)
 
 **The whole walk is one commit.** It used to commit once in the middle — the session revoke carries
 its own commit for the logout race — which made everything above it durable while everything below
@@ -139,8 +177,26 @@ comes back empty, over the `(OccurredOn)` index, under the company's override. T
 set below one year — the floor is enforced where the value is written, on the admin page, because this
 is the one delete the append-only discipline sanctions and a cutoff of "now" would empty the evidence
 table on the next tick; a stored value the catalogue no longer accepts falls back to the default. The
-admin and cleaner audit tables have **no** window and the task never reaches them.
+admin and cleaner tables have separate tasks and settings since the owner's **2026-09-22** ruling:
+`AdminActionAudits` / `retention.admin_audit.years` deletes by `OccurredOn`, and
+`EmployeeActionAudits` / `retention.employee_audit.years` by `CreatedOn`, each defaulting to **3 years**.
+They remain append-only during that window and survive a subject's erasure; age-based deletion is
+the explicit exception. The catalogue currently permits a one-year minimum for both; whether the
+minimum must be three years remains an owner question.
 → [Business rules — retention](/product/business-rules#customer-record)
+
+**Order photos expire from completion.** `OrderPhotos` reads `retention.order_photos.days` (default
+**7**, owner ruling 2026-09-22) and deletes the row and its blob when the order's `CompletedAt` is
+older than that window. Any dispute whose status is neither `Resolved` nor `Closed` holds the photos.
+The order's operating company determines the window, including when a photo carries a different
+uploader stamp. A blob deletion failure leaves its row for a later run. Deletion is attempted on the
+first weekly run after the seven-day window; never-completed orders and disputes raised after the
+photos have already gone remain outside that protection.
+
+**Dead guest keys are removed too.** `GuestOrderAccessTokens` deletes rows whose expiry has passed
+or whose `RevokedOn` is set, under the token's stored company stamp (copied from the order at issue).
+It needs no additional setting. There are **thirteen retention settings and fourteen tasks**, all
+under the same master switch.
 
 **The erased customer's dispute text is on it too.** The `DisputeText` task reads only the stamp the
 erasure set (`Dispute.TextRetainedUntil`), blanks the description, the messages and the resolution
@@ -199,7 +255,10 @@ subject is a cleaner, **orders** (the account's and the guest bookings under its
 the erasure reaches, a live guest booking included), **disputes** (owner ruling 2026-09-15 — every
 dispute filed on the account or on one of those orders: reason and status by name, the description,
 the resolution notes, the refund with its currency code, every message as author role, time and text,
-the evidence file names; text as stored, so the three-year window's marker once the sweep has run),
+the evidence file names; text as stored, so the three-year window's marker once the sweep has run —
+and, through the order term, any dispute on one of the guest bookings, which names no customer; a bank
+chargeback on a guest booking is not among them, because none is recorded →
+[Cancellation, refund and dispute](/flows/cancellation-refund-dispute#dispute)),
 documents, invoices, consents (with IP, user agent, version and document id), the customer trail
 (`customerActions` — the account's own rows only, not the guest rows on its orders: their IP and device
 belong to whoever placed the booking, a stranger's when the address is a typo) and the metadata.
@@ -263,13 +322,17 @@ names an account the request did not sign in as — that account's. The row hold
 money, enums and versions and never a name, a contact detail, an address line, free text or a token;
 a build-time guard walks every evidence record for a member so named.
 
-**Guest cancellation (T-0753, backend added 2026-09-16).** The `customer.order.cancel` success and
-refusal rows have `UserId = null`, even if a JWT or a snapshot names an account: the booking secret
-proves resource access, not an account actor. The complete secret is checked against a guest order
-before the request adopts that order’s operator, ahead of validation and writes. The success row
-records the standard `OrderCancellationEvidence`; `refundAmount` is the policy amount, while the
-nullable `actualRefundAmount` records the successful refund’s amount. A refusal has the error key
-and no evidence payload. The guest secret and cancellation text are not copied into the trail.
+**Guest cancellation (T-0753, backend added 2026-09-16; re-keyed 2026-09-22).** The
+`customer.order.cancel` success and refusal rows have `UserId = null`, even if a JWT or a snapshot
+names an account: the booking's **access token** proves resource access, not an account actor. The
+token is resolved against a guest order before the request adopts that order’s operator, ahead of
+validation and writes. The success row records the standard `OrderCancellationEvidence`;
+`refundAmount` is the policy amount, while the nullable `actualRefundAmount` records the successful
+refund’s amount. A refusal has the error key and no evidence payload. **The token and the
+cancellation text are not copied into the trail**: `OrderCancellationEvidence` carries tiers, money,
+enums and durations and has no member for either, and the build-time payload guard refuses a live
+credential by name.
+→ [The guest access token](/flows/booking-and-pricing#guest-access-token)
 
 **Commit boundary.** The refund service durably records a guest refund before the final cancellation
 status, audit success and durable e-mail intent commit together. If work after that refund fails,
@@ -308,18 +371,20 @@ What survives what:
 | Case | What happens |
 |---|---|
 | Erasure requested with a job in progress | Refused. Erasing mid-job would anonymise a customer while a cleaner is on the way to their home. |
+| Erasure of a customer who holds credit | Not refused. Every positive balance, in every currency, is written off in the erasure's commit (`Expired`, key `account-deletion:<account id>`) — no payout. A refused or failed erasure leaves it untouched. |
+| A refund or cancellation on an erased customer's order | The card share is refunded as usual; the credit share is not returned — no balance, no new account, no larger card refund. |
 | Erasure requested twice | Refused as already pending while any earlier request is not yet `Completed` — a `Failed` one included, which the daily retry or an admin finishes. |
 | The erasure's commit throws | Nothing changes — the subject, their sessions, the trail; a `Failed` request row is written out of band with the reason and retried the next day at 05:00 UTC, or by an admin's **Retry**. |
 | A `Processing` request row older than thirty minutes | Cannot be a live run — the walk takes seconds — so it is treated like a failure: the daily job retries it and the admin **Retry** is offered on it. |
 | An erased customer's dispute | The description, messages and resolution notes stay readable for `retention.dispute_text.years` (3) from the erasure, then the weekly sweep blanks them; the evidence files went at erasure. |
 | A cleaner deletes their own account | A request is filed; nothing is erased. They stay signed in. An admin fulfils it after the paperwork. |
 | A cleaner is staffed on a future job, or is owed pay | Refused — for an admin as much as for the cleaner. |
-| Order photos | Anonymised individually — they carry a capturer and free text the order-level walk does not reach. |
-| An audit row for an erased admin | Survives. The audit is append-only and outlives the actor. |
+| Order photos | For photos on the subject's ended orders, erasure attempts blob deletion and retains each row with `OriginalFileName` anonymised and `Notes` cleared. Its existing blob-name extraction gap can leave the blob behind. Independently, the completion-based seven-day sweep deletes blobs before removing their rows, unless an unresolved dispute holds them. |
+| An audit row for an erased admin | Survives erasure, then expires by its own age under the company's admin-audit window (default three years). |
 | A customer audit row for an erased customer | Survives, pseudonymised: the three request-metadata columns are blanked and nothing else changes. An erasure whose commit fails leaves the rows untouched. |
 | A contract-for-work acceptance of an erased cleaner | Survives, pseudonymised the same way: IP, device label and device id go; the seat, the exact text row, the instant and the frozen facts stay, and the cleaner's id stays as the pseudonymous handle `Employee.Anonymize` keeps. The per-company sweep blanks the same three columns three years after the acceptance for everyone else; nothing ever deletes the row. |
 | A guest's booking rows after the guest registers with the same email | Not inherited by the timeline — guest rows have no user and are reachable only from the order's history. The account's **erasure** reaches them all the same, by the e-mail: the ended booking is anonymised and its guest rows lose IP and device. |
-| A guest booking under the erased e-mail that is still live | Left out of the walk, not a refusal: its name, contact and address stay until the job ends and the order-PII sweep reaches it, its guest rows until the three-year sweep. T-0753 adds secret-keyed guest cancellation in the backend; the erasure rule is unchanged, and Q-GDPR-03 remains open. |
+| A guest booking under the erased e-mail that is still live | Left out of the walk, not a refusal: its name, contact and address stay until the job ends and the order-PII sweep reaches it, its guest rows until the three-year sweep. T-0753 added guest cancellation, keyed since 2026-09-22 on the booking's access token; the erasure rule is unchanged, and Q-GDPR-03 remains open. |
 | A guest booking placed in another market with the account's e-mail | Reached and exported all the same — the read goes past the operating-company filter, because a guest checkout is stamped with the market's company and the erasure runs under the subject's. The anonymised rows keep their own company's stamp. |
 | An anonymous refusal before the market's operator is known | No row — there is no tenant to stamp it with. The sink logs one warning instead of writing an orphan. |
 | Notification flood for one user | Capped; the overflow is pruned. |

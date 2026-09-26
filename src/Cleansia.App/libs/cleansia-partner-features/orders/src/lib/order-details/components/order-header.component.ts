@@ -16,7 +16,6 @@ export class OrderHeaderComponent {
   orderStatus = input<Code | null>(null);
   paymentStatus = input<Code | null>(null);
   createdOn = input<string>('');
-  confirmationCode = input<string>('');
 
   print = output<void>();
   downloadInvoice = output<void>();

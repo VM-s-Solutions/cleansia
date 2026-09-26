@@ -77,7 +77,9 @@ enum RecurringFixtures {
         isActive: Bool = true,
         frequency: Int = 1,
         endsOn: Date? = nil,
-        selectedServiceIds: [String] = ["s-1"]
+        selectedServiceIds: [String] = ["s-1"],
+        paymentType: Int = RecurringPaymentType.cash,
+        requiresPaymentMethodChange: Bool = false
     ) -> RecurringTemplate {
         RecurringTemplate(
             id: id,
@@ -90,10 +92,11 @@ enum RecurringFixtures {
             addressLine: "Zenklova 6, Praha",
             selectedServiceIds: selectedServiceIds,
             selectedPackageIds: [],
-            paymentType: 1,
+            paymentType: paymentType,
             startsOn: Date(timeIntervalSince1970: 1_780_000_000),
             endsOn: endsOn,
-            isActive: isActive
+            isActive: isActive,
+            requiresPaymentMethodChange: requiresPaymentMethodChange
         )
     }
 }

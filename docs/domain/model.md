@@ -45,11 +45,11 @@ serves that market: `Market/GetOverview` does not list it and an anonymous write
 `country.not_serviced`. → [Tenant](/domain/roles/tenant), [Company lifecycle](/domain/roles/company-lifecycle)
 
 **Every stamped row carries its operator, and the column is a foreign key.** A type that belongs to
-one company extends **`TenantAuditable : Auditable, ITenantEntity`** — 46 of them — or is one of the
-two `BaseEntity + ITenantEntity` audits (`AdminActionAudit`, `CustomerActionAudit`): **48 stamped
+one company extends **`TenantAuditable : Auditable, ITenantEntity`** — 47 of them — or is one of the
+two `BaseEntity + ITenantEntity` audits (`AdminActionAudit`, `CustomerActionAudit`): **49 stamped
 tables**, each with `FK_<T>_Tenants_TenantId` (`Restrict`, no navigation — the two `TenantId` arrows
-above stand in for all 48; the area diagrams below do not repeat them). The `TenantId` column is
-**NOT NULL** on 46 of them and
+above stand in for all 49; the area diagrams below do not repeat them). The `TenantId` column is
+**NOT NULL** on 47 of them and
 nullable only on `OutboxMessage` and `DeadLetter` (an envelope may have no tenant; a `NULL` passes the
 FK). The value is written at commit time from the ambient tenant — the JWT claim, the market's operator
 for an anonymous write, the user's tenant on a token mint, the row's own tenant or the registry's
@@ -61,8 +61,8 @@ grows one.
 
 | Entity | |
 |---|---|
-| `Tenant` | — ; referenced by `CountryConfiguration.OperatorTenantId` and by `TenantId` on all 48 stamped tables. `Auditable` (tenantless by construction); the lifecycle columns above; the company's state is the highest of *archived* (`ArchivedOn`), *frozen* (`ArchiveRequestedOn`), *deactivated* (`!IsActive`), *winding down* (`WindDownFrom`), *operating* → [Company lifecycle](/domain/roles/company-lifecycle) |
-| `TenantConfiguration` | references `Tenant`; one row per `(TenantId, Key)` (unique, `NULLS NOT DISTINCT`) holding a company's override of one catalogued setting — the ten `retention.*` windows today; no row means the catalogue default. Written by the admin's *Company settings* page, read per company by the retention job → [TenantConfiguration](/domain/roles/tenant-configuration) |
+| `Tenant` | — ; referenced by `CountryConfiguration.OperatorTenantId` and by `TenantId` on all 49 stamped tables. `Auditable` (tenantless by construction); the lifecycle columns above; the company's state is the highest of *archived* (`ArchivedOn`), *frozen* (`ArchiveRequestedOn`), *deactivated* (`!IsActive`), *winding down* (`WindDownFrom`), *operating* → [Company lifecycle](/domain/roles/company-lifecycle) |
+| `TenantConfiguration` | references `Tenant`; one row per `(TenantId, Key)` (unique, `NULLS NOT DISTINCT`) holding a company's override of one of fifteen catalogued settings — thirteen `retention.*` settings, the chargeback horizon and the administrator notification mailbox; no row means the catalogue default. Written by the admin's *Company settings* page, read per company by the retention job → [TenantConfiguration](/domain/roles/tenant-configuration) |
 
 ## Identity and access
 
@@ -92,7 +92,7 @@ erDiagram
 | `EmployeeDocument` | references `Employee`, `PreviousVersion` |
 | `EmployeeDocumentRequirement` | references `Country` (Restrict); unique `(CountryId, DocumentType)` — which document types a country requires of a cleaner |
 | `DocumentDeletionRequest` | references `Document` (Restrict) — a cleaner's request to have a document removed, answered by an admin |
-| `EmployeeActionAudit` | — bare `EmployeeId` and `OrderId` scalars with no FK, because the act it records deletes the `OrderEmployee` row it describes and must survive an erased order; indexed `(OrderId, CreatedOn DESC)` for the admin timeline that reads it by order ([ADR-0062](/decisions/adr-0062) D6) |
+| `EmployeeActionAudit` | — bare `EmployeeId` and `OrderId` scalars with no FK; records a cover request, dropped seat, accepted work contract or first access-instructions disclosure. Indexed `(OrderId, CreatedOn DESC)` for the admin timeline; survives erasure and expires by `CreatedOn` under the company's window (default three years) → [Entry instructions](/flows/execution-and-completion#entry-instructions), [ADR-0062](/decisions/adr-0062) D6 |
 | `CustomerActionAudit` | — bare `UserId` scalar with no FK (null for a guest act), because the row must outlive everything it names; `ClientAudience`, `IpAddress`, `DeviceLabel`, `DeviceId` are the request context, `PayloadJson` (jsonb) the typed evidence a handler emitted, `ErrorCode` the refusal key on a failure row. `TenantId` NOT NULL. Append-only — `Pseudonymise()` (erasure blanks the three request-metadata columns) is the one mutator; indexed `(TenantId, OccurredOn DESC)`, `(UserId, OccurredOn DESC)`, `(ResourceType, ResourceId)`, `(OccurredOn)` for the three-year-per-row retention scan → [ADR-0062](/decisions/adr-0062), [`customer-action-audit`](/domain/roles/customer-action-audit) |
 | `UserConsent` | references `User`, `LegalDocument` (nullable, Restrict — a text a customer accepted can never be deleted from under the row); one row per `(UserId, ConsentType)` — the **current state**, overwritten on regrant, with `DocumentVersion` (`varchar(32)`, nullable — the document's effective date as `yyyy-MM-dd`) and `LegalDocumentId` written together (both null on consent types with no document and on every employee row, which stamps nothing until ADR-0041's agreement lands). A regrant under a *different document identity* moves the row. IP, user agent, version and document id **survive erasure** on the withdrawn row (`RetainedByPolicy`). The history of grants and withdrawals is the `customer.consent.*` rows in `CustomerActionAudit` → [ADR-0063](/decisions/adr-0063), [ADR-0062](/decisions/adr-0062) D4 |
 | `UserStripeCustomer` | references `User` (Restrict), `Currency` (Restrict); unique `(UserId, CurrencyId)` with no tenant term, unique `StripeCustomerId` — the Stripe Customer that bills this user in **one** currency. Stripe locks a Customer to the currency of its first invoice, so a user holds one per currency and can re-subscribe to Plus in a new market; `User.StripeCustomerId` stays as the legacy field one-off order payments use, adopted as the first row for a currency it has only ever billed. GDPR erasure deletes the rows; `DeleteCurrency` answers `currency.in_use` for them. → [ADR-0059](/decisions/adr-0059) amendment |
@@ -119,6 +119,7 @@ erDiagram
   Order }o--o| LegalDocument : "WorkContractDocument"
   WorkContractAcceptance }o--|| Order : "Order"
   WorkContractAcceptance }o--|| LegalDocumentText : "LegalDocumentText"
+  GuestOrderAccessToken }o--|| Order : "Order"
 ```
 
 **`OrderService`, `OrderPackage` and `OrderExtra` are the order's line items** — what was actually
@@ -146,14 +147,34 @@ by the three-year sweep), `FactsJson` (the job as shown at acceptance; never a n
 Append-only, `TenantAuditable` stamped with the order's operator. → [ADR-0068](/decisions/adr-0068),
 [`work-contract-acceptance`](/domain/roles/work-contract-acceptance)
 
+**`GuestOrderAccessToken` is the credential a guest proves a booking with** — 256 bits, stored only as
+a SHA-256 digest (`TokenHash`, unique, the single lookup path), with `ExpiresOn` 30 days past the
+cleaning and a nullable `RevokedOn`. It replaced the (display number, e-mail, confirmation code)
+triple, which was not a secret: the code was served on the order detail to every assigned cleaner.
+**Several live rows per order are normal** — every message that carries a track link mints its own,
+and none supersedes another; `CancelGuestOrder` revokes the booking's existing live tokens. Erasure revokes the live
+tokens of each ended guest booking it anonymises, in the same database commit. The weekly retention
+sweep deletes rows whose `ExpiresOn` has passed or whose `RevokedOn` is set. An account booking has none.
+The raw value is returned to the issuing caller once, on a `[NotMapped]` carrier, and is never
+retrievable again — the same contract as `RefreshToken` and the account confirmation token.
+→ [The guest access token](/flows/booking-and-pricing#guest-access-token)
+
+**An order's address is protected by a `Restrict` foreign key.** Erasure and the completed-order PII
+sweep replace the affected order's address with an anonymised copy. They delete the original only
+when no other reference remains. A reference committed between the census and deletion refuses
+deletion rather than cascade-deleting its order; if deletion wins, the competing reference cannot
+commit against the deleted row. Cleaner erasure also replaces the employee's address with a blank copy.
+→ [Erasure](/flows/gdpr-and-audit#erasure-is-anonymise-in-place)
+
 | Entity | |
 |---|---|
-| `Order` | references `Currency` (Restrict), `PromoCode` (nullable, Restrict — the code that was actually honoured; a losing promo leaves it null), `WorkContractDocument` → `LegalDocument` (nullable, Restrict, indexed — the contract-for-work text the job was booked under, ADR-0068 D1), `Receipt`. `UserId` is null on a guest booking and is never attached afterwards, so **`SubjectOrders.Of(userId, email)`** (`Core.Domain/Orders`) is the one definition of a data subject's orders for the erasure and the subject export: the account's orders **or** the rows with no `UserId` whose `CustomerEmail` matches case-folded (owner ruling 2026-09-15) — asked past the tenant filter, because a guest checkout is stamped with the market's operator → [ADR-0062](/decisions/adr-0062) D5 as amended 2026-09-15 |
+| `Order` | references `Currency` (Restrict), `PromoCode` (nullable, Restrict — the code that was actually honoured; a losing promo leaves it null), `WorkContractDocument` → `LegalDocument` (nullable, Restrict, indexed — the contract-for-work text the job was booked under, ADR-0068 D1), `Receipt`. `UserId` is null on a guest booking and is never attached afterwards, so **`SubjectOrders.Of(userId, email)`** (`Core.Domain/Orders`) is the one definition of a data subject's orders for the erasure and the subject export: the account's orders **or** the rows with no `UserId` whose `CustomerEmail` matches case-folded (owner ruling 2026-09-15) — asked past the tenant filter, because a guest checkout is stamped with the market's operator → [ADR-0062](/decisions/adr-0062) D5 as amended 2026-09-15. `ExpressSurchargeAmount` (`numeric(18,2)`, default 0) is the surcharge the booking was charged and `LanguageCode` (nullable, `varchar(5)`, no foreign key) the language the booking request stated — null on a recurring occurrence; the receipt prints the first as its own line and is written in the second → [What the receipt says](/flows/payment-and-fiscal#what-the-receipt-says) |
 | `OrderEmployee` | — |
+| `GuestOrderAccessToken` | references `Order` (Cascade — a deleted booking takes its keys with it); unique `TokenHash` (`IX_GuestOrderAccessTokens_TokenHash`, the only lookup path), indexed `(OrderId, RevokedOn)` for revocation by `CancelGuestOrder` and erasure. `TenantAuditable`, stamped with the order's operator; resolved past the tenant filter, because a guest presents the token without knowing which operator took the booking |
 | `WorkContractAcceptance` | references `Order` (Restrict), `LegalDocumentText` (Restrict — `FK_WorkContractAcceptances_LegalDocumentTexts_TextId`; a text a cleaner accepted can never be deleted from under the row), `Tenant`; **unique `(OrderEmployeeId)`** — one contract per seat and the arbiter of a concurrent double accept; indexed `(OrderId, EmployeeId)`, `(EmployeeId, AcceptedOn DESC)`, `(TenantId, AcceptedOn)`; `OrderEmployeeId` and `EmployeeId` are bare scalars with no FK. `Pseudonymise()` (the trio) is the one mutator; no delete path → [ADR-0068](/decisions/adr-0068) D2 |
 | `OrderExtra` | references `Order` (Cascade), `Extra` (Restrict — a catalogue extra referenced by any order line cannot be deleted, only deactivated); unique `(OrderId, ExtraId)` |
 | `OrderPackageService` | references `OrderPackage` (Cascade), `Service` (Restrict); unique `(OrderPackageId, ServiceId)` |
-| `OrderPhoto` | references `CapturedBy`, `Order` |
+| `OrderPhoto` | references `CapturedBy`, `Order`; the weekly sweep deletes its blob and row after the order's completion-based photo window (default seven days), held while any dispute is neither `Resolved` nor `Closed`. The order's tenant determines the window |
 | `OrderNote` | references `Order` |
 | `OrderIssue` | references `Order` |
 | `OrderReceipt` | references `Language`; unique `(TenantId, ReceiptNumber)`, nulls not distinct — the number comes from a per-operator `FiscalCounter`, so two operators' first receipts of a year are the same string and the tenant term is what keeps them apart |
@@ -269,7 +290,7 @@ that money was ever recorded in cannot be deleted. → [Pay and payouts](/flows/
 | `CreditAccount` | references `User` (Restrict); `CurrencyId` is a plain column with **no declared foreign key**; unique `(UserId, CurrencyId)` |
 | `CreditTransaction` | references `Account` (Cascade); unique `IdempotencyKey` — unfiltered and with no tenant term, because this is money and the backstop has to fire |
 | `Refund` | references `Dispute`, `Order`, `Receipt` |
-| `Dispute` | references `Order`, `User`; `TextRetainedUntil` (nullable, indexed) is the stamp an erasure sets to `now + retention.dispute_text.years` — the description, messages and resolution notes stay readable for defence of claims until the weekly `DisputeText` sweep finds the stamp past, blanks them and clears it (owner ruling 2026-09-14, Q-AUD-L3; the evidence blobs still go at erasure). Exported whole — thread, notes, refund, evidence names, text as stored — in the subject's Art. 15 JSON export when filed on the account or on a `SubjectOrders` order (owner ruling 2026-09-15) → [ADR-0062](/decisions/adr-0062) D5/D6 as amended |
+| `Dispute` | references `Order`, `User` (**nullable**, Restrict — a dispute hangs off the order, an order may have no account, and the Stripe webhook's two writers (a chargeback, a double settlement) copy the order's `UserId`; a null matches no caller on any ownership read); `TextRetainedUntil` (nullable, indexed) is the stamp an erasure sets to `now + retention.dispute_text.years` — the description, messages and resolution notes stay readable for defence of claims until the weekly `DisputeText` sweep finds the stamp past, blanks them and clears it (owner ruling 2026-09-14, Q-AUD-L3; the evidence blobs still go at erasure). Exported whole — thread, notes, refund, evidence names, text as stored — in the subject's Art. 15 JSON export when filed on the account or on a `SubjectOrders` order (owner ruling 2026-09-15) → [ADR-0062](/decisions/adr-0062) D5/D6 as amended |
 | `DisputeLine` | references `Dispute` (Cascade), `Service` and `Package` (both Restrict, no navigation); unique `(DisputeId, ServiceId, PackageId)` — the order lines a dispute is about |
 | `DisputeEvidence` | references `Dispute` |
 | `DisputeMessage` | references `Author`, `Dispute` |
@@ -318,7 +339,7 @@ named on their rows: `OrderReview` and `OrderReviewLine` (declared, with delete 
 
 | Entity | |
 |---|---|
-| `AdminActionAudit` | no references; `ActorAdminRole` (nullable int) records the administrator role the act ran under, read from the `admin_role` claim ([ADR-0066](/decisions/adr-0066) D5) |
+| `AdminActionAudit` | no references; `ActorAdminRole` (nullable int) records the administrator role the act ran under, read from the `admin_role` claim ([ADR-0066](/decisions/adr-0066) D5). Survives subject erasure, then expires by `OccurredOn` under the company's window (default three years) |
 | `CountryInvoiceConfig` | references `Country` |
 | `DeadLetter` | — |
 | `EmailTemplateTranslation` | references `Language` — the one translation table the renderer reads |

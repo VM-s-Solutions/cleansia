@@ -20,6 +20,7 @@ using Cleansia.Tests.Common;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
+using Cleansia.Tests.Infrastructure;
 
 namespace Cleansia.Tests.Features.Orders;
 
@@ -111,6 +112,7 @@ public sealed class CreateOrderAuditEvidenceTests
             new OrderPaymentDispatcher(
                 _stripeClientFactory.Object, _pending.Object, new OrderChannelProvider(OrderChannel.Web),
                 new StripeConfig(new ConfigurationBuilder().Build()), NullLogger<OrderPaymentDispatcher>.Instance),
+            TestGuestOrderAccessTokenIssuer.WithNoLiveTokens(),
             _expressWaiverConsumer.Object,
             _creditAccountRepository.Object,
             new CancellationPolicyResolver(_membershipRepository.Object),
@@ -193,6 +195,7 @@ public sealed class CreateOrderAuditEvidenceTests
         Assert.Equal(BookingPolicy.PartialCancellationFeeRate, shown.GetProperty("partialRate").GetDecimal());
         Assert.Equal(BookingPolicy.LastMinuteCancellationFeeRate, shown.GetProperty("lastMinuteRate").GetDecimal());
         Assert.Equal(BookingPolicy.FreeCancellationHours, shown.GetProperty("freeHoursForThisCustomer").GetInt32());
+        Assert.Equal(BookingPolicy.OopsWindowMinutesStandard, shown.GetProperty("oopsMinutesForThisCustomer").GetInt32());
 
         var members = payload.EnumerateObject().Select(p => p.Name).ToList();
         Assert.DoesNotContain("quotedTotalPrice", members);
@@ -238,6 +241,9 @@ public sealed class CreateOrderAuditEvidenceTests
         var payload = Payload(snapshot);
         Assert.False(payload.GetProperty("isGuest").GetBoolean());
         Assert.Equal(4, payload.GetProperty("cancellationPolicyShown").GetProperty("freeHoursForThisCustomer").GetInt32());
+        Assert.Equal(
+            BookingPolicy.OopsWindowMinutesPlus,
+            payload.GetProperty("cancellationPolicyShown").GetProperty("oopsMinutesForThisCustomer").GetInt32());
         Assert.Equal("card", payload.GetProperty("paymentType").GetString());
         Assert.DoesNotContain("emp-favourite", snapshot!.AfterJson!);
     }

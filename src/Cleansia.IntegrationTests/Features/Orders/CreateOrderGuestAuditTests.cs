@@ -6,6 +6,7 @@ using Cleansia.Core.AppServices.Features.Addresses.DTOs;
 using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Auditing;
+using Cleansia.Core.Domain.Common;
 using Cleansia.Core.Domain.Configuration;
 using Cleansia.Core.Domain.EmployeePayroll;
 using Cleansia.Core.Domain.Enums;
@@ -31,7 +32,7 @@ using Service = Cleansia.Core.Domain.Services.Service;
 namespace Cleansia.IntegrationTests.Features.Orders;
 
 /// <summary>
-/// ADR-0062 D3/D4 through the real pipeline on real Postgres, as a GUEST: a cash checkout leaves ONE
+/// ADR-0062 D3/D4 through the real pipeline on real Postgres, as a GUEST: a card checkout leaves ONE
 /// <c>customer.order.create</c> row with no user, the host audience filled, <c>isGuest</c>, the terms
 /// tick as sent with the version in force, and the standard cancellation window — and no name, contact
 /// or address text. A checkout whose submitted total is not the server's leaves one out-of-band failure
@@ -54,7 +55,10 @@ public class CreateOrderGuestAuditTests(PostgresContainerFixture fixture) : Base
     private const string Ip = "203.0.113.77";
     private const string DeviceLabel = "Chrome/Windows";
 
-    /// <summary>No claim and no override: the anonymous path, where the scope behaviour sets the tenant from the market.</summary>
+    /// <summary>
+    /// No claim and no override: the anonymous path, where the scope behaviour sets the tenant from the market.
+    /// Mobile, so the guest's card checkout (a guest may not pay cash) mints no Stripe session.
+    /// </summary>
     private static Task GuestSession(IServiceCollection services)
     {
         services.Replace(ServiceDescriptor.Scoped<IUserSessionProvider>(_ => new TestUserSessionProvider(
@@ -62,7 +66,7 @@ public class CreateOrderGuestAuditTests(PostgresContainerFixture fixture) : Base
         services.Replace(ServiceDescriptor.Scoped<ITenantProvider>(sp =>
             new TenantProvider(sp.GetRequiredService<IHttpContextAccessor>())));
         services.Replace(ServiceDescriptor.Scoped<IRequestMetadataProvider>(_ => new TestRequestMetadataProvider(Ip, DeviceLabel, "device-guest")));
-        services.Replace(ServiceDescriptor.Singleton<IOrderChannelProvider>(_ => new OrderChannelProvider(OrderChannel.Web)));
+        services.Replace(ServiceDescriptor.Singleton<IOrderChannelProvider>(_ => new OrderChannelProvider(OrderChannel.Mobile)));
         services.Replace(ServiceDescriptor.Scoped<IAddressGeocoder, NoopAddressGeocoder>());
         return Task.CompletedTask;
     }
@@ -79,7 +83,7 @@ public class CreateOrderGuestAuditTests(PostgresContainerFixture fixture) : Base
         Bathrooms: 1,
         Extras: new Dictionary<string, bool>(),
         CleaningDate: DateTime.UtcNow.AddDays(3),
-        PaymentType: PaymentType.Cash,
+        PaymentType: PaymentType.Card,
         CurrencyId: null,
         TotalPrice: totalPrice,
         SpecialInstructions: "gate code 1234",
@@ -102,6 +106,15 @@ public class CreateOrderGuestAuditTests(PostgresContainerFixture fixture) : Base
                 var order = await context.Orders.IgnoreQueryFilters().SingleAsync(o => o.Id == result.Value.Id);
                 Assert.Null(order.UserId);
 
+                // The checkout response is the guest's ONLY synchronous channel for the credential, and
+                // without it the success page cannot read back the booking it has just taken payment
+                // for. Committed with the order, so the two exist together or not at all.
+                Assert.False(string.IsNullOrEmpty(result.Value.GuestAccessToken));
+                var accessToken = Assert.Single(
+                    await context.GuestOrderAccessTokens.IgnoreQueryFilters().Where(t => t.OrderId == order.Id).ToListAsync());
+                Assert.Equal(SecurityTokens.Hash(result.Value.GuestAccessToken!), accessToken.TokenHash);
+                Assert.True(accessToken.IsLive(DateTimeOffset.UtcNow));
+
                 var row = Assert.Single(await CustomerRows(context));
                 Assert.Equal("customer.order.create", row.Action);
                 Assert.True(row.Success);
@@ -120,7 +133,7 @@ public class CreateOrderGuestAuditTests(PostgresContainerFixture fixture) : Base
                 Assert.Equal(CzkServicePrice + CzkPackagePrice, payload.GetProperty("totalPrice").GetDecimal());
                 Assert.Equal("CZK", payload.GetProperty("currencyCode").GetString());
                 Assert.Equal(Czechia, payload.GetProperty("countryId").GetString());
-                Assert.Equal("cash", payload.GetProperty("paymentType").GetString());
+                Assert.Equal("card", payload.GetProperty("paymentType").GetString());
                 Assert.Equal(order.CustomerAddressId, payload.GetProperty("addressId").GetString());
                 Assert.Equal(BookingPolicy.FreeCancellationHours,
                     payload.GetProperty("cancellationPolicyShown").GetProperty("freeHoursForThisCustomer").GetInt32());

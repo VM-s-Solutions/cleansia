@@ -19,9 +19,13 @@ sequenceDiagram
   API->>O: InProgress
   O-->>N: push (+ Live Activity on iOS)
   C->>API: photos, notes
+  opt cash taken at the door
+    C->>API: cash collected
+    API->>O: Paid (an issued receipt is restated as paid)
+  end
   C->>API: complete
   API->>O: Completed
-  O-->>N: push + receipt
+  O-->>N: push (+ receipt if none was issued yet)
 ```
 
 ## Only the assigned cleaner may move the job
@@ -77,19 +81,27 @@ out on another job, because asking someone mid-clean whether they have set off i
 ## What a cleaner who has *not* taken the job can see
 
 A cleaner browsing the board gets **the job, not the household**. The redaction strips the customer's
-name, email, phone, address and coordinates, the confirmation code, every free-text field — notes,
-special instructions, **entry instructions**, completion notes — the review, and the crew's phone
-numbers.
+name, email, phone, address and coordinates, every free-text field — notes, special instructions,
+**entry instructions**, completion notes — the review, and the crew's phone numbers.
 
 List and detail shapes live in **one file** on purpose: when they lived apart, the detail answered with
 everything the list had just withheld. A surface test fails the build until a newly-added field is
 explicitly classified as kept or stripped.
+
+**The confirmation code is not on the list because it is no longer on the DTO.** It used to be
+redacted to an empty string for a browsing cleaner, which left it readable by every cleaner *assigned*
+to the job — and it was one third of the key the anonymous guest-cancellation endpoint accepted, so an
+assigned cleaner could cancel their own customer's booking and charge them the fee. The code has since
+left `OrderItem` entirely and authenticates nothing; a guest proves a booking with a per-order access
+token that reaches only their mailbox.
+→ [The guest access token](/flows/booking-and-pricing#guest-access-token)
 
 ## Edge cases
 
 | Case | What happens |
 |---|---|
 | Non-assigned cleaner tries to start/complete | Refused — the gate is assignment, not role. |
+| Cleaner records the cash (`MarkCashCollected`) | Only while `InProgress`, and only by an approved cleaner on the crew. The order becomes `Paid`. If it already has its receipt (a cash booking gets one at booking), that receipt is restated as paid under the same number. → [The restate](/flows/payment-and-fiscal#cash-receipt-restated) |
 | Admin-placed cleaner taps Start or Complete before accepting the contract | Refused with `contract.acceptance_required`; the app opens the contract, they accept, and the act goes through. A second crew member who neither starts nor completes is never prompted — the stated residual. |
 | Photos requested by a non-assignee | Refused by the strict access gate. Browsing detail is redacted; **photographs of a customer's home are not browsable at all**. |
 | Status moved out of order | Refused by the transition guard. |
@@ -104,6 +116,19 @@ explicitly classified as kept or stripped.
 
 `AccessInstructions` is free text of the form *"key under the mat"*. It is correctly withheld from a
 browsing cleaner and needed by an assigned one.
+
+The first detail response serving nonempty instructions to an assigned cleaner records
+`employee.order.access_instructions_read`. It names the cleaner and order, never the instructions.
+`GetOrderDetails` awaits a separate audit transaction before returning the text: the query has no
+UnitOfWork commit, and the separate context cannot flush its tracked order graph. The audit writer
+locks the order row before checking and inserting, so concurrent first reads produce one entry per
+cleaner and job. A failed audit write fails the response. This is a disclosure-recording exception
+to query immutability, not a change to who can see the instructions.
+
+The cleaner trail now has four labels: `employee.order.cover_requested`, `employee.order.dropped`,
+`employee.order.contract_accepted` and `employee.order.access_instructions_read`. Its rows expire
+under the company's cleaner-audit window, default three years. Time-boxing the cleaner's access
+after completion remains an owner decision; recording a read does not introduce that restriction.
 
 > **An admin does not get it with the order.** It is withheld from an administrator read and comes only
 > from a reveal — `POST /AdminOrder/{orderId}/access-instructions/reveal` — which is a **command**

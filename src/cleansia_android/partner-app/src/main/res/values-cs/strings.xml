@@ -204,7 +204,6 @@
     <!-- Why we need your address -->
     <string name="address_why_title">Proč potřebujeme vaši adresu</string>
     <string name="address_why_reason_jobs">Ukážeme vám zakázky blízko domova včetně vzdálenosti</string>
-    <string name="address_why_reason_distance_pay">Spočítáme vám cestovné za kilometr</string>
     <string name="address_why_reason_invoice">Vystavíme fakturu do správné daňové jurisdikce</string>
     <string name="address_why_privacy">Zákazníci nikdy nevidí vaši domácí adresu — jen město, ve kterém jste.</string>
     <!-- Service-area indicator -->

@@ -579,7 +579,7 @@
         "cancel_desc": "Mezi 4 a 24 hodinami 25 %, pod 4 hodiny 50 %.",
         "rethink_label": "Než si to uklízeč vezme",
         "rethink_value": "Vždy zdarma",
-        "rethink_desc": "Dokud práci nikdo nepřijme, zrušení nic nestojí, ať je úklid jakkoli blízko. Jakmile ji někdo přijme, máte pořád 15 minut od objednání.",
+        "rethink_desc": "Dokud práci nikdo nepřijme, zrušení nic nestojí, ať je úklid jakkoli blízko. Jakmile ji někdo přijme, máte pořád 15 minut od objednání — s Cleansia Plus 60 minut.",
         "we_cancel_label": "Když zrušíme my",
         "we_cancel_value": "Vše zpět + kredit {{amount}}",
         "we_cancel_value_refund_only": "Vše zpět",
@@ -594,12 +594,15 @@
       "plus": {
         "badge": "Cleansia Plus",
         "title": "{{price}} měsíčně, prvních {{days}} dní zdarma",
+        "title_no_trial": "{{price}} měsíčně, zrušíte kdykoli",
         "perk1": "Sleva {{percent}} % z každé objednávky",
         "perk2": "Zrušení zdarma až {{hours}} hodiny předem místo 24",
+        "perk_grace": "Zrušení zdarma do 60 minut od objednání místo 15 minut",
         "perk3": "{{count}}× měsíčně expresní úklid bez příplatku",
         "perk4": "Opakované termíny a oblíbený uklízeč",
         "yearly": "{{price}} ročně — ušetříte {{percent}} %",
-        "cta": "Vyzkoušet zdarma"
+        "cta": "Vyzkoušet zdarma",
+        "cta_no_trial": "Získat Cleansia Plus"
       },
       "quote": {
         "title": "Spočítat cenu",
@@ -769,7 +772,7 @@
       "bathrooms": "Počet koupelen",
       "bathrooms_count_label": "Počet koupelen",
       "bathrooms_label": "Koupelny",
-      "cancel_policy_note": "Zrušení zdarma do 24 hodin. Do 15 minut od objednání neplatíte nic.",
+      "cancel_policy_note": "Zrušení zdarma do 24 hodin. Do 15 minut od objednání neplatíte nic — s Cleansia Plus do 60 minut.",
       "cancel_policy_tier1_value": "Zdarma",
       "cancel_policy_tier1_when": "Než uklízeč přijme objednávku",
       "cancel_policy_tier2_value": "Zdarma",
@@ -839,7 +842,8 @@
         "date": "Vyberte datum úklidu.",
         "time": "Vyberte čas, který je ještě volný.",
         "address_fields": "Doplňte ulici, město a PSČ.",
-        "terms": "Potvrďte souhlas s podmínkami."
+        "terms": "Potvrďte souhlas s podmínkami.",
+        "payment": "Zvolte, jak chcete platit."
       },
       "new_address": "Zadat novou adresu",
       "package_most_popular": "Nejoblíbenější",
@@ -940,7 +944,7 @@
       "special_instructions_placeholder": "Například: kočka je doma, prosím nezavírat balkon.",
       "step_address_lead": "Začněte psát adresu — napovíme ji a rovnou zkontrolujeme, že je v dojezdu.",
       "step_address_title": "Kam máme přijet?",
-      "step_pay_lead": "Kartou zaplatíte hned, hotově až na místě v den úklidu. Cena je stejná.",
+      "step_pay_lead": "Kartou zaplatíte hned, hotově až na místě v den úklidu, pokud jste přihlášeni a objednávku zvládne jeden uklízeč. Cena je stejná.",
       "step_plus_title": "Přidat Cleansia Plus?",
       "step_review_lead": "Každou sekci opravíte přímo tady, bez procházení celého průvodce znovu.",
       "step_review_title": "Zkontrolujte objednávku",
@@ -1013,7 +1017,13 @@
       "zip_code": "PSČ",
       "wizard": {
         "catalogue_changed_for_country": "Část vašeho výběru se na této adrese nenabízí, proto byla odebrána. Ceny jsou uvedeny v měně země, ve které objednáváte."
-      }
+      },
+      "cash_needs_account": "Hotově mohou platit jen přihlášení zákazníci. Přihlaste se, pokud chcete platit hotově, nebo zaplaťte kartou.",
+      "cash_needs_card": "Počet uklízečů potřebných pro tuto objednávku: {{count}}. Hotově lze platit jen objednávky, které zvládne jeden uklízeč, tuto proto zaplatíte kartou.",
+      "cash_pending": "Zda můžete platit hotově, potvrdíme, jakmile bude známa cena.",
+      "cash_cleared": "Platba hotově už pro tuto objednávku není možná, a proto není vybrán žádný způsob platby. Zvolte, jak chcete platit.",
+      "cash_sign_in": "Přihlásit se",
+      "plus_perk_grace": "60 minut po objednání na bezplatné zrušení místo 15 minut"
     },
     "orders": {
       "title": "Moje objednávky",
@@ -1090,8 +1100,6 @@
       "notes": "Poznámky",
       "special_instructions": "Speciální instrukce",
       "access_instructions": "Pokyny pro přístup",
-      "confirmation_code": "Potvrzovací kód",
-      "confirmation_code_hint": "Přečtěte ho uklízečce u dveří — podle něj pozná, že úklid patří vám.",
       "download_receipt": "Stáhnout účtenku",
       "download_error": "Nepodařilo se stáhnout účtenku",
       "report_issue": "Nahlásit problém",
@@ -1170,7 +1178,8 @@
           "2": "Objednávka je mimo období zpoplatněného zrušení.",
           "3": "Platí částečný storno poplatek.",
           "4": "Platí storno poplatek za zrušení na poslední chvíli."
-        }
+        },
+        "grace_note": "Zrušení do {{minutes}} minut od objednání je zdarma, i když už objednávku přijal uklízeč."
       },
       "estimated_hours": "odhadem {{hours}} h",
       "label_market": "Trh"
@@ -1341,9 +1350,9 @@
       "discount_of": "sleva {{percent}} %",
       "to_next_tier": "Do stupně {{tier}}",
       "points_remaining": "{{count}} bodů",
-      "spent_note": "Body se počítají ze všeho, co jste kdy utratili — stupeň už vám nikdy neklesne pod ten, kterého jste dosáhli.",
+      "spent_note": "Body se počítají ze všeho, co jste kdy utratili. Stupeň se řídí jejich součtem — když se body odečtou, třeba po vrácení peněz, může klesnout i stupeň.",
       "how_title": "Jak se body počítají",
-      "tier_ladder_lead": "Podle bodů, které jste kdy získali. Sleva se odečte automaticky.",
+      "tier_ladder_lead": "Podle součtu vašich bodů. Sleva se odečte automaticky.",
       "your_tier": "Váš stupeň",
       "points_threshold": "{{count}} bodů",
       "discount_min_order": "{{percent}} % sleva na objednávky nad {{minAmount}}",
@@ -1397,6 +1406,7 @@
       "benefit_express_body": "Odpouštíme 20% příplatek za expresní objednávky — úklidy, které začínají 2 až 4 hodiny po objednání. Určitý počet každý kalendářní měsíc po dobu aktivního placeného členství; nevyužité se nepřevádějí.",
       "perk_discount": "{{percent}}% členská sleva",
       "perk_cancel_window": "{{hours}} h na bezplatné zrušení",
+      "perk_grace": "60 minut po objednání na bezplatné zrušení místo 15 minut",
       "perk_express_used": "Expresní příplatek odpuštěn — tento měsíc už žádný nezbývá",
       "perk_express_trial": "Expresní příplatek odpuštěn — začíná po skončení zkušební doby",
       "cancel_action": "Zrušit členství",
@@ -1410,8 +1420,6 @@
       "plan_per_month": "{{month}} / měsíc",
       "plan_per_year": "{{year}} / rok",
       "plan_per_month_billed_annually": "{{month}} / měsíc — účtováno ročně jako {{year}}",
-      "trial_badge": "{{days}} dní zdarma",
-      "trial_disclosure": "Prvních {{days}} dní zdarma. Poté bude vaše karta automaticky zaúčtována. Můžete zrušit kdykoli před koncem zkušební doby.",
       "switch_dialog_title": "Přejít na roční?",
       "switch_dialog_message": "Dnes zaplatíte poměrný rozdíl, poté {{price}} za rok. Vaše výhody pokračují.",
       "switch_dialog_confirm": "Přejít a doplatit rozdíl",
@@ -1420,10 +1428,7 @@
       "social_proof_headline": "Jak funguje členská sleva",
       "social_proof_sub": "Plus a váš věrnostní program se sčítají maximálně do 12%. Promo kódy se nesčítají — uplatní se vyšší sleva.",
       "perks_section_title": "Co získáte",
-      "cta_start_trial": "Začít zkušební období zdarma",
       "cta_subscribe": "Získat Cleansia Plus",
-      "cta_disclosure_trial": "Poté {{price}} / měsíc. Zrušte kdykoli před koncem zkušebního období a nic vám nebude účtováno.",
-      "cta_disclosure_trial_year": "Poté {{price}} / rok. Zrušte kdykoli před koncem zkušebního období a nic vám nebude účtováno.",
       "benefit_recurring_title": "Opakované objednávky",
       "benefit_recurring_body": "Nastavte si týdenní nebo dvoutýdenní úklid a přeskočte rezervační proces.",
       "welcome_title": "Vítejte v Cleansia Plus!",
@@ -1488,10 +1493,10 @@
       "delete_title": "Smazat účet",
       "delete_desc": "Trvale smažete svůj účet a všechna data. Tuto akci nelze vrátit.",
       "delete_btn": "Smazat účet",
-      "delete_description": "Trvale smazat váš účet a všechna související data. Tuto akci nelze vrátit.",
+      "delete_description": "Trvale smazat váš účet a všechna související data. Nevyčerpaný kredit smazáním účtu propadá — nelze ho vyplatit ani obnovit. Tuto akci nelze vrátit.",
       "delete_button": "Smazat účet",
       "delete_confirm": "Opravdu chcete smazat svůj účet? Tato akce je nevratná.",
-      "delete_confirm_message": "Opravdu chcete trvale smazat svůj účet? Všechna vaše data budou ztracena a tuto akci nelze vrátit.",
+      "delete_confirm_message": "Opravdu chcete trvale smazat svůj účet? Všechna vaše data budou ztracena a tuto akci nelze vrátit. Nevyčerpaný kredit na účtu dokončením smazání propadá — nelze ho vyplatit ani obnovit.",
       "delete_confirm_title": "Smazat účet",
       "delete_confirm_yes": "Ano, smazat můj účet",
       "delete_success": "Účet smazán",
@@ -1556,16 +1561,11 @@
           "2": "Objednávka je mimo období zpoplatněného zrušení.",
           "3": "Platí částečný storno poplatek.",
           "4": "Platí storno poplatek za zrušení na poslední chvíli."
-        }
+        },
+        "grace_note": "Zrušení do {{minutes}} minut od objednání je zdarma, i když už objednávku přijal uklízeč."
       },
       "title": "Sledovat objednávku",
       "subtitle": "Zadejte číslo objednávky a e-mail pro kontrolu stavu vaší objednávky",
-      "order_number": "Číslo objednávky",
-      "order_number_placeholder": "např. CLS-2026-0412",
-      "email": "E-mailová adresa",
-      "email_placeholder": "e-mail, na který přišlo potvrzení",
-      "search": "Sledovat objednávku",
-      "not_found": "Nebyla nalezena žádná objednávka s touto kombinací. Zkontrolujte číslo objednávky a e-mailovou adresu.",
       "not_found_title": "Objednávka nenalezena",
       "order": "Objednávka",
       "status_details": "Stav",
@@ -1575,19 +1575,18 @@
       "service_info": "Detaily služby",
       "cleaning_date": "Datum úklidu",
       "estimated_time": "Odhadovaný čas",
-      "confirmation_code": "Potvrzovací kód",
       "packages": "Balíčky",
       "services": "Služby",
       "total": "Celkem",
       "timeline": "Průběh objednávky",
-      "hint": "Kód najdete v potvrzovacím e-mailu, hned u čísla objednávky. Nedorazil? Zkontrolujte složku s nevyžádanou poštou, nebo nám ",
+      "hint": "E-mail s odkazem nedorazil? Zkontrolujte složku s nevyžádanou poštou, nebo nám ",
       "recent_orders": "Nedávné objednávky",
       "lookup_another": "Vyhledat jinou objednávku",
       "manual_lookup": "Ruční vyhledávání",
       "guest_limit": "Jako host je sledováno pouze posledních 5 objednávek na tomto zařízení. Vytvořte si účet pro přístup ke všem objednávkám odkudkoli.",
       "guest_cta": "Vytvořit účet",
       "view_details": "Zobrazit detail",
-      "lead": "Účet k tomu nepotřebujete. Stačí číslo objednávky, e-mail a potvrzovací kód z potvrzovacího e-mailu.",
+      "lead": "Účet k tomu nepotřebujete. Odkaz z potvrzovacího e-mailu otevře vaši objednávku — nic nemusíte vypisovat.",
       "retry": "Zkusit znovu",
       "have_account": "Máte účet?",
       "sign_in": "Přihlaste se a uvidíte všechny objednávky najednou.",
@@ -1616,20 +1615,22 @@
         "in_progress": "Uklízíme",
         "completed": "Hotovo"
       },
-      "confirmation_code_placeholder": "6 znaků z potvrzovacího e-mailu",
       "entry_link": "Máte číslo objednávky? Sledujte ji",
       "where_it_is": "Kde to je",
       "two_axes_lead": "Dvě věci se dějí zvlášť — proto dvě osy.",
       "whats_booked": "Co je objednáno",
       "the_order": "Objednávka",
-      "hint_missed": "Pořád nic?",
       "write_us": "Napište nám",
       "hint_end": " a najdeme ji za vás.",
       "pay_method_cash": "Hotově · zaplatíte na místě",
       "pay_method_card": "Zaplaceno kartou",
       "pay_paid": "Zaplaceno",
       "pay_failed": "Platba se nezdařila",
-      "pay_refunded": "Vráceno"
+      "pay_refunded": "Vráceno",
+      "need_link_title": "Otevřete odkaz z e-mailu",
+      "need_link_body": "V e-mailu, který jsme vám po objednání poslali, je tlačítko na tuto stránku. Nese soukromý klíč k té objednávce — proto se vás na nic dalšího neptáme.",
+      "link_expired": "Tento odkaz už objednávku neotevře. Přestává platit 30 dní po úklidu a hned poté, co je objednávka zrušena.",
+      "loading": "Otevíráme vaši objednávku…"
     },
     "saved_addresses": {
       "title": "Moje adresy",
@@ -1650,8 +1651,8 @@
       "checkout_failed": "Platební stránku se nepodařilo otevřít. Zkuste to prosím znovu.",
       "not_available_in_market": "Plus zatím není ve vašem trhu k dispozici",
       "closing_alt": "Objednat bez členství",
-      "closing_cta": "Vyzkoušet Plus",
-      "closing_text": "Bez závazku. Když se to nevyplatí, vypnete to dřív, než přijde první platba.",
+      "closing_cta": "Předplatit Plus",
+      "closing_text": "Bez závazku. Zrušíte kdykoli a výhody vám zůstanou do konce zaplaceného období.",
       "closing_title": "Zkuste {{days}} dní zdarma",
       "closing_title_no_trial": "Získat Cleansia Plus",
       "compare_title": "S Plus a bez něj",
@@ -1661,7 +1662,7 @@
       "cta_trial": "Vyzkoušet {{days}} dní zdarma",
       "cta_try_free": "Vyzkoušet zdarma",
       "cta_whats_in_it": "Co v tom je",
-      "faq_cancel_a": "Kdykoli, jedním tlačítkem v profilu. Výhody vám zůstanou do konce zaplaceného období — nic se neruší zpětně. Zkušební období je ale jen jednou: kdo se vrátí, začíná rovnou placeným členstvím.",
+      "faq_cancel_a": "Kdykoli, jedním tlačítkem v profilu. Výhody vám zůstanou do konce zaplaceného období — nic se neruší zpětně.",
       "faq_cancel_q": "Jak členství zruším?",
       "faq_express_a": "Až po zkušebním období. Během {{days}} dnů máte slevu i kratší lhůtu na zrušení, expresní úklid bez příplatku ale ne.",
       "faq_express_a_no_trial": "Od prvního měsíce. Expresní příplatek se promíjí hned od začátku předplatného.",
@@ -1677,10 +1678,10 @@
       "none": "—",
       "per_month": "měsíčně",
       "per_year": "ročně",
-      "perk_cancel_body": "Bez členství je hranice 24 hodin. Plány se mění, tohle to zlevní.",
+      "perk_cancel_body": "Bez členství je hranice 24 hodin. A po objednání máte na bezplatné zrušení 60 minut místo 15 minut.",
       "perk_cancel_title": "Zrušení zdarma {{hours}} hodiny předem",
       "perk_discount_title": "Sleva {{percent}} % na každý úklid",
-      "perk_express_body": "Úklid do dvou hodin bez příplatku {{percent}} %. Nabíhá až po zkušebním období.",
+      "perk_express_body": "Úklid objednaný 2 až 4 hodiny předem bez příplatku {{percent}} %.",
       "perk_express_title": "{{count}}× expresní termín měsíčně",
       "perk_recurring_body": "Pravidelný rozvrh, který jede sám. Bez členství ho založit nelze.",
       "perks_lead": "Každá z těchto věcí je pravidlo, které platí od chvíle, kdy členství zapnete.",
@@ -1691,7 +1692,7 @@
       "plans_footnote_no_trial": "U obou začíná účtování ihned. Zrušit můžete kdykoli.",
       "plans_lead": "Stejné výhody. Roční se platí jednou a vyjde levněji.",
       "plans_title": "Dva plány",
-      "price_note": "{{price}} měsíčně po zkušebním období. Zrušíte kdykoli.",
+      "price_note": "{{price}} měsíčně. Zrušíte kdykoli.",
       "row_cancel": "Zrušení zdarma",
       "row_cancel_membership": "Zrušení členství kdykoli",
       "row_cancel_membership_with": "výhody do konce období",
@@ -1699,13 +1700,16 @@
       "row_cancel_without": "24 hodin předem",
       "row_discount": "Sleva na každou objednávku",
       "row_discount_with": "{{percent}} %",
-      "row_express": "Expresní termín do 2 hodin",
+      "row_express": "Expresní termín (2–4 hodiny předem)",
       "row_express_with": "{{count}}× měsíčně bez příplatku",
       "row_express_without": "příplatek {{percent}} %",
       "row_preferred": "Vyžádat si oblíbeného uklízeče",
       "row_recurring": "Opakované termíny",
       "title": "Cleansia Plus",
-      "yes": "ano"
+      "yes": "ano",
+      "row_grace": "Zrušení zdarma po objednání",
+      "row_grace_without": "15 minut",
+      "row_grace_with": "60 minut"
     }
   },
   "address_picker": {
@@ -1881,6 +1885,7 @@
       "invalid_status_transition": "Tato akce není pro aktuální stav objednávky povolena.",
       "address_exactly_one_required": "Zadejte k objednávce právě jednu adresu.",
       "empty": "Přidejte do objednávky alespoň jednu službu nebo balíček.",
+      "size_exceeds_maximum": "Jedna objednávka může zahrnovat nejvýše 8 pokojů a 4 koupelny.",
       "span_exceeds_maximum": "Tato objednávka zahrnuje příliš mnoho práce na jednu návštěvu. Odeberte prosím některé služby nebo balíčky, případně je objednejte zvlášť.",
       "selected_package": {
         "invalid": "Jeden z vybraných balíčků už není dostupný."
@@ -1897,6 +1902,7 @@
         "not_match": "Celková cena objednávky se změnila — zkontrolujte objednávku a zkuste to znovu."
       },
       "payment_gateway_unavailable": "Platby jsou dočasně nedostupné. Zkuste to prosím za chvíli.",
+      "cash_not_available": "Platba hotově je možná jen po přihlášení a u objednávky, kterou zvládne jeden uklízeč.",
       "country_operator_mismatch": "Tuto adresu obsluhuje jiná společnost Cleansia, proto ji zde nelze objednat.",
       "payment": {
         "already_paid": "Tato objednávka už byla zaplacena."
@@ -1971,7 +1977,6 @@
       "deletion_blocked_by_invoice": "Váš účet nelze smazat, dokud máte nevyřízené faktury.",
       "consent_not_found": "Toto nastavení souhlasu jsme nenašli.",
       "consent_already_granted": "Tento souhlas jste už udělili.",
-      "deletion_blocked_by_credit_balance": "Váš účet nelze smazat, dokud u nás máte kredit. Využijte jej při objednávce, nebo nás kontaktujte kvůli vyplacení.",
       "deletion_blocked_by_assigned_order": "Váš účet nelze smazat, dokud jste přiřazeni k zakázce.",
       "deletion_blocked_by_unsettled_pay": "Váš účet nelze smazat, dokud vám dlužíme odměnu. Nejprve to vyřešte s kanceláří."
     },
@@ -2041,9 +2046,7 @@
       "welcome_badge": "Vítejte v odměnách Cleansia",
       "discount_5_above_1000": "5 % sleva na objednávky",
       "discount_10": "10 % sleva na objednávky",
-      "discount_12": "12 % sleva na objednávky",
-      "priority_support": "Prioritní zákaznická podpora",
-      "dedicated_pool": "Vyhrazený tým uklízečů"
+      "discount_12": "12 % sleva na objednávky"
     }
   },
   "membership": {
@@ -2144,6 +2147,7 @@
     "order_detail_make_recurring_plus_required": "Pro pravidelné rozvrhy je potřeba Cleansia Plus.",
     "plus_chip": "Součást Cleansia Plus",
     "status_active": "Aktivní",
+    "status_needs_change": "Vyžaduje úpravu",
     "action_edit": "Upravit",
     "price_per_clean": "za úklid",
     "next_on": "příště {{date}}",
@@ -2155,7 +2159,7 @@
     "gate_badge": "Cleansia Plus",
     "gate_title": "Opakované termíny jsou součástí členství",
     "gate_lead": "Bez členství rozvrh založit nejde. S ním k němu dostanete i slevu na každý úklid, zrušení až čtyři hodiny předem a jeden expresní termín měsíčně.",
-    "gate_cta": "Vyzkoušet 14 dní zdarma",
+    "gate_cta": "Získat Cleansia Plus",
     "gate_alt": "Co všechno Plus umí",
     "edit_title": "Upravit rozvrh",
     "edit_subtitle": "Cokoli změníte, další objednávka už pojede podle toho.",
@@ -2178,7 +2182,16 @@
     "new_address_label": "Pojmenujte ji",
     "new_address_label_hint": "Domů, Práce, Máma…",
     "save_address": "Uložit adresu",
-    "address_loading": "Načítáme vaše adresy…"
+    "address_loading": "Načítáme vaše adresy…",
+    "cash_needs_card": "Počet uklízečů potřebných na každý úklid: {{count}}. Hotově lze platit jen úklidy, které zvládne jeden uklízeč, tento rozvrh proto platíte kartou.",
+    "cash_pending": "Zda lze tento rozvrh platit hotově, potvrdíme, jakmile bude známa cena.",
+    "cash_cleared": "Platba hotově už pro tento rozvrh není možná, a proto není vybrán žádný způsob platby. Zvolte, jak chcete platit.",
+    "cash_unchecked": "Nepodařilo se ověřit, zda lze tento rozvrh platit hotově. Uložte ho za chvíli znovu, nebo zvolte kartu.",
+    "payment_placeholder": "Zvolte způsob platby",
+    "error_payment": "Zvolte, jak se bude rozvrh platit.",
+    "cash_change_title": "Tento rozvrh už nelze platit hotově",
+    "cash_change_body": "Každý úklid potřebuje více než jednoho uklízeče a hotově lze platit jen úklidy, které zvládne jeden uklízeč, proto se z něj neobjednávají žádné nové úklidy, dokud ho nezměníte. Přepněte ho na platbu kartou nebo vyberte služby či balíčky, které zvládne jeden uklízeč. Úklid, který už je z něj objednaný, můžete v Objednávkách zrušit zdarma, dokud ho nepřijme žádný uklízeč.",
+    "cash_change_action": "Upravit rozvrh"
   },
   "preferred_cleaner": {
     "title": "Vyžádejte si oblíbeného uklízeče",

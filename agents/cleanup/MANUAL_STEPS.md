@@ -116,7 +116,52 @@ regenerated `Initial` once more as **`20260920204705`**: `Employees.Availability
 dropped, the three `Cart*` tables and `EmailTranslations` dropped, `MembershipPlans.TrialPeriodDays` dropped (the
 owner's Q-UI-01/02 rulings); the table count is now **84** and 48 carry the `Tenants` FK. The integration suite ran
 in full locally (Docker up) and green.
-**The one owed drop belongs to `20260920204705`**: a DEV database whose
+The guest access re-key (phase 1 of `agents/FIX-PLAN-2026-09-22.md`, branch `fix/audit-findings-2026-09-22`,
+2026-09-22 — finding F69) regenerated `Initial` once more as **`20260922153301`**: one new table,
+`GuestOrderAccessTokens` (`OrderId`, `TokenHash`, `ExpiresOn`, `RevokedOn` + the audit stamps and
+`TenantId` NOT NULL), with `IX_GuestOrderAccessTokens_TokenHash` **unique**,
+`IX_GuestOrderAccessTokens_OrderId_RevokedOn`, `IX_GuestOrderAccessTokens_TenantId` and FKs `Orders`
+(Cascade) and `Tenants` (Restrict). The body diff against `20260920204705` is exactly that table, its
+two FKs and its three indexes and nothing else; the table count is now **85** and **49** carry the
+`Tenants` FK. All three backend suites ran locally and green (6278 / 559 / 347), the integration one
+against a real Postgres built from this migration.
+
+The guest chargeback (item 2.3 of phase 2 of `agents/FIX-PLAN-2026-09-22.md`, same branch,
+2026-09-22 — finding F71) regenerated `Initial` once more as **`20260922182416`**: `Disputes.UserId`
+becomes **nullable** (the FK into `Users` and `IX_Disputes_UserId` both stay). A bank chargeback on a
+guest booking has no account to name; the webhook used to substitute the empty string, Postgres raised
+`23503`, and Stripe retried a 500 forever while the dispute went unrecorded. The body diff against
+`20260922153301` is exactly that one column's nullability — **85 tables, 1339 columns, 169 foreign
+keys and 280 indexes are identical**, and **49** still carry the `Tenants` FK.
+
+The receipts (phase 3 of `agents/FIX-PLAN-2026-09-22.md`, same branch, 2026-09-22 — finding F77)
+regenerated `Initial` once more as **`20260922220828`**, adding two columns to `Orders`:
+
+- `ExpressSurchargeAmount` (item 3.1), `numeric(18,2)` NOT NULL with a database default of `0` — the
+  same shape `CreditAppliedAmount` carries, for the same reason (the integration suite's raw-SQL order
+  inserts name their columns explicitly). A receipt's lines are raw catalogue prices and its stored
+  discounts are already measured against the charged price, so the surcharge is the term between them.
+  It is stored rather than derived as `Total − lines + discounts` because the derivation would print
+  any gap — a line a loader missed, a rounding cent — as a surcharge the customer never paid.
+- `LanguageCode` (item 3.3), `character varying(5)` NULL — the language the booking request was made
+  in. The receipt is written in it before the account's stored preference; null on a recurring
+  occurrence, which has no request of its own.
+
+The body diff against `20260922182416` is exactly those two columns (Designer: the migration id and
+those two properties) — **85 tables** and **49** carrying the `Tenants` FK, unchanged; `dotnet ef
+migrations has-pending-model-changes` reports none. An intermediate regeneration in the same phase
+(`20260922200233`, surcharge only) was never committed.
+
+Phase 4 (2026-09-23) regenerates `Initial` as **`20260923064534`**. Its only schema delta is
+`Orders.CustomerAddressId` changing from cascading deletion to restrictive deletion. Erasure and
+retention now move affected records to blank address copies before deleting an unshared original;
+if another booking attaches concurrently, the FK refuses deletion instead of deleting that booking.
+The same drop also reseeds the phase-5 loyalty perks.
+
+Phase 6A (2026-09-23) regenerates `Initial` as **`20260923071814`**, removing the unread
+`CountryConfigurations.ReducedVatRate` column while retaining both live VAT rates.
+
+**The one owed drop belongs to `20260923071814`**: a DEV database whose
 `__EFMigrationsHistory` records any earlier id replays the whole create script against tables that
 already exist. The legal texts need no extra step — every host seeds them at start, and since
 `b34dff07` a fresh Development database is seeded once more in the boot that migrates it (the factory

@@ -19,18 +19,18 @@ public class CancellationFeeTierTests
 
     private static CancellationFeeTier Tier(
         DateTime cleaning, DateTime cancel, bool accepted = true,
-        bool firstTime = false, int? freeOverride = null) =>
+        int oopsMinutes = BookingPolicy.OopsWindowMinutesStandard, int? freeOverride = null) =>
         BookingPolicy.ClassifyCancellation(
             cleaning, BookingCreated, cancel,
-            isFirstTimeCustomer: firstTime, hasBeenAccepted: accepted,
+            oopsWindowMinutes: oopsMinutes, hasBeenAccepted: accepted,
             freeCancellationHoursOverride: freeOverride);
 
     private static decimal Rate(
         DateTime cleaning, DateTime cancel, bool accepted = true,
-        bool firstTime = false, int? freeOverride = null) =>
+        int oopsMinutes = BookingPolicy.OopsWindowMinutesStandard, int? freeOverride = null) =>
         BookingPolicy.CalculateCancellationFeeRate(
             cleaning, BookingCreated, cancel,
-            isFirstTimeCustomer: firstTime, hasBeenAccepted: accepted,
+            oopsWindowMinutes: oopsMinutes, hasBeenAccepted: accepted,
             freeCancellationHoursOverride: freeOverride);
 
     // ── The tier→rate table: the ONE place a tier is priced ──
@@ -89,34 +89,75 @@ public class CancellationFeeTierTests
         Assert.Equal(CancellationFeeTier.FreeNotAccepted, Tier(cleaning, cancel, accepted: false, freeOverride: 4));
     }
 
-    // ── Oops window ──
+    // ── Oops window: 15 minutes standard, 60 for an entitled Plus member (owner ruling 2026-09-24) ──
 
     [Fact]
-    public void At_Exactly_The_Standard_Oops_Cap_Then_FreeOopsWindow()
+    public void The_Ruled_Oops_Windows_Are_Fifteen_And_Sixty_Minutes()
+    {
+        Assert.Equal(15, BookingPolicy.OopsWindowMinutesStandard);
+        Assert.Equal(60, BookingPolicy.OopsWindowMinutesPlus);
+    }
+
+    [Theory]
+    [InlineData(BookingPolicy.OopsWindowMinutesStandard)]
+    [InlineData(BookingPolicy.OopsWindowMinutesPlus)]
+    public void At_Exactly_The_Oops_Window_Then_FreeOopsWindow(int oopsMinutes)
     {
         var cleaning = BookingCreated.AddHours(3);
-        var cancel = BookingCreated.AddMinutes(BookingPolicy.OopsWindowMinutesStandard);
+        var cancel = BookingCreated.AddMinutes(oopsMinutes);
 
-        Assert.Equal(CancellationFeeTier.FreeOopsWindow, Tier(cleaning, cancel));
+        Assert.Equal(CancellationFeeTier.FreeOopsWindow, Tier(cleaning, cancel, oopsMinutes: oopsMinutes));
+        Assert.Equal(0m, Rate(cleaning, cancel, oopsMinutes: oopsMinutes));
+    }
+
+    [Theory]
+    [InlineData(BookingPolicy.OopsWindowMinutesStandard)]
+    [InlineData(BookingPolicy.OopsWindowMinutesPlus)]
+    public void One_Tick_Past_The_Oops_Window_Then_The_Timing_Tier_Applies(int oopsMinutes)
+    {
+        var cleaning = BookingCreated.AddHours(3);
+        var cancel = BookingCreated.AddMinutes(oopsMinutes).AddTicks(1);
+
+        Assert.Equal(CancellationFeeTier.LastMinute, Tier(cleaning, cancel, oopsMinutes: oopsMinutes));
+        Assert.Equal(BookingPolicy.LastMinuteCancellationFeeRate, Rate(cleaning, cancel, oopsMinutes: oopsMinutes));
     }
 
     [Fact]
-    public void One_Minute_Past_The_Oops_Cap_Then_The_Timing_Tier_Applies()
+    public void The_Plus_Oops_Window_Frees_A_Cancel_The_Standard_One_Charges()
     {
         var cleaning = BookingCreated.AddHours(3);
-        var cancel = BookingCreated.AddMinutes(BookingPolicy.OopsWindowMinutesStandard + 1);
+        var cancel = BookingCreated.AddMinutes(30);
 
         Assert.Equal(CancellationFeeTier.LastMinute, Tier(cleaning, cancel));
+        Assert.Equal(
+            CancellationFeeTier.FreeOopsWindow,
+            Tier(cleaning, cancel, oopsMinutes: BookingPolicy.OopsWindowMinutesPlus));
     }
 
     [Fact]
-    public void FirstTime_Customer_Gets_The_Wider_Oops_Cap()
+    public void The_Oops_Window_Does_Not_Free_An_Order_Nobody_Took_Any_Differently()
     {
         var cleaning = BookingCreated.AddHours(3);
-        var cancel = BookingCreated.AddMinutes(BookingPolicy.OopsWindowMinutesStandard + 1);
+        var cancel = BookingCreated.AddMinutes(30);
 
-        Assert.Equal(CancellationFeeTier.LastMinute, Tier(cleaning, cancel));
-        Assert.Equal(CancellationFeeTier.FreeOopsWindow, Tier(cleaning, cancel, firstTime: true));
+        Assert.Equal(
+            CancellationFeeTier.FreeNotAccepted,
+            Tier(cleaning, cancel, accepted: false, oopsMinutes: BookingPolicy.OopsWindowMinutesPlus));
+    }
+
+    [Fact]
+    public void Past_The_Plus_Oops_Window_The_Plus_Free_Hours_Still_Apply()
+    {
+        // Two independent Plus benefits: past the 60-minute oops window, the plan's 4-hour free window
+        // still frees a cancel six hours out, and the 4h/partial ladder below it is unchanged.
+        var cleaning = BookingCreated.AddHours(30);
+
+        Assert.Equal(
+            CancellationFeeTier.FreeOutsideWindow,
+            Tier(cleaning, cleaning.AddHours(-6), oopsMinutes: BookingPolicy.OopsWindowMinutesPlus, freeOverride: 4));
+        Assert.Equal(
+            CancellationFeeTier.LastMinute,
+            Tier(cleaning, cleaning.AddHours(-3), oopsMinutes: BookingPolicy.OopsWindowMinutesPlus, freeOverride: 4));
     }
 
     // ── Free / partial / last-minute boundaries ──

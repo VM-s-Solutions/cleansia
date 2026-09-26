@@ -32,7 +32,6 @@ enum CustomerNotificationDeepLink {
     ) -> CustomerNotificationDestination? {
         switch eventKey {
         case "order.payment_confirmed",
-             "order.confirmed",
              "order.cleaner_assigned",
              "order.on_the_way",
              "order.in_progress",

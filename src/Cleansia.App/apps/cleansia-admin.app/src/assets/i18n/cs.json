@@ -486,7 +486,6 @@
       "pay_config_base_pay": "Základní platba",
       "pay_config_extra_room": "Příplatek za pokoj",
       "pay_config_extra_bathroom": "Příplatek za koupelnu",
-      "pay_config_distance_rate": "Sazba za km",
       "pay_config_min_pay": "Minimální platba",
       "pay_config_max_pay": "Maximální platba",
       "pay_config_description": "Popis",
@@ -964,7 +963,8 @@
           "order": {
             "cover_requested": "Vyžádán záskok",
             "dropped": "Zakázka odhozena",
-            "contract_accepted": "Smlouva o dílo přijata"
+            "contract_accepted": "Smlouva o dílo přijata",
+            "access_instructions_read": "Přečteny pokyny pro vstup"
           }
         }
       }
@@ -1104,7 +1104,6 @@
       "base_pay": "Základní platba",
       "extra_per_room": "Příplatek za pokoj",
       "extra_per_bathroom": "Příplatek za koupelnu",
-      "distance_rate": "Sazba za km",
       "pay_limits": "Limity platby",
       "pay_limits_hint": "Volitelné. Ponechte 0 pro bez limitu. Pokud je nastaveno, vypočítaná platba bude omezena na tento rozsah.",
       "minimum_pay": "Minimální platba",
@@ -1908,6 +1907,15 @@
           "notifications": {
             "days": "Počet dní, po které notifikace zůstává v přehledu v aplikaci"
           },
+          "order_photos": {
+            "days": "Počet dní od dokončení úklidu, po které se uchovávají fotografie zakázky; při nevyřešené reklamaci zůstávají až do jejího uzavření"
+          },
+          "admin_audit": {
+            "years": "Počet let uchování záznamu o činnosti administrátora"
+          },
+          "employee_audit": {
+            "years": "Počet let uchování záznamu o činnosti uklízeče"
+          },
           "customer_audit": {
             "years": "Počet let, po které se uchovává auditní záznam zákazníka"
           },
@@ -2354,7 +2362,7 @@
         "expire_error": "Zůstatek se nepodařilo odepsat.",
         "expire_dialog": {
           "title": "Odepsat zůstatek kreditu",
-          "lede": "Odepíše celý zůstatek {{amount}} a nelze to vrátit zpět. Použijte, když zákazník odchází: dokud kredit zůstává, výmaz účtu se odmítne.",
+          "lede": "Odepíše celý zůstatek {{amount}} a nelze to vrátit zpět. Před výmazem účtu to není potřeba: výmaz nevyčerpaný kredit odepíše sám.",
           "field": {
             "note": "Důvod",
             "note_help": "Jediný záznam o tom, proč firma přestala dlužit peníze. Uveďte, kdo o to požádal."
@@ -2597,7 +2605,7 @@
         "fulfil_title": "Vyřídit tuto žádost o smazání?",
         "retry": "Opakovat výmaz",
         "retry_confirm_title": "Opakovat tento výmaz?",
-        "retry_confirm_message": "Výmaz účtu uživatele {{userId}} bude spuštěn znovu. Pokud uspěje, účet bude trvale anonymizován a akci nelze vrátit.",
+        "retry_confirm_message": "Výmaz účtu uživatele {{userId}} bude spuštěn znovu. Pokud uspěje, účet bude trvale anonymizován a nevyčerpaný zákaznický kredit na něm se odepíše bez výplaty a bez možnosti obnovení. Akci nelze vrátit.",
         "retry_confirm_yes": "Opakovat",
         "retry_success": "Výmaz byl zopakován. Účet je nyní vymazán.",
         "retry_error": "Výmaz se nepodařilo zopakovat."
@@ -2649,7 +2657,7 @@
         "success": "Účet byl vymazán.",
         "error": "Účet se nepodařilo vymazat.",
         "confirm_title": "Vymazat účet?",
-        "confirm_message": "Účet uživatele {{userId}} bude trvale anonymizován. Tuto akci nelze vrátit.",
+        "confirm_message": "Účet uživatele {{userId}} bude trvale anonymizován. Nevyčerpaný zákaznický kredit na účtu se po dokončení výmazu odepíše — nevyplácí se a nelze ho obnovit. Tuto akci nelze vrátit.",
         "confirm_yes": "Vymazat"
       }
     },
@@ -3026,7 +3034,6 @@
     "gdpr": {
       "deletion_already_pending": "Žádost o smazání tohoto účtu již probíhá.",
       "deletion_blocked_by_order": "Tento účet má aktívní objednávky a zatím jej nelze smazat.",
-      "deletion_blocked_by_credit_balance": "Tento zákazník má stále kredit. Než půjde účet smazat, musí být vyčerpán nebo vyplacen.",
       "deletion_blocked_by_invoice": "Tento účet má nevyřízené faktury a zatím jej nelze smazat.",
       "deletion_blocked_by_assigned_order": "Tato üklidová pracovnice je přiřazena k zakázce a zatím ji nelze smazat.",
       "deletion_blocked_by_unsettled_pay": "Této üklidové pracovnici stále dlužíme odměnu. Vyřešte to před smazáním účtu.",
@@ -3115,7 +3122,6 @@
       "already_exists": "Konfigurace platby již existuje",
       "base_pay_negative": "Základní mzda nemůže být záporná",
       "cannot_have_both": "Nelze mít současně službu i balíček",
-      "distance_rate_negative": "Sazba za vzdálenost nemůže být záporná",
       "extra_per_bathroom_negative": "Příplatek za koupelnu nemůže být záporný",
       "extra_per_room_negative": "Příplatek za místnost nemůže být záporný",
       "has_order_pays": "Nelze smazat konfiguraci platby, která má přiřazené platby objednávek",

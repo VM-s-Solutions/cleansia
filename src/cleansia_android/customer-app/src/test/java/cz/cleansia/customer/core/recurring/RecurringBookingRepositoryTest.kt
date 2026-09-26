@@ -73,6 +73,7 @@ class RecurringBookingRepositoryTest {
         paymentType = 1,
         startsOn = "2026-07-01T08:00:00Z",
         isActive = true,
+        requiresPaymentMethodChange = false,
     )
 
     private fun createRequest() = CreateRecurringBookingRequest(

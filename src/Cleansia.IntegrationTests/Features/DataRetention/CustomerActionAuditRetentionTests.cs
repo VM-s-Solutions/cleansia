@@ -19,9 +19,9 @@ namespace Cleansia.IntegrationTests.Features.DataRetention;
 /// Functions timer runs: the customer audit task is registered, reads its window, and deletes per row by
 /// that row's own <c>OccurredOn</c> across both operating companies. A backlog wider than one batch is
 /// drained in the one run, which on Postgres exercises the id-list delete the batching is built on.
-/// Rows the sweep must never reach — a younger row of the same user, the admin table, the employee
-/// table — are counted after it. The second case is the per-company read: a window one company set
-/// shortens that company alone.
+/// Rows the sweep must not reach — a younger row of the same user, and admin and employee rows still inside
+/// their own tables' windows — are counted after it. The second case is the per-company read: a window one
+/// company set shortens that company alone.
 /// </summary>
 [Collection("PostgresCollection")]
 public class CustomerActionAuditRetentionTests(PostgresContainerFixture fixture) : BaseIntegrationTest(fixture)
@@ -53,11 +53,11 @@ public class CustomerActionAuditRetentionTests(PostgresContainerFixture fixture)
                 context.AdminActionAudits.Add(new AdminActionAudit
                 {
                     ActorId = "admin-1", Action = "order.refund", ActorProfile = UserProfile.Administrator,
-                    Success = true, OccurredOn = cutoff.AddYears(-1), TenantId = TestTenants.Default
+                    Success = true, OccurredOn = cutoff.AddDays(1), TenantId = TestTenants.Default
                 });
                 var employeeRow = EmployeeActionAudit.Create("employee-1", "ORD-OLD-0", EmployeeAuditAction.OrderDropped);
                 employeeRow.TenantId = TestTenants.Default;
-                employeeRow.Created("employee-1", cutoff.AddYears(-1));
+                employeeRow.Created("employee-1", cutoff.AddDays(1));
                 context.EmployeeActionAudits.Add(employeeRow);
                 await Task.CompletedTask;
             },

@@ -1,5 +1,6 @@
 using System.Linq.Expressions;
 using System.Reflection;
+using System.Text.Json;
 using Cleansia.Core.AppServices.Features.PayConfig;
 using Cleansia.Core.AppServices.Features.PayConfig.DTOs;
 using Cleansia.Core.AppServices.Features.PayConfig.Filters;
@@ -40,9 +41,9 @@ public class GetPagedPayConfigsHandlerTests
             currencyId: "cur-czk",
             extraPerRoom: 10m,
             extraPerBathroom: 5m,
-            distanceRatePerKm: 2m,
             description: "global rate");
         config.SetPayLimits(100m, 900m);
+        typeof(EmployeePayConfig).GetProperty(nameof(EmployeePayConfig.DistanceRatePerKm))!.SetValue(config, 2m);
         config.Id = "cfg-1";
         config.Created("system", new DateTimeOffset(2026, 2, 2, 0, 0, 0, TimeSpan.Zero));
         return config;
@@ -73,7 +74,7 @@ public class GetPagedPayConfigsHandlerTests
         Assert.Equal(300m, row.BasePay);
         Assert.Equal(10m, row.ExtraPerRoom);
         Assert.Equal(5m, row.ExtraPerBathroom);
-        Assert.Equal(2m, row.DistanceRatePerKm);
+        Assert.DoesNotContain("distanceRatePerKm", JsonSerializer.Serialize(row, new JsonSerializerOptions(JsonSerializerDefaults.Web)));
         Assert.Equal(100m, row.MinimumPay);
         Assert.Equal(900m, row.MaximumPay);
         Assert.Equal("cur-czk", row.CurrencyId);

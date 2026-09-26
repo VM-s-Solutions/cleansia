@@ -18,8 +18,8 @@ data class GuestOrderDto(
 )
 
 class GuestOrderApi(private val api: GenOrderApi) {
-    suspend fun lookup(number: String, email: String, code: String): Response<GuestOrderDto> =
-        api.orderLookup(LookupOrderQuery(number, email, code)).mapWire { body ->
+    suspend fun lookup(accessToken: String): Response<GuestOrderDto> =
+        api.orderLookup(LookupOrderQuery(accessToken = accessToken)).mapWire { body ->
             val order = body.required("LookupOrderResponse")
             GuestOrderDto(
                 id = order.id.required("id"),
@@ -31,23 +31,19 @@ class GuestOrderApi(private val api: GenOrderApi) {
             )
         }
 
-    suspend fun preview(number: String, email: String, code: String): Response<CancellationFeePreviewDto> =
+    suspend fun preview(accessToken: String): Response<CancellationFeePreviewDto> =
         api.orderGuestCancellationPreview(
-            GetGuestCancellationFeePreviewQuery(number, email, code),
+            GetGuestCancellationFeePreviewQuery(accessToken = accessToken),
         ).mapWire { it.toAppDto() }
 
     suspend fun cancel(
-        number: String,
-        email: String,
-        code: String,
+        accessToken: String,
         reason: String?,
         language: String,
     ): Response<CancelOrderResponse> =
         api.orderCancelGuest(
             CancelGuestOrderCommand(
-                displayOrderNumber = number,
-                email = email,
-                confirmationCode = code,
+                accessToken = accessToken,
                 reason = reason,
                 language = language,
             ),

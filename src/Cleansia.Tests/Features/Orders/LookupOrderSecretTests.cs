@@ -1,4 +1,5 @@
 using Cleansia.Core.AppServices.Features.Orders;
+using Cleansia.Core.Domain.Common;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Repositories;
@@ -10,39 +11,40 @@ using Moq;
 namespace Cleansia.Tests.Features.Orders;
 
 /// <summary>
-/// The anonymous single <see cref="LookupOrder.Handler"/> now gates on THREE
-/// things: the display order number, the customer's e-mail, and the order's own
-/// confirmation code.
+/// The anonymous single <see cref="LookupOrder.Handler"/> gates on ONE thing: the per-order access
+/// token the booking's confirmation e-mail carried.
 ///
-/// The code is what makes the gate a gate. A display order number is sequential
-/// and an e-mail address is not a secret, so the previous two-factor pair was
-/// guessable by anyone who knew a customer's address and could count — and the
-/// endpoint is anonymous, so there is no tenant filter behind it (S3).
+/// <para>It used to gate on (display order number, e-mail, confirmation code). None of those three is
+/// a secret the platform keeps: the number is sequential, the e-mail is not private, and the code was
+/// served on the order detail to every cleaner assigned to the job — so a cleaner held the whole key
+/// to their own customer's booking, including the cancellation that charges the customer the
+/// 25 % / 50 % tier.</para>
 ///
 /// These cases pin the properties that matter:
-///   - all three correct returns the order;
-///   - a wrong code returns NOTHING, and returns it the same way a wrong order
-///     number does, so the endpoint is never an oracle for which orders exist;
-///   - the code is matched case-insensitively, because it is generated
-///     uppercase and then read off an e-mail and typed by hand;
-///   - e-mail remains case-insensitive and the order number remains exact.
+/// <list type="bullet">
+///   <item>the live token returns the order;</item>
+///   <item>a token nobody issued returns NOTHING, the same way an expired or revoked one does, so the
+///     endpoint is never an oracle for which bookings exist;</item>
+///   <item>an account booking is never reachable by a guest token, whatever the token says;</item>
+///   <item>only the hash is ever compared — the raw value appears in no persisted row.</item>
+/// </list>
 /// </summary>
 public class LookupOrderSecretTests
 {
     private const string OrderNumber = "CLS-2026-0001";
-    private const string MatchingEmail = "alice@example.com";
-    private const string RealCode = "A1B2C3";
 
     private readonly Mock<IOrderRepository> _orderRepository = new();
+    private readonly Mock<IGuestOrderAccessTokenRepository> _tokenRepository = new();
+    private readonly List<GuestOrderAccessToken> _tokens = [];
 
-    private static Order BuildOrder()
+    private static Order BuildOrder(string? userId = null)
     {
         var address = Address.Create("Street 1", "Praha", "14000", "country-1");
         var currency = Core.Domain.Internationalization.Currency.Create("CZK", "Kč", "Czech Koruna");
 
         var order = Order.Create(
             customerName: "Alice",
-            customerEmail: MatchingEmail,
+            customerEmail: "alice@example.com",
             customerPhone: "+420123456789",
             customerAddress: address,
             rooms: 2,
@@ -51,7 +53,8 @@ public class LookupOrderSecretTests
             paymentType: PaymentType.Cash,
             totalPrice: 1000m,
             currencyId: currency.Id,
-            paymentStatus: PaymentStatus.Pending);
+            paymentStatus: PaymentStatus.Pending,
+            userId: userId);
 
         order.Id = "ord-1";
         order.SetCurrency(currency);
@@ -59,100 +62,93 @@ public class LookupOrderSecretTests
         // MapToDetail dereferences the latest status row.
         order.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.New, order));
 
-        // The code and the display number are generated, so they are forced to
-        // known values here rather than read back — a test that asserts against
-        // whatever the entity happened to generate proves nothing.
-        typeof(Order).GetProperty(nameof(Order.ConfirmationCode))!
-            .SetValue(order, RealCode);
-        typeof(Order).GetProperty(nameof(Order.DisplayOrderNumber))!
-            .SetValue(order, OrderNumber);
+        // The display number is generated, so it is forced to a known value here rather than read
+        // back — a test that asserts against whatever the entity happened to generate proves nothing.
+        typeof(Order).GetProperty(nameof(Order.DisplayOrderNumber))!.SetValue(order, OrderNumber);
 
         return order;
     }
 
-    private void SeedOrder(Order order) =>
-        _orderRepository.Setup(r => r.GetQueryableIgnoringTenant()).Returns(new[] { order }.AsQueryable().BuildMock());
+    private void SeedOrder(Order order)
+    {
+        _orderRepository.Setup(r => r.GetQueryableIgnoringTenant())
+            .Returns(new[] { order }.AsQueryable().BuildMock());
+        _tokenRepository.Setup(r => r.GetQueryableIgnoringTenant())
+            .Returns(_tokens.AsQueryable().BuildMock());
+    }
 
-    private LookupOrder.Handler CreateHandler() => new(_orderRepository.Object);
+    private string IssueToken(string orderId, DateTimeOffset? expiresOn = null, bool revoked = false)
+    {
+        var token = GuestOrderAccessToken.Issue(orderId, expiresOn ?? DateTimeOffset.UtcNow.AddDays(30));
+        if (revoked)
+        {
+            token.Revoke(DateTimeOffset.UtcNow);
+        }
+
+        _tokens.Add(token);
+        return token.RawToken!;
+    }
+
+    private LookupOrder.Handler CreateHandler() =>
+        new(new GuestOrderAccess(_orderRepository.Object, _tokenRepository.Object));
 
     [Fact]
-    public async Task All_Three_Correct_Returns_The_Order()
+    public async Task The_Live_Token_Returns_The_Order()
     {
         SeedOrder(BuildOrder());
+        var token = IssueToken("ord-1");
 
-        var result = await CreateHandler().Handle(
-            new LookupOrder.Query(OrderNumber, MatchingEmail, RealCode), CancellationToken.None);
+        var result = await CreateHandler().Handle(new LookupOrder.Query(token), CancellationToken.None);
 
         Assert.True(result.IsSuccess);
         Assert.Equal(OrderNumber, result.Value!.DisplayOrderNumber);
     }
 
     [Fact]
-    public async Task Wrong_Confirmation_Code_Returns_Nothing()
+    public async Task An_Unissued_Token_And_A_Dead_Token_Fail_Identically()
     {
-        // The number and the e-mail are both right; only the code is wrong.
-        // Before the code was part of the predicate this call succeeded.
+        // The endpoint must not tell a caller that a booking EXISTS but their link has lapsed — that
+        // turns it into an oracle. Every refusal is the same refusal.
         SeedOrder(BuildOrder());
-
-        var result = await CreateHandler().Handle(
-            new LookupOrder.Query(OrderNumber, MatchingEmail, "ZZZZZZ"), CancellationToken.None);
-
-        Assert.False(result.IsSuccess);
-    }
-
-    [Fact]
-    public async Task Wrong_Code_And_Unknown_Order_Fail_Identically()
-    {
-        // The endpoint must not tell a caller that an order EXISTS but their
-        // code was wrong — that turns it into an oracle for order numbers.
-        SeedOrder(BuildOrder());
+        var expired = IssueToken("ord-1", expiresOn: DateTimeOffset.UtcNow.AddMinutes(-1));
+        var revoked = IssueToken("ord-1", revoked: true);
         var handler = CreateHandler();
 
-        var wrongCode = await handler.Handle(
-            new LookupOrder.Query(OrderNumber, MatchingEmail, "ZZZZZZ"), CancellationToken.None);
-        var noSuchOrder = await handler.Handle(
-            new LookupOrder.Query("CLS-2026-9999", MatchingEmail, RealCode), CancellationToken.None);
+        var unissued = await handler.Handle(
+            new LookupOrder.Query(SecurityTokens.Generate(SecurityTokens.DurableTokenByteLength)),
+            CancellationToken.None);
+        var lapsed = await handler.Handle(new LookupOrder.Query(expired), CancellationToken.None);
+        var withdrawn = await handler.Handle(new LookupOrder.Query(revoked), CancellationToken.None);
 
-        Assert.False(wrongCode.IsSuccess);
-        Assert.False(noSuchOrder.IsSuccess);
-        Assert.Equal(noSuchOrder.Error?.Code, wrongCode.Error?.Code);
-        Assert.Equal(noSuchOrder.Error?.Message, wrongCode.Error?.Message);
-    }
-
-    [Theory]
-    [InlineData("a1b2c3")]
-    [InlineData("A1b2C3")]
-    [InlineData("A1B2C3")]
-    public async Task Confirmation_Code_Is_Case_Insensitive(string typedCode)
-    {
-        // Generated uppercase, read off an e-mail, typed by a person.
-        SeedOrder(BuildOrder());
-
-        var result = await CreateHandler().Handle(
-            new LookupOrder.Query(OrderNumber, MatchingEmail, typedCode), CancellationToken.None);
-
-        Assert.True(result.IsSuccess);
+        foreach (var refusal in new[] { unissued, lapsed, withdrawn })
+        {
+            Assert.False(refusal.IsSuccess);
+            Assert.Equal(unissued.Error?.Code, refusal.Error?.Code);
+            Assert.Equal(unissued.Error?.Message, refusal.Error?.Message);
+        }
     }
 
     [Fact]
-    public async Task Email_Stays_Case_Insensitive()
+    public async Task An_Account_Booking_Is_Not_Reachable_By_A_Guest_Token()
     {
-        SeedOrder(BuildOrder());
+        // A token can only ever be issued for a guest booking, but the guest read refuses an owned
+        // order in its own right rather than trusting that — an account holder signs in.
+        SeedOrder(BuildOrder(userId: "user-1"));
+        var token = IssueToken("ord-1");
 
-        var result = await CreateHandler().Handle(
-            new LookupOrder.Query(OrderNumber, "ALICE@EXAMPLE.COM", RealCode), CancellationToken.None);
-
-        Assert.True(result.IsSuccess);
-    }
-
-    [Fact]
-    public async Task Wrong_Email_Still_Returns_Nothing()
-    {
-        SeedOrder(BuildOrder());
-
-        var result = await CreateHandler().Handle(
-            new LookupOrder.Query(OrderNumber, "attacker@evil.com", RealCode), CancellationToken.None);
+        var result = await CreateHandler().Handle(new LookupOrder.Query(token), CancellationToken.None);
 
         Assert.False(result.IsSuccess);
+    }
+
+    [Fact]
+    public async Task Only_The_Hash_Is_Persisted()
+    {
+        SeedOrder(BuildOrder());
+        var raw = IssueToken("ord-1");
+
+        var stored = Assert.Single(_tokens);
+        Assert.NotEqual(raw, stored.TokenHash);
+        Assert.Equal(SecurityTokens.Hash(raw), stored.TokenHash);
     }
 }

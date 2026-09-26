@@ -143,6 +143,16 @@ POST /api/Order/CreateOrder
 }
 ```
 
+`language` — the language the customer is booking in, one of the seeded language codes (`en` when
+omitted; an unknown code is refused by the `LanguageValidator`). It is **stored on the order**
+(`Order.LanguageCode`) and decides the language of the order's receipt ahead of the account's
+preference. The web sends its UI language; the Android and iOS customer apps send the language the
+app is displaying. → [The order records its language](/flows/booking-and-pricing#booking-language)
+
+`rooms` / `bathrooms` — maximum **8 rooms** and **4 bathrooms**. Exceeding either returns
+`order.size_exceeds_maximum` on the corresponding field. The same upper bounds apply to `QuoteOrder`,
+`QuotePlusSavings`, `CreateRecurringBooking` and `UpdateRecurringBooking`.
+
 `currencyId` — optional. The order's currency is the **service address's country's** currency
 (owner ruling 2026-09-12); null lets the server derive it, and a value must equal it — send back the
 `currencyId` the quote returned for the same country — or create fails as `currency.invalid` before any
@@ -163,7 +173,7 @@ before any other rule.
 
 | `paymentType` | Value | Behavior |
 |---------------|-------|----------|
-| `Cash` | `1` | Receipt queued. The order stays `New` + `PaymentStatus.Pending` and becomes offerable immediately; the cleaner's take is what writes `Confirmed` |
+| `Cash` | `1` | **Only for a signed-in caller whose selection needs one cleaner** — `requiredEmployees == 1` on the server's own duration; otherwise `order.cash_not_available` ([the cash rule](/product/business-rules#cash)). Receipt queued. The order stays `New` + `PaymentStatus.Pending` and becomes offerable immediately; the cleaner's take is what writes `Confirmed` |
 | `Card` | `2` | Web: a Stripe Checkout Session is created. Mobile: no session — the client drives a PaymentSheet against the PaymentIntent. Either way the order stays `New` + `PaymentStatus.Pending` and is **not** offerable until the webhook writes `Paid`; the status stays `New` until a cleaner takes it (ADR-0057) |
 
 ::: warning A cash order is not auto-confirmed at creation
@@ -185,11 +195,19 @@ materializer). The cap also bounds crew size, since `requiredEmployees = ceil(es
 {
   "id": "order-id",
   "confirmationCode": "ABC123",
-  "stripeSessionId": "https://checkout.stripe.com/..." 
+  "stripeSessionId": "https://checkout.stripe.com/...",
+  "guestAccessToken": "p8Jw2hQx…"
 }
 ```
 
 `stripeSessionId` is `null` for cash payments and a Stripe checkout URL for card payments.
+
+`guestAccessToken` is the booking's access token on a **guest** booking and `null` when the command
+carried a session — an account booking mints none, because its owner signs in to reach it. The caller
+*is* the guest, so the response body is the right channel: it is the only moment the browser can learn
+the credential without waiting for the e-mail, and the checkout success page reads the booking back
+with it. Losing it costs nothing — every later message that carries a track link mints its own.
+→ [The guest access token](/flows/booking-and-pricing#guest-access-token)
 
 ::: warning Price validation is a chain, and the order of its rules is load-bearing
 `CreateOrder.Validator` runs one `Cascade.Stop` chain over the whole command, so only the **first**
@@ -205,6 +223,7 @@ failure is reported:
 | Booked estimate ≤ `MaxBookableOrderSpanHours` (24 h) | `order.span_exceeds_maximum` |
 | A membership express waiver the client assumed is still available | `membership.express_waiver.no_longer_available` |
 | Server-recalculated price equals the submitted `totalPrice` | `order.total_price.not_match` |
+| `paymentType` Cash only from a signed-in caller on a selection whose required crew — `max(1, ceil(minutes / 120))`, `OrderDuration.RequiredEmployees` on the same calculator run — is exactly one | `order.cash_not_available` — error code `PaymentType` |
 | A `promoCode`, if any, is sent by a signed-in customer | `promo.requires_account` — error code `PromoCode` |
 | The `promoCode`, if any, would be honoured — previewed again in the address currency on the pre-surcharge subtotal | the preview's own reason: `promo.currency_mismatch`, `promo.expired`, `promo.global_limit_reached`, `promo.per_user_limit_reached`, `promo.below_minimum_order_amount`, `promo.not_found`, `promo.inactive`, `promo.not_yet_valid` — error code `PromoCode` |
 
@@ -248,8 +267,10 @@ as follows, then `BookingPolicy.ApplyExpressSurcharge` grosses the **discounted*
 3. The express surcharge (+20 %) is applied **after** the discount, and only when the booking is in
    the 2–4 h lead window and no membership waiver was reserved.
 
-`QuoteOrder` runs the same ordering, which is why the wizard's quote and the receipted saving cannot
-drift apart.
+`QuoteOrder` runs the same ordering, which is why the wizard's quote and the receipted saving agree —
+to within one cent: the order stores each discount rounded to the cent so the receipt's lines add up
+to its total, while the quote reports the discounts unrounded.
+→ [Business rules — the express-surcharge correction](/product/business-rules#discount-express-correction)
 
 Separate lead-time rules run first on `cleaningDate`: `order.cleaning_date.future`, then
 `order.cleaning_date.below_lead_time` (under 2 h lead).
@@ -285,6 +306,9 @@ POST /api/Order/Quote
 `cleaningDate` is optional — omit it on the wizard's first step, before a slot is chosen, and the
 express-surcharge check is skipped.
 
+`rooms` / `bathrooms` must be nonnegative and no greater than 8 / 4 respectively. Oversized baskets
+are refused as `order.size_exceeds_maximum`, using the same upper bounds as order creation.
+
 `countryId` — optional; the service address's country once the wizard has one, and the customer's
 **chosen market** before that (the home page's quick quote and the wizard's first step send the
 market's, ADR-0058). The quote is priced in that country's currency (owner ruling 2026-09-12: the
@@ -317,6 +341,8 @@ and resolves them the same way.
   "extrasSubtotal": 50.00,
   "expressSurchargeApplied": false,
   "expressSurchargeAmount": 0.00,
+  "estimatedDurationMinutes": 120,
+  "requiredEmployees": 1,
   "expressSurchargeWaivedByMembership": true,
   "expressUpgradesRemaining": 1,
   "currencyId": "currency-id",
@@ -332,6 +358,7 @@ and resolves them the same way.
 | `expressSurchargeWaivedByMembership` | Disambiguates `expressSurchargeApplied: false`. Without it, "waived" and "not an express slot at all" look identical |
 | `expressUpgradesRemaining` | Waivers left **this calendar month, before this booking** — server-computed. Null when the caller has no membership. A client that counts its own orders disagrees with the server the first time a cancellation releases a slot |
 | `tierDiscountMinOrderAmount` | The tier-discount floor the quote judged the order against, so a client can state the same rule. Null when no floor applied — the floor is a platform-default-currency number and is enforced only on an order in that currency |
+| `estimatedDurationMinutes` / `requiredEmployees` | The selection's booked duration and the crew it needs — `OrderDuration.RequiredEmployees`, the same function that staffs the order. The customer web, Android and iOS clients offer cash only when `requiredEmployees` is 1 and the customer is signed in; `CreateOrder` re-decides it server-side |
 | `currencyId` / `currencyCode` | The currency the quote was priced in — the one named on the request, else the request's `countryId`'s, else (no country named) the platform default. A named country without a configured currency throws rather than defaulting. There is no exchange rate on the wire; nothing converts |
 
 Promo codes are **not** priced here — they are entered at checkout and applied at create time.
@@ -376,6 +403,7 @@ validator refuses before the calculator can throw:
 | `countryId`, if named, is a serviced country | `country.not_serviced` |
 | The resolved currency (named `currencyId`, else the country's, else the platform default) is offerable | `currency.invalid` |
 | Booked estimate ≤ `MaxBookableOrderSpanHours` (24 h) | `order.span_exceeds_maximum` |
+| At most 8 rooms and 4 bathrooms | `order.size_exceeds_maximum` |
 
 The span cap is the one `QuoteOrder` and `CreateOrder` draw (ADR-0039 D3.4): a preview must not show
 savings on a basket the booking will refuse. An empty selection still previews, as it still quotes.
@@ -561,44 +589,69 @@ The admin host's unredacted detail is `GET /api/AdminOrder/details/{orderId}` un
 
 ### Lookup <Badge type="info" text="Customer API only" />
 
-Looks up an order by order number and email (for anonymous tracking).
+Opens a guest booking with its **access token** — the credential the guest's e-mail link carries.
 
 ```
-GET /api/Order/Lookup?displayOrderNumber=CLN-2026-001&email=jane@example.com&confirmationCode=ABC123
+POST /api/Order/Lookup
+GET  /api/Order/Lookup?token=p8Jw2hQx…
 ```
 
-**Auth:** Anonymous (rate-limited: 10 requests/minute per IP)
+**Request body (POST):**
 
-**No `countryId`, on purpose.** The read is keyed on a secret — the six-character confirmation code
-delivered only in the confirmation e-mail, checked in the same predicate as the number and the e-mail
-so a wrong code and a non-existent order are indistinguishable — and it searches **across operating
-companies**, so a guest who booked under one company finds the order without knowing which company
-that was. The secret is the pin ([ADR-0051](/decisions/adr-0051) bypass-and-re-pin cell,
-[ADR-0061](/decisions/adr-0061) D3). `LookupBatch` below is the same posture keyed on the order's
-ULID, which the browser only has because it placed the order.
+```json
+{ "accessToken": "p8Jw2hQx…" }
+```
+
+**Auth:** Anonymous · rate-limit window `interactive`. The request logger suppresses `accessToken`.
+
+**Response:** the guest projection — id, display order number, customer name, cleaning date, payment
+type and status, total, estimate, order status, `confirmationCode`, currency, the selected services
+and packages, and the order's status history. **No address and no crew**: the token opens the booking,
+not the household. `confirmationCode` is the short human reference printed on the booking; nothing
+authenticates on it, and it is served here on the guest's own order only.
+
+**No `countryId`, on purpose.** The token is 256 bits, stored as a SHA-256 digest, and the read
+resolves the booking by that digest alone **across operating companies** — so a guest who booked under
+one company finds the order without knowing which company that was. The hash is the pin
+([ADR-0051](/decisions/adr-0051) bypass-and-re-pin cell, [ADR-0061](/decisions/adr-0061) D3). An
+unknown, expired or revoked token, and a booking that belongs to an account, all answer
+`order.not_found`.
+
+::: warning The old key is gone, not deprecated
+`displayOrderNumber` + `email` + `confirmationCode` no longer open anything. The triple was not a
+secret — the display number is sequential, the e-mail is not private, and the confirmation code was
+served on the order detail to every cleaner assigned to the job.
+→ [Guest order lookup](/flows/booking-and-pricing#guest-order-lookup)
+:::
 
 ---
 
 ### LookupBatch <Badge type="info" text="Customer API only" />
 
-Looks up multiple orders at once.
+Opens the bookings a browser still holds tokens for, in one call.
 
 ```
 POST /api/Order/LookupBatch
 ```
 
-**Auth:** Anonymous (rate-limited: 10 requests/minute per IP)
+**Auth:** Anonymous · rate-limit window `interactive`
 
-**Request body:**
+**Request body** — at most **10** tokens; more than ten, or none, returns an empty list:
 
 ```json
 {
-  "lookups": [
-    { "orderNumber": "CLN-2026-001", "email": "jane@example.com" },
-    { "orderNumber": "CLN-2026-002", "email": "jane@example.com" }
-  ]
+  "accessTokens": ["p8Jw2hQx…", "Ld3Kf9Tz…"]
 }
 ```
+
+**Response:** `{ "orders": [ … ] }`, each item the same shape `Lookup` returns. A token that matches
+nothing simply yields no row, so the response never says which of the presented tokens was wrong.
+
+::: tip The same token cancels
+`POST /api/Order/GuestCancellationPreview` and `POST /api/Order/CancelGuest` take `accessToken` too,
+in the `auth` window on the customer web and customer mobile hosts. Cancelling revokes every live
+token on the booking. → [Guest cancellation](/flows/booking-and-pricing#guest-cancellation)
+:::
 
 ---
 
@@ -1035,7 +1088,7 @@ GET /api/Order/DownloadReceipt?orderId=order-id
 **Response:** Binary PDF file (`application/pdf`).
 
 ::: tip Receipt Generation
-Receipts are generated asynchronously via an Azure Queue message (`GenerateReceipt`) processed by Azure Functions. The PDF is stored in Azure Blob Storage.
+Receipts are generated asynchronously via an Azure Queue message (`GenerateReceipt`) processed by Azure Functions. The PDF is stored in Azure Blob Storage, and this endpoint returns the stored copy — for a cash booking whose collection a cleaner has recorded, the copy restated as paid. The number, the issue date and the language are fixed when the receipt is issued. → [What the receipt says](/flows/payment-and-fiscal#what-the-receipt-says)
 :::
 
 ## Error Responses

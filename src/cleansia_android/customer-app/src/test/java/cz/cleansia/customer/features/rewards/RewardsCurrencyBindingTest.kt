@@ -64,6 +64,8 @@ class RewardsCurrencyBindingTest {
             "loyalty_perks_discount_10",
             "loyalty_perks_discount_12",
             "loyalty_perks_discount_15",
+            "loyalty_perks_priority_support",
+            "loyalty_perks_dedicated_pool",
             "home_hero2_cta",
             "home_service_household_price",
             "home_service_upholstery_price",

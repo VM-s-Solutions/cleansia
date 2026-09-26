@@ -20,7 +20,7 @@ object NotificationTemplates {
     )
 
     fun templateFor(eventKey: String): Template? = when (eventKey) {
-        "order.payment_confirmed", "order.confirmed" -> Template(
+        "order.payment_confirmed" -> Template(
             R.string.notification_order_payment_confirmed_title,
             R.string.notification_order_payment_confirmed_body,
             NotificationCategoryDto.OrderUpdates,
@@ -124,7 +124,6 @@ object NotificationTemplates {
     fun formatBody(context: Context, eventKey: String, bodyRes: Int, args: Map<String, String>): String =
         when (eventKey) {
             "order.payment_confirmed",
-            "order.confirmed",
             "order.cleaner_assigned",
             "order.starting_soon",
             "order.preferred_offer_closed",

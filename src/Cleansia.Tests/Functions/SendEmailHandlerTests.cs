@@ -8,6 +8,8 @@ using Cleansia.Functions.Core.Handlers;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
+using Cleansia.Tests.Infrastructure;
+using Cleansia.Core.Domain.SeedWork;
 
 namespace Cleansia.Tests.Functions;
 
@@ -49,7 +51,8 @@ public class SendEmailHandlerTests
         _promoCodes.Object,
         _tenants.Object,
         _companyInfos.Object,
-        NullLogger<SendEmailHandler>.Instance, Mock.Of<IOrderRepository>());
+        NullLogger<SendEmailHandler>.Instance, Mock.Of<IOrderRepository>(),
+        TestGuestOrderAccessTokenIssuer.WithNoLiveTokens(), Mock.Of<IUnitOfWork>());
 
     private static readonly JsonSerializerOptions JsonOptions =
         new() { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
@@ -320,7 +323,8 @@ public class SendEmailHandlerTests
         var logger = new CapturingLogger();
         var handler = new SendEmailHandler(
             _emailService.Object, _guard, _tenantProvider.Object, _promoCodes.Object,
-            new Mock<ITenantRepository>().Object, new Mock<ICompanyInfoRepository>().Object, logger, Mock.Of<IOrderRepository>());
+            new Mock<ITenantRepository>().Object, new Mock<ICompanyInfoRepository>().Object, logger, Mock.Of<IOrderRepository>(),
+            TestGuestOrderAccessTokenIssuer.WithNoLiveTokens(), Mock.Of<IUnitOfWork>());
 
         var ex = await Record.ExceptionAsync(() => handler.HandleAsync(SerializeEnvelope(Confirmation()), CancellationToken.None));
 

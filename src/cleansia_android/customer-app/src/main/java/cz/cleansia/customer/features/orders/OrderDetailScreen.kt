@@ -1098,7 +1098,6 @@ private val previewOrder = OrderDetailDto(
     membershipDiscountAmount = 350.0,
     estimatedTime = 180,
     orderStatus = CodeDto(type = "OrderStatus", name = "InProgress", value = 4),
-    confirmationCode = "CLS-4417",
     currency = OrderCurrencyDetailDto(code = "CZK", symbol = "Kč"),
     statusHistory = listOf(
         OrderStatusTrackDto(

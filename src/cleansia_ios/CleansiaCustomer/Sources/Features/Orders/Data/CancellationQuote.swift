@@ -9,7 +9,7 @@ import Foundation
 enum CancellationTier: Equatable {
     /// Nobody has taken the job — free whatever the clock says.
     case freeNotAccepted
-    /// Just booked — free inside the oops window.
+    /// Free inside this customer's grace after booking.
     case freeOopsWindow
     /// Free because the cleaning is still far enough away for this customer.
     case freeOutsideWindow
@@ -23,6 +23,8 @@ struct CancellationQuote: Equatable {
     let refundAmount: Double
     let currencyCode: String?
     let forfeitsExpressWaiver: Bool
+    /// This customer's own free window after booking, as the server resolved it for them.
+    let oopsWindowMinutes: Int
 }
 
 extension CancellationTier {
@@ -43,7 +45,8 @@ extension CancellationQuote {
     /// decides, so each coercion here pushes them toward the outcome that costs them: a defaulted fee
     /// says *"free"* over a charge, a defaulted refund says *"nothing comes back"* over money that does,
     /// and a defaulted `forfeitsExpressWaiver` says *"you keep this month's free express booking"* to
-    /// someone about to spend it. `GetCancellationFeePreview.Response` is a positional record of
+    /// someone about to spend it; a defaulted `oopsWindowMinutes` tells a Plus member the standard grace
+    /// where they have their own. `GetCancellationFeePreview.Response` is a positional record of
     /// non-nullable members with one success path — there is no state this screen can be in where the
     /// server legitimately omits any of them.
     ///
@@ -68,5 +71,6 @@ extension CancellationQuote {
         currencyCode = response.currencyCode
         forfeitsExpressWaiver = try response.expressWaiverForfeitedOnCancel
             .require("expressWaiverForfeitedOnCancel")
+        oopsWindowMinutes = try response.oopsWindowMinutes.require("oopsWindowMinutes")
     }
 }

@@ -263,7 +263,6 @@
     <!-- Why we need your address — onboarding explainer -->
     <string name="address_why_title">Why we need your address</string>
     <string name="address_why_reason_jobs">Show you jobs near you, with distance from your home</string>
-    <string name="address_why_reason_distance_pay">Calculate your travel pay per kilometre</string>
     <string name="address_why_reason_invoice">Issue invoices to the correct tax jurisdiction</string>
     <string name="address_why_privacy">Customers never see your home address — only the city you\'re in.</string>
     <!-- Service-area indicator below the address summary -->

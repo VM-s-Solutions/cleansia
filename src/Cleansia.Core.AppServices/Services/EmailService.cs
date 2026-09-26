@@ -74,18 +74,43 @@ public sealed partial class EmailService : IEmailService
             ct);
     }
 
+    /// <summary>
+    /// The link the e-mail's button points at, and it is a different page for the two audiences.
+    ///
+    /// <para>A booking with an account goes to that account's own order detail: the reader signs in and
+    /// the server authorises them. It must NOT go to the guest track page — that page proves a booking
+    /// with a token, <c>IssueForGuest</c> mints none for an account, and the button would land its owner
+    /// on "the link is in your confirmation e-mail" for an e-mail they are already reading.</para>
+    ///
+    /// <para>A guest's copy carries their per-order access token. Only the caller that just minted one
+    /// can supply it (the raw value is never readable again), so a caller with none passes null.</para>
+    /// </summary>
+    private string BuildOrderStatusLink(Order order, string email, string? guestAccessToken)
+        => string.IsNullOrEmpty(order.UserId)
+            ? BuildGuestTrackLink(order.DisplayOrderNumber, email, guestAccessToken)
+            : $"{sendGridConfig.ClientDomainUrl}/orders/{Uri.EscapeDataString(order.Id)}";
+
+    private string BuildGuestTrackLink(string displayOrderNumber, string email, string? guestAccessToken)
+    {
+        var link = $"{sendGridConfig.ClientDomainUrl}/track-order?orderNumber={Uri.EscapeDataString(displayOrderNumber)}&email={Uri.EscapeDataString(email)}";
+        return string.IsNullOrEmpty(guestAccessToken)
+            ? link
+            : link + $"&token={Uri.EscapeDataString(guestAccessToken)}";
+    }
+
     public async Task<string> SendOrderReceiptEmailAsync(
         string email,
         Order order,
         byte[]? pdfBytes = null,
         string fileName = "receipt.pdf",
         string languageCode = Constants.Language.English,
-        CancellationToken ct = default)
+        CancellationToken ct = default,
+        string? guestAccessToken = null)
     {
         var translations = await emailTemplateTranslationRepository
             .GetTranslationsByTypeAndLanguageAsync(EmailType.OrderReceipt, languageCode, ct);
 
-        var orderStatusLink = $"{sendGridConfig.ClientDomainUrl}/track-order?orderNumber={Uri.EscapeDataString(order.DisplayOrderNumber)}&email={Uri.EscapeDataString(email)}";
+        var orderStatusLink = BuildOrderStatusLink(order, email, guestAccessToken);
 
         var values = BuildTemplateValues(translations, new
         {
@@ -121,7 +146,7 @@ public sealed partial class EmailService : IEmailService
         var translations = await emailTemplateTranslationRepository
             .GetTranslationsByTypeAndLanguageAsync(EmailType.OrderReceipt, languageCode, ct);
 
-        var orderStatusLink = $"{sendGridConfig.ClientDomainUrl}/track-order?orderNumber={Uri.EscapeDataString(orderNumber)}&email={Uri.EscapeDataString(email)}";
+        var orderStatusLink = BuildGuestTrackLink(orderNumber, email, null);
 
         var values = BuildTemplateValues(translations, new
         {
@@ -344,7 +369,8 @@ public sealed partial class EmailService : IEmailService
         string newStatus,
         string languageCode = Constants.Language.English,
         CancellationToken ct = default,
-        decimal? refundedAmount = null)
+        decimal? refundedAmount = null,
+        string? guestAccessToken = null)
     {
         var translations = await emailTemplateTranslationRepository
             .GetTranslationsByTypeAndLanguageAsync(EmailType.OrderStatusUpdate, languageCode, ct);
@@ -359,11 +385,7 @@ public sealed partial class EmailService : IEmailService
             }
         }
 
-        var orderStatusLink = $"{sendGridConfig.ClientDomainUrl}/track-order?orderNumber={Uri.EscapeDataString(order.DisplayOrderNumber)}&email={Uri.EscapeDataString(email)}";
-        if (string.IsNullOrEmpty(order.UserId))
-        {
-            orderStatusLink += $"&confirmationCode={Uri.EscapeDataString(order.ConfirmationCode)}";
-        }
+        var orderStatusLink = BuildOrderStatusLink(order, email, guestAccessToken);
         var address = order.CustomerAddress != null
             ? $"{order.CustomerAddress.Street}, {order.CustomerAddress.City}"
             : "";

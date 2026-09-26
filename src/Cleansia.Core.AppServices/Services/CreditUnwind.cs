@@ -26,7 +26,7 @@ public static class CreditUnwind
 
     /// <summary>
     /// Return <paramref name="amount"/> of <paramref name="order"/>'s applied credit to the customer's
-    /// balance. False means the key was already used — the ordinary retry, and a no-op, not a failure.
+    /// balance. False means no movement: an ordinary retry, erased account, or no applied credit.
     ///
     /// <para><paramref name="keyDiscriminator"/> must be DETERMINISTIC on the domain inputs, never a
     /// Guid or a timestamp: it is the whole idempotency story. A refund passes its own already-

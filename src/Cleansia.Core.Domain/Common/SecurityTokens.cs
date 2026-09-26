@@ -37,12 +37,18 @@ public static class SecurityTokens
     private const int TokenByteLength = 16;
 
     /// <summary>
+    /// 32 bytes = 256 bits → 43 base64url chars. The length for a credential that lives for weeks
+    /// rather than minutes, such as the guest order access token.
+    /// </summary>
+    public const int DurableTokenByteLength = 32;
+
+    /// <summary>
     /// Generates a fresh, cryptographically-random, URL-safe raw token (&gt;=128 bits). This is the
     /// value emailed to the user; it is NEVER persisted — store <see cref="Hash"/> of it instead.
     /// </summary>
-    public static string Generate()
+    public static string Generate(int byteLength = TokenByteLength)
     {
-        var bytes = RandomNumberGenerator.GetBytes(TokenByteLength);
+        var bytes = RandomNumberGenerator.GetBytes(byteLength);
         return Convert.ToBase64String(bytes)
             .TrimEnd('=')
             .Replace('+', '-')

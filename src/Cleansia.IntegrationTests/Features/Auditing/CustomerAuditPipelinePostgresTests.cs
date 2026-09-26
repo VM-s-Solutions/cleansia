@@ -176,7 +176,9 @@ public class CustomerAuditPipelinePostgresTests : BaseIntegrationTest
             run.Session, Host(run), run.AuditContext, sink, factory,
             new CapturingLogger<AuditFailureCaptureBehavior<TRequest, BusinessResult>>(behaviorEntries));
         var operatorScope = new OperatorTenantScopeBehavior<TRequest, BusinessResult>(tenantProvider, new FixedOperatorResolver(resolution),
-            new Cleansia.Core.AppServices.Features.Orders.GuestOrderAccess(new Cleansia.Infra.Database.Repositories.OrderRepository(context)), run.AuditContext);
+            new Cleansia.Core.AppServices.Features.Orders.GuestOrderAccess(
+                new Cleansia.Infra.Database.Repositories.OrderRepository(context),
+                new Cleansia.Infra.Database.Repositories.GuestOrderAccessTokenRepository(context)), run.AuditContext);
         var validation = new ValidationPipelineBehavior<TRequest, BusinessResult>(
             [validator], NullLogger<ValidationPipelineBehavior<TRequest, BusinessResult>>.Instance);
         var unitOfWork = new UnitOfWorkPipelineBehavior<TRequest, BusinessResult>(context);

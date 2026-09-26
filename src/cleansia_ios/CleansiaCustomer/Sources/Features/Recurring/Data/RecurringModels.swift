@@ -6,6 +6,12 @@ enum RecurrenceFrequency: Int, CaseIterable {
     case monthly = 3
 }
 
+/// The backend's `PaymentType` as the schedule commands carry it.
+enum RecurringPaymentType {
+    static let cash = 1
+    static let card = 2
+}
+
 struct RecurringTemplate: Equatable, Identifiable {
     let id: String
     let frequency: Int
@@ -21,6 +27,20 @@ struct RecurringTemplate: Equatable, Identifiable {
     let startsOn: Date
     let endsOn: Date?
     let isActive: Bool
+    /// A cash schedule whose selection now needs more than one cleaner: the server skips it rather than
+    /// switching it to card, so it books nothing until the customer changes it.
+    let requiresPaymentMethodChange: Bool
+}
+
+/// The card's status badge. A paused schedule says so whatever else is true of it.
+enum RecurringStatusBadge: Equatable {
+    case paused
+    case needsPaymentChange
+
+    static func of(_ template: RecurringTemplate) -> RecurringStatusBadge? {
+        if !template.isActive { return .paused }
+        return template.requiresPaymentMethodChange ? .needsPaymentChange : nil
+    }
 }
 
 struct CreateRecurringInput: Equatable {

@@ -1,4 +1,5 @@
 import { AddressDto, PackageListItem, PackageServiceSummary, PaymentType, ServiceListItem } from '@cleansia/customer-services';
+import type { CashEligibility } from '@cleansia/models';
 import { TranslateService } from '@ngx-translate/core';
 
 /**
@@ -25,6 +26,29 @@ export const PROMO_ERROR_KEYS: Record<string, string> = {
 
 /** Falls back to a generic message for an error code this client does not know. */
 export const PROMO_ERROR_FALLBACK = 'pages.order.promo.error_generic';
+
+/** Why cash cannot be chosen right now, or null when it can. */
+export function cashReasonCopy(
+  eligibility: CashEligibility,
+): { key: string; params: Record<string, number> } | null {
+  switch (eligibility.kind) {
+    case 'needs_account':
+      return { key: 'pages.order.cash_needs_account', params: {} };
+    case 'needs_card':
+      return { key: 'pages.order.cash_needs_card', params: { count: eligibility.requiredCleaners } };
+    case 'pending':
+      return { key: 'pages.order.cash_pending', params: {} };
+    default:
+      return null;
+  }
+}
+
+/** The review line for the way to pay; an unchosen one says so rather than naming a default. */
+export function paymentTitleKey(paymentType: PaymentType | null): string {
+  if (paymentType === PaymentType.Card) return 'pages.order.payment_card_title';
+  if (paymentType === PaymentType.Cash) return 'pages.order.payment_cash_title';
+  return 'pages.order.missing.payment';
+}
 
 export type PromoCodeUiState =
   | { kind: 'idle' }
@@ -92,7 +116,8 @@ export interface OrderWizardFormData {
   accessMode: string;
   cleaningDate: Date | null;
   cleaningTime: string;
-  paymentType: PaymentType;
+  /** Null once a cash choice was taken away and the customer has not chosen again. */
+  paymentType: PaymentType | null;
   extras: Record<string, boolean>;
   specialInstructions: string;
   entryInstructions: string;

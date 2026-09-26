@@ -208,7 +208,7 @@ Four things that look like bugs, are not, and have each cost a session:
   tenant.** A tenant is an operating company under the holding (`Tenants`, one row: `cleansia-cz`);
   a type that belongs to one company extends **`TenantAuditable`** (or is one of the two
   `BaseEntity + ITenantEntity` audits) and its row carries the company from its first write —
-  48 stamped tables, NOT NULL on all but `OutboxMessages` and `DeadLetters`, each with
+  49 stamped tables, NOT NULL on all but `OutboxMessages` and `DeadLetters`, each with
   `FK_<T>_Tenants_TenantId` (Restrict, no navigation). A plain `Auditable` — the 21 catalogue and
   per-country tables (`CountryConfiguration`, `Service`, …) — **has no `TenantId` column at all**; if
   you see one on such a type, the type is on the wrong base. Two traps this closed, and how: a

@@ -113,20 +113,7 @@ public class GetOrderPhotos
                 Notes: photo.Notes);
         }
 
-        private static string GenerateSasUrl(IBlobContainerClient blobClient, string blobUrl, ServedContentType servedAs)
-        {
-            // Recover the blob name from the stored absolute URL by locating the container segment by
-            // NAME and taking everything after it. A positional Skip(1) worked only on the Azure shape
-            // `/<container>/<blob>`; Azurite serves `/<account>/<container>/<blob>`, which left the
-            // container in the blob name and produced doubled paths in the SAS URL.
-            var uri = new Uri(blobUrl);
-            var pathSegments = uri.AbsolutePath.Split('/', StringSplitOptions.RemoveEmptyEntries);
-            var containerName = Constants.BlobContainers.OrderPhotos;
-            var containerIndex = Array.IndexOf(pathSegments, containerName);
-            var blobName = containerIndex >= 0 && containerIndex + 1 < pathSegments.Length
-                ? string.Join("/", pathSegments.Skip(containerIndex + 1))
-                : string.Join("/", pathSegments.Skip(1)); // legacy fallback
-            return blobClient.GenerateSasUri(blobName, TimeSpan.FromHours(1), servedAs).ToString();
-        }
+        private static string GenerateSasUrl(IBlobContainerClient blobClient, string blobUrl, ServedContentType servedAs) =>
+            blobClient.GenerateSasUri(OrderPhotoBlobName.FromUrl(blobUrl), TimeSpan.FromHours(1), servedAs).ToString();
     }
 }

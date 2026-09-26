@@ -78,6 +78,10 @@ extension L10n {
             localized("order_cancel_fee_recheck_note")
         }
 
+        static func feeGraceNote(_ minutes: Int) -> String {
+            format("order_cancel_fee_grace_note", minutes)
+        }
+
         static var expressWaiverForfeit: String {
             localized("order_cancel_express_waiver_forfeit")
         }

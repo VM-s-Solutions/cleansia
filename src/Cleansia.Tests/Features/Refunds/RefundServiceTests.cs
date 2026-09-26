@@ -549,6 +549,89 @@ public class RefundServiceTests
         Assert.Equal(RefundStatus.Succeeded, Assert.Single(added).Status);
     }
 
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task IssueRefund_SuppressedCredit_DoesNotIncreaseTheCardShareOrFailTheRefund(bool mobile)
+    {
+        var order = mobile ? CreateMobileCardPaidOrder(2000m) : CreateCardPaidOrder(2000m);
+        order.ApplyCredit(500m, "user-1");
+        ArrangeOrder(order);
+        ArrangeNoExistingRefund();
+        ArrangeConsumed(0m);
+        CaptureAddedRefund(out var added);
+        var refundKey = $"refund:{OrderId}:cancel";
+        _creditAccountRepository
+            .Setup(r => r.TryReturnAsync("user-1", order.CurrencyId, 250m,
+                $"credit-return:{refundKey}", ActorId, It.IsAny<CancellationToken>(), OrderId, null))
+            .ReturnsAsync(false);
+
+        var result = await CreateService().IssueRefundAsync(
+            new RefundRequest(OrderId, 1000m, RefundReason.CustomerCancellation, ActorId), CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(750m, result.Value!.Amount);
+        Assert.Equal(750m, _stripe.LastAmount);
+        Assert.Equal(1, _stripe.RefundCallCount);
+        Assert.Equal(mobile ? 1 : 0, _stripe.PaymentIntentRefundCallCount);
+        Assert.Equal(mobile ? 0 : 1, _stripe.SessionRefundCallCount);
+        var refund = Assert.Single(added);
+        Assert.Equal(750m, refund.Amount);
+        Assert.Equal(RefundStatus.Succeeded, refund.Status);
+        Assert.Equal(PaymentStatus.PartiallyRefunded, order.PaymentStatus);
+        _creditAccountRepository.Verify(r => r.TryReturnAsync("user-1", order.CurrencyId, 250m,
+            $"credit-return:{refundKey}", ActorId, It.IsAny<CancellationToken>(), OrderId, null), Times.Once);
+    }
+
+    [Fact]
+    public async Task IssueRefund_SuppressedCredit_AllowsPendingCardRetryAndSucceededReplay()
+    {
+        var order = CreateCardPaidOrder(2000m);
+        order.ApplyCredit(500m, "user-1");
+        ArrangeOrder(order);
+        ArrangeConsumed(0m);
+        CaptureAddedRefund(out var added);
+        var refundKey = $"refund:{OrderId}:cancel";
+        _refundRepository
+            .Setup(r => r.GetByRefundKeyAsync(refundKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(() => added.SingleOrDefault());
+        _creditAccountRepository
+            .Setup(r => r.TryReturnAsync("user-1", order.CurrencyId, 500m,
+                $"credit-return:{refundKey}", ActorId, It.IsAny<CancellationToken>(), OrderId, null))
+            .ReturnsAsync(false);
+        var service = CreateService();
+        var request = new RefundRequest(OrderId, 2000m, RefundReason.CustomerCancellation, ActorId);
+
+        _stripe.ThrowOnRefund = true;
+        var failed = await service.IssueRefundAsync(request, CancellationToken.None);
+
+        Assert.True(failed.IsFailure);
+        Assert.Equal(RefundStatus.Pending, Assert.Single(added).Status);
+        Assert.Equal(PaymentStatus.Paid, order.PaymentStatus);
+        _creditAccountRepository.Verify(r => r.TryReturnAsync(It.IsAny<string>(), It.IsAny<string>(),
+            It.IsAny<decimal>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>(),
+            It.IsAny<string?>(), It.IsAny<string?>()), Times.Never);
+
+        _stripe.ThrowOnRefund = false;
+        var retried = await service.IssueRefundAsync(request, CancellationToken.None);
+        var replayed = await service.IssueRefundAsync(request, CancellationToken.None);
+
+        Assert.True(retried.IsSuccess);
+        Assert.False(retried.Value!.ResolvedToExisting);
+        Assert.Equal(1500m, retried.Value.Amount);
+        Assert.True(replayed.IsSuccess);
+        Assert.True(replayed.Value!.ResolvedToExisting);
+        Assert.Equal(retried.Value.RefundId, replayed.Value.RefundId);
+        Assert.Equal(1500m, replayed.Value.Amount);
+        Assert.Equal(1500m, _stripe.LastAmount);
+        Assert.Equal(refundKey, _stripe.LastIdempotencyKey);
+        Assert.Equal(1, _stripe.RefundCallCount);
+        Assert.Equal(RefundStatus.Succeeded, Assert.Single(added).Status);
+        Assert.Equal(PaymentStatus.Refunded, order.PaymentStatus);
+        _creditAccountRepository.Verify(r => r.TryReturnAsync("user-1", order.CurrencyId, 500m,
+            $"credit-return:{refundKey}", ActorId, It.IsAny<CancellationToken>(), OrderId, null), Times.Once);
+    }
+
     private sealed class RecordingStripeClient : IStripeClient
     {
         private readonly List<string> _refundKeys = [];

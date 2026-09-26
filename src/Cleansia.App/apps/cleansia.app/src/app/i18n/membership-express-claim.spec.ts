@@ -149,6 +149,7 @@ function expressEntries(locale: Locale): [string, string][] {
   const bundle = readLocale(locale);
   return [
     ...leafEntries(block(bundle, ['pages', 'membership']), 'pages.membership'),
+    ...leafEntries(block(bundle, ['pages', 'plus']), 'pages.plus'),
     ...leafEntries(block(bundle, ['pages', 'order']), 'pages.order'),
     ...leafEntries(block(bundle, ['api', 'membership']), 'api.membership'),
   ].filter(([, value]) => EXPRESS_STEMS.some((stem) => stem.test(value)));
@@ -213,13 +214,19 @@ describe('the Plus express perk claim matches the mechanism (T-0544 / T-0514)', 
 
   it('names the 2-to-4-hour lead window wherever it sells the perk', () => {
     for (const locale of LOCALES) {
-      const body = block(readLocale(locale), ['pages', 'membership'])[
-        'benefit_express_body'
-      ] as string;
-      expect({ locale, namesWindow: /2\D{1,6}4/.test(body) }).toEqual({
-        locale,
-        namesWindow: true,
-      });
+      const bundle = readLocale(locale);
+      for (const [path, key] of [
+        [['pages', 'membership'], 'benefit_express_body'],
+        [['pages', 'plus'], 'perk_express_body'],
+        [['pages', 'plus'], 'row_express'],
+      ] as const) {
+        const value = String(block(bundle, [...path])[key] ?? '');
+        expect({ locale, key, namesWindow: /2\D{1,6}4/.test(value) }).toEqual({
+          locale,
+          key,
+          namesWindow: true,
+        });
+      }
     }
   });
 

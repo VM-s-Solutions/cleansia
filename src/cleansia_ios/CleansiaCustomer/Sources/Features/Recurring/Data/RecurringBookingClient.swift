@@ -79,7 +79,7 @@ struct LiveRecurringBookingClient: RecurringBookingClient {
 /// customer can no longer see, pause or cancel from this screen — the one place they can. `rooms`
 /// and `bathrooms` are the scope every generated order is priced from, so a `0` understates a repeat
 /// charge rather than one.
-private extension RecurringBookingTemplateDto {
+extension RecurringBookingTemplateDto {
     func toDomain() throws -> RecurringTemplate {
         try RecurringTemplate(
             id: id.requireNonBlank("id"),
@@ -95,7 +95,8 @@ private extension RecurringBookingTemplateDto {
             paymentType: paymentType.require("paymentType"),
             startsOn: startsOn.require("startsOn"),
             endsOn: endsOn,
-            isActive: isActive.require("isActive")
+            isActive: isActive.require("isActive"),
+            requiresPaymentMethodChange: requiresPaymentMethodChange.require("requiresPaymentMethodChange")
         )
     }
 }

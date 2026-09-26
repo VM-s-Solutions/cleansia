@@ -10,7 +10,7 @@ namespace Cleansia.Tests.Features.Credit;
 /// A discharge names the currency it drains. Credit is held per currency, so "expire this customer's
 /// balance" is not one action once they hold two; the admin says which, and the platform checks it is
 /// a real currency — but NOT that it is still operated, because a balance stranded in a switched-off
-/// currency is exactly the one that must still be dischargeable before erasure.
+/// currency is still a real balance the admin must be able to expire while the account lives.
 /// </summary>
 public class ExpireCustomerCreditValidatorTests
 {

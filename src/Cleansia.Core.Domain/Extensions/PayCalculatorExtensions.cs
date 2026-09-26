@@ -12,32 +12,29 @@ public static class PayCalculatorExtensions
         var basePay = config.BasePay;
         var extraRooms = Math.Max(0, order.Rooms - 1);
         var extrasPay = (extraRooms * config.ExtraPerRoom) + (order.Bathrooms * config.ExtraPerBathroom);
-        var expensesPay = (order.TravelDistance ?? 0) * config.DistanceRatePerKm;
-        var totalPay = basePay + extrasPay + expensesPay;
+        var totalPay = basePay + extrasPay;
 
         totalPay = ApplyMinMaxClamp(totalPay, config.MinimumPay, config.MaximumPay);
 
-        var breakdown = BuildPayBreakdown(basePay, extraRooms, config.ExtraPerRoom, order.Bathrooms, config.ExtraPerBathroom, order.TravelDistance ?? 0, config.DistanceRatePerKm);
+        var breakdown = BuildPayBreakdown(basePay, extraRooms, config.ExtraPerRoom, order.Bathrooms, config.ExtraPerBathroom);
 
-        return (basePay, extrasPay, expensesPay, totalPay, breakdown);
+        return (basePay, extrasPay, 0m, totalPay, breakdown);
     }
 
     public static (decimal basePay, decimal extrasPay, decimal expensesPay, decimal totalPay, string breakdown) CalculateAggregatedPay(
         this IEnumerable<EmployeePayConfig> configs,
         Order order) =>
-        configs.CalculateAggregatedPay(order.Rooms, order.Bathrooms, order.TravelDistance);
+        configs.CalculateAggregatedPay(order.Rooms, order.Bathrooms);
 
     public static (decimal basePay, decimal extrasPay, decimal expensesPay, decimal totalPay, string breakdown) CalculateAggregatedPay(
         this IEnumerable<EmployeePayConfig> configs,
         int rooms,
-        int bathrooms,
-        decimal? travelDistance)
+        int bathrooms)
     {
         var configList = configs.ToList();
 
         var basePay = 0m;
         var extrasPay = 0m;
-        var expensesPay = 0m;
 
         var extraRooms = Math.Max(0, rooms - 1);
 
@@ -46,18 +43,17 @@ public static class PayCalculatorExtensions
             basePay += config.BasePay;
             extrasPay += config.ExtraPerRoom * extraRooms;
             extrasPay += config.ExtraPerBathroom * bathrooms;
-            expensesPay += config.DistanceRatePerKm * (travelDistance ?? 0m);
         }
 
-        var totalPay = basePay + extrasPay + expensesPay;
+        var totalPay = basePay + extrasPay;
 
         var (minimumFloor, maximumCeiling) = configList.AggregateBounds();
 
         totalPay = ApplyMinMaxClamp(totalPay, minimumFloor, maximumCeiling);
 
-        var breakdown = $"Base: {basePay:F2}, Extras: {extrasPay:F2}, Expenses: {expensesPay:F2}";
+        var breakdown = $"Base: {basePay:F2}, Extras: {extrasPay:F2}";
 
-        return (basePay, extrasPay, expensesPay, totalPay, breakdown);
+        return (basePay, extrasPay, 0m, totalPay, breakdown);
     }
 
     /// <summary>
@@ -112,9 +108,7 @@ public static class PayCalculatorExtensions
         int extraRooms,
         decimal perRoom,
         int bathrooms,
-        decimal perBathroom,
-        decimal distance,
-        decimal perKm)
+        decimal perBathroom)
     {
         var parts = new List<string>
         {
@@ -129,11 +123,6 @@ public static class PayCalculatorExtensions
         if (bathrooms > 0 && perBathroom > 0)
         {
             parts.Add($"Bathrooms({bathrooms}): {bathrooms * perBathroom:F2}");
-        }
-
-        if (distance > 0 && perKm > 0)
-        {
-            parts.Add($"Distance({distance:F1}km): {distance * perKm:F2}");
         }
 
         return string.Join(", ", parts);

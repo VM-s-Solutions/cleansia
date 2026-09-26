@@ -66,7 +66,8 @@ public sealed class CancelOrderAuditEvidenceTests
                 _producer.Object,
                 _liveActivityProducer.Object,
                 _expressWaiverConsumer.Object,
-                _auditContext));
+                _auditContext,
+                TimeProvider.System));
 
     private void ArrangePlusMember(int freeCancellationWindowHours = 4)
     {
@@ -88,7 +89,8 @@ public sealed class CancelOrderAuditEvidenceTests
         string ownerUserId = UserId,
         PaymentType paymentType = PaymentType.Card,
         PaymentStatus paymentStatus = PaymentStatus.Paid,
-        OrderStatus? currentStatus = null)
+        OrderStatus? currentStatus = null,
+        int bookedMinutesAgo = 2 * 24 * 60)
     {
         var currency = Currency.Create("CZK", "Kč", "Czech Koruna");
         currency.Id = CurrencyId;
@@ -106,7 +108,7 @@ public sealed class CancelOrderAuditEvidenceTests
             paymentStatus: paymentStatus,
             userId: ownerUserId);
         order.Id = OrderId;
-        order.Created("tester", DateTime.UtcNow.AddDays(-2));
+        order.Created("tester", DateTime.UtcNow.AddMinutes(-bookedMinutesAgo));
         order.SetCurrency(currency);
         order.AssignStripeSessionId("cs_test_ev");
 
@@ -173,6 +175,7 @@ public sealed class CancelOrderAuditEvidenceTests
         Assert.InRange(payload.GetProperty("hoursBeforeCleaning").GetDecimal(), 2.9m, 3.0m);
         Assert.InRange(payload.GetProperty("minutesSinceBooking").GetDecimal(), 2879m, 2881m);
         Assert.Equal(4, payload.GetProperty("freeCancellationHoursApplied").GetInt32());
+        Assert.Equal(BookingPolicy.OopsWindowMinutesPlus, payload.GetProperty("oopsMinutesApplied").GetInt32());
         Assert.False(payload.GetProperty("expressWaiverReleased").GetBoolean());
         Assert.True(payload.GetProperty("refundInitiated").GetBoolean());
         Assert.Equal("card", payload.GetProperty("paymentType").GetString());
@@ -185,10 +188,11 @@ public sealed class CancelOrderAuditEvidenceTests
         Assert.Equal(BookingPolicy.PartialCancellationFeeRate, figures.GetProperty("partialRate").GetDecimal());
         Assert.Equal(BookingPolicy.LastMinuteCancellationFeeRate, figures.GetProperty("lastMinuteRate").GetDecimal());
         Assert.Equal(BookingPolicy.OopsWindowMinutesStandard, figures.GetProperty("oopsMinutesStandard").GetInt32());
-        Assert.Equal(BookingPolicy.OopsWindowMinutesFirstTime, figures.GetProperty("oopsMinutesFirstTime").GetInt32());
+        Assert.Equal(BookingPolicy.OopsWindowMinutesPlus, figures.GetProperty("oopsMinutesPlus").GetInt32());
+        Assert.False(figures.TryGetProperty("oopsMinutesFirstTime", out _));
 
         var members = payload.EnumerateObject().Select(p => p.Name).ToList();
-        Assert.Equal(17, members.Count);
+        Assert.Equal(18, members.Count);
         Assert.DoesNotContain(members, m =>
             m.EndsWith("Reason", StringComparison.OrdinalIgnoreCase)
             || m.EndsWith("Name", StringComparison.OrdinalIgnoreCase)
@@ -213,6 +217,7 @@ public sealed class CancelOrderAuditEvidenceTests
         Assert.Equal(0m, payload.GetProperty("feeRate").GetDecimal());
         Assert.False(payload.GetProperty("hasBeenAccepted").GetBoolean());
         Assert.Equal(BookingPolicy.FreeCancellationHours, payload.GetProperty("freeCancellationHoursApplied").GetInt32());
+        Assert.Equal(BookingPolicy.OopsWindowMinutesStandard, payload.GetProperty("oopsMinutesApplied").GetInt32());
         // The release was asked for (no cleaner ever took the job) and answered "no slot": the row
         // records the answer, not the asking.
         _expressWaiverConsumer.Verify(c => c.ReleaseForOrderAsync(OrderId, It.IsAny<CancellationToken>()), Times.Once);
@@ -223,6 +228,39 @@ public sealed class CancelOrderAuditEvidenceTests
         Assert.Equal("pending", payload.GetProperty("paymentStatus").GetString());
         Assert.True(payload.GetProperty("reasonProvided").GetBoolean());
         Assert.DoesNotContain("changed my plans", _auditContext.DrainSnapshot()?.AfterJson ?? string.Empty);
+    }
+
+    [Fact]
+    public async Task A_Plus_Member_Cancelling_An_Accepted_Job_Half_An_Hour_After_Booking_Records_The_Free_Oops_Tier_And_Sixty_Minutes()
+    {
+        ArrangePlusMember();
+        ArrangeOrder(DateTime.UtcNow.AddHours(3), bookedMinutesAgo: 30);
+
+        var result = await CreateHandler().Handle(new CancelOrder.Command(OrderId, Reason: null), CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        var payload = Payload(_auditContext.DrainSnapshot());
+        Assert.Equal("freeOopsWindow", payload.GetProperty("tier").GetString());
+        Assert.Equal(0m, payload.GetProperty("feeAmount").GetDecimal());
+        Assert.Equal(1000m, payload.GetProperty("refundAmount").GetDecimal());
+        Assert.Equal(BookingPolicy.OopsWindowMinutesPlus, payload.GetProperty("oopsMinutesApplied").GetInt32());
+    }
+
+    [Fact]
+    public async Task A_Standard_Customer_Cancelling_An_Accepted_Job_Half_An_Hour_After_Booking_Records_The_Paid_Tier_And_Fifteen_Minutes()
+    {
+        _membershipRepository
+            .Setup(r => r.GetEntitledForUserNoTrackingAsync(UserId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((UserMembership?)null);
+        ArrangeOrder(DateTime.UtcNow.AddHours(3), bookedMinutesAgo: 30);
+
+        var result = await CreateHandler().Handle(new CancelOrder.Command(OrderId, Reason: null), CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        var payload = Payload(_auditContext.DrainSnapshot());
+        Assert.Equal("lastMinute", payload.GetProperty("tier").GetString());
+        Assert.Equal(500m, payload.GetProperty("feeAmount").GetDecimal());
+        Assert.Equal(BookingPolicy.OopsWindowMinutesStandard, payload.GetProperty("oopsMinutesApplied").GetInt32());
     }
 
     [Fact]

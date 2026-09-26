@@ -204,6 +204,7 @@ public class GetActionTimeline
         EmployeeAuditAction.CoverRequested => "employee.order.cover_requested",
         EmployeeAuditAction.OrderDropped => "employee.order.dropped",
         EmployeeAuditAction.ContractAccepted => "employee.order.contract_accepted",
+        EmployeeAuditAction.AccessInstructionsRead => "employee.order.access_instructions_read",
         _ => throw new ArgumentOutOfRangeException(nameof(action), action, null),
     };
 }

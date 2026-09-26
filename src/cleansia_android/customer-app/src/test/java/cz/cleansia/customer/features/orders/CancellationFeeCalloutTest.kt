@@ -21,6 +21,7 @@ class CancellationFeeCalloutTest {
         feeAmount: Double = 0.0,
         refundAmount: Double = 0.0,
         expressWaiverForfeited: Boolean = false,
+        graceMinutes: Int? = null,
     ) = CancellationFeePreviewDto(
         orderId = "order-1",
         tier = tier,
@@ -30,6 +31,7 @@ class CancellationFeeCalloutTest {
         totalPrice = 1000.0,
         currencyCode = "CZK",
         expressWaiverForfeitedOnCancel = expressWaiverForfeited,
+        oopsWindowMinutes = graceMinutes,
     )
 
     @Test
@@ -121,6 +123,27 @@ class CancellationFeeCalloutTest {
     fun `no warning when the server says nothing is forfeited`() {
         (0..4).forEach { tier ->
             assertTrue(!cancellationFeeCallout(preview(tier = tier))!!.warnsExpressWaiverForfeited)
+        }
+    }
+
+    /** The grace is the customer's own, so the sheet states the server's figure on every tier. */
+    @Test
+    fun `the server's grace rides every tier unchanged`() {
+        listOf(15, 60).forEach { minutes ->
+            (0..4).forEach { tier ->
+                assertEquals(
+                    "tier $tier restated the grace",
+                    minutes,
+                    cancellationFeeCallout(preview(tier = tier, graceMinutes = minutes))!!.graceMinutes,
+                )
+            }
+        }
+    }
+
+    @Test
+    fun `no grace from the server states none`() {
+        (0..4).forEach { tier ->
+            assertNull(cancellationFeeCallout(preview(tier = tier))!!.graceMinutes)
         }
     }
 }

@@ -7,19 +7,10 @@ import {
   signal,
 } from '@angular/core';
 import { computed } from '@angular/core';
-import { toSignal } from '@angular/core/rxjs-interop';
-import {
-  FormBuilder,
-  FormGroup,
-  FormsModule,
-  ReactiveFormsModule,
-  Validators,
-} from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import {
   CleansiaButtonComponent,
   CleansiaScrollTopComponent,
-  CleansiaTextInputComponent,
 } from '@cleansia/components';
 import { FoamEdgeComponent } from '@cleansia-customer/home';
 import {
@@ -42,13 +33,10 @@ import { TrackOrderFacade } from './track-order.facade';
   standalone: true,
   imports: [
     CommonModule,
-    FormsModule,
-    ReactiveFormsModule,
     RouterLink,
     TranslatePipe,
     CleansiaButtonComponent,
     CleansiaScrollTopComponent,
-    CleansiaTextInputComponent,
     FoamEdgeComponent,
     OrderStatusLabelPipe,
     OrderStatusIconPipe,
@@ -84,46 +72,18 @@ export class TrackOrderComponent implements OnInit {
     { key: 'completed', value: OrderStatus.Completed },
   ];
 
-  private readonly fb = inject(FormBuilder);
-
-  /**
-   * A real form, not three loose signals. The fields accepted anything at all
-   * — a lookup could be fired with `abc` as an e-mail — so every attempt cost
-   * a round trip against a rate-limited endpoint to be told what the browser
-   * already knew.
-   *
-   * The confirmation code is `Guid.NewGuid().ToString("N")[..6].ToUpper()`:
-   * exactly six characters, hexadecimal, generated uppercase. The pattern
-   * accepts either case because it is read off an e-mail and typed by hand,
-   * and the server compares case-insensitively.
-   */
-  readonly form: FormGroup = this.fb.nonNullable.group({
-    orderNumber: ['', [Validators.required, Validators.minLength(3)]],
-    email: ['', [Validators.required, Validators.email]],
-    confirmationCode: [
-      '',
-      [
-        // Length first: a short code is the common mistake and
-        // "at least 6 characters" says what to do, where the pattern's
-        // message can only say the field is wrong. The pattern still runs, for
-        // the rarer case of six characters that are not hexadecimal.
-        Validators.required,
-        Validators.minLength(6),
-        Validators.maxLength(6),
-        Validators.pattern(/^[0-9a-fA-F]+$/),
-      ],
-    ],
-  });
-
   // State
   loading = signal(false);
   recentOrders = signal<LookupOrderResponse[]>([]);
   readonly manualResult = this.facade.selectedOrder;
   error = signal<string | null>(null);
-  searched = signal(false);
+
+  /** The token the e-mail link carried, kept so a failed attempt can be retried. */
+  private readonly linkToken = signal('');
+  readonly hasLink = computed(() => this.linkToken().length > 0);
 
   /**
-   * The page's one branch. The form IS the page until an order is found, and
+   * The page's one branch. The link IS the page until an order is found, and
    * the order is the page after that — there is no third thing to toggle, so
    * the flag that used to gate the form went with the second screen.
    */
@@ -144,19 +104,6 @@ export class TrackOrderComponent implements OnInit {
   formatAmount(amount: number, currency: string | undefined): string {
     return formatMoney(amount, currency, localeFor(this.translate.currentLang));
   }
-
-  /**
-   * Whether the three values are even worth sending. `form.valid` is not a
-   * signal, so this is bumped by the form's own value stream — the button has
-   * to react to typing.
-   */
-  private readonly formValue = toSignal(this.form.valueChanges, {
-    initialValue: this.form.getRawValue(),
-  });
-  readonly canSubmit = computed(() => {
-    this.formValue();
-    return this.form.valid;
-  });
 
   readonly isPaid = computed(
     () => this.manualResult()?.paymentStatus?.value === PaymentStatus.Paid,
@@ -291,13 +238,12 @@ export class TrackOrderComponent implements OnInit {
       : 'pages.track_order.price_note_cash',
   );
 
-  /** Back to the form, with the fields kept so a typo can be corrected. */
+  /** Back to the page the link landed on, with the remembered bookings still listed. */
   reset(): void {
     if (!this.facade.clearSelection()) return;
     this.lookupVersion++;
     this.loading.set(false);
     this.error.set(null);
-    this.searched.set(false);
   }
 
   formatDuration(minutes: number | undefined): string {
@@ -309,74 +255,54 @@ export class TrackOrderComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    const params = this.route.snapshot.queryParams;
-    if (params['orderNumber'] || params['email'] || params['code']) {
-      // A deep link prefills whatever it carries; the lookup only fires when
-      // the three together are actually valid, rather than firing a request
-      // that has to fail.
-      this.form.patchValue({
-        orderNumber: params['orderNumber'] ?? '',
-        email: params['email'] ?? '',
-        confirmationCode: params['code'] ?? '',
-      });
-      if (this.form.valid) this.lookup();
-    } else {
-      this.loadGuestOrders();
+    const token = this.route.snapshot.queryParams['token'] ?? '';
+    this.loadGuestOrders();
+    if (token) {
+      this.linkToken.set(token);
+      this.lookup(token);
     }
+  }
+
+  retry(): void {
+    if (this.hasLink()) this.lookup(this.linkToken());
   }
 
   private loadGuestOrders(): void {
     const guestOrders = this.guestOrderService.getAll();
     if (guestOrders.length === 0) return;
 
-    this.loading.set(true);
     this.facade
-      .lookupBatch(guestOrders.map((o) => ({ orderId: o.orderId, email: o.email })))
+      .lookupBatch(guestOrders.map((o) => o.accessToken))
       .pipe(takeUntil(this.facade.destroyed$))
       .subscribe({
         next: (data: LookupOrderBatchResponse) => {
           this.recentOrders.set(data.orders || []);
-          this.loading.set(false);
         },
-        error: () => {
-          // The remembered list is a convenience — the form below still works.
-          this.loading.set(false);
-        },
+        // The remembered list is a convenience — the rest of the page still reads.
+        error: () => undefined,
       });
   }
 
-  lookup(): void {
+  lookup(accessToken: string): void {
     if (this.loading() || this.facade.cancelling()) return;
-    // Touch everything first: a field the customer never focused has no error
-    // to show until it is marked, so an invalid submit would look like nothing
-    // happened at all.
-    if (this.form.invalid) {
-      this.form.markAllAsTouched();
-      return;
-    }
 
-    const { orderNumber, email, confirmationCode } = this.form.getRawValue();
     const version = ++this.lookupVersion;
-
     this.loading.set(true);
     this.error.set(null);
     this.facade.clearSelection();
-    this.searched.set(true);
 
     this.facade
-      .lookup(orderNumber.trim(), email.trim(), confirmationCode.trim())
+      .lookup(accessToken)
       .pipe(takeUntil(this.facade.destroyed$))
       .subscribe({
         next: (data) => {
           if (version !== this.lookupVersion) return;
-          this.facade.selectOrder(data, email, confirmationCode);
+          this.facade.selectOrder(data, accessToken);
           this.loading.set(false);
         },
         error: () => {
           if (version !== this.lookupVersion) return;
-          this.error.set(
-            this.translate.instant('pages.track_order.not_found')
-          );
+          this.error.set('pages.track_order.link_expired');
           this.loading.set(false);
         },
       });
@@ -396,7 +322,6 @@ export class TrackOrderComponent implements OnInit {
     this.lookupVersion++;
     this.loading.set(false);
     this.error.set(null);
-    this.searched.set(true);
   }
 
   formatDate(date: string | Date | undefined): string {

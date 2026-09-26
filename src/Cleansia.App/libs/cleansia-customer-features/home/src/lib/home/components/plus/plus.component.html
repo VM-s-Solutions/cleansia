@@ -12,14 +12,21 @@
           is the drift this replaced.
         -->
         <h2 class="cl-plus__title">
-          {{
-            'pages.home.plus.title'
-              | translate
-                : {
-                    price: formatPrice(facts.monthlyPlan()!.price),
-                    days: facts.trialDays()
-                  }
-          }}
+          @if (facts.trialDays() > 0) {
+            {{
+              'pages.home.plus.title'
+                | translate
+                  : {
+                      price: formatPrice(facts.monthlyPlan()!.price),
+                      days: facts.trialDays()
+                    }
+            }}
+          } @else {
+            {{
+              'pages.home.plus.title_no_trial'
+                | translate: { price: formatPrice(facts.monthlyPlan()!.price) }
+            }}
+          }
         </h2>
 
         <ul class="cl-plus__perks">
@@ -29,6 +36,7 @@
           <li>
             {{ 'pages.home.plus.perk2' | translate: { hours: facts.cancellationHours() } }}
           </li>
+          <li>{{ 'pages.home.plus.perk_grace' | translate }}</li>
           @if (facts.hasExpressPerk()) {
             <li>
               {{ 'pages.home.plus.perk3' | translate: { count: facts.expressPerMonth() } }}
@@ -39,7 +47,11 @@
 
         <div class="cl-plus__actions">
           <a class="cl-btn cl-btn--inverse cl-plus__cta" [routerLink]="ctaLink()">
-            {{ 'pages.home.plus.cta' | translate }}
+            @if (facts.trialDays() > 0) {
+              {{ 'pages.home.plus.cta' | translate }}
+            } @else {
+              {{ 'pages.home.plus.cta_no_trial' | translate }}
+            }
           </a>
           @if (facts.yearlyPlan(); as yearly) {
             <span class="cl-plus__yearly">

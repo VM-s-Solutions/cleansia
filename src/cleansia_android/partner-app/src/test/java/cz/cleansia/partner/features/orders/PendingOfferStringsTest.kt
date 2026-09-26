@@ -11,8 +11,8 @@ import org.junit.Test
  * placeholder throws only at render, and a sentence that says too much is a policy breach nothing
  * else in the tree can see.
  *
- * These read every locale's `strings.xml` off disk through a path Gradle does not track, so they are
- * a silent non-run unless the task is forced (`--rerun-tasks --no-build-cache`).
+ * These read every locale's `strings.xml` off disk. The module's test task declares those files as
+ * the `localeStrings` input (build.gradle.kts), so a copy-only change re-runs them.
  */
 class PendingOfferStringsTest {
 

@@ -111,10 +111,6 @@ public class Order : TenantAuditable
 
     public int MaxEmployees { get; private set; } = 1;
 
-    // One number, named on OrderDuration. It was 120 here and 120 in the quote,
-    // which is two copies of a rule that must not drift.
-    private const int StandardWorkUnitMinutes = OrderDuration.MinutesPerEmployee;
-
     /// <summary>
     /// Query floor for the overlap scan. <b>It may only ever be too GENEROUS</b> — too generous costs a
     /// wider scan of a near-empty band; too tight makes an overlapping order invisible on the booking
@@ -299,6 +295,28 @@ public class Order : TenantAuditable
     public string? CancellationReason { get; private set; }
 
     /// <summary>
+    /// The express surcharge this booking was charged, in the order's currency. Zero when none applied.
+    /// The receipt's term between its raw catalogue lines and its discounts, which are measured against
+    /// the charged price.
+    ///
+    /// <para>Stored rather than derived as <c>Total − lines + discounts</c>: that derivation would print
+    /// any gap between the lines and the total — a line a loader did not read, a rounding cent — as an
+    /// express surcharge the customer was never charged.</para>
+    /// </summary>
+    public decimal ExpressSurchargeAmount { get; private set; }
+
+    /// <summary>
+    /// The language the customer booked in, as the booking request stated it. Null where no customer
+    /// made a request — a recurring occurrence — and on orders booked before it was recorded.
+    ///
+    /// <para>The customer's documents read this before the account's stored preference: a guest has no
+    /// account to read, and an account's preference is only as current as the last client that wrote it.
+    /// → GenerateReceiptHandler.DocumentLanguage</para>
+    /// </summary>
+    [MaxLength(5)]
+    public string? LanguageCode { get; private set; }
+
+    /// <summary>
     /// Loyalty tier discount applied at create-time (CZK amount, not %).
     /// Null when no loyalty discount applied (legacy/anon orders, Bronze tier, or no qualifying account).
     /// </summary>
@@ -325,10 +343,9 @@ public class Order : TenantAuditable
     public string? PromoCodeId { get; private set; }
 
     /// <summary>
-    /// Membership discount applied at create-time (CZK amount, not %). Null
-    /// when no membership discount applied (no active membership, or tier/promo
-    /// won the best-wins comparison). Mutually exclusive with TierDiscountAmount
-    /// and PromoDiscountAmount — only one of the three can be non-null.
+    /// Membership discount applied at create-time in the order's currency. Adds to
+    /// TierDiscountAmount under the combined cap; a larger promo replaces both.
+    /// Null when no membership discount applied.
     /// </summary>
     public decimal? MembershipDiscountAmount { get; private set; }
 
@@ -476,12 +493,11 @@ public class Order : TenantAuditable
         decimal? tierDiscountAmount = null,
         LoyaltyTier? tierAtPurchase = null,
         // Promo: optional snapshot of the promo discount applied at booking
-        // time. Mutually exclusive with tierDiscountAmount in practice — the
-        // CreateOrder handler picks best-wins between tier and promo.
+        // time. A larger promo replaces the combined membership and tier discount.
         decimal? promoDiscountAmount = null,
         string? promoCodeId = null,
         // Membership: optional snapshot of the Cleansia Plus discount applied
-        // at booking time. Mutually exclusive with tier/promo via best-wins.
+        // at booking time. Adds to the tier discount under the combined cap.
         decimal? membershipDiscountAmount = null,
         string? membershipPlanIdAtPurchase = null,
         // Optional customer-requested cleaner. Used as a matching hint;
@@ -759,17 +775,22 @@ public class Order : TenantAuditable
         return this;
     }
 
-    public Order SetTravelDistance(decimal distance)
+    /// <summary>
+    /// Records the express surcharge charged on this booking. Zero is the normal case.
+    /// </summary>
+    public Order SetExpressSurcharge(decimal amount)
     {
-        if (distance < 0)
-        {
-            throw new ArgumentException("Travel distance cannot be negative", nameof(distance));
-        }
+        ArgumentOutOfRangeException.ThrowIfLessThan(amount, 0m);
 
-        TravelDistance = distance;
+        ExpressSurchargeAmount = amount;
         return this;
     }
 
+    public Order SetLanguage(string? languageCode)
+    {
+        LanguageCode = languageCode;
+        return this;
+    }
 
     /// <summary>
     /// Seats a cleaner and stamps which seat they took — the smallest FREE ordinal, not a count, so an
@@ -844,9 +865,7 @@ public class Order : TenantAuditable
     {
         ArgumentOutOfRangeException.ThrowIfNegative(spareSeats);
 
-        RequiredEmployees = EstimatedTime <= 0
-            ? 1
-            : (int)Math.Ceiling((double)EstimatedTime / StandardWorkUnitMinutes);
+        RequiredEmployees = OrderDuration.RequiredEmployees(EstimatedTime);
         MaxEmployees = RequiredEmployees + spareSeats;
 
         return this;
@@ -979,5 +998,25 @@ public class Order : TenantAuditable
             issue.Anonymize();
         }
         return this;
+    }
+
+    /// <summary>
+    /// Moves this order to an anonymised copy without modifying its deduped source address.
+    /// The caller stages the copy and deletes the source only when no other owner needs it.
+    /// </summary>
+    public Address? AnonymizeCustomerAddress()
+    {
+        if (CustomerAddress is null)
+        {
+            return null;
+        }
+
+        var copy = Address.Create(
+            AnonymizationMarker.Value, AnonymizationMarker.Value, AnonymizationMarker.Value, CustomerAddress.CountryId)
+            .Anonymize();
+        copy.TenantId = TenantId;
+        CustomerAddress = copy;
+        CustomerAddressId = copy.Id;
+        return copy;
     }
 }

@@ -37,17 +37,27 @@ Order Wizard → submitOrder() → orderClient.createOrder()
 1. The `OrderWizardFacade.submitOrder()` calls `customerClient.orderClient.createOrder(command)` when `paymentType === PaymentType.Cash`
 2. On success, the router navigates to `/checkout/success?type=cash`
 
+Only a signed-in customer whose booking needs one cleaner reaches this path: the wizard offers cash on
+no other booking, and the server refuses it with `order.cash_not_available`, in which case the wizard
+clears the choice and goes back to the payment step. A guest's booking is always the card path above.
+→ [Order wizard — payment method](/customer-app/ordering-flow#step-3-payment-method)
+
 ## Guest Order Tracking
 
-Regardless of payment method, when an order is created successfully:
+A successful **guest** create response — always a card booking, since cash is signed-in only —
+carries the booking's access token, and the wizard keeps it:
 
 ```typescript
-if (response.id) {
-  this.guestOrderService.save(response.id, data.customerEmail);
+if (response.id && response.guestAccessToken) {
+  this.guestOrderService.save(response.id, response.guestAccessToken);
 }
 ```
 
-The `GuestOrderService` stores `{ orderId, email }` pairs in `localStorage`, allowing unauthenticated users to track their orders later via the `/track-order` page.
+`GuestOrderService` stores `{ orderId, accessToken, createdAt }` in `localStorage` (five entries, a
+token per entry), which is what lets an unauthenticated customer reopen the booking from
+`/track-order` without going back to their mailbox. `guestAccessToken` is `null` when the command
+carried a session — an account booking mints none, because its owner signs in instead — so nothing is
+saved for a signed-in customer. → [Order tracking](/customer-app/order-tracking)
 
 ## Checkout Routes
 
@@ -78,6 +88,18 @@ ordersRoute = this.authService.isLoggedIn()
   : '/' + CleansiaCustomerRoute.TRACK_ORDER;
 ```
 
+**The page shows the booking only when it can prove it.** Both paths name the booking in the URL —
+the wizard puts `?orderId=` on the cash navigation and Stripe returns it on the card one — and an id
+in a URL proves nothing, so each visitor reads it back with what they actually hold: a **guest** with
+the booking's access token out of `GuestOrderService` (through `LookupBatch`), a **signed-in**
+customer with their session (through `GetById`). A guest booking mints no token for an account and an
+account booking mints none at all, so the two reads never cross.
+
+When neither can prove it — a browser that did not place this booking, a session the booking does not
+belong to — the page keeps its headline, its three steps and its actions and simply states no figures.
+A refused read and an unknown booking answer identically, so the page cannot be asked whether somebody
+else's order exists.
+
 ### Cancel Page (`/checkout/cancel`)
 
 Shown when the user cancels the Stripe payment. Provides a link back to the home page or to retry the order.
@@ -91,10 +113,10 @@ Orders have a `PaymentStatus` enum tracked throughout their lifecycle, **indepen
 | Status | Value | Description |
 |---|---|---|
 | `Pending` | `1` | Payment not yet received |
-| `Paid` | `2` | Payment confirmed — the webhook also writes `OrderStatus.Confirmed` |
+| `Paid` | `2` | Payment confirmed — the order stays at `OrderStatus.New` until a cleaner takes it ([ADR-0057](/decisions/adr-0057)) |
 | `Failed` | `3` | Payment attempt failed, or the stale-order sweep gave up on it |
 | `Refunded` | `4` | Payment was refunded |
-| `Disputed` | `5` | Payment is under dispute |
+| `Disputed` | `5` | Reserved; nothing writes it. A chargeback is recorded as a `Chargeback` dispute, not on this axis |
 | `PartiallyRefunded` | `6` | Part of the payment was refunded |
 
 ::: warning An abandoned checkout is swept, not left forever

@@ -60,12 +60,6 @@
           <i class="pi pi-calendar"></i>
           {{ facade.formatDateTime(facade.order()?.createdOn) }}
         </span>
-        @if (facade.order()?.confirmationCode) {
-        <span class="detail-identity__meta-item">
-          <i class="pi pi-key"></i>
-          {{ facade.order()?.confirmationCode }}
-        </span>
-        }
       </div>
     </div>
 

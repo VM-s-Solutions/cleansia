@@ -5,11 +5,9 @@ using Cleansia.Core.Domain.Repositories;
 namespace Cleansia.Core.AppServices.Services;
 
 /// <summary>
-/// Default implementation: looks up the user's active membership and uses its
-/// FreeCancellationWindowHours when one exists, otherwise returns the standard
-/// BookingPolicy values. Today (no Plus product live) every call returns the
-/// standard policy. When Plus launches, members automatically pick up the
-/// wider free window without any changes here.
+/// The standard <see cref="BookingPolicy"/> figures, adjusted for an ENTITLED (paid, current) Plus
+/// membership: the Plus oops window always, and the plan's free-cancellation hours when it sets any.
+/// Read live on every call — a membership that lapsed since the preview is judged as it stands now.
 /// </summary>
 public class CancellationPolicyResolver(IUserMembershipRepository userMembershipRepository)
     : ICancellationPolicyResolver
@@ -18,29 +16,31 @@ public class CancellationPolicyResolver(IUserMembershipRepository userMembership
         string? userId,
         CancellationToken cancellationToken)
     {
-        var defaultPolicy = new CancellationPolicy(
+        var standardPolicy = new CancellationPolicy(
             FreeCancellationHours: BookingPolicy.FreeCancellationHours,
             PartialCancellationHours: BookingPolicy.PartialCancellationHours,
             PartialCancellationFeeRate: BookingPolicy.PartialCancellationFeeRate,
-            LastMinuteCancellationFeeRate: BookingPolicy.LastMinuteCancellationFeeRate);
+            LastMinuteCancellationFeeRate: BookingPolicy.LastMinuteCancellationFeeRate,
+            OopsWindowMinutes: BookingPolicy.OopsWindowMinutesStandard);
 
         if (string.IsNullOrEmpty(userId))
         {
-            return defaultPolicy;
+            return standardPolicy;
         }
 
-        var activeMembership = await userMembershipRepository
+        var entitledMembership = await userMembershipRepository
             .GetEntitledForUserNoTrackingAsync(userId, cancellationToken);
 
-        if (activeMembership == null
-            || activeMembership.MembershipPlan.FreeCancellationWindowHours <= 0)
+        if (entitledMembership == null)
         {
-            return defaultPolicy;
+            return standardPolicy;
         }
 
-        return defaultPolicy with
+        var planFreeHours = entitledMembership.MembershipPlan.FreeCancellationWindowHours;
+        return standardPolicy with
         {
-            FreeCancellationHours = activeMembership.MembershipPlan.FreeCancellationWindowHours,
+            OopsWindowMinutes = BookingPolicy.OopsWindowMinutesPlus,
+            FreeCancellationHours = planFreeHours > 0 ? planFreeHours : standardPolicy.FreeCancellationHours,
         };
     }
 }

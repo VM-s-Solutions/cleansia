@@ -83,7 +83,6 @@ public static class EmployeePayrollMappers
             config.BasePay,
             config.ExtraPerRoom,
             config.ExtraPerBathroom,
-            config.DistanceRatePerKm,
             config.MinimumPay,
             config.MaximumPay,
             config.CurrencyId,

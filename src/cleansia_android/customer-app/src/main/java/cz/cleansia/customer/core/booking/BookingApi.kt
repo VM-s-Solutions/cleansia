@@ -111,6 +111,9 @@ private fun Int.toWirePaymentType(): GenPaymentType? = when (this) {
  *
  * The three nullable-by-design discounts stay nullable: absent means "no tier discount", which is a
  * different sentence from "a 0 Kč tier discount applied".
+ *
+ * `requiredEmployees` decides whether cash is offered, and a defaulted crew of one offers it on every
+ * multi-cleaner booking.
  */
 private fun GenQuoteOrderResponse.toAppDto(): QuoteOrderResponse? {
     return QuoteOrderResponse(
@@ -129,6 +132,7 @@ private fun GenQuoteOrderResponse.toAppDto(): QuoteOrderResponse? {
         expressSurchargeApplied = expressSurchargeApplied ?: return null,
         expressSurchargeAmount = expressSurchargeAmount ?: return null,
         expressSurchargeWaivedByMembership = expressSurchargeWaivedByMembership ?: return null,
+        requiredEmployees = requiredEmployees ?: return null,
     )
 }
 

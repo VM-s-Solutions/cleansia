@@ -319,7 +319,7 @@ public class OrderSpanCapTests
             Bathrooms: 1,
             SelectedExtraSlugs: [],
             CleaningDate: DateTime.UtcNow.AddDays(3),
-            PaymentType: PaymentType.Cash,
+            PaymentType: PaymentType.Card,
             Currency: Czk,
             SelectedServiceIds: [ServiceId],
             SelectedPackageIds: [PackageId],

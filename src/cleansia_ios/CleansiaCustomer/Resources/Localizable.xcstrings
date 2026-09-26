@@ -1858,6 +1858,41 @@
         }
       }
     },
+    "booking_cancel_grace_note": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Do 15 minut od objednání neplatíte nic — s Cleansia Plus do 60 minut."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Within 15 minutes of booking you pay nothing — within 60 minutes with Cleansia Plus."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "В течение 15 минут после заказа вы не платите ничего — с Cleansia Plus в течение 60 минут."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Do 15 minút od objednania neplatíte nič — s Cleansia Plus do 60 minút."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Протягом 15 хвилин після замовлення ви не платите нічого — з Cleansia Plus протягом 60 хвилин."
+          }
+        }
+      }
+    },
     "booking_cancel_hint": {
       "extractionState": "stale",
       "localizations": {
@@ -2204,6 +2239,146 @@
           "stringUnit": {
             "state": "translated",
             "value": "Політика скасування"
+          }
+        }
+      }
+    },
+    "booking_cash_cleared": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Platba hotově už pro tuto objednávku není možná, a proto není vybrán žádný způsob platby. Zvolte, jak chcete platit."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cash is no longer available for this booking, so no payment method is selected. Choose how you want to pay."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Оплата наличными для этого заказа больше недоступна, поэтому способ оплаты не выбран. Выберите, как вы хотите платить."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Platba v hotovosti už pre túto objednávku nie je možná, preto nie je vybraný žiadny spôsob platby. Zvoľte, ako chcete platiť."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Оплата готівкою для цього замовлення більше недоступна, тому спосіб оплати не обрано. Оберіть, як ви хочете платити."
+          }
+        }
+      }
+    },
+    "booking_cash_needs_account": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hotově mohou platit jen přihlášení zákazníci. Přihlaste se, pokud chcete platit hotově, nebo zaplaťte kartou."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cash is only for signed-in customers. Sign in to pay in cash, or pay by card."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Наличными могут платить только клиенты, вошедшие в аккаунт. Войдите, чтобы платить наличными, или оплатите картой."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "V hotovosti môžu platiť len prihlásení zákazníci. Prihláste sa, ak chcete platiť v hotovosti, alebo zaplaťte kartou."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Готівкою можуть платити лише клієнти, які увійшли в акаунт. Увійдіть, щоб платити готівкою, або сплатіть карткою."
+          }
+        }
+      }
+    },
+    "booking_cash_needs_card": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Počet uklízečů potřebných pro tuto objednávku: %d. Hotově lze platit jen objednávky, které zvládne jeden uklízeč, tuto proto zaplatíte kartou."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cleaners needed for this booking: %d. Cash is only for bookings one cleaner handles alone, so this one is paid by card."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Количество уборщиков для этого заказа: %d. Наличными можно платить только за заказы, с которыми справится один уборщик, поэтому этот заказ оплачивается картой."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Počet upratovačov potrebných pre túto objednávku: %d. V hotovosti sa dá platiť len za objednávky, ktoré zvládne jeden upratovač, túto preto zaplatíte kartou."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Кількість прибиральників для цього замовлення: %d. Готівкою можна платити лише за замовлення, з якими впорається один прибиральник, тож це замовлення сплачується карткою."
+          }
+        }
+      }
+    },
+    "booking_cash_pending": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zda můžete platit hotově, potvrdíme, jakmile bude známa cena."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Whether you can pay in cash is confirmed once the price is ready."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Можно ли платить наличными, мы подтвердим, как только будет известна цена."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Či môžete platiť v hotovosti, potvrdíme, keď bude známa cena."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Чи можна платити готівкою, ми підтвердимо, щойно буде відома ціна."
           }
         }
       }
@@ -7048,31 +7223,31 @@
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Tímto trvale smažete svůj účet a data. Toto nelze vrátit zpět."
+            "value": "Tímto trvale smažete svůj účet a data. Toto nelze vrátit zpět. Nevyčerpaný kredit na účtu dokončením smazání propadá — nelze ho vyplatit ani obnovit."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "This permanently deletes your account and data. This cannot be undone."
+            "value": "This permanently deletes your account and data. This cannot be undone. Any unused credit on your account is forfeited once the deletion completes — it cannot be paid out or restored."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Это навсегда удалит ваш аккаунт и данные. Это нельзя отменить."
+            "value": "Это навсегда удалит ваш аккаунт и данные. Это нельзя отменить. Неиспользованные бонусы на счёте аннулируются, как только удаление завершится, — их нельзя выплатить или восстановить."
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Týmto natrvalo odstránite svoj účet a údaje. Toto nie je možné vrátiť späť."
+            "value": "Týmto natrvalo odstránite svoj účet a údaje. Toto nie je možné vrátiť späť. Nevyčerpaný kredit na účte dokončením vymazania prepadá — nedá sa vyplatiť ani obnoviť."
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Це назавжди видалить ваш обліковий запис і дані. Це не можна скасувати."
+            "value": "Це назавжди видалить ваш обліковий запис і дані. Це не можна скасувати. Невикористані бонуси на рахунку анулюються, щойно видалення завершиться, — їх не можна виплатити чи відновити."
           }
         }
       }
@@ -7293,31 +7468,31 @@
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Tímto trvale smažete svůj účet a všechna související data. Tuto akci nelze vrátit zpět."
+            "value": "Tímto trvale smažete svůj účet a všechna související data. Nevyčerpaný kredit smazáním účtu propadá — nelze ho vyplatit ani obnovit. Tuto akci nelze vrátit zpět."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "This will permanently delete your account and all associated data. This action cannot be undone."
+            "value": "This will permanently delete your account and all associated data. Any unused credit is forfeited when the account is deleted — it cannot be paid out or restored. This action cannot be undone."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Это навсегда удалит ваш аккаунт и все связанные данные. Это действие нельзя отменить."
+            "value": "Это навсегда удалит ваш аккаунт и все связанные данные. Неиспользованные бонусы при удалении аккаунта аннулируются — их нельзя выплатить или восстановить. Это действие нельзя отменить."
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Týmto natrvalo odstránite svoj účet a všetky súvisiace údaje. Túto akciu nie je možné vrátiť späť."
+            "value": "Týmto natrvalo odstránite svoj účet a všetky súvisiace údaje. Nevyčerpaný kredit vymazaním účtu prepadá — nedá sa vyplatiť ani obnoviť. Túto akciu nie je možné vrátiť späť."
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Це назавжди видалить ваш обліковий запис і всі пов'язані дані. Цю дію не можна скасувати."
+            "value": "Це назавжди видалить ваш обліковий запис і всі пов'язані дані. Невикористані бонуси після видалення облікового запису анулюються — їх не можна виплатити чи відновити. Цю дію не можна скасувати."
           }
         }
       }
@@ -10682,41 +10857,6 @@
         }
       }
     },
-    "guest_order_code": {
-      "extractionState": "manual",
-      "localizations": {
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Potvrzovací kód"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Confirmation code"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Код подтверждения"
-          }
-        },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Potvrdzovací kód"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Код підтвердження"
-          }
-        }
-      }
-    },
     "guest_order_empty": {
       "extractionState": "manual",
       "localizations": {
@@ -10828,31 +10968,31 @@
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Zadejte číslo rezervace, e-mail a potvrzovací kód z potvrzovacího e-mailu."
+            "value": "Vložte odkaz na sledování z potvrzovacího e-mailu. Otevře vaši rezervaci — nic dalšího zadávat nemusíte."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Use the booking number, email and confirmation code from your booking email."
+            "value": "Paste the tracking link from your booking email. It opens your booking — there is nothing else to enter."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Введите номер бронирования, электронную почту и код подтверждения из письма о бронировании."
+            "value": "Вставьте ссылку для отслеживания из письма о бронировании. Она откроет ваше бронирование — больше ничего вводить не нужно."
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Zadajte číslo rezervácie, e-mail a potvrdzovací kód z potvrdzovacieho e-mailu."
+            "value": "Vložte odkaz na sledovanie z potvrdzovacieho e-mailu. Otvorí vašu rezerváciu — nič ďalšie zadávať nemusíte."
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Введіть номер бронювання, електронну пошту та код підтвердження з листа про бронювання."
+            "value": "Вставте посилання для відстеження з листа про бронювання. Воно відкриє ваше бронювання — більше нічого вводити не треба."
           }
         }
       }
@@ -10927,37 +11067,37 @@
         }
       }
     },
-    "guest_order_number": {
+    "guest_order_link": {
       "extractionState": "manual",
       "localizations": {
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Číslo rezervace"
+            "value": "Odkaz na sledování z e-mailu"
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Booking number"
+            "value": "Tracking link from your email"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Номер бронирования"
+            "value": "Ссылка для отслеживания из письма"
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Číslo rezervácie"
+            "value": "Odkaz na sledovanie z e-mailu"
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Номер бронювання"
+            "value": "Посилання для відстеження з листа"
           }
         }
       }
@@ -11003,31 +11143,31 @@
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Zadejte číslo rezervace, e-mail a potvrzovací kód."
+            "value": "Vložte odkaz na sledování z potvrzovacího e-mailu."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Enter the booking number, email and confirmation code."
+            "value": "Paste the tracking link from your booking email."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Введите номер бронирования, электронную почту и код подтверждения."
+            "value": "Вставьте ссылку для отслеживания из письма о бронировании."
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Zadajte číslo rezervácie, e-mail a potvrdzovací kód."
+            "value": "Vložte odkaz na sledovanie z potvrdzovacieho e-mailu."
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Введіть номер бронювання, електронну пошту та код підтвердження."
+            "value": "Вставте посилання для відстеження з листа про бронювання."
           }
         }
       }
@@ -11213,31 +11353,31 @@
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Otevřete rezervaci na kartě Objednávky a klepněte na „Zrušit“. Zrušení je zdarma až 24 hodin před začátkem úklidu."
+            "value": "Otevřete rezervaci na kartě Objednávky a klepněte na „Zrušit“. Zrušení je zdarma až 24 hodin před začátkem úklidu. Do 15 minut od objednání neplatíte nic — s Cleansia Plus do 60 minut."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Open your booking from the Orders tab and tap \"Cancel\". Cancellations are free up to 24 hours before the cleaning start time."
+            "value": "Open your booking from the Orders tab and tap \"Cancel\". Cancellations are free up to 24 hours before the cleaning start time. Within 15 minutes of booking you pay nothing — within 60 minutes with Cleansia Plus."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Откройте заказ на вкладке Заказы и нажмите «Отменить». Отмена бесплатна за 24 часа до начала уборки."
+            "value": "Откройте заказ на вкладке Заказы и нажмите «Отменить». Отмена бесплатна за 24 часа до начала уборки. В течение 15 минут после заказа вы не платите ничего — с Cleansia Plus в течение 60 минут."
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Otvorte rezerváciu na karte Objednávky a ťuknite na „Zrušiť“. Zrušenie je zdarma až 24 hodín pred začiatkom upratovania."
+            "value": "Otvorte rezerváciu na karte Objednávky a ťuknite na „Zrušiť“. Zrušenie je zdarma až 24 hodín pred začiatkom upratovania. Do 15 minút od objednania neplatíte nič — s Cleansia Plus do 60 minút."
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Відкрийте бронювання на вкладці Замовлення і натисніть «Скасувати». Скасування безкоштовне за 24 години до початку прибирання."
+            "value": "Відкрийте бронювання на вкладці Замовлення і натисніть «Скасувати». Скасування безкоштовне за 24 години до початку прибирання. Протягом 15 хвилин після замовлення ви не платите нічого — з Cleansia Plus протягом 60 хвилин."
           }
         }
       }
@@ -13661,76 +13801,6 @@
         }
       }
     },
-    "loyalty_perks_dedicated_pool": {
-      "extractionState": "stale",
-      "localizations": {
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Vlastní tým uklízečů"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Dedicated cleaner pool"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Выделенная команда клинеров"
-          }
-        },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Vlastný tím upratovačiek"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Спеціалізована команда клінерів"
-          }
-        }
-      }
-    },
-    "loyalty_perks_priority_support": {
-      "extractionState": "stale",
-      "localizations": {
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Přednostní zákaznická podpora"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Priority customer support"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Приоритетная поддержка клиентов"
-          }
-        },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Prednostná zákaznícka podpora"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Пріоритетна підтримка клієнтів"
-          }
-        }
-      }
-    },
     "loyalty_perks_welcome_badge": {
       "extractionState": "stale",
       "localizations": {
@@ -15763,6 +15833,76 @@
         }
       }
     },
+    "membership_perk_grace_desc": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "60 minut po objednání na bezplatné zrušení místo 15 minut"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "60 minutes after booking to cancel free, instead of 15 minutes"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "60 минут после заказа на бесплатную отмену вместо 15 минут"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "60 minút po objednaní na bezplatné zrušenie namiesto 15 minút"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "60 хвилин після замовлення на безкоштовне скасування замість 15 хвилин"
+          }
+        }
+      }
+    },
+    "membership_perk_grace_title": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zrušení zdarma po objednání"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Free cancellation after booking"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Бесплатная отмена после заказа"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zrušenie zadarmo po objednaní"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Безкоштовне скасування після замовлення"
+          }
+        }
+      }
+    },
     "membership_perk_pill_cancellation": {
       "extractionState": "stale",
       "localizations": {
@@ -16214,6 +16354,41 @@
           "stringUnit": {
             "state": "translated",
             "value": "%1$@ / рік"
+          }
+        }
+      }
+    },
+    "order_cancel_fee_grace_note": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zrušení do %d minut od objednání je zdarma, i když už objednávku přijal uklízeč."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cancelling within %d minutes of booking is free, even after a cleaner has accepted."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Отмена в течение %d минут после заказа бесплатна, даже если уборщик уже взял заказ."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zrušenie do %d minút od objednania je zadarmo, aj keď už objednávku prijal upratovač."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Скасування протягом %d хвилин після замовлення безкоштовне, навіть якщо прибиральник уже взяв замовлення."
           }
         }
       }
@@ -19059,31 +19234,31 @@
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Zrušení zdarma — objednali jste před malou chvílí."
+            "value": "Objednávka je v ochranné lhůtě pro bezplatné zrušení."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Free cancellation — you booked this only moments ago."
+            "value": "This booking is within the cancellation grace period."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Бесплатная отмена — вы забронировали только что."
+            "value": "Для этого заказа ещё действует льготный период отмены."
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Zrušenie zdarma — objednali ste pred malou chvíľou."
+            "value": "Objednávka je v ochrannej lehote na bezplatné zrušenie."
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Безкоштовне скасування — ви забронювали щойно."
+            "value": "Для цього замовлення ще діє пільговий період скасування."
           }
         }
       }
@@ -20134,41 +20309,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Ваш клінер"
-          }
-        }
-      }
-    },
-    "order_detail_code_label": {
-      "extractionState": "stale",
-      "localizations": {
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Kód"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Code"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Код"
-          }
-        },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Kód"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Код"
           }
         }
       }
@@ -27562,41 +27702,6 @@
         }
       }
     },
-    "push.order.confirmed.body": {
-      "extractionState": "manual",
-      "localizations": {
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Vaše rezervace #%1$@ je potvrzena. Klepněte pro zobrazení detailů."
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Your booking #%1$@ is confirmed. Tap to see the details."
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Заказ #%1$@ подтверждён. Нажмите, чтобы посмотреть подробности."
-          }
-        },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Vaša rezervácia #%1$@ je potvrdená. Ťuknutím zobrazíte detaily."
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Замовлення #%1$@ підтверджено. Натисніть, щоб переглянути деталі."
-          }
-        }
-      }
-    },
     "push.order.payment_confirmed.body": {
       "extractionState": "manual",
       "localizations": {
@@ -27628,41 +27733,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Замовлення #%1$@ підтверджено. Натисніть, щоб переглянути деталі."
-          }
-        }
-      }
-    },
-    "push.order.confirmed.title": {
-      "extractionState": "manual",
-      "localizations": {
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Rezervace potvrzena ✅"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Booking confirmed ✅"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Заказ подтверждён ✅"
-          }
-        },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Rezervácia potvrdená ✅"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Замовлення підтверджено ✅"
           }
         }
       }
@@ -29413,6 +29483,251 @@
         }
       }
     },
+    "recurring_cash_change_action": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Upravit rozvrh"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Change the schedule"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Изменить расписание"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Upraviť rozvrh"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Змінити розклад"
+          }
+        }
+      }
+    },
+    "recurring_cash_change_body": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Každý úklid potřebuje více než jednoho uklízeče a hotově lze platit jen úklidy, které zvládne jeden uklízeč, proto se z něj neobjednávají žádné nové úklidy, dokud ho nezměníte. Přepněte ho na platbu kartou nebo vyberte služby či balíčky, které zvládne jeden uklízeč. Úklid, který už je z něj objednaný, můžete v Objednávkách zrušit zdarma, dokud ho nepřijme žádný uklízeč."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Each clean needs more than one cleaner, and cash is only for cleans one cleaner handles alone, so no new cleanings are booked from it until you change it. Switch it to card, or pick services or packages one cleaner can do. A cleaning already booked from it can be cancelled free of charge in Orders while no cleaner has taken it."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Для каждой уборки нужно больше одного уборщика, а наличными можно платить только за уборки, с которыми справится один уборщик, поэтому новые уборки по нему не заказываются, пока вы его не измените. Переведите его на оплату картой или выберите услуги либо пакеты, с которыми справится один уборщик. Уборку, которая уже заказана по нему, можно бесплатно отменить в Заказах, пока её не взял ни один уборщик."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Každé upratovanie potrebuje viac ako jedného upratovača a v hotovosti sa dá platiť len za upratovania, ktoré zvládne jeden upratovač, preto sa z neho neobjednávajú žiadne nové upratovania, kým ho nezmeníte. Prepnite ho na platbu kartou alebo vyberte služby či balíky, ktoré zvládne jeden upratovač. Upratovanie, ktoré je z neho už objednané, môžete v Objednávkach zrušiť zadarmo, kým ho neprijme žiadny upratovač."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Для кожного прибирання потрібен більш ніж один прибиральник, а готівкою можна платити лише за прибирання, з якими впорається один прибиральник, тому нові прибирання за ним не замовляються, доки ви його не зміните. Переведіть його на оплату карткою або оберіть послуги чи пакети, з якими впорається один прибиральник. Прибирання, яке вже замовлено за ним, можна безкоштовно скасувати в Замовленнях, поки його не взяв жоден прибиральник."
+          }
+        }
+      }
+    },
+    "recurring_cash_change_title": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tento rozvrh už nelze platit hotově"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This schedule can no longer be paid in cash"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Это расписание больше нельзя оплачивать наличными"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tento rozvrh sa už nedá platiť v hotovosti"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Цей розклад більше не можна оплачувати готівкою"
+          }
+        }
+      }
+    },
+    "recurring_cash_cleared": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Platba hotově už pro tento rozvrh není možná, a proto není vybrán žádný způsob platby. Zvolte, jak chcete platit."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cash is no longer available for this schedule, so no payment method is selected. Choose how you want to pay."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Оплата наличными для этого расписания больше недоступна, поэтому способ оплаты не выбран. Выберите, как вы хотите платить."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Platba v hotovosti už pre tento rozvrh nie je možná, preto nie je vybraný žiadny spôsob platby. Zvoľte, ako chcete platiť."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Оплата готівкою для цього розкладу більше недоступна, тому спосіб оплати не обрано. Оберіть, як ви хочете платити."
+          }
+        }
+      }
+    },
+    "recurring_cash_needs_card": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Počet uklízečů potřebných na každý úklid: %d. Hotově lze platit jen úklidy, které zvládne jeden uklízeč, tento rozvrh proto platíte kartou."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cleaners needed for each clean: %d. Cash is only for cleans one cleaner handles alone, so this schedule is paid by card."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Количество уборщиков для каждой уборки: %d. Наличными можно платить только за уборки, с которыми справится один уборщик, поэтому это расписание оплачивается картой."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Počet upratovačov potrebných na každé upratovanie: %d. V hotovosti sa dá platiť len za upratovania, ktoré zvládne jeden upratovač, tento rozvrh preto platíte kartou."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Кількість прибиральників для кожного прибирання: %d. Готівкою можна платити лише за прибирання, з якими впорається один прибиральник, тож цей розклад сплачується карткою."
+          }
+        }
+      }
+    },
+    "recurring_cash_pending": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zda lze tento rozvrh platit hotově, potvrdíme, jakmile bude známa cena."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Whether this schedule can be paid in cash is confirmed once the price is ready."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Можно ли оплачивать это расписание наличными, мы подтвердим, как только будет известна цена."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Či sa dá tento rozvrh platiť v hotovosti, potvrdíme, keď bude známa cena."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Чи можна платити за цей розклад готівкою, ми підтвердимо, щойно буде відома ціна."
+          }
+        }
+      }
+    },
+    "recurring_cash_unchecked": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nepodařilo se ověřit, zda lze tento rozvrh platit hotově. Uložte ho za chvíli znovu, nebo zvolte kartu."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "We couldn't confirm whether this schedule can be paid in cash. Save it again in a moment, or choose card."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Не удалось проверить, можно ли оплачивать это расписание наличными. Сохраните его ещё раз через минуту или выберите карту."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nepodarilo sa overiť, či sa dá tento rozvrh platiť v hotovosti. Uložte ho o chvíľu znova alebo zvoľte kartu."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Не вдалося перевірити, чи можна платити за цей розклад готівкою. Збережіть його ще раз за хвилину або оберіть картку."
+          }
+        }
+      }
+    },
     "recurring_confirm_cta": {
       "extractionState": "stale",
       "localizations": {
@@ -30668,6 +30983,41 @@
           "stringUnit": {
             "state": "translated",
             "value": "Регулярні — це перевага Plus"
+          }
+        }
+      }
+    },
+    "recurring_status_needs_change": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vyžaduje úpravu"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Needs a change"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Требует изменений"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vyžaduje úpravu"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Потребує змін"
           }
         }
       }

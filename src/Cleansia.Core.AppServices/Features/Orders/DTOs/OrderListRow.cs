@@ -6,7 +6,7 @@ namespace Cleansia.Core.AppServices.Features.Orders.DTOs;
 /// <summary>
 /// Server-side projection shape for the order LIST queries — exactly the columns the
 /// <see cref="OrderListItem"/> mapper reads plus the sidecar fields the list handlers need
-/// (assignee ids for the ownership mask, travel distance for the pay estimator, address id
+/// (assignee ids for the ownership mask, address id
 /// for the geocode backfill). Never leaves the backend; the wire DTO stays
 /// <see cref="OrderListItem"/>.
 /// </summary>
@@ -33,7 +33,6 @@ public sealed record OrderListRow(
     decimal CreditAppliedAmount,
     int EstimatedTime,
     OrderStatus OrderStatus,
-    string ConfirmationCode,
     string CurrencyId,
     OrderListCurrencyRow Currency,
     List<OrderListPackageRow> SelectedPackages,
@@ -41,7 +40,6 @@ public sealed record OrderListRow(
     List<OrderListEmployeeRow> AssignedEmployees,
     int RequiredEmployees,
     int MaxEmployees,
-    decimal? TravelDistance,
     bool HasReview);
 
 public sealed record OrderListAddressRow(

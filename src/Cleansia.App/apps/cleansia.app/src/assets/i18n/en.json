@@ -579,7 +579,7 @@
         "cancel_desc": "Between 4 and 24 hours it is 25%, under 4 hours 50%.",
         "rethink_label": "Before a cleaner takes it",
         "rethink_value": "Always free",
-        "rethink_desc": "Until someone accepts the job, cancelling costs nothing however close the clean is. Once someone has, you still have 15 minutes from when you booked.",
+        "rethink_desc": "Until someone accepts the job, cancelling costs nothing however close the clean is. Once someone has, you still have 15 minutes from when you booked — 60 minutes with Cleansia Plus.",
         "we_cancel_label": "If we cancel",
         "we_cancel_value": "Everything back + {{amount}} credit",
         "we_cancel_value_refund_only": "Everything back",
@@ -594,12 +594,15 @@
       "plus": {
         "badge": "Cleansia Plus",
         "title": "{{price}} a month, first {{days}} days free",
+        "title_no_trial": "{{price}} a month, cancel any time",
         "perk1": "{{percent}}% off every order",
         "perk2": "Cancel free up to {{hours}} hours before, instead of 24",
+        "perk_grace": "Cancel free within 60 minutes of booking, instead of 15 minutes",
         "perk3": "{{count}} express clean a month at no surcharge",
         "perk4": "Recurring slots and a cleaner you have had before",
         "yearly": "{{price}} a year — saves {{percent}}%",
-        "cta": "Try it free"
+        "cta": "Try it free",
+        "cta_no_trial": "Get Cleansia Plus"
       },
       "quote": {
         "title": "Get a price",
@@ -769,7 +772,7 @@
       "bathrooms": "Number of Bathrooms",
       "bathrooms_count_label": "Number of bathrooms",
       "bathrooms_label": "Bathrooms",
-      "cancel_policy_note": "Free cancellation up to 24 hours ahead. Within 15 minutes of booking you pay nothing.",
+      "cancel_policy_note": "Free cancellation up to 24 hours ahead. Within 15 minutes of booking you pay nothing — within 60 minutes with Cleansia Plus.",
       "cancel_policy_tier1_value": "Free",
       "cancel_policy_tier1_when": "Before a cleaner accepts",
       "cancel_policy_tier2_value": "Free",
@@ -839,7 +842,8 @@
         "date": "Pick a cleaning date.",
         "time": "Pick a time that is still available.",
         "address_fields": "Fill in the street, city and postcode.",
-        "terms": "Accept the terms to continue."
+        "terms": "Accept the terms to continue.",
+        "payment": "Choose how you want to pay."
       },
       "new_address": "Enter a new address",
       "package_most_popular": "Most popular",
@@ -940,7 +944,7 @@
       "special_instructions_placeholder": "For example: the cat is home, please do not shut the balcony.",
       "step_address_lead": "Start typing an address — we will suggest it and check straight away that it is in range.",
       "step_address_title": "Where should we come?",
-      "step_pay_lead": "Card pays now, cash on the day at your door. The price is the same.",
+      "step_pay_lead": "Card pays now, cash on the day at your door — if you are signed in and one cleaner handles the booking alone. The price is the same.",
       "step_plus_title": "Add Cleansia Plus?",
       "step_review_lead": "Fix any section right here, without walking through the whole wizard again.",
       "step_review_title": "Check your order",
@@ -1013,7 +1017,13 @@
       "zip_code": "ZIP Code",
       "wizard": {
         "catalogue_changed_for_country": "Some of your selection is not offered at this address, so it was removed. Prices are shown in the currency of the country you are booking in."
-      }
+      },
+      "cash_needs_account": "Cash is only for signed-in customers. Sign in to pay in cash, or pay by card.",
+      "cash_needs_card": "Cleaners needed for this booking: {{count}}. Cash is only for bookings one cleaner handles alone, so this one is paid by card.",
+      "cash_pending": "Whether you can pay in cash is confirmed once the price is ready.",
+      "cash_cleared": "Cash is no longer available for this booking, so no payment method is selected. Choose how you want to pay.",
+      "cash_sign_in": "Sign in",
+      "plus_perk_grace": "60 minutes after booking to cancel free, instead of 15 minutes"
     },
     "orders": {
       "title": "My Orders",
@@ -1090,8 +1100,6 @@
       "notes": "Notes",
       "special_instructions": "Special Instructions",
       "access_instructions": "Access Instructions",
-      "confirmation_code": "Confirmation Code",
-      "confirmation_code_hint": "Read it to the cleaner at the door — it is how they know the visit is yours.",
       "download_receipt": "Download Receipt",
       "download_error": "Failed to download receipt",
       "report_issue": "Report Issue",
@@ -1170,7 +1178,8 @@
           "2": "This booking is outside the chargeable cancellation window.",
           "3": "A partial cancellation fee applies.",
           "4": "A last-minute cancellation fee applies."
-        }
+        },
+        "grace_note": "Cancelling within {{minutes}} minutes of booking is free, even after a cleaner has accepted."
       },
       "estimated_hours": "about {{hours}} h",
       "label_market": "Market"
@@ -1341,9 +1350,9 @@
       "discount_of": "{{percent}}% off",
       "to_next_tier": "To {{tier}}",
       "points_remaining": "{{count}} points",
-      "spent_note": "Points count everything you have ever spent — and your tier never drops below the one you have reached.",
+      "spent_note": "Points count everything you have ever spent. Your tier follows that total — if points are taken back, after a refund for example, the tier can drop too.",
       "how_title": "How points work",
-      "tier_ladder_lead": "By the points you have earned. The discount comes off automatically.",
+      "tier_ladder_lead": "By your current points total. The discount comes off automatically.",
       "your_tier": "Your tier",
       "points_threshold": "{{count}} points",
       "discount_min_order": "{{percent}}% off orders over {{minAmount}}",
@@ -1397,6 +1406,7 @@
       "benefit_express_body": "We waive the 20% surcharge on express bookings — cleanings that start 2 to 4 hours after you book. A set number each calendar month while your paid membership is active; unused ones don't carry over.",
       "perk_discount": "{{percent}}% member discount",
       "perk_cancel_window": "{{hours}}h free cancellation window",
+      "perk_grace": "60 minutes after booking to cancel free, instead of 15 minutes",
       "perk_express_used": "Express surcharge waived — none left until next month",
       "perk_express_trial": "Express surcharge waived — starts when your trial ends",
       "cancel_action": "Cancel membership",
@@ -1410,8 +1420,6 @@
       "plan_per_month": "{{month}} / month",
       "plan_per_year": "{{year}} / year",
       "plan_per_month_billed_annually": "{{month}} / month — billed annually as {{year}}",
-      "trial_badge": "{{days}}-day free trial",
-      "trial_disclosure": "Free for the first {{days}} days. After that, your card is billed automatically. Cancel anytime before the trial ends.",
       "switch_dialog_title": "Switch to annual?",
       "switch_dialog_message": "You'll be charged the prorated difference today, then {{price}} per year. Your benefits keep going.",
       "switch_dialog_confirm": "Switch and pay difference",
@@ -1420,10 +1428,7 @@
       "social_proof_headline": "How the member discount works",
       "social_proof_sub": "Plus and your loyalty tier add up to a combined 12% maximum. Promo codes don't stack — the larger discount applies.",
       "perks_section_title": "What you get",
-      "cta_start_trial": "Start free trial",
       "cta_subscribe": "Get Cleansia Plus",
-      "cta_disclosure_trial": "Then {{price}} / month. Cancel anytime before the trial ends and you won't be charged.",
-      "cta_disclosure_trial_year": "Then {{price}} / year. Cancel anytime before the trial ends and you won't be charged.",
       "benefit_recurring_title": "Recurring bookings",
       "benefit_recurring_body": "Set up a weekly or biweekly cleaning and skip the booking flow each time.",
       "welcome_title": "Welcome to Cleansia Plus!",
@@ -1488,10 +1493,10 @@
       "delete_title": "Delete Account",
       "delete_desc": "Permanently delete your account and all data. This action cannot be undone.",
       "delete_btn": "Delete Account",
-      "delete_description": "Permanently delete your account and all associated data. This action cannot be undone.",
+      "delete_description": "Permanently delete your account and all associated data. Any unused credit is forfeited when the account is deleted — it cannot be paid out or restored. This action cannot be undone.",
       "delete_button": "Delete Account",
       "delete_confirm": "Are you sure you want to delete your account? This cannot be undone.",
-      "delete_confirm_message": "Are you sure you want to permanently delete your account? All your data will be lost and this action cannot be undone.",
+      "delete_confirm_message": "Are you sure you want to permanently delete your account? All your data will be lost and this action cannot be undone. Any unused credit on your account is forfeited once the deletion completes — it cannot be paid out or restored.",
       "delete_confirm_title": "Delete Account",
       "delete_confirm_yes": "Yes, Delete My Account",
       "delete_success": "Account deleted",
@@ -1556,16 +1561,11 @@
           "2": "This booking is outside the chargeable cancellation window.",
           "3": "A partial cancellation fee applies.",
           "4": "A last-minute cancellation fee applies."
-        }
+        },
+        "grace_note": "Cancelling within {{minutes}} minutes of booking is free, even after a cleaner has accepted."
       },
       "title": "Track Your Order",
       "subtitle": "Enter your order number and email to check the status of your order",
-      "order_number": "Order Number",
-      "order_number_placeholder": "e.g. CLS-2026-0412",
-      "email": "Email Address",
-      "email_placeholder": "the e-mail the confirmation went to",
-      "search": "Track Order",
-      "not_found": "No order found with this combination. Please check your order number and email address.",
       "not_found_title": "Order Not Found",
       "order": "Order",
       "status_details": "Status",
@@ -1575,19 +1575,18 @@
       "service_info": "Service Details",
       "cleaning_date": "Cleaning Date",
       "estimated_time": "Estimated Time",
-      "confirmation_code": "Confirmation code",
       "packages": "Packages",
       "services": "Services",
       "total": "Total",
       "timeline": "Order Timeline",
-      "hint": "The code is in your confirmation e-mail, next to the order number. Never arrived? Check your spam folder, or ",
+      "hint": "Never arrived? Check your spam folder, or ",
       "recent_orders": "Recent Orders",
       "lookup_another": "Look up another order",
       "manual_lookup": "Manual Lookup",
       "guest_limit": "As a guest, only your last 5 orders are tracked on this device. Create an account to access all your orders from anywhere.",
       "guest_cta": "Create an account",
       "view_details": "View details",
-      "lead": "You do not need an account. The order number, your e-mail and the confirmation code from that e-mail are enough.",
+      "lead": "You do not need an account. The link in your confirmation e-mail opens this booking — there is nothing to type.",
       "retry": "Try again",
       "have_account": "Have an account?",
       "sign_in": "Sign in and see every order at once.",
@@ -1616,20 +1615,22 @@
         "in_progress": "Cleaning",
         "completed": "Done"
       },
-      "confirmation_code_placeholder": "6 characters from that e-mail",
       "entry_link": "Have an order number? Track your order",
       "where_it_is": "Where it is",
       "two_axes_lead": "Two things happen separately — so there are two tracks.",
       "whats_booked": "What's booked",
       "the_order": "The order",
-      "hint_missed": "Still nothing?",
       "write_us": "Write to us",
       "hint_end": " and we will find it for you.",
       "pay_method_cash": "Cash · you pay on the day",
       "pay_method_card": "Paid by card",
       "pay_paid": "Paid",
       "pay_failed": "Payment failed",
-      "pay_refunded": "Refunded"
+      "pay_refunded": "Refunded",
+      "need_link_title": "Open the link from your e-mail",
+      "need_link_body": "The e-mail we sent when you booked has a button to this page. It carries a private key to that booking, which is why nothing else is asked for.",
+      "link_expired": "This link no longer opens a booking. A link stops working 30 days after the clean, and straight away once the booking is cancelled.",
+      "loading": "Opening your booking…"
     },
     "saved_addresses": {
       "title": "My addresses",
@@ -1650,8 +1651,8 @@
       "checkout_failed": "We couldn't open the payment page. Please try again.",
       "not_available_in_market": "Plus is not available in your market yet",
       "closing_alt": "Book without membership",
-      "closing_cta": "Try Plus",
-      "closing_text": "No commitment. If it does not pay off, switch it off before the first payment arrives.",
+      "closing_cta": "Subscribe to Plus",
+      "closing_text": "No commitment. Cancel any time and your benefits stay until the end of the period you have paid for.",
       "closing_title": "Try it {{days}} days free",
       "closing_title_no_trial": "Get Cleansia Plus",
       "compare_title": "With Plus and without",
@@ -1661,7 +1662,7 @@
       "cta_trial": "Try {{days}} days free",
       "cta_try_free": "Start free trial",
       "cta_whats_in_it": "What you get",
-      "faq_cancel_a": "Any time, with one button in your profile. Your benefits stay until the end of the period you have paid for — nothing is cancelled retroactively. The free trial only happens once, though: if you come back later you start on a paid membership.",
+      "faq_cancel_a": "Any time, with one button in your profile. Your benefits stay until the end of the period you have paid for — nothing is cancelled retroactively.",
       "faq_cancel_q": "How do I cancel?",
       "faq_express_a": "After the trial. During those {{days}} days you have the discount and the shorter cancellation window, but not the express waiver.",
       "faq_express_a_no_trial": "From your first month. The express waiver is included as soon as your subscription starts.",
@@ -1677,10 +1678,10 @@
       "none": "—",
       "per_month": "a month",
       "per_year": "a year",
-      "perk_cancel_body": "Without membership the line is 24 hours. Plans change; this makes that cheaper.",
+      "perk_cancel_body": "Without membership the line is 24 hours. And after booking you have 60 minutes to cancel free of charge, instead of 15 minutes.",
       "perk_cancel_title": "Free cancellation {{hours}} hours ahead",
       "perk_discount_title": "{{percent}}% off every clean",
-      "perk_express_body": "A clean within two hours with no {{percent}}% surcharge. Starts once the trial ends.",
+      "perk_express_body": "A clean booked 2 to 4 hours ahead, with no {{percent}}% surcharge.",
       "perk_express_title": "{{count}} express slot a month",
       "perk_recurring_body": "A regular schedule that runs itself. It cannot be set up without membership.",
       "perks_lead": "Each of these is a rule, and it applies from the moment you switch membership on.",
@@ -1691,7 +1692,7 @@
       "plans_footnote_no_trial": "Billing starts straight away on both. Cancel any time.",
       "plans_lead": "The same benefits. The annual one is paid once and works out cheaper.",
       "plans_title": "Two plans",
-      "price_note": "{{price}} a month after the trial. Cancel any time.",
+      "price_note": "{{price}} a month. Cancel any time.",
       "row_cancel": "Free cancellation",
       "row_cancel_membership": "Cancel the membership any time",
       "row_cancel_membership_with": "benefits to the end of the period",
@@ -1699,13 +1700,16 @@
       "row_cancel_without": "24 hours ahead",
       "row_discount": "Discount on every order",
       "row_discount_with": "{{percent}}%",
-      "row_express": "Express slot within 2 hours",
+      "row_express": "Express slot (2–4 hours ahead)",
       "row_express_with": "{{count}} a month, no surcharge",
       "row_express_without": "{{percent}}% surcharge",
       "row_preferred": "Request a cleaner you have had before",
       "row_recurring": "Recurring schedules",
       "title": "Cleansia Plus",
-      "yes": "yes"
+      "yes": "yes",
+      "row_grace": "Free cancellation after booking",
+      "row_grace_without": "15 minutes",
+      "row_grace_with": "60 minutes"
     }
   },
   "address_picker": {
@@ -1881,6 +1885,7 @@
       "invalid_status_transition": "That action isn't allowed for the order's current status.",
       "address_exactly_one_required": "Please provide exactly one address for this order.",
       "empty": "Add at least one service or package to your order.",
+      "size_exceeds_maximum": "A booking can include up to 8 rooms and 4 bathrooms.",
       "span_exceeds_maximum": "This booking covers too much work for a single visit. Please remove some services or packages, or book them separately.",
       "selected_package": {
         "invalid": "One of the selected packages is no longer available."
@@ -1897,6 +1902,7 @@
         "not_match": "The order total has changed — please review your order and try again."
       },
       "payment_gateway_unavailable": "Payments are temporarily unavailable. Please try again shortly.",
+      "cash_not_available": "Cash is only available when you're signed in and the booking needs a single cleaner.",
       "country_operator_mismatch": "This address is served by another Cleansia company, so it can't be booked here.",
       "payment": {
         "already_paid": "This order has already been paid."
@@ -1971,7 +1977,6 @@
       "deletion_blocked_by_invoice": "Your account can't be deleted while invoices are outstanding.",
       "consent_not_found": "We couldn't find that consent setting.",
       "consent_already_granted": "You've already granted this consent.",
-      "deletion_blocked_by_credit_balance": "Your account can’t be deleted while you still have credit with us. Use it on a booking, or contact support to be paid out.",
       "deletion_blocked_by_assigned_order": "Your account can't be deleted while you are still assigned to a job.",
       "deletion_blocked_by_unsettled_pay": "Your account can't be deleted while pay is still owed to you. Contact the office to settle it first."
     },
@@ -2041,9 +2046,7 @@
       "welcome_badge": "Welcome to Cleansia rewards",
       "discount_5_above_1000": "5% off bookings",
       "discount_10": "10% off bookings",
-      "discount_12": "12% off bookings",
-      "priority_support": "Priority customer support",
-      "dedicated_pool": "Dedicated cleaner pool"
+      "discount_12": "12% off bookings"
     }
   },
   "membership": {
@@ -2144,6 +2147,7 @@
     "order_detail_make_recurring_plus_required": "Cleansia Plus required to set up recurring schedules.",
     "plus_chip": "Part of Cleansia Plus",
     "status_active": "Active",
+    "status_needs_change": "Needs a change",
     "action_edit": "Edit",
     "price_per_clean": "per clean",
     "next_on": "next {{date}}",
@@ -2155,7 +2159,7 @@
     "gate_badge": "Cleansia Plus",
     "gate_title": "Recurring schedules come with the membership",
     "gate_lead": "You need Plus to set a schedule up. It also gets you a discount on every clean, a wider cancellation window and one express slot a month.",
-    "gate_cta": "Try it free for 14 days",
+    "gate_cta": "Get Cleansia Plus",
     "gate_alt": "See everything Plus does",
     "edit_title": "Edit schedule",
     "edit_subtitle": "Change anything and the next booking follows the new plan.",
@@ -2178,7 +2182,16 @@
     "new_address_label": "Name it",
     "new_address_label_hint": "Home, Office, Mum…",
     "save_address": "Save address",
-    "address_loading": "Loading your addresses…"
+    "address_loading": "Loading your addresses…",
+    "cash_needs_card": "Cleaners needed for each clean: {{count}}. Cash is only for cleans one cleaner handles alone, so this schedule is paid by card.",
+    "cash_pending": "Whether this schedule can be paid in cash is confirmed once the price is ready.",
+    "cash_cleared": "Cash is no longer available for this schedule, so no payment method is selected. Choose how you want to pay.",
+    "cash_unchecked": "We couldn't confirm whether this schedule can be paid in cash. Save it again in a moment, or choose card.",
+    "payment_placeholder": "Choose how to pay",
+    "error_payment": "Choose how the schedule is paid.",
+    "cash_change_title": "This schedule can no longer be paid in cash",
+    "cash_change_body": "Each clean needs more than one cleaner, and cash is only for cleans one cleaner handles alone, so no new cleanings are booked from it until you change it. Switch it to card, or pick services or packages one cleaner can do. A cleaning already booked from it can be cancelled free of charge in Orders while no cleaner has taken it.",
+    "cash_change_action": "Change the schedule"
   },
   "preferred_cleaner": {
     "title": "Request your favourite cleaner",

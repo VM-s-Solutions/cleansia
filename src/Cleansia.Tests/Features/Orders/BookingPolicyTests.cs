@@ -27,7 +27,7 @@ public class BookingPolicyTests
 
         // Act
         var rate = BookingPolicy.CalculateCancellationFeeRate(
-            cleaning, BookingCreated, cancel, isFirstTimeCustomer: false, hasBeenAccepted: false);
+            cleaning, BookingCreated, cancel, oopsWindowMinutes: BookingPolicy.OopsWindowMinutesStandard, hasBeenAccepted: false);
 
         // Assert
         Assert.Equal(0m, rate);
@@ -42,7 +42,7 @@ public class BookingPolicyTests
 
         // Act
         var rate = BookingPolicy.CalculateCancellationFeeRate(
-            cleaning, BookingCreated, cancel, isFirstTimeCustomer: false, hasBeenAccepted: false);
+            cleaning, BookingCreated, cancel, oopsWindowMinutes: BookingPolicy.OopsWindowMinutesStandard, hasBeenAccepted: false);
 
         // Assert
         Assert.Equal(0m, rate);
@@ -57,24 +57,9 @@ public class BookingPolicyTests
 
         // Act
         var rate = BookingPolicy.CalculateCancellationFeeRate(
-            cleaning, BookingCreated, cancel, isFirstTimeCustomer: false, hasBeenAccepted: false);
+            cleaning, BookingCreated, cancel, oopsWindowMinutes: BookingPolicy.OopsWindowMinutesStandard, hasBeenAccepted: false);
 
         // Assert — "before acceptance" wins over the otherwise-50% last-minute tier.
-        Assert.Equal(0m, rate);
-    }
-
-    [Fact]
-    public void When_Not_Accepted_And_FirstTimeCustomer_Then_Fee_Is_Zero()
-    {
-        // Arrange
-        var cleaning = BookingCreated.AddDays(7);
-        var cancel = cleaning.AddMinutes(-30); // < 4h, would normally trigger 50%
-
-        // Act
-        var rate = BookingPolicy.CalculateCancellationFeeRate(
-            cleaning, BookingCreated, cancel, isFirstTimeCustomer: true, hasBeenAccepted: false);
-
-        // Assert
         Assert.Equal(0m, rate);
     }
 
@@ -89,7 +74,7 @@ public class BookingPolicyTests
 
         // Act
         var rate = BookingPolicy.CalculateCancellationFeeRate(
-            cleaning, BookingCreated, cancel, isFirstTimeCustomer: false, hasBeenAccepted: true);
+            cleaning, BookingCreated, cancel, oopsWindowMinutes: BookingPolicy.OopsWindowMinutesStandard, hasBeenAccepted: true);
 
         // Assert
         Assert.Equal(0m, rate);
@@ -104,7 +89,7 @@ public class BookingPolicyTests
 
         // Act
         var rate = BookingPolicy.CalculateCancellationFeeRate(
-            cleaning, BookingCreated, cancel, isFirstTimeCustomer: false, hasBeenAccepted: true);
+            cleaning, BookingCreated, cancel, oopsWindowMinutes: BookingPolicy.OopsWindowMinutesStandard, hasBeenAccepted: true);
 
         // Assert
         Assert.Equal(0m, rate);
@@ -119,7 +104,7 @@ public class BookingPolicyTests
 
         // Act
         var rate = BookingPolicy.CalculateCancellationFeeRate(
-            cleaning, BookingCreated, cancel, isFirstTimeCustomer: false, hasBeenAccepted: true);
+            cleaning, BookingCreated, cancel, oopsWindowMinutes: BookingPolicy.OopsWindowMinutesStandard, hasBeenAccepted: true);
 
         // Assert
         Assert.Equal(BookingPolicy.PartialCancellationFeeRate, rate);
@@ -135,7 +120,7 @@ public class BookingPolicyTests
 
         // Act
         var rate = BookingPolicy.CalculateCancellationFeeRate(
-            cleaning, BookingCreated, cancel, isFirstTimeCustomer: false, hasBeenAccepted: true);
+            cleaning, BookingCreated, cancel, oopsWindowMinutes: BookingPolicy.OopsWindowMinutesStandard, hasBeenAccepted: true);
 
         // Assert
         Assert.Equal(0.25m, rate);
@@ -150,7 +135,7 @@ public class BookingPolicyTests
 
         // Act
         var rate = BookingPolicy.CalculateCancellationFeeRate(
-            cleaning, BookingCreated, cancel, isFirstTimeCustomer: false, hasBeenAccepted: true);
+            cleaning, BookingCreated, cancel, oopsWindowMinutes: BookingPolicy.OopsWindowMinutesStandard, hasBeenAccepted: true);
 
         // Assert
         Assert.Equal(BookingPolicy.LastMinuteCancellationFeeRate, rate);
@@ -166,7 +151,7 @@ public class BookingPolicyTests
 
         // Act
         var rate = BookingPolicy.CalculateCancellationFeeRate(
-            cleaning, BookingCreated, cancel, isFirstTimeCustomer: false, hasBeenAccepted: true);
+            cleaning, BookingCreated, cancel, oopsWindowMinutes: BookingPolicy.OopsWindowMinutesStandard, hasBeenAccepted: true);
 
         // Assert
         Assert.Equal(0.50m, rate);
@@ -184,23 +169,23 @@ public class BookingPolicyTests
 
         // Act
         var rate = BookingPolicy.CalculateCancellationFeeRate(
-            cleaning, BookingCreated, cancel, isFirstTimeCustomer: false, hasBeenAccepted: true);
+            cleaning, BookingCreated, cancel, oopsWindowMinutes: BookingPolicy.OopsWindowMinutesStandard, hasBeenAccepted: true);
 
         // Assert
         Assert.Equal(0m, rate);
     }
 
     [Fact]
-    public void When_Accepted_And_FirstTimeCustomer_Within_Extended_Oops_Window_Then_Fee_Is_Zero()
+    public void When_Accepted_And_Within_Plus_Oops_Window_Then_Fee_Is_Zero()
     {
         // Arrange — cleaning is in a few hours (would normally be 50%) but cancel
-        // happens within the 60-min first-time "oops" window.
+        // happens within an entitled Plus member's 60-min "oops" window.
         var cleaning = BookingCreated.AddHours(2);
-        var cancel = BookingCreated.AddMinutes(BookingPolicy.OopsWindowMinutesFirstTime);
+        var cancel = BookingCreated.AddMinutes(BookingPolicy.OopsWindowMinutesPlus);
 
         // Act
         var rate = BookingPolicy.CalculateCancellationFeeRate(
-            cleaning, BookingCreated, cancel, isFirstTimeCustomer: true, hasBeenAccepted: true);
+            cleaning, BookingCreated, cancel, oopsWindowMinutes: BookingPolicy.OopsWindowMinutesPlus, hasBeenAccepted: true);
 
         // Assert
         Assert.Equal(0m, rate);
@@ -215,7 +200,7 @@ public class BookingPolicyTests
 
         // Act
         var rate = BookingPolicy.CalculateCancellationFeeRate(
-            cleaning, BookingCreated, cancel, isFirstTimeCustomer: false, hasBeenAccepted: true);
+            cleaning, BookingCreated, cancel, oopsWindowMinutes: BookingPolicy.OopsWindowMinutesStandard, hasBeenAccepted: true);
 
         // Assert
         Assert.Equal(0.50m, rate);

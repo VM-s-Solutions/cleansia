@@ -71,7 +71,6 @@ public class PayCoverageEstimatorAgreementTests
             packageIds.ToHashSet(),
             2,
             1,
-            (decimal?)5m,
             // The order's currency. The estimator narrows to it, and the configs above are all created
             // in CurrencyId -- so this fixture keeps agreeing with the repository, which now returns
             // only rows in the currencies asked for.

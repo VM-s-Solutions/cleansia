@@ -1,9 +1,11 @@
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using Cleansia.Core.Domain.Common;
+using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Repositories;
+using Cleansia.Core.Domain.SeedWork;
 using Cleansia.Core.Queue.Abstractions;
 using Cleansia.Core.Queue.Abstractions.Messages;
 using Microsoft.Extensions.Logging;
@@ -35,7 +37,9 @@ public class SendEmailHandler(
     ITenantRepository tenantRepository,
     ICompanyInfoRepository companyInfoRepository,
     ILogger<SendEmailHandler> logger,
-    IOrderRepository orderRepository)
+    IOrderRepository orderRepository,
+    GuestOrderAccessTokenIssuer guestAccessTokenIssuer,
+    IUnitOfWork unitOfWork)
 {
     private static readonly JsonSerializerOptions JsonOptions =
         new() { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
@@ -182,8 +186,19 @@ public class SendEmailHandler(
             return;
         }
 
+        // A fresh credential for a booking whose keys were all just retired, and the two are the same
+        // decision rather than opposite ones: cancelling withdraws every key that was outstanding, and
+        // this — the last message the booking will ever send — carries the only one that still opens
+        // it, so the customer can read what they were refunded. Committed before the send, so a crash
+        // after it cannot leave an e-mailed token with no row behind it.
+        var guestAccessToken = guestAccessTokenIssuer.IssueForGuest(order);
+        if (guestAccessToken is not null)
+        {
+            await unitOfWork.CommitAsync(ct);
+        }
+
         await emailService.SendOrderStatusUpdateEmailAsync(order.CustomerEmail, order, "Cancelled",
-            message.LanguageCode, ct, message.SuccessfulRefundAmount);
+            message.LanguageCode, ct, message.SuccessfulRefundAmount, guestAccessToken);
         try
         {
             await idempotencyGuard.MarkProcessedAsync(key, ct);

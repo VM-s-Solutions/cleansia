@@ -10,19 +10,19 @@ final class PartnerNotificationDeepLinkTests: XCTestCase {
     }
 
     func testOrderEventWithIdResolvesToOrderDestination() {
-        let destination = PartnerNotificationDeepLink.resolve(eventKey: "order.confirmed", orderId: "ord-1")
+        let destination = PartnerNotificationDeepLink.resolve(eventKey: "order.payment_confirmed", orderId: "ord-1")
         XCTAssertEqual(destination, .order(orderId: "ord-1"))
     }
 
     func testAllOrderScopedEventsResolveToOrder() {
         let keys = [
             "order.payment_confirmed",
-            "order.confirmed",
             "order.in_progress",
             "order.completed",
             "order.cancelled",
             "order.on_the_way",
             "order.assignment_cancelled",
+            "order.seat_open",
             "order.preferred_offer",
             "order.assigned",
             "order.assignment_revoked",
@@ -55,12 +55,28 @@ final class PartnerNotificationDeepLinkTests: XCTestCase {
 
     func testOrderEventWithoutIdResolvesToNil() {
         XCTAssertNil(PartnerNotificationDeepLink.resolve(eventKey: "order.payment_confirmed", orderId: nil))
-        XCTAssertNil(PartnerNotificationDeepLink.resolve(eventKey: "order.confirmed", orderId: nil))
     }
 
     func testAssignmentEventsWithoutIdResolveToNil() {
-        for key in ["order.assigned", "order.assignment_revoked"] {
+        for key in ["order.assigned", "order.assignment_revoked", "order.seat_open"] {
             XCTAssertNil(PartnerNotificationDeepLink.resolve(eventKey: key, orderId: nil), key)
+        }
+    }
+
+    func testSeatOpenAlertOpensTheOrderNeedingCover() {
+        let userInfo = alertCarryingUserInfo(
+            eventKey: "order.seat_open",
+            locArgs: ["A-2201"],
+            extra: ["orderId": "ord-1", "orderNumber": "A-2201"]
+        )
+        XCTAssertEqual(PartnerNotificationDeepLink.resolve(userInfo), .order(orderId: "ord-1"))
+    }
+
+    func testSeatOpenAlertWithoutAnOrderIdDoesNotInventADestination() {
+        let payloads: [[AnyHashable: Any]] = [[:], ["orderId": ""]]
+        for extra in payloads {
+            let userInfo = alertCarryingUserInfo(eventKey: "order.seat_open", locArgs: ["A-2201"], extra: extra)
+            XCTAssertNil(PartnerNotificationDeepLink.resolve(userInfo))
         }
     }
 
@@ -121,7 +137,7 @@ final class PartnerNotificationDeepLinkTests: XCTestCase {
 
     func testResolveFromAlertCarryingUserInfoStillResolvesOrder() {
         let userInfo = alertCarryingUserInfo(
-            eventKey: "order.confirmed",
+            eventKey: "order.payment_confirmed",
             locArgs: ["A-1042"],
             extra: ["orderId": "ord-1"]
         )

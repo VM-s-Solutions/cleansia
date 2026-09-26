@@ -16,6 +16,8 @@ using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using Microsoft.Extensions.DependencyInjection;
+using Cleansia.Core.AppServices.Features.Orders;
+using Cleansia.Tests.Infrastructure;
 
 namespace Cleansia.Tests.Functions;
 
@@ -50,6 +52,7 @@ public class GenerateReceiptHandlerBranchTests
         _orderRepository.Object,
         _receiptService.Object,
         _emailService.Object,
+        TestGuestOrderAccessTokenIssuer.WithNoLiveTokens(),
         _countryConfigurationRepository.Object,
         _unitOfWork.Object,
         _tenantProvider.Object,
@@ -103,7 +106,7 @@ public class GenerateReceiptHandlerBranchTests
         _emailService.Verify(
             s => s.SendOrderReceiptEmailAsync(
                 It.IsAny<string>(), It.IsAny<Order>(), It.IsAny<byte[]?>(), It.IsAny<string>(),
-                It.IsAny<string>(), It.IsAny<CancellationToken>()),
+                It.IsAny<string>(), It.IsAny<CancellationToken>(), It.IsAny<string?>()),
             Times.Never);
     }
 
@@ -139,7 +142,7 @@ public class GenerateReceiptHandlerBranchTests
             .ReturnsAsync(receipt);
         // Realize does NOT stamp a code (the authority hasn't signed yet) — FiscalCode remains null.
         _receiptService
-            .Setup(s => s.RealizeFiscalAndPdfAsync(order, receipt, LanguageCode, It.IsAny<CancellationToken>()))
+            .Setup(s => s.RealizeFiscalAndPdfAsync(order, receipt, It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
         _unitOfWork
             .Setup(u => u.CommitAsync(It.IsAny<CancellationToken>()))
@@ -160,7 +163,7 @@ public class GenerateReceiptHandlerBranchTests
         _emailService.Verify(
             s => s.SendOrderReceiptEmailAsync(
                 It.IsAny<string>(), It.IsAny<Order>(), It.IsAny<byte[]?>(), It.IsAny<string>(),
-                It.IsAny<string>(), It.IsAny<CancellationToken>()),
+                It.IsAny<string>(), It.IsAny<CancellationToken>(), It.IsAny<string?>()),
             Times.Never);
         _receiptService.Verify(
             s => s.DownloadReceiptPdfAsync(It.IsAny<OrderReceipt>(), It.IsAny<CancellationToken>()),

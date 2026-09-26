@@ -3721,21 +3721,7 @@
         "operationId": "Order_LookupOrder",
         "parameters": [
           {
-            "name": "orderNumber",
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "email",
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "confirmationCode",
+            "name": "token",
             "in": "query",
             "schema": {
               "type": "string"
@@ -7477,15 +7463,7 @@
       "CancelGuestOrder_Command": {
         "type": "object",
         "properties": {
-          "displayOrderNumber": {
-            "type": "string",
-            "nullable": true
-          },
-          "email": {
-            "type": "string",
-            "nullable": true
-          },
-          "confirmationCode": {
+          "accessToken": {
             "type": "string",
             "nullable": true
           },
@@ -8041,6 +8019,10 @@
             "nullable": true
           },
           "stripeSessionId": {
+            "type": "string",
+            "nullable": true
+          },
+          "guestAccessToken": {
             "type": "string",
             "nullable": true
           }
@@ -9179,6 +9161,10 @@
           },
           "expressWaiverForfeitedOnCancel": {
             "type": "boolean"
+          },
+          "oopsWindowMinutes": {
+            "type": "integer",
+            "format": "int32"
           }
         },
         "additionalProperties": false
@@ -9190,15 +9176,7 @@
       "GetGuestCancellationFeePreview_Query": {
         "type": "object",
         "properties": {
-          "displayOrderNumber": {
-            "type": "string",
-            "nullable": true
-          },
-          "email": {
-            "type": "string",
-            "nullable": true
-          },
-          "confirmationCode": {
+          "accessToken": {
             "type": "string",
             "nullable": true
           }
@@ -9857,27 +9835,13 @@
         },
         "additionalProperties": false
       },
-      "LookupOrderBatch_OrderLookupItem": {
-        "type": "object",
-        "properties": {
-          "orderId": {
-            "type": "string",
-            "nullable": true
-          },
-          "email": {
-            "type": "string",
-            "nullable": true
-          }
-        },
-        "additionalProperties": false
-      },
       "LookupOrderBatch_Query": {
         "type": "object",
         "properties": {
-          "items": {
+          "accessTokens": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/LookupOrderBatch_OrderLookupItem"
+              "type": "string"
             },
             "nullable": true
           }
@@ -9900,15 +9864,7 @@
       "LookupOrder_Query": {
         "type": "object",
         "properties": {
-          "displayOrderNumber": {
-            "type": "string",
-            "nullable": true
-          },
-          "email": {
-            "type": "string",
-            "nullable": true
-          },
-          "confirmationCode": {
+          "accessToken": {
             "type": "string",
             "nullable": true
           }
@@ -10464,10 +10420,6 @@
           "orderStatus": {
             "$ref": "#/components/schemas/Code"
           },
-          "confirmationCode": {
-            "type": "string",
-            "nullable": true
-          },
           "notes": {
             "type": "string",
             "nullable": true
@@ -10716,10 +10668,6 @@
           },
           "orderStatus": {
             "$ref": "#/components/schemas/Code"
-          },
-          "confirmationCode": {
-            "type": "string",
-            "nullable": true
           },
           "selectedPackages": {
             "type": "array",
@@ -11557,6 +11505,9 @@
           "preferredEmployeeId": {
             "type": "string",
             "nullable": true
+          },
+          "requiresPaymentMethodChange": {
+            "type": "boolean"
           }
         },
         "additionalProperties": false

@@ -130,7 +130,7 @@ Queues decouple the APIs from long-running operations (PDF generation). Each que
 
 | Queue | Poison Queue | Producer | Consumer |
 |-------|-------------|----------|----------|
-| `generate-receipt` | `generate-receipt-poison` | Customer API (after payment) | `GenerateReceipt` function |
+| `generate-receipt` | `generate-receipt-poison` | Every issue of an order's receipt, keyed `receipt:{orderId}`: the customer hosts' `CreateOrder` (a cash booking) and `ConfirmRecurringOrder` (a cash occurrence), the Stripe webhook on each host that runs it (a card payment settles), the partner hosts' `CompleteOrder` (an order with no receipt yet) and the `FiscalReconciliation` timer (one that never landed). The partner hosts' `MarkCashCollected` restates an issued receipt under `receipt-reissue:{orderId}` → [what the receipt says](/flows/payment-and-fiscal#what-the-receipt-says) | `GenerateReceipt` function |
 | `generate-invoice` | `generate-invoice-poison` | Admin API (period close) | `GenerateInvoice` function |
 | `company-wind-down` | `company-wind-down-poison` | Admin API (`WindDownCompany`, and `DeactivateCompany` when a date is set) — one message per act, keyed `wind-down:{tenantId}:{request instant}` | `CompanyWindDown` function — the idempotent sweep ([ADR-0064](/decisions/adr-0064) D2) |
 | `company-archive` | `company-archive-poison` | Admin API (`ArchiveCompany`) — keyed `archive:{tenantId}:{request instant}` | `CompanyArchive` function — builds the bundle into `company-archives` and stamps the manifest hash (ADR-0064 D3) |
@@ -142,11 +142,15 @@ in `storage.bicep`'s `queueBaseNames` and an alert in `queueAlerts.bicep`.
 ### Queue Message Format
 
 ```json
-// generate-receipt queue message
+// generate-receipt queue message — a QueueEnvelope<GenerateReceiptMessage>
 {
-  "orderId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-  "tenantId": "a1b2c3d4-...",
-  "locale": "cs-CZ"
+  "messageKey": "receipt:01J9Z3K4M5N6P7Q8R9S0T1V2W3",
+  "tenantId": "cleansia-cz",
+  "payload": {
+    "orderId": "01J9Z3K4M5N6P7Q8R9S0T1V2W3",
+    "languageCode": "cs",   // a fallback only: the order's own language wins
+    "reissue": false        // true = restate the issued receipt, key receipt-reissue:{orderId}
+  }
 }
 
 // generate-invoice queue message
@@ -202,13 +206,13 @@ had never fired at all — see [the schedule tokens](#timer-schedules) below.
 | `PruneOutbox` | daily 04:00 UTC | Deletes drained outbox rows |
 | `RetryFailedUserDeletions` | daily 05:00 UTC | Re-runs every GDPR erasure left `Failed` (or `Processing` for over 30 min), once per row per day, in its own scope per row; logs a still-failed one at Error. Under `DataRetention__Enabled` |
 | `SendPeriodEndReminders` | daily 09:00 UTC | Emails employees whose pay period ends in 3 days |
-| `DataRetentionCleanup` | weekly, Sun 03:00 UTC | GDPR — deletes expired user data, anonymizes old orders, expires customer audit rows (3 y per row) and blanks an erased customer's dispute text once its 3-year window is past (`DisputeText`). Runs **once per operating company** under that company's own windows (its *Company settings*; the platform defaults where none are set) |
+| `DataRetentionCleanup` | weekly, Sun 03:00 UTC | Fourteen tasks under thirteen retention settings: expired user data, old-order PII, customer/admin/cleaner audit rows (3 y per row by default), dispute text after erasure, contract-acceptance metadata, completed-order photos (7 d by default, held by unresolved disputes), and expired or revoked guest access tokens. Runs **once per operating company** under that company's own settings; token expiry/revocation needs no separate setting → [Retention](/flows/gdpr-and-audit#retention) |
 
 #### Queue consumers
 
 | Function | Queue | Purpose |
 |---|---|---|
-| `GenerateReceipt` | `generate-receipt` | Receipt PDF via QuestPDF → blob storage → SendGrid |
+| `GenerateReceipt` | `generate-receipt` | Issues the receipt: number, fiscal registration, PDF via QuestPDF → blob storage → SendGrid. A restate (`reissue`) re-renders the stored PDF and sends nothing |
 | `GenerateInvoice` | `generate-invoice` | Employee invoice PDF → blob storage |
 | `CalculateOrderPay` | `calculate-order-pay` | Computes a cleaner's pay for a finished order |
 | `SendEmail` | `send-email` | SendGrid delivery |
@@ -250,9 +254,9 @@ deployed database while reporting success (T-0685).
 
 | Setting | Turns off | Keeps working |
 |---|---|---|
-| `DataRetention__Enabled` | The weekly GDPR retention sweep (Sun 03:00) — expired codes, stale devices, old GDPR requests, order PII anonymisation, withdrawn consents, superseded documents, notifications, customer audit rows, erased customers' dispute text — **and** the daily failed-erasure retry (05:00) | Everything else |
+| `DataRetention__Enabled` | All fourteen weekly GDPR retention tasks (Sun 03:00), including order photos, all three audit tables, contract-acceptance metadata and dead guest access tokens — **and** the daily failed-erasure retry (05:00) | Everything else |
 | `PayPeriodClosing__Enabled` | The nightly pay-period job (02:00) — closing expired periods, opening the next, **and generating + emailing an invoice per employee** | `EnsureOpenPeriodAsync`, called inline by pay calculation, so pay-calc never fails with `NoActivePeriod` |
-| `Stripe__Enabled` | **All seven card-charge surfaces** — web checkout, resume checkout, mobile PaymentSheet, recurring-occurrence confirm, membership subscribe, membership checkout, membership plan swap | **Cash orders**, and everything that returns or releases money: refunds, cash-collection intent cancellation, membership cancellation, and GDPR erasure of the Stripe customer |
+| `Stripe__Enabled` | **All seven card-charge surfaces** — web checkout, resume checkout, mobile PaymentSheet, recurring-occurrence confirm, membership subscribe, membership checkout, membership plan swap | **Cash orders** — which only a signed-in customer's one-cleaner booking may use ([the cash rule](/product/business-rules#cash)), so with card off a guest or a larger booking has no way to pay — and everything that returns or releases money: refunds, cash-collection intent cancellation, membership cancellation, and GDPR erasure of the Stripe customer |
 
 ::: danger Set these as app settings, never in `Cleansia.Functions/appsettings.json`
 The Functions worker composes configuration in the **opposite order** to the five API hosts:
@@ -290,26 +294,25 @@ RUN apt-get update && apt-get install -y \
 
 ### Example: GenerateReceipt Function
 
+The trigger is a thin shell. The body is `GenerateReceiptHandler` in `Cleansia.Functions.Core`, where
+it can be tested without the Functions host:
+
 ```csharp
-public class GenerateReceiptFunction(
-    ISender sender,
-    ILogger<GenerateReceiptFunction> logger)
+public class GenerateReceiptFunction(GenerateReceiptHandler handler)
 {
     [Function("GenerateReceipt")]
-    public async Task Run(
-        [QueueTrigger("generate-receipt")] GenerateReceiptMessage message)
-    {
-        logger.LogInformation("Generating receipt for order {OrderId}", message.OrderId);
-
-        var result = await sender.Send(new GenerateReceipt.Command(
-            message.OrderId, message.TenantId, message.Locale));
-
-        if (!result.IsSuccess)
-            throw new InvalidOperationException(
-                $"Receipt generation failed: {result.Error!.Message}");
-    }
+    public Task Run(
+        [QueueTrigger("generate-receipt", Connection = "QueueStorageConnectionString")] string messageText,
+        CancellationToken ct)
+        => handler.HandleAsync(messageText, ct);
 }
 ```
+
+The handler reads the envelope, or a bare message from an older deploy. A `reissue` message restates
+the stored PDF and stops. Any other message is discarded unless the order is a cash booking or paid,
+and is a no-op once the order has its receipt. Otherwise it claims the receipt number, registers it
+with the fiscal authority, renders the PDF and e-mails it. A failure rethrows so the queue retries; a
+write refused by a frozen company is dead-lettered instead.
 
 ## Service Integrations
 
@@ -337,7 +340,7 @@ Used for all transactional emails via Dynamic Templates.
 | Template | Trigger |
 |----------|---------|
 | Order Confirmation | After order creation |
-| Receipt | After payment (with PDF attachment) |
+| Receipt | When the receipt is issued (with PDF attachment): at booking for cash, on settlement for card. A restate sends nothing |
 | Pay Period Reminder | 3 days before period end |
 | Welcome Email | After registration |
 | Password Reset | On password reset request |

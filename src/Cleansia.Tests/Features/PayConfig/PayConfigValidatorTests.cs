@@ -61,7 +61,6 @@ public class PayConfigValidatorTests
         BasePay: 100m,
         ExtraPerRoom: 0m,
         ExtraPerBathroom: 0m,
-        DistanceRatePerKm: 0m,
         MinimumPay: 0m,
         MaximumPay: 0m,
         CurrencyId: CurrencyId,
@@ -155,7 +154,7 @@ public class PayConfigValidatorTests
         _payConfigRepository
             .Setup(r => r.GetByServiceIdAsync(ServiceId, CurrencyId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Core.Domain.EmployeePayroll.EmployeePayConfig.CreateForService(
-                ServiceId, 50m, CurrencyId, 0m, 0m, 0m, null, null));
+                ServiceId, 50m, CurrencyId, 0m, 0m, null, null));
 
         var result = await CreateValidator().ValidateAsync(ValidCreate());
 
@@ -242,7 +241,6 @@ public class PayConfigValidatorTests
         BasePay: 100m,
         ExtraPerRoom: 0m,
         ExtraPerBathroom: 0m,
-        DistanceRatePerKm: 0m,
         MinimumPay: 0m,
         MaximumPay: 0m,
         Description: null);

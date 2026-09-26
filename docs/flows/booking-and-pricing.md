@@ -23,6 +23,7 @@ sequenceDiagram
   API->>V: validate
   V->>P: RE-price, server-side
   V-->>API: refuse if the totals disagree
+  V-->>API: refuse cash unless signed in AND one cleaner is required
   API->>F: create
   F-->>API: New + PaymentStatus.Pending
   alt Card
@@ -62,19 +63,45 @@ re-prices the whole selection server-side and refuses on disagreement. The amoun
 is `ToMinorUnits(order.TotalPrice)` read from the persisted, server-computed value — the client cannot
 influence it at any point, which is why the payment webhook does not need to reconcile the amount.
 
+## Cash is for a signed-in customer's one-cleaner job {#cash-eligibility}
+
+A booking may be paid in cash only when the caller is signed in **and** the server's crew for the
+selection is exactly one (`BookingPolicy.AllowsCash`, owner ruling 2026-09-24); a guest, or a booking
+whose duration needs two cleaners or more, pays by card. The crew is not something the command carries:
+the validator reads it off the same calculator run that re-priced the order
+(`OrderDuration.RequiredEmployees`, one cleaner per started 120 minutes), so a forged request cannot
+make a two-cleaner job cash-eligible. The rule sits in the price chain after the price match and ahead
+of the promo rules, and a refusal is `order.cash_not_available` before any side effect — no express
+waiver reserved, no credit debited, no referral accepted, nothing dispatched. `OrderFactory` refuses
+the same combination as a backstop for callers that never run the validator.
+
+**What the clients do.** The quote already returns `requiredEmployees` for the selection on screen.
+The customer web wizard and the Android and iOS booking flows combine it with the live sign-in state:
+cash is offered only when both allow it; otherwise it is disabled with the reason — cash needs a
+signed-in customer, this booking needs N cleaners, or (while no quote describes the current selection)
+it is confirmed once the price is ready. The mobile booking flows run inside a signed-in session, so
+only the web ever shows the first reason. A cash choice that stops being allowed — a sign-out, a bigger
+selection — is **taken away, not switched to card**: the payment choice is cleared and the customer is
+told to choose again. Both mobile apps re-check cash against the quote the booking is submitted with
+and clear it there rather than send it. If the server still refuses, the web and iOS clear the choice
+(the web wizard returns to the payment step); Android shows the refusal and leaves the choice for the
+customer to change.
+→ [Business rules — paying in cash](/product/business-rules#cash)
+
 ## The booking leaves a row, and so does a refused one
 
 `CreateOrder` is marked `customer.order.create` ([ADR-0062](/decisions/adr-0062)), so the same commit
 that creates the order writes a `CustomerActionAudit` row carrying what the server priced and showed:
 the price breakdown, the discounts and the express state, the line items by id, the cleaning time and
-lead time, the cancellation policy figures as shown (with this customer's free window), the terms
-tick and the terms version in force, the client it came from, the IP and device — never the name,
+lead time, the cancellation policy figures as shown (with this customer's free window and oops
+window), the terms tick and the terms version in force, the client it came from, the IP and device — never the name,
 the address text or the instructions. A guest booking writes the same row with no user; it is the
 case the row exists for, and it is reachable later only by the order, never by a person.
 
 A refused booking is a row too, written outside the transaction that was rolled back: a missing
 terms tick is `consent.terms_not_accepted` (judged first, ahead of the price chain), the wrong quoted
-total is `order.total_price.not_match`, and an express waiver whose quota ran out is its own key.
+total is `order.total_price.not_match`, an express waiver whose quota ran out is its own key, and
+cash the rule does not allow is `order.cash_not_available`.
 `order.country_operator_mismatch` remains a guest consistency check; a signed-in account belonging
 to another operator is no longer a refusal. An anonymous refusal carries the caller’s IP and is
 bounded by the same `auth` window as the request. On an anonymous request, two refusals leave no row
@@ -119,6 +146,20 @@ consent plus the stamped document. What the cleaner accepts against that stamp, 
 story → [Offerability and the take](/flows/offerability-and-take#the-take-carries-the-acceptance),
 [ADR-0068](/decisions/adr-0068) D1.
 
+## The order records the language it was booked in {#booking-language}
+
+`CreateOrder` carries the customer's `language` — one of the seeded codes, `en` when a client sends
+none — and `OrderFactory` stores it on the order as `Order.LanguageCode`. Every client sends what the
+customer is reading. The web sends its UI language. The Android and iOS customer apps send the
+language the app is displaying: the one chosen in the app's language setting, else the first of the
+device's languages the app supports, else English.
+
+The order's documents read it first. The receipt is written in the order's language, then the
+account's preferred language, then whatever its producer passed — so a guest, who has no account to
+read, gets a receipt in the language they booked in. A recurring occurrence has no booking request of
+its own: its `LanguageCode` is null and its receipt follows the account's preference.
+→ [What the receipt says](/flows/payment-and-fiscal#what-the-receipt-says)
+
 ## Responsive quote previews
 
 The home calculator requests its quote immediately. Booking groups rapid selection changes into a
@@ -138,8 +179,14 @@ While selecting services, room and bathroom counts are editable above the sticky
 On smaller screens those controls appear before the packages and services, so they are visible
 without scrolling through the catalogue. Both layouts edit the same selection.
 
+The server accepts at most **eight rooms and four bathrooms**. The same upper bounds apply to
+booking, quote, Plus-savings quote and recurring-template creation or update, with
+`order.size_exceeds_maximum` when either is exceeded. Existing lower-bound rules are unchanged.
+
 Web, Android, and iOS offer starts every 15 minutes from 08:00 through 19:45. The two-hour minimum
 lead time and the express window still apply to the exact selected instant, including its minutes.
+The picker range and grid are not additional API restrictions today; enforcing them on API callers
+awaits an owner decision.
 
 ## Edge cases
 
@@ -151,7 +198,8 @@ lead time and the express window still apply to the exact selected instant, incl
 | 2–4 h lead time | Accepted with a **+20 %** express surcharge, unless a Plus waiver applies. |
 | Booked span over 24 h | Refused. See [why that bound exists](/product/business-rules#maximum-booked-duration-24-h-and-it-is-not-about-calendars). |
 | A package **and** a service the package includes | Charged twice, performed twice, takes twice as long. Owner ruling — not a bug, and not to be de-duplicated. |
-| Guest, no account | Allowed. The order is keyed on the email address, and the customer later finds it via order lookup. The audit row has no user; an admin reaches it from the order's history. |
+| Guest, no account | Allowed, by card. The order is keyed on the email address, and the customer later finds it via order lookup. The audit row has no user; an admin reaches it from the order's history. |
+| Cash from a guest, or on a booking that needs two cleaners or more | Refused, `order.cash_not_available`, before anything is reserved, debited or dispatched. 120 booked minutes is one cleaner; 121 is two. |
 | An unknown language code on the booking | Refused (`CreateOrder.Validator` carries the `LanguageValidator`, the `Register` idiom) — the audit row records `language`, and an unrecognised code is not evidence of anything. No shipped client sends one outside the five seeded codes. |
 | A recurring occurrence confirmed | One `customer.order.recurring.confirm` row: the order, the template, the price and currency, the payment type, the cleaning time and lead time. A schedule created, edited, paused/resumed or deleted writes a `customer.recurring.*` row with the schedule facts before and after. |
 
@@ -175,6 +223,45 @@ longer offers (with a notice to the customer), like the one-off wizard — other
 `order.selected_services.invalid` / `order.selected_package.invalid` for an entry with no price in that
 market. → [Business rules — order currency](/product/business-rules#price-stages)
 
+**A cash schedule must stay a one-cleaner job** ([the cash rule](/product/business-rules#cash)). A
+template always belongs to an account, so only the crew can fail it: `CreateRecurringBooking` and
+`UpdateRecurringBooking` refuse cash (`order.cash_not_available`) when the selection, judged on the live
+catalogue by the same duration sum the factory staffs occurrences with, needs more than one cleaner.
+A cash template that needs more — authored before the rule, or grown by a catalogue change — is
+**never switched to card and never charged**:
+
+- **The materialiser skips it.** It creates no occurrence and logs a warning; the template stays active,
+  and its materialisation marker is left where it was, so it books again — from the occurrences still
+  ahead — as soon as it is eligible.
+- **The list says so.** `GetMyRecurringBookings` returns `requiresPaymentMethodChange: true` on it. The
+  web, Android and iOS lists badge it *Needs a change* and explain the fix beside an edit action; the web
+  list also stops promising a next visit, and Android's Home schedules section badges it too and lists it
+  first.
+- **The fix is an edit.** An update replaces the selection and the payment type together, so the
+  customer moves the schedule to card or to a selection one cleaner can do; the edit clears the
+  materialisation marker and the schedule books again.
+- **An occurrence whose own crew is more than one cleaner cannot be confirmed as cash.**
+  `ConfirmRecurringOrder` judges the occurrence's stored `RequiredEmployees`, not the live template, and
+  refuses such a cash occurrence (one materialised before the rule) with `order.cash_not_available` —
+  it is neither confirmed as cash nor switched to card. The customer cancels it, free while nobody has
+  taken it, and corrects the template; left alone, it is retracted an hour before the slot like any
+  unconfirmed occurrence. A one-cleaner cash occurrence created before a catalogue change grew its
+  template is still confirmable as cash.
+
+The recurring wizard on the web, Android and iOS applies the same rule while the customer authors or
+edits: cash is offered only when the quote for the selection says one cleaner, and a cash choice that
+stops being allowed is cleared rather than switched. Every recurring wizard starts a new schedule on
+card.
+
+The materialiser calculates a raw subtotal without a cleaning date; `OrderFactory` then applies
+the express surcharge once, from that occurrence's date and lead time. Recurring templates carry no
+extras, and this path reserves no monthly express waiver. The undated pricing call does not mean
+that a short-notice occurrence is exempt from the surcharge.
+
+The `Monthly` frequency currently adds 30 days and then advances to the selected weekday, normally
+an interval of 35 days. Calendar-month semantics, including short months, await an owner decision;
+"every 30 days" would not describe the current algorithm either.
+
 > The materialiser decides "did I already spawn this occurrence?" with an unlocked read, and **the
 > answer is enforced by a unique index** — `IX_Orders_RecurringTemplateId_CleaningDateTime`, on the
 > template plus the exact occurrence instant, filtered to spawned orders. The read is the fast path; the
@@ -185,31 +272,88 @@ market. → [Business rules — order currency](/product/business-rules#price-st
 > schema**, so moving the sweep to another scheduler or fanning it out would have reintroduced duplicate
 > billing silently. The lease still holds; it is no longer the only thing holding.
 
-## Guest order lookup
+## Guest order lookup {#guest-order-lookup}
 
-`POST api/Order/Lookup` is anonymous and accepts **order number, e-mail and confirmation code** in
-the request body, which the request logger suppresses. The existing GET route remains compatible. All
-three are checked together; a wrong number, e-mail or code receives the same `order.not_found`
-answer. The display number and e-mail alone are not the secret. `POST api/Order/LookupBatch` takes
-at most 10 internal order-id/e-mail pairs for remembered orders; it does not accept a display number
-as a substitute for the internal id. Both reads are rate-limited.
+**A guest proves a booking with one per-order access token, and it arrives only by e-mail.** The
+token is 256 bits of URL-safe randomness, stored as a SHA-256 digest and never persisted in the
+clear; the anonymous endpoints hash what the caller sent and resolve the booking by that digest
+alone — across operating companies, so a guest who booked under one operator finds the order without
+knowing which operator that was ([ADR-0051](/decisions/adr-0051)'s bypass-and-re-pin cell, with the
+hash as the pin). A token that matches nothing, an expired or revoked one, and a booking that belongs
+to an account all answer the same `order.not_found`, so the read is never an oracle for which
+bookings exist.
+
+| Route (customer web + customer mobile) | Takes | Result |
+|---|---|---|
+| `POST api/Order/Lookup` | `accessToken` | The booking, in the projection a guest is allowed to see |
+| `GET api/Order/Lookup?token=…` | the same token on the query string | The route the e-mail link lands on |
+| `POST api/Order/LookupBatch` | up to **10** tokens | The bookings this browser still holds a token for; an unmatched token simply yields no row, so the response never says which token was wrong |
+
+Both reads sit in the `interactive` rate-limit window, and the request logger suppresses
+`accessToken` the way it suppresses a password.
+→ [Rate-limit policy](/domain/roles/rate-limit-policy)
+
+The guest projection carries no address and no crew: the token opens the **booking**, not the
+household. It does carry the `confirmationCode`, now purely as the short human reference printed on
+the booking — nothing authenticates on it, and it is served on the guest's own order only.
+
+::: warning It replaced a triple that was never a secret
+The old key was **display order number + e-mail + confirmation code**. The display number is
+sequential, the e-mail is not private, and the confirmation code was served on the order detail to
+**every cleaner assigned to the job** — so a cleaner held the whole key to their own customer's
+booking, including the cancellation that charges that customer the 25 % / 50 % tier. Re-keying closed
+the class rather than one leak; the code has left every DTO a cleaner can reach.
+:::
+
+### Where a token comes from, and how long it lives {#guest-access-token}
+
+**Every message that offers a guest a link mints its own token**, so one booking accumulates several
+live rows and none of them supersedes another. Superseding is what a single-channel design needs and
+this is not one: a guest who opened *"your cleaner is on the way"* would land on a page that can open
+nothing, and the checkout success page could not read back the booking it had just taken payment for.
+N live tokens are no weaker than one — each is 256 bits, resolved by its own hash, and scoped to the
+single booking it was minted for.
+
+| Minted by | How the guest receives it |
+|---|---|
+| `CreateOrder` | `guestAccessToken` on the checkout response — guest bookings only, `null` when the booking names an account |
+| The receipt e-mail | the *view your booking* button |
+| "A cleaner has taken your job" · "we're on our way" · "all done" | the same button on each status e-mail |
+| The cancellation e-mail | the same button |
+
+The link is `{clientDomain}/track-order?orderNumber=…&email=…&token=…`; only the `token` opens
+anything. A call site that sends a status e-mail **without** minting one ships a button that dead-ends
+on the "the link is in your e-mail" panel, which is why `GuestTrackLinkTests` walks the tree for
+senders rather than testing each handler behaviourally.
+
+A token dies **30 days after the cleaning** — long enough to cover the refund window and a question
+about the receipt afterwards, short enough that a mailbox read years later is not a live key to
+somebody's home. **`CancelGuestOrder` revokes every existing live token on the booking at once**, because there is
+nothing left to do with them — with one deliberate exception, the cancellation e-mail itself
+([below](#guest-cancellation)). An account booking mints none at all: its owner signs in instead.
+Erasing an ended guest booking also revokes its live tokens in the same database commit as its
+personal data is anonymised. Live guest bookings excluded from erasure keep their tokens. The weekly
+retention sweep deletes expired or revoked token rows; it does not extend their lifetime.
+→ [GDPR, retention and audit](/flows/gdpr-and-audit#retention)
 
 ## Guest cancellation {#guest-cancellation}
 
-A guest can use the same order number, e-mail and confirmation code to preview cancellation and
-submit it without creating an account. Both operations require a guest booking (`UserId` null); an
-account-owned booking is refused with the same `order.not_found` answer as a wrong secret. The
-booking’s operator is resolved from that proven order, so the guest need not choose its market and
-an unrelated browsing or account market cannot redirect the cancellation.
+A guest previews a cancellation and submits it with **the same access token**, and no account. Both
+operations require a guest booking (`UserId` null); an account-owned booking is refused with the same
+`order.not_found` answer as an unknown token. The booking’s operator is resolved from that proven
+order, so the guest need not choose its market and an unrelated browsing or account market cannot
+redirect the cancellation.
 
 The preview shows the standard cancellation tier, fee and policy refund in the order’s currency.
 The cancellation recalculates those figures at the time it is submitted, with the same notice,
 cleaner-assignment and oops-window rules as the signed-in path, and records `CancelledBy.Customer`.
-A guest has no Plus entitlement. An order already cancelled, completed or under way cannot be
+A guest has no Plus entitlement, so their oops window is the standard 15 minutes, and the preview's
+`oopsWindowMinutes` says 15. An order already cancelled, completed or under way cannot be
 cancelled again. → [Cancellation rules](/product/business-rules#cancellation)
 
 The two anonymous routes are available on the customer web and customer mobile API hosts, both in
-the `auth` rate-limit window. Their request bodies carry the complete secret:
+the `auth` rate-limit window. Each request body carries the access token and nothing else that
+proves anything:
 
 | Route | Result |
 |---|---|
@@ -220,7 +364,15 @@ A cancellation e-mail goes to the **persisted booking address**, with a refund l
 successfully issued refund and its actual amount. A deleted or anonymised destination receives
 nothing. The guest gets no account, feed or push; assigned cleaners still receive their notice. The
 act is recorded as `customer.order.cancel` with no customer user id, even when a session accompanies
-the guest secret. → [The customer trail](/flows/gdpr-and-audit#customer-trail)
+the guest's token. → [The customer trail](/flows/gdpr-and-audit#customer-trail)
 
-**Implementation checkpoint, 2026-09-16:** the backend routes are implemented. Generated contracts
-and guest cancellation screens on web, Android and iOS remain in progress under T-0753.
+**`CancelGuestOrder` revokes every existing live key, and the cancellation e-mail then carries a new one.** Those are
+the same decision rather than opposite ones: every token the guest already held is retired at the
+cancel, and the last message the booking will ever send carries the only one that still opens it, so
+the customer can read what they were refunded. It is minted and committed *before* the send, so a
+crash after it cannot leave an e-mailed token with no row behind it, and it expires on the same
+schedule as any other — 30 days past the cleaning.
+
+**Shipped on every client.** The web track page, the Android customer app and the iOS customer app
+all draw the preview (tier, fee, refund estimate) before asking for confirmation, and all three key
+it on the access token. → [Order tracking](/customer-app/order-tracking)

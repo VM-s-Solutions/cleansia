@@ -280,7 +280,8 @@ final class CancellationQuoteTests: XCTestCase {
             refundAmount: 750,
             totalPrice: 1000,
             currencyCode: "CZK",
-            expressWaiverForfeitedOnCancel: true
+            expressWaiverForfeitedOnCancel: true,
+            oopsWindowMinutes: 15
         ))
 
         XCTAssertEqual(quote.tier, .partial)
@@ -297,7 +298,8 @@ final class CancellationQuoteTests: XCTestCase {
             tier: ._0,
             feeAmount: 0,
             refundAmount: 1000,
-            expressWaiverForfeitedOnCancel: false
+            expressWaiverForfeitedOnCancel: false,
+            oopsWindowMinutes: 15
         ))
 
         XCTAssertNil(quote.currencyCode)
@@ -319,8 +321,8 @@ final class CancellationFeeCardModelTests: XCTestCase {
     }
 
     /// All three are zero-fee and none is the same sentence: `FreeNotAccepted` means no cleaner has taken
-    /// the job, `FreeOopsWindow` means you just booked, `FreeOutsideWindow` means you are early.
-    /// Re-deriving meaning from the rate collapses them into one.
+    /// the job, `FreeOopsWindow` means you are inside the grace after booking, `FreeOutsideWindow` means
+    /// you are early. Re-deriving meaning from the rate collapses them into one.
     func testTheThreeZeroFeeTiersAreThreeDifferentSentences() {
         let callouts = [
             Self.callout(.freeNotAccepted),
@@ -370,19 +372,34 @@ final class CancellationFeeCardModelTests: XCTestCase {
         XCTAssertEqual(Self.callout(.freeOopsWindow, refundIsEstimate: true).amountKey, "order_cancel_fee_none")
     }
 
+    /// The sheet states the customer's own grace, whichever the preview resolved for them, on every tier
+    /// — the figure is the server's and the card adds none of its own.
+    func testTheCalloutCarriesTheGraceThePreviewReturned() {
+        XCTAssertEqual(Self.callout(.partial, fee: 250, refund: 750, oopsWindowMinutes: 15).graceMinutes, 15)
+        XCTAssertEqual(Self.callout(.lastMinute, fee: 500, refund: 500, oopsWindowMinutes: 60).graceMinutes, 60)
+        XCTAssertEqual(Self.callout(.freeNotAccepted, oopsWindowMinutes: 60).graceMinutes, 60)
+        XCTAssertEqual(Self.callout(.freeOopsWindow, refundIsEstimate: true, oopsWindowMinutes: 15).graceMinutes, 15)
+    }
+
+    func testANonPositiveGraceStatesNothing() {
+        XCTAssertNil(Self.callout(.partial, oopsWindowMinutes: 0).graceMinutes)
+    }
+
     private static func callout(
         _ tier: CancellationTier,
         fee: Double = 0,
         refund: Double = 1000,
         forfeitsExpressWaiver: Bool = false,
-        refundIsEstimate: Bool = false
+        refundIsEstimate: Bool = false,
+        oopsWindowMinutes: Int = 15
     ) -> CancellationFeeCallout {
         let quote = CancellationQuote(
             tier: tier,
             feeAmount: fee,
             refundAmount: refund,
             currencyCode: "CZK",
-            forfeitsExpressWaiver: forfeitsExpressWaiver
+            forfeitsExpressWaiver: forfeitsExpressWaiver,
+            oopsWindowMinutes: oopsWindowMinutes
         )
         let model = CancellationFeeCardModel(.loaded(quote), refundIsEstimate: refundIsEstimate)
         guard case let .quoted(callout) = model else {
@@ -391,7 +408,8 @@ final class CancellationFeeCardModelTests: XCTestCase {
                 amountKey: "",
                 amounts: [],
                 severity: .free,
-                warnsExpressWaiverForfeited: false
+                warnsExpressWaiverForfeited: false,
+                graceMinutes: nil
             )
         }
         return callout
@@ -463,14 +481,16 @@ final class CancelOrderConfirmGateTests: XCTestCase {
             feeAmount: 250,
             refundAmount: 750,
             currencyCode: "CZK",
-            forfeitsExpressWaiver: false
+            forfeitsExpressWaiver: false,
+            oopsWindowMinutes: 15
         )
         let unpriced = CancellationQuote(
             tier: .partial,
             feeAmount: 250,
             refundAmount: 750,
             currencyCode: " ",
-            forfeitsExpressWaiver: false
+            forfeitsExpressWaiver: false,
+            oopsWindowMinutes: 15
         )
 
         XCTAssertFalse(CancelOrderConfirmGate.quoteIsUsable(.loading))

@@ -1,3 +1,4 @@
+using Cleansia.Core.Domain.Enums;
 using Cleansia.Infra.Services.Pdf.Layouts;
 using Cleansia.Infra.Services.Pdf.Models;
 
@@ -35,7 +36,8 @@ public class ReceiptTenderLayoutTests
             CreditApplied = creditApplied,
             AmountDueOnCard = total - creditApplied,
             Currency = "Kč",
-            PaymentStatus = "Paid",
+            PaymentStatus = PaymentStatus.Paid,
+            PaymentType = PaymentType.Card,
             IsVatPayer = vatPayer,
             NetAmount = vatPayer ? total / 1.21m : null,
             VatAmount = vatPayer ? total - (total / 1.21m) : null,

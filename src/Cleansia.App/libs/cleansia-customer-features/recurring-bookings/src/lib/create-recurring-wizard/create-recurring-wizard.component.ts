@@ -8,10 +8,12 @@ import {
   OnInit,
   PLATFORM_ID,
   signal,
+  untracked,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { FoamEdgeComponent } from '@cleansia-customer/home';
+import { PaymentType } from '@cleansia/customer-services';
 import { CleansiaCustomerRoute } from '@cleansia/services';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import {
@@ -113,26 +115,19 @@ export class CreateRecurringWizardComponent implements OnInit {
     })),
   );
 
-  /** 1 = Cash, 2 = Card — the backend's `PaymentType`. */
   readonly paymentOptions = computed(() => [
-    { label: this.translate.instant('recurring_booking.pay_cash'), value: 1 },
-    { label: this.translate.instant('recurring_booking.pay_card'), value: 2 },
+    {
+      label: this.translate.instant('recurring_booking.pay_cash'),
+      value: PaymentType.Cash,
+      disabled: !this.facade.cashSelectable(),
+    },
+    { label: this.translate.instant('recurring_booking.pay_card'), value: PaymentType.Card },
   ]);
 
-  /**
-   * Re-quote whenever the priced inputs change. Watching those five fields
-   * rather than the whole form object: the day and the time move no money, and
-   * quoting on each of them would put a request behind every tap. The address
-   * does — its country decides the currency the schedule is priced in.
-   */
+  /** Re-quote only when the price can change; the day, the time and the way to pay cannot. */
   private readonly quoteEffect = effect(() => {
-    const d = this.facade.formData();
-    void d.selectedServiceIds;
-    void d.selectedPackageIds;
-    void d.rooms;
-    void d.bathrooms;
-    void d.savedAddressId;
-    this.facade.quoteForm();
+    this.facade.pricedSelection();
+    untracked(() => this.facade.quoteForm());
   });
 
   /**
@@ -205,6 +200,7 @@ export class CreateRecurringWizardComponent implements OnInit {
       time: 'recurring_booking.time_label',
       address: 'recurring_booking.address_label',
       startsOn: 'recurring_booking.starts_on_label',
+      payment: 'recurring_booking.payment_label',
     };
     return this.facade
       .missing()
@@ -285,8 +281,8 @@ export class CreateRecurringWizardComponent implements OnInit {
     this.facade.updateFormData({ savedAddressId: id });
   }
 
-  selectPayment(type: number): void {
-    this.facade.updateFormData({ paymentType: type });
+  selectPayment(type: PaymentType): void {
+    this.facade.selectPayment(type);
   }
 
   onStartsOnChange(date: Date | null): void {

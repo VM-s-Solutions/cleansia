@@ -33,6 +33,11 @@
   }
   @if (facade.cancellationPreview(); as preview) {
   <p>{{ ('pages.track_order.cancellation.tier.' + preview.tier) | translate }}</p>
+  @if (preview.oopsWindowMinutes) {
+  <p>
+    {{ 'pages.track_order.cancellation.grace_note' | translate: { minutes: preview.oopsWindowMinutes } }}
+  </p>
+  }
   <dl class="cl-trk__cancellation-figures">
     <div>
       <dt>{{ 'pages.track_order.cancellation.fee' | translate }}</dt>

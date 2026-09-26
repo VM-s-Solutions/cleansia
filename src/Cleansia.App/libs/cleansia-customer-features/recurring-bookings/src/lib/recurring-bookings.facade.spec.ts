@@ -4,6 +4,7 @@ import {
   CustomerClient,
   DeleteRecurringBookingCommand,
   PackageListItem,
+  PaymentType,
   QuoteOrderResponse,
   RecurringBookingTemplateDto,
   SavedAddressDto,
@@ -24,9 +25,9 @@ import { SnackbarService } from '@cleansia/services';
 import { Action } from '@ngrx/store';
 import { provideMockStore, MockStore } from '@ngrx/store/testing';
 import { TranslateService } from '@ngx-translate/core';
-import { Observable, of, throwError } from 'rxjs';
+import { Observable, of, Subject, throwError } from 'rxjs';
 import { RecurringBookingsFacade } from './recurring-bookings.facade';
-import { RecurringPrefillParams } from './recurring-bookings.models';
+import { RecurrenceFrequency, RecurringPrefillParams } from './recurring-bookings.models';
 
 describe('RecurringBookingsFacade', () => {
   let facade: RecurringBookingsFacade;
@@ -34,6 +35,7 @@ describe('RecurringBookingsFacade', () => {
   let client: {
     getMine: jest.Mock;
     create: jest.Mock;
+    update: jest.Mock;
     setActive: jest.Mock;
     delete: jest.Mock;
   };
@@ -60,6 +62,7 @@ describe('RecurringBookingsFacade', () => {
     client = {
       getMine: jest.fn().mockReturnValue(of([])),
       create: jest.fn(),
+      update: jest.fn(),
       setActive: jest.fn().mockReturnValue(of(undefined)),
       delete: jest.fn().mockReturnValue(of(undefined)),
     };
@@ -563,6 +566,269 @@ describe('RecurringBookingsFacade', () => {
 
       expect(ok).toBe(false);
       expect(client.create).not.toHaveBeenCalled();
+    });
+  });
+
+  // Owner ruling 2026-09-24: a schedule is always an account's, so cash turns on the crew alone —
+  // one cleaner, from the server's quote. A cash choice that stops being allowed is taken away, never
+  // swapped for card.
+  describe('paying a schedule in cash', () => {
+    const crewOf = (requiredEmployees: number) =>
+      QuoteOrderResponse.fromJS({
+        totalPrice: 1000,
+        finalPriceAfterDiscount: 1000,
+        currencyCode: 'CZK',
+        requiredEmployees,
+      });
+
+    const completeForm = (paymentType: PaymentType) =>
+      facade.updateFormData({
+        selectedServiceIds: ['s1'],
+        savedAddressId: 'addr-1',
+        startsOn: new Date('2026-10-01T00:00:00Z'),
+        paymentType,
+      });
+
+    it('starts a new schedule on card', () => {
+      expect(facade.formData().paymentType).toBe(PaymentType.Card);
+    });
+
+    it('offers cash once the quote says one cleaner does each clean', async () => {
+      orderClient.quote.mockReturnValue(of(crewOf(1)));
+      facade.updateFormData({ selectedServiceIds: ['s1'] });
+
+      await facade.quoteForm();
+
+      expect(facade.cashEligibility()).toEqual({ kind: 'available' });
+    });
+
+    it('refuses cash when the quote says two cleaners are needed', async () => {
+      orderClient.quote.mockReturnValue(of(crewOf(2)));
+      facade.updateFormData({ selectedServiceIds: ['s1'] });
+
+      await facade.quoteForm();
+
+      expect(facade.cashEligibility()).toEqual({ kind: 'needs_card', requiredCleaners: 2 });
+    });
+
+    it('decides nothing about cash before the form has a quote', () => {
+      expect(facade.cashEligibility()).toEqual({ kind: 'pending' });
+    });
+
+    it('keeps the answer for the latest selection when quotes land out of order', async () => {
+      const slow = new Subject<QuoteOrderResponse>();
+      orderClient.quote.mockReturnValueOnce(slow).mockReturnValueOnce(of(crewOf(1)));
+      facade.updateFormData({ selectedServiceIds: ['s1', 's2'] });
+      const older = facade.quoteForm();
+      facade.updateFormData({ selectedServiceIds: ['s1'] });
+      await facade.quoteForm();
+
+      slow.next(crewOf(2));
+      slow.complete();
+      await older;
+
+      expect(facade.cashEligibility()).toEqual({ kind: 'available' });
+    });
+
+    it('cannot choose cash while it is not allowed', () => {
+      facade.selectPayment(PaymentType.Cash);
+
+      expect(facade.formData().paymentType).toBe(PaymentType.Card);
+    });
+
+    it('takes an ineligible cash away from a legacy template opened for edit, without choosing card', async () => {
+      orderClient.quote.mockReturnValue(of(crewOf(2)));
+      facade.loadForEdit(
+        template({ selectedServiceIds: ['s1'], paymentType: PaymentType.Cash, requiresPaymentMethodChange: true }),
+      );
+
+      await facade.quoteForm();
+      TestBed.flushEffects();
+
+      expect(facade.formData().paymentType).toBeNull();
+      expect(facade.cashCleared()).toBe(true);
+      expect(facade.missing()).toContain('payment');
+      expect(snackbar.showInfoTranslated).toHaveBeenCalledWith('recurring_booking.cash_cleared');
+    });
+
+    it('takes cash prefilled from an order away when the selection needs two cleaners', async () => {
+      orderClient.quote.mockReturnValue(of(crewOf(2)));
+      facade.prefillFromOrder({
+        selectedServiceIds: ['s1'],
+        selectedPackageIds: [],
+        selectedServiceNames: ['Basic'],
+        selectedPackageNames: [],
+        rooms: 2,
+        bathrooms: 1,
+        paymentType: PaymentType.Cash,
+        timeOfDay: '09:00',
+      });
+
+      await facade.quoteForm();
+      TestBed.flushEffects();
+
+      expect(facade.formData().paymentType).toBeNull();
+    });
+
+    it('keeps an allowed cash choice', async () => {
+      orderClient.quote.mockReturnValue(of(crewOf(1)));
+      facade.updateFormData({ selectedServiceIds: ['s1'] });
+      await facade.quoteForm();
+
+      facade.selectPayment(PaymentType.Cash);
+      TestBed.flushEffects();
+
+      expect(facade.formData().paymentType).toBe(PaymentType.Cash);
+      expect(facade.cashCleared()).toBe(false);
+    });
+
+    it('never sends cash the quote taken at submit refuses', async () => {
+      orderClient.quote.mockReturnValue(of(crewOf(2)));
+      completeForm(PaymentType.Cash);
+
+      const ok = await facade.submit();
+
+      expect(ok).toBe(false);
+      expect(client.create).not.toHaveBeenCalled();
+      expect(facade.formData().paymentType).toBeNull();
+    });
+
+    it('does not send cash when the crew could not be checked', async () => {
+      orderClient.quote.mockReturnValue(throwError(() => new Error('offline')));
+      completeForm(PaymentType.Cash);
+
+      const ok = await facade.submit();
+
+      expect(ok).toBe(false);
+      expect(client.create).not.toHaveBeenCalled();
+      expect(facade.formData().paymentType).toBe(PaymentType.Cash);
+      expect(snackbar.showError).toHaveBeenCalledWith('recurring_booking.cash_unchecked');
+    });
+
+    it('sends cash on a schedule one cleaner does alone', async () => {
+      orderClient.quote.mockReturnValue(of(crewOf(1)));
+      client.create.mockReturnValue(of(template({ id: 't-new' })));
+      completeForm(PaymentType.Cash);
+
+      const ok = await facade.submit();
+
+      expect(ok).toBe(true);
+      expect(client.create.mock.calls[0][0].paymentType).toBe(PaymentType.Cash);
+    });
+
+    it('sends card without asking for a quote first', async () => {
+      client.create.mockReturnValue(of(template({ id: 't-new' })));
+      completeForm(PaymentType.Card);
+
+      await facade.submit();
+
+      expect(orderClient.quote).not.toHaveBeenCalled();
+      expect(client.create).toHaveBeenCalledTimes(1);
+    });
+
+    it('takes cash off the form when the server refuses it, leaving the interceptor toast alone', async () => {
+      orderClient.quote.mockReturnValue(of(crewOf(1)));
+      client.update.mockReturnValue(
+        throwError(() => ({ errors: { PaymentType: 'order.cash_not_available' } })),
+      );
+      facade.loadForEdit(template({ id: 't1', paymentType: PaymentType.Cash }));
+      completeForm(PaymentType.Cash);
+
+      const ok = await facade.submit();
+
+      expect(ok).toBe(false);
+      expect(snackbar.showError).not.toHaveBeenCalled();
+      expect(facade.formData().paymentType).toBeNull();
+      expect(facade.cashCleared()).toBe(true);
+    });
+
+    it('prices the same selection whatever the day, the time, the cadence or the payment', async () => {
+      orderClient.quote.mockReturnValue(of(crewOf(1)));
+      facade.updateFormData({ selectedServiceIds: ['s1'] });
+      await facade.quoteForm();
+      const priced = facade.pricedSelection();
+
+      facade.selectPayment(PaymentType.Cash);
+      facade.updateFormData({
+        timeOfDay: '11:00',
+        dayOfWeek: 2,
+        frequency: RecurrenceFrequency.Monthly,
+        startsOn: new Date('2026-11-01T00:00:00Z'),
+      });
+      TestBed.flushEffects();
+
+      expect(facade.pricedSelection()).toBe(priced);
+      expect(facade.cashEligibility()).toEqual({ kind: 'available' });
+      expect(facade.formData().paymentType).toBe(PaymentType.Cash);
+
+      facade.updateFormData({ rooms: 5 });
+
+      expect(facade.pricedSelection()).not.toBe(priced);
+      expect(facade.cashEligibility()).toEqual({ kind: 'pending' });
+    });
+
+    it('keeps cash open while an unchanged selection is quoted again', async () => {
+      orderClient.quote.mockReturnValue(of(crewOf(1)));
+      facade.updateFormData({ selectedServiceIds: ['s1'] });
+      await facade.quoteForm();
+      facade.selectPayment(PaymentType.Cash);
+
+      const inFlight = new Subject<QuoteOrderResponse>();
+      orderClient.quote.mockReturnValue(inFlight);
+      const requote = facade.quoteForm();
+
+      expect(facade.cashSelectable()).toBe(true);
+      expect(facade.cashReason()).toBeNull();
+
+      inFlight.next(crewOf(1));
+      inFlight.complete();
+      await requote;
+      TestBed.flushEffects();
+
+      expect(facade.formData().paymentType).toBe(PaymentType.Cash);
+    });
+
+    it('names why cash is not available, with the crew the quote gave', async () => {
+      expect(facade.cashReason()).toEqual({ key: 'recurring_booking.cash_pending', params: {} });
+
+      orderClient.quote.mockReturnValue(of(crewOf(3)));
+      facade.updateFormData({ selectedServiceIds: ['s1'] });
+      await facade.quoteForm();
+
+      expect(facade.cashSelectable()).toBe(false);
+      expect(facade.cashReason()).toEqual({
+        key: 'recurring_booking.cash_needs_card',
+        params: { count: 3 },
+      });
+
+      orderClient.quote.mockReturnValue(of(crewOf(1)));
+      facade.updateFormData({ rooms: 3 });
+      await facade.quoteForm();
+
+      expect(facade.cashSelectable()).toBe(true);
+      expect(facade.cashReason()).toBeNull();
+    });
+
+    it('stops saying cash was taken away once the selection allows it again', async () => {
+      orderClient.quote.mockReturnValue(of(crewOf(1)));
+      facade.updateFormData({ selectedServiceIds: ['s1'] });
+      await facade.quoteForm();
+      facade.selectPayment(PaymentType.Cash);
+
+      orderClient.quote.mockReturnValue(of(crewOf(2)));
+      facade.updateFormData({ selectedServiceIds: ['s1', 's2'] });
+      await facade.quoteForm();
+      TestBed.flushEffects();
+      expect(facade.cashClearedNotice()).toBe(true);
+
+      orderClient.quote.mockReturnValue(of(crewOf(1)));
+      facade.updateFormData({ selectedServiceIds: ['s1'] });
+      expect(facade.cashClearedNotice()).toBe(true);
+
+      await facade.quoteForm();
+
+      expect(facade.cashClearedNotice()).toBe(false);
+      expect(facade.formData().paymentType).toBeNull();
     });
   });
 

@@ -1,4 +1,4 @@
-import { inject, Injectable, Injector, PLATFORM_ID, signal, computed } from '@angular/core';
+import { computed, effect, inject, Injectable, Injector, PLATFORM_ID, signal, untracked } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { Router } from '@angular/router';
 import { UnsubscribeControlDirective } from '@cleansia/directives';
@@ -39,6 +39,7 @@ import {
   marketCountryOptions,
   SnackbarService,
 } from '@cleansia/services';
+import { CashEligibility, cashIsRefused, resolveCashEligibility } from '@cleansia/models';
 import { Store } from '@ngrx/store';
 import { TranslateService } from '@ngx-translate/core';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
@@ -54,8 +55,10 @@ import {
   OrderWizardFormData,
   PromoCodeUiState,
   RebookParams,
+  cashReasonCopy,
 } from './order-wizard.models';
 
+const PAYMENT_STEP = 3;
 /** The index of the Plus step in `steps`. */
 const PLUS_STEP = 4;
 
@@ -225,6 +228,26 @@ export class OrderWizardFacade extends UnsubscribeControlDirective {
   readonly tierDiscount = this.pricing.tierDiscount;
   readonly membershipDiscount = this.pricing.membershipDiscount;
   readonly effectiveDiscount = this.pricing.effectiveDiscount;
+
+  /**
+   * Whether this booking may be paid in cash, from the live session and the crew the server quoted
+   * for the selection on screen. A quote for an earlier selection says nothing about this one.
+   */
+  readonly cashEligibility = computed<CashEligibility>(() =>
+    resolveCashEligibility(
+      this.authService.isLoggedIn(),
+      this.pricing.cachedQuoteMatchesCurrentState()
+        ? (this.quote()?.requiredEmployees ?? null)
+        : null,
+    ),
+  );
+  readonly cashSelectable = computed(() => this.cashEligibility().kind === 'available');
+  readonly cashReason = computed(() => cashReasonCopy(this.cashEligibility()));
+  readonly cashNeedsAccount = computed(() => this.cashEligibility().kind === 'needs_account');
+  /** A cash choice was taken away because it stopped being allowed; cleared by the next choice. */
+  readonly cashCleared = signal(false);
+  /** Said only while cash is still not available; a booking that allows it again needs no warning. */
+  readonly cashClearedNotice = computed(() => this.cashCleared() && !this.cashSelectable());
   // Credit: the balance, the slice this booking takes, and what the card is left to pay.
   // Owner ruling 2026-09-05 — applied automatically, and never the whole booking.
   readonly creditBalance = this.pricing.creditBalance;
@@ -293,6 +316,24 @@ export class OrderWizardFacade extends UnsubscribeControlDirective {
       currentFormData: () => this.formData(),
       patchFormData: (partial) => this.updateFormData(partial),
     });
+    effect(() => {
+      if (this.formData().paymentType === PaymentType.Cash && cashIsRefused(this.cashEligibility())) {
+        untracked(() => this.dropCash(true));
+      }
+    });
+  }
+
+  selectPaymentType(type: PaymentType): void {
+    if (type === PaymentType.Cash && !this.cashSelectable()) return;
+    this.cashCleared.set(false);
+    this.updateFormData({ paymentType: type });
+  }
+
+  /** Never replaced by card: the customer is told and chooses again. */
+  private dropCash(announce: boolean): void {
+    this.updateFormData({ paymentType: null });
+    this.cashCleared.set(true);
+    if (announce) this.snackbarService.showInfoTranslated('pages.order.cash_cleared');
   }
 
   selectPreferredCleaner(employeeId: string | null): void {
@@ -758,6 +799,15 @@ export class OrderWizardFacade extends UnsubscribeControlDirective {
         }
         break;
 
+      case PAYMENT_STEP:
+        if (
+          data.paymentType === null ||
+          (data.paymentType === PaymentType.Cash && cashIsRefused(this.cashEligibility()))
+        ) {
+          reasons.push('pages.order.missing.payment');
+        }
+        break;
+
       default:
         break;
     }
@@ -844,6 +894,17 @@ export class OrderWizardFacade extends UnsubscribeControlDirective {
       return;
     }
 
+    const paymentType = this.formData().paymentType;
+    if (
+      paymentType === null ||
+      (paymentType === PaymentType.Cash && !this.cashSelectable())
+    ) {
+      this.submitting.set(false);
+      if (paymentType === PaymentType.Cash) this.dropCash(true);
+      this.goToPaymentStep();
+      return;
+    }
+
     const selectedDate = new Date(data.cleaningDate);
     const [hours, minutes] = data.cleaningTime.split(':').map(Number);
     // Build the slot in the user's LOCAL timezone — `cleaningTime` is the
@@ -886,7 +947,7 @@ export class OrderWizardFacade extends UnsubscribeControlDirective {
     command.bathrooms = data.bathrooms;
     command.extras = data.extras;
     command.cleaningDate = cleaningDate;
-    command.paymentType = data.paymentType;
+    command.paymentType = paymentType;
     // The currency the server resolved for the address's country, echoed so the create prices in
     // the same one the quote did.
     command.currencyId = quoted.currencyId;
@@ -917,7 +978,7 @@ export class OrderWizardFacade extends UnsubscribeControlDirective {
     // Deliberately unset: `referralCode` is a signup-only benefit the checkout wizard never
     // populates. It stays off the JSON.
 
-    if (data.paymentType === PaymentType.Card) {
+    if (paymentType === PaymentType.Card) {
       this.customerClient.paymentClient
         .createOrder(command)
         .pipe(
@@ -977,13 +1038,25 @@ export class OrderWizardFacade extends UnsubscribeControlDirective {
    * A promo the server will not honour refuses the whole create rather than booking at full
    * price. The interceptor has already toasted which promo rule refused it, and a second, generic
    * toast would replace that sentence — so this one only takes the code off the order, which is
-   * what lets the customer submit again.
+   * what lets the customer submit again. Refused cash is handled the same way: taken off, and the
+   * customer sent back to choose how to pay.
    */
   private onCreateRefused(error: unknown): void {
-    if (extractApiErrorCode(error)?.startsWith('promo.')) {
+    const code = extractApiErrorCode(error);
+    if (code?.startsWith('promo.')) {
       this.promo.clearPromoCode();
       return;
     }
+    if (code === 'order.cash_not_available') {
+      this.dropCash(false);
+      this.goToPaymentStep();
+      return;
+    }
     this.snackbarService.showError(this.translate.instant('pages.order.submit_error'));
+  }
+
+  private goToPaymentStep(): void {
+    this.activeStep.set(PAYMENT_STEP);
+    if (this.isBrowser) window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 }

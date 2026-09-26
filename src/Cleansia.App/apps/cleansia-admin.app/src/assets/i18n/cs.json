@@ -2362,7 +2362,7 @@
         "expire_error": "Zůstatek se nepodařilo odepsat.",
         "expire_dialog": {
           "title": "Odepsat zůstatek kreditu",
-          "lede": "Odepíše celý zůstatek {{amount}} a nelze to vrátit zpět. Použijte, když zákazník odchází: dokud kredit zůstává, výmaz účtu se odmítne.",
+          "lede": "Odepíše celý zůstatek {{amount}} a nelze to vrátit zpět. Před výmazem účtu to není potřeba: výmaz nevyčerpaný kredit odepíše sám.",
           "field": {
             "note": "Důvod",
             "note_help": "Jediný záznam o tom, proč firma přestala dlužit peníze. Uveďte, kdo o to požádal."
@@ -2605,7 +2605,7 @@
         "fulfil_title": "Vyřídit tuto žádost o smazání?",
         "retry": "Opakovat výmaz",
         "retry_confirm_title": "Opakovat tento výmaz?",
-        "retry_confirm_message": "Výmaz účtu uživatele {{userId}} bude spuštěn znovu. Pokud uspěje, účet bude trvale anonymizován a akci nelze vrátit.",
+        "retry_confirm_message": "Výmaz účtu uživatele {{userId}} bude spuštěn znovu. Pokud uspěje, účet bude trvale anonymizován a nevyčerpaný zákaznický kredit na něm se odepíše bez výplaty a bez možnosti obnovení. Akci nelze vrátit.",
         "retry_confirm_yes": "Opakovat",
         "retry_success": "Výmaz byl zopakován. Účet je nyní vymazán.",
         "retry_error": "Výmaz se nepodařilo zopakovat."
@@ -2657,7 +2657,7 @@
         "success": "Účet byl vymazán.",
         "error": "Účet se nepodařilo vymazat.",
         "confirm_title": "Vymazat účet?",
-        "confirm_message": "Účet uživatele {{userId}} bude trvale anonymizován. Tuto akci nelze vrátit.",
+        "confirm_message": "Účet uživatele {{userId}} bude trvale anonymizován. Nevyčerpaný zákaznický kredit na účtu se po dokončení výmazu odepíše — nevyplácí se a nelze ho obnovit. Tuto akci nelze vrátit.",
         "confirm_yes": "Vymazat"
       }
     },

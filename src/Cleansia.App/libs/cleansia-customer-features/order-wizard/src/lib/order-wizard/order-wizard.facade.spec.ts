@@ -1,4 +1,4 @@
-import { PLATFORM_ID, signal } from '@angular/core';
+import { PLATFORM_ID, signal, WritableSignal } from '@angular/core';
 import { fakeAsync, TestBed, tick } from '@angular/core/testing';
 import { Router } from '@angular/router';
 import {
@@ -37,6 +37,7 @@ import { createAddressDto } from './order-wizard.models';
 import {
   EXPRESS_DISCOUNTED_QUOTE,
   EXPRESS_QUOTE,
+  ONE_CLEANER_QUOTE,
   PLAIN_QUOTE,
   quoteFixture,
 } from './order-quote.fixtures';
@@ -53,6 +54,7 @@ describe('OrderWizardFacade', () => {
   let apiClient: { serviceCity: jest.Mock };
   let membershipClient: { getMine: jest.Mock; getPlans: jest.Mock };
   let authService: { isLoggedIn: jest.Mock };
+  let signedIn: WritableSignal<boolean>;
   let snackbar: { showError: jest.Mock; showInfoTranslated: jest.Mock };
   let router: { navigate: jest.Mock };
   let guestOrderService: { save: jest.Mock };
@@ -97,7 +99,10 @@ describe('OrderWizardFacade', () => {
       getMine: jest.fn().mockReturnValue(of({ hasMembership: false })),
       getPlans: jest.fn().mockReturnValue(of([])),
     };
-    authService = { isLoggedIn: jest.fn().mockReturnValue(false) };
+    // Backed by a signal, as the real service is: a computed that reads a bare jest.fn has no
+    // dependency to re-run on, so sign-in and sign-out would be invisible to it.
+    signedIn = signal(false);
+    authService = { isLoggedIn: jest.fn(() => signedIn()) };
     guestOrderService = { save: jest.fn() };
     snackbar = { showError: jest.fn(), showInfoTranslated: jest.fn() };
     router = { navigate: jest.fn() };
@@ -729,9 +734,12 @@ describe('OrderWizardFacade', () => {
       expect(facade.canProceed()).toBe(true);
     });
 
-    it('step 3 (payment) always passes', () => {
+    it('step 3 passes once a way to pay is chosen, and names the gap until then', () => {
       facade.goToStep(3);
       expect(facade.canProceed()).toBe(true);
+
+      facade.updateFormData({ paymentType: null });
+      expect(facade.missingReasons()).toEqual(['pages.order.missing.payment']);
     });
   });
 
@@ -878,8 +886,11 @@ describe('OrderWizardFacade', () => {
     // A COMPLETE order, not the minimum that used to reach the network. Submit now refuses an
     // incomplete one — that is the whole point of the gate — and the single-letter names and absent
     // address this set up would be rejected by the step rules the wizard already had, which is
-    // exactly the payload that reached the server and came back 400.
+    // exactly the payload that reached the server and came back 400. Signed in, on a booking one
+    // cleaner does alone, because that is the only customer the cash cases below can be.
     beforeEach(() => {
+      signedIn.set(true);
+      orderClient.quote.mockReturnValue(of(ONE_CLEANER_QUOTE));
       facade.updateFormData({
         selectedServiceIds: ['s1'],
         cleaningDate: new Date('2026-07-01T00:00:00Z'),
@@ -964,19 +975,17 @@ describe('OrderWizardFacade', () => {
     // The create response is the only moment a guest's browser can learn the booking's access
     // token without waiting for the e-mail, and it is what the success page reads the booking back
     // with. An account booking answers with no token and leaves nothing behind.
-    it.each([PaymentType.Cash, PaymentType.Card])(
-      'remembers the access token a guest booking answers with (%s)',
-      async paymentType => {
-        facade.updateFormData({ paymentType });
-        const answer = of({ id: 'order-1', stripeSessionId: '', guestAccessToken: 'tok-1' });
-        orderClient.createOrder.mockReturnValue(answer);
-        paymentClient.createOrder.mockReturnValue(answer);
+    it('remembers the access token a guest booking answers with', async () => {
+      signedIn.set(false);
+      facade.updateFormData({ paymentType: PaymentType.Card });
+      paymentClient.createOrder.mockReturnValue(
+        of({ id: 'order-1', stripeSessionId: '', guestAccessToken: 'tok-1' }),
+      );
 
-        await facade.submitOrder();
+      await facade.submitOrder();
 
-        expect(guestOrderService.save).toHaveBeenCalledWith('order-1', 'tok-1');
-      },
-    );
+      expect(guestOrderService.save).toHaveBeenCalledWith('order-1', 'tok-1');
+    });
 
     it.each([PaymentType.Cash, PaymentType.Card])(
       'remembers nothing when the booking answers with no token (%s)',
@@ -1173,6 +1182,220 @@ describe('OrderWizardFacade', () => {
     });
   });
 
+  // Owner ruling 2026-09-24: cash only for a signed-in customer on a booking the server says one
+  // cleaner does alone. The payment step reads that off the quote for the CURRENT selection, follows
+  // sign-in and sign-out, and takes an invalidated cash choice away without choosing card instead.
+  describe('paying in cash', () => {
+    const TWO_CLEANER_QUOTE = quoteFixture({ requiredEmployees: 2 });
+
+    async function quoted(quote = ONE_CLEANER_QUOTE, serviceIds = ['s1']): Promise<void> {
+      orderClient.quote.mockReturnValue(of(quote));
+      facade.updateFormData({ selectedServiceIds: serviceIds });
+      await facade.refreshQuoteNow();
+    }
+
+    function completeOrder(): void {
+      facade.updateFormData({
+        cleaningDate: new Date('2026-07-01T00:00:00Z'),
+        cleaningTime: '10:00',
+        address: createAddressDto({
+          street: 'Wenceslas Square',
+          city: 'Prague',
+          zipCode: '11000',
+          countryId: 'cz',
+        }),
+        addressLatitude: 50.08,
+        addressLongitude: 14.42,
+        customerFirstName: 'Anna',
+        customerLastName: 'Brown',
+        customerEmail: 'a@b.com',
+        customerPhone: '+420123456789',
+      });
+    }
+
+    it('is offered to a signed-in customer whose booking one cleaner does alone', async () => {
+      signedIn.set(true);
+      await quoted();
+
+      expect(facade.cashEligibility()).toEqual({ kind: 'available' });
+    });
+
+    it('is refused to a guest, who is asked to sign in', async () => {
+      await quoted();
+
+      expect(facade.cashEligibility()).toEqual({ kind: 'needs_account' });
+    });
+
+    it('is refused when the quote says the booking needs two cleaners', async () => {
+      signedIn.set(true);
+      await quoted(TWO_CLEANER_QUOTE);
+
+      expect(facade.cashEligibility()).toEqual({ kind: 'needs_card', requiredCleaners: 2 });
+    });
+
+    it('reads the crew only off a quote that still describes the selection', async () => {
+      signedIn.set(true);
+      await quoted();
+
+      facade.updateFormData({ selectedServiceIds: ['s1', 's2'] });
+
+      expect(facade.cashEligibility()).toEqual({ kind: 'pending' });
+    });
+
+    it('follows sign-in and sign-out', async () => {
+      await quoted();
+      expect(facade.cashEligibility().kind).toBe('needs_account');
+
+      signedIn.set(true);
+      expect(facade.cashEligibility().kind).toBe('available');
+
+      signedIn.set(false);
+      expect(facade.cashEligibility().kind).toBe('needs_account');
+    });
+
+    it('cannot be chosen while it is refused', async () => {
+      await quoted();
+
+      facade.selectPaymentType(PaymentType.Cash);
+
+      expect(facade.formData().paymentType).toBe(PaymentType.Card);
+    });
+
+    it('is taken away, and not replaced by card, when the selection grows past one cleaner', async () => {
+      signedIn.set(true);
+      await quoted();
+      facade.selectPaymentType(PaymentType.Cash);
+      TestBed.flushEffects();
+      expect(facade.formData().paymentType).toBe(PaymentType.Cash);
+
+      await quoted(TWO_CLEANER_QUOTE, ['s1', 's2']);
+      TestBed.flushEffects();
+
+      expect(facade.formData().paymentType).toBeNull();
+      expect(facade.cashCleared()).toBe(true);
+      expect(snackbar.showInfoTranslated).toHaveBeenCalledWith('pages.order.cash_cleared');
+    });
+
+    it('is taken away when the customer signs out', async () => {
+      signedIn.set(true);
+      await quoted();
+      facade.selectPaymentType(PaymentType.Cash);
+
+      signedIn.set(false);
+      TestBed.flushEffects();
+
+      expect(facade.formData().paymentType).toBeNull();
+    });
+
+    it('is kept while the crew for a changed selection is not known yet', async () => {
+      signedIn.set(true);
+      await quoted();
+      facade.selectPaymentType(PaymentType.Cash);
+
+      facade.updateFormData({ rooms: 4 });
+      TestBed.flushEffects();
+
+      expect(facade.formData().paymentType).toBe(PaymentType.Cash);
+      expect(snackbar.showInfoTranslated).not.toHaveBeenCalled();
+    });
+
+    it('clears the notice once the customer chooses again', async () => {
+      signedIn.set(true);
+      await quoted();
+      facade.selectPaymentType(PaymentType.Cash);
+      signedIn.set(false);
+      TestBed.flushEffects();
+
+      facade.selectPaymentType(PaymentType.Card);
+
+      expect(facade.cashCleared()).toBe(false);
+      expect(facade.formData().paymentType).toBe(PaymentType.Card);
+    });
+
+    it('stops saying cash was taken away once the booking allows it again', async () => {
+      signedIn.set(true);
+      await quoted();
+      facade.selectPaymentType(PaymentType.Cash);
+      await quoted(TWO_CLEANER_QUOTE, ['s1', 's2']);
+      TestBed.flushEffects();
+      expect(facade.cashClearedNotice()).toBe(true);
+
+      facade.updateFormData({ selectedServiceIds: ['s1'] });
+      expect(facade.cashClearedNotice()).toBe(true);
+
+      await quoted();
+
+      expect(facade.cashSelectable()).toBe(true);
+      expect(facade.cashClearedNotice()).toBe(false);
+      expect(facade.formData().paymentType).toBeNull();
+    });
+
+    it('names why cash is refused, and offers only a guest the way to sign in', async () => {
+      await quoted();
+
+      expect(facade.cashSelectable()).toBe(false);
+      expect(facade.cashNeedsAccount()).toBe(true);
+      expect(facade.cashReason()?.key).toBe('pages.order.cash_needs_account');
+
+      signedIn.set(true);
+      await quoted(TWO_CLEANER_QUOTE, ['s1', 's2']);
+
+      expect(facade.cashSelectable()).toBe(false);
+      expect(facade.cashNeedsAccount()).toBe(false);
+      expect(facade.cashReason()).toEqual({ key: 'pages.order.cash_needs_card', params: { count: 2 } });
+
+      await quoted();
+
+      expect(facade.cashSelectable()).toBe(true);
+      expect(facade.cashReason()).toBeNull();
+    });
+
+    it('is never submitted when the quote fetched at submit refuses it', async () => {
+      signedIn.set(true);
+      completeOrder();
+      await quoted();
+      facade.selectPaymentType(PaymentType.Cash);
+      orderClient.quote.mockReturnValue(of(TWO_CLEANER_QUOTE));
+      facade.updateFormData({ selectedServiceIds: ['s1', 's2'] });
+
+      await facade.submitOrder();
+
+      expect(orderClient.createOrder).not.toHaveBeenCalled();
+      expect(paymentClient.createOrder).not.toHaveBeenCalled();
+      expect(facade.formData().paymentType).toBeNull();
+      expect(facade.activeStep()).toBe(3);
+      expect(facade.submitting()).toBe(false);
+    });
+
+    it('is submitted for a signed-in customer on a one-cleaner booking', async () => {
+      signedIn.set(true);
+      completeOrder();
+      await quoted();
+      facade.selectPaymentType(PaymentType.Cash);
+
+      await facade.submitOrder();
+
+      expect(orderClient.createOrder).toHaveBeenCalledTimes(1);
+      expect(orderClient.createOrder.mock.calls[0][0].paymentType).toBe(PaymentType.Cash);
+    });
+
+    it('is taken off the order when the server refuses it, leaving the interceptor toast alone', async () => {
+      signedIn.set(true);
+      completeOrder();
+      await quoted();
+      facade.selectPaymentType(PaymentType.Cash);
+      orderClient.createOrder.mockReturnValue(
+        throwError(() => ({ errors: { PaymentType: 'order.cash_not_available' } })),
+      );
+
+      await facade.submitOrder();
+
+      expect(snackbar.showError).not.toHaveBeenCalled();
+      expect(facade.formData().paymentType).toBeNull();
+      expect(facade.activeStep()).toBe(3);
+    });
+  });
+
   // The address country picker lists the market directory (ADR-0058 D1) and shows the chosen
   // market until the address names a country (D4). What it shows is what the booking is priced
   // for, so an inline address that never named one is sent with that country rather than none —
@@ -1223,7 +1446,7 @@ describe('OrderWizardFacade', () => {
         customerLastName: 'Brown',
         customerEmail: 'a@b.com',
         customerPhone: '+421123456789',
-        paymentType: PaymentType.Cash,
+        paymentType: PaymentType.Card,
       });
 
     it('sends the country the picker showed when the inline address never named one', async () => {
@@ -1231,7 +1454,7 @@ describe('OrderWizardFacade', () => {
 
       await facade.submitOrder();
 
-      const command = orderClient.createOrder.mock.calls[0][0];
+      const command = paymentClient.createOrder.mock.calls[0][0];
       expect(command.customerAddress.countryId).toBe('cze-id');
     });
 
@@ -1240,7 +1463,7 @@ describe('OrderWizardFacade', () => {
 
       await facade.submitOrder();
 
-      const command = orderClient.createOrder.mock.calls[0][0];
+      const command = paymentClient.createOrder.mock.calls[0][0];
       expect(command.customerAddress.countryId).toBe('svk-id');
     });
   });

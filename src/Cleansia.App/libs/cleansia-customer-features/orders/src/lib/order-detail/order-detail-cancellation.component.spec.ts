@@ -29,6 +29,7 @@ const COPY = {
       cancellation: {
         success: 'Your booking is cancelled.',
         refund_success: 'A refund of {{amount}} was issued.',
+        grace_note: 'Free within {{minutes}} minutes of booking.',
       },
     },
   },
@@ -139,6 +140,24 @@ describe('OrderDetailComponent — cancelling a booking', () => {
       expect(cancelButton()).toBeNull();
     },
   );
+
+  // Owner ruling 2026-09-24: 15 minutes, 60 for an entitled Plus member. Which one THIS customer has
+  // is the server's answer on the preview; the sheet never works it out from the membership.
+  it.each([15, 60])("states the customer's own %i-minute grace from the preview", async (minutes) => {
+    await setup(OrderStatus.Confirmed);
+    orderClient.cancellationPreview.mockReturnValue(
+      of(GetCancellationFeePreviewResponse.fromJS({ ...preview.toJSON(), oopsWindowMinutes: minutes })),
+    );
+
+    fixture.componentInstance.openCancellation();
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect((fixture.nativeElement as HTMLElement).textContent).toContain(
+      `Free within ${minutes} minutes of booking.`,
+    );
+  });
 
   it('caps the reason at the length the server accepts', async () => {
     await setup(OrderStatus.OnTheWay);

@@ -2362,7 +2362,7 @@
         "expire_error": "Zostatok sa nepodarilo odpísať.",
         "expire_dialog": {
           "title": "Odpísať zostatok kreditu",
-          "lede": "Odpíše celý zostatok {{amount}} a nedá sa to vrátiť späť. Použite, keď zákazník odchádza: kým kredit zostáva, výmaz účtu sa odmietne.",
+          "lede": "Odpíše celý zostatok {{amount}} a nedá sa to vrátiť späť. Pred výmazom účtu to nie je potrebné: výmaz nevyčerpaný kredit odpíše sám.",
           "field": {
             "note": "Dôvod",
             "note_help": "Jediný záznam o tom, prečo firma prestala dlžiť peniaze. Uveďte, kto o to požiadal."
@@ -2605,7 +2605,7 @@
         "fulfil_title": "Vybaviť túto žiadosť o zmazanie?",
         "retry": "Zopakovať výmaz",
         "retry_confirm_title": "Zopakovať tento výmaz?",
-        "retry_confirm_message": "Výmaz účtu používateľa {{userId}} sa spustí znova. Ak uspeje, účet bude natrvalo anonymizovaný a akciu nemožno vrátiť.",
+        "retry_confirm_message": "Výmaz účtu používateľa {{userId}} sa spustí znova. Ak uspeje, účet bude natrvalo anonymizovaný a nevyčerpaný zákaznícky kredit na ňom sa odpíše bez výplaty a bez možnosti obnovenia. Akciu nemožno vrátiť.",
         "retry_confirm_yes": "Zopakovať",
         "retry_success": "Výmaz bol zopakovaný. Účet je teraz vymazaný.",
         "retry_error": "Výmaz sa nepodarilo zopakovať."
@@ -2657,7 +2657,7 @@
         "success": "Účet bol vymazaný.",
         "error": "Účet sa nepodarilo vymazať.",
         "confirm_title": "Vymazať účet?",
-        "confirm_message": "Účet používateľa {{userId}} bude natrvalo anonymizovaný. Túto akciu nemožno vrátiť.",
+        "confirm_message": "Účet používateľa {{userId}} bude natrvalo anonymizovaný. Nevyčerpaný zákaznícky kredit na účte sa po dokončení výmazu odpíše — nevypláca sa a nedá sa obnoviť. Túto akciu nemožno vrátiť.",
         "confirm_yes": "Vymazať"
       }
     },

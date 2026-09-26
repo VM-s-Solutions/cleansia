@@ -221,6 +221,14 @@
         </span>
       </div>
 
+      <div class="cl-plusp__row">
+        <span class="cl-plusp__row-label">{{ 'pages.plus.row_grace' | translate }}</span>
+        <span class="cl-muted" [attr.data-label]="'pages.plus.compare_without' | translate">{{ 'pages.plus.row_grace_without' | translate }}</span>
+        <span class="cl-plusp__yes" [attr.data-label]="'pages.plus.compare_with' | translate">
+          <i class="pi pi-check"></i>{{ 'pages.plus.row_grace_with' | translate }}
+        </span>
+      </div>
+
       @if (facade.hasExpressPerk()) {
         <div class="cl-plusp__row">
           <span class="cl-plusp__row-label">{{ 'pages.plus.row_express' | translate }}</span>

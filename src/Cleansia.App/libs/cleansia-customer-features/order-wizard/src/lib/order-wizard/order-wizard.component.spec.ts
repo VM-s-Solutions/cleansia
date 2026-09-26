@@ -142,6 +142,11 @@ class FakeOrderWizardFacade {
   alreadyConsented = signal(false);
   preferredCleanerLoading = signal(false);
   preferredCleanerVisible = signal(false);
+  cashSelectable = signal(true);
+  cashReason = signal<{ key: string; params: Record<string, number> } | null>(null);
+  cashNeedsAccount = signal(false);
+  cashClearedNotice = signal(false);
+  selectPaymentType = jest.fn((paymentType: PaymentType) => this.updateFormData({ paymentType }));
 }
 
 describe('OrderWizardComponent (a11y)', () => {
@@ -464,6 +469,60 @@ describe('OrderWizardComponent (a11y)', () => {
       expect((cards[0] as HTMLElement).tagName).toBe('BUTTON');
       expect(cards[0].getAttribute('aria-pressed')).toBe('true');
       expect(cards[1].getAttribute('aria-pressed')).toBe('false');
+    });
+
+    const cashCard = () => el.querySelectorAll('.cl-wiz__pay-card')[1] as HTMLButtonElement;
+
+    it('disables cash and says why when the booking needs more than one cleaner', async () => {
+      await setup();
+      facade.activeStep.set(3);
+      facade.cashSelectable.set(false);
+      facade.cashReason.set({ key: 'pages.order.cash_needs_card', params: { count: 2 } });
+      fixture.detectChanges();
+
+      expect(cashCard().disabled).toBe(true);
+      expect(cashCard().getAttribute('aria-describedby')).toBe('wizard-cash-reason');
+      expect((el.querySelectorAll('.cl-wiz__pay-card')[0] as HTMLButtonElement).disabled).toBe(false);
+      expect(el.querySelector('#wizard-cash-reason')?.textContent).toContain(
+        'pages.order.cash_needs_card',
+      );
+      expect(el.querySelector('#wizard-cash-reason cleansia-button')).toBeNull();
+    });
+
+    it('disables cash for a guest and offers the way to sign in beside the reason', async () => {
+      await setup();
+      facade.activeStep.set(3);
+      facade.cashSelectable.set(false);
+      facade.cashReason.set({ key: 'pages.order.cash_needs_account', params: {} });
+      facade.cashNeedsAccount.set(true);
+      fixture.detectChanges();
+
+      expect(cashCard().disabled).toBe(true);
+      const reason = el.querySelector('#wizard-cash-reason');
+      expect(reason?.textContent).toContain('pages.order.cash_needs_account');
+      expect(reason?.querySelector('cleansia-button')).not.toBeNull();
+    });
+
+    it('leaves both ways open, with no reason, when cash is allowed', async () => {
+      await setup();
+      facade.activeStep.set(3);
+      fixture.detectChanges();
+
+      expect(cashCard().disabled).toBe(false);
+      expect(cashCard().getAttribute('aria-describedby')).toBeNull();
+      expect(el.querySelector('#wizard-cash-reason')).toBeNull();
+    });
+
+    it('says cash was taken away only while the facade says so', async () => {
+      await setup();
+      facade.activeStep.set(3);
+      facade.cashClearedNotice.set(true);
+      fixture.detectChanges();
+      expect(el.textContent).toContain('pages.order.cash_cleared');
+
+      facade.cashClearedNotice.set(false);
+      fixture.detectChanges();
+      expect(el.textContent).not.toContain('pages.order.cash_cleared');
     });
   });
 

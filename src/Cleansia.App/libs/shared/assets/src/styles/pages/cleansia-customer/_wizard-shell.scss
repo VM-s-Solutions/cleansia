@@ -1397,6 +1397,40 @@
   margin-top: 6px;
 }
 
+.cl-wiz__pay-card[disabled] {
+  cursor: not-allowed;
+  opacity: 0.55;
+  box-shadow: none;
+
+  &:hover {
+    border-color: var(--cl-border);
+  }
+}
+
+.cl-wiz__pay-note {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px 12px;
+  margin: 16px 0 0;
+  max-width: 640px;
+  font-size: calc(0.875 * var(--cl-u));
+  color: var(--cl-body);
+
+  > i {
+    flex-shrink: 0;
+    color: $primary-dark;
+  }
+
+  &--warn > i {
+    color: var(--cl-warn-ink);
+  }
+}
+
+.cl-wiz__pay-note-text {
+  flex: 1 1 260px;
+}
+
 // ---- the promo code ---------------------------------------------------------
 .cl-wiz__promo-signin {
   margin: 12px 0 0;

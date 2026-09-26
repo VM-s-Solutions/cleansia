@@ -36,6 +36,7 @@
           <li>
             {{ 'pages.home.plus.perk2' | translate: { hours: facts.cancellationHours() } }}
           </li>
+          <li>{{ 'pages.home.plus.perk_grace' | translate }}</li>
           @if (facts.hasExpressPerk()) {
             <li>
               {{ 'pages.home.plus.perk3' | translate: { count: facts.expressPerMonth() } }}

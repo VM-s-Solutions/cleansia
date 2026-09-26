@@ -2362,7 +2362,7 @@
         "expire_error": "The balance could not be discharged.",
         "expire_dialog": {
           "title": "Discharge credit balance",
-          "lede": "This writes off the whole balance of {{amount}} and cannot be undone. Use it when the customer is leaving: erasure is refused while credit is outstanding.",
+          "lede": "This writes off the whole balance of {{amount}} and cannot be undone. It is not needed before an account erasure: the erasure writes off any unused credit itself.",
           "field": {
             "note": "Why",
             "note_help": "The only record of why money the company owed stopped being owed. Name the request."
@@ -2605,7 +2605,7 @@
         "fulfil_title": "Fulfil this deletion request?",
         "retry": "Retry deletion",
         "retry_confirm_title": "Retry this deletion?",
-        "retry_confirm_message": "This re-runs the erasure of the account of user {{userId}}. If it succeeds, the account is permanently anonymized and this cannot be undone.",
+        "retry_confirm_message": "This re-runs the erasure of the account of user {{userId}}. If it succeeds, the account is permanently anonymized and any unused customer credit on it is written off, with no payout and no way to restore it. This cannot be undone.",
         "retry_confirm_yes": "Retry",
         "retry_success": "Deletion retried. The account is now erased.",
         "retry_error": "Couldn't retry the deletion."
@@ -2657,7 +2657,7 @@
         "success": "Account erased.",
         "error": "Couldn't erase the account.",
         "confirm_title": "Erase account?",
-        "confirm_message": "This permanently anonymizes the account of user {{userId}}. This cannot be undone.",
+        "confirm_message": "This permanently anonymizes the account of user {{userId}}. Any unused customer credit on it is written off when the erasure completes — it is not paid out and cannot be restored. This cannot be undone.",
         "confirm_yes": "Erase"
       }
     },

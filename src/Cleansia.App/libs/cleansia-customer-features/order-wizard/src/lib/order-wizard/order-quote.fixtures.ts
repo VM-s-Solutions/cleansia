@@ -65,6 +65,12 @@ export function quoteFixture(overrides: Partial<QuoteFields> = {}): QuoteOrderRe
 /** Standard slot, no discount. */
 export const PLAIN_QUOTE = quoteFixture();
 
+/** A basket one cleaner does alone: 120 minutes is ceil(120 / 120) = 1. */
+export const ONE_CLEANER_QUOTE = quoteFixture({
+  estimatedDurationMinutes: 120,
+  requiredEmployees: 1,
+});
+
 /** Standard slot, Plus 10%: charged 1000 − 100 = 900. */
 export const DISCOUNTED_QUOTE = quoteFixture({
   finalPriceAfterDiscount: 900,

@@ -29,6 +29,11 @@
   }
   @if (cancellationPreview(); as preview) {
   <p>{{ 'pages.order_detail.cancellation.tier.' + preview.tier | translate }}</p>
+  @if (preview.oopsWindowMinutes) {
+  <p>
+    {{ 'pages.order_detail.cancellation.grace_note' | translate: { minutes: preview.oopsWindowMinutes } }}
+  </p>
+  }
   <dl class="order-detail__cancellation-figures">
     <div>
       <dt>{{ 'pages.order_detail.cancellation.fee' | translate }}</dt>

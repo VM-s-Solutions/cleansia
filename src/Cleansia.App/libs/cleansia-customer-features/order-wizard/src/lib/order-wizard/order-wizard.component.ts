@@ -36,6 +36,7 @@ import {
   getFieldError,
   getItemTranslation,
   OrderWizardFormData,
+  paymentTitleKey,
 } from './order-wizard.models';
 import {
   EXPRESS_LEAD_TIME_HOURS,
@@ -859,13 +860,7 @@ export class OrderWizardComponent implements OnInit {
       );
     }
 
-    const pay = [
-      this.translate.instant(
-        data.paymentType === PaymentType.Card
-          ? 'pages.order.payment_card_title'
-          : 'pages.order.payment_cash_title'
-      ),
-    ];
+    const pay = [this.translate.instant(paymentTitleKey(data.paymentType))];
     if (this.facade.promoCodeState().kind === 'valid') {
       pay.push(
         this.translate.instant('pages.order.promo.row_applied', {
@@ -914,6 +909,10 @@ export class OrderWizardComponent implements OnInit {
       descKey: 'payment_cash_desc',
     },
   ] as const;
+
+  isPaymentUnavailable(type: PaymentType): boolean {
+    return type === PaymentType.Cash && !this.facade.cashSelectable();
+  }
 
   /**
    * One round trip, on Apply. A promo code is validated by the server, so a

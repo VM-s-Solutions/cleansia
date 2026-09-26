@@ -33,7 +33,7 @@ public class OrderPayEstimatorCurrencyTests
             .GetType("Cleansia.Core.AppServices.Features.Orders.OrderPayEstimator")!
             .GetMethod("Estimate", BindingFlags.NonPublic | BindingFlags.Static)!;
 
-    /// <summary>Two rooms and one bathroom, no travel — so the estimate is base + 3 x perUnit.</summary>
+    /// <summary>Two rooms and one bathroom — so the estimate is base + 3 x perUnit.</summary>
     private static decimal? Estimate(string orderCurrencyId, params EmployeePayConfig[] configs) =>
         (decimal?)EstimateCore.Invoke(null,
         [
@@ -41,7 +41,6 @@ public class OrderPayEstimatorCurrencyTests
             new HashSet<string>(),
             2,
             1,
-            (decimal?)null,
             orderCurrencyId,
             EmployeeId,
             (IReadOnlyList<EmployeePayConfig>)configs.ToList(),

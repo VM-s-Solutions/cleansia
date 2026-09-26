@@ -323,7 +323,6 @@ public static class BusinessErrorMessage
     public const string PayConfigBasePayNegative = "pay_config.base_pay_negative";
     public const string PayConfigExtraPerRoomNegative = "pay_config.extra_per_room_negative";
     public const string PayConfigExtraPerBathroomNegative = "pay_config.extra_per_bathroom_negative";
-    public const string PayConfigDistanceRateNegative = "pay_config.distance_rate_negative";
     public const string PayConfigMinimumPayNegative = "pay_config.minimum_pay_negative";
     public const string PayConfigMaximumPayNegative = "pay_config.maximum_pay_negative";
     public const string PayConfigMaximumLessThanMinimum = "pay_config.maximum_less_than_minimum";

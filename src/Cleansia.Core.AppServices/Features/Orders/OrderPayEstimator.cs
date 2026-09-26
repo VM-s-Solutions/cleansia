@@ -31,7 +31,6 @@ internal static class OrderPayEstimator
             order.SelectedPackages.Select(p => p.PackageId).ToHashSet(),
             order.Rooms,
             order.Bathrooms,
-            order.TravelDistance,
             order.CurrencyId,
             employeeId,
             serviceConfigs,
@@ -51,7 +50,6 @@ internal static class OrderPayEstimator
             order.SelectedPackages.Select(p => p.Id).ToHashSet(),
             order.Rooms,
             order.Bathrooms,
-            order.TravelDistance,
             order.CurrencyId,
             employeeId,
             serviceConfigs,
@@ -79,7 +77,6 @@ internal static class OrderPayEstimator
         HashSet<string> orderPackageIds,
         int rooms,
         int bathrooms,
-        decimal? travelDistance,
         string orderCurrencyId,
         string employeeId,
         IReadOnlyList<EmployeePayConfig> serviceConfigs,
@@ -103,7 +100,7 @@ internal static class OrderPayEstimator
             return null;
         }
 
-        var (_, _, _, totalPay, _) = allConfigs.CalculateAggregatedPay(rooms, bathrooms, travelDistance);
+        var (_, _, _, totalPay, _) = allConfigs.CalculateAggregatedPay(rooms, bathrooms);
         return totalPay;
     }
 }

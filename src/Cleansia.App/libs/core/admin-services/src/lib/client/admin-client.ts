@@ -21686,7 +21686,6 @@ export class CreatePayConfigCommand implements ICreatePayConfigCommand {
     basePay!: number;
     extraPerRoom!: number;
     extraPerBathroom!: number;
-    distanceRatePerKm!: number;
     minimumPay!: number;
     maximumPay!: number;
     currencyId!: string | undefined;
@@ -21709,7 +21708,6 @@ export class CreatePayConfigCommand implements ICreatePayConfigCommand {
             this.basePay = Data["basePay"];
             this.extraPerRoom = Data["extraPerRoom"];
             this.extraPerBathroom = Data["extraPerBathroom"];
-            this.distanceRatePerKm = Data["distanceRatePerKm"];
             this.minimumPay = Data["minimumPay"];
             this.maximumPay = Data["maximumPay"];
             this.currencyId = Data["currencyId"];
@@ -21732,7 +21730,6 @@ export class CreatePayConfigCommand implements ICreatePayConfigCommand {
         data["basePay"] = this.basePay;
         data["extraPerRoom"] = this.extraPerRoom;
         data["extraPerBathroom"] = this.extraPerBathroom;
-        data["distanceRatePerKm"] = this.distanceRatePerKm;
         data["minimumPay"] = this.minimumPay;
         data["maximumPay"] = this.maximumPay;
         data["currencyId"] = this.currencyId;
@@ -21748,7 +21745,6 @@ export interface ICreatePayConfigCommand {
     basePay: number;
     extraPerRoom: number;
     extraPerBathroom: number;
-    distanceRatePerKm: number;
     minimumPay: number;
     maximumPay: number;
     currencyId: string | undefined;
@@ -24716,7 +24712,6 @@ export class EmployeePayConfigDto implements IEmployeePayConfigDto {
     basePay!: number;
     extraPerRoom!: number;
     extraPerBathroom!: number;
-    distanceRatePerKm!: number;
     minimumPay!: number;
     maximumPay!: number;
     currencyId!: string | undefined;
@@ -24745,7 +24740,6 @@ export class EmployeePayConfigDto implements IEmployeePayConfigDto {
             this.basePay = Data["basePay"];
             this.extraPerRoom = Data["extraPerRoom"];
             this.extraPerBathroom = Data["extraPerBathroom"];
-            this.distanceRatePerKm = Data["distanceRatePerKm"];
             this.minimumPay = Data["minimumPay"];
             this.maximumPay = Data["maximumPay"];
             this.currencyId = Data["currencyId"];
@@ -24774,7 +24768,6 @@ export class EmployeePayConfigDto implements IEmployeePayConfigDto {
         data["basePay"] = this.basePay;
         data["extraPerRoom"] = this.extraPerRoom;
         data["extraPerBathroom"] = this.extraPerBathroom;
-        data["distanceRatePerKm"] = this.distanceRatePerKm;
         data["minimumPay"] = this.minimumPay;
         data["maximumPay"] = this.maximumPay;
         data["currencyId"] = this.currencyId;
@@ -24796,7 +24789,6 @@ export interface IEmployeePayConfigDto {
     basePay: number;
     extraPerRoom: number;
     extraPerBathroom: number;
-    distanceRatePerKm: number;
     minimumPay: number;
     maximumPay: number;
     currencyId: string | undefined;
@@ -24891,7 +24883,6 @@ export class EmployeePayConfigSummaryItemDto implements IEmployeePayConfigSummar
     basePay!: number;
     extraPerRoom!: number;
     extraPerBathroom!: number;
-    distanceRatePerKm!: number;
     minimumPay!: number;
     maximumPay!: number;
     currencyId!: string | undefined;
@@ -24917,7 +24908,6 @@ export class EmployeePayConfigSummaryItemDto implements IEmployeePayConfigSummar
             this.basePay = Data["basePay"];
             this.extraPerRoom = Data["extraPerRoom"];
             this.extraPerBathroom = Data["extraPerBathroom"];
-            this.distanceRatePerKm = Data["distanceRatePerKm"];
             this.minimumPay = Data["minimumPay"];
             this.maximumPay = Data["maximumPay"];
             this.currencyId = Data["currencyId"];
@@ -24943,7 +24933,6 @@ export class EmployeePayConfigSummaryItemDto implements IEmployeePayConfigSummar
         data["basePay"] = this.basePay;
         data["extraPerRoom"] = this.extraPerRoom;
         data["extraPerBathroom"] = this.extraPerBathroom;
-        data["distanceRatePerKm"] = this.distanceRatePerKm;
         data["minimumPay"] = this.minimumPay;
         data["maximumPay"] = this.maximumPay;
         data["currencyId"] = this.currencyId;
@@ -24962,7 +24951,6 @@ export interface IEmployeePayConfigSummaryItemDto {
     basePay: number;
     extraPerRoom: number;
     extraPerBathroom: number;
-    distanceRatePerKm: number;
     minimumPay: number;
     maximumPay: number;
     currencyId: string | undefined;
@@ -35902,7 +35890,6 @@ export class UpdatePayConfigCommand implements IUpdatePayConfigCommand {
     basePay!: number;
     extraPerRoom!: number;
     extraPerBathroom!: number;
-    distanceRatePerKm!: number;
     minimumPay!: number;
     maximumPay!: number;
     description!: string | undefined;
@@ -35922,7 +35909,6 @@ export class UpdatePayConfigCommand implements IUpdatePayConfigCommand {
             this.basePay = Data["basePay"];
             this.extraPerRoom = Data["extraPerRoom"];
             this.extraPerBathroom = Data["extraPerBathroom"];
-            this.distanceRatePerKm = Data["distanceRatePerKm"];
             this.minimumPay = Data["minimumPay"];
             this.maximumPay = Data["maximumPay"];
             this.description = Data["description"];
@@ -35942,7 +35928,6 @@ export class UpdatePayConfigCommand implements IUpdatePayConfigCommand {
         data["basePay"] = this.basePay;
         data["extraPerRoom"] = this.extraPerRoom;
         data["extraPerBathroom"] = this.extraPerBathroom;
-        data["distanceRatePerKm"] = this.distanceRatePerKm;
         data["minimumPay"] = this.minimumPay;
         data["maximumPay"] = this.maximumPay;
         data["description"] = this.description;
@@ -35955,7 +35940,6 @@ export interface IUpdatePayConfigCommand {
     basePay: number;
     extraPerRoom: number;
     extraPerBathroom: number;
-    distanceRatePerKm: number;
     minimumPay: number;
     maximumPay: number;
     description: string | undefined;

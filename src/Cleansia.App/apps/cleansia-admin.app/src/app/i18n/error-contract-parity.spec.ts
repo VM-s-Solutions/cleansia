@@ -597,7 +597,6 @@ const ADMIN_SURFACE_ERROR_KEYS: readonly string[] = [
   'pay_config.already_exists',
   'pay_config.base_pay_negative',
   'pay_config.cannot_have_both',
-  'pay_config.distance_rate_negative',
   'pay_config.extra_per_bathroom_negative',
   'pay_config.extra_per_room_negative',
   'pay_config.has_order_pays',

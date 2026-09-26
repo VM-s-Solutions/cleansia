@@ -75,7 +75,7 @@
         [title]="'pages.pay_config_form.pay_rates' | translate"
       >
         <div class="form-grid">
-          <div class="form-field form-field--quarter">
+          <div class="form-field form-field--third">
             <cleansia-text-input
               [label]="'pages.pay_config_form.base_pay' | translate"
               formControlName="basePay"
@@ -83,24 +83,17 @@
               [required]="true"
             />
           </div>
-          <div class="form-field form-field--quarter">
+          <div class="form-field form-field--third">
             <cleansia-text-input
               [label]="'pages.pay_config_form.extra_per_room' | translate"
               formControlName="extraPerRoom"
               dataType="number"
             />
           </div>
-          <div class="form-field form-field--quarter">
+          <div class="form-field form-field--third">
             <cleansia-text-input
               [label]="'pages.pay_config_form.extra_per_bathroom' | translate"
               formControlName="extraPerBathroom"
-              dataType="number"
-            />
-          </div>
-          <div class="form-field form-field--quarter">
-            <cleansia-text-input
-              [label]="'pages.pay_config_form.distance_rate' | translate"
-              formControlName="distanceRatePerKm"
               dataType="number"
             />
           </div>

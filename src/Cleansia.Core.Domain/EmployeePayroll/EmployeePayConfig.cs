@@ -25,6 +25,7 @@ public class EmployeePayConfig : TenantAuditable
 
     public decimal ExtraPerBathroom { get; private set; } = 0;
 
+    // Retained so stored rates survive; no pay calculation reads it any more.
     public decimal DistanceRatePerKm { get; private set; } = 0;
 
     [MaxLength(500)]
@@ -44,7 +45,6 @@ public class EmployeePayConfig : TenantAuditable
         string currencyId,
         decimal extraPerRoom = 0,
         decimal extraPerBathroom = 0,
-        decimal distanceRatePerKm = 0,
         string? description = null,
         string? employeeId = null)
     {
@@ -61,7 +61,6 @@ public class EmployeePayConfig : TenantAuditable
             CurrencyId = currencyId,
             ExtraPerRoom = extraPerRoom,
             ExtraPerBathroom = extraPerBathroom,
-            DistanceRatePerKm = distanceRatePerKm,
             Description = description
         };
     }
@@ -72,7 +71,6 @@ public class EmployeePayConfig : TenantAuditable
         string currencyId,
         decimal extraPerRoom = 0,
         decimal extraPerBathroom = 0,
-        decimal distanceRatePerKm = 0,
         string? description = null,
         string? employeeId = null)
     {
@@ -89,7 +87,6 @@ public class EmployeePayConfig : TenantAuditable
             CurrencyId = currencyId,
             ExtraPerRoom = extraPerRoom,
             ExtraPerBathroom = extraPerBathroom,
-            DistanceRatePerKm = distanceRatePerKm,
             Description = description
         };
     }
@@ -97,8 +94,7 @@ public class EmployeePayConfig : TenantAuditable
     public EmployeePayConfig UpdatePayRates(
         decimal basePay,
         decimal extraPerRoom,
-        decimal extraPerBathroom,
-        decimal distanceRatePerKm)
+        decimal extraPerBathroom)
     {
         if (basePay < 0)
         {
@@ -108,7 +104,6 @@ public class EmployeePayConfig : TenantAuditable
         BasePay = basePay;
         ExtraPerRoom = extraPerRoom;
         ExtraPerBathroom = extraPerBathroom;
-        DistanceRatePerKm = distanceRatePerKm;
 
         return this;
     }

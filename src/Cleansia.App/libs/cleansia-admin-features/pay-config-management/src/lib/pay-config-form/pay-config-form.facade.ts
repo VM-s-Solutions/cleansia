@@ -31,7 +31,6 @@ export interface PayConfigFormData {
   basePay: number;
   extraPerRoom: number;
   extraPerBathroom: number;
-  distanceRatePerKm: number;
   minimumPay: number;
   maximumPay: number;
   currencyId: string;
@@ -128,7 +127,6 @@ export class PayConfigFormFacade extends UnsubscribeControlDirective {
     command.basePay = data.basePay;
     command.extraPerRoom = data.extraPerRoom;
     command.extraPerBathroom = data.extraPerBathroom;
-    command.distanceRatePerKm = data.distanceRatePerKm;
     command.minimumPay = data.minimumPay;
     command.maximumPay = data.maximumPay;
     command.currencyId = data.currencyId;
@@ -159,7 +157,6 @@ export class PayConfigFormFacade extends UnsubscribeControlDirective {
     command.basePay = data.basePay;
     command.extraPerRoom = data.extraPerRoom;
     command.extraPerBathroom = data.extraPerBathroom;
-    command.distanceRatePerKm = data.distanceRatePerKm;
     command.minimumPay = data.minimumPay;
     command.maximumPay = data.maximumPay;
     command.description = data.description || undefined;

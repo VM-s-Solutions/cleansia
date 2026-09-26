@@ -976,7 +976,6 @@
       "base_pay_negative": "Základní mzda nemůže být záporná",
       "extra_per_room_negative": "Příplatek za místnost nemůže být záporný",
       "extra_per_bathroom_negative": "Příplatek za koupelnu nemůže být záporný",
-      "distance_rate_negative": "Sazba za vzdálenost nemůže být záporná",
       "minimum_pay_negative": "Minimální mzda nemůže být záporná",
       "maximum_pay_negative": "Maximální mzda nemůže být záporná",
       "maximum_less_than_minimum": "Maximální mzda nemůže být nižší než minimální mzda",

@@ -773,12 +773,12 @@ INSERT INTO public."EmployeePayConfigs" (
   "Id", "IsActive", "CreatedBy", "CreatedOn",
   "UpdatedBy", "UpdatedOn", "DeactivatedBy", "DeactivatedOn",
   "TenantId", "EmployeeId", "ServiceId", "PackageId",
-  "BasePay", "ExtraPerRoom", "ExtraPerBathroom", "DistanceRatePerKm",
+  "BasePay", "ExtraPerRoom", "ExtraPerBathroom",
   "Description", "CurrencyId", "MinimumPay", "MaximumPay"
 )
 SELECT generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
        'cleansia-cz', NULL, sp."ServiceId", NULL,
-       ROUND(sp."BasePrice" * 0.5, 2), ROUND(sp."PerRoomPrice" * 0.5, 2), 0, 0,
+       ROUND(sp."BasePrice" * 0.5, 2), ROUND(sp."PerRoomPrice" * 0.5, 2), 0,
        'Platform-wide default (junior template)',
        sp."CurrencyId",
        0, 0
@@ -789,12 +789,12 @@ INSERT INTO public."EmployeePayConfigs" (
   "Id", "IsActive", "CreatedBy", "CreatedOn",
   "UpdatedBy", "UpdatedOn", "DeactivatedBy", "DeactivatedOn",
   "TenantId", "EmployeeId", "ServiceId", "PackageId",
-  "BasePay", "ExtraPerRoom", "ExtraPerBathroom", "DistanceRatePerKm",
+  "BasePay", "ExtraPerRoom", "ExtraPerBathroom",
   "Description", "CurrencyId", "MinimumPay", "MaximumPay"
 )
 SELECT generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
        'cleansia-cz', NULL, NULL, pp."PackageId",
-       ROUND(pp."Price" * 0.5, 2), 0, 0, 0,
+       ROUND(pp."Price" * 0.5, 2), 0, 0,
        'Platform-wide default (junior template)',
        pp."CurrencyId",
        0, 0

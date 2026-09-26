@@ -86,7 +86,6 @@ public static class OrderMappers
             o.AssignedEmployees.Select(ae => new OrderListEmployeeRow(ae.Id, ae.EmployeeId)).ToList(),
             o.RequiredEmployees,
             o.MaxEmployees,
-            o.TravelDistance,
             o.Reviews.Any()));
     }
 

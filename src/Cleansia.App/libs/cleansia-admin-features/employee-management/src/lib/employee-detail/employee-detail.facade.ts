@@ -408,7 +408,6 @@ export class EmployeeDetailFacade extends UnsubscribeControlDirective {
       basePay: number;
       extraPerRoom: number;
       extraPerBathroom: number;
-      distanceRatePerKm: number;
       minimumPay: number;
       maximumPay: number;
     }
@@ -423,7 +422,6 @@ export class EmployeeDetailFacade extends UnsubscribeControlDirective {
     command.basePay = data.basePay;
     command.extraPerRoom = data.extraPerRoom;
     command.extraPerBathroom = data.extraPerBathroom;
-    command.distanceRatePerKm = data.distanceRatePerKm;
     command.minimumPay = data.minimumPay;
     command.maximumPay = data.maximumPay;
     command.description = undefined;
@@ -495,7 +493,6 @@ export class EmployeeDetailFacade extends UnsubscribeControlDirective {
     command.basePay = data.basePay ?? 0;
     command.extraPerRoom = data.extraPerRoom ?? 0;
     command.extraPerBathroom = data.extraPerBathroom ?? 0;
-    command.distanceRatePerKm = data.distanceRatePerKm ?? 0;
     command.minimumPay = data.minimumPay ?? 0;
     command.maximumPay = data.maximumPay ?? 0;
     command.currencyId = data.currencyId ?? undefined;

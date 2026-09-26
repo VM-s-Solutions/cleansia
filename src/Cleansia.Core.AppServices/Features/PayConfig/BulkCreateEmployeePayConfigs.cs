@@ -146,7 +146,6 @@ public class BulkCreateEmployeePayConfigs
                     command.CurrencyId,
                     extraPerRoom,
                     extraPerBathroom: 0,
-                    distanceRatePerKm: 0,
                     description: $"Auto-generated from {command.Grade} grade template",
                     employeeId: command.EmployeeId);
 
@@ -183,7 +182,6 @@ public class BulkCreateEmployeePayConfigs
                     command.CurrencyId,
                     extraPerRoom: 0,
                     extraPerBathroom: 0,
-                    distanceRatePerKm: 0,
                     description: $"Auto-generated from {command.Grade} grade template",
                     employeeId: command.EmployeeId);
 

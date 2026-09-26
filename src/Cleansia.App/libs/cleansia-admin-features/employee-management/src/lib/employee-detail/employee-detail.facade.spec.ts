@@ -31,7 +31,6 @@ describe('EmployeeDetailFacade — pay config overrides', () => {
     basePay: 500,
     extraPerRoom: 50,
     extraPerBathroom: 30,
-    distanceRatePerKm: 10,
     minimumPay: 300,
     maximumPay: 2000,
   };
@@ -99,12 +98,12 @@ describe('EmployeeDetailFacade — pay config overrides', () => {
       basePay: 500,
       extraPerRoom: 50,
       extraPerBathroom: 30,
-      distanceRatePerKm: 10,
       minimumPay: 300,
       maximumPay: 2000,
       currencyId: 'cur-1',
       description: 'note',
     });
+    expect(command.toJSON()).not.toHaveProperty('distanceRatePerKm');
     expect(facade.payConfigDialogOpen()).toBe(false);
     expect(facade.savingPayConfig()).toBe(false);
     expect(employeeSummaryMock).toHaveBeenCalledWith('emp-1');
@@ -143,11 +142,11 @@ describe('EmployeeDetailFacade — pay config overrides', () => {
       basePay: 500,
       extraPerRoom: 50,
       extraPerBathroom: 30,
-      distanceRatePerKm: 10,
       minimumPay: 300,
       maximumPay: 2000,
       description: undefined,
     });
+    expect(command.toJSON()).not.toHaveProperty('distanceRatePerKm');
     expect(facade.payConfigDialogOpen()).toBe(false);
     expect(facade.savingPayConfig()).toBe(false);
     expect(employeeSummaryMock).toHaveBeenCalledWith('emp-1');

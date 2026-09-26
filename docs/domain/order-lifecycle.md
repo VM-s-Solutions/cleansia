@@ -32,7 +32,8 @@ flowchart TB
   class Pending dead
 ```
 
-`PaymentType` is `Cash (1)` or `Card (2)` and never changes after creation.
+`PaymentType` is `Cash (1)` or `Card (2)` and never changes after creation. `Cash` is chosen only by a
+signed-in customer whose booking needs one cleaner → [Paying in cash](/product/business-rules#cash).
 
 ## Why one axis is not enough
 

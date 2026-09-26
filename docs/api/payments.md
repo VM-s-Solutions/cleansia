@@ -52,6 +52,11 @@ Client                    API
 
 Cash orders are immediately confirmed without any payment gateway interaction.
 
+**Who may choose cash.** Only a signed-in customer whose selection needs exactly one cleaner
+(`BookingPolicy.AllowsCash`); a guest, or a booking whose duration needs two cleaners or more, is
+refused with `order.cash_not_available` before anything is reserved, debited or dispatched, and pays by
+card. → [Paying in cash](/product/business-rules#cash)
+
 ## Endpoints
 
 ### Create Payment (via CreateOrder)

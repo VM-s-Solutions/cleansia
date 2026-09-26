@@ -444,7 +444,7 @@ builds:
 
 | Missing | Simulator / Debug | Device / Release |
 |---|---|---|
-| `STRIPE_PUBLISHABLE_KEY` | warning — card payment hidden, cash only (fail-closed) | build **error** on Release |
+| `STRIPE_PUBLISHABLE_KEY` | warning — card payment hidden, cash only (fail-closed) — and cash itself needs a signed-in customer and a one-cleaner booking | build **error** on Release |
 | `DEVELOPMENT_TEAM` | no diagnostic (the simulator needs no signing) | build **error** |
 
 A secret key (`sk_…`) in the publishable slot is always a build error. The severity rules have their

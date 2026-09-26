@@ -86,8 +86,10 @@ link is the durable route back, and every status e-mail carries a fresh one.
 `TrackOrderFacade` holds the selected booking's token and the cancellation state in signals. **Cancel
 booking** appears only while the status is `New`, `Confirmed` or `OnTheWay` and a token is held. It
 opens a dialog that first fetches `POST /api/Order/GuestCancellationPreview` with the same token and
-shows the tier, the fee (amount and rate) and the refund estimate before anything is submitted;
-confirming sends `POST /api/Order/CancelGuest`.
+shows the tier, the fee (amount and rate) and the refund estimate before anything is submitted — with
+the preview's `oopsWindowMinutes` stated as *Cancelling within {minutes} minutes of booking is free,
+even after a cleaner has accepted* (15 for a guest; the signed-in order detail prints the same line,
+60 for an entitled Plus member); confirming sends `POST /api/Order/CancelGuest`.
 
 Both calls go through `errorToastSuppressingHttpClient()` — they answer **inline**, so they opt out of
 the shared error snackbar. A red *"An error occurred"* toast over an amber panel that already explains

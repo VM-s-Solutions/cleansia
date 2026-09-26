@@ -39,14 +39,15 @@ five locales, or if the copy promises that a tier cannot drop.
 
 ## Cleansia Plus
 
-A membership buys a discount, a wider free-cancellation window, and a quota of express-surcharge
-waivers.
+A membership buys a discount, a wider free-cancellation window, a 60-minute oops window after booking
+instead of the standard 15 ([the oops window](/product/business-rules#oops-window)), and a quota of
+express-surcharge waivers.
 
 **There is no free trial, and a trialing enrolment is not a member** (owner ruling 2026-09-08,
 T-0690). Both seeded plans carry `TrialPeriodDays = 0` and the admin plan commands refuse any other
 value (`membership.plan.trial_not_permitted`), because a trial is benefits without payment. Every Plus
-benefit — the discount, the cancellation window, the waiver quota, recurring schedules and the preferred
-cleaner — resolves through the one entitlement predicate (`UserMembershipRepository
+benefit — the discount, the cancellation window, the 60-minute oops window, the waiver quota, recurring
+schedules and the preferred cleaner — resolves through the one entitlement predicate (`UserMembershipRepository
 .EntitledForUserQuery`), which refuses a `Trialing` enrolment exactly as it refuses `PastDue`, `Paused`,
 `Cancelled` or an elapsed period. The `trialEndsAtUtc` / `trialEligible` fields on `GetMyMembership`
 still ride the wire for clients built before the ruling; with every plan at zero days no enrolment

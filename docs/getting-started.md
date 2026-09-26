@@ -51,7 +51,8 @@ This is the short path, and nothing gates it but an email confirmation.
 2. **Confirm the email.** The link arrives by SendGrid. On a local run, check the API logs rather
    than your inbox.
 3. **Add an address.** Pick it on the map; the app fills in the street, city and postcode.
-4. **Book.** Choose services, a date and a time, then pay by card or choose cash.
+4. **Book.** Choose services, a date and a time, then pay by card — or choose cash, which is offered
+   only to a signed-in customer whose booking needs a single cleaner.
 
 That is the whole customer onboarding. There is no approval step and no document upload.
 
@@ -102,7 +103,9 @@ question — the sweeps do. See [the order lifecycle](/domain/order-lifecycle).
 service needs two people and stays partly open until both seats are taken.
 
 **Cash and card behave differently.** A card order settles before the work; a cash order is collected
-by the cleaner and marked on the job. Refunds and cancellation fees differ between them, and so does
+by the cleaner and marked on the job. Cash is only for a signed-in customer on a job one cleaner does
+alone — a guest, or a booking long enough to need two cleaners, pays by card, and the server refuses
+anything else ([the cash rule](/product/business-rules#cash)). Refunds and cancellation fees differ between them, and so does
 the receipt: a cash booking's receipt is issued at booking as *awaiting payment* and restated as
 *paid*, under the same number, when the cleaner records the cash.
 

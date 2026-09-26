@@ -6,8 +6,10 @@ Three ways money goes back, with different triggers and different authority.
 
 ```mermaid
 flowchart LR
-  A[Customer cancels] --> B{Within the oops window?}
-  B -- yes --> F["free — 0%"]
+  A[Customer cancels] --> N{A cleaner on the job?}
+  N -- no --> F["free — 0%"]
+  N -- yes --> B{"Within the oops window? (15 min, 60 for Plus)"}
+  B -- yes --> F
   B -- no --> C{Notice given}
   C -- "≥ 24 h" --> F
   C -- "4–24 h" --> P["partial — 25%"]
@@ -20,11 +22,14 @@ flowchart LR
   class F,R free
 ```
 
-The oops window is **15 minutes** from booking, regardless of how close the cleaning is.
-`BookingPolicy` also declares a 60-minute first-customer window, but `CancellationAssessor` always
-passes `IsFirstTimeCustomer = false`, so that wider window is unreachable. Whether to enable it and
-how to count guest history, or remove it, remains an owner decision. A Plus membership can widen
-the free cancellation notice window. The fee ladder itself is priced in exactly one place.
+The oops window is **15 minutes** from booking — **60 minutes for an entitled Plus member** — regardless
+of how close the cleaning is (owner ruling 2026-09-24). Guests and first-time customers get the 15.
+`CancellationPolicyResolver` decides it, live, from the same paid-entitlement read as every other Plus
+benefit, and every route asks it: the signed-in and the guest cancel, both previews, and the booking's
+evidence row. The previews return the figure as `oopsWindowMinutes`, so the sheet states the
+customer's own window. A Plus membership separately widens the free cancellation **notice** window
+(hours before the cleaning); the two never derive from each other. The fee ladder itself is priced in
+exactly one place. → [The oops window](/product/business-rules#oops-window)
 
 When the **cleaner** cancels or no-shows, the customer is refunded *and* credited the apology figure
 authored for the order's currency — `Currency.NoShowCredit`, 250 on a CZK order, paid into the
@@ -40,7 +45,7 @@ credit's own, which the device cannot derive from the order).
 **The cancel is written down as the server priced it.** `CancelOrder` is marked
 `customer.order.cancel` ([ADR-0062](/decisions/adr-0062)): the row that rides its commit carries the
 tier, the fee rate and amount, the refund amount, the notice given in hours, the minutes since booking,
-whether a cleaner had already accepted (the fact the fee turns on, and one that drop/cover hard-deletes
+the oops window applied (`oopsMinutesApplied`, 15 or 60), whether a cleaner had already accepted (the fact the fee turns on, and one that drop/cover hard-deletes
 so it cannot be reconstructed later), the free window applied (Plus or standard), the policy figures at
 that moment, whether an express-waiver slot was actually released, whether a refund was initiated,
 and that a reason was given — the reason's text stays on the order. The preview the customer saw is

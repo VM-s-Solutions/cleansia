@@ -12,15 +12,19 @@ figures in the copy until a booking's address takes over. One market today (CZ),
 stays hidden and the chip is a plain label. → [Business rules — the market](/product/business-rules#market)
 
 **Booking** — browse the service catalogue and packages, pick rooms, bathrooms and extras, choose a
-date and a 60-minute window between 08:00 and 20:00, and pay by card or cash. Book as a guest with no
-account. Get a live price quote before committing, including whether an express surcharge applies and
-whether a membership waives it. Before the address step the catalogue and the quote are in the chosen
+date and a 60-minute window between 08:00 and 20:00, and pay by card — or in cash, when signed in and
+the booking is a job one cleaner does alone ([the cash rule](/product/business-rules#cash)). Book as a
+guest with no account, paying by card. Get a live price quote before committing, including whether an
+express surcharge applies and whether a membership waives it. Before the address step the catalogue and the quote are in the chosen
 market's currency; from the address step on, the address's country decides.
 
 **Recurring bookings** — set up a repeating clean; occurrences materialise ahead of time and are
 confirmed individually, so a single occurrence can be skipped without cancelling the arrangement. A
 schedule is priced in the currency of its saved address's country, like a one-off booking, and every
-wizard -- web, Android and iOS -- offers only what that market sells.
+wizard -- web, Android and iOS -- offers only what that market sells. A cash schedule must stay a
+one-cleaner job: one that grows past it books nothing until the customer moves it to card or a smaller
+selection, and the web, Android and iOS schedule lists say so. →
+[Recurring bookings](/flows/booking-and-pricing#recurring-bookings)
 
 **Choosing a cleaner** — nominate a preferred cleaner, who gets first refusal for a bounded window
 before the job opens to everyone.
@@ -63,11 +67,12 @@ with stars and a short list of tappable tags — *on time*, *thorough*, *missed 
 takes a tap rather than a paragraph. Tags are a fixed server-owned set, which is what makes *"the top
 three complaints this month"* answerable.
 
-**Cancelling** — free within the "oops window" or with enough notice; a clear fee otherwise. See
-[Business rules](/product/business-rules#cancellation).
+**Cancelling** — free while no cleaner has taken the job, within the "oops window" after booking
+(15 minutes, 60 with Plus) or with enough notice; a clear fee otherwise, previewed before the customer
+confirms. See [Business rules](/product/business-rules#cancellation).
 
-**Cleansia Plus** — a discount, a wider free-cancellation window, and a monthly quota of
-express-surcharge waivers. Priced per market: the Plus page, the wizard's Plus step and the mobile
+**Cleansia Plus** — a discount, a wider free-cancellation window, a 60-minute oops window instead of
+15, and a monthly quota of express-surcharge waivers. Priced per market: the Plus page, the wizard's Plus step and the mobile
 Subscribe screens show the plans priced in the chosen market's currency, a market with no priced plan
 says so instead of showing a price, and a subscription keeps the currency it was started in for life.
 No plan has a free trial, and the web's Plus page, home band and recurring-bookings gate offer none.
@@ -97,8 +102,11 @@ account's own (a live one is left to finish first). The terms and the privacy po
 documents**: the `/terms` and `/privacy` pages show the version in force for the customer's market
 with its effective date, a sign-up or a booking without the terms tick is **refused**, and the
 consent written at sign-up points at exactly the text that was shown. An erasure request that could
-not complete is kept on record and finished by the platform without a second request.
+not complete is kept on record and finished by the platform without a second request. A completed
+deletion forfeits any unused credit — never paid out, never restored — and the deletion confirmation
+on the web and in both mobile apps says so before the customer confirms.
 → [What is recorded about a customer](/product/business-rules#customer-record),
+[Credit on a deleted account](/product/business-rules#credit-on-account-deletion),
 [ADR-0063](/decisions/adr-0063)
 
 ## Cleaner (partner)
@@ -142,7 +150,9 @@ time, a notice about two hours before each one, and a nudge close to the start f
 has not set off. The nudge stops the moment they mark themselves on the way. None of the three can be
 silenced: they are about work the cleaner already accepted.
 
-**Getting paid** — see pay per job, per pay period, and download invoices. Payout details are the
+**Getting paid** — see pay per job, per pay period, and download invoices. A job pays its service and
+package rates plus rooms and bathrooms, within the rates' floor and cap; nothing is paid for travel
+distance → [Business rules — cleaner pay](/product/business-rules#cleaner-pay). Payout details are the
 cleaner's own to read in full. A period that holds pay in more than one currency (reachable only
 through an admin reassignment) shows a currency switch on My Pay, derived from the period's pay rows —
 an open period offers it before any invoice exists, and a cancelled invoice's currency is not offered.

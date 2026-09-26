@@ -21,7 +21,7 @@
 > binding amendments, **amended 2026-08-03 by owner instruction (AM-17/AM-18/AM-19)**. T-0493 builds it.
 > **Direct sibling of `CancellationPolicyResolver`** (`Core.AppServices/Services/`) — same shape, same
 > namespace family, same null-user short-circuit, same "returns a record the policy takes as a
-> parameter" contract. Read `CancellationPolicyResolver.cs:14-45` and `BookingPolicy.cs:101-111` first.
+> parameter" contract. Read `CancellationPolicyResolver.cs:12-46` and `BookingPolicy.cs:101-111` first.
 
 ## Responsibility (one sentence)
 
@@ -80,9 +80,11 @@ express surcharge on this booking, and how many waivers are left in this period?
 
 1. **Zero writes.** Grep the implementation for `Add` / `Commit` / `ExecuteSql` / `TryReserve` — none.
 2. **Short-circuits like its sibling:** `string.IsNullOrEmpty(userId)` → no waiver
-   (`CancellationPolicyResolver.cs:27-30`); no entitled membership (**incl. `PastDue`/`Paused` and a
-   trialing enrolment, all by the shared predicate**), `!AllowsExpressUpgrade`, or
-   `ExpressUpgradesPerMonth <= 0` → no waiver (`:35-39`'s shape).
+   (`CancellationPolicyResolver.cs:26-29`); no entitled membership (**incl. `PastDue`/`Paused` and a
+   trialing enrolment, all by the shared predicate**) → no waiver, the shape of the sibling's
+   no entitled membership → standard policy (`:34-37`). `!AllowsExpressUpgrade` or
+   `ExpressUpgradesPerMonth <= 0` → no waiver are this resolver's own plan gates: the sibling no longer
+   short-circuits on its plan's hours — an entitled member always gets the Plus oops window.
 2b. **`UserMembershipId` appears nowhere in this class.** Grep it: zero hits. Any occurrence is the
    AM-19 violation — a quota that silently resets on a plan swap or a re-subscribe.
 3. **Never throws on a bad/missing zone** — null / blank / `TimeZoneNotFoundException` /

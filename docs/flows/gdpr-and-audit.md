@@ -16,7 +16,8 @@ flowchart LR
   D --> E["Anonymise the subject's orders — the account's, and the ENDED guest bookings under its e-mail — with their photos, pay rows and guest audit rows; stamp the disputes' text window"]
   E --> F[Stage the revoke of every session]
   F --> G[Hard-delete payout identifiers]
-  G --> H[ONE commit]
+  G --> K["Forfeit unused credit, every currency — an Expired ledger row per account"]
+  K --> H[ONE commit]
   H -- throws --> X[Failed request row, written out of band — retried tomorrow or by an admin]
 
   classDef stop fill:#fee2e2,stroke:#b91c1c,color:#7f1d1d
@@ -74,6 +75,19 @@ in the walk have every live token revoked before anonymisation, staged into the 
 guest booking left out of the walk keeps its cancellation path. The order-PII sweep starts at least
 one year after the cleaning, beyond the token's fixed 30-day lifetime, so it cannot erase an order
 while one of those tokens is still live.
+
+**Unused credit is forfeited, last** (owner ruling 2026-09-24). After the Stripe membership cancel and
+the blob deletes, `ForfeitCreditAsync` locks the subject's user row and credit accounts, drains every
+positive balance in every currency and writes one `Expired` ledger row per account under
+`account-deletion:<account id>`, noted with the deletion reason; the lock is held to the commit. Nothing
+is paid out. Because every writer that puts credit on an account — a refund's or a cancellation's
+credit share, checkout compensation, a grant, the no-show apology — takes the same owner lock and
+refuses an erased (anonymised and deactivated) owner, a return that committed first is drained here,
+and one that waits finds the erased owner and moves nothing; no account is ever recreated for the
+subject. A merely inactive account still receives credit. A card
+refund is unaffected: its card share still goes back to the card, and the credit share is simply not
+returned. A refused, deferred or failed deletion keeps the balance. Positive credit used to **refuse**
+the erasure; it no longer does. → [Credit on a deleted account](/product/business-rules#credit-on-account-deletion)
 
 **The whole walk is one commit.** It used to commit once in the middle — the session revoke carries
 its own commit for the logout race — which made everything above it durable while everything below
@@ -357,6 +371,8 @@ What survives what:
 | Case | What happens |
 |---|---|
 | Erasure requested with a job in progress | Refused. Erasing mid-job would anonymise a customer while a cleaner is on the way to their home. |
+| Erasure of a customer who holds credit | Not refused. Every positive balance, in every currency, is written off in the erasure's commit (`Expired`, key `account-deletion:<account id>`) — no payout. A refused or failed erasure leaves it untouched. |
+| A refund or cancellation on an erased customer's order | The card share is refunded as usual; the credit share is not returned — no balance, no new account, no larger card refund. |
 | Erasure requested twice | Refused as already pending while any earlier request is not yet `Completed` — a `Failed` one included, which the daily retry or an admin finishes. |
 | The erasure's commit throws | Nothing changes — the subject, their sessions, the trail; a `Failed` request row is written out of band with the reason and retried the next day at 05:00 UTC, or by an admin's **Retry**. |
 | A `Processing` request row older than thirty minutes | Cannot be a live run — the walk takes seconds — so it is treated like a failure: the daily job retries it and the admin **Retry** is offered on it. |

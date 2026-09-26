@@ -73,7 +73,11 @@ You must select **either** a Service or a Package — not both. The backend vali
 | Base Pay | Required. Flat rate paid per completed order. |
 | Extra Per Room | Optional. Added for every room after the first (the first is inside Base Pay). |
 | Extra Per Bathroom | Optional. Bonus added per bathroom in the order. |
-| Distance Rate (per km) | Optional. Reimbursement per kilometer of travel. |
+
+There is **no kilometre rate**: a cleaner is not paid for distance (owner ruling 2026-09-24). The field
+left the form, the employee detail, the create/update/bulk commands and their DTOs; a rate stored
+before the ruling stays in its legacy column, is not shown here and is not applied.
+→ [Business rules — cleaner pay](/product/business-rules#cleaner-pay)
 
 #### Pay Limits
 
@@ -97,13 +101,14 @@ pays for every room after it:
 pay = BasePay
     + (ExtraPerRoom × max(0, rooms − 1))
     + (ExtraPerBathroom × bathrooms)
-    + (DistanceRatePerKm × distance)
 ```
 
 Multiple services/packages on the same order are summed, and the sum is then clamped once: to at
 least the highest `MinimumPay` and at most the lowest `MaximumPay` among the configs involved (`0` on
 either means no bound). The result is the order's `OrderEmployeePay.TotalPay`, one row per assigned
-cleaner. → [Business rules — cleaner pay](/product/business-rules#cleaner-pay)
+cleaner, each at that cleaner's own rates; its `ExpensesPay` is always 0. Pay rows written before the
+distance component was removed keep the figures they were calculated with.
+→ [Business rules — cleaner pay](/product/business-rules#cleaner-pay)
 
 ## API Endpoints
 

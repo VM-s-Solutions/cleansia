@@ -27,6 +27,7 @@ final class CustomerWireContractTests: XCTestCase {
             extrasSubtotal: 0,
             expressSurchargeApplied: true,
             expressSurchargeAmount: 400,
+            requiredEmployees: 2,
             expressSurchargeWaivedByMembership: false
         )
     }
@@ -36,6 +37,7 @@ final class CustomerWireContractTests: XCTestCase {
         XCTAssertEqual(quote.totalPrice, 2400)
         XCTAssertEqual(quote.preSurchargeSubtotal, 2000)
         XCTAssertEqual(quote.currencyId, "cur-1")
+        XCTAssertEqual(quote.requiredEmployees, 2)
     }
 
     func testABrokenQuoteIsRefusedRatherThanPricedAtZero() {
@@ -49,7 +51,8 @@ final class CustomerWireContractTests: XCTestCase {
             ("expressSurchargeApplied", { dto in dto.expressSurchargeApplied = nil }),
             ("expressSurchargeWaivedByMembership", { dto in dto.expressSurchargeWaivedByMembership = nil }),
             ("currencyId", { dto in dto.currencyId = "" }),
-            ("currencyCode", { dto in dto.currencyCode = nil })
+            ("currencyCode", { dto in dto.currencyCode = nil }),
+            ("requiredEmployees", { dto in dto.requiredEmployees = nil })
         ] {
             var payload = quotePayload()
             break_(&payload)
@@ -235,7 +238,8 @@ final class CustomerWireContractTests: XCTestCase {
             ("tier", { (dto: inout GetCancellationFeePreviewResponse) in dto.tier = nil }),
             ("feeAmount", { dto in dto.feeAmount = nil }),
             ("refundAmount", { dto in dto.refundAmount = nil }),
-            ("expressWaiverForfeitedOnCancel", { dto in dto.expressWaiverForfeitedOnCancel = nil })
+            ("expressWaiverForfeitedOnCancel", { dto in dto.expressWaiverForfeitedOnCancel = nil }),
+            ("oopsWindowMinutes", { dto in dto.oopsWindowMinutes = nil })
         ] {
             var payload = cancellationPayload()
             break_(&payload)
@@ -249,6 +253,7 @@ final class CustomerWireContractTests: XCTestCase {
         XCTAssertEqual(quote.feeAmount, 250)
         XCTAssertEqual(quote.refundAmount, 750)
         XCTAssertTrue(quote.forfeitsExpressWaiver)
+        XCTAssertEqual(quote.oopsWindowMinutes, 60)
     }
 
     private func cancellationPayload() -> GetCancellationFeePreviewResponse {
@@ -260,8 +265,37 @@ final class CustomerWireContractTests: XCTestCase {
             refundAmount: 750,
             totalPrice: 1000,
             currencyCode: "CZK",
-            expressWaiverForfeitedOnCancel: true
+            expressWaiverForfeitedOnCancel: true,
+            oopsWindowMinutes: 60
         )
+    }
+
+    // MARK: the recurring list — a schedule the server now skips
+
+    private func templatePayload() -> RecurringBookingTemplateDto {
+        RecurringBookingTemplateDto(
+            id: "tpl-1",
+            frequency: 1,
+            dayOfWeek: 4,
+            timeOfDay: "10:00",
+            rooms: 2,
+            bathrooms: 1,
+            savedAddressId: "addr-1",
+            paymentType: 1,
+            startsOn: Date(timeIntervalSince1970: 1_780_000_000),
+            isActive: true,
+            requiresPaymentMethodChange: true
+        )
+    }
+
+    /// A cash schedule that now needs more than one cleaner is skipped rather than switched to card, so
+    /// the list is the only place the customer learns it books nothing. Defaulted to `false`, the card
+    /// reads as a live schedule that will never produce a cleaning.
+    func testATemplateCarriesWhetherItNeedsAPaymentChangeAndRefusesWithoutIt() throws {
+        XCTAssertTrue(try templatePayload().toDomain().requiresPaymentMethodChange)
+        var payload = templatePayload()
+        payload.requiresPaymentMethodChange = nil
+        assertRefused("requiresPaymentMethodChange") { try payload.toDomain() }
     }
 
     // MARK: the photo counts — a figure the server computes beside the rail, not from it

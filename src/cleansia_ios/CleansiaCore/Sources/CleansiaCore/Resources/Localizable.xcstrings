@@ -3534,6 +3534,41 @@
         }
       }
     },
+    "error.order.cash_not_available": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Platba hotově je možná jen po přihlášení a u objednávky, kterou zvládne jeden uklízeč."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cash is only available when you're signed in and the booking needs a single cleaner."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Оплата наличными доступна только после входа в аккаунт и для заказа, с которым справится один уборщик."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Platba v hotovosti je možná len po prihlásení a pri objednávke, ktorú zvládne jeden upratovač."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Оплата готівкою можлива лише після входу в акаунт і для замовлення, з яким впорається один прибиральник."
+          }
+        }
+      }
+    },
     "error.order.cash_not_collected": {
       "extractionState": "manual",
       "localizations": {

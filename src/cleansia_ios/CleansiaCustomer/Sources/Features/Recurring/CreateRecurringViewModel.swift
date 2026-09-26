@@ -11,7 +11,8 @@ struct CreateRecurringFormState: Equatable {
     var savedAddressId = ""
     var selectedServiceIds: Set<String> = []
     var selectedPackageIds: Set<String> = []
-    var paymentType = 1
+    /// Nil once a cash choice was taken away and the customer has not chosen again.
+    var paymentType: Int? = RecurringPaymentType.card
     var startsOn: Date?
 
     static let totalSteps = 3
@@ -29,7 +30,7 @@ struct CreateRecurringFormState: Equatable {
     }
 
     var isValid: Bool {
-        (1 ... Self.totalSteps).allSatisfy(canAdvance)
+        (1 ... Self.totalSteps).allSatisfy(canAdvance) && paymentType != nil
     }
 
     init() {}
@@ -67,6 +68,45 @@ extension UpdateRecurringInput {
     }
 }
 
+/// What the form's quote prices. The day, the time and the way to pay move no money.
+struct RecurringPricedSelection: Equatable {
+    let serviceIds: [String]
+    let packageIds: [String]
+    let rooms: Int
+    let bathrooms: Int
+    let countryId: String?
+
+    init(_ form: CreateRecurringFormState, countryId: String?) {
+        serviceIds = form.selectedServiceIds.sorted()
+        packageIds = form.selectedPackageIds.sorted()
+        rooms = form.rooms
+        bathrooms = form.bathrooms
+        self.countryId = countryId
+    }
+
+    var isPriced: Bool {
+        !serviceIds.isEmpty || !packageIds.isEmpty
+    }
+
+    var quoteRequest: QuoteRequest {
+        QuoteRequest(
+            serviceIds: serviceIds,
+            packageIds: packageIds,
+            extraSlugs: [],
+            rooms: rooms,
+            bathrooms: bathrooms,
+            cleaningDate: nil,
+            countryId: countryId
+        )
+    }
+}
+
+/// The crew the server last quoted, with the selection it was quoted for.
+struct RecurringCrew: Equatable {
+    let selection: RecurringPricedSelection
+    let requiredEmployees: Int
+}
+
 enum CreateRecurringEvent: Equatable {
     /// Part of the selection is not offered in the picked address's market — the address moved the
     /// schedule there, or the order it was prefilled from was priced elsewhere; the selection was
@@ -80,6 +120,9 @@ final class CreateRecurringViewModel: ViewModel {
     @Published private(set) var submitState: ActionState = .idle
     @Published private(set) var catalogState: UiState<Catalog> = .loading
     @Published private(set) var savedAddresses: [RecurringSavedAddress] = []
+    @Published private(set) var formCrew: RecurringCrew?
+    /// Set when a cash choice was taken away; cleared by the customer's next choice.
+    @Published private(set) var cashCleared = false
 
     let sourceOrderId: String?
     let editing: RecurringTemplate?
@@ -89,9 +132,14 @@ final class CreateRecurringViewModel: ViewModel {
     private let catalogClient: CatalogClient
     private let addressClient: RecurringSavedAddressClient
     private let orderClient: OrderClient
+    private let quoteClient: QuoteClient
     private let snackbar: SnackbarController
+    private let quoteDebounce: DispatchQueue.SchedulerTimeType.Stride
+    private let scheduler: AnySchedulerOf<DispatchQueue>
     private var catalogCountryId: String?
     private var marketReload: Task<Void, Never>?
+    private var quoteTask: Task<Void, Never>?
+    private var quoteSequence = 0
     private var cancellables = Set<AnyCancellable>()
 
     init(
@@ -101,7 +149,10 @@ final class CreateRecurringViewModel: ViewModel {
         catalogClient: CatalogClient,
         addressClient: RecurringSavedAddressClient,
         orderClient: OrderClient,
-        snackbar: SnackbarController
+        quoteClient: QuoteClient,
+        snackbar: SnackbarController,
+        quoteDebounce: DispatchQueue.SchedulerTimeType.Stride = .milliseconds(400),
+        scheduler: AnySchedulerOf<DispatchQueue> = .main
     ) {
         self.sourceOrderId = editing == nil && sourceOrderId?.isBlank == false ? sourceOrderId : nil
         self.editing = editing
@@ -109,12 +160,16 @@ final class CreateRecurringViewModel: ViewModel {
         self.catalogClient = catalogClient
         self.addressClient = addressClient
         self.orderClient = orderClient
+        self.quoteClient = quoteClient
         self.snackbar = snackbar
+        self.quoteDebounce = quoteDebounce
+        self.scheduler = scheduler
         super.init()
         if let editing {
             formState = CreateRecurringFormState(editing)
         }
         startMarketWatcher()
+        startQuoteWatcher()
     }
 
     var isEditing: Bool {
@@ -148,6 +203,16 @@ final class CreateRecurringViewModel: ViewModel {
     /// The country of the picked saved address — the market the schedule is priced in.
     var selectedCountryId: String? {
         savedAddresses.first { $0.id == formState.savedAddressId }?.countryId
+    }
+
+    var pricedSelection: RecurringPricedSelection {
+        RecurringPricedSelection(formState, countryId: selectedCountryId)
+    }
+
+    /// A schedule is always an account's, so only the crew quoted for the form as it is now decides.
+    var cashEligibility: CashEligibility {
+        let crew = formCrew.flatMap { $0.selection == pricedSelection ? $0.requiredEmployees : nil }
+        return .resolve(signedIn: true, requiredEmployees: crew)
     }
 
     /// The addresses come first so the catalogue is read once, priced for the seeded address's market,
@@ -208,6 +273,47 @@ final class CreateRecurringViewModel: ViewModel {
                 self?.reloadCatalogForMarket(countryId)
             }
             .store(in: &cancellables)
+    }
+
+    private func startQuoteWatcher() {
+        Publishers.CombineLatest($formState, $savedAddresses)
+            .map { form, addresses in
+                RecurringPricedSelection(form, countryId: addresses.first { $0.id == form.savedAddressId }?.countryId)
+            }
+            .removeDuplicates()
+            .debounce(for: quoteDebounce, scheduler: scheduler)
+            .sink { [weak self] selection in
+                self?.requote(selection)
+            }
+            .store(in: &cancellables)
+    }
+
+    private func requote(_ selection: RecurringPricedSelection) {
+        quoteTask?.cancel()
+        let sequence = nextQuoteSequence()
+        guard selection.isPriced else { return }
+        quoteTask = Task { [weak self] in
+            await self?.quoteForm(selection, sequence: sequence)
+        }
+    }
+
+    private func nextQuoteSequence() -> Int {
+        quoteSequence += 1
+        return quoteSequence
+    }
+
+    /// Only the latest request's answer is kept. A crew that refuses cash takes a cash choice away.
+    private func quoteForm(_ selection: RecurringPricedSelection, sequence: Int) async {
+        let result = await quoteClient.quote(selection.quoteRequest)
+        guard sequence == quoteSequence else { return }
+        if case let .success(quoted) = result {
+            formCrew = RecurringCrew(selection: selection, requiredEmployees: quoted.requiredEmployees)
+        } else {
+            formCrew = nil
+        }
+        if formState.paymentType == RecurringPaymentType.cash, cashEligibility.refusesCash {
+            dropCash(announce: true)
+        }
     }
 
     private func reloadCatalogForMarket(_ countryId: String?) {
@@ -285,7 +391,17 @@ final class CreateRecurringViewModel: ViewModel {
     }
 
     func setPaymentType(_ type: Int) {
+        if type == RecurringPaymentType.cash, cashEligibility != .available { return }
+        cashCleared = false
         formState.paymentType = type
+    }
+
+    /// Never replaced by card: the customer is told and chooses again.
+    private func dropCash(announce: Bool) {
+        guard formState.paymentType == RecurringPaymentType.cash else { return }
+        formState.paymentType = nil
+        cashCleared = true
+        if announce { snackbar.showInfo(L10n.Recurring.cashCleared) }
     }
 
     func setStartsOn(_ date: Date) {
@@ -314,6 +430,13 @@ final class CreateRecurringViewModel: ViewModel {
         guard !submitState.isSubmitting, isCatalogLoaded else { return false }
         guard let input = buildInput() else { return false }
         submitState = .submitting
+        if input.paymentType == RecurringPaymentType.cash {
+            let confirmed = await cashConfirmedForForm()
+            guard confirmed else {
+                submitState = .idle
+                return false
+            }
+        }
         let result: ApiResult<RecurringTemplate> = if let editing {
             await repository.update(UpdateRecurringInput(input, templateId: editing.id, endsOn: editing.endsOn))
         } else {
@@ -326,9 +449,36 @@ final class CreateRecurringViewModel: ViewModel {
             return true
         case let .failure(error):
             snackbar.showApiError(error)
+            if error.code == CashEligibility.refusalCode {
+                dropCash(announce: false)
+            }
             submitState = .error(isEditing ? L10n.Recurring.editFailed : L10n.Recurring.createFailed)
             return false
         }
+    }
+
+    /// Cash goes out only on a fresh quote for the form that says one cleaner does it. The verdict is
+    /// this quote's own answer: a debounced requote that starts while it is in flight may take over
+    /// the form's crew, but it must not turn a confirmed save into "could not confirm".
+    private func cashConfirmedForForm() async -> Bool {
+        let selection = pricedSelection
+        let sequence = nextQuoteSequence()
+        let result = await quoteClient.quote(selection.quoteRequest)
+        var requiredEmployees: Int?
+        if case let .success(quoted) = result {
+            requiredEmployees = quoted.requiredEmployees
+        }
+        if sequence == quoteSequence {
+            formCrew = requiredEmployees.map { RecurringCrew(selection: selection, requiredEmployees: $0) }
+        }
+        let eligibility = CashEligibility.resolve(signedIn: true, requiredEmployees: requiredEmployees)
+        if eligibility == .available { return true }
+        if eligibility.refusesCash {
+            dropCash(announce: true)
+        } else {
+            snackbar.showError(L10n.Recurring.cashUnchecked)
+        }
+        return false
     }
 
     private func buildInput() -> CreateRecurringInput? {
@@ -336,7 +486,8 @@ final class CreateRecurringViewModel: ViewModel {
         guard !state.savedAddressId.isBlank,
               !state.selectedServiceIds.isEmpty || !state.selectedPackageIds.isEmpty,
               let startsOn = state.startsOn,
-              !state.timeOfDay.isBlank
+              !state.timeOfDay.isBlank,
+              let paymentType = state.paymentType
         else { return nil }
         return CreateRecurringInput(
             frequency: state.frequency.rawValue,
@@ -347,7 +498,7 @@ final class CreateRecurringViewModel: ViewModel {
             savedAddressId: state.savedAddressId,
             selectedServiceIds: Array(state.selectedServiceIds),
             selectedPackageIds: Array(state.selectedPackageIds),
-            paymentType: state.paymentType,
+            paymentType: paymentType,
             startsOn: startsOn
         )
     }

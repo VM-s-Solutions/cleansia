@@ -58,7 +58,8 @@ enum GuestOrderFixtures {
                 feeAmount: 22.5,
                 refundAmount: 67.5,
                 currencyCode: currencyCode,
-                forfeitsExpressWaiver: false
+                forfeitsExpressWaiver: false,
+                oopsWindowMinutes: 15
             )
         )
     }

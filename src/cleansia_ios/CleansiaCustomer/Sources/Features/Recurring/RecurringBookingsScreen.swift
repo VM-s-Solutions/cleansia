@@ -213,13 +213,23 @@ private struct TemplateCard: View {
                     .font(CleansiaTypography.titleMedium)
                     .foregroundColor(CleansiaColors.onSurface)
                 Spacer()
-                if !template.isActive {
+                switch RecurringStatusBadge.of(template) {
+                case .paused:
                     Text(L10n.Recurring.pausedBadge)
                         .font(CleansiaTypography.labelSmall)
                         .foregroundColor(CleansiaColors.onSurfaceVariant)
                         .padding(.horizontal, Spacing.s)
                         .padding(.vertical, 3)
                         .background(CleansiaColors.surfaceVariant, in: Capsule())
+                case .needsPaymentChange:
+                    Text(L10n.Recurring.statusNeedsChange)
+                        .font(CleansiaTypography.labelSmall)
+                        .foregroundColor(CleansiaColors.error)
+                        .padding(.horizontal, Spacing.s)
+                        .padding(.vertical, 3)
+                        .background(CleansiaColors.errorContainer, in: Capsule())
+                case nil:
+                    EmptyView()
                 }
             }
             Text(L10n.Recurring.dayAtTime(
@@ -232,6 +242,9 @@ private struct TemplateCard: View {
                 Text(addressLine)
                     .font(CleansiaTypography.bodyMedium)
                     .foregroundColor(CleansiaColors.onSurfaceVariant)
+            }
+            if template.requiresPaymentMethodChange {
+                PaymentChangeNotice(showChangeAction: showEdit, onChange: onEdit)
             }
             // A flow, not an HStack: three labelled actions in cs/sk/uk/ru overflow a 375pt card and
             // would otherwise truncate rather than wrap.
@@ -269,6 +282,34 @@ private struct TemplateCard: View {
             RoundedRectangle(cornerRadius: CornerRadius.medium)
                 .stroke(CleansiaColors.outlineVariant, lineWidth: 1)
         )
+    }
+}
+
+/// Editing is a Plus capability, so a lapsed member is not offered the change; pausing and deleting
+/// the schedule stay their way out.
+private struct PaymentChangeNotice: View {
+    let showChangeAction: Bool
+    let onChange: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: Spacing.xs) {
+            HStack(alignment: .top, spacing: Spacing.xs) {
+                Image(systemName: "exclamationmark.circle")
+                    .foregroundColor(CleansiaColors.error)
+                Text(L10n.Recurring.cashChangeTitle)
+                    .font(CleansiaTypography.titleMedium)
+                    .foregroundColor(CleansiaColors.error)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            Text(L10n.Recurring.cashChangeBody)
+                .font(CleansiaTypography.bodyMedium)
+                .foregroundColor(CleansiaColors.onSurfaceVariant)
+                .fixedSize(horizontal: false, vertical: true)
+            if showChangeAction {
+                CleansiaTextLink(L10n.Recurring.cashChangeAction, action: onChange)
+            }
+        }
+        .padding(.top, Spacing.xxs)
     }
 }
 

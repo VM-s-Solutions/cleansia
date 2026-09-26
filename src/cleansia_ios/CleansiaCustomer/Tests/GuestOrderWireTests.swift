@@ -16,7 +16,7 @@ final class GuestOrderWireTests: XCTestCase {
     private static let lookup = #"{"id":"o-1","displayOrderNumber":"CZ-123","cleaningDateTime":"2026-09-19T10:00:00Z","#
         + #""totalPrice":90.0,"orderStatus":{"value":2},"currency":{"code":"EUR"},"confirmationCode":"ref-1"}"#
     private static let preview = #"{"orderId":"o-1","tier":3,"feeRate":0.25,"feeAmount":22.5,"refundAmount":67.5,"#
-        + #""totalPrice":90.0,"currencyCode":"EUR","expressWaiverForfeitedOnCancel":false}"#
+        + #""totalPrice":90.0,"currencyCode":"EUR","expressWaiverForfeitedOnCancel":false,"oopsWindowMinutes":15}"#
     private static let receipt = #"{"orderId":"o-1","feeRate":0.25,"refundAmount":67.5,"actualRefundAmount":12.0,"#
         + #""totalPrice":90.0,"refundInitiated":true}"#
     private static let notFound = #"{"type":"order.not_found","detail":"Order not found"}"#
@@ -97,6 +97,7 @@ final class GuestOrderWireTests: XCTestCase {
         XCTAssertEqual(quote.quote.feeAmount, 22.5)
         XCTAssertEqual(quote.quote.refundAmount, 67.5)
         XCTAssertEqual(quote.quote.currencyCode, "EUR")
+        XCTAssertEqual(quote.quote.oopsWindowMinutes, 15)
     }
 
     func testCancellationSendsTheReasonAndLanguageAndKeepsTheActualRefundApartFromThePolicyOne() async throws {
@@ -140,10 +141,15 @@ final class GuestOrderWireTests: XCTestCase {
     }
 
     /// The order id is what pins a quote to the booking on screen, so it is refused with the figures.
-    func testAQuoteWithoutItsOrderIdOrTierIsRefusedRatherThanShown() async {
+    func testAQuoteWithoutItsOrderIdOrTierOrGraceIsRefusedRatherThanShown() async {
+        GuestWireRecorder.responses[Self.previewPath] = (200, Data(Self.preview.utf8))
+        let intact = await client.cancellationQuote(key)
+        XCTAssertNotNil(intact.loadedValue, "the intact preview is refused, so every refusal below proves nothing")
+
         for body in [
             Self.preview.replacingOccurrences(of: "\"orderId\":\"o-1\",", with: ""),
-            Self.preview.replacingOccurrences(of: "\"tier\":3,", with: "")
+            Self.preview.replacingOccurrences(of: "\"tier\":3,", with: ""),
+            Self.preview.replacingOccurrences(of: ",\"oopsWindowMinutes\":15", with: "")
         ] {
             GuestWireRecorder.responses[Self.previewPath] = (200, Data(body.utf8))
 

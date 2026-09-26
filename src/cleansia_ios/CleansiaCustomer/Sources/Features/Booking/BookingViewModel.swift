@@ -6,6 +6,8 @@ enum BookingEvent: Equatable {
     /// The address moved the draft into a market where part of the selection is not offered; the
     /// selection was cut down to what the reloaded catalogue still lists.
     case selectionPrunedForMarket
+    /// A cash choice stopped being allowed and was taken away; it is never replaced by card.
+    case cashCleared
 }
 
 @MainActor
@@ -26,6 +28,8 @@ final class BookingViewModel: ViewModel {
     /// The market the customer browses in — what the catalogue and the quote are priced for until
     /// an address decides otherwise.
     @Published private(set) var marketState: MarketState = .unavailable
+    /// Set when a cash choice was taken away; cleared by the customer's next choice.
+    @Published internal(set) var cashCleared = false
 
     @Published private(set) var currentStep = 1
 
@@ -204,6 +208,7 @@ final class BookingViewModel: ViewModel {
         quoteState = .idle
         promoState = .idle
         referralState = .idle
+        cashCleared = false
         currentStep = 1
         lastQuoteRequest = nil
         quoteTask?.cancel()
@@ -434,8 +439,7 @@ final class BookingViewModel: ViewModel {
             if Task.isCancelled { return }
             switch result {
             case let .success(quote):
-                lastQuoteRequest = request
-                quoteState = .quoted(quote)
+                landQuote(quote, for: request)
                 if let previousQuote, previousQuote.currencyId != quote.currencyId, case .valid = promoState {
                     clearPromoCode()
                 }

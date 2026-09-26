@@ -17,6 +17,7 @@ struct BookingQuote: Equatable {
     let expressSurchargeApplied: Bool
     let expressSurchargeAmount: Double
     let expressSurchargeWaivedByMembership: Bool
+    let requiredEmployees: Int
 
     init(
         totalPrice: Double,
@@ -31,7 +32,8 @@ struct BookingQuote: Equatable {
         tierDiscountMinOrderAmount: Double? = nil,
         expressSurchargeApplied: Bool = false,
         expressSurchargeAmount: Double = 0,
-        expressSurchargeWaivedByMembership: Bool = false
+        expressSurchargeWaivedByMembership: Bool = false,
+        requiredEmployees: Int = 1
     ) {
         self.totalPrice = totalPrice
         self.originalSubtotal = originalSubtotal
@@ -46,6 +48,7 @@ struct BookingQuote: Equatable {
         self.expressSurchargeApplied = expressSurchargeApplied
         self.expressSurchargeAmount = expressSurchargeAmount
         self.expressSurchargeWaivedByMembership = expressSurchargeWaivedByMembership
+        self.requiredEmployees = requiredEmployees
     }
 
     /// **Refuse.** This is the number the customer commits to, and the screen does arithmetic on it —
@@ -67,7 +70,8 @@ struct BookingQuote: Equatable {
             expressSurchargeApplied: response.expressSurchargeApplied.require("expressSurchargeApplied"),
             expressSurchargeAmount: response.expressSurchargeAmount.require("expressSurchargeAmount"),
             expressSurchargeWaivedByMembership: response.expressSurchargeWaivedByMembership
-                .require("expressSurchargeWaivedByMembership")
+                .require("expressSurchargeWaivedByMembership"),
+            requiredEmployees: response.requiredEmployees.require("requiredEmployees")
         )
     }
 }

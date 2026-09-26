@@ -16,11 +16,17 @@ extension BookingViewModel {
         guard profile.isComplete else { return .profileIncomplete }
 
         let current = state
-        guard let instant = current.selectedInstant else { return .failed(nil) }
+        guard let instant = current.selectedInstant, let paymentMethod = current.paymentMethod else {
+            return .failed(nil)
+        }
 
         let quoteResult = await resolvedQuote(for: current)
         guard case let .success(quote) = quoteResult else {
             return .failed(quoteResult.apiErrorOrNil)
+        }
+
+        if takeCashAwayIfRefused(paymentMethod, by: quote) {
+            return .paymentMethodCleared
         }
 
         let countryId = current.savedAddressId == nil
@@ -35,6 +41,7 @@ extension BookingViewModel {
                 quote: quote,
                 instant: instant,
                 countryId: countryId,
+                paymentMethod: paymentMethod,
                 promoIsValid: promoIsValid,
                 alreadyConsented: alreadyConsented,
                 language: languageTag()
@@ -47,10 +54,11 @@ extension BookingViewModel {
         // every one of them already ships translated in five locales.
         let createResult = await orderCreateClient.create(command)
         guard case let .success(order) = createResult else {
+            takeCashAwayIfServerRefused(createResult.apiErrorOrNil)
             return .failed(createResult.apiErrorOrNil)
         }
 
-        if current.paymentMethod == .card, isCardPaymentAvailable {
+        if paymentMethod == .card, isCardPaymentAvailable {
             return await cardPending(for: order)
         }
         // Wipe the draft at the success outcome itself, not on the success screen's
@@ -92,8 +100,7 @@ extension BookingViewModel {
         }
         let result = await quoteClient.quote(request)
         if case let .success(quote) = result {
-            lastQuoteRequest = request
-            quoteState = .quoted(quote)
+            landQuote(quote, for: request)
         }
         return result
     }

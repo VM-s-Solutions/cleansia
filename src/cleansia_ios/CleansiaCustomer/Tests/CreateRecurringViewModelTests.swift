@@ -24,7 +24,9 @@ final class CreateRecurringViewModelTests: XCTestCase {
             catalogClient: catalog,
             addressClient: addressClient,
             orderClient: orderClient,
-            snackbar: SnackbarController()
+            quoteClient: FakeQuoteClient(),
+            snackbar: SnackbarController(),
+            scheduler: TestScheduler.dispatch.eraseToAnyScheduler()
         )
         return (vm, recurringClient)
     }

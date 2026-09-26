@@ -296,7 +296,8 @@ enum OrderFixtures {
             feeAmount: fee,
             refundAmount: refund,
             currencyCode: "CZK",
-            forfeitsExpressWaiver: forfeitsExpressWaiver
+            forfeitsExpressWaiver: forfeitsExpressWaiver,
+            oopsWindowMinutes: 15
         )
     }
 

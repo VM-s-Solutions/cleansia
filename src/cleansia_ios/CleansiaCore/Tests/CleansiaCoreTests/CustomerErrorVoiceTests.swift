@@ -38,6 +38,10 @@ final class CustomerErrorVoiceTests: XCTestCase {
         CustomerOnlyKey("order.preferred_employee.not_eligible", emitters: "CreateOrder"),
         CustomerOnlyKey("order.total_price.not_match", emitters: "CreateOrder"),
         CustomerOnlyKey(
+            "order.cash_not_available",
+            emitters: "CreateOrder, CreateRecurringBooking, UpdateRecurringBooking, ConfirmRecurringOrder"
+        ),
+        CustomerOnlyKey(
             "recurring_booking.not_found",
             emitters: "UpdateRecurringBooking, SetRecurringBookingActive, DeleteRecurringBooking"
         ),
@@ -136,6 +140,8 @@ final class CustomerErrorVoiceTests: XCTestCase {
         "order.address_exactly_one_required": "CreateOrder",
         "order.already_cancelled": "CancellationAssessor",
         "order.already_completed": "CancellationAssessor",
+        "order.cash_not_available":
+            "CreateOrder, CreateRecurringBooking, UpdateRecurringBooking, ConfirmRecurringOrder",
         "order.cleaning_date.below_lead_time": "CreateOrder",
         "order.cleaning_date.future": "CreateOrder",
         "order.country_operator_mismatch": "CreateOrder",

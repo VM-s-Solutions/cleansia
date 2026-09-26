@@ -981,41 +981,6 @@
         }
       }
     },
-    "address_why_reason_distance_pay": {
-      "extractionState": "stale",
-      "localizations": {
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Pro výpočet cestovní odměny"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "To calculate your travel pay"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Для расчёта оплаты за дорогу"
-          }
-        },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Na výpočet cestovnej odmeny"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Для розрахунку оплати за дорогу"
-          }
-        }
-      }
-    },
     "address_why_reason_invoice": {
       "extractionState": "stale",
       "localizations": {

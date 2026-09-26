@@ -13,7 +13,7 @@ final class CreateRecurringCashTests: XCTestCase {
         requiredEmployees: Int,
         editing: RecurringTemplate? = nil,
         recurringClient: FakeRecurringBookingClient = FakeRecurringBookingClient(),
-        snackbar: SnackbarController = SnackbarController(),
+        snackbar: SnackbarController? = nil,
         quoteClient: QuoteClient? = nil
     ) -> (CreateRecurringViewModel, FakeQuoteClient) {
         let quote = FakeQuoteClient(result: .success(Self.quote(requiredEmployees: requiredEmployees)))
@@ -25,7 +25,7 @@ final class CreateRecurringCashTests: XCTestCase {
             addressClient: FakeRecurringSavedAddressClient(),
             orderClient: FakeOrderClient(),
             quoteClient: quoteClient ?? quote,
-            snackbar: snackbar,
+            snackbar: snackbar ?? SnackbarController(),
             quoteDebounce: .milliseconds(400),
             scheduler: scheduler.eraseToAnyScheduler()
         )

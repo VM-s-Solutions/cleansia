@@ -327,8 +327,8 @@ private fun LapsedPlusNotice(onSubscribe: () -> Unit) {
 }
 
 /**
- * Recurring schedule card: tinted header with the cadence and paused badge, then the slot, address and
- * next occurrence. -> /flows/booking-and-pricing#recurring-bookings
+ * Recurring schedule card: tinted header with the cadence and status badge, then the slot and address,
+ * and how to fix a schedule that needs a payment change. -> /flows/booking-and-pricing#recurring-bookings
  */
 @Composable
 private fun TemplateCard(
@@ -353,9 +353,12 @@ private fun TemplateCard(
         R.string.recurring_bookings_day_at_time, dayName, template.timeOfDay,
     )
 
+    val status = ScheduleStatus.of(template)
+    val booksCleanings = status == ScheduleStatus.Active
+
     val cardShape = RoundedCornerShape(16.dp)
     val accent = MaterialTheme.colorScheme.primary
-    val accentTint = accent.copy(alpha = if (template.isActive) 0.10f else 0.05f)
+    val accentTint = accent.copy(alpha = if (booksCleanings) 0.10f else 0.05f)
 
     Column(
         modifier = Modifier
@@ -375,19 +378,24 @@ private fun TemplateCard(
             Icon(
                 imageVector = Icons.Outlined.AutoAwesome,
                 contentDescription = null,
-                tint = if (template.isActive) accent else MaterialTheme.colorScheme.onSurfaceVariant,
+                tint = if (booksCleanings) accent else MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.size(16.dp),
             )
             Spacer(Modifier.width(8.dp))
             Text(
                 text = cadenceLabel,
                 style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold),
-                color = if (template.isActive) accent else MaterialTheme.colorScheme.onSurfaceVariant,
+                color = if (booksCleanings) accent else MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.weight(1f),
             )
-            if (!template.isActive) {
+            val badge = when (status) {
+                ScheduleStatus.Paused -> R.string.recurring_bookings_paused_badge
+                ScheduleStatus.NeedsPaymentChange -> R.string.recurring_status_needs_change
+                ScheduleStatus.Active -> null
+            }
+            if (badge != null) {
                 Text(
-                    text = stringResource(R.string.recurring_bookings_paused_badge),
+                    text = stringResource(badge),
                     style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier
@@ -429,6 +437,29 @@ private fun TemplateCard(
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
+                }
+            }
+            if (template.requiresPaymentMethodChange) {
+                Spacer(Modifier.height(12.dp))
+                Text(
+                    text = stringResource(R.string.recurring_cash_change_title),
+                    style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
+                    color = MaterialTheme.colorScheme.error,
+                )
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    text = stringResource(R.string.recurring_cash_change_body),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                if (showEdit) {
+                    TextButton(
+                        onClick = onEdit,
+                        enabled = !isMutating,
+                        contentPadding = PaddingValues(0.dp),
+                    ) {
+                        Text(stringResource(R.string.recurring_cash_change_action))
+                    }
                 }
             }
         }

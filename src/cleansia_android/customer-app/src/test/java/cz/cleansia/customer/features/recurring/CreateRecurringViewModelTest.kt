@@ -8,6 +8,10 @@ import cz.cleansia.core.network.ApiError
 import cz.cleansia.core.network.ApiResult
 import cz.cleansia.core.snackbar.SnackbarController
 import cz.cleansia.customer.R
+import cz.cleansia.customer.core.booking.BookingApi
+import cz.cleansia.customer.core.booking.CashEligibility
+import cz.cleansia.customer.core.booking.QuoteOrderCommand
+import cz.cleansia.customer.core.booking.QuoteOrderResponse
 import cz.cleansia.customer.core.catalog.CatalogRepository
 import cz.cleansia.customer.core.catalog.CategoryDto
 import cz.cleansia.customer.core.catalog.PackageListItem
@@ -23,6 +27,7 @@ import cz.cleansia.customer.core.orders.OrderRepository
 import cz.cleansia.customer.core.orders.OrderServiceDetailsDto
 import cz.cleansia.customer.core.recurring.RecurrenceFrequency
 import cz.cleansia.customer.core.recurring.RecurringBookingRepository
+import cz.cleansia.customer.core.recurring.CreateRecurringBookingRequest
 import cz.cleansia.customer.core.recurring.RecurringBookingTemplateDto
 import cz.cleansia.customer.core.recurring.UpdateRecurringBookingRequest
 import cz.cleansia.customer.testing.MainDispatcherRule
@@ -45,6 +50,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
+import retrofit2.Response
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class CreateRecurringViewModelTest {
@@ -57,6 +63,7 @@ class CreateRecurringViewModelTest {
     private lateinit var catalogRepo: CatalogRepository
     private lateinit var addressRepo: AddressRepository
     private lateinit var marketRepo: MarketRepository
+    private lateinit var bookingApi: BookingApi
     private lateinit var snackbar: SnackbarController
     private lateinit var appContext: Context
     private lateinit var marketFlow: MutableStateFlow<MarketState>
@@ -75,6 +82,8 @@ class CreateRecurringViewModelTest {
         catalogRepo = mockk(relaxed = true)
         addressRepo = mockk(relaxed = true)
         marketRepo = mockk(relaxed = true)
+        bookingApi = mockk()
+        coEvery { bookingApi.quote(any()) } returns Response.success(crewQuote(1))
         snackbar = mockk(relaxed = true)
         appContext = mockk(relaxed = true)
         marketFlow = MutableStateFlow(MarketState.Unavailable)
@@ -109,6 +118,7 @@ class CreateRecurringViewModelTest {
             catalogRepo = catalogRepo,
             addressRepo = addressRepo,
             marketRepo = marketRepo,
+            bookingApi = bookingApi,
             snackbar = snackbar,
             appContext = appContext,
         )
@@ -328,6 +338,7 @@ class CreateRecurringViewModelTest {
         paymentType = 1,
         startsOn = "2026-07-01T00:00:00Z",
         isActive = true,
+        requiresPaymentMethodChange = false,
     )
 
     @Test
@@ -898,5 +909,195 @@ class CreateRecurringViewModelTest {
 
         coVerify(exactly = 0) { recurringRepo.update(any()) }
         assertTrue(!vm.isEditing)
+    }
+
+    // ── cash — only when the server quotes one cleaner for the schedule's selection ──
+
+    private fun crewQuote(requiredEmployees: Int) = QuoteOrderResponse(
+        totalPrice = 1000.0,
+        finalPriceAfterDiscount = 1000.0,
+        originalSubtotal = 1000.0,
+        appliedDiscountSource = 0,
+        currencyId = "cur-1",
+        currencyCode = "CZK",
+        servicesSubtotal = 1000.0,
+        packagesSubtotal = 0.0,
+        extrasSubtotal = 0.0,
+        expressSurchargeApplied = false,
+        expressSurchargeAmount = 0.0,
+        expressSurchargeWaivedByMembership = false,
+        requiredEmployees = requiredEmployees,
+    )
+
+    private fun crewOf(requiredEmployees: Int) {
+        coEvery { bookingApi.quote(any()) } returns Response.success(crewQuote(requiredEmployees))
+    }
+
+    private fun kotlinx.coroutines.test.TestScope.filledForm(requiredEmployees: Int): CreateRecurringViewModel {
+        crewOf(requiredEmployees)
+        val vm = viewModel()
+        advanceUntilIdle()
+        fillValidForm(vm)
+        advanceUntilIdle()
+        return vm
+    }
+
+    @Test
+    fun `a new schedule is paid by card until the customer chooses otherwise`() = runTest {
+        val vm = viewModel()
+        advanceUntilIdle()
+
+        assertEquals(CreateRecurringViewModel.PAYMENT_CARD, vm.state.value.paymentType)
+    }
+
+    @Test
+    fun `cash is offered once the quote says one cleaner does each clean`() = runTest {
+        val vm = filledForm(requiredEmployees = 1)
+
+        vm.setPaymentType(CreateRecurringViewModel.PAYMENT_CASH)
+
+        assertEquals(CashEligibility.Available, vm.cashEligibility.value)
+        assertEquals(CreateRecurringViewModel.PAYMENT_CASH, vm.state.value.paymentType)
+    }
+
+    @Test
+    fun `cash is refused with the crew when each clean needs two cleaners`() = runTest {
+        val vm = filledForm(requiredEmployees = 2)
+
+        vm.setPaymentType(CreateRecurringViewModel.PAYMENT_CASH)
+
+        assertEquals(CashEligibility.NeedsCard(2), vm.cashEligibility.value)
+        assertEquals(CreateRecurringViewModel.PAYMENT_CARD, vm.state.value.paymentType)
+    }
+
+    @Test
+    fun `the quote prices the form's selection in the address's market`() = runTest {
+        addressesFlow.value = listOf(address("addr-1", "svk-id"))
+        slovakCatalogue(service("svc-1"))
+        val sent = mutableListOf<QuoteOrderCommand>()
+        coEvery { bookingApi.quote(capture(sent)) } returns Response.success(crewQuote(1))
+        val vm = viewModel()
+        advanceUntilIdle()
+
+        fillValidForm(vm)
+        vm.setRooms(4)
+        advanceUntilIdle()
+
+        val last = sent.last()
+        assertEquals(listOf("svc-1"), last.selectedServiceIds)
+        assertEquals(4, last.rooms)
+        assertEquals("svk-id", last.countryId)
+        assertEquals(null, last.cleaningDate)
+    }
+
+    @Test
+    fun `a cash choice that stops being allowed is taken away, not switched to card`() = runTest {
+        val vm = filledForm(requiredEmployees = 1)
+        vm.setPaymentType(CreateRecurringViewModel.PAYMENT_CASH)
+
+        crewOf(2)
+        vm.toggleService("svc-2")
+        advanceUntilIdle()
+
+        assertEquals(null, vm.state.value.paymentType)
+        assertEquals(true, vm.cashClearedNotice.value)
+        assertEquals(false, vm.isValid.value)
+        verify(exactly = 1) { snackbar.showInfoKey(R.string.recurring_cash_cleared) }
+    }
+
+    /** A legacy cash schedule the server now skips: the edit is the recovery, and it cannot keep cash. */
+    @Test
+    fun `editing a cash schedule that now needs two cleaners takes cash away`() = runTest {
+        crewOf(2)
+        templatesFlow.value = listOf(editableTemplate.copy(paymentType = CreateRecurringViewModel.PAYMENT_CASH))
+
+        val vm = viewModel(templateId = "tpl-1")
+        advanceUntilIdle()
+        vm.submit()
+        advanceUntilIdle()
+
+        assertEquals(null, vm.state.value.paymentType)
+        assertEquals(true, vm.cashClearedNotice.value)
+        coVerify(exactly = 0) { recurringRepo.update(any()) }
+    }
+
+    @Test
+    fun `the edit goes out once the customer picks card`() = runTest {
+        crewOf(2)
+        templatesFlow.value = listOf(editableTemplate.copy(paymentType = CreateRecurringViewModel.PAYMENT_CASH))
+        coEvery { recurringRepo.update(any()) } returns ApiResult.Success(editableTemplate)
+        val vm = viewModel(templateId = "tpl-1")
+        advanceUntilIdle()
+
+        vm.setPaymentType(CreateRecurringViewModel.PAYMENT_CARD)
+        vm.submit()
+        advanceUntilIdle()
+
+        val request = slot<UpdateRecurringBookingRequest>()
+        coVerify(exactly = 1) { recurringRepo.update(capture(request)) }
+        assertEquals(CreateRecurringViewModel.PAYMENT_CARD, request.captured.paymentType)
+        assertEquals(false, vm.cashClearedNotice.value)
+    }
+
+    @Test
+    fun `eligible cash is sent as cash`() = runTest {
+        coEvery { recurringRepo.create(any()) } returns ApiResult.Success(template)
+        val vm = filledForm(requiredEmployees = 1)
+        vm.setPaymentType(CreateRecurringViewModel.PAYMENT_CASH)
+
+        vm.submit()
+        advanceUntilIdle()
+
+        val request = slot<CreateRecurringBookingRequest>()
+        coVerify(exactly = 1) { recurringRepo.create(capture(request)) }
+        assertEquals(CreateRecurringViewModel.PAYMENT_CASH, request.captured.paymentType)
+    }
+
+    /** The submit re-asks the server; the answer on screen may be older than the crew rules. */
+    @Test
+    fun `a cash submit whose fresh quote needs two cleaners creates nothing`() = runTest {
+        val vm = filledForm(requiredEmployees = 1)
+        vm.setPaymentType(CreateRecurringViewModel.PAYMENT_CASH)
+        crewOf(2)
+
+        vm.submit()
+        advanceUntilIdle()
+
+        coVerify(exactly = 0) { recurringRepo.create(any()) }
+        assertEquals(null, vm.state.value.paymentType)
+        assertEquals(ActionState.Idle, vm.submitState.value)
+    }
+
+    @Test
+    fun `a cash submit the server could not quote is held back with the reason`() = runTest {
+        val vm = filledForm(requiredEmployees = 1)
+        vm.setPaymentType(CreateRecurringViewModel.PAYMENT_CASH)
+        coEvery { bookingApi.quote(any()) } throws java.io.IOException("boom")
+
+        vm.submit()
+        advanceUntilIdle()
+
+        coVerify(exactly = 0) { recurringRepo.create(any()) }
+        verify(exactly = 1) { snackbar.showErrorKey(R.string.recurring_cash_unchecked) }
+        assertTrue(vm.submitState.value is ActionState.Error)
+        assertEquals(CreateRecurringViewModel.PAYMENT_CASH, vm.state.value.paymentType)
+    }
+
+    @Test
+    fun `the form without a way to pay cannot be submitted`() = runTest {
+        val vm = filledForm(requiredEmployees = 1)
+        vm.setPaymentType(CreateRecurringViewModel.PAYMENT_CASH)
+        crewOf(2)
+        vm.toggleService("svc-2")
+        advanceUntilIdle()
+        vm.nextStep()
+        vm.nextStep()
+        runCurrent()
+
+        vm.submit()
+        advanceUntilIdle()
+
+        assertEquals(false, vm.canAdvance.value)
+        coVerify(exactly = 0) { recurringRepo.create(any()) }
     }
 }

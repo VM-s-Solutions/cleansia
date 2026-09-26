@@ -508,6 +508,8 @@ data class CancellationFeePreviewDto(
     val totalPrice: Double,
     val currencyCode: String? = null,
     val expressWaiverForfeitedOnCancel: Boolean,
+    /** The caller's own free-cancellation grace after booking, in minutes. */
+    val oopsWindowMinutes: Int? = null,
 )
 
 /**

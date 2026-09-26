@@ -153,6 +153,25 @@ class RecurringBookingWireTest {
         refuses("isActive") { templates(templatesWithFirstRow { it - "isActive" }) }
     }
 
+    /**
+     * The flag is the only sign that a cash schedule books nothing any more. `false` would show it as
+     * running on the one screen that says how to fix it.
+     */
+    @Test
+    fun theNeedsAPaymentChangeFlagArrivesWithTheValueTheServerSent() = runTest {
+        val list = loadedTemplates(CAPTURED_TEMPLATES)
+
+        assertEquals(true, list.first().requiresPaymentMethodChange)
+        assertEquals(false, list.last().requiresPaymentMethodChange)
+    }
+
+    @Test
+    fun aMissingNeedsAPaymentChangeFlagRefusesTheList() = runTest {
+        refuses("requiresPaymentMethodChange") {
+            templates(templatesWithFirstRow { it - "requiresPaymentMethodChange" })
+        }
+    }
+
     // --- rule 3: identity is refused, never synthesized --------------------------
 
     /**
@@ -250,7 +269,8 @@ class RecurringBookingWireTest {
                 "endsOn": "2026-12-21T09:30:00Z",
                 "lastMaterializedFor": "2026-08-17T09:30:00Z",
                 "isActive": true,
-                "preferredEmployeeId": "e-9"
+                "preferredEmployeeId": "e-9",
+                "requiresPaymentMethodChange": true
               },
               {
                 "id": "t-2",
@@ -268,7 +288,8 @@ class RecurringBookingWireTest {
                 "endsOn": "2027-01-08T14:00:00Z",
                 "lastMaterializedFor": "2026-08-14T14:00:00Z",
                 "isActive": false,
-                "preferredEmployeeId": "e-4"
+                "preferredEmployeeId": "e-4",
+                "requiresPaymentMethodChange": false
               }
             ]
         """.trimIndent()

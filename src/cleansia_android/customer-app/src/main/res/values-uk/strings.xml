@@ -293,7 +293,7 @@
     <string name="order_action_cancel">Скасувати замовлення</string>
     <string name="order_cancel_title">Скасувати це прибирання?</string>
     <string name="order_cancel_fee_not_accepted">Безкоштовне скасування — це бронювання ще ніхто з клінерів не взяв.</string>
-    <string name="order_cancel_fee_oops">Безкоштовне скасування — ви забронювали щойно.</string>
+    <string name="order_cancel_fee_oops">Для цього замовлення ще діє пільговий період скасування.</string>
     <string name="order_cancel_fee_outside_window">Безкоштовне скасування — ви скасовуєте завчасно.</string>
     <string name="order_cancel_fee_partial">Клінер уже працює над цим замовленням, тож за скасування буде комісія.</string>
     <string name="order_cancel_fee_last_minute">Це скасування в останню хвилину, тому комісія вища.</string>
@@ -303,6 +303,12 @@
     <string name="order_cancel_fee_unavailable">Зараз не вдалося перевірити комісію за скасування. Ви все одно можете скасувати — суму підтвердимо під час скасування.</string>
     <string name="order_cancel_fee_retry">Спробувати ще раз</string>
     <string name="order_cancel_fee_recheck_note">Це вартість на цю мить — ми перевіримо її ще раз, щойно ви підтвердите.</string>
+    <plurals name="order_cancel_fee_grace_note">
+        <item quantity="one">Скасування протягом %1$d хвилини після замовлення безкоштовне, навіть якщо прибиральник уже взяв замовлення.</item>
+        <item quantity="few">Скасування протягом %1$d хвилин після замовлення безкоштовне, навіть якщо прибиральник уже взяв замовлення.</item>
+        <item quantity="many">Скасування протягом %1$d хвилин після замовлення безкоштовне, навіть якщо прибиральник уже взяв замовлення.</item>
+        <item quantity="other">Скасування протягом %1$d хвилини після замовлення безкоштовне, навіть якщо прибиральник уже взяв замовлення.</item>
+    </plurals>
     <string name="order_cancel_express_waiver_forfeit">Скасування також витратить одне з експрес-замовлень, включених у ваше членство цього місяця.</string>
     <string name="order_cancel_fee_neutral">Ви впевнені, що хочете скасувати це бронювання?</string>
     <string name="order_cancel_reason_label">Причина (необов’язково)</string>
@@ -523,7 +529,7 @@
     <string name="help_email_desc">support@cleansia.cz</string>
     <string name="help_faq_title">Поширені запитання</string>
     <string name="help_faq_q1">Як скасувати бронювання?</string>
-    <string name="help_faq_a1">Відкрийте бронювання у вкладці Замовлення та натисніть \"Скасувати\". Безкоштовне скасування за 24 години до початку прибирання.</string>
+    <string name="help_faq_a1">Відкрийте бронювання у вкладці Замовлення та натисніть \"Скасувати\". Безкоштовне скасування за 24 години до початку прибирання. Протягом 15 хвилин після замовлення ви не платите нічого — з Cleansia Plus протягом 60 хвилин.</string>
     <string name="help_faq_q2">Що робити, якщо мене не буде вдома, коли прийде клінер?</string>
     <string name="help_faq_a2">Додайте інструкції щодо доступу при бронюванні (напр. код від дверей, місце ключа). Клінери чекають до 15 хвилин; якщо ми не можемо зв’язатися з вами, бронювання може бути скасовано.</string>
     <string name="help_faq_q3">Чи застраховані та перевірені клінери?</string>
@@ -606,6 +612,7 @@
     <string name="booking_cancel_tier3_value">50% комісія</string>
     <string name="booking_cancel_plus_badge">ПЕРЕВАГА PLUS</string>
     <string name="booking_cancel_plus_subtitle">Як учасник Plus ви можете скасувати безкоштовно всього за %1$d години до початку.</string>
+    <string name="booking_cancel_grace_note">Протягом 15 хвилин після замовлення ви не платите нічого — з Cleansia Plus протягом 60 хвилин.</string>
 
     <!-- Booking — save address -->
     <string name="booking_save_address">Зберегти цю адресу</string>
@@ -756,6 +763,10 @@
     <string name="booking_pay_card_desc">Безпечно через Stripe</string>
     <string name="booking_pay_cash">Готівкою</string>
     <string name="booking_pay_cash_desc">Оплата при доставці</string>
+    <string name="booking_cash_needs_account">Готівкою можуть платити лише клієнти, які увійшли в акаунт. Увійдіть, щоб платити готівкою, або сплатіть карткою.</string>
+    <string name="booking_cash_needs_card">Кількість прибиральників для цього замовлення: %1$d. Готівкою можна платити лише за замовлення, з якими впорається один прибиральник, тож це замовлення сплачується карткою.</string>
+    <string name="booking_cash_pending">Чи можна платити готівкою, ми підтвердимо, щойно буде відома ціна.</string>
+    <string name="booking_cash_cleared">Оплата готівкою для цього замовлення більше недоступна, тому спосіб оплати не обрано. Оберіть, як ви хочете платити.</string>
     <string name="booking_special_instructions_hint">Особливі побажання? (необов’язково)</string>
     <string name="booking_access_instructions_hint">Як увійти? (необов’язково)</string>
 
@@ -797,7 +808,7 @@
     <!-- Account deletion -->
     <string name="profile_delete_account">Видалити обліковий запис</string>
     <string name="delete_account_title">Видалити ваш обліковий запис</string>
-    <string name="delete_account_subtitle">Це назавжди видалить ваш обліковий запис і всі пов’язані дані. Цю дію неможливо скасувати.</string>
+    <string name="delete_account_subtitle">Це назавжди видалить ваш обліковий запис і всі пов’язані дані. Невикористані бонуси після видалення облікового запису анулюються — їх не можна виплатити чи відновити. Цю дію неможливо скасувати.</string>
     <string name="delete_account_what_happens">Що буде видалено</string>
     <string name="delete_account_item_profile">• Ваш профіль (ім’я, email, телефон, фото)</string>
     <string name="delete_account_item_addresses">• Усі збережені адреси</string>
@@ -810,7 +821,7 @@
     <string name="delete_account_confirm_button">Назавжди видалити обліковий запис</string>
     <string name="delete_account_success">Ваш обліковий запис видалено.</string>
     <string name="delete_account_dialog_title">Видалити обліковий запис?</string>
-    <string name="delete_account_dialog_message">Це назавжди видалить ваш обліковий запис і дані. Це не можна скасувати.</string>
+    <string name="delete_account_dialog_message">Це назавжди видалить ваш обліковий запис і дані. Це не можна скасувати. Невикористані бонуси на рахунку анулюються, щойно видалення завершиться, — їх не можна виплатити чи відновити.</string>
     <string name="delete_account_dialog_confirm">Видалити</string>
 
     <!-- Error handling — generics -->
@@ -862,6 +873,8 @@
     <string name="membership_perk_recurring_desc">Налаштуйте один раз — кожен другий вівторок о 10:00, автоматично.</string>
     <string name="membership_perk_cancellation_title">Безкоштовне скасування</string>
     <string name="membership_perk_cancellation_desc">Скасуйте за 4 години до прибирання без комісій.</string>
+    <string name="membership_perk_grace_title">Безкоштовне скасування після замовлення</string>
+    <string name="membership_perk_grace_desc">60 хвилин після замовлення на безкоштовне скасування замість 15 хвилин</string>
     <string name="membership_perk_discount_title" formatted="false">5% знижка для учасників</string>
     <string name="membership_perk_discount_desc" formatted="false">На кожне прибирання. У поєднанні з рівнем лояльності обмежена 12%.</string>
     <string name="membership_perk_express_title">Експрес-замовлення без доплати</string>
@@ -910,6 +923,10 @@
     <string name="recurring_bookings_empty_title">Поки немає регулярних розкладів</string>
     <string name="recurring_bookings_empty_subtitle">Налаштуйте щотижневе або раз на два тижні прибирання з минулого замовлення, щоб не оформлювати кожного разу.</string>
     <string name="recurring_bookings_paused_badge">ПРИЗУПИНЕНО</string>
+    <string name="recurring_status_needs_change">Потребує змін</string>
+    <string name="recurring_cash_change_title">Цей розклад більше не можна оплачувати готівкою</string>
+    <string name="recurring_cash_change_body">Для кожного прибирання потрібен більш ніж один прибиральник, а готівкою можна платити лише за прибирання, з якими впорається один прибиральник, тому нові прибирання за ним не замовляються, доки ви його не зміните. Переведіть його на оплату карткою або оберіть послуги чи пакети, з якими впорається один прибиральник. Прибирання, яке вже замовлено за ним, можна безкоштовно скасувати в Замовленнях, поки його не взяв жоден прибиральник.</string>
+    <string name="recurring_cash_change_action">Змінити розклад</string>
     <string name="recurring_bookings_pause">Призупинити</string>
     <string name="recurring_bookings_resume">Відновити</string>
     <string name="recurring_bookings_delete">Видалити</string>
@@ -949,6 +966,11 @@
     <string name="recurring_create_payment_label">Оплата</string>
     <string name="recurring_create_pay_cash">Готівкою</string>
     <string name="recurring_create_pay_card">Карткою</string>
+    <string name="recurring_cash_needs_card">Кількість прибиральників для кожного прибирання: %1$d. Готівкою можна платити лише за прибирання, з якими впорається один прибиральник, тож цей розклад сплачується карткою.</string>
+    <string name="recurring_cash_pending">Чи можна платити за цей розклад готівкою, ми підтвердимо, щойно буде відома ціна.</string>
+    <string name="recurring_cash_cleared">Оплата готівкою для цього розкладу більше недоступна, тому спосіб оплати не обрано. Оберіть, як ви хочете платити.</string>
+    <string name="recurring_cash_unchecked">Не вдалося перевірити, чи можна платити за цей розклад готівкою. Збережіть його ще раз за хвилину або оберіть картку.</string>
+    <string name="recurring_create_payment_missing">Оберіть, як оплачуватиметься розклад.</string>
     <string name="recurring_create_starts_label">Починається</string>
     <string name="recurring_create_starts_change">Змінити</string>
     <string name="recurring_create_address_add_new">Додати нову адресу</string>
@@ -1054,6 +1076,7 @@
     <string name="error_order_payment_gateway_unavailable">Платіжна служба тимчасово недоступна.</string>
     <string name="error_order_payment_already_paid">Це замовлення вже оплачено.</string>
     <string name="error_order_creation_failed">Не вдалося створити бронювання. Спробуйте знову.</string>
+    <string name="error_order_cash_not_available">Оплата готівкою можлива лише після входу в акаунт і для замовлення, з яким впорається один прибиральник.</string>
     <string name="error_order_review_already_exists">Ви вже залишили відгук про це бронювання.</string>
     <string name="error_order_review_rating_invalid">Оцінка має бути від 1 до 5.</string>
     <string name="error_order_not_owned_by_user">Ви не маєте доступу до цього бронювання.</string>

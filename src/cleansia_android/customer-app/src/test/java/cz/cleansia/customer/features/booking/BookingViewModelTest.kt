@@ -5,6 +5,7 @@ import android.content.Context
 import app.cash.turbine.test
 import cz.cleansia.customer.R
 import cz.cleansia.customer.core.booking.BookingApi
+import cz.cleansia.customer.core.booking.CashEligibility
 import cz.cleansia.customer.core.booking.CreateOrderCommand
 import cz.cleansia.customer.core.booking.CreateOrderResponse
 import cz.cleansia.customer.core.booking.QuoteOrderCommand
@@ -93,6 +94,9 @@ class BookingViewModelTest {
         cz.cleansia.customer.core.market.MarketState.Unavailable,
     )
     private val currentUserFlow = MutableStateFlow<CurrentUser?>(null)
+    private val tokensFlow = MutableStateFlow<TokenStore.Tokens?>(
+        TokenStore.Tokens("access", Long.MAX_VALUE, "refresh", Long.MAX_VALUE),
+    )
     private val membershipFlow = MutableStateFlow<GetMyMembershipResponse?>(null)
     private val catalogCurrencyFlow = MutableStateFlow<String?>(null)
     private val catalogCountryFlow = MutableStateFlow<String?>(null)
@@ -144,6 +148,7 @@ class BookingViewModelTest {
         // Default: signed in. Tests that exercise the signed-out branch
         // override this per-test.
         every { tokenStore.current() } returns mockk(relaxed = true)
+        every { tokenStore.tokens } returns tokensFlow
 
         every { appContext.getString(R.string.error_generic_network) } returns networkMessage
         every { appContext.getString(R.string.error_booking_pick_time) } returns pickTimeMessage
@@ -279,6 +284,7 @@ class BookingViewModelTest {
     fun submit_givenCompleteUserAndCashFlow_returnsSuccessAndIdleState() = runTest {
         currentUserFlow.value = completeUser()
         val quote = QuoteOrderResponse(
+        requiredEmployees = 1,
         expressSurchargeApplied = false,
         expressSurchargeAmount = 0.0,
         expressSurchargeWaivedByMembership = false,
@@ -326,6 +332,7 @@ class BookingViewModelTest {
     fun submit_givenSpecialInstructions_sendsThemOnTheCreateCommand() = runTest {
         currentUserFlow.value = completeUser()
         val quote = QuoteOrderResponse(
+        requiredEmployees = 1,
         expressSurchargeApplied = false,
         expressSurchargeAmount = 0.0,
         expressSurchargeWaivedByMembership = false,
@@ -370,6 +377,7 @@ class BookingViewModelTest {
     fun submit_givenBlankSpecialInstructions_sendsNull() = runTest {
         currentUserFlow.value = completeUser()
         val quote = QuoteOrderResponse(
+        requiredEmployees = 1,
         expressSurchargeApplied = false,
         expressSurchargeAmount = 0.0,
         expressSurchargeWaivedByMembership = false,
@@ -417,6 +425,7 @@ class BookingViewModelTest {
     fun submit_givenAccessInstructions_sendsThemOnTheCreateCommand() = runTest {
         currentUserFlow.value = completeUser()
         val quote = QuoteOrderResponse(
+        requiredEmployees = 1,
         expressSurchargeApplied = false,
         expressSurchargeAmount = 0.0,
         expressSurchargeWaivedByMembership = false,
@@ -461,6 +470,7 @@ class BookingViewModelTest {
     fun submit_givenBlankAccessInstructions_sendsNull() = runTest {
         currentUserFlow.value = completeUser()
         val quote = QuoteOrderResponse(
+        requiredEmployees = 1,
         expressSurchargeApplied = false,
         expressSurchargeAmount = 0.0,
         expressSurchargeWaivedByMembership = false,
@@ -608,6 +618,7 @@ class BookingViewModelTest {
         // Pre-cache a quote so the watcher (which fires on state changes during
         // the 400ms debounce window) doesn't compete with submit() for the API.
         val cachedQuote = QuoteOrderResponse(
+        requiredEmployees = 1,
         expressSurchargeApplied = false,
         expressSurchargeAmount = 0.0,
         expressSurchargeWaivedByMembership = false,
@@ -722,6 +733,7 @@ class BookingViewModelTest {
     fun submit_givenCardFlow_returnsCardPendingWithPaymentParams() = runTest {
         currentUserFlow.value = completeUser()
         val quote = QuoteOrderResponse(
+        requiredEmployees = 1,
         expressSurchargeApplied = false,
         expressSurchargeAmount = 0.0,
         expressSurchargeWaivedByMembership = false,
@@ -773,6 +785,7 @@ class BookingViewModelTest {
     @Test
     fun quoteWatcher_givenSuccessfulQuote_emitsQuotedState() = runTest {
         val quote = QuoteOrderResponse(
+        requiredEmployees = 1,
         expressSurchargeApplied = false,
         expressSurchargeAmount = 0.0,
         expressSurchargeWaivedByMembership = false,
@@ -801,6 +814,7 @@ class BookingViewModelTest {
     @Test
     fun quoteWatcher_failureWithPriorCachedQuote_fallsBackToPrevious() = runTest {
         val firstQuote = QuoteOrderResponse(
+        requiredEmployees = 1,
         expressSurchargeApplied = false,
         expressSurchargeAmount = 0.0,
         expressSurchargeWaivedByMembership = false,
@@ -1710,6 +1724,219 @@ class BookingViewModelTest {
         assertEquals("cs", createCommandSent(vm).language)
     }
 
+    // ── cash — BookingPolicy.AllowsCash: signed in, and one cleaner does the booking alone ──
+
+    private suspend fun kotlinx.coroutines.test.TestScope.quotedFor(
+        requiredEmployees: Int,
+        services: Set<String> = setOf("s-1"),
+    ): BookingViewModel {
+        coEvery { bookingApi.quote(any()) } returns Response.success(quoteWith(requiredEmployees = requiredEmployees))
+        val vm = newViewModel()
+        vm.update { it.copy(selectedServiceIds = services, selectedInstant = futureCleaningInstant()) }
+        advanceUntilIdle()
+        return vm
+    }
+
+    @Test
+    fun cash_signedInOnAOneCleanerBooking_isAvailable() = runTest {
+        val vm = quotedFor(requiredEmployees = 1)
+
+        assertEquals(CashEligibility.Available, vm.cashEligibility.value)
+    }
+
+    @Test
+    fun cash_signedInOnATwoCleanerBooking_needsCard() = runTest {
+        val vm = quotedFor(requiredEmployees = 2)
+
+        assertEquals(CashEligibility.NeedsCard(2), vm.cashEligibility.value)
+    }
+
+    @Test
+    fun cash_guestOnAOneCleanerBooking_needsAnAccount() = runTest {
+        tokensFlow.value = null
+        val vm = quotedFor(requiredEmployees = 1)
+
+        assertEquals(CashEligibility.NeedsAccount, vm.cashEligibility.value)
+    }
+
+    @Test
+    fun cash_guestOnATwoCleanerBooking_needsCard() = runTest {
+        tokensFlow.value = null
+        val vm = quotedFor(requiredEmployees = 2)
+
+        assertEquals(CashEligibility.NeedsCard(2), vm.cashEligibility.value)
+    }
+
+    @Test
+    fun cash_isReEvaluatedOnSignOutAndSignIn() = runTest {
+        val vm = quotedFor(requiredEmployees = 1)
+
+        tokensFlow.value = null
+        advanceUntilIdle()
+        assertEquals(CashEligibility.NeedsAccount, vm.cashEligibility.value)
+
+        tokensFlow.value = TokenStore.Tokens("access", Long.MAX_VALUE, "refresh", Long.MAX_VALUE)
+        advanceUntilIdle()
+        assertEquals(CashEligibility.Available, vm.cashEligibility.value)
+    }
+
+    /** The fallback keeps the old quote on screen; its crew describes the old selection, not this one. */
+    @Test
+    fun cash_aQuoteForAnEarlierSelectionDecidesNothing() = runTest {
+        val vm = quotedFor(requiredEmployees = 1)
+        coEvery { bookingApi.quote(any()) } throws java.io.IOException("boom")
+
+        vm.update { it.copy(selectedServiceIds = setOf("s-1", "s-2")) }
+        advanceUntilIdle()
+
+        assertTrue(vm.quoteState.value is QuoteState.Quoted)
+        assertEquals(CashEligibility.Pending, vm.cashEligibility.value)
+    }
+
+    @Test
+    fun selectPaymentMethod_cashOnATwoCleanerBooking_isIgnored() = runTest {
+        val vm = quotedFor(requiredEmployees = 2)
+
+        vm.selectPaymentMethod(BookingViewModel.PAYMENT_CASH)
+        advanceUntilIdle()
+
+        assertEquals("", vm.state.value.paymentMethod)
+    }
+
+    @Test
+    fun selectPaymentMethod_cashWhileTheCrewIsUnknown_isIgnored() = runTest {
+        val vm = newViewModel()
+        advanceUntilIdle()
+
+        vm.selectPaymentMethod(BookingViewModel.PAYMENT_CASH)
+        advanceUntilIdle()
+
+        assertEquals(CashEligibility.Pending, vm.cashEligibility.value)
+        assertEquals("", vm.state.value.paymentMethod)
+    }
+
+    @Test
+    fun cash_thatBecomesRefusedIsDeselectedNotSwitchedToCard() = runTest {
+        val vm = quotedFor(requiredEmployees = 1)
+        vm.selectPaymentMethod(BookingViewModel.PAYMENT_CASH)
+        advanceUntilIdle()
+        assertEquals(BookingViewModel.PAYMENT_CASH, vm.state.value.paymentMethod)
+
+        coEvery { bookingApi.quote(any()) } returns Response.success(quoteWith(requiredEmployees = 2))
+        vm.update { it.copy(selectedServiceIds = setOf("s-1", "s-2")) }
+        advanceUntilIdle()
+
+        assertEquals("", vm.state.value.paymentMethod)
+        assertEquals(true, vm.cashClearedNotice.value)
+        verify(exactly = 1) { snackbar.showInfoKey(R.string.booking_cash_cleared) }
+    }
+
+    @Test
+    fun cash_isDeselectedWhenTheCustomerSignsOut() = runTest {
+        val vm = quotedFor(requiredEmployees = 1)
+        vm.selectPaymentMethod(BookingViewModel.PAYMENT_CASH)
+        advanceUntilIdle()
+
+        tokensFlow.value = null
+        advanceUntilIdle()
+
+        assertEquals("", vm.state.value.paymentMethod)
+    }
+
+    /** The ViewModel outlives the sheet: a sign-out after closing it must not snackbar over sign-in. */
+    @Test
+    fun cash_refusedWhileTheSheetIsClosed_isClearedWithoutAnnouncing() = runTest {
+        val vm = quotedFor(requiredEmployees = 1)
+        vm.selectPaymentMethod(BookingViewModel.PAYMENT_CASH)
+        advanceUntilIdle()
+        vm.setSheetVisible(false)
+
+        tokensFlow.value = null
+        advanceUntilIdle()
+
+        assertEquals("", vm.state.value.paymentMethod)
+        assertEquals(true, vm.cashClearedNotice.value)
+        verify(exactly = 0) { snackbar.showInfoKey(R.string.booking_cash_cleared) }
+    }
+
+    /** An unknown crew is not a verdict: the choice waits for the quote rather than being taken away. */
+    @Test
+    fun cash_isKeptWhileTheNewSelectionIsUnquoted() = runTest {
+        val vm = quotedFor(requiredEmployees = 1)
+        vm.selectPaymentMethod(BookingViewModel.PAYMENT_CASH)
+        advanceUntilIdle()
+        coEvery { bookingApi.quote(any()) } throws java.io.IOException("boom")
+
+        vm.update { it.copy(selectedServiceIds = setOf("s-1", "s-2")) }
+        advanceUntilIdle()
+
+        assertEquals(BookingViewModel.PAYMENT_CASH, vm.state.value.paymentMethod)
+        verify(exactly = 0) { snackbar.showInfoKey(R.string.booking_cash_cleared) }
+    }
+
+    @Test
+    fun choosingAgain_clearsTheNotice() = runTest {
+        val vm = quotedFor(requiredEmployees = 1)
+        vm.selectPaymentMethod(BookingViewModel.PAYMENT_CASH)
+        coEvery { bookingApi.quote(any()) } returns Response.success(quoteWith(requiredEmployees = 2))
+        vm.update { it.copy(selectedServiceIds = setOf("s-1", "s-2")) }
+        advanceUntilIdle()
+
+        vm.selectPaymentMethod(BookingViewModel.PAYMENT_CARD)
+        advanceUntilIdle()
+
+        assertEquals(BookingViewModel.PAYMENT_CARD, vm.state.value.paymentMethod)
+        assertEquals(false, vm.cashClearedNotice.value)
+    }
+
+    @Test
+    fun submit_eligibleCash_isSentAsCash() = runTest {
+        currentUserFlow.value = completeUser()
+        val vm = quotedFor(requiredEmployees = 1)
+        vm.selectPaymentMethod(BookingViewModel.PAYMENT_CASH)
+        val sent = slot<CreateOrderCommand>()
+        coEvery { bookingApi.create(capture(sent)) } returns Response.success(
+            CreateOrderResponse(id = "o-1", confirmationCode = "ABC123"),
+        )
+        advanceUntilIdle()
+
+        val outcome = vm.submit()
+
+        assertTrue("expected Success but was $outcome", outcome is BookingSubmitOutcome.Success)
+        assertEquals(1, sent.captured.paymentType)
+    }
+
+    /**
+     * The selection moved after cash was chosen and the create re-quotes: the fresh quote needs two
+     * cleaners, so nothing is created, and cash is taken off rather than swapped for card.
+     */
+    @Test
+    fun submit_cashOnAFreshTwoCleanerQuote_neverCreates() = runTest {
+        currentUserFlow.value = completeUser()
+        val vm = quotedFor(requiredEmployees = 1)
+        vm.selectPaymentMethod(BookingViewModel.PAYMENT_CASH)
+        advanceUntilIdle()
+        coEvery { bookingApi.quote(any()) } returns Response.success(quoteWith(requiredEmployees = 2))
+
+        vm.update { it.copy(selectedServiceIds = setOf("s-1", "s-2")) }
+        val outcome = vm.submit()
+
+        assertEquals(BookingSubmitOutcome.Failed, outcome)
+        coVerify(exactly = 0) { bookingApi.create(any()) }
+        assertEquals("", vm.state.value.paymentMethod)
+    }
+
+    @Test
+    fun submit_withoutAPaymentMethod_neverCreates() = runTest {
+        currentUserFlow.value = completeUser()
+        val vm = quotedFor(requiredEmployees = 1)
+
+        val outcome = vm.submit()
+
+        assertEquals(BookingSubmitOutcome.Failed, outcome)
+        coVerify(exactly = 0) { bookingApi.create(any()) }
+    }
+
     private fun quoteWith(
         tierDiscount: Double = 0.0,
         membershipDiscount: Double = 0.0,
@@ -1718,7 +1945,9 @@ class BookingViewModelTest {
         surchargeApplied: Boolean = surcharge > 0.0,
         waived: Boolean = false,
         currencyCode: String = "CZK",
+        requiredEmployees: Int = 1,
     ) = QuoteOrderResponse(
+        requiredEmployees = requiredEmployees,
         finalPriceAfterDiscount = 0.0,
         originalSubtotal = 0.0,
         appliedDiscountSource = 0,

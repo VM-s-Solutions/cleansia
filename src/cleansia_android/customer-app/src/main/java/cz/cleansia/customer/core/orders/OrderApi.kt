@@ -436,6 +436,9 @@ internal fun GenCancelOrderResponse?.toAppDto(): CancelOrderResponse {
 /**
  * The tier is refused rather than defaulted — every other field on the generated response is nullable
  * too, so ordinal 0 would quote a free cancellation on the strength of a field the server never sent.
+ *
+ * `oopsWindowMinutes` is dropped rather than refused when absent: it only adds a sentence, and refusing
+ * it would take the whole quote away from a guest, who cannot cancel without one.
  */
 internal fun GenGetCancellationFeePreviewResponse?.toAppDto(): CancellationFeePreviewDto {
     val quote = required("GetCancellationFeePreviewResponse")
@@ -449,6 +452,7 @@ internal fun GenGetCancellationFeePreviewResponse?.toAppDto(): CancellationFeePr
         currencyCode = quote.currencyCode,
         expressWaiverForfeitedOnCancel =
             quote.expressWaiverForfeitedOnCancel.required("expressWaiverForfeitedOnCancel"),
+        oopsWindowMinutes = quote.oopsWindowMinutes?.takeIf { it > 0 },
     )
 }
 

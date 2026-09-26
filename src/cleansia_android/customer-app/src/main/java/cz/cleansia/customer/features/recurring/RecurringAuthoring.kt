@@ -1,5 +1,7 @@
 package cz.cleansia.customer.features.recurring
 
+import cz.cleansia.customer.core.recurring.RecurringBookingTemplateDto
+
 /**
  * Mirrors the server's split. Authoring a schedule — `CreateRecurringBooking`,
  * `UpdateRecurringBooking` — is the paid Cleansia Plus capability. Listing,
@@ -37,5 +39,22 @@ data class RecurringListAffordances(
             showLapsedNotice = gate == RecurringAuthoringGate.Upsell && hasTemplates,
             showEdit = gate == RecurringAuthoringGate.Allowed,
         )
+    }
+}
+
+/** Whether a schedule books cleanings, and if not, why. */
+enum class ScheduleStatus {
+    Active,
+    Paused,
+    NeedsPaymentChange,
+    ;
+
+    companion object {
+        /** A paused schedule books nothing, and neither does a cash one the server skips until it is changed. */
+        fun of(template: RecurringBookingTemplateDto): ScheduleStatus = when {
+            !template.isActive -> Paused
+            template.requiresPaymentMethodChange -> NeedsPaymentChange
+            else -> Active
+        }
     }
 }

@@ -118,6 +118,7 @@ class BookingApiTest {
                 expressSurchargeApplied = false,
                 expressSurchargeAmount = 0.0,
                 expressSurchargeWaivedByMembership = true,
+                requiredEmployees = 1,
             ),
         )
 

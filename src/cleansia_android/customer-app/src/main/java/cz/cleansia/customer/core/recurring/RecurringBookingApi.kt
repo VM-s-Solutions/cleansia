@@ -118,4 +118,5 @@ private fun GenRecurringBookingTemplateDto.toAppDto(): RecurringBookingTemplateD
         endsOn = endsOn?.toString(),
         lastMaterializedFor = lastMaterializedFor?.toString(),
         isActive = isActive.required("isActive"),
+        requiresPaymentMethodChange = requiresPaymentMethodChange.required("requiresPaymentMethodChange"),
     )

@@ -73,7 +73,7 @@ data class QuoteOrderResponse(
      * send.
      */
     val estimatedDurationMinutes: Int = 0,
-    val requiredEmployees: Int = 1,
+    val requiredEmployees: Int,
     /** Free express upgrades left this calendar month BEFORE this booking. Null with no membership. */
     val expressUpgradesRemaining: Int? = null,
     /**

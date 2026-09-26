@@ -294,7 +294,7 @@
     <string name="order_action_cancel">Zrušit objednávku</string>
     <string name="order_cancel_title">Zrušit tento úklid?</string>
     <string name="order_cancel_fee_not_accepted">Zrušení zdarma — tuto rezervaci zatím nepřevzal žádný uklízeč.</string>
-    <string name="order_cancel_fee_oops">Zrušení zdarma — objednali jste před malou chvílí.</string>
+    <string name="order_cancel_fee_oops">Objednávka je v ochranné lhůtě pro bezplatné zrušení.</string>
     <string name="order_cancel_fee_outside_window">Zrušení zdarma — rušíte s dostatečným předstihem.</string>
     <string name="order_cancel_fee_partial">Na této zakázce už pracuje uklízeč, takže je zrušení zpoplatněné.</string>
     <string name="order_cancel_fee_last_minute">Toto je zrušení na poslední chvíli, poplatek je proto vyšší.</string>
@@ -304,6 +304,12 @@
     <string name="order_cancel_fee_unavailable">Poplatek za zrušení se teď nepodařilo zjistit. Zrušit můžete i tak — částku potvrdíme při zrušení.</string>
     <string name="order_cancel_fee_retry">Zkusit znovu</string>
     <string name="order_cancel_fee_recheck_note">Toto je cena v tuto chvíli — při potvrzení ji ověříme znovu.</string>
+    <plurals name="order_cancel_fee_grace_note">
+        <item quantity="one">Zrušení do %1$d minuty od objednání je zdarma, i když už objednávku přijal uklízeč.</item>
+        <item quantity="few">Zrušení do %1$d minut od objednání je zdarma, i když už objednávku přijal uklízeč.</item>
+        <item quantity="many">Zrušení do %1$d minuty od objednání je zdarma, i když už objednávku přijal uklízeč.</item>
+        <item quantity="other">Zrušení do %1$d minut od objednání je zdarma, i když už objednávku přijal uklízeč.</item>
+    </plurals>
     <string name="order_cancel_express_waiver_forfeit">Zrušením také vyčerpáte jednu z expresních objednávek zahrnutých ve vašem členství pro tento měsíc.</string>
     <string name="order_cancel_fee_neutral">Opravdu chcete tuto rezervaci zrušit?</string>
     <!-- Legacy free-text label (zachováno kvůli zpětné kompatibilitě). -->
@@ -526,7 +532,7 @@
     <string name="help_email_desc">support@cleansia.cz</string>
     <string name="help_faq_title">Často kladené otázky</string>
     <string name="help_faq_q1">Jak mohu zrušit rezervaci?</string>
-    <string name="help_faq_a1">Otevřete rezervaci v záložce Objednávky a klepněte na \"Zrušit\". Zrušení zdarma až 24 hodin před začátkem úklidu.</string>
+    <string name="help_faq_a1">Otevřete rezervaci v záložce Objednávky a klepněte na \"Zrušit\". Zrušení zdarma až 24 hodin před začátkem úklidu. Do 15 minut od objednání neplatíte nic — s Cleansia Plus do 60 minut.</string>
     <string name="help_faq_q2">Co když nebudu doma, když uklízeč přijde?</string>
     <string name="help_faq_a2">Při rezervaci přidejte pokyny ke vstupu (např. kód u dveří, místo klíče). Uklízeči čekají až 15 minut; pokud vás nemůžeme zastihnout, rezervace může být zrušena.</string>
     <string name="help_faq_q3">Jsou uklízeči pojištěni a prověřeni?</string>
@@ -609,6 +615,7 @@
     <string name="booking_cancel_tier3_value">50% poplatek</string>
     <string name="booking_cancel_plus_badge">VÝHODA PLUS</string>
     <string name="booking_cancel_plus_subtitle">Jako člen Plus můžete zrušit zdarma až %1$d hodiny předem.</string>
+    <string name="booking_cancel_grace_note">Do 15 minut od objednání neplatíte nic — s Cleansia Plus do 60 minut.</string>
 
     <!-- Booking — save address -->
     <string name="booking_save_address">Uložit tuto adresu</string>
@@ -759,6 +766,10 @@
     <string name="booking_pay_card_desc">Bezpečně přes Stripe</string>
     <string name="booking_pay_cash">Hotově</string>
     <string name="booking_pay_cash_desc">Platba při dodání</string>
+    <string name="booking_cash_needs_account">Hotově mohou platit jen přihlášení zákazníci. Přihlaste se, pokud chcete platit hotově, nebo zaplaťte kartou.</string>
+    <string name="booking_cash_needs_card">Počet uklízečů potřebných pro tuto objednávku: %1$d. Hotově lze platit jen objednávky, které zvládne jeden uklízeč, tuto proto zaplatíte kartou.</string>
+    <string name="booking_cash_pending">Zda můžete platit hotově, potvrdíme, jakmile bude známa cena.</string>
+    <string name="booking_cash_cleared">Platba hotově už pro tuto objednávku není možná, a proto není vybrán žádný způsob platby. Zvolte, jak chcete platit.</string>
     <string name="booking_special_instructions_hint">Speciální požadavky? (nepovinné)</string>
     <string name="booking_access_instructions_hint">Pokyny ke vstupu? (nepovinné)</string>
 
@@ -800,7 +811,7 @@
     <!-- Account deletion -->
     <string name="profile_delete_account">Smazat účet</string>
     <string name="delete_account_title">Smazat váš účet</string>
-    <string name="delete_account_subtitle">Tím trvale smažete svůj účet a všechna související data. Tuto akci nelze vrátit zpět.</string>
+    <string name="delete_account_subtitle">Tím trvale smažete svůj účet a všechna související data. Nevyčerpaný kredit smazáním účtu propadá — nelze ho vyplatit ani obnovit. Tuto akci nelze vrátit zpět.</string>
     <string name="delete_account_what_happens">Co bude smazáno</string>
     <string name="delete_account_item_profile">• Váš profil (jméno, e-mail, telefon, fotka)</string>
     <string name="delete_account_item_addresses">• Všechny uložené adresy</string>
@@ -813,7 +824,7 @@
     <string name="delete_account_confirm_button">Trvale smazat účet</string>
     <string name="delete_account_success">Váš účet byl smazán.</string>
     <string name="delete_account_dialog_title">Smazat účet?</string>
-    <string name="delete_account_dialog_message">Tímto trvale smažete svůj účet a data. Toto nelze vrátit zpět.</string>
+    <string name="delete_account_dialog_message">Tímto trvale smažete svůj účet a data. Toto nelze vrátit zpět. Nevyčerpaný kredit na účtu dokončením smazání propadá — nelze ho vyplatit ani obnovit.</string>
     <string name="delete_account_dialog_confirm">Smazat</string>
 
     <!-- Error handling — generics -->
@@ -865,6 +876,8 @@
     <string name="membership_perk_recurring_desc">Nastavte jednou — každý druhý čtvrtek v 10:00, automaticky.</string>
     <string name="membership_perk_cancellation_title">Bezplatné zrušení</string>
     <string name="membership_perk_cancellation_desc">Zrušte až 4 hodiny před úklidem bez poplatků.</string>
+    <string name="membership_perk_grace_title">Zrušení zdarma po objednání</string>
+    <string name="membership_perk_grace_desc">60 minut po objednání na bezplatné zrušení místo 15 minut</string>
     <string name="membership_perk_discount_title" formatted="false">5% členská sleva</string>
     <string name="membership_perk_discount_desc" formatted="false">Z každého úklidu. V kombinaci s věrnostním programem je omezena na 12%.</string>
     <string name="membership_perk_express_title">Expresní termíny bez příplatku</string>
@@ -913,6 +926,10 @@
     <string name="recurring_bookings_empty_title">Zatím žádné opakované rozvrhy</string>
     <string name="recurring_bookings_empty_subtitle">Nastavte si týdenní nebo dvoutýdenní úklid z minulé objednávky a vyhněte se opětovnému objednávání.</string>
     <string name="recurring_bookings_paused_badge">POZASTAVENO</string>
+    <string name="recurring_status_needs_change">Vyžaduje úpravu</string>
+    <string name="recurring_cash_change_title">Tento rozvrh už nelze platit hotově</string>
+    <string name="recurring_cash_change_body">Každý úklid potřebuje více než jednoho uklízeče a hotově lze platit jen úklidy, které zvládne jeden uklízeč, proto se z něj neobjednávají žádné nové úklidy, dokud ho nezměníte. Přepněte ho na platbu kartou nebo vyberte služby či balíčky, které zvládne jeden uklízeč. Úklid, který už je z něj objednaný, můžete v Objednávkách zrušit zdarma, dokud ho nepřijme žádný uklízeč.</string>
+    <string name="recurring_cash_change_action">Upravit rozvrh</string>
     <string name="recurring_bookings_pause">Pozastavit</string>
     <string name="recurring_bookings_resume">Obnovit</string>
     <string name="recurring_bookings_delete">Smazat</string>
@@ -952,6 +969,11 @@
     <string name="recurring_create_payment_label">Platba</string>
     <string name="recurring_create_pay_cash">Hotově</string>
     <string name="recurring_create_pay_card">Kartou</string>
+    <string name="recurring_cash_needs_card">Počet uklízečů potřebných na každý úklid: %1$d. Hotově lze platit jen úklidy, které zvládne jeden uklízeč, tento rozvrh proto platíte kartou.</string>
+    <string name="recurring_cash_pending">Zda lze tento rozvrh platit hotově, potvrdíme, jakmile bude známa cena.</string>
+    <string name="recurring_cash_cleared">Platba hotově už pro tento rozvrh není možná, a proto není vybrán žádný způsob platby. Zvolte, jak chcete platit.</string>
+    <string name="recurring_cash_unchecked">Nepodařilo se ověřit, zda lze tento rozvrh platit hotově. Uložte ho za chvíli znovu, nebo zvolte kartu.</string>
+    <string name="recurring_create_payment_missing">Zvolte, jak se bude rozvrh platit.</string>
     <string name="recurring_create_starts_label">Začíná</string>
     <string name="recurring_create_starts_change">Změnit</string>
     <string name="recurring_create_address_add_new">Přidat novou adresu</string>
@@ -1057,6 +1079,7 @@
     <string name="error_order_payment_gateway_unavailable">Platební služba je dočasně nedostupná.</string>
     <string name="error_order_payment_already_paid">Tato objednávka už byla zaplacena.</string>
     <string name="error_order_creation_failed">Nelze vytvořit rezervaci. Zkuste to znovu.</string>
+    <string name="error_order_cash_not_available">Platba hotově je možná jen po přihlášení a u objednávky, kterou zvládne jeden uklízeč.</string>
     <string name="error_order_review_already_exists">Tuto rezervaci jste již hodnotili.</string>
     <string name="error_order_review_rating_invalid">Hodnocení musí být mezi 1 a 5.</string>
     <string name="error_order_not_owned_by_user">K této rezervaci nemáte přístup.</string>

@@ -73,6 +73,7 @@ class GuestOrderWireTest {
         assertEquals(3, quote.tier)
         assertEquals(22.5, quote.feeAmount, 0.0)
         assertEquals("EUR", quote.currencyCode)
+        assertEquals(15, quote.oopsWindowMinutes)
     }
 
     @Test
@@ -114,7 +115,7 @@ class GuestOrderWireTest {
     companion object {
         private const val TOKEN = "P8Jw-2hQ_xTokenFromTheEmail"
         private const val LOOKUP = """{"id":"o-1","displayOrderNumber":"CZ-123","cleaningDateTime":"2026-09-19T10:00:00Z","totalPrice":90.0,"orderStatus":{"value":2},"currency":{"code":"EUR"},"confirmationCode":"printed-reference"}"""
-        private const val PREVIEW = """{"orderId":"o-1","tier":3,"feeRate":0.25,"feeAmount":22.5,"refundAmount":67.5,"totalPrice":90.0,"currencyCode":"EUR","expressWaiverForfeitedOnCancel":false}"""
+        private const val PREVIEW = """{"orderId":"o-1","tier":3,"feeRate":0.25,"feeAmount":22.5,"refundAmount":67.5,"totalPrice":90.0,"currencyCode":"EUR","expressWaiverForfeitedOnCancel":false,"oopsWindowMinutes":15}"""
         private const val RECEIPT = """{"orderId":"o-1","feeRate":0.25,"refundAmount":67.5,"actualRefundAmount":12.0,"totalPrice":90.0,"refundInitiated":true}"""
     }
 }

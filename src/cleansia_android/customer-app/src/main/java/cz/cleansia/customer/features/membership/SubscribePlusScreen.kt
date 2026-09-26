@@ -27,6 +27,7 @@ import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.Bolt
 import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material.icons.outlined.CheckCircle
+import androidx.compose.material.icons.outlined.History
 import androidx.compose.material.icons.outlined.LocalOffer
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.Repeat
@@ -183,6 +184,12 @@ fun SubscribePlusScreen(
                 icon = Icons.Outlined.CheckCircle,
                 title = stringResource(R.string.membership_perk_cancellation_title),
                 desc = stringResource(R.string.membership_perk_cancellation_desc),
+            )
+            Spacer(Modifier.height(10.dp))
+            PerkTile(
+                icon = Icons.Outlined.History,
+                title = stringResource(R.string.membership_perk_grace_title),
+                desc = stringResource(R.string.membership_perk_grace_desc),
             )
             Spacer(Modifier.height(10.dp))
             PerkTile(

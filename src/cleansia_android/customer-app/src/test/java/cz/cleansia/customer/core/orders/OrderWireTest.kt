@@ -246,6 +246,24 @@ class OrderWireTest {
         }
     }
 
+    /** The customer's own grace, which the sheet states as it arrived — 60 for an entitled Plus member. */
+    @Test
+    fun theGraceArrivesWithItsLiteralValue() = runTest {
+        assertEquals(60, preview(CAPTURED_PREVIEW).oopsWindowMinutes)
+    }
+
+    /**
+     * The grace only adds a sentence; refusing the quote over it would take the fee away from a guest,
+     * who cannot cancel without one.
+     */
+    @Test
+    fun aMissingGraceStatesNoneAndKeepsTheQuote() = runTest {
+        val quoted = preview(withoutKey(CAPTURED_PREVIEW, "oopsWindowMinutes"))
+
+        assertNull(quoted.oopsWindowMinutes)
+        assertEquals(2190.00, quoted.feeAmount, 0.0)
+    }
+
     @Test
     fun anExplicitFalseForfeitureIsARealStateAndSurvives() = runTest {
         val quoted = preview(withKey(CAPTURED_PREVIEW, "expressWaiverForfeitedOnCancel", falseValue()))
@@ -602,7 +620,8 @@ class OrderWireTest {
               "refundAmount": 2190.00,
               "totalPrice": 4380.00,
               "currencyCode": "CZK",
-              "expressWaiverForfeitedOnCancel": true
+              "expressWaiverForfeitedOnCancel": true,
+              "oopsWindowMinutes": 60
             }
         """.trimIndent()
 

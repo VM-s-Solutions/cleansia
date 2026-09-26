@@ -156,7 +156,7 @@ Phase 4 (2026-09-23) regenerates `Initial` as **`20260923064534`**. Its only sch
 `Orders.CustomerAddressId` changing from cascading deletion to restrictive deletion. Erasure and
 retention now move affected records to blank address copies before deleting an unshared original;
 if another booking attaches concurrently, the FK refuses deletion instead of deleting that booking.
-The same drop also reseeds the phase-5 loyalty perks.
+The phase-5 loyalty perks arrive with the reseed that follows the drop (below) — the drop alone seeds nothing.
 
 Phase 6A (2026-09-23) regenerates `Initial` as **`20260923071814`**, removing the unread
 `CountryConfigurations.ReducedVatRate` column while retaining both live VAT rates.
@@ -175,8 +175,12 @@ deployment work; all production operations remain prohibited. `MigrationService/
 whose `__EFMigrationsHistory` records the **old** id will try to replay the whole create script against
 tables that already exist — failing the `migrate-database` job every other deploy job depends on.
 
-**Action:** drop the DEV database, then deploy. Pre-production, so there is no data to preserve; the
-seed repopulates it (`sql-scripts/insert_seed_data.sql` — which now inserts the `Tenants` row first and
+**Action:** drop the DEV database, deploy, then **run the seed yourself** — a deployed host runs as
+`Production` (no `ASPNETCORE_ENVIRONMENT` is set anywhere; `deploy/bicep/main.bicep`), the seeder runs only
+under `IsDevelopment`, and the deploy applies the migration bundle only. Run
+`gh workflow run execute-sql.yml -f environment=DEV -f script_path=insert_seed_data.sql` (DEV only — the
+workflow refuses the fixture against PRO). Pre-production, so there is no data to preserve; the seed
+repopulates it (`sql-scripts/insert_seed_data.sql` — which now inserts the `Tenants` row first and
 stamps every seeded business row `cleansia-cz`; a database seeded by any earlier script has `NULL`
 tenants that the NOT NULL columns would refuse, which is one more reason the drop is not optional).
 

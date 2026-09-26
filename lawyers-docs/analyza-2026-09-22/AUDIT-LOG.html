@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="cs"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Záznam auditu - 23. 9. 2026</title><style>
+<html lang="cs"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Záznam auditu - 26. 9. 2026</title><style>
 :root { color-scheme: light; }
 * { box-sizing: border-box; }
 body { margin: 0; background: #eef3f3; color: #183034; font-family: 'Segoe UI', Arial, sans-serif; font-size: 16px; line-height: 1.6; }
@@ -40,8 +40,8 @@ blockquote { border-left: 4px solid #12796b; margin: 20px 0; padding: 5px 20px; 
  h1, h2, h3, h4 { break-after: avoid; }
  a { text-decoration: none; color: #135d55; }
 }
-</style></head><body><main><nav><a href="PROVOZ-PLATFORMY.html">Jak platforma funguje</a><a href="ROZPORY-DOKUMENTY-VS-KOD.html">Dokumenty vs. aplikace</a><a href="TECHNICKE-MEZERY.html">Technické mezery</a><a href="OBCHODNI-MEZERY-A-HRANICNI-PRIPADY.html">Obchodní mezery a hraniční případy</a><a href="AUDIT-LOG.html">Záznam auditu</a><a href="SHRNUTI.html">Shrnutí</a><a href="PODKLADY-KOLEGU-VS-KOD.html">Podklady kolegu vs kod</a><a href="PROVOZ-PLATFORMY.pdf">Jak platforma funguje (PDF)</a><a href="ROZPORY-DOKUMENTY-VS-KOD.pdf">Dokumenty vs. aplikace (PDF)</a><a href="TECHNICKE-MEZERY.pdf">Technické mezery (PDF)</a><a href="OBCHODNI-MEZERY-A-HRANICNI-PRIPADY.pdf">Obchodní mezery a hraniční případy (PDF)</a><a href="AUDIT-LOG.pdf">Záznam auditu (PDF)</a><a href="SHRNUTI.pdf">Shrnutí (PDF)</a><a href="PODKLADY-KOLEGU-VS-KOD.pdf">Podklady kolegu vs kod (PDF)</a><a href="podklady/INVENTAR.html">Inventář podkladů</a></nav><h1 id="zaznam-auditu-23-9-2026">Záznam auditu - 23. 9. 2026</h1>
-<p><strong>Auditovaný commit <code>865549b026b02602d11648a3a7e9a12aa2878198</code>, 23. 9. 2026, větev <code>fix/audit-findings-2026-09-22</code>.</strong> Pět věcných rozborů a obchodní shrnutí popisují tento strom. Následující dokumentační commity nemění auditovaný kód. Cíl PR je <code>master</code>; jeho ověřený stav při připnutí je <code>6792f0c256e81e1473908308bd73881004853be4</code>. Složka zachovává datum původního auditu.</p>
+</style></head><body><main><nav><a href="PROVOZ-PLATFORMY.html">Jak platforma funguje</a><a href="ROZPORY-DOKUMENTY-VS-KOD.html">Dokumenty vs. aplikace</a><a href="TECHNICKE-MEZERY.html">Technické mezery</a><a href="OBCHODNI-MEZERY-A-HRANICNI-PRIPADY.html">Obchodní mezery a hraniční případy</a><a href="AUDIT-LOG.html">Záznam auditu</a><a href="SHRNUTI.html">Shrnutí</a><a href="PODKLADY-KOLEGU-VS-KOD.html">Podklady kolegu vs kod</a><a href="PROVOZ-PLATFORMY.pdf">Jak platforma funguje (PDF)</a><a href="ROZPORY-DOKUMENTY-VS-KOD.pdf">Dokumenty vs. aplikace (PDF)</a><a href="TECHNICKE-MEZERY.pdf">Technické mezery (PDF)</a><a href="OBCHODNI-MEZERY-A-HRANICNI-PRIPADY.pdf">Obchodní mezery a hraniční případy (PDF)</a><a href="AUDIT-LOG.pdf">Záznam auditu (PDF)</a><a href="SHRNUTI.pdf">Shrnutí (PDF)</a><a href="PODKLADY-KOLEGU-VS-KOD.pdf">Podklady kolegu vs kod (PDF)</a><a href="podklady/INVENTAR.html">Inventář podkladů</a></nav><h1 id="zaznam-auditu-26-9-2026">Záznam auditu - 26. 9. 2026</h1>
+<p><strong>Auditovaný commit <code>fdae9dfba72614e42db0faf1e7c267f79f269ae8</code>, 26. 9. 2026, větev <code>fix/audit-findings-2026-09-22</code> (PR #265 do <code>master</code>).</strong> Pět věcných rozborů a obchodní shrnutí popisují tento strom. Pozdější commit <code>23d0cc656</code> (jen iOS test) auditován není. <code>master</code> je při připnutí <code>6792f0c256e81e1473908308bd73881004853be4</code>.</p>
 <h2 id="inventar">Inventář</h2>
 <table>
 <thead>
@@ -114,17 +114,17 @@ blockquote { border-left: 4px solid #12796b; margin: 20px 0; padding: 5px 20px; 
 </tr>
 <tr>
 <td>chyby / události</td>
-<td>332 chybových klíčů, 28 zákaznických/partnerských událostí (8 bez vypnutelné kategorie), 9 admin událostí</td>
+<td>331 chybových klíčů, 28 zákaznických/partnerských událostí (8 bez vypnutelné kategorie), 9 admin událostí</td>
 <td>deklarované konstanty; <a href="../../src/Cleansia.Core.Domain/Notifications/NotificationEventCatalog.cs#L8">NotificationEventCatalog.cs:8</a></td>
 </tr>
 <tr>
 <td>definice backend testů</td>
-<td>unit 4 692, integrační 572, host 289; nejde o počet spuštěných parametrických případů</td>
+<td>unit 4 736, integrační 604, host 289; nejde o počet spuštěných parametrických případů</td>
 <td>řádky začínající <code>[Fact</code> nebo <code>[Theory</code> v příslušných projektech</td>
 </tr>
 <tr>
 <td>testovací soubory klientů</td>
-<td>Angular 331 <code>*.spec.ts</code>, Android 233 <code>src/test/*.kt</code>, iOS 314 <code>Tests/*.swift</code></td>
+<td>Angular 337 <code>*.spec.ts</code>, Android 238 <code>src/test/*.kt</code>, iOS 321 <code>Tests/*.swift</code></td>
 <td>sledované soubory podle cesty a přípony</td>
 </tr>
 </tbody>
@@ -142,7 +142,7 @@ blockquote { border-left: 4px solid #12796b; margin: 20px 0; padding: 5px 20px; 
 <tr>
 <td>výběr adresy</td>
 <td>Obě zákaznické aplikace nabízejí uložené adresy i mapu. Android otevírá správce adres; iOS skládá chooser a picker.</td>
-<td><a href="../../src/cleansia_android/customer-app/src/main/java/cz/cleansia/customer/features/booking/BookingBottomSheet.kt#L666-L676">BookingBottomSheet.kt:666-676</a>, <a href="../../src/cleansia_ios/CleansiaCustomer/Sources/Features/Booking/WhenWhere/AddressPicker/BookingSavedAddressChooser.swift#L130-L146">BookingSavedAddressChooser.swift:130-146</a></td>
+<td><a href="../../src/cleansia_android/customer-app/src/main/java/cz/cleansia/customer/features/booking/BookingBottomSheet.kt#L667-L677">BookingBottomSheet.kt:667-677</a>, <a href="../../src/cleansia_ios/CleansiaCustomer/Sources/Features/Booking/WhenWhere/AddressPicker/BookingSavedAddressChooser.swift#L130-L146">BookingSavedAddressChooser.swift:130-146</a></td>
 </tr>
 <tr>
 <td>počítání iOS</td>
@@ -158,7 +158,7 @@ blockquote { border-left: 4px solid #12796b; margin: 20px 0; padding: 5px 20px; 
 </table>
 <p>Počty souborů ani tyto dvě ověřené plochy neprokazují úplnou funkční paritu.</p>
 <h2 id="podklady-a-rozsah-srovnani">Podklady a rozsah srovnání</h2>
-<p>Deset DOCX znovu ověřeno 23. 9. 2026: všechny SHA-256 souhlasí s 11. 9. 2026, viz <a href="podklady/INVENTAR.md">inventář</a>. Extrakce a Pxxx zůstávají stejné. Pro obchodní podklady bylo přečteno všech 17 stran dvou PDF a deset listů sešitu.</p>
+<p>Deset DOCX znovu ověřeno 26. 9. 2026: všechny SHA-256 souhlasí s 11. 9. 2026, viz <a href="podklady/INVENTAR.md">inventář</a>. Extrakce a Pxxx zůstávají stejné.</p>
 <table>
 <thead>
 <tr>
@@ -231,11 +231,11 @@ blockquote { border-left: 4px solid #12796b; margin: 20px 0; padding: 5px 20px; 
 </tr>
 </tbody>
 </table>
-<p>„Výslovně porovnáno“ počítá odlišná Pxxx v seznamu Shoda a řádcích §1; nezahrnuje Mimo aplikaci. Nahrazuje nereprodukovatelné souhrnné počty původního logu.</p>
+<p>„Výslovně porovnáno“ počítá odlišná Pxxx v seznamu Shoda a řádcích §1; nezahrnuje Mimo aplikaci.</p>
 <h2 id="metoda-a-kontroly">Metoda a kontroly</h2>
-<p>Čtecí průchody pokryly identitu, smlouvy, objednávky, ceny, platby, doklady, vratky, spory, úklidníky, členství, věrnost, komunikaci, společnosti a retenci. Znovu byly ověřeny také nezměněné výroky, právní citáty a rozhodnutí R1-R27. Souřadnice citací byly přeneseny porovnáním stromů; tvrzení následně ověřena proti zdrojům. Oponentura odděluje věcnou pravdivost od srozumitelnosti a rozsahu. PDF procházejí vizuální kontrolou.</p>
-<p>Kontrola: <code>python lawyers-docs/check-citations.py analyza-2026-09-22 865549b026b02602d11648a3a7e9a12aa2878198</code>.</p>
-<p>Výstup skriptu: <strong>1706 citací · 199 bez identifikátoru · 0 nevyřešených</strong>.</p>
+<p>Čtecí průchody pokryly identitu, smlouvy, objednávky, ceny, platby, doklady, vratky, spory, úklidníky, členství, věrnost, komunikaci, společnosti a retenci. Připnutí na <code>fdae9dfb</code> přidalo průchod čtyřmi pravidly vlastníka z 24. 9. 2026 (hotovost, storno po objednání, kredit při výmazu, odměna bez vzdálenosti) ve všech rozborech. Inventář je přepočten na novém stromu stejnými metodami.</p>
+<p>Kontrola: <code>python lawyers-docs/check-citations.py analyza-2026-09-22 fdae9dfba72614e42db0faf1e7c267f79f269ae8</code>.</p>
+<p>Výstup skriptu: <strong>1777 citací · 194 bez identifikátoru · 0 nevyřešených</strong>.</p>
 <p>Příkaz pro rozsah: <code>wc -w lawyers-docs/analyza-2026-09-22/*.md</code>.</p>
 <table>
 <thead>
@@ -248,38 +248,43 @@ blockquote { border-left: 4px solid #12796b; margin: 20px 0; padding: 5px 20px; 
 <tbody>
 <tr>
 <td>PROVOZ-PLATFORMY</td>
-<td style="text-align: right;">8983</td>
+<td style="text-align: right;">8 999</td>
 <td style="text-align: right;">9 000</td>
 </tr>
 <tr>
 <td>ROZPORY-DOKUMENTY-VS-KOD</td>
-<td style="text-align: right;">7888</td>
+<td style="text-align: right;">7 933</td>
 <td style="text-align: right;">8 000</td>
 </tr>
 <tr>
 <td>TECHNICKE-MEZERY</td>
-<td style="text-align: right;">3701</td>
+<td style="text-align: right;">4 040</td>
 <td style="text-align: right;">5 000</td>
 </tr>
 <tr>
 <td>OBCHODNI-MEZERY-A-HRANICNI-PRIPADY</td>
-<td style="text-align: right;">4032</td>
+<td style="text-align: right;">4 661</td>
 <td style="text-align: right;">5 000</td>
 </tr>
 <tr>
 <td>AUDIT-LOG</td>
-<td style="text-align: right;">1234</td>
+<td style="text-align: right;">1 495</td>
 <td style="text-align: right;">1 500</td>
 </tr>
 <tr>
 <td>PODKLADY-KOLEGU-VS-KOD</td>
-<td style="text-align: right;">2824</td>
+<td style="text-align: right;">3 292</td>
 <td style="text-align: right;">3 500</td>
+</tr>
+<tr>
+<td>SHRNUTI</td>
+<td style="text-align: right;">3 256</td>
+<td style="text-align: right;">—</td>
 </tr>
 </tbody>
 </table>
 <h2 id="rozdil-7acea58b-6792f0c2">Rozdíl 7acea58b → 6792f0c2</h2>
-<p>63 commitů; 1 061 souborů, +40 994 / -43 671 řádků. Historický interval je oddělen od oprav níže.</p>
+<p>63 commitů; 1 061 souborů, +40 994 / -43 671 řádků.</p>
 <table>
 <thead>
 <tr>
@@ -341,7 +346,7 @@ blockquote { border-left: 4px solid #12796b; margin: 20px 0; padding: 5px 20px; 
 </tbody>
 </table>
 <h2 id="rozdil-6792f0c2-865549b0">Rozdíl 6792f0c2 → 865549b0</h2>
-<p>23 commitů včetně dokumentační větve a jejího sloučení; 433 souborů, +21 416 / -3 263 řádků. Poslední změna chování aplikace je <code>1858d77ef</code>; závěrečný <code>865549b02</code> odstraňuje pouze prázdný řádek iOS testu kvůli formátovací kontrole CI.</p>
+<p>23 commitů včetně dokumentační větve a jejího sloučení; 433 souborů, +21 416 / -3 263 řádků.</p>
 <table>
 <thead>
 <tr>
@@ -393,4 +398,62 @@ blockquote { border-left: 4px solid #12796b; margin: 20px 0; padding: 5px 20px; 
 </tr>
 </tbody>
 </table>
-<p>Rozhodovací varianty nebyly implementovány: mimo jiné model posádky, hotovostní vyrovnání, první storno okno, serverová časová mřížka, sjednocení živých sazeb DPH a význam měsíčního opakování.</p></main></body></html>
+<h2 id="rozdil-865549b0-fdae9dfb">Rozdíl 865549b0 → fdae9dfb</h2>
+<p>10 commitů; 322 souborů, +11 187 / -1 073 řádků. Migrace <code>20260923071814_Initial</code> beze změny.</p>
+<table>
+<thead>
+<tr>
+<th>změna</th>
+<th>commit</th>
+<th>dotčený rozbor</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Hotovost (<code>AllowsCash</code>) jen přihlášenému zákazníkovi, když <code>RequiredEmployees</code> je 1; host a posádka platí kartou; klíč <code>order.cash_not_available</code> <a href="../../src/Cleansia.Core.AppServices/Features/Orders/BookingPolicy.cs#L147-L148">BookingPolicy.cs:147-148</a></td>
+<td><code>a261cc226</code></td>
+<td>PROVOZ §4.5, §5.1, A1; ROZPORY R6; OBCHODNI §1; PODKLADY §6</td>
+</tr>
+<tr>
+<td>Opakovaný úklid: hotovostní šablonu mimo <code>AllowsCash</code> materializace přeskočí a seznam označí <code>RequiresPaymentMethodChange</code>; <code>ConfirmRecurringOrder</code> takovou hotovost odmítne <a href="../../src/Cleansia.Core.AppServices/Features/Bookings/MaterializeRecurringBookingTemplate.cs#L261-L263">MaterializeRecurringBookingTemplate.cs:261-263</a>, <a href="../../src/Cleansia.Core.AppServices/Features/Orders/ConfirmRecurringOrder.cs#L115-L119">ConfirmRecurringOrder.cs:115-119</a></td>
+<td><code>a261cc226</code></td>
+<td>PROVOZ §4.5; OBCHODNI §1</td>
+</tr>
+<tr>
+<td>Storno zdarma do 15 min od objednání všem včetně hostů, 60 min placenému členovi Plus; neúčinné okno první objednávky (<code>OopsWindowMinutesFirstTime</code>) odstraněno; pásma storna beze změny <a href="../../src/Cleansia.Core.AppServices/Features/Orders/BookingPolicy.cs#L81-L87">BookingPolicy.cs:81-87</a></td>
+<td><code>0ed55136f</code></td>
+<td>PROVOZ §6.1, A1; ROZPORY VOP P073, R4; OBCHODNI §1</td>
+</tr>
+<tr>
+<td>Dokončený výmaz účtu odepíše kredit všech měn jako <code>Expired</code> pod <code>account-deletion:</code>; kladný zůstatek výmaz neblokuje (klíč <code>gdpr.deletion_blocked_by_credit_balance</code> odstraněn); vymazanému účtu (<code>AnonymisedEmailSuffix</code>) se kredit nepřipíše <a href="../../src/Cleansia.Core.AppServices/Services/GdprDeletionService.cs#L247-L259">GdprDeletionService.cs:247-259</a>, <a href="../../src/Cleansia.Infra.Database/Repositories/CreditAccountRepository.cs#L100-L105">CreditAccountRepository.cs:100-105</a></td>
+<td><code>d56b5b6b0</code></td>
+<td>PROVOZ §6.4, §11.2; ROZPORY VOP P034, R4; OBCHODNI §1, §3</td>
+</tr>
+<tr>
+<td>Odměna úklidníka bez vzdálenosti: <code>BasePay</code> + pokoje + koupelny, pak meze; sloupec <code>DistanceRatePerKm</code> zůstává (hledání v <code>Cleansia.Core.*</code>: jen deklarace); klíč <code>pay_config.distance_rate_negative</code> odstraněn <a href="../../src/Cleansia.Core.Domain/Extensions/PayCalculatorExtensions.cs#L36-L52">PayCalculatorExtensions.cs:36-52</a>, <a href="../../src/Cleansia.Core.Domain/EmployeePayroll/EmployeePayConfig.cs#L28-L29">EmployeePayConfig.cs:28-29</a></td>
+<td><code>fdc41c97a</code></td>
+<td>PROVOZ §8.6, A1; ROZPORY R6; PODKLADY §5; OBCHODNI §2; TECHNICKE §7</td>
+</tr>
+<tr>
+<td>Web vypíná hotovost s důvodem podle <code>requiredEmployees</code> z nabídky; texty 15/60 min; zákaznický i admin výmaz varuje před odepsáním kreditu <a href="../../src/Cleansia.App/libs/shared/models/src/lib/models/cash-eligibility.models.ts#L13-L22">cash-eligibility.models.ts:13-22</a></td>
+<td><code>3e6de6f2a</code></td>
+<td>SHRNUTI</td>
+</tr>
+<tr>
+<td>iOS a Android: totéž pravidlo (<code>requiredEmployees</code>), texty a varování; partnerské aplikace neslibují odměnu za cestu (<code>git grep distance_pay</code> → jen testy) <a href="../../src/cleansia_ios/CleansiaCustomer/Sources/Features/Booking/CashEligibility.swift#L14-L19">CashEligibility.swift:14-19</a>, <a href="../../src/cleansia_android/customer-app/src/main/java/cz/cleansia/customer/core/booking/CashEligibility.kt#L22-L27">CashEligibility.kt:22-27</a></td>
+<td><code>a7c25405a</code>, <code>202093723</code></td>
+<td>SHRNUTI</td>
+</tr>
+<tr>
+<td>Kontrola parity storna 15/60 min; popis pravidel v <code>docs/</code></td>
+<td><code>1877915e6</code>, <code>fdae9dfba</code></td>
+<td>bez vlivu na chování</td>
+</tr>
+<tr>
+<td>Připnutí rozborů po formátování CI</td>
+<td><code>e4b46a486</code></td>
+<td>celý soubor rozborů; kód beze změny</td>
+</tr>
+</tbody>
+</table>
+<p>Rozhodovací varianty mimo čtyři pravidla implementovány nejsou: model posádky, hotovostní vyrovnání, serverová časová mřížka, sjednocení živých sazeb DPH a význam měsíčního opakování.</p></main></body></html>

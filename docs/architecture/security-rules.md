@@ -55,7 +55,7 @@ default above is not an alternative when the field is not last in the positional
 Every controller method has exactly one of:
 - `[Permission(Policy.CanXxx)]` — the project's policy attribute (default expectation), or
 - `[AllowAnonymous]` — only for genuinely public routes (landing, signup, password-reset request,
-  public order-lookup-by-confirmation-code), or
+  the guest order lookup, which authorises on a per-order access token), or
 - `[Authorize]` with no policy — only for "any authenticated user" routes (e.g. `GetMyProfile`).
 
 A new endpoint with **none** of these is a hole: the default policy requires authentication, but a
@@ -232,7 +232,10 @@ if (order is null || order.UserId != cmd.UserId)
 Project convention: return **NotFound** for cross-user access attempts so we don't confirm a
 resource exists to someone not allowed to see it. For `[AllowAnonymous]` endpoints there is **no
 tenant claim**, so the global filter is bypassed — anonymous routes must not return tenant-scoped
-data unless gated by a different shared secret (e.g. a confirmation code in the URL).
+data unless gated by a **server-issued secret the caller could not have guessed or been shown**
+(the guest booking's access token: 256 bits, stored as a SHA-256 digest, resolved by that digest
+alone). The qualifier is load-bearing, and the guest lookup is why — see
+[When the gate is a secret the wrong people hold](#gate-secret-wrong-people).
 
 ## S4 — DTO leak prevention
 
@@ -255,6 +258,44 @@ on "is the caller assigned". Reference: `OrderPiiRedaction.cs` for the two shape
 `GetOrderDetails.cs:57`/`:136-138` for the predicate and its application. Enforced by the
 `OrderRedactionSurfaceTests` row of the S12 table (**`T1-CI`**), which is where the diagnostic that
 finds this class lives.
+
+### When the gate is a secret the wrong people hold {#gate-secret-wrong-people}
+
+**S3 and S4 are the same defect seen from two ends, and the guest booking is the worked example**
+(re-keyed 2026-09-22). The anonymous guest endpoints — lookup, cancellation preview, cancel — gated on
+**display order number + e-mail + confirmation code**. Read as an S3 question that looks fine: the
+route is anonymous, so it is gated on a shared secret rather than on ownership, which is what S3
+allows. Read as an S4 question it is not fine at all: the third element of that "secret" was a member
+of the order-detail DTO **served to every cleaner assigned to the job**, and the first two are a
+sequential number and an e-mail address.
+
+So the gate and the leak were one thing. A cleaner reading their own job's detail held the entire
+credential to their own customer's booking, including `POST api/Order/CancelGuest` — which charges
+that customer the 25 % / 50 % cancellation tier. Nothing was bypassed and no rule was broken in
+isolation; the two rules were each satisfied against a different half of the same field.
+
+**What the fix looked like, and why it is the shape to copy:**
+
+- **The credential became server-issued and single-channel.** `GuestOrderAccessToken` — 256 bits,
+  persisted only as a SHA-256 digest, minted by the server and delivered to exactly one place: the
+  guest's mailbox (and the checkout response, whose caller *is* the guest). Nothing derived from data
+  anyone else can read.
+- **The leaked field stopped being a credential AND left the surface.** `ConfirmationCode` is now a
+  printed human reference that authenticates nothing, and it is gone from `OrderItem` — so it is not
+  even a field the redaction has to remember to blank. Removing the field beats redacting it.
+- **Every refusal is the same refusal.** An unknown token, an expired one, a revoked one and a
+  booking that belongs to an account all answer `order.not_found`, so the endpoint is not an oracle
+  for which bookings exist (S3's NotFound-not-Forbidden convention, applied to an anonymous route).
+- **Expiry and revocation are part of the gate.** A token dies 30 days after the cleaning, and
+  cancelling the booking revokes every live token on it. A credential with no end is a credential
+  that leaks eventually.
+
+**The diagnostic:** *when an anonymous route is gated on a secret, ask who else is served that secret.*
+Grep the field name across every DTO on every host. If it comes back on a projection some other
+audience reads, the gate is decorative — and the audience that holds it is usually the one with a
+motive.
+→ [Guest order lookup](/flows/booking-and-pricing#guest-order-lookup),
+[the guest access token](/flows/booking-and-pricing#guest-access-token)
 
 ## S5 — Rate limiting on auth + side-effecting endpoints
 
@@ -495,7 +536,7 @@ question first and the form second.
 |  | **Read under a tenant claim** | **Read with no claim (anonymous / job)** |
 |---|---|---|
 | **Written under a tenant claim** | **symmetric → FILTERED.** `src/Cleansia.Config/Filters/RequireCompleteProfileAttribute.cs:25`, `src/Cleansia.Core.AppServices/Authentication/OrderAccessService.cs:112`, the employee self-service `Update*` handlers, `src/Cleansia.Infra.Database/Repositories/LiveActivityTokenRepository.cs:10-45` | **ASYMMETRIC → bypass + re-pin.** `src/Cleansia.Infra.Database/Repositories/EmployeeRepository.cs:19-26` on the token-mint paths; `src/Cleansia.Infra.Database/Repositories/LiveActivityTokenRepository.cs:47-61`; `src/Cleansia.Infra.Database/Repositories/DeviceRepository.cs:46-57` and `src/Cleansia.Infra.Database/Repositories/DeviceRepository.cs:59-68` |
-| **Written with no claim (anonymous)** | **ASYMMETRIC → bypass + re-pin.** `src/Cleansia.Infra.Database/Repositories/RefreshTokenRepository.cs:10-23` and the revoke family at `src/Cleansia.Infra.Database/Repositories/RefreshTokenRepository.cs:120-150`; **the legacy confirm read** `UserRepository.GetByConfirmationCodeIgnoringTenantAsync` (written under the market's operator by `Register`, read anonymously from the link — pinned by the code hash); **the register / resend / admin-create pre-checks** (`GetByEmailIgnoringTenantAsync` / `ExistsWithEmailIgnoringTenantAsync` — pinned by the global `IX_Users_Email`, deliberately across the holding: one email is one identity); `Order/Lookup` and `LookupBatch` (`GetQueryableIgnoringTenant()`, pinned by `ConfirmationCode` + `CustomerEmail`) | **symmetric → FILTERED.** Since ADR-0061 D3 every anonymous write runs under the market operator's override, so this cell holds the reads a request makes of rows *it* wrote in the same scope — the promo `GetByCodeAsync` pre-check under `RequestPromoCode`, `ValidateReferral`'s `(TenantId, Code)` read |
+| **Written with no claim (anonymous)** | **ASYMMETRIC → bypass + re-pin.** `src/Cleansia.Infra.Database/Repositories/RefreshTokenRepository.cs:10-23` and the revoke family at `src/Cleansia.Infra.Database/Repositories/RefreshTokenRepository.cs:120-150`; **the legacy confirm read** `UserRepository.GetByConfirmationCodeIgnoringTenantAsync` (written under the market's operator by `Register`, read anonymously from the link — pinned by the code hash); **the register / resend / admin-create pre-checks** (`GetByEmailIgnoringTenantAsync` / `ExistsWithEmailIgnoringTenantAsync` — pinned by the global `IX_Users_Email`, deliberately across the holding: one email is one identity); the **guest booking family** — `Order/Lookup`, `LookupBatch`, `GuestCancellationPreview`, `CancelGuest`, all four through the one seam `GuestOrderAccess` (`GetQueryableIgnoringTenant()` on the order *and* the token table, pinned by the SHA-256 digest of the presented token, plus `UserId == null`) | **symmetric → FILTERED.** Since ADR-0061 D3 every anonymous write runs under the market operator's override, so this cell holds the reads a request makes of rows *it* wrote in the same scope — the promo `GetByCodeAsync` pre-check under `RequestPromoCode`, `ValidateReferral`'s `(TenantId, Code)` read |
 
 **The newest row in the top-right cell — the contract-for-work acceptance (ADR-0068, 2026-09-20).**
 `WorkContractAcceptances` is written under the *cleaner's* claim and pinned to the **order's**
@@ -732,10 +773,14 @@ For every upload surface, answer three questions **in writing, on the intake ros
    **The projection.** A gate can be right and the response still wrong, and that is the half this law
    used to miss. The browse gate on `GetOrderDetails.cs:48` was doing its job — a cleaner must read a
    job before taking it — and the leak was that nothing shaped what "read" returned: the door code, the
-   address with its coordinates, the confirmation code, the crew's surnames and phone numbers. The fix
+   address with its coordinates, the confirmation code, the crew's surnames and phone numbers. *(The
+   confirmation code was the worst of them and is no longer on the DTO at all — it was also a third of
+   the anonymous guest-cancellation key, so an **assigned** cleaner, past the redaction entirely, could
+   cancel their own customer's booking. Re-keyed 2026-09-22 —
+   [When the gate is a secret the wrong people hold](#gate-secret-wrong-people).)* The fix
    is a **projection**, not a narrower gate. The strict gate is asked *again* at `:57` purely as a
    redaction predicate and applied at `:136-138`, through one shared rule (`OrderPiiRedaction.cs` —
-   seventeen `OrderItem` members at `:34-54`, the list twin at `:22-32`). Make that predicate the
+   twenty-two `OrderItem` members, the list twin above it). Make that predicate the
    **entitlement**, never "is the caller assigned": an employee who books a cleaning for their own home
    arrives at that handler as the order's **customer**, and an assignment test would redact their own
    data from them. It fails **closed** — a later widening of the browse gate redacts by default.

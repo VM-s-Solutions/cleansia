@@ -54,7 +54,8 @@ public sealed class OperatorTenantScopeBehaviorOrderTests
         var resolver = new Mock<IOperatorTenantResolver>();
         resolver.Setup(r => r.ResolveAsync(It.IsAny<string?>(), It.IsAny<CancellationToken>())).ReturnsAsync(resolution);
         return (new OperatorTenantScopeBehavior<TRequest, BusinessResult>(tenant.Object, resolver.Object,
-            new Cleansia.Core.AppServices.Features.Orders.GuestOrderAccess(Mock.Of<IOrderRepository>()),
+            new Cleansia.Core.AppServices.Features.Orders.GuestOrderAccess(
+                Mock.Of<IOrderRepository>(), Mock.Of<IGuestOrderAccessTokenRepository>()),
             new Cleansia.Core.AppServices.Auditing.AuditContext()), tenant, resolver);
     }
 
@@ -162,6 +163,7 @@ public sealed class OperatorTenantScopeBehaviorOrderTests
             "Cleansia.Core.AppServices.Features.Orders.CancelGuestOrder+Command",
             "Cleansia.Core.AppServices.Features.Orders.CreateOrder+Command",
             "Cleansia.Core.AppServices.Features.Orders.GetGuestCancellationFeePreview+Query",
+            "Cleansia.Core.AppServices.Features.Orders.LookupOrder+Query",
             "Cleansia.Core.AppServices.Features.Orders.QuoteOrder+Command",
             "Cleansia.Core.AppServices.Features.Orders.QuotePlusSavings+Query",
             "Cleansia.Core.AppServices.Features.PromoCodes.RequestPromoCode+Command",

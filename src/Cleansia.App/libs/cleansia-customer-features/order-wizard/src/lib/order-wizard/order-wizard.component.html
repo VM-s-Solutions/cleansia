@@ -694,7 +694,9 @@
             class="cl-wiz__pay-card"
             [class.cl-wiz__pay-card--on]="facade.formData().paymentType === method.type"
             [attr.aria-pressed]="facade.formData().paymentType === method.type"
-            (click)="facade.updateFormData({ paymentType: method.type })"
+            [disabled]="isPaymentUnavailable(method.type)"
+            [attr.aria-describedby]="isPaymentUnavailable(method.type) ? 'wizard-cash-reason' : null"
+            (click)="facade.selectPaymentType(method.type)"
           >
             <span class="cl-wiz__pay-head">
               <span class="cl-wiz__pay-icon"><i [class]="method.icon" aria-hidden="true"></i></span>
@@ -707,6 +709,28 @@
           </button>
           }
         </div>
+
+        @if (facade.cashClearedNotice()) {
+        <p class="cl-wiz__pay-note cl-wiz__pay-note--warn" role="status">
+          <i class="pi pi-exclamation-circle" aria-hidden="true"></i>
+          <span>{{ 'pages.order.cash_cleared' | translate }}</span>
+        </p>
+        }
+        @if (facade.cashReason(); as reason) {
+        <div id="wizard-cash-reason" class="cl-wiz__pay-note">
+          <i class="pi pi-info-circle" aria-hidden="true"></i>
+          <span class="cl-wiz__pay-note-text">{{ reason.key | translate: reason.params }}</span>
+          @if (facade.cashNeedsAccount()) {
+          <cleansia-button
+            [label]="'pages.order.cash_sign_in' | translate"
+            severity="secondary"
+            [outlined]="true"
+            buttonSize="small"
+            (onClick)="goToAuth('login')"
+          />
+          }
+        </div>
+        }
 
         <div class="cl-wiz__rule"></div>
 
@@ -884,6 +908,10 @@
           <div class="cl-wiz__perk">
             <i class="pi pi-clock" aria-hidden="true"></i>
             <span>{{ 'pages.order.plus_perk_cancel' | translate: { hours: plan.freeCancellationWindowHours } }}</span>
+          </div>
+          <div class="cl-wiz__perk">
+            <i class="pi pi-undo" aria-hidden="true"></i>
+            <span>{{ 'pages.order.plus_perk_grace' | translate }}</span>
           </div>
           @if (plan.expressUpgradesPerMonth > 0) {
           <div class="cl-wiz__perk">
@@ -1335,9 +1363,7 @@
         <!--
           The last step says the whole policy, where the earlier ones say the
           headline: this is the screen where the customer commits, so the "you
-          can still undo this" is worth its extra line. 15 minutes is the
-          STANDARD oops window — a first-time customer gets 60 — so the sentence
-          under-promises for them rather than overstating for anyone.
+          can still undo this" is worth its extra line.
         -->
         @if (facade.activeStep() === facade.steps.length - 1) {
         <p class="cl-muted cl-wiz__summary-policy">{{ 'pages.order.cancel_policy_note' | translate }}</p>

@@ -112,7 +112,8 @@ public class CancellationAcceptanceSignalTests
                 _producer.Object,
                 _liveActivityProducer.Object,
                 _expressWaiverConsumer.Object,
-                new AuditContext()));
+                new AuditContext(),
+                TimeProvider.System));
 
     private HandlePaymentNotification.Handler CreateWebhookHandler() =>
         new(

@@ -14,12 +14,8 @@ extension L10n {
             localized("guest_order_intro")
         }
 
-        static var number: String {
-            localized("guest_order_number")
-        }
-
-        static var code: String {
-            localized("guest_order_code")
+        static var link: String {
+            localized("guest_order_link")
         }
 
         static var lookup: String {

@@ -1,5 +1,6 @@
 ﻿using Cleansia.Core.AppServices.Features.DataRetention;
 using Cleansia.Core.AppServices.Features.Gdpr;
+using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Services;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Blobs.Abstractions;
@@ -16,6 +17,7 @@ using Cleansia.TestUtilities;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 
@@ -96,6 +98,11 @@ public sealed class UserNotificationRetentionAndGdprTests : IDisposable
             new CustomerActionAuditRepository(ctx),
             new DisputeRepository(ctx),
             new WorkContractAcceptanceRepository(ctx),
+            new AddressRepository(ctx),
+            new OrderPhotoRepository(ctx),
+            new AdminActionAuditRepository(ctx),
+            new EmployeeActionAuditRepository(ctx, Mock.Of<IServiceScopeFactory>()),
+            new GuestOrderAccessTokenRepository(ctx),
             new TenantRepository(ctx),
             tenantProvider,
             _configProvider.Object,
@@ -209,6 +216,8 @@ public sealed class UserNotificationRetentionAndGdprTests : IDisposable
                 new OutboxMessageRepository(ctx),
                 new CustomerActionAuditRepository(ctx),
                 new WorkContractAcceptanceRepository(ctx),
+                new AddressRepository(ctx),
+                new GuestOrderAccessTokenIssuer(new GuestOrderAccessTokenRepository(ctx)),
                 Mock.Of<IRefreshTokenService>(),
                 Mock.Of<IStripeClient>(),
                 _blobClientFactory.Object,

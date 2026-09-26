@@ -71,14 +71,14 @@ limiting.
 | Flow | |
 |---|---|
 | **[Auth and identity](/flows/auth-and-identity)** | sign-in, session rotation, theft detection, revocation |
-| **[Booking and pricing](/flows/booking-and-pricing)** | quote, create, express surcharge, recurring, guest lookup |
+| **[Booking and pricing](/flows/booking-and-pricing)** | quote, create, who may pay cash, express surcharge, recurring, guest lookup |
 | **[Payment and fiscal](/flows/payment-and-fiscal)** | the Stripe webhook, replay, receipts, the stale-checkout sweep |
 | **[Offerability and the take](/flows/offerability-and-take)** | the board, the preferred hold, the seat race |
 | **[Execution and completion](/flows/execution-and-completion)** | on-the-way to completed, photos, what a browsing cleaner sees |
 | **[Cancellation, refund and dispute](/flows/cancellation-refund-dispute)** | the fee ladder, refund bounds, the dispute guard |
 | **[Pay, periods, invoices and payouts](/flows/pay-and-payouts)** | pay rows, period states, claimed numbering, payout disclosure |
 | **[Loyalty, memberships and referrals](/flows/loyalty-and-memberships)** | points, Plus, the metered express waiver |
-| **[GDPR, retention and audit](/flows/gdpr-and-audit)** | anonymise-in-place, what survives it, the audit trail |
+| **[GDPR, retention and audit](/flows/gdpr-and-audit)** | anonymise-in-place, what survives it, the credit it forfeits, the audit trail |
 | **[Cross-cutting concerns](/flows/cross-cutting)** | tenancy, outbox, idempotency, notifications, rate limiting |
 
 Each was written from the end-to-end walk recorded in the cleanup track's gap register, and each

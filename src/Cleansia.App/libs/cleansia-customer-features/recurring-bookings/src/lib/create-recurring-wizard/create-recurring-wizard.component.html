@@ -252,10 +252,28 @@
                 [options]="paymentOptions()"
                 [ngModel]="facade.formData().paymentType"
                 (ngModelChange)="selectPayment($event)"
+                [placeholder]="'recurring_booking.payment_placeholder' | translate"
                 [showClear]="false"
+                [required]="true"
                 [floatVariant]="null"
                 [appendTo]="'body'"
               />
+              @if (facade.cashClearedNotice()) {
+                <p class="cl-rec__error" role="status" data-spec-cash-cleared>
+                  <i class="pi pi-exclamation-circle" aria-hidden="true"></i>
+                  {{ 'recurring_booking.cash_cleared' | translate }}
+                </p>
+              } @else if (showError('payment')) {
+                <p class="cl-rec__error">
+                  <i class="pi pi-exclamation-circle" aria-hidden="true"></i>
+                  {{ 'recurring_booking.error_payment' | translate }}
+                </p>
+              }
+              @if (facade.cashReason(); as reason) {
+                <p class="cl-rec__hint" data-spec-cash-reason>
+                  {{ reason.key | translate: reason.params }}
+                </p>
+              }
             </div>
           </div>
 

@@ -45,7 +45,8 @@ public sealed class GetOrderDetailsWorkContractTests
             Mock.Of<ITenantRepository>(),
             _expressWaiverConsumer.Object,
             Mock.Of<IUserMembershipRepository>(),
-            _acceptanceRepository.Object);
+            _acceptanceRepository.Object,
+            Mock.Of<IEmployeeActionAuditRepository>());
 
     private (Order Order, OrderEmployee Seat) ArrangeEmployeeCaller(string caller, bool entitled)
     {

@@ -389,6 +389,11 @@ private struct PerksSection: View {
                 desc: L10n.Membership.perkCancellationDesc
             )
             PerkTile(
+                icon: "arrow.uturn.backward",
+                title: L10n.Membership.perkGraceTitle,
+                desc: L10n.Membership.perkGraceDesc
+            )
+            PerkTile(
                 icon: "person",
                 title: L10n.Membership.perkFavoriteCleanerTitle,
                 desc: L10n.Membership.perkFavoriteCleanerDesc

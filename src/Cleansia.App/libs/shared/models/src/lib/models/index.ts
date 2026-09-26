@@ -5,3 +5,4 @@ export * from './sort-types.models';
 export * from './sort.models';
 export * from './state-adapter.models';
 export * from './booking-window.models';
+export * from './cash-eligibility.models';

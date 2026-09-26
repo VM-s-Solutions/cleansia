@@ -51,7 +51,6 @@ public record OrderListItem(
     decimal AmountDueOnCard,
     int EstimatedTime,
     Code OrderStatus,
-    string ConfirmationCode,
     IEnumerable<PackageListItem> SelectedPackages,
     string CurrencyId,
     CurrencyListItem Currency,

@@ -51,7 +51,8 @@ This is the short path, and nothing gates it but an email confirmation.
 2. **Confirm the email.** The link arrives by SendGrid. On a local run, check the API logs rather
    than your inbox.
 3. **Add an address.** Pick it on the map; the app fills in the street, city and postcode.
-4. **Book.** Choose services, a date and a time, then pay by card or choose cash.
+4. **Book.** Choose services, a date and a time, then pay by card — or choose cash, which is offered
+   only to a signed-in customer whose booking needs a single cleaner.
 
 That is the whole customer onboarding. There is no approval step and no document upload.
 
@@ -102,14 +103,21 @@ question — the sweeps do. See [the order lifecycle](/domain/order-lifecycle).
 service needs two people and stays partly open until both seats are taken.
 
 **Cash and card behave differently.** A card order settles before the work; a cash order is collected
-by the cleaner and marked on the job. Refunds and cancellation fees differ between them.
+by the cleaner and marked on the job. Cash is only for a signed-in customer on a job one cleaner does
+alone — a guest, or a booking long enough to need two cleaners, pays by card, and the server refuses
+anything else ([the cash rule](/product/business-rules#cash)). Refunds and cancellation fees differ between them, and so does
+the receipt: a cash booking's receipt is issued at booking as *awaiting payment* and restated as
+*paid*, under the same number, when the cleaner records the cash.
 
-**Plus is a subscription with a trial.** Two plans, monthly and annual, both with a 14-day trial and a
-discount on every booking. Starting one needs a real Stripe payment method even during the trial,
-because the trial converts.
+**Plus is a paid subscription, with no trial.** Two plans, monthly and annual, each with a discount on
+every booking; both carry zero trial days and the admin plan commands refuse any other value. Every
+benefit needs an active, paid period, so starting one needs a real Stripe payment method.
+→ [Business rules — Cleansia Plus](/product/business-rules#cleansia-plus)
 
-**Loyalty tiers are automatic.** They rise with completed bookings and unlock a discount at the higher
-tiers. Nothing needs enabling.
+**Loyalty tiers are automatic, and they go both ways.** The tier follows the account's points total:
+completed bookings raise it and unlock a discount at the higher tiers, and points taken back — a
+refund's clawback, an administrator's revoke — can lower it. Nothing needs enabling.
+→ [Loyalty — tiers](/flows/loyalty-and-memberships#tiers)
 
 **Push notifications need a real device.** Simulators and emulators do not receive them. The in-app
 notification feed still fills up, so use that to check something fired.

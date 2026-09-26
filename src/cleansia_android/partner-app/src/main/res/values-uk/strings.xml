@@ -263,7 +263,6 @@
     <!-- Why we need your address -->
     <string name="address_why_title">Навіщо нам ваша адреса</string>
     <string name="address_why_reason_jobs">Показуємо замовлення поблизу з відстанню від вашого дому</string>
-    <string name="address_why_reason_distance_pay">Розраховуємо оплату за кілометр у дорозі</string>
     <string name="address_why_reason_invoice">Виставляємо рахунки до правильної податкової юрисдикції</string>
     <string name="address_why_privacy">Клієнти ніколи не бачать вашу домашню адресу — лише місто, де ви.</string>
     <!-- Service-area indicator -->

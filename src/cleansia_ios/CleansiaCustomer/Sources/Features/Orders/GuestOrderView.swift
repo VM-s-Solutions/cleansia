@@ -6,9 +6,7 @@ struct GuestOrderView: View {
     @Environment(\.locale) private var locale
     let onBack: () -> Void
 
-    @State private var number = ""
-    @State private var email = ""
-    @State private var code = ""
+    @State private var link = ""
 
     init(makeViewModel: @escaping () -> GuestOrderViewModel, onBack: @escaping () -> Void) {
         _vm = StateObject(wrappedValue: makeViewModel())
@@ -30,20 +28,16 @@ struct GuestOrderView: View {
         GuestOrderContent(
             state: vm.state,
             isSubmitting: isSubmitting,
-            number: $number,
-            email: $email,
-            code: $code,
+            link: $link,
             locale: locale,
             onBack: onBack,
-            onCredentialsChanged: vm.onCredentialsChanged,
-            onLookup: { Task { await vm.lookup(number: number, email: email, code: code) } },
+            onLinkChanged: vm.onLinkChanged,
+            onLookup: { Task { await vm.lookup(pasted: link) } },
             onCancel: { Task { await vm.openCancellation() } }
         )
         .onChange(of: vm.state) { state in
             guard case .cancelled = state else { return }
-            number = ""
-            email = ""
-            code = ""
+            link = ""
         }
         .sheet(isPresented: cancellationPresented) { cancelSheet }
     }
@@ -66,17 +60,15 @@ struct GuestOrderView: View {
 private struct GuestOrderContent: View {
     let state: GuestOrderUiState
     let isSubmitting: Bool
-    @Binding var number: String
-    @Binding var email: String
-    @Binding var code: String
+    @Binding var link: String
     let locale: Locale
     let onBack: () -> Void
-    let onCredentialsChanged: () -> Void
+    let onLinkChanged: () -> Void
     let onLookup: () -> Void
     let onCancel: () -> Void
 
     private var canLookup: Bool {
-        !isSubmitting && state != .loading && !number.isBlank && !email.isBlank && !code.isBlank
+        !isSubmitting && state != .loading && !link.isBlank
     }
 
     var body: some View {
@@ -101,7 +93,7 @@ private struct GuestOrderContent: View {
                     Text(L10n.GuestOrder.intro)
                         .font(CleansiaTypography.bodyMedium)
                         .foregroundColor(CleansiaColors.onSurfaceVariant)
-                    credentialFields
+                    linkField
                     CleansiaPrimaryButton(
                         L10n.GuestOrder.lookup,
                         loading: state == .loading,
@@ -117,27 +109,13 @@ private struct GuestOrderContent: View {
         .background(CleansiaColors.background.ignoresSafeArea())
     }
 
-    private var credentialFields: some View {
-        VStack(spacing: Spacing.xs) {
-            CleansiaTextField(
-                value: $number.onChange(onCredentialsChanged),
-                label: L10n.GuestOrder.number,
-                enabled: !isSubmitting
-            )
-            CleansiaTextField(
-                value: $email.onChange(onCredentialsChanged),
-                label: L10n.Auth.email,
-                keyboardType: .emailAddress,
-                textContentType: .emailAddress,
-                enabled: !isSubmitting
-            )
-            CleansiaTextField(
-                value: $code.onChange(onCredentialsChanged),
-                label: L10n.GuestOrder.code,
-                textContentType: .oneTimeCode,
-                enabled: !isSubmitting
-            )
-        }
+    private var linkField: some View {
+        CleansiaTextField(
+            value: $link.onChange(onLinkChanged),
+            label: L10n.GuestOrder.link,
+            keyboardType: .URL,
+            enabled: !isSubmitting
+        )
     }
 
     @ViewBuilder
@@ -250,12 +228,10 @@ private extension Binding where Value == String {
             GuestOrderContent(
                 state: state,
                 isSubmitting: false,
-                number: .constant("CZ-123"),
-                email: .constant("guest@example.test"),
-                code: .constant("ABCD"),
+                link: .constant("https://cleansia.cz/track-order?token=P8Jw-2hQ"),
                 locale: Locale(identifier: "en"),
                 onBack: {},
-                onCredentialsChanged: {},
+                onLinkChanged: {},
                 onLookup: {},
                 onCancel: {}
             )

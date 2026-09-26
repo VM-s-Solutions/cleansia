@@ -124,6 +124,15 @@ class BackendKeyStringsTest {
         "tenant.archived",
     )
 
+    /**
+     * Cash only for a signed-in customer whose booking one cleaner does alone (`BookingPolicy.AllowsCash`).
+     * Refused on `CreateOrder`, `CreateRecurringBooking`, `UpdateRecurringBooking` and
+     * `ConfirmRecurringOrder` — all four reachable from this app.
+     */
+    private val cashEligibilityKeys = listOf(
+        "order.cash_not_available",
+    )
+
     private val resDir: File = sequenceOf(
         File("src/main/res"),
         File("customer-app/src/main/res"),
@@ -186,6 +195,11 @@ class BackendKeyStringsTest {
     @Test
     fun `the archived-company refusal every write can answer resolves to a sentence in all five locales`() {
         assertAllResolve(archivedCompanyKeys)
+    }
+
+    @Test
+    fun `the cash refusal a booking or schedule can answer resolves to a sentence in all five locales`() {
+        assertAllResolve(cashEligibilityKeys)
     }
 
     private fun assertAllResolve(keys: List<String>) {

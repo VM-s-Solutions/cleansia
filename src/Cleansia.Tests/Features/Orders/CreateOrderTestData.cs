@@ -58,11 +58,12 @@ internal static class CreateOrderTestData
     /// A fully valid command: a future cleaning date above the lead time, a positive total that
     /// matches <see cref="MatchingPricing"/>, exactly the inline address, one of each catalog id, and
     /// the terms tick asserted — the fixture books as a guest, and a guest without the tick is refused.
+    /// Card by default because a guest may not pay cash.
     /// </summary>
     public static CreateOrder.Command ValidCommand(
         AddressDto? customerAddress = null,
         string? savedAddressId = null,
-        PaymentType paymentType = PaymentType.Cash,
+        PaymentType paymentType = PaymentType.Card,
         DateTime? cleaningDate = null,
         decimal? totalPrice = null,
         IEnumerable<string>? serviceIds = null,

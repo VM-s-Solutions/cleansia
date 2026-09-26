@@ -41,6 +41,7 @@ public class CleansiaDbContext : DbContext, IUnitOfWork
     private readonly IUserSessionProvider userSessionProvider;
     private readonly ITenantProvider tenantProvider;
     private readonly IArchiveWriteGate? archiveWriteGate;
+    private IDbContextTransaction? creditMutationTransaction;
 
     // One Tenants read per company per context instance: a request scope or a job iteration asks
     // once and every later commit on the same context reuses the answer.
@@ -111,8 +112,34 @@ public class CleansiaDbContext : DbContext, IUnitOfWork
             }
         }
 
-        await RefuseFrozenBooksAsync(cancellationToken);
-        await SaveChangesAsync(cancellationToken);
+        try
+        {
+            await RefuseFrozenBooksAsync(cancellationToken);
+            await SaveChangesAsync(cancellationToken);
+            if (creditMutationTransaction is not null)
+            {
+                await creditMutationTransaction.CommitAsync(cancellationToken);
+                await creditMutationTransaction.DisposeAsync();
+                creditMutationTransaction = null;
+            }
+        }
+        catch
+        {
+            RollbackCreditMutation();
+            throw;
+        }
+    }
+
+    internal async Task LockCreditOwnerAsync(string userId, CancellationToken cancellationToken)
+    {
+        if (!Database.IsNpgsql())
+            return;
+        if (Database.CurrentTransaction is null && System.Transactions.Transaction.Current is null)
+            creditMutationTransaction = await Database.BeginTransactionAsync(cancellationToken);
+
+        // Hold through the final commit: a grant/return must finish before erasure drains the balance.
+        await Database.ExecuteSqlAsync(
+            $"""SELECT "Id" FROM "Users" WHERE "Id" = {userId} FOR NO KEY UPDATE""", cancellationToken);
     }
 
     /// <summary>
@@ -156,9 +183,32 @@ public class CleansiaDbContext : DbContext, IUnitOfWork
 
     public void Rollback()
     {
+        RollbackCreditMutation();
         foreach (var entry in ChangeTracker.Entries())
         {
             entry.State = EntityState.Unchanged;
+        }
+    }
+
+    private void RollbackCreditMutation()
+    {
+        var transaction = creditMutationTransaction;
+        if (transaction is null)
+            return;
+
+        creditMutationTransaction = null;
+        try
+        {
+            transaction.Rollback();
+        }
+        catch (Exception)
+        {
+            // A failed rollback means a dead connection, and Postgres aborts the transaction with it;
+            // the failure that brought us here is the one the caller must see.
+        }
+        finally
+        {
+            transaction.Dispose();
         }
     }
 
@@ -364,6 +414,7 @@ public class CleansiaDbContext : DbContext, IUnitOfWork
     public virtual DbSet<OrderNote> OrderNotes { get; set; }
     public virtual DbSet<OrderIssue> OrderIssues { get; set; }
     public virtual DbSet<OrderReview> OrderReviews { get; set; }
+    public virtual DbSet<GuestOrderAccessToken> GuestOrderAccessTokens { get; set; }
     public virtual DbSet<EmployeePayConfig> EmployeePayConfigs { get; set; }
     public virtual DbSet<OrderEmployeePay> OrderEmployeePays { get; set; }
     public virtual DbSet<PayPeriod> PayPeriods { get; set; }

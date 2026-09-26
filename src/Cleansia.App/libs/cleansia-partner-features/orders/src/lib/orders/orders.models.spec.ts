@@ -1,5 +1,24 @@
+import { readFileSync } from 'fs';
+import { join } from 'path';
 import { OrderListItem, OrderStatus } from '@cleansia/partner-services';
-import { getAvailableOrdersTableDefinition, getMyOrdersTableDefinition } from './orders.models';
+import {
+  getAvailableOrdersTableDefinition,
+  getMyOrdersTableDefinition,
+  ORDER_STATUS_FLOW,
+} from './orders.models';
+
+const PARTNER_LOCALES = ['en', 'cs', 'sk', 'uk', 'ru'] as const;
+const I18N_DIR = join(__dirname, '../../../../../../apps/cleansia-partner.app/src/assets/i18n');
+
+function resolveKey(bundle: unknown, key: string): unknown {
+  return key
+    .split('.')
+    .reduce<unknown>(
+      (node, segment) =>
+        node && typeof node === 'object' ? (node as Record<string, unknown>)[segment] : undefined,
+      bundle
+    );
+}
 
 function row(status: OrderStatus, availableSpots = 1): OrderListItem {
   return OrderListItem.fromJS({
@@ -102,5 +121,28 @@ describe('the cleaning date column is the session-language stamp the order detai
 
   it('prints nothing for an order with no date', () => {
     expect(cellValues('cs', 'cleaningDateTime', OrderListItem.fromJS({}))).toEqual(['', '']);
+  });
+});
+
+describe('the help legend describes only statuses an order reaches', () => {
+  it('leaves out Pending, which no order is ever written to', () => {
+    const described = ORDER_STATUS_FLOW.map((item) => item.statusKey);
+
+    expect(described).not.toContain('enums.order_status.pending');
+    expect(described).toContain('enums.order_status.confirmed');
+  });
+
+  it('names and describes every row it lists, in all five partner locales', () => {
+    for (const locale of PARTNER_LOCALES) {
+      const bundle = JSON.parse(readFileSync(join(I18N_DIR, `${locale}.json`), 'utf8')) as unknown;
+      const missing = ORDER_STATUS_FLOW.flatMap((item) => [item.statusKey, item.descriptionKey]).filter(
+        (key) => {
+          const value = resolveKey(bundle, key);
+          return typeof value !== 'string' || !value.trim();
+        }
+      );
+
+      expect({ locale, missing }).toEqual({ locale, missing: [] });
+    }
   });
 });

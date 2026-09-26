@@ -156,11 +156,15 @@ public class QuoteOrder
 
             RuleFor(x => x.Rooms)
                 .GreaterThanOrEqualTo(0)
-                .WithMessage(BusinessErrorMessage.MustBePositive);
+                .WithMessage(BusinessErrorMessage.MustBePositive)
+                .LessThanOrEqualTo(BookingPolicy.MaxRooms)
+                .WithMessage(BusinessErrorMessage.OrderSizeExceedsMaximum);
 
             RuleFor(x => x.Bathrooms)
                 .GreaterThanOrEqualTo(0)
-                .WithMessage(BusinessErrorMessage.MustBePositive);
+                .WithMessage(BusinessErrorMessage.MustBePositive)
+                .LessThanOrEqualTo(BookingPolicy.MaxBathrooms)
+                .WithMessage(BusinessErrorMessage.OrderSizeExceedsMaximum);
 
             // Existence, then a price row in the currency being quoted in. The second term reuses the
             // selection code deliberately -- see CreateOrder.Validator: an entry with no row in this
@@ -449,9 +453,7 @@ public class QuoteOrder
             };
 
             var estimatedMinutes = result.EstimatedDurationMinutes;
-            var requiredEmployees = estimatedMinutes <= 0
-                ? 1
-                : (int)Math.Ceiling(estimatedMinutes / (double)OrderDuration.MinutesPerEmployee);
+            var requiredEmployees = OrderDuration.RequiredEmployees(estimatedMinutes);
 
             var creditBalance = await ResolveCreditBalanceAsync(result.CurrencyId, cancellationToken);
 

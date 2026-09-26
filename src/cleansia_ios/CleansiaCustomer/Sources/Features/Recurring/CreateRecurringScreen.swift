@@ -30,6 +30,7 @@ struct CreateRecurringScreen: View {
             catalogClient: LiveCatalogClient(),
             addressClient: LiveRecurringSavedAddressClient(),
             orderClient: LiveOrderClient(),
+            quoteClient: LiveQuoteClient(),
             snackbar: snackbar
         ))
         self.savedAddressRepository = savedAddressRepository
@@ -71,7 +72,12 @@ struct CreateRecurringScreen: View {
                     onRoomsChange: vm.setRooms,
                     onBathroomsChange: vm.setBathrooms
                 )
-                PaymentSection(selected: vm.formState.paymentType, onSelect: vm.setPaymentType)
+                PaymentSection(
+                    selected: vm.formState.paymentType,
+                    cash: vm.cashEligibility,
+                    cashCleared: vm.cashCleared,
+                    onSelect: vm.setPaymentType
+                )
                 StartsSection(
                     startsOn: vm.formState.startsOn,
                     earliest: vm.earliestStart,
@@ -392,14 +398,28 @@ private struct ServicesSection: View {
 }
 
 private struct PaymentSection: View {
-    let selected: Int
+    let selected: Int?
+    let cash: CashEligibility
+    let cashCleared: Bool
     let onSelect: (Int) -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: Spacing.s) {
             SectionLabel(text: L10n.Recurring.createPaymentLabel)
-            SelectableRow(text: L10n.Recurring.createPayCash, selected: selected == 1) { onSelect(1) }
-            SelectableRow(text: L10n.Recurring.createPayCard, selected: selected == 2) { onSelect(2) }
+            SelectableRow(
+                text: L10n.Recurring.createPayCash,
+                selected: selected == RecurringPaymentType.cash,
+                enabled: cash == .available
+            ) { onSelect(RecurringPaymentType.cash) }
+            SelectableRow(text: L10n.Recurring.createPayCard, selected: selected == RecurringPaymentType.card) {
+                onSelect(RecurringPaymentType.card)
+            }
+            if cashCleared, cash != .available {
+                PaymentNote(systemImage: "exclamationmark.circle", text: L10n.Recurring.cashCleared, warns: true)
+            }
+            if let reason = L10n.Recurring.cashReason(cash) {
+                PaymentNote(systemImage: "info.circle", text: reason)
+            }
         }
     }
 }
@@ -430,6 +450,7 @@ private struct SelectableRow: View {
     let text: String
     var badge: String?
     let selected: Bool
+    var enabled = true
     let onTap: () -> Void
 
     var body: some View {
@@ -459,6 +480,8 @@ private struct SelectableRow: View {
             )
         }
         .buttonStyle(.plain)
+        .disabled(!enabled)
+        .opacity(enabled ? 1 : 0.5)
     }
 }
 

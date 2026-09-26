@@ -169,8 +169,7 @@ public sealed class RefundService(
             order.Id, cancellationToken);
         refund.MarkSucceeded(stripeRefundId: null, confirmedOnUtc: DateTimeOffset.UtcNow);
 
-        // The card leg is settled; give back the credit leg too, in the SAME commit. Keyed off the
-        // deterministic refund key, so a re-driven refund returns the credit exactly once.
+        // The credit leg is independently idempotent; an erased account receives only its card refund.
         await ReturnCreditShareAsync(order, split.Credit, refundKey, request.ActorId, cancellationToken);
 
         // FULLY REFUNDED IS A TEST ON THE CARD LEG AGAINST THE CARD TOTAL, not against TotalPrice.
@@ -280,8 +279,7 @@ public sealed class RefundService(
 
     /// <summary>
     /// Put the credit leg back on the customer's balance, through the one place that builds a return
-    /// key. A false answer is the ordinary retry — the key was already used — not a failure, because
-    /// the money is already back.
+    /// key. A false answer is a no-op, including credit suppressed after account erasure.
     /// </summary>
     private async Task ReturnCreditShareAsync(
         Order order, decimal creditShare, string refundKey, string actorId, CancellationToken cancellationToken)
@@ -292,7 +290,7 @@ public sealed class RefundService(
         if (!returned && creditShare > 0m)
         {
             logger.LogInformation(
-                "Credit return of {Amount} for order {OrderId} was a no-op on refund key {RefundKey} — already returned.",
+                "No credit movement of {Amount} for order {OrderId} on refund key {RefundKey}.",
                 creditShare, order.Id, refundKey);
         }
     }

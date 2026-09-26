@@ -74,6 +74,31 @@ public class ResolveDispute
             }
 
             var actorId = userSessionProvider.GetUserId() ?? string.Empty;
+
+            // The money moves BEFORE the resolution is written. Resolving first and refunding second
+            // left a dispute recorded as settled with a RefundAmount the customer never received when
+            // Stripe refused: the failure was read only to skip a notification, and the terminal status
+            // then blocked every retry.
+            RefundResult? refundResult = null;
+            if (request.RefundAmount is > 0m)
+            {
+                var refund = await refundService.IssueRefundAsync(
+                    new RefundRequest(
+                        dispute.OrderId,
+                        request.RefundAmount.Value,
+                        RefundReason.DisputeResolution,
+                        actorId,
+                        DisputeId: dispute.Id),
+                    cancellationToken);
+
+                if (refund.IsFailure)
+                {
+                    return BusinessResult.Failure(refund.Error!);
+                }
+
+                refundResult = refund.Value!;
+            }
+
             dispute.Resolve(
                 resolvedBy: actorId,
                 refundAmount: request.RefundAmount,
@@ -86,43 +111,31 @@ public class ResolveDispute
                 new ResolutionSnapshot(dispute.Id, statusBefore, refundBefore),
                 new ResolutionSnapshot(dispute.Id, dispute.Status, dispute.RefundAmount));
 
-            if (request.RefundAmount is > 0m)
+            if (refundResult is not null && !string.IsNullOrEmpty(dispute.UserId))
             {
-                var refund = await refundService.IssueRefundAsync(
-                    new RefundRequest(
-                        dispute.OrderId,
-                        request.RefundAmount.Value,
-                        RefundReason.DisputeResolution,
-                        actorId,
-                        DisputeId: dispute.Id),
+                await notificationProducer.NotifyAsync(
+                    dispute.UserId,
+                    NotificationEventCatalog.OrderRefunded,
+                    new Dictionary<string, string>
+                    {
+                        ["orderId"] = dispute.OrderId,
+                        // Display-only, resolved AFTER the Stripe refund settled: a missing
+                        // Order must degrade to the factory's tolerated empty loc-arg, never
+                        // throw and unwind the resolution while the money already moved.
+                        ["orderNumber"] = dispute.Order?.DisplayOrderNumber ?? string.Empty,
+                        ["disputeId"] = dispute.Id,
+                    },
+                    // The dedup subject is the REFUND, not the order. Three handlers raise this one
+                    // event — an admin refund, an admin cancellation that refunds, and a dispute
+                    // resolved with a refund — and all three keyed it on the order, so the second
+                    // refund an order ever saw minted a key the first had written. The outbox's unique
+                    // index raises that at the pipeline's commit, AFTER the Stripe refund has already
+                    // settled: the money left, the transaction rolled back, and the customer was never
+                    // told. RefundResult.RefundId is stable per refund and the service already resolves
+                    // a repeat to the existing one, so a genuinely duplicate notice still collapses.
+                    dispute.TenantId,
+                    refundResult.RefundId,
                     cancellationToken);
-
-                if (refund.IsSuccess && !string.IsNullOrEmpty(dispute.UserId))
-                {
-                    await notificationProducer.NotifyAsync(
-                        dispute.UserId,
-                        NotificationEventCatalog.OrderRefunded,
-                        new Dictionary<string, string>
-                        {
-                            ["orderId"] = dispute.OrderId,
-                            // Display-only, resolved AFTER the Stripe refund settled: a missing
-                            // Order must degrade to the factory's tolerated empty loc-arg, never
-                            // throw and unwind the resolution while the money already moved.
-                            ["orderNumber"] = dispute.Order?.DisplayOrderNumber ?? string.Empty,
-                            ["disputeId"] = dispute.Id,
-                        },
-                        // The dedup subject is the REFUND, not the order. Three handlers raise this one
-                        // event — an admin refund, an admin cancellation that refunds, and a dispute
-                        // resolved with a refund — and all three keyed it on the order, so the second
-                        // refund an order ever saw minted a key the first had written. The outbox's unique
-                        // index raises that at the pipeline's commit, AFTER the Stripe refund has already
-                        // settled: the money left, the transaction rolled back, and the customer was never
-                        // told. RefundResult.RefundId is stable per refund and the service already resolves
-                        // a repeat to the existing one, so a genuinely duplicate notice still collapses.
-                        dispute.TenantId,
-                        refund.Value!.RefundId,
-                        cancellationToken);
-                }
             }
 
             return BusinessResult.Success();

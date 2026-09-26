@@ -45,6 +45,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
@@ -55,6 +56,7 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import cz.cleansia.customer.core.booking.CashEligibility
 import cz.cleansia.customer.core.memberships.GetMyMembershipResponse
 import cz.cleansia.customer.features.orders.roomsAndBathrooms
 import cz.cleansia.customer.R
@@ -103,6 +105,8 @@ fun ConfirmStep(
     val insuranceCoverage by viewModel.insuranceCoverage.collectAsStateWithLifecycle()
     val effectiveDiscount by bookingVm.effectiveDiscount.collectAsStateWithLifecycle()
     val alreadyConsented by bookingVm.alreadyConsented.collectAsStateWithLifecycle()
+    val cashEligibility by bookingVm.cashEligibility.collectAsStateWithLifecycle()
+    val cashClearedNotice by bookingVm.cashClearedNotice.collectAsStateWithLifecycle()
     // Every money row comes from the one resolver, so this card and the sticky bar below it cannot
     // disagree with each other or with the total the order is created with.
     val summary = BookingPriceSummary.resolve(quote, effectiveDiscount)
@@ -346,17 +350,40 @@ fun ConfirmStep(
             icon = Icons.Outlined.CreditCard,
             title = stringResource(R.string.booking_pay_card),
             subtitle = stringResource(R.string.booking_pay_card_desc),
-            selected = state.paymentMethod == "card",
-            onClick = { onUpdate(state.copy(paymentMethod = "card")) },
+            selected = state.paymentMethod == BookingViewModel.PAYMENT_CARD,
+            onClick = { bookingVm.selectPaymentMethod(BookingViewModel.PAYMENT_CARD) },
         )
         Spacer(Modifier.height(8.dp))
         PaymentOption(
             icon = Icons.Outlined.Payments,
             title = stringResource(R.string.booking_pay_cash),
             subtitle = stringResource(R.string.booking_pay_cash_desc),
-            selected = state.paymentMethod == "cash",
-            onClick = { onUpdate(state.copy(paymentMethod = "cash")) },
+            selected = state.paymentMethod == BookingViewModel.PAYMENT_CASH,
+            enabled = cashEligibility == CashEligibility.Available,
+            onClick = { bookingVm.selectPaymentMethod(BookingViewModel.PAYMENT_CASH) },
         )
+        if (cashClearedNotice) {
+            Spacer(Modifier.height(8.dp))
+            Text(
+                stringResource(R.string.booking_cash_cleared),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.error,
+            )
+        }
+        val cashReason = when (val cash = cashEligibility) {
+            CashEligibility.NeedsAccount -> stringResource(R.string.booking_cash_needs_account)
+            is CashEligibility.NeedsCard -> stringResource(R.string.booking_cash_needs_card, cash.requiredCleaners)
+            CashEligibility.Pending -> stringResource(R.string.booking_cash_pending)
+            CashEligibility.Available -> null
+        }
+        if (cashReason != null) {
+            Spacer(Modifier.height(8.dp))
+            Text(
+                cashReason,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
 
         Spacer(Modifier.height(16.dp))
 
@@ -618,6 +645,12 @@ private fun CancellationPolicyCard(
             value = stringResource(R.string.booking_cancel_tier3_value),
             valueColor = MaterialTheme.colorScheme.error,
         )
+        Spacer(Modifier.height(6.dp))
+        Text(
+            text = stringResource(R.string.booking_cancel_grace_note),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
     }
 }
 
@@ -815,13 +848,21 @@ private fun LabeledInfoRow(icon: ImageVector, label: String, value: String) {
 }
 
 @Composable
-private fun PaymentOption(icon: ImageVector, title: String, subtitle: String, selected: Boolean, onClick: () -> Unit) {
+private fun PaymentOption(
+    icon: ImageVector,
+    title: String,
+    subtitle: String,
+    selected: Boolean,
+    onClick: () -> Unit,
+    enabled: Boolean = true,
+) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
+            .alpha(if (enabled) 1f else 0.45f)
             .clip(RoundedCornerShape(14.dp))
             .background(if (selected) selectionTint() else MaterialTheme.colorScheme.surface)
-            .clickable(onClick = onClick),
+            .clickable(enabled = enabled, onClick = onClick),
     ) {
         if (selected) {
             Box(

@@ -54,16 +54,16 @@ class NotificationsViewModelTest {
         createdOn = "2026-07-17T10:00:00+00:00",
         readOn = null,
     )
-    private val confirmedRow = UserNotificationDto(
-        id = "n-confirmed",
-        eventKey = "order.confirmed",
+    private val assignmentCancelledRow = UserNotificationDto(
+        id = "n-assignment-cancelled",
+        eventKey = "order.assignment_cancelled",
         args = mapOf("orderId" to "ord-1", "orderNumber" to "A-1042"),
         createdOn = "2026-07-16T08:00:00+00:00",
         readOn = null,
     )
-    private val readConfirmedRow = UserNotificationDto(
+    private val readAssignmentCancelledRow = UserNotificationDto(
         id = "n-read",
-        eventKey = "order.confirmed",
+        eventKey = "order.assignment_cancelled",
         args = mapOf("orderId" to "ord-2", "orderNumber" to "A-2000"),
         createdOn = "2026-07-15T08:00:00+00:00",
         readOn = "2026-07-15T09:00:00+00:00",
@@ -84,9 +84,9 @@ class NotificationsViewModelTest {
         appContext = mockk(relaxed = true)
         every { appContext.getString(R.string.notification_new_jobs_title) } returns "New jobs available"
         every { appContext.getString(R.string.notification_new_jobs_body, 3) } returns "3 new jobs available near you."
-        every { appContext.getString(R.string.notification_order_payment_confirmed_title) } returns "Job confirmed"
-        every { appContext.getString(R.string.notification_order_payment_confirmed_body, "A-1042") } returns "Job #A-1042 is confirmed."
-        every { appContext.getString(R.string.notification_order_payment_confirmed_body, "A-2000") } returns "Job #A-2000 is confirmed."
+        every { appContext.getString(R.string.notification_order_assignment_cancelled_title) } returns "Job cancelled"
+        every { appContext.getString(R.string.notification_order_assignment_cancelled_body, "A-1042") } returns "Job #A-1042 was cancelled."
+        every { appContext.getString(R.string.notification_order_assignment_cancelled_body, "A-2000") } returns "Job #A-2000 was cancelled."
         every { appContext.getString(R.string.notification_payroll_invoice_paid_title) } returns "You've been paid"
         every { appContext.getString(R.string.notification_payroll_invoice_paid_body) } returns "Your invoice has been paid."
         every { errorTranslator.translate(any()) } returns translatedError
@@ -172,7 +172,7 @@ class NotificationsViewModelTest {
 
     @Test
     fun `unread row tap optimistically clears the dot, decrements the badge, fires mark-read and emits the route`() = runTest {
-        coEvery { repository.getPage(offset = 0) } returns ApiResult.Success(page(confirmedRow))
+        coEvery { repository.getPage(offset = 0) } returns ApiResult.Success(page(assignmentCancelledRow))
 
         val vm = viewModel()
         vm.open()
@@ -188,7 +188,7 @@ class NotificationsViewModelTest {
         val loaded = vm.state.value as NotificationsUiState.Loaded
         assertFalse(loaded.items.single().unread)
         verify(exactly = 1) { repository.decrementUnread() }
-        coVerify(exactly = 1) { repository.markRead("n-confirmed") }
+        coVerify(exactly = 1) { repository.markRead("n-assignment-cancelled") }
     }
 
     @Test
@@ -235,7 +235,7 @@ class NotificationsViewModelTest {
 
     @Test
     fun `read row tap navigates without a second mark-read or badge decrement`() = runTest {
-        coEvery { repository.getPage(offset = 0) } returns ApiResult.Success(page(readConfirmedRow))
+        coEvery { repository.getPage(offset = 0) } returns ApiResult.Success(page(readAssignmentCancelledRow))
 
         val vm = viewModel()
         vm.open()
@@ -254,7 +254,7 @@ class NotificationsViewModelTest {
 
     @Test
     fun `row without a destination just marks read - no route emitted`() = runTest {
-        val orphanRow = confirmedRow.copy(id = "n-orphan", args = mapOf("orderNumber" to "A-1042"))
+        val orphanRow = assignmentCancelledRow.copy(id = "n-orphan", args = mapOf("orderNumber" to "A-1042"))
         coEvery { repository.getPage(offset = 0) } returns ApiResult.Success(page(orphanRow))
 
         val vm = viewModel()
@@ -278,7 +278,7 @@ class NotificationsViewModelTest {
             page(unknownNewestRow, newJobsRow, total = 3),
         )
         coEvery { repository.getPage(offset = 2) } returns ApiResult.Success(
-            PagedNotificationsDto(pageNumber = 2, pageSize = 20, total = 3, data = listOf(confirmedRow)),
+            PagedNotificationsDto(pageNumber = 2, pageSize = 20, total = 3, data = listOf(assignmentCancelledRow)),
         )
 
         val vm = viewModel()
@@ -290,7 +290,7 @@ class NotificationsViewModelTest {
         advanceUntilIdle()
 
         val loaded = vm.state.value as NotificationsUiState.Loaded
-        assertEquals(listOf("n-newjobs", "n-confirmed"), loaded.items.map { it.id })
+        assertEquals(listOf("n-newjobs", "n-assignment-cancelled"), loaded.items.map { it.id })
         assertFalse(loaded.canLoadMore)
         assertFalse(loaded.loadingMore)
         coVerify(exactly = 1) { repository.markAllRead(any()) }
@@ -311,7 +311,7 @@ class NotificationsViewModelTest {
             page(unknownNewestRow, newJobsRow, total = 5),
         )
         coEvery { repository.getPage(offset = 2) } returns ApiResult.Success(
-            page(secondUnknownRow, confirmedRow, total = 5),
+            page(secondUnknownRow, assignmentCancelledRow, total = 5),
         )
         coEvery { repository.getPage(offset = 4) } returns ApiResult.Success(page(total = 5))
 
@@ -327,7 +327,7 @@ class NotificationsViewModelTest {
         coVerify(exactly = 1) { repository.getPage(offset = 2) }
         coVerify(exactly = 1) { repository.getPage(offset = 4) }
         assertEquals(
-            listOf("n-newjobs", "n-confirmed"),
+            listOf("n-newjobs", "n-assignment-cancelled"),
             (vm.state.value as NotificationsUiState.Loaded).items.map { it.id },
         )
     }

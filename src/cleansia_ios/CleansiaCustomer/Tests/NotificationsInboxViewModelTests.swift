@@ -128,7 +128,7 @@ final class NotificationsInboxViewModelTests: XCTestCase {
     }
 
     func testTapUnreadRowSendsMarkReadOnceAndFlipsOptimistically() async {
-        badge.notePushReceived(eventKey: "order.confirmed")
+        badge.notePushReceived(eventKey: "order.completed")
         client.pageResults = [NotificationFixtures.page([NotificationFixtures.item(id: "n-1")])]
         client.markAllReadResult = .failure(ApiError(httpStatus: 500))
         let vm = makeVM()
@@ -142,7 +142,7 @@ final class NotificationsInboxViewModelTests: XCTestCase {
     }
 
     func testTapReadRowSkipsMarkReadAndTheBadge() async {
-        badge.notePushReceived(eventKey: "order.confirmed")
+        badge.notePushReceived(eventKey: "order.completed")
         client.pageResults = [NotificationFixtures.page([
             NotificationFixtures.item(id: "n-1", readOn: Date())
         ])]

@@ -54,7 +54,7 @@ public sealed class DbIdempotencyGuardPersistenceTests : IDisposable
     public async Task First_Claim_Returns_False_Then_Second_Claim_For_Same_Key_Returns_True()
     {
         await EnsureSchemaAsync();
-        const string key = "push:USER-1:order.confirmed:ORDER-1";
+        const string key = "push:USER-1:order.cleaner_assigned:ORDER-1";
 
         await using var ctx1 = NewContext();
         var first = await Guard(ctx1).AlreadyProcessedAsync(key, CancellationToken.None);
@@ -105,7 +105,7 @@ public sealed class DbIdempotencyGuardPersistenceTests : IDisposable
     public async Task Parallel_Claim_Loser_Catches_The_Unique_Violation_And_Resolves_To_Already_Claimed()
     {
         await EnsureSchemaAsync();
-        const string key = "push:USER-4:order.confirmed:ORDER-RACE";
+        const string key = "push:USER-4:order.cleaner_assigned:ORDER-RACE";
 
         // Winner stages + commits its claim row directly, populating the REAL unique index.
         await using (var contextWinner = NewContext())

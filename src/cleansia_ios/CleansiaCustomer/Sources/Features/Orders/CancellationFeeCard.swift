@@ -18,6 +18,8 @@ struct CancellationFeeCallout: Equatable {
     let amounts: [Double]
     let severity: CancellationFeeSeverity
     let warnsExpressWaiverForfeited: Bool
+    /// The customer's own grace after booking, from the preview; nil when there is none to state.
+    let graceMinutes: Int?
 }
 
 enum CancellationFeeCardModel: Equatable {
@@ -64,7 +66,8 @@ extension CancellationFeeCallout {
             amountKey: "order_cancel_fee_none",
             amounts: [],
             severity: .free,
-            warnsExpressWaiverForfeited: quote.forfeitsExpressWaiver
+            warnsExpressWaiverForfeited: quote.forfeitsExpressWaiver,
+            graceMinutes: quote.statedGraceMinutes
         )
     }
 
@@ -79,8 +82,15 @@ extension CancellationFeeCallout {
             amountKey: refundIsEstimate ? "guest_order_fee_estimate" : "order_cancel_fee_split",
             amounts: [quote.feeAmount, quote.refundAmount],
             severity: severity,
-            warnsExpressWaiverForfeited: quote.forfeitsExpressWaiver
+            warnsExpressWaiverForfeited: quote.forfeitsExpressWaiver,
+            graceMinutes: quote.statedGraceMinutes
         )
+    }
+}
+
+private extension CancellationQuote {
+    var statedGraceMinutes: Int? {
+        oopsWindowMinutes > 0 ? oopsWindowMinutes : nil
     }
 }
 
@@ -131,6 +141,11 @@ struct CancellationFeeCard: View {
                 )
                 if callout.warnsExpressWaiverForfeited {
                     ExpressWaiverWarning()
+                }
+                if let minutes = callout.graceMinutes {
+                    Text(L10n.OrderCancel.feeGraceNote(minutes))
+                        .font(CleansiaTypography.bodyMedium)
+                        .foregroundColor(CleansiaColors.onSurfaceVariant)
                 }
                 Text(L10n.OrderCancel.feeRecheckNote)
                     .font(CleansiaTypography.bodyMedium)
@@ -211,7 +226,8 @@ private struct FeeCardRow: View {
             feeAmount: 250,
             refundAmount: 750,
             currencyCode: "CZK",
-            forfeitsExpressWaiver: true
+            forfeitsExpressWaiver: true,
+            oopsWindowMinutes: 60
         )
 
         static var previews: some View {

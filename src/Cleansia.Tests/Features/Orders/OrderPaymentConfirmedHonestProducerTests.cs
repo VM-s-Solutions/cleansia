@@ -26,7 +26,7 @@ namespace Cleansia.Tests.Features.Orders;
 /// Payment settlement and recurring cash confirmation emit the money-axis notification without
 /// claiming a cleaner or changing fulfilment status. Their existing payment guards prevent replay.
 /// </summary>
-public class OrderConfirmedHonestProducerTests
+public class OrderPaymentConfirmedHonestProducerTests
 {
     private const string WebhookSecret = "whsec_test_secret";
     private const string OrderId = "order-confirmed-1";
@@ -38,7 +38,7 @@ public class OrderConfirmedHonestProducerTests
     private readonly Mock<IOrderRepository> _orderRepository = new();
     private readonly Mock<IPendingDispatch> _pending = new();
 
-    public OrderConfirmedHonestProducerTests()
+    public OrderPaymentConfirmedHonestProducerTests()
     {
         _notificationProducer
             .Setup(p => p.NotifyAsync(

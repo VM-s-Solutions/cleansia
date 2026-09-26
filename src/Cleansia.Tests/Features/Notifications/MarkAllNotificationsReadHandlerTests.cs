@@ -58,7 +58,7 @@ public sealed class MarkAllNotificationsReadHandlerTests : IDisposable
 
         await using var seed = NewContext();
         seed.AddRange(
-            Row(NotificationEventCatalog.OrderConfirmed, T0),
+            Row(NotificationEventCatalog.OrderCleanerAssigned, T0),
             Row(NotificationEventCatalog.OrderCompleted, T0.AddMinutes(1)),
             Row(NotificationEventCatalog.DisputeReply, T0.AddMinutes(2)),
             Row(NotificationEventCatalog.OrderCancelled, T0.AddMinutes(10)),

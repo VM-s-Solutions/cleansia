@@ -166,8 +166,9 @@ an exhaustiveness test over `Enum.GetValues<PaymentType>()` goes red until it is
   **seats = `RequiredEmployees`. No spare seat.** `RequiredEmployees = ceil(EstimatedTime / 120)` is the
   work-derived number and `MaxEmployees = RequiredEmployees + BookingPolicy.SpareSeatsPerOrder` with the
   spare at **0** — the constant stays so the number is citable and tunable in one edit. The old `+1`
-  cost **a second full labour payment per filled spare seat** (`CalculateOrderPay:140-152` writes one pay
-  row per assigned employee; `CalculateAggregatedPay:30-61` has no crew-size term) against an unchanged
+  cost **a second full labour payment per filled spare seat** (`CompleteOrder` fans out one
+  `CalculateOrderPay` per assigned employee, and `CalculateOrderPay:163-179` writes that employee's pay
+  row; `CalculateAggregatedPay:30-61` has no crew-size term) against an unchanged
   customer price. The standing rule is unchanged and is what made the flip cheap: **there is ONE seat
   cap, it is a property of `Order`, every surface reads it, and no surface re-derives it.** A long job
   still carries several seats; only the extra one is gone. `Order.IsFullyAssigned` — which denoted the

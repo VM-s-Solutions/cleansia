@@ -32,6 +32,11 @@ public class OrderEntityConfiguration : TenantAuditableEntityConfiguration<Order
             .IsRequired()
             .HasMaxLength(20);
 
+        builder.HasOne(o => o.CustomerAddress)
+            .WithMany()
+            .HasForeignKey(o => o.CustomerAddressId)
+            .OnDelete(DeleteBehavior.Restrict);
+
         // Floor and door. Nullable: a house has neither, and an order booked
         // before this shipped has neither either.
         builder.Property(o => o.CustomerFloor)
@@ -76,10 +81,10 @@ public class OrderEntityConfiguration : TenantAuditableEntityConfiguration<Order
         // tidiness point for the rate: ReceiptService makes `AppliedVatRate is not null` the fiscal
         // discriminator, puts the rate on every line of the FiscalReceiptRequest sent to the tax
         // authority, and prints it on the receipt PDF. Rounding it to two places would put a wrong
-        // statutory rate on a real document -- 5.5% (seeded for France) becomes 6%.
+        // statutory rate on a real document -- 5.5% becomes 6%.
         //
-        // So the rate is (5,4), the fraction convention `CountryConfiguration.StandardVatRate` and
-        // `ReducedVatRate` already use and the column this one is a verbatim copy of; the two amounts
+        // So the rate is (5,4), the fraction convention `CountryConfiguration.StandardVatRate`
+        // already uses and the column this one is a verbatim copy of; the two amounts
         // are (18,2) like the total they decompose.
         builder.Property(o => o.NetAmount)
             .HasPrecision(18, 2);
@@ -111,6 +116,14 @@ public class OrderEntityConfiguration : TenantAuditableEntityConfiguration<Order
         // NOT NULL column with no default breaks every one of those the moment it is added. It is
         // also what an existing row would need if this ever ran as a real migration.
         builder.Property(o => o.CreditAppliedAmount)
+            .IsRequired()
+            .HasPrecision(18, 2)
+            .HasDefaultValue(0m);
+
+        // The express surcharge charged at booking. NOT NULL with a database default for the same
+        // reason as CreditAppliedAmount above: "no surcharge" is zero, not unknown, and the raw-SQL
+        // inserts in the integration suite name their columns explicitly.
+        builder.Property(o => o.ExpressSurchargeAmount)
             .IsRequired()
             .HasPrecision(18, 2)
             .HasDefaultValue(0m);
@@ -233,9 +246,8 @@ public class OrderEntityConfiguration : TenantAuditableEntityConfiguration<Order
         // (GetByStripePaymentIntentIdIgnoringTenantAsync) on an anonymous hot path.
         builder.HasIndex(o => o.StripePaymentIntentId);
 
-        // UpdateCurrentUser back-fills a phone change onto historical orders matched by
-        // CustomerPhone (including anonymous orders sharing the phone, so it cannot become a
-        // UserId-keyed lookup without changing semantics).
+        // UpdateCurrentUser back-fills a phone change onto the caller's own orders matched by
+        // CustomerPhone.
         builder.HasIndex(o => o.CustomerPhone);
 
         // Stamped by the 24h-ahead reminder sweep. Indexed alongside

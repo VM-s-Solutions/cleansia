@@ -182,6 +182,40 @@ extension L10n {
             localized("recurring_create_pay_card")
         }
 
+        static var cashCleared: String {
+            localized("recurring_cash_cleared")
+        }
+
+        static var cashUnchecked: String {
+            localized("recurring_cash_unchecked")
+        }
+
+        /// Why a schedule cannot be paid in cash right now, or nil when it can. A schedule is always an
+        /// account's, so the account is never the reason.
+        static func cashReason(_ eligibility: CashEligibility) -> String? {
+            switch eligibility {
+            case .available, .needsAccount: nil
+            case let .needsCard(requiredCleaners): format("recurring_cash_needs_card", requiredCleaners)
+            case .pending: localized("recurring_cash_pending")
+            }
+        }
+
+        static var statusNeedsChange: String {
+            localized("recurring_status_needs_change")
+        }
+
+        static var cashChangeTitle: String {
+            localized("recurring_cash_change_title")
+        }
+
+        static var cashChangeBody: String {
+            localized("recurring_cash_change_body")
+        }
+
+        static var cashChangeAction: String {
+            localized("recurring_cash_change_action")
+        }
+
         static var createStartsLabel: String {
             localized("recurring_create_starts_label")
         }

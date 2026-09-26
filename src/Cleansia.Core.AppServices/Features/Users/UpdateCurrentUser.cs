@@ -148,8 +148,8 @@ public class UpdateCurrentUser
                     "Authentication", BusinessErrorMessage.NotExistingUserWithId));
             }
 
-            var userOrders = await orderRepository.GetOrdersByPhoneNumberAsync(
-                user.PhoneNumber ?? string.Empty, cancellationToken);
+            var userOrders = await orderRepository.GetOwnOrdersByPhoneNumberAsync(
+                user.Id, user.PhoneNumber ?? string.Empty, cancellationToken);
 
             await ProfilePhotoUpdater.ApplyAsync(
                 user, command.Photo, command.RemovePhoto, clientFactory, cancellationToken);
@@ -162,9 +162,9 @@ public class UpdateCurrentUser
         {
             // Every optional field here means "nothing to say about it", never "delete it" — the same
             // rule Photo and LanguageCode already follow, and the one UpdateAdminUser adopted for its
-            // birth date. Phone is the one that has to hold: it is copied onto every order that carried
-            // the old number, so a single blank save would erase the contact number the crew calls from
-            // the whole order history, not just the profile row.
+            // birth date. Phone is the one that has to hold: it is copied onto every one of the caller's
+            // orders that carried the old number, so a single blank save would erase the contact number the
+            // crew calls from the whole order history, not just the profile row.
             var hasPhoneNumber = !string.IsNullOrWhiteSpace(command.PhoneNumber);
 
             if (hasPhoneNumber)

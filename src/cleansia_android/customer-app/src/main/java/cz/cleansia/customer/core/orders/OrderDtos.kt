@@ -63,7 +63,6 @@ data class OrderListItemDto(
     val amountDueOnCard: Double = 0.0,
     val estimatedTime: Int = 0,
     val orderStatus: CodeDto? = null,
-    val confirmationCode: String? = null,
     val stripeSessionId: String? = null,
     val selectedPackages: List<OrderPackageSummaryDto>? = null,
     val currencyId: String? = null,
@@ -120,7 +119,6 @@ data class OrderDetailDto(
     val completedAt: String? = null,
     val completionNotes: String? = null,
     val orderStatus: CodeDto? = null,
-    val confirmationCode: String? = null,
     val stripeSessionId: String? = null,
     val notes: String? = null,
     val specialInstructions: String? = null,
@@ -510,6 +508,8 @@ data class CancellationFeePreviewDto(
     val totalPrice: Double,
     val currencyCode: String? = null,
     val expressWaiverForfeitedOnCancel: Boolean,
+    /** The caller's own free-cancellation grace after booking, in minutes. */
+    val oopsWindowMinutes: Int? = null,
 )
 
 /**

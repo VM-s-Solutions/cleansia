@@ -25,24 +25,22 @@ final class NotificationFeedTemplatesTests: XCTestCase {
         XCTAssertEqual(rows.map(\.id), ["paused"])
     }
 
-    func testCurrentAndPersistedLegacyPaymentRowsRenderTheSameBooking() throws {
-        let current = try XCTUnwrap(NotificationFeedTemplates.render(
+    func testPaymentConfirmationRowRendersTheBookingNumber() throws {
+        let rendered = try XCTUnwrap(NotificationFeedTemplates.render(
             eventKey: "order.payment_confirmed",
             args: ["orderNumber": "A-1042"]
         ))
-        let legacy = try XCTUnwrap(NotificationFeedTemplates.render(
-            eventKey: "order.confirmed",
-            args: ["orderNumber": "A-1042"]
-        ))
-        XCTAssertEqual(current.title, legacy.title)
-        XCTAssertEqual(current.body, legacy.body)
-        XCTAssertTrue(current.body.contains("A-1042"))
-        XCTAssertFalse(current.body.contains("%"))
+        XCTAssertEqual(rendered.title, L10n.localized("push.order.payment_confirmed.title"))
+        XCTAssertEqual(
+            rendered.body,
+            String(format: L10n.localized("push.order.payment_confirmed.body"), "A-1042")
+        )
+        XCTAssertTrue(rendered.body.contains("A-1042"))
+        XCTAssertFalse(rendered.body.contains("%"))
         let rows = NotificationFeedTemplates.rows(from: [
-            NotificationFixtures.item(id: "current", eventKey: "order.payment_confirmed"),
-            NotificationFixtures.item(id: "saved", eventKey: "order.confirmed")
+            NotificationFixtures.item(id: "current", eventKey: "order.payment_confirmed")
         ])
-        XCTAssertEqual(rows.map(\.id), ["current", "saved"])
+        XCTAssertEqual(rows.map(\.id), ["current"])
     }
 
     func testOrderRowRendersTheApnsTemplateWithTheOrderNumber() throws {
@@ -156,7 +154,7 @@ final class NotificationFeedTemplatesTests: XCTestCase {
     }
 
     func testRowsFilterUnknownKeysAndCarryUnreadState() {
-        let known = NotificationFixtures.item(id: "n-1", eventKey: "order.confirmed")
+        let known = NotificationFixtures.item(id: "n-1", eventKey: "order.payment_confirmed")
         let unknown = NotificationFixtures.item(id: "n-2", eventKey: "some.future_event")
         let read = NotificationFixtures.item(id: "n-3", eventKey: "dispute.reply", readOn: Date())
 

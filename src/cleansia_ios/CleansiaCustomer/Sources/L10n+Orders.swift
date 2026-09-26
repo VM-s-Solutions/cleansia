@@ -189,10 +189,6 @@ extension L10n {
             localized("order_detail_cleaner_fallback")
         }
 
-        static var codeLabel: String {
-            localized("order_detail_code_label")
-        }
-
         static func discountLabel(_ source: OrderDiscountSource) -> String {
             switch source {
             case .tier: localized("order_detail_discount_tier")

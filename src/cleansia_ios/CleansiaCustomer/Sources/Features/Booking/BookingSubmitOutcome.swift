@@ -18,4 +18,7 @@ enum BookingSubmitOutcome: Equatable {
     /// clients + a scheduler, and the sheet already owns the snackbar host.
     case failed(ApiError?)
     case profileIncomplete
+    /// The fresh quote refused the cash choice, so it was taken away and nothing was sent; the
+    /// customer has already been told and chooses again.
+    case paymentMethodCleared
 }

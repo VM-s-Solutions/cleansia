@@ -72,10 +72,10 @@ cash orders refunded by hand have no refund record and show gross. The rules and
 | Average order value | `averageOrderValue` | net revenue over the order count |
 | Cancelled orders | `cancelledOrders` | cancelled **bookings** in the period by cancellation date, on their own axis and not part of revenue; an abandoned card checkout is not a booking (the card's tooltip says so) |
 | Growth | `growthPercentage` | second half of the period's daily net against the first half |
-| Revenue by service / package | `revenueByService`, `revenueByPackage` | net, split evenly across an order's lines |
+| Revenue by service / package | `revenueByService`, `revenueByPackage` | net of both refund legs, split evenly across an order's lines |
 | Revenue by payment type | `revenueByPaymentType` | per tender: the sale, *from customer credit*, *taken by this tender*, **refunded to card**, **returned as credit**, and **net on tender** — the figure to reconcile against the gateway statement (the table's hint) |
 | Revenue by payment status | `revenueByPaymentStatus` | gross by `PaymentStatus` — `Paid`, `PartiallyRefunded`, `Refunded`; `Disputed` has no production writer and no copy |
-| Daily revenue | `dailyRevenues` | by completion date, each day's `amount` net and its `refunded` beside it |
+| Daily revenue | `dailyRevenues` | by completion date: each day's `amount` is net of both refund legs (card refunds and credit returned), `refunded` is the two legs together, and the days add up to `netRevenue` |
 
 There is no *Completed orders* card any more — it would always equal the total.
 

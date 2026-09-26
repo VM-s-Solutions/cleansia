@@ -56,8 +56,8 @@ column.
   fallback. A plan priced only in CZK is unpriced in EUR.
 - **Stripe's object.** The id is entered by an admin; nothing here calls Stripe to create, verify or
   read a Price. A wrong id fails at subscribe time as a gateway error.
-- **Benefits.** Discount, cancellation window, waiver quota and trial are the plan's, currency-free,
-  and apply to an order in any currency (ADR-0059 D2).
+- **Benefits.** Discount, cancellation window and waiver quota are the plan's, currency-free, and apply
+  to an order in any currency (ADR-0059 D2).
 
 **Smell guard:** if a scenario requires this row to carry two intervals, a per-month and a per-year
 figure, a tenant, a customer, or a fallback to another currency's price, the responsibility is being

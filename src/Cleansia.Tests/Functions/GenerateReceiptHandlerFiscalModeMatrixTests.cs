@@ -16,6 +16,8 @@ using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using Microsoft.Extensions.DependencyInjection;
+using Cleansia.Core.AppServices.Features.Orders;
+using Cleansia.Tests.Infrastructure;
 
 namespace Cleansia.Tests.Functions;
 
@@ -53,6 +55,7 @@ public class GenerateReceiptHandlerFiscalModeMatrixTests
         _orderRepository.Object,
         _receiptService.Object,
         _emailService.Object,
+        TestGuestOrderAccessTokenIssuer.WithNoLiveTokens(),
         _countryConfigurationRepository.Object,
         _unitOfWork.Object,
         _tenantProvider.Object,
@@ -120,7 +123,7 @@ public class GenerateReceiptHandlerFiscalModeMatrixTests
             .Callback(() => AttachReceipt(order, receipt))
             .Returns(Task.CompletedTask);
         _receiptService
-            .Setup(s => s.RealizeFiscalAndPdfAsync(order, receipt, LanguageCode, It.IsAny<CancellationToken>()))
+            .Setup(s => s.RealizeFiscalAndPdfAsync(order, receipt, It.IsAny<CancellationToken>()))
             .Callback(() =>
             {
                 if (signed)
@@ -135,7 +138,7 @@ public class GenerateReceiptHandlerFiscalModeMatrixTests
         _emailService
             .Setup(s => s.SendOrderReceiptEmailAsync(
                 It.IsAny<string>(), It.IsAny<Order>(), It.IsAny<byte[]?>(),
-                It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>(), It.IsAny<string?>()))
             .ReturnsAsync("email-msg-id");
 
         return (order, receipt);
@@ -145,7 +148,7 @@ public class GenerateReceiptHandlerFiscalModeMatrixTests
         _emailService.Verify(
             s => s.SendOrderReceiptEmailAsync(
                 It.IsAny<string>(), It.IsAny<Order>(), It.IsAny<byte[]?>(),
-                It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()),
+                It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>(), It.IsAny<string?>()),
             times);
 
     // ── AC5 — a blocking country with an UNSIGNED receipt HOLDS the email ──

@@ -60,7 +60,6 @@ struct CustomerOrderDetail: Equatable {
     let statusCode: Code?
     let cleaningDateTime: Date?
     let completedAt: Date?
-    let confirmationCode: String?
     let receiptNumber: String?
     let recurringTemplateId: String?
 
@@ -121,7 +120,6 @@ extension CustomerOrderDetail {
         statusCode = item.orderStatus
         cleaningDateTime = item.cleaningDateTime
         completedAt = item.completedAt
-        confirmationCode = item.confirmationCode
         receiptNumber = item.receiptNumber
         recurringTemplateId = item.recurringTemplateId
 

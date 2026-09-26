@@ -143,7 +143,7 @@ public sealed class GetPagedUserNotificationsHandlerTests : IDisposable
         await EnsureSchemaAsync();
         var t0 = new DateTimeOffset(2026, 6, 1, 12, 0, 0, TimeSpan.Zero);
         var rows = Enumerable.Range(0, 60)
-            .Select(i => Row(UserId, NotificationEventCatalog.OrderConfirmed, t0.AddMinutes(i)))
+            .Select(i => Row(UserId, NotificationEventCatalog.OrderCleanerAssigned, t0.AddMinutes(i)))
             .ToArray();
         await SeedAsync(rows);
 

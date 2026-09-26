@@ -69,8 +69,8 @@ public class ExpressWaiverReleaseRuleTests
 
     /// <summary>
     /// The accepted exploit, disclosed: a customer cancelling an ASSIGNED express booking forfeits the
-    /// credit — including when the fee is 0 Kč (inside the 15-minute oops window, and on every cash
-    /// order), which is exactly when the forfeiture is otherwise invisible.
+    /// credit — including when the fee is 0 Kč (inside the member's 60-minute oops window, and on every
+    /// cash order), which is exactly when the forfeiture is otherwise invisible.
     /// </summary>
     [Fact]
     public async Task ForfeitureIsDisclosedWhenACleanerIsAssignedAndASlotIsLive()

@@ -552,6 +552,13 @@ Country, Language}**, **mobile = {Service, Package, Extra, MembershipPlan}**.
 > closed: the catalogue batch by making the entities tenantless (§7a/§7b), `Referral/Validate` by
 > the market scope. The "collapse" column describes a null-tenant world that no longer exists — an
 > anonymous request that reads a stamped table now has a tenant before its first read, or is refused.
+>
+> **The `Order/Lookup` row's credential is superseded (2026-09-22).** It is no longer
+> `DisplayOrderNumber` + `CustomerEmail` — that pair, plus the confirmation code, was served on the
+> order detail to every assigned cleaner, so the "credentialed" verdict held only against a stranger.
+> The four guest-order routes now key on a per-order access token (256 bits, SHA-256 at rest) that
+> reaches only the guest's mailbox. The verdict — credentialed, fails shut, cannot enumerate — still
+> stands; the credential does not. → [Guest order lookup](/flows/booking-and-pricing#guest-order-lookup)
 
 **Two reads the catalog batch must NOT forget (both are anonymous reads of `ITenantEntity` data the
 original prose did not enumerate):**

@@ -12,10 +12,11 @@ final class GuestOrderWireTests: XCTestCase {
     private static let previewPath = "/api/Order/GuestCancellationPreview"
     private static let cancelPath = "/api/Order/CancelGuest"
 
+    private static let token = "P8Jw-2hQ_xTokenFromTheEmail"
     private static let lookup = #"{"id":"o-1","displayOrderNumber":"CZ-123","cleaningDateTime":"2026-09-19T10:00:00Z","#
-        + #""totalPrice":90.0,"orderStatus":{"value":2},"currency":{"code":"EUR"},"confirmationCode":"secret-code"}"#
+        + #""totalPrice":90.0,"orderStatus":{"value":2},"currency":{"code":"EUR"},"confirmationCode":"ref-1"}"#
     private static let preview = #"{"orderId":"o-1","tier":3,"feeRate":0.25,"feeAmount":22.5,"refundAmount":67.5,"#
-        + #""totalPrice":90.0,"currencyCode":"EUR","expressWaiverForfeitedOnCancel":false}"#
+        + #""totalPrice":90.0,"currencyCode":"EUR","expressWaiverForfeitedOnCancel":false,"oopsWindowMinutes":15}"#
     private static let receipt = #"{"orderId":"o-1","feeRate":0.25,"refundAmount":67.5,"actualRefundAmount":12.0,"#
         + #""totalPrice":90.0,"refundInitiated":true}"#
     private static let notFound = #"{"type":"order.not_found","detail":"Order not found"}"#
@@ -45,7 +46,8 @@ final class GuestOrderWireTests: XCTestCase {
             basePath: "https://api.test"
         )
         CodableHelper.jsonDecoder = ApiDateDecoding.decoder(primary: { CodableHelper.dateFormatter.date(from: $0) })
-        key = try XCTUnwrap(GuestOrderKey(number: "CZ-123", email: "guest@example.test", code: "secret-code"))
+        let link = "https://cleansia.cz/track-order?orderNumber=CZ-123&token=\(Self.token)"
+        key = try XCTUnwrap(GuestOrderKey(pasted: link))
     }
 
     override func tearDown() {
@@ -54,21 +56,21 @@ final class GuestOrderWireTests: XCTestCase {
         super.tearDown()
     }
 
-    /// The secret is the whole credential, so it travels in a POST body and the device's own session
-    /// stays out of the request: a Bearer beside the key would let a stale account answer for a booking
-    /// it never owned.
+    /// The token is the whole credential, so it travels in a POST body and the device's own session
+    /// stays out of the request: a Bearer beside the token would let a stale account answer for a
+    /// booking it never owned.
     private func credentials(at path: String) throws -> [String: Any] {
         let request = try XCTUnwrap(GuestWireRecorder.request(ofPath: path), "no request to \(path)")
         XCTAssertEqual(request.httpMethod, "POST")
         XCTAssertNil(request.value(forHTTPHeaderField: "Authorization"), "\(path) must not carry the session")
         let body = try XCTUnwrap(GuestWireRecorder.json(ofPath: path))
-        XCTAssertEqual(body["displayOrderNumber"] as? String, "CZ-123")
-        XCTAssertEqual(body["email"] as? String, "guest@example.test")
-        XCTAssertEqual(body["confirmationCode"] as? String, "secret-code")
+        XCTAssertEqual(body["accessToken"] as? String, Self.token)
+        XCTAssertNil(body["displayOrderNumber"])
+        XCTAssertNil(body["confirmationCode"])
         return body
     }
 
-    func testLookupPostsTheCredentialsInTheBodyAndMapsTheOrderWithoutKeepingItsSecret() async throws {
+    func testLookupPostsTheAccessTokenInTheBodyAndMapsTheOrderWithoutKeepingIt() async throws {
         GuestWireRecorder.responses[Self.lookupPath] = (200, Data(Self.lookup.utf8))
 
         let result = await client.lookup(key)
@@ -80,10 +82,10 @@ final class GuestOrderWireTests: XCTestCase {
         XCTAssertEqual(order.totalPrice, 90)
         XCTAssertEqual(order.status, ._2)
         XCTAssertEqual(order.cleaningDateTime, ISO8601DateFormatter().date(from: "2026-09-19T10:00:00Z"))
-        XCTAssertFalse(String(describing: order).contains("secret-code"))
+        XCTAssertFalse(String(describing: order).contains(Self.token))
     }
 
-    func testThePreviewPostsTheCredentialsAndKeepsTheServersTierAndAmounts() async throws {
+    func testThePreviewPostsTheAccessTokenAndKeepsTheServersTierAndAmounts() async throws {
         GuestWireRecorder.responses[Self.previewPath] = (200, Data(Self.preview.utf8))
 
         let result = await client.cancellationQuote(key)
@@ -95,6 +97,7 @@ final class GuestOrderWireTests: XCTestCase {
         XCTAssertEqual(quote.quote.feeAmount, 22.5)
         XCTAssertEqual(quote.quote.refundAmount, 67.5)
         XCTAssertEqual(quote.quote.currencyCode, "EUR")
+        XCTAssertEqual(quote.quote.oopsWindowMinutes, 15)
     }
 
     func testCancellationSendsTheReasonAndLanguageAndKeepsTheActualRefundApartFromThePolicyOne() async throws {
@@ -138,10 +141,15 @@ final class GuestOrderWireTests: XCTestCase {
     }
 
     /// The order id is what pins a quote to the booking on screen, so it is refused with the figures.
-    func testAQuoteWithoutItsOrderIdOrTierIsRefusedRatherThanShown() async {
+    func testAQuoteWithoutItsOrderIdOrTierOrGraceIsRefusedRatherThanShown() async {
+        GuestWireRecorder.responses[Self.previewPath] = (200, Data(Self.preview.utf8))
+        let intact = await client.cancellationQuote(key)
+        XCTAssertNotNil(intact.loadedValue, "the intact preview is refused, so every refusal below proves nothing")
+
         for body in [
             Self.preview.replacingOccurrences(of: "\"orderId\":\"o-1\",", with: ""),
-            Self.preview.replacingOccurrences(of: "\"tier\":3,", with: "")
+            Self.preview.replacingOccurrences(of: "\"tier\":3,", with: ""),
+            Self.preview.replacingOccurrences(of: ",\"oopsWindowMinutes\":15", with: "")
         ] {
             GuestWireRecorder.responses[Self.previewPath] = (200, Data(body.utf8))
 
@@ -167,14 +175,21 @@ final class GuestOrderWireTests: XCTestCase {
         }
     }
 
-    func testTheKeyIsTrimmedAndRefusedBlank() {
-        XCTAssertNil(GuestOrderKey(number: " ", email: "a@b.cz", code: "x"))
-        XCTAssertNil(GuestOrderKey(number: "CZ-1", email: "", code: "x"))
-        XCTAssertNil(GuestOrderKey(number: "CZ-1", email: "a@b.cz", code: "\n"))
-        let key = GuestOrderKey(number: " CZ-1 ", email: " a@b.cz ", code: " x ")
-        XCTAssertEqual(key?.number, "CZ-1")
-        XCTAssertEqual(key?.email, "a@b.cz")
-        XCTAssertEqual(key?.code, "x")
+    func testThePastedLinkIsReducedToItsTokenAndABlankOneIsRefused() {
+        XCTAssertNil(GuestOrderKey(pasted: "   "))
+        XCTAssertEqual(GuestOrderKey(pasted: " tok-1 ")?.accessToken, "tok-1")
+        XCTAssertEqual(
+            GuestOrderKey(pasted: "https://cleansia.cz/track-order?orderNumber=CZ-1&token=tok-1")?.accessToken,
+            "tok-1"
+        )
+        XCTAssertEqual(
+            GuestOrderKey(pasted: "https://cleansia.cz/track-order?token=tok-1&email=a%40b.cz")?.accessToken,
+            "tok-1"
+        )
+        XCTAssertEqual(
+            GuestOrderKey(pasted: "https://cleansia.cz/track-order?accesstoken=x")?.accessToken,
+            "https://cleansia.cz/track-order?accesstoken=x"
+        )
     }
 }
 

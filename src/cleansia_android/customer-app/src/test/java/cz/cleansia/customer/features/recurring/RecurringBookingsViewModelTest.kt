@@ -53,6 +53,7 @@ class RecurringBookingsViewModelTest {
         startsOn = "2026-08-01T10:00:00Z",
         endsOn = null,
         isActive = true,
+        requiresPaymentMethodChange = false,
     )
 
     @Before

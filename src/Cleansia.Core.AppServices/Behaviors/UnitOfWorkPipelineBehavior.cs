@@ -17,18 +17,27 @@ public class UnitOfWorkPipelineBehavior<TRequest, TResponse>(IUnitOfWork unitOfW
             return await next(cancellationToken);
         }
 
-        var response = await next(cancellationToken);
-
-        // ADR-0002 D4 (F11) defense-in-depth: commit ONLY when the inner pipeline produced a
-        // successful BusinessResult. Combined with the Validation-outer registration order, a future
-        // re-swap of the registration cannot resurrect F11 (a committed validation failure). A
-        // PagedData<T> query never reaches this branch: the IsNotCommand guard above skips it.
-        if (response is BusinessResult { IsSuccess: true })
+        try
         {
-            await unitOfWork.CommitAsync(cancellationToken);
-        }
+            var response = await next(cancellationToken);
 
-        return response;
+            // ADR-0002 D4 (F11) defense-in-depth: commit ONLY when the inner pipeline produced a
+            // successful BusinessResult. Combined with the Validation-outer registration order, a future
+            // re-swap of the registration cannot resurrect F11 (a committed validation failure). A
+            // PagedData<T> query never reaches this branch: the IsNotCommand guard above skips it.
+            if (response is BusinessResult { IsSuccess: true })
+                await unitOfWork.CommitAsync(cancellationToken);
+            else
+                unitOfWork.Rollback();
+
+            return response;
+        }
+        catch
+        {
+            // A failed command releases its credit locks now, not when its scope is disposed.
+            unitOfWork.Rollback();
+            throw;
+        }
     }
 
     private static bool IsNotCommand(TRequest request)

@@ -694,7 +694,6 @@ namespace Cleansia.Infra.Database.Migrations
                     TimeZoneId = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: true),
                     PhonePrefix = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: true),
                     StandardVatRate = table.Column<decimal>(type: "numeric(5,4)", precision: 5, scale: 4, nullable: false),
-                    ReducedVatRate = table.Column<decimal>(type: "numeric(5,4)", precision: 5, scale: 4, nullable: true),
                     TaxIdLabel = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: true),
                     TaxIdFormat = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true),
                     RegistrationNumberLabel = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: true),
@@ -1462,6 +1461,8 @@ namespace Cleansia.Infra.Database.Migrations
                     CancellationFeeRate = table.Column<decimal>(type: "numeric(5,4)", precision: 5, scale: 4, nullable: true),
                     CancelledBy = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: true),
                     CancellationReason = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),
+                    ExpressSurchargeAmount = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: false, defaultValue: 0m),
+                    LanguageCode = table.Column<string>(type: "character varying(5)", maxLength: 5, nullable: true),
                     TierDiscountAmount = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: true),
                     TierAtPurchase = table.Column<int>(type: "integer", nullable: true),
                     PromoDiscountAmount = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: true),
@@ -1493,7 +1494,7 @@ namespace Cleansia.Infra.Database.Migrations
                         column: x => x.CustomerAddressId,
                         principalTable: "Addresses",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
                         name: "FK_Orders_Currencies_CurrencyId",
                         column: x => x.CurrencyId,
@@ -2206,7 +2207,7 @@ namespace Cleansia.Infra.Database.Migrations
                 {
                     Id = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
                     OrderId = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
-                    UserId = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
+                    UserId = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: true),
                     Reason = table.Column<int>(type: "integer", nullable: false),
                     Description = table.Column<string>(type: "character varying(2000)", maxLength: 2000, nullable: false),
                     Status = table.Column<int>(type: "integer", nullable: false),
@@ -2244,6 +2245,41 @@ namespace Cleansia.Infra.Database.Migrations
                         name: "FK_Disputes_Users_UserId",
                         column: x => x.UserId,
                         principalTable: "Users",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "GuestOrderAccessTokens",
+                columns: table => new
+                {
+                    Id = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
+                    OrderId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
+                    TokenHash = table.Column<string>(type: "character varying(64)", maxLength: 64, nullable: false),
+                    ExpiresOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
+                    RevokedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    IsActive = table.Column<bool>(type: "boolean", nullable: false),
+                    CreatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
+                    CreatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
+                    UpdatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
+                    UpdatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    DeactivatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
+                    DeactivatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_GuestOrderAccessTokens", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_GuestOrderAccessTokens_Orders_OrderId",
+                        column: x => x.OrderId,
+                        principalTable: "Orders",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_GuestOrderAccessTokens_Tenants_TenantId",
+                        column: x => x.TenantId,
+                        principalTable: "Tenants",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
                 });
@@ -3729,6 +3765,22 @@ namespace Cleansia.Infra.Database.Migrations
                 column: "UserId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_GuestOrderAccessTokens_OrderId_RevokedOn",
+                table: "GuestOrderAccessTokens",
+                columns: new[] { "OrderId", "RevokedOn" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_GuestOrderAccessTokens_TenantId",
+                table: "GuestOrderAccessTokens",
+                column: "TenantId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_GuestOrderAccessTokens_TokenHash",
+                table: "GuestOrderAccessTokens",
+                column: "TokenHash",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
                 name: "IX_LegalDocuments_Audience_Type_CountryId_Version",
                 table: "LegalDocuments",
                 columns: new[] { "Audience", "Type", "CountryId", "Version" },
@@ -4750,6 +4802,9 @@ namespace Cleansia.Infra.Database.Migrations
 
             migrationBuilder.DropTable(
                 name: "GdprRequests");
+
+            migrationBuilder.DropTable(
+                name: "GuestOrderAccessTokens");
 
             migrationBuilder.DropTable(
                 name: "LiveActivityTokens");

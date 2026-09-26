@@ -1,3 +1,5 @@
+using Cleansia.Core.Domain.Enums;
+
 namespace Cleansia.Infra.Services.Pdf.Models;
 
 public record ReceiptPdfData
@@ -11,11 +13,38 @@ public record ReceiptPdfData
     public string? CustomerAddress { get; init; }
     public required List<ReceiptLineItem> Services { get; init; }
     public required List<ReceiptLineItem> Packages { get; init; }
-    public List<string> Extras { get; init; } = [];
+
+    /// <summary>Extras, each at the price it was bought at.</summary>
+    public List<ReceiptLineItem> Extras { get; init; } = [];
+
+    /// <summary>The express surcharge charged on this booking, zero when none was.</summary>
+    public decimal ExpressSurcharge { get; init; }
+
+    /// <summary>
+    /// The three discount sources, separately, because each is a different promise to the customer.
+    /// Measured against the CHARGED price (surcharge included), which is what makes the item lines and
+    /// the total reconcile.
+    /// </summary>
+    public decimal TierDiscount { get; init; }
+    public decimal MembershipDiscount { get; init; }
+    public decimal PromoDiscount { get; init; }
+
     public required decimal Total { get; init; }
     public required string Currency { get; init; }
-    public required string PaymentStatus { get; init; }
-    public string? PaymentType { get; init; }
+
+    /// <summary>
+    /// The enum values, not their names: the word for each is chosen from <see cref="ReceiptLabels"/> in
+    /// the document's language.
+    /// </summary>
+    public required PaymentStatus PaymentStatus { get; init; }
+    public required PaymentType PaymentType { get; init; }
+
+    /// <summary>
+    /// The language the document is written in — the customer's, as recorded on the receipt row, so a
+    /// re-render reproduces the document rather than re-deciding it.
+    /// </summary>
+    public string LanguageCode { get; init; } = "en";
+
     public string? CleaningDate { get; init; }
     public int? Rooms { get; init; }
     public int? Bathrooms { get; init; }
@@ -33,12 +62,13 @@ public record ReceiptPdfData
     public decimal AmountDueOnCard { get; init; }
 
     // VAT breakdown — populated from Order at receipt generation time.
-    // When IsVatPayer is false, NonVatPayerNotice is shown instead of VAT rows.
+    // When IsVatPayer is false, the statutory non-payer notice is shown instead of VAT rows — and the
+    // company's VAT number is withheld, because a document cannot both disclaim VAT registration and
+    // print a VAT registration.
     public bool IsVatPayer { get; init; }
     public decimal? NetAmount { get; init; }
     public decimal? VatAmount { get; init; }
     public decimal? VatRate { get; init; }
-    public string? NonVatPayerNotice { get; init; }
 
     // Fiscal registration — set after fiscal authority responds.
     // Null when the country has no fiscal system or registration failed.

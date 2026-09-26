@@ -91,6 +91,8 @@ struct BookingSheetView: View {
             switch event {
             case .selectionPrunedForMarket:
                 snackbar.showInfo(L10n.Booking.marketSelectionPruned)
+            case .cashCleared:
+                snackbar.showInfo(L10n.Booking.cashCleared)
             }
         }
         .snackbarHost(snackbar, bottomInset: Self.footerSnackbarInset)
@@ -108,6 +110,8 @@ struct BookingSheetView: View {
         case .profileIncomplete:
             slideResetCount += 1
             onCompleteProfile()
+        case .paymentMethodCleared:
+            slideResetCount += 1
         case let .failed(error):
             slideResetCount += 1
             // Prefer the server's own business error — "no cleaner is available

@@ -29,6 +29,11 @@ struct CancellationPolicyCard: View {
                 value: L10n.Booking.cancelTier3Value,
                 valueColor: CleansiaColors.error
             )
+            Text(L10n.Booking.cancelGraceNote)
+                .font(CleansiaTypography.labelMedium)
+                .foregroundColor(CleansiaColors.onSurfaceVariant)
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(.top, Spacing.xxs)
         }
         .padding(Spacing.m)
         .background(CleansiaColors.surface)

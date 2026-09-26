@@ -42,9 +42,6 @@ public class CountryConfigurationEntityConfiguration : AuditableEntityConfigurat
         builder.Property(e => e.StandardVatRate)
             .HasPrecision(5, 4);
 
-        builder.Property(e => e.ReducedVatRate)
-            .HasPrecision(5, 4);
-
         builder.Property(e => e.TaxIdLabel)
             .HasMaxLength(50);
 

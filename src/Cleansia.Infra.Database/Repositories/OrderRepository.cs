@@ -10,10 +10,10 @@ namespace Cleansia.Infra.Database.Repositories;
 
 public class OrderRepository(CleansiaDbContext context) : BaseRepository<Order>(context), IOrderRepository
 {
-    public async Task<IReadOnlyList<Order>> GetOrdersByPhoneNumberAsync(string phoneNumber, CancellationToken cancellationToken)
+    public async Task<IReadOnlyList<Order>> GetOwnOrdersByPhoneNumberAsync(string userId, string phoneNumber, CancellationToken cancellationToken)
     {
         return await GetDbSet()
-            .Where(x => x.CustomerPhone == phoneNumber)
+            .Where(x => x.UserId == userId && x.CustomerPhone == phoneNumber)
             .ToListAsync(cancellationToken);
     }
 
@@ -201,6 +201,7 @@ public class OrderRepository(CleansiaDbContext context) : BaseRepository<Order>(
         return orders
             .Include(o => o.OrderStatusHistory)
             .Include(o => o.Currency)
+            .Include(o => o.SelectedExtras)
             .Include(o => o.SelectedServices)
                 .ThenInclude(s => s.Service)
             .Include(o => o.SelectedPackages)
@@ -231,12 +232,15 @@ public class OrderRepository(CleansiaDbContext context) : BaseRepository<Order>(
                 .ThenInclude(op => op.Package)
                     .ThenInclude(p => p.IncludedServices)
                         .ThenInclude(s => s.Service)
+            .Include(o => o.SelectedExtras)
+                .ThenInclude(e => e.Extra)
             .Include(o => o.AssignedEmployees)
                 .ThenInclude(ae => ae.Employee)
                     .ThenInclude(e => e.User)
             .Include(o => o.Receipt)
             .Include(o => o.CustomerAddress)
                 .ThenInclude(ca => ca.Country)
+            .Include(o => o.User)
             .AsSplitQuery()
             .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
     }

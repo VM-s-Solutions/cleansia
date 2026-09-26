@@ -61,7 +61,7 @@ public class ReceiptServiceFiscalIdempotencyTokenTests
             .Setup(r => r.GetActiveCompanyInfoAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(company);
 
-        var country = Country.Create("Germany", "DE", "DE");
+        var country = Country.Create("Germany", "DEU", "DE");
         _countryRepository
             .Setup(r => r.GetByIdAsync(CountryId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(country);
@@ -133,7 +133,7 @@ public class ReceiptServiceFiscalIdempotencyTokenTests
         var order = BuildOrder();
         var receipt = BuildReceipt();
 
-        await CreateService().RealizeFiscalAndPdfAsync(order, receipt, LanguageCode, CancellationToken.None);
+        await CreateService().RealizeFiscalAndPdfAsync(order, receipt, CancellationToken.None);
 
         Assert.Single(_provider.SeenKeys);
         Assert.Equal(ReceiptNumber, _provider.SeenKeys[0]);
@@ -146,7 +146,7 @@ public class ReceiptServiceFiscalIdempotencyTokenTests
         var receipt = BuildReceipt();
         var service = CreateService();
 
-        await service.RealizeFiscalAndPdfAsync(order, receipt, LanguageCode, CancellationToken.None);
+        await service.RealizeFiscalAndPdfAsync(order, receipt, CancellationToken.None);
         await service.RetryFiscalRegistrationAsync(receipt, order, CancellationToken.None);
 
         Assert.Equal(2, _provider.SeenKeys.Count);

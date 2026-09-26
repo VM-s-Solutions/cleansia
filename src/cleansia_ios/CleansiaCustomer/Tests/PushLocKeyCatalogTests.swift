@@ -20,7 +20,6 @@ final class PushLocKeyCatalogTests: XCTestCase {
     private let languages = ["en", "cs", "sk", "uk", "ru"]
     private let events = [
         "order.payment_confirmed",
-        "order.confirmed",
         "order.cleaner_assigned",
         "order.on_the_way",
         "order.in_progress",
@@ -36,6 +35,7 @@ final class PushLocKeyCatalogTests: XCTestCase {
         "membership.expiring_soon",
         "membership.cancellation_effective",
         "order.new_available",
+        "order.seat_open",
         "order.preferred_offer",
         "order.preferred_offer_closed",
         "order.assignment_cancelled",
@@ -54,7 +54,6 @@ final class PushLocKeyCatalogTests: XCTestCase {
     /// backend put in it.
     private let orderNumberArgEvents: Set<String> = [
         "order.payment_confirmed",
-        "order.confirmed",
         "order.cleaner_assigned",
         "order.on_the_way",
         "order.in_progress",
@@ -64,6 +63,7 @@ final class PushLocKeyCatalogTests: XCTestCase {
         "order.starting_soon",
         "recurring.scheduled",
         "order.new_available",
+        "order.seat_open",
         "order.preferred_offer",
         "order.preferred_offer_closed",
         "order.assignment_cancelled",
@@ -164,10 +164,7 @@ final class PushLocKeyCatalogTests: XCTestCase {
         for language in languages {
             let table = try localizableTable(for: language)
             let word = try XCTUnwrap(cleanerWord[language])
-            for key in [
-                "push.order.payment_confirmed.title", "push.order.payment_confirmed.body",
-                "push.order.confirmed.title", "push.order.confirmed.body"
-            ] {
+            for key in ["push.order.payment_confirmed.title", "push.order.payment_confirmed.body"] {
                 let value = try XCTUnwrap(table[key], "\(key) in \(language)")
                 XCTAssertNil(
                     value.range(of: word, options: .caseInsensitive),
@@ -258,17 +255,6 @@ final class PushLocKeyCatalogTests: XCTestCase {
                         "\(key) says \(word) in \(language): \(value)"
                     )
                 }
-            }
-        }
-    }
-
-    func testPaymentConfirmationRetainsTheLegacyCopyInEveryLanguage() throws {
-        for language in languages {
-            let table = try localizableTable(for: language)
-            for suffix in ["title", "body"] {
-                let current = try XCTUnwrap(table["push.order.payment_confirmed.\(suffix)"], language)
-                let legacy = try XCTUnwrap(table["push.order.confirmed.\(suffix)"], language)
-                XCTAssertEqual(current, legacy, language)
             }
         }
     }

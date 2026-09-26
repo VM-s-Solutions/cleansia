@@ -33,11 +33,6 @@ export const selectMarketNoShowCredit = createSelector(
   (market: MarketListItem | null) => market?.noShowCredit ?? null
 );
 
-export const selectMarketInsuranceCoverageAmount = createSelector(
-  selectMarket,
-  (market: MarketListItem | null) => market?.insuranceCoverageAmount ?? null
-);
-
 export const selectMarketLoadFailed = createSelector(
   selectCustomerMarketState,
   (state: CustomerMarketState) => state.loadFailed

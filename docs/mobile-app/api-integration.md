@@ -195,12 +195,23 @@ the Bearer is withheld by path match. The device and time-zone headers are still
 | Match | `path.contains(...)`, case-insensitive | `path.lowercased().contains(...)` |
 
 iOS carries a per-app list because the **customer host's anonymous surface is wider**: a guest can
-price and place an order before signing in, so `/api/Order/Quote`, `/api/Order/CreateOrder`,
-`/api/Payment/CreateOrder`, the catalogue `GetOverview` endpoints, `/api/Membership/GetPlans`,
-`/api/Order/Lookup(Batch)` and `/api/Referral/Validate` are anonymous there and on no other host. Of
-those, `Quote`, `CreateOrder` and `Payment/CreateOrder` are **dual-use** — anonymous *and* meaningful
-for a signed-in user — so the customer allow-list marks them and the Bearer is attached when one
-exists.
+price and place an order before signing in, and can track and cancel it afterwards, so
+`/api/Order/Quote`, `/api/Order/CreateOrder`, `/api/Payment/CreateOrder`, the catalogue `GetOverview`
+endpoints, `/api/Membership/GetPlans`, `/api/Order/Lookup(Batch)`,
+`/api/Order/GuestCancellationPreview`, `/api/Order/CancelGuest` and `/api/Referral/Validate` are
+anonymous there and on no other host. Of those, `Quote`, `CreateOrder` and `Payment/CreateOrder` are
+**dual-use** — anonymous *and* meaningful for a signed-in user — so the customer allow-list marks them
+and the Bearer is attached when one exists.
+
+The guest-order paths are **not** dual-use, and that is the point: they authorise on the booking's
+access token, so a stale Bearer from a session that does not own the booking must not ride along.
+Both clients drop it by path match, and both pin it —
+`AuthInterceptorAuthorizationTest.guest order endpoints omit stale bearer while signed in
+cancellation keeps it` and
+`AnonymousAllowListTests.testGuestOrderPathsStayTokenlessWhileTheAccountCancelStaysAuthed` assert the
+same pair: no Bearer on `Lookup` / `GuestCancellationPreview` / `CancelGuest`, a Bearer on the
+signed-in `/api/Order/Cancel` and `/api/Order/CancellationPreview`, which are different routes.
+→ [Guest order lookup](/flows/booking-and-pricing#guest-order-lookup)
 
 > `/api/Auth/Logout` is **`[Authorize]`**, not anonymous: it needs the Bearer to identify the session
 > and carries the refresh token in the body to revoke it. It must never join the allow-list, and it

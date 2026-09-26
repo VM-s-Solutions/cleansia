@@ -104,13 +104,18 @@ const dir = (rel) => (isAbsolute(rel) ? resolve(rel) : join(REPO, rel));
 // The enclosing C# method/local-function name for a 0-based line index, or "" if none found.
 // Walks backwards to the nearest `<modifiers> <returnType> <Name>(` signature, skipping the
 // generic-suffix `> Name(` case. Heuristic, sufficient for the dispute-guard allowlist below.
+//
+// `new Foo(` on its own line reads as `<type> <Name>(` to the signature pattern — the modifier
+// alternation admits bare whitespace, so `new` lands where the return type goes. A wrapped
+// constructor call above the statement being classified therefore renamed the enclosing method to
+// the type being constructed, and an allowlisted site started reporting as a violation.
+const NOT_A_METHOD_NAME = new Set(["if", "while", "for", "switch", "foreach", "catch"]);
 function enclosingMethod(lines, idx) {
-    const sig = /^\s*(?:public|private|protected|internal|static|async|override|virtual|sealed|\s)+[\w.<>\[\],?]+\s+(\w+)\s*\(/;
+    const sig = /^\s*(?:public|private|protected|internal|static|async|override|virtual|sealed|\s)+([\w.<>\[\],?]+)\s+(\w+)\s*\(/;
     for (let i = idx; i >= 0; i--) {
         const m = lines[i].match(sig);
-        if (m && m[1] !== "if" && m[1] !== "while" && m[1] !== "for" &&
-            m[1] !== "switch" && m[1] !== "foreach" && m[1] !== "catch")
-            return m[1];
+        if (m && m[1] !== "new" && m[1] !== "return" && m[1] !== "await" && !NOT_A_METHOD_NAME.has(m[2]))
+            return m[2];
     }
     return "";
 }

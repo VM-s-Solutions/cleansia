@@ -114,7 +114,8 @@ public class UpdateRecurringBookingMembershipGuardTests
     private UpdateRecurringBooking.Validator CreateValidator() =>
         new(_templateRepository.Object, _membershipRepository.Object, _session.Object,
             _orderRepository.Object, _savedAddressRepository.Object,
-            OrderMarketDoubles.Trading(CreateOrderTestData.DefaultCurrency()), OrderMarketDoubles.Servicing("country-cz"));
+            OrderMarketDoubles.Trading(CreateOrderTestData.DefaultCurrency()), OrderMarketDoubles.Servicing("country-cz"),
+            CatalogueDoubles.Services(), CatalogueDoubles.Packages());
 
     private void ArrangeActiveMembership()
     {

@@ -42,9 +42,8 @@ class GuestOrderViewModel @Inject constructor(
     private val _showCancellation = MutableStateFlow(false)
     val showCancellation = _showCancellation.asStateFlow()
 
-    // Credentials live only while this screen owns the lookup; never in a route or saved state.
-    private class Credentials(val number: String, val email: String, val code: String)
-    private var credentials: Credentials? = null
+    // The token lives only while this screen owns the lookup; never in a route or saved state.
+    private var accessToken: String? = null
     private var generation = 0
     private var previewGeneration = 0
     private var lookupJob: Job? = null
@@ -57,30 +56,30 @@ class GuestOrderViewModel @Inject constructor(
         lookupJob?.cancel()
         previewJob?.cancel()
         cancelJob?.cancel()
-        credentials = null
+        accessToken = null
         _state.value = GuestOrderUiState.Empty
         _preview.value = CancellationPreviewUiState.Loading
         _cancelState.value = ActionState.Idle
         _showCancellation.value = false
     }
 
-    fun onCredentialsChanged() {
+    fun onLinkChanged() {
         if (_cancelState.value !is ActionState.Submitting) clear()
     }
 
-    fun lookup(number: String, email: String, code: String) {
+    fun lookup(pastedLink: String) {
         if (_cancelState.value is ActionState.Submitting || _state.value is GuestOrderUiState.Loading) return
         clear()
-        val key = Credentials(number.trim(), email.trim(), code.trim())
-        if (key.number.isBlank() || key.email.isBlank() || key.code.isBlank()) {
+        val token = guestAccessTokenFrom(pastedLink)
+        if (token.isBlank()) {
             _state.value = GuestOrderUiState.Error(context.getString(R.string.guest_order_required))
             return
         }
-        credentials = key
+        accessToken = token
         val current = generation
         _state.value = GuestOrderUiState.Loading
         lookupJob = viewModelScope.launch {
-            val result = repository.lookup(key.number, key.email, key.code)
+            val result = repository.lookup(token)
             if (current != generation) return@launch
             _state.value = when (result) {
                 is ApiResult.Success -> GuestOrderUiState.Loaded(result.data)
@@ -107,7 +106,7 @@ class GuestOrderViewModel @Inject constructor(
 
     fun loadPreview() {
         if (!_showCancellation.value || _cancelState.value is ActionState.Submitting) return
-        val key = credentials ?: return
+        val token = accessToken ?: return
         val order = (_state.value as? GuestOrderUiState.Loaded)?.order ?: return
         val current = generation
         val currentPreview = ++previewGeneration
@@ -115,7 +114,7 @@ class GuestOrderViewModel @Inject constructor(
         _preview.value = CancellationPreviewUiState.Loading
         _cancelState.value = ActionState.Idle
         previewJob = viewModelScope.launch {
-            val result = repository.preview(key.number, key.email, key.code)
+            val result = repository.preview(token)
             if (current != generation || currentPreview != previewGeneration) return@launch
             _preview.value = when (result) {
                 is ApiResult.Success -> {
@@ -136,7 +135,7 @@ class GuestOrderViewModel @Inject constructor(
     }
 
     fun cancel(reason: String?) {
-        val key = credentials ?: return
+        val token = accessToken ?: return
         val order = (_state.value as? GuestOrderUiState.Loaded)?.order ?: return
         if (!_showCancellation.value || !customerCanCancelOrder(order.status) ||
             reason.isNullOrBlank() || reason.length > CANCEL_REASON_MAX_LENGTH ||
@@ -145,7 +144,7 @@ class GuestOrderViewModel @Inject constructor(
         val current = generation
         _cancelState.value = ActionState.Submitting
         cancelJob = viewModelScope.launch {
-            val result = repository.cancel(key.number, key.email, key.code, reason, settings.emailLanguageTag())
+            val result = repository.cancel(token, reason, settings.emailLanguageTag())
             if (current != generation) return@launch
             when (result) {
                 is ApiResult.Success -> {
@@ -156,7 +155,7 @@ class GuestOrderViewModel @Inject constructor(
                     } else {
                         context.getString(R.string.order_cancel_success_no_refund)
                     }
-                    credentials = null
+                    accessToken = null
                     _state.value = GuestOrderUiState.Cancelled(message)
                     _showCancellation.value = false
                     _cancelState.value = ActionState.Idle

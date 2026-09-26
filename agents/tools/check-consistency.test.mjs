@@ -101,6 +101,32 @@ public class H
     assert.equal(r.b10.length, 0, `expected 0 B10, got: ${r.out}`);
 });
 
+// A wrapped constructor call above the state write used to rename the enclosing method: `new
+// RefundRequest(` reads as `<type> <Name>(` to the signature pattern, so the allowlisted
+// ResolveDispute.Handle resolved as "RefundRequest" and reported a violation the moment the refund
+// was attempted before the resolution was written.
+test("allows ResolveDispute.Handle with a wrapped constructor call above the state write", () => {
+    const r = run({
+        fileName: "ResolveDispute.cs",
+        code: `namespace X;
+public class ResolveDispute
+{
+    public async Task<BusinessResult> Handle(Command request, CancellationToken ct)
+    {
+        var refund = await refundService.IssueRefundAsync(
+            new RefundRequest(
+                dispute.OrderId,
+                request.RefundAmount.Value),
+            ct);
+
+        dispute.Resolve("a", null, "n");
+        return BusinessResult.Success();
+    }
+}`,
+    });
+    assert.equal(r.b10.length, 0, `expected 0 B10, got: ${r.out}`);
+});
+
 // HandleChargeback no longer gets a direct-call exception: it routes its new dispute's escalation
 // through dispute.UpdateStatus(Escalated) (the guard), so a *direct* Escalate inside it is now a
 // genuine B10 violation. This pins that the funnel is enforced going forward (it regresses if anyone

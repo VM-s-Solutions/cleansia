@@ -332,8 +332,8 @@ result is a per-employee `EmployeePayConfig` in that same currency:
 
 ```
 service:  BasePay = BasePrice × m      ExtraPerRoom = PerRoomPrice × m      (rounded to 2 places)
-package:  BasePay = Price × m
-          ExtraPerBathroom = 0, DistanceRatePerKm = 0, description "Auto-generated from {grade} grade template"
+package:  BasePay = Price × m          ExtraPerRoom = 0
+          ExtraPerBathroom = 0, description "Auto-generated from {grade} grade template"
 ```
 
 An entry with no price row in that currency is **skipped and counted in `skippedCount`**, never
@@ -407,10 +407,12 @@ balance block per account, each labelled with its currency code, and the two act
 | Issue credit | `IssueCustomerCredit` | Chosen by the admin in the dialog from the active currencies; must exist and be active (`currency.not_found`, `currency.invalid`). Capped by the unit-free sanity guard of 10 000 in whatever currency it names. |
 | Expire credit | `ExpireCustomerCredit` | The account the admin clicked **Expire** on — the dialog carries that account's `currencyId` and balance. Required on the wire; unknown is `currency.not_found`. |
 
-**A discharge takes one account's whole balance and leaves the others alone.** The reason the action
-exists is erasure: `GdprDeletionService` refuses to erase a customer while any balance is positive and
-there are no payouts, so the admin discharges each funded account in turn — one note per currency in
-the ledger — and the erasure proceeds. The command drains the named account to zero, writes one
+**A discharge takes one account's whole balance and leaves the others alone.** It is **not** a step
+before an erasure: since 2026-09-24 a completed erasure writes off every positive balance itself, in
+every currency, and a positive balance no longer refuses one (the dialog says so) →
+[Credit on a deleted account](/product/business-rules#credit-on-account-deletion). The erasure and
+*Retry* confirmations on the data-protection page warn that the customer's unused credit is written off,
+not paid out and not restorable. The command drains the named account to zero, writes one
 `Expired` ledger row on it, and answers `amountExpired` with the account's `currencyCode`; a discharge
 in a currency the customer holds nothing in is a no-op that answers zero, not an error. The old refusal
 for a customer funded in two currencies (`credit.held_in_multiple_currencies`) is gone — it had no

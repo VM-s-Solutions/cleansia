@@ -65,6 +65,10 @@ public class CreateCompanyInfo
                 .WithMessage(BusinessErrorMessage.MaxLength);
 
             RuleFor(x => x.VatNumber)
+                .Cascade(CascadeMode.Stop)
+                .NotEmpty()
+                .WithMessage(BusinessErrorMessage.Required)
+                .When(x => x.IsVatPayer, ApplyConditionTo.CurrentValidator)
                 .MaximumLength(50)
                 .WithMessage(BusinessErrorMessage.MaxLength);
 

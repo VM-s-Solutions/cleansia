@@ -193,6 +193,19 @@ android {
     }
 }
 
+// Copy guards read every locale's strings.xml, and the grace claim reads the backend's
+// BookingPolicy.cs, straight off disk. Neither changes a compiled class, so undeclared, a copy-only
+// edit or a changed policy figure leaves this task UP-TO-DATE or FROM-CACHE with the old verdict.
+tasks.withType<Test>().configureEach {
+    inputs.files(fileTree("src/main/res") { include("values*/strings.xml") })
+        .withPropertyName("localeStrings")
+        .withPathSensitivity(PathSensitivity.RELATIVE)
+
+    inputs.file("$rootDir/../Cleansia.Core.AppServices/Features/Orders/BookingPolicy.cs")
+        .withPropertyName("bookingPolicy")
+        .withPathSensitivity(PathSensitivity.NONE)
+}
+
 // ─── Release signing assertion ──────────────────────────────────────
 // The `if (keystoreFile.exists())` guard above is what keeps debug builds and IDE sync working on
 // a machine with no keystore — but AGP then treats the empty signingConfig as "package it

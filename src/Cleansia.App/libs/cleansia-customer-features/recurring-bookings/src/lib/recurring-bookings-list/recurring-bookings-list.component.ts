@@ -7,7 +7,11 @@ import { formatMoney, localeFor } from '@cleansia/utils';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { SkeletonModule } from 'primeng/skeleton';
 import { RecurringBookingsFacade } from '../recurring-bookings.facade';
-import { RecurrenceFrequency } from '../recurring-bookings.models';
+import {
+  RecurrenceFrequency,
+  scheduleBooksCleanings,
+  scheduleStatusKey,
+} from '../recurring-bookings.models';
 
 /**
  * The schedules a customer has — the board's "Moje rozvrhy" artboard, and its
@@ -108,14 +112,22 @@ export class RecurringBookingsListComponent implements OnInit {
   whenLine(template: RecurringBookingTemplateDto): string {
     const base = `${this.dayName(template.dayOfWeek)} ${template.timeOfDay ?? ''}`.trim();
     const next = this.facade.nextRun(template);
-    // A paused schedule has no next run to promise, whatever the maths says.
-    if (!next || !template.isActive) return base;
+    // A schedule that books nothing has no next run to promise, whatever the maths says.
+    if (!next || !scheduleBooksCleanings(template)) return base;
     return `${base} · ${this.translate.instant('recurring_booking.next_on', {
       date: next.toLocaleDateString(localeFor(this.translate.currentLang), {
         day: 'numeric',
         month: 'long',
       }),
     })}`;
+  }
+
+  booksCleanings(template: RecurringBookingTemplateDto): boolean {
+    return scheduleBooksCleanings(template);
+  }
+
+  statusKey(template: RecurringBookingTemplateDto): string {
+    return scheduleStatusKey(template);
   }
 
   priceFor(template: RecurringBookingTemplateDto): string | null {

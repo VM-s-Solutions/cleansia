@@ -92,6 +92,11 @@ public class CreateOrder
             RuleFor(x => x.PaymentType)
                 .IsInEnum().WithMessage(BusinessErrorMessage.InvalidEnumValue);
 
+            RuleFor(x => x.Rooms).LessThanOrEqualTo(BookingPolicy.MaxRooms)
+                .WithMessage(BusinessErrorMessage.OrderSizeExceedsMaximum);
+            RuleFor(x => x.Bathrooms).LessThanOrEqualTo(BookingPolicy.MaxBathrooms)
+                .WithMessage(BusinessErrorMessage.OrderSizeExceedsMaximum);
+
             // Ahead of the price chain on purpose: the failure row records the FIRST refusal, and a
             // booking nobody consented to is refused on that ground before any figure is judged.
             RuleFor(x => x.TermsAccepted)
@@ -249,6 +254,9 @@ public class CreateOrder
                 .WithMessage(BusinessErrorMessage.ExpressWaiverNoLongerAvailable)
                 .MustAsync(PriceMatchesAsync)
                 .WithMessage(BusinessErrorMessage.TotalPriceNotMatch)
+                .Must(CashIsAvailable)
+                .WithMessage(BusinessErrorMessage.OrderCashNotAvailable)
+                .WithErrorCode(nameof(Command.PaymentType))
                 .Must(PromoNamesASignedInCustomer)
                 .WithMessage(BusinessErrorMessage.PromoRequiresAccount)
                 .WithErrorCode(nameof(Command.PromoCode))
@@ -648,6 +656,16 @@ public class CreateOrder
         private static OrderPricingResult CachedPricing(ValidationContext<Command> context)
             => (OrderPricingResult)context.RootContextData[PricingResultKey];
 
+        /// <summary>
+        /// Judged on the calculator's duration -- the same catalogue sum the factory staffs the order
+        /// with -- because the command carries no duration or crew a client could be trusted for.
+        /// </summary>
+        private bool CashIsAvailable(Command command, Command _, ValidationContext<Command> context)
+            => command.PaymentType != PaymentType.Cash
+               || BookingPolicy.AllowsCash(
+                   signedIn: !IsGuest(),
+                   OrderDuration.RequiredEmployees(CachedPricing(context).EstimatedDurationMinutes));
+
         // The promo rule cannot pick its message up front: which refusal applies is only known after
         // the preview inside the predicate. So the predicate hands the resolved message key to the rule
         // through the MessageFormatter, and the rule's template is nothing but this placeholder.
@@ -780,7 +798,20 @@ public class CreateOrder
     public record Response(
         string Id,
         string ConfirmationCode,
-        string? StripeSessionId);
+        // The wire contract's name, kept: it has always carried the Checkout URL the browser is
+        // redirected to, and the web client reads it as one.
+        string? StripeSessionId,
+        /// <summary>
+        /// The booking's access token, on a GUEST booking only — null when the customer has an
+        /// account and signs in to reach it instead.
+        ///
+        /// <para>The caller IS the guest, so the response body is the right channel for it: this is
+        /// the only moment the browser can learn the credential without waiting for the e-mail, and
+        /// without it the checkout success page cannot read back the booking it just paid for. Every
+        /// later message that carries a track link mints its own, so this one being lost costs
+        /// nothing.</para>
+        /// </summary>
+        string? GuestAccessToken = null);
 
     /// <summary>
     /// The booking as the server priced and stored it (ADR-0062 D3): every figure is read off the
@@ -868,21 +899,25 @@ public class CreateOrder
 
     /// <summary>
     /// The cancellation schedule the booking was made under: the platform figures, plus the free window
-    /// this customer actually had (a Plus window is narrower than the standard 24 h).
+    /// and the oops window this customer had AT BOOKING (a Plus free window is narrower than the standard
+    /// 24 h, a Plus oops window longer than 15 minutes). The cancellation re-resolves both live, so its
+    /// own evidence row is what explains a given cancellation.
     /// </summary>
     public record CancellationPolicyShown(
         int FreeHours,
         int PartialHours,
         decimal PartialRate,
         decimal LastMinuteRate,
-        int FreeHoursForThisCustomer)
+        int FreeHoursForThisCustomer,
+        int OopsMinutesForThisCustomer)
     {
         public static CancellationPolicyShown From(CancellationPolicy policy) => new(
-            BookingPolicy.FreeCancellationHours,
-            BookingPolicy.PartialCancellationHours,
-            BookingPolicy.PartialCancellationFeeRate,
-            BookingPolicy.LastMinuteCancellationFeeRate,
-            policy.FreeCancellationHours);
+            FreeHours: BookingPolicy.FreeCancellationHours,
+            PartialHours: BookingPolicy.PartialCancellationHours,
+            PartialRate: BookingPolicy.PartialCancellationFeeRate,
+            LastMinuteRate: BookingPolicy.LastMinuteCancellationFeeRate,
+            FreeHoursForThisCustomer: policy.FreeCancellationHours,
+            OopsMinutesForThisCustomer: policy.OopsWindowMinutes);
     }
 
     public class Handler(
@@ -894,6 +929,7 @@ public class CreateOrder
         IOrderPromoApplier orderPromoApplier,
         IOrderLateReferralAcceptor orderLateReferralAcceptor,
         IOrderPaymentDispatcher orderPaymentDispatcher,
+        GuestOrderAccessTokenIssuer guestAccessTokenIssuer,
         IExpressWaiverConsumer expressWaiverConsumer,
         ICreditAccountRepository creditAccountRepository,
         ICancellationPolicyResolver cancellationPolicyResolver,
@@ -1019,7 +1055,8 @@ public class CreateOrder
                 AccessInstructions: command.AccessInstructions,
                 CustomerFloor: command.CustomerFloor,
                 CustomerApartment: command.CustomerApartment,
-                AccessMode: command.AccessMode), cancellationToken);
+                AccessMode: command.AccessMode,
+                LanguageCode: command.Language), cancellationToken);
 
             if (reservation != null)
             {
@@ -1081,9 +1118,10 @@ public class CreateOrder
             return BusinessResult.Success(new Response(
                 Id: order.Id,
                 ConfirmationCode: order.ConfirmationCode,
-                // The wire contract's name, kept: it has always carried the Checkout URL the
-                // browser is redirected to, and the web client reads it as one.
-                StripeSessionId: dispatch.CheckoutUrl));
+                StripeSessionId: dispatch.CheckoutUrl,
+                // Staged, never committed here: it rides the pipeline's commit with the order it
+                // belongs to, so a booking that does not exist cannot leave a key behind.
+                GuestAccessToken: guestAccessTokenIssuer.IssueForGuest(order)));
         }
 
         /// <summary>

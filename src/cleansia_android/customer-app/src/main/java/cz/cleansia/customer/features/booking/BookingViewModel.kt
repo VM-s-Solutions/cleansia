@@ -7,6 +7,7 @@ import cz.cleansia.customer.R
 import cz.cleansia.customer.core.auth.ApiErrorParser
 import cz.cleansia.core.auth.TokenStore
 import cz.cleansia.customer.core.booking.BookingApi
+import cz.cleansia.customer.core.booking.CashEligibility
 import cz.cleansia.customer.core.booking.CreateOrderAddressDto
 import cz.cleansia.customer.core.booking.CreateOrderCommand
 import cz.cleansia.customer.core.booking.CreateOrderResponse
@@ -23,6 +24,7 @@ import cz.cleansia.customer.core.promo.PromoCodeError
 import cz.cleansia.customer.core.promo.ValidatePromoCodeRequest
 import cz.cleansia.customer.core.referral.ReferralRepository
 import cz.cleansia.customer.core.referral.ReferralValidationError
+import cz.cleansia.customer.core.settings.AppSettingsRepository
 import cz.cleansia.customer.core.user.UserRepository
 import cz.cleansia.core.network.ApiResult
 import cz.cleansia.core.snackbar.SnackbarController
@@ -149,6 +151,7 @@ class BookingViewModel @Inject constructor(
     private val catalogRepository: CatalogRepository,
     private val marketRepository: cz.cleansia.customer.core.market.MarketRepository,
     private val consentClient: GdprConsentClient,
+    private val settings: AppSettingsRepository,
     @ApplicationContext private val appContext: Context,
 ) : ViewModel() {
 
@@ -180,14 +183,6 @@ class BookingViewModel @Inject constructor(
     private val _alreadyConsented = MutableStateFlow(false)
     val alreadyConsented: StateFlow<Boolean> = _alreadyConsented.asStateFlow()
 
-    /**
-     * The review step's gate on the slide-to-confirm: a payment method, and the terms tick whenever
-     * the box is shown. The same rule as the web wizard's place-order button.
-     */
-    val canPlaceOrder: StateFlow<Boolean> = combine(_state, _alreadyConsented) { s, consented ->
-        s.paymentMethod.isNotBlank() && (consented || s.termsAccepted)
-    }.stateIn(viewModelScope, SharingStarted.Eagerly, false)
-
     init {
         if (tokenStore.current() != null) {
             viewModelScope.launch { membershipRepository.refresh() }
@@ -212,7 +207,7 @@ class BookingViewModel @Inject constructor(
 
     // Inputs that produced the current Quoted response. Submit() consults this
     // to decide whether the cached quote can be reused without re-calling /Quote.
-    private var lastQuoteInputs: QuoteInputs? = null
+    private val lastQuoteInputs = MutableStateFlow<QuoteInputs?>(null)
 
     /**
      * The country the booking is priced in (ADR-0058 D4): the service address's, resolved from the
@@ -242,6 +237,70 @@ class BookingViewModel @Inject constructor(
             .distinctUntilChanged()
             .debounce(400L)
             .collectLatest { refreshQuote(it) }
+    }
+
+    /**
+     * Whether this booking may be paid in cash, from the live session and the crew the server quoted
+     * for the selection on screen. A quote for an earlier selection says nothing about this one.
+     */
+    val cashEligibility: StateFlow<CashEligibility> = combine(
+        tokenStore.tokens,
+        _state,
+        resolvedCountryId,
+        _quoteState,
+        lastQuoteInputs,
+    ) { tokens, s, countryId, quote, quotedFor ->
+        val crew = (quote as? QuoteState.Quoted)?.response?.requiredEmployees
+            ?.takeIf { quotedFor == s.toQuoteInputs(countryId) }
+        CashEligibility.resolve(signedIn = tokens != null, requiredEmployees = crew)
+    }.stateIn(viewModelScope, SharingStarted.Eagerly, CashEligibility.Pending)
+
+    /** A cash choice was taken away because it stopped being allowed; cleared by the next choice. */
+    private val _cashCleared = MutableStateFlow(false)
+
+    /** Said only while cash is still not available; a selection that allows it again needs no warning. */
+    val cashClearedNotice: StateFlow<Boolean> = combine(_cashCleared, cashEligibility) { cleared, cash ->
+        cleared && cash != CashEligibility.Available
+    }.stateIn(viewModelScope, SharingStarted.Eagerly, false)
+
+    private val cashWatcher = viewModelScope.launch {
+        combine(_state, cashEligibility) { s, cash -> s.paymentMethod == PAYMENT_CASH && cash.isRefused }
+            .distinctUntilChanged()
+            .collect { refused -> if (refused) dropCash() }
+    }
+
+    /**
+     * The review step's gate on the slide-to-confirm: a payment method the booking may use, and the
+     * terms tick whenever the box is shown. The same rule as the web wizard's place-order button.
+     */
+    val canPlaceOrder: StateFlow<Boolean> = combine(_state, _alreadyConsented, cashEligibility) { s, consented, cash ->
+        s.paymentMethod.isNotBlank() &&
+            !(s.paymentMethod == PAYMENT_CASH && cash.isRefused) &&
+            (consented || s.termsAccepted)
+    }.stateIn(viewModelScope, SharingStarted.Eagerly, false)
+
+    fun selectPaymentMethod(method: String) {
+        if (method == PAYMENT_CASH && cashEligibility.value != CashEligibility.Available) return
+        _cashCleared.value = false
+        _state.update { it.copy(paymentMethod = method) }
+    }
+
+    /**
+     * This ViewModel outlives the sheet, so a cash choice refused while it is closed (a sign-out, say)
+     * is cleared without a snackbar over whatever screen is showing. The sheet creates it open.
+     */
+    private var sheetVisible = true
+
+    fun setSheetVisible(visible: Boolean) {
+        sheetVisible = visible
+    }
+
+    /** Never replaced by card: the customer is told and chooses again. */
+    private fun dropCash() {
+        if (_state.value.paymentMethod != PAYMENT_CASH) return
+        _state.update { it.copy(paymentMethod = "") }
+        _cashCleared.value = true
+        if (sheetVisible) snackbar.showInfoKey(R.string.booking_cash_cleared)
     }
 
     private val _promoCodeState = MutableStateFlow<PromoCodeUiState>(PromoCodeUiState.Idle)
@@ -375,7 +434,8 @@ class BookingViewModel @Inject constructor(
         _promoCodeState.value = PromoCodeUiState.Idle
         promoCurrencyId = null
         _referralCodeState.value = ReferralCodeUiState.Idle
-        lastQuoteInputs = null
+        lastQuoteInputs.value = null
+        _cashCleared.value = false
     }
 
     fun update(transform: (BookingState) -> BookingState) {
@@ -462,7 +522,7 @@ class BookingViewModel @Inject constructor(
             // round trip and guarantees the user submits exactly the number they saw.
             val currentInputs = s.toQuoteInputs(resolvedCountryId)
             val cached = (_quoteState.value as? QuoteState.Quoted)?.response
-            val quoted: QuoteOrderResponse = if (cached != null && lastQuoteInputs == currentInputs) {
+            val quoted: QuoteOrderResponse = if (cached != null && lastQuoteInputs.value == currentInputs) {
                 cached
             } else {
                 val quoteCmd = QuoteOrderCommand(
@@ -490,6 +550,20 @@ class BookingViewModel @Inject constructor(
                     snackbar.showError(appContext.getString(R.string.error_generic_network))
                     return BookingSubmitOutcome.Failed
                 }
+            }
+
+            val paymentType = when (s.paymentMethod) {
+                PAYMENT_CARD -> PAYMENT_TYPE_CARD
+                PAYMENT_CASH -> PAYMENT_TYPE_CASH
+                else -> return BookingSubmitOutcome.Failed
+            }
+            // Judged against the quote this booking is created from, not the one on screen.
+            if (paymentType == PAYMENT_TYPE_CASH &&
+                CashEligibility.resolve(signedIn = true, requiredEmployees = quoted.requiredEmployees) !=
+                CashEligibility.Available
+            ) {
+                dropCash()
+                return BookingSubmitOutcome.Failed
             }
 
             // Backend's quote response already folds the express surcharge into
@@ -523,7 +597,7 @@ class BookingViewModel @Inject constructor(
                 // resolves them against the Extras table to price the order.
                 extras = s.selectedExtraSlugs.associateWith { true },
                 cleaningDate = instant.toString(),
-                paymentType = if (s.paymentMethod.equals("card", ignoreCase = true)) 2 else 1,
+                paymentType = paymentType,
                 currencyId = quoted.currencyId,
                 // Send the promo only when the live validation said it was valid;
                 // an Invalid/Idle state means we don't trust it and let the backend
@@ -549,6 +623,7 @@ class BookingViewModel @Inject constructor(
                 // normalise to null rather than persisting an empty note.
                 specialInstructions = s.specialInstructions.trim().ifBlank { null },
                 accessInstructions = s.accessInstructions.trim().ifBlank { null },
+                language = settings.emailLanguageTag(),
                 // Asserted only when the box was shown and ticked; an account that already consented
                 // saw no box and asserts nothing new.
                 termsAccepted = if (!_alreadyConsented.value && s.termsAccepted) true else null,
@@ -573,7 +648,7 @@ class BookingViewModel @Inject constructor(
             // Cash flow ends here — order is created and ready to display.
             // Card flow needs a second hop: create a Stripe PaymentIntent so
             // PaymentSheet can confirm payment before we navigate.
-            if (!s.paymentMethod.equals("card", ignoreCase = true)) {
+            if (paymentType == PAYMENT_TYPE_CASH) {
                 return BookingSubmitOutcome.Success(body)
             }
 
@@ -603,7 +678,7 @@ class BookingViewModel @Inject constructor(
     private suspend fun refreshQuote(inputs: QuoteInputs) {
         if (inputs.serviceIds.isEmpty() && inputs.packageIds.isEmpty()) {
             _quoteState.value = QuoteState.Idle
-            lastQuoteInputs = null
+            lastQuoteInputs.value = null
             return
         }
         // Snapshot the previous Quoted response so we can fall back to it on
@@ -631,7 +706,7 @@ class BookingViewModel @Inject constructor(
         val body = if (resp?.isSuccessful == true) resp.body() else null
         _quoteState.value = when {
             body != null -> {
-                lastQuoteInputs = inputs
+                lastQuoteInputs.value = inputs
                 QuoteState.Quoted(body)
             }
             previousQuoted != null -> QuoteState.Quoted(previousQuoted)
@@ -713,5 +788,12 @@ class BookingViewModel @Inject constructor(
 
         /** Mirrors `CreateOrder`'s `RuleFor(x => x.AccessInstructions).MaximumLength(2000)`. */
         const val ACCESS_INSTRUCTIONS_MAX_LENGTH = 2000
+
+        const val PAYMENT_CARD = "card"
+        const val PAYMENT_CASH = "cash"
+
+        /** The backend's `PaymentType`. */
+        private const val PAYMENT_TYPE_CASH = 1
+        private const val PAYMENT_TYPE_CARD = 2
     }
 }

@@ -59,7 +59,6 @@
         [orderStatus]="orderDetails()!.orderStatus"
         [paymentStatus]="orderDetails()!.paymentStatus"
         [createdOn]="formattedCreatedOn()"
-        [confirmationCode]="orderDetails()!.confirmationCode || ''"
         (print)="printOrder()"
         (downloadInvoice)="downloadInvoice()"
       />

@@ -341,7 +341,6 @@ export class OrderDetailsComponent implements OnInit {
     return this.fb.group({
       orderStatus: [{ value: '', disabled: true }],
       paymentStatus: [{ value: '', disabled: true }],
-      confirmationCode: [{ value: '', disabled: true }],
       customerName: [{ value: '', disabled: true }],
       customerEmail: [{ value: '', disabled: true }],
       customerPhone: [{ value: '', disabled: true }],
@@ -368,7 +367,6 @@ export class OrderDetailsComponent implements OnInit {
     this.formGroup.patchValue({
       orderStatus: orderDetails.orderStatus.name,
       paymentStatus: orderDetails.paymentStatus.name,
-      confirmationCode: orderDetails.confirmationCode,
       customerName: orderDetails.customerName,
       customerEmail: orderDetails.customerEmail,
       customerPhone: orderDetails.customerPhone,

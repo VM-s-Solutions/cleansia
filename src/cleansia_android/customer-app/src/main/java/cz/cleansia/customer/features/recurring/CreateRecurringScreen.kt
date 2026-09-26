@@ -62,6 +62,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
@@ -71,6 +72,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cz.cleansia.customer.R
+import cz.cleansia.customer.core.booking.CashEligibility
 import cz.cleansia.customer.core.catalog.PackageListItem
 import cz.cleansia.customer.core.catalog.ServiceListItem
 import cz.cleansia.customer.core.data.UserAddress
@@ -111,6 +113,8 @@ fun CreateRecurringScreen(
     val services by viewModel.services.collectAsStateWithLifecycle()
     val packages by viewModel.packages.collectAsStateWithLifecycle()
     val catalogState by viewModel.catalogState.collectAsStateWithLifecycle()
+    val cashEligibility by viewModel.cashEligibility.collectAsStateWithLifecycle()
+    val cashClearedNotice by viewModel.cashClearedNotice.collectAsStateWithLifecycle()
     val submitting = submitState is ActionState.Submitting
     val isEditing = viewModel.isEditing
 
@@ -206,6 +210,8 @@ fun CreateRecurringScreen(
                         3 -> WhereAndPayStep(
                             state = state,
                             savedAddresses = savedAddresses,
+                            cashEligibility = cashEligibility,
+                            cashClearedNotice = cashClearedNotice,
                             viewModel = viewModel,
                             onOpenAddressSheet = { addressSheetOpen = true },
                             isEditing = isEditing,
@@ -535,6 +541,8 @@ private fun WhatStep(
 private fun WhereAndPayStep(
     state: CreateRecurringFormState,
     savedAddresses: List<UserAddress>,
+    cashEligibility: CashEligibility,
+    cashClearedNotice: Boolean,
     viewModel: CreateRecurringViewModel,
     onOpenAddressSheet: () -> Unit,
     isEditing: Boolean,
@@ -552,7 +560,38 @@ private fun WhereAndPayStep(
 
     SectionLabel(stringResource(R.string.recurring_create_payment_label))
     Spacer(Modifier.height(8.dp))
-    PaymentTypePicker(selected = state.paymentType, onSelect = viewModel::setPaymentType)
+    PaymentTypePicker(
+        selected = state.paymentType,
+        cashEnabled = cashEligibility == CashEligibility.Available,
+        onSelect = viewModel::setPaymentType,
+    )
+    val paymentNote = when {
+        cashClearedNotice -> stringResource(R.string.recurring_cash_cleared)
+        state.paymentType == null -> stringResource(R.string.recurring_create_payment_missing)
+        else -> null
+    }
+    if (paymentNote != null) {
+        Spacer(Modifier.height(8.dp))
+        Text(
+            text = paymentNote,
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.error,
+        )
+    }
+    val cashReason = when (cashEligibility) {
+        is CashEligibility.NeedsCard ->
+            stringResource(R.string.recurring_cash_needs_card, cashEligibility.requiredCleaners)
+        CashEligibility.Pending -> stringResource(R.string.recurring_cash_pending)
+        CashEligibility.NeedsAccount, CashEligibility.Available -> null
+    }
+    if (cashReason != null) {
+        Spacer(Modifier.height(8.dp))
+        Text(
+            text = cashReason,
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
 
     Spacer(Modifier.height(24.dp))
 
@@ -1219,7 +1258,7 @@ private fun SelectionBadge(selected: Boolean) {
  * cards on Step 2 and the affordance is more obviously tappable.
  */
 @Composable
-private fun PaymentTypePicker(selected: Int, onSelect: (Int) -> Unit) {
+private fun PaymentTypePicker(selected: Int?, cashEnabled: Boolean, onSelect: (Int) -> Unit) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -1228,15 +1267,16 @@ private fun PaymentTypePicker(selected: Int, onSelect: (Int) -> Unit) {
             modifier = Modifier.weight(1f),
             icon = Icons.Outlined.Payments,
             label = stringResource(R.string.recurring_create_pay_cash),
-            selected = selected == 1,
-            onClick = { onSelect(1) },
+            selected = selected == CreateRecurringViewModel.PAYMENT_CASH,
+            enabled = cashEnabled,
+            onClick = { onSelect(CreateRecurringViewModel.PAYMENT_CASH) },
         )
         PaymentCard(
             modifier = Modifier.weight(1f),
             icon = Icons.Outlined.CreditCard,
             label = stringResource(R.string.recurring_create_pay_card),
-            selected = selected == 2,
-            onClick = { onSelect(2) },
+            selected = selected == CreateRecurringViewModel.PAYMENT_CARD,
+            onClick = { onSelect(CreateRecurringViewModel.PAYMENT_CARD) },
         )
     }
 }
@@ -1248,9 +1288,11 @@ private fun PaymentCard(
     label: String,
     selected: Boolean,
     onClick: () -> Unit,
+    enabled: Boolean = true,
 ) {
     Column(
         modifier = modifier
+            .alpha(if (enabled) 1f else 0.45f)
             .clip(RoundedCornerShape(12.dp))
             .background(
                 if (selected) MaterialTheme.colorScheme.primary.copy(alpha = 0.06f)
@@ -1262,7 +1304,7 @@ private fun PaymentCard(
                     else MaterialTheme.colorScheme.outlineVariant,
                 shape = RoundedCornerShape(12.dp),
             )
-            .clickable(onClick = onClick)
+            .clickable(enabled = enabled, onClick = onClick)
             .padding(vertical = 16.dp, horizontal = 12.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,

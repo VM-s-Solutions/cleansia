@@ -83,8 +83,12 @@ public static class QuotePlusSavings
                 .NotEmpty()
                 .WithMessage(BusinessErrorMessage.Required);
 
-            RuleFor(x => x.Rooms).GreaterThanOrEqualTo(0);
-            RuleFor(x => x.Bathrooms).GreaterThanOrEqualTo(0);
+            RuleFor(x => x.Rooms).GreaterThanOrEqualTo(0)
+                .LessThanOrEqualTo(BookingPolicy.MaxRooms)
+                .WithMessage(BusinessErrorMessage.OrderSizeExceedsMaximum);
+            RuleFor(x => x.Bathrooms).GreaterThanOrEqualTo(0)
+                .LessThanOrEqualTo(BookingPolicy.MaxBathrooms)
+                .WithMessage(BusinessErrorMessage.OrderSizeExceedsMaximum);
 
             // Existence, then a price row in the currency being quoted in -- the same two terms as
             // QuoteOrder, because this query prices the same basket and the calculator throws on an

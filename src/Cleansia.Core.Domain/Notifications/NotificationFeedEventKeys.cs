@@ -29,7 +29,6 @@ public static class NotificationFeedEventKeys
     public static readonly IReadOnlyList<string> Customer =
     [
         NotificationEventCatalog.OrderPaymentConfirmed,
-        NotificationEventCatalog.OrderConfirmed,
         NotificationEventCatalog.OrderCleanerAssigned,
         NotificationEventCatalog.OrderOnTheWay,
         NotificationEventCatalog.OrderInProgress,

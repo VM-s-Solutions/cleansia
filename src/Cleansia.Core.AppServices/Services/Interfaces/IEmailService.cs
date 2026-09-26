@@ -8,7 +8,7 @@ public interface IEmailService
 {
     Task<string> SendResetPasswordEmailAsync(string email, string fullUserName, string code, string languageCode = Constants.Language.English, CancellationToken ct = default);
 
-    Task<string> SendOrderReceiptEmailAsync(string email, Order order, byte[]? pdfBytes = null, string fileName = "receipt.pdf", string languageCode = Constants.Language.English, CancellationToken ct = default);
+    Task<string> SendOrderReceiptEmailAsync(string email, Order order, byte[]? pdfBytes = null, string fileName = "receipt.pdf", string languageCode = Constants.Language.English, CancellationToken ct = default, string? guestAccessToken = null);
 
     Task<string> SendTestOrderReceiptEmailAsync(string email, string customerName, string orderNumber, string orderDate, string totalAmount, string languageCode = Constants.Language.English, CancellationToken ct = default);
 
@@ -24,7 +24,7 @@ public interface IEmailService
     /// </summary>
     Task<string> SendPromoCodeEmailAsync(string email, string promoCode, string discountLabel, DateTime? expiresOn, string languageCode = Constants.Language.English, CancellationToken ct = default);
 
-    Task<string> SendOrderStatusUpdateEmailAsync(string email, Order order, string newStatus, string languageCode = Constants.Language.English, CancellationToken ct = default, decimal? refundedAmount = null);
+    Task<string> SendOrderStatusUpdateEmailAsync(string email, Order order, string newStatus, string languageCode = Constants.Language.English, CancellationToken ct = default, decimal? refundedAmount = null, string? guestAccessToken = null);
 
     /// <summary>
     /// The wind-down notice to a customer of a closing company (ADR-0064 D2 step 1): the company

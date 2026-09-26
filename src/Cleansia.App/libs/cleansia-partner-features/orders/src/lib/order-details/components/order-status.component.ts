@@ -3,7 +3,6 @@ import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormGroup } from '@angular/forms';
 import {
   CleansiaSectionComponent,
-  CleansiaTextInputComponent,
   CleansiaSelectComponent,
 } from '@cleansia/components';
 import { TranslatePipe } from '@ngx-translate/core';
@@ -17,7 +16,6 @@ import { ICleansiaSelectOption } from '@cleansia/components';
     ReactiveFormsModule,
     TranslatePipe,
     CleansiaSectionComponent,
-    CleansiaTextInputComponent,
     CleansiaSelectComponent,
   ],
   templateUrl: './order-status.component.html',

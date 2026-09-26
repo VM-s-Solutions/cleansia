@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Http;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Clients.Abstractions.Stripe;
 using Cleansia.Core.Domain.Auditing;
+using Cleansia.Core.Domain.Common;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Internationalization;
 using Cleansia.Core.Domain.Orders;
@@ -40,6 +41,8 @@ public class GuestOrderCancellationTests(PostgresContainerFixture fixture) : Bas
     private const string CurrencyId = "guest-cancel-eur";
     private const string CountryId = "guest-cancel-sk";
 
+    private string _guestToken = null!;
+
     private sealed class Run
     {
         public readonly Mock<IStripeClient> Stripe = new();
@@ -67,8 +70,8 @@ public class GuestOrderCancellationTests(PostgresContainerFixture fixture) : Bas
                     if (DuringStripe is not null) await DuringStripe();
                 });
             EmailService.Setup(x => x.SendOrderStatusUpdateEmailAsync(It.IsAny<string>(), It.IsAny<Order>(),
-                    "Cancelled", It.IsAny<string>(), It.IsAny<CancellationToken>(), It.IsAny<decimal?>()))
-                .Returns((string to, Order _, string _, string _, CancellationToken _, decimal? amount) =>
+                    "Cancelled", It.IsAny<string>(), It.IsAny<CancellationToken>(), It.IsAny<decimal?>(), It.IsAny<string?>()))
+                .Returns((string to, Order _, string _, string _, CancellationToken _, decimal? amount, string? _) =>
                 {
                     if (FailEmail) throw new HttpRequestException("recording transport unavailable");
                     DeliveredTo = to;
@@ -97,7 +100,7 @@ public class GuestOrderCancellationTests(PostgresContainerFixture fixture) : Bas
         }
     }
 
-    private static async Task Seed(CleansiaDbContext db, bool paid = true, bool accepted = false,
+    private async Task Seed(CleansiaDbContext db, bool paid = true, bool accepted = false,
         bool owned = false, OrderStatus status = OrderStatus.Confirmed, decimal priorRefund = 0m)
     {
         db.Languages.Add(Language.Create("en", "English"));
@@ -139,6 +142,10 @@ public class GuestOrderCancellationTests(PostgresContainerFixture fixture) : Bas
             order.AddAssignedEmployee(assignment);
         }
         db.Orders.Add(order);
+        var accessToken = GuestOrderAccessToken.Issue(order.Id, GuestOrderAccessToken.ExpiryFor(order.CleaningDateTime));
+        accessToken.TenantId = TestTenants.Second;
+        _guestToken = accessToken.RawToken!;
+        db.GuestOrderAccessTokens.Add(accessToken);
         if (priorRefund > 0m)
         {
             var prior = Refund.Create(OrderId, "prior-refund", priorRefund, "EUR", RefundReason.CustomerCancellation, RefundSource.AppRefund);
@@ -150,11 +157,7 @@ public class GuestOrderCancellationTests(PostgresContainerFixture fixture) : Bas
         await db.CommitAsync(CancellationToken.None);
     }
 
-    private static async Task<CancelGuestOrder.Command> Command(IServiceProvider provider)
-    {
-        var order = await provider.GetRequiredService<CleansiaDbContext>().Orders.IgnoreQueryFilters().AsNoTracking().SingleAsync();
-        return new(order.DisplayOrderNumber, Email.ToUpperInvariant(), order.ConfirmationCode.ToLowerInvariant(), "private reason");
-    }
+    private CancelGuestOrder.Command GuestCommand() => new(_guestToken, "private reason");
 
     private static async Task StartInSeparateScope(IServiceProvider provider)
     {
@@ -184,9 +187,9 @@ public class GuestOrderCancellationTests(PostgresContainerFixture fixture) : Bas
         await TestMethod<bool>(setup: run.Setup, arrange: (CleansiaDbContext db) => Seed(db, accepted: accepted),
             act: async (IServiceProvider provider) =>
             {
-                var command = await Command(provider);
+                var command = GuestCommand();
                 var mediator = provider.GetRequiredService<IMediator>();
-                var preview = await mediator.Send(new GetGuestCancellationFeePreview.Query(command.DisplayOrderNumber, command.Email, command.ConfirmationCode));
+                var preview = await mediator.Send(new GetGuestCancellationFeePreview.Query(command.AccessToken));
                 Assert.True(preview.IsSuccess, preview.Error?.Message);
                 Assert.Equal(refund, preview.Value.RefundAmount);
                 using (var read = provider.CreateScope()) await AssertUncancelled(read.ServiceProvider.GetRequiredService<CleansiaDbContext>(), OrderStatus.Confirmed);
@@ -232,7 +235,7 @@ public class GuestOrderCancellationTests(PostgresContainerFixture fixture) : Bas
         var run = new Run();
         await TestMethod<bool>(setup: run.Setup, arrange: (CleansiaDbContext db) => Seed(db, paid: false), act: async (IServiceProvider provider) =>
         {
-            var result = await provider.GetRequiredService<IMediator>().Send(await Command(provider));
+            var result = await provider.GetRequiredService<IMediator>().Send(GuestCommand());
             Assert.True(result.IsSuccess, result.Error?.Message);
             Assert.False(result.Value.RefundInitiated);
             Assert.Null(result.Value.ActualRefundAmount);
@@ -248,25 +251,24 @@ public class GuestOrderCancellationTests(PostgresContainerFixture fixture) : Bas
     }
 
     [Theory]
-    [InlineData("email")]
-    [InlineData("code")]
-    [InlineData("number")]
+    [InlineData("unissued")]
     [InlineData("account")]
     public async Task Unproven_or_account_owned_keys_return_the_same_refusal(string mismatch)
     {
         var run = new Run();
         await TestMethod<bool>(setup: run.Setup, arrange: (CleansiaDbContext db) => Seed(db, owned: mismatch == "account"), act: async (IServiceProvider provider) =>
         {
-            var command = await Command(provider);
+            var command = GuestCommand();
             command = mismatch switch
             {
-                "email" => command with { Email = "other@example.test" },
-                "code" => command with { ConfirmationCode = "wrong" },
-                "number" => command with { DisplayOrderNumber = "missing" },
+                "unissued" => command with
+                {
+                    AccessToken = SecurityTokens.Generate(SecurityTokens.DurableTokenByteLength),
+                },
                 _ => command
             };
             var mediator = provider.GetRequiredService<IMediator>();
-            var preview = await mediator.Send(new GetGuestCancellationFeePreview.Query(command.DisplayOrderNumber, command.Email, command.ConfirmationCode));
+            var preview = await mediator.Send(new GetGuestCancellationFeePreview.Query(command.AccessToken));
             Assert.Equal(BusinessErrorMessage.OrderNotFound, preview.Error?.Message);
             var result = await mediator.Send(command);
             Assert.Equal(BusinessErrorMessage.OrderNotFound, result.Error?.Message);
@@ -289,7 +291,7 @@ public class GuestOrderCancellationTests(PostgresContainerFixture fixture) : Bas
         var run = new Run();
         await TestMethod<bool>(setup: run.Setup, arrange: (CleansiaDbContext db) => Seed(db, status: OrderStatus.InProgress), act: async (IServiceProvider provider) =>
         {
-            var result = await provider.GetRequiredService<IMediator>().Send(await Command(provider));
+            var result = await provider.GetRequiredService<IMediator>().Send(GuestCommand());
             Assert.Equal(BusinessErrorMessage.OrderInProgressCannotCancel, result.Error?.Message);
             return true;
         }, assert: async (CleansiaDbContext db, bool _) =>
@@ -309,7 +311,7 @@ public class GuestOrderCancellationTests(PostgresContainerFixture fixture) : Bas
         var run = new Run();
         await TestMethod<bool>(setup: run.Setup, arrange: (CleansiaDbContext db) => Seed(db, priorRefund: 600m), act: async (IServiceProvider provider) =>
         {
-            var result = await provider.GetRequiredService<IMediator>().Send(await Command(provider));
+            var result = await provider.GetRequiredService<IMediator>().Send(GuestCommand());
             Assert.True(result.IsSuccess, result.Error?.Message);
             Assert.Equal(1000m, result.Value.RefundAmount);
             Assert.Equal(400m, result.Value.ActualRefundAmount);
@@ -344,7 +346,7 @@ public class GuestOrderCancellationTests(PostgresContainerFixture fixture) : Bas
             return Task.CompletedTask;
         }, arrange: (CleansiaDbContext db) => Seed(db, paid: false), act: async (IServiceProvider provider) =>
         {
-            var command = await Command(provider);
+            var command = GuestCommand();
             using (var invalid = provider.CreateScope())
             {
                 var result = await invalid.ServiceProvider.GetRequiredService<IMediator>().Send(command with { Language = "xx" });
@@ -379,7 +381,7 @@ public class GuestOrderCancellationTests(PostgresContainerFixture fixture) : Bas
             return Task.CompletedTask;
         }, arrange: (CleansiaDbContext db) => Seed(db), act: async (IServiceProvider provider) =>
         {
-            var result = await provider.GetRequiredService<IMediator>().Send(await Command(provider));
+            var result = await provider.GetRequiredService<IMediator>().Send(GuestCommand());
             Assert.True(result.IsSuccess, result.Error?.Message);
             Assert.False(result.Value.RefundInitiated);
             Assert.Null(result.Value.ActualRefundAmount);
@@ -403,7 +405,7 @@ public class GuestOrderCancellationTests(PostgresContainerFixture fixture) : Bas
         var run = new Run();
         await TestMethod<bool>(setup: run.Setup, arrange: (CleansiaDbContext db) => Seed(db, paid: false), act: async (IServiceProvider provider) =>
         {
-            var result = await provider.GetRequiredService<IMediator>().Send(await Command(provider));
+            var result = await provider.GetRequiredService<IMediator>().Send(GuestCommand());
             Assert.True(result.IsSuccess, result.Error?.Message);
             string body;
             using (var erase = provider.CreateScope())
@@ -428,7 +430,7 @@ public class GuestOrderCancellationTests(PostgresContainerFixture fixture) : Bas
         var run = new Run { FailFinalCommit = true };
         await TestMethod<bool>(setup: run.Setup, arrange: (CleansiaDbContext db) => Seed(db), act: async (IServiceProvider provider) =>
         {
-            var command = await Command(provider);
+            var command = GuestCommand();
             using (var attempt = provider.CreateScope())
                 await Assert.ThrowsAsync<DbUpdateException>(() => attempt.ServiceProvider.GetRequiredService<IMediator>().Send(command));
             using (var read = provider.CreateScope())
@@ -472,7 +474,7 @@ public class GuestOrderCancellationTests(PostgresContainerFixture fixture) : Bas
             return Task.CompletedTask;
         }, arrange: (CleansiaDbContext db) => Seed(db), act: async (IServiceProvider provider) =>
         {
-            var command = await Command(provider);
+            var command = GuestCommand();
             if (duringStripe) run.DuringStripe = () => StartInSeparateScope(provider);
             else beforeFinalCommit = () => StartInSeparateScope(provider);
             using (var attempt = provider.CreateScope())

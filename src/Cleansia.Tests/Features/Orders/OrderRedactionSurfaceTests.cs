@@ -37,7 +37,6 @@ public class OrderRedactionSurfaceTests
         nameof(OrderItem.CustomerEmail),
         nameof(OrderItem.CustomerPhone),
         nameof(OrderItem.Address),
-        nameof(OrderItem.ConfirmationCode),
         nameof(OrderItem.Notes),
         nameof(OrderItem.SpecialInstructions),
         nameof(OrderItem.AccessInstructions),
@@ -128,7 +127,6 @@ public class OrderRedactionSurfaceTests
         nameof(OrderListItem.CustomerEmail),
         nameof(OrderListItem.CustomerPhone),
         nameof(OrderListItem.CustomerAddress),
-        nameof(OrderListItem.ConfirmationCode),
         nameof(OrderListItem.CustomerAddressLatitude),
         nameof(OrderListItem.CustomerAddressLongitude),
     ];
@@ -172,6 +170,28 @@ public class OrderRedactionSurfaceTests
         // payload behind the same access gate.
         nameof(OrderListItem.HasReview),
     ];
+
+    /// <summary>
+    /// The confirmation code is on none of the three lists, and must never return to one. It used to
+    /// be blanked for a BROWSING cleaner and served in full to an ASSIGNED one — who therefore held
+    /// the whole key the anonymous guest-cancellation endpoint accepted, and could cancel their own
+    /// customer's booking at the 25 % / 50 % tier. The guest's credential is a per-order token now and
+    /// the code is a human reference with no partner-side reader, so the shapes the partner hosts read
+    /// do not carry it at all — a redaction list is not what should be deciding this.
+    /// </summary>
+    [Theory]
+    [InlineData(typeof(OrderItem))]
+    [InlineData(typeof(OrderListItem))]
+    [InlineData(typeof(OrderListRow))]
+    public void No_Cleaner_Reachable_Shape_Carries_The_Confirmation_Code(Type dto)
+    {
+        var offenders = dto.GetProperties(BindingFlags.Public | BindingFlags.Instance)
+            .Select(p => p.Name)
+            .Where(name => name.Contains("ConfirmationCode", StringComparison.OrdinalIgnoreCase))
+            .ToArray();
+
+        Assert.Empty(offenders);
+    }
 
     [Fact]
     public void Every_Detail_Member_Is_Classified()
@@ -352,7 +372,6 @@ public class OrderRedactionSurfaceTests
             CompletedAt: new DateTime(2026, 8, 20, 12, 0, 0, DateTimeKind.Utc),
             CompletionNotes: "Balcony door was jammed.",
             OrderStatus: new Code("OrderStatus", "Completed", 5),
-            ConfirmationCode: "CONF-1234",
             Notes: "Cat is friendly.",
             SpecialInstructions: "Use the eco products under the sink.",
             AccessInstructions: "Code 1234 at the gate.",
@@ -418,7 +437,6 @@ public class OrderRedactionSurfaceTests
             AmountDueOnCard: 100m,
             EstimatedTime: 180,
             OrderStatus: new Code("OrderStatus", "Confirmed", 2),
-            ConfirmationCode: "CONF-1234",
             SelectedPackages: [],
             CurrencyId: "czk",
             Currency: new CurrencyListItem("czk", "CZK", "Kč", "Czech Koruna", true),

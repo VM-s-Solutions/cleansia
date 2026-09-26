@@ -286,6 +286,34 @@ public class CancelUnfilledOrdersTests
             Times.Never);
     }
 
+    [Fact]
+    public async Task AnErasedAccount_IsRefundedWithoutApologyCreditOrAPromiseOfCredit()
+    {
+        var order = UnfilledOrder();
+        Arrange(order);
+        // The sweep may have loaded the order before erasure; the locked account lookup is final.
+        _credit.Setup(c => c.EnsureForUserAsync(UserId, DefaultCurrencyId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((CreditAccount?)null);
+
+        var result = await Sweep();
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(1, result.Value!.CancelledCount);
+        Assert.Equal(1, result.Value.RefundedCount);
+        Assert.Equal(0, result.Value.CreditedCount);
+        Assert.Equal(OrderStatus.Cancelled, order.CurrentStatus);
+        Assert.Empty(_accounts);
+        _credit.Verify(c => c.EnsureForUserAsync(UserId, DefaultCurrencyId, It.IsAny<CancellationToken>()), Times.Once);
+        _notifications.Verify(n => n.NotifyAsync(
+            UserId, NotificationEventCatalog.OrderCancelled,
+            It.Is<Dictionary<string, string>>(args => !args.ContainsKey("amount")),
+            It.IsAny<string?>(), order.Id, It.IsAny<CancellationToken>()), Times.Once);
+        _notifications.Verify(n => n.NotifyAsync(
+            It.IsAny<string>(), NotificationEventCatalog.OrderNoCleanerRefunded,
+            It.IsAny<Dictionary<string, string>>(), It.IsAny<string?>(), It.IsAny<string>(),
+            It.IsAny<CancellationToken>()), Times.Never);
+    }
+
     /// <summary>
     /// The apology figure is authored PER CURRENCY, and a credit account keeps whatever currency it
     /// was opened in, converting nothing — so a currency with no authored figure pays none rather than

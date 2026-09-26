@@ -67,6 +67,15 @@ function buildFixture(overrides = {}) {
     androidTier3: '50% charge',
     iosTier2: '25% charge',
     iosTier3: '50% charge',
+    graceStandard: '15',
+    gracePlus: '60',
+    webGraceWithout: '15 minutes',
+    webGraceWith: '60 minutes',
+    webPlusPerkGrace: '60 minutes after booking to cancel free, instead of 15 minutes',
+    androidGraceNote: 'Within 15 minutes of booking you pay nothing — within 60 minutes with Cleansia Plus.',
+    androidPerkGrace: '60 minutes after booking to cancel free, instead of 15 minutes',
+    iosGraceNote: 'Within 15 minutes of booking you pay nothing — within 60 minutes with Cleansia Plus.',
+    iosPerkGrace: '60 minutes after booking to cancel free, instead of 15 minutes',
     webWeCancelValue: 'Everything back + {{amount}} credit',
     webWeCancelRefundOnly: 'Everything back',
     /**
@@ -125,6 +134,8 @@ public static class BookingPolicy
     public const decimal PartialCancellationFeeRate = ${o.partialRate};
     public const decimal LastMinuteCancellationFeeRate = ${o.lastMinuteRate};
     public const int PartialCancellationHours = 4;
+    public const int OopsWindowMinutesStandard = ${o.graceStandard};
+    public const int OopsWindowMinutesPlus = ${o.gracePlus};
 }
 `);
 
@@ -196,6 +207,11 @@ export const EXPRESS_SURCHARGE_RATE = ${o.tsExpressRate};
           order: {
             cancel_policy_tier3_value: o.webTier3,
             cancel_policy_tier4_value: o.webTier4,
+            plus_perk_grace: o.webPlusPerkGrace,
+          },
+          plus: {
+            row_grace_without: o.webGraceWithout,
+            row_grace_with: o.webGraceWith,
           },
           home: {
             rules: {
@@ -224,6 +240,8 @@ export const EXPRESS_SURCHARGE_RATE = ${o.tsExpressRate};
       `<resources>
     <string name="booking_cancel_tier2_value">${o.androidTier2}</string>
     <string name="booking_cancel_tier3_value">${o.androidTier3}</string>
+    <string name="booking_cancel_grace_note">${o.androidGraceNote}</string>
+    <string name="membership_perk_grace_desc">${o.androidPerkGrace}</string>
     <string name="notification_order_no_cleaner_refunded_body">${o.androidNoShowBody}</string>
     <string name="booking_trust_insured">${o.androidInsured}</string>
     <string name="booking_trust_insured_no_figure">${o.androidInsuredNoFigure}</string>
@@ -242,6 +260,8 @@ ${mapped('android-locale').map((r) => `    <string name="order_cancelled_reason_
       strings: {
         booking_cancel_tier2_value: { localizations: localizations(o.iosTier2) },
         booking_cancel_tier3_value: { localizations: localizations(o.iosTier3) },
+        booking_cancel_grace_note: { localizations: localizations(o.iosGraceNote) },
+        membership_perk_grace_desc: { localizations: localizations(o.iosPerkGrace) },
         'push.order.no_cleaner_refunded.body': { localizations: localizations(o.iosNoShowBody) },
         booking_trust_insured: { localizations: localizations(o.iosInsured) },
         booking_trust_insured_no_figure: { localizations: localizations(o.iosInsuredNoFigure) },
@@ -299,6 +319,28 @@ function scenario(name, overrides, expect) {
 
 // ─── 1. A tree that agrees passes ───────────────────────────────────────────
 scenario('a tree whose four surfaces agree passes', {}, { code: 0 });
+
+// ─── 1a. The grace after booking is stated from the policy on every client ──
+scenario(
+  'a web Plus row that promises 30 minutes is caught',
+  { webGraceWith: '30 minutes' },
+  { code: 1, mentions: ['pages.plus.row_grace_with', 'does not state 60 minutes'] },
+);
+scenario(
+  'an Android grace note that drops the Plus figure is caught',
+  { androidGraceNote: 'Within 15 minutes of booking you pay nothing.' },
+  { code: 1, mentions: ['booking_cancel_grace_note', 'does not state 60 minutes'] },
+);
+scenario(
+  'an iOS perk that states the old first-time 60 for everyone is caught',
+  { iosPerkGrace: 'Cancel free within 60 minutes of booking' },
+  { code: 1, mentions: ['membership_perk_grace_desc', 'does not state 15 minutes'] },
+);
+scenario(
+  'a policy change to the Plus grace flags every surface that still states the old figure',
+  { gracePlus: '90' },
+  { code: 1, mentions: ['web/en', 'android/values', 'ios/en', 'does not state 90 minutes'] },
+);
 
 // ─── 1b. Every platform cancellation reason renders on the three clients ────
 // A key the server writes that a client cannot turn into a sentence reaches the customer as

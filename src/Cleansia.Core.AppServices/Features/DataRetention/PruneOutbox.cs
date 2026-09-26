@@ -16,7 +16,7 @@ namespace Cleansia.Core.AppServices.Features.DataRetention;
 /// outbox rows older than the retention window and processed-inbox idempotency rows older than their window.
 /// This is read-terminal-then-delete only — it never touches a Pending/Failed outbox row (those are still
 /// re-drivable) nor an in-flight idempotency claim, so dispatch and duplicate-suppression are unchanged. The
-/// audit table is deliberately out of scope (append-only, keep-indefinitely). Deletes run in bounded,
+/// audit tables are out of scope — the data retention job sweeps them by their own windows. Deletes run in bounded,
 /// per-batch-committed loops so a single run can never issue one unbounded DELETE and a crash keeps the
 /// batches already removed.
 /// </summary>

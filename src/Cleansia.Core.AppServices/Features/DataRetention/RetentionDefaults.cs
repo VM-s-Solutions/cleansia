@@ -12,6 +12,9 @@ public static class RetentionDefaults
     public const string CustomerAuditRetentionYearsKey = "retention.customer_audit.years";
     public const string DisputeTextRetentionYearsKey = "retention.dispute_text.years";
     public const string WorkContractMetadataRetentionYearsKey = "retention.work_contract_metadata.years";
+    public const string OrderPhotosDaysKey = "retention.order_photos.days";
+    public const string AdminAuditRetentionYearsKey = "retention.admin_audit.years";
+    public const string EmployeeAuditRetentionYearsKey = "retention.employee_audit.years";
 
     public const bool DefaultExpiredCodesEnabled = true;
     public const int DefaultStaleDevicesDays = 90;
@@ -23,6 +26,9 @@ public static class RetentionDefaults
     public const int DefaultCustomerAuditRetentionYears = 3;
     public const int DefaultDisputeTextRetentionYears = 3;
     public const int DefaultWorkContractMetadataRetentionYears = 3;
+    public const int DefaultOrderPhotosDays = 7;
+    public const int DefaultAdminAuditRetentionYears = 3;
+    public const int DefaultEmployeeAuditRetentionYears = 3;
 
     /// <summary>
     /// Runaway/abuse guard on the notifications feed — an order of magnitude above a realistic

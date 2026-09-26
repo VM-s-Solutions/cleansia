@@ -246,6 +246,24 @@ class OrderWireTest {
         }
     }
 
+    /** The customer's own grace, which the sheet states as it arrived — 60 for an entitled Plus member. */
+    @Test
+    fun theGraceArrivesWithItsLiteralValue() = runTest {
+        assertEquals(60, preview(CAPTURED_PREVIEW).oopsWindowMinutes)
+    }
+
+    /**
+     * The grace only adds a sentence; refusing the quote over it would take the fee away from a guest,
+     * who cannot cancel without one.
+     */
+    @Test
+    fun aMissingGraceStatesNoneAndKeepsTheQuote() = runTest {
+        val quoted = preview(withoutKey(CAPTURED_PREVIEW, "oopsWindowMinutes"))
+
+        assertNull(quoted.oopsWindowMinutes)
+        assertEquals(2190.00, quoted.feeAmount, 0.0)
+    }
+
     @Test
     fun anExplicitFalseForfeitureIsARealStateAndSurvives() = runTest {
         val quoted = preview(withKey(CAPTURED_PREVIEW, "expressWaiverForfeitedOnCancel", falseValue()))
@@ -445,7 +463,6 @@ class OrderWireTest {
               "promoDiscountAmount": 88.00,
               "estimatedTime": 240,
               "orderStatus": { "type": "OrderStatus", "name": "Confirmed", "value": 2 },
-              "confirmationCode": "ABC123",
               "selectedPackages": [
                 { "id": "pkg-1", "name": "Deep clean", "description": "Everything", "price": 450.00 }
               ],
@@ -522,7 +539,6 @@ class OrderWireTest {
               "completedAt": "2026-08-12T13:55:00Z",
               "completionNotes": "All done.",
               "orderStatus": { "type": "OrderStatus", "name": "Completed", "value": 5 },
-              "confirmationCode": "ABC123",
               "notes": "Ring twice.",
               "specialInstructions": "Gate code 1234.",
               "accessInstructions": "Side gate, key box 4417.",
@@ -604,7 +620,8 @@ class OrderWireTest {
               "refundAmount": 2190.00,
               "totalPrice": 4380.00,
               "currencyCode": "CZK",
-              "expressWaiverForfeitedOnCancel": true
+              "expressWaiverForfeitedOnCancel": true,
+              "oopsWindowMinutes": 60
             }
         """.trimIndent()
 
@@ -631,7 +648,6 @@ class OrderWireTest {
             "promoDiscountAmount",
             "estimatedTime",
             "orderStatus",
-            "confirmationCode",
             "selectedPackages",
             "currencyId",
             "currency",
@@ -664,6 +680,7 @@ class OrderWireTest {
             "totalPrice",
             "currencyCode",
             "expressWaiverForfeitedOnCancel",
+            "oopsWindowMinutes",
         )
 
         val LIST_ROW_REQUIRED_MONEY = listOf("totalPrice", "originalSubtotal", "appliedDiscountSource")

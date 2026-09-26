@@ -59,6 +59,7 @@ public class RevenueReportPredicateTests(PostgresContainerFixture fixture) : Bas
                     Completed("paid", PaymentStatus.Paid, March5),
                     Completed("partial", PaymentStatus.PartiallyRefunded, March5),
                     Completed("refunded", PaymentStatus.Refunded, March5),
+                    Completed("legacy-disputed", PaymentStatus.Disputed, March5),
                     Completed("unpaid-completed", PaymentStatus.Pending, March5),
                     At("new", OrderStatus.New),
                     At("confirmed", OrderStatus.Confirmed),
@@ -71,7 +72,7 @@ public class RevenueReportPredicateTests(PostgresContainerFixture fixture) : Bas
                 .GetCompletedPaidOrdersByCompletionDateAsync(Start, End, Czk, CancellationToken.None),
             assert: (CleansiaDbContext _, IReadOnlyList<Order> orders) =>
             {
-                Assert.Equal(["paid", "partial", "refunded"], orders.Select(o => o.Id).Order());
+                Assert.Equal(["legacy-disputed", "paid", "partial", "refunded"], orders.Select(o => o.Id).Order());
                 return Task.CompletedTask;
             },
             transactional: false);

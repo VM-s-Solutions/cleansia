@@ -76,7 +76,8 @@ public class CancelOrderStandardTierFeeTests
                 _producer.Object,
                 _liveActivityProducer.Object,
                 _expressWaiverConsumer.Object,
-                new AuditContext()));
+                new AuditContext(),
+                TimeProvider.System));
 
     private Order ArrangeAcceptedCardPaidOrder(DateTime cleaningUtc, decimal totalPrice)
     {

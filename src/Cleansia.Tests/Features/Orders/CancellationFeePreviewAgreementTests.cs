@@ -77,14 +77,16 @@ public class CancellationFeePreviewAgreementTests
                 _producer.Object,
                 _liveActivityProducer.Object,
                 _expressWaiverConsumer.Object,
-                new AuditContext()));
+                new AuditContext(),
+                TimeProvider.System));
 
     private GetCancellationFeePreview.Handler CreatePreviewHandler() =>
         new(
             OrderAccessDoubles.Over(_orderRepository, _session),
             _session.Object,
             Resolver,
-            _expressWaiverConsumer.Object);
+            _expressWaiverConsumer.Object,
+            TimeProvider.System);
 
     private Order ArrangeOrder(
         double cleaningInHours,
@@ -172,12 +174,14 @@ public class CancellationFeePreviewAgreementTests
 
     /// <summary>Quote, then commit — and assert the two agree AND land on the hand-derived numbers.</summary>
     private async Task AssertQuoteMatchesChargeAsync(
-        CancellationFeeTier expectedTier, decimal expectedRate, decimal expectedRefund, decimal expectedFee)
+        CancellationFeeTier expectedTier, decimal expectedRate, decimal expectedRefund, decimal expectedFee,
+        int expectedOopsMinutes = BookingPolicy.OopsWindowMinutesStandard)
     {
         var preview = await PreviewAsync();
         var cancel = await CancelAsync();
 
         Assert.Equal(expectedTier, preview.Tier);
+        Assert.Equal(expectedOopsMinutes, preview.OopsWindowMinutes);
         Assert.Equal(expectedRate, preview.FeeRate);
         Assert.Equal(expectedRefund, preview.RefundAmount);
         Assert.Equal(expectedFee, preview.FeeAmount);
@@ -221,11 +225,41 @@ public class CancellationFeePreviewAgreementTests
     public async Task Accepted_Inside_The_Oops_Window_Quotes_Free_And_Charges_Free()
     {
         // Booked 5 minutes ago with the cleaning an hour away: the 50% tier by timing, free by the
-        // accidental-tap rule. Strictly inside the 15-minute cap — both handlers read DateTime.UtcNow,
-        // so the exact boundary is pinned deterministically by the pure-function suite instead.
+        // accidental-tap rule. Strictly inside the 15-minute cap; the exact boundary is pinned by the
+        // pure-function suite and at a fixed clock by the Postgres pipeline suite.
         ArrangeOrder(cleaningInHours: 1, bookedMinutesAgo: 5);
 
         await AssertQuoteMatchesChargeAsync(CancellationFeeTier.FreeOopsWindow, 0m, 1000m, 0m);
+    }
+
+    [Fact]
+    public async Task Plus_Member_Half_An_Hour_After_Booking_Quotes_Free_And_Charges_Free()
+    {
+        // Past the standard 15 minutes, inside an entitled member's 60: free on both surfaces, where the
+        // same order for a non-member is the 50% tier (next case).
+        GivenPlusMembership(freeCancellationWindowHours: 4);
+        ArrangeOrder(cleaningInHours: 1, bookedMinutesAgo: 30);
+
+        await AssertQuoteMatchesChargeAsync(
+            CancellationFeeTier.FreeOopsWindow, 0m, 1000m, 0m, BookingPolicy.OopsWindowMinutesPlus);
+    }
+
+    [Fact]
+    public async Task NonMember_Half_An_Hour_After_Booking_Quotes_50Percent_And_Charges_50Percent()
+    {
+        ArrangeOrder(cleaningInHours: 1, bookedMinutesAgo: 30);
+
+        await AssertQuoteMatchesChargeAsync(CancellationFeeTier.LastMinute, 0.50m, 500m, 500m);
+    }
+
+    [Fact]
+    public async Task Plus_Member_Past_The_Sixty_Minutes_Quotes_50Percent_And_Charges_50Percent()
+    {
+        GivenPlusMembership(freeCancellationWindowHours: 4);
+        ArrangeOrder(cleaningInHours: 1, bookedMinutesAgo: 90);
+
+        await AssertQuoteMatchesChargeAsync(
+            CancellationFeeTier.LastMinute, 0.50m, 500m, 500m, BookingPolicy.OopsWindowMinutesPlus);
     }
 
     // ── No cleaner on the job ──
@@ -249,7 +283,8 @@ public class CancellationFeePreviewAgreementTests
         GivenPlusMembership(freeCancellationWindowHours: 4);
         ArrangeOrder(cleaningInHours: 6);
 
-        await AssertQuoteMatchesChargeAsync(CancellationFeeTier.FreeOutsideWindow, 0m, 1000m, 0m);
+        await AssertQuoteMatchesChargeAsync(
+            CancellationFeeTier.FreeOutsideWindow, 0m, 1000m, 0m, BookingPolicy.OopsWindowMinutesPlus);
     }
 
     [Fact]

@@ -153,12 +153,13 @@ public class IssueCustomerCredit
             // default-currency number to it, which is how a CZK refund could land on a EUR balance.
             var account = await creditAccountRepository.EnsureForUserAsync(
                 command.UserId, command.CurrencyId, cancellationToken);
+            if (account is null)
+                return BusinessResult.Failure<Response>(new Error(nameof(command.UserId), BusinessErrorMessage.UserNotFound));
 
             var balanceBefore = account.Balance;
 
-            // Increases go through the tracked graph, not the conditional UPDATE. Two concurrent
-            // grants both increase the balance and both are correct; the direction that needs the
-            // database to arbitrate is spending, and it does not live here.
+            // A tracked write of an absolute balance, safe only because EnsureForUserAsync holds the
+            // owner and account locks until the commit.
             account.Issue(
                 amount: command.Amount,
                 reason: command.Reason,

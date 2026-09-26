@@ -36,12 +36,12 @@ public class CustomerOrderCancellationSequencingTests
             });
         var policy = new Mock<ICancellationPolicyResolver>();
         policy.Setup(x => x.ResolveForUserAsync(order.UserId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new CancellationPolicy(24, 4, .25m, .50m));
+            .ReturnsAsync(new CancellationPolicy(24, 4, .25m, .50m, BookingPolicy.OopsWindowMinutesStandard));
         var notices = new Mock<INotificationProducer>();
         var waiver = ExpressWaiverMocks.NoConsumer();
         var service = new CustomerOrderCancellation(Mock.Of<ITenantProvider>(), refunds.Object, Mock.Of<IRefundRepository>(),
             Mock.Of<ICreditAccountRepository>(), Mock.Of<ILoyaltyService>(), policy.Object, notices.Object,
-            Mock.Of<ILiveActivityProducer>(), waiver.Object, new AuditContext());
+            Mock.Of<ILiveActivityProducer>(), waiver.Object, new AuditContext(), TimeProvider.System);
 
         var result = await service.ExecuteAsync(order, null, guest ? "System" : "account", CancellationToken.None);
 

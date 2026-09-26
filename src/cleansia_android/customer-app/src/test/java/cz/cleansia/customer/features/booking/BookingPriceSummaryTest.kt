@@ -162,6 +162,7 @@ class BookingPriceSummaryTest {
         surcharge: Double = 0.0,
         waived: Boolean = false,
     ) = QuoteOrderResponse(
+        requiredEmployees = 1,
         finalPriceAfterDiscount = 0.0,
         originalSubtotal = 0.0,
         appliedDiscountSource = 0,

@@ -8,6 +8,8 @@ import { GuestOrderService, TrackOrderFacade } from '@cleansia-customer/orders';
 import {
   CUSTOMER_API_BASE_URL,
   CustomerAuthService,
+  CustomerOrderClient,
+  OrderItem,
 } from '@cleansia/customer-services';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { BehaviorSubject, of, throwError } from 'rxjs';
@@ -35,31 +37,42 @@ describe('CheckoutSuccessComponent', () => {
   let queryParamMap: BehaviorSubject<ParamMap>;
   let title: Title;
   let lookupBatch: jest.Mock;
+  let getById: jest.SpyInstance;
 
   /**
-   * `guestOrders` is what the page uses to find the order it is confirming —
-   * the wizard writes it there immediately before leaving for Stripe. Empty by
-   * default so these tests exercise the page WITHOUT an order, which is the
-   * branch that must keep working: the confirmation still has to render when
-   * the lookup finds nothing.
+   * `guestOrders` is where the access tokens live — one is written when a booking is opened from
+   * its e-mail link. Empty by default so these tests exercise the page WITHOUT an order, which is
+   * the branch that must keep working: the confirmation still has to render when there is nothing
+   * to prove the booking with.
    */
   async function render(
     options: {
       type?: string;
+      orderId?: string;
       loggedIn?: boolean;
       guestOrders?: unknown[];
       lookup?: unknown;
+      signedInRead?: unknown;
     } = {},
   ): Promise<void> {
-    // The page looks the order up by its ULID, which only the BATCH query
-    // matches — the single lookup is keyed on the display order number.
+    // The batch query is the one keyed on access tokens; the single lookup takes exactly one.
     lookupBatch = jest.fn().mockReturnValue(
       options.lookup === 'fail'
         ? throwError(() => new Error('not found'))
         : of({ orders: options.lookup === 'none' ? [] : [ORDER] }),
     );
+    // The signed-in read is the app's own authenticated order detail, which answers the same
+    // members this page reads off the guest lookup.
+    getById = jest.spyOn(CustomerOrderClient.prototype, 'getById').mockReturnValue(
+      options.signedInRead === 'fail'
+        ? throwError(() => new Error('not yours'))
+        : of(OrderItem.fromJS(ORDER)),
+    );
     queryParamMap = new BehaviorSubject<ParamMap>(
-      convertToParamMap(options.type === undefined ? {} : { type: options.type })
+      convertToParamMap({
+        ...(options.type === undefined ? {} : { type: options.type }),
+        ...(options.orderId === undefined ? {} : { orderId: options.orderId }),
+      })
     );
 
     await TestBed.configureTestingModule({
@@ -105,7 +118,10 @@ describe('CheckoutSuccessComponent', () => {
     fixture.detectChanges();
   }
 
-  afterEach(() => TestBed.resetTestingModule());
+  afterEach(() => {
+    jest.restoreAllMocks();
+    TestBed.resetTestingModule();
+  });
 
   describe('payment type', () => {
     it('reads a cash return from the type query param', async () => {
@@ -164,34 +180,85 @@ describe('CheckoutSuccessComponent', () => {
   });
 
   /**
-   * Neither return path carries the order in the URL — the cash path navigates
-   * here with only `?type=cash`, the card path comes back from a URL Stripe
-   * builds — so the page finds it through the entry the wizard wrote before
-   * either departure.
+   * Both paths name the booking in the URL — the wizard puts `?orderId=` on the cash navigation and
+   * Stripe returns it on the card one. A guest proves it with the access token this browser holds;
+   * a signed-in customer's session proves it, and the server decides whose order it is.
    */
   describe('the order it is confirming', () => {
     const GUEST = [
-      { orderId: '01ORDER', email: 'jan@example.com', createdAt: '2026-09-02T09:14:00Z' },
+      { orderId: '01ORDER', accessToken: 'tok-01ORDER', createdAt: '2026-09-02T09:14:00Z' },
     ];
 
-    it('asks for the newest remembered order', async () => {
-      await render({ guestOrders: GUEST });
-      expect(lookupBatch).toHaveBeenCalledWith([
-        { orderId: '01ORDER', email: 'jan@example.com' },
-      ]);
-      expect(fixture.componentInstance.hasOrder()).toBe(true);
-    });
+    it.each(['card', 'cash'])(
+      'asks for the booking the %s path named, with the token this browser holds',
+      async (type) => {
+        await render({ type, orderId: '01ORDER', guestOrders: GUEST });
+        expect(lookupBatch).toHaveBeenCalledWith(['tok-01ORDER']);
+        expect(fixture.componentInstance.hasOrder()).toBe(true);
+      },
+    );
 
     // The whole point of the fallback: a confirmation that cannot prove what it
     // is confirming still has to confirm, rather than showing an error to
     // someone who has just paid.
     it('renders without figures when the lookup fails', async () => {
-      await render({ guestOrders: GUEST, lookup: 'fail' });
+      await render({ orderId: '01ORDER', guestOrders: GUEST, lookup: 'fail' });
       expect(fixture.componentInstance.hasOrder()).toBe(false);
     });
 
-    it('asks for nothing when this browser remembers no order', async () => {
-      await render({ guestOrders: [] });
+    it('asks for nothing when this browser holds no token for that booking', async () => {
+      await render({ orderId: '01ORDER', guestOrders: [] });
+      expect(lookupBatch).not.toHaveBeenCalled();
+      expect(fixture.componentInstance.hasOrder()).toBe(false);
+    });
+
+    it('asks for nothing when the URL names no booking', async () => {
+      await render({ type: 'cash', guestOrders: GUEST });
+      expect(lookupBatch).not.toHaveBeenCalled();
+      expect(fixture.componentInstance.hasOrder()).toBe(false);
+    });
+
+    it('asks for nothing when the URL names a booking this browser cannot prove', async () => {
+      await render({ orderId: '01OTHER', guestOrders: GUEST });
+      expect(lookupBatch).not.toHaveBeenCalled();
+      expect(fixture.componentInstance.hasOrder()).toBe(false);
+    });
+
+    it('never reads a guest booking through the signed-out path with the session', async () => {
+      await render({ orderId: '01ORDER', guestOrders: GUEST });
+      expect(getById).not.toHaveBeenCalled();
+    });
+  });
+
+  /**
+   * A signed-in customer holds no access token — one is minted for guest bookings only — so the
+   * booking comes back through the account's own order detail, keyed on the id in the URL. Whether
+   * that booking is theirs is the server's answer, not this page's: a refusal reads the same here as
+   * a booking that does not exist.
+   */
+  describe('the order it is confirming, signed in', () => {
+    it.each(['card', 'cash'])(
+      'reads the booking the %s path named through the account order detail',
+      async (type) => {
+        await render({ type, orderId: '01ORDER', loggedIn: true });
+
+        expect(getById).toHaveBeenCalledWith('01ORDER');
+        expect(lookupBatch).not.toHaveBeenCalled();
+        expect(fixture.componentInstance.hasOrder()).toBe(true);
+      },
+    );
+
+    it('states no figures when the booking is not theirs, and says nothing else about it', async () => {
+      await render({ orderId: '01OTHER', loggedIn: true, signedInRead: 'fail' });
+
+      expect(getById).toHaveBeenCalledWith('01OTHER');
+      expect(fixture.componentInstance.hasOrder()).toBe(false);
+    });
+
+    it('asks for nothing when the URL names no booking', async () => {
+      await render({ type: 'cash', loggedIn: true });
+
+      expect(getById).not.toHaveBeenCalled();
       expect(lookupBatch).not.toHaveBeenCalled();
       expect(fixture.componentInstance.hasOrder()).toBe(false);
     });

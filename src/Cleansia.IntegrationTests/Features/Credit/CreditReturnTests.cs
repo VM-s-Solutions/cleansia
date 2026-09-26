@@ -73,7 +73,7 @@ public class CreditReturnTests(PostgresContainerFixture fixture) : BaseIntegrati
             await using var seed = NewContext();
             var repo = new CreditAccountRepository(seed);
             var account = await repo.EnsureForUserAsync(user.Id, currency.Id, CancellationToken.None);
-            account.Issue(balance, CreditTransactionReason.Goodwill, "seed-grant", ActorId, note: "n");
+            account!.Issue(balance, CreditTransactionReason.Goodwill, "seed-grant", ActorId, note: "n");
             await seed.CommitAsync(CancellationToken.None);
         }
 
@@ -320,6 +320,117 @@ public class CreditReturnTests(PostgresContainerFixture fixture) : BaseIntegrati
                 afterReturn > DateTimeOffset.UtcNow.AddDays(1),
                 $"a return must push the expiry out, but it is {afterReturn}");
         }
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task ErasedOwner_NeverReceivesReturnsOrANewAccount(bool existingAccount)
+    {
+        await ResetAsync();
+        var (userId, currencyId) = await SeedCustomerAsync(existingAccount ? 100m : 0m);
+        await using (var erase = NewContext())
+        {
+            var user = await erase.Users.SingleAsync(u => u.Id == userId);
+            user.Anonymize().Deactivated("GDPR_DELETION", DateTimeOffset.UtcNow);
+            if (existingAccount)
+            {
+                var account = await erase.CreditAccounts.SingleAsync(a => a.UserId == userId);
+                account.RecordExpiry(account.Drain(ActorId, DateTimeOffset.UtcNow),
+                    "seed-deletion", ActorId, "Account deletion");
+            }
+            await erase.CommitAsync(CancellationToken.None);
+        }
+
+        Assert.False(await ReturnAsync(userId, currencyId, 75m, "credit-return:erased"));
+        Assert.False(await ReturnAsync(userId, currencyId, 75m, "credit-return:erased"));
+        await using var check = NewContext();
+        var repository = new CreditAccountRepository(check);
+        Assert.Null(await repository.EnsureForUserAsync(userId, currencyId, CancellationToken.None));
+        Assert.Equal(existingAccount ? 1 : 0, await check.CreditAccounts.CountAsync(a => a.UserId == userId));
+        Assert.Equal(0m, await repository.GetReturnedTotalForOrderAsync(OrderId, CancellationToken.None));
+        Assert.Equal(0m, await BalanceAsync(userId));
+        Assert.Equal(0m, (await LedgerAsync(userId)).Ledger);
+    }
+
+    [Fact]
+    public async Task OrdinaryInactiveOwner_CanStillReceiveCredit()
+    {
+        await ResetAsync();
+        var (userId, currencyId) = await SeedCustomerAsync(0m);
+        await using (var deactivate = NewContext())
+        {
+            var user = await deactivate.Users.SingleAsync(u => u.Id == userId);
+            user.Deactivated("account suspended", DateTimeOffset.UtcNow);
+            await deactivate.CommitAsync(CancellationToken.None);
+        }
+
+        Assert.True(await ReturnAsync(userId, currencyId, 75m, "credit-return:inactive"));
+        await using (var grant = NewContext())
+        {
+            var account = await new CreditAccountRepository(grant).EnsureForUserAsync(userId, currencyId, CancellationToken.None);
+            Assert.NotNull(account);
+            account.Issue(25m, CreditTransactionReason.Goodwill, "inactive-grant", ActorId);
+            await grant.CommitAsync(CancellationToken.None);
+        }
+        Assert.Equal(100m, await BalanceAsync(userId));
+        Assert.Equal(100m, (await LedgerAsync(userId)).Ledger);
+    }
+
+    [Fact]
+    public async Task ReturnThatCreatesAccount_DoesNotFlushUnrelatedStagedChanges()
+    {
+        await ResetAsync();
+        var (userId, currencyId) = await SeedCustomerAsync(0m);
+        await using (var failingCommand = NewContext())
+        {
+            var user = await failingCommand.Users.SingleAsync(u => u.Id == userId);
+            user.Deactivated("must not persist", DateTimeOffset.UtcNow);
+            Assert.True(await new CreditAccountRepository(failingCommand).TryReturnAsync(
+                userId, currencyId, 75m, "credit-return:failed-checkout", ActorId, CancellationToken.None));
+            failingCommand.Rollback();
+        }
+
+        await using var check = NewContext();
+        Assert.True((await check.Users.SingleAsync(u => u.Id == userId)).IsActive);
+        Assert.Equal(75m, await BalanceAsync(userId));
+        Assert.Equal(75m, (await LedgerAsync(userId)).Ledger);
+    }
+
+    [Fact]
+    public async Task ConcurrentSameKeyReturns_MoveCreditOnce()
+    {
+        await ResetAsync();
+        var (userId, currencyId) = await SeedCustomerAsync(0m);
+        const string key = "credit-return:concurrent";
+
+        await using var first = NewContext();
+        await using var firstTransaction = await first.Database.BeginTransactionAsync();
+        Assert.True(await new CreditAccountRepository(first).TryReturnAsync(
+            userId, currencyId, 75m, key, ActorId, CancellationToken.None, orderId: OrderId));
+
+        await using var second = NewContext();
+        await second.Database.OpenConnectionAsync();
+        var secondReturn = new CreditAccountRepository(second).TryReturnAsync(
+            userId, currencyId, 75m, key, ActorId, CancellationToken.None, orderId: OrderId);
+        await WaitUntilBlocked(((NpgsqlConnection)second.Database.GetDbConnection()).ProcessID, secondReturn);
+        Assert.False(secondReturn.IsCompleted, "the second return must wait for the first one's owner lock");
+
+        await firstTransaction.CommitAsync();
+        Assert.False(await secondReturn.WaitAsync(TimeSpan.FromSeconds(15)));
+        Assert.Equal(75m, await BalanceAsync(userId));
+        Assert.Equal((75m, 1), await LedgerAsync(userId));
+    }
+
+    private async Task WaitUntilBlocked(int backendPid, Task work)
+    {
+        using var deadline = new CancellationTokenSource(TimeSpan.FromSeconds(15));
+        await using var observer = new NpgsqlConnection(Fixture.GetConnectionString());
+        await observer.OpenAsync(deadline.Token);
+        await using var command = new NpgsqlCommand("SELECT cardinality(pg_blocking_pids(@pid)) > 0", observer);
+        command.Parameters.AddWithValue("pid", backendPid);
+        while (await command.ExecuteScalarAsync(deadline.Token) is not true && !work.IsCompleted)
+            await Task.Delay(TimeSpan.FromMilliseconds(10), deadline.Token);
     }
 
     private sealed class FixedTenantProvider(string? tenantId) : ITenantProvider

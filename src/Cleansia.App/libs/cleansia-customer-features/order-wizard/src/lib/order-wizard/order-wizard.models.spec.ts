@@ -1,8 +1,11 @@
+import { PaymentType } from '@cleansia/customer-services';
 import {
+  cashReasonCopy,
   composeFinalPriceForUnquotedDiscount,
   composeSlotMoment,
   filterTimeOptionsForToday,
   generateTimeOptions,
+  paymentTitleKey,
 } from './order-wizard.models';
 
 describe('composeFinalPriceForUnquotedDiscount', () => {
@@ -76,4 +79,33 @@ describe('quarter-hour booking slots', () => {
       expect(instant?.getSeconds()).toBe(0);
     }
   );
+});
+
+describe('cashReasonCopy', () => {
+  it('says nothing when cash can be chosen', () => {
+    expect(cashReasonCopy({ kind: 'available' })).toBeNull();
+  });
+
+  it('asks a guest to sign in', () => {
+    expect(cashReasonCopy({ kind: 'needs_account' })?.key).toBe('pages.order.cash_needs_account');
+  });
+
+  it("states the server's crew, never a count of its own", () => {
+    expect(cashReasonCopy({ kind: 'needs_card', requiredCleaners: 3 })).toEqual({
+      key: 'pages.order.cash_needs_card',
+      params: { count: 3 },
+    });
+  });
+
+  it('waits for the price while the crew is unknown', () => {
+    expect(cashReasonCopy({ kind: 'pending' })?.key).toBe('pages.order.cash_pending');
+  });
+});
+
+describe('paymentTitleKey', () => {
+  it('names the chosen way to pay, and never a default for an unchosen one', () => {
+    expect(paymentTitleKey(PaymentType.Card)).toBe('pages.order.payment_card_title');
+    expect(paymentTitleKey(PaymentType.Cash)).toBe('pages.order.payment_cash_title');
+    expect(paymentTitleKey(null)).toBe('pages.order.missing.payment');
+  });
 });

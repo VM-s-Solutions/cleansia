@@ -13,6 +13,8 @@ using Cleansia.Core.Fiscal.Abstractions;
 using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
+using Cleansia.Core.AppServices.Features.Orders;
+using Cleansia.Tests.Infrastructure;
 
 namespace Cleansia.Tests.Fiscal;
 
@@ -70,7 +72,7 @@ public sealed class FiscalRetryServicePerReceiptDurabilityTests
         _emailService
             .Setup(s => s.SendOrderReceiptEmailAsync(
                 It.IsAny<string>(), It.IsAny<Order>(), It.IsAny<byte[]?>(),
-                It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>(), It.IsAny<string?>()))
             .ReturnsAsync("msg-1");
     }
 
@@ -80,6 +82,7 @@ public sealed class FiscalRetryServicePerReceiptDurabilityTests
         _countryConfigurationRepository.Object,
         _receiptService.Object,
         _emailService.Object,
+        TestGuestOrderAccessTokenIssuer.WithNoLiveTokens(),
         unitOfWork,
         _tenantProvider.Object,
         NullLogger<FiscalRetryService>.Instance);
@@ -202,7 +205,7 @@ public sealed class FiscalRetryServicePerReceiptDurabilityTests
         _emailService.Verify(
             s => s.SendOrderReceiptEmailAsync(
                 It.IsAny<string>(), It.IsAny<Order>(), It.IsAny<byte[]?>(),
-                It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()),
+                It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>(), It.IsAny<string?>()),
             Times.Once);
 
         Assert.True(receipt.EmailSent);

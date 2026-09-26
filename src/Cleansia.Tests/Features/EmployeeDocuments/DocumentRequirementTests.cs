@@ -65,17 +65,36 @@ public class DocumentRequirementTests
         Assert.Equal(3, existing.SortOrder);
     }
 
-    [Fact]
-    public async Task A_Type_The_Country_Has_Never_Configured_Is_Added()
+    [Theory]
+    [InlineData(DocumentType.WorkPermit)]
+    [InlineData(DocumentType.TaxDocument)]
+    [InlineData(DocumentType.InsuranceDocument)]
+    public async Task A_Type_The_Country_Has_Never_Configured_Can_Be_Saved_And_Read_On_The_Checklist(DocumentType type)
     {
         Configured();
+        var countries = new Mock<ICountryRepository>();
+        countries.Setup(r => r.ExistsAsync(CountryId, It.IsAny<CancellationToken>())).ReturnsAsync(true);
+        var command = new SaveDocumentRequirement.Command(CountryId, type, false, 1);
+
+        var validation = await new SaveDocumentRequirement.Validator(countries.Object)
+            .ValidateAsync(command);
+        Assert.True(validation.IsValid);
 
         var result = await SaveHandler().Handle(
-            new SaveDocumentRequirement.Command(CountryId, DocumentType.WorkPermit, true, 1),
-            CancellationToken.None);
+            command, CancellationToken.None);
 
         Assert.True(result.IsSuccess);
-        Assert.Equal(DocumentType.WorkPermit, Assert.Single(_added).DocumentType);
+        var requirement = Assert.Single(_added);
+        Assert.Equal(type, requirement.DocumentType);
+        Configured(requirement);
+        var document = Held(type, DocumentStatus.Approved, version: 1);
+
+        var row = Assert.Single(await Checklist(EmployeeWith(document)));
+
+        Assert.Equal(type, row.DocumentType);
+        Assert.Equal(document.Id, row.DocumentId);
+        Assert.Equal(DocumentStatus.Approved, row.Status);
+        Assert.False(row.IsRequired);
     }
 
     /// <summary>

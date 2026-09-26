@@ -27,6 +27,8 @@ data class CancellationFeeCallout(
     val amounts: List<Double>,
     val severity: CancellationFeeSeverity,
     val warnsExpressWaiverForfeited: Boolean,
+    /** The server's grace for this customer, stated on every tier; null states none. */
+    val graceMinutes: Int?,
 )
 
 /**
@@ -85,6 +87,7 @@ private fun CancellationFeePreviewDto.free(@StringRes titleRes: Int) = Cancellat
     amounts = emptyList(),
     severity = CancellationFeeSeverity.Free,
     warnsExpressWaiverForfeited = expressWaiverForfeitedOnCancel,
+    graceMinutes = oopsWindowMinutes,
 )
 
 private fun CancellationFeePreviewDto.charged(
@@ -97,4 +100,5 @@ private fun CancellationFeePreviewDto.charged(
     amounts = listOf(feeAmount, refundAmount),
     severity = severity,
     warnsExpressWaiverForfeited = expressWaiverForfeitedOnCancel,
+    graceMinutes = oopsWindowMinutes,
 )

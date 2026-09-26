@@ -5,6 +5,8 @@ import XCTest
 
 @MainActor
 final class BookingSubmitTests: XCTestCase {
+    private var languageTag = "en"
+
     private func makeVM(
         quote: FakeQuoteClient = FakeQuoteClient(result: .success(BookingQuote(
             totalPrice: 1234,
@@ -23,6 +25,7 @@ final class BookingSubmitTests: XCTestCase {
             orderCreateClient: create,
             countryResolver: country,
             tokenStore: tokenStore,
+            languageTag: { [unowned self] in languageTag },
             isCardPaymentAvailable: cardAvailable,
             quoteDebounce: .milliseconds(400),
             scheduler: TestScheduler.dispatch.eraseToAnyScheduler()
@@ -254,6 +257,19 @@ final class BookingSubmitTests: XCTestCase {
         let outcome = await vm.submit()
         XCTAssertEqual(outcome, .failed(serverError))
         XCTAssertEqual(create.callCount, 0)
+    }
+
+    /// The receipt and its e-mail are rendered in the booking's language, and this view model outlives
+    /// a language switch, so the tag is read when the order is placed rather than when the sheet opened.
+    func testTheOrderIsBookedInTheLanguageTheAppShowsWhenItIsPlaced() async {
+        let create = FakeOrderCreateClient()
+        let vm = makeVM(create: create)
+        languageTag = "cs"
+        vm.update(readyState())
+
+        _ = await vm.submit()
+
+        XCTAssertEqual(create.commands.first?.language, "cs")
     }
 
     func testResolvedCountryIdIsSentOnInlineAddress() async {

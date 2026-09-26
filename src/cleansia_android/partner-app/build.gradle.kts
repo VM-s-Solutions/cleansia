@@ -172,6 +172,14 @@ android {
     }
 }
 
+// Copy guards read every locale's strings.xml straight off disk. A copy-only edit changes no compiled
+// class, so undeclared, this task stays UP-TO-DATE or FROM-CACHE and reports the old verdict.
+tasks.withType<Test>().configureEach {
+    inputs.files(fileTree("src/main/res") { include("values*/strings.xml") })
+        .withPropertyName("localeStrings")
+        .withPathSensitivity(PathSensitivity.RELATIVE)
+}
+
 // ─── Release signing assertion ──────────────────────────────────────
 // AGP treats an incomplete signingConfig as "package it unsigned" and emits the artifact with
 // no error at all, so the first signal that the keystore or a password was missing is Play

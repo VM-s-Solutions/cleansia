@@ -276,7 +276,6 @@
     <string name="order_detail_error_title">Couldn\'t load this order</string>
     <string name="order_detail_error_message">Check your internet connection and try again.</string>
     <string name="order_detail_error_retry">Try again</string>
-    <string name="order_detail_code_label">Code</string>
     <string name="order_detail_discount_tier">Loyalty discount applied</string>
     <string name="order_detail_discount_membership">Cleansia Plus discount applied</string>
     <string name="order_detail_discount_promo">Promo code applied</string>
@@ -298,7 +297,7 @@
     <string name="order_cancel_title">Cancel this cleaning?</string>
     <!-- Fee card. One sentence per server tier; the money comes from the server too. -->
     <string name="order_cancel_fee_not_accepted">Free cancellation — no cleaner has taken this booking yet.</string>
-    <string name="order_cancel_fee_oops">Free cancellation — you booked this only moments ago.</string>
+    <string name="order_cancel_fee_oops">This booking is within the cancellation grace period.</string>
     <string name="order_cancel_fee_outside_window">Free cancellation — you\'re cancelling far enough ahead.</string>
     <string name="order_cancel_fee_partial">A cleaner is already on this job, so cancelling now has a fee.</string>
     <string name="order_cancel_fee_last_minute">This is a last-minute cancellation, so the fee is higher.</string>
@@ -308,6 +307,10 @@
     <string name="order_cancel_fee_unavailable">We couldn\'t check the cancellation fee just now. You can still cancel — the amount is confirmed when you do.</string>
     <string name="order_cancel_fee_retry">Try again</string>
     <string name="order_cancel_fee_recheck_note">This is the cost right now — we check again the moment you confirm.</string>
+    <plurals name="order_cancel_fee_grace_note">
+        <item quantity="one">Cancelling within %1$d minute of booking is free, even after a cleaner has accepted.</item>
+        <item quantity="other">Cancelling within %1$d minutes of booking is free, even after a cleaner has accepted.</item>
+    </plurals>
     <string name="order_cancel_express_waiver_forfeit">Cancelling also uses up one of your included express bookings for this month.</string>
     <string name="order_cancel_fee_neutral">Are you sure you want to cancel this booking?</string>
     <!-- Legacy free-text label (kept for backward-compat — no longer rendered). -->
@@ -531,7 +534,7 @@
     <string name="help_email_desc">support@cleansia.cz</string>
     <string name="help_faq_title">Frequently asked questions</string>
     <string name="help_faq_q1">How do I cancel my booking?</string>
-    <string name="help_faq_a1">Open your booking from the Orders tab and tap \"Cancel\". Cancellations free of charge up to 24 hours before the cleaning start time.</string>
+    <string name="help_faq_a1">Open your booking from the Orders tab and tap \"Cancel\". Cancellations free of charge up to 24 hours before the cleaning start time. Within 15 minutes of booking you pay nothing — within 60 minutes with Cleansia Plus.</string>
     <string name="help_faq_q2">What if I\'m not home when the cleaner arrives?</string>
     <string name="help_faq_a2">Add access instructions when booking (e.g., door code, key location). Cleaners wait up to 15 minutes; if we can\'t reach you, the booking may be cancelled.</string>
     <string name="help_faq_q3">Are cleaners insured and vetted?</string>
@@ -618,6 +621,7 @@
     <string name="booking_cancel_plus_badge">PLUS PERK</string>
     <!-- %1$d = the user's extended free window in hours. -->
     <string name="booking_cancel_plus_subtitle">As a Plus member you can cancel free up to %1$d hours before.</string>
+    <string name="booking_cancel_grace_note">Within 15 minutes of booking you pay nothing — within 60 minutes with Cleansia Plus.</string>
 
     <!-- Booking — save address -->
     <string name="booking_save_address">Save this address</string>
@@ -771,6 +775,10 @@
     <string name="booking_pay_card_desc">Pay securely via Stripe</string>
     <string name="booking_pay_cash">Cash</string>
     <string name="booking_pay_cash_desc">Pay on delivery</string>
+    <string name="booking_cash_needs_account">Cash is only for signed-in customers. Sign in to pay in cash, or pay by card.</string>
+    <string name="booking_cash_needs_card">Cleaners needed for this booking: %1$d. Cash is only for bookings one cleaner handles alone, so this one is paid by card.</string>
+    <string name="booking_cash_pending">Whether you can pay in cash is confirmed once the price is ready.</string>
+    <string name="booking_cash_cleared">Cash is no longer available for this booking, so no payment method is selected. Choose how you want to pay.</string>
     <string name="booking_special_instructions_hint">Any special requests? (optional)</string>
     <string name="booking_access_instructions_hint">How do we get in? (optional)</string>
 
@@ -812,7 +820,7 @@
     <!-- Account deletion -->
     <string name="profile_delete_account">Delete account</string>
     <string name="delete_account_title">Delete your account</string>
-    <string name="delete_account_subtitle">This will permanently delete your account and all associated data. This action cannot be undone.</string>
+    <string name="delete_account_subtitle">This will permanently delete your account and all associated data. Any unused credit is forfeited when the account is deleted — it cannot be paid out or restored. This action cannot be undone.</string>
     <string name="delete_account_what_happens">What gets deleted</string>
     <string name="delete_account_item_profile">• Your profile (name, email, phone, photo)</string>
     <string name="delete_account_item_addresses">• All saved addresses</string>
@@ -826,7 +834,7 @@
     <string name="delete_account_success">Your account has been deleted.</string>
     <!-- Final confirmation dialog — second gate after the typed-email match. Copy matches iOS. -->
     <string name="delete_account_dialog_title">Delete account?</string>
-    <string name="delete_account_dialog_message">This permanently deletes your account and data. This cannot be undone.</string>
+    <string name="delete_account_dialog_message">This permanently deletes your account and data. This cannot be undone. Any unused credit on your account is forfeited once the deletion completes — it cannot be paid out or restored.</string>
     <string name="delete_account_dialog_confirm">Delete</string>
 
     <!-- Error handling — generics (used when a specific key can't be resolved) -->
@@ -879,6 +887,8 @@
     <string name="membership_perk_recurring_desc">Set it once — every other Tuesday at 10am, automatically.</string>
     <string name="membership_perk_cancellation_title">Free cancellation</string>
     <string name="membership_perk_cancellation_desc">Cancel up to 4 hours before your cleaning, no fees.</string>
+    <string name="membership_perk_grace_title">Free cancellation after booking</string>
+    <string name="membership_perk_grace_desc">60 minutes after booking to cancel free, instead of 15 minutes</string>
     <string name="membership_perk_discount_title" formatted="false">5% member discount</string>
     <string name="membership_perk_discount_desc" formatted="false">Off every cleaning. Combined with your loyalty tier it is capped at 12%.</string>
     <string name="membership_perk_express_title">Express bookings without the surcharge</string>
@@ -928,6 +938,10 @@
     <string name="recurring_bookings_empty_title">No recurring schedules yet</string>
     <string name="recurring_bookings_empty_subtitle">Set up a weekly or biweekly cleaning from a past order to skip the booking flow each time.</string>
     <string name="recurring_bookings_paused_badge">PAUSED</string>
+    <string name="recurring_status_needs_change">Needs a change</string>
+    <string name="recurring_cash_change_title">This schedule can no longer be paid in cash</string>
+    <string name="recurring_cash_change_body">Each clean needs more than one cleaner, and cash is only for cleans one cleaner handles alone, so no new cleanings are booked from it until you change it. Switch it to card, or pick services or packages one cleaner can do. A cleaning already booked from it can be cancelled free of charge in Orders while no cleaner has taken it.</string>
+    <string name="recurring_cash_change_action">Change the schedule</string>
     <string name="recurring_bookings_pause">Pause</string>
     <string name="recurring_bookings_resume">Resume</string>
     <string name="recurring_bookings_delete">Delete</string>
@@ -967,6 +981,11 @@
     <string name="recurring_create_payment_label">Payment</string>
     <string name="recurring_create_pay_cash">Cash</string>
     <string name="recurring_create_pay_card">Card</string>
+    <string name="recurring_cash_needs_card">Cleaners needed for each clean: %1$d. Cash is only for cleans one cleaner handles alone, so this schedule is paid by card.</string>
+    <string name="recurring_cash_pending">Whether this schedule can be paid in cash is confirmed once the price is ready.</string>
+    <string name="recurring_cash_cleared">Cash is no longer available for this schedule, so no payment method is selected. Choose how you want to pay.</string>
+    <string name="recurring_cash_unchecked">We couldn\'t confirm whether this schedule can be paid in cash. Save it again in a moment, or choose card.</string>
+    <string name="recurring_create_payment_missing">Choose how the schedule is paid.</string>
     <string name="recurring_create_starts_label">Starts on</string>
     <string name="recurring_create_starts_change">Change</string>
     <string name="recurring_create_address_add_new">Add new address</string>
@@ -1064,6 +1083,7 @@
     <string name="error_order_in_progress_cannot_cancel">This booking is in progress and can\'t be cancelled.</string>
     <string name="error_order_cancellation_window_closed">The cancellation window has closed.</string>
     <string name="error_order_empty">Your order is empty. Please add at least one service.</string>
+    <string name="error_order_size_exceeds_maximum">A booking can include up to 8 rooms and 4 bathrooms.</string>
     <string name="error_order_span_exceeds_maximum">This booking covers too much work for a single visit. Please remove some services or packages, or book them separately.</string>
     <string name="error_order_selected_package_invalid">One of the selected packages is no longer available.</string>
     <string name="error_order_selected_services_invalid">One of the selected services is no longer available.</string>
@@ -1075,6 +1095,7 @@
     <string name="error_order_payment_gateway_unavailable">Payment service is temporarily unavailable.</string>
     <string name="error_order_payment_already_paid">This order has already been paid.</string>
     <string name="error_order_creation_failed">Couldn\'t create booking. Please try again.</string>
+    <string name="error_order_cash_not_available">Cash is only available when you\'re signed in and the booking needs a single cleaner.</string>
     <string name="error_order_review_already_exists">You\'ve already reviewed this booking.</string>
     <string name="error_order_review_rating_invalid">Rating must be between 1 and 5.</string>
     <string name="error_order_not_owned_by_user">You can\'t access this booking.</string>
@@ -1182,8 +1203,6 @@
     <string name="loyalty_discount_min_order">%1$d%% off orders ≥ %2$s</string>
     <string name="loyalty_no_discount_yet">No discount yet</string>
     <string name="loyalty_perks_welcome_badge">Welcome to Cleansia rewards</string>
-    <string name="loyalty_perks_priority_support">Priority customer support</string>
-    <string name="loyalty_perks_dedicated_pool">Dedicated cleaner pool</string>
     <string name="loyalty_activity_title">Recent activity</string>
     <string name="loyalty_activity_view_all">See all activity</string>
     <string name="loyalty_tx_earn_order">+%1$d pts — Cleaning #%2$s</string>
@@ -1410,11 +1429,10 @@
     <string name="notification_recurring_paused_body">Your recurring schedule is paused because Plus is not active. Renew Plus to resume scheduling.</string>
     <string name="guest_order_entry">Find a guest booking</string>
     <string name="guest_order_title">Guest booking</string>
-    <string name="guest_order_intro">Use the booking number, email and confirmation code from your booking email.</string>
-    <string name="guest_order_number">Booking number</string>
-    <string name="guest_order_code">Confirmation code</string>
+    <string name="guest_order_intro">Paste the tracking link from your booking email. It opens your booking — there is nothing else to enter.</string>
+    <string name="guest_order_link">Tracking link from your email</string>
     <string name="guest_order_lookup">Find booking</string>
-    <string name="guest_order_required">Enter the booking number, email and confirmation code.</string>
+    <string name="guest_order_required">Paste the tracking link from your booking email.</string>
     <string name="guest_order_empty">Your booking details will appear here after lookup.</string>
     <string name="guest_order_loading">Finding your booking…</string>
     <string name="guest_order_cancel">Cancel booking</string>

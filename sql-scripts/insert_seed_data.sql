@@ -773,12 +773,12 @@ INSERT INTO public."EmployeePayConfigs" (
   "Id", "IsActive", "CreatedBy", "CreatedOn",
   "UpdatedBy", "UpdatedOn", "DeactivatedBy", "DeactivatedOn",
   "TenantId", "EmployeeId", "ServiceId", "PackageId",
-  "BasePay", "ExtraPerRoom", "ExtraPerBathroom", "DistanceRatePerKm",
+  "BasePay", "ExtraPerRoom", "ExtraPerBathroom",
   "Description", "CurrencyId", "MinimumPay", "MaximumPay"
 )
 SELECT generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
        'cleansia-cz', NULL, sp."ServiceId", NULL,
-       ROUND(sp."BasePrice" * 0.5, 2), ROUND(sp."PerRoomPrice" * 0.5, 2), 0, 0,
+       ROUND(sp."BasePrice" * 0.5, 2), ROUND(sp."PerRoomPrice" * 0.5, 2), 0,
        'Platform-wide default (junior template)',
        sp."CurrencyId",
        0, 0
@@ -789,12 +789,12 @@ INSERT INTO public."EmployeePayConfigs" (
   "Id", "IsActive", "CreatedBy", "CreatedOn",
   "UpdatedBy", "UpdatedOn", "DeactivatedBy", "DeactivatedOn",
   "TenantId", "EmployeeId", "ServiceId", "PackageId",
-  "BasePay", "ExtraPerRoom", "ExtraPerBathroom", "DistanceRatePerKm",
+  "BasePay", "ExtraPerRoom", "ExtraPerBathroom",
   "Description", "CurrencyId", "MinimumPay", "MaximumPay"
 )
 SELECT generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
        'cleansia-cz', NULL, NULL, pp."PackageId",
-       ROUND(pp."Price" * 0.5, 2), 0, 0, 0,
+       ROUND(pp."Price" * 0.5, 2), 0, 0,
        'Platform-wide default (junior template)',
        pp."CurrencyId",
        0, 0
@@ -995,7 +995,7 @@ INSERT INTO public."CountryConfigurations" (
   "UpdatedBy", "UpdatedOn", "DeactivatedBy", "DeactivatedOn",
   "CountryId", "DefaultCurrencyCode", "DefaultLanguageCode",
   "DateFormat", "TimeZoneId", "PhonePrefix",
-  "StandardVatRate", "ReducedVatRate",
+  "StandardVatRate",
   "TaxIdLabel", "TaxIdFormat",
   "RegistrationNumberLabel", "RegistrationNumberFormat", "RegistrationNumberRequired",
   "VatNumberLabel", "VatNumberFormat", "VatNumberRequired",
@@ -1007,7 +1007,7 @@ VALUES
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
    (SELECT "Id" FROM public."Countries" WHERE "IsoCode" = 'CZE' LIMIT 1),
    'CZK', 'cs', 'dd.MM.yyyy', 'Europe/Prague', '+420',
-   0.21, 0.15, 'IČO', '^\d{8}$',
+   0.21, 'IČO', '^\d{8}$',
    'IČO', '^\d{8}$', true,
    'DIČ', '^CZ\d{8,10}$', false,
    'Stripe', 1,
@@ -1017,7 +1017,7 @@ VALUES
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
    (SELECT "Id" FROM public."Countries" WHERE "IsoCode" = 'SVK' LIMIT 1),
    'EUR', 'sk', 'dd.MM.yyyy', 'Europe/Bratislava', '+421',
-   0.20, 0.10, 'IČO', '^\d{8}$',
+   0.20, 'IČO', '^\d{8}$',
    'IČO', '^\d{8}$', true,
    'IČ DPH', '^SK\d{10}$', false,
    'Stripe', 1,
@@ -1027,7 +1027,7 @@ VALUES
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
    (SELECT "Id" FROM public."Countries" WHERE "IsoCode" = 'POL' LIMIT 1),
    'PLN', 'pl', 'dd.MM.yyyy', 'Europe/Warsaw', '+48',
-   0.23, 0.08, 'NIP', '^\d{10}$',
+   0.23, 'NIP', '^\d{10}$',
    'NIP', '^\d{10}$', true,
    'VAT UE', '^PL\d{10}$', false,
    'Stripe', NULL,
@@ -1037,7 +1037,7 @@ VALUES
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
    (SELECT "Id" FROM public."Countries" WHERE "IsoCode" = 'DEU' LIMIT 1),
    'EUR', 'de', 'dd.MM.yyyy', 'Europe/Berlin', '+49',
-   0.19, 0.07, 'Steuernummer', '^\d{10,13}$',
+   0.19, 'Steuernummer', '^\d{10,13}$',
    'Steuernummer', '^\d{10,13}$', true,
    'USt-IdNr', '^DE\d{9}$', false,
    'Stripe', NULL,
@@ -1047,7 +1047,7 @@ VALUES
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
    (SELECT "Id" FROM public."Countries" WHERE "IsoCode" = 'AUT' LIMIT 1),
    'EUR', 'de', 'dd.MM.yyyy', 'Europe/Vienna', '+43',
-   0.20, 0.10, 'UID-Nummer', '^ATU\d{8}$',
+   0.20, 'UID-Nummer', '^ATU\d{8}$',
    'Firmenbuchnummer', '^[A-Z]?\d{1,6}[a-z]?$', true,
    'UID-Nummer', '^ATU\d{8}$', false,
    'Stripe', NULL,
@@ -1057,7 +1057,7 @@ VALUES
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
    (SELECT "Id" FROM public."Countries" WHERE "IsoCode" = 'GBR' LIMIT 1),
    'GBP', 'en', 'dd/MM/yyyy', 'Europe/London', '+44',
-   0.20, 0.05, 'UTR', '^\d{10}$',
+   0.20, 'UTR', '^\d{10}$',
    'UTR', '^\d{10}$', true,
    'VAT Number', '^GB\d{9}$', false,
    'Stripe', NULL,
@@ -1067,7 +1067,7 @@ VALUES
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
    (SELECT "Id" FROM public."Countries" WHERE "IsoCode" = 'FRA' LIMIT 1),
    'EUR', 'fr', 'dd/MM/yyyy', 'Europe/Paris', '+33',
-   0.20, 0.055, 'SIRET', '^\d{14}$',
+   0.20, 'SIRET', '^\d{14}$',
    'SIRET', '^\d{14}$', true,
    'TVA', '^FR[A-Z0-9]{2}\d{9}$', false,
    'Stripe', NULL,
@@ -1077,7 +1077,7 @@ VALUES
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
    (SELECT "Id" FROM public."Countries" WHERE "IsoCode" = 'ITA' LIMIT 1),
    'EUR', 'it', 'dd/MM/yyyy', 'Europe/Rome', '+39',
-   0.22, 0.10, 'Codice Fiscale', '^[A-Z]{6}\d{2}[A-Z]\d{2}[A-Z]\d{3}[A-Z]$',
+   0.22, 'Codice Fiscale', '^[A-Z]{6}\d{2}[A-Z]\d{2}[A-Z]\d{3}[A-Z]$',
    'Codice Fiscale', '^[A-Z]{6}\d{2}[A-Z]\d{2}[A-Z]\d{3}[A-Z]$', true,
    'Partita IVA', '^IT\d{11}$', false,
    'Stripe', NULL,
@@ -1087,7 +1087,7 @@ VALUES
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
    (SELECT "Id" FROM public."Countries" WHERE "IsoCode" = 'ESP' LIMIT 1),
    'EUR', 'es', 'dd/MM/yyyy', 'Europe/Madrid', '+34',
-   0.21, 0.10, 'NIF', '^[A-Z]\d{7}[A-Z0-9]$',
+   0.21, 'NIF', '^[A-Z]\d{7}[A-Z0-9]$',
    'NIF', '^[A-Z]\d{7}[A-Z0-9]$', true,
    'NIF-IVA', '^ES[A-Z0-9]\d{7}[A-Z0-9]$', false,
    'Stripe', NULL,
@@ -1097,7 +1097,7 @@ VALUES
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
    (SELECT "Id" FROM public."Countries" WHERE "IsoCode" = 'USA' LIMIT 1),
    'USD', 'en', 'MM/dd/yyyy', 'America/New_York', '+1',
-   0.00, NULL, 'EIN', '^\d{2}-\d{7}$',
+   0.00, 'EIN', '^\d{2}-\d{7}$',
    'EIN', '^\d{2}-\d{7}$', true,
    NULL, NULL, false,
    'Stripe', NULL,
@@ -1694,7 +1694,7 @@ INSERT INTO public."LoyaltyTierConfigs" (
 )
 SELECT '01LTYGOLD0000000000000000A', true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
     3, 2000, 0.1000, NULL,
-    '[{"icon":"badge","labelKey":"loyalty.perks.welcome_badge"},{"icon":"percent","labelKey":"loyalty.perks.discount_10"},{"icon":"support","labelKey":"loyalty.perks.priority_support"}]'
+    '[{"icon":"badge","labelKey":"loyalty.perks.welcome_badge"},{"icon":"percent","labelKey":"loyalty.perks.discount_10"}]'
 WHERE NOT EXISTS (SELECT 1 FROM public."LoyaltyTierConfigs" WHERE "Tier" = 3);
 
 INSERT INTO public."LoyaltyTierConfigs" (
@@ -1705,7 +1705,7 @@ INSERT INTO public."LoyaltyTierConfigs" (
 )
 SELECT '01LTYPLATINUM0000000000000', true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
     4, 5000, 0.1200, 1000.00,
-    '[{"icon":"badge","labelKey":"loyalty.perks.welcome_badge"},{"icon":"percent","labelKey":"loyalty.perks.discount_12"},{"icon":"support","labelKey":"loyalty.perks.priority_support"},{"icon":"star","labelKey":"loyalty.perks.dedicated_pool"}]'
+    '[{"icon":"badge","labelKey":"loyalty.perks.welcome_badge"},{"icon":"percent","labelKey":"loyalty.perks.discount_12"}]'
 WHERE NOT EXISTS (SELECT 1 FROM public."LoyaltyTierConfigs" WHERE "Tier" = 4);
 
 -- LOY-003 — keep the seed in sync with the live tier values. Idempotent
@@ -1720,13 +1720,14 @@ UPDATE public."LoyaltyTierConfigs"
 
 UPDATE public."LoyaltyTierConfigs"
    SET "DiscountPercent" = 0.1000,
-       "MinimumOrderAmountForDiscount" = 1000.00
+       "MinimumOrderAmountForDiscount" = 1000.00,
+       "PerksJson" = '[{"icon":"badge","labelKey":"loyalty.perks.welcome_badge"},{"icon":"percent","labelKey":"loyalty.perks.discount_10"}]'
  WHERE "Tier" = 3;
 
 UPDATE public."LoyaltyTierConfigs"
    SET "DiscountPercent" = 0.1200,
        "MinimumOrderAmountForDiscount" = 1000.00,
-       "PerksJson" = '[{"icon":"badge","labelKey":"loyalty.perks.welcome_badge"},{"icon":"percent","labelKey":"loyalty.perks.discount_12"},{"icon":"support","labelKey":"loyalty.perks.priority_support"},{"icon":"star","labelKey":"loyalty.perks.dedicated_pool"}]'
+       "PerksJson" = '[{"icon":"badge","labelKey":"loyalty.perks.welcome_badge"},{"icon":"percent","labelKey":"loyalty.perks.discount_12"}]'
  WHERE "Tier" = 4;
 
 -- ============================================================

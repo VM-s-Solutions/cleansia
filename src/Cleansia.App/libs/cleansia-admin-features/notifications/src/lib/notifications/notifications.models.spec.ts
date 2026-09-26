@@ -46,7 +46,7 @@ describe('the admin event catalogue mirror', () => {
 
   it('recognises only those keys', () => {
     expect(isAdminNotificationEventKey('admin.order.new')).toBe(true);
-    expect(isAdminNotificationEventKey('order.confirmed')).toBe(false);
+    expect(isAdminNotificationEventKey('order.completed')).toBe(false);
     expect(isAdminNotificationEventKey('admin.order.unknown')).toBe(false);
     expect(isAdminNotificationEventKey(undefined)).toBe(false);
   });

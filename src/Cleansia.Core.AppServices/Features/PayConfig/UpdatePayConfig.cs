@@ -16,7 +16,6 @@ public class UpdatePayConfig
         decimal BasePay,
         decimal ExtraPerRoom,
         decimal ExtraPerBathroom,
-        decimal DistanceRatePerKm,
         decimal MinimumPay,
         decimal MaximumPay,
         string? Description) : ICommand<Response>;
@@ -31,7 +30,6 @@ public class UpdatePayConfig
         decimal BasePay,
         decimal ExtraPerRoom,
         decimal ExtraPerBathroom,
-        decimal DistanceRatePerKm,
         decimal MinimumPay,
         decimal MaximumPay);
 
@@ -62,10 +60,6 @@ public class UpdatePayConfig
             RuleFor(x => x.ExtraPerBathroom)
                 .GreaterThanOrEqualTo(0)
                 .WithMessage(BusinessErrorMessage.PayConfigExtraPerBathroomNegative);
-
-            RuleFor(x => x.DistanceRatePerKm)
-                .GreaterThanOrEqualTo(0)
-                .WithMessage(BusinessErrorMessage.PayConfigDistanceRateNegative);
 
             RuleFor(x => x.MinimumPay)
                 .GreaterThanOrEqualTo(0)
@@ -102,8 +96,7 @@ public class UpdatePayConfig
             payConfig.UpdatePayRates(
                 command.BasePay,
                 command.ExtraPerRoom,
-                command.ExtraPerBathroom,
-                command.DistanceRatePerKm);
+                command.ExtraPerBathroom);
 
             payConfig.SetPayLimits(command.MinimumPay, command.MaximumPay);
 
@@ -125,7 +118,6 @@ public class UpdatePayConfig
                 config.BasePay,
                 config.ExtraPerRoom,
                 config.ExtraPerBathroom,
-                config.DistanceRatePerKm,
                 config.MinimumPay,
                 config.MaximumPay);
     }

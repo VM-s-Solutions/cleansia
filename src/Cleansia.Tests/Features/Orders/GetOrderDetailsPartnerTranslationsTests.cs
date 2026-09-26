@@ -48,7 +48,8 @@ public class GetOrderDetailsPartnerTranslationsTests
             Mock.Of<ITenantRepository>(),
             _expressWaiverConsumer.Object,
             Mock.Of<IUserMembershipRepository>(),
-            WorkContractTestData.AcceptanceRepository().Object);
+            WorkContractTestData.AcceptanceRepository().Object,
+            Mock.Of<IEmployeeActionAuditRepository>());
 
     private void ArrangeEmployeeCaller(Order order)
     {

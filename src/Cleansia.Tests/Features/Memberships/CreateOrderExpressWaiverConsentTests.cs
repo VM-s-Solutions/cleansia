@@ -19,6 +19,7 @@ using Cleansia.TestUtilities.MockDataFactories.Orders;
 using Microsoft.Extensions.Logging.Abstractions;
 using Cleansia.Tests.Domain.Legal;
 using Moq;
+using Cleansia.Tests.Infrastructure;
 
 namespace Cleansia.Tests.Features.Memberships;
 
@@ -114,6 +115,7 @@ public class CreateOrderExpressWaiverConsentTests
                 new OrderChannelProvider(OrderChannel.Mobile),
                 new StripeConfig(new ConfigurationBuilder().Build()),
                 NullLogger<OrderPaymentDispatcher>.Instance),
+            TestGuestOrderAccessTokenIssuer.WithNoLiveTokens(),
             _expressWaiverConsumer.Object,
             // No credit account: these suites characterize pricing, dispatch and the waiver slot, and
             // an unconfigured Mock returns null from GetSpendableAsync - which is exactly what a

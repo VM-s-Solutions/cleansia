@@ -234,7 +234,7 @@ public sealed class CompanyLifecycleRouteTests(HostTestPostgresFixture db) : Aut
         bathrooms = 1,
         extras = new Dictionary<string, bool>(),
         cleaningDate = CleaningDate,
-        paymentType = (int)PaymentType.Cash,
+        paymentType = (int)PaymentType.Card,
         currencyId = (string?)null,
         totalPrice,
         termsAccepted = true,

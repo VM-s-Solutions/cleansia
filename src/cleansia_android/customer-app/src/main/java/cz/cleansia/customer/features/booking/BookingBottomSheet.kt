@@ -305,6 +305,7 @@ private fun SheetContent(
     // re-fires after this clears `state.street` and re-applies the saved
     // default address.
     LaunchedEffect(visible) {
+        bookingVm.setSheetVisible(visible)
         if (!visible) return@LaunchedEffect
         if (rebookFromOrderId == null && lastRebookedFrom == null) bookingVm.reset() else bookingVm.returnToFirstStep()
     }

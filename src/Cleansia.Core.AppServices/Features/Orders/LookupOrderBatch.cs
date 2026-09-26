@@ -1,41 +1,35 @@
 using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Mappers;
-using Cleansia.Core.Domain.Orders;
-using Cleansia.Core.Domain.Repositories;
 using Cleansia.Infra.Common.Validations;
 using Microsoft.EntityFrameworkCore;
 
 namespace Cleansia.Core.AppServices.Features.Orders;
 
+/// <summary>
+/// The remembered-bookings list a guest's browser refreshes in one call. Each item carries the same
+/// per-order token <see cref="LookupOrder"/> takes; an item whose token matches nothing simply yields
+/// no row, so the response never says which of the presented tokens was the wrong one.
+/// </summary>
 public class LookupOrderBatch
 {
-    public record OrderLookupItem(string OrderId, string Email);
+    public const int MaxItems = 10;
 
-    public record Query(IEnumerable<OrderLookupItem> Items) : IQuery<Response>;
+    public record Query(IEnumerable<string> AccessTokens) : IQuery<Response>;
 
     public record Response(IEnumerable<LookupOrder.Response> Orders);
 
-    public class Handler(IOrderRepository orderRepository) : IQueryHandler<Query, Response>
+    public class Handler(GuestOrderAccess guestOrderAccess) : IQueryHandler<Query, Response>
     {
         public async Task<BusinessResult<Response>> Handle(Query request, CancellationToken cancellationToken)
         {
-            var items = request.Items?.ToList() ?? [];
-            if (items.Count == 0 || items.Count > 10)
+            var tokens = request.AccessTokens?
+                .Where(token => !string.IsNullOrWhiteSpace(token))
+                .Distinct()
+                .ToList() ?? [];
+            if (tokens.Count == 0 || tokens.Count > MaxItems)
                 return BusinessResult.Success(new Response([]));
 
-            // Drop items with a null/empty OrderId or Email BEFORE the lookup so the
-            // email-match below never dereferences a null (i.Email.ToLower() previously NRE'd on a
-            // null/empty Email). A dropped item simply yields no row — it can never widen the secret.
-            items = items
-                .Where(i => !string.IsNullOrEmpty(i.OrderId) && !string.IsNullOrEmpty(i.Email))
-                .ToList();
-            if (items.Count == 0)
-                return BusinessResult.Success(new Response([]));
-
-            var orderIds = items.Select(i => i.OrderId).Distinct().ToList();
-
-            // Tenant-ignoring for the same reason as LookupOrder: the (OrderId, Email) secret is the pin.
-            var orders = await orderRepository.GetQueryableIgnoringTenant()
+            var orders = await guestOrderAccess.OrdersForTokens(tokens)
                 .Include(o => o.Currency)
                 .Include(o => o.OrderStatusHistory)
                 .Include(o => o.SelectedServices)
@@ -45,22 +39,10 @@ public class LookupOrderBatch
                         .ThenInclude(p => p.IncludedServices)
                             .ThenInclude(s => s.Service)
                 .AsSplitQuery()
-                .Where(o => orderIds.Contains(o.Id))
+                .AsNoTracking()
                 .ToListAsync(cancellationToken);
 
-            // Only return orders where the email matches (security check). The per-item secret
-            // is the (OrderId, Email) pair, where OrderId is the internal GUID Order.Id. This is the
-            // SAME secret pairing as single LookupOrder (LookupOrder.cs:51-53) — both gate on a
-            // lower-cased email match; the GUID Id is an equal-or-stronger secret than the human-typed
-            // DisplayOrderNumber the guest first proves through single Lookup to OBTAIN that GUID. The
-            // batch therefore does not widen the secret. Email is normalized identically on both sides
-            // (i.Email and o.CustomerEmail lower-cased), matching single LookupOrder's comparison.
-            var lookupSet = items
-                .Select(i => (i.OrderId, Email: i.Email.ToLower()))
-                .ToHashSet();
-
             var matched = orders
-                .Where(o => lookupSet.Contains((o.Id, o.CustomerEmail.ToLower())))
                 .Select(o =>
                 {
                     var detail = o.MapToDetail();
@@ -74,7 +56,7 @@ public class LookupOrderBatch
                         detail.TotalPrice,
                         detail.EstimatedTime,
                         detail.OrderStatus,
-                        detail.ConfirmationCode,
+                        o.ConfirmationCode,
                         detail.Currency,
                         detail.SelectedServices,
                         detail.SelectedPackages,

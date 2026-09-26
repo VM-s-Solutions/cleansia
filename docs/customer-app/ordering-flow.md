@@ -29,8 +29,12 @@ The customer selects from available cleaning services and/or packages, and speci
 |---|---|---|---|
 | `selectedServiceIds` | `string[]` | `[]` | At least one service or package required |
 | `selectedPackageIds` | `string[]` | `[]` | (combined with above) |
-| `rooms` | `number` | `1` | Minimum 1, increment/decrement buttons |
-| `bathrooms` | `number` | `1` | Minimum 1, increment/decrement buttons |
+| `rooms` | `number` | `1` | Minimum 1 in the picker; API maximum 8 |
+| `bathrooms` | `number` | `1` | Minimum 1 in the picker; API maximum 4 |
+
+The same upper limits apply to booking, price quotes, Plus-savings previews and recurring-template
+creation/update. The API returns `order.size_exceeds_maximum` when either is exceeded. Mobile
+steppers still permit larger values; they receive the translated refusal rather than a local clamp.
 
 Services and packages support **translations** -- the component reads the user's current locale to display translated names/descriptions.
 
@@ -94,9 +98,27 @@ The customer selects between:
 | Method | Value | Description |
 |---|---|---|
 | Card | `PaymentType.Card` | Redirects to Stripe Checkout |
-| Cash | `PaymentType.Cash` | Pay on delivery |
+| Cash | `PaymentType.Cash` | Paid to the cleaner at the job — **only** for a signed-in customer whose booking needs one cleaner |
 
 Default: `PaymentType.Card`
+
+**Cash is decided by the server's rule, read on screen.** `OrderWizardFacade.cashEligibility` feeds
+`resolveCashEligibility` (`libs/shared/models`, the web copy of `BookingPolicy.AllowsCash`) with the
+live sign-in state and the quote's `requiredEmployees` — but only while the cached quote matches the
+current selection. The verdict is one of four:
+
+| Verdict | When | What the step shows |
+|---|---|---|
+| `available` | signed in, and the quote says one cleaner | cash selectable |
+| `needs_account` | a guest | cash disabled — *Cash is only for signed-in customers* (`pages.order.cash_needs_account`) |
+| `needs_card` | the quote says two cleaners or more, signed in or not | cash disabled — *Cleaners needed for this booking: N* (`pages.order.cash_needs_card`) |
+| `pending` | signed in, no quote for this selection yet | cash disabled until the quote lands (`pages.order.cash_pending`) |
+
+A cash choice that becomes refused — a sign-out, a selection that grows to two cleaners — is **taken
+away, never switched to card**: `paymentType` becomes `null`, the step says *Cash is no longer
+available for this booking…* (`pages.order.cash_cleared`) and the customer chooses again. Submit never
+sends refused cash; if the server still answers `order.cash_not_available`, the choice is cleared and
+the wizard returns to the payment step. → [Paying in cash](/product/business-rules#cash)
 
 ### Step 4: Review & Submit
 
@@ -145,12 +167,18 @@ When the customer clicks submit on the review step:
 **Card payment flow:**
 - `customerClient.paymentClient.createOrder(command)` is called
 - If a `stripeSessionId` (Stripe Checkout URL) is returned, the browser redirects to Stripe
-- The guest order ID + email is saved via `GuestOrderService`
+- The order id and its `guestAccessToken` are saved via `GuestOrderService`
 
 **Cash payment flow:**
 - `customerClient.orderClient.createOrder(command)` is called
 - On success, navigates to `/checkout/success?type=cash`
-- The guest order ID + email is saved via `GuestOrderService`
+- Nothing is saved to `GuestOrderService`: cash is signed-in only
+  ([Paying in cash](/product/business-rules#cash)), so a cash response never carries a
+  `guestAccessToken`
+
+`guestAccessToken` is present only on a **guest** booking — always a card booking; an account booking returns `null` and
+nothing is saved, because its owner signs in to reach it.
+→ [The guest access token](/flows/booking-and-pricing#guest-access-token)
 
 ## Rebook Flow
 
@@ -200,7 +228,7 @@ interface OrderWizardFormData {
   address: AddressDto;
   cleaningDate: Date | null;
   cleaningTime: string;
-  paymentType: PaymentType;
+  paymentType: PaymentType | null;   // null once refused cash was taken away
   extras: Record<string, boolean>;
   specialInstructions: string;
   entryInstructions: string;

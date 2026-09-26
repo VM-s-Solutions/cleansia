@@ -3,6 +3,7 @@ using System.Net.Http.Json;
 using System.Reflection;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Orders;
+using Cleansia.Core.Domain.Common;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Notifications;
@@ -22,9 +23,11 @@ public class GuestCancellationRouteTests(HostTestPostgresFixture fixture) : Auth
     private const string CancelPath = "/api/Order/CancelGuest";
     private const string PreviewPath = "/api/Order/GuestCancellationPreview";
 
-    private async Task<CancelGuestOrder.Command> SeedGuest(bool owned = false, OrderStatus status = OrderStatus.New)
+    private sealed record Seeded(CancelGuestOrder.Command Command, string DisplayOrderNumber, string ConfirmationCode);
+
+    private async Task<Seeded> SeedGuest(bool owned = false, OrderStatus status = OrderStatus.New)
     {
-        CancelGuestOrder.Command command = null!;
+        Seeded seeded = null!;
         await SeedAsync(async db =>
         {
             await DomainSeed.EnsureReferenceDataAsync(db);
@@ -40,38 +43,73 @@ public class GuestCancellationRouteTests(HostTestPostgresFixture fixture) : Auth
             track.TenantId = HostTestTenants.B;
             order.AddOrderStatus(track);
             db.Orders.Add(order);
-            command = new(order.DisplayOrderNumber, Email, order.ConfirmationCode);
+            var accessToken = GuestOrderAccessToken.Issue(
+                order.Id, GuestOrderAccessToken.ExpiryFor(order.CleaningDateTime));
+            accessToken.TenantId = HostTestTenants.B;
+            db.GuestOrderAccessTokens.Add(accessToken);
+            seeded = new Seeded(
+                new CancelGuestOrder.Command(accessToken.RawToken!),
+                order.DisplayOrderNumber,
+                order.ConfirmationCode);
         });
-        return command;
+        return seeded;
     }
 
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
-    public async Task Both_customer_hosts_accept_lookup_secrets_in_the_body_and_preserve_get(bool mobile)
+    public async Task Both_customer_hosts_accept_the_access_token_in_the_body_and_preserve_get(bool mobile)
     {
-        var command = await SeedGuest();
+        var seeded = await SeedGuest();
         using var mobileHost = new HostTestApplicationFactory<Cleansia.Web.Mobile.Customer.Program>(Db.ConnectionString);
         using var client = mobile ? mobileHost.CreateClient() : CustomerClientAnonymous();
-        var query = new LookupOrder.Query(command.DisplayOrderNumber, command.Email, command.ConfirmationCode);
+        var query = new LookupOrder.Query(seeded.Command.AccessToken);
         var response = await client.PostAsJsonAsync("/api/Order/Lookup", query);
         HttpAssert.IsOk(response);
         var body = await response.Content.ReadFromJsonAsync<LookupOrder.Response>();
-        Assert.Equal(command.DisplayOrderNumber, body!.DisplayOrderNumber);
-        Assert.Equal(command.ConfirmationCode, body.ConfirmationCode);
-        foreach (var wrong in new[] {
-            query with { Email = "wrong@example.test" },
-            query with { ConfirmationCode = "wrong" },
-            query with { DisplayOrderNumber = "missing" }
-        })
-        {
-            var refused = await client.PostAsJsonAsync("/api/Order/Lookup", wrong);
-            Assert.Equal(HttpStatusCode.BadRequest, refused.StatusCode);
-            await HttpAssert.AssertBusinessErrorAsync(refused, BusinessErrorMessage.OrderNotFound);
-        }
-        var legacy = await client.GetAsync($"/api/Order/Lookup?orderNumber={Uri.EscapeDataString(query.DisplayOrderNumber)}&email={Uri.EscapeDataString(query.Email)}&confirmationCode={Uri.EscapeDataString(query.ConfirmationCode)}");
-        HttpAssert.IsOk(legacy);
+        Assert.Equal(seeded.DisplayOrderNumber, body!.DisplayOrderNumber);
+        Assert.Equal(seeded.ConfirmationCode, body.ConfirmationCode);
+
+        var refused = await client.PostAsJsonAsync("/api/Order/Lookup",
+            new LookupOrder.Query(SecurityTokens.Generate(SecurityTokens.DurableTokenByteLength)));
+        Assert.Equal(HttpStatusCode.BadRequest, refused.StatusCode);
+        await HttpAssert.AssertBusinessErrorAsync(refused, BusinessErrorMessage.OrderNotFound);
+
+        var byQueryString = await client.GetAsync(
+            $"/api/Order/Lookup?token={Uri.EscapeDataString(query.AccessToken)}");
+        HttpAssert.IsOk(byQueryString);
         Assert.Equal(0, await QueryAsync(db => db.OutboxMessages.IgnoreQueryFilters().CountAsync()));
+    }
+
+    /// <summary>
+    /// The defect this whole re-key closes (F69): the triple a cleaner was served on the order detail
+    /// — display number, customer e-mail, confirmation code — no longer opens anything.
+    /// </summary>
+    [Fact]
+    public async Task The_Old_Triple_Authenticates_Nothing_On_Any_Guest_Route()
+    {
+        var seeded = await SeedGuest();
+        using var client = CustomerClientAnonymous();
+
+        foreach (var stale in new[] { seeded.DisplayOrderNumber, Email, seeded.ConfirmationCode })
+        {
+            var lookup = await client.PostAsJsonAsync("/api/Order/Lookup", new LookupOrder.Query(stale));
+            await HttpAssert.AssertBusinessErrorAsync(lookup, BusinessErrorMessage.OrderNotFound);
+
+            var preview = await client.PostAsJsonAsync(PreviewPath, new GetGuestCancellationFeePreview.Query(stale));
+            await HttpAssert.AssertBusinessErrorAsync(preview, BusinessErrorMessage.OrderNotFound);
+
+            var cancel = await client.PostAsJsonAsync(CancelPath, new CancelGuestOrder.Command(stale));
+            await HttpAssert.AssertBusinessErrorAsync(cancel, BusinessErrorMessage.OrderNotFound);
+        }
+
+        Assert.Equal(OrderStatus.New, await QueryAsync(db => db.Orders.IgnoreQueryFilters().Select(x => x.CurrentStatus).SingleAsync()));
+
+        var legacyQueryString = await client.GetAsync(
+            $"/api/Order/Lookup?orderNumber={Uri.EscapeDataString(seeded.DisplayOrderNumber)}"
+            + $"&email={Uri.EscapeDataString(Email)}"
+            + $"&confirmationCode={Uri.EscapeDataString(seeded.ConfirmationCode)}");
+        Assert.Equal(HttpStatusCode.BadRequest, legacyQueryString.StatusCode);
     }
 
     [Theory]
@@ -79,19 +117,32 @@ public class GuestCancellationRouteTests(HostTestPostgresFixture fixture) : Auth
     [InlineData(true)]
     public async Task Both_customer_hosts_allow_anonymous_preview_and_cancel_in_the_orders_operator(bool mobile)
     {
-        var command = await SeedGuest();
+        var seeded = await SeedGuest();
         using var mobileHost = new HostTestApplicationFactory<Cleansia.Web.Mobile.Customer.Program>(Db.ConnectionString);
         using var client = mobile ? mobileHost.CreateClient() : CustomerClientAnonymous();
-        var preview = await client.PostAsJsonAsync(PreviewPath, new GetGuestCancellationFeePreview.Query(
-            command.DisplayOrderNumber, command.Email, command.ConfirmationCode));
+        var preview = await client.PostAsJsonAsync(PreviewPath,
+            new GetGuestCancellationFeePreview.Query(seeded.Command.AccessToken));
         HttpAssert.IsOk(preview);
+        using (var quote = System.Text.Json.JsonDocument.Parse(await preview.Content.ReadAsStringAsync()))
+        {
+            Assert.Equal(15, quote.RootElement.GetProperty("oopsWindowMinutes").GetInt32());
+        }
         Assert.Equal(OrderStatus.New, await QueryAsync(db => db.Orders.IgnoreQueryFilters().Select(x => x.CurrentStatus).SingleAsync()));
         Assert.Equal(0, await QueryAsync(db => db.OutboxMessages.IgnoreQueryFilters().CountAsync()));
-        var cancelled = await client.PostAsJsonAsync(CancelPath, command);
+        var cancelled = await client.PostAsJsonAsync(CancelPath, seeded.Command);
         HttpAssert.IsOk(cancelled);
         var state = await QueryAsync(db => db.Orders.IgnoreQueryFilters().SingleAsync());
         Assert.Equal(OrderStatus.Cancelled, state.CurrentStatus);
         Assert.Equal(CancelledBy.Customer, state.CancelledBy);
+
+        // The credential dies with the booking: nothing is left to do with it, so the link in the
+        // customer's mailbox stops being a key.
+        var token = Assert.Single(await QueryAsync(db => db.GuestOrderAccessTokens.IgnoreQueryFilters().ToListAsync()));
+        Assert.NotNull(token.RevokedOn);
+        await HttpAssert.AssertBusinessErrorAsync(
+            await client.PostAsJsonAsync("/api/Order/Lookup", new LookupOrder.Query(seeded.Command.AccessToken)),
+            BusinessErrorMessage.OrderNotFound);
+
         var audit = Assert.Single(await QueryAsync(db => db.CustomerActionAudits.IgnoreQueryFilters().ToListAsync()));
         Assert.True(audit.Success);
         Assert.Null(audit.UserId);
@@ -102,28 +153,21 @@ public class GuestCancellationRouteTests(HostTestPostgresFixture fixture) : Auth
         var email = Assert.Single(await QueryAsync(db => db.OutboxMessages.IgnoreQueryFilters().Where(x => x.QueueName == QueueNames.SendEmail).ToListAsync()));
         Assert.Equal(HostTestTenants.B, email.TenantId);
         Assert.DoesNotContain(Email, email.Body);
+        Assert.DoesNotContain(seeded.Command.AccessToken, email.Body);
         Assert.Equal(0, await QueryAsync(db => db.Set<UserNotification>().IgnoreQueryFilters().CountAsync()));
     }
 
     [Theory]
-    [InlineData(false, "email")]
-    [InlineData(false, "code")]
-    [InlineData(false, "number")]
+    [InlineData(false, "unissued")]
     [InlineData(false, "account")]
-    [InlineData(true, "email")]
-    [InlineData(true, "code")]
-    [InlineData(true, "number")]
+    [InlineData(true, "unissued")]
     [InlineData(true, "account")]
-    public async Task Wrong_keys_and_account_orders_are_uniformly_refused_without_mutation(bool mobile, string mismatch)
+    public async Task Unproven_tokens_and_account_orders_are_uniformly_refused_without_mutation(bool mobile, string mismatch)
     {
-        var command = await SeedGuest(owned: mismatch == "account");
-        command = mismatch switch
-        {
-            "email" => command with { Email = "other@example.test" },
-            "code" => command with { ConfirmationCode = "wrong" },
-            "number" => command with { DisplayOrderNumber = "missing" },
-            _ => command
-        };
+        var seeded = await SeedGuest(owned: mismatch == "account");
+        var command = mismatch == "unissued"
+            ? seeded.Command with { AccessToken = SecurityTokens.Generate(SecurityTokens.DurableTokenByteLength) }
+            : seeded.Command;
         using var mobileHost = new HostTestApplicationFactory<Cleansia.Web.Mobile.Customer.Program>(Db.ConnectionString);
         using var client = mobile ? mobileHost.CreateClient() : CustomerClientAnonymous();
         foreach (var path in new[] { PreviewPath, CancelPath })
@@ -145,12 +189,12 @@ public class GuestCancellationRouteTests(HostTestPostgresFixture fixture) : Auth
     [InlineData(true)]
     public async Task Started_guest_order_is_refused_with_the_same_business_key_on_both_hosts(bool mobile)
     {
-        var command = await SeedGuest(status: OrderStatus.InProgress);
+        var seeded = await SeedGuest(status: OrderStatus.InProgress);
         using var mobileHost = new HostTestApplicationFactory<Cleansia.Web.Mobile.Customer.Program>(Db.ConnectionString);
         using var client = mobile ? mobileHost.CreateClient() : CustomerClientAnonymous();
         foreach (var path in new[] { PreviewPath, CancelPath })
         {
-            var response = await client.PostAsJsonAsync(path, command);
+            var response = await client.PostAsJsonAsync(path, seeded.Command);
             Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
             await HttpAssert.AssertBusinessErrorAsync(response, BusinessErrorMessage.OrderInProgressCannotCancel);
         }
@@ -166,9 +210,9 @@ public class GuestCancellationRouteTests(HostTestPostgresFixture fixture) : Auth
     [InlineData(true)]
     public async Task Customer_token_does_not_turn_a_secret_key_guest_action_into_an_account_action(bool refused)
     {
-        var command = await SeedGuest(status: refused ? OrderStatus.InProgress : OrderStatus.New);
+        var seeded = await SeedGuest(status: refused ? OrderStatus.InProgress : OrderStatus.New);
         using var client = CustomerClient(TestJwtFactory.Mint(CustomerAudience, "unrelated-customer", "account@example.test", UserProfile.Customer));
-        var response = await client.PostAsJsonAsync(CancelPath, command);
+        var response = await client.PostAsJsonAsync(CancelPath, seeded.Command);
         Assert.Equal(refused ? HttpStatusCode.BadRequest : HttpStatusCode.OK, response.StatusCode);
         var audit = Assert.Single(await QueryAsync(db => db.CustomerActionAudits.IgnoreQueryFilters().ToListAsync()));
         Assert.Null(audit.UserId);
@@ -180,13 +224,13 @@ public class GuestCancellationRouteTests(HostTestPostgresFixture fixture) : Auth
     [Fact]
     public async Task Guest_lookup_preview_and_cancel_do_not_exist_on_admin_partner_or_mobile_partner()
     {
-        var command = await SeedGuest();
+        var seeded = await SeedGuest();
         using var admin = AdminClientAnonymous();
         using var partner = PartnerClientAnonymous();
         using var mobilePartner = MobileClientAnonymous();
         foreach (var client in new[] { admin, partner, mobilePartner })
         foreach (var path in new[] { PreviewPath, CancelPath, "/api/Order/Lookup" })
-            HttpAssert.IsNotFound(await client.PostAsJsonAsync(path, command));
+            HttpAssert.IsNotFound(await client.PostAsJsonAsync(path, seeded.Command));
     }
 
     [Theory]
@@ -194,13 +238,14 @@ public class GuestCancellationRouteTests(HostTestPostgresFixture fixture) : Auth
     [InlineData(true)]
     public async Task Guest_preview_and_cancel_share_the_anonymous_auth_rate_window(bool mobile)
     {
-        var command = await SeedGuest();
+        var seeded = await SeedGuest();
         using var mobileHost = new HostTestApplicationFactory<Cleansia.Web.Mobile.Customer.Program>(Db.ConnectionString);
         using var client = mobile ? mobileHost.CreateClient() : CustomerClientAnonymous();
+        var preview = new GetGuestCancellationFeePreview.Query(seeded.Command.AccessToken);
         const int anonymousAuthAllowance = 10;
         for (var i = 0; i < anonymousAuthAllowance; i++)
-            HttpAssert.IsOk(await client.PostAsJsonAsync(PreviewPath, command));
-        Assert.Equal(HttpStatusCode.TooManyRequests, (await client.PostAsJsonAsync(CancelPath, command)).StatusCode);
+            HttpAssert.IsOk(await client.PostAsJsonAsync(PreviewPath, preview));
+        Assert.Equal(HttpStatusCode.TooManyRequests, (await client.PostAsJsonAsync(CancelPath, seeded.Command)).StatusCode);
         Assert.Equal(OrderStatus.New, await QueryAsync(db => db.Orders.IgnoreQueryFilters().Select(x => x.CurrentStatus).SingleAsync()));
     }
 

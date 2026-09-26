@@ -43,7 +43,7 @@
         member has the discount and the shorter cancellation window, but the
         express waiver starts when the trial ends. → /product/business-rules
       -->
-      @if (expressWaiverAdvertised()) {
+      @if (expressWaiverPendingTrial()) {
       <p class="cl-mbr__note cl-mbr__note--warn">
         <i class="pi pi-bolt"></i>
         {{ 'pages.membership.welcome_express_after_trial' | translate }}

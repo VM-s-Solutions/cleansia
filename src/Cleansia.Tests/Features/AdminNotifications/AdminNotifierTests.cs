@@ -319,7 +319,7 @@ public sealed class AdminNotifierTests
     [Fact]
     public async Task A_Key_Outside_The_Catalogue_Is_Refused()
     {
-        var unknown = DisputeFiled(TenantA) with { Key = NotificationEventCatalog.OrderConfirmed };
+        var unknown = DisputeFiled(TenantA) with { Key = NotificationEventCatalog.OrderCompleted };
 
         await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() => NewNotifier().NotifyAsync(unknown, CancellationToken.None));
 

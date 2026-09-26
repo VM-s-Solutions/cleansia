@@ -1,5 +1,6 @@
 using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Features.Bookings.DTOs;
+using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Infra.Common.Validations;
 
@@ -12,7 +13,9 @@ public class GetMyRecurringBookings
     public class Handler(
         IRecurringBookingTemplateRepository templateRepository,
         ISavedAddressRepository savedAddressRepository,
-        IUserSessionProvider userSessionProvider) : IQueryHandler<Query, IReadOnlyList<RecurringBookingTemplateDto>>
+        IUserSessionProvider userSessionProvider,
+        IServiceRepository serviceRepository,
+        IPackageRepository packageRepository) : IQueryHandler<Query, IReadOnlyList<RecurringBookingTemplateDto>>
     {
         public async Task<BusinessResult<IReadOnlyList<RecurringBookingTemplateDto>>> Handle(Query query, CancellationToken cancellationToken)
         {
@@ -27,6 +30,16 @@ public class GetMyRecurringBookings
             var addressById = addresses
                 .Where(a => a.Address != null)
                 .ToDictionary(a => a.Id, a => a);
+
+            var cashTemplates = templates.Where(t => t.PaymentType == PaymentType.Cash).ToList();
+            var cashEligibility = cashTemplates.Count == 0
+                ? null
+                : await RecurringCashEligibility.LoadAsync(
+                    serviceRepository,
+                    packageRepository,
+                    cashTemplates.SelectMany(t => t.SelectedServiceIds),
+                    cashTemplates.SelectMany(t => t.SelectedPackageIds),
+                    cancellationToken);
 
             var dtos = templates.Select(t =>
             {
@@ -51,7 +64,9 @@ public class GetMyRecurringBookings
                     EndsOn: t.EndsOn,
                     LastMaterializedFor: t.LastMaterializedFor,
                     IsActive: t.IsActive,
-                    PreferredEmployeeId: t.PreferredEmployeeId);
+                    PreferredEmployeeId: t.PreferredEmployeeId,
+                    RequiresPaymentMethodChange: t.PaymentType == PaymentType.Cash
+                        && !cashEligibility!.Allows(t.SelectedServiceIds, t.SelectedPackageIds));
             }).ToList();
 
             return BusinessResult.Success<IReadOnlyList<RecurringBookingTemplateDto>>(dtos);

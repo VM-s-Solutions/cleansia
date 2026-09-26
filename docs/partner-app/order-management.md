@@ -52,6 +52,14 @@ is a display refinement on top of that floor and can never widen it.
 
 Shows all orders assigned to the current partner, regardless of status.
 
+### The status help
+
+The orders page's help panel carries two legends, each row drawn with the same pill and tone as the
+table's badge (`legendBadgeClass`). The order legend covers `Confirmed`, `InProgress`, `Completed` and
+`Cancelled`; `New` and `OnTheWay`, which the badges can show, have no row. The payment legend covers
+`Pending`, `Paid`, `Failed` and `Refunded`. There is no row for `OrderStatus.Pending`, because nothing
+writes it.
+
 ### Sorting & Filtering
 
 Both tabs support:

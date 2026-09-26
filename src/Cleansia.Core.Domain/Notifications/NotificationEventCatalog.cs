@@ -8,8 +8,6 @@
 public static class NotificationEventCatalog
 {
     public const string OrderPaymentConfirmed = "order.payment_confirmed";
-    // Kept for persisted feed rows, queued messages and device-held notifications.
-    public const string OrderConfirmed = "order.confirmed";
     public const string OrderOnTheWay = "order.on_the_way";
     public const string OrderInProgress = "order.in_progress";
     public const string OrderCompleted = "order.completed";
@@ -227,7 +225,7 @@ public static class NotificationEventCatalog
 
     public static NotificationCategory? GetCategoryFor(string eventKey) => eventKey switch
     {
-        OrderPaymentConfirmed or OrderConfirmed => NotificationCategory.OrderUpdates,
+        OrderPaymentConfirmed => NotificationCategory.OrderUpdates,
         OrderOnTheWay => NotificationCategory.CleanerOnTheWay,
         OrderInProgress => NotificationCategory.OrderUpdates,
         OrderCompleted => NotificationCategory.OrderCompleted,

@@ -20,14 +20,15 @@ public sealed class CustomerOrderCancellation(
     INotificationProducer notificationProducer,
     ILiveActivityProducer liveActivityProducer,
     IExpressWaiverConsumer expressWaiverConsumer,
-    IAuditContext auditContext)
+    IAuditContext auditContext,
+    TimeProvider timeProvider)
 {
     public record Result(Response Response, decimal? SuccessfulRefundAmount);
 
     public async Task<Result> ExecuteAsync(
         Order order, string? reason, string actorId, CancellationToken cancellationToken)
     {
-        var now = DateTime.UtcNow;
+        var now = timeProvider.GetUtcNow().UtcDateTime;
         var policy = await cancellationPolicyResolver.ResolveForUserAsync(order.UserId, cancellationToken);
         var assessment = CancellationAssessor.Assess(order, policy, now);
         var paymentStatusAtCancel = order.PaymentStatus;
@@ -69,13 +70,24 @@ public sealed class CustomerOrderCancellation(
         await loyaltyService.RevokeForCancelledOrderAsync(order.Id, cancellationToken);
 
         auditContext.RecordEvidence("Order", order.Id, new OrderCancellationEvidence(
-            assessment.Tier, assessment.FeeRate, assessment.FeeAmount, assessment.RefundAmount,
-            order.TotalPrice, order.CurrencyId, assessment.HasBeenAccepted,
-            Math.Round((decimal)(order.CleaningDateTime - now).TotalHours, 2),
-            Math.Round((decimal)(now - order.CreatedOn.UtcDateTime).TotalMinutes, 2),
-            policy.FreeCancellationHours, CancellationPolicyFigures.Current(), waiverReleased,
-            refundInitiated, order.PaymentType, paymentStatusAtCancel, !string.IsNullOrWhiteSpace(reason),
-            successfulRefundAmount));
+            Tier: assessment.Tier,
+            FeeRate: assessment.FeeRate,
+            FeeAmount: assessment.FeeAmount,
+            RefundAmount: assessment.RefundAmount,
+            TotalPrice: order.TotalPrice,
+            CurrencyId: order.CurrencyId,
+            HasBeenAccepted: assessment.HasBeenAccepted,
+            HoursBeforeCleaning: Math.Round((decimal)(order.CleaningDateTime - now).TotalHours, 2),
+            MinutesSinceBooking: Math.Round((decimal)(now - order.CreatedOn.UtcDateTime).TotalMinutes, 2),
+            FreeCancellationHoursApplied: policy.FreeCancellationHours,
+            OopsMinutesApplied: policy.OopsWindowMinutes,
+            PolicyFigures: CancellationPolicyFigures.Current(),
+            ExpressWaiverReleased: waiverReleased,
+            RefundInitiated: refundInitiated,
+            PaymentType: order.PaymentType,
+            PaymentStatus: paymentStatusAtCancel,
+            ReasonProvided: !string.IsNullOrWhiteSpace(reason),
+            ActualRefundAmount: successfulRefundAmount));
 
         return new Result(new Response(order.Id, assessment.FeeRate, assessment.RefundAmount,
             order.TotalPrice, refundInitiated, successfulRefundAmount), successfulRefundAmount);

@@ -23,6 +23,11 @@ public class DataRetentionBackgroundService(
     ICustomerActionAuditRepository customerActionAuditRepository,
     IDisputeRepository disputeRepository,
     IWorkContractAcceptanceRepository workContractAcceptanceRepository,
+    IAddressRepository addressRepository,
+    IOrderPhotoRepository orderPhotoRepository,
+    IAdminActionAuditRepository adminActionAuditRepository,
+    IEmployeeActionAuditRepository employeeActionAuditRepository,
+    IGuestOrderAccessTokenRepository guestOrderAccessTokenRepository,
     ITenantRepository tenantRepository,
     ITenantProvider tenantProvider,
     IAppConfigurationProvider configProvider,
@@ -71,6 +76,10 @@ public class DataRetentionBackgroundService(
             await RunSafeAsync("CustomerActionAudits", tenantId, CleanCustomerActionAuditsAsync, cancellationToken);
             await RunSafeAsync("DisputeText", tenantId, CleanExpiredDisputeTextAsync, cancellationToken);
             await RunSafeAsync("WorkContractAcceptanceMetadata", tenantId, CleanWorkContractAcceptanceMetadataAsync, cancellationToken);
+            await RunSafeAsync("OrderPhotos", tenantId, CleanOrderPhotosAsync, cancellationToken);
+            await RunSafeAsync("AdminActionAudits", tenantId, CleanAdminActionAuditsAsync, cancellationToken);
+            await RunSafeAsync("EmployeeActionAudits", tenantId, CleanEmployeeActionAuditsAsync, cancellationToken);
+            await RunSafeAsync("GuestOrderAccessTokens", tenantId, CleanDeadGuestOrderAccessTokensAsync, cancellationToken);
         }
 
         tenantProvider.ClearTenantOverride();
@@ -181,12 +190,29 @@ public class DataRetentionBackgroundService(
 
             if (batch.Count == 0) break;
 
+            var sourceAddresses = batch.Where(o => o.CustomerAddress is not null)
+                .Select(o => o.CustomerAddress!).DistinctBy(a => a.Id).ToList();
+
+            // The customer is not erased here, so their own newer orders and saved address still count.
+            var sharedAddressIds = await addressRepository.GetReferencedElsewhereAsync(
+                sourceAddresses.Select(a => a.Id).ToList(),
+                batch.Select(o => o.Id).ToList(),
+                exceptSavedAddressIds: [],
+                exceptEmployeeId: null,
+                ct);
+
             foreach (var order in batch)
             {
                 order.AnonymizeCustomerData();
-                order.CustomerAddress?.Anonymize();
+                var addressCopy = order.AnonymizeCustomerAddress();
+                if (addressCopy is not null)
+                {
+                    addressRepository.Add(addressCopy);
+                }
             }
 
+            // A new reference after the census makes the FK refuse deletion; it can never be blanked.
+            addressRepository.RemoveRange(sourceAddresses.Where(a => !sharedAddressIds.Contains(a.Id)));
             await orderRepository.CommitAsync(ct);
             totalProcessed += batch.Count;
         }
@@ -321,7 +347,7 @@ public class DataRetentionBackgroundService(
 
         // Per row by its own age, never anchored on the customer's last act: the anchor form kept an
         // active customer's IP addresses for the life of the account (ADR-0062 D5). The admin and
-        // employee tables have no window (ADR-0012 D6) and this task must never reach them.
+        // employee tables are swept by their own tasks, each under its own key.
         var totalDeleted = await customerActionAuditRepository.DeleteExpiredAsync(cutoff, ct);
 
         logger.LogInformation("Deleted {Total} customer audit rows older than {Years} years",
@@ -371,5 +397,80 @@ public class DataRetentionBackgroundService(
 
         logger.LogInformation("Blanked the request metadata on {Total} contract acceptances older than {Years} years",
             totalBlanked, years);
+    }
+
+    private async Task CleanOrderPhotosAsync(CancellationToken ct)
+    {
+        var days = await configProvider.GetAsync(TenantSettingCatalog.OrderPhotosDays, ct);
+        var completedBefore = DateTime.UtcNow.AddDays(-days);
+        var operatorTenantId = tenantProvider.GetCurrentTenantId()!;
+
+        var blobClient = blobClientFactory.GetBlobContainerClient(Constants.BlobContainers.OrderPhotos);
+        var totalDeleted = 0;
+        string? afterId = null;
+
+        // Paged by id rather than re-reading the head: a photo whose blob would not delete keeps its row,
+        // since BlobUrl is the only name the blob has, and must not be read again in this run.
+        while (true)
+        {
+            var batch = await orderPhotoRepository.GetPastRetentionAsync(
+                operatorTenantId, completedBefore, afterId, RetentionDefaults.BatchSize, ct);
+
+            if (batch.Count == 0) break;
+            afterId = batch[^1].Id;
+
+            foreach (var photo in batch)
+            {
+                try
+                {
+                    await blobClient.DeleteAsync(OrderPhotoBlobName.FromUrl(photo.BlobUrl), ct);
+                }
+                catch (Exception ex)
+                {
+                    logger.LogWarning(ex, "Failed to delete the blob of order photo {PhotoId} on order {OrderId}, skipping",
+                        photo.Id, photo.OrderId);
+                    continue;
+                }
+
+                orderPhotoRepository.Remove(photo);
+                totalDeleted++;
+            }
+
+            await orderPhotoRepository.CommitAsync(ct);
+        }
+
+        logger.LogInformation("Deleted {Total} order photos of orders completed more than {Days} days ago",
+            totalDeleted, days);
+    }
+
+    private async Task CleanAdminActionAuditsAsync(CancellationToken ct)
+    {
+        var years = await configProvider.GetAsync(TenantSettingCatalog.AdminAuditRetentionYears, ct);
+        var cutoff = DateTimeOffset.UtcNow.AddYears(-years);
+
+        var totalDeleted = await adminActionAuditRepository.DeleteExpiredAsync(cutoff, ct);
+
+        logger.LogInformation("Deleted {Total} admin audit rows older than {Years} years", totalDeleted, years);
+    }
+
+    private async Task CleanEmployeeActionAuditsAsync(CancellationToken ct)
+    {
+        var years = await configProvider.GetAsync(TenantSettingCatalog.EmployeeAuditRetentionYears, ct);
+        var cutoff = DateTimeOffset.UtcNow.AddYears(-years);
+
+        var totalDeleted = await employeeActionAuditRepository.DeleteExpiredAsync(cutoff, ct);
+
+        logger.LogInformation("Deleted {Total} cleaner audit rows older than {Years} years", totalDeleted, years);
+    }
+
+    private async Task CleanDeadGuestOrderAccessTokensAsync(CancellationToken ct)
+    {
+        var now = DateTimeOffset.UtcNow;
+
+        var totalDeleted = await guestOrderAccessTokenRepository.GetQueryable()
+            .Where(t => t.RevokedOn != null || t.ExpiresOn <= now)
+            .ExecuteDeleteAsync(ct);
+
+        logger.LogInformation("Deleted {Total} expired or revoked guest order access tokens", totalDeleted);
     }
 }

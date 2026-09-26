@@ -10,6 +10,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 using MockQueryable;
 using Moq;
 using Cleansia.TestUtilities;
+using Cleansia.Tests.Infrastructure;
 
 namespace Cleansia.Tests.Features.Orders;
 
@@ -175,6 +176,7 @@ public class TakeOrderImplicitDeclineTests
             _accessService.Object,
             _notificationProducer.Object,
             _emailService.Object,
+            TestGuestOrderAccessTokenIssuer.WithNoLiveTokens(),
             _workContractAcceptor.Object,
             NullLogger<TakeOrder.Handler>.Instance);
 }

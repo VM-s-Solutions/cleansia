@@ -10,10 +10,8 @@ namespace Cleansia.Core.AppServices.Features.Credit.Admin;
 /// <summary>
 /// Discharge a customer's whole credit balance now, before it expires on its own.
 ///
-/// <para><b>This is how a customer who wants to leave actually gets to leave.</b> Erasure is refused
-/// while a balance is positive (owner ruling 2026-09-05, GdprDeletionService), and Cleansia does not
-/// do Stripe payouts — so without this the platform had a customer it could neither pay nor erase.
-/// They ask, an admin discharges the balance, and the erasure proceeds.</para>
+/// <para>Not a step before erasure: a completed erasure forfeits every remaining balance itself
+/// (GdprDeletionService).</para>
 ///
 /// <para>The movement and its ledger reason are the same as the nightly sweep's, because they ARE the
 /// same thing: money leaving because it will not be spent. The note says which it was, and it is
@@ -31,7 +29,7 @@ public class ExpireCustomerCredit
 {
     /// <param name="CurrencyId">
     /// Which account to drain. Must exist; NOT required to be active — a balance stranded in a
-    /// switched-off currency is precisely the one that still blocks erasure and must be dischargeable.
+    /// switched-off currency can never be spent and must still be dischargeable.
     /// </param>
     /// <param name="RequestId">
     /// S7a. Persisted as the ledger row's <c>IdempotencyKey</c>, where a plain unique index collapses
@@ -92,12 +90,13 @@ public class ExpireCustomerCredit
             var currency = await currencyRepository.GetByIdAsync(command.CurrencyId, cancellationToken);
             var currencyCode = currency?.Code ?? string.Empty;
 
+            await creditAccountRepository.LockForUserAsync(command.UserId, cancellationToken);
             var accounts = await creditAccountRepository.GetAllForUserAsync(
                 command.UserId, cancellationToken);
             var account = accounts.FirstOrDefault(a => a.CurrencyId == command.CurrencyId);
 
             // No account in this currency, or nothing on it. Both are SUCCESS with zero: the admin's
-            // intent — "make this balance not block anything" — is already true, and an error here
+            // intent — "this balance is zero" — is already true, and an error here
             // would send them hunting for a problem that does not exist.
             if (account is null || account.Balance <= 0m)
             {

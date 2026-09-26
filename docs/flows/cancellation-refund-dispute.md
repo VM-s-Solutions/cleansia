@@ -6,8 +6,10 @@ Three ways money goes back, with different triggers and different authority.
 
 ```mermaid
 flowchart LR
-  A[Customer cancels] --> B{Within the oops window?}
-  B -- yes --> F["free — 0%"]
+  A[Customer cancels] --> N{A cleaner on the job?}
+  N -- no --> F["free — 0%"]
+  N -- yes --> B{"Within the oops window? (15 min, 60 for Plus)"}
+  B -- yes --> F
   B -- no --> C{Notice given}
   C -- "≥ 24 h" --> F
   C -- "4–24 h" --> P["partial — 25%"]
@@ -20,9 +22,14 @@ flowchart LR
   class F,R free
 ```
 
-The oops window is **15 minutes** from booking, or **60** for a first-time customer, regardless of how
-close the cleaning is. A Plus membership can widen the free window. The fee ladder itself is priced in
-exactly one place.
+The oops window is **15 minutes** from booking — **60 minutes for an entitled Plus member** — regardless
+of how close the cleaning is (owner ruling 2026-09-24). Guests and first-time customers get the 15.
+`CancellationPolicyResolver` decides it, live, from the same paid-entitlement read as every other Plus
+benefit, and every route asks it: the signed-in and the guest cancel, both previews, and the booking's
+evidence row. The previews return the figure as `oopsWindowMinutes`, so the sheet states the
+customer's own window. A Plus membership separately widens the free cancellation **notice** window
+(hours before the cleaning); the two never derive from each other. The fee ladder itself is priced in
+exactly one place. → [The oops window](/product/business-rules#oops-window)
 
 When the **cleaner** cancels or no-shows, the customer is refunded *and* credited the apology figure
 authored for the order's currency — `Currency.NoShowCredit`, 250 on a CZK order, paid into the
@@ -38,7 +45,7 @@ credit's own, which the device cannot derive from the order).
 **The cancel is written down as the server priced it.** `CancelOrder` is marked
 `customer.order.cancel` ([ADR-0062](/decisions/adr-0062)): the row that rides its commit carries the
 tier, the fee rate and amount, the refund amount, the notice given in hours, the minutes since booking,
-whether a cleaner had already accepted (the fact the fee turns on, and one that drop/cover hard-deletes
+the oops window applied (`oopsMinutesApplied`, 15 or 60), whether a cleaner had already accepted (the fact the fee turns on, and one that drop/cover hard-deletes
 so it cannot be reconstructed later), the free window applied (Plus or standard), the policy figures at
 that moment, whether an express-waiver slot was actually released, whether a refund was initiated,
 and that a reason was given — the reason's text stays on the order. The preview the customer saw is
@@ -64,6 +71,13 @@ amount     = min(requested, refundable)      refuse if ≤ 0
 
 Re-driving an existing refund row clamps it to what remains rather than issuing a second one.
 
+**Partial line refunds load every component of the split.** `IssuePartialRefund` uses the order's
+persisted service, package and extra snapshots. The detail repository includes `SelectedExtras`, so
+their value remains in the denominator even when the selected refund line is a service. On an
+undiscounted order with a 1,000 service and a 200 extra, the split allocates 1,000 to that service,
+before any applicable processing fee, instead of the whole 1,200. The refund service still applies
+its remaining-money ceiling.
+
 ## Dispute
 
 A dispute has a guarded state machine: the terminal writes — close, escalate, resolve — may only be
@@ -72,7 +86,16 @@ is a build-time violation, because a dispute that skips the guard can land in a 
 cannot explain.
 
 Chargebacks arrive as Stripe events and are **reflected onto the linked dispute**, not onto the
-order's payment status.
+order's payment status. The webhook finds the disputed order **by its stored payment intent**, links
+the order's open dispute or writes an escalated `Chargeback` one, and acknowledges. Only an order paid
+through a PaymentIntent stores one: a mobile PaymentSheet payment or a confirmed recurring occurrence,
+both account orders. **A web card booking stores only its Checkout Session, and every guest card
+booking is one**, so its chargeback resolves to no order. The webhook logs it and answers `200`. No
+dispute is written and no administrator is told.
+
+`Dispute.UserId` is nullable: a dispute hangs off the order, an order may have no account, and the
+webhook's writers copy the order's `UserId`. Every ownership read compares that column against the
+caller, so no customer can open a dispute that names no account; an administrator can.
 
 **The company's administrators are told of both, in the same commit.** A customer filing a dispute
 writes one feed row per administrator of the order's company whose role is Support or above, and one
@@ -82,6 +105,21 @@ money that left is theirs to reconcile — with the reversed amount and the disp
 attached to — the customer's open dispute when there is one, else the chargeback's own — so the console
 opens the right file. Both ride the outbox, so a Stripe redelivery that never reaches the handler never mails twice.
 → [Business rules — administrators are told](/product/business-rules#admin-notifications)
+
+**Resolving with a refund moves the money first.** `ResolveDispute` with a refund amount above zero
+sends that refund through the one refund seam (reason `DisputeResolution`, the dispute's id on the
+`Refund` row) **before** it writes anything on the dispute. The seam splits the amount across the
+tenders the order was settled with: the card share goes back through Stripe, clamped to what the card
+can still return, and any credit share goes back to the customer's balance in the same commit. Only
+when the refund succeeds is the dispute written `Resolved` with its `RefundAmount`, and a customer with
+an account told (`order.refunded`, keyed on the refund). The `RefundAmount` recorded is the amount the
+administrator asked for, not the figure the seam moved. When the seam refuses — `refund.failed` from
+Stripe, `refund.order_not_refundable` on an order with no card charge, `refund.nothing_refundable` once
+the ceiling is spent — the resolver gets that error and the dispute stays open. The refund key carries
+the dispute's id and no amount, so a retry re-drives the **first attempt's** refund row, clamped to
+what remains, whatever amount the retry names. The money moves once, and the dispute records the
+retry's amount. A resolution with no amount, or zero, moves nothing and simply resolves. A terminal
+dispute is never resolved twice (`dispute.already_resolved`).
 
 **Filing one is recorded against the order, then the dispute.** `CreateDispute` is marked
 `customer.dispute.create` with `Order` as its resource, so a filing that is refused — against a clean
@@ -110,4 +148,7 @@ dispute or the order shows the three interleaved, newest first.
 | Cancel after the cleaner is on the way | Allowed; the fee ladder decides the cost. |
 | Cancel by someone who does not own the order | Refused — the handler checks `order.UserId`. The probe is recorded: a failure row on the caller with `order.not_found` and the probed order as its resource. |
 | Dispute resolved outside the guard | Cannot happen from application code; the checker fails the build. |
+| Dispute resolved with a refund Stripe refuses | The resolver gets `refund.failed`; the dispute stays open with no `RefundAmount`, and the customer is not told of a refund. Resolving again re-drives the same refund row at the first attempt's amount, even when the retry names another; the dispute then records the retry's amount. |
+| Dispute resolved with a refund on a cash booking | `refund.order_not_refundable` — there is no card charge to refund, and the dispute stays open. |
+| Chargeback on a web card booking, guest or account | The order is not found, because a Checkout Session order stores no payment intent. The webhook logs it and answers `200`. No dispute is written and the administrators are not told. |
 | Express waiver used, then the order cancelled | The consumed benefit slot is forfeited or released by rule, not silently kept. |

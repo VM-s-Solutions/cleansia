@@ -57,11 +57,9 @@ object NotificationDeepLink {
         // job that changed. dispute.reply also carries the disputed order's id
         // (see CleansiaFirebaseMessagingService).
         "order.payment_confirmed",
-        "order.confirmed",
         "order.in_progress",
         "order.completed",
         "order.cancelled",
-        "order.on_the_way",
         "dispute.reply",
         "order.assignment_cancelled",
         "order.assigned",

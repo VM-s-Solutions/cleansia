@@ -34,8 +34,6 @@ public class CountryConfiguration : Auditable
     [Required]
     public decimal StandardVatRate { get; private set; }
 
-    public decimal? ReducedVatRate { get; private set; }
-
     [MaxLength(50)]
     public string? TaxIdLabel { get; private set; }
 
@@ -134,7 +132,6 @@ public class CountryConfiguration : Auditable
         string? dateFormat = null,
         string? timeZoneId = null,
         string? phonePrefix = null,
-        decimal? reducedVatRate = null,
         string? taxIdLabel = null,
         string? taxIdFormat = null,
         string? defaultPaymentGateway = null,
@@ -153,7 +150,6 @@ public class CountryConfiguration : Auditable
             DateFormat = dateFormat,
             TimeZoneId = timeZoneId,
             PhonePrefix = phonePrefix,
-            ReducedVatRate = reducedVatRate,
             TaxIdLabel = taxIdLabel,
             TaxIdFormat = taxIdFormat,
             DefaultPaymentGateway = defaultPaymentGateway,

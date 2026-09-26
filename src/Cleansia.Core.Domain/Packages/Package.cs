@@ -30,8 +30,6 @@ public class Package : Auditable
     /// </summary>
     public bool IsPopular { get; private set; }
 
-    [Required]
-
     private IDictionary<string, Translation> _translations = new Dictionary<string, Translation>();
     public IReadOnlyDictionary<string, Translation> Translations => _translations.AsReadOnly();
 

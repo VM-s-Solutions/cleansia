@@ -20,6 +20,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
+using Cleansia.Core.AppServices.Features.Orders;
+using Cleansia.Tests.Infrastructure;
 
 namespace Cleansia.Tests.Logging;
 
@@ -60,14 +62,14 @@ public class S6LoggingHygieneCharacterizationTests
             Mock.Of<IUnitOfWork>(), new NoopGuard(), Mock.Of<ITenantProvider>(), logger);
 
         var body = JsonSerializer.Serialize(
-            new SendPushNotificationMessage("USER-1", "order.confirmed", new(), TenantId: null),
+            new SendPushNotificationMessage("USER-1", "order.cleaner_assigned", new(), TenantId: null),
             CamelCase);
 
         await Assert.ThrowsAsync<TimeoutException>(() => handler.HandleAsync(body, CancellationToken.None));
 
         var entry = logger.Single(LogLevel.Error);
         Assert.Equal("USER-1", entry.Scalar("UserId"));
-        Assert.Equal("order.confirmed", entry.Scalar("EventKey"));
+        Assert.Equal("order.cleaner_assigned", entry.Scalar("EventKey"));
         Assert.DoesNotContain(body, entry.Message);
     }
 
@@ -207,7 +209,7 @@ public class S6LoggingHygieneCharacterizationTests
             .ReturnsAsync(Mock.Of<IDbContextTransaction>());
 
         var handler = new GenerateReceiptHandler(
-            orders.Object, Mock.Of<IReceiptService>(), Mock.Of<IEmailService>(),
+            orders.Object, Mock.Of<IReceiptService>(), Mock.Of<IEmailService>(), TestGuestOrderAccessTokenIssuer.WithNoLiveTokens(),
             Mock.Of<ICountryConfigurationRepository>(), uow.Object, Mock.Of<ITenantProvider>(), DeadLetterOfFrozenCompany(), logger);
 
         var body = JsonSerializer.Serialize(
@@ -232,7 +234,7 @@ public class S6LoggingHygieneCharacterizationTests
             .ReturnsAsync(Mock.Of<IDbContextTransaction>());
 
         var handler = new GenerateReceiptHandler(
-            Mock.Of<IOrderRepository>(), Mock.Of<IReceiptService>(), Mock.Of<IEmailService>(),
+            Mock.Of<IOrderRepository>(), Mock.Of<IReceiptService>(), Mock.Of<IEmailService>(), TestGuestOrderAccessTokenIssuer.WithNoLiveTokens(),
             Mock.Of<ICountryConfigurationRepository>(), uow.Object, Mock.Of<ITenantProvider>(), DeadLetterOfFrozenCompany(), logger);
 
         // Malformed body → both envelope and bare reads throw → ReadPayload returns null → the

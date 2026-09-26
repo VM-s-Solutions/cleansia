@@ -166,6 +166,39 @@ public class GuestOrderErasureTests(PostgresContainerFixture fixture) : BaseInte
             });
     }
 
+    /// <summary>
+    /// A guest booking's link lives until 30 days after the cleaning, so a subject who registers and erases
+    /// within that month would otherwise leave a working link to the anonymised booking in their mailbox.
+    /// The erasure retires every live link of the ended guest bookings it walks — and only those: a
+    /// stranger's booking and the subject's still-live guest booking, which keeps its only cancel path,
+    /// keep theirs.
+    /// </summary>
+    [Fact]
+    public async Task The_Erasure_Revokes_The_Live_Links_Of_The_Ended_Guest_Booking_It_Anonymises_And_No_Other()
+    {
+        await TestMethod(
+            setup: WithoutBlobStorage,
+            arrange: async context =>
+            {
+                await Seed(context);
+                context.GuestOrderAccessTokens.AddRange(
+                    LiveToken(GuestOrderId, TestTenants.Second),
+                    LiveToken(StrangerOrderId, TestTenants.Default),
+                    LiveToken(LiveGuestOrderId, TestTenants.Default));
+                await context.CommitAsync(CancellationToken.None);
+            },
+            act: async provider => await provider.GetRequiredService<IMediator>().Send(new DeleteUserAccount.Command()),
+            assert: async (CleansiaDbContext context, BusinessResult result) =>
+            {
+                Assert.True(result.IsSuccess, result.Error?.Message);
+
+                var tokens = await context.GuestOrderAccessTokens.IgnoreQueryFilters().ToDictionaryAsync(t => t.OrderId);
+                Assert.NotNull(tokens[GuestOrderId].RevokedOn);
+                Assert.Null(tokens[StrangerOrderId].RevokedOn);
+                Assert.Null(tokens[LiveGuestOrderId].RevokedOn);
+            });
+    }
+
     [Fact]
     public async Task The_Export_Lists_The_Guest_Orders_Under_The_Subjects_Email_Whatever_Their_Market_Or_Status_Beside_Their_Own_And_Not_A_Strangers()
     {
@@ -270,6 +303,13 @@ public class GuestOrderErasureTests(PostgresContainerFixture fixture) : BaseInte
         order.Id = id;
         order.AddOrderStatus(OrderStatusTrack.Create(status, order));
         return order;
+    }
+
+    private static GuestOrderAccessToken LiveToken(string orderId, string tenantId)
+    {
+        var token = GuestOrderAccessToken.Issue(orderId, DateTimeOffset.UtcNow.AddDays(10));
+        token.TenantId = tenantId;
+        return token;
     }
 
     private static OrderPhoto NewPhoto(string orderId, string originalFileName) =>

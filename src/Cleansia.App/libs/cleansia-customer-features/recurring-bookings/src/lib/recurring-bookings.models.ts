@@ -1,3 +1,6 @@
+import { PaymentType } from '@cleansia/customer-services';
+import type { CashEligibility } from '@cleansia/models';
+
 /**
  * Frequency enum mirroring backend `RecurrenceFrequency`. Persisted as an int
  * over the wire — don't reorder. Names + values must match the Kotlin enum on
@@ -43,8 +46,8 @@ export interface RecurringWizardFormData {
   savedAddressId: string | null;
   selectedServiceIds: string[];
   selectedPackageIds: string[];
-  /** 1 = Cash, 2 = Card. */
-  paymentType: number;
+  /** Null once a cash choice was taken away and the customer has not chosen again. */
+  paymentType: PaymentType | null;
   /** Local Date for the picker; converted to ISO instant on submit. */
   startsOn: Date | null;
 }
@@ -58,7 +61,7 @@ export const RECURRING_WIZARD_INITIAL_DATA: RecurringWizardFormData = {
   savedAddressId: null,
   selectedServiceIds: [],
   selectedPackageIds: [],
-  paymentType: 1,
+  paymentType: PaymentType.Card,
   startsOn: null,
 };
 
@@ -160,12 +163,7 @@ export function canAdvance(step: number, data: RecurringWizardFormData): boolean
 }
 
 export function canSubmit(data: RecurringWizardFormData): boolean {
-  return (
-    !!data.timeOfDay &&
-    !!data.savedAddressId &&
-    !!data.startsOn &&
-    (data.selectedServiceIds.length > 0 || data.selectedPackageIds.length > 0)
-  );
+  return missingFields(data).length === 0;
 }
 
 /**
@@ -247,7 +245,7 @@ export function nextOccurrenceUtc(
 }
 
 /** A required field the form is still missing, in the order the form asks. */
-export type MissingField = 'services' | 'time' | 'address' | 'startsOn';
+export type MissingField = 'services' | 'time' | 'address' | 'startsOn' | 'payment';
 
 /**
  * What is stopping this schedule from being saved.
@@ -265,5 +263,54 @@ export function missingFields(data: RecurringWizardFormData): MissingField[] {
   if (!data.timeOfDay) missing.push('time');
   if (!data.savedAddressId) missing.push('address');
   if (!data.startsOn) missing.push('startsOn');
+  if (data.paymentType === null) missing.push('payment');
   return missing;
+}
+
+/** What a quote prices. The day, the time and the way to pay move no money. */
+export interface PricedSelection {
+  serviceIds: string[];
+  packageIds: string[];
+  rooms: number;
+  bathrooms: number;
+  countryId: string | null;
+}
+
+export function samePricedSelection(a: PricedSelection, b: PricedSelection): boolean {
+  const sameIds = (x: string[], y: string[]) => x.length === y.length && x.every((id, i) => id === y[i]);
+  return (
+    sameIds(a.serviceIds, b.serviceIds) &&
+    sameIds(a.packageIds, b.packageIds) &&
+    a.rooms === b.rooms &&
+    a.bathrooms === b.bathrooms &&
+    a.countryId === b.countryId
+  );
+}
+
+/** Why a schedule cannot be paid in cash right now, or null when it can. */
+export function scheduleCashReason(
+  eligibility: CashEligibility,
+): { key: string; params: Record<string, number> } | null {
+  switch (eligibility.kind) {
+    case 'needs_card':
+      return { key: 'recurring_booking.cash_needs_card', params: { count: eligibility.requiredCleaners } };
+    case 'pending':
+      return { key: 'recurring_booking.cash_pending', params: {} };
+    default:
+      return null;
+  }
+}
+
+type ScheduleState = { isActive: boolean; requiresPaymentMethodChange?: boolean };
+
+/** A paused schedule books nothing, and neither does a cash one the server now skips until it is changed. */
+export function scheduleBooksCleanings(template: ScheduleState): boolean {
+  return template.isActive && !template.requiresPaymentMethodChange;
+}
+
+export function scheduleStatusKey(template: ScheduleState): string {
+  if (!template.isActive) return 'recurring_booking.paused_badge';
+  return template.requiresPaymentMethodChange
+    ? 'recurring_booking.status_needs_change'
+    : 'recurring_booking.status_active';
 }

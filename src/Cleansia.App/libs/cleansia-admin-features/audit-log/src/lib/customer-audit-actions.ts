@@ -27,11 +27,12 @@ export const CUSTOMER_AUDIT_ACTIONS = [
   'customer.account.email_confirmed',
 ] as const;
 
-// GetActionTimeline.EmployeeActionLabel — the two dotted labels the timeline gives employee rows.
+// GetActionTimeline.EmployeeActionLabel — the dotted labels the timeline gives employee rows.
 export const EMPLOYEE_AUDIT_ACTIONS = [
   'employee.order.cover_requested',
   'employee.order.dropped',
   'employee.order.contract_accepted',
+  'employee.order.access_instructions_read',
 ] as const;
 
 const ACTION_LABEL_KEY_PREFIX = 'pages.audit_log.actions.';

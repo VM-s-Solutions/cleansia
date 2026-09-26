@@ -3616,12 +3616,10 @@ export interface IOrderClient {
      */
     lookupPost(body?: LookupOrderQuery | undefined): Observable<LookupOrderResponse>;
     /**
-     * @param orderNumber (optional) 
-     * @param email (optional) 
-     * @param confirmationCode (optional) 
+     * @param token (optional) 
      * @return OK
      */
-    lookupGet(orderNumber?: string | undefined, email?: string | undefined, confirmationCode?: string | undefined): Observable<LookupOrderResponse>;
+    lookupGet(token?: string | undefined): Observable<LookupOrderResponse>;
     /**
      * @param body (optional) 
      * @return OK
@@ -3957,25 +3955,15 @@ export class OrderClient implements IOrderClient {
     }
 
     /**
-     * @param orderNumber (optional) 
-     * @param email (optional) 
-     * @param confirmationCode (optional) 
+     * @param token (optional) 
      * @return OK
      */
-    lookupGet(orderNumber?: string | undefined, email?: string | undefined, confirmationCode?: string | undefined): Observable<LookupOrderResponse> {
+    lookupGet(token?: string | undefined): Observable<LookupOrderResponse> {
         let url = this.baseUrl + "/api/Order/Lookup?";
-        if (orderNumber === null)
-            throw new globalThis.Error("The parameter 'orderNumber' cannot be null.");
-        else if (orderNumber !== undefined)
-            url += "orderNumber=" + encodeURIComponent("" + orderNumber) + "&";
-        if (email === null)
-            throw new globalThis.Error("The parameter 'email' cannot be null.");
-        else if (email !== undefined)
-            url += "email=" + encodeURIComponent("" + email) + "&";
-        if (confirmationCode === null)
-            throw new globalThis.Error("The parameter 'confirmationCode' cannot be null.");
-        else if (confirmationCode !== undefined)
-            url += "confirmationCode=" + encodeURIComponent("" + confirmationCode) + "&";
+        if (token === null)
+            throw new globalThis.Error("The parameter 'token' cannot be null.");
+        else if (token !== undefined)
+            url += "token=" + encodeURIComponent("" + token) + "&";
         url = url.replace(/[?&]$/, "");
 
         let options : any = {
@@ -7797,9 +7785,7 @@ export interface IBlobFileDto {
 }
 
 export class CancelGuestOrderCommand implements ICancelGuestOrderCommand {
-    displayOrderNumber!: string | undefined;
-    email!: string | undefined;
-    confirmationCode!: string | undefined;
+    accessToken!: string | undefined;
     reason!: string | undefined;
     language!: string | undefined;
 
@@ -7814,9 +7800,7 @@ export class CancelGuestOrderCommand implements ICancelGuestOrderCommand {
 
     init(Data?: any) {
         if (Data) {
-            this.displayOrderNumber = Data["displayOrderNumber"];
-            this.email = Data["email"];
-            this.confirmationCode = Data["confirmationCode"];
+            this.accessToken = Data["accessToken"];
             this.reason = Data["reason"];
             this.language = Data["language"];
         }
@@ -7831,9 +7815,7 @@ export class CancelGuestOrderCommand implements ICancelGuestOrderCommand {
 
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
-        data["displayOrderNumber"] = this.displayOrderNumber;
-        data["email"] = this.email;
-        data["confirmationCode"] = this.confirmationCode;
+        data["accessToken"] = this.accessToken;
         data["reason"] = this.reason;
         data["language"] = this.language;
         return data;
@@ -7841,9 +7823,7 @@ export class CancelGuestOrderCommand implements ICancelGuestOrderCommand {
 }
 
 export interface ICancelGuestOrderCommand {
-    displayOrderNumber: string | undefined;
-    email: string | undefined;
-    confirmationCode: string | undefined;
+    accessToken: string | undefined;
     reason: string | undefined;
     language: string | undefined;
 }
@@ -8939,6 +8919,7 @@ export class CreateOrderResponse implements ICreateOrderResponse {
     id!: string | undefined;
     confirmationCode!: string | undefined;
     stripeSessionId!: string | undefined;
+    guestAccessToken!: string | undefined;
 
     constructor(data?: ICreateOrderResponse) {
         if (data) {
@@ -8954,6 +8935,7 @@ export class CreateOrderResponse implements ICreateOrderResponse {
             this.id = Data["id"];
             this.confirmationCode = Data["confirmationCode"];
             this.stripeSessionId = Data["stripeSessionId"];
+            this.guestAccessToken = Data["guestAccessToken"];
         }
     }
 
@@ -8969,6 +8951,7 @@ export class CreateOrderResponse implements ICreateOrderResponse {
         data["id"] = this.id;
         data["confirmationCode"] = this.confirmationCode;
         data["stripeSessionId"] = this.stripeSessionId;
+        data["guestAccessToken"] = this.guestAccessToken;
         return data;
     }
 }
@@ -8977,6 +8960,7 @@ export interface ICreateOrderResponse {
     id: string | undefined;
     confirmationCode: string | undefined;
     stripeSessionId: string | undefined;
+    guestAccessToken: string | undefined;
 }
 
 export class CreatePaymentIntentCommand implements ICreatePaymentIntentCommand {
@@ -10905,6 +10889,7 @@ export class GetCancellationFeePreviewResponse implements IGetCancellationFeePre
     totalPrice!: number;
     currencyCode!: string | undefined;
     expressWaiverForfeitedOnCancel!: boolean;
+    oopsWindowMinutes!: number;
 
     constructor(data?: IGetCancellationFeePreviewResponse) {
         if (data) {
@@ -10925,6 +10910,7 @@ export class GetCancellationFeePreviewResponse implements IGetCancellationFeePre
             this.totalPrice = Data["totalPrice"];
             this.currencyCode = Data["currencyCode"];
             this.expressWaiverForfeitedOnCancel = Data["expressWaiverForfeitedOnCancel"];
+            this.oopsWindowMinutes = Data["oopsWindowMinutes"];
         }
     }
 
@@ -10945,6 +10931,7 @@ export class GetCancellationFeePreviewResponse implements IGetCancellationFeePre
         data["totalPrice"] = this.totalPrice;
         data["currencyCode"] = this.currencyCode;
         data["expressWaiverForfeitedOnCancel"] = this.expressWaiverForfeitedOnCancel;
+        data["oopsWindowMinutes"] = this.oopsWindowMinutes;
         return data;
     }
 }
@@ -10958,6 +10945,7 @@ export interface IGetCancellationFeePreviewResponse {
     totalPrice: number;
     currencyCode: string | undefined;
     expressWaiverForfeitedOnCancel: boolean;
+    oopsWindowMinutes: number;
 }
 
 export class GetCurrentUserQuery implements IGetCurrentUserQuery {
@@ -10991,9 +10979,7 @@ export interface IGetCurrentUserQuery {
 }
 
 export class GetGuestCancellationFeePreviewQuery implements IGetGuestCancellationFeePreviewQuery {
-    displayOrderNumber!: string | undefined;
-    email!: string | undefined;
-    confirmationCode!: string | undefined;
+    accessToken!: string | undefined;
 
     constructor(data?: IGetGuestCancellationFeePreviewQuery) {
         if (data) {
@@ -11006,9 +10992,7 @@ export class GetGuestCancellationFeePreviewQuery implements IGetGuestCancellatio
 
     init(Data?: any) {
         if (Data) {
-            this.displayOrderNumber = Data["displayOrderNumber"];
-            this.email = Data["email"];
-            this.confirmationCode = Data["confirmationCode"];
+            this.accessToken = Data["accessToken"];
         }
     }
 
@@ -11021,17 +11005,13 @@ export class GetGuestCancellationFeePreviewQuery implements IGetGuestCancellatio
 
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
-        data["displayOrderNumber"] = this.displayOrderNumber;
-        data["email"] = this.email;
-        data["confirmationCode"] = this.confirmationCode;
+        data["accessToken"] = this.accessToken;
         return data;
     }
 }
 
 export interface IGetGuestCancellationFeePreviewQuery {
-    displayOrderNumber: string | undefined;
-    email: string | undefined;
-    confirmationCode: string | undefined;
+    accessToken: string | undefined;
 }
 
 export class GetLoyaltyActivityActivityItem implements IGetLoyaltyActivityActivityItem {
@@ -12344,48 +12324,8 @@ export interface ILogoutCommand {
     token: string | undefined;
 }
 
-export class LookupOrderBatchOrderLookupItem implements ILookupOrderBatchOrderLookupItem {
-    orderId!: string | undefined;
-    email!: string | undefined;
-
-    constructor(data?: ILookupOrderBatchOrderLookupItem) {
-        if (data) {
-            for (var property in data) {
-                if (data.hasOwnProperty(property))
-                    (this as any)[property] = (data as any)[property];
-            }
-        }
-    }
-
-    init(Data?: any) {
-        if (Data) {
-            this.orderId = Data["orderId"];
-            this.email = Data["email"];
-        }
-    }
-
-    static fromJS(data: any): LookupOrderBatchOrderLookupItem {
-        data = typeof data === 'object' ? data : {};
-        let result = new LookupOrderBatchOrderLookupItem();
-        result.init(data);
-        return result;
-    }
-
-    toJSON(data?: any) {
-        data = typeof data === 'object' ? data : {};
-        data["orderId"] = this.orderId;
-        data["email"] = this.email;
-        return data;
-    }
-}
-
-export interface ILookupOrderBatchOrderLookupItem {
-    orderId: string | undefined;
-    email: string | undefined;
-}
-
 export class LookupOrderBatchQuery implements ILookupOrderBatchQuery {
-    items!: LookupOrderBatchOrderLookupItem[] | undefined;
+    accessTokens!: string[] | undefined;
 
     constructor(data?: ILookupOrderBatchQuery) {
         if (data) {
@@ -12398,10 +12338,10 @@ export class LookupOrderBatchQuery implements ILookupOrderBatchQuery {
 
     init(Data?: any) {
         if (Data) {
-            if (Array.isArray(Data["items"])) {
-                this.items = [] as any;
-                for (let item of Data["items"])
-                    this.items!.push(LookupOrderBatchOrderLookupItem.fromJS(item));
+            if (Array.isArray(Data["accessTokens"])) {
+                this.accessTokens = [] as any;
+                for (let item of Data["accessTokens"])
+                    this.accessTokens!.push(item);
             }
         }
     }
@@ -12415,17 +12355,17 @@ export class LookupOrderBatchQuery implements ILookupOrderBatchQuery {
 
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
-        if (Array.isArray(this.items)) {
-            data["items"] = [];
-            for (let item of this.items)
-                data["items"].push(item ? item.toJSON() : undefined as any);
+        if (Array.isArray(this.accessTokens)) {
+            data["accessTokens"] = [];
+            for (let item of this.accessTokens)
+                data["accessTokens"].push(item);
         }
         return data;
     }
 }
 
 export interface ILookupOrderBatchQuery {
-    items: LookupOrderBatchOrderLookupItem[] | undefined;
+    accessTokens: string[] | undefined;
 }
 
 export class LookupOrderBatchResponse implements ILookupOrderBatchResponse {
@@ -12473,9 +12413,7 @@ export interface ILookupOrderBatchResponse {
 }
 
 export class LookupOrderQuery implements ILookupOrderQuery {
-    displayOrderNumber!: string | undefined;
-    email!: string | undefined;
-    confirmationCode!: string | undefined;
+    accessToken!: string | undefined;
 
     constructor(data?: ILookupOrderQuery) {
         if (data) {
@@ -12488,9 +12426,7 @@ export class LookupOrderQuery implements ILookupOrderQuery {
 
     init(Data?: any) {
         if (Data) {
-            this.displayOrderNumber = Data["displayOrderNumber"];
-            this.email = Data["email"];
-            this.confirmationCode = Data["confirmationCode"];
+            this.accessToken = Data["accessToken"];
         }
     }
 
@@ -12503,17 +12439,13 @@ export class LookupOrderQuery implements ILookupOrderQuery {
 
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
-        data["displayOrderNumber"] = this.displayOrderNumber;
-        data["email"] = this.email;
-        data["confirmationCode"] = this.confirmationCode;
+        data["accessToken"] = this.accessToken;
         return data;
     }
 }
 
 export interface ILookupOrderQuery {
-    displayOrderNumber: string | undefined;
-    email: string | undefined;
-    confirmationCode: string | undefined;
+    accessToken: string | undefined;
 }
 
 export class LookupOrderResponse implements ILookupOrderResponse {
@@ -13055,7 +12987,6 @@ export class OrderItem implements IOrderItem {
     completedAt!: Date | undefined;
     completionNotes!: string | undefined;
     orderStatus!: Code;
-    confirmationCode!: string | undefined;
     notes!: string | undefined;
     specialInstructions!: string | undefined;
     accessInstructions!: string | undefined;
@@ -13133,7 +13064,6 @@ export class OrderItem implements IOrderItem {
             this.completedAt = Data["completedAt"] ? new Date(Data["completedAt"].toString()) : undefined as any;
             this.completionNotes = Data["completionNotes"];
             this.orderStatus = Data["orderStatus"] ? Code.fromJS(Data["orderStatus"]) : undefined as any;
-            this.confirmationCode = Data["confirmationCode"];
             this.notes = Data["notes"];
             this.specialInstructions = Data["specialInstructions"];
             this.accessInstructions = Data["accessInstructions"];
@@ -13239,7 +13169,6 @@ export class OrderItem implements IOrderItem {
         data["completedAt"] = this.completedAt ? this.completedAt.toISOString() : undefined as any;
         data["completionNotes"] = this.completionNotes;
         data["orderStatus"] = this.orderStatus ? this.orderStatus.toJSON() : undefined as any;
-        data["confirmationCode"] = this.confirmationCode;
         data["notes"] = this.notes;
         data["specialInstructions"] = this.specialInstructions;
         data["accessInstructions"] = this.accessInstructions;
@@ -13332,7 +13261,6 @@ export interface IOrderItem {
     completedAt: Date | undefined;
     completionNotes: string | undefined;
     orderStatus: Code;
-    confirmationCode: string | undefined;
     notes: string | undefined;
     specialInstructions: string | undefined;
     accessInstructions: string | undefined;
@@ -13392,7 +13320,6 @@ export class OrderListItem implements IOrderListItem {
     amountDueOnCard!: number;
     estimatedTime!: number;
     orderStatus!: Code;
-    confirmationCode!: string | undefined;
     selectedPackages!: PackageListItem[] | undefined;
     currencyId!: string | undefined;
     currency!: CurrencyListItem;
@@ -13449,7 +13376,6 @@ export class OrderListItem implements IOrderListItem {
             this.amountDueOnCard = Data["amountDueOnCard"];
             this.estimatedTime = Data["estimatedTime"];
             this.orderStatus = Data["orderStatus"] ? Code.fromJS(Data["orderStatus"]) : undefined as any;
-            this.confirmationCode = Data["confirmationCode"];
             if (Array.isArray(Data["selectedPackages"])) {
                 this.selectedPackages = [] as any;
                 for (let item of Data["selectedPackages"])
@@ -13518,7 +13444,6 @@ export class OrderListItem implements IOrderListItem {
         data["amountDueOnCard"] = this.amountDueOnCard;
         data["estimatedTime"] = this.estimatedTime;
         data["orderStatus"] = this.orderStatus ? this.orderStatus.toJSON() : undefined as any;
-        data["confirmationCode"] = this.confirmationCode;
         if (Array.isArray(this.selectedPackages)) {
             data["selectedPackages"] = [];
             for (let item of this.selectedPackages)
@@ -13574,7 +13499,6 @@ export interface IOrderListItem {
     amountDueOnCard: number;
     estimatedTime: number;
     orderStatus: Code;
-    confirmationCode: string | undefined;
     selectedPackages: PackageListItem[] | undefined;
     currencyId: string | undefined;
     currency: CurrencyListItem;
@@ -14904,6 +14828,7 @@ export class RecurringBookingTemplateDto implements IRecurringBookingTemplateDto
     lastMaterializedFor!: Date | undefined;
     isActive!: boolean;
     preferredEmployeeId!: string | undefined;
+    requiresPaymentMethodChange!: boolean;
 
     constructor(data?: IRecurringBookingTemplateDto) {
         if (data) {
@@ -14940,6 +14865,7 @@ export class RecurringBookingTemplateDto implements IRecurringBookingTemplateDto
             this.lastMaterializedFor = Data["lastMaterializedFor"] ? new Date(Data["lastMaterializedFor"].toString()) : undefined as any;
             this.isActive = Data["isActive"];
             this.preferredEmployeeId = Data["preferredEmployeeId"];
+            this.requiresPaymentMethodChange = Data["requiresPaymentMethodChange"];
         }
     }
 
@@ -14976,6 +14902,7 @@ export class RecurringBookingTemplateDto implements IRecurringBookingTemplateDto
         data["lastMaterializedFor"] = this.lastMaterializedFor ? this.lastMaterializedFor.toISOString() : undefined as any;
         data["isActive"] = this.isActive;
         data["preferredEmployeeId"] = this.preferredEmployeeId;
+        data["requiresPaymentMethodChange"] = this.requiresPaymentMethodChange;
         return data;
     }
 }
@@ -14997,6 +14924,7 @@ export interface IRecurringBookingTemplateDto {
     lastMaterializedFor: Date | undefined;
     isActive: boolean;
     preferredEmployeeId: string | undefined;
+    requiresPaymentMethodChange: boolean;
 }
 
 export enum ReferralStatus {

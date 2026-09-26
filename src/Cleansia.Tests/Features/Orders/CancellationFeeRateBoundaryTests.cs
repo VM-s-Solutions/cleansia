@@ -12,7 +12,7 @@ namespace Cleansia.Tests.Features.Orders;
 ///
 /// Override contract: <c>freeCancellationHoursOverride</c> is the ABSOLUTE free-cancellation
 /// threshold in hours (it REPLACES <see cref="BookingPolicy.FreeCancellationHours"/>), matching the
-/// only production caller — <c>CancelOrder</c> passes <c>CancellationPolicy.FreeCancellationHours</c>,
+/// only production caller — <c>CancellationAssessor</c> passes <c>CancellationPolicy.FreeCancellationHours</c>,
 /// which <c>CancellationPolicyResolver</c> resolves to the absolute window: 24 for the standard tier,
 /// the membership's <c>FreeCancellationWindowHours</c> for a Plus member. A SMALLER threshold is MORE
 /// generous (free even closer to the start), so a Plus plan seeded at 4 lets a member cancel free up
@@ -27,11 +27,10 @@ public class CancellationFeeRateBoundaryTests
     private static readonly DateTime BookingCreated = new(2026, 4, 1, 10, 0, 0, DateTimeKind.Utc);
 
     private static decimal Rate(
-        DateTime cleaning, DateTime cancel, bool accepted = true,
-        bool firstTime = false, int? freeOverride = null) =>
+        DateTime cleaning, DateTime cancel, bool accepted = true, int? freeOverride = null) =>
         BookingPolicy.CalculateCancellationFeeRate(
             cleaning, BookingCreated, cancel,
-            isFirstTimeCustomer: firstTime, hasBeenAccepted: accepted,
+            oopsWindowMinutes: BookingPolicy.OopsWindowMinutesStandard, hasBeenAccepted: accepted,
             freeCancellationHoursOverride: freeOverride);
 
     // ── Free/partial boundary at exactly FreeCancellationHours (24h) ──

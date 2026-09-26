@@ -26,7 +26,6 @@ public class FcmMessageFactoryTests
 
     public static TheoryData<string, Dictionary<string, string>, string[]> DisplayableEvents => new()
     {
-        { "order.confirmed", OrderArgs(), ["A-1042"] },
         { "order.payment_confirmed", OrderArgs(), ["A-1042"] },
         { "recurring.paused", new Dictionary<string, string>(), [] },
         { "order.on_the_way", OrderArgs(), ["A-1042"] },
@@ -64,7 +63,6 @@ public class FcmMessageFactoryTests
 
     public static TheoryData<string, Dictionary<string, string>> AllProducedEvents => new()
     {
-        { "order.confirmed", OrderArgs() },
         { "order.on_the_way", OrderArgs() },
         { "order.in_progress", OrderArgs() },
         { "order.completed", OrderArgs() },
@@ -113,7 +111,7 @@ public class FcmMessageFactoryTests
     {
         var message = FcmMessageFactory.Build(
             Tokens,
-            "order.confirmed",
+            "order.cleaner_assigned",
             new Dictionary<string, string> { ["orderId"] = "ord-1", ["orderNumber"] = "A-1042" });
 
         AssertDataEquals(
@@ -121,7 +119,7 @@ public class FcmMessageFactoryTests
             {
                 ["orderId"] = "ord-1",
                 ["orderNumber"] = "A-1042",
-                ["event_key"] = "order.confirmed",
+                ["event_key"] = "order.cleaner_assigned",
             },
             message.Data);
     }
@@ -266,7 +264,7 @@ public class FcmMessageFactoryTests
     [Fact]
     public void Alert_Ships_Default_Sound_And_Immediate_Apns_Priority_Header()
     {
-        var message = FcmMessageFactory.Build(Tokens, "order.confirmed", OrderArgs());
+        var message = FcmMessageFactory.Build(Tokens, "order.cleaner_assigned", OrderArgs());
 
         Assert.NotNull(message.Apns);
         Assert.Equal("default", message.Apns.Aps.Sound);
@@ -275,7 +273,7 @@ public class FcmMessageFactoryTests
 
     public static TheoryData<string, Dictionary<string, string>, string> ThreadIdCases => new()
     {
-        { "order.confirmed", OrderArgs(), "ord-1" },
+        { "order.cleaner_assigned", OrderArgs(), "ord-1" },
         { "dispute.reply", new Dictionary<string, string> { ["orderId"] = "ord-1", ["disputeId"] = "dsp-1" }, "ord-1" },
         { "dispute.reply", new Dictionary<string, string> { ["disputeId"] = "dsp-1" }, "dsp-1" },
         { "membership.expiring_soon", new Dictionary<string, string>(), "membership.expiring_soon" },
@@ -341,7 +339,6 @@ public class FcmMessageFactoryTests
             "order.cancelled",
             "order.cleaner_assigned",
             "order.completed",
-            "order.confirmed",
             "order.in_progress",
             "order.new_available",
             "order.no_cleaner_refunded",

@@ -4,7 +4,6 @@ import { errorToastSuppressingHttpClient, extractApiErrorCode } from '@cleansia/
 import {
   CUSTOMER_API_BASE_URL,
   CustomerOrderClient,
-  LookupOrderBatchOrderLookupItem,
   LookupOrderBatchQuery,
   LookupOrderBatchResponse,
   LookupOrderResponse,
@@ -20,23 +19,17 @@ import { OrderStatus } from '@cleansia/models';
 import { catchError, finalize, Observable, of, Subject, takeUntil } from 'rxjs';
 import { GuestOrderService } from './guest-order.service';
 
-interface GuestBookingKey {
-  displayOrderNumber: string;
-  email: string;
-  confirmationCode: string;
-}
-
 /**
  * Shared facade for guest order lookup. One caller now: the track-order page.
  *
  * **The customer order client has no DI registration in this app** — components used to build one
  * inline from HttpClient and the base-URL token. This centralises that wiring and keeps the selected
- * booking's credentials and cancellation state together.
+ * booking's access token and cancellation state together.
  *
- * Calls answer INLINE, so they opt out of the shared error snackbar: a failed lookup already
- * says so in amber on the form — nothing failed, the three values simply matched no order — and a
- * red "An error occurred" toast over the top contradicts it. A failed batch is silent by design;
- * the remembered list is a convenience and the form underneath still works.
+ * Calls answer INLINE, so they opt out of the shared error snackbar: a failed lookup already says so
+ * in amber on the page — the link simply no longer opens a booking — and a red "An error occurred"
+ * toast over the top contradicts it. A failed batch is silent by design; the remembered list is a
+ * convenience and the rest of the page still reads.
  * → /flows/booking-and-pricing
  */
 @Injectable()
@@ -47,7 +40,7 @@ export class TrackOrderFacade extends UnsubscribeControlDirective {
   private readonly orderClient = new CustomerOrderClient(this.http, this.baseUrl);
   private readonly guestOrders = inject(GuestOrderService);
   private readonly cancellationReset$ = new Subject<void>();
-  private selectedKey: GuestBookingKey | null = null;
+  private selectedToken: string | null = null;
   private selectionVersion = 0;
 
   readonly selectedOrder = signal<LookupOrderResponse | null>(null);
@@ -60,32 +53,32 @@ export class TrackOrderFacade extends UnsubscribeControlDirective {
   readonly refundCurrency = signal<string | undefined>(undefined);
   readonly canCancel = computed(() => {
     const status = this.selectedOrder()?.orderStatus?.value;
-    return !!this.selectedKey && !this.cancellationResult() && status !== undefined &&
+    return !!this.selectedToken && !this.cancellationResult() && status !== undefined &&
       [OrderStatus.New, OrderStatus.Confirmed, OrderStatus.OnTheWay].includes(status);
   });
   readonly canConfirmCancellation = computed(() =>
     this.canCancel() && this.cancellationOpen() && !!this.cancellationPreview() &&
     !this.previewLoading() && !this.cancelling() && !this.cancellationError());
 
-  selectOrder(order: LookupOrderResponse, email: string, confirmationCode: string): boolean {
+  selectOrder(order: LookupOrderResponse, accessToken: string): boolean {
     if (!this.clearSelection()) return false;
-    this.selectedKey = order.displayOrderNumber && email.trim() && confirmationCode.trim()
-      ? { displayOrderNumber: order.displayOrderNumber, email: email.trim(), confirmationCode: confirmationCode.trim() }
-      : null;
+    const token = accessToken.trim();
+    this.selectedToken = token || null;
     this.selectedOrder.set(order);
+    if (token && order.id) this.guestOrders.save(order.id, token);
     return true;
   }
 
   selectRememberedOrder(order: LookupOrderResponse): boolean {
     const remembered = this.guestOrders.getAll().find(item => item.orderId === order.id);
-    return this.selectOrder(order, remembered?.email ?? '', order.confirmationCode ?? '');
+    return this.selectOrder(order, remembered?.accessToken ?? '');
   }
 
   clearSelection(): boolean {
     if (this.cancelling()) return false;
     this.selectionVersion++;
     this.cancellationReset$.next();
-    this.selectedKey = null;
+    this.selectedToken = null;
     this.selectedOrder.set(null);
     this.cancellationOpen.set(false);
     this.cancellationPreview.set(null);
@@ -106,13 +99,11 @@ export class TrackOrderFacade extends UnsubscribeControlDirective {
   }
 
   openCancellation(): void {
-    if (!this.canCancel() || this.cancelling() || !this.selectedKey) return;
+    if (!this.canCancel() || this.cancelling() || !this.selectedToken) return;
     this.cancellationReset$.next();
     const version = this.selectionVersion;
     const query = new GetGuestCancellationFeePreviewQuery();
-    query.displayOrderNumber = this.selectedKey.displayOrderNumber;
-    query.email = this.selectedKey.email;
-    query.confirmationCode = this.selectedKey.confirmationCode;
+    query.accessToken = this.selectedToken;
     this.cancellationOpen.set(true);
     this.cancellationPreview.set(null);
     this.cancellationError.set(null);
@@ -142,13 +133,11 @@ export class TrackOrderFacade extends UnsubscribeControlDirective {
   cancelBooking(language: string): void {
     const order = this.selectedOrder();
     const preview = this.cancellationPreview();
-    const key = this.selectedKey;
-    if (!this.canConfirmCancellation() || !key || !order || !preview) return;
+    const token = this.selectedToken;
+    if (!this.canConfirmCancellation() || !token || !order || !preview) return;
     const version = this.selectionVersion;
     const command = new CancelGuestOrderCommand();
-    command.displayOrderNumber = key.displayOrderNumber;
-    command.email = key.email;
-    command.confirmationCode = key.confirmationCode;
+    command.accessToken = token;
     command.language = language;
     this.cancelling.set(true);
     this.cancellationError.set(null);
@@ -177,11 +166,6 @@ export class TrackOrderFacade extends UnsubscribeControlDirective {
         Object.assign(cancelled, order);
         cancelled.orderStatus = status;
         this.selectedOrder.set(cancelled);
-        this.lookup(key.displayOrderNumber, key.email, key.confirmationCode)
-          .pipe(takeUntil(this.destroyed$), takeUntil(this.cancellationReset$), catchError(() => of(null)))
-          .subscribe(refreshed => {
-            if (version === this.selectionVersion && refreshed) this.selectedOrder.set(refreshed);
-          });
       });
   }
 
@@ -193,33 +177,19 @@ export class TrackOrderFacade extends UnsubscribeControlDirective {
   }
 
   /**
-   * Guest lookup — order number, e-mail AND the order's confirmation code.
-   * The code is the third factor: without it the endpoint answered to a
-   * sequential order number and an e-mail, neither of which is a secret.
+   * Guest lookup — the per-order access token the confirmation e-mail carries, and nothing else.
+   * It replaced a (order number, e-mail, confirmation code) triple in which the code was the only
+   * secret, and that code was served to every cleaner assigned to the job.
    */
-  lookup(
-    orderNumber: string,
-    email: string,
-    confirmationCode: string,
-  ): Observable<LookupOrderResponse> {
+  lookup(accessToken: string): Observable<LookupOrderResponse> {
     const query = new LookupOrderQuery();
-    query.displayOrderNumber = orderNumber;
-    query.email = email;
-    query.confirmationCode = confirmationCode;
+    query.accessToken = accessToken;
     return this.orderClient.lookupPost(query);
   }
 
-  lookupBatch(
-    items: { orderId: string; email: string }[]
-  ): Observable<LookupOrderBatchResponse> {
+  lookupBatch(accessTokens: string[]): Observable<LookupOrderBatchResponse> {
     const query = new LookupOrderBatchQuery();
-    query.items = items.map((i) => {
-      const item = new LookupOrderBatchOrderLookupItem();
-      item.orderId = i.orderId;
-      item.email = i.email;
-      return item;
-    });
-
+    query.accessTokens = accessTokens;
     return this.orderClient.lookupBatch(query);
   }
 }

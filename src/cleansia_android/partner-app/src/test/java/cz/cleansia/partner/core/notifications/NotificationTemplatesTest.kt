@@ -81,32 +81,30 @@ class NotificationTemplatesTest {
 
 
     @Test
-    fun `payment confirmation and saved legacy notifications share a template`() {
+    fun `payment confirmation rides the order-updates channel`() {
         val current = NotificationTemplates.templateFor("order.payment_confirmed")
         assertNotNull(current)
-        assertEquals(NotificationTemplates.templateFor("order.confirmed"), current)
         assertEquals(NotificationChannels.CHANNEL_ORDER_UPDATES, current?.channelId)
     }
 
     @Test
-    fun `payment confirmation formats the order number for both wire keys`() {
+    fun `payment confirmation formats the order number into the body`() {
         val context = mockk<Context>()
         val bodyRes = R.string.notification_order_payment_confirmed_body
         every { context.getString(bodyRes, "A-1042") } returns "Booking A-1042"
-        listOf("order.payment_confirmed", "order.confirmed").forEach { key ->
-            assertEquals(
-                "Booking A-1042",
-                NotificationTemplates.formatBody(context, key, bodyRes, mapOf("orderNumber" to "A-1042")),
-            )
-        }
+        assertEquals(
+            "Booking A-1042",
+            NotificationTemplates.formatBody(context, "order.payment_confirmed", bodyRes, mapOf("orderNumber" to "A-1042")),
+        )
     }
 
     @Test
-    fun `payment confirmation and saved legacy taps require and open the booking`() {
-        listOf("order.payment_confirmed", "order.confirmed").forEach { key ->
-            assertEquals(NavRoute.OrderDetail(orderId = "ord-7"), NotificationDeepLink.resolve(key, "ord-7", null))
-            assertNull(NotificationDeepLink.resolve(key, null, null))
-        }
+    fun `a payment confirmation tap requires an order id and opens the job`() {
+        assertEquals(
+            NavRoute.OrderDetail(orderId = "ord-7"),
+            NotificationDeepLink.resolve("order.payment_confirmed", "ord-7", null),
+        )
+        assertNull(NotificationDeepLink.resolve("order.payment_confirmed", null, null))
     }
 
     @Test
@@ -218,9 +216,11 @@ class NotificationTemplatesTest {
     }
 
     @Test
-    fun `templateFor returns null for an unknown key - drop parity`() {
+    fun `templateFor drops unknown and customer-only keys`() {
         assertNull(NotificationTemplates.templateFor("promo.new_sitewide"))
         assertNull(NotificationTemplates.templateFor("loyalty.tier_upgrade"))
+        assertNull(NotificationTemplates.templateFor("order.on_the_way"))
+        assertFalse(PartnerFeedEventKeys.contains("order.on_the_way"))
     }
 
     @Test
@@ -308,7 +308,7 @@ class NotificationTemplatesTest {
     fun `deep link resolves an order event to the order detail`() {
         assertEquals(
             NavRoute.OrderDetail(orderId = "ord-7"),
-            NotificationDeepLink.resolve("order.confirmed", "ord-7", null),
+            NotificationDeepLink.resolve("order.completed", "ord-7", null),
         )
     }
 
@@ -331,8 +331,9 @@ class NotificationTemplatesTest {
     }
 
     @Test
-    fun `deep link resolves an unknown key to null`() {
+    fun `deep link ignores unknown and customer-only keys`() {
         assertNull(NotificationDeepLink.resolve("promo.new_sitewide", null, null))
+        assertNull(NotificationDeepLink.resolve("order.on_the_way", "order-1", null))
     }
 
     /**

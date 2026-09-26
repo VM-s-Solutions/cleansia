@@ -49,18 +49,14 @@ fun GuestOrderScreen(
     val preview by viewModel.preview.collectAsStateWithLifecycle()
     val cancelState by viewModel.cancelState.collectAsStateWithLifecycle()
     val showCancellation by viewModel.showCancellation.collectAsStateWithLifecycle()
-    var number by remember { mutableStateOf("") }
-    var email by remember { mutableStateOf("") }
-    var code by remember { mutableStateOf("") }
+    var link by remember { mutableStateOf("") }
     val submitting = cancelState is ActionState.Submitting
 
     DisposableEffect(viewModel) { onDispose { viewModel.clear() } }
     BackHandler(enabled = submitting) {}
     LaunchedEffect(state) {
         if (state is GuestOrderUiState.Cancelled) {
-            number = ""
-            email = ""
-            code = ""
+            link = ""
         }
     }
 
@@ -83,30 +79,17 @@ fun GuestOrderScreen(
         ) {
             Text(stringResource(R.string.guest_order_intro), style = MaterialTheme.typography.bodyMedium)
             CleansiaTextField(
-                value = number,
-                onValueChange = { number = it; viewModel.onCredentialsChanged() },
-                label = stringResource(R.string.guest_order_number),
-                enabled = !submitting,
-            )
-            CleansiaTextField(
-                value = email,
-                onValueChange = { email = it; viewModel.onCredentialsChanged() },
-                label = stringResource(R.string.login_email),
-                keyboardType = KeyboardType.Email,
-                enabled = !submitting,
-            )
-            CleansiaTextField(
-                value = code,
-                onValueChange = { code = it; viewModel.onCredentialsChanged() },
-                label = stringResource(R.string.guest_order_code),
+                value = link,
+                onValueChange = { link = it; viewModel.onLinkChanged() },
+                label = stringResource(R.string.guest_order_link),
+                keyboardType = KeyboardType.Uri,
                 enabled = !submitting,
             )
             CleansiaPrimaryButton(
                 text = stringResource(R.string.guest_order_lookup),
-                onClick = { viewModel.lookup(number, email, code) },
+                onClick = { viewModel.lookup(link) },
                 loading = state is GuestOrderUiState.Loading,
-                enabled = !submitting && state !is GuestOrderUiState.Loading &&
-                    number.isNotBlank() && email.isNotBlank() && code.isNotBlank(),
+                enabled = !submitting && state !is GuestOrderUiState.Loading && link.isNotBlank(),
             )
             when (val current = state) {
                 GuestOrderUiState.Empty -> Text(

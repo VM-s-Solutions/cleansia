@@ -136,6 +136,7 @@ public class GetActionTimelineTests
     {
         Assert.Equal("employee.order.cover_requested", GetActionTimeline.EmployeeActionLabel(EmployeeAuditAction.CoverRequested));
         Assert.Equal("employee.order.dropped", GetActionTimeline.EmployeeActionLabel(EmployeeAuditAction.OrderDropped));
+        Assert.Equal("employee.order.access_instructions_read", GetActionTimeline.EmployeeActionLabel(EmployeeAuditAction.AccessInstructionsRead));
     }
 
     [Fact]

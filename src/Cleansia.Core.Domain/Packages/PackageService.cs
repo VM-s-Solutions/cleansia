@@ -14,10 +14,9 @@ public class PackageService : BaseEntity
     public Service? Service { get; private set; }
 
     /// <summary>
-    /// Dimensionless relative share by which the owning <see cref="Package.Price"/> is split across
-    /// the bundle's included services. It is never a currency amount: a service's gross is
-    /// <c>PriceWeight / Σ(weights) × Package.Price</c>, keeping <see cref="Package.Price"/> the single
-    /// source of truth for the bundle price.
+    /// Dimensionless relative share by which <see cref="PackagePrice.Price"/> in the order's currency
+    /// is split across the bundle's included services. A service's gross is
+    /// <c>PriceWeight / Σ(weights) × PackagePrice.Price</c>.
     /// </summary>
     public decimal PriceWeight { get; private set; } = DefaultPriceWeight;
 

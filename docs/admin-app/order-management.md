@@ -97,6 +97,20 @@ When a customer or partner raises a dispute, admins can:
 Disputes are linked to specific orders and contain a description of the issue. The admin can view the full order history, including status changes, notes, and photos, to make an informed decision.
 :::
 
+**A resolution with a refund moves the money before it is recorded.** Resolving with an amount above
+zero issues that refund first: the card share through Stripe, and on an order settled partly from
+customer credit, the credit share back to the customer's balance. The dispute becomes *Resolved* with
+the amount only when the refund succeeds. A refused refund shows its error and leaves the dispute open:
+`refund.failed`, `refund.order_not_refundable` (a cash booking has no card charge) or
+`refund.nothing_refundable`. Resolving again re-drives the first attempt's refund, never a second one,
+and at the first attempt's amount even if the new resolution names another. A resolution with no
+amount moves no money. → [Cancellation, refund and dispute](/flows/cancellation-refund-dispute#dispute)
+
+A dispute that names no account shows the booking's own customer name and e-mail, read off the order.
+A bank chargeback on a web card booking, which includes every **guest** card booking, never reaches
+the console. The webhook finds a chargeback's order by its stored payment intent, and a Checkout
+Session order stores none.
+
 ## Order Reassignment
 
 Admins can reassign orders from one partner to another. This is useful when:

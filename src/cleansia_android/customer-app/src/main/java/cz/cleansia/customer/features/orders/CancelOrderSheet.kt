@@ -45,6 +45,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -381,6 +382,13 @@ private fun LoadedFeeCard(callout: CancellationFeeCallout, currencyCode: String?
         )
         if (callout.warnsExpressWaiverForfeited) {
             ExpressWaiverWarning()
+        }
+        callout.graceMinutes?.let { minutes ->
+            Text(
+                text = pluralStringResource(R.plurals.order_cancel_fee_grace_note, minutes, minutes),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
         }
         Text(
             text = stringResource(R.string.order_cancel_fee_recheck_note),

@@ -158,6 +158,7 @@ public class StartOrder
     public class Handler(
         IOrderRepository orderRepository,
         IEmailService emailService,
+        GuestOrderAccessTokenIssuer guestAccessTokenIssuer,
         INotificationProducer notificationProducer,
         ILiveActivityProducer liveActivityProducer,
         ILogger<Handler> logger)
@@ -191,8 +192,13 @@ public class StartOrder
             try
             {
                 var languageCode = order.User?.PreferredLanguageCode ?? Constants.Language.English;
+                // A guest has no account to sign in to, so this link is only a link if it carries a
+                // credential. Its own, minted here: nothing can hand this site the one the
+                // confirmation e-mail carried, and superseding that one to reuse the row would kill
+                // the link in the message the guest most likely still has.
                 await emailService.SendOrderStatusUpdateEmailAsync(
-                    order.CustomerEmail, order, "Started", languageCode, cancellationToken);
+                    order.CustomerEmail, order, "Started", languageCode, cancellationToken,
+                    guestAccessToken: guestAccessTokenIssuer.IssueForGuest(order));
             }
             catch (Exception ex)
             {

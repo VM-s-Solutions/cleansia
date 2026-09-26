@@ -1,5 +1,6 @@
 ﻿using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Gdpr;
+using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Features.TenantSettings;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Blobs.Abstractions;
@@ -39,6 +40,8 @@ public class GdprDeletionService(
     IOutboxMessageRepository outboxMessageRepository,
     ICustomerActionAuditRepository customerActionAuditRepository,
     IWorkContractAcceptanceRepository workContractAcceptanceRepository,
+    IAddressRepository addressRepository,
+    GuestOrderAccessTokenIssuer guestOrderAccessTokenIssuer,
     IRefreshTokenService refreshTokenService,
     IStripeClient stripeClient,
     IBlobContainerClientFactory blobClientFactory,
@@ -146,19 +149,6 @@ public class GdprDeletionService(
             return BusinessResult.Failure(new Error(
                 SubjectField, BusinessErrorMessage.GdprDeletionBlockedByOrder));
 
-        // MONEY OWED BLOCKS ERASURE. Owner ruling 2026-09-05, and the same shape as the unsettled-pay
-        // guard below: a credit balance is a DEBT, not a preference, and anonymizing the person it is
-        // owed to writes it off at the exact moment they asked to be forgotten. The customer spends it
-        // or asks to be paid out, and then the erasure proceeds and the account goes with them.
-        //
-        // Applies to CUSTOMERS, which is why it sits above the employee block rather than inside it.
-        // A zero balance never blocks anything, and a customer who has never had credit has no account
-        // at all. -> /architecture/security-rules, SubjectDataErasureRosterTests
-        var creditOwed = await HasPositiveCreditBalanceAsync(user.Id, cancellationToken);
-        if (creditOwed)
-            return BusinessResult.Failure(new Error(
-                SubjectField, BusinessErrorMessage.GdprDeletionBlockedByCreditBalance));
-
         if (user.Employee is null)
             return null;
 
@@ -195,6 +185,7 @@ public class GdprDeletionService(
 
         await CancelActiveMembershipAsync(user.Id, cancellationToken);
         await AnonymizeUserDataAsync(user, deactivationReason, cancellationToken);
+        await ForfeitCreditAsync(user.Id, deactivationReason, cancellationToken);
 
         var (processedBy, notes) = resolveAuditActor(user);
         request.MarkCompleted(processedBy, notes);
@@ -247,28 +238,26 @@ public class GdprDeletionService(
     /// remedy — settle the period — so two error keys would name a distinction the reader cannot
     /// act on. → /flows/pay-and-payouts
     /// </summary>
-    /// <summary>
-    /// Does the platform still owe this customer money, IN ANY CURRENCY? Reads balances only — the
-    /// ledger is irrelevant to the question, and a customer with no account has nothing owed.
-    ///
-    /// <para><b>Any currency is the whole point.</b> This used to read a single account, which under
-    /// one-account-per-customer was the same question. It is not any more: a customer holding nothing
-    /// in one currency and a positive balance in another would have passed the gate and been erased
-    /// while the platform still owed them the second balance. Erasure is irreversible and this is the
-    /// only thing standing in front of it.</para>
-    /// </summary>
-    private async Task<bool> HasPositiveCreditBalanceAsync(
-        string userId, CancellationToken cancellationToken)
-    {
-        var spendables = await creditAccountRepository.GetSpendablesForUserAsync(userId, cancellationToken);
-        return spendables.Any(s => s.Balance > 0m);
-    }
-
     private Task<bool> HasUnsettledPayAsync(string employeeId, CancellationToken cancellationToken)
         => orderEmployeePayRepository.GetQueryable()
             .AnyAsync(p => p.EmployeeId == employeeId
                     && (p.EmployeeInvoiceId == null || p.PayPeriod!.Status != PayPeriodStatus.Paid),
                 cancellationToken);
+
+    private async Task ForfeitCreditAsync(string userId, string reason, CancellationToken cancellationToken)
+    {
+        // Locked last, after the walk's Stripe and blob calls, and held to the commit: a return that
+        // committed first is read below, and one that waits sees the erased owner and moves nothing.
+        await creditAccountRepository.LockForUserAsync(userId, cancellationToken);
+        var accounts = await creditAccountRepository.GetAllForUserAsync(userId, cancellationToken);
+        foreach (var account in accounts)
+        {
+            var amount = account.Drain(GdprAuditReasons.SystemActor, DateTimeOffset.UtcNow);
+            if (amount > 0m)
+                account.RecordExpiry(amount, $"account-deletion:{account.Id}", GdprAuditReasons.SystemActor,
+                    $"Account deletion: {reason}");
+        }
+    }
 
     private Task<bool> HasBlockingInvoiceAsync(string employeeId, CancellationToken cancellationToken)
     {
@@ -389,10 +378,32 @@ public class GdprDeletionService(
             .Include(o => o.OrderIssues)
             .ToListAsync(ct);
 
+        var savedAddresses = await savedAddressRepository.GetByUserAsync(user.Id, ct);
+        var sourceAddresses = orders.Where(o => o.CustomerAddress is not null)
+            .Select(o => o.CustomerAddress!)
+            .Concat(user.Employee?.Address is { } employeeAddress ? [employeeAddress] : [])
+            .DistinctBy(a => a.Id).ToList();
+
+        // These subject-owned references are all removed or replaced before the same commit.
+        var sharedAddressIds = await addressRepository.GetReferencedElsewhereAsync(
+            sourceAddresses.Select(a => a.Id).ToList(), customerOrderIds,
+            savedAddresses.Select(s => s.Id).ToList(), user.Employee?.Id, ct);
+
         foreach (var order in orders)
         {
+            // The key is the guest's; an account order never carried one. Read before the anonymisation
+            // below clears UserId, and only for these ended orders — a live booking keeps its cancel path.
+            if (order.UserId is null)
+            {
+                await guestOrderAccessTokenIssuer.RevokeAsync(order, ct);
+            }
+
             order.AnonymizeCustomerData();
-            order.CustomerAddress?.Anonymize();
+            var addressCopy = order.AnonymizeCustomerAddress();
+            if (addressCopy is not null)
+            {
+                addressRepository.Add(addressCopy);
+            }
         }
 
         // Every device row, not the active ones: logout soft-deletes a device and leaves the row present so
@@ -467,7 +478,6 @@ public class GdprDeletionService(
             dispute.RetainTextUntil(disputeTextRetainedUntil);
         }
 
-        var savedAddresses = await savedAddressRepository.GetByUserAsync(user.Id, ct);
         savedAddressRepository.RemoveRange(savedAddresses);
 
         if (customerOrderIds.Count > 0)
@@ -501,9 +511,20 @@ public class GdprDeletionService(
             await workContractAcceptanceRepository.PseudonymiseForEmployeeAsync(user.Employee.Id, ct);
 
             user.Employee.Anonymize();
-            user.Employee.Address?.Anonymize();
+            if (user.Employee.Address is { } address)
+            {
+                var copy = Domain.Users.Address.Create(
+                    Domain.Common.AnonymizationMarker.Value, Domain.Common.AnonymizationMarker.Value,
+                    Domain.Common.AnonymizationMarker.Value, address.CountryId).Anonymize();
+                copy.TenantId = user.Employee.TenantId;
+                user.Employee.UpdateAddress(copy);
+                addressRepository.Add(copy);
+            }
             user.Employee.Deactivated(deactivationReason, DateTimeOffset.UtcNow);
         }
+
+        // A reference created after the census makes the FK refuse deletion instead of losing its address.
+        addressRepository.RemoveRange(sourceAddresses.Where(a => !sharedAddressIds.Contains(a.Id)));
 
         // The per-currency Stripe Customer ids go with the legacy one Anonymize() clears.
         await userStripeCustomerRepository.RemoveForUserAsync(user.Id, ct);

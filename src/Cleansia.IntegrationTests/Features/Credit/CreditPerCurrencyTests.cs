@@ -200,16 +200,10 @@ public class CreditPerCurrencyTests(PostgresContainerFixture fixture) : BaseInte
     // ── erasure ─────────────────────────────────────────────────────────────
 
     /// <summary>
-    /// THE LEGAL-FACING ONE. Erasure is refused while the platform still owes money, and the gate used
-    /// to ask through a single-account read — so a customer holding nothing in one currency and a
-    /// positive balance in another would have passed it and been erased with the debt outstanding.
-    /// Erasure is irreversible; this is the only thing in front of it.
-    ///
-    /// <para>Asserted through the repository the gate actually calls, with the ZERO account ordered
-    /// first so an implementation that looks at one row picks the wrong one.</para>
+    /// Reading all currencies must retain a funded balance even when another currency is empty.
     /// </summary>
     [Fact]
-    public async Task A_Balance_In_Any_Currency_Is_Visible_To_The_Erasure_Gate()
+    public async Task A_Balance_In_Any_Currency_Is_Visible_In_The_Account_Summary()
     {
         await ResetAsync();
         var (userId, czk, eur) = await SeedAsync();
@@ -229,16 +223,15 @@ public class CreditPerCurrencyTests(PostgresContainerFixture fixture) : BaseInte
             .GetSpendablesForUserAsync(userId, CancellationToken.None);
 
         Assert.Equal(2, spendables.Count);
-        Assert.True(spendables.Any(s => s.Balance > 0m), "the EUR balance must be visible to the gate");
+        Assert.True(spendables.Any(s => s.Balance > 0m), "the EUR balance must be visible in the summary");
         Assert.Equal(25m, Assert.Single(spendables, s => s.CurrencyId == eur).Balance);
     }
 
     /// <summary>
-    /// Anti-vacuity for the gate: a customer who genuinely holds nothing produces no positive balance,
-    /// so the assertion above is the EUR row being seen rather than the predicate always being true.
+    /// A customer who has never held credit has no account summary rows.
     /// </summary>
     [Fact]
-    public async Task A_Customer_Who_Holds_Nothing_Blocks_Nothing()
+    public async Task A_Customer_Who_Never_Held_Credit_Has_An_Empty_Summary()
     {
         await ResetAsync();
         var (userId, _, _) = await SeedAsync();
@@ -447,10 +440,10 @@ public class CreditPerCurrencyTests(PostgresContainerFixture fixture) : BaseInte
     }
 
     /// <summary>
-    /// THE ADMIN SCREEN, and the reason it matters more than the customer's: erasure is refused while
-    /// ANY balance is positive, and the discharge drains one named currency at a time. An admin looking
-    /// at a single balance could be told erasure is blocked by money the screen never showed them. Each
-    /// account carries its OWN ledger, capped separately, and its CurrencyId — what the discharge sends.
+    /// THE ADMIN SCREEN, and the reason it matters more than the customer's: the discharge drains one
+    /// named currency at a time, so an admin looking at a single balance could miss money the screen
+    /// never showed them. Each account carries its OWN ledger, capped separately, and its CurrencyId —
+    /// what the discharge sends.
     /// </summary>
     [Fact]
     public async Task GetUserCredit_Reports_Every_Account_With_Its_Own_Ledger()

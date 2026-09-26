@@ -2,19 +2,24 @@ import CleansiaCore
 import CleansiaCustomerApi
 import Foundation
 
-/// The three things a guest booking is keyed by. Trimmed on entry and refused blank, so the server is
-/// never asked about a booking nobody named.
+/// What a guest booking is keyed by: the per-order access token the confirmation e-mail carries. The
+/// guest pastes the whole tracking link or the token out of it; either way only the token is sent, and
+/// a blank one is refused here so the server is never asked about a booking nobody named.
 struct GuestOrderKey: Equatable {
-    let number: String
-    let email: String
-    let code: String
+    let accessToken: String
 
-    init?(number: String, email: String, code: String) {
-        let trimmed = [number, email, code].map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
-        guard trimmed.allSatisfy({ !$0.isEmpty }) else { return nil }
-        self.number = trimmed[0]
-        self.email = trimmed[1]
-        self.code = trimmed[2]
+    init?(pasted: String) {
+        let token = Self.token(in: pasted)
+        guard !token.isEmpty else { return nil }
+        accessToken = token
+    }
+
+    private static func token(in pasted: String) -> String {
+        let trimmed = pasted.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard let marker = trimmed.range(of: "[?&]token=", options: .regularExpression) else { return trimmed }
+        let rest = trimmed[marker.upperBound...]
+        let end = rest.firstIndex { $0 == "&" || $0 == "#" } ?? rest.endIndex
+        return String(rest[..<end])
     }
 }
 
@@ -94,18 +99,14 @@ extension GuestOrderCancellation {
 
 struct LiveGuestOrderClient: GuestOrderClient {
     func lookup(_ key: GuestOrderKey) async -> ApiResult<GuestOrder> {
-        let query = LookupOrderQuery(displayOrderNumber: key.number, email: key.email, confirmationCode: key.code)
+        let query = LookupOrderQuery(accessToken: key.accessToken)
         return await apiResult(mapError: ApiError.fromGenerated) {
             try await GuestOrder(CustomerOrderAPI.orderLookup(lookupOrderQuery: query))
         }
     }
 
     func cancellationQuote(_ key: GuestOrderKey) async -> ApiResult<GuestCancellationQuote> {
-        let query = GetGuestCancellationFeePreviewQuery(
-            displayOrderNumber: key.number,
-            email: key.email,
-            confirmationCode: key.code
-        )
+        let query = GetGuestCancellationFeePreviewQuery(accessToken: key.accessToken)
         return await apiResult(mapError: ApiError.fromGenerated) {
             try await GuestCancellationQuote(
                 CustomerOrderAPI.orderGuestCancellationPreview(getGuestCancellationFeePreviewQuery: query)
@@ -115,9 +116,7 @@ struct LiveGuestOrderClient: GuestOrderClient {
 
     func cancel(_ key: GuestOrderKey, reason: String?, language: String) async -> ApiResult<GuestOrderCancellation> {
         let command = CancelGuestOrderCommand(
-            displayOrderNumber: key.number,
-            email: key.email,
-            confirmationCode: key.code,
+            accessToken: key.accessToken,
             reason: reason,
             language: language
         )

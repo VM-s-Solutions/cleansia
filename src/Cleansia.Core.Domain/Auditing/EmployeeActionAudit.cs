@@ -13,21 +13,22 @@ namespace Cleansia.Core.Domain.Auditing;
 ///
 /// <para><b>The pipeline does not write this row, by decision.</b> <c>AuditGate</c> has two arms — the
 /// Administrator role (ADR-0012) and an opted-in customer act (ADR-0062) — and ADR-0062 D1/D2 keeps the
-/// employee table handler-written on purpose: its three acts have no refusal branch worth a row, so the
+/// employee table handler-written on purpose: its acts have no refusal branch worth a row, so the
 /// out-of-band failure capture the pipeline exists for buys nothing here. A partner-app command
 /// therefore produces no pipeline row at all. Rows are added explicitly by a handler through
 /// <see cref="Repositories.IEmployeeActionAuditRepository"/>, which rides the UnitOfWork's single
-/// commit. Do not wire this into <c>AuditLogBehavior</c>.</para>
+/// commit — except the access-instructions read, recorded from a query that has no commit to ride, which
+/// writes out of band. Do not wire this into <c>AuditLogBehavior</c>.</para>
 ///
 /// <para><b>Why it exists.</b> <c>Order.UnassignEmployee</c> hard-deletes the <c>OrderEmployee</c> row
 /// — load-bearing, because the unique seat index is unfiltered and a released ordinal frees itself by
 /// disappearing. <c>OrderEmployeePay</c> is only written for COMPLETED orders. So after a cleaner
 /// leaves a job, no row anywhere says they were ever on it.</para>
 ///
-/// <para>Append-only: private setters, one factory, no mutators, and nothing prunes it. Deliberately
-/// three declared columns — there is no reason field, no before/after JSON and no actor profile,
-/// because nothing reads them and ADR-0045 D13 refuses collection just in case. <c>CreatedOn</c> IS
-/// the occurred-at and <c>CreatedBy</c> IS the acting principal, both stamped at commit.</para>
+/// <para>Append-only: private setters, one factory, no mutators; only the retention window deletes a row,
+/// by its own age. Deliberately three declared columns — there is no reason field, no before/after JSON
+/// and no actor profile, because nothing reads them and ADR-0045 D13 refuses collection just in case.
+/// <c>CreatedOn</c> IS the occurred-at and <c>CreatedBy</c> IS the acting principal, both stamped at commit.</para>
 /// </summary>
 public class EmployeeActionAudit : TenantAuditable
 {

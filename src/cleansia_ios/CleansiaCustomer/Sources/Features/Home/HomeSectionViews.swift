@@ -281,7 +281,8 @@ private struct PopularPackageCard: View {
                 paymentType: 1,
                 startsOn: Date(),
                 endsOn: nil,
-                isActive: true
+                isActive: true,
+                requiresPaymentMethodChange: false
             )
         }
 

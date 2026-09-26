@@ -54,7 +54,7 @@ public class UpdateCurrentUserSessionIdentityTests
             .Setup(r => r.GetByPhoneNumberAsync(Phone, It.IsAny<CancellationToken>()))
             .ReturnsAsync((User?)null);
         _orderRepository
-            .Setup(r => r.GetOrdersByPhoneNumberAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetOwnOrdersByPhoneNumberAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Array.Empty<Order>());
         return caller;
     }

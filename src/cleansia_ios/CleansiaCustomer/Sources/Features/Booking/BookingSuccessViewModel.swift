@@ -35,13 +35,6 @@ final class BookingSuccessViewModel: ObservableObject {
         return nil
     }
 
-    /// The freshly-loaded code wins over the nav-arg one (the backend may trim
-    /// whitespace); the fallback keeps the pill rendering in loading/error.
-    func effectiveCode(fallback: String) -> String {
-        guard let code = order?.confirmationCode, !code.isBlank else { return fallback }
-        return code
-    }
-
     func load() async {
         guard !didLoad else { return }
         didLoad = true

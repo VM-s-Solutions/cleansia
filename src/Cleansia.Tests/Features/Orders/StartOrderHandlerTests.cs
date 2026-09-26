@@ -7,6 +7,7 @@ using Cleansia.Core.Domain.Repositories;
 using Microsoft.Extensions.Logging;
 using MockQueryable;
 using Moq;
+using Cleansia.Tests.Infrastructure;
 
 namespace Cleansia.Tests.Features.Orders;
 
@@ -33,6 +34,7 @@ public class StartOrderHandlerTests
         new(
             _orderRepository.Object,
             _emailService.Object,
+            TestGuestOrderAccessTokenIssuer.WithNoLiveTokens(),
             _producer.Object,
             _liveActivityProducer.Object,
             _logger.Object);
@@ -73,5 +75,24 @@ public class StartOrderHandlerTests
         Assert.True(result.IsSuccess);
         Assert.Equal(OrderStatus.InProgress, result.Value!.NewStatus);
         Assert.Equal(OrderStatus.InProgress, order.CurrentStatus);
+    }
+
+    /// <summary>
+    /// The fixture's booking carries no <c>UserId</c>, so "we're on our way" goes to somebody with no
+    /// account to sign in to. The e-mail's button is only a link if the send carries a credential.
+    /// </summary>
+    [Fact]
+    public async Task A_Guest_Booking_Is_Told_It_Started_With_A_Link_That_Opens_It()
+    {
+        var order = ArrangeOrder();
+        Assert.Null(order.UserId);
+
+        await CreateHandler().Handle(new StartOrder.Command(OrderId), CancellationToken.None);
+
+        _emailService.Verify(
+            s => s.SendOrderStatusUpdateEmailAsync(
+                order.CustomerEmail, order, "Started", It.IsAny<string>(), It.IsAny<CancellationToken>(),
+                It.IsAny<decimal?>(), It.Is<string?>(token => !string.IsNullOrEmpty(token))),
+            Times.Once);
     }
 }

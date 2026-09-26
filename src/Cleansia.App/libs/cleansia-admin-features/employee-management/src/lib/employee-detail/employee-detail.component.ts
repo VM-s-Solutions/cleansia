@@ -186,7 +186,6 @@ export class EmployeeDetailComponent implements OnInit, OnDestroy {
     basePay: new FormControl<number>(0, [Validators.required, Validators.min(0)]),
     extraPerRoom: new FormControl<number>(0, [Validators.min(0)]),
     extraPerBathroom: new FormControl<number>(0, [Validators.min(0)]),
-    distanceRatePerKm: new FormControl<number>(0, [Validators.min(0)]),
     minimumPay: new FormControl<number>(0, [Validators.min(0)]),
     maximumPay: new FormControl<number>(0, [Validators.min(0)]),
     description: new FormControl<string | null>(null),
@@ -267,7 +266,6 @@ export class EmployeeDetailComponent implements OnInit, OnDestroy {
       basePay: Math.round(baseRate * multiplier * 100) / 100,
       extraPerRoom: Math.round(50 * multiplier * 100) / 100,
       extraPerBathroom: Math.round(30 * multiplier * 100) / 100,
-      distanceRatePerKm: Math.round(10 * multiplier * 100) / 100,
     });
   }
 
@@ -283,7 +281,6 @@ export class EmployeeDetailComponent implements OnInit, OnDestroy {
       basePay: item.hasConfig ? item.basePay : 0,
       extraPerRoom: item.hasConfig ? item.extraPerRoom : 0,
       extraPerBathroom: item.hasConfig ? item.extraPerBathroom : 0,
-      distanceRatePerKm: item.hasConfig ? item.distanceRatePerKm : 0,
       minimumPay: item.hasConfig ? item.minimumPay : 0,
       maximumPay: item.hasConfig ? item.maximumPay : 0,
       description: null,
@@ -305,7 +302,6 @@ export class EmployeeDetailComponent implements OnInit, OnDestroy {
         basePay: value.basePay ?? 0,
         extraPerRoom: value.extraPerRoom ?? 0,
         extraPerBathroom: value.extraPerBathroom ?? 0,
-        distanceRatePerKm: value.distanceRatePerKm ?? 0,
         minimumPay: value.minimumPay ?? 0,
         maximumPay: value.maximumPay ?? 0,
       });
@@ -343,7 +339,6 @@ export class EmployeeDetailComponent implements OnInit, OnDestroy {
         basePay: 0,
         extraPerRoom: 0,
         extraPerBathroom: 0,
-        distanceRatePerKm: 0,
         minimumPay: 0,
         maximumPay: 0,
         description: null,

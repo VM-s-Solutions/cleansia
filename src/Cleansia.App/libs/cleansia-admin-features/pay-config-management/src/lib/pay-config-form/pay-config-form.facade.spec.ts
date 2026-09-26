@@ -30,7 +30,6 @@ describe('PayConfigFormFacade', () => {
     basePay: 500,
     extraPerRoom: 50,
     extraPerBathroom: 30,
-    distanceRatePerKm: 10,
     minimumPay: 300,
     maximumPay: 2000,
     currencyId: 'cur-1',
@@ -181,13 +180,13 @@ describe('PayConfigFormFacade', () => {
         basePay: 500,
         extraPerRoom: 50,
         extraPerBathroom: 30,
-        distanceRatePerKm: 10,
         minimumPay: 300,
         maximumPay: 2000,
         currencyId: 'cur-1',
         description: 'Standard rate',
         packageId: undefined,
       });
+      expect(command.toJSON()).not.toHaveProperty('distanceRatePerKm');
     });
 
     it('serializes an update with the config id and every rate', () => {
@@ -202,11 +201,11 @@ describe('PayConfigFormFacade', () => {
         basePay: 500,
         extraPerRoom: 50,
         extraPerBathroom: 30,
-        distanceRatePerKm: 10,
         minimumPay: 300,
         maximumPay: 2000,
         description: 'Standard rate',
       });
+      expect(command.toJSON()).not.toHaveProperty('distanceRatePerKm');
     });
   });
 });

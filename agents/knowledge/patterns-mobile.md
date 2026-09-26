@@ -730,9 +730,12 @@ All user text in `res/values/strings.xml`, accessed via `stringResource(R.string
 handled by the sealed `*UiState`; empty states use `MascotEmptyState`; transient errors go to the
 snackbar (not the main state); submit errors use `ActionState.Error`.
 
-> **A copy-only change is a silent NON-RUN on Android, and a mutation proof against one is worthless
-> until it is forced.** The locale guards read `res/values*/strings.xml` **off disk**, through a path
-> Gradle does not know is an input. Change only a string *value* and nothing Gradle tracks moves — the
+> **Declare every file a test reads off disk as a Gradle input, or a copy-only change is a silent
+> NON-RUN.** Since 2026-09-26 the `customer-app` and `partner-app` test tasks declare
+> `res/values*/strings.xml` as `localeStrings` (and `customer-app` also declares `BookingPolicy.cs`), so
+> their locale guards re-run on a copy change; a new module or a new off-disk read must do the same.
+> Without the declaration the history below holds: the locale guards read `res/values*/strings.xml`
+> **off disk**, through a path Gradle does not know is an input. Change only a string *value* and nothing Gradle tracks moves — the
 > R class is byte-identical — so `testDebugUnitTest` reports `UP-TO-DATE`, and `cleanTestDebugUnitTest`
 > then restores the same result `FROM-CACHE`. Measured 2026-08-09 on the closed-offer copy: a
 > deliberately wrong translation **passed the mutation twice** before the run was forced.

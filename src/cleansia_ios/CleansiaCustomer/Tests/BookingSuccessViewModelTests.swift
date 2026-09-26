@@ -32,7 +32,7 @@ final class BookingSuccessViewModelTests: XCTestCase {
     }
 
     func testLoadSuccessPopulatesTheSummaryOrder() async {
-        let order = OrderFixtures.detail(id: "o-1", confirmationCode: "CLN-777", total: 1200)
+        let order = OrderFixtures.detail(id: "o-1", total: 1200)
         let vm = makeVM(order: order)
 
         await vm.load()
@@ -79,21 +79,5 @@ final class BookingSuccessViewModelTests: XCTestCase {
         await vm.load()
 
         XCTAssertEqual(recorder.warmCount, 1)
-    }
-
-    func testEffectiveCodePrefersTheLoadedOrdersCode() async {
-        let vm = makeVM(order: OrderFixtures.detail(confirmationCode: "SERVER-1"))
-
-        await vm.load()
-
-        XCTAssertEqual(vm.effectiveCode(fallback: "NAV-1"), "SERVER-1")
-    }
-
-    func testEffectiveCodeFallsBackWhileLoadingAndWhenTheLoadedCodeIsBlank() async {
-        let vm = makeVM(order: OrderFixtures.detail(confirmationCode: " "))
-
-        XCTAssertEqual(vm.effectiveCode(fallback: "NAV-1"), "NAV-1")
-        await vm.load()
-        XCTAssertEqual(vm.effectiveCode(fallback: "NAV-1"), "NAV-1")
     }
 }

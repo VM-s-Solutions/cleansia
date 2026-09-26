@@ -10,6 +10,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 using MockQueryable;
 using Moq;
 using Cleansia.TestUtilities;
+using Cleansia.Tests.Infrastructure;
 
 namespace Cleansia.Tests.Features.Orders;
 
@@ -95,17 +96,6 @@ public class OrderCleanerAssignedNotificationTests
         Assert.Equal(OrderStatus.Confirmed, order.CurrentStatus);
         var sent = Assert.Single(_sent);
         Assert.Equal(NotificationEventCatalog.OrderCleanerAssigned, sent.EventKey);
-    }
-
-    [Fact]
-    public async Task Taking_An_Order_Never_Claims_A_Cleaner_Through_OrderConfirmed()
-    {
-        ArrangeOrder(OrderStatus.New, PaymentType.Cash, PaymentStatus.Pending, maxEmployees: 1);
-        ArrangeTaker();
-
-        await CreateTakeHandler().Handle(new TakeOrder.Command(OrderId, WorkContractTestData.TextIdEn), CancellationToken.None);
-
-        Assert.DoesNotContain(_sent, s => s.EventKey == NotificationEventCatalog.OrderConfirmed);
     }
 
     [Fact]
@@ -247,6 +237,7 @@ public class OrderCleanerAssignedNotificationTests
             _accessService.Object,
             _notificationProducer.Object,
             _emailService.Object,
+            TestGuestOrderAccessTokenIssuer.WithNoLiveTokens(),
             _workContractAcceptor.Object,
             NullLogger<TakeOrder.Handler>.Instance);
 

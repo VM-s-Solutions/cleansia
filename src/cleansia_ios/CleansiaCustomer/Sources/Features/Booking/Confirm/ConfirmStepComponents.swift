@@ -259,6 +259,7 @@ struct PaymentOption: View {
     let title: String
     let subtitle: String
     let selected: Bool
+    var enabled = true
     let action: () -> Void
 
     var body: some View {
@@ -295,6 +296,28 @@ struct PaymentOption: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .disabled(!enabled)
+        .opacity(enabled ? 1 : 0.5)
+    }
+}
+
+/// A line under a payment choice saying why an option is unavailable or was taken away.
+struct PaymentNote: View {
+    let systemImage: String
+    let text: String
+    var warns = false
+
+    var body: some View {
+        HStack(alignment: .top, spacing: Spacing.xs) {
+            Image(systemName: systemImage)
+                .font(.system(size: 14))
+                .foregroundColor(warns ? CleansiaColors.error : CleansiaColors.onSurfaceVariant)
+            Text(text)
+                .font(CleansiaTypography.bodyMedium)
+                .foregroundColor(warns ? CleansiaColors.error : CleansiaColors.onSurfaceVariant)
+                .fixedSize(horizontal: false, vertical: true)
+            Spacer(minLength: 0)
+        }
     }
 }
 

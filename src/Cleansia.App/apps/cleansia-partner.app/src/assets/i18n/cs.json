@@ -349,7 +349,6 @@
       "download_invoice": "Stáhnout fakturu",
       "order_status": "Stav objednávky",
       "payment_status": "Stav platby",
-      "confirmation_code": "Potvrzovací kód",
       "customer_information": "Informace o zákazníkovi",
       "customer_name": "Jméno zákazníka",
       "customer_email": "Email zákazníka",
@@ -977,7 +976,6 @@
       "base_pay_negative": "Základní mzda nemůže být záporná",
       "extra_per_room_negative": "Příplatek za místnost nemůže být záporný",
       "extra_per_bathroom_negative": "Příplatek za koupelnu nemůže být záporný",
-      "distance_rate_negative": "Sazba za vzdálenost nemůže být záporná",
       "minimum_pay_negative": "Minimální mzda nemůže být záporná",
       "maximum_pay_negative": "Maximální mzda nemůže být záporná",
       "maximum_less_than_minimum": "Maximální mzda nemůže být nižší než minimální mzda",
@@ -1023,8 +1021,7 @@
       "deletion_blocked_by_order": "Váš účet nelze smazat, dokud máte aktívní objednávky.",
       "deletion_blocked_by_invoice": "Váš účet nelze smazat, dokud jsou nevyřízené faktury.",
       "deletion_blocked_by_assigned_order": "Váš účet nelze smazat, dokud jste přiřazeni k zakázce.",
-      "deletion_blocked_by_unsettled_pay": "Váš účet nelze smazat, dokud vám dlužíme odměnu. Nejprve to vyřešte s kanceláří.",
-      "deletion_blocked_by_credit_balance": "Váš účet nelze smazat, dokud u nás máte kredit. Využijte jej při objednávce, nebo kontaktujte kancelář kvůli vyplacení."
+      "deletion_blocked_by_unsettled_pay": "Váš účet nelze smazat, dokud vám dlužíme odměnu. Nejprve to vyřešte s kanceláří."
     },
     "company": {
       "not_found": "Informace o společnosti nenalezeny",
@@ -1139,7 +1136,6 @@
       "step4_desc": "Vaše výdělky budou přidány na další fakturu za platební období.",
       "status_title": "Vysvětlení stavů objednávek",
       "status": {
-        "pending_desc": "Zastaralý stav, do kterého nová objednávka nevstupuje — každá objednávka začíná jako Nová. Zda zákazník zaplatil, ukazuje samostatný stav platby.",
         "confirmed_desc": "Uklízeč převzal zakázku. O platbě to nic neříká — hotovostní objednávka je Potvrzená dřív, než se pohnou jakékoli peníze.",
         "in_progress_desc": "Zaměstnanec začal pracovat na této objednávce. Úklid probíhá.",
         "completed_desc": "Práce je dokončena, fotografie nahrány. Připraveno ke zpracování platby.",

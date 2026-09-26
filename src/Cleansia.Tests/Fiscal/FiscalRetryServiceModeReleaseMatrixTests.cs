@@ -12,6 +12,8 @@ using Cleansia.Core.Fiscal.Abstractions;
 using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
+using Cleansia.Core.AppServices.Features.Orders;
+using Cleansia.Tests.Infrastructure;
 
 namespace Cleansia.Tests.Fiscal;
 
@@ -45,7 +47,7 @@ public sealed class FiscalRetryServiceModeReleaseMatrixTests
         _emailService
             .Setup(s => s.SendOrderReceiptEmailAsync(
                 It.IsAny<string>(), It.IsAny<Order>(), It.IsAny<byte[]?>(),
-                It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>(), It.IsAny<string?>()))
             .ReturnsAsync("msg-1");
     }
 
@@ -55,6 +57,7 @@ public sealed class FiscalRetryServiceModeReleaseMatrixTests
         _countryConfigurationRepository.Object,
         _receiptService.Object,
         _emailService.Object,
+        TestGuestOrderAccessTokenIssuer.WithNoLiveTokens(),
         new NoopUnitOfWork(),
         _tenantProvider.Object,
         NullLogger<FiscalRetryService>.Instance);
@@ -128,7 +131,7 @@ public sealed class FiscalRetryServiceModeReleaseMatrixTests
         _emailService.Verify(
             s => s.SendOrderReceiptEmailAsync(
                 It.IsAny<string>(), It.IsAny<Order>(), It.IsAny<byte[]?>(),
-                It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()),
+                It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>(), It.IsAny<string?>()),
             times);
 
     // ── AC7 — successful retry RELEASES the held email only for blocking modes ──

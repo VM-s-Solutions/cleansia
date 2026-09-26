@@ -23,7 +23,7 @@ public interface IPushDispatcher
     /// <param name="deviceTokens">FCM registration tokens. Caller is
     /// responsible for filtering by user preference + NotificationsEnabled
     /// before invoking; this method blindly attempts every supplied token.</param>
-    /// <param name="eventKey">Event key (e.g. <c>order.confirmed</c>) the
+    /// <param name="eventKey">Event key (e.g. <c>order.completed</c>) the
     /// mobile client uses to look up localized strings. Lands in the data
     /// payload as <c>event_key</c>.</param>
     /// <param name="data">Structured args (e.g. <c>orderId</c>,

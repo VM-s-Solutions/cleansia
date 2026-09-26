@@ -35,6 +35,7 @@ class OrderApiTest {
     private fun response(
         tier: GenCancellationFeeTier? = GenCancellationFeeTier._3,
         expressWaiverForfeitedOnCancel: Boolean? = true,
+        oopsWindowMinutes: Int? = 60,
     ) = GenPreviewResponse(
         orderId = "order-1",
         tier = tier,
@@ -44,6 +45,7 @@ class OrderApiTest {
         totalPrice = 1000.0,
         currencyCode = "CZK",
         expressWaiverForfeitedOnCancel = expressWaiverForfeitedOnCancel,
+        oopsWindowMinutes = oopsWindowMinutes,
     )
 
     @Test
@@ -61,6 +63,7 @@ class OrderApiTest {
         assertEquals(1000.0, body.totalPrice, 0.0)
         assertEquals("CZK", body.currencyCode)
         assertTrue(body.expressWaiverForfeitedOnCancel)
+        assertEquals(60, body.oopsWindowMinutes)
     }
 
     @Test

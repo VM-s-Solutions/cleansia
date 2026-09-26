@@ -80,7 +80,7 @@ public class SendPushNotificationAuthConfigAckTests
     {
         var handler = CreateHandler();
         var message = Serialize(new SendPushNotificationMessage(
-            UserId: "USER-1", EventKey: "order.confirmed", Args: new(), TenantId: null));
+            UserId: "USER-1", EventKey: "order.cleaner_assigned", Args: new(), TenantId: null));
 
         SetupEligibleDevices("USER-1", "TOKEN-1");
         SetupDispatch(new PushDispatchResult(
@@ -103,7 +103,7 @@ public class SendPushNotificationAuthConfigAckTests
         // the next notification. Pin it.
         var handler = CreateHandler();
         var message = Serialize(new SendPushNotificationMessage(
-            UserId: "USER-1", EventKey: "order.confirmed", Args: new(), TenantId: null));
+            UserId: "USER-1", EventKey: "order.cleaner_assigned", Args: new(), TenantId: null));
 
         SetupEligibleDevices("USER-1", "TOKEN-1", "TOKEN-2", "TOKEN-3");
         SetupDispatch(new PushDispatchResult(
@@ -128,7 +128,7 @@ public class SendPushNotificationAuthConfigAckTests
         // Device rows, which are innocent.
         var handler = CreateHandler();
         var message = Serialize(new SendPushNotificationMessage(
-            UserId: "USER-1", EventKey: "order.confirmed", Args: new(), TenantId: null));
+            UserId: "USER-1", EventKey: "order.cleaner_assigned", Args: new(), TenantId: null));
 
         SetupEligibleDevices("USER-1", "IOS-TOKEN-1", "IOS-TOKEN-2");
         SetupDispatch(new PushDispatchResult(
@@ -154,7 +154,7 @@ public class SendPushNotificationAuthConfigAckTests
         // takes the normal path — it neither acks-and-swallows nor throws.
         var handler = CreateHandler();
         var message = Serialize(new SendPushNotificationMessage(
-            UserId: "USER-1", EventKey: "order.confirmed", Args: new(), TenantId: null));
+            UserId: "USER-1", EventKey: "order.cleaner_assigned", Args: new(), TenantId: null));
 
         SetupEligibleDevices("USER-1", "IOS-TOKEN-1", "ANDROID-TOKEN-1");
         SetupDispatch(new PushDispatchResult(SuccessCount: 1, FailureCount: 1, InvalidTokens: []));
@@ -172,7 +172,7 @@ public class SendPushNotificationAuthConfigAckTests
         // Characterization pin: the genuine cold-start init race / network all-fail keeps its retry.
         var handler = CreateHandler();
         var message = Serialize(new SendPushNotificationMessage(
-            UserId: "USER-1", EventKey: "order.confirmed", Args: new(), TenantId: null));
+            UserId: "USER-1", EventKey: "order.cleaner_assigned", Args: new(), TenantId: null));
 
         SetupEligibleDevices("USER-1", "TOKEN-1");
         SetupDispatch(new PushDispatchResult(SuccessCount: 0, FailureCount: 1, InvalidTokens: []));

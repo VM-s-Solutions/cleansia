@@ -84,6 +84,7 @@ import cz.cleansia.customer.core.market.MarketState
 import cz.cleansia.customer.core.market.countryId
 import cz.cleansia.customer.core.market.offersAChoice
 import cz.cleansia.customer.features.booking.localizedName
+import cz.cleansia.customer.features.recurring.ScheduleStatus
 import cz.cleansia.core.ui.theme.Poppins
 import cz.cleansia.customer.R
 import cz.cleansia.customer.core.loyalty.LoyaltyAccountDto
@@ -190,8 +191,13 @@ fun HomeTab(
     androidx.compose.runtime.LaunchedEffect(Unit) {
         recurringRepo.refresh()
     }
+    // A schedule that needs a payment change books nothing until the customer fixes it, so it is
+    // listed first rather than cut by the three-row limit.
     val activeRecurring = androidx.compose.runtime.remember(recurringTemplates) {
-        recurringTemplates.filter { it.isActive }.take(3)
+        recurringTemplates
+            .filter { it.isActive }
+            .sortedByDescending { ScheduleStatus.of(it) == ScheduleStatus.NeedsPaymentChange }
+            .take(3)
     }
     val showRecurringSection = activeRecurring.isNotEmpty()
     val showSetupRecurringSlide = isPlus && recurringTemplates.isEmpty()
@@ -334,9 +340,7 @@ fun HomeTab(
             }
             Spacer(Modifier.height(24.dp))
 
-            // 4. Recurring schedules (Plus-only, when at least one is active) —
-            // mini list with a "Manage" link. Lets users see what's already
-            // booked-on-repeat without leaving home.
+            // 4. Recurring schedules, when at least one is unpaused.
             if (showRecurringSection) {
                 RecurringSchedulesSection(
                     templates = activeRecurring,
@@ -862,9 +866,9 @@ private fun OrderAgainCard(order: OrderListItemDto, onClick: () -> Unit) {
 }
 
 /**
- * Active recurring schedules — mini list with a "Manage" link. Surfaces what's
- * already booked-on-repeat so users don't have to dig through the Profile tab
- * to remember they have a schedule going.
+ * Unpaused recurring schedules — mini list with a "Manage" link. A cash schedule the
+ * server skips until it is changed carries its badge here too, since a customer who
+ * never opens the recurring list is told nowhere else.
  */
 @Composable
 private fun RecurringSchedulesSection(
@@ -913,6 +917,8 @@ private fun RecurringScheduleRow(
     val dayName = java.time.DayOfWeek.of(javaDow)
         .getDisplayName(java.time.format.TextStyle.FULL, java.util.Locale.getDefault())
     val schedule = stringResource(R.string.recurring_bookings_day_at_time, dayName, template.timeOfDay)
+    val needsChange = ScheduleStatus.of(template) == ScheduleStatus.NeedsPaymentChange
+    val accent = if (needsChange) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.primary
 
     Row(
         modifier = Modifier
@@ -927,13 +933,13 @@ private fun RecurringScheduleRow(
         Box(
             modifier = Modifier
                 .size(40.dp)
-                .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.12f), CircleShape),
+                .background(accent.copy(alpha = 0.12f), CircleShape),
             contentAlignment = Alignment.Center,
         ) {
             Icon(
                 Icons.Outlined.AutoAwesome,
                 null,
-                tint = MaterialTheme.colorScheme.primary,
+                tint = accent,
                 modifier = Modifier.size(20.dp),
             )
         }
@@ -942,7 +948,7 @@ private fun RecurringScheduleRow(
             Text(
                 cadenceLabel,
                 style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
-                color = MaterialTheme.colorScheme.primary,
+                color = accent,
             )
             Text(
                 schedule,
@@ -958,6 +964,19 @@ private fun RecurringScheduleRow(
                     overflow = TextOverflow.Ellipsis,
                 )
             }
+        }
+        if (needsChange) {
+            Spacer(Modifier.width(8.dp))
+            Text(
+                stringResource(R.string.recurring_status_needs_change),
+                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(MaterialTheme.colorScheme.surfaceVariant)
+                    .padding(horizontal = 8.dp, vertical = 3.dp),
+            )
+            Spacer(Modifier.width(8.dp))
         }
         Icon(
             Icons.AutoMirrored.Outlined.ArrowForward,

@@ -26,12 +26,6 @@ internal sealed record CancellationAssessment(
 internal static class CancellationAssessor
 {
     /// <summary>
-    /// Not yet derived from the customer's history; a shared constant so the quote and the charge
-    /// cannot land on different sides of the wider first-time oops window.
-    /// </summary>
-    private const bool IsFirstTimeCustomer = false;
-
-    /// <summary>
     /// The <c>BusinessErrorMessage</c> key for why this order cannot be cancelled at all, or
     /// <see langword="null"/> when it can. Each caller wraps it in an <c>Error</c> against its own
     /// <c>OrderId</c> field.
@@ -57,8 +51,8 @@ internal static class CancellationAssessor
             order.CleaningDateTime,
             order.CreatedOn.UtcDateTime,
             nowUtc,
-            IsFirstTimeCustomer,
-            hasBeenAccepted,
+            oopsWindowMinutes: policy.OopsWindowMinutes,
+            hasBeenAccepted: hasBeenAccepted,
             freeCancellationHoursOverride: policy.FreeCancellationHours);
         var feeRate = BookingPolicy.CancellationFeeRateFor(tier);
 

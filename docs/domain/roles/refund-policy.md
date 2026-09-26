@@ -24,7 +24,9 @@ non-refunded fee only on pure goodwill — `RefundReason.AdminDiscretion`).
   (ADR-0006 D2). `RefundPolicy` is policy, not the money primitive.
 - **How a line's amount is allocated** — the share-of-`TotalPrice` allocation (ADR-0009 D2) is the caller's
   computation, not the policy's; the policy gates *whether and on what fee terms*, not *how much per line*.
-- **Discount / express-surcharge math** — those are already embedded in `Order.TotalPrice`
-  (`OrderFactory.cs:91-95`); no refund actor re-applies them.
+- **Discount / express-surcharge math** — computed once, at booking, from `ResolveLoy003Discount` to
+  `ApplyExpressSurcharge` (`OrderFactory.cs:121-137`), and embedded in `Order.TotalPrice`. Each discount is stored in its own
+  column, and the surcharge is stored beside them as `Order.ExpressSurchargeAmount` by
+  `order.SetExpressSurcharge` (`:183`); no refund actor re-applies or re-derives them.
 - **The cancel penalty** — `BookingPolicy`'s cancel-fee tiers (`BookingPolicy.cs:98-127`,
   `CustomerOrderCancellation.cs:32`) are a different, distinct fee; `RefundPolicy` never touches the cancel penalty.

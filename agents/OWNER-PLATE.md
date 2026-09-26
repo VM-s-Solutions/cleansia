@@ -1,5 +1,11 @@
 # Owner plate — what only Mike can decide or do (written 2026-09-16 from a full-branch sweep; updated 2026-09-19 after the batch-6 rulings, the same night when batch 6 shipped, 2026-09-20 when batch 9 — the contract for work — shipped, 2026-09-20 evening when the UI-polish and dead-code batch was filed, and 2026-09-22 when it shipped and again when the lawyer audit of `6792f0c2` reported F68–F83)
 
+> **Audit-fix status, 2026-09-23:** the current disposition of F68–F83 and the related audit findings
+> is maintained only in [FIX-PLAN-2026-09-22.md](FIX-PLAN-2026-09-22.md). The audit rows here retain
+> their original finding context; they are not a second implementation queue. The latest owed
+> migration is `20260923071814_Initial`: one DEV-only drop immediately before the next manual DEV
+> deployment, plus the consolidated iOS Mac checks listed in the plan.
+
 Everything an agent could build without a ruling is either shipped or filed as a `todo` row in
 `agents/backlog/INDEX.md`. This file holds the rest: decisions with their default in force, and
 actions outside the repository. A ruled decision or finding **stays on the plate, unstruck, marked

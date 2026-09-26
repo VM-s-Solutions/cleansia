@@ -486,7 +486,6 @@
       "pay_config_base_pay": "Base Pay",
       "pay_config_extra_room": "Extra Per Room",
       "pay_config_extra_bathroom": "Extra Per Bathroom",
-      "pay_config_distance_rate": "Distance Rate / km",
       "pay_config_min_pay": "Minimum Pay",
       "pay_config_max_pay": "Maximum Pay",
       "pay_config_description": "Description",
@@ -964,7 +963,8 @@
           "order": {
             "cover_requested": "Cover requested",
             "dropped": "Job dropped",
-            "contract_accepted": "Contract for work accepted"
+            "contract_accepted": "Contract for work accepted",
+            "access_instructions_read": "Access instructions read"
           }
         }
       }
@@ -1001,7 +1001,6 @@
       "base_pay": "Base Pay",
       "extra_per_room": "Extra Per Room",
       "extra_per_bathroom": "Extra Per Bathroom",
-      "distance_rate": "Distance Rate (per km)",
       "pay_limits": "Pay Limits",
       "pay_limits_hint": "Optional. Leave as 0 for no limit. If set, the calculated pay will be clamped to this range.",
       "minimum_pay": "Minimum Pay",
@@ -1805,6 +1804,15 @@
           "notifications": {
             "days": "Days a notification stays in the in-app feed"
           },
+          "order_photos": {
+            "days": "Days after completion that order photos are kept; unresolved disputes hold the photos until they close"
+          },
+          "admin_audit": {
+            "years": "Years an administrator audit row is kept"
+          },
+          "employee_audit": {
+            "years": "Years a cleaner audit row is kept"
+          },
           "customer_audit": {
             "years": "Years a customer audit row is kept"
           },
@@ -2354,7 +2362,7 @@
         "expire_error": "The balance could not be discharged.",
         "expire_dialog": {
           "title": "Discharge credit balance",
-          "lede": "This writes off the whole balance of {{amount}} and cannot be undone. Use it when the customer is leaving: erasure is refused while credit is outstanding.",
+          "lede": "This writes off the whole balance of {{amount}} and cannot be undone. It is not needed before an account erasure: the erasure writes off any unused credit itself.",
           "field": {
             "note": "Why",
             "note_help": "The only record of why money the company owed stopped being owed. Name the request."
@@ -2597,7 +2605,7 @@
         "fulfil_title": "Fulfil this deletion request?",
         "retry": "Retry deletion",
         "retry_confirm_title": "Retry this deletion?",
-        "retry_confirm_message": "This re-runs the erasure of the account of user {{userId}}. If it succeeds, the account is permanently anonymized and this cannot be undone.",
+        "retry_confirm_message": "This re-runs the erasure of the account of user {{userId}}. If it succeeds, the account is permanently anonymized and any unused customer credit on it is written off, with no payout and no way to restore it. This cannot be undone.",
         "retry_confirm_yes": "Retry",
         "retry_success": "Deletion retried. The account is now erased.",
         "retry_error": "Couldn't retry the deletion."
@@ -2649,7 +2657,7 @@
         "success": "Account erased.",
         "error": "Couldn't erase the account.",
         "confirm_title": "Erase account?",
-        "confirm_message": "This permanently anonymizes the account of user {{userId}}. This cannot be undone.",
+        "confirm_message": "This permanently anonymizes the account of user {{userId}}. Any unused customer credit on it is written off when the erasure completes — it is not paid out and cannot be restored. This cannot be undone.",
         "confirm_yes": "Erase"
       }
     },
@@ -3026,7 +3034,6 @@
     "gdpr": {
       "deletion_already_pending": "A deletion request for this account is already in progress.",
       "deletion_blocked_by_order": "This account has active orders and cannot be deleted yet.",
-      "deletion_blocked_by_credit_balance": "This customer still has a credit balance. It has to be spent or paid out before the account can be deleted.",
       "deletion_blocked_by_invoice": "This account has outstanding invoices and cannot be deleted yet.",
       "deletion_blocked_by_assigned_order": "This cleaner is still assigned to a job and cannot be deleted yet.",
       "deletion_blocked_by_unsettled_pay": "This cleaner is still owed pay. Settle it before deleting the account.",
@@ -3115,7 +3122,6 @@
       "already_exists": "Pay configuration already exists",
       "base_pay_negative": "Base pay cannot be negative",
       "cannot_have_both": "Cannot have both service and package",
-      "distance_rate_negative": "Distance rate cannot be negative",
       "extra_per_bathroom_negative": "Extra per bathroom cannot be negative",
       "extra_per_room_negative": "Extra per room cannot be negative",
       "has_order_pays": "Cannot delete pay configuration that has associated order pays",

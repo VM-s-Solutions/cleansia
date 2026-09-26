@@ -1,4 +1,4 @@
-import { computed, effect, inject, Injectable, Injector, signal } from '@angular/core';
+import { computed, effect, inject, Injectable, Injector, signal, untracked } from '@angular/core';
 import { UnsubscribeControlDirective } from '@cleansia/directives';
 import {
   AddSavedAddressCommand,
@@ -6,13 +6,16 @@ import {
   CustomerClient,
   DeleteRecurringBookingCommand,
   PackageListItem,
+  PaymentType,
   QuoteOrderCommand,
+  QuoteOrderResponse,
   RecurringBookingTemplateDto,
   ServiceListItem,
   SetRecurringBookingActiveCommand,
   UpdateRecurringBookingCommand,
 } from '@cleansia/customer-services';
-import { SnackbarService } from '@cleansia/services';
+import { CashEligibility, cashIsRefused, resolveCashEligibility } from '@cleansia/models';
+import { extractApiErrorCode, SnackbarService } from '@cleansia/services';
 import {
   loadCustomerPackages,
   loadCustomerServices,
@@ -28,6 +31,7 @@ import { TranslateService } from '@ngx-translate/core';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { firstValueFrom, takeUntil } from 'rxjs';
 import {
+  PricedSelection,
   RecurringPrefillParams,
   RecurringWizardFormData,
   RECURRING_WIZARD_INITIAL_DATA,
@@ -35,12 +39,22 @@ import {
   canSubmit,
   missingFields,
   nextOccurrenceUtc,
+  samePricedSelection,
+  scheduleCashReason,
 } from './recurring-bookings.models';
 
 /** A server-quoted figure with the currency the server priced it in. */
 export interface QuotedPrice {
   amount: number;
   currency: string | null;
+}
+
+function priceOf(quoted: QuoteOrderResponse): QuotedPrice {
+  return {
+    amount: quoted.finalPriceAfterDiscount ?? quoted.totalPrice,
+    // The quote names its currency; a blank one renders the bare number, never a guessed unit.
+    currency: quoted.currencyCode ?? '',
+  };
 }
 
 /**
@@ -99,6 +113,34 @@ export class RecurringBookingsFacade extends UnsubscribeControlDirective {
   /** The price of whatever the form currently describes. */
   readonly formPrice = signal<QuotedPrice | null>(null);
   readonly quoting = signal(false);
+  /** The crew the server last quoted, with the selection it was quoted for. */
+  private readonly formCrew = signal<{ selection: PricedSelection; requiredEmployees: number } | null>(
+    null,
+  );
+  private formQuoteSequence = 0;
+  /** The crew for the form as it is now; null until a quote for this very selection lands. */
+  private readonly formRequiredEmployees = computed(() => {
+    const crew = this.formCrew();
+    return crew && samePricedSelection(crew.selection, this.pricedSelection())
+      ? crew.requiredEmployees
+      : null;
+  });
+
+  // A schedule is always an account's, so only the crew decides.
+  readonly cashEligibility = computed<CashEligibility>(() =>
+    resolveCashEligibility(true, this.formRequiredEmployees()),
+  );
+  readonly cashSelectable = computed(() => this.cashEligibility().kind === 'available');
+  readonly cashReason = computed(() => scheduleCashReason(this.cashEligibility()));
+  /** A cash choice was taken away because it stopped being allowed; cleared by the next choice. */
+  readonly cashCleared = signal(false);
+  /** Said only while cash is still not available; a selection that allows it again needs no warning. */
+  readonly cashClearedNotice = computed(() => this.cashCleared() && !this.cashSelectable());
+  private readonly cashEffect = effect(() => {
+    if (this.formData().paymentType === PaymentType.Cash && cashIsRefused(this.cashEligibility())) {
+      untracked(() => this.dropCash(true));
+    }
+  });
 
   /** Drives the address field's own spinner — see `ensureAddresses`. */
   readonly addressesLoading = signal(false);
@@ -108,6 +150,20 @@ export class RecurringBookingsFacade extends UnsubscribeControlDirective {
   readonly formData = signal<RecurringWizardFormData>({
     ...RECURRING_WIZARD_INITIAL_DATA,
   });
+  /** What the form's quote prices; it changes only when the price can. */
+  readonly pricedSelection = computed<PricedSelection>(
+    () => {
+      const d = this.formData();
+      return {
+        serviceIds: d.selectedServiceIds,
+        packageIds: d.selectedPackageIds,
+        rooms: d.rooms,
+        bathrooms: d.bathrooms,
+        countryId: this.countryOf(d.savedAddressId),
+      };
+    },
+    { equal: samePricedSelection },
+  );
   readonly submitting = signal(false);
 
   // ─── Shared catalog + addresses (reused across both screens) ───────
@@ -318,30 +374,32 @@ export class RecurringBookingsFacade extends UnsubscribeControlDirective {
       this.countryOf(template.savedAddressId),
     );
     if (!quoted) return;
-    this.templatePrices.update((all) => ({ ...all, [template.id as string]: quoted }));
+    this.templatePrices.update((all) => ({ ...all, [template.id as string]: priceOf(quoted) }));
   }
 
-  /** Re-quote whatever the form currently describes. */
+  /** Re-quote whatever the form currently describes. Only the latest request's answer is kept. */
   async quoteForm(): Promise<void> {
-    const d = this.formData();
-    if (d.selectedServiceIds.length === 0 && d.selectedPackageIds.length === 0) {
+    const sequence = ++this.formQuoteSequence;
+    const selection = this.pricedSelection();
+    if (selection.serviceIds.length === 0 && selection.packageIds.length === 0) {
       this.formPrice.set(null);
+      this.formCrew.set(null);
+      this.quoting.set(false);
       return;
     }
     this.quoting.set(true);
-    try {
-      this.formPrice.set(
-        await this.quote(
-          d.selectedServiceIds,
-          d.selectedPackageIds,
-          d.rooms,
-          d.bathrooms,
-          this.countryOf(d.savedAddressId),
-        ),
-      );
-    } finally {
-      this.quoting.set(false);
-    }
+    const quoted = await this.quote(
+      selection.serviceIds,
+      selection.packageIds,
+      selection.rooms,
+      selection.bathrooms,
+      selection.countryId,
+    );
+    if (sequence !== this.formQuoteSequence) return;
+    this.formPrice.set(quoted ? priceOf(quoted) : null);
+    const requiredEmployees = quoted?.requiredEmployees ?? null;
+    this.formCrew.set(requiredEmployees === null ? null : { selection, requiredEmployees });
+    this.quoting.set(false);
   }
 
   /** The country of a saved address, which decides the currency a schedule is priced in. */
@@ -412,7 +470,7 @@ export class RecurringBookingsFacade extends UnsubscribeControlDirective {
     rooms: number,
     bathrooms: number,
     countryId: string | null,
-  ): Promise<QuotedPrice | null> {
+  ): Promise<QuoteOrderResponse | null> {
     if (serviceIds.length === 0 && packageIds.length === 0) return null;
     const command = new QuoteOrderCommand();
     command.selectedServiceIds = serviceIds;
@@ -427,15 +485,10 @@ export class RecurringBookingsFacade extends UnsubscribeControlDirective {
     command.selectedExtraSlugs = [];
     command.cleaningDate = undefined;
     try {
-      const quoted = await firstValueFrom(
-        this.orderClient.quote(command).pipe(takeUntil(this.destroyed$)),
+      return (
+        (await firstValueFrom(this.orderClient.quote(command).pipe(takeUntil(this.destroyed$)))) ??
+        null
       );
-      if (!quoted) return null;
-      return {
-        amount: quoted.finalPriceAfterDiscount ?? quoted.totalPrice,
-        // The quote names its currency; a blank one renders the bare number, never a guessed unit.
-        currency: quoted.currencyCode ?? '',
-      };
     } catch {
       return null;
     }
@@ -513,6 +566,19 @@ export class RecurringBookingsFacade extends UnsubscribeControlDirective {
     this.formData.update((current) => ({ ...current, ...patch }));
   }
 
+  selectPayment(type: PaymentType): void {
+    if (type === PaymentType.Cash && !this.cashSelectable()) return;
+    this.cashCleared.set(false);
+    this.updateFormData({ paymentType: type });
+  }
+
+  /** Never replaced by card: the customer is told and chooses again. */
+  private dropCash(announce: boolean): void {
+    this.updateFormData({ paymentType: null });
+    this.cashCleared.set(true);
+    if (announce) this.snackbar.showInfoTranslated('recurring_booking.cash_cleared');
+  }
+
   toggleService(id: string): void {
     const current = this.formData().selectedServiceIds;
     this.updateFormData({
@@ -545,6 +611,8 @@ export class RecurringBookingsFacade extends UnsubscribeControlDirective {
     this.activeStep.set(1);
     this.editingId.set(null);
     this.formPrice.set(null);
+    this.formCrew.set(null);
+    this.cashCleared.set(false);
     this.submitAttempted.set(false);
     this.formData.set({ ...RECURRING_WIZARD_INITIAL_DATA });
   }
@@ -621,14 +689,16 @@ export class RecurringBookingsFacade extends UnsubscribeControlDirective {
   async submit(): Promise<boolean> {
     if (this.submitting() || !this.canSubmit()) return false;
     const d = this.formData();
-    if (!d.savedAddressId || !d.startsOn) return false;
+    const paymentType = d.paymentType;
+    if (!d.savedAddressId || !d.startsOn || paymentType === null) return false;
     const editingId = this.editingId();
 
     this.submitting.set(true);
     try {
+      if (paymentType === PaymentType.Cash && !(await this.cashConfirmedForForm())) return false;
       const saved = editingId
-        ? await this.sendUpdate(editingId, d)
-        : await this.sendCreate(d);
+        ? await this.sendUpdate(editingId, d, paymentType)
+        : await this.sendCreate(d, paymentType);
 
       if (saved) {
         // Optimistic in-place write so the list is right the moment the user
@@ -654,7 +724,12 @@ export class RecurringBookingsFacade extends UnsubscribeControlDirective {
       // Background refresh to pick up server-side enrichment (addressLine etc).
       this.refreshList();
       return true;
-    } catch {
+    } catch (error: unknown) {
+      // The interceptor has already said why; a generic toast would replace that sentence.
+      if (extractApiErrorCode(error) === 'order.cash_not_available') {
+        this.dropCash(false);
+        return false;
+      }
       this.snackbar.showError(
         this.translate.instant(
           editingId ? 'recurring_booking.update_failed' : 'recurring_booking.create_failed',
@@ -666,7 +741,22 @@ export class RecurringBookingsFacade extends UnsubscribeControlDirective {
     }
   }
 
-  private sendCreate(d: RecurringWizardFormData): Promise<RecurringBookingTemplateDto> {
+  /** Cash goes out only on a fresh quote for the form that says one cleaner does it. */
+  private async cashConfirmedForForm(): Promise<boolean> {
+    await this.quoteForm();
+    if (this.cashSelectable()) return true;
+    if (cashIsRefused(this.cashEligibility())) {
+      this.dropCash(true);
+    } else {
+      this.snackbar.showError(this.translate.instant('recurring_booking.cash_unchecked'));
+    }
+    return false;
+  }
+
+  private sendCreate(
+    d: RecurringWizardFormData,
+    paymentType: PaymentType,
+  ): Promise<RecurringBookingTemplateDto> {
     const command = new CreateRecurringBookingCommand();
     command.frequency = d.frequency as unknown as number;
     command.dayOfWeek = d.dayOfWeek;
@@ -676,7 +766,7 @@ export class RecurringBookingsFacade extends UnsubscribeControlDirective {
     command.savedAddressId = d.savedAddressId ?? undefined;
     command.selectedServiceIds = d.selectedServiceIds;
     command.selectedPackageIds = d.selectedPackageIds;
-    command.paymentType = d.paymentType;
+    command.paymentType = paymentType;
     command.startsOn = d.startsOn as Date;
     command.endsOn = undefined;
     return firstValueFrom(this.client.create(command).pipe(takeUntil(this.destroyed$)));
@@ -685,6 +775,7 @@ export class RecurringBookingsFacade extends UnsubscribeControlDirective {
   private sendUpdate(
     templateId: string,
     d: RecurringWizardFormData,
+    paymentType: PaymentType,
   ): Promise<RecurringBookingTemplateDto> {
     const command = new UpdateRecurringBookingCommand();
     command.templateId = templateId;
@@ -696,7 +787,7 @@ export class RecurringBookingsFacade extends UnsubscribeControlDirective {
     command.savedAddressId = d.savedAddressId ?? undefined;
     command.selectedServiceIds = d.selectedServiceIds;
     command.selectedPackageIds = d.selectedPackageIds;
-    command.paymentType = d.paymentType;
+    command.paymentType = paymentType;
     command.startsOn = d.startsOn as Date;
     command.endsOn = undefined;
     return firstValueFrom(this.client.update(command).pipe(takeUntil(this.destroyed$)));

@@ -35,6 +35,30 @@ final class FakeQuoteClient: QuoteClient, @unchecked Sendable {
     }
 }
 
+/// Holds every quote until the test releases them, so a test can have two quotes in flight at once.
+final class GatedQuoteClient: QuoteClient, @unchecked Sendable {
+    let result: ApiResult<BookingQuote>
+    private(set) var callCount = 0
+    private var held: [CheckedContinuation<Void, Never>] = []
+
+    init(result: ApiResult<BookingQuote>) {
+        self.result = result
+    }
+
+    func quote(_: QuoteRequest) async -> ApiResult<BookingQuote> {
+        callCount += 1
+        await withCheckedContinuation { held.append($0) }
+        return result
+    }
+
+    /// Lets every held quote answer, oldest first.
+    func releaseAll() {
+        let waiting = held
+        held = []
+        waiting.forEach { $0.resume() }
+    }
+}
+
 final class FakeExtraClient: ExtraClient, @unchecked Sendable {
     var result: ApiResult<[CatalogExtra]>
     private(set) var callCount = 0

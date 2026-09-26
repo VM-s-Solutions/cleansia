@@ -114,7 +114,8 @@ public class ReservationIsNotAcceptanceTests
             OrderAccessDoubles.Over(_orderRepository, _session),
             _session.Object,
             new CancellationPolicyResolver(_membershipRepository.Object),
-            _expressWaiverConsumer.Object);
+            _expressWaiverConsumer.Object,
+            TimeProvider.System);
 
     private Order ArrangeReservedOrder(double cleaningInHours)
     {

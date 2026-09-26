@@ -318,12 +318,7 @@ private fun stepCounterLabel(status: OrderStatus?): String {
 
 /* ── 4. Facts ── */
 
-/**
- * `Code D23AF7 ......... 1 660 Kč` — the two facts the pinned header has no room for.
- *
- * The confirmation code is how the customer identifies the person at their door, so it stays reachable
- * at every status rather than only while a cleaner is on the way.
- */
+/** `1 660 Kč` — the fact the pinned header has no room for. */
 @Composable
 internal fun OrderFactsStrip(
     order: OrderDetailDto,
@@ -337,26 +332,8 @@ internal fun OrderFactsStrip(
     Row(
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween,
+        horizontalArrangement = Arrangement.End,
     ) {
-        order.confirmationCode?.takeIf { it.isNotBlank() }?.let { code ->
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(6.dp),
-            ) {
-                Text(
-                    text = stringResource(R.string.order_detail_code_label),
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                Text(
-                    text = code,
-                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                    color = MaterialTheme.colorScheme.onSurface,
-                )
-            }
-        }
-        Spacer(Modifier.width(Spacing.XS))
         Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(6.dp),

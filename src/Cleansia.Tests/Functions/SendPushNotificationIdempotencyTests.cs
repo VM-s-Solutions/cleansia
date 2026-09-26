@@ -74,8 +74,8 @@ public class SendPushNotificationIdempotencyTests
         var handler = CreateHandler();
         var body = SerializeEnvelope(
             new SendPushNotificationMessage(
-                UserId: "USER-1", EventKey: "order.confirmed", Args: new(), TenantId: "TENANT-A"),
-            messageKey: MessageKeys.Push("USER-1", "order.confirmed", "ORDER-1"),
+                UserId: "USER-1", EventKey: "order.cleaner_assigned", Args: new(), TenantId: "TENANT-A"),
+            messageKey: MessageKeys.Push("USER-1", "order.cleaner_assigned", "ORDER-1"),
             tenantId: "TENANT-A");
 
         await handler.HandleAsync(body, CancellationToken.None);
@@ -93,8 +93,8 @@ public class SendPushNotificationIdempotencyTests
         var handler = CreateHandler();
         var body = SerializeEnvelope(
             new SendPushNotificationMessage(
-                UserId: "USER-1", EventKey: "order.confirmed", Args: new(), TenantId: null),
-            messageKey: MessageKeys.Push("USER-1", "order.confirmed", "ORDER-1"),
+                UserId: "USER-1", EventKey: "order.cleaner_assigned", Args: new(), TenantId: null),
+            messageKey: MessageKeys.Push("USER-1", "order.cleaner_assigned", "ORDER-1"),
             tenantId: null);
 
         await handler.HandleAsync(body, CancellationToken.None);
@@ -111,13 +111,13 @@ public class SendPushNotificationIdempotencyTests
     {
         // Guard-first ordering: the key is claimed strictly before SendAsync. We assert that when the
         // claim is already held (a prior delivery won it), no push is sent at all on this run.
-        _guard.PreClaim(MessageKeys.Push("USER-1", "order.confirmed", "ORDER-1"));
+        _guard.PreClaim(MessageKeys.Push("USER-1", "order.cleaner_assigned", "ORDER-1"));
         SetupOneEligibleDevice("USER-1");
         var handler = CreateHandler();
         var body = SerializeEnvelope(
             new SendPushNotificationMessage(
-                UserId: "USER-1", EventKey: "order.confirmed", Args: new(), TenantId: null),
-            messageKey: MessageKeys.Push("USER-1", "order.confirmed", "ORDER-1"),
+                UserId: "USER-1", EventKey: "order.cleaner_assigned", Args: new(), TenantId: null),
+            messageKey: MessageKeys.Push("USER-1", "order.cleaner_assigned", "ORDER-1"),
             tenantId: null);
 
         await handler.HandleAsync(body, CancellationToken.None);
@@ -134,10 +134,10 @@ public class SendPushNotificationIdempotencyTests
     {
         SetupOneEligibleDevice("USER-1");
         var handler = CreateHandler();
-        var key = MessageKeys.Push("USER-1", "order.confirmed", "ORDER-7");
+        var key = MessageKeys.Push("USER-1", "order.cleaner_assigned", "ORDER-7");
         var body = SerializeEnvelope(
             new SendPushNotificationMessage(
-                UserId: "USER-1", EventKey: "order.confirmed", Args: new(), TenantId: null),
+                UserId: "USER-1", EventKey: "order.cleaner_assigned", Args: new(), TenantId: null),
             messageKey: key,
             tenantId: null);
 
@@ -151,8 +151,8 @@ public class SendPushNotificationIdempotencyTests
     {
         // TC-KEY-0: same inputs => same key (no Guid/timestamp). The frozen D2.1 formula.
         Assert.Equal(
-            MessageKeys.Push("USER-1", "order.confirmed", "ORDER-1"),
-            MessageKeys.Push("USER-1", "order.confirmed", "ORDER-1"));
+            MessageKeys.Push("USER-1", "order.cleaner_assigned", "ORDER-1"),
+            MessageKeys.Push("USER-1", "order.cleaner_assigned", "ORDER-1"));
     }
 
     // ── AC5 — a transient-init all-failed no longer masquerades as acked ─────────────
@@ -181,8 +181,8 @@ public class SendPushNotificationIdempotencyTests
 
         var handler = CreateHandler();
         var body = SerializeEnvelope(
-            new SendPushNotificationMessage("USER-1", "order.confirmed", new(), null),
-            messageKey: MessageKeys.Push("USER-1", "order.confirmed", "ORDER-1"),
+            new SendPushNotificationMessage("USER-1", "order.cleaner_assigned", new(), null),
+            messageKey: MessageKeys.Push("USER-1", "order.cleaner_assigned", "ORDER-1"),
             tenantId: null);
 
         await Assert.ThrowsAsync<InvalidOperationException>(() => handler.HandleAsync(body, CancellationToken.None));
@@ -213,8 +213,8 @@ public class SendPushNotificationIdempotencyTests
 
         var handler = CreateHandler();
         var body = SerializeEnvelope(
-            new SendPushNotificationMessage("USER-1", "order.confirmed", new(), null),
-            messageKey: MessageKeys.Push("USER-1", "order.confirmed", "ORDER-1"),
+            new SendPushNotificationMessage("USER-1", "order.cleaner_assigned", new(), null),
+            messageKey: MessageKeys.Push("USER-1", "order.cleaner_assigned", "ORDER-1"),
             tenantId: null);
 
         var ex = await Record.ExceptionAsync(() => handler.HandleAsync(body, CancellationToken.None));
@@ -225,9 +225,9 @@ public class SendPushNotificationIdempotencyTests
     }
 
     [Theory]
-    [InlineData("order.confirmed")]
+    [InlineData("order.cleaner_assigned")]
     [InlineData("order.payment_confirmed")]
-    public async Task Payment_keys_keep_their_own_bare_and_envelope_replay_identity(string eventKey)
+    public async Task Distinct_order_keys_keep_their_own_bare_and_envelope_replay_identity(string eventKey)
     {
         SetupOneEligibleDevice("USER-1");
         var handler = CreateHandler();

@@ -7,10 +7,11 @@ namespace Cleansia.Core.Domain.Repositories;
 public interface IOrderRepository : IRepository<Order, string>
 {
     /// <summary>
-    /// Orders matching the given phone number. Used by UpdateCurrentUser
-    /// to back-fill the phone change onto the user's historical orders.
+    /// The user's own orders that carry the given phone number, for UpdateCurrentUser to back-fill a phone
+    /// change onto. Keyed on the owner too: another customer or a guest who gave the same number, or none,
+    /// is somebody else.
     /// </summary>
-    Task<IReadOnlyList<Order>> GetOrdersByPhoneNumberAsync(string phoneNumber, CancellationToken cancellationToken);
+    Task<IReadOnlyList<Order>> GetOwnOrdersByPhoneNumberAsync(string userId, string phoneNumber, CancellationToken cancellationToken);
 
     /// <summary>
     /// Orders assigned to an employee whose CleaningDateTime falls in the

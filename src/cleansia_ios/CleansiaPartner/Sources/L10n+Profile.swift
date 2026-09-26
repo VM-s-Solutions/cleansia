@@ -299,10 +299,6 @@ extension L10n {
             localized("address_why_reason_jobs")
         }
 
-        static var addressWhyReasonDistancePay: String {
-            localized("address_why_reason_distance_pay")
-        }
-
         static var addressWhyReasonInvoice: String {
             localized("address_why_reason_invoice")
         }

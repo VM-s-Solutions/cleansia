@@ -26,4 +26,10 @@ public record RecurringBookingTemplateDto(
     DateTime? EndsOn,
     DateTime? LastMaterializedFor,
     bool IsActive,
-    string? PreferredEmployeeId = null);
+    string? PreferredEmployeeId = null,
+    /// <summary>
+    /// A cash template whose selection now needs more than one cleaner. It creates no occurrences until
+    /// the customer switches it to card or to a one-cleaner selection; nothing switches it for them.
+    /// Read from the live catalogue, so an edit to a service's duration can set or clear it.
+    /// </summary>
+    bool RequiresPaymentMethodChange = false);

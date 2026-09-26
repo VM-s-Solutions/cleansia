@@ -73,7 +73,7 @@ data class QuoteOrderResponse(
      * send.
      */
     val estimatedDurationMinutes: Int = 0,
-    val requiredEmployees: Int = 1,
+    val requiredEmployees: Int,
     /** Free express upgrades left this calendar month BEFORE this booking. Null with no membership. */
     val expressUpgradesRemaining: Int? = null,
     /**
@@ -166,8 +166,7 @@ data class CreateOrderCommand(
      * rather than coming back as a `CreateOrder` MaximumLength rejection.
      */
     val accessInstructions: String? = null,
-    @EncodeDefault(EncodeDefault.Mode.ALWAYS)
-    val language: String = "en",
+    val language: String,
     /**
      * The review step's terms tick — the one client-asserted member on the booking's audit row.
      * `true` only when the box was shown and ticked; null (absent on the wire) when an account that

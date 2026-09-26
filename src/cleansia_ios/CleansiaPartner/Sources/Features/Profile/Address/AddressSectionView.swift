@@ -237,7 +237,6 @@ private struct WhyWeNeedThisCard: View {
             if expanded {
                 VStack(alignment: .leading, spacing: Spacing.xs) {
                     WhyRow(text: L10n.Profile.addressWhyReasonJobs)
-                    WhyRow(text: L10n.Profile.addressWhyReasonDistancePay)
                     WhyRow(text: L10n.Profile.addressWhyReasonInvoice)
                     Text(L10n.Profile.addressWhyPrivacy)
                         .font(CleansiaTypography.labelSmall)

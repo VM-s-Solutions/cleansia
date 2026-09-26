@@ -29,4 +29,11 @@ public static class OrderDuration
     public static int EstimateMinutes(IEnumerable<Service> services, IEnumerable<Package> packages)
         => services.Sum(s => s.EstimatedTime)
          + packages.Sum(p => p.IncludedServices.Sum(i => i.Service!.EstimatedTime));
+
+    /// <summary>
+    /// The crew the booked minutes need — one cleaner per started <see cref="MinutesPerEmployee"/>,
+    /// and never fewer than one, so a selection with no recorded duration still sends somebody.
+    /// </summary>
+    public static int RequiredEmployees(int estimatedMinutes)
+        => estimatedMinutes <= 0 ? 1 : (int)Math.Ceiling(estimatedMinutes / (double)MinutesPerEmployee);
 }

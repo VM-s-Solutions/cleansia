@@ -349,7 +349,6 @@
       "download_invoice": "Download Invoice",
       "order_status": "Order Status",
       "payment_status": "Payment Status",
-      "confirmation_code": "Confirmation Code",
       "customer_information": "Customer Information",
       "customer_name": "Customer Name",
       "customer_email": "Customer Email",
@@ -977,7 +976,6 @@
       "base_pay_negative": "Base pay cannot be negative",
       "extra_per_room_negative": "Extra per room cannot be negative",
       "extra_per_bathroom_negative": "Extra per bathroom cannot be negative",
-      "distance_rate_negative": "Distance rate cannot be negative",
       "minimum_pay_negative": "Minimum pay cannot be negative",
       "maximum_pay_negative": "Maximum pay cannot be negative",
       "maximum_less_than_minimum": "Maximum pay cannot be less than minimum pay",
@@ -1023,8 +1021,7 @@
       "deletion_blocked_by_order": "Your account can't be deleted while you have active orders.",
       "deletion_blocked_by_invoice": "Your account can't be deleted while invoices are outstanding.",
       "deletion_blocked_by_assigned_order": "Your account can't be deleted while you are still assigned to a job.",
-      "deletion_blocked_by_unsettled_pay": "Your account can't be deleted while pay is still owed to you. Contact the office to settle it first.",
-      "deletion_blocked_by_credit_balance": "Your account can’t be deleted while you still have credit with us. Use it on a booking, or contact the office to be paid out."
+      "deletion_blocked_by_unsettled_pay": "Your account can't be deleted while pay is still owed to you. Contact the office to settle it first."
     },
     "company": {
       "not_found": "Company information not found",
@@ -1139,7 +1136,6 @@
       "step4_desc": "Your earnings are added to your next invoice for the pay period.",
       "status_title": "Order Status Explained",
       "status": {
-        "pending_desc": "A legacy state no new order enters — every order starts as New. Whether the customer has paid is a separate payment status.",
         "confirmed_desc": "A cleaner has taken the job. This says nothing about payment — a cash order is Confirmed before any money moves.",
         "in_progress_desc": "An employee has started working on this order. Cleaning is underway.",
         "completed_desc": "Work is finished, photos uploaded. Ready for payment processing.",

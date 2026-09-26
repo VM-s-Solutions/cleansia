@@ -91,15 +91,10 @@
                     <h2 class="cl-rec__card-title">{{ templateTitle(template) }}</h2>
                     <span
                       class="cl-rec__pill"
-                      [class.cl-rec__pill--on]="template.isActive"
-                      [class.cl-rec__pill--off]="!template.isActive"
+                      [class.cl-rec__pill--on]="booksCleanings(template)"
+                      [class.cl-rec__pill--off]="!booksCleanings(template)"
                     >
-                      {{
-                        (template.isActive
-                          ? 'recurring_booking.status_active'
-                          : 'recurring_booking.paused_badge'
-                        ) | translate
-                      }}
+                      {{ statusKey(template) | translate }}
                     </span>
                   </div>
 
@@ -119,6 +114,23 @@
                       </span>
                     }
                   </div>
+
+                  <!--
+                    A cash schedule that now needs more than one cleaner is skipped, not switched
+                    to card, so it books nothing until the customer changes it.
+                  -->
+                  @if (template.requiresPaymentMethodChange) {
+                    <p class="cl-rec__error" data-spec-cash-change>
+                      <i class="pi pi-exclamation-circle" aria-hidden="true"></i>
+                      {{ 'recurring_booking.cash_change_title' | translate }}
+                    </p>
+                    <p class="cl-rec__hint">
+                      {{ 'recurring_booking.cash_change_body' | translate }}
+                      <a class="cl-link" [routerLink]="editRouteFor(template)">
+                        {{ 'recurring_booking.cash_change_action' | translate }}
+                      </a>
+                    </p>
+                  }
                 </div>
 
                 <!--

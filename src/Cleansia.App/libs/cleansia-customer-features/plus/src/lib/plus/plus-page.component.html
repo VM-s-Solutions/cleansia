@@ -221,6 +221,14 @@
         </span>
       </div>
 
+      <div class="cl-plusp__row">
+        <span class="cl-plusp__row-label">{{ 'pages.plus.row_grace' | translate }}</span>
+        <span class="cl-muted" [attr.data-label]="'pages.plus.compare_without' | translate">{{ 'pages.plus.row_grace_without' | translate }}</span>
+        <span class="cl-plusp__yes" [attr.data-label]="'pages.plus.compare_with' | translate">
+          <i class="pi pi-check"></i>{{ 'pages.plus.row_grace_with' | translate }}
+        </span>
+      </div>
+
       @if (facade.hasExpressPerk()) {
         <div class="cl-plusp__row">
           <span class="cl-plusp__row-label">{{ 'pages.plus.row_express' | translate }}</span>
@@ -287,7 +295,11 @@
               @if (facade.submitting()) {
                 <i class="pi pi-spin pi-spinner" aria-hidden="true"></i>
               }
-              {{ 'pages.plus.cta_try_free' | translate }}
+              @if (facade.trialDays() > 0) {
+                {{ 'pages.plus.cta_try_free' | translate }}
+              } @else {
+                {{ 'pages.plus.cta_subscribe' | translate }}
+              }
             </button>
           </div>
         }
@@ -320,7 +332,11 @@
               @if (facade.submitting()) {
                 <i class="pi pi-spin pi-spinner" aria-hidden="true"></i>
               }
-              {{ 'pages.plus.cta_try_free' | translate }}
+              @if (facade.trialDays() > 0) {
+                {{ 'pages.plus.cta_try_free' | translate }}
+              } @else {
+                {{ 'pages.plus.cta_subscribe' | translate }}
+              }
             </button>
           </div>
         }
@@ -384,8 +400,7 @@
 
       <!--
         "Cancel", not "pause". There is no pause: cancel-at-period-end is the
-        only exit, and Stripe honours a trial once per customer, so someone who
-        leaves and comes back does not get another free period.
+        only exit.
       -->
       <div class="cl-plusp__qa">
         <i class="pi pi-question-circle"></i>

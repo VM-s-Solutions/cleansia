@@ -20,7 +20,6 @@ public static class OrderPiiRedaction
             CustomerEmail = string.Empty,
             CustomerPhone = string.Empty,
             CustomerAddress = string.Empty,
-            ConfirmationCode = string.Empty,
             CustomerAddressLatitude = null,
             CustomerAddressLongitude = null,
         };
@@ -45,7 +44,6 @@ public static class OrderPiiRedaction
             CustomerEmail = string.Empty,
             CustomerPhone = string.Empty,
             Address = null,
-            ConfirmationCode = string.Empty,
             Notes = null,
             SpecialInstructions = null,
             AccessInstructions = null,

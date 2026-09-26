@@ -85,7 +85,7 @@ public sealed class NotificationProducerFeedRowTests : IDisposable
     {
         await EnsureSchemaAsync();
         await using var ctx = NewContext();
-        await NewProducer(ctx).NotifyAsync("missing-user", NotificationEventCatalog.OrderConfirmed,
+        await NewProducer(ctx).NotifyAsync("missing-user", NotificationEventCatalog.OrderCleanerAssigned,
             OrderArgs("missing-order"), TenantId, "missing-order", CancellationToken.None);
         await ctx.CommitAsync(CancellationToken.None);
         Assert.Empty(await ReadRowsAsync());
@@ -102,7 +102,7 @@ public sealed class NotificationProducerFeedRowTests : IDisposable
         await using (var ctx = NewContext())
         {
             await NewProducer(ctx).NotifyAsync(
-                UserId, NotificationEventCatalog.OrderConfirmed, OrderArgs("order-1"),
+                UserId, NotificationEventCatalog.OrderCleanerAssigned, OrderArgs("order-1"),
                 TenantId, "order-1", CancellationToken.None);
             ctx.Languages.Add(Language.Create("xx", "X-Language"));
             await ctx.CommitAsync(CancellationToken.None);
@@ -110,7 +110,7 @@ public sealed class NotificationProducerFeedRowTests : IDisposable
 
         var row = Assert.Single(await ReadRowsAsync());
         Assert.Equal(UserId, row.UserId);
-        Assert.Equal(NotificationEventCatalog.OrderConfirmed, row.EventKey);
+        Assert.Equal(NotificationEventCatalog.OrderCleanerAssigned, row.EventKey);
         Assert.Equal(TenantId, row.TenantId);
         Assert.Null(row.ReadOn);
         var args = JsonSerializer.Deserialize<Dictionary<string, string>>(row.ArgsJson);
@@ -120,7 +120,7 @@ public sealed class NotificationProducerFeedRowTests : IDisposable
         var outbox = Assert.Single(await ReadOutboxAsync());
         Assert.Equal(QueueNames.NotificationsDispatch, outbox.QueueName);
         Assert.Equal(
-            MessageKeys.Push(UserId, NotificationEventCatalog.OrderConfirmed, "order-1"),
+            MessageKeys.Push(UserId, NotificationEventCatalog.OrderCleanerAssigned, "order-1"),
             outbox.MessageKey);
     }
 

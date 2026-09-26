@@ -283,8 +283,8 @@ private fun ServiceAreaRow(status: ServiceAreaStatus) {
 /**
  * Collapsed-by-default "Why we need this" explainer. Builds trust at
  * onboarding ("why do you want my home address") without inventing form
- * fields. Three concrete reasons rendered as bullet rows so the cleaner
- * sees exactly what their address powers.
+ * fields. Concrete reasons rendered as bullet rows so the cleaner sees
+ * exactly what their address powers.
  */
 @Composable
 private fun WhyWeNeedThisCard() {
@@ -326,7 +326,6 @@ private fun WhyWeNeedThisCard() {
                     verticalArrangement = Arrangement.spacedBy(Spacing.XS),
                 ) {
                     WhyRow(text = stringResource(R.string.address_why_reason_jobs))
-                    WhyRow(text = stringResource(R.string.address_why_reason_distance_pay))
                     WhyRow(text = stringResource(R.string.address_why_reason_invoice))
                     Spacer(Modifier.height(Spacing.XXS))
                     Text(

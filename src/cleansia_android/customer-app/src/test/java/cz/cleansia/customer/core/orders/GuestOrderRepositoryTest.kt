@@ -28,36 +28,37 @@ class GuestOrderRepositoryTest {
         every { getString(R.string.error_order_not_found) } returns "Booking not found"
     }
     private val repository = GuestOrderRepository(api, context)
-    private val problem = """{"title":"One or more validation errors occurred.","status":400,"errors":{"DisplayOrderNumber":["order.not_found"]}}"""
+    private val problem =
+        """{"title":"One or more validation errors occurred.","status":400,"errors":{"AccessToken":["order.not_found"]}}"""
 
     @Test
-    fun `wrong key and account owned preview use the same localized problem response`() = runTest {
-        coEvery { api.lookup(any(), any(), any()) } returns Response.error(
+    fun `wrong token and account owned preview use the same localized problem response`() = runTest {
+        coEvery { api.lookup(any()) } returns Response.error(
             400, problem.toResponseBody("application/problem+json".toMediaType()),
         )
-        coEvery { api.preview(any(), any(), any()) } returns Response.error(
+        coEvery { api.preview(any()) } returns Response.error(
             400, problem.toResponseBody("application/problem+json".toMediaType()),
         )
-        val lookup = repository.lookup("wrong", "guest@example.test", "secret") as ApiResult.Error
-        val preview = repository.preview("CZ-123", "guest@example.test", "secret") as ApiResult.Error
+        val lookup = repository.lookup("wrong-token") as ApiResult.Error
+        val preview = repository.preview("tok-1") as ApiResult.Error
         assertEquals("Booking not found", lookup.error.getUserMessage())
         assertEquals(lookup.error, preview.error)
     }
 
     @Test
     fun `malformed successful lookup stays a contract error instead of a network error`() = runTest {
-        coEvery { api.lookup(any(), any(), any()) } throws WireContractViolation("totalPrice")
-        val result = repository.lookup("CZ-123", "guest@example.test", "secret") as ApiResult.Error
+        coEvery { api.lookup(any()) } throws WireContractViolation("totalPrice")
+        val result = repository.lookup("tok-1") as ApiResult.Error
         assertTrue(result.error is ApiError.Server)
         assertTrue((result.error as ApiError.Server).diagnostic!!.startsWith("totalPrice "))
     }
 
     @Test
     fun `cancel refusal remains an error instead of a successful receipt`() = runTest {
-        coEvery { api.cancel(any(), any(), any(), any(), any()) } returns Response.error(
+        coEvery { api.cancel(any(), any(), any()) } returns Response.error(
             400, problem.toResponseBody("application/problem+json".toMediaType()),
         )
-        val result = repository.cancel("CZ-123", "guest@example.test", "secret", "schedule_changed", "en")
+        val result = repository.cancel("tok-1", "schedule_changed", "en")
         assertTrue(result is ApiResult.Error)
     }
 }

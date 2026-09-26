@@ -202,7 +202,8 @@ public class PreferredOfferExitAgreementTests
             Mock.Of<ITenantRepository>(),
             _expressWaiverConsumer.Object,
             _userMembershipRepository.Object,
-            WorkContractTestData.AcceptanceRepository().Object);
+            WorkContractTestData.AcceptanceRepository().Object,
+            Mock.Of<IEmployeeActionAuditRepository>());
 
     private ChoosePreferredCleaner.Handler CreateChooseHandler() =>
         new(

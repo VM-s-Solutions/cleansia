@@ -87,6 +87,8 @@ public static class BusinessErrorMessage
     // Cash-collection gating (cleaner marks cash collected before an order can be completed).
     public const string OrderCashAlreadyCollected = "order.cash_already_collected";
     public const string OrderCashNotCollected = "order.cash_not_collected";
+    /// <summary>Cash is only for a signed-in customer whose booking needs one cleaner; anything else pays by card.</summary>
+    public const string OrderCashNotAvailable = "order.cash_not_available";
     public const string OrderPaymentNotConfirmed = "order.payment_not_confirmed";
     // Reconciliation outcomes when the cleaner tries to take cash for an order booked on a card: the
     // handler asks Stripe what really happened before any second tender is recorded.
@@ -136,6 +138,7 @@ public static class BusinessErrorMessage
     /// </summary>
     public const string PreferredOfferClosed = "order.preferred_offer_closed";
     public const string OrderSpanExceedsMaximum = "order.span_exceeds_maximum";
+    public const string OrderSizeExceedsMaximum = "order.size_exceeds_maximum";
 
     // Cleansia Plus / membership errors. Surfaced by the subscribe + cancel
     // flows; the customer UI maps each key to a localized snackbar string.
@@ -320,7 +323,6 @@ public static class BusinessErrorMessage
     public const string PayConfigBasePayNegative = "pay_config.base_pay_negative";
     public const string PayConfigExtraPerRoomNegative = "pay_config.extra_per_room_negative";
     public const string PayConfigExtraPerBathroomNegative = "pay_config.extra_per_bathroom_negative";
-    public const string PayConfigDistanceRateNegative = "pay_config.distance_rate_negative";
     public const string PayConfigMinimumPayNegative = "pay_config.minimum_pay_negative";
     public const string PayConfigMaximumPayNegative = "pay_config.maximum_pay_negative";
     public const string PayConfigMaximumLessThanMinimum = "pay_config.maximum_less_than_minimum";
@@ -397,8 +399,6 @@ public static class BusinessErrorMessage
     /// <summary>Cash cannot settle an order part of which the customer already paid in credit.</summary>
     public const string CashNotCollectableOnCreditOrder = "credit.cash_not_collectable_on_credit_order";
 
-    /// <summary>Erasure refused: the platform still owes this customer a credit balance.</summary>
-    public const string GdprDeletionBlockedByCreditBalance = "gdpr.deletion_blocked_by_credit_balance";
     public const string InvalidRefundAmount = "dispute.invalid_refund_amount";
     public const string MaxLengthExceeded = "dispute.max_length_exceeded";
     public const string DisputeNotOwnedByUser = "dispute.not_owned_by_user";

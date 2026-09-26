@@ -106,7 +106,7 @@ public class GetPagedOrders
 
             var totalItems = await orderRepository.GetCountAsync(filter, cancellationToken);
             // Server-side projection onto exactly the columns the list DTO reads (plus the
-            // sidecar fields this handler needs: assignee ids, travel distance, address id) —
+            // sidecar fields this handler needs: assignee ids, address id) —
             // the previous full-graph Include set paid ~7 split queries per page for mostly
             // unread columns.
             var orders = await orderRepository

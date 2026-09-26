@@ -231,9 +231,17 @@ public class PreferredCleanerHoldResolverTests
             Times.Never);
     }
 
-    [Fact]
-    public async Task An_Eligible_Cleaner_Earns_A_Hold_Of_The_Policy_Window()
+    [Theory]
+    [InlineData(ContractStatus.Approved)]
+    [InlineData(ContractStatus.Active)]
+    public async Task An_Eligible_Cleaner_Earns_A_Hold_Of_The_Policy_Window(ContractStatus status)
     {
+        var cleaner = NewCleaner();
+        cleaner.UpdateContractStatus(status);
+        _employees
+            .Setup(r => r.GetByIdAsync(CleanerId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(cleaner);
+
         var outcome = await ResolveAsync();
 
         Assert.True(outcome.NotifyPreferred);

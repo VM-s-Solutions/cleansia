@@ -16,9 +16,10 @@ extension GuestOrderUiState {
     }
 }
 
-/// Mirrors Android's `GuestOrderViewModel`. The credentials live only here, for as long as the looked-up
-/// booking is on screen — never in a route, saved state or log — and every async answer is checked
-/// against a generation counter so a reply for a booking the guest has since edited away cannot land.
+/// Mirrors Android's `GuestOrderViewModel`. The access token lives only here, for as long as the
+/// looked-up booking is on screen — never in a route, saved state or log — and every async answer is
+/// checked against a generation counter so a reply for a booking the guest has since edited away
+/// cannot land.
 @MainActor
 final class GuestOrderViewModel: ViewModel {
     @Published private(set) var state: GuestOrderUiState = .empty
@@ -30,7 +31,7 @@ final class GuestOrderViewModel: ViewModel {
     private let settings: AppSettingsStore
     private let localizer: ApiErrorLocalizing
 
-    private var credentials: GuestOrderKey?
+    private var credential: GuestOrderKey?
     private var generation = 0
     private var quoteGeneration = 0
 
@@ -48,25 +49,25 @@ final class GuestOrderViewModel: ViewModel {
     func clear() {
         generation += 1
         quoteGeneration += 1
-        credentials = nil
+        credential = nil
         state = .empty
         quote = .loading
         cancelState = .idle
         isCancellationPresented = false
     }
 
-    func onCredentialsChanged() {
+    func onLinkChanged() {
         if !cancelState.isSubmitting { clear() }
     }
 
-    func lookup(number: String, email: String, code: String) async {
+    func lookup(pasted: String) async {
         guard !cancelState.isSubmitting, state != .loading else { return }
         clear()
-        guard let key = GuestOrderKey(number: number, email: email, code: code) else {
+        guard let key = GuestOrderKey(pasted: pasted) else {
             state = .error(L10n.GuestOrder.required)
             return
         }
-        credentials = key
+        credential = key
         let current = generation
         state = .loading
         let result = await client.lookup(key)
@@ -99,7 +100,7 @@ final class GuestOrderViewModel: ViewModel {
     /// figures on the card are the only ones the guest will read before they commit.
     func loadQuote() async {
         guard isCancellationPresented, !cancelState.isSubmitting,
-              let key = credentials, let order = state.loadedOrder
+              let key = credential, let order = state.loadedOrder
         else { return }
         let current = generation
         quoteGeneration += 1
@@ -120,7 +121,7 @@ final class GuestOrderViewModel: ViewModel {
 
     func cancel(reason: String?) async {
         guard isCancellationPresented, !cancelState.isSubmitting,
-              let key = credentials, let order = state.loadedOrder, order.isCancellable,
+              let key = credential, let order = state.loadedOrder, order.isCancellable,
               let reason, !reason.isBlank, reason.utf16.count <= CancelReasonLimit.maxUtf16Length,
               CancelOrderConfirmGate.quoteIsUsable(quote)
         else { return }
@@ -130,7 +131,7 @@ final class GuestOrderViewModel: ViewModel {
         guard current == generation else { return }
         switch result {
         case let .success(receipt):
-            credentials = nil
+            credential = nil
             state = .cancelled(successMessage(receipt, currencyCode: order.currencyCode))
             isCancellationPresented = false
             cancelState = .idle

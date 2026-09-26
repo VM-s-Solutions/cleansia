@@ -564,7 +564,7 @@ public class RecurringPauseNotificationTests(PostgresContainerFixture fixture) :
     }
 
     [Fact]
-    public async Task Legacy_and_canonical_payment_notifications_keep_feed_preferences_and_replay_identity()
+    public async Task Two_distinct_order_notifications_keep_feed_preferences_and_replay_identity()
     {
         var run = new Run();
         await TestMethod<bool>(setup: run.Setup, arrange: (CleansiaDbContext db) => Seed(db), act: async (IServiceProvider provider) =>
@@ -572,7 +572,7 @@ public class RecurringPauseNotificationTests(PostgresContainerFixture fixture) :
             using (var action = provider.CreateScope())
             {
                 var producer = action.ServiceProvider.GetRequiredService<INotificationProducer>();
-                foreach (var key in new[] { NotificationEventCatalog.OrderConfirmed, NotificationEventCatalog.OrderPaymentConfirmed })
+                foreach (var key in new[] { NotificationEventCatalog.OrderCleanerAssigned, NotificationEventCatalog.OrderPaymentConfirmed })
                     await producer.NotifyAsync(UserA, key, new Dictionary<string, string> { ["orderId"] = "old-order", ["orderNumber"] = "A-1234" },
                         TestTenants.Second, "old-order", CancellationToken.None);
                 await action.ServiceProvider.GetRequiredService<CleansiaDbContext>().CommitAsync(CancellationToken.None);
@@ -591,13 +591,13 @@ public class RecurringPauseNotificationTests(PostgresContainerFixture fixture) :
                 await Dispatch(provider, json.RootElement.GetProperty("payload").GetRawText());
             }
             Assert.Equal(2, run.Sent.Count);
-            Assert.Contains(run.Sent, x => x.Event == "order.confirmed");
+            Assert.Contains(run.Sent, x => x.Event == "order.cleaner_assigned");
             Assert.Contains(run.Sent, x => x.Event == "order.payment_confirmed");
             return true;
         }, assert: async (CleansiaDbContext db, bool _) =>
         {
             var keys = await db.OutboxMessages.IgnoreQueryFilters().Select(x => x.MessageKey).ToListAsync();
-            Assert.Contains($"push:{UserA}:order.confirmed:old-order", keys);
+            Assert.Contains($"push:{UserA}:order.cleaner_assigned:old-order", keys);
             Assert.Contains($"push:{UserA}:order.payment_confirmed:old-order", keys);
         }, transactional: false);
     }

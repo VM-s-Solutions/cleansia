@@ -100,4 +100,9 @@ public record CreateOrderInput(
     /// </summary>
     string? CustomerFloor = null,
     string? CustomerApartment = null,
-    string? AccessMode = null);
+    string? AccessMode = null,
+    /// <summary>
+    /// The language the booking request was made in. Null for the recurring pipeline: an occurrence has
+    /// no request of its own, so its documents fall back to the account's preference.
+    /// </summary>
+    string? LanguageCode = null);

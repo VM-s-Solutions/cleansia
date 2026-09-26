@@ -10,7 +10,6 @@ public record EmployeePayConfigSummaryItemDto(
     decimal BasePay,
     decimal ExtraPerRoom,
     decimal ExtraPerBathroom,
-    decimal DistanceRatePerKm,
     decimal MinimumPay,
     decimal MaximumPay,
     string? CurrencyId,

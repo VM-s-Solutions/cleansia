@@ -15,6 +15,8 @@ using MediatR;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
+using Cleansia.Core.AppServices.Features.Orders;
+using Cleansia.Tests.Infrastructure;
 
 namespace Cleansia.Tests.Functions;
 
@@ -81,7 +83,8 @@ public sealed class ArchivedCompanyConsumerClassificationTests
         // The claim commit is where the frozen company's guard fires: the receipt row is books.
         unitOfWork.Setup(u => u.CommitAsync(It.IsAny<CancellationToken>())).ThrowsAsync(new CompanyArchivedException(TenantId));
         var handler = new GenerateReceiptHandler(
-            orders.Object, receipts.Object, Mock.Of<IEmailService>(), Mock.Of<ICountryConfigurationRepository>(),
+            orders.Object, receipts.Object, Mock.Of<IEmailService>(), TestGuestOrderAccessTokenIssuer.WithNoLiveTokens(),
+            Mock.Of<ICountryConfigurationRepository>(),
             unitOfWork.Object, Mock.Of<ITenantProvider>(), DeadLetter(), NullLogger<GenerateReceiptHandler>.Instance);
         var body = JsonSerializer.Serialize(
             new QueueEnvelope<GenerateReceiptMessage>(MessageKeys.Receipt(order.Id), TenantId, new GenerateReceiptMessage(order.Id, "en")), CamelCase);

@@ -256,7 +256,7 @@ enum RewardsTierStyle {
                         nextTier: 3,
                         currentDiscountPercent: 0.05,
                         currentDiscountMinOrderAmount: 1000,
-                        currentPerks: [TierPerk(icon: nil, labelKey: "loyalty.perks.priority_support")]
+                        currentPerks: [TierPerk(icon: "badge", labelKey: "loyalty.perks.welcome_badge")]
                     ),
                     tiers: [
                         TierInfo(

@@ -68,7 +68,7 @@ final class RewardsViewModelTests: XCTestCase {
             lifetimePoints: 600,
             pointsToNextTier: 400,
             nextTier: 3,
-            perks: [TierPerk(icon: "star", labelKey: "loyalty.perks.priority_support")]
+            perks: [TierPerk(icon: "badge", labelKey: "loyalty.perks.welcome_badge")]
         ))
         loyalty.tiersResult = .success([LoyaltyFixtures.tier(1, threshold: 0), LoyaltyFixtures.tier(2, threshold: 500)])
         loyalty.activityPages = [LoyaltyActivityPage(items: [LoyaltyFixtures.activityItem()], total: 1)]

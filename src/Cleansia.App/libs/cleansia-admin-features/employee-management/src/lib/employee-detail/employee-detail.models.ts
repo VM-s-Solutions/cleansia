@@ -25,7 +25,6 @@ export interface EmployeePayConfigFormValue {
   basePay: number | null;
   extraPerRoom: number | null;
   extraPerBathroom: number | null;
-  distanceRatePerKm: number | null;
   minimumPay: number | null;
   maximumPay: number | null;
   description: string | null;

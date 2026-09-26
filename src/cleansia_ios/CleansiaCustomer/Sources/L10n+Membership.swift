@@ -122,6 +122,14 @@ extension L10n {
             localized("membership_perk_express_desc")
         }
 
+        static var perkGraceTitle: String {
+            localized("membership_perk_grace_title")
+        }
+
+        static var perkGraceDesc: String {
+            localized("membership_perk_grace_desc")
+        }
+
         static var successPerkExpress: String {
             localized("membership_success_perk_express")
         }

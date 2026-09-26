@@ -111,7 +111,8 @@ struct ConfirmStep: View {
     }
 
     private var paymentSection: some View {
-        VStack(alignment: .leading, spacing: Spacing.s) {
+        let cash = viewModel.cashEligibility
+        return VStack(alignment: .leading, spacing: Spacing.s) {
             Text(L10n.Booking.paymentMethod)
                 .font(CleansiaTypography.titleMedium)
                 .fontWeight(.semibold)
@@ -122,7 +123,7 @@ struct ConfirmStep: View {
                     title: L10n.Booking.payCard,
                     subtitle: L10n.Booking.payCardDesc,
                     selected: viewModel.state.paymentMethod == .card,
-                    action: { setPayment(.card) }
+                    action: { viewModel.selectPayment(.card) }
                 )
             }
             PaymentOption(
@@ -130,16 +131,15 @@ struct ConfirmStep: View {
                 title: L10n.Booking.payCash,
                 subtitle: L10n.Booking.payCashDesc,
                 selected: viewModel.state.paymentMethod == .cash,
-                action: { setPayment(.cash) }
+                enabled: cash == .available,
+                action: { viewModel.selectPayment(.cash) }
             )
-        }
-    }
-
-    private func setPayment(_ method: PaymentMethod) {
-        viewModel.update { current in
-            var next = current
-            next.paymentMethod = method
-            return next
+            if viewModel.cashCleared, cash != .available {
+                PaymentNote(systemImage: "exclamationmark.circle", text: L10n.Booking.cashCleared, warns: true)
+            }
+            if let reason = L10n.Booking.cashReason(cash) {
+                PaymentNote(systemImage: "info.circle", text: reason)
+            }
         }
     }
 

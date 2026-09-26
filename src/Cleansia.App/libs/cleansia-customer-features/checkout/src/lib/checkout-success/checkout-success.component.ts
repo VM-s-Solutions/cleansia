@@ -11,30 +11,53 @@ import { Title } from '@angular/platform-browser';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { GuestOrderService, TrackOrderFacade } from '@cleansia-customer/orders';
 import {
+  CUSTOMER_API_BASE_URL,
   CustomerAuthService,
+  CustomerOrderClient,
   LookupOrderResponse,
 } from '@cleansia/customer-services';
-import { CleansiaCustomerRoute } from '@cleansia/services';
+import {
+  CleansiaCustomerRoute,
+  errorToastSuppressingHttpClient,
+} from '@cleansia/services';
 import { formatMoney, localeFor } from '@cleansia/utils';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { catchError, map, of } from 'rxjs';
+import { catchError, map, Observable, of } from 'rxjs';
+
+/**
+ * What this page reads off a booking. The guest lookup and the signed-in order detail are different
+ * DTOs that answer these members identically, which is why one template serves both.
+ */
+type ConfirmedBooking = Pick<
+  LookupOrderResponse,
+  | 'displayOrderNumber'
+  | 'cleaningDateTime'
+  | 'totalPrice'
+  | 'currency'
+  | 'selectedServices'
+  | 'selectedPackages'
+>;
 
 /**
  * The page a customer lands on after paying — the owner picked the "Katalog"
  * board for it (2026-09-02): a page on the site rather than a receipt slip.
  * The slip's job is done by the confirmation e-mail.
  *
- * It shows the ORDER, which it has to find for itself. Neither path carries it
- * in the URL: the cash path navigates here with only `?type=cash`, and the card
- * path leaves for Stripe and comes back to a URL Stripe builds. But the wizard
- * writes `(orderId, email)` to `GuestOrderService` immediately before either
- * departure — for signed-in customers too — so the newest entry there IS this
- * order, and one anonymous lookup turns it into something worth showing.
+ * It shows the ORDER when it can prove it. Both paths name the booking in the
+ * URL — the wizard puts `?orderId=` on the cash navigation and Stripe returns
+ * it on the card one — and an id in a URL proves nothing, so each visitor reads
+ * it back with what they actually hold: a guest with the booking's access token,
+ * which the wizard wrote to `GuestOrderService` from the create response, and a
+ * signed-in customer with their session, through the same order detail their
+ * orders page reads. A guest booking mints no token for an account and an
+ * account booking mints none at all, so the two reads never cross.
  *
- * When that lookup finds nothing the page keeps its headline, its three steps
- * and its actions and simply states no figures. A confirmation that cannot
- * prove what it is confirming should not invent it.
+ * When neither can prove it — a browser that did not place this booking, a
+ * session the booking does not belong to — the page keeps its headline, its
+ * three steps and its actions and simply states no figures, saying nothing
+ * about whether that booking exists. A confirmation that cannot prove what it
+ * is confirming should not invent it.
  */
 @Component({
   selector: 'cleansia-customer-checkout-success',
@@ -50,10 +73,17 @@ export class CheckoutSuccessComponent implements OnInit {
   private readonly titleService = inject(Title);
   private readonly translate = inject(TranslateService);
   private readonly guestOrders = inject(GuestOrderService);
-  // The same wrapper the tracking page uses. The customer order client has no
-  // DI registration in this app, and building a second hand-wired copy of it
-  // here is how the two would have drifted.
+  // The guest read borrows the tracking page's facade rather than a second hand-wired copy of the
+  // client it holds — that is how the two would have drifted.
   private readonly lookupFacade = inject(TrackOrderFacade);
+  // The signed-in read is the account's own order detail, built here rather than taken from
+  // `CustomerClient` for one reason: that wrapper hands its sub-clients the ambient HttpClient,
+  // which is the one the shared error snackbar rides, and a booking this session cannot open has to
+  // be silence on the confirmation rather than a red toast over it.
+  private readonly ownBookings = new CustomerOrderClient(
+    errorToastSuppressingHttpClient(),
+    inject(CUSTOMER_API_BASE_URL),
+  );
 
   readonly routes = CleansiaCustomerRoute;
   readonly ordersRoute = this.authService.isLoggedIn()
@@ -82,7 +112,7 @@ export class CheckoutSuccessComponent implements OnInit {
     { initialValue: this.translate.currentLang || this.translate.getDefaultLang() },
   );
 
-  readonly order = signal<LookupOrderResponse | null>(null);
+  readonly order = signal<ConfirmedBooking | null>(null);
   readonly hasOrder = computed(() => this.order() !== null);
 
   constructor() {
@@ -95,27 +125,32 @@ export class CheckoutSuccessComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    // Stripe's success URL carries `?orderId=`, so on the card path the page is TOLD which order
-    // it is confirming. Match that against the remembered entries rather than assuming the newest
-    // is the right one — a customer with two bookings open in two tabs would otherwise be shown
-    // the wrong figures. The cash path navigates here without an orderId and still falls back to
-    // the newest, which is correct there because it was written moments earlier.
-    const remembered = this.guestOrders.getAll();
+    // The page only ever shows the booking it was TOLD about. It used to fall back to the newest
+    // remembered entry when the URL named nothing, which on a second tab confirmed a different
+    // booking's figures.
     const fromUrl = this.orderIdFromUrl();
-    const latest = (fromUrl && remembered.find((o) => o.orderId === fromUrl)) || remembered[0];
-    if (!latest) return;
+    if (!fromUrl) return;
 
-    // BATCH, not the single lookup. `GuestOrderService` stores the order's
-    // ULID, and `LookupOrder` matches on DisplayOrderNumber — a ULID is never
-    // a display number, so the single lookup could not have matched a real
-    // order. `LookupOrderBatch` is keyed on `Order.Id`, which is what is
-    // stored, and it needs no confirmation code precisely because that id is
-    // itself the secret: 26 unguessable characters the browser only holds
-    // because it placed the order.
-    this.lookupFacade
-      .lookupBatch([{ orderId: latest.orderId, email: latest.email }])
+    const found: Observable<ConfirmedBooking | null> | null = this.authService.isLoggedIn()
+      ? this.ownBookings.getById(fromUrl)
+      : this.rememberedBooking(fromUrl);
+    if (!found) return;
+
+    found
       .pipe(catchError(() => of(null)))
-      .subscribe((result) => this.order.set(result?.orders?.[0] ?? null));
+      .subscribe((booking) => this.order.set(booking ?? null));
+  }
+
+  /**
+   * A refused read and an unknown booking answer the same way — null — so the page cannot be asked
+   * whether somebody else's order exists.
+   */
+  private rememberedBooking(orderId: string): Observable<ConfirmedBooking | null> | null {
+    const remembered = this.guestOrders.getAll().find((o) => o.orderId === orderId);
+    if (!remembered) return null;
+    return this.lookupFacade
+      .lookupBatch([remembered.accessToken])
+      .pipe(map((result) => result.orders?.[0] ?? null));
   }
 
   formatDateTime(date: Date | undefined): string {
@@ -161,7 +196,7 @@ export class CheckoutSuccessComponent implements OnInit {
     ].filter((i) => i.name !== '');
   });
 
-  formatPrice(order: LookupOrderResponse): string {
+  formatPrice(order: ConfirmedBooking): string {
     return formatMoney(
       order.totalPrice ?? 0,
       order.currency?.code,

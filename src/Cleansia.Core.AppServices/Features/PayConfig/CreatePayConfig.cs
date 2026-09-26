@@ -17,7 +17,6 @@ public class CreatePayConfig
         decimal BasePay,
         decimal ExtraPerRoom,
         decimal ExtraPerBathroom,
-        decimal DistanceRatePerKm,
         decimal MinimumPay,
         decimal MaximumPay,
         string CurrencyId,
@@ -123,10 +122,6 @@ public class CreatePayConfig
                 .GreaterThanOrEqualTo(0)
                 .WithMessage(BusinessErrorMessage.PayConfigExtraPerBathroomNegative);
 
-            RuleFor(x => x.DistanceRatePerKm)
-                .GreaterThanOrEqualTo(0)
-                .WithMessage(BusinessErrorMessage.PayConfigDistanceRateNegative);
-
             RuleFor(x => x.MinimumPay)
                 .GreaterThanOrEqualTo(0)
                 .WithMessage(BusinessErrorMessage.PayConfigMinimumPayNegative);
@@ -167,7 +162,6 @@ public class CreatePayConfig
                     command.CurrencyId,
                     command.ExtraPerRoom,
                     command.ExtraPerBathroom,
-                    command.DistanceRatePerKm,
                     command.Description,
                     command.EmployeeId);
             }
@@ -179,7 +173,6 @@ public class CreatePayConfig
                     command.CurrencyId,
                     command.ExtraPerRoom,
                     command.ExtraPerBathroom,
-                    command.DistanceRatePerKm,
                     command.Description,
                     command.EmployeeId);
             }

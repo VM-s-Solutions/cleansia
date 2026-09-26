@@ -81,6 +81,24 @@ extension L10n.Booking {
         L10n.localized("booking_market_selection_pruned")
     }
 
+    static var cashCleared: String {
+        L10n.localized("booking_cash_cleared")
+    }
+
+    /// Why cash cannot be chosen right now, or nil when it can.
+    static func cashReason(_ eligibility: CashEligibility) -> String? {
+        switch eligibility {
+        case .available: nil
+        case .needsAccount: L10n.localized("booking_cash_needs_account")
+        case let .needsCard(requiredCleaners): L10n.format("booking_cash_needs_card", requiredCleaners)
+        case .pending: L10n.localized("booking_cash_pending")
+        }
+    }
+
+    static var cancelGraceNote: String {
+        L10n.localized("booking_cancel_grace_note")
+    }
+
     static var successTitle: String {
         L10n.localized("booking_success_title")
     }

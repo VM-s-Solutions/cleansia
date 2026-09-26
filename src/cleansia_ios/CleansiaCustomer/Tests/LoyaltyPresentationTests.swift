@@ -98,11 +98,11 @@ final class LoyaltyPresentationTests: XCTestCase {
         XCTAssertEqual(effective.first?.labelKey, "loyalty.perks.welcome_badge")
 
         let supplied = LoyaltyPresentation.effectivePerks([TierPerk(
-            icon: "x",
-            labelKey: "loyalty.perks.dedicated_pool"
+            icon: "percent",
+            labelKey: "loyalty.perks.discount_5_above_1000"
         )])
         XCTAssertEqual(supplied.count, 1)
-        XCTAssertEqual(supplied.first?.labelKey, "loyalty.perks.dedicated_pool")
+        XCTAssertEqual(supplied.first?.labelKey, "loyalty.perks.discount_5_above_1000")
     }
 
     func testTransactionDescriptionPerSource() {

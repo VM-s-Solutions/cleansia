@@ -222,6 +222,7 @@ public sealed class AuditSensitiveSnapshotTests
         var auditContext = new AuditContext();
         var config = EmployeePayConfig.CreateForService("svc-pay", basePay: 100m, currencyId: "czk", employeeId: "emp-7");
         config.Id = "paycfg-1";
+        typeof(EmployeePayConfig).GetProperty(nameof(EmployeePayConfig.DistanceRatePerKm))!.SetValue(config, 2m);
 
         var payConfigRepository = new Mock<IEmployeePayConfigRepository>();
         payConfigRepository.Setup(r => r.GetByIdAsync("paycfg-1", It.IsAny<CancellationToken>())).ReturnsAsync(config);
@@ -229,7 +230,7 @@ public sealed class AuditSensitiveSnapshotTests
         var handler = new UpdatePayConfig.Handler(payConfigRepository.Object, auditContext);
         var result = await handler.Handle(
             new UpdatePayConfig.Command("paycfg-1", BasePay: 150m, ExtraPerRoom: 10m, ExtraPerBathroom: 5m,
-                DistanceRatePerKm: 2m, MinimumPay: 0m, MaximumPay: 0m, Description: null),
+                MinimumPay: 0m, MaximumPay: 0m, Description: null),
             CancellationToken.None);
 
         Assert.True(result.IsSuccess);
@@ -239,6 +240,9 @@ public sealed class AuditSensitiveSnapshotTests
         Assert.Equal("paycfg-1", snapshot.ResourceId);
         Assert.Contains("\"basePay\":100", snapshot.BeforeJson);
         Assert.Contains("\"basePay\":150", snapshot.AfterJson);
+        Assert.Equal(2m, config.DistanceRatePerKm);
+        Assert.DoesNotContain("distanceRatePerKm", snapshot.BeforeJson);
+        Assert.DoesNotContain("distanceRatePerKm", snapshot.AfterJson);
         Assert.Contains("\"employeeId\":\"emp-7\"", snapshot.AfterJson);
         Assert.Contains("\"serviceId\":\"svc-pay\"", snapshot.AfterJson);
         AssertNoSubjectPii(snapshot);

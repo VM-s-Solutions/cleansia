@@ -1,6 +1,7 @@
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Services.Interfaces;
+using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Internationalization;
 using Cleansia.Core.Domain.Memberships;
 using Cleansia.Core.Domain.Packages;
@@ -817,6 +818,91 @@ public class CreateOrderValidatorCharacterizationTests
             e.PropertyName == nameof(CreateOrder.Command.AccessInstructions)
             && e.ErrorMessage == BusinessErrorMessage.MaxLength);
     }
+
+    // ── Cash eligibility — owner ruling 2026-09-24: signed in AND exactly one required cleaner ──
+
+    [Theory]
+    [InlineData(null, 120)]
+    [InlineData(null, 121)]
+    [InlineData("user-1", 121)]
+    [InlineData("user-1", 240)]
+    public async Task Cash_For_A_Guest_Or_A_Job_Needing_Two_Cleaners_Is_Refused_On_The_Payment_Type(
+        string? userId, int serverMinutes)
+    {
+        _session.Setup(s => s.GetUserId()).Returns(userId);
+        ArrangeServerDuration(serverMinutes);
+
+        var result = await CreateValidator().ValidateAsync(
+            CreateOrderTestData.ValidCommand(paymentType: PaymentType.Cash));
+
+        var error = Assert.Single(result.Errors);
+        Assert.Equal(BusinessErrorMessage.OrderCashNotAvailable, error.ErrorMessage);
+        Assert.Equal(nameof(CreateOrder.Command.PaymentType), error.ErrorCode);
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(1)]
+    [InlineData(120)]
+    public async Task Cash_For_A_Signed_In_Customer_On_A_One_Cleaner_Job_Passes(int serverMinutes)
+    {
+        _session.Setup(s => s.GetUserId()).Returns("user-1");
+        ArrangeServerDuration(serverMinutes);
+
+        var result = await CreateValidator().ValidateAsync(
+            CreateOrderTestData.ValidCommand(paymentType: PaymentType.Cash));
+
+        Assert.True(result.IsValid);
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("user-1")]
+    public async Task Card_Is_Never_Refused_By_The_Cash_Rule(string? userId)
+    {
+        _session.Setup(s => s.GetUserId()).Returns(userId);
+        ArrangeServerDuration(600);
+
+        var result = await CreateValidator().ValidateAsync(
+            CreateOrderTestData.ValidCommand(paymentType: PaymentType.Card));
+
+        Assert.True(result.IsValid);
+    }
+
+    /// <summary>
+    /// The rule reads the calculator's duration from the price chain, so a chain stopped earlier -- here
+    /// by a currency that is not the address market's -- must answer with that refusal alone rather than
+    /// reach for a pricing result that was never computed.
+    /// </summary>
+    [Fact]
+    public async Task A_Guest_Cash_Booking_Stopped_On_The_Currency_Reports_The_Currency_Alone()
+    {
+        _session.Setup(s => s.GetUserId()).Returns((string?)null);
+        var command = CreateOrderTestData.ValidCommand(
+            customerAddress: CreateOrderTestData.InlineAddress(countryId: Slovakia),
+            paymentType: PaymentType.Cash) with { CurrencyId = CreateOrderTestData.CurrencyId };
+
+        var result = await CreateValidator(servicePrices: PricedServices(Czk), packagePrices: PricedPackages(Czk))
+            .ValidateAsync(command);
+
+        var error = Assert.Single(result.Errors);
+        Assert.Equal(BusinessErrorMessage.InvalidCurrency, error.ErrorMessage);
+    }
+
+    private void ArrangeServerDuration(int minutes) =>
+        _pricingCalculator
+            .Setup(c => c.CalculateAsync(
+                It.IsAny<IEnumerable<string>>(),
+                It.IsAny<IEnumerable<string>>(),
+                It.IsAny<IEnumerable<string>>(),
+                It.IsAny<int>(),
+                It.IsAny<int>(),
+                It.IsAny<string?>(),
+                It.IsAny<DateTime?>(),
+                It.IsAny<string?>(),
+                It.IsAny<DateTime>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(CreateOrderTestData.MatchingPricing() with { EstimatedDurationMinutes = minutes });
 
     private void ArrangeActiveMembership(string userId)
     {

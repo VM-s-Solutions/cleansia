@@ -24,8 +24,8 @@ public class GetCancellationFeePreview
 
     /// <param name="Tier">
     /// Why the fee is what it is, so a client renders the reason rather than rebuilding the schedule.
-    /// Both deciding facts — the caller's own free-cancellation window and whether a cleaner has been
-    /// pulled onto the job — are server-side, so <b>no client can derive this even in principle</b>.
+    /// The deciding facts — the caller's own free-cancellation and oops windows and whether a cleaner has
+    /// been pulled onto the job — are server-side, so <b>no client can derive this even in principle</b>.
     /// → /product/business-rules#cancellation
     /// </param>
     /// <param name="FeeAmount">
@@ -36,6 +36,10 @@ public class GetCancellationFeePreview
     /// Cancelling would consume one of this month's free express bookings. Disclosed here because the
     /// cases where the forfeiture is otherwise invisible are exactly the ones where the fee is zero.
     /// </param>
+    /// <param name="OopsWindowMinutes">
+    /// The minutes after booking this customer could cancel free, from the same resolution the tier used:
+    /// 15, or 60 for an entitled Plus member — so the sheet can state the customer's own number.
+    /// </param>
     public record Response(
         string OrderId,
         CancellationFeeTier Tier,
@@ -44,7 +48,8 @@ public class GetCancellationFeePreview
         decimal RefundAmount,
         decimal TotalPrice,
         string CurrencyCode,
-        bool ExpressWaiverForfeitedOnCancel);
+        bool ExpressWaiverForfeitedOnCancel,
+        int OopsWindowMinutes);
 
     public class Validator : AbstractValidator<Query>
     {
@@ -61,7 +66,8 @@ public class GetCancellationFeePreview
         IOrderAccessService orderAccessService,
         IUserSessionProvider userSessionProvider,
         ICancellationPolicyResolver cancellationPolicyResolver,
-        IExpressWaiverConsumer expressWaiverConsumer) : IQueryHandler<Query, Response>
+        IExpressWaiverConsumer expressWaiverConsumer,
+        TimeProvider timeProvider) : IQueryHandler<Query, Response>
     {
         public async Task<BusinessResult<Response>> Handle(Query query, CancellationToken cancellationToken)
         {
@@ -90,7 +96,7 @@ public class GetCancellationFeePreview
             }
 
             var policy = await cancellationPolicyResolver.ResolveForUserAsync(userId, cancellationToken);
-            var assessment = CancellationAssessor.Assess(order, policy, DateTime.UtcNow);
+            var assessment = CancellationAssessor.Assess(order, policy, timeProvider.GetUtcNow().UtcDateTime);
 
             var expressWaiverForfeited = await expressWaiverConsumer.WouldForfeitOnCustomerCancelAsync(
                 order.Id, assessment.HasBeenAccepted, cancellationToken);
@@ -103,7 +109,8 @@ public class GetCancellationFeePreview
                 RefundAmount: assessment.RefundAmount,
                 TotalPrice: order.TotalPrice,
                 CurrencyCode: order.Currency!.Code,
-                ExpressWaiverForfeitedOnCancel: expressWaiverForfeited));
+                ExpressWaiverForfeitedOnCancel: expressWaiverForfeited,
+                OopsWindowMinutes: policy.OopsWindowMinutes));
         }
     }
 }

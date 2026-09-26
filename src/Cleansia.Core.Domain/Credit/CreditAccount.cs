@@ -98,12 +98,8 @@ public class CreditAccount : TenantAuditable
     }
 
     /// <summary>
-    /// Add credit and record why.
-    ///
-    /// <para>Increases are safe to do in the tracked graph: two concurrent grants both increase the
-    /// balance and both are correct, and a repeated grant is stopped by the ledger's unique
-    /// <c>IdempotencyKey</c> rather than by arithmetic. Spending is the direction that needs the
-    /// database to arbitrate, and it does not live here.</para>
+    /// Add credit and record why. The caller holds the repository's owner/account locks until commit;
+    /// the ledger's unique idempotency key prevents a repeated grant.
     /// </summary>
     public CreditTransaction Issue(
         decimal amount,

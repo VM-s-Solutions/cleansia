@@ -6,8 +6,7 @@ using Cleansia.Core.AppServices.Features.Packages.DTOs;
 using Cleansia.Core.AppServices.Features.Services.DTOs;
 using Cleansia.Core.AppServices.Mappers;
 using Cleansia.Core.AppServices.Shared.DTOs.Enums;
-using Cleansia.Core.Domain.Orders;
-using Cleansia.Core.Domain.Repositories;
+using Cleansia.Core.AppServices.Tenancy;
 using Cleansia.Infra.Common.Validations;
 using FluentValidation;
 using Microsoft.EntityFrameworkCore;
@@ -15,35 +14,27 @@ using Microsoft.EntityFrameworkCore;
 namespace Cleansia.Core.AppServices.Features.Orders;
 
 /// <summary>
-/// Guest order lookup. Three factors, all required: the display order number,
-/// the e-mail the confirmation went to, and the order's own confirmation code.
+/// Guest order lookup. One factor: the per-order access token the confirmation e-mail carries.
 ///
-/// The code is the point. Without it this endpoint answered to an order number
-/// and an e-mail — a display number is sequential and an e-mail is not a
-/// secret, so anyone who could guess both could read a stranger's booking. The
-/// code is six characters of a GUID, generated per order and delivered only in
-/// the confirmation e-mail, and it is checked in the SAME query as the other
-/// two so a wrong code and a non-existent order are indistinguishable: the
-/// endpoint never confirms that an order exists.
-///
-/// `LookupOrderBatch` deliberately does NOT take one. It is keyed on the
-/// order's ULID rather than its display number — 26 unguessable characters the
-/// browser only has because it placed the order — so the id is itself the
-/// secret, and requiring a code there would break the remembered-orders list
-/// for every guest without giving anything up.
+/// <para>It replaced a (display order number, e-mail, confirmation code) triple. None of the three was
+/// a secret the platform could keep: the display number is sequential, the e-mail is not private, and
+/// the confirmation code was served on the order detail to every cleaner assigned to the job — so a
+/// cleaner held the whole key to their own customer's booking, including the cancellation that charges
+/// the customer the 25 % / 50 % tier. The token is 256 bits, stored only as a SHA-256 hash, and reaches
+/// nobody but the person who received the e-mail.</para>
 /// </summary>
 public class LookupOrder
 {
-    public record Query(string DisplayOrderNumber, string Email, string ConfirmationCode)
-        : IQuery<Response>;
+    public record Query(string AccessToken) : IQuery<Response>, IGuestOrderScopedRequest
+    {
+        string? IOperatorScopedRequest.CountryId => null;
+    }
 
     public class Validator : AbstractValidator<Query>
     {
         public Validator()
         {
-            RuleFor(x => x.DisplayOrderNumber).NotEmpty().WithMessage(BusinessErrorMessage.Required);
-            RuleFor(x => x.Email).NotEmpty().WithMessage(BusinessErrorMessage.Required);
-            RuleFor(x => x.ConfirmationCode).NotEmpty().WithMessage(BusinessErrorMessage.Required);
+            RuleFor(x => x.AccessToken).NotEmpty().WithMessage(BusinessErrorMessage.Required);
         }
     }
 
@@ -57,6 +48,10 @@ public class LookupOrder
         decimal TotalPrice,
         int EstimatedTime,
         Code OrderStatus,
+        /// <summary>
+        /// The short human reference printed on the booking. A REFERENCE, not a credential: nothing
+        /// authenticates on it any more, and it is served on the guest's own order only.
+        /// </summary>
         string ConfirmationCode,
         CurrencyDetailDto Currency,
         IEnumerable<ServiceDetails> SelectedServices,
@@ -64,14 +59,11 @@ public class LookupOrder
         IEnumerable<OrderStatusTrackDto> StatusHistory,
         DateTimeOffset CreatedOn);
 
-    public class Handler(IOrderRepository orderRepository) : IQueryHandler<Query, Response>
+    public class Handler(GuestOrderAccess guestOrderAccess) : IQueryHandler<Query, Response>
     {
         public async Task<BusinessResult<Response>> Handle(Query request, CancellationToken cancellationToken)
         {
-            // An anonymous read keyed on a secret (ADR-0051's bypass-and-re-pin cell): a guest who booked
-            // under operator A must find the order without knowing which operator that was, so the read
-            // ignores the tenant and the (number, email, code) predicate below is the pin.
-            var order = await orderRepository.GetQueryableIgnoringTenant()
+            var order = await guestOrderAccess.OrdersForKey(request)
                 .Include(o => o.Currency)
                 .Include(o => o.OrderStatusHistory)
                 .Include(o => o.SelectedServices)
@@ -81,19 +73,11 @@ public class LookupOrder
                         .ThenInclude(p => p.IncludedServices)
                             .ThenInclude(s => s.Service)
                 .AsSplitQuery()
-                .FirstOrDefaultAsync(o =>
-                    o.DisplayOrderNumber == request.DisplayOrderNumber &&
-                    o.CustomerEmail.ToLower() == request.Email.ToLower() &&
-                    // Case-insensitive: the code is generated uppercase but is
-                    // read off an e-mail and typed by hand. Part of the SAME
-                    // predicate as the other two so a wrong code returns the
-                    // same "not found" as a wrong number — the endpoint must
-                    // not become an oracle for which orders exist.
-                    o.ConfirmationCode.ToUpper() == request.ConfirmationCode.ToUpper(),
-                    cancellationToken);
+                .AsNoTracking()
+                .FirstOrDefaultAsync(cancellationToken);
 
             if (order == null)
-                return BusinessResult.Failure<Response>(new Error(nameof(request.DisplayOrderNumber), BusinessErrorMessage.OrderNotFound));
+                return BusinessResult.Failure<Response>(new Error(nameof(request.AccessToken), BusinessErrorMessage.OrderNotFound));
 
             var detail = order.MapToDetail();
 
@@ -107,7 +91,7 @@ public class LookupOrder
                 detail.TotalPrice,
                 detail.EstimatedTime,
                 detail.OrderStatus,
-                detail.ConfirmationCode,
+                order.ConfirmationCode,
                 detail.Currency,
                 detail.SelectedServices,
                 detail.SelectedPackages,

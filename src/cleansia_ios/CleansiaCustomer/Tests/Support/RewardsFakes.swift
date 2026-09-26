@@ -55,7 +55,7 @@ enum LoyaltyFixtures {
         pointsToNextTier: Int? = 400,
         nextTier: Int? = 3,
         discountPercent: Double = 0.05,
-        perks: [TierPerk] = [TierPerk(icon: "discount", labelKey: "loyalty.perks.priority_support")]
+        perks: [TierPerk] = [TierPerk(icon: "badge", labelKey: "loyalty.perks.welcome_badge")]
     ) -> LoyaltyAccount {
         LoyaltyAccount(
             currentTier: currentTier,

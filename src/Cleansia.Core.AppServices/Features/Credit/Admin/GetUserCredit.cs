@@ -31,10 +31,9 @@ public class GetUserCredit
     /// ledger.
     ///
     /// <para>Credit is only spendable on an order in the SAME currency (owner ruling 2026-09-09), so
-    /// "this customer's balance" stopped being a single number. It matters most on the two admin
-    /// actions beside this screen: erasure is refused while ANY balance is positive, and the discharge
-    /// drains one named currency at a time — so an admin looking at one balance could be told erasure
-    /// is blocked by money the screen never showed them.</para>
+    /// "this customer's balance" stopped being a single number. It matters most beside the admin
+    /// discharge, which drains one named currency at a time — so an admin looking at one balance
+    /// could miss money the screen never showed them.</para>
     ///
     /// <para><b>Added beside the scalars rather than replacing them.</b> HasAccount, Balance,
     /// CurrencyCode and the flat Ledger are unchanged and still describe the largest account, and they

@@ -628,7 +628,6 @@ const CUSTOMER_SURFACE_ERROR_KEYS: readonly string[] = [
   // authenticate here and hit all three. `gdpr.deletion_blocked_by_invoice` was
   // already on this contract for exactly that reason; these are its siblings.
   'gdpr.deletion_blocked_by_assigned_order',
-  'gdpr.deletion_blocked_by_credit_balance',
   'gdpr.deletion_blocked_by_unsettled_pay',
 ];
 

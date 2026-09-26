@@ -610,7 +610,6 @@ const PARTNER_SURFACE_ERROR_KEYS: readonly string[] = [
   'file.type_not_allowed',
   'gdpr.deletion_already_pending',
   'gdpr.deletion_blocked_by_assigned_order',
-  'gdpr.deletion_blocked_by_credit_balance',
   'gdpr.deletion_blocked_by_invoice',
   'gdpr.deletion_blocked_by_order',
   'gdpr.deletion_blocked_by_unsettled_pay',

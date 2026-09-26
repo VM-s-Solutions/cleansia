@@ -149,19 +149,6 @@ public class GdprDeletionService(
             return BusinessResult.Failure(new Error(
                 SubjectField, BusinessErrorMessage.GdprDeletionBlockedByOrder));
 
-        // MONEY OWED BLOCKS ERASURE. Owner ruling 2026-09-05, and the same shape as the unsettled-pay
-        // guard below: a credit balance is a DEBT, not a preference, and anonymizing the person it is
-        // owed to writes it off at the exact moment they asked to be forgotten. The customer spends it
-        // or asks to be paid out, and then the erasure proceeds and the account goes with them.
-        //
-        // Applies to CUSTOMERS, which is why it sits above the employee block rather than inside it.
-        // A zero balance never blocks anything, and a customer who has never had credit has no account
-        // at all. -> /architecture/security-rules, SubjectDataErasureRosterTests
-        var creditOwed = await HasPositiveCreditBalanceAsync(user.Id, cancellationToken);
-        if (creditOwed)
-            return BusinessResult.Failure(new Error(
-                SubjectField, BusinessErrorMessage.GdprDeletionBlockedByCreditBalance));
-
         if (user.Employee is null)
             return null;
 
@@ -198,6 +185,7 @@ public class GdprDeletionService(
 
         await CancelActiveMembershipAsync(user.Id, cancellationToken);
         await AnonymizeUserDataAsync(user, deactivationReason, cancellationToken);
+        await ForfeitCreditAsync(user.Id, deactivationReason, cancellationToken);
 
         var (processedBy, notes) = resolveAuditActor(user);
         request.MarkCompleted(processedBy, notes);
@@ -250,28 +238,26 @@ public class GdprDeletionService(
     /// remedy — settle the period — so two error keys would name a distinction the reader cannot
     /// act on. → /flows/pay-and-payouts
     /// </summary>
-    /// <summary>
-    /// Does the platform still owe this customer money, IN ANY CURRENCY? Reads balances only — the
-    /// ledger is irrelevant to the question, and a customer with no account has nothing owed.
-    ///
-    /// <para><b>Any currency is the whole point.</b> This used to read a single account, which under
-    /// one-account-per-customer was the same question. It is not any more: a customer holding nothing
-    /// in one currency and a positive balance in another would have passed the gate and been erased
-    /// while the platform still owed them the second balance. Erasure is irreversible and this is the
-    /// only thing standing in front of it.</para>
-    /// </summary>
-    private async Task<bool> HasPositiveCreditBalanceAsync(
-        string userId, CancellationToken cancellationToken)
-    {
-        var spendables = await creditAccountRepository.GetSpendablesForUserAsync(userId, cancellationToken);
-        return spendables.Any(s => s.Balance > 0m);
-    }
-
     private Task<bool> HasUnsettledPayAsync(string employeeId, CancellationToken cancellationToken)
         => orderEmployeePayRepository.GetQueryable()
             .AnyAsync(p => p.EmployeeId == employeeId
                     && (p.EmployeeInvoiceId == null || p.PayPeriod!.Status != PayPeriodStatus.Paid),
                 cancellationToken);
+
+    private async Task ForfeitCreditAsync(string userId, string reason, CancellationToken cancellationToken)
+    {
+        // Locked last, after the walk's Stripe and blob calls, and held to the commit: a return that
+        // committed first is read below, and one that waits sees the erased owner and moves nothing.
+        await creditAccountRepository.LockForUserAsync(userId, cancellationToken);
+        var accounts = await creditAccountRepository.GetAllForUserAsync(userId, cancellationToken);
+        foreach (var account in accounts)
+        {
+            var amount = account.Drain(GdprAuditReasons.SystemActor, DateTimeOffset.UtcNow);
+            if (amount > 0m)
+                account.RecordExpiry(amount, $"account-deletion:{account.Id}", GdprAuditReasons.SystemActor,
+                    $"Account deletion: {reason}");
+        }
+    }
 
     private Task<bool> HasBlockingInvoiceAsync(string employeeId, CancellationToken cancellationToken)
     {

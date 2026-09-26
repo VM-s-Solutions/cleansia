@@ -5,6 +5,12 @@ namespace Cleansia.Core.Domain.Repositories;
 public interface ICreditAccountRepository : IRepository<CreditAccount, string>
 {
     /// <summary>
+    /// Serialize erasure and credit mutations for this owner until the unit of work commits or rolls
+    /// back, and re-read any of the owner's accounts this unit of work already tracks unchanged.
+    /// </summary>
+    Task LockForUserAsync(string userId, CancellationToken cancellationToken);
+
+    /// <summary>
     /// EVERY account this customer holds, with their ledgers, newest balance first. Empty if they have
     /// never had credit.
     ///
@@ -14,17 +20,18 @@ public interface ICreditAccountRepository : IRepository<CreditAccount, string>
     /// emptied an arbitrary one. A method that returns a LIST cannot be misread that way, and the two
     /// callers now each say what they do with the set.</para>
     ///
-    /// <para>Currency-blind on purpose. The two questions this serves — "what does this customer hold"
-    /// and "is anything owed" — are the two that must never be scoped to one currency.</para>
+    /// <para>Currency-blind on purpose. "What does this customer hold" must never be scoped to one
+    /// currency, and neither must the erasure's forfeiture of it.</para>
     /// </summary>
     Task<IReadOnlyList<CreditAccount>> GetAllForUserAsync(
         string userId, CancellationToken cancellationToken);
 
     /// <summary>
-    /// The customer's account, creating an empty one in <paramref name="currencyId"/> if they have
-    /// never had credit. Shaped on <c>ILoyaltyAccountRepository.EnsureForUserAsync</c>: the caller is
-    /// always about to write to it, so "no account" and "an account holding nothing" are the same
-    /// thing and the distinction only ever produced a null check.
+    /// The customer's account, or null for an erased or missing user. Creates an empty one in
+    /// <paramref name="currencyId"/> if they have never had credit. Shaped on
+    /// <c>ILoyaltyAccountRepository.EnsureForUserAsync</c>: the caller is always about to write to it,
+    /// so "no account" and "an account holding nothing" are the same thing. Holds the owner and account
+    /// locks until the unit of work commits or rolls back.
     ///
     /// <para><b>The currency is part of the LOOKUP, not only of the creation.</b> That sentence used
     /// to read "the currency is used ONLY when creating", and the query behind it matched on
@@ -35,7 +42,7 @@ public interface ICreditAccountRepository : IRepository<CreditAccount, string>
     /// <para>An existing account still keeps the currency it was opened in, because a lookup for a
     /// different currency no longer finds it — it opens that currency's own account instead.</para>
     /// </summary>
-    Task<CreditAccount> EnsureForUserAsync(
+    Task<CreditAccount?> EnsureForUserAsync(
         string userId, string currencyId, CancellationToken cancellationToken);
 
     /// <summary>
@@ -54,21 +61,14 @@ public interface ICreditAccountRepository : IRepository<CreditAccount, string>
         string userId, string currencyId, CancellationToken cancellationToken);
 
     /// <summary>
-    /// What the customer holds, in every currency — the currency-BLIND counterpart, for the two
-    /// callers that must not scope to one: the customer's own credit screen, whose wire shape carries a
-    /// single balance and its currency, and the GDPR erasure gate.
-    ///
-    /// <para>The gate is why this is not merely a convenience. Erasure is refused while the platform
-    /// still owes money, and it used to ask that question through a single-account read — so a customer
-    /// holding nothing in one currency and a positive balance in another could be erased while the
-    /// platform still owed them.</para>
+    /// What the customer holds, in every currency, without loading the ledger.
     /// </summary>
     Task<IReadOnlyList<CreditSpendable>> GetSpendablesForUserAsync(
         string userId, CancellationToken cancellationToken);
 
     /// <summary>
     /// Put credit BACK on a balance because the order it settled was unwound. Returns false when the
-    /// key has already been used, which is what makes a retried refund or a re-delivered webhook safe.
+    /// key has already been used or the owner has been erased; false never claims money was returned.
     ///
     /// <para>This is the writer of <see cref="CreditTransactionReason.OrderPaymentReturned"/>, and
     /// without it credit is a one-way door: an order cancelled or refunded after credit settled part
@@ -82,9 +82,10 @@ public interface ICreditAccountRepository : IRepository<CreditAccount, string>
     /// discarded with the rest of the unit of work — and flushing it explicitly would persist the
     /// half-built order the factory has already added to the same context.</para>
     ///
-    /// <para>The same shape also makes it safe everywhere else: the money goes back even if the
-    /// caller's own commit later fails, and a replay is a no-op rather than a 23505 that would take
-    /// that commit down with it.</para>
+    /// <para>The return commits on its own unless a transaction is already open on this context — the
+    /// credit lock of this unit of work (<see cref="LockForUserAsync"/>), an explicit database
+    /// transaction or an ambient <c>TransactionScope</c>; then it commits or rolls back with it. A replay
+    /// is a no-op rather than a 23505 that would take the caller's commit down with it.</para>
     /// </summary>
     Task<bool> TryReturnAsync(
         string userId,

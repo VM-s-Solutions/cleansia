@@ -1022,8 +1022,7 @@
       "deletion_blocked_by_order": "Your account can't be deleted while you have active orders.",
       "deletion_blocked_by_invoice": "Your account can't be deleted while invoices are outstanding.",
       "deletion_blocked_by_assigned_order": "Your account can't be deleted while you are still assigned to a job.",
-      "deletion_blocked_by_unsettled_pay": "Your account can't be deleted while pay is still owed to you. Contact the office to settle it first.",
-      "deletion_blocked_by_credit_balance": "Your account can’t be deleted while you still have credit with us. Use it on a booking, or contact the office to be paid out."
+      "deletion_blocked_by_unsettled_pay": "Your account can't be deleted while pay is still owed to you. Contact the office to settle it first."
     },
     "company": {
       "not_found": "Company information not found",

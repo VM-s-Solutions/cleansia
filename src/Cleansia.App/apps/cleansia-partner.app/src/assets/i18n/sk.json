@@ -1022,8 +1022,7 @@
       "deletion_blocked_by_order": "Váš účet sa nedá zmazať, kým máte aktívne objednávky.",
       "deletion_blocked_by_invoice": "Váš účet sa nedá zmazať, kým sú nevybavené faktúry.",
       "deletion_blocked_by_assigned_order": "Váš účet sa nedá zmazať, kým ste priradený k zakázke.",
-      "deletion_blocked_by_unsettled_pay": "Váš účet sa nedá zmazať, kým vám dlžíme odmenu. Najprv to vyriešte s kanceláriou.",
-      "deletion_blocked_by_credit_balance": "Váš účet sa nedá zmazať, kým u nás máte kredit. Využite ho pri objednávke, alebo kontaktujte kanceláriu kvôli vyplateniu."
+      "deletion_blocked_by_unsettled_pay": "Váš účet sa nedá zmazať, kým vám dlžíme odmenu. Najprv to vyriešte s kanceláriou."
     },
     "company": {
       "not_found": "Informácie o spoločnosti nenájdené",

@@ -12,9 +12,9 @@ namespace Cleansia.Core.AppServices.Features.Credit;
 /// Take balances that have expired.
 ///
 /// <para>Owner ruling 2026-09-05: credit expires rather than being paid out. Cleansia does not do
-/// Stripe payouts, so the alternative to expiry is a debt that sits on the books forever and a
-/// customer who cannot be erased because of it. Twelve months from the last movement, and every
-/// movement resets the clock — a customer who books once a year never loses anything.
+/// Stripe payouts, so the alternative to expiry is a debt that sits on the books forever. Twelve
+/// months from the last movement, and every movement resets the clock — a customer who books once a
+/// year never loses anything.
 /// → CreditAccount.ExpiryMonths</para>
 ///
 /// <para>The customer is told the date on their profile and in the booking summary, so this can never
@@ -79,26 +79,40 @@ public class ExpireStaleCredit
                     tenantProvider.SetTenantOverride(tenantGroup.Key);
                 }
 
-                foreach (var account in tenantGroup)
+                foreach (var owner in tenantGroup.GroupBy(a => a.UserId))
                 {
-                    var taken = account.Drain(SystemActor, nowUtc);
-                    if (taken <= 0m)
+                    // Re-reads this owner's balances under the lock: a return or an erasure may have
+                    // moved them since the batch above was loaded.
+                    await creditAccountRepository.LockForUserAsync(owner.Key, cancellationToken);
+
+                    foreach (var account in owner)
                     {
-                        continue;
+                        if (account.ExpiresOn is null || account.ExpiresOn > nowUtc)
+                        {
+                            continue;
+                        }
+
+                        var taken = account.Drain(SystemActor, nowUtc);
+                        if (taken <= 0m)
+                        {
+                            continue;
+                        }
+
+                        // The ledger row keeps Balance == SUM(Transactions.Amount) true through the
+                        // expiry, which is the one invariant this design has. Negative, because the
+                        // money left. Keyed on the account and the date so a re-run of the same
+                        // night's sweep cannot take it twice — the unique index on IdempotencyKey is
+                        // the backstop, and the balance is already zero by then anyway.
+                        account.RecordExpiry(taken, $"credit-expired:{account.Id}:{nowUtc:yyyy-MM-dd}", SystemActor);
+
+                        accountsExpired++;
+                        totalExpired[account.CurrencyId] = totalExpired.GetValueOrDefault(account.CurrencyId) + taken;
                     }
 
-                    // The ledger row keeps Balance == SUM(Transactions.Amount) true through the
-                    // expiry, which is the one invariant this design has. Negative, because the money
-                    // left. Keyed on the account and the date so a re-run of the same night's sweep
-                    // cannot take it twice — the unique index on IdempotencyKey is the backstop, and
-                    // the balance is already zero by then anyway.
-                    account.RecordExpiry(taken, $"credit-expired:{account.Id}:{nowUtc:yyyy-MM-dd}", SystemActor);
-
-                    accountsExpired++;
-                    totalExpired[account.CurrencyId] = totalExpired.GetValueOrDefault(account.CurrencyId) + taken;
+                    // One owner's lock at a time, released here: holding a batch of owners until the
+                    // group ends could deadlock against a sweep that takes the same owners in another order.
+                    await unitOfWork.CommitAsync(cancellationToken);
                 }
-
-                await unitOfWork.CommitAsync(cancellationToken);
             }
 
             tenantProvider.ClearTenantOverride();

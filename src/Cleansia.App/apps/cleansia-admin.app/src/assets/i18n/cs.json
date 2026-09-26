@@ -3036,7 +3036,6 @@
     "gdpr": {
       "deletion_already_pending": "Žádost o smazání tohoto účtu již probíhá.",
       "deletion_blocked_by_order": "Tento účet má aktívní objednávky a zatím jej nelze smazat.",
-      "deletion_blocked_by_credit_balance": "Tento zákazník má stále kredit. Než půjde účet smazat, musí být vyčerpán nebo vyplacen.",
       "deletion_blocked_by_invoice": "Tento účet má nevyřízené faktury a zatím jej nelze smazat.",
       "deletion_blocked_by_assigned_order": "Tato üklidová pracovnice je přiřazena k zakázce a zatím ji nelze smazat.",
       "deletion_blocked_by_unsettled_pay": "Této üklidové pracovnici stále dlužíme odměnu. Vyřešte to před smazáním účtu.",

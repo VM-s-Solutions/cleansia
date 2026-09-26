@@ -1,5 +1,6 @@
 using Cleansia.Core.Domain.Credit;
 using Cleansia.Core.Domain.Repositories;
+using Cleansia.Core.Domain.Users;
 using Cleansia.Infra.Database.Extensions;
 using Microsoft.EntityFrameworkCore;
 
@@ -8,6 +9,20 @@ namespace Cleansia.Infra.Database.Repositories;
 public class CreditAccountRepository(CleansiaDbContext context)
     : BaseRepository<CreditAccount>(context), ICreditAccountRepository
 {
+    public async Task LockForUserAsync(string userId, CancellationToken cancellationToken)
+    {
+        await context.LockCreditOwnerAsync(userId, cancellationToken);
+        if (context.Database.IsNpgsql())
+            await context.Database.ExecuteSqlAsync(
+                $"""SELECT "Id" FROM "CreditAccounts" WHERE "UserId" = {userId} ORDER BY "Id" FOR NO KEY UPDATE""",
+                cancellationToken);
+
+        // Expiry loads a batch before locking; use balances read after any preceding return/deletion.
+        foreach (var entry in context.ChangeTracker.Entries<CreditAccount>()
+                     .Where(e => e.Entity.UserId == userId && e.State == EntityState.Unchanged).ToList())
+            await entry.ReloadAsync(cancellationToken);
+    }
+
     public async Task<IReadOnlyList<CreditAccount>> GetAllForUserAsync(
         string userId, CancellationToken cancellationToken)
     {
@@ -22,9 +37,16 @@ public class CreditAccountRepository(CleansiaDbContext context)
             .ToListAsync(cancellationToken);
     }
 
-    public async Task<CreditAccount> EnsureForUserAsync(
+    public async Task<CreditAccount?> EnsureForUserAsync(
         string userId, string currencyId, CancellationToken cancellationToken)
     {
+        await LockForUserAsync(userId, cancellationToken);
+        var eligible = await context.Users.IgnoreQueryFilters().AsNoTracking()
+            .AnyAsync(u => u.Id == userId && (u.IsActive || !u.Email.EndsWith(User.AnonymisedEmailSuffix)),
+                cancellationToken);
+        if (!eligible)
+            return null;
+
         // No Include(Transactions). Issue() only APPENDS, and EF tracks an appended child without the
         // collection pre-loaded - same reasoning as LoyaltyAccountRepository, and it matters more here
         // because a long-lived customer's ledger is unbounded.
@@ -69,9 +91,20 @@ public class CreditAccountRepository(CleansiaDbContext context)
             return false;
         }
 
-        // The key check is not the guarantee - the unique index below is. It is here so a replay is a
-        // cheap no-op rather than an exception the caller has to catch: a re-driven refund and a
-        // re-delivered webhook both arrive on a key that is already used, routinely.
+        // No tracked flush: checkout compensation must survive a failed command without saving its order.
+        await using var transaction = context.Database.CurrentTransaction is null && System.Transactions.Transaction.Current is null
+            ? await context.Database.BeginTransactionAsync(cancellationToken)
+            : null;
+        await context.Database.ExecuteSqlAsync(
+            $"""SELECT "Id" FROM "Users" WHERE "Id" = {userId} FOR NO KEY UPDATE""", cancellationToken);
+        var owner = await context.Users.IgnoreQueryFilters().AsNoTracking()
+            .Where(u => u.Id == userId && (u.IsActive || !u.Email.EndsWith(User.AnonymisedEmailSuffix)))
+            .Select(u => new { u.TenantId })
+            .SingleOrDefaultAsync(cancellationToken);
+        if (owner is null)
+            return false;
+
+        // Read after the owner lock: a concurrent return's key is now visible.
         var alreadyReturned = await context.CreditTransactions
             .AsNoTracking()
             .AnyAsync(t => t.IdempotencyKey == idempotencyKey, cancellationToken);
@@ -80,38 +113,19 @@ public class CreditAccountRepository(CleansiaDbContext context)
             return false;
         }
 
-        // An account may not exist yet: credit can only reach an order through one, but a customer
-        // whose account was created and then erased still needs somewhere for the money to land. This
-        // is the one part of a return that goes through the tracked graph, and it is followed by an
-        // explicit flush so the raw statement below has a row to update. The flush is CommitAsync, not
-        // SaveChangesAsync: the commit is where the new row's TenantId is stamped, and the column is
-        // NOT NULL (ADR-0061 D8) — a bare save would 23502.
-        var account = await EnsureForUserAsync(userId, currencyId, cancellationToken);
-        if (context.Entry(account).State == EntityState.Added)
-        {
-            await context.CommitAsync(cancellationToken);
-        }
-
-        // ONE STATEMENT, mirroring TryDebitAsync, and for a second reason on top of the shared one.
-        //
-        // Shared: balance and ledger move together or not at all, so
-        // Balance == SUM(Transactions.Amount) cannot drift.
-        //
-        // Its own: this must NOT enlist in the caller's unit of work. CreateOrder compensates a failed
-        // Stripe dispatch by calling it on a request that then returns a FAILURE, which the pipeline
-        // never commits - a tracked Issue would be thrown away along with the half-built order, and
-        // flushing it explicitly would persist that order. A self-contained statement is the only
-        // shape that puts the money back on a path that is about to roll back.
         var rowsAffected = await context.Database.ExecuteSqlAsync(
             $"""
             WITH returned AS (
-                UPDATE "CreditAccounts"
-                SET "Balance" = "Balance" + {amount},
-                    -- See TryDebitAsync: the raw statements push the expiry themselves.
-                    "ExpiresOn" = NOW() + MAKE_INTERVAL(months => {CreditAccount.ExpiryMonths}),
+                INSERT INTO "CreditAccounts" (
+                    "Id", "UserId", "CurrencyId", "TenantId", "Balance", "ExpiresOn",
+                    "IsActive", "CreatedBy", "CreatedOn")
+                VALUES ({NewId()}, {userId}, {currencyId}, {owner.TenantId}, {amount},
+                    NOW() + MAKE_INTERVAL(months => {CreditAccount.ExpiryMonths}), TRUE, {actorId}, NOW())
+                ON CONFLICT ("UserId", "CurrencyId") DO UPDATE
+                SET "Balance" = "CreditAccounts"."Balance" + EXCLUDED."Balance",
+                    "ExpiresOn" = EXCLUDED."ExpiresOn",
                     "UpdatedBy" = {actorId},
                     "UpdatedOn" = NOW()
-                WHERE "Id" = {account.Id}
                 RETURNING "Id"
             )
             INSERT INTO "CreditTransactions" (
@@ -124,6 +138,8 @@ public class CreditAccountRepository(CleansiaDbContext context)
             """,
             cancellationToken);
 
+        if (transaction is not null)
+            await transaction.CommitAsync(cancellationToken);
         return rowsAffected > 0;
     }
 

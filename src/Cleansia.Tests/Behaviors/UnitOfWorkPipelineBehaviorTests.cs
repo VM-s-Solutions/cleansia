@@ -1,9 +1,12 @@
 using Cleansia.Config.Validation;
 using Cleansia.Core.AppServices.Behaviors;
+using Cleansia.Core.AppServices.Features.Gdpr;
 using Cleansia.Core.Domain.SeedWork;
+using Cleansia.Core.Domain.Users;
 using Cleansia.Infra.Common.Validations;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 
 namespace Cleansia.Tests.Behaviors;
@@ -85,6 +88,7 @@ public class UnitOfWorkPipelineBehaviorTests
         Assert.Same(failure, result);
         Assert.True(result.IsFailure);
         _unitOfWork.Verify(u => u.CommitAsync(It.IsAny<CancellationToken>()), Times.Never);
+        _unitOfWork.Verify(u => u.Rollback(), Times.Once);
     }
 
     // ── happy path: a succeeding command commits exactly once, after the handler ─
@@ -103,6 +107,7 @@ public class UnitOfWorkPipelineBehaviorTests
         Assert.Same(success, result);
         Assert.True(result.IsSuccess);
         _unitOfWork.Verify(u => u.CommitAsync(It.IsAny<CancellationToken>()), Times.Once);
+        _unitOfWork.Verify(u => u.Rollback(), Times.Never);
     }
 
     // ── defense-in-depth & the IsNotCommand guard ────────────────────────────────
@@ -122,5 +127,60 @@ public class UnitOfWorkPipelineBehaviorTests
 
         Assert.Same(success, result);
         _unitOfWork.Verify(u => u.CommitAsync(It.IsAny<CancellationToken>()), Times.Never);
+        _unitOfWork.Verify(u => u.Rollback(), Times.Never);
+    }
+
+    [Fact]
+    public async Task Failed_Command_ReleasesItsLocksBeforeTheOuterErasureFailureRecorder()
+    {
+        var events = new List<string>();
+        _unitOfWork.Setup(u => u.Rollback()).Callback(() => events.Add("rollback"));
+        var failure = BusinessResult.Failure(new Error("userId", "deletion.refused"));
+        var command = new FakeCommand();
+
+        var result = await OuterFailureRecorder(events).Handle(command,
+            ct => Behavior<FakeCommand>().Handle(command, _ => Task.FromResult(failure), ct),
+            CancellationToken.None);
+
+        Assert.Same(failure, result);
+        Assert.Equal(new[] { "rollback", "failure-recorded" }, events);
+        _unitOfWork.Verify(u => u.CommitAsync(It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task Throwing_Command_ReleasesItsLocksBeforeTheOuterErasureFailureRecorder(bool commitThrows)
+    {
+        var events = new List<string>();
+        var failure = new InvalidOperationException(commitThrows ? "commit failed" : "handler failed");
+        _unitOfWork.Setup(u => u.Rollback()).Callback(() => events.Add("rollback"));
+        if (commitThrows)
+            _unitOfWork.Setup(u => u.CommitAsync(It.IsAny<CancellationToken>())).ThrowsAsync(failure);
+        RequestHandlerDelegate<BusinessResult> next = _ => commitThrows
+            ? Task.FromResult(BusinessResult.Success())
+            : Task.FromException<BusinessResult>(failure);
+        var command = new FakeCommand();
+
+        var thrown = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            OuterFailureRecorder(events).Handle(command,
+                ct => Behavior<FakeCommand>().Handle(command, next, ct), CancellationToken.None));
+
+        Assert.Same(failure, thrown);
+        Assert.Equal(new[] { "rollback", "failure-recorded" }, events);
+        _unitOfWork.Verify(u => u.CommitAsync(It.IsAny<CancellationToken>()), commitThrows ? Times.Once() : Times.Never());
+    }
+
+    private static ErasureFailureCaptureBehavior<FakeCommand, BusinessResult> OuterFailureRecorder(List<string> events)
+    {
+        var attempt = new ErasureAttempt();
+        attempt.Begin("subject-1", "request-1", "self");
+        var sink = new Mock<IGdprDeletionFailureSink>();
+        sink.Setup(s => s.RecordFailureAsync("subject-1", "request-1", "self",
+                It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .Callback(() => events.Add("failure-recorded"))
+            .Returns(Task.CompletedTask);
+        return new(attempt, sink.Object,
+            NullLogger<ErasureFailureCaptureBehavior<FakeCommand, BusinessResult>>.Instance);
     }
 }

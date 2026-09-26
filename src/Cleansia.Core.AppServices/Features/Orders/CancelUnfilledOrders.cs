@@ -290,6 +290,8 @@ public class CancelUnfilledOrders
 
             var account = await creditAccountRepository.EnsureForUserAsync(
                 order.UserId, order.CurrencyId, cancellationToken);
+            if (account is null)
+                return null;
 
             // One key per ORDER, so an order swept twice — a retried tick, a re-entry after a failed
             // commit — pays the apology once. The ledger's IdempotencyKey carries a plain unique index

@@ -29,6 +29,8 @@ const CANCELLABLE_ORDER_STATUSES: readonly OrderStatus[] = [
   OrderStatus.OnTheWay,
 ];
 
+const STANDARD_FREE_CANCELLATION_HOURS = 24;
+
 @Injectable()
 export class OrderDetailFacade extends UnsubscribeControlDirective {
   private readonly customerClient = inject(CustomerClient);
@@ -60,6 +62,17 @@ export class OrderDetailFacade extends UnsubscribeControlDirective {
 
   /** One per crew member who accepted the contract for work; nothing before any acceptance. */
   readonly workContractAcceptances = computed(() => buildWorkContractAcceptanceLines(this.order()));
+
+  /**
+   * How long free cancellation lasted. Plus shortens the window, but only for a paid month: the
+   * server reads the paid entitlement, which a running trial is not. -> /product/business-rules
+   */
+  readonly freeCancellationHours = computed(() => {
+    const membership = this.membership();
+    const trialEnd = membership?.trialEndsAtUtc;
+    if (trialEnd && trialEnd.getTime() > Date.now()) return STANDARD_FREE_CANCELLATION_HOURS;
+    return membership?.freeCancellationWindowHours ?? STANDARD_FREE_CANCELLATION_HOURS;
+  });
 
   readonly canConfirmCancellation = computed(() =>
     this.canCancel() && this.cancellationOpen() && !!this.cancellationPreview() &&

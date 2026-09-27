@@ -101,6 +101,7 @@ export class OrderDetailComponent implements OnInit {
   readonly loading = this.facade.loading;
   readonly error = this.facade.error;
   readonly membership = this.facade.membership;
+  readonly freeCancellationHours = this.facade.freeCancellationHours;
   readonly reviewSubmitting = this.facade.reviewSubmitting;
   readonly downloading = this.facade.downloading;
   readonly workContractAcceptances = this.facade.workContractAcceptances;
@@ -340,11 +341,6 @@ export class OrderDetailComponent implements OnInit {
     };
   });
 
-  /**
-   * How long free cancellation lasted. The window is a MEMBERSHIP benefit, so
-   * it is read off the membership the customer actually has rather than
-   * hardcoded — Plus shortens it. -> /product/business-rules
-   */
   /** "Petra S." -> "PS". Same shape the profile rail uses for an avatar. */
   initialsOf(fullName: string | undefined): string {
     return (fullName ?? '')
@@ -365,9 +361,6 @@ export class OrderDetailComponent implements OnInit {
     return inside ? `${base} · ${inside}` : base;
   });
 
-  readonly freeCancellationHours = computed(
-    () => this.membership()?.freeCancellationWindowHours ?? 24,
-  );
   stars = [1, 2, 3, 4, 5];
 
   ngOnInit(): void {

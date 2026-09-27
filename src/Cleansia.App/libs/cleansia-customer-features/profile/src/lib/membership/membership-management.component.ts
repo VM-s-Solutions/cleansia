@@ -63,6 +63,8 @@ export class MembershipManagementComponent implements OnInit {
   readonly expressWaiverAvailable = this.facade.expressWaiverAvailable;
   readonly expressWaiverExhausted = this.facade.expressWaiverExhausted;
   readonly expressWaiverPendingTrial = this.facade.expressWaiverPendingTrial;
+  readonly trialEndsOn = this.facade.trialEndsOn;
+  readonly switchLeadKey = this.facade.switchLeadKey;
 
   /** Yearly plan (if any) — drives the "Switch to annual" CTA visibility. */
   ngOnInit(): void {
@@ -79,10 +81,11 @@ export class MembershipManagementComponent implements OnInit {
     this.router.navigate([CleansiaCustomerRoute.PLUS]);
   }
 
-  /** Cancel-at-period-end. The benefit window is unaffected until period end. */
   confirmCancel(): void {
     this.confirmService.confirm({
-      message: this.translate.instant('pages.membership.cancel_dialog_message'),
+      message: this.translate.instant(this.facade.cancelDialogMessageKey(), {
+        date: this.formatDate(this.trialEndsOn() ?? undefined),
+      }),
       header: this.translate.instant('pages.membership.cancel_dialog_title'),
       icon: 'pi pi-exclamation-triangle',
       acceptLabel: this.translate.instant('pages.membership.cancel_dialog_confirm'),
@@ -129,12 +132,13 @@ export class MembershipManagementComponent implements OnInit {
     const plan = this.plans().find((p) => p.code === planCode);
     if (!plan) return;
     this.confirmService.confirm({
-      message: this.translate.instant('pages.membership.switch_dialog_message', {
+      message: this.translate.instant(this.facade.switchDialogMessageKey(), {
         price: this.formatPrice(plan.price),
+        date: this.formatDate(this.trialEndsOn() ?? undefined),
       }),
       header: this.translate.instant('pages.membership.switch_dialog_title'),
       icon: 'pi pi-arrow-up-right',
-      acceptLabel: this.translate.instant('pages.membership.switch_dialog_confirm'),
+      acceptLabel: this.translate.instant(this.facade.switchConfirmKey()),
       rejectLabel: this.translate.instant('common.back'),
       accept: () => this.facade.swapPlan(planCode),
     });

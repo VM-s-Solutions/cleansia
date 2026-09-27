@@ -7,6 +7,7 @@ import {
   CustomerAuthService,
   CustomerClient,
   GetCancellationFeePreviewResponse,
+  GetMyMembershipResponse,
   OrderItem,
   OrderStatus,
   SubmitOrderReviewCommand,
@@ -140,6 +141,41 @@ describe('OrderDetailFacade', () => {
     it('is withheld while the order has not loaded', () => {
       facade.order.set(null);
       expect(facade.canCancel()).toBe(false);
+    });
+  });
+
+  // The server charges by the paid entitlement, which `hasMembership` is not: it counts a running
+  // trial too, and a trialing member cancels on the standard window.
+  describe('the free-cancellation window the page states', () => {
+    const DAY_MS = 24 * 60 * 60 * 1000;
+    const plus = (trialEndsAtUtc?: Date) =>
+      GetMyMembershipResponse.fromJS({
+        hasMembership: true,
+        freeCancellationWindowHours: 12,
+        trialEndsAtUtc: trialEndsAtUtc?.toISOString(),
+      });
+
+    it("is the plan's window for a paid member", () => {
+      facade.membership.set(plus());
+      expect(facade.freeCancellationHours()).toBe(12);
+    });
+
+    it('is the standard 24 hours during a running trial', () => {
+      facade.membership.set(plus(new Date(Date.now() + 7 * DAY_MS)));
+      expect(facade.freeCancellationHours()).toBe(24);
+    });
+
+    it("is the plan's window once the trial has ended", () => {
+      facade.membership.set(plus(new Date(Date.now() - DAY_MS)));
+      expect(facade.freeCancellationHours()).toBe(12);
+    });
+
+    it('is the standard 24 hours without a membership', () => {
+      facade.membership.set(GetMyMembershipResponse.fromJS({ hasMembership: false }));
+      expect(facade.freeCancellationHours()).toBe(24);
+
+      facade.membership.set(null);
+      expect(facade.freeCancellationHours()).toBe(24);
     });
   });
 

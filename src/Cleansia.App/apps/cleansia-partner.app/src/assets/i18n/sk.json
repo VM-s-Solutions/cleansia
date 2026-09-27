@@ -897,6 +897,7 @@
       "card_payment_already_settled": "Platba kartou už prebehla. Obnovte stránku a objednávku dokončite — hotovosť nevyberajte.",
       "card_payment_in_progress": "Platba kartou sa stále spracúva. Chvíľu počkajte a skúste to znova — hotovosť zatiaľ nevyberajte.",
       "card_payment_unverified": "Stav platby kartou sa teraz nepodarilo overiť, hotovosť preto nemožno zaznamenať. Skúste to o chvíľu znova alebo kontaktujte administrátora.",
+      "cash_not_allowed_on_card_order": "Táto objednávka sa platí kartou, hotovosť pri nej preto nemožno zaznamenať. Hotovosť nevyberajte — požiadajte o vybavenie kanceláriu.",
       "completion_notes": {
         "too_long": "Poznámky k dokončeniu sú príliš dlhé"
       },

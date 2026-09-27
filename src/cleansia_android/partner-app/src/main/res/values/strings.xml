@@ -1132,6 +1132,7 @@
     <string name="error_order_card_payment_already_settled">This order was already paid by card. Don\'t collect cash — the payment status has been updated.</string>
     <string name="error_order_card_payment_in_progress">A card payment for this order is still processing. Wait a moment and try again.</string>
     <string name="error_order_card_payment_unverified">We couldn\'t check this order\'s card payment. Don\'t collect cash yet — try again in a moment.</string>
+    <string name="error_order_cash_not_allowed_on_card_order">This order is paid by card, so cash can\'t be recorded for it. Don\'t take cash — ask an office admin to settle it.</string>
 
     <!-- Order — notes / issues / review -->
     <string name="error_order_note_content_required">Note text is required.</string>

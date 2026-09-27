@@ -3534,6 +3534,41 @@
         }
       }
     },
+    "error.order.cash_not_allowed_on_card_order": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tato zakázka se platí kartou, hotovost u ní proto nelze zaznamenat. Hotovost nevybírejte — požádejte o vyřízení kancelář."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This order is paid by card, so cash can't be recorded for it. Don't take cash — ask an office admin to settle it."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Этот заказ оплачивается картой, поэтому наличные по нему записать нельзя. Не берите наличные — обратитесь в офис."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Táto zákazka sa platí kartou, hotovosť pri nej preto nemožno zaznamenať. Hotovosť nevyberajte — požiadajte o vybavenie kanceláriu."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Це замовлення оплачується карткою, тому готівку за нього зафіксувати не можна. Не беріть готівку — зверніться до офісу."
+          }
+        }
+      }
+    },
     "error.order.cash_not_available": {
       "extractionState": "manual",
       "localizations": {

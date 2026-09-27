@@ -24,8 +24,11 @@ namespace Cleansia.Tests.Features.Orders;
 ///   • still processing     → REJECTED (order.card_payment_in_progress);
 ///   • Stripe unreachable   → REJECTED (order.card_payment_unverified) — deliberately fail closed, the
 ///                            admin status-override is the release valve;
-///   • confirmed unpaid     → the outstanding intent is best-effort cancelled, then the cash is recorded.
-/// A cash-booked order has no Stripe surface and never round-trips.
+///   • confirmed unpaid     → cash only where the booking could have been paid in cash (a signed-in
+///                            customer, one cleaner required), else REJECTED
+///                            (order.cash_not_allowed_on_card_order) before anything moves; then the
+///                            outstanding intent is best-effort cancelled and the cash is recorded.
+/// A cash-booked order has no Stripe surface and never round-trips, and stays collectable as booked.
 /// PaymentType stays as booked (Card) — the derived <see cref="Order.ActualPaymentType"/> carries the
 /// tender that was actually taken.
 /// </summary>
@@ -34,6 +37,7 @@ public class MarkCashCollectedHandlerTests
     private const string OrderId = "order-1";
     private const string EmployeeId = "emp-1";
     private const string PaymentIntentId = "pi_test_1";
+    private const string CustomerId = "customer-1";
 
     private readonly Mock<IOrderRepository> _orderRepository = new();
     private readonly Mock<IOrderAccessService> _accessService = new();
@@ -54,10 +58,16 @@ public class MarkCashCollectedHandlerTests
         _pending.Object,
         NullLogger<MarkCashCollected.Handler>.Instance);
 
-    private Order ArrangeOrder(PaymentType paymentType, bool withStripeSurface)
+    private Order ArrangeOrder(
+        PaymentType paymentType, bool withStripeSurface, string? userId = CustomerId, int requiredEmployees = 1)
     {
         var order = ValidatorTestHelpers.BuildOrder(
-            OrderId, OrderStatus.InProgress, EmployeeId, paymentType, PaymentStatus.Pending);
+            OrderId, OrderStatus.InProgress, EmployeeId, paymentType, PaymentStatus.Pending, userId: userId);
+        if (requiredEmployees > 1)
+        {
+            order.UpdateEstimatedTime(requiredEmployees * OrderDuration.MinutesPerEmployee)
+                .CalculateRequiredEmployees(spareSeats: 0);
+        }
 
         if (withStripeSurface)
         {
@@ -92,10 +102,14 @@ public class MarkCashCollectedHandlerTests
             Times.Never);
     }
 
+    /// <summary>
+    /// A guest's card order could never be paid in cash, yet the repair still runs: the Stripe read comes
+    /// before the cash rule, so a settled charge whose webhook never arrived is not left unpayable.
+    /// </summary>
     [Fact]
     public async Task Card_Order_Already_Settled_At_Stripe_Repairs_To_Paid_And_Rejects()
     {
-        var order = ArrangeOrder(PaymentType.Card, withStripeSurface: true);
+        var order = ArrangeOrder(PaymentType.Card, withStripeSurface: true, userId: null);
         ArrangeStripeState(StripePaymentState.Settled, PaymentIntentId);
 
         var result = await CreateHandler().Handle(new MarkCashCollected.Command(OrderId), CancellationToken.None);
@@ -201,6 +215,61 @@ public class MarkCashCollectedHandlerTests
         Assert.NotNull(order.CashCollectedAt);
         _stripeClient.Verify(
             c => c.CancelPaymentIntentAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Theory]
+    [InlineData(null, 1)]
+    [InlineData(CustomerId, 2)]
+    [InlineData(null, 2)]
+    public async Task Card_Order_That_Could_Not_Have_Been_Booked_For_Cash_Is_Refused_Before_Anything_Moves(
+        string? userId, int requiredEmployees)
+    {
+        var order = ArrangeOrder(PaymentType.Card, withStripeSurface: true, userId, requiredEmployees);
+        ArrangeStripeState(StripePaymentState.Unpaid, PaymentIntentId);
+
+        var result = await CreateHandler().Handle(new MarkCashCollected.Command(OrderId), CancellationToken.None);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal(BusinessErrorMessage.OrderCashNotAllowedOnCardOrder, result.Error!.Message);
+        Assert.Equal(PaymentStatus.Pending, order.PaymentStatus);
+        Assert.Null(order.CashCollectedAt);
+        Assert.Null(order.CollectedByEmployeeId);
+        _stripeClient.Verify(
+            c => c.CancelPaymentIntentAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+        _orderRepository.Verify(r => r.CommitAsync(It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task Ineligible_Card_Order_Without_A_Stripe_Surface_Is_Refused_Without_Asking_Stripe()
+    {
+        var order = ArrangeOrder(PaymentType.Card, withStripeSurface: false, userId: null);
+
+        var result = await CreateHandler().Handle(new MarkCashCollected.Command(OrderId), CancellationToken.None);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal(BusinessErrorMessage.OrderCashNotAllowedOnCardOrder, result.Error!.Message);
+        Assert.Null(order.CashCollectedAt);
+        _stripeClient.Verify(
+            c => c.GetPaymentSnapshotAsync(It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()),
+            Times.Never);
+    }
+
+    /// <summary>
+    /// The cash rule governs what a booking may choose. An order already booked as cash — a guest's or a
+    /// multi-cleaner one confirmed before the rule — is collected exactly as booked.
+    /// </summary>
+    [Theory]
+    [InlineData(null, 1)]
+    [InlineData(CustomerId, 2)]
+    public async Task Booked_Cash_Stays_Collectable_Whatever_The_Cash_Rule(string? userId, int requiredEmployees)
+    {
+        var order = ArrangeOrder(PaymentType.Cash, withStripeSurface: false, userId, requiredEmployees);
+
+        var result = await CreateHandler().Handle(new MarkCashCollected.Command(OrderId), CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(PaymentStatus.Paid, order.PaymentStatus);
+        Assert.Equal(EmployeeId, order.CollectedByEmployeeId);
     }
 
     [Fact]

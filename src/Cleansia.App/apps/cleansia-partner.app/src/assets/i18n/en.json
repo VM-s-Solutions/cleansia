@@ -897,6 +897,7 @@
       "card_payment_already_settled": "The card payment already went through. Refresh and complete the order — don't take cash.",
       "card_payment_in_progress": "The card payment is still being processed. Wait a moment and try again — don't take cash yet.",
       "card_payment_unverified": "We couldn't check the card payment status right now, so cash can't be recorded. Try again shortly or contact an administrator.",
+      "cash_not_allowed_on_card_order": "This order is paid by card, so cash can't be recorded for it. Don't take cash — ask an office admin to settle it.",
       "completion_notes": {
         "too_long": "Completion notes are too long"
       },

@@ -23,8 +23,10 @@ namespace Cleansia.Core.AppServices.Features.Orders;
 /// <para>
 /// It accepts a CARD booking too — a card order whose Stripe webhook never arrived is otherwise
 /// impossible to complete in the field. For those, the handler reconciles against live Stripe first so
-/// the customer is never asked to pay twice; <see cref="Order.PaymentType"/> stays as booked and the
-/// tender actually taken is derived from the stamp via <see cref="Order.ActualPaymentType"/>.
+/// the customer is never asked to pay twice, and then takes cash only where the booking itself could
+/// have chosen it (<see cref="BookingPolicy.AllowsCash"/>); <see cref="Order.PaymentType"/> stays as
+/// booked and the tender actually taken is derived from the stamp via <see cref="Order.ActualPaymentType"/>.
+/// An order booked as cash is collected as booked.
 /// </para>
 /// </summary>
 public class MarkCashCollected
@@ -154,13 +156,34 @@ public class MarkCashCollected
                     nameof(order.PaymentStatus), BusinessErrorMessage.CashNotCollectableOnCreditOrder));
             }
 
+            string? outstandingIntentId = null;
             if (order.HasRefundableChargeSurface)
             {
-                var rejection = await ReconcileCardSurfaceAsync(order, cancellationToken);
+                var (rejection, outstanding) = await ReconcileCardSurfaceAsync(order, cancellationToken);
                 if (rejection is not null)
                 {
                     return rejection;
                 }
+
+                outstandingIntentId = outstanding;
+            }
+
+            // Here and not in the validator: it must follow the Stripe repair above, or a settled card
+            // order the rule refuses could never reach Paid; and it must precede the cancel below, or a
+            // refusal would leave the customer's card intent closed and the order payable by nothing.
+            if (order.PaymentType != PaymentType.Cash
+                && !BookingPolicy.AllowsCash(!string.IsNullOrEmpty(order.UserId), order.RequiredEmployees))
+            {
+                logger.LogWarning(
+                    "Refusing cash collection on card order {OrderId}: its booking could not have been paid in cash",
+                    order.Id);
+                return BusinessResult.Failure<Response>(new Error(
+                    nameof(order.PaymentType), BusinessErrorMessage.OrderCashNotAllowedOnCardOrder));
+            }
+
+            if (!string.IsNullOrEmpty(outstandingIntentId))
+            {
+                await CancelOutstandingIntentAsync(order, outstandingIntentId, cancellationToken);
             }
 
             // The validator guarantees an Approved, assigned caller, so the employee id is present.
@@ -185,12 +208,12 @@ public class MarkCashCollected
 
         /// <summary>
         /// Asks Stripe what actually happened on the order's charge surface before a second tender is
-        /// taken. Returns the rejection to surface, or null when the cash may be recorded. Fails CLOSED
-        /// on an unreachable Stripe: telling a customer to pay cash for a charge that may already have
-        /// settled costs real money, and an admin can still drive the job forward with
+        /// taken. Returns the rejection to surface, or none plus the intent still open at Stripe. Fails
+        /// CLOSED on an unreachable Stripe: telling a customer to pay cash for a charge that may already
+        /// have settled costs real money, and an admin can still drive the job forward with
         /// <see cref="AdminOverrideOrderStatus"/>.
         /// </summary>
-        private async Task<BusinessResult<Response>?> ReconcileCardSurfaceAsync(
+        private async Task<(BusinessResult<Response>? Rejection, string? OutstandingIntentId)> ReconcileCardSurfaceAsync(
             Order order, CancellationToken cancellationToken)
         {
             StripePaymentSnapshot snapshot;
@@ -204,8 +227,8 @@ public class MarkCashCollected
                 logger.LogError(ex,
                     "Could not read the Stripe payment state for order {OrderId}; refusing the cash collection to avoid a double charge",
                     order.Id);
-                return BusinessResult.Failure<Response>(new Error(
-                    nameof(order.PaymentStatus), BusinessErrorMessage.CardPaymentUnverified));
+                return (BusinessResult.Failure<Response>(new Error(
+                    nameof(order.PaymentStatus), BusinessErrorMessage.CardPaymentUnverified)), null);
             }
 
             switch (snapshot.State)
@@ -218,36 +241,38 @@ public class MarkCashCollected
                     logger.LogWarning(
                         "Order {OrderId} was already settled at Stripe; repaired the payment status instead of collecting cash",
                         order.Id);
-                    return BusinessResult.Failure<Response>(new Error(
-                        nameof(order.PaymentStatus), BusinessErrorMessage.CardPaymentAlreadySettled));
+                    return (BusinessResult.Failure<Response>(new Error(
+                        nameof(order.PaymentStatus), BusinessErrorMessage.CardPaymentAlreadySettled)), null);
 
                 case StripePaymentState.Processing:
                     logger.LogWarning(
                         "Order {OrderId} has a card payment in flight at Stripe; refusing the cash collection",
                         order.Id);
-                    return BusinessResult.Failure<Response>(new Error(
-                        nameof(order.PaymentStatus), BusinessErrorMessage.CardPaymentInProgress));
+                    return (BusinessResult.Failure<Response>(new Error(
+                        nameof(order.PaymentStatus), BusinessErrorMessage.CardPaymentInProgress)), null);
             }
 
-            if (!string.IsNullOrEmpty(snapshot.OutstandingPaymentIntentId))
+            return (null, snapshot.OutstandingPaymentIntentId);
+        }
+
+        /// <summary>
+        /// Best-effort: closing the intent stops the customer paying the card later on top of the cash.
+        /// A failure here is not worth blocking the collection — the late-arrival webhook path raises a
+        /// dispute for a human if it does settle after all.
+        /// </summary>
+        private async Task CancelOutstandingIntentAsync(
+            Order order, string outstandingIntentId, CancellationToken cancellationToken)
+        {
+            try
             {
-                // Best-effort: closing the intent stops the customer paying the card later on top of the
-                // cash. A failure here is not worth blocking the collection — the late-arrival webhook
-                // path raises a dispute for a human if it does settle after all.
-                try
-                {
-                    await stripeClient.CancelPaymentIntentAsync(
-                        snapshot.OutstandingPaymentIntentId, cancellationToken);
-                }
-                catch (Exception ex) when (IsStripeReadFailure(ex, cancellationToken))
-                {
-                    logger.LogWarning(ex,
-                        "Could not cancel the outstanding PaymentIntent for order {OrderId} before recording cash",
-                        order.Id);
-                }
+                await stripeClient.CancelPaymentIntentAsync(outstandingIntentId, cancellationToken);
             }
-
-            return null;
+            catch (Exception ex) when (IsStripeReadFailure(ex, cancellationToken))
+            {
+                logger.LogWarning(ex,
+                    "Could not cancel the outstanding PaymentIntent for order {OrderId} before recording cash",
+                    order.Id);
+            }
         }
 
         // A caller-requested cancellation is a genuine abort, not a Stripe outage — never launder it

@@ -91,6 +91,17 @@ class BackendKeyStringsTest {
         assertTrue("these refusals render raw: $raw", raw.isEmpty())
     }
 
+    /**
+     * `MarkCashCollected` refuses cash on a card order whose booking could not have chosen it. The
+     * apps offer the action on cash orders only, but the endpoint answers any assigned cleaner.
+     */
+    @Test
+    fun `the cash-on-card-order refusal resolves to a sentence in all five locales`() {
+        val resName = "error_order_cash_not_allowed_on_card_order"
+        val raw = locales.filterNot { resName in declared(it) }
+        assertTrue("order.cash_not_allowed_on_card_order renders raw in $raw", raw.isEmpty())
+    }
+
     @Test
     fun `every profile field the lock can list resolves to a label`() {
         ProfileSection.entries.flatMap { it.ownedFields() }.forEach { key ->

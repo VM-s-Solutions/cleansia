@@ -468,6 +468,9 @@ const PARTNER_SURFACE_ERROR_KEYS: readonly string[] = [
   // is owed at the door. MarkCashCollected fails closed rather than let a cleaner collect it.
   'credit.cash_not_collectable_on_credit_order',
   'order.cash_already_collected',
+  // A card order whose booking could not have chosen cash (a guest's, or one needing more than one
+  // cleaner) is refused cash at the door; MarkCashCollected reconciles with Stripe first.
+  'order.cash_not_allowed_on_card_order',
   'order.cash_not_collected',
   'order.completion_notes.too_long',
   'order.employee_already_assigned',

@@ -88,6 +88,20 @@ struct CreateRecurringScreen: View {
                     AppliesNotice(text: appliesNotice)
                 }
 
+                if vm.preferredCleanerRefused {
+                    PaymentNote(
+                        systemImage: "exclamationmark.circle",
+                        text: L10n.Recurring.preferredCleanerRefused,
+                        warns: true
+                    )
+                    CleansiaOutlinedButton(
+                        L10n.Recurring.saveWithoutPreferredCleaner,
+                        enabled: vm.isValid && !vm.submitState.isSubmitting
+                    ) {
+                        Task { if await vm.saveWithoutPreferredCleaner() { onCreated() } }
+                    }
+                }
+
                 CleansiaPrimaryButton(
                     vm.isEditing ? L10n.Recurring.editSubmit : L10n.Recurring.createSubmit,
                     loading: vm.submitState.isSubmitting,

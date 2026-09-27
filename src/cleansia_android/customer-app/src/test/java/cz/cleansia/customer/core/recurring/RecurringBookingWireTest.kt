@@ -229,6 +229,43 @@ class RecurringBookingWireTest {
         assertEquals("t-1", list.first().id)
     }
 
+    // --- the favourite cleaner survives an edit ------------------------------------
+
+    /** The edit form sends back what it loaded; a template read without it would clear it on save. */
+    @Test
+    fun theFavouriteCleanerArrivesOnTheTemplate() = runTest {
+        val list = loadedTemplates(CAPTURED_TEMPLATES)
+
+        assertEquals("e-9", list.first().preferredEmployeeId)
+        assertNull(loadedTemplates(templatesWithFirstRow { it - "preferredEmployeeId" }).first().preferredEmployeeId)
+    }
+
+    @Test
+    fun theUpdateSendsTheFavouriteCleanerOnTheWire() = runTest {
+        val template = Json.parseToJsonElement(CAPTURED_TEMPLATES).jsonArray.first().toString()
+        var sent: JsonObject? = null
+        serving(template, onRequest = { sent = Json.parseToJsonElement(it.body.readUtf8()).jsonObject }) {
+            it.update(
+                UpdateRecurringBookingRequest(
+                    templateId = "t-1",
+                    frequency = 2,
+                    dayOfWeek = 3,
+                    timeOfDay = "09:30",
+                    rooms = 4,
+                    bathrooms = 2,
+                    savedAddressId = "a-1",
+                    selectedServiceIds = listOf("s-1"),
+                    selectedPackageIds = emptyList(),
+                    paymentType = 2,
+                    startsOn = "2026-08-03T09:30:00Z",
+                    preferredEmployeeId = "e-9",
+                ),
+            )
+        }
+
+        assertEquals("\"e-9\"", sent!!["preferredEmployeeId"].toString())
+    }
+
     // --- payload plumbing ---------------------------------------------------------
 
     private fun templatesWithFirstRow(transform: (JsonObject) -> JsonObject): String {

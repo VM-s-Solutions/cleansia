@@ -77,6 +77,7 @@ enum RecurringFixtures {
         isActive: Bool = true,
         frequency: Int = 1,
         endsOn: Date? = nil,
+        preferredEmployeeId: String? = nil,
         selectedServiceIds: [String] = ["s-1"],
         paymentType: Int = RecurringPaymentType.cash,
         requiresPaymentMethodChange: Bool = false
@@ -95,6 +96,7 @@ enum RecurringFixtures {
             paymentType: paymentType,
             startsOn: Date(timeIntervalSince1970: 1_780_000_000),
             endsOn: endsOn,
+            preferredEmployeeId: preferredEmployeeId,
             isActive: isActive,
             requiresPaymentMethodChange: requiresPaymentMethodChange
         )

@@ -71,6 +71,7 @@ class RecurringBookingApi(
                 paymentType = body.paymentType,
                 startsOn = Instant.parse(body.startsOn),
                 endsOn = body.endsOn?.let { Instant.parse(it) },
+                preferredEmployeeId = body.preferredEmployeeId,
             ),
         )
         return raw.mapWire { it.required("RecurringBookingTemplateDto").toAppDto() }
@@ -118,5 +119,6 @@ private fun GenRecurringBookingTemplateDto.toAppDto(): RecurringBookingTemplateD
         endsOn = endsOn?.toString(),
         lastMaterializedFor = lastMaterializedFor?.toString(),
         isActive = isActive.required("isActive"),
+        preferredEmployeeId = preferredEmployeeId,
         requiresPaymentMethodChange = requiresPaymentMethodChange.required("requiresPaymentMethodChange"),
     )

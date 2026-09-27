@@ -38,6 +38,18 @@ final class CreateRecurringBindingTests: XCTestCase {
         XCTAssertTrue(source.contains("AppliesNotice(text: appliesNotice)"), "the notice is resolved and dropped")
     }
 
+    /// The view model keeping the favourite cleaner proves nothing if the form never says why the save
+    /// failed or offers the one way through.
+    func testTheFormOffersSavingWithoutARefusedFavouriteCleaner() throws {
+        let source = try read(Self.screen)
+        XCTAssertTrue(source.contains("if vm.preferredCleanerRefused {"), "the refusal is never drawn")
+        XCTAssertTrue(source.contains("text: L10n.Recurring.preferredCleanerRefused"), "the refusal says nothing")
+        XCTAssertTrue(
+            source.contains("await vm.saveWithoutPreferredCleaner()"),
+            "the save-without action calls nothing"
+        )
+    }
+
     func testTheScreenSpellsNoLabelItself() throws {
         let source = try read(Self.screen)
         for hardcoded in ["Rooms", "Bathrooms", "Add new"] {

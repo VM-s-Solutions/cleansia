@@ -990,6 +990,8 @@
     <string name="recurring_freq_biweekly_label">Každé 2 týdny</string>
     <string name="recurring_freq_monthly_label">Každý měsíc</string>
     <string name="recurring_create_step_when_title">Kdy</string>
+    <string name="preferred_cleaner_schedule_refused">U tohoto rozvrhu už nemůžeme vašeho oblíbeného uklízeče požádat jako prvního — například proto, že adresa úklidu je teď v jiné zemi. Rozvrh můžete uložit bez něj a každý úklid se pak otevře celému našemu týmu.</string>
+    <string name="preferred_cleaner_schedule_save_without">Uložit bez oblíbeného uklízeče</string>
     <string name="recurring_create_step_what_title">Co uklidit</string>
     <string name="recurring_create_step_where_pay_title">Kde a platba</string>
     <string name="recurring_create_back">Zpět</string>

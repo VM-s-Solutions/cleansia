@@ -115,6 +115,7 @@ fun CreateRecurringScreen(
     val catalogState by viewModel.catalogState.collectAsStateWithLifecycle()
     val cashEligibility by viewModel.cashEligibility.collectAsStateWithLifecycle()
     val cashClearedNotice by viewModel.cashClearedNotice.collectAsStateWithLifecycle()
+    val preferredCleanerRefused by viewModel.preferredCleanerRefused.collectAsStateWithLifecycle()
     val submitting = submitState is ActionState.Submitting
     val isEditing = viewModel.isEditing
 
@@ -158,10 +159,12 @@ fun CreateRecurringScreen(
                 canAdvance = canAdvance,
                 submitting = submitting,
                 isEditing = isEditing,
+                preferredCleanerRefused = preferredCleanerRefused,
                 onPrevious = viewModel::previousStep,
                 onNext = {
                     if (currentStep < TOTAL_STEPS) viewModel.nextStep() else viewModel.submit()
                 },
+                onSaveWithoutPreferredCleaner = viewModel::saveWithoutPreferredCleaner,
             )
         },
     ) { padding ->
@@ -407,54 +410,75 @@ private fun WizardBottomBar(
     canAdvance: Boolean,
     submitting: Boolean,
     isEditing: Boolean,
+    preferredCleanerRefused: Boolean,
     onPrevious: () -> Unit,
     onNext: () -> Unit,
+    onSaveWithoutPreferredCleaner: () -> Unit,
 ) {
     // navigationBarsPadding lifts the action row above the system gesture
     // indicator so Back / Next don't sit flush with the bottom bezel.
-    Row(
+    Column(
         modifier = Modifier
             .fillMaxWidth()
             .background(MaterialTheme.colorScheme.surface)
             .navigationBarsPadding()
             .padding(horizontal = 20.dp, vertical = 14.dp),
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-        verticalAlignment = Alignment.CenterVertically,
+        verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        if (currentStep > 1) {
+        if (preferredCleanerRefused && currentStep == TOTAL_STEPS) {
+            Text(
+                text = stringResource(R.string.preferred_cleaner_schedule_refused),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.error,
+            )
             OutlinedButton(
-                onClick = onPrevious,
+                onClick = onSaveWithoutPreferredCleaner,
                 enabled = !submitting,
-                modifier = Modifier.weight(1f).defaultMinSize(minHeight = 54.dp),
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text(text = stringResource(R.string.preferred_cleaner_schedule_save_without))
+            }
+        }
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            if (currentStep > 1) {
+                OutlinedButton(
+                    onClick = onPrevious,
+                    enabled = !submitting,
+                    modifier = Modifier.weight(1f).defaultMinSize(minHeight = 54.dp),
+                ) {
+                    Text(
+                        text = stringResource(R.string.recurring_create_back),
+                        style = MaterialTheme.typography.titleMedium,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
+            }
+            Button(
+                onClick = onNext,
+                enabled = canAdvance && !submitting,
+                modifier = Modifier.weight(if (currentStep > 1) 1f else 2f).defaultMinSize(minHeight = 54.dp),
             ) {
                 Text(
-                    text = stringResource(R.string.recurring_create_back),
-                    style = MaterialTheme.typography.titleMedium,
+                    text = stringResource(
+                        when {
+                            currentStep < TOTAL_STEPS -> R.string.recurring_create_next
+                            isEditing -> R.string.recurring_edit_submit
+                            else -> R.string.recurring_create_submit
+                        },
+                    ),
+                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                    // ru "Сохранить изменения" is 166dp against a 131.5dp slot, and the button used to be
+                    // a FIXED 54.dp — so the label wrapped to two lines and the second one was cut off
+                    // inside the button. defaultMinSize above lets it grow; this keeps it to one line.
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
             }
-        }
-        Button(
-            onClick = onNext,
-            enabled = canAdvance && !submitting,
-            modifier = Modifier.weight(if (currentStep > 1) 1f else 2f).defaultMinSize(minHeight = 54.dp),
-        ) {
-            Text(
-                text = stringResource(
-                    when {
-                        currentStep < TOTAL_STEPS -> R.string.recurring_create_next
-                        isEditing -> R.string.recurring_edit_submit
-                        else -> R.string.recurring_create_submit
-                    },
-                ),
-                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                // ru "Сохранить изменения" is 166dp against a 131.5dp slot, and the button used to be
-                // a FIXED 54.dp — so the label wrapped to two lines and the second one was cut off
-                // inside the button. defaultMinSize above lets it grow; this keeps it to one line.
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
         }
     }
 }

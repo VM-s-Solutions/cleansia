@@ -50,7 +50,7 @@ struct CreateRecurringFormState: Equatable {
 }
 
 extension UpdateRecurringInput {
-    init(_ input: CreateRecurringInput, templateId: String, endsOn: Date?) {
+    init(_ input: CreateRecurringInput, templateId: String, endsOn: Date?, preferredEmployeeId: String?) {
         self.init(
             templateId: templateId,
             frequency: input.frequency,
@@ -63,7 +63,8 @@ extension UpdateRecurringInput {
             selectedPackageIds: input.selectedPackageIds,
             paymentType: input.paymentType,
             startsOn: input.startsOn,
-            endsOn: endsOn
+            endsOn: endsOn,
+            preferredEmployeeId: preferredEmployeeId
         )
     }
 }
@@ -123,6 +124,9 @@ final class CreateRecurringViewModel: ViewModel {
     @Published private(set) var formCrew: RecurringCrew?
     /// Set when a cash choice was taken away; cleared by the customer's next choice.
     @Published private(set) var cashCleared = false
+    /// The server no longer accepts the schedule's favourite cleaner. The cleaner is kept until the
+    /// customer chooses to save without them.
+    @Published private(set) var preferredCleanerRefused = false
 
     let sourceOrderId: String?
     let editing: RecurringTemplate?
@@ -426,9 +430,21 @@ final class CreateRecurringViewModel: ViewModel {
 
     // MARK: - Submit
 
+    private static let preferredCleanerRefusalCode = "order.preferred_employee.not_eligible"
+
     func submit() async -> Bool {
+        await save(keepingPreferredCleaner: true)
+    }
+
+    /// The customer's own answer to a refused favourite cleaner, never taken on their behalf.
+    func saveWithoutPreferredCleaner() async -> Bool {
+        await save(keepingPreferredCleaner: false)
+    }
+
+    private func save(keepingPreferredCleaner: Bool) async -> Bool {
         guard !submitState.isSubmitting, isCatalogLoaded else { return false }
         guard let input = buildInput() else { return false }
+        preferredCleanerRefused = false
         submitState = .submitting
         if input.paymentType == RecurringPaymentType.cash {
             let confirmed = await cashConfirmedForForm()
@@ -438,7 +454,12 @@ final class CreateRecurringViewModel: ViewModel {
             }
         }
         let result: ApiResult<RecurringTemplate> = if let editing {
-            await repository.update(UpdateRecurringInput(input, templateId: editing.id, endsOn: editing.endsOn))
+            await repository.update(UpdateRecurringInput(
+                input,
+                templateId: editing.id,
+                endsOn: editing.endsOn,
+                preferredEmployeeId: keepingPreferredCleaner ? editing.preferredEmployeeId : nil
+            ))
         } else {
             await repository.create(input)
         }
@@ -451,6 +472,9 @@ final class CreateRecurringViewModel: ViewModel {
             snackbar.showApiError(error)
             if error.code == CashEligibility.refusalCode {
                 dropCash(announce: false)
+            }
+            if isEditing, error.code == Self.preferredCleanerRefusalCode {
+                preferredCleanerRefused = true
             }
             submitState = .error(isEditing ? L10n.Recurring.editFailed : L10n.Recurring.createFailed)
             return false

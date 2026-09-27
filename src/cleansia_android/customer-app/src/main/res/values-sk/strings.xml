@@ -987,6 +987,8 @@
     <string name="recurring_freq_biweekly_label">Každé 2 týždne</string>
     <string name="recurring_freq_monthly_label">Každý mesiac</string>
     <string name="recurring_create_step_when_title">Kedy</string>
+    <string name="preferred_cleaner_schedule_refused">Pri tomto rozvrhu už nemôžeme vášho obľúbeného upratovača požiadať ako prvého — napríklad preto, že adresa upratovania je teraz v inej krajine. Rozvrh môžete uložiť bez neho a každé upratovanie sa potom otvorí celému nášmu tímu.</string>
+    <string name="preferred_cleaner_schedule_save_without">Uložiť bez obľúbeného upratovača</string>
     <string name="recurring_create_step_what_title">Čo upratovať</string>
     <string name="recurring_create_step_where_pay_title">Kde a platba</string>
     <string name="recurring_create_back">Späť</string>

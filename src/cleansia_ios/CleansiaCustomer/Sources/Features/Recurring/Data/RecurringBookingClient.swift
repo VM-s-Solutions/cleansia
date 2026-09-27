@@ -51,7 +51,8 @@ struct LiveRecurringBookingClient: RecurringBookingClient {
             selectedPackageIds: input.selectedPackageIds,
             paymentType: input.paymentType,
             startsOn: input.startsOn,
-            endsOn: input.endsOn
+            endsOn: input.endsOn,
+            preferredEmployeeId: input.preferredEmployeeId
         )
         return await apiResult(mapError: ApiError.fromGenerated) {
             try await CustomerRecurringBookingAPI
@@ -95,6 +96,7 @@ extension RecurringBookingTemplateDto {
             paymentType: paymentType.require("paymentType"),
             startsOn: startsOn.require("startsOn"),
             endsOn: endsOn,
+            preferredEmployeeId: preferredEmployeeId,
             isActive: isActive.require("isActive"),
             requiresPaymentMethodChange: requiresPaymentMethodChange.require("requiresPaymentMethodChange")
         )

@@ -125,6 +125,13 @@ class CreateRecurringViewModel @Inject constructor(
     private val _submitted = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
     val submitted: SharedFlow<Unit> = _submitted.asSharedFlow()
 
+    /**
+     * The server no longer accepts the schedule's favourite cleaner. The form keeps them until the
+     * customer chooses [saveWithoutPreferredCleaner]; nothing drops them on the customer's behalf.
+     */
+    private val _preferredCleanerRefused = MutableStateFlow(false)
+    val preferredCleanerRefused: StateFlow<Boolean> = _preferredCleanerRefused.asStateFlow()
+
     /** The crew the server last quoted, with the selection it was quoted for. */
     private val quotedCrew = MutableStateFlow<QuotedCrew?>(null)
 
@@ -245,24 +252,28 @@ class CreateRecurringViewModel @Inject constructor(
     /**
      * The backend's `UpdateSchedule` rewrites every schedule column from the
      * command, so a field the form does not echo back is not "left alone" —
-     * it is erased. `endsOn` has no editor in this wizard, which is exactly
-     * why the stored value has to ride along.
+     * it is erased. `endsOn` and the favourite cleaner have no editor in this
+     * wizard, which is exactly why the stored values have to ride along.
      */
-    private fun CreateRecurringFormState.toUpdateRequest(templateId: String, paymentType: Int) =
-        UpdateRecurringBookingRequest(
-            templateId = templateId,
-            frequency = frequency.code,
-            dayOfWeek = dayOfWeek,
-            timeOfDay = timeOfDay,
-            rooms = rooms,
-            bathrooms = bathrooms,
-            savedAddressId = savedAddressId,
-            selectedServiceIds = selectedServiceIds.toList(),
-            selectedPackageIds = selectedPackageIds.toList(),
-            paymentType = paymentType,
-            startsOn = startsOnIso,
-            endsOn = endsOnIso,
-        )
+    private fun CreateRecurringFormState.toUpdateRequest(
+        templateId: String,
+        paymentType: Int,
+        withoutPreferredCleaner: Boolean,
+    ) = UpdateRecurringBookingRequest(
+        templateId = templateId,
+        frequency = frequency.code,
+        dayOfWeek = dayOfWeek,
+        timeOfDay = timeOfDay,
+        rooms = rooms,
+        bathrooms = bathrooms,
+        savedAddressId = savedAddressId,
+        selectedServiceIds = selectedServiceIds.toList(),
+        selectedPackageIds = selectedPackageIds.toList(),
+        paymentType = paymentType,
+        startsOn = startsOnIso,
+        endsOn = endsOnIso,
+        preferredEmployeeId = if (withoutPreferredCleaner) null else preferredEmployeeId,
+    )
 
     /**
      * True when the form has the minimum data needed to submit. A schedule is only ever submitted
@@ -273,22 +284,29 @@ class CreateRecurringViewModel @Inject constructor(
         s.isSubmittable() && catalog is RecurringCatalogState.Loaded
     }.stateIn(viewModelScope, SharingStarted.Eagerly, false)
 
-    fun submit() {
+    fun submit() = save(withoutPreferredCleaner = false)
+
+    /** The customer's own answer to a refused favourite cleaner: the same update, sent without them. */
+    fun saveWithoutPreferredCleaner() = save(withoutPreferredCleaner = true)
+
+    private fun save(withoutPreferredCleaner: Boolean) {
         if (_submitState.value is ActionState.Submitting) return
         if (_catalogState.value !is RecurringCatalogState.Loaded) return
         val form = _state.value
         if (!form.isSubmittable()) return
         val paymentType = form.paymentType ?: return
+        _preferredCleanerRefused.value = false
         _submitState.value = ActionState.Submitting
         viewModelScope.launch {
             if (paymentType == PAYMENT_CASH && !cashConfirmedFor(form)) return@launch
             val result = if (editingTemplateId != null) {
-                recurringRepo.update(form.toUpdateRequest(editingTemplateId, paymentType))
+                recurringRepo.update(form.toUpdateRequest(editingTemplateId, paymentType, withoutPreferredCleaner))
             } else {
                 recurringRepo.create(form.toCreateRequest(paymentType))
             }
             when (result) {
                 is ApiResult.Success -> {
+                    if (withoutPreferredCleaner) _state.update { it.copy(preferredEmployeeId = null) }
                     _submitState.value = ActionState.Idle
                     snackbar.showSuccessKey(
                         if (isEditing) R.string.recurring_edit_success else R.string.recurring_create_success,
@@ -296,10 +314,17 @@ class CreateRecurringViewModel @Inject constructor(
                     _submitted.emit(Unit)
                 }
                 is ApiResult.Error -> {
-                    if (result.error !is ApiError.Network) {
-                        snackbar.showError(result.error)
+                    val error = result.error
+                    if (isEditing && (error as? ApiError.BadRequest)?.errorKey == PREFERRED_CLEANER_NOT_ELIGIBLE) {
+                        _preferredCleanerRefused.value = true
+                        _submitState.value =
+                            ActionState.Error(appContext.getString(R.string.preferred_cleaner_schedule_refused))
+                        return@launch
                     }
-                    _submitState.value = ActionState.Error(result.error.userMessage(appContext))
+                    if (error !is ApiError.Network) {
+                        snackbar.showError(error)
+                    }
+                    _submitState.value = ActionState.Error(error.userMessage(appContext))
                 }
             }
         }
@@ -446,6 +471,8 @@ class CreateRecurringViewModel @Inject constructor(
         const val PAYMENT_CARD = 2
 
         private const val QUOTE_DEBOUNCE_MS = 400L
+
+        private const val PREFERRED_CLEANER_NOT_ELIGIBLE = "order.preferred_employee.not_eligible"
     }
 
     // ─── Path C pre-fill ───
@@ -473,6 +500,7 @@ class CreateRecurringViewModel @Inject constructor(
                 paymentType = template.paymentType,
                 startsOnIso = template.startsOn,
                 endsOnIso = template.endsOn,
+                preferredEmployeeId = template.preferredEmployeeId,
             )
         }
     }
@@ -563,4 +591,6 @@ data class CreateRecurringFormState(
     val startsOnIso: String = "",
     /** ISO-8601 instant. No editor in the wizard; carried so an edit doesn't erase it. */
     val endsOnIso: String? = null,
+    /** No editor in the wizard either; carried for the same reason. */
+    val preferredEmployeeId: String? = null,
 )

@@ -31232,6 +31232,76 @@
         }
       }
     },
+    "recurring_preferred_cleaner_refused": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "U tohoto rozvrhu už nemůžeme vašeho oblíbeného uklízeče požádat jako prvního — například proto, že adresa úklidu je teď v jiné zemi. Rozvrh můžete uložit bez něj a každý úklid se pak otevře celému našemu týmu."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "We can no longer ask your favourite cleaner first on this schedule — for example, because its address is now in another country. You can save it without them, and each cleaning will then open to our whole team."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Для этого расписания мы больше не можем попросить вашего любимого клинера первым — например, потому что адрес уборки теперь в другой стране. Вы можете сохранить расписание без него, и тогда каждая уборка будет открыта для всей нашей команды."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pri tomto rozvrhu už nemôžeme vášho obľúbeného upratovača požiadať ako prvého — napríklad preto, že adresa upratovania je teraz v inej krajine. Rozvrh môžete uložiť bez neho a každé upratovanie sa potom otvorí celému nášmu tímu."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Для цього розкладу ми більше не можемо попросити вашого улюбленого клінера першим — наприклад, тому що адреса прибирання тепер в іншій країні. Ви можете зберегти розклад без нього, і тоді кожне прибирання буде відкрите для всієї нашої команди."
+          }
+        }
+      }
+    },
+    "recurring_preferred_cleaner_save_without": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uložit bez oblíbeného uklízeče"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Save without your favourite cleaner"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Сохранить без любимого клинера"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uložiť bez obľúbeného upratovača"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Зберегти без улюбленого клінера"
+          }
+        }
+      }
+    },
     "register_pw_number": {
       "extractionState": "stale",
       "localizations": {

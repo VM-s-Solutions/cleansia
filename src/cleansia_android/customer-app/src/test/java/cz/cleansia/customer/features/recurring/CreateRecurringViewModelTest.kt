@@ -533,6 +533,73 @@ class CreateRecurringViewModelTest {
         assertEquals("2026-12-31T00:00:00Z", request.captured.endsOn)
     }
 
+    // The update replaces the favourite cleaner with whatever it is sent, so the loaded one rides along;
+    // when the server no longer accepts them, dropping them is the customer's call, never the form's.
+
+    private val notEligible = ApiResult.Error(
+        ApiError.BadRequest(
+            message = "The selected cleaner isn't available for this order.",
+            errorKey = "order.preferred_employee.not_eligible",
+        ),
+    )
+
+    @Test
+    fun `edit mode echoes the stored favourite cleaner back so the update cannot erase it`() = runTest {
+        templatesFlow.value = listOf(editableTemplate.copy(preferredEmployeeId = "emp-7"))
+        coEvery { recurringRepo.update(any()) } returns ApiResult.Success(editableTemplate)
+
+        val vm = viewModel(templateId = "tpl-1")
+        advanceUntilIdle()
+        vm.setRooms(4)
+        vm.submit()
+        advanceUntilIdle()
+
+        val request = slot<UpdateRecurringBookingRequest>()
+        coVerify(exactly = 1) { recurringRepo.update(capture(request)) }
+        assertEquals("emp-7", request.captured.preferredEmployeeId)
+    }
+
+    @Test
+    fun `a refused favourite cleaner is kept and offered back, and nothing is resent on its own`() = runTest {
+        templatesFlow.value = listOf(editableTemplate.copy(preferredEmployeeId = "emp-7"))
+        coEvery { recurringRepo.update(any()) } returns notEligible
+
+        val vm = viewModel(templateId = "tpl-1")
+        advanceUntilIdle()
+        vm.submit()
+        advanceUntilIdle()
+
+        assertEquals(true, vm.preferredCleanerRefused.value)
+        assertEquals("emp-7", vm.state.value.preferredEmployeeId)
+        assertTrue(vm.submitState.value is ActionState.Error)
+        coVerify(exactly = 1) { recurringRepo.update(any()) }
+        verify(exactly = 0) { snackbar.showError(any<ApiError>()) }
+    }
+
+    @Test
+    fun `saving without the favourite cleaner resends the same update with only the cleaner cleared`() = runTest {
+        templatesFlow.value = listOf(editableTemplate.copy(preferredEmployeeId = "emp-7", endsOn = "2026-12-31T00:00:00Z"))
+        val sent = mutableListOf<UpdateRecurringBookingRequest>()
+        coEvery { recurringRepo.update(capture(sent)) } returnsMany listOf(notEligible, ApiResult.Success(editableTemplate))
+        val vm = viewModel(templateId = "tpl-1")
+        advanceUntilIdle()
+        vm.setRooms(4)
+        vm.submit()
+        advanceUntilIdle()
+
+        vm.submitted.test {
+            vm.saveWithoutPreferredCleaner()
+            advanceUntilIdle()
+            awaitItem()
+        }
+
+        assertEquals(2, sent.size)
+        assertEquals(null, sent[1].preferredEmployeeId)
+        assertEquals(sent[0].copy(preferredEmployeeId = null), sent[1])
+        assertEquals(false, vm.preferredCleanerRefused.value)
+        assertEquals(ActionState.Idle, vm.submitState.value)
+    }
+
     @Test
     fun `submit failure shows the backend message, not a generic key`() = runTest {
         templatesFlow.value = listOf(editableTemplate)
@@ -546,6 +613,7 @@ class CreateRecurringViewModelTest {
 
         verify(exactly = 1) { snackbar.showError(match<ApiError> { it.getUserMessage() == plusRefusal }) }
         verify(exactly = 0) { snackbar.showErrorKey(any()) }
+        assertEquals(false, vm.preferredCleanerRefused.value)
     }
 
     @Test

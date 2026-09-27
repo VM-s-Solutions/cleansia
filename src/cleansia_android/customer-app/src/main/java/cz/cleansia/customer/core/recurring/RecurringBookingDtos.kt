@@ -47,6 +47,7 @@ data class RecurringBookingTemplateDto(
     val endsOn: String? = null,
     val lastMaterializedFor: String? = null,
     val isActive: Boolean,
+    val preferredEmployeeId: String? = null,
     /** A cash schedule the server now skips: it books nothing until the customer changes it. */
     val requiresPaymentMethodChange: Boolean,
 )
@@ -81,6 +82,7 @@ data class UpdateRecurringBookingRequest(
     val paymentType: Int,
     val startsOn: String,
     val endsOn: String? = null,
+    val preferredEmployeeId: String? = null,
 )
 
 @Serializable

@@ -200,6 +200,23 @@ class RecurringBookingRepositoryTest {
         verify(exactly = 0) { snackbar.showError(any<String>()) }
     }
 
+    /** The edit form answers this one refusal itself, so the key has to survive the repository. */
+    @Test
+    fun update_givenNotEligibleRefusal_carriesTheBackendKey() = runTest {
+        val body = """
+            {"type":"ValidationError","title":"Validation Error","status":400,
+             "detail":"A validation problem occurred.",
+             "errors":{"PreferredEmployeeId":"order.preferred_employee.not_eligible"}}
+        """.trimIndent().toResponseBody("application/json".toMediaType())
+        coEvery { api.update(any()) } returns Response.error(400, body)
+
+        val result = newRepo().update(updateRequest())
+
+        val error = (result as ApiResult.Error).error as ApiError.BadRequest
+        assertEquals("order.preferred_employee.not_eligible", error.errorKey)
+        verify(exactly = 0) { snackbar.showError(any<String>()) }
+    }
+
     @Test
     fun update_givenHttpError_returnsError() = runTest {
         coEvery { api.update(any()) } returns Response.error(500, errorBody())

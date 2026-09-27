@@ -26,6 +26,7 @@ struct RecurringTemplate: Equatable, Identifiable {
     let paymentType: Int
     let startsOn: Date
     let endsOn: Date?
+    let preferredEmployeeId: String?
     let isActive: Bool
     /// A cash schedule whose selection now needs more than one cleaner: the server skips it rather than
     /// switching it to card, so it books nothing until the customer changes it.
@@ -56,8 +57,9 @@ struct CreateRecurringInput: Equatable {
     let startsOn: Date
 }
 
-/// `UpdateRecurringBooking` replaces every field it is sent, `EndsOn` included, so an edit carries the
-/// template's existing end date forward rather than letting a nil clear it.
+/// `UpdateRecurringBooking` replaces every field it is sent, `EndsOn` and `PreferredEmployeeId` included,
+/// so an edit carries the template's end date and favourite cleaner forward rather than letting a nil
+/// clear them.
 struct UpdateRecurringInput: Equatable {
     let templateId: String
     let frequency: Int
@@ -71,6 +73,7 @@ struct UpdateRecurringInput: Equatable {
     let paymentType: Int
     let startsOn: Date
     let endsOn: Date?
+    let preferredEmployeeId: String?
 }
 
 struct RecurringSavedAddress: Equatable, Identifiable {

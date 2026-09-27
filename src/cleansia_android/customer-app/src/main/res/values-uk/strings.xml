@@ -987,6 +987,8 @@
     <string name="recurring_freq_biweekly_label">Кожні 2 тижні</string>
     <string name="recurring_freq_monthly_label">Щомісяця</string>
     <string name="recurring_create_step_when_title">Коли</string>
+    <string name="preferred_cleaner_schedule_refused">Для цього розкладу ми більше не можемо попросити вашого улюбленого клінера першим — наприклад, тому що адреса прибирання тепер в іншій країні. Ви можете зберегти розклад без нього, і тоді кожне прибирання буде відкрите для всієї нашої команди.</string>
+    <string name="preferred_cleaner_schedule_save_without">Зберегти без улюбленого клінера</string>
     <string name="recurring_create_step_what_title">Що прибрати</string>
     <string name="recurring_create_step_where_pay_title">Де і оплата</string>
     <string name="recurring_create_back">Назад</string>

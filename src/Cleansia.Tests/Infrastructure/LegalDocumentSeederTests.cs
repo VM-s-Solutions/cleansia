@@ -1,3 +1,5 @@
+using System.Text.RegularExpressions;
+using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.Domain.Internationalization;
 using Cleansia.Core.Domain.Legal;
 using Cleansia.Core.Domain.Repositories;
@@ -21,6 +23,15 @@ public sealed class LegalDocumentSeederTests : IDisposable
 {
     private static readonly DateOnly Today = new(2026, 9, 14);
     private const string Czechia = "country-cze";
+
+    /// <summary>Every document the embedded seed carries: a wording change is a new dated folder.</summary>
+    private static readonly (LegalDocumentType Type, DateOnly EffectiveFrom)[] SeededVersions =
+    [
+        (LegalDocumentType.TermsOfService, new DateOnly(2026, 9, 14)),
+        (LegalDocumentType.TermsOfService, new DateOnly(2026, 9, 27)),
+        (LegalDocumentType.PrivacyPolicy, new DateOnly(2026, 9, 14)),
+        (LegalDocumentType.WorkContract, new DateOnly(2026, 9, 20)),
+    ];
 
     private readonly SqliteConnection _connection;
 
@@ -70,22 +81,20 @@ public sealed class LegalDocumentSeederTests : IDisposable
         new(LegalDocumentAudience.Customer, type, countryIso, effectiveFrom ?? Today, language, title, body);
 
     [Fact]
-    public async Task The_Embedded_Seed_Creates_The_Three_Customer_Documents_In_Five_Languages()
+    public async Task The_Embedded_Seed_Creates_Every_Customer_Document_Version_In_Five_Languages()
     {
         var outcome = await SeedAsync();
 
-        Assert.Equal(3, outcome.AddedDocuments);
+        Assert.Equal(SeededVersions.Length, outcome.AddedDocuments);
         var documents = await DocumentsAsync();
-        Assert.Equal(3, documents.Count);
+        Assert.Equal(
+            SeededVersions.OrderBy(v => v.Type).ThenBy(v => v.EffectiveFrom),
+            documents.Select(d => (d.Type, d.EffectiveFrom)).OrderBy(v => v.Type).ThenBy(v => v.EffectiveFrom));
         foreach (var document in documents)
         {
             Assert.Equal(LegalDocumentAudience.Customer, document.Audience);
             Assert.Null(document.CountryId);
-            var expectedEffectiveFrom = document.Type == LegalDocumentType.WorkContract
-                ? new DateOnly(2026, 9, 20)
-                : new DateOnly(2026, 9, 14);
-            Assert.Equal(expectedEffectiveFrom, document.EffectiveFrom);
-            Assert.Equal(LegalDocument.VersionFor(expectedEffectiveFrom), document.Version);
+            Assert.Equal(LegalDocument.VersionFor(document.EffectiveFrom), document.Version);
             Assert.Equal(new[] { "cs", "en", "ru", "sk", "uk" }, document.Texts.Select(t => t.Language).OrderBy(l => l));
             foreach (var text in document.Texts)
             {
@@ -97,10 +106,8 @@ public sealed class LegalDocumentSeederTests : IDisposable
             }
         }
 
-        Assert.Contains(documents, d => d.Type == LegalDocumentType.TermsOfService);
-        Assert.Contains(documents, d => d.Type == LegalDocumentType.PrivacyPolicy);
-        Assert.Contains(documents, d => d.Type == LegalDocumentType.WorkContract);
-        Assert.Equal("Terms of Service", documents.Single(d => d.Type == LegalDocumentType.TermsOfService).TextFor("en")!.Title);
+        Assert.All(documents.Where(d => d.Type == LegalDocumentType.TermsOfService),
+            d => Assert.Equal("Terms of Service", d.TextFor("en")!.Title));
         Assert.Equal("Contract for Work", documents.Single(d => d.Type == LegalDocumentType.WorkContract).TextFor("en")!.Title);
     }
 
@@ -129,12 +136,59 @@ public sealed class LegalDocumentSeederTests : IDisposable
         await SeedAsync();
 
         var documents = await DocumentsAsync();
-        var terms = documents.Single(d => d.Type == LegalDocumentType.TermsOfService);
+        var terms = documents.Where(d => d.Type == LegalDocumentType.TermsOfService).SelectMany(d => d.Texts).ToList();
         var privacy = documents.Single(d => d.Type == LegalDocumentType.PrivacyPolicy);
 
-        Assert.All(terms.Texts, t => Assert.Contains("{{currency}}", t.ContentMarkdown));
+        Assert.Equal(SeededVersions.Count(v => v.Type == LegalDocumentType.TermsOfService) * 5, terms.Count);
+        Assert.All(terms, t => Assert.Contains("{{currency}}", t.ContentMarkdown));
         Assert.All(privacy.Texts, t => Assert.DoesNotContain("{{", t.ContentMarkdown));
     }
+
+    /// <summary>
+    /// The terms a customer accepts state the cancellation grace the platform applies. Read off the
+    /// minute phrases alone, in order — the standard window, then the Plus one — so the hour figures
+    /// elsewhere in the text cannot stand in for them, and moving, swapping or equalising either
+    /// constant without publishing a new terms version fails here.
+    /// </summary>
+    [Fact]
+    public void The_Newest_Terms_State_The_Cancellation_Grace_Minutes_In_Every_Language()
+    {
+        var newest = NewestTerms();
+
+        Assert.Equal(new[] { "cs", "en", "ru", "sk", "uk" }, newest.Select(r => r.Language).Order());
+        Assert.All(newest, r => Assert.Equal(
+            new[] { BookingPolicy.OopsWindowMinutesStandard, BookingPolicy.OopsWindowMinutesPlus },
+            MinutePhrase.Matches(r.ContentMarkdown).Select(m => int.Parse(m.Groups[1].Value))));
+    }
+
+    /// <summary>
+    /// The 2026-09-14 terms promised cash on delivery to everyone; the cash rule admits it only for a
+    /// signed-in customer whose booking needs a single cleaner. That payment sentence must not come
+    /// back in any language of the newest terms.
+    /// </summary>
+    [Fact]
+    public void The_Newest_Terms_Do_Not_Carry_The_Unconditional_Cash_Promise_In_Any_Language()
+    {
+        var unconditional = LegalSeedResource.ReadAll()
+            .Where(r => r.Type == LegalDocumentType.TermsOfService && r.EffectiveFrom == new DateOnly(2026, 9, 14))
+            .ToDictionary(r => r.Language, r => r.ContentMarkdown
+                .Split('\n')
+                .Select(line => line.Trim())
+                .Single(line => line.Contains("Stripe")));
+        var newest = NewestTerms();
+
+        Assert.Equal(unconditional.Keys.Order(), newest.Select(r => r.Language).Order());
+        Assert.All(newest, r => Assert.DoesNotContain(unconditional[r.Language], r.ContentMarkdown));
+    }
+
+    private static readonly Regex MinutePhrase = new(@"(\d+)\s+(?:min|хвилин|минут)", RegexOptions.IgnoreCase);
+
+    private static List<LegalSeedResource> NewestTerms() =>
+        LegalSeedResource.ReadAll()
+            .Where(r => r.Type == LegalDocumentType.TermsOfService)
+            .GroupBy(r => r.EffectiveFrom)
+            .MaxBy(g => g.Key)!
+            .ToList();
 
     [Fact]
     public async Task A_Second_Run_Writes_Nothing()
@@ -274,11 +328,12 @@ public sealed class LegalDocumentSeederTests : IDisposable
     {
         var resources = LegalSeedResource.ReadAll();
 
-        Assert.Equal(15, resources.Count);
+        Assert.Equal(SeededVersions.Length * 5, resources.Count);
         Assert.All(resources, r => Assert.Equal(LegalDocumentAudience.Customer, r.Audience));
         Assert.All(resources, r => Assert.Null(r.CountryIsoCode));
-        Assert.All(resources.Where(r => r.Type != LegalDocumentType.WorkContract), r => Assert.Equal(new DateOnly(2026, 9, 14), r.EffectiveFrom));
-        Assert.All(resources.Where(r => r.Type == LegalDocumentType.WorkContract), r => Assert.Equal(new DateOnly(2026, 9, 20), r.EffectiveFrom));
+        Assert.Equal(
+            SeededVersions.OrderBy(v => v.Type).ThenBy(v => v.EffectiveFrom),
+            resources.Select(r => (r.Type, r.EffectiveFrom)).Distinct().OrderBy(v => v.Type).ThenBy(v => v.EffectiveFrom));
     }
 
     private sealed class DefaultTenantProvider : ITenantProvider

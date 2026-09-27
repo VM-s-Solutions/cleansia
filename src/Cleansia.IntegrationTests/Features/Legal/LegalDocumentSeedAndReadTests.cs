@@ -59,7 +59,7 @@ public sealed class LegalDocumentSeedAndReadTests(PostgresContainerFixture fixtu
         provider.GetRequiredService<IMediator>().Send(new GetLegalDocument.Query(type, countryId, language));
 
     [Fact]
-    public async Task The_Seed_Lands_The_Three_Documents_In_Five_Languages_And_A_Second_Run_Writes_Nothing()
+    public async Task The_Seed_Lands_Every_Document_Version_In_Five_Languages_And_A_Second_Run_Writes_Nothing()
     {
         await TestMethod(
             arrange: SeedMarketsAndTextsAsync,
@@ -69,14 +69,14 @@ public sealed class LegalDocumentSeedAndReadTests(PostgresContainerFixture fixtu
                 Assert.False(second.Changed);
 
                 var documents = await context.LegalDocuments.Include(d => d.Texts).AsNoTracking().ToListAsync();
-                Assert.Equal(3, documents.Count);
+                Assert.Equal(4, documents.Count);
                 Assert.All(documents, d => Assert.Null(d.CountryId));
                 Assert.All(documents, d => Assert.Equal(LegalDocument.VersionFor(d.EffectiveFrom), d.Version));
                 Assert.All(documents, d => Assert.Equal(5, d.Texts.Count));
                 Assert.Equal(
-                    [LegalDocumentType.TermsOfService, LegalDocumentType.PrivacyPolicy, LegalDocumentType.WorkContract],
+                    [LegalDocumentType.TermsOfService, LegalDocumentType.TermsOfService, LegalDocumentType.PrivacyPolicy, LegalDocumentType.WorkContract],
                     documents.Select(d => d.Type).OrderBy(t => t));
-                Assert.Equal(15, await context.LegalDocumentTexts.CountAsync());
+                Assert.Equal(20, await context.LegalDocumentTexts.CountAsync());
             },
             transactional: false);
     }
@@ -179,7 +179,7 @@ public sealed class LegalDocumentSeedAndReadTests(PostgresContainerFixture fixtu
             {
                 var mediator = provider.GetRequiredService<IMediator>();
                 var versions = await mediator.Send(new AdminGetLegalVersions.Query(Type: LegalDocumentType.TermsOfService));
-                var terms = versions.Value.Single();
+                var terms = versions.Value.First();
                 var czech = await mediator.Send(new AdminGetLegalDocument.Query(terms.Id, "cs"));
                 var missing = await mediator.Send(new AdminGetLegalDocument.Query("01ARZ3NDEKTSV4RRFFQ69G5FAV", "cs"));
                 return (terms, czech, missing);

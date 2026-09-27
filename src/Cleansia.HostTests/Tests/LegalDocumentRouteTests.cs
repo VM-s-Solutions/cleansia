@@ -37,13 +37,14 @@ public sealed class LegalDocumentRouteTests(HostTestPostgresFixture db) : AuthzH
     private Task ArrangeMarketAsync() => SeedAsync(DomainSeed.EnsureReferenceDataAsync);
 
     [Fact]
-    public async Task Booting_a_host_seeds_the_three_customer_documents_in_five_languages()
+    public async Task Booting_a_host_seeds_every_customer_document_version_in_five_languages()
     {
         await ArrangeMarketAsync();
 
         var documents = await QueryAsync(ctx => ctx.LegalDocuments.Include(d => d.Texts).AsNoTracking().ToListAsync());
 
-        Assert.Equal(3, documents.Count);
+        Assert.Equal(4, documents.Count);
+        Assert.Equal(2, documents.Count(d => d.Type == LegalDocumentType.TermsOfService));
         Assert.Contains(documents, d => d.Type == LegalDocumentType.WorkContract);
         Assert.All(documents, d => Assert.Equal(LegalDocumentAudience.Customer, d.Audience));
         Assert.All(documents, d => Assert.Null(d.CountryId));
@@ -61,8 +62,11 @@ public sealed class LegalDocumentRouteTests(HostTestPostgresFixture db) : AuthzH
         HttpAssert.IsOk(resp);
         using var doc = JsonDocument.Parse(await resp.Content.ReadAsStringAsync());
         var body = doc.RootElement;
+        var today = DateOnly.FromDateTime(DateTime.UtcNow);
         var seeded = await QueryAsync(ctx => ctx.LegalDocuments.AsNoTracking()
-            .SingleAsync(d => d.Type == LegalDocumentType.TermsOfService && d.CountryId == null));
+            .Where(d => d.Type == LegalDocumentType.TermsOfService && d.CountryId == null && d.EffectiveFrom <= today)
+            .OrderByDescending(d => d.EffectiveFrom)
+            .FirstAsync());
         Assert.Equal(seeded.Version, body.GetProperty("version").GetString());
         Assert.Equal((int)LegalDocumentType.TermsOfService, body.GetProperty("type").GetInt32());
         Assert.Equal("cs", body.GetProperty("language").GetString());

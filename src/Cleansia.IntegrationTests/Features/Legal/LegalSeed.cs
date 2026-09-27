@@ -13,9 +13,16 @@ public static class LegalSeed
         new LegalDocumentSeeder(context, NullLogger<LegalDocumentSeeder>.Instance)
             .SeedAsync(DateOnly.FromDateTime(DateTime.UtcNow), CancellationToken.None);
 
-    public static Task<LegalDocument> PlatformWideAsync(CleansiaDbContext context, LegalDocumentType type) =>
-        context.LegalDocuments
+    /// <summary>The platform-wide version in force today, the one the resolver serves.</summary>
+    public static Task<LegalDocument> PlatformWideAsync(CleansiaDbContext context, LegalDocumentType type)
+    {
+        var today = DateOnly.FromDateTime(DateTime.UtcNow);
+        return context.LegalDocuments
             .Include(d => d.Texts)
             .AsNoTracking()
-            .SingleAsync(d => d.Audience == LegalDocumentAudience.Customer && d.Type == type && d.CountryId == null);
+            .Where(d => d.Audience == LegalDocumentAudience.Customer && d.Type == type && d.CountryId == null
+                && d.EffectiveFrom <= today)
+            .OrderByDescending(d => d.EffectiveFrom)
+            .FirstAsync();
+    }
 }

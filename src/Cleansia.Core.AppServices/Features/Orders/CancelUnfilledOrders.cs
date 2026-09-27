@@ -13,6 +13,7 @@ using Cleansia.Infra.Common.Validations;
 using FluentValidation;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Polly;
 using BusinessResult = Cleansia.Infra.Common.Validations.BusinessResult;
 
 namespace Cleansia.Core.AppServices.Features.Orders;
@@ -158,42 +159,33 @@ public class CancelUnfilledOrders
                     // THE REPEAT SUPPRESSOR IS THE CANCEL ITSELF. Cancelled is outside NeverStarted, so
                     // the next tick's own status filter excludes the row — the CleanupStalePendingOrders
                     // shape, and the reason this sweep needs no stamp column and therefore no schema.
-                    // A partial failure re-enters safely: the refund key is deterministic and resolves
-                    // to the existing refund, and the credit's idempotency key is unique per order.
+                    // It also means this sweep never retries its own refund: the refund's claim commit
+                    // saves this cancel before Stripe is called, so however the refund fails, the order
+                    // is already out of every later tick.
 
+                    var refundIssued = false;
                     if (order.PaymentType == PaymentType.Card
                         && order.PaymentStatus == PaymentStatus.Paid
                         && order.TotalPrice > 0m
                         && order.HasRefundableChargeSurface)
                     {
-                        var refund = await refundService.IssueRefundAsync(
-                            new RefundRequest(
-                                order.Id,
-                                order.TotalPrice,
-                                RefundReason.ServiceNotRendered,
-                                SystemActor),
-                            cancellationToken);
-
-                        if (refund.IsSuccess)
+                        refundIssued = await TryRefundAsync(order, cancellationToken);
+                        if (refundIssued)
                         {
                             refunded++;
                         }
-                        else
-                        {
-                            // Say so and carry on. The cancellation is still right, and a refund that
-                            // did not go through is a thing a person must see — not a reason to leave
-                            // the customer holding a booking nobody is coming to.
-                            logger.LogError(
-                                "CancelUnfilledOrders could not refund order {OrderId}: {Error}",
-                                order.Id, refund.Error?.Message);
-                        }
                     }
 
-                    // The credit any card refund already returned goes back on its own leg. Separate
-                    // from the apology below: this is the customer's own money coming home, that one
-                    // is a gift.
-                    await creditAccountRepository.ReturnUnpaidOrderCreditAsync(
-                        order, SystemActor, cancellationToken);
+                    // A refund of the whole sale already returned the applied credit on its own leg.
+                    // Without one — none attempted, or it failed — the credit comes back here, now:
+                    // nothing re-drives this sweep's refund, and any later refund of the order nets
+                    // off credit already returned, so this cannot pay it twice. Separate from the
+                    // apology below: this is the customer's own money coming home, that one is a gift.
+                    if (!refundIssued)
+                    {
+                        await creditAccountRepository.ReturnUnpaidOrderCreditAsync(
+                            order, SystemActor, cancellationToken);
+                    }
 
                     var apology = await TryIssueApologyCreditAsync(order, cancellationToken);
                     var apologised = apology is not null;
@@ -256,6 +248,52 @@ public class CancelUnfilledOrders
 
             return BusinessResult.Success(new Response(cancelled, refunded, credited));
         }
+
+        /// <summary>
+        /// The full card refund, and whether it went through. A failure is logged for a person and
+        /// carried on from: the cancellation is still right, and a refund that did not go through is
+        /// not a reason to leave the customer holding a booking nobody is coming to.
+        ///
+        /// <para><b>A Stripe transport fault is a failed refund, not a crash.</b> RefundService turns a
+        /// Stripe refusal into a Failure but lets a timeout, a dropped connection or an open circuit
+        /// escape, after its claim commit has already saved this cancel — rethrown, the applied credit
+        /// would never come back. Caught here and not in RefundService, whose guest cancellation relies
+        /// on that escape to stay retryable.</para>
+        /// </summary>
+        private async Task<bool> TryRefundAsync(Order order, CancellationToken cancellationToken)
+        {
+            BusinessResult<RefundResult> refund;
+            try
+            {
+                refund = await refundService.IssueRefundAsync(
+                    new RefundRequest(
+                        order.Id,
+                        order.TotalPrice,
+                        RefundReason.ServiceNotRendered,
+                        SystemActor),
+                    cancellationToken);
+            }
+            catch (Exception ex) when (IsStripeTransportFailure(ex, cancellationToken))
+            {
+                logger.LogError(ex,
+                    "CancelUnfilledOrders could not reach Stripe to refund order {OrderId}; the refund is left pending",
+                    order.Id);
+                return false;
+            }
+
+            if (refund.IsFailure)
+            {
+                logger.LogError(
+                    "CancelUnfilledOrders could not refund order {OrderId}: {Error}",
+                    order.Id, refund.Error?.Message);
+            }
+
+            return refund.IsSuccess;
+        }
+
+        private static bool IsStripeTransportFailure(Exception ex, CancellationToken cancellationToken) =>
+            ex is HttpRequestException or TimeoutException or ExecutionRejectedException
+            || (ex is OperationCanceledException && !cancellationToken.IsCancellationRequested);
 
         /// <summary>
         /// The apology credit: the amount issued, or null — without failing the cancellation —

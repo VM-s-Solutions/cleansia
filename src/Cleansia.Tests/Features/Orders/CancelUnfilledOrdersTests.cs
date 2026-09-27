@@ -1,3 +1,4 @@
+using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Credit;
@@ -12,6 +13,8 @@ using Cleansia.Infra.Common.Validations;
 using Microsoft.Extensions.Logging;
 using MockQueryable;
 using Moq;
+using Polly.CircuitBreaker;
+using Polly.Timeout;
 
 namespace Cleansia.Tests.Features.Orders;
 
@@ -389,6 +392,134 @@ public class CancelUnfilledOrdersTests
         Assert.Equal(0, result.Value.RefundedCount);
         Assert.Equal(1, result.Value.CreditedCount);
     }
+
+    /// <summary>
+    /// A card refund of the whole sale already puts the credit share back on its own leg, so the
+    /// order-ended return must not pay the same credit a second time.
+    /// </summary>
+    [Fact]
+    public async Task ARefundedCardOrdersAppliedCreditIsNotReturnedASecondTime()
+    {
+        var order = UnfilledOrder();
+        order.ApplyCredit(300m, UserId);
+        Arrange(order);
+
+        var result = await Sweep();
+
+        Assert.Equal(1, result.Value.RefundedCount);
+        _refunds.Verify(r => r.IssueRefundAsync(
+            It.Is<RefundRequest>(q => q.OrderId == order.Id && q.Amount == order.TotalPrice),
+            It.IsAny<CancellationToken>()), Times.Once);
+        VerifyOrderEndedCreditReturn(order, Times.Never());
+    }
+
+    /// <summary>
+    /// Nothing re-drives this sweep's refund, so a card refund that failed still gives the credit back
+    /// now. A later refund of the order nets off what already went back, so this cannot double it.
+    /// </summary>
+    [Fact]
+    public async Task AFailedCardRefundStillReturnsTheAppliedCreditOnce()
+    {
+        var order = UnfilledOrder();
+        order.ApplyCredit(300m, UserId);
+        _refunds.Setup(r => r.IssueRefundAsync(It.IsAny<RefundRequest>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(BusinessResult.Failure<RefundResult>(
+                new Error(nameof(RefundRequest.Amount), BusinessErrorMessage.RefundFailed)));
+        Arrange(order);
+
+        var result = await Sweep();
+
+        Assert.Equal(0, result.Value.RefundedCount);
+        VerifyOrderEndedCreditReturn(order, Times.Once());
+    }
+
+    /// <summary>
+    /// RefundService turns a Stripe refusal into a Failure but lets a transport fault escape, after its
+    /// claim commit has already saved the cancel. Rethrown, the order would leave the sweep for good
+    /// with its credit never returned.
+    /// </summary>
+    [Theory]
+    [MemberData(nameof(StripeTransportFailures))]
+    public async Task AStripeTransportFaultIsAFailedRefundAndTheCreditStillComesBackOnce(Exception failure)
+    {
+        var order = UnfilledOrder();
+        order.ApplyCredit(300m, UserId);
+        _refunds.Setup(r => r.IssueRefundAsync(It.IsAny<RefundRequest>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(failure);
+        Arrange(order);
+
+        var result = await Sweep();
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(1, result.Value.CancelledCount);
+        Assert.Equal(0, result.Value.RefundedCount);
+        Assert.Equal(1, result.Value.CreditedCount);
+        Assert.Equal(OrderStatus.Cancelled, order.CurrentStatus);
+        VerifyOrderEndedCreditReturn(order, Times.Once());
+        Assert.Equal(CzkApology, _account!.Balance);
+        _notifications.Verify(n => n.NotifyAsync(
+            UserId, It.IsAny<string>(), It.IsAny<Dictionary<string, string>>(),
+            It.IsAny<string?>(), order.Id, It.IsAny<CancellationToken>()), Times.Once);
+        _uow.Verify(u => u.CommitAsync(It.IsAny<CancellationToken>()), Times.Once);
+        Assert.Contains(_log, e => e.Level == LogLevel.Error && e.Message.Contains(order.Id));
+    }
+
+    public static TheoryData<Exception> StripeTransportFailures() =>
+    [
+        new HttpRequestException("connection reset"),
+        new TimeoutException("gateway timeout"),
+        new TaskCanceledException("the request timed out"),
+        new TimeoutRejectedException("total request timeout"),
+        new BrokenCircuitException("circuit open"),
+    ];
+
+    /// <summary>A caller-requested cancellation is a genuine abort, not a Stripe outage.</summary>
+    [Fact]
+    public async Task ACancelledSweepIsNotLaunderedIntoAFailedRefund()
+    {
+        var order = UnfilledOrder();
+        order.ApplyCredit(300m, UserId);
+        using var cancellation = new CancellationTokenSource();
+        _refunds.Setup(r => r.IssueRefundAsync(It.IsAny<RefundRequest>(), It.IsAny<CancellationToken>()))
+            .Returns(async () =>
+            {
+                await cancellation.CancelAsync();
+                throw new TaskCanceledException();
+            });
+        Arrange(order);
+
+        await Assert.ThrowsAsync<TaskCanceledException>(
+            () => Handler().Handle(new CancelUnfilledOrders.Command(), cancellation.Token));
+
+        VerifyOrderEndedCreditReturn(order, Times.Never());
+        _uow.Verify(u => u.CommitAsync(It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task AnUnchargedOrdersAppliedCreditIsReturnedOnce()
+    {
+        var order = UnfilledOrder(paymentType: PaymentType.Cash, paymentStatus: PaymentStatus.Pending);
+        order.ApplyCredit(300m, UserId);
+        Arrange(order);
+
+        await Sweep();
+
+        _refunds.Verify(
+            r => r.IssueRefundAsync(It.IsAny<RefundRequest>(), It.IsAny<CancellationToken>()),
+            Times.Never);
+        VerifyOrderEndedCreditReturn(order, Times.Once());
+    }
+
+    private void VerifyOrderEndedCreditReturn(Order order, Times times) =>
+        _credit.Verify(c => c.TryReturnAsync(
+            UserId,
+            DefaultCurrencyId,
+            300m,
+            $"credit-return:order-ended-unpaid:{order.Id}",
+            "system",
+            It.IsAny<CancellationToken>(),
+            order.Id,
+            It.IsAny<string?>()), times);
 
     /// <summary>
     /// The customer must be told, and told about the money. Owner ruling 2026-09-06: the 250 is

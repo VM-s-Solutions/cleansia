@@ -1261,6 +1261,41 @@
         }
       }
     },
+    "error.credit.cash_not_collectable_on_credit_order": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Část této objednávky již byla uhrazena z kreditu zákazníka. Požádejte o vyřízení kancelář — částku uvedenou v aplikaci nevybírejte."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Part of this order was already paid from the customer’s credit. Ask an office admin to settle it — do not collect the amount shown."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Часть этого заказа уже оплачена бонусами клиента. Обратитесь в офис — не берите сумму, указанную в приложении."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Časť tejto objednávky už bola uhradená z kreditu zákazníka. Požiadajte o vybavenie kanceláriu — sumu uvedenú v aplikácii nevyberajte."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Частину цього замовлення вже оплачено бонусами клієнта. Зверніться до офісу — не беріть суму, вказану в додатку."
+          }
+        }
+      }
+    },
     "error.currency.invalid": {
       "extractionState": "manual",
       "localizations": {

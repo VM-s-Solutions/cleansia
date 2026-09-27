@@ -1113,6 +1113,7 @@
     <string name="error_order_card_payment_unverified">Не вдалося перевірити оплату карткою за це замовлення. Поки не беріть готівку — спробуйте ще раз за хвилину.</string>
     <string name="error_order_cash_not_allowed_on_card_order">Це замовлення оплачується карткою, тому готівку за нього зафіксувати не можна. Не беріть готівку — зверніться до офісу.</string>
     <string name="error_order_payment_not_outstanding">За цим замовленням уже нічого стягувати — його оплачено або кошти повернено. Не беріть готівку.</string>
+    <string name="error_credit_cash_not_collectable_on_credit_order">Частину цього замовлення вже оплачено бонусами клієнта. Зверніться до офісу — не беріть суму, вказану в додатку.</string>
 
     <string name="error_order_note_content_required">Текст нотатки обов\'язковий.</string>
     <string name="error_order_issue_description_required">Опис проблеми обов\'язковий.</string>

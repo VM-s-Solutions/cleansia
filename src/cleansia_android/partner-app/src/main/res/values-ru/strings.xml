@@ -1113,6 +1113,7 @@
     <string name="error_order_card_payment_unverified">Не удалось проверить оплату картой за этот заказ. Пока не берите наличные — попробуйте снова через минуту.</string>
     <string name="error_order_cash_not_allowed_on_card_order">Этот заказ оплачивается картой, поэтому наличные по нему записать нельзя. Не берите наличные — обратитесь в офис.</string>
     <string name="error_order_payment_not_outstanding">По этому заказу уже нечего собирать — он оплачен или деньги возвращены. Не берите наличные.</string>
+    <string name="error_credit_cash_not_collectable_on_credit_order">Часть этого заказа уже оплачена бонусами клиента. Обратитесь в офис — не берите сумму, указанную в приложении.</string>
 
     <string name="error_order_note_content_required">Текст заметки обязателен.</string>
     <string name="error_order_issue_description_required">Описание проблемы обязательно.</string>

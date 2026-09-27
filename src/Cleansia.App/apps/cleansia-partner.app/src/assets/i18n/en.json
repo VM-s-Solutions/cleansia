@@ -645,7 +645,6 @@
         "invalid_request": "Invalid request. Missing required information.",
         "order_started": "Order started successfully.",
         "cash_collected": "Cash collected. The order is marked as paid.",
-        "cash_collect_failed": "Failed to record the cash collection. Please try again.",
         "failed_to_start": "Failed to start order. Please try again.",
         "print_failed": "Failed to print order. Please try again.",
         "receipt_not_available": "Receipt is not available for this order.",
@@ -898,6 +897,7 @@
       "card_payment_in_progress": "The card payment is still being processed. Wait a moment and try again — don't take cash yet.",
       "card_payment_unverified": "We couldn't check the card payment status right now, so cash can't be recorded. Try again shortly or contact an administrator.",
       "cash_not_allowed_on_card_order": "This order is paid by card, so cash can't be recorded for it. Don't take cash — ask an office admin to settle it.",
+      "payment_not_outstanding": "This order has no payment left to collect — it is already settled or refunded. Don't take cash.",
       "completion_notes": {
         "too_long": "Completion notes are too long"
       },

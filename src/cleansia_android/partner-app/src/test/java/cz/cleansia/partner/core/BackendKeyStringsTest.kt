@@ -102,6 +102,14 @@ class BackendKeyStringsTest {
         assertTrue("order.cash_not_allowed_on_card_order renders raw in $raw", raw.isEmpty())
     }
 
+    /** `MarkCashCollected` refuses an order with nothing left to pay (settled, refunded, disputed). */
+    @Test
+    fun `the nothing-outstanding refusal resolves to a sentence in all five locales`() {
+        val resName = "error_order_payment_not_outstanding"
+        val raw = locales.filterNot { resName in declared(it) }
+        assertTrue("order.payment_not_outstanding renders raw in $raw", raw.isEmpty())
+    }
+
     @Test
     fun `every profile field the lock can list resolves to a label`() {
         ProfileSection.entries.flatMap { it.ownedFields() }.forEach { key ->

@@ -645,7 +645,6 @@
         "invalid_request": "Neplatný požadavek. Chybí požadované informace.",
         "order_started": "Objednávka byla úspěšně zahájena.",
         "cash_collected": "Hotovost byla přijata. Objednávka je označena jako zaplacená.",
-        "cash_collect_failed": "Nepodařilo se zaznamenat přijetí hotovosti. Zkuste to prosím znovu.",
         "failed_to_start": "Nepodařilo se zahájit objednávku. Zkuste to prosím znovu.",
         "print_failed": "Nepodařilo se vytisknout objednávku. Zkuste to prosím znovu.",
         "receipt_not_available": "Účtenka není k dispozici pro tuto objednávku.",
@@ -898,6 +897,7 @@
       "card_payment_in_progress": "Platba kartou se stále zpracovává. Chvíli počkejte a zkuste to znovu — hotovost zatím nevybírejte.",
       "card_payment_unverified": "Stav platby kartou se teď nepodařilo ověřit, hotovost proto nelze zaznamenat. Zkuste to za chvíli znovu nebo kontaktujte administrátora.",
       "cash_not_allowed_on_card_order": "Tato objednávka se platí kartou, hotovost u ní proto nelze zaznamenat. Hotovost nevybírejte — požádejte o vyřízení kancelář.",
+      "payment_not_outstanding": "U této zakázky už není co vybrat — je uhrazená, nebo byly peníze vráceny. Hotovost nevybírejte.",
       "completion_notes": {
         "too_long": "Poznámky k dokončení jsou příliš dlouhé"
       },

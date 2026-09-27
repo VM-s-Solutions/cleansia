@@ -1107,6 +1107,7 @@
     <string name="error_order_card_payment_in_progress">Platba kartou za túto zákazku sa stále spracúva. Chvíľu počkajte a skúste to znova.</string>
     <string name="error_order_card_payment_unverified">Nepodarilo sa overiť platbu kartou za túto zákazku. Zatiaľ nevyberajte hotovosť — skúste to o chvíľu znova.</string>
     <string name="error_order_cash_not_allowed_on_card_order">Táto zákazka sa platí kartou, hotovosť pri nej preto nemožno zaznamenať. Hotovosť nevyberajte — požiadajte o vybavenie kanceláriu.</string>
+    <string name="error_order_payment_not_outstanding">Pri tejto zákazke už nie je čo vybrať — je uhradená alebo boli peniaze vrátené. Hotovosť nevyberajte.</string>
 
     <string name="error_order_note_content_required">Text poznámky je povinný.</string>
     <string name="error_order_issue_description_required">Popis problému je povinný.</string>

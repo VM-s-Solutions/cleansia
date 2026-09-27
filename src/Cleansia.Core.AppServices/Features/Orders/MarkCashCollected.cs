@@ -61,7 +61,11 @@ public class MarkCashCollected
                 .MustAsync(OrderIsInProgressAsync)
                 .WithMessage(BusinessErrorMessage.OrderNotInProgress)
                 .MustAsync(OrderIsNotAlreadyPaidAsync)
-                .WithMessage(BusinessErrorMessage.OrderCashAlreadyCollected);
+                .WithMessage(BusinessErrorMessage.OrderCashAlreadyCollected)
+                // Only a Pending or Failed payment is money still owed; recording cash on a refunded or
+                // disputed order would mark it Paid over the refund.
+                .MustAsync(OrderPaymentIsOutstandingAsync)
+                .WithMessage(BusinessErrorMessage.OrderPaymentNotOutstanding);
 
             // Same ownership gate as StartOrder / CompleteOrder: only an Approved cleaner assigned to the
             // order may collect its cash. Employee is server-derived from the caller (S1); empty caller
@@ -91,6 +95,15 @@ public class MarkCashCollected
                 .FirstOrDefaultAsync(o => o.Id == orderId, cancellationToken);
 
             return order is not null && order.PaymentStatus != PaymentStatus.Paid;
+        }
+
+        private async Task<bool> OrderPaymentIsOutstandingAsync(string orderId, CancellationToken cancellationToken)
+        {
+            var order = await _orderRepository
+                .GetQueryable()
+                .FirstOrDefaultAsync(o => o.Id == orderId, cancellationToken);
+
+            return order?.PaymentStatus is PaymentStatus.Pending or PaymentStatus.Failed;
         }
 
         private async Task<bool> EmployeeIsApprovedAsync(Command command, CancellationToken cancellationToken)

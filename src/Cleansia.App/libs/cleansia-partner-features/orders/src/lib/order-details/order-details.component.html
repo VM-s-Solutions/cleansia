@@ -138,7 +138,7 @@
       }
 
       <!-- Action buttons row: Report Issue / Add Note available across active statuses, Mark Cash Collected
-           only while InProgress and unpaid, Complete only in InProgress with after-photos. -->
+           only while InProgress, awaiting payment and not refused by anything the job sheet shows, Complete only in InProgress with after-photos. -->
       @if (canAddNoteOrIssue() || canMarkCashCollected() || canCompleteOrder()) {
       <div class="cleansia-order-details__actions-row">
         @if (canMarkCashCollected()) {

@@ -35,7 +35,11 @@ import {
   WorkContractDialogOutcome,
   WorkContractDialogResult,
 } from '../components/work-contract-dialog';
-import { canMarkCashCollected, formatCurrency } from './order-details.helpers';
+import {
+  canMarkCashCollected,
+  cashCollectionRefusal,
+  formatCurrency,
+} from './order-details.helpers';
 
 const ACCEPTANCE_REQUIRED = 'contract.acceptance_required';
 
@@ -481,18 +485,10 @@ export class OrderDetailsFacade extends UnsubscribeControlDirective {
       return;
     }
 
-    // Pre-flight gate mirroring MarkCashCollected.Validator: InProgress, not already Paid,
-    // caller assigned. Defence in depth — the trigger is already hidden outside this window.
-    if (
-      !canMarkCashCollected(
-        order.orderStatus.value,
-        order.paymentStatus.value,
-        order.assignedEmployees,
-        employeeId
-      )
-    ) {
+    // Defence in depth — the trigger is already hidden whenever this refuses.
+    if (!canMarkCashCollected(order, employeeId)) {
       this.snackbarService.showErrorTranslated(
-        'pages.order_details.mark_cash_collected_gating_error'
+        cashCollectionRefusal(order) ?? 'pages.order_details.mark_cash_collected_gating_error'
       );
       return;
     }
@@ -547,11 +543,13 @@ export class OrderDetailsFacade extends UnsubscribeControlDirective {
           // Reload so the payment status reflects the collection.
           this.loadOrderDetails(orderId);
         }),
+        // The interceptor has already shown the refusal. Re-read after a server refusal: it can
+        // follow a repair (a card payment Stripe had already settled is now Paid). Without an
+        // answer from the server a re-read would most likely fail too and blank the sheet.
         catchError((error) => {
-          this.snackbarService.showApiError(
-            error,
-            'global.messages.orders.cash_collect_failed'
-          );
+          if (extractApiErrorCode(error)) {
+            this.loadOrderDetails(orderId);
+          }
           return of(null);
         }),
         finalize(() => this.loading.set(false))

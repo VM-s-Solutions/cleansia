@@ -3569,6 +3569,41 @@
         }
       }
     },
+    "error.order.payment_not_outstanding": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "U této zakázky už není co vybrat — je uhrazená, nebo byly peníze vráceny. Hotovost nevybírejte."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This order has no payment left to collect — it is already settled or refunded. Don't take cash."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "По этому заказу уже нечего собирать — он оплачен или деньги возвращены. Не берите наличные."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pri tejto zákazke už nie je čo vybrať — je uhradená alebo boli peniaze vrátené. Hotovosť nevyberajte."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "За цим замовленням уже нічого стягувати — його оплачено або кошти повернено. Не беріть готівку."
+          }
+        }
+      }
+    },
     "error.order.cash_not_available": {
       "extractionState": "manual",
       "localizations": {

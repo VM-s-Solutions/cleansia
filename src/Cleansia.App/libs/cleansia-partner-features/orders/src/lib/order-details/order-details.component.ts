@@ -217,18 +217,11 @@ export class OrderDetailsComponent implements OnInit {
     return canAddNoteOrIssue(order.orderStatus.value, order.assignedEmployees, eid);
   });
 
-  // Mirrors MarkCashCollected.Validator: InProgress + not already Paid + assigned.
-  // Not gated on paymentType — the backend accepts a card booking whose webhook never arrived.
   protected readonly canMarkCashCollected = computed((): boolean => {
     const order = this.orderDetails();
     const eid = this.currentEmployeeId();
     if (!order || !eid) return false;
-    return canMarkCashCollected(
-      order.orderStatus.value,
-      order.paymentStatus.value,
-      order.assignedEmployees,
-      eid
-    );
+    return canMarkCashCollected(order, eid);
   });
 
   constructor() {

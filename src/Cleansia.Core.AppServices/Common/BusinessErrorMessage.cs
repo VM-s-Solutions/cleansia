@@ -97,6 +97,8 @@ public static class BusinessErrorMessage
     public const string CardPaymentUnverified = "order.card_payment_unverified";
     /// <summary>The cleaner's side of <see cref="OrderCashNotAvailable"/>: cash on a card order only where the booking could have chosen it.</summary>
     public const string OrderCashNotAllowedOnCardOrder = "order.cash_not_allowed_on_card_order";
+    /// <summary>MarkCashCollected on an order with nothing outstanding: settled, refunded or disputed.</summary>
+    public const string OrderPaymentNotOutstanding = "order.payment_not_outstanding";
     public const string AddressNotOwnedByUser = "address.not_owned_by_user";
     public const string AddressLabelRequired = "address.label_required";
     public const string SavedAddressAlreadyExists = "address.already_exists";

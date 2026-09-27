@@ -865,6 +865,7 @@
     <string name="membership_switch_to_annual_cta">Prejsť na ročné — ušetríte %1$d%%</string>
     <string name="membership_switch_dialog_title">Prejsť na ročné?</string>
     <string name="membership_switch_dialog_message">Dnes zaplatíte pomerný rozdiel, potom %1$s za rok. Vaše výhody pokračujú.</string>
+    <string name="membership_switch_dialog_message_trial">Skúšobné obdobie pokračuje do %1$s. Nový plán (%2$s) sa uplatní od prvého plateného obdobia a až s ním začnú platiť výhody Plus.</string>
     <string name="membership_switch_dialog_confirm">Prejsť</string>
     <string name="membership_switch_success">Vitajte v ročnom predplatnom!</string>
     <string name="membership_perk_favorite_cleaner_title">Vaša obľúbená upratovačka</string>
@@ -896,6 +897,9 @@
     <string name="membership_inactive_cta">Vyskúšať zdarma na 14 dní</string>
     <string name="membership_success_title">Vitajte v Plus!</string>
     <string name="membership_success_subtitle">Vaše výhody sú hneď aktívne. Tu je, čo ste práve odomkli:</string>
+    <string name="membership_success_subtitle_trial">Vaše skúšobné obdobie Cleansia Plus sa začalo.</string>
+    <string name="membership_trial_perks_title">Čo zahŕňa platené členstvo</string>
+    <string name="membership_trial_perks_note">Počas skúšobného obdobia z toho zatiaľ nič neplatí — výhody začnú až s prvým plateným mesiacom.</string>
     <string name="membership_success_perks_header">VAŠE VÝHODY PLUS</string>
     <string name="membership_success_perk_express">Expresné termíny bez príplatku — od prvého plateného mesiaca</string>
     <string name="membership_success_cta_setup_recurring">Nastaviť pravidelné upratovanie</string>
@@ -903,15 +907,18 @@
     <string name="membership_active_status">Aktívne</string>
     <string name="membership_renews_on">Obnoví sa %1$s</string>
     <string name="membership_cancelled_until">Aktívne do %1$s</string>
+    <string name="membership_cancel_success_trial">Členstvo zrušené — nenasleduje žiadny platený mesiac, takže vám nič nenaúčtujeme.</string>
     <string name="membership_active_until">Aktívne do %1$s</string>
     <string name="membership_status_ending">Zrušenie vyžiadané</string>
     <string name="membership_status_ending_badge">KONČÍ</string>
     <string name="membership_status_active_badge">PLUS · AKTÍVNE</string>
     <string name="membership_then_ends_hint">Výhody Plus týmto dňom skončia.</string>
+    <string name="membership_trial_cancelled_lead">Keďže ste ho zrušili počas skúšobného obdobia, nenasleduje žiadny platený mesiac a výhody Plus tak vôbec nezačnú platiť.</string>
     <string name="membership_auto_renew_hint">Obnovuje sa automaticky — kedykoľvek môžete zrušiť.</string>
     <string name="membership_cancel_action">Zrušiť predplatné</string>
     <string name="membership_cancel_dialog_title">Zrušiť Cleansia Plus?</string>
     <string name="membership_cancel_dialog_message">Vaše výhody zostanú do konca aktuálneho zúčtovacieho obdobia. Ďalšia platba neprebehne.</string>
+    <string name="membership_cancel_dialog_message_trial">Skúšobné obdobie skončí %1$s. Nenasleduje žiadny platený mesiac, takže vám nič nenaúčtujeme a žiadna z výhod Plus nezačne platiť.</string>
     <string name="membership_cancel_dialog_confirm">Zrušiť</string>
     <string name="membership_subscribed_success">Vitajte v Cleansia Plus!</string>
     <string name="membership_already_active">Už ste členom Plus.</string>
@@ -980,6 +987,8 @@
     <string name="recurring_edit_submit">Uložiť zmeny</string>
     <string name="recurring_edit_success">Rozvrh bol aktualizovaný.</string>
     <string name="recurring_edit_load_failed">Tento rozvrh sa nepodarilo načítať. Vráťte sa späť a skúste to znova.</string>
+    <string name="preferred_cleaner_schedule_refused">Pri tomto rozvrhu už nemôžeme vášho obľúbeného upratovača požiadať ako prvého — napríklad preto, že adresa upratovania je teraz v inej krajine. Rozvrh môžete uložiť bez neho a každé upratovanie sa potom otvorí celému nášmu tímu.</string>
+    <string name="preferred_cleaner_schedule_save_without">Uložiť bez obľúbeného upratovača</string>
     <string name="recurring_edit_notice_title">Čo sa uložením zmení</string>
     <string name="recurring_edit_notice_what_changes">Upratovania nanovo objednané z tohto rozvrhu sa budú riadiť údajmi vyššie.</string>
     <string name="recurring_edit_notice_what_stays">Upratovania, ktoré už máte v kalendári, si ponechajú pôvodný čas aj cenu — zmeniť alebo zrušiť ich môžete jednotlivo v Objednávkach.</string>
@@ -987,8 +996,6 @@
     <string name="recurring_freq_biweekly_label">Každé 2 týždne</string>
     <string name="recurring_freq_monthly_label">Každý mesiac</string>
     <string name="recurring_create_step_when_title">Kedy</string>
-    <string name="preferred_cleaner_schedule_refused">Pri tomto rozvrhu už nemôžeme vášho obľúbeného upratovača požiadať ako prvého — napríklad preto, že adresa upratovania je teraz v inej krajine. Rozvrh môžete uložiť bez neho a každé upratovanie sa potom otvorí celému nášmu tímu.</string>
-    <string name="preferred_cleaner_schedule_save_without">Uložiť bez obľúbeného upratovača</string>
     <string name="recurring_create_step_what_title">Čo upratovať</string>
     <string name="recurring_create_step_where_pay_title">Kde a platba</string>
     <string name="recurring_create_back">Späť</string>

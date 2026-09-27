@@ -3,9 +3,9 @@ import Foundation
 /// What a customer surface may say about the express surcharge waiver.
 ///
 /// `expressUpgradesRemaining` is `0` for a member still inside the trial **and** for one who has used
-/// the month's allowance up, so `trialEndsAtUtc` is the only field that separates them — a trialing
-/// member is active and keeps the discount and the cancellation window, but earns no waiver, and
-/// telling them they used theirs up would be a fresh false claim.
+/// the month's allowance up, so `trialEndsAtUtc` is the only field that separates them — no Plus benefit
+/// runs during a trial, the waiver included, and telling a trialing member they used theirs up would be a
+/// fresh false claim.
 enum ExpressWaiverStatus: Equatable {
     case none
     case trial

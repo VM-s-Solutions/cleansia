@@ -25,6 +25,9 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
+import kotlinx.datetime.Clock
+import kotlinx.datetime.Instant
+import kotlin.time.Duration.Companion.days
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -286,6 +289,60 @@ class MembershipViewModelTest {
         advanceUntilIdle()
 
         verify(exactly = 1) { snackbar.showSuccess("Active until ${formatPeriodEnd("2026-07-01T00:00:00Z")}") }
+        assertEquals(ActionState.Idle, vm.submitState.value)
+    }
+
+    // No Plus benefit runs during the free trial; every one starts with the first paid month.
+
+    private fun member(trialEndsAtUtc: Instant?, hasMembership: Boolean = true) = GetMyMembershipResponse(
+        hasMembership = hasMembership,
+        planCode = "plus_monthly",
+        trialEndsAtUtc = trialEndsAtUtc,
+    )
+
+    private val trialRunning get() = Clock.System.now() + 7.days
+    private val trialEnded get() = Clock.System.now() - 1.days
+
+    @Test
+    fun `a running trial is exposed with its end date`() = runTest {
+        val end = trialRunning
+        current.value = member(trialEndsAtUtc = end)
+
+        val vm = viewModel()
+        advanceUntilIdle()
+
+        assertEquals(end, vm.trialEndsAt.value)
+    }
+
+    @Test
+    fun `an ended trial, a paid membership and no membership expose no trial`() = runTest {
+        val vm = viewModel()
+        listOf(
+            member(trialEndsAtUtc = trialEnded),
+            member(trialEndsAtUtc = null),
+            member(trialEndsAtUtc = trialRunning, hasMembership = false),
+            null,
+        ).forEach { membership ->
+            current.value = membership
+            advanceUntilIdle()
+            assertEquals("for $membership", null, vm.trialEndsAt.value)
+        }
+    }
+
+    @Test
+    fun `cancelling during the trial says no paid month follows, not that benefits run on`() = runTest {
+        current.value = member(trialEndsAtUtc = trialRunning)
+        coEvery { repository.cancel() } returns ApiResult.Success(
+            CancelMembershipSubscriptionResponse(effectiveEndDate = "2026-10-04T00:00:00Z"),
+        )
+
+        val vm = viewModel()
+        advanceUntilIdle()
+        vm.cancel()
+        advanceUntilIdle()
+
+        verify(exactly = 1) { snackbar.showSuccessKey(R.string.membership_cancel_success_trial) }
+        verify(exactly = 0) { snackbar.showSuccess(any<String>()) }
         assertEquals(ActionState.Idle, vm.submitState.value)
     }
 

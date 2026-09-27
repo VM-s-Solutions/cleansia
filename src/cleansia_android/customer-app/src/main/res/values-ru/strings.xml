@@ -865,6 +865,7 @@
     <string name="membership_switch_to_annual_cta">Перейти на годовой — экономия %1$d%%</string>
     <string name="membership_switch_dialog_title">Перейти на годовой?</string>
     <string name="membership_switch_dialog_message">Сегодня будет списана пропорциональная разница, затем %1$s в год. Ваши преимущества продолжаются.</string>
+    <string name="membership_switch_dialog_message_trial">Пробный период продолжается до %1$s. Новый план (%2$s) применяется с первого оплаченного периода, и только тогда начнут действовать преимущества Plus.</string>
     <string name="membership_switch_dialog_confirm">Перейти</string>
     <string name="membership_switch_success">Добро пожаловать в годовой план!</string>
     <string name="membership_perk_favorite_cleaner_title">Ваш любимый клинер</string>
@@ -896,6 +897,9 @@
     <string name="membership_inactive_cta">Попробовать бесплатно 14 дней</string>
     <string name="membership_success_title">Добро пожаловать в Plus!</string>
     <string name="membership_success_subtitle">Ваши преимущества активны сразу. Вот что только что открылось:</string>
+    <string name="membership_success_subtitle_trial">Ваш пробный период Cleansia Plus начался.</string>
+    <string name="membership_trial_perks_title">Что входит в платную подписку</string>
+    <string name="membership_trial_perks_note">Во время пробного периода ничего из этого не действует — преимущества начнут действовать только с первого оплаченного месяца.</string>
     <string name="membership_success_perks_header">ВАШИ ПРЕИМУЩЕСТВА PLUS</string>
     <string name="membership_success_perk_express">Экспресс-заказы без доплаты — с первого оплаченного месяца</string>
     <string name="membership_success_cta_setup_recurring">Настроить регулярную уборку</string>
@@ -903,15 +907,18 @@
     <string name="membership_active_status">Активна</string>
     <string name="membership_renews_on">Продлевается %1$s</string>
     <string name="membership_cancelled_until">Активна до %1$s</string>
+    <string name="membership_cancel_success_trial">Членство отменено — оплаченного месяца не будет, поэтому с вас ничего не спишут.</string>
     <string name="membership_active_until">Активна до %1$s</string>
     <string name="membership_status_ending">Запрошена отмена</string>
     <string name="membership_status_ending_badge">ЗАВЕРШАЕТСЯ</string>
     <string name="membership_status_active_badge">PLUS · АКТИВНА</string>
     <string name="membership_then_ends_hint">Преимущества Plus прекратятся в эту дату.</string>
+    <string name="membership_trial_cancelled_lead">Поскольку вы отменили её во время пробного периода, оплаченного месяца не будет, и преимущества Plus так и не начнут действовать.</string>
     <string name="membership_auto_renew_hint">Продлевается автоматически — отмените в любое время.</string>
     <string name="membership_cancel_action">Отменить подписку</string>
     <string name="membership_cancel_dialog_title">Отменить Cleansia Plus?</string>
     <string name="membership_cancel_dialog_message">Ваши преимущества сохранятся до конца текущего расчётного периода. Списаний больше не будет.</string>
+    <string name="membership_cancel_dialog_message_trial">Пробный период закончится %1$s. Оплаченного месяца не будет, поэтому с вас ничего не спишут и ни одно из преимуществ Plus не начнёт действовать.</string>
     <string name="membership_cancel_dialog_confirm">Отменить</string>
     <string name="membership_subscribed_success">Добро пожаловать в Cleansia Plus!</string>
     <string name="membership_already_active">Вы уже участник Plus.</string>
@@ -980,6 +987,8 @@
     <string name="recurring_edit_submit">Сохранить изменения</string>
     <string name="recurring_edit_success">Расписание обновлено.</string>
     <string name="recurring_edit_load_failed">Не удалось загрузить это расписание. Вернитесь назад и попробуйте снова.</string>
+    <string name="preferred_cleaner_schedule_refused">Для этого расписания мы больше не можем попросить вашего любимого клинера первым — например, потому что адрес уборки теперь в другой стране. Вы можете сохранить расписание без него, и тогда каждая уборка будет открыта для всей нашей команды.</string>
+    <string name="preferred_cleaner_schedule_save_without">Сохранить без любимого клинера</string>
     <string name="recurring_edit_notice_title">Что изменится после сохранения</string>
     <string name="recurring_edit_notice_what_changes">Уборки, заказанные по этому расписанию в дальнейшем, будут использовать данные выше.</string>
     <string name="recurring_edit_notice_what_stays">Уборки, уже добавленные в ваш календарь, сохранят исходное время и цену — изменить или отменить их можно по отдельности в Заказах.</string>
@@ -987,8 +996,6 @@
     <string name="recurring_freq_biweekly_label">Каждые 2 недели</string>
     <string name="recurring_freq_monthly_label">Каждый месяц</string>
     <string name="recurring_create_step_when_title">Когда</string>
-    <string name="preferred_cleaner_schedule_refused">Для этого расписания мы больше не можем попросить вашего любимого клинера первым — например, потому что адрес уборки теперь в другой стране. Вы можете сохранить расписание без него, и тогда каждая уборка будет открыта для всей нашей команды.</string>
-    <string name="preferred_cleaner_schedule_save_without">Сохранить без любимого клинера</string>
     <string name="recurring_create_step_what_title">Что убрать</string>
     <string name="recurring_create_step_where_pay_title">Где и оплата</string>
     <string name="recurring_create_back">Назад</string>

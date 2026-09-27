@@ -58,6 +58,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cz.cleansia.customer.core.booking.CashEligibility
 import cz.cleansia.customer.core.memberships.GetMyMembershipResponse
+import cz.cleansia.customer.core.memberships.trialEndsAt
 import cz.cleansia.customer.features.orders.roomsAndBathrooms
 import cz.cleansia.customer.R
 import cz.cleansia.core.format.formatOrderPrice
@@ -67,6 +68,8 @@ import cz.cleansia.core.ui.components.ConsentMarkup
 import cz.cleansia.customer.ui.theme.CleansiaTheme
 import cz.cleansia.customer.ui.theme.selectionTint
 import cz.cleansia.customer.ui.theme.SuccessText
+import kotlinx.datetime.Clock
+import kotlinx.datetime.Instant
 
 @Composable
 fun ConfirmStep(
@@ -681,9 +684,12 @@ internal fun cancellationPolicyFor(
     membership: GetMyMembershipResponse?,
     standardFreeHours: Int = 24,
     penaltyHours: Int = 4,
+    now: Instant = Clock.System.now(),
 ): CancellationPolicyDisplay {
+    // A running trial is a membership but not a paid one, and the server prices the cancellation from
+    // the paid entitlement: a trialing member cancels on the standard terms.
     val rawPlusHours = membership
-        ?.takeIf { it.hasMembership }
+        ?.takeIf { it.hasMembership && it.trialEndsAt(now) == null }
         ?.freeCancellationWindowHours
         ?.takeIf { it > 0 }
     // Plus moves the free-cancellation deadline CLOSER to the cleaning, so the perk is a SMALLER

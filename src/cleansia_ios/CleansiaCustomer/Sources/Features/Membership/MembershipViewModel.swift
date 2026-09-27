@@ -45,6 +45,10 @@ final class MembershipViewModel: ViewModel {
         expressWaiverStatus.isAdvertised
     }
 
+    var copy: MembershipCopy {
+        MembershipCopy(current)
+    }
+
     func load() async {
         await repository.refresh()
         await repository.refreshPlans()

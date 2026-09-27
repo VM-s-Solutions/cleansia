@@ -22,6 +22,10 @@ struct MembershipSnapshot: Equatable {
         self.expressUpgradesRemaining = expressUpgradesRemaining
         self.trialEndsAtUtc = trialEndsAtUtc
     }
+
+    func isInTrial(at now: Date) -> Bool {
+        trialEndsAtUtc.map { $0 > now } ?? false
+    }
 }
 
 protocol MembershipClient {

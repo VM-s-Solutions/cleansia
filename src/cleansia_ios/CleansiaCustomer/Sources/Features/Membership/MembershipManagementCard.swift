@@ -26,6 +26,7 @@ struct MembershipManagementCard: View {
             } else {
                 ActiveCard(
                     membership: membership,
+                    copy: vm.copy,
                     cancelEnabled: !vm.submitState.isSubmitting && !membership.cancelRequested,
                     switchSavings: yearlyPlan.map { Int($0.savingsPercentVsMonthly) },
                     onCancel: { showCancelDialog = true },
@@ -43,7 +44,7 @@ struct MembershipManagementCard: View {
                 confirmLabel: L10n.Membership.cancelDialogConfirm,
                 onConfirm: confirmCancel,
                 onDismiss: { showCancelDialog = false },
-                message: L10n.Membership.cancelDialogMessage,
+                message: vm.copy.cancelDialogMessage,
                 dismissLabel: L10n.Membership.back,
                 destructive: true
             )
@@ -54,8 +55,8 @@ struct MembershipManagementCard: View {
                 confirmLabel: L10n.Membership.switchDialogConfirm,
                 onConfirm: { confirmSwitch(yearlyPlan) },
                 onDismiss: { showSwitchDialog = false },
-                message: L10n.Membership.switchDialogMessage(
-                    MembershipFormat.price(yearlyPlan.price, currencyCode: yearlyPlan.currencyCode)
+                message: vm.copy.switchDialogMessage(
+                    price: MembershipFormat.price(yearlyPlan.price, currencyCode: yearlyPlan.currencyCode)
                 ),
                 dismissLabel: L10n.Membership.back
             )
@@ -64,9 +65,10 @@ struct MembershipManagementCard: View {
 
     private func confirmCancel() {
         showCancelDialog = false
+        let copy = vm.copy
         Task {
             if let date = await vm.cancel() {
-                snackbar.showSuccess(L10n.Membership.cancelledUntil(MembershipFormat.periodEnd(date)))
+                snackbar.showSuccess(copy.cancelSuccess(activeUntil: date))
             }
         }
     }
@@ -143,6 +145,7 @@ private struct InactiveCard: View {
 
 private struct ActiveCard: View {
     let membership: MyMembership
+    let copy: MembershipCopy
     let cancelEnabled: Bool
     let switchSavings: Int?
     let onCancel: () -> Void
@@ -186,10 +189,21 @@ private struct ActiveCard: View {
             }
 
             if !perks.isEmpty {
+                if let perksTitle = copy.perksTitle {
+                    Text(perksTitle)
+                        .font(CleansiaTypography.labelLarge)
+                        .foregroundColor(CleansiaColors.onSurface)
+                }
                 ChipFlow(spacing: Spacing.xs) {
                     ForEach(perks) { perk in
                         PerkPill(perk: perk, accent: accent)
                     }
+                }
+                if let perksNote = copy.perksNote {
+                    Text(perksNote)
+                        .font(CleansiaTypography.labelMedium)
+                        .foregroundColor(CleansiaColors.onSurfaceVariant)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
                 Divider().background(CleansiaColors.outlineVariant)
             }
@@ -203,7 +217,7 @@ private struct ActiveCard: View {
                         .font(CleansiaTypography.bodyMedium)
                         .foregroundColor(CleansiaColors.onSurface)
                     Text(membership.cancelRequested
-                        ? L10n.Membership.thenEndsHint
+                        ? copy.cancelledHint
                         : L10n.Membership.autoRenewHint)
                         .font(CleansiaTypography.labelMedium)
                         .foregroundColor(CleansiaColors.onSurfaceVariant)
@@ -258,6 +272,7 @@ private struct PerkPill: View {
             Group {
                 ActiveCard(
                     membership: sample(cancelRequested: false),
+                    copy: MembershipCopy(sample(cancelRequested: false)),
                     cancelEnabled: true,
                     switchSavings: 15,
                     onCancel: {},
@@ -266,6 +281,7 @@ private struct PerkPill: View {
                 .previewDisplayName("Active")
                 ActiveCard(
                     membership: sample(cancelRequested: true),
+                    copy: MembershipCopy(sample(cancelRequested: true)),
                     cancelEnabled: false,
                     switchSavings: nil,
                     onCancel: {},

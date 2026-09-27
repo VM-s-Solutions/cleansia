@@ -1,5 +1,7 @@
 package cz.cleansia.customer.core.memberships
 
+import kotlinx.datetime.Clock
+import kotlinx.datetime.Instant
 import kotlinx.serialization.Serializable
 
 /**
@@ -99,6 +101,14 @@ data class GetMyMembershipResponse(
     /** Null only for a non-member, or when the plan's price row in this currency was deleted. */
     val currencyCode: String? = null,
 )
+
+/**
+ * When the running free trial ends, or null. [GetMyMembershipResponse.hasMembership] counts a trial, but
+ * no Plus benefit runs during one — the server grants them from the paid entitlement, so every benefit
+ * starts with the first paid month. -> /product/business-rules
+ */
+fun GetMyMembershipResponse.trialEndsAt(now: Instant = Clock.System.now()): Instant? =
+    trialEndsAtUtc?.takeIf { hasMembership && it > now }
 
 /**
  * Mirrors backend `GetMembershipPlans.Response`. Drives the monthly/yearly

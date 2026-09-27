@@ -238,6 +238,34 @@ extension L10n {
             format("membership_cancelled_until", date)
         }
 
+        static func cancelDialogMessageTrial(_ trialEndsOn: String) -> String {
+            format("membership_cancel_dialog_message_trial", trialEndsOn)
+        }
+
+        static var cancelSuccessTrial: String {
+            localized("membership_cancel_success_trial")
+        }
+
+        static func switchDialogMessageTrial(trialEndsOn: String, price: String) -> String {
+            format("membership_switch_dialog_message_trial", trialEndsOn, price)
+        }
+
+        static var successSubtitleTrial: String {
+            localized("membership_success_subtitle_trial")
+        }
+
+        static var trialPerksTitle: String {
+            localized("membership_trial_perks_title")
+        }
+
+        static var trialPerksNote: String {
+            localized("membership_trial_perks_note")
+        }
+
+        static var trialCancelledLead: String {
+            localized("membership_trial_cancelled_lead")
+        }
+
         static func switchToAnnualCta(_ savings: Int) -> String {
             format("membership_switch_to_annual_cta", savings)
         }

@@ -15,9 +15,11 @@ enum CancellationPolicyBuilder {
     static let standardFreeHours = 24
     static let penaltyHours = 4
 
-    static func make(membership: MembershipSnapshot?) -> CancellationPolicy {
+    /// The Plus window follows the paid entitlement, which a running trial is not, so a trialing member is
+    /// quoted the standard window.
+    static func make(membership: MembershipSnapshot?, now: Date = Date()) -> CancellationPolicy {
         let rawPlusHours = membership
-            .flatMap { $0.hasMembership ? $0.freeCancellationWindowHours : nil }
+            .flatMap { $0.hasMembership && !$0.isInTrial(at: now) ? $0.freeCancellationWindowHours : nil }
             .flatMap { $0 > 0 ? $0 : nil }
         // SMALLER is the perk, and the comparison used to read `>`.
         //

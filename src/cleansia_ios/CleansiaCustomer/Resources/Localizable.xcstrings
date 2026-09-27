@@ -15028,6 +15028,41 @@
         }
       }
     },
+    "membership_cancel_dialog_message_trial": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zkušební období skončí %1$@. Nenásleduje žádný placený měsíc, takže vám nic nenaúčtujeme a žádná z výhod Plus nezačne platit."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your trial ends on %1$@. No paid month follows, so you won't be charged and no Plus benefit starts."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Пробный период закончится %1$@. Оплаченного месяца не будет, поэтому с вас ничего не спишут и ни одно из преимуществ Plus не начнёт действовать."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Skúšobné obdobie skončí %1$@. Nenasleduje žiadny platený mesiac, takže vám nič nenaúčtujeme a žiadna z výhod Plus nezačne platiť."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Пробний період закінчиться %1$@. Оплаченого місяця не буде, тож з вас нічого не спишуть і жодна з переваг Plus не почне діяти."
+          }
+        }
+      }
+    },
     "membership_cancel_dialog_title": {
       "extractionState": "stale",
       "localizations": {
@@ -15059,6 +15094,41 @@
           "stringUnit": {
             "state": "translated",
             "value": "Скасувати Cleansia Plus?"
+          }
+        }
+      }
+    },
+    "membership_cancel_success_trial": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Členství zrušeno — nenásleduje žádný placený měsíc, takže vám nic nenaúčtujeme."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Membership cancelled — no paid month follows, so you won't be charged."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Членство отменено — оплаченного месяца не будет, поэтому с вас ничего не спишут."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Členstvo zrušené — nenasleduje žiadny platený mesiac, takže vám nič nenaúčtujeme."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Членство скасовано — оплаченого місяця не буде, тож з вас нічого не спишуть."
           }
         }
       }
@@ -16883,6 +16953,41 @@
         }
       }
     },
+    "membership_success_subtitle_trial": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vaše zkušební období Cleansia Plus začalo."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your Cleansia Plus trial has started."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ваш пробный период Cleansia Plus начался."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vaše skúšobné obdobie Cleansia Plus sa začalo."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ваш пробний період Cleansia Plus розпочався."
+          }
+        }
+      }
+    },
     "membership_success_title": {
       "extractionState": "stale",
       "localizations": {
@@ -16984,6 +17089,41 @@
           "stringUnit": {
             "state": "translated",
             "value": "Сьогодні буде списано пропорційну різницю, потім %1$@ на рік. Ваші переваги залишаються."
+          }
+        }
+      }
+    },
+    "membership_switch_dialog_message_trial": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zkušební období pokračuje do %1$@. Nový plán (%2$@) se uplatní od prvního placeného období a teprve s ním začnou platit výhody Plus."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your trial continues until %1$@. The new plan (%2$@) applies from your first paid period, and the Plus benefits start only then."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Пробный период продолжается до %1$@. Новый план (%2$@) применяется с первого оплаченного периода, и только тогда начнут действовать преимущества Plus."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Skúšobné obdobie pokračuje do %1$@. Nový plán (%2$@) sa uplatní od prvého plateného obdobia a až s ním začnú platiť výhody Plus."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Пробний період триває до %1$@. Новий план (%2$@) застосовується з першого оплаченого періоду, і лише тоді почнуть діяти переваги Plus."
           }
         }
       }
@@ -17124,6 +17264,111 @@
           "stringUnit": {
             "state": "translated",
             "value": "Переваги Plus припиняються в цю дату."
+          }
+        }
+      }
+    },
+    "membership_trial_cancelled_lead": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Protože jste ho zrušili během zkušebního období, žádný placený měsíc nenásleduje a výhody Plus tak vůbec nezačnou platit."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Since you cancelled during the trial, no paid month follows and none of the Plus benefits start."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Поскольку вы отменили её во время пробного периода, оплаченного месяца не будет, и преимущества Plus так и не начнут действовать."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keďže ste ho zrušili počas skúšobného obdobia, nenasleduje žiadny platený mesiac a výhody Plus tak vôbec nezačnú platiť."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Оскільки ви скасували її під час пробного періоду, оплаченого місяця не буде, тож переваги Plus так і не почнуть діяти."
+          }
+        }
+      }
+    },
+    "membership_trial_perks_note": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Během zkušebního období z toho zatím nic neplatí — výhody začnou až s prvním placeným měsícem."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "None of these apply during the trial — they start only once a paid month begins."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Во время пробного периода ничего из этого не действует — преимущества начнут действовать только с первого оплаченного месяца."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Počas skúšobného obdobia z toho zatiaľ nič neplatí — výhody začnú až s prvým plateným mesiacom."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Під час пробного періоду нічого з цього не діє — переваги почнуть діяти лише з першого оплаченого місяця."
+          }
+        }
+      }
+    },
+    "membership_trial_perks_title": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Co zahrnuje placené členství"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "What a paid membership includes"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Что входит в платную подписку"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Čo zahŕňa platené členstvo"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Що входить у платну підписку"
           }
         }
       }
@@ -30987,6 +31232,76 @@
         }
       }
     },
+    "recurring_preferred_cleaner_refused": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "U tohoto rozvrhu už nemůžeme vašeho oblíbeného uklízeče požádat jako prvního — například proto, že adresa úklidu je teď v jiné zemi. Rozvrh můžete uložit bez něj a každý úklid se pak otevře celému našemu týmu."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "We can no longer ask your favourite cleaner first on this schedule — for example, because its address is now in another country. You can save it without them, and each cleaning will then open to our whole team."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Для этого расписания мы больше не можем попросить вашего любимого клинера первым — например, потому что адрес уборки теперь в другой стране. Вы можете сохранить расписание без него, и тогда каждая уборка будет открыта для всей нашей команды."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pri tomto rozvrhu už nemôžeme vášho obľúbeného upratovača požiadať ako prvého — napríklad preto, že adresa upratovania je teraz v inej krajine. Rozvrh môžete uložiť bez neho a každé upratovanie sa potom otvorí celému nášmu tímu."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Для цього розкладу ми більше не можемо попросити вашого улюбленого клінера першим — наприклад, тому що адреса прибирання тепер в іншій країні. Ви можете зберегти розклад без нього, і тоді кожне прибирання буде відкрите для всієї нашої команди."
+          }
+        }
+      }
+    },
+    "recurring_preferred_cleaner_save_without": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uložit bez oblíbeného uklízeče"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Save without your favourite cleaner"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Сохранить без любимого клинера"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uložiť bez obľúbeného upratovača"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Зберегти без улюбленого клінера"
+          }
+        }
+      }
+    },
     "recurring_status_needs_change": {
       "extractionState": "manual",
       "localizations": {
@@ -31228,76 +31543,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Не менше 8 символів"
-          }
-        }
-      }
-    },
-    "recurring_preferred_cleaner_refused": {
-      "extractionState": "manual",
-      "localizations": {
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "U tohoto rozvrhu už nemůžeme vašeho oblíbeného uklízeče požádat jako prvního — například proto, že adresa úklidu je teď v jiné zemi. Rozvrh můžete uložit bez něj a každý úklid se pak otevře celému našemu týmu."
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "We can no longer ask your favourite cleaner first on this schedule — for example, because its address is now in another country. You can save it without them, and each cleaning will then open to our whole team."
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Для этого расписания мы больше не можем попросить вашего любимого клинера первым — например, потому что адрес уборки теперь в другой стране. Вы можете сохранить расписание без него, и тогда каждая уборка будет открыта для всей нашей команды."
-          }
-        },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Pri tomto rozvrhu už nemôžeme vášho obľúbeného upratovača požiadať ako prvého — napríklad preto, že adresa upratovania je teraz v inej krajine. Rozvrh môžete uložiť bez neho a každé upratovanie sa potom otvorí celému nášmu tímu."
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Для цього розкладу ми більше не можемо попросити вашого улюбленого клінера першим — наприклад, тому що адреса прибирання тепер в іншій країні. Ви можете зберегти розклад без нього, і тоді кожне прибирання буде відкрите для всієї нашої команди."
-          }
-        }
-      }
-    },
-    "recurring_preferred_cleaner_save_without": {
-      "extractionState": "manual",
-      "localizations": {
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Uložit bez oblíbeného uklízeče"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Save without your favourite cleaner"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Сохранить без любимого клинера"
-          }
-        },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Uložiť bez obľúbeného upratovača"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Зберегти без улюбленого клінера"
           }
         }
       }

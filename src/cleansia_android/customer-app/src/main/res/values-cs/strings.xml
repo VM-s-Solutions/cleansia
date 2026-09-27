@@ -868,6 +868,7 @@
     <string name="membership_switch_to_annual_cta">Přejít na roční — ušetříte %1$d%%</string>
     <string name="membership_switch_dialog_title">Přejít na roční?</string>
     <string name="membership_switch_dialog_message">Dnes zaplatíte poměrný rozdíl, poté %1$s za rok. Vaše výhody pokračují.</string>
+    <string name="membership_switch_dialog_message_trial">Zkušební období pokračuje do %1$s. Nový plán (%2$s) se uplatní od prvního placeného období a teprve s ním začnou platit výhody Plus.</string>
     <string name="membership_switch_dialog_confirm">Přejít</string>
     <string name="membership_switch_success">Vítejte v ročním předplatném!</string>
     <string name="membership_perk_favorite_cleaner_title">Váš oblíbený uklízeč</string>
@@ -899,6 +900,9 @@
     <string name="membership_inactive_cta">Vyzkoušet zdarma na 14 dní</string>
     <string name="membership_success_title">Vítejte v Plus!</string>
     <string name="membership_success_subtitle">Vaše výhody jsou hned aktivní. Tady je, co jste právě odemkli:</string>
+    <string name="membership_success_subtitle_trial">Vaše zkušební období Cleansia Plus začalo.</string>
+    <string name="membership_trial_perks_title">Co zahrnuje placené členství</string>
+    <string name="membership_trial_perks_note">Během zkušebního období z toho zatím nic neplatí — výhody začnou až s prvním placeným měsícem.</string>
     <string name="membership_success_perks_header">VAŠE VÝHODY PLUS</string>
     <string name="membership_success_perk_express">Expresní termíny bez příplatku — od prvního placeného měsíce</string>
     <string name="membership_success_cta_setup_recurring">Nastavit pravidelný úklid</string>
@@ -906,15 +910,18 @@
     <string name="membership_active_status">Aktivní</string>
     <string name="membership_renews_on">Obnoví se %1$s</string>
     <string name="membership_cancelled_until">Aktivní do %1$s</string>
+    <string name="membership_cancel_success_trial">Členství zrušeno — nenásleduje žádný placený měsíc, takže vám nic nenaúčtujeme.</string>
     <string name="membership_active_until">Aktivní do %1$s</string>
     <string name="membership_status_ending">Zrušení vyžádáno</string>
     <string name="membership_status_ending_badge">KONČÍ</string>
     <string name="membership_status_active_badge">PLUS · AKTIVNÍ</string>
     <string name="membership_then_ends_hint">Výhody Plus tímto dnem skončí.</string>
+    <string name="membership_trial_cancelled_lead">Protože jste ho zrušili během zkušebního období, žádný placený měsíc nenásleduje a výhody Plus tak vůbec nezačnou platit.</string>
     <string name="membership_auto_renew_hint">Obnovuje se automaticky — kdykoli můžete zrušit.</string>
     <string name="membership_cancel_action">Zrušit předplatné</string>
     <string name="membership_cancel_dialog_title">Zrušit Cleansia Plus?</string>
     <string name="membership_cancel_dialog_message">Vaše výhody zůstanou do konce aktuálního zúčtovacího období. Další platba neproběhne.</string>
+    <string name="membership_cancel_dialog_message_trial">Zkušební období skončí %1$s. Nenásleduje žádný placený měsíc, takže vám nic nenaúčtujeme a žádná z výhod Plus nezačne platit.</string>
     <string name="membership_cancel_dialog_confirm">Zrušit</string>
     <string name="membership_subscribed_success">Vítejte v Cleansia Plus!</string>
     <string name="membership_already_active">Už jste členem Plus.</string>
@@ -983,6 +990,8 @@
     <string name="recurring_edit_submit">Uložit změny</string>
     <string name="recurring_edit_success">Rozvrh byl aktualizován.</string>
     <string name="recurring_edit_load_failed">Tento rozvrh se nepodařilo načíst. Vraťte se zpět a zkuste to znovu.</string>
+    <string name="preferred_cleaner_schedule_refused">U tohoto rozvrhu už nemůžeme vašeho oblíbeného uklízeče požádat jako prvního — například proto, že adresa úklidu je teď v jiné zemi. Rozvrh můžete uložit bez něj a každý úklid se pak otevře celému našemu týmu.</string>
+    <string name="preferred_cleaner_schedule_save_without">Uložit bez oblíbeného uklízeče</string>
     <string name="recurring_edit_notice_title">Co se uložením změní</string>
     <string name="recurring_edit_notice_what_changes">Úklidy nově objednané z tohoto rozvrhu se budou řídit údaji výše.</string>
     <string name="recurring_edit_notice_what_stays">Úklidy, které už máte v kalendáři, si ponechají původní čas i cenu — změnit nebo zrušit je můžete jednotlivě v Objednávkách.</string>
@@ -990,8 +999,6 @@
     <string name="recurring_freq_biweekly_label">Každé 2 týdny</string>
     <string name="recurring_freq_monthly_label">Každý měsíc</string>
     <string name="recurring_create_step_when_title">Kdy</string>
-    <string name="preferred_cleaner_schedule_refused">U tohoto rozvrhu už nemůžeme vašeho oblíbeného uklízeče požádat jako prvního — například proto, že adresa úklidu je teď v jiné zemi. Rozvrh můžete uložit bez něj a každý úklid se pak otevře celému našemu týmu.</string>
-    <string name="preferred_cleaner_schedule_save_without">Uložit bez oblíbeného uklízeče</string>
     <string name="recurring_create_step_what_title">Co uklidit</string>
     <string name="recurring_create_step_where_pay_title">Kde a platba</string>
     <string name="recurring_create_back">Zpět</string>

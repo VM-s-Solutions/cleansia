@@ -72,7 +72,9 @@ fun MembershipManagementCard(
     val current by viewModel.current.collectAsStateWithLifecycle()
     val plans by viewModel.plans.collectAsStateWithLifecycle()
     val submitState by viewModel.submitState.collectAsStateWithLifecycle()
+    val trialEndsAt by viewModel.trialEndsAt.collectAsStateWithLifecycle()
     val submitting = submitState is cz.cleansia.customer.ui.state.ActionState.Submitting
+    val trialEndText = trialEndsAt?.let { formatPeriodEnd(it.toString()) }
 
     var showCancelDialog by remember { mutableStateOf(false) }
     var showSwitchDialog by remember { mutableStateOf(false) }
@@ -101,6 +103,7 @@ fun MembershipManagementCard(
             cancelEnabled = !submitting && !membership.cancelRequested,
             onSwitchToAnnualClick = if (showSwitchCta) ({ showSwitchDialog = true }) else null,
             yearlyPlan = yearlyPlan,
+            inTrial = trialEndText != null,
         )
     }
 
@@ -108,7 +111,11 @@ fun MembershipManagementCard(
         CleansiaDialog(
             onDismiss = { showCancelDialog = false },
             title = stringResource(R.string.membership_cancel_dialog_title),
-            message = stringResource(R.string.membership_cancel_dialog_message),
+            message = if (trialEndText != null) {
+                stringResource(R.string.membership_cancel_dialog_message_trial, trialEndText)
+            } else {
+                stringResource(R.string.membership_cancel_dialog_message)
+            },
             destructive = true,
             confirmLabel = stringResource(R.string.membership_cancel_dialog_confirm),
             onConfirm = {
@@ -123,10 +130,18 @@ fun MembershipManagementCard(
         CleansiaDialog(
             onDismiss = { showSwitchDialog = false },
             title = stringResource(R.string.membership_switch_dialog_title),
-            message = stringResource(
-                R.string.membership_switch_dialog_message,
-                formatOrderPrice(yearlyPlan.price, yearlyPlan.currencyCode),
-            ),
+            message = if (trialEndText != null) {
+                stringResource(
+                    R.string.membership_switch_dialog_message_trial,
+                    trialEndText,
+                    formatOrderPrice(yearlyPlan.price, yearlyPlan.currencyCode),
+                )
+            } else {
+                stringResource(
+                    R.string.membership_switch_dialog_message,
+                    formatOrderPrice(yearlyPlan.price, yearlyPlan.currencyCode),
+                )
+            },
             confirmLabel = stringResource(R.string.membership_switch_dialog_confirm),
             onConfirm = {
                 showSwitchDialog = false
@@ -259,6 +274,7 @@ private fun ActiveCard(
     cancelEnabled: Boolean,
     onSwitchToAnnualClick: (() -> Unit)?,
     yearlyPlan: cz.cleansia.customer.core.memberships.MembershipPlanDto?,
+    inTrial: Boolean,
 ) {
     val cardShape = RoundedCornerShape(20.dp)
     val isCancelling = response.cancelRequested
@@ -332,8 +348,18 @@ private fun ActiveCard(
         }
 
         // ── Perk pill row — quick visual reminder of what's unlocked ──
+        // A running trial unlocks none of them, so for a trialing member the row is what a paid
+        // membership includes. -> /product/business-rules
         val perks = remember(response) { MembershipPerks.resolve(response) }
         if (perks.isNotEmpty()) {
+            if (inTrial) {
+                Text(
+                    text = stringResource(R.string.membership_trial_perks_title),
+                    style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold),
+                    color = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 12.dp),
+                )
+            }
             androidx.compose.foundation.layout.FlowRow(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -342,6 +368,14 @@ private fun ActiveCard(
                 verticalArrangement = Arrangement.spacedBy(6.dp),
             ) {
                 perks.forEach { perk -> PerkPill(perk = perk, accent = accent) }
+            }
+            if (inTrial) {
+                Text(
+                    text = stringResource(R.string.membership_trial_perks_note),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 12.dp),
+                )
             }
         }
 
@@ -374,8 +408,11 @@ private fun ActiveCard(
                         )
                         Text(
                             text = stringResource(
-                                if (isCancelling) R.string.membership_then_ends_hint
-                                else R.string.membership_auto_renew_hint,
+                                when {
+                                    isCancelling && inTrial -> R.string.membership_trial_cancelled_lead
+                                    isCancelling -> R.string.membership_then_ends_hint
+                                    else -> R.string.membership_auto_renew_hint
+                                },
                             ),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,

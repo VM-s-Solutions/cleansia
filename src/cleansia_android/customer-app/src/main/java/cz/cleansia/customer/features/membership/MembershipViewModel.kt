@@ -12,6 +12,7 @@ import cz.cleansia.customer.core.market.countryId
 import cz.cleansia.customer.core.memberships.GetMyMembershipResponse
 import cz.cleansia.customer.core.memberships.MembershipPlanDto
 import cz.cleansia.customer.core.memberships.MembershipRepository
+import cz.cleansia.customer.core.memberships.trialEndsAt
 import cz.cleansia.customer.ui.state.ActionState
 import cz.cleansia.core.snackbar.SnackbarController
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -19,12 +20,15 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import java.util.UUID
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.datetime.Instant
 
 /**
  * Outcome of [MembershipViewModel.startSubscribe]. The screen maps these
@@ -69,6 +73,14 @@ class MembershipViewModel @Inject constructor(
 
     val current: StateFlow<GetMyMembershipResponse?> = repository.current
     val loading: StateFlow<Boolean> = repository.loading
+
+    /**
+     * When the running free trial ends, or null. A trialing member has no benefit running yet, so the
+     * membership screens say what a paid month will bring rather than what is on.
+     */
+    val trialEndsAt: StateFlow<Instant?> = repository.current
+        .map { it?.trialEndsAt() }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, null)
 
     /** The chosen market — what the subscription is bought in, and the payment sheet's country. */
     val market: StateFlow<MarketState> = marketRepository.state
@@ -187,18 +199,24 @@ class MembershipViewModel @Inject constructor(
 
     /**
      * Cancel the user's active membership at period end. UI refreshes from
-     * [current] which reflects the cancellation request flag.
+     * [current] which reflects the cancellation request flag. A paid period runs
+     * to its end; a trial ends with no paid month after it.
      */
     fun cancel() {
         if (_submitState.value is ActionState.Submitting) return
         _submitState.value = ActionState.Submitting
+        val inTrial = trialEndsAt.value != null
         viewModelScope.launch {
             try {
                 val resp = repository.cancel().showErrorUnlessNetwork().getOrNull()
                     ?: return@launch
-                snackbar.showSuccess(
-                    appContext.getString(R.string.membership_cancelled_until, formatPeriodEnd(resp.effectiveEndDate)),
-                )
+                if (inTrial) {
+                    snackbar.showSuccessKey(R.string.membership_cancel_success_trial)
+                } else {
+                    snackbar.showSuccess(
+                        appContext.getString(R.string.membership_cancelled_until, formatPeriodEnd(resp.effectiveEndDate)),
+                    )
+                }
             } finally {
                 _submitState.value = ActionState.Idle
             }

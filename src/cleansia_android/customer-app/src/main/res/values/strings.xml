@@ -879,6 +879,7 @@
     <string name="membership_switch_to_annual_cta">Switch to annual — save %1$d%%</string>
     <string name="membership_switch_dialog_title">Switch to annual?</string>
     <string name="membership_switch_dialog_message">You\'ll be charged the prorated difference today, then %1$s per year. Your benefits keep going.</string>
+    <string name="membership_switch_dialog_message_trial">Your trial continues until %1$s. The new plan (%2$s) applies from your first paid period, and the Plus benefits start only then.</string>
     <string name="membership_switch_dialog_confirm">Switch</string>
     <string name="membership_switch_success">Welcome to the annual plan!</string>
     <string name="membership_perk_favorite_cleaner_title">Your favorite cleaner</string>
@@ -911,6 +912,9 @@
     <!-- Post-purchase success screen (Plus) -->
     <string name="membership_success_title">Welcome to Plus!</string>
     <string name="membership_success_subtitle">Your benefits are active right away. Here\'s what just unlocked:</string>
+    <string name="membership_success_subtitle_trial">Your Cleansia Plus trial has started.</string>
+    <string name="membership_trial_perks_title">What a paid membership includes</string>
+    <string name="membership_trial_perks_note">None of these apply during the trial — they start only once a paid month begins.</string>
     <string name="membership_success_perks_header">YOUR PLUS PERKS</string>
     <string name="membership_success_perk_express">Express bookings with the surcharge waived — from your first paid month</string>
     <string name="membership_success_cta_setup_recurring">Set up a recurring cleaning</string>
@@ -918,15 +922,18 @@
     <string name="membership_active_status">Active</string>
     <string name="membership_renews_on">Renews on %1$s</string>
     <string name="membership_cancelled_until">Active until %1$s</string>
+    <string name="membership_cancel_success_trial">Membership cancelled — no paid month follows, so you won\'t be charged.</string>
     <string name="membership_active_until">Active until %1$s</string>
     <string name="membership_status_ending">Cancellation requested</string>
     <string name="membership_status_ending_badge">ENDING</string>
     <string name="membership_status_active_badge">PLUS · ACTIVE</string>
     <string name="membership_then_ends_hint">Plus benefits stop on this date.</string>
+    <string name="membership_trial_cancelled_lead">Since you cancelled during the trial, no paid month follows and none of the Plus benefits start.</string>
     <string name="membership_auto_renew_hint">Auto-renews — cancel anytime.</string>
     <string name="membership_cancel_action">Cancel subscription</string>
     <string name="membership_cancel_dialog_title">Cancel Cleansia Plus?</string>
     <string name="membership_cancel_dialog_message">Your benefits remain until the end of the current billing period. You won\'t be charged again.</string>
+    <string name="membership_cancel_dialog_message_trial">Your trial ends on %1$s. No paid month follows, so you won\'t be charged and no Plus benefit starts.</string>
     <string name="membership_cancel_dialog_confirm">Cancel</string>
     <string name="membership_subscribed_success">Welcome to Cleansia Plus!</string>
     <string name="membership_already_active">You\'re already a Plus member.</string>
@@ -995,6 +1002,8 @@
     <string name="recurring_edit_submit">Save changes</string>
     <string name="recurring_edit_success">Recurring schedule updated.</string>
     <string name="recurring_edit_load_failed">Couldn\'t load this schedule. Go back and try again.</string>
+    <string name="preferred_cleaner_schedule_refused">We can no longer ask your favourite cleaner first on this schedule — for example, because its address is now in another country. You can save it without them, and each cleaning will then open to our whole team.</string>
+    <string name="preferred_cleaner_schedule_save_without">Save without your favourite cleaner</string>
     <string name="recurring_edit_notice_title">What saving this changes</string>
     <string name="recurring_edit_notice_what_changes">Cleanings booked from this schedule from now on use the details above.</string>
     <string name="recurring_edit_notice_what_stays">Cleanings already on your calendar keep their original time and price — change or cancel them individually from Orders.</string>
@@ -1002,8 +1011,6 @@
     <string name="recurring_freq_biweekly_label">Every 2 weeks</string>
     <string name="recurring_freq_monthly_label">Every month</string>
     <!-- Wizard chrome -->
-    <string name="preferred_cleaner_schedule_refused">We can no longer ask your favourite cleaner first on this schedule — for example, because its address is now in another country. You can save it without them, and each cleaning will then open to our whole team.</string>
-    <string name="preferred_cleaner_schedule_save_without">Save without your favourite cleaner</string>
     <string name="recurring_create_step_when_title">When</string>
     <string name="recurring_create_step_what_title">What to clean</string>
     <string name="recurring_create_step_where_pay_title">Where &amp; payment</string>

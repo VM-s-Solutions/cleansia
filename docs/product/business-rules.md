@@ -143,6 +143,12 @@ The customer is refunded **and** credited the apology figure authored for the or
 > `Currency.NoShowCredit`, authored per currency; a currency with none pays no credit and the push is
 > the plain cancellation. The home page states the figure from the market, never from the translation;
 > see [Money constants](#money-constants).
+>
+> **Credit the customer spent on the booking comes back exactly once.** A paid card order's full refund
+> returns it on the refund's own credit leg; the sweep returns it itself only when no refund went
+> through — a cash or unpaid order, a refund Stripe refused, or Stripe unreachable. A later refund of the
+> same order nets off credit already returned. Until 2026-09-27 the sweep returned it after a successful
+> refund as well, crediting a card customer twice.
 
 ### When the last cleaner leaves {#crew-lost}
 
@@ -346,8 +352,15 @@ AllowsCash = signedIn && RequiredEmployees == 1        # BookingPolicy.AllowsCas
   (`requiresPaymentMethodChange`). An unconfirmed cash occurrence the rule refuses cannot be confirmed;
   the customer cancels it — free while nobody has taken it — and corrects the template.
   → [Recurring bookings](/flows/booking-and-pricing#recurring-bookings)
-- **It governs the tender chosen at booking, not money at the door.** A cleaner recording cash on an
-  order in progress (`MarkCashCollected`) is not gated by it.
+- **Cash at the door follows it on a card order.** A cleaner recording cash on an order in progress
+  (`MarkCashCollected`) may do so on a cash order whatever the rule says today — that booking chose cash
+  when it was allowed. On a **card** order the cleaner may take cash only where the booking itself could
+  have chosen it (signed-in customer, one cleaner); otherwise `order.cash_not_allowed_on_card_order`,
+  checked after the Stripe repair (a card payment Stripe already settled still becomes `Paid`) and before
+  any open card intent is cancelled. Either way cash is recorded only while money is still owed —
+  payment `Pending` or `Failed`: a paid order answers `order.cash_already_collected`, and a refunded,
+  part-refunded or disputed one `order.payment_not_outstanding`. The partner apps offer the action only in
+  that window.
 
 The customer web, Android and iOS apps ask the quote for `requiredEmployees` and read the live
 sign-in: cash is disabled with the reason — not signed in, the number of cleaners the booking needs, or
@@ -614,6 +627,11 @@ and that one currency scopes everything the cleaner sees and does with money:
   fail as one key, `order.preferred_employee.not_eligible`, because which one failed is not the
   customer's to learn. A hold granted across currencies could only lapse: the cleaner's board would not
   show the job and their take would be refused, while the seat sat withheld for the whole hold.
+- **Editing a schedule keeps its favourite cleaner.** `UpdateRecurringBooking` writes every schedule
+  column from the command, so the web, Android and iOS edit forms send the stored favourite cleaner and
+  end date back unchanged. When the edit is refused with `order.preferred_employee.not_eligible` — say,
+  the address is now in another country — the client says so and offers an explicit *save without your
+  favourite cleaner*; it never drops the cleaner on its own.
 
 **There is no fallback for a named country** (owner ruling 2026-09-12, "throw instead, 100 %"). A work
 country with no `CountryConfiguration`, a blank `DefaultCurrencyCode`, or a code that names no `Currency`
@@ -1212,7 +1230,10 @@ failed order"* (owner, Q-AUD-O2).
 **The terms have a version, and the version is the date the text started applying.** The terms and
 the privacy policy are stored documents (`LegalDocuments`, one per audience, type and market, seeded
 from files in the repository at every host start), each identified by its effective date as
-`yyyy-MM-dd` — `2026-09-14` today, for the whole platform, in five languages. **A document in force
+`yyyy-MM-dd`. For the whole platform, in five languages, the privacy policy is `2026-09-14` and the
+terms are `2026-09-27`: that version says cash on delivery is for a signed-in customer whose booking
+one cleaner can do, and states the 15/60-minute free-cancellation grace; `2026-09-14` stays as the
+text earlier customers accepted. **A document in force
 is immutable**: an edit to its file is refused with a warning, and a wording change is a new file
 under a new date, so every text a customer ever accepted stays in the database. The `/terms` and
 `/privacy` pages show the version in force for the customer's market (a market's own copy beats the

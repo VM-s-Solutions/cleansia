@@ -291,16 +291,26 @@ export class CreateRecurringWizardComponent implements OnInit {
 
   // ─── Leaving the screen ────────────────────────────────────────────
   async submit(): Promise<void> {
-    // Reveals the field messages from here on, whether or not this attempt goes
-    // through — an incomplete form now answers instead of ignoring the press.
-    this.facade.submitAttempted.set(true);
-    if (this.facade.missing().length > 0) return;
+    if (!this.readyToSave()) return;
+    this.leaveIfSaved(await this.facade.submit());
+  }
 
-    const ok = await this.facade.submit();
-    if (ok) {
-      this.facade.resetWizard();
-      this.router.navigate(this.listRoute);
-    }
+  async saveWithoutPreferredCleaner(): Promise<void> {
+    if (!this.readyToSave()) return;
+    this.leaveIfSaved(await this.facade.saveWithoutPreferredCleaner());
+  }
+
+  // Reveals the field messages from here on, whether or not this attempt goes
+  // through — an incomplete form answers instead of ignoring the press.
+  private readyToSave(): boolean {
+    this.facade.submitAttempted.set(true);
+    return this.facade.missing().length === 0;
+  }
+
+  private leaveIfSaved(saved: boolean): void {
+    if (!saved) return;
+    this.facade.resetWizard();
+    this.router.navigate(this.listRoute);
   }
 
   async togglePause(): Promise<void> {

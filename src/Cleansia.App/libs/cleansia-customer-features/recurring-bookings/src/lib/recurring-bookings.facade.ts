@@ -49,6 +49,8 @@ export interface QuotedPrice {
   currency: string | null;
 }
 
+const ONE_DAY_MS = 24 * 60 * 60 * 1000;
+
 function priceOf(quoted: QuoteOrderResponse): QuotedPrice {
   return {
     amount: quoted.finalPriceAfterDiscount ?? quoted.totalPrice,
@@ -106,6 +108,16 @@ export class RecurringBookingsFacade extends UnsubscribeControlDirective {
   // ─── Edit ──────────────────────────────────────────────────────────
   /** Template being edited, or null when the form is creating a new one. */
   readonly editingId = signal<string | null>(null);
+  /**
+   * The server no longer accepts the schedule's preferred cleaner (the address may now be in a
+   * market they are not paid in). The preference is kept until the customer chooses to save without it.
+   */
+  readonly preferredCleanerRefused = signal(false);
+  /** The server refuses a start on or after the schedule's end date, which this form cannot edit. */
+  readonly latestStartsOn = computed(() => {
+    const endsOn = this.formData().endsOn;
+    return endsOn ? new Date(endsOn.getTime() - ONE_DAY_MS) : null;
+  });
 
   // ─── Prices ────────────────────────────────────────────────────────
   /** templateId → quoted price per clean. Absent until the quote lands. */
@@ -543,7 +555,10 @@ export class RecurringBookingsFacade extends UnsubscribeControlDirective {
       selectedPackageIds: [...(template.selectedPackageIds ?? [])],
       paymentType: template.paymentType,
       startsOn: template.startsOn ? new Date(template.startsOn) : null,
+      endsOn: template.endsOn ? new Date(template.endsOn) : null,
+      preferredEmployeeId: template.preferredEmployeeId ?? null,
     });
+    this.preferredCleanerRefused.set(false);
     this.activeStep.set(1);
   }
 
@@ -613,6 +628,7 @@ export class RecurringBookingsFacade extends UnsubscribeControlDirective {
     this.formPrice.set(null);
     this.formCrew.set(null);
     this.cashCleared.set(false);
+    this.preferredCleanerRefused.set(false);
     this.submitAttempted.set(false);
     this.formData.set({ ...RECURRING_WIZARD_INITIAL_DATA });
   }
@@ -686,19 +702,33 @@ export class RecurringBookingsFacade extends UnsubscribeControlDirective {
    * responsible for navigating + resetting the wizard. List cache is
    * refreshed in-place so the user lands on a fresh list.
    */
-  async submit(): Promise<boolean> {
+  submit(): Promise<boolean> {
+    return this.save(false);
+  }
+
+  /**
+   * The customer's own answer to a refused preferred cleaner — never taken on their behalf. The form
+   * keeps the cleaner until this save goes through, so a save that never leaves or fails drops nothing.
+   */
+  saveWithoutPreferredCleaner(): Promise<boolean> {
+    return this.save(true);
+  }
+
+  private async save(withoutPreferredCleaner: boolean): Promise<boolean> {
     if (this.submitting() || !this.canSubmit()) return false;
     const d = this.formData();
     const paymentType = d.paymentType;
     if (!d.savedAddressId || !d.startsOn || paymentType === null) return false;
     const editingId = this.editingId();
 
+    this.preferredCleanerRefused.set(false);
     this.submitting.set(true);
     try {
       if (paymentType === PaymentType.Cash && !(await this.cashConfirmedForForm())) return false;
       const saved = editingId
-        ? await this.sendUpdate(editingId, d, paymentType)
+        ? await this.sendUpdate(editingId, d, paymentType, withoutPreferredCleaner)
         : await this.sendCreate(d, paymentType);
+      if (withoutPreferredCleaner) this.updateFormData({ preferredEmployeeId: null });
 
       if (saved) {
         // Optimistic in-place write so the list is right the moment the user
@@ -726,8 +756,13 @@ export class RecurringBookingsFacade extends UnsubscribeControlDirective {
       return true;
     } catch (error: unknown) {
       // The interceptor has already said why; a generic toast would replace that sentence.
-      if (extractApiErrorCode(error) === 'order.cash_not_available') {
+      const code = extractApiErrorCode(error);
+      if (code === 'order.cash_not_available') {
         this.dropCash(false);
+        return false;
+      }
+      if (editingId && code === 'order.preferred_employee.not_eligible') {
+        this.preferredCleanerRefused.set(true);
         return false;
       }
       this.snackbar.showError(
@@ -776,6 +811,7 @@ export class RecurringBookingsFacade extends UnsubscribeControlDirective {
     templateId: string,
     d: RecurringWizardFormData,
     paymentType: PaymentType,
+    withoutPreferredCleaner: boolean,
   ): Promise<RecurringBookingTemplateDto> {
     const command = new UpdateRecurringBookingCommand();
     command.templateId = templateId;
@@ -789,7 +825,10 @@ export class RecurringBookingsFacade extends UnsubscribeControlDirective {
     command.selectedPackageIds = d.selectedPackageIds;
     command.paymentType = paymentType;
     command.startsOn = d.startsOn as Date;
-    command.endsOn = undefined;
+    command.endsOn = d.endsOn ?? undefined;
+    command.preferredEmployeeId = withoutPreferredCleaner
+      ? undefined
+      : (d.preferredEmployeeId ?? undefined);
     return firstValueFrom(this.client.update(command).pipe(takeUntil(this.destroyed$)));
   }
 

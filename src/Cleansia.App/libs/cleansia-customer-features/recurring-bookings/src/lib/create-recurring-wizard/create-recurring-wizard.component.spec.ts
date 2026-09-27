@@ -1,7 +1,8 @@
 import { signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
-import { ActivatedRoute, provideRouter } from '@angular/router';
+import { ActivatedRoute, provideRouter, Router } from '@angular/router';
 import {
   PackageListItem,
   PaymentType,
@@ -10,6 +11,7 @@ import {
 } from '@cleansia/customer-services';
 import { TranslateModule } from '@ngx-translate/core';
 import { ConfirmationService } from 'primeng/api';
+import { DatePicker } from 'primeng/datepicker';
 import { RecurringBookingsFacade } from '../recurring-bookings.facade';
 import {
   MissingField,
@@ -33,6 +35,8 @@ class FakeRecurringBookingsFacade {
   cashSelectable = signal(true);
   cashReason = signal<{ key: string; params: Record<string, number> } | null>(null);
   cashClearedNotice = signal(false);
+  preferredCleanerRefused = signal(false);
+  latestStartsOn = signal<Date | null>(null);
   packages = signal<PackageListItem[]>([]);
   services = signal<ServiceListItem[]>([]);
   savedAddresses = signal<SavedAddressDto[]>([]);
@@ -58,6 +62,7 @@ class FakeRecurringBookingsFacade {
   togglePackage = jest.fn();
   addAddress = jest.fn();
   submit = jest.fn();
+  saveWithoutPreferredCleaner = jest.fn();
   resetWizard = jest.fn();
   toggleActive = jest.fn();
   deleteTemplate = jest.fn();
@@ -142,6 +147,19 @@ describe('CreateRecurringWizardComponent — paying in cash', () => {
     expect(el.querySelector('[data-spec-cash-cleared]')).toBeNull();
   });
 
+  // The web cannot edit a schedule's end date, so a start past it could never be saved.
+  it('caps the start date at the latest the facade allows', () => {
+    const startPicker = () =>
+      fixture.debugElement.query(By.directive(DatePicker)).componentInstance as DatePicker;
+    expect(startPicker().maxDate).toBeNull();
+
+    const latest = new Date('2027-03-30T00:00:00Z');
+    facade.latestStartsOn.set(latest);
+    fixture.detectChanges();
+
+    expect(startPicker().maxDate).toEqual(latest);
+  });
+
   it('re-quotes when what the schedule costs changes, not when the day, time or payment does', () => {
     expect(facade.quoteForm).toHaveBeenCalledTimes(1);
 
@@ -152,5 +170,101 @@ describe('CreateRecurringWizardComponent — paying in cash', () => {
     facade.pricedSelection.set({ ...NOTHING_PRICED, serviceIds: ['s1'] });
     fixture.detectChanges();
     expect(facade.quoteForm).toHaveBeenCalledTimes(2);
+  });
+});
+
+// Editing sends the schedule's preferred cleaner back. When the server no longer accepts them, the
+// form says so and offers the one way through — saving without them, by the customer's own press.
+describe('CreateRecurringWizardComponent — a refused preferred cleaner', () => {
+  let fixture: ComponentFixture<CreateRecurringWizardComponent>;
+  let facade: FakeRecurringBookingsFacade;
+  let el: HTMLElement;
+
+  beforeEach(async () => {
+    facade = new FakeRecurringBookingsFacade();
+    facade.editingId.set('t1');
+    await TestBed.configureTestingModule({
+      imports: [CreateRecurringWizardComponent, TranslateModule.forRoot()],
+      providers: [
+        provideRouter([]),
+        provideNoopAnimations(),
+        {
+          provide: ActivatedRoute,
+          useValue: {
+            snapshot: { paramMap: { get: () => null }, queryParamMap: { get: () => null } },
+          },
+        },
+      ],
+    })
+      .overrideComponent(CreateRecurringWizardComponent, {
+        set: {
+          providers: [
+            { provide: RecurringBookingsFacade, useValue: facade },
+            ConfirmationService,
+          ],
+        },
+      })
+      .compileComponents();
+    fixture = TestBed.createComponent(CreateRecurringWizardComponent);
+    el = fixture.nativeElement;
+    fixture.detectChanges();
+  });
+
+  const notice = () => el.querySelector('[data-spec-preferred-refused]');
+  const saveWithout = () =>
+    el.querySelector<HTMLButtonElement>('[data-spec-save-without-preferred]');
+
+  it('says nothing about the preferred cleaner until the server refuses them', () => {
+    expect(notice()).toBeNull();
+    expect(saveWithout()).toBeNull();
+  });
+
+  it('names the refusal and offers saving without them', () => {
+    facade.preferredCleanerRefused.set(true);
+    fixture.detectChanges();
+
+    expect(notice()?.textContent).toContain('preferred_cleaner.schedule_refused');
+    expect(saveWithout()?.textContent).toContain('preferred_cleaner.schedule_save_without');
+  });
+
+  it('saves without them only on the press, then returns to the list', async () => {
+    const router = TestBed.inject(Router);
+    const navigate = jest.spyOn(router, 'navigate').mockResolvedValue(true);
+    facade.saveWithoutPreferredCleaner.mockResolvedValue(true);
+    facade.preferredCleanerRefused.set(true);
+    fixture.detectChanges();
+    expect(facade.saveWithoutPreferredCleaner).not.toHaveBeenCalled();
+
+    saveWithout()?.click();
+    await fixture.whenStable();
+
+    expect(facade.saveWithoutPreferredCleaner).toHaveBeenCalledTimes(1);
+    expect(facade.resetWizard).toHaveBeenCalledTimes(1);
+    expect(navigate).toHaveBeenCalledWith(['/membership', 'recurring']);
+  });
+
+  it('saves without them only once the form is complete, as the ordinary save does', async () => {
+    facade.missing.set(['time']);
+    facade.preferredCleanerRefused.set(true);
+    fixture.detectChanges();
+
+    saveWithout()?.click();
+    await fixture.whenStable();
+
+    expect(facade.submitAttempted()).toBe(true);
+    expect(facade.saveWithoutPreferredCleaner).not.toHaveBeenCalled();
+  });
+
+  it('stays on the form when saving without them is refused too', async () => {
+    const navigate = jest.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
+    facade.saveWithoutPreferredCleaner.mockResolvedValue(false);
+    facade.preferredCleanerRefused.set(true);
+    fixture.detectChanges();
+
+    saveWithout()?.click();
+    await fixture.whenStable();
+
+    expect(facade.resetWizard).not.toHaveBeenCalled();
+    expect(navigate).not.toHaveBeenCalled();
   });
 });

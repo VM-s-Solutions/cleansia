@@ -198,6 +198,7 @@
                 [ngModel]="facade.formData().startsOn"
                 (ngModelChange)="onStartsOnChange($event)"
                 [minDate]="minStartsOn"
+                [maxDate]="facade.latestStartsOn()"
                 dateFormat="dd. mm. yy"
                 [showIcon]="true"
                 [appendTo]="'body'"
@@ -336,12 +337,28 @@
                 <i class="pi pi-exclamation-circle" aria-hidden="true"></i>
                 {{ 'recurring_booking.error_summary' | translate: { fields: missingLabels() } }}
               </p>
+            } @else if (facade.preferredCleanerRefused()) {
+              <p class="cl-rec__error cl-rec__error--summary" role="alert" data-spec-preferred-refused>
+                <i class="pi pi-exclamation-circle" aria-hidden="true"></i>
+                {{ 'preferred_cleaner.schedule_refused' | translate }}
+              </p>
             } @else {
               <p class="cl-rec__summary-note">{{ 'recurring_booking.price_note' | translate }}</p>
             }
           </div>
           <div class="cl-rec__summary-actions">
             <a class="cl-link" [routerLink]="listRoute">{{ 'global.cancel' | translate }}</a>
+            @if (facade.preferredCleanerRefused()) {
+              <button
+                type="button"
+                class="cl-rec__ghost"
+                data-spec-save-without-preferred
+                [disabled]="facade.submitting()"
+                (click)="saveWithoutPreferredCleaner()"
+              >
+                {{ 'preferred_cleaner.schedule_save_without' | translate }}
+              </button>
+            }
             <!--
               NOT disabled on an incomplete form. A dead button is why pressing
               save appeared to do nothing; this one always responds, and an

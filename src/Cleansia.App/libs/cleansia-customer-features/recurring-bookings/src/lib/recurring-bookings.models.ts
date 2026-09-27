@@ -50,6 +50,12 @@ export interface RecurringWizardFormData {
   paymentType: PaymentType | null;
   /** Local Date for the picker; converted to ISO instant on submit. */
   startsOn: Date | null;
+  /**
+   * Not editable here, but carried from the schedule being edited: the update replaces every field
+   * it is sent, so leaving either off clears it.
+   */
+  endsOn: Date | null;
+  preferredEmployeeId: string | null;
 }
 
 export const RECURRING_WIZARD_INITIAL_DATA: RecurringWizardFormData = {
@@ -63,6 +69,8 @@ export const RECURRING_WIZARD_INITIAL_DATA: RecurringWizardFormData = {
   selectedPackageIds: [],
   paymentType: PaymentType.Card,
   startsOn: null,
+  endsOn: null,
+  preferredEmployeeId: null,
 };
 
 /**

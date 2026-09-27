@@ -2210,7 +2210,9 @@
     "choose_submit": "Požádat",
     "choose_success": "Požádali jsme ho.",
     "list_error": "Vaše uklízeče se nepodařilo načíst. Zkuste to prosím znovu.",
-    "list_empty": "Zatím není koho požádat — seznam se plní s dokončenými úklidy."
+    "list_empty": "Zatím není koho požádat — seznam se plní s dokončenými úklidy.",
+    "schedule_refused": "U tohoto rozvrhu už nemůžeme vašeho oblíbeného uklízeče požádat jako prvního — například proto, že adresa úklidu je teď v jiné zemi. Rozvrh můžete uložit bez něj a každý úklid se pak otevře celému našemu týmu.",
+    "schedule_save_without": "Uložit bez oblíbeného uklízeče"
   },
   "enums": {
     "order_status": {

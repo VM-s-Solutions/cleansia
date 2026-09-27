@@ -2210,7 +2210,9 @@
     "choose_submit": "Ask",
     "choose_success": "We've asked them.",
     "list_error": "We couldn't load your cleaners. Please try again.",
-    "list_empty": "There's no one to ask yet — the list fills up as your cleanings are completed."
+    "list_empty": "There's no one to ask yet — the list fills up as your cleanings are completed.",
+    "schedule_refused": "We can no longer ask your favourite cleaner first on this schedule — for example, because its address is now in another country. You can save it without them, and each cleaning will then open to our whole team.",
+    "schedule_save_without": "Save without your favourite cleaner"
   },
   "enums": {
     "order_status": {

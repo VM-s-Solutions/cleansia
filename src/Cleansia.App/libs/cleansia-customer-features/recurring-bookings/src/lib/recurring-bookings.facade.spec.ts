@@ -10,6 +10,7 @@ import {
   SavedAddressDto,
   ServiceListItem,
   SetRecurringBookingActiveCommand,
+  UpdateRecurringBookingCommand,
 } from '@cleansia/customer-services';
 import {
   loadCustomerPackages,
@@ -829,6 +830,171 @@ describe('RecurringBookingsFacade', () => {
 
       expect(facade.cashClearedNotice()).toBe(false);
       expect(facade.formData().paymentType).toBeNull();
+    });
+  });
+
+  // The update replaces every field it is sent, so a field the form does not edit has to travel
+  // back as the schedule has it — an omitted one is a cleared one.
+  describe('editing keeps what the form does not edit', () => {
+    const endsOn = new Date('2027-03-31T00:00:00Z');
+    const stored = (overrides?: Partial<RecurringBookingTemplateDto>) =>
+      template({
+        id: 't1',
+        frequency: RecurrenceFrequency.Weekly,
+        dayOfWeek: 4,
+        timeOfDay: '10:00',
+        rooms: 2,
+        bathrooms: 1,
+        savedAddressId: 'addr-1',
+        selectedServiceIds: ['s1'],
+        selectedPackageIds: [],
+        paymentType: PaymentType.Card,
+        startsOn: new Date('2026-10-01T00:00:00Z'),
+        endsOn,
+        preferredEmployeeId: 'e-1',
+        ...overrides,
+      });
+    const notEligible = () =>
+      throwError(() => ({
+        detail: 'A validation problem occurred.',
+        errors: { PreferredEmployeeId: 'order.preferred_employee.not_eligible' },
+      }));
+    const updateBody = (call: number) =>
+      JSON.parse(JSON.stringify(client.update.mock.calls[call][0] as UpdateRecurringBookingCommand));
+
+    beforeEach(() => client.update.mockReturnValue(of(stored())));
+
+    it('sends the preferred cleaner and the end date the schedule already has', async () => {
+      facade.loadForEdit(stored());
+      facade.updateFormData({ timeOfDay: '11:00' });
+
+      const ok = await facade.submit();
+
+      expect(ok).toBe(true);
+      expect(updateBody(0)).toMatchObject({
+        templateId: 't1',
+        timeOfDay: '11:00',
+        preferredEmployeeId: 'e-1',
+        endsOn: '2027-03-31T00:00:00.000Z',
+      });
+    });
+
+    it('sends neither when the schedule has neither', async () => {
+      facade.loadForEdit(stored({ preferredEmployeeId: undefined, endsOn: undefined }));
+
+      await facade.submit();
+
+      expect(updateBody(0)).not.toHaveProperty('preferredEmployeeId');
+      expect(updateBody(0)).not.toHaveProperty('endsOn');
+    });
+
+    it('keeps the start date before the end date the schedule has', () => {
+      expect(facade.latestStartsOn()).toBeNull();
+
+      facade.loadForEdit(stored());
+
+      expect(facade.latestStartsOn()).toEqual(new Date('2027-03-30T00:00:00Z'));
+    });
+
+    it('keeps the preferred cleaner and says so when the server no longer accepts them', async () => {
+      client.update.mockReturnValueOnce(notEligible());
+      facade.loadForEdit(stored());
+
+      const ok = await facade.submit();
+
+      expect(ok).toBe(false);
+      expect(snackbar.showError).not.toHaveBeenCalled();
+      expect(facade.formData().preferredEmployeeId).toBe('e-1');
+      expect(facade.preferredCleanerRefused()).toBe(true);
+    });
+
+    it('saves without the preferred cleaner only when the customer chooses to', async () => {
+      client.update.mockReturnValueOnce(notEligible());
+      facade.loadForEdit(stored());
+      await facade.submit();
+
+      const ok = await facade.saveWithoutPreferredCleaner();
+
+      expect(ok).toBe(true);
+      expect(client.update).toHaveBeenCalledTimes(2);
+      expect(updateBody(1)).not.toHaveProperty('preferredEmployeeId');
+      expect(updateBody(1).endsOn).toBe('2027-03-31T00:00:00.000Z');
+      expect(facade.preferredCleanerRefused()).toBe(false);
+      expect(facade.formData().preferredEmployeeId).toBeNull();
+    });
+
+    it('keeps the preferred cleaner when saving without them never goes out', async () => {
+      client.update.mockReturnValueOnce(notEligible());
+      facade.loadForEdit(stored());
+      await facade.submit();
+      facade.updateFormData({ timeOfDay: '' });
+
+      const ok = await facade.saveWithoutPreferredCleaner();
+
+      expect(ok).toBe(false);
+      expect(client.update).toHaveBeenCalledTimes(1);
+      expect(facade.formData().preferredEmployeeId).toBe('e-1');
+
+      facade.updateFormData({ timeOfDay: '10:00' });
+      await facade.submit();
+
+      expect(updateBody(1).preferredEmployeeId).toBe('e-1');
+    });
+
+    it('keeps the preferred cleaner when saving without them fails', async () => {
+      client.update
+        .mockReturnValueOnce(notEligible())
+        .mockReturnValueOnce(throwError(() => new Error('offline')));
+      facade.loadForEdit(stored());
+      await facade.submit();
+
+      const ok = await facade.saveWithoutPreferredCleaner();
+
+      expect(ok).toBe(false);
+      expect(updateBody(1)).not.toHaveProperty('preferredEmployeeId');
+      expect(facade.formData().preferredEmployeeId).toBe('e-1');
+
+      await facade.submit();
+
+      expect(updateBody(2).preferredEmployeeId).toBe('e-1');
+    });
+
+    it('puts the notice down when the wizard is reset', async () => {
+      client.update.mockReturnValueOnce(notEligible());
+      facade.loadForEdit(stored());
+      await facade.submit();
+
+      facade.resetWizard();
+
+      expect(facade.preferredCleanerRefused()).toBe(false);
+    });
+
+    it('still names every other refusal with the generic update message', async () => {
+      client.update.mockReturnValueOnce(throwError(() => new Error('boom')));
+      facade.loadForEdit(stored());
+
+      await facade.submit();
+
+      expect(facade.preferredCleanerRefused()).toBe(false);
+      expect(snackbar.showError).toHaveBeenCalledWith('recurring_booking.update_failed');
+    });
+
+    it('creates a schedule with neither, even after an edit was abandoned', async () => {
+      facade.loadForEdit(stored());
+      facade.resetWizard();
+      client.create.mockReturnValue(of(template({ id: 't-new' })));
+      facade.updateFormData({
+        selectedServiceIds: ['s1'],
+        savedAddressId: 'addr-1',
+        startsOn: new Date('2026-10-01T00:00:00Z'),
+      });
+
+      await facade.submit();
+
+      const body = JSON.parse(JSON.stringify(client.create.mock.calls[0][0]));
+      expect(body).not.toHaveProperty('preferredEmployeeId');
+      expect(body).not.toHaveProperty('endsOn');
+      expect(facade.latestStartsOn()).toBeNull();
     });
   });
 

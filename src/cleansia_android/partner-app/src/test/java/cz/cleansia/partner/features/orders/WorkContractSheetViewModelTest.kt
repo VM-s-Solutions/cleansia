@@ -28,8 +28,9 @@ import org.junit.Test
 
 /**
  * The sheet is where the take now happens, and what it sends is the whole point: the text row the
- * cleaner was shown, echoed on the swipe. The mismatch loop is the one refusal it owns — re-run the
- * preview, reset the gesture, say so — and every other verdict is handed to the host untouched.
+ * cleaner was shown, echoed on the swipe. It owns two refusals — the mismatch loop (re-run the preview,
+ * reset the gesture, say so) and the unaccepted contract documents — and every other verdict is handed
+ * to the host untouched.
  */
 @OptIn(ExperimentalCoroutinesApi::class)
 class WorkContractSheetViewModelTest {
@@ -214,6 +215,32 @@ class WorkContractSheetViewModelTest {
             assertEquals(listOf<WorkContractOutcome>(WorkContractOutcome.Refused(take, cap)), outcomes)
             assertNull(vm.notice.value)
             assertEquals(ActionState.Idle, vm.actionState.value)
+        }
+
+    /**
+     * The take is refused on the cleaner's contract documents, not on this job: nothing about the job
+     * changed, so the host has nothing to reconcile and the sheet itself becomes the way to the documents.
+     */
+    @Test
+    fun `a take refused on the contract documents turns the sheet into the way to them`() =
+        runTestCollectingOutcomes { vm, outcomes ->
+            coEvery { ordersRepository.getWorkContractPreview(orderId, "cs") } returns ApiResult.Success(contract("text-1"))
+            coEvery { ordersRepository.takeOrder(orderId, "text-1") } returns
+                ApiResult.Error(badRequest("employee.legal_documents_not_accepted"))
+            vm.open(take)
+            advanceUntilIdle()
+
+            vm.accept()
+            advanceUntilIdle()
+
+            assertEquals(WorkContractUiState.LegalDocumentsNotAccepted, vm.uiState.value)
+            assertEquals(ActionState.Idle, vm.actionState.value)
+            assertTrue("the documents refusal is the sheet's to handle, not the host's", outcomes.isEmpty())
+            coVerify(exactly = 1) { ordersRepository.getWorkContractPreview(orderId, "cs") }
+
+            vm.accept()
+            advanceUntilIdle()
+            coVerify(exactly = 1) { ordersRepository.takeOrder(any(), any()) }
         }
 
     @Test

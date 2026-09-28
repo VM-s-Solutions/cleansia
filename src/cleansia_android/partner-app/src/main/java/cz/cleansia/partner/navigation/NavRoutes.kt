@@ -94,6 +94,9 @@ sealed interface NavRoute {
     @Serializable data object ProfileEmergency : NavRoute
     @Serializable data object ProfileDocuments : NavRoute
 
+    /** The contract documents the cleaner reads and accepts — not the papers [ProfileDocuments] uploads. */
+    @Serializable data object LegalDocuments : NavRoute
+
     /**
      * Full-screen Mapbox picker launched from the Address section. On
      * confirm it writes a serialized `GeocodedAddress` into the

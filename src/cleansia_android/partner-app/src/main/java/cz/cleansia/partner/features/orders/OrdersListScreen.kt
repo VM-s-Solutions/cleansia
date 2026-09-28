@@ -102,6 +102,7 @@ import kotlin.math.roundToInt
 @Composable
 fun OrdersListScreen(
     onOrderClick: (String) -> Unit,
+    onOpenLegalDocuments: () -> Unit,
     viewModel: OrdersListViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -141,6 +142,10 @@ fun OrdersListScreen(
             request = request,
             onDismiss = viewModel::dismissContract,
             onOutcome = viewModel::onWorkContractOutcome,
+            onOpenLegalDocuments = {
+                viewModel.dismissContract()
+                onOpenLegalDocuments()
+            },
         )
     }
 

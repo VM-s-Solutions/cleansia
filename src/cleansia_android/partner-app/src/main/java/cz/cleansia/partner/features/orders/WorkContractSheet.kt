@@ -63,6 +63,7 @@ fun WorkContractSheet(
     request: WorkContractRequest,
     onDismiss: () -> Unit,
     onOutcome: (WorkContractOutcome) -> Unit,
+    onOpenLegalDocuments: () -> Unit,
     viewModel: WorkContractSheetViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -87,6 +88,7 @@ fun WorkContractSheet(
             onAccept = viewModel::accept,
             onRetry = viewModel::retry,
             onClose = onDismiss,
+            onOpenLegalDocuments = onOpenLegalDocuments,
         )
     }
 }
@@ -100,6 +102,7 @@ fun WorkContractSheetContent(
     onAccept: () -> Unit,
     onRetry: () -> Unit,
     onClose: () -> Unit,
+    onOpenLegalDocuments: () -> Unit,
 ) {
     Column(
         modifier = Modifier
@@ -132,6 +135,12 @@ fun WorkContractSheetContent(
                 text = stringResource(R.string.error_legal_document_not_found),
                 ctaLabel = stringResource(R.string.close),
                 onCta = onClose,
+            )
+
+            WorkContractUiState.LegalDocumentsNotAccepted -> SheetMessage(
+                text = stringResource(R.string.error_employee_legal_documents_not_accepted),
+                ctaLabel = stringResource(R.string.legal_documents_review),
+                onCta = onOpenLegalDocuments,
             )
 
             is WorkContractUiState.Loaded -> LoadedContract(
@@ -349,6 +358,7 @@ private fun WorkContractSheetPreview() {
             onAccept = {},
             onRetry = {},
             onClose = {},
+            onOpenLegalDocuments = {},
         )
     }
 }

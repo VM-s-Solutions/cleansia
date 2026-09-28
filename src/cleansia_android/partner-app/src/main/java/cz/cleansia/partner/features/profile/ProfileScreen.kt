@@ -31,6 +31,7 @@ import androidx.compose.material.icons.outlined.AccountBalance
 import androidx.compose.material.icons.outlined.Badge
 import androidx.compose.material.icons.outlined.DarkMode
 import androidx.compose.material.icons.outlined.DateRange
+import androidx.compose.material.icons.outlined.Gavel
 import androidx.compose.material.icons.outlined.Description
 import androidx.compose.material.icons.outlined.Devices
 import androidx.compose.material.icons.outlined.Info
@@ -84,6 +85,7 @@ fun ProfileScreen(
     onNavigateToBank: () -> Unit,
     onNavigateToEmergency: () -> Unit,
     onNavigateToDocuments: () -> Unit,
+    onNavigateToLegalDocuments: () -> Unit,
     onNavigateToLanguage: () -> Unit,
     onNavigateToTheme: () -> Unit,
     onNavigateToJobRadius: () -> Unit,
@@ -185,6 +187,13 @@ fun ProfileScreen(
                             title = stringResource(R.string.my_documents),
                             summary = stringResource(R.string.documents_summary_view),
                             onClick = onNavigateToDocuments,
+                        )
+                        RowDivider()
+                        ProfileSectionRow(
+                            icon = Icons.Outlined.Gavel,
+                            title = stringResource(R.string.legal_documents_title),
+                            summary = stringResource(R.string.profile_legal_documents_summary),
+                            onClick = onNavigateToLegalDocuments,
                         )
                         employee.weeklyOrderLimit?.let { limit ->
                             RowDivider()

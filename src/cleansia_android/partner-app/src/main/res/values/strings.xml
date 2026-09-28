@@ -881,6 +881,17 @@
     <string name="work_contract_pending_banner">Accept the contract for work before you start</string>
     <string name="work_contract_accept_cta">Accept the contract</string>
     <string name="work_contract_read">Read the contract</string>
+    <string name="legal_documents_title">Contract documents</string>
+    <string name="legal_documents_intro">These documents govern your cooperation with Cleansia. Read each one and accept its current version — until you do, you can\'t be approved or take jobs.</string>
+    <string name="legal_documents_empty">There are no documents for you to accept right now.</string>
+    <string name="legal_documents_version">Version %1$s</string>
+    <string name="legal_documents_accepted_on">Accepted on %1$s, version %2$s</string>
+    <string name="legal_documents_new_version">A new version is in force. You accepted version %1$s.</string>
+    <string name="legal_documents_awaiting">Awaiting your acceptance</string>
+    <string name="legal_documents_accept">Accept this document</string>
+    <string name="legal_documents_accepted_toast">Document accepted.</string>
+    <string name="legal_documents_text_updated">This document was updated — please read it again.</string>
+    <string name="legal_documents_review">Review documents</string>
     <string name="slide_to_start">Slide to start cleaning</string>
     <string name="starting_order">Starting the job…</string>
     <string name="slide_to_complete">Slide to complete</string>
@@ -1005,6 +1016,8 @@
     <string name="registration_lock_action_complete_profile">Complete profile</string>
     <string name="registration_lock_action_upload_documents">Upload documents</string>
     <string name="registration_lock_action_contact_support">Contact support</string>
+    <string name="registration_lock_category_legal_documents">Contract documents</string>
+    <string name="registration_lock_action_accept_documents">Read and accept</string>
     <string name="registration_lock_documents_required">Upload your identification documents.</string>
     <string name="registration_lock_approval_awaiting_review">Application under review by an administrator.</string>
     <string name="registration_lock_approval_complete_profile_first">Finish the steps above first — then admin can approve you.</string>
@@ -1390,6 +1403,7 @@
     <string name="profile_weekly_limit_reason">Reason: %1$s</string>
     <string name="profile_how_jobs_are_offered">How jobs are offered</string>
     <string name="profile_how_jobs_are_offered_summary">The rules behind the job board</string>
+    <string name="profile_legal_documents_summary">Read and accept the documents you work under</string>
 
     <!-- Profile photo. Copy shared verbatim with the customer app. -->
     <string name="profile_avatar_change">Change photo</string>

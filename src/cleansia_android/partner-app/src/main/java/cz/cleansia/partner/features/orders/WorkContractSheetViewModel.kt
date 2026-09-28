@@ -31,6 +31,10 @@ sealed interface WorkContractUiState {
 
     /** The order has no contract text in force, so it cannot be taken now; nothing to accept. */
     data object Unavailable : WorkContractUiState
+
+    /** The take was refused until the cleaner accepts the current version of their contract documents. */
+    data object LegalDocumentsNotAccepted : WorkContractUiState
+
     data class Loaded(val contract: WorkContract) : WorkContractUiState
 }
 
@@ -39,7 +43,8 @@ enum class WorkContractNotice { TextUpdated }
 /**
  * How the sheet ended for its host. The host — the board, the detail or the offers list — reacts to
  * the take exactly as it did when the take was its own one tap: a success refreshes its panes, a
- * refusal is framed and reconciled in its own words. The two contract keys never leave the sheet.
+ * refusal is framed and reconciled in its own words. The contract and documents keys never leave the
+ * sheet.
  */
 sealed interface WorkContractOutcome {
     val request: WorkContractRequest
@@ -58,10 +63,11 @@ sealed interface WorkContractOutcome {
  * The contract sheet: loads the preview (or the accepted contract), and on the swipe echoes the
  * previewed text row to the take or the standalone acceptance.
  *
- * `contract.text_mismatch` is the one refusal handled here: the echoed text is not this order's, so
- * the preview is re-run, the gesture reset and the cleaner told to read again. `legal.document_not_found`
- * can only come from the preview and means the job cannot be taken now. Every other refusal is the
- * host's to frame.
+ * `contract.text_mismatch` is handled here: the echoed text is not this order's, so the preview is
+ * re-run, the gesture reset and the cleaner told to read again. So is
+ * `employee.legal_documents_not_accepted`: the sheet turns into the way to the documents, since
+ * nothing about the job changed. `legal.document_not_found` can only come from the preview and means
+ * the job cannot be taken now. Every other refusal is the host's to frame.
  */
 @HiltViewModel
 class WorkContractSheetViewModel @Inject constructor(
@@ -136,6 +142,11 @@ class WorkContractSheetViewModel @Inject constructor(
                 load()
                 return@launch
             }
+            if (outcome is WorkContractOutcome.Refused && outcome.error.hasKey(LEGAL_DOCUMENTS_NOT_ACCEPTED)) {
+                _actionState.value = ActionState.Idle
+                _uiState.value = WorkContractUiState.LegalDocumentsNotAccepted
+                return@launch
+            }
             _actionState.value = ActionState.Idle
             _outcome.emit(outcome)
         }
@@ -152,6 +163,7 @@ class WorkContractSheetViewModel @Inject constructor(
     private companion object {
         const val TEXT_MISMATCH = "contract.text_mismatch"
         const val DOCUMENT_NOT_FOUND = "legal.document_not_found"
+        const val LEGAL_DOCUMENTS_NOT_ACCEPTED = "employee.legal_documents_not_accepted"
     }
 }
 

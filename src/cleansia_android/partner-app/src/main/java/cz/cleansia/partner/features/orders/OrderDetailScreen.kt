@@ -94,6 +94,7 @@ import java.util.Locale
 @Composable
 fun OrderDetailScreen(
     onNavigateBack: () -> Unit,
+    onOpenLegalDocuments: () -> Unit,
     viewModel: OrderDetailViewModel = hiltViewModel(),
     checklistViewModel: CleaningChecklistViewModel = hiltViewModel(),
 ) {
@@ -194,6 +195,10 @@ fun OrderDetailScreen(
                         request = request,
                         onDismiss = viewModel::dismissContract,
                         onOutcome = viewModel::onWorkContractOutcome,
+                        onOpenLegalDocuments = {
+                            viewModel.dismissContract()
+                            onOpenLegalDocuments()
+                        },
                     )
                 }
 

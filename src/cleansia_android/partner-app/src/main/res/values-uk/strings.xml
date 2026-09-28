@@ -891,6 +891,17 @@
     <string name="work_contract_pending_banner">Перш ніж почати, прийміть договір підряду</string>
     <string name="work_contract_accept_cta">Прийняти договір</string>
     <string name="work_contract_read">Прочитати договір</string>
+    <string name="legal_documents_title">Договірні документи</string>
+    <string name="legal_documents_intro">Ці документи регулюють вашу співпрацю з Cleansia. Прочитайте кожен і прийміть його чинну версію — доки ви цього не зробите, вас не можуть схвалити і ви не можете брати замовлення.</string>
+    <string name="legal_documents_empty">Зараз у вас немає документів для прийняття.</string>
+    <string name="legal_documents_version">Версія %1$s</string>
+    <string name="legal_documents_accepted_on">Прийнято %1$s, версія %2$s</string>
+    <string name="legal_documents_new_version">Діє нова версія. Ви прийняли версію %1$s.</string>
+    <string name="legal_documents_awaiting">Очікує вашого прийняття</string>
+    <string name="legal_documents_accept">Прийняти документ</string>
+    <string name="legal_documents_accepted_toast">Документ прийнято.</string>
+    <string name="legal_documents_text_updated">Цей документ оновлено — будь ласка, прочитайте його ще раз.</string>
+    <string name="legal_documents_review">Переглянути документи</string>
     <string name="slide_to_start">Проведіть, щоб почати прибирання</string>
     <string name="starting_order">Починаю прибирання…</string>
     <string name="slide_to_complete">Проведіть, щоб завершити</string>
@@ -1005,6 +1016,8 @@
     <string name="registration_lock_action_complete_profile">Заповнити профіль</string>
     <string name="registration_lock_action_upload_documents">Завантажити документи</string>
     <string name="registration_lock_action_contact_support">Звернутися до підтримки</string>
+    <string name="registration_lock_category_legal_documents">Договірні документи</string>
+    <string name="registration_lock_action_accept_documents">Прочитати та прийняти</string>
     <string name="registration_lock_documents_required">Завантажте свої документи, що посвідчують особу.</string>
     <string name="registration_lock_approval_awaiting_review">Заявку розглядає адміністратор.</string>
     <string name="registration_lock_approval_complete_profile_first">Спочатку виконайте кроки вище — потім адміністратор зможе вас схвалити.</string>
@@ -1360,6 +1373,7 @@
     <string name="profile_weekly_limit_reason">Причина: %1$s</string>
     <string name="profile_how_jobs_are_offered">Як ми пропонуємо замовлення</string>
     <string name="profile_how_jobs_are_offered_summary">Правила списку замовлень</string>
+    <string name="profile_legal_documents_summary">Прочитайте та прийміть документи, за якими ви працюєте</string>
 
     <!-- Profile photo. Copy shared verbatim with the customer app. -->
     <string name="profile_avatar_change">Змінити фото</string>

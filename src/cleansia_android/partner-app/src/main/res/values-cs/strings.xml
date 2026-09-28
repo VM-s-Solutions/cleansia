@@ -907,6 +907,17 @@
     <string name="work_contract_pending_banner">Než začnete, přijměte smlouvu o dílo</string>
     <string name="work_contract_accept_cta">Přijmout smlouvu</string>
     <string name="work_contract_read">Přečíst smlouvu</string>
+    <string name="legal_documents_title">Smluvní dokumenty</string>
+    <string name="legal_documents_intro">Tyto dokumenty upravují vaši spolupráci s Cleansia. Každý si přečtěte a přijměte jeho aktuální verzi — dokud to neuděláte, nemůžete být schváleni ani přijímat zakázky.</string>
+    <string name="legal_documents_empty">Momentálně nemáte žádné dokumenty k přijetí.</string>
+    <string name="legal_documents_version">Verze %1$s</string>
+    <string name="legal_documents_accepted_on">Přijato %1$s, verze %2$s</string>
+    <string name="legal_documents_new_version">Platí nová verze. Přijali jste verzi %1$s.</string>
+    <string name="legal_documents_awaiting">Čeká na vaše přijetí</string>
+    <string name="legal_documents_accept">Přijmout dokument</string>
+    <string name="legal_documents_accepted_toast">Dokument přijat.</string>
+    <string name="legal_documents_text_updated">Tento dokument byl aktualizován — přečtěte si jej prosím znovu.</string>
+    <string name="legal_documents_review">Zobrazit dokumenty</string>
     <string name="slide_to_start">Posunutím začněte úklid</string>
     <string name="starting_order">Začínám úklid…</string>
     <string name="slide_to_complete">Posunutím dokončete</string>
@@ -1021,6 +1032,8 @@
     <string name="registration_lock_action_complete_profile">Dokončit profil</string>
     <string name="registration_lock_action_upload_documents">Nahrát dokumenty</string>
     <string name="registration_lock_action_contact_support">Kontaktovat podporu</string>
+    <string name="registration_lock_category_legal_documents">Smluvní dokumenty</string>
+    <string name="registration_lock_action_accept_documents">Přečíst a přijmout</string>
     <string name="registration_lock_documents_required">Nahrajte své identifikační dokumenty.</string>
     <string name="registration_lock_approval_awaiting_review">Žádost je posuzována administrátorem.</string>
     <string name="registration_lock_approval_complete_profile_first">Nejprve dokončete kroky výše — pak vás může admin schválit.</string>
@@ -1376,6 +1389,7 @@
     <string name="profile_weekly_limit_reason">Důvod: %1$s</string>
     <string name="profile_how_jobs_are_offered">Jak nabízíme zakázky</string>
     <string name="profile_how_jobs_are_offered_summary">Pravidla nabídky zakázek</string>
+    <string name="profile_legal_documents_summary">Přečtěte si a přijměte dokumenty, podle kterých pracujete</string>
 
     <!-- Profile photo. Copy shared verbatim with the customer app. -->
     <string name="profile_avatar_change">Změnit fotku</string>

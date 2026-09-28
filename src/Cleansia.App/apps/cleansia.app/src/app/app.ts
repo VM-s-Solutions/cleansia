@@ -9,7 +9,6 @@ import { CleansiaCookieConsentComponent } from '@cleansia/components/cleansia-co
 import { CleansiaDevBannerComponent } from '@cleansia/components/cleansia-dev-banner';
 import { CleansiaCustomerFooterComponent } from './components/footer/customer-footer.component';
 import { CleansiaCustomerNavbarComponent } from './components/navbar/customer-navbar.component';
-import { ConsentSyncService } from '@cleansia/customer-services';
 import { environment } from '../environments/environment';
 import { PageTitleService } from '@cleansia/services';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
@@ -37,10 +36,8 @@ export class AppComponent implements OnInit, OnDestroy {
   private readonly translate = inject(TranslateService);
   private readonly pageTitleService = inject(PageTitleService);
   private readonly platformId = inject(PLATFORM_ID);
-  private readonly consentSync = inject(ConsentSyncService);
   private readonly destroy$ = new Subject<void>();
 
-  readonly consentSyncFn = this.consentSync.getSyncFn();
   readonly bugReportUrl = environment.bugReportUrl;
   isOnLandingPage = signal(true);
 

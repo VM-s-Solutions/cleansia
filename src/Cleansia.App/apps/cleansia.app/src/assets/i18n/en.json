@@ -30,34 +30,11 @@
     "my_recurring": "Recurring cleanings"
   },
   "cookies": {
-    "title": "Your Privacy Matters",
-    "description": "We use cookies to improve your browsing experience, provide personalized content, and analyze traffic.",
-    "accept": "Accept All",
-    "decline": "Decline All",
+    "title": "Cookies on this site",
+    "description": "We use only the cookies and browser storage the site needs to work: keeping you signed in, remembering your language and market, and remembering that you have seen this notice. No analytics or advertising cookies.",
     "learn_more": "Learn More",
-    "banner_title": "Cookie Consent Banner",
-    "customize": "Customize",
-    "hide_settings": "Hide Settings",
-    "save_preferences": "Save Preferences",
-    "always_on": "Always On",
-    "categories": {
-      "necessary": {
-        "name": "Necessary",
-        "description": "Essential for the website to function. Cannot be disabled."
-      },
-      "analytics": {
-        "name": "Analytics",
-        "description": "Help us understand how visitors interact with our website."
-      },
-      "marketing": {
-        "name": "Marketing",
-        "description": "Used to deliver relevant ads and track campaigns."
-      },
-      "preferences": {
-        "name": "Preferences",
-        "description": "Remember your settings like language and theme."
-      }
-    }
+    "banner_title": "Cookie notice",
+    "acknowledge": "OK"
   },
   "page_titles": {
     "customer": {
@@ -556,8 +533,7 @@
         "about": "About us",
         "become_cleaner": "Become a cleaner",
         "careers": "Careers",
-        "complaints": "Complaints",
-        "cookie_settings": "Cookie settings"
+        "complaints": "Complaints"
       },
       "rules": {
         "badge": "Our rules",

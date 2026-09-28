@@ -30,34 +30,11 @@
     "my_recurring": "Opakované termíny"
   },
   "cookies": {
-    "title": "Vaše súkromie je dôležité",
-    "description": "Používame cookies na zlepšenie prehliadania, poskytovanie personalizovaného obsahu a analýzu návštevnosti.",
-    "accept": "Prijať všetky",
-    "decline": "Odmietnuť všetky",
+    "title": "Cookies na tejto stránke",
+    "description": "Používame len cookies a úložisko prehliadača, ktoré web potrebuje, aby fungoval: aby ste zostali prihlásení, aby sme si pamätali váš jazyk a trh a že ste toto upozornenie videli. Žiadne analytické ani reklamné cookies.",
     "learn_more": "Zistiť viac",
-    "banner_title": "Banner súhlasu s cookies",
-    "customize": "Prispôsobiť",
-    "hide_settings": "Skryť nastavenia",
-    "save_preferences": "Uložiť predvoľby",
-    "always_on": "Vždy zapnuté",
-    "categories": {
-      "necessary": {
-        "name": "Nevyhnutné",
-        "description": "Nevyhnutné pre fungovanie webu. Nedajú sa vypnúť."
-      },
-      "analytics": {
-        "name": "Analytické",
-        "description": "Pomáhajú nám pochopiť, ako návštevníci používajú náš web."
-      },
-      "marketing": {
-        "name": "Marketingové",
-        "description": "Slúžia na zobrazovanie relevantných reklám a sledovanie kampaní."
-      },
-      "preferences": {
-        "name": "Preferenčné",
-        "description": "Zapamätajú si vaše nastavenia, ako je jazyk a téma."
-      }
-    }
+    "banner_title": "Upozornenie na cookies",
+    "acknowledge": "Rozumiem"
   },
   "page_titles": {
     "customer": {
@@ -556,8 +533,7 @@
         "about": "O nás",
         "become_cleaner": "Staňte sa upratovačom",
         "careers": "Kariéra",
-        "complaints": "Reklamácie",
-        "cookie_settings": "Nastavenia cookies"
+        "complaints": "Reklamácie"
       },
       "rules": {
         "badge": "Naše pravidlá",

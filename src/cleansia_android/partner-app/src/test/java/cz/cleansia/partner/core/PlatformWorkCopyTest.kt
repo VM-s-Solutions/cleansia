@@ -1,10 +1,12 @@
 package cz.cleansia.partner.core
 
 import cz.cleansia.partner.features.profile.HOW_JOBS_ARE_OFFERED_URL
+import cz.cleansia.partner.features.profile.browserPackage
 import java.io.File
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -62,6 +64,34 @@ class PlatformWorkCopyTest {
         assertEquals("https://partner.cleansia.cz/how-jobs-are-offered", HOW_JOBS_ARE_OFFERED_URL)
     }
 
+    @Test
+    fun `the rules page opens in the default browser`() {
+        assertEquals(CHROME, browserPackage(CHROME, listOf(FIREFOX, CHROME), OWN_PACKAGE))
+    }
+
+    @Test
+    fun `with no default browser the rules page opens in an installed one, not the system chooser`() {
+        assertEquals(FIREFOX, browserPackage("android", listOf(FIREFOX, CHROME), OWN_PACKAGE))
+    }
+
+    @Test
+    fun `the rules page never opens in the partner app itself`() {
+        assertEquals(CHROME, browserPackage(OWN_PACKAGE, listOf(OWN_PACKAGE, CHROME), OWN_PACKAGE))
+        assertNull(browserPackage(OWN_PACKAGE, listOf(OWN_PACKAGE), OWN_PACKAGE))
+    }
+
+    @Test
+    fun `the app can see the installed browsers on API 30 and later`() {
+        val queries = Regex("<queries>(.*?)</queries>", RegexOption.DOT_MATCHES_ALL).find(manifest)?.groupValues?.get(1)
+        assertNotNull("the manifest declares no <queries>, so API 30+ hides every browser", queries)
+        assertTrue(queries!!.contains("android.intent.action.VIEW"))
+        assertTrue(queries.contains("android.intent.category.BROWSABLE"))
+        assertTrue(queries.contains("android:scheme=\"https\""))
+    }
+
+    private val manifest: String
+        get() = File(resDir.parentFile, "AndroidManifest.xml").readText()
+
     private fun stringsXml(locale: String): String {
         val file = File(resDir, "$locale/strings.xml")
         assertTrue("missing $locale/strings.xml", file.isFile)
@@ -76,4 +106,10 @@ class PlatformWorkCopyTest {
 
     private fun formatSlots(value: String): List<String> =
         Regex("%(\\d+\\\$)?[a-zA-Z]").findAll(value).map { it.value }.toList()
+
+    private companion object {
+        const val OWN_PACKAGE = "cz.cleansia.partner"
+        const val CHROME = "com.android.chrome"
+        const val FIREFOX = "org.mozilla.firefox"
+    }
 }

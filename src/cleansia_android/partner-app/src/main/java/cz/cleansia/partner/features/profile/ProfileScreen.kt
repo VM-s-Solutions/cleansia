@@ -1,5 +1,9 @@
 package cz.cleansia.partner.features.profile
 
+import android.content.Context
+import android.content.Intent
+import android.content.pm.PackageManager
+import android.net.Uri
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -22,6 +26,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import cz.cleansia.core.config.CleansiaWeb
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.material.icons.outlined.PrivacyTip
 import androidx.compose.material.icons.outlined.DeleteForever
@@ -76,6 +81,28 @@ import cz.cleansia.partner.features.settings.SettingsViewModel
 
 internal const val HOW_JOBS_ARE_OFFERED_URL = "https://partner.${CleansiaWeb.DOMAIN}/how-jobs-are-offered"
 
+/**
+ * The app claims its own partner host for App Links and reads no URL it is opened with, so a plain
+ * VIEW of a page on that host can land back in the app and open nothing. A page there goes to a
+ * browser by package: the default one when it is set, otherwise the first installed.
+ */
+internal fun browserPackage(defaultHandler: String?, browsers: List<String>, ownPackage: String): String? =
+    defaultHandler?.takeIf { it in browsers && it != ownPackage }
+        ?: browsers.firstOrNull { it != ownPackage }
+
+@Suppress("DEPRECATION")
+private fun openInBrowser(context: Context, url: String) {
+    val anyWebPage = Intent(Intent.ACTION_VIEW, Uri.parse("https://")).addCategory(Intent.CATEGORY_BROWSABLE)
+    val packageManager = context.packageManager
+    val browsers = packageManager.queryIntentActivities(anyWebPage, PackageManager.MATCH_DEFAULT_ONLY)
+        .map { it.activityInfo.packageName }
+    val defaultHandler = packageManager.resolveActivity(anyWebPage, PackageManager.MATCH_DEFAULT_ONLY)
+        ?.activityInfo?.packageName
+    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url)).addCategory(Intent.CATEGORY_BROWSABLE)
+    browserPackage(defaultHandler, browsers, context.packageName)?.let { intent.setPackage(it) }
+    runCatching { context.startActivity(intent) }
+}
+
 @Composable
 fun ProfileScreen(
     onNavigateBack: () -> Unit,
@@ -111,6 +138,7 @@ fun ProfileScreen(
     // this dialog and route straight through `onSignedOut` above.
     var showLogoutDialog by remember { mutableStateOf(false) }
     val uriHandler = LocalUriHandler.current
+    val context = LocalContext.current
 
     val statusBarTop = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
 
@@ -267,7 +295,7 @@ fun ProfileScreen(
                             icon = Icons.Outlined.Info,
                             title = stringResource(R.string.profile_how_jobs_are_offered),
                             summary = stringResource(R.string.profile_how_jobs_are_offered_summary),
-                            onClick = { uriHandler.openUri(HOW_JOBS_ARE_OFFERED_URL) },
+                            onClick = { openInBrowser(context, HOW_JOBS_ARE_OFFERED_URL) },
                         )
                     }
                 }

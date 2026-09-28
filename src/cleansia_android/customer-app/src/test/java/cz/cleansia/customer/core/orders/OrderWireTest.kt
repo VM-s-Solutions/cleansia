@@ -339,6 +339,31 @@ class OrderWireTest {
         assertEquals(4380.00, order.totalPrice, 0.0)
     }
 
+    /** A confirmed cash occurrence stays payment-Pending, so only the flag tells the two apart. */
+    @Test
+    fun theConfirmationFlagArrivesLiterallyOnTwoPendingOccurrences() = runTest {
+        fun pendingCash(needsConfirmation: Boolean) = mutating(CAPTURED_ORDER) { root ->
+            root +
+                ("paymentType" to Json.parseToJsonElement("""{ "type": "PaymentType", "name": "Cash", "value": 1 }""")) +
+                ("paymentStatus" to Json.parseToJsonElement("""{ "type": "PaymentStatus", "name": "Pending", "value": 1 }""")) +
+                ("needsConfirmation" to kotlinx.serialization.json.JsonPrimitive(needsConfirmation))
+        }
+
+        val awaiting = detailed(pendingCash(needsConfirmation = true))
+        val confirmed = detailed(pendingCash(needsConfirmation = false))
+
+        assertEquals(1, awaiting.paymentStatus?.value)
+        assertEquals(1, confirmed.paymentStatus?.value)
+        assertTrue(awaiting.needsConfirmation)
+        assertEquals(false, confirmed.needsConfirmation)
+    }
+
+    @Test
+    fun anOrderWithoutTheConfirmationFlagNeedsNoConfirmation() = runTest {
+        assertEquals(false, detailed(withoutKey(CAPTURED_ORDER, "needsConfirmation")).needsConfirmation)
+        assertEquals(false, detailed(withKey(CAPTURED_ORDER, "needsConfirmation", JsonNull)).needsConfirmation)
+    }
+
     /**
      * `review = review?.toAppDto() ?: return null` refused every order nobody had reviewed yet,
      * which is most of them — the `?:` fired on the absent review, not on a broken one.

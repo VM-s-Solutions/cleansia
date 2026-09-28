@@ -27,6 +27,9 @@ import cz.cleansia.customer.core.recurring.RecurrenceFrequency
 import cz.cleansia.customer.R
 import cz.cleansia.customer.core.recurring.RecurringBookingRepository
 import cz.cleansia.customer.core.recurring.UpdateRecurringBookingRequest
+import cz.cleansia.customer.features.booking.BOOKING_SLOT_INTERVAL_MINUTES
+import cz.cleansia.customer.features.booking.FIRST_WINDOW_HOUR
+import cz.cleansia.customer.features.booking.LAST_WINDOW_HOUR
 import cz.cleansia.customer.ui.state.ActionState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
@@ -55,6 +58,7 @@ import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.minus
 import kotlinx.datetime.toLocalDateTime
+import java.util.Locale
 
 /**
  * Shared form state for the recurring-booking form, backing three paths: blank create, create pre-filled
@@ -106,7 +110,7 @@ class CreateRecurringViewModel @Inject constructor(
 
     val canAdvance: StateFlow<Boolean> = combine(_state, _step, _catalogState) { s, step, catalog ->
         when (step) {
-            1 -> s.timeOfDay.isNotBlank()
+            1 -> s.timeOfDay in START_TIMES
             2 -> s.selectedServiceIds.isNotEmpty() || s.selectedPackageIds.isNotEmpty()
             3 -> s.savedAddressId.isNotBlank() &&
                 s.startsOnIso.isNotBlank() &&
@@ -237,7 +241,7 @@ class CreateRecurringViewModel @Inject constructor(
         savedAddressId.isNotBlank() &&
             (selectedServiceIds.isNotEmpty() || selectedPackageIds.isNotEmpty()) &&
             startsOnIso.isNotBlank() &&
-            timeOfDay.isNotBlank() &&
+            timeOfDay in START_TIMES &&
             paymentType != null
 
     private fun CreateRecurringFormState.toCreateRequest(paymentType: Int) = CreateRecurringBookingRequest(
@@ -477,6 +481,11 @@ class CreateRecurringViewModel @Inject constructor(
         private const val QUOTE_DEBOUNCE_MS = 400L
 
         private const val PREFERRED_CLEANER_NOT_ELIGIBLE = "order.preferred_employee.not_eligible"
+
+        /** Every start a schedule may take, "HH:mm": the server's window on its 15-minute grid. */
+        val START_TIMES: List<String> =
+            (FIRST_WINDOW_HOUR * 60 until LAST_WINDOW_HOUR * 60 step BOOKING_SLOT_INTERVAL_MINUTES)
+                .map { "%02d:%02d".format(Locale.ROOT, it / 60, it % 60) }
     }
 
     // ─── Path C pre-fill ───
@@ -523,7 +532,7 @@ class CreateRecurringViewModel @Inject constructor(
                     val local = instant.toLocalDateTime(TimeZone.currentSystemDefault())
                     "%02d:%02d".format(local.hour, local.minute)
                 }.getOrNull()
-            }
+            }?.takeIf { it in START_TIMES }
             val dayOfWeek = order.cleaningDateTime?.let { iso ->
                 runCatching {
                     val instant = Instant.parse(iso)

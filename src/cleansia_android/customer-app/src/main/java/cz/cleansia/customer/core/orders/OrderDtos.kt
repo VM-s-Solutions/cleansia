@@ -132,13 +132,14 @@ data class OrderDetailDto(
      * nothing here has to decide whether the value is safe to show.
      */
     val systemCancellationReason: String? = null,
-    /**
-     * FK back to the recurring booking template that spawned this order.
-     * Non-null + Pending payment status means the OrderDetail screen shows
-     * the "Confirm and pay" CTA so the customer can take it through Wave 3.3's
-     * confirm flow.
-     */
+    /** FK back to the recurring booking template that spawned this order. */
     val recurringTemplateId: String? = null,
+    /**
+     * A recurring occurrence still waiting for the customer's confirm. The server decides it: a
+     * confirmed cash occurrence stays payment-Pending until the cleaner collects, so the payment
+     * status cannot tell a confirmed one from an unconfirmed one.
+     */
+    val needsConfirmation: Boolean = false,
     val selectedPackages: List<OrderPackageDetailsDto>? = null,
     val currency: OrderCurrencyDetailDto? = null,
     val selectedServices: List<OrderServiceDetailsDto>? = null,
@@ -460,8 +461,8 @@ data class ConfirmRecurringOrderRequest(val orderId: String)
 /**
  * Mirrors backend `ConfirmRecurringOrder.Response`. Card path returns the
  * three Stripe pieces the PaymentSheet needs (clientSecret + customerId +
- * ephemeralKey); Cash path returns nulls for those and the order is already
- * marked Confirmed + Paid server-side.
+ * ephemeralKey); Cash path returns nulls for those: the occurrence is
+ * confirmed and its payment stays Pending until the cleaner collects the cash.
  */
 @Serializable
 data class ConfirmRecurringOrderResponse(

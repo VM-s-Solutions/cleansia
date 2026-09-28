@@ -9,21 +9,25 @@ import cz.cleansia.customer.core.market.MarketState
 import cz.cleansia.core.network.ApiError
 import cz.cleansia.core.network.ApiResult
 import cz.cleansia.core.snackbar.SnackbarController
+import cz.cleansia.customer.R
 import cz.cleansia.customer.core.memberships.GetMyMembershipResponse
 import cz.cleansia.customer.core.memberships.MembershipRepository
 import cz.cleansia.customer.core.notifications.OrderEvent
 import cz.cleansia.customer.core.notifications.OrderEventBus
 import cz.cleansia.customer.core.orders.OrderDetailDto
 import cz.cleansia.customer.core.orders.AssignedEmployeeDto
+import cz.cleansia.customer.core.orders.ConfirmRecurringOrderResponse
 import cz.cleansia.customer.core.orders.OrderRepository
 import cz.cleansia.customer.core.orders.WorkContractAcceptanceDto
 import cz.cleansia.customer.core.user.CodeDto
 import cz.cleansia.customer.features.recurring.RecurringAuthoringGate
 import cz.cleansia.customer.testing.MainDispatcherRule
+import cz.cleansia.customer.ui.state.ActionState
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.verify
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.cancel
@@ -410,5 +414,40 @@ class OrderDetailViewModelTest {
         advanceUntilIdle()
 
         assertEquals(emptyList<WorkContractAcceptanceLine>(), vm.workContractAcceptances.value)
+    }
+
+    // ── recurring confirm ──
+
+    /** Wire values: OrderStatus New = 1; PaymentType Cash = 1; PaymentStatus Pending = 1. */
+    private fun recurringCashOccurrence(needsConfirmation: Boolean) = order(1).copy(
+        recurringTemplateId = "tpl-1",
+        paymentType = CodeDto(type = "PaymentType", name = "Cash", value = 1),
+        paymentStatus = CodeDto(type = "PaymentStatus", name = "Pending", value = 1),
+        needsConfirmation = needsConfirmation,
+    )
+
+    @Test
+    fun `a cash confirm re-reads the occurrence, which no longer asks to be confirmed and is still unpaid`() = runTest {
+        coEvery { repository.getById(orderId) } returnsMany listOf(
+            ApiResult.Success(recurringCashOccurrence(needsConfirmation = true)),
+            ApiResult.Success(recurringCashOccurrence(needsConfirmation = false)),
+        )
+        coEvery { repository.refresh() } returns ApiResult.Success(Unit)
+        coEvery { repository.confirmRecurring(orderId) } returns
+            ApiResult.Success(ConfirmRecurringOrderResponse(orderId = orderId))
+        every { appContext.getString(R.string.recurring_confirm_success) } returns "Booking confirmed"
+
+        val vm = viewModel()
+        advanceUntilIdle()
+        assertTrue(loadedOrder(vm).needsConfirmation)
+
+        vm.confirmRecurring()
+        advanceUntilIdle()
+
+        assertEquals(false, loadedOrder(vm).needsConfirmation)
+        assertEquals(1, loadedOrder(vm).paymentStatus?.value)
+        assertEquals(ActionState.Idle, vm.confirmRecurringState.value)
+        verify(exactly = 1) { snackbar.showSuccess("Booking confirmed") }
+        coVerify(exactly = 2) { repository.getById(orderId) }
     }
 }

@@ -432,10 +432,10 @@ class OrderDetailViewModel @Inject constructor(
     }
 
     /**
-     * Wave 3.3 — confirm a Pending recurring-template order. Backend branches
-     * on payment type:
-     *   * Cash response (clientSecret == null) → backend already flipped the
-     *     order to Confirmed + Paid; we push a success snackbar + refetch.
+     * Confirm a recurring occurrence. Backend branches on payment type:
+     *   * Cash response (clientSecret == null) → the occurrence is confirmed and
+     *     its payment stays Pending until the cleaner collects; we push a success
+     *     snackbar + refetch, and the refetched order no longer needs confirmation.
      *   * Card response (clientSecret != null) → screen consumes [confirmResult]
      *     and opens the Stripe PaymentSheet with the returned client secret.
      *
@@ -456,11 +456,9 @@ class OrderDetailViewModel @Inject constructor(
             _confirmResult.emit(resp)
             _confirmRecurringState.value = ActionState.Idle
 
-            // Cash path: backend already moved the order to Confirmed + Paid.
-            // Push the success snackbar + refetch so the screen reflects the
-            // new status. Card path's snackbars fire from the PaymentSheet
-            // result callback (via [notifyCardPaymentResult]) since only the
-            // screen sees the Stripe outcome.
+            // Card path's snackbars fire from the PaymentSheet result callback
+            // (via [notifyCardPaymentResult]) since only the screen sees the
+            // Stripe outcome.
             if (resp.clientSecret.isNullOrBlank()) {
                 snackbar.showSuccess(
                     appContext.getString(R.string.recurring_confirm_success),

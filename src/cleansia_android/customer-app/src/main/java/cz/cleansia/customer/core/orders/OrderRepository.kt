@@ -160,10 +160,9 @@ class OrderRepository @Inject constructor(
     }
 
     /**
-     * Wave 3.3 — confirm a Pending recurring-template order. Cash response
-     * means the order's already Confirmed + Paid backend-side; the caller
-     * should refetch + show success. Card response carries the Stripe
-     * PaymentIntent fields the mobile PaymentSheet needs.
+     * Confirm a recurring occurrence. A cash response means it is confirmed and still payment-Pending
+     * (the cleaner collects on the day); the caller refetches and shows success. A card response
+     * carries the Stripe PaymentIntent fields the mobile PaymentSheet needs.
      */
     suspend fun confirmRecurring(orderId: String): ApiResult<ConfirmRecurringOrderResponse> = wireResult {
         val resp = networkCall {

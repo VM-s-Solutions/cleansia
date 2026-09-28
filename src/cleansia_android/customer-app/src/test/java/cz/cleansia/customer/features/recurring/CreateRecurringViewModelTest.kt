@@ -48,8 +48,10 @@ import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlinx.datetime.LocalDate
+import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.atStartOfDayIn
+import kotlinx.datetime.toInstant
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -324,12 +326,14 @@ class CreateRecurringViewModelTest {
         packages: List<String> = emptyList(),
         rooms: Int = 3,
         bathrooms: Int = 2,
+        cleaningDateTime: String? = null,
     ) {
         coEvery { orderRepo.getById("ord-7") } returns ApiResult.Success(
             OrderDetailDto(
                 id = "ord-7",
                 rooms = rooms,
                 bathrooms = bathrooms,
+                cleaningDateTime = cleaningDateTime,
                 totalPrice = 100.0,
                 originalSubtotal = 100.0,
                 appliedDiscountSource = 0,
@@ -979,18 +983,106 @@ class CreateRecurringViewModelTest {
     }
 
     @Test
-    fun `step one advances once a time of day is set`() = runTest {
+    fun `step one advances only on a start the picker offers`() = runTest {
         val vm = viewModel()
         advanceUntilIdle()
         assertEquals(true, vm.canAdvance.value)
 
-        vm.setTimeOfDay("")
-        runCurrent()
-        assertEquals(false, vm.canAdvance.value)
+        listOf("", "07:45", "09:07", "20:00", "03:07").forEach { start ->
+            vm.setTimeOfDay(start)
+            runCurrent()
+            assertEquals("\"$start\" is not an offered start", false, vm.canAdvance.value)
+        }
 
-        vm.setTimeOfDay("09:30")
+        listOf("08:00", "09:30", "19:45").forEach { start ->
+            vm.setTimeOfDay(start)
+            runCurrent()
+            assertEquals("\"$start\" is an offered start", true, vm.canAdvance.value)
+        }
+    }
+
+    // ── the start-time window: the server refuses a schedule off 08:00–19:45 or off the quarter-hour ──
+
+    @Test
+    fun `the picker offers the server's window on its 15-minute grid`() {
+        val starts = CreateRecurringViewModel.START_TIMES
+
+        assertEquals(48, starts.size)
+        assertEquals(listOf("08:00", "08:15", "08:30", "08:45", "09:00"), starts.take(5))
+        assertEquals("19:45", starts.last())
+        assertTrue(starts.none { it < "08:00" || it >= "20:00" })
+    }
+
+    private fun localStart(hour: Int, minute: Int): String =
+        LocalDateTime(2026, 7, 2, hour, minute).toInstant(TimeZone.currentSystemDefault()).toString()
+
+    @Test
+    fun `a schedule made from a past order takes the order's start when the picker offers it`() = runTest {
+        sourceOrder(services = listOf("svc-1"), cleaningDateTime = localStart(9, 45))
+
+        val vm = viewModel(orderId = "ord-7")
+        advanceUntilIdle()
+
+        assertEquals("09:45", vm.state.value.timeOfDay)
+    }
+
+    @Test
+    fun `a past order's start the picker does not offer leaves the default start`() = runTest {
+        listOf(localStart(6, 30), localStart(9, 7)).forEach { cleaningAt ->
+            sourceOrder(services = listOf("svc-1"), cleaningDateTime = cleaningAt)
+
+            val vm = viewModel(orderId = "ord-7")
+            advanceUntilIdle()
+
+            assertEquals(CreateRecurringFormState().timeOfDay, vm.state.value.timeOfDay)
+            assertEquals(true, vm.canAdvance.value)
+        }
+    }
+
+    @Test
+    fun `a stored start off the grid goes back only once an offered start is picked`() = runTest {
+        templatesFlow.value = listOf(editableTemplate.copy(timeOfDay = "03:07"))
+        coEvery { recurringRepo.update(any()) } returns ApiResult.Success(editableTemplate)
+
+        val vm = viewModel(templateId = "tpl-1")
+        advanceUntilIdle()
+
+        assertEquals(false, vm.canAdvance.value)
+        vm.submit()
+        advanceUntilIdle()
+        coVerify(exactly = 0) { recurringRepo.update(any()) }
+
+        vm.setTimeOfDay("08:15")
         runCurrent()
         assertEquals(true, vm.canAdvance.value)
+        vm.submit()
+        advanceUntilIdle()
+
+        val request = slot<UpdateRecurringBookingRequest>()
+        coVerify(exactly = 1) { recurringRepo.update(capture(request)) }
+        assertEquals("08:15", request.captured.timeOfDay)
+    }
+
+    @Test
+    fun `a schedule the server refuses for the start window says why and stays on the form`() = runTest {
+        val refusal = ApiError.BadRequest(
+            message = "Pick a start between 08:00 and 19:45 local time, on the quarter-hour, no more than 60 days ahead.",
+            errorKey = "order.cleaning_date.outside_booking_window",
+        )
+        coEvery { recurringRepo.create(any()) } returns ApiResult.Error(refusal)
+
+        val vm = viewModel()
+        advanceUntilIdle()
+        fillValidForm(vm)
+
+        vm.submitted.test {
+            vm.submit()
+            advanceUntilIdle()
+            expectNoEvents()
+        }
+
+        verify(exactly = 1) { snackbar.showError(refusal) }
+        assertEquals(ActionState.Error(refusal.message), vm.submitState.value)
     }
 
     @Test

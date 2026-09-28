@@ -15,6 +15,8 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -24,8 +26,6 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -856,13 +856,12 @@ private fun DayChip(
  * Time-of-day picker — slots grouped into Morning / Afternoon / Evening with
  * section labels and matching glyphs (sun rising / sun / moon). The grouping
  * gives users orientation ("ah, the cleaner comes in the morning") instead
- * of forcing them to mentally categorize a flat list of "08:00, 09:00…".
+ * of forcing them to mentally categorize a flat list of "08:00, 08:15…".
  */
 @Composable
 private fun TimeOfDayPicker(selected: String, onSelect: (String) -> Unit) {
-    val morning = remember { (8..11).map { "%02d:00".format(it) } }
-    val afternoon = remember { (12..16).map { "%02d:00".format(it) } }
-    val evening = remember { (17..19).map { "%02d:00".format(it) } }
+    val (morning, rest) = remember { CreateRecurringViewModel.START_TIMES.partition { it < "12:00" } }
+    val (afternoon, evening) = remember(rest) { rest.partition { it < "17:00" } }
 
     Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
         TimeSlotGroup(
@@ -889,6 +888,7 @@ private fun TimeOfDayPicker(selected: String, onSelect: (String) -> Unit) {
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun TimeSlotGroup(
     label: String,
@@ -913,8 +913,11 @@ private fun TimeSlotGroup(
             )
         }
         Spacer(Modifier.height(6.dp))
-        LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            items(slots) { slot ->
+        FlowRow(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            slots.forEach { slot ->
                 OutlinedSelectableChip(
                     selected = slot == selected,
                     onClick = { onSelect(slot) },

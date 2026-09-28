@@ -588,12 +588,7 @@ private fun OrderDetailSheetContent(
     onReadWorkContract: (acceptanceId: String) -> Unit = {},
     onConfirmRecurring: () -> Unit,
 ) {
-    // Wave 3.3 — Pending recurring-template orders need an explicit customer
-    // confirm step. Show the CTA when both conditions hold; everything else
-    // is a no-op render (already-confirmed orders go through the standard
-    // life-cycle UI).
-    val showConfirmRecurringCta = !order.recurringTemplateId.isNullOrBlank() &&
-        order.paymentStatus?.value == 1
+    val showConfirmRecurringCta = order.needsConfirmation
     val hasFooter = showCancel || showCleanerNoShow || showReportIssue || showRebook || showMakeRecurring
 
     // Gesture-priority guard, the same one the partner sheet carries: once the customer has scrolled
@@ -685,9 +680,9 @@ private fun OrderDetailSheetContent(
                 ConfirmRecurringButton(
                     submitting = confirmingRecurring,
                     // "Confirm and pay" is false on a cash booking: ConfirmRecurringOrder's cash
-                    // arm mints no PaymentIntent and returns ClientSecret null — it just flips the
-                    // occurrence to Confirmed. Branch on Card so anything unexpected falls to the
-                    // label that is true of BOTH flavours rather than the one that over-promises.
+                    // arm takes no payment — the cleaner collects on the day. Branch on Card so
+                    // anything unexpected falls to the label that is true of BOTH flavours rather
+                    // than the one that over-promises.
                     labelRes = if (order.paymentType?.value == 2) {
                         R.string.recurring_confirm_cta
                     } else {

@@ -119,9 +119,9 @@ internal data class TimeSlot(val time: String, val state: SlotState)
 // LastWindowHour = 20). Slot states are derived from the user's selected date so "Today" never shows
 // already-passed hours as bookable; the express band itself is [BookingPricing]'s.
 private const val EXPRESS_LEAD_HOURS = 2
-private const val FIRST_WINDOW_HOUR = 8
-private const val LAST_WINDOW_HOUR = 20
-private const val BOOKING_SLOT_INTERVAL_MINUTES = 15
+internal const val FIRST_WINDOW_HOUR = 8
+internal const val LAST_WINDOW_HOUR = 20
+internal const val BOOKING_SLOT_INTERVAL_MINUTES = 15
 
 /**
  * Build the quarter-hour arrival list for a given local date, gated on lead time.

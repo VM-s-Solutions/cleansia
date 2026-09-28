@@ -35,26 +35,31 @@ function policyMinutes(name: string): number {
 }
 
 /**
- * Owner ruling 2026-09-24: after booking, cancelling is free for 15 minutes, and for 60 for an
- * entitled Plus member. Guests and first-time customers get the standard 15 — the first-time 60
- * the copy once implied is gone from the server, so it must not come back in any locale.
+ * Owner ruling 2026-09-28, reversing 2026-09-24: after booking, cancelling is free for 15 minutes,
+ * for 60 on a customer's first booking (account, e-mail or phone alike) and for 60 for an entitled
+ * Plus member. The first-booking figure is the server's own constant, so it is read, not assumed.
  */
 const STANDARD = policyMinutes('OopsWindowMinutesStandard');
+const FIRST_BOOKING = policyMinutes('OopsWindowMinutesFirstBooking');
 const PLUS = policyMinutes('OopsWindowMinutesPlus');
+const GRACE_FIGURES = [STANDARD, FIRST_BOOKING, PLUS];
 
-/** A grace sentence cut into the part that speaks for Plus members and the part that speaks for everyone. */
+type Figure = 'standard' | 'first' | 'plus';
+const FIGURE: Record<Figure, number> = { standard: STANDARD, first: FIRST_BOOKING, plus: PLUS };
+
+/** A grace sentence cut into the part that speaks for the longer grace and the part that speaks for everyone. */
 interface GraceSides {
-  plus: string;
+  longer: string;
   standard: string;
 }
 
 const INSTEAD_OF = /instead of|namiesto|místo|замість|вместо/i;
 
-/** "15 minutes … — 60 minutes with Cleansia Plus": the side that names Plus is the Plus figure's. */
+/** "15 minutes … — 60 minutes on your first booking or with Cleansia Plus": the side naming Plus is the longer one's. */
 function aroundDash(value: string): GraceSides {
   const parts = value.split('—');
   return {
-    plus: parts.filter((part) => part.includes('Cleansia Plus')).join(' '),
+    longer: parts.filter((part) => part.includes('Cleansia Plus')).join(' '),
     standard: parts.filter((part) => !part.includes('Cleansia Plus')).join(' '),
   };
 }
@@ -63,27 +68,29 @@ function aroundDash(value: string): GraceSides {
 function aroundInsteadOf(value: string): GraceSides {
   const match = INSTEAD_OF.exec(value);
   return match
-    ? { plus: value.slice(0, match.index), standard: value.slice(match.index) }
-    : { plus: '', standard: value };
+    ? { longer: value.slice(0, match.index), standard: value.slice(match.index) }
+    : { longer: '', standard: value };
 }
 
-const onlyStandard = (value: string): GraceSides => ({ plus: '', standard: value });
-const onlyPlus = (value: string): GraceSides => ({ plus: value, standard: '' });
-
-/** Every sentence that states the grace, which figures it owes, and how to tell whose each one is. */
+/**
+ * Every sentence that states the grace: the figures it owes, whether it names the first booking, and
+ * — where it states two figures — how to tell whose each one is. A Plus perk speaks of EVERY booking
+ * and names no first booking: the member's 60 minutes are the benefit on the bookings after the first.
+ */
 const GRACE_CLAIMS: {
   key: string;
-  owes: 'both' | 'standard' | 'plus';
-  sides: (value: string) => GraceSides;
+  owes: Figure[];
+  namesFirstBooking: boolean;
+  sides?: (value: string) => GraceSides;
 }[] = [
-  { key: 'pages.home.rules.rethink_desc', owes: 'both', sides: aroundDash },
-  { key: 'pages.order.cancel_policy_note', owes: 'both', sides: aroundDash },
-  { key: 'pages.order.plus_perk_grace', owes: 'both', sides: aroundInsteadOf },
-  { key: 'pages.plus.perk_cancel_body', owes: 'both', sides: aroundInsteadOf },
-  { key: 'pages.membership.perk_grace', owes: 'both', sides: aroundInsteadOf },
-  { key: 'pages.home.plus.perk_grace', owes: 'both', sides: aroundInsteadOf },
-  { key: 'pages.plus.row_grace_without', owes: 'standard', sides: onlyStandard },
-  { key: 'pages.plus.row_grace_with', owes: 'plus', sides: onlyPlus },
+  { key: 'pages.home.rules.rethink_desc', owes: ['standard', 'first', 'plus'], namesFirstBooking: true, sides: aroundDash },
+  { key: 'pages.order.cancel_policy_note', owes: ['standard', 'first', 'plus'], namesFirstBooking: true, sides: aroundDash },
+  { key: 'pages.order.plus_perk_grace', owes: ['standard', 'plus'], namesFirstBooking: false, sides: aroundInsteadOf },
+  { key: 'pages.plus.perk_cancel_body', owes: ['standard', 'plus'], namesFirstBooking: false, sides: aroundInsteadOf },
+  { key: 'pages.membership.perk_grace', owes: ['standard', 'plus'], namesFirstBooking: false, sides: aroundInsteadOf },
+  { key: 'pages.home.plus.perk_grace', owes: ['standard', 'plus'], namesFirstBooking: false, sides: aroundInsteadOf },
+  { key: 'pages.plus.row_grace_without', owes: ['standard', 'first'], namesFirstBooking: true },
+  { key: 'pages.plus.row_grace_with', owes: ['plus'], namesFirstBooking: false },
 ];
 
 /** The sheet's line is the customer's OWN grace, so it carries the server's figure and no other. */
@@ -94,7 +101,7 @@ const SHEET_NOTES = [
 
 const MINUTE_FIGURE = /(\d+)\s*-?\s*(?:minutes?|minut|minút|хвилин|минут)/gi;
 const CANCEL_STEMS = [/cancel/i, /zruš/i, /storn/i, /скасув/i, /отмен/i];
-const FIRST_TIME_STEMS = [
+const FIRST_BOOKING_STEMS = [
   /first[-\s]time/i,
   /first (?:booking|order)/i,
   /new customer/i,
@@ -106,6 +113,16 @@ const FIRST_TIME_STEMS = [
   /перв\S* (?:заказ|уборк)/i,
   /нов\S* клиент/i,
 ];
+
+const namesFirstBooking = (value: string) => FIRST_BOOKING_STEMS.some((stem) => stem.test(value));
+const distinct = (numbers: number[]) => [...new Set(numbers)].sort((a, b) => a - b);
+
+/** Every minute figure, plus any bare integer that is a grace figure ("15 minutes (60 on your first booking)"). */
+const graceFiguresIn = (value: string) =>
+  distinct([
+    ...minuteFigures(value),
+    ...[...value.matchAll(/\d+/g)].map((match) => Number(match[0])).filter((n) => GRACE_FIGURES.includes(n)),
+  ]);
 
 function readLocale(locale: Locale): Record<string, unknown> {
   return JSON.parse(readFileSync(join(I18N_DIR, `${locale}.json`), 'utf8')) as Record<
@@ -141,31 +158,41 @@ function template(relative: string): string {
   return readFileSync(join(FEATURES_DIR, relative), 'utf8').replace(/\s+/g, ' ');
 }
 
-describe('the cancellation grace the customer is told matches BookingPolicy (15 / 60 minutes)', () => {
-  it('reads two different figures off the server', () => {
+describe('the cancellation grace the customer is told matches BookingPolicy (15 / 60 on a first booking / 60 with Plus)', () => {
+  it('reads a standard figure and two longer ones off the server', () => {
     expect(STANDARD).toBeGreaterThan(0);
+    expect(FIRST_BOOKING).toBeGreaterThan(STANDARD);
     expect(PLUS).toBeGreaterThan(STANDARD);
   });
 
-  it.each(LOCALES)('states each figure a grace sentence owes in minutes, on the side it belongs to, in %s', (locale) => {
+  it.each(LOCALES)('states exactly the figures each grace sentence owes, on the side they belong to, in %s', (locale) => {
     const bundle = readLocale(locale);
 
     for (const { key, owes, sides } of GRACE_CLAIMS) {
       const value = resolveKey(bundle, key);
-      const { plus, standard } = sides(value);
-      const integers = [...value.matchAll(/\d+/g)].map((match) => Number(match[0]));
-      const owed = owes === 'both' ? [STANDARD, PLUS] : owes === 'standard' ? [STANDARD] : [PLUS];
+      const split = sides?.(value);
 
       expect({
         key,
-        plus: minuteFigures(plus),
-        standard: minuteFigures(standard),
-        unowed: [STANDARD, PLUS].filter((n) => !owed.includes(n) && integers.includes(n)),
+        stated: graceFiguresIn(value),
+        longer: split ? distinct(minuteFigures(split.longer)) : null,
+        standard: split ? distinct(minuteFigures(split.standard)) : null,
       }).toEqual({
         key,
-        plus: owes === 'standard' ? [] : [PLUS],
-        standard: owes === 'plus' ? [] : [STANDARD],
-        unowed: [],
+        stated: distinct(owes.map((figure) => FIGURE[figure])),
+        longer: split ? distinct(owes.filter((f) => f !== 'standard').map((f) => FIGURE[f])) : null,
+        standard: split ? [STANDARD] : null,
+      });
+    }
+  });
+
+  it.each(LOCALES)('names the first booking wherever its grace is owed, and on no Plus perk, in %s', (locale) => {
+    const bundle = readLocale(locale);
+
+    for (const { key, namesFirstBooking: owed } of GRACE_CLAIMS) {
+      expect({ key, firstBooking: namesFirstBooking(resolveKey(bundle, key)) }).toEqual({
+        key,
+        firstBooking: owed,
       });
     }
   });
@@ -183,21 +210,18 @@ describe('the cancellation grace the customer is told matches BookingPolicy (15 
     }
   });
 
-  it.each(LOCALES)('states no grace other than the two, and no first-time grace, anywhere in %s', (locale) => {
+  it.each(LOCALES)('states no grace but the policy figures, and a first booking only with its own, anywhere in %s', (locale) => {
     const graceSentences = leafEntries(readLocale(locale)).filter(
       ([, value]) => minuteFigures(value).length > 0 && CANCEL_STEMS.some((stem) => stem.test(value))
     );
 
     expect(graceSentences.length).toBeGreaterThanOrEqual(3);
     for (const [key, value] of graceSentences) {
-      expect({ key, strays: minuteFigures(value).filter((n) => n !== STANDARD && n !== PLUS) }).toEqual({
+      expect({
         key,
-        strays: [],
-      });
-      expect({ key, firstTime: FIRST_TIME_STEMS.some((stem) => stem.test(value)) }).toEqual({
-        key,
-        firstTime: false,
-      });
+        strays: minuteFigures(value).filter((n) => !GRACE_FIGURES.includes(n)),
+        firstBookingWithoutItsFigure: namesFirstBooking(value) && !minuteFigures(value).includes(FIRST_BOOKING),
+      }).toEqual({ key, strays: [], firstBookingWithoutItsFigure: false });
     }
   });
 
@@ -216,6 +240,7 @@ describe('the cancellation grace the customer is told matches BookingPolicy (15 
       ['order-wizard/src/lib/order-wizard/order-wizard.component.html', 'pages.order.cancel_policy_note'],
       ['order-wizard/src/lib/order-wizard/order-wizard.component.html', 'pages.order.plus_perk_grace'],
       ['plus/src/lib/plus/plus-page.component.html', 'pages.plus.perk_cancel_body'],
+      ['plus/src/lib/plus/plus-page.component.html', 'pages.plus.row_grace_without'],
       ['plus/src/lib/plus/plus-page.component.html', 'pages.plus.row_grace_with'],
       ['profile/src/lib/membership/membership-management.component.html', 'pages.membership.perk_grace'],
       ['home/src/lib/home/components/plus/plus.component.html', 'pages.home.plus.perk_grace'],

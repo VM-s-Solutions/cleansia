@@ -577,7 +577,7 @@
         "cancel_desc": "Between 4 and 24 hours it is 25%, under 4 hours 50%.",
         "rethink_label": "Before a cleaner takes it",
         "rethink_value": "Always free",
-        "rethink_desc": "Until someone accepts the job, cancelling costs nothing however close the clean is. Once someone has, you still have 15 minutes from when you booked — 60 minutes with Cleansia Plus.",
+        "rethink_desc": "Until someone accepts the job, cancelling costs nothing however close the clean is. Once someone has, you still have 15 minutes from when you booked — 60 minutes on your first booking or with Cleansia Plus.",
         "we_cancel_label": "If we cancel",
         "we_cancel_value": "Everything back + {{amount}} credit",
         "we_cancel_value_refund_only": "Everything back",
@@ -595,7 +595,7 @@
         "title_no_trial": "{{price}} a month, cancel any time",
         "perk1": "{{percent}}% off every order",
         "perk2": "Cancel free up to {{hours}} hours before, instead of 24",
-        "perk_grace": "Cancel free within 60 minutes of booking, instead of 15 minutes",
+        "perk_grace": "Cancel free within 60 minutes of every booking, instead of 15 minutes",
         "perk3": "{{count}} express clean a month at no surcharge",
         "perk4": "Recurring slots and a cleaner you have had before",
         "yearly": "{{price}} a year — saves {{percent}}%",
@@ -769,7 +769,7 @@
       "bathrooms": "Number of Bathrooms",
       "bathrooms_count_label": "Number of bathrooms",
       "bathrooms_label": "Bathrooms",
-      "cancel_policy_note": "Free cancellation up to 24 hours ahead. Within 15 minutes of booking you pay nothing — within 60 minutes with Cleansia Plus.",
+      "cancel_policy_note": "Free cancellation up to 24 hours ahead. Within 15 minutes of booking you pay nothing — within 60 minutes on your first booking or with Cleansia Plus.",
       "cancel_policy_tier1_value": "Free",
       "cancel_policy_tier1_when": "Before a cleaner accepts",
       "cancel_policy_tier2_value": "Free",
@@ -1019,7 +1019,7 @@
       "cash_pending": "Whether you can pay in cash is confirmed once the price is ready.",
       "cash_cleared": "Cash is no longer available for this booking, so no payment method is selected. Choose how you want to pay.",
       "cash_sign_in": "Sign in",
-      "plus_perk_grace": "60 minutes after booking to cancel free, instead of 15 minutes"
+      "plus_perk_grace": "60 minutes after every booking to cancel free, instead of 15 minutes"
     },
     "orders": {
       "title": "My Orders",
@@ -1400,7 +1400,7 @@
       "benefit_express_body": "We waive the 20% surcharge on express bookings — cleanings that start 2 to 4 hours after you book. A set number each calendar month while your paid membership is active; unused ones don't carry over.",
       "perk_discount": "{{percent}}% member discount",
       "perk_cancel_window": "{{hours}}h free cancellation window",
-      "perk_grace": "60 minutes after booking to cancel free, instead of 15 minutes",
+      "perk_grace": "60 minutes after every booking to cancel free, instead of 15 minutes",
       "perk_express_used": "Express surcharge waived — none left until next month",
       "perk_express_trial": "Express surcharge waived — starts when your trial ends",
       "cancel_action": "Cancel membership",
@@ -1678,7 +1678,7 @@
       "none": "—",
       "per_month": "a month",
       "per_year": "a year",
-      "perk_cancel_body": "Without membership the line is 24 hours. And after booking you have 60 minutes to cancel free of charge, instead of 15 minutes.",
+      "perk_cancel_body": "Without membership the line is 24 hours. And after every booking you have 60 minutes to cancel free of charge, instead of 15 minutes.",
       "perk_cancel_title": "Free cancellation {{hours}} hours ahead",
       "perk_discount_title": "{{percent}}% off every clean",
       "perk_express_body": "A clean booked 2 to 4 hours ahead, with no {{percent}}% surcharge.",
@@ -1708,7 +1708,7 @@
       "title": "Cleansia Plus",
       "yes": "yes",
       "row_grace": "Free cancellation after booking",
-      "row_grace_without": "15 minutes",
+      "row_grace_without": "15 minutes (60 on your first booking)",
       "row_grace_with": "60 minutes"
     }
   },

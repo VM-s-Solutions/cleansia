@@ -67,8 +67,20 @@
         </div>
         @if (hasRefundAmount()) {
         <div class="detail-grid__item">
-          <span class="detail-grid__label">{{ 'pages.disputes_management.columns.refund_amount' | translate }}</span>
+          <span class="detail-grid__label">{{ 'pages.disputes_management.detail.refund_requested' | translate }}</span>
           <span class="detail-grid__value">{{ facade.refundAmountLabel() }}</span>
+        </div>
+        }
+        @if (facade.cardRefundedLabel(); as cardRefunded) {
+        <div class="detail-grid__item">
+          <span class="detail-grid__label">{{ 'pages.disputes_management.detail.card_refunded' | translate }}</span>
+          <span class="detail-grid__value">{{ cardRefunded }}</span>
+        </div>
+        }
+        @if (facade.creditReturnedLabel(); as creditReturned) {
+        <div class="detail-grid__item">
+          <span class="detail-grid__label">{{ 'pages.disputes_management.detail.credit_returned' | translate }}</span>
+          <span class="detail-grid__value">{{ creditReturned }}</span>
         </div>
         }
         <div class="detail-grid__item cleansia-dispute-detail__prose-item">

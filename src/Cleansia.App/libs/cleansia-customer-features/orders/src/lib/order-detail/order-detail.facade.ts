@@ -10,6 +10,8 @@ import {
   GetMyMembershipResponse,
   OrderItem,
   OrderStatus,
+  PaymentStatus,
+  PaymentType,
   SubmitOrderReviewCommand,
   SubmitOrderReviewReviewLineScore,
 } from '@cleansia/customer-services';
@@ -58,6 +60,18 @@ export class OrderDetailFacade extends UnsubscribeControlDirective {
     const status = this.order()?.orderStatus?.value;
     return !this.cancellationResult() && status !== undefined &&
       CANCELLABLE_ORDER_STATUSES.includes(status);
+  });
+
+  /**
+   * No card charge to refund: the server's `Order.TookNoPayment`, plus the payment type, because a
+   * confirmed recurring cash occurrence rests at Paid with nothing taken.
+   */
+  readonly tookNoCardPayment = computed(() => {
+    const order = this.order();
+    if (!order) return false;
+    const status = order.paymentStatus?.value;
+    return order.paymentType?.value === PaymentType.Cash ||
+      status === PaymentStatus.Pending || status === PaymentStatus.Failed;
   });
 
   /** One per crew member who accepted the contract for work; nothing before any acceptance. */

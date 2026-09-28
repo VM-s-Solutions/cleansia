@@ -243,4 +243,37 @@ describe('DisputeDetailFacade', () => {
 
     expect(facade.refundAmountLabel()).toBe('');
   });
+
+  // The card leg is clamped to what the card can still give back, so what moved can fall short of
+  // the request; the admin reads both.
+  it('labels what the resolution moved beside what it asked for', () => {
+    facade.dispute.set(
+      DisputeDetails.fromJS({
+        refundAmount: 1250,
+        cardRefundedAmount: 1000,
+        creditReturnedAmount: 150,
+        currency: { code: 'CZK', symbol: 'Kč' },
+      })
+    );
+
+    expect(facade.refundAmountLabel()).toBe('1 250,00 Kč');
+    expect(facade.cardRefundedLabel()).toBe('1 000,00 Kč');
+    expect(facade.creditReturnedLabel()).toBe('150,00 Kč');
+  });
+
+  it('labels a leg that moved nothing as zero, and one never recorded as nothing', () => {
+    facade.dispute.set(
+      DisputeDetails.fromJS({
+        refundAmount: 500,
+        cardRefundedAmount: 500,
+        creditReturnedAmount: 0,
+        currency: { code: 'CZK', symbol: 'Kč' },
+      })
+    );
+    expect(facade.creditReturnedLabel()).toBe('0,00 Kč');
+
+    facade.dispute.set(DisputeDetails.fromJS({ refundAmount: 500, currency: { code: 'CZK' } }));
+    expect(facade.cardRefundedLabel()).toBe('');
+    expect(facade.creditReturnedLabel()).toBe('');
+  });
 });

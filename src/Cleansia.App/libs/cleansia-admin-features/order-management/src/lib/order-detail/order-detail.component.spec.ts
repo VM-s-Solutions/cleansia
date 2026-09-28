@@ -178,6 +178,24 @@ describe('OrderDetailComponent — incident file', () => {
     expect(fixture.nativeElement.textContent).toContain('pages.order_detail.customer_account_error');
   });
 
+  it('shows the fee a cancellation applied and what of it is still owed', () => {
+    details.mockReturnValue(
+      of(OrderItem.fromJS({ id: 'order-1', cancellationFeeRate: 0.25, cancellationFeeOwed: 300 }))
+    );
+    const text = render().nativeElement.textContent;
+
+    expect(text).toContain('pages.order_detail.cancellation_fee_rate');
+    expect(text).toContain('25%');
+    expect(text).toContain('pages.order_detail.cancellation_fee_owed');
+  });
+
+  it('shows no cancellation fee on an order that was not cancelled', () => {
+    const text = render().nativeElement.textContent;
+
+    expect(text).not.toContain('pages.order_detail.cancellation_fee_rate');
+    expect(text).not.toContain('pages.order_detail.cancellation_fee_owed');
+  });
+
   it('hides the panel and avoids its request without the customer policy', () => {
     grantedPolicies.delete('CanViewOrderCustomer');
     const fixture = render();

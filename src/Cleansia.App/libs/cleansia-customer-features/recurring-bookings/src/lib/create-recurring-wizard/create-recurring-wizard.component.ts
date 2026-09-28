@@ -82,8 +82,9 @@ export class CreateRecurringWizardComponent implements OnInit {
 
   /** Recurring schedules can't start in the past. */
   protected readonly minStartsOn = new Date();
-  /** The booking wizard's own range — a schedule is a home, not a hotel. */
-  protected readonly COUNTS = [0, 1, 2, 3, 4, 5, 6];
+  /** The booking wizard's own counts, and the server's cap: rooms run to eight, bathrooms to four. */
+  protected readonly roomChoices = [1, 2, 3, 4, 5, 6, 7, 8];
+  protected readonly bathroomChoices = [1, 2, 3, 4];
   protected readonly listRoute = ['/' + CleansiaCustomerRoute.MEMBERSHIP, 'recurring'];
 
   /** Flattened from the three period groups — the board draws one select. */

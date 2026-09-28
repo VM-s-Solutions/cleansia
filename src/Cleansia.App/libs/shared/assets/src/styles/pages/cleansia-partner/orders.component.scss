@@ -16,11 +16,11 @@ cleansia-partner-orders {
   gap: 1rem;
 }
 
-// The completion dialog compares three times side by side; on the detail grid's four columns the
-// last would sit empty and the labels would wrap. Two classes outweigh the shared grid's own
-// breakpoints, so the phone collapse is restated here or the three columns would hold at 390px.
+// The completion dialog shows two times side by side; on the detail grid's four columns the last
+// two would sit empty and the labels would wrap. Two classes outweigh the shared grid's own
+// breakpoints, so the phone collapse is restated here or the two columns would hold at 390px.
 .complete-order-dialog__times.detail-grid {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 
   @media (max-width: 767px) {
     grid-template-columns: minmax(0, 1fr);

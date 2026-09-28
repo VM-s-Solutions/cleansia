@@ -100,7 +100,7 @@
             <div>
               <div class="cl-rec__label">{{ 'recurring_booking.rooms_label' | translate }}</div>
               <div class="cl-rec__count-chips">
-                @for (n of COUNTS; track n) {
+                @for (n of roomChoices; track n) {
                   <button
                     type="button"
                     class="cl-rec__chip cl-rec__chip--count"
@@ -114,7 +114,7 @@
             <div>
               <div class="cl-rec__label">{{ 'recurring_booking.bathrooms_label' | translate }}</div>
               <div class="cl-rec__count-chips">
-                @for (n of COUNTS; track n) {
+                @for (n of bathroomChoices; track n) {
                   <button
                     type="button"
                     class="cl-rec__chip cl-rec__chip--count"

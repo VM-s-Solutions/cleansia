@@ -254,11 +254,10 @@ export class OrderWizardFacade extends UnsubscribeControlDirective {
   readonly creditApplied = this.pricing.creditApplied;
   readonly amountDueOnCard = this.pricing.amountDueOnCard;
 
-  // ─── Membership (free-cancellation window + express waiver) ─────
+  // ─── Membership (express waiver + the plan on the summary) ─────
   //
   // One /Membership/Mine read for the whole wizard, owned by OrderMembershipFacade and
   // re-exposed here so the slot grid and the summary step both read the wizard facade.
-  readonly plusFreeCancellationHours = this.membership.freeCancellationWindowHours;
   readonly expressUpgradesRemaining = this.membership.expressUpgradesRemaining;
   readonly activeMembership = this.membership.membership;
   readonly plans = this.membership.plans;

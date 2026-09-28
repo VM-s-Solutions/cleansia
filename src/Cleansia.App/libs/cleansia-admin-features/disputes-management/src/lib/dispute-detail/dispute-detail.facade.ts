@@ -32,13 +32,9 @@ export class DisputeDetailFacade extends UnsubscribeControlDirective {
   readonly updatingStatus = signal<boolean>(false);
   readonly sendingMessage = signal<boolean>(false);
 
-  readonly refundAmountLabel = computed(() => {
-    const dispute = this.dispute();
-    if (dispute?.refundAmount == null) return '';
-    return formatMoney(dispute.refundAmount, dispute.currency?.code, localeFor(this.translate.currentLang), {
-      fractionDigits: 2,
-    });
-  });
+  readonly refundAmountLabel = computed(() => this.moneyLabel(this.dispute()?.refundAmount));
+  readonly cardRefundedLabel = computed(() => this.moneyLabel(this.dispute()?.cardRefundedAmount));
+  readonly creditReturnedLabel = computed(() => this.moneyLabel(this.dispute()?.creditReturnedAmount));
 
   readonly isTerminal = computed(() => {
     const status = this.dispute()?.status?.value;
@@ -140,4 +136,10 @@ export class DisputeDetailFacade extends UnsubscribeControlDirective {
       });
   }
 
+  private moneyLabel(amount: number | undefined): string {
+    if (amount == null) return '';
+    return formatMoney(amount, this.dispute()?.currency?.code, localeFor(this.translate.currentLang), {
+      fractionDigits: 2,
+    });
+  }
 }

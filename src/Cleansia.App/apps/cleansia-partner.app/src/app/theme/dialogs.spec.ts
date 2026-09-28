@@ -133,7 +133,7 @@ describe('partner dialogs', () => {
 
   it('collapse the completion summary to one column on a phone, as the detail grid it sits on does', () => {
     // A page rule that re-declares the grid's columns on two classes outweighs the shared
-    // breakpoints, so it must restate the phone collapse or the three columns hold at 390px.
+    // breakpoints, so it must restate the phone collapse or the two columns hold at 390px.
     const scss = read(join(PARTNER_PAGES_DIR, 'orders.component.scss'));
     const start = scss.indexOf('.complete-order-dialog__times.detail-grid {');
     expect(start).toBeGreaterThanOrEqual(0);

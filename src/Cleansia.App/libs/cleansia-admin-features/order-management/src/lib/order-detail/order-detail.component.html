@@ -257,6 +257,16 @@
           <span class="detail-grid__value">{{ facade.order()?.receiptNumber }}</span>
         </div>
         }
+        @if (facade.cancellationFee(); as fee) {
+        <div class="detail-grid__item">
+          <span class="detail-grid__label">{{ 'pages.order_detail.cancellation_fee_rate' | translate }}</span>
+          <span class="detail-grid__value">{{ facade.formatRate(fee.rate) }}</span>
+        </div>
+        <div class="detail-grid__item">
+          <span class="detail-grid__label">{{ 'pages.order_detail.cancellation_fee_owed' | translate }}</span>
+          <span class="detail-grid__value">{{ facade.formatPrice(fee.owed) }}</span>
+        </div>
+        }
       </div>
       <div class="detail-ledger">
         <div class="detail-ledger__row detail-ledger__row--total">

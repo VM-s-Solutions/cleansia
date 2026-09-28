@@ -47,18 +47,13 @@ export class CompleteOrderDialogComponent {
       String(this.data.estimatedTime),
       [Validators.required, Validators.min(1)],
     ],
-    completionNotes: ['', [Validators.required, Validators.maxLength(1000)]],
+    completionNotes: ['', [Validators.maxLength(1000)]],
   });
 
   private readonly formValue = toSignal(this.form.valueChanges, { initialValue: this.form.value });
 
   readonly estimatedTime = this.data.estimatedTime;
   readonly actualTime = computed(() => Number(this.formValue().actualCompletionTimeMinutes) || 0);
-  readonly delay = computed(() => this.actualTime() - this.estimatedTime);
-  readonly delayPercentage = computed(() =>
-    this.estimatedTime === 0 ? 0 : Math.round((this.delay() / this.estimatedTime) * 100)
-  );
-  readonly isDelayed = computed(() => this.delay() > 0);
 
   formatMinutes(minutes: number): string {
     const hours = Math.floor(minutes / 60);

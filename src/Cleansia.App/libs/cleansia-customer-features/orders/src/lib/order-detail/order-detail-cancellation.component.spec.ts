@@ -12,6 +12,8 @@ import {
   GetCancellationFeePreviewResponse,
   OrderItem,
   OrderStatus,
+  PaymentStatus,
+  PaymentType,
 } from '@cleansia/customer-services';
 import { SnackbarService } from '@cleansia/services';
 import { TranslateLoader, TranslateModule, TranslateService } from '@ngx-translate/core';
@@ -41,11 +43,17 @@ class PreferredOfferStub {
   locale = input<string>();
 }
 
-function order(status: OrderStatus): OrderItem {
+function order(
+  status: OrderStatus,
+  paymentType = PaymentType.Card,
+  paymentStatus = PaymentStatus.Paid,
+): OrderItem {
   return OrderItem.fromJS({
     id: ORDER_ID,
     displayOrderNumber: 'ORD-1',
     orderStatus: { value: status, name: OrderStatus[status] },
+    paymentType: { value: paymentType, name: PaymentType[paymentType] },
+    paymentStatus: { value: paymentStatus, name: PaymentStatus[paymentStatus] },
     cleaningDateTime: '2026-09-25T08:00:00Z',
     totalPrice: 1200,
     currency: { code: 'CZK' },
@@ -73,9 +81,13 @@ describe('OrderDetailComponent — cancelling a booking', () => {
   let fixture: ComponentFixture<OrderDetailComponent>;
   let orderClient: { getById: jest.Mock; cancellationPreview: jest.Mock; cancel: jest.Mock };
 
-  async function setup(status: OrderStatus): Promise<void> {
+  async function setup(
+    status: OrderStatus,
+    paymentType = PaymentType.Card,
+    paymentStatus = PaymentStatus.Paid,
+  ): Promise<void> {
     orderClient = {
-      getById: jest.fn().mockReturnValue(of(order(status))),
+      getById: jest.fn().mockReturnValue(of(order(status, paymentType, paymentStatus))),
       cancellationPreview: jest.fn().mockReturnValue(of(preview)),
       cancel: jest.fn(),
     };
@@ -157,6 +169,25 @@ describe('OrderDetailComponent — cancelling a booking', () => {
     expect((fixture.nativeElement as HTMLElement).textContent).toContain(
       `Free within ${minutes} minutes of booking.`,
     );
+  });
+
+  // With no card charge behind the booking the sheet names the fee and estimates no card refund.
+  it.each([
+    { booking: 'charged card', paymentType: PaymentType.Card, paymentStatus: PaymentStatus.Paid, shown: true },
+    { booking: 'uncharged card', paymentType: PaymentType.Card, paymentStatus: PaymentStatus.Pending, shown: false },
+    { booking: 'cash', paymentType: PaymentType.Cash, paymentStatus: PaymentStatus.Pending, shown: false },
+  ])('on a $booking booking, estimates a card refund: $shown', async ({ paymentType, paymentStatus, shown }) => {
+    await setup(OrderStatus.Confirmed, paymentType, paymentStatus);
+
+    fixture.componentInstance.openCancellation();
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const sheet = (fixture.nativeElement as HTMLElement).textContent ?? '';
+    expect(sheet).toContain('pages.order_detail.cancellation.fee');
+    expect(sheet.includes('pages.order_detail.cancellation.refund_estimate')).toBe(shown);
+    expect(sheet.includes('pages.order_detail.cancellation.refund_note')).toBe(shown);
   });
 
   it('caps the reason at the length the server accepts', async () => {

@@ -99,6 +99,44 @@ describe('DisputeDetailComponent', () => {
     expect(el.querySelector('.detail-grid')).toBeTruthy();
   });
 
+  it('shows what the resolution moved beside what it asked for', () => {
+    disputeClient.details.mockReturnValue(
+      of(
+        DisputeDetails.fromJS({
+          id: 'dispute-1',
+          refundAmount: 1250,
+          cardRefundedAmount: 1000,
+          creditReturnedAmount: 150,
+          currency: { code: 'CZK' },
+          messages: [],
+        })
+      )
+    );
+    const text = setup().el.textContent;
+
+    expect(text).toContain('pages.disputes_management.detail.refund_requested');
+    expect(text).toContain('pages.disputes_management.detail.card_refunded');
+    expect(text).toContain('pages.disputes_management.detail.credit_returned');
+  });
+
+  it('shows no moved-money rows on a dispute that never recorded them', () => {
+    disputeClient.details.mockReturnValue(
+      of(
+        DisputeDetails.fromJS({
+          id: 'dispute-1',
+          refundAmount: 1250,
+          currency: { code: 'CZK' },
+          messages: [],
+        })
+      )
+    );
+    const text = setup().el.textContent;
+
+    expect(text).toContain('pages.disputes_management.detail.refund_requested');
+    expect(text).not.toContain('pages.disputes_management.detail.card_refunded');
+    expect(text).not.toContain('pages.disputes_management.detail.credit_returned');
+  });
+
   it('renders the error state when the load fails', () => {
     disputeClient.details.mockReturnValue(throwError(() => new Error('x')));
     const { facade, el } = setup();

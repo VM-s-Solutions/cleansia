@@ -39,12 +39,16 @@
       <dt>{{ 'pages.order_detail.cancellation.fee' | translate }}</dt>
       <dd class="cl-num">{{ formatPrice(preview.feeAmount) }} ({{ preview.feeRate | percent }})</dd>
     </div>
+    @if (!tookNoCardPayment()) {
     <div>
       <dt>{{ 'pages.order_detail.cancellation.refund_estimate' | translate }}</dt>
       <dd class="cl-num">{{ formatPrice(preview.refundAmount) }}</dd>
     </div>
+    }
   </dl>
+  @if (!tookNoCardPayment()) {
   <p>{{ 'pages.order_detail.cancellation.refund_note' | translate }}</p>
+  }
   <cleansia-textarea
     id="order-detail-cancellation-reason"
     [floatVariant]="null"
@@ -100,14 +104,6 @@
           {{ o.orderStatus | orderStatusLabel }} · {{ formatDate(o.cleaningDateTime) }}
         </p>
       </div>
-      @if (isInProgress() || o.orderStatus?.value === 3) {
-      <cleansia-button
-        [title]="'pages.order_detail.track_live' | translate"
-        [severity]="'primary'"
-        [style]="'raised-button'"
-        (clickFn)="goBack()"
-      />
-      }
     </div>
     }
   </div>

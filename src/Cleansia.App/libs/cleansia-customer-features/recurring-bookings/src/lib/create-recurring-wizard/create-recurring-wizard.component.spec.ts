@@ -10,6 +10,8 @@ import {
   ServiceListItem,
 } from '@cleansia/customer-services';
 import { TranslateModule } from '@ngx-translate/core';
+import { readFileSync } from 'fs';
+import { join } from 'path';
 import { ConfirmationService } from 'primeng/api';
 import { DatePicker } from 'primeng/datepicker';
 import { RecurringBookingsFacade } from '../recurring-bookings.facade';
@@ -266,5 +268,67 @@ describe('CreateRecurringWizardComponent — a refused preferred cleaner', () =>
 
     expect(facade.resetWizard).not.toHaveBeenCalled();
     expect(navigate).not.toHaveBeenCalled();
+  });
+});
+
+const BOOKING_POLICY = join(
+  __dirname,
+  '../../../../../../../Cleansia.Core.AppServices/Features/Orders/BookingPolicy.cs',
+);
+
+function bookingPolicy(name: string): number {
+  const match = new RegExp(`public\\s+const\\s+int\\s+${name}\\s*=\\s*(\\d+)\\s*;`).exec(
+    readFileSync(BOOKING_POLICY, 'utf8'),
+  );
+  if (!match) throw new Error(`BookingPolicy.${name} not found — the parser needs updating`);
+  return Number(match[1]);
+}
+
+const oneTo = (max: number): number[] => Array.from({ length: max }, (_, i) => i + 1);
+
+// The server refuses a home above BookingPolicy.MaxRooms or MaxBathrooms (order.size_exceeds_maximum),
+// so the pickers offer one up to each and nothing it would refuse.
+describe('CreateRecurringWizardComponent — home size', () => {
+  let el: HTMLElement;
+
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({
+      imports: [CreateRecurringWizardComponent, TranslateModule.forRoot()],
+      providers: [
+        provideRouter([]),
+        provideNoopAnimations(),
+        {
+          provide: ActivatedRoute,
+          useValue: {
+            snapshot: { paramMap: { get: () => null }, queryParamMap: { get: () => null } },
+          },
+        },
+      ],
+    })
+      .overrideComponent(CreateRecurringWizardComponent, {
+        set: {
+          providers: [
+            { provide: RecurringBookingsFacade, useValue: new FakeRecurringBookingsFacade() },
+            ConfirmationService,
+          ],
+        },
+      })
+      .compileComponents();
+    const fixture = TestBed.createComponent(CreateRecurringWizardComponent);
+    el = fixture.nativeElement;
+    fixture.detectChanges();
+  });
+
+  const offered = (picker: number): number[] =>
+    Array.from(
+      el.querySelectorAll('.cl-rec__counts > div')[picker].querySelectorAll('.cl-rec__chip--count'),
+    ).map((chip) => Number(chip.textContent?.trim()));
+
+  it('offers one room up to the server maximum', () => {
+    expect(offered(0)).toEqual(oneTo(bookingPolicy('MaxRooms')));
+  });
+
+  it('offers one bathroom up to the server maximum', () => {
+    expect(offered(1)).toEqual(oneTo(bookingPolicy('MaxBathrooms')));
   });
 });

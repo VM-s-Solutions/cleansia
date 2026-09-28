@@ -107,6 +107,7 @@ export class OrderDetailComponent implements OnInit {
   readonly workContractAcceptances = this.facade.workContractAcceptances;
 
   readonly canCancel = this.facade.canCancel;
+  readonly tookNoCardPayment = this.facade.tookNoCardPayment;
   readonly cancellationOpen = this.facade.cancellationOpen;
   readonly previewLoading = this.facade.previewLoading;
   readonly cancellationPreview = this.facade.cancellationPreview;

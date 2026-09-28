@@ -43,12 +43,16 @@
       <dt>{{ 'pages.track_order.cancellation.fee' | translate }}</dt>
       <dd>{{ formatAmount(preview.feeAmount, preview.currencyCode) }} ({{ preview.feeRate | percent }})</dd>
     </div>
+    @if (!facade.tookNoCardPayment()) {
     <div>
       <dt>{{ 'pages.track_order.cancellation.refund_estimate' | translate }}</dt>
       <dd>{{ formatAmount(preview.refundAmount, preview.currencyCode) }}</dd>
     </div>
+    }
   </dl>
+  @if (!facade.tookNoCardPayment()) {
   <p>{{ 'pages.track_order.cancellation.refund_note' | translate }}</p>
+  }
   }
   <ng-template #footer>
     <div class="cl-trk__cancellation-actions">

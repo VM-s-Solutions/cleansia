@@ -14,6 +14,8 @@ import {
   Code,
   GetCancellationFeePreviewResponse,
   GetGuestCancellationFeePreviewQuery,
+  PaymentStatus,
+  PaymentType,
 } from '@cleansia/customer-services';
 import { OrderStatus } from '@cleansia/models';
 import { catchError, finalize, Observable, of, Subject, takeUntil } from 'rxjs';
@@ -55,6 +57,14 @@ export class TrackOrderFacade extends UnsubscribeControlDirective {
     const status = this.selectedOrder()?.orderStatus?.value;
     return !!this.selectedToken && !this.cancellationResult() && status !== undefined &&
       [OrderStatus.New, OrderStatus.Confirmed, OrderStatus.OnTheWay].includes(status);
+  });
+  /** No card charge to refund: a guest pays by card, so only a checkout that never completed. */
+  readonly tookNoCardPayment = computed(() => {
+    const order = this.selectedOrder();
+    if (!order) return false;
+    const status = order.paymentStatus?.value;
+    return order.paymentType?.value === PaymentType.Cash ||
+      status === PaymentStatus.Pending || status === PaymentStatus.Failed;
   });
   readonly canConfirmCancellation = computed(() =>
     this.canCancel() && this.cancellationOpen() && !!this.cancellationPreview() &&

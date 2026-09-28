@@ -10,6 +10,8 @@ import {
   GetMyMembershipResponse,
   OrderItem,
   OrderStatus,
+  PaymentStatus,
+  PaymentType,
   SubmitOrderReviewCommand,
 } from '@cleansia/customer-services';
 import { SnackbarService } from '@cleansia/services';
@@ -141,6 +143,34 @@ describe('OrderDetailFacade', () => {
     it('is withheld while the order has not loaded', () => {
       facade.order.set(null);
       expect(facade.canCancel()).toBe(false);
+    });
+  });
+
+  // With no card charge behind the booking the cancel sheet has no card refund to estimate.
+  describe('whether the booking took a card payment', () => {
+    const booking = (type: PaymentType, status: PaymentStatus) =>
+      OrderItem.fromJS({
+        id: ORDER_ID,
+        paymentType: { value: type, name: PaymentType[type] },
+        paymentStatus: { value: status, name: PaymentStatus[status] },
+      });
+
+    it.each([
+      ['a cash booking not yet collected', PaymentType.Cash, PaymentStatus.Pending],
+      ['a cash booking already marked paid', PaymentType.Cash, PaymentStatus.Paid],
+      ['a card booking never charged', PaymentType.Card, PaymentStatus.Pending],
+      ['a card booking whose charge failed', PaymentType.Card, PaymentStatus.Failed],
+    ])('took none on %s', (_, type, status) => {
+      facade.order.set(booking(type, status));
+      expect(facade.tookNoCardPayment()).toBe(true);
+    });
+
+    it('took one on a charged card booking, and says nothing before the order has loaded', () => {
+      facade.order.set(booking(PaymentType.Card, PaymentStatus.Paid));
+      expect(facade.tookNoCardPayment()).toBe(false);
+
+      facade.order.set(null);
+      expect(facade.tookNoCardPayment()).toBe(false);
     });
   });
 

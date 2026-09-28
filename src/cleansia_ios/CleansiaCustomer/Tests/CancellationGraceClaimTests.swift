@@ -41,6 +41,8 @@ final class CancellationGraceClaimTests: XCTestCase {
         #"prvn\S* (?:objedn|zákazn|úklid)"#, #"prv\S* (?:objedn|zákazn|upratov)"#, #"nov\S* zákazn"#,
         #"перш\S* (?:замовлен|прибиран)"#, #"нов\S* клієнт"#, #"перв\S* (?:заказ|уборк)"#, #"нов\S* клиент"#
     ]
+    private static let hourFigure = #"\d+\s*(?:hours?|hodin|hodín|годин|час)"#
+    private static let rescheduleButton = #"[„"«“]\s*(?:reschedule|změnit termín|zmeniť termín|перенести)"#
 
     private var restoreBundle: Bundle?
 
@@ -141,6 +143,21 @@ final class CancellationGraceClaimTests: XCTestCase {
             for claim in Self.momentClaims {
                 XCTAssertFalse(Self.matches(claim, value), "the oops tier says just now in \(language): \(value)")
             }
+        }
+    }
+
+    /// A booking cannot be moved to another date: the only way is to cancel it and book again.
+    func testTheFaqOffersCancellingAndNoReschedule() throws {
+        try forEachLanguage { language in
+            let answer = L10n.Help.faqA4
+            XCTAssertFalse(Self.matches(Self.hourFigure, answer), "the FAQ states a window in \(language): \(answer)")
+            XCTAssertFalse(Self.matches(Self.rescheduleButton, answer), "the FAQ quotes a button in \(language)")
+            XCTAssertTrue(
+                Self.cancelStems.contains { Self.matches($0, answer) },
+                "the FAQ no longer says to cancel in \(language): \(answer)"
+            )
+            let offenders = try Self.catalog(language).filter { Self.matches("reschedul", $0.value) }.keys.sorted()
+            XCTAssertEqual(offenders, [], "\(language) offers rescheduling")
         }
     }
 

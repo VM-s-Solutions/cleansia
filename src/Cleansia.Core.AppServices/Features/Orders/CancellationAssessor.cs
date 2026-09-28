@@ -60,7 +60,7 @@ internal static class CancellationAssessor
         // numeric(18,2) (rounds) while Stripe truncates (long)(amount*100), so an unrounded value can
         // make the ledger and Stripe diverge by a cent and skew the Refunded/PartiallyRefunded
         // comparison. Rounding once here makes every downstream reader agree.
-        var refundAmount = Math.Round(order.TotalPrice * (1m - feeRate), 2, MidpointRounding.AwayFromZero);
+        var refundAmount = RefundAmountFor(order.TotalPrice, feeRate);
 
         // The fee is the residual, never a second rounding of the same half-cent: rounding both legs
         // independently makes them sum to a cent more than the total the customer is looking at.
@@ -71,4 +71,18 @@ internal static class CancellationAssessor
             RefundAmount: refundAmount,
             HasBeenAccepted: hasBeenAccepted);
     }
+
+    public static decimal RefundAmountFor(decimal totalPrice, decimal feeRate) =>
+        Math.Round(totalPrice * (1m - feeRate), 2, MidpointRounding.AwayFromZero);
+
+    /// <summary>
+    /// The cancellation fee a cancelled order still owes: all of it on an order that took no payment,
+    /// none where a card charge covered it. Null on an order that is not cancelled.
+    /// </summary>
+    public static decimal? FeeOwed(Order order) => order.CancellationFeeRate switch
+    {
+        null => null,
+        { } rate when order.TookNoPayment => order.TotalPrice - RefundAmountFor(order.TotalPrice, rate),
+        _ => 0m,
+    };
 }

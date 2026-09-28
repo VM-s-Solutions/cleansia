@@ -53,6 +53,9 @@ public class CardPaymentsChargeSurfaceCoverageTests
         ("Services/GdprDeletionService.cs",
             "Deletes the Stripe customer as part of an erasure request. A legal obligation that cannot "
             + "wait on an ops toggle."),
+        ("Features/Payments/HandlePaymentNotification.cs",
+            "The webhook asks Stripe which Checkout Session charged a disputed intent, to find the order a "
+            + "bank chargeback is about. A read, and a chargeback arrives whether card payments are on or off."),
         ("Services/StripeCustomerResolver.cs",
             "Creates a Stripe Customer object, never a charge, and only for the two subscribe handlers, "
             + "both of which refuse on the switch before any Stripe object is created."),

@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Configuration;
+using Cleansia.Core.Clients.Abstractions.Stripe;
 using Cleansia.Core.AppServices.Auditing;
 using Cleansia.Infra.Common.Configuration;
 using System.Globalization;
@@ -283,6 +284,8 @@ public class PreferredOfferDeferredAnnouncementTests
             resolver,
             Mock.Of<IAdminNotifier>(),
             Mock.Of<IUserNotificationRepository>(),
+            Mock.Of<IStripeClientFactory>(),
+            Mock.Of<ITenantRepository>(),
             NullLogger<HandlePaymentNotification.Handler>.Instance);
     }
 

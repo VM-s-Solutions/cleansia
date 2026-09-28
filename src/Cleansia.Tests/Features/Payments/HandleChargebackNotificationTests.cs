@@ -1,10 +1,12 @@
 using System.Globalization;
+using Cleansia.Core.Clients.Abstractions.Stripe;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Payments;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Disputes;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Internationalization;
+using Cleansia.Core.Domain.Notifications;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Queue.Abstractions;
@@ -14,6 +16,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using Stripe;
 using Dispute = Cleansia.Core.Domain.Disputes.Dispute;
+using IStripeClient = Cleansia.Core.Clients.Abstractions.Stripe.IStripeClient;
 
 namespace Cleansia.Tests.Features.Payments;
 
@@ -29,7 +32,10 @@ namespace Cleansia.Tests.Features.Payments;
 ///     side effect (AC3, S7);
 ///   - updated/closed (won → Resolved, lost → Closed) → found by StripeDisputeId (the id <c>.created</c>
 ///     actually wrote), no new dispute (AC4);
-///   - charge that resolves to no local order → success, warning-level, nothing written (S6);
+///   - a web order that carries only its Checkout Session → found through the session, its intent
+///     recorded, and the dispute created as for any other order;
+///   - charge that resolves to no local order → success, no dispute, and every company's
+///     administrators told, since the claim could be any company's money (S6);
 ///   - invalid signature → rejected, nothing written.
 /// The status write is routed through the same transition guard the in-app path obeys: <c>lost</c>/
 /// non-terminal targets gate on <see cref="Dispute.CanTransitionTo"/>; <c>won</c> gates on
@@ -55,9 +61,25 @@ public class HandleChargebackNotificationTests
     private readonly Mock<ITenantProvider> _tenantProvider = new();
     private readonly Mock<IPendingDispatch> _pending = new();
     private readonly Mock<INotificationProducer> _producer = new();
+    private readonly Mock<IStripeClient> _stripeClient = new();
+    private readonly Mock<IStripeClientFactory> _stripeClientFactory = new();
+    private readonly Mock<ITenantRepository> _tenantRepository = new();
+    private readonly List<AdminEvent> _adminEvents = [];
+    private readonly Mock<IAdminNotifier> _adminNotifier = new();
 
     public HandleChargebackNotificationTests()
     {
+        _stripeClientFactory.Setup(f => f.CreateClient()).Returns(_stripeClient.Object);
+        _tenantRepository
+            .Setup(r => r.GetAllIdsAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync([]);
+        _stripeClient
+            .Setup(c => c.FindCheckoutSessionOrderIdAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((string?)null);
+        _adminNotifier
+            .Setup(n => n.NotifyAsync(It.IsAny<AdminEvent>(), It.IsAny<CancellationToken>()))
+            .Callback<AdminEvent, CancellationToken>((e, _) => _adminEvents.Add(e))
+            .Returns(Task.CompletedTask);
         _stripeConfig.SetupGet(c => c.WebhookSecret).Returns(WebhookSecret);
         _processedEvents
             .Setup(r => r.HasProcessedAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
@@ -83,8 +105,10 @@ public class HandleChargebackNotificationTests
             _pending.Object,
             _producer.Object,
             NoPreferredCleanerHold.Resolver,
-            Mock.Of<IAdminNotifier>(),
+            _adminNotifier.Object,
             Mock.Of<IUserNotificationRepository>(),
+            _stripeClientFactory.Object,
+            _tenantRepository.Object,
             NullLogger<HandlePaymentNotification.Handler>.Instance)!;
 
     private static Order ArrangeOrder()
@@ -389,6 +413,81 @@ public class HandleChargebackNotificationTests
         Assert.True(result.IsSuccess);
         _disputeRepository.Verify(r => r.Add(It.IsAny<Dispute>()), Times.Never);
         _tenantProvider.Verify(t => t.SetTenantOverride(It.IsAny<string>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task ChargebackCreated_OnAWebOrderKnownOnlyByItsCheckoutSession_FindsItThroughTheSession()
+    {
+        var order = ArrangeWebOrderWithoutIntent();
+        _stripeClient
+            .Setup(c => c.FindCheckoutSessionOrderIdAsync(PaymentIntentId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(OrderId);
+        _orderRepository
+            .Setup(r => r.GetByIdIgnoringTenantAsync(OrderId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(order);
+        Dispute? added = null;
+        _disputeRepository.Setup(r => r.Add(It.IsAny<Dispute>())).Callback<Dispute>(d => added = d);
+
+        var result = await CreateHandler().Handle(
+            ChargebackCommand(Constants.StripeEventType.ChargeDisputeCreated, "needs_response", "evt_web_1"),
+            CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        Assert.NotNull(added);
+        Assert.Equal(OrderId, added!.OrderId);
+        Assert.Equal(StripeDisputeId, added.StripeDisputeId);
+        Assert.Equal(DisputeStatus.Escalated, added.Status);
+        Assert.Equal(PaymentIntentId, order.StripePaymentIntentId);
+        _tenantProvider.Verify(t => t.SetTenantOverride(TenantId), Times.Once);
+        Assert.Equal(AdminNotificationEventCatalog.DisputeChargeback, Assert.Single(_adminEvents).Key);
+    }
+
+    [Fact]
+    public async Task ChargebackCreated_ThatMatchesNoOrder_TellsEveryCompanysAdministrators()
+    {
+        _orderRepository
+            .Setup(r => r.GetByStripePaymentIntentIdIgnoringTenantAsync(PaymentIntentId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Order?)null);
+        _tenantRepository
+            .Setup(r => r.GetAllIdsAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(["tenant-a", "tenant-b"]);
+
+        var result = await CreateHandler().Handle(
+            ChargebackCommand(Constants.StripeEventType.ChargeDisputeCreated, "needs_response", "evt_unmatched_1"),
+            CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        _disputeRepository.Verify(r => r.Add(It.IsAny<Dispute>()), Times.Never);
+        Assert.Equal(["tenant-a", "tenant-b"], _adminEvents.Select(e => e.TenantId));
+        Assert.All(_adminEvents, e =>
+        {
+            Assert.Equal(AdminNotificationEventCatalog.DisputeChargebackUnmatched, e.Key);
+            Assert.Equal("10 CZK", e.Args["amount"]);
+            Assert.Equal(StripeDisputeId, e.Args["stripeDisputeId"]);
+        });
+        Assert.Equal(2, _adminEvents.Select(e => e.Subject).Distinct().Count());
+    }
+
+    private static Order ArrangeWebOrderWithoutIntent()
+    {
+        var order = Order.Create(
+            customerName: "Test Customer",
+            customerEmail: "customer@example.com",
+            customerPhone: "+420123456789",
+            customerAddress: null!,
+            rooms: 2,
+            bathrooms: 1,
+            cleaningDateTime: DateTime.UtcNow.AddDays(1),
+            paymentType: PaymentType.Card,
+            totalPrice: 1000m,
+            currencyId: "currency-1",
+            paymentStatus: PaymentStatus.Paid,
+            userId: "user-1");
+        order.Id = OrderId;
+        order.AssignStripeSessionId("cs_test_web_1");
+        order.TenantId = TenantId;
+        order.SetCurrency(Currency.Create("CZK", "Kč", "Czech koruna"));
+        return order;
     }
 
     [Fact]

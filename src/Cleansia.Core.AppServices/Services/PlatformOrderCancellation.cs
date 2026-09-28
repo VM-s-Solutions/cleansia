@@ -1,3 +1,4 @@
+using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Enums;
@@ -14,7 +15,9 @@ public sealed class PlatformOrderCancellation(
     ILoyaltyService loyaltyService,
     INotificationProducer notificationProducer,
     ILiveActivityProducer liveActivityProducer,
-    IExpressWaiverConsumer expressWaiverConsumer) : IPlatformOrderCancellation
+    IExpressWaiverConsumer expressWaiverConsumer,
+    GuestOrderAccessTokenIssuer accessTokenIssuer,
+    IPendingDispatch pending) : IPlatformOrderCancellation
 {
     public async Task<PlatformOrderCancellationResult> CancelAsync(
         Order order,
@@ -69,7 +72,10 @@ public sealed class PlatformOrderCancellation(
 
         await loyaltyService.RevokeForCancelledOrderAsync(order.Id, cancellationToken);
 
-        return new PlatformOrderCancellationResult(refundAmount, refund);
+        await GuestCancellationEmail.EnqueueAsync(order, EmailLocale.Resolve(order.LanguageCode),
+            refund.RefundedAmount, accessTokenIssuer, pending, cancellationToken);
+
+        return new PlatformOrderCancellationResult(order.CancellationRefundAmount ?? 0m, refund);
     }
 
     public async Task<PlatformRefundOutcome> RefundAsync(
@@ -113,6 +119,6 @@ public sealed class PlatformOrderCancellation(
                 cancellationToken);
         }
 
-        return PlatformRefundOutcome.Issued;
+        return PlatformRefundOutcome.Issued with { RefundedAmount = refund.Value!.Amount };
     }
 }

@@ -57,6 +57,7 @@ public sealed class AdminNotificationEmailRenderingTests
             "statusAtLoss" => nameof(OrderStatus.Confirmed),
             "cleaningDateTime" => new DateTime(2026, 10, 1, 9, 30, 0, DateTimeKind.Utc).ToString("O", CultureInfo.InvariantCulture),
             "disputeId" => "dispute-1",
+            "stripeDisputeId" => "dp_1ABC",
             "reason" => nameof(DisputeReason.QualityIssue),
             "requestId" => "request-1",
             "day" => "2026-10-01",
@@ -90,7 +91,12 @@ public sealed class AdminNotificationEmailRenderingTests
         Assert.DoesNotContain("{0}", capture.Subject, StringComparison.Ordinal);
         Assert.DoesNotContain("{{", capture.Subject, StringComparison.Ordinal);
         Assert.Contains(capture.Subject, html, StringComparison.Ordinal);
-        if (eventKey.StartsWith("admin.order.", StringComparison.Ordinal) || eventKey.StartsWith("admin.dispute.", StringComparison.Ordinal) || eventKey.StartsWith("admin.payment.", StringComparison.Ordinal))
+        if (eventKey == AdminNotificationEventCatalog.DisputeChargebackUnmatched)
+        {
+            Assert.Contains("1 250 Kč", capture.Subject, StringComparison.Ordinal);
+            Assert.Contains("dp_1ABC", html, StringComparison.Ordinal);
+        }
+        else if (eventKey.StartsWith("admin.order.", StringComparison.Ordinal) || eventKey.StartsWith("admin.dispute.", StringComparison.Ordinal) || eventKey.StartsWith("admin.payment.", StringComparison.Ordinal))
         {
             Assert.Contains("ORD-1A2B3C4D", capture.Subject, StringComparison.Ordinal);
         }
@@ -210,7 +216,8 @@ public sealed class AdminNotificationEmailRenderingTests
             NullLogger<EmailService>.Instance,
             httpClientFactory.Object,
             translationRepository.Object,
-            new EmailTemplateRenderer());
+            new EmailTemplateRenderer(),
+            Mock.Of<ICountryConfigurationRepository>());
 
         return (service, capture);
     }

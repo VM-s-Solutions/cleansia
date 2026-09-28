@@ -30,12 +30,13 @@ function dto(overrides: Partial<UserNotificationDto> = {}): UserNotificationDto 
 }
 
 describe('the admin event catalogue mirror', () => {
-  it('pins the nine keys the backend catalogue declares, in its order', () => {
+  it('pins the ten keys the backend catalogue declares, in its order', () => {
     expect(ADMIN_NOTIFICATION_EVENT_KEYS).toEqual([
       'admin.order.new',
       'admin.order.crew_lost',
       'admin.dispute.filed',
       'admin.dispute.chargeback',
+      'admin.dispute.chargeback_unmatched',
       'admin.payment.failed',
       'admin.erasure.failed',
       'admin.company.wind_down_requested',
@@ -51,11 +52,16 @@ describe('the admin event catalogue mirror', () => {
     expect(isAdminNotificationEventKey(undefined)).toBe(false);
   });
 
+  it('routes an unmatched chargeback nowhere, since there is no dispute to open', () => {
+    expect(getNotificationRoute('admin.dispute.chargeback_unmatched', { amount: '100 CZK', stripeDisputeId: 'dp_1' })).toBeNull();
+  });
+
   it('sorts every key into a family the page has an icon for', () => {
     const families = ADMIN_NOTIFICATION_EVENT_KEYS.map(getNotificationFamily);
     expect(families).toEqual([
       NotificationFamily.Order,
       NotificationFamily.Order,
+      NotificationFamily.Dispute,
       NotificationFamily.Dispute,
       NotificationFamily.Dispute,
       NotificationFamily.Payment,

@@ -90,6 +90,15 @@ public interface IStripeClient
         CancellationToken cancellationToken);
 
     /// <summary>
+    /// The <c>OrderId</c> metadata of the Checkout Session that charged <paramref name="paymentIntentId"/>,
+    /// or null when no Checkout Session did (a mobile PaymentSheet intent, a subscription invoice).
+    /// Read-only; an unreachable Stripe throws.
+    /// </summary>
+    Task<string?> FindCheckoutSessionOrderIdAsync(
+        string paymentIntentId,
+        CancellationToken cancellationToken);
+
+    /// <summary>
     /// Create a short-lived Stripe ephemeral key tied to a customer. The mobile
     /// PaymentSheet uses this to display saved cards without requiring a full
     /// authentication round-trip. Lifetime is ~10 minutes — generate per

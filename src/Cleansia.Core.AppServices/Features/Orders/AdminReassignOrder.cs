@@ -30,8 +30,14 @@ public class AdminReassignOrder
 
     public class Validator : AbstractValidator<Command>
     {
-        public Validator(IOrderRepository orderRepository)
+        private readonly IOrderRepository _orderRepository;
+        private readonly IEmployeeRepository _employeeRepository;
+
+        public Validator(IOrderRepository orderRepository, IEmployeeRepository employeeRepository)
         {
+            _orderRepository = orderRepository;
+            _employeeRepository = employeeRepository;
+
             RuleFor(x => x.OrderId)
                 .Cascade(CascadeMode.Stop)
                 .NotEmpty()
@@ -40,8 +46,66 @@ public class AdminReassignOrder
                 .WithMessage(BusinessErrorMessage.OrderNotFound);
 
             RuleFor(x => x.ToEmployeeId)
+                .Cascade(CascadeMode.Stop)
                 .NotEmpty()
-                .WithMessage(BusinessErrorMessage.Required);
+                .WithMessage(BusinessErrorMessage.Required)
+                .MustAsync(TargetExistsAsync)
+                .WithMessage(BusinessErrorMessage.EmployeeNotFound)
+                .MustAsync(TargetIsApprovedAsync)
+                .WithMessage(BusinessErrorMessage.ReassignEmployeeNotApproved)
+                .MustAsync(TargetWorksInTheOrdersMarketAsync)
+                .WithMessage(BusinessErrorMessage.ReassignEmployeeOtherMarket)
+                .MustAsync(TargetIsFreeAtTheCleaningTimeAsync)
+                .WithMessage(BusinessErrorMessage.ReassignEmployeeBusy);
+        }
+
+        private async Task<bool> TargetExistsAsync(string employeeId, CancellationToken cancellationToken) =>
+            await _employeeRepository.GetByIdAsync(employeeId, cancellationToken) is not null;
+
+        // Deactivated(...) leaves ContractStatus untouched, so a departed or erased cleaner still reads Approved.
+        private async Task<bool> TargetIsApprovedAsync(string employeeId, CancellationToken cancellationToken) =>
+            await _employeeRepository.GetByIdAsync(employeeId, cancellationToken)
+                is { IsActive: true, ContractStatus: ContractStatus.Approved };
+
+        private async Task<bool> TargetWorksInTheOrdersMarketAsync(
+            Command command, string employeeId, CancellationToken cancellationToken)
+        {
+            var market = await _orderRepository
+                .GetQueryable()
+                .Where(o => o.Id == command.OrderId)
+                .Select(o => new { CountryId = o.CustomerAddress != null ? o.CustomerAddress.CountryId : null })
+                .FirstOrDefaultAsync(cancellationToken);
+            if (market is null)
+            {
+                return true;
+            }
+
+            var employee = await _employeeRepository.GetByIdAsync(employeeId, cancellationToken);
+            return !string.IsNullOrEmpty(employee?.WorkCountryId)
+                && string.Equals(employee.WorkCountryId, market.CountryId, StringComparison.Ordinal);
+        }
+
+        // A cleaner already on this order is refused by the handler as already assigned, not as busy.
+        private async Task<bool> TargetIsFreeAtTheCleaningTimeAsync(
+            Command command, string employeeId, CancellationToken cancellationToken)
+        {
+            var slot = await _orderRepository
+                .GetQueryable()
+                .Where(o => o.Id == command.OrderId)
+                .Select(o => new
+                {
+                    o.CleaningDateTime,
+                    o.EstimatedTime,
+                    AlreadyOnIt = o.AssignedEmployees.Any(ae => ae.EmployeeId == employeeId),
+                })
+                .FirstOrDefaultAsync(cancellationToken);
+            if (slot is null || slot.AlreadyOnIt)
+            {
+                return true;
+            }
+
+            return !await _orderRepository.HasOverlappingOrderAsync(
+                employeeId, slot.CleaningDateTime, slot.EstimatedTime, cancellationToken);
         }
     }
 

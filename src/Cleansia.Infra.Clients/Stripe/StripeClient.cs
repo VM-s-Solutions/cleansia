@@ -260,6 +260,20 @@ public class StripeClient : IStripeClient
         return new StripePaymentSnapshot(state, cancellable);
     }
 
+    public async Task<string?> FindCheckoutSessionOrderIdAsync(
+        string paymentIntentId,
+        CancellationToken cancellationToken)
+    {
+        var sessionService = new SessionService(stripe);
+        var sessions = await ClassifyAsync(
+            nameof(FindCheckoutSessionOrderIdAsync),
+            () => sessionService.ListAsync(
+                new SessionListOptions { PaymentIntent = paymentIntentId, Limit = 1 },
+                cancellationToken: cancellationToken));
+
+        return sessions.Data.FirstOrDefault()?.Metadata?.GetValueOrDefault("OrderId");
+    }
+
     // requires_capture is an authorized hold — real money the customer can still be charged — so it
     // counts as in-flight, not unpaid. requires_action is a customer mid-3DS who may confirm a second
     // later. Everything the customer has not started (or has abandoned/cancelled) is genuinely unpaid.

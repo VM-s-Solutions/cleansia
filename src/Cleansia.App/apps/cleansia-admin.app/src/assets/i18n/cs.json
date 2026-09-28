@@ -686,6 +686,8 @@
       "payment_status": "Stav platby",
       "total_price": "Celková cena",
       "receipt_number": "Číslo účtenky",
+      "cancellation_fee_rate": "Storno poplatek",
+      "cancellation_fee_owed": "Dosud dlužný poplatek",
       "assigned_employee": "Přiřazený zaměstnanec",
       "assigned_employees": "Přiřazení zaměstnanci",
       "employee_name": "Jméno",
@@ -2475,6 +2477,9 @@
         "title": "Spor",
         "back": "Zpět na spory",
         "summary": "Souhrn",
+        "refund_requested": "Požadovaná vratka",
+        "card_refunded": "Vráceno na kartu",
+        "credit_returned": "Vráceno jako kredit",
         "description": "Popis",
         "resolution_notes": "Poznámky k řešení",
         "messages": "Zprávy",
@@ -2701,6 +2706,10 @@
             "chargeback": {
               "title": "Přišla zpětná platba (chargeback)",
               "body": "Banka vrátila {{amount}} z objednávky {{orderNumber}}. Podrobnosti jsou u reklamace."
+            },
+            "chargeback_unmatched": {
+              "title": "Chargeback bez objednávky",
+              "body": "Banka vrátila {{amount}} z platby kartou, kterou nemá žádná objednávka. Najděte spor {{stripeDisputeId}} ve Stripe a vyřiďte ho tam."
             }
           },
           "payment": {
@@ -3067,7 +3076,8 @@
         "discount_out_of_range": "Sleva musí být mezi 0 a 100.",
         "not_found": "Plán členství nebyl nalezen.",
         "trial_not_permitted": "Výhody Cleansia Plus vyžadují aktivní předplatné, zkušební období proto nelze nastavit. Ponechte 0 dní.",
-        "stripe_price_already_used": "Toto Stripe Price id už používá cena jiného plánu."
+        "stripe_price_already_used": "Toto Stripe Price id už používá cena jiného plánu.",
+        "free_cancellation_window_too_long": "Okno pro bezplatné zrušení nemůže být delší než standardních 24 hodin."
       }
     },
     "order": {
@@ -3104,6 +3114,11 @@
       "total_price": {
         "not_match": "Celková cena neodpovídá",
         "positive": "Celková cena musí být kladná"
+      },
+      "reassign": {
+        "employee_not_approved": "Tento uklízeč zatím není schválen, proto ho nelze přiřadit k zakázce.",
+        "employee_other_market": "Tento uklízeč nepracuje v zemi této objednávky.",
+        "employee_busy": "Tento uklízeč má v tuto dobu jinou zakázku."
       }
     },
     "extra": {

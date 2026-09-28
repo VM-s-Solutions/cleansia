@@ -16,7 +16,9 @@ public class ResolveDispute
     public record ResolutionSnapshot(
         string DisputeId,
         DisputeStatus Status,
-        decimal? RefundAmount);
+        decimal? RefundAmount,
+        decimal? CardRefundedAmount,
+        decimal? CreditReturnedAmount);
 
     public class Validator : AbstractValidator<Command>
     {
@@ -62,8 +64,8 @@ public class ResolveDispute
                 return BusinessResult.Failure(new Error(nameof(request.DisputeId), BusinessErrorMessage.DisputeNotFound));
             }
 
-            var statusBefore = dispute.Status;
-            var refundBefore = dispute.RefundAmount;
+            var before = new ResolutionSnapshot(
+                dispute.Id, dispute.Status, dispute.RefundAmount, dispute.CardRefundedAmount, dispute.CreditReturnedAmount);
 
             // A terminal dispute (Resolved/Closed) is never re-resolved: a second Resolve would overwrite
             // the recorded RefundAmount/notes of the settled dispute. Resolve owns the Resolved state and
@@ -102,14 +104,17 @@ public class ResolveDispute
             dispute.Resolve(
                 resolvedBy: actorId,
                 refundAmount: request.RefundAmount,
-                resolutionNotes: request.ResolutionNotes
+                resolutionNotes: request.ResolutionNotes,
+                cardRefundedAmount: refundResult?.Amount,
+                creditReturnedAmount: refundResult?.CreditReturned
             );
 
             auditContext.RecordChange(
                 "Dispute",
                 dispute.Id,
-                new ResolutionSnapshot(dispute.Id, statusBefore, refundBefore),
-                new ResolutionSnapshot(dispute.Id, dispute.Status, dispute.RefundAmount));
+                before,
+                new ResolutionSnapshot(
+                    dispute.Id, dispute.Status, dispute.RefundAmount, dispute.CardRefundedAmount, dispute.CreditReturnedAmount));
 
             if (refundResult is not null && !string.IsNullOrEmpty(dispute.UserId))
             {

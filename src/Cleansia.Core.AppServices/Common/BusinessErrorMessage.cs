@@ -84,6 +84,10 @@ public static class BusinessErrorMessage
     /// cleaner took the job, and the reassign is the admin act that puts one on it.
     /// </summary>
     public const string OrderStatusConfirmedNeedsCrew = "order.status.confirmed_needs_crew";
+    // The admin placement's refusals: the same gates a cleaner meets at take and at start, voiced to the admin.
+    public const string ReassignEmployeeNotApproved = "order.reassign.employee_not_approved";
+    public const string ReassignEmployeeOtherMarket = "order.reassign.employee_other_market";
+    public const string ReassignEmployeeBusy = "order.reassign.employee_busy";
     // Cash-collection gating (cleaner marks cash collected before an order can be completed).
     public const string OrderCashAlreadyCollected = "order.cash_already_collected";
     public const string OrderCashNotCollected = "order.cash_not_collected";
@@ -179,6 +183,8 @@ public static class BusinessErrorMessage
     public const string MembershipPlanCodeAlreadyExists = "membership.plan.code_already_exists";
     public const string MembershipPlanDiscountOutOfRange = "membership.plan.discount_out_of_range";
     public const string MembershipPlanStripePriceAlreadyUsed = "membership.plan.stripe_price_already_used";
+    /// <summary>A plan's free-notice window longer than the standard one would make a member's cancellation terms worse.</summary>
+    public const string MembershipPlanFreeCancellationWindowTooLong = "membership.plan.free_cancellation_window_too_long";
 
     /// <summary>
     /// A free trial is benefits without payment, and the owner ruling of 2026-09-08 (T-0690) is that no

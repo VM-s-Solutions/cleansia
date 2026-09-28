@@ -19,7 +19,7 @@ public static class LegalDocumentMappers
             ContentHash: text.ContentHash);
     }
 
-    public static LegalDocumentVersionDto MapToVersionDto(this LegalDocument document, DateOnly today)
+    public static LegalDocumentVersionDto MapToVersionDto(this LegalDocument document, bool isInForce)
     {
         return new LegalDocumentVersionDto(
             Id: document.Id,
@@ -29,7 +29,7 @@ public static class LegalDocumentMappers
             CountryIsoCode: document.Country?.IsoCode,
             EffectiveFrom: document.EffectiveFrom,
             Version: document.Version,
-            IsInForce: document.IsInForceOn(today),
+            IsInForce: isInForce,
             Notes: document.Notes,
             Texts: document.Texts
                 .OrderBy(t => t.Language, StringComparer.Ordinal)
@@ -37,7 +37,7 @@ public static class LegalDocumentMappers
                 .ToList());
     }
 
-    public static AdminLegalDocumentDto MapToAdminDto(this LegalDocument document, LegalDocumentText text, DateOnly today)
+    public static AdminLegalDocumentDto MapToAdminDto(this LegalDocument document, LegalDocumentText text, bool isInForce)
     {
         return new AdminLegalDocumentDto(
             Id: document.Id,
@@ -47,7 +47,7 @@ public static class LegalDocumentMappers
             CountryIsoCode: document.Country?.IsoCode,
             EffectiveFrom: document.EffectiveFrom,
             Version: document.Version,
-            IsInForce: document.IsInForceOn(today),
+            IsInForce: isInForce,
             Notes: document.Notes,
             Language: text.Language,
             Title: text.Title,

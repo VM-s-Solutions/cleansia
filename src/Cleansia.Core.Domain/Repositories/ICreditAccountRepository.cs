@@ -119,6 +119,9 @@ public interface ICreditAccountRepository : IRepository<CreditAccount, string>
     /// </summary>
     Task<decimal> GetReturnedTotalForOrderAsync(string orderId, CancellationToken cancellationToken);
 
+    /// <summary>What one return key put back on a balance; zero when the key was never used.</summary>
+    Task<decimal> GetReturnedAmountAsync(string idempotencyKey, CancellationToken cancellationToken);
+
     /// <summary>
     /// The batch form of <see cref="GetReturnedTotalForOrderAsync"/>: Σ
     /// <see cref="CreditTransactionReason.OrderPaymentReturned"/> per order, keyed by order id; an order

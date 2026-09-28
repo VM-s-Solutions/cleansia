@@ -55,6 +55,13 @@ public static class CreditUnwind
             orderId: order.Id);
     }
 
+    /// <summary>What the credit leg of the refund keyed <paramref name="refundKey"/> put back.</summary>
+    public static Task<decimal> GetReturnedForRefundAsync(
+        this ICreditAccountRepository creditAccountRepository,
+        string refundKey,
+        CancellationToken cancellationToken) =>
+        creditAccountRepository.GetReturnedAmountAsync(KeyPrefix + refundKey, cancellationToken);
+
     /// <summary>
     /// Give back ALL of an order's credit, because the order ended without the card ever being
     /// charged — the stale-order sweep, the recurring auto-cancel, an expired Stripe session, or a

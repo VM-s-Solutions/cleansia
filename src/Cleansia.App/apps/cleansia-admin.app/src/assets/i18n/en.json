@@ -686,6 +686,8 @@
       "payment_status": "Payment Status",
       "total_price": "Total Price",
       "receipt_number": "Receipt Number",
+      "cancellation_fee_rate": "Cancellation fee",
+      "cancellation_fee_owed": "Fee still owed",
       "assigned_employee": "Assigned Employee",
       "assigned_employees": "Assigned Employees",
       "employee_name": "Name",
@@ -2475,6 +2477,9 @@
         "title": "Dispute",
         "back": "Back to disputes",
         "summary": "Summary",
+        "refund_requested": "Refund requested",
+        "card_refunded": "Refunded to card",
+        "credit_returned": "Returned as credit",
         "description": "Description",
         "resolution_notes": "Resolution notes",
         "messages": "Messages",
@@ -2701,6 +2706,10 @@
             "chargeback": {
               "title": "A chargeback came in",
               "body": "The bank reversed {{amount}} on order {{orderNumber}}. The dispute holds the details."
+            },
+            "chargeback_unmatched": {
+              "title": "A chargeback matches no order",
+              "body": "The bank reversed {{amount}} on a card payment no order carries. Find Stripe dispute {{stripeDisputeId}} in the Stripe dashboard and answer it there."
             }
           },
           "payment": {
@@ -3067,7 +3076,8 @@
         "discount_out_of_range": "Discount must be between 0 and 100.",
         "not_found": "Membership plan not found.",
         "trial_not_permitted": "Cleansia Plus benefits require an active subscription, so a free trial cannot be set. Leave the trial at 0 days.",
-        "stripe_price_already_used": "That Stripe Price id is already used by another plan price."
+        "stripe_price_already_used": "That Stripe Price id is already used by another plan price.",
+        "free_cancellation_window_too_long": "The free cancellation window cannot be longer than the standard 24 hours."
       }
     },
     "order": {
@@ -3104,6 +3114,11 @@
       "total_price": {
         "not_match": "Total price doesn't match",
         "positive": "Total price must be positive"
+      },
+      "reassign": {
+        "employee_not_approved": "This cleaner is not approved yet, so they cannot be placed on a job.",
+        "employee_other_market": "This cleaner does not work in this order's country.",
+        "employee_busy": "This cleaner already has another job at this time."
       }
     },
     "extra": {

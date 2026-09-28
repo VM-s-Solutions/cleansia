@@ -53,7 +53,7 @@ public sealed class RefundService(
         var existing = await refundRepository.GetByRefundKeyAsync(refundKey, cancellationToken);
         if (existing is { Status: RefundStatus.Succeeded })
         {
-            return ResolveToExisting(existing);
+            return await ResolveToExistingAsync(existing, cancellationToken);
         }
 
         if (!order.HasRefundableChargeSurface)
@@ -129,7 +129,7 @@ public sealed class RefundService(
                     logger.LogInformation(
                         "Refund collapsed on RefundKey unique-violation for order {OrderId} — resolved to existing succeeded refund {RefundId}, no second Stripe refund issued.",
                         order.Id, winner.Id);
-                    return ResolveToExisting(winner);
+                    return await ResolveToExistingAsync(winner, cancellationToken);
                 }
 
                 // The winner is Pending/Failed — re-drive its Stripe call (same key → Stripe replays once).
@@ -193,16 +193,18 @@ public sealed class RefundService(
             RefundKey: refundKey,
             Amount: refund.Amount,
             Status: RefundStatus.Succeeded,
-            ResolvedToExisting: false));
+            ResolvedToExisting: false,
+            CreditReturned: await creditAccountRepository.GetReturnedForRefundAsync(refundKey, cancellationToken)));
     }
 
-    private static BusinessResult<RefundResult> ResolveToExisting(Refund existing) =>
+    private async Task<BusinessResult<RefundResult>> ResolveToExistingAsync(Refund existing, CancellationToken cancellationToken) =>
         BusinessResult.Success(new RefundResult(
             RefundId: existing.Id,
             RefundKey: existing.RefundKey,
             Amount: existing.Amount,
             Status: existing.Status,
-            ResolvedToExisting: true));
+            ResolvedToExisting: true,
+            CreditReturned: await creditAccountRepository.GetReturnedForRefundAsync(existing.RefundKey, cancellationToken)));
 
     /// <summary>
     /// The most that can still go back to the CARD.

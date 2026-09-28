@@ -391,6 +391,64 @@ public class RefundServiceTests
         _refundRepository.Verify(r => r.Add(It.IsAny<Refund>()), Times.Never);
     }
 
+    // A 1000 sale settled with 200 credit, 500 already back on the card: the card has 300 left. A
+    // request for 800 splits 640 card / 160 credit, the card leg clamps to 300, and the credit leg's
+    // 160 is read back from the ledger row its key wrote.
+    [Fact]
+    public async Task IssueRefund_ClampedByTheCardCeiling_ReportsTheCardLegAndTheCreditLegThatMoved()
+    {
+        var order = CreateCardPaidOrder(1000m);
+        order.ApplyCredit(200m, "user-1");
+        ArrangeOrder(order);
+        ArrangeNoExistingRefund();
+        ArrangeConsumed(500m);
+        CaptureAddedRefund(out _);
+        var creditKey = $"credit-return:refund:{OrderId}:dispute:dispute-1";
+        _creditAccountRepository
+            .Setup(r => r.TryReturnAsync("user-1", order.CurrencyId, 160m, creditKey, ActorId,
+                It.IsAny<CancellationToken>(), OrderId, null))
+            .ReturnsAsync(true);
+        _creditAccountRepository
+            .Setup(r => r.GetReturnedAmountAsync(creditKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(160m);
+
+        var result = await CreateService().IssueRefundAsync(
+            new RefundRequest(OrderId, 800m, RefundReason.DisputeResolution, ActorId, DisputeId: "dispute-1"),
+            CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(300m, result.Value!.Amount);
+        Assert.Equal(300m, _stripe.LastAmount);
+        Assert.Equal(160m, result.Value.CreditReturned);
+    }
+
+    [Fact]
+    public async Task IssueRefund_ResolvingToAnExistingRefund_ReportsTheCreditItsKeyReturned()
+    {
+        var order = CreateCardPaidOrder(1000m);
+        ArrangeOrder(order);
+        ArrangeConsumed(0m);
+        var refundKey = $"refund:{OrderId}:dispute:dispute-1";
+        var existing = Refund.Create(
+            OrderId, refundKey, 300m, "CZK", RefundReason.DisputeResolution, RefundSource.AppRefund);
+        existing.MarkSucceeded("re_abc", DateTimeOffset.UtcNow);
+        _refundRepository
+            .Setup(r => r.GetByRefundKeyAsync(refundKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(existing);
+        _creditAccountRepository
+            .Setup(r => r.GetReturnedAmountAsync($"credit-return:{refundKey}", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(160m);
+
+        var result = await CreateService().IssueRefundAsync(
+            new RefundRequest(OrderId, 800m, RefundReason.DisputeResolution, ActorId, DisputeId: "dispute-1"),
+            CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        Assert.True(result.Value!.ResolvedToExisting);
+        Assert.Equal(300m, result.Value.Amount);
+        Assert.Equal(160m, result.Value.CreditReturned);
+    }
+
     [Fact]
     public async Task IssueRefund_RetriedSameKey_AfterPriorStripeFailureLeftRowPending_ReDrivesStripe_NotPhantomResolve()
     {
@@ -714,6 +772,9 @@ public class RefundServiceTests
             => throw new NotSupportedException();
 
         public Task<StripePaymentSnapshot> GetPaymentSnapshotAsync(string? stripeSessionId, string? stripePaymentIntentId, CancellationToken cancellationToken)
+            => throw new NotSupportedException();
+
+        public Task<string?> FindCheckoutSessionOrderIdAsync(string paymentIntentId, CancellationToken cancellationToken)
             => throw new NotSupportedException();
 
         public Task<string> CreateEphemeralKeyAsync(string stripeCustomerId, CancellationToken cancellationToken)

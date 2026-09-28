@@ -167,7 +167,11 @@ public class GetOrderDetails
             // an admin is neither. They get the reveal route, which is audited — see
             // OrderPiiRedaction.WithholdAccessInstructions.
             return BusinessResult.Success(isAdminCaller
-                ? detail.WithholdAccessInstructions()
+                ? (detail with
+                {
+                    CancellationFeeRate = order.CancellationFeeRate,
+                    CancellationFeeOwed = CancellationAssessor.FeeOwed(order),
+                }).WithholdAccessInstructions()
                 : detail);
         }
 

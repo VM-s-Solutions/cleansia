@@ -38,11 +38,13 @@ public sealed record RefundRequest(
 /// amount), which on a resolve-to-existing is the already-recorded refund's amount.
 /// <see cref="ResolvedToExisting"/> is true when the call collapsed onto an existing refund for the
 /// same key (a retry/redelivery or the loser of a concurrent double-issue) — no second Stripe refund
-/// was issued.
+/// was issued. <see cref="CreditReturned"/> is the credit leg the same refund put back on the
+/// customer's balance, read from its ledger row; the card and credit legs together are what moved.
 /// </summary>
 public sealed record RefundResult(
     string RefundId,
     string RefundKey,
     decimal Amount,
     RefundStatus Status,
-    bool ResolvedToExisting);
+    bool ResolvedToExisting,
+    decimal CreditReturned = 0m);

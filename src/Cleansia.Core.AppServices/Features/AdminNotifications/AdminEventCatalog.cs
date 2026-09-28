@@ -26,6 +26,8 @@ public static class AdminEventCatalog
             ["orderNumber", "reason", "disputeId", "orderId"]),
         new(AdminNotificationEventCatalog.DisputeChargeback, PhysicalPolicy.AdminOnly,
             ["orderNumber", "amount", "disputeId", "orderId"]),
+        new(AdminNotificationEventCatalog.DisputeChargebackUnmatched, PhysicalPolicy.AdminOnly,
+            ["amount", "stripeDisputeId"]),
         new(AdminNotificationEventCatalog.PaymentFailed, PhysicalPolicy.SupportOrAbove,
             ["orderNumber", "orderId"]),
         new(AdminNotificationEventCatalog.ErasureFailed, PhysicalPolicy.ManagerOrAbove,

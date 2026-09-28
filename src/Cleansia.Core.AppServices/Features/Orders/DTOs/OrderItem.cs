@@ -181,5 +181,13 @@ public record OrderItem(
     /// <c>AssignedEmployeeDto.Id</c>, which is where the name comes from (already audience-masked
     /// there); this list carries none. Empty for a browsing cleaner.
     /// </summary>
-    IEnumerable<WorkContractAcceptanceDto>? WorkContractAcceptances = null
+    IEnumerable<WorkContractAcceptanceDto>? WorkContractAcceptances = null,
+
+    /// <summary>
+    /// ADMIN-ONLY, null for every other caller and on an order that is not cancelled: the fee rate the
+    /// cancellation applied, and what of that fee the customer still owes — all of it on an order that
+    /// took no payment, which nothing collects yet, and zero where the card charge covered it.
+    /// </summary>
+    decimal? CancellationFeeRate = null,
+    decimal? CancellationFeeOwed = null
 );

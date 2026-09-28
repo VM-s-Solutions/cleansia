@@ -450,6 +450,8 @@ class DisputeWireTest {
             "status",
             "resolutionNotes",
             "refundAmount",
+            "cardRefundedAmount",
+            "creditReturnedAmount",
             "resolvedOn",
             "messages",
             "evidence",

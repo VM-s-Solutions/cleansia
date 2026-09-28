@@ -5702,75 +5702,6 @@
         }
       }
     },
-    "/api/Payment/CreateOrder": {
-      "post": {
-        "tags": [
-          "Payment"
-        ],
-        "operationId": "Payment_CreateOrder",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateOrder_Command"
-              }
-            },
-            "text/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateOrder_Command"
-              }
-            },
-            "application/*+json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateOrder_Command"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "text/plain": {
-                "schema": {
-                  "$ref": "#/components/schemas/CreateOrder_Response"
-                }
-              },
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/CreateOrder_Response"
-                }
-              },
-              "text/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/CreateOrder_Response"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Bad Request",
-            "content": {
-              "text/plain": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              },
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              },
-              "text/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/api/Payment/CreatePaymentIntent": {
       "post": {
         "tags": [
@@ -8259,6 +8190,16 @@
             "format": "double",
             "nullable": true
           },
+          "cardRefundedAmount": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "creditReturnedAmount": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
           "currency": {
             "$ref": "#/components/schemas/CurrencyDetailDto"
           },
@@ -10567,6 +10508,16 @@
             "items": {
               "$ref": "#/components/schemas/WorkContractAcceptanceDto"
             },
+            "nullable": true
+          },
+          "cancellationFeeRate": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "cancellationFeeOwed": {
+            "type": "number",
+            "format": "double",
             "nullable": true
           }
         },

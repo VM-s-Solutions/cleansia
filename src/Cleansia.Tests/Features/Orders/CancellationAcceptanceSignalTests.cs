@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Configuration;
 using Cleansia.Infra.Common.Configuration;
 using System.Globalization;
+using Cleansia.Core.Clients.Abstractions.Stripe;
 using Cleansia.Core.AppServices.Auditing;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Orders;
@@ -129,6 +130,8 @@ public class CancellationAcceptanceSignalTests
             NoPreferredCleanerHold.Resolver,
             Mock.Of<IAdminNotifier>(),
             Mock.Of<IUserNotificationRepository>(),
+            Mock.Of<IStripeClientFactory>(),
+            Mock.Of<ITenantRepository>(),
             NullLogger<HandlePaymentNotification.Handler>.Instance);
 
     private ConfirmRecurringOrder.Handler CreateRecurringConfirmHandler() =>

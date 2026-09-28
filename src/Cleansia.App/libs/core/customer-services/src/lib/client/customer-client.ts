@@ -9382,6 +9382,8 @@ export class DisputeDetails implements IDisputeDetails {
     status!: Code;
     resolutionNotes!: string | undefined;
     refundAmount!: number | undefined;
+    cardRefundedAmount!: number | undefined;
+    creditReturnedAmount!: number | undefined;
     currency!: CurrencyDetailDto;
     resolvedOn!: Date | undefined;
     messages!: DisputeMessageDto[] | undefined;
@@ -9412,6 +9414,8 @@ export class DisputeDetails implements IDisputeDetails {
             this.status = Data["status"] ? Code.fromJS(Data["status"]) : undefined as any;
             this.resolutionNotes = Data["resolutionNotes"];
             this.refundAmount = Data["refundAmount"];
+            this.cardRefundedAmount = Data["cardRefundedAmount"];
+            this.creditReturnedAmount = Data["creditReturnedAmount"];
             this.currency = Data["currency"] ? CurrencyDetailDto.fromJS(Data["currency"]) : undefined as any;
             this.resolvedOn = Data["resolvedOn"] ? new Date(Data["resolvedOn"].toString()) : undefined as any;
             if (Array.isArray(Data["messages"])) {
@@ -9454,6 +9458,8 @@ export class DisputeDetails implements IDisputeDetails {
         data["status"] = this.status ? this.status.toJSON() : undefined as any;
         data["resolutionNotes"] = this.resolutionNotes;
         data["refundAmount"] = this.refundAmount;
+        data["cardRefundedAmount"] = this.cardRefundedAmount;
+        data["creditReturnedAmount"] = this.creditReturnedAmount;
         data["currency"] = this.currency ? this.currency.toJSON() : undefined as any;
         data["resolvedOn"] = this.resolvedOn ? this.resolvedOn.toISOString() : undefined as any;
         if (Array.isArray(this.messages)) {
@@ -9489,6 +9495,8 @@ export interface IDisputeDetails {
     status: Code;
     resolutionNotes: string | undefined;
     refundAmount: number | undefined;
+    cardRefundedAmount: number | undefined;
+    creditReturnedAmount: number | undefined;
     currency: CurrencyDetailDto;
     resolvedOn: Date | undefined;
     messages: DisputeMessageDto[] | undefined;
@@ -13020,6 +13028,8 @@ export class OrderItem implements IOrderItem {
     customerCompany!: string | undefined;
     countryId!: string | undefined;
     workContractAcceptances!: WorkContractAcceptanceDto[] | undefined;
+    cancellationFeeRate!: number | undefined;
+    cancellationFeeOwed!: number | undefined;
 
     constructor(data?: IOrderItem) {
         if (data) {
@@ -13125,6 +13135,8 @@ export class OrderItem implements IOrderItem {
                 for (let item of Data["workContractAcceptances"])
                     this.workContractAcceptances!.push(WorkContractAcceptanceDto.fromJS(item));
             }
+            this.cancellationFeeRate = Data["cancellationFeeRate"];
+            this.cancellationFeeOwed = Data["cancellationFeeOwed"];
         }
     }
 
@@ -13230,6 +13242,8 @@ export class OrderItem implements IOrderItem {
             for (let item of this.workContractAcceptances)
                 data["workContractAcceptances"].push(item ? item.toJSON() : undefined as any);
         }
+        data["cancellationFeeRate"] = this.cancellationFeeRate;
+        data["cancellationFeeOwed"] = this.cancellationFeeOwed;
         return data;
     }
 }
@@ -13294,6 +13308,8 @@ export interface IOrderItem {
     customerCompany: string | undefined;
     countryId: string | undefined;
     workContractAcceptances: WorkContractAcceptanceDto[] | undefined;
+    cancellationFeeRate: number | undefined;
+    cancellationFeeOwed: number | undefined;
 }
 
 export class OrderListItem implements IOrderListItem {

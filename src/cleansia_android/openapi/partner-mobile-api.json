@@ -9961,6 +9961,16 @@
               "$ref": "#/components/schemas/WorkContractAcceptanceDto"
             },
             "nullable": true
+          },
+          "cancellationFeeRate": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "cancellationFeeOwed": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
           }
         },
         "additionalProperties": false

@@ -13,7 +13,14 @@ public record DisputeDetails(
     string Description,
     Code Status,
     string? ResolutionNotes,
+    /// <summary>
+    /// The refund the resolution asked for, then what it moved: the card refund Stripe confirmed and
+    /// the credit returned to the balance. The two can fall short of the request when the card had
+    /// less left to give back. Null where the dispute was resolved without a refund.
+    /// </summary>
     decimal? RefundAmount,
+    decimal? CardRefundedAmount,
+    decimal? CreditReturnedAmount,
     /// <summary>
     /// The currency the agreed refund is in — the ORDER's, since that is what is being refunded.
     /// Null only when the dispute's order could not be loaded.

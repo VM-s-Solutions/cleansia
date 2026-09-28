@@ -391,7 +391,30 @@ public sealed class ReceiptService(
                 VatRate: vatRate));
         }
 
+        foreach (var e in order.SelectedExtras)
+        {
+            items.Add(new FiscalLineItem(
+                Description: e.Extra?.Name ?? e.Slug,
+                Quantity: 1,
+                UnitPrice: e.UnitPrice,
+                VatRate: vatRate));
+        }
+
+        // The receipt's own breakdown below the lines, so the declared lines sum to the declared total.
+        AddBreakdownLine(items, "Express surcharge", order.ExpressSurchargeAmount, vatRate);
+        AddBreakdownLine(items, "Loyalty discount", -(order.TierDiscountAmount ?? 0m), vatRate);
+        AddBreakdownLine(items, "Cleansia Plus discount", -(order.MembershipDiscountAmount ?? 0m), vatRate);
+        AddBreakdownLine(items, "Promo code discount", -(order.PromoDiscountAmount ?? 0m), vatRate);
+
         return items;
+    }
+
+    private static void AddBreakdownLine(List<FiscalLineItem> items, string description, decimal amount, decimal? vatRate)
+    {
+        if (amount != 0m)
+        {
+            items.Add(new FiscalLineItem(description, Quantity: 1, UnitPrice: amount, VatRate: vatRate));
+        }
     }
 
     public async Task<byte[]> DownloadReceiptPdfAsync(OrderReceipt receipt, CancellationToken cancellationToken = default)

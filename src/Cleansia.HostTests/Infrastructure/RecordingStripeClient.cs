@@ -46,6 +46,7 @@ public sealed class RecordingStripeClient : IStripeClient
     public Task<PaymentIntentResult> CreatePaymentIntentAsync(decimal amount, string currency, string stripeCustomerId, string orderId, string displayOrderNumber, CancellationToken cancellationToken) => throw new NotSupportedException();
     public Task CancelPaymentIntentAsync(string paymentIntentId, CancellationToken cancellationToken) => throw new NotSupportedException();
     public Task<StripePaymentSnapshot> GetPaymentSnapshotAsync(string? stripeSessionId, string? stripePaymentIntentId, CancellationToken cancellationToken) => throw new NotSupportedException();
+    public Task<string?> FindCheckoutSessionOrderIdAsync(string paymentIntentId, CancellationToken cancellationToken) => throw new NotSupportedException();
     public Task<SubscriptionResult> SwapSubscriptionPriceAsync(string stripeSubscriptionId, string newStripePriceId, string idempotencyAttemptId, CancellationToken cancellationToken) => throw new NotSupportedException();
     public Task CancelSubscriptionAtPeriodEndAsync(string stripeSubscriptionId, CancellationToken cancellationToken) => throw new NotSupportedException();
 }

@@ -157,6 +157,10 @@ public class Order : TenantAuditable
     public bool HasRefundableChargeSurface =>
         !string.IsNullOrEmpty(StripeSessionId) || !string.IsNullOrEmpty(StripePaymentIntentId);
 
+    /// <summary>No money was ever taken: a cash order not yet collected, or a card never charged.</summary>
+    [NotMapped]
+    public bool TookNoPayment => PaymentStatus is PaymentStatus.Pending or PaymentStatus.Failed;
+
     public string? Notes { get; private set; }
 
     public string? SpecialInstructions { get; private set; }
@@ -275,7 +279,8 @@ public class Order : TenantAuditable
 
     /// <summary>
     /// Amount actually refunded to the customer on cancellation.
-    /// Zero if the full fee applied (100% no-refund charge).
+    /// Zero if the full fee applied (100% no-refund charge), and zero on an order that
+    /// <see cref="TookNoPayment"/>: nothing was taken, so nothing goes back.
     /// </summary>
     public decimal? CancellationRefundAmount { get; private set; }
 
@@ -902,7 +907,7 @@ public class Order : TenantAuditable
         CancelledAt = cancelledAtUtc;
         CancelledBy = cancelledBy;
         CancellationFeeRate = feeRate;
-        CancellationRefundAmount = refundAmount;
+        CancellationRefundAmount = TookNoPayment ? 0m : refundAmount;
         CancellationReason = reason;
         return this;
     }
@@ -984,7 +989,16 @@ public class Order : TenantAuditable
         Notes = null;
         SpecialInstructions = null;
         AccessInstructions = null;
+        CustomerFloor = null;
+        CustomerApartment = null;
+        AccessMode = null;
         CompletionNotes = null;
+        // A platform reason is a code, not personal data, and the wind-down's refund re-drive selects its
+        // cancelled orders by it; the customer's or an admin's free text goes.
+        if (CancelledBy != Enums.CancelledBy.System)
+        {
+            CancellationReason = null;
+        }
         foreach (var review in Reviews)
         {
             review.Anonymize();

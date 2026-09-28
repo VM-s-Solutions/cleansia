@@ -686,6 +686,8 @@
       "payment_status": "Статус оплати",
       "total_price": "Загальна вартість",
       "receipt_number": "Номер квитанції",
+      "cancellation_fee_rate": "Збір за скасування",
+      "cancellation_fee_owed": "Ще не сплачений збір",
       "assigned_employee": "Призначений працівник",
       "assigned_employees": "Призначені працівники",
       "employee_name": "Ім'я",
@@ -2475,6 +2477,9 @@
         "title": "Суперечка",
         "back": "Назад до суперечок",
         "summary": "Зведення",
+        "refund_requested": "Запитане повернення",
+        "card_refunded": "Повернено на картку",
+        "credit_returned": "Повернено бонусами",
         "description": "Опис",
         "resolution_notes": "Примітки до вирішення",
         "messages": "Повідомлення",
@@ -2701,6 +2706,10 @@
             "chargeback": {
               "title": "Надійшов чарджбек",
               "body": "Банк повернув {{amount}} за замовленням {{orderNumber}}. Подробиці — у спорі."
+            },
+            "chargeback_unmatched": {
+              "title": "Чарджбек без замовлення",
+              "body": "Банк повернув {{amount}} за платежем карткою, якого немає в жодному замовленні. Знайдіть спір {{stripeDisputeId}} у Stripe і дайте відповідь там."
             }
           },
           "payment": {
@@ -3067,7 +3076,8 @@
         "discount_out_of_range": "Знижка має бути від 0 до 100.",
         "not_found": "План членства не знайдено.",
         "trial_not_permitted": "Переваги Cleansia Plus потребують активної підписки, тому пробний період неможливо встановити. Залиште 0 днів.",
-        "stripe_price_already_used": "Цей Stripe Price id уже використовується ціною іншого плану."
+        "stripe_price_already_used": "Цей Stripe Price id уже використовується ціною іншого плану.",
+        "free_cancellation_window_too_long": "Вікно безкоштовного скасування не може бути довшим за стандартні 24 години."
       }
     },
     "order": {
@@ -3104,6 +3114,11 @@
       "total_price": {
         "not_match": "Загальна вартість не збігається",
         "positive": "Загальна вартість повинна бути додатною"
+      },
+      "reassign": {
+        "employee_not_approved": "Цього прибиральника ще не схвалено, тому його не можна призначити на замовлення.",
+        "employee_other_market": "Цей прибиральник не працює в країні цього замовлення.",
+        "employee_busy": "У цього прибиральника на цей час уже є інше замовлення."
       }
     },
     "extra": {

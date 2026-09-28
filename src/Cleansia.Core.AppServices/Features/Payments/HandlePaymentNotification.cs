@@ -2,6 +2,7 @@
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Services.Interfaces;
+using Cleansia.Core.Clients.Abstractions.Stripe;
 using Cleansia.Core.Queue.Abstractions;
 using Cleansia.Core.Queue.Abstractions.Messages;
 using Cleansia.Core.Domain.Enums;
@@ -128,6 +129,8 @@ public class HandlePaymentNotification
         IPreferredCleanerHoldResolver preferredCleanerHoldResolver,
         IAdminNotifier adminNotifier,
         IUserNotificationRepository userNotificationRepository,
+        IStripeClientFactory stripeClientFactory,
+        ITenantRepository tenantRepository,
         ILogger<Handler> logger) : ICommandHandler<Command>
     {
         public async Task<BusinessResult> Handle(Command command, CancellationToken cancellationToken)
@@ -182,7 +185,8 @@ public class HandlePaymentNotification
             }
 
             // Bank chargeback (ADR-0006 D4). No OrderId metadata — the event
-            // resolves to the Order by payment_intent. Branched here, after the
+            // resolves to the Order by its stored payment_intent, else through the
+            // Checkout Session that charged it. Branched here, after the
             // idempotency gate (S7) and before the OrderId-metadata path below
             // which cannot resolve these.
             if (Constants.StripeEventType.IsChargebackEvent(stripeEvent.Type))
@@ -216,6 +220,14 @@ public class HandlePaymentNotification
             if (!string.IsNullOrEmpty(order.TenantId))
             {
                 tenantProvider.SetTenantOverride(order.TenantId);
+            }
+
+            // A chargeback names only the PaymentIntent, and a web order is paid through a Checkout
+            // Session, so the intent that moved the money is recorded here or the bank's claim finds no order.
+            if (stripeEvent.Type == Constants.StripeEventType.CompletedSession
+                && stripeEvent.Data.Object is Session { PaymentIntentId: { Length: > 0 } sessionPaymentIntentId })
+            {
+                order.AssignStripePaymentIntentId(sessionPaymentIntentId);
             }
 
             // Dispatch by event type. Checkout Session events come from web's
@@ -438,9 +450,12 @@ public class HandlePaymentNotification
 
         /// <summary>
         /// Inbound bank chargeback (ADR-0006 D4). Resolves the disputed charge to
-        /// our Order by payment_intent, then links a Dispute (created if absent) to
-        /// the Stripe dispute id and reflects Stripe's status. A charge that maps to
-        /// no local Order is a no-op success (S6 — never a retry-inducing failure).
+        /// our Order by its stored payment_intent, else through the Checkout Session
+        /// that charged it, then links a Dispute (created if absent) to the Stripe
+        /// dispute id and reflects Stripe's status. A Stripe outage during the
+        /// session lookup throws, so the processed-event stamp rolls back and Stripe
+        /// retries. A charge.dispute.created that still matches no Order alerts the
+        /// administrators of every company.
         /// </summary>
         private async Task<BusinessResult> HandleChargeback(Event stripeEvent, CancellationToken cancellationToken)
         {
@@ -460,10 +475,12 @@ public class HandlePaymentNotification
                 return await ReflectChargebackStatus(stripeDispute!, stripeDisputeId, stripeEvent, cancellationToken);
             }
 
-            var order = await orderRepository.GetByStripePaymentIntentIdIgnoringTenantAsync(paymentIntentId, cancellationToken);
+            var order = await orderRepository.GetByStripePaymentIntentIdIgnoringTenantAsync(paymentIntentId, cancellationToken)
+                ?? await FindByCheckoutSessionAsync(paymentIntentId, cancellationToken);
             if (order is null)
             {
-                logger.LogWarning("Chargeback {EventType} resolved to no local order; ignoring", stripeEvent.Type);
+                logger.LogWarning("Chargeback {EventType} resolved to no local order; telling every company", stripeEvent.Type);
+                await TellEveryCompanyOfUnmatchedChargeback(stripeDispute!, cancellationToken);
                 return BusinessResult.Success();
             }
 
@@ -509,6 +526,42 @@ public class HandlePaymentNotification
         }
 
         private const string ChargebackDescription = "Bank chargeback raised against this order's payment.";
+
+        // A web order paid before its intent was recorded carries only its Checkout Session.
+        private async Task<Order?> FindByCheckoutSessionAsync(string paymentIntentId, CancellationToken cancellationToken)
+        {
+            var orderId = await stripeClientFactory.CreateClient()
+                .FindCheckoutSessionOrderIdAsync(paymentIntentId, cancellationToken);
+            if (string.IsNullOrEmpty(orderId))
+            {
+                return null;
+            }
+
+            var order = await orderRepository.GetByIdIgnoringTenantAsync(orderId, cancellationToken);
+            order?.AssignStripePaymentIntentId(paymentIntentId);
+            return order;
+        }
+
+        // The Stripe account is shared by every operating company, so a claim no order carries could be
+        // any company's money, and each is told.
+        private async Task TellEveryCompanyOfUnmatchedChargeback(Stripe.Dispute stripeDispute, CancellationToken cancellationToken)
+        {
+            var amount = MoneyText.Format(stripeDispute.Amount / 100m, stripeDispute.Currency?.ToUpperInvariant() ?? string.Empty);
+            foreach (var tenantId in await tenantRepository.GetAllIdsAsync(cancellationToken))
+            {
+                await adminNotifier.NotifyAsync(
+                    new AdminEvent(
+                        AdminNotificationEventCatalog.DisputeChargebackUnmatched,
+                        tenantId,
+                        Subject: $"{stripeDispute.Id}:{tenantId}",
+                        Args: new Dictionary<string, string>
+                        {
+                            ["amount"] = amount,
+                            ["stripeDisputeId"] = stripeDispute.Id,
+                        }),
+                    cancellationToken);
+            }
+        }
 
         /// <summary>
         /// The dispute named is the one the money is now attached to — the customer's open one when

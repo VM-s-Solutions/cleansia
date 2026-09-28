@@ -114,6 +114,34 @@ public class ResolveDisputeRefundSeamTests
         Assert.Equal(250m, dispute.RefundAmount);
     }
 
+    // The request asks for 800 of a 1000 sale settled with 200 credit, after 500 already went back to
+    // the card: the card has 300 left, so 300 moves to it, and the credit leg returns 160.
+    [Fact]
+    public async Task Resolve_WithARefundClampedByTheCardCeiling_RecordsTheRequestAndWhatMoved()
+    {
+        var dispute = ArrangeDispute();
+        _refundService
+            .Setup(s => s.IssueRefundAsync(It.IsAny<RefundRequest>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(BusinessResult.Success(new RefundResult(
+                "refund-1", $"refund:{OrderId}:dispute:{DisputeId}", 300m, RefundStatus.Succeeded, false,
+                CreditReturned: 160m)));
+
+        var result = await CreateHandler().Handle(
+            new ResolveDispute.Command(DisputeId, 800m, "approved"), CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(800m, dispute.RefundAmount);
+        Assert.Equal(300m, dispute.CardRefundedAmount);
+        Assert.Equal(160m, dispute.CreditReturnedAmount);
+
+        var snapshot = _auditContext.DrainSnapshot();
+        Assert.NotNull(snapshot);
+        Assert.Contains("\"refundAmount\":800", snapshot!.AfterJson);
+        Assert.Contains("\"cardRefundedAmount\":300", snapshot.AfterJson);
+        Assert.Contains("\"creditReturnedAmount\":160", snapshot.AfterJson);
+        Assert.Contains("\"cardRefundedAmount\":null", snapshot.BeforeJson);
+    }
+
     [Fact]
     public async Task Resolve_WithSuccessfulRefund_RecordsRefundNotificationViaTheSeam()
     {

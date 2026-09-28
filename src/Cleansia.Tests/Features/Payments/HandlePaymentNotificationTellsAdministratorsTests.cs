@@ -1,4 +1,5 @@
 using System.Globalization;
+using Cleansia.Core.Clients.Abstractions.Stripe;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.AdminNotifications;
 using Cleansia.Core.AppServices.Features.Payments;
@@ -78,6 +79,8 @@ public sealed class HandlePaymentNotificationTellsAdministratorsTests
         NoPreferredCleanerHold.Resolver,
         _adminNotifier.Object,
         _userNotifications.Object,
+        Mock.Of<IStripeClientFactory>(),
+        Mock.Of<ITenantRepository>(),
         NullLogger<HandlePaymentNotification.Handler>.Instance);
 
     private Order ArrangeOrder(PaymentStatus paymentStatus = PaymentStatus.Pending)

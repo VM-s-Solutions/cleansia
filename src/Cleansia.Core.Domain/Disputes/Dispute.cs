@@ -43,6 +43,15 @@ public class Dispute : TenantAuditable
 
     public decimal? RefundAmount { get; private set; }
 
+    /// <summary>
+    /// What the resolution actually moved, beside the <see cref="RefundAmount"/> it asked for: the card
+    /// refund Stripe confirmed, clamped to what the card can still give back, and the credit returned
+    /// to the customer's balance. Null on a dispute resolved without a refund.
+    /// </summary>
+    public decimal? CardRefundedAmount { get; private set; }
+
+    public decimal? CreditReturnedAmount { get; private set; }
+
     public string? ResolvedBy { get; private set; }
 
     public DateTimeOffset? ResolvedOn { get; private set; }
@@ -175,12 +184,19 @@ public class Dispute : TenantAuditable
         _evidence.Add(evidence);
     }
 
-    public void Resolve(string resolvedBy, decimal? refundAmount, string resolutionNotes)
+    public void Resolve(
+        string resolvedBy,
+        decimal? refundAmount,
+        string resolutionNotes,
+        decimal? cardRefundedAmount = null,
+        decimal? creditReturnedAmount = null)
     {
         Status = DisputeStatus.Resolved;
         ResolvedBy = resolvedBy;
         ResolvedOn = DateTimeOffset.UtcNow;
         RefundAmount = refundAmount;
+        CardRefundedAmount = cardRefundedAmount;
+        CreditReturnedAmount = creditReturnedAmount;
         ResolutionNotes = resolutionNotes;
         Updated(resolvedBy, DateTimeOffset.UtcNow);
     }

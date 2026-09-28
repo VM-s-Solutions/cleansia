@@ -21,7 +21,7 @@ public sealed class AdminNotificationEventCatalogTests
     {
         "orderId", "orderNumber", "amount", "paymentType", "countryId",
         "cause", "statusAtLoss", "cleaningDateTime",
-        "disputeId", "reason",
+        "disputeId", "reason", "stripeDisputeId",
         "requestId", "day",
         "windDownFrom", "cancelled", "refunded", "refundFailures", "periodsClosed",
         "archivedOn",
@@ -79,6 +79,7 @@ public sealed class AdminNotificationEventCatalogTests
     [InlineData(AdminNotificationEventCatalog.OrderCrewLost, PhysicalPolicy.SupportOrAbove)]
     [InlineData(AdminNotificationEventCatalog.DisputeFiled, PhysicalPolicy.SupportOrAbove)]
     [InlineData(AdminNotificationEventCatalog.DisputeChargeback, PhysicalPolicy.AdminOnly)]
+    [InlineData(AdminNotificationEventCatalog.DisputeChargebackUnmatched, PhysicalPolicy.AdminOnly)]
     [InlineData(AdminNotificationEventCatalog.PaymentFailed, PhysicalPolicy.SupportOrAbove)]
     [InlineData(AdminNotificationEventCatalog.ErasureFailed, PhysicalPolicy.ManagerOrAbove)]
     [InlineData(AdminNotificationEventCatalog.CompanyWindDownRequested, PhysicalPolicy.AdministratorOnly)]

@@ -686,6 +686,8 @@
       "payment_status": "Stav platby",
       "total_price": "Celková cena",
       "receipt_number": "Číslo účtenky",
+      "cancellation_fee_rate": "Storno poplatok",
+      "cancellation_fee_owed": "Doteraz dlžný poplatok",
       "assigned_employee": "Priradený zamestnanec",
       "assigned_employees": "Priradení zamestnanci",
       "employee_name": "Meno",
@@ -2475,6 +2477,9 @@
         "title": "Reklamácia",
         "back": "Späť na reklamácie",
         "summary": "Súhrn",
+        "refund_requested": "Požadované vrátenie",
+        "card_refunded": "Vrátené na kartu",
+        "credit_returned": "Vrátené ako kredit",
         "description": "Popis",
         "resolution_notes": "Poznámky k riešeniu",
         "messages": "Správy",
@@ -2701,6 +2706,10 @@
             "chargeback": {
               "title": "Prišla spätná platba (chargeback)",
               "body": "Banka vrátila {{amount}} z objednávky {{orderNumber}}. Podrobnosti sú pri reklamácii."
+            },
+            "chargeback_unmatched": {
+              "title": "Chargeback bez objednávky",
+              "body": "Banka vrátila {{amount}} z platby kartou, ktorú nemá žiadna objednávka. Nájdite spor {{stripeDisputeId}} v službe Stripe a vybavte ho tam."
             }
           },
           "payment": {
@@ -3067,7 +3076,8 @@
         "discount_out_of_range": "Zľava musí byť medzi 0 a 100.",
         "not_found": "Plán členstva sa nenašiel.",
         "trial_not_permitted": "Výhody Cleansia Plus vyžadujú aktívne predplatné, skúšobné obdobie preto nemožno nastaviť. Ponechajte 0 dní.",
-        "stripe_price_already_used": "Toto Stripe Price id už používa cena iného plánu."
+        "stripe_price_already_used": "Toto Stripe Price id už používa cena iného plánu.",
+        "free_cancellation_window_too_long": "Okno na bezplatné zrušenie nemôže byť dlhšie ako štandardných 24 hodín."
       }
     },
     "order": {
@@ -3104,6 +3114,11 @@
       "total_price": {
         "not_match": "Celková cena sa nezhoduje",
         "positive": "Celková cena musí byť kladná"
+      },
+      "reassign": {
+        "employee_not_approved": "Tento upratovač zatiaľ nie je schválený, preto ho nemožno priradiť k zákazke.",
+        "employee_other_market": "Tento upratovač nepracuje v krajine tejto objednávky.",
+        "employee_busy": "Tento upratovač má v tomto čase inú zákazku."
       }
     },
     "extra": {

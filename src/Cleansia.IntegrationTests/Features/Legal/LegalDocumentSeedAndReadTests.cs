@@ -206,4 +206,54 @@ public sealed class LegalDocumentSeedAndReadTests(PostgresContainerFixture fixtu
             },
             transactional: false);
     }
+
+    [Fact]
+    public async Task The_Admin_Catalogue_Marks_Only_The_Newest_Past_Version_Of_A_Group_In_Force()
+    {
+        var today = DateOnly.FromDateTime(DateTime.UtcNow);
+        var older = MarketTerms(today.AddYears(-2));
+        var newer = MarketTerms(today.AddYears(-1));
+        var future = MarketTerms(today.AddDays(30));
+
+        await TestMethod(
+            arrange: async context =>
+            {
+                await SeedMarketsAndTextsAsync(context);
+                context.LegalDocuments.AddRange(older, newer, future);
+                await context.CommitAsync(CancellationToken.None);
+            },
+            act: async provider =>
+            {
+                var mediator = provider.GetRequiredService<IMediator>();
+                var versions = await mediator.Send(new AdminGetLegalVersions.Query(
+                    LegalDocumentAudience.Customer, LegalDocumentType.TermsOfService, Czechia));
+                var single = new Dictionary<string, bool>();
+                foreach (var document in new[] { older, newer, future })
+                {
+                    single[document.Id] = (await mediator.Send(new AdminGetLegalDocument.Query(document.Id, "en"))).Value.IsInForce;
+                }
+                return (versions.Value, single);
+            },
+            assert: (_, tuple) =>
+            {
+                var (versions, single) = tuple;
+                var inForce = versions.ToDictionary(v => v.Id, v => v.IsInForce);
+
+                Assert.Equal(3, inForce.Count);
+                Assert.True(inForce[newer.Id]);
+                Assert.False(inForce[older.Id]);
+                Assert.False(inForce[future.Id]);
+                Assert.Equal(inForce, single);
+                return Task.CompletedTask;
+            },
+            transactional: false);
+    }
+
+    private static LegalDocument MarketTerms(DateOnly effectiveFrom)
+    {
+        var document = LegalDocument.Create(
+            LegalDocumentAudience.Customer, LegalDocumentType.TermsOfService, Czechia, effectiveFrom);
+        document.AddText("en", "Terms of Service", "Terms effective " + LegalDocument.VersionFor(effectiveFrom));
+        return document;
+    }
 }

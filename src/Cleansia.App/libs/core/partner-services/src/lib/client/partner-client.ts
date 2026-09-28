@@ -10456,6 +10456,8 @@ export class OrderItem implements IOrderItem {
     customerCompany!: string | undefined;
     countryId!: string | undefined;
     workContractAcceptances!: WorkContractAcceptanceDto[] | undefined;
+    cancellationFeeRate!: number | undefined;
+    cancellationFeeOwed!: number | undefined;
 
     constructor(data?: IOrderItem) {
         if (data) {
@@ -10561,6 +10563,8 @@ export class OrderItem implements IOrderItem {
                 for (let item of Data["workContractAcceptances"])
                     this.workContractAcceptances!.push(WorkContractAcceptanceDto.fromJS(item));
             }
+            this.cancellationFeeRate = Data["cancellationFeeRate"];
+            this.cancellationFeeOwed = Data["cancellationFeeOwed"];
         }
     }
 
@@ -10666,6 +10670,8 @@ export class OrderItem implements IOrderItem {
             for (let item of this.workContractAcceptances)
                 data["workContractAcceptances"].push(item ? item.toJSON() : undefined as any);
         }
+        data["cancellationFeeRate"] = this.cancellationFeeRate;
+        data["cancellationFeeOwed"] = this.cancellationFeeOwed;
         return data;
     }
 }
@@ -10730,6 +10736,8 @@ export interface IOrderItem {
     customerCompany: string | undefined;
     countryId: string | undefined;
     workContractAcceptances: WorkContractAcceptanceDto[] | undefined;
+    cancellationFeeRate: number | undefined;
+    cancellationFeeOwed: number | undefined;
 }
 
 export class OrderListItem implements IOrderListItem {

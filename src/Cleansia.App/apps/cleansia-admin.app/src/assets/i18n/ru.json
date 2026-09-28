@@ -686,6 +686,8 @@
       "payment_status": "Статус оплаты",
       "total_price": "Общая стоимость",
       "receipt_number": "Номер квитанции",
+      "cancellation_fee_rate": "Сбор за отмену",
+      "cancellation_fee_owed": "Ещё не оплаченный сбор",
       "assigned_employee": "Назначенный сотрудник",
       "assigned_employees": "Назначенные сотрудники",
       "employee_name": "Имя",
@@ -2475,6 +2477,9 @@
         "title": "Спор",
         "back": "Назад к спорам",
         "summary": "Сводка",
+        "refund_requested": "Запрошенный возврат",
+        "card_refunded": "Возвращено на карту",
+        "credit_returned": "Возвращено бонусами",
         "description": "Описание",
         "resolution_notes": "Примечания к решению",
         "messages": "Сообщения",
@@ -2701,6 +2706,10 @@
             "chargeback": {
               "title": "Поступил чарджбэк",
               "body": "Банк вернул {{amount}} по заказу {{orderNumber}}. Подробности — в споре."
+            },
+            "chargeback_unmatched": {
+              "title": "Чарджбэк без заказа",
+              "body": "Банк вернул {{amount}} по платежу картой, которого нет ни в одном заказе. Найдите спор {{stripeDisputeId}} в Stripe и ответьте на него там."
             }
           },
           "payment": {
@@ -3067,7 +3076,8 @@
         "discount_out_of_range": "Скидка должна быть от 0 до 100.",
         "not_found": "План членства не найден.",
         "trial_not_permitted": "Преимущества Cleansia Plus требуют активной подписки, поэтому пробный период установить нельзя. Оставьте 0 дней.",
-        "stripe_price_already_used": "Этот Stripe Price id уже используется ценой другого плана."
+        "stripe_price_already_used": "Этот Stripe Price id уже используется ценой другого плана.",
+        "free_cancellation_window_too_long": "Окно бесплатной отмены не может быть длиннее стандартных 24 часов."
       }
     },
     "order": {
@@ -3104,6 +3114,11 @@
       "total_price": {
         "not_match": "Общая стоимость не совпадает",
         "positive": "Общая стоимость должна быть положительной"
+      },
+      "reassign": {
+        "employee_not_approved": "Этот уборщик ещё не одобрен, поэтому его нельзя назначить на заказ.",
+        "employee_other_market": "Этот уборщик не работает в стране этого заказа.",
+        "employee_busy": "У этого уборщика на это время уже есть другой заказ."
       }
     },
     "extra": {

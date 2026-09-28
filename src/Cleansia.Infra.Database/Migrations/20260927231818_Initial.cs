@@ -2213,6 +2213,8 @@ namespace Cleansia.Infra.Database.Migrations
                     Status = table.Column<int>(type: "integer", nullable: false),
                     ResolutionNotes = table.Column<string>(type: "character varying(2000)", maxLength: 2000, nullable: true),
                     RefundAmount = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: true),
+                    CardRefundedAmount = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: true),
+                    CreditReturnedAmount = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: true),
                     ResolvedBy = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: true),
                     ResolvedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
                     StripeDisputeId = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true),

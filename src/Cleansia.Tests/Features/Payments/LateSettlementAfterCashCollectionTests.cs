@@ -1,4 +1,5 @@
 using System.Globalization;
+using Cleansia.Core.Clients.Abstractions.Stripe;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Payments;
 using Cleansia.Core.AppServices.Services.Interfaces;
@@ -64,6 +65,8 @@ public class LateSettlementAfterCashCollectionTests
         NoPreferredCleanerHold.Resolver,
         Mock.Of<IAdminNotifier>(),
         Mock.Of<IUserNotificationRepository>(),
+        Mock.Of<IStripeClientFactory>(),
+        Mock.Of<ITenantRepository>(),
         NullLogger<HandlePaymentNotification.Handler>.Instance);
 
     private Order ArrangeOrder(bool collectedInCash)

@@ -171,6 +171,13 @@ public class CreditAccountRepository(CleansiaDbContext context)
             .SumAsync(t => t.Amount, cancellationToken);
     }
 
+    public Task<decimal> GetReturnedAmountAsync(string idempotencyKey, CancellationToken cancellationToken) =>
+        context.CreditTransactions
+            .AsNoTracking()
+            .Where(t => t.IdempotencyKey == idempotencyKey
+                && t.Reason == CreditTransactionReason.OrderPaymentReturned)
+            .SumAsync(t => t.Amount, cancellationToken);
+
     public async Task<IReadOnlyDictionary<string, decimal>> GetReturnedTotalsByOrderAsync(
         IReadOnlyCollection<string> orderIds, CancellationToken cancellationToken)
     {

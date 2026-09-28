@@ -47,6 +47,8 @@ public static class DisputeMappers
             Status: dispute.Status.MapToCode(),
             ResolutionNotes: dispute.ResolutionNotes,
             RefundAmount: dispute.RefundAmount,
+            CardRefundedAmount: dispute.CardRefundedAmount,
+            CreditReturnedAmount: dispute.CreditReturnedAmount,
             Currency: dispute.Order?.Currency?.MapToDetailDto(),
             ResolvedOn: dispute.ResolvedOn,
             Messages: dispute.Messages.Select(m => m.MapToDto(dispute)).ToList(),

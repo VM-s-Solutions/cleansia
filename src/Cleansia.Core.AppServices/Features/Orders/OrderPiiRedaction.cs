@@ -64,6 +64,8 @@ public static class OrderPiiRedaction
             PreferredOffer = null,
             CustomerCompany = null,
             WorkContractAcceptances = [],
+            CancellationFeeRate = null,
+            CancellationFeeOwed = null,
         };
 
     /// <summary>

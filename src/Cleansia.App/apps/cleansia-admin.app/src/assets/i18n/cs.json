@@ -649,6 +649,18 @@
           "confirm": "Vrátit celou platbu bez změny stavu objednávky.",
           "submit": "Vrátit platbu",
           "success": "Platba byla úspěšně vrácena."
+        },
+        "no_show": {
+          "action": "Zrušit jako nedostavení uklízeče",
+          "context": "Použijte, když přidělený uklízeč nedorazil – poté, co to zákazník nahlásil nebo přišlo upozornění „Uklízeč nezačal objednávku“. Nejprve to ověřte u uklízeče i zákazníka.",
+          "confirm": "Objednávka se zruší bez poplatku, platba kartou se vrátí v plné výši, přihlášený zákazník dostane omluvný kredit za nedostavení a otevřený spor „služba nebyla poskytnuta“ se uzavře. Akci nelze vrátit zpět.",
+          "submit": "Potvrdit nedostavení",
+          "success": "Objednávka byla zrušena jako nedostavení uklízeče. {{refund}} {{credit}}",
+          "refunded": "Na kartu bylo vráceno {{amount}}.",
+          "refund_pending": "Vrácení platby na kartu zatím neproběhlo; opakuje se automaticky.",
+          "nothing_refunded": "Nebyla žádná platba kartou k vrácení.",
+          "credit_granted": "Zákazník dostal omluvný kredit {{amount}}.",
+          "no_credit": "Omluvný kredit nebyl vydán: jde o objednávku hosta, nebo pro tuto měnu není nastaven."
         }
       },
       "messages": {

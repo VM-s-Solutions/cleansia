@@ -7,7 +7,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { NG_VALUE_ACCESSOR } from '@angular/forms';
 import { By } from '@angular/platform-browser';
 import { Subject } from 'rxjs';
-import { OrderItem, OrderStatus } from '@cleansia/admin-services';
+import { CurrencyDetailDto, OrderItem, OrderStatus } from '@cleansia/admin-services';
 import {
   CleansiaButtonComponent,
   CleansiaSectionComponent,
@@ -125,6 +125,7 @@ class FacadeStub {
   overrideStatus = jest.fn();
   reassignOrder = jest.fn();
   refundOrder = jest.fn();
+  cancelAsNoShow = jest.fn();
 }
 
 function makeOrder(partial: Partial<OrderItem>): OrderItem {
@@ -188,7 +189,7 @@ describe('AdminOrderOpsComponent', () => {
     expect(meta.onPush).toBe(true);
   });
 
-  it('renders the four action buttons', () => {
+  it('renders the five action buttons', () => {
     setOrder(makeOrder({}));
     const buttons = fixture.debugElement
       .queryAll(By.directive(ButtonStub))
@@ -199,6 +200,7 @@ describe('AdminOrderOpsComponent', () => {
         'pages.order_management.ops.override_status.action',
         'pages.order_management.ops.reassign.action',
         'pages.order_management.ops.refund.action',
+        'pages.order_management.ops.no_show.action',
       ])
     );
   });
@@ -212,6 +214,20 @@ describe('AdminOrderOpsComponent', () => {
     component.submitCancel();
     expect(facade.cancelOrder).toHaveBeenCalledWith(
       'order-1',
+      expect.any(Function)
+    );
+  });
+
+  it('opens the no-show panel and delegates submit with the order id and its currency', () => {
+    setOrder(makeOrder({ currency: CurrencyDetailDto.fromJS({ code: 'CZK' }) }));
+    component.togglePanel('noShow');
+    expect(facade.openPanel).toHaveBeenCalledWith('noShow');
+    fixture.detectChanges();
+
+    component.submitNoShow();
+    expect(facade.cancelAsNoShow).toHaveBeenCalledWith(
+      'order-1',
+      'CZK',
       expect.any(Function)
     );
   });

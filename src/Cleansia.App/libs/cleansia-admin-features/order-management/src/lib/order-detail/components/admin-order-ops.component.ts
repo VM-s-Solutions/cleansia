@@ -113,4 +113,10 @@ export class AdminOrderOpsComponent {
     if (!orderId) return;
     this.facade.refundOrder(orderId, () => this.changed.emit());
   }
+
+  submitNoShow(): void {
+    const order = this.order();
+    if (!order.id) return;
+    this.facade.cancelAsNoShow(order.id, order.currency?.code, () => this.changed.emit());
+  }
 }

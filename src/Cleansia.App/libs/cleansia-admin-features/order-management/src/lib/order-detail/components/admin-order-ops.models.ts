@@ -4,7 +4,10 @@ export type AdminOrderOpsPanel =
   | 'cancel'
   | 'overrideStatus'
   | 'reassign'
-  | 'refund';
+  | 'refund'
+  | 'noShow';
+
+export const NO_SHOW_OUTCOME_TOAST_MS = 10_000;
 
 export interface OrderStatusOption {
   value: OrderStatus;

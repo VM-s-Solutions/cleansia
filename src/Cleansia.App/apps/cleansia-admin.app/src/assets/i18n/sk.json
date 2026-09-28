@@ -649,6 +649,18 @@
           "confirm": "Vrátiť celú platbu bez zmeny stavu objednávky.",
           "submit": "Vrátiť platbu",
           "success": "Platba bola úspešne vrátená."
+        },
+        "no_show": {
+          "action": "Zrušiť ako nedostavenie sa upratovača",
+          "context": "Použite, keď pridelený upratovač neprišiel – potom, čo to zákazník nahlásil alebo prišlo upozornenie „Upratovač nezačal objednávku“. Najprv to overte u upratovača aj zákazníka.",
+          "confirm": "Objednávka sa zruší bez poplatku, platba kartou sa vráti v plnej výške, prihlásený zákazník dostane ospravedlňujúci kredit za nedostavenie sa a otvorený spor „služba nebola poskytnutá“ sa uzavrie. Akciu nie je možné vrátiť.",
+          "submit": "Potvrdiť nedostavenie sa",
+          "success": "Objednávka bola zrušená ako nedostavenie sa upratovača. {{refund}} {{credit}}",
+          "refunded": "Na kartu sa vrátilo {{amount}}.",
+          "refund_pending": "Vrátenie platby na kartu zatiaľ neprebehlo; opakuje sa automaticky.",
+          "nothing_refunded": "Nebola žiadna platba kartou na vrátenie.",
+          "credit_granted": "Zákazník dostal ospravedlňujúci kredit {{amount}}.",
+          "no_credit": "Ospravedlňujúci kredit nebol vydaný: ide o objednávku hosťa, alebo pre túto menu nie je nastavený."
         }
       },
       "messages": {

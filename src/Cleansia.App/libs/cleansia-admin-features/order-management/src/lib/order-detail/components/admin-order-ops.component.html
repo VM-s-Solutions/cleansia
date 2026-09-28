@@ -24,6 +24,13 @@
   [outlined]="facade.activePanel() !== 'refund'"
   (onClick)="togglePanel('refund')"
 />
+<cleansia-button
+  [label]="'pages.order_management.ops.no_show.action' | translate"
+  icon="pi pi-user-minus"
+  severity="danger"
+  [outlined]="facade.activePanel() !== 'noShow'"
+  (onClick)="togglePanel('noShow')"
+/>
 
 @if (facade.activePanel() === 'cancel') {
 <div class="detail-actions__panel">
@@ -131,6 +138,27 @@
     severity="danger"
     [loading]="facade.submitting()"
     (onClick)="submitRefund()"
+  />
+</div>
+}
+
+@if (facade.activePanel() === 'noShow') {
+<div class="detail-actions__panel">
+  <p class="detail-actions__hint">
+    {{ 'pages.order_management.ops.no_show.context' | translate }}
+  </p>
+  <p class="detail-actions__hint">
+    {{ 'pages.order_management.ops.no_show.confirm' | translate }}
+  </p>
+  @if (facade.errorKey()) {
+  <p class="detail-actions__error">{{ facade.errorKey()! | translate }}</p>
+  }
+  <cleansia-button
+    [label]="'pages.order_management.ops.no_show.submit' | translate"
+    icon="pi pi-user-minus"
+    severity="danger"
+    [loading]="facade.submitting()"
+    (onClick)="submitNoShow()"
   />
 </div>
 }

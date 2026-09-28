@@ -1,5 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import {
+  AdminCancelOrderAsNoShowCommand,
+  AdminCancelOrderAsNoShowResponse,
   AdminCancelOrderCommand,
   AdminCancelOrderResponse,
   AdminClient,
@@ -13,16 +15,28 @@ import {
   PaymentStatus,
 } from '@cleansia/admin-services';
 import { SnackbarService } from '@cleansia/services';
+import { formatMoney } from '@cleansia/utils';
 import { TranslateService } from '@ngx-translate/core';
 import { of, throwError } from 'rxjs';
 import { AdminOrderOpsFacade } from './admin-order-ops.facade';
+import { NO_SHOW_OUTCOME_TOAST_MS } from './admin-order-ops.models';
 
 // The keys a refusal resolves to; anything else falls back, as an untranslated code does in the app.
 const TRANSLATED = new Set([
   'api.order.invalid_status_transition',
   'api.order.no_available_spots',
   'api.refund.order_not_refundable',
+  'api.order.cleaner_already_started',
 ]);
+
+function translated(key: string, params?: Record<string, unknown>): string {
+  if (TRANSLATED.has(key)) return `${key} (translated)`;
+  return params ? `${key} ${JSON.stringify(params)}` : key;
+}
+
+function czk(amount: number): string {
+  return formatMoney(amount, 'CZK', 'en-US', { fractionDigits: 2 });
+}
 
 describe('AdminOrderOpsFacade', () => {
   let facade: AdminOrderOpsFacade;
@@ -31,6 +45,7 @@ describe('AdminOrderOpsFacade', () => {
     overrideStatus: jest.Mock;
     reassign: jest.Mock;
     refund: jest.Mock;
+    cancelNoShow: jest.Mock;
   };
   let snackbar: {
     showSuccess: jest.Mock;
@@ -59,6 +74,16 @@ describe('AdminOrderOpsFacade', () => {
     paymentStatus: PaymentStatus.Refunded,
     refundInitiated: true,
   });
+  const noShowResponse = (
+    outcome: Partial<{ refundedAmount: number; refundPending: boolean; apologyCredit: number }>
+  ) =>
+    AdminCancelOrderAsNoShowResponse.fromJS({
+      orderId: 'order-1',
+      refundedAmount: null,
+      refundPending: false,
+      apologyCredit: null,
+      ...outcome,
+    });
 
   beforeEach(() => {
     orderClient = {
@@ -66,6 +91,7 @@ describe('AdminOrderOpsFacade', () => {
       overrideStatus: jest.fn(),
       reassign: jest.fn(),
       refund: jest.fn(),
+      cancelNoShow: jest.fn(),
     };
     snackbar = {
       showSuccess: jest.fn(),
@@ -84,9 +110,7 @@ describe('AdminOrderOpsFacade', () => {
         { provide: SnackbarService, useValue: snackbar },
         {
           provide: TranslateService,
-          useValue: {
-            instant: (k: string) => (TRANSLATED.has(k) ? `${k} (translated)` : k),
-          },
+          useValue: { instant: translated },
         },
       ],
     });
@@ -277,5 +301,84 @@ describe('AdminOrderOpsFacade', () => {
     expect(facade.errorKey()).toBe('api.common.error_occurred');
     expect(snackbar.showErrorTranslated).not.toHaveBeenCalled();
     expect(onSuccess).not.toHaveBeenCalled();
+  });
+  describe('cancel as cleaner no-show', () => {
+    it('builds a typed no-show command carrying just the order id', () => {
+      orderClient.cancelNoShow.mockReturnValue(of(noShowResponse({})));
+
+      facade.cancelAsNoShow('order-1', 'CZK', jest.fn());
+
+      const command: AdminCancelOrderAsNoShowCommand = orderClient.cancelNoShow.mock.calls[0][0];
+      expect(command).toBeInstanceOf(AdminCancelOrderAsNoShowCommand);
+      expect(command.toJSON()).toEqual({ orderId: 'order-1' });
+    });
+
+    it('does not call the endpoint without an order id', () => {
+      facade.cancelAsNoShow('', 'CZK', jest.fn());
+      expect(orderClient.cancelNoShow).not.toHaveBeenCalled();
+    });
+
+    it('announces the card refund and the apology credit, closes the panel and re-loads', () => {
+      orderClient.cancelNoShow.mockReturnValue(
+        of(noShowResponse({ refundedAmount: 1200, apologyCredit: 250 }))
+      );
+      facade.openPanel('noShow');
+      const onSuccess = jest.fn();
+
+      facade.cancelAsNoShow('order-1', 'CZK', onSuccess);
+
+      expect(snackbar.showSuccessTranslated).toHaveBeenCalledWith(
+        'pages.order_management.ops.no_show.success',
+        {
+          refund: translated('pages.order_management.ops.no_show.refunded', { amount: czk(1200) }),
+          credit: translated('pages.order_management.ops.no_show.credit_granted', { amount: czk(250) }),
+        },
+        NO_SHOW_OUTCOME_TOAST_MS
+      );
+      expect(facade.activePanel()).toBeNull();
+      expect(onSuccess).toHaveBeenCalledTimes(1);
+    });
+
+    it('says the card refund is still pending when it did not go through', () => {
+      orderClient.cancelNoShow.mockReturnValue(
+        of(noShowResponse({ refundPending: true, apologyCredit: 250 }))
+      );
+
+      facade.cancelAsNoShow('order-1', 'CZK', jest.fn());
+
+      const params = snackbar.showSuccessTranslated.mock.calls[0][1];
+      expect(params.refund).toBe('pages.order_management.ops.no_show.refund_pending');
+      expect(params.credit).toBe(
+        translated('pages.order_management.ops.no_show.credit_granted', { amount: czk(250) })
+      );
+    });
+
+    it('says nothing was refunded and no credit issued when neither happened', () => {
+      orderClient.cancelNoShow.mockReturnValue(of(noShowResponse({})));
+
+      facade.cancelAsNoShow('order-1', 'CZK', jest.fn());
+
+      const params = snackbar.showSuccessTranslated.mock.calls[0][1];
+      expect(params).toEqual({
+        refund: 'pages.order_management.ops.no_show.nothing_refunded',
+        credit: 'pages.order_management.ops.no_show.no_credit',
+      });
+    });
+
+    it('shows the refusal inline and does not re-load when the cleaner already started', () => {
+      orderClient.cancelNoShow.mockReturnValue(
+        throwError(() => ({ result: { detail: 'order.cleaner_already_started' } }))
+      );
+      facade.openPanel('noShow');
+      const onSuccess = jest.fn();
+
+      facade.cancelAsNoShow('order-1', 'CZK', onSuccess);
+
+      expect(facade.errorKey()).toBe('api.order.cleaner_already_started');
+      expect(facade.activePanel()).toBe('noShow');
+      expect(facade.submitting()).toBe(false);
+      expect(snackbar.showSuccessTranslated).not.toHaveBeenCalled();
+      expect(onSuccess).not.toHaveBeenCalled();
+    });
   });
 });

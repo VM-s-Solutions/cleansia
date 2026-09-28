@@ -649,6 +649,18 @@
           "confirm": "Issue a full refund without changing the order status.",
           "submit": "Issue refund",
           "success": "Refund issued successfully."
+        },
+        "no_show": {
+          "action": "Cancel as cleaner no-show",
+          "context": "Use this when the assigned cleaner did not arrive — after the customer reported it or the alert “The cleaner has not started an order” came in. Check with the cleaner and the customer first.",
+          "confirm": "This cancels the order with no fee, refunds a paid card order in full, gives a signed-in customer the no-show apology credit and closes an open “service not provided” dispute. It cannot be undone.",
+          "submit": "Confirm no-show",
+          "success": "Order cancelled as a cleaner no-show. {{refund}} {{credit}}",
+          "refunded": "{{amount}} was refunded to the card.",
+          "refund_pending": "The card refund has not gone through yet; it is retried automatically.",
+          "nothing_refunded": "There was no card payment to refund.",
+          "credit_granted": "The customer received {{amount}} in apology credit.",
+          "no_credit": "No apology credit was issued: a guest order, or none is set for this currency."
         }
       },
       "messages": {

@@ -237,7 +237,7 @@
     <string name="swipe_to_complete">Swipe to Complete</string>
     <string name="swipe_to_notify_on_the_way">Swipe to mark on the way</string>
     <string name="customer_notified_on_the_way">Customer notified · on the way</string>
-    <string name="waiting_for_other_employees">You\'re assigned! Waiting for other employees to confirm before the order can start.</string>
+    <string name="waiting_for_other_employees">You\'re assigned! Waiting for other partners to confirm before the order can start.</string>
     <string name="order_started">Started!</string>
     <string name="complete_order">Complete Order</string>
     <string name="no_orders_available">No orders available</string>
@@ -717,7 +717,7 @@
     <string name="invoice_information">Invoice Information</string>
     <string name="amount_breakdown">Amount Breakdown</string>
     <string name="status_timeline">Status Timeline</string>
-    <string name="employee">Employee</string>
+    <string name="employee">Partner</string>
     <string name="variable_symbol">Variable Symbol</string>
     <string name="payment_reference">Payment Reference</string>
     <string name="total_orders">Total Orders</string>
@@ -1078,13 +1078,13 @@
     <string name="error_user_not_found">User not found.</string>
 
     <!-- Employee -->
-    <string name="error_employee_not_found">Employee not found.</string>
-    <string name="error_employee_not_existing_email">No employee found with this email.</string>
-    <string name="error_employee_not_allowed_to_update">You can\'t edit this employee.</string>
+    <string name="error_employee_not_found">Partner not found.</string>
+    <string name="error_employee_not_existing_email">No partner found with this email.</string>
+    <string name="error_employee_not_allowed_to_update">You can\'t edit this partner.</string>
     <string name="error_employee_profile_incomplete">Please complete your profile before taking jobs.</string>
     <string name="error_employee_documents_missing">Required documents are missing. Please upload them in your profile.</string>
-    <string name="error_employee_already_approved">This employee is already approved.</string>
-    <string name="error_employee_already_rejected">This employee is already rejected.</string>
+    <string name="error_employee_already_approved">This partner is already approved.</string>
+    <string name="error_employee_already_rejected">This partner is already rejected.</string>
 
     <!-- Employee documents -->
     <string name="error_employee_document_not_found">Document not found.</string>
@@ -1115,6 +1115,8 @@
     <string name="error_contract_text_mismatch">The contract was updated \u2014 please read it again.</string>
     <string name="error_contract_acceptance_required">Accept the contract for work for this job before you continue.</string>
     <string name="error_legal_document_not_found">This job cannot be taken right now.</string>
+    <string name="error_employee_legal_documents_not_accepted">Accept the current version of your contract documents before taking jobs.</string>
+    <string name="error_legal_document_not_in_force">This document is no longer the version in force. Reload it and accept the current one.</string>
 
     <!-- Order — completion -->
     <string name="error_order_not_in_progress">This order isn\'t in progress.</string>
@@ -1125,6 +1127,8 @@
     <string name="error_order_completion_notes_required">Completion notes are required.</string>
     <string name="error_order_completion_notes_too_long">Completion notes are too long.</string>
     <string name="error_order_after_photos_required">Take at least one \"after\" photo before completing the order.</string>
+    <string name="error_order_photo_window_closed">This photo can\'t be added now: before photos from the moment you hold the job until it\'s finished, after photos while the work is in progress.</string>
+    <string name="error_order_photo_locked">Photos can\'t be deleted once the order is completed or cancelled.</string>
     <string name="error_order_cash_not_collected">Collect the cash and mark it as received before completing this order.</string>
     <string name="error_order_payment_not_confirmed">This order\'s payment hasn\'t been confirmed yet.</string>
     <string name="error_order_not_cash_payment">This isn\'t a cash order.</string>
@@ -1293,6 +1297,7 @@
     <string name="error_employee_not_approved">Your account hasn\'t been approved yet.</string>
     <string name="error_gdpr_consent_already_granted">This consent has already been granted.</string>
     <string name="error_gdpr_consent_not_found">Consent not found.</string>
+    <string name="error_gdpr_consent_not_editable">This consent can\'t be changed here.</string>
     <string name="error_gdpr_deletion_already_pending">Account deletion is already in progress.</string>
     <string name="error_gdpr_deletion_blocked_by_invoice">Your account can\'t be deleted yet — there is an open invoice.</string>
     <string name="error_gdpr_deletion_blocked_by_order">Your account can\'t be deleted yet — there is an active order.</string>

@@ -118,6 +118,29 @@ class BackendKeyStringsTest {
         assertTrue("credit.cash_not_collectable_on_credit_order renders raw in $raw", raw.isEmpty())
     }
 
+    /**
+     * `TakeOrder` and `AcceptLegalDocument` refuse on the cleaner documents, the photo endpoints
+     * outside their window, and `GrantConsent`/`WithdrawConsent` on a document-backed consent.
+     */
+    @Test
+    fun `every document, photo-window and consent refusal resolves to a sentence in all five locales`() {
+        val keys = listOf(
+            "employee.legal_documents_not_accepted",
+            "legal.document_not_in_force",
+            "order.photo.window_closed",
+            "order.photo.locked",
+            "gdpr.consent_not_editable",
+        )
+        val raw = locales.flatMap { locale ->
+            val declared = declared(locale)
+            keys
+                .map { it to "error_" + it.replace('.', '_').lowercase() }
+                .filterNot { (_, resName) -> resName in declared }
+                .map { (key, resName) -> "$locale/$resName ($key)" }
+        }
+        assertTrue("these refusals render raw: $raw", raw.isEmpty())
+    }
+
     @Test
     fun `every profile field the lock can list resolves to a label`() {
         ProfileSection.entries.flatMap { it.ownedFields() }.forEach { key ->

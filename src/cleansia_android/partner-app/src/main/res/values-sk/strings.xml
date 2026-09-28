@@ -237,7 +237,7 @@
     <string name="swipe_to_complete">Potiahnite pre dokončenie</string>
     <string name="swipe_to_notify_on_the_way">Potiahnite pre „Som na ceste"</string>
     <string name="customer_notified_on_the_way">Zákazník upozornený · ste na ceste</string>
-    <string name="waiting_for_other_employees">Ste priradený! Čakáme na potvrdenie od ostatných zamestnancov, aby mohla zákazka začať.</string>
+    <string name="waiting_for_other_employees">Ste priradený! Čakáme na potvrdenie od ostatných partnerov, aby mohla zákazka začať.</string>
     <string name="order_started">Zahájené!</string>
     <string name="complete_order">Dokončiť zákazku</string>
     <string name="no_orders_available">Žiadne dostupné zákazky</string>
@@ -717,7 +717,7 @@
     <string name="invoice_information">Informácie o faktúre</string>
     <string name="amount_breakdown">Rozpad sumy</string>
     <string name="status_timeline">Časová os stavov</string>
-    <string name="employee">Zamestnanec</string>
+    <string name="employee">Partner</string>
     <string name="variable_symbol">Variabilný symbol</string>
     <string name="payment_reference">Referencia platby</string>
     <string name="total_orders">Celkom zákazok</string>
@@ -1055,13 +1055,13 @@
     <string name="error_user_existing_phone_number">Toto telefónne číslo sa už používa.</string>
     <string name="error_user_not_found">Používateľ sa nenašiel.</string>
 
-    <string name="error_employee_not_found">Zamestnanec sa nenašiel.</string>
-    <string name="error_employee_not_existing_email">Zamestnanec s týmto e-mailom sa nenašiel.</string>
-    <string name="error_employee_not_allowed_to_update">Tohto zamestnanca nemôžete upravovať.</string>
+    <string name="error_employee_not_found">Partner sa nenašiel.</string>
+    <string name="error_employee_not_existing_email">Partner s týmto e-mailom sa nenašiel.</string>
+    <string name="error_employee_not_allowed_to_update">Tohto partnera nemôžete upravovať.</string>
     <string name="error_employee_profile_incomplete">Pred prijímaním zákaziek si prosím dokončite profil.</string>
     <string name="error_employee_documents_missing">Chýbajú povinné dokumenty. Nahrajte ich vo svojom profile.</string>
-    <string name="error_employee_already_approved">Tento zamestnanec je už schválený.</string>
-    <string name="error_employee_already_rejected">Tento zamestnanec je už zamietnutý.</string>
+    <string name="error_employee_already_approved">Tento partner je už schválený.</string>
+    <string name="error_employee_already_rejected">Tento partner je už zamietnutý.</string>
 
     <string name="error_employee_document_not_found">Dokument sa nenašiel.</string>
     <string name="error_employee_document_unauthorized">K tomuto dokumentu nemáte prístup.</string>
@@ -1090,6 +1090,8 @@
     <string name="error_contract_text_mismatch">Zmluva bola aktualizovaná \u2014 prečítajte si ju prosím znova.</string>
     <string name="error_contract_acceptance_required">Skôr než budete pokračovať, prijmite zmluvu o dielo k tejto zákazke.</string>
     <string name="error_legal_document_not_found">Túto zákazku teraz nie je možné prevziať.</string>
+    <string name="error_employee_legal_documents_not_accepted">Skôr než začnete prijímať zákazky, prijmite aktuálnu verziu svojich zmluvných dokumentov.</string>
+    <string name="error_legal_document_not_in_force">Tento dokument už nie je platnou verziou. Načítajte ho znova a prijmite aktuálnu verziu.</string>
 
     <string name="error_order_not_in_progress">Táto zákazka nie je v priebehu.</string>
     <string name="error_order_not_confirmed">Táto zákazka ešte nie je potvrdená.</string>
@@ -1099,6 +1101,8 @@
     <string name="error_order_completion_notes_required">Poznámky k dokončeniu sú povinné.</string>
     <string name="error_order_completion_notes_too_long">Poznámky k dokončeniu sú príliš dlhé.</string>
     <string name="error_order_after_photos_required">Pred dokončením zákazky odfoťte aspoň jednu fotografiu „po\".</string>
+    <string name="error_order_photo_window_closed">Túto fotografiu teraz nemožno pridať: fotografie pred upratovaním od prevzatia zákazky do jej dokončenia, fotografie po upratovaní počas práce.</string>
+    <string name="error_order_photo_locked">Po dokončení alebo zrušení zákazky nemožno fotografie vymazať.</string>
     <string name="error_order_cash_not_collected">Pred dokončením zákazky vyberte hotovosť a označte ju ako prijatú.</string>
     <string name="error_order_payment_not_confirmed">Platba za túto zákazku ešte nebola potvrdená.</string>
     <string name="error_order_not_cash_payment">Toto nie je zákazka platená v hotovosti.</string>
@@ -1258,6 +1262,7 @@
     <string name="error_employee_not_approved">Váš účet zatiaľ nebol schválený.</string>
     <string name="error_gdpr_consent_already_granted">Tento súhlas už bol udelený.</string>
     <string name="error_gdpr_consent_not_found">Súhlas nebol nájdený.</string>
+    <string name="error_gdpr_consent_not_editable">Tento súhlas tu nemožno zmeniť.</string>
     <string name="error_gdpr_deletion_already_pending">Vymazanie účtu už prebieha.</string>
     <string name="error_gdpr_deletion_blocked_by_invoice">Účet zatiaľ nie je možné vymazať — existuje nevybavená faktúra.</string>
     <string name="error_gdpr_deletion_blocked_by_order">Účet zatiaľ nie je možné vymazať — existuje aktívna objednávka.</string>
@@ -1329,14 +1334,14 @@
     <string name="delete_account_requested_body">Ozveme sa vám ohľadom podpisu dokumentov. Dovtedy môžete pracovať ako zvyčajne.</string>
     <string name="delete_account_kept_label">Čo musíme uchovať</string>
     <string name="delete_account_kept_invoices">Vaše faktúry ako účtovné doklady</string>
-    <string name="delete_account_kept_pay">Mzdové záznamy za dokončené zákazky</string>
+    <string name="delete_account_kept_pay">Záznamy o odmenách za dokončené zákazky</string>
     <string name="delete_account_cta">Požiadať o zmazanie</string>
     <string name="delete_account_confirm_title">Požiadať o zmazanie účtu?</string>
     <string name="delete_account_confirm_message">Ozveme sa vám a spoluprácu formálne ukončíme. Dnes sa nič nemaže.</string>
     <string name="delete_account_confirm_yes">Odoslať žiadosť</string>
     <string name="delete_account_requested">Žiadosť o zmazanie bola odoslaná.</string>
     <string name="error_gdpr_deletion_blocked_by_assigned_order">Stále ste priradení k nadchádzajúcej zákazke. Keď bude dokončená alebo preradená, môžete o zmazanie požiadať znova.</string>
-    <string name="error_gdpr_deletion_blocked_by_unsettled_pay">Stále máte nevyrovnanú mzdu. Keď bude mzdové obdobie vyplatené, môžete o zmazanie požiadať znova.</string>
+    <string name="error_gdpr_deletion_blocked_by_unsettled_pay">Stále máte nevyplatenú odmenu. Keď bude výplatné obdobie vyplatené, môžete o zmazanie požiadať znova.</string>
     <string name="splash_unreachable_title">Nedarí sa nám spojiť s Cleansia</string>
     <string name="splash_unreachable_message">Skontrolujte pripojenie a skúste to znova. S vaším účtom je všetko v poriadku — len sa nám ho nepodarilo načítať.</string>
     <string name="profile_group_legal">Právne informácie</string>

@@ -237,7 +237,7 @@
     <string name="swipe_to_complete">Проведіть, щоб завершити</string>
     <string name="swipe_to_notify_on_the_way">Проведіть, щоб повідомити „У дорозі"</string>
     <string name="customer_notified_on_the_way">Клієнта повідомлено · ви в дорозі</string>
-    <string name="waiting_for_other_employees">Вас призначено! Чекаємо підтвердження від інших працівників, щоб замовлення могло розпочатися.</string>
+    <string name="waiting_for_other_employees">Вас призначено! Чекаємо підтвердження від інших партнерів, щоб замовлення могло розпочатися.</string>
     <string name="order_started">Розпочато!</string>
     <string name="complete_order">Завершити замовлення</string>
     <string name="no_orders_available">Немає доступних замовлень</string>
@@ -717,7 +717,7 @@
     <string name="invoice_information">Інформація про рахунок</string>
     <string name="amount_breakdown">Розбивка суми</string>
     <string name="status_timeline">Хронологія статусів</string>
-    <string name="employee">Працівник</string>
+    <string name="employee">Партнер</string>
     <string name="variable_symbol">Варіативний символ</string>
     <string name="payment_reference">Платіжне посилання</string>
     <string name="total_orders">Усього замовлень</string>
@@ -1060,13 +1060,13 @@
     <string name="error_user_existing_phone_number">Цей номер телефону вже використовується.</string>
     <string name="error_user_not_found">Користувача не знайдено.</string>
 
-    <string name="error_employee_not_found">Працівника не знайдено.</string>
-    <string name="error_employee_not_existing_email">Працівника з цією е-поштою не знайдено.</string>
-    <string name="error_employee_not_allowed_to_update">Ви не можете редагувати цього працівника.</string>
+    <string name="error_employee_not_found">Партнера не знайдено.</string>
+    <string name="error_employee_not_existing_email">Партнера з цією е-поштою не знайдено.</string>
+    <string name="error_employee_not_allowed_to_update">Ви не можете редагувати цього партнера.</string>
     <string name="error_employee_profile_incomplete">Перед прийняттям замовлень заповніть свій профіль.</string>
     <string name="error_employee_documents_missing">Відсутні обов\'язкові документи. Завантажте їх у профілі.</string>
-    <string name="error_employee_already_approved">Цього працівника вже схвалено.</string>
-    <string name="error_employee_already_rejected">Цього працівника вже відхилено.</string>
+    <string name="error_employee_already_approved">Цього партнера вже схвалено.</string>
+    <string name="error_employee_already_rejected">Цього партнера вже відхилено.</string>
 
     <string name="error_employee_document_not_found">Документ не знайдено.</string>
     <string name="error_employee_document_unauthorized">У вас немає доступу до цього документа.</string>
@@ -1095,6 +1095,8 @@
     <string name="error_contract_text_mismatch">Договір оновлено \u2014 будь ласка, прочитайте його ще раз.</string>
     <string name="error_contract_acceptance_required">Перш ніж продовжити, прийміть договір підряду для цього замовлення.</string>
     <string name="error_legal_document_not_found">Це замовлення зараз неможливо взяти.</string>
+    <string name="error_employee_legal_documents_not_accepted">Перш ніж брати замовлення, прийміть чинну версію своїх договірних документів.</string>
+    <string name="error_legal_document_not_in_force">Цей документ уже не є чинною версією. Завантажте його знову та прийміть чинну версію.</string>
 
     <string name="error_order_not_in_progress">Це замовлення не в роботі.</string>
     <string name="error_order_not_confirmed">Це замовлення ще не підтверджено.</string>
@@ -1104,6 +1106,8 @@
     <string name="error_order_completion_notes_required">Нотатки про завершення обов\'язкові.</string>
     <string name="error_order_completion_notes_too_long">Нотатки про завершення занадто довгі.</string>
     <string name="error_order_after_photos_required">Перед завершенням замовлення зробіть хоча б одне фото «після».</string>
+    <string name="error_order_photo_window_closed">Це фото зараз не можна додати: фото до прибирання — від моменту, коли ви взяли замовлення, до його завершення, фото після — під час роботи.</string>
+    <string name="error_order_photo_locked">Після завершення або скасування замовлення фото видалити не можна.</string>
     <string name="error_order_cash_not_collected">Перш ніж завершити замовлення, отримайте готівку та позначте її як прийняту.</string>
     <string name="error_order_payment_not_confirmed">Оплату за це замовлення ще не підтверджено.</string>
     <string name="error_order_not_cash_payment">Це не замовлення з оплатою готівкою.</string>
@@ -1263,6 +1267,7 @@
     <string name="error_employee_not_approved">Ваш обліковий запис ще не схвалено.</string>
     <string name="error_gdpr_consent_already_granted">Цю згоду вже надано.</string>
     <string name="error_gdpr_consent_not_found">Згоду не знайдено.</string>
+    <string name="error_gdpr_consent_not_editable">Цю згоду тут змінити не можна.</string>
     <string name="error_gdpr_deletion_already_pending">Видалення облікового запису вже триває.</string>
     <string name="error_gdpr_deletion_blocked_by_invoice">Обліковий запис поки не можна видалити — є незакритий рахунок.</string>
     <string name="error_gdpr_deletion_blocked_by_order">Обліковий запис поки не можна видалити — є активне замовлення.</string>

@@ -24,8 +24,8 @@
     "admin": {
       "default": "Admin Portal",
       "login": "Login",
-      "employees": "Employees",
-      "employee_details": "Employee Details",
+      "employees": "Partners",
+      "employee_details": "Partner Details",
       "pay_periods": "Pay Periods",
       "pay_period_details": "Pay Period Details",
       "orders": "Orders",
@@ -255,7 +255,7 @@
     }
   },
   "sidebar": {
-    "employees": "Employees",
+    "employees": "Partners",
     "pay_periods": "Pay Periods",
     "orders": "Orders",
     "invoices": "Invoices",
@@ -269,7 +269,7 @@
     "service_area": "Service Area",
     "currencies": "Currencies",
     "legal_documents": "Legal documents",
-    "employee_documents": "Employee documents",
+    "employee_documents": "Partner documents",
     "employee_document_requirements": "Requirements",
     "employee_document_deletion_requests": "Deletion requests",
     "company_info": "Company Info",
@@ -298,8 +298,8 @@
       "message": "You don't have permission to access this area. Administrator privileges are required."
     },
     "employee_management": {
-      "title": "Employee Management",
-      "description": "Manage employees, approve registrations, and track performance",
+      "title": "Partner Management",
+      "description": "Manage partners and approve registrations",
       "name": "Name",
       "email": "Email",
       "phone": "Phone",
@@ -312,7 +312,7 @@
       "approve": "Approve",
       "reject": "Reject",
       "view_details": "View Details",
-      "no_employees": "No employees to display",
+      "no_employees": "No partners to display",
       "filters": {
         "search": "Search",
         "search_placeholder": "Search by name, email or phone",
@@ -320,24 +320,24 @@
         "active_status": "Active Status"
       },
       "approve_dialog": {
-        "title": "Approve Employee",
+        "title": "Approve Partner",
         "subtitle": "Pick the country this cleaner is approved to work in. This drives their currency, language and VAT defaults.",
-        "approve_button": "Approve Employee"
+        "approve_button": "Approve Partner"
       },
       "reject_dialog": {
-        "title": "Reject Employee",
-        "subtitle": "Please provide a reason for rejecting this employee",
+        "title": "Reject Partner",
+        "subtitle": "Please provide a reason for rejecting this partner",
         "reason_label": "Rejection Reason",
         "reason_placeholder": "Enter detailed reason for rejection...",
         "reason_hint": "Maximum 500 characters",
-        "reject_button": "Reject Employee"
+        "reject_button": "Reject Partner"
       },
       "messages": {
-        "load_error": "Failed to load employees",
-        "approve_success": "Employee approved successfully",
-        "approve_error": "Failed to approve employee",
-        "reject_success": "Employee rejected successfully",
-        "reject_error": "Failed to reject employee"
+        "load_error": "Failed to load partners",
+        "approve_success": "Partner approved successfully",
+        "approve_error": "Failed to approve partner",
+        "reject_success": "Partner rejected successfully",
+        "reject_error": "Failed to reject partner"
       },
       "contract_status": {
         "pending": "Pending",
@@ -349,8 +349,8 @@
       "profile_incomplete_tooltip": "Profile incomplete - cannot approve"
     },
     "employee_detail": {
-      "title": "Employee Details",
-      "back_to_list": "Back to Employee List",
+      "title": "Partner Details",
+      "back_to_list": "Back to Partner List",
       "personal_info": "Personal Information",
       "first_name": "First Name",
       "last_name": "Last Name",
@@ -362,7 +362,7 @@
       "city": "City",
       "zip_code": "Zip Code",
       "country": "Country",
-      "employment_info": "Employment Information",
+      "employment_info": "Identity and Business Details",
       "nationality": "Nationality",
       "passport_id": "Passport/National ID",
       "tax_id": "Tax ID",
@@ -405,8 +405,8 @@
       "review_notes": "Review Notes",
       "document_description": "Description",
       "actions": {
-        "approve_employee": "Approve Employee",
-        "reject_employee": "Reject Employee",
+        "approve_employee": "Approve Partner",
+        "reject_employee": "Reject Partner",
         "approve_document": "Approve",
         "reject_document": "Reject",
         "download_document": "Download",
@@ -414,24 +414,24 @@
         "set_weekly_limit": "Set weekly limit"
       },
       "approve_employee_dialog": {
-        "title": "Approve Employee",
+        "title": "Approve Partner",
         "subtitle": "Pick the country this cleaner is approved to work in. This drives their currency, language and VAT defaults.",
         "work_country_label": "Work Country",
         "work_country_hint": "Only countries we currently service are selectable.",
         "notes_label": "Approval notes",
         "notes_placeholder": "Optional approval notes...",
         "notes_hint": "Maximum 1000 characters",
-        "approve_button": "Approve Employee"
+        "approve_button": "Approve Partner"
       },
       "reject_employee_dialog": {
-        "title": "Reject Employee",
-        "subtitle": "Please provide a reason for rejecting this employee",
+        "title": "Reject Partner",
+        "subtitle": "Please provide a reason for rejecting this partner",
         "reason_label": "Rejection Reason",
         "reason_placeholder": "Enter detailed reason for rejection...",
         "reason_hint": "Maximum 500 characters",
         "reason_required": "Rejection reason is required",
         "reason_too_long": "Rejection reason is too long (max 500 characters)",
-        "reject_button": "Reject Employee"
+        "reject_button": "Reject Partner"
       },
       "reject_document_dialog": {
         "title": "Reject Document",
@@ -444,18 +444,18 @@
         "reject_button": "Reject Document"
       },
       "messages": {
-        "load_error": "Failed to load employee details",
-        "employee_approve_success": "Employee approved successfully",
-        "employee_approve_error": "Failed to approve employee",
-        "employee_reject_success": "Employee rejected successfully",
-        "employee_reject_error": "Failed to reject employee",
+        "load_error": "Failed to load partner details",
+        "employee_approve_success": "Partner approved successfully",
+        "employee_approve_error": "Failed to approve partner",
+        "employee_reject_success": "Partner rejected successfully",
+        "employee_reject_error": "Failed to reject partner",
         "document_approve_success": "Document approved successfully",
         "document_approve_error": "Failed to approve document",
         "document_reject_success": "Document rejected successfully",
         "document_reject_error": "Failed to reject document",
         "document_download_error": "Failed to download document",
-        "employee_update_success": "Employee updated successfully",
-        "employee_update_error": "Failed to update employee",
+        "employee_update_success": "Partner updated successfully",
+        "employee_update_error": "Failed to update partner",
         "pay_config_save_success": "Pay configuration saved successfully",
         "pay_config_save_error": "Failed to save pay configuration",
         "pay_config_delete_success": "Pay configuration deleted successfully",
@@ -463,7 +463,7 @@
         "pay_config_bulk_success": "Pay configurations applied: {{created}} created, {{skipped}} skipped",
         "weekly_limit_save_success": "Weekly order limit updated"
       },
-      "grade": "Grade",
+      "grade": "Rate Template",
       "document_types": {
         "identity_card": "Identity Card",
         "passport": "Passport",
@@ -489,11 +489,11 @@
       "pay_config_min_pay": "Minimum Pay",
       "pay_config_max_pay": "Maximum Pay",
       "pay_config_description": "Description",
-      "grade_template": "Grade Template",
+      "grade_template": "Rate Template",
       "services_configured": "Services",
       "packages_configured": "Packages",
-      "bulk_apply_grade": "Apply Grade Template",
-      "bulk_apply_grade_hint": "Pick a grade and currency to automatically create pay configs for all services and packages. Rates are calculated from the base price using grade multipliers (Junior 0.5x, Medior 0.75x, Senior 1.0x).",
+      "bulk_apply_grade": "Apply Rate Template",
+      "bulk_apply_grade_hint": "Pick a rate template and currency to automatically create pay configs for all services and packages. Rates are calculated from the base price using the template multipliers (Junior 0.5x, Medior 0.75x, Senior 1.0x).",
       "overwrite_existing": "Overwrite existing configs",
       "apply_to_all": "Apply to All",
       "services": "Services",
@@ -503,14 +503,14 @@
       "add_override": "Add override",
       "edit_override": "Edit override",
       "delete_override": "Delete override",
-      "delete_override_confirm": "Are you sure you want to remove this pay override? The employee will fall back to the global rate.",
+      "delete_override_confirm": "Are you sure you want to remove this pay override? The partner will fall back to the global rate.",
       "grade_quick_fill": "Quick fill",
       "grade_junior": "Junior",
       "grade_medior": "Medior",
       "grade_senior": "Senior",
       "payout_details": {
         "title": "Payout Details",
-        "none": "No payout details on file for this employee.",
+        "none": "No payout details on file for this partner.",
         "load_error": "Could not load payout details.",
         "retry": "Try again",
         "masked_account": "Account",
@@ -546,7 +546,7 @@
       "weekly_order_limit": "Weekly order limit",
       "weekly_order_limit_unlimited": "Unlimited",
       "weekly_order_limit_hint": "Leave empty for no limit",
-      "not_found": "Employee not found",
+      "not_found": "Partner not found",
       "actions_section": "Actions",
       "rate_format": "{{base}} + {{room}}/room + {{bath}}/bath"
     },
@@ -638,8 +638,8 @@
           "none_assigned": "This order has no assigned cleaner to reassign.",
           "add_only_hint": "Nobody is on this job. Enter a cleaner to put one on it.",
           "from": "From cleaner",
-          "to": "To cleaner (employee ID)",
-          "to_hint": "Enter the target employee ID.",
+          "to": "To cleaner (partner ID)",
+          "to_hint": "Enter the target partner ID.",
           "unnamed": "Unnamed cleaner",
           "submit": "Reassign",
           "success": "Cleaner reassigned successfully."
@@ -688,8 +688,8 @@
       "receipt_number": "Receipt Number",
       "cancellation_fee_rate": "Cancellation fee",
       "cancellation_fee_owed": "Fee still owed",
-      "assigned_employee": "Assigned Employee",
-      "assigned_employees": "Assigned Employees",
+      "assigned_employee": "Assigned Partner",
+      "assigned_employees": "Assigned Partners",
       "employee_name": "Name",
       "employee_phone": "Phone",
       "employee_email": "Email",
@@ -762,9 +762,9 @@
     },
     "invoice_management": {
       "title": "Invoice Management",
-      "description": "View and manage employee invoices, approve payments, and track invoice status",
+      "description": "View and manage partner invoices, approve payments, and track invoice status",
       "invoice_number": "Invoice #",
-      "employee_name": "Employee",
+      "employee_name": "Partner",
       "pay_period": "Pay Period",
       "total_orders": "Orders",
       "total_amount": "Total Amount",
@@ -777,7 +777,7 @@
       "no_invoices": "No invoices found",
       "filters": {
         "search": "Search",
-        "search_placeholder": "Search by invoice number or employee",
+        "search_placeholder": "Search by invoice number or partner",
         "status": "Invoice Status",
         "currency": "Currency"
       },
@@ -973,8 +973,8 @@
     },
     "pay_config_management": {
       "title": "Global Rates",
-      "description": "Manage platform-wide rate defaults applied to all employees by default.",
-      "info_banner": "These are global rates that apply to every employee. To set per-employee rates, open an employee's detail page and use the Apply Grade Template feature.",
+      "description": "Manage platform-wide rate defaults applied to all partners by default.",
+      "info_banner": "These are global rates that apply to every partner. To set per-partner rates, open a partner's detail page and use the Apply Rate Template feature.",
       "create": "Create Global Rate",
       "edit": "Edit",
       "delete": "Delete Global Rate",
@@ -995,7 +995,7 @@
       "create_title": "Create Global Rate",
       "edit_title": "Edit Global Rate",
       "target": "What this rate applies to",
-      "target_hint": "Select a service OR a package, not both. This rate will apply to all employees unless they have a per-employee override.",
+      "target_hint": "Select a service OR a package, not both. This rate will apply to all partners unless they have a per-partner override.",
       "service": "Service",
       "package": "Package",
       "currency": "Currency",
@@ -1311,7 +1311,7 @@
       "all_markets": "All markets",
       "audience": {
         "customer": "Customer",
-        "employee": "Employee"
+        "employee": "Partner"
       },
       "type": {
         "terms_of_service": "Terms of service",
@@ -1611,7 +1611,7 @@
         "order_date": "Date when the order was placed",
         "total_amount": "Total order amount with currency",
         "order_status_link": "Link to check order status",
-        "employee_name": "The name of the employee",
+        "employee_name": "The name of the partner",
         "period_label": "Pay period label (e.g., 2025-01)",
         "start_date": "Period start date",
         "end_date": "Period end date",
@@ -1805,7 +1805,7 @@
             "years": "Years a withdrawn consent record is kept"
           },
           "deleted_documents": {
-            "days": "Days a deactivated employee document is kept before the file is deleted"
+            "days": "Days a deactivated partner document is kept before the file is deleted"
           },
           "notifications": {
             "days": "Days a notification stays in the in-app feed"
@@ -1943,7 +1943,7 @@
     },
     "reports": {
       "title": "Reports",
-      "description": "View revenue and payroll reports, analyze performance, and track financial data",
+      "description": "View revenue and partner pay reports and track financial data",
       "date_filter": "Date Range",
       "start_date": "Start Date",
       "end_date": "End Date",
@@ -1954,7 +1954,7 @@
         "currency": "Currency"
       },
       "revenue_report": "Revenue Report",
-      "payroll_report": "Payroll Report",
+      "payroll_report": "Partner Pay Report",
       "no_data": "No data available for the selected period",
       "total_revenue": "Total Revenue",
       "avg_order_value": "Average Order Value",
@@ -1968,26 +1968,26 @@
       "package_name": "Package",
       "payment_type": "Payment Type",
       "order_count": "Orders",
-      "total_payroll": "Total Payroll",
-      "avg_pay_per_employee": "Avg. Pay per Employee",
+      "total_payroll": "Total Partner Pay",
+      "avg_pay_per_employee": "Avg. Pay per Partner",
       "total_invoices": "Total Invoices",
       "pending_invoices": "Pending Invoices",
       "paid_invoices": "Paid Invoices",
       "total_bonuses": "Total Bonuses",
-      "employee_summaries": "Employee Summaries",
-      "employee_name": "Employee",
+      "employee_summaries": "Partner Summaries",
+      "employee_name": "Partner",
       "invoice_count": "Invoices",
       "subtotal": "Subtotal",
       "bonus": "Bonus",
       "deductions": "Deductions",
       "total_amount": "Total",
-      "payroll_by_status": "Payroll by Status",
+      "payroll_by_status": "Pay by Status",
       "status": "Status",
-      "monthly_payroll": "Monthly Payroll",
+      "monthly_payroll": "Monthly Pay",
       "month": "Month",
       "messages": {
         "revenue_load_error": "Failed to load revenue report",
-        "payroll_load_error": "Failed to load payroll report"
+        "payroll_load_error": "Failed to load partner pay report"
       },
       "settled_from_credit": "From customer credit",
       "settled_on_tender": "Taken by this tender",
@@ -2011,7 +2011,7 @@
       "pdf_error_label": "Error",
       "actions_section": "Actions",
       "invoice_summary": "Invoice Summary",
-      "employee_name": "Employee",
+      "employee_name": "Partner",
       "pay_period": "Pay Period",
       "variable_symbol": "Variable Symbol",
       "specific_symbol": "Specific Symbol",
@@ -2803,7 +2803,7 @@
   },
   "pay_periods": {
     "title": "Pay Period Management",
-    "description": "Manage pay periods, close periods, and track employee payments",
+    "description": "Manage pay periods, close periods, and track partner payments",
     "create_new": "Create New Pay Period",
     "confirm_close": "Are you sure you want to close this pay period? This action cannot be undone.",
     "filters": {
@@ -2946,7 +2946,7 @@
       "current_password_invalid": "The current password is incorrect",
       "external_type_error": "This account uses a different sign-in method.",
       "google_type_error": "This account uses Google sign-in. Use the Google button.",
-      "insufficient_privileges": "You do not have permission to access the admin panel. Only administrators and employees can log in.",
+      "insufficient_privileges": "You do not have permission to access the admin panel. Only administrators can log in.",
       "internal_type_error": "Use email and password to sign in for this account.",
       "invalid_apple_token": "Invalid Apple token",
       "invalid_confirmation_code": "Invalid confirmation code",
@@ -3041,13 +3041,13 @@
       "invalid_format": "Invalid email format"
     },
     "employee": {
-      "already_approved": "Employee has already been approved",
-      "already_rejected": "Employee has already been rejected",
+      "already_approved": "Partner has already been approved",
+      "already_rejected": "Partner has already been rejected",
       "documents_not_approved": "This cleaner cannot be approved until every document their work country requires has been uploaded and approved.",
-      "not_allowed_to_update": "You are not allowed to update this employee",
-      "not_found": "Employee not found",
+      "not_allowed_to_update": "You are not allowed to update this partner",
+      "not_found": "Partner not found",
       "pay_config_missing": "This cleaner has no pay configured for one or more active services or packages. Add the missing pay configuration before approving them.",
-      "profile_incomplete": "Employee profile is incomplete",
+      "profile_incomplete": "Partner profile is incomplete",
       "weekly_limit_invalid": "The weekly order limit must be at least 1, or empty for no limit",
       "work_country_operator_mismatch": "The work country belongs to another operating company.",
       "weekly_limit_reason_required": "Write why this cleaner is limited. They are shown the reason.",
@@ -3119,8 +3119,8 @@
       "completion_notes": {
         "too_long": "Completion notes are too long"
       },
-      "employee_already_assigned": "Employee is already assigned to this order",
-      "employee_not_assigned": "Employee is not assigned to this order",
+      "employee_already_assigned": "Partner is already assigned to this order",
+      "employee_not_assigned": "Partner is not assigned to this order",
       "empty": "Order is empty",
       "in_progress_cannot_cancel": "An order that is in progress cannot be cancelled",
       "invalid_status_transition": "This status change is not allowed for the current order state",
@@ -3196,10 +3196,10 @@
       "stripe_signature_required": "Stripe signature header is required"
     },
     "payout": {
-      "not_found": "This employee has no payout details on file"
+      "not_found": "This partner has no payout details on file"
     },
     "payroll": {
-      "employee_not_assigned": "Employee not assigned to this order",
+      "employee_not_assigned": "Partner not assigned to this order",
       "invoice": {
         "already_cancelled": "Invoice has already been cancelled",
         "already_exists": "Invoice already exists",
@@ -3317,14 +3317,14 @@
         "country_not_supported": "Payouts to a bank in this country are not supported yet",
         "iban_country_mismatch": "The IBAN is from a different country than the bank. Check the IBAN, or change the bank country so the two match.",
         "iban_mismatch": "The IBAN does not match the account number and bank code. Check all three, or clear the IBAN and it will be derived from them.",
-        "invalid_account_number": "The account number could not be verified — almost always a mistyped digit. Check it against the employee's bank details.",
+        "invalid_account_number": "The account number could not be verified — almost always a mistyped digit. Check it against the partner's bank details.",
         "invalid_account_prefix": "The account prefix could not be verified — it is the part before the dash in the account number. Check the digits, or clear the field if the account has none.",
         "invalid_bank_code": "Enter a 4-digit bank code",
         "invalid_iban": "This is not a valid IBAN",
         "invalid_swift": "The SWIFT/BIC does not belong to the bank's country",
         "looks_like_card": "That looks like a payment card number. Enter the bank account number instead.",
         "scheme_not_supported": "Payouts to this kind of account are not supported yet",
-        "swift_required": "The bank is in a different country than the employee's work country, so the bank's SWIFT/BIC code is also required."
+        "swift_required": "The bank is in a different country than the partner's work country, so the bank's SWIFT/BIC code is also required."
       }
     },
     "review": {

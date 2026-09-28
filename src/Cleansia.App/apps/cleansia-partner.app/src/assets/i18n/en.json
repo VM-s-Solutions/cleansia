@@ -76,7 +76,7 @@
       "change_password_error": "Could not change your password. Please try again."
     },
     "profile": {
-      "title": "Employee Onboarding Profile",
+      "title": "Partner Onboarding Profile",
       "description": "Please fill in all required information and upload the necessary documents to complete the onboarding process.",
       "personal_info": "Personal Information",
       "full_name": "Full Name",
@@ -92,7 +92,7 @@
       "tax_id": "Tax ID",
       "registration_number": "Registration Number",
       "legal_entity_name": "Legal Entity Name",
-      "bank_details": "Bank Details for Payroll",
+      "bank_details": "Bank Details for Payouts",
       "iban": "IBAN",
       "emergency_contact": "Emergency Contact",
       "emergency_name": "Name",
@@ -274,7 +274,7 @@
       "no_available_orders": "No available orders",
       "no_my_orders": "You haven't completed any orders yet",
       "order_taken_success": "Order taken successfully!",
-      "employee_not_found": "Employee information not found",
+      "employee_not_found": "Partner information not found",
       "available_spots": "Available Spots",
       "complete_order": {
         "title": "Complete Order",
@@ -366,9 +366,9 @@
       "payment_type": "Payment Type",
       "total_price": "Total Price",
       "currency": "Currency",
-      "assigned_employee": "Assigned Employee",
-      "employee_name": "Employee Name",
-      "employee_phone": "Employee Phone",
+      "assigned_employee": "Assigned Partner",
+      "employee_name": "Partner Name",
+      "employee_phone": "Partner Phone",
       "notes_instructions": "Notes & Instructions",
       "notes": "Notes",
       "special_instructions": "Special Instructions",
@@ -403,8 +403,8 @@
       "report_issue": "Report Issue",
       "add_note": "Add Note",
       "take_order": "Take Order",
-      "assigned_employees": "Assigned Employees",
-      "employee_email": "Employee Email",
+      "assigned_employees": "Assigned Partners",
+      "employee_email": "Partner Email",
       "not_found_title": "Order Not Found",
       "not_found_message": "The order you are looking for could not be found.",
       "load_failed": "Failed to load order details",
@@ -413,7 +413,7 @@
       "issue_description": "Issue Description",
       "issue_description_placeholder": "Describe the issue...",
       "issue_type": "Issue Type",
-      "employee_notes": "Employee Notes",
+      "employee_notes": "Partner Notes",
       "reported_issues": "Reported Issues",
       "resolved": "Resolved",
       "open_issue": "Open",
@@ -437,8 +437,8 @@
       }
     },
     "invoices": {
-      "title": "My Payroll Invoices",
-      "description": "View your payroll invoices and track payments for completed orders.",
+      "title": "My Invoices",
+      "description": "View your invoices and track payments for completed orders.",
       "my_invoices": "My Invoices",
       "invoice_number": "Invoice Number",
       "pay_period": "Pay Period",
@@ -469,7 +469,7 @@
       "title": "Invoice Details",
       "invoice_details": "Invoice Details",
       "summary": "Invoice Summary",
-      "employee_name": "Employee Name",
+      "employee_name": "Partner Name",
       "variable_symbol": "Variable Symbol",
       "total_orders": "Total Orders",
       "generated_date": "Generated Date",
@@ -809,7 +809,7 @@
       "invalid_password_format": "Invalid password format",
       "invalid_reset_token": "Invalid password reset token",
       "same_reset_password": "New password matches the old password",
-      "insufficient_privileges": "You do not have permission to access the partner app. Only employees and administrators can log in.",
+      "insufficient_privileges": "You do not have permission to access the partner app. Only partners and administrators can log in.",
       "current_password_invalid": "The current password is incorrect",
       "account_locked": "Too many failed login attempts. The account is temporarily locked — try again in a few minutes.",
       "too_many_attempts": "Too many attempts with this code. Request a new code and try again.",
@@ -886,8 +886,8 @@
         "already_cancelled": "This order is already cancelled.",
         "already_completed": "This order is already completed."
       },
-      "employee_already_assigned": "Employee is already assigned to this order",
-      "employee_not_assigned": "Employee is not assigned to this order",
+      "employee_already_assigned": "Partner is already assigned to this order",
+      "employee_not_assigned": "Partner is not assigned to this order",
       "not_in_progress": "Order is not in progress",
       "not_confirmed": "Order must be in confirmed status to start",
       "too_early_to_start": "Too early to start — you can begin up to an hour before the booking.",
@@ -924,14 +924,14 @@
       "not_found": "User not found"
     },
     "employee": {
-      "not_found": "Employee not found",
-      "not_allowed_to_update": "You are not allowed to update this employee",
-      "data_not_available": "Employee data not available",
+      "not_found": "Partner not found",
+      "not_allowed_to_update": "You are not allowed to update this partner",
+      "data_not_available": "Partner data not available",
       "profile_incomplete": "Complete profile information",
       "documents_missing": "Upload required documents",
       "not_approved": "Your account is not approved to work on orders",
-      "already_approved": "Employee has already been approved",
-      "already_rejected": "Employee has already been rejected",
+      "already_approved": "Partner has already been approved",
+      "already_rejected": "Partner has already been rejected",
       "job_radius_out_of_range": "The travel radius you entered is outside the allowed range",
       "legal_entity_not_accepted": "Cleaners work with us as natural persons; a company cannot be registered here",
       "legal_documents_not_accepted": "Accept the current version of your contract documents before taking jobs."
@@ -963,7 +963,7 @@
       "no_unpaid_order_pays": "No unpaid order pays found",
       "no_active_period": "No active pay period found",
       "no_pay_configuration": "No pay configuration found",
-      "employee_not_assigned": "Employee not assigned to this order"
+      "employee_not_assigned": "Partner not assigned to this order"
     },
     "receipt": {
       "not_found": "Receipt not found"
@@ -1145,7 +1145,7 @@
       "status_title": "Order Status Explained",
       "status": {
         "confirmed_desc": "A cleaner has taken the job. This says nothing about payment — a cash order is Confirmed before any money moves.",
-        "in_progress_desc": "An employee has started working on this order. Cleaning is underway.",
+        "in_progress_desc": "A partner has started working on this order. Cleaning is underway.",
         "completed_desc": "Work is finished, photos uploaded. Ready for payment processing.",
         "cancelled_desc": "Order was cancelled. No payment or work required."
       },

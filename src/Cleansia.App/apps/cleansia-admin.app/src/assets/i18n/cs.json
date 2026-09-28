@@ -24,8 +24,8 @@
     "admin": {
       "default": "Administrátorský portál",
       "login": "Přihlášení",
-      "employees": "Zaměstnanci",
-      "employee_details": "Detail zaměstnance",
+      "employees": "Partneři",
+      "employee_details": "Detail partnera",
       "pay_periods": "Platební období",
       "pay_period_details": "Detail platebního období",
       "orders": "Objednávky",
@@ -122,7 +122,7 @@
     "next_page": "Další stránka",
     "actions": {
       "login": "Přihlásit se",
-      "pay_configs": "Konfigurace mezd",
+      "pay_configs": "Konfigurace odměn",
       "logout": "Odhlásit se",
       "back": "Zpět",
       "save": "Uložit",
@@ -255,7 +255,7 @@
     }
   },
   "sidebar": {
-    "employees": "Zaměstnanci",
+    "employees": "Partneři",
     "pay_periods": "Platební období",
     "orders": "Objednávky",
     "invoices": "Faktury",
@@ -298,8 +298,8 @@
       "message": "Nemáte oprávnění pro přístup do této oblasti. Jsou vyžadována administrátorská oprávnění."
     },
     "employee_management": {
-      "title": "Správa zaměstnanců",
-      "description": "Spravujte zaměstnance, schvalujte registrace a sledujte výkon",
+      "title": "Správa partnerů",
+      "description": "Spravujte partnery a schvalujte registrace",
       "name": "Jméno",
       "email": "E-mail",
       "phone": "Telefon",
@@ -312,7 +312,7 @@
       "approve": "Schválit",
       "reject": "Zamítnout",
       "view_details": "Zobrazit detail",
-      "no_employees": "Žádní zaměstnanci k zobrazení",
+      "no_employees": "Žádní partneři k zobrazení",
       "filters": {
         "search": "Vyhledávání",
         "search_placeholder": "Vyhledat dle jména, emailu nebo telefonu",
@@ -320,24 +320,24 @@
         "active_status": "Stav aktivity"
       },
       "approve_dialog": {
-        "title": "Schválit zaměstnance",
+        "title": "Schválit partnera",
         "subtitle": "Vyberte zemi, ve které je tento uklízeč oprávněn pracovat. Určuje výchozí měnu, jazyk a DPH.",
-        "approve_button": "Schválit zaměstnance"
+        "approve_button": "Schválit partnera"
       },
       "reject_dialog": {
-        "title": "Zamítnout zaměstnance",
-        "subtitle": "Prosím uveďte důvod zamítnutí tohoto zaměstnance",
+        "title": "Zamítnout partnera",
+        "subtitle": "Prosím uveďte důvod zamítnutí tohoto partnera",
         "reason_label": "Důvod zamítnutí",
         "reason_placeholder": "Zadejte podrobný důvod zamítnutí...",
         "reason_hint": "Maximálně 500 znaků",
-        "reject_button": "Zamítnout zaměstnance"
+        "reject_button": "Zamítnout partnera"
       },
       "messages": {
-        "load_error": "Nepodařilo se načíst zaměstnance",
-        "approve_success": "Zaměstnanec byl úspěšně schválen",
-        "approve_error": "Nepodařilo se schválit zaměstnance",
-        "reject_success": "Zaměstnanec byl úspěšně zamítnut",
-        "reject_error": "Nepodařilo se zamítnout zaměstnance"
+        "load_error": "Nepodařilo se načíst partnery",
+        "approve_success": "Partner byl úspěšně schválen",
+        "approve_error": "Nepodařilo se schválit partnera",
+        "reject_success": "Partner byl úspěšně zamítnut",
+        "reject_error": "Nepodařilo se zamítnout partnera"
       },
       "contract_status": {
         "pending": "Čekající",
@@ -349,8 +349,8 @@
       "profile_incomplete_tooltip": "Profil nekompletní - nelze schválit"
     },
     "employee_detail": {
-      "title": "Detail zaměstnance",
-      "back_to_list": "Zpět na seznam zaměstnanců",
+      "title": "Detail partnera",
+      "back_to_list": "Zpět na seznam partnerů",
       "personal_info": "Osobní informace",
       "first_name": "Jméno",
       "last_name": "Příjmení",
@@ -362,7 +362,7 @@
       "city": "Město",
       "zip_code": "PSČ",
       "country": "Země",
-      "employment_info": "Pracovní informace",
+      "employment_info": "Identifikační a podnikatelské údaje",
       "nationality": "Státní příslušnost",
       "passport_id": "Číslo pasu/občanského průkazu",
       "tax_id": "Daňové identifikační číslo",
@@ -405,8 +405,8 @@
       "review_notes": "Poznámky kontroly",
       "document_description": "Popis",
       "actions": {
-        "approve_employee": "Schválit zaměstnance",
-        "reject_employee": "Zamítnout zaměstnance",
+        "approve_employee": "Schválit partnera",
+        "reject_employee": "Zamítnout partnera",
         "approve_document": "Schválit",
         "reject_document": "Zamítnout",
         "download_document": "Stáhnout",
@@ -414,24 +414,24 @@
         "set_weekly_limit": "Nastavit týdenní limit"
       },
       "approve_employee_dialog": {
-        "title": "Schválit zaměstnance",
+        "title": "Schválit partnera",
         "subtitle": "Vyberte zemi, ve které je tento uklízeč oprávněn pracovat. Určuje výchozí měnu, jazyk a DPH.",
         "work_country_label": "Pracovní země",
         "work_country_hint": "Lze vybrat pouze země, ve kterých aktuálně poskytujeme služby.",
         "notes_label": "Poznámky ke schválení",
         "notes_placeholder": "Volitelné poznámky ke schválení...",
         "notes_hint": "Maximálně 1000 znaků",
-        "approve_button": "Schválit zaměstnance"
+        "approve_button": "Schválit partnera"
       },
       "reject_employee_dialog": {
-        "title": "Zamítnout zaměstnance",
-        "subtitle": "Prosím uveďte důvod zamítnutí tohoto zaměstnance",
+        "title": "Zamítnout partnera",
+        "subtitle": "Prosím uveďte důvod zamítnutí tohoto partnera",
         "reason_label": "Důvod zamítnutí",
         "reason_placeholder": "Zadejte podrobný důvod zamítnutí...",
         "reason_hint": "Maximálně 500 znaků",
         "reason_required": "Důvod zamítnutí je povinný",
         "reason_too_long": "Důvod zamítnutí je příliš dlouhý (max 500 znaků)",
-        "reject_button": "Zamítnout zaměstnance"
+        "reject_button": "Zamítnout partnera"
       },
       "reject_document_dialog": {
         "title": "Zamítnout dokument",
@@ -444,18 +444,18 @@
         "reject_button": "Zamítnout dokument"
       },
       "messages": {
-        "load_error": "Nepodařilo se načíst detail zaměstnance",
-        "employee_approve_success": "Zaměstnanec byl úspěšně schválen",
-        "employee_approve_error": "Nepodařilo se schválit zaměstnance",
-        "employee_reject_success": "Zaměstnanec byl úspěšně zamítnut",
-        "employee_reject_error": "Nepodařilo se zamítnout zaměstnance",
+        "load_error": "Nepodařilo se načíst detail partnera",
+        "employee_approve_success": "Partner byl úspěšně schválen",
+        "employee_approve_error": "Nepodařilo se schválit partnera",
+        "employee_reject_success": "Partner byl úspěšně zamítnut",
+        "employee_reject_error": "Nepodařilo se zamítnout partnera",
         "document_approve_success": "Dokument byl úspěšně schválen",
         "document_approve_error": "Nepodařilo se schválit dokument",
         "document_reject_success": "Dokument byl úspěšně zamítnut",
         "document_reject_error": "Nepodařilo se zamítnout dokument",
         "document_download_error": "Nepodařilo se stáhnout dokument",
-        "employee_update_success": "Zaměstnanec byl úspěšně aktualizován",
-        "employee_update_error": "Nepodařilo se aktualizovat zaměstnance",
+        "employee_update_success": "Partner byl úspěšně aktualizován",
+        "employee_update_error": "Nepodařilo se aktualizovat partnera",
         "pay_config_save_success": "Konfigurace platby úspěšně uložena",
         "pay_config_save_error": "Nepodařilo se uložit konfiguraci platby",
         "pay_config_delete_success": "Konfigurace platby úspěšně smazána",
@@ -463,7 +463,7 @@
         "pay_config_bulk_success": "Konfigurace platby použity: {{created}} vytvořeno, {{skipped}} přeskočeno",
         "weekly_limit_save_success": "Týdenní limit zakázek byl aktualizován"
       },
-      "grade": "Hodnost",
+      "grade": "Šablona sazeb",
       "document_types": {
         "identity_card": "Občanský průkaz",
         "passport": "Pas",
@@ -479,7 +479,7 @@
       },
       "pay_configuration": "Konfigurace platby",
       "add_pay_config": "Přidat přepsání platby",
-      "no_pay_configs": "Žádné přepsání platby pro zaměstnance. Platí globální sazby.",
+      "no_pay_configs": "Žádné přepsání platby pro partnera. Platí globální sazby.",
       "pay_config_service": "Služba",
       "pay_config_package": "Balíček",
       "pay_config_currency": "Měna",
@@ -489,11 +489,11 @@
       "pay_config_min_pay": "Minimální platba",
       "pay_config_max_pay": "Maximální platba",
       "pay_config_description": "Popis",
-      "grade_template": "Šablona hodnosti",
+      "grade_template": "Šablona sazeb",
       "services_configured": "Služby",
       "packages_configured": "Balíčky",
-      "bulk_apply_grade": "Použít šablonu hodnosti",
-      "bulk_apply_grade_hint": "Vyberte hodnost a měnu pro automatické vytvoření platových konfigurací pro všechny služby a balíčky. Sazby se vypočítávají ze základní ceny pomocí násobitelů hodností (Junior 0.5x, Medior 0.75x, Senior 1.0x).",
+      "bulk_apply_grade": "Použít šablonu sazeb",
+      "bulk_apply_grade_hint": "Vyberte šablonu sazeb a měnu pro automatické vytvoření konfigurací odměn pro všechny služby a balíčky. Sazby se vypočítávají ze základní ceny pomocí násobitelů šablon (Junior 0.5x, Medior 0.75x, Senior 1.0x).",
       "overwrite_existing": "Přepsat existující konfigurace",
       "apply_to_all": "Použít na vše",
       "services": "Služby",
@@ -503,14 +503,14 @@
       "add_override": "Přidat sazbu",
       "edit_override": "Upravit sazbu",
       "delete_override": "Odstranit sazbu",
-      "delete_override_confirm": "Opravdu chcete odstranit tuto individuální sazbu? Zaměstnanec se vrátí ke globální sazbě.",
+      "delete_override_confirm": "Opravdu chcete odstranit tuto individuální sazbu? Partner se vrátí ke globální sazbě.",
       "grade_quick_fill": "Rychlé vyplnění",
       "grade_junior": "Junior",
       "grade_medior": "Medior",
       "grade_senior": "Senior",
       "payout_details": {
         "title": "Platební údaje",
-        "none": "U tohoto zaměstnance nejsou uloženy žádné platební údaje.",
+        "none": "U tohoto partnera nejsou uloženy žádné platební údaje.",
         "load_error": "Platební údaje se nepodařilo načíst.",
         "retry": "Zkusit znovu",
         "masked_account": "Účet",
@@ -546,7 +546,7 @@
       "weekly_order_limit": "Týdenní limit zakázek",
       "weekly_order_limit_unlimited": "Neomezený",
       "weekly_order_limit_hint": "Ponechte prázdné pro neomezený počet",
-      "not_found": "Zaměstnanec nenalezen",
+      "not_found": "Partner nenalezen",
       "actions_section": "Akce",
       "rate_format": "{{base}} + {{room}}/pokoj + {{bath}}/koupelna"
     },
@@ -638,8 +638,8 @@
           "none_assigned": "K této objednávce není přiřazen žádný uklízeč, kterého by bylo možné přeřadit.",
           "add_only_hint": "Na této zakázce nikdo není. Zadejte uklízeče, kterýho na ni chcete přiřadit.",
           "from": "Od uklízeče",
-          "to": "Na uklízeče (ID zaměstnance)",
-          "to_hint": "Zadejte ID cílového zaměstnance.",
+          "to": "Na uklízeče (ID partnera)",
+          "to_hint": "Zadejte ID cílového partnera.",
           "unnamed": "Nepojmenovaný uklízeč",
           "submit": "Přeřadit",
           "success": "Uklízeč byl úspěšně přeřazen."
@@ -688,8 +688,8 @@
       "receipt_number": "Číslo účtenky",
       "cancellation_fee_rate": "Storno poplatek",
       "cancellation_fee_owed": "Dosud dlužný poplatek",
-      "assigned_employee": "Přiřazený zaměstnanec",
-      "assigned_employees": "Přiřazení zaměstnanci",
+      "assigned_employee": "Přiřazený partner",
+      "assigned_employees": "Přiřazení partneři",
       "employee_name": "Jméno",
       "employee_phone": "Telefon",
       "employee_email": "E-mail",
@@ -762,9 +762,9 @@
     },
     "invoice_management": {
       "title": "Správa faktur",
-      "description": "Zobrazujte a spravujte faktury zaměstnanců, schvalujte platby a sledujte stav faktur",
+      "description": "Zobrazujte a spravujte faktury partnerů, schvalujte platby a sledujte stav faktur",
       "invoice_number": "Faktura #",
-      "employee_name": "Zaměstnanec",
+      "employee_name": "Partner",
       "pay_period": "Platební období",
       "total_orders": "Objednávky",
       "total_amount": "Celková částka",
@@ -777,7 +777,7 @@
       "no_invoices": "Nebyly nalezeny žádné faktury",
       "filters": {
         "search": "Vyhledávání",
-        "search_placeholder": "Hledat dle čísla faktury nebo zaměstnance",
+        "search_placeholder": "Hledat dle čísla faktury nebo partnera",
         "status": "Stav faktury",
         "currency": "Měna"
       },
@@ -981,7 +981,7 @@
       "pdf_error_label": "Chyba",
       "actions_section": "Akce",
       "invoice_summary": "Přehled faktury",
-      "employee_name": "Zaměstnanec",
+      "employee_name": "Partner",
       "pay_period": "Platební období",
       "variable_symbol": "Variabilní symbol",
       "specific_symbol": "Specifický symbol",
@@ -1010,7 +1010,7 @@
       },
       "order_pays": {
         "order_number": "Objednávka #",
-        "base_pay": "Základní mzda",
+        "base_pay": "Základní odměna",
         "extras_pay": "Příplatky",
         "expenses_pay": "Náklady",
         "bonus_pay": "Bonus",
@@ -1076,8 +1076,8 @@
     },
     "pay_config_management": {
       "title": "Globální sazby",
-      "description": "Spravujte výchozí platformové sazby, které se automaticky použijí pro všechny zaměstnance.",
-      "info_banner": "Toto jsou globální sazby, které platí pro každého zaměstnance. Chcete-li nastavit sazby jednotlivých zaměstnanců, otevřete detail zaměstnance a použijte funkci Použít šablonu hodnosti.",
+      "description": "Spravujte výchozí platformové sazby, které se automaticky použijí pro všechny partnery.",
+      "info_banner": "Toto jsou globální sazby, které platí pro každého partnera. Chcete-li nastavit sazby jednotlivých partnerů, otevřete detail partnera a použijte funkci Použít šablonu sazeb.",
       "create": "Vytvořit globální sazbu",
       "edit": "Upravit",
       "delete": "Smazat globální sazbu",
@@ -1098,7 +1098,7 @@
       "create_title": "Vytvořit globální sazbu",
       "edit_title": "Upravit globální sazbu",
       "target": "Pro co se tato sazba používá",
-      "target_hint": "Vyberte službu NEBO balíček, nikoli oba. Tato sazba se použije pro všechny zaměstnance, pokud nemají vlastní přepsání.",
+      "target_hint": "Vyberte službu NEBO balíček, nikoli oba. Tato sazba se použije pro všechny partnery, pokud nemají vlastní přepsání.",
       "service": "Služba",
       "package": "Balíček",
       "currency": "Měna",
@@ -1414,7 +1414,7 @@
       "all_markets": "Všechny trhy",
       "audience": {
         "customer": "Zákazník",
-        "employee": "Zaměstnanec"
+        "employee": "Partner"
       },
       "type": {
         "terms_of_service": "Obchodní podmínky",
@@ -1714,7 +1714,7 @@
         "order_date": "Datum vytvoření objednávky",
         "total_amount": "Celková částka objednávky s měnou",
         "order_status_link": "Odkaz pro kontrolu stavu objednávky",
-        "employee_name": "Jméno zaměstnance",
+        "employee_name": "Jméno partnera",
         "period_label": "Označení výplatního období (např. 2025-01)",
         "start_date": "Datum začátku období",
         "end_date": "Datum konce období",
@@ -1908,7 +1908,7 @@
             "years": "Počet let, po které se uchovává záznam o odvolaném souhlasu"
           },
           "deleted_documents": {
-            "days": "Počet dní, po které se uchovává deaktivovaný dokument zaměstnance, než se soubor smaže"
+            "days": "Počet dní, po které se uchovává deaktivovaný dokument partnera, než se soubor smaže"
           },
           "notifications": {
             "days": "Počet dní, po které notifikace zůstává v přehledu v aplikaci"
@@ -2046,7 +2046,7 @@
     },
     "reports": {
       "title": "Přehledy",
-      "description": "Prohlížejte přehledy o tržbách a mzdách, analyzujte výkon a sledujte finanční údaje",
+      "description": "Prohlížejte přehledy o tržbách a odměnách a sledujte finanční údaje",
       "date_filter": "Období",
       "start_date": "Datum od",
       "end_date": "Datum do",
@@ -2057,7 +2057,7 @@
         "currency": "Měna"
       },
       "revenue_report": "Přehled tržeb",
-      "payroll_report": "Přehled mezd",
+      "payroll_report": "Přehled odměn",
       "no_data": "Pro vybrané období nejsou k dispozici žádná data",
       "total_revenue": "Celkové tržby",
       "avg_order_value": "Průměrná hodnota objednávky",
@@ -2071,26 +2071,26 @@
       "package_name": "Balíček",
       "payment_type": "Typ platby",
       "order_count": "Objednávky",
-      "total_payroll": "Celkové mzdy",
-      "avg_pay_per_employee": "Průměrná mzda na zaměstnance",
+      "total_payroll": "Celkové odměny",
+      "avg_pay_per_employee": "Průměrná odměna na partnera",
       "total_invoices": "Celkem faktur",
       "pending_invoices": "Čekající faktury",
       "paid_invoices": "Zaplacené faktury",
       "total_bonuses": "Celkové bonusy",
-      "employee_summaries": "Přehledy zaměstnanců",
-      "employee_name": "Zaměstnanec",
+      "employee_summaries": "Přehledy partnerů",
+      "employee_name": "Partner",
       "invoice_count": "Faktury",
       "subtotal": "Mezisoučet",
       "bonus": "Bonus",
       "deductions": "Srážky",
       "total_amount": "Celkem",
-      "payroll_by_status": "Mzdy podle stavu",
+      "payroll_by_status": "Odměny podle stavu",
       "status": "Stav",
-      "monthly_payroll": "Měsíční mzdy",
+      "monthly_payroll": "Měsíční odměny",
       "month": "Měsíc",
       "messages": {
         "revenue_load_error": "Nepodařilo se načíst přehled tržeb",
-        "payroll_load_error": "Nepodařilo se načíst přehled mezd"
+        "payroll_load_error": "Nepodařilo se načíst přehled odměn"
       },
       "settled_from_credit": "Z kreditu zákazníků",
       "settled_on_tender": "Skutečně přijato",
@@ -2803,7 +2803,7 @@
   },
   "pay_periods": {
     "title": "Správa platebních období",
-    "description": "Spravujte platební období, uzavírejte období a sledujte platby zaměstnanců",
+    "description": "Spravujte platební období, uzavírejte období a sledujte platby partnerům",
     "create_new": "Vytvořit nové výplatní období",
     "confirm_close": "Opravdu chcete uzavřít toto platební období? Tuto akci nelze vrátit zpět.",
     "filters": {
@@ -2946,7 +2946,7 @@
       "current_password_invalid": "Současné heslo není správné",
       "external_type_error": "Tento účet používá jiný způsob přihlášení.",
       "google_type_error": "Tento účet používá přihlášení přes Google. Použijte tlačítko Google.",
-      "insufficient_privileges": "Nemáte oprávnění přistupovat k administrátorskému panelu. Přihlásit se mohou pouze administrátoři a zaměstnanci.",
+      "insufficient_privileges": "Nemáte oprávnění přistupovat k administrátorskému panelu. Přihlásit se mohou pouze administrátoři.",
       "internal_type_error": "Pro tento účet se přihlaste e-mailem a heslem.",
       "invalid_apple_token": "Neplatný Apple token",
       "invalid_confirmation_code": "Neplatný potvrzovací kód",
@@ -3041,13 +3041,13 @@
       "invalid_format": "Neplatný formát e-mailu"
     },
     "employee": {
-      "already_approved": "Zaměstnanec již byl schválen",
-      "already_rejected": "Zaměstnanec již byl zamítnut",
+      "already_approved": "Partner již byl schválen",
+      "already_rejected": "Partner již byl zamítnut",
       "documents_not_approved": "Tohoto uklízeče nelze schválit, dokud nejsou nahrány a schváleny všechny dokumenty, které vyžaduje země výkonu jeho práce.",
-      "not_allowed_to_update": "Nemáte oprávnění upravit tohoto zaměstnance",
-      "not_found": "Zaměstnanec nenalezen",
+      "not_allowed_to_update": "Nemáte oprávnění upravit tohoto partnera",
+      "not_found": "Partner nenalezen",
       "pay_config_missing": "Tento uklízeč nemá nastavenou odměnu u jedné nebo více aktivních služeb či balíčků. Před schválením chybějící nastavení doplňte.",
-      "profile_incomplete": "Profil zaměstnance je nekompletní",
+      "profile_incomplete": "Profil partnera je nekompletní",
       "weekly_limit_invalid": "Týdenní limit zakázek musí být alespoň 1, nebo prázdný pro neomezený počet",
       "work_country_operator_mismatch": "Pracovní země patří jiné provozní společnosti.",
       "weekly_limit_reason_required": "Napište, proč tohoto uklízeče omezujete. Důvod se mu zobrazí.",
@@ -3119,8 +3119,8 @@
       "completion_notes": {
         "too_long": "Poznámky k dokončení jsou příliš dlouhé"
       },
-      "employee_already_assigned": "Zaměstnanec je již přiřazen k této objednávce",
-      "employee_not_assigned": "Zaměstnanec není přiřazen k této objednávce",
+      "employee_already_assigned": "Partner je již přiřazen k této objednávce",
+      "employee_not_assigned": "Partner není přiřazen k této objednávce",
       "empty": "Objednávka je prázdná",
       "in_progress_cannot_cancel": "Probíhající objednávku nelze zrušit",
       "invalid_status_transition": "Tato změna stavu není pro aktuální stav objednávky povolena",
@@ -3172,15 +3172,15 @@
     },
     "pay_config": {
       "already_exists": "Konfigurace platby již existuje",
-      "base_pay_negative": "Základní mzda nemůže být záporná",
+      "base_pay_negative": "Základní odměna nemůže být záporná",
       "cannot_have_both": "Nelze mít současně službu i balíček",
       "extra_per_bathroom_negative": "Příplatek za koupelnu nemůže být záporný",
       "extra_per_room_negative": "Příplatek za místnost nemůže být záporný",
       "has_order_pays": "Nelze smazat konfiguraci platby, která má přiřazené platby objednávek",
       "last_for_live_catalogue_entry": "Toto je poslední nastavení odměny pro službu nebo balíček, které se stále používají. Jeho odstraněním by u zakázek zmizela odhadovaná odměna.",
-      "maximum_less_than_minimum": "Maximální mzda nemůže být nižší než minimální mzda",
-      "maximum_pay_negative": "Maximální mzda nemůže být záporná",
-      "minimum_pay_negative": "Minimální mzda nemůže být záporná",
+      "maximum_less_than_minimum": "Maximální odměna nemůže být nižší než minimální odměna",
+      "maximum_pay_negative": "Maximální odměna nemůže být záporná",
+      "minimum_pay_negative": "Minimální odměna nemůže být záporná",
       "not_found": "Konfigurace platby nenalezena",
       "service_or_package_required": "Je vyžadována buď služba nebo balíček"
     },
@@ -3196,10 +3196,10 @@
       "stripe_signature_required": "Hlavička podpisu Stripe je povinná"
     },
     "payout": {
-      "not_found": "Tento zaměstnanec nemá uložené platební údaje"
+      "not_found": "Tento partner nemá uložené platební údaje"
     },
     "payroll": {
-      "employee_not_assigned": "Zaměstnanec není přiřazen k této objednávce",
+      "employee_not_assigned": "Partner není přiřazen k této objednávce",
       "invoice": {
         "already_cancelled": "Faktura již byla zrušena",
         "already_exists": "Faktura již existuje",
@@ -3220,7 +3220,7 @@
       "no_pay_configuration": "Konfigurace platby nenalezena",
       "no_unpaid_order_pays": "Nenalezeny žádné nezaplacené platby objednávek",
       "pay": {
-        "already_calculated": "Mzda již byla vypočtena"
+        "already_calculated": "Odměna již byla vypočtena"
       },
       "pay_period": {
         "not_found": "Platební období nenalezeno",
@@ -3317,14 +3317,14 @@
         "country_not_supported": "Výplaty do banky v této zemi zatím nejsou podporovány",
         "iban_country_mismatch": "IBAN je z jiné země než banka. Zkontrolujte IBAN, nebo změňte zemi banky tak, aby souhlasily.",
         "iban_mismatch": "IBAN neodpovídá číslu účtu a kódu banky. Zkontrolujte všechny tři údaje, nebo IBAN vymažte a odvodí se z nich.",
-        "invalid_account_number": "Číslo účtu se nepodařilo ověřit — téměř vždy jde o překlep v číslici. Zkontrolujte ho podle bankovních údajů zaměstnance.",
+        "invalid_account_number": "Číslo účtu se nepodařilo ověřit — téměř vždy jde o překlep v číslici. Zkontrolujte ho podle bankovních údajů partnera.",
         "invalid_account_prefix": "Předčíslí účtu se nepodařilo ověřit — je to část před pomlčkou v čísle účtu. Zkontrolujte číslice, nebo pole vymažte, pokud účet předčíslí nemá.",
         "invalid_bank_code": "Zadejte čtyřmístný kód banky",
         "invalid_iban": "Toto není platný IBAN",
         "invalid_swift": "SWIFT/BIC nepatří do země banky",
         "looks_like_card": "Vypadá to jako číslo platební karty. Zadejte místo toho číslo bankovního účtu.",
         "scheme_not_supported": "Výplaty na tento typ účtu zatím nejsou podporovány",
-        "swift_required": "Banka je v jiné zemi, než ve které zaměstnanec pracuje, proto je nutný také SWIFT/BIC kód banky."
+        "swift_required": "Banka je v jiné zemi, než ve které partner pracuje, proto je nutný také SWIFT/BIC kód banky."
       }
     },
     "review": {

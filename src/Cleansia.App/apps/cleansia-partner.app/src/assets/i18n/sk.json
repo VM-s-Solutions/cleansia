@@ -1182,34 +1182,11 @@
     "show_help": "Zobraziť nápovedu"
   },
   "cookies": {
-    "title": "Vaše súkromie je pre nás dôležité",
-    "description": "Používame cookies na zlepšenie vášho prehliadania, poskytovanie personalizovaného obsahu a analýzu návštevnosti. Kliknutím na \"Prijať\" súhlasíte s používaním cookies.",
-    "accept": "Prijať všetko",
-    "decline": "Odmietnuť",
+    "title": "Cookies na tejto stránke",
+    "description": "Používame len cookies a úložisko prehliadača, ktoré aplikácia potrebuje, aby fungovala: aby ste zostali prihlásení, aby sme si pamätali váš jazyk a že ste toto upozornenie videli. Žiadne analytické ani reklamné cookies.",
     "learn_more": "Zistiť viac",
-    "banner_title": "Banner so súhlasom s cookies",
-    "customize": "Prispôsobiť",
-    "hide_settings": "Skryť nastavenia",
-    "save_preferences": "Uložiť predvoľby",
-    "always_on": "Vždy zapnuté",
-    "categories": {
-      "necessary": {
-        "name": "Nevyhnutné",
-        "description": "Nevyhnutné pre fungovanie webu. Nedajú sa vypnúť."
-      },
-      "analytics": {
-        "name": "Analytické",
-        "description": "Pomáhajú nám pochopiť, ako návštevníci používajú náš web."
-      },
-      "marketing": {
-        "name": "Marketingové",
-        "description": "Slúžia na zobrazovanie relevantných reklám a sledovanie kampaní."
-      },
-      "preferences": {
-        "name": "Preferenčné",
-        "description": "Zapamätajú si vaše nastavenia, ako je jazyk a téma."
-      }
-    }
+    "banner_title": "Upozornenie na cookies",
+    "acknowledge": "Rozumiem"
   },
   "auth": {
     "login": {

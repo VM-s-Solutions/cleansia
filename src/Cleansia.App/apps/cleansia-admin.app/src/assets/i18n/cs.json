@@ -3378,34 +3378,11 @@
     }
   },
   "cookies": {
-    "title": "Vaše soukromí je pro nás důležité",
-    "description": "Používáme cookies pro zlepšení vašeho prohlížení, poskytování personalizovaného obsahu a analýzu návštěvnosti. Kliknutím na \"Přijmout\" souhlasíte s používáním cookies.",
-    "accept": "Přijmout vše",
-    "decline": "Odmítnout",
+    "title": "Cookies na tomto webu",
+    "description": "Používáme jen cookies a úložiště prohlížeče, které aplikace potřebuje, aby fungovala: abyste zůstali přihlášeni, abychom si pamatovali váš jazyk a že jste toto upozornění viděli. Žádné analytické ani reklamní cookies.",
     "learn_more": "Více informací",
-    "banner_title": "Banner souhlasu s cookies",
-    "customize": "Přizpůsobit",
-    "hide_settings": "Skrýt nastavení",
-    "save_preferences": "Uložit předvolby",
-    "always_on": "Vždy zapnuto",
-    "categories": {
-      "necessary": {
-        "name": "Nezbytné",
-        "description": "Nezbytné pro fungování webu. Nelze vypnout."
-      },
-      "analytics": {
-        "name": "Analytické",
-        "description": "Pomáhají nám pochopit, jak návštěvníci používají náš web."
-      },
-      "marketing": {
-        "name": "Marketingové",
-        "description": "Slouží k zobrazování relevantních reklam a sledování kampaní."
-      },
-      "preferences": {
-        "name": "Preferenční",
-        "description": "Zapamatují si vaše nastavení, jako je jazyk a téma."
-      }
-    }
+    "banner_title": "Upozornění na cookies",
+    "acknowledge": "Rozumím"
   },
   "auth": {
     "login": {

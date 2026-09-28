@@ -469,13 +469,13 @@
       },
       "services": {
         "title": "Co u nás objednáte",
-        "subtitle": "{{count}} služeb. Vlastní stroje a ekologické prostředky v ceně.",
+        "subtitle": "{{count}} služeb. Uklízeč přiveze vše potřebné a je to v ceně.",
         "view_all": "Všechny služby",
         "details": "Podrobnosti",
         "extra_stain": "Odstranění složitých skvrn",
         "extra_odour": "Odstranění zápachu (domácí mazlíčci, cigarety)",
         "from": "od",
-        "eco_chip": "Ekologicky · v ceně"
+        "supplies_chip": "Prostředky · v ceně"
       },
       "before_after": {
         "title": "Jak to dopadá",
@@ -501,8 +501,8 @@
           "answer": "Není to nutné. Mnoho klientů nám předá klíče nebo nás pustí dovnitř a odejde. Pracujeme samostatně a spolehlivě."
         },
         "q3": {
-          "question": "Nosíte si vlastní vybavení a prostředky?",
-          "answer": "Ano, přijíždíme vždy plně vybaveni. Používáme profesionální stroje a šetrné, certifikované přípravky."
+          "question": "Kdo přiveze vybavení a čisticí prostředky?",
+          "answer": "Uklízeč přiveze vše potřebné a je to v ceně. Nic nemusíte chystat."
         },
         "q4": {
           "question": "Můžete čistit nábytek s delikátním potahem?",
@@ -719,7 +719,7 @@
     },
     "services": {
       "title": "Naše služby",
-      "subtitle": "Profesionální úklid s vlastními stroji a pevnou cenou. Vyberte službu nebo celý balíček.",
+      "subtitle": "Profesionální úklid za pevnou cenu — uklízeč přiveze vše potřebné. Vyberte službu nebo celý balíček.",
       "cleaning_services": "Jednotlivé služby",
       "packages": "Balíčky",
       "book_now": "Objednat",
@@ -729,10 +729,8 @@
       "most_popular": "Nejoblíbenější",
       "per_cleaning": "za úklid",
       "premium_quality": "Prémiová kvalita úklidu",
-      "vetted_professionals": "Prověření profesionálové",
       "check_back_later": "Podívejte se sem později pro naše prémiové nabídky.",
-      "trust_certified": "Certifikovaní profesionálové",
-      "trust_eco": "Ekologické produkty",
+      "trust_supplies": "Prostředky v ceně",
       "trust_report_window": "24 h na nahlášení problému",
       "cta_title": "Připraveni na zářivě čistý domov?",
       "cta_subtitle": "Objednáte online za dvě minuty. Cenu vidíte předem a už se nezmění.",
@@ -1008,7 +1006,6 @@
       "time_note": "Šedé časy jsou dnes už mimo dojezd. Denní okna {{first}}:00–{{last}}:00.",
       "title": "Objednat úklid",
       "total_price": "Celková cena",
-      "trust_certified": "Certifikovaní uklízeči",
       "trust_no_hidden": "Žádné skryté poplatky",
       "zip_code": "PSČ",
       "wizard": {
@@ -1035,8 +1032,6 @@
       "past_orders": "Předchozí objednávky",
       "rebook": "Objednat znovu",
       "empty_subtitle": "Vaše cesta k čistému domovu začíná zde! Prohlédněte si naše služby a objednejte si první úklid.",
-      "empty_trust_certified": "Certifikovaní profesionálové",
-      "empty_trust_eco": "Ekologické produkty",
       "empty_step1": "Vyberete službu nebo balíček.",
       "empty_step2": "Řeknete kam a kdy.",
       "empty_step3": "Zaplatíte kartou nebo na místě.",
@@ -1301,7 +1296,7 @@
       "none_title": "Když něco nesedí, napište nám",
       "none_lead": "Reklamaci můžete podat u kterékoli dokončené objednávky. Odpovídáme do jednoho pracovního dne.",
       "none_item1": "Kvalita úklidu, nedokončený úklid nebo uklízeč, který nepřijel.",
-      "none_item2": "Poškozená věc — pojištění řešíme za vás.",
+      "none_item2": "Poškozená věc — napište nám a vyřešíme to s vámi.",
       "none_item3": "Částka, která nesedí, nebo platba, kterou jste neschválili.",
       "my_orders": "Moje objednávky",
       "attach_photo": "Přiložit fotku",

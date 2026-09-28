@@ -469,13 +469,13 @@
       },
       "services": {
         "title": "Čo si u nás objednáte",
-        "subtitle": "{{count}} služieb. Vlastné stroje a ekologické prostriedky v cene.",
+        "subtitle": "{{count}} služieb. Upratovač prinesie všetko potrebné a je to v cene.",
         "view_all": "Všetky služby",
         "details": "Podrobnosti",
         "extra_stain": "Odstránenie odolných škvŕn",
         "extra_odour": "Odstránenie zápachu (domáce zvieratá, cigarety)",
         "from": "od",
-        "eco_chip": "Ekologicky · v cene"
+        "supplies_chip": "Prostriedky · v cene"
       },
       "before_after": {
         "title": "Ako to dopadá",
@@ -501,8 +501,8 @@
           "answer": "Nie je to potrebné. Mnohí klienti nám odovzdajú kľúče alebo nás pustia dnu a odídu. Pracujeme samostatne a spoľahlivo."
         },
         "q3": {
-          "question": "Nosíte si vlastné vybavenie a prípravky?",
-          "answer": "Áno, prichádzame vždy plne vybavení. Používame profesionálne stroje a šetrné, certifikované prípravky."
+          "question": "Kto prinesie vybavenie a čistiace prostriedky?",
+          "answer": "Upratovač prinesie všetko potrebné a je to v cene. Nič nemusíte pripravovať."
         },
         "q4": {
           "question": "Dokážete vyčistiť nábytok s jemným čalúnením?",
@@ -719,7 +719,7 @@
     },
     "services": {
       "title": "Naše služby",
-      "subtitle": "Profesionálne upratovanie s vlastnými strojmi a pevnou cenou. Vyberte si službu alebo celý balíček.",
+      "subtitle": "Profesionálne upratovanie za pevnú cenu — upratovač prinesie všetko potrebné. Vyberte si službu alebo celý balíček.",
       "cleaning_services": "Jednotlivé služby",
       "packages": "Balíčky",
       "book_now": "Objednať",
@@ -729,10 +729,8 @@
       "most_popular": "Najobľúbenejšie",
       "per_cleaning": "za čistenie",
       "premium_quality": "Prémiová kvalita čistenia",
-      "vetted_professionals": "Overení profesionáli",
       "check_back_later": "Navštívte nás neskôr pre naše prémiové ponuky.",
-      "trust_certified": "Certifikovaní profesionáli",
-      "trust_eco": "Ekologické produkty",
+      "trust_supplies": "Prostriedky v cene",
       "trust_report_window": "24 h na nahlásenie problému",
       "cta_title": "Pripravení na žiarivý domov?",
       "cta_subtitle": "Objednáte online za dve minúty. Cenu vidíte vopred a už sa nezmení.",
@@ -1008,7 +1006,6 @@
       "time_note": "Sivé časy sú dnes už mimo dojazd. Denné okná {{first}}:00–{{last}}:00.",
       "title": "Objednať čistenie",
       "total_price": "Celková cena",
-      "trust_certified": "Certifikovaní pracovníci",
       "trust_no_hidden": "Žiadne skryté poplatky",
       "zip_code": "PSČ",
       "wizard": {
@@ -1035,8 +1032,6 @@
       "past_orders": "Minulé objednávky",
       "rebook": "Objednať znova",
       "empty_subtitle": "Vaša cesta k čistému domovu začína tu! Prezrite si naše služby a objednajte si prvý termín.",
-      "empty_trust_certified": "Certifikovaní profesionáli",
-      "empty_trust_eco": "Ekologické produkty",
       "empty_step1": "Vyberiete službu alebo balík.",
       "empty_step2": "Poviete kam a kedy.",
       "empty_step3": "Zaplatíte kartou alebo na mieste.",
@@ -1301,7 +1296,7 @@
       "none_title": "Keď niečo nesedí, napíšte nám",
       "none_lead": "Reklamáciu môžete podať pri ktorejkoľvek dokončenej objednávke. Odpovedáme do jedného pracovného dňa.",
       "none_item1": "Kvalita upratovania, nedokončené upratovanie alebo upratovač, ktorý neprišiel.",
-      "none_item2": "Poškodená vec — poistenie riešime za vás.",
+      "none_item2": "Poškodená vec — napíšte nám a vyriešime to s vami.",
       "none_item3": "Suma, ktorá nesedí, alebo platba, ktorú ste neschválili.",
       "my_orders": "Moje objednávky",
       "attach_photo": "Priložiť fotku",

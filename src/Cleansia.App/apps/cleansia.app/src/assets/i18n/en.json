@@ -469,13 +469,13 @@
       },
       "services": {
         "title": "What you can order",
-        "subtitle": "{{count}} services. Our own machines and eco products included.",
+        "subtitle": "{{count}} services. The cleaner brings everything needed, included in the price.",
         "view_all": "All services",
         "details": "Details",
         "extra_stain": "Tough stain removal",
         "extra_odour": "Odour removal (pets, cigarettes)",
         "from": "from",
-        "eco_chip": "Eco-friendly · included"
+        "supplies_chip": "Supplies · included"
       },
       "before_after": {
         "title": "How it turns out",
@@ -501,8 +501,8 @@
           "answer": "It is not necessary. Many clients hand over the keys or let us in and leave. We work independently and reliably."
         },
         "q3": {
-          "question": "Do you bring your own equipment and products?",
-          "answer": "Yes, we always arrive fully equipped. We use professional machines and gentle, certified products."
+          "question": "Who brings the equipment and cleaning products?",
+          "answer": "The cleaner brings everything needed for the job, and it is included in the price. You don't need to prepare anything."
         },
         "q4": {
           "question": "Can you clean furniture with delicate upholstery?",
@@ -719,7 +719,7 @@
     },
     "services": {
       "title": "Our Services",
-      "subtitle": "Professional cleaning with our own equipment and a fixed price. Pick a single service or a whole package.",
+      "subtitle": "Professional cleaning at a fixed price — the cleaner brings everything needed. Pick a single service or a whole package.",
       "cleaning_services": "Individual services",
       "packages": "Packages",
       "book_now": "Book Now",
@@ -729,10 +729,8 @@
       "most_popular": "Most Popular",
       "per_cleaning": "per cleaning",
       "premium_quality": "Premium quality cleaning",
-      "vetted_professionals": "Vetted professionals",
       "check_back_later": "Check back later for our premium offerings.",
-      "trust_certified": "Certified Professionals",
-      "trust_eco": "Eco-Friendly Products",
+      "trust_supplies": "Supplies included",
       "trust_report_window": "24 h to report a problem",
       "cta_title": "Ready for a Spotless Home?",
       "cta_subtitle": "Book online in two minutes. You see the price up front and it does not change.",
@@ -1008,7 +1006,6 @@
       "time_note": "Greyed times are already inside today’s lead time. Daily windows {{first}}:00–{{last}}:00.",
       "title": "Book a Cleaning",
       "total_price": "Total Price",
-      "trust_certified": "Certified Cleaners",
       "trust_no_hidden": "No Hidden Fees",
       "zip_code": "ZIP Code",
       "wizard": {
@@ -1035,8 +1032,6 @@
       "past_orders": "Past Orders",
       "rebook": "Rebook",
       "empty_subtitle": "Your cleaning journey starts here! Browse our services and book your first appointment.",
-      "empty_trust_certified": "Certified Professionals",
-      "empty_trust_eco": "Eco-Friendly Products",
       "empty_step1": "Pick a service or a package.",
       "empty_step2": "Tell us where and when.",
       "empty_step3": "Pay by card or on the day.",
@@ -1301,7 +1296,7 @@
       "none_title": "When something isn't right, write to us",
       "none_lead": "You can report any completed order. We answer within one working day.",
       "none_item1": "Quality of the clean, an unfinished clean, or a cleaner who didn't arrive.",
-      "none_item2": "Something damaged — we handle the insurance for you.",
+      "none_item2": "Something damaged — tell us and we will sort it out with you.",
       "none_item3": "An amount that doesn't add up, or a payment you didn't approve.",
       "my_orders": "My orders",
       "attach_photo": "Attach photo",

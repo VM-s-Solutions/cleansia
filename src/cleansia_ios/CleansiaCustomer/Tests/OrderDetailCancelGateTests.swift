@@ -16,7 +16,10 @@ private struct NoopLiveActivitySync: OrderLiveActivitySyncing {
 final class OrderDetailCancelGateTests: XCTestCase {
     private let snackbar = SnackbarController()
 
-    private func makeVM(client: FakeOrderClient) -> OrderDetailViewModel {
+    private func makeVM(
+        client: FakeOrderClient,
+        now: @escaping () -> Date = Date.init
+    ) -> OrderDetailViewModel {
         OrderDetailViewModel(
             orderId: "o1",
             client: client,
@@ -26,7 +29,8 @@ final class OrderDetailCancelGateTests: XCTestCase {
             snackbar: snackbar,
             eventBus: OrderEventBus(),
             liveActivity: NoopLiveActivitySync(),
-            pollInterval: 60
+            pollInterval: 60,
+            now: now
         )
     }
 
@@ -98,6 +102,167 @@ final class OrderDetailCancelGateTests: XCTestCase {
     func testTheViewReadsTheGateFromTheViewModelRatherThanAStatusListOfItsOwn() throws {
         let source = try readSource("CleansiaCustomer/Sources/Features/Orders/OrderDetailView.swift")
         XCTAssertTrue(source.contains("showCancel: vm.canCancel,"), "the footer no longer binds Cancel to vm.canCancel")
+    }
+
+    // MARK: - past the booked start
+
+    private let start = Date(timeIntervalSince1970: 1_800_000_000)
+
+    private func order(statusValue: Int, staffed: Bool) -> CustomerOrderDetail {
+        OrderFixtures.detail(
+            statusCode: Code(type: "OrderStatus", name: nil, value: statusValue),
+            cleaningDateTime: start,
+            currencyCode: "CZK",
+            assignedEmployees: staffed
+                ? [AssignedEmployeeDto(id: "seat-1", employeeId: "emp-1", fullName: "Jana", phoneNumber: nil)]
+                : []
+        )
+    }
+
+    private func loadedVM(_ order: CustomerOrderDetail, at instant: Date) async -> OrderDetailViewModel {
+        let client = FakeOrderClient()
+        client.detailResults = [.success(order)]
+        let vm = makeVM(client: client, now: { instant })
+        await vm.load()
+        return vm
+    }
+
+    /// `CancellationAssessor.BlockedReason` refuses a staffed order once its start has passed, whatever
+    /// the not-started status, and the customer reports the no-show instead of paying the last-minute fee.
+    func testPastTheStartAStaffedOrderOffersTheNoShowReportInCancelsPlace() async {
+        for status in [0, 1, 2, 3] {
+            let vm = await loadedVM(order(statusValue: status, staffed: true), at: start.addingTimeInterval(60))
+            XCTAssertFalse(vm.canCancel, "status \(status)")
+            XCTAssertTrue(vm.canReportCleanerNoShow, "status \(status)")
+        }
+    }
+
+    /// The server compares `nowUtc >= CleaningDateTime`: the start itself is already past it.
+    func testTheBookedStartItselfIsWhereCancelGivesWay() async {
+        let atStart = await loadedVM(order(statusValue: 2, staffed: true), at: start)
+        XCTAssertFalse(atStart.canCancel)
+        XCTAssertTrue(atStart.canReportCleanerNoShow)
+
+        let justBefore = await loadedVM(order(statusValue: 3, staffed: true), at: start.addingTimeInterval(-1))
+        XCTAssertTrue(justBefore.canCancel)
+        XCTAssertFalse(justBefore.canReportCleanerNoShow)
+    }
+
+    /// Nobody took the job, so nobody failed to arrive: the unfilled sweep owns that order, and the
+    /// customer may still cancel it free.
+    func testAnUnstaffedOrderPastItsStartStaysCancellable() async {
+        let vm = await loadedVM(order(statusValue: 0, staffed: false), at: start.addingTimeInterval(3600))
+        XCTAssertTrue(vm.canCancel)
+        XCTAssertFalse(vm.canReportCleanerNoShow)
+    }
+
+    func testOnceWorkHasStartedOrTheOrderIsClosedNeitherIsOffered() async {
+        for status in [4, 5, 6] {
+            let vm = await loadedVM(order(statusValue: status, staffed: true), at: start.addingTimeInterval(3600))
+            XCTAssertFalse(vm.canCancel, "status \(status)")
+            XCTAssertFalse(vm.canReportCleanerNoShow, "status \(status)")
+        }
+    }
+
+    func testAnOrderWithNoStartTimeKeepsCancel() async {
+        let undated = OrderFixtures.detail(
+            statusCode: Code(type: "OrderStatus", name: nil, value: 2),
+            assignedEmployees: [
+                AssignedEmployeeDto(id: "seat-1", employeeId: "emp-1", fullName: "Jana", phoneNumber: nil)
+            ]
+        )
+        let vm = await loadedVM(undated, at: start)
+        XCTAssertTrue(vm.canCancel)
+        XCTAssertFalse(vm.canReportCleanerNoShow)
+    }
+
+    /// The gate reads the clock when asked, not at load: a screen left open across the start swaps the
+    /// footer on the poller's next re-render without a fetch deciding it.
+    func testTheClockIsReadAtEveryAskNotFrozenAtLoad() async {
+        var clock = start.addingTimeInterval(-60)
+        let client = FakeOrderClient()
+        client.detailResults = [.success(order(statusValue: 2, staffed: true))]
+        let vm = makeVM(client: client, now: { clock })
+        await vm.load()
+        XCTAssertTrue(vm.canCancel)
+
+        clock = start.addingTimeInterval(60)
+
+        XCTAssertFalse(vm.canCancel)
+        XCTAssertTrue(vm.canReportCleanerNoShow)
+        XCTAssertEqual(client.detailCallCount, 1)
+    }
+
+    func testNothingIsReportedBeforeTheOrderHasLoaded() {
+        let late = start.addingTimeInterval(3600)
+        let vm = makeVM(client: FakeOrderClient(), now: { late })
+        XCTAssertFalse(vm.canReportCleanerNoShow)
+    }
+
+    func testTheViewOffersTheReportFromTheViewModelAndTheShellFilesItAsServiceNotProvided() throws {
+        let view = try readSource("CleansiaCustomer/Sources/Features/Orders/OrderDetailView.swift")
+        XCTAssertTrue(view.contains("showCleanerDidNotArrive: vm.canReportCleanerNoShow,"))
+        XCTAssertTrue(view.contains("onCleanerDidNotArrive: { onReportCleanerNoShow(orderId) },"))
+
+        let shell = try readSource("CleansiaCustomer/Sources/Features/Shell/CustomerShellView.swift")
+        XCTAssertTrue(shell.contains("reason: DisputeReasonOption.serviceNotProvided"))
+        XCTAssertTrue(shell.contains("initialReason: reason,"))
+    }
+
+    /// `DisputeReason.ServiceNotProvided = 2` on the server; the form's picker offers the same value.
+    func testTheNoShowReasonIsTheServersServiceNotProvided() {
+        XCTAssertEqual(DisputeReasonOption.serviceNotProvided, 2)
+        XCTAssertTrue(DisputeReasonOption.all.contains { $0.value == DisputeReasonOption.serviceNotProvided })
+        XCTAssertEqual(
+            L10n.Disputes.reason(DisputeReasonOption.serviceNotProvided),
+            L10n.localized("dispute_reason_service_not_provided")
+        )
+    }
+
+    // MARK: - no card payment
+
+    private func tookNoCardPayment(paymentType: Int, paymentStatus: Int) async -> Bool {
+        let detail = OrderFixtures.detail(
+            statusCode: Code(type: "OrderStatus", name: nil, value: 2),
+            paymentType: Code(type: "PaymentType", name: nil, value: paymentType),
+            paymentStatus: Code(type: "PaymentStatus", name: nil, value: paymentStatus),
+            currencyCode: "CZK"
+        )
+        let client = FakeOrderClient()
+        client.detailResults = [.success(detail)]
+        let vm = makeVM(client: client)
+        await vm.load()
+        return vm.tookNoCardPayment
+    }
+
+    /// Wire values: PaymentType Cash=1, Card=2; PaymentStatus Pending=1, Paid=2, Failed=3,
+    /// PartiallyRefunded=6. The server's `Order.TookNoPayment` is Pending or Failed; a confirmed recurring
+    /// cash occurrence rests at Paid with nothing taken, so cash is read off the type as well.
+    func testTheSheetStatesNoRefundOnCashOrOnACardThatWasNeverCharged() async {
+        let cashPending = await tookNoCardPayment(paymentType: 1, paymentStatus: 1)
+        let cashPaid = await tookNoCardPayment(paymentType: 1, paymentStatus: 2)
+        let cardPending = await tookNoCardPayment(paymentType: 2, paymentStatus: 1)
+        let cardFailed = await tookNoCardPayment(paymentType: 2, paymentStatus: 3)
+        XCTAssertTrue(cashPending)
+        XCTAssertTrue(cashPaid)
+        XCTAssertTrue(cardPending)
+        XCTAssertTrue(cardFailed)
+    }
+
+    func testACardThatWasChargedKeepsTheRefundLine() async {
+        let cardPaid = await tookNoCardPayment(paymentType: 2, paymentStatus: 2)
+        let cardPartlyRefunded = await tookNoCardPayment(paymentType: 2, paymentStatus: 6)
+        XCTAssertFalse(cardPaid)
+        XCTAssertFalse(cardPartlyRefunded)
+    }
+
+    func testNoPaymentFactsAreReadBeforeTheOrderHasLoaded() {
+        XCTAssertFalse(makeVM(client: FakeOrderClient()).tookNoCardPayment)
+    }
+
+    func testTheViewHandsTheSheetTheViewModelsReading() throws {
+        let view = try readSource("CleansiaCustomer/Sources/Features/Orders/OrderDetailView.swift")
+        XCTAssertTrue(view.contains("tookNoCardPayment: vm.tookNoCardPayment"))
     }
 
     // MARK: - the confirmed figure

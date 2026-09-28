@@ -15,8 +15,9 @@ enum ShellRoute: Hashable, Codable {
     /// Non-optional on purpose: a dispute is always ABOUT an order, and
     /// `CreateDisputeViewModel.submit` cannot post without one. Making the id
     /// optional is what let the disputes-list "+" push a form that could never
-    /// be submitted — the type now makes that route unrepresentable.
-    case createDispute(orderId: String)
+    /// be submitted — the type now makes that route unrepresentable. `reason` preselects one of
+    /// `DisputeReasonOption`'s values.
+    case createDispute(orderId: String, reason: Int? = nil)
     case disputeDetail(String)
     case addresses
     case editProfile(showBookingHint: Bool)

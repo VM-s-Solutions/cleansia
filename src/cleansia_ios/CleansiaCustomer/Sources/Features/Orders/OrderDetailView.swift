@@ -16,6 +16,7 @@ struct OrderDetailView: View {
     private let paymentSheet: PaymentSheetPresenting
     private let mapProvider: MapProvider
     private let onReportIssue: (String) -> Void
+    private let onReportCleanerNoShow: (String) -> Void
     private let onRebook: (String) -> Void
     private let onMakeRecurring: (String) -> Void
     private let onReadWorkContract: (String) -> Void
@@ -36,6 +37,7 @@ struct OrderDetailView: View {
         paymentSheet: PaymentSheetPresenting,
         mapProvider: MapProvider,
         onReportIssue: @escaping (String) -> Void,
+        onReportCleanerNoShow: @escaping (String) -> Void,
         onRebook: @escaping (String) -> Void,
         onMakeRecurring: @escaping (String) -> Void,
         onReadWorkContract: @escaping (String) -> Void
@@ -57,6 +59,7 @@ struct OrderDetailView: View {
         self.paymentSheet = paymentSheet
         self.mapProvider = mapProvider
         self.onReportIssue = onReportIssue
+        self.onReportCleanerNoShow = onReportCleanerNoShow
         self.onRebook = onRebook
         self.onMakeRecurring = onMakeRecurring
         self.onReadWorkContract = onReadWorkContract
@@ -171,11 +174,13 @@ struct OrderDetailView: View {
                     authoring: vm.recurringAuthoring
                 ),
                 showCancel: vm.canCancel,
+                showCleanerDidNotArrive: vm.canReportCleanerNoShow,
                 showReportIssue: OrderStatusGroup.isReportable(order.status),
                 cancelEnabled: !vm.cancelState.isSubmitting,
                 onRebook: { onRebook(orderId) },
                 onMakeRecurring: { onMakeRecurring(orderId) },
                 onCancel: { showCancelSheet = true },
+                onCleanerDidNotArrive: { onReportCleanerNoShow(orderId) },
                 onReportIssue: { onReportIssue(orderId) }
             )
         }
@@ -195,7 +200,8 @@ struct OrderDetailView: View {
                     showCancelSheet = false
                     vm.dismissCancelError()
                 }
-            }
+            },
+            tookNoCardPayment: vm.tookNoCardPayment
         )
         .task { await vm.loadCancellationQuote() }
         .snackbarHost(snackbar, bottomInset: SnackbarController.defaultBottomInset)
@@ -351,22 +357,25 @@ struct OrderDetailFooterStyle {
 
     static let makeRecurring = Self(icon: "calendar", tint: CleansiaColors.primary)
     static let cancel = Self(icon: "xmark.circle", tint: CleansiaColors.error)
+    static let cleanerDidNotArrive = Self(icon: "person.fill.questionmark", tint: CleansiaColors.error)
     static let reportIssue = Self(icon: "exclamationmark.triangle", tint: CleansiaColors.error)
 }
 
 /// The order-detail footer (`ActionsFooter` in `OrderDetailScreen.kt`).
 /// Several actions overlap on one status, so they are stacked in Android's order
 /// rather than each owning its own footer: Book again (primary) on top, then
-/// Make recurring, then Cancel, then Report issue.
+/// Make recurring, then Cancel or — past the start — The cleaner did not arrive, then Report issue.
 private struct OrderDetailActionsFooter: View {
     let showRebook: Bool
     let showMakeRecurring: Bool
     let showCancel: Bool
+    let showCleanerDidNotArrive: Bool
     let showReportIssue: Bool
     let cancelEnabled: Bool
     let onRebook: () -> Void
     let onMakeRecurring: () -> Void
     let onCancel: () -> Void
+    let onCleanerDidNotArrive: () -> Void
     let onReportIssue: () -> Void
 
     var body: some View {
@@ -393,6 +402,14 @@ private struct OrderDetailActionsFooter: View {
                     contentColor: OrderDetailFooterStyle.cancel.tint,
                     enabled: cancelEnabled,
                     action: onCancel
+                )
+            }
+            if showCleanerDidNotArrive {
+                CleansiaOutlinedButton(
+                    L10n.OrderDetail.actionCleanerDidNotArrive,
+                    leadingIcon: OrderDetailFooterStyle.cleanerDidNotArrive.icon,
+                    contentColor: OrderDetailFooterStyle.cleanerDidNotArrive.tint,
+                    action: onCleanerDidNotArrive
                 )
             }
             if showReportIssue {

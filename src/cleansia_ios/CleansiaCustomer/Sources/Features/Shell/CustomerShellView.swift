@@ -318,9 +318,10 @@ extension CustomerShellView {
                 onDisputeClick: { model.path.append(ShellRoute.disputeDetail($0)) },
                 onBrowseOrders: model.openOrders
             )
-        case let .createDispute(orderId):
+        case let .createDispute(orderId, reason):
             CreateDisputeView(
                 orderId: orderId,
+                initialReason: reason,
                 repository: container.disputeRepository,
                 orderClient: container.orderClient,
                 snackbar: snackbar,
@@ -417,6 +418,12 @@ extension CustomerShellView {
             // The footer hands back the id of the order on screen — the dispute
             // form is only reachable with one, which is the whole fix.
             onReportIssue: { model.path.append(ShellRoute.createDispute(orderId: $0)) },
+            onReportCleanerNoShow: {
+                model.path.append(ShellRoute.createDispute(
+                    orderId: $0,
+                    reason: DisputeReasonOption.serviceNotProvided
+                ))
+            },
             // Pop FIRST. `rebookOrder` presents the booking sheet at the shell
             // root, so leaving the detail pushed underneath drops the customer
             // back onto the old order when the sheet dismisses — Android pops to

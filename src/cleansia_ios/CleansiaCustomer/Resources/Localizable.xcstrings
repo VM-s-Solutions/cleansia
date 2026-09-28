@@ -19228,6 +19228,41 @@
         }
       }
     },
+    "order_action_cleaner_did_not_arrive": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uklízeč nepřišel"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The cleaner didn't arrive"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Клинер не пришёл"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Upratovač neprišiel"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Клінер не прийшов"
+          }
+        }
+      }
+    },
     "order_cancel_confirm": {
       "extractionState": "stale",
       "localizations": {
@@ -19679,6 +19714,41 @@
           "stringUnit": {
             "state": "translated",
             "value": "Комісія за скасування %1$@ — вам повернемо %2$@."
+          }
+        }
+      }
+    },
+    "order_cancel_fee_only": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Poplatek za zrušení %1$@. Kartou jste nic nezaplatili, takže se nic nevrací."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cancellation fee %1$@. No card payment was taken, so there is nothing to refund."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Комиссия за отмену %1$@. Оплаты картой не было, поэтому возвращать нечего."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Poplatok za zrušenie %1$@. Kartou ste nič nezaplatili, takže sa nič nevracia."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Комісія за скасування %1$@. Оплати карткою не було, тож повертати нічого."
           }
         }
       }

@@ -11,6 +11,7 @@ struct CreateDisputeView: View {
 
     init(
         orderId: String?,
+        initialReason: Int? = nil,
         repository: DisputeRepository,
         orderClient: OrderClient,
         snackbar: SnackbarController,
@@ -22,6 +23,7 @@ struct CreateDisputeView: View {
             orderClient: orderClient,
             snackbar: snackbar
         ))
+        _reasonId = State(initialValue: initialReason.map { String($0) })
         self.onCreated = onCreated
     }
 

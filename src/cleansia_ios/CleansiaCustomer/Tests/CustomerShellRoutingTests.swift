@@ -76,6 +76,7 @@ final class CustomerShellRoutingTests: XCTestCase {
             .rewardsActivity,
             .disputes,
             .createDispute(orderId: "order-3"),
+            .createDispute(orderId: "order-3", reason: DisputeReasonOption.serviceNotProvided),
             .disputeDetail("d-1"),
             .addresses,
             .editProfile(showBookingHint: false),
@@ -109,6 +110,10 @@ final class CustomerShellRoutingTests: XCTestCase {
         )
         XCTAssertNotEqual(ShellRoute.subscribePlus, ShellRoute.editProfile(showBookingHint: false))
         XCTAssertNotEqual(ShellRoute.workContract(acceptanceId: "a"), ShellRoute.workContract(acceptanceId: "b"))
+        XCTAssertNotEqual(
+            ShellRoute.createDispute(orderId: "a"),
+            ShellRoute.createDispute(orderId: "a", reason: DisputeReasonOption.serviceNotProvided)
+        )
     }
 
     private func assertPath(

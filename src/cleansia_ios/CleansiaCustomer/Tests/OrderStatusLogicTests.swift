@@ -372,6 +372,21 @@ final class CancellationFeeCardModelTests: XCTestCase {
         XCTAssertEqual(Self.callout(.freeOopsWindow, refundIsEstimate: true).amountKey, "order_cancel_fee_none")
     }
 
+    /// An order that took no card payment gets no refund from the server, so a charged tier states the
+    /// fee alone and the free tiers are unchanged.
+    func testAnOrderThatTookNoCardPaymentStatesTheFeeAndNoRefund() {
+        for tier in [CancellationTier.partial, .lastMinute] {
+            let callout = Self.callout(tier, fee: 250, refund: 750, tookNoCardPayment: true)
+            XCTAssertEqual(callout.amountKey, "order_cancel_fee_only")
+            XCTAssertEqual(callout.amounts, [250])
+        }
+        for tier in [CancellationTier.freeNotAccepted, .freeOopsWindow, .freeOutsideWindow] {
+            let callout = Self.callout(tier, tookNoCardPayment: true)
+            XCTAssertEqual(callout.amountKey, "order_cancel_fee_none")
+            XCTAssertEqual(callout.amounts, [])
+        }
+    }
+
     /// The sheet states the customer's own grace, whichever the preview resolved for them, on every tier
     /// — the figure is the server's and the card adds none of its own.
     func testTheCalloutCarriesTheGraceThePreviewReturned() {
@@ -391,6 +406,7 @@ final class CancellationFeeCardModelTests: XCTestCase {
         refund: Double = 1000,
         forfeitsExpressWaiver: Bool = false,
         refundIsEstimate: Bool = false,
+        tookNoCardPayment: Bool = false,
         oopsWindowMinutes: Int = 15
     ) -> CancellationFeeCallout {
         let quote = CancellationQuote(
@@ -401,7 +417,11 @@ final class CancellationFeeCardModelTests: XCTestCase {
             forfeitsExpressWaiver: forfeitsExpressWaiver,
             oopsWindowMinutes: oopsWindowMinutes
         )
-        let model = CancellationFeeCardModel(.loaded(quote), refundIsEstimate: refundIsEstimate)
+        let model = CancellationFeeCardModel(
+            .loaded(quote),
+            refundIsEstimate: refundIsEstimate,
+            tookNoCardPayment: tookNoCardPayment
+        )
         guard case let .quoted(callout) = model else {
             return CancellationFeeCallout(
                 titleKey: "",
@@ -517,6 +537,7 @@ final class CancellationFeeCopyTests: XCTestCase {
         "order_cancel_fee_partial",
         "order_cancel_fee_last_minute",
         "order_cancel_fee_none",
+        "order_cancel_fee_only",
         "order_cancel_express_waiver_forfeit"
     ]
 
@@ -553,6 +574,15 @@ final class CancellationFeeCopyTests: XCTestCase {
             let fee = try XCTUnwrap(text.range(of: "250 Kč"), "the fee is missing in \(language): \(text)")
             let refund = try XCTUnwrap(text.range(of: "750 Kč"), "the refund is missing in \(language): \(text)")
             XCTAssertTrue(fee.lowerBound < refund.lowerBound, "fee and refund are swapped in \(language)")
+        }
+    }
+
+    func testTheFeeOnlyLineStatesTheFeeAndNoSecondFigure() throws {
+        for language in Self.languages {
+            L10n.bundle = try localeBundle(language)
+            let text = L10n.format("order_cancel_fee_only", arguments: ["250 Kč"])
+            XCTAssertNotNil(text.range(of: "250 Kč"), "the fee is missing in \(language): \(text)")
+            XCTAssertFalse(text.contains("%"), "a placeholder is left unfilled in \(language): \(text)")
         }
     }
 

@@ -83,9 +83,30 @@ final class OrderDetailViewModel: ViewModel {
         subscribeToEvents()
     }
 
-    /// Whether the footer offers Cancel: the server's set, read off the loaded order's status.
+    /// Whether the footer offers Cancel: the server's set, read off the loaded order's status and, past
+    /// the booked start, off whether a cleaner is on the job.
     var canCancel: Bool {
-        OrderStatusGroup.isCancellable(state.loadedValue?.status)
+        OrderStatusGroup.isCancellable(state.loadedValue?.status) && !canReportCleanerNoShow
+    }
+
+    /// Whether the footer offers "the cleaner did not arrive" in Cancel's place. Re-read on every render,
+    /// and the active-order poller re-renders a staffed order across its start.
+    var canReportCleanerNoShow: Bool {
+        guard let order = state.loadedValue else { return false }
+        return OrderStatusGroup.isAwaitingCleanerPastStart(
+            order.status,
+            hasCleaner: !order.assignedEmployees.isEmpty,
+            startsAt: order.cleaningDateTime,
+            now: now()
+        )
+    }
+
+    /// No card charge for the cancel sheet to promise back: a cash booking — a confirmed recurring cash
+    /// occurrence rests at Paid with nothing taken — or a card one whose payment is Pending or Failed.
+    var tookNoCardPayment: Bool {
+        guard let order = state.loadedValue else { return false }
+        let paymentStatus = order.paymentStatus?.value
+        return order.paymentType?.value == 1 || paymentStatus == 1 || paymentStatus == 3
     }
 
     /// One per crew member who accepted the contract for work; nothing before any acceptance.

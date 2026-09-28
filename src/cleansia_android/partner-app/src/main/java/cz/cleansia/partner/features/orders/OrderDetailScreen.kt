@@ -1,5 +1,6 @@
 package cz.cleansia.partner.features.orders
 
+import androidx.annotation.StringRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
@@ -305,6 +306,7 @@ private fun OrderDetailBottomSheetLayout(
 
     val location = order.orderLocation()
     val mapPoint = location.mapPoint()
+    val customerDetailsClosedNote = order.customerDetailsClosedNote()
 
     val screenHeight = LocalConfiguration.current.screenHeightDp.dp
     // Sheet peek = 75% of screen so the map shrinks to ~25% — just
@@ -345,6 +347,7 @@ private fun OrderDetailBottomSheetLayout(
                     status = status,
                     contentScroll = contentScroll,
                     location = location,
+                    customerDetailsClosedNote = customerDetailsClosedNote,
                     isMine = isMine,
                     isInProgress = isInProgress,
                     inFlight = inFlight,
@@ -374,6 +377,7 @@ private fun OrderDetailBottomSheetLayout(
                 } else {
                     ApproximateAreaBackdrop(
                         location = location,
+                        customerDetailsClosed = customerDetailsClosedNote != null,
                         sheetCoverHeight = sheetPeekHeight,
                     )
                 }
@@ -470,6 +474,7 @@ private fun MapBackdrop(
 @Composable
 private fun ApproximateAreaBackdrop(
     location: OrderLocation,
+    customerDetailsClosed: Boolean,
     sheetCoverHeight: Dp,
 ) {
     Box(
@@ -505,8 +510,8 @@ private fun ApproximateAreaBackdrop(
             }
             // A precise address that simply has no coordinates is the other way into this branch —
             // there the address is already on the sheet and promising it "once you take the order"
-            // would be a lie.
-            if (location !is OrderLocation.Precise) {
+            // would be a lie. So would it on a job the partner worked whose details have been removed.
+            if (location !is OrderLocation.Precise && !customerDetailsClosed) {
                 Spacer(Modifier.height(Spacing.XXS))
                 Text(
                     text = stringResource(R.string.map_approximate_area),
@@ -565,6 +570,7 @@ private fun OrderDetailSheetContent(
     status: OrderStatus?,
     contentScroll: ScrollState,
     location: OrderLocation,
+    @StringRes customerDetailsClosedNote: Int?,
     isMine: Boolean,
     isInProgress: Boolean,
     inFlight: OrderAction?,
@@ -682,6 +688,7 @@ private fun OrderDetailSheetContent(
                 customerName = order.customerName,
                 disclosure = disclosure,
                 location = location,
+                closedNote = customerDetailsClosedNote?.let { stringResource(it) },
             )
 
             ScopeCard(order = order)
@@ -752,19 +759,12 @@ private fun OrderDetailSheetContent(
             Spacer(Modifier.height(Spacing.S))
         }
 
-        // Cash orders reach the door still Pending; the server blocks
-        // CompleteOrder until the cleaner records the cash (PaymentType._1
-        // = Cash, PaymentStatus._2 = Paid — Code.value carries the enum
-        // ordinal, same as OrderStatus above).
-        val needsCashCollection = order.paymentType?.value == PaymentType._1.value &&
-            order.paymentStatus?.value != PaymentStatus._2.value
-
         StickyActionFooter(
             status = status,
             isMine = isMine,
             inFlight = inFlight,
             canComplete = order.hasAfterPhotos == true,
-            needsCashCollection = needsCashCollection,
+            needsCashCollection = order.needsCashCollection(),
             preferredOffer = preferredOffer,
             onTake = onTake,
             onStart = onStart,
@@ -865,3 +865,10 @@ internal fun cashDueLabel(
 ): String? = totalPrice
     ?.takeIf { it > 0 }
     ?.let { formatOrderPrice(it, currencyCode, locale) }
+
+/**
+ * A cash order reaches the door unpaid, a recurring occurrence the customer confirmed included, and the
+ * server refuses CompleteOrder until the partner records the cash.
+ */
+internal fun OrderItem.needsCashCollection(): Boolean =
+    paymentType?.value == PaymentType._1.value && paymentStatus?.value != PaymentStatus._2.value

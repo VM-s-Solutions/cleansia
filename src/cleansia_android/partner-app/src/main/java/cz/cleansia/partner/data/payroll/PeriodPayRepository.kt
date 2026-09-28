@@ -74,6 +74,7 @@ data class OrderPayLine(
     val createdOn: String?,
     /** The row's own currency; the summary's applies where the wire sends none. */
     val currencyCode: String?,
+    val deductionReason: String?,
 )
 
 // Stateless — nothing cached, so no SessionScopedCache
@@ -135,5 +136,6 @@ internal fun OrderEmployeePayDto.toDomainOrNull(): OrderPayLine? {
         isApproved = isApproved.required("isApproved"),
         createdOn = createdOn,
         currencyCode = currencyCode,
+        deductionReason = deductionReason,
     )
 }

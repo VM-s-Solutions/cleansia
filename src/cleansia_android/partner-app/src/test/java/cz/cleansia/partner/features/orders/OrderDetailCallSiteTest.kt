@@ -131,6 +131,30 @@ class OrderDetailCallSiteTest {
     }
 
     @Test
+    fun `a past job says the customer's details were removed instead of promising them`() {
+        assertTrue(
+            "the detail must resolve the note through customerDetailsClosedNote()",
+            detailScreen.contains("order.customerDetailsClosedNote()"),
+        )
+        assertTrue(
+            "the customer card must render the note where the customer was",
+            customerCard.contains("closedNote"),
+        )
+        assertTrue(
+            "the map stand-in must not promise the address on a job whose details were removed",
+            detailScreen.contains("location !is OrderLocation.Precise && !customerDetailsClosed"),
+        )
+    }
+
+    @Test
+    fun `the cash button follows the tested gate`() {
+        assertTrue(
+            "the footer must take its cash gate from needsCashCollection()",
+            detailScreen.contains("needsCashCollection = order.needsCashCollection()"),
+        )
+    }
+
+    @Test
     fun `job photos come from the camera and never reach a disk cache`() {
         val photosSection = source("PhotosSection.kt")
         assertTrue(

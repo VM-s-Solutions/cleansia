@@ -202,7 +202,6 @@
     <string name="pending_orders">Pending</string>
     <string name="performance_score">Performance Score</string>
     <string name="customer_rating">Customer Rating</string>
-    <string name="on_time_rate">On-Time Rate</string>
     <string name="avg_response_time">Avg Response</string>
     <string name="minutes_short">%1$d min</string>
     <string name="monthly_earnings_trend">Monthly Earnings Trend</string>
@@ -215,11 +214,6 @@
     <string name="booked_hours_label">Booked</string>
     <string name="utilization_rate">Utilization</string>
     <string name="hours_short">%1$.1fh</string>
-    <string name="completion_efficiency">Completion Efficiency</string>
-    <string name="estimated_label">Estimated</string>
-    <string name="actual_label">Actual</string>
-    <string name="faster_than_estimate">%1$d%% faster</string>
-    <string name="slower_than_estimate">%1$d%% slower</string>
 
     <!-- Orders -->
     <string name="orders">Orders</string>
@@ -285,7 +279,6 @@
     <string name="delete_photo_confirm">Are you sure you want to delete this photo?</string>
     <string name="photos_none_recorded">No photos recorded</string>
     <string name="estimated_time">Estimated Time</string>
-    <string name="actual_completion_time">Actual completion time (min)</string>
     <string name="completion_notes">Completion notes (optional)</string>
     <string name="rooms">Rooms</string>
     <string name="bathrooms">Bathrooms</string>
@@ -843,7 +836,6 @@
     <string name="jobs">Jobs</string>
     <string name="rating">Rating</string>
     <string name="unscheduled">Unscheduled</string>
-    <string name="guest">Guest</string>
     <plurals name="scope_rooms">
         <item quantity="one">%1$d room</item>
         <item quantity="other">%1$d rooms</item>
@@ -932,6 +924,8 @@
 
     <!-- Shown instead of the map when the order has no street address to point at. -->
     <string name="map_approximate_area">Approximate area — the exact address appears once you take the order.</string>
+    <string name="order_customer_details_closed_completed">The customer\'s name, address and phone number were removed 24 hours after the job was completed.</string>
+    <string name="order_customer_details_closed_cancelled">The customer\'s name, address and phone number were removed when the order was cancelled.</string>
 
     <string name="from_customer_section_title">From customer</string>
     <string name="note_general_label">Notes</string>
@@ -1331,6 +1325,8 @@
     <string name="period_pay_jobs_section">Jobs in this period</string>
     <string name="period_pay_empty">No jobs in this period yet.</string>
     <string name="period_pay_error">We couldn\'t load this period\'s pay.</string>
+    <string name="period_pay_line_deduction">Deduction %1$s</string>
+    <string name="period_pay_line_deduction_reason">Deduction %1$s: %2$s</string>
     <string name="invoice_view_period_pay">View period pay</string>
     <string name="photo_encode_failed">We couldn\'t process that photo. Please try another one.</string>
     <string name="document_read_failed">We couldn\'t read that file. Please try another one.</string>

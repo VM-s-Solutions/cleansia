@@ -148,6 +148,14 @@ class PeriodPayWireTest {
         assertEquals(4951.80, summary.grandTotal, 0.0)
     }
 
+    @Test
+    fun aDisputeChargeReachesTheLineWithTheReasonThePartnerIsShown() = runTest {
+        val lines = loaded(CAPTURED_PAYLOAD).orderPays
+
+        assertEquals("Windows left streaked in two rooms", lines.first().deductionReason)
+        assertNull(lines.last().deductionReason)
+    }
+
     // --- rule 1: money is never coerced -----------------------------------------
 
     @Test
@@ -276,6 +284,7 @@ class PeriodPayWireTest {
         assertNull(summary.invoiceId)
         assertNull(summary.orderPays.first().orderNumber)
         assertNull(summary.orderPays.first().createdOn)
+        assertNull(summary.orderPays.first().deductionReason)
         assertEquals(4951.80, summary.grandTotal, 0.0)
     }
 
@@ -356,7 +365,8 @@ class PeriodPayWireTest {
                   "payBreakdown": "base 1400.10 + extras 103.20",
                   "isApproved": true,
                   "createdOn": "2026-08-03T09:15:00Z",
-                  "currencyCode": "CZK"
+                  "currencyCode": "CZK",
+                  "deductionReason": "Windows left streaked in two rooms"
                 },
                 {
                   "id": "line-2",
@@ -441,6 +451,6 @@ class PeriodPayWireTest {
 
         val NULLABLE_STRINGS = listOf("payPeriodLabel", "invoiceId", "employeeName", "payPeriodId", "employeeId")
 
-        val LINE_NULLABLE_STRINGS = listOf("orderNumber", "createdOn", "orderId")
+        val LINE_NULLABLE_STRINGS = listOf("orderNumber", "createdOn", "orderId", "deductionReason")
     }
 }

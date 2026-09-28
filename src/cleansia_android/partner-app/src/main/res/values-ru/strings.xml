@@ -202,7 +202,6 @@
     <string name="pending_orders">Ожидающие</string>
     <string name="performance_score">Оценка производительности</string>
     <string name="customer_rating">Оценка клиентов</string>
-    <string name="on_time_rate">Процент вовремя</string>
     <string name="avg_response_time">Ср. время ответа</string>
     <string name="minutes_short">%1$d мин</string>
     <string name="monthly_earnings_trend">Месячный тренд заработка</string>
@@ -215,11 +214,6 @@
     <string name="booked_hours_label">Забронировано</string>
     <string name="utilization_rate">Использование</string>
     <string name="hours_short">%1$.1fч</string>
-    <string name="completion_efficiency">Эффективность выполнения</string>
-    <string name="estimated_label">Оценочное</string>
-    <string name="actual_label">Фактическое</string>
-    <string name="faster_than_estimate">на %1$d%% быстрее</string>
-    <string name="slower_than_estimate">на %1$d%% медленнее</string>
 
     <!-- Orders -->
     <string name="orders">Заказы</string>
@@ -285,7 +279,6 @@
     <string name="delete_photo_confirm">Вы уверены, что хотите удалить это фото?</string>
     <string name="photos_none_recorded">Фотографии не записаны</string>
     <string name="estimated_time">Ориентировочное время</string>
-    <string name="actual_completion_time">Фактическое время выполнения (мин)</string>
     <string name="completion_notes">Заметки к завершению (необязательно)</string>
     <string name="rooms">Комнаты</string>
     <string name="bathrooms">Ванные комнаты</string>
@@ -843,7 +836,6 @@
     <string name="jobs">Заказы</string>
     <string name="rating">Рейтинг</string>
     <string name="unscheduled">Без даты</string>
-    <string name="guest">Гость</string>
     <plurals name="scope_rooms">
         <item quantity="one">%1$d комната</item>
         <item quantity="few">%1$d комнаты</item>
@@ -933,6 +925,8 @@
 
     <!-- Shown instead of the map when the order has no street address to point at. -->
     <string name="map_approximate_area">Приблизительный район — точный адрес появится, когда вы возьмёте заказ.</string>
+    <string name="order_customer_details_closed_completed">Имя, адрес и номер телефона клиента удалены через 24 часа после завершения заказа.</string>
+    <string name="order_customer_details_closed_cancelled">Имя, адрес и номер телефона клиента удалены при отмене заказа.</string>
 
     <string name="from_customer_section_title">От клиента</string>
     <string name="note_general_label">Примечание</string>
@@ -1301,6 +1295,8 @@
     <string name="period_pay_jobs_section">Заказы за этот период</string>
     <string name="period_pay_empty">В этом периоде пока нет заказов.</string>
     <string name="period_pay_error">Не удалось загрузить оплату за этот период.</string>
+    <string name="period_pay_line_deduction">Удержание %1$s</string>
+    <string name="period_pay_line_deduction_reason">Удержание %1$s: %2$s</string>
     <string name="invoice_view_period_pay">Посмотреть оплату за период</string>
     <string name="photo_encode_failed">Не удалось обработать это фото. Попробуйте другое.</string>
     <string name="document_read_failed">Не удалось прочитать этот файл. Попробуйте другой.</string>

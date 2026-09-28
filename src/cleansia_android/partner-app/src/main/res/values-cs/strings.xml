@@ -225,7 +225,6 @@
     <string name="delete_photo_confirm">Opravdu chcete smazat tuto fotografii?</string>
     <string name="photos_none_recorded">Žádné fotografie nebyly zaznamenány</string>
     <string name="estimated_time">Odhadovaný čas</string>
-    <string name="actual_completion_time">Skutečný čas dokončení (min)</string>
     <string name="completion_notes">Poznámky k dokončení (volitelné)</string>
     <string name="rooms">Pokoje</string>
     <string name="bathrooms">Koupelny</string>
@@ -801,18 +800,12 @@
     <string name="analytics_title">Analytika</string>
     <string name="performance_score">Skóre výkonu</string>
     <string name="completion_rate">Míra dokončení</string>
-    <string name="completion_efficiency">Efektivita dokončení</string>
-    <string name="on_time_rate">Včasnost</string>
     <string name="customer_rating">Hodnocení zákazníků</string>
     <string name="avg_response_time">Prům. doba odezvy</string>
     <string name="utilization_rate">Vytížení</string>
     <string name="schedule_utilization">Vytížení rozvrhu</string>
     <string name="available_hours_label">K dispozici</string>
     <string name="booked_hours_label">Rezervováno</string>
-    <string name="estimated_label">Odhad</string>
-    <string name="actual_label">Skutečnost</string>
-    <string name="faster_than_estimate">o %1$d %% rychleji</string>
-    <string name="slower_than_estimate">o %1$d %% pomaleji</string>
     <string name="hours_short">%1$.1f h</string>
     <string name="minutes_short">%1$d min</string>
 
@@ -864,7 +857,6 @@
     <string name="jobs">Zakázky</string>
     <string name="rating">Hodnocení</string>
     <string name="unscheduled">Bez termínu</string>
-    <string name="guest">Host</string>
     <plurals name="scope_rooms">
         <item quantity="one">%1$d pokoj</item>
         <item quantity="few">%1$d pokoje</item>
@@ -949,6 +941,8 @@
 
     <!-- Shown instead of the map when the order has no street address to point at. -->
     <string name="map_approximate_area">Přibližná oblast — přesnou adresu uvidíte, jakmile objednávku přijmete.</string>
+    <string name="order_customer_details_closed_completed">Jméno, adresa a telefon zákazníka byly odstraněny 24 hodin po dokončení zakázky.</string>
+    <string name="order_customer_details_closed_cancelled">Jméno, adresa a telefon zákazníka byly odstraněny při zrušení objednávky.</string>
 
     <string name="from_customer_section_title">Od zákazníka</string>
     <string name="note_general_label">Poznámka</string>
@@ -1317,6 +1311,8 @@
     <string name="period_pay_jobs_section">Zakázky v tomto období</string>
     <string name="period_pay_empty">V tomto období zatím nejsou žádné zakázky.</string>
     <string name="period_pay_error">Výplatu za toto období se nepodařilo načíst.</string>
+    <string name="period_pay_line_deduction">Srážka %1$s</string>
+    <string name="period_pay_line_deduction_reason">Srážka %1$s: %2$s</string>
     <string name="invoice_view_period_pay">Zobrazit výplatu za období</string>
     <string name="photo_encode_failed">Tuto fotku se nepodařilo zpracovat. Zkuste prosím jinou.</string>
     <string name="document_read_failed">Tento soubor se nepodařilo načíst. Zkuste prosím jiný.</string>

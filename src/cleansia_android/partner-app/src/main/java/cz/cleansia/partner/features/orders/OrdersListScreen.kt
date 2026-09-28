@@ -1055,7 +1055,8 @@ private fun HistoryRow(order: OrderListItem, onClick: () -> Unit) {
         ) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = order.customerName?.takeIf { it.isNotBlank() } ?: stringResource(R.string.guest),
+                    text = order.customerName?.takeIf { it.isNotBlank() }
+                        ?: "#${order.displayOrderNumber.orEmpty()}",
                     style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,

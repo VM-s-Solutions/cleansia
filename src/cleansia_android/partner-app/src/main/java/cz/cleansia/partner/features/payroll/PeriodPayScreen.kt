@@ -288,6 +288,16 @@ private fun JobRow(line: OrderPayLine, symbol: String) {
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
+            if (line.deductionPay != 0.0) {
+                val amount = formatMoney(-line.deductionPay, symbol)
+                Text(
+                    text = line.deductionReason?.takeIf { it.isNotBlank() }
+                        ?.let { stringResource(R.string.period_pay_line_deduction_reason, amount, it) }
+                        ?: stringResource(R.string.period_pay_line_deduction, amount),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.error,
+                )
+            }
         }
         Text(
             text = formatMoney(line.totalPay, symbol),

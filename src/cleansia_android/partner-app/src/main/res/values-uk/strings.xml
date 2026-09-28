@@ -202,7 +202,6 @@
     <string name="pending_orders">Очікують</string>
     <string name="performance_score">Оцінка продуктивності</string>
     <string name="customer_rating">Оцінка клієнтів</string>
-    <string name="on_time_rate">Рівень вчасності</string>
     <string name="avg_response_time">Сер. час відповіді</string>
     <string name="minutes_short">%1$d хв</string>
     <string name="monthly_earnings_trend">Місячний тренд заробітку</string>
@@ -215,11 +214,6 @@
     <string name="booked_hours_label">Заброньовано</string>
     <string name="utilization_rate">Використання</string>
     <string name="hours_short">%1$.1fг</string>
-    <string name="completion_efficiency">Ефективність завершення</string>
-    <string name="estimated_label">Очікуваний</string>
-    <string name="actual_label">Фактичний</string>
-    <string name="faster_than_estimate">на %1$d%% швидше</string>
-    <string name="slower_than_estimate">на %1$d%% повільніше</string>
 
     <!-- Orders -->
     <string name="orders">Замовлення</string>
@@ -285,7 +279,6 @@
     <string name="delete_photo_confirm">Ви впевнені, що хочете видалити це фото?</string>
     <string name="photos_none_recorded">Фотографій не записано</string>
     <string name="estimated_time">Орієнтовний час</string>
-    <string name="actual_completion_time">Фактичний час завершення (хв)</string>
     <string name="completion_notes">Нотатки до завершення (необов\'язково)</string>
     <string name="rooms">Кімнати</string>
     <string name="bathrooms">Ванні кімнати</string>
@@ -843,7 +836,6 @@
     <string name="jobs">Замовлення</string>
     <string name="rating">Рейтинг</string>
     <string name="unscheduled">Без дати</string>
-    <string name="guest">Гість</string>
     <plurals name="scope_rooms">
         <item quantity="one">%1$d кімната</item>
         <item quantity="few">%1$d кімнати</item>
@@ -933,6 +925,8 @@
 
     <!-- Shown instead of the map when the order has no street address to point at. -->
     <string name="map_approximate_area">Приблизний район — точна адреса з\'явиться, щойно ви візьмете замовлення.</string>
+    <string name="order_customer_details_closed_completed">Ім\'я, адресу й номер телефону клієнта видалено через 24 години після завершення замовлення.</string>
+    <string name="order_customer_details_closed_cancelled">Ім\'я, адресу й номер телефону клієнта видалено під час скасування замовлення.</string>
 
     <string name="from_customer_section_title">Від клієнта</string>
     <string name="note_general_label">Примітка</string>
@@ -1301,6 +1295,8 @@
     <string name="period_pay_jobs_section">Замовлення за цей період</string>
     <string name="period_pay_empty">У цьому періоді поки немає замовлень.</string>
     <string name="period_pay_error">Не вдалося завантажити оплату за цей період.</string>
+    <string name="period_pay_line_deduction">Утримання %1$s</string>
+    <string name="period_pay_line_deduction_reason">Утримання %1$s: %2$s</string>
     <string name="invoice_view_period_pay">Переглянути оплату за період</string>
     <string name="photo_encode_failed">Не вдалося обробити це фото. Спробуйте інше.</string>
     <string name="document_read_failed">Не вдалося прочитати цей файл. Спробуйте інший.</string>

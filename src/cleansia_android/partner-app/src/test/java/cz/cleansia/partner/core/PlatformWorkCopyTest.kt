@@ -60,6 +60,18 @@ class PlatformWorkCopyTest {
     }
 
     @Test
+    fun `no copy rates the partner on punctuality or pace`() {
+        val scoring = Regex("(?i)\\bon[- ]time\\b|\\b(faster|slower)\\b|completion time")
+        val offending = Regex("<string name=\"([^\"]+)\"[^>]*>(.*?)</string>", RegexOption.DOT_MATCHES_ALL)
+            .findAll(stringsXml("values"))
+            .filter { scoring.containsMatchIn(it.groupValues[2]) }
+            .map { it.groupValues[1] }
+            .toList()
+
+        assertEquals(emptyList<String>(), offending)
+    }
+
+    @Test
     fun `the rules page is the one the partner web serves`() {
         assertEquals("https://partner.cleansia.cz/how-jobs-are-offered", HOW_JOBS_ARE_OFFERED_URL)
     }

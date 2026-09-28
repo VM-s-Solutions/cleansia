@@ -493,7 +493,7 @@
       "services_configured": "Services",
       "packages_configured": "Packages",
       "bulk_apply_grade": "Apply Rate Template",
-      "bulk_apply_grade_hint": "Pick a rate template and currency to automatically create pay configs for all services and packages. Rates are calculated from the base price using the template multipliers (Junior 0.5x, Medior 0.75x, Senior 1.0x).",
+      "bulk_apply_grade_hint": "Pick a rate template and currency to automatically create pay configs for all services and packages. Rates are calculated from the base price using the template multipliers (Standard 0.5x, Experienced 0.6x, Expert 0.7x).",
       "overwrite_existing": "Overwrite existing configs",
       "apply_to_all": "Apply to All",
       "services": "Services",
@@ -505,9 +505,9 @@
       "delete_override": "Delete override",
       "delete_override_confirm": "Are you sure you want to remove this pay override? The partner will fall back to the global rate.",
       "grade_quick_fill": "Quick fill",
-      "grade_junior": "Junior",
-      "grade_medior": "Medior",
-      "grade_senior": "Senior",
+      "grade_standard": "Standard",
+      "grade_experienced": "Experienced",
+      "grade_expert": "Expert",
       "payout_details": {
         "title": "Payout Details",
         "none": "No payout details on file for this partner.",
@@ -2547,7 +2547,22 @@
         "notes": "Resolution notes",
         "notes_placeholder": "Explain how this dispute was resolved…",
         "submit": "Resolve dispute",
-        "submitted": "Dispute resolution submitted"
+        "submitted": "Dispute resolution submitted",
+        "settlement_preference": "Customer's choice of settlement",
+        "settlement": {
+          "card_refund": "Refund to card",
+          "credit": "Credit to their balance"
+        },
+        "credit_disclaimer": "The customer chose credit: the amount is added to their credit balance instead of being refunded to the card.",
+        "charge": {
+          "toggle": "Charge the cleaner",
+          "hint": "Only when the dispute finds the cleaner at fault. The amount is deducted from their pay for this order, and they see the reason on it.",
+          "cleaner": "Cleaner",
+          "amount": "Amount to deduct",
+          "reason": "Reason",
+          "reason_placeholder": "The cleaner sees this reason on their pay record…",
+          "unnamed": "Unnamed cleaner"
+        }
       }
     },
     "membership_plans": {

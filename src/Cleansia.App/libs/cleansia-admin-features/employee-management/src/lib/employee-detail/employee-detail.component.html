@@ -732,27 +732,15 @@
       <span class="dialog-toolbar__label">
         {{ 'pages.employee_detail.grade_quick_fill' | translate }}
       </span>
+      @for (template of rateTemplates; track template.value) {
       <cleansia-button
-        [label]="'pages.employee_detail.grade_junior' | translate"
+        [label]="template.labelKey | translate"
         severity="secondary"
         buttonSize="small"
         [outlined]="true"
-        (onClick)="applyGradeMultiplier(0.5)"
+        (onClick)="applyGradeMultiplier(template.multiplier)"
       />
-      <cleansia-button
-        [label]="'pages.employee_detail.grade_medior' | translate"
-        severity="secondary"
-        buttonSize="small"
-        [outlined]="true"
-        (onClick)="applyGradeMultiplier(0.75)"
-      />
-      <cleansia-button
-        [label]="'pages.employee_detail.grade_senior' | translate"
-        severity="secondary"
-        buttonSize="small"
-        [outlined]="true"
-        (onClick)="applyGradeMultiplier(1)"
-      />
+      }
     </div>
   </form>
 

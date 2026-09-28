@@ -85,15 +85,10 @@ export class IssueCreditDialogComponent {
    * The server's ISSUABLE set, not the whole enum. `OrderPayment` describes money LEAVING a balance
    * and the validator refuses it, so offering it would only produce a 400 the admin cannot act on;
    * `OrderPaymentReturned` is accepted by the server but is the automatic return path's own reason,
-   * and an admin choosing it by hand almost always meant Goodwill.
+   * and an admin choosing it by hand almost always meant Goodwill. `DisputeSettlement` is written only
+   * by resolving the dispute, and the server refuses it here.
    */
   readonly reasonOptions = computed<ICleansiaSelectOption[]>(() => [
-    {
-      value: CreditTransactionReason.DisputeSettlement,
-      label: this.translate.instant(
-        'pages.loyalty_user_detail.credit.reason.dispute_settlement',
-      ),
-    },
     {
       value: CreditTransactionReason.CleanerNoShow,
       label: this.translate.instant(

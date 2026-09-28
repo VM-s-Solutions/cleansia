@@ -493,7 +493,7 @@
       "services_configured": "Služby",
       "packages_configured": "Balíčky",
       "bulk_apply_grade": "Použít šablonu sazeb",
-      "bulk_apply_grade_hint": "Vyberte šablonu sazeb a měnu pro automatické vytvoření konfigurací odměn pro všechny služby a balíčky. Sazby se vypočítávají ze základní ceny pomocí násobitelů šablon (Junior 0.5x, Medior 0.75x, Senior 1.0x).",
+      "bulk_apply_grade_hint": "Vyberte šablonu sazeb a měnu pro automatické vytvoření konfigurací odměn pro všechny služby a balíčky. Sazby se vypočítávají ze základní ceny pomocí násobitelů šablon (Standardní 0.5x, Pro zkušené 0.6x, Expertní 0.7x).",
       "overwrite_existing": "Přepsat existující konfigurace",
       "apply_to_all": "Použít na vše",
       "services": "Služby",
@@ -505,9 +505,9 @@
       "delete_override": "Odstranit sazbu",
       "delete_override_confirm": "Opravdu chcete odstranit tuto individuální sazbu? Partner se vrátí ke globální sazbě.",
       "grade_quick_fill": "Rychlé vyplnění",
-      "grade_junior": "Junior",
-      "grade_medior": "Medior",
-      "grade_senior": "Senior",
+      "grade_standard": "Standardní",
+      "grade_experienced": "Pro zkušené",
+      "grade_expert": "Expertní",
       "payout_details": {
         "title": "Platební údaje",
         "none": "U tohoto partnera nejsou uloženy žádné platební údaje.",
@@ -2547,7 +2547,22 @@
         "notes": "Poznámky k řešení",
         "notes_placeholder": "Vysvětlete, jak byl tento spor vyřešen…",
         "submit": "Vyřešit spor",
-        "submitted": "Řešení sporu odesláno"
+        "submitted": "Řešení sporu odesláno",
+        "settlement_preference": "Způsob vypořádání zvolený zákazníkem",
+        "settlement": {
+          "card_refund": "Vrácení na kartu",
+          "credit": "Kredit na účet"
+        },
+        "credit_disclaimer": "Zákazník zvolil kredit: částka se připíše na jeho kreditní zůstatek, nevrací se na kartu.",
+        "charge": {
+          "toggle": "Strhnout uklízeči",
+          "hint": "Jen pokud reklamace zjistila chybu uklízeče. Částka se strhne z jeho odměny za tuto zakázku a důvod u ní uvidí.",
+          "cleaner": "Uklízeč",
+          "amount": "Částka ke stržení",
+          "reason": "Důvod",
+          "reason_placeholder": "Uklízeč tento důvod uvidí u své odměny…",
+          "unnamed": "Nepojmenovaný uklízeč"
+        }
       }
     },
     "membership_plans": {

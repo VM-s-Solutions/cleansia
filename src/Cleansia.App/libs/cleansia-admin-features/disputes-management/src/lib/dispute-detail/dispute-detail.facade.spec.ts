@@ -2,12 +2,16 @@ import { TestBed } from '@angular/core/testing';
 import {
   AddDisputeMessageCommand,
   AdminDisputeClient,
+  AdminOrderClient,
   DisputeDetails,
+  DisputeSettlementPreference,
   DisputeStatus,
+  OrderItem,
+  ResolveDisputeCleanerCharge,
   ResolveDisputeCommand,
   UpdateDisputeStatusCommand,
 } from '@cleansia/admin-services';
-import { SnackbarService } from '@cleansia/services';
+import { PermissionService, Policy, SnackbarService } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
 import { of, throwError } from 'rxjs';
 import { DisputeDetailFacade } from './dispute-detail.facade';
@@ -20,6 +24,8 @@ describe('DisputeDetailFacade', () => {
     updateStatus: jest.Mock;
     addMessage: jest.Mock;
   };
+  let orderClient: { details: jest.Mock };
+  let grantedPolicies: Set<string>;
   let snackbar: {
     showSuccess: jest.Mock;
     showSuccessTranslated: jest.Mock;
@@ -42,6 +48,8 @@ describe('DisputeDetailFacade', () => {
       updateStatus: jest.fn(),
       addMessage: jest.fn(),
     };
+    orderClient = { details: jest.fn().mockReturnValue(of(OrderItem.fromJS({ assignedEmployees: [] }))) };
+    grantedPolicies = new Set([Policy.CanResolveDispute, Policy.CanViewOrderDetailAdmin]);
     snackbar = {
       showSuccess: jest.fn(),
       showSuccessTranslated: jest.fn(),
@@ -53,6 +61,8 @@ describe('DisputeDetailFacade', () => {
       providers: [
         DisputeDetailFacade,
         { provide: AdminDisputeClient, useValue: disputeClient },
+        { provide: AdminOrderClient, useValue: orderClient },
+        { provide: PermissionService, useValue: { hasPolicy: (p: string) => grantedPolicies.has(p) } },
         { provide: SnackbarService, useValue: snackbar },
         { provide: TranslateService, useValue: { instant: (k: string) => k, currentLang: 'cs' } },
       ],
@@ -275,5 +285,112 @@ describe('DisputeDetailFacade', () => {
     facade.dispute.set(DisputeDetails.fromJS({ refundAmount: 500, currency: { code: 'CZK' } }));
     expect(facade.cardRefundedLabel()).toBe('');
     expect(facade.creditReturnedLabel()).toBe('');
+  });
+
+  it('reads the settlement the customer chose off the dispute', () => {
+    facade.dispute.set(DisputeDetails.fromJS({ settlementPreference: DisputeSettlementPreference.Credit }));
+    expect(facade.settlesInCredit()).toBe(true);
+
+    facade.dispute.set(DisputeDetails.fromJS({ settlementPreference: DisputeSettlementPreference.CardRefund }));
+    expect(facade.settlesInCredit()).toBe(false);
+  });
+
+  it('loads the crew of the disputed order for an open dispute', () => {
+    disputeClient.details.mockReturnValue(of(details));
+    orderClient.details.mockReturnValue(
+      of(
+        OrderItem.fromJS({
+          assignedEmployees: [
+            { id: 'seat-1', employeeId: 'emp-1', fullName: 'Jana Nová' },
+            { id: 'seat-2', employeeId: 'emp-2', fullName: 'Petr Malý' },
+          ],
+        })
+      )
+    );
+
+    facade.loadDispute('dispute-1');
+
+    expect(orderClient.details).toHaveBeenCalledWith('order-1');
+    expect(facade.crew().map((employee) => employee.employeeId)).toEqual(['emp-1', 'emp-2']);
+  });
+
+  it('does not load the crew of a settled dispute', () => {
+    disputeClient.details.mockReturnValue(
+      of(
+        DisputeDetails.fromJS({
+          id: 'dispute-1',
+          orderId: 'order-1',
+          status: { type: 'DisputeStatus', name: 'Resolved', value: DisputeStatus.Resolved },
+        })
+      )
+    );
+
+    facade.loadDispute('dispute-1');
+
+    expect(orderClient.details).not.toHaveBeenCalled();
+    expect(facade.crew()).toEqual([]);
+  });
+
+  it.each([Policy.CanResolveDispute, Policy.CanViewOrderDetailAdmin])(
+    'does not load the crew without %s',
+    (policy) => {
+      grantedPolicies.delete(policy);
+      disputeClient.details.mockReturnValue(of(details));
+
+      facade.loadDispute('dispute-1');
+
+      expect(orderClient.details).not.toHaveBeenCalled();
+    }
+  );
+
+  it('leaves the crew empty when the order cannot be read', () => {
+    disputeClient.details.mockReturnValue(of(details));
+    orderClient.details.mockReturnValue(throwError(() => new Error('x')));
+
+    facade.loadDispute('dispute-1');
+
+    expect(facade.crew()).toEqual([]);
+    expect(facade.dispute()?.id).toBe('dispute-1');
+  });
+
+  it('sends a charge to the cleaner with the resolution, reason trimmed', () => {
+    disputeClient.resolve.mockReturnValue(of(undefined));
+    disputeClient.details.mockReturnValue(of(details));
+
+    facade.resolve('dispute-1', 500, 'partly refunded', {
+      employeeId: 'emp-1',
+      amount: 150,
+      reason: '  skipped the bathroom  ',
+    });
+
+    const command: ResolveDisputeCommand = disputeClient.resolve.mock.calls[0][0];
+    expect(command.chargeToCleaner).toBeInstanceOf(ResolveDisputeCleanerCharge);
+    expect(command.toJSON()).toEqual({
+      disputeId: 'dispute-1',
+      refundAmount: 500,
+      resolutionNotes: 'partly refunded',
+      chargeToCleaner: { employeeId: 'emp-1', amount: 150, reason: 'skipped the bathroom' },
+    });
+  });
+
+  it('sends no charge to a cleaner unless one is asked for', () => {
+    disputeClient.resolve.mockReturnValue(of(undefined));
+    disputeClient.details.mockReturnValue(of(details));
+
+    facade.resolve('dispute-1', 500, 'refunded', null);
+
+    const command: ResolveDisputeCommand = disputeClient.resolve.mock.calls[0][0];
+    expect(command.chargeToCleaner).toBeUndefined();
+  });
+
+  it('leaves the dispute.cleaner_charge_not_chargeable refusal to the interceptor toast', () => {
+    disputeClient.resolve.mockReturnValue(
+      throwError(() => ({ result: { detail: 'dispute.cleaner_charge_not_chargeable' } }))
+    );
+
+    facade.resolve('dispute-1', 0, 'notes', { employeeId: 'emp-1', amount: 9999, reason: 'fault' });
+
+    expect(snackbar.showErrorTranslated).not.toHaveBeenCalled();
+    expect(facade.resolving()).toBe(false);
   });
 });

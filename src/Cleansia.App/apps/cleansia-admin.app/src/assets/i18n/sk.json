@@ -493,7 +493,7 @@
       "services_configured": "Služby",
       "packages_configured": "Balíčky",
       "bulk_apply_grade": "Použiť šablónu sadzieb",
-      "bulk_apply_grade_hint": "Vyberte šablónu sadzieb a menu na automatické vytvorenie konfigurácií odmien pre všetky služby a balíčky. Sadzby sa vypočítavajú zo základnej ceny pomocou násobiteľov šablón (Junior 0.5x, Medior 0.75x, Senior 1.0x).",
+      "bulk_apply_grade_hint": "Vyberte šablónu sadzieb a menu na automatické vytvorenie konfigurácií odmien pre všetky služby a balíčky. Sadzby sa vypočítavajú zo základnej ceny pomocou násobiteľov šablón (Štandardná 0.5x, Pre skúsených 0.6x, Expertná 0.7x).",
       "overwrite_existing": "Prepísať existujúce konfigurácie",
       "apply_to_all": "Použiť na všetko",
       "services": "Služby",
@@ -505,9 +505,9 @@
       "delete_override": "Odstrániť sadzbu",
       "delete_override_confirm": "Naozaj chcete odstrániť túto individuálnu sadzbu? Partner sa vráti ku globálnej sadzbe.",
       "grade_quick_fill": "Rýchle vyplnenie",
-      "grade_junior": "Junior",
-      "grade_medior": "Medior",
-      "grade_senior": "Senior",
+      "grade_standard": "Štandardná",
+      "grade_experienced": "Pre skúsených",
+      "grade_expert": "Expertná",
       "payout_details": {
         "title": "Platobné údaje",
         "none": "U tohto partnera nie sú uložené žiadne platobné údaje.",
@@ -2547,7 +2547,22 @@
         "notes": "Poznámky k riešeniu",
         "notes_placeholder": "Vysvetlite, ako bola táto reklamácia vyriešená…",
         "submit": "Vyriešiť reklamáciu",
-        "submitted": "Riešenie sporu odoslané"
+        "submitted": "Riešenie sporu odoslané",
+        "settlement_preference": "Spôsob vyrovnania zvolený zákazníkom",
+        "settlement": {
+          "card_refund": "Vrátenie na kartu",
+          "credit": "Kredit na účet"
+        },
+        "credit_disclaimer": "Zákazník zvolil kredit: suma sa pripíše na jeho kreditný zostatok, nevracia sa na kartu.",
+        "charge": {
+          "toggle": "Strhnúť upratovačovi",
+          "hint": "Len ak reklamácia zistila chybu upratovača. Suma sa strhne z jeho odmeny za túto zákazku a dôvod pri nej uvidí.",
+          "cleaner": "Upratovač",
+          "amount": "Suma na strhnutie",
+          "reason": "Dôvod",
+          "reason_placeholder": "Upratovač tento dôvod uvidí pri svojej odmene…",
+          "unnamed": "Nepomenovaný upratovač"
+        }
       }
     },
     "membership_plans": {

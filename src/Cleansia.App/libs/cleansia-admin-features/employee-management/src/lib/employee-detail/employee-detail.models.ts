@@ -18,6 +18,12 @@ export type EmployeeEditFormValue = Partial<{
   emergencyContactPhone: string | null;
 }>;
 
+export const RATE_TEMPLATES = [
+  { value: 'standard', labelKey: 'pages.employee_detail.grade_standard', multiplier: 0.5 },
+  { value: 'experienced', labelKey: 'pages.employee_detail.grade_experienced', multiplier: 0.6 },
+  { value: 'expert', labelKey: 'pages.employee_detail.grade_expert', multiplier: 0.7 },
+] as const;
+
 export interface EmployeePayConfigFormValue {
   serviceId: string | null;
   packageId: string | null;

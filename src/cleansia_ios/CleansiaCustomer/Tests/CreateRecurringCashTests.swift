@@ -51,6 +51,15 @@ final class CreateRecurringCashTests: XCTestCase {
         }
     }
 
+    /// Yields until `condition` holds. A quote reaching the gate hops to another executor, so a fixed
+    /// number of yields races on a busy runner and can release the gate before the quote is held.
+    private func eventually(_ condition: () -> Bool) async {
+        for _ in 0 ..< 500 {
+            if condition() { return }
+            await Task.yield()
+        }
+    }
+
     /// Past the quote debounce, and the quote it asked for landed.
     private func settle() async {
         scheduler.advance(by: .milliseconds(400))
@@ -217,16 +226,16 @@ final class CreateRecurringCashTests: XCTestCase {
         )
         await vm.load()
         scheduler.advance(by: .milliseconds(400))
-        await drain()
+        await eventually { gate.heldCount >= 1 }
         gate.releaseAll()
-        await drain()
+        await eventually { vm.cashEligibility == .available }
         XCTAssertEqual(vm.cashEligibility, .available)
 
         vm.setRooms(3)
         let saving = Task { await vm.submit() }
-        await drain()
+        await eventually { gate.heldCount >= 1 }
         scheduler.advance(by: .milliseconds(400))
-        await drain()
+        await eventually { gate.heldCount >= 2 }
         gate.releaseAll()
         let saved = await saving.value
 

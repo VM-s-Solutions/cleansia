@@ -821,7 +821,7 @@
     <!-- Cleansia Plus subscription -->
     <string name="membership_plus_title">Cleansia Plus</string>
     <string name="membership_plus_subtitle">Lepší způsob, jak udržovat domov čistý</string>
-    <string name="membership_disclosure">Můžete kdykoli zrušit. Předplatné se obnovuje automaticky, dokud ho nezrušíte.</string>
+    <string name="membership_disclosure">Předplatné se obnovuje automaticky, dokud ho nezrušíte. Po zrušení platí výhody do konce zaplaceného období. Pokud se platbu za obnovení nepodaří strhnout, výhody se pozastaví a zrušení pak platí okamžitě.</string>
     <string name="plus_not_available_in_market">Plus zatím není na vašem trhu k dispozici</string>
 
     <!-- Plus subscribe page redesign -->
@@ -857,13 +857,13 @@
     <string name="membership_perk_recurring_title">Pravidelné objednávky</string>
     <string name="membership_perk_recurring_desc">Nastavte jednou — každý druhý čtvrtek v 10:00, automaticky.</string>
     <string name="membership_perk_cancellation_title">Bezplatné zrušení</string>
-    <string name="membership_perk_cancellation_desc">Zrušte až 4 hodiny před úklidem bez poplatků.</string>
+    <string name="membership_perk_cancellation_desc">Zrušte až %1$d h před úklidem bez poplatků.</string>
     <string name="membership_perk_grace_title">Zrušení zdarma po objednání</string>
     <string name="membership_perk_grace_desc">60 minut po každé objednávce na bezplatné zrušení místo 15 minut</string>
-    <string name="membership_perk_discount_title" formatted="false">5% členská sleva</string>
+    <string name="membership_perk_discount_title">%1$d%% členská sleva</string>
     <string name="membership_perk_discount_desc" formatted="false">Z každého úklidu. V kombinaci s věrnostním programem je omezena na 12%.</string>
     <string name="membership_perk_express_title">Expresní termíny bez příplatku</string>
-    <string name="membership_perk_express_desc" formatted="false">Odpouštíme 20% příplatek za expresní objednávky — úklidy, které začínají 2 až 4 hodiny po objednání. Určitý počet každý kalendářní měsíc po dobu aktivního placeného členství; nevyužité se nepřevádějí.</string>
+    <string name="membership_perk_express_desc">Odpouštíme 20%% příplatek za expresní objednávky — úklidy, které začínají 2 až 4 hodiny po objednání. Až %1$d každý kalendářní měsíc po dobu aktivního placeného členství; nevyužité se nepřevádějí.</string>
 
     <!-- Perk pills on the active management card. -->
     <string name="membership_perk_pill_discount">sleva %1$d %%</string>
@@ -891,17 +891,22 @@
     <string name="membership_renews_on">Obnoví se %1$s</string>
     <string name="membership_cancelled_until">Aktivní do %1$s</string>
     <string name="membership_cancel_success_trial">Členství zrušeno — nenásleduje žádný placený měsíc, takže vám nic nenaúčtujeme.</string>
+    <string name="membership_cancel_success_now">Cleansia Plus zrušeno — nic dalšího vám nenaúčtujeme.</string>
     <string name="membership_active_until">Aktivní do %1$s</string>
     <string name="membership_status_ending">Zrušení vyžádáno</string>
     <string name="membership_status_ending_badge">KONČÍ</string>
     <string name="membership_status_active_badge">PLUS · AKTIVNÍ</string>
     <string name="membership_then_ends_hint">Výhody Plus tímto dnem skončí.</string>
     <string name="membership_trial_cancelled_lead">Protože jste ho zrušili během zkušebního období, žádný placený měsíc nenásleduje a výhody Plus tak vůbec nezačnou platit.</string>
-    <string name="membership_auto_renew_hint">Obnovuje se automaticky — kdykoli můžete zrušit.</string>
+    <string name="membership_auto_renew_hint">Obnovuje se automaticky. Pokud členství zrušíte, výhody platí do tohoto dne.</string>
+    <string name="membership_status_past_due_badge">PLATBA SELHALA</string>
+    <string name="membership_past_due_title">Platba selhala — výhody pozastaveny</string>
+    <string name="membership_past_due_body">Platbu za obnovení se nepodařilo strhnout, a proto jsou vaše výhody Plus pozastaveny. Pokud opakovaná platba projde, výhody se obnoví. Pokud členství zrušíte, skončí okamžitě a nic dalšího vám nenaúčtujeme.</string>
     <string name="membership_cancel_action">Zrušit předplatné</string>
     <string name="membership_cancel_dialog_title">Zrušit Cleansia Plus?</string>
     <string name="membership_cancel_dialog_message">Vaše výhody zůstanou do konce aktuálního zúčtovacího období. Další platba neproběhne.</string>
     <string name="membership_cancel_dialog_message_trial">Zkušební období skončí %1$s. Nenásleduje žádný placený měsíc, takže vám nic nenaúčtujeme a žádná z výhod Plus nezačne platit.</string>
+    <string name="membership_cancel_dialog_message_now">Členství skončí okamžitě. Nezaplacené obnovení vám nenaúčtujeme a nic dalšího už také ne.</string>
     <string name="membership_cancel_dialog_confirm">Zrušit</string>
     <string name="membership_subscribed_success">Vítejte v Cleansia Plus!</string>
     <string name="membership_already_active">Už jste členem Plus.</string>

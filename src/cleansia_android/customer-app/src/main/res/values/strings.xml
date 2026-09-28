@@ -832,7 +832,7 @@
          and perk wording is provisional; lock with product before launch. -->
     <string name="membership_plus_title">Cleansia Plus</string>
     <string name="membership_plus_subtitle">A better way to keep your home clean</string>
-    <string name="membership_disclosure">Cancel anytime. Your subscription renews automatically until you cancel.</string>
+    <string name="membership_disclosure">Renews automatically until you cancel. If you cancel, the benefits run to the end of the paid period. If a renewal payment fails, the benefits pause, and a cancellation then takes effect at once.</string>
     <string name="plus_not_available_in_market">Plus is not available in your market yet</string>
 
     <!-- Plus subscribe page redesign (Bolt+/Wolt+ style) -->
@@ -868,13 +868,13 @@
     <string name="membership_perk_recurring_title">Recurring bookings</string>
     <string name="membership_perk_recurring_desc">Set it once — every other Tuesday at 10am, automatically.</string>
     <string name="membership_perk_cancellation_title">Free cancellation</string>
-    <string name="membership_perk_cancellation_desc">Cancel up to 4 hours before your cleaning, no fees.</string>
+    <string name="membership_perk_cancellation_desc">Cancel up to %1$d hours before your cleaning, no fees.</string>
     <string name="membership_perk_grace_title">Free cancellation after booking</string>
     <string name="membership_perk_grace_desc">60 minutes after every booking to cancel free, instead of 15 minutes</string>
-    <string name="membership_perk_discount_title" formatted="false">5% member discount</string>
+    <string name="membership_perk_discount_title">%1$d%% member discount</string>
     <string name="membership_perk_discount_desc" formatted="false">Off every cleaning. Combined with your loyalty tier it is capped at 12%.</string>
     <string name="membership_perk_express_title">Express bookings without the surcharge</string>
-    <string name="membership_perk_express_desc" formatted="false">We waive the 20% surcharge on express bookings — cleanings that start 2 to 4 hours after you book. A set number each calendar month while your paid membership is active; unused ones don\'t carry over.</string>
+    <string name="membership_perk_express_desc">We waive the 20%% surcharge on express bookings — cleanings that start 2 to 4 hours after you book. Up to %1$d each calendar month while your paid membership is active; unused ones don\'t carry over.</string>
 
     <!-- Perk pills on the active management card. -->
     <string name="membership_perk_pill_discount">%1$d%% off</string>
@@ -903,17 +903,22 @@
     <string name="membership_renews_on">Renews on %1$s</string>
     <string name="membership_cancelled_until">Active until %1$s</string>
     <string name="membership_cancel_success_trial">Membership cancelled — no paid month follows, so you won\'t be charged.</string>
+    <string name="membership_cancel_success_now">Cleansia Plus cancelled — nothing more will be charged.</string>
     <string name="membership_active_until">Active until %1$s</string>
     <string name="membership_status_ending">Cancellation requested</string>
     <string name="membership_status_ending_badge">ENDING</string>
     <string name="membership_status_active_badge">PLUS · ACTIVE</string>
     <string name="membership_then_ends_hint">Plus benefits stop on this date.</string>
     <string name="membership_trial_cancelled_lead">Since you cancelled during the trial, no paid month follows and none of the Plus benefits start.</string>
-    <string name="membership_auto_renew_hint">Auto-renews — cancel anytime.</string>
+    <string name="membership_auto_renew_hint">Auto-renews. If you cancel, the benefits run until this date.</string>
+    <string name="membership_status_past_due_badge">PAYMENT FAILED</string>
+    <string name="membership_past_due_title">Payment failed — benefits paused</string>
+    <string name="membership_past_due_body">We couldn\'t charge your renewal, so your Plus benefits are paused. If a retried payment goes through, they resume. If you cancel, the membership ends right away and nothing more is charged.</string>
     <string name="membership_cancel_action">Cancel subscription</string>
     <string name="membership_cancel_dialog_title">Cancel Cleansia Plus?</string>
     <string name="membership_cancel_dialog_message">Your benefits remain until the end of the current billing period. You won\'t be charged again.</string>
     <string name="membership_cancel_dialog_message_trial">Your trial ends on %1$s. No paid month follows, so you won\'t be charged and no Plus benefit starts.</string>
+    <string name="membership_cancel_dialog_message_now">Your membership ends right away. The unpaid renewal is not charged, and nothing more will be.</string>
     <string name="membership_cancel_dialog_confirm">Cancel</string>
     <string name="membership_subscribed_success">Welcome to Cleansia Plus!</string>
     <string name="membership_already_active">You\'re already a Plus member.</string>

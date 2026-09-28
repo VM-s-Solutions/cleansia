@@ -207,7 +207,15 @@ private fun LoyaltyContent(
         ProgressCard(account = account, currentTier = currentTier)
         Spacer(Modifier.height(16.dp))
 
-        CurrentPerksCard(perks = account.currentPerks)
+        CurrentPerksCard(
+            perks = account.currentPerks,
+            tierDiscount = composeDiscountSummary(
+                account.currentDiscountPercent,
+                account.currentDiscountMinOrderAmount,
+                currencyCode,
+                tierFloorApplies,
+            ),
+        )
         Spacer(Modifier.height(16.dp))
 
         TierLadderCard(tiers = tiers, currentTier = currentTier, currencyCode = currencyCode, tierFloorApplies = tierFloorApplies)
@@ -403,7 +411,7 @@ private fun ProgressCard(
 /* ── Current perks ── */
 
 @Composable
-private fun CurrentPerksCard(perks: List<TierPerkDto>) {
+private fun CurrentPerksCard(perks: List<TierPerkDto>, tierDiscount: String) {
     // Bronze with no backend-supplied perks falls back to the default welcome
     // badge so the section never renders empty (would look broken).
     val effective = if (perks.isEmpty()) {
@@ -425,16 +433,19 @@ private fun CurrentPerksCard(perks: List<TierPerkDto>) {
         )
         Spacer(Modifier.height(12.dp))
         effective.forEachIndexed { idx, perk ->
-            PerkRow(perk)
+            PerkRow(perk, tierDiscount)
             if (idx < effective.lastIndex) Spacer(Modifier.height(10.dp))
         }
     }
 }
 
+/** The tier discount perk states the account's configured figure, not the one its seeded label key names. */
 @Composable
-private fun PerkRow(perk: TierPerkDto) {
+private fun PerkRow(perk: TierPerkDto, tierDiscount: String) {
     val context = LocalContext.current
-    val resolved = remember(perk.labelKey) { resolveLabelKey(context, perk.labelKey) }
+    val resolved = remember(perk.labelKey, tierDiscount) {
+        if (perk.labelKey?.startsWith(TIER_DISCOUNT_PERK_KEY) == true) tierDiscount else resolveLabelKey(context, perk.labelKey)
+    }
     Row(verticalAlignment = Alignment.CenterVertically) {
         Box(
             modifier = Modifier
@@ -476,6 +487,8 @@ private fun resolveLabelKey(
     val resId = context.resources.getIdentifier(resName, "string", context.packageName)
     return if (resId != 0) context.getString(resId) else labelKey
 }
+
+private const val TIER_DISCOUNT_PERK_KEY = "loyalty.perks.discount"
 
 /* ── Tier ladder ── */
 
@@ -574,7 +587,12 @@ private fun TierLadderRow(
                 )
             }
             Text(
-                composeDiscountSummary(tierDto, currencyCode, tierFloorApplies),
+                composeDiscountSummary(
+                    tierDto.discountPercent,
+                    tierDto.minimumOrderAmountForDiscount,
+                    currencyCode,
+                    tierFloorApplies,
+                ),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -602,7 +620,7 @@ private fun TierLadderRow(
 
 /**
  * Compose the per-tier discount summary line shown under the tier name in the
- * ladder. Three branches:
+ * ladder and as the current tier's discount perk. Three branches:
  *  - 0% discount → "No discount yet" (Bronze)
  *  - >0% with min order amount → "X% off orders ≥ Y" (Silver), Y in the platform default currency,
  *    only while the market's currency is that one — elsewhere no floor applies (ADR-0058 D5)
@@ -612,10 +630,15 @@ private fun TierLadderRow(
  * as a 0..1 decimal so we multiply and round.
  */
 @Composable
-private fun composeDiscountSummary(tierDto: TierInfoDto, currencyCode: String?, tierFloorApplies: Boolean): String {
-    val pct = (tierDto.discountPercent * 100).toInt()
+private fun composeDiscountSummary(
+    discountPercent: Double,
+    minimumOrderAmount: Double?,
+    currencyCode: String?,
+    tierFloorApplies: Boolean,
+): String {
+    val pct = (discountPercent * 100).toInt()
     if (pct <= 0) return stringResource(R.string.loyalty_no_discount_yet)
-    val minOrder = tierDto.minimumOrderAmountForDiscount ?: 0.0
+    val minOrder = minimumOrderAmount ?: 0.0
     return if (minOrder > 0 && tierFloorApplies) {
         stringResource(R.string.loyalty_discount_min_order, pct, formatOrderPrice(minOrder, currencyCode))
     } else {

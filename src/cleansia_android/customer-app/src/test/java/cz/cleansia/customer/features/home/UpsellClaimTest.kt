@@ -138,6 +138,19 @@ class UpsellClaimTest {
         assertEquals(emptyList<String>(), claims)
     }
 
+    /** A paid-up member's cancel runs to the period end and a past-due one's ends it at once; "anytime" states neither. */
+    @Test
+    fun `the Plus disclosure and auto-renew hint do not promise cancelling anytime`() {
+        val claims = locales.flatMap { locale ->
+            val declared = strings(locale)
+            listOf("membership_disclosure", "membership_auto_renew_hint").mapNotNull { key ->
+                val value = declared[key] ?: return@mapNotNull "$locale/$key is missing"
+                if (cancelAnytimeClaim.containsMatchIn(value)) "$locale/$key: $value" else null
+            }
+        }
+        assertEquals(emptyList<String>(), claims)
+    }
+
     /** The rows known to state the referral reward, so the sweep below cannot pass by finding none. */
     private val referralRewardKeys = listOf(
         "home_upsell_referral_title",

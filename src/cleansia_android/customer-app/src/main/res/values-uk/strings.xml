@@ -818,7 +818,7 @@
     <!-- Cleansia Plus subscription -->
     <string name="membership_plus_title">Cleansia Plus</string>
     <string name="membership_plus_subtitle">Кращий спосіб тримати дім чистим</string>
-    <string name="membership_disclosure">Можна скасувати будь-коли. Підписка автоматично продовжується до скасування.</string>
+    <string name="membership_disclosure">Підписка автоматично продовжується до скасування. Після скасування переваги діють до кінця оплаченого періоду. Якщо оплату за продовження не вдається списати, переваги призупиняються, а скасування тоді діє одразу.</string>
     <string name="plus_not_available_in_market">Plus поки що недоступний на вашому ринку</string>
 
     <!-- Plus subscribe page redesign -->
@@ -854,13 +854,13 @@
     <string name="membership_perk_recurring_title">Регулярні бронювання</string>
     <string name="membership_perk_recurring_desc">Налаштуйте один раз — кожен другий вівторок о 10:00, автоматично.</string>
     <string name="membership_perk_cancellation_title">Безкоштовне скасування</string>
-    <string name="membership_perk_cancellation_desc">Скасуйте за 4 години до прибирання без комісій.</string>
+    <string name="membership_perk_cancellation_desc">Скасуйте без комісій за %1$d год до прибирання.</string>
     <string name="membership_perk_grace_title">Безкоштовне скасування після замовлення</string>
     <string name="membership_perk_grace_desc">60 хвилин після кожного замовлення на безкоштовне скасування замість 15 хвилин</string>
-    <string name="membership_perk_discount_title" formatted="false">5% знижка для учасників</string>
+    <string name="membership_perk_discount_title">%1$d%% знижка для учасників</string>
     <string name="membership_perk_discount_desc" formatted="false">На кожне прибирання. У поєднанні з рівнем лояльності обмежена 12%.</string>
     <string name="membership_perk_express_title">Експрес-замовлення без доплати</string>
-    <string name="membership_perk_express_desc" formatted="false">Ми не беремо 20 % доплати за експрес-замовлення — прибирання, що починаються через 2–4 години після оформлення. Певна кількість на кожен календарний місяць, поки діє ваше оплачене членство; невикористані не переносяться.</string>
+    <string name="membership_perk_express_desc">Ми не беремо 20 %% доплати за експрес-замовлення — прибирання, що починаються через 2–4 години після оформлення. До %1$d на кожен календарний місяць, поки діє ваше оплачене членство; невикористані не переносяться.</string>
 
     <!-- Perk pills on the active management card. -->
     <string name="membership_perk_pill_discount">знижка %1$d%%</string>
@@ -888,17 +888,22 @@
     <string name="membership_renews_on">Продовжується %1$s</string>
     <string name="membership_cancelled_until">Активний до %1$s</string>
     <string name="membership_cancel_success_trial">Членство скасовано — оплаченого місяця не буде, тож з вас нічого не спишуть.</string>
+    <string name="membership_cancel_success_now">Cleansia Plus скасовано — більше нічого не буде списано.</string>
     <string name="membership_active_until">Активний до %1$s</string>
     <string name="membership_status_ending">Запит на скасування</string>
     <string name="membership_status_ending_badge">ЗАВЕРШУЄТЬСЯ</string>
     <string name="membership_status_active_badge">PLUS · АКТИВНИЙ</string>
     <string name="membership_then_ends_hint">Переваги Plus припиняються в цю дату.</string>
     <string name="membership_trial_cancelled_lead">Оскільки ви скасували її під час пробного періоду, оплаченого місяця не буде, тож переваги Plus так і не почнуть діяти.</string>
-    <string name="membership_auto_renew_hint">Автоматично продовжується — скасуйте будь-коли.</string>
+    <string name="membership_auto_renew_hint">Продовжується автоматично. Якщо ви скасуєте, переваги діятимуть до цієї дати.</string>
+    <string name="membership_status_past_due_badge">ОПЛАТА НЕ ВДАЛАСЯ</string>
+    <string name="membership_past_due_title">Оплата не вдалася — переваги призупинено</string>
+    <string name="membership_past_due_body">Нам не вдалося списати оплату за продовження, тому ваші переваги Plus призупинено. Якщо повторна оплата пройде, вони відновляться. Якщо ви скасуєте, членство завершиться одразу і більше нічого не буде списано.</string>
     <string name="membership_cancel_action">Скасувати підписку</string>
     <string name="membership_cancel_dialog_title">Скасувати Cleansia Plus?</string>
     <string name="membership_cancel_dialog_message">Ваші переваги залишаться до кінця поточного періоду. Списань більше не буде.</string>
     <string name="membership_cancel_dialog_message_trial">Пробний період закінчиться %1$s. Оплаченого місяця не буде, тож з вас нічого не спишуть і жодна з переваг Plus не почне діяти.</string>
+    <string name="membership_cancel_dialog_message_now">Членство завершиться одразу. Неоплачене продовження не буде списано, і більше нічого також.</string>
     <string name="membership_cancel_dialog_confirm">Скасувати</string>
     <string name="membership_subscribed_success">Ласкаво просимо до Cleansia Plus!</string>
     <string name="membership_already_active">Ви вже учасник Plus.</string>

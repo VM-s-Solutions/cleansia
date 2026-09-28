@@ -153,7 +153,7 @@ fun MembershipManagementCard(
 }
 
 /**
- * The not-subscribed Plus card: badge and mascot, the value line, then the trial CTA.
+ * The not-subscribed Plus card: badge and mascot, the value line, then the subscribe CTA.
  * -> /product/features
  */
 @Composable

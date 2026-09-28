@@ -361,8 +361,6 @@ private fun SheetContent(
             current.copy(
                 selectedServiceIds = keptServiceIds.toSet(),
                 selectedPackageIds = keptPackageIds.toSet(),
-                rooms = if (order.rooms > 0) order.rooms else current.rooms,
-                bathrooms = if (order.bathrooms > 0) order.bathrooms else current.bathrooms,
                 street = order.address?.street.orEmpty(),
                 city = order.address?.city.orEmpty(),
                 zipCode = order.address?.zipCode.orEmpty(),
@@ -375,6 +373,8 @@ private fun SheetContent(
                 savedAddressId = matchedSavedAddress?.serverId,
             )
         }
+        if (order.rooms > 0) bookingVm.setRooms(order.rooms)
+        if (order.bathrooms > 0) bookingVm.setBathrooms(order.bathrooms)
 
         if (droppedAny) {
             snackbarController.showInfoKey(R.string.order_rebook_unavailable_items)
@@ -527,7 +527,12 @@ private fun SheetContent(
                 label = "booking-step-transition",
             ) { step ->
                 when (step) {
-                    1 -> ServicesStep(state = state, onUpdate = { next -> bookingVm.update { next } })
+                    1 -> ServicesStep(
+                        state = state,
+                        onUpdate = { next -> bookingVm.update { next } },
+                        onRoomsChange = bookingVm::setRooms,
+                        onBathroomsChange = bookingVm::setBathrooms,
+                    )
                     2 -> WhenWhereStep(
                         state = state,
                         onUpdate = { next -> bookingVm.update { next } },

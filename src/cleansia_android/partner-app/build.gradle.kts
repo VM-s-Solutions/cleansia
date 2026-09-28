@@ -172,11 +172,16 @@ android {
     }
 }
 
-// Copy guards read every locale's strings.xml straight off disk. A copy-only edit changes no compiled
-// class, so undeclared, this task stays UP-TO-DATE or FROM-CACHE and reports the old verdict.
+// Copy guards read every locale's strings.xml, and the location guard reads the manifest, straight off
+// disk. Neither edit changes a compiled class, so undeclared, this task stays UP-TO-DATE or
+// FROM-CACHE and reports the old verdict.
 tasks.withType<Test>().configureEach {
     inputs.files(fileTree("src/main/res") { include("values*/strings.xml") })
         .withPropertyName("localeStrings")
+        .withPathSensitivity(PathSensitivity.RELATIVE)
+
+    inputs.file("src/main/AndroidManifest.xml")
+        .withPropertyName("manifest")
         .withPathSensitivity(PathSensitivity.RELATIVE)
 }
 

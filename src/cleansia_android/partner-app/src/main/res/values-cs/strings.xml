@@ -1351,7 +1351,6 @@
     <string name="delete_account_kept_label">Co musíme uchovat</string>
     <string name="delete_account_kept_invoices">Vaše faktury jako účetní doklady</string>
     <string name="delete_account_kept_pay">Mzdové záznamy za dokončené zakázky</string>
-    <string name="delete_account_kept_agreement">Dohodu o samofakturaci k těmto fakturám</string>
     <string name="delete_account_cta">Požádat o smazání</string>
     <string name="delete_account_confirm_title">Požádat o smazání účtu?</string>
     <string name="delete_account_confirm_message">Ozveme se vám a spolupráci formálně ukončíme. Dnes se nic nemaže.</string>

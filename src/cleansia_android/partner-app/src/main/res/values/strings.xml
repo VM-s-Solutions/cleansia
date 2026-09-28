@@ -1365,7 +1365,6 @@
     <string name="delete_account_kept_label">What we have to keep</string>
     <string name="delete_account_kept_invoices">Your invoices, as accounting records</string>
     <string name="delete_account_kept_pay">Your pay records for completed jobs</string>
-    <string name="delete_account_kept_agreement">The self-billing agreement behind those invoices</string>
     <string name="delete_account_cta">Request deletion</string>
     <string name="delete_account_confirm_title">Request account deletion?</string>
     <string name="delete_account_confirm_message">We\'ll contact you to end the cooperation formally. Nothing is deleted today.</string>

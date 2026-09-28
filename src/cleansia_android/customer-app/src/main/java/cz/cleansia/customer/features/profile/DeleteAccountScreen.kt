@@ -1,5 +1,6 @@
 package cz.cleansia.customer.features.profile
 
+import androidx.annotation.StringRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -130,49 +131,28 @@ fun DeleteAccountScreen(
 
             Spacer(Modifier.height(24.dp))
 
-            // What gets deleted — list
-            Text(
-                stringResource(R.string.delete_account_what_happens).uppercase(),
-                style = MaterialTheme.typography.labelSmall.copy(
-                    fontWeight = FontWeight.SemiBold,
+            RecordList(
+                title = R.string.delete_account_what_happens,
+                items = listOf(
+                    R.string.delete_account_item_profile,
+                    R.string.delete_account_item_addresses,
+                    R.string.delete_account_item_history,
+                    R.string.delete_account_item_devices,
                 ),
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
-            Spacer(Modifier.height(8.dp))
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(16.dp))
-                    .background(MaterialTheme.colorScheme.surface)
-                    .padding(horizontal = 16.dp, vertical = 14.dp),
-                verticalArrangement = Arrangement.spacedBy(6.dp),
-            ) {
-                Text(
-                    stringResource(R.string.delete_account_item_profile),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurface,
-                )
-                Text(
-                    stringResource(R.string.delete_account_item_addresses),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurface,
-                )
-                Text(
-                    stringResource(R.string.delete_account_item_history),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurface,
-                )
-                Text(
-                    stringResource(R.string.delete_account_item_devices),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurface,
-                )
-                Text(
-                    stringResource(R.string.delete_account_item_consents),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurface,
-                )
-            }
+
+            Spacer(Modifier.height(24.dp))
+
+            RecordList(
+                title = R.string.delete_account_what_is_kept,
+                items = listOf(
+                    R.string.delete_account_kept_bookings,
+                    R.string.delete_account_kept_receipts,
+                    R.string.delete_account_kept_consents,
+                    R.string.delete_account_kept_audit,
+                    R.string.delete_account_kept_disputes,
+                ),
+            )
 
             Spacer(Modifier.height(24.dp))
 
@@ -267,5 +247,33 @@ fun DeleteAccountScreen(
             // reaching it, so the dialog cannot flash a second confirm.
             confirmEnabled = !loading,
         )
+    }
+}
+
+@Composable
+private fun RecordList(@StringRes title: Int, items: List<Int>) {
+    Text(
+        stringResource(title).uppercase(),
+        style = MaterialTheme.typography.labelSmall.copy(
+            fontWeight = FontWeight.SemiBold,
+        ),
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+    )
+    Spacer(Modifier.height(8.dp))
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(16.dp))
+            .background(MaterialTheme.colorScheme.surface)
+            .padding(horizontal = 16.dp, vertical = 14.dp),
+        verticalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        items.forEach { item ->
+            Text(
+                stringResource(item),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+        }
     }
 }

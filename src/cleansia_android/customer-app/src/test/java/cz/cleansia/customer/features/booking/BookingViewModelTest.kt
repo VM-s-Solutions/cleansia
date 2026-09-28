@@ -8,6 +8,7 @@ import cz.cleansia.customer.core.booking.BookingApi
 import cz.cleansia.customer.core.booking.CashEligibility
 import cz.cleansia.customer.core.booking.CreateOrderCommand
 import cz.cleansia.customer.core.booking.CreateOrderResponse
+import cz.cleansia.customer.core.booking.PropertySize
 import cz.cleansia.customer.core.booking.QuoteOrderCommand
 import cz.cleansia.customer.core.booking.QuoteOrderResponse
 import cz.cleansia.customer.core.catalog.CatalogRepository
@@ -533,6 +534,28 @@ class BookingViewModelTest {
         vm.updateAccessInstructions("  Ring the bell twice.  ")
 
         assertEquals("  Ring the bell twice.  ", vm.state.value.accessInstructions)
+    }
+
+    @Test
+    fun setRoomsAndBathrooms_whenAboveTheServerCap_stopAtTheLargestHome() = runTest {
+        val vm = newViewModel()
+
+        vm.setRooms(PropertySize.MAX_ROOMS + 1)
+        vm.setBathrooms(PropertySize.MAX_BATHROOMS + 1)
+
+        assertEquals(PropertySize.MAX_ROOMS, vm.state.value.rooms)
+        assertEquals(PropertySize.MAX_BATHROOMS, vm.state.value.bathrooms)
+    }
+
+    @Test
+    fun setRoomsAndBathrooms_whenBelowOne_stayAtOne() = runTest {
+        val vm = newViewModel()
+
+        vm.setRooms(0)
+        vm.setBathrooms(0)
+
+        assertEquals(1, vm.state.value.rooms)
+        assertEquals(1, vm.state.value.bathrooms)
     }
 
     // ── wizard steps ──

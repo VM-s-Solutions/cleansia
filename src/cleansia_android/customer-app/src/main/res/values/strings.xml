@@ -82,16 +82,8 @@
     <string name="rewards_next_milestone">%1$d more to unlock %2$s</string>
     <string name="rewards_all_tiers_unlocked">You\'ve unlocked all tiers — thank you!</string>
     <string name="rewards_tiers_title">Milestones</string>
-    <string name="rewards_tier_unlocked">Unlocked</string>
-    <string name="rewards_tier_regular">Regular</string>
-    <string name="rewards_tier_regular_perk">Priority rescheduling &amp; cleaning tips guide</string>
-    <string name="rewards_tier_vip">VIP Member</string>
-    <string name="rewards_tier_vip_perk">Priority support &amp; free eco-products upgrade</string>
-    <string name="rewards_tier_hero">Cleansia Hero</string>
-    <string name="rewards_tier_hero_perk">Guaranteed same-day slots &amp; early access to new services</string>
 
     <string name="rewards_referral_title">Invite a friend</string>
-    <string name="rewards_referral_subtitle">They get a welcome treat, you get a free add-on.</string>
     <string name="rewards_referral_your_code">Your code</string>
     <string name="rewards_referral_share">Share your code</string>
     <string name="rewards_referral_no_joins">Be the first — share your code</string>
@@ -118,13 +110,13 @@
     <!-- Smart upsell carousel slides — Plus / Welcome / Referral. The Book
          slide reuses the existing home_hero_* trio above. -->
     <string name="home_upsell_plus_top">Cleansia Plus</string>
-    <string name="home_upsell_plus_title">Save on every cleaning. 14 days free.</string>
-    <string name="home_upsell_plus_cta">Try Plus free</string>
+    <string name="home_upsell_plus_title">Save on every cleaning.</string>
+    <string name="home_upsell_plus_cta">Get Plus</string>
     <string name="home_upsell_welcome_top">Welcome offer</string>
     <string name="home_upsell_welcome_title">15% off your first cleaning with WELCOME15</string>
     <string name="home_upsell_welcome_cta">Book your first one</string>
     <string name="home_upsell_referral_top">Refer a friend</string>
-    <string name="home_upsell_referral_title">You both get 150 points after they book</string>
+    <string name="home_upsell_referral_title">You both get 150 points after their first completed cleaning</string>
     <string name="home_upsell_referral_cta">Share my code</string>
     <string name="home_upsell_setup_recurring_top">Plus perk</string>
     <string name="home_upsell_setup_recurring_title">Set up a recurring cleaning — book once, run forever</string>
@@ -132,10 +124,6 @@
 
     <string name="home_hero2_top">Spring is here</string>
     <string name="home_hero2_title">Deep clean + windows combo</string>
-
-    <string name="home_hero3_top">Invite a friend</string>
-    <string name="home_hero3_title">Give a treat, get a free add-on</string>
-    <string name="home_hero3_cta">Share your code</string>
 
     <!-- Home — trust strip -->
     <string name="home_trust_insured">Insured</string>
@@ -194,10 +182,6 @@
     <string name="home_hero_slide2_title">Deep clean, easy week</string>
     <string name="home_hero_slide2_subtitle">Carpets, upholstery, windows — all in a single visit.</string>
     <string name="home_hero_slide2_cta">Explore</string>
-
-    <string name="home_hero_slide3_title">100% satisfaction</string>
-    <string name="home_hero_slide3_subtitle">Not happy? We\'ll come back and make it right.</string>
-    <string name="home_hero_slide3_cta">Learn more</string>
 
     <!-- Orders tab -->
     <string name="orders_title">My orders</string>
@@ -820,21 +804,26 @@
     <!-- Account deletion -->
     <string name="profile_delete_account">Delete account</string>
     <string name="delete_account_title">Delete your account</string>
-    <string name="delete_account_subtitle">This will permanently delete your account and all associated data. Any unused credit is forfeited when the account is deleted — it cannot be paid out or restored. This action cannot be undone.</string>
+    <string name="delete_account_subtitle">Deleting your account removes your personal details. We keep only what the law or the defence of legal claims requires, listed below. Any unused credit is forfeited when the account is deleted — it cannot be paid out or restored. This action cannot be undone.</string>
     <string name="delete_account_what_happens">What gets deleted</string>
     <string name="delete_account_item_profile">• Your profile (name, email, phone, photo)</string>
     <string name="delete_account_item_addresses">• All saved addresses</string>
-    <string name="delete_account_item_history">• Booking history will be anonymised</string>
+    <string name="delete_account_item_history">• Your name, contact details, address and photos on your bookings</string>
     <string name="delete_account_item_devices">• Sign-in on all your devices</string>
-    <string name="delete_account_item_consents">• All marketing consents</string>
+    <string name="delete_account_what_is_kept">What we keep</string>
+    <string name="delete_account_kept_bookings">• Your bookings, as the record of each contract, without your personal details</string>
+    <string name="delete_account_kept_receipts">• Receipts, for as long as accounting law requires</string>
+    <string name="delete_account_kept_consents">• The record of the consents you gave, for 3 years</string>
+    <string name="delete_account_kept_audit">• The log of actions on your account, for 3 years, without IP addresses or device details</string>
+    <string name="delete_account_kept_disputes">• The text of any dispute you raised, for 3 years</string>
     <string name="delete_account_confirm_label">To confirm, type your email</string>
     <string name="delete_account_confirm_hint">your@email.com</string>
     <string name="delete_account_confirm_mismatch">Email doesn\'t match your account</string>
     <string name="delete_account_confirm_button">Permanently delete account</string>
     <string name="delete_account_success">Your account has been deleted.</string>
-    <!-- Final confirmation dialog — second gate after the typed-email match. Copy matches iOS. -->
+    <!-- Final confirmation dialog — second gate after the typed-email match. -->
     <string name="delete_account_dialog_title">Delete account?</string>
-    <string name="delete_account_dialog_message">This permanently deletes your account and data. This cannot be undone. Any unused credit on your account is forfeited once the deletion completes — it cannot be paid out or restored.</string>
+    <string name="delete_account_dialog_message">Your personal details are removed and this cannot be undone; the records listed on this screen are kept for the periods it states. Any unused credit on your account is forfeited once the deletion completes — it cannot be paid out or restored.</string>
     <string name="delete_account_dialog_confirm">Delete</string>
 
     <!-- Error handling — generics (used when a specific key can't be resolved) -->
@@ -848,7 +837,6 @@
          and perk wording is provisional; lock with product before launch. -->
     <string name="membership_plus_title">Cleansia Plus</string>
     <string name="membership_plus_subtitle">A better way to keep your home clean</string>
-    <string name="membership_subscribe_cta">Try Cleansia Plus</string>
     <string name="membership_disclosure">Cancel anytime. Your subscription renews automatically until you cancel.</string>
     <string name="plus_not_available_in_market">Plus is not available in your market yet</string>
 
@@ -872,8 +860,6 @@
     <string name="membership_plan_per_month_billed_annually">%1$s / month — billed annually as %2$s</string>
     <string name="membership_plan_per_month">%1$s / month</string>
     <string name="membership_plan_per_year">%1$s / year</string>
-    <string name="membership_trial_badge">%1$d-day free trial</string>
-    <string name="membership_trial_disclosure">Free for the first %1$d days. After that, your card is billed automatically. Cancel anytime before the trial ends.</string>
 
     <!-- Switch to annual flow (in management card for monthly subscribers) -->
     <string name="membership_switch_to_annual_cta">Switch to annual — save %1$d%%</string>
@@ -905,10 +891,9 @@
 
     <!-- Membership management card on Profile -->
     <string name="membership_inactive_title">Cleansia Plus</string>
-    <string name="membership_inactive_subtitle" formatted="false">5% off, free cancellation, your favorite cleaner.</string>
     <string name="membership_inactive_badge">PLUS</string>
-    <string name="membership_inactive_perks_summary" formatted="false">Save on every booking · cancel anytime · recurring cleanings</string>
-    <string name="membership_inactive_cta">Try free for 14 days</string>
+    <string name="membership_inactive_perks_summary" formatted="false">Save on every booking · recurring cleanings</string>
+    <string name="membership_inactive_cta">Get Cleansia Plus</string>
     <!-- Post-purchase success screen (Plus) -->
     <string name="membership_success_title">Welcome to Plus!</string>
     <string name="membership_success_subtitle">Your benefits are active right away. Here\'s what just unlocked:</string>
@@ -966,7 +951,7 @@
     <string name="recurring_bookings_create_fab">New schedule</string>
     <string name="recurring_plus_gate_title">Recurring is a Plus perk</string>
     <string name="recurring_plus_gate_subtitle">Join Cleansia Plus to set up weekly or biweekly cleanings that book themselves.</string>
-    <string name="recurring_plus_gate_cta">Try Cleansia Plus</string>
+    <string name="recurring_plus_gate_cta">Get Cleansia Plus</string>
     <string name="recurring_lapsed_notice_title">Cleansia Plus is no longer active</string>
     <string name="recurring_lapsed_notice_body">These schedules keep running and are booked at the full non-member price. You can pause or delete any of them here at any time. Resubscribe to add or change a schedule.</string>
 
@@ -1236,7 +1221,6 @@
     <string name="referral_code_field_collapsed">I have a referral code</string>
     <string name="referral_code_field_label">Referral code</string>
     <string name="referral_code_field_placeholder">X3K9P2</string>
-    <string name="referral_code_valid">Code from %1$s — you\'ll get 150 bonus points</string>
     <string name="referral_code_validating">Checking…</string>
     <string name="error_referral_not_found">Referral code not found</string>
     <string name="error_referral_self_referral">You can\'t refer yourself</string>

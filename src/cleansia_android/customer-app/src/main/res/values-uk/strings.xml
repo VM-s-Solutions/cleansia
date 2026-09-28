@@ -82,16 +82,8 @@
     <string name="rewards_next_milestone">Ще %1$d для відкриття %2$s</string>
     <string name="rewards_all_tiers_unlocked">Ви відкрили всі рівні — дякуємо!</string>
     <string name="rewards_tiers_title">Етапи</string>
-    <string name="rewards_tier_unlocked">Відкрито</string>
-    <string name="rewards_tier_regular">Постійний</string>
-    <string name="rewards_tier_regular_perk">Пріоритетна зміна термінів &amp; гайд із порадами щодо прибирання</string>
-    <string name="rewards_tier_vip">VIP-учасник</string>
-    <string name="rewards_tier_vip_perk">Пріоритетна підтримка &amp; безкоштовне еко-оновлення</string>
-    <string name="rewards_tier_hero">Cleansia Hero</string>
-    <string name="rewards_tier_hero_perk">Гарантовані слоти у той самий день &amp; ранній доступ до нових послуг</string>
 
     <string name="rewards_referral_title">Запросити друга</string>
-    <string name="rewards_referral_subtitle">Вони отримають вітальний бонус, ви — додаток безкоштовно.</string>
     <string name="rewards_referral_your_code">Ваш код</string>
     <string name="rewards_referral_share">Поділитися кодом</string>
     <string name="rewards_referral_no_joins">Будьте першим — поділіться своїм кодом</string>
@@ -117,13 +109,13 @@
 
     <!-- Smart upsell carousel slides -->
     <string name="home_upsell_plus_top">Cleansia Plus</string>
-    <string name="home_upsell_plus_title">Економте на кожному прибиранні. 14 днів безкоштовно.</string>
-    <string name="home_upsell_plus_cta">Спробувати Plus безкоштовно</string>
+    <string name="home_upsell_plus_title">Економте на кожному прибиранні.</string>
+    <string name="home_upsell_plus_cta">Отримати Plus</string>
     <string name="home_upsell_welcome_top">Вітальна пропозиція</string>
     <string name="home_upsell_welcome_title">Знижка 15% на перше прибирання з кодом WELCOME15</string>
     <string name="home_upsell_welcome_cta">Замовити перше прибирання</string>
     <string name="home_upsell_referral_top">Запросіть друга</string>
-    <string name="home_upsell_referral_title">Обидва отримаєте 150 балів після їхнього бронювання</string>
+    <string name="home_upsell_referral_title">По 150 балів після першого завершеного прибирання друга</string>
     <string name="home_upsell_referral_cta">Поділитися кодом</string>
     <string name="home_upsell_setup_recurring_top">Перевага Plus</string>
     <string name="home_upsell_setup_recurring_title">Налаштуйте регулярне прибирання — замов один раз, працює завжди</string>
@@ -131,10 +123,6 @@
 
     <string name="home_hero2_top">Весна вже тут</string>
     <string name="home_hero2_title">Глибоке прибирання + вікна разом</string>
-
-    <string name="home_hero3_top">Запросіть друга</string>
-    <string name="home_hero3_title">Подаруйте бонус, отримайте додаток безкоштовно</string>
-    <string name="home_hero3_cta">Поділитися кодом</string>
 
     <!-- Home — trust strip -->
     <string name="home_trust_insured">Застраховано</string>
@@ -192,10 +180,6 @@
     <string name="home_hero_slide2_title">Глибоке прибирання, легкий тиждень</string>
     <string name="home_hero_slide2_subtitle">Килими, оббивка, вікна — все за один візит.</string>
     <string name="home_hero_slide2_cta">Дослідити</string>
-
-    <string name="home_hero_slide3_title">100% задоволення</string>
-    <string name="home_hero_slide3_subtitle">Не задоволені? Ми повернемося і виправимо це.</string>
-    <string name="home_hero_slide3_cta">Дізнатися більше</string>
 
     <!-- Orders tab -->
     <string name="orders_title">Мої замовлення</string>
@@ -808,20 +792,25 @@
     <!-- Account deletion -->
     <string name="profile_delete_account">Видалити обліковий запис</string>
     <string name="delete_account_title">Видалити ваш обліковий запис</string>
-    <string name="delete_account_subtitle">Це назавжди видалить ваш обліковий запис і всі пов’язані дані. Невикористані бонуси після видалення облікового запису анулюються — їх не можна виплатити чи відновити. Цю дію неможливо скасувати.</string>
+    <string name="delete_account_subtitle">Під час видалення облікового запису ми видалимо ваші персональні дані. Ми зберігаємо лише те, чого вимагає закон або захист правових вимог, — перелік нижче. Невикористані бонуси після видалення облікового запису анулюються — їх не можна виплатити чи відновити. Цю дію неможливо скасувати.</string>
     <string name="delete_account_what_happens">Що буде видалено</string>
     <string name="delete_account_item_profile">• Ваш профіль (ім’я, email, телефон, фото)</string>
     <string name="delete_account_item_addresses">• Усі збережені адреси</string>
-    <string name="delete_account_item_history">• Історію бронювань буде анонімізовано</string>
+    <string name="delete_account_item_history">• Ваше ім’я, контактні дані, адреса й фотографії з ваших замовлень</string>
     <string name="delete_account_item_devices">• Вихід на всіх ваших пристроях</string>
-    <string name="delete_account_item_consents">• Усі маркетингові згоди</string>
+    <string name="delete_account_what_is_kept">Що ми зберігаємо</string>
+    <string name="delete_account_kept_bookings">• Ваші замовлення як запис про кожен договір, без ваших персональних даних</string>
+    <string name="delete_account_kept_receipts">• Чеки — стільки, скільки вимагає бухгалтерське законодавство</string>
+    <string name="delete_account_kept_consents">• Запис про надані згоди — 3 роки</string>
+    <string name="delete_account_kept_audit">• Журнал дій у вашому обліковому записі — 3 роки, без IP-адрес і даних про пристрій</string>
+    <string name="delete_account_kept_disputes">• Текст ваших скарг, якщо вони були, — 3 роки</string>
     <string name="delete_account_confirm_label">Для підтвердження введіть свій email</string>
     <string name="delete_account_confirm_hint">your@email.com</string>
     <string name="delete_account_confirm_mismatch">Email не збігається з вашим обліковим записом</string>
     <string name="delete_account_confirm_button">Назавжди видалити обліковий запис</string>
     <string name="delete_account_success">Ваш обліковий запис видалено.</string>
     <string name="delete_account_dialog_title">Видалити обліковий запис?</string>
-    <string name="delete_account_dialog_message">Це назавжди видалить ваш обліковий запис і дані. Це не можна скасувати. Невикористані бонуси на рахунку анулюються, щойно видалення завершиться, — їх не можна виплатити чи відновити.</string>
+    <string name="delete_account_dialog_message">Ваші персональні дані буде видалено, і цю дію неможливо скасувати; записи, перелічені на цьому екрані, ми зберігаємо протягом зазначених на ньому строків. Невикористані бонуси на рахунку анулюються, щойно видалення завершиться, — їх не можна виплатити чи відновити.</string>
     <string name="delete_account_dialog_confirm">Видалити</string>
 
     <!-- Error handling — generics -->
@@ -834,7 +823,6 @@
     <!-- Cleansia Plus subscription -->
     <string name="membership_plus_title">Cleansia Plus</string>
     <string name="membership_plus_subtitle">Кращий спосіб тримати дім чистим</string>
-    <string name="membership_subscribe_cta">Спробувати Cleansia Plus</string>
     <string name="membership_disclosure">Можна скасувати будь-коли. Підписка автоматично продовжується до скасування.</string>
     <string name="plus_not_available_in_market">Plus поки що недоступний на вашому ринку</string>
 
@@ -858,8 +846,6 @@
     <string name="membership_plan_per_month_billed_annually">%1$s / місяць — оплата щорічно %2$s</string>
     <string name="membership_plan_per_month">%1$s / місяць</string>
     <string name="membership_plan_per_year">%1$s / рік</string>
-    <string name="membership_trial_badge">%1$d днів безкоштовно</string>
-    <string name="membership_trial_disclosure">Перші %1$d днів безкоштовно. Потім картку буде автоматично списано. Скасуйте будь-коли до кінця пробного періоду.</string>
 
     <!-- Switch to annual flow -->
     <string name="membership_switch_to_annual_cta">Перейти на річний — економія %1$d%%</string>
@@ -891,10 +877,9 @@
 
     <!-- Membership management card on Profile -->
     <string name="membership_inactive_title">Cleansia Plus</string>
-    <string name="membership_inactive_subtitle" formatted="false">5% знижка, безкоштовне скасування, ваш улюблений клінер.</string>
     <string name="membership_inactive_badge">PLUS</string>
-    <string name="membership_inactive_perks_summary" formatted="false">Економія на кожному бронюванні · скасування будь-коли · регулярні прибирання</string>
-    <string name="membership_inactive_cta">Спробувати безкоштовно 14 днів</string>
+    <string name="membership_inactive_perks_summary" formatted="false">Економія на кожному бронюванні · регулярні прибирання</string>
+    <string name="membership_inactive_cta">Отримати Cleansia Plus</string>
     <string name="membership_success_title">Ласкаво просимо до Plus!</string>
     <string name="membership_success_subtitle">Ваші переваги активні одразу. Ось що щойно відкрилося:</string>
     <string name="membership_success_subtitle_trial">Ваш пробний період Cleansia Plus розпочався.</string>
@@ -951,7 +936,7 @@
     <string name="recurring_bookings_create_fab">Новий розклад</string>
     <string name="recurring_plus_gate_title">Регулярні — це перевага Plus</string>
     <string name="recurring_plus_gate_subtitle">Приєднайтеся до Cleansia Plus, щоб налаштувати щотижневі або раз на два тижні прибирання, які бронюються самі.</string>
-    <string name="recurring_plus_gate_cta">Спробувати Cleansia Plus</string>
+    <string name="recurring_plus_gate_cta">Отримати Cleansia Plus</string>
     <string name="recurring_lapsed_notice_title">Cleansia Plus більше не активна</string>
     <string name="recurring_lapsed_notice_body">Ці розклади продовжують працювати, і прибирання бронюються за повною ціною без членства. Будь-який з них можна тут будь-коли призупинити або видалити. Щоб додати чи змінити розклад, поновіть підписку.</string>
 
@@ -1212,7 +1197,6 @@
     <string name="referral_code_field_collapsed">У мене є реферальний код</string>
     <string name="referral_code_field_label">Реферальний код</string>
     <string name="referral_code_field_placeholder">X3K9P2</string>
-    <string name="referral_code_valid">Код від %1$s — ви отримаєте 150 бонусних балів</string>
     <string name="referral_code_validating">Перевірка…</string>
     <string name="error_referral_not_found">Реферальний код не знайдено</string>
     <string name="error_referral_self_referral">Ви не можете рекомендувати себе</string>

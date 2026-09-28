@@ -11,6 +11,7 @@ import cz.cleansia.customer.core.booking.CashEligibility
 import cz.cleansia.customer.core.booking.CreateOrderAddressDto
 import cz.cleansia.customer.core.booking.CreateOrderCommand
 import cz.cleansia.customer.core.booking.CreateOrderResponse
+import cz.cleansia.customer.core.booking.PropertySize
 import cz.cleansia.customer.core.booking.QuoteOrderCommand
 import cz.cleansia.customer.core.booking.QuoteOrderResponse
 import cz.cleansia.customer.core.catalog.CatalogRepository
@@ -440,6 +441,14 @@ class BookingViewModel @Inject constructor(
 
     fun update(transform: (BookingState) -> BookingState) {
         _state.value = transform(_state.value)
+    }
+
+    fun setRooms(n: Int) {
+        _state.value = _state.value.copy(rooms = n.coerceIn(1, PropertySize.MAX_ROOMS))
+    }
+
+    fun setBathrooms(n: Int) {
+        _state.value = _state.value.copy(bathrooms = n.coerceIn(1, PropertySize.MAX_BATHROOMS))
     }
 
     fun nextStep() { _step.update { (it + 1).coerceAtMost(TOTAL_STEPS) } }

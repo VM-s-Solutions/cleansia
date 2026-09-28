@@ -82,16 +82,8 @@
     <string name="rewards_next_milestone">Ještě %1$d pro odemčení %2$s</string>
     <string name="rewards_all_tiers_unlocked">Odemkli jste všechny úrovně — děkujeme!</string>
     <string name="rewards_tiers_title">Milníky</string>
-    <string name="rewards_tier_unlocked">Odemčeno</string>
-    <string name="rewards_tier_regular">Pravidelný</string>
-    <string name="rewards_tier_regular_perk">Přednostní změna termínu &amp; průvodce čisticími tipy</string>
-    <string name="rewards_tier_vip">VIP člen</string>
-    <string name="rewards_tier_vip_perk">Přednostní podpora &amp; eko-produkty zdarma</string>
-    <string name="rewards_tier_hero">Cleansia hrdina</string>
-    <string name="rewards_tier_hero_perk">Garantované termíny ve stejný den &amp; brzký přístup k novým službám</string>
 
     <string name="rewards_referral_title">Pozvat kamaráda</string>
-    <string name="rewards_referral_subtitle">Oni získají uvítací bonus, vy doplněk zdarma.</string>
     <string name="rewards_referral_your_code">Váš kód</string>
     <string name="rewards_referral_share">Sdílet kód</string>
     <string name="rewards_referral_no_joins">Buďte první — sdílejte svůj kód</string>
@@ -117,13 +109,13 @@
 
     <!-- Smart upsell carousel slides -->
     <string name="home_upsell_plus_top">Cleansia Plus</string>
-    <string name="home_upsell_plus_title">Šetřete na každém úklidu. 14 dní zdarma.</string>
-    <string name="home_upsell_plus_cta">Vyzkoušet Plus zdarma</string>
+    <string name="home_upsell_plus_title">Šetřete na každém úklidu.</string>
+    <string name="home_upsell_plus_cta">Získat Plus</string>
     <string name="home_upsell_welcome_top">Uvítací nabídka</string>
     <string name="home_upsell_welcome_title">15 % sleva na první úklid s kódem WELCOME15</string>
     <string name="home_upsell_welcome_cta">Objednat první úklid</string>
     <string name="home_upsell_referral_top">Pozvěte kamaráda</string>
-    <string name="home_upsell_referral_title">Oba získáte 150 bodů po jeho první objednávce</string>
+    <string name="home_upsell_referral_title">Oba získáte 150 bodů po jeho prvním dokončeném úklidu</string>
     <string name="home_upsell_referral_cta">Sdílet můj kód</string>
     <string name="home_upsell_setup_recurring_top">Výhoda Plus</string>
     <string name="home_upsell_setup_recurring_title">Nastavte si pravidelný úklid — jednou objednat, navždy běží</string>
@@ -131,10 +123,6 @@
 
     <string name="home_hero2_top">Jaro je tu</string>
     <string name="home_hero2_title">Hloubkový úklid + okna v jednom</string>
-
-    <string name="home_hero3_top">Pozvěte kamaráda</string>
-    <string name="home_hero3_title">Dejte mu bonus, získejte doplněk zdarma</string>
-    <string name="home_hero3_cta">Sdílet kód</string>
 
     <!-- Home — trust strip -->
     <string name="home_trust_insured">Pojištěno</string>
@@ -192,10 +180,6 @@
     <string name="home_hero_slide2_title">Hloubkový úklid, klidný týden</string>
     <string name="home_hero_slide2_subtitle">Koberce, čalounění, okna — vše během jedné návštěvy.</string>
     <string name="home_hero_slide2_cta">Prozkoumat</string>
-
-    <string name="home_hero_slide3_title">100% spokojenost</string>
-    <string name="home_hero_slide3_subtitle">Nejste spokojeni? Vrátíme se a napravíme to.</string>
-    <string name="home_hero_slide3_cta">Zjistit více</string>
 
     <!-- Orders tab -->
     <string name="orders_title">Moje objednávky</string>
@@ -811,20 +795,25 @@
     <!-- Account deletion -->
     <string name="profile_delete_account">Smazat účet</string>
     <string name="delete_account_title">Smazat váš účet</string>
-    <string name="delete_account_subtitle">Tím trvale smažete svůj účet a všechna související data. Nevyčerpaný kredit smazáním účtu propadá — nelze ho vyplatit ani obnovit. Tuto akci nelze vrátit zpět.</string>
+    <string name="delete_account_subtitle">Při smazání účtu odstraníme vaše osobní údaje. Uchováme jen to, co vyžaduje zákon nebo obrana právních nároků — viz seznam níže. Nevyčerpaný kredit smazáním účtu propadá — nelze ho vyplatit ani obnovit. Tuto akci nelze vrátit zpět.</string>
     <string name="delete_account_what_happens">Co bude smazáno</string>
     <string name="delete_account_item_profile">• Váš profil (jméno, e-mail, telefon, fotka)</string>
     <string name="delete_account_item_addresses">• Všechny uložené adresy</string>
-    <string name="delete_account_item_history">• Historie rezervací bude anonymizována</string>
+    <string name="delete_account_item_history">• Vaše jméno, kontaktní údaje, adresa a fotografie z vašich objednávek</string>
     <string name="delete_account_item_devices">• Odhlášení ze všech zařízení</string>
-    <string name="delete_account_item_consents">• Všechny marketingové souhlasy</string>
+    <string name="delete_account_what_is_kept">Co uchováme</string>
+    <string name="delete_account_kept_bookings">• Vaše objednávky jako záznam o každé smlouvě, bez vašich osobních údajů</string>
+    <string name="delete_account_kept_receipts">• Účtenky po dobu, kterou vyžadují účetní předpisy</string>
+    <string name="delete_account_kept_consents">• Záznam o udělených souhlasech po dobu 3 let</string>
+    <string name="delete_account_kept_audit">• Záznam úkonů na vašem účtu po dobu 3 let, bez IP adres a údajů o zařízení</string>
+    <string name="delete_account_kept_disputes">• Text vašich případných reklamací po dobu 3 let</string>
     <string name="delete_account_confirm_label">Pro potvrzení zadejte svůj e-mail</string>
     <string name="delete_account_confirm_hint">vas@email.com</string>
     <string name="delete_account_confirm_mismatch">E-mail neodpovídá vašemu účtu</string>
     <string name="delete_account_confirm_button">Trvale smazat účet</string>
     <string name="delete_account_success">Váš účet byl smazán.</string>
     <string name="delete_account_dialog_title">Smazat účet?</string>
-    <string name="delete_account_dialog_message">Tímto trvale smažete svůj účet a data. Toto nelze vrátit zpět. Nevyčerpaný kredit na účtu dokončením smazání propadá — nelze ho vyplatit ani obnovit.</string>
+    <string name="delete_account_dialog_message">Vaše osobní údaje budou odstraněny a tuto akci nelze vrátit; záznamy uvedené na této obrazovce uchováme po dobu, kterou uvádí. Nevyčerpaný kredit na účtu dokončením smazání propadá — nelze ho vyplatit ani obnovit.</string>
     <string name="delete_account_dialog_confirm">Smazat</string>
 
     <!-- Error handling — generics -->
@@ -837,7 +826,6 @@
     <!-- Cleansia Plus subscription -->
     <string name="membership_plus_title">Cleansia Plus</string>
     <string name="membership_plus_subtitle">Lepší způsob, jak udržovat domov čistý</string>
-    <string name="membership_subscribe_cta">Vyzkoušet Cleansia Plus</string>
     <string name="membership_disclosure">Můžete kdykoli zrušit. Předplatné se obnovuje automaticky, dokud ho nezrušíte.</string>
     <string name="plus_not_available_in_market">Plus zatím není na vašem trhu k dispozici</string>
 
@@ -861,8 +849,6 @@
     <string name="membership_plan_per_month_billed_annually">%1$s / měsíc — účtováno ročně jako %2$s</string>
     <string name="membership_plan_per_month">%1$s / měsíc</string>
     <string name="membership_plan_per_year">%1$s / rok</string>
-    <string name="membership_trial_badge">%1$d dní zdarma</string>
-    <string name="membership_trial_disclosure">Prvních %1$d dní zdarma. Poté bude vaše karta automaticky zaúčtována. Můžete zrušit kdykoli před koncem zkušební doby.</string>
 
     <!-- Switch to annual flow -->
     <string name="membership_switch_to_annual_cta">Přejít na roční — ušetříte %1$d%%</string>
@@ -894,10 +880,9 @@
 
     <!-- Membership management card on Profile -->
     <string name="membership_inactive_title">Cleansia Plus</string>
-    <string name="membership_inactive_subtitle" formatted="false">5% sleva, bezplatné zrušení, váš oblíbený uklízeč.</string>
     <string name="membership_inactive_badge">PLUS</string>
-    <string name="membership_inactive_perks_summary" formatted="false">Sleva na každou objednávku · zrušení kdykoli · pravidelný úklid</string>
-    <string name="membership_inactive_cta">Vyzkoušet zdarma na 14 dní</string>
+    <string name="membership_inactive_perks_summary" formatted="false">Sleva na každou objednávku · pravidelný úklid</string>
+    <string name="membership_inactive_cta">Získat Cleansia Plus</string>
     <string name="membership_success_title">Vítejte v Plus!</string>
     <string name="membership_success_subtitle">Vaše výhody jsou hned aktivní. Tady je, co jste právě odemkli:</string>
     <string name="membership_success_subtitle_trial">Vaše zkušební období Cleansia Plus začalo.</string>
@@ -954,7 +939,7 @@
     <string name="recurring_bookings_create_fab">Nový rozvrh</string>
     <string name="recurring_plus_gate_title">Opakování je výhoda Plus</string>
     <string name="recurring_plus_gate_subtitle">Připojte se k Cleansia Plus a nastavte si týdenní nebo čtrnáctidenní úklidy, které se objednají samy.</string>
-    <string name="recurring_plus_gate_cta">Vyzkoušet Cleansia Plus</string>
+    <string name="recurring_plus_gate_cta">Získat Cleansia Plus</string>
     <string name="recurring_lapsed_notice_title">Cleansia Plus už není aktivní</string>
     <string name="recurring_lapsed_notice_body">Tyto rozvrhy běží dál a úklidy se objednávají za plnou cenu bez členství. Kterýkoli z nich tu můžete kdykoli pozastavit nebo smazat. Pro přidání nebo úpravu rozvrhu členství obnovte.</string>
 
@@ -1215,7 +1200,6 @@
     <string name="referral_code_field_collapsed">Mám kód doporučení</string>
     <string name="referral_code_field_label">Kód doporučení</string>
     <string name="referral_code_field_placeholder">X3K9P2</string>
-    <string name="referral_code_valid">Kód od %1$s — získáte 150 bonusových bodů</string>
     <string name="referral_code_validating">Ověřuji…</string>
     <string name="error_referral_not_found">Kód doporučení nebyl nalezen</string>
     <string name="error_referral_self_referral">Nemůžete doporučit sami sebe</string>

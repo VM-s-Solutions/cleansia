@@ -73,6 +73,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cz.cleansia.customer.R
 import cz.cleansia.customer.core.booking.CashEligibility
+import cz.cleansia.customer.core.booking.PropertySize
 import cz.cleansia.customer.core.catalog.PackageListItem
 import cz.cleansia.customer.core.catalog.ServiceListItem
 import cz.cleansia.customer.core.data.UserAddress
@@ -84,6 +85,7 @@ import cz.cleansia.customer.ui.state.ActionState
 import kotlinx.datetime.Clock
 import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.Instant
+import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.atStartOfDayIn
 import kotlinx.datetime.plus
@@ -549,12 +551,12 @@ private fun WhatStep(
         Column(modifier = Modifier.weight(1f)) {
             SectionLabel(stringResource(R.string.recurring_create_rooms_label))
             Spacer(Modifier.height(8.dp))
-            Stepper(value = state.rooms, onChange = viewModel::setRooms)
+            Stepper(value = state.rooms, max = PropertySize.MAX_ROOMS, onChange = viewModel::setRooms)
         }
         Column(modifier = Modifier.weight(1f)) {
             SectionLabel(stringResource(R.string.recurring_create_bathrooms_label))
             Spacer(Modifier.height(8.dp))
-            Stepper(value = state.bathrooms, onChange = viewModel::setBathrooms)
+            Stepper(value = state.bathrooms, max = PropertySize.MAX_BATHROOMS, onChange = viewModel::setBathrooms)
         }
     }
 }
@@ -621,7 +623,11 @@ private fun WhereAndPayStep(
 
     SectionLabel(stringResource(R.string.recurring_create_starts_label))
     Spacer(Modifier.height(8.dp))
-    StartsOnPicker(isoValue = state.startsOnIso, onChange = viewModel::setStartsOn)
+    StartsOnPicker(
+        isoValue = state.startsOnIso,
+        latestDate = state.latestStartDate(TimeZone.currentSystemDefault()),
+        onChange = viewModel::setStartsOn,
+    )
 
     if (isEditing) {
         Spacer(Modifier.height(24.dp))
@@ -963,7 +969,7 @@ private fun OutlinedSelectableChip(
 }
 
 @Composable
-private fun Stepper(value: Int, onChange: (Int) -> Unit) {
+private fun Stepper(value: Int, max: Int, onChange: (Int) -> Unit) {
     Row(
         modifier = Modifier
             .clip(RoundedCornerShape(12.dp))
@@ -979,7 +985,7 @@ private fun Stepper(value: Int, onChange: (Int) -> Unit) {
             modifier = Modifier.padding(horizontal = 12.dp),
             style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
         )
-        IconButton(onClick = { onChange(value + 1) }) {
+        IconButton(onClick = { onChange(value + 1) }, enabled = value < max) {
             Icon(Icons.Outlined.Add, contentDescription = null)
         }
     }
@@ -1366,7 +1372,7 @@ private fun PaymentCard(
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun StartsOnPicker(isoValue: String, onChange: (String) -> Unit) {
+private fun StartsOnPicker(isoValue: String, latestDate: LocalDate?, onChange: (String) -> Unit) {
     val tz = TimeZone.currentSystemDefault()
     val today = remember { Clock.System.now().toLocalDateTime(tz).date }
     val parsed = remember(isoValue) {
@@ -1415,8 +1421,7 @@ private fun StartsOnPicker(isoValue: String, onChange: (String) -> Unit) {
 
     if (dialogOpen) {
         val initialMillis = displayDate.atStartOfDayIn(TimeZone.UTC).toEpochMilliseconds()
-        val todayUtcMs = today.atStartOfDayIn(TimeZone.UTC).toEpochMilliseconds()
-        val selectableDates = NotInPastSelectableDates(todayUtcMs)
+        val selectableDates = StartsOnSelectableDates(today = today, latest = latestDate)
         val pickerState = rememberDatePickerState(
             initialSelectedDateMillis = initialMillis,
             selectableDates = selectableDates,
@@ -1445,13 +1450,17 @@ private fun StartsOnPicker(isoValue: String, onChange: (String) -> Unit) {
 }
 
 /**
- * SelectableDates impl that blocks any UTC-day before [todayUtcMs]. Hoisted
- * out of the composable so it sits in plain code — keeps the compose
- * compiler plugin from flagging an inline `object :` literal.
+ * The start days the picker offers: none before [today], and in edit mode none after [latest]. Hoisted
+ * out of the composable so it sits in plain code — keeps the compose compiler plugin from flagging an
+ * inline `object :` literal.
  */
 @OptIn(ExperimentalMaterial3Api::class)
-private class NotInPastSelectableDates(
-    private val todayUtcMs: Long,
+internal class StartsOnSelectableDates(
+    private val today: LocalDate,
+    private val latest: LocalDate?,
 ) : androidx.compose.material3.SelectableDates {
-    override fun isSelectableDate(utcTimeMillis: Long): Boolean = utcTimeMillis >= todayUtcMs
+    override fun isSelectableDate(utcTimeMillis: Long): Boolean {
+        val day = Instant.fromEpochMilliseconds(utcTimeMillis).toLocalDateTime(TimeZone.UTC).date
+        return day >= today && (latest == null || day <= latest)
+    }
 }

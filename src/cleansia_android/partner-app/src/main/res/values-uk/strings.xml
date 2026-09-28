@@ -1335,7 +1335,6 @@
     <string name="delete_account_kept_label">Що ми маємо зберегти</string>
     <string name="delete_account_kept_invoices">Ваші рахунки як фінансові документи</string>
     <string name="delete_account_kept_pay">Записи про оплату за виконані замовлення</string>
-    <string name="delete_account_kept_agreement">Угоду про самовиставлення рахунків до них</string>
     <string name="delete_account_cta">Надіслати запит</string>
     <string name="delete_account_confirm_title">Надіслати запит на видалення?</string>
     <string name="delete_account_confirm_message">Ми зв\'яжемося з вами та офіційно завершимо співпрацю. Сьогодні нічого не видаляється.</string>

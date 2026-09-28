@@ -114,7 +114,7 @@ fun OrdersListScreen(
     LaunchedEffect(uiState.tab) {
         if (uiState.tab == OrdersTab.Available) {
             if (!uiState.hasLocationPermission) {
-                permissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
+                permissionLauncher.launch(Manifest.permission.ACCESS_COARSE_LOCATION)
             } else {
                 // Re-resolve every time the cleaner enters the Available tab.
                 // VM.init() only runs once; without this the first fix attempt

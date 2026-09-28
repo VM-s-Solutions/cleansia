@@ -12,6 +12,7 @@ import cz.cleansia.core.network.networkCall
 import cz.cleansia.core.snackbar.SnackbarController
 import cz.cleansia.customer.core.booking.BookingApi
 import cz.cleansia.customer.core.booking.CashEligibility
+import cz.cleansia.customer.core.booking.PropertySize
 import cz.cleansia.customer.core.booking.QuoteOrderCommand
 import cz.cleansia.customer.core.catalog.CatalogRepository
 import cz.cleansia.customer.core.catalog.PackageListItem
@@ -48,8 +49,11 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.Instant
+import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
+import kotlinx.datetime.minus
 import kotlinx.datetime.toLocalDateTime
 
 /**
@@ -194,8 +198,8 @@ class CreateRecurringViewModel @Inject constructor(
     fun setFrequency(f: RecurrenceFrequency) { _state.update { it.copy(frequency = f) } }
     fun setDayOfWeek(dow: Int) { _state.update { it.copy(dayOfWeek = dow) } }
     fun setTimeOfDay(time: String) { _state.update { it.copy(timeOfDay = time) } }
-    fun setRooms(n: Int) { _state.update { it.copy(rooms = n.coerceAtLeast(0)) } }
-    fun setBathrooms(n: Int) { _state.update { it.copy(bathrooms = n.coerceAtLeast(0)) } }
+    fun setRooms(n: Int) { _state.update { it.copy(rooms = n.coerceIn(0, PropertySize.MAX_ROOMS)) } }
+    fun setBathrooms(n: Int) { _state.update { it.copy(bathrooms = n.coerceIn(0, PropertySize.MAX_BATHROOMS)) } }
     fun setSavedAddressId(id: String) { _state.update { it.copy(savedAddressId = id) } }
     fun toggleService(id: String) {
         _state.update {
@@ -530,8 +534,8 @@ class CreateRecurringViewModel @Inject constructor(
             }
             _state.update { current ->
                 current.copy(
-                    rooms = order.rooms.coerceAtLeast(0),
-                    bathrooms = order.bathrooms.coerceAtLeast(0),
+                    rooms = order.rooms.coerceIn(0, PropertySize.MAX_ROOMS),
+                    bathrooms = order.bathrooms.coerceIn(0, PropertySize.MAX_BATHROOMS),
                     selectedServiceIds = order.selectedServices?.mapNotNull { it.id }?.toSet().orEmpty(),
                     selectedPackageIds = order.selectedPackages?.mapNotNull { it.id }?.toSet().orEmpty(),
                     paymentType = order.paymentType?.value ?: current.paymentType,
@@ -593,4 +597,9 @@ data class CreateRecurringFormState(
     val endsOnIso: String? = null,
     /** No editor in the wizard either; carried for the same reason. */
     val preferredEmployeeId: String? = null,
-)
+) {
+    /** The server refuses a start on or after [endsOnIso], and this form cannot move the end date. */
+    fun latestStartDate(tz: TimeZone): LocalDate? = endsOnIso
+        ?.let { runCatching { Instant.parse(it).toLocalDateTime(tz).date }.getOrNull() }
+        ?.minus(1, DateTimeUnit.DAY)
+}

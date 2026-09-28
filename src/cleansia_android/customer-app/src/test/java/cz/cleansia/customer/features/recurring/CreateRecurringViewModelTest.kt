@@ -1,6 +1,7 @@
 package cz.cleansia.customer.features.recurring
 
 import android.content.Context
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModelStore
 import app.cash.turbine.test
@@ -10,6 +11,7 @@ import cz.cleansia.core.snackbar.SnackbarController
 import cz.cleansia.customer.R
 import cz.cleansia.customer.core.booking.BookingApi
 import cz.cleansia.customer.core.booking.CashEligibility
+import cz.cleansia.customer.core.booking.PropertySize
 import cz.cleansia.customer.core.booking.QuoteOrderCommand
 import cz.cleansia.customer.core.booking.QuoteOrderResponse
 import cz.cleansia.customer.core.catalog.CatalogRepository
@@ -45,7 +47,12 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.atStartOfDayIn
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Rule
@@ -312,12 +319,17 @@ class CreateRecurringViewModelTest {
         catalogLoadedFlow.value = true
     }
 
-    private fun sourceOrder(services: List<String>, packages: List<String> = emptyList()) {
+    private fun sourceOrder(
+        services: List<String>,
+        packages: List<String> = emptyList(),
+        rooms: Int = 3,
+        bathrooms: Int = 2,
+    ) {
         coEvery { orderRepo.getById("ord-7") } returns ApiResult.Success(
             OrderDetailDto(
                 id = "ord-7",
-                rooms = 3,
-                bathrooms = 2,
+                rooms = rooms,
+                bathrooms = bathrooms,
                 totalPrice = 100.0,
                 originalSubtotal = 100.0,
                 appliedDiscountSource = 0,
@@ -531,6 +543,67 @@ class CreateRecurringViewModelTest {
         val request = slot<UpdateRecurringBookingRequest>()
         coVerify(exactly = 1) { recurringRepo.update(capture(request)) }
         assertEquals("2026-12-31T00:00:00Z", request.captured.endsOn)
+    }
+
+    // The server refuses a start on or after the end date (`recurring_template.ends_on_before_start`),
+    // and this form cannot move the end date, so the picker stops the day before it — as the web does.
+
+    @OptIn(ExperimentalMaterial3Api::class)
+    @Test
+    fun `edit mode offers no start on or after the stored end date`() = runTest {
+        templatesFlow.value = listOf(editableTemplate.copy(endsOn = "2026-12-31T00:00:00Z"))
+
+        val vm = viewModel(templateId = "tpl-1")
+        advanceUntilIdle()
+
+        val latest = vm.state.value.latestStartDate(TimeZone.UTC)
+        assertEquals(LocalDate(2026, 12, 30), latest)
+        val dates = StartsOnSelectableDates(today = LocalDate(2026, 9, 1), latest = latest)
+        assertTrue(dates.isSelectableDate(utcMidnight(LocalDate(2026, 12, 30))))
+        assertFalse(dates.isSelectableDate(utcMidnight(LocalDate(2026, 12, 31))))
+        assertFalse(dates.isSelectableDate(utcMidnight(LocalDate(2027, 1, 15))))
+    }
+
+    @OptIn(ExperimentalMaterial3Api::class)
+    @Test
+    fun `a schedule with no end date leaves the start open after today`() = runTest {
+        templatesFlow.value = listOf(editableTemplate)
+
+        val vm = viewModel(templateId = "tpl-1")
+        advanceUntilIdle()
+
+        val latest = vm.state.value.latestStartDate(TimeZone.UTC)
+        assertNull(latest)
+        val dates = StartsOnSelectableDates(today = LocalDate(2026, 9, 1), latest = latest)
+        assertTrue(dates.isSelectableDate(utcMidnight(LocalDate(2030, 1, 1))))
+        assertFalse(dates.isSelectableDate(utcMidnight(LocalDate(2026, 8, 31))))
+    }
+
+    private fun utcMidnight(date: LocalDate): Long = date.atStartOfDayIn(TimeZone.UTC).toEpochMilliseconds()
+
+    // Every basket validator refuses a home above BookingPolicy.MaxRooms / MaxBathrooms.
+
+    @Test
+    fun `the size steppers stop at the largest home the server accepts`() = runTest {
+        val vm = viewModel()
+        advanceUntilIdle()
+
+        vm.setRooms(PropertySize.MAX_ROOMS + 1)
+        vm.setBathrooms(PropertySize.MAX_BATHROOMS + 1)
+
+        assertEquals(PropertySize.MAX_ROOMS, vm.state.value.rooms)
+        assertEquals(PropertySize.MAX_BATHROOMS, vm.state.value.bathrooms)
+    }
+
+    @Test
+    fun `a schedule made from a larger past order starts at the largest home the server accepts`() = runTest {
+        sourceOrder(services = listOf("svc-1"), rooms = PropertySize.MAX_ROOMS + 3, bathrooms = PropertySize.MAX_BATHROOMS + 2)
+
+        val vm = viewModel(orderId = "ord-7")
+        advanceUntilIdle()
+
+        assertEquals(PropertySize.MAX_ROOMS, vm.state.value.rooms)
+        assertEquals(PropertySize.MAX_BATHROOMS, vm.state.value.bathrooms)
     }
 
     // The update replaces the favourite cleaner with whatever it is sent, so the loaded one rides along;

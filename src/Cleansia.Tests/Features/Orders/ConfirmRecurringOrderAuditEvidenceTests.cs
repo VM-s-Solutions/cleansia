@@ -1,6 +1,7 @@
 using System.Text.Json;
 using Cleansia.Core.AppServices.Auditing;
 using Cleansia.Core.AppServices.Common;
+using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Clients.Abstractions.Stripe;
@@ -47,6 +48,7 @@ public sealed class ConfirmRecurringOrderAuditEvidenceTests
             Mock.Of<ITenantProvider>(),
             new Mock<IStripeClient>().Object,
             new StripeConfig(new ConfigurationBuilder().Build()),
+            new OrderChannelProvider(OrderChannel.Mobile),
             new Mock<IPendingDispatch>().Object,
             new Mock<INotificationProducer>().Object,
             NoPreferredCleanerHold.Resolver,

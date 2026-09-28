@@ -123,8 +123,7 @@ public class OrderAccessService : IOrderAccessService
         }
 
         var currency = await _currencyResolutionService.ResolveCurrencyForEmployeeAsync(employeeId, cancellationToken);
-        return OrderAvailability.IsOfferable(
-                order.CurrentStatus, order.PaymentType, order.PaymentStatus, order.RecurringTemplateId)
+        return OrderAvailability.IsOfferable(order)
             // TakeableSeat, not AvailableSpots: the browse gate exists so a cleaner can READ what they
             // may TAKE. A cover-requested seat is takeable, so gating on capacity here would show the
             // job on the board and then 403 the cleaner opening it.

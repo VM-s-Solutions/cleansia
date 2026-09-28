@@ -68,6 +68,8 @@ public class ResumeOrderCheckout
                 .MustAsync(NotCancelledAsync)
                 .WithMessage(BusinessErrorMessage.OrderAlreadyCancelled)
                 .MustAsync(HaveNoPaymentIntentAsync)
+                .WithMessage(BusinessErrorMessage.InvalidOrderStatusTransition)
+                .MustAsync(NotRecurringOccurrenceAsync)
                 .WithMessage(BusinessErrorMessage.InvalidOrderStatusTransition);
         }
 
@@ -118,6 +120,17 @@ public class ResumeOrderCheckout
         {
             var order = await LoadOwnOrderAsync(orderId, cancellationToken);
             return order != null && string.IsNullOrEmpty(order.StripePaymentIntentId);
+        }
+
+        /// <summary>
+        /// A recurring occurrence pays through <see cref="ConfirmRecurringOrder"/>, whose session closes
+        /// before the occurrence is retracted and is keyed on that expiry. Asked here without it, Stripe
+        /// would not replay that session but open a second one beside it, payable for a full day.
+        /// </summary>
+        private async Task<bool> NotRecurringOccurrenceAsync(string orderId, CancellationToken cancellationToken)
+        {
+            var order = await LoadOwnOrderAsync(orderId, cancellationToken);
+            return order != null && order.RecurringTemplateId is null;
         }
     }
 

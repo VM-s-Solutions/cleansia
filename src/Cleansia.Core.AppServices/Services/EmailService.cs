@@ -103,6 +103,53 @@ public sealed partial class EmailService : IEmailService
     private static CultureInfo CultureFor(string languageCode) =>
         CultureInfo.GetCultureInfo(EmailLocale.Resolve(languageCode));
 
+    /// <summary>
+    /// An amount the way the e-mail's language writes it, never the host's: "1 234,50 €" in Czech,
+    /// "€1,234.50" in English — the receipt's convention. No unit when the currency was not loaded.
+    /// </summary>
+    private static string Money(decimal amount, string currencySymbol, string languageCode)
+    {
+        var digits = amount.ToString("N2", CultureFor(languageCode));
+        if (string.IsNullOrEmpty(currencySymbol))
+        {
+            return digits;
+        }
+
+        return EmailLocale.Resolve(languageCode) == Constants.Language.English
+            ? $"{currencySymbol}{digits}"
+            : $"{digits} {currencySymbol}";
+    }
+
+    private static readonly IReadOnlyDictionary<string, Dictionary<string, string>> ReceiptAfterServiceDefaults =
+        new Dictionary<string, Dictionary<string, string>>
+        {
+            ["en"] = new()
+            {
+                ["SubjectAfterService"] = "Your receipt from Cleansia",
+                ["ThankYouTextAfterService"] = "Thank you for your cleaning with Cleansia. Your receipt is attached.",
+            },
+            ["cs"] = new()
+            {
+                ["SubjectAfterService"] = "Účtenka za váš úklid",
+                ["ThankYouTextAfterService"] = "Děkujeme, že jste si vybrali Cleansia. V příloze najdete účtenku za provedený úklid.",
+            },
+            ["sk"] = new()
+            {
+                ["SubjectAfterService"] = "Účtenka za vaše upratovanie",
+                ["ThankYouTextAfterService"] = "Ďakujeme, že ste si vybrali Cleansia. V prílohe nájdete účtenku za vykonané upratovanie.",
+            },
+            ["uk"] = new()
+            {
+                ["SubjectAfterService"] = "Квитанція за ваше прибирання",
+                ["ThankYouTextAfterService"] = "Дякуємо, що обрали Cleansia. Квитанцію за виконане прибирання додано до цього листа.",
+            },
+            ["ru"] = new()
+            {
+                ["SubjectAfterService"] = "Квитанция за вашу уборку",
+                ["ThankYouTextAfterService"] = "Спасибо, что выбрали Cleansia. Квитанция за выполненную уборку приложена к этому письму.",
+            },
+        };
+
     private string BuildGuestTrackLink(string displayOrderNumber, string email, string? guestAccessToken)
     {
         var link = $"{sendGridConfig.ClientDomainUrl}/track-order?orderNumber={Uri.EscapeDataString(displayOrderNumber)}&email={Uri.EscapeDataString(email)}";
@@ -123,6 +170,16 @@ public sealed partial class EmailService : IEmailService
         var translations = await emailTemplateTranslationRepository
             .GetTranslationsByTypeAndLanguageAsync(EmailType.OrderReceipt, languageCode, ct);
 
+        // A receipt issued after the clean — every cash receipt — thanks the customer for the clean
+        // rather than confirming a booking (owner ruling 2026-09-28). A translation row still wins.
+        if (order.CompletedAt is not null)
+        {
+            var afterService = ReceiptAfterServiceDefaults.GetValueOrDefault(EmailLocale.Resolve(languageCode))
+                ?? ReceiptAfterServiceDefaults[Constants.Language.English];
+            translations["Subject"] = translations.GetValueOrDefault("SubjectAfterService", afterService["SubjectAfterService"]);
+            translations["ThankYouText"] = translations.GetValueOrDefault("ThankYouTextAfterService", afterService["ThankYouTextAfterService"]);
+        }
+
         var orderStatusLink = BuildOrderStatusLink(order, email, guestAccessToken);
         var marketZone = await MarketZoneAsync(order, ct);
 
@@ -132,7 +189,7 @@ public sealed partial class EmailService : IEmailService
             OrderNumber = order.DisplayOrderNumber,
             OrderDate = TimeZoneInfo.ConvertTime(order.CreatedOn, marketZone).ToString("d", CultureFor(languageCode)),
             // An unloaded Currency navigation is a loader omission, not a CZK order: no unit rather than a guessed one. → /architecture/platform-expandability#_5-where-czk-kc-is-hardcoded-vs-configurable
-            TotalAmount = $"{order.Currency?.Symbol ?? string.Empty}{order.TotalPrice:N2}",
+            TotalAmount = Money(order.TotalPrice, order.Currency?.Symbol ?? string.Empty, languageCode),
             OrderStatusLink = orderStatusLink
         }, languageCode);
 
@@ -292,12 +349,21 @@ public sealed partial class EmailService : IEmailService
             ct);
     }
 
-    private static readonly IReadOnlyDictionary<string, Dictionary<string, string>> CancellationEmailDefaults =
+    /// <summary>
+    /// In-code copy for the status e-mail's cancelled and booked arms, used only where no translation
+    /// row supplies a key. The table carries no status-update rows, and these two arms go to guests and
+    /// cash customers in their own language.
+    /// </summary>
+    private static readonly IReadOnlyDictionary<string, Dictionary<string, string>> StatusEmailDefaults =
         new Dictionary<string, Dictionary<string, string>>
         {
             ["en"] = new()
             {
                 ["StatusTitle_Cancelled"] = "Order cancelled",
+                ["StatusTitle_Booked"] = "Booking confirmed",
+                ["StatusMessage_Booked"] = "Your cleaning is booked.",
+                ["CashDueMessage"] = "Please pay {0} in cash to the cleaner on the day.",
+                ["FreeCancellationMessage"] = "You can cancel free of charge up to {0} h before the cleaning; a later cancellation may be charged a fee.",
                 ["StatusMessage_Cancelled"] = "Your order has been cancelled.",
                 ["RefundMessage"] = "Refund issued:",
                 ["CancelledReason_NoCleaner"] = "No cleaner was available for this booking, so it was cancelled.",
@@ -319,6 +385,10 @@ public sealed partial class EmailService : IEmailService
             ["cs"] = new()
             {
                 ["StatusTitle_Cancelled"] = "Rezervace zrušena",
+                ["StatusTitle_Booked"] = "Rezervace potvrzena",
+                ["StatusMessage_Booked"] = "Váš úklid je zarezervován.",
+                ["CashDueMessage"] = "Částku {0} zaplaťte v hotovosti uklízeči v den úklidu.",
+                ["FreeCancellationMessage"] = "Zdarma můžete zrušit nejpozději {0} h před úklidem; pozdější zrušení může být zpoplatněno.",
                 ["StatusMessage_Cancelled"] = "Vaše rezervace byla zrušena.",
                 ["RefundMessage"] = "Vrácená částka:",
                 ["CancelledReason_NoCleaner"] = "Pro tuto rezervaci nebyl k dispozici žádný uklízeč, a proto byla zrušena.",
@@ -340,6 +410,10 @@ public sealed partial class EmailService : IEmailService
             ["sk"] = new()
             {
                 ["StatusTitle_Cancelled"] = "Rezervácia zrušená",
+                ["StatusTitle_Booked"] = "Rezervácia potvrdená",
+                ["StatusMessage_Booked"] = "Vaše upratovanie je zarezervované.",
+                ["CashDueMessage"] = "Sumu {0} zaplaťte v hotovosti upratovačovi v deň upratovania.",
+                ["FreeCancellationMessage"] = "Bezplatne môžete zrušiť najneskôr {0} h pred upratovaním; neskoršie zrušenie môže byť spoplatnené.",
                 ["StatusMessage_Cancelled"] = "Vaša rezervácia bola zrušená.",
                 ["RefundMessage"] = "Vrátená suma:",
                 ["CancelledReason_NoCleaner"] = "Pre túto rezerváciu nebol k dispozícii žiadny upratovač, a preto bola zrušená.",
@@ -361,6 +435,10 @@ public sealed partial class EmailService : IEmailService
             ["uk"] = new()
             {
                 ["StatusTitle_Cancelled"] = "Бронювання скасовано",
+                ["StatusTitle_Booked"] = "Бронювання підтверджено",
+                ["StatusMessage_Booked"] = "Ваше прибирання заброньовано.",
+                ["CashDueMessage"] = "Будь ласка, сплатіть {0} готівкою прибиральнику в день прибирання.",
+                ["FreeCancellationMessage"] = "Безкоштовно скасувати можна не пізніше ніж за {0} год до прибирання; за пізніше скасування може стягуватися плата.",
                 ["StatusMessage_Cancelled"] = "Ваше бронювання скасовано.",
                 ["RefundMessage"] = "Сума повернення:",
                 ["CancelledReason_NoCleaner"] = "Для цього бронювання не знайшлося вільного прибиральника, тому його скасовано.",
@@ -382,6 +460,10 @@ public sealed partial class EmailService : IEmailService
             ["ru"] = new()
             {
                 ["StatusTitle_Cancelled"] = "Бронирование отменено",
+                ["StatusTitle_Booked"] = "Бронирование подтверждено",
+                ["StatusMessage_Booked"] = "Ваша уборка забронирована.",
+                ["CashDueMessage"] = "Пожалуйста, оплатите {0} наличными уборщику в день уборки.",
+                ["FreeCancellationMessage"] = "Бесплатно отменить можно не позднее чем за {0} ч до уборки; за более позднюю отмену может взиматься плата.",
                 ["StatusMessage_Cancelled"] = "Ваше бронирование отменено.",
                 ["RefundMessage"] = "Сумма возврата:",
                 ["CancelledReason_NoCleaner"] = "Для этого бронирования не нашлось свободного уборщика, поэтому оно отменено.",
@@ -402,22 +484,51 @@ public sealed partial class EmailService : IEmailService
             },
         };
 
-    public async Task<string> SendOrderStatusUpdateEmailAsync(
+    public Task<string> SendOrderStatusUpdateEmailAsync(
         string email,
         Order order,
         string newStatus,
         string languageCode = Constants.Language.English,
         CancellationToken ct = default,
         decimal? refundedAmount = null,
-        string? guestAccessToken = null)
+        string? guestAccessToken = null) =>
+        SendStatusEmailAsync(email, order, newStatus, languageCode, ct, refundedAmount, guestAccessToken, freeCancellationHours: null);
+
+    /// <summary>
+    /// The status e-mail's booked arm: what a cash booking gets instead of a receipt, which follows at
+    /// completion (owner ruling 2026-09-28) — the amount to pay the cleaner in cash, the slot in market
+    /// time, the address and the free-cancellation window.
+    /// </summary>
+    public Task<string> SendOrderBookedEmailAsync(
+        string email,
+        Order order,
+        int freeCancellationHours,
+        string languageCode = Constants.Language.English,
+        CancellationToken ct = default,
+        string? guestAccessToken = null) =>
+        SendStatusEmailAsync(email, order, BookedStatus, languageCode, ct, refundedAmount: null, guestAccessToken, freeCancellationHours);
+
+    private const string BookedStatus = "booked";
+
+    private async Task<string> SendStatusEmailAsync(
+        string email,
+        Order order,
+        string newStatus,
+        string languageCode,
+        CancellationToken ct,
+        decimal? refundedAmount,
+        string? guestAccessToken,
+        int? freeCancellationHours)
     {
         var translations = await emailTemplateTranslationRepository
             .GetTranslationsByTypeAndLanguageAsync(EmailType.OrderStatusUpdate, languageCode, ct);
 
-        if (newStatus.Equals("cancelled", StringComparison.OrdinalIgnoreCase))
+        var isCancelled = newStatus.Equals("cancelled", StringComparison.OrdinalIgnoreCase);
+        var isBooked = newStatus.Equals(BookedStatus, StringComparison.OrdinalIgnoreCase);
+        if (isCancelled || isBooked)
         {
-            var defaults = CancellationEmailDefaults.GetValueOrDefault(languageCode)
-                ?? CancellationEmailDefaults[Constants.Language.English];
+            var defaults = StatusEmailDefaults.GetValueOrDefault(languageCode)
+                ?? StatusEmailDefaults[Constants.Language.English];
             foreach (var (key, value) in defaults)
             {
                 translations.TryAdd(key, value);
@@ -453,18 +564,38 @@ public sealed partial class EmailService : IEmailService
                 translations.GetValueOrDefault("StatusTitle_Cancelled", "Order Cancelled"),
                 translations.GetValueOrDefault("StatusMessage_Cancelled", "Your order has been cancelled."),
                 "cancelled"),
+            BookedStatus => (
+                translations.GetValueOrDefault("StatusTitle_Booked", "Booking confirmed"),
+                translations.GetValueOrDefault("StatusMessage_Booked", "Your cleaning is booked."),
+                "confirmed"),
             _ => (
                 translations.GetValueOrDefault("StatusTitle_Default", "Order Update"),
                 translations.GetValueOrDefault("StatusMessage_Default", "Your order status has been updated."),
                 "confirmed")
         };
 
-        var orderLabel = statusClass == "cancelled" ? translations.GetValueOrDefault("OrderNumberLabel", "Order") : "Order";
+        var isLocalised = isCancelled || isBooked;
+        var orderLabel = isLocalised ? translations.GetValueOrDefault("OrderNumberLabel", "Order") : "Order";
         var subject = translations.GetValueOrDefault("Subject", $"{orderLabel} {order.DisplayOrderNumber} — {statusTitle}");
 
         var refundLine = refundedAmount is > 0m
-            ? $"{translations.GetValueOrDefault("RefundMessage", "Refund issued:")} {currencySymbol}{refundedAmount.Value:N2}."
+            ? $"{translations.GetValueOrDefault("RefundMessage", "Refund issued:")} {Money(refundedAmount.Value, currencySymbol, languageCode)}."
             : null;
+        string?[] bookedLines = isBooked
+            ?
+            [
+                string.Format(
+                    CultureFor(languageCode),
+                    translations.GetValueOrDefault("CashDueMessage", "Please pay {0} in cash to the cleaner on the day."),
+                    Money(order.TotalPrice - order.CreditAppliedAmount, currencySymbol, languageCode)),
+                freeCancellationHours is { } hours
+                    ? string.Format(
+                        CultureFor(languageCode),
+                        translations.GetValueOrDefault("FreeCancellationMessage", "You can cancel free of charge up to {0} h before the cleaning; a later cancellation may be charged a fee."),
+                        hours)
+                    : null,
+            ]
+            : [];
         string? platformReason = null;
         if (statusClass == "cancelled" && order.CancelledBy is CancelledBy.Admin or CancelledBy.System)
         {
@@ -494,11 +625,11 @@ public sealed partial class EmailService : IEmailService
         {
             Subject = subject,
             StatusMessage = string.Join(" ",
-                new[] { statusMessage, platformReason, refundLine }.Where(line => !string.IsNullOrWhiteSpace(line))),
+                new[] { statusMessage, platformReason, refundLine }.Concat(bookedLines)
+                    .Where(line => !string.IsNullOrWhiteSpace(line))),
             StatusSectionLabel = translations.GetValueOrDefault("StatusSectionLabel", "Current Status"),
             StatusClass = statusClass,
-            StatusLabel = newStatus.Equals("cancelled", StringComparison.OrdinalIgnoreCase)
-                ? statusTitle : newStatus.ToUpperInvariant(),
+            StatusLabel = isLocalised ? statusTitle : newStatus.ToUpperInvariant(),
             OrderNumberLabel = translations.GetValueOrDefault("OrderNumberLabel", "Order #"),
             OrderNumber = order.DisplayOrderNumber,
             CleaningDateLabel = translations.GetValueOrDefault("CleaningDateLabel", "Cleaning Date"),
@@ -506,7 +637,7 @@ public sealed partial class EmailService : IEmailService
             AddressLabel = translations.GetValueOrDefault("AddressLabel", "Address"),
             Address = address,
             TotalLabel = translations.GetValueOrDefault("TotalLabel", "Total"),
-            Total = $"{currencySymbol}{order.TotalPrice:N2}",
+            Total = Money(order.TotalPrice, currencySymbol, languageCode),
             OrderStatusLink = orderStatusLink,
             ButtonText = translations.GetValueOrDefault("ButtonText", "View Order Details"),
             QuestionsText = translations.GetValueOrDefault("QuestionsText", "If you have any questions about your order, don't hesitate to reach out."),
@@ -514,7 +645,7 @@ public sealed partial class EmailService : IEmailService
             SupportEmail = translations.GetValueOrDefault("SupportEmail", "info@cleansia.cz"),
             Closing = translations.GetValueOrDefault("Closing", "Best regards,"),
             TeamName = translations.GetValueOrDefault("TeamName", "The Cleansia Team"),
-            FooterText = translations.GetValueOrDefault("FooterText", statusClass == "cancelled"
+            FooterText = translations.GetValueOrDefault("FooterText", isLocalised
                 ? $"© {DateTime.UtcNow.Year} Cleansia"
                 : $"© {DateTime.UtcNow.Year} Cleansia s.r.o. All rights reserved.")
         }, languageCode);

@@ -5,7 +5,6 @@ using Cleansia.Core.Clients.Abstractions.Stripe;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Repositories;
-using Cleansia.Core.Queue.Abstractions;
 using Microsoft.Extensions.Logging.Abstractions;
 using MockQueryable;
 using MockQueryable.Moq;
@@ -42,7 +41,6 @@ public class MarkCashCollectedHandlerTests
     private readonly Mock<IOrderRepository> _orderRepository = new();
     private readonly Mock<IOrderAccessService> _accessService = new();
     private readonly Mock<IStripeClient> _stripeClient = new();
-    private readonly Mock<IPendingDispatch> _pending = new();
 
     public MarkCashCollectedHandlerTests()
     {
@@ -55,7 +53,6 @@ public class MarkCashCollectedHandlerTests
         _orderRepository.Object,
         _accessService.Object,
         _stripeClient.Object,
-        _pending.Object,
         NullLogger<MarkCashCollected.Handler>.Instance);
 
     private Order ArrangeOrder(
@@ -100,6 +97,22 @@ public class MarkCashCollectedHandlerTests
         _stripeClient.Verify(
             c => c.GetPaymentSnapshotAsync(It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()),
             Times.Never);
+    }
+
+    /// <summary>
+    /// Owner ruling 2026-09-28: the cleaner confirms the handover and the server writes the
+    /// amount due, so the figure on the order is never one somebody typed.
+    /// </summary>
+    [Fact]
+    public async Task The_Collection_Stamps_The_Amount_Due()
+    {
+        var order = ArrangeOrder(PaymentType.Cash, withStripeSurface: false);
+
+        var result = await CreateHandler().Handle(new MarkCashCollected.Command(OrderId), CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        Assert.True(order.TotalPrice > 0m);
+        Assert.Equal(order.TotalPrice, order.CashCollectedAmount);
     }
 
     /// <summary>

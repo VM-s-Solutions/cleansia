@@ -423,6 +423,60 @@ public sealed class CleanupStalePendingOrdersSweepTests : IDisposable
         Assert.Equal(TestTenants.Default, Assert.Single(tracks, t => t.OrderId == "01HZX9N6M7Q8R9S0T1V2W3Y412").TenantId);
     }
 
+    /// <summary>
+    /// Owner ruling 2026-09-28: a cash occurrence the customer confirmed stays Pending until the cleaner
+    /// records the cash, and from then on it is the cleaner's job — retracting it an hour before the slot
+    /// would cancel a booking the customer confirmed. An unconfirmed one is still retracted, and so is a
+    /// card one whose payment never settled, whatever it was stamped with.
+    /// </summary>
+    [Fact]
+    public async Task The_Recurring_Sweep_Leaves_A_Confirmed_Cash_Occurrence_And_Retracts_The_Rest()
+    {
+        await EnsureSchemaAsync();
+        var confirmedCash = PendingOrder("01HZX9N6M7Q8R9S0T1V2W3Y413", "user-13", PaymentType.Cash,
+            recurringTemplateId: "tmpl-13a", createdAgo: TimeSpan.FromHours(2), cleaningIn: TimeSpan.FromMinutes(30));
+        confirmedCash.ConfirmByCustomer(DateTime.UtcNow.AddHours(-1));
+        var unconfirmedCash = PendingOrder("01HZX9N6M7Q8R9S0T1V2W3Y414", "user-13", PaymentType.Cash,
+            recurringTemplateId: "tmpl-13b", createdAgo: TimeSpan.FromHours(2), cleaningIn: TimeSpan.FromMinutes(30));
+        var confirmedUnpaidCard = PendingOrder("01HZX9N6M7Q8R9S0T1V2W3Y415", "user-13", PaymentType.Card,
+            recurringTemplateId: "tmpl-13c", createdAgo: TimeSpan.FromHours(2), cleaningIn: TimeSpan.FromMinutes(30));
+        confirmedUnpaidCard.ConfirmByCustomer(DateTime.UtcNow.AddHours(-1));
+        await SeedAsync(confirmedCash, unconfirmedCash, confirmedUnpaidCard);
+
+        await RunRecurringSweepAsync();
+
+        Assert.Equal(OrderStatus.New, (await ReadOrderAsync("01HZX9N6M7Q8R9S0T1V2W3Y413")).CurrentStatus);
+        Assert.Equal(OrderStatus.Cancelled, (await ReadOrderAsync("01HZX9N6M7Q8R9S0T1V2W3Y414")).CurrentStatus);
+        Assert.Equal(OrderStatus.Cancelled, (await ReadOrderAsync("01HZX9N6M7Q8R9S0T1V2W3Y415")).CurrentStatus);
+    }
+
+    /// <summary>The reminder asks for a confirmation, so a confirmed cash occurrence is not asked again.</summary>
+    [Fact]
+    public async Task The_Confirm_Reminder_Skips_A_Confirmed_Cash_Occurrence()
+    {
+        await EnsureSchemaAsync();
+        var confirmedCash = PendingOrder("01HZX9N6M7Q8R9S0T1V2W3Y416", "user-16", PaymentType.Cash,
+            recurringTemplateId: "tmpl-16a", createdAgo: TimeSpan.FromHours(2), cleaningIn: TimeSpan.FromHours(12));
+        confirmedCash.ConfirmByCustomer(DateTime.UtcNow.AddHours(-1));
+        var unconfirmedCash = PendingOrder("01HZX9N6M7Q8R9S0T1V2W3Y417", "user-16", PaymentType.Cash,
+            recurringTemplateId: "tmpl-16b", createdAgo: TimeSpan.FromHours(2), cleaningIn: TimeSpan.FromHours(12));
+        await SeedAsync(confirmedCash, unconfirmedCash);
+
+        await using (var ctx = NewContext())
+        {
+            var handler = new SendRecurringOrderReminders.Handler(
+                new OrderRepository(ctx),
+                new NotificationProducer(new UserNotificationRepository(ctx), new OutboxPendingDispatch(ctx), new UserRepository(ctx), NullLogger<NotificationProducer>.Instance),
+                ctx,
+                NullLogger<SendRecurringOrderReminders.Handler>.Instance);
+            var result = await handler.Handle(new SendRecurringOrderReminders.Command(), CancellationToken.None);
+            Assert.Equal(1, result.Value!.RemindersSent);
+        }
+
+        Assert.Null((await ReadOrderAsync("01HZX9N6M7Q8R9S0T1V2W3Y416")).RecurringReminderSentAt);
+        Assert.NotNull((await ReadOrderAsync("01HZX9N6M7Q8R9S0T1V2W3Y417")).RecurringReminderSentAt);
+    }
+
     private sealed class FixedTenantProvider(string? tenantId) : ITenantProvider
     {
         private string? _tenantId = tenantId;

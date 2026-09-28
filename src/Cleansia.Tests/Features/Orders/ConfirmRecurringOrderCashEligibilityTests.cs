@@ -1,6 +1,7 @@
 using Cleansia.Core.AppServices.Auditing;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.AdminNotifications;
+using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Clients.Abstractions.Stripe;
@@ -52,6 +53,7 @@ public sealed class ConfirmRecurringOrderCashEligibilityTests
         Mock.Of<ITenantProvider>(),
         _stripe.Object,
         new StripeConfig(new ConfigurationBuilder().Build()),
+        new OrderChannelProvider(OrderChannel.Mobile),
         _pending.Object,
         _notifications.Object,
         NoPreferredCleanerHold.Resolver,
@@ -122,7 +124,8 @@ public sealed class ConfirmRecurringOrderCashEligibilityTests
 
         Assert.True(result.IsSuccess, result.Error?.Message);
         Assert.Null(result.Value!.ClientSecret);
-        Assert.Equal(PaymentStatus.Paid, order.PaymentStatus);
+        Assert.NotNull(order.CustomerConfirmedAt);
+        Assert.Equal(PaymentStatus.Pending, order.PaymentStatus);
     }
 
     [Fact]
@@ -136,7 +139,8 @@ public sealed class ConfirmRecurringOrderCashEligibilityTests
         Assert.Equal(3, order.MaxEmployees);
         Assert.True(result.IsSuccess, result.Error?.Message);
         Assert.Null(result.Value!.ClientSecret);
-        Assert.Equal(PaymentStatus.Paid, order.PaymentStatus);
+        Assert.NotNull(order.CustomerConfirmedAt);
+        Assert.Equal(PaymentStatus.Pending, order.PaymentStatus);
     }
 
     [Fact]

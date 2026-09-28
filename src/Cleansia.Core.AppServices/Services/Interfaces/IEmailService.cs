@@ -27,6 +27,12 @@ public interface IEmailService
     Task<string> SendOrderStatusUpdateEmailAsync(string email, Order order, string newStatus, string languageCode = Constants.Language.English, CancellationToken ct = default, decimal? refundedAmount = null, string? guestAccessToken = null);
 
     /// <summary>
+    /// The informational e-mail a cash booking gets instead of a receipt: the amount to pay the cleaner
+    /// in cash, the slot in market time, the address and the free-cancellation window.
+    /// </summary>
+    Task<string> SendOrderBookedEmailAsync(string email, Order order, int freeCancellationHours, string languageCode = Constants.Language.English, CancellationToken ct = default, string? guestAccessToken = null);
+
+    /// <summary>
     /// The wind-down notice to a customer of a closing company (ADR-0064 D2 step 1): the company
     /// names as the receipts print them, the last day of service, and what happens to bookings, Plus,
     /// credit and the account.

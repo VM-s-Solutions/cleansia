@@ -5,7 +5,8 @@ using Cleansia.Infra.Clients.Stripe;
 namespace Cleansia.Tests.Configuration;
 
 /// <summary>
-/// The two customer-app paths a membership checkout returns to.
+/// The customer-app paths a Stripe checkout returns to: the two of a membership checkout, and the
+/// orders mount a recurring occurrence's checkout cancels back to.
 ///
 /// They used to be sent by the browser, which is what made them an open redirect: any authenticated
 /// caller could name the page Stripe returned to after payment. Deriving them server-side closed
@@ -39,12 +40,25 @@ public class MembershipReturnPathTests
         Assert.Equal($"/{membership}/welcome", PrivateConst("MembershipWelcomePath"));
     }
 
+    /// <summary>
+    /// A recurring occurrence's web checkout cancels back to the occurrence's own page, under the
+    /// orders mount, where confirming again replays the session.
+    /// </summary>
     [Fact]
-    public void Both_Paths_Are_Rooted_And_Carry_No_Origin()
+    public void OrdersPath_Is_The_Orders_Mount_Whose_Child_Is_The_Order_Detail()
+    {
+        var orders = CustomerRouteValue("ORDERS");
+
+        Assert.Contains("path: ':orderId',", OrdersRoutesSource());
+        Assert.Equal($"/{orders}", PrivateConst("OrdersPagePath"));
+    }
+
+    [Fact]
+    public void Every_Path_Is_Rooted_And_Carries_No_Origin()
     {
         // The origin comes from Stripe:SuccessUrlBase; a path that smuggled one in would silently
         // win over it and send the customer somewhere else entirely.
-        foreach (var name in new[] { "PlusPagePath", "MembershipWelcomePath" })
+        foreach (var name in new[] { "PlusPagePath", "MembershipWelcomePath", "OrdersPagePath" })
         {
             var path = PrivateConst(name);
             Assert.StartsWith("/", path);
@@ -84,6 +98,9 @@ public class MembershipReturnPathTests
 
     private static string ProfileRoutesSource() => ReadAppFile(
         "libs", "cleansia-customer-features", "profile", "src", "lib", "lib.routes.ts");
+
+    private static string OrdersRoutesSource() => ReadAppFile(
+        "libs", "cleansia-customer-features", "orders", "src", "lib", "lib.routes.ts");
 
     private static string ReadAppFile(params string[] relativeParts)
     {

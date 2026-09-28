@@ -64,6 +64,12 @@ public class OrderRedactionSurfaceTests
         // What the customer still owes for a cancellation is between the customer and the company.
         nameof(OrderItem.CancellationFeeRate),
         nameof(OrderItem.CancellationFeeOwed),
+        // The customer's confirmation, and who took the customer's cash and how much, are between the
+        // customer, the crew and the company.
+        nameof(OrderItem.NeedsConfirmation),
+        nameof(OrderItem.CashCollectedAt),
+        nameof(OrderItem.CashCollectedByName),
+        nameof(OrderItem.CashCollectedAmount),
     ];
 
     private static readonly string[] DetailReshaped =
@@ -415,7 +421,11 @@ public class OrderRedactionSurfaceTests
                     "acceptance-1", "assignment-1", "employee-1", DateTimeOffset.UtcNow.AddDays(-2), "2026-09-20", "cs"),
             ],
             CancellationFeeRate: 0.25m,
-            CancellationFeeOwed: 250m);
+            CancellationFeeOwed: 250m,
+            NeedsConfirmation: true,
+            CashCollectedAt: new DateTime(2026, 8, 20, 11, 55, 0, DateTimeKind.Utc),
+            CashCollectedByName: "Petra Svobodova",
+            CashCollectedAmount: 1500m);
 
     private static OrderListItem FullyPopulatedListItem() =>
         new(

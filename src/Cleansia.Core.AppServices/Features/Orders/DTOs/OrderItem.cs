@@ -63,8 +63,8 @@ public record OrderItem(
     string? AccessMode,
     /// <summary>
     /// FK back to the recurring booking template that spawned this order.
-    /// Null for one-off orders. Mobile uses this + <c>PaymentStatus.Pending</c>
-    /// to show the "Confirm and pay" CTA on the Order Detail screen.
+    /// Null for one-off orders. Whether the occurrence still needs the customer's
+    /// confirmation is <see cref="NeedsConfirmation"/>, not this plus the payment status.
     /// </summary>
     string? RecurringTemplateId,
     IEnumerable<PackageDetails> SelectedPackages,
@@ -189,5 +189,20 @@ public record OrderItem(
     /// took no payment, which nothing collects yet, and zero where the card charge covered it.
     /// </summary>
     decimal? CancellationFeeRate = null,
-    decimal? CancellationFeeOwed = null
+    decimal? CancellationFeeOwed = null,
+
+    /// <summary>
+    /// A recurring occurrence the customer still has to confirm; the Confirm action shows exactly when
+    /// this is true. A confirmed cash occurrence stays <c>Pending</c> until the cleaner records the
+    /// cash, so the payment status can no longer answer this. → <c>Order.AwaitsCustomerConfirmation</c>
+    /// </summary>
+    bool? NeedsConfirmation = null,
+
+    /// <summary>
+    /// ADMIN-ONLY, null for every other caller and until the cash is recorded: when the cash was handed
+    /// over, the cleaner who took it, and how much.
+    /// </summary>
+    DateTime? CashCollectedAt = null,
+    string? CashCollectedByName = null,
+    decimal? CashCollectedAmount = null
 );

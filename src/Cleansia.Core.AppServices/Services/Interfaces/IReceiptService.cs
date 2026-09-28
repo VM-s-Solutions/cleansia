@@ -25,13 +25,6 @@ public interface IReceiptService
     /// <remarks>The document's language is the one <see cref="ReserveReceiptAsync"/> recorded on the row.</remarks>
     Task RealizeFiscalAndPdfAsync(Order order, OrderReceipt receipt, CancellationToken cancellationToken = default);
 
-    /// <summary>
-    /// Re-renders an already-issued receipt from the order as it stands now, over the same receipt
-    /// number and the same blob. For the cash sale whose money arrives after the document does.
-    /// Registers nothing with any fiscal authority. Does NOT commit.
-    /// </summary>
-    Task RegenerateReceiptPdfAsync(Order order, OrderReceipt receipt, CancellationToken cancellationToken = default);
-
     Task<byte[]> DownloadReceiptPdfAsync(OrderReceipt receipt, CancellationToken cancellationToken = default);
 
     /// <summary>

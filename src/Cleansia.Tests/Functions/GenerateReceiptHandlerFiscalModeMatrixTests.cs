@@ -76,7 +76,7 @@ public class GenerateReceiptHandlerFiscalModeMatrixTests
             paymentType: PaymentType.Cash,
             totalPrice: 1000m,
             currencyId: "czk",
-            paymentStatus: PaymentStatus.Pending);
+            paymentStatus: PaymentStatus.Paid);
         order.Id = OrderId;
         return order;
     }

@@ -1,6 +1,7 @@
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using Cleansia.Core.Domain.Common;
+using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Enums;
@@ -13,11 +14,11 @@ using Microsoft.Extensions.Logging;
 namespace Cleansia.Functions.Core.Handlers;
 
 /// <summary>
-/// Realizes every e-mail the send-email queue carries, off the request path. The queue holds three
+/// Realizes every e-mail the send-email queue carries, off the request path. The queue holds four
 /// payload shapes told apart by their <c>messageType</c> discriminator: the bare
 /// <see cref="SendEmailMessage"/> (no discriminator; confirmation, reset, promo and the two wind-down
-/// notices, resolved by <see cref="EmailType"/>), the guest order cancellation, and the admin
-/// notification. Each is sent via the existing <see cref="IEmailService"/> in the language the
+/// notices, resolved by <see cref="EmailType"/>), the guest order cancellation, the cash booking
+/// confirmation, and the admin notification. Each is sent via the existing <see cref="IEmailService"/> in the language the
 /// producer chose.
 ///
 /// Idempotent via <see cref="IIdempotencyGuard"/> in ACT-THEN-CLAIM mode (at-least-once): non-claiming
@@ -39,7 +40,8 @@ public class SendEmailHandler(
     ILogger<SendEmailHandler> logger,
     IOrderRepository orderRepository,
     GuestOrderAccessTokenIssuer guestAccessTokenIssuer,
-    IUnitOfWork unitOfWork)
+    IUnitOfWork unitOfWork,
+    ICancellationPolicyResolver cancellationPolicyResolver)
 {
     private static readonly JsonSerializerOptions JsonOptions =
         new() { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
@@ -47,6 +49,7 @@ public class SendEmailHandler(
     public async Task HandleAsync(string messageText, CancellationToken ct)
     {
         SendGuestOrderCancellationEmailMessage? guestMessage;
+        SendOrderBookedEmailMessage? bookedMessage;
         SendAdminNotificationEmailMessage? adminMessage;
         string? discriminatedTenantId;
         try
@@ -59,6 +62,8 @@ public class SendEmailHandler(
                 && kind.ValueKind == JsonValueKind.String ? kind.GetString() : null;
             guestMessage = messageType == "guest-order-cancelled"
                 ? payload.Deserialize<SendGuestOrderCancellationEmailMessage>(JsonOptions) : null;
+            bookedMessage = messageType == SendOrderBookedEmailMessage.Discriminator
+                ? payload.Deserialize<SendOrderBookedEmailMessage>(JsonOptions) : null;
             adminMessage = messageType == SendAdminNotificationEmailMessage.Discriminator
                 ? payload.Deserialize<SendAdminNotificationEmailMessage>(JsonOptions) : null;
             discriminatedTenantId = root.TryGetProperty("tenantId", out var tenant) && tenant.ValueKind == JsonValueKind.String ? tenant.GetString() : null;
@@ -71,6 +76,11 @@ public class SendEmailHandler(
         if (guestMessage is not null)
         {
             await SendGuestCancellationAsync(guestMessage, discriminatedTenantId, ct);
+            return;
+        }
+        if (bookedMessage is not null)
+        {
+            await SendOrderBookedAsync(bookedMessage, discriminatedTenantId, ct);
             return;
         }
         if (adminMessage is not null)
@@ -211,7 +221,58 @@ public class SendEmailHandler(
         }
     }
 
-    // Act-then-claim like the two shapes beside it: the send is the only thing that may throw, and it
+    // Act-then-claim like the guest cancellation beside it. A booking cancelled before the message was
+    // read is not confirmed to anyone.
+    private async Task SendOrderBookedAsync(
+        SendOrderBookedEmailMessage message, string? envelopeTenantId, CancellationToken ct)
+    {
+        var tenantId = envelopeTenantId ?? message.TenantId;
+        if (string.IsNullOrWhiteSpace(message.OrderId) || string.IsNullOrWhiteSpace(tenantId))
+        {
+            logger.LogWarning("Discarding booking e-mail with no order or operator");
+            return;
+        }
+        var key = MessageKeys.OrderBookedEmail(message.OrderId);
+        if (await idempotencyGuard.HasProcessedAsync(key, ct)) return;
+
+        tenantProvider.SetTenantOverride(tenantId);
+        var order = await orderRepository.GetQueryable()
+            .Include(o => o.Currency).Include(o => o.CustomerAddress).Include(o => o.User)
+            .AsNoTracking()
+            .FirstOrDefaultAsync(o => o.Id == message.OrderId
+                && o.CurrentStatus != OrderStatus.Cancelled, ct);
+        if (order is null || string.IsNullOrWhiteSpace(order.CustomerEmail)
+            || order.CustomerEmail == AnonymizationMarker.Value)
+        {
+            logger.LogWarning("Discarding booking e-mail: order {OrderId} has no eligible destination", message.OrderId);
+            return;
+        }
+
+        var policy = await cancellationPolicyResolver.ResolveForOrderAsync(order, ct);
+        var languageCode = EmailLocale.Resolve(
+            order.LanguageCode ?? order.User?.PreferredLanguageCode ?? message.LanguageCode);
+
+        // The guest's link to the booking, committed before the send so an e-mailed token always has
+        // its row — the receipt that used to carry it now comes after the clean.
+        var guestAccessToken = guestAccessTokenIssuer.IssueForGuest(order);
+        if (guestAccessToken is not null)
+        {
+            await unitOfWork.CommitAsync(ct);
+        }
+
+        await emailService.SendOrderBookedEmailAsync(order.CustomerEmail, order, policy.FreeCancellationHours,
+            languageCode, ct, guestAccessToken);
+        try
+        {
+            await idempotencyGuard.MarkProcessedAsync(key, ct);
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(ex, "Booking e-mail sent for order {OrderId}, but its delivery claim failed", order.Id);
+        }
+    }
+
+    // Act-then-claim like the shapes beside it: the send is the only thing that may throw, and it
     // throws so the runtime retries and dead-letters; a body the producer could never have written acks.
     private async Task SendAdminNotificationAsync(
         SendAdminNotificationEmailMessage message, string? envelopeTenantId, CancellationToken ct)

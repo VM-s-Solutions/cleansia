@@ -53,9 +53,7 @@ public class GenerateReceiptHandler(
             // The idempotency key is deterministic from the order id (envelope or synthesized) — used
             // for log correlation; the load-bearing dedup is the receipt-creation guard below (the
             // committed receipt row IS the claim, written before the email — claim-first, D2.2).
-            var messageKey = message.Reissue
-                ? MessageKeys.ReceiptReissue(message.OrderId ?? string.Empty)
-                : MessageKeys.Receipt(message.OrderId ?? string.Empty);
+            var messageKey = MessageKeys.Receipt(message.OrderId ?? string.Empty);
 
             if (string.IsNullOrEmpty(message.OrderId) || !UlidPattern.IsMatch(message.OrderId))
             {
@@ -84,29 +82,10 @@ public class GenerateReceiptHandler(
                 tenantProvider.SetTenantOverride(order.TenantId);
             }
 
-            // RE-ISSUE — the document exists and a fact printed on it has moved. It restates the same
-            // number over the same blob and stops there: no sequence is allocated, no authority is
-            // called, no e-mail is sent, so a redelivery only restates it again. It sits ahead of the
-            // eligibility guard on purpose — the guard asks whether an order has EARNED a receipt, and
-            // this order already has one.
-            if (message.Reissue)
-            {
-                if (order.Receipt is null)
-                {
-                    logger.LogWarning(
-                        "Receipt re-issue for order {OrderId} found no receipt to restate; discarding (key {MessageKey})",
-                        message.OrderId, messageKey);
-                    return;
-                }
-
-                await receiptService.RegenerateReceiptPdfAsync(order, order.Receipt, ct);
-                logger.LogInformation(
-                    "Receipt {ReceiptNumber} restated for order {OrderId} (key {MessageKey})",
-                    order.Receipt.ReceiptNumber, message.OrderId, messageKey);
-                return;
-            }
-
-            if (order.PaymentType != PaymentType.Cash && order.PaymentStatus != PaymentStatus.Paid)
+            // A receipt says money was received, for every tender: a cash sale earns one once the cleaner
+            // has recorded the cash, which is why a cash booking and a cancelled cash order have none
+            // (owner ruling 2026-09-28).
+            if (order.PaymentStatus != PaymentStatus.Paid)
             {
                 logger.LogWarning("Discarding receipt message for order {OrderId}: not eligible (PaymentType={Type}, PaymentStatus={Status})",
                     message.OrderId, order.PaymentType, order.PaymentStatus);

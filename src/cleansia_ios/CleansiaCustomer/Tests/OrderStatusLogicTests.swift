@@ -170,6 +170,18 @@ final class OrderDetailFooterActionsTests: XCTestCase {
         )
     }
 
+    /// A confirmed cash occurrence stays payment-pending, so "recurring and pending" offered a second
+    /// confirm the server refuses. The footer reads the server's verdict instead.
+    func testTheConfirmFooterKeysOnTheServersVerdict() throws {
+        let source = try readSource("CleansiaCustomer/Sources/Features/Orders/OrderDetailView.swift")
+
+        XCTAssertTrue(source.contains("if order.needsConfirmation {"), "the confirm footer ignores the verdict")
+        XCTAssertNil(
+            source.range(of: "paymentStatus?.value == 1"),
+            "the confirm footer infers the verdict from the payment status again"
+        )
+    }
+
     /// The shell used to answer the membership question for this screen out of its own
     /// observed copy, which is the read-without-fetch half of the defect.
     func testTheShellHandsTheScreenTheRepositoryNotAnAnswer() throws {

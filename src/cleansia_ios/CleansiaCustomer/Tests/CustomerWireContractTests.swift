@@ -188,6 +188,21 @@ final class CustomerWireContractTests: XCTestCase {
         XCTAssertNil(try CustomerOrderDetail(detail).countryId)
     }
 
+    /// Whether an occurrence still waits for the customer is the server's answer: a confirmed cash
+    /// occurrence stays payment-pending until the cleaner takes the cash.
+    func testTheDetailCarriesTheServersConfirmationVerdict() throws {
+        var payload = OrderItem.wireComplete()
+        payload.recurringTemplateId = "tpl-1"
+        payload.paymentStatus = Code(type: "PaymentStatus", name: nil, value: 1)
+
+        payload.needsConfirmation = true
+        XCTAssertTrue(try CustomerOrderDetail(payload).needsConfirmation)
+        payload.needsConfirmation = false
+        XCTAssertFalse(try CustomerOrderDetail(payload).needsConfirmation)
+        payload.needsConfirmation = nil
+        XCTAssertFalse(try CustomerOrderDetail(payload).needsConfirmation)
+    }
+
     /// The one identifier this surface does NOT refuse: the screen is routed with the order id and
     /// keeps it, so a null here has an equally authoritative replacement and refusing would blank a
     /// screen that navigates perfectly.

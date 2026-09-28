@@ -62,6 +62,7 @@ struct CustomerOrderDetail: Equatable {
     let completedAt: Date?
     let receiptNumber: String?
     let recurringTemplateId: String?
+    let needsConfirmation: Bool
 
     let address: OrderAddress?
     let rooms: Int
@@ -122,6 +123,7 @@ extension CustomerOrderDetail {
         completedAt = item.completedAt
         receiptNumber = item.receiptNumber
         recurringTemplateId = item.recurringTemplateId
+        needsConfirmation = item.needsConfirmation ?? false
 
         address = item.address
         rooms = try item.rooms.require("rooms")

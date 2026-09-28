@@ -14,7 +14,8 @@ final class CreateRecurringViewModelTests: XCTestCase {
         recurringClient: FakeRecurringBookingClient = FakeRecurringBookingClient(),
         catalog: FakeCatalogClient = FakeCatalogClient(result: .success(CatalogFixtures.populated)),
         addressClient: FakeRecurringSavedAddressClient = FakeRecurringSavedAddressClient(),
-        orderClient: FakeOrderClient = FakeOrderClient()
+        orderClient: FakeOrderClient = FakeOrderClient(),
+        snackbar: SnackbarController? = nil
     ) -> (CreateRecurringViewModel, FakeRecurringBookingClient) {
         let repo = RecurringBookingRepository(client: recurringClient)
         let vm = CreateRecurringViewModel(
@@ -25,7 +26,8 @@ final class CreateRecurringViewModelTests: XCTestCase {
             addressClient: addressClient,
             orderClient: orderClient,
             quoteClient: FakeQuoteClient(),
-            snackbar: SnackbarController(),
+            cleanersClient: FakeServingCleanersClient(),
+            snackbar: snackbar ?? SnackbarController(),
             scheduler: TestScheduler.dispatch.eraseToAnyScheduler()
         )
         return (vm, recurringClient)
@@ -780,6 +782,78 @@ final class CreateRecurringViewModelTests: XCTestCase {
         XCTAssertEqual(vm.catalogState.loadedValue, CatalogFixtures.slovak)
     }
 
+    // MARK: - The start is one the server books: a quarter-hour from 08:00 to 19:45
+
+    func testANewScheduleStartsAtABookableTime() {
+        let (vm, _) = makeVM()
+
+        XCTAssertTrue(RecurringTime.bookableTimes.contains(vm.formState.timeOfDay))
+    }
+
+    func testAStartTheServerRefusesDoesNotAdvanceAndIsNeverSent() async {
+        let (vm, client) = makeVM()
+        await vm.load()
+        fillValid(vm)
+
+        for refused in ["10:08", "07:45", "20:00", "03:07"] {
+            vm.setTimeOfDay(refused)
+            XCTAssertFalse(vm.canAdvance(step: 1), "\(refused) advances")
+            XCTAssertFalse(vm.isValid, "\(refused) is submittable")
+        }
+        let saved = await vm.submit()
+
+        XCTAssertFalse(saved)
+        XCTAssertTrue(client.createInputs.isEmpty)
+
+        vm.setTimeOfDay("19:45")
+        XCTAssertTrue(vm.isValid)
+    }
+
+    /// The server refuses an edit that keeps a start outside the window, and the wheel cannot show one.
+    func testEditingAScheduleOutsideTheWindowSeedsAndSendsTheNearestBookableTime() async {
+        let (vm, client) = makeVM(editing: RecurringFixtures.template(timeOfDay: "21:10"))
+        await vm.load()
+
+        XCTAssertEqual(vm.formState.timeOfDay, "19:45")
+
+        _ = await vm.submit()
+
+        XCTAssertEqual(client.updateInputs.first?.timeOfDay, "19:45")
+    }
+
+    func testAScheduleFromAnOrderOffTheGridStartsAtTheNearestBookableTime() async throws {
+        let cleaningDate = try XCTUnwrap(Calendar.current.date(from: DateComponents(
+            year: 2026, month: 10, day: 5, hour: 7, minute: 20
+        )))
+        let orderClient = FakeOrderClient()
+        orderClient.detailResults = [.success(OrderFixtures.detail(
+            id: "ord-7",
+            cleaningDateTime: cleaningDate,
+            services: [OrderFixtures.service(id: "s-1")]
+        ))]
+        let (vm, _) = makeVM(sourceOrderId: "ord-7", orderClient: orderClient)
+
+        await vm.load()
+
+        XCTAssertEqual(vm.formState.timeOfDay, "08:00")
+    }
+
+    func testARefusalForTheBookingWindowIsShownInTheCustomersLanguage() async {
+        let refusal = ApiError(code: "order.cleaning_date.outside_booking_window", httpStatus: 400)
+        let client = FakeRecurringBookingClient()
+        client.createResult = .failure(refusal)
+        let snackbar = SnackbarController()
+        let (vm, _) = makeVM(recurringClient: client, snackbar: snackbar)
+        await vm.load()
+        fillValid(vm)
+
+        let saved = await vm.submit()
+
+        XCTAssertFalse(saved)
+        XCTAssertEqual(snackbar.current?.text, ApiErrorLocalizer().message(for: refusal))
+        XCTAssertNotEqual(snackbar.current?.text, refusal.code, "the catalog entry is missing")
+    }
+
     private func twoMarkets() -> FakeRecurringSavedAddressClient {
         let addressClient = FakeRecurringSavedAddressClient()
         addressClient.result = .success([
@@ -793,5 +867,35 @@ final class CreateRecurringViewModelTests: XCTestCase {
         for _ in 0 ..< 5 {
             await Task.yield()
         }
+    }
+}
+
+final class RecurringTimeTests: XCTestCase {
+    func testTheWheelOffersEveryQuarterHourFromEightToQuarterToEight() {
+        let times = RecurringTime.bookableTimes
+
+        XCTAssertEqual(times.count, 48)
+        XCTAssertEqual(times.first, "08:00")
+        XCTAssertEqual(times.last, "19:45")
+        XCTAssertTrue(times.contains("12:15"))
+        XCTAssertFalse(times.contains("12:10"))
+        XCTAssertFalse(times.contains("20:00"))
+    }
+
+    func testTheNearestBookableTimeRoundsToTheQuarterHourAndStaysInTheWindow() {
+        XCTAssertEqual(RecurringTime.nearestBookable("11:30"), "11:30")
+        XCTAssertEqual(RecurringTime.nearestBookable("10:07"), "10:00")
+        XCTAssertEqual(RecurringTime.nearestBookable("10:08"), "10:15")
+        XCTAssertEqual(RecurringTime.nearestBookable("07:59"), "08:00")
+        XCTAssertEqual(RecurringTime.nearestBookable("00:00"), "08:00")
+        XCTAssertEqual(RecurringTime.nearestBookable("19:53"), "19:45")
+        XCTAssertEqual(RecurringTime.nearestBookable("23:59"), "19:45")
+        XCTAssertEqual(RecurringTime.nearestBookable("09:30:00"), "09:30")
+    }
+
+    func testAnUnreadableTimeFallsBackToTheDefaultStart() {
+        XCTAssertEqual(RecurringTime.nearestBookable(""), RecurringTime.defaultTime)
+        XCTAssertEqual(RecurringTime.nearestBookable("soon"), RecurringTime.defaultTime)
+        XCTAssertTrue(RecurringTime.bookableTimes.contains(RecurringTime.defaultTime))
     }
 }

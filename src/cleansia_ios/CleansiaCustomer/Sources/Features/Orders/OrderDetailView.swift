@@ -159,7 +159,7 @@ struct OrderDetailView: View {
 
     @ViewBuilder
     private func footer(_ order: CustomerOrderDetail) -> some View {
-        if OrderRecurringConfirm.needsConfirmation(order) {
+        if order.needsConfirmation {
             ConfirmRecurringFooter(
                 submitting: vm.confirmRecurringState.isSubmitting,
                 label: OrderRecurringConfirm.ctaLabel(order)
@@ -264,13 +264,6 @@ private struct ReceiptFile: Identifiable {
 }
 
 enum OrderRecurringConfirm {
-    /// A recurring-generated order awaiting customer confirmation: it carries a
-    /// `recurringTemplateId` and its payment status is Pending (value 1).
-    static func needsConfirmation(_ order: CustomerOrderDetail) -> Bool {
-        guard let templateId = order.recurringTemplateId, !templateId.isBlank else { return false }
-        return order.paymentStatus?.value == 1
-    }
-
     /// "Confirm and pay" is false on a CASH booking — the server's cash arm takes no payment at all.
     /// Branch on Card (value 2) so anything unexpected falls to the label that is true of BOTH
     /// flavours rather than the one that over-promises.

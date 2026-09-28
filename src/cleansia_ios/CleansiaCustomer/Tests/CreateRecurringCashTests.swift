@@ -25,6 +25,7 @@ final class CreateRecurringCashTests: XCTestCase {
             addressClient: FakeRecurringSavedAddressClient(),
             orderClient: FakeOrderClient(),
             quoteClient: quoteClient ?? quote,
+            cleanersClient: FakeServingCleanersClient(),
             snackbar: snackbar ?? SnackbarController(),
             quoteDebounce: .milliseconds(400),
             scheduler: scheduler.eraseToAnyScheduler()

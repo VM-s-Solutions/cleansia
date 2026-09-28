@@ -29,7 +29,8 @@ struct LiveRecurringBookingClient: RecurringBookingClient {
             selectedPackageIds: input.selectedPackageIds,
             paymentType: input.paymentType,
             startsOn: input.startsOn,
-            endsOn: nil
+            endsOn: nil,
+            preferredEmployeeId: input.preferredEmployeeId
         )
         return await apiResult(mapError: ApiError.fromGenerated) {
             try await CustomerRecurringBookingAPI

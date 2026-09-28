@@ -45,7 +45,7 @@ struct ConfirmStep: View {
                 specialInstructionsSection
                 accessInstructionsSection
                 PreferredCleanerPicker(
-                    viewModel: extras,
+                    cleaners: extras.isVisible ? extras.cleaners : [],
                     selectedId: viewModel.state.preferredEmployeeId,
                     onSelect: setPreferredCleaner
                 )

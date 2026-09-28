@@ -1408,6 +1408,12 @@
     <string name="dispute_create_item_in_package">v balíčku %1$s</string>
     <string name="dispute_create_evidence_hint">Nepovinné. Fotky nebo PDF do 10 MB každý — nahrají se při odeslání.</string>
     <string name="dispute_create_evidence_partial">Stížnost byla odeslána, ale tyto soubory se nepodařilo nahrát: %1$s. Přidejte je znovu v detailu stížnosti.</string>
+    <string name="dispute_create_settlement_title">Pokud reklamaci uznáme</string>
+    <string name="dispute_create_settlement_hint">Vyberte, jak chcete peníze vrátit. Pokud nezvolíte kredit, vrátíme je na kartu.</string>
+    <string name="dispute_settlement_card_refund">Vrátit na kartu</string>
+    <string name="dispute_settlement_card_refund_desc">Peníze se vrátí na kartu, kterou jste platili.</string>
+    <string name="dispute_settlement_credit">Kredit Cleansia</string>
+    <string name="dispute_settlement_credit_desc">Připíšeme ho na účet pro další objednávky. Kredit nelze vyplatit a propadá 12 měsíců po posledním pohybu kreditu.</string>
     <string name="dispute_evidence_remove">Odebrat</string>
     <string name="dispute_evidence_uploaded">Nahráno</string>
     <string name="dispute_evidence_upload_failed">Nahrání se nezdařilo</string>

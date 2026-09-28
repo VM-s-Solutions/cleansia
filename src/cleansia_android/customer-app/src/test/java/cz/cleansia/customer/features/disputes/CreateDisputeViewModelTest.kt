@@ -5,6 +5,7 @@ import androidx.lifecycle.SavedStateHandle
 import app.cash.turbine.test
 import cz.cleansia.customer.R
 import cz.cleansia.customer.core.disputes.DisputeRepository
+import cz.cleansia.customer.core.disputes.DisputeSettlement
 import cz.cleansia.customer.core.disputes.UploadDisputeEvidenceResponse
 import cz.cleansia.customer.core.orders.OrderRepository
 import cz.cleansia.customer.testing.MainDispatcherRule
@@ -175,6 +176,56 @@ class CreateDisputeViewModelTest {
 
         vm.clearError()
         assertEquals(ActionState.Idle, vm.submitState.value)
+    }
+
+    // ── settlement ──
+
+    @Test
+    fun `an upheld complaint is refunded to the card unless the customer chooses credit`() = runTest {
+        assertEquals(DisputeSettlement.CardRefund, viewModel().settlement.value)
+    }
+
+    @Test
+    fun `submit sends a card refund when nothing else was chosen`() = runTest {
+        coEvery { repository.create(any(), any(), any(), any(), any()) } returns ApiResult.Success("dispute-9")
+
+        val vm = viewModel()
+        vm.submit(3, validDescription)
+        advanceUntilIdle()
+
+        coVerify(exactly = 1) {
+            repository.create("order-1", 3, validDescription, any(), DisputeSettlement.CardRefund)
+        }
+    }
+
+    @Test
+    fun `submit sends credit when the customer chose it`() = runTest {
+        coEvery { repository.create(any(), any(), any(), any(), any()) } returns ApiResult.Success("dispute-9")
+
+        val vm = viewModel()
+        vm.selectSettlement(DisputeSettlement.Credit)
+        vm.submit(3, validDescription)
+        advanceUntilIdle()
+
+        assertEquals(DisputeSettlement.Credit, vm.settlement.value)
+        coVerify(exactly = 1) {
+            repository.create("order-1", 3, validDescription, any(), DisputeSettlement.Credit)
+        }
+    }
+
+    @Test
+    fun `the settlement is frozen while submitting`() = runTest {
+        val gate = CompletableDeferred<ApiResult<String>>()
+        coEvery { repository.create(any(), any(), any(), any(), any()) } coAnswers { gate.await() }
+
+        val vm = viewModel()
+        vm.submit(3, validDescription)
+        runCurrent()
+        vm.selectSettlement(DisputeSettlement.Credit)
+
+        assertEquals(DisputeSettlement.CardRefund, vm.settlement.value)
+        gate.complete(ApiResult.Error(ApiError.Network("offline")))
+        advanceUntilIdle()
     }
 
     // ── evidence ──

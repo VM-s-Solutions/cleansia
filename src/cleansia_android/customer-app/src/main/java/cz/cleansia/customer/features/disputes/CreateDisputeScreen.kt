@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -41,6 +42,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -65,6 +67,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cz.cleansia.customer.R
+import cz.cleansia.customer.core.disputes.DisputeSettlement
 import cz.cleansia.customer.ui.state.ActionState
 
 /**
@@ -78,6 +81,7 @@ import cz.cleansia.customer.ui.state.ActionState
  * Form fields: reason dropdown (7 enum values, 1-indexed) + description
  * textarea bounded by [DisputeFormConstants] (counter shown). Submit is gated on both.
  * Evidence is optional and picked here; it uploads to the new dispute right after the create.
+ * The settlement choice is a card refund unless the customer picks credit.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -99,6 +103,7 @@ fun CreateDisputeScreen(
     val lineOptions by viewModel.lineOptions.collectAsStateWithLifecycle()
     val pickedLineKeys by viewModel.pickedLineKeys.collectAsStateWithLifecycle()
     val pickedEvidence by viewModel.pickedEvidence.collectAsStateWithLifecycle()
+    val settlement by viewModel.settlement.collectAsStateWithLifecycle()
 
     val pickFiles = rememberEvidencePicker(viewModel.snackbar) { bytes, fileName, mimeType ->
         viewModel.addEvidence(bytes = bytes, fileName = fileName, mimeType = mimeType)
@@ -277,6 +282,32 @@ fun CreateDisputeScreen(
                 )
             }
 
+            // ── Settlement ──
+            if (viewModel.orderId != null) {
+                Spacer(Modifier.height(20.dp))
+                Text(
+                    text = stringResource(R.string.dispute_create_settlement_title),
+                    style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    text = stringResource(R.string.dispute_create_settlement_hint),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Spacer(Modifier.height(8.dp))
+                DisputeSettlement.entries.forEach { option ->
+                    SettlementRow(
+                        settlement = option,
+                        selected = option == settlement,
+                        enabled = !submitting,
+                        onSelect = { viewModel.selectSettlement(option) },
+                    )
+                    Spacer(Modifier.height(8.dp))
+                }
+            }
+
             // ── Inline error ──
             val errorText = error
             if (!errorText.isNullOrBlank()) {
@@ -335,6 +366,50 @@ private fun DisputeLineRow(
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
+        }
+    }
+}
+
+@Composable
+private fun SettlementRow(
+    settlement: DisputeSettlement,
+    selected: Boolean,
+    enabled: Boolean,
+    onSelect: () -> Unit,
+) {
+    val (titleRes, descriptionRes) = when (settlement) {
+        DisputeSettlement.CardRefund ->
+            R.string.dispute_settlement_card_refund to R.string.dispute_settlement_card_refund_desc
+        DisputeSettlement.Credit ->
+            R.string.dispute_settlement_credit to R.string.dispute_settlement_credit_desc
+    }
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(12.dp))
+            .background(MaterialTheme.colorScheme.surface)
+            .border(
+                1.dp,
+                if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant,
+                RoundedCornerShape(12.dp),
+            )
+            .selectable(selected = selected, enabled = enabled, role = Role.RadioButton, onClick = onSelect)
+            .padding(horizontal = 4.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.Top,
+    ) {
+        RadioButton(selected = selected, onClick = null, enabled = enabled)
+        Spacer(Modifier.width(8.dp))
+        Column(Modifier.weight(1f).padding(end = 12.dp)) {
+            Text(
+                text = stringResource(titleRes),
+                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+            Text(
+                text = stringResource(descriptionRes),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
         }
     }
 }

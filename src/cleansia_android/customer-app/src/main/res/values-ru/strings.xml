@@ -1405,6 +1405,12 @@
     <string name="dispute_create_item_in_package">в пакете %1$s</string>
     <string name="dispute_create_evidence_hint">Необязательно. Фото или PDF до 10 МБ каждый — загрузятся при отправке.</string>
     <string name="dispute_create_evidence_partial">Спор отправлен, но эти файлы не удалось загрузить: %1$s. Добавьте их снова на странице спора.</string>
+    <string name="dispute_create_settlement_title">Если жалобу признают</string>
+    <string name="dispute_create_settlement_hint">Выберите, как вернуть деньги. Если вы не выберете кредит, мы вернём их на карту.</string>
+    <string name="dispute_settlement_card_refund">Вернуть на карту</string>
+    <string name="dispute_settlement_card_refund_desc">Деньги вернутся на карту, которой вы платили.</string>
+    <string name="dispute_settlement_credit">Кредит Cleansia</string>
+    <string name="dispute_settlement_credit_desc">Зачислим на ваш счёт для следующих заказов. Кредит не выплачивается и сгорает через 12 месяцев после последнего движения по кредиту.</string>
     <string name="dispute_evidence_remove">Удалить</string>
     <string name="dispute_evidence_uploaded">Загружено</string>
     <string name="dispute_evidence_upload_failed">Не удалось загрузить</string>

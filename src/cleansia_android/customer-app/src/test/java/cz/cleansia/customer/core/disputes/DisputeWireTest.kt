@@ -8,6 +8,7 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
@@ -273,6 +274,26 @@ class DisputeWireTest {
         // Absent, not [], when nothing was ticked — the web client omits it and the two wire shapes
         // should not diverge. → DisputeApi.create
         assertNull(body!!["lines"])
+        assertEquals(JsonPrimitive(1), body!!["settlementPreference"])
+    }
+
+    @Test
+    fun aChosenCreditTravelsAsTheNumberTheServerBinds() = runTest {
+        var body: JsonObject? = null
+        serving("""{"disputeId":"d-77"}""", onRequest = {
+            body = Json.parseToJsonElement(it.body.readUtf8()).jsonObject
+        }) {
+            it.create(
+                CreateDisputeRequest(
+                    orderId = "o-1",
+                    reason = 1,
+                    description = "not clean",
+                    settlementPreference = DisputeSettlement.Credit,
+                ),
+            )
+        }
+
+        assertEquals(JsonPrimitive(2), body!!["settlementPreference"])
     }
 
     /**
@@ -422,7 +443,8 @@ class DisputeWireTest {
                 }
               ],
               "createdOn": "2026-07-02T10:00:00Z",
-              "updatedOn": "2026-07-09T16:31:00Z"
+              "updatedOn": "2026-07-09T16:31:00Z",
+              "settlementPreference": 2
             }
         """.trimIndent()
 
@@ -459,7 +481,8 @@ class DisputeWireTest {
             "updatedOn",
             "currency",
             "filedWithinWindow",
-            "lines", "settlementPreference",
+            "lines",
+            "settlementPreference",
         )
 
         val MESSAGE_SPEC_PROPERTIES = setOf(

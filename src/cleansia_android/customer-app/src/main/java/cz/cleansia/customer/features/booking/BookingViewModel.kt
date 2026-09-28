@@ -177,8 +177,9 @@ class BookingViewModel @Inject constructor(
 
     /**
      * Whether this account already holds the two consents the review step's tick names — Terms of
-     * Service and Privacy Policy — granted at sign-up or on an earlier booking. Re-consenting to the
-     * same two documents on every order is noise, so the box is shown only when this is false.
+     * Service and Privacy Policy — given to the versions in force, at sign-up or on an earlier
+     * booking. Re-consenting to the same two texts on every order is noise, so the box is shown only
+     * when this is false; a newer version in force makes it false until the customer accepts it.
      * Defaults to false and stays false on a failed read: a consent that might not exist is asked for.
      */
     private val _alreadyConsented = MutableStateFlow(false)

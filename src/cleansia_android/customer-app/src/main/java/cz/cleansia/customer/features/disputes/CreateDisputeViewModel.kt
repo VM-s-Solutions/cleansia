@@ -7,6 +7,7 @@ import androidx.lifecycle.viewModelScope
 import cz.cleansia.customer.R
 import cz.cleansia.customer.core.disputes.DisputeLineRequest
 import cz.cleansia.customer.core.disputes.DisputeRepository
+import cz.cleansia.customer.core.disputes.DisputeSettlement
 import cz.cleansia.customer.core.orders.OrderRepository
 import cz.cleansia.customer.ui.state.ActionState
 import cz.cleansia.core.network.ApiError
@@ -80,6 +81,9 @@ class CreateDisputeViewModel @Inject constructor(
     private val _pickedEvidence = MutableStateFlow<List<PickedEvidence>>(emptyList())
     val pickedEvidence: StateFlow<List<PickedEvidence>> = _pickedEvidence.asStateFlow()
 
+    private val _settlement = MutableStateFlow(DisputeSettlement.CardRefund)
+    val settlement: StateFlow<DisputeSettlement> = _settlement.asStateFlow()
+
     /**
      * Set the moment the server acknowledges the create. A later submit — after an upload failed —
      * resumes from here instead of filing a second dispute about the same money.
@@ -122,6 +126,11 @@ class CreateDisputeViewModel @Inject constructor(
         _pickedEvidence.update { list -> list.filterNot { it.key == key } }
     }
 
+    fun selectSettlement(settlement: DisputeSettlement) {
+        if (_submitState.value is ActionState.Submitting) return
+        _settlement.value = settlement
+    }
+
     fun submit(reason: Int, description: String) {
         if (_submitState.value is ActionState.Submitting) return
         val id = orderId ?: run {
@@ -148,7 +157,8 @@ class CreateDisputeViewModel @Inject constructor(
             .filter { it.key in picked }
             .map { DisputeLineRequest(serviceId = it.serviceId, packageId = it.packageId) }
 
-        return when (val result = disputeRepository.create(orderId, reason, description.trim(), lines)) {
+        val result = disputeRepository.create(orderId, reason, description.trim(), lines, _settlement.value)
+        return when (result) {
             is ApiResult.Success -> {
                 createdId = result.data
                 disputeRepository.refresh()

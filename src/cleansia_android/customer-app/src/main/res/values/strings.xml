@@ -1416,6 +1416,12 @@
     <string name="dispute_create_item_in_package">in %1$s</string>
     <string name="dispute_create_evidence_hint">Optional. Photos or PDFs up to 10 MB each — they upload when you submit.</string>
     <string name="dispute_create_evidence_partial">Your dispute was submitted, but these files could not be uploaded: %1$s. Add them again from the dispute.</string>
+    <string name="dispute_create_settlement_title">If your complaint is upheld</string>
+    <string name="dispute_create_settlement_hint">Choose how you want the money back. We refund to your card unless you choose credit.</string>
+    <string name="dispute_settlement_card_refund">Refund to my card</string>
+    <string name="dispute_settlement_card_refund_desc">The money goes back to the card you paid with.</string>
+    <string name="dispute_settlement_credit">Cleansia credit</string>
+    <string name="dispute_settlement_credit_desc">Added to your account for future bookings. Credit is never paid out and expires 12 months after your last credit activity.</string>
     <string name="dispute_evidence_remove">Remove</string>
     <string name="dispute_evidence_uploaded">Uploaded</string>
     <string name="dispute_evidence_upload_failed">Upload failed</string>

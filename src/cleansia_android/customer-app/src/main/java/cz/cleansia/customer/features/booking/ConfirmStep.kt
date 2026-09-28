@@ -414,7 +414,8 @@ fun ConfirmStep(
         Spacer(Modifier.height(16.dp))
 
         // The same two documents the sign-up tick names, asked only of an account that has not
-        // already granted both. Gates the slide-to-confirm and rides `termsAccepted` on CreateOrder.
+        // already accepted the versions in force. Gates the slide-to-confirm and rides
+        // `termsAccepted` on CreateOrder.
         if (!alreadyConsented) {
             CleansiaConsentCheckbox(
                 checked = state.termsAccepted,

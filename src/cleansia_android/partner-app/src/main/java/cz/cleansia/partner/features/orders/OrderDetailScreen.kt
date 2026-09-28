@@ -80,6 +80,7 @@ import cz.cleansia.partner.data.orders.PendingOffer
 import cz.cleansia.partner.api.model.OrderStatus
 import cz.cleansia.partner.api.model.PaymentStatus
 import cz.cleansia.partner.api.model.PaymentType
+import cz.cleansia.partner.api.model.PhotoType
 import java.util.Locale
 
 /**
@@ -730,23 +731,14 @@ private fun OrderDetailSheetContent(
             }
 
             if (showWorkSections) {
-                // Per-rail gating: Before photos are uploadable once
-                // the cleaner is OnTheWay or InProgress (no pre-arrival
-                // uploads while merely Confirmed). After photos are
-                // only uploadable once work is InProgress. Existing
-                // photos still render read-only outside their upload
-                // window.
-                val canUploadBefore =
-                    status == OrderStatus._3 || status == OrderStatus._4
-                val canUploadAfter = status == OrderStatus._4
                 PhotosSection(
                     // Refresh the surrounding OrderItem after each
                     // upload / delete so `hasAfterPhotos` stays live
                     // and the Complete slide unlocks the moment the
                     // cleaner adds an "after" photo.
                     onPhotosChanged = onPhotosChanged,
-                    canUploadBefore = canUploadBefore,
-                    canUploadAfter = canUploadAfter,
+                    canUploadBefore = photoWindowOpen(PhotoType._1, status),
+                    canUploadAfter = photoWindowOpen(PhotoType._2, status),
                 )
             }
 

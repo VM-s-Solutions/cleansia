@@ -1419,6 +1419,7 @@
     <string name="open_settings">Open Settings</string>
     <string name="photo_source_title">Add photo</string>
     <string name="camera_unavailable">This device has no camera.</string>
+    <string name="job_photos_camera_only">Job photos can only be taken with the camera, not chosen from the gallery. Use a phone with a camera to add them.</string>
     <string name="notification_recurring_paused_title">Recurring schedule paused</string>
     <string name="notification_recurring_paused_body">Your recurring schedule is paused because Plus is not active. Renew Plus to resume scheduling.</string>
 </resources>

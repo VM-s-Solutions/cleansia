@@ -1389,6 +1389,7 @@
     <string name="open_settings">Открыть настройки</string>
     <string name="photo_source_title">Добавить фото</string>
     <string name="camera_unavailable">На этом устройстве нет камеры.</string>
+    <string name="job_photos_camera_only">Фото к заказу можно сделать только камерой, выбрать их из галереи нельзя. Чтобы добавить их, воспользуйтесь телефоном с камерой.</string>
     <string name="notification_recurring_paused_title">Расписание регулярных уборок приостановлено</string>
     <string name="notification_recurring_paused_body">Ваше расписание регулярных уборок приостановлено, поскольку Plus неактивен. Продлите Plus, чтобы возобновить планирование уборок.</string>
 </resources>

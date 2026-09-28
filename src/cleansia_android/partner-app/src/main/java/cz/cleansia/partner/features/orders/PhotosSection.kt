@@ -48,6 +48,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
 import coil3.compose.SubcomposeAsyncImage
+import coil3.request.CachePolicy
 import coil3.request.ImageRequest
 import coil3.request.crossfade
 import cz.cleansia.core.ui.theme.Spacing
@@ -55,12 +56,13 @@ import cz.cleansia.partner.BuildConfig
 import cz.cleansia.partner.R
 import cz.cleansia.partner.features.media.rememberPhotoSourcePicker
 import cz.cleansia.partner.api.model.GetOrderPhotosOrderPhotoDto
+import cz.cleansia.partner.api.model.OrderStatus
 import cz.cleansia.partner.api.model.PhotoType
 
 /**
  * Photos block embedded in [OrderDetailScreen]. Two horizontal rails
  * (Before / After), each shows existing photos and an "add" tile that
- * opens the system image picker. Per-photo delete via the close icon.
+ * opens the camera. Per-photo delete via the close icon.
  *
  * Uses its own ViewModel keyed on the same orderId from the parent
  * navigation arguments so this composable can be dropped in without
@@ -130,6 +132,15 @@ fun PhotosSection(
     }
 }
 
+/**
+ * The server's photo windows (`OrderPhoto.MayBeAddedAt`): before photos from Confirmed through
+ * InProgress, after photos only while InProgress. Outside its window a rail is read-only.
+ */
+internal fun photoWindowOpen(type: PhotoType, status: OrderStatus?): Boolean = when (type) {
+    PhotoType._1 -> status == OrderStatus._2 || status == OrderStatus._3 || status == OrderStatus._4
+    PhotoType._2 -> status == OrderStatus._4
+}
+
 @Composable
 private fun PhotoRail(
     title: String,
@@ -150,10 +161,7 @@ private fun PhotoRail(
     // multi-MB read. (The comment that used to sit here claimed the opposite.)
     // Reading, downscaling, the EXIF/GPS strip and the base64 now all happen
     // inside ImageCompressor, off the main thread and in one hop.
-    //
-    // A capture URI and a gallery URI are interchangeable here: both are content:// with a read
-    // grant, so ImageCompressor opens either one without knowing the difference.
-    val pickPhoto = rememberPhotoSourcePicker { uri ->
+    val pickPhoto = rememberPhotoSourcePicker(cameraOnly = true) { uri ->
         val target = pickingForType
         pickingForType = null
         if (target != null) onUpload(target, uri)
@@ -232,9 +240,14 @@ private fun PhotoTile(
         // fades in on load. listener logs failures to logcat — debug
         // builds only, SAS query stripped so the signed token never
         // hits the log.
+        //
+        // No disk cache, so a job photo never lands in the app's cache dir; Coil then also sends
+        // `no-cache, no-store`. The network policy must stay enabled: with both disabled Coil asks
+        // for `only-if-cached` and every tile fails with a 504.
         SubcomposeAsyncImage(
             model = ImageRequest.Builder(context)
                 .data(photo.blobUrl)
+                .diskCachePolicy(CachePolicy.DISABLED)
                 .crossfade(true)
                 .listener(
                     onError = { _, result ->

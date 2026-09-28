@@ -130,6 +130,30 @@ class OrderDetailCallSiteTest {
         )
     }
 
+    @Test
+    fun `job photos come from the camera and never reach a disk cache`() {
+        val photosSection = source("PhotosSection.kt")
+        assertTrue(
+            "the job-photo rails must open the picker camera-only — a gallery photo is already a " +
+                "copy on the device",
+            photosSection.contains("rememberPhotoSourcePicker(cameraOnly = true)"),
+        )
+        assertTrue(
+            "an order photo must not be written to Coil's disk cache",
+            photosSection.contains(".diskCachePolicy(CachePolicy.DISABLED)"),
+        )
+        assertFalse(
+            "Coil's network policy must stay enabled — with the disk cache also off it asks for " +
+                "only-if-cached and every tile fails with a 504",
+            photosSection.contains("networkCachePolicy(CachePolicy.DISABLED)"),
+        )
+        assertTrue(
+            "the rails open and close on the server's photo windows",
+            detailScreen.contains("canUploadBefore = photoWindowOpen(PhotoType._1, status)") &&
+                detailScreen.contains("canUploadAfter = photoWindowOpen(PhotoType._2, status)"),
+        )
+    }
+
     private fun source(name: String): String =
         File(featureDir, name)
             .also { assertTrue("$name not found at ${it.absolutePath}", it.isFile) }

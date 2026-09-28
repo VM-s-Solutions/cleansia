@@ -1,5 +1,5 @@
 import { PaymentType } from '@cleansia/customer-services';
-import type { CashEligibility } from '@cleansia/models';
+import { CashEligibility, EXPRESS_LEAD_TIME_HOURS } from '@cleansia/models';
 
 /**
  * Frequency enum mirroring backend `RecurrenceFrequency`. Persisted as an int
@@ -178,18 +178,14 @@ export function canSubmit(data: RecurringWizardFormData): boolean {
  * The next instant this template will be materialized for, or `null` when the
  * schedule has run out.
  *
- * This is a LINE-BY-LINE mirror of the backend's own derivation —
- * `MaterializeRecurringBookingTemplate.ComputeOccurrences` — and it has to
- * stay one: the card states a date the customer will plan around, and a second
- * opinion about the cadence is worse than no date at all. The schedule's day
- * and time are wall-clock time where the home is, so the walk runs over dates
- * in that zone and each date is converted to an instant on its own.
+ * Computed the way the backend's `MaterializeRecurringBookingTemplate.ComputeOccurrences`
+ * computes it, because the card states a date the customer will plan around. The
+ * schedule's day and time are wall-clock time in the market's zone, which the
+ * template names; the reader's zone stands in only when it does not.
  *
- * The template carries no zone, so the reader's stands in for the market's —
- * the same zone the wizard's "HH:mm" was typed in.
- *
- * `lastMaterializedFor` only moves the START of the search forward — it is not
- * a duplicate guard here any more than it is there.
+ * Every cadence is anchored on the first chosen weekday on or after `startsOn`, so
+ * an edit — which clears `lastMaterializedFor` — keeps a fortnightly schedule on its
+ * weeks and a monthly one on its nth weekday.
  */
 export function nextOccurrenceUtc(
   template: {
@@ -199,17 +195,11 @@ export function nextOccurrenceUtc(
     startsOn: Date | string;
     endsOn?: Date | string;
     lastMaterializedFor?: Date | string;
+    timeZoneId?: string | null;
   },
   now: Date = new Date(),
-  timeZone: string = Intl.DateTimeFormat().resolvedOptions().timeZone,
+  timeZone: string = template.timeZoneId || Intl.DateTimeFormat().resolvedOptions().timeZone,
 ): Date | null {
-  const stepDays =
-    template.frequency === RecurrenceFrequency.Biweekly
-      ? 14
-      : template.frequency === RecurrenceFrequency.Monthly
-        ? 30 // the backend's own approximation — mirrored, not corrected
-        : 7;
-
   const asDate = (v: Date | string | undefined): Date | null => {
     if (!v) return null;
     const d = v instanceof Date ? v : new Date(v);
@@ -222,29 +212,58 @@ export function nextOccurrenceUtc(
   const lastMaterializedFor = asDate(template.lastMaterializedFor);
 
   // Market dates are held as midnight-UTC stand-ins, so day arithmetic is exact.
-  let searchDate = lastMaterializedFor
-    ? addDays(marketDate(lastMaterializedFor, timeZone), stepDays)
-    : marketDate(startsOn, timeZone);
+  const startDate = marketDate(startsOn, timeZone);
+  const anchor = addDays(startDate, (template.dayOfWeek - startDate.getUTCDay() + 7) % 7);
   const today = marketDate(now, timeZone);
-  if (searchDate.getTime() < today.getTime()) searchDate = today;
+  let from = lastMaterializedFor ? addDays(marketDate(lastMaterializedFor, timeZone), 1) : anchor;
+  if (from.getTime() < today.getTime()) from = today;
 
-  while (searchDate.getUTCDay() !== template.dayOfWeek) {
-    searchDate = addDays(searchDate, 1);
-  }
+  const dates =
+    template.frequency === RecurrenceFrequency.Monthly
+      ? monthlyDates(anchor, from, template.dayOfWeek)
+      : stepDates(anchor, from, template.frequency === RecurrenceFrequency.Biweekly ? 14 : 7);
 
   const [hours, minutes] = (template.timeOfDay ?? '00:00').split(':');
   const hour = Number(hours) || 0;
   const minute = Number(minutes) || 0;
+  const earliest = now.getTime() + EXPRESS_LEAD_TIME_HOURS * 60 * 60 * 1000;
 
-  // The backend yields only occurrences inside [startsOn, endsOn]; anything
-  // earlier steps forward. Bounded so a malformed template cannot spin.
+  // Bounded so a malformed template cannot spin.
   for (let i = 0; i < 64; i++) {
-    const occurrence = marketTimeToUtc(searchDate, hour, minute, timeZone);
+    const occurrence = marketTimeToUtc(dates.next().value, hour, minute, timeZone);
     if (endsOn && occurrence.getTime() > endsOn.getTime()) return null;
-    if (occurrence.getTime() >= startsOn.getTime()) return occurrence;
-    searchDate = addDays(searchDate, stepDays);
+    if (occurrence.getTime() >= earliest && occurrence.getTime() >= startsOn.getTime()) return occurrence;
   }
   return null;
+}
+
+function* stepDates(anchor: Date, from: Date, stepDays: number): Generator<Date, never> {
+  const days = Math.round((from.getTime() - anchor.getTime()) / (24 * 60 * 60 * 1000));
+  let date = addDays(anchor, Math.max(0, Math.ceil(days / stepDays)) * stepDays);
+  while (true) {
+    yield date;
+    date = addDays(date, stepDays);
+  }
+}
+
+/** The nth weekday of each month, n read off the anchor; a 5th means the last, since most months have none. */
+function* monthlyDates(anchor: Date, from: Date, dayOfWeek: number): Generator<Date, never> {
+  const ordinal = Math.floor((anchor.getUTCDate() - 1) / 7) + 1;
+  let month = from.getUTCMonth();
+  const year = from.getUTCFullYear();
+  while (true) {
+    const firstOfMonth = new Date(Date.UTC(year, month, 1));
+    const first = addDays(firstOfMonth, (dayOfWeek - firstOfMonth.getUTCDay() + 7) % 7);
+    const fifth = addDays(first, 28);
+    const date =
+      ordinal < 5
+        ? addDays(first, 7 * (ordinal - 1))
+        : fifth.getUTCMonth() === firstOfMonth.getUTCMonth()
+          ? fifth
+          : addDays(first, 21);
+    if (date.getTime() >= from.getTime()) yield date;
+    month++;
+  }
 }
 
 function addDays(date: Date, days: number): Date {
